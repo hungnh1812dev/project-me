@@ -19,7 +19,8 @@ COPY --from=prepare /app/out/pnpm-lock.yaml /app/out/pnpm-workspace.yaml ./
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
     pnpm install --frozen-lockfile --store-dir /pnpm/store
 COPY --from=prepare /app/out/full/ .
-RUN pnpm turbo run build --filter=cms-admin
+RUN --mount=type=cache,id=turbo-cms-admin,target=/app/.turbo/cache \
+    pnpm turbo run build --filter=cms-admin
 
 # Serve static files with nginx
 FROM nginx:alpine AS runner

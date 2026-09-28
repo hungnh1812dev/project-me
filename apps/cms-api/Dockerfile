@@ -12,22 +12,29 @@ FROM base AS prepare
 COPY . .
 RUN turbo prune cms-api --docker
 
-# Install, build, then extract production-only dependencies
-FROM base AS builder
+# Manifests + pruned lockfile only, so the stages below re-run only when dependencies change
+FROM base AS manifests
 COPY --from=prepare /app/out/json/ .
 COPY --from=prepare /app/out/pnpm-lock.yaml /app/out/pnpm-workspace.yaml ./
+
+# Production-only dependencies
+FROM manifests AS prod-deps
+RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
+    pnpm deploy --legacy --filter=cms-api --prod --store-dir /pnpm/store /prod/cms-api
+
+# All dependencies + source, then build
+FROM manifests AS builder
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
     pnpm install --frozen-lockfile --store-dir /pnpm/store
 COPY --from=prepare /app/out/full/ .
-RUN pnpm turbo run build --filter=cms-api
-RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
-    pnpm deploy --legacy --filter=cms-api --prod --store-dir /pnpm/store /prod/cms-api
+RUN --mount=type=cache,id=turbo-cms-api,target=/app/.turbo/cache \
+    pnpm turbo run build --filter=cms-api
 
 FROM node:24-alpine AS runner
 ENV NODE_ENV=production
 WORKDIR /app
-COPY --from=builder --chown=node:node /prod/cms-api/package.json ./package.json
-COPY --from=builder --chown=node:node /prod/cms-api/node_modules ./node_modules
+COPY --from=prod-deps --chown=node:node /prod/cms-api/package.json ./package.json
+COPY --from=prod-deps --chown=node:node /prod/cms-api/node_modules ./node_modules
 COPY --from=builder --chown=node:node /app/apps/cms-api/dist ./dist
 USER node
 EXPOSE 3000
