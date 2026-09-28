@@ -194,6 +194,12 @@ A workflow can't be unit-tested, so verification is staged:
   - **cms-api bug found:** the new typecheck exposed an existing bug in Nest's generated `test/app.e2e-spec.ts`. The file imports `supertest/types`, but cms-api is ESM (`"type": "module"`, `nodenext`) and supertest has no `exports` map, so the subpath needs its extension. Fixed to `supertest/types.js` (user-approved). Nobody noticed before because `nest build` excludes `test/` and Vitest doesn't typecheck. `test:e2e` still passes.
   - **Verified:** on a clean `git archive` export, `pnpm install --frozen-lockfile && turbo run typecheck lint build --force` passes 9/9. A deliberate type error in each app makes all 3 `typecheck` tasks fail.
   - **Gotcha for local clean-copy tests:** a copy placed under the gitignored `out/` makes oxlint and eslint find "no files". The copy needs its own `git init`.
+- **T2 (2026-09-28), `changes` job:**
+  - **turbo via npx:** turbo runs as `npx -y turbo@${TURBO_VERSION}` (workflow-level env, `2.11.5`, the same pin as the Dockerfiles). There's no `pnpm install` in this job. Verified on a fresh clone with no `node_modules` and a cold npm cache.
+  - **Checkout:** `fetch-depth: 0`.
+  - **Base commit:** the push base is `github.event.before`, and the PR base is `pull_request.base.sha`. If that commit is empty or missing (`git cat-file -e`), the job falls back to all apps explicitly, with a `::notice::`.
+  - **PR target:** PRs resolve their target from `github.base_ref`, and the tag uses the PR head SHA. Only push runs use the tag.
+  - **Tests:** a local harness (`out/t2/`, not committed) pulls each step's `run:` block out of `ci.yml` and runs it with `bash -eo pipefail`, like the runner does. 15 cases pass: affected per synthetic commit, zero/unknown/empty base, the branch → platform/runner matrix for develop/staging/main, an empty app list, and an unmapped branch failing. actionlint 1.7.12 with shellcheck is clean.
 
 ## Open Questions
 

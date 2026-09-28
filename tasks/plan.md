@@ -32,7 +32,7 @@ T0 and T1 are independent. Everything after them runs in sequence because every 
 - [x] `pnpm turbo run typecheck lint build` is green, and T0 findings are recorded in SPEC-ci.md
 
 ### Phase 2: PR path
-- [ ] T2: Workflow skeleton + `changes` job
+- [x] T2: Workflow skeleton + `changes` job
 - [ ] T3: `checks` + `build` jobs
 
 ### Checkpoint B

@@ -19,7 +19,7 @@ Spec: [../SPEC-ci.md](../SPEC-ci.md) · Plan: [plan.md](plan.md)
 
 ## Phase 2: PR path
 
-- [ ] T2: Workflow skeleton + `changes` job (M)
+- [x] T2: Workflow skeleton + `changes` job (M)
   - Acceptance: `ci.yml` has the `push`/`pull_request` triggers on develop/staging/main, the concurrency groups (cancel only for PRs) and `permissions: contents: read`. `changes` outputs `apps` (JSON array, apps only), `any`, `platforms` + the `image` matrix include (runner per arch) from the branch map, and `tag` (`<branch>-<sha7>`). Base = PR base sha or `github.event.before`, with a fallback to all apps on a zero or missing `before`. Untrusted values go through `env:` only.
   - Verify: `docker run --rm -v "$PWD":/repo -w /repo rhysd/actionlint:latest` is clean. The detection shell block, run against synthetic plumbing commits (see SPEC-ci.md T0 notes), gives these results: (a) a commit touching only `apps/cms-admin` → `["cms-admin"]`; (b) only `README.md` → `[]`; (c) `packages/types` → the apps that depend on it (currently none, since no `@repo/*` deps exist, so expect `[]` and note it); (d) base `0000000…` → all 3.
   - Files: .github/workflows/ci.yml

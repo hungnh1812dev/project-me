@@ -1,0 +1,88 @@
+# Spec: SPEC-ci.md
+# push to develop/staging/main: changes -> checks -> build -> image -> manifest -> deploy
+# pull_request into them:       changes -> checks -> build
+name: CI
+
+on:
+  push:
+    branches: [develop, staging, main]
+  pull_request:
+    branches: [develop, staging, main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  # Cancel superseded PR runs; never cut a push run (and its deploy) mid-way
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+env:
+  # Keep in sync with the Dockerfiles and the root package.json
+  TURBO_VERSION: 2.11.5
+
+jobs:
+  changes:
+    name: Detect affected apps
+    runs-on: ubuntu-latest
+    outputs:
+      apps: ${{ steps.affected.outputs.apps }}
+      any: ${{ steps.affected.outputs.any }}
+      branch: ${{ steps.target.outputs.branch }}
+      tag: ${{ steps.target.outputs.tag }}
+      matrix: ${{ steps.target.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          # turbo needs the history between base and head
+          fetch-depth: 0
+
+      - name: List affected apps
+        id: affected
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BASE_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
+          HEAD_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+        run: |
+          packages=(cms-admin cms-api frontend)
+          all=$(jq -cn '$ARGS.positional' --args "${packages[@]}")
+          if [ -n "$BASE_SHA" ] && git cat-file -e "${BASE_SHA}^{commit}" 2>/dev/null; then
+            apps=$(npx -y "turbo@${TURBO_VERSION}" query affected \
+                --packages "${packages[@]}" --base "$BASE_SHA" --head "$HEAD_SHA" \
+              | jq -c '[.data.affectedPackages.items[] | select(.path | startswith("apps/")) | .name]')
+          else
+            # New branch (before = 000…) or force push (before is gone): build everything
+            echo "::notice::No usable base commit '${BASE_SHA}' for ${EVENT_NAME}; treating all apps as affected"
+            apps=$all
+          fi
+          echo "Affected apps: $apps"
+          {
+            echo "apps=$apps"
+            echo "any=$(jq 'length > 0' <<<"$apps")"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Resolve deploy target
+        id: target
+        env:
+          BRANCH: ${{ github.event_name == 'pull_request' && github.base_ref || github.ref_name }}
+          SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          APPS: ${{ steps.affected.outputs.apps }}
+        run: |
+          case "$BRANCH" in
+            develop) platforms='["linux/amd64","linux/arm64"]' ;;
+            staging) platforms='["linux/arm64"]' ;;   # Ubuntu VM on Apple M1
+            main)    platforms='["linux/amd64"]' ;;   # Ubuntu on Intel
+            *) echo "::error::No deploy target for branch '$BRANCH'"; exit 1 ;;
+          esac
+          # One image job per app x platform, each on a native runner
+          matrix=$(jq -cn --argjson apps "$APPS" --argjson platforms "$platforms" '{include: [
+            $apps[] as $app | $platforms[] as $platform | ($platform | split("/")[1]) as $arch
+            | {app: $app, platform: $platform, arch: $arch,
+               runner: (if $arch == "arm64" then "ubuntu-24.04-arm" else "ubuntu-latest" end)}
+          ]}')
+          {
+            echo "branch=$BRANCH"
+            echo "tag=${BRANCH}-${SHA::7}"
+            echo "matrix=$matrix"
+          } >> "$GITHUB_OUTPUT"
+          echo "Target: $BRANCH, platforms $platforms"
