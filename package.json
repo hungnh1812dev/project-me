@@ -1,0 +1,17 @@
+{
+  "name": "project-me",
+  "private": true,
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "lint": "turbo run lint",
+    "test": "turbo run test"
+  },
+  "devDependencies": {
+    "turbo": "^2.11.5"
+  },
+  "packageManager": "pnpm@11.5.2",
+  "engines": {
+    "node": ">=24"
+  }
+}
