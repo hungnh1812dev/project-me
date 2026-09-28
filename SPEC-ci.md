@@ -4,7 +4,7 @@ Builds on [SPEC.md](SPEC.md) (scaffold + Dockerfiles). This spec covers one GitH
 
 ## Objective
 
-For every push to `develop`, `staging` or `main`, publish a new image to GHCR **only for the apps that changed**. Then point the matching cluster at that image by rewriting `APP_IMAGE_TAG` in the deployment repo. Argo CD / Flux (outside this repo) takes it from there. PRs get the same checks with no publishing.
+For every push to `staging` or `main`, publish a new image to GHCR **only for the apps that changed**. Then point the matching cluster at that image by rewriting `APP_IMAGE_TAG` on the matching branch of the deployment repo. Argo CD / Flux (outside this repo) takes it from there. Pushes to `develop`, and all PRs, get the checks and the normal build with no publishing.
 
 **Who it's for:** the developer(s) pushing to this repo, who want "merge → deployed" with no manual image or tag handling.
 
@@ -12,21 +12,21 @@ For every push to `develop`, `staging` or `main`, publish a new image to GHCR **
 
 ```
 changes ──> checks (typecheck + lint) ──> build (turbo) ──> image (per app × arch) ──> manifest (tag) ──> deploy (tag bump)
-   │                                                          └──────────── push events only ────────────┘
+   │                                                          └──── push to staging/main only (publish=true) ────┘
    └── zero affected apps is a valid outcome: every later job is skipped and the run is green
 ```
 
 **Decisions (2026-09-28):**
 | # | Decision |
 |---|---|
-| D1 | Triggers: a `push` to `develop`/`staging`/`main` runs the full flow. A `pull_request` into those branches runs `changes → checks → build` only (no GHCR push, no deploy). |
-| D2 | Each branch maps to a **GitHub Environment** of the same name (`develop`, `staging`, `main`), and each Environment has its own `DEPLOYMENT_CLUSTER_PATH`. `DEPLOYMENT_REPO` is a single repository variable. |
-| D3 | Image tag = `<branch>-<short-sha>` (7 chars), e.g. `develop-a1b2c3d`. That tag is written into `APP_IMAGE_TAG`. A moving `<branch>` tag is also pushed for convenience, but deploys never use it. |
-| D4 | The tag bump is a **direct commit** to the deployment repo's default branch, using a fine-grained PAT secret. |
+| D1 | Triggers: a `push` to `staging`/`main` runs the full flow. A `push` to `develop`, and a `pull_request` into any of the three, runs `changes → checks → build` only (no GHCR push, no deploy). *(Revised 2026-09-28: develop no longer publishes.)* |
+| D2 | Each publishing branch maps to a **GitHub Environment** and a **branch of the deployment repo**: `staging` → Environment `staging`, deployment branch `staging`; `main` → Environment `production`, deployment branch `main`. Each Environment has its own `DEPLOYMENT_CLUSTER_PATH`. `DEPLOYMENT_REPO` is a single repository variable. |
+| D3 | Image tag = `<branch>-<short-sha>` (7 chars), e.g. `staging-a1b2c3d`. That tag is written into `APP_IMAGE_TAG`. A moving `<branch>` tag is also pushed for convenience, but deploys never use it. |
+| D4 | The tag bump is a **direct commit** to the mapped deployment branch (D2), using a fine-grained PAT secret. |
 | D5 | `APP_IMAGE_TAG` is a plain YAML key (`APP_IMAGE_TAG: <value>`, may be nested or indented) in `<DEPLOYMENT_CLUSTER_PATH>/<app>-sync.yaml`. |
 | D6 | Code changes allowed before the build: add a `typecheck` script to each app and a `typecheck` task to `turbo.json`. The one approved exception is a one-line import fix in `apps/cms-api/test/app.e2e-spec.ts` (see T1 notes). |
 | D7 | Change detection uses turbo's own `turbo query affected --packages` (bundled docs: `guides/skipping-tasks.mdx`, `reference/query.mdx`). A change in `packages/*` or the root lockfile marks the dependent apps as affected. |
-| D8 | **Image platform follows the target cluster.** `staging` → `linux/arm64` (Ubuntu VM on an Apple M1). `main` → `linux/amd64` (Ubuntu on Intel). `develop` → **both** (a multi-arch image, so the same tag runs on either host). All hosts run Ubuntu, and the images are ordinary `linux/*` images. Each arch builds on a **native runner**: `ubuntu-24.04-arm` for arm64, `ubuntu-latest` for amd64. That means no QEMU emulation, which would be 5–10× slower for `pnpm install` + Next/Nest builds. |
+| D8 | **Image platform follows the target cluster.** `staging` → `linux/arm64` (Ubuntu VM on an Apple M1). `main` → `linux/amd64` (Ubuntu on Intel). `develop` builds no image. Each arch builds on a **native runner**: `ubuntu-24.04-arm` for arm64, `ubuntu-latest` for amd64. That means no QEMU emulation, which would be 5–10× slower for `pnpm install` + Next/Nest builds. The digest + `manifest` pattern still works for any number of platforms per branch. |
 
 ## Tech Stack
 
@@ -53,22 +53,24 @@ File: `.github/workflows/ci.yml`. There is one workflow with six jobs. The app l
 | `changes` | push + PR | Checkout (full history), install turbo, run `turbo query affected --packages <apps> --base <base> --head HEAD`, and emit a JSON array of affected **apps** (packages under `apps/` only). Base = PR base sha for PRs, or `github.event.before` for pushes. If `before` is all zeros (new branch) or not in history (force push), fall back to **all apps**. | `apps` (JSON array), `any` (`true`/`false`) |
 | `checks` | `any == 'true'` | `pnpm install --frozen-lockfile`, then `pnpm turbo run typecheck lint --filter=<each app>` | — |
 | `build` | after `checks` | `pnpm turbo run build --filter=<each app>` (the plain Node/Next/Vite build, which catches build breaks before Docker) | — |
-| `image` | push only, after `build`, matrix over `apps` × `platforms` | `changes` resolves the platform list from the branch → platform map (D8) and outputs it. Each matrix leg runs on its arch's native runner. The leg logs in to GHCR and runs `build-push-action` with `file: apps/<app>/Dockerfile`, `context: .`, `platforms: <one platform>`, and GHA cache. It pushes **by digest only** (`outputs: type=image,push-by-digest=true,name-canonical=true,push=true`) and uploads the digest as an artifact `digest-<app>-<arch>`. This is Docker's documented "distribute build across multiple runners" pattern. | digests |
-| `manifest` | push only, after `image`, matrix over `apps` | Download that app's digests. `docker buildx imagetools create --tag=<image>:<branch>-<sha7> --tag=<image>:<branch>` combines them into one tagged manifest list, then `imagetools inspect` prints it. The OCI labels (`org.opencontainers.image.source`, `.revision`) are set on the per-arch images in `image`. The same code path covers 1 digest (staging/main) and 2 digests (develop). | — |
-| `deploy` | push only, after `manifest`, `environment: <branch>` | Checkout `DEPLOYMENT_REPO` with the PAT. For each affected app, replace the `APP_IMAGE_TAG` value in `$DEPLOYMENT_CLUSTER_PATH/<app>-sync.yaml`. Make **one commit** for all apps (`chore(<branch>): bump <apps> to <tag>`) and push. If the push is rejected, `pull --rebase` and retry (up to 3 times). | — |
+| `image` | `publish` only, after `build`, matrix over `apps` × `platforms` | `changes` resolves the platform list from the branch → platform map (D8) and outputs it. Each matrix leg runs on its arch's native runner. The leg logs in to GHCR and runs `build-push-action` with `file: apps/<app>/Dockerfile`, `context: .`, `platforms: <one platform>`, and GHA cache. It pushes **by digest only** (`outputs: type=image,push-by-digest=true,name-canonical=true,push=true`) and uploads the digest as an artifact `digest-<app>-<arch>`. This is Docker's documented "distribute build across multiple runners" pattern. | digests |
+| `manifest` | `publish` only, after `image`, matrix over `apps` | Download that app's digests. `docker buildx imagetools create --tag=<image>:<branch>-<sha7> --tag=<image>:<branch>` combines them into one tagged manifest list, then `imagetools inspect` prints it. The OCI labels (`org.opencontainers.image.source`, `.revision`) are set on the per-arch images in `image`. The same code path covers 1 digest (staging/main) and 2 digests (develop). | — |
+| `deploy` | `publish` only, after `manifest`, `environment: <mapped Environment>` | Checkout `DEPLOYMENT_REPO` at the mapped deployment branch with the PAT. For each affected app, replace the `APP_IMAGE_TAG` value in `$DEPLOYMENT_CLUSTER_PATH/<app>-sync.yaml`. Make **one commit** for all apps (`chore(<branch>): bump <apps> to <tag>`) and push. Push to `HEAD:<deployment branch>`. If the push is rejected, `pull --rebase` and retry (up to 3 times). | — |
 
 **Branch → target map** (one place in the workflow, the `changes` job, e.g. a `case "$BRANCH"` block):
 
-| Branch | Environment | Platform | Runner for `image` |
-|---|---|---|---|
-| `develop` | `develop` | `linux/amd64`, `linux/arm64` | `ubuntu-latest` + `ubuntu-24.04-arm` (in parallel) |
-| `staging` | `staging` | `linux/arm64` | `ubuntu-24.04-arm` |
-| `main` | `main` | `linux/amd64` | `ubuntu-latest` |
+| Branch | Publishes? | Platform | Runner for `image` | GitHub Environment | Deployment repo branch |
+|---|---|---|---|---|---|
+| `develop` | no (checks + build only) | — | — | — | — |
+| `staging` | yes | `linux/arm64` | `ubuntu-24.04-arm` | `staging` | `staging` |
+| `main` | yes | `linux/amd64` | `ubuntu-latest` | `production` | `main` |
+
+`changes` outputs `publish=true` only for a `push` to a publishing branch with at least one affected app. `image`, `manifest` and `deploy` all run on `if: needs.changes.outputs.publish == 'true'`. PRs into `develop` resolve fine (`publish=false`).
 
 `checks` and `build` stay on `ubuntu-latest` for every branch, because they're arch-independent JS/TS checks. Only the Docker image is arch-specific.
 
 **Other rules:**
-- `concurrency: ci-${{ github.ref }}`. For PRs, `cancel-in-progress: true`. For pushes it's `false`, so a deploy never gets cut mid-way. A second concurrency group `deploy-<branch>` on `deploy` serializes tag bumps per environment.
+- `concurrency: ci-${{ github.ref }}`. For PRs, `cancel-in-progress: true`. For pushes it's `false`, so a deploy never gets cut mid-way. A second concurrency group `deploy-<environment>` on `deploy` serializes tag bumps per environment.
 - Least-privilege `permissions`: `contents: read` at workflow level, and `packages: write` on `image` only.
 - An empty `apps` array is not an error. `checks`/`build`/`image`/`manifest`/`deploy` are skipped via `if:` and the run passes.
 - **Tag replacement** (D5), in plain sed so no extra tool is needed:
@@ -78,13 +80,13 @@ File: `.github/workflows/ci.yml`. There is one workflow with six jobs. The app l
   grep -qE '^[[:space:]]*APP_IMAGE_TAG:' "$f" || { echo "::error::APP_IMAGE_TAG not found in $f"; exit 1; }
   sed -i -E "s|^([[:space:]]*APP_IMAGE_TAG:[[:space:]]*).*$|\1\"${TAG}\"|" "$f"
   ```
-  The value is written quoted (`"develop-a1b2c3d"`) so YAML never reads it as a number. If the file already holds this tag, `git diff --quiet` makes the commit a no-op and the step succeeds.
+  The value is written quoted (`"staging-a1b2c3d"`) so YAML never reads it as a number. If the file already holds this tag, `git diff --quiet` makes the commit a no-op and the step succeeds.
 
 **Configuration you set up in GitHub (not stored in code):**
 | Name | Kind | Scope | Value |
 |---|---|---|---|
 | `DEPLOYMENT_REPO` | variable | repository | `owner/repo` of the GitOps repo |
-| `DEPLOYMENT_CLUSTER_PATH` | variable | Environment `develop` / `staging` / `main` | path inside the deployment repo, e.g. `clusters/dev` |
+| `DEPLOYMENT_CLUSTER_PATH` | variable | Environments `staging` / `production` | path inside the deployment repo (on that environment's deployment branch), e.g. `clusters/staging` |
 | `DEPLOYMENT_REPO_TOKEN` | secret | repository | fine-grained PAT: **Contents: read & write** on the deployment repo only |
 
 ## Code changes (D6)
@@ -108,10 +110,10 @@ Before editing `turbo.json`, read the installed turbo's `docs/reference/configur
 ```bash
 # Local equivalents of the CI steps (from the repo root)
 pnpm install --frozen-lockfile
-pnpm turbo query affected --packages cms-api cms-admin frontend --base origin/develop --head HEAD
+pnpm turbo query affected --packages cms-api cms-admin frontend --base origin/staging --head HEAD
 pnpm turbo run typecheck lint --filter=cms-api --filter=cms-admin --filter=frontend
 pnpm turbo run build --filter=cms-api
-docker build -f apps/cms-api/Dockerfile -t ghcr.io/hungnh1812dev/project-me/cms-api:develop-abc1234 .
+docker build -f apps/cms-api/Dockerfile -t ghcr.io/hungnh1812dev/project-me/cms-api:staging-abc1234 .
 
 # Validate the workflow file
 actionlint .github/workflows/ci.yml   # or: docker run --rm -v "$PWD":/repo -w /repo rhysd/actionlint:latest
@@ -149,7 +151,8 @@ A workflow can't be unit-tested, so verification is staged:
 4. **Live (you run it, after approval to push):**
    - Open a PR that touches only `apps/cms-admin`. Only cms-admin is checked and built, and nothing is pushed.
    - Open a PR that touches only `README.md`. `changes` reports `[]`, the other jobs are skipped, and the run is green.
-   - Push to `develop`. Images appear in GHCR with tag `develop-<sha7>`, the deployment repo gets one commit, and only the affected `<app>-sync.yaml` files change.
+   - Push to `develop`. Only `changes → checks → build` run, and `image`/`manifest`/`deploy` are skipped.
+   - Push to `staging`. arm64 images appear in GHCR with tag `staging-<sha7>`, the deployment repo's `staging` branch gets one commit, and only the affected `<app>-sync.yaml` files change.
 
 ## Boundaries
 
@@ -161,13 +164,13 @@ A workflow can't be unit-tested, so verification is staged:
 
 1. `.github/workflows/ci.yml` exists and `actionlint` reports nothing.
 2. Every app has a `typecheck` script, `turbo.json` has a `typecheck` task, and `pnpm turbo run typecheck lint build` exits 0 locally.
-3. PR runs never execute `image`, `manifest` or `deploy`.
+3. PR runs and `develop` pushes never execute `image`, `manifest` or `deploy`.
 4. A commit that affects no app ends green, with `checks`/`build`/`image`/`manifest`/`deploy` skipped.
 5. A commit that affects only app X builds, pushes and bumps only X. A change in `packages/*` or `pnpm-lock.yaml` affects every app that depends on it.
-6. A push to branch B pushes `ghcr.io/hungnh1812dev/project-me/<app>:B-<sha7>` (and `:B`), and commits `APP_IMAGE_TAG: "B-<sha7>"` into `$DEPLOYMENT_CLUSTER_PATH(B)/<app>-sync.yaml` in `DEPLOYMENT_REPO`, leaving the rest of that file byte-identical.
+6. A push to `staging` or `main` (B) pushes `ghcr.io/hungnh1812dev/project-me/<app>:B-<sha7>` (and `:B`), and commits `APP_IMAGE_TAG: "B-<sha7>"` into `$DEPLOYMENT_CLUSTER_PATH/<app>-sync.yaml` on the mapped deployment branch (`staging` / `main`), using Environment `staging` / `production`. The rest of that file stays byte-identical.
 7. A missing sync file or a missing `APP_IMAGE_TAG` key fails the `deploy` job with a clear error. No partial commit is made.
 8. Two quick pushes to the same branch don't corrupt or lose a tag bump (deploy concurrency + rebase retry).
-9. `docker buildx imagetools inspect <image>:<tag>` lists exactly the platforms for that branch, not counting `unknown/unknown` provenance attestation entries: `linux/arm64` for `staging`, `linux/amd64` for `main`, and both for `develop`. The staging image runs on the M1 Ubuntu VM, the main image runs on the Intel Ubuntu host, and the develop image runs on either.
+9. `docker buildx imagetools inspect <image>:<tag>` lists exactly the platform for that branch, not counting `unknown/unknown` provenance attestation entries: `linux/arm64` for `staging` and `linux/amd64` for `main`. The staging image runs on the M1 Ubuntu VM, and the main image runs on the Intel Ubuntu host.
 
 ## Implementation Notes
 
@@ -219,9 +222,11 @@ A workflow can't be unit-tested, so verification is staged:
   - **Commit and push:** one commit as `github-actions[bot]`. The push is retried 3 times with `git pull --rebase` in between. A rebase conflict (someone else edited the same line) fails the job instead of guessing.
   - **Tests:** 9 structure checks, plus 26 behavior checks in `ubuntu:24.04` against a local bare repo. They cover a nested quoted key and a top-level unquoted key (only those lines change), a repeat of the same tag (no commit, exit 0), a missing file / missing key / empty cluster path (fail, no commit, no edits), and a concurrent push after checkout, from a full clone and from a depth-1 clone (the retry lands both commits).
 
+- **Mapping revision (2026-09-28, after T5):** per user decision, `develop` no longer publishes or deploys. `staging` → Environment `staging` + deployment branch `staging`. `main` → Environment `production` + deployment branch `main`. `changes` gained the outputs `publish`, `environment` and `deploy_ref`. The publishing jobs gate on `publish`. `deploy` checks out `deploy_ref` and pushes `HEAD:$DEPLOY_REF`. Tests updated: changes 22, checks 9, image 17, deploy 10 structure + 30 behavior, including a bump to the deployment repo's `staging` branch with a concurrent push on it, leaving `main` untouched. actionlint is clean.
+
 ## Open Questions
 
 1. **Tests in CI:** `cms-api` has Vitest specs (`pnpm test`). The flow you gave has no test step. Default: leave it out, as specified. Should I add `test` next to `typecheck lint`?
 2. **GHCR package visibility:** new GHCR packages are **private** by default, so the cluster needs an image pull secret, or you make each package public once after the first push. Nothing in the workflow depends on this. Just confirm your cluster can pull.
-3. **Environment protection:** should `main` require manual approval (a GitHub Environment "required reviewer") before `deploy`? Default: no protection, so it's fully automatic.
+3. **Environment protection:** should the `production` Environment (branch `main`) require manual approval (a GitHub Environment "required reviewer") before `deploy`? Default: no protection, so it's fully automatic.
 4. **Workflow-only changes build nothing** (T0 finding). Default: accept it; the next app change exercises the new workflow. Alternative: add `workflow_dispatch` (manual "run for all apps" button), or treat a change to `.github/workflows/ci.yml` as "all apps affected". Either one adds a few lines to `changes`.

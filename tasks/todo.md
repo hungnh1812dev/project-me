@@ -45,11 +45,11 @@ Spec: [../SPEC-ci.md](../SPEC-ci.md) · Plan: [plan.md](plan.md)
   - Files: .github/workflows/ci.yml
 
 ## Checkpoint C
-- [ ] actionlint clean · fixtures pass · you create: repo var `DEPLOYMENT_REPO`, Environments `develop`/`staging`/`main` each with `DEPLOYMENT_CLUSTER_PATH`, secret `DEPLOYMENT_REPO_TOKEN` · **ask before committing/pushing**
+- [ ] actionlint clean · fixtures pass · you create: repo var `DEPLOYMENT_REPO`, Environments `staging`/`production` each with `DEPLOYMENT_CLUSTER_PATH` (deployment branches `staging`/`main`), secret `DEPLOYMENT_REPO_TOKEN` · **ask before committing/pushing**
 
 ## Phase 4: Verify
 
 - [ ] T6: Live verification (S)
   - Acceptance: SPEC-ci.md Success Criteria 1–9 are checked off with evidence (run URLs, `imagetools inspect` output, deployment-repo commit). Implementation notes are added to SPEC-ci.md.
-  - Verify: a PR touching only `apps/cms-admin` → only cms-admin checked/built, no image. A README-only PR → green with jobs skipped. A push to `develop` → multi-arch images + one deploy commit. A push to `staging` → arm64-only image. `main` is checked on the first real release, or by a test push if you allow it.
+  - Verify: a PR touching only `apps/cms-admin` → only cms-admin checked/built, no image. A README-only PR → green with jobs skipped. A push to `develop` → checks + build only. A push to `staging` → arm64 image + one commit on the deployment repo's `staging` branch. `main` (amd64, `production`) is checked on the first real release, or by a test push if you allow it.
   - Files: SPEC-ci.md

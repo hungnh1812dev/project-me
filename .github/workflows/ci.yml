@@ -1,6 +1,6 @@
 # Spec: SPEC-ci.md
-# push to develop/staging/main: changes -> checks -> build -> image -> manifest -> deploy
-# pull_request into them:       changes -> checks -> build
+# push to staging/main:        changes -> checks -> build -> image -> manifest -> deploy
+# push to develop, and PRs:    changes -> checks -> build
 name: CI
 
 on:
@@ -30,9 +30,12 @@ jobs:
     outputs:
       apps: ${{ steps.affected.outputs.apps }}
       any: ${{ steps.affected.outputs.any }}
+      publish: ${{ steps.target.outputs.publish }}
       branch: ${{ steps.target.outputs.branch }}
       tag: ${{ steps.target.outputs.tag }}
       matrix: ${{ steps.target.outputs.matrix }}
+      environment: ${{ steps.target.outputs.environment }}
+      deploy_ref: ${{ steps.target.outputs.deploy_ref }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -66,16 +69,20 @@ jobs:
       - name: Resolve deploy target
         id: target
         env:
+          EVENT_NAME: ${{ github.event_name }}
           BRANCH: ${{ github.event_name == 'pull_request' && github.base_ref || github.ref_name }}
           SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
           APPS: ${{ steps.affected.outputs.apps }}
         run: |
+          # branch -> image platforms, GitHub Environment, deployment repo branch
           case "$BRANCH" in
-            develop) platforms='["linux/amd64","linux/arm64"]' ;;
-            staging) platforms='["linux/arm64"]' ;;   # Ubuntu VM on Apple M1
-            main)    platforms='["linux/amd64"]' ;;   # Ubuntu on Intel
+            develop) platforms='[]';              environment='';           deploy_ref='' ;;     # checks + build only
+            staging) platforms='["linux/arm64"]'; environment=staging;    deploy_ref=staging ;; # Ubuntu VM on Apple M1
+            main)    platforms='["linux/amd64"]'; environment=production; deploy_ref=main ;;    # Ubuntu on Intel
             *) echo "::error::No deploy target for branch '$BRANCH'"; exit 1 ;;
           esac
+          publish=false
+          if [ "$EVENT_NAME" = push ] && [ -n "$environment" ] && [ "$APPS" != '[]' ]; then publish=true; fi
           # One image job per app x platform, each on a native runner
           matrix=$(jq -cn --argjson apps "$APPS" --argjson platforms "$platforms" '{include: [
             $apps[] as $app | $platforms[] as $platform | ($platform | split("/")[1]) as $arch
@@ -83,11 +90,14 @@ jobs:
                runner: (if $arch == "arm64" then "ubuntu-24.04-arm" else "ubuntu-latest" end)}
           ]}')
           {
+            echo "publish=$publish"
             echo "branch=$BRANCH"
             echo "tag=${BRANCH}-${SHA::7}"
             echo "matrix=$matrix"
+            echo "environment=$environment"
+            echo "deploy_ref=$deploy_ref"
           } >> "$GITHUB_OUTPUT"
-          echo "Target: $BRANCH, platforms $platforms"
+          echo "Target: $BRANCH, publish=$publish, platforms $platforms, environment '${environment}'"
 
   checks:
     name: Typecheck and lint
@@ -133,7 +143,7 @@ jobs:
   image:
     name: Image ${{ matrix.app }} (${{ matrix.arch }})
     needs: [changes, build]
-    if: github.event_name == 'push'
+    if: needs.changes.outputs.publish == 'true'
     runs-on: ${{ matrix.runner }}
     permissions:
       contents: read
@@ -179,7 +189,7 @@ jobs:
   manifest:
     name: Tag ${{ matrix.app }}
     needs: [changes, image]
-    if: github.event_name == 'push'
+    if: needs.changes.outputs.publish == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -213,19 +223,20 @@ jobs:
           docker buildx imagetools inspect "${IMAGE}:${TAG}"
 
   deploy:
-    name: Deploy to ${{ needs.changes.outputs.branch }}
+    name: Deploy to ${{ needs.changes.outputs.environment }}
     needs: [changes, manifest]
-    if: github.event_name == 'push'
+    if: needs.changes.outputs.publish == 'true'
     runs-on: ubuntu-latest
-    environment: ${{ needs.changes.outputs.branch }}
+    environment: ${{ needs.changes.outputs.environment }}
     # One tag bump at a time per environment; never cancel a half-done bump
     concurrency:
-      group: deploy-${{ needs.changes.outputs.branch }}
+      group: deploy-${{ needs.changes.outputs.environment }}
       cancel-in-progress: false
     steps:
       - uses: actions/checkout@v7
         with:
           repository: ${{ vars.DEPLOYMENT_REPO }}
+          ref: ${{ needs.changes.outputs.deploy_ref }}
           token: ${{ secrets.DEPLOYMENT_REPO_TOKEN }}
           path: deployment
       - name: Bump APP_IMAGE_TAG
@@ -235,10 +246,11 @@ jobs:
           APPS: ${{ needs.changes.outputs.apps }}
           TAG: ${{ needs.changes.outputs.tag }}
           BRANCH: ${{ needs.changes.outputs.branch }}
+          DEPLOY_REF: ${{ needs.changes.outputs.deploy_ref }}
           CLUSTER_PATH: ${{ vars.DEPLOYMENT_CLUSTER_PATH }}
         run: |
           if [ -z "$CLUSTER_PATH" ]; then
-            echo "::error::DEPLOYMENT_CLUSTER_PATH is not set for environment '$BRANCH'"; exit 1
+            echo "::error::DEPLOYMENT_CLUSTER_PATH is not set for this environment"; exit 1
           fi
           read -r -a apps <<<"$(jq -r 'join(" ")' <<<"$APPS")"
           key='^([[:space:]]*APP_IMAGE_TAG:[[:space:]]*)'
@@ -269,8 +281,8 @@ jobs:
 
           # Another bump may land between checkout and push: rebase onto it and retry
           for attempt in 1 2 3; do
-            if git push origin HEAD; then exit 0; fi
+            if git push origin "HEAD:${DEPLOY_REF}"; then exit 0; fi
             echo "::warning::Push rejected (attempt ${attempt}/3); rebasing and retrying"
-            git pull --rebase origin "$(git rev-parse --abbrev-ref HEAD)"
+            git pull --rebase origin "$DEPLOY_REF"
           done
           echo "::error::Could not push the tag bump after 3 attempts"; exit 1
