@@ -11,13 +11,13 @@ Create a pnpm + Turborepo monorepo in the current repo root that holds 3 freshly
 **Decisions made (2026-09-28):**
 | # | Decision | Deviation from doc? |
 |---|---|---|
-| D1 | Scope is the scaffold plus workspace wiring. **No** Dockerfiles or `nginx.conf` yet. | Deferred |
+| D1 | Scope is the scaffold plus workspace wiring. Dockerfiles and `nginx.conf` were added afterwards at the user's request (see Implementation Notes, Docker). | — |
 | D2 | We write the root files by hand. Each app comes from its official CLI, not the `create-turbo` template. | — |
 | D3 | Target **Node 24 LTS**, not Node 20, which reached EOL in April 2026. | Yes |
 | D4 | The repo root is the monorepo root. There is no `my-monorepo/` subfolder. | Yes |
 | D5 | `packages/types` uses `src/index.ts` instead of `index.ts` at the package root, following the common convention. | Minor |
 | D6 | Next.js config is whatever `create-next-app` generates (`next.config.ts`), not `next.config.js`. | Minor |
-| D7 | `frontend` will run on a **Next.js custom server**, so it will **not** use `output: 'standalone'`, which doesn't work with a custom server. The future Docker spec needs a runner stage that copies `.next/`, `public/`, the compiled server entry and production `node_modules` (via `turbo prune` + `pnpm install --prod`), so the image will likely be larger than the doc's ~100MB. The custom server is `apps/frontend/server.ts` (Next 16 documented pattern, `node:http`). It runs directly with Node 24's built-in TypeScript type stripping: no `tsx` and no compile step, so it may only use erasable TS syntax (no enums or namespaces). Scripts: `dev` = `node server.ts`, `start` = `NODE_ENV=production node server.ts`, and `PORT` sets the port. `apps/frontend/package.json` has `"type": "module"` so Node loads `server.ts` as ESM without a reparse warning. | Yes |
+| D7 | `frontend` uses Next's **`output: 'standalone'`** with `outputFileTracingRoot` = monorepo root (required so pnpm's root `node_modules` is traced). A custom server (`server.ts`) was tried first and then dropped: standalone can't be combined with it, and without standalone the image was ~570MB unpacked (full `next` + `@next/swc` in node_modules). Scripts are the generated `next dev` / `next build` / `next start`. | Matches doc |
 
 ## Tech Stack (latest on npm as of 2026-09-28)
 
@@ -48,6 +48,12 @@ pnpm lint                        # turbo run lint
 pnpm test                        # turbo run test
 pnpm --filter cms-api start:dev  # run one app (Nest 12 has no `dev` script)
 pnpm turbo prune cms-api --docker   # isolation check (output to ./out, not committed)
+
+# Docker (build from the repo root; each Dockerfile runs `turbo prune` itself)
+docker build -f apps/cms-api/Dockerfile   -t cms-api:<tag>   .
+docker build -f apps/cms-admin/Dockerfile -t cms-admin:<tag> .
+docker build -f apps/frontend/Dockerfile  -t frontend:<tag>  .
+docker run -p 3000:3000 cms-api:<tag>     # cms-admin listens on 80, frontend on 3000
 ```
 
 If a CLI flag has changed in the latest version, use the nearest non-interactive equivalent and record the change in this spec.
@@ -132,6 +138,7 @@ There is no application code, so we write no new tests. We only verify that the 
 - **T4 (2026-09-28):** `create-vite` 9 defaults to **oxlint** for React templates (`--eslint` opts out), and we kept the default so linting matches cms-api. It generated TypeScript ~6.0 and React ^19.2.8 (the caret range resolves to 19.3.x). The template ships its own `.gitignore`, and we kept it.
 - **T5 (2026-09-28):** `create-next-app` 16.3 removed `--turbopack` (Turbopack is the default). It generated `AGENTS.md` + `CLAUDE.md` (kept), a `packageManager` field (kept), and a **nested `apps/frontend/pnpm-workspace.yaml`** containing `allowBuilds: {sharp: false, unrs-resolver: false}` (moved its `allowBuilds` block to the root file and deleted the nested one, per user decision). It pins older tooling than the other apps: TypeScript ^5, ESLint ^9, @types/node ^20, and exact React 19.2.8.
 - **T6 (2026-09-28):** All success criteria were verified. Findings: (a) `turbo` 2.11 writes a root `AGENTS.md` block when it detects an AI agent (kept; set `"agentGuidance": false` in turbo.json to opt out). (b) `turbo.json` `test` no longer declares `coverage/**` outputs, since plain `vitest run` doesn't produce them. (c) There is a peer warning: `tsconfck` (via cms-api's `vite-tsconfig-paths`) wants TypeScript ^5 but gets 6.0.3. It's harmless so far, and Vitest suggests replacing the plugin with native `resolve.tsconfigPaths`. (d) With pnpm 11, pass extra args without `--`: `pnpm --filter frontend dev -p 3001`.
+- **Docker (2026-09-28):** The Dockerfiles follow turbo's bundled Docker guide: a `prepare` stage runs `turbo prune <app> --docker`, then `builder` runs `pnpm install --frozen-lockfile` (with a BuildKit store cache) and `turbo run build`, then `runner`. Base images are `node:24-alpine` and `nginx:alpine`. Node runners use the non-root `node` user. `cms-api` gets production-only deps via `pnpm deploy --legacy --prod` (plain `pnpm deploy` would require `injectWorkspacePackages: true` workspace-wide, which breaks live linking of `@repo/*` in local dev). `cms-admin` nginx: SPA fallback to `index.html`, long-cache for `/assets/`. The root `.dockerignore` excludes node_modules, build output, `.git` and `.env*`. Verified: all 3 containers return HTTP 200. `frontend` runner copies `.next/standalone`, `.next/static` and `public`, sets `HOSTNAME=0.0.0.0`, and runs `node apps/frontend/server.js`. Sizes (Docker 29 reports compressed + unpacked together; unpacked / compressed download in brackets): cms-api 264MB (~200MB / 64MB), cms-admin 93MB, frontend 292MB (~217MB / 75MB). About 176MB of each Node image is the `node:24-alpine` base.
 
 ## Open Questions
 

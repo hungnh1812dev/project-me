@@ -2,11 +2,10 @@
   "name": "frontend",
   "version": "0.1.0",
   "private": true,
-  "type": "module",
   "scripts": {
-    "dev": "node server.ts",
+    "dev": "next dev",
     "build": "next build",
-    "start": "NODE_ENV=production node server.ts",
+    "start": "next start",
     "lint": "eslint"
   },
   "dependencies": {
