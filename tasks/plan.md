@@ -39,7 +39,7 @@ T0 and T1 are independent. Everything after them runs in sequence because every 
 - [ ] `actionlint` is clean. The detection script passes its scratch cases. **Ask:** push a branch/PR so the PR path runs live?
 
 ### Phase 3: Publish + deploy
-- [ ] T4: `image` + `manifest` jobs
+- [x] T4: `image` + `manifest` jobs
 - [ ] T5: `deploy` job
 
 ### Checkpoint C

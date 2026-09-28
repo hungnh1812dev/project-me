@@ -37,7 +37,7 @@ changes ──> checks (typecheck + lint) ──> build (turbo) ──> image (p
 | `pnpm/action-setup` | `v6` | version comes from `packageManager` (`pnpm@11.5.2`) |
 | `actions/setup-node` | `v7` | `node-version-file: .nvmrc` (24), `cache: pnpm` |
 | `actions/upload-artifact` / `actions/download-artifact` | `v7` / `v8` | digest hand-off `image` → `manifest` |
-| `docker/setup-buildx-action` `v4`, `docker/login-action` `v4`, `docker/metadata-action` `v6`, `docker/build-push-action` `v7` | as listed | cache `type=gha,scope=<app>-<arch>,mode=max` (per arch, so arm64 and amd64 layers don't evict each other) |
+| `docker/setup-buildx-action` `v4`, `docker/login-action` `v4`, `docker/build-push-action` `v7` | as listed | cache `type=gha,scope=<app>-<arch>,mode=max` (per arch, so arm64 and amd64 layers don't evict each other) |
 | Runners for `image` | `ubuntu-24.04-arm` (arm64), `ubuntu-latest` (amd64) | Confirmed (T0): the repo is public, and standard arm64 runners are free and unlimited for public repos. No QEMU needed. (`docker/setup-qemu-action` `v4` is the fallback if the repo ever goes private and minutes become a concern.) |
 | turbo | 2.11.5 (from lockfile) | `turbo query affected`, `turbo run … --filter` |
 | Registry | `ghcr.io/hungnh1812dev/project-me/<app>` | auth via `GITHUB_TOKEN` (`packages: write`) |
@@ -54,7 +54,7 @@ File: `.github/workflows/ci.yml`. There is one workflow with six jobs. The app l
 | `checks` | `any == 'true'` | `pnpm install --frozen-lockfile`, then `pnpm turbo run typecheck lint --filter=<each app>` | — |
 | `build` | after `checks` | `pnpm turbo run build --filter=<each app>` (the plain Node/Next/Vite build, which catches build breaks before Docker) | — |
 | `image` | push only, after `build`, matrix over `apps` × `platforms` | `changes` resolves the platform list from the branch → platform map (D8) and outputs it. Each matrix leg runs on its arch's native runner. The leg logs in to GHCR and runs `build-push-action` with `file: apps/<app>/Dockerfile`, `context: .`, `platforms: <one platform>`, and GHA cache. It pushes **by digest only** (`outputs: type=image,push-by-digest=true,name-canonical=true,push=true`) and uploads the digest as an artifact `digest-<app>-<arch>`. This is Docker's documented "distribute build across multiple runners" pattern. | digests |
-| `manifest` | push only, after `image`, matrix over `apps` | Download that app's digests, then run `docker/metadata-action` (tags `<branch>-<sha7>` and `<branch>`, OCI labels incl. `org.opencontainers.image.source`). `docker buildx imagetools create` combines the digests into one tagged manifest list. The same code path covers 1 digest (staging/main) and 2 digests (develop). | — |
+| `manifest` | push only, after `image`, matrix over `apps` | Download that app's digests. `docker buildx imagetools create --tag=<image>:<branch>-<sha7> --tag=<image>:<branch>` combines them into one tagged manifest list, then `imagetools inspect` prints it. The OCI labels (`org.opencontainers.image.source`, `.revision`) are set on the per-arch images in `image`. The same code path covers 1 digest (staging/main) and 2 digests (develop). | — |
 | `deploy` | push only, after `manifest`, `environment: <branch>` | Checkout `DEPLOYMENT_REPO` with the PAT. For each affected app, replace the `APP_IMAGE_TAG` value in `$DEPLOYMENT_CLUSTER_PATH/<app>-sync.yaml`. Make **one commit** for all apps (`chore(<branch>): bump <apps> to <tag>`) and push. If the push is rejected, `pull --rebase` and retry (up to 3 times). | — |
 
 **Branch → target map** (one place in the workflow, the `changes` job, e.g. a `case "$BRANCH"` block):
@@ -167,7 +167,7 @@ A workflow can't be unit-tested, so verification is staged:
 6. A push to branch B pushes `ghcr.io/hungnh1812dev/project-me/<app>:B-<sha7>` (and `:B`), and commits `APP_IMAGE_TAG: "B-<sha7>"` into `$DEPLOYMENT_CLUSTER_PATH(B)/<app>-sync.yaml` in `DEPLOYMENT_REPO`, leaving the rest of that file byte-identical.
 7. A missing sync file or a missing `APP_IMAGE_TAG` key fails the `deploy` job with a clear error. No partial commit is made.
 8. Two quick pushes to the same branch don't corrupt or lose a tag bump (deploy concurrency + rebase retry).
-9. `docker buildx imagetools inspect <image>:<tag>` lists exactly the platforms for that branch: `linux/arm64` for `staging`, `linux/amd64` for `main`, and both for `develop`. The staging image runs on the M1 Ubuntu VM, the main image runs on the Intel Ubuntu host, and the develop image runs on either.
+9. `docker buildx imagetools inspect <image>:<tag>` lists exactly the platforms for that branch, not counting `unknown/unknown` provenance attestation entries: `linux/arm64` for `staging`, `linux/amd64` for `main`, and both for `develop`. The staging image runs on the M1 Ubuntu VM, the main image runs on the Intel Ubuntu host, and the develop image runs on either.
 
 ## Implementation Notes
 
@@ -205,6 +205,13 @@ A workflow can't be unit-tested, so verification is staged:
   - **Skipping:** `build` needs `[changes, checks]`, so it's skipped automatically whenever `checks` is skipped (no affected apps).
   - **Setup:** the setup steps (checkout, pnpm, Node from `.nvmrc` with the pnpm store cache, `pnpm install --frozen-lockfile`) are duplicated in the two jobs on purpose. The spec says no composite actions.
   - **Tests:** 9 harness cases pass. They run the real steps with a given `apps` and check that turbo executed only those apps' tasks, plus structural checks on gating, `needs`, the frozen lockfile and `.nvmrc`.
+- **T4 (2026-09-28), `image` and `manifest` jobs:**
+  - **Pattern:** the manual digest pattern (build by digest per arch, then merge), as specified. Docker's docs now point to the reusable `docker/github-builder` workflow (v1) for distributed multi-arch builds. We didn't adopt it: it needs `id-token: write` for signing and hand-built `registry-auths` for GHCR, and the per-app matrix + GITHUB_TOKEN setup here is already small.
+  - **Simplification:** dropped `docker/metadata-action`. Both tags are known upfront (`changes` outputs `tag` + `branch`), and labels go straight on `build-push-action`.
+  - **Action majors:** checked release notes for build-push v7, metadata v6 and download-artifact v8. The changes are runtime-only (Node 24, ESM, download-artifact v8 errors on hash mismatch). The inputs used here are unchanged.
+  - **Attestations:** `build-push-action` adds a provenance attestation per platform by default. It shows up in `imagetools inspect` as `unknown/unknown`. Kept.
+  - **Tests:** 17 harness cases pass (structure; the digest export step; the merge step with a fake `docker` checking the exact `imagetools` args).
+  - **End-to-end locally:** cms-admin was built per arch by digest (`docker-container` builder, like `setup-buildx-action` creates; the plain `docker` driver can't push by digest) and pushed to a throwaway `registry:2`. Then the real merge step ran. Results: the develop tag has `linux/arm64` + `linux/amd64`, the moving `develop` tag exists, and a single-digest staging tag has only `linux/arm64`. `docker run --platform linux/{arm64,amd64} <image>:develop-<sha>` printed `aarch64` / `x86_64`.
 
 ## Open Questions
 

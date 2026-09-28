@@ -34,8 +34,8 @@ Spec: [../SPEC-ci.md](../SPEC-ci.md) · Plan: [plan.md](plan.md)
 
 ## Phase 3: Publish + deploy
 
-- [ ] T4: `image` + `manifest` jobs (M)
-  - Acceptance: `image` runs only on `push`, with a matrix over the `changes` include list (app × arch) and `packages: write`. It uses `build-push-action` with `platforms: <one>`, `push-by-digest`, GHA cache `scope=<app>-<arch>`, and uploads the `digest-<app>-<arch>` artifact (1-day retention). `manifest` (matrix over apps) uses `metadata-action` for the `<branch>-<sha7>` and `<branch>` tags + OCI labels, then `imagetools create` from all of that app's digests, then `imagetools inspect`.
+- [x] T4: `image` + `manifest` jobs (M)
+  - Acceptance: `image` runs only on `push`, with a matrix over the `changes` include list (app × arch) and `packages: write`. It uses `build-push-action` with `platforms: <one>`, `push-by-digest`, GHA cache `scope=<app>-<arch>`, and uploads the `digest-<app>-<arch>` artifact (1-day retention). `manifest` (matrix over apps) runs `imagetools create --tag` for `<branch>-<sha7>` and `<branch>` (OCI labels are set in `image`; no metadata-action, see T4 notes) from all of that app's digests, then `imagetools inspect`.
   - Verify: actionlint is clean. Locally, `docker buildx build --platform linux/arm64 -f apps/cms-api/Dockerfile .` succeeds (native on this Mac). A live check comes in T6.
   - Files: .github/workflows/ci.yml
 
