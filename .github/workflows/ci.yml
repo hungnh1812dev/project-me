@@ -1,0 +1,288 @@
+# Docs: docs/ci-cd.md
+# push to staging/main:        changes -> checks -> build -> image -> manifest -> deploy
+# push to develop, and PRs:    changes -> checks -> build
+name: CI
+
+on:
+  push:
+    branches: [develop, staging, main]
+  pull_request:
+    branches: [develop, staging, main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  # Cancel superseded PR runs; never cut a push run (and its deploy) mid-way
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+env:
+  # Keep in sync with the Dockerfiles and the root package.json
+  TURBO_VERSION: 2.11.5
+  # ghcr.io/<owner>/<repo>/<app>; GHCR needs lowercase names
+  IMAGE_PREFIX: ghcr.io/hungnh1812dev/project-me
+
+jobs:
+  changes:
+    name: Detect affected apps
+    runs-on: ubuntu-latest
+    outputs:
+      apps: ${{ steps.affected.outputs.apps }}
+      any: ${{ steps.affected.outputs.any }}
+      publish: ${{ steps.target.outputs.publish }}
+      branch: ${{ steps.target.outputs.branch }}
+      tag: ${{ steps.target.outputs.tag }}
+      matrix: ${{ steps.target.outputs.matrix }}
+      environment: ${{ steps.target.outputs.environment }}
+      deploy_ref: ${{ steps.target.outputs.deploy_ref }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          # turbo needs the history between base and head
+          fetch-depth: 0
+
+      - name: List affected apps
+        id: affected
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BASE_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
+          HEAD_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+        run: |
+          packages=(cms-admin cms-api frontend)
+          all=$(jq -cn '$ARGS.positional' --args "${packages[@]}")
+          if [ -n "$BASE_SHA" ] && git cat-file -e "${BASE_SHA}^{commit}" 2>/dev/null; then
+            apps=$(npx -y "turbo@${TURBO_VERSION}" query affected \
+                --packages "${packages[@]}" --base "$BASE_SHA" --head "$HEAD_SHA" \
+              | jq -c '[.data.affectedPackages.items[] | select(.path | startswith("apps/")) | .name]')
+          else
+            # New branch (before = 000…) or force push (before is gone): build everything
+            echo "::notice::No usable base commit '${BASE_SHA}' for ${EVENT_NAME}; treating all apps as affected"
+            apps=$all
+          fi
+          echo "Affected apps: $apps"
+          {
+            echo "apps=$apps"
+            echo "any=$(jq 'length > 0' <<<"$apps")"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Resolve deploy target
+        id: target
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BRANCH: ${{ github.event_name == 'pull_request' && github.base_ref || github.ref_name }}
+          SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          APPS: ${{ steps.affected.outputs.apps }}
+        run: |
+          # branch -> image platforms, GitHub Environment, deployment repo branch
+          case "$BRANCH" in
+            develop) platforms='[]';              environment='';           deploy_ref='' ;;     # checks + build only
+            staging) platforms='["linux/arm64"]'; environment=staging;    deploy_ref=staging ;; # Ubuntu VM on Apple M1
+            main)    platforms='["linux/amd64"]'; environment=production; deploy_ref=main ;;    # Ubuntu on Intel
+            *) echo "::error::No deploy target for branch '$BRANCH'"; exit 1 ;;
+          esac
+          publish=false
+          if [ "$EVENT_NAME" = push ] && [ -n "$environment" ] && [ "$APPS" != '[]' ]; then publish=true; fi
+          # One image job per app x platform, each on a native runner
+          matrix=$(jq -cn --argjson apps "$APPS" --argjson platforms "$platforms" '{include: [
+            $apps[] as $app | $platforms[] as $platform | ($platform | split("/")[1]) as $arch
+            | {app: $app, platform: $platform, arch: $arch,
+               runner: (if $arch == "arm64" then "ubuntu-24.04-arm" else "ubuntu-latest" end)}
+          ]}')
+          {
+            echo "publish=$publish"
+            echo "branch=$BRANCH"
+            echo "tag=${BRANCH}-${SHA::7}"
+            echo "matrix=$matrix"
+            echo "environment=$environment"
+            echo "deploy_ref=$deploy_ref"
+          } >> "$GITHUB_OUTPUT"
+          echo "Target: $BRANCH, publish=$publish, platforms $platforms, environment '${environment}'"
+
+  checks:
+    name: Typecheck and lint
+    needs: changes
+    if: needs.changes.outputs.any == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Typecheck and lint affected apps
+        id: run
+        env:
+          APPS: ${{ needs.changes.outputs.apps }}
+        run: |
+          read -r -a filters <<<"$(jq -r 'map("--filter=" + .) | join(" ")' <<<"$APPS")"
+          pnpm turbo run typecheck lint "${filters[@]}"
+
+  build:
+    name: Build
+    needs: [changes, checks]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Build affected apps
+        id: run
+        env:
+          APPS: ${{ needs.changes.outputs.apps }}
+        run: |
+          read -r -a filters <<<"$(jq -r 'map("--filter=" + .) | join(" ")' <<<"$APPS")"
+          pnpm turbo run build "${filters[@]}"
+
+  image:
+    name: Image ${{ matrix.app }} (${{ matrix.arch }})
+    needs: [changes, build]
+    if: needs.changes.outputs.publish == 'true'
+    runs-on: ${{ matrix.runner }}
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      matrix: ${{ fromJSON(needs.changes.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: docker/setup-buildx-action@v4
+      - uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      # Untagged, pushed by digest; the manifest job tags the per-arch digests together
+      - name: Build and push by digest
+        id: build
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: apps/${{ matrix.app }}/Dockerfile
+          platforms: ${{ matrix.platform }}
+          labels: |
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+          outputs: type=image,name=${{ env.IMAGE_PREFIX }}/${{ matrix.app }},push-by-digest=true,name-canonical=true,push=true
+          cache-from: type=gha,scope=${{ matrix.app }}-${{ matrix.arch }}
+          cache-to: type=gha,scope=${{ matrix.app }}-${{ matrix.arch }},mode=max
+      - name: Export digest
+        id: digest
+        env:
+          DIGEST: ${{ steps.build.outputs.digest }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/digests"
+          touch "$RUNNER_TEMP/digests/${DIGEST#sha256:}"
+      - uses: actions/upload-artifact@v7
+        with:
+          name: digest-${{ matrix.app }}-${{ matrix.arch }}
+          path: ${{ runner.temp }}/digests/*
+          if-no-files-found: error
+          retention-days: 1
+
+  manifest:
+    name: Tag ${{ matrix.app }}
+    needs: [changes, image]
+    if: needs.changes.outputs.publish == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      matrix:
+        app: ${{ fromJSON(needs.changes.outputs.apps) }}
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          path: ${{ runner.temp }}/digests
+          pattern: digest-${{ matrix.app }}-*
+          merge-multiple: true
+      - uses: docker/setup-buildx-action@v4
+      - uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Create tagged manifest list
+        id: merge
+        working-directory: ${{ runner.temp }}/digests
+        env:
+          IMAGE: ${{ env.IMAGE_PREFIX }}/${{ matrix.app }}
+          TAG: ${{ needs.changes.outputs.tag }}
+          BRANCH: ${{ needs.changes.outputs.branch }}
+        run: |
+          refs=()
+          for digest in *; do refs+=("${IMAGE}@sha256:${digest}"); done
+          docker buildx imagetools create --tag="${IMAGE}:${TAG}" --tag="${IMAGE}:${BRANCH}" "${refs[@]}"
+          docker buildx imagetools inspect "${IMAGE}:${TAG}"
+
+  deploy:
+    name: Deploy to ${{ needs.changes.outputs.environment }}
+    needs: [changes, manifest]
+    if: needs.changes.outputs.publish == 'true'
+    runs-on: ubuntu-latest
+    environment: ${{ needs.changes.outputs.environment }}
+    # One tag bump at a time per environment; never cancel a half-done bump
+    concurrency:
+      group: deploy-${{ needs.changes.outputs.environment }}
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          repository: ${{ vars.DEPLOYMENT_REPO }}
+          ref: ${{ needs.changes.outputs.deploy_ref }}
+          token: ${{ secrets.DEPLOYMENT_REPO_TOKEN }}
+          path: deployment
+      - name: Bump APP_IMAGE_TAG
+        id: bump
+        working-directory: deployment
+        env:
+          APPS: ${{ needs.changes.outputs.apps }}
+          TAG: ${{ needs.changes.outputs.tag }}
+          BRANCH: ${{ needs.changes.outputs.branch }}
+          DEPLOY_REF: ${{ needs.changes.outputs.deploy_ref }}
+          CLUSTER_PATH: ${{ vars.DEPLOYMENT_CLUSTER_PATH }}
+        run: |
+          if [ -z "$CLUSTER_PATH" ]; then
+            echo "::error::DEPLOYMENT_CLUSTER_PATH is not set for this environment"; exit 1
+          fi
+          read -r -a apps <<<"$(jq -r 'join(" ")' <<<"$APPS")"
+          key='^([[:space:]]*APP_IMAGE_TAG:[[:space:]]*)'
+
+          # Validate every file before touching any, so a bad one never leaves a partial bump
+          errors=0
+          for app in "${apps[@]}"; do
+            f="$CLUSTER_PATH/${app}-sync.yaml"
+            if [ ! -f "$f" ]; then
+              echo "::error::$f not found in the deployment repo"; errors=1
+            elif ! grep -qE "$key" "$f"; then
+              echo "::error::APP_IMAGE_TAG not found in $f"; errors=1
+            fi
+          done
+          [ "$errors" -eq 0 ] || exit 1
+
+          for app in "${apps[@]}"; do
+            sed -i -E "s|${key}.*\$|\\1\"${TAG}\"|" "$CLUSTER_PATH/${app}-sync.yaml"
+          done
+          if git diff --quiet; then
+            echo "::notice::Already at ${TAG}; nothing to commit"; exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -qam "chore(${BRANCH}): bump $(IFS=,; echo "${apps[*]}") to ${TAG}"
+          git diff HEAD~1 --stat
+
+          # Another bump may land between checkout and push: rebase onto it and retry
+          for attempt in 1 2 3; do
+            if git push origin "HEAD:${DEPLOY_REF}"; then exit 0; fi
+            echo "::warning::Push rejected (attempt ${attempt}/3); rebasing and retrying"
+            git pull --rebase origin "$DEPLOY_REF"
+          done
+          echo "::error::Could not push the tag bump after 3 attempts"; exit 1
