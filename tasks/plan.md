@@ -33,7 +33,7 @@ T0 and T1 are independent. Everything after them runs in sequence because every 
 
 ### Phase 2: PR path
 - [x] T2: Workflow skeleton + `changes` job
-- [ ] T3: `checks` + `build` jobs
+- [x] T3: `checks` + `build` jobs
 
 ### Checkpoint B
 - [ ] `actionlint` is clean. The detection script passes its scratch cases. **Ask:** push a branch/PR so the PR path runs live?

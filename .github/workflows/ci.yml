@@ -86,3 +86,44 @@ jobs:
             echo "matrix=$matrix"
           } >> "$GITHUB_OUTPUT"
           echo "Target: $BRANCH, platforms $platforms"
+
+  checks:
+    name: Typecheck and lint
+    needs: changes
+    if: needs.changes.outputs.any == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Typecheck and lint affected apps
+        id: run
+        env:
+          APPS: ${{ needs.changes.outputs.apps }}
+        run: |
+          read -r -a filters <<<"$(jq -r 'map("--filter=" + .) | join(" ")' <<<"$APPS")"
+          pnpm turbo run typecheck lint "${filters[@]}"
+
+  build:
+    name: Build
+    needs: [changes, checks]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Build affected apps
+        id: run
+        env:
+          APPS: ${{ needs.changes.outputs.apps }}
+        run: |
+          read -r -a filters <<<"$(jq -r 'map("--filter=" + .) | join(" ")' <<<"$APPS")"
+          pnpm turbo run build "${filters[@]}"

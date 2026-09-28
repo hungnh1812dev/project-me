@@ -200,6 +200,11 @@ A workflow can't be unit-tested, so verification is staged:
   - **Base commit:** the push base is `github.event.before`, and the PR base is `pull_request.base.sha`. If that commit is empty or missing (`git cat-file -e`), the job falls back to all apps explicitly, with a `::notice::`.
   - **PR target:** PRs resolve their target from `github.base_ref`, and the tag uses the PR head SHA. Only push runs use the tag.
   - **Tests:** a local harness (`out/t2/`, not committed) pulls each step's `run:` block out of `ci.yml` and runs it with `bash -eo pipefail`, like the runner does. 15 cases pass: affected per synthetic commit, zero/unknown/empty base, the branch → platform/runner matrix for develop/staging/main, an empty app list, and an unmapped branch failing. actionlint 1.7.12 with shellcheck is clean.
+- **T3 (2026-09-28), `checks` and `build` jobs:**
+  - **Filters:** both jobs turn `apps` into `--filter=<app>` args with `read -r -a`, not `mapfile`, so the same script runs under the local bash 3.2 harness and the runner's bash 5.
+  - **Skipping:** `build` needs `[changes, checks]`, so it's skipped automatically whenever `checks` is skipped (no affected apps).
+  - **Setup:** the setup steps (checkout, pnpm, Node from `.nvmrc` with the pnpm store cache, `pnpm install --frozen-lockfile`) are duplicated in the two jobs on purpose. The spec says no composite actions.
+  - **Tests:** 9 harness cases pass. They run the real steps with a given `apps` and check that turbo executed only those apps' tasks, plus structural checks on gating, `needs`, the frozen lockfile and `.nvmrc`.
 
 ## Open Questions
 

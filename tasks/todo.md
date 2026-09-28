@@ -24,7 +24,7 @@ Spec: [../SPEC-ci.md](../SPEC-ci.md) · Plan: [plan.md](plan.md)
   - Verify: `docker run --rm -v "$PWD":/repo -w /repo rhysd/actionlint:latest` is clean. The detection shell block, run against synthetic plumbing commits (see SPEC-ci.md T0 notes), gives these results: (a) a commit touching only `apps/cms-admin` → `["cms-admin"]`; (b) only `README.md` → `[]`; (c) `packages/types` → the apps that depend on it (currently none, since no `@repo/*` deps exist, so expect `[]` and note it); (d) base `0000000…` → all 3.
   - Files: .github/workflows/ci.yml
 
-- [ ] T3: `checks` + `build` jobs (S)
+- [x] T3: `checks` + `build` jobs (S)
   - Acceptance: both are gated on `needs.changes.outputs.any == 'true'`, run on `ubuntu-latest` with pnpm + Node from `.nvmrc` + the pnpm store cache and `--frozen-lockfile`, and use `--filter` built from `apps`. `build` needs `checks`. PR runs stop here.
   - Verify: actionlint is clean. The exact filter command, run locally, typechecks, lints and builds only the listed apps.
   - Files: .github/workflows/ci.yml
