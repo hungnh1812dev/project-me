@@ -1,4 +1,4 @@
-# Spec: SPEC-ci.md
+# Docs: docs/ci-cd.md
 # push to staging/main:        changes -> checks -> build -> image -> manifest -> deploy
 # push to develop, and PRs:    changes -> checks -> build
 name: CI
