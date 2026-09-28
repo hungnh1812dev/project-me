@@ -75,8 +75,8 @@ File: `.github/workflows/ci.yml`. There is one workflow with six jobs. The app l
   ```bash
   f="$DEPLOYMENT_CLUSTER_PATH/${app}-sync.yaml"
   test -f "$f" || { echo "::error::$f not found"; exit 1; }
-  grep -qE '^\s*APP_IMAGE_TAG:' "$f" || { echo "::error::APP_IMAGE_TAG not in $f"; exit 1; }
-  sed -i -E "s|^(\s*APP_IMAGE_TAG:\s*).*$|\1\"${TAG}\"|" "$f"
+  grep -qE '^[[:space:]]*APP_IMAGE_TAG:' "$f" || { echo "::error::APP_IMAGE_TAG not found in $f"; exit 1; }
+  sed -i -E "s|^([[:space:]]*APP_IMAGE_TAG:[[:space:]]*).*$|\1\"${TAG}\"|" "$f"
   ```
   The value is written quoted (`"develop-a1b2c3d"`) so YAML never reads it as a number. If the file already holds this tag, `git diff --quiet` makes the commit a no-op and the step succeeds.
 
@@ -212,6 +212,12 @@ A workflow can't be unit-tested, so verification is staged:
   - **Attestations:** `build-push-action` adds a provenance attestation per platform by default. It shows up in `imagetools inspect` as `unknown/unknown`. Kept.
   - **Tests:** 17 harness cases pass (structure; the digest export step; the merge step with a fake `docker` checking the exact `imagetools` args).
   - **End-to-end locally:** cms-admin was built per arch by digest (`docker-container` builder, like `setup-buildx-action` creates; the plain `docker` driver can't push by digest) and pushed to a throwaway `registry:2`. Then the real merge step ran. Results: the develop tag has `linux/arm64` + `linux/amd64`, the moving `develop` tag exists, and a single-digest staging tag has only `linux/arm64`. `docker run --platform linux/{arm64,amd64} <image>:develop-<sha>` printed `aarch64` / `x86_64`.
+- **T5 (2026-09-28), `deploy` job:**
+  - **Checkout:** checks out `vars.DEPLOYMENT_REPO` (default branch, shallow) into `deployment/` with `secrets.DEPLOYMENT_REPO_TOKEN`. The job itself has no `packages` permission.
+  - **Validation first:** fails if `DEPLOYMENT_CLUSTER_PATH` is empty. It checks **every** `<app>-sync.yaml` for existence and the `APP_IMAGE_TAG` key, and reports all errors, before editing anything.
+  - **Rewrite:** `sed` with POSIX `[[:space:]]` changes only the key's line and always writes the value quoted. Limitation: a trailing `# comment` on that line is dropped.
+  - **Commit and push:** one commit as `github-actions[bot]`. The push is retried 3 times with `git pull --rebase` in between. A rebase conflict (someone else edited the same line) fails the job instead of guessing.
+  - **Tests:** 9 structure checks, plus 26 behavior checks in `ubuntu:24.04` against a local bare repo. They cover a nested quoted key and a top-level unquoted key (only those lines change), a repeat of the same tag (no commit, exit 0), a missing file / missing key / empty cluster path (fail, no commit, no edits), and a concurrent push after checkout, from a full clone and from a depth-1 clone (the retry lands both commits).
 
 ## Open Questions
 

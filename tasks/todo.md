@@ -39,7 +39,7 @@ Spec: [../SPEC-ci.md](../SPEC-ci.md) · Plan: [plan.md](plan.md)
   - Verify: actionlint is clean. Locally, `docker buildx build --platform linux/arm64 -f apps/cms-api/Dockerfile .` succeeds (native on this Mac). A live check comes in T6.
   - Files: .github/workflows/ci.yml
 
-- [ ] T5: `deploy` job (M)
+- [x] T5: `deploy` job (M)
   - Acceptance: push only, `needs: manifest`, `environment: <branch>`, concurrency `deploy-<branch>` (no cancel). It checks out `vars.DEPLOYMENT_REPO` with `secrets.DEPLOYMENT_REPO_TOKEN` and validates every sync file and key **before** editing any of them (no partial commit). It rewrites `APP_IMAGE_TAG` with sed, makes one commit (`chore(<branch>): bump <apps> to <tag>`), and pushes, retrying up to 3 times with rebase. If nothing changed, it exits 0.
   - Verify: actionlint is clean. The deploy shell block runs in `ubuntu:24.04` against scratch fixtures (a local bare repo as "remote"): nested key → only that line changes (`diff`); the old value quoted/unquoted → both replaced; missing file → fails, no commit; missing key → fails, no commit; same tag twice → second run makes no commit; a concurrent commit on the remote → the retry succeeds.
   - Files: .github/workflows/ci.yml

@@ -40,7 +40,7 @@ T0 and T1 are independent. Everything after them runs in sequence because every 
 
 ### Phase 3: Publish + deploy
 - [x] T4: `image` + `manifest` jobs
-- [ ] T5: `deploy` job
+- [x] T5: `deploy` job
 
 ### Checkpoint C
 - [ ] `actionlint` is clean, and the tag-replace fixtures pass in `ubuntu:24.04`
