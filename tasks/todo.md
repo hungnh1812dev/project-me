@@ -30,7 +30,7 @@ Spec: [../SPEC-ci.md](../SPEC-ci.md) · Plan: [plan.md](plan.md)
   - Files: .github/workflows/ci.yml
 
 ## Checkpoint B
-- [ ] actionlint clean · detection cases pass · **ask before pushing** a branch/PR for a live PR-path run
+- [x] actionlint clean · detection cases pass · live PR-path run deferred to Checkpoint C (user choice)
 
 ## Phase 3: Publish + deploy
 
