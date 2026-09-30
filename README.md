@@ -2,11 +2,11 @@
 
 Personal website, a pnpm + Turborepo monorepo:
 
-| App | What | Stack |
-|---|---|---|
-| [`apps/frontend`](apps/frontend) | Public site + BFF | Next.js 16 |
-| [`apps/cms-admin`](apps/cms-admin) | Admin portal | React 19 + Vite 8, served by nginx |
-| [`apps/cms-api`](apps/cms-api) | Backend API | NestJS 12 |
+| App                                | What              | Stack                              |
+| ---------------------------------- | ----------------- | ---------------------------------- |
+| [`apps/frontend`](apps/frontend)   | Public site + BFF | Next.js 16                         |
+| [`apps/cms-admin`](apps/cms-admin) | Admin portal      | React 19 + Vite 8, served by nginx |
+| [`apps/cms-api`](apps/cms-api)     | Backend API       | NestJS 12                          |
 
 Shared code lives in [`packages/`](packages) (`@repo/types`, `@repo/ui`, `@repo/eslint-config`, `@repo/typescript-config`).
 
