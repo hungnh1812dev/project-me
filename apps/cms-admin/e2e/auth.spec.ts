@@ -133,11 +133,14 @@ test('an access token that expires mid-session is refreshed transparently', asyn
   await expect(page.getByRole('heading', { name: 'Your profile' })).toBeVisible();
   await expect(page.getByText(JANE.email)).toBeVisible();
   await expect(page).toHaveURL('/admin/profile');
-  expect(calls(mockApi, before)).toEqual([
-    'GET /api/v1/auth/me 401',
-    'POST /api/v1/auth/refresh 200',
-    'GET /api/v1/auth/me 200',
-  ]);
+  // The profile shows the session user first, so the refetch may still be in flight here.
+  await expect
+    .poll(() => calls(mockApi, before))
+    .toEqual([
+      'GET /api/v1/auth/me 401',
+      'POST /api/v1/auth/refresh 200',
+      'GET /api/v1/auth/me 200',
+    ]);
 });
 
 test('a session that cannot be refreshed goes to /login, then back after re-login', async ({

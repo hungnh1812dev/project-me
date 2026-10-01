@@ -1,7 +1,9 @@
 import { screen } from '@testing-library/react';
+import { http, HttpResponse } from 'msw';
 import { describe, expect, it } from 'vitest';
 
 import { makeMeUser, makeRole } from '@/test/fixtures';
+import { server } from '@/test/msw/server';
 import { renderRoutes } from '@/test/renderWithProviders';
 
 import { routes } from './router';
@@ -52,5 +54,30 @@ describe('route table', () => {
     renderRoutes(routes, { route: '/admin/users', auth: signedIn(['user:read']) });
 
     expect(await screen.findByRole('heading', { name: 'Users' })).toBeInTheDocument();
+  });
+
+  it.each([
+    ['/register', 'Create account'],
+    ['/verify-otp', 'Verify your email'],
+    ['/forgot-password', 'Reset your password'],
+    ['/reset-password', 'Link expired'],
+    ['/reset-password?token=t', 'Choose a new password'],
+  ])('serves the public page %s without a session', async (route, heading) => {
+    renderRoutes(routes, { route, auth: { status: 'unauthenticated' } });
+
+    expect(await screen.findByRole('heading', { name: heading })).toBeInTheDocument();
+  });
+
+  it('sends a first run from /login to the admin setup at /register', async () => {
+    server.use(http.get('*/api/v1/auth/has-users', () => HttpResponse.json({ hasUsers: false })));
+    const { router } = renderRoutes(routes, {
+      route: '/login',
+      auth: { status: 'unauthenticated' },
+    });
+
+    expect(
+      await screen.findByRole('heading', { name: 'Set up admin account' }),
+    ).toBeInTheDocument();
+    expect(router.state.location.pathname).toBe('/register');
   });
 });

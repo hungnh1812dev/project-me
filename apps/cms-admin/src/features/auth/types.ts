@@ -56,3 +56,29 @@ export interface MessageResponse {
 export interface HasUsersResponse {
   hasUsers: boolean;
 }
+
+/** `POST /auth/register`. `accountType: true` as the legacy UI sent (SPEC Assumption 3). */
+export interface RegisterRequest {
+  email: string;
+  name: string;
+  username: string;
+  password: string;
+  accountType: boolean;
+}
+
+/** `POST /auth/verify-otp`. */
+export interface VerifyOtpRequest {
+  email: string;
+  otp: string;
+}
+
+/** `POST /auth/resend-otp` and `POST /auth/forgot-password`. */
+export interface EmailRequest {
+  email: string;
+}
+
+/** `POST /auth/reset-password`. */
+export interface ResetPasswordRequest {
+  token: string;
+  newPassword: string;
+}

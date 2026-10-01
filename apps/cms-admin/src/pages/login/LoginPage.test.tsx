@@ -1,8 +1,9 @@
-import { screen } from '@testing-library/react';
+import { act, screen } from '@testing-library/react';
 import { delay, http, HttpResponse } from 'msw';
 import { useLocation } from 'react-router-dom';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
+import { loginNoticeState } from '@/features/auth/onboarding';
 import { makeMeUser } from '@/test/fixtures';
 import { server } from '@/test/msw/server';
 import { renderRoutes } from '@/test/renderWithProviders';
@@ -15,6 +16,7 @@ const routes = [
   { path: '/login', element: <LoginPage /> },
   { path: '/admin', element: <Where /> },
   { path: '/admin/profile', element: <Where /> },
+  { path: '/register', element: <Where /> },
 ];
 
 function renderLogin(auth: Parameters<typeof renderRoutes>[1] = {}) {
@@ -142,5 +144,64 @@ describe('LoginPage', () => {
     renderLogin({ auth: { status: 'authenticated', user: makeMeUser() } });
 
     expect(await screen.findByText('at /admin')).toBeInTheDocument();
+  });
+
+  it('goes to /register when the CMS has no users yet', async () => {
+    server.use(http.get('*/api/v1/auth/has-users', () => HttpResponse.json({ hasUsers: false })));
+    renderLogin();
+
+    expect(await screen.findByText('at /register')).toBeInTheDocument();
+  });
+
+  it('re-checks has-users on mount instead of trusting a cached "no users"', async () => {
+    server.use(http.get('*/api/v1/auth/has-users', () => HttpResponse.json({ hasUsers: false })));
+    const { router } = renderLogin();
+    expect(await screen.findByText('at /register')).toBeInTheDocument();
+
+    // Meanwhile the first account is registered and verified on other pages.
+    server.use(http.get('*/api/v1/auth/has-users', () => HttpResponse.json({ hasUsers: true })));
+    await act(() => delay(10));
+    await act(() => router.navigate('/login'));
+
+    expect(await screen.findByRole('heading', { name: 'Sign in' })).toBeInTheDocument();
+    await act(() => delay(50));
+    expect(router.state.location.pathname).toBe('/login');
+  });
+
+  it('stays on the form when the has-users check fails', async () => {
+    let checked = false;
+    server.use(
+      http.get('*/api/v1/auth/has-users', () => {
+        checked = true;
+        return apiError(500, 'Down');
+      }),
+    );
+    renderLogin();
+
+    await vi.waitFor(() => expect(checked).toBe(true));
+    expect(screen.getByRole('heading', { name: 'Sign in' })).toBeInTheDocument();
+  });
+
+  it.each([
+    ['verified', 'Your email is verified. Please sign in.'],
+    ['passwordReset', 'Your password has been reset. Please sign in.'],
+  ] as const)('shows the %s notice from router state', async (notice, text) => {
+    const { router } = renderLogin();
+    await router.navigate('/login', { state: loginNoticeState(notice) });
+
+    expect(await screen.findByRole('status')).toHaveTextContent(text);
+  });
+
+  it('links to password recovery and registration', () => {
+    renderLogin();
+
+    expect(screen.getByRole('link', { name: 'Forgot your password?' })).toHaveAttribute(
+      'href',
+      '/forgot-password',
+    );
+    expect(screen.getByRole('link', { name: 'Create an account' })).toHaveAttribute(
+      'href',
+      '/register',
+    );
   });
 });

@@ -80,4 +80,55 @@ describe('authApi', () => {
     expect(result).toEqual({ message: 'Logged out' });
     expect(called).toBe(true);
   });
+
+  it.each([
+    [
+      'register',
+      '/auth/register',
+      { email: 'a@b.c', name: 'A', username: 'abc', password: 'password1', accountType: true },
+    ],
+    ['verifyOtp', '/auth/verify-otp', { email: 'a@b.c', otp: '123456' }],
+    ['resendOtp', '/auth/resend-otp', { email: 'a@b.c' }],
+    ['forgotPassword', '/auth/forgot-password', { email: 'a@b.c' }],
+    ['resetPassword', '/auth/reset-password', { token: 'tok', newPassword: 'password1' }],
+  ] as const)('%s posts the body to %s', async (name, path, payload) => {
+    let body: unknown;
+    server.use(
+      http.post(`*/api/v1${path}`, async ({ request }) => {
+        body = await request.json();
+        return HttpResponse.json({ message: 'done' });
+      }),
+    );
+    const store = makeStore();
+    // The union of endpoint argument types cannot be called through `name`, so cast once here.
+    const endpoint = authApi.endpoints[name] as unknown as {
+      initiate: (arg: unknown) => Parameters<typeof store.dispatch>[0];
+    };
+
+    const result = await store.dispatch(endpoint.initiate(payload));
+
+    expect(result).toMatchObject({ data: { message: 'done' } });
+    expect(body).toEqual(payload);
+  });
+
+  it('onboarding endpoints return the API error without a refresh on 401', async () => {
+    let refreshes = 0;
+    server.use(
+      http.post('*/api/v1/auth/verify-otp', () =>
+        HttpResponse.json({ statusCode: 401, message: 'Nope' }, { status: 401 }),
+      ),
+      http.post('*/api/v1/auth/refresh', () => {
+        refreshes += 1;
+        return HttpResponse.json({ message: 'ok', accessToken: 'x' });
+      }),
+    );
+    const store = makeStore();
+
+    const result = await store.dispatch(
+      authApi.endpoints.verifyOtp.initiate({ email: 'a@b.c', otp: '123456' }),
+    );
+
+    expect(result).toMatchObject({ error: { status: 401, message: 'Nope' } });
+    expect(refreshes).toBe(0);
+  });
 });

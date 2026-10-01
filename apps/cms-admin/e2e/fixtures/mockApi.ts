@@ -34,6 +34,9 @@ export interface MockUserInput {
 /** The password every mock user has unless the spec sets one. */
 export const DEFAULT_PASSWORD = 'correct-horse';
 
+/** The OTP the mock "emails" on register and resend. Any other code gets a 400. */
+export const OTP_CODE = '123456';
+
 export interface MockApi {
   /** Every `/api/v1/**` request the page made, in order. */
   readonly requests: RecordedRequest[];
@@ -47,12 +50,16 @@ export interface MockApi {
   revokeSession(): void;
   /** The next `times` calls to `method path` (e.g. `POST /auth/refresh`) answer `status`. */
   failNext(method: string, path: string, status: number, times?: number): void;
+  /** The token in the latest reset link "emailed" to `email`, if any (see `forgot-password`). */
+  resetTokenFor(email: string): string | undefined;
 }
 
 interface StoredUser {
   password: string;
   me: MeUser;
 }
+
+type Body = Record<string, unknown>;
 
 const API_PATTERN = '**/api/v1/**';
 const API_PREFIX = '/api/v1';
@@ -61,6 +68,7 @@ const STATUS_TEXT: Record<number, string> = {
   401: 'Unauthorized',
   403: 'Forbidden',
   404: 'Not Found',
+  409: 'Conflict',
   429: 'Too Many Requests',
   500: 'Internal Server Error',
   503: 'Service Unavailable',
@@ -89,6 +97,12 @@ function errorBody(status: number, message: string) {
   return { statusCode: status, message, error: STATUS_TEXT[status] ?? 'Error' };
 }
 
+/** Answers a Nest-style error and returns its status, for `handle`'s return value. */
+async function reply(route: Route, status: number, message: string): Promise<number> {
+  await json(route, status, errorBody(status, message));
+  return status;
+}
+
 /**
  * Routes all `/api/v1/**` traffic to an in-test fake backend, so no spec reaches a real one.
  *
@@ -101,8 +115,85 @@ export async function installMockApi(page: Page): Promise<MockApi> {
   const users = new Map<string, StoredUser>();
   const accessTokens = new Map<string, string>(); // token → email
   const failures: { key: string; status: number; left: number }[] = [];
+  const resetTokens = new Map<string, string>(); // token → email
   let session: { email: string; cookie: number } | null = null;
   let tokenCounter = 0;
+  let resetCounter = 0;
+
+  function createUser(input: MockUserInput): MeUser {
+    const username = input.username ?? input.email.split('@')[0];
+    const role = input.role === undefined ? ROLES.editor : input.role;
+    const me: MeUser = {
+      documentId: `user-${users.size + 1}`,
+      email: input.email,
+      name: input.name ?? username,
+      username,
+      accountType: false,
+      verified: input.verified ?? true,
+      roleId: role?.documentId ?? null,
+      createdAt: '2026-01-01T00:00:00.000Z',
+      updatedAt: '2026-01-01T00:00:00.000Z',
+      role,
+    };
+    users.set(input.email, { password: input.password ?? DEFAULT_PASSWORD, me });
+    return me;
+  }
+
+  /** register → verify-otp → resend-otp → forgot-password → reset-password. */
+  async function handleOnboarding(route: Route, path: string, body: Body): Promise<number | null> {
+    const email = typeof body.email === 'string' ? body.email : '';
+    const user = users.get(email);
+
+    if (path === '/auth/register') {
+      const taken = [...users.values()].some(
+        (u) => u.me.email === email || u.me.username === body.username,
+      );
+      if (taken) return reply(route, 409, 'Email or username already exists');
+      createUser({
+        email,
+        name: String(body.name),
+        username: String(body.username),
+        password: String(body.password),
+        verified: false,
+        // The first account is the CMS's administrator.
+        role: users.size === 0 ? ROLES.superAdmin : ROLES.editor,
+      });
+      await json(route, 201, { message: 'Registered. Check your email for the code.' });
+      return 201;
+    }
+
+    if (path === '/auth/verify-otp' || path === '/auth/resend-otp') {
+      if (!user) return reply(route, 404, 'User not found');
+      if (user.me.verified) return reply(route, 409, 'Email already verified');
+      if (path === '/auth/verify-otp') {
+        if (body.otp !== OTP_CODE) return reply(route, 400, 'Invalid or expired OTP');
+        user.me = { ...user.me, verified: true };
+      }
+      await json(route, 200, { message: 'ok' });
+      return 200;
+    }
+
+    if (path === '/auth/forgot-password') {
+      if (user) {
+        resetCounter += 1;
+        resetTokens.set(`reset-${resetCounter}`, email);
+      }
+      await json(route, 200, { message: 'If that email exists, a reset link was sent.' });
+      return 200;
+    }
+
+    if (path === '/auth/reset-password') {
+      const owner = typeof body.token === 'string' ? resetTokens.get(body.token) : undefined;
+      const stored = owner ? users.get(owner) : undefined;
+      if (!stored) return reply(route, 400, 'Invalid or expired token');
+      stored.password = String(body.newPassword);
+      resetTokens.delete(String(body.token));
+      await json(route, 200, { message: 'Password reset' });
+      return 200;
+    }
+
+    return null;
+  }
 
   function issueAccessToken(email: string): string {
     tokenCounter += 1;
@@ -187,8 +278,13 @@ export async function installMockApi(page: Page): Promise<MockApi> {
       return 200;
     }
 
-    await json(route, 404, errorBody(404, `Not mocked: ${method} ${API_PREFIX}${path}`));
-    return 404;
+    if (method === 'POST') {
+      const body = (route.request().postDataJSON() ?? {}) as Body;
+      const status = await handleOnboarding(route, path, body);
+      if (status !== null) return status;
+    }
+
+    return reply(route, 404, `Not mocked: ${method} ${API_PREFIX}${path}`);
   }
 
   await page.route(API_PATTERN, async (route) => {
@@ -201,24 +297,7 @@ export async function installMockApi(page: Page): Promise<MockApi> {
 
   return {
     requests,
-    addUser(input) {
-      const username = input.username ?? input.email.split('@')[0];
-      const role = input.role === undefined ? ROLES.editor : input.role;
-      const me: MeUser = {
-        documentId: `user-${users.size + 1}`,
-        email: input.email,
-        name: input.name ?? username,
-        username,
-        accountType: false,
-        verified: input.verified ?? true,
-        roleId: role?.documentId ?? null,
-        createdAt: '2026-01-01T00:00:00.000Z',
-        updatedAt: '2026-01-01T00:00:00.000Z',
-        role,
-      };
-      users.set(input.email, { password: input.password ?? DEFAULT_PASSWORD, me });
-      return me;
-    },
+    addUser: createUser,
     signInAs(email) {
       if (!users.has(email)) throw new Error(`signInAs: no mock user ${email}`);
       startSession(email);
@@ -231,6 +310,9 @@ export async function installMockApi(page: Page): Promise<MockApi> {
     },
     failNext(method, path, status, times = 1) {
       failures.push({ key: `${method} ${path}`, status, left: times });
+    },
+    resetTokenFor(email) {
+      return [...resetTokens].findLast(([, owner]) => owner === email)?.[0];
     },
   };
 }

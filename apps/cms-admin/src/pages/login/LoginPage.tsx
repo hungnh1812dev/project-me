@@ -1,16 +1,19 @@
 import { useState, type FormEvent } from 'react';
-import { Navigate, useLocation } from 'react-router-dom';
+import { Link, Navigate, useLocation } from 'react-router-dom';
 
+import { useHasUsersQuery } from '@/core/api/AuthApi';
 import { useAuth } from '@/features/auth/hooks/useAuth';
+import { loginNoticeMessage } from '@/features/auth/onboarding';
 import { redirectTarget } from '@/features/auth/redirect';
 
 /**
  * `/login`. A signed-in user (already, or after submitting) goes to `state.from`, or `/admin`
- * when there is none.
+ * when there is none. A CMS with no users yet goes to `/register` (first-run setup).
  */
 const LoginPage: React.FC = () => {
   const { status, login } = useAuth();
   const location = useLocation();
+  const { data: hasUsers } = useHasUsersQuery();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
@@ -20,6 +23,11 @@ const LoginPage: React.FC = () => {
   if (status === 'authenticated') {
     return <Navigate to={redirectTarget(location.state)} replace />;
   }
+  if (hasUsers?.hasUsers === false) {
+    return <Navigate to="/register" replace />;
+  }
+
+  const notice = loginNoticeMessage(location.state);
 
   // A bootstrap still in flight could clear the session that this login creates.
   const checkingSession = status === 'idle' || status === 'loading';
@@ -39,6 +47,7 @@ const LoginPage: React.FC = () => {
   return (
     <main>
       <h1>Sign in</h1>
+      {notice && <p role="status">{notice}</p>}
       <form onSubmit={(event) => void handleSubmit(event)}>
         <p>
           <label htmlFor="login-email">Email</label>
@@ -77,6 +86,12 @@ const LoginPage: React.FC = () => {
           {pending ? 'Signing in…' : 'Sign in'}
         </button>
       </form>
+      <p>
+        <Link to="/forgot-password">Forgot your password?</Link>
+      </p>
+      <p>
+        <Link to="/register">Create an account</Link>
+      </p>
     </main>
   );
 };
