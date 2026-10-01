@@ -311,6 +311,72 @@ test.describe('side menu', () => {
   });
 });
 
+test.describe('breadcrumbs', () => {
+  const trail = (page: import('@playwright/test').Page) =>
+    page.getByRole('navigation', { name: 'Breadcrumb' });
+
+  test('a content-type page shows the cached name without an extra request', async ({
+    page,
+    mockApi,
+    mockContent,
+  }) => {
+    seedContent(mockContent);
+    signInJane(mockApi, ROLES.contentEditor);
+    await page.goto('/admin/content-types/article');
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+
+    await expect(trail(page).getByRole('listitem')).toHaveText([
+      'Home',
+      'Content types',
+      'Article',
+    ]);
+    await expect(trail(page).getByText('Article')).toHaveAttribute('aria-current', 'page');
+    const paths = mockApi.requests.map((r) => r.path);
+    expect(paths.filter((p) => p === '/api/v1/content-types')).toHaveLength(1);
+    expect(paths.filter((p) => p === '/api/v1/content-types/article')).toHaveLength(1);
+
+    await trail(page).getByRole('link', { name: 'Content types' }).click();
+    await expect(page).toHaveURL('/admin/content-types');
+    await expect(trail(page).getByRole('listitem')).toHaveText(['Home', 'Content types']);
+  });
+
+  test('a settings page shows Settings as plain text', async ({ page, mockApi }) => {
+    signInJane(mockApi, ROLES.superAdmin);
+    await page.goto('/admin/settings/users');
+
+    await expect(trail(page).getByRole('listitem')).toHaveText(['Home', 'Settings', 'Users']);
+    await expect(trail(page).getByRole('link')).toHaveText(['Home']);
+  });
+
+  test.describe('at 375px', () => {
+    test.use({ viewport: { width: 375, height: 812 } });
+
+    test('the middle items collapse into a menu and a long name truncates', async ({
+      page,
+      mockApi,
+      mockContent,
+    }) => {
+      const long = 'Quarterly investor relations announcements archive';
+      mockContent.addContentType(contentType('reports', long, 'collection'));
+      signInJane(mockApi, ROLES.contentEditor);
+      await page.goto('/admin/content-types/reports');
+
+      const current = trail(page).getByText(long);
+      await expect(current).toBeVisible();
+      await expect(trail(page).getByRole('link', { name: 'Content types' })).toBeHidden();
+      expect(
+        await current.evaluate((el) => el.scrollWidth > el.clientWidth),
+        'the label is cut',
+      ).toBe(true);
+      await expect(current).toHaveCSS('text-overflow', 'ellipsis');
+
+      await trail(page).getByRole('button', { name: 'More breadcrumbs' }).click();
+      await page.getByRole('menuitem', { name: 'Content types' }).click();
+      await expect(page).toHaveURL('/admin/content-types');
+    });
+  });
+});
+
 test.describe('mobile drawer', () => {
   test.use({ viewport: { width: 375, height: 812 } });
 
