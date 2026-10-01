@@ -14,10 +14,14 @@ test('answers /api/v1 calls from the mock, not a real backend', async ({ page, m
   await page.goto('/');
 
   const status = await page.evaluate(async () => {
-    const res = await fetch('/api/v1/auth/has-users');
+    const res = await fetch('/api/v1/not-a-route');
     return res.status;
   });
 
   expect(status).toBe(404);
-  expect(mockApi.requests).toContainEqual({ method: 'GET', path: '/api/v1/auth/has-users' });
+  expect(mockApi.requests).toContainEqual({
+    method: 'GET',
+    path: '/api/v1/not-a-route',
+    status: 404,
+  });
 });

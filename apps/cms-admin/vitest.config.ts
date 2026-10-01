@@ -6,14 +6,6 @@ import { defineConfig } from 'vitest/config';
 const LOGIC_THRESHOLD = { lines: 85, statements: 85, functions: 85, branches: 85 };
 const UI_THRESHOLD = { lines: 70, statements: 70, functions: 70, branches: 70 };
 
-// Draft files that later small phases rewrite in place. Each entry is removed by the
-// phase that rewrites the file, so its new code is measured against the gates.
-const PENDING_REWRITE = [
-  'src/App.tsx', // 1.5
-  'src/pages/login/LoginPage.tsx', // 1.5
-  'src/pages/profile/ProfilePage.tsx', // 1.5
-];
-
 export default defineConfig({
   plugins: [react()],
   resolve: {
@@ -33,7 +25,6 @@ export default defineConfig({
         'src/test/**',
         'src/**/types.ts',
         'src/**/*.test.{ts,tsx}',
-        ...PENDING_REWRITE,
       ],
       thresholds: {
         'src/core/**/*.ts': LOGIC_THRESHOLD,

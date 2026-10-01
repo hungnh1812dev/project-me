@@ -3,7 +3,12 @@ import { QueryClientProvider, type QueryClient } from '@tanstack/react-query';
 import { render, renderHook, type RenderOptions } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Provider } from 'react-redux';
-import { MemoryRouter } from 'react-router-dom';
+import {
+  createMemoryRouter,
+  MemoryRouter,
+  RouterProvider,
+  type RouteObject,
+} from 'react-router-dom';
 
 import { makeQueryClient } from '@/app/queryClient';
 import { makeStore, type AppStore } from '@/app/store';
@@ -48,4 +53,30 @@ export function renderWithProviders(
 export function renderHookWithProviders<Result>(hook: () => Result, options: ProviderOptions = {}) {
   const providers = createProviders(options);
   return { ...providers, ...renderHook(hook, { wrapper: providers.Wrapper }) };
+}
+
+/**
+ * Renders a route table in a memory data router (fresh store and `QueryClient`), starting at
+ * `route`. Use it for guards and pages that redirect. Session bootstrap is not run.
+ */
+export function renderRoutes(
+  routes: RouteObject[],
+  { auth, route = '/', store, queryClient }: ProviderOptions = {},
+) {
+  const client = queryClient ?? makeQueryClient();
+  const appStore = store ?? makeStore({ queryClient: client, preloadedAuth: auth });
+  const router = createMemoryRouter(routes, { initialEntries: [route] });
+  return {
+    store: appStore,
+    queryClient: client,
+    router,
+    user: userEvent.setup(),
+    ...render(
+      <Provider store={appStore}>
+        <QueryClientProvider client={client}>
+          <RouterProvider router={router} />
+        </QueryClientProvider>
+      </Provider>,
+    ),
+  };
 }

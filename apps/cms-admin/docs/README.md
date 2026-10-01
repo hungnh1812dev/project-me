@@ -8,5 +8,6 @@ Feature docs for `apps/cms-admin`. Each small phase adds or updates one page her
 | [API client](./api-client.md)                 | `cmsApi`, bearer interceptor, single-flight 401 refresh, `ApiError` shape             |
 | [Auth session](./auth-session.md)             | Redux auth state, RTK Query auth API, bootstrap, login, logout, expiry, QueryClient   |
 | [RBAC and ABAC](./rbac-abac.md)               | Permission rules, ABAC policy table, `usePermission`/`useCan`/`useRoleLevel`, `<Can>` |
+| [Routing and guards](./routing-and-guards.md) | Route table, `RequireAuth`/`RequireAccess`, login/profile/403 pages, e2e `mockApi`    |
 
 The legacy app's docs are in [`../docs-old-dev/`](../docs-old-dev/) (reference only).

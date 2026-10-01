@@ -56,7 +56,7 @@ Once a refresh has succeeded, retries redo only `/me`: the refresh rotated and b
 
 A module-level latch makes it run **once per page load**, so React StrictMode's double mount can't start two refreshes (which would log the user out, because the backend blacklists a consumed refresh token). `retryBootstrap()` (the Retry button) starts a new run, or joins the run still in flight. `resetBootstrapLatch()` is for tests only.
 
-`useSessionBootstrap()` dispatches `bootstrapSession()` on mount. `AppProvider` runs it once, inside the Redux `Provider` and `QueryClientProvider`. The router is added by `App.tsx` in small phase 1.5.
+`useSessionBootstrap()` dispatches `bootstrapSession()` on mount. `AppProvider` runs it once, inside the Redux `Provider` and `QueryClientProvider`. `App.tsx` renders the router inside it (see [Routing and guards](./routing-and-guards.md)).
 
 ## Login
 
@@ -77,7 +77,7 @@ The login mutation result is reset right away, so the token never sits in the RT
 
 ## Session expiry
 
-When `cmsApi` cannot recover from a 401 (see [API client](./api-client.md#401-refresh-sequence)), it calls `onSessionExpired`, which dispatches `sessionExpired()`. A listener (`createListenerMiddleware`, in `makeStore`) then resets `authApi` and clears the React Query cache, so no data from the previous user survives. Phase 1.5's route guard sends the user to `/login`.
+When `cmsApi` cannot recover from a 401 (see [API client](./api-client.md#401-refresh-sequence)), it calls `onSessionExpired`, which dispatches `sessionExpired()`. A listener (`createListenerMiddleware`, in `makeStore`) then resets `authApi` and clears the React Query cache, so no data from the previous user survives. `RequireAuth` then sends the user to `/login`, remembering the page (see [Routing and guards](./routing-and-guards.md)).
 
 ## QueryClient
 

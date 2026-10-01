@@ -44,7 +44,7 @@ The logic globs match only `.ts` and the UI glob only `.tsx`, so no file counts 
 
 - Config: `playwright.config.ts`. Chromium only. Specs live in `e2e/*.spec.ts`.
 - `webServer` starts `vite --port 5174 --strictPort` with `VITE_API_URL` set to empty, so the app calls the relative `/api/v1`. A running dev server on 5174 is reused locally.
-- Import `test` and `expect` from `e2e/fixtures/mockApi.ts`, not from `@playwright/test`. Its auto fixture routes every `**/api/v1/**` request through `page.route`, records it in `mockApi.requests`, and answers with a Nest-style 404 until a spec or a later fixture version mocks it. No e2e test needs a live backend.
+- Import `test` and `expect` from `e2e/fixtures/mockApi.ts`, not from `@playwright/test`. Its auto fixture routes every `**/api/v1/**` request through `page.route`, records it in `mockApi.requests` (with its status), and answers from a fake backend (users, roles, tokens and the refresh-cookie session; see [Routing and guards](./routing-and-guards.md#e2e-fixture-mockapi)). Anything not modelled gets a Nest-style 404. No e2e test needs a live backend.
 - Reports go to `playwright-report/` and `test-results/` (git-ignored).
 
 ## The `@/` alias
