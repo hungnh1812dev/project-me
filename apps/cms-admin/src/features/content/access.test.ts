@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 
-import { ApiError } from '@/core/api/apiError';
 import type { Actor, Decision } from '@/features/auth/permissions/policies';
 import { makeContentTypeSummary } from '@/test/contentFixtures';
 
@@ -8,7 +7,6 @@ import {
   CONTENT_TYPE_ACTIONS,
   contentTypeAccess,
   filterReadableContentTypes,
-  guard,
   type ContentTypeAction,
 } from './access';
 import type { ContentTypeRef } from './types';
@@ -324,34 +322,5 @@ describe('filterReadableContentTypes', () => {
     filterReadableContentTypes(actor([]), types);
 
     expect(types).toEqual([blog, news, home]);
-  });
-});
-
-describe('guard', () => {
-  it('returns when the decision is allowed', () => {
-    expect(() => guard(ALLOW)).not.toThrow();
-  });
-
-  it('throws ApiError 403 ERR_CLIENT_FORBIDDEN with the reason when denied', () => {
-    let thrown: unknown;
-    try {
-      guard(requires('document:update:blog'));
-    } catch (error) {
-      thrown = error;
-    }
-
-    expect(thrown).toBeInstanceOf(ApiError);
-    expect(thrown).toMatchObject({
-      status: 403,
-      code: 'ERR_CLIENT_FORBIDDEN',
-      message: 'Requires the "document:update:blog" permission.',
-      messages: ['Requires the "document:update:blog" permission.'],
-    });
-  });
-
-  it('falls back to a generic message when a denial has no reason', () => {
-    expect(() => guard({ allowed: false, reason: null })).toThrow(
-      expect.objectContaining({ status: 403, code: 'ERR_CLIENT_FORBIDDEN', message: 'Forbidden.' }),
-    );
   });
 });

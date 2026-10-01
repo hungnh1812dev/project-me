@@ -173,8 +173,8 @@ test.describe('side menu', () => {
   const menu = (page: import('@playwright/test').Page) =>
     page.getByRole('navigation', { name: 'Main' });
 
-  test('a super admin sees Users and Roles under Settings', async ({ page, mockApi }) => {
-    signInJane(mockApi, ROLES.superAdmin);
+  test('a user manager sees Users and Roles under Settings', async ({ page, mockApi }) => {
+    signInJane(mockApi, ROLES.userManager);
     await page.goto('/admin');
 
     const settings = menu(page).getByRole('list', { name: 'Settings' });

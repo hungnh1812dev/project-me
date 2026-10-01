@@ -16,7 +16,7 @@ api/contentTypesApi.ts    request functions for C1–C3
 api/documentsApi.ts       request functions for S1–S4 and D1–D10 (unwrap { data })
 listQuery.ts              normalizeListParams, validateListParams, toListSearchParams, toWireField
 queryKeys.ts              contentKeys
-access.ts                 contentTypeAccess, filterReadableContentTypes, guard
+access.ts                 contentTypeAccess, filterReadableContentTypes
 hooks/                    useContentTypes, useSingleType, useCollectionQueries,
                           useCollectionMutations, useContentTypeAccess
 ```
@@ -136,7 +136,8 @@ actor on `ref.slug` and `ref.draftToPublish`. Both return one `Decision` per act
 `useContentTypes` and `useContentType` use `useCan('read', 'content_type')` and expose it as
 `decision`. `filterReadableContentTypes(actor, types)` keeps the types whose `read` is allowed, for a
 menu; `useContentTypes` itself returns the full server list. Queries are disabled when read is
-denied; mutations call `guard(decision)` first.
+denied; mutations call `guard(decision)` first. `guard` lives in
+`src/features/auth/permissions/guard.ts` since Phase 4, shared with the settings feature.
 
 ## Client error codes
 

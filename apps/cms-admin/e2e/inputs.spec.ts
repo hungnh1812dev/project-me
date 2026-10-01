@@ -134,3 +134,45 @@ test('keyboard focus shows a solid ring-coloured outline', async ({ page }) => {
   await expect(username).toBeFocused();
   await expect(username).toHaveCSS('outline-style', 'solid');
 });
+
+test('a Dialog is modal, moves focus inside, closes on Escape and returns focus', async ({
+  page,
+}) => {
+  const trigger = page.getByRole('button', { name: 'Open dialog' });
+  await trigger.click();
+
+  const dialog = page.getByRole('dialog', { name: 'Rename item' });
+  await expect(dialog).toHaveAttribute('aria-modal', 'true');
+  await expect(dialog.getByRole('textbox', { name: 'Item name' })).toBeFocused();
+
+  await page.keyboard.press('Escape');
+
+  await expect(dialog).toHaveCount(0);
+  await expect(trigger).toBeFocused();
+});
+
+test('an AlertDialog is a modal alertdialog that closes from Cancel', async ({ page }) => {
+  const trigger = page.getByRole('button', { name: 'Open alert dialog' });
+  await trigger.click();
+
+  const dialog = page.getByRole('alertdialog', { name: 'Delete item?' });
+  await expect(dialog).toHaveAttribute('aria-modal', 'true');
+  await expect(dialog.getByRole('button', { name: 'Cancel' })).toBeFocused();
+
+  await dialog.getByRole('button', { name: 'Cancel' }).click();
+
+  await expect(dialog).toHaveCount(0);
+  await expect(trigger).toBeFocused();
+});
+
+test('a Select in a Field is labelled and picks an option with the keyboard', async ({ page }) => {
+  const select = page.getByRole('combobox', { name: 'Expires in' });
+  await expect(select).toHaveText(/1 day/);
+
+  await select.focus();
+  await page.keyboard.press('Enter');
+  await page.getByRole('option', { name: '1 year' }).click();
+
+  await expect(select).toHaveText(/1 year/);
+  await expect(select).toBeFocused();
+});

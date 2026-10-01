@@ -5,8 +5,35 @@ import { Link } from 'react-router-dom';
 import { Field } from '@/components/form/Field';
 import { JsonInput } from '@/components/form/JsonInput';
 import { PasswordInput } from '@/components/form/PasswordInput';
+import {
+  AlertDialog,
+  AlertDialogClose,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 
@@ -35,6 +62,31 @@ const JsonDemo: React.FC = () => {
 };
 JsonDemo.displayName = 'JsonDemo';
 
+const EXPIRY_OPTIONS = [
+  { value: '1h', label: '1 hour' },
+  { value: '1d', label: '1 day' },
+  { value: '1y', label: '1 year' },
+];
+
+/** A Select whose trigger sits in a Field, as forms wire it. */
+const SelectDemo: React.FC = () => (
+  <Select items={EXPIRY_OPTIONS} defaultValue="1d">
+    <Field label="Expires in">
+      <SelectTrigger>
+        <SelectValue />
+      </SelectTrigger>
+    </Field>
+    <SelectContent>
+      {EXPIRY_OPTIONS.map((option) => (
+        <SelectItem key={option.value} value={option.value}>
+          {option.label}
+        </SelectItem>
+      ))}
+    </SelectContent>
+  </Select>
+);
+SelectDemo.displayName = 'SelectDemo';
+
 /** `/admin/dev/ui-kit` (development only): every base input and state, for Playwright and axe. */
 const UiKitPage: React.FC = () => (
   <section aria-labelledby="ui-kit-title" className="flex flex-col gap-10 p-4 sm:p-6">
@@ -43,8 +95,8 @@ const UiKitPage: React.FC = () => (
         UI kit
       </h1>
       <p className="text-muted-foreground">
-        Development only. Every base input in its default, filled, disabled, invalid and required
-        states.
+        Development only. Every base input and overlay in its default, filled, disabled, invalid and
+        required states.
       </p>
     </header>
 
@@ -151,6 +203,58 @@ const UiKitPage: React.FC = () => (
         <Switch />
       </Field>
     </Section>
+
+    <Section title="Select">
+      <SelectDemo />
+      <Select disabled defaultValue="1h" items={EXPIRY_OPTIONS}>
+        <Field label="Disabled select">
+          <SelectTrigger>
+            <SelectValue />
+          </SelectTrigger>
+        </Field>
+      </Select>
+    </Section>
+
+    <section aria-labelledby="ui-kit-dialogs" className="flex flex-col gap-4">
+      <h2 id="ui-kit-dialogs" className="text-lg font-semibold">
+        Dialog
+      </h2>
+      <div className="flex flex-wrap items-center gap-3">
+        <Dialog>
+          <DialogTrigger render={<Button variant="outline" />}>Open dialog</DialogTrigger>
+          <DialogContent>
+            <form className="flex flex-col gap-4" onSubmit={(event) => event.preventDefault()}>
+              <DialogHeader>
+                <DialogTitle>Rename item</DialogTitle>
+                <DialogDescription>The new name shows everywhere.</DialogDescription>
+              </DialogHeader>
+              <Field label="Item name">
+                <Input defaultValue="Draft" />
+              </Field>
+              <DialogFooter>
+                <DialogClose render={<Button variant="outline" />}>Cancel</DialogClose>
+                <Button type="submit">Save</Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
+        <AlertDialog>
+          <AlertDialogTrigger render={<Button variant="destructive" />}>
+            Open alert dialog
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete item?</AlertDialogTitle>
+              <AlertDialogDescription>This can't be undone.</AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogClose render={<Button variant="outline" />}>Cancel</AlertDialogClose>
+              <Button variant="destructive">Delete item</Button>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </div>
+    </section>
   </section>
 );
 UiKitPage.displayName = 'UiKitPage';

@@ -1,8 +1,8 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { ApiError } from '@/core/api/apiError';
+import { guard } from '@/features/auth/permissions/guard';
 
-import { guard } from '../access';
 import {
   bulkCreateDocuments,
   bulkDeleteDocuments,

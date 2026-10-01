@@ -2,6 +2,7 @@ import { test as base, type Page, type Route } from '@playwright/test';
 
 import type { MeUser, Role } from '../../src/features/auth/types.ts';
 import { createMockContent, type MockContent } from './mockContent.ts';
+import { createMockSettings, PERMISSION_CATALOG, type MockSettings } from './mockSettings.ts';
 
 /** One API call the app made, recorded by the mock with the status it answered. */
 export interface RecordedRequest {
@@ -13,7 +14,17 @@ export interface RecordedRequest {
 
 /** Seeded-style roles. Roles are data: a spec can also pass its own. */
 export const ROLES = {
-  superAdmin: makeRole('super_admin', 'Super Admin', 100, [
+  /** Level 100 with every catalog slug, as seeded. */
+  superAdmin: makeRole('super_admin', 'Super Admin', 100, [...PERMISSION_CATALOG]),
+  /** Level 50, read-only: every `<res>:read` of the catalog, as seeded. */
+  admin: makeRole(
+    'admin',
+    'Admin',
+    50,
+    PERMISSION_CATALOG.filter((slug) => slug.endsWith(':read')),
+  ),
+  /** Level 100, manages users and roles only (no Content, no other settings). */
+  userManager: makeRole('user_manager', 'User Manager', 100, [
     'user:read',
     'user:manager',
     'user:role_manager',
@@ -49,6 +60,8 @@ export interface MockApi {
   readonly requests: RecordedRequest[];
   /** The content model that answers `/content-types*` and `/documents*`. */
   readonly content: MockContent;
+  /** The settings store that answers `/users*`, `/roles*`, `/permissions*`, `/access-tokens*`, `/media*`. */
+  readonly settings: MockSettings;
   /** Adds a user who can sign in. `has-users` answers `true` once there is one. */
   addUser(input: MockUserInput): MeUser;
   /** Starts a refresh-cookie session for `email`, as if they had signed in before this page load. */
@@ -59,6 +72,8 @@ export interface MockApi {
   revokeSession(): void;
   /** The next `times` calls to `method path` (e.g. `POST /auth/refresh`) answer `status`. */
   failNext(method: string, path: string, status: number, times?: number): void;
+  /** The latest access token issued to `email`, for calling the API directly from a spec. */
+  latestAccessToken(email: string): string | undefined;
   /** The token in the latest reset link "emailed" to `email`, if any (see `forgot-password`). */
   resetTokenFor(email: string): string | undefined;
 }
@@ -115,7 +130,8 @@ async function reply(route: Route, status: number, message: string): Promise<num
 /**
  * Routes all `/api/v1/**` traffic to an in-test fake backend, so no spec reaches a real one.
  *
- * It models users and roles, access-token issuing, and the httpOnly refresh-cookie session. The
+ * It models users and roles, access-token issuing, and the httpOnly refresh-cookie session, and
+ * delegates content and settings paths to `mockContent` and `mockSettings`. The
  * cookie is held by the fixture, not the browser: it survives reloads within a test, and every
  * refresh rotates it. Anything not modelled answers a Nest-style 404.
  */
@@ -129,6 +145,7 @@ export async function installMockApi(page: Page): Promise<MockApi> {
   let tokenCounter = 0;
   let resetCounter = 0;
   const mockContent = createMockContent();
+  const mockSettings = createMockSettings(() => [...users.values()].map((user) => user.me));
 
   function createUser(input: MockUserInput): MeUser {
     const username = input.username ?? input.email.split('@')[0];
@@ -146,6 +163,9 @@ export async function installMockApi(page: Page): Promise<MockApi> {
       role,
     };
     users.set(input.email, { password: input.password ?? DEFAULT_PASSWORD, me });
+    if (role && !mockSettings.settings.roles.some((r) => r.documentId === role.documentId)) {
+      mockSettings.settings.addRole(role);
+    }
     return me;
   }
 
@@ -314,6 +334,14 @@ export async function installMockApi(page: Page): Promise<MockApi> {
     });
     if (content !== null) return content;
 
+    const settings = await mockSettings.handle(route, {
+      method,
+      path,
+      query,
+      user: bearerUser(route),
+    });
+    if (settings !== null) return settings;
+
     return reply(route, 404, `Not mocked: ${method} ${API_PREFIX}${path}`);
   }
 
@@ -329,6 +357,7 @@ export async function installMockApi(page: Page): Promise<MockApi> {
   return {
     requests,
     content: mockContent.content,
+    settings: mockSettings.settings,
     addUser: createUser,
     signInAs(email) {
       if (!users.has(email)) throw new Error(`signInAs: no mock user ${email}`);
@@ -343,6 +372,9 @@ export async function installMockApi(page: Page): Promise<MockApi> {
     failNext(method, path, status, times = 1) {
       failures.push({ key: `${method} ${path}`, status, left: times });
     },
+    latestAccessToken(email) {
+      return [...accessTokens].findLast(([, owner]) => owner === email)?.[0];
+    },
     resetTokenFor(email) {
       return [...resetTokens].findLast(([, owner]) => owner === email)?.[0];
     },
@@ -350,7 +382,11 @@ export async function installMockApi(page: Page): Promise<MockApi> {
 }
 
 /** Playwright `test` with the API mocked for every spec that imports it. */
-export const test = base.extend<{ mockApi: MockApi; mockContent: MockContent }>({
+export const test = base.extend<{
+  mockApi: MockApi;
+  mockContent: MockContent;
+  mockSettings: MockSettings;
+}>({
   mockApi: [
     async ({ page }, use) => {
       await use(await installMockApi(page));
@@ -360,6 +396,9 @@ export const test = base.extend<{ mockApi: MockApi; mockContent: MockContent }>(
   // `provide` is Playwright's `use`, renamed so the React hooks lint rule does not mistake it.
   mockContent: async ({ mockApi }, provide) => {
     await provide(mockApi.content);
+  },
+  mockSettings: async ({ mockApi }, provide) => {
+    await provide(mockApi.settings);
   },
 });
 
