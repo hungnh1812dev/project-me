@@ -37,7 +37,7 @@ const ContentTypesPage: React.FC = () => {
   const { data, isPending, isError } = useContentTypes();
 
   return (
-    <main>
+    <section>
       <h1>Content types</h1>
       {isError ? (
         <p role="alert">Couldn't load content types.</p>
@@ -55,7 +55,7 @@ const ContentTypesPage: React.FC = () => {
           />
         </>
       )}
-    </main>
+    </section>
   );
 };
 ContentTypesPage.displayName = 'ContentTypesPage';

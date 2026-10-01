@@ -93,31 +93,31 @@ const ContentTypePage: React.FC = () => {
 
   if (isForbidden(error))
     return (
-      <main>
+      <section>
         <Forbidden />
-      </main>
+      </section>
     );
   if (error?.status === 404)
     return (
-      <main>
+      <section>
         <p role="alert">Content type not found.</p>
-      </main>
+      </section>
     );
   if (error)
     return (
-      <main>
+      <section>
         <p role="alert">Couldn't load this content type.</p>
-      </main>
+      </section>
     );
   if (isPending)
     return (
-      <main>
+      <section>
         <p role="status">Loading content type…</p>
-      </main>
+      </section>
     );
 
   return (
-    <main>
+    <section>
       <h1>{type.name}</h1>
       <p>Kind: {type.kind === 'single' ? 'Single type' : 'Collection type'}</p>
       <h2 id="content-type-fields">Fields</h2>
@@ -131,7 +131,7 @@ const ContentTypePage: React.FC = () => {
       ) : (
         <CollectionDocuments type={type} />
       )}
-    </main>
+    </section>
   );
 };
 ContentTypePage.displayName = 'ContentTypePage';

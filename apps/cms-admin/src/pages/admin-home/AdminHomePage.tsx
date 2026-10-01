@@ -7,7 +7,7 @@ const AdminHomePage: React.FC = () => {
   const { user } = useAuth();
 
   return (
-    <main>
+    <section>
       <h1>Welcome, {user?.name}</h1>
       <nav aria-label="Admin">
         <ul>
@@ -16,7 +16,7 @@ const AdminHomePage: React.FC = () => {
           </li>
         </ul>
       </nav>
-    </main>
+    </section>
   );
 };
 AdminHomePage.displayName = 'AdminHomePage';

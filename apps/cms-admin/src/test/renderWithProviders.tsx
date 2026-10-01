@@ -13,6 +13,7 @@ import {
 import { makeQueryClient } from '@/app/queryClient';
 import { makeStore, type AppStore } from '@/app/store';
 import type { AuthState } from '@/features/auth/types';
+import ThemeProvider from '@/features/theme/ThemeProvider';
 
 export interface ProviderOptions {
   /** Merged over the initial auth state of the fresh store. */
@@ -23,14 +24,16 @@ export interface ProviderOptions {
   queryClient?: QueryClient;
 }
 
-/** A fresh store, `QueryClient` and memory router per call. Session bootstrap is not run. */
+/** A fresh store, `QueryClient`, theme and memory router per call. Session bootstrap is not run. */
 export function createProviders({ auth, route = '/', store, queryClient }: ProviderOptions = {}) {
   const client = queryClient ?? makeQueryClient();
   const appStore = store ?? makeStore({ queryClient: client, preloadedAuth: auth });
   const Wrapper = ({ children }: { children: ReactNode }) => (
     <Provider store={appStore}>
       <QueryClientProvider client={client}>
-        <MemoryRouter initialEntries={[route]}>{children}</MemoryRouter>
+        <ThemeProvider>
+          <MemoryRouter initialEntries={[route]}>{children}</MemoryRouter>
+        </ThemeProvider>
       </QueryClientProvider>
     </Provider>
   );
@@ -74,7 +77,9 @@ export function renderRoutes(
     ...render(
       <Provider store={appStore}>
         <QueryClientProvider client={client}>
-          <RouterProvider router={router} />
+          <ThemeProvider>
+            <RouterProvider router={router} />
+          </ThemeProvider>
         </QueryClientProvider>
       </Provider>,
     ),

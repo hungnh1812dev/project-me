@@ -1,10 +1,10 @@
 /** `/admin/users`: placeholder, gated by `user:read`. The users screen arrives in Phase 4. */
 const UsersPage: React.FC = () => {
   return (
-    <main>
+    <section>
       <h1>Users</h1>
       <p>User management is coming soon.</p>
-    </main>
+    </section>
   );
 };
 UsersPage.displayName = 'UsersPage';

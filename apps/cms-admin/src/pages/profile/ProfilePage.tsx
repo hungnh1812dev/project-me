@@ -12,7 +12,7 @@ const ProfilePage: React.FC = () => {
   const permissions = role?.permissions ?? [];
 
   return (
-    <main>
+    <section>
       <h1>Your profile</h1>
       {isError && <p role="alert">Couldn&apos;t refresh your profile.</p>}
 
@@ -55,7 +55,7 @@ const ProfilePage: React.FC = () => {
       <button type="button" onClick={() => void logout()}>
         Log out
       </button>
-    </main>
+    </section>
   );
 };
 ProfilePage.displayName = 'ProfilePage';

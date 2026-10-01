@@ -101,6 +101,33 @@ describe('route table', () => {
     expect(await screen.findByRole('heading', { name: heading })).toBeInTheDocument();
   });
 
+  it.each([
+    ['/admin', 'Welcome, Jane Doe', ['user:read']],
+    ['/admin/profile', 'Your profile', []],
+    ['/admin/users', 'Users', ['user:read']],
+    ['/admin/content-types', 'Content types', ['content_type:read']],
+    ['/admin/content-types/article', 'Article', ['content_type:read']],
+    ['/admin/dev/ui-kit', 'UI kit', []],
+  ])('renders %s inside the shell with exactly one main', async (route, heading, permissions) => {
+    server.use(getContentTypesHandler().handler, getContentTypeHandler().handler);
+    renderRoutes(routes, { route, auth: signedIn(permissions) });
+
+    const h1 = await screen.findByRole('heading', { name: heading, level: 1 });
+    expect(screen.getByRole('link', { name: 'Skip to content' })).toBeInTheDocument();
+    expect(screen.getAllByRole('main')).toHaveLength(1);
+    expect(screen.getByRole('main')).toContainElement(h1);
+  });
+
+  it.each([
+    ['/login', 'Sign in'],
+    ['/403', 'Access denied'],
+  ])('renders %s without the shell', async (route, heading) => {
+    renderRoutes(routes, { route, auth: { status: 'unauthenticated' } });
+
+    expect(await screen.findByRole('heading', { name: heading })).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Skip to content' })).not.toBeInTheDocument();
+  });
+
   it('sends a first run from /login to the admin setup at /register', async () => {
     server.use(http.get('*/api/v1/auth/has-users', () => HttpResponse.json({ hasUsers: false })));
     const { router } = renderRoutes(routes, {

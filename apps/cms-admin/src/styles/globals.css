@@ -157,6 +157,12 @@
     outline: 2px solid var(--ring);
     outline-offset: 2px;
   }
+
+  /* The shell moves focus to main or the page h1 after navigation; they are not controls. */
+  main[tabindex='-1']:focus,
+  main h1[tabindex='-1']:focus {
+    outline: none;
+  }
 }
 
 /* Respect the OS "reduce motion" setting: no transitions or animations. */

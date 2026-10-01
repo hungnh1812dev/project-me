@@ -2,6 +2,7 @@ import { createBrowserRouter, Navigate, type RouteObject } from 'react-router-do
 
 import RequireAccess from '@/features/auth/components/RequireAccess';
 import RequireAuth from '@/features/auth/components/RequireAuth';
+import AppShell from '@/features/shell/components/AppShell';
 import AdminHomePage from '@/pages/admin-home/AdminHomePage';
 import ContentTypePage from '@/pages/content-types/ContentTypePage';
 import ContentTypesPage from '@/pages/content-types/ContentTypesPage';
@@ -37,22 +38,28 @@ export const routes: RouteObject[] = [
     path: '/admin',
     element: <RequireAuth />,
     children: [
-      { index: true, element: <AdminHomePage /> },
-      { path: 'profile', element: <ProfilePage /> },
       {
-        path: 'users',
-        element: <RequireAccess permission="user:read" />,
-        children: [{ index: true, element: <UsersPage /> }],
-      },
-      {
-        path: 'content-types',
-        element: <RequireAccess can={{ I: 'read', a: 'content_type' }} />,
+        // The shell wraps every signed-in page; /403 and the public pages stay outside it.
+        element: <AppShell />,
         children: [
-          { index: true, element: <ContentTypesPage /> },
-          { path: ':slug', element: <ContentTypePage /> },
+          { index: true, element: <AdminHomePage /> },
+          { path: 'profile', element: <ProfilePage /> },
+          {
+            path: 'users',
+            element: <RequireAccess permission="user:read" />,
+            children: [{ index: true, element: <UsersPage /> }],
+          },
+          {
+            path: 'content-types',
+            element: <RequireAccess can={{ I: 'read', a: 'content_type' }} />,
+            children: [
+              { index: true, element: <ContentTypesPage /> },
+              { path: ':slug', element: <ContentTypePage /> },
+            ],
+          },
+          ...(import.meta.env.DEV ? [uiKitRoute] : []),
         ],
       },
-      ...(import.meta.env.DEV ? [uiKitRoute] : []),
     ],
   },
   { path: '*', element: <Navigate to="/admin" replace /> },
