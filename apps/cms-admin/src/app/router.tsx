@@ -3,6 +3,8 @@ import { createBrowserRouter, Navigate, type RouteObject } from 'react-router-do
 import RequireAccess from '@/features/auth/components/RequireAccess';
 import RequireAuth from '@/features/auth/components/RequireAuth';
 import AdminHomePage from '@/pages/admin-home/AdminHomePage';
+import ContentTypePage from '@/pages/content-types/ContentTypePage';
+import ContentTypesPage from '@/pages/content-types/ContentTypesPage';
 import ForbiddenPage from '@/pages/forbidden/ForbiddenPage';
 import ForgotPasswordPage from '@/pages/forgot-password/ForgotPasswordPage';
 import LoginPage from '@/pages/login/LoginPage';
@@ -30,6 +32,14 @@ export const routes: RouteObject[] = [
         path: 'users',
         element: <RequireAccess permission="user:read" />,
         children: [{ index: true, element: <UsersPage /> }],
+      },
+      {
+        path: 'content-types',
+        element: <RequireAccess can={{ I: 'read', a: 'content_type' }} />,
+        children: [
+          { index: true, element: <ContentTypesPage /> },
+          { path: ':slug', element: <ContentTypePage /> },
+        ],
       },
     ],
   },

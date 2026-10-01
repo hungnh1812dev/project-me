@@ -1,10 +1,12 @@
 import { test as base, type Page, type Route } from '@playwright/test';
 
 import type { MeUser, Role } from '../../src/features/auth/types.ts';
+import { createMockContent, type MockContent } from './mockContent.ts';
 
 /** One API call the app made, recorded by the mock with the status it answered. */
 export interface RecordedRequest {
   method: string;
+  /** The full path, including the query string when there is one. */
   path: string;
   status: number;
 }
@@ -19,6 +21,11 @@ export const ROLES = {
     'document:read',
   ]),
   editor: makeRole('editor', 'Editor', 20, ['document:read', 'document:update']),
+  contentEditor: makeRole('content_editor', 'Content Editor', 30, [
+    'content_type:read',
+    'document:read',
+    'document:update',
+  ]),
 } satisfies Record<string, Role>;
 
 export interface MockUserInput {
@@ -40,6 +47,8 @@ export const OTP_CODE = '123456';
 export interface MockApi {
   /** Every `/api/v1/**` request the page made, in order. */
   readonly requests: RecordedRequest[];
+  /** The content model that answers `/content-types*` and `/documents*`. */
+  readonly content: MockContent;
   /** Adds a user who can sign in. `has-users` answers `true` once there is one. */
   addUser(input: MockUserInput): MeUser;
   /** Starts a refresh-cookie session for `email`, as if they had signed in before this page load. */
@@ -119,6 +128,7 @@ export async function installMockApi(page: Page): Promise<MockApi> {
   let session: { email: string; cookie: number } | null = null;
   let tokenCounter = 0;
   let resetCounter = 0;
+  const mockContent = createMockContent();
 
   function createUser(input: MockUserInput): MeUser {
     const username = input.username ?? input.email.split('@')[0];
@@ -213,7 +223,19 @@ export async function installMockApi(page: Page): Promise<MockApi> {
     return failure.status;
   }
 
-  async function handle(route: Route, method: string, path: string): Promise<number> {
+  /** The user behind the request's bearer token, or `null` when it is missing or expired. */
+  function bearerUser(route: Route): MeUser | null {
+    const header = route.request().headers()['authorization'] ?? '';
+    const email = accessTokens.get(header.replace(/^Bearer /, ''));
+    return (email && users.get(email)?.me) || null;
+  }
+
+  async function handle(
+    route: Route,
+    method: string,
+    path: string,
+    query: URLSearchParams,
+  ): Promise<number> {
     const forced = takeFailure(`${method} ${path}`);
     if (forced !== null) {
       await json(route, forced, errorBody(forced, `Forced ${forced}`));
@@ -284,19 +306,29 @@ export async function installMockApi(page: Page): Promise<MockApi> {
       if (status !== null) return status;
     }
 
+    const content = await mockContent.handle(route, {
+      method,
+      path,
+      query,
+      user: bearerUser(route),
+    });
+    if (content !== null) return content;
+
     return reply(route, 404, `Not mocked: ${method} ${API_PREFIX}${path}`);
   }
 
   await page.route(API_PATTERN, async (route) => {
     const request = route.request();
-    const fullPath = new URL(request.url()).pathname;
+    const url = new URL(request.url());
+    const fullPath = url.pathname;
     const path = fullPath.slice(fullPath.indexOf(API_PREFIX) + API_PREFIX.length);
-    const status = await handle(route, request.method(), path);
-    requests.push({ method: request.method(), path: fullPath, status });
+    const status = await handle(route, request.method(), path, url.searchParams);
+    requests.push({ method: request.method(), path: `${fullPath}${url.search}`, status });
   });
 
   return {
     requests,
+    content: mockContent.content,
     addUser: createUser,
     signInAs(email) {
       if (!users.has(email)) throw new Error(`signInAs: no mock user ${email}`);
@@ -318,13 +350,17 @@ export async function installMockApi(page: Page): Promise<MockApi> {
 }
 
 /** Playwright `test` with the API mocked for every spec that imports it. */
-export const test = base.extend<{ mockApi: MockApi }>({
+export const test = base.extend<{ mockApi: MockApi; mockContent: MockContent }>({
   mockApi: [
     async ({ page }, use) => {
       await use(await installMockApi(page));
     },
     { auto: true },
   ],
+  // `provide` is Playwright's `use`, renamed so the React hooks lint rule does not mistake it.
+  mockContent: async ({ mockApi }, provide) => {
+    await provide(mockApi.content);
+  },
 });
 
 export { expect } from '@playwright/test';

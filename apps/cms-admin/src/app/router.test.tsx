@@ -3,6 +3,7 @@ import { http, HttpResponse } from 'msw';
 import { describe, expect, it } from 'vitest';
 
 import { makeMeUser, makeRole } from '@/test/fixtures';
+import { getContentTypeHandler, getContentTypesHandler } from '@/test/msw/contentHandlers';
 import { server } from '@/test/msw/server';
 import { renderRoutes } from '@/test/renderWithProviders';
 
@@ -54,6 +55,37 @@ describe('route table', () => {
     renderRoutes(routes, { route: '/admin/users', auth: signedIn(['user:read']) });
 
     expect(await screen.findByRole('heading', { name: 'Users' })).toBeInTheDocument();
+  });
+
+  it('gates /admin/content-types behind content_type:read', async () => {
+    const c1 = getContentTypesHandler();
+    server.use(c1.handler);
+    const { router } = renderRoutes(routes, { route: '/admin/content-types', auth: signedIn([]) });
+
+    expect(await screen.findByRole('heading', { name: 'Access denied' })).toBeInTheDocument();
+    expect(router.state.location.pathname).toBe('/403');
+    expect(c1.requests).toHaveLength(0);
+  });
+
+  it('opens /admin/content-types with content_type:read', async () => {
+    server.use(getContentTypesHandler().handler);
+    renderRoutes(routes, { route: '/admin/content-types', auth: signedIn(['content_type:read']) });
+
+    expect(await screen.findByRole('heading', { name: 'Content types' })).toBeInTheDocument();
+    expect(await screen.findByRole('link', { name: 'Home' })).toBeInTheDocument();
+  });
+
+  it('gates /admin/content-types/:slug behind content_type:read', async () => {
+    const c2 = getContentTypeHandler();
+    server.use(c2.handler);
+    const { router } = renderRoutes(routes, {
+      route: '/admin/content-types/article',
+      auth: signedIn([]),
+    });
+
+    expect(await screen.findByRole('heading', { name: 'Access denied' })).toBeInTheDocument();
+    expect(router.state.location.pathname).toBe('/403');
+    expect(c2.requests).toHaveLength(0);
   });
 
   it.each([
