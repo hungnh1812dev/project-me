@@ -1,11 +1,12 @@
 import { screen } from '@testing-library/react';
 import { http, HttpResponse } from 'msw';
 import type { RouteObject } from 'react-router-dom';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { makeMeUser, makeRole } from '@/test/fixtures';
 import { getContentTypeHandler, getContentTypesHandler } from '@/test/msw/contentHandlers';
 import { server } from '@/test/msw/server';
+import { listUsersHandler } from '@/test/msw/settingsHandlers';
 import { renderRoutes } from '@/test/renderWithProviders';
 
 import { routes } from './router';
@@ -16,6 +17,9 @@ const signedIn = (permissions: string[] = []) => ({
 });
 
 describe('route table', () => {
+  // The Users page loads U1 as soon as it renders; R1 stays idle without `role:read`.
+  beforeEach(() => server.use(listUsersHandler().handler));
+
   it('serves the admin home at /admin', async () => {
     renderRoutes(routes, { route: '/admin', auth: signedIn() });
 
@@ -72,8 +76,32 @@ describe('route table', () => {
     renderRoutes(routes, { route: `/admin/settings/${path}`, auth: signedIn([permission]) });
 
     expect(await screen.findByRole('heading', { name: label, level: 1 })).toBeInTheDocument();
-    expect(screen.getByText('Coming in Phase 4.')).toBeInTheDocument();
   });
+
+  it('serves the real Users page from SETTINGS_PAGES (AC-1)', async () => {
+    renderRoutes(routes, { route: '/admin/settings/users', auth: signedIn(['user:read']) });
+
+    expect(await screen.findByRole('searchbox', { name: 'Search users' })).toBeInTheDocument();
+    expect(screen.queryByText('Coming in Phase 4.')).not.toBeInTheDocument();
+  });
+
+  it.each([['roles'], ['permissions'], ['access-tokens'], ['media']])(
+    'still serves the placeholder for /admin/settings/%s',
+    async (path) => {
+      renderRoutes(routes, {
+        route: `/admin/settings/${path}`,
+        auth: signedIn([
+          'user:read',
+          'role:read',
+          'permission:read',
+          'api_token:read',
+          'media:read',
+        ]),
+      });
+
+      expect(await screen.findByText('Coming in Phase 4.')).toBeInTheDocument();
+    },
+  );
 
   it('opens a settings page with the matching manager permission', async () => {
     renderRoutes(routes, { route: '/admin/settings/media', auth: signedIn(['media:manager']) });

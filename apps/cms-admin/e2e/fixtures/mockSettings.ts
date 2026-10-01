@@ -1,7 +1,12 @@
 import type { Route } from '@playwright/test';
 
 import type { MeUser, Role } from '../../src/features/auth/types.ts';
-import type { AccessToken, MediaAsset, Permission } from '../../src/features/settings/types.ts';
+import type {
+  AccessToken,
+  MediaAsset,
+  Permission,
+  User,
+} from '../../src/features/settings/types.ts';
 
 /**
  * The seeded permission catalog (legacy `cms-admin-integration.md` §4), in catalog order. Scoped
@@ -32,6 +37,8 @@ export const PERMISSION_CATALOG = [
 export interface MockSettings {
   /** Every user `mockApi` models, as `MeUser` (U1 strips `role`). */
   users(): MeUser[];
+  /** Removes a user from `mockApi` (U4): they can no longer sign in. */
+  removeUser(documentId: string): void;
   /** R1's store. `mockApi` adds each user's role when the user is added. */
   readonly roles: Role[];
   /** P1's store, seeded with `PERMISSION_CATALOG`. */
@@ -77,8 +84,70 @@ export interface SettingsRoute {
   handle(route: Route, context: SettingsContext): Promise<number>;
 }
 
+/** A `User` as U1–U3 answer it: the `MeUser` without its joined `role`. */
+function toUser({ role: _role, ...user }: MeUser): User {
+  return user;
+}
+
+const levelOf = (user: MeUser) => user.role?.level ?? 0;
+
+/** The backend's hierarchy rule on U3 and U4: the actor must outrank the target. */
+const HIERARCHY = 'You can only manage users with a lower role level.';
+
+/** Users (U1, U3, U4) and the roles list (R1). U3 and U4 enforce the level hierarchy. */
+const USERS_ROUTES: SettingsRoute[] = [
+  {
+    method: 'GET',
+    pattern: /^\/users$/,
+    permission: 'user:read',
+    handle: (route, { store }) => sendJson(route, 200, store.users().map(toUser)),
+  },
+  {
+    method: 'PATCH',
+    pattern: /^\/users\/([^/]+)\/role$/,
+    permission: 'user:role_manager',
+    handle: async (route, { user: me, params: [id], store }) => {
+      const target = store.users().find((u) => u.documentId === id);
+      if (!target) return sendError(route, 404, 'User not found');
+      const { roleId } = (route.request().postDataJSON() ?? {}) as { roleId?: string };
+      const role = store.roles.find((r) => r.documentId === roleId);
+      if (!role) return sendError(route, 404, 'Role not found');
+      if (target.documentId === me.documentId || levelOf(target) >= levelOf(me)) {
+        return sendError(route, 403, HIERARCHY);
+      }
+      if (role.level >= levelOf(me)) {
+        return sendError(route, 403, 'You can only assign a role below your own level.');
+      }
+      // `mockApi` holds the same object, so the change also reaches `/auth/me`.
+      Object.assign(target, { roleId: role.documentId, role });
+      return sendJson(route, 200, toUser(target));
+    },
+  },
+  {
+    method: 'DELETE',
+    pattern: /^\/users\/([^/]+)$/,
+    permission: 'user:manager',
+    handle: async (route, { user: me, params: [id], store }) => {
+      const target = store.users().find((u) => u.documentId === id);
+      if (!target) return sendError(route, 404, 'User not found');
+      if (target.documentId === me.documentId || levelOf(target) >= levelOf(me)) {
+        return sendError(route, 403, HIERARCHY);
+      }
+      store.removeUser(id);
+      await route.fulfill({ status: 204 });
+      return 204;
+    },
+  },
+  {
+    method: 'GET',
+    pattern: /^\/roles$/,
+    permission: 'role:read',
+    handle: (route, { store }) => sendJson(route, 200, store.roles),
+  },
+];
+
 /** The routes the fake settings backend models. Anything else under its prefixes answers 404. */
-export const SETTINGS_ROUTES: SettingsRoute[] = [];
+export const SETTINGS_ROUTES: SettingsRoute[] = [...USERS_ROUTES];
 
 const PREFIXES = /^\/(users|roles|permissions|access-tokens|media)(\/|$)/;
 const STAMP = '2026-01-01T00:00:00.000Z';
@@ -138,7 +207,10 @@ function upsert<T extends { documentId: string }>(list: T[], item: T): void {
  * Creates the in-memory settings store and its request handler. `users` reads the users `mockApi`
  * already models, so `addUser` and `signInAs` keep working and U1 lists them.
  */
-export function createMockSettings(users: () => MeUser[]) {
+export function createMockSettings(
+  users: () => MeUser[],
+  removeUser: (documentId: string) => void,
+) {
   const roles: Role[] = [];
   const permissions: Permission[] = PERMISSION_CATALOG.map(catalogPermission);
   const accessTokens: AccessToken[] = [];
@@ -146,6 +218,7 @@ export function createMockSettings(users: () => MeUser[]) {
 
   const settings: MockSettings = {
     users,
+    removeUser,
     roles,
     permissions,
     accessTokens,

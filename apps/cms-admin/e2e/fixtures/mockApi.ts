@@ -145,7 +145,13 @@ export async function installMockApi(page: Page): Promise<MockApi> {
   let tokenCounter = 0;
   let resetCounter = 0;
   const mockContent = createMockContent();
-  const mockSettings = createMockSettings(() => [...users.values()].map((user) => user.me));
+  const mockSettings = createMockSettings(
+    () => [...users.values()].map((user) => user.me),
+    (documentId) => {
+      const entry = [...users].find(([, user]) => user.me.documentId === documentId);
+      if (entry) users.delete(entry[0]);
+    },
+  );
 
   function createUser(input: MockUserInput): MeUser {
     const username = input.username ?? input.email.split('@')[0];

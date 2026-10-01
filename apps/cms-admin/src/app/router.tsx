@@ -1,3 +1,4 @@
+import type { ComponentType } from 'react';
 import { createBrowserRouter, Navigate, type RouteObject } from 'react-router-dom';
 
 import RequireAccess from '@/features/auth/components/RequireAccess';
@@ -14,6 +15,7 @@ import ProfilePage from '@/pages/profile/ProfilePage';
 import RegisterPage from '@/pages/register/RegisterPage';
 import ResetPasswordPage from '@/pages/reset-password/ResetPasswordPage';
 import SettingsPlaceholderPage from '@/pages/settings/SettingsPlaceholderPage';
+import UsersPage from '@/pages/settings/UsersPage';
 import VerifyOtpPage from '@/pages/verify-otp/VerifyOtpPage';
 
 /**
@@ -25,6 +27,19 @@ const uiKitRoute: RouteObject = {
   // Shown while the lazy chunk loads on a first visit straight to this URL.
   HydrateFallback: () => null,
   lazy: async () => ({ Component: (await import('@/pages/dev/UiKitPage')).default }),
+};
+
+/**
+ * The real page of each `SETTINGS_LINKS` key. A key without a page still renders the placeholder
+ * until its small phase lands (AC-1).
+ */
+const SETTINGS_PAGES: Partial<Record<string, ComponentType>> = {
+  users: UsersPage,
+};
+
+const settingsPage = (key: string, label: string) => {
+  const Page = SETTINGS_PAGES[key];
+  return Page ? <Page /> : <SettingsPlaceholderPage label={label} />;
 };
 
 /** The app's route table. Tests mount it in a memory router. */
@@ -52,7 +67,7 @@ export const routes: RouteObject[] = [
             children: SETTINGS_LINKS.map((link) => ({
               path: link.key,
               element: <RequireAccess permission={link.permission} />,
-              children: [{ index: true, element: <SettingsPlaceholderPage label={link.label} /> }],
+              children: [{ index: true, element: settingsPage(link.key, link.label) }],
             })),
           },
           {

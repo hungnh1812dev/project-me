@@ -2,8 +2,8 @@
 
 Phase 4 replaces the `/admin/settings/*` placeholders with working pages for users, roles,
 permissions, access tokens and the media library, and adds name editing to `/admin/profile`. This
-page grows with each small phase. Small phase 4.1 laid the foundations described below; the pages
-themselves are still placeholders.
+page grows with each small phase. Small phase 4.1 laid the foundations described below, and 4.2
+added the Users page. The other four routes are still placeholders.
 
 Every request goes through `cmsApi` (see [API client](./api-client.md)). ABAC checks are
 **client-side defense in depth only** (see [RBAC and ABAC](./rbac-abac.md)); the backend stays the
@@ -16,8 +16,15 @@ types.ts                  User, Permission, PermissionConflict, AccessToken, Acc
                           MediaAsset, ExpiresIn, EXPIRES_IN_OPTIONS, expiresInLabel (Role is in auth/types)
 queryKeys.ts              settingsKeys
 search.ts                 filterBySearch
+roleHierarchy.ts          roleLevelOf, assignableRoles, usersWithRoles (UserRow)
+api/                      usersApi (U1, U3, U4), rolesApi (R1)
+hooks/                    useUsers, useAssignRole, useDeleteUser, useRoles
 components/               ListState, SearchField, LiveRegion, useAnnouncer
 ```
+
+`router.tsx` maps each settings key to its page through `SETTINGS_PAGES`; a key without a page
+still renders `SettingsPlaceholderPage`. Each route stays behind `RequireAccess
+permission="<res>:read"`.
 
 ## Backend contract
 
@@ -54,8 +61,15 @@ labelled "1 month"; that reading is not yet checked against the backend (D6, a k
 
 `settingsKeys` is the only source of settings keys. Each list has one key under `['settings']`:
 `users()`, `roles()`, `permissions()`, `accessTokens()` and `media()` (for example
-`['settings', 'accessTokens']`). `settingsKeys.all` clears the whole feature. The invalidation matrix
-is added with the mutations in the page slices.
+`['settings', 'accessTokens']`). `settingsKeys.all` clears the whole feature. There are no
+optimistic updates, and a failed mutation leaves the cache unchanged.
+
+| Mutation        | Invalidates |
+| --------------- | ----------- |
+| `useAssignRole` | `users`     |
+| `useDeleteUser` | `users`     |
+
+The other slices add their rows here.
 
 ## The shared `guard`
 
@@ -105,6 +119,39 @@ In `src/features/settings/components/`:
 - `useAnnouncer` plus `LiveRegion` give each page one polite status region for success messages
   (AC-10, D2: no toast library). Announcing the same text twice still re-announces it.
 
+## Users (`/admin/settings/users`)
+
+`src/pages/settings/UsersPage.tsx`, with its dialogs in `src/pages/settings/users/`.
+
+- **List (U1 + R1).** `useUsers` loads U1. `useRoles` loads R1 only with `role:read`; while it is
+  allowed and loading, the page waits so no row flashes "Unknown". `usersWithRoles` joins each user
+  to its role by `roleId` and sorts by name. The role column shows the role name, "No role" for a
+  `null` `roleId`, or "Unknown" when R1 is unavailable or the id has no match. Each row shows the
+  name (plus a "You" badge on the signed-in user), username, email, "Verified" or "Not verified" in
+  text, the role and the created date. Search covers name, username and email. No control edits a
+  name or password (AC-17).
+- **Levels.** `roleLevelOf` gives 0 for no role and `undefined` when the role is unknown. An unknown
+  level denies both row actions (Assumption 4).
+- **Table.** The vendored `Table` has a screen-reader caption and `scope="col"` headers, inside a
+  labelled, focusable `region` ("Users table") that scrolls sideways at 375px instead of the page.
+- **Policy use.** Each row computes `useCan('assign_role', 'user', { targetUserId, targetLevel,
+newRoleLevel })` (with the highest assignable level) and `useCan('delete', 'user', { targetUserId,
+targetLevel })`. Both buttons are `GatedButton`s named after the row ("Change role for
+  jane@example.com", "Delete jane@example.com"). Self, a target at or above the actor's level, an
+  unknown level and a missing `user:role_manager` or `user:manager` are denied with the policy's
+  reason.
+- **Change role.** `ChangeRoleDialog` is a `ConfirmDialog` (`alertdialog`, Cancel focused first,
+  "Change role" confirm) titled "Change the role of <email>?" with a `Select` of
+  `assignableRoles(roles, actor.level)`: levels below the actor's, highest first, labelled
+  "Name (level n)". The current role is preselected when it is assignable; otherwise saving asks to
+  "Choose a role.". `useAssignRole` guards `assign_role` again, then sends U3 `{ roleId }`. A server
+  403 shows inside the dialog.
+- **Delete.** `DeleteUserDialog` confirms "Delete <email>?" with a destructive "Delete user" button.
+  `useDeleteUser` guards `delete user`, then sends U4; the row disappears after the refetch.
+- **Feedback.** Success is announced in the page's `LiveRegion` ("Role of <email> changed to
+  <role>.", "User <email> deleted."). Each dialog is remounted per opening, so a previous error never
+  shows again.
+
 ## Test doubles
 
 - **Unit (MSW):** `src/test/msw/settingsHandlers.ts` has one opt-in recorder factory per contract
@@ -122,3 +169,7 @@ In `src/features/settings/components/`:
   `PERMISSION_CATALOG`. `ROLES.superAdmin` now holds every catalog slug, `ROLES.admin` (level 50)
   every `<res>:read`, and the old partial super admin is `ROLES.userManager`.
   `mockApi.latestAccessToken(email)` returns a bearer for direct API calls from a spec.
+- **E2E routes so far:** U1, U3 and U4 (both enforce the level hierarchy with a 403, and answer 404
+  for an unknown user or role) and R1. U3 updates the `mockApi` user in place, so `/auth/me` sees the
+  new role; U4 removes the user through `removeUser`. Use `mockApi.failNext(method, path, 403)` for a
+  server 403 that the client guard would otherwise prevent. Spec: `e2e/settings-users.spec.ts`.
