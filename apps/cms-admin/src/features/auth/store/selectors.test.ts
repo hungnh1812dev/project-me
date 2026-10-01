@@ -5,11 +5,13 @@ import { makeMeUser, makeRole } from '@/test/fixtures';
 import type { AuthState } from '../types';
 import { initialAuthState } from './AuthSlice';
 import {
+  selectActor,
   selectAuthStatus,
   selectCurrentUser,
   selectIsAuthenticated,
   selectPermissions,
   selectRole,
+  selectRoleLevel,
 } from './selectors';
 
 const stateWith = (auth: Partial<AuthState>) => ({ auth: { ...initialAuthState, ...auth } });
@@ -55,5 +57,29 @@ describe('auth selectors', () => {
     expect(selectPermissions({ auth: { ...state.auth, error: 'x' } })).toBe(
       selectPermissions(state),
     );
+  });
+});
+
+describe('RBAC/ABAC selectors', () => {
+  it('select the role level, 0 without a role', () => {
+    const user = makeMeUser({ role: makeRole({ level: 50 }) });
+
+    expect(selectRoleLevel(stateWith({ user }))).toBe(50);
+    expect(selectRoleLevel(stateWith({ user: makeMeUser({ role: null }) }))).toBe(0);
+    expect(selectRoleLevel(stateWith({}))).toBe(0);
+  });
+
+  it('select the actor and keep it stable while the user is unchanged', () => {
+    const role = makeRole({ level: 20, permissions: ['media:read'] });
+    const state = stateWith({ user: makeMeUser({ documentId: 'u-1', role }) });
+
+    const actor = selectActor(state);
+
+    expect(actor).toEqual({ userId: 'u-1', level: 20, permissions: ['media:read'] });
+    expect(selectActor({ auth: { ...state.auth, status: 'loading' } })).toBe(actor);
+  });
+
+  it('select an anonymous actor when signed out', () => {
+    expect(selectActor(stateWith({}))).toEqual({ userId: null, level: 0, permissions: [] });
   });
 });

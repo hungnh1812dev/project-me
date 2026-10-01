@@ -1,5 +1,6 @@
 import { createSelector } from '@reduxjs/toolkit';
 
+import { toActor } from '../permissions/can';
 import type { AuthState } from '../types';
 
 /** Any state that holds the auth slice (the app `RootState`, or a test stub). */
@@ -27,3 +28,9 @@ export const selectPermissions = createSelector(
   selectRole,
   (role): readonly string[] => role?.permissions ?? NO_PERMISSIONS,
 );
+
+/** The actor's role level, 0 when there is no user or no role. */
+export const selectRoleLevel = createSelector(selectRole, (role) => role?.level ?? 0);
+
+/** The signed-in user as an ABAC `Actor`. Recomputed only when the user changes. */
+export const selectActor = createSelector(selectCurrentUser, toActor);
