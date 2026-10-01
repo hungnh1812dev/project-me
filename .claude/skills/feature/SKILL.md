@@ -24,7 +24,11 @@ Handoff files: `SPEC.md`, `tasks/plan.md`, `tasks/todo.md`, `tasks/qc-report.md`
 
 - Request: `$ARGUMENTS`. If it's empty, ask the user for the feature request.
 - Run `git status --porcelain`. If there are uncommitted changes outside `SPEC.md` and `tasks/`, ask the user whether to commit, stash, or continue. The builder commits per task and must not pick up unrelated work.
-- If `SPEC.md` or `tasks/plan.md` already exists, ask whether to resume from it or start fresh.
+- **Resume.** If `$ARGUMENTS` is `continue` or `resume`, or `SPEC.md` and `tasks/todo.md` already exist, ask the user whether to resume or start fresh. When resuming, jump to the first unfinished stage and don't redo the approved spec or plan:
+  - `tasks/todo.md` has unchecked tasks in a small phase → step 2, from that phase
+  - all small phases are checked, and there's no `tasks/qc-report.md` with `VERDICT: PASS` → step 3
+  - QC passed, and there's no `tasks/security-report.md` with `VERDICT: PASS` → step 4
+  - security passed → step 5
 - Record `BASE=$(git rev-parse HEAD)`.
 
 ## 1. Spec & Plan: `feature-spec-planner`, with draft → review → approve → write
@@ -47,6 +51,12 @@ Use **one** spec-planner session for the whole of step 1. Start it with an `Agen
 5. Show the full `tasks/plan.md` and `tasks/todo.md` drafts and ask for approval. Run the REVISE loop the same way. On a clear approval, send `Mode: WRITE. APPROVED: PLAN`.
 
 Never write these files yourself, and never send `WRITE` without the user's explicit approval of that exact draft.
+
+Once the plan reports `WRITTEN`, **continue straight into step 2 in the same turn.** Don't end your turn or wait for another prompt. Approving the plan is the go-ahead for the build.
+
+## Don't stop between stages
+
+Run the whole pipeline in one go. End your turn only to ask the user something (an approval, a blocker, a commit, the cleanup confirmation), and after their answer pick up exactly where you left off.
 
 ## 2. Build: `feature-builder`, one fresh session per small phase
 
