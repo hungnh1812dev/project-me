@@ -1,6 +1,7 @@
 import { screen } from '@testing-library/react';
 import { http, HttpResponse } from 'msw';
-import { describe, expect, it } from 'vitest';
+import type { RouteObject } from 'react-router-dom';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { makeMeUser, makeRole } from '@/test/fixtures';
 import { getContentTypeHandler, getContentTypesHandler } from '@/test/msw/contentHandlers';
@@ -111,5 +112,44 @@ describe('route table', () => {
       await screen.findByRole('heading', { name: 'Set up admin account' }),
     ).toBeInTheDocument();
     expect(router.state.location.pathname).toBe('/register');
+  });
+});
+
+/** Every path in the table, joined with its parents (e.g. `/admin/dev/ui-kit`). */
+function allPaths(table: RouteObject[], parent = ''): string[] {
+  return table.flatMap((route) => {
+    const path = route.path
+      ? `${parent.replace(/\/$/, '')}/${route.path.replace(/^\//, '')}`
+      : parent;
+    return [path, ...allPaths(route.children ?? [], path)];
+  });
+}
+
+describe('dev-only UI kit route', () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    vi.resetModules();
+  });
+
+  it('serves /admin/dev/ui-kit behind login in development', async () => {
+    renderRoutes(routes, { route: '/admin/dev/ui-kit', auth: signedIn() });
+
+    expect(await screen.findByRole('heading', { name: 'UI kit', level: 1 })).toBeInTheDocument();
+  });
+
+  it('protects /admin/dev/ui-kit behind login', async () => {
+    renderRoutes(routes, { route: '/admin/dev/ui-kit', auth: { status: 'unauthenticated' } });
+
+    expect(await screen.findByRole('heading', { name: 'Sign in' })).toBeInTheDocument();
+  });
+
+  it('is not registered when import.meta.env.DEV is false', async () => {
+    expect(allPaths(routes)).toContain('/admin/dev/ui-kit');
+
+    vi.stubEnv('DEV', false);
+    vi.resetModules();
+    const { routes: productionRoutes } = await import('./router');
+
+    expect(allPaths(productionRoutes)).not.toContain('/admin/dev/ui-kit');
   });
 });

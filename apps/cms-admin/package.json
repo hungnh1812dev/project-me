@@ -15,12 +15,15 @@
     "test:e2e": "playwright test"
   },
   "dependencies": {
+    "@base-ui/react": "^1.8.0",
     "@fontsource-variable/fira-code": "^5.3.0",
     "@fontsource/fira-sans": "^5.3.0",
     "@reduxjs/toolkit": "^2.13.0",
     "@tanstack/react-query": "^5.104.0",
     "axios": "^1.20.0",
+    "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "lucide-react": "^1.49.0",
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "react-redux": "^9.3.0",

@@ -14,6 +14,17 @@ import ResetPasswordPage from '@/pages/reset-password/ResetPasswordPage';
 import UsersPage from '@/pages/users/UsersPage';
 import VerifyOtpPage from '@/pages/verify-otp/VerifyOtpPage';
 
+/**
+ * Dev-only showcase of the base inputs. Registered only when `import.meta.env.DEV`, and loaded
+ * lazily, so production builds drop it entirely.
+ */
+const uiKitRoute: RouteObject = {
+  path: 'dev/ui-kit',
+  // Shown while the lazy chunk loads on a first visit straight to this URL.
+  HydrateFallback: () => null,
+  lazy: async () => ({ Component: (await import('@/pages/dev/UiKitPage')).default }),
+};
+
 /** The app's route table. Tests mount it in a memory router. */
 export const routes: RouteObject[] = [
   { path: '/login', element: <LoginPage /> },
@@ -41,6 +52,7 @@ export const routes: RouteObject[] = [
           { path: ':slug', element: <ContentTypePage /> },
         ],
       },
+      ...(import.meta.env.DEV ? [uiKitRoute] : []),
     ],
   },
   { path: '*', element: <Navigate to="/admin" replace /> },

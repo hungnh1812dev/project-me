@@ -25,6 +25,8 @@ export default defineConfig({
         'src/test/**',
         'src/**/types.ts',
         'src/**/*.test.{ts,tsx}',
+        // Vendored shadcn primitives; their custom behaviour is tested from src/components/form.
+        'src/components/ui/**',
       ],
       thresholds: {
         'src/core/**/*.ts': LOGIC_THRESHOLD,
