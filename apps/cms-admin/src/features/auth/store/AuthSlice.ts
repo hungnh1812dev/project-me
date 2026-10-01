@@ -1,48 +1,47 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
 
-export type userRole = 'owner' | 'admin' | 'editor' | 'viewer';
+import type { AuthState, AuthStatus, MeUser } from '../types';
 
-export interface User {
-  id: string;
-  displayName: string;
-}
-
-export interface AuthState {
-  user: User | null;
-  role: userRole;
-  basePermissions: string[];
-  dynamicPermissions: string[];
-}
-
-const initialState: AuthState = {
+export const initialAuthState: AuthState = {
+  status: 'idle',
+  accessToken: null,
   user: null,
-  role: 'viewer',
-  basePermissions: [],
-  dynamicPermissions: [],
+  error: null,
 };
+
+function clearSession(state: AuthState): void {
+  state.status = 'unauthenticated';
+  state.accessToken = null;
+  state.user = null;
+  state.error = null;
+}
 
 const authSlice = createSlice({
   name: 'auth',
-  initialState,
+  initialState: initialAuthState,
   reducers: {
-    setAuthState: (state: AuthState, action: PayloadAction<AuthState>) => {
-      state.user = action.payload.user;
-      state.role = action.payload.role;
-      state.basePermissions = action.payload.basePermissions;
-      state.dynamicPermissions = action.payload.dynamicPermissions;
+    tokenReceived: (state, action: PayloadAction<string>) => {
+      state.accessToken = action.payload;
     },
-    grantDynamicPermission: (state: AuthState, action: PayloadAction<string>) => {
-      if (!state.dynamicPermissions.includes(action.payload)) {
-        state.dynamicPermissions.push(action.payload);
-      }
+    userLoaded: (state, action: PayloadAction<MeUser>) => {
+      state.user = action.payload;
+      state.status = 'authenticated';
+      state.error = null;
     },
-    revokeDynamicPermission: (state: AuthState, action: PayloadAction<string>) => {
-      state.dynamicPermissions = state.dynamicPermissions.filter(
-        (permission) => permission !== action.payload,
-      );
+    statusChanged: (
+      state,
+      action: PayloadAction<{ status: AuthStatus; error?: string | null }>,
+    ) => {
+      state.status = action.payload.status;
+      state.error = action.payload.error ?? null;
     },
+    /** Local sign-out (logout, or a 401 during bootstrap). */
+    sessionCleared: clearSession,
+    /** The API client could not recover from a 401. A listener also resets the caches. */
+    sessionExpired: clearSession,
   },
 });
 
-export const { setAuthState, grantDynamicPermission, revokeDynamicPermission } = authSlice.actions;
+export const { tokenReceived, userLoaded, statusChanged, sessionCleared, sessionExpired } =
+  authSlice.actions;
 export default authSlice.reducer;

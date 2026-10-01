@@ -9,4 +9,6 @@ export const handlers: RequestHandler[] = [
       { status: 401 },
     ),
   ),
+  // Logout never fails on the backend.
+  http.post('*/api/v1/auth/logout', () => HttpResponse.json({ message: 'Logged out' })),
 ];

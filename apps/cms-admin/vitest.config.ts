@@ -10,8 +10,6 @@ const UI_THRESHOLD = { lines: 70, statements: 70, functions: 70, branches: 70 };
 // phase that rewrites the file, so its new code is measured against the gates.
 const PENDING_REWRITE = [
   'src/App.tsx', // 1.5
-  'src/app/AppProvider.tsx', // 1.3
-  'src/features/auth/store/AuthSlice.ts', // 1.3
   'src/pages/login/LoginPage.tsx', // 1.5
   'src/pages/profile/ProfilePage.tsx', // 1.5
 ];

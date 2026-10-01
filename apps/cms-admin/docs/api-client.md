@@ -16,12 +16,12 @@ Source: `src/core/api/CmsApi.ts`, `src/core/api/apiError.ts`.
 | `toApiError(e)`             | `apiError.ts` | Normalizes anything thrown into an `ApiError` (returns an `ApiError` unchanged)                         |
 | `isApiError(e)`             | `apiError.ts` | Type guard (`instanceof ApiError`)                                                                      |
 
-`API_BASE_URL` comes from `VITE_API_URL` (see [Testing and config](./testing-and-config.md#env-vars)). The module is React- and store-agnostic: it never imports the store. The store calls `configureCmsApi` once (small phase 1.3):
+`API_BASE_URL` comes from `VITE_API_URL` (see [Testing and config](./testing-and-config.md#env-vars)). The module is React- and store-agnostic: it never imports the store. `makeStore()` in `src/app/store.ts` calls `configureCmsApi` (see [Auth session](./auth-session.md)):
 
 ```ts
 configureCmsApi({
   getAccessToken: () => store.getState().auth.accessToken,
-  onTokenRefreshed: (token) => store.dispatch(tokenRefreshed(token)),
+  onTokenRefreshed: (token) => store.dispatch(tokenReceived(token)),
   onSessionExpired: () => store.dispatch(sessionExpired()),
 });
 ```
@@ -51,7 +51,7 @@ On a 401 from any endpoint except `/auth/login`, `/auth/refresh` and `/auth/logo
 
 Expiry is deduplicated by token: a burst of 401s carrying the same token, including late ones that arrive after the session already expired, reports the expiry only once. `configureCmsApi` resets this latch.
 
-`refreshAccessToken()` is the same single-flight function. Session bootstrap (small phase 1.3) calls it directly. It rejects with an `ApiError` and never calls `onSessionExpired` itself: the caller decides what a failed refresh means.
+`refreshAccessToken()` is the same single-flight function. Session bootstrap (`bootstrapSession`) calls it directly. It rejects with an `ApiError` and never calls `onSessionExpired` itself: the caller decides what a failed refresh means.
 
 ## Error shape
 
@@ -80,7 +80,7 @@ class ApiError extends Error {
 ## How later code must use it
 
 - **Every HTTP call goes through `cmsApi`.** Do not create another axios instance or call `fetch` directly, or the bearer and the refresh are lost.
-- **RTK Query (1.3):** `axiosBaseQuery` calls `cmsApi` and maps a rejection with `toApiError(e)`. Auth endpoints (`login`, `logout`, `refresh`) pass `skipAuthRefresh: true`.
+- **RTK Query:** `axiosBaseQuery` (`src/core/api/axiosBaseQuery.ts`) calls `cmsApi` and maps a rejection to `{ error: ApiErrorData }`, a plain copy of the `ApiError` fields made by `toApiErrorData(e)`. The `authApi` endpoints pass `skipAuthRefresh: true`; refresh is not an endpoint (use `refreshAccessToken()`).
 - **React Query (Phase 2+):** a query or mutation function calls `cmsApi` and lets the `ApiError` propagate, so `error` is typed as `ApiError`. Narrow `unknown` errors with `isApiError` or `toApiError`. Check `status === 403` to show a forbidden state; 401s have already been handled by the client.
 
 ## Testing
@@ -93,5 +93,5 @@ class ApiError extends Error {
 
 - **401 recovery lives in the axios interceptor, not in an RTK Query base query**, so RTK Query and React Query share one refresh path.
 - **Token in the store, client stays store-agnostic**, through `configureCmsApi`, which avoids a circular import between the store and the client.
-- **`ApiError` is a class**, so `instanceof` works and stack traces survive. RTK Query state should hold a plain copy of its fields (handled in 1.3).
+- **`ApiError` is a class**, so `instanceof` works and stack traces survive. RTK Query state holds a plain copy of its fields (`ApiErrorData`), because the store must stay serializable.
 - **`code` is the axios error code**, not Nest's `error` text, so it has one meaning for HTTP and network failures alike.
