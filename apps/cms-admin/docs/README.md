@@ -10,5 +10,6 @@ Feature docs for `apps/cms-admin`. Each small phase adds or updates one page her
 | [RBAC and ABAC](./rbac-abac.md)                         | Permission rules, ABAC policy table, `usePermission`/`useCan`/`useRoleLevel`, `<Can>` |
 | [Routing and guards](./routing-and-guards.md)           | Route table, `RequireAuth`/`RequireAccess`, login/profile/403 pages, e2e `mockApi`    |
 | [Onboarding and recovery](./onboarding-and-recovery.md) | First-run redirect, register, verify OTP, forgot and reset password                   |
+| [Roadmap](./roadmap.md)                                 | Big phases 1–6 with status and outlines, deferred questions, known gaps               |
 
 The legacy app's docs are in [`../docs-old-dev/`](../docs-old-dev/) (reference only).

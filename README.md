@@ -32,10 +32,14 @@ All run from the repo root through Turborepo:
 pnpm build                           # build all apps
 pnpm lint                            # lint all apps
 pnpm turbo run typecheck             # typecheck all apps
-pnpm test                            # cms-api unit tests
+pnpm test                            # cms-api and cms-admin unit tests
 pnpm --filter cms-api test:e2e       # cms-api e2e tests
+pnpm --filter cms-admin test:cov     # cms-admin unit tests with coverage gates
+pnpm --filter cms-admin test:e2e     # cms-admin Playwright tests (mocked API)
 pnpm turbo run build --filter=frontend   # one app only
 ```
+
+Before the first cms-admin e2e run, install the browser once: `pnpm --filter cms-admin exec playwright install chromium`.
 
 ## Docker
 

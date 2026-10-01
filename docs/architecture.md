@@ -34,11 +34,11 @@ No app depends on a `@repo/*` package yet. When one does, turbo's change detecti
 
 ## Apps
 
-| App         | Stack                                             | Dev command                       | Dev port | Lint                | Tests                       | Container port |
-| ----------- | ------------------------------------------------- | --------------------------------- | -------- | ------------------- | --------------------------- | -------------- |
-| `cms-api`   | NestJS 12, TypeScript 6, ESM                      | `pnpm --filter cms-api start:dev` | 3000     | oxlint (type-aware) | Vitest (`test`, `test:e2e`) | 3000           |
-| `cms-admin` | Vite 8, React 19, TypeScript 6                    | `pnpm --filter cms-admin dev`     | 5173     | oxlint              | none                        | 80 (nginx)     |
-| `frontend`  | Next.js 16.3 (App Router, Tailwind), TypeScript 5 | `pnpm --filter frontend dev`      | 3000     | ESLint 9            | none                        | 3000           |
+| App         | Stack                                             | Dev command                       | Dev port | Lint                | Tests                                                 | Container port |
+| ----------- | ------------------------------------------------- | --------------------------------- | -------- | ------------------- | ----------------------------------------------------- | -------------- |
+| `cms-api`   | NestJS 12, TypeScript 6, ESM                      | `pnpm --filter cms-api start:dev` | 3000     | oxlint (type-aware) | Vitest (`test`, `test:e2e`)                           | 3000           |
+| `cms-admin` | Vite 8, React 19, TypeScript 6                    | `pnpm --filter cms-admin dev`     | 5173     | oxlint              | Vitest (`test`, `test:cov`) + Playwright (`test:e2e`) | 80 (nginx)     |
+| `frontend`  | Next.js 16.3 (App Router, Tailwind), TypeScript 5 | `pnpm --filter frontend dev`      | 3000     | ESLint 9            | none                                                  | 3000           |
 
 Each app keeps its generator's own tooling and versions. That's why TypeScript and lint tools differ between apps, and it's intentional. Nest 12 has no `dev` script, so `pnpm dev` at the root doesn't start cms-api.
 
@@ -49,7 +49,7 @@ Each app keeps its generator's own tooling and versions. That's why TypeScript a
 | `build`     | `^build`     | outputs `dist/**`, `.next/**` (minus cache)                                                                                 |
 | `typecheck` | `^typecheck` | `tsc --noEmit`. cms-admin uses `tsc -b --noEmit`. frontend runs `next typegen` first, because `next-env.d.ts` is gitignored |
 | `lint`      | `^lint`      |                                                                                                                             |
-| `test`      | `^build`     | only cms-api has tests                                                                                                      |
+| `test`      | `^build`     | runs cms-api and cms-admin unit tests (Vitest). e2e suites (`test:e2e`) and cms-admin coverage (`test:cov`) run per app     |
 | `dev`       | —            | persistent, not cached                                                                                                      |
 
 Before changing `turbo.json`, read the docs bundled with the installed turbo (`node_modules/turbo/docs/`). See the root `AGENTS.md`.

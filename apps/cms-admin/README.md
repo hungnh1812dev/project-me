@@ -1,32 +1,29 @@
-# React + TypeScript + Vite
+# CMS Admin
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+The admin portal for the CMS, a React 19 + Vite 8 single-page app served by nginx. It talks to `apps/cms-api` through one axios client and enforces the backend's RBAC/ABAC permission model on the client side as defense in depth (the server stays the authority).
 
-Currently, two official plugins are available:
+Phase 1 (Core Auth) is done: API client with single-flight token refresh, Redux + RTK Query auth state, session bootstrap, RBAC/ABAC engine with hooks and a `<Can>` guard, protected routing, and minimal login, profile, 403, register, OTP and password-reset pages. What comes next is in the [roadmap](./docs/roadmap.md).
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Getting started
 
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the Oxlint configuration
-
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+```bash
+pnpm install                                   # from the repo root
+cp apps/cms-admin/.env.example apps/cms-admin/.env.local   # optional, defaults work for local dev
+pnpm --filter cms-admin dev                    # :5173, proxies /api and /health to VITE_API_PROXY_TARGET
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+Env vars (`VITE_API_URL`, `VITE_API_PROXY_TARGET`) are documented in [`.env.example`](./.env.example) and [Testing and config](./docs/testing-and-config.md).
+
+## Commands
+
+```bash
+pnpm --filter cms-admin test                   # Vitest
+pnpm --filter cms-admin test:cov               # Vitest with coverage gates
+pnpm --filter cms-admin exec playwright install chromium   # one-time
+pnpm --filter cms-admin test:e2e               # Playwright (mocked API, port 5174)
+pnpm turbo run lint typecheck build --filter=cms-admin
+```
+
+## Docs
+
+Feature docs live in [`docs/`](./docs/README.md), one page per feature, plus the [roadmap](./docs/roadmap.md).
