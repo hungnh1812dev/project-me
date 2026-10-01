@@ -51,6 +51,13 @@ export default {
       },
     },
     {
+      files: 'apps/cms-admin/**',
+      options: {
+        tailwindStylesheet: './apps/cms-admin/src/styles/globals.css',
+        tailwindFunctions: ['clsx', 'cn', 'cva'],
+      },
+    },
+    {
       files: ['*.json', '*.jsonc'],
       options: { trailingComma: 'none' },
     },

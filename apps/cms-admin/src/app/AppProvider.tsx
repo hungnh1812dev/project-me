@@ -2,6 +2,7 @@ import { QueryClientProvider, type QueryClient } from '@tanstack/react-query';
 import { Provider } from 'react-redux';
 
 import { useSessionBootstrap } from '@/features/auth/hooks/useSessionBootstrap';
+import ThemeProvider from '@/features/theme/ThemeProvider';
 
 import { queryClient as sharedQueryClient } from './queryClient';
 import { store as appStore, type AppStore } from './store';
@@ -20,7 +21,7 @@ const SessionBootstrap: React.FC = () => {
 };
 SessionBootstrap.displayName = 'SessionBootstrap';
 
-/** Redux store + React Query client, and the one-time session bootstrap. */
+/** Redux store + React Query client, the theme, and the one-time session bootstrap. */
 const AppProvider: React.FC<AppProviderProps> = ({
   children,
   store = appStore,
@@ -29,8 +30,10 @@ const AppProvider: React.FC<AppProviderProps> = ({
   return (
     <Provider store={store}>
       <QueryClientProvider client={queryClient}>
-        <SessionBootstrap />
-        {children}
+        <ThemeProvider>
+          <SessionBootstrap />
+          {children}
+        </ThemeProvider>
       </QueryClientProvider>
     </Provider>
   );

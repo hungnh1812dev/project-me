@@ -8,3 +8,6 @@ interface ImportMetaEnv {
 interface ImportMeta {
   readonly env: ImportMetaEnv;
 }
+
+/** The `package.json` version, injected by Vite `define`. */
+declare const __APP_VERSION__: string;

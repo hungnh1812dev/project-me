@@ -4,6 +4,7 @@ import { http, HttpResponse } from 'msw';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { resetBootstrapLatch } from '@/features/auth/store/sessionThunks';
+import { useTheme } from '@/features/theme/useTheme';
 import { makeMeUser } from '@/test/fixtures';
 import { server } from '@/test/msw/server';
 
@@ -50,5 +51,17 @@ describe('AppProvider', () => {
     );
 
     expect(screen.getByText('shared')).toBeInTheDocument();
+  });
+
+  it('provides the theme', () => {
+    const Probe = () => <p>theme: {useTheme().choice}</p>;
+
+    render(
+      <AppProvider store={makeStore({ queryClient: makeQueryClient() })}>
+        <Probe />
+      </AppProvider>,
+    );
+
+    expect(screen.getByText('theme: system')).toBeInTheDocument();
   });
 });

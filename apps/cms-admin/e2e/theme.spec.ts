@@ -1,0 +1,78 @@
+import type { Page } from '@playwright/test';
+
+import { expect, test } from './fixtures/mockApi.ts';
+
+const DARK = /(^|\s)dark(\s|$)/;
+
+/** Seeds the stored theme choice before any page script runs. */
+const storeTheme = (page: Page, choice: string) =>
+  page.addInitScript({ content: `window.localStorage.setItem('cms-admin:theme', '${choice}');` });
+
+test('the page title is CMS Admin', async ({ page }) => {
+  await page.goto('/login');
+
+  await expect(page).toHaveTitle(/CMS Admin/);
+});
+
+test('a stored dark choice applies before React mounts (no flash)', async ({ page }) => {
+  await storeTheme(page, 'dark');
+  // Block the app bundle: only the pre-paint script can set the theme.
+  await page.route('**/src/main.tsx', (route) => route.abort());
+
+  await page.goto('/login');
+
+  await expect(page.locator('html')).toHaveClass(DARK);
+  await expect(page.locator('#root')).toBeEmpty();
+});
+
+test('System follows the OS setting before mount and live after it', async ({ page }) => {
+  await page.emulateMedia({ colorScheme: 'dark' });
+  await page.goto('/login');
+  await expect(page.locator('#root')).not.toBeEmpty();
+  await expect(page.locator('html')).toHaveClass(DARK);
+
+  await page.emulateMedia({ colorScheme: 'light' });
+
+  await expect(page.locator('html')).not.toHaveClass(DARK);
+});
+
+test('a stored light choice wins over a dark OS setting', async ({ page }) => {
+  await storeTheme(page, 'light');
+  await page.emulateMedia({ colorScheme: 'dark' });
+
+  await page.goto('/login');
+  await expect(page.locator('#root')).not.toBeEmpty();
+
+  await expect(page.locator('html')).not.toHaveClass(DARK);
+});
+
+test('with localStorage blocked the theme follows the OS and nothing throws', async ({ page }) => {
+  const pageErrors: Error[] = [];
+  page.on('pageerror', (error) => pageErrors.push(error));
+  await page.addInitScript({
+    content: `Object.defineProperty(window, 'localStorage', {
+      get() { throw new DOMException('Blocked', 'SecurityError'); },
+    });`,
+  });
+  await page.emulateMedia({ colorScheme: 'dark' });
+
+  await page.goto('/login');
+  await expect(page.locator('#root')).not.toBeEmpty();
+
+  await expect(page.locator('html')).toHaveClass(DARK);
+  expect(pageErrors).toEqual([]);
+});
+
+test('fonts are self-hosted: no request goes to a font CDN', async ({ page }) => {
+  const external: string[] = [];
+  page.on('request', (request) => {
+    if (/fonts\.(googleapis|gstatic)\.com/.test(request.url())) external.push(request.url());
+  });
+
+  await page.goto('/login');
+  await expect(page.locator('#root')).not.toBeEmpty();
+  await page.evaluate('document.fonts.ready');
+
+  expect(external).toEqual([]);
+  await expect(page.locator('body')).toHaveCSS('font-family', /Fira Sans/);
+});
