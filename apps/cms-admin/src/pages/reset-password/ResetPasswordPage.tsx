@@ -1,9 +1,14 @@
 import { useState, type FormEvent } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 
+import { Field } from '@/components/form/Field';
+import { PasswordInput } from '@/components/form/PasswordInput';
+import { Alert } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
 import { useResetPasswordMutation } from '@/core/api/AuthApi';
 import { toApiErrorData } from '@/core/api/axiosBaseQuery';
 import { loginNoticeState, validateNewPassword } from '@/features/auth/onboarding';
+import AuthLayout from '@/layouts/AuthLayout';
 
 /**
  * `/reset-password?token=…`, the link from the reset email. A missing token or a 400 (invalid or
@@ -22,13 +27,14 @@ const ResetPasswordPage: React.FC = () => {
 
   if (token === '' || expired) {
     return (
-      <main>
-        <h1>Link expired</h1>
-        <p>This password reset link is invalid or has expired.</p>
-        <p>
-          <Link to="/forgot-password">Request a new link</Link>
-        </p>
-      </main>
+      <AuthLayout
+        title="Link expired"
+        description="This password reset link is invalid or has expired."
+      >
+        <Button variant="outline" className="w-full" render={<Link to="/forgot-password" />}>
+          Request a new link
+        </Button>
+      </AuthLayout>
     );
   }
 
@@ -49,37 +55,34 @@ const ResetPasswordPage: React.FC = () => {
   };
 
   return (
-    <main>
-      <h1>Choose a new password</h1>
-      <form noValidate onSubmit={(event) => void handleSubmit(event)}>
-        <p>
-          <label htmlFor="reset-password">New password</label>
-          <input
+    <AuthLayout title="Choose a new password">
+      <form
+        noValidate
+        className="flex flex-col gap-4"
+        onSubmit={(event) => void handleSubmit(event)}
+      >
+        <Field label="New password" required>
+          <PasswordInput
             id="reset-password"
-            type="password"
             autoComplete="new-password"
-            required
             value={password}
             onChange={(event) => setPassword(event.target.value)}
           />
-        </p>
-        <p>
-          <label htmlFor="reset-confirmation">Confirm new password</label>
-          <input
+        </Field>
+        <Field label="Confirm new password" required>
+          <PasswordInput
             id="reset-confirmation"
-            type="password"
             autoComplete="new-password"
-            required
             value={confirmation}
             onChange={(event) => setConfirmation(event.target.value)}
           />
-        </p>
-        {error && <p role="alert">{error}</p>}
-        <button type="submit" disabled={isLoading}>
+        </Field>
+        {error && <Alert variant="destructive">{error}</Alert>}
+        <Button type="submit" className="w-full" loading={isLoading}>
           {isLoading ? 'Resetting…' : 'Reset password'}
-        </button>
+        </Button>
       </form>
-    </main>
+    </AuthLayout>
   );
 };
 ResetPasswordPage.displayName = 'ResetPasswordPage';

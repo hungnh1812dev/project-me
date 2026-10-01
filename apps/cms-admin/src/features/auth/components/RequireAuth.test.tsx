@@ -40,6 +40,20 @@ describe('<RequireAuth>', () => {
     expect(screen.queryByText('Admin home')).not.toBeInTheDocument();
   });
 
+  it('centres the connecting view full-screen, without the shell (AC-40)', () => {
+    renderRoutes(routes, { route: '/admin', auth: { status: 'loading' } });
+
+    expect(screen.getByRole('status')).toHaveClass('min-h-svh', 'place-content-center');
+    expect(screen.queryByRole('main')).not.toBeInTheDocument();
+  });
+
+  it('centres the error view full-screen, with a design-system Retry button (AC-40)', () => {
+    renderRoutes(routes, { route: '/admin', auth: { status: 'error', error: 'Network Error' } });
+
+    expect(screen.getByRole('alert')).toHaveClass('min-h-svh', 'place-content-center');
+    expect(screen.getByRole('button', { name: 'Retry' })).toHaveAttribute('data-slot', 'button');
+  });
+
   it('renders the protected route when authenticated', () => {
     renderRoutes(routes, {
       route: '/admin/profile',

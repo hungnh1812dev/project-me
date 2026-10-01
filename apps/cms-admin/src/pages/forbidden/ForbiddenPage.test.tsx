@@ -17,6 +17,15 @@ describe('ForbiddenPage', () => {
     );
   });
 
+  it('renders in AuthLayout, with the back link styled as a button link (AC-44)', () => {
+    renderRoutes([{ path: '/403', element: <ForbiddenPage /> }], { route: '/403' });
+
+    const main = screen.getByRole('main');
+    expect(main).toHaveTextContent('hungnhdev CMS');
+    expect(main.querySelector('[data-slot="card"]')).not.toBeNull();
+    expect(screen.getByRole('link', { name: 'Back to admin home' })).toHaveClass('text-primary');
+  });
+
   it('shows the reason passed by the guard', async () => {
     const { router } = renderRoutes([{ path: '/403', element: <ForbiddenPage /> }], {
       route: '/',

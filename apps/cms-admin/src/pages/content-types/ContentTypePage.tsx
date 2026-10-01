@@ -1,6 +1,16 @@
 import { useMemo } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import type { ApiError } from '@/core/api/apiError';
 import { useDocumentList } from '@/features/content/hooks/useCollectionQueries';
 import { useContentTypeAccess } from '@/features/content/hooks/useContentTypeAccess';
@@ -10,7 +20,14 @@ import type { ContentType, ListedDocumentItem, ListParams } from '@/features/con
 
 const FORBIDDEN = "You don't have access to this content type.";
 
-const Forbidden: React.FC = () => <p role="alert">{FORBIDDEN}</p>;
+const ALERT = 'text-sm text-destructive';
+const STATUS = 'text-sm text-muted-foreground';
+
+const Forbidden: React.FC = () => (
+  <p role="alert" className={ALERT}>
+    {FORBIDDEN}
+  </p>
+);
 Forbidden.displayName = 'Forbidden';
 
 const isForbidden = (error: ApiError | null) => error?.status === 403;
@@ -42,30 +59,42 @@ const CollectionDocuments: React.FC<{ type: ContentType }> = ({ type }) => {
   const { data, error, isPending } = useDocumentList(type, params);
 
   if (!access.read.allowed || isForbidden(error)) return <Forbidden />;
-  if (error) return <p role="alert">Couldn't load the documents.</p>;
-  if (isPending) return <p role="status">Loading documents…</p>;
+  if (error)
+    return (
+      <p role="alert" className={ALERT}>
+        Couldn't load the documents.
+      </p>
+    );
+  if (isPending)
+    return (
+      <p role="status" className={STATUS}>
+        Loading documents…
+      </p>
+    );
   return (
-    <>
-      <table aria-label="Documents">
-        <thead>
-          <tr>
+    <div className="flex flex-col gap-2">
+      <Table aria-label="Documents">
+        <TableHeader>
+          <TableRow>
             {type.listFields.map((field) => (
-              <th key={field}>{field}</th>
+              <TableHead key={field} className="font-mono text-xs">
+                {field}
+              </TableHead>
             ))}
-          </tr>
-        </thead>
-        <tbody>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
           {data.items.map((item) => (
-            <tr key={item.documentId}>
+            <TableRow key={item.documentId}>
               {type.listFields.map((field) => (
-                <td key={field}>{cellText(item, field)}</td>
+                <TableCell key={field}>{cellText(item, field)}</TableCell>
               ))}
-            </tr>
+            </TableRow>
           ))}
-        </tbody>
-      </table>
-      <p>{data.total} total</p>
-    </>
+        </TableBody>
+      </Table>
+      <p className={STATUS}>{data.total} total</p>
+    </div>
   );
 };
 CollectionDocuments.displayName = 'CollectionDocuments';
@@ -75,17 +104,27 @@ const SingleDocument: React.FC<{ type: ContentType }> = ({ type }) => {
   const { data, error, isPending } = useSingleTypeDocument(type);
 
   if (!access.read.allowed || isForbidden(error)) return <Forbidden />;
-  if (error) return <p role="alert">Couldn't load the document.</p>;
-  if (isPending) return <p role="status">Loading document…</p>;
-  return <p>{data ? `Status: ${data.status}` : 'Not saved yet'}</p>;
+  if (error)
+    return (
+      <p role="alert" className={ALERT}>
+        Couldn't load the document.
+      </p>
+    );
+  if (isPending)
+    return (
+      <p role="status" className={STATUS}>
+        Loading document…
+      </p>
+    );
+  return <p className="text-sm">{data ? `Status: ${data.status}` : 'Not saved yet'}</p>;
 };
 SingleDocument.displayName = 'SingleDocument';
 
 /**
- * `/admin/content-types/:slug`: unstyled, read-only placeholder (gated by `content_type:read`). It
- * shows the content type's name, kind and fields, then the first page of a collection type (with
- * `orderBy` and `sortDir` taken from the URL) or the status of a single type. The styled screens
- * arrive in Phase 5.
+ * `/admin/content-types/:slug`: read-only placeholder (gated by `content_type:read`) with a light
+ * Card, Badge and Table restyle (AC-39). It shows the content type's name, kind and fields, then
+ * the first page of a collection type (with `orderBy` and `sortDir` taken from the URL) or the
+ * status of a single type. The styled screens arrive in Phase 5.
  */
 const ContentTypePage: React.FC = () => {
   const { slug = '' } = useParams();
@@ -100,37 +139,60 @@ const ContentTypePage: React.FC = () => {
   if (error?.status === 404)
     return (
       <section>
-        <p role="alert">Content type not found.</p>
+        <p role="alert" className={ALERT}>
+          Content type not found.
+        </p>
       </section>
     );
   if (error)
     return (
       <section>
-        <p role="alert">Couldn't load this content type.</p>
+        <p role="alert" className={ALERT}>
+          Couldn't load this content type.
+        </p>
       </section>
     );
   if (isPending)
     return (
       <section>
-        <p role="status">Loading content type…</p>
+        <p role="status" className={STATUS}>
+          Loading content type…
+        </p>
       </section>
     );
 
   return (
     <section>
-      <h1>{type.name}</h1>
-      <p>Kind: {type.kind === 'single' ? 'Single type' : 'Collection type'}</p>
-      <h2 id="content-type-fields">Fields</h2>
-      <ul aria-labelledby="content-type-fields">
-        {type.fields.map((field) => (
-          <li key={field.name}>{field.name}</li>
-        ))}
-      </ul>
-      {type.kind === 'single' ? (
-        <SingleDocument type={type} />
-      ) : (
-        <CollectionDocuments type={type} />
-      )}
+      <Card>
+        <CardHeader>
+          <h1 className="text-2xl font-semibold tracking-tight">{type.name}</h1>
+          <Badge variant="secondary">
+            Kind: {type.kind === 'single' ? 'Single type' : 'Collection type'}
+          </Badge>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-6">
+          <div className="flex flex-col gap-2">
+            <h2 id="content-type-fields" className="text-base font-semibold">
+              Fields
+            </h2>
+            <ul aria-labelledby="content-type-fields" className="flex flex-wrap gap-2 font-mono">
+              {type.fields.map((field) => (
+                <li
+                  key={field.name}
+                  className="rounded-md border border-border bg-muted px-2 py-0.5 text-xs"
+                >
+                  {field.name}
+                </li>
+              ))}
+            </ul>
+          </div>
+          {type.kind === 'single' ? (
+            <SingleDocument type={type} />
+          ) : (
+            <CollectionDocuments type={type} />
+          )}
+        </CardContent>
+      </Card>
     </section>
   );
 };

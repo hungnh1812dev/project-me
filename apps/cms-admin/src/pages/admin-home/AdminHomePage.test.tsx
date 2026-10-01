@@ -18,4 +18,14 @@ describe('AdminHomePage', () => {
       '/admin/profile',
     );
   });
+
+  it('is a welcome card whose profile link is styled as a button (AC-38)', () => {
+    renderWithProviders(<AdminHomePage />, {
+      auth: { status: 'authenticated', user: makeMeUser({ name: 'Jane Doe' }) },
+    });
+
+    const heading = screen.getByRole('heading', { name: 'Welcome, Jane Doe' });
+    expect(heading.closest('[data-slot="card"]')).not.toBeNull();
+    expect(screen.getByRole('link', { name: 'Your profile' })).toHaveClass('inline-flex');
+  });
 });

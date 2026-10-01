@@ -240,4 +240,23 @@ describe('ContentTypePage (AC-32)', () => {
 
     expect(await screen.findByText('Loading documents…')).toHaveAttribute('role', 'status');
   });
+
+  it('uses Card, Badge and Table, with the field names in mono font (AC-4, AC-39)', async () => {
+    server.use(
+      getContentTypeHandler().handler,
+      listDocumentsHandler(() => HttpResponse.json(makeListResponse({ items: [], total: 0 })))
+        .handler,
+    );
+
+    renderPage('/admin/content-types/article');
+
+    const heading = await screen.findByRole('heading', { level: 1, name: 'Article' });
+    expect(heading.closest('[data-slot="card"]')).not.toBeNull();
+    expect(screen.getByText('Kind: Collection type')).toHaveAttribute('data-slot', 'badge');
+    expect(screen.getByRole('list', { name: 'Fields' })).toHaveClass('font-mono');
+    expect(await screen.findByRole('table', { name: 'Documents' })).toHaveAttribute(
+      'data-slot',
+      'table',
+    );
+  });
 });

@@ -1,6 +1,11 @@
 import { useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 
+import { Field } from '@/components/form/Field';
+import { PasswordInput } from '@/components/form/PasswordInput';
+import { Alert } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { useHasUsersQuery, useRegisterMutation } from '@/core/api/AuthApi';
 import { toApiErrorData } from '@/core/api/axiosBaseQuery';
 import {
@@ -9,8 +14,14 @@ import {
   type RegisterErrors,
   type RegisterForm,
 } from '@/features/auth/onboarding';
+import AuthLayout from '@/layouts/AuthLayout';
 
-const FIELDS: { name: keyof RegisterForm; label: string; type: string; autoComplete: string }[] = [
+const FIELDS: {
+  name: keyof RegisterForm;
+  label: string;
+  type: 'text' | 'email' | 'password';
+  autoComplete: string;
+}[] = [
   { name: 'name', label: 'Name', type: 'text', autoComplete: 'name' },
   { name: 'username', label: 'Username', type: 'text', autoComplete: 'username' },
   { name: 'email', label: 'Email', type: 'email', autoComplete: 'email' },
@@ -49,38 +60,43 @@ const RegisterPage: React.FC = () => {
   };
 
   return (
-    <main>
-      <h1>{firstRun ? 'Set up admin account' : 'Create account'}</h1>
-      <form noValidate onSubmit={(event) => void handleSubmit(event)}>
+    <AuthLayout
+      title={firstRun ? 'Set up admin account' : 'Create account'}
+      footer={
+        <Button variant="link" className="px-0" render={<Link to="/login" />}>
+          Back to sign in
+        </Button>
+      }
+    >
+      <form
+        noValidate
+        className="flex flex-col gap-4"
+        onSubmit={(event) => void handleSubmit(event)}
+      >
         {FIELDS.map(({ name, label, type, autoComplete }) => {
-          const id = `register-${name}`;
-          const fieldError = fieldErrors[name];
+          const controlProps = {
+            id: `register-${name}`,
+            autoComplete,
+            value: form[name],
+            onChange: (event: React.ChangeEvent<HTMLInputElement>) =>
+              setForm({ ...form, [name]: event.target.value }),
+          };
           return (
-            <p key={name}>
-              <label htmlFor={id}>{label}</label>
-              <input
-                id={id}
-                type={type}
-                autoComplete={autoComplete}
-                required
-                aria-invalid={fieldError ? true : undefined}
-                aria-describedby={fieldError ? `${id}-error` : undefined}
-                value={form[name]}
-                onChange={(event) => setForm({ ...form, [name]: event.target.value })}
-              />
-              {fieldError && <span id={`${id}-error`}>{fieldError}</span>}
-            </p>
+            <Field key={name} label={label} required error={fieldErrors[name]}>
+              {type === 'password' ? (
+                <PasswordInput {...controlProps} />
+              ) : (
+                <Input {...controlProps} type={type} />
+              )}
+            </Field>
           );
         })}
-        {error && <p role="alert">{error}</p>}
-        <button type="submit" disabled={isLoading}>
+        {error && <Alert variant="destructive">{error}</Alert>}
+        <Button type="submit" className="w-full" loading={isLoading}>
           {isLoading ? 'Creating account…' : 'Create account'}
-        </button>
+        </Button>
       </form>
-      <p>
-        <Link to="/login">Back to sign in</Link>
-      </p>
-    </main>
+    </AuthLayout>
   );
 };
 RegisterPage.displayName = 'RegisterPage';

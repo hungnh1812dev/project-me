@@ -1,10 +1,18 @@
 import { useState, type FormEvent } from 'react';
 import { Link, Navigate, useLocation } from 'react-router-dom';
 
+import { Field } from '@/components/form/Field';
+import { PasswordInput } from '@/components/form/PasswordInput';
+import { Alert } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { useHasUsersQuery } from '@/core/api/AuthApi';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { loginNoticeMessage } from '@/features/auth/onboarding';
 import { redirectTarget } from '@/features/auth/redirect';
+import AuthLayout from '@/layouts/AuthLayout';
 
 /**
  * `/login`. A signed-in user (already, or after submitting) goes to `state.from`, or `/admin`
@@ -45,54 +53,52 @@ const LoginPage: React.FC = () => {
   };
 
   return (
-    <main>
-      <h1>Sign in</h1>
-      {notice && <p role="status">{notice}</p>}
-      <form onSubmit={(event) => void handleSubmit(event)}>
-        <p>
-          <label htmlFor="login-email">Email</label>
-          <input
+    <AuthLayout
+      title="Sign in"
+      footer={
+        <>
+          <Button variant="link" className="px-0" render={<Link to="/forgot-password" />}>
+            Forgot your password?
+          </Button>
+          <Button variant="link" className="px-0" render={<Link to="/register" />}>
+            Create an account
+          </Button>
+        </>
+      }
+    >
+      {notice && <Alert role="status">{notice}</Alert>}
+      <form className="flex flex-col gap-4" onSubmit={(event) => void handleSubmit(event)}>
+        <Field label="Email" required>
+          <Input
             id="login-email"
             type="email"
             autoComplete="username"
-            required
             value={email}
             onChange={(event) => setEmail(event.target.value)}
           />
-        </p>
-        <p>
-          <label htmlFor="login-password">Password</label>
-          <input
+        </Field>
+        <Field label="Password" required>
+          <PasswordInput
             id="login-password"
-            type="password"
             autoComplete="current-password"
-            required
             value={password}
             onChange={(event) => setPassword(event.target.value)}
           />
-        </p>
-        <p>
-          <label>
-            <input
-              type="checkbox"
-              checked={rememberMe}
-              onChange={(event) => setRememberMe(event.target.checked)}
-            />{' '}
-            Remember me
-          </label>
-        </p>
-        {error && <p role="alert">{error}</p>}
-        <button type="submit" disabled={pending || checkingSession}>
+        </Field>
+        <div className="flex items-center gap-2">
+          <Checkbox
+            id="login-remember"
+            checked={rememberMe}
+            onCheckedChange={(checked) => setRememberMe(checked)}
+          />
+          <Label htmlFor="login-remember">Remember me</Label>
+        </div>
+        {error && <Alert variant="destructive">{error}</Alert>}
+        <Button type="submit" className="w-full" loading={pending} disabled={checkingSession}>
           {pending ? 'Signing in…' : 'Sign in'}
-        </button>
+        </Button>
       </form>
-      <p>
-        <Link to="/forgot-password">Forgot your password?</Link>
-      </p>
-      <p>
-        <Link to="/register">Create an account</Link>
-      </p>
-    </main>
+    </AuthLayout>
   );
 };
 LoginPage.displayName = 'LoginPage';

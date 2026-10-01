@@ -25,6 +25,32 @@ describe('ForgotPasswordPage', () => {
     expect(screen.getByRole('link', { name: 'Back to sign in' })).toHaveAttribute('href', '/login');
   });
 
+  it('renders in AuthLayout with a Field-wired email input (AC-41, AC-42)', () => {
+    renderForgot();
+
+    expect(screen.getByRole('main')).toHaveTextContent('hungnhdev CMS');
+    expect(screen.getByLabelText('Email')).toHaveAttribute('aria-required', 'true');
+    expect(screen.getByRole('button', { name: 'Send reset link' })).toHaveAttribute(
+      'data-slot',
+      'button',
+    );
+  });
+
+  it('shows the generic message and errors in Alert boxes (AC-42)', async () => {
+    server.use(
+      http.post('*/api/v1/auth/forgot-password', () => HttpResponse.json({ message: 'ok' })),
+    );
+    const { user } = renderForgot();
+
+    await user.type(screen.getByLabelText('Email'), 'jane');
+    await user.click(screen.getByRole('button', { name: 'Send reset link' }));
+    expect(screen.getByRole('alert')).toHaveAttribute('data-slot', 'alert');
+
+    await user.type(screen.getByLabelText('Email'), '@example.com');
+    await user.click(screen.getByRole('button', { name: 'Send reset link' }));
+    expect(await screen.findByRole('status')).toHaveAttribute('data-slot', 'alert');
+  });
+
   it('posts the email and shows the generic message', async () => {
     let body: unknown;
     server.use(
@@ -97,7 +123,9 @@ describe('ForgotPasswordPage', () => {
     await user.type(screen.getByLabelText('Email'), 'jane@example.com');
     await user.click(screen.getByRole('button', { name: 'Send reset link' }));
 
-    expect(screen.getByRole('button', { name: 'Sending…' })).toBeDisabled();
+    const button = screen.getByRole('button', { name: 'Sending…' });
+    expect(button).toHaveAttribute('aria-disabled', 'true');
+    expect(button).toHaveAttribute('aria-busy', 'true');
     expect(await screen.findByRole('status')).toBeInTheDocument();
   });
 });

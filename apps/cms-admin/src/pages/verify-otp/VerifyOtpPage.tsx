@@ -1,6 +1,10 @@
 import { useState, type FormEvent } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 
+import { Field } from '@/components/form/Field';
+import { Alert } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { useResendOtpMutation, useVerifyOtpMutation } from '@/core/api/AuthApi';
 import { toApiErrorData } from '@/core/api/axiosBaseQuery';
 import {
@@ -11,6 +15,7 @@ import {
   validateOtp,
   verifyOtpErrorMessage,
 } from '@/features/auth/onboarding';
+import AuthLayout from '@/layouts/AuthLayout';
 
 interface PageError {
   message: string;
@@ -74,54 +79,67 @@ const VerifyOtpPage: React.FC = () => {
   };
 
   return (
-    <main>
-      <h1>Verify your email</h1>
-      <p>Enter the 6-digit code we sent to your email.</p>
-      <form noValidate onSubmit={(event) => void handleVerify(event)}>
-        <p>
-          <label htmlFor="verify-email">Email</label>
-          <input
+    <AuthLayout
+      title="Verify your email"
+      description="Enter the 6-digit code we sent to your email."
+    >
+      <form
+        noValidate
+        className="flex flex-col gap-4"
+        onSubmit={(event) => void handleVerify(event)}
+      >
+        <Field label="Email" required>
+          <Input
             id="verify-email"
             type="email"
             autoComplete="email"
-            required
             value={email}
             onChange={(event) => setEmail(event.target.value)}
           />
-        </p>
-        <p>
-          <label htmlFor="verify-otp">Verification code</label>
-          <input
+        </Field>
+        <Field label="Verification code" required>
+          <Input
             id="verify-otp"
             type="text"
             inputMode="numeric"
             autoComplete="one-time-code"
             maxLength={6}
-            required
+            className="font-mono tracking-[0.3em]"
             value={otp}
             onChange={(event) => setOtp(event.target.value.trim())}
           />
-        </p>
+        </Field>
         {error && (
-          <p role="alert">
-            {error.message}
-            {error.alreadyVerified && (
-              <>
-                {' '}
-                <Link to="/login">Go to sign in</Link>
-              </>
-            )}
-          </p>
+          <Alert variant="destructive">
+            <p>
+              {error.message}
+              {error.alreadyVerified && (
+                <>
+                  {' '}
+                  <Link to="/login" className="underline underline-offset-4">
+                    Go to sign in
+                  </Link>
+                </>
+              )}
+            </p>
+          </Alert>
         )}
-        {sentTo && <p role="status">A new code was sent to {sentTo}.</p>}
-        <button type="submit" disabled={verifying}>
-          {verifying ? 'Verifying…' : 'Verify'}
-        </button>{' '}
-        <button type="button" disabled={resending} onClick={() => void handleResend()}>
-          Resend code
-        </button>
+        {sentTo && <Alert role="status">A new code was sent to {sentTo}.</Alert>}
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <Button type="submit" className="sm:flex-1" loading={verifying}>
+            {verifying ? 'Verifying…' : 'Verify'}
+          </Button>
+          <Button
+            variant="outline"
+            className="sm:flex-1"
+            loading={resending}
+            onClick={() => void handleResend()}
+          >
+            Resend code
+          </Button>
+        </div>
       </form>
-    </main>
+    </AuthLayout>
   );
 };
 VerifyOtpPage.displayName = 'VerifyOtpPage';

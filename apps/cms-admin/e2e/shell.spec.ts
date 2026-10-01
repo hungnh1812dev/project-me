@@ -80,7 +80,9 @@ test('the shell has one main, a sticky header and a footer at the bottom', async
   expect(box && viewport && Math.round(box.y + box.height)).toBe(viewport?.height);
 });
 
-test('public pages render without the shell', async ({ page }) => {
+test('public pages render without the shell', async ({ page, mockApi }) => {
+  // With no users, /login redirects to /register (first run); seed one so the form stays.
+  mockApi.addUser({ email: 'jane@example.com' });
   await page.goto('/login');
 
   await expect(page.getByRole('heading', { name: 'Sign in' })).toBeVisible();
@@ -139,7 +141,7 @@ test('Log out from the account menu returns to the same page after signing in', 
   );
 
   await page.getByLabel('Email').fill(JANE.email);
-  await page.getByLabel('Password').fill(DEFAULT_PASSWORD);
+  await page.getByLabel('Password', { exact: true }).fill(DEFAULT_PASSWORD);
   await page.getByRole('button', { name: 'Sign in' }).click();
   await expect(page).toHaveURL('/admin/profile');
 });

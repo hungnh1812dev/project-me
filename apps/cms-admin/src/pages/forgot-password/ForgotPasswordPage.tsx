@@ -1,9 +1,14 @@
 import { useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 
+import { Field } from '@/components/form/Field';
+import { Alert } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { useForgotPasswordMutation } from '@/core/api/AuthApi';
 import { toApiErrorData } from '@/core/api/axiosBaseQuery';
 import { validateEmail } from '@/features/auth/onboarding';
+import AuthLayout from '@/layouts/AuthLayout';
 
 const GENERIC_MESSAGE = 'If that email exists, a reset link was sent.';
 
@@ -35,30 +40,35 @@ const ForgotPasswordPage: React.FC = () => {
   };
 
   return (
-    <main>
-      <h1>Reset your password</h1>
-      <form noValidate onSubmit={(event) => void handleSubmit(event)}>
-        <p>
-          <label htmlFor="forgot-email">Email</label>
-          <input
+    <AuthLayout
+      title="Reset your password"
+      footer={
+        <Button variant="link" className="px-0" render={<Link to="/login" />}>
+          Back to sign in
+        </Button>
+      }
+    >
+      <form
+        noValidate
+        className="flex flex-col gap-4"
+        onSubmit={(event) => void handleSubmit(event)}
+      >
+        <Field label="Email" required>
+          <Input
             id="forgot-email"
             type="email"
             autoComplete="email"
-            required
             value={email}
             onChange={(event) => setEmail(event.target.value)}
           />
-        </p>
-        {error && <p role="alert">{error}</p>}
-        {sent && <p role="status">{GENERIC_MESSAGE}</p>}
-        <button type="submit" disabled={isLoading}>
+        </Field>
+        {error && <Alert variant="destructive">{error}</Alert>}
+        {sent && <Alert role="status">{GENERIC_MESSAGE}</Alert>}
+        <Button type="submit" className="w-full" loading={isLoading}>
           {isLoading ? 'Sending…' : 'Send reset link'}
-        </button>
+        </Button>
       </form>
-      <p>
-        <Link to="/login">Back to sign in</Link>
-      </p>
-    </main>
+    </AuthLayout>
   );
 };
 ForgotPasswordPage.displayName = 'ForgotPasswordPage';

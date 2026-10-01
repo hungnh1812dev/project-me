@@ -46,6 +46,38 @@ describe('LoginPage', () => {
     expect(screen.getByRole('checkbox', { name: 'Remember me' })).not.toBeChecked();
   });
 
+  it('renders in AuthLayout with Field-wired inputs and a password toggle (AC-41, AC-42)', () => {
+    renderLogin();
+
+    expect(screen.getByRole('main')).toHaveTextContent('hungnhdev CMS');
+    expect(screen.getByLabelText('Email')).toHaveAttribute('aria-required', 'true');
+    expect(screen.getByLabelText('Password')).toHaveAttribute('aria-required', 'true');
+    expect(screen.getByRole('button', { name: 'Show password' })).toBeInTheDocument();
+    expect(screen.getByRole('checkbox', { name: 'Remember me' })).toHaveAttribute(
+      'data-slot',
+      'checkbox',
+    );
+  });
+
+  it('marks the submit button busy while signing in (AC-43)', async () => {
+    server.use(
+      http.post('*/api/v1/auth/login', async () => {
+        await delay(50);
+        return apiError(401, 'Unauthorized');
+      }),
+    );
+    const { user } = renderLogin();
+
+    await fillAndSubmit(user);
+
+    expect(screen.getByRole('button', { name: 'Signing in…' })).toHaveAttribute(
+      'aria-busy',
+      'true',
+    );
+    const alert = await screen.findByRole('alert');
+    expect(alert).toHaveAttribute('data-slot', 'alert');
+  });
+
   it('signs in, sends the form values, and goes to /admin', async () => {
     let body: unknown;
     server.use(
@@ -93,7 +125,10 @@ describe('LoginPage', () => {
 
     await fillAndSubmit(user);
 
-    expect(screen.getByRole('button', { name: 'Signing in…' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Signing in…' })).toHaveAttribute(
+      'aria-disabled',
+      'true',
+    );
     expect(await screen.findByRole('alert')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Sign in' })).toBeEnabled();
   });
@@ -189,7 +224,9 @@ describe('LoginPage', () => {
     const { router } = renderLogin();
     await router.navigate('/login', { state: loginNoticeState(notice) });
 
-    expect(await screen.findByRole('status')).toHaveTextContent(text);
+    const status = await screen.findByRole('status');
+    expect(status).toHaveTextContent(text);
+    expect(status).toHaveAttribute('data-slot', 'alert');
   });
 
   it('links to password recovery and registration', () => {

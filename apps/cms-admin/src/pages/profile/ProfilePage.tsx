@@ -1,7 +1,19 @@
+import { LogOutIcon } from 'lucide-react';
+
+import { Alert } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
+import { Separator } from '@/components/ui/separator';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { useCurrentUserQuery } from '@/features/auth/hooks/useCurrentUserQuery';
+import { cn } from '@/utils/cn';
 
-/** `/admin/profile`: who is signed in, their role and permissions, and Log out. */
+const DL = 'grid grid-cols-[minmax(6rem,auto)_1fr] gap-x-4 gap-y-2 text-sm';
+const DT = 'text-muted-foreground';
+const DD = 'min-w-0 break-words text-foreground';
+
+/** `/admin/profile`: who is signed in, their role and permissions, and Log out (AC-38). */
 const ProfilePage: React.FC = () => {
   const { user: sessionUser, logout } = useAuth();
   const { data: freshUser, isError } = useCurrentUserQuery();
@@ -12,49 +24,75 @@ const ProfilePage: React.FC = () => {
   const permissions = role?.permissions ?? [];
 
   return (
-    <section>
-      <h1>Your profile</h1>
-      {isError && <p role="alert">Couldn&apos;t refresh your profile.</p>}
+    <section className="mx-auto flex max-w-3xl flex-col gap-4">
+      {isError && <Alert variant="destructive">Couldn&apos;t refresh your profile.</Alert>}
+      <Card>
+        <CardHeader>
+          <h1 className="text-2xl font-semibold tracking-tight">Your profile</h1>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-6">
+          <dl className={DL}>
+            <dt className={DT}>Name</dt>
+            <dd className={DD}>{user.name}</dd>
+            <dt className={DT}>Username</dt>
+            <dd className={DD}>{user.username}</dd>
+            <dt className={DT}>Email</dt>
+            <dd className={DD}>{user.email}</dd>
+            <dt className={DT}>Email status</dt>
+            <dd className={DD}>
+              <Badge variant={user.verified ? 'secondary' : 'destructive'}>
+                {user.verified ? 'Verified' : 'Not verified'}
+              </Badge>
+            </dd>
+          </dl>
 
-      <dl>
-        <dt>Name</dt>
-        <dd>{user.name}</dd>
-        <dt>Username</dt>
-        <dd>{user.username}</dd>
-        <dt>Email</dt>
-        <dd>{user.email}</dd>
-        <dt>Email status</dt>
-        <dd>{user.verified ? 'Verified' : 'Not verified'}</dd>
-      </dl>
+          <Separator />
 
-      <h2>Role</h2>
-      {role ? (
-        <dl>
-          <dt>Name</dt>
-          <dd>{role.name}</dd>
-          <dt>Slug</dt>
-          <dd>{role.slug}</dd>
-          <dt>Level</dt>
-          <dd>{role.level}</dd>
-        </dl>
-      ) : (
-        <p>No role assigned</p>
-      )}
+          <div className="flex flex-col gap-3">
+            <h2 className="text-base font-semibold">Role</h2>
+            {role ? (
+              <dl className={DL}>
+                <dt className={DT}>Name</dt>
+                <dd className={DD}>{role.name}</dd>
+                <dt className={DT}>Slug</dt>
+                <dd className={cn(DD, 'font-mono')}>{role.slug}</dd>
+                <dt className={DT}>Level</dt>
+                <dd className={DD}>{role.level}</dd>
+              </dl>
+            ) : (
+              <p className="text-sm text-muted-foreground">No role assigned</p>
+            )}
+          </div>
 
-      <h2 id="profile-permissions">Permissions</h2>
-      {permissions.length > 0 ? (
-        <ul aria-labelledby="profile-permissions">
-          {permissions.map((slug) => (
-            <li key={slug}>{slug}</li>
-          ))}
-        </ul>
-      ) : (
-        <p>No permissions</p>
-      )}
+          <Separator />
 
-      <button type="button" onClick={() => void logout()}>
-        Log out
-      </button>
+          <div className="flex flex-col gap-3">
+            <h2 id="profile-permissions" className="text-base font-semibold">
+              Permissions
+            </h2>
+            {permissions.length > 0 ? (
+              <ul aria-labelledby="profile-permissions" className="flex flex-wrap gap-2 font-mono">
+                {permissions.map((slug) => (
+                  <li
+                    key={slug}
+                    className="rounded-md border border-border bg-muted px-2 py-0.5 text-xs text-foreground"
+                  >
+                    {slug}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-sm text-muted-foreground">No permissions</p>
+            )}
+          </div>
+        </CardContent>
+        <CardFooter className="justify-end">
+          <Button variant="outline" onClick={() => void logout()}>
+            <LogOutIcon aria-hidden="true" />
+            Log out
+          </Button>
+        </CardFooter>
+      </Card>
     </section>
   );
 };

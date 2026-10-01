@@ -116,4 +116,18 @@ describe('ProfilePage', () => {
     expect(store.getState().auth).toMatchObject({ status: 'unauthenticated', accessToken: null });
     await vi.waitFor(() => expect(loggedOut).toBe(true));
   });
+
+  it('is a card with the slug and permissions in mono font and a Log out button (AC-4, AC-38)', () => {
+    renderProfile(
+      makeMeUser({
+        role: makeRole({ name: 'Editor', slug: 'editor', permissions: ['a:read'] }),
+      }),
+    );
+
+    const heading = screen.getByRole('heading', { level: 1, name: 'Your profile' });
+    expect(heading.closest('[data-slot="card"]')).not.toBeNull();
+    expect(screen.getByText('editor')).toHaveClass('font-mono');
+    expect(screen.getByRole('list', { name: 'Permissions' })).toHaveClass('font-mono');
+    expect(screen.getByRole('button', { name: 'Log out' })).toHaveAttribute('data-slot', 'button');
+  });
 });

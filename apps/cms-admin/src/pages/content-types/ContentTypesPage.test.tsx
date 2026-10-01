@@ -86,4 +86,20 @@ describe('ContentTypesPage (AC-31)', () => {
 
     expect(await screen.findByRole('alert')).toHaveTextContent("Couldn't load content types.");
   });
+
+  it('shows each group as a card, with the slugs in mono font (AC-4, AC-39)', async () => {
+    server.use(
+      getContentTypesHandler(() =>
+        Response.json([makeContentTypeSummary({ slug: 'home', name: 'Home', kind: 'single' })]),
+      ).handler,
+    );
+
+    renderWithProviders(<ContentTypesPage />, READER);
+
+    const single = await screen.findByRole('region', { name: 'Single types' });
+    expect(single.querySelector('[data-slot="card"]')).not.toBeNull();
+    const collection = screen.getByRole('region', { name: 'Collection types' });
+    expect(collection.querySelector('[data-slot="card"]')).not.toBeNull();
+    expect(within(single).getByText('home')).toHaveClass('font-mono');
+  });
 });

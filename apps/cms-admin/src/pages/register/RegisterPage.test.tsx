@@ -61,6 +61,25 @@ describe('RegisterPage', () => {
     expect(screen.getByRole('link', { name: 'Back to sign in' })).toHaveAttribute('href', '/login');
   });
 
+  it('renders in AuthLayout with Field-wired inputs and a password toggle (AC-41, AC-42)', async () => {
+    renderRegister();
+
+    expect(await screen.findByRole('main')).toHaveTextContent('hungnhdev CMS');
+    for (const label of ['Name', 'Username', 'Email', 'Password']) {
+      expect(screen.getByLabelText(label)).toHaveAttribute('aria-required', 'true');
+    }
+    expect(screen.getByRole('button', { name: 'Show password' })).toBeInTheDocument();
+  });
+
+  it('shows the field errors through Field as alerts (AC-7, AC-42)', async () => {
+    const { user } = renderRegister();
+
+    await user.click(screen.getByRole('button', { name: 'Create account' }));
+
+    expect(screen.getByLabelText('Name')).toHaveAccessibleDescription('Name is required.');
+    expect(screen.getAllByRole('alert').map((el) => el.textContent)).toContain('Name is required.');
+  });
+
   it('validates every field before calling the API', async () => {
     let called = false;
     server.use(
@@ -121,7 +140,9 @@ describe('RegisterPage', () => {
     await fill(user);
     await user.click(screen.getByRole('button', { name: 'Create account' }));
 
-    expect(screen.getByRole('button', { name: 'Creating account…' })).toBeDisabled();
+    const button = screen.getByRole('button', { name: 'Creating account…' });
+    expect(button).toHaveAttribute('aria-disabled', 'true');
+    expect(button).toHaveAttribute('aria-busy', 'true');
     expect(await screen.findByRole('alert')).toBeInTheDocument();
   });
 

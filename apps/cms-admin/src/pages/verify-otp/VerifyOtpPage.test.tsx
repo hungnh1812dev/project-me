@@ -44,6 +44,16 @@ describe('VerifyOtpPage', () => {
     expect(otp).toHaveAttribute('autocomplete', 'one-time-code');
   });
 
+  it('renders in AuthLayout with Field-wired inputs and a mono OTP input (AC-4, AC-41, AC-42)', async () => {
+    await renderVerify();
+
+    expect(screen.getByRole('main')).toHaveTextContent('hungnhdev CMS');
+    expect(screen.getByLabelText('Email')).toHaveAttribute('aria-required', 'true');
+    const otp = screen.getByLabelText('Verification code');
+    expect(otp).toHaveAttribute('aria-required', 'true');
+    expect(otp).toHaveClass('font-mono');
+  });
+
   it('starts with an empty email when there is no state', async () => {
     await renderVerify(null);
 
@@ -96,7 +106,9 @@ describe('VerifyOtpPage', () => {
     await user.type(screen.getByLabelText('Verification code'), '123456');
     await user.click(screen.getByRole('button', { name: 'Verify' }));
 
-    expect(screen.getByRole('button', { name: 'Verifying…' })).toBeDisabled();
+    const button = screen.getByRole('button', { name: 'Verifying…' });
+    expect(button).toHaveAttribute('aria-disabled', 'true');
+    expect(button).toHaveAttribute('aria-busy', 'true');
     expect(await screen.findByRole('alert')).toBeInTheDocument();
   });
 

@@ -15,7 +15,7 @@ test('a first run goes register → verify → sign in as the admin', async ({ p
   await page.getByLabel('Name', { exact: true }).fill(ADMIN.name);
   await page.getByLabel('Username').fill(ADMIN.username);
   await page.getByLabel('Email').fill(ADMIN.email);
-  await page.getByLabel('Password').fill(ADMIN.password);
+  await page.getByLabel('Password', { exact: true }).fill(ADMIN.password);
   await page.getByRole('button', { name: 'Create account' }).click();
 
   await expect(page).toHaveURL('/verify-otp');
@@ -31,7 +31,7 @@ test('a first run goes register → verify → sign in as the admin', async ({ p
   await expect(page).toHaveURL('/login');
   await expect(page.getByRole('status')).toHaveText('Your email is verified. Please sign in.');
   await page.getByLabel('Email').fill(ADMIN.email);
-  await page.getByLabel('Password').fill(ADMIN.password);
+  await page.getByLabel('Password', { exact: true }).fill(ADMIN.password);
   await page.getByRole('button', { name: 'Sign in' }).click();
 
   await expect(page).toHaveURL('/admin');
@@ -46,7 +46,7 @@ test('registering a taken email shows the conflict message', async ({ page, mock
   await page.getByLabel('Name', { exact: true }).fill(ADMIN.name);
   await page.getByLabel('Username').fill(ADMIN.username);
   await page.getByLabel('Email').fill(ADMIN.email);
-  await page.getByLabel('Password').fill(ADMIN.password);
+  await page.getByLabel('Password', { exact: true }).fill(ADMIN.password);
   await page.getByRole('button', { name: 'Create account' }).click();
 
   await expect(page.getByRole('alert')).toHaveText('Email or username is already in use.');
@@ -75,11 +75,11 @@ test('forgot → reset → sign in with the new password', async ({ page, mockAp
     'Your password has been reset. Please sign in.',
   );
   await page.getByLabel('Email').fill(jane.email);
-  await page.getByLabel('Password').fill(DEFAULT_PASSWORD);
+  await page.getByLabel('Password', { exact: true }).fill(DEFAULT_PASSWORD);
   await page.getByRole('button', { name: 'Sign in' }).click();
   await expect(page.getByRole('alert')).toHaveText('Invalid email or password.');
 
-  await page.getByLabel('Password').fill('brand-new-pass');
+  await page.getByLabel('Password', { exact: true }).fill('brand-new-pass');
   await page.getByRole('button', { name: 'Sign in' }).click();
   await expect(page.getByRole('heading', { name: 'Welcome, Jane Doe' })).toBeVisible();
 });

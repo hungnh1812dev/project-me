@@ -50,6 +50,21 @@ describe('ResetPasswordPage', () => {
     expect(screen.queryByLabelText('New password')).not.toBeInTheDocument();
   });
 
+  it('renders the link-expired state in AuthLayout (AC-41)', () => {
+    renderReset('/reset-password');
+
+    expect(screen.getByRole('main')).toHaveTextContent('hungnhdev CMS');
+  });
+
+  it('renders the form in AuthLayout with password toggles (AC-41, AC-42)', () => {
+    renderReset();
+
+    expect(screen.getByRole('main')).toHaveTextContent('hungnhdev CMS');
+    expect(screen.getByLabelText('New password')).toHaveAttribute('aria-required', 'true');
+    expect(screen.getByLabelText('Confirm new password')).toHaveAttribute('aria-required', 'true');
+    expect(screen.getAllByRole('button', { name: 'Show password' })).toHaveLength(2);
+  });
+
   it('shows the form with labelled password fields', () => {
     renderReset();
 
@@ -120,7 +135,9 @@ describe('ResetPasswordPage', () => {
 
     await submit(user);
 
-    expect(screen.getByRole('button', { name: 'Resetting…' })).toBeDisabled();
+    const button = screen.getByRole('button', { name: 'Resetting…' });
+    expect(button).toHaveAttribute('aria-disabled', 'true');
+    expect(button).toHaveAttribute('aria-busy', 'true');
     expect(await screen.findByRole('alert')).toHaveTextContent('Boom');
     expect(screen.getByRole('button', { name: 'Reset password' })).toBeEnabled();
   });
