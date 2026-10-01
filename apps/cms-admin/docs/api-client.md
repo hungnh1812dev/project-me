@@ -81,7 +81,7 @@ class ApiError extends Error {
 
 - **Every HTTP call goes through `cmsApi`.** Do not create another axios instance or call `fetch` directly, or the bearer and the refresh are lost.
 - **RTK Query:** `axiosBaseQuery` (`src/core/api/axiosBaseQuery.ts`) calls `cmsApi` and maps a rejection to `{ error: ApiErrorData }`, a plain copy of the `ApiError` fields made by `toApiErrorData(e)`. The `authApi` endpoints pass `skipAuthRefresh: true`; refresh is not an endpoint (use `refreshAccessToken()`).
-- **React Query (Phase 2+):** a query or mutation function calls `cmsApi` and lets the `ApiError` propagate, so `error` is typed as `ApiError`. Narrow `unknown` errors with `isApiError` or `toApiError`. Check `status === 403` to show a forbidden state; 401s have already been handled by the client.
+- **React Query (Phase 2+):** a query or mutation function calls `cmsApi` and lets the `ApiError` propagate, so `error` is typed as `ApiError`. Narrow `unknown` errors with `isApiError` or `toApiError`. Check `status === 403` to show a forbidden state; 401s have already been handled by the client. The content hooks follow this pattern; see [Content data](./content-data.md).
 
 ## Testing
 

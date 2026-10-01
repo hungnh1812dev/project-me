@@ -44,6 +44,18 @@ describe('normalizeListParams (AC-2)', () => {
     expect(Object.keys(out.filters ?? {})).toEqual(['author', 'title', 'views']);
   });
 
+  it('sorts the operators within a field', () => {
+    const out = normalizeListParams({ filters: { views: { $gt: 1, $lt: 9, $eq: 5 } } });
+
+    expect(Object.keys(out.filters?.views ?? {})).toEqual(['$eq', '$gt', '$lt']);
+  });
+
+  it('drops a field whose operator map is missing at runtime', () => {
+    const input = { filters: { title: undefined, views: { $gt: 1 } } } as unknown as ListParams;
+
+    expect(normalizeListParams(input)).toEqual({ filters: { views: { $gt: 1 } } });
+  });
+
   it('maps equal inputs to deep-equal outputs', () => {
     const a = normalizeListParams({});
     const b = normalizeListParams({ start: 0, size: 20, search: ' ', filters: {} });
@@ -193,6 +205,12 @@ describe('validateListParams (AC-5)', () => {
 
     expect(problems).toHaveLength(1);
     expect(problems[0]).toMatch(pattern);
+  });
+
+  it('ignores a field whose operator map is missing at runtime', () => {
+    const params = { filters: { title: undefined } } as unknown as ListParams;
+
+    expect(validateListParams(params)).toEqual([]);
   });
 
   it('reports every violation at once', () => {

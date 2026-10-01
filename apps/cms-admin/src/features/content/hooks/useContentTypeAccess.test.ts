@@ -75,7 +75,9 @@ describe('useContentTypeAccess', () => {
     expect(result.current.delete.allowed).toBe(false);
 
     act(() => {
-      store.dispatch(userLoaded(makeMeUser({ role: makeRole({ permissions: ['document:delete'] }) })));
+      store.dispatch(
+        userLoaded(makeMeUser({ role: makeRole({ permissions: ['document:delete'] }) })),
+      );
     });
 
     expect(result.current.delete).toEqual({ allowed: true, reason: null });

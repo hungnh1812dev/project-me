@@ -186,9 +186,7 @@ describe.each([
 
     expect(outcome).toEqual({ status });
     expect(recorder.requests).toHaveLength(1);
-    expect(recorder.requests[0]?.url.pathname).toBe(
-      `/api/v1/documents/single-type/home/${action}`,
-    );
+    expect(recorder.requests[0]?.url.pathname).toBe(`/api/v1/documents/single-type/home/${action}`);
     expect(queryClient.getQueryState(contentKeys.single('home'))?.isInvalidated).toBe(true);
     expect(queryClient.getQueryState(contentKeys.single('about'))?.isInvalidated).toBe(false);
   });
