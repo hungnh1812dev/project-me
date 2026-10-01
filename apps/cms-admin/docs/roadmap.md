@@ -26,3 +26,15 @@ Resolve each one before the named phase starts.
 - `PUT /users/:id` stores passwords unhashed on the backend, so the admin offers no password change until that is fixed.
 - The profile page is read-only; profile editing moves to Phase 4.
 - Cross-tab session sync and health keep-alive pings are not implemented.
+
+## Open security findings (LOW, from the Phase 1 audit)
+
+The Phase 1 security audit passed with no CRITICAL, HIGH or MEDIUM findings. These LOW findings were accepted for now:
+
+| ID    | Finding                                                                                                                          | Where                                                                | Suggested fix                                                                              |
+| ----- | -------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| SEC-1 | A 401 refresh that is still running during logout can store a fresh access token after the session was cleared.                  | `src/core/api/CmsApi.ts`, `src/features/auth/store/sessionThunks.ts` | Drop refresh results that started before the logout (for example, with a session counter). |
+| SEC-2 | If the logout request fails, the user is not told, and the refresh cookie stays valid, so the next page load signs them back in. | `src/features/auth/store/sessionThunks.ts`                           | Tell the user when logout fails, or retry it.                                              |
+| SEC-3 | The Bearer token is added to every request, whatever its host. Every call uses a relative path today, so nothing leaks yet.      | `src/core/api/CmsApi.ts`                                             | Attach the token only to requests for the API's own origin.                                |
+| SEC-4 | No Content-Security-Policy or Referrer-Policy is set. The access token is in JS memory, so any XSS could read it.                | `index.html`, nginx config                                           | Add both headers before Phase 5 starts rendering HTML from the server.                     |
+| SEC-5 | The password-reset token stays in the URL and in browser history while the reset page is open.                                   | `src/pages/reset-password/ResetPasswordPage.tsx`                     | Read the token, then remove it from the URL with `history.replaceState`.                   |
