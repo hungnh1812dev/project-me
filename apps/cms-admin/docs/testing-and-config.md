@@ -29,7 +29,7 @@ Tooling and runtime config for `apps/cms-admin`: unit and e2e test setup, covera
 
 ## Coverage gates
 
-`test:cov` uses the v8 provider. Coverage includes `src/**/*.{ts,tsx}` and excludes `src/main.tsx`, `src/**/*.d.ts`, `src/test/**`, type-only `types.ts` files and the test files themselves.
+`test:cov` uses the v8 provider. Coverage includes `src/**/*.{ts,tsx}` and excludes `src/main.tsx`, `src/**/*.d.ts`, `src/test/**`, the vendored primitives in `src/components/ui/**`, type-only `types.ts` files and the test files themselves. `src/components/form/**` stays covered. The pure shell, theme and JSON modules (`navigation.ts`, `breadcrumbs.ts`, `theme.ts`, `storage.ts`, `json.ts`) are expected to keep at least 90% branch coverage.
 
 | Glob                                                                                      | Lines, statements, functions, branches |
 | ----------------------------------------------------------------------------------------- | -------------------------------------- |
@@ -45,6 +45,7 @@ The logic globs match only `.ts` and the UI glob only `.tsx`, so no file counts 
 - Config: `playwright.config.ts`. Chromium only. Specs live in `e2e/*.spec.ts`.
 - `webServer` starts `vite --port 5174 --strictPort` with `VITE_API_URL` set to empty, so the app calls the relative `/api/v1`. A running dev server on 5174 is reused locally.
 - Import `test` and `expect` from `e2e/fixtures/mockApi.ts`, not from `@playwright/test`. Its auto fixture routes every `**/api/v1/**` request through `page.route`, records it in `mockApi.requests` (with its status), and answers from a fake backend (users, roles, tokens and the refresh-cookie session; see [Routing and guards](./routing-and-guards.md#e2e-fixture-mockapi)). Anything not modelled gets a Nest-style 404. No e2e test needs a live backend.
+- `e2e/a11y.spec.ts` uses `@axe-core/playwright` (see [App shell](./app-shell.md#tests)).
 - Reports go to `playwright-report/` and `test-results/` (git-ignored).
 
 ## The `@/` alias
