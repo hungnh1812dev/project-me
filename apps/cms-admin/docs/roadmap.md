@@ -32,6 +32,12 @@ Resolve each one before the named phase starts.
 - The manual smoke against the real backend on :8080 has not run: no `super_admin` credentials were available on 2026-10-01. Phase 2 moves to DONE once it runs and its result is recorded in [Content data](./content-data.md).
 - The seeded `editor` role has no `content_type:read`, so no schema loads for an editor until that permission is granted. This is a backend seeding gap, not fixed in the admin.
 
+## Known gaps from Phase 3
+
+- The mobile menu drawer has `role="dialog"` but no `aria-modal="true"`. Focus trapping and Escape work and axe reports nothing, but screen readers may still read the page behind it. Add `aria-modal` to the vendored `sheet.tsx`.
+- The admin home welcome card has a capped width and is centred, while other cards inside the shell are full width.
+- The Phase 3 security audit re-raised SEC-4 below (no Content-Security-Policy). Phase 3 made the page CSP-ready: the theme pre-paint script is the external `public/theme-init.js`, and nothing is inline. The headers still belong in the hosting or proxy config.
+
 ## Open security findings (LOW, from the Phase 1 audit)
 
 The Phase 1 security audit passed with no CRITICAL, HIGH or MEDIUM findings. These LOW findings were accepted for now:
