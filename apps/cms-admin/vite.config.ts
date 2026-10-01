@@ -1,7 +1,27 @@
+import { fileURLToPath, URL } from 'node:url';
+
 import react from '@vitejs/plugin-react';
-import { defineConfig } from 'vite';
+import { defineConfig, loadEnv } from 'vite';
+
+const DEFAULT_PROXY_TARGET = 'http://localhost:8080';
 
 // https://vite.dev/config/
-export default defineConfig({
-  plugins: [react()],
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, process.cwd(), '');
+  const target = env.VITE_API_PROXY_TARGET || DEFAULT_PROXY_TARGET;
+
+  return {
+    plugins: [react()],
+    resolve: {
+      alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) },
+    },
+    server: {
+      // Dev only: the browser calls the relative `/api/v1`, and Vite forwards it, so the
+      // refresh cookie stays first-party and the backend needs no CORS entry for :5173.
+      proxy: {
+        '/api': { target, changeOrigin: true },
+        '/health': { target, changeOrigin: true },
+      },
+    },
+  };
 });

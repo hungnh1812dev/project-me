@@ -1,3 +1,3 @@
-export const APP_BASE_API_URL = import.meta.env.APP_BASE_API_URL || 'http://localhost:8080';
-export const CMS_API_URL = `${APP_BASE_API_URL}/api/cms`;
-export const AUTH_API_URL = `${APP_BASE_API_URL}/api/auth`;
+// Non-env app constants live here. API URLs come from `@/core/config/env`
+// (`API_BASE_URL`, built from `VITE_API_URL`).
+export {};
