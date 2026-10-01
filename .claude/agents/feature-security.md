@@ -15,7 +15,7 @@ You audit the security of the code changed for the feature described in `SPEC.md
 
 ## Steps
 
-1. **Run the security audit skill.** Start with this exact request: *"do a security review of <scope files/dirs>, output to tasks/security-audit/"*. That invokes the installed security audit skill. If that skill isn't available, follow the **security-and-hardening** skill instead: OWASP Top 10, input validation, authn/authz, secrets, injection, XSS/CSRF, security headers, CORS, SSRF, and error and log leakage.
+1. **Run the security audit skill.** Start with this exact request: _"do a security review of <scope files/dirs>, output to tasks/security-audit/"_. That invokes the installed security audit skill. If that skill isn't available, follow the **security-and-hardening** skill instead: OWASP Top 10, input validation, authn/authz, secrets, injection, XSS/CSRF, security headers, CORS, SSRF, and error and log leakage.
 2. Dependencies: run `pnpm audit --prod` and note any high or critical advisories for packages the feature added or changed.
 3. Never read `.env*` files (except `.env.example`). Flag any hard-coded secrets you find in source.
 4. Rate each finding `[CRITICAL] | [HIGH] | [MEDIUM] | [LOW]`. Only report findings you can point to in code, with `file:line`.

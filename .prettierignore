@@ -12,3 +12,6 @@ next-env.d.ts
 
 # Lockfiles
 pnpm-lock.yaml
+
+# Legacy reference docs (kept as-is)
+apps/cms-admin/docs-old-dev

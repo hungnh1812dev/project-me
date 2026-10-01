@@ -47,8 +47,9 @@ Follow **incremental-implementation** and **test-driven-development**:
    - key files and exports it introduced (`path`: what it provides)
    - decisions or deviations made during this run
    - known gaps or follow-ups
-   
+
    Don't paste code or logs there.
+
 3. Stop.
 
 ## Stop early and report BLOCKED instead of pushing through when:
