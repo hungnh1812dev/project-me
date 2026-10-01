@@ -5,5 +5,6 @@ Feature docs for `apps/cms-admin`. Each small phase adds or updates one page her
 | Page                                          | What it covers                                                                    |
 | --------------------------------------------- | --------------------------------------------------------------------------------- |
 | [Testing and config](./testing-and-config.md) | Test scripts, coverage gates, MSW and Playwright conventions, env vars, dev proxy |
+| [API client](./api-client.md)                 | `cmsApi`, bearer interceptor, single-flight 401 refresh, `ApiError` shape         |
 
 The legacy app's docs are in [`../docs-old-dev/`](../docs-old-dev/) (reference only).
