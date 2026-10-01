@@ -1,13 +1,41 @@
+import type { Role } from '../src/features/auth/types.ts';
+import type { ContentType } from '../src/features/content/types.ts';
 import { DEFAULT_PASSWORD, expect, ROLES, test, type MockApi } from './fixtures/mockApi.ts';
+import type { MockContent } from './fixtures/mockContent.ts';
 
 const JANE = { email: 'jane@example.com', name: 'Jane Doe' };
 const DARK = /(^|\s)dark(\s|$)/;
 
-/** Jane (Editor) has a session, so /admin pages open straight away. */
-function signInJane(mockApi: MockApi) {
-  mockApi.addUser({ ...JANE, role: ROLES.editor });
+/** Jane (Editor unless a role is given) has a session, so /admin pages open straight away. */
+function signInJane(mockApi: MockApi, role: Role = ROLES.editor) {
+  mockApi.addUser({ ...JANE, role });
   mockApi.signInAs(JANE.email);
 }
+
+const STAMP = '2026-01-01T00:00:00.000Z';
+
+function contentType(slug: string, name: string, kind: ContentType['kind']): ContentType {
+  return {
+    documentId: `ct-${slug}`,
+    slug,
+    name,
+    kind,
+    draftToPublish: true,
+    fields: [{ name: 'title', type: 'text', header: true }],
+    listFields: ['title'],
+    createdAt: STAMP,
+    updatedAt: STAMP,
+  };
+}
+
+/** Two collection types (Post added before Article) and one single type. */
+function seedContent(content: MockContent) {
+  content.addContentType(contentType('post', 'Post', 'collection'));
+  content.addContentType(contentType('article', 'Article', 'collection'));
+  content.addContentType(contentType('home', 'Home', 'single'));
+}
+
+const SETTINGS = ['Users', 'Roles', 'Permissions', 'Access tokens', 'Media library'];
 
 test('Skip to content is the first Tab stop and moves focus to main', async ({ page, mockApi }) => {
   signInJane(mockApi);
@@ -138,3 +166,210 @@ test('the theme choice from the account menu persists across a reload', async ({
     'true',
   );
 });
+
+test.describe('side menu', () => {
+  const menu = (page: import('@playwright/test').Page) =>
+    page.getByRole('navigation', { name: 'Main' });
+
+  test('a super admin sees Users and Roles under Settings', async ({ page, mockApi }) => {
+    signInJane(mockApi, ROLES.superAdmin);
+    await page.goto('/admin');
+
+    const settings = menu(page).getByRole('list', { name: 'Settings' });
+    await expect(settings.getByRole('link')).toHaveText(['Users', 'Roles']);
+    await expect(menu(page).getByRole('button', { name: 'Content' })).toHaveCount(0);
+  });
+
+  test('an editor has neither Content nor Settings, and no content-type request', async ({
+    page,
+    mockApi,
+  }) => {
+    signInJane(mockApi, ROLES.editor);
+    await page.goto('/admin');
+    await expect(page.getByRole('heading', { name: 'Welcome, Jane Doe' })).toBeVisible();
+
+    await expect(menu(page)).toBeAttached();
+    await expect(menu(page).getByRole('link')).toHaveCount(0);
+    await expect(menu(page).getByRole('button', { name: 'Content' })).toHaveCount(0);
+    await expect(menu(page).getByRole('button', { name: 'Settings' })).toHaveCount(0);
+    expect(mockApi.requests.map((r) => r.path)).not.toContain('/api/v1/content-types');
+  });
+
+  test('a content editor has Content, grouped and sorted, but no Settings', async ({
+    page,
+    mockApi,
+    mockContent,
+  }) => {
+    seedContent(mockContent);
+    signInJane(mockApi, ROLES.contentEditor);
+    await page.goto('/admin');
+
+    await expect(
+      menu(page).getByRole('list', { name: 'Collection types' }).getByRole('link'),
+    ).toHaveText(['Article', 'Post']);
+    await expect(
+      menu(page).getByRole('list', { name: 'Single types' }).getByRole('link'),
+    ).toHaveText(['Home']);
+    await expect(menu(page).getByRole('button', { name: 'Settings' })).toHaveCount(0);
+  });
+
+  test('a custom role with media:manager sees only Media library', async ({ page, mockApi }) => {
+    signInJane(mockApi, {
+      ...ROLES.editor,
+      slug: 'media',
+      name: 'Media',
+      permissions: ['media:manager'],
+    });
+    await page.goto('/admin');
+
+    await expect(menu(page).getByRole('link')).toHaveText(['Media library']);
+    await menu(page).getByRole('link', { name: 'Media library' }).click();
+    await expect(page).toHaveURL('/admin/settings/media');
+    await expect(page.getByRole('heading', { name: 'Media library', level: 1 })).toBeVisible();
+    await expect(page.getByText('Coming in Phase 4.')).toBeVisible();
+  });
+
+  test('every settings link opens its placeholder for a role with every grant', async ({
+    page,
+    mockApi,
+  }) => {
+    signInJane(mockApi, {
+      ...ROLES.superAdmin,
+      permissions: ['user:read', 'role:read', 'permission:read', 'api_token:read', 'media:read'],
+    });
+    await page.goto('/admin');
+
+    await expect(menu(page).getByRole('link')).toHaveText(SETTINGS);
+  });
+
+  test('/admin/users redirects to /admin/settings/users', async ({ page, mockApi }) => {
+    signInJane(mockApi, ROLES.superAdmin);
+    await page.goto('/admin/users');
+
+    await expect(page).toHaveURL('/admin/settings/users');
+    await expect(page.getByRole('heading', { name: 'Users', level: 1 })).toBeVisible();
+  });
+
+  test('the link of the current page is marked active', async ({ page, mockApi, mockContent }) => {
+    seedContent(mockContent);
+    signInJane(mockApi, ROLES.contentEditor);
+    await page.goto('/admin/content-types/article');
+
+    const article = menu(page).getByRole('link', { name: 'Article' });
+    await expect(article).toHaveAttribute('aria-current', 'page');
+    await expect(menu(page).getByRole('link', { name: 'Post' })).not.toHaveAttribute(
+      'aria-current',
+    );
+
+    await menu(page).getByRole('link', { name: 'Post' }).click();
+    await expect(menu(page).getByRole('link', { name: 'Post' })).toHaveAttribute(
+      'aria-current',
+      'page',
+    );
+    await expect(article).not.toHaveAttribute('aria-current');
+  });
+
+  test('a group collapses and stays collapsed after a reload', async ({ page, mockApi }) => {
+    signInJane(mockApi, ROLES.superAdmin);
+    await page.goto('/admin');
+    const toggle = menu(page).getByRole('button', { name: 'Settings' });
+    await expect(toggle).toHaveAttribute('aria-expanded', 'true');
+
+    await toggle.click();
+    await expect(toggle).toHaveAttribute('aria-expanded', 'false');
+    await expect(menu(page).getByRole('link', { name: 'Users' })).toBeHidden();
+
+    await page.reload();
+    await expect(menu(page).getByRole('button', { name: 'Settings' })).toHaveAttribute(
+      'aria-expanded',
+      'false',
+    );
+  });
+
+  test('the menu collapses to a rail with tooltips, by toggle and Ctrl+B, and stays after a reload', async ({
+    page,
+    mockApi,
+  }) => {
+    signInJane(mockApi, ROLES.superAdmin);
+    await page.goto('/admin');
+    const sidebar = page.locator('[data-slot="sidebar"]');
+    await expect(sidebar).toHaveAttribute('data-state', 'expanded');
+
+    await page.getByRole('button', { name: 'Toggle menu' }).click();
+    await expect(sidebar).toHaveAttribute('data-state', 'collapsed');
+    const users = menu(page).getByRole('link', { name: 'Users' });
+    await expect(users).toBeVisible();
+    await users.hover();
+    // Base UI tooltips carry no tooltip role; the link keeps its own accessible name.
+    await expect(page.locator('[data-slot="tooltip-content"]')).toHaveText('Users');
+
+    await page.reload();
+    await expect(sidebar).toHaveAttribute('data-state', 'collapsed');
+
+    await page.keyboard.press('ControlOrMeta+b');
+    await expect(sidebar).toHaveAttribute('data-state', 'expanded');
+  });
+});
+
+test.describe('mobile drawer', () => {
+  test.use({ viewport: { width: 375, height: 812 } });
+
+  test('opens from the toggle, navigates, and closes on a link', async ({ page, mockApi }) => {
+    signInJane(mockApi, ROLES.superAdmin);
+    await page.goto('/admin');
+    await expect(page.getByRole('heading', { name: 'Welcome, Jane Doe' })).toBeVisible();
+    await expect(page.getByRole('navigation', { name: 'Main' })).toHaveCount(0);
+
+    await page.getByRole('button', { name: 'Toggle menu' }).click();
+    const drawer = page.getByRole('dialog', { name: 'Menu' });
+    await expect(drawer).toBeVisible();
+    // The page behind cannot scroll while the drawer is open.
+    expect(
+      await page.evaluate<string>(
+        'getComputedStyle(document.documentElement).overflow + getComputedStyle(document.body).overflow',
+      ),
+    ).toContain('hidden');
+
+    const users = drawer.getByRole('link', { name: 'Users' });
+    expect((await users.boundingBox())?.height).toBeGreaterThanOrEqual(44);
+    await users.click();
+
+    await expect(page).toHaveURL('/admin/settings/users');
+    await expect(drawer).toBeHidden();
+  });
+
+  test('Escape closes the drawer and returns focus to the toggle', async ({ page, mockApi }) => {
+    signInJane(mockApi, ROLES.superAdmin);
+    await page.goto('/admin');
+    const toggle = page.getByRole('button', { name: 'Toggle menu' });
+
+    await toggle.click();
+    const drawer = page.getByRole('dialog', { name: 'Menu' });
+    await expect(drawer).toBeVisible();
+    await expect(drawer.locator(':focus')).toHaveCount(1);
+
+    await page.keyboard.press('Escape');
+    await expect(drawer).toBeHidden();
+    await expect(toggle).toBeFocused();
+  });
+});
+
+for (const width of [375, 768, 1024, 1440]) {
+  test(`no horizontal scroll at ${width}px`, async ({ page, mockApi, mockContent }) => {
+    seedContent(mockContent);
+    signInJane(mockApi, {
+      ...ROLES.contentEditor,
+      permissions: [...ROLES.contentEditor.permissions, 'user:read'],
+    });
+    await page.setViewportSize({ width, height: 900 });
+
+    for (const path of ['/admin', '/admin/content-types/article', '/admin/settings/users']) {
+      await page.goto(path);
+      await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+      const overflow = await page.evaluate<number>(
+        'document.documentElement.scrollWidth - document.documentElement.clientWidth',
+      );
+      expect(overflow, path).toBeLessThanOrEqual(0);
+    }
+  });
+}

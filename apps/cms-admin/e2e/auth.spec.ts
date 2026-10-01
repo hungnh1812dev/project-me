@@ -97,7 +97,7 @@ test('a user without the required permission is sent to /403', async ({ page, mo
   mockApi.addUser({ ...JANE, role: ROLES.editor });
   mockApi.signInAs(JANE.email);
 
-  await page.goto('/admin/users');
+  await page.goto('/admin/settings/users');
 
   await expect(page).toHaveURL('/403');
   await expect(page.getByRole('heading', { name: 'Access denied' })).toBeVisible();
@@ -111,9 +111,9 @@ test('a user with the permission opens the gated page', async ({ page, mockApi }
   mockApi.addUser({ ...JANE, role: ROLES.superAdmin });
   mockApi.signInAs(JANE.email);
 
-  await page.goto('/admin/users');
+  await page.goto('/admin/settings/users');
 
-  await expect(page).toHaveURL('/admin/users');
+  await expect(page).toHaveURL('/admin/settings/users');
   await expect(page.getByRole('heading', { name: 'Users' })).toBeVisible();
 });
 

@@ -214,11 +214,13 @@ test('a content page recovers transparently when the access token expires', asyn
   seed(mockContent);
   signedInAs(mockApi);
   await page.goto('/admin/content-types');
-  await expect(page.getByRole('link', { name: 'Article' })).toBeVisible();
+  // Scoped to main: the side menu also links to Article (AC-22).
+  const main = page.getByRole('main');
+  await expect(main.getByRole('link', { name: 'Article' })).toBeVisible();
   const before = mockApi.requests.length;
 
   mockApi.expireAccessTokens();
-  await page.getByRole('link', { name: 'Article' }).click();
+  await main.getByRole('link', { name: 'Article' }).click();
 
   await expect(page.getByText('2 total')).toBeVisible();
   await expect(page.getByRole('alert')).toHaveCount(0);

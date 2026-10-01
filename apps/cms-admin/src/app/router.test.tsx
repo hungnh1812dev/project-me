@@ -45,17 +45,42 @@ describe('route table', () => {
     expect(await screen.findByRole('heading', { name: 'Access denied' })).toBeInTheDocument();
   });
 
-  it('gates /admin/users behind the user:read permission', async () => {
-    const { router } = renderRoutes(routes, { route: '/admin/users', auth: signedIn([]) });
+  it('redirects /admin/users to /admin/settings/users (AC-26)', async () => {
+    const { router } = renderRoutes(routes, {
+      route: '/admin/users',
+      auth: signedIn(['user:read']),
+    });
 
-    expect(await screen.findByRole('heading', { name: 'Access denied' })).toBeInTheDocument();
-    expect(router.state.location.pathname).toBe('/403');
+    expect(await screen.findByRole('heading', { name: 'Users', level: 1 })).toBeInTheDocument();
+    expect(router.state.location.pathname).toBe('/admin/settings/users');
   });
 
-  it('opens /admin/users with the user:read permission', async () => {
-    renderRoutes(routes, { route: '/admin/users', auth: signedIn(['user:read']) });
+  it.each([
+    ['users', 'Users', 'user:read'],
+    ['roles', 'Roles', 'role:read'],
+    ['permissions', 'Permissions', 'permission:read'],
+    ['access-tokens', 'Access tokens', 'api_token:read'],
+    ['media', 'Media library', 'media:read'],
+  ])('gates /admin/settings/%s behind its read permission', async (path, label, permission) => {
+    const denied = renderRoutes(routes, { route: `/admin/settings/${path}`, auth: signedIn([]) });
 
-    expect(await screen.findByRole('heading', { name: 'Users' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Access denied' })).toBeInTheDocument();
+    expect(denied.router.state.location.pathname).toBe('/403');
+    expect(screen.getByText(`Requires the "${permission}" permission.`)).toBeInTheDocument();
+    denied.unmount();
+
+    renderRoutes(routes, { route: `/admin/settings/${path}`, auth: signedIn([permission]) });
+
+    expect(await screen.findByRole('heading', { name: label, level: 1 })).toBeInTheDocument();
+    expect(screen.getByText('Coming in Phase 4.')).toBeInTheDocument();
+  });
+
+  it('opens a settings page with the matching manager permission', async () => {
+    renderRoutes(routes, { route: '/admin/settings/media', auth: signedIn(['media:manager']) });
+
+    expect(
+      await screen.findByRole('heading', { name: 'Media library', level: 1 }),
+    ).toBeInTheDocument();
   });
 
   it('gates /admin/content-types behind content_type:read', async () => {
@@ -104,7 +129,7 @@ describe('route table', () => {
   it.each([
     ['/admin', 'Welcome, Jane Doe', ['user:read']],
     ['/admin/profile', 'Your profile', []],
-    ['/admin/users', 'Users', ['user:read']],
+    ['/admin/settings/users', 'Users', ['user:read']],
     ['/admin/content-types', 'Content types', ['content_type:read']],
     ['/admin/content-types/article', 'Article', ['content_type:read']],
     ['/admin/dev/ui-kit', 'UI kit', []],

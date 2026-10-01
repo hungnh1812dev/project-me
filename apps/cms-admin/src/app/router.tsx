@@ -3,6 +3,7 @@ import { createBrowserRouter, Navigate, type RouteObject } from 'react-router-do
 import RequireAccess from '@/features/auth/components/RequireAccess';
 import RequireAuth from '@/features/auth/components/RequireAuth';
 import AppShell from '@/features/shell/components/AppShell';
+import { SETTINGS_LINKS } from '@/features/shell/settingsLinks';
 import AdminHomePage from '@/pages/admin-home/AdminHomePage';
 import ContentTypePage from '@/pages/content-types/ContentTypePage';
 import ContentTypesPage from '@/pages/content-types/ContentTypesPage';
@@ -12,7 +13,7 @@ import LoginPage from '@/pages/login/LoginPage';
 import ProfilePage from '@/pages/profile/ProfilePage';
 import RegisterPage from '@/pages/register/RegisterPage';
 import ResetPasswordPage from '@/pages/reset-password/ResetPasswordPage';
-import UsersPage from '@/pages/users/UsersPage';
+import SettingsPlaceholderPage from '@/pages/settings/SettingsPlaceholderPage';
 import VerifyOtpPage from '@/pages/verify-otp/VerifyOtpPage';
 
 /**
@@ -44,10 +45,15 @@ export const routes: RouteObject[] = [
         children: [
           { index: true, element: <AdminHomePage /> },
           { path: 'profile', element: <ProfilePage /> },
+          // The old users path (Phase 1) now lives under settings (AC-26).
+          { path: 'users', element: <Navigate to="/admin/settings/users" replace /> },
           {
-            path: 'users',
-            element: <RequireAccess permission="user:read" />,
-            children: [{ index: true, element: <UsersPage /> }],
+            path: 'settings',
+            children: SETTINGS_LINKS.map((link) => ({
+              path: link.key,
+              element: <RequireAccess permission={link.permission} />,
+              children: [{ index: true, element: <SettingsPlaceholderPage label={link.label} /> }],
+            })),
           },
           {
             path: 'content-types',
