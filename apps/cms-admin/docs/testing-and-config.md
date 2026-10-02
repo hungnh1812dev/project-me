@@ -61,12 +61,12 @@ The temporary `PENDING_REWRITE` exclusion list is gone: every rewritten file is 
 
 Documented in `apps/cms-admin/.env.example` (no secrets). Vite only exposes names that start with `VITE_`.
 
-| Variable                | Used by         | Meaning                                                                                                 |
-| ----------------------- | --------------- | ------------------------------------------------------------------------------------------------------- |
-| `VITE_API_URL`          | the app (build) | Backend origin, for example `https://cms-api.example.com`. Empty or unset in dev, so the proxy is used. |
-| `VITE_API_PROXY_TARGET` | Vite dev server | Where `/api` and `/health` are proxied in dev. Defaults to `http://localhost:8080`.                     |
+| Variable                | Used by                         | Meaning                                                                                                                            |
+| ----------------------- | ------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| `VITE_API_URL`          | the app (build)                 | Backend origin, for example `https://cms-api.example.com`. Empty or unset in dev, so the proxy is used.                            |
+| `VITE_API_PROXY_TARGET` | Vite dev server                 | Where `/api` and `/health` are proxied in dev. Defaults to `http://localhost:8080`.                                                |
 | `CSP_API_ORIGIN`        | nginx (runtime), `vite preview` | The API origin added to `img-src` and `connect-src`, for example `https://cms-api.example.com`. Empty when the API is same-origin. |
-| `CSP_IMG_ORIGINS`       | nginx (runtime), `vite preview` | Extra image origins (CDN, media host), separated by spaces. Added to `img-src`. Empty by default.  |
+| `CSP_IMG_ORIGINS`       | nginx (runtime), `vite preview` | Extra image origins (CDN, media host), separated by spaces. Added to `img-src`. Empty by default.                                  |
 
 The two `CSP_` variables are not `VITE_` vars: they never reach the bundle. nginx reads them when the container starts, so one image serves any deployment.
 
