@@ -61,6 +61,8 @@ export interface MockSettings {
   removeAccessToken(documentId: string): void;
   /** Adds an asset at the front (newest first). */
   addMedia(asset: MediaAsset): void;
+  /** Removes an asset (M3). */
+  removeMedia(documentId: string): void;
 }
 
 /** One settings request, as `mockApi` hands it over. */
@@ -448,12 +450,108 @@ const ACCESS_TOKENS_ROUTES: SettingsRoute[] = [
   },
 ];
 
+/** The `file` part of a raw multipart body: its file name, type and bytes. */
+function multipartFile(body: Buffer, contentType: string) {
+  const boundary = /boundary=(?:"([^"]+)"|([^;]+))/.exec(contentType);
+  const delimiter = boundary ? `--${boundary[1] ?? boundary[2]}` : null;
+  if (!delimiter) return null;
+  const text = body.toString('latin1');
+  for (const part of text.split(delimiter)) {
+    const split = part.indexOf('\r\n\r\n');
+    if (split === -1) continue;
+    const head = part.slice(0, split);
+    const name = /filename="([^"]*)"/.exec(head)?.[1];
+    if (!head.includes('name="file"') || name === undefined) continue;
+    const bytes = Buffer.from(part.slice(split + 4).replace(/\r\n$/, ''), 'latin1');
+    const type = /content-type:\s*([^\r\n]+)/i.exec(head)?.[1]?.trim() ?? '';
+    return { name, type, bytes };
+  }
+  return null;
+}
+
+/** A PNG's pixel size from its IHDR chunk; anything else counts as 1 × 1. */
+function imageSize(bytes: Buffer): { width: number; height: number } {
+  const isPng = bytes.length >= 24 && bytes.toString('latin1', 12, 16) === 'IHDR';
+  return isPng
+    ? { width: bytes.readUInt32BE(16), height: bytes.readUInt32BE(20) }
+    : { width: 1, height: 1 };
+}
+
+let mediaCount = 0;
+
+/**
+ * Media (M1 to M3). M2 reads the multipart `file` part: none answers 400, a file name containing
+ * `too-large` answers 413 and one containing `unsupported` answers 422 (the triggers the e2e spec
+ * uses). An accepted file becomes the newest asset, and its URLs are `data:` URLs of the uploaded
+ * bytes, so thumbnails render without a media host. M3 answers 404 for an unknown id.
+ */
+const MEDIA_ROUTES: SettingsRoute[] = [
+  {
+    method: 'GET',
+    pattern: /^\/media$/,
+    permission: 'media:read',
+    handle: (route, { store }) => sendJson(route, 200, store.media),
+  },
+  {
+    method: 'POST',
+    pattern: /^\/media\/upload$/,
+    permission: 'media:manager',
+    handle: (route, { user, store }) => {
+      const request = route.request();
+      const file = multipartFile(
+        request.postDataBuffer() ?? Buffer.alloc(0),
+        request.headers()['content-type'] ?? '',
+      );
+      if (!file) return sendError(route, 400, 'File is required');
+      if (file.name.includes('too-large')) {
+        return sendError(route, 413, 'File too large');
+      }
+      if (file.name.includes('unsupported')) {
+        return sendError(route, 422, 'Unsupported media type');
+      }
+      mediaCount += 1;
+      const now = new Date().toISOString();
+      const dataUrl = `data:${file.type};base64,${file.bytes.toString('base64')}`;
+      const asset: MediaAsset = {
+        documentId: `media-${mediaCount}`,
+        fileName: file.name,
+        mimeType: file.type,
+        size: file.bytes.length,
+        ...imageSize(file.bytes),
+        url: dataUrl,
+        thumbnailUrl: dataUrl,
+        publicId: `cms/media-${mediaCount}`,
+        hash: String(mediaCount).padStart(64, '0'),
+        uploadedBy: user.documentId,
+        createdAt: now,
+        updatedAt: now,
+      };
+      store.addMedia(asset);
+      return sendJson(route, 201, asset);
+    },
+  },
+  {
+    method: 'DELETE',
+    pattern: /^\/media\/([^/]+)$/,
+    permission: 'media:manager',
+    handle: async (route, { params: [id], store }) => {
+      if (!store.media.some((asset) => asset.documentId === id)) {
+        return sendError(route, 404, 'Media not found');
+      }
+      store.removeMedia(id);
+      await route.fulfill({ status: 204 });
+      return 204;
+    },
+  },
+];
+
 /** The routes the fake settings backend models. Anything else under its prefixes answers 404. */
 export const SETTINGS_ROUTES: SettingsRoute[] = [
   ...USERS_ROUTES,
   ...ROLES_ROUTES,
   ...PERMISSIONS_ROUTES,
   ...ACCESS_TOKENS_ROUTES,
+  ...MEDIA_ROUTES,
 ];
 
 const PREFIXES = /^\/(users|roles|permissions|access-tokens|media)(\/|$)/;
@@ -547,6 +645,10 @@ export function createMockSettings(
     },
     addMedia: (asset) => {
       media.unshift(asset);
+    },
+    removeMedia: (documentId) => {
+      const index = media.findIndex((asset) => asset.documentId === documentId);
+      if (index !== -1) media.splice(index, 1);
     },
   };
 

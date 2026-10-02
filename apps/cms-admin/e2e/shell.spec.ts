@@ -228,7 +228,8 @@ test.describe('side menu', () => {
     await menu(page).getByRole('link', { name: 'Media library' }).click();
     await expect(page).toHaveURL('/admin/settings/media');
     await expect(page.getByRole('heading', { name: 'Media library', level: 1 })).toBeVisible();
-    await expect(page.getByText('Coming in Phase 4.')).toBeVisible();
+    await expect(page.getByText('No files yet.')).toBeVisible();
+    await expect(page.getByText('Coming in Phase 4.')).toHaveCount(0);
   });
 
   test('every settings link opens its placeholder for a role with every grant', async ({

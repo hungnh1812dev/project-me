@@ -326,7 +326,9 @@ export async function installMockApi(page: Page): Promise<MockApi> {
       return 200;
     }
 
-    if (method === 'POST') {
+    // A multipart body (M2 upload) is not JSON; the settings handler reads it raw.
+    const multipart = (route.request().headers()['content-type'] ?? '').startsWith('multipart/');
+    if (method === 'POST' && !multipart) {
       const body = (route.request().postDataJSON() ?? {}) as Body;
       const status = await handleOnboarding(route, path, body);
       if (status !== null) return status;

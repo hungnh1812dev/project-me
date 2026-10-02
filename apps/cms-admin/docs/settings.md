@@ -4,7 +4,8 @@ Phase 4 replaces the `/admin/settings/*` placeholders with working pages for use
 permissions, access tokens and the media library, and adds name editing to `/admin/profile`. This
 page grows with each small phase. Small phase 4.1 laid the foundations described below, 4.2 added
 the Users page, 4.3 the Permissions page, 4.4 the Roles page with the PermissionTree and 4.5 the
-Access tokens page with the SecretReveal. The media route is still a placeholder.
+Access tokens page with the SecretReveal, and 4.6 the Media library. Every settings key now has a
+real page.
 
 Every request goes through `cmsApi` (see [API client](./api-client.md)). ABAC checks are
 **client-side defense in depth only** (see [RBAC and ABAC](./rbac-abac.md)); the backend stays the
@@ -24,17 +25,20 @@ validation.ts             PERMISSION_SLUG_PATTERN, validatePermission, permissio
 permissionTree.ts         buildPermissionTree, nodeSlugs, countSelected, nodeState, toggleNode,
                           toggleSlug, filterPermissionTree, groupSlugsByResource
 conflict.ts               parsePermissionConflict (P4 409 → counts sentence or server message)
+media.ts                  UPLOAD_ACCEPT, validateUploadFile, formatBytes, uploadErrorMessage,
+                          uploadSummary
 api/                      usersApi (U1, U3, U4), rolesApi (R1 to R4), permissionsApi (P1 to P4),
-                          accessTokensApi (T1 to T4)
+                          accessTokensApi (T1 to T4), mediaApi (M1 to M3)
 hooks/                    useUsers, useAssignRole, useDeleteUser, useRoles, useCreateRole,
                           useUpdateRole, useDeleteRole, usePermissions, useCreatePermission,
                           useUpdatePermission, useDeletePermission, useAccessTokens,
-                          useCreateAccessToken, useRevokeAccessToken, useDeleteAccessToken
+                          useCreateAccessToken, useRevokeAccessToken, useDeleteAccessToken,
+                          useMediaList, useUploadMedia, useDeleteMedia
 components/               ListState, SearchField, LiveRegion, useAnnouncer
 ```
 
-`router.tsx` maps each settings key to its page through `SETTINGS_PAGES`; a key without a page
-still renders `SettingsPlaceholderPage`. Each route stays behind `RequireAccess
+`router.tsx` maps each settings key to its page through `SETTINGS_PAGES` (all five keys now have
+one; `SettingsPlaceholderPage` is removed in 4.8). Each route stays behind `RequireAccess
 permission="<res>:read"`.
 
 ## Backend contract
@@ -75,18 +79,23 @@ labelled "1 month"; that reading is not yet checked against the backend (D6, a k
 `['settings', 'accessTokens']`). `settingsKeys.all` clears the whole feature. There are no
 optimistic updates, and a failed mutation leaves the cache unchanged.
 
-| Mutation              | Invalidates                                               |
-| --------------------- | --------------------------------------------------------- |
-| `useAssignRole`       | `users`                                                   |
-| `useDeleteUser`       | `users`                                                   |
-| `useCreateRole`       | `roles`                                                   |
-| `useUpdateRole`       | `roles`, `users` (and `['auth', 'me']` for your own role) |
-| `useDeleteRole`       | `roles`, `users`                                          |
-| `useCreatePermission` | `permissions`                                             |
-| `useUpdatePermission` | `permissions`                                             |
-| `useDeletePermission` | `permissions`                                             |
+| Mutation               | Invalidates                                               |
+| ---------------------- | --------------------------------------------------------- |
+| `useAssignRole`        | `users`                                                   |
+| `useDeleteUser`        | `users`                                                   |
+| `useCreateRole`        | `roles`                                                   |
+| `useUpdateRole`        | `roles`, `users` (and `['auth', 'me']` for your own role) |
+| `useDeleteRole`        | `roles`, `users`                                          |
+| `useCreatePermission`  | `permissions`                                             |
+| `useUpdatePermission`  | `permissions`                                             |
+| `useDeletePermission`  | `permissions`                                             |
+| `useCreateAccessToken` | `accessTokens`                                            |
+| `useRevokeAccessToken` | `accessTokens`                                            |
+| `useDeleteAccessToken` | `accessTokens`                                            |
+| `useUploadMedia`       | `media`, once per batch and only when a file uploaded     |
+| `useDeleteMedia`       | `media`                                                   |
 
-The other slices add their rows here.
+The profile slice adds its row here.
 
 ## The shared `guard`
 
@@ -125,6 +134,7 @@ is trapped, and returns to the trigger on close. The UI kit (`/admin/dev/ui-kit`
   for a state where the action can no longer run (the permission and role delete conflicts).
 - `PermissionTree` picks permission slugs; see [PermissionTree](#permissiontree).
 - `SecretReveal` shows a one-time secret; see [Access tokens](#access-tokens-adminsettingsaccess-tokens).
+- `FileDropzone` picks files to upload; see [Media library](#media-library-adminsettingsmedia).
 
 ## List building blocks
 
@@ -283,6 +293,48 @@ created.` and `Token "<name>" revoked. Its new secret was shown once.` are annou
   the control that started the flow (`finalFocus`), New token or Revoke. The e2e spec checks the
   DOM, input values, web storage and URL no longer hold the secret.
 
+## Media library (`/admin/settings/media`)
+
+`src/pages/settings/MediaLibraryPage.tsx`, with `DeleteMediaDialog` in `src/pages/settings/media/`.
+
+- **Grid (M1).** `useMediaList` loads the assets (only with `media:read`), newest first as the
+  server sends them. A labelled list ("Media files") of cards, 2 columns at 375px, 3 from `sm`, 4
+  from `lg`, 5 from `xl`. Each card has the thumbnail (`thumbnailUrl`, `alt` = file name,
+  `loading="lazy"`, the asset's `width`/`height` attributes, inside a fixed `aspect-square` box so
+  nothing shifts as it loads), the file name (truncated, full name in `title` and in the image's
+  alt), "W × H", `formatBytes(size)` (binary units, one decimal, for example "1.2 MB") and the upload
+  date. Search ("Search files") covers the file name.
+- **Policy use.** Upload uses `useCan('upload', 'media')` and Delete `useCan('delete', 'media')`;
+  both need `media:manager`. A denied Upload also ignores dropped files.
+- **Upload flow (M2, AC-36, AC-37).** `FileDropzone` (`src/components/form/FileDropzone.tsx`) has a
+  visible Upload `GatedButton` that opens a hidden `<input type="file" multiple
+accept="image/png,image/jpeg">`, so the keyboard alone is enough; the dashed zone around it also
+  accepts dropped files. The input is cleared after each pick, so the same file can be picked again.
+  `useUploadMedia().upload(files)` then:
+  1. calls `guard(can(actor, 'upload', 'media'))` (a denial rejects with no request);
+  2. runs `validateUploadFile` on every file: anything that is not PNG or JPEG by both MIME type and
+     extension fails at once with "<name>: only PNG and JPEG images are supported." and is never
+     sent. There is no size check (D7);
+  3. sends the rest one at a time (`uploadMedia`: a `FormData` with the field `file`; the request
+     overrides `cmsApi`'s JSON `Content-Type` with `multipart/form-data`, which axios then drops so
+     the browser sets it with the boundary). A failure does not stop the batch: 413 shows "File is
+     too large.", 422 "Unsupported file type.", anything else the server message
+     (`uploadErrorMessage`);
+  4. invalidates `media` once at the end if at least one file uploaded, and resolves with
+     `{ uploaded, total }` (rejected files count in `total`).
+
+  While a batch runs the button shows `loading` and new files are ignored. `items` drives the
+  "Upload progress" list under the zone: each file with Waiting, Uploading, Uploaded, or "Failed:
+  <reason>" in text, with an icon. At the end the page shows `uploadSummary` ("2 of 3 files
+  uploaded.") under the list and announces it in the page's `LiveRegion`.
+
+- **Delete (M3, AC-38).** `DeleteMediaDialog` confirms `Delete "<file name>"?` with "Documents that
+  use this image will show a broken image. This can't be undone.", the thumbnail and the file name,
+  then sends M3. "File "<name>" deleted." is announced; a 404 or other error stays in the dialog.
+- **CSP.** Thumbnails load straight from the media host (`thumbnailUrl`, usually a CDN), not through
+  `/api`. The app sets no Content-Security-Policy yet; when one is added, its `img-src` must allow
+  that host (see the roadmap).
+
 ## PermissionTree
 
 `src/components/form/PermissionTree.tsx`, with its pure logic in
@@ -316,8 +368,10 @@ created.` and `Token "<name>" revoked. Its new secret was shown once.` are annou
 - **Unit (MSW):** `src/test/msw/settingsHandlers.ts` has one opt-in recorder factory per contract
   row (`listUsersHandler`, `updateUserRoleHandler`, …, `uploadMediaHandler`). None is a global
   default. Each records method, decoded params, `Content-Type` and body. A multipart body is kept
-  as raw text, because jsdom's `FormData` and `File` do not cross MSW's Node interceptors; read its
-  file part with `multipartFile(body)`. Fixtures: `makeUser`, `makePermission`, `makeAccessToken`,
+  as raw text; read its file part with `multipartFile(body)`. jsdom's `FormData` and `File` do not
+  cross MSW's Node interceptors, so a test that uploads calls `useNodeFormData()` (it swaps in Node's
+  `FormData` per test) and builds files with `uploadFile(name, type)`, both from
+  `src/test/nodeMultipart.ts`. Fixtures: `makeUser`, `makePermission`, `makeAccessToken`,
   `makeAccessTokenSecret` and `makeMediaAsset` in `src/test/fixtures.ts`.
 - **E2E:** `e2e/fixtures/mockSettings.ts` is the in-memory settings backend that `mockApi` delegates
   `/users*`, `/roles*`, `/permissions*`, `/access-tokens*` and `/media*` to (also available as the
@@ -341,8 +395,15 @@ created.` and `Token "<name>" revoked. Its new secret was shown once.` are annou
   (`removePermission`). T1 lists the stored tokens. T2 answers 400 for an empty name, an unknown
   `expiresIn` or a slug missing from the catalog, stores the record with `expiresAt` derived from
   `expiresIn` (`1m` as 30 days), and answers it with a fresh `cms_live_…` secret. T3 keeps the record
-  and answers a new secret each time. T3 and T4 answer 404 for an unknown id. U3 updates the `mockApi` user in place, so `/auth/me` sees the
+  and answers a new secret each time. T3 and T4 answer 404 for an unknown id. M1 lists the stored
+  assets (`addMedia` puts one first). M2 parses the multipart `file` part: none answers 400 "File is
+  required", a file name containing `too-large` answers 413 and one containing `unsupported` 422;
+  otherwise it stores the asset with `data:` URLs of the uploaded bytes (so thumbnails render
+  offline) and the PNG's IHDR size (1 × 1 for anything else). M3 answers 404 for an unknown id,
+  otherwise `removeMedia`. `mockApi` skips its JSON parse for multipart bodies. U3 updates the `mockApi` user in place, so `/auth/me` sees the
   new role; U4 removes the user through `removeUser`. Use `mockApi.failNext(method, path, 403)` for a
   server 403 that the client guard would otherwise prevent. Specs: `e2e/settings-users.spec.ts`,
   `e2e/settings-permissions.spec.ts`, `e2e/settings-roles.spec.ts`,
-  `e2e/settings-access-tokens.spec.ts` (grants clipboard permissions to read the copied secret).
+  `e2e/settings-access-tokens.spec.ts` (grants clipboard permissions to read the copied secret),
+  `e2e/settings-media.spec.ts` (uploads canvas-generated PNG and JPEG buffers plus a `.gif` through
+  the Upload button's file chooser, and measures layout shift at 375px).

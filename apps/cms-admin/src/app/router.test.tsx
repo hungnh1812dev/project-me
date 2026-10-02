@@ -8,6 +8,7 @@ import { getContentTypeHandler, getContentTypesHandler } from '@/test/msw/conten
 import { server } from '@/test/msw/server';
 import {
   listAccessTokensHandler,
+  listMediaHandler,
   listPermissionsHandler,
   listRolesHandler,
   listUsersHandler,
@@ -22,11 +23,12 @@ const signedIn = (permissions: string[] = []) => ({
 });
 
 describe('route table', () => {
-  // The Users, Roles, Permissions and Access tokens pages load U1, R1, P1 and T1 as soon as they
-  // render (R1 only with `role:read`).
+  // The Users, Roles, Permissions, Access tokens and Media pages load U1, R1, P1, T1 and M1 as
+  // soon as they render (R1 only with `role:read`).
   beforeEach(() =>
     server.use(
       listAccessTokensHandler().handler,
+      listMediaHandler().handler,
       listUsersHandler().handler,
       listRolesHandler().handler,
       listPermissionsHandler().handler,
@@ -129,13 +131,11 @@ describe('route table', () => {
     expect(screen.queryByText('Coming in Phase 4.')).not.toBeInTheDocument();
   });
 
-  it.each([['media']])('still serves the placeholder for /admin/settings/%s', async (path) => {
-    renderRoutes(routes, {
-      route: `/admin/settings/${path}`,
-      auth: signedIn(['user:read', 'role:read', 'permission:read', 'api_token:read', 'media:read']),
-    });
+  it('serves the real Media library page from SETTINGS_PAGES (AC-1)', async () => {
+    renderRoutes(routes, { route: '/admin/settings/media', auth: signedIn(['media:read']) });
 
-    expect(await screen.findByText('Coming in Phase 4.')).toBeInTheDocument();
+    expect(await screen.findByRole('searchbox', { name: 'Search files' })).toBeInTheDocument();
+    expect(screen.queryByText('Coming in Phase 4.')).not.toBeInTheDocument();
   });
 
   it('opens a settings page with the matching manager permission', async () => {
