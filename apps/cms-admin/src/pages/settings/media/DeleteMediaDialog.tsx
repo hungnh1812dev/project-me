@@ -2,6 +2,8 @@ import { ConfirmDialog } from '@/components/form/ConfirmDialog';
 import { useDeleteMedia } from '@/features/settings/hooks/useMedia';
 import type { MediaAsset } from '@/features/settings/types';
 
+import { MediaThumbnail } from './MediaThumbnail';
+
 export interface DeleteMediaDialogProps {
   asset: MediaAsset;
   open: boolean;
@@ -37,13 +39,7 @@ export const DeleteMediaDialog: React.FC<DeleteMediaDialogProps> = ({
     >
       <div className="flex min-w-0 items-center gap-3">
         <div className="aspect-square w-16 shrink-0 overflow-hidden rounded-md border bg-muted">
-          <img
-            src={asset.thumbnailUrl}
-            alt={asset.fileName}
-            width={64}
-            height={64}
-            className="size-full object-cover"
-          />
+          <MediaThumbnail asset={asset} width={64} height={64} />
         </div>
         <p className="min-w-0 truncate text-sm font-medium" title={asset.fileName}>
           {asset.fileName}
