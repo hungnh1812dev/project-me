@@ -258,7 +258,7 @@ jobs:
           # Validate every file before touching any, so a bad one never leaves a partial bump
           errors=0
           for app in "${apps[@]}"; do
-            f="$CLUSTER_PATH/${app}-sync.yaml"
+            f="$CLUSTER_PATH/${app}-sync-overlay.yaml"
             if [ ! -f "$f" ]; then
               echo "::error::$f not found in the deployment repo"; errors=1
             elif ! grep -qE "$key" "$f"; then
@@ -268,7 +268,7 @@ jobs:
           [ "$errors" -eq 0 ] || exit 1
 
           for app in "${apps[@]}"; do
-            sed -i -E "s|${key}.*\$|\\1\"${TAG}\"|" "$CLUSTER_PATH/${app}-sync.yaml"
+            sed -i -E "s|${key}.*\$|\\1\"${TAG}\"|" "$CLUSTER_PATH/${app}-sync-overlay.yaml"
           done
           if git diff --quiet; then
             echo "::notice::Already at ${TAG}; nothing to commit"; exit 0

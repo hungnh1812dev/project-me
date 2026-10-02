@@ -1,0 +1,529 @@
+import { AxeBuilder } from '@axe-core/playwright';
+import type { Locator, Page } from '@playwright/test';
+
+import type { Role } from '../src/features/auth/types.ts';
+import type { ContentType } from '../src/features/content/types.ts';
+import type { AccessToken, MediaAsset } from '../src/features/settings/types.ts';
+import { expect, ROLES, test, type MockApi } from './fixtures/mockApi.ts';
+
+/**
+ * Accessibility gates (AC-45, AC-46): axe on every listed page in both themes at desktop and
+ * phone width, plus keyboard-only walks with a visible focus indicator on every Tab stop.
+ */
+const STAMP = '2026-01-01T00:00:00.000Z';
+const ARTICLE: ContentType = {
+  documentId: 'ct-article',
+  slug: 'article',
+  name: 'Article',
+  kind: 'collection',
+  draftToPublish: true,
+  fields: [{ name: 'title', type: 'text', header: true }],
+  listFields: ['title'],
+  createdAt: STAMP,
+  updatedAt: STAMP,
+};
+
+const PAGES = [
+  { path: '/login', heading: 'Sign in', signedIn: false },
+  { path: '/register', heading: 'Create account', signedIn: false },
+  { path: '/forgot-password', heading: 'Reset your password', signedIn: false },
+  { path: '/403', heading: 'Access denied', signedIn: false },
+  { path: '/admin', heading: 'Welcome, Jane Doe', signedIn: true },
+  { path: '/admin/profile', heading: 'Your profile', signedIn: true },
+  { path: '/admin/content-types/article', heading: 'Article', signedIn: true },
+  { path: '/admin/dev/ui-kit', heading: 'UI kit', signedIn: true },
+];
+const THEMES = ['light', 'dark'] as const;
+const DARK = /(^|\s)dark(\s|$)/;
+const WIDTHS = [1280, 375] as const;
+
+/** Jane can read content types, so the content-type page and its menu render. */
+function seed(mockApi: MockApi, signedIn: boolean) {
+  mockApi.addUser({ email: 'jane@example.com', name: 'Jane Doe', role: ROLES.contentEditor });
+  mockApi.content.addContentType(ARTICLE);
+  if (signedIn) mockApi.signInAs('jane@example.com');
+}
+
+/** Stores the theme choice before any page script runs, and turns transitions off. */
+async function prepare(page: Page, theme: string, width: number) {
+  await page.addInitScript({
+    content: `window.localStorage.setItem('cms-admin:theme', '${theme}');`,
+  });
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.setViewportSize({ width, height: 812 });
+}
+
+/** Runs axe once the theme and fonts have settled; serious or critical violations fail. */
+async function expectNoBlockingViolations(page: Page, theme: string) {
+  const html = expect(page.locator('html'));
+  await (theme === 'dark' ? html.toHaveClass(DARK) : html.not.toHaveClass(DARK));
+  await page.evaluate('document.fonts.ready');
+
+  const results = await new AxeBuilder({ page })
+    .withTags(['wcag2a', 'wcag2aa', 'wcag21aa'])
+    .analyze();
+  const blocking = results.violations
+    .filter((v) => v.impact === 'serious' || v.impact === 'critical')
+    .map((v) => ({
+      id: v.id,
+      impact: v.impact,
+      targets: v.nodes.map((n) => n.target.join(' ')),
+    }));
+
+  expect(blocking).toEqual([]);
+}
+
+for (const { path, heading, signedIn } of PAGES) {
+  for (const theme of THEMES) {
+    for (const width of WIDTHS) {
+      test(`axe: ${path} has no serious or critical violations (${theme}, ${width}px)`, async ({
+        page,
+        mockApi,
+      }) => {
+        seed(mockApi, signedIn);
+        await prepare(page, theme, width);
+
+        await page.goto(path);
+        await expect(page.getByRole('heading', { level: 1, name: heading })).toBeVisible();
+
+        await expectNoBlockingViolations(page, theme);
+      });
+    }
+  }
+}
+
+/** What the browser reports about the element that has focus after a Tab press. */
+interface TabStop {
+  name: string;
+  landmark: string;
+  /** Inside `<main>`, even when a nearer `<header>` (a page header) sets `landmark`. */
+  inMain: boolean;
+  top: number;
+  visibleFocus: boolean;
+}
+
+/**
+ * Presses Tab until focus leaves the document or comes back to the first stop, and records each
+ * stop. A cap well above the real count turns a keyboard trap into a test failure.
+ */
+async function walkTabOrder(page: Page, cap = 120): Promise<TabStop[]> {
+  const stops: TabStop[] = [];
+  let first: string | null = null;
+  for (let i = 0; i < cap; i += 1) {
+    await page.keyboard.press('Tab');
+    const stop = await page.evaluate<(TabStop & { key: string }) | null>(`(() => {
+      const el = document.activeElement;
+      if (!el || el === document.body) return null;
+      const style = getComputedStyle(el);
+      const outline = style.outlineStyle !== 'none' && parseFloat(style.outlineWidth) > 0;
+      const ring = style.boxShadow !== 'none';
+      const region = el.closest('[data-sidebar="sidebar"], header, main, footer');
+      const landmark = el.matches('a[href="#main-content"]')
+        ? 'skip'
+        : region
+          ? region.tagName === 'DIV' ? 'nav' : region.tagName.toLowerCase()
+          : 'other';
+      const name = (el.getAttribute('aria-label') || el.labels?.[0]?.textContent || el.textContent || el.getAttribute('name') || el.tagName)
+        .trim().replace(/\\s+/g, ' ').slice(0, 40);
+      const rect = el.getBoundingClientRect();
+      if (!el.dataset.tabWalk) el.dataset.tabWalk = String(${i});
+      return { key: el.dataset.tabWalk, name, landmark, inMain: !!el.closest('main'), top: rect.top + window.scrollY, visibleFocus: outline || ring };
+    })()`);
+    if (!stop) return stops;
+    if (first === null) first = stop.key;
+    else if (stop.key === first) return stops;
+    stops.push({
+      name: stop.name,
+      landmark: stop.landmark,
+      inMain: stop.inMain,
+      top: stop.top,
+      visibleFocus: stop.visibleFocus,
+    });
+  }
+  throw new Error(`Focus never left the page after ${cap} Tab presses (a keyboard trap?)`);
+}
+
+/** Collapses consecutive repeats: ['a', 'a', 'b'] → ['a', 'b']. */
+const runs = (values: string[]) => values.filter((v, i) => v !== values[i - 1]);
+
+test('keyboard walk in the shell: skip link, menu, header, main, with visible focus (AC-45)', async ({
+  page,
+  mockApi,
+}) => {
+  seed(mockApi, true);
+  await page.setViewportSize({ width: 1280, height: 812 });
+  await page.goto('/admin');
+  await expect(page.getByRole('heading', { name: 'Welcome, Jane Doe' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Article' })).toBeVisible();
+
+  const stops = await walkTabOrder(page);
+
+  expect(stops.filter((s) => !s.visibleFocus)).toEqual([]);
+  expect(runs(stops.map((s) => s.landmark))).toEqual(['skip', 'nav', 'header', 'main']);
+  expect(stops.map((s) => s.name)).toEqual(
+    expect.arrayContaining(['Skip to content', 'Article', 'Toggle menu', 'Your profile']),
+  );
+});
+
+test('keyboard walk on the mobile shell reaches the menu button first (AC-45)', async ({
+  page,
+  mockApi,
+}) => {
+  seed(mockApi, true);
+  await page.setViewportSize({ width: 375, height: 812 });
+  await page.goto('/admin');
+  await expect(page.getByRole('heading', { name: 'Welcome, Jane Doe' })).toBeVisible();
+
+  const stops = await walkTabOrder(page);
+
+  expect(stops.filter((s) => !s.visibleFocus)).toEqual([]);
+  // The drawer is closed, so no menu link takes focus behind it.
+  expect(runs(stops.map((s) => s.landmark))).toEqual(['skip', 'header', 'main']);
+  expect(stops[1].name).toBe('Toggle menu');
+});
+
+for (const { path, heading } of PAGES.filter((p) => !p.signedIn)) {
+  test(`keyboard walk on ${path} follows the visual order with visible focus (AC-45)`, async ({
+    page,
+    mockApi,
+  }) => {
+    seed(mockApi, false);
+    await page.setViewportSize({ width: 1280, height: 812 });
+    await page.goto(path);
+    await expect(page.getByRole('heading', { level: 1, name: heading })).toBeVisible();
+
+    const stops = await walkTabOrder(page);
+
+    expect(stops.length).toBeGreaterThan(0);
+    expect(stops.filter((s) => !s.visibleFocus)).toEqual([]);
+    // Single-column card: each stop sits at or below the one before it.
+    const tops = stops.map((s) => Math.round(s.top));
+    expect(tops).toEqual([...tops].sort((a, b) => a - b));
+  });
+}
+
+test('keyboard walk on the UI kit reaches every control with visible focus (AC-45)', async ({
+  page,
+  mockApi,
+}) => {
+  seed(mockApi, true);
+  await page.setViewportSize({ width: 1280, height: 812 });
+  await page.goto('/admin/dev/ui-kit');
+  await expect(page.getByRole('heading', { name: 'UI kit', level: 1 })).toBeVisible();
+
+  const stops = await walkTabOrder(page, 200);
+  const inMain = stops.filter((s) => s.landmark === 'main');
+
+  expect(stops.filter((s) => !s.visibleFocus)).toEqual([]);
+  // Disabled controls are skipped; every other visible control in main is a Tab stop.
+  const enabled = await page.evaluate<number>(
+    `[...document.querySelectorAll('main *')].filter(
+      (el) => el.tabIndex >= 0 && !el.disabled && el.checkVisibility(),
+    ).length`,
+  );
+  expect(inMain.length).toBe(enabled);
+});
+
+/* ------------------------------------------------------------------------------------------------
+ * Settings pages (AC-42, AC-43): a super admin with one row on every list, so each page shows its
+ * search, its primary action and its row actions.
+ * --------------------------------------------------------------------------------------------- */
+
+const ADA = 'ada@example.com';
+/** A valid 1 × 1 PNG, so the media thumbnail renders without a media host. */
+const PIXEL =
+  'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==';
+const WRITER: Role = {
+  documentId: 'role-writer',
+  name: 'Writer',
+  slug: 'writer',
+  level: 10,
+  permissions: ['document:read', 'document:update'],
+  isDefault: false,
+  createdAt: STAMP,
+  updatedAt: STAMP,
+  updatedBy: null,
+};
+const DEPLOY: AccessToken = {
+  documentId: 'tok-deploy',
+  name: 'Deploy bot',
+  permissions: ['document:read'],
+  expiresAt: '2099-01-01T00:00:00.000Z',
+  createdAt: STAMP,
+  updatedAt: STAMP,
+  updatedBy: null,
+};
+const CAT: MediaAsset = {
+  documentId: 'media-cat',
+  fileName: 'cat.png',
+  mimeType: 'image/png',
+  size: 1258291,
+  width: 1920,
+  height: 1080,
+  url: PIXEL,
+  thumbnailUrl: PIXEL,
+  publicId: 'cms/media-cat',
+  hash: 'media-cat'.padStart(64, '0'),
+  uploadedBy: null,
+  createdAt: STAMP,
+  updatedAt: STAMP,
+};
+
+/**
+ * Each settings page, with the Tab stops a keyboard user must reach in this order (AC-43): the
+ * primary action in the page header, the search, then the row actions.
+ */
+const SETTINGS_PAGES = [
+  {
+    path: '/admin/settings/users',
+    heading: 'Users',
+    order: ['Search users', 'Change role for bob@example.com', 'Delete bob@example.com'],
+  },
+  {
+    path: '/admin/settings/roles',
+    heading: 'Roles',
+    order: ['New role', 'Search roles', 'Edit Writer', 'Delete Writer'],
+  },
+  {
+    path: '/admin/settings/permissions',
+    heading: 'Permissions',
+    order: ['New permission', 'Search permissions', 'Edit document:read', 'Delete document:read'],
+  },
+  {
+    path: '/admin/settings/access-tokens',
+    heading: 'Access tokens',
+    order: ['New token', 'Search access tokens', 'Revoke Deploy bot', 'Delete Deploy bot'],
+  },
+  {
+    path: '/admin/settings/media',
+    heading: 'Media library',
+    order: ['Upload', 'Search files', 'Delete cat.png'],
+  },
+];
+
+/** Ada (super admin) signed in, plus Bob, a custom role, a token and an image. */
+function seedSettings(mockApi: MockApi) {
+  mockApi.addUser({ email: ADA, name: 'Ada Admin', role: ROLES.superAdmin });
+  mockApi.addUser({ email: 'bob@example.com', name: 'Bob Writer', role: WRITER });
+  mockApi.settings.addAccessToken({ ...DEPLOY });
+  mockApi.settings.addMedia({ ...CAT });
+  mockApi.signInAs(ADA);
+}
+
+async function openSettings(page: Page, path: string, heading: string) {
+  await page.goto(path);
+  await expect(page.getByRole('heading', { level: 1, name: heading })).toBeVisible();
+  // Wait for the list itself, not only the skeleton.
+  await expect(page.locator('[aria-busy="true"]')).toHaveCount(0);
+}
+
+for (const { path, heading } of SETTINGS_PAGES) {
+  for (const theme of THEMES) {
+    for (const width of WIDTHS) {
+      test(`axe: ${path} has no serious or critical violations (${theme}, ${width}px)`, async ({
+        page,
+        mockApi,
+      }) => {
+        seedSettings(mockApi);
+        await prepare(page, theme, width);
+
+        await openSettings(page, path, heading);
+
+        await expectNoBlockingViolations(page, theme);
+      });
+    }
+  }
+}
+
+/** The settings dialogs that AC-42 checks open: the Roles form, the token reveal, a delete. */
+const SETTINGS_DIALOGS: {
+  name: string;
+  path: string;
+  heading: string;
+  open: (page: Page) => Promise<Locator>;
+}[] = [
+  {
+    name: 'the Roles form with the PermissionTree',
+    path: '/admin/settings/roles',
+    heading: 'Roles',
+    open: async (page) => {
+      await page.getByRole('button', { name: 'New role' }).click();
+      return page.getByRole('dialog', { name: 'New role' });
+    },
+  },
+  {
+    name: 'the token reveal',
+    path: '/admin/settings/access-tokens',
+    heading: 'Access tokens',
+    open: async (page) => {
+      await page.getByRole('button', { name: 'New token' }).click();
+      const form = page.getByRole('dialog', { name: 'New token' });
+      await form.getByRole('textbox', { name: 'Name' }).fill('Nightly export');
+      await form.getByRole('textbox', { name: 'Name' }).press('Enter');
+      return page.getByRole('alertdialog', { name: 'Copy your token now' });
+    },
+  },
+  {
+    name: 'the media delete confirmation',
+    path: '/admin/settings/media',
+    heading: 'Media library',
+    open: async (page) => {
+      await page.getByRole('button', { name: 'Delete cat.png' }).click();
+      return page.getByRole('alertdialog', { name: 'Delete "cat.png"?' });
+    },
+  },
+];
+
+for (const { name, path, heading, open } of SETTINGS_DIALOGS) {
+  for (const theme of THEMES) {
+    for (const width of WIDTHS) {
+      test(`axe: ${name} has no serious or critical violations (${theme}, ${width}px)`, async ({
+        page,
+        mockApi,
+      }) => {
+        seedSettings(mockApi);
+        await prepare(page, theme, width);
+        await openSettings(page, path, heading);
+
+        const dialog = await open(page);
+        await expect(dialog).toBeVisible();
+        await expect(dialog).toHaveAttribute('aria-modal', 'true');
+
+        await expectNoBlockingViolations(page, theme);
+      });
+    }
+  }
+}
+
+for (const { path, heading, order } of SETTINGS_PAGES) {
+  test(`keyboard walk on ${path}: primary action, search, row actions in DOM order (AC-43)`, async ({
+    page,
+    mockApi,
+  }) => {
+    seedSettings(mockApi);
+    await page.setViewportSize({ width: 1280, height: 812 });
+    await openSettings(page, path, heading);
+
+    const stops = await walkTabOrder(page, 200);
+    const inMain = stops.filter((s) => s.inMain).map((s) => s.name);
+
+    expect(stops.filter((s) => !s.visibleFocus)).toEqual([]);
+    // The named stops come in this order (other stops may sit between them).
+    expect(inMain.filter((n) => order.includes(n))).toEqual(order);
+    // Tab visited every focusable control in main, in DOM order (`walkTabOrder` tags each one).
+    const visited = await page.evaluate<(string | null)[]>(
+      `[...document.querySelectorAll('main *')]
+        .filter((el) => el.tabIndex >= 0 && !el.disabled && el.checkVisibility())
+        .map((el) => el.dataset.tabWalk ?? null)`,
+    );
+    expect(visited).not.toContain(null);
+    const indexes = visited.map(Number);
+    expect(indexes).toEqual([...indexes].sort((a, b) => a - b));
+  });
+}
+
+/** Asserts focus stays inside `dialog` for more than a full lap of Tab, then of Shift+Tab. */
+async function expectFocusTrapped(page: Page, dialog: Locator) {
+  const focused = dialog.locator(':focus');
+  // Every control that can take focus inside, so the laps below go all the way round.
+  const count = await dialog
+    .locator('a[href], button, input, select, textarea, [tabindex="0"]')
+    .filter({ visible: true })
+    .count();
+  await expect(focused).toHaveCount(1);
+  for (const key of ['Tab', 'Shift+Tab']) {
+    for (let i = 0; i < count + 2; i += 1) {
+      await page.keyboard.press(key);
+      // Base UI's focus guards hand focus back inside on the next tick, so this retries briefly.
+      await expect(focused, `${key} #${i + 1} left the dialog`).toHaveCount(1);
+    }
+  }
+}
+
+/** Each settings dialog, opened from the keyboard: trap, close, and focus back on the trigger. */
+const TRAPS: {
+  name: string;
+  path: string;
+  heading: string;
+  trigger: string;
+  dialog: (page: Page) => Locator;
+  close: (page: Page, dialog: Locator) => Promise<void>;
+  before?: (page: Page) => Promise<void>;
+}[] = [
+  {
+    name: 'the change-role confirmation',
+    path: '/admin/settings/users',
+    heading: 'Users',
+    trigger: 'Change role for bob@example.com',
+    dialog: (page) =>
+      page.getByRole('alertdialog', { name: 'Change the role of bob@example.com?' }),
+    close: (page) => page.keyboard.press('Escape'),
+  },
+  {
+    name: 'the Roles form',
+    path: '/admin/settings/roles',
+    heading: 'Roles',
+    trigger: 'New role',
+    dialog: (page) => page.getByRole('dialog', { name: 'New role' }),
+    close: (page) => page.keyboard.press('Escape'),
+  },
+  {
+    name: 'the permission form',
+    path: '/admin/settings/permissions',
+    heading: 'Permissions',
+    trigger: 'New permission',
+    dialog: (page) => page.getByRole('dialog', { name: 'New permission' }),
+    close: (page) => page.keyboard.press('Escape'),
+  },
+  {
+    name: 'the token reveal (Escape does not close it)',
+    path: '/admin/settings/access-tokens',
+    heading: 'Access tokens',
+    trigger: 'New token',
+    before: async (page) => {
+      const form = page.getByRole('dialog', { name: 'New token' });
+      await form.getByRole('textbox', { name: 'Name' }).fill('Nightly export');
+      await page.keyboard.press('Enter');
+    },
+    dialog: (page) => page.getByRole('alertdialog', { name: 'Copy your token now' }),
+    close: async (page, dialog) => {
+      await page.keyboard.press('Escape');
+      await expect(dialog).toBeVisible();
+      await dialog.getByRole('button', { name: 'Done' }).focus();
+      await page.keyboard.press('Enter');
+    },
+  },
+  {
+    name: 'the media delete confirmation',
+    path: '/admin/settings/media',
+    heading: 'Media library',
+    trigger: 'Delete cat.png',
+    dialog: (page) => page.getByRole('alertdialog', { name: 'Delete "cat.png"?' }),
+    close: (page) => page.keyboard.press('Escape'),
+  },
+];
+
+for (const { name, path, heading, trigger, dialog, close, before } of TRAPS) {
+  test(`keyboard: ${name} traps focus and returns it to the trigger (AC-8, AC-43)`, async ({
+    page,
+    mockApi,
+  }) => {
+    seedSettings(mockApi);
+    await page.setViewportSize({ width: 1280, height: 812 });
+    await openSettings(page, path, heading);
+    const button = page.getByRole('button', { name: trigger, exact: true });
+
+    await button.focus();
+    await page.keyboard.press('Enter');
+    await before?.(page);
+    const modal = dialog(page);
+    await expect(modal).toBeVisible();
+    await expect(modal).toHaveAttribute('aria-modal', 'true');
+
+    await expectFocusTrapped(page, modal);
+
+    await close(page, modal);
+    await expect(modal).toBeHidden();
+    await expect(button).toBeFocused();
+  });
+}
