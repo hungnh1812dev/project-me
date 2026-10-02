@@ -10,6 +10,7 @@ import {
   roleSlugFromName,
   validatePermission,
   validateRole,
+  validateTokenName,
 } from './validation';
 
 const VALID = { slug: 'article:export', name: 'Export articles', description: 'Download as CSV.' };
@@ -183,5 +184,19 @@ describe('roleChanges (AC-20)', () => {
 
   it('treats the same permissions with a duplicate as unchanged', () => {
     expect(roleChanges(ROLE, { ...SAME, permissions: ['a:b', 'c:d', 'a:b'] })).toEqual({});
+  });
+});
+
+describe('validateTokenName (AC-29)', () => {
+  it.each([
+    ['', 'Enter a name.'],
+    ['   ', 'Enter a name.'],
+    ['a'.repeat(101), 'Use 100 characters or fewer.'],
+  ])('rejects %j', (name, message) => {
+    expect(validateTokenName(name)).toBe(message);
+  });
+
+  it.each(['CI', ` ${'a'.repeat(100)} `])('accepts %j (trimmed)', (name) => {
+    expect(validateTokenName(name)).toBeUndefined();
   });
 });

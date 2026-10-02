@@ -138,3 +138,15 @@ export function roleChanges(
     ...(!samePermissions && { permissions }),
   };
 }
+
+// Access tokens
+
+export const TOKEN_NAME_MAX = 100;
+
+/** Checks a token name (AC-29): required once trimmed, with at most 100 characters. */
+export function validateTokenName(value: string): string | undefined {
+  const name = value.trim();
+  if (!name) return 'Enter a name.';
+  if (name.length > TOKEN_NAME_MAX) return 'Use 100 characters or fewer.';
+  return undefined;
+}

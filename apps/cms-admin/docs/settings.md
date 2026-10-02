@@ -3,8 +3,8 @@
 Phase 4 replaces the `/admin/settings/*` placeholders with working pages for users, roles,
 permissions, access tokens and the media library, and adds name editing to `/admin/profile`. This
 page grows with each small phase. Small phase 4.1 laid the foundations described below, 4.2 added
-the Users page, 4.3 the Permissions page and 4.4 the Roles page with the PermissionTree. The other
-two routes are still placeholders.
+the Users page, 4.3 the Permissions page, 4.4 the Roles page with the PermissionTree and 4.5 the
+Access tokens page with the SecretReveal. The media route is still a placeholder.
 
 Every request goes through `cmsApi` (see [API client](./api-client.md)). ABAC checks are
 **client-side defense in depth only** (see [RBAC and ABAC](./rbac-abac.md)); the backend stays the
@@ -19,14 +19,17 @@ queryKeys.ts              settingsKeys
 search.ts                 filterBySearch
 roleHierarchy.ts          roleLevelOf, assignableRoles, usersWithRoles (UserRow)
 validation.ts             PERMISSION_SLUG_PATTERN, validatePermission, permissionChanges,
-                          ROLE_SLUG_PATTERN, roleSlugFromName, validateRole, roleChanges
+                          ROLE_SLUG_PATTERN, roleSlugFromName, validateRole, roleChanges,
+                          TOKEN_NAME_MAX, validateTokenName
 permissionTree.ts         buildPermissionTree, nodeSlugs, countSelected, nodeState, toggleNode,
                           toggleSlug, filterPermissionTree, groupSlugsByResource
 conflict.ts               parsePermissionConflict (P4 409 → counts sentence or server message)
-api/                      usersApi (U1, U3, U4), rolesApi (R1 to R4), permissionsApi (P1 to P4)
+api/                      usersApi (U1, U3, U4), rolesApi (R1 to R4), permissionsApi (P1 to P4),
+                          accessTokensApi (T1 to T4)
 hooks/                    useUsers, useAssignRole, useDeleteUser, useRoles, useCreateRole,
                           useUpdateRole, useDeleteRole, usePermissions, useCreatePermission,
-                          useUpdatePermission, useDeletePermission
+                          useUpdatePermission, useDeletePermission, useAccessTokens,
+                          useCreateAccessToken, useRevokeAccessToken, useDeleteAccessToken
 components/               ListState, SearchField, LiveRegion, useAnnouncer
 ```
 
@@ -121,6 +124,7 @@ is trapped, and returns to the trigger on close. The UI kit (`/admin/dev/ui-kit`
   the caller can show `error`. `hideConfirm` removes the confirm button and moves focus to Cancel,
   for a state where the action can no longer run (the permission and role delete conflicts).
 - `PermissionTree` picks permission slugs; see [PermissionTree](#permissiontree).
+- `SecretReveal` shows a one-time secret; see [Access tokens](#access-tokens-adminsettingsaccess-tokens).
 
 ## List building blocks
 
@@ -233,10 +237,56 @@ targetLevel })`. Both buttons are `GatedButton`s named after the row ("Change ro
 - **Feedback.** `Role "<name>" created.`, `… updated.` and `… deleted.` go to the page's
   `LiveRegion`.
 
+## Access tokens (`/admin/settings/access-tokens`)
+
+`src/pages/settings/AccessTokensPage.tsx`, with its dialogs in `src/pages/settings/access-tokens/`
+(`TokenFormDialog`, `RevokeTokenDialog`, `DeleteTokenDialog`).
+
+- **List (T1).** `useAccessTokens` loads the tokens (only with `api_token:read`). One captioned table
+  ("Access tokens") in a labelled, focusable scroll region: name, a permission-count toggle that
+  opens the slugs grouped by resource (read-only), expiry, and the created and updated dates.
+  Expiry is "Never" for `expiresAt: null`, the date, or an outlined "Expired" badge plus the date
+  once it has passed (compared with the time the page mounted). Search covers name.
+  `getAccessTokens` drops any `token` field a T1 response might carry, so no list secret is ever
+  cached or rendered.
+- **Policy use.** New token, Revoke and Delete use `useCan('create' | 'revoke' | 'delete',
+'api_token')`; all need `api_token:manager` ("Revoke <name>", "Delete <name>" `GatedButton`s).
+- **Create (T2).** `TokenFormDialog` (a wide modal `Dialog`, Enter submits): Name (required, at most
+  100, `validateTokenName`), an Expires `Select` of the six `EXPIRES_IN_OPTIONS` (default `1m`,
+  "1 month", D6 not yet checked against the backend) and the PermissionTree. With no permission
+  picked it shows "A token with no permissions can't call any protected endpoint." but still
+  allows saving. A 400 shows the server message as an alert in the dialog.
+- **Revoke (T3) and delete (T4).** `RevokeTokenDialog` confirms `Revoke token "<name>"?` with "The
+  current secret stops working immediately. A new secret will be shown once." and sends T3 with
+  `{}`; the record keeps its name, permissions and expiry. `DeleteTokenDialog` confirms `Delete token
+"<name>"?` and sends T4. A 404 or other error stays in the dialog.
+- **Feedback.** `Token "<name>" deleted.` goes straight to the page's `LiveRegion`. `Token "<name>"
+created.` and `Token "<name>" revoked. Its new secret was shown once.` are announced when the
+  reveal closes, because the modal hides the page's live region while it is open.
+
+### Secret handling (AC-30, AC-33, AC-34)
+
+- T2 and T3 resolve with `AccessTokenSecret` to the caller only. Their hooks never call
+  `setQueryData`, and they use `gcTime: 0`, so a finished mutation (and the secret in its state)
+  leaves the mutation cache as soon as the caller runs `reset()`. A unit test serializes both React
+  Query caches after `reset()` and checks the secret is absent.
+- The dialog reads the result once, passes `{ name, secret }` to the page and runs
+  `mutation.reset()`. The secret then lives only in the page's `reveal` state. Nothing writes it to
+  Redux, web storage, the URL or the console.
+- `SecretReveal` (`src/components/form/SecretReveal.tsx`) opens while `secret` is set: an
+  `alertdialog` titled "Copy your token now", "You won't be able to see it again.", a read-only
+  monospace "Token" input that selects itself on focus, Copy and Done. Copy uses
+  `navigator.clipboard.writeText`; success announces "Copied." in the dialog's own polite status and
+  relabels the button "Copied" for 2 s; failure (or no Clipboard API) announces "Couldn't copy.
+  Select the token and copy it manually." and selects the text. Escape and outside clicks are
+  ignored: only Done closes it. Done calls `onDone`, the page clears `reveal`, and focus returns to
+  the control that started the flow (`finalFocus`), New token or Revoke. The e2e spec checks the
+  DOM, input values, web storage and URL no longer hold the secret.
+
 ## PermissionTree
 
 `src/components/form/PermissionTree.tsx`, with its pure logic in
-`src/features/settings/permissionTree.ts`. Used by the role form (and, from 4.5, the token form).
+`src/features/settings/permissionTree.ts`. Used, unchanged, by the role form and the token form.
 
 - **Props.** `value` and `onChange` (slug arrays), `catalog` (P1 data), `canReadCatalog`
   (`usePermissions().decision.allowed`), `isLoading`, `error` and `onRetry`, and an optional `label`
@@ -275,7 +325,8 @@ targetLevel })`. Both buttons are `GatedButton`s named after the row ("Change ro
   `requirePermission` (`<res>:manager` satisfies `<res>:read`, else 403), and answers 404
   `Not mocked: …` for anything not in `SETTINGS_ROUTES`. Its users are the users `mockApi` models,
   each user's role is added to the roles store, and the permissions store starts with
-  `PERMISSION_CATALOG`. `addRole` and `removeRole` change the roles store. `ROLES.superAdmin` now holds every catalog slug, `ROLES.admin` (level 50)
+  `PERMISSION_CATALOG`. `addRole` and `removeRole` change the roles store, and
+  `addAccessToken` and `removeAccessToken` the tokens store (which never holds a secret). `ROLES.superAdmin` now holds every catalog slug, `ROLES.admin` (level 50)
   every `<res>:read`, and the old partial super admin is `ROLES.userManager`.
   `mockApi.latestAccessToken(email)` returns a bearer for direct API calls from a spec.
 - **E2E routes so far:** U1, U3 and U4 (both enforce the level hierarchy with a 403, and answer 404
@@ -287,7 +338,11 @@ targetLevel })`. Both buttons are `GatedButton`s named after the row ("Change ro
   pattern or a missing name or description, and 409 for a known slug. P3 and P4 answer 404 for an
   unknown id. P4 answers 409 `{ message, roleCount, accessTokenCount }`, counted from the roles and
   access tokens in the store that grant the slug; otherwise it removes the permission
-  (`removePermission`). U3 updates the `mockApi` user in place, so `/auth/me` sees the
+  (`removePermission`). T1 lists the stored tokens. T2 answers 400 for an empty name, an unknown
+  `expiresIn` or a slug missing from the catalog, stores the record with `expiresAt` derived from
+  `expiresIn` (`1m` as 30 days), and answers it with a fresh `cms_live_…` secret. T3 keeps the record
+  and answers a new secret each time. T3 and T4 answer 404 for an unknown id. U3 updates the `mockApi` user in place, so `/auth/me` sees the
   new role; U4 removes the user through `removeUser`. Use `mockApi.failNext(method, path, 403)` for a
   server 403 that the client guard would otherwise prevent. Specs: `e2e/settings-users.spec.ts`,
-  `e2e/settings-permissions.spec.ts`, `e2e/settings-roles.spec.ts`.
+  `e2e/settings-permissions.spec.ts`, `e2e/settings-roles.spec.ts`,
+  `e2e/settings-access-tokens.spec.ts` (grants clipboard permissions to read the copied secret).

@@ -55,7 +55,10 @@ export interface MockSettings {
   addPermission(permission: Permission): void;
   /** Removes a permission (P4). */
   removePermission(documentId: string): void;
+  /** Adds a token (never a secret), or replaces the one with the same `documentId`. */
   addAccessToken(token: AccessToken): void;
+  /** Removes a token (T4). */
+  removeAccessToken(documentId: string): void;
   /** Adds an asset at the front (newest first). */
   addMedia(asset: MediaAsset): void;
 }
@@ -353,11 +356,104 @@ const PERMISSIONS_ROUTES: SettingsRoute[] = [
   },
 ];
 
+const EXPIRES_IN_MS: Record<string, number | null> = {
+  '30m': 30 * 60_000,
+  '1h': 60 * 60_000,
+  '1d': 24 * 60 * 60_000,
+  '1m': 30 * 24 * 60 * 60_000,
+  '1y': 365 * 24 * 60 * 60_000,
+  never: null,
+};
+
+let secretCount = 0;
+
+/** A fresh plaintext secret, unique per call. */
+function newSecret(): string {
+  secretCount += 1;
+  return `cms_live_${secretCount}_${Math.random().toString(36).slice(2, 12)}`;
+}
+
+/**
+ * Access tokens (T1 to T4). The store never holds a secret: T2 and T3 answer one, fresh each time,
+ * and forget it. T2 answers 400 for an empty name, an unknown `expiresIn` or an unknown permission
+ * slug. T3 keeps the record's name, permissions and expiry and rotates only the secret. T3 and T4
+ * answer 404 for an unknown id.
+ */
+const ACCESS_TOKENS_ROUTES: SettingsRoute[] = [
+  {
+    method: 'GET',
+    pattern: /^\/access-tokens$/,
+    permission: 'api_token:read',
+    handle: (route, { store }) => sendJson(route, 200, store.accessTokens),
+  },
+  {
+    method: 'POST',
+    pattern: /^\/access-tokens$/,
+    permission: 'api_token:manager',
+    handle: (route, { user, store }) => {
+      const { name, permissions, expiresIn } = (route.request().postDataJSON() ?? {}) as Partial<
+        Record<'name' | 'permissions' | 'expiresIn', unknown>
+      >;
+      if (typeof name !== 'string' || !name.trim()) {
+        return sendError(route, 400, 'name is required');
+      }
+      if (typeof expiresIn !== 'string' || !(expiresIn in EXPIRES_IN_MS)) {
+        return sendError(route, 400, 'expiresIn must be one of 30m, 1h, 1d, 1m, 1y, never');
+      }
+      const invalid = permissionsError(permissions, store);
+      if (invalid) return sendError(route, 400, invalid);
+      const now = new Date();
+      const lifetime = EXPIRES_IN_MS[expiresIn] ?? null;
+      const token: AccessToken = {
+        documentId: `tok-${now.getTime()}-${store.accessTokens.length + 1}`,
+        name,
+        permissions: permissions as string[],
+        expiresAt: lifetime === null ? null : new Date(now.getTime() + lifetime).toISOString(),
+        createdAt: now.toISOString(),
+        updatedAt: now.toISOString(),
+        updatedBy: user.documentId,
+      };
+      store.addAccessToken(token);
+      return sendJson(route, 201, { ...token, token: newSecret() });
+    },
+  },
+  {
+    method: 'POST',
+    pattern: /^\/access-tokens\/([^/]+)\/revoke$/,
+    permission: 'api_token:manager',
+    handle: (route, { user, params: [id], store }) => {
+      const token = store.accessTokens.find((t) => t.documentId === id);
+      if (!token) return sendError(route, 404, 'Access token not found');
+      const updated: AccessToken = {
+        ...token,
+        updatedAt: new Date().toISOString(),
+        updatedBy: user.documentId,
+      };
+      store.addAccessToken(updated);
+      return sendJson(route, 200, { ...updated, token: newSecret() });
+    },
+  },
+  {
+    method: 'DELETE',
+    pattern: /^\/access-tokens\/([^/]+)$/,
+    permission: 'api_token:manager',
+    handle: async (route, { params: [id], store }) => {
+      if (!store.accessTokens.some((t) => t.documentId === id)) {
+        return sendError(route, 404, 'Access token not found');
+      }
+      store.removeAccessToken(id);
+      await route.fulfill({ status: 204 });
+      return 204;
+    },
+  },
+];
+
 /** The routes the fake settings backend models. Anything else under its prefixes answers 404. */
 export const SETTINGS_ROUTES: SettingsRoute[] = [
   ...USERS_ROUTES,
   ...ROLES_ROUTES,
   ...PERMISSIONS_ROUTES,
+  ...ACCESS_TOKENS_ROUTES,
 ];
 
 const PREFIXES = /^\/(users|roles|permissions|access-tokens|media)(\/|$)/;
@@ -445,6 +541,10 @@ export function createMockSettings(
       if (index !== -1) permissions.splice(index, 1);
     },
     addAccessToken: (token) => upsert(accessTokens, token),
+    removeAccessToken: (documentId) => {
+      const index = accessTokens.findIndex((t) => t.documentId === documentId);
+      if (index !== -1) accessTokens.splice(index, 1);
+    },
     addMedia: (asset) => {
       media.unshift(asset);
     },

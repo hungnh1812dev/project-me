@@ -14,6 +14,7 @@ import LoginPage from '@/pages/login/LoginPage';
 import ProfilePage from '@/pages/profile/ProfilePage';
 import RegisterPage from '@/pages/register/RegisterPage';
 import ResetPasswordPage from '@/pages/reset-password/ResetPasswordPage';
+import AccessTokensPage from '@/pages/settings/AccessTokensPage';
 import PermissionsPage from '@/pages/settings/PermissionsPage';
 import RolesPage from '@/pages/settings/RolesPage';
 import SettingsPlaceholderPage from '@/pages/settings/SettingsPlaceholderPage';
@@ -39,6 +40,7 @@ const SETTINGS_PAGES: Partial<Record<string, ComponentType>> = {
   users: UsersPage,
   roles: RolesPage,
   permissions: PermissionsPage,
+  'access-tokens': AccessTokensPage,
 };
 
 const settingsPage = (key: string, label: string) => {
