@@ -1,6 +1,8 @@
+import type { Role } from '@/features/auth/types';
+
 import type { Permission } from './types';
 
-// Pure form rules for the settings dialogs (AC-25, AC-26). The Roles part arrives with 4.4.
+// Pure form rules for the settings dialogs (AC-19, AC-20, AC-25, AC-26).
 
 /** `resource:action`, lowercase, each part starting with a letter (AC-25). */
 export const PERMISSION_SLUG_PATTERN = /^[a-z][a-z0-9_]*:[a-z][a-z0-9_]*$/;
@@ -55,5 +57,84 @@ export function permissionChanges(
   return {
     ...(name !== original.name && { name }),
     ...(description !== (original.description ?? '') && { description }),
+  };
+}
+
+// Roles
+
+/** Lowercase letters and digits in dash-separated runs (AC-19). */
+export const ROLE_SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+
+export const ROLE_NAME_MAX = 100;
+export const ROLE_SLUG_MAX = 63;
+export const ROLE_LEVEL_MAX = 100;
+
+/**
+ * The slug derived from a role name (AC-19): lowercase, every run of other characters becomes one
+ * `-`, no leading or trailing `-`, at most 63 characters.
+ */
+export function roleSlugFromName(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, ROLE_SLUG_MAX)
+    .replace(/-+$/, '');
+}
+
+/** The role form's values, as typed. `level` is the input's text. */
+export interface RoleValues {
+  name: string;
+  slug: string;
+  level: string;
+  permissions: readonly string[];
+}
+
+/** One message per invalid field; an empty object means valid. */
+export type RoleErrors = Partial<Record<'name' | 'slug' | 'level', string>>;
+
+/**
+ * Checks the role form (AC-19, AC-20): name required (trimmed) with at most 100 characters; slug
+ * required, matching `ROLE_SLUG_PATTERN`, at most 63 characters (skipped on edit, where it is
+ * read-only); level a whole number from 0 to 100. No rule compares the level with the actor's (D4).
+ */
+export function validateRole(
+  values: RoleValues,
+  { isEdit = false }: { isEdit?: boolean } = {},
+): RoleErrors {
+  const errors: RoleErrors = {};
+  const name = values.name.trim();
+  if (!name) errors.name = 'Enter a name.';
+  else if (name.length > ROLE_NAME_MAX) errors.name = 'Use 100 characters or fewer.';
+  if (!isEdit) {
+    if (!values.slug) errors.slug = 'Enter a slug.';
+    else if (values.slug.length > ROLE_SLUG_MAX) errors.slug = 'Use 63 characters or fewer.';
+    else if (!ROLE_SLUG_PATTERN.test(values.slug)) {
+      errors.slug = 'Use lowercase letters, numbers and single dashes, for example content-writer.';
+    }
+  }
+  const level = values.level.trim();
+  if (!level) errors.level = 'Enter a level.';
+  else if (!/^\d+$/.test(level) || Number(level) > ROLE_LEVEL_MAX) {
+    errors.level = 'Use a whole number from 0 to 100.';
+  }
+  return errors;
+}
+
+/** R3's body: only the fields that differ from `original` (AC-20). Permissions compare as sets. */
+export function roleChanges(
+  original: Pick<Role, 'name' | 'level' | 'permissions'>,
+  values: Pick<RoleValues, 'name' | 'level' | 'permissions'>,
+): { name?: string; level?: number; permissions?: string[] } {
+  const name = values.name.trim();
+  const level = Number(values.level.trim());
+  const permissions = [...new Set(values.permissions)];
+  const before = new Set(original.permissions);
+  const samePermissions =
+    permissions.length === before.size && permissions.every((slug) => before.has(slug));
+  return {
+    ...(name !== original.name && { name }),
+    ...(level !== original.level && { level }),
+    ...(!samePermissions && { permissions }),
   };
 }

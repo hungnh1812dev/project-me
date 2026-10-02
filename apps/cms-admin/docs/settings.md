@@ -3,7 +3,8 @@
 Phase 4 replaces the `/admin/settings/*` placeholders with working pages for users, roles,
 permissions, access tokens and the media library, and adds name editing to `/admin/profile`. This
 page grows with each small phase. Small phase 4.1 laid the foundations described below, 4.2 added
-the Users page and 4.3 the Permissions page. The other three routes are still placeholders.
+the Users page, 4.3 the Permissions page and 4.4 the Roles page with the PermissionTree. The other
+two routes are still placeholders.
 
 Every request goes through `cmsApi` (see [API client](./api-client.md)). ABAC checks are
 **client-side defense in depth only** (see [RBAC and ABAC](./rbac-abac.md)); the backend stays the
@@ -17,11 +18,15 @@ types.ts                  User, Permission, PermissionConflict, AccessToken, Acc
 queryKeys.ts              settingsKeys
 search.ts                 filterBySearch
 roleHierarchy.ts          roleLevelOf, assignableRoles, usersWithRoles (UserRow)
-validation.ts             PERMISSION_SLUG_PATTERN, validatePermission, permissionChanges
+validation.ts             PERMISSION_SLUG_PATTERN, validatePermission, permissionChanges,
+                          ROLE_SLUG_PATTERN, roleSlugFromName, validateRole, roleChanges
+permissionTree.ts         buildPermissionTree, nodeSlugs, countSelected, nodeState, toggleNode,
+                          toggleSlug, filterPermissionTree, groupSlugsByResource
 conflict.ts               parsePermissionConflict (P4 409 → counts sentence or server message)
-api/                      usersApi (U1, U3, U4), rolesApi (R1), permissionsApi (P1 to P4)
-hooks/                    useUsers, useAssignRole, useDeleteUser, useRoles, usePermissions,
-                          useCreatePermission, useUpdatePermission, useDeletePermission
+api/                      usersApi (U1, U3, U4), rolesApi (R1 to R4), permissionsApi (P1 to P4)
+hooks/                    useUsers, useAssignRole, useDeleteUser, useRoles, useCreateRole,
+                          useUpdateRole, useDeleteRole, usePermissions, useCreatePermission,
+                          useUpdatePermission, useDeletePermission
 components/               ListState, SearchField, LiveRegion, useAnnouncer
 ```
 
@@ -67,13 +72,16 @@ labelled "1 month"; that reading is not yet checked against the backend (D6, a k
 `['settings', 'accessTokens']`). `settingsKeys.all` clears the whole feature. There are no
 optimistic updates, and a failed mutation leaves the cache unchanged.
 
-| Mutation              | Invalidates   |
-| --------------------- | ------------- |
-| `useAssignRole`       | `users`       |
-| `useDeleteUser`       | `users`       |
-| `useCreatePermission` | `permissions` |
-| `useUpdatePermission` | `permissions` |
-| `useDeletePermission` | `permissions` |
+| Mutation              | Invalidates                                               |
+| --------------------- | --------------------------------------------------------- |
+| `useAssignRole`       | `users`                                                   |
+| `useDeleteUser`       | `users`                                                   |
+| `useCreateRole`       | `roles`                                                   |
+| `useUpdateRole`       | `roles`, `users` (and `['auth', 'me']` for your own role) |
+| `useDeleteRole`       | `roles`, `users`                                          |
+| `useCreatePermission` | `permissions`                                             |
+| `useUpdatePermission` | `permissions`                                             |
+| `useDeletePermission` | `permissions`                                             |
 
 The other slices add their rows here.
 
@@ -111,7 +119,8 @@ is trapped, and returns to the trigger on close. The UI kit (`/admin/dev/ui-kit`
   conflict summary. Cancel gets the initial focus. Use `trigger` for an uncontrolled dialog, or
   `open` and `onOpenChange`. A resolved `onConfirm` closes the dialog; a rejected one keeps it open so
   the caller can show `error`. `hideConfirm` removes the confirm button and moves focus to Cancel,
-  for a state where the action can no longer run (the permission delete conflict).
+  for a state where the action can no longer run (the permission and role delete conflicts).
+- `PermissionTree` picks permission slugs; see [PermissionTree](#permissiontree).
 
 ## List building blocks
 
@@ -191,6 +200,67 @@ targetLevel })`. Both buttons are `GatedButton`s named after the row ("Change ro
 - **Feedback.** `Permission "<slug>" created.`, `… updated.` and `… deleted.` go to the page's
   `LiveRegion`.
 
+## Roles (`/admin/settings/roles`)
+
+`src/pages/settings/RolesPage.tsx`, with its dialogs in `src/pages/settings/roles/`.
+
+- **List (R1).** `useRoles` loads the roles (only with `role:read`). One captioned table ("Roles")
+  in a labelled, focusable scroll region: name with a "Default" badge, slug in monospace, level and a
+  permission count. Rows are sorted by level descending, then by name (case ignored). The count is a
+  toggle button ("Writer: 3 permissions" to a screen reader, `aria-expanded`) that opens a detail row
+  with the role's slugs grouped by resource (`groupSlugsByResource`), read-only. Search covers name
+  and slug.
+- **Policy use.** New role uses `useCan('create', 'role')`; each row's Edit and Delete use
+  `useCan('update' | 'delete', 'role', { isDefault })` (`GatedButton`s "Edit <name>", "Delete
+  <name>"). All need `role:manager`; Delete is also denied for a default role ("A default role cannot
+  be deleted."). No client-side level-hierarchy rule applies to roles (D4).
+- **Create and edit.** `RoleFormDialog` (a wide modal `Dialog`, Enter submits): Name (required, at
+  most 100), Slug (required, `ROLE_SLUG_PATTERN`, at most 63), Level (a whole number 0 to 100, a
+  `number` input) and the PermissionTree. On create, the slug follows `roleSlugFromName(name)` until
+  the user types in Slug; a R2 409 shows "A role with this slug already exists." on Slug and clears
+  when the slug changes; a 400 (unknown slug) shows the server message as an alert. On edit, Slug is
+  read-only; a default role's Name and Level are disabled with "The name and level of a default role
+  cannot be changed." while its permissions stay editable. `roleChanges` builds R3's body from the
+  changed fields only (permissions compare as a set), and Save is disabled while there is none.
+- **Your own role (AC-22).** When the edited role is `me.roleId`, `useUpdateRole` refetches
+  `GET /auth/me` after R3, dispatches `userLoaded` and invalidates `['auth', 'me']`, so the menu,
+  `<Can>` checks and the profile follow without a reload. A failed refetch is ignored (the save
+  succeeded).
+- **Delete.** `DeleteRoleDialog` confirms `Delete role "<name>"?` with "Delete role". On a R4 409 it
+  says "This role is still assigned to users. Assign them another role first." and, when the users
+  list is cached, "Assigned to 3 users."; it then offers only Close. Other errors stay in the
+  dialog.
+- **Feedback.** `Role "<name>" created.`, `… updated.` and `… deleted.` go to the page's
+  `LiveRegion`.
+
+## PermissionTree
+
+`src/components/form/PermissionTree.tsx`, with its pure logic in
+`src/features/settings/permissionTree.ts`. Used by the role form (and, from 4.5, the token form).
+
+- **Props.** `value` and `onChange` (slug arrays), `catalog` (P1 data), `canReadCatalog`
+  (`usePermissions().decision.allowed`), `isLoading`, `error` and `onRetry`, and an optional `label`
+  (the legend, "Permissions").
+- **Groups (D3).** `buildPermissionTree(catalog, selected)` makes one group per resource (the text
+  before the first `:`), sorted alphabetically, with leaves sorted by slug. `document` holds no
+  leaves itself: it is split into "All content types" (two-segment slugs) and one sub-group per
+  content-type slug found in the catalog (three segments). Selected slugs the catalog lacks go last
+  under "Unknown permissions", described as "Not in the permission catalog."; they stay listed after
+  being unchecked, so they can be checked again.
+- **Controls.** Every control is a native checkbox. A group has a tri-state checkbox
+  (`indeterminate` set through a ref) named by its label, with "n of m selected" as its description;
+  toggling it selects all of its descendants, or clears them when all were selected (`toggleNode`).
+  A permission is named by its slug (monospace) and name (left out when it only repeats the slug)
+  and described by its description. Labels never wrap a control, so Tab and Space work everywhere.
+- **Filter and Select all.** The filter (`type="search"`, "Filter permissions") matches slug, name
+  or description; Enter in it does not submit the form. Select all and the counts act on the
+  visible permissions, and Select all never adds unknown slugs (R2 and R3 would reject them).
+- **States.** Loading shows skeleton rows (`aria-busy`), a load error shows the message with Retry,
+  and an empty catalog says so. Without `permission:read` the tree is replaced by the current slugs,
+  read-only, and the note "Requires the "permission:read" permission to change permissions.".
+- **Layout.** Groups sit in a bordered list capped at 20rem with its own vertical scroll. Rows are
+  44px tall below `lg`.
+
 ## Test doubles
 
 - **Unit (MSW):** `src/test/msw/settingsHandlers.ts` has one opt-in recorder factory per contract
@@ -205,15 +275,19 @@ targetLevel })`. Both buttons are `GatedButton`s named after the row ("Change ro
   `requirePermission` (`<res>:manager` satisfies `<res>:read`, else 403), and answers 404
   `Not mocked: …` for anything not in `SETTINGS_ROUTES`. Its users are the users `mockApi` models,
   each user's role is added to the roles store, and the permissions store starts with
-  `PERMISSION_CATALOG`. `ROLES.superAdmin` now holds every catalog slug, `ROLES.admin` (level 50)
+  `PERMISSION_CATALOG`. `addRole` and `removeRole` change the roles store. `ROLES.superAdmin` now holds every catalog slug, `ROLES.admin` (level 50)
   every `<res>:read`, and the old partial super admin is `ROLES.userManager`.
   `mockApi.latestAccessToken(email)` returns a bearer for direct API calls from a spec.
 - **E2E routes so far:** U1, U3 and U4 (both enforce the level hierarchy with a 403, and answer 404
-  for an unknown user or role), R1, and P1 to P4. P2 answers 400 for a slug that does not match the
+  for an unknown user or role), R1 to R4, and P1 to P4. R2 answers 400 for an invalid body or a
+  slug missing from the catalog and 409 for a known role slug. R3 answers 400 when a default role's
+  name or level changes, replaces the role (never mutates it, since `ROLES` is shared) and hands
+  the new role to every user holding it, so `/auth/me` follows. R4 answers 400 for a default role
+  and 409 while a user holds the role. P2 answers 400 for a slug that does not match the
   pattern or a missing name or description, and 409 for a known slug. P3 and P4 answer 404 for an
   unknown id. P4 answers 409 `{ message, roleCount, accessTokenCount }`, counted from the roles and
   access tokens in the store that grant the slug; otherwise it removes the permission
   (`removePermission`). U3 updates the `mockApi` user in place, so `/auth/me` sees the
   new role; U4 removes the user through `removeUser`. Use `mockApi.failNext(method, path, 403)` for a
   server 403 that the client guard would otherwise prevent. Specs: `e2e/settings-users.spec.ts`,
-  `e2e/settings-permissions.spec.ts`.
+  `e2e/settings-permissions.spec.ts`, `e2e/settings-roles.spec.ts`.

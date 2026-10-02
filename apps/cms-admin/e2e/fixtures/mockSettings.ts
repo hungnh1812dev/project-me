@@ -49,6 +49,8 @@ export interface MockSettings {
   readonly media: MediaAsset[];
   /** Adds a role, or replaces the one with the same `documentId`. */
   addRole(role: Role): void;
+  /** Removes a role (R4). */
+  removeRole(documentId: string): void;
   /** Adds a permission, or replaces the one with the same `documentId`. */
   addPermission(permission: Permission): void;
   /** Removes a permission (P4). */
@@ -148,6 +150,121 @@ const USERS_ROUTES: SettingsRoute[] = [
   },
 ];
 
+const ROLE_SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+const DEFAULT_LOCKED = 'The name and level of a default role cannot be changed';
+
+type RoleBody = Partial<Record<'name' | 'slug' | 'level' | 'permissions', unknown>>;
+
+const isLevel = (level: unknown): level is number =>
+  Number.isInteger(level) && (level as number) >= 0 && (level as number) <= 100;
+
+/** The 400 message for a `permissions` body that is not a list of catalog slugs, or `null`. */
+function permissionsError(permissions: unknown, store: MockSettings): string | null {
+  if (!Array.isArray(permissions) || permissions.some((slug) => typeof slug !== 'string')) {
+    return 'permissions must be an array of slugs';
+  }
+  const unknown = permissions.filter((slug) => !store.permissions.some((p) => p.slug === slug));
+  return unknown.length > 0 ? `Unknown permission slugs: ${unknown.join(', ')}` : null;
+}
+
+/**
+ * Roles (R2 to R4). R2 answers 400 for an invalid body or an unknown permission slug and 409 for a
+ * known slug. R3 answers 400 when a default role's name or level changes, and the new role reaches
+ * every user holding it (so `/auth/me` follows). R4 answers 400 for a default role and 409 while a
+ * user still holds the role. Roles are replaced, never mutated, because `ROLES` is shared.
+ */
+const ROLES_ROUTES: SettingsRoute[] = [
+  {
+    method: 'POST',
+    pattern: /^\/roles$/,
+    permission: 'role:manager',
+    handle: (route, { user, store }) => {
+      const { name, slug, level, permissions } = (route.request().postDataJSON() ?? {}) as RoleBody;
+      if (typeof name !== 'string' || !name.trim())
+        return sendError(route, 400, 'name is required');
+      if (typeof slug !== 'string' || !ROLE_SLUG.test(slug)) {
+        return sendError(route, 400, 'slug must be lowercase words joined by dashes');
+      }
+      if (!isLevel(level)) return sendError(route, 400, 'level must be an integer from 0 to 100');
+      const invalid = permissionsError(permissions, store);
+      if (invalid) return sendError(route, 400, invalid);
+      if (store.roles.some((r) => r.slug === slug)) {
+        return sendError(route, 409, `Role "${slug}" already exists`);
+      }
+      const now = new Date().toISOString();
+      const role: Role = {
+        documentId: `role-${slug}`,
+        name,
+        slug,
+        level,
+        permissions: permissions as string[],
+        isDefault: false,
+        createdAt: now,
+        updatedAt: now,
+        updatedBy: user.documentId,
+      };
+      store.addRole(role);
+      return sendJson(route, 201, role);
+    },
+  },
+  {
+    method: 'PUT',
+    pattern: /^\/roles\/([^/]+)$/,
+    permission: 'role:manager',
+    handle: (route, { user, params: [id], store }) => {
+      const role = store.roles.find((r) => r.documentId === id);
+      if (!role) return sendError(route, 404, 'Role not found');
+      const { name, level, permissions } = (route.request().postDataJSON() ?? {}) as RoleBody;
+      if (name !== undefined && (typeof name !== 'string' || !name.trim())) {
+        return sendError(route, 400, 'name must not be empty');
+      }
+      if (level !== undefined && !isLevel(level)) {
+        return sendError(route, 400, 'level must be an integer from 0 to 100');
+      }
+      if (
+        role.isDefault &&
+        ((name !== undefined && name !== role.name) ||
+          (level !== undefined && level !== role.level))
+      ) {
+        return sendError(route, 400, DEFAULT_LOCKED);
+      }
+      if (permissions !== undefined) {
+        const invalid = permissionsError(permissions, store);
+        if (invalid) return sendError(route, 400, invalid);
+      }
+      const updated: Role = {
+        ...role,
+        ...(name !== undefined && { name: name as string }),
+        ...(level !== undefined && { level: level as number }),
+        ...(permissions !== undefined && { permissions: permissions as string[] }),
+        updatedAt: new Date().toISOString(),
+        updatedBy: user.documentId,
+      };
+      store.addRole(updated);
+      for (const holder of store.users().filter((u) => u.roleId === id)) {
+        Object.assign(holder, { role: updated });
+      }
+      return sendJson(route, 200, updated);
+    },
+  },
+  {
+    method: 'DELETE',
+    pattern: /^\/roles\/([^/]+)$/,
+    permission: 'role:manager',
+    handle: async (route, { params: [id], store }) => {
+      const role = store.roles.find((r) => r.documentId === id);
+      if (!role) return sendError(route, 404, 'Role not found');
+      if (role.isDefault) return sendError(route, 400, 'A default role cannot be deleted');
+      if (store.users().some((u) => u.roleId === id)) {
+        return sendError(route, 409, 'Role is still assigned to users');
+      }
+      store.removeRole(id);
+      await route.fulfill({ status: 204 });
+      return 204;
+    },
+  },
+];
+
 const PERMISSION_SLUG = /^[a-z][a-z0-9_]*:[a-z][a-z0-9_]*$/;
 
 /**
@@ -237,7 +354,11 @@ const PERMISSIONS_ROUTES: SettingsRoute[] = [
 ];
 
 /** The routes the fake settings backend models. Anything else under its prefixes answers 404. */
-export const SETTINGS_ROUTES: SettingsRoute[] = [...USERS_ROUTES, ...PERMISSIONS_ROUTES];
+export const SETTINGS_ROUTES: SettingsRoute[] = [
+  ...USERS_ROUTES,
+  ...ROLES_ROUTES,
+  ...PERMISSIONS_ROUTES,
+];
 
 const PREFIXES = /^\/(users|roles|permissions|access-tokens|media)(\/|$)/;
 const STAMP = '2026-01-01T00:00:00.000Z';
@@ -314,6 +435,10 @@ export function createMockSettings(
     accessTokens,
     media,
     addRole: (role) => upsert(roles, role),
+    removeRole: (documentId) => {
+      const index = roles.findIndex((r) => r.documentId === documentId);
+      if (index !== -1) roles.splice(index, 1);
+    },
     addPermission: (permission) => upsert(permissions, permission),
     removePermission: (documentId) => {
       const index = permissions.findIndex((p) => p.documentId === documentId);

@@ -6,7 +6,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { makeMeUser, makeRole } from '@/test/fixtures';
 import { getContentTypeHandler, getContentTypesHandler } from '@/test/msw/contentHandlers';
 import { server } from '@/test/msw/server';
-import { listPermissionsHandler, listUsersHandler } from '@/test/msw/settingsHandlers';
+import {
+  listPermissionsHandler,
+  listRolesHandler,
+  listUsersHandler,
+} from '@/test/msw/settingsHandlers';
 import { renderRoutes } from '@/test/renderWithProviders';
 
 import { routes } from './router';
@@ -17,9 +21,15 @@ const signedIn = (permissions: string[] = []) => ({
 });
 
 describe('route table', () => {
-  // The Users and Permissions pages load U1 and P1 as soon as they render; R1 stays idle without
-  // `role:read`.
-  beforeEach(() => server.use(listUsersHandler().handler, listPermissionsHandler().handler));
+  // The Users, Roles and Permissions pages load U1, R1 and P1 as soon as they render (R1 only with
+  // `role:read`).
+  beforeEach(() =>
+    server.use(
+      listUsersHandler().handler,
+      listRolesHandler().handler,
+      listPermissionsHandler().handler,
+    ),
+  );
 
   it('serves the admin home at /admin', async () => {
     renderRoutes(routes, { route: '/admin', auth: signedIn() });
@@ -98,7 +108,14 @@ describe('route table', () => {
     expect(screen.queryByText('Coming in Phase 4.')).not.toBeInTheDocument();
   });
 
-  it.each([['roles'], ['access-tokens'], ['media']])(
+  it('serves the real Roles page from SETTINGS_PAGES (AC-1)', async () => {
+    renderRoutes(routes, { route: '/admin/settings/roles', auth: signedIn(['role:read']) });
+
+    expect(await screen.findByRole('searchbox', { name: 'Search roles' })).toBeInTheDocument();
+    expect(screen.queryByText('Coming in Phase 4.')).not.toBeInTheDocument();
+  });
+
+  it.each([['access-tokens'], ['media']])(
     'still serves the placeholder for /admin/settings/%s',
     async (path) => {
       renderRoutes(routes, {
