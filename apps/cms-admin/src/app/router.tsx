@@ -14,6 +14,7 @@ import LoginPage from '@/pages/login/LoginPage';
 import ProfilePage from '@/pages/profile/ProfilePage';
 import RegisterPage from '@/pages/register/RegisterPage';
 import ResetPasswordPage from '@/pages/reset-password/ResetPasswordPage';
+import PermissionsPage from '@/pages/settings/PermissionsPage';
 import SettingsPlaceholderPage from '@/pages/settings/SettingsPlaceholderPage';
 import UsersPage from '@/pages/settings/UsersPage';
 import VerifyOtpPage from '@/pages/verify-otp/VerifyOtpPage';
@@ -35,6 +36,7 @@ const uiKitRoute: RouteObject = {
  */
 const SETTINGS_PAGES: Partial<Record<string, ComponentType>> = {
   users: UsersPage,
+  permissions: PermissionsPage,
 };
 
 const settingsPage = (key: string, label: string) => {

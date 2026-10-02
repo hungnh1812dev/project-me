@@ -2,8 +2,8 @@
 
 Phase 4 replaces the `/admin/settings/*` placeholders with working pages for users, roles,
 permissions, access tokens and the media library, and adds name editing to `/admin/profile`. This
-page grows with each small phase. Small phase 4.1 laid the foundations described below, and 4.2
-added the Users page. The other four routes are still placeholders.
+page grows with each small phase. Small phase 4.1 laid the foundations described below, 4.2 added
+the Users page and 4.3 the Permissions page. The other three routes are still placeholders.
 
 Every request goes through `cmsApi` (see [API client](./api-client.md)). ABAC checks are
 **client-side defense in depth only** (see [RBAC and ABAC](./rbac-abac.md)); the backend stays the
@@ -17,8 +17,11 @@ types.ts                  User, Permission, PermissionConflict, AccessToken, Acc
 queryKeys.ts              settingsKeys
 search.ts                 filterBySearch
 roleHierarchy.ts          roleLevelOf, assignableRoles, usersWithRoles (UserRow)
-api/                      usersApi (U1, U3, U4), rolesApi (R1)
-hooks/                    useUsers, useAssignRole, useDeleteUser, useRoles
+validation.ts             PERMISSION_SLUG_PATTERN, validatePermission, permissionChanges
+conflict.ts               parsePermissionConflict (P4 409 → counts sentence or server message)
+api/                      usersApi (U1, U3, U4), rolesApi (R1), permissionsApi (P1 to P4)
+hooks/                    useUsers, useAssignRole, useDeleteUser, useRoles, usePermissions,
+                          useCreatePermission, useUpdatePermission, useDeletePermission
 components/               ListState, SearchField, LiveRegion, useAnnouncer
 ```
 
@@ -64,10 +67,13 @@ labelled "1 month"; that reading is not yet checked against the backend (D6, a k
 `['settings', 'accessTokens']`). `settingsKeys.all` clears the whole feature. There are no
 optimistic updates, and a failed mutation leaves the cache unchanged.
 
-| Mutation        | Invalidates |
-| --------------- | ----------- |
-| `useAssignRole` | `users`     |
-| `useDeleteUser` | `users`     |
+| Mutation              | Invalidates   |
+| --------------------- | ------------- |
+| `useAssignRole`       | `users`       |
+| `useDeleteUser`       | `users`       |
+| `useCreatePermission` | `permissions` |
+| `useUpdatePermission` | `permissions` |
+| `useDeletePermission` | `permissions` |
 
 The other slices add their rows here.
 
@@ -104,7 +110,8 @@ is trapped, and returns to the trigger on close. The UI kit (`/admin/dev/ui-kit`
   second submit and dismissal while pending), `error` (`role="alert"`) and a `children` slot for a
   conflict summary. Cancel gets the initial focus. Use `trigger` for an uncontrolled dialog, or
   `open` and `onOpenChange`. A resolved `onConfirm` closes the dialog; a rejected one keeps it open so
-  the caller can show `error`.
+  the caller can show `error`. `hideConfirm` removes the confirm button and moves focus to Cancel,
+  for a state where the action can no longer run (the permission delete conflict).
 
 ## List building blocks
 
@@ -152,6 +159,38 @@ targetLevel })`. Both buttons are `GatedButton`s named after the row ("Change ro
   <role>.", "User <email> deleted."). Each dialog is remounted per opening, so a previous error never
   shows again.
 
+## Permissions (`/admin/settings/permissions`)
+
+`src/pages/settings/PermissionsPage.tsx`, with its dialogs in `src/pages/settings/permissions/`.
+
+- **List (P1).** `usePermissions` loads the catalog (only with `permission:read`). The page groups it
+  by resource (the slug before the first `:`) into native `<details>` sections, open by default, each
+  with a count badge ("document 6 permissions" to a screen reader) and its own captioned table
+  ("document permissions") in a labelled, focusable scroll region. Groups and rows are sorted by slug.
+  Each row shows the slug in monospace, the name and the description. Search covers slug, name and
+  description; the group counts follow the search.
+- **Policy use.** `useCan('create' | 'update' | 'delete', 'permission')` gates New permission and
+  each row's Edit and Delete (`GatedButton`s named "Edit <slug>", "Delete <slug>"). All three need
+  `permission:manager`. The empty state repeats New permission.
+- **Create and edit.** `PermissionFormDialog` is a modal `Dialog` with a native form (Enter submits).
+  Slug (required, `PERMISSION_SLUG_PATTERN`, help text "resource:action, lowercase. It can't be
+  changed later."), Name (required, at most 100 characters) and Description (required, the
+  `Textarea` counter at 500). Create shows the info note "Creating a permission grants nothing by
+  itself…". `validatePermission` runs on submit, then on every change. A P2 409 shows "A permission
+  with this slug already exists." on Slug and clears when the slug changes; any other server error
+  shows as an alert in the dialog. On edit the slug is read-only, focus starts on Name, and
+  `permissionChanges` sends P3 only the changed (trimmed) fields; with no change the dialog just
+  closes.
+- **Delete.** `DeletePermissionDialog` confirms "Delete <slug>?" with "Delete permission". On a P4
+  409, `parsePermissionConflict(error)` reads `{ roleCount, accessTokenCount }` from the error body:
+  "This permission is still used by 2 roles and 1 access token. Remove it from them first."
+  (pluralized, a zero count left out). Without usable counts (missing, not whole numbers, or both 0)
+  it falls back to the server message. The dialog then switches to "<slug> is still in use", links
+  to Roles and Access tokens (each only when the actor can read it; following one closes the dialog)
+  and offers only Close.
+- **Feedback.** `Permission "<slug>" created.`, `… updated.` and `… deleted.` go to the page's
+  `LiveRegion`.
+
 ## Test doubles
 
 - **Unit (MSW):** `src/test/msw/settingsHandlers.ts` has one opt-in recorder factory per contract
@@ -170,6 +209,11 @@ targetLevel })`. Both buttons are `GatedButton`s named after the row ("Change ro
   every `<res>:read`, and the old partial super admin is `ROLES.userManager`.
   `mockApi.latestAccessToken(email)` returns a bearer for direct API calls from a spec.
 - **E2E routes so far:** U1, U3 and U4 (both enforce the level hierarchy with a 403, and answer 404
-  for an unknown user or role) and R1. U3 updates the `mockApi` user in place, so `/auth/me` sees the
+  for an unknown user or role), R1, and P1 to P4. P2 answers 400 for a slug that does not match the
+  pattern or a missing name or description, and 409 for a known slug. P3 and P4 answer 404 for an
+  unknown id. P4 answers 409 `{ message, roleCount, accessTokenCount }`, counted from the roles and
+  access tokens in the store that grant the slug; otherwise it removes the permission
+  (`removePermission`). U3 updates the `mockApi` user in place, so `/auth/me` sees the
   new role; U4 removes the user through `removeUser`. Use `mockApi.failNext(method, path, 403)` for a
-  server 403 that the client guard would otherwise prevent. Spec: `e2e/settings-users.spec.ts`.
+  server 403 that the client guard would otherwise prevent. Specs: `e2e/settings-users.spec.ts`,
+  `e2e/settings-permissions.spec.ts`.

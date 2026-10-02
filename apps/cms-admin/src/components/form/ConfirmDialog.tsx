@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import {
   AlertDialog,
@@ -32,6 +32,12 @@ export interface ConfirmDialogProps {
   error?: React.ReactNode;
   /** Extra content between the description and the buttons, such as a conflict summary. */
   children?: React.ReactNode;
+  /**
+   * Hides the confirm button, leaving only Cancel (give it a `cancelLabel` such as "Close"), for a
+   * state where the action can no longer run, such as a delete conflict. Turning it on moves focus
+   * to Cancel.
+   */
+  hideConfirm?: boolean;
 }
 
 /**
@@ -50,6 +56,7 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
   onConfirm,
   error,
   children,
+  hideConfirm = false,
 }) => {
   const [innerOpen, setInnerOpen] = useState(false);
   const [pending, setPending] = useState(false);
@@ -57,6 +64,11 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
   const cancelRef = useRef<HTMLButtonElement>(null);
   const open = openProp ?? innerOpen;
   const hasError = error != null && error !== false && error !== '';
+
+  // The confirm button had focus when it was clicked; keep focus inside the dialog once it goes.
+  useEffect(() => {
+    if (hideConfirm) cancelRef.current?.focus();
+  }, [hideConfirm]);
 
   const setOpen = (next: boolean) => {
     if (pendingRef.current) return;
@@ -99,9 +111,11 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
           <AlertDialogClose render={<Button ref={cancelRef} variant="outline" />}>
             {cancelLabel}
           </AlertDialogClose>
-          <Button variant="destructive" loading={pending} onClick={() => void confirm()}>
-            {confirmLabel}
-          </Button>
+          {!hideConfirm && (
+            <Button variant="destructive" loading={pending} onClick={() => void confirm()}>
+              {confirmLabel}
+            </Button>
+          )}
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>

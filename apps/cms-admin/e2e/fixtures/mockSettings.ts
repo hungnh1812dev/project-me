@@ -51,6 +51,8 @@ export interface MockSettings {
   addRole(role: Role): void;
   /** Adds a permission, or replaces the one with the same `documentId`. */
   addPermission(permission: Permission): void;
+  /** Removes a permission (P4). */
+  removePermission(documentId: string): void;
   addAccessToken(token: AccessToken): void;
   /** Adds an asset at the front (newest first). */
   addMedia(asset: MediaAsset): void;
@@ -146,8 +148,96 @@ const USERS_ROUTES: SettingsRoute[] = [
   },
 ];
 
+const PERMISSION_SLUG = /^[a-z][a-z0-9_]*:[a-z][a-z0-9_]*$/;
+
+/**
+ * The permission catalog (P1 to P4). P2 answers 400 for an invalid body and 409 for a known slug.
+ * P4 answers 409 with `{ roleCount, accessTokenCount }`, counted from the store, while a role or
+ * an access token still grants the slug.
+ */
+const PERMISSIONS_ROUTES: SettingsRoute[] = [
+  {
+    method: 'GET',
+    pattern: /^\/permissions$/,
+    permission: 'permission:read',
+    handle: (route, { store }) => sendJson(route, 200, store.permissions),
+  },
+  {
+    method: 'POST',
+    pattern: /^\/permissions$/,
+    permission: 'permission:manager',
+    handle: (route, { user, store }) => {
+      const { slug, name, description } = (route.request().postDataJSON() ?? {}) as Partial<
+        Record<'slug' | 'name' | 'description', unknown>
+      >;
+      if (typeof slug !== 'string' || !PERMISSION_SLUG.test(slug)) {
+        return sendError(route, 400, 'slug must be resource:action');
+      }
+      if (typeof name !== 'string' || !name || typeof description !== 'string') {
+        return sendError(route, 400, 'name and description are required');
+      }
+      if (store.permissions.some((p) => p.slug === slug)) {
+        return sendError(route, 409, `Permission "${slug}" already exists`);
+      }
+      const permission: Permission = {
+        ...catalogPermission(slug),
+        name,
+        description,
+        updatedBy: user.documentId,
+      };
+      store.addPermission(permission);
+      return sendJson(route, 201, permission);
+    },
+  },
+  {
+    method: 'PUT',
+    pattern: /^\/permissions\/([^/]+)$/,
+    permission: 'permission:manager',
+    handle: (route, { user, params: [id], store }) => {
+      const permission = store.permissions.find((p) => p.documentId === id);
+      if (!permission) return sendError(route, 404, 'Permission not found');
+      const { name, description } = (route.request().postDataJSON() ?? {}) as Partial<
+        Pick<Permission, 'name' | 'description'>
+      >;
+      Object.assign(permission, {
+        ...(name !== undefined && { name }),
+        ...(description !== undefined && { description }),
+        updatedAt: new Date().toISOString(),
+        updatedBy: user.documentId,
+      });
+      return sendJson(route, 200, permission);
+    },
+  },
+  {
+    method: 'DELETE',
+    pattern: /^\/permissions\/([^/]+)$/,
+    permission: 'permission:manager',
+    handle: async (route, { params: [id], store }) => {
+      const index = store.permissions.findIndex((p) => p.documentId === id);
+      const permission = store.permissions[index];
+      if (!permission) return sendError(route, 404, 'Permission not found');
+      const roleCount = store.roles.filter((r) => r.permissions.includes(permission.slug)).length;
+      const accessTokenCount = store.accessTokens.filter((t) =>
+        t.permissions.includes(permission.slug),
+      ).length;
+      if (roleCount + accessTokenCount > 0) {
+        return sendJson(route, 409, {
+          statusCode: 409,
+          message: 'Permission is still in use',
+          error: STATUS_TEXT[409],
+          roleCount,
+          accessTokenCount,
+        });
+      }
+      store.removePermission(id);
+      await route.fulfill({ status: 204 });
+      return 204;
+    },
+  },
+];
+
 /** The routes the fake settings backend models. Anything else under its prefixes answers 404. */
-export const SETTINGS_ROUTES: SettingsRoute[] = [...USERS_ROUTES];
+export const SETTINGS_ROUTES: SettingsRoute[] = [...USERS_ROUTES, ...PERMISSIONS_ROUTES];
 
 const PREFIXES = /^\/(users|roles|permissions|access-tokens|media)(\/|$)/;
 const STAMP = '2026-01-01T00:00:00.000Z';
@@ -225,6 +315,10 @@ export function createMockSettings(
     media,
     addRole: (role) => upsert(roles, role),
     addPermission: (permission) => upsert(permissions, permission),
+    removePermission: (documentId) => {
+      const index = permissions.findIndex((p) => p.documentId === documentId);
+      if (index !== -1) permissions.splice(index, 1);
+    },
     addAccessToken: (token) => upsert(accessTokens, token),
     addMedia: (asset) => {
       media.unshift(asset);

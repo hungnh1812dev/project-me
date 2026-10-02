@@ -139,4 +139,29 @@ describe('ConfirmDialog', () => {
 
     await waitFor(() => expect(onOpenChange).toHaveBeenCalledWith(false));
   });
+
+  it('hides the confirm button and focuses Cancel when hideConfirm turns on', async () => {
+    const Harness = () => {
+      const [hidden, setHidden] = useState(false);
+      return (
+        <ConfirmDialog
+          open
+          title="Delete permission?"
+          confirmLabel="Delete permission"
+          cancelLabel={hidden ? 'Close' : 'Cancel'}
+          hideConfirm={hidden}
+          onConfirm={async () => {
+            setHidden(true);
+            throw new Error('409');
+          }}
+        />
+      );
+    };
+    render(<Harness />);
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Delete permission' }));
+
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Close' })).toHaveFocus());
+    expect(screen.queryByRole('button', { name: 'Delete permission' })).not.toBeInTheDocument();
+  });
 });
