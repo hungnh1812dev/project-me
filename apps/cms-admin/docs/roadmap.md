@@ -34,16 +34,13 @@ Resolve each one before the named phase starts.
 
 ## Known gaps from Phase 3
 
-- The mobile menu drawer has `role="dialog"` but no `aria-modal="true"`. Focus trapping and Escape work and axe reports nothing, but screen readers may still read the page behind it. Add `aria-modal` to the vendored `sheet.tsx`.
 - The admin home welcome card has a capped width and is centred, while other cards inside the shell are full width.
-- The Phase 3 security audit re-raised SEC-4 below (no Content-Security-Policy). Phase 3 made the page CSP-ready: the theme pre-paint script is the external `public/theme-init.js`, and nothing is inline. The headers still belong in the hosting or proxy config.
 
 ## Known gaps from Phase 4
 
 - The manual smoke against the real backend on :8080 has not run: no `super_admin` credentials were available on 2026-10-02 (D9). The settings contract is checked only against the legacy docs and the e2e mocks. Phase 4 moves to DONE once the smoke runs and its result is recorded in [Settings](./settings.md#manual-smoke-against-8080-d9).
 - `expiresIn: "1m"` is labelled "1 month" but has not been checked against the backend (D6). The smoke should create a token with it and compare `expiresAt` with the creation time. If `1m` means one minute, relabel it.
 - The Roles page adds no client-side level-hierarchy rule for creating, editing or deleting roles (D4). It mirrors the backend contract (level 0 to 100 only), so an actor can create or edit a role above their own level if the backend allows it.
-- Media thumbnails load straight from the media host (usually a CDN), not through `/api`. When the Content-Security-Policy from SEC-4 is added, its `img-src` must allow that host, or every thumbnail breaks.
 - `PUT /users/:id` still stores passwords unhashed on the backend, so the profile page edits the name only (D8).
 - The pure-module 90% branch bar of AC-44 is met (97% or more) but checked by reading the coverage report, not enforced by a per-file threshold.
 
@@ -55,24 +52,27 @@ The Phase 1 security audit passed with no CRITICAL, HIGH or MEDIUM findings. The
 | ----- | -------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
 | SEC-1 | A 401 refresh that is still running during logout can store a fresh access token after the session was cleared.                  | `src/core/api/CmsApi.ts`, `src/features/auth/store/sessionThunks.ts` | Drop refresh results that started before the logout (for example, with a session counter). |
 | SEC-2 | If the logout request fails, the user is not told, and the refresh cookie stays valid, so the next page load signs them back in. | `src/features/auth/store/sessionThunks.ts`                           | Tell the user when logout fails, or retry it.                                              |
-| SEC-3 | The Bearer token is added to every request, whatever its host. Every call uses a relative path today, so nothing leaks yet.      | `src/core/api/CmsApi.ts`                                             | Attach the token only to requests for the API's own origin.                                |
-| SEC-4 | No Content-Security-Policy or Referrer-Policy is set. The access token is in JS memory, so any XSS could read it.                | `index.html`, nginx config                                           | Add both headers before Phase 5 starts rendering HTML from the server.                     |
-| SEC-5 | The password-reset token stays in the URL and in browser history while the reset page is open.                                   | `src/pages/reset-password/ResetPasswordPage.tsx`                     | Read the token, then remove it from the URL with `history.replaceState`.                   |
-
-## Open security findings (LOW, from the Phase 2 audit)
-
-The Phase 2 security audit passed with no CRITICAL, HIGH or MEDIUM findings. These LOW findings were accepted for now, and both should be fixed before Phase 5 builds user-driven filter screens:
-
-| ID       | Finding                                                                                                                                                                                                              | Where                                                                              | Suggested fix                                                                                                    |
-| -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| P2-SEC-1 | Filter field names and `orderBy` go into the query string unchecked. A field name with brackets (such as `x][$ne`) can add parameters that validation never saw. The placeholder page passes `orderBy` from its URL. | `src/features/content/listQuery.ts`, `src/pages/content-types/ContentTypePage.tsx` | Reject any field name or `orderBy` that is not a plain identifier or known column, with `ERR_CLIENT_VALIDATION`. |
-| P2-SEC-2 | `search` and filter values have no length limit, so they can produce very long GET URLs.                                                                                                                             | `src/features/content/listQuery.ts`                                                | Cap them in `validateListParams` (for example, at 256 characters).                                               |
 
 ## Open security findings (LOW, from the Phase 4 audit)
 
 The Phase 4 security audit passed with no CRITICAL, HIGH or MEDIUM findings. These LOW findings were accepted for now:
 
-| ID       | Finding                                                                                                                                                                                                                                      | Where                                                                                       | Suggested fix                                                                                                              |
-| -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| P4-SEC-1 | The client applies no level-hierarchy check to role create, edit or delete (D4), so an actor with `role:manager` could try to create a level-100 role or add permissions to their own role. It becomes HIGH if the backend has the same gap. | `src/features/settings/hooks/useRoles.ts`                                                   | Confirm in the manual smoke that the backend answers 403 to both. Optionally mirror the level rule in the `role` policies. |
-| P4-SEC-2 | The server's `thumbnailUrl` goes into `<img src>` with no scheme or origin allowlist. A tampered record makes every admin's browser call an outside host, leaking IP and referrer. It cannot become XSS.                                     | `src/pages/settings/MediaLibraryPage.tsx`, `src/pages/settings/media/DeleteMediaDialog.tsx` | Allow only `https:` (or the media origin) and add `referrerPolicy="no-referrer"`.                                          |
+| ID       | Finding                                                                                                                                                                                                                                      | Where                                     | Suggested fix                                                                                                              |
+| -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| P4-SEC-1 | The client applies no level-hierarchy check to role create, edit or delete (D4), so an actor with `role:manager` could try to create a level-100 role or add permissions to their own role. It becomes HIGH if the backend has the same gap. | `src/features/settings/hooks/useRoles.ts` | Confirm in the manual smoke that the backend answers 403 to both. Optionally mirror the level rule in the `role` policies. |
+
+## Resolved before Phase 5
+
+The pre-Phase-5 hardening closed these findings and gaps. Each is checked by the acceptance criteria (AC) of that work:
+
+- **P2-SEC-1:** `orderBy` and every filter key must be a plain identifier, or `validateListParams` rejects the params with `ERR_CLIENT_VALIDATION` and no request is sent (AC-1 to AC-4). See [Content data](./content-data.md).
+- **P2-SEC-2:** `search` and string filter values are capped at 256 characters (`MAX_LIST_TEXT_LENGTH`), with the same fail-closed rejection (AC-5 to AC-7). See [Content data](./content-data.md).
+- **SEC-3:** the Bearer token goes only to requests for the API origin, on the first try and on the retry after a refresh (AC-20, AC-21). See [API client](./api-client.md).
+- **SEC-4:** the nginx image serves `Content-Security-Policy` (built from `CSP_API_ORIGIN` and `CSP_IMG_ORIGINS`) and `Referrer-Policy: same-origin`, and `index.html` sets a `same-origin` referrer meta. The `csp` Playwright project checks the built app under the policy (AC-8 to AC-13). This also closes the Phase 3 CSP gap and the Phase 4 `img-src` gap. See [Testing and config](./testing-and-config.md).
+- **SEC-5:** the reset page reads the token once and strips it from the URL without adding a history entry (AC-14 to AC-16). See [Onboarding and recovery](./onboarding-and-recovery.md).
+- **P4-SEC-2:** thumbnail URLs pass an allowlist (`https:`, the API origin or the page origin) and load with `referrerPolicy="no-referrer"`; anything else shows a placeholder (AC-17 to AC-19). See [Settings](./settings.md).
+- **Phase 3 gap:** the mobile menu drawer is marked `aria-modal="true"` (AC-22).
+
+## Deferred to Phase 5
+
+- The schema-aware "known column" check: `orderBy` only on a system column or a `text`, `number` or `boolean` field, and filter keys only on system columns or schema fields. P2-SEC-1 added only the plain-identifier rule. This check ships with Phase 5's sortable headers and filter screens.
