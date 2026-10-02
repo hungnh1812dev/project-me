@@ -17,7 +17,7 @@ export interface SettingsLink {
   icon: LucideIcon;
 }
 
-/** The Settings section (AC-25), in menu order. Each route is a Phase 4 placeholder for now. */
+/** The Settings section (AC-25), in menu order. Each key has a page in `router.tsx` (AC-1). */
 export const SETTINGS_LINKS: readonly SettingsLink[] = Object.freeze([
   {
     key: 'users',

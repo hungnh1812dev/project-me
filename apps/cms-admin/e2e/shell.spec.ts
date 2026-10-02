@@ -232,10 +232,7 @@ test.describe('side menu', () => {
     await expect(page.getByText('Coming in Phase 4.')).toHaveCount(0);
   });
 
-  test('every settings link opens its placeholder for a role with every grant', async ({
-    page,
-    mockApi,
-  }) => {
+  test('every settings link shows for a role with every grant', async ({ page, mockApi }) => {
     signInJane(mockApi, {
       ...ROLES.superAdmin,
       permissions: ['user:read', 'role:read', 'permission:read', 'api_token:read', 'media:read'],

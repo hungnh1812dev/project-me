@@ -18,7 +18,6 @@ import AccessTokensPage from '@/pages/settings/AccessTokensPage';
 import MediaLibraryPage from '@/pages/settings/MediaLibraryPage';
 import PermissionsPage from '@/pages/settings/PermissionsPage';
 import RolesPage from '@/pages/settings/RolesPage';
-import SettingsPlaceholderPage from '@/pages/settings/SettingsPlaceholderPage';
 import UsersPage from '@/pages/settings/UsersPage';
 import VerifyOtpPage from '@/pages/verify-otp/VerifyOtpPage';
 
@@ -33,11 +32,8 @@ const uiKitRoute: RouteObject = {
   lazy: async () => ({ Component: (await import('@/pages/dev/UiKitPage')).default }),
 };
 
-/**
- * The real page of each `SETTINGS_LINKS` key. A key without a page still renders the placeholder
- * until its small phase lands (AC-1).
- */
-const SETTINGS_PAGES: Partial<Record<string, ComponentType>> = {
+/** The page of each `SETTINGS_LINKS` key (AC-1). Every key has one; there is no placeholder. */
+const SETTINGS_PAGES: Record<string, ComponentType> = {
   users: UsersPage,
   roles: RolesPage,
   permissions: PermissionsPage,
@@ -45,9 +41,9 @@ const SETTINGS_PAGES: Partial<Record<string, ComponentType>> = {
   media: MediaLibraryPage,
 };
 
-const settingsPage = (key: string, label: string) => {
+const settingsPage = (key: string) => {
   const Page = SETTINGS_PAGES[key];
-  return Page ? <Page /> : <SettingsPlaceholderPage label={label} />;
+  return <Page />;
 };
 
 /** The app's route table. Tests mount it in a memory router. */
@@ -75,7 +71,7 @@ export const routes: RouteObject[] = [
             children: SETTINGS_LINKS.map((link) => ({
               path: link.key,
               element: <RequireAccess permission={link.permission} />,
-              children: [{ index: true, element: settingsPage(link.key, link.label) }],
+              children: [{ index: true, element: settingsPage(link.key) }],
             })),
           },
           {

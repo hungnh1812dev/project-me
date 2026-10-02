@@ -45,7 +45,7 @@ The menu recomputes when the user (and so their permissions) or the cached list 
 
 ### Settings links
 
-`src/features/shell/settingsLinks.ts`. Each route is a `SettingsPlaceholderPage` ("Coming in Phase 4.") behind `RequireAccess permission="<permission>"`.
+`src/features/shell/settingsLinks.ts`. Each route renders its real page (see [Settings](./settings.md)), mapped by `SETTINGS_PAGES` in `router.tsx`, behind `RequireAccess permission="<permission>"`.
 
 | Key             | Label         | Path                            | Permission        |
 | --------------- | ------------- | ------------------------------- | ----------------- |

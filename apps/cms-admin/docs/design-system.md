@@ -53,7 +53,7 @@ Rules:
 
 ## Primitives (`src/components/ui`)
 
-`alert`, `badge`, `breadcrumb`, `button`, `card`, `checkbox`, `dropdown-menu`, `input`, `label`, `separator`, `sheet`, `sidebar` (with `use-sidebar.ts`), `skeleton`, `switch`, `table`, `textarea`, `tooltip`, and `variants.ts` (`buttonVariants`, `controlClasses`). This folder is excluded from coverage. Behaviour that we own goes in `src/components/form` or `src/utils`, which stay under the coverage gates.
+`alert`, `alert-dialog`, `badge`, `breadcrumb`, `button`, `card`, `checkbox`, `dialog`, `dropdown-menu`, `input`, `label`, `select`, `separator`, `sheet`, `sidebar` (with `use-sidebar.ts`), `skeleton`, `switch`, `table`, `textarea`, `tooltip`, and `variants.ts` (`buttonVariants`, `controlClasses`). This folder is excluded from coverage. Behaviour that we own goes in `src/components/form` or `src/utils`, which stay under the coverage gates.
 
 Controls are 44px tall below `lg` (1024px) and compact (32 to 40px) above it.
 
@@ -68,6 +68,19 @@ Controls are 44px tall below `lg` (1024px) and compact (32 to 40px) above it.
 | `JsonInput`     | `form/JsonInput.tsx`     | Monospace, dependency-free. Props: `value` / `defaultValue` (text), `onChange(text)`, `onValidate(error \| null)`, `onValueChange(parsed \| undefined)`, `expect` (`object`, `array`, `any`), `required`, `disabled`. A "Format JSON" button pretty-prints valid text.                                                                                                                                     |
 | `Switch`        | `ui/switch.tsx`          | Base UI Switch as a native `<button role="switch">`, so `Field`'s label names and toggles it. Controlled (`checked`, `onCheckedChange(checked)`) or uncontrolled (`defaultChecked`). `name` and `value` submit through a hidden input. Space toggles it.                                                                                                                                                   |
 | `Checkbox`      | `ui/checkbox.tsx`        | Base UI checkbox, used with a `Label` (for example "Remember me").                                                                                                                                                                                                                                                                                                                                         |
+
+Phase 4 added the dialog primitives and the settings form components. Their full behaviour is in [Settings](./settings.md#primitives-and-form-components).
+
+| Component        | Where                     | API and states                                                                                                                                                                                      |
+| ---------------- | ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Dialog`         | `ui/dialog.tsx`           | Modal with `aria-modal="true"`, a labelled title, focus moved inside, trapped and returned to the trigger. `DialogContent` can show an icon-only Close.                                             |
+| `AlertDialog`    | `ui/alert-dialog.tsx`     | The same parts with `role="alertdialog"` and no outside-click dismissal.                                                                                                                            |
+| `Select`         | `ui/select.tsx`           | Base UI Select. Put `SelectTrigger` inside a `Field` for its label and `aria-*` wiring.                                                                                                             |
+| `ConfirmDialog`  | `form/ConfirmDialog.tsx`  | An `alertdialog` that names its target, with a destructive verb button, Cancel focused first, `loading` while `onConfirm` runs (no second submit, no dismissal), an `error` slot and `hideConfirm`. |
+| `GatedButton`    | `form/GatedButton.tsx`    | A `Button` fed a `useCan` decision. Denied: `aria-disabled="true"`, still focusable, the reason in a tooltip and `aria-describedby`, and clicks, Enter and form submission ignored.                 |
+| `PermissionTree` | `form/PermissionTree.tsx` | Native checkboxes grouped by resource (content-type sub-groups under `document`), tri-state group boxes, a filter, Select all, and loading, error, empty and read-only states.                      |
+| `SecretReveal`   | `form/SecretReveal.tsx`   | An `alertdialog` for a one-time secret: read-only monospace input, Copy (announces "Copied." or the manual fallback) and Done. Escape and outside clicks do not close it.                           |
+| `FileDropzone`   | `form/FileDropzone.tsx`   | A visible Upload `GatedButton` that opens a hidden file input, plus a drop zone, and an "Upload progress" list with each file's state in text.                                                      |
 
 Every input supports the default, filled, disabled, invalid (`aria-invalid`, destructive border) and required states. The [UI kit](./app-shell.md#ui-kit-route) shows all of them.
 

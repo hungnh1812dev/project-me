@@ -29,7 +29,7 @@ Tooling and runtime config for `apps/cms-admin`: unit and e2e test setup, covera
 
 ## Coverage gates
 
-`test:cov` uses the v8 provider. Coverage includes `src/**/*.{ts,tsx}` and excludes `src/main.tsx`, `src/**/*.d.ts`, `src/test/**`, the vendored primitives in `src/components/ui/**`, type-only `types.ts` files and the test files themselves. `src/components/form/**` stays covered. The pure shell, theme and JSON modules (`navigation.ts`, `breadcrumbs.ts`, `theme.ts`, `storage.ts`, `json.ts`) are expected to keep at least 90% branch coverage.
+`test:cov` uses the v8 provider. Coverage includes `src/**/*.{ts,tsx}` and excludes `src/main.tsx`, `src/**/*.d.ts`, `src/test/**`, the vendored primitives in `src/components/ui/**`, type-only `types.ts` files and the test files themselves. `src/components/form/**` stays covered. The pure shell, theme and JSON modules (`navigation.ts`, `breadcrumbs.ts`, `theme.ts`, `storage.ts`, `json.ts`) and the pure settings modules (`permissionTree.ts`, `roleHierarchy.ts`, `validation.ts`, `conflict.ts`, `media.ts`, `search.ts`, `guard.ts`) are expected to keep at least 90% branch coverage. That bar is read from the report; the config enforces only the globs below.
 
 | Glob                                                                                      | Lines, statements, functions, branches |
 | ----------------------------------------------------------------------------------------- | -------------------------------------- |
@@ -38,14 +38,17 @@ Tooling and runtime config for `apps/cms-admin`: unit and e2e test setup, covera
 
 The logic globs match only `.ts` and the UI glob only `.tsx`, so no file counts twice. A missed gate makes `test:cov` exit 1 (checked by temporarily raising a threshold).
 
-`PENDING_REWRITE` in `vitest.config.ts` temporarily excludes the draft files that later small phases rewrite in place (`App.tsx`, `AppProvider.tsx`, `AuthSlice.ts`, `LoginPage.tsx`, `ProfilePage.tsx`). The phase that rewrites a file removes it from that list.
+The temporary `PENDING_REWRITE` exclusion list is gone: every rewritten file is now under the gates.
 
 ## E2E tests (Playwright)
 
 - Config: `playwright.config.ts`. Chromium only. Specs live in `e2e/*.spec.ts`.
 - `webServer` starts `vite --port 5174 --strictPort` with `VITE_API_URL` set to empty, so the app calls the relative `/api/v1`. A running dev server on 5174 is reused locally.
 - Import `test` and `expect` from `e2e/fixtures/mockApi.ts`, not from `@playwright/test`. Its auto fixture routes every `**/api/v1/**` request through `page.route`, records it in `mockApi.requests` (with its status), and answers from a fake backend (users, roles, tokens and the refresh-cookie session; see [Routing and guards](./routing-and-guards.md#e2e-fixture-mockapi)). Anything not modelled gets a Nest-style 404. No e2e test needs a live backend.
-- `e2e/a11y.spec.ts` uses `@axe-core/playwright` (see [App shell](./app-shell.md#tests)).
+- The settings paths (`/users*`, `/roles*`, `/permissions*`, `/access-tokens*`, `/media*`) are answered by `e2e/fixtures/mockSettings.ts`, an in-memory settings backend that `mockApi` delegates to (also the `mockSettings` fixture). See [Settings](./settings.md#test-doubles) for its routes and error triggers.
+- Unit tests of the settings feature use the opt-in recorders in `src/test/msw/settingsHandlers.ts` (one per contract row, none installed by default) and `src/test/nodeMultipart.ts` for uploads.
+- `e2e/a11y.spec.ts` uses `@axe-core/playwright` (see [App shell](./app-shell.md#tests)). It covers the settings pages and their dialogs too (see [Settings](./settings.md#accessibility-and-keyboard-ac-42-ac-43)).
+- If the Playwright browser is missing from the user cache, run `pnpm --filter cms-admin exec playwright install chromium`, or install it into `node_modules` and run with `PLAYWRIGHT_BROWSERS_PATH=0`.
 - Reports go to `playwright-report/` and `test-results/` (git-ignored).
 
 ## The `@/` alias

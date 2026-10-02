@@ -1,11 +1,11 @@
 # Settings
 
-Phase 4 replaces the `/admin/settings/*` placeholders with working pages for users, roles,
-permissions, access tokens and the media library, and adds name editing to `/admin/profile`. This
-page grows with each small phase. Small phase 4.1 laid the foundations described below, 4.2 added
-the Users page, 4.3 the Permissions page, 4.4 the Roles page with the PermissionTree and 4.5 the
-Access tokens page with the SecretReveal, and 4.6 the Media library. Every settings key now has a
-real page.
+Phase 4 replaced the `/admin/settings/*` placeholders with working pages for users, roles,
+permissions, access tokens and the media library, and added name editing to `/admin/profile`.
+Small phase 4.1 laid the foundations described below, 4.2 added the Users page, 4.3 the Permissions
+page, 4.4 the Roles page with the PermissionTree, 4.5 the Access tokens page with the SecretReveal,
+4.6 the Media library, 4.7 profile name editing, and 4.8 the accessibility and keyboard checks, the
+coverage gate and these docs.
 
 Every request goes through `cmsApi` (see [API client](./api-client.md)). ABAC checks are
 **client-side defense in depth only** (see [RBAC and ABAC](./rbac-abac.md)); the backend stays the
@@ -37,9 +37,9 @@ hooks/                    useUsers, useAssignRole, useDeleteUser, useRoles, useC
 components/               ListState, SearchField, LiveRegion, useAnnouncer
 ```
 
-`router.tsx` maps each settings key to its page through `SETTINGS_PAGES` (all five keys now have
-one; `SettingsPlaceholderPage` is removed in 4.8). Each route stays behind `RequireAccess
-permission="<res>:read"`.
+`router.tsx` maps each settings key to its page through `SETTINGS_PAGES`, a required
+`Record<string, ComponentType>` with no placeholder fallback. Each route stays behind `RequireAccess
+permission="<res>:read"`; without it the user lands on `/403` with the reason.
 
 ## Backend contract
 
@@ -95,6 +95,24 @@ optimistic updates, and a failed mutation leaves the cache unchanged.
 | `useUploadMedia`       | `media`, once per batch and only when a file uploaded     |
 | `useDeleteMedia`       | `media`                                                   |
 | `useUpdateProfile`     | `users` (and writes the new name to `['auth', 'me']`)     |
+
+## Policy use per page
+
+Every write control is a `GatedButton` fed by `useCan`, and each mutation hook calls `guard` with
+the same decision before its request. The details are in each page's section below.
+
+| Page          | Read (route and list) | Control                      | `useCan(action, subject, attrs)`                                       | Needs                |
+| ------------- | --------------------- | ---------------------------- | ---------------------------------------------------------------------- | -------------------- |
+| Users         | `user:read`           | Change role                  | `assign_role`, `user`, `{ targetUserId, targetLevel, newRoleLevel }`   | `user:role_manager`  |
+| Users         |                       | Delete                       | `delete`, `user`, `{ targetUserId, targetLevel }`                      | `user:manager`       |
+| Roles         | `role:read`           | New role, Edit, Delete       | `create` / `update` / `delete`, `role`, `{ isDefault }` (Edit, Delete) | `role:manager`       |
+| Permissions   | `permission:read`     | New permission, Edit, Delete | `create` / `update` / `delete`, `permission`                           | `permission:manager` |
+| Access tokens | `api_token:read`      | New token, Revoke, Delete    | `create` / `revoke` / `delete`, `api_token`                            | `api_token:manager`  |
+| Media library | `media:read`          | Upload, Delete               | `upload` / `delete`, `media`                                           | `media:manager`      |
+| Profile       | signed in             | Edit name                    | none (U2 is bearer only for your own record)                           | —                    |
+
+Users also need a target below the actor's level and never themselves. Roles add no level rule
+(D4). The PermissionTree in the role and token forms needs `permission:read` to edit.
 
 ## The shared `guard`
 
@@ -405,7 +423,7 @@ accept="image/png,image/jpeg">`, so the keyboard alone is enough; the dashed zon
   `addAccessToken` and `removeAccessToken` the tokens store (which never holds a secret). `ROLES.superAdmin` now holds every catalog slug, `ROLES.admin` (level 50)
   every `<res>:read`, and the old partial super admin is `ROLES.userManager`.
   `mockApi.latestAccessToken(email)` returns a bearer for direct API calls from a spec.
-- **E2E routes so far:** U1, U2, U3 and U4. U2 is bearer only: it records every body in
+- **E2E routes:** U1, U2, U3 and U4. U2 is bearer only: it records every body in
   `settings.userUpdates`, answers 404 for an unknown user, 403 for another user without
   `user:manager`, 400 for any `password` key or a name that is not 1 to 100 characters, and
   otherwise renames the `mockApi` user in place (so `/auth/me` follows). U3 and U4 (both enforce the level hierarchy with a 403, and answer 404
@@ -432,3 +450,36 @@ accept="image/png,image/jpeg">`, so the keyboard alone is enough; the dashed zon
   `e2e/settings-access-tokens.spec.ts` (grants clipboard permissions to read the copied secret),
   `e2e/settings-media.spec.ts` (uploads canvas-generated PNG and JPEG buffers plus a `.gif` through
   the Upload button's file chooser, and measures layout shift at 375px), `e2e/profile.spec.ts`.
+
+## Accessibility and keyboard (AC-42, AC-43)
+
+`e2e/a11y.spec.ts` covers the settings area as a super admin with one row on every list:
+
+- **axe.** Each of the five settings pages, plus three open dialogs (the Roles form with the
+  PermissionTree, the token reveal and the media delete confirmation), in light and dark at 1280px
+  and 375px. No serious or critical violation is allowed.
+- **Tab order.** On each page, Tab reaches the primary action (in the page header), then the search,
+  then every row action, in DOM order, each with a visible focus ring. The walk also checks that
+  every focusable control in `<main>` was visited, in DOM order. The Users page has no primary
+  action.
+- **Dialogs.** Each dialog is opened from the keyboard (change role, Roles form, permission form,
+  token reveal, media delete). Focus stays inside for more than a full lap of Tab and of Shift+Tab,
+  and returns to the trigger on close. Escape closes every dialog except the token reveal, which only
+  Done closes (AC-34).
+
+## Coverage (AC-44)
+
+`pnpm --filter cms-admin test:cov` enforces `src/features/**/*.ts` ≥ 85% and `src/**/*.tsx` ≥ 70%
+(`vitest.config.ts`). At the end of 4.8 the pure modules `permissionTree.ts`, `roleHierarchy.ts`,
+`validation.ts`, `conflict.ts`, `media.ts`, `search.ts` and `guard.ts` are at 97% branch coverage
+or more (the AC asks for 90%). That per-module bar is checked by reading the report, not by a
+threshold in the config.
+
+## Manual smoke against :8080 (D9)
+
+Not run (2026-10-02, no `super_admin` credentials). So the contract above, including what
+`expiresIn: "1m"` means (D6), is still checked only against the legacy docs and the mocks, and the
+roadmap keeps Phase 4 IN REVIEW. To run it: start the backend on :8080, run
+`pnpm --filter cms-admin dev`, sign in as a `super_admin`, make one pass per page, create a token
+with "1 month" and compare its `expiresAt` with the creation time, then record the requests and
+results here.
