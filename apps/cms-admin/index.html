@@ -5,6 +5,8 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>CMS Admin</title>
+    <!-- Same as the Referrer-Policy header (SEC-4): no referrer leaves the admin origin. -->
+    <meta name="referrer" content="same-origin" />
     <!-- Sets the light or dark theme before first paint. External on purpose: no inline scripts (CSP). -->
     <script src="/theme-init.js"></script>
   </head>
