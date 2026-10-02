@@ -133,6 +133,22 @@ test('a collection page sends the mapped orderBy on the wire', async ({
   );
 });
 
+test('a collection page rejects a non-identifier orderBy without asking the API (AC-4)', async ({
+  page,
+  mockApi,
+  mockContent,
+}) => {
+  seed(mockContent);
+  signedInAs(mockApi);
+
+  await page.goto('/admin/content-types/article?orderBy=x%5D%5B%24ne');
+
+  await expect(page.getByRole('alert')).toContainText("Couldn't load the documents.");
+  expect(
+    mockApi.requests.filter((r) => r.path.startsWith('/api/v1/documents/collection-type/article')),
+  ).toEqual([]);
+});
+
 test('a single type that was never saved shows "Not saved yet"', async ({
   page,
   mockApi,

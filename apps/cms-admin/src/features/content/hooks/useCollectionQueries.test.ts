@@ -111,6 +111,26 @@ describe('useDocumentList (AC-14)', () => {
     expect(result.current.data).toEqual(second);
   });
 
+  it.each<[string, ListParams]>([
+    ['an orderBy that is not a plain identifier (AC-3)', { orderBy: 'x][$ne' }],
+    ['a filter key that is not a plain identifier (AC-3)', { filters: { 'x][$ne': { $eq: 1 } } }],
+    ['a search over 256 characters (AC-7)', { search: 'a'.repeat(257) }],
+    [
+      'a string filter value over 256 characters (AC-7)',
+      { filters: { title: { $contains: 'a'.repeat(257) } } },
+    ],
+  ])('rejects %s with 400 ERR_CLIENT_VALIDATION and sends no request', async (_case, params) => {
+    const d1 = listDocumentsHandler();
+    server.use(d1.handler);
+
+    const { result } = renderHookWithProviders(() => useDocumentList(ARTICLE, params), READER);
+
+    await waitFor(() => expect(result.current.isError).toBe(true));
+    expect(result.current.error).toBeInstanceOf(ApiError);
+    expect(result.current.error).toMatchObject({ status: 400, code: 'ERR_CLIENT_VALIDATION' });
+    expect(d1.requests).toHaveLength(0);
+  });
+
   it('is disabled when scoped read is denied', async () => {
     const d1 = listDocumentsHandler();
     server.use(d1.handler);

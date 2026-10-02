@@ -4,6 +4,7 @@ import { ApiError } from '@/core/api/apiError';
 
 import {
   listValidationError,
+  MAX_LIST_TEXT_LENGTH,
   normalizeListParams,
   toListSearchParams,
   toWireField,
@@ -222,6 +223,80 @@ describe('validateListParams (AC-5)', () => {
     } as unknown as ListParams);
 
     expect(problems).toHaveLength(5);
+  });
+});
+
+describe('validateListParams: plain identifiers (P2-SEC-1, AC-1, AC-2)', () => {
+  it.each(['id', 'createdAt', 'title', 'published_at', '_private', 'a'.repeat(64)])(
+    'accepts orderBy %s',
+    (orderBy) => {
+      expect(validateListParams({ orderBy })).toEqual([]);
+    },
+  );
+
+  it.each(['x][$ne', 'a b', 'created_at;', '', '1title', 'a'.repeat(65), 'title.raw', 'tïtle'])(
+    'flags orderBy %j',
+    (orderBy) => {
+      const problems = validateListParams({ orderBy });
+
+      expect(problems).toHaveLength(1);
+      expect(problems[0]).toMatch(/orderBy must be a plain field name/);
+    },
+  );
+
+  it.each(['x][$ne', 'a b', 'created_at;', '', 'a'.repeat(65)])('flags filter key %j', (key) => {
+    const problems = validateListParams({ filters: { [key]: { $eq: 1 } } });
+
+    expect(problems).toHaveLength(1);
+    expect(problems[0]).toMatch(/filter field must be a plain field name/);
+  });
+
+  it('accepts valid filter keys and keeps the operator rules', () => {
+    expect(
+      validateListParams({ filters: { createdAt: { $gt: 1 }, published_at: { $lt: 2 } } }),
+    ).toEqual([]);
+    expect(validateListParams({ filters: { title: { $eq: 'a', $ne: 'b' } } })).toHaveLength(1);
+  });
+});
+
+describe('validateListParams: length caps (P2-SEC-2, AC-5, AC-6)', () => {
+  it('caps at 256 characters', () => {
+    expect(MAX_LIST_TEXT_LENGTH).toBe(256);
+  });
+
+  it('accepts a 256-character search, measured after trimming', () => {
+    expect(validateListParams({ search: 'a'.repeat(256) })).toEqual([]);
+    expect(validateListParams({ search: `  ${'a'.repeat(256)}  ` })).toEqual([]);
+  });
+
+  it('flags a search over 256 characters after trimming', () => {
+    const problems = validateListParams({ search: ` ${'a'.repeat(257)} ` });
+
+    expect(problems).toHaveLength(1);
+    expect(problems[0]).toMatch(/search/);
+  });
+
+  it('accepts a 256-character string filter value', () => {
+    expect(validateListParams({ filters: { title: { $contains: 'a'.repeat(256) } } })).toEqual([]);
+  });
+
+  it('flags a string filter value over 256 characters', () => {
+    const problems = validateListParams({ filters: { title: { $contains: 'a'.repeat(257) } } });
+
+    expect(problems).toHaveLength(1);
+    expect(problems[0]).toMatch(/title/);
+  });
+
+  it('leaves numbers, booleans and dates alone', () => {
+    expect(
+      validateListParams({
+        filters: {
+          views: { $gt: 10 ** 300 },
+          featured: { $eq: true },
+          createdAt: { $gte: new Date('2026-01-01T00:00:00Z') },
+        },
+      }),
+    ).toEqual([]);
   });
 });
 

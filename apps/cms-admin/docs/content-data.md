@@ -74,6 +74,15 @@ axios's own nested-object serialization.
 - **Validation:** `validateListParams` flags a bad `start`, `size` or `sortDir`, an unknown operator
   and more than one operator on a field. The query then fails with `ERR_CLIENT_VALIDATION` and sends
   nothing.
+  - **Identifier rule (P2-SEC-1):** `orderBy` and every filter key must be a plain identifier,
+    `^[A-Za-z_][A-Za-z0-9_]{0,63}$`, checked before wire mapping. `id`, `createdAt`, `title` and
+    `published_at` pass. `x][$ne`, `a b`, `created_at;`, `""` and 65-character names do not, so a
+    crafted `?orderBy=` in the address bar cannot inject extra `filters[...]` brackets.
+  - **Length caps (P2-SEC-2):** `MAX_LIST_TEXT_LENGTH` is 256. A `search` longer than that after
+    trimming, or a string filter value longer than that, is a problem. Exactly 256 passes. Numbers,
+    booleans and `Date` values are not capped.
+  - Whether a name is a _known_ column for the content type (schema-aware check) is deferred to
+    Phase 5.
 - **Items:** each `ListedDocumentItem` carries its system columns (`id`, `documentId`, `status`,
   `createdAt`, `updatedAt`, `updatedBy`) beside `data`, and `data` is projected to the content
   type's `listFields`.
