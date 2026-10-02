@@ -418,6 +418,18 @@ test.describe('mobile drawer', () => {
     await expect(drawer).toBeHidden();
     await expect(toggle).toBeFocused();
   });
+
+  test('the open drawer is a modal dialog (AC-22)', async ({ page, mockApi }) => {
+    signInJane(mockApi, ROLES.superAdmin);
+    await page.goto('/admin');
+
+    await page.getByRole('button', { name: 'Toggle menu' }).click();
+    const drawer = page.getByRole('dialog', { name: 'Menu' });
+    await expect(drawer).toBeVisible();
+
+    await expect(drawer).toHaveAttribute('role', 'dialog');
+    await expect(drawer).toHaveAttribute('aria-modal', 'true');
+  });
 });
 
 for (const width of [375, 768, 1024, 1440]) {
