@@ -150,3 +150,15 @@ export function validateTokenName(value: string): string | undefined {
   if (name.length > TOKEN_NAME_MAX) return 'Use 100 characters or fewer.';
   return undefined;
 }
+
+// Profile
+
+export const PROFILE_NAME_MAX = 100;
+
+/** Checks the profile name (AC-39): required once trimmed, with at most 100 characters. */
+export function validateProfileName(value: string): string | undefined {
+  const name = value.trim();
+  if (!name) return 'Enter your name.';
+  if (name.length > PROFILE_NAME_MAX) return 'Use 100 characters or fewer.';
+  return undefined;
+}

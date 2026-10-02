@@ -8,11 +8,12 @@ import {
   listRolesHandler,
   listUsersHandler,
   settingsErrorReply,
+  updateUserHandler,
   updateUserRoleHandler,
 } from '@/test/msw/settingsHandlers';
 
 import { getRoles } from './rolesApi';
-import { assignUserRole, deleteUser, getUsers } from './usersApi';
+import { assignUserRole, deleteUser, getUsers, updateUserName } from './usersApi';
 
 describe('getUsers (U1)', () => {
   it('GETs /users and resolves with the users', async () => {
@@ -64,6 +65,29 @@ describe('assignUserRole (U3)', () => {
     await expect(assignUserRole('user-2', 'role-admin')).rejects.toMatchObject({
       status: 403,
       message: 'Role level too high',
+    });
+  });
+});
+
+describe('updateUserName (U2, AC-40)', () => {
+  it('PUTs /users/:id with exactly { name } and an encoded id', async () => {
+    const u2 = updateUserHandler();
+    server.use(u2.handler);
+
+    await expect(updateUserName('me/1', 'Jane Roe')).resolves.toEqual(
+      makeUser({ documentId: 'me/1', name: 'Jane Roe' }),
+    );
+    expect(u2.requests[0]?.method).toBe('PUT');
+    expect(u2.requests[0]?.url.pathname).toBe('/api/v1/users/me%2F1');
+    expect(u2.requests[0]?.body).toEqual({ name: 'Jane Roe' });
+  });
+
+  it('rejects a 400 with the server message', async () => {
+    server.use(updateUserHandler(settingsErrorReply(400, 'name must be shorter')).handler);
+
+    await expect(updateUserName('me', 'x')).rejects.toMatchObject({
+      status: 400,
+      message: 'name must be shorter',
     });
   });
 });

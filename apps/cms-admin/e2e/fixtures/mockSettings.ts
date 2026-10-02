@@ -39,6 +39,8 @@ export interface MockSettings {
   users(): MeUser[];
   /** Removes a user from `mockApi` (U4): they can no longer sign in. */
   removeUser(documentId: string): void;
+  /** Every U2 `PUT /users/:id` body, in order, including refused ones. */
+  readonly userUpdates: { documentId: string; body: unknown }[];
   /** R1's store. `mockApi` adds each user's role when the user is added. */
   readonly roles: Role[];
   /** P1's store, seeded with `PERMISSION_CATALOG`. */
@@ -103,13 +105,37 @@ const levelOf = (user: MeUser) => user.role?.level ?? 0;
 /** The backend's hierarchy rule on U3 and U4: the actor must outrank the target. */
 const HIERARCHY = 'You can only manage users with a lower role level.';
 
-/** Users (U1, U3, U4) and the roles list (R1). U3 and U4 enforce the level hierarchy. */
+/** Users (U1 to U4) and the roles list (R1). U3 and U4 enforce the level hierarchy. */
 const USERS_ROUTES: SettingsRoute[] = [
   {
     method: 'GET',
     pattern: /^\/users$/,
     permission: 'user:read',
     handle: (route, { store }) => sendJson(route, 200, store.users().map(toUser)),
+  },
+  {
+    // U2: bearer only, for yourself or with `user:manager`. Any `password` key is refused, since the
+    // real endpoint would store it unhashed (SPEC Boundaries).
+    method: 'PUT',
+    pattern: /^\/users\/([^/]+)$/,
+    permission: null,
+    handle: async (route, { user: me, params: [id], store }) => {
+      const body: unknown = route.request().postDataJSON();
+      store.userUpdates.push({ documentId: id, body });
+      const target = store.users().find((u) => u.documentId === id);
+      if (!target) return sendError(route, 404, 'User not found');
+      if (target.documentId !== me.documentId && !requirePermission(me, 'user:manager')) {
+        return sendError(route, 403, 'Forbidden resource');
+      }
+      const { name, ...rest } = (body ?? {}) as { name?: unknown };
+      if ('password' in rest) return sendError(route, 400, 'property password should not exist');
+      if (typeof name !== 'string' || !name.trim() || name.length > 100) {
+        return sendError(route, 400, 'name must be between 1 and 100 characters');
+      }
+      // `mockApi` holds the same object, so the change also reaches `/auth/me`.
+      Object.assign(target, { name });
+      return sendJson(route, 200, toUser(target));
+    },
   },
   {
     method: 'PATCH',
@@ -624,6 +650,7 @@ export function createMockSettings(
   const settings: MockSettings = {
     users,
     removeUser,
+    userUpdates: [],
     roles,
     permissions,
     accessTokens,

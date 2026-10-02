@@ -9,6 +9,7 @@ import {
   roleChanges,
   roleSlugFromName,
   validatePermission,
+  validateProfileName,
   validateRole,
   validateTokenName,
 } from './validation';
@@ -198,5 +199,19 @@ describe('validateTokenName (AC-29)', () => {
 
   it.each(['CI', ` ${'a'.repeat(100)} `])('accepts %j (trimmed)', (name) => {
     expect(validateTokenName(name)).toBeUndefined();
+  });
+});
+
+describe('validateProfileName (AC-39)', () => {
+  it.each([
+    ['', 'Enter your name.'],
+    ['   ', 'Enter your name.'],
+    ['a'.repeat(101), 'Use 100 characters or fewer.'],
+  ])('rejects %j', (name, message) => {
+    expect(validateProfileName(name)).toBe(message);
+  });
+
+  it.each(['J', ` ${'a'.repeat(100)} `])('accepts %j (trimmed)', (name) => {
+    expect(validateProfileName(name)).toBeUndefined();
   });
 });

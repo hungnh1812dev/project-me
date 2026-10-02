@@ -6,6 +6,7 @@ import RequireAuth from '@/features/auth/components/RequireAuth';
 import type { MeUser } from '@/features/auth/types';
 import { makeMeUser, makeRole } from '@/test/fixtures';
 import { server } from '@/test/msw/server';
+import { settingsErrorReply, updateUserHandler } from '@/test/msw/settingsHandlers';
 import { renderRoutes } from '@/test/renderWithProviders';
 
 import ProfilePage from './ProfilePage';
@@ -129,5 +130,102 @@ describe('ProfilePage', () => {
     expect(screen.getByText('editor')).toHaveClass('font-mono');
     expect(screen.getByRole('list', { name: 'Permissions' })).toHaveClass('font-mono');
     expect(screen.getByRole('button', { name: 'Log out' })).toHaveAttribute('data-slot', 'button');
+  });
+
+  describe('name editing (AC-39 to AC-41)', () => {
+    const ME = makeMeUser({ documentId: 'me-1', name: 'Jane Doe' });
+
+    it('opens an inline, prefilled, required Name field with Save and Cancel', async () => {
+      const { user } = renderProfile(ME);
+
+      await user.click(await screen.findByRole('button', { name: 'Edit name' }));
+
+      const input = screen.getByRole('textbox', { name: 'Name' });
+      expect(input).toHaveValue('Jane Doe');
+      expect(input).toBeRequired();
+      expect(input).toHaveFocus();
+      expect(screen.getByRole('button', { name: 'Save' })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Cancel' })).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: 'Edit name' })).not.toBeInTheDocument();
+    });
+
+    it('Cancel restores the view and returns focus to Edit name without a request', async () => {
+      const u2 = updateUserHandler();
+      server.use(u2.handler);
+      const { user } = renderProfile(ME);
+      await user.click(await screen.findByRole('button', { name: 'Edit name' }));
+      await user.clear(screen.getByRole('textbox', { name: 'Name' }));
+      await user.type(screen.getByRole('textbox', { name: 'Name' }), 'Other');
+
+      await user.click(screen.getByRole('button', { name: 'Cancel' }));
+
+      expect(screen.queryByRole('textbox', { name: 'Name' })).not.toBeInTheDocument();
+      expect(screen.getByText('Jane Doe')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Edit name' })).toHaveFocus();
+      expect(u2.requests).toHaveLength(0);
+    });
+
+    it.each([
+      ['   ', 'Enter your name.'],
+      ['a'.repeat(101), 'Use 100 characters or fewer.'],
+    ])('rejects %j before any request', async (value, message) => {
+      const u2 = updateUserHandler();
+      server.use(u2.handler);
+      const { user } = renderProfile(ME);
+      await user.click(await screen.findByRole('button', { name: 'Edit name' }));
+      const input = screen.getByRole('textbox', { name: 'Name' });
+      await user.clear(input);
+      await user.click(input);
+      await user.paste(value);
+
+      await user.click(screen.getByRole('button', { name: 'Save' }));
+
+      expect(await screen.findByText(message)).toBeInTheDocument();
+      expect(input).toHaveAttribute('aria-invalid', 'true');
+      expect(u2.requests).toHaveLength(0);
+    });
+
+    it('saves the trimmed name, updates the header data, announces it and refocuses Edit name', async () => {
+      const u2 = updateUserHandler();
+      server.use(u2.handler);
+      const { user, store } = renderProfile(ME);
+      await user.click(await screen.findByRole('button', { name: 'Edit name' }));
+      const input = screen.getByRole('textbox', { name: 'Name' });
+      await user.clear(input);
+      await user.type(input, '  Jane Roe  ');
+
+      await user.click(screen.getByRole('button', { name: 'Save' }));
+
+      expect(await screen.findByText('Jane Roe')).toBeInTheDocument();
+      expect(u2.requests[0]?.url.pathname).toBe('/api/v1/users/me-1');
+      expect(u2.requests[0]?.body).toEqual({ name: 'Jane Roe' });
+      expect(store.getState().auth.user?.name).toBe('Jane Roe');
+      expect(screen.getByRole('status')).toHaveTextContent('Name updated.');
+      expect(screen.getByRole('button', { name: 'Edit name' })).toHaveFocus();
+    });
+
+    it('shows a server error as an alert and keeps the typed value', async () => {
+      server.use(updateUserHandler(settingsErrorReply(400, 'Name is not allowed.')).handler);
+      const { user, store } = renderProfile(ME);
+      await user.click(await screen.findByRole('button', { name: 'Edit name' }));
+      const input = screen.getByRole('textbox', { name: 'Name' });
+      await user.clear(input);
+      await user.type(input, 'Bad Name');
+
+      await user.click(screen.getByRole('button', { name: 'Save' }));
+
+      const alerts = await screen.findAllByRole('alert');
+      expect(alerts.map((a) => a.textContent)).toContain('Name is not allowed.');
+      expect(input).toHaveValue('Bad Name');
+      expect(store.getState().auth.user?.name).toBe('Jane Doe');
+    });
+
+    it('offers no password control (AC-41)', async () => {
+      const { user, container } = renderProfile(ME);
+      await user.click(await screen.findByRole('button', { name: 'Edit name' }));
+
+      expect(container.querySelector('input[type="password"]')).toBeNull();
+      expect(screen.queryByText(/password/i)).not.toBeInTheDocument();
+    });
   });
 });

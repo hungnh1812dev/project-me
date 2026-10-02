@@ -94,8 +94,7 @@ optimistic updates, and a failed mutation leaves the cache unchanged.
 | `useDeleteAccessToken` | `accessTokens`                                            |
 | `useUploadMedia`       | `media`, once per batch and only when a file uploaded     |
 | `useDeleteMedia`       | `media`                                                   |
-
-The profile slice adds its row here.
+| `useUpdateProfile`     | `users` (and writes the new name to `['auth', 'me']`)     |
 
 ## The shared `guard`
 
@@ -335,6 +334,29 @@ accept="image/png,image/jpeg">`, so the keyboard alone is enough; the dashed zon
   `/api`. The app sets no Content-Security-Policy yet; when one is added, its `img-src` must allow
   that host (see the roadmap).
 
+## Profile (`/admin/profile`)
+
+`src/pages/profile/ProfilePage.tsx`, with the inline form in `src/pages/profile/EditNameForm.tsx`.
+
+- **Edit name (AC-39).** The Name row of the profile card has an **Edit name** button. It swaps
+  the name for an inline form: Name (`Field`, label kept for screen readers since the row already
+  shows "Name", required, prefilled, focused on open) with Save and Cancel. `validateProfileName`
+  (`src/features/settings/validation.ts`) runs on submit, then on every change: required once
+  trimmed ("Enter your name."), at most 100 characters. Cancel sends nothing, restores the view and
+  returns focus to Edit name.
+- **Save (U2, AC-40).** `useUpdateProfile` (`src/features/settings/hooks/useUpdateProfile.ts`) calls
+  `updateUserName(me.documentId, name)` (`usersApi.ts`), which sends `PUT /users/<id>` with exactly
+  `{ name }` (trimmed). U2 needs only the bearer for your own record, so there is no policy check;
+  with nobody signed in the hook rejects with a client 403 and sends nothing. On success it merges
+  the returned name into `['auth', 'me']` (or the session user when that query is empty), dispatches
+  `userLoaded` so the header's initials and name update without a reload, and invalidates `users`.
+  The page then closes the form, announces "Name updated." in its `LiveRegion` and focuses Edit
+  name. A failure shows the server message with `role="alert"`, keeps the typed value and changes
+  no cache.
+- **No password (AC-41, D8).** The page edits the display name only. There is no password, email
+  or username control, and `PUT /users/:id` never receives `password` (the backend would store it
+  unhashed; the gap stays in the roadmap).
+
 ## PermissionTree
 
 `src/components/form/PermissionTree.tsx`, with its pure logic in
@@ -383,7 +405,10 @@ accept="image/png,image/jpeg">`, so the keyboard alone is enough; the dashed zon
   `addAccessToken` and `removeAccessToken` the tokens store (which never holds a secret). `ROLES.superAdmin` now holds every catalog slug, `ROLES.admin` (level 50)
   every `<res>:read`, and the old partial super admin is `ROLES.userManager`.
   `mockApi.latestAccessToken(email)` returns a bearer for direct API calls from a spec.
-- **E2E routes so far:** U1, U3 and U4 (both enforce the level hierarchy with a 403, and answer 404
+- **E2E routes so far:** U1, U2, U3 and U4. U2 is bearer only: it records every body in
+  `settings.userUpdates`, answers 404 for an unknown user, 403 for another user without
+  `user:manager`, 400 for any `password` key or a name that is not 1 to 100 characters, and
+  otherwise renames the `mockApi` user in place (so `/auth/me` follows). U3 and U4 (both enforce the level hierarchy with a 403, and answer 404
   for an unknown user or role), R1 to R4, and P1 to P4. R2 answers 400 for an invalid body or a
   slug missing from the catalog and 409 for a known role slug. R3 answers 400 when a default role's
   name or level changes, replaces the role (never mutates it, since `ROLES` is shared) and hands
@@ -406,4 +431,4 @@ accept="image/png,image/jpeg">`, so the keyboard alone is enough; the dashed zon
   `e2e/settings-permissions.spec.ts`, `e2e/settings-roles.spec.ts`,
   `e2e/settings-access-tokens.spec.ts` (grants clipboard permissions to read the copied secret),
   `e2e/settings-media.spec.ts` (uploads canvas-generated PNG and JPEG buffers plus a `.gif` through
-  the Upload button's file chooser, and measures layout shift at 375px).
+  the Upload button's file chooser, and measures layout shift at 375px), `e2e/profile.spec.ts`.

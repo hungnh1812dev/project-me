@@ -1,4 +1,5 @@
-import { LogOutIcon } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { LogOutIcon, PencilIcon } from 'lucide-react';
 
 import { Alert } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
@@ -7,18 +8,41 @@ import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { useCurrentUserQuery } from '@/features/auth/hooks/useCurrentUserQuery';
+import { LiveRegion } from '@/features/settings/components/LiveRegion';
+import { useAnnouncer } from '@/features/settings/components/useAnnouncer';
 import { cn } from '@/utils/cn';
+
+import { EditNameForm } from './EditNameForm';
 
 const DL = 'grid grid-cols-[minmax(6rem,auto)_1fr] gap-x-4 gap-y-2 text-sm';
 const DT = 'text-muted-foreground';
 const DD = 'min-w-0 break-words text-foreground';
 
-/** `/admin/profile`: who is signed in, their role and permissions, and Log out (AC-38). */
+/**
+ * `/admin/profile`: who is signed in, their role and permissions, and Log out (AC-38). The name is
+ * editable inline (AC-39 to AC-41); leaving the form returns focus to Edit name.
+ */
 const ProfilePage: React.FC = () => {
   const { user: sessionUser, logout } = useAuth();
   const { data: freshUser, isError } = useCurrentUserQuery();
+  const { message, announce } = useAnnouncer();
+  const [editing, setEditing] = useState(false);
+  const editButtonRef = useRef<HTMLButtonElement>(null);
+  const returnFocus = useRef(false);
+
+  useEffect(() => {
+    if (editing || !returnFocus.current) return;
+    returnFocus.current = false;
+    editButtonRef.current?.focus();
+  }, [editing]);
+
   const user = freshUser ?? sessionUser;
   if (!user) return null;
+
+  const closeForm = () => {
+    returnFocus.current = true;
+    setEditing(false);
+  };
 
   const { role } = user;
   const permissions = role?.permissions ?? [];
@@ -33,7 +57,31 @@ const ProfilePage: React.FC = () => {
         <CardContent className="flex flex-col gap-6">
           <dl className={DL}>
             <dt className={DT}>Name</dt>
-            <dd className={DD}>{user.name}</dd>
+            <dd className={DD}>
+              {editing ? (
+                <EditNameForm
+                  name={user.name}
+                  onCancel={closeForm}
+                  onSaved={() => {
+                    closeForm();
+                    announce('Name updated.');
+                  }}
+                />
+              ) : (
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                  <span className="min-w-0 break-words">{user.name}</span>
+                  <Button
+                    ref={editButtonRef}
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setEditing(true)}
+                  >
+                    <PencilIcon aria-hidden="true" />
+                    Edit name
+                  </Button>
+                </div>
+              )}
+            </dd>
             <dt className={DT}>Username</dt>
             <dd className={DD}>{user.username}</dd>
             <dt className={DT}>Email</dt>
@@ -93,6 +141,7 @@ const ProfilePage: React.FC = () => {
           </Button>
         </CardFooter>
       </Card>
+      <LiveRegion message={message} />
     </section>
   );
 };
