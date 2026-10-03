@@ -3,6 +3,8 @@ import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import type { ApiError } from '@/core/api/apiError';
 
 import { getDocument, listDocuments } from '../api/documentsApi';
+import { validateListParamsForType, type ColumnCatalog } from '../columns';
+import { listValidationError } from '../listQuery';
 import { contentKeys } from '../queryKeys';
 import type { ContentTypeRef, Document, ListDocumentsResponse, ListParams } from '../types';
 import { useContentTypeAccess } from './useContentTypeAccess';
@@ -12,12 +14,21 @@ import { useContentTypeAccess } from './useContentTypeAccess';
  * params share one entry and one request. The previous page stays visible while the next one loads
  * (`isPlaceholderData`). Invalid params fail with `ERR_CLIENT_VALIDATION` and send nothing.
  * Disabled when `document read`, scoped to `ref.slug`, is denied.
+ *
+ * With a `catalog` (the content type's columns), the known-column check also runs: an `orderBy`, a
+ * filter key or an operator the content type doesn't allow fails closed the same way (Phase 5 AC-2).
  */
-export function useDocumentList(ref: ContentTypeRef, params: ListParams) {
+export function useDocumentList(ref: ContentTypeRef, params: ListParams, catalog?: ColumnCatalog) {
   const access = useContentTypeAccess(ref);
   return useQuery<ListDocumentsResponse, ApiError>({
     queryKey: contentKeys.list(ref.slug, params),
-    queryFn: ({ signal }) => listDocuments(ref.slug, params, signal),
+    queryFn: async ({ signal }) => {
+      if (catalog) {
+        const problems = validateListParamsForType(params, catalog);
+        if (problems.length > 0) throw listValidationError(problems);
+      }
+      return listDocuments(ref.slug, params, signal);
+    },
     placeholderData: keepPreviousData,
     enabled: access.read.allowed,
   });

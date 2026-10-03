@@ -4,12 +4,19 @@ import { describe, expect, it } from 'vitest';
 
 import { ApiError } from '@/core/api/apiError';
 import { cmsApi } from '@/core/api/CmsApi';
-import { makeDocument, makeListedItem, makeListResponse } from '@/test/contentFixtures';
+import {
+  makeContentType,
+  makeDocument,
+  makeFieldSet,
+  makeListedItem,
+  makeListResponse,
+} from '@/test/contentFixtures';
 import { makeMeUser, makeRole } from '@/test/fixtures';
 import { errorReply, getDocumentHandler, listDocumentsHandler } from '@/test/msw/contentHandlers';
 import { server } from '@/test/msw/server';
 import { renderHookWithProviders } from '@/test/renderWithProviders';
 
+import { buildColumnCatalog } from '../columns';
 import { contentKeys } from '../queryKeys';
 import type { ContentTypeRef, ListParams } from '../types';
 import { useDocument, useDocumentList } from './useCollectionQueries';
@@ -129,6 +136,95 @@ describe('useDocumentList (AC-14)', () => {
     expect(result.current.error).toBeInstanceOf(ApiError);
     expect(result.current.error).toMatchObject({ status: 400, code: 'ERR_CLIENT_VALIDATION' });
     expect(d1.requests).toHaveLength(0);
+  });
+
+  describe('with a column catalog (AC-2)', () => {
+    const catalog = buildColumnCatalog(makeContentType({ fields: makeFieldSet() }));
+
+    it.each<[string, ListParams, string]>([
+      ['a richtext orderBy', { orderBy: 'body' }, 'orderBy "body" is not a sortable column'],
+      [
+        'a media orderBy',
+        { orderBy: 'coverImage' },
+        'orderBy "coverImage" is not a sortable column',
+      ],
+      ['a json orderBy', { orderBy: 'meta' }, 'orderBy "meta" is not a sortable column'],
+      ['a component orderBy', { orderBy: 'seo' }, 'orderBy "seo" is not a sortable column'],
+      ['an unknown orderBy', { orderBy: 'nope' }, 'orderBy "nope" is not a sortable column'],
+      [
+        'an unknown filter key',
+        { filters: { nope: { $eq: '1' } } },
+        'filter "nope" is not a filterable column',
+      ],
+      [
+        'a status filter (D7)',
+        { filters: { status: { $eq: 'draft' } } },
+        'filter "status" is not a filterable column',
+      ],
+      [
+        'an operator the column does not allow',
+        { filters: { featured: { $gt: true } } },
+        'filter operator $gt is not allowed on "featured"',
+      ],
+      [
+        'a non-identifier orderBy, with the P2-SEC-1 rule first',
+        { orderBy: 'x][$ne' },
+        'orderBy must be a plain field name (got "x][$ne")',
+      ],
+    ])(
+      'rejects %s with ERR_CLIENT_VALIDATION and sends no request',
+      async (_c, params, problem) => {
+        const d1 = listDocumentsHandler();
+        server.use(d1.handler);
+
+        const { result } = renderHookWithProviders(
+          () => useDocumentList(ARTICLE, params, catalog),
+          READER,
+        );
+
+        await waitFor(() => expect(result.current.isError).toBe(true));
+        expect(result.current.error).toBeInstanceOf(ApiError);
+        expect(result.current.error).toMatchObject({
+          status: 400,
+          code: 'ERR_CLIENT_VALIDATION',
+          messages: [problem],
+        });
+        expect(d1.requests).toHaveLength(0);
+      },
+    );
+
+    it('sends known columns on the wire', async () => {
+      const d1 = listDocumentsHandler();
+      server.use(d1.handler);
+
+      const { result } = renderHookWithProviders(
+        () =>
+          useDocumentList(
+            ARTICLE,
+            { orderBy: 'title', sortDir: 'asc', filters: { createdAt: { $gte: '2026-01-01' } } },
+            catalog,
+          ),
+        READER,
+      );
+
+      await waitFor(() => expect(result.current.isSuccess).toBe(true));
+      expect(d1.requests).toHaveLength(1);
+      expect(d1.requests[0]?.url.searchParams.get('orderBy')).toBe('title');
+      expect(d1.requests[0]?.url.searchParams.get('filters[created_at][$gte]')).toBe('2026-01-01');
+    });
+
+    it('lets an unknown column through without a catalog (existing callers)', async () => {
+      const d1 = listDocumentsHandler();
+      server.use(d1.handler);
+
+      const { result } = renderHookWithProviders(
+        () => useDocumentList(ARTICLE, { orderBy: 'body' }),
+        READER,
+      );
+
+      await waitFor(() => expect(result.current.isSuccess).toBe(true));
+      expect(d1.requests).toHaveLength(1);
+    });
   });
 
   it('is disabled when scoped read is denied', async () => {

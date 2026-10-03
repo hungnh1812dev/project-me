@@ -2,6 +2,8 @@ import type {
   ContentType,
   ContentTypeSummary,
   Document,
+  FieldDefinition,
+  FieldType,
   ListDocumentsResponse,
   ListedDocumentItem,
 } from '@/features/content/types';
@@ -37,6 +39,55 @@ export function makeContentType(overrides: Partial<ContentType> = {}): ContentTy
     updatedAt: STAMP,
     ...overrides,
   };
+}
+
+/**
+ * A schema with every field kind: text (one marked `header`), richtext, number, boolean, media,
+ * json, a component (with a nested component), a repeatable component (with a nested repeatable),
+ * and a field of a type the client doesn't know. Widths cover `50%`, `1/3` and the default.
+ */
+export function makeFieldSet(): FieldDefinition[] {
+  return [
+    { name: 'title', type: 'text', header: true, width: '50%' },
+    { name: 'slug', type: 'text', width: '50%' },
+    { name: 'views', type: 'number', width: '1/3' },
+    { name: 'featured', type: 'boolean', width: '1/3' },
+    { name: 'body', type: 'richtext' },
+    { name: 'coverImage', type: 'media' },
+    { name: 'meta', type: 'json' },
+    {
+      name: 'seo',
+      type: 'component',
+      component: 'shared.seo',
+      fields: [
+        { name: 'metaTitle', type: 'text', header: true },
+        {
+          name: 'social',
+          type: 'component',
+          component: 'shared.social',
+          fields: [{ name: 'handle', type: 'text' }],
+        },
+      ],
+    },
+    {
+      name: 'gallery',
+      type: 'component',
+      component: 'media.gallery-item',
+      repeatable: true,
+      fields: [
+        { name: 'caption', type: 'text', header: true },
+        { name: 'image', type: 'media' },
+        {
+          name: 'tags',
+          type: 'component',
+          component: 'shared.tag',
+          repeatable: true,
+          fields: [{ name: 'label', type: 'text' }],
+        },
+      ],
+    },
+    { name: 'location', type: 'geo' as FieldType },
+  ];
 }
 
 /** A full `Document` (already unwrapped from `{ data }`). */
