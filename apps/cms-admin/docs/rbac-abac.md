@@ -1,14 +1,17 @@
 # RBAC and ABAC
 
-The client decides what to show from the signed-in user's role. RBAC is a set of pure functions over the flat permission slugs in `me.role.permissions`. ABAC is a typed policy table that `can()` evaluates against the user and the resource. Hooks and the `<Can>` component are thin wrappers over memoized selectors.
+The client decides what to show from the signed-in user's role. RBAC is a set of pure functions over
+the flat permission slugs in `me.role.permissions`; ABAC is a typed policy table that `can()`
+evaluates against the user and the resource. Hooks, `<Can>`, `checkAccess` and `guard` are thin
+wrappers. These checks are **client-side defense in depth only**: the backend enforces every rule
+again, and a server 403 is still shown as "no access".
 
-These checks are **client-side defense in depth only**. The backend enforces every rule again, and a server 403 is still surfaced as "no access".
+## Feature
 
-Source: `src/features/auth/permissions/{permissions.ts,policies.ts,can.ts}`, `src/features/auth/hooks/{usePermission.ts,useCan.ts}`, `src/features/auth/components/Can.tsx`, `src/features/auth/store/selectors.ts`.
+### Permission rules (RBAC)
 
-## Permission rules (RBAC)
-
-Slugs are `resource:action[:scope]`. `hasPermission(granted, required)` mirrors the backend's `PermissionsGuard`:
+Slugs are `resource:action[:scope]`. `hasPermission(granted, required)` mirrors the backend's
+`PermissionsGuard`:
 
 | Rule                                                            | Example                                             |
 | --------------------------------------------------------------- | --------------------------------------------------- |
@@ -18,59 +21,45 @@ Slugs are `resource:action[:scope]`. `hasPermission(granted, required)` mirrors 
 | A scoped grant never satisfies the global slug                  | `document:read:blog` ⇏ `document:read`              |
 | Malformed slugs are never granted                               | `''`, `media`, `:read`, `document:read:`, `a:b:c:d` |
 
-Other helpers (`permissions.ts`):
+Other helpers: `hasAllPermissions` (empty list passes), `hasAnyPermission` (empty list fails),
+`hasRole(role, slug | slug[])`, `hasMinLevel(role, n)` (null role is level 0), and
+`ROLE_LEVEL = { ADMIN: 50, SUPER_ADMIN: 100 }` (named floors only; roles are dynamic, never hardcode
+a role list). `checkPermissions(granted, required, { mode, contentTypeSlug })` returns a `Decision`;
+with `contentTypeSlug`, global `document:<action>` slugs are scoped (`scopeToContentType`).
 
-- `hasAllPermissions(granted, required[])`: every slug. An empty list passes.
-- `hasAnyPermission(granted, required[])`: one slug. An empty list fails.
-- `hasRole(role, slug | slug[])`: the role's slug matches. A null role has no slug.
-- `hasMinLevel(role, n)`: `role.level >= n`. A null role is level 0.
-- `ROLE_LEVEL = { ADMIN: 50, SUPER_ADMIN: 100 }`: named floors only. Roles are dynamic, so never hardcode a role list.
+### Policy table (ABAC)
 
-`checkPermissions(granted, required, { mode, contentTypeSlug })` (`can.ts`) returns a `Decision` for one or more slugs. With `contentTypeSlug`, global `document:<action>` slugs are scoped to `document:<action>:<slug>`; other slugs are unchanged.
-
-## Policy table (ABAC)
-
-`can(actor, action, subject, attrs?)` returns `{ allowed: boolean; reason: string | null }`. It is **deny by default**: an unknown subject or action (including inherited object keys such as `toString`) is denied. The actor is `{ userId, level, permissions }`, built by `toActor(user)` (no user or no role: level 0, no permissions).
-
-The permission is always checked first, then the conditions, in the order below.
+`can(actor, action, subject, attrs?)` returns `Decision { allowed, reason }` (the type comes from
+`@repo/ui/lib/decision`). **Deny by default**: an unknown subject or action (including inherited keys
+like `toString`) is denied. The actor is `{ userId, level, permissions }` from `toActor(user)`. The
+permission is checked first, then the conditions.
 
 | Subject                            | Action                                           | Rule                                                                                                            |
 | ---------------------------------- | ------------------------------------------------ | --------------------------------------------------------------------------------------------------------------- |
-| `document`                         | `read`, `create`, `update`, `delete`             | `document:<action>`, or `document:<action>:<contentTypeSlug>` when `contentTypeSlug` is given                   |
+| `document`                         | `read`, `create`, `update`, `delete`             | `document:<action>`, or `document:<action>:<contentTypeSlug>` when given                                        |
 | `document`                         | `publish`, `unpublish`                           | As above, and denied when `draftToPublish === false`                                                            |
 | `content_type`                     | `read`                                           | `content_type:read`                                                                                             |
 | `content_type`                     | `configure`                                      | `content_type:manager`                                                                                          |
 | `user`                             | `read`                                           | `user:read`                                                                                                     |
-| `user`                             | `update`                                         | Own record (`targetUserId === actor.userId`): allowed. Otherwise `user:manager` and `actor.level > targetLevel` |
+| `user`                             | `update`                                         | Own record allowed. Otherwise `user:manager` and `actor.level > targetLevel`                                    |
 | `user`                             | `delete`                                         | `user:manager`, not self, `actor.level > targetLevel`                                                           |
 | `user`                             | `assign_role`                                    | `user:role_manager`, not self, `actor.level > targetLevel`, `newRoleLevel < actor.level`                        |
 | `role`                             | `read`                                           | `role:read`                                                                                                     |
 | `role`                             | `create`                                         | `role:manager`                                                                                                  |
-| `role`                             | `update`                                         | `role:manager`; denied on a default role (`isDefault`) when `fields` includes `name` or `level`                 |
+| `role`                             | `update`                                         | `role:manager`; denied on a default role when `fields` includes `name` or `level`                               |
 | `role`                             | `delete`                                         | `role:manager`; denied on a default role                                                                        |
 | `permission`, `api_token`, `media` | `read`                                           | `<res>:read`                                                                                                    |
 | `permission`, `api_token`, `media` | `create`, `update`, `delete`, `revoke`, `upload` | `<res>:manager`                                                                                                 |
 
-An unknown `targetLevel` or `newRoleLevel` counts as a failed condition (deny).
+An unknown `targetLevel` or `newRoleLevel` fails the condition. Denial reasons:
+`Requires the "<slug>" permission.`, `Requires one of the "<a>", "<b>" permissions.`,
+`This content type does not use draft and publish.`,
+`Requires a higher role level than the target user.`, `You cannot delete your own account.`,
+`You cannot change your own role.`, `The new role level must be lower than your own.`,
+`A default role cannot be deleted.`, `The name and level of a default role cannot be changed.`,
+`Unknown subject "<s>".` / `Unknown action "<a>" on "<s>".`
 
-Denial reasons:
-
-| Reason                                                      | When                                           |
-| ----------------------------------------------------------- | ---------------------------------------------- |
-| `Requires the "<slug>" permission.`                         | The first missing slug                         |
-| `Requires one of the "<a>", "<b>" permissions.`             | `checkPermissions` in `any` mode               |
-| `This content type does not use draft and publish.`         | publish/unpublish with `draftToPublish: false` |
-| `Requires a higher role level than the target user.`        | user update/delete/assign_role                 |
-| `You cannot delete your own account.`                       | user delete on self                            |
-| `You cannot change your own role.`                          | user assign_role on self                       |
-| `The new role level must be lower than your own.`           | user assign_role                               |
-| `A default role cannot be deleted.`                         | role delete                                    |
-| `The name and level of a default role cannot be changed.`   | role update                                    |
-| `Unknown subject "<s>".` / `Unknown action "<a>" on "<s>".` | deny by default                                |
-
-## Selectors and hooks
-
-Selectors (`store/selectors.ts`, memoized): `selectPermissions`, `selectRoleLevel` (0 without a role), `selectActor` (recomputed only when the user changes).
+### Hooks and `<Can>`
 
 | Hook                                                                 | Returns    |
 | -------------------------------------------------------------------- | ---------- |
@@ -79,53 +68,65 @@ Selectors (`store/selectors.ts`, memoized): `selectPermissions`, `selectRoleLeve
 | `useCan(action, subject, attrs?)`                                    | `Decision` |
 | `useRoleLevel()`                                                     | `number`   |
 
-All of them re-render when the user's permissions or role change (for example after `userLoaded` or a sign-out). `useCan` memoizes on `attrs` identity, so pass a memoized object when a stable result matters.
+All re-render when the user's role or permissions change. `useCan` memoizes on `attrs` identity, so
+pass a memoized object when a stable result matters.
 
-```tsx
-const canEditBlog = usePermission('document:update', { contentTypeSlug: 'blog' });
-const canSeeAdmin = usePermission(['user:read', 'role:read'], { mode: 'any' });
-const { allowed, reason } = useCan('delete', 'user', { targetUserId, targetLevel });
-const isAdmin = useRoleLevel() >= ROLE_LEVEL.ADMIN;
-```
+`<Can>` takes a policy (`I`, `a`, `with`) or a `permission` (+ `mode`, `contentTypeSlug`). It
+renders `children` when allowed and `fallback` (default `null`) when denied. A render-function child
+is always called with the decision, so a page can render a disabled control with the reason.
 
-## `<Can>`
+### Route checks and mutation guard
 
-Pass either a policy (`I`, `a`, `with`) or a `permission` (with optional `mode` and `contentTypeSlug`). It renders `children` when allowed and `fallback` (default `null`) when denied. A render-function child is always called with the decision and `fallback` is ignored, so a page can render a disabled control with the reason.
+- `checkAccess({ permission, mode, contentTypeSlug, minLevel, can })` runs every given check in that
+  order; the first denial wins. `RequireAccess` uses it (see
+  [Routing and guards](./routing-and-guards.md)).
+- `guard(decision)`: every mutation hook calls it first. A denied decision throws
+  `ApiError { status: 403, code: 'ERR_CLIENT_FORBIDDEN', message: reason }`, so no request is sent
+  and no cache entry changes. Shared by the content and settings features (moved here from
+  `features/content/access.ts` in Phase 4).
 
-```tsx
-<Can I="upload" a="media" fallback={<p>No access</p>}>
-  <UploadButton />
-</Can>
+### Adding a policy
 
-<Can permission={['role:read', 'user:read']} mode="any">
-  <SettingsLink />
-</Can>
+1. Add the subject or action to `policies`: `requires('<slug>')`, `resourcePolicies('<res>')`, or a
+   function `(actor, attrs) => Decision` that calls `check(actor, slug)` first.
+2. Add any new attribute to `PolicyAttrs`, commented with the subject that reads it.
+3. Add table-driven cases to `can.test.ts`, including every denial reason.
+4. Update the policy table above. The engine, hooks and `<Can>` don't change.
 
-<Can I="delete" a="role" with={{ isDefault: role.isDefault }}>
-  {({ allowed, reason }) => (
-    <button type="button" disabled={!allowed} title={reason ?? undefined}>
-      Delete
-    </button>
-  )}
-</Can>
-```
+### Decisions
 
-## Adding a policy
+- **Permission first, then conditions**, so a user without the permission never learns the
+  condition.
+- **Unknown attribute values deny**, so a caller that forgets an attribute gets the safe answer.
+- **`a:b:c:d` is malformed**: slugs have at most three parts.
+- **`contentTypeSlug` only scopes `document:<action>`**; other resources have no per-type grants.
+- **`useRoleLevel` lives in `useCan.ts`**, next to the other ABAC hook.
 
-1. Add the subject (or action) to `policies` in `permissions/policies.ts`. Use `requires('<slug>')` for a plain permission check, `resourcePolicies('<res>')` for the read/manager pattern, or a function `(actor, attrs) => Decision` that calls `check(actor, slug)` first and then the conditions.
-2. Add any new attribute to `PolicyAttrs`, with a comment naming the subject that reads it.
-3. Add table-driven cases to `permissions/can.test.ts`, including every denial reason. The coverage gate for `src/features/**/*.ts` is 85%; this folder is at 100%.
-4. Update the policy table above. The engine (`can`), hooks and `<Can>` do not change.
+## Files
+
+| File                                          | Spec                                                                                           |
+| --------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| `src/features/auth/permissions/permissions.ts`| Exports `hasPermission`, `hasAllPermissions`, `hasAnyPermission`, `hasRole`, `hasMinLevel`, `ROLE_LEVEL`. Pure RBAC. |
+| `src/features/auth/permissions/policies.ts`   | Exports `policies`, `Actor`, `PolicyAttrs`, `Policy`. The ABAC table.                          |
+| `src/features/auth/permissions/can.ts`        | Exports `can`, `toActor`, `checkPermissions`, `scopeToContentType`, `PermissionMode`, `PermissionOptions`. Deny-by-default engine. |
+| `src/features/auth/permissions/access.ts`     | Exports `checkAccess`, `AccessRequirements`. Combined route check for `RequireAccess`.         |
+| `src/features/auth/permissions/guard.ts`      | Exports `guard`. Turns a denied decision into a client 403 before any request.                 |
+| `src/features/auth/hooks/usePermission.ts`    | Exports `usePermission`, `usePermissionDecision`.                                              |
+| `src/features/auth/hooks/useCan.ts`           | Exports `useCan`, `useRoleLevel`.                                                              |
+| `src/features/auth/components/Can.tsx`        | Default export `Can`, `CanProps`. Declarative gate with fallback or render function.          |
 
 ## Testing
 
-- `permissions.test.ts` and `can.test.ts` are plain unit tests (no store).
-- Hook and `<Can>` tests use `renderHookWithProviders` / `renderWithProviders` with `auth: { user: makeMeUser({ role: makeRole({ permissions, level }) }) }`, and dispatch `userLoaded` inside `act` to check re-renders.
+- `permissions/permissions.test.ts`, `can.test.ts` (table-driven, every reason), `access.test.ts`,
+  `guard.test.ts`: plain unit tests, 100% of this folder.
+- `hooks/usePermission.test.ts`, `useCan.test.ts`, `components/Can.test.tsx`: use
+  `renderHookWithProviders` / `renderWithProviders` with
+  `auth: { user: makeMeUser({ role: makeRole({ permissions, level }) }) }` and dispatch `userLoaded`
+  inside `act` to check re-renders.
+- Run: `pnpm --filter cms-admin exec vitest run src/features/auth/permissions src/features/auth/hooks src/features/auth/components/Can.test.tsx`.
 
-## Decisions
+## Related
 
-- **Permission first, then conditions.** A denial names the missing slug before any attribute rule, so a user without the permission never learns about the condition.
-- **Unknown attribute values deny.** A missing `targetLevel` or `newRoleLevel` fails the level checks, so a caller that forgets an attribute gets the safe answer.
-- **`a:b:c:d` is malformed.** Slugs have at most three parts (`resource:action:scope`).
-- **`contentTypeSlug` only scopes `document:<action>`.** Other resources have no per-type grants.
-- **`useRoleLevel` lives in `useCan.ts`**, next to the other ABAC hook, to keep the file list of the plan.
+- [Auth session](./auth-session.md) (`selectActor`, `selectPermissions`)
+- [Routing and guards](./routing-and-guards.md) (`RequireAccess`)
+- [Content data](./content-data.md) and [Settings foundation](./settings-foundation.md) (policy use, `guard`)
