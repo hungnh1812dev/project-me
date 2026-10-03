@@ -2,6 +2,7 @@ import { useCallback, useState } from 'react';
 
 import { GatedButton } from '@/components/form/GatedButton';
 import { SchemaForm } from '@/components/form/SchemaForm';
+import { UnsavedChangesDialog } from '@/components/form/UnsavedChangesDialog';
 import { isApiError } from '@/core/api/apiError';
 import type { Decision } from '@/features/auth/permissions/policies';
 import { useContentTypeAccess } from '@/features/content/hooks/useContentTypeAccess';
@@ -11,6 +12,7 @@ import {
   useSingleTypeDocument,
   useUnpublishSingleType,
 } from '@/features/content/hooks/useSingleType';
+import { useUnsavedChangesGuard } from '@/features/content/hooks/useUnsavedChangesGuard';
 import type { ContentType, Document, DocumentData } from '@/features/content/types';
 import { LiveRegion } from '@/features/settings/components/LiveRegion';
 import { useAnnouncer } from '@/features/settings/components/useAnnouncer';
@@ -46,6 +48,7 @@ const Editor: React.FC<EditorProps> = ({ type, doc }) => {
   const { message, announce } = useAnnouncer();
   const [dirty, setDirty] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
+  const guard = useUnsavedChangesGuard(dirty);
 
   const submit = useCallback(
     async (data: DocumentData): Promise<DocumentData> => {
@@ -122,6 +125,7 @@ const Editor: React.FC<EditorProps> = ({ type, doc }) => {
         readOnlyReason={access.update.reason ?? undefined}
         onDirtyChange={setDirty}
       />
+      <UnsavedChangesDialog guard={guard} />
       <LiveRegion message={message} />
     </div>
   );

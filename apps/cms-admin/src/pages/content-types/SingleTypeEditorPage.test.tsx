@@ -1,4 +1,4 @@
-import { screen, waitFor, within } from '@testing-library/react';
+import { act, screen, waitFor, within } from '@testing-library/react';
 import { HttpResponse } from 'msw';
 import { describe, expect, it } from 'vitest';
 
@@ -13,7 +13,7 @@ import {
   unpublishSingleTypeHandler,
 } from '@/test/msw/contentHandlers';
 import { server } from '@/test/msw/server';
-import { renderWithProviders } from '@/test/renderWithProviders';
+import { renderRoutes } from '@/test/renderWithProviders';
 
 import SingleTypeEditorPage from './SingleTypeEditorPage';
 
@@ -36,9 +36,17 @@ const HOME = makeContentType({
 });
 
 function renderPage(type: ContentType = HOME, permissions = ALL) {
-  return renderWithProviders(<SingleTypeEditorPage type={type} />, {
-    auth: { status: 'authenticated', user: makeMeUser({ role: makeRole({ permissions }) }) },
-  });
+  // A data router, because the unsaved-changes guard uses `useBlocker`.
+  return renderRoutes(
+    [
+      { path: '/admin/content-types/home', element: <SingleTypeEditorPage type={type} /> },
+      { path: '/admin/content-types', element: <h1>Overview</h1> },
+    ],
+    {
+      route: '/admin/content-types/home',
+      auth: { status: 'authenticated', user: makeMeUser({ role: makeRole({ permissions }) }) },
+    },
+  );
 }
 
 /** S1 replies with `doc` (wrapped), or 404 when `doc` is null. */
@@ -298,5 +306,35 @@ describe('SingleTypeEditorPage publish (AC-18)', () => {
     await user.click(await screen.findByRole('button', { name: 'Publish' }));
 
     expect(await screen.findByRole('alert')).toHaveTextContent('Draft and publish is off');
+  });
+});
+
+describe('SingleTypeEditorPage unsaved changes (AC-16)', () => {
+  it('asks before leaving a dirty form, and Cancel keeps the edits', async () => {
+    server.use(single(saved()).handler);
+    const { user, router } = renderPage();
+    await user.type(await screen.findByLabelText('Headline'), '!');
+
+    await act(() => router.navigate('/admin/content-types'));
+
+    expect(
+      await screen.findByRole('alertdialog', { name: 'Discard unsaved changes?' }),
+    ).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Cancel' }));
+    expect(router.state.location.pathname).toBe('/admin/content-types/home');
+    expect(screen.getByLabelText('Headline')).toHaveValue('Welcome!');
+  });
+
+  it('leaves a just-saved form without asking', async () => {
+    server.use(single(saved()).handler, saveSingleTypeHandler().handler);
+    const { user, router } = renderPage();
+    await user.type(await screen.findByLabelText('Headline'), '!');
+    await user.click(screen.getByRole('button', { name: 'Save' }));
+    await screen.findByText('Saved.');
+
+    await act(() => router.navigate('/admin/content-types'));
+
+    expect(await screen.findByRole('heading', { name: 'Overview' })).toBeInTheDocument();
+    expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
   });
 });
