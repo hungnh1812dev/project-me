@@ -2,6 +2,7 @@ import { createRef } from 'react';
 import { act, render } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
+import { editorViewOf } from '../lib/jsonEditorView';
 import JsonCodeEditor, { type JsonCodeEditorHandle } from './JsonCodeEditor';
 
 const hostOf = (container: HTMLElement): HTMLElement => {
@@ -146,5 +147,13 @@ describe('JsonCodeEditor', () => {
     unmount();
 
     expect(destroy).toHaveBeenCalled();
+  });
+
+  it('finds the view from the host element, or null without one', () => {
+    const ref = createRef<JsonCodeEditorHandle>();
+    const { container } = render(<JsonCodeEditor ref={ref} label="M" />);
+
+    expect(editorViewOf(hostOf(container))).toBe(ref.current?.view);
+    expect(editorViewOf(document.createElement('div'))).toBeNull();
   });
 });

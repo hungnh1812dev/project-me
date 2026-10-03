@@ -3,6 +3,7 @@ import type { Page } from '@playwright/test';
 import type { Document } from '../src/features/content/types.ts';
 import type { MediaAsset } from '../src/features/settings/types.ts';
 import { FIELD_SHOWCASE, seedContent, STAMP } from './fixtures/contentFixtures.ts';
+import { editorText } from './fixtures/jsonEditor.ts';
 import { expect, ROLES, test, type MockApi } from './fixtures/mockApi.ts';
 
 // The schema form is checked through a single type built from the showcase fields, since the
@@ -41,9 +42,9 @@ function showcase(overrides: Partial<Document> = {}): Document {
 
 /** The `Field` wrapper of the control labelled `label`. */
 const fieldBox = async (page: Page, label: string) => {
+  // `has` pierces the JSON editor's shadow root, where an ancestor XPath can't.
   const box = await page
-    .getByLabel(label, { exact: true })
-    .locator('xpath=ancestor::*[@data-slot="field"][1]')
+    .locator('[data-slot="field"]', { has: page.getByLabel(label, { exact: true }) })
     .boundingBox();
   expect(box).not.toBeNull();
   return box!;
@@ -93,7 +94,9 @@ test('every primitive field renders its control with a visible label (AC-7)', as
   await expect(page.getByLabel('Title', { exact: true })).toHaveValue('Hello');
   await expect(page.getByLabel('Views')).toHaveValue('5');
   await expect(page.getByRole('switch', { name: 'Featured' })).toBeChecked();
-  await expect(page.getByLabel('Meta', { exact: true })).toHaveValue('{\n  "a": 1\n}');
+  await expect
+    .poll(() => editorText(page.getByLabel('Meta', { exact: true })))
+    .toBe('{\n  "a": 1\n}');
   for (const label of ['Title', 'Views', 'Featured', 'Meta'])
     await expect(page.locator('label', { hasText: new RegExp(`^${label}$`) })).toBeVisible();
 });
@@ -130,7 +133,7 @@ test('invalid JSON stays visible, shows its parse error and sends nothing (AC-8)
   await page.getByRole('button', { name: 'Save' }).click();
 
   await expect(page.getByRole('alert')).toContainText('Invalid JSON');
-  await expect(meta).toHaveValue('{"a":');
+  expect(await editorText(meta)).toBe('{"a":');
   await expect(meta).toBeFocused();
   expect(writes(mockApi)).toEqual([]);
 

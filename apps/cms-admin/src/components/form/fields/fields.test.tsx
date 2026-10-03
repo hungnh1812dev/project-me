@@ -1,8 +1,9 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 
 import { JsonInput } from '@repo/ui/form/JsonInput';
+import { editorViewOf } from '@repo/ui/lib/jsonEditorView';
 
 import type { DocumentData, FieldDefinition, FieldType } from '@/features/content/types';
 
@@ -73,15 +74,38 @@ describe('BooleanField (AC-7)', () => {
   });
 });
 
-describe('JsonField (AC-7, AC-8)', () => {
+/** Waits for the lazy JSON editor of a field and returns its in-shadow content and view. */
+async function jsonEditor(label: string) {
+  const content = await waitFor(() => {
+    const node = screen
+      .getByText(label, { selector: 'label' })
+      .closest('[data-slot="field"]')
+      ?.querySelector('repo-json-editor')
+      ?.shadowRoot?.querySelector<HTMLElement>('.cm-content');
+    if (!node) throw new Error('editor not mounted yet');
+    return node;
+  });
+  const view = editorViewOf((content.getRootNode() as ShadowRoot).host);
+  if (!view) throw new Error('no EditorView');
+  const replace = (text: string) =>
+    act(() => {
+      view.dispatch({ changes: { from: 0, to: view.state.doc.length, insert: text } });
+    });
+  return { content, view, replace };
+}
+
+describe('JsonField (AC-7, AC-8, AC-17, AC-20)', () => {
   it('shows the value as two-space JSON text and saves it parsed', async () => {
     const { onSubmit, user } = renderForm();
 
-    const meta = screen.getByLabelText('Meta');
-    expect(meta).toHaveValue('{\n  "a": 1\n}');
-    expect(meta.closest('[data-slot="field"]')).toHaveClass('md:col-span-6');
+    const { content, view, replace } = await jsonEditor('Meta');
+    expect(view.state.doc.toString()).toBe('{\n  "a": 1\n}');
+    expect(content.getRootNode()).toBeInstanceOf(ShadowRoot);
+    const host = (content.getRootNode() as ShadowRoot).host;
+    expect(host.closest('[data-slot="field"]')).toHaveClass('md:col-span-6');
+    expect(host).toHaveAttribute('name', 'meta');
 
-    fireEvent.change(meta, { target: { value: '[1, 2]' } });
+    replace('[1, 2]');
     await save(user);
 
     await waitFor(() =>
@@ -89,28 +113,37 @@ describe('JsonField (AC-7, AC-8)', () => {
     );
   });
 
+  it('names the editor from the field label (AC-20)', async () => {
+    renderForm();
+
+    const { content } = await jsonEditor('Meta');
+    expect(content).toHaveAttribute('aria-label', 'Meta');
+  });
+
   it('keeps invalid text, shows the parse error, focuses the field and sends nothing', async () => {
     const { onSubmit, user } = renderForm();
 
-    const meta = screen.getByLabelText('Meta');
-    fireEvent.change(meta, { target: { value: '{"a":' } });
+    const { content, view, replace } = await jsonEditor('Meta');
+    replace('{"a":');
     await save(user);
 
     const alert = await screen.findByRole('alert');
     expect(alert).toHaveTextContent(/^Invalid JSON: /);
-    expect(meta).toHaveValue('{"a":');
-    expect(meta).toHaveAttribute('aria-invalid', 'true');
-    expect(meta).toHaveFocus();
+    expect(view.state.doc.toString()).toBe('{"a":');
+    expect(content).toHaveAttribute('aria-invalid', 'true');
+    expect(content.getRootNode()).toHaveProperty('activeElement', content);
     expect(onSubmit).not.toHaveBeenCalled();
 
-    fireEvent.change(meta, { target: { value: '{"a": 2}' } });
+    replace('{"a": 2}');
     await waitFor(() => expect(screen.queryByRole('alert')).not.toBeInTheDocument());
   });
 
-  it('is read-only, with Format JSON disabled, in read-only mode', () => {
+  it('is read-only, with Format JSON disabled, in read-only mode', async () => {
     renderForm({ meta: '{"a":1}' }, true);
 
-    expect(screen.getByLabelText('Meta')).toHaveAttribute('readonly');
+    const { content, view } = await jsonEditor('Meta');
+    expect(content).toHaveAttribute('aria-readonly', 'true');
+    expect(view.state.readOnly).toBe(true);
     expect(screen.getByRole('button', { name: 'Format JSON' })).toBeDisabled();
   });
 });
@@ -149,7 +182,7 @@ describe('UnsupportedField (AC-7)', () => {
 
 describe('JsonInput read-only', () => {
   it('disables Format JSON when read-only', () => {
-    render(<JsonInput aria-label="Data" value='{"a":1}' readOnly />);
+    render(<JsonInput label="Data" value='{"a":1}' readOnly />);
 
     expect(screen.getByRole('button', { name: 'Format JSON' })).toBeDisabled();
   });

@@ -1,13 +1,17 @@
 'use client';
 
-import { useState } from 'react';
+import { lazy, Suspense, useState } from 'react';
 
 import { Button } from '../components/button';
-import { Textarea, type TextareaProps } from '../components/textarea';
-import { cn } from '../lib/cn';
+import { Skeleton } from '../components/skeleton';
 import { formatJson, parseJson, type JsonExpect } from '../lib/json';
+import { canFormat, shouldValidate } from '../lib/jsonEditor';
+import type { JsonCodeEditorHandle } from './JsonCodeEditor';
 
-export type JsonInputProps = Omit<TextareaProps, 'value' | 'defaultValue' | 'onChange'> & {
+/** CodeMirror loads in its own chunk, on first render of a JSON field. */
+const JsonCodeEditor = lazy(() => import('./JsonCodeEditor'));
+
+export interface JsonInputProps {
   /** The JSON text (controlled). */
   value?: string;
   /** The initial JSON text (uncontrolled). */
@@ -17,23 +21,54 @@ export type JsonInputProps = Omit<TextareaProps, 'value' | 'defaultValue' | 'onC
   onValidate?: (error: string | null) => void;
   /** The parsed value when the text is valid; `undefined` when invalid or empty. */
   onValueChange?: (value: unknown) => void;
+  onBlur?: () => void;
   expect?: JsonExpect;
-};
+  /** The accessible name of the editor (the field label; ids can't cross the shadow root). */
+  label?: string;
+  /** Text mirrored into the editor's in-shadow description. */
+  description?: string;
+  required?: boolean;
+  disabled?: boolean;
+  readOnly?: boolean;
+  /** Minimum height in lines. */
+  rows?: number;
+  id?: string;
+  name?: string;
+  className?: string;
+  /** Set by `Field` when it shows an error. */
+  'aria-invalid'?: boolean | 'true' | 'false';
+  /** Set by `Field`; ignored, because ids outside the shadow root can't be referenced from it. */
+  'aria-describedby'?: string;
+  'aria-required'?: boolean | 'true' | 'false';
+  ref?: React.Ref<JsonCodeEditorHandle>;
+}
 
-/** A monospace textarea for JSON text with validation and a "Format JSON" button. */
+/** Placeholder with the editor's footprint while the CodeMirror chunk loads. */
+const JsonEditorSkeleton: React.FC = () => (
+  <Skeleton data-slot="json-editor-skeleton" aria-hidden="true" className="h-36 w-full" />
+);
+JsonEditorSkeleton.displayName = 'JsonEditorSkeleton';
+
+/** A CodeMirror JSON editor (lazy-loaded) with validation and a "Format JSON" button. */
 export const JsonInput: React.FC<JsonInputProps> = ({
   value,
   defaultValue = '',
   onChange,
   onValidate,
   onValueChange,
+  onBlur,
   expect = 'any',
+  label,
+  description,
   required,
   disabled,
   readOnly,
+  rows,
+  id,
+  name,
   className,
-  onBlur,
-  ...props
+  'aria-invalid': ariaInvalid,
+  ref,
 }) => {
   const [uncontrolled, setUncontrolled] = useState(defaultValue);
   const [touched, setTouched] = useState(false);
@@ -53,37 +88,41 @@ export const JsonInput: React.FC<JsonInputProps> = ({
     onChange?.(next);
     const result = parse(next);
     onValueChange?.(result.ok ? result.value : undefined);
-    if (touched) validate(next);
+    if (shouldValidate(touched)) validate(next);
   };
 
-  const canFormat = !disabled && !readOnly && text.trim() !== '' && parseJson(text).ok;
+  const invalid = Boolean(error) || ariaInvalid === true || ariaInvalid === 'true';
 
   return (
     <div data-slot="json-input" className="flex w-full flex-col gap-1">
-      <Textarea
-        spellCheck={false}
-        autoCapitalize="off"
-        autoComplete="off"
-        autoCorrect="off"
-        aria-invalid={error ? true : undefined}
-        {...props}
-        required={required}
-        disabled={disabled}
-        readOnly={readOnly}
-        value={text}
-        onChange={(event) => update(event.target.value)}
-        onBlur={(event) => {
-          setTouched(true);
-          validate(text);
-          onBlur?.(event);
-        }}
-        className={cn('font-mono', className)}
-      />
+      <Suspense fallback={<JsonEditorSkeleton />}>
+        <JsonCodeEditor
+          ref={ref}
+          id={id}
+          name={name}
+          className={className}
+          value={text}
+          onChange={update}
+          onBlur={() => {
+            setTouched(true);
+            validate(text);
+            onBlur?.();
+          }}
+          label={label}
+          description={description}
+          error={error}
+          invalid={invalid}
+          required={required}
+          readOnly={readOnly}
+          disabled={disabled}
+          rows={rows}
+        />
+      </Suspense>
       <Button
         variant="ghost"
         size="sm"
         className="self-start"
-        disabled={!canFormat}
+        disabled={!canFormat(text, { disabled, readOnly })}
         onClick={() => update(formatJson(text))}
       >
         Format JSON

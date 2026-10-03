@@ -1,3 +1,4 @@
+import { editorText } from './fixtures/jsonEditor.ts';
 import { expect, test } from './fixtures/mockApi.ts';
 
 test.beforeEach(async ({ page, mockApi }) => {
@@ -45,7 +46,7 @@ test('Format JSON pretty-prints valid text', async ({ page }) => {
   await json.fill('{"a":[1,2]}');
   await format.click();
 
-  await expect(json).toHaveValue('{\n  "a": [\n    1,\n    2\n  ]\n}');
+  await expect.poll(() => editorText(json)).toBe('{\n  "a": [\n    1,\n    2\n  ]\n}');
 });
 
 test('Tab leaves the JSON field (no keyboard trap)', async ({ page }) => {

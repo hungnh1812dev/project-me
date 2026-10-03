@@ -80,7 +80,13 @@ const JsonDemo: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   return (
     <Field label="Metadata" description="A JSON object." error={error}>
-      <JsonInput value={text} onChange={setText} onValidate={setError} expect="object" />
+      <JsonInput
+        label="Metadata"
+        value={text}
+        onChange={setText}
+        onValidate={setError}
+        expect="object"
+      />
     </Field>
   );
 };
@@ -244,16 +250,16 @@ const UiKitPage: React.FC = () => (
     <Section title="JsonInput">
       <JsonDemo />
       <Field label="Settings">
-        <JsonInput defaultValue='{"theme":"dark"}' />
+        <JsonInput label="Settings" defaultValue='{"theme":"dark"}' />
       </Field>
       <Field label="Disabled JSON">
-        <JsonInput disabled defaultValue='{"locked":true}' />
+        <JsonInput label="Disabled JSON" disabled defaultValue='{"locked":true}' />
       </Field>
       <Field label="Invalid JSON" error='Invalid JSON: Unexpected token "x"'>
-        <JsonInput defaultValue="x" />
+        <JsonInput label="Invalid JSON" defaultValue="x" />
       </Field>
       <Field label="Schema" required>
-        <JsonInput />
+        <JsonInput label="Schema" />
       </Field>
     </Section>
 
