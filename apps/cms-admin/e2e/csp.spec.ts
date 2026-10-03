@@ -2,6 +2,7 @@ import type { Page } from '@playwright/test';
 
 import { buildContentSecurityPolicy } from '../src/core/security/csp.ts';
 import type { MediaAsset } from '../src/features/settings/types.ts';
+import { FIELD_SHOWCASE, seedContent, STAMP } from './fixtures/contentFixtures.ts';
 import { expect, ROLES, test, type MockApi } from './fixtures/mockApi.ts';
 
 /**
@@ -156,4 +157,102 @@ test('control: an image from an unlisted host is blocked and reported', async ({
         blockedURI: 'https://blocked.example.test/x.png',
       }),
     );
+});
+
+// Content pages (AC-35). Until the collection detail page lands (task 5.7.5), the editor check runs
+// on a single type built from the showcase fields, which has richtext and media.
+
+const SHOWCASE_SINGLE = {
+  ...FIELD_SHOWCASE,
+  documentId: 'ct-showcase-single',
+  slug: 'showcase-single',
+  name: 'Showcase single',
+  kind: 'single' as const,
+};
+
+test('the content list page renders with no CSP violation', async ({
+  page,
+  mockApi,
+  mockContent,
+}) => {
+  signInAda(mockApi);
+  seedContent(mockContent);
+
+  await page.goto('/admin/content-types/blog');
+
+  await expect(page.getByRole('heading', { level: 1, name: 'Blog post' })).toBeVisible();
+  expect(await violations(page)).toEqual([]);
+});
+
+test('an entry with richtext and media renders with the editor mounted and no CSP violation', async ({
+  page,
+  mockApi,
+  mockContent,
+}) => {
+  signInAda(mockApi);
+  seedContent(mockContent);
+  mockContent.addContentType(SHOWCASE_SINGLE);
+  const cat = asset('media-cat', 'cat.png', '2026-01-01T00:00:00.000Z');
+  mockApi.settings.addMedia(cat);
+  mockContent.setSingle('showcase-single', {
+    documentId: 'showcase-single',
+    status: 'draft',
+    createdAt: STAMP,
+    updatedAt: STAMP,
+    updatedBy: null,
+    title: 'Hello',
+    body: '<h2>Heading</h2><p>Some <strong>bold</strong> and <a href="https://example.com">a link</a>.</p><ul><li>One</li></ul><pre><code>x = 1</code></pre>',
+    coverImage: cat,
+  });
+  await serveMediaHost(page);
+
+  await page.goto('/admin/content-types/showcase-single');
+
+  const editor = page.getByRole('textbox', { name: 'Body', exact: true });
+  await expect(editor).toContainText('Heading');
+  await expect(editor).toHaveAttribute('contenteditable', 'true');
+  // Typing and formatting change the editor's DOM under the policy too.
+  await editor.click();
+  await page.keyboard.press('ControlOrMeta+a');
+  await page
+    .getByRole('toolbar', { name: 'Body formatting' })
+    .getByRole('button', { name: 'Italic' })
+    .click();
+  await page.keyboard.press('ArrowRight');
+  await page.keyboard.type(' more');
+  const thumbnail = page
+    .getByRole('group', { name: 'Cover image', exact: true })
+    .getByRole('img', { name: 'cat.png' });
+  await expect
+    .poll(() => thumbnail.evaluate((img) => (img as { naturalWidth: number }).naturalWidth))
+    .toBe(1);
+  expect(await violations(page)).toEqual([]);
+});
+
+test('the open media picker renders with no CSP violation', async ({
+  page,
+  mockApi,
+  mockContent,
+}) => {
+  signInAda(mockApi);
+  seedContent(mockContent);
+  mockContent.addContentType(SHOWCASE_SINGLE);
+  mockApi.settings.addMedia(asset('media-cat', 'cat.png', '2026-01-01T00:00:00.000Z'));
+  mockApi.settings.addMedia(asset('media-dog', 'dog.png', '2026-01-02T00:00:00.000Z'));
+  await serveMediaHost(page);
+
+  await page.goto('/admin/content-types/showcase-single');
+  await page.getByRole('button', { name: 'Choose Cover image' }).click();
+
+  const dialog = page.getByRole('dialog', { name: 'Choose cover image' });
+  await expect(dialog.getByRole('radio')).toHaveCount(2);
+  for (const name of ['cat.png', 'dog.png']) {
+    const image = dialog.locator('label', { hasText: name }).locator('img');
+    await expect
+      .poll(() => image.evaluate((img) => (img as { naturalWidth: number }).naturalWidth))
+      .toBe(1);
+  }
+  await dialog.getByRole('radio', { name: 'dog.png' }).focus();
+  await page.keyboard.press('ArrowRight');
+  expect(await violations(page)).toEqual([]);
 });

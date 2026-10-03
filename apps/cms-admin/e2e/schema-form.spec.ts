@@ -604,3 +604,45 @@ test('media: a documentId value resolves to the asset, or shows "File not found"
   expect(data.coverImage).toEqual(CAT);
   expect(data.gallery).toEqual([{ caption: 'Gone', image: 'media-gone', tags: [] }]);
 });
+
+// XSS (AC-34)
+
+test('richtext holding <script> and <img onerror> runs nothing and loads nothing (AC-34)', async ({
+  page,
+  mockContent,
+}) => {
+  mockContent.setSingle(
+    'showcase-single',
+    showcase({
+      body:
+        '<p>Safe text</p><script>window.__xss = "script"; alert("script")</script>' +
+        '<img src="x" onerror="window.__xss = \'onerror\'; alert(\'onerror\')">' +
+        '<p><a href="javascript:alert(\'link\')">Click</a></p>',
+    }),
+  );
+  const dialogs: string[] = [];
+  page.on('dialog', (dialog) => {
+    dialogs.push(dialog.message());
+    void dialog.dismiss();
+  });
+  const imageRequests: string[] = [];
+  page.on('request', (request) => {
+    // The page's `URL` constant shadows the global, so match the path with a pattern.
+    if (/^[a-z]+:\/\/[^/]+(?:\/[^?#]*)?\/x(?:[?#]|$)/.test(request.url())) {
+      imageRequests.push(request.url());
+    }
+  });
+
+  await page.goto(URL);
+  const editor = page.getByRole('textbox', { name: 'Body', exact: true });
+  await expect(editor).toContainText('Safe text');
+  await expect(page.getByText(ROUND_TRIP_WARNING)).toBeVisible();
+  // The dropped link keeps its text without an href; clicking it does nothing.
+  await editor.getByText('Click').click();
+
+  expect(await page.evaluate('window.__xss')).toBeUndefined();
+  expect(dialogs).toEqual([]);
+  expect(imageRequests).toEqual([]);
+  await expect(page.locator('script', { hasText: '__xss' })).toHaveCount(0);
+  await expect(editor.locator('img, script, a')).toHaveCount(0);
+});
