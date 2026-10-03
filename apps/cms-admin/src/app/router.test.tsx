@@ -3,8 +3,13 @@ import { http, HttpResponse } from 'msw';
 import type { RouteObject } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { makeContentType } from '@/test/contentFixtures';
 import { makeMeUser, makeRole } from '@/test/fixtures';
-import { getContentTypeHandler, getContentTypesHandler } from '@/test/msw/contentHandlers';
+import {
+  getContentTypeHandler,
+  getContentTypesHandler,
+  getSingleTypeHandler,
+} from '@/test/msw/contentHandlers';
 import { server } from '@/test/msw/server';
 import {
   listAccessTokensHandler,
@@ -175,6 +180,57 @@ describe('route table', () => {
     expect(await screen.findByRole('heading', { name: 'Access denied' })).toBeInTheDocument();
     expect(router.state.location.pathname).toBe('/403');
     expect(c2.requests).toHaveLength(0);
+  });
+
+  it.each([
+    ['/admin/content-types/article/new', 'New entry'],
+    ['/admin/content-types/article/doc-1', 'doc-1'],
+  ])('gates %s behind content_type:read (AC-39)', async (route) => {
+    const c2 = getContentTypeHandler();
+    server.use(c2.handler);
+    const { router } = renderRoutes(routes, { route, auth: signedIn([]) });
+
+    expect(await screen.findByRole('heading', { name: 'Access denied' })).toBeInTheDocument();
+    expect(router.state.location.pathname).toBe('/403');
+    expect(c2.requests).toHaveLength(0);
+  });
+
+  it('serves the create page at /admin/content-types/:slug/new (AC-39)', async () => {
+    server.use(getContentTypeHandler().handler);
+    const { router } = renderRoutes(routes, {
+      route: '/admin/content-types/article/new',
+      auth: signedIn(['content_type:read']),
+    });
+
+    expect(await screen.findByRole('heading', { name: 'New entry', level: 1 })).toBeInTheDocument();
+    expect(router.state.location.pathname).toBe('/admin/content-types/article/new');
+  });
+
+  it('serves the detail page at /admin/content-types/:slug/:documentId (AC-39)', async () => {
+    server.use(getContentTypeHandler().handler);
+    renderRoutes(routes, {
+      route: '/admin/content-types/article/doc%201',
+      auth: signedIn(['content_type:read']),
+    });
+
+    expect(await screen.findByRole('heading', { name: 'doc 1', level: 1 })).toBeInTheDocument();
+  });
+
+  it('redirects /new on a single type to the single-type editor (AC-39)', async () => {
+    server.use(
+      getContentTypeHandler(({ params }) =>
+        HttpResponse.json(makeContentType({ slug: params.slug, name: 'Home', kind: 'single' })),
+      ).handler,
+      getSingleTypeHandler().handler,
+    );
+    const { router } = renderRoutes(routes, {
+      route: '/admin/content-types/home/new',
+      auth: signedIn(['content_type:read', 'document:read']),
+    });
+
+    expect(await screen.findByRole('heading', { name: 'Home', level: 1 })).toBeInTheDocument();
+    expect(router.state.location.pathname).toBe('/admin/content-types/home');
+    expect(router.state.historyAction).toBe('REPLACE');
   });
 
   it.each([

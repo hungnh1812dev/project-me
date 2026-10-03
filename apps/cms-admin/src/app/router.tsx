@@ -8,6 +8,8 @@ import { SETTINGS_LINKS } from '@/features/shell/settingsLinks';
 import AdminHomePage from '@/pages/admin-home/AdminHomePage';
 import ContentTypePage from '@/pages/content-types/ContentTypePage';
 import ContentTypesPage from '@/pages/content-types/ContentTypesPage';
+import DocumentCreatePage from '@/pages/content-types/DocumentCreatePage';
+import DocumentDetailPage from '@/pages/content-types/DocumentDetailPage';
 import ForbiddenPage from '@/pages/forbidden/ForbiddenPage';
 import ForgotPasswordPage from '@/pages/forgot-password/ForgotPasswordPage';
 import LoginPage from '@/pages/login/LoginPage';
@@ -80,6 +82,9 @@ export const routes: RouteObject[] = [
             children: [
               { index: true, element: <ContentTypesPage /> },
               { path: ':slug', element: <ContentTypePage /> },
+              // `new` is a static segment, so it wins over `:documentId` (Phase 5 AC-39).
+              { path: ':slug/new', element: <DocumentCreatePage /> },
+              { path: ':slug/:documentId', element: <DocumentDetailPage /> },
             ],
           },
           ...(import.meta.env.DEV ? [uiKitRoute] : []),
