@@ -270,7 +270,8 @@ test('leaving a dirty form asks first, on a link and on Back; Cancel stays and D
 
   const title = page.getByLabel('Title', { exact: true });
   await title.fill('Post 1 edited');
-  expect(await beforeUnloadArmed(page)).toBe(true);
+  // The listener is added by an effect after the dirty render, so wait for it.
+  await expect.poll(() => beforeUnloadArmed(page)).toBe(true);
 
   // A link: Cancel keeps the edits.
   await trail(page).getByRole('link', { name: 'Blog post' }).click();
