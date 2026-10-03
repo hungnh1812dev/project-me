@@ -214,12 +214,14 @@ describe('SchemaForm read-only mode (AC-14)', () => {
 });
 
 describe('SchemaField dispatch', () => {
-  it('renders a richtext field as text until its editor lands', () => {
+  it('renders a richtext field as a skeleton, then the lazy editor', async () => {
     renderForm({
       fields: [{ name: 'body', type: 'richtext' as FieldType }],
       document: { body: '<p>Hi</p>' },
     });
 
-    expect(screen.getByLabelText('Body')).toHaveValue('<p>Hi</p>');
+    expect(screen.getByRole('status', { name: 'Loading editor' })).toBeInTheDocument();
+    expect(await screen.findByRole('textbox', { name: 'Body' })).toHaveTextContent('Hi');
+    expect(screen.queryByRole('status', { name: 'Loading editor' })).not.toBeInTheDocument();
   });
 });

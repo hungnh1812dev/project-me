@@ -6,6 +6,7 @@ import { ComponentField } from './fields/ComponentField';
 import { JsonField } from './fields/JsonField';
 import { NumberField } from './fields/NumberField';
 import { RepeatableField } from './fields/RepeatableField';
+import { RichTextField } from './fields/RichTextField';
 import { TextField } from './fields/TextField';
 import { UnsupportedField } from './fields/UnsupportedField';
 
@@ -31,8 +32,7 @@ export const SchemaField: React.FC<SchemaFieldProps> = ({
     case 'text':
       return <TextField label={label} name={name} className={className} />;
     case 'richtext':
-      // A plain HTML textarea until the Tiptap editor lands (task 5.4).
-      return <TextField label={label} name={name} multiline className={className} />;
+      return <RichTextField label={label} name={name} className={className} />;
     case 'number':
       return <NumberField field={field} label={label} name={name} className={className} />;
     case 'boolean':
