@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -89,6 +89,21 @@ describe('DatePicker', () => {
     await user.click(trigger);
     await screen.findByRole('dialog');
     await user.keyboard('{Escape}');
+
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    await waitFor(() => expect(trigger).toHaveFocus());
+    expect(spy).not.toHaveBeenCalled();
+  });
+
+  it('has a Close button inside the calendar that closes it without a change', async () => {
+    const user = userEvent.setup();
+    const spy = vi.fn();
+    render(<Harness initial={new Date(2026, 0, 15)} spy={spy} />);
+
+    const trigger = screen.getByRole('button', { name: 'Created' });
+    await user.click(trigger);
+    const calendar = await screen.findByRole('dialog', { name: 'Choose a date' });
+    await user.click(within(calendar).getByRole('button', { name: 'Close' }));
 
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
     await waitFor(() => expect(trigger).toHaveFocus());

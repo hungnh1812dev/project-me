@@ -4,7 +4,13 @@ import { CalendarIcon, XIcon } from 'lucide-react';
 import type { FieldControlProps } from '@/components/form/Field';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
-import { Popover, PopoverContent, PopoverTitle, PopoverTrigger } from '@/components/ui/popover';
+import {
+  Popover,
+  PopoverClose,
+  PopoverContent,
+  PopoverTitle,
+  PopoverTrigger,
+} from '@/components/ui/popover';
 import { controlClasses } from '@/components/ui/variants';
 import { cn } from '@/utils/cn';
 
@@ -37,7 +43,8 @@ const dayToFocus = (popup: HTMLElement | null): HTMLElement | null => {
 /**
  * A date input for a `Field`: a trigger button showing the day (`Intl.DateTimeFormat`) that opens
  * the Calendar in a Popover, with focus on the selected day (or today). Picking a day closes it;
- * Escape closes it without a change. Focus returns to the trigger. Clear sets `undefined`.
+ * Escape or Close closes it without a change. While open, Tab stays inside the calendar. Focus
+ * returns to the trigger. Clear sets `undefined`.
  */
 export const DatePicker: React.FC<DatePickerProps> = ({
   value,
@@ -60,7 +67,8 @@ export const DatePicker: React.FC<DatePickerProps> = ({
 
   return (
     <div data-slot="date-picker" className={cn('flex min-w-0 items-center gap-1', className)}>
-      <Popover open={open} onOpenChange={setOpen}>
+      {/* `trap-focus` keeps Tab inside the calendar; Base UI needs a Close inside to allow it. */}
+      <Popover open={open} onOpenChange={setOpen} modal="trap-focus">
         <PopoverTrigger
           ref={triggerRef}
           id={id}
@@ -96,6 +104,9 @@ export const DatePicker: React.FC<DatePickerProps> = ({
               setOpen(false);
             }}
           />
+          <div className="flex justify-end">
+            <PopoverClose render={<Button variant="ghost" size="sm" />}>Close</PopoverClose>
+          </div>
         </PopoverContent>
       </Popover>
       {value && !disabled && (
