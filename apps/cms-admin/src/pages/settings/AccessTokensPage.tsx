@@ -1,12 +1,8 @@
 import { useId, useMemo, useRef, useState } from 'react';
 import { ChevronRightIcon } from 'lucide-react';
 
+import { Badge } from '@repo/ui/components/badge';
 import { Button } from '@repo/ui/components/button';
-import { cn } from '@repo/ui/lib/cn';
-
-import { GatedButton } from '@/components/form/GatedButton';
-import { SecretReveal } from '@/components/form/SecretReveal';
-import { Badge } from '@/components/ui/badge';
 import {
   Table,
   TableBody,
@@ -15,7 +11,11 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
+} from '@repo/ui/components/table';
+import { cn } from '@repo/ui/lib/cn';
+
+import { GatedButton } from '@/components/form/GatedButton';
+import { SecretReveal } from '@/components/form/SecretReveal';
 import { useCan } from '@/features/auth/hooks/useCan';
 import { ListState } from '@/features/settings/components/ListState';
 import { LiveRegion } from '@/features/settings/components/LiveRegion';

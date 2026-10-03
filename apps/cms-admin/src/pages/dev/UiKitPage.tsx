@@ -2,12 +2,6 @@ import { useState } from 'react';
 import { PlusIcon, SearchIcon } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
-import { Button } from '@repo/ui/components/button';
-
-import { DatePicker } from '@/components/form/DatePicker';
-import { Field } from '@/components/form/Field';
-import { JsonInput } from '@/components/form/JsonInput';
-import { PasswordInput } from '@/components/form/PasswordInput';
 import {
   AlertDialog,
   AlertDialogClose,
@@ -17,8 +11,9 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
-import { Calendar } from '@/components/ui/calendar';
+} from '@repo/ui/components/alert-dialog';
+import { Button } from '@repo/ui/components/button';
+import { Calendar } from '@repo/ui/components/calendar';
 import {
   Dialog,
   DialogClose,
@@ -28,8 +23,8 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
+} from '@repo/ui/components/dialog';
+import { Input } from '@repo/ui/components/input';
 import {
   Popover,
   PopoverContent,
@@ -37,16 +32,21 @@ import {
   PopoverHeader,
   PopoverTitle,
   PopoverTrigger,
-} from '@/components/ui/popover';
+} from '@repo/ui/components/popover';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
-import { Textarea } from '@/components/ui/textarea';
+} from '@repo/ui/components/select';
+import { Switch } from '@repo/ui/components/switch';
+import { Textarea } from '@repo/ui/components/textarea';
+
+import { DatePicker } from '@/components/form/DatePicker';
+import { Field } from '@/components/form/Field';
+import { JsonInput } from '@/components/form/JsonInput';
+import { PasswordInput } from '@/components/form/PasswordInput';
 
 const VARIANTS = ['default', 'secondary', 'outline', 'ghost', 'destructive', 'link'] as const;
 const SIZES = ['sm', 'default', 'lg'] as const;

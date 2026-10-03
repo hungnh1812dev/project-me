@@ -1,7 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
 
-import { Button } from '@repo/ui/components/button';
-
 import {
   AlertDialog,
   AlertDialogClose,
@@ -11,7 +9,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
+} from '@repo/ui/components/alert-dialog';
+import { Button } from '@repo/ui/components/button';
 
 export interface ConfirmDialogProps {
   /** Opens the dialog; focus returns to it on close. Omit it and use `open` to control the dialog. */

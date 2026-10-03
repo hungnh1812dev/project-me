@@ -1,3 +1,5 @@
+'use client';
+
 import * as React from 'react';
 
 /** Below this width the side menu is an off-canvas Sheet (AC-35: mobile and tablet). */

@@ -1,9 +1,9 @@
 import { useState } from 'react';
 
 import { Button } from '@repo/ui/components/button';
+import { Textarea, type TextareaProps } from '@repo/ui/components/textarea';
 import { cn } from '@repo/ui/lib/cn';
 
-import { Textarea, type TextareaProps } from '@/components/ui/textarea';
 import { formatJson, parseJson, type JsonExpect } from '@/utils/json';
 
 export type JsonInputProps = Omit<TextareaProps, 'value' | 'defaultValue' | 'onChange'> & {

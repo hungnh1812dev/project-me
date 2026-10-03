@@ -2,9 +2,9 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { CircleAlert, Lock } from 'lucide-react';
 import { FormProvider, useForm } from 'react-hook-form';
 
+import { Alert, AlertDescription, AlertTitle } from '@repo/ui/components/alert';
 import { cn } from '@repo/ui/lib/cn';
 
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { isApiError } from '@/core/api/apiError';
 import { widthClass } from '@/features/content/schema';
 import { toDocumentData, toFormValues, type FormValues } from '@/features/content/schemaForm';

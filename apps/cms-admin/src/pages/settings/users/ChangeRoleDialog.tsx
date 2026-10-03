@@ -1,14 +1,15 @@
 import { useState } from 'react';
 
-import { ConfirmDialog } from '@/components/form/ConfirmDialog';
-import { Field } from '@/components/form/Field';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from '@repo/ui/components/select';
+
+import { ConfirmDialog } from '@/components/form/ConfirmDialog';
+import { Field } from '@/components/form/Field';
 import type { Role } from '@/features/auth/types';
 import { useAssignRole } from '@/features/settings/hooks/useUsers';
 import type { UserRow } from '@/features/settings/roleHierarchy';

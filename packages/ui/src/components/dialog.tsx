@@ -1,8 +1,10 @@
+'use client';
+
 import { Dialog as DialogPrimitive } from '@base-ui/react/dialog';
 import { XIcon } from 'lucide-react';
 
-import { Button } from '@repo/ui/components/button';
-import { cn } from '@repo/ui/lib/cn';
+import { cn } from '../lib/cn';
+import { Button } from './button';
 
 // Vendored from shadcn/ui (base-nova) and adapted: arrow components, semantic tokens, 44px touch
 // targets below `lg`, and `aria-modal="true"` on the popup (Base UI does not set it).
@@ -91,7 +93,7 @@ DialogFooter.displayName = 'DialogFooter';
 const DialogTitle: React.FC<DialogPrimitive.Title.Props> = ({ className, ...props }) => (
   <DialogPrimitive.Title
     data-slot="dialog-title"
-    className={cn('text-lg font-semibold text-foreground', className)}
+    className={cn('text-foreground text-lg font-semibold', className)}
     {...props}
   />
 );
@@ -103,7 +105,7 @@ const DialogDescription: React.FC<DialogPrimitive.Description.Props> = ({
 }) => (
   <DialogPrimitive.Description
     data-slot="dialog-description"
-    className={cn('text-sm text-muted-foreground', className)}
+    className={cn('text-muted-foreground text-sm', className)}
     {...props}
   />
 );

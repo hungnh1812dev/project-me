@@ -1,6 +1,12 @@
 import { LayersIcon } from 'lucide-react';
 
-import { Card, CardContent, CardDescription, CardFooter, CardHeader } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+} from '@repo/ui/components/card';
 
 interface AuthLayoutProps {
   /** The page heading (the only `<h1>`). */

@@ -1,8 +1,6 @@
 import { useMemo, useState } from 'react';
 
-import { useAppSelector } from '@/app/hooks';
-import { GatedButton } from '@/components/form/GatedButton';
-import { Badge } from '@/components/ui/badge';
+import { Badge } from '@repo/ui/components/badge';
 import {
   Table,
   TableBody,
@@ -11,7 +9,10 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
+} from '@repo/ui/components/table';
+
+import { useAppSelector } from '@/app/hooks';
+import { GatedButton } from '@/components/form/GatedButton';
 import { useCan, useRoleLevel } from '@/features/auth/hooks/useCan';
 import { selectCurrentUser } from '@/features/auth/store/selectors';
 import { ListState } from '@/features/settings/components/ListState';

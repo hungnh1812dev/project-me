@@ -1,8 +1,10 @@
+'use client';
+
 import { Select as SelectPrimitive } from '@base-ui/react/select';
 import { CheckIcon, ChevronDownIcon } from 'lucide-react';
 
-import { controlClasses } from '@repo/ui/components/variants';
-import { cn } from '@repo/ui/lib/cn';
+import { cn } from '../lib/cn';
+import { controlClasses } from './variants';
 
 // Vendored from shadcn/ui (base-nova) and adapted: arrow components, semantic tokens and 44px
 // touch targets below `lg`. Put `SelectTrigger` inside a `Field` so it gets the label and the
@@ -18,7 +20,7 @@ SelectGroup.displayName = 'SelectGroup';
 const SelectValue: React.FC<SelectPrimitive.Value.Props> = ({ className, ...props }) => (
   <SelectPrimitive.Value
     data-slot="select-value"
-    className={cn('truncate data-placeholder:text-muted-foreground', className)}
+    className={cn('data-placeholder:text-muted-foreground truncate', className)}
     {...props}
   />
 );
@@ -33,13 +35,13 @@ const SelectTrigger: React.FC<SelectPrimitive.Trigger.Props> = ({
     data-slot="select-trigger"
     className={cn(
       controlClasses,
-      'flex h-11 items-center justify-between gap-2 px-3 py-2 text-left whitespace-nowrap data-disabled:cursor-not-allowed data-disabled:bg-muted data-disabled:opacity-60 lg:h-10 [&_svg]:pointer-events-none [&_svg]:shrink-0',
+      'data-disabled:bg-muted flex h-11 items-center justify-between gap-2 px-3 py-2 text-left whitespace-nowrap data-disabled:cursor-not-allowed data-disabled:opacity-60 lg:h-10 [&_svg]:pointer-events-none [&_svg]:shrink-0',
       className,
     )}
     {...props}
   >
     {children}
-    <SelectPrimitive.Icon render={<ChevronDownIcon className="size-4 text-muted-foreground" />} />
+    <SelectPrimitive.Icon render={<ChevronDownIcon className="text-muted-foreground size-4" />} />
   </SelectPrimitive.Trigger>
 );
 SelectTrigger.displayName = 'SelectTrigger';
@@ -72,7 +74,7 @@ const SelectContent: React.FC<SelectContentProps> = ({
       <SelectPrimitive.Popup
         data-slot="select-content"
         className={cn(
-          'max-h-(--available-height) min-w-(--anchor-width) origin-(--transform-origin) overflow-x-hidden overflow-y-auto rounded-lg bg-popover p-1 text-popover-foreground shadow-md ring-1 ring-foreground/10 duration-100 outline-none data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95',
+          'bg-popover text-popover-foreground ring-foreground/10 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 max-h-(--available-height) min-w-(--anchor-width) origin-(--transform-origin) overflow-x-hidden overflow-y-auto rounded-lg p-1 shadow-md ring-1 duration-100 outline-none',
           className,
         )}
         {...props}
@@ -87,7 +89,7 @@ SelectContent.displayName = 'SelectContent';
 const SelectLabel: React.FC<SelectPrimitive.GroupLabel.Props> = ({ className, ...props }) => (
   <SelectPrimitive.GroupLabel
     data-slot="select-label"
-    className={cn('px-2 py-1.5 text-xs font-medium text-muted-foreground', className)}
+    className={cn('text-muted-foreground px-2 py-1.5 text-xs font-medium', className)}
     {...props}
   />
 );
@@ -97,7 +99,7 @@ const SelectItem: React.FC<SelectPrimitive.Item.Props> = ({ className, children,
   <SelectPrimitive.Item
     data-slot="select-item"
     className={cn(
-      'relative flex min-h-11 w-full cursor-default items-center gap-2 rounded-md py-1.5 pr-8 pl-2 text-sm outline-none select-none data-disabled:pointer-events-none data-disabled:opacity-50 data-highlighted:bg-accent data-highlighted:text-accent-foreground lg:min-h-8 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*="size-"])]:size-4',
+      'data-highlighted:bg-accent data-highlighted:text-accent-foreground relative flex min-h-11 w-full cursor-default items-center gap-2 rounded-md py-1.5 pr-8 pl-2 text-sm outline-none select-none data-disabled:pointer-events-none data-disabled:opacity-50 lg:min-h-8 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*="size-"])]:size-4',
       className,
     )}
     {...props}
@@ -113,7 +115,7 @@ SelectItem.displayName = 'SelectItem';
 const SelectSeparator: React.FC<SelectPrimitive.Separator.Props> = ({ className, ...props }) => (
   <SelectPrimitive.Separator
     data-slot="select-separator"
-    className={cn('-mx-1 my-1 h-px bg-border', className)}
+    className={cn('bg-border -mx-1 my-1 h-px', className)}
     {...props}
   />
 );

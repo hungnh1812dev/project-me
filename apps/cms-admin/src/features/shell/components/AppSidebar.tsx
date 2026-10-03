@@ -3,8 +3,6 @@ import { ChevronDownIcon, FileIcon, FilesIcon, type LucideIcon } from 'lucide-re
 import { Link, useLocation } from 'react-router-dom';
 
 import { Button } from '@repo/ui/components/button';
-import { cn } from '@repo/ui/lib/cn';
-
 import {
   SidebarContent,
   SidebarGroup,
@@ -14,8 +12,9 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarMenuSkeleton,
-} from '@/components/ui/sidebar';
-import { useSidebar } from '@/components/ui/use-sidebar';
+} from '@repo/ui/components/sidebar';
+import { useSidebar } from '@repo/ui/hooks/use-sidebar';
+import { cn } from '@repo/ui/lib/cn';
 
 import { useNavModel } from '../hooks/useNavModel';
 import type { NavLinkItem } from '../navigation';

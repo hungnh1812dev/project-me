@@ -1,9 +1,6 @@
 import { Fragment } from 'react';
 import { Link } from 'react-router-dom';
 
-import { buttonVariants } from '@repo/ui/components/variants';
-import { cn } from '@repo/ui/lib/cn';
-
 import {
   Breadcrumb,
   BreadcrumbEllipsis,
@@ -12,13 +9,15 @@ import {
   BreadcrumbList,
   BreadcrumbPage,
   BreadcrumbSeparator,
-} from '@/components/ui/breadcrumb';
+} from '@repo/ui/components/breadcrumb';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+} from '@repo/ui/components/dropdown-menu';
+import { buttonVariants } from '@repo/ui/components/variants';
+import { cn } from '@repo/ui/lib/cn';
 
 import type { Crumb } from '../breadcrumbs';
 import { useBreadcrumbs } from '../hooks/useBreadcrumbs';

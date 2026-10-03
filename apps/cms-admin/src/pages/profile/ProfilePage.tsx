@@ -1,13 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
 import { LogOutIcon, PencilIcon } from 'lucide-react';
 
+import { Alert } from '@repo/ui/components/alert';
+import { Badge } from '@repo/ui/components/badge';
 import { Button } from '@repo/ui/components/button';
+import { Card, CardContent, CardFooter, CardHeader } from '@repo/ui/components/card';
+import { Separator } from '@repo/ui/components/separator';
 import { cn } from '@repo/ui/lib/cn';
 
-import { Alert } from '@/components/ui/alert';
-import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { useCurrentUserQuery } from '@/features/auth/hooks/useCurrentUserQuery';
 import { LiveRegion } from '@/features/settings/components/LiveRegion';

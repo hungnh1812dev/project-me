@@ -2,13 +2,13 @@ import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
 import { AlertCircleIcon, Columns3Icon, ListFilterIcon, PlusIcon, SearchIcon } from 'lucide-react';
 import { Link, useLocation, useSearchParams } from 'react-router-dom';
 
+import { Badge } from '@repo/ui/components/badge';
 import { Button } from '@repo/ui/components/button';
+import { Input } from '@repo/ui/components/input';
+import { Skeleton } from '@repo/ui/components/skeleton';
 
 import { Field } from '@/components/form/Field';
 import { GatedButton } from '@/components/form/GatedButton';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Skeleton } from '@/components/ui/skeleton';
 import type { Decision } from '@/features/auth/permissions/policies';
 import { buildColumnCatalog, entryLabeler } from '@/features/content/columns';
 import { useDocumentList } from '@/features/content/hooks/useCollectionQueries';

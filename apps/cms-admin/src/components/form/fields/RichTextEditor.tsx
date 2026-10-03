@@ -18,10 +18,10 @@ import {
 } from 'lucide-react';
 
 import { Button } from '@repo/ui/components/button';
+import { Input } from '@repo/ui/components/input';
 import { cn } from '@repo/ui/lib/cn';
 
 import { Field } from '@/components/form/Field';
-import { Input } from '@/components/ui/input';
 import { changesOnRoundTrip, isAllowedHref, LINK_ERROR } from '@/features/content/richtext';
 
 /** What a parent can do with the editor: focus it (react-hook-form focuses a field this way). */

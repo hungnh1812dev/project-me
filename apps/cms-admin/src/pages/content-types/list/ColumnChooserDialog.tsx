@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { ArrowDownIcon, ArrowUpIcon } from 'lucide-react';
 
 import { Button } from '@repo/ui/components/button';
-
 import {
   Dialog,
   DialogClose,
@@ -11,7 +10,8 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
+} from '@repo/ui/components/dialog';
+
 import { isApiError } from '@/core/api/apiError';
 import type { ColumnCatalog } from '@/features/content/columns';
 import { useUpdateListFields } from '@/features/content/hooks/useContentTypes';

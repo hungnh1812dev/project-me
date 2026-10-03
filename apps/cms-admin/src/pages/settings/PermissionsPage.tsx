@@ -1,7 +1,6 @@
 import { useMemo, useState } from 'react';
 
-import { GatedButton } from '@/components/form/GatedButton';
-import { Badge } from '@/components/ui/badge';
+import { Badge } from '@repo/ui/components/badge';
 import {
   Table,
   TableBody,
@@ -10,7 +9,9 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
+} from '@repo/ui/components/table';
+
+import { GatedButton } from '@/components/form/GatedButton';
 import { useCan } from '@/features/auth/hooks/useCan';
 import type { Decision } from '@/features/auth/permissions/policies';
 import { ListState } from '@/features/settings/components/ListState';

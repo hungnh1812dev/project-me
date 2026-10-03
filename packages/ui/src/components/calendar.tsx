@@ -1,3 +1,5 @@
+'use client';
+
 import { ChevronDownIcon, ChevronLeftIcon, ChevronRightIcon } from 'lucide-react';
 import {
   DayButton as DayButtonPrimitive,
@@ -6,8 +8,8 @@ import {
   type DayButtonProps,
 } from 'react-day-picker';
 
-import { buttonVariants } from '@repo/ui/components/variants';
-import { cn } from '@repo/ui/lib/cn';
+import { cn } from '../lib/cn';
+import { buttonVariants } from './variants';
 
 // Vendored from shadcn/ui (Calendar on react-day-picker) and adapted: arrow components, semantic
 // tokens, `cn`, and 44px day and navigation targets below `lg`. No `style` props: react-day-picker
@@ -61,7 +63,7 @@ const Calendar: React.FC<CalendarProps> = ({
   <DayPicker
     data-slot="calendar"
     showOutsideDays={showOutsideDays}
-    className={cn('w-fit text-sm text-foreground', className)}
+    className={cn('text-foreground w-fit text-sm', className)}
     classNames={{
       months: 'relative flex flex-col gap-4',
       month: 'flex w-full flex-col gap-2',

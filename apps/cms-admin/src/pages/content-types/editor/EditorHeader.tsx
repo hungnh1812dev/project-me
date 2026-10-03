@@ -1,14 +1,14 @@
 import { EllipsisVerticalIcon } from 'lucide-react';
 
+import { Badge } from '@repo/ui/components/badge';
 import { Button } from '@repo/ui/components/button';
-import { cn } from '@repo/ui/lib/cn';
-
-import { Badge } from '@/components/ui/badge';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+} from '@repo/ui/components/dropdown-menu';
+import { cn } from '@repo/ui/lib/cn';
+
 import { formatCell, STATUS_LABELS } from '@/features/content/columns';
 import type { DocumentStatus, UpdatedBy } from '@/features/content/types';
 

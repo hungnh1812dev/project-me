@@ -1,4 +1,4 @@
-import { readdirSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
 
 import { describe, expect, it } from 'vitest';
@@ -115,4 +115,42 @@ describe("'use client' directive (AC-6)", () => {
 
     expect(missing).toEqual([]);
   });
+});
+
+describe('primitives (AC-2)', () => {
+  const PRIMITIVES = [
+    'alert',
+    'alert-dialog',
+    'badge',
+    'breadcrumb',
+    'button',
+    'calendar',
+    'card',
+    'checkbox',
+    'dialog',
+    'dropdown-menu',
+    'input',
+    'label',
+    'popover',
+    'select',
+    'separator',
+    'sheet',
+    'sidebar',
+    'skeleton',
+    'switch',
+    'table',
+    'textarea',
+    'tooltip',
+  ] as const;
+
+  it.each(PRIMITIVES)('components/%s.tsx is in the package', (name) => {
+    expect(existsSync(join(SRC, 'components', `${name}.tsx`))).toBe(true);
+  });
+
+  it.each(['components/variants.ts', 'hooks/use-mobile.ts', 'hooks/use-sidebar.ts', 'lib/cn.ts'])(
+    '%s is in the package',
+    (path) => {
+      expect(existsSync(join(SRC, path))).toBe(true);
+    },
+  );
 });

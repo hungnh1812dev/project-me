@@ -1,11 +1,11 @@
 import { useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 
+import { Alert } from '@repo/ui/components/alert';
 import { Button } from '@repo/ui/components/button';
+import { Input } from '@repo/ui/components/input';
 
 import { Field } from '@/components/form/Field';
-import { Alert } from '@/components/ui/alert';
-import { Input } from '@/components/ui/input';
 import { useForgotPasswordMutation } from '@/core/api/AuthApi';
 import { toApiErrorData } from '@/core/api/axiosBaseQuery';
 import { validateEmail } from '@/features/auth/onboarding';

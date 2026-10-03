@@ -1,6 +1,8 @@
+'use client';
+
 import { Popover as PopoverPrimitive } from '@base-ui/react/popover';
 
-import { cn } from '@repo/ui/lib/cn';
+import { cn } from '../lib/cn';
 
 // Vendored from shadcn/ui (base-nova) and adapted: arrow components and semantic tokens. Base UI
 // positions the popup through CSSOM only (no `style` attribute), so it renders under the CSP's
@@ -43,7 +45,7 @@ const PopoverContent: React.FC<PopoverContentProps> = ({
       <PopoverPrimitive.Popup
         data-slot="popover-content"
         className={cn(
-          'z-50 flex max-h-(--available-height) w-72 max-w-[calc(100vw-2rem)] origin-(--transform-origin) flex-col gap-4 overflow-y-auto rounded-lg border bg-popover p-4 text-sm text-popover-foreground shadow-md duration-100 outline-none data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95',
+          'bg-popover text-popover-foreground data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 z-50 flex max-h-(--available-height) w-72 max-w-[calc(100vw-2rem)] origin-(--transform-origin) flex-col gap-4 overflow-y-auto rounded-lg border p-4 text-sm shadow-md duration-100 outline-none',
           className,
         )}
         {...props}
@@ -61,7 +63,7 @@ PopoverHeader.displayName = 'PopoverHeader';
 const PopoverTitle: React.FC<PopoverPrimitive.Title.Props> = ({ className, ...props }) => (
   <PopoverPrimitive.Title
     data-slot="popover-title"
-    className={cn('font-medium text-foreground', className)}
+    className={cn('text-foreground font-medium', className)}
     {...props}
   />
 );

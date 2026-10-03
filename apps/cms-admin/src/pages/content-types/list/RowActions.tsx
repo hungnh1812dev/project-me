@@ -3,15 +3,15 @@ import { CopyIcon, EllipsisIcon, PencilIcon, SendIcon, Trash2Icon, UndoIcon } fr
 import { Link } from 'react-router-dom';
 
 import { Button } from '@repo/ui/components/button';
-
-import { GatedMenuItem } from '@/components/form/GatedMenuItem';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+} from '@repo/ui/components/dropdown-menu';
+
+import { GatedMenuItem } from '@/components/form/GatedMenuItem';
 import {
   useDuplicateDocument,
   usePublishDocument,

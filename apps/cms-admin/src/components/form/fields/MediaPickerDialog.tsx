@@ -2,8 +2,6 @@ import { useId, useMemo, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 
 import { Button } from '@repo/ui/components/button';
-
-import { FileDropzone } from '@/components/form/FileDropzone';
 import {
   Dialog,
   DialogClose,
@@ -12,7 +10,9 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
+} from '@repo/ui/components/dialog';
+
+import { FileDropzone } from '@/components/form/FileDropzone';
 import { useCan } from '@/features/auth/hooks/useCan';
 import { ListState } from '@/features/settings/components/ListState';
 import { SearchField } from '@/features/settings/components/SearchField';

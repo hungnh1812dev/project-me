@@ -2,9 +2,9 @@ import { useEffect, useId, useRef } from 'react';
 import { ArrowDownIcon, ArrowUpIcon, ChevronsUpDownIcon } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
+import { TableBody, TableCell, TableHead, TableHeader, TableRow } from '@repo/ui/components/table';
 import { cn } from '@repo/ui/lib/cn';
 
-import { TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import {
   cellValue,
   entryLabeler,

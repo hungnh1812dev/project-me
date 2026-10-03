@@ -1,5 +1,7 @@
-import { controlClasses } from '@repo/ui/components/variants';
-import { cn } from '@repo/ui/lib/cn';
+'use client';
+
+import { cn } from '../lib/cn';
+import { controlClasses } from './variants';
 
 type InputProps = Omit<React.ComponentProps<'input'>, 'type'> & {
   type?: 'text' | 'email' | 'password' | 'search' | 'url' | 'tel' | 'number';
@@ -29,7 +31,7 @@ const Input: React.FC<InputProps> = ({ className, type = 'text', leading, traili
   return (
     <div data-slot="input-group" className="relative w-full">
       {leading != null && (
-        <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-muted-foreground [&_svg]:size-4">
+        <span className="text-muted-foreground pointer-events-none absolute inset-y-0 left-3 flex items-center [&_svg]:size-4">
           {leading}
         </span>
       )}

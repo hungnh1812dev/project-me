@@ -1,3 +1,5 @@
+'use client';
+
 import * as React from 'react';
 
 // Split from sidebar.tsx so that file only exports components (fast refresh).

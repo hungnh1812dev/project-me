@@ -15,7 +15,6 @@
     "test:e2e": "playwright test"
   },
   "dependencies": {
-    "@base-ui/react": "^1.8.0",
     "@fontsource-variable/fira-code": "^5.3.0",
     "@fontsource/fira-sans": "^5.3.0",
     "@reduxjs/toolkit": "^2.13.0",
@@ -26,10 +25,8 @@
     "@tiptap/react": "3.31.4",
     "@tiptap/starter-kit": "3.31.4",
     "axios": "^1.20.0",
-    "class-variance-authority": "^0.7.1",
     "lucide-react": "^1.49.0",
     "react": "19.2.8",
-    "react-day-picker": "10.0.2",
     "react-dom": "19.2.8",
     "react-hook-form": "^7.89.0",
     "react-redux": "^9.3.0",

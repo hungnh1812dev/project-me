@@ -3,7 +3,7 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 
-import { Input } from '@/components/ui/input';
+import { Input } from '@repo/ui/components/input';
 
 describe('Input', () => {
   it('forwards ref and passes native props through', () => {

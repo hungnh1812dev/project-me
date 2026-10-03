@@ -1,8 +1,8 @@
 import { useId } from 'react';
 
+import { DropdownMenuItem } from '@repo/ui/components/dropdown-menu';
 import { cn } from '@repo/ui/lib/cn';
 
-import { DropdownMenuItem } from '@/components/ui/dropdown-menu';
 import type { Decision } from '@/features/auth/permissions/policies';
 
 export type GatedMenuItemProps = React.ComponentProps<typeof DropdownMenuItem> & {

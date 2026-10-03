@@ -1,14 +1,14 @@
 import { useState, type FormEvent } from 'react';
 import { Link, Navigate, useLocation } from 'react-router-dom';
 
+import { Alert } from '@repo/ui/components/alert';
 import { Button } from '@repo/ui/components/button';
+import { Checkbox } from '@repo/ui/components/checkbox';
+import { Input } from '@repo/ui/components/input';
+import { Label } from '@repo/ui/components/label';
 
 import { Field } from '@/components/form/Field';
 import { PasswordInput } from '@/components/form/PasswordInput';
-import { Alert } from '@/components/ui/alert';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { useHasUsersQuery } from '@/core/api/AuthApi';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { loginNoticeMessage } from '@/features/auth/onboarding';

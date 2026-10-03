@@ -2,15 +2,15 @@ import { useId } from 'react';
 import { ChevronLeftIcon, ChevronRightIcon } from 'lucide-react';
 
 import { Button } from '@repo/ui/components/button';
-
-import { Label } from '@/components/ui/label';
+import { Label } from '@repo/ui/components/label';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from '@repo/ui/components/select';
+
 import { lastPage, PAGE_SIZES, type PageSize } from '@/features/content/listState';
 
 export interface PaginationBarProps {

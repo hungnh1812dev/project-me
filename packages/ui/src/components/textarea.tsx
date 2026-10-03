@@ -1,7 +1,9 @@
+'use client';
+
 import { useId, useState } from 'react';
 
-import { controlClasses } from '@repo/ui/components/variants';
-import { cn } from '@repo/ui/lib/cn';
+import { cn } from '../lib/cn';
+import { controlClasses } from './variants';
 
 type TextareaProps = React.ComponentProps<'textarea'>;
 

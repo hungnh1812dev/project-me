@@ -1,8 +1,9 @@
+'use client';
+
 import { AlertDialog as AlertDialogPrimitive } from '@base-ui/react/alert-dialog';
 
-import { cn } from '@repo/ui/lib/cn';
-
-import { overlayClasses, popupClasses } from '@/components/ui/dialog';
+import { cn } from '../lib/cn';
+import { overlayClasses, popupClasses } from './dialog';
 
 // Vendored from shadcn/ui (base-nova) and adapted like `dialog`. The popup has
 // `role="alertdialog"` and `aria-modal="true"`; it does not close on an outside click.
@@ -60,7 +61,7 @@ AlertDialogFooter.displayName = 'AlertDialogFooter';
 const AlertDialogTitle: React.FC<AlertDialogPrimitive.Title.Props> = ({ className, ...props }) => (
   <AlertDialogPrimitive.Title
     data-slot="alert-dialog-title"
-    className={cn('text-lg font-semibold text-foreground', className)}
+    className={cn('text-foreground text-lg font-semibold', className)}
     {...props}
   />
 );
@@ -72,7 +73,7 @@ const AlertDialogDescription: React.FC<AlertDialogPrimitive.Description.Props> =
 }) => (
   <AlertDialogPrimitive.Description
     data-slot="alert-dialog-description"
-    className={cn('text-sm text-muted-foreground', className)}
+    className={cn('text-muted-foreground text-sm', className)}
     {...props}
   />
 );

@@ -1,9 +1,9 @@
 import { useId } from 'react';
 
 import { Button, type ButtonProps } from '@repo/ui/components/button';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@repo/ui/components/tooltip';
 import { cn } from '@repo/ui/lib/cn';
 
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import type { Decision } from '@/features/auth/permissions/policies';
 
 export type GatedButtonProps = ButtonProps & {
