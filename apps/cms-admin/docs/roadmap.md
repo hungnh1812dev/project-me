@@ -83,6 +83,14 @@ The hardening audit passed with no CRITICAL, HIGH or MEDIUM findings. These LOW 
 
 The audit also noted that CI no longer runs on pull requests (commit `e6d4794`, a deliberate repo change outside this work) and has no `pnpm audit` step.
 
+## Open security findings (LOW, from the Phase 5 audit)
+
+The Phase 5 security audit passed with no CRITICAL, HIGH or MEDIUM findings. This LOW finding was accepted for now:
+
+| ID       | Finding                                                                                                                                                                                                                                                                                       | Where                                | Suggested fix                                                                                                                                                            |
+| -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| P5-SEC-1 | The schema form uses server-defined field names as plain object keys. A field named `__proto__` would set the object's prototype instead of a value, so that field is silently left out of the save. It matters only if the backend allows such names, which can't be checked from this repo. | `src/features/content/schemaForm.ts` | Build the value objects with `Object.create(null)`, or reject `__proto__`, `constructor` and `prototype` as field names; add a round-trip test with a `__proto__` field. |
+
 ## Resolved before Phase 5
 
 The pre-Phase-5 hardening closed these findings and gaps. Each is checked by the acceptance criteria (AC) of that work:
