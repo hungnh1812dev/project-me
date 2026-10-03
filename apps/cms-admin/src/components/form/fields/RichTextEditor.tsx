@@ -301,6 +301,8 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor, labelId, linkOpen, onLink }) 
       aria-expanded={key === LINK_KEY ? linkOpen : undefined}
       tabIndex={index === current ? 0 : -1}
       onFocus={() => setCurrent(index)}
+      // A pointer press keeps the focus (and the selection) in the editor.
+      onMouseDown={(event: React.MouseEvent) => event.preventDefault()}
       onClick={onClick}
       className="aria-pressed:bg-accent aria-pressed:text-accent-foreground"
     >

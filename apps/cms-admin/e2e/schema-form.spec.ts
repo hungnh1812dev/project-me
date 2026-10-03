@@ -1,6 +1,7 @@
 import type { Page } from '@playwright/test';
 
 import type { Document } from '../src/features/content/types.ts';
+import type { MediaAsset } from '../src/features/settings/types.ts';
 import { FIELD_SHOWCASE, seedContent, STAMP } from './fixtures/contentFixtures.ts';
 import { expect, ROLES, test, type MockApi } from './fixtures/mockApi.ts';
 
@@ -253,4 +254,353 @@ test('a top-level component is a labelled group and a nested one collapses with 
   await summary.focus();
   await page.keyboard.press('Enter');
   await expect(seo.getByLabel('Handle')).toBeHidden();
+});
+
+// Richtext (AC-11, AC-12)
+
+const ROUND_TRIP_WARNING =
+  "This entry contains formatting the editor can't keep. Saving will remove it.";
+const LINK_ERROR = 'Links must start with http://, https:// or mailto:.';
+
+const lastSave = (mockContent: { saves: { body: unknown }[] }) =>
+  (mockContent.saves.at(-1)!.body as { data: Record<string, unknown> }).data;
+
+/** Focuses the editor and selects all of its text, with the keyboard. */
+async function selectAllInEditor(page: Page) {
+  const editor = page.getByRole('textbox', { name: 'Body', exact: true });
+  await editor.click();
+  await page.keyboard.press('ControlOrMeta+a');
+  return editor;
+}
+
+test('richtext: the toolbar is one tab stop, moves with the arrows and shows pressed states (AC-12)', async ({
+  page,
+  mockContent,
+}) => {
+  mockContent.setSingle('showcase-single', showcase({ body: '<p>Hello world</p>' }));
+  await page.goto(URL);
+  const toolbar = page.getByRole('toolbar', { name: 'Body formatting' });
+  const editor = await selectAllInEditor(page);
+
+  // Shift+Tab from the editor lands on the toolbar's single tab stop.
+  await page.keyboard.press('Shift+Tab');
+  await expect(toolbar.getByRole('button', { name: 'Bold' })).toBeFocused();
+  await page.keyboard.press('ArrowRight');
+  const italic = toolbar.getByRole('button', { name: 'Italic' });
+  await expect(italic).toBeFocused();
+  await expect(italic).toHaveAttribute('aria-pressed', 'false');
+  await page.keyboard.press('Enter');
+
+  await expect(italic).toHaveAttribute('aria-pressed', 'true');
+  await expect(editor.locator('em')).toHaveText('Hello world');
+  // Tab from the editor's previous control reaches the toolbar on the last-used button.
+  await page.keyboard.press('Shift+Tab');
+  await expect(italic).toBeFocused();
+  await page.keyboard.press('End');
+  await expect(toolbar.getByRole('button', { name: 'Link' })).toBeFocused();
+  await page.keyboard.press('Home');
+  await expect(toolbar.getByRole('button', { name: 'Bold' })).toBeFocused();
+
+  await page.getByRole('button', { name: 'Save' }).click();
+  await expect(page.getByRole('status').filter({ hasText: 'Saved.' })).toBeAttached();
+  expect(lastSave(mockContent).body).toBe('<p><em>Hello world</em></p>');
+});
+
+test('richtext: a javascript: link is rejected with a message, an https link is saved (AC-12)', async ({
+  page,
+  mockContent,
+}) => {
+  mockContent.setSingle('showcase-single', showcase({ body: '<p>Docs</p>' }));
+  await page.goto(URL);
+  const toolbar = page.getByRole('toolbar', { name: 'Body formatting' });
+  await selectAllInEditor(page);
+
+  await page.keyboard.press('Shift+Tab');
+  await page.keyboard.press('End');
+  await page.keyboard.press('Enter');
+  const url = page.getByRole('textbox', { name: 'Link URL' });
+  await expect(url).toBeFocused();
+  await page.keyboard.type('javascript:alert(1)');
+  await page.keyboard.press('Enter');
+
+  await expect(page.getByRole('alert')).toHaveText(LINK_ERROR);
+  await expect(url).toHaveAttribute('aria-invalid', 'true');
+  expect(mockContent.saves).toEqual([]);
+
+  await url.fill('https://example.com/docs');
+  await page.keyboard.press('Enter');
+  await expect(url).toHaveCount(0);
+  await expect(toolbar.getByRole('button', { name: 'Link' })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  );
+
+  await page.getByRole('button', { name: 'Save' }).click();
+  await expect(page.getByRole('status').filter({ hasText: 'Saved.' })).toBeAttached();
+  expect(lastSave(mockContent).body).toBe('<p><a href="https://example.com/docs">Docs</a></p>');
+});
+
+test('richtext: saved HTML holds only the allowed elements (AC-12)', async ({
+  page,
+  mockContent,
+}) => {
+  mockContent.setSingle('showcase-single', showcase({ body: '' }));
+  await page.goto(URL);
+  const toolbar = page.getByRole('toolbar', { name: 'Body formatting' });
+  await page.getByRole('textbox', { name: 'Body', exact: true }).click();
+
+  await page.keyboard.type('Start');
+  await page.keyboard.press('Enter');
+  await toolbar.getByRole('button', { name: 'Heading 3' }).click();
+  await page.keyboard.type('Sub');
+  await page.keyboard.press('Enter');
+  await toolbar.getByRole('button', { name: 'Bulleted list' }).click();
+  await page.keyboard.type('One');
+  await page.keyboard.press('Enter');
+  await page.keyboard.type('Two');
+  await page.keyboard.press('Enter');
+  await page.keyboard.press('Enter');
+  await toolbar.getByRole('button', { name: 'Code block' }).click();
+  await page.keyboard.type('x = 1');
+
+  await page.getByRole('button', { name: 'Save' }).click();
+  await expect(page.getByRole('status').filter({ hasText: 'Saved.' })).toBeAttached();
+  const html = String(lastSave(mockContent).body);
+  expect(html).toBe(
+    '<p>Start</p><h3>Sub</h3><ul><li><p>One</p></li><li><p>Two</p></li></ul><pre><code>x = 1</code></pre>',
+  );
+  const tags = [...html.matchAll(/<([a-z0-9]+)/g)].map((match) => match[1]);
+  const allowed = [
+    'p',
+    'h2',
+    'h3',
+    'h4',
+    'strong',
+    'em',
+    's',
+    'code',
+    'pre',
+    'ul',
+    'ol',
+    'li',
+    'blockquote',
+    'a',
+  ];
+  expect(tags.filter((tag) => !allowed.includes(tag!))).toEqual([]);
+});
+
+test('richtext: unsupported server markup shows the D2 warning and saving removes it (AC-12)', async ({
+  page,
+  mockContent,
+}) => {
+  mockContent.setSingle(
+    'showcase-single',
+    showcase({ body: '<p class="lead" style="color: red">Kept <u>text</u></p><hr>' }),
+  );
+  await page.goto(URL);
+
+  const editor = page.getByRole('textbox', { name: 'Body', exact: true });
+  await expect(page.getByText(ROUND_TRIP_WARNING)).toBeVisible();
+  await expect(editor).toHaveAccessibleDescription(ROUND_TRIP_WARNING);
+  // Loading alone doesn't make the form dirty.
+  await expect(page.getByRole('button', { name: 'Save' })).toBeDisabled();
+
+  await page.getByLabel('Title', { exact: true }).fill('Changed');
+  await page.getByRole('button', { name: 'Save' }).click();
+  await expect(page.getByRole('status').filter({ hasText: 'Saved.' })).toBeAttached();
+  expect(lastSave(mockContent).body).toBe('<p>Kept text</p>');
+  await expect(page.getByText(ROUND_TRIP_WARNING)).toHaveCount(0);
+});
+
+test('the editor chunk loads only on a form with a richtext field (AC-11)', async ({
+  page,
+  mockContent,
+}) => {
+  mockContent.addContentType({
+    ...SHOWCASE_SINGLE,
+    documentId: 'ct-plain-single',
+    slug: 'plain-single',
+    name: 'Plain single',
+    fields: [{ name: 'headline', type: 'text' }],
+  });
+  mockContent.setSingle('plain-single', {
+    documentId: 'plain-single',
+    status: 'draft',
+    createdAt: STAMP,
+    updatedAt: STAMP,
+    updatedBy: null,
+    headline: 'Plain',
+  });
+  const editorRequests: string[] = [];
+  page.on('request', (request) => {
+    if (/RichTextEditor|tiptap|prosemirror/i.test(request.url()))
+      editorRequests.push(request.url());
+  });
+
+  await page.goto('/admin/content-types/plain-single');
+  await expect(page.getByLabel('Headline')).toHaveValue('Plain');
+  await page.goto('/admin/content-types/blog');
+  await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+  expect(editorRequests).toEqual([]);
+
+  // Control: the showcase form has a richtext field, so the chunk is requested.
+  await page.goto(URL);
+  await expect(page.getByRole('textbox', { name: 'Body', exact: true })).toBeVisible();
+  expect(editorRequests.length).toBeGreaterThan(0);
+});
+
+// Media (AC-13)
+
+const MEDIA_HOST = 'https://media.example.test';
+/** A valid 1 × 1 PNG. */
+const PIXEL = Buffer.from(
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
+  'base64',
+);
+
+const mediaAsset = (id: string, fileName: string, createdAt = STAMP): MediaAsset => ({
+  documentId: id,
+  fileName,
+  mimeType: 'image/png',
+  size: 2048,
+  width: 1,
+  height: 1,
+  url: `${MEDIA_HOST}/${fileName}`,
+  thumbnailUrl: `${MEDIA_HOST}/thumbs/${fileName}`,
+  publicId: `cms/${id}`,
+  hash: id.padStart(64, '0'),
+  uploadedBy: null,
+  createdAt,
+  updatedAt: createdAt,
+});
+const CAT = mediaAsset('media-cat', 'cat.png', '2026-01-01T00:00:00.000Z');
+const DOG = mediaAsset('media-dog', 'dog.png', '2026-01-02T00:00:00.000Z');
+
+async function seedMedia(page: Page, mockApi: MockApi) {
+  mockApi.settings.addMedia(CAT);
+  mockApi.settings.addMedia(DOG);
+  await page.route(`${MEDIA_HOST}/**`, (route) =>
+    route.fulfill({ status: 200, contentType: 'image/png', body: PIXEL }),
+  );
+}
+
+const cover = (page: Page) => page.getByRole('group', { name: 'Cover image', exact: true });
+
+/** Presses Tab until a radio of the open picker has focus. */
+async function tabToRadios(page: Page) {
+  for (let i = 0; i < 10; i += 1) {
+    if (await page.evaluate('document.activeElement?.getAttribute("type") === "radio"')) return;
+    await page.keyboard.press('Tab');
+  }
+  throw new Error('No radio took focus');
+}
+
+test('media: picks an asset with only the keyboard and saves the full asset (AC-13)', async ({
+  page,
+  mockApi,
+  mockContent,
+}) => {
+  await seedMedia(page, mockApi);
+  await page.goto(URL);
+
+  await cover(page).getByRole('button', { name: 'Choose Cover image' }).focus();
+  await page.keyboard.press('Enter');
+  const dialog = page.getByRole('dialog', { name: 'Choose cover image' });
+  await expect(dialog.getByRole('radio')).toHaveCount(2);
+  await tabToRadios(page);
+  await expect(dialog.getByRole('radio', { name: 'dog.png' })).toBeFocused();
+  await page.keyboard.press('ArrowRight');
+  await expect(dialog.getByRole('radio', { name: 'cat.png' })).toBeChecked();
+  await page.keyboard.press('Enter');
+
+  await expect(dialog).toHaveCount(0);
+  await expect(cover(page).getByText('cat.png')).toBeVisible();
+  await expect(cover(page).getByRole('img', { name: 'cat.png' })).toHaveAttribute(
+    'src',
+    CAT.thumbnailUrl,
+  );
+  await expect(
+    page.getByRole('status').filter({ hasText: 'Cover image set to cat.png.' }),
+  ).toBeAttached();
+
+  await page.getByRole('button', { name: 'Save' }).click();
+  await expect(page.getByRole('status').filter({ hasText: 'Saved.' })).toBeAttached();
+  expect(lastSave(mockContent).coverImage).toEqual(CAT);
+});
+
+test('media: an uploaded PNG is selected automatically (AC-13)', async ({
+  page,
+  mockApi,
+  mockContent,
+}) => {
+  await seedMedia(page, mockApi);
+  await page.goto(URL);
+
+  await cover(page).getByRole('button', { name: 'Choose Cover image' }).click();
+  const dialog = page.getByRole('dialog', { name: 'Choose cover image' });
+  await expect(dialog.getByRole('radio')).toHaveCount(2);
+  await dialog
+    .locator('input[type="file"]')
+    .setInputFiles({ name: 'new.png', mimeType: 'image/png', buffer: PIXEL });
+
+  await expect(dialog.getByText('1 of 1 file uploaded.')).toBeVisible();
+  await expect(dialog.getByRole('radio', { name: 'new.png' })).toBeChecked();
+  await dialog.getByRole('button', { name: 'Select' }).click();
+  await expect(cover(page).getByText('new.png')).toBeVisible();
+
+  await page.getByRole('button', { name: 'Save' }).click();
+  await expect(page.getByRole('status').filter({ hasText: 'Saved.' })).toBeAttached();
+  expect(lastSave(mockContent).coverImage).toMatchObject({
+    fileName: 'new.png',
+    mimeType: 'image/png',
+    documentId: expect.stringMatching(/^media-\d+$/),
+  });
+});
+
+test('media: Remove clears the value and the save sends null (AC-13)', async ({
+  page,
+  mockApi,
+  mockContent,
+}) => {
+  await seedMedia(page, mockApi);
+  mockContent.setSingle('showcase-single', showcase({ coverImage: DOG }));
+  await page.goto(URL);
+
+  await expect(cover(page).getByText('dog.png')).toBeVisible();
+  await cover(page).getByRole('button', { name: 'Remove Cover image' }).click();
+  await expect(cover(page).getByText('No file selected.')).toBeVisible();
+  await expect(cover(page).getByRole('button', { name: 'Choose Cover image' })).toBeFocused();
+
+  await page.getByRole('button', { name: 'Save' }).click();
+  await expect(page.getByRole('status').filter({ hasText: 'Saved.' })).toBeAttached();
+  expect(lastSave(mockContent).coverImage).toBeNull();
+});
+
+test('media: a documentId value resolves to the asset, or shows "File not found" (AC-13)', async ({
+  page,
+  mockApi,
+  mockContent,
+}) => {
+  await seedMedia(page, mockApi);
+  mockContent.setSingle(
+    'showcase-single',
+    showcase({
+      coverImage: 'media-cat',
+      gallery: [{ caption: 'Gone', image: 'media-gone', tags: [] }],
+    }),
+  );
+  await page.goto(URL);
+
+  await expect(cover(page).getByText('cat.png')).toBeVisible();
+  const gone = page.getByRole('group', { name: 'Image', exact: true });
+  await expect(gone.getByText('File not found')).toBeVisible();
+  await expect(gone.getByRole('button', { name: 'Remove Image' })).toBeVisible();
+
+  await page.getByLabel('Title', { exact: true }).fill('Changed');
+  await page.getByRole('button', { name: 'Save' }).click();
+  await expect(page.getByRole('status').filter({ hasText: 'Saved.' })).toBeAttached();
+  const data = lastSave(mockContent);
+  // The resolved id is saved as the full asset; the unknown one goes back as it came.
+  expect(data.coverImage).toEqual(CAT);
+  expect(data.gallery).toEqual([{ caption: 'Gone', image: 'media-gone', tags: [] }]);
 });

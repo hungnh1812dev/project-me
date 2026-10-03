@@ -1,4 +1,4 @@
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 
@@ -103,6 +103,14 @@ describe('RichTextField (AC-11, AC-12)', () => {
     await waitFor(() => expect(bold).toHaveAttribute('aria-pressed', 'true'));
     await user.click(screen.getByRole('button', { name: 'Save' }));
     await waitFor(() => expect(savedBody(onSubmit)).toBe('<p><strong>Hello</strong></p>'));
+  });
+
+  it('keeps the focus in the editor when a toolbar button is pressed with a pointer', async () => {
+    renderForm({ body: '<p>x</p>' });
+    const bold = within(await toolbar()).getByRole('button', { name: 'Bold' });
+
+    // `fireEvent` returns false when the default (moving focus) was prevented.
+    expect(fireEvent.mouseDown(bold)).toBe(false);
   });
 
   it('turns the selection into a heading and back', async () => {
