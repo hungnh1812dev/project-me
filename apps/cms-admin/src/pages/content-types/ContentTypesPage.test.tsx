@@ -16,7 +16,7 @@ const READER = {
   },
 };
 
-describe('ContentTypesPage (AC-31)', () => {
+describe('ContentTypesPage (AC-31, AC-41)', () => {
   it('shows a status while the content types load', () => {
     server.use(getContentTypesHandler().handler);
 
@@ -79,15 +79,62 @@ describe('ContentTypesPage (AC-31)', () => {
     );
   });
 
-  it('shows an alert when the list fails to load', async () => {
+  it('shows the no-access state on a server 403', async () => {
     server.use(getContentTypesHandler(errorReply(403, 'Forbidden resource')).handler);
+
+    renderWithProviders(<ContentTypesPage />, READER);
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      "You don't have access to content types.",
+    );
+  });
+
+  it('shows an alert when the list fails to load otherwise', async () => {
+    server.use(getContentTypesHandler(errorReply(400, 'Bad request')).handler);
 
     renderWithProviders(<ContentTypesPage />, READER);
 
     expect(await screen.findByRole('alert')).toHaveTextContent("Couldn't load content types.");
   });
 
-  it('shows each group as a card, with the slugs in mono font (AC-4, AC-39)', async () => {
+  it('says so when there are no content types at all', async () => {
+    server.use(getContentTypesHandler(() => Response.json([])).handler);
+
+    renderWithProviders(<ContentTypesPage />, READER);
+
+    expect(await screen.findByText('No content types yet.')).toBeInTheDocument();
+    expect(screen.queryByRole('region')).not.toBeInTheDocument();
+  });
+
+  it('shows each type as a card with its kind and draft and publish mode (AC-41)', async () => {
+    server.use(
+      getContentTypesHandler(() =>
+        Response.json([
+          makeContentTypeSummary({ slug: 'article', name: 'Article', kind: 'collection' }),
+          makeContentTypeSummary({
+            slug: 'home',
+            name: 'Home',
+            kind: 'single',
+            draftToPublish: false,
+          }),
+        ]),
+      ).handler,
+    );
+
+    renderWithProviders(<ContentTypesPage />, READER);
+
+    const collection = await screen.findByRole('region', { name: 'Collection types' });
+    const article = within(collection).getByRole('listitem');
+    expect(article.querySelector('[data-slot="card"]')).not.toBeNull();
+    expect(within(article).getByText('Collection type')).toHaveAttribute('data-slot', 'badge');
+    expect(within(article).getByText('Draft & publish')).toBeInTheDocument();
+
+    const home = within(screen.getByRole('region', { name: 'Single types' })).getByRole('listitem');
+    expect(within(home).getByText('Single type')).toHaveAttribute('data-slot', 'badge');
+    expect(within(home).getByText('No draft & publish')).toBeInTheDocument();
+  });
+
+  it('shows each type as a card, with the slug in mono font (AC-4, AC-39)', async () => {
     server.use(
       getContentTypesHandler(() =>
         Response.json([makeContentTypeSummary({ slug: 'home', name: 'Home', kind: 'single' })]),
@@ -98,8 +145,6 @@ describe('ContentTypesPage (AC-31)', () => {
 
     const single = await screen.findByRole('region', { name: 'Single types' });
     expect(single.querySelector('[data-slot="card"]')).not.toBeNull();
-    const collection = screen.getByRole('region', { name: 'Collection types' });
-    expect(collection.querySelector('[data-slot="card"]')).not.toBeNull();
     expect(within(single).getByText('home')).toHaveClass('font-mono');
   });
 });
