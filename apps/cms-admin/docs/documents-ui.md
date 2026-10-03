@@ -243,6 +243,11 @@ read from the `test:cov` report). The global gates (`src/features/**/*.ts` ≥ 8
 
 ## Manual smoke against :8080 (D9)
 
+**Status: pending (2026-10-03, no super_admin credentials).** The smoke was not attempted. So the
+contract the UI relies on (field value shapes, the `MediaAsset` value, the richtext HTML, the 400
+wording, the status transitions and the date filter format) is checked only against the legacy docs
+and the e2e mock, and the roadmap keeps Phase 5 IN REVIEW.
+
 The planned pass, through `pnpm --filter cms-admin dev` (proxied to :8080) signed in as a
 `super_admin`:
 

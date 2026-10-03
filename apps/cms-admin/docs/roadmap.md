@@ -46,7 +46,7 @@ Resolve each one before the named phase starts.
 
 ## Known gaps from Phase 5
 
-- The manual smoke against the real backend on :8080 has not run (D9). The field value shapes, the `MediaAsset` value, the richtext HTML, the wording of 400 messages, the status transitions and the date filter format are checked only against the legacy docs and the e2e mock. Phase 5 moves to DONE once the smoke runs and its result is recorded in [Documents UI](./documents-ui.md#manual-smoke-against-8080-d9).
+- The manual smoke against the real backend on :8080 has not run: it is pending (2026-10-03, no `super_admin` credentials) (D9). The field value shapes, the `MediaAsset` value, the richtext HTML, the wording of 400 messages, the status transitions and the date filter format are checked only against the legacy docs and the e2e mock. Phase 5 moves to DONE once the smoke runs and its result is recorded in [Documents UI](./documents-ui.md#manual-smoke-against-8080-d9).
 - **Richtext markup loss (D2).** Markup the editor does not support (images, raw HTML, other tags) is removed on save. The field warns before that happens, but the content is still lost.
 - **Global columns (D6).** The column chooser saves the type's `listFields` (C3), so it changes the list for everyone; there is no per-viewer column choice.
 - The seeded `editor` role still has no `content_type:read` (the Phase 2 gap), so an editor sees no content types until the backend seeding is fixed.
