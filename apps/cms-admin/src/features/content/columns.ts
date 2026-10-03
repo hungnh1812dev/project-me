@@ -148,6 +148,31 @@ export function cellValue(item: ListedDocumentItem, column: Column): unknown {
   return Object.hasOwn(item.data, column.key) ? item.data[column.key] : undefined;
 }
 
+/** The column that names a row: the first listed, listable text column, if any. */
+export function labelColumn(
+  listFields: readonly string[],
+  catalog: ColumnCatalog,
+): Column | undefined {
+  return listFields
+    .map((key) => catalog.byKey.get(key))
+    .find((column) => column?.listable && column.kind === 'text');
+}
+
+/**
+ * A row's name, as its link, checkbox, actions menu and bulk summaries show it: the trimmed value of
+ * the first listed text column, else its `documentId`.
+ */
+export function entryLabeler(
+  listFields: readonly string[],
+  catalog: ColumnCatalog,
+): (item: ListedDocumentItem) => string {
+  const column = labelColumn(listFields, catalog);
+  return (item) => {
+    const value = column ? cellValue(item, column) : undefined;
+    return typeof value === 'string' && value.trim() !== '' ? value.trim() : item.documentId;
+  };
+}
+
 /** The status badge text. */
 export const STATUS_LABELS: Readonly<Record<DocumentStatus, string>> = {
   draft: 'Draft',

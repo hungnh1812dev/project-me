@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { Decision } from '@/features/auth/permissions/policies';
-import { buildColumnCatalog } from '@/features/content/columns';
+import { buildColumnCatalog, entryLabeler } from '@/features/content/columns';
 import { useDocumentList } from '@/features/content/hooks/useCollectionQueries';
 import { useContentTypeAccess } from '@/features/content/hooks/useContentTypeAccess';
 import { MAX_LIST_TEXT_LENGTH } from '@/features/content/listQuery';
@@ -25,6 +25,7 @@ import type { ContentType } from '@/features/content/types';
 import { LiveRegion } from '@/features/settings/components/LiveRegion';
 import { useAnnouncer } from '@/features/settings/components/useAnnouncer';
 
+import { BulkActionBar } from './list/BulkActionBar';
 import { ColumnChooserDialog } from './list/ColumnChooserDialog';
 import { DocumentsTable } from './list/DocumentsTable';
 import { FilterChips } from './list/FilterChips';
@@ -63,8 +64,8 @@ CreateEntry.displayName = 'CreateEntry';
  * The collection list (SPEC "Collection list"). The URL holds the list state: it is parsed against
  * the content type's column catalog, and rewritten to its canonical form with `replace`; dropped
  * params are announced (D8). Search is debounced and resets the page. Pagination clamps a page past
- * the end. The selection is cleared whenever the list changes. States: skeleton, error with Retry,
- * 403, empty and no match.
+ * the end. The selection is cleared whenever the list changes, and drives the bulk action bar.
+ * States: skeleton, error with Retry, 403, empty and no match.
  */
 const CollectionListPage: React.FC<{ type: ContentType }> = ({ type }) => {
   const catalog = useMemo(() => buildColumnCatalog(type), [type]);
@@ -141,6 +142,14 @@ const CollectionListPage: React.FC<{ type: ContentType }> = ({ type }) => {
     ids: new Set(),
   });
   const selected = selection.key === listKey ? selection.ids : new Set<string>();
+  const setSelected = useCallback(
+    (ids: Set<string>) => setSelection({ key: listKey, ids }),
+    [listKey],
+  );
+  const labelOf = useMemo(() => entryLabeler(type.listFields, catalog), [type.listFields, catalog]);
+  const selectedEntries = (data?.items ?? [])
+    .filter((item) => selected.has(item.documentId))
+    .map((item) => ({ documentId: item.documentId, status: item.status, label: labelOf(item) }));
 
   // Filters: the panel edits a copy; Apply, Clear all and chip removal write the URL (page 1) and
   // put focus back on the Filters button.
@@ -227,7 +236,7 @@ const CollectionListPage: React.FC<{ type: ContentType }> = ({ type }) => {
           sortDir={state.sortDir}
           onSortChange={(orderBy, sortDir) => update({ orderBy, sortDir, page: 1 })}
           selected={selected}
-          onSelectedChange={(ids) => setSelection({ key: listKey, ids })}
+          onSelectedChange={setSelected}
           busy={isPlaceholderData}
           renderActions={(item, label) => (
             <RowActions type={type} item={item} label={label} onResult={onRowResult} />
@@ -311,6 +320,14 @@ const CollectionListPage: React.FC<{ type: ContentType }> = ({ type }) => {
           <AlertCircleIcon aria-hidden="true" className="size-4 shrink-0" />
           {rowError}
         </p>
+      )}
+      {!forbidden && (
+        <BulkActionBar
+          type={type}
+          selected={selectedEntries}
+          onSelectionChange={setSelected}
+          onAnnounce={announce}
+        />
       )}
       {body}
       <LiveRegion message={message} />

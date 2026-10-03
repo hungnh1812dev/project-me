@@ -5,6 +5,7 @@ import { makeContentType, makeFieldSet, makeListedItem } from '@/test/contentFix
 import {
   buildColumnCatalog,
   cellValue,
+  entryLabeler,
   formatCell,
   validateListParamsForType,
   type ColumnCatalog,
@@ -275,5 +276,26 @@ describe('formatCell', () => {
       timeStyle: 'short',
     }).format(new Date(iso));
     expect(formatCell('date', iso, 'en-US')).toEqual({ text: expected, title: iso });
+  });
+});
+
+describe('entryLabeler', () => {
+  it('names a row by the first listed text column', () => {
+    const label = entryLabeler(['views', 'title'], catalog);
+
+    expect(
+      label(makeListedItem({ documentId: 'd1', data: { title: '  Hello  ', views: 3 } })),
+    ).toBe('Hello');
+  });
+
+  it.each([
+    ['a blank text value', ['title'], { title: '   ' }],
+    ['a missing text value', ['title'], {}],
+    ['no listed text column', ['views', 'status'], { title: 'Hidden' }],
+    ['an unknown listed field', ['nope'], { nope: 'x' }],
+  ])('falls back to the documentId for %s', (_case, listFields, data) => {
+    const label = entryLabeler(listFields, catalog);
+
+    expect(label(makeListedItem({ documentId: 'd1', data }))).toBe('d1');
   });
 });

@@ -5,7 +5,9 @@ import { Link } from 'react-router-dom';
 import { TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import {
   cellValue,
+  entryLabeler,
   formatCell,
+  labelColumn,
   STATUS_LABELS,
   type Column,
   type ColumnCatalog,
@@ -52,17 +54,6 @@ function visibleColumns(listFields: readonly string[], catalog: ColumnCatalog): 
     if (status) columns.push(status);
   }
   return columns;
-}
-
-/** The column that links to the entry: the first text column, else `documentId`. */
-function labelColumnKey(columns: readonly Column[]): string {
-  return columns.find((column) => column.kind === 'text')?.key ?? 'documentId';
-}
-
-/** A row's name for its checkbox and link: the label column's text, else its `documentId`. */
-function rowLabel(item: ListedDocumentItem, labelColumn: Column | undefined): string {
-  const value = labelColumn ? cellValue(item, labelColumn) : undefined;
-  return typeof value === 'string' && value.trim() !== '' ? value.trim() : item.documentId;
 }
 
 const ARIA_SORT = { asc: 'ascending', desc: 'descending' } as const;
@@ -192,11 +183,13 @@ export const DocumentsTable: React.FC<DocumentsTableProps> = ({
   const captionId = useId();
   const caption = `${type.name} entries`;
   const shown = visibleColumns(type.listFields, catalog);
-  const labelKey = labelColumnKey(shown);
-  const labelColumn = catalog.byKey.get(labelKey);
+  // The first text column links to the entry, else `documentId`.
+  const labelKey = labelColumn(type.listFields, catalog)?.key ?? 'documentId';
+  const linkColumn = catalog.byKey.get(labelKey);
+  const rowLabel = entryLabeler(type.listFields, catalog);
   // With no text column listed, the documentId column is added first so every row has a link.
   const columns =
-    shown.some((c) => c.key === labelKey) || !labelColumn ? shown : [labelColumn, ...shown];
+    shown.some((c) => c.key === labelKey) || !linkColumn ? shown : [linkColumn, ...shown];
 
   const pageIds = items.map((item) => item.documentId);
   const selectedOnPage = pageIds.filter((id) => selected.has(id)).length;
@@ -261,7 +254,7 @@ export const DocumentsTable: React.FC<DocumentsTableProps> = ({
         </TableHeader>
         <TableBody>
           {items.map((item) => {
-            const label = rowLabel(item, labelColumn);
+            const label = rowLabel(item);
             const isSelected = selected.has(item.documentId);
             return (
               <TableRow key={item.documentId} data-state={isSelected ? 'selected' : undefined}>
