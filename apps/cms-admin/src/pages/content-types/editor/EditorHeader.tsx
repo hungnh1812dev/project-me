@@ -24,6 +24,12 @@ const BADGE_VARIANT = {
   published: 'default',
 } as const satisfies Record<DocumentStatus, 'secondary' | 'outline' | 'default'>;
 
+/** A document status as a text badge (Draft, Modified or Published). */
+export const StatusBadge: React.FC<{ status: DocumentStatus }> = ({ status }) => (
+  <Badge variant={BADGE_VARIANT[status]}>{STATUS_LABELS[status]}</Badge>
+);
+StatusBadge.displayName = 'StatusBadge';
+
 const AuditLine: React.FC<{ audit: EditorAudit }> = ({ audit }) => {
   const date = formatCell('date', audit.updatedAt, 'en');
   const name = audit.updatedBy?.name ? audit.updatedBy.name : 'an unknown user';
@@ -45,7 +51,7 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({ title, status, audit
     <div className="flex min-w-0 flex-col gap-1">
       <div className="flex flex-wrap items-center gap-2">
         <h1 className="text-2xl font-semibold tracking-tight break-words">{title}</h1>
-        {status && <Badge variant={BADGE_VARIANT[status]}>{STATUS_LABELS[status]}</Badge>}
+        {status && <StatusBadge status={status} />}
       </div>
       {audit ? (
         <AuditLine audit={audit} />
