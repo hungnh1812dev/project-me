@@ -184,6 +184,26 @@ test('the content list page renders with no CSP violation', async ({
   expect(await violations(page)).toEqual([]);
 });
 
+test('the filter panel with the date picker open renders with no CSP violation', async ({
+  page,
+  mockApi,
+  mockContent,
+}) => {
+  signInAda(mockApi);
+  seedContent(mockContent);
+
+  await page.goto('/admin/content-types/blog?filters[createdAt][$gte]=2026-02-02T00:00:00.000Z');
+  await page.getByRole('button', { name: /^Filters/ }).click();
+  const panel = page.getByRole('region', { name: 'Filters' });
+  await panel.getByRole('button', { name: 'Value' }).click();
+
+  const calendar = page.getByRole('dialog', { name: 'Choose a date' });
+  await expect(calendar.getByRole('grid')).toBeVisible();
+  await page.keyboard.press('ArrowRight');
+  await expect(calendar.locator('[data-focused] button')).toBeFocused();
+  expect(await violations(page)).toEqual([]);
+});
+
 test('an entry with richtext and media renders with the editor mounted and no CSP violation', async ({
   page,
   mockApi,
