@@ -4,6 +4,7 @@ import type { FieldDefinition } from '@/features/content/types';
 import { BooleanField } from './fields/BooleanField';
 import { ComponentField } from './fields/ComponentField';
 import { JsonField } from './fields/JsonField';
+import { MediaField } from './fields/MediaField';
 import { NumberField } from './fields/NumberField';
 import { RepeatableField } from './fields/RepeatableField';
 import { RichTextField } from './fields/RichTextField';
@@ -49,11 +50,12 @@ export const SchemaField: React.FC<SchemaFieldProps> = ({
           className={className}
         />
       );
+    case 'media':
+      return <MediaField label={label} name={name} className={className} />;
     case 'repeatable':
       return <RepeatableField field={field} label={label} name={name} className={className} />;
     default:
-      // Unknown types, plus media until its field lands (task 5.4): a
-      // read-only preview whose value is sent back unchanged.
+      // Unknown types: a read-only preview whose value is sent back unchanged.
       return <UnsupportedField label={label} name={name} type={field.type} className={className} />;
   }
 };
