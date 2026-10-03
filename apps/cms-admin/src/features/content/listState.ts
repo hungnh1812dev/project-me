@@ -26,9 +26,15 @@ export interface ListState {
   filters: Record<string, ListFilter>;
 }
 
+/**
+ * The list shows 10 rows by default (AC-20). This is the URL default only: the backend's default
+ * (`LIST_DEFAULTS.size`, 20) still decides which `size` is left off the request, so 10 is sent.
+ */
+export const DEFAULT_LIST_SIZE: PageSize = 10;
+
 export const DEFAULT_LIST_STATE: ListState = {
   page: 1,
-  size: LIST_DEFAULTS.size,
+  size: DEFAULT_LIST_SIZE,
   orderBy: LIST_DEFAULTS.orderBy,
   sortDir: LIST_DEFAULTS.sortDir,
   q: '',
@@ -157,11 +163,6 @@ export function serializeListState(state: ListState): string {
     .sort(([a], [b]) => (a < b ? -1 : 1)) // keys are unique
     .map(([key, value]) => `${key}=${encodeURIComponent(value)}`)
     .join('&');
-}
-
-/** The last 1-based page of `total` items, `size` per page. An empty list has one page. */
-export function lastPage(total: number, size: number): number {
-  return Math.max(1, Math.ceil(total / size));
 }
 
 /** The D1 list params of `state`, normalized: `start = (page - 1) * size`. */

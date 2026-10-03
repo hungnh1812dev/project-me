@@ -8,6 +8,8 @@ import { Input } from '@repo/ui/components/input';
 import { Skeleton } from '@repo/ui/components/skeleton';
 import { Field } from '@repo/ui/form/Field';
 import { GatedButton } from '@repo/ui/form/GatedButton';
+import { Pagination } from '@repo/ui/form/Pagination';
+import { lastPage } from '@repo/ui/lib/pagination';
 
 import type { Decision } from '@/features/auth/permissions/policies';
 import { buildColumnCatalog, entryLabeler } from '@/features/content/columns';
@@ -15,12 +17,13 @@ import { useDocumentList } from '@/features/content/hooks/useCollectionQueries';
 import { useContentTypeAccess } from '@/features/content/hooks/useContentTypeAccess';
 import { MAX_LIST_TEXT_LENGTH } from '@/features/content/listQuery';
 import {
-  lastPage,
+  PAGE_SIZES,
   parseListState,
   serializeListState,
   toListParams,
   type ListFilter,
   type ListState,
+  type PageSize,
 } from '@/features/content/listState';
 import type { ContentType } from '@/features/content/types';
 import { LiveRegion } from '@/features/settings/components/LiveRegion';
@@ -31,7 +34,6 @@ import { ColumnChooserDialog } from './list/ColumnChooserDialog';
 import { DocumentsTable } from './list/DocumentsTable';
 import { FilterChips } from './list/FilterChips';
 import { FilterPanel } from './list/FilterPanel';
-import { PaginationBar } from './list/PaginationBar';
 import { RowActions } from './list/RowActions';
 import { announcementOf } from './paths';
 
@@ -266,12 +268,14 @@ const CollectionListPage: React.FC<{ type: ContentType }> = ({ type }) => {
             />
           )}
         />
-        <PaginationBar
+        <Pagination
           page={state.page}
           size={state.size}
           total={data.total}
+          sizes={PAGE_SIZES}
           onPageChange={(page) => update({ page })}
-          onSizeChange={(size) => update({ size, page: 1 })}
+          // The select only offers PAGE_SIZES.
+          onSizeChange={(size) => update({ size: size as PageSize, page: 1 })}
         />
       </div>
     );

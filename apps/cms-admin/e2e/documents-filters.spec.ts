@@ -59,7 +59,7 @@ test('a text filter goes to the URL and the request, and shows a chip (AC-22)', 
 
   await expect(table(page).getByRole('row')).toHaveCount(2);
   expect(decodedSearch(page)).toBe('?filters[title][$contains]=post 2');
-  expect(lastQuery(mockApi)).toBe('?filters[title][$contains]=post 2');
+  expect(lastQuery(mockApi)).toBe('?size=10&filters[title][$contains]=post 2');
   await expect(page.getByRole('button', { name: 'Title contains “post 2”, remove' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Filters (1 active)' })).toBeFocused();
 });
@@ -89,12 +89,14 @@ test('number and boolean filters serialise for their kind; chips and Clear all r
   await expect(table(page).getByRole('row')).toHaveCount(2);
   await expect(table(page).getByRole('link', { name: 'Post 3' })).toBeVisible();
   expect(decodedSearch(page)).toBe('?filters[featured][$eq]=false&filters[views][$gte]=20');
-  expect(lastQuery(mockApi)).toBe('?filters[featured][$eq]=false&filters[views][$gte]=20');
+  expect(lastQuery(mockApi)).toBe(
+    '?size=10&filters[featured][$eq]=false&filters[views][$gte]=20',
+  );
 
   await page.getByRole('button', { name: 'Featured is No, remove' }).click();
   await expect(table(page).getByRole('row')).toHaveCount(3);
   expect(decodedSearch(page)).toBe('?filters[views][$gte]=20');
-  expect(lastQuery(mockApi)).toBe('?filters[views][$gte]=20');
+  expect(lastQuery(mockApi)).toBe('?size=10&filters[views][$gte]=20');
   await expect(
     page.getByRole('list', { name: 'Active filters' }).getByRole('listitem'),
   ).toHaveCount(1);
@@ -108,7 +110,7 @@ test('number and boolean filters serialise for their kind; chips and Clear all r
   expect(
     listQueries(mockApi)
       .slice(before)
-      .filter((q) => q !== ''),
+      .filter((q) => q !== '?size=10'),
   ).toEqual([]);
   await expect(page.getByRole('list', { name: 'Active filters' })).toHaveCount(0);
 });
@@ -153,7 +155,7 @@ test('a date picked with the keyboard is sent as an ISO value (AC-22)', async ({
 
   await panel.getByRole('button', { name: 'Apply' }).click();
   await expect(table(page).getByRole('row')).toHaveCount(2);
-  expect(lastQuery(mockApi)).toBe('?filters[created_at][$gte]=2026-02-03T00:00:00.000Z');
+  expect(lastQuery(mockApi)).toBe('?size=10&filters[created_at][$gte]=2026-02-03T00:00:00.000Z');
   expect(decodedSearch(page)).toBe('?filters[createdAt][$gte]=2026-02-03T00:00:00.000Z');
 });
 

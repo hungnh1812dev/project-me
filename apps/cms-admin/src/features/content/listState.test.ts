@@ -5,7 +5,6 @@ import { makeContentType, makeFieldSet } from '@/test/contentFixtures';
 import { buildColumnCatalog } from './columns';
 import {
   DEFAULT_LIST_STATE,
-  lastPage,
   PAGE_SIZES,
   parseListState,
   serializeListState,
@@ -25,7 +24,7 @@ describe('parseListState (AC-3)', () => {
     expect(parseListState('', catalog)).toEqual({ state: DEFAULT_LIST_STATE, dropped: [] });
     expect(DEFAULT_LIST_STATE).toEqual({
       page: 1,
-      size: 20,
+      size: 10,
       orderBy: 'id',
       sortDir: 'desc',
       q: '',
@@ -151,6 +150,13 @@ describe('serializeListState (AC-3)', () => {
     expect(serializeListState(DEFAULT_LIST_STATE)).toBe('');
   });
 
+  it('omits size 10, the default, and keeps the other sizes (AC-20)', () => {
+    expect(serializeListState(state({ size: 10 }))).toBe('');
+    expect(serializeListState(state({ size: 20 }))).toBe('size=20');
+    expect(serializeListState(state({ size: 50 }))).toBe('size=50');
+    expect(serializeListState(state({ size: 100 }))).toBe('size=100');
+  });
+
   it('writes sorted keys, with readable filter brackets', () => {
     expect(
       serializeListState(
@@ -204,8 +210,12 @@ describe('round trip (AC-3)', () => {
 });
 
 describe('toListParams', () => {
-  it('maps the default state to empty params', () => {
-    expect(toListParams(DEFAULT_LIST_STATE)).toEqual({});
+  it('requests 10 rows for the default state, since the backend default is 20 (AC-20)', () => {
+    expect(toListParams(DEFAULT_LIST_STATE)).toEqual({ size: 10 });
+  });
+
+  it('leaves size 20 to the backend default (AC-20)', () => {
+    expect(toListParams(state({ size: 20 }))).toEqual({});
   });
 
   it('computes start from the 1-based page and keeps the rest', () => {
@@ -228,13 +238,5 @@ describe('toListParams', () => {
       search: 'hi',
       filters: { featured: { $eq: 'true' } },
     });
-  });
-});
-
-describe('lastPage', () => {
-  it('is the number of pages, and 1 for an empty list', () => {
-    expect(lastPage(95, 20)).toBe(5);
-    expect(lastPage(100, 20)).toBe(5);
-    expect(lastPage(0, 20)).toBe(1);
   });
 });

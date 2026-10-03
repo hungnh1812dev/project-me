@@ -728,7 +728,7 @@ test('keyboard walk on the list: toolbar, header checkbox, sort buttons, rows, p
   for (let n = 4; n <= 25; n += 1) mockContent.addDocument('blog', blogPost(n));
   await page.setViewportSize({ width: 1280, height: 812 });
   await page.goto(BLOG_LIST);
-  await expect(page.getByText('Showing 1–20 of 25')).toBeVisible();
+  await expect(page.getByText('Showing 1–10 of 25')).toBeVisible();
 
   const stops = await walkTabOrder(page, 300);
   const inMain = stops.filter((s) => s.inMain).map((s) => s.name);
@@ -747,9 +747,9 @@ test('keyboard walk on the list: toolbar, header checkbox, sort buttons, rows, p
     'Select Post 25',
     'Post 25',
     'Actions for Post 25',
-    'Select Post 6',
-    'Post 6',
-    'Actions for Post 6',
+    'Select Post 16',
+    'Post 16',
+    'Actions for Post 16',
     'Next page',
   ];
   expect(inMain.filter((n) => order.includes(n))).toEqual(order);
