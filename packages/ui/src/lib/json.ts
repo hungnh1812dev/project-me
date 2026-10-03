@@ -33,8 +33,9 @@ export function describeJsonError(message: string, text: string): JsonErrorDescr
   const reason = message
     .replace(/^JSON\.parse: /, '')
     .replace(/^JSON Parse error: /, '')
-    .replace(/, ".*" is not valid JSON$/s, '')
-    .replace(/ in JSON at position \d+.*$/s, '')
+    // `[\s\S]` instead of the `s` flag: frontend typechecks this file with target ES2017.
+    .replace(/, "[\s\S]*" is not valid JSON$/, '')
+    .replace(/ in JSON at position \d+[\s\S]*$/, '')
     .replace(/ at line \d+ column \d+ of the JSON data$/, '');
 
   const lineColumn = LINE_COLUMN.exec(message);

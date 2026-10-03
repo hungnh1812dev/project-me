@@ -7,9 +7,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@repo/ui/components/select';
+import { ConfirmDialog } from '@repo/ui/form/ConfirmDialog';
+import { Field } from '@repo/ui/form/Field';
 
-import { ConfirmDialog } from '@/components/form/ConfirmDialog';
-import { Field } from '@/components/form/Field';
 import type { Role } from '@/features/auth/types';
 import { useAssignRole } from '@/features/settings/hooks/useUsers';
 import type { UserRow } from '@/features/settings/roleHierarchy';

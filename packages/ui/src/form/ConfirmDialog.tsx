@@ -1,3 +1,5 @@
+'use client';
+
 import { useEffect, useRef, useState } from 'react';
 
 import {
@@ -9,8 +11,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from '@repo/ui/components/alert-dialog';
-import { Button } from '@repo/ui/components/button';
+} from '../components/alert-dialog';
+import { Button } from '../components/button';
 
 export interface ConfirmDialogProps {
   /** Opens the dialog; focus returns to it on close. Omit it and use `open` to control the dialog. */
@@ -110,7 +112,7 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
         </AlertDialogHeader>
         {children}
         {hasError && (
-          <p role="alert" className="text-sm font-medium text-destructive">
+          <p role="alert" className="text-destructive text-sm font-medium">
             {error}
           </p>
         )}

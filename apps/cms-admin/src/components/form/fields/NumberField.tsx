@@ -1,8 +1,8 @@
 import { useFormContext } from 'react-hook-form';
 
 import { Input } from '@repo/ui/components/input';
+import { Field } from '@repo/ui/form/Field';
 
-import { Field } from '@/components/form/Field';
 import { useFieldError, useSchemaFormReadOnly } from '@/components/form/schemaFormContext';
 import { rulesFor } from '@/features/content/schemaForm';
 import type { FieldDefinition } from '@/features/content/types';

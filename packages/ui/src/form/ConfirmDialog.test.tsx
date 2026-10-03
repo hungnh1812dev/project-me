@@ -3,8 +3,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 
-import { Button } from '@repo/ui/components/button';
-
+import { Button } from '../components/button';
 import { ConfirmDialog } from './ConfirmDialog';
 
 function setup(props: Partial<React.ComponentProps<typeof ConfirmDialog>> = {}) {

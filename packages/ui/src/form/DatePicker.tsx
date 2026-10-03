@@ -1,19 +1,20 @@
+'use client';
+
 import { useId, useRef, useState } from 'react';
 import { CalendarIcon, XIcon } from 'lucide-react';
 
-import { Button } from '@repo/ui/components/button';
-import { Calendar } from '@repo/ui/components/calendar';
+import { Button } from '../components/button';
+import { Calendar } from '../components/calendar';
 import {
   Popover,
   PopoverClose,
   PopoverContent,
   PopoverTitle,
   PopoverTrigger,
-} from '@repo/ui/components/popover';
-import { controlClasses } from '@repo/ui/components/variants';
-import { cn } from '@repo/ui/lib/cn';
-
-import type { FieldControlProps } from '@/components/form/Field';
+} from '../components/popover';
+import { controlClasses } from '../components/variants';
+import { cn } from '../lib/cn';
+import type { FieldControlProps } from './Field';
 
 export interface DatePickerProps extends FieldControlProps {
   /** A day (local midnight), or `undefined` for no date. */
@@ -83,7 +84,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
             !value && 'text-muted-foreground',
           )}
         >
-          <CalendarIcon aria-hidden="true" className="size-4 shrink-0 text-muted-foreground" />
+          <CalendarIcon aria-hidden="true" className="text-muted-foreground size-4 shrink-0" />
           <span className="truncate">{text}</span>
         </PopoverTrigger>
         <PopoverContent

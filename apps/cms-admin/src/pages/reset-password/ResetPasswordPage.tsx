@@ -3,9 +3,9 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 
 import { Alert } from '@repo/ui/components/alert';
 import { Button } from '@repo/ui/components/button';
+import { Field } from '@repo/ui/form/Field';
+import { PasswordInput } from '@repo/ui/form/PasswordInput';
 
-import { Field } from '@/components/form/Field';
-import { PasswordInput } from '@/components/form/PasswordInput';
 import { useResetPasswordMutation } from '@/core/api/AuthApi';
 import { toApiErrorData } from '@/core/api/axiosBaseQuery';
 import { loginNoticeState, validateNewPassword } from '@/features/auth/onboarding';

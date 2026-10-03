@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react';
 
-import { FileDropzone } from '@/components/form/FileDropzone';
-import { GatedButton } from '@/components/form/GatedButton';
+import { FileDropzone } from '@repo/ui/form/FileDropzone';
+import { GatedButton } from '@repo/ui/form/GatedButton';
+
 import { useCan } from '@/features/auth/hooks/useCan';
 import { ListState } from '@/features/settings/components/ListState';
 import { LiveRegion } from '@/features/settings/components/LiveRegion';

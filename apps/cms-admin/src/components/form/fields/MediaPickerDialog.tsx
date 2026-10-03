@@ -11,8 +11,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@repo/ui/components/dialog';
+import { FileDropzone } from '@repo/ui/form/FileDropzone';
 
-import { FileDropzone } from '@/components/form/FileDropzone';
 import { useCan } from '@/features/auth/hooks/useCan';
 import { ListState } from '@/features/settings/components/ListState';
 import { SearchField } from '@/features/settings/components/SearchField';

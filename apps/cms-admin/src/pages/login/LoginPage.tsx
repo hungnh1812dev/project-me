@@ -6,9 +6,9 @@ import { Button } from '@repo/ui/components/button';
 import { Checkbox } from '@repo/ui/components/checkbox';
 import { Input } from '@repo/ui/components/input';
 import { Label } from '@repo/ui/components/label';
+import { Field } from '@repo/ui/form/Field';
+import { PasswordInput } from '@repo/ui/form/PasswordInput';
 
-import { Field } from '@/components/form/Field';
-import { PasswordInput } from '@/components/form/PasswordInput';
 import { useHasUsersQuery } from '@/core/api/AuthApi';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { loginNoticeMessage } from '@/features/auth/onboarding';

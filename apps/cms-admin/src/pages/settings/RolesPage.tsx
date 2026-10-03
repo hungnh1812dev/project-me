@@ -12,9 +12,9 @@ import {
   TableHeader,
   TableRow,
 } from '@repo/ui/components/table';
+import { GatedButton } from '@repo/ui/form/GatedButton';
 import { cn } from '@repo/ui/lib/cn';
 
-import { GatedButton } from '@/components/form/GatedButton';
 import { useCan } from '@/features/auth/hooks/useCan';
 import type { Role } from '@/features/auth/types';
 import { ListState } from '@/features/settings/components/ListState';

@@ -1,8 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 
-import { Input } from '@repo/ui/components/input';
-
+import { Input } from '../components/input';
 import { Field } from './Field';
 
 describe('Field', () => {

@@ -3,8 +3,7 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 
-import { Textarea } from '@repo/ui/components/textarea';
-
+import { Textarea } from '../../components/textarea';
 import { Field } from '../Field';
 
 describe('Textarea', () => {

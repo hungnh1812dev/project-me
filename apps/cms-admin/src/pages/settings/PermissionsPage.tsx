@@ -10,8 +10,8 @@ import {
   TableHeader,
   TableRow,
 } from '@repo/ui/components/table';
+import { GatedButton } from '@repo/ui/form/GatedButton';
 
-import { GatedButton } from '@/components/form/GatedButton';
 import { useCan } from '@/features/auth/hooks/useCan';
 import type { Decision } from '@/features/auth/permissions/policies';
 import { ListState } from '@/features/settings/components/ListState';

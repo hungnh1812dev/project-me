@@ -1,3 +1,5 @@
+'use client';
+
 import { useRef, useState } from 'react';
 import {
   CheckCircle2Icon,
@@ -7,10 +9,9 @@ import {
   XCircleIcon,
 } from 'lucide-react';
 
-import { cn } from '@repo/ui/lib/cn';
-
-import { GatedButton } from '@/components/form/GatedButton';
-import type { Decision } from '@/features/auth/permissions/policies';
+import { cn } from '../lib/cn';
+import type { Decision } from '../lib/decision';
+import { GatedButton } from './GatedButton';
 
 /** One file of a batch and where it stands. */
 export interface FileStatusItem {
@@ -42,19 +43,19 @@ export interface FileDropzoneProps {
 const STATUS: Record<FileStatusItem['status'], { label: string; icon: React.ReactNode }> = {
   waiting: {
     label: 'Waiting',
-    icon: <CircleDashedIcon aria-hidden="true" className="size-4 text-muted-foreground" />,
+    icon: <CircleDashedIcon aria-hidden="true" className="text-muted-foreground size-4" />,
   },
   uploading: {
     label: 'Uploading',
-    icon: <Loader2Icon aria-hidden="true" className="size-4 animate-spin text-muted-foreground" />,
+    icon: <Loader2Icon aria-hidden="true" className="text-muted-foreground size-4 animate-spin" />,
   },
   uploaded: {
     label: 'Uploaded',
-    icon: <CheckCircle2Icon aria-hidden="true" className="size-4 text-primary" />,
+    icon: <CheckCircle2Icon aria-hidden="true" className="text-primary size-4" />,
   },
   failed: {
     label: 'Failed',
-    icon: <XCircleIcon aria-hidden="true" className="size-4 text-destructive" />,
+    icon: <XCircleIcon aria-hidden="true" className="text-destructive size-4" />,
   },
 };
 

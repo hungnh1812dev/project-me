@@ -3,9 +3,9 @@ import { FileWarningIcon, ImageIcon } from 'lucide-react';
 import { Controller, useFormContext } from 'react-hook-form';
 
 import { Button } from '@repo/ui/components/button';
+import { GatedButton } from '@repo/ui/form/GatedButton';
 import { cn } from '@repo/ui/lib/cn';
 
-import { GatedButton } from '@/components/form/GatedButton';
 import { useSchemaFormAnnounce, useSchemaFormReadOnly } from '@/components/form/schemaFormContext';
 import { readMediaValue, resolveMedia, type ResolvedMedia } from '@/features/content/mediaValue';
 import { useMediaList } from '@/features/settings/hooks/useMedia';

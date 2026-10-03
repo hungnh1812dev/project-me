@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 
-import { ConfirmDialog } from '@/components/form/ConfirmDialog';
+import { ConfirmDialog } from '@repo/ui/form/ConfirmDialog';
+
 import { useCan } from '@/features/auth/hooks/useCan';
 import { parsePermissionConflict } from '@/features/settings/conflict';
 import { useDeletePermission } from '@/features/settings/hooks/usePermissions';

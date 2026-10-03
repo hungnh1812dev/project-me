@@ -11,8 +11,8 @@ import {
   DialogTitle,
 } from '@repo/ui/components/dialog';
 import { Input } from '@repo/ui/components/input';
+import { Field } from '@repo/ui/form/Field';
 
-import { Field } from '@/components/form/Field';
 import { PermissionTree } from '@/components/form/PermissionTree';
 import type { Role } from '@/features/auth/types';
 import { usePermissions } from '@/features/settings/hooks/usePermissions';

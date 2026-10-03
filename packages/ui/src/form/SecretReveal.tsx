@@ -1,3 +1,5 @@
+'use client';
+
 import { useEffect, useRef, useState } from 'react';
 import { CheckIcon, CopyIcon } from 'lucide-react';
 
@@ -8,11 +10,10 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@repo/ui/components/alert-dialog';
-import { Button } from '@repo/ui/components/button';
-import { Input } from '@repo/ui/components/input';
-
-import { Field } from '@/components/form/Field';
+} from '../components/alert-dialog';
+import { Button } from '../components/button';
+import { Input } from '../components/input';
+import { Field } from './Field';
 
 export interface SecretRevealProps {
   /** The one-time secret. The dialog is open while it is set; clear it in `onDone`. */

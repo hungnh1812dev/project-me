@@ -1,8 +1,8 @@
 import { Controller, useFormContext } from 'react-hook-form';
 
 import { Switch } from '@repo/ui/components/switch';
+import { Field } from '@repo/ui/form/Field';
 
-import { Field } from '@/components/form/Field';
 import { useSchemaFormReadOnly } from '@/components/form/schemaFormContext';
 
 export interface BooleanFieldProps {

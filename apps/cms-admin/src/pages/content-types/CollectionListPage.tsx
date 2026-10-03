@@ -6,9 +6,9 @@ import { Badge } from '@repo/ui/components/badge';
 import { Button } from '@repo/ui/components/button';
 import { Input } from '@repo/ui/components/input';
 import { Skeleton } from '@repo/ui/components/skeleton';
+import { Field } from '@repo/ui/form/Field';
+import { GatedButton } from '@repo/ui/form/GatedButton';
 
-import { Field } from '@/components/form/Field';
-import { GatedButton } from '@/components/form/GatedButton';
 import type { Decision } from '@/features/auth/permissions/policies';
 import { buildColumnCatalog, entryLabeler } from '@/features/content/columns';
 import { useDocumentList } from '@/features/content/hooks/useCollectionQueries';

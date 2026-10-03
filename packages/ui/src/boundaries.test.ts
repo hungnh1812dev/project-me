@@ -154,3 +154,26 @@ describe('primitives (AC-2)', () => {
     },
   );
 });
+
+describe('generic form components (AC-3)', () => {
+  const FORM = [
+    'Field',
+    'PasswordInput',
+    'JsonInput',
+    'DatePicker',
+    'ConfirmDialog',
+    'UnsavedChangesDialog',
+    'SecretReveal',
+    'GatedButton',
+    'GatedMenuItem',
+    'FileDropzone',
+  ] as const;
+
+  it.each(FORM)('form/%s.tsx is in the package', (name) => {
+    expect(existsSync(join(SRC, 'form', `${name}.tsx`))).toBe(true);
+  });
+
+  it.each(['lib/json.ts', 'lib/decision.ts'])('%s is in the package', (path) => {
+    expect(existsSync(join(SRC, path))).toBe(true);
+  });
+});

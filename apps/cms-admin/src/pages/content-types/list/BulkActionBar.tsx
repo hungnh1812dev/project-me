@@ -10,9 +10,9 @@ import {
 } from 'lucide-react';
 
 import { Button } from '@repo/ui/components/button';
+import { GatedButton } from '@repo/ui/form/GatedButton';
 import { cn } from '@repo/ui/lib/cn';
 
-import { GatedButton } from '@/components/form/GatedButton';
 import {
   bulkDeleteSummary,
   bulkProgressText,

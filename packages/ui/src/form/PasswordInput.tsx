@@ -1,8 +1,10 @@
+'use client';
+
 import { useState } from 'react';
 import { EyeIcon, EyeOffIcon } from 'lucide-react';
 
-import { Button } from '@repo/ui/components/button';
-import { Input, type InputProps } from '@repo/ui/components/input';
+import { Button } from '../components/button';
+import { Input, type InputProps } from '../components/input';
 
 export type PasswordInputProps = Omit<InputProps, 'type' | 'trailing'>;
 

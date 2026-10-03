@@ -2,7 +2,8 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 
-import { JsonInput } from '@/components/form/JsonInput';
+import { JsonInput } from '@repo/ui/form/JsonInput';
+
 import type { DocumentData, FieldDefinition, FieldType } from '@/features/content/types';
 
 import { SchemaForm } from '../SchemaForm';

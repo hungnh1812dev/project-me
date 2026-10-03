@@ -1,10 +1,11 @@
+'use client';
+
 import { useState } from 'react';
 
-import { Button } from '@repo/ui/components/button';
-import { Textarea, type TextareaProps } from '@repo/ui/components/textarea';
-import { cn } from '@repo/ui/lib/cn';
-
-import { formatJson, parseJson, type JsonExpect } from '@/utils/json';
+import { Button } from '../components/button';
+import { Textarea, type TextareaProps } from '../components/textarea';
+import { cn } from '../lib/cn';
+import { formatJson, parseJson, type JsonExpect } from '../lib/json';
 
 export type JsonInputProps = Omit<TextareaProps, 'value' | 'defaultValue' | 'onChange'> & {
   /** The JSON text (controlled). */

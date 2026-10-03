@@ -10,8 +10,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@repo/ui/components/dropdown-menu';
+import { GatedMenuItem } from '@repo/ui/form/GatedMenuItem';
 
-import { GatedMenuItem } from '@/components/form/GatedMenuItem';
 import {
   useDuplicateDocument,
   usePublishDocument,

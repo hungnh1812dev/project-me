@@ -1,7 +1,9 @@
+'use client';
+
 import { cloneElement, useId } from 'react';
 
-import { Label } from '@repo/ui/components/label';
-import { cn } from '@repo/ui/lib/cn';
+import { Label } from '../components/label';
+import { cn } from '../lib/cn';
 
 /** The props `Field` sets on its control. Any input primitive in this folder accepts them. */
 export interface FieldControlProps {
@@ -75,12 +77,12 @@ export const Field: React.FC<FieldProps> = ({
       </Label>
       {control}
       {hasDescription && (
-        <p id={descriptionId} className="text-sm text-muted-foreground">
+        <p id={descriptionId} className="text-muted-foreground text-sm">
           {description}
         </p>
       )}
       {hasError && (
-        <p id={errorId} role="alert" className="text-sm font-medium text-destructive">
+        <p id={errorId} role="alert" className="text-destructive text-sm font-medium">
           {error}
         </p>
       )}

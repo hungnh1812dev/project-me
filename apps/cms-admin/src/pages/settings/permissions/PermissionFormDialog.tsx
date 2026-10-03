@@ -14,8 +14,8 @@ import {
 } from '@repo/ui/components/dialog';
 import { Input } from '@repo/ui/components/input';
 import { Textarea } from '@repo/ui/components/textarea';
+import { Field } from '@repo/ui/form/Field';
 
-import { Field } from '@/components/form/Field';
 import { useCreatePermission, useUpdatePermission } from '@/features/settings/hooks/usePermissions';
 import type { Permission } from '@/features/settings/types';
 import {

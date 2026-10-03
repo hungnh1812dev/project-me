@@ -1,15 +1,25 @@
-import { useRef } from 'react';
+'use client';
 
-import type { UnsavedChangesGuard } from '@/features/content/hooks/useUnsavedChangesGuard';
+import { useRef } from 'react';
 
 import { ConfirmDialog } from './ConfirmDialog';
 
+/** What the dialog needs from an unsaved-changes guard (structural, so any guard hook fits). */
+export interface UnsavedChangesDialogGuard {
+  /** A navigation is waiting for the user's answer. */
+  open: boolean;
+  /** Cancel: stay on the page and keep the edits. */
+  stay: () => void;
+  /** Discard: continue the blocked navigation. */
+  leave: () => void;
+}
+
 /**
- * "Discard unsaved changes?" (D10), opened by `useUnsavedChangesGuard` when a navigation would
+ * "Discard unsaved changes?" (D10), opened by an unsaved-changes guard when a navigation would
  * leave a dirty form. Cancel (the initial focus), Escape or the backdrop keep the edits; Discard
  * continues the navigation.
  */
-export const UnsavedChangesDialog: React.FC<{ guard: UnsavedChangesGuard }> = ({ guard }) => {
+export const UnsavedChangesDialog: React.FC<{ guard: UnsavedChangesDialogGuard }> = ({ guard }) => {
   // Discard closes the dialog too; that close must not reset the navigation it just let through.
   const leaving = useRef(false);
   return (

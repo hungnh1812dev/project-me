@@ -4,8 +4,8 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Alert } from '@repo/ui/components/alert';
 import { Button } from '@repo/ui/components/button';
 import { Input } from '@repo/ui/components/input';
+import { Field } from '@repo/ui/form/Field';
 
-import { Field } from '@/components/form/Field';
 import { useResendOtpMutation, useVerifyOtpMutation } from '@/core/api/AuthApi';
 import { toApiErrorData } from '@/core/api/axiosBaseQuery';
 import {

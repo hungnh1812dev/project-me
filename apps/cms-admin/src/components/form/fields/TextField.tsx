@@ -1,8 +1,8 @@
 import { useFormContext } from 'react-hook-form';
 
 import { Input } from '@repo/ui/components/input';
+import { Field } from '@repo/ui/form/Field';
 
-import { Field } from '@/components/form/Field';
 import { useSchemaFormReadOnly } from '@/components/form/schemaFormContext';
 
 export interface TextFieldProps {

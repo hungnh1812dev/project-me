@@ -1,3 +1,5 @@
+import type { Decision } from '@repo/ui/lib/decision';
+
 import { hasPermission } from './permissions';
 
 /** Who is asking: the signed-in user reduced to what the policies need. */
@@ -8,11 +10,8 @@ export interface Actor {
   permissions: readonly string[];
 }
 
-/** The outcome of a policy check. `reason` explains a denial and is `null` when allowed. */
-export interface Decision {
-  allowed: boolean;
-  reason: string | null;
-}
+/** The outcome of a policy check, shared with the gated `@repo/ui` form components. */
+export type { Decision };
 
 /** Attributes of the resource being acted on. Each subject reads only the fields it needs. */
 export interface PolicyAttrs {

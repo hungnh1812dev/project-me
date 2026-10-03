@@ -1,8 +1,9 @@
 import { useCallback, useState } from 'react';
 
-import { GatedButton } from '@/components/form/GatedButton';
+import { GatedButton } from '@repo/ui/form/GatedButton';
+import { UnsavedChangesDialog } from '@repo/ui/form/UnsavedChangesDialog';
+
 import { SchemaForm } from '@/components/form/SchemaForm';
-import { UnsavedChangesDialog } from '@/components/form/UnsavedChangesDialog';
 import { isApiError } from '@/core/api/apiError';
 import type { Decision } from '@/features/auth/permissions/policies';
 import { useContentTypeAccess } from '@/features/content/hooks/useContentTypeAccess';

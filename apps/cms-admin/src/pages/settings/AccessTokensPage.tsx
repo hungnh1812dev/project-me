@@ -12,10 +12,10 @@ import {
   TableHeader,
   TableRow,
 } from '@repo/ui/components/table';
+import { GatedButton } from '@repo/ui/form/GatedButton';
+import { SecretReveal } from '@repo/ui/form/SecretReveal';
 import { cn } from '@repo/ui/lib/cn';
 
-import { GatedButton } from '@/components/form/GatedButton';
-import { SecretReveal } from '@/components/form/SecretReveal';
 import { useCan } from '@/features/auth/hooks/useCan';
 import { ListState } from '@/features/settings/components/ListState';
 import { LiveRegion } from '@/features/settings/components/LiveRegion';

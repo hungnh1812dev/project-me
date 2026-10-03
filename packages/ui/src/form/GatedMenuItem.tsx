@@ -1,9 +1,10 @@
+'use client';
+
 import { useId } from 'react';
 
-import { DropdownMenuItem } from '@repo/ui/components/dropdown-menu';
-import { cn } from '@repo/ui/lib/cn';
-
-import type { Decision } from '@/features/auth/permissions/policies';
+import { DropdownMenuItem } from '../components/dropdown-menu';
+import { cn } from '../lib/cn';
+import type { Decision } from '../lib/decision';
 
 export type GatedMenuItemProps = React.ComponentProps<typeof DropdownMenuItem> & {
   /** A denial keeps the item in the menu, `aria-disabled`, with the reason as its description. */
@@ -41,7 +42,7 @@ export const GatedMenuItem: React.FC<GatedMenuItemProps> = ({
       className={cn(ROW, 'flex-col items-start gap-0.5 py-1.5', className)}
     >
       <span className="flex items-center gap-1.5">{children}</span>
-      <span id={reasonId} className="text-xs text-muted-foreground">
+      <span id={reasonId} className="text-muted-foreground text-xs">
         {decision.reason ?? FALLBACK_REASON}
       </span>
     </DropdownMenuItem>

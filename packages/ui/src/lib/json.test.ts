@@ -118,6 +118,18 @@ describe('describeJsonError', () => {
     });
   });
 
+  it('drops a multi-line echoed input from V8 "is not valid JSON" messages', () => {
+    expect(
+      describeJsonError('Unexpected token \'a\', "{\n  a" is not valid JSON', '{\n  a'),
+    ).toEqual({ reason: "Unexpected token 'a'" });
+  });
+
+  it('drops a multi-line tail after a V8 position', () => {
+    expect(
+      describeJsonError('Unexpected token in JSON at position 4\nwhile parsing', '{\n  a'),
+    ).toEqual({ reason: 'Unexpected token', line: 2, column: 3 });
+  });
+
   it('keeps an unknown message as is', () => {
     expect(describeJsonError('Unexpected end of JSON input', '{')).toEqual({
       reason: 'Unexpected end of JSON input',

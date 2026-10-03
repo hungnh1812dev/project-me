@@ -5,9 +5,9 @@ import { Alert, AlertDescription } from '@repo/ui/components/alert';
 import { Button } from '@repo/ui/components/button';
 import { Input } from '@repo/ui/components/input';
 import { Skeleton } from '@repo/ui/components/skeleton';
+import { Field } from '@repo/ui/form/Field';
 import { cn } from '@repo/ui/lib/cn';
 
-import { Field } from '@/components/form/Field';
 import {
   buildPermissionTree,
   countSelected,

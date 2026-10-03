@@ -42,11 +42,10 @@ import {
 } from '@repo/ui/components/select';
 import { Switch } from '@repo/ui/components/switch';
 import { Textarea } from '@repo/ui/components/textarea';
-
-import { DatePicker } from '@/components/form/DatePicker';
-import { Field } from '@/components/form/Field';
-import { JsonInput } from '@/components/form/JsonInput';
-import { PasswordInput } from '@/components/form/PasswordInput';
+import { DatePicker } from '@repo/ui/form/DatePicker';
+import { Field } from '@repo/ui/form/Field';
+import { JsonInput } from '@repo/ui/form/JsonInput';
+import { PasswordInput } from '@repo/ui/form/PasswordInput';
 
 const VARIANTS = ['default', 'secondary', 'outline', 'ghost', 'destructive', 'link'] as const;
 const SIZES = ['sm', 'default', 'lg'] as const;
