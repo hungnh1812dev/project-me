@@ -159,8 +159,8 @@ test('control: an image from an unlisted host is blocked and reported', async ({
     );
 });
 
-// Content pages (AC-35). Until the collection detail page lands (task 5.7.5), the editor check runs
-// on a single type built from the showcase fields, which has richtext and media.
+// Content pages (AC-35). The editor check runs on a collection entry of the showcase type, which
+// has richtext and media; the media picker opens from a single type built from the same fields.
 
 const SHOWCASE_SINGLE = {
   ...FIELD_SHOWCASE,
@@ -211,11 +211,10 @@ test('an entry with richtext and media renders with the editor mounted and no CS
 }) => {
   signInAda(mockApi);
   seedContent(mockContent);
-  mockContent.addContentType(SHOWCASE_SINGLE);
   const cat = asset('media-cat', 'cat.png', '2026-01-01T00:00:00.000Z');
   mockApi.settings.addMedia(cat);
-  mockContent.setSingle('showcase-single', {
-    documentId: 'showcase-single',
+  mockContent.addDocument('showcase', {
+    documentId: 'showcase-1',
     status: 'draft',
     createdAt: STAMP,
     updatedAt: STAMP,
@@ -226,7 +225,8 @@ test('an entry with richtext and media renders with the editor mounted and no CS
   });
   await serveMediaHost(page);
 
-  await page.goto('/admin/content-types/showcase-single');
+  await page.goto('/admin/content-types/showcase/showcase-1');
+  await expect(page.getByRole('heading', { level: 1, name: 'Hello' })).toBeVisible();
 
   const editor = page.getByRole('textbox', { name: 'Body', exact: true });
   await expect(editor).toContainText('Heading');

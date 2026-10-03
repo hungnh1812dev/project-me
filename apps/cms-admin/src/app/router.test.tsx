@@ -8,6 +8,7 @@ import { makeMeUser, makeRole } from '@/test/fixtures';
 import {
   getContentTypeHandler,
   getContentTypesHandler,
+  getDocumentHandler,
   getSingleTypeHandler,
 } from '@/test/msw/contentHandlers';
 import { server } from '@/test/msw/server';
@@ -199,7 +200,7 @@ describe('route table', () => {
     server.use(getContentTypeHandler().handler);
     const { router } = renderRoutes(routes, {
       route: '/admin/content-types/article/new',
-      auth: signedIn(['content_type:read']),
+      auth: signedIn(['content_type:read', 'document:create']),
     });
 
     expect(await screen.findByRole('heading', { name: 'New entry', level: 1 })).toBeInTheDocument();
@@ -207,13 +208,18 @@ describe('route table', () => {
   });
 
   it('serves the detail page at /admin/content-types/:slug/:documentId (AC-39)', async () => {
-    server.use(getContentTypeHandler().handler);
+    const d3 = getDocumentHandler();
+    server.use(getContentTypeHandler().handler, d3.handler);
     renderRoutes(routes, {
       route: '/admin/content-types/article/doc%201',
-      auth: signedIn(['content_type:read']),
+      auth: signedIn(['content_type:read', 'document:read']),
     });
 
-    expect(await screen.findByRole('heading', { name: 'doc 1', level: 1 })).toBeInTheDocument();
+    // The heading is the entry label (the fixture's title).
+    expect(
+      await screen.findByRole('heading', { name: 'Hello world', level: 1 }),
+    ).toBeInTheDocument();
+    expect(d3.requests[0]!.params.documentId).toBe('doc 1');
   });
 
   it('redirects /new on a single type to the single-type editor (AC-39)', async () => {
