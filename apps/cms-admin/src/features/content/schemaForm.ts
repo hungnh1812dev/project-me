@@ -1,6 +1,6 @@
-import type { MediaAsset } from '@/features/settings/types';
 import { parseJson } from '@/utils/json';
 
+import { readMediaValue } from './mediaValue';
 import { fieldKind } from './schema';
 import type { DocumentData, FieldDefinition } from './types';
 
@@ -11,8 +11,7 @@ import type { DocumentData, FieldDefinition } from './types';
  */
 export type FormValues = Record<string, unknown>;
 
-/** A media value in the form: the full asset, a `documentId` still to resolve, or nothing (D4). */
-export type MediaFormValue = MediaAsset | string | null;
+export type { MediaFormValue } from './mediaValue';
 
 /** The message a number field shows when its text isn't a finite number. */
 export const NUMBER_ERROR = 'Enter a number.';
@@ -46,7 +45,7 @@ function formValue(field: FieldDefinition, value: unknown): unknown {
     case 'json':
       return value === undefined ? '' : JSON.stringify(value, null, 2);
     case 'media':
-      return isRecord(value) || typeof value === 'string' ? value : null;
+      return readMediaValue(value);
     case 'component':
       return toFormValues(field.fields ?? [], isRecord(value) ? value : null);
     case 'repeatable':
@@ -98,8 +97,9 @@ function documentValue(field: FieldDefinition, value: unknown): unknown {
       return result.ok && result.value !== undefined ? result.value : null;
     }
     case 'media':
-      // Task 5.4.3 resolves an id to the full MediaAsset before a save.
-      return value ?? null;
+      // The full MediaAsset (D4). MediaField swaps a resolved id for its asset; an id it can't
+      // resolve ("File not found") is sent back as it came.
+      return readMediaValue(value);
     case 'component':
       return toDocumentData(field.fields ?? [], isRecord(value) ? value : {});
     case 'repeatable':
@@ -113,8 +113,9 @@ function documentValue(field: FieldDefinition, value: unknown): unknown {
 
 /**
  * The `DocumentData` a save sends: exactly the schema's fields, converted back from form values.
- * Empty number text becomes `null`, json text is parsed (empty becomes `null`), and an unknown
- * type's value is sent back unchanged. A system field is never included.
+ * Empty number text becomes `null`, json text is parsed (empty becomes `null`), media is the full
+ * `MediaAsset` (or an unresolved `documentId`, or `null`), and an unknown type's value is sent
+ * back unchanged. A system field is never included.
  */
 export function toDocumentData(
   fields: readonly FieldDefinition[],

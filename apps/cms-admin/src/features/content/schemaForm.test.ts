@@ -105,6 +105,8 @@ describe('toFormValues (AC-6)', () => {
     ['a missing media value', field('a', 'media'), undefined, null],
     ['a media number', field('a', 'media'), 5, null],
     ['an array as media', field('a', 'media'), ['x'], null],
+    ['an object that is not an asset', field('a', 'media'), { url: 'x' }, null],
+    ['a blank media id', field('a', 'media'), '  ', null],
     [
       'a missing component',
       field('a', 'component', { fields: [field('b', 'text')] }),
@@ -198,6 +200,9 @@ describe('toDocumentData (AC-6)', () => {
     ['a media asset', field('a', 'media'), ASSET, ASSET],
     ['a media id', field('a', 'media'), 'media-1', 'media-1'],
     ['a missing media value', field('a', 'media'), undefined, null],
+    ['a media number', field('a', 'media'), 5, null],
+    ['a media object that is not an asset', field('a', 'media'), { url: 'x' }, null],
+    ['an empty media id', field('a', 'media'), '', null],
     [
       'a missing component',
       field('a', 'component', { fields: [field('b', 'number')] }),
