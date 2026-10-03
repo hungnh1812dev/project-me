@@ -1,6 +1,6 @@
 import { act, screen } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
 import { useLocation } from 'react-router-dom';
+import { describe, expect, it } from 'vitest';
 
 import { makeContentType } from '@/test/contentFixtures';
 import { makeMeUser, makeRole } from '@/test/fixtures';
@@ -159,4 +159,3 @@ describe('DocumentCreatePage (AC-26)', () => {
     expect(screen.getByRole('status')).toHaveTextContent('Loading content type…');
   });
 });
-

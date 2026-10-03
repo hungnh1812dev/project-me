@@ -232,9 +232,7 @@ describe('bearer origin rule (SEC-3)', () => {
       const api = await loadCmsApi();
       echoAuthorizationOn(`${window.location.origin}/echo`);
 
-      const res = await api.get<{ authorization: string | null }>(
-        `${window.location.origin}/echo`,
-      );
+      const res = await api.get<{ authorization: string | null }>(`${window.location.origin}/echo`);
 
       expect(res.data.authorization).toBeNull();
     });

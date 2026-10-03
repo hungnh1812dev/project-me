@@ -47,12 +47,7 @@ const CreateForm: React.FC<{ type: ContentType }> = ({ type }) => {
       <Button variant="outline" render={<Link to={listPath(type.slug)} />}>
         Cancel
       </Button>
-      <GatedButton
-        decision={access.create}
-        type="submit"
-        form={FORM_ID}
-        loading={create.isPending}
-      >
+      <GatedButton decision={access.create} type="submit" form={FORM_ID} loading={create.isPending}>
         Save
       </GatedButton>
     </>

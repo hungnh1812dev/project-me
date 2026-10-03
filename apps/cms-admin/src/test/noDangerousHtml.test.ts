@@ -20,9 +20,7 @@ function tsxFiles(dir: string): string[] {
 
 /** The 1-based line numbers of `source` that use the prop. */
 function offendingLines(source: string): number[] {
-  return source
-    .split('\n')
-    .flatMap((line, index) => (line.includes(PROP) ? [index + 1] : []));
+  return source.split('\n').flatMap((line, index) => (line.includes(PROP) ? [index + 1] : []));
 }
 
 describe('no dangerouslySetInnerHTML (AC-34)', () => {
