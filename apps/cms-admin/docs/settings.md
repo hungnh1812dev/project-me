@@ -5,7 +5,9 @@ permissions, access tokens and the media library, and added name editing to `/ad
 Small phase 4.1 laid the foundations described below, 4.2 added the Users page, 4.3 the Permissions
 page, 4.4 the Roles page with the PermissionTree, 4.5 the Access tokens page with the SecretReveal,
 4.6 the Media library, 4.7 profile name editing, and 4.8 the accessibility and keyboard checks, the
-coverage gate and these docs.
+coverage gate and these docs. Phase 6 added client-side pagination to the five lists (see
+[Pagination](#pagination)) and moved the shared primitives and generic form components to `@repo/ui`
+(see [Design system](./design-system.md#shared-package-repoui)).
 
 Every request goes through `cmsApi` (see [API client](./api-client.md)). ABAC checks are
 **client-side defense in depth only** (see [RBAC and ABAC](./rbac-abac.md)); the backend stays the
@@ -27,13 +29,15 @@ permissionTree.ts         buildPermissionTree, nodeSlugs, countSelected, nodeSta
 conflict.ts               parsePermissionConflict (P4 409 → counts sentence or server message)
 media.ts                  UPLOAD_ACCEPT, validateUploadFile, formatBytes, uploadErrorMessage,
                           uploadSummary
+paging.ts                 PAGE_SIZES, DEFAULT_PAGING, parsePaging, serializePaging (Phase 6)
+permissionGroups.ts       sortBySlug, groupByResource (Phase 6)
 api/                      usersApi (U1, U3, U4), rolesApi (R1 to R4), permissionsApi (P1 to P4),
                           accessTokensApi (T1 to T4), mediaApi (M1 to M3)
 hooks/                    useUsers, useAssignRole, useDeleteUser, useRoles, useCreateRole,
                           useUpdateRole, useDeleteRole, usePermissions, useCreatePermission,
                           useUpdatePermission, useDeletePermission, useAccessTokens,
                           useCreateAccessToken, useRevokeAccessToken, useDeleteAccessToken,
-                          useMediaList, useUploadMedia, useDeleteMedia
+                          useMediaList, useUploadMedia, useDeleteMedia, useListPaging (Phase 6)
 components/               ListState, SearchField, LiveRegion, useAnnouncer
 ```
 
@@ -124,24 +128,25 @@ sent and no cache entry changes. The content hooks import it from there too.
 ## Primitives and form components
 
 Vendored by hand from shadcn/ui (`base-nova`, Base UI), adapted to the house rules (arrow components
-with `displayName`, semantic tokens, 44px touch targets below `lg`):
+with `displayName`, semantic tokens, 44px touch targets below `lg`). Since Phase 6 they live in
+`@repo/ui` (`packages/ui/src`):
 
-- `components/ui/dialog.tsx`: `Dialog`, `DialogTrigger`, `DialogClose`, `DialogContent` (optional
+- `components/dialog.tsx`: `Dialog`, `DialogTrigger`, `DialogClose`, `DialogContent` (optional
   icon-only Close), `DialogHeader`, `DialogFooter`, `DialogTitle`, `DialogDescription`.
-- `components/ui/alert-dialog.tsx`: the same parts as `AlertDialog*`, with `role="alertdialog"` and no
+- `components/alert-dialog.tsx`: the same parts as `AlertDialog*`, with `role="alertdialog"` and no
   outside-click dismissal.
-- `components/ui/select.tsx`: `Select` (Base UI `Select.Root`), `SelectTrigger`, `SelectValue`,
+- `components/select.tsx`: `Select` (Base UI `Select.Root`), `SelectTrigger`, `SelectValue`,
   `SelectContent`, `SelectItem`, `SelectGroup`, `SelectLabel`, `SelectSeparator`. Put
   `SelectTrigger` inside a `Field` so it gets its label and `aria-*` wiring.
 
 Both dialog popups set `aria-modal="true"` themselves (Base UI does not). Focus moves inside on open,
 is trapped, and returns to the trigger on close. The UI kit (`/admin/dev/ui-kit`) shows each one.
 
-`components/form/`:
+`@repo/ui/form/` (except `PermissionTree`, which stays in cms-admin's `src/components/form/`):
 
 - `GatedButton` takes a `Decision` from `useCan`. When denied it renders `aria-disabled="true"`, stays
   focusable, exposes the reason through a tooltip and `aria-describedby`, and ignores clicks, Enter
-  and form submission (D5).
+  and form submission (D5). Its optional `tooltip` (Phase 6) names an allowed icon button.
 - `ConfirmDialog` confirms a destructive action in an `alertdialog`: `title` (names the target),
   `description`, a destructive `confirmLabel` verb, `onConfirm` (async; shows `loading`, blocks a
   second submit and dismissal while pending), `error` (`role="alert"`) and a `children` slot for a
@@ -152,6 +157,7 @@ is trapped, and returns to the trigger on close. The UI kit (`/admin/dev/ui-kit`
 - `PermissionTree` picks permission slugs; see [PermissionTree](#permissiontree).
 - `SecretReveal` shows a one-time secret; see [Access tokens](#access-tokens-adminsettingsaccess-tokens).
 - `FileDropzone` picks files to upload; see [Media library](#media-library-adminsettingsmedia).
+- `Pagination` is the list footer; see [Pagination](#pagination).
 
 ## List building blocks
 
@@ -165,6 +171,35 @@ In `src/features/settings/components/`:
   over the named fields, with no request.
 - `useAnnouncer` plus `LiveRegion` give each page one polite status region for success messages
   (AC-10, D2: no toast library). Announcing the same text twice still re-announces it.
+
+## Pagination
+
+Phase 6 (D5 to D8). The settings endpoints return full lists, so every list pages on the client.
+The backend is unchanged.
+
+- **What is paged.** Each page builds its sorted, searched list as before, then
+  `useListPaging(items, search)` (`src/features/settings/hooks/useListPaging.ts`) slices it with
+  `pageSlice` from `@repo/ui/lib/pagination`. `items` is `undefined` while the list loads. The
+  shared `Pagination` (`@repo/ui/form/Pagination`) goes under the table or grid, inside `ListState`,
+  so it is not shown while the list is loading, in error or empty.
+- **Size.** "Rows per page" offers 10, 20, 50 and 100. The default is 10 (D6).
+- **URL state.** `page` and `size` live in the query string and are left out at their defaults (1
+  and 10). `parsePaging` and `serializePaging` (`src/features/settings/paging.ts`) read and write
+  them and keep every other param. An invalid value falls back to its default, and a page past the
+  end clamps to the last page (`clampPage`). Those fixes use `replace`, so they add no history entry.
+  Next, Previous and a size change push an entry (a size change goes back to page 1), so Back and
+  Forward restore the page.
+- **Search.** Changing the search goes back to page 1 (with `replace`). `SearchField`'s live count
+  still announces every match, not the rows on the page.
+- **Delete.** When a delete empties the current page (the last row on the last page), the list
+  moves to the new last page. It never shows an empty page while items remain, and the success
+  announcement is unchanged.
+- **Focus.** Changing the page or the size keeps focus on the control used. When Next or Previous
+  becomes disabled by its own step, focus moves to the other button.
+- **Per list.** Users, Roles and Access tokens page their table rows; a Roles or Access tokens
+  detail row (the permission slugs) does not count as a row. Permissions page by permission row
+  (D7); see [Permissions](#permissions-adminsettingspermissions). The Media library pages its cards.
+  `MediaPickerDialog` is not paged (D8).
 
 ## Users (`/admin/settings/users`)
 
@@ -209,6 +244,10 @@ targetLevel })`. Both buttons are `GatedButton`s named after the row ("Change ro
   ("document permissions") in a labelled, focusable scroll region. Groups and rows are sorted by slug.
   Each row shows the slug in monospace, the name and the description. Search covers slug, name and
   description; the group counts follow the search.
+- **Paging (Phase 6, D7).** The page runs over the permission rows that match the search, sorted by
+  slug (`sortBySlug`), not over the groups. `groupByResource(pageRows, allMatches)` then shows only
+  the groups with rows on the current page. A group split across pages appears on each of them,
+  and its count badge keeps the group's full match count.
 - **Policy use.** `useCan('create' | 'update' | 'delete', 'permission')` gates New permission and
   each row's Edit and Delete (`GatedButton`s named "Edit <slug>", "Delete <slug>"). All three need
   `permission:manager`. The empty state repeats New permission.
@@ -240,7 +279,8 @@ targetLevel })`. Both buttons are `GatedButton`s named after the row ("Change ro
   permission count. Rows are sorted by level descending, then by name (case ignored). The count is a
   toggle button ("Writer: 3 permissions" to a screen reader, `aria-expanded`) that opens a detail row
   with the role's slugs grouped by resource (`groupSlugsByResource`), read-only. Search covers name
-  and slug.
+  and slug. The table shows one page of roles (see [Pagination](#pagination)); detail rows don't
+  count as rows.
 - **Policy use.** New role uses `useCan('create', 'role')`; each row's Edit and Delete use
   `useCan('update' | 'delete', 'role', { isDefault })` (`GatedButton`s "Edit <name>", "Delete
   <name>"). All need `role:manager`; Delete is also denied for a default role ("A default role cannot
@@ -275,7 +315,8 @@ targetLevel })`. Both buttons are `GatedButton`s named after the row ("Change ro
   Expiry is "Never" for `expiresAt: null`, the date, or an outlined "Expired" badge plus the date
   once it has passed (compared with the time the page mounted). Search covers name.
   `getAccessTokens` drops any `token` field a T1 response might carry, so no list secret is ever
-  cached or rendered.
+  cached or rendered. The table shows one page of tokens, in the order the server sends them (see
+  [Pagination](#pagination)).
 - **Policy use.** New token, Revoke and Delete use `useCan('create' | 'revoke' | 'delete',
 'api_token')`; all need `api_token:manager` ("Revoke <name>", "Delete <name>" `GatedButton`s).
 - **Create (T2).** `TokenFormDialog` (a wide modal `Dialog`, Enter submits): Name (required, at most
@@ -300,7 +341,7 @@ created.` and `Token "<name>" revoked. Its new secret was shown once.` are annou
 - The dialog reads the result once, passes `{ name, secret }` to the page and runs
   `mutation.reset()`. The secret then lives only in the page's `reveal` state. Nothing writes it to
   Redux, web storage, the URL or the console.
-- `SecretReveal` (`src/components/form/SecretReveal.tsx`) opens while `secret` is set: an
+- `SecretReveal` (`@repo/ui/form/SecretReveal`) opens while `secret` is set: an
   `alertdialog` titled "Copy your token now", "You won't be able to see it again.", a read-only
   monospace "Token" input that selects itself on focus, Copy and Done. Copy uses
   `navigator.clipboard.writeText`; success announces "Copied." in the dialog's own polite status and
@@ -320,10 +361,11 @@ created.` and `Token "<name>" revoked. Its new secret was shown once.` are annou
   `loading="lazy"`, the asset's `width`/`height` attributes, inside a fixed `aspect-square` box so
   nothing shifts as it loads), the file name (truncated, full name in `title` and in the image's
   alt), "W × H", `formatBytes(size)` (binary units, one decimal, for example "1.2 MB") and the upload
-  date. Search ("Search files") covers the file name.
+  date. Search ("Search files") covers the file name. The grid shows at most `size` cards (10 by
+  default) per page, with `Pagination` under it (see [Pagination](#pagination)).
 - **Policy use.** Upload uses `useCan('upload', 'media')` and Delete `useCan('delete', 'media')`;
   both need `media:manager`. A denied Upload also ignores dropped files.
-- **Upload flow (M2, AC-36, AC-37).** `FileDropzone` (`src/components/form/FileDropzone.tsx`) has a
+- **Upload flow (M2, AC-36, AC-37).** `FileDropzone` (`@repo/ui/form/FileDropzone`) has a
   visible Upload `GatedButton` that opens a hidden `<input type="file" multiple
 accept="image/png,image/jpeg">`, so the keyboard alone is enough; the dashed zone around it also
   accepts dropped files. The input is cleared after each pick, so the same file can be picked again.
@@ -462,7 +504,8 @@ accept="image/png,image/jpeg">`, so the keyboard alone is enough; the dashed zon
 
 `e2e/a11y.spec.ts` covers the settings area as a super admin with one row on every list:
 
-- **axe.** Each of the five settings pages, plus three open dialogs (the Roles form with the
+- **axe.** Each of the five settings pages (Users and Media were added to the shared `PAGES` list
+  in Phase 6), plus three open dialogs (the Roles form with the
   PermissionTree, the token reveal and the media delete confirmation), in light and dark at 1280px
   and 375px. No serious or critical violation is allowed.
 - **Tab order.** On each page, Tab reaches the primary action (in the page header), then the search,

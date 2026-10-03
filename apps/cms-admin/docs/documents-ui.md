@@ -16,14 +16,16 @@ src/pages/content-types/            the pages
   DocumentCreatePage.tsx            :slug/new (D2)
   DocumentDetailPage.tsx            :slug/:documentId (D3 to D8)
   editor/EditorHeader.tsx           title, status badge, audit line, actions, "More actions"
-  list/                             DocumentsTable, FilterPanel, FilterChips, PaginationBar,
+  list/                             DocumentsTable, FilterPanel, FilterChips,
                                     ColumnChooserDialog, RowActions, DeleteDocumentDialog,
                                     BulkActionBar, BulkDeleteDialog
 src/components/form/
   SchemaForm.tsx, SchemaField.tsx   the schema-driven form (react-hook-form)
   fields/                           one control per field type
-  DatePicker.tsx                    Calendar in a Popover, for the date filters
-  UnsavedChangesDialog.tsx          "Discard unsaved changes?"
+@repo/ui (packages/ui/src, Phase 6)
+  form/Pagination.tsx               the list footer (replaced list/PaginationBar)
+  form/DatePicker.tsx               Calendar in a Popover, for the date filters
+  form/UnsavedChangesDialog.tsx     "Discard unsaved changes?"
 src/features/content/               pure modules (below) and the hooks
 ```
 
@@ -94,14 +96,37 @@ Fields render in `type.fields` order in a 6-column grid from `md` (`width` `"100
   HTML, `injectCSS: false`. The value is HTML. When the loaded HTML does not survive a round trip
   (`changesOnRoundTrip`), the field warns that saving removes the unsupported formatting. Only
   `RichTextEditor.tsx` imports `@tiptap/*`, so the editor is its own chunk.
-- **Media (D4).** The field shows the asset (thumbnail, name, size) with Choose and Remove. The
-  picker is a searchable radio grid of the M1 assets (arrow keys move, Enter selects) with a
-  `FileDropzone` gated by `upload media`; a new upload is selected. A save writes the full
-  `MediaAsset`. A `documentId` string is resolved through the cached M1 list (`resolveMedia`), and
-  an unresolved value shows "File not found".
+- **Media (D4).** The field shows the asset with Choose and Remove (see
+  [MediaField preview](#mediafield-preview)). The picker is a searchable radio grid of the M1
+  assets (arrow keys move, Enter selects) with a `FileDropzone` gated by `upload media`; a new
+  upload is selected. A save writes the full `MediaAsset`. A `documentId` string is resolved
+  through the cached M1 list (`resolveMedia`), and an unresolved value shows "File not found".
 - **Leaving (D10).** `useUnsavedChangesGuard(dirty)` blocks in-app navigation with a `useBlocker`
   and `UnsavedChangesDialog` ("Discard unsaved changes?": Cancel stays, Discard leaves), and arms
   `beforeunload` only while the form is dirty. A just-saved form leaves without asking.
+
+### MediaField preview
+
+Phase 6 (D10) reworked the media field (`src/components/form/fields/MediaField.tsx`):
+
+- **Preview box.** A full-width box, 320px tall (`h-80`, `data-slot="media-preview"`) on a `muted`
+  background. The box has a fixed size, so nothing shifts while the image loads.
+- **Image.** The asset's full `url` (not `thumbnailUrl`), centred with `object-fit: contain` and
+  `loading="lazy"`. It goes through `MediaThumbnail` with `fit="contain"` and `source="url"`, so it
+  uses the same `safeImageSrc` allowlist and `referrerPolicy="no-referrer"`. A URL that is not
+  allowlisted shows the neutral placeholder named after the file. `MediaThumbnail`'s defaults
+  (`fit="cover"`, `source="thumbnail"`) keep the media library grid, `MediaPickerDialog` and
+  `DeleteMediaDialog` as they were.
+- **States.** Loading ("Loading file…"), empty ("No file selected.") and missing ("File not found"
+  plus the id) use the same box, with a centred icon and text.
+- **Details row.** Under the box: the file name (truncated, full name in `title`), "W × H · size",
+  and the actions.
+- **Actions.** Choose (`ImagePlus` icon, a `GatedButton` with `tooltip`) and Remove (`Trash2` icon)
+  are `size="icon"` buttons, 44px below `lg`. Their accessible names stay "Choose <label>" and
+  "Remove <label>", the icons are `aria-hidden`, and each shows its name in a tooltip. A denied
+  Choose keeps the `GatedButton` behaviour (`aria-disabled`, the reason in its tooltip and
+  `aria-describedby`). After Remove, focus moves to Choose and "<label> removed." is announced as
+  before. Read-only mode shows no actions, and with no asset it shows no details row.
 
 ## Collection list
 
@@ -112,7 +137,7 @@ The URL is the list's state; `listState.ts` parses and writes it.
 | Param                           | Values                                       | Default |
 | ------------------------------- | -------------------------------------------- | ------- |
 | `page`                          | 1-based integer                              | `1`     |
-| `size`                          | `10`, `20`, `50`, `100`                      | `20`    |
+| `size`                          | `10`, `20`, `50`, `100`                      | `10`    |
 | `orderBy`                       | a sortable column (camelCase)                | `id`    |
 | `sortDir`                       | `asc`, `desc`                                | `desc`  |
 | `q`                             | search text, trimmed, at most 256 characters | —       |
@@ -125,6 +150,10 @@ announced once: "Some filters in the link were ignored." (D8). A bad `page`, `si
 fixed silently, and a page past the end goes to the last page. `toListParams` gives
 `start = (page - 1) * size`; system columns go out with their snake_case wire names
 (`listQuery.ts`).
+
+The default size became 10 in Phase 6 (`DEFAULT_LIST_SIZE` in `listState.ts`); it was 20. This is
+the URL default only. `LIST_DEFAULTS.size` in `listQuery.ts` stays 20, because it is the backend's
+own default and decides which `size` is left off the request, so the default list sends `size=10`.
 
 ### Known-column check
 
@@ -161,8 +190,11 @@ then requires a sortable `orderBy`, a filterable column for each filter and an a
   Arrow keys move, Enter picks and closes, Escape or Close closes without a change, and focus
   returns to the trigger. While open, Tab stays inside the calendar (`modal="trap-focus"`). Dates
   go out as ISO strings.
-- **Pagination.** "Showing 21–40 of 95", Previous, Next, the page and the page-size select. Old
-  rows stay visible with `aria-busy` while the next page loads.
+- **Pagination.** The shared `Pagination` from `@repo/ui` (Phase 6, it replaced `PaginationBar`):
+  "Showing 11–20 of 95", the "Rows per page" select, Previous, Next and "Page x of y", with the
+  current page marked in the `highlight` colour. When Next or Previous becomes disabled by its own
+  step, focus moves to the other one. Old rows stay visible with `aria-busy` while the next page
+  loads.
 - **Columns (D6).** A `GatedButton` on `configureColumns` opens "Choose columns": the listable
   columns as checkboxes with Move up and Move down. At least one must stay ("Choose at least one
   column."). Save sends C3; a 400 or 403 stays in the dialog. The choice applies to everyone.
@@ -208,7 +240,7 @@ errors inside dialogs use `role="alert"`.
 | --------------- | ------------------------------------------------------------------------ |
 | `schema.ts`     | field kinds, labels, widths, sortable and filterable rules, entry labels |
 | `columns.ts`    | the column catalog, the known-column check, cell values and formatting   |
-| `listState.ts`  | URL ↔ `ListState`, canonical form, `lastPage`, `toListParams`            |
+| `listState.ts`  | URL ↔ `ListState`, canonical form, `toListParams`                        |
 | `schemaForm.ts` | document ↔ form values, empty values, field rules                        |
 | `richtext.ts`   | link protocols, normalisation and the round-trip check (D2)              |
 | `mediaValue.ts` | reading and resolving a media value (D4)                                 |

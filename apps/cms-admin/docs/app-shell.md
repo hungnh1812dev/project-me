@@ -2,7 +2,7 @@
 
 The layout around every signed-in `/admin` page (Phase 3): a skip link, a side menu, a sticky header with breadcrumbs and the account menu, the only `<main>`, and a footer. The styling and inputs are in [Design system](./design-system.md).
 
-Source: `src/features/shell/` (`components/`, `hooks/`, `navigation.ts`, `breadcrumbs.ts`, `settingsLinks.ts`, `sidebarState.ts`, `storage.ts`, `initials.ts`), `src/hooks/use-mobile.ts`, `src/components/ui/sidebar.tsx`, `src/layouts/AuthLayout.tsx`, `src/pages/settings/`, `src/pages/dev/UiKitPage.tsx`.
+Source: `src/features/shell/` (`components/`, `hooks/`, `navigation.ts`, `breadcrumbs.ts`, `settingsLinks.ts`, `sidebarState.ts`, `storage.ts`, `initials.ts`), `@repo/ui/hooks/use-mobile`, `@repo/ui/components/sidebar`, `src/layouts/AuthLayout.tsx`, `src/pages/settings/`, `src/pages/dev/UiKitPage.tsx`.
 
 ## Layout
 
