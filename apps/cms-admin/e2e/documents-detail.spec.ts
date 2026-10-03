@@ -100,9 +100,7 @@ test('the detail page loads D3, saves D4 with schema fields only, and a publishe
   await main(page).getByRole('button', { name: 'Save' }).click();
 
   await expect(page.getByText('Saved.')).toBeAttached();
-  await expect(
-    main(page).getByRole('heading', { level: 1, name: 'Post 2 revised' }),
-  ).toBeVisible();
+  await expect(main(page).getByRole('heading', { level: 1, name: 'Post 2 revised' })).toBeVisible();
   await expect(header.getByText('Modified', { exact: true })).toBeVisible();
   await expect(trail(page).getByRole('listitem').last()).toHaveText('Post 2 revised');
   const save = mockContent.saves.at(-1)!;
@@ -329,4 +327,34 @@ test('at 375px the detail actions sit in a bottom bar with a "More actions" menu
     'document.documentElement.scrollWidth - document.documentElement.clientWidth',
   );
   expect(overflow).toBe(0);
+});
+
+test('at 375px the bottom bar stays in view at the end of a long form and covers no field (AC-38)', async ({
+  page,
+  mockApi,
+  mockContent,
+}) => {
+  await page.setViewportSize({ width: 375, height: 640 });
+  seedContent(mockContent);
+  mockContent.addDocument('showcase', {
+    documentId: 'show-1',
+    status: 'draft',
+    createdAt: '2026-02-01T09:00:00.000Z',
+    updatedAt: '2026-02-01T09:00:00.000Z',
+    updatedBy: null,
+    title: 'Every field',
+  });
+  signedInAs(mockApi);
+  await page.goto('/admin/content-types/showcase/show-1');
+  await expect(main(page).getByRole('heading', { level: 1, name: 'Every field' })).toBeVisible();
+  const bar = main(page).getByRole('group', { name: 'Entry actions' });
+  const last = page.getByRole('textbox', { name: 'Location' });
+
+  await last.scrollIntoViewIfNeeded();
+  await page.evaluate('window.scrollTo(0, document.documentElement.scrollHeight)');
+
+  await expect(bar.getByRole('button', { name: 'Save' })).toBeInViewport();
+  const barTop = (await bar.boundingBox())!.y;
+  const lastBox = (await last.boundingBox())!;
+  expect(lastBox.y + lastBox.height).toBeLessThanOrEqual(barTop);
 });

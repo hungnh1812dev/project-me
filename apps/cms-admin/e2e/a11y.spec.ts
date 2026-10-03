@@ -4,7 +4,7 @@ import type { Locator, Page } from '@playwright/test';
 import type { Role } from '../src/features/auth/types.ts';
 import type { ContentType } from '../src/features/content/types.ts';
 import type { AccessToken, MediaAsset } from '../src/features/settings/types.ts';
-import { CONTENT_MANAGER, seedContent } from './fixtures/contentFixtures.ts';
+import { blogPost, CONTENT_MANAGER, seedContent } from './fixtures/contentFixtures.ts';
 import { expect, ROLES, test, type MockApi } from './fixtures/mockApi.ts';
 import type { MockContent } from './fixtures/mockContent.ts';
 
@@ -676,4 +676,305 @@ for (const { name, open } of DOCUMENT_SURFACES) {
       });
     }
   }
+}
+
+test('keyboard walk on the list: toolbar, header checkbox, sort buttons, rows, pagination in DOM order (AC-37)', async ({
+  page,
+  mockApi,
+  mockContent,
+}) => {
+  seedDocuments(mockApi, mockContent);
+  for (let n = 4; n <= 25; n += 1) mockContent.addDocument('blog', blogPost(n));
+  await page.setViewportSize({ width: 1280, height: 812 });
+  await page.goto(BLOG_LIST);
+  await expect(page.getByText('Showing 1–20 of 25')).toBeVisible();
+
+  const stops = await walkTabOrder(page, 300);
+  const inMain = stops.filter((s) => s.inMain).map((s) => s.name);
+
+  expect(stops.filter((s) => !s.visibleFocus)).toEqual([]);
+  const order = [
+    'Create entry',
+    'Search entries',
+    'Filters',
+    'Columns',
+    'Select all entries on this page',
+    'Title',
+    'Views',
+    'Featured',
+    'Updated',
+    'Select Post 25',
+    'Post 25',
+    'Actions for Post 25',
+    'Select Post 6',
+    'Post 6',
+    'Actions for Post 6',
+    'Next page',
+  ];
+  expect(inMain.filter((n) => order.includes(n))).toEqual(order);
+  // Tab visited every focusable control in main, in DOM order.
+  const visited = await page.evaluate<(string | null)[]>(
+    `[...document.querySelectorAll('main *')]
+      .filter((el) => el.tabIndex >= 0 && !el.disabled && el.checkVisibility())
+      .map((el) => el.dataset.tabWalk ?? null)`,
+  );
+  expect(visited).not.toContain(null);
+  const indexes = visited.map(Number);
+  expect(indexes).toEqual([...indexes].sort((a, b) => a - b));
+});
+
+/** Each Phase 5 dialog, opened from the keyboard: trap, Escape, and focus back on the trigger. */
+const DOCUMENT_TRAPS: {
+  name: string;
+  width?: number;
+  setup: (page: Page) => Promise<Locator>;
+  dialog: (page: Page) => Locator;
+}[] = [
+  {
+    name: 'the column chooser',
+    setup: async (page) => {
+      await openBlogList(page);
+      return page.getByRole('button', { name: 'Columns' });
+    },
+    dialog: (page) => page.getByRole('dialog', { name: 'Choose columns' }),
+  },
+  {
+    name: 'the bulk delete dialog',
+    setup: async (page) => {
+      await openBlogList(page);
+      await page.getByRole('checkbox', { name: 'Select Post 1' }).check();
+      return page
+        .getByRole('region', { name: 'Bulk actions' })
+        .getByRole('button', { name: 'Delete selected' });
+    },
+    dialog: (page) => page.getByRole('alertdialog', { name: 'Delete 1 entry?' }),
+  },
+  {
+    name: 'the media picker',
+    setup: async (page) => {
+      await openShowcaseCreate(page);
+      return page
+        .getByRole('group', { name: 'Cover image', exact: true })
+        .getByRole('button', { name: 'Choose Cover image' });
+    },
+    dialog: (page) => page.getByRole('dialog', { name: 'Choose cover image' }),
+  },
+  {
+    name: 'the detail Delete confirmation',
+    setup: async (page) => {
+      await page.goto(`${BLOG_LIST}/blog-1`);
+      await expect(mainOf(page).getByRole('heading', { level: 1, name: 'Post 1' })).toBeVisible();
+      return mainOf(page).getByRole('button', { name: 'Delete', exact: true });
+    },
+    dialog: (page) => page.getByRole('alertdialog', { name: 'Delete "Post 1"?' }),
+  },
+];
+
+for (const { name, setup, dialog } of DOCUMENT_TRAPS) {
+  test(`keyboard: ${name} traps focus, closes on Escape and returns focus to the trigger (AC-37)`, async ({
+    page,
+    mockApi,
+    mockContent,
+  }) => {
+    seedDocuments(mockApi, mockContent);
+    await page.setViewportSize({ width: 1280, height: 812 });
+    const trigger = await setup(page);
+
+    await trigger.focus();
+    await page.keyboard.press('Enter');
+    const modal = dialog(page);
+    await expect(modal).toBeVisible();
+    await expect(modal).toHaveAttribute('aria-modal', 'true');
+
+    await expectFocusTrapped(page, modal);
+
+    await page.keyboard.press('Escape');
+    await expect(modal).toBeHidden();
+    await expect(trigger).toBeFocused();
+  });
+}
+
+test('keyboard: the date picker takes focus, closes on Escape and returns focus to its button (AC-37)', async ({
+  page,
+  mockApi,
+  mockContent,
+}) => {
+  seedDocuments(mockApi, mockContent);
+  await page.goto(`${BLOG_LIST}?filters[createdAt][$gte]=2026-02-02T00:00:00.000Z`);
+  await page.getByRole('button', { name: /^Filters/ }).click();
+  const value = page
+    .getByRole('region', { name: 'Filters' })
+    .getByRole('group', { name: 'Filter 1' })
+    .getByRole('button', { name: 'Value' });
+
+  await value.focus();
+  await page.keyboard.press('Enter');
+  const calendar = page.getByRole('dialog', { name: 'Choose a date' });
+  await expect(calendar).toBeVisible();
+  await expect(calendar.locator(':focus')).toHaveCount(1);
+  // Tab moves between the calendar's own controls and stays inside it.
+  for (let i = 0; i < 4; i += 1) {
+    await page.keyboard.press('Tab');
+    await expect(calendar.locator(':focus'), `Tab #${i + 1} left the calendar`).toHaveCount(1);
+  }
+
+  await page.keyboard.press('Escape');
+  await expect(calendar).toBeHidden();
+  await expect(value).toBeFocused();
+});
+
+test('keyboard: the unsaved-changes dialog traps focus, and Escape stays and returns focus to the link (AC-37)', async ({
+  page,
+  mockApi,
+  mockContent,
+}) => {
+  seedDocuments(mockApi, mockContent);
+  await page.setViewportSize({ width: 1280, height: 812 });
+  await page.goto(`${BLOG_LIST}/blog-1`);
+  await expect(mainOf(page).getByRole('heading', { level: 1, name: 'Post 1' })).toBeVisible();
+  await page.getByLabel('Title', { exact: true }).fill('Post 1 edited');
+  const link = page.getByRole('navigation', { name: 'Breadcrumb' }).getByRole('link', {
+    name: 'Blog post',
+  });
+
+  await link.focus();
+  await page.keyboard.press('Enter');
+  const modal = page.getByRole('alertdialog', { name: 'Discard unsaved changes?' });
+  await expect(modal).toBeVisible();
+  await expectFocusTrapped(page, modal);
+
+  await page.keyboard.press('Escape');
+  await expect(modal).toBeHidden();
+  await expect(page).toHaveURL(`${BLOG_LIST}/blog-1`);
+  await expect(link).toBeFocused();
+});
+
+test('keyboard: a row Delete opened from the Actions menu returns focus to the menu button on Escape (AC-37)', async ({
+  page,
+  mockApi,
+  mockContent,
+}) => {
+  seedDocuments(mockApi, mockContent);
+  await openBlogList(page);
+  const actions = entries(page).getByRole('button', { name: 'Actions for Post 1' });
+
+  await actions.focus();
+  await page.keyboard.press('Enter');
+  await page.getByRole('menuitem', { name: 'Delete' }).focus();
+  await page.keyboard.press('Enter');
+  const modal = page.getByRole('alertdialog', { name: 'Delete "Post 1"?' });
+  await expect(modal).toBeVisible();
+  await expectFocusTrapped(page, modal);
+
+  await page.keyboard.press('Escape');
+  await expect(modal).toBeHidden();
+  await expect(actions).toBeFocused();
+});
+
+test('keyboard: after a row delete, focus moves to the entries region, not the page body (AC-37)', async ({
+  page,
+  mockApi,
+  mockContent,
+}) => {
+  seedDocuments(mockApi, mockContent);
+  await openBlogList(page);
+
+  await entries(page).getByRole('button', { name: 'Actions for Post 1' }).click();
+  await page.getByRole('menuitem', { name: 'Delete' }).click();
+  await page
+    .getByRole('alertdialog', { name: 'Delete "Post 1"?' })
+    .getByRole('button', { name: 'Delete entry' })
+    .click();
+
+  await expect(entries(page).getByRole('row')).toHaveCount(3);
+  await expect(page.getByRole('region', { name: 'Blog post entries' })).toBeFocused();
+});
+
+test('keyboard: after a bulk delete removes every selected row, focus moves to the entries region (AC-37)', async ({
+  page,
+  mockApi,
+  mockContent,
+}) => {
+  seedDocuments(mockApi, mockContent);
+  await openBlogList(page);
+  await page.getByRole('checkbox', { name: 'Select Post 1' }).check();
+  await page.getByRole('checkbox', { name: 'Select Post 2' }).check();
+
+  await page
+    .getByRole('region', { name: 'Bulk actions' })
+    .getByRole('button', { name: 'Delete selected' })
+    .click();
+  await page
+    .getByRole('alertdialog', { name: 'Delete 2 entries?' })
+    .getByRole('button', { name: 'Delete entries' })
+    .click();
+
+  await expect(entries(page).getByRole('row')).toHaveCount(2);
+  await expect(page.getByRole('region', { name: 'Bulk actions' })).toHaveCount(0);
+  await expect(page.getByRole('region', { name: 'Blog post entries' })).toBeFocused();
+});
+
+test('keyboard: deleting the last entry moves focus to the list heading (AC-37)', async ({
+  page,
+  mockApi,
+  mockContent,
+}) => {
+  seedDocuments(mockApi, mockContent);
+  await openBlogList(page);
+  for (const label of ['Post 1', 'Post 2', 'Post 3']) {
+    await page.getByRole('checkbox', { name: `Select ${label}` }).check();
+  }
+
+  await page
+    .getByRole('region', { name: 'Bulk actions' })
+    .getByRole('button', { name: 'Delete selected' })
+    .click();
+  await page
+    .getByRole('alertdialog', { name: 'Delete 3 entries?' })
+    .getByRole('button', { name: 'Delete entries' })
+    .click();
+
+  await expect(mainOf(page).getByText('No entries yet.')).toBeVisible();
+  await expect(mainOf(page).getByRole('heading', { level: 1, name: 'Blog post' })).toBeFocused();
+});
+
+test('keyboard: at 375px a Delete opened from "More actions" returns focus to that button (AC-37)', async ({
+  page,
+  mockApi,
+  mockContent,
+}) => {
+  seedDocuments(mockApi, mockContent);
+  await page.setViewportSize({ width: 375, height: 740 });
+  await page.goto(`${BLOG_LIST}/blog-1`);
+  await expect(mainOf(page).getByRole('heading', { level: 1, name: 'Post 1' })).toBeVisible();
+  const more = mainOf(page).getByRole('button', { name: 'More actions' });
+
+  await more.focus();
+  await page.keyboard.press('Enter');
+  await page.getByRole('menuitem', { name: 'Delete' }).focus();
+  await page.keyboard.press('Enter');
+  const modal = page.getByRole('alertdialog', { name: 'Delete "Post 1"?' });
+  await expect(modal).toBeVisible();
+
+  await page.keyboard.press('Escape');
+  await expect(modal).toBeHidden();
+  await expect(more).toBeFocused();
+});
+
+for (const { name, open } of DOCUMENT_SURFACES) {
+  test(`at 375px ${name} does not scroll the page sideways (AC-38)`, async ({
+    page,
+    mockApi,
+    mockContent,
+  }) => {
+    seedDocuments(mockApi, mockContent);
+    await prepare(page, 'light', 375);
+
+    await open(page);
+
+    const overflow = await page.evaluate<number>(
+      'document.documentElement.scrollWidth - document.documentElement.clientWidth',
+    );
+    expect(overflow).toBeLessThanOrEqual(0);
+  });
 }
