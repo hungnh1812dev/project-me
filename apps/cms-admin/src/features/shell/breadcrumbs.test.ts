@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
-import { buildBreadcrumbs, contentTypeSlugOf, type Crumb } from './breadcrumbs';
+import {
+  buildBreadcrumbs,
+  contentDocumentIdOf,
+  contentTypeSlugOf,
+  NEW_ENTRY,
+  type Crumb,
+} from './breadcrumbs';
 
 const HOME: Crumb = { label: 'Home', to: '/admin' };
 const CONTENT_TYPES: Crumb = { label: 'Content types', to: '/admin/content-types' };
@@ -22,7 +28,6 @@ describe('buildBreadcrumbs', () => {
     ['/admin/reports', [HOME, { label: 'Reports' }]],
     ['/admin/audit-log', [HOME, { label: 'Audit Log' }]],
     ['/admin/settings/unknown_page', [HOME, { label: 'Unknown Page' }]],
-    ['/admin/content-types/article/extra', [HOME, CONTENT_TYPES, { label: 'article' }]],
   ])('%s', (pathname, trail) => {
     expect(buildBreadcrumbs(pathname)).toEqual(trail);
   });
@@ -55,11 +60,88 @@ describe('buildBreadcrumbs', () => {
   });
 });
 
+describe('buildBreadcrumbs for entries (AC-39)', () => {
+  const ARTICLE: Crumb = { label: 'article', to: '/admin/content-types/article' };
+
+  it('adds "New entry" below the content type on /new', () => {
+    expect(buildBreadcrumbs('/admin/content-types/article/new')).toEqual([
+      HOME,
+      CONTENT_TYPES,
+      ARTICLE,
+      { label: 'New entry' },
+    ]);
+    expect(NEW_ENTRY).toBe('New entry');
+  });
+
+  it('links the content type by name once it is known', () => {
+    expect(
+      buildBreadcrumbs('/admin/content-types/article/new', { contentTypeName: 'Article' }).at(2),
+    ).toEqual({ label: 'Article', to: '/admin/content-types/article' });
+  });
+
+  it('shows the entry label on a detail page', () => {
+    expect(
+      buildBreadcrumbs('/admin/content-types/article/doc-1', {
+        contentTypeName: 'Article',
+        entryLabel: 'Hello world',
+      }),
+    ).toEqual([
+      HOME,
+      CONTENT_TYPES,
+      { label: 'Article', to: '/admin/content-types/article' },
+      { label: 'Hello world' },
+    ]);
+  });
+
+  it('shows the decoded documentId until the entry label is known', () => {
+    expect(buildBreadcrumbs('/admin/content-types/article/doc%201').at(-1)).toEqual({
+      label: 'doc 1',
+    });
+  });
+
+  it('encodes the slug in the content-type link', () => {
+    expect(buildBreadcrumbs('/admin/content-types/caf%C3%A9/new').at(2)).toEqual({
+      label: 'café',
+      to: '/admin/content-types/caf%C3%A9',
+    });
+  });
+
+  it('ignores the entry label on the content-type page itself', () => {
+    expect(
+      buildBreadcrumbs('/admin/content-types/article', { entryLabel: 'Hello' }).at(-1),
+    ).toEqual({ label: 'article' });
+  });
+
+  it('ignores segments below the entry', () => {
+    expect(buildBreadcrumbs('/admin/content-types/article/doc-1/extra')).toEqual([
+      HOME,
+      CONTENT_TYPES,
+      ARTICLE,
+      { label: 'doc-1' },
+    ]);
+  });
+});
+
+describe('contentDocumentIdOf', () => {
+  it.each<[string, string | null]>([
+    ['/admin/content-types/article/doc-1', 'doc-1'],
+    ['/admin/content-types/article/doc%2F1', 'doc/1'],
+    ['/admin/content-types/article/new', null],
+    ['/admin/content-types/article', null],
+    ['/admin/content-types', null],
+    ['/admin/settings/users/x', null],
+  ])('%s -> %s', (pathname, documentId) => {
+    expect(contentDocumentIdOf(pathname)).toBe(documentId);
+  });
+});
+
 describe('contentTypeSlugOf', () => {
   it.each<[string, string | null]>([
     ['/admin/content-types/article', 'article'],
     ['/admin/content-types/caf%C3%A9', 'café'],
     ['/admin/content-types/article/', 'article'],
+    ['/admin/content-types/article/new', 'article'],
+    ['/admin/content-types/article/doc-1', 'article'],
     ['/admin/content-types', null],
     ['/admin/profile', null],
     ['/admin', null],
