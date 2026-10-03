@@ -432,3 +432,96 @@ describe('UsersPage delete (AC-7, AC-10, AC-11, AC-16)', () => {
     expect(u4.requests).toHaveLength(0);
   });
 });
+
+describe('UsersPage paging (AC-21, AC-24 to AC-26)', () => {
+  /** Ada plus `count` editors named "User 01"…, so the sorted list is Ada first. */
+  function manyUsers(count: number) {
+    const others = Array.from({ length: count }, (_, i) => {
+      const n = String(i + 1).padStart(2, '0');
+      return makeUser({
+        documentId: `user-${n}`,
+        email: `user${n}@example.com`,
+        name: `User ${n}`,
+        username: `user${n}`,
+        roleId: 'role-editor',
+      });
+    });
+    return [ME, ...others];
+  }
+
+  const bodyRows = () => screen.getAllByRole('row').slice(1);
+
+  async function renderAt(route: string) {
+    const view = renderWithProviders(<UsersPage />, { auth: auth(), route });
+    await screen.findByRole('table');
+    return view;
+  }
+
+  it('shows 10 rows and the pagination under the table, and Next shows the rest', async () => {
+    mockApi(manyUsers(11));
+    const { user } = await renderAt('/');
+
+    expect(bodyRows()).toHaveLength(10);
+    const nav = screen.getByRole('navigation', { name: 'Pagination' });
+    expect(nav).toHaveTextContent('Showing 1–10 of 12');
+    expect(nav).toHaveTextContent('Page 1 of 2');
+
+    await user.click(within(nav).getByRole('button', { name: 'Next page' }));
+
+    expect(bodyRows()).toHaveLength(2);
+    expect(rowOf('user10@example.com')).toBeInTheDocument();
+    expect(nav).toHaveTextContent('Page 2 of 2');
+  });
+
+  it('opens a deep link to ?page=2, and clamps a page past the end', async () => {
+    mockApi(manyUsers(11));
+    await renderAt('/?page=9');
+
+    expect(screen.getByRole('navigation', { name: 'Pagination' })).toHaveTextContent('Page 2 of 2');
+    expect(bodyRows()).toHaveLength(2);
+  });
+
+  it('goes back to page 1 when the search changes, and the count announces every match', async () => {
+    mockApi(manyUsers(11));
+    const { user } = await renderAt('/?page=2');
+
+    await user.type(screen.getByRole('searchbox', { name: 'Search users' }), 'user');
+
+    const nav = screen.getByRole('navigation', { name: 'Pagination' });
+    await waitFor(() => expect(nav).toHaveTextContent('Page 1 of 2'));
+    expect(bodyRows()).toHaveLength(10);
+    expect(screen.getByText('11 users', { exact: true })).toBeInTheDocument();
+  });
+
+  it('hides the pagination while loading and when nothing matches', async () => {
+    mockApi(manyUsers(11));
+    const { user } = renderWithProviders(<UsersPage />, { auth: auth() });
+    expect(screen.queryByRole('navigation', { name: 'Pagination' })).not.toBeInTheDocument();
+    await screen.findByRole('table');
+
+    await user.type(screen.getByRole('searchbox', { name: 'Search users' }), 'nobody');
+
+    expect(screen.queryByRole('navigation', { name: 'Pagination' })).not.toBeInTheDocument();
+  });
+
+  it('moves to the new last page when a delete empties the current one', async () => {
+    const { store } = mockApi(manyUsers(10));
+    server.use(
+      deleteUserHandler(({ params }) => {
+        store.users = store.users.filter((u) => u.documentId !== params.id);
+        return new HttpResponse(null, { status: 204 });
+      }).handler,
+    );
+    const { user } = await renderAt('/?page=2');
+    expect(bodyRows()).toHaveLength(1);
+
+    await user.click(screen.getByRole('button', { name: 'Delete user10@example.com' }));
+    const dialog = await screen.findByRole('alertdialog');
+    await user.click(within(dialog).getByRole('button', { name: 'Delete user' }));
+
+    const nav = screen.getByRole('navigation', { name: 'Pagination' });
+    await waitFor(() => expect(nav).toHaveTextContent('Page 1 of 1'));
+    expect(bodyRows()).toHaveLength(10);
+    expect(screen.getByText('User user10@example.com deleted.')).toBeInTheDocument();
+  });
+});

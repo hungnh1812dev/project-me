@@ -19,8 +19,12 @@ function seed(mockApi: MockApi, role: Role = ROLES.superAdmin) {
   mockApi.signInAs(ADA);
 }
 
+/**
+ * Opens the list with 50 rows per page, so the whole seeded catalog (19 rows) is on one page. The
+ * paging itself is covered by the Phase 6 tests below.
+ */
 async function openPermissions(page: Page) {
-  await page.goto('/admin/settings/permissions');
+  await page.goto('/admin/settings/permissions?size=50');
   await expect(page.getByRole('heading', { level: 1, name: 'Permissions' })).toBeVisible();
   await expect(page.getByRole('table', { name: 'role permissions' })).toBeVisible();
 }
@@ -218,4 +222,76 @@ test('at 375px the page does not scroll sideways', async ({ page, mockApi }) => 
   const region = page.getByRole('region', { name: 'document permissions table' });
   await region.focus();
   await expect(region).toBeFocused();
+});
+
+const PERMISSIONS_URL = '/admin/settings/permissions';
+
+test('permissions page by rows: a split group keeps its full count; next, Back, size, deep link, clamp and search reset (Phase 6 AC-22, AC-24, AC-25)', async ({
+  page,
+  mockApi,
+}) => {
+  seed(mockApi);
+  // 20 rows: the seven document rows split 6 + 1 across pages 1 and 2.
+  mockApi.settings.addPermission(catalogPermission('document:read:article'));
+  await page.goto(PERMISSIONS_URL);
+  const pagination = page.getByRole('navigation', { name: 'Pagination' });
+
+  await expect(pagination.getByText('Showing 1–10 of 20')).toBeVisible();
+  await expect(page.locator('summary')).toHaveText([
+    'api_token2 permissions',
+    'article1 permission',
+    'content_type1 permission',
+    'document7 permissions',
+  ]);
+  await expect(
+    page.getByRole('table', { name: 'document permissions' }).getByRole('row'),
+  ).toHaveCount(7); // header + 6
+
+  await pagination.getByRole('button', { name: 'Next page' }).click();
+  await expect(page).toHaveURL(`${PERMISSIONS_URL}?page=2`);
+  await expect(page.locator('summary')).toHaveText([
+    'document7 permissions',
+    'media2 permissions',
+    'permission2 permissions',
+    'role2 permissions',
+    'user3 permissions',
+  ]);
+  await expect(row(page, 'document:update')).toBeVisible();
+  await page.goBack();
+  await expect(page).toHaveURL(PERMISSIONS_URL);
+  await expect(row(page, 'api_token:read')).toBeVisible();
+
+  const sizeSelect = pagination.getByRole('combobox', { name: 'Rows per page' });
+  await sizeSelect.click();
+  await page.getByRole('option', { name: '20', exact: true }).click();
+  await expect(page).toHaveURL(`${PERMISSIONS_URL}?size=20`);
+  await expect(pagination.getByText('Showing 1–20 of 20')).toBeVisible();
+
+  await page.goto(`${PERMISSIONS_URL}?page=4`);
+  await expect(page).toHaveURL(`${PERMISSIONS_URL}?page=2`);
+  await expect(pagination.getByText('Showing 11–20 of 20')).toBeVisible();
+
+  await page.getByRole('searchbox', { name: 'Search permissions' }).fill('document');
+  await expect(page).toHaveURL(PERMISSIONS_URL);
+  await expect(pagination.getByText('Showing 1–7 of 7')).toBeVisible();
+  await expect(page.locator('summary')).toHaveText(['document7 permissions']);
+});
+
+test('deleting the only permission on the last page moves to the new last page (Phase 6 AC-26)', async ({
+  page,
+  mockApi,
+}) => {
+  seed(mockApi);
+  mockApi.settings.addPermission(catalogPermission('document:read:article'));
+  mockApi.settings.addPermission(catalogPermission('zeta:export'));
+  await page.goto(`${PERMISSIONS_URL}?page=3`);
+  const pagination = page.getByRole('navigation', { name: 'Pagination' });
+  await expect(pagination.getByText('Showing 21–21 of 21')).toBeVisible();
+
+  await page.getByRole('button', { name: 'Delete zeta:export' }).click();
+  await page.getByRole('alertdialog').getByRole('button', { name: 'Delete permission' }).click();
+
+  await expect(page).toHaveURL(`${PERMISSIONS_URL}?page=2`);
+  await expect(pagination.getByText('Showing 11–20 of 20')).toBeVisible();
+  await expect(page.getByText('Permission "zeta:export" deleted.')).toBeAttached();
 });

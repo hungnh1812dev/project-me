@@ -458,3 +458,69 @@ describe('RolesPage delete (AC-7, AC-10, AC-21)', () => {
     expect(r4.requests).toHaveLength(1);
   });
 });
+
+describe('RolesPage paging (Phase 6 AC-21, AC-24 to AC-26)', () => {
+  /** `count` roles "Role 01"… with levels count..1, so the list order is Role 01 first. */
+  const manyRoles = (count: number) =>
+    Array.from({ length: count }, (_, i) => {
+      const n = String(i + 1).padStart(2, '0');
+      return makeRole({
+        documentId: `role-${n}`,
+        name: `Role ${n}`,
+        slug: `role_${n}`,
+        level: count - i,
+        permissions: ['role:read'],
+      });
+    });
+
+  async function renderAt(route: string) {
+    const view = renderWithProviders(<RolesPage />, { auth: auth(), route });
+    await screen.findByRole('table', { name: 'Roles' });
+    return view;
+  }
+
+  it('shows 10 roles, and an expanded permission row does not count as a row', async () => {
+    mockApi(manyRoles(12));
+    const { user } = await renderAt('/');
+
+    expect(namesInOrder()).toHaveLength(10);
+    await user.click(screen.getByRole('button', { name: 'Role 01: 1 permission' }));
+    expect(screen.getByRole('region', { name: 'Role 01 permissions' })).toBeInTheDocument();
+    expect(namesInOrder()).toHaveLength(10);
+
+    const nav = screen.getByRole('navigation', { name: 'Pagination' });
+    await user.click(within(nav).getByRole('button', { name: 'Next page' }));
+    expect(namesInOrder()).toEqual(['Role 11', 'Role 12']);
+  });
+
+  it('goes back to page 1 when the search changes', async () => {
+    mockApi(manyRoles(12));
+    const { user } = await renderAt('/?page=2');
+    expect(namesInOrder()).toEqual(['Role 11', 'Role 12']);
+
+    await user.type(screen.getByRole('searchbox', { name: 'Search roles' }), 'role');
+
+    await waitFor(() => expect(namesInOrder()).toHaveLength(10));
+    expect(screen.getByRole('navigation', { name: 'Pagination' })).toHaveTextContent('Page 1 of 2');
+  });
+
+  it('moves to the new last page when a delete empties the current one', async () => {
+    const { store } = mockApi(manyRoles(11));
+    server.use(
+      deleteRoleHandler(({ params }) => {
+        store.roles = store.roles.filter((role) => role.documentId !== params.id);
+        return new HttpResponse(null, { status: 204 });
+      }).handler,
+    );
+    const { user } = await renderAt('/?page=2');
+    expect(namesInOrder()).toEqual(['Role 11']);
+
+    await user.click(screen.getByRole('button', { name: 'Delete Role 11' }));
+    const dialog = await screen.findByRole('alertdialog');
+    await user.click(within(dialog).getByRole('button', { name: 'Delete role' }));
+
+    expect(await screen.findByText('Role "Role 11" deleted.')).toBeInTheDocument();
+    await waitFor(() => expect(namesInOrder()).toHaveLength(10));
+    expect(screen.getByRole('navigation', { name: 'Pagination' })).toHaveTextContent('Page 1 of 1');
+  });
+});

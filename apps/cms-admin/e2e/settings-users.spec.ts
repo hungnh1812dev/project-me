@@ -210,3 +210,105 @@ test('at 375px the page does not scroll sideways; the table scrolls in its regio
   await region.focus();
   await expect(region).toBeFocused();
 });
+
+/** Adds `count` editors named "User 01"…, sorted after Ada, Jane and John. */
+function seedMany(mockApi: MockApi, count: number) {
+  for (let i = 1; i <= count; i += 1) {
+    const n = String(i).padStart(2, '0');
+    mockApi.addUser({ email: `user${n}@example.com`, name: `User ${n}`, username: `user${n}` });
+  }
+}
+
+const USERS_URL = '/admin/settings/users';
+
+test('the list pages 10 rows with the page in the URL: next, previous, Back, size, deep link and clamp (Phase 6 AC-21, AC-24)', async ({
+  page,
+  mockApi,
+}) => {
+  seed(mockApi);
+  seedMany(mockApi, 10);
+  await openUsers(page);
+  const pagination = page.getByRole('navigation', { name: 'Pagination' });
+  const rows = page.getByRole('table', { name: 'Users' }).getByRole('row');
+
+  await expect(pagination.getByText('Showing 1–10 of 13')).toBeVisible();
+  await expect(rows).toHaveCount(11); // header + 10 rows
+  await expect(page).toHaveURL(USERS_URL);
+  await expect(pagination.getByRole('button', { name: 'Previous page' })).toBeDisabled();
+
+  const next = pagination.getByRole('button', { name: 'Next page' });
+  await next.focus();
+  await page.keyboard.press('Enter');
+  await expect(page).toHaveURL(`${USERS_URL}?page=2`);
+  await expect(pagination.getByText('Showing 11–13 of 13')).toBeVisible();
+  await expect(rows).toHaveCount(4);
+  await expect(row(page, 'user10@example.com')).toBeVisible();
+  await expect(pagination.getByRole('button', { name: 'Previous page' })).toBeFocused();
+
+  await page.goBack();
+  await expect(page).toHaveURL(USERS_URL);
+  await expect(pagination.getByText('Showing 1–10 of 13')).toBeVisible();
+  await page.goForward();
+  await expect(pagination.getByText('Page 2 of 2')).toBeVisible();
+
+  await pagination.getByRole('button', { name: 'Previous page' }).click();
+  await expect(page).toHaveURL(USERS_URL);
+
+  const sizeSelect = pagination.getByRole('combobox', { name: 'Rows per page' });
+  await sizeSelect.click();
+  await page.getByRole('option', { name: '20', exact: true }).click();
+  await expect(page).toHaveURL(`${USERS_URL}?size=20`);
+  await expect(pagination.getByText('Showing 1–13 of 13')).toBeVisible();
+  await expect(sizeSelect).toBeFocused();
+
+  await page.goto(`${USERS_URL}?page=2`);
+  await expect(pagination.getByText('Showing 11–13 of 13')).toBeVisible();
+
+  await page.goto(`${USERS_URL}?page=9`);
+  await expect(page).toHaveURL(`${USERS_URL}?page=2`);
+  await expect(pagination.getByText('Page 2 of 2')).toBeVisible();
+
+  await page.goto(`${USERS_URL}?page=abc&size=7`);
+  await expect(page).toHaveURL(USERS_URL);
+  await expect(pagination.getByText('Showing 1–10 of 13')).toBeVisible();
+});
+
+test('a search resets to page 1 and the count still announces every match (Phase 6 AC-25)', async ({
+  page,
+  mockApi,
+}) => {
+  seed(mockApi);
+  seedMany(mockApi, 10);
+  await page.goto(`${USERS_URL}?page=2`);
+  const pagination = page.getByRole('navigation', { name: 'Pagination' });
+  await expect(pagination.getByText('Page 2 of 2')).toBeVisible();
+
+  await page.getByRole('searchbox', { name: 'Search users' }).fill('User 0');
+
+  await expect(page).toHaveURL(USERS_URL);
+  await expect(pagination.getByText('Showing 1–9 of 9')).toBeVisible();
+  await expect(page.getByText('9 users', { exact: true })).toBeAttached();
+
+  await page.getByRole('searchbox', { name: 'Search users' }).fill('nobody');
+  await expect(pagination).toHaveCount(0);
+});
+
+test('deleting the only row on the last page moves to the new last page (Phase 6 AC-26)', async ({
+  page,
+  mockApi,
+}) => {
+  seed(mockApi);
+  seedMany(mockApi, 8);
+  await page.goto(`${USERS_URL}?page=2`);
+  const pagination = page.getByRole('navigation', { name: 'Pagination' });
+  await expect(pagination.getByText('Showing 11–11 of 11')).toBeVisible();
+
+  await page.getByRole('button', { name: 'Delete user08@example.com' }).click();
+  await page.getByRole('alertdialog').getByRole('button', { name: 'Delete user' }).click();
+
+  await expect(page).toHaveURL(USERS_URL);
+  await expect(pagination.getByText('Showing 1–10 of 10')).toBeVisible();
+  await expect(page.getByRole('status').filter({ hasText: 'deleted' })).toHaveText(
+    'User user08@example.com deleted.',
+  );
+});
