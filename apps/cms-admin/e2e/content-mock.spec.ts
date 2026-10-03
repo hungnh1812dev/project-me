@@ -392,3 +392,17 @@ test('D1 sorts, searches, filters with every operator and rejects unknown column
   expect((await list('filters[status][$eq]=draft')).status).toBe(400);
   expect((await list('filters[featured][$gt]=true')).status).toBe(400);
 });
+
+test('a read grant scoped to one type reads that type only (AC-41)', async ({
+  page,
+  mockApi,
+  mockContent,
+}) => {
+  seedContent(mockContent);
+  const api = await signIn(page, mockApi, role(['content_type:read', 'document:read:homepage']));
+
+  // Allowed: the never-saved homepage answers 404, not 403.
+  expect((await api('GET', '/documents/single-type/homepage')).status).toBe(404);
+  expect((await api('GET', '/documents/collection-type/blog')).status).toBe(403);
+  expect((await api('GET', '/documents/collection-type/blog/blog-1')).status).toBe(403);
+});

@@ -372,3 +372,27 @@ test('at 375px the table scrolls inside its region, not the page', async ({
   );
   expect(pageScroll).toBeLessThanOrEqual(0);
 });
+
+test('the overview groups content types by kind and links each to its page (AC-41)', async ({
+  page,
+  mockApi,
+  mockContent,
+}) => {
+  seedContent(mockContent);
+  signedInAs(mockApi, ROLES.contentEditor);
+
+  await page.goto('/admin/content-types');
+
+  const single = page.getByRole('region', { name: 'Single types' });
+  const collection = page.getByRole('region', { name: 'Collection types' });
+  await expect(single.getByRole('link', { name: 'Homepage' })).toBeVisible();
+  await expect(collection.getByRole('link', { name: 'Blog post' })).toBeVisible();
+  await expect(single.getByRole('listitem')).toContainText('Single type');
+  const blog = collection.getByRole('listitem').filter({ hasText: 'Blog post' });
+  await expect(blog).toContainText('Collection type');
+  await expect(blog).toContainText('Draft & publish');
+
+  await collection.getByRole('link', { name: 'Blog post' }).click();
+  await expect(page).toHaveURL(URL);
+  await expect(page.getByRole('heading', { level: 1, name: 'Blog post' })).toBeVisible();
+});

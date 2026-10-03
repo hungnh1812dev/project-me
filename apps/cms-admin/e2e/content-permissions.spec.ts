@@ -338,3 +338,18 @@ test.describe('a server 403 shows "no access" where the action started (AC-33)',
     await expect(bar(page).getByText('2 selected')).toBeVisible();
   });
 });
+
+test('a user without content_type:read is sent to /403 and nothing is requested (AC-41)', async ({
+  page,
+  mockApi,
+  mockContent,
+}) => {
+  seedContent(mockContent);
+  signedInAs(mockApi, ROLES.editor);
+
+  await page.goto('/admin/content-types');
+
+  await expect(page).toHaveURL('/403');
+  await expect(page.getByRole('heading', { name: 'Access denied' })).toBeVisible();
+  expect(mockApi.requests.filter((r) => r.path.includes('/content-types'))).toEqual([]);
+});
