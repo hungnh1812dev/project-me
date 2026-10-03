@@ -121,12 +121,16 @@ describe('ContentTypePage (AC-32)', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent(FORBIDDEN);
   });
 
-  it('shows "Content type not found." on a 404', async () => {
+  it('shows "Content type not found." with a link to the overview on a 404', async () => {
     server.use(getContentTypeHandler(errorReply(404, 'Not found')).handler);
 
     renderPage('/admin/content-types/missing');
 
     expect(await screen.findByRole('alert')).toHaveTextContent('Content type not found.');
+    expect(screen.getByRole('link', { name: 'Back to content types' })).toHaveAttribute(
+      'href',
+      '/admin/content-types',
+    );
   });
 
   it('shows a generic alert when the content type fails otherwise', async () => {
