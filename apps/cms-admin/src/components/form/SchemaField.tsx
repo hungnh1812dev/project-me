@@ -1,8 +1,11 @@
 import { fieldKind, fieldLabel } from '@/features/content/schema';
 import type { FieldDefinition } from '@/features/content/types';
 
+import { BooleanField } from './fields/BooleanField';
+import { JsonField } from './fields/JsonField';
 import { NumberField } from './fields/NumberField';
 import { TextField } from './fields/TextField';
+import { UnsupportedField } from './fields/UnsupportedField';
 
 export interface SchemaFieldProps {
   field: FieldDefinition;
@@ -23,9 +26,14 @@ export const SchemaField: React.FC<SchemaFieldProps> = ({ field, name, className
       return <TextField label={label} name={name} multiline className={className} />;
     case 'number':
       return <NumberField field={field} label={label} name={name} className={className} />;
+    case 'boolean':
+      return <BooleanField label={label} name={name} className={className} />;
+    case 'json':
+      return <JsonField field={field} label={label} name={name} className={className} />;
     default:
-      // The value stays in the form state and is sent back unchanged.
-      return null;
+      // Unknown types, plus media and components until their fields land (tasks 5.3 and 5.4): a
+      // read-only preview whose value is sent back unchanged.
+      return <UnsupportedField label={label} name={name} type={field.type} className={className} />;
   }
 };
 SchemaField.displayName = 'SchemaField';
