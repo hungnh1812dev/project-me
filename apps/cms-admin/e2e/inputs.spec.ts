@@ -186,3 +186,41 @@ test('button classes from @repo/ui reach the app stylesheet', async ({ page }) =
   const icon = page.getByRole('button', { name: 'Add item' });
   await expect(icon).toHaveCSS('width', '36px'); // `lg:size-9` at the 1280px desktop viewport
 });
+
+test('the Button roles section shows action, normal and danger in every state (AC-8)', async ({
+  page,
+}) => {
+  const roles = page.getByRole('region', { name: 'Button roles' });
+  await expect(roles).toBeVisible();
+
+  for (const role of ['Action', 'Normal', 'Danger']) {
+    const idle = roles.getByRole('button', { name: role, exact: true });
+    await expect(idle).toBeEnabled();
+    await expect(
+      roles.getByRole('button', { name: `${role} disabled`, exact: true }),
+    ).toBeDisabled();
+    const busy = roles.getByRole('button', { name: `${role} loading`, exact: true });
+    await expect(busy).toHaveAttribute('aria-busy', 'true');
+    await expect(busy).toHaveAttribute('aria-disabled', 'true');
+
+    // Hover changes the fill and keyboard focus draws the ring outline.
+    const before = await idle.evaluate(
+      (el) => el.ownerDocument.defaultView!.getComputedStyle(el).backgroundColor,
+    );
+    await idle.hover();
+    await expect(idle).not.toHaveCSS('background-color', before);
+    await idle.focus();
+    await expect(idle).toHaveCSS('outline-style', 'solid');
+  }
+
+  // Action is the gold fill with the primary-ink border, Danger the destructive fill.
+  const action = roles.getByRole('button', { name: 'Action', exact: true });
+  await expect(action).not.toHaveCSS('border-top-color', 'rgba(0, 0, 0, 0)');
+  const danger = roles.getByRole('button', { name: 'Danger', exact: true });
+  await expect(danger).not.toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
+});
+
+test('the Badge section shows the destructive badge (AC-9)', async ({ page }) => {
+  const badges = page.getByRole('region', { name: 'Badge' });
+  await expect(badges.getByText('destructive', { exact: true })).toBeVisible();
+});

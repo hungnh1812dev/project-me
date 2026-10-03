@@ -51,7 +51,14 @@ import { cn } from '@repo/ui/lib/cn';
 
 const VARIANTS = ['default', 'secondary', 'outline', 'ghost', 'destructive', 'link'] as const;
 const SIZES = ['sm', 'default', 'lg'] as const;
-const BADGE_VARIANTS = ['default', 'secondary', 'outline', 'highlight'] as const;
+const BADGE_VARIANTS = ['default', 'secondary', 'outline', 'highlight', 'destructive'] as const;
+
+/** The three button roles (AC-8): Action is the gold fill, Normal the outline, Danger destructive. */
+const BUTTON_ROLES = [
+  { name: 'Action', variant: 'default' },
+  { name: 'Normal', variant: 'outline' },
+  { name: 'Danger', variant: 'destructive' },
+] as const;
 
 /** The semantic colour pairs, each as a token-class swatch (AC-14). Literal classes for Tailwind. */
 const SWATCHES = [
@@ -182,6 +189,27 @@ const UiKitPage: React.FC = () => (
           Link as button
         </Button>
       </div>
+    </section>
+
+    <section aria-labelledby="ui-kit-button-roles" className="flex flex-col gap-4">
+      <h2 id="ui-kit-button-roles" className="text-lg font-semibold">
+        Button roles
+      </h2>
+      <p className="text-muted-foreground">
+        Action for the one main step, Normal for everything else, Danger for removing things. Hover
+        or Tab to a button to see its hover and focus states.
+      </p>
+      {BUTTON_ROLES.map(({ name, variant }) => (
+        <div key={name} className="flex flex-wrap items-center gap-3">
+          <Button variant={variant}>{name}</Button>
+          <Button variant={variant} disabled>
+            {name} disabled
+          </Button>
+          <Button variant={variant} loading>
+            {name} loading
+          </Button>
+        </div>
+      ))}
     </section>
 
     <Section title="Colour">
