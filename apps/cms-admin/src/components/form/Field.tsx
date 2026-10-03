@@ -1,7 +1,8 @@
 import { cloneElement, useId } from 'react';
 
+import { cn } from '@repo/ui/lib/cn';
+
 import { Label } from '@/components/ui/label';
-import { cn } from '@/utils/cn';
 
 /** The props `Field` sets on its control. Any input primitive in this folder accepts them. */
 export interface FieldControlProps {

@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { CheckIcon, CopyIcon } from 'lucide-react';
 
+import { Button } from '@repo/ui/components/button';
+
 import { Field } from '@/components/form/Field';
 import {
   AlertDialog,
@@ -10,7 +12,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
 export interface SecretRevealProps {

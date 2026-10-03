@@ -1,9 +1,10 @@
 import { useRef, useState } from 'react';
 import { InfoIcon } from 'lucide-react';
 
+import { Button } from '@repo/ui/components/button';
+
 import { Field } from '@/components/form/Field';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogClose,

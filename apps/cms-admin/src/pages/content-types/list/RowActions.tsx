@@ -2,8 +2,9 @@ import { useRef, useState } from 'react';
 import { CopyIcon, EllipsisIcon, PencilIcon, SendIcon, Trash2Icon, UndoIcon } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
+import { Button } from '@repo/ui/components/button';
+
 import { GatedMenuItem } from '@/components/form/GatedMenuItem';
-import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,

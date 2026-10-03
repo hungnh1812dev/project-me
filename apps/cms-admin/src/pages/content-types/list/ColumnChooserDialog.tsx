@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { ArrowDownIcon, ArrowUpIcon } from 'lucide-react';
 
-import { Button } from '@/components/ui/button';
+import { Button } from '@repo/ui/components/button';
+
 import {
   Dialog,
   DialogClose,

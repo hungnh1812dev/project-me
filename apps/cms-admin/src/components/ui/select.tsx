@@ -1,8 +1,8 @@
 import { Select as SelectPrimitive } from '@base-ui/react/select';
 import { CheckIcon, ChevronDownIcon } from 'lucide-react';
 
-import { controlClasses } from '@/components/ui/variants';
-import { cn } from '@/utils/cn';
+import { controlClasses } from '@repo/ui/components/variants';
+import { cn } from '@repo/ui/lib/cn';
 
 // Vendored from shadcn/ui (base-nova) and adapted: arrow components, semantic tokens and 44px
 // touch targets below `lg`. Put `SelectTrigger` inside a `Field` so it gets the label and the

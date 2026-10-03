@@ -1,7 +1,7 @@
 import { useId, useState } from 'react';
 
-import { controlClasses } from '@/components/ui/variants';
-import { cn } from '@/utils/cn';
+import { controlClasses } from '@repo/ui/components/variants';
+import { cn } from '@repo/ui/lib/cn';
 
 type TextareaProps = React.ComponentProps<'textarea'>;
 

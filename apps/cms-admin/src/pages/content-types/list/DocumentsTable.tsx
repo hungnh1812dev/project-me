@@ -2,6 +2,8 @@ import { useEffect, useId, useRef } from 'react';
 import { ArrowDownIcon, ArrowUpIcon, ChevronsUpDownIcon } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
+import { cn } from '@repo/ui/lib/cn';
+
 import { TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import {
   cellValue,
@@ -18,7 +20,6 @@ import type {
   ListedDocumentItem,
   SortDir,
 } from '@/features/content/types';
-import { cn } from '@/utils/cn';
 
 import { StatusBadge } from '../editor/EditorHeader';
 

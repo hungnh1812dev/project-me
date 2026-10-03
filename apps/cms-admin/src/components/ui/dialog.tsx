@@ -1,8 +1,8 @@
 import { Dialog as DialogPrimitive } from '@base-ui/react/dialog';
 import { XIcon } from 'lucide-react';
 
-import { Button } from '@/components/ui/button';
-import { cn } from '@/utils/cn';
+import { Button } from '@repo/ui/components/button';
+import { cn } from '@repo/ui/lib/cn';
 
 // Vendored from shadcn/ui (base-nova) and adapted: arrow components, semantic tokens, 44px touch
 // targets below `lg`, and `aria-modal="true"` on the popup (Base UI does not set it).

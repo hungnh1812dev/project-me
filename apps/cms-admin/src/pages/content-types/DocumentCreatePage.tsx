@@ -1,10 +1,11 @@
 import { useCallback, useState } from 'react';
 import { Link, Navigate, useLocation, useNavigate, useParams } from 'react-router-dom';
 
+import { Button } from '@repo/ui/components/button';
+
 import { GatedButton } from '@/components/form/GatedButton';
 import { SchemaForm } from '@/components/form/SchemaForm';
 import { UnsavedChangesDialog } from '@/components/form/UnsavedChangesDialog';
-import { Button } from '@/components/ui/button';
 import type { ForbiddenState } from '@/features/auth/components/RequireAccess';
 import { useCreateDocument } from '@/features/content/hooks/useCollectionMutations';
 import { useContentTypeAccess } from '@/features/content/hooks/useContentTypeAccess';

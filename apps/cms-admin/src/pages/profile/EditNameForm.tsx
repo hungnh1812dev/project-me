@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 
+import { Button } from '@repo/ui/components/button';
+
 import { Field } from '@/components/form/Field';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useUpdateProfile } from '@/features/settings/hooks/useUpdateProfile';
 import { validateProfileName } from '@/features/settings/validation';

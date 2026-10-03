@@ -1,7 +1,8 @@
 import { AlertDialog as AlertDialogPrimitive } from '@base-ui/react/alert-dialog';
 
+import { cn } from '@repo/ui/lib/cn';
+
 import { overlayClasses, popupClasses } from '@/components/ui/dialog';
-import { cn } from '@/utils/cn';
 
 // Vendored from shadcn/ui (base-nova) and adapted like `dialog`. The popup has
 // `role="alertdialog"` and `aria-modal="true"`; it does not close on an outside click.

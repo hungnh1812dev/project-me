@@ -1,6 +1,6 @@
 import { Popover as PopoverPrimitive } from '@base-ui/react/popover';
 
-import { cn } from '@/utils/cn';
+import { cn } from '@repo/ui/lib/cn';
 
 // Vendored from shadcn/ui (base-nova) and adapted: arrow components and semantic tokens. Base UI
 // positions the popup through CSSOM only (no `style` attribute), so it renders under the CSP's

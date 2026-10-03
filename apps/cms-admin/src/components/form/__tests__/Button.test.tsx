@@ -3,8 +3,8 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 
-import { Button } from '@/components/ui/button';
-import { buttonVariants } from '@/components/ui/variants';
+import { Button } from '@repo/ui/components/button';
+import { buttonVariants } from '@repo/ui/components/variants';
 
 describe('Button', () => {
   it('defaults type to "button" so it never submits a form by accident', () => {

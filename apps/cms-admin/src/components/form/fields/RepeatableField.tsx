@@ -2,12 +2,13 @@ import { useEffect, useRef } from 'react';
 import { Plus } from 'lucide-react';
 import { useFieldArray, useFormContext, useWatch } from 'react-hook-form';
 
+import { Button } from '@repo/ui/components/button';
+import { cn } from '@repo/ui/lib/cn';
+
 import { useSchemaFormAnnounce, useSchemaFormReadOnly } from '@/components/form/schemaFormContext';
-import { Button } from '@/components/ui/button';
 import { entryHint } from '@/features/content/schema';
 import { emptyEntry } from '@/features/content/schemaForm';
 import type { FieldDefinition } from '@/features/content/types';
-import { cn } from '@/utils/cn';
 
 import { ComponentChildren } from './ComponentField';
 import { RepeatableEntry, type EntryAction } from './RepeatableEntry';

@@ -1,7 +1,7 @@
 import { useId } from 'react';
 import { ArrowDown, ArrowUp, Trash2 } from 'lucide-react';
 
-import { Button } from '@/components/ui/button';
+import { Button } from '@repo/ui/components/button';
 
 /** The entry buttons, found by `data-action` when focus moves after a change. */
 export type EntryAction = 'up' | 'down' | 'remove';

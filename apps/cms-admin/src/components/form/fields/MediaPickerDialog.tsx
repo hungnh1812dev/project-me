@@ -1,8 +1,9 @@
 import { useId, useMemo, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 
+import { Button } from '@repo/ui/components/button';
+
 import { FileDropzone } from '@/components/form/FileDropzone';
-import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogClose,

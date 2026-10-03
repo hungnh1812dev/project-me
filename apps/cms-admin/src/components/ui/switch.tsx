@@ -1,6 +1,6 @@
 import { Switch as SwitchPrimitive } from '@base-ui/react/switch';
 
-import { cn } from '@/utils/cn';
+import { cn } from '@repo/ui/lib/cn';
 
 type SwitchProps = Omit<
   SwitchPrimitive.Root.Props,

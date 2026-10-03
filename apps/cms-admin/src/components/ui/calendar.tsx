@@ -6,8 +6,8 @@ import {
   type DayButtonProps,
 } from 'react-day-picker';
 
-import { buttonVariants } from '@/components/ui/variants';
-import { cn } from '@/utils/cn';
+import { buttonVariants } from '@repo/ui/components/variants';
+import { cn } from '@repo/ui/lib/cn';
 
 // Vendored from shadcn/ui (Calendar on react-day-picker) and adapted: arrow components, semantic
 // tokens, `cn`, and 44px day and navigation targets below `lg`. No `style` props: react-day-picker

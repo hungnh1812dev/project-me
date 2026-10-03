@@ -1,8 +1,9 @@
 import { useRef, useState } from 'react';
 
+import { Button } from '@repo/ui/components/button';
+
 import { Field } from '@/components/form/Field';
 import { PermissionTree } from '@/components/form/PermissionTree';
-import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogClose,

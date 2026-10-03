@@ -1,10 +1,11 @@
 import { useState, type FormEvent } from 'react';
 import { Link, Navigate, useLocation } from 'react-router-dom';
 
+import { Button } from '@repo/ui/components/button';
+
 import { Field } from '@/components/form/Field';
 import { PasswordInput } from '@/components/form/PasswordInput';
 import { Alert } from '@/components/ui/alert';
-import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';

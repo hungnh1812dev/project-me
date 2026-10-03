@@ -1,11 +1,13 @@
+'use client';
+
 import { Button as ButtonPrimitive } from '@base-ui/react/button';
 import { mergeProps } from '@base-ui/react/merge-props';
 import { useRender } from '@base-ui/react/use-render';
 import type { VariantProps } from 'class-variance-authority';
 import { Loader2Icon } from 'lucide-react';
 
-import { buttonVariants } from '@/components/ui/variants';
-import { cn } from '@/utils/cn';
+import { cn } from '../lib/cn';
+import { buttonVariants } from './variants';
 
 type ButtonProps = Omit<ButtonPrimitive.Props, 'render' | 'className'> &
   VariantProps<typeof buttonVariants> & {
@@ -19,9 +21,13 @@ type ButtonProps = Omit<ButtonPrimitive.Props, 'render' | 'className'> &
     render?: useRender.RenderProp;
   };
 
+// Typed locally so the check compiles in every consumer: Vite and Next both replace
+// `process.env.NODE_ENV` at build time, but cms-admin's TS config has no Node types.
+declare const process: { env: { NODE_ENV?: string } };
+
 /** Dev-only guard: an icon button needs an accessible name (`aria-label` or `aria-labelledby`). */
 function warnIfUnlabelledIcon(props: ButtonProps) {
-  if (!import.meta.env.DEV || props.size !== 'icon') return;
+  if (process.env.NODE_ENV === 'production' || props.size !== 'icon') return;
   if (props['aria-label'] || props['aria-labelledby']) return;
   console.warn('Button: an icon-size button needs an aria-label (or aria-labelledby).');
 }

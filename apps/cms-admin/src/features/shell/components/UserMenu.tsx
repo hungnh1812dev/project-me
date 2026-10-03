@@ -1,6 +1,9 @@
 import { LogOutIcon, MonitorIcon, MoonIcon, SunIcon, UserIcon } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
+import { buttonVariants } from '@repo/ui/components/variants';
+import { cn } from '@repo/ui/lib/cn';
+
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,11 +15,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { buttonVariants } from '@/components/ui/variants';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { isThemeChoice, type ThemeChoice } from '@/features/theme/theme';
 import { useTheme } from '@/features/theme/useTheme';
-import { cn } from '@/utils/cn';
 
 import { getInitials } from '../initials';
 

@@ -1,4 +1,4 @@
-import { cn } from '@/utils/cn';
+import { cn } from '@repo/ui/lib/cn';
 
 const Label: React.FC<React.ComponentProps<'label'>> = ({ className, ...props }) => (
   <label

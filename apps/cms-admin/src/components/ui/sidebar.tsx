@@ -4,7 +4,9 @@ import { useRender } from '@base-ui/react/use-render';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { PanelLeftIcon } from 'lucide-react';
 
-import { Button } from '@/components/ui/button';
+import { Button } from '@repo/ui/components/button';
+import { cn } from '@repo/ui/lib/cn';
+
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import {
@@ -18,7 +20,6 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { SidebarContext, useSidebar, type SidebarContextProps } from '@/components/ui/use-sidebar';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { cn } from '@/utils/cn';
 
 const SIDEBAR_WIDTH = '16rem';
 const SIDEBAR_WIDTH_MOBILE = '18rem';

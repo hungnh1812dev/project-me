@@ -1,9 +1,11 @@
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { InfoIcon, SearchIcon } from 'lucide-react';
 
+import { Button } from '@repo/ui/components/button';
+import { cn } from '@repo/ui/lib/cn';
+
 import { Field } from '@/components/form/Field';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
@@ -19,7 +21,6 @@ import {
   type PermissionTreeNode,
 } from '@/features/settings/permissionTree';
 import type { Permission } from '@/features/settings/types';
-import { cn } from '@/utils/cn';
 
 export interface PermissionTreeProps {
   /** The legend. Defaults to "Permissions". */

@@ -1,10 +1,11 @@
 import { useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 
+import { Button } from '@repo/ui/components/button';
+
 import { Field } from '@/components/form/Field';
 import { PasswordInput } from '@/components/form/PasswordInput';
 import { Alert } from '@/components/ui/alert';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useHasUsersQuery, useRegisterMutation } from '@/core/api/AuthApi';
 import { toApiErrorData } from '@/core/api/axiosBaseQuery';

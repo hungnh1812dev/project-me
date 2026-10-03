@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { EyeIcon, EyeOffIcon } from 'lucide-react';
 
-import { Button } from '@/components/ui/button';
+import { Button } from '@repo/ui/components/button';
+
 import { Input, type InputProps } from '@/components/ui/input';
 
 export type PasswordInputProps = Omit<InputProps, 'type' | 'trailing'>;

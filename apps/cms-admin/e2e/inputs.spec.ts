@@ -176,3 +176,12 @@ test('a Select in a Field is labelled and picks an option with the keyboard', as
   await expect(select).toHaveText(/1 year/);
   await expect(select).toBeFocused();
 });
+
+test('button classes from @repo/ui reach the app stylesheet', async ({ page }) => {
+  // Classes used only inside packages/ui go missing unless globals.css adds an @source for it.
+  const destructive = page.getByRole('button', { name: 'destructive', exact: true });
+  await expect(destructive).not.toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
+
+  const icon = page.getByRole('button', { name: 'Add item' });
+  await expect(icon).toHaveCSS('width', '36px'); // `lg:size-9` at the 1280px desktop viewport
+});

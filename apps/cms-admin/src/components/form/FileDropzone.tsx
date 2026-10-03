@@ -7,9 +7,10 @@ import {
   XCircleIcon,
 } from 'lucide-react';
 
+import { cn } from '@repo/ui/lib/cn';
+
 import { GatedButton } from '@/components/form/GatedButton';
 import type { Decision } from '@/features/auth/permissions/policies';
-import { cn } from '@/utils/cn';
 
 /** One file of a batch and where it stands. */
 export interface FileStatusItem {

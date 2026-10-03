@@ -3,7 +3,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 
-import { Button } from '@/components/ui/button';
+import { Button } from '@repo/ui/components/button';
 
 import { ConfirmDialog } from './ConfirmDialog';
 

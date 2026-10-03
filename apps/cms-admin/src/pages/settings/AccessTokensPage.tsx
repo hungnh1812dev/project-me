@@ -1,10 +1,12 @@
 import { useId, useMemo, useRef, useState } from 'react';
 import { ChevronRightIcon } from 'lucide-react';
 
+import { Button } from '@repo/ui/components/button';
+import { cn } from '@repo/ui/lib/cn';
+
 import { GatedButton } from '@/components/form/GatedButton';
 import { SecretReveal } from '@/components/form/SecretReveal';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import {
   Table,
   TableBody,
@@ -23,7 +25,6 @@ import { useAccessTokens } from '@/features/settings/hooks/useAccessTokens';
 import { groupSlugsByResource } from '@/features/settings/permissionTree';
 import { filterBySearch } from '@/features/settings/search';
 import type { AccessToken } from '@/features/settings/types';
-import { cn } from '@/utils/cn';
 
 import { DeleteTokenDialog } from './access-tokens/DeleteTokenDialog';
 import { RevokeTokenDialog } from './access-tokens/RevokeTokenDialog';

@@ -1,7 +1,9 @@
 import { EllipsisVerticalIcon } from 'lucide-react';
 
+import { Button } from '@repo/ui/components/button';
+import { cn } from '@repo/ui/lib/cn';
+
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -9,7 +11,6 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { formatCell, STATUS_LABELS } from '@/features/content/columns';
 import type { DocumentStatus, UpdatedBy } from '@/features/content/types';
-import { cn } from '@/utils/cn';
 
 /** When and by whom a document was last saved. */
 export interface EditorAudit {

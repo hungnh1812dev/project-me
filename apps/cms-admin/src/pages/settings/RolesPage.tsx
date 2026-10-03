@@ -1,9 +1,11 @@
 import { useId, useMemo, useState } from 'react';
 import { ChevronRightIcon } from 'lucide-react';
 
+import { Button } from '@repo/ui/components/button';
+import { cn } from '@repo/ui/lib/cn';
+
 import { GatedButton } from '@/components/form/GatedButton';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import {
   Table,
   TableBody,
@@ -22,7 +24,6 @@ import { useAnnouncer } from '@/features/settings/components/useAnnouncer';
 import { useRoles } from '@/features/settings/hooks/useRoles';
 import { groupSlugsByResource } from '@/features/settings/permissionTree';
 import { filterBySearch } from '@/features/settings/search';
-import { cn } from '@/utils/cn';
 
 import { DeleteRoleDialog } from './roles/DeleteRoleDialog';
 import { RoleFormDialog } from './roles/RoleFormDialog';

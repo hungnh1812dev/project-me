@@ -1,6 +1,7 @@
 import { AlertCircleIcon } from 'lucide-react';
 
-import { Button } from '@/components/ui/button';
+import { Button } from '@repo/ui/components/button';
+
 import { Skeleton } from '@/components/ui/skeleton';
 import type { ApiError } from '@/core/api/apiError';
 
