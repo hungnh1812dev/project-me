@@ -4,7 +4,9 @@ import type { Locator, Page } from '@playwright/test';
 import type { Role } from '../src/features/auth/types.ts';
 import type { ContentType } from '../src/features/content/types.ts';
 import type { AccessToken, MediaAsset } from '../src/features/settings/types.ts';
+import { CONTENT_MANAGER, seedContent } from './fixtures/contentFixtures.ts';
 import { expect, ROLES, test, type MockApi } from './fixtures/mockApi.ts';
+import type { MockContent } from './fixtures/mockContent.ts';
 
 /**
  * Accessibility gates (AC-45, AC-46): axe on every listed page in both themes at desktop and
@@ -526,4 +528,152 @@ for (const { name, path, heading, trigger, dialog, close, before } of TRAPS) {
     await expect(modal).toBeHidden();
     await expect(button).toBeFocused();
   });
+}
+
+/* ------------------------------------------------------------------------------------------------
+ * Document UI (Phase 5, AC-36): every new surface, in both themes at desktop and phone width.
+ * A content manager (super admin plus `content_type:manager`) sees every control ungated.
+ * --------------------------------------------------------------------------------------------- */
+
+const BLOG_LIST = '/admin/content-types/blog';
+
+/** The Phase 5 fixtures: four types, three blog posts, a never-saved homepage, and one image. */
+function seedDocuments(mockApi: MockApi, mockContent: MockContent) {
+  seedContent(mockContent);
+  mockApi.addUser({ email: ADA, name: 'Ada Admin', role: CONTENT_MANAGER });
+  mockApi.settings.addMedia({ ...CAT });
+  mockApi.signInAs(ADA);
+}
+
+const mainOf = (page: Page) => page.getByRole('main');
+const entries = (page: Page) => page.getByRole('table', { name: 'Blog post entries' });
+
+/** Opens the blog list and waits for its rows. */
+async function openBlogList(page: Page, search = '') {
+  await page.goto(`${BLOG_LIST}${search}`);
+  await expect(entries(page).getByRole('row')).toHaveCount(4);
+}
+
+/** The create page for the field showcase, with the lazy richtext editor mounted. */
+async function openShowcaseCreate(page: Page) {
+  await page.goto('/admin/content-types/showcase/new');
+  await expect(mainOf(page).getByRole('heading', { level: 1, name: 'New entry' })).toBeVisible();
+  await expect(page.getByRole('textbox', { name: 'Body', exact: true })).toBeVisible();
+}
+
+/** Each Phase 5 surface: how to reach it, and what must be on screen before axe runs. */
+const DOCUMENT_SURFACES: { name: string; open: (page: Page) => Promise<void> }[] = [
+  {
+    name: 'the content-type overview',
+    open: async (page) => {
+      await page.goto('/admin/content-types');
+      await expect(page.getByRole('region', { name: 'Collection types' })).toBeVisible();
+    },
+  },
+  {
+    name: 'the list with rows selected and the filter panel open',
+    open: async (page) => {
+      await openBlogList(page);
+      await page.getByRole('checkbox', { name: 'Select Post 1' }).check();
+      await page.getByRole('checkbox', { name: 'Select Post 2' }).check();
+      await expect(page.getByRole('region', { name: 'Bulk actions' })).toContainText('2 selected');
+      await page.getByRole('button', { name: /^Filters/ }).click();
+      await expect(page.getByRole('region', { name: 'Filters' })).toBeVisible();
+    },
+  },
+  {
+    name: 'the open date picker',
+    open: async (page) => {
+      await page.goto(`${BLOG_LIST}?filters[createdAt][$gte]=2026-02-02T00:00:00.000Z`);
+      await expect(entries(page).getByRole('row')).toHaveCount(3);
+      await page.getByRole('button', { name: /^Filters/ }).click();
+      await page
+        .getByRole('region', { name: 'Filters' })
+        .getByRole('group', { name: 'Filter 1' })
+        .getByRole('button', { name: 'Value' })
+        .click();
+      await expect(page.getByRole('dialog', { name: 'Choose a date' })).toBeVisible();
+    },
+  },
+  {
+    name: 'the single-type editor',
+    open: async (page) => {
+      await page.goto('/admin/content-types/homepage');
+      await expect(mainOf(page).getByRole('heading', { level: 1, name: 'Homepage' })).toBeVisible();
+      await expect(page.getByText('Not saved yet')).toBeVisible();
+    },
+  },
+  { name: 'the create page with every field type', open: openShowcaseCreate },
+  {
+    name: 'the detail page',
+    open: async (page) => {
+      await page.goto(`${BLOG_LIST}/blog-2`);
+      await expect(mainOf(page).getByRole('heading', { level: 1, name: 'Post 2' })).toBeVisible();
+      await expect(page.getByRole('textbox', { name: 'Body', exact: true })).toBeVisible();
+    },
+  },
+  {
+    name: 'the media picker',
+    open: async (page) => {
+      await openShowcaseCreate(page);
+      await page
+        .getByRole('group', { name: 'Cover image', exact: true })
+        .getByRole('button', { name: 'Choose Cover image' })
+        .click();
+      const picker = page.getByRole('dialog', { name: 'Choose cover image' });
+      await expect(picker.getByRole('radio')).toHaveCount(1);
+    },
+  },
+  {
+    name: 'the column chooser',
+    open: async (page) => {
+      await openBlogList(page);
+      await page.getByRole('button', { name: 'Columns' }).click();
+      await expect(page.getByRole('dialog', { name: 'Choose columns' })).toBeVisible();
+    },
+  },
+  {
+    name: 'the bulk delete dialog',
+    open: async (page) => {
+      await openBlogList(page);
+      await page.getByRole('checkbox', { name: 'Select Post 1' }).check();
+      await page
+        .getByRole('region', { name: 'Bulk actions' })
+        .getByRole('button', { name: 'Delete selected' })
+        .click();
+      await expect(page.getByRole('alertdialog', { name: 'Delete 1 entry?' })).toBeVisible();
+    },
+  },
+  {
+    name: 'the unsaved-changes dialog',
+    open: async (page) => {
+      await openBlogList(page);
+      await entries(page).getByRole('link', { name: 'Post 1' }).click();
+      await expect(mainOf(page).getByRole('heading', { level: 1, name: 'Post 1' })).toBeVisible();
+      await page.getByLabel('Title', { exact: true }).fill('Post 1 edited');
+      await page.evaluate('history.back()');
+      await expect(
+        page.getByRole('alertdialog', { name: 'Discard unsaved changes?' }),
+      ).toBeVisible();
+    },
+  },
+];
+
+for (const { name, open } of DOCUMENT_SURFACES) {
+  for (const theme of THEMES) {
+    for (const width of WIDTHS) {
+      test(`axe: ${name} has no serious or critical violations (${theme}, ${width}px) (AC-36)`, async ({
+        page,
+        mockApi,
+        mockContent,
+      }) => {
+        seedDocuments(mockApi, mockContent);
+        await prepare(page, theme, width);
+
+        await open(page);
+
+        await expectNoBlockingViolations(page, theme);
+      });
+    }
+  }
 }
