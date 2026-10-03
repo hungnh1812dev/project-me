@@ -21,6 +21,8 @@ import {
 export interface RecordedRequest {
   method: string;
   url: URL;
+  /** The decoded pathname, e.g. `/api/v1/documents/collection-type/my type`. Read the query from `url`. */
+  path: string;
   /** Path params as MSW decoded them, e.g. `{ slug, documentId }`. */
   params: Record<string, string>;
   /** The parsed JSON body, or undefined when the request had none. */
@@ -47,6 +49,14 @@ async function readJson(request: Request): Promise<unknown> {
   return text ? (JSON.parse(text) as unknown) : undefined;
 }
 
+function decodePath(pathname: string): string {
+  try {
+    return decodeURIComponent(pathname);
+  } catch {
+    return pathname;
+  }
+}
+
 function toParams(params: Record<string, string | readonly string[] | undefined>) {
   const out: Record<string, string> = {};
   for (const [key, value] of Object.entries(params)) {
@@ -64,6 +74,7 @@ function recorder(method: Method, path: string, fallback: Reply, skipBulk = fals
       const recorded: RecordedRequest = {
         method: request.method,
         url: new URL(request.url),
+        path: decodePath(new URL(request.url).pathname),
         params: toParams(params),
         body: await readJson(request),
       };
