@@ -5,6 +5,7 @@ import { makeContentType, makeFieldSet } from '@/test/contentFixtures';
 import { buildColumnCatalog } from './columns';
 import {
   DEFAULT_LIST_STATE,
+  lastPage,
   PAGE_SIZES,
   parseListState,
   serializeListState,
@@ -227,5 +228,13 @@ describe('toListParams', () => {
       search: 'hi',
       filters: { featured: { $eq: 'true' } },
     });
+  });
+});
+
+describe('lastPage', () => {
+  it('is the number of pages, and 1 for an empty list', () => {
+    expect(lastPage(95, 20)).toBe(5);
+    expect(lastPage(100, 20)).toBe(5);
+    expect(lastPage(0, 20)).toBe(1);
   });
 });

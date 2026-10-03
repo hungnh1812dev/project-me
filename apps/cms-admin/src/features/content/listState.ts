@@ -159,6 +159,11 @@ export function serializeListState(state: ListState): string {
     .join('&');
 }
 
+/** The last 1-based page of `total` items, `size` per page. An empty list has one page. */
+export function lastPage(total: number, size: number): number {
+  return Math.max(1, Math.ceil(total / size));
+}
+
 /** The D1 list params of `state`, normalized: `start = (page - 1) * size`. */
 export function toListParams(state: ListState): ListParams {
   const filters: ListFilters = {};
