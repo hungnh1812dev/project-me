@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import { AlertCircleIcon, Columns3Icon, ListFilterIcon, PlusIcon, SearchIcon } from 'lucide-react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useLocation, useSearchParams } from 'react-router-dom';
 
 import { Field } from '@/components/form/Field';
 import { GatedButton } from '@/components/form/GatedButton';
@@ -30,6 +30,8 @@ import { DocumentsTable } from './list/DocumentsTable';
 import { FilterChips } from './list/FilterChips';
 import { FilterPanel } from './list/FilterPanel';
 import { PaginationBar } from './list/PaginationBar';
+import { RowActions } from './list/RowActions';
+import { announcementOf } from './paths';
 
 const IGNORED = 'Some filters in the link were ignored.';
 const SEARCH_DEBOUNCE_MS = 300;
@@ -69,6 +71,23 @@ const CollectionListPage: React.FC<{ type: ContentType }> = ({ type }) => {
   const access = useContentTypeAccess(type);
   const [searchParams, setSearchParams] = useSearchParams();
   const { message, announce } = useAnnouncer();
+  const location = useLocation();
+
+  // "Entry deleted.", sent by the detail page that deleted the entry.
+  const opening = announcementOf(location.state);
+  useEffect(() => {
+    if (opening) announce(opening);
+  }, [opening, announce]);
+
+  // A row action's failure shows above the table; its success is announced.
+  const [rowError, setRowError] = useState<string | null>(null);
+  const onRowResult = useCallback(
+    (text: string, error = false) => {
+      setRowError(error ? text : null);
+      if (!error) announce(text);
+    },
+    [announce],
+  );
 
   const parsed = useMemo(() => parseListState(searchParams, catalog), [searchParams, catalog]);
   const { state } = parsed;
@@ -210,6 +229,9 @@ const CollectionListPage: React.FC<{ type: ContentType }> = ({ type }) => {
           selected={selected}
           onSelectedChange={(ids) => setSelection({ key: listKey, ids })}
           busy={isPlaceholderData}
+          renderActions={(item, label) => (
+            <RowActions type={type} item={item} label={label} onResult={onRowResult} />
+          )}
         />
         <PaginationBar
           page={state.page}
@@ -283,6 +305,12 @@ const CollectionListPage: React.FC<{ type: ContentType }> = ({ type }) => {
       )}
       {!forbidden && (
         <FilterChips catalog={catalog} filters={state.filters} onRemove={removeFilter} />
+      )}
+      {rowError && (
+        <p role="alert" className="flex items-center gap-2 text-sm font-medium text-destructive">
+          <AlertCircleIcon aria-hidden="true" className="size-4 shrink-0" />
+          {rowError}
+        </p>
       )}
       {body}
       <LiveRegion message={message} />

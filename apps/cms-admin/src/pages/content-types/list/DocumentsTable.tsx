@@ -33,8 +33,8 @@ export interface DocumentsTableProps {
   onSelectedChange: (next: Set<string>) => void;
   /** While the next page loads: the old rows stay, and the table is `aria-busy`. */
   busy?: boolean;
-  /** The row actions (filled in by a later phase). */
-  renderActions?: (item: ListedDocumentItem) => React.ReactNode;
+  /** The row actions, given the row and its label (as in its link and checkbox). */
+  renderActions?: (item: ListedDocumentItem, label: string) => React.ReactNode;
 }
 
 const BOX = 'size-5 shrink-0 cursor-pointer accent-primary lg:size-4';
@@ -285,7 +285,7 @@ export const DocumentsTable: React.FC<DocumentsTableProps> = ({
                     href={column.key === labelKey ? hrefOf(item) : undefined}
                   />
                 ))}
-                <TableCell className="text-right">{renderActions?.(item)}</TableCell>
+                <TableCell className="text-right">{renderActions?.(item, label)}</TableCell>
               </TableRow>
             );
           })}

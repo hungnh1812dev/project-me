@@ -1,11 +1,16 @@
-import { screen, waitFor, within } from '@testing-library/react';
+import { act, screen, waitFor, within } from '@testing-library/react';
 import { delay, HttpResponse } from 'msw';
 import { describe, expect, it } from 'vitest';
 
 import type { ListedDocumentItem } from '@/features/content/types';
 import { makeContentType, makeListedItem, makeListResponse } from '@/test/contentFixtures';
 import { makeMeUser, makeRole } from '@/test/fixtures';
-import { errorReply, listDocumentsHandler, type Reply } from '@/test/msw/contentHandlers';
+import {
+  duplicateDocumentHandler,
+  errorReply,
+  listDocumentsHandler,
+  type Reply,
+} from '@/test/msw/contentHandlers';
 import { server } from '@/test/msw/server';
 import { renderRoutes } from '@/test/renderWithProviders';
 
@@ -370,5 +375,54 @@ describe('CollectionListPage columns (AC-25)', () => {
     expect(columns).toHaveAccessibleDescription(/content_type:manager|permission/i);
     await user.click(columns);
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+});
+
+describe('CollectionListPage row actions (AC-28)', () => {
+  it('gives each row an actions menu named after the entry', async () => {
+    server.use(listDocumentsHandler(paged(2)).handler);
+
+    renderPage();
+
+    expect(await screen.findByRole('button', { name: 'Actions for Post 1' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Actions for Post 2' })).toBeInTheDocument();
+  });
+
+  it('announces a row action and refetches the list', async () => {
+    const d1 = listDocumentsHandler(paged(1));
+    server.use(d1.handler, duplicateDocumentHandler().handler);
+    const { user } = renderPage();
+
+    await user.click(await screen.findByRole('button', { name: 'Actions for Post 1' }));
+    await user.click(await screen.findByRole('menuitem', { name: 'Duplicate' }));
+
+    expect(await screen.findByText('Copy of "Post 1" created.')).toBeInTheDocument();
+    await waitFor(() => expect(d1.requests).toHaveLength(2));
+  });
+
+  it('shows "no access" above the table when the server forbids a row action (AC-33)', async () => {
+    server.use(
+      listDocumentsHandler(paged(1)).handler,
+      duplicateDocumentHandler(errorReply(403, 'Forbidden resource')).handler,
+    );
+    const { user } = renderPage();
+
+    await user.click(await screen.findByRole('button', { name: 'Actions for Post 1' }));
+    await user.click(await screen.findByRole('menuitem', { name: 'Duplicate' }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent("You don't have access to do this.");
+    expect(screen.getByRole('table')).toBeInTheDocument();
+  });
+
+  it('announces the message it was opened with', async () => {
+    server.use(listDocumentsHandler(paged(1)).handler);
+    const { router } = renderPage();
+    await screen.findByRole('table');
+
+    await act(() =>
+      router.navigate('/admin/content-types/article', { state: { announce: 'Entry deleted.' } }),
+    );
+
+    expect(await screen.findByText('Entry deleted.')).toBeInTheDocument();
   });
 });
