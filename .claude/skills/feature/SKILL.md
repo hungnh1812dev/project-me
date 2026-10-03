@@ -1,13 +1,13 @@
 ---
 name: feature
-description: Runs the full feature workflow (Spec+Plan → Build → QC → Security → docs → cleanup) through four isolated subagents. Use when the user runs /feature <request> or asks to build a feature end to end with this workflow.
+description: Runs the full feature workflow (Spec+Plan → Build → QC → Security → Docs, with cleanup) through five isolated subagents. Use when the user runs /feature <request> or asks to build a feature end to end with this workflow.
 argument-hint: <feature request>
 disable-model-invocation: true
 ---
 
 # Feature workflow
 
-You are the orchestrator. Four subagents do the work. None of them knows about the others, and they share state only through files. Give each one a self-contained prompt: never mention the other agents or the pipeline, only inputs, files, and the expected output.
+You are the orchestrator. Five subagents do the work. None of them knows about the others, and they share state only through files. Give each one a self-contained prompt: never mention the other agents or the pipeline, only inputs, files, and the expected output.
 
 ```
 user request → feature-spec-planner: SPEC draft → [user approves] → write
@@ -15,7 +15,7 @@ user request → feature-spec-planner: SPEC draft → [user approves] → write
   → for each small phase: NEW feature-builder (BUILD <phase>) → [commit approval]
   → feature-qc ──FAIL──→ feature-builder (FIX tasks/qc-report.md) → feature-qc …
   → feature-security ──FAIL──→ feature-builder (FIX tasks/security-report.md) → feature-qc → feature-security …
-  → docs (you) → cleanup (you, after the user confirms)
+  → feature-docs (DOCS) → [user confirms] → feature-docs (CLEANUP)
 ```
 
 Handoff files: `SPEC.md`, `tasks/plan.md`, `tasks/todo.md`, `tasks/qc-report.md`, `tasks/security-report.md`, `tasks/security-audit/`.
@@ -39,9 +39,9 @@ Use **one** spec-planner session for the whole of step 1. Start it with an `Agen
 
 **Gate A: spec**
 
-1. Spawn it with `Mode: SPEC_DRAFT.` plus the feature request verbatim.
+1. Spawn it with `Mode: SPEC_DRAFT.` plus the feature request verbatim. It reads the module map, and for new or remade UI it runs the ui-ux-pro-max skills and puts the design system in the spec's `## Design` section.
 2. `NEEDS_INPUT`: ask the user the questions (AskUserQuestion). Send the answers back with `Mode: REVISE`.
-3. `DRAFT_READY`: show the user the agent's SUMMARY and the **full** `SPEC.md` draft, exactly as returned. Then ask: approve, or request changes?
+3. `DRAFT_READY`: show the user the agent's SUMMARY, MODULES, DESIGN and the **full** `SPEC.md` draft, exactly as returned. Then ask: approve, or request changes?
    - Changes: send `Mode: REVISE` with the user's feedback verbatim, and repeat step 3.
    - Approval: the reply must be unambiguous ("approve", "yes", "go"). Treat hedged replies as not approved. Then send `Mode: WRITE. APPROVED: SPEC`.
 
@@ -90,19 +90,21 @@ Prompt: `Audit the changes for SPEC.md. Base commit: <BASE>.`
 - **Maximum 3 security rounds.** After that, stop and escalate to the user.
 - Show any MEDIUM or LOW findings that remain to the user in the final summary.
 
-## 5. Docs (you)
+## 5. Docs: `feature-docs`
 
-Follow the `agent-skills:documentation-and-adrs` skill. For each affected app, create or update `apps/<app>/docs/`:
+Prompt: `Mode: DOCS. Document the changes for SPEC.md. Base commit: <BASE>. Affected apps: <apps>.`
 
-- One page per feature or area (`<feature-slug>.md`): what it does, how to use it, its API or contract, config and env vars (names only), how to test it, and any decision records worth keeping.
-- Link the page from `apps/<app>/docs/README.md` (create that file if missing).
-- Update root `docs/architecture.md` only if the cross-app architecture changed.
-- Commit as `docs(<app>): ...`. No AI attribution trailer.
+The docs ruleset lives in the agent: one entrypoint per app (`apps/<app>/docs/README.md`) that holds only the module map, and one page per module with its feature details, its files and a spec per file.
 
-## 6. Cleanup (you)
+- `NEEDS_COMMIT_APPROVAL`: handle it like a builder commit (show, ask, commit yourself with no AI attribution).
+- Note any `OBSOLETE` pages for step 6.
 
-List exactly what will be removed: `SPEC.md`, `tasks/plan.md`, `tasks/todo.md`, `tasks/qc-report.md`, `tasks/security-report.md`, and `tasks/security-audit/`. **Ask the user to confirm before deleting anything.** Then delete only those paths.
+## 6. Cleanup: `feature-docs`
+
+List exactly what will be removed: `SPEC.md`, `tasks/plan.md`, `tasks/todo.md`, `tasks/qc-report.md`, `tasks/security-report.md`, `tasks/security-audit/`, and any `OBSOLETE` docs pages from step 5. **Ask the user to confirm before deleting anything.** The user may keep some paths.
+
+On confirmation, run a **new** `feature-docs` with `Mode: CLEANUP. CONFIRMED. Delete exactly: <confirmed paths>.`
 
 ## 7. Final summary
 
-Report the commits (`git log --oneline <BASE>..HEAD`), the QC verdict, the security verdict with any remaining findings, the docs pages you touched, and anything you skipped or escalated.
+Report the commits (`git log --oneline <BASE>..HEAD`), the QC verdict, the security verdict with any remaining findings, the docs pages and entrypoints touched, and anything you skipped or escalated.
