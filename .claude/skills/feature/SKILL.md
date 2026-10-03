@@ -13,12 +13,13 @@ You are the orchestrator. Five subagents do the work. None of them knows about t
 user request → feature-spec-planner: SPEC draft → [user approves] → write
                                   → PLAN draft → [user approves] → write
   → for each small phase: NEW feature-builder (BUILD <phase>) → [commit approval]
-  → feature-qc ──FAIL──→ feature-builder (FIX tasks/qc-report.md) → feature-qc …
+  → checks (you: lint, typecheck, build, unit) ──FAIL──→ feature-builder (FIX tasks/checks.log) → checks …
+  → feature-qc (e2e + browser) ──FAIL──→ feature-builder (FIX tasks/qc-report.md) → checks → feature-qc …
   → feature-security ──FAIL──→ feature-builder (FIX tasks/security-report.md) → feature-qc → feature-security …
   → feature-docs (DOCS) → [user confirms] → feature-docs (CLEANUP)
 ```
 
-Handoff files: `SPEC.md`, `tasks/plan.md`, `tasks/todo.md`, `tasks/qc-report.md`, `tasks/security-report.md`, `tasks/security-audit/`.
+Handoff files: `SPEC.md`, `tasks/plan.md`, `tasks/todo.md`, `tasks/checks.log`, `tasks/qc-report.md`, `tasks/security-report.md`, `tasks/security-audit/`.
 
 ## 0. Preflight
 
@@ -75,11 +76,22 @@ When no phase has unchecked tasks left, go to QC.
 
 FIX rounds in steps 3 and 4 follow the same rule: a new builder per round, with the `Mode: FIX <report>` prompt, and the same commit-approval handling.
 
-## 3. QC: `feature-qc`
+## 3. QC: checks (you), then `feature-qc`
 
-Prompt: `Verify the working tree against SPEC.md. Affected apps: <apps>.`
+**3a. Static checks and unit tests: one Bash command, no agent.**
 
-- `FAIL`: run `feature-builder` with `Mode: FIX tasks/qc-report.md`, then run QC again.
+```
+pnpm turbo run lint typecheck build test --filter=<app> [--filter=<app2> …] > tasks/checks.log 2>&1; echo "EXIT $?"; tail -n 40 tasks/checks.log
+```
+
+- Non-zero exit: run a **new** `feature-builder` with `Mode: FIX tasks/checks.log`, then run 3a again. These rounds count toward the QC round limit.
+- Exit 0: go to 3b. Don't read the rest of the log.
+
+**3b. `feature-qc`** (e2e and browser smoke test only)
+
+Prompt: `Verify the working tree against SPEC.md. Affected apps: <apps>. Lint, typecheck, build and unit tests already passed.`
+
+- `FAIL`: run `feature-builder` with `Mode: FIX tasks/qc-report.md`, then run step 3 again from 3a.
 - **Maximum 3 QC rounds.** After that, stop and show the user `tasks/qc-report.md`.
 
 ## 4. Security: `feature-security`
@@ -101,7 +113,7 @@ The docs ruleset lives in the agent: one entrypoint per app (`apps/<app>/docs/RE
 
 ## 6. Cleanup: `feature-docs`
 
-List exactly what will be removed: `SPEC.md`, `tasks/plan.md`, `tasks/todo.md`, `tasks/qc-report.md`, `tasks/security-report.md`, `tasks/security-audit/`, and any `OBSOLETE` docs pages from step 5. **Ask the user to confirm before deleting anything.** The user may keep some paths.
+List exactly what will be removed: `SPEC.md`, `tasks/plan.md`, `tasks/todo.md`, `tasks/checks.log`, `tasks/qc-report.md`, `tasks/security-report.md`, `tasks/security-audit/`, and any `OBSOLETE` docs pages from step 5. **Ask the user to confirm before deleting anything.** The user may keep some paths.
 
 On confirmation, run a **new** `feature-docs` with `Mode: CLEANUP. CONFIRMED. Delete exactly: <confirmed paths>.`
 

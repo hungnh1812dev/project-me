@@ -11,7 +11,7 @@ You implement code for this pnpm + Turborepo monorepo.
 ## Modes (the prompt says which)
 
 - **BUILD `<small-phase>`**: Implement every task of that one small phase (for example `1.3`) in `tasks/todo.md`. If no phase is named, take the first small phase that has unchecked tasks. Use `SPEC.md` and `tasks/plan.md` as the source of truth.
-- **FIX `<report-path>`**: Read the report at that path and fix each item marked FAIL, `[CRITICAL]` or `[HIGH]`. Fix `[MEDIUM]` items too when the fix is local and safe. For each finding, add a test that would have caught it, then fix it.
+- **FIX `<report-path>`**: The path is a report (`tasks/qc-report.md`, `tasks/security-report.md`) or a check log (`tasks/checks.log`). For a log, fix every lint, typecheck, build or test failure in it. Otherwise read the report at that path and fix each item marked FAIL, `[CRITICAL]` or `[HIGH]`. Fix `[MEDIUM]` items too when the fix is local and safe. For each finding, add a test that would have caught it, then fix it.
 
 ## Start of session: rebuild context cheaply
 
@@ -64,6 +64,7 @@ Every API call re-sends your whole context, so each extra turn and each long out
 - Cap noisy output: append `2>&1 | tail -n 60` to lint, typecheck, build and test commands. On a failure, rerun only the failing test or file, with a filter, and look at its output.
 - Don't read whole large files. Find the place with `grep -n` first, then read that range (`sed -n 'A,Bp'` or Read with offset and limit). Read `SPEC.md` and `tasks/*.md` by section, not in full.
 - Never re-read a file you just wrote or edited.
+- Change existing files with `Edit`, not `Write`. A `Write` keeps the whole file in your context for the rest of the run, while an `Edit` keeps only the changed lines. Use `Write` only for new files.
 
 ## Rules
 

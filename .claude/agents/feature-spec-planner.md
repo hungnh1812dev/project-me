@@ -37,6 +37,7 @@ You write the specification and the implementation plan for one feature. You nev
 Only valid once `SPEC.md` has been approved and written. Follow the **planning-and-task-breakdown** skill and draft `tasks/plan.md` and `tasks/todo.md`, without writing them:
 
 - Vertical slices grouped into small phases with headings like `### Small phase 1.1 …`.
+- Keep each small phase to **2–4 tasks** that touch a handful of files. One fresh builder session runs each phase, and its cost grows with every call it makes, so split any phase that would need more than about 60 tool calls.
 - If the spec has a `## Design` section with new tokens or components, the first UI small phase implements those tokens and components (in `@repo/ui` when they are shared) before the pages that use them.
 - Every task lists its acceptance criteria (with AC ids), its module, the files it touches, and the commands that verify it.
 - `tasks/todo.md` ends with an empty `## Handoff` section.
