@@ -76,3 +76,32 @@ test('fonts are self-hosted: no request goes to a font CDN', async ({ page }) =>
   expect(external).toEqual([]);
   await expect(page.locator('body')).toHaveCSS('font-family', /Fira Sans/);
 });
+
+for (const { choice, background, foreground, primary } of [
+  {
+    choice: 'light',
+    background: 'rgb(255, 255, 255)',
+    foreground: 'rgb(2, 6, 23)',
+    primary: 'rgb(79, 70, 229)',
+  },
+  {
+    choice: 'dark',
+    background: 'rgb(2, 6, 23)',
+    foreground: 'rgb(248, 250, 252)',
+    primary: 'rgb(129, 140, 248)',
+  },
+]) {
+  test(`the shared @repo/ui theme tokens reach the page in the ${choice} theme`, async ({
+    page,
+  }) => {
+    await storeTheme(page, choice);
+
+    await page.goto('/login');
+    await expect(page.locator('#root')).not.toBeEmpty();
+
+    await expect(page.locator('body')).toHaveCSS('background-color', background);
+    await expect(page.locator('body')).toHaveCSS('color', foreground);
+    // The auth page's submit button uses the default (primary) variant.
+    await expect(page.locator('button[type="submit"]')).toHaveCSS('background-color', primary);
+  });
+}

@@ -1,5 +1,5 @@
 /**
- * The semantic colour tokens, mirrored from `globals.css` (`:root` and `.dark`).
+ * The semantic colour tokens, mirrored from `theme.css` (`:root` and `.dark`).
  * `tokens.test.ts` checks that both stay in sync and that every pair meets WCAG AA (AC-3).
  * Neutrals are Tailwind slate; the accent is indigo-600 (light) and indigo-400 (dark).
  */

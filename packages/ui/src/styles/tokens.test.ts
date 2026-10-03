@@ -1,4 +1,3 @@
-/// <reference types="node" />
 // Vitest blanks CSS imports (even `?raw`), so the stylesheet is read from disk.
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
@@ -15,12 +14,12 @@ import {
 } from './tokens';
 
 const THEMES: ThemeName[] = ['light', 'dark'];
-const globalsCss = readFileSync(resolve(process.cwd(), 'src/styles/globals.css'), 'utf8');
+const themeCss = readFileSync(resolve(process.cwd(), 'src/styles/theme.css'), 'utf8');
 
 /** Reads `--name: value;` declarations from the first block that starts with `selector {`. */
 function readBlock(css: string, selector: string): Record<string, string> {
   const start = css.indexOf(`${selector} {`);
-  if (start === -1) throw new Error(`No "${selector}" block in globals.css`);
+  if (start === -1) throw new Error(`No "${selector}" block in theme.css`);
   const body = css.slice(start, css.indexOf('}', start));
   const vars: Record<string, string> = {};
   for (const match of body.matchAll(/--([\w-]+):\s*([^;]+);/g)) {
@@ -69,8 +68,8 @@ describe.each(THEMES)('%s theme tokens', (theme) => {
     expect(contrastRatio(tokens[fg], tokens[bg])).toBeGreaterThanOrEqual(3);
   });
 
-  it('matches the values declared in globals.css', () => {
-    const declared = readBlock(globalsCss, theme === 'light' ? ':root' : '.dark');
+  it('matches the values declared in theme.css', () => {
+    const declared = readBlock(themeCss, theme === 'light' ? ':root' : '.dark');
     for (const name of COLOR_TOKEN_NAMES) {
       expect(declared[name], `--${name}`).toBe(tokens[name]);
     }
@@ -84,28 +83,37 @@ describe('palette', () => {
   });
 });
 
-describe('globals.css', () => {
-  const rootVars = readBlock(globalsCss, ':root');
+describe('theme.css', () => {
+  const rootVars = readBlock(themeCss, ':root');
 
-  it('defines the radius, font families and motion durations', () => {
+  it('defines the radius and motion durations', () => {
     expect(rootVars.radius).toBeDefined();
-    expect(rootVars['font-sans-family']).toContain('fira sans');
-    expect(rootVars['font-mono-family']).toContain('fira code variable');
     expect(rootVars['motion-duration-fast']).toMatch(/ms$/);
     expect(rootVars['motion-duration-normal']).toMatch(/ms$/);
+    expect(rootVars['motion-duration-slow']).toMatch(/ms$/);
   });
 
-  it('self-hosts the fonts through @fontsource and loads no font CDN', () => {
-    expect(globalsCss).toContain("@import '@fontsource/fira-sans/400.css'");
-    expect(globalsCss).toContain("@import '@fontsource-variable/fira-code'");
-    expect(globalsCss).not.toMatch(/fonts\.(googleapis|gstatic)\.com/);
+  it('declares the class-based dark variant', () => {
+    expect(themeCss).toContain('@custom-variant dark (&:where(.dark, .dark *));');
+  });
+
+  it('maps every colour token in @theme inline', () => {
+    const mapped = readBlock(themeCss, '@theme inline');
+    for (const name of COLOR_TOKEN_NAMES) {
+      expect(mapped[`color-${name}`], `--color-${name}`).toBe(`var(--${name})`);
+    }
+  });
+
+  it('leaves fonts and tailwindcss itself to each app', () => {
+    expect(themeCss).not.toMatch(/^@import/m);
+    expect(themeCss).not.toMatch(/font-family|--font-/);
   });
 
   it('turns off transitions and animations under prefers-reduced-motion', () => {
-    expect(globalsCss).toMatch(/@media \(prefers-reduced-motion: reduce\)/);
+    expect(themeCss).toMatch(/@media \(prefers-reduced-motion: reduce\)/);
   });
 
   it('draws a focus-visible ring with the ring token', () => {
-    expect(globalsCss).toMatch(/:focus-visible\s*{[^}]*var\(--ring\)/);
+    expect(themeCss).toMatch(/:focus-visible\s*{[^}]*var\(--ring\)/);
   });
 });
