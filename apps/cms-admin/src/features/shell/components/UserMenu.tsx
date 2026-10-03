@@ -47,7 +47,7 @@ const UserMenu: React.FC = () => {
       >
         <span
           aria-hidden="true"
-          className="flex size-8 items-center justify-center rounded-full bg-primary text-xs font-semibold text-primary-foreground"
+          className="flex size-8 items-center justify-center rounded-full border border-primary-ink bg-primary text-xs font-semibold text-primary-foreground"
         >
           {getInitials(user?.name)}
         </span>

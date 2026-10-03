@@ -43,7 +43,7 @@ const CalendarDayButton = ({
       modifiers.today && !modifiers.selected && 'bg-accent text-accent-foreground',
       modifiers.outside && !modifiers.selected && 'text-muted-foreground',
       modifiers.selected &&
-        'bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground',
+        'border-primary-ink bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground',
       className,
     )}
     {...props}

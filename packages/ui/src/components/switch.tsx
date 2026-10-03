@@ -23,7 +23,7 @@ const Switch: React.FC<SwitchProps> = ({ className, onCheckedChange, ...props })
     onCheckedChange={onCheckedChange && ((checked) => onCheckedChange(checked))}
     className={cn(
       // The ::after pseudo-element widens the hit area to 44px without changing the layout.
-      'peer group/switch focus-visible:outline-ring aria-invalid:ring-destructive aria-invalid:ring-offset-background data-checked:bg-primary data-unchecked:bg-input relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors after:absolute after:-inset-x-1 after:-inset-y-2.5 focus-visible:outline-2 focus-visible:outline-offset-2 aria-invalid:ring-2 aria-invalid:ring-offset-2 data-disabled:cursor-not-allowed data-disabled:opacity-50',
+      'peer group/switch focus-visible:outline-ring aria-invalid:ring-destructive aria-invalid:ring-offset-background data-checked:border-primary-ink data-checked:bg-primary data-unchecked:bg-input relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors after:absolute after:-inset-x-1 after:-inset-y-2.5 focus-visible:outline-2 focus-visible:outline-offset-2 aria-invalid:ring-2 aria-invalid:ring-offset-2 data-disabled:cursor-not-allowed data-disabled:opacity-50',
       className,
     )}
     {...props}

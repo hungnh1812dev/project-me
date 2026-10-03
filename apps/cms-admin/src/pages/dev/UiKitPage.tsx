@@ -55,7 +55,7 @@ const BADGE_VARIANTS = ['default', 'secondary', 'outline', 'highlight'] as const
 
 /** The semantic colour pairs, each as a token-class swatch (AC-14). Literal classes for Tailwind. */
 const SWATCHES = [
-  { name: 'primary', className: 'bg-primary text-primary-foreground' },
+  { name: 'primary', className: 'border-primary-ink bg-primary text-primary-foreground' },
   { name: 'highlight', className: 'bg-highlight text-highlight-foreground' },
   { name: 'secondary', className: 'bg-secondary text-secondary-foreground' },
   { name: 'muted', className: 'bg-muted text-muted-foreground' },
