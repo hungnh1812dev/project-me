@@ -7,6 +7,8 @@ import { isApiError } from '@/core/api/apiError';
 import { widthClass } from '@/features/content/schema';
 import { toDocumentData, toFormValues, type FormValues } from '@/features/content/schemaForm';
 import type { DocumentData, FieldDefinition } from '@/features/content/types';
+import { LiveRegion } from '@/features/settings/components/LiveRegion';
+import { useAnnouncer } from '@/features/settings/components/useAnnouncer';
 import { cn } from '@/utils/cn';
 
 import { SchemaField } from './SchemaField';
@@ -62,7 +64,8 @@ export const SchemaForm: React.FC<SchemaFormProps> = ({
   const { isDirty } = form.formState;
   const [saveErrors, setSaveErrors] = useState<string[] | null>(null);
   const alertRef = useRef<HTMLDivElement>(null);
-  const context = useMemo(() => ({ readOnly }), [readOnly]);
+  const { message, announce } = useAnnouncer();
+  const context = useMemo(() => ({ readOnly, announce }), [readOnly, announce]);
 
   useEffect(() => onDirtyChange?.(isDirty), [isDirty, onDirtyChange]);
   useEffect(() => {
@@ -120,6 +123,7 @@ export const SchemaForm: React.FC<SchemaFormProps> = ({
               />
             ))}
           </form>
+          <LiveRegion message={message} />
         </div>
       </SchemaFormContext>
     </FormProvider>

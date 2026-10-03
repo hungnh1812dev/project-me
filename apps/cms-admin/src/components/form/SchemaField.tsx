@@ -5,6 +5,7 @@ import { BooleanField } from './fields/BooleanField';
 import { ComponentField } from './fields/ComponentField';
 import { JsonField } from './fields/JsonField';
 import { NumberField } from './fields/NumberField';
+import { RepeatableField } from './fields/RepeatableField';
 import { TextField } from './fields/TextField';
 import { UnsupportedField } from './fields/UnsupportedField';
 
@@ -48,8 +49,10 @@ export const SchemaField: React.FC<SchemaFieldProps> = ({
           className={className}
         />
       );
+    case 'repeatable':
+      return <RepeatableField field={field} label={label} name={name} className={className} />;
     default:
-      // Unknown types, plus media and repeatables until their fields land (tasks 5.3 and 5.4): a
+      // Unknown types, plus media until its field lands (task 5.4): a
       // read-only preview whose value is sent back unchanged.
       return <UnsupportedField label={label} name={name} type={field.type} className={className} />;
   }
