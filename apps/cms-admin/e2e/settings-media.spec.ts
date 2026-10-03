@@ -7,9 +7,13 @@ import { expect, ROLES, test, type MockApi } from './fixtures/mockApi.ts';
 /** `/admin/settings/media` against the fake backend (AC-1, AC-3 to AC-5, AC-7, AC-35 to AC-38). */
 
 const ADA = 'ada@example.com';
-/** A valid 1 × 1 PNG, so seeded thumbnails render without a media host. */
-const PIXEL =
-  'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==';
+/** The fake media host; `page.route` answers it, so allowed (`https:`) thumbnails really load. */
+const MEDIA_HOST = 'https://media.example.test';
+/** A valid 1 × 1 PNG, answered for every request to the media host. */
+const PIXEL = Buffer.from(
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
+  'base64',
+);
 
 const asset = (id: string, fileName: string, createdAt: string): MediaAsset => ({
   documentId: id,
@@ -18,13 +22,19 @@ const asset = (id: string, fileName: string, createdAt: string): MediaAsset => (
   size: 1258291,
   width: 1920,
   height: 1080,
-  url: PIXEL,
-  thumbnailUrl: PIXEL,
+  url: `${MEDIA_HOST}/${fileName}`,
+  thumbnailUrl: `${MEDIA_HOST}/thumbs/${fileName}`,
   publicId: `cms/${id}`,
   hash: id.padStart(64, '0'),
   uploadedBy: null,
   createdAt,
   updatedAt: createdAt,
+});
+
+test.beforeEach(async ({ page }) => {
+  await page.route(`${MEDIA_HOST}/**`, (route) =>
+    route.fulfill({ status: 200, contentType: 'image/png', body: PIXEL }),
+  );
 });
 
 const CAT = asset('media-cat', 'cat.png', '2026-01-01T00:00:00.000Z');
@@ -229,4 +239,38 @@ test('at 375px the grid has 2 columns, no sideways scroll and no layout shift', 
   ).toBeLessThanOrEqual(0);
   await page.waitForFunction(`[...document.querySelectorAll('img')].every((img) => img.complete)`);
   expect(await page.evaluate<number>('window.__layoutShift')).toBeLessThan(0.01);
+});
+
+test('a thumbnail outside the allowlist is never requested and shows a placeholder (AC-19)', async ({
+  page,
+  mockApi,
+}) => {
+  const evilRequests: string[] = [];
+  page.on('request', (request) => {
+    if (new URL(request.url()).hostname === 'evil.example.test') evilRequests.push(request.url());
+  });
+  seed(mockApi);
+  mockApi.settings.addMedia({
+    ...asset('media-evil', 'evil.png', '2026-01-03T00:00:00.000Z'),
+    thumbnailUrl: 'http://evil.example.test/x.png',
+  });
+  await openMedia(page);
+
+  const placeholder = card(page, 'evil.png').getByRole('img', { name: 'evil.png' });
+  await expect(placeholder).toBeVisible();
+  await expect(placeholder).not.toHaveAttribute('src');
+  await expect(page.locator('img[src*="evil.example.test"]')).toHaveCount(0);
+
+  const allowed = card(page, DOG.fileName).getByRole('img', { name: DOG.fileName });
+  await expect(allowed).toHaveAttribute('src', DOG.thumbnailUrl);
+  await expect(allowed).toHaveAttribute('referrerpolicy', 'no-referrer');
+  await expect
+    .poll(() => allowed.evaluate((img) => (img as { naturalWidth: number }).naturalWidth))
+    .toBeGreaterThan(0);
+
+  await page.getByRole('button', { name: 'Delete evil.png' }).click();
+  const dialog = page.getByRole('alertdialog', { name: 'Delete "evil.png"?' });
+  await expect(dialog.getByRole('img', { name: 'evil.png' })).toBeVisible();
+  await expect(dialog.locator('img')).toHaveCount(0);
+  expect(evilRequests).toEqual([]);
 });

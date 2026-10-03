@@ -54,6 +54,14 @@ test('the content-type pages use cards and a table (AC-39)', async ({
   mockContent,
 }) => {
   mockContent.addContentType(ARTICLE);
+  mockContent.addDocument('article', {
+    documentId: 'doc-1',
+    status: 'draft',
+    createdAt: STAMP,
+    updatedAt: STAMP,
+    updatedBy: null,
+    title: 'Hello',
+  });
   signedInAs(mockApi);
   await page.goto('/admin/content-types');
 
@@ -61,8 +69,10 @@ test('the content-type pages use cards and a table (AC-39)', async ({
   await expect(collection.locator(card)).toBeVisible();
   await collection.getByRole('link', { name: 'Article' }).click();
 
-  const detail = page.getByRole('main').locator(card);
-  await expect(detail.getByRole('heading', { level: 1, name: 'Article' })).toBeVisible();
-  await expect(detail.getByText('Kind: Collection type')).toBeVisible();
-  await expect(detail.getByRole('table', { name: 'Documents' })).toBeVisible();
+  const main = page.getByRole('main');
+  await expect(main.getByRole('heading', { level: 1, name: 'Article' })).toBeVisible();
+  await expect(main.getByRole('table', { name: 'Article entries' })).toHaveAttribute(
+    'data-slot',
+    'table',
+  );
 });

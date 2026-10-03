@@ -67,11 +67,13 @@ The old `/admin/users` path redirects to `/admin/settings/users`.
 | `/admin/profile`             | Home › Profile                                                          |
 | `/admin/content-types`       | Home › Content types                                                    |
 | `/admin/content-types/:slug` | Home › Content types › _content-type name_ (the slug until it is known) |
+| `…/:slug/new`                | Home › Content types › _content-type name_ › New entry                  |
+| `…/:slug/:documentId`        | Home › Content types › _content-type name_ › _entry label_              |
 | `/admin/settings/<key>`      | Home › Settings (text) › _link label_                                   |
 | `/admin/dev/ui-kit`          | Home › UI kit                                                           |
 | anything else                | Home › _last segment in Title Case_                                     |
 
-`useBreadcrumbs()` reads the content-type name only from the React Query cache (the type detail first, then the list). It subscribes to the cache but never fetches. Below `md` (768px), the middle crumbs collapse into a "More breadcrumbs" menu.
+`useBreadcrumbs()` reads the content-type name only from the React Query cache (the type detail first, then the list). It subscribes to the cache but never fetches. On a document page it also reads the cached document (`contentKeys.detail`) and names it with `entryLabel` from `features/content/schema.ts`: the first `header` text field, else the first text field, else "Untitled entry". Until the document is cached, the crumb shows its documentId. The crumb truncates a long label; the page `<h1>`, and so `document.title`, shows it in full. Below `md` (768px), the middle crumbs collapse into a "More breadcrumbs" menu.
 
 ## Responsive behaviour
 
@@ -102,5 +104,5 @@ All access goes through `storage.ts` (`readStorage`, `writeStorage`): try/catch,
 ## Tests
 
 - Unit: `navigation.test.ts`, `breadcrumbs.test.ts`, `storage` and `sidebarState` tests, and component tests for `AppShell`, `AppSidebar`, `UserMenu` and `Breadcrumbs`.
-- E2E: `e2e/shell.spec.ts` (skip link, title and focus, menus per role, collapse persistence, theme switch, mobile drawer, no horizontal scroll, breadcrumbs), `e2e/pages.spec.ts`, `e2e/auth-layout.spec.ts`, `e2e/inputs.spec.ts`.
+- E2E: `e2e/shell.spec.ts` (skip link, title and focus, menus per role, collapse persistence, theme switch, mobile drawer, no horizontal scroll, breadcrumbs), `e2e/pages.spec.ts`, `e2e/auth-layout.spec.ts`, `e2e/inputs.spec.ts`. The entry trails and titles are checked in `e2e/documents-detail.spec.ts`.
 - Accessibility: `e2e/a11y.spec.ts` runs axe (`wcag2a`, `wcag2aa`, `wcag21aa`) on `/login`, `/register`, `/forgot-password`, `/403`, `/admin`, `/admin/profile`, `/admin/content-types/:slug` and `/admin/dev/ui-kit`, in light and dark mode at 1280px and 375px, and fails on any serious or critical violation. Keyboard walks check the Tab order (skip link, menu, header, main), a visible focus indicator on every stop, and that focus always leaves the page (no trap).

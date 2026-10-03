@@ -28,6 +28,7 @@ export const JsonInput: React.FC<JsonInputProps> = ({
   expect = 'any',
   required,
   disabled,
+  readOnly,
   className,
   onBlur,
   ...props
@@ -53,7 +54,7 @@ export const JsonInput: React.FC<JsonInputProps> = ({
     if (touched) validate(next);
   };
 
-  const canFormat = !disabled && text.trim() !== '' && parseJson(text).ok;
+  const canFormat = !disabled && !readOnly && text.trim() !== '' && parseJson(text).ok;
 
   return (
     <div data-slot="json-input" className="flex w-full flex-col gap-1">
@@ -66,6 +67,7 @@ export const JsonInput: React.FC<JsonInputProps> = ({
         {...props}
         required={required}
         disabled={disabled}
+        readOnly={readOnly}
         value={text}
         onChange={(event) => update(event.target.value)}
         onBlur={(event) => {

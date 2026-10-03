@@ -1,7 +1,7 @@
 import { screen } from '@testing-library/react';
 import { delay, http, HttpResponse } from 'msw';
 import { useLocation } from 'react-router-dom';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import { server } from '@/test/msw/server';
 import { renderRoutes } from '@/test/renderWithProviders';
@@ -108,6 +108,46 @@ describe('ResetPasswordPage', () => {
       await screen.findByText('at /login with {"notice":"passwordReset"}'),
     ).toBeInTheDocument();
     expect(body).toEqual({ token: 'reset-tok', newPassword: 'new-password' });
+  });
+
+  it('strips the token from the URL without adding a history entry (AC-14)', async () => {
+    const { router } = renderReset('/reset-password?token=reset-tok&from=email');
+
+    expect(await screen.findByLabelText('New password')).toBeInTheDocument();
+    await vi.waitFor(() => expect(router.state.location.search).toBe(''));
+    expect(router.state.location.pathname).toBe('/reset-password');
+    expect(router.state.historyAction).toBe('REPLACE');
+    expect(screen.getByRole('heading', { name: 'Choose a new password' })).toBeInTheDocument();
+  });
+
+  it('still sends the captured token after the strip (AC-15)', async () => {
+    let body: unknown;
+    server.use(
+      http.post('*/api/v1/auth/reset-password', async ({ request }) => {
+        body = await request.json();
+        return HttpResponse.json({ message: 'Password reset' });
+      }),
+    );
+    const { router, user } = renderReset('/reset-password?token=abc');
+    await vi.waitFor(() => expect(router.state.location.search).toBe(''));
+
+    await submit(user);
+
+    expect(
+      await screen.findByText('at /login with {"notice":"passwordReset"}'),
+    ).toBeInTheDocument();
+    expect(body).toEqual({ token: 'abc', newPassword: 'new-password' });
+  });
+
+  it('shows the link-expired state on a fresh render of the stripped URL (AC-16)', async () => {
+    const first = renderReset('/reset-password?token=abc');
+    await vi.waitFor(() => expect(first.router.state.location.search).toBe(''));
+    const strippedUrl = first.router.state.location.pathname + first.router.state.location.search;
+    first.unmount();
+
+    renderReset(strippedUrl);
+
+    expectLinkExpired();
   });
 
   it('shows the link-expired state on a 400', async () => {

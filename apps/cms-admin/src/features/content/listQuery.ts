@@ -8,6 +8,12 @@ export const LIST_DEFAULTS = { start: 0, size: 20, orderBy: 'id', sortDir: 'desc
 /** The largest page size the backend accepts. */
 export const MAX_LIST_SIZE = 100;
 
+/** The longest `search` or string filter value sent on the wire (P2-SEC-2). */
+export const MAX_LIST_TEXT_LENGTH = 256;
+
+/** A plain identifier: what a field name or `orderBy` may be before wire mapping (P2-SEC-1). */
+const IDENTIFIER = /^[A-Za-z_][A-Za-z0-9_]{0,63}$/;
+
 const FILTER_OPERATORS: ReadonlySet<string> = new Set<FilterOperator>([
   '$eq',
   '$ne',
@@ -98,12 +104,14 @@ function isIntegerIn(value: number, min: number, max: number): boolean {
 
 /**
  * Returns every rule the list params break (an empty list when they are valid): `start` must be an
- * integer ≥ 0, `size` an integer 1–100, `sortDir` `asc` or `desc`, and each filter field must have
- * exactly one known operator. Undefined values are ignored.
+ * integer ≥ 0, `size` an integer 1–100, `sortDir` `asc` or `desc`, `orderBy` and each filter field a
+ * plain identifier (`IDENTIFIER`), the trimmed `search` and each string filter value at most
+ * `MAX_LIST_TEXT_LENGTH` characters, and each filter field must have exactly one known operator.
+ * Undefined values are ignored.
  */
 export function validateListParams(params: ListParams): string[] {
   const problems: string[] = [];
-  const { start, size, sortDir } = params;
+  const { start, size, orderBy, sortDir, search } = params;
   if (start !== undefined && !isIntegerIn(start, 0, Number.MAX_SAFE_INTEGER)) {
     problems.push(`start must be an integer ≥ 0 (got ${String(start)})`);
   }
@@ -113,10 +121,25 @@ export function validateListParams(params: ListParams): string[] {
   if (sortDir !== undefined && sortDir !== 'asc' && sortDir !== 'desc') {
     problems.push(`sortDir must be "asc" or "desc" (got ${JSON.stringify(sortDir)})`);
   }
+  if (orderBy !== undefined && !IDENTIFIER.test(orderBy)) {
+    problems.push(`orderBy must be a plain field name (got ${JSON.stringify(orderBy)})`);
+  }
+  if (search !== undefined && search.trim().length > MAX_LIST_TEXT_LENGTH) {
+    problems.push(`search must be at most ${MAX_LIST_TEXT_LENGTH} characters`);
+  }
   for (const [field, ops] of Object.entries(params.filters ?? {})) {
-    const names = definedEntries(ops ?? {}).map(([op]) => op);
+    if (!IDENTIFIER.test(field)) {
+      problems.push(`filter field must be a plain field name (got ${JSON.stringify(field)})`);
+    }
+    const entries = definedEntries(ops ?? {});
+    const names = entries.map(([op]) => op);
     for (const op of names) {
       if (!FILTER_OPERATORS.has(op)) problems.push(`unknown filter operator ${op} on ${field}`);
+    }
+    for (const [op, value] of entries) {
+      if (typeof value === 'string' && value.length > MAX_LIST_TEXT_LENGTH) {
+        problems.push(`${field} ${op} value must be at most ${MAX_LIST_TEXT_LENGTH} characters`);
+      }
     }
     if (names.length > 1) {
       problems.push(

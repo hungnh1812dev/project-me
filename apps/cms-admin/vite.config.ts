@@ -5,6 +5,7 @@ import react from '@vitejs/plugin-react';
 import { defineConfig, loadEnv } from 'vite';
 
 import pkg from './package.json' with { type: 'json' };
+import { buildContentSecurityPolicy } from './src/core/security/csp.ts';
 
 const DEFAULT_PROXY_TARGET = 'http://localhost:8080';
 
@@ -26,6 +27,17 @@ export default defineConfig(({ mode }) => {
       proxy: {
         '/api': { target, changeOrigin: true },
         '/health': { target, changeOrigin: true },
+      },
+    },
+    // `vite preview` sends the production headers (SEC-4), built from the same runtime vars
+    // as the nginx template, so the `csp` e2e project checks the built app under the policy.
+    preview: {
+      headers: {
+        'Content-Security-Policy': buildContentSecurityPolicy({
+          apiOrigin: env.CSP_API_ORIGIN ?? '',
+          imgOrigins: env.CSP_IMG_ORIGINS ?? '',
+        }),
+        'Referrer-Policy': 'same-origin',
       },
     },
   };

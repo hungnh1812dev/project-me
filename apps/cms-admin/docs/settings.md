@@ -348,9 +348,16 @@ accept="image/png,image/jpeg">`, so the keyboard alone is enough; the dashed zon
 - **Delete (M3, AC-38).** `DeleteMediaDialog` confirms `Delete "<file name>"?` with "Documents that
   use this image will show a broken image. This can't be undone.", the thumbnail and the file name,
   then sends M3. "File "<name>" deleted." is announced; a 404 or other error stays in the dialog.
-- **CSP.** Thumbnails load straight from the media host (`thumbnailUrl`, usually a CDN), not through
-  `/api`. The app sets no Content-Security-Policy yet; when one is added, its `img-src` must allow
-  that host (see the roadmap).
+- **Thumbnail allowlist (P4-SEC-2, AC-17 to AC-19).** Thumbnails load straight from the media host
+  (`thumbnailUrl`, usually a CDN), not through `/api`. `MediaThumbnail`
+  (`src/pages/settings/media/MediaThumbnail.tsx`), used by the grid and `DeleteMediaDialog`, passes
+  the URL through `safeImageSrc` (`src/core/security/safeImageSrc.ts`): any absolute `https:` URL, or
+  an `http:` URL on the API or page origin (so the dev backend on `http://localhost:8080` works), is
+  rendered with `referrerPolicy="no-referrer"`. Anything else (`http:` to another host, `data:`,
+  `blob:`, `javascript:`, relative or unparsable) gets a neutral placeholder with no `src`, so no
+  request is sent; it keeps the file name as its accessible name (`role="img"`).
+- **CSP.** The production policy's `img-src` must also allow the media host: set `CSP_IMG_ORIGINS`
+  (see "Content-Security-Policy" in `testing-and-config.md`).
 
 ## Profile (`/admin/profile`)
 

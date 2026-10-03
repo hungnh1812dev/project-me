@@ -176,3 +176,48 @@
     scroll-behavior: auto !important;
   }
 }
+
+/* The richtext editor's content (D1). Tiptap runs with `injectCSS: false`, so the rules
+   ProseMirror needs (pre-wrap white space) live here, under the CSP's `style-src 'self'`. */
+@layer components {
+  .rich-text {
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    font-variant-ligatures: none;
+    @apply flex flex-col gap-3 leading-relaxed;
+
+    h2 {
+      @apply text-xl font-semibold tracking-tight;
+    }
+    h3 {
+      @apply text-lg font-semibold;
+    }
+    h4 {
+      @apply text-base font-semibold;
+    }
+    ul {
+      @apply list-disc pl-6;
+    }
+    ol {
+      @apply list-decimal pl-6;
+    }
+    li > p {
+      @apply my-0.5;
+    }
+    blockquote {
+      @apply border-l-2 border-border pl-4 text-muted-foreground;
+    }
+    a {
+      @apply text-primary underline underline-offset-4;
+    }
+    code {
+      @apply rounded bg-muted px-1 py-0.5 font-mono text-sm;
+    }
+    pre {
+      @apply overflow-x-auto rounded-md bg-muted p-3 font-mono text-sm;
+    }
+    pre code {
+      @apply bg-transparent p-0;
+    }
+  }
+}

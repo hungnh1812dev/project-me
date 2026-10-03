@@ -266,3 +266,54 @@ describe('MediaLibraryPage delete (AC-7, AC-10, AC-38)', () => {
     expect(await within(dialog).findByRole('alert')).toHaveTextContent('Media not found');
   });
 });
+
+describe('MediaLibraryPage thumbnail allowlist (P4-SEC-2, AC-18)', () => {
+  const EVIL = makeMediaAsset({
+    documentId: 'media-evil',
+    fileName: 'evil.png',
+    thumbnailUrl: 'http://evil.example.test/x.png',
+    createdAt: '2026-01-03T00:00:00.000Z',
+  });
+
+  it('renders allowed thumbnails without a referrer', async () => {
+    mockApi();
+    await renderPage();
+
+    const image = within(cards()[0] as HTMLElement).getByRole('img', { name: DOG.fileName });
+    expect(image).toHaveAttribute('src', DOG.thumbnailUrl);
+    expect(image).toHaveAttribute('referrerpolicy', 'no-referrer');
+  });
+
+  it('shows a placeholder with no src, named after the file, for an unsafe URL', async () => {
+    mockApi([EVIL, DOG]);
+    const { container } = await renderPage();
+
+    const placeholder = within(cards()[0] as HTMLElement).getByRole('img', { name: 'evil.png' });
+    expect(placeholder).not.toHaveAttribute('src');
+    expect(container.querySelector(`img[src="${EVIL.thumbnailUrl}"]`)).toBeNull();
+    expect(container.querySelectorAll('img')).toHaveLength(1);
+  });
+
+  it('confirms delete with the placeholder for an unsafe URL', async () => {
+    mockApi([EVIL, DOG]);
+    const { user } = await renderPage();
+
+    await user.click(screen.getByRole('button', { name: 'Delete evil.png' }));
+    const dialog = await screen.findByRole('alertdialog', { name: 'Delete "evil.png"?' });
+    const placeholder = within(dialog).getByRole('img', { name: 'evil.png' });
+    expect(placeholder).not.toHaveAttribute('src');
+    expect(dialog.querySelector('img')).toBeNull();
+  });
+
+  it('confirms delete with an allowed thumbnail sent without a referrer', async () => {
+    mockApi();
+    const { user } = await renderPage();
+
+    await user.click(screen.getByRole('button', { name: 'Delete cat.png' }));
+    const dialog = await screen.findByRole('alertdialog', { name: 'Delete "cat.png"?' });
+    expect(within(dialog).getByRole('img', { name: 'cat.png' })).toHaveAttribute(
+      'referrerpolicy',
+      'no-referrer',
+    );
+  });
+});

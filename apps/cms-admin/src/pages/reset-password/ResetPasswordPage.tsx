@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 
 import { Field } from '@/components/form/Field';
@@ -13,6 +13,10 @@ import AuthLayout from '@/layouts/AuthLayout';
 /**
  * `/reset-password?token=…`, the link from the reset email. A missing token or a 400 (invalid or
  * expired token) shows "Link expired" with a way to request a new one. Success goes to `/login`.
+ *
+ * SEC-5: the token is read once into state, then the query is stripped from the URL by replacing
+ * the current history entry, so it does not linger in history, the address bar or a Referer. A
+ * reload after the strip therefore shows "Link expired"; the user opens the email link again.
  */
 const ResetPasswordPage: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -23,7 +27,12 @@ const ResetPasswordPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [expired, setExpired] = useState(false);
 
-  const token = searchParams.get('token') ?? '';
+  const [token] = useState(() => searchParams.get('token') ?? '');
+
+  const hasQuery = searchParams.size > 0;
+  useEffect(() => {
+    if (hasQuery) navigate({ search: '' }, { replace: true });
+  }, [hasQuery, navigate]);
 
   if (token === '' || expired) {
     return (

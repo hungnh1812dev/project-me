@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { PlusIcon, SearchIcon } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
+import { DatePicker } from '@/components/form/DatePicker';
 import { Field } from '@/components/form/Field';
 import { JsonInput } from '@/components/form/JsonInput';
 import { PasswordInput } from '@/components/form/PasswordInput';
@@ -16,6 +17,7 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
+import { Calendar } from '@/components/ui/calendar';
 import {
   Dialog,
   DialogClose,
@@ -27,6 +29,14 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import {
+  Popover,
+  PopoverContent,
+  PopoverDescription,
+  PopoverHeader,
+  PopoverTitle,
+  PopoverTrigger,
+} from '@/components/ui/popover';
 import {
   Select,
   SelectContent,
@@ -61,6 +71,32 @@ const JsonDemo: React.FC = () => {
   );
 };
 JsonDemo.displayName = 'JsonDemo';
+
+/** A controlled DatePicker in a Field, as the filter panel wires it. */
+const DatePickerDemo: React.FC = () => {
+  const [value, setValue] = useState<Date | undefined>();
+  return (
+    <Field label="Publish date" description="Opens a calendar; Escape closes it.">
+      <DatePicker value={value} onChange={setValue} />
+    </Field>
+  );
+};
+DatePickerDemo.displayName = 'DatePickerDemo';
+
+/** The bare Calendar primitive. */
+const CalendarDemo: React.FC = () => {
+  const [value, setValue] = useState<Date | undefined>();
+  return (
+    <Calendar
+      mode="single"
+      selected={value}
+      onSelect={setValue}
+      aria-label="Calendar example"
+      className="rounded-lg border p-3"
+    />
+  );
+};
+CalendarDemo.displayName = 'CalendarDemo';
 
 const EXPIRY_OPTIONS = [
   { value: '1h', label: '1 hour' },
@@ -213,6 +249,25 @@ const UiKitPage: React.FC = () => (
           </SelectTrigger>
         </Field>
       </Select>
+    </Section>
+
+    <Section title="Date picker">
+      <DatePickerDemo />
+      <Field label="Disabled date picker">
+        <DatePicker value={new Date(2026, 0, 15)} onChange={() => undefined} disabled />
+      </Field>
+      <CalendarDemo />
+      <div className="flex items-start">
+        <Popover>
+          <PopoverTrigger render={<Button variant="outline" />}>Open popover</PopoverTrigger>
+          <PopoverContent>
+            <PopoverHeader>
+              <PopoverTitle>Popover</PopoverTitle>
+              <PopoverDescription>Escape or an outside click closes it.</PopoverDescription>
+            </PopoverHeader>
+          </PopoverContent>
+        </Popover>
+      </div>
     </Section>
 
     <section aria-labelledby="ui-kit-dialogs" className="flex flex-col gap-4">

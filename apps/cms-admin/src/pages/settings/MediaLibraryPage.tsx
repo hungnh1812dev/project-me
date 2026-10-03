@@ -13,6 +13,7 @@ import { filterBySearch } from '@/features/settings/search';
 import type { MediaAsset } from '@/features/settings/types';
 
 import { DeleteMediaDialog } from './media/DeleteMediaDialog';
+import { MediaThumbnail } from './media/MediaThumbnail';
 
 const NOUN = { one: 'file', other: 'files' };
 const SEARCH_FIELDS = ['fileName'] as const;
@@ -29,14 +30,7 @@ const MediaCard: React.FC<CardProps> = ({ asset, onDelete }) => {
   return (
     <li className="flex min-w-0 flex-col overflow-hidden rounded-lg border bg-card text-sm">
       <div className="aspect-square overflow-hidden bg-muted">
-        <img
-          src={asset.thumbnailUrl}
-          alt={asset.fileName}
-          loading="lazy"
-          width={asset.width}
-          height={asset.height}
-          className="size-full object-cover"
-        />
+        <MediaThumbnail asset={asset} width={asset.width} height={asset.height} loading="lazy" />
       </div>
       <div className="flex min-w-0 flex-col gap-1 p-3">
         <p className="truncate font-medium" title={asset.fileName}>

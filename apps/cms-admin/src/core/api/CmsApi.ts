@@ -58,6 +58,21 @@ function bearerOf(config: AxiosRequestConfig): string | null {
   return typeof header === 'string' && header.startsWith('Bearer ') ? header.slice(7) : null;
 }
 
+/**
+ * Whether a request goes to the API origin, the only origin that may see the Bearer token (SEC-3).
+ * `baseURL` + `url` are resolved against the page origin, so a relative base means the page origin
+ * and an absolute or protocol-relative `url` on another host does not match. Unparsable URLs fail closed.
+ */
+function targetsApiOrigin(config: AxiosRequestConfig): boolean {
+  try {
+    const pageOrigin = window.location.origin;
+    const apiOrigin = new URL(API_BASE_URL, pageOrigin).origin;
+    return new URL(cmsApi.getUri(config), pageOrigin).origin === apiOrigin;
+  } catch {
+    return false;
+  }
+}
+
 let refreshPromise: Promise<string> | null = null;
 
 /**
@@ -100,7 +115,7 @@ function recoverSession(staleToken: string | null): Promise<string> {
 }
 
 cmsApi.interceptors.request.use((config) => {
-  if (config._retry) return config;
+  if (config._retry || !targetsApiOrigin(config)) return config;
   const token = handlers.getAccessToken();
   if (token) config.headers.set('Authorization', `Bearer ${token}`);
   return config;
@@ -110,6 +125,8 @@ cmsApi.interceptors.response.use(undefined, async (error: unknown) => {
   const apiError = toApiError(error);
   const config = axios.isAxiosError(error) ? error.config : undefined;
   if (apiError.status !== 401 || !config || skipsRefresh(config)) throw apiError;
+  // A 401 from another origin says nothing about our session: never refresh or retry with the token.
+  if (!targetsApiOrigin(config)) throw apiError;
 
   const sentToken = bearerOf(config);
   if (config._retry) {

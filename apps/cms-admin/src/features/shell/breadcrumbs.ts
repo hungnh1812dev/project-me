@@ -7,9 +7,14 @@ export interface Crumb {
 }
 
 export interface BreadcrumbContext {
-  /** The name of the content type on `/admin/content-types/:slug`, when the cache knows it. */
+  /** The name of the content type on `/admin/content-types/:slug[/…]`, when the cache knows it. */
   contentTypeName?: string;
+  /** The entry's label on `/admin/content-types/:slug/:documentId`, when the cache knows it. */
+  entryLabel?: string;
 }
+
+/** The last crumb of the create page. */
+export const NEW_ENTRY = 'New entry';
 
 const HOME_PATH = '/admin';
 const CONTENT_TYPES_PATH = '/admin/content-types';
@@ -43,9 +48,18 @@ export function contentTypeSlugOf(pathname: string): string | null {
   return section === 'content-types' && slug ? slug : null;
 }
 
+/** The documentId of a `/admin/content-types/:slug/:documentId` path, decoded; `null` elsewhere and on `/new`. */
+export function contentDocumentIdOf(pathname: string): string | null {
+  const [section, slug, documentId] = segmentsOf(pathname);
+  return section === 'content-types' && slug && documentId && documentId !== 'new'
+    ? documentId
+    : null;
+}
+
 /**
- * The breadcrumb trail of a pathname (AC-31). The last crumb is the current page and has no `to`.
- * The content-type crumb shows `contentTypeName` when given, and the slug until then.
+ * The breadcrumb trail of a pathname (AC-31, Phase 5 AC-39). The last crumb is the current page and
+ * has no `to`. The content-type crumb shows `contentTypeName` when given, and the slug until then.
+ * Below it, `/new` adds "New entry", and a document adds `entryLabel` (its documentId until then).
  */
 export function buildBreadcrumbs(pathname: string, context: BreadcrumbContext = {}): Crumb[] {
   const segments = segmentsOf(pathname);
@@ -57,11 +71,16 @@ export function buildBreadcrumbs(pathname: string, context: BreadcrumbContext = 
   if (section === 'profile' && !child) return [home, { label: 'Profile' }];
   if (section === 'content-types') {
     if (!child) return [home, { label: 'Content types' }];
-    return [
-      home,
-      { label: 'Content types', to: CONTENT_TYPES_PATH },
-      { label: context.contentTypeName ?? child },
-    ];
+    const contentTypes: Crumb = { label: 'Content types', to: CONTENT_TYPES_PATH };
+    const typeLabel = context.contentTypeName ?? child;
+    const entry = segments[2];
+    if (!entry) return [home, contentTypes, { label: typeLabel }];
+    const type: Crumb = {
+      label: typeLabel,
+      to: `${CONTENT_TYPES_PATH}/${encodeURIComponent(child)}`,
+    };
+    const last = entry === 'new' ? NEW_ENTRY : (context.entryLabel ?? entry);
+    return [home, contentTypes, type, { label: last }];
   }
   if (section === 'settings') {
     const link = SETTINGS_LINKS.find((l) => l.key === child);

@@ -39,6 +39,8 @@ Until then the handlers are no-ops (no token, nothing stored).
 
 Each request gets `Authorization: Bearer <token>` when `getAccessToken()` returns a token, and no `Authorization` header otherwise. The token lives in the Redux store only (memory), never in web storage.
 
+The token goes only to the API origin (SEC-3). The interceptor resolves the request URL (`baseURL` + `url`, with a relative URL resolved against `window.location.origin`) and sets the header only when that URL's origin equals the origin of `API_BASE_URL`. With the default relative `/api/v1` base, the API origin is the page origin. With an absolute `VITE_API_URL`, it is that host, and the page origin no longer gets the token. An absolute or protocol-relative `url` on any other origin is sent without the header, and an unparsable URL fails closed (no header). A 401 from another origin is rejected as is: no refresh, no retry and no session expiry.
+
 ## 401 refresh sequence
 
 On a 401 from any endpoint except `/auth/login`, `/auth/refresh` and `/auth/logout` (matched by path), and except requests with `skipAuthRefresh`:
