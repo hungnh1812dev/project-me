@@ -31,14 +31,31 @@ function renderMenu({
   status = 'draft',
   permissions = ALL,
   type = ARTICLE,
-}: { status?: DocumentStatus; permissions?: string[]; type?: ContentType } = {}) {
+  focusAfterDelete,
+}: {
+  status?: DocumentStatus;
+  permissions?: string[];
+  type?: ContentType;
+  focusAfterDelete?: () => HTMLElement | null;
+} = {}) {
   const onResult = vi.fn();
   const item = makeListedItem({ documentId: 'doc-1', status, data: { title: 'Hello world' } });
   const utils = renderRoutes(
     [
       {
         path: '/admin/content-types/article',
-        element: <RowActions type={type} item={item} label="Hello world" onResult={onResult} />,
+        element: (
+          <>
+            <RowActions
+              type={type}
+              item={item}
+              label="Hello world"
+              onResult={onResult}
+              focusAfterDelete={focusAfterDelete}
+            />
+            <button type="button">Fallback</button>
+          </>
+        ),
       },
       { path: '/admin/content-types/article/:documentId', element: <h1>Detail</h1> },
     ],
@@ -137,6 +154,37 @@ describe('RowActions (AC-28, AC-29)', () => {
     await waitFor(() => expect(onResult).toHaveBeenCalledWith('"Hello world" deleted.'));
     expect(d5.requests).toHaveLength(1);
     await waitFor(() => expect(dialog).not.toBeInTheDocument());
+  });
+
+  it('moves focus to focusAfterDelete after a confirmed delete, as the row is going away', async () => {
+    server.use(deleteDocumentHandler().handler);
+    // The modal still hides the page from the accessibility tree while it closes.
+    const fallback = () => screen.getByRole('button', { name: 'Fallback', hidden: true });
+    const { user } = renderMenu({ focusAfterDelete: fallback });
+
+    const menu = await openMenu(user);
+    await user.click(within(menu).getByRole('menuitem', { name: 'Delete' }));
+    const dialog = await screen.findByRole('alertdialog', { name: 'Delete "Hello world"?' });
+    await user.click(within(dialog).getByRole('button', { name: 'Delete entry' }));
+
+    await waitFor(() => expect(dialog).not.toBeInTheDocument());
+    await waitFor(() => expect(fallback()).toHaveFocus());
+  });
+
+  it('returns focus to the Actions button when the delete is cancelled', async () => {
+    const focusAfterDelete = vi.fn(() => null);
+    const { user } = renderMenu({ focusAfterDelete });
+
+    const menu = await openMenu(user);
+    await user.click(within(menu).getByRole('menuitem', { name: 'Delete' }));
+    const dialog = await screen.findByRole('alertdialog', { name: 'Delete "Hello world"?' });
+    await user.click(within(dialog).getByRole('button', { name: 'Cancel' }));
+
+    await waitFor(() => expect(dialog).not.toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: 'Actions for Hello world' })).toHaveFocus(),
+    );
+    expect(focusAfterDelete).not.toHaveBeenCalled();
   });
 
   it('reports "no access" when the server forbids an action (AC-33)', async () => {

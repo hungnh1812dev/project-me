@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import {
   AlertCircleIcon,
   CheckCircle2Icon,
@@ -42,6 +42,11 @@ export interface BulkActionBarProps {
   onSelectionChange: (ids: Set<string>) => void;
   /** Announces a summary without failures through the page's live region. */
   onAnnounce: (message: string) => void;
+  /**
+   * Where focus goes after a bulk delete that removed every selected row, since the bar and its
+   * buttons go away. With failures, focus returns to Delete selected.
+   */
+  focusAfterDelete?: () => HTMLElement | null;
 }
 
 /** A summary on screen; `alert` when something failed. */
@@ -62,6 +67,7 @@ export const BulkActionBar: React.FC<BulkActionBarProps> = ({
   selected,
   onSelectionChange,
   onAnnounce,
+  focusAfterDelete,
 }) => {
   const access = useContentTypeAccess(type);
   const bulkStatus = useBulkStatus(type);
@@ -69,6 +75,8 @@ export const BulkActionBar: React.FC<BulkActionBarProps> = ({
   const [running, setRunning] = useState<BulkTarget | null>(null);
   const [summary, setSummary] = useState<Outcome | null>(null);
   const [deleteIds, setDeleteIds] = useState<string[]>([]);
+  // Every selected row was deleted, so Delete selected is about to unmount.
+  const cleared = useRef(false);
   const count = selected.length;
   const busy = running !== null;
 
@@ -157,6 +165,7 @@ export const BulkActionBar: React.FC<BulkActionBarProps> = ({
               disabled={busy}
               onClick={() => {
                 setSummary(null);
+                cleared.current = false;
                 setDeleteIds(selected.map((entry) => entry.documentId));
                 setDeleteOpen(true);
               }}
@@ -211,7 +220,9 @@ export const BulkActionBar: React.FC<BulkActionBarProps> = ({
         documentIds={deleteIds}
         open={deleteOpen}
         onOpenChange={setDeleteOpen}
+        finalFocus={() => (cleared.current ? (focusAfterDelete?.() ?? true) : true)}
         onDeleted={(result) => {
+          cleared.current = result.failed.length === 0;
           show(bulkDeleteSummary(result, labels(deleteIds)));
           onSelectionChange(new Set(result.failed.map((failure) => failure.documentId)));
         }}

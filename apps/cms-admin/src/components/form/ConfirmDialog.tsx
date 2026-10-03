@@ -38,6 +38,12 @@ export interface ConfirmDialogProps {
    * to Cancel.
    */
   hideConfirm?: boolean;
+  /**
+   * Where focus goes when the dialog closes (Base UI `finalFocus`). By default it returns to the
+   * element that opened the dialog; pass a function when that element may be gone, such as a row
+   * the action deleted.
+   */
+  finalFocus?: React.ComponentProps<typeof AlertDialogContent>['finalFocus'];
 }
 
 /**
@@ -57,6 +63,7 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
   error,
   children,
   hideConfirm = false,
+  finalFocus,
 }) => {
   const [innerOpen, setInnerOpen] = useState(false);
   const [pending, setPending] = useState(false);
@@ -96,7 +103,7 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
   return (
     <AlertDialog open={open} onOpenChange={setOpen}>
       {trigger && <AlertDialogTrigger render={trigger} />}
-      <AlertDialogContent initialFocus={cancelRef}>
+      <AlertDialogContent initialFocus={cancelRef} finalFocus={finalFocus}>
         <AlertDialogHeader>
           <AlertDialogTitle>{title}</AlertDialogTitle>
           {description != null && <AlertDialogDescription>{description}</AlertDialogDescription>}

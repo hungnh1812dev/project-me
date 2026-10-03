@@ -121,6 +121,73 @@ describe('BulkActionBar delete (AC-30)', () => {
     expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
   });
 
+  it('moves focus to the entries region when every selected row was deleted', async () => {
+    const list = backend(['draft', 'draft', 'draft']);
+    server.use(
+      bulkDeleteDocumentsHandler(() => {
+        list.remove(['doc-1', 'doc-2']);
+        return HttpResponse.json({ deleted: ['doc-1', 'doc-2'], failed: [] });
+      }).handler,
+    );
+    const { user } = renderPage();
+    await select(user, 1, 2);
+
+    await user.click(within(bar()).getByRole('button', { name: 'Delete selected' }));
+    const dialog = await screen.findByRole('alertdialog', { name: 'Delete 2 entries?' });
+    await user.click(within(dialog).getByRole('button', { name: 'Delete entries' }));
+
+    await waitFor(() => expect(screen.queryAllByRole('row')).toHaveLength(2));
+    expect(screen.queryByRole('region', { name: 'Bulk actions' })).not.toBeInTheDocument();
+    await waitFor(() =>
+      expect(screen.getByRole('region', { name: 'Article entries' })).toHaveFocus(),
+    );
+  });
+
+  it('moves focus to the list heading when the delete emptied the list', async () => {
+    const list = backend(['draft', 'draft']);
+    server.use(
+      bulkDeleteDocumentsHandler(() => {
+        list.remove(['doc-1', 'doc-2']);
+        return HttpResponse.json({ deleted: ['doc-1', 'doc-2'], failed: [] });
+      }).handler,
+    );
+    const { user } = renderPage();
+    await select(user, 1, 2);
+
+    await user.click(within(bar()).getByRole('button', { name: 'Delete selected' }));
+    const dialog = await screen.findByRole('alertdialog', { name: 'Delete 2 entries?' });
+    await user.click(within(dialog).getByRole('button', { name: 'Delete entries' }));
+
+    expect(await screen.findByText('No entries yet.')).toBeInTheDocument();
+    await waitFor(() =>
+      expect(screen.getByRole('heading', { level: 1, name: TYPE.name })).toHaveFocus(),
+    );
+  });
+
+  it('keeps focus on Delete selected when a failed row stays selected', async () => {
+    const list = backend(['draft', 'draft']);
+    server.use(
+      bulkDeleteDocumentsHandler(() => {
+        list.remove(['doc-1']);
+        return HttpResponse.json({
+          deleted: ['doc-1'],
+          failed: [{ documentId: 'doc-2', error: 'Entry is locked.' }],
+        });
+      }).handler,
+    );
+    const { user } = renderPage();
+    await select(user, 1, 2);
+
+    await user.click(within(bar()).getByRole('button', { name: 'Delete selected' }));
+    const dialog = await screen.findByRole('alertdialog', { name: 'Delete 2 entries?' });
+    await user.click(within(dialog).getByRole('button', { name: 'Delete entries' }));
+
+    expect(await screen.findByText('Post 2: Entry is locked.')).toBeInTheDocument();
+    await waitFor(() =>
+      expect(within(bar()).getByRole('button', { name: 'Delete selected' })).toHaveFocus(),
+    );
+  });
+
   it('names a single entry in the title', async () => {
     backend(['draft']);
     const { user } = renderPage();

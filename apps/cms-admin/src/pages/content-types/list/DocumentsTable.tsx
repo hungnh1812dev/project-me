@@ -37,6 +37,8 @@ export interface DocumentsTableProps {
   busy?: boolean;
   /** The row actions, given the row and its label (as in its link and checkbox). */
   renderActions?: (item: ListedDocumentItem, label: string) => React.ReactNode;
+  /** The focusable scroll region, for moving focus to the list after a delete. */
+  regionRef?: React.Ref<HTMLDivElement>;
 }
 
 const BOX = 'size-5 shrink-0 cursor-pointer accent-primary lg:size-4';
@@ -179,6 +181,7 @@ export const DocumentsTable: React.FC<DocumentsTableProps> = ({
   onSelectedChange,
   busy = false,
   renderActions,
+  regionRef,
 }) => {
   const captionId = useId();
   const caption = `${type.name} entries`;
@@ -209,6 +212,7 @@ export const DocumentsTable: React.FC<DocumentsTableProps> = ({
 
   return (
     <div
+      ref={regionRef}
       role="region"
       aria-labelledby={captionId}
       tabIndex={0}

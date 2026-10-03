@@ -167,6 +167,22 @@ const CollectionListPage: React.FC<{ type: ContentType }> = ({ type }) => {
     setFilters(rest);
   };
 
+  // After a delete removes the focused control, focus goes to the entries region, or to the
+  // heading once the list is empty (the region unmounts with the last row).
+  const regionRef = useRef<HTMLDivElement>(null);
+  const headingRef = useRef<HTMLHeadingElement>(null);
+  const deletedRef = useRef(false);
+  const focusAfterDelete = useCallback(() => {
+    deletedRef.current = true;
+    return regionRef.current ?? headingRef.current;
+  }, []);
+  const emptied = data?.total === 0;
+  useEffect(() => {
+    if (!deletedRef.current || data === undefined) return;
+    deletedRef.current = false;
+    if (emptied && document.activeElement === document.body) headingRef.current?.focus();
+  }, [data, emptied]);
+
   const [columnsOpen, setColumnsOpen] = useState(false);
   const columnsButton = useRef<HTMLButtonElement>(null);
 
@@ -238,8 +254,15 @@ const CollectionListPage: React.FC<{ type: ContentType }> = ({ type }) => {
           selected={selected}
           onSelectedChange={setSelected}
           busy={isPlaceholderData}
+          regionRef={regionRef}
           renderActions={(item, label) => (
-            <RowActions type={type} item={item} label={label} onResult={onRowResult} />
+            <RowActions
+              type={type}
+              item={item}
+              label={label}
+              onResult={onRowResult}
+              focusAfterDelete={focusAfterDelete}
+            />
           )}
         />
         <PaginationBar
@@ -256,7 +279,13 @@ const CollectionListPage: React.FC<{ type: ContentType }> = ({ type }) => {
   return (
     <div className="flex flex-col gap-6">
       <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-2xl font-semibold tracking-tight break-words">{type.name}</h1>
+        <h1
+          ref={headingRef}
+          tabIndex={-1}
+          className="text-2xl font-semibold tracking-tight break-words"
+        >
+          {type.name}
+        </h1>
         {!forbidden && <CreateEntry slug={type.slug} decision={access.create} />}
       </header>
       {!forbidden && (
@@ -327,6 +356,7 @@ const CollectionListPage: React.FC<{ type: ContentType }> = ({ type }) => {
           selected={selectedEntries}
           onSelectionChange={setSelected}
           onAnnounce={announce}
+          focusAfterDelete={focusAfterDelete}
         />
       )}
       {body}

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-import { ConfirmDialog } from '@/components/form/ConfirmDialog';
+import { ConfirmDialog, type ConfirmDialogProps } from '@/components/form/ConfirmDialog';
 import { useDeleteDocument } from '@/features/content/hooks/useCollectionMutations';
 import type { ContentTypeRef } from '@/features/content/types';
 
@@ -15,6 +15,8 @@ export interface DeleteDocumentDialogProps {
   onOpenChange: (open: boolean) => void;
   /** Runs after D5 succeeded, before the dialog closes. */
   onDeleted: () => void;
+  /** Where focus goes on close; see `ConfirmDialog`. */
+  finalFocus?: ConfirmDialogProps['finalFocus'];
 }
 
 /**
@@ -28,6 +30,7 @@ export const DeleteDocumentDialog: React.FC<DeleteDocumentDialogProps> = ({
   open,
   onOpenChange,
   onDeleted,
+  finalFocus,
 }) => {
   const remove = useDeleteDocument(type);
   const [error, setError] = useState<string | null>(null);
@@ -35,6 +38,7 @@ export const DeleteDocumentDialog: React.FC<DeleteDocumentDialogProps> = ({
   return (
     <ConfirmDialog
       open={open}
+      finalFocus={finalFocus}
       onOpenChange={(next) => {
         if (!next) setError(null);
         onOpenChange(next);

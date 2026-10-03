@@ -1,12 +1,5 @@
-import { useState } from 'react';
-import {
-  CopyIcon,
-  EllipsisIcon,
-  PencilIcon,
-  SendIcon,
-  Trash2Icon,
-  UndoIcon,
-} from 'lucide-react';
+import { useRef, useState } from 'react';
+import { CopyIcon, EllipsisIcon, PencilIcon, SendIcon, Trash2Icon, UndoIcon } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 import { GatedMenuItem } from '@/components/form/GatedMenuItem';
@@ -37,6 +30,11 @@ export interface RowActionsProps {
   label: string;
   /** Reports an action's outcome: announced on success, shown as an alert when `error`. */
   onResult: (message: string, error?: boolean) => void;
+  /**
+   * Where focus goes after a confirmed delete, since this row (and its Actions button) is going
+   * away. `null`, or leaving it out, keeps the default: back to the Actions button.
+   */
+  focusAfterDelete?: () => HTMLElement | null;
 }
 
 /** 44px rows below `lg`, denser on desktop. */
@@ -48,12 +46,19 @@ const ROW = 'min-h-11 px-2 lg:min-h-8';
  * item stays in the menu, `aria-disabled` with its reason, and does nothing. Outcomes go to
  * `onResult`; the list refetches through the hooks' invalidation.
  */
-export const RowActions: React.FC<RowActionsProps> = ({ type, item, label, onResult }) => {
+export const RowActions: React.FC<RowActionsProps> = ({
+  type,
+  item,
+  label,
+  onResult,
+  focusAfterDelete,
+}) => {
   const access = useContentTypeAccess(type);
   const duplicate = useDuplicateDocument(type);
   const publish = usePublishDocument(type);
   const unpublish = useUnpublishDocument(type);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const deleted = useRef(false);
   const { documentId, status } = item;
 
   const run = (mutation: typeof publish | typeof duplicate, done: string) =>
@@ -107,7 +112,10 @@ export const RowActions: React.FC<RowActionsProps> = ({ type, item, label, onRes
           <GatedMenuItem
             decision={access.delete}
             variant="destructive"
-            onClick={() => setDeleteOpen(true)}
+            onClick={() => {
+              deleted.current = false;
+              setDeleteOpen(true);
+            }}
           >
             <Trash2Icon aria-hidden="true" />
             Delete
@@ -120,7 +128,11 @@ export const RowActions: React.FC<RowActionsProps> = ({ type, item, label, onRes
         label={label}
         open={deleteOpen}
         onOpenChange={setDeleteOpen}
-        onDeleted={() => onResult(`"${label}" deleted.`)}
+        onDeleted={() => {
+          deleted.current = true;
+          onResult(`"${label}" deleted.`);
+        }}
+        finalFocus={() => (deleted.current ? (focusAfterDelete?.() ?? true) : true)}
       />
     </>
   );

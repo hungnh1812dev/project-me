@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-import { ConfirmDialog } from '@/components/form/ConfirmDialog';
+import { ConfirmDialog, type ConfirmDialogProps } from '@/components/form/ConfirmDialog';
 import { useBulkDeleteDocuments } from '@/features/content/hooks/useCollectionMutations';
 import type { BulkDeleteResult, ContentTypeRef } from '@/features/content/types';
 
@@ -14,6 +14,8 @@ export interface BulkDeleteDialogProps {
   onOpenChange: (open: boolean) => void;
   /** Runs with the D10 result (which may list failures), before the dialog closes. */
   onDeleted: (result: BulkDeleteResult) => void;
+  /** Where focus goes on close; see `ConfirmDialog`. */
+  finalFocus?: ConfirmDialogProps['finalFocus'];
 }
 
 /**
@@ -27,6 +29,7 @@ export const BulkDeleteDialog: React.FC<BulkDeleteDialogProps> = ({
   open,
   onOpenChange,
   onDeleted,
+  finalFocus,
 }) => {
   const remove = useBulkDeleteDocuments(type);
   const [error, setError] = useState<string | null>(null);
@@ -35,6 +38,7 @@ export const BulkDeleteDialog: React.FC<BulkDeleteDialogProps> = ({
   return (
     <ConfirmDialog
       open={open}
+      finalFocus={finalFocus}
       onOpenChange={(next) => {
         if (!next) setError(null);
         onOpenChange(next);
