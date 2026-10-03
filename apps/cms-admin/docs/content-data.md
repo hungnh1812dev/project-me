@@ -188,7 +188,14 @@ const publish = usePublishDocument(ref); // variables: documentId
 - **Filters:** `{ filters: { featured: { $eq: true }, createdAt: { $gte: new Date(...) } } }`. Use
   camelCase system-column names; the wire mapping is automatic.
 - **Bulk delete:** `useBulkDeleteDocuments(ref).mutateAsync(ids)` resolves with `{ deleted, failed }`
-  even on partial failure, so show `failed` to the user.
+  even on partial failure, so show `failed` to the user. `bulkDeleteSummary(result, labels)` in
+  `bulk.ts` turns it into "2 of 3 entries deleted." plus one line per failed entry.
+- **Bulk publish and unpublish (D5):** `useBulkStatus(ref).run('publish' | 'unpublish', items)`
+  skips entries already in the target status (`planBulkStatus`), sends D6 or D7 one entry at a
+  time, keeps going after a failure, and invalidates `lists(slug)` once at the end. `progress`
+  (`{ target, current, total }`) feeds `bulkProgressText` ("Publishing 2 of 5…"), and the resolved
+  `{ succeeded, failed, skipped }` feeds `bulkStatusSummary`. A denied decision rejects with
+  `ERR_CLIENT_FORBIDDEN` before any request.
 - **Columns:** `useUpdateListFields(slug).mutate(['id', 'title'])`, gated by
   `access.configureColumns`.
 - **Errors:** narrow with `isApiError`; check `error.code` for the two client codes above and
