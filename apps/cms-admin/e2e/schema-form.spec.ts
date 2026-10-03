@@ -515,10 +515,7 @@ test('media: picks an asset with only the keyboard and saves the full asset (AC-
 
   await expect(dialog).toHaveCount(0);
   await expect(cover(page).getByText('cat.png')).toBeVisible();
-  await expect(cover(page).getByRole('img', { name: 'cat.png' })).toHaveAttribute(
-    'src',
-    CAT.thumbnailUrl,
-  );
+  await expect(cover(page).getByRole('img', { name: 'cat.png' })).toHaveAttribute('src', CAT.url);
   await expect(
     page.getByRole('status').filter({ hasText: 'Cover image set to cat.png.' }),
   ).toBeAttached();
@@ -603,6 +600,42 @@ test('media: a documentId value resolves to the asset, or shows "File not found"
   // The resolved id is saved as the full asset; the unknown one goes back as it came.
   expect(data.coverImage).toEqual(CAT);
   expect(data.gallery).toEqual([{ caption: 'Gone', image: 'media-gone', tags: [] }]);
+});
+
+test('media: the preview is a 320px contain box with icon buttons and tooltips (AC-28, AC-31)', async ({
+  page,
+  mockApi,
+  mockContent,
+}) => {
+  await seedMedia(page, mockApi);
+  mockContent.setSingle('showcase-single', showcase({ coverImage: DOG }));
+  await page.goto(URL);
+
+  const img = cover(page).getByRole('img', { name: 'dog.png' });
+  await expect(img).toHaveAttribute('src', DOG.url);
+  await expect
+    .poll(() => img.evaluate((node) => (node as { naturalWidth: number }).naturalWidth))
+    .toBeGreaterThan(0);
+  await expect(img).toHaveCSS('object-fit', 'contain');
+  const box = await cover(page).locator('[data-slot="media-preview"]').boundingBox();
+  const group = await cover(page).boundingBox();
+  expect(box?.height).toBeGreaterThanOrEqual(320);
+  // Full width: the group's 8px padding and 1px border on each side.
+  expect(box?.width).toBeCloseTo((group?.width ?? 0) - 18, 0);
+  await expect(cover(page).getByText('1 × 1')).toBeVisible();
+
+  const choose = cover(page).getByRole('button', { name: 'Choose Cover image' });
+  const remove = cover(page).getByRole('button', { name: 'Remove Cover image' });
+  await expect(choose).toHaveText('');
+  await expect(remove).toHaveText('');
+  await choose.hover();
+  await expect(page.locator('[data-slot="tooltip-content"][data-open]')).toHaveText(
+    'Choose Cover image',
+  );
+  await remove.focus();
+  await expect(page.locator('[data-slot="tooltip-content"][data-open]')).toHaveText(
+    'Remove Cover image',
+  );
 });
 
 // XSS (AC-34)

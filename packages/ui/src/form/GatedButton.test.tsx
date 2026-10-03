@@ -89,4 +89,52 @@ describe('GatedButton', () => {
       "You don't have permission to do this.",
     );
   });
+
+  it('shows its tooltip on hover and focus when allowed, without changing the name', async () => {
+    render(
+      <GatedButton decision={ALLOW} tooltip="Choose Cover image" aria-label="Choose Cover image">
+        <svg aria-hidden="true" />
+      </GatedButton>,
+    );
+    const button = screen.getByRole('button', { name: 'Choose Cover image' });
+
+    expect(button).not.toHaveAttribute('aria-disabled');
+    await userEvent.tab();
+    expect(button).toHaveFocus();
+    await waitFor(() =>
+      expect(document.querySelector('[data-slot="tooltip-content"]')).toHaveTextContent(
+        'Choose Cover image',
+      ),
+    );
+  });
+
+  it('still activates when allowed with a tooltip', async () => {
+    const onClick = vi.fn();
+    render(
+      <GatedButton decision={ALLOW} tooltip="Remove" aria-label="Remove" onClick={onClick}>
+        <svg aria-hidden="true" />
+      </GatedButton>,
+    );
+
+    await userEvent.click(screen.getByRole('button', { name: 'Remove' }));
+    expect(onClick).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows the denial reason, not the tooltip, when denied', async () => {
+    render(
+      <GatedButton decision={DENY} tooltip="Choose Cover image" aria-label="Choose Cover image">
+        <svg aria-hidden="true" />
+      </GatedButton>,
+    );
+    const button = screen.getByRole('button', { name: 'Choose Cover image' });
+
+    expect(button).toHaveAttribute('aria-disabled', 'true');
+    expect(button).toHaveAccessibleDescription(DENY.reason);
+    await userEvent.hover(button);
+    await waitFor(() =>
+      expect(document.querySelector('[data-slot="tooltip-content"]')).toHaveTextContent(
+        DENY.reason,
+      ),
+    );
+  });
 });
