@@ -1,9 +1,10 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { AlertCircleIcon, PlusIcon, SearchIcon } from 'lucide-react';
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
+import { AlertCircleIcon, Columns3Icon, ListFilterIcon, PlusIcon, SearchIcon } from 'lucide-react';
 import { Link, useSearchParams } from 'react-router-dom';
 
 import { Field } from '@/components/form/Field';
 import { GatedButton } from '@/components/form/GatedButton';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -17,13 +18,17 @@ import {
   parseListState,
   serializeListState,
   toListParams,
+  type ListFilter,
   type ListState,
 } from '@/features/content/listState';
 import type { ContentType } from '@/features/content/types';
 import { LiveRegion } from '@/features/settings/components/LiveRegion';
 import { useAnnouncer } from '@/features/settings/components/useAnnouncer';
 
+import { ColumnChooserDialog } from './list/ColumnChooserDialog';
 import { DocumentsTable } from './list/DocumentsTable';
+import { FilterChips } from './list/FilterChips';
+import { FilterPanel } from './list/FilterPanel';
 import { PaginationBar } from './list/PaginationBar';
 
 const IGNORED = 'Some filters in the link were ignored.';
@@ -117,6 +122,25 @@ const CollectionListPage: React.FC<{ type: ContentType }> = ({ type }) => {
     ids: new Set(),
   });
   const selected = selection.key === listKey ? selection.ids : new Set<string>();
+
+  // Filters: the panel edits a copy; Apply, Clear all and chip removal write the URL (page 1) and
+  // put focus back on the Filters button.
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const filtersButton = useRef<HTMLButtonElement>(null);
+  const filterPanelId = useId();
+  const filterCount = Object.keys(state.filters).length;
+  const setFilters = (filters: Record<string, ListFilter>) => {
+    update({ filters, page: 1 });
+    setFiltersOpen(false);
+    filtersButton.current?.focus();
+  };
+  const removeFilter = (field: string) => {
+    const { [field]: _, ...rest } = state.filters;
+    setFilters(rest);
+  };
+
+  const [columnsOpen, setColumnsOpen] = useState(false);
+  const columnsButton = useRef<HTMLButtonElement>(null);
 
   const filtered = state.q !== '' || Object.keys(state.filters).length > 0;
   const forbidden = !access.read.allowed || error?.status === 403;
@@ -217,7 +241,48 @@ const CollectionListPage: React.FC<{ type: ContentType }> = ({ type }) => {
               leading={<SearchIcon aria-hidden="true" />}
             />
           </Field>
+          <Button
+            ref={filtersButton}
+            variant="outline"
+            aria-label={filterCount > 0 ? `Filters (${filterCount} active)` : undefined}
+            aria-expanded={filtersOpen}
+            aria-controls={filtersOpen ? filterPanelId : undefined}
+            onClick={() => setFiltersOpen((open) => !open)}
+          >
+            <ListFilterIcon aria-hidden="true" />
+            Filters
+            {filterCount > 0 && <Badge aria-hidden="true">{filterCount}</Badge>}
+          </Button>
+          <GatedButton
+            ref={columnsButton}
+            variant="outline"
+            decision={access.configureColumns}
+            onClick={() => setColumnsOpen(true)}
+          >
+            <Columns3Icon aria-hidden="true" />
+            Columns
+          </GatedButton>
+          <ColumnChooserDialog
+            type={type}
+            catalog={catalog}
+            open={columnsOpen}
+            onOpenChange={setColumnsOpen}
+            finalFocus={columnsButton}
+          />
         </div>
+      )}
+      {!forbidden && filtersOpen && (
+        <div id={filterPanelId}>
+          <FilterPanel
+            key={JSON.stringify(state.filters)}
+            catalog={catalog}
+            filters={state.filters}
+            onApply={setFilters}
+          />
+        </div>
+      )}
+      {!forbidden && (
+        <FilterChips catalog={catalog} filters={state.filters} onRemove={removeFilter} />
       )}
       {body}
       <LiveRegion message={message} />

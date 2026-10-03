@@ -292,3 +292,83 @@ describe('CollectionListPage states (AC-24)', () => {
     expect(screen.getByRole('searchbox', { name: 'Search entries' })).toHaveValue('');
   });
 });
+
+describe('CollectionListPage filters (AC-22)', () => {
+  it('opens the panel, applies a filter to the URL and the request, and shows a chip', async () => {
+    const d1 = listDocumentsHandler(paged(30));
+    server.use(d1.handler);
+    const { router, user } = renderPage('/admin/content-types/article?page=2');
+
+    const toggle = await screen.findByRole('button', { name: 'Filters' });
+    expect(toggle).toHaveAttribute('aria-expanded', 'false');
+    await user.click(toggle);
+    expect(toggle).toHaveAttribute('aria-expanded', 'true');
+    const panel = screen.getByRole('region', { name: 'Filters' });
+    await user.click(within(panel).getByRole('combobox', { name: 'Field' }));
+    await user.click(await screen.findByRole('option', { name: 'Title' }));
+    await user.type(within(panel).getByRole('textbox', { name: 'Value' }), 'hi');
+    await user.click(within(panel).getByRole('button', { name: 'Apply' }));
+
+    await waitFor(() => expect(search(router)).toBe('?filters[title][$eq]=hi'));
+    await waitFor(() => expect(d1.requests).toHaveLength(2));
+    expect(d1.requests[1]!.url.searchParams.get('filters[title][$eq]')).toBe('hi');
+    expect(screen.queryByRole('region', { name: 'Filters' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Filters (1 active)' })).toHaveFocus();
+    expect(screen.getByRole('button', { name: 'Title is “hi”, remove' })).toBeInTheDocument();
+  });
+
+  it('removes a chip, updating the URL and the request', async () => {
+    const d1 = listDocumentsHandler(paged(3));
+    server.use(d1.handler);
+    const { router, user } = renderPage(
+      '/admin/content-types/article?filters[featured][$eq]=true&filters[views][$gt]=2',
+    );
+
+    await screen.findByRole('table');
+    expect(screen.getByRole('button', { name: 'Filters (2 active)' })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Featured is Yes, remove' }));
+
+    await waitFor(() => expect(search(router)).toBe('?filters[views][$gt]=2'));
+    await waitFor(() => expect(d1.requests).toHaveLength(2));
+    expect(d1.requests[1]!.url.searchParams.has('filters[featured][$eq]')).toBe(false);
+    expect(screen.getByRole('button', { name: 'Filters (1 active)' })).toHaveFocus();
+  });
+
+  it('clears every filter with Clear all', async () => {
+    const d1 = listDocumentsHandler(paged(3));
+    server.use(d1.handler);
+    const { router, user } = renderPage('/admin/content-types/article?filters[featured][$eq]=true');
+
+    await user.click(await screen.findByRole('button', { name: 'Filters (1 active)' }));
+    await user.click(screen.getByRole('button', { name: 'Clear all' }));
+
+    await waitFor(() => expect(search(router)).toBe(''));
+    expect(screen.queryByRole('list', { name: 'Active filters' })).not.toBeInTheDocument();
+  });
+});
+
+describe('CollectionListPage columns (AC-25)', () => {
+  it('opens the column chooser for a content type manager and returns focus on close', async () => {
+    server.use(listDocumentsHandler(paged(2)).handler);
+    const { user } = renderPage(undefined, [...READER, 'content_type:manager']);
+
+    const columns = await screen.findByRole('button', { name: 'Columns' });
+    await user.click(columns);
+    expect(await screen.findByRole('dialog', { name: 'Choose columns' })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Cancel' }));
+
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    expect(columns).toHaveFocus();
+  });
+
+  it('gates Columns with the reason for other users', async () => {
+    server.use(listDocumentsHandler(paged(2)).handler);
+    const { user } = renderPage();
+
+    const columns = await screen.findByRole('button', { name: 'Columns' });
+    expect(columns).toHaveAttribute('aria-disabled', 'true');
+    expect(columns).toHaveAccessibleDescription(/content_type:manager|permission/i);
+    await user.click(columns);
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+});
