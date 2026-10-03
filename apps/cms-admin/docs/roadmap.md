@@ -60,7 +60,10 @@ Resolve each one before the named phase starts.
 
 ## Known gaps from Phase 6
 
-- **Collection list wire default (AC-20).** The URL default size is 10 (`DEFAULT_LIST_SIZE`), but `LIST_DEFAULTS.size` stays 20, because it mirrors the backend's own default and decides which `size` is left off the request. So the default list sends `size=10` instead of leaving `size` out.
+- **Collection list wire default (AC-20, decision).** The list's own default is `DEFAULT_LIST_SIZE = 10` in `listState.ts`. `LIST_DEFAULTS.size` stays 20, because it mirrors the backend's default and decides which `size` is left off the request, so the default list sends `size=10`. AC-20 was reworded with the user's approval to require this behaviour rather than a change to the constant.
+- The `destructive` badge (`bg-destructive/10` with destructive text) fails axe colour contrast in the light theme. This predates Phase 6, so the UI kit leaves it out of its Badge section. Fix the badge's token pair before adding it back.
+- `GatedMenuItem` has no unit test (0% coverage); it had none before the move to `@repo/ui` either. The package's 70% gate on `src/form/**` is met as a whole.
+- The Phase 6 security audit passed with no findings at any severity.
 - `apps/frontend` is wired to `@repo/ui` only (D4). It renders no package component yet, has no Playwright tests, and its dark mode is still media-query based rather than the `.dark` switch.
 - The settings lists page on the client over the full list each endpoint returns (D5). Very large lists still load in full; backend paging would need a contract change.
 - The Phase 4 and Phase 5 manual smokes against :8080 are still pending; Phase 6 did not run them.
