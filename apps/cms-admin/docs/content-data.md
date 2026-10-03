@@ -1,8 +1,8 @@
 # Content data layer
 
-Phase 2 adds a React Query data layer for content types and their documents. It is logic only: the
-two pages under `/admin/content-types` are unstyled, read-only placeholders that exist so the e2e
-suite can drive the hooks in a real browser. Phase 5 builds the editing UI on top of these hooks.
+Phase 2 adds a React Query data layer for content types and their documents. Phase 5 builds the
+editing UI on top of these hooks; the pages, the form and the list are described in
+[Documents UI](./documents-ui.md).
 
 Every request goes through `cmsApi` (see [API client](./api-client.md)), so a 401 is refreshed once
 and retried, and every error reaches the hooks as an `ApiError`. ABAC checks are **client-side
@@ -81,8 +81,13 @@ axios's own nested-object serialization.
   - **Length caps (P2-SEC-2):** `MAX_LIST_TEXT_LENGTH` is 256. A `search` longer than that after
     trimming, or a string filter value longer than that, is a problem. Exactly 256 passes. Numbers,
     booleans and `Date` values are not capped.
-  - Whether a name is a _known_ column for the content type (schema-aware check) is deferred to
-    Phase 5.
+  - **Known-column check (Phase 5):** pass the content type's column catalog as the third
+    argument, `useDocumentList(ref, params, buildColumnCatalog(type))`. After the rules above,
+    `validateListParamsForType` (`columns.ts`) then requires `orderBy` to be a sortable column,
+    each filter key a filterable column and each operator one that column allows. A failure is
+    `ERR_CLIENT_VALIDATION` and nothing is sent. Without the catalog only the rules above run, so
+    existing callers are unchanged. Which columns qualify is listed in
+    [Documents UI](./documents-ui.md#known-column-check).
 - **Items:** each `ListedDocumentItem` carries its system columns (`id`, `documentId`, `status`,
   `createdAt`, `updatedAt`, `updatedBy`) beside `data`, and `data` is projected to the content
   type's `listFields`.
@@ -158,7 +163,7 @@ denied; mutations call `guard(decision)` first. `guard` lives in
 A server 403 surfaces as an `ApiError` with status 403. It is not retried and does not end the
 session. Other 4xx errors are not retried either (the `queryClient` default).
 
-## Using the hooks in Phase 5
+## Using the hooks
 
 Pass a `ContentTypeRef` (`{ slug, draftToPublish }`), usually taken from `useContentType(slug)` or
 the `useContentTypes()` list, and gate buttons with `useContentTypeAccess`.
@@ -168,7 +173,12 @@ const { data: type } = useContentType(slug);
 const ref = { slug, draftToPublish: type?.draftToPublish ?? true };
 const access = useContentTypeAccess(ref);
 
-const list = useDocumentList(ref, { start, size: 20, orderBy: 'createdAt', sortDir: 'asc' });
+const catalog = buildColumnCatalog(type); // columns.ts; memoize it per type
+const list = useDocumentList(
+  ref,
+  { start, size: 20, orderBy: 'createdAt', sortDir: 'asc' },
+  catalog,
+);
 // list.data → { items, total, start, size }; list.isPlaceholderData while the next page loads
 
 const create = useCreateDocument(ref);
@@ -201,17 +211,14 @@ const publish = usePublishDocument(ref); // variables: documentId
 - **Errors:** narrow with `isApiError`; check `error.code` for the two client codes above and
   `error.status === 403` for a forbidden state.
 
-## Placeholder pages
+## E2E harness
 
-- `/admin/content-types` (`ContentTypesPage`): unstyled list grouped into "Single types" and
-  "Collection types", behind `RequireAccess can={{ I: 'read', a: 'content_type' }}`.
-- `/admin/content-types/:slug` (`ContentTypePage`): name, kind, field names, a first-page table for a
-  collection type, or the status ("Not saved yet" on a 404) for a single type. It reads `orderBy` and
-  `sortDir` from its URL query, so e2e can set a sort. Phase 3 and 5 replace both pages.
-
-E2E (`e2e/content-types.spec.ts`) runs against the `mockContent` fixture
-(`e2e/fixtures/mockContent.ts`), which models C1, C2, S1 and D1 with scoped 403s and expired-token
-401s. Automated tests never hit a real backend.
+The `mockContent` fixture (`e2e/fixtures/mockContent.ts`) is the in-memory content backend for C1 to
+C3, S1 to S4 and D1 to D10; [Documents UI](./documents-ui.md#test-doubles) describes it. The Phase 2
+placeholder pages and their `e2e/content-types.spec.ts` are gone: Phase 5 replaced the pages, and
+their assertions (the scoped 403, the 401 refresh during a list load, the sort read from the URL,
+the overview grouping and the `/403` redirect) now live in `documents-list.spec.ts`,
+`content-permissions.spec.ts` and `content-mock.spec.ts`. Automated tests never hit a real backend.
 
 ## Manual smoke against :8080
 
@@ -236,4 +243,4 @@ requests and results here, and fix any mismatch in the `listQuery.ts` mapping wi
 - Bulk create is denied client-side when `draftToPublish` is false (it needs `publish`).
 - Types stay app-local in `types.ts`; dynamic document fields are `Record<string, unknown>`.
 - No locale support: there is no `locale` param and no locale segment in the keys.
-- The placeholder pages and the `mockContent` e2e harness stay until Phase 5 replaces them.
+- The known-column check is opt-in on the hook (the third argument), so the change is additive.
