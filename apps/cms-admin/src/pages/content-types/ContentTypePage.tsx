@@ -15,8 +15,9 @@ import type { ApiError } from '@/core/api/apiError';
 import { useDocumentList } from '@/features/content/hooks/useCollectionQueries';
 import { useContentTypeAccess } from '@/features/content/hooks/useContentTypeAccess';
 import { useContentType } from '@/features/content/hooks/useContentTypes';
-import { useSingleTypeDocument } from '@/features/content/hooks/useSingleType';
 import type { ContentType, ListedDocumentItem, ListParams } from '@/features/content/types';
+
+import SingleTypeEditorPage from './SingleTypeEditorPage';
 
 const FORBIDDEN = "You don't have access to this content type.";
 
@@ -99,32 +100,10 @@ const CollectionDocuments: React.FC<{ type: ContentType }> = ({ type }) => {
 };
 CollectionDocuments.displayName = 'CollectionDocuments';
 
-const SingleDocument: React.FC<{ type: ContentType }> = ({ type }) => {
-  const access = useContentTypeAccess(type);
-  const { data, error, isPending } = useSingleTypeDocument(type);
-
-  if (!access.read.allowed || isForbidden(error)) return <Forbidden />;
-  if (error)
-    return (
-      <p role="alert" className={ALERT}>
-        Couldn't load the document.
-      </p>
-    );
-  if (isPending)
-    return (
-      <p role="status" className={STATUS}>
-        Loading document…
-      </p>
-    );
-  return <p className="text-sm">{data ? `Status: ${data.status}` : 'Not saved yet'}</p>;
-};
-SingleDocument.displayName = 'SingleDocument';
-
 /**
- * `/admin/content-types/:slug`: read-only placeholder (gated by `content_type:read`) with a light
- * Card, Badge and Table restyle (AC-39). It shows the content type's name, kind and fields, then
- * the first page of a collection type (with `orderBy` and `sortDir` taken from the URL) or the
- * status of a single type. The styled screens arrive in Phase 5.
+ * `/admin/content-types/:slug` (gated by `content_type:read`): loads the content type, then shows
+ * the single-type editor, or for a collection type the read-only placeholder list (its name, kind,
+ * fields and first page, with `orderBy` and `sortDir` taken from the URL) until the list view lands.
  */
 const ContentTypePage: React.FC = () => {
   const { slug = '' } = useParams();
@@ -161,14 +140,19 @@ const ContentTypePage: React.FC = () => {
       </section>
     );
 
+  if (type.kind === 'single')
+    return (
+      <section>
+        <SingleTypeEditorPage type={type} />
+      </section>
+    );
+
   return (
     <section>
       <Card>
         <CardHeader>
           <h1 className="text-2xl font-semibold tracking-tight">{type.name}</h1>
-          <Badge variant="secondary">
-            Kind: {type.kind === 'single' ? 'Single type' : 'Collection type'}
-          </Badge>
+          <Badge variant="secondary">Kind: Collection type</Badge>
         </CardHeader>
         <CardContent className="flex flex-col gap-6">
           <div className="flex flex-col gap-2">
@@ -186,11 +170,7 @@ const ContentTypePage: React.FC = () => {
               ))}
             </ul>
           </div>
-          {type.kind === 'single' ? (
-            <SingleDocument type={type} />
-          ) : (
-            <CollectionDocuments type={type} />
-          )}
+          <CollectionDocuments type={type} />
         </CardContent>
       </Card>
     </section>

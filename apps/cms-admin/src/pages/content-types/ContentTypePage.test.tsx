@@ -129,17 +129,21 @@ describe('ContentTypePage (AC-32)', () => {
     expect(d1.requests[0]!.url.search).toBe('');
   });
 
-  it('shows the status of a saved single type', async () => {
+  it('shows the single-type editor for a single type (AC-17)', async () => {
     server.use(
       getContentTypeHandler(() => HttpResponse.json(HOME)).handler,
-      getSingleTypeHandler(() => HttpResponse.json({ data: makeDocument({ status: 'published' }) }))
-        .handler,
+      getSingleTypeHandler(() =>
+        HttpResponse.json({ data: makeDocument({ status: 'published', headline: 'Hi' }) }),
+      ).handler,
     );
 
     renderPage('/admin/content-types/home');
 
-    expect(await screen.findByText('Status: published')).toBeInTheDocument();
-    expect(screen.getByText('Kind: Single type')).toBeInTheDocument();
+    expect(await screen.findByLabelText('Headline')).toHaveValue('Hi');
+    expect(screen.getByRole('heading', { level: 1, name: 'Home' })).toBeInTheDocument();
+    expect(screen.getByText('Published')).toHaveAttribute('data-slot', 'badge');
+    expect(screen.getByRole('button', { name: 'Save' })).toBeInTheDocument();
+    expect(screen.queryByText(/^Kind:/)).not.toBeInTheDocument();
     expect(screen.queryByRole('table')).not.toBeInTheDocument();
   });
 
@@ -152,6 +156,17 @@ describe('ContentTypePage (AC-32)', () => {
     renderPage('/admin/content-types/home');
 
     expect(await screen.findByText('Not saved yet')).toBeInTheDocument();
+  });
+
+  it('shows the access alert when the server forbids the single type', async () => {
+    server.use(
+      getContentTypeHandler(() => HttpResponse.json(HOME)).handler,
+      getSingleTypeHandler(errorReply(403, 'Forbidden resource')).handler,
+    );
+
+    renderPage('/admin/content-types/home');
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(FORBIDDEN);
   });
 
   it('shows the access alert when the server forbids the content type', async () => {
@@ -209,28 +224,6 @@ describe('ContentTypePage (AC-32)', () => {
     renderPage('/admin/content-types/article');
 
     expect(await screen.findByRole('alert')).toHaveTextContent("Couldn't load the documents.");
-  });
-
-  it('shows the access alert when the server forbids the single type', async () => {
-    server.use(
-      getContentTypeHandler(() => HttpResponse.json(HOME)).handler,
-      getSingleTypeHandler(errorReply(403, 'Forbidden resource')).handler,
-    );
-
-    renderPage('/admin/content-types/home');
-
-    expect(await screen.findByRole('alert')).toHaveTextContent(FORBIDDEN);
-  });
-
-  it('shows a generic alert when the single type fails otherwise', async () => {
-    server.use(
-      getContentTypeHandler(() => HttpResponse.json(HOME)).handler,
-      getSingleTypeHandler(errorReply(400, 'Bad slug')).handler,
-    );
-
-    renderPage('/admin/content-types/home');
-
-    expect(await screen.findByRole('alert')).toHaveTextContent("Couldn't load the document.");
   });
 
   it('shows a status while the documents load', async () => {
