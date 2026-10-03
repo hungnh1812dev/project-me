@@ -4,7 +4,9 @@ import { resolve } from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
+import { SYNTAX_TOKENS } from '../lib/jsonEditor';
 import {
+  type ColorTokenName,
   COLOR_TOKEN_NAMES,
   contrastRatio,
   TEXT_PAIRS,
@@ -76,43 +78,83 @@ describe.each(THEMES)('%s theme tokens', (theme) => {
   });
 });
 
-describe('palette (D9, AC-13)', () => {
-  const VIOLET = { light: '#7c3aed', dark: '#a78bfa' } as const;
-  const ON_ACCENT = { light: '#ffffff', dark: '#020617' } as const;
+describe('palette (AC-1, AC-3)', () => {
+  it('uses charcoal text on an off-white canvas with white cards in light', () => {
+    const light = THEME_TOKENS.light;
+    expect(light.foreground).toBe('#2b2b2b');
+    expect(light.background).toBe('#fafaf9');
+    expect(light.card).toBe('#ffffff');
+    expect(light.popover).toBe('#ffffff');
+  });
 
-  it.each(THEMES)('makes primary, ring and the sidebar primary and ring violet (%s)', (theme) => {
+  it.each(THEMES)('makes primary and the sidebar primary metallic gold (%s)', (theme) => {
+    expect(THEME_TOKENS[theme].primary).toBe('#d4af37');
+    expect(THEME_TOKENS[theme]['sidebar-primary']).toBe('#d4af37');
+  });
+
+  it.each([
+    ['light', '#7a5c14'],
+    ['dark', '#e0c068'],
+  ] as const)('uses the deep gold primary-ink for ring, sidebar ring and highlight (%s)', (theme, ink) => {
     const tokens = THEME_TOKENS[theme];
-    for (const name of ['primary', 'ring', 'sidebar-primary', 'sidebar-ring'] as const) {
-      expect(tokens[name], name).toBe(VIOLET[theme]);
+    for (const name of ['primary-ink', 'ring', 'sidebar-ring', 'highlight'] as const) {
+      expect(tokens[name], name).toBe(ink);
     }
-    expect(tokens['primary-foreground']).toBe(ON_ACCENT[theme]);
-    expect(tokens['sidebar-primary-foreground']).toBe(ON_ACCENT[theme]);
   });
 
-  it('uses orange-700 with white text for the light highlight', () => {
-    expect(THEME_TOKENS.light.highlight).toBe('#c2410c');
-    expect(THEME_TOKENS.light['highlight-foreground']).toBe('#ffffff');
+  it('moves the neutrals to stone', () => {
+    expect(THEME_TOKENS.light.border).toBe('#e7e5e4');
+    expect(THEME_TOKENS.light.input).toBe('#78716c');
+    expect(THEME_TOKENS.dark.background).toBe('#1c1a17');
+    expect(THEME_TOKENS.dark.card).toBe('#292524');
   });
 
-  it('uses orange-400 with slate-950 text for the dark highlight', () => {
-    expect(THEME_TOKENS.dark.highlight).toBe('#fb923c');
-    expect(THEME_TOKENS.dark['highlight-foreground']).toBe('#020617');
-  });
-
-  it('keeps the neutrals on slate', () => {
-    expect(THEME_TOKENS.light.foreground).toBe('#020617');
-    expect(THEME_TOKENS.light.border).toBe('#e2e8f0');
-    expect(THEME_TOKENS.dark.background).toBe('#020617');
-    expect(THEME_TOKENS.dark.card).toBe('#0f172a');
-  });
-
-  it('checks the highlight text pairs for contrast (AC-15)', () => {
+  it('checks the AC-2 text pairs for 4.5:1', () => {
+    const own = COLOR_TOKEN_NAMES.filter((name) =>
+      COLOR_TOKEN_NAMES.includes(`${name}-foreground` as ColorTokenName),
+    ).map((name) => [`${name}-foreground`, name]);
+    expect(own.length).toBeGreaterThan(10);
     expect(TEXT_PAIRS).toEqual(
       expect.arrayContaining([
-        ['highlight-foreground', 'highlight'],
-        ['highlight', 'background'],
-        ['highlight', 'card'],
+        ...own,
+        ['foreground', 'background'],
+        ['foreground', 'card'],
+        ['foreground', 'muted'],
+        ['muted-foreground', 'background'],
+        ['muted-foreground', 'card'],
+        ['muted-foreground', 'muted'],
+        ['primary-ink', 'background'],
+        ['primary-ink', 'card'],
+        ['primary-ink', 'accent'],
+        ['primary-ink', 'sidebar'],
       ]),
+    );
+  });
+
+  it('never treats the gold fill as text on the page', () => {
+    expect(TEXT_PAIRS).not.toContainEqual(['primary', 'background']);
+    expect(TEXT_PAIRS).not.toContainEqual(['primary', 'card']);
+  });
+
+  it('checks the AC-2 boundary pairs for 3:1', () => {
+    expect(UI_BOUNDARY_PAIRS).toEqual(
+      expect.arrayContaining(
+        (['input', 'ring', 'primary-ink'] as const).flatMap((fg) => [
+          [fg, 'background'],
+          [fg, 'card'],
+        ]),
+      ),
+    );
+  });
+});
+
+describe.each(THEMES)('JSON editor syntax colours (AC-24, %s)', (theme) => {
+  const tokens = THEME_TOKENS[theme];
+
+  it.each(Object.entries(SYNTAX_TOKENS))('%s (%s) reaches 4.5:1 on background', (_, name) => {
+    expect(COLOR_TOKEN_NAMES).toContain(name);
+    expect(contrastRatio(tokens[name as ColorTokenName], tokens.background)).toBeGreaterThanOrEqual(
+      4.5,
     );
   });
 });

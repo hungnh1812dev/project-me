@@ -7,6 +7,9 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  /* Pinned to the pre-restyle shared values so the focus outline and default border stay put. */
+  --ring: #7c3aed;
+  --border: #e2e8f0;
 }
 
 @theme inline {
