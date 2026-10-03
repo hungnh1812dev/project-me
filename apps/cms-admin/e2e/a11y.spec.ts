@@ -25,7 +25,17 @@ const ARTICLE: ContentType = {
   updatedAt: STAMP,
 };
 
-const PAGES = [
+/**
+ * `seed` picks the fixtures: Jane (the default), the settings super admin, or the Phase 5 content
+ * manager. `ready` waits for what loads after the heading (a list, a lazy editor).
+ */
+const PAGES: {
+  path: string;
+  heading: string;
+  signedIn: boolean;
+  seed?: 'settings' | 'documents';
+  ready?: (page: Page) => Promise<void>;
+}[] = [
   { path: '/login', heading: 'Sign in', signedIn: false },
   { path: '/register', heading: 'Create account', signedIn: false },
   { path: '/forgot-password', heading: 'Reset your password', signedIn: false },
@@ -34,6 +44,30 @@ const PAGES = [
   { path: '/admin/profile', heading: 'Your profile', signedIn: true },
   { path: '/admin/content-types/article', heading: 'Article', signedIn: true },
   { path: '/admin/dev/ui-kit', heading: 'UI kit', signedIn: true },
+  // AC-16: the pages the palette change touches most.
+  {
+    path: '/admin/settings/users',
+    heading: 'Users',
+    signedIn: true,
+    seed: 'settings',
+    ready: (page) => expect(page.locator('[aria-busy="true"]')).toHaveCount(0),
+  },
+  {
+    path: '/admin/settings/media',
+    heading: 'Media library',
+    signedIn: true,
+    seed: 'settings',
+    ready: (page) => expect(page.locator('[aria-busy="true"]')).toHaveCount(0),
+  },
+  {
+    // The field showcase has a `media` field (Cover image).
+    path: '/admin/content-types/showcase/new',
+    heading: 'New entry',
+    signedIn: true,
+    seed: 'documents',
+    ready: (page) =>
+      expect(page.getByRole('group', { name: 'Cover image', exact: true })).toBeVisible(),
+  },
 ];
 const THEMES = ['light', 'dark'] as const;
 const DARK = /(^|\s)dark(\s|$)/;
@@ -75,18 +109,22 @@ async function expectNoBlockingViolations(page: Page, theme: string) {
   expect(blocking).toEqual([]);
 }
 
-for (const { path, heading, signedIn } of PAGES) {
+for (const { path, heading, signedIn, seed: fixtures, ready } of PAGES) {
   for (const theme of THEMES) {
     for (const width of WIDTHS) {
       test(`axe: ${path} has no serious or critical violations (${theme}, ${width}px)`, async ({
         page,
         mockApi,
+        mockContent,
       }) => {
-        seed(mockApi, signedIn);
+        if (fixtures === 'settings') seedSettings(mockApi);
+        else if (fixtures === 'documents') seedDocuments(mockApi, mockContent);
+        else seed(mockApi, signedIn);
         await prepare(page, theme, width);
 
         await page.goto(path);
         await expect(page.getByRole('heading', { level: 1, name: heading })).toBeVisible();
+        await ready?.(page);
 
         await expectNoBlockingViolations(page, theme);
       });
@@ -319,7 +357,10 @@ async function openSettings(page: Page, path: string, heading: string) {
   await expect(page.locator('[aria-busy="true"]')).toHaveCount(0);
 }
 
-for (const { path, heading } of SETTINGS_PAGES) {
+// Users and Media run in the `PAGES` loop above with the same fixtures (AC-16).
+for (const { path, heading } of SETTINGS_PAGES.filter(
+  (s) => !PAGES.some((p) => p.path === s.path),
+)) {
   for (const theme of THEMES) {
     for (const width of WIDTHS) {
       test(`axe: ${path} has no serious or critical violations (${theme}, ${width}px)`, async ({

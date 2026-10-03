@@ -1,7 +1,8 @@
 /**
  * The semantic colour tokens, mirrored from `theme.css` (`:root` and `.dark`).
  * `tokens.test.ts` checks that both stay in sync and that every pair meets WCAG AA (AC-3).
- * Neutrals are Tailwind slate; the accent is indigo-600 (light) and indigo-400 (dark).
+ * Neutrals are Tailwind slate; the primary is violet-600 (light) and violet-400 (dark), and the
+ * highlight is orange-700 (light) and orange-400 (dark) (D9).
  */
 export const COLOR_TOKEN_NAMES = [
   'background',
@@ -24,6 +25,8 @@ export const COLOR_TOKEN_NAMES = [
   'success-foreground',
   'warning',
   'warning-foreground',
+  'highlight',
+  'highlight-foreground',
   'border',
   'input',
   'ring',
@@ -48,7 +51,7 @@ export const THEME_TOKENS: Record<ThemeName, Record<ColorTokenName, string>> = {
     'card-foreground': '#020617',
     popover: '#ffffff',
     'popover-foreground': '#020617',
-    primary: '#4f46e5',
+    primary: '#7c3aed',
     'primary-foreground': '#ffffff',
     secondary: '#f1f5f9',
     'secondary-foreground': '#0f172a',
@@ -62,17 +65,19 @@ export const THEME_TOKENS: Record<ThemeName, Record<ColorTokenName, string>> = {
     'success-foreground': '#ffffff',
     warning: '#b45309',
     'warning-foreground': '#ffffff',
+    highlight: '#c2410c',
+    'highlight-foreground': '#ffffff',
     border: '#e2e8f0',
     input: '#64748b',
-    ring: '#4f46e5',
+    ring: '#7c3aed',
     sidebar: '#f8fafc',
     'sidebar-foreground': '#0f172a',
-    'sidebar-primary': '#4f46e5',
+    'sidebar-primary': '#7c3aed',
     'sidebar-primary-foreground': '#ffffff',
     'sidebar-accent': '#e2e8f0',
     'sidebar-accent-foreground': '#0f172a',
     'sidebar-border': '#e2e8f0',
-    'sidebar-ring': '#4f46e5',
+    'sidebar-ring': '#7c3aed',
   },
   dark: {
     background: '#020617',
@@ -81,7 +86,7 @@ export const THEME_TOKENS: Record<ThemeName, Record<ColorTokenName, string>> = {
     'card-foreground': '#f8fafc',
     popover: '#0f172a',
     'popover-foreground': '#f8fafc',
-    primary: '#818cf8',
+    primary: '#a78bfa',
     'primary-foreground': '#020617',
     secondary: '#1e293b',
     'secondary-foreground': '#f8fafc',
@@ -95,17 +100,19 @@ export const THEME_TOKENS: Record<ThemeName, Record<ColorTokenName, string>> = {
     'success-foreground': '#020617',
     warning: '#fbbf24',
     'warning-foreground': '#020617',
+    highlight: '#fb923c',
+    'highlight-foreground': '#020617',
     border: '#1e293b',
     input: '#64748b',
-    ring: '#818cf8',
+    ring: '#a78bfa',
     sidebar: '#0f172a',
     'sidebar-foreground': '#f8fafc',
-    'sidebar-primary': '#818cf8',
+    'sidebar-primary': '#a78bfa',
     'sidebar-primary-foreground': '#020617',
     'sidebar-accent': '#1e293b',
     'sidebar-accent-foreground': '#f8fafc',
     'sidebar-border': '#1e293b',
-    'sidebar-ring': '#818cf8',
+    'sidebar-ring': '#a78bfa',
   },
 };
 
@@ -129,6 +136,9 @@ export const TEXT_PAIRS: ReadonlyArray<readonly [ColorTokenName, ColorTokenName]
   ['success', 'background'],
   ['warning-foreground', 'warning'],
   ['warning', 'background'],
+  ['highlight-foreground', 'highlight'],
+  ['highlight', 'background'],
+  ['highlight', 'card'],
   ['sidebar-foreground', 'sidebar'],
   ['muted-foreground', 'sidebar'],
   ['sidebar-primary-foreground', 'sidebar-primary'],
@@ -143,6 +153,7 @@ export const UI_BOUNDARY_PAIRS: ReadonlyArray<readonly [ColorTokenName, ColorTok
   ['ring', 'card'],
   ['sidebar-ring', 'sidebar'],
   ['sidebar-primary', 'sidebar'],
+  ['highlight', 'sidebar'],
 ];
 
 function relativeLuminance(hex: string): number {

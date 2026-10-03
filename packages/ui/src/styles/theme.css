@@ -12,7 +12,7 @@
   --card-foreground: #020617;
   --popover: #ffffff;
   --popover-foreground: #020617;
-  --primary: #4f46e5;
+  --primary: #7c3aed;
   --primary-foreground: #ffffff;
   --secondary: #f1f5f9;
   --secondary-foreground: #0f172a;
@@ -26,17 +26,19 @@
   --success-foreground: #ffffff;
   --warning: #b45309;
   --warning-foreground: #ffffff;
+  --highlight: #c2410c;
+  --highlight-foreground: #ffffff;
   --border: #e2e8f0;
   --input: #64748b;
-  --ring: #4f46e5;
+  --ring: #7c3aed;
   --sidebar: #f8fafc;
   --sidebar-foreground: #0f172a;
-  --sidebar-primary: #4f46e5;
+  --sidebar-primary: #7c3aed;
   --sidebar-primary-foreground: #ffffff;
   --sidebar-accent: #e2e8f0;
   --sidebar-accent-foreground: #0f172a;
   --sidebar-border: #e2e8f0;
-  --sidebar-ring: #4f46e5;
+  --sidebar-ring: #7c3aed;
   --radius: 0.5rem;
   --motion-duration-fast: 150ms;
   --motion-duration-normal: 200ms;
@@ -51,7 +53,7 @@
   --card-foreground: #f8fafc;
   --popover: #0f172a;
   --popover-foreground: #f8fafc;
-  --primary: #818cf8;
+  --primary: #a78bfa;
   --primary-foreground: #020617;
   --secondary: #1e293b;
   --secondary-foreground: #f8fafc;
@@ -65,17 +67,19 @@
   --success-foreground: #020617;
   --warning: #fbbf24;
   --warning-foreground: #020617;
+  --highlight: #fb923c;
+  --highlight-foreground: #020617;
   --border: #1e293b;
   --input: #64748b;
-  --ring: #818cf8;
+  --ring: #a78bfa;
   --sidebar: #0f172a;
   --sidebar-foreground: #f8fafc;
-  --sidebar-primary: #818cf8;
+  --sidebar-primary: #a78bfa;
   --sidebar-primary-foreground: #020617;
   --sidebar-accent: #1e293b;
   --sidebar-accent-foreground: #f8fafc;
   --sidebar-border: #1e293b;
-  --sidebar-ring: #818cf8;
+  --sidebar-ring: #a78bfa;
   color-scheme: dark;
 }
 
@@ -100,6 +104,8 @@
   --color-success-foreground: var(--success-foreground);
   --color-warning: var(--warning);
   --color-warning-foreground: var(--warning-foreground);
+  --color-highlight: var(--highlight);
+  --color-highlight-foreground: var(--highlight-foreground);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);

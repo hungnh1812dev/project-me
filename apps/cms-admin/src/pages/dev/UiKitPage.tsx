@@ -12,6 +12,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@repo/ui/components/alert-dialog';
+import { Badge } from '@repo/ui/components/badge';
 import { Button } from '@repo/ui/components/button';
 import { Calendar } from '@repo/ui/components/calendar';
 import {
@@ -46,9 +47,22 @@ import { DatePicker } from '@repo/ui/form/DatePicker';
 import { Field } from '@repo/ui/form/Field';
 import { JsonInput } from '@repo/ui/form/JsonInput';
 import { PasswordInput } from '@repo/ui/form/PasswordInput';
+import { cn } from '@repo/ui/lib/cn';
 
 const VARIANTS = ['default', 'secondary', 'outline', 'ghost', 'destructive', 'link'] as const;
 const SIZES = ['sm', 'default', 'lg'] as const;
+const BADGE_VARIANTS = ['default', 'secondary', 'outline', 'highlight'] as const;
+
+/** The semantic colour pairs, each as a token-class swatch (AC-14). Literal classes for Tailwind. */
+const SWATCHES = [
+  { name: 'primary', className: 'bg-primary text-primary-foreground' },
+  { name: 'highlight', className: 'bg-highlight text-highlight-foreground' },
+  { name: 'secondary', className: 'bg-secondary text-secondary-foreground' },
+  { name: 'muted', className: 'bg-muted text-muted-foreground' },
+  { name: 'destructive', className: 'bg-destructive text-destructive-foreground' },
+  { name: 'success', className: 'bg-success text-success-foreground' },
+  { name: 'warning', className: 'bg-warning text-warning-foreground' },
+] as const;
 
 const Section: React.FC<{ title: string; children: React.ReactNode }> = ({ title, children }) => (
   <section aria-labelledby={`ui-kit-${title}`} className="flex flex-col gap-4">
@@ -161,6 +175,27 @@ const UiKitPage: React.FC = () => (
         <Button variant="outline" render={<Link to="/admin" />}>
           Link as button
         </Button>
+      </div>
+    </section>
+
+    <Section title="Colour">
+      {SWATCHES.map(({ name, className }) => (
+        <div key={name} className={cn('rounded-lg border px-4 py-6 font-mono text-sm', className)}>
+          {name}
+        </div>
+      ))}
+    </Section>
+
+    <section aria-labelledby="ui-kit-Badge" className="flex flex-col gap-4">
+      <h2 id="ui-kit-Badge" className="text-lg font-semibold">
+        Badge
+      </h2>
+      <div className="flex flex-wrap items-center gap-3">
+        {BADGE_VARIANTS.map((variant) => (
+          <Badge key={variant} variant={variant} className="capitalize">
+            {variant}
+          </Badge>
+        ))}
       </div>
     </section>
 

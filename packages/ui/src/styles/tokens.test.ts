@@ -76,10 +76,44 @@ describe.each(THEMES)('%s theme tokens', (theme) => {
   });
 });
 
-describe('palette', () => {
-  it('uses indigo-600 for light primary and indigo-400 for dark primary', () => {
-    expect(THEME_TOKENS.light.primary).toBe('#4f46e5');
-    expect(THEME_TOKENS.dark.primary).toBe('#818cf8');
+describe('palette (D9, AC-13)', () => {
+  const VIOLET = { light: '#7c3aed', dark: '#a78bfa' } as const;
+  const ON_ACCENT = { light: '#ffffff', dark: '#020617' } as const;
+
+  it.each(THEMES)('makes primary, ring and the sidebar primary and ring violet (%s)', (theme) => {
+    const tokens = THEME_TOKENS[theme];
+    for (const name of ['primary', 'ring', 'sidebar-primary', 'sidebar-ring'] as const) {
+      expect(tokens[name], name).toBe(VIOLET[theme]);
+    }
+    expect(tokens['primary-foreground']).toBe(ON_ACCENT[theme]);
+    expect(tokens['sidebar-primary-foreground']).toBe(ON_ACCENT[theme]);
+  });
+
+  it('uses orange-700 with white text for the light highlight', () => {
+    expect(THEME_TOKENS.light.highlight).toBe('#c2410c');
+    expect(THEME_TOKENS.light['highlight-foreground']).toBe('#ffffff');
+  });
+
+  it('uses orange-400 with slate-950 text for the dark highlight', () => {
+    expect(THEME_TOKENS.dark.highlight).toBe('#fb923c');
+    expect(THEME_TOKENS.dark['highlight-foreground']).toBe('#020617');
+  });
+
+  it('keeps the neutrals on slate', () => {
+    expect(THEME_TOKENS.light.foreground).toBe('#020617');
+    expect(THEME_TOKENS.light.border).toBe('#e2e8f0');
+    expect(THEME_TOKENS.dark.background).toBe('#020617');
+    expect(THEME_TOKENS.dark.card).toBe('#0f172a');
+  });
+
+  it('checks the highlight text pairs for contrast (AC-15)', () => {
+    expect(TEXT_PAIRS).toEqual(
+      expect.arrayContaining([
+        ['highlight-foreground', 'highlight'],
+        ['highlight', 'background'],
+        ['highlight', 'card'],
+      ]),
+    );
   });
 });
 

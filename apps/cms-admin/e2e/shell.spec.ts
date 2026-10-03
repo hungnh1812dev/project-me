@@ -269,6 +269,34 @@ test.describe('side menu', () => {
     await expect(article).not.toHaveAttribute('aria-current');
   });
 
+  for (const { theme, highlight } of [
+    { theme: 'light', highlight: 'rgb(194, 65, 12)' },
+    { theme: 'dark', highlight: 'rgb(251, 146, 60)' },
+  ]) {
+    test(`only the active link shows the highlight indicator (${theme}, AC-14)`, async ({
+      page,
+      mockApi,
+    }) => {
+      signInJane(mockApi, ROLES.superAdmin);
+      await page.addInitScript({
+        content: `window.localStorage.setItem('cms-admin:theme', '${theme}');`,
+      });
+      await page.goto('/admin/settings/users');
+      await expect(page.getByRole('heading', { name: 'Users', level: 1 })).toBeVisible();
+
+      const indicator = (name: string) =>
+        menu(page)
+          .getByRole('link', { name })
+          .evaluate((el) => {
+            const before = el.ownerDocument.defaultView!.getComputedStyle(el, '::before');
+            return { content: before.content, background: before.backgroundColor };
+          });
+
+      expect(await indicator('Users')).toEqual({ content: '""', background: highlight });
+      expect((await indicator('Roles')).content).toBe('none');
+    });
+  }
+
   test('a group collapses and stays collapsed after a reload', async ({ page, mockApi }) => {
     signInJane(mockApi, ROLES.superAdmin);
     await page.goto('/admin');

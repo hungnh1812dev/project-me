@@ -1,6 +1,6 @@
 import type { Page } from '@playwright/test';
 
-import { expect, test } from './fixtures/mockApi.ts';
+import { expect, ROLES, test } from './fixtures/mockApi.ts';
 
 const DARK = /(^|\s)dark(\s|$)/;
 
@@ -82,13 +82,13 @@ for (const { choice, background, foreground, primary } of [
     choice: 'light',
     background: 'rgb(255, 255, 255)',
     foreground: 'rgb(2, 6, 23)',
-    primary: 'rgb(79, 70, 229)',
+    primary: 'rgb(124, 58, 237)',
   },
   {
     choice: 'dark',
     background: 'rgb(2, 6, 23)',
     foreground: 'rgb(248, 250, 252)',
-    primary: 'rgb(129, 140, 248)',
+    primary: 'rgb(167, 139, 250)',
   },
 ]) {
   test(`the shared @repo/ui theme tokens reach the page in the ${choice} theme`, async ({
@@ -103,5 +103,35 @@ for (const { choice, background, foreground, primary } of [
     await expect(page.locator('body')).toHaveCSS('color', foreground);
     // The auth page's submit button uses the default (primary) variant.
     await expect(page.locator('button[type="submit"]')).toHaveCSS('background-color', primary);
+  });
+}
+
+for (const { choice, primary, highlight } of [
+  { choice: 'light', primary: 'rgb(124, 58, 237)', highlight: 'rgb(194, 65, 12)' },
+  { choice: 'dark', primary: 'rgb(167, 139, 250)', highlight: 'rgb(251, 146, 60)' },
+]) {
+  test(`the UI kit shows the primary and highlight swatches and the highlight badge (${choice}, AC-14)`, async ({
+    page,
+    mockApi,
+  }) => {
+    mockApi.addUser({ email: 'jane@example.com', name: 'Jane Doe', role: ROLES.contentEditor });
+    mockApi.signInAs('jane@example.com');
+    await storeTheme(page, choice);
+
+    await page.goto('/admin/dev/ui-kit');
+    const colour = page.getByRole('region', { name: 'Colour' });
+
+    await expect(colour.getByText('primary', { exact: true })).toHaveCSS(
+      'background-color',
+      primary,
+    );
+    await expect(colour.getByText('highlight', { exact: true })).toHaveCSS(
+      'background-color',
+      highlight,
+    );
+    await expect(page.getByRole('region', { name: 'Badge' }).getByText('Highlight')).toHaveCSS(
+      'background-color',
+      highlight,
+    );
   });
 }
