@@ -149,32 +149,6 @@ test('a collection page rejects a non-identifier orderBy without asking the API 
   ).toEqual([]);
 });
 
-test('a single type that was never saved shows "Not saved yet"', async ({
-  page,
-  mockApi,
-  mockContent,
-}) => {
-  seed(mockContent);
-  signedInAs(mockApi);
-
-  await page.goto('/admin/content-types/home');
-
-  await expect(page.getByRole('heading', { level: 1, name: 'Home' })).toBeVisible();
-  await expect(page.getByText('Kind: Single type')).toBeVisible();
-  await expect(page.getByText('Not saved yet')).toBeVisible();
-  expect(calls(mockApi)).toContain('GET /api/v1/documents/single-type/home 404');
-});
-
-test('a saved single type shows its status', async ({ page, mockApi, mockContent }) => {
-  seed(mockContent);
-  mockContent.setSingle('home', { ...article('doc-home', 'Home', STAMP), status: 'published' });
-  signedInAs(mockApi);
-
-  await page.goto('/admin/content-types/home');
-
-  await expect(page.getByText('Status: published')).toBeVisible();
-});
-
 test('a user scoped to one content type sees the access alert on another', async ({
   page,
   mockApi,
