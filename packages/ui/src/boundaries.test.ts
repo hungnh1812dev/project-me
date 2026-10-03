@@ -177,3 +177,31 @@ describe('generic form components (AC-3)', () => {
     expect(existsSync(join(SRC, path))).toBe(true);
   });
 });
+
+describe('shadcn CLI config (AC-8)', () => {
+  const PACKAGE_ROOT = join(SRC, '..');
+  const CONFIG = join(PACKAGE_ROOT, 'components.json');
+
+  it('components.json lives in the package', () => {
+    expect(existsSync(CONFIG)).toBe(true);
+  });
+
+  it('components.json is no longer in cms-admin', () => {
+    expect(existsSync(join(PACKAGE_ROOT, '..', '..', 'apps', 'cms-admin', 'components.json'))).toBe(
+      false,
+    );
+  });
+
+  it('every alias points inside the package', () => {
+    const config = JSON.parse(readFileSync(CONFIG, 'utf8')) as { aliases: Record<string, string> };
+    const outside = Object.values(config.aliases).filter((alias) => !alias.startsWith('@repo/ui/'));
+
+    expect(outside).toEqual([]);
+  });
+
+  it('the Tailwind css entry is the package theme', () => {
+    const config = JSON.parse(readFileSync(CONFIG, 'utf8')) as { tailwind: { css: string } };
+
+    expect(existsSync(join(PACKAGE_ROOT, config.tailwind.css))).toBe(true);
+  });
+});
