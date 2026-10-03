@@ -26,6 +26,17 @@ export default defineConfig({
       use: { ...devices['Desktop Chrome'], baseURL: CSP_BASE_URL },
       testMatch: CSP_SPEC,
     },
+    // The JSON editor's shadow-root styling is engine-specific (constructed stylesheets).
+    {
+      name: 'csp-firefox',
+      use: { ...devices['Desktop Firefox'], baseURL: CSP_BASE_URL },
+      testMatch: CSP_SPEC,
+    },
+    {
+      name: 'csp-webkit',
+      use: { ...devices['Desktop Safari'], baseURL: CSP_BASE_URL },
+      testMatch: CSP_SPEC,
+    },
   ],
   webServer: [
     {
