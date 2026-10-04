@@ -18,6 +18,7 @@ export * as dropdownMenu from '@repo/ui/components/dropdown-menu';
 export * as input from '@repo/ui/components/input';
 export * as label from '@repo/ui/components/label';
 export * as popover from '@repo/ui/components/popover';
+export * as radioGroup from '@repo/ui/components/radio-group';
 export * as select from '@repo/ui/components/select';
 export * as separator from '@repo/ui/components/separator';
 export * as sheet from '@repo/ui/components/sheet';

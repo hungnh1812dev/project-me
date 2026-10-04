@@ -15,6 +15,7 @@ import {
 import { Badge } from '@repo/ui/components/badge';
 import { Button } from '@repo/ui/components/button';
 import { Calendar } from '@repo/ui/components/calendar';
+import { Checkbox } from '@repo/ui/components/checkbox';
 import {
   Dialog,
   DialogClose,
@@ -26,6 +27,7 @@ import {
   DialogTrigger,
 } from '@repo/ui/components/dialog';
 import { Input } from '@repo/ui/components/input';
+import { Label } from '@repo/ui/components/label';
 import {
   Popover,
   PopoverContent,
@@ -34,6 +36,7 @@ import {
   PopoverTitle,
   PopoverTrigger,
 } from '@repo/ui/components/popover';
+import { RadioGroup, RadioGroupItem } from '@repo/ui/components/radio-group';
 import {
   Select,
   SelectContent,
@@ -310,6 +313,39 @@ const UiKitPage: React.FC = () => (
       <Field label="Visible" required>
         <Switch />
       </Field>
+    </Section>
+
+    <Section title="Checkbox">
+      {(
+        [
+          { id: 'ui-kit-subscribe', label: 'Subscribe' },
+          { id: 'ui-kit-checked', label: 'Checked', defaultChecked: true },
+          { id: 'ui-kit-mixed', label: 'Some selected', indeterminate: true },
+          { id: 'ui-kit-checkbox-disabled', label: 'Disabled checkbox', disabled: true },
+        ] as const
+      ).map(({ id, label, ...props }) => (
+        <div key={id} className="flex items-center gap-2">
+          <Checkbox id={id} {...props} />
+          <Label htmlFor={id}>{label}</Label>
+        </div>
+      ))}
+    </Section>
+
+    <Section title="RadioGroup">
+      <RadioGroup aria-label="Density" defaultValue="comfortable">
+        {(
+          [
+            { value: 'comfortable', label: 'Comfortable' },
+            { value: 'compact', label: 'Compact' },
+            { value: 'spacious', label: 'Spacious' },
+          ] as const
+        ).map(({ value, label }) => (
+          <div key={value} className="flex items-center gap-2">
+            <RadioGroupItem id={`ui-kit-density-${value}`} value={value} />
+            <Label htmlFor={`ui-kit-density-${value}`}>{label}</Label>
+          </div>
+        ))}
+      </RadioGroup>
     </Section>
 
     <Section title="Select">

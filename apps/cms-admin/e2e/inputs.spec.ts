@@ -1,3 +1,5 @@
+import type { Locator } from '@playwright/test';
+
 import { editorText } from './fixtures/jsonEditor.ts';
 import { expect, test } from './fixtures/mockApi.ts';
 
@@ -334,4 +336,68 @@ test('the Button roles section shows action, normal and danger in every state (A
 test('the Badge section shows the destructive badge (AC-9)', async ({ page }) => {
   const badges = page.getByRole('region', { name: 'Badge' });
   await expect(badges.getByText('destructive', { exact: true })).toBeVisible();
+});
+
+/** Size of the element's ::after hit area (the box plus its negative inset). */
+type StyleOf = (el: unknown, pseudo: string) => Record<'left' | 'right' | 'top' | 'bottom', string>;
+const hitArea = (locator: Locator) =>
+  locator.evaluate((el) => {
+    const box = el.getBoundingClientRect();
+    const after = (globalThis as unknown as { getComputedStyle: StyleOf }).getComputedStyle(
+      el,
+      '::after',
+    );
+    return {
+      width: box.width - parseFloat(after.left) - parseFloat(after.right),
+      height: box.height - parseFloat(after.top) - parseFloat(after.bottom),
+    };
+  });
+
+test('checkboxes show checked, mixed and disabled states and keep a 44px hit area (AC-14)', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  const subscribe = page.getByRole('checkbox', { name: 'Subscribe' });
+  await expect(subscribe).toHaveAttribute('aria-checked', 'false');
+  await subscribe.focus();
+  await page.keyboard.press('Space');
+  await expect(subscribe).toHaveAttribute('aria-checked', 'true');
+  await page.getByText('Subscribe', { exact: true }).click();
+  await expect(subscribe).toHaveAttribute('aria-checked', 'false');
+
+  await expect(page.getByRole('checkbox', { name: 'Some selected' })).toHaveAttribute(
+    'aria-checked',
+    'mixed',
+  );
+  const disabled = page.getByRole('checkbox', { name: 'Disabled checkbox' });
+  await expect(disabled).toHaveAttribute('aria-disabled', 'true');
+
+  const checked = page.getByRole('checkbox', { name: 'Checked' });
+  await expect(checked).toHaveAttribute('aria-checked', 'true');
+  const area = await hitArea(checked);
+  expect(area.width).toBeGreaterThanOrEqual(44);
+  expect(area.height).toBeGreaterThanOrEqual(44);
+});
+
+test('a radio group moves the selection with arrow keys and keeps a 44px hit area (AC-14)', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  const group = page.getByRole('radiogroup', { name: 'Density' });
+  const comfortable = group.getByRole('radio', { name: 'Comfortable' });
+  const compact = group.getByRole('radio', { name: 'Compact' });
+  await expect(comfortable).toHaveAttribute('aria-checked', 'true');
+
+  await comfortable.focus();
+  await page.keyboard.press('ArrowDown');
+  await expect(compact).toBeFocused();
+  await expect(compact).toHaveAttribute('aria-checked', 'true');
+  await expect(comfortable).toHaveAttribute('aria-checked', 'false');
+
+  await page.getByText('Comfortable', { exact: true }).click();
+  await expect(comfortable).toHaveAttribute('aria-checked', 'true');
+
+  const area = await hitArea(compact);
+  expect(area.width).toBeGreaterThanOrEqual(44);
+  expect(area.height).toBeGreaterThanOrEqual(44);
 });
