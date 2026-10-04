@@ -48,7 +48,7 @@ Build from the repo root. Each Dockerfile isolates its app with `turbo prune`.
 
 ```bash
 docker build -f apps/cms-api/Dockerfile   -t cms-api .     # listens on 3000
-docker build -f apps/cms-admin/Dockerfile -t cms-admin .   # listens on 80
+docker build -f apps/cms-admin/Dockerfile -t cms-admin .   # listens on 8080, runs as non-root
 docker build -f apps/frontend/Dockerfile  -t frontend .    # listens on 3000
 ```
 
