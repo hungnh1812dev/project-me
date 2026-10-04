@@ -9,16 +9,16 @@ is its own module, [Theme](./theme.md).
 
 ### Stack
 
-| Concern        | Choice                                                                                                        |
-| -------------- | ------------------------------------------------------------------------------------------------------------- |
-| CSS            | Tailwind CSS v4 through `@tailwindcss/vite`. Tokens are CSS variables, mapped to utilities by `@theme inline` |
-| Components     | shadcn/ui in the Base UI flavour (`style: base-nova`), on `@base-ui/react`, vendored in `@repo/ui`            |
-| Variants       | `class-variance-authority`. Classes always go through `cn()` (`@repo/ui/lib/cn`)                              |
-| Animation      | `tw-animate-css`. `prefers-reduced-motion: reduce` turns transitions and animations off globally              |
-| Icons          | `lucide-react`. Decorative icons get `aria-hidden`; icon-only buttons get `aria-label`                        |
-| Fonts          | Fira Sans (400, 500, 600) and Fira Code, self-hosted through `@fontsource`. No font CDN. Fonts stay per app   |
-| Visual         | Minimal / Swiss, dense. Slate neutrals, a violet primary and an orange highlight                              |
-| Forms          | react-hook-form v7 for admin data forms; state never in component state                                       |
+| Concern    | Choice                                                                                                        |
+| ---------- | ------------------------------------------------------------------------------------------------------------- |
+| CSS        | Tailwind CSS v4 through `@tailwindcss/vite`. Tokens are CSS variables, mapped to utilities by `@theme inline` |
+| Components | shadcn/ui in the Base UI flavour (`style: base-nova`), on `@base-ui/react`, vendored in `@repo/ui`            |
+| Variants   | `class-variance-authority`. Classes always go through `cn()` (`@repo/ui/lib/cn`)                              |
+| Animation  | `tw-animate-css`. `prefers-reduced-motion: reduce` turns transitions and animations off globally              |
+| Icons      | `lucide-react`. Decorative icons get `aria-hidden`; icon-only buttons get `aria-label`                        |
+| Fonts      | Fira Sans (400, 500, 600) and Fira Code, self-hosted through `@fontsource`. No font CDN. Fonts stay per app   |
+| Visual     | Minimal / Swiss, dense. Slate neutrals, a violet primary and an orange highlight                              |
+| Forms      | react-hook-form v7 for admin data forms; state never in component state                                       |
 
 Deviations: Fira Sans is the static `@fontsource/fira-sans` (no variable build exists), Fira Code is
 `@fontsource-variable/fira-code`. The primitives were written by hand from the shadcn Base UI source
@@ -31,7 +31,7 @@ Deviations: Fira Sans is the static `@fontsource/fira-sans` (no variable build e
   `@repo/ui/components/*`, `/form/*`, `/hooks/*`, `/lib/*`, `/styles/theme.css`, `/styles/tokens`.
   No re-export shims in the apps.
 - **D2 Tailwind sharing.** `theme.css` holds the tokens for `:root` and `.dark`, `@custom-variant
-  dark`, the `@theme inline` mapping, radius and motion tokens, the global `:focus-visible` rule and
+dark`, the `@theme inline` mapping, radius and motion tokens, the global `:focus-visible` rule and
   the reduced-motion rule. The app's `globals.css` imports it and adds
   `@source '../../../../packages/ui/src'` (Tailwind doesn't scan `node_modules`). Fonts, `body`
   font settings, the `main`/`h1` focus exception and the `.rich-text` styles stay in `globals.css`.
@@ -82,19 +82,19 @@ trap and return focus.
 
 Generic form components (`@repo/ui/form`), with the behaviour the admin relies on:
 
-| Component              | Behaviour                                                                                                                                         |
-| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `Field`                | Wraps one control; wires label (`htmlFor`), description and error (`aria-describedby`, `aria-invalid`, `role="alert"`), `required` mark outside the accessible name. Placeholder-only labels are not allowed. |
-| `PasswordInput`        | Show/Hide toggle (`aria-pressed`).                                                                                                                |
-| `JsonInput`            | Validates after first blur; `parseJson` gives "Invalid JSON: <reason> (line L, column C)" or a kind mismatch; "Format JSON".                      |
-| `GatedButton`          | Fed a `Decision`: denied is `aria-disabled`, focusable, reason in tooltip and `aria-describedby`, ignores activation. Optional `tooltip` for allowed icon buttons. |
-| `GatedMenuItem`        | The same for menu items.                                                                                                                          |
-| `ConfirmDialog`        | `alertdialog` naming its target, Cancel focused first, `loading` while `onConfirm` runs, `error` slot, `hideConfirm`, `finalFocus`.               |
-| `SecretReveal`         | One-time secret: read-only input, Copy, Done only (see [Settings access tokens](./settings-access-tokens.md)).                                   |
-| `FileDropzone`         | Visible Upload `GatedButton` plus drop zone and a text progress list (see [Settings media](./settings-media.md)).                                |
-| `DatePicker`           | `Calendar` in a `Popover`, focus on the selected day, Escape/Close without change, focus back to the trigger, `modal="trap-focus"`.              |
-| `UnsavedChangesDialog` | "Discard unsaved changes?" (see [Document editor](./document-editor.md)).                                                                        |
-| `Pagination`           | "Showing a–b of n", "Rows per page" (10/20/50/100), Previous/Next, "Page x of y" marked in `highlight`; focus moves to the other step button when one disables itself. Helpers `lastPage`, `clampPage`, `pageSlice` in `lib/pagination`. |
+| Component              | Behaviour                                                                                                                                                                                                                                                                                                                                                                             |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Field`                | Wraps one control; wires label (`htmlFor`), description and error (`aria-describedby`, `aria-invalid`, `role="alert"`), `required` mark outside the accessible name. Placeholder-only labels are not allowed.                                                                                                                                                                         |
+| `PasswordInput`        | Show/Hide toggle (`aria-pressed`).                                                                                                                                                                                                                                                                                                                                                    |
+| `JsonInput`            | Validates after first blur; `parseJson` gives "Invalid JSON: <reason> (line L, column C)" or a kind mismatch; "Format JSON". CodeMirror in a lazy chunk, inside the open shadow root of `<repo-json-editor>` (delegated focus, one Tab stop, label click focuses it); the content is named by `label` and described by an in-shadow node mirroring the `Field` description and error. |
+| `GatedButton`          | Fed a `Decision`: denied is `aria-disabled`, focusable, reason in tooltip and `aria-describedby`, ignores activation. Optional `tooltip` for allowed icon buttons.                                                                                                                                                                                                                    |
+| `GatedMenuItem`        | The same for menu items.                                                                                                                                                                                                                                                                                                                                                              |
+| `ConfirmDialog`        | `alertdialog` naming its target, Cancel focused first, `loading` while `onConfirm` runs, `error` slot, `hideConfirm`, `finalFocus`.                                                                                                                                                                                                                                                   |
+| `SecretReveal`         | One-time secret: read-only input, Copy, Done only (see [Settings access tokens](./settings-access-tokens.md)).                                                                                                                                                                                                                                                                        |
+| `FileDropzone`         | Visible Upload `GatedButton` plus drop zone and a text progress list (see [Settings media](./settings-media.md)).                                                                                                                                                                                                                                                                     |
+| `DatePicker`           | `Calendar` in a `Popover`, focus on the selected day, Escape/Close without change, focus back to the trigger, `modal="trap-focus"`.                                                                                                                                                                                                                                                   |
+| `UnsavedChangesDialog` | "Discard unsaved changes?" (see [Document editor](./document-editor.md)).                                                                                                                                                                                                                                                                                                             |
+| `Pagination`           | "Showing a–b of n", "Rows per page" (10/20/50/100), Previous/Next, "Page x of y" marked in `highlight`; focus moves to the other step button when one disables itself. Helpers `lastPage`, `clampPage`, `pageSlice` in `lib/pagination`.                                                                                                                                              |
 
 Every input supports default, filled, disabled, invalid and required states.
 
@@ -128,11 +128,11 @@ production drops it (the router test checks registration; the release check grep
 
 ## Files
 
-| File                       | Spec                                                                                            |
-| -------------------------- | ----------------------------------------------------------------------------------------------- |
-| `src/styles/globals.css`   | Imports Tailwind and `@repo/ui/styles/theme.css`, scans the package, fonts, focus exception, `.rich-text` styles. No colour tokens of its own. |
-| `src/pages/dev/UiKitPage.tsx` | Default export `UiKitPage`: dev-only showcase of inputs, states, swatches and badges.        |
-| `public/favicon.svg`       | The app icon.                                                                                   |
+| File                          | Spec                                                                                                                                           |
+| ----------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/styles/globals.css`      | Imports Tailwind and `@repo/ui/styles/theme.css`, scans the package, fonts, focus exception, `.rich-text` styles. No colour tokens of its own. |
+| `src/pages/dev/UiKitPage.tsx` | Default export `UiKitPage`: dev-only showcase of inputs, states, swatches and badges.                                                          |
+| `public/favicon.svg`          | The app icon.                                                                                                                                  |
 
 The shared primitives, form components and tokens live in `packages/ui` (outside this app).
 

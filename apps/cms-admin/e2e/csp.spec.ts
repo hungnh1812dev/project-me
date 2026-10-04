@@ -286,10 +286,11 @@ const ADOPTED_SHEETS =
 const styleCount = (page: Page) =>
   page.evaluate<number>("document.querySelectorAll('style').length");
 
-test('the JSON editor mounts styled in its shadow root with no CSP violation', async (
-  { page, mockApi, mockContent },
-  testInfo,
-) => {
+test('the JSON editor mounts styled in its shadow root with no CSP violation', async ({
+  page,
+  mockApi,
+  mockContent,
+}, testInfo) => {
   signInAda(mockApi);
   seedContent(mockContent);
   mockContent.addDocument('showcase', {
@@ -349,3 +350,35 @@ function isChromiumMergeReport(v: Violation, project: string) {
     v.sourceFile === ''
   );
 }
+
+test('clicking the JSON field label focuses the editor, and Tab and Shift+Tab move out and back (AC-21, AC-33)', async ({
+  page,
+  mockApi,
+  mockContent,
+}) => {
+  signInAda(mockApi);
+  seedContent(mockContent);
+  mockContent.addDocument('showcase', {
+    documentId: 'showcase-1',
+    status: 'draft',
+    createdAt: STAMP,
+    updatedAt: STAMP,
+    updatedBy: null,
+    title: 'Hello',
+    meta: { a: 1 },
+  });
+
+  await page.goto('/admin/content-types/showcase/showcase-1');
+  const meta = page.getByRole('textbox', { name: 'Meta', exact: true });
+  await expect(meta).toBeVisible();
+
+  await page.locator('label', { hasText: /^Meta$/ }).click();
+  await expect(meta).toBeFocused();
+
+  // No keyboard trap: Tab leaves the editor and Shift+Tab returns to its content.
+  await page.keyboard.press('Tab');
+  await expect(meta).not.toBeFocused();
+  await page.keyboard.press('Shift+Tab');
+  await expect(meta).toBeFocused();
+  expect(await violations(page)).toEqual([]);
+});

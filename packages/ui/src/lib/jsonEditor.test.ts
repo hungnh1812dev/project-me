@@ -10,6 +10,7 @@ import {
   needsExternalSync,
   shouldValidate,
   SYNTAX_TOKENS,
+  takeOwnEcho,
 } from './jsonEditor';
 
 const COLOUR_PROPS = ['color', 'backgroundColor', 'caretColor', 'borderLeftColor', 'borderColor'];
@@ -45,6 +46,26 @@ describe('canFormat', () => {
   it('refuses disabled or read-only fields', () => {
     expect(canFormat('{"a":1}', { disabled: true })).toBe(false);
     expect(canFormat('{"a":1}', { readOnly: true })).toBe(false);
+  });
+});
+
+describe('takeOwnEcho', () => {
+  it('drops an echoed value and every older one, and reports the echo', () => {
+    const sent = ['', '{}', '{"'];
+    expect(takeOwnEcho(sent, '{}')).toBe(true);
+    expect(sent).toEqual(['{"']);
+  });
+
+  it('clears the queue for a value it never sent', () => {
+    const sent = ['', '{}'];
+    expect(takeOwnEcho(sent, '[1]')).toBe(false);
+    expect(sent).toEqual([]);
+  });
+
+  it('leaves the queue alone for an uncontrolled editor', () => {
+    const sent = ['{}'];
+    expect(takeOwnEcho(sent, undefined)).toBe(false);
+    expect(sent).toEqual(['{}']);
   });
 });
 

@@ -37,7 +37,7 @@ export interface JsonInputProps {
   className?: string;
   /** Set by `Field` when it shows an error. */
   'aria-invalid'?: boolean | 'true' | 'false';
-  /** Set by `Field`; ignored, because ids outside the shadow root can't be referenced from it. */
+  /** Set by `Field`; the referenced text is mirrored into the in-shadow description (AC-20). */
   'aria-describedby'?: string;
   'aria-required'?: boolean | 'true' | 'false';
   ref?: React.Ref<JsonCodeEditorHandle>;
@@ -68,6 +68,7 @@ export const JsonInput: React.FC<JsonInputProps> = ({
   name,
   className,
   'aria-invalid': ariaInvalid,
+  'aria-describedby': ariaDescribedBy,
   ref,
 }) => {
   const [uncontrolled, setUncontrolled] = useState(defaultValue);
@@ -130,6 +131,7 @@ export const JsonInput: React.FC<JsonInputProps> = ({
           label={label}
           description={description}
           error={error}
+          describedBy={ariaDescribedBy}
           invalid={invalid}
           required={required}
           readOnly={readOnly}

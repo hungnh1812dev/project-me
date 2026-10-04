@@ -58,6 +58,117 @@ test('Tab leaves the JSON field (no keyboard trap)', async ({ page }) => {
   await expect(json).not.toBeFocused();
 });
 
+test('the JSON editor shows line numbers and highlighted tokens (AC-15)', async ({ page }) => {
+  const json = page.getByRole('textbox', { name: 'Settings' });
+  const editor = page.locator('repo-json-editor', { has: json });
+
+  await expect(editor.locator('.cm-lineNumbers .cm-gutterElement', { hasText: '1' })).toBeVisible();
+  const property = json.locator('span', { hasText: '"theme"' });
+  const value = json.locator('span', { hasText: '"dark"' });
+  await expect(property).toBeVisible();
+  await expect(value).toBeVisible();
+  // Property names and string values get different highlight colours.
+  const colours = await page.evaluate<string[]>(`(() => {
+    const content = [...document.querySelectorAll('repo-json-editor')]
+      .map((host) => host.shadowRoot.querySelector('.cm-content'))
+      .find((el) => el?.getAttribute('aria-label') === 'Settings');
+    return ${JSON.stringify(['"theme"', '"dark"'])}.map((text) => {
+      const span = [...content.querySelectorAll('span')].find((s) => s.textContent === text);
+      return span ? getComputedStyle(span).color : '';
+    });
+  })()`);
+  expect(colours[0]).not.toBe('');
+  expect(colours[0]).not.toBe(colours[1]);
+});
+
+test('the skeleton and the mounted editor have the same height (AC-16)', async ({ page }) => {
+  let release!: () => void;
+  const gate = new Promise<void>((resolve) => (release = resolve));
+  await page.route(/JsonCodeEditor/, async (route) => {
+    await gate;
+    await route.continue();
+  });
+  await page.goto('/admin/dev/ui-kit');
+  const field = page.locator('[data-slot="json-input"]').first();
+  const skeleton = field.locator('[data-slot="json-editor-skeleton"]');
+  await expect(skeleton).toBeVisible();
+  const before = (await skeleton.boundingBox())!.height;
+
+  release();
+  const host = field.locator('repo-json-editor');
+  await expect(host.locator('.cm-content')).toBeVisible();
+  const after = (await host.boundingBox())!.height;
+
+  expect(Math.abs(after - before)).toBeLessThanOrEqual(2);
+});
+
+test('the editor is named by its label and described by the Field text (AC-20)', async ({
+  page,
+}) => {
+  /** Strings, not functions: the e2e tsconfig has no DOM lib. */
+  const describedText = (name: string) =>
+    page.evaluate<string>(`(() => {
+      const el = [...document.querySelectorAll('repo-json-editor')]
+        .map((host) => host.shadowRoot.querySelector('.cm-content'))
+        .find((content) => content?.getAttribute('aria-label') === ${JSON.stringify(name)});
+      return el.getRootNode().getElementById(el.getAttribute('aria-describedby')).textContent;
+    })()`);
+  await expect(page.getByRole('textbox', { name: 'Invalid JSON', exact: true })).toBeVisible();
+
+  expect(await describedText('Invalid JSON')).toBe('Invalid JSON: Unexpected token "x"');
+  expect(await describedText('Metadata')).toBe('A JSON object.');
+
+  const json = page.getByRole('textbox', { name: 'Metadata' });
+  await json.fill('[1]');
+  await json.blur();
+  await expect.poll(() => describedText('Metadata')).toBe('A JSON object. Expected a JSON object.');
+});
+
+test('Shift+Tab leaves the JSON field backwards (AC-21)', async ({ page }) => {
+  const json = page.getByRole('textbox', { name: 'Settings' });
+  await json.click();
+
+  await page.keyboard.press('Shift+Tab');
+
+  // The Metadata Format button before it is disabled (empty text), so focus reaches that editor.
+  await expect(json).not.toBeFocused();
+  await expect(page.getByRole('textbox', { name: 'Metadata' })).toBeFocused();
+});
+
+test('clicking the JSON field label focuses the editor (AC-33)', async ({ page }) => {
+  const json = page.getByRole('textbox', { name: 'Settings' });
+  await expect(json).toBeVisible();
+
+  await page.locator('label', { hasText: /^Settings$/ }).click();
+
+  await expect(json).toBeFocused();
+});
+
+test('read-only and disabled JSON editors are not editable (AC-18, AC-19)', async ({ page }) => {
+  const readOnly = page.getByRole('textbox', { name: 'Read-only JSON' });
+  const disabled = page.getByRole('textbox', { name: 'Disabled JSON' });
+  const formatOf = (json: typeof readOnly) =>
+    page.locator('[data-slot="field"]', { has: json }).getByRole('button', { name: 'Format JSON' });
+
+  await expect(readOnly).toHaveAttribute('aria-readonly', 'true');
+  await expect(disabled).toHaveAttribute('contenteditable', 'false');
+  await expect(formatOf(readOnly)).toBeDisabled();
+  await expect(formatOf(disabled)).toBeDisabled();
+
+  await readOnly.click();
+  await page.keyboard.type('x');
+  expect(await editorText(readOnly)).toBe('{"fixed":true}');
+
+  // Disabled uses the muted background on its host.
+  const host = page.locator('repo-json-editor', { has: disabled });
+  const muted = await page.evaluate<string>(
+    "getComputedStyle(document.documentElement).getPropertyValue('--muted').trim()",
+  );
+  expect(muted).not.toBe('');
+  await expect(host).toHaveClass(/data-disabled:bg-muted/);
+  await expect(host).not.toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
+});
+
 test('Space toggles a Switch and clicking its label toggles it back', async ({ page }) => {
   const toggle = page.getByRole('switch', { name: 'Notifications' });
   await expect(toggle).toHaveAttribute('aria-checked', 'false');

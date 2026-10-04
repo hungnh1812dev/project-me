@@ -15,12 +15,15 @@ import {
   editorThemeSpec,
   highlightSpec,
   needsExternalSync,
+  takeOwnEcho,
 } from '../lib/jsonEditor';
 
 const TAG = 'repo-json-editor';
 const DESCRIPTION_ID = 'json-editor-description';
 /** Marks transactions that sync an outside `value` in, so they don't echo back to `onChange`. */
 const external = Annotation.define<boolean>();
+/** Bounds the queue of sent texts when a parent never echoes them back. */
+const MAX_SENT = 64;
 
 declare module 'react' {
   // oxlint-disable-next-line typescript/no-namespace -- JSX intrinsic elements are declared this way.
@@ -46,13 +49,28 @@ const defineHost = (): void => {
     class extends HTMLElement {
       static formAssociated = true;
 
+      readonly internals: ElementInternals | null;
+
       constructor() {
         super();
         this.attachShadow({ mode: 'open', delegatesFocus: true });
-        if (typeof this.attachInternals === 'function') this.attachInternals();
+        this.internals = typeof this.attachInternals === 'function' ? this.attachInternals() : null;
       }
     },
   );
+};
+
+/** True when `label` labels `host`: through `ElementInternals.labels`, or `for` = the host id. */
+const labels = (host: HTMLElement, label: HTMLLabelElement): boolean => {
+  const internals = (host as HTMLElement & { internals?: ElementInternals | null }).internals;
+  let list: NodeList | undefined;
+  try {
+    list = internals?.labels;
+  } catch {
+    list = undefined; // Engines without label support for custom elements.
+  }
+  if (list && Array.prototype.includes.call(list, label)) return true;
+  return host.id !== '' && label.htmlFor === host.id;
 };
 
 export interface JsonCodeEditorHandle {
@@ -75,6 +93,11 @@ export interface JsonCodeEditorProps {
   description?: string;
   /** Current error text, mirrored into the in-shadow describedby node. */
   error?: string | null;
+  /**
+   * Ids of light-DOM description nodes (a `Field`'s `aria-describedby`). The shadow content
+   * can't reference them, so their text is mirrored into the in-shadow describedby node.
+   */
+  describedBy?: string;
   invalid?: boolean;
   required?: boolean;
   readOnly?: boolean;
@@ -125,6 +148,21 @@ const hideVisually = (node: HTMLElement): void => {
   });
 };
 
+/** The mirrored description: referenced node text, then `description` and `error`, deduplicated. */
+const mirrorText = (
+  host: HTMLElement,
+  describedBy: string | undefined,
+  description: string | undefined,
+  error: string | null | undefined,
+): string => {
+  const root = host.getRootNode() as Document | ShadowRoot;
+  const referenced = (describedBy ?? '')
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((ref) => root.getElementById(ref)?.textContent?.trim());
+  return [...new Set([...referenced, description, error].filter(Boolean))].join(' ');
+};
+
 /** CodeMirror 6 JSON editor in a shadow root. Loaded lazily by `JsonInput`. */
 const JsonCodeEditor: React.FC<JsonCodeEditorProps> = ({
   value,
@@ -134,6 +172,7 @@ const JsonCodeEditor: React.FC<JsonCodeEditorProps> = ({
   label,
   description,
   error,
+  describedBy,
   invalid,
   required,
   readOnly,
@@ -157,6 +196,8 @@ const JsonCodeEditor: React.FC<JsonCodeEditorProps> = ({
   const attributesRef = useRef<AttributeProps>({ label, invalid, required, readOnly, disabled });
   const initialText = useRef(value ?? defaultValue);
   const rowsRef = useRef(rows);
+  /** Texts sent to `onChange` that the parent hasn't passed back as `value` yet. */
+  const sentRef = useRef<string[]>([]);
 
   useImperativeHandle(ref, () => ({
     focus: () => viewRef.current?.focus(),
@@ -192,8 +233,13 @@ const JsonCodeEditor: React.FC<JsonCodeEditorProps> = ({
           syntaxHighlighting(HighlightStyle.define([...highlightSpec])),
           stateCompartment.current.of(stateExtensions(attributesRef.current)),
           EditorView.updateListener.of((update) => {
-            if (update.docChanged && !update.transactions.some((tr) => tr.annotation(external)))
-              callbacks.current.onChange?.(update.state.doc.toString());
+            if (!update.docChanged || update.transactions.some((tr) => tr.annotation(external)))
+              return;
+            const text = update.state.doc.toString();
+            const sent = sentRef.current;
+            sent.push(text);
+            if (sent.length > MAX_SENT) sent.shift();
+            callbacks.current.onChange?.(text);
           }),
           EditorView.domEventHandlers({ blur: () => void callbacks.current.onBlur?.() }),
         ],
@@ -210,6 +256,25 @@ const JsonCodeEditor: React.FC<JsonCodeEditorProps> = ({
     };
   }, []);
 
+  // A click on a visible `Field` label focuses the editor content (AC-33). The host is
+  // form-associated, so the label is in `ElementInternals.labels`.
+  const disabledRef = useRef(disabled);
+  useLayoutEffect(() => {
+    disabledRef.current = disabled;
+  });
+  useEffect(() => {
+    const host = hostRef.current;
+    if (!host) return;
+    const onClick = (event: MouseEvent) => {
+      const target = event.target instanceof Element ? event.target : null;
+      const label = target?.closest('label');
+      if (!label || disabledRef.current || !labels(host, label)) return;
+      viewRef.current?.focus();
+    };
+    document.addEventListener('click', onClick);
+    return () => document.removeEventListener('click', onClick);
+  }, []);
+
   useEffect(() => {
     viewRef.current?.dispatch({
       effects: stateCompartment.current.reconfigure(
@@ -218,13 +283,19 @@ const JsonCodeEditor: React.FC<JsonCodeEditorProps> = ({
     });
   }, [label, invalid, required, readOnly, disabled]);
 
+  // Every render: a `Field` re-renders the control whenever its description or error changes.
   useEffect(() => {
-    if (descriptionRef.current)
-      descriptionRef.current.textContent = [description, error].filter(Boolean).join(' ');
-  }, [description, error]);
+    const host = hostRef.current;
+    const node = descriptionRef.current;
+    if (!host || !node) return;
+    const text = mirrorText(host, describedBy, description, error);
+    if (node.textContent !== text) node.textContent = text;
+  });
 
   useEffect(() => {
     const view = viewRef.current;
+    // An echo of the editor's own text: it shows that text or has typed past it already.
+    if (takeOwnEcho(sentRef.current, value)) return;
     if (!view || !needsExternalSync(view.state.doc.toString(), value)) return;
     view.dispatch({
       changes: { from: 0, to: view.state.doc.length, insert: value },
@@ -238,11 +309,14 @@ const JsonCodeEditor: React.FC<JsonCodeEditorProps> = ({
       ref={hostRef}
       id={id}
       name={name}
+      // With `delegatesFocus`, Tab passes through the host into the editor content: the host
+      // is the editor's one light-DOM Tab-order entry and adds no stop of its own (AC-21).
+      tabIndex={disabled ? -1 : 0}
       data-slot="json-code-editor"
       data-invalid={invalid ? '' : undefined}
       data-disabled={disabled ? '' : undefined}
       className={cn(
-        'border-input focus-within:outline-ring data-invalid:border-destructive block w-full overflow-hidden rounded-md border focus-within:outline-2 focus-within:outline-offset-2 data-disabled:bg-muted data-disabled:cursor-not-allowed data-disabled:opacity-70',
+        'border-input focus-within:outline-ring data-invalid:border-destructive data-disabled:bg-muted block w-full overflow-hidden rounded-md border focus-within:outline-2 focus-within:outline-offset-2 data-disabled:cursor-not-allowed data-disabled:opacity-70',
         className,
       )}
     />

@@ -1,6 +1,6 @@
 import { createRef } from 'react';
-import { act, render } from '@testing-library/react';
 import { undo } from '@codemirror/commands';
+import { act, render } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
 import { editorViewOf } from '../lib/jsonEditorView';
@@ -120,6 +120,33 @@ describe('JsonCodeEditor', () => {
     expect(onChange).not.toHaveBeenCalled();
   });
 
+  it('ignores a late echo of its own earlier text while typing runs ahead (AC-22)', () => {
+    const ref = createRef<JsonCodeEditorHandle>();
+    const onChange = vi.fn();
+    const { rerender } = render(
+      <JsonCodeEditor ref={ref} value='{"a":1}' onChange={onChange} label="M" />,
+    );
+    const view = ref.current!.view!;
+
+    // Two keystrokes land before the parent re-renders with the first one.
+    act(() => {
+      view.dispatch({ changes: { from: 0, to: view.state.doc.length, insert: '' } });
+    });
+    act(() => {
+      view.dispatch({ changes: { from: 0, insert: '{}' }, selection: { anchor: 1 } });
+    });
+    rerender(<JsonCodeEditor ref={ref} value="" onChange={onChange} label="M" />);
+    rerender(<JsonCodeEditor ref={ref} value="{}" onChange={onChange} label="M" />);
+
+    expect(view.state.doc.toString()).toBe('{}');
+    expect(view.state.selection.main.head).toBe(1);
+    expect(onChange.mock.calls).toEqual([[''], ['{}']]);
+
+    // A real outside change after that still syncs, even to text it showed before.
+    rerender(<JsonCodeEditor ref={ref} value="" onChange={onChange} label="M" />);
+    expect(view.state.doc.toString()).toBe('');
+  });
+
   it('keeps undo history across an outside value change (AC-22)', () => {
     const ref = createRef<JsonCodeEditorHandle>();
     const onChange = vi.fn();
@@ -160,6 +187,92 @@ describe('JsonCodeEditor', () => {
       contentOf(container).dispatchEvent(new FocusEvent('blur'));
     });
     expect(onBlur).toHaveBeenCalledTimes(1);
+  });
+
+  it('mirrors description and error changes into the describedby node (AC-20)', () => {
+    const { container, rerender } = render(<JsonCodeEditor label="M" description="Any JSON" />);
+    const node = () =>
+      hostOf(container).shadowRoot?.getElementById(
+        contentOf(container).getAttribute('aria-describedby') ?? '',
+      );
+    expect(node()?.textContent).toBe('Any JSON');
+
+    rerender(<JsonCodeEditor label="M" description="Any JSON" error="Invalid JSON" />);
+    expect(node()?.textContent).toBe('Any JSON Invalid JSON');
+
+    rerender(<JsonCodeEditor label="M" />);
+    expect(node()?.textContent).toBe('');
+  });
+
+  it('mirrors the text of light-DOM describedby nodes, without repeats (AC-20)', () => {
+    const { container, rerender } = render(
+      <>
+        <p id="meta-description">A JSON object.</p>
+        <p id="meta-error">Bad</p>
+        <JsonCodeEditor label="M" describedBy="meta-description missing" error="Bad" />
+      </>,
+    );
+    const node = () =>
+      hostOf(container).shadowRoot?.getElementById(
+        contentOf(container).getAttribute('aria-describedby') ?? '',
+      );
+    expect(node()?.textContent).toBe('A JSON object. Bad');
+
+    rerender(
+      <>
+        <p id="meta-description">A JSON object.</p>
+        <p id="meta-error">Bad</p>
+        <JsonCodeEditor label="M" describedBy="meta-description meta-error" error="Bad" />
+      </>,
+    );
+    expect(node()?.textContent).toBe('A JSON object. Bad');
+  });
+
+  it('puts the host in the Tab order as a delegating scope, not its own stop (AC-21)', () => {
+    const { container, rerender } = render(<JsonCodeEditor label="M" />);
+    const host = hostOf(container);
+
+    // Delegated focus: Tab passes through the host to the in-shadow content, so the host
+    // counts as one control in the light DOM and adds no stop of its own (the Playwright
+    // keyboard walk checks the real engine; jsdom has no `delegatesFocus`).
+    expect(host.tabIndex).toBe(0);
+
+    rerender(<JsonCodeEditor label="M" disabled />);
+    expect(host.tabIndex).toBe(-1);
+  });
+
+  it('focuses the editor content when a label for the host is clicked (AC-33)', () => {
+    const { container } = render(
+      <>
+        <label htmlFor="meta">Metadata</label>
+        <label htmlFor="other">Other</label>
+        <JsonCodeEditor id="meta" label="Metadata" />
+      </>,
+    );
+    const shadow = hostOf(container).shadowRoot;
+
+    act(() => container.querySelector<HTMLLabelElement>('label[for="other"]')?.click());
+    expect(shadow?.activeElement).toBeNull();
+
+    act(() => container.querySelector<HTMLLabelElement>('label[for="meta"]')?.click());
+    expect(shadow?.activeElement).toBe(contentOf(container));
+  });
+
+  it('ignores label clicks while disabled and after unmount', () => {
+    const { container, unmount } = render(
+      <>
+        <label htmlFor="meta">Metadata</label>
+        <JsonCodeEditor id="meta" label="Metadata" disabled />
+      </>,
+    );
+    const shadow = hostOf(container).shadowRoot;
+    const label = container.querySelector<HTMLLabelElement>('label')!;
+
+    act(() => label.click());
+    expect(shadow?.activeElement).toBeNull();
+
+    unmount();
+    expect(() => label.click()).not.toThrow();
   });
 
   it('passes id, name and className to the host', () => {

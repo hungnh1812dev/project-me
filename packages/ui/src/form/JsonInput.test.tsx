@@ -1,7 +1,7 @@
 import { createRef, useState } from 'react';
+import { undo } from '@codemirror/commands';
 import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { undo } from '@codemirror/commands';
 import { describe, expect, it, vi } from 'vitest';
 
 import { Field } from './Field';
@@ -218,6 +218,21 @@ describe('JsonInput', () => {
 
     expect(await editorContent(container)).toHaveAttribute('aria-readonly', 'true');
     expect(screen.getByRole('button', { name: 'Format JSON' })).toBeDisabled();
+  });
+
+  it('mirrors the Field description and error into the in-shadow describedby node (AC-20)', async () => {
+    const { container } = render(
+      <Field label="Settings" description="Any JSON." error="Server says no">
+        <JsonInput label="Settings" defaultValue="{}" />
+      </Field>,
+    );
+    const content = await editorContent(container);
+    const node = content
+      .getRootNode()
+      .ownerDocument?.querySelector('repo-json-editor')
+      ?.shadowRoot?.getElementById(content.getAttribute('aria-describedby') ?? '');
+
+    expect(node?.textContent).toBe('Any JSON. Server says no');
   });
 
   it('forwards the ref to the editor handle and calls onBlur', async () => {

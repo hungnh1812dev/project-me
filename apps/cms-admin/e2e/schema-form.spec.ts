@@ -144,6 +144,45 @@ test('invalid JSON stays visible, shows its parse error and sends nothing (AC-8)
   expect(mockContent.single('showcase-single')).toMatchObject({ meta: { a: [1, 2] } });
 });
 
+test('JSON typed with the keyboard validates after blur, formats and saves (AC-17, AC-18, AC-22)', async ({
+  page,
+  mockApi,
+  mockContent,
+}) => {
+  await page.goto(URL);
+  const meta = page.getByRole('textbox', { name: 'Meta', exact: true });
+  const format = page
+    .locator('[data-slot="field"]', { has: meta })
+    .getByRole('button', { name: 'Format JSON' });
+  await meta.click();
+  await page.keyboard.press('ControlOrMeta+a');
+  await page.keyboard.press('Delete');
+
+  // closeBrackets adds the closing `}` and `]` the keys would also type, so type the inside only.
+  await page.keyboard.type('{"tags":["a"');
+  await expect(page.getByRole('alert')).toHaveCount(0); // no error before the first blur
+  await page.keyboard.press('Tab');
+  await expect(meta).not.toBeFocused();
+  expect(await editorText(meta)).toBe('{"tags":["a"]}');
+  await expect(page.getByRole('alert')).toHaveCount(0);
+
+  await format.click();
+  await expect.poll(() => editorText(meta)).toBe('{\n  "tags": [\n    "a"\n  ]\n}');
+
+  await meta.click();
+  await page.keyboard.press('ControlOrMeta+End');
+  await page.keyboard.type('x');
+  await expect(page.getByRole('alert')).toContainText('Invalid JSON'); // every change after blur
+  await expect(meta).toHaveAttribute('aria-invalid', 'true');
+  await page.keyboard.press('Backspace');
+  await expect(page.getByRole('alert')).toHaveCount(0);
+
+  await page.getByRole('button', { name: 'Save' }).click();
+  await expect(page.getByRole('status').filter({ hasText: 'Saved.' })).toBeAttached();
+  expect(writes(mockApi)).toHaveLength(1);
+  expect(mockContent.single('showcase-single')).toMatchObject({ meta: { tags: ['a'] } });
+});
+
 test('an unsupported field type shows a read-only preview and is sent back unchanged (AC-7)', async ({
   page,
   mockContent,

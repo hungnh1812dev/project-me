@@ -27,6 +27,19 @@ export const canFormat = (
 export const needsExternalSync = (editorText: string, value: string | undefined): boolean =>
   value !== undefined && value !== editorText;
 
+/**
+ * Whether a controlled `value` is a late echo of text the editor itself sent to `onChange`
+ * (`sent`, oldest first). Typing can run ahead of the parent's re-render, so an echo of an
+ * older text must not be pushed back in (it would undo the newer keystrokes). Removes the
+ * echo and everything older from `sent`; a value it never sent clears `sent`.
+ */
+export const takeOwnEcho = (sent: string[], value: string | undefined): boolean => {
+  if (value === undefined) return false;
+  const index = sent.indexOf(value);
+  sent.splice(0, index === -1 ? sent.length : index + 1);
+  return index !== -1;
+};
+
 /** The colour token used for each JSON syntax class (AC-24 checks their contrast). */
 export const SYNTAX_TOKENS = {
   propertyName: 'primary-ink',

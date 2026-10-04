@@ -250,6 +250,11 @@ test('keyboard walk on the UI kit reaches every control with visible focus (AC-4
   await page.setViewportSize({ width: 1280, height: 812 });
   await page.goto('/admin/dev/ui-kit');
   await expect(page.getByRole('heading', { name: 'UI kit', level: 1 })).toBeVisible();
+  // The JSON editors load lazily; walk once every editor has replaced its skeleton.
+  await expect(page.locator('[data-slot="json-editor-skeleton"]')).toHaveCount(0);
+  await expect(page.locator('[data-slot="json-code-editor"] .cm-content')).toHaveCount(
+    await page.locator('[data-slot="json-input"]').count(),
+  );
 
   const stops = await walkTabOrder(page, 200);
   const inMain = stops.filter((s) => s.landmark === 'main');
