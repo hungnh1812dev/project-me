@@ -45,6 +45,12 @@ thumbnails, or the media library images are blocked.
 - **`index.html`:** `<meta name="referrer" content="same-origin">`, so the referrer rule holds where
   the header is missing.
 
+**The image.** The `runner` stage (`nginx-unprivileged:alpine`) runs as the non-root user `abyss`,
+numeric `USER 1001`, and listens on 8080. `VITE_API_URL` is a build arg of the `builder` stage only
+(`--build-arg VITE_API_URL=https://cms-api.example.com`; empty keeps the relative `/api/v1`), so the
+runner stage holds neither the arg nor the env var. In CI the value comes from the GitHub
+Environment variable `VITE_API_URL`. `.env` files never reach the image (`.dockerignore`).
+
 Image check by hand:
 
 ```bash
@@ -90,8 +96,11 @@ allowed images with `referrerPolicy="no-referrer"` (see `MediaThumbnail` in
 
 - **One builder, pinned to the template.** The policy text lives in `csp.ts`; a test compares the
   nginx template against it, so the two can't drift.
-- **Runtime env, not build env.** The CSP origins are read by nginx at start, so the same image is
-  promoted across environments.
+- **Runtime env, not build env.** The CSP origins are read by nginx at start, so they can change
+  without a rebuild. The API origin is the exception: `VITE_API_URL` is a Docker build arg of the
+  `builder` stage, set in CI from the GitHub Environment variable `VITE_API_URL` and baked into the
+  bundle (see [Testing and config](./testing-and-config.md#env-vars)). Keep `CSP_API_ORIGIN` in
+  line with it when the API is on another origin.
 - **A library that needs inline scripts or styles is a stop-and-ask**, not a policy change. The
   JSON editor is the worked example: a shadow root, not a nonce.
 - **Known gap:** nginx sends no `X-Content-Type-Options: nosniff` (H-SEC-3, see
