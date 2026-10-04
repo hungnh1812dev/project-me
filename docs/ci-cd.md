@@ -26,6 +26,8 @@ changes ──> checks ──> build ──> image ──> manifest ──> depl
 
 This mapping lives in one place: the `case` block in the `Resolve deploy target` step of the `changes` job. A push to any other branch doesn't trigger the workflow.
 
+`build`, `image`, `manifest` and `deploy` all run in the branch's GitHub Environment, so they can read its variables and secrets. On `develop` the environment is empty and `build` runs without one.
+
 If no app is affected, every job after `changes` is skipped and the run is green.
 
 ## Jobs
