@@ -276,3 +276,109 @@ test('the open media picker renders with no CSP violation', async ({
   await page.keyboard.press('ArrowRight');
   expect(await violations(page)).toEqual([]);
 });
+
+// The CodeMirror JSON editor (AC-23, AC-29, AC-30): its rules live in a stylesheet adopted by the
+// `<repo-json-editor>` shadow root, so `style-src 'self'` stays as it is on every engine.
+
+/** Strings, not functions: the e2e tsconfig has no DOM lib. */
+const ADOPTED_SHEETS =
+  "document.querySelector('repo-json-editor').shadowRoot.adoptedStyleSheets.length";
+const styleCount = (page: Page) =>
+  page.evaluate<number>("document.querySelectorAll('style').length");
+
+test('the JSON editor mounts styled in its shadow root with no CSP violation', async ({
+  page,
+  mockApi,
+  mockContent,
+}, testInfo) => {
+  signInAda(mockApi);
+  seedContent(mockContent);
+  mockContent.addDocument('showcase', {
+    documentId: 'showcase-1',
+    status: 'draft',
+    createdAt: STAMP,
+    updatedAt: STAMP,
+    updatedBy: null,
+    title: 'Hello',
+    meta: { a: [1, 2] },
+  });
+
+  // Count before the lazy editor chunk ever loads, then reach the entry by client-side navigation.
+  await page.goto('/admin/content-types/showcase');
+  await page.getByRole('table').getByRole('link', { name: 'Hello' }).click();
+  // Counted after the list is in place, so only the editor mount can change it.
+  const before = await styleCount(page);
+  await expect(page.getByRole('heading', { level: 1, name: 'Hello' })).toBeVisible();
+
+  const meta = page.getByLabel('Meta', { exact: true });
+  await expect(meta).toBeVisible();
+  const host = page.locator('repo-json-editor');
+  await expect(host).toHaveCount(1);
+  await expect(host.locator('.cm-gutters')).toBeVisible();
+  await expect(
+    host.locator('.cm-lineNumbers .cm-gutterElement').filter({ hasText: '1' }).first(),
+  ).toBeVisible();
+  await expect(host.locator('.cm-content')).toHaveCSS('font-family', /mono/i);
+  expect(await page.evaluate<number>(ADOPTED_SHEETS)).toBeGreaterThanOrEqual(1);
+  expect(await styleCount(page)).toBe(before);
+  // Mount is clean on every engine: no allowance applies here.
+  expect(await violations(page)).toEqual([]);
+
+  // Typing re-renders lines and gutter markers under the policy too. `fill` replaces the
+  // multi-line formatted value in one edit, so this is a multi-line selection replacement.
+  await meta.fill('{\n  "b": true\n}');
+  await expect(
+    host.locator('.cm-lineNumbers .cm-gutterElement').filter({ hasText: '3' }),
+  ).toBeVisible();
+  expect(await styleCount(page)).toBe(before);
+  const afterReplace = await violations(page);
+  // Tolerated, Chromium only: its native contenteditable code merges the replaced `.cm-line`
+  // blocks through an inline-styled span. The browser blocks that attribute (one
+  // style-src-attr report per replacement, no source file); the editor stays styled and
+  // works. Anything else, or the same report on Firefox or WebKit, still fails.
+  const tolerated = afterReplace.filter((v) => isChromiumMergeReport(v, testInfo.project.name));
+  expect(tolerated.length).toBeLessThanOrEqual(1);
+  expect(afterReplace.filter((v) => !tolerated.includes(v))).toEqual([]);
+});
+
+/** The single report Chromium raises when replacing a selection across several `.cm-line`s. */
+function isChromiumMergeReport(v: Violation, project: string) {
+  return (
+    project === 'csp' &&
+    v.directive === 'style-src-attr' &&
+    v.blockedURI === 'inline' &&
+    v.sourceFile === ''
+  );
+}
+
+test('clicking the JSON field label focuses the editor, and Tab and Shift+Tab move out and back (AC-21, AC-33)', async ({
+  page,
+  mockApi,
+  mockContent,
+}) => {
+  signInAda(mockApi);
+  seedContent(mockContent);
+  mockContent.addDocument('showcase', {
+    documentId: 'showcase-1',
+    status: 'draft',
+    createdAt: STAMP,
+    updatedAt: STAMP,
+    updatedBy: null,
+    title: 'Hello',
+    meta: { a: 1 },
+  });
+
+  await page.goto('/admin/content-types/showcase/showcase-1');
+  const meta = page.getByRole('textbox', { name: 'Meta', exact: true });
+  await expect(meta).toBeVisible();
+
+  await page.locator('label', { hasText: /^Meta$/ }).click();
+  await expect(meta).toBeFocused();
+
+  // No keyboard trap: Tab leaves the editor and Shift+Tab returns to its content.
+  await page.keyboard.press('Tab');
+  await expect(meta).not.toBeFocused();
+  await page.keyboard.press('Shift+Tab');
+  await expect(meta).toBeFocused();
+  expect(await violations(page)).toEqual([]);
+});

@@ -269,6 +269,63 @@ test.describe('side menu', () => {
     await expect(article).not.toHaveAttribute('aria-current');
   });
 
+  for (const { theme, accent, accentForeground, highlight } of [
+    // SPEC colour table (Strapi palette): the active item has the sidebar-accent tint
+    // #F0F0FF / #181826 with sidebar-accent-foreground text #271FE0 / #9A98FF, and a
+    // 4px highlight (= primary-ink) left bar #4945FF / #9A98FF.
+    {
+      theme: 'light',
+      accent: 'rgb(240, 240, 255)',
+      accentForeground: 'rgb(39, 31, 224)',
+      highlight: 'rgb(73, 69, 255)',
+    },
+    {
+      theme: 'dark',
+      accent: 'rgb(24, 24, 38)',
+      accentForeground: 'rgb(154, 152, 255)',
+      highlight: 'rgb(154, 152, 255)',
+    },
+  ]) {
+    test(`only the active link shows the highlight indicator (${theme}, AC-14)`, async ({
+      page,
+      mockApi,
+    }) => {
+      signInJane(mockApi, ROLES.superAdmin);
+      await page.addInitScript({
+        content: `window.localStorage.setItem('cms-admin:theme', '${theme}');`,
+      });
+      await page.goto('/admin/settings/users');
+      await expect(page.getByRole('heading', { name: 'Users', level: 1 })).toBeVisible();
+
+      const indicator = (name: string) =>
+        menu(page)
+          .getByRole('link', { name })
+          .evaluate((el) => {
+            const view = el.ownerDocument.defaultView!;
+            const before = view.getComputedStyle(el, '::before');
+            const self = view.getComputedStyle(el);
+            return {
+              content: before.content,
+              barColour: before.backgroundColor,
+              barWidth: before.width,
+              background: self.backgroundColor,
+              color: self.color,
+            };
+          });
+
+      expect(await indicator('Users')).toEqual({
+        content: '""',
+        barColour: highlight,
+        barWidth: '4px',
+        background: accent,
+        color: accentForeground,
+      });
+      const inactive = await indicator('Roles');
+      expect(inactive.content).toBe('none');
+      expect(inactive.background).not.toBe(accent);
+    });
+  }
+
   test('a group collapses and stays collapsed after a reload', async ({ page, mockApi }) => {
     signInJane(mockApi, ROLES.superAdmin);
     await page.goto('/admin');

@@ -64,7 +64,7 @@ describe('CollectionListPage', () => {
     );
     expect(screen.getByText('Showing 1–3 of 3')).toBeInTheDocument();
     expect(d1.requests).toHaveLength(1);
-    expect(d1.requests[0]!.url.search).toBe('');
+    expect(d1.requests[0]!.url.search).toBe('?size=10');
   });
 
   it('gates Create entry on the create permission', async () => {
@@ -86,7 +86,7 @@ describe('CollectionListPage URL state (AC-4)', () => {
     renderPage('/admin/content-types/article?orderBy=createdAt&sortDir=asc');
 
     await screen.findByRole('table');
-    expect(d1.requests[0]!.url.search).toBe('?orderBy=created_at&sortDir=asc');
+    expect(d1.requests[0]!.url.search).toBe('?size=10&orderBy=created_at&sortDir=asc');
     expect(screen.queryByText(IGNORED)).not.toBeInTheDocument();
   });
 
@@ -102,13 +102,13 @@ describe('CollectionListPage URL state (AC-4)', () => {
     await waitFor(() => expect(search(router)).toBe('?sortDir=asc'));
     expect(router.state.historyAction).toBe('REPLACE');
     expect(screen.getByText(IGNORED)).toHaveAttribute('role', 'status');
-    expect(d1.requests.map((r) => r.url.search)).toEqual(['?sortDir=asc']);
+    expect(d1.requests.map((r) => r.url.search)).toEqual(['?size=10&sortDir=asc']);
   });
 
   it('canonicalises a URL with defaults silently', async () => {
     server.use(listDocumentsHandler(paged(2)).handler);
 
-    const { router } = renderPage('/admin/content-types/article?size=20&page=1&sortDir=bad');
+    const { router } = renderPage('/admin/content-types/article?size=10&page=1&sortDir=bad');
 
     await screen.findByRole('table');
     await waitFor(() => expect(search(router)).toBe(''));
@@ -122,7 +122,7 @@ describe('CollectionListPage sorting (AC-20)', () => {
     server.use(d1.handler);
     const { router, user } = renderPage('/admin/content-types/article?page=2');
 
-    await user.click(await screen.findByRole('checkbox', { name: 'Select Post 21' }));
+    await user.click(await screen.findByRole('checkbox', { name: 'Select Post 11' }));
     await user.click(screen.getByRole('button', { name: 'Updated' }));
 
     await waitFor(() => expect(search(router)).toBe('?orderBy=updatedAt'));
@@ -130,7 +130,7 @@ describe('CollectionListPage sorting (AC-20)', () => {
       'aria-sort',
       'descending',
     );
-    await waitFor(() => expect(d1.requests.at(-1)!.url.search).toBe('?orderBy=updated_at'));
+    await waitFor(() => expect(d1.requests.at(-1)!.url.search).toBe('?size=10&orderBy=updated_at'));
     expect(await screen.findByRole('checkbox', { name: 'Select Post 1' })).not.toBeChecked();
     expect(screen.queryByRole('checkbox', { checked: true })).not.toBeInTheDocument();
   });
@@ -159,22 +159,43 @@ describe('CollectionListPage search (AC-21)', () => {
     renderPage('/admin/content-types/article?q=news');
 
     expect(await screen.findByRole('searchbox', { name: 'Search entries' })).toHaveValue('news');
-    expect(d1.requests[0]!.url.search).toBe('?search=news');
+    expect(d1.requests[0]!.url.search).toBe('?size=10&search=news');
   });
 });
 
 describe('CollectionListPage pagination (AC-23)', () => {
+  it('shows and requests 10 rows by default (AC-20)', async () => {
+    const d1 = listDocumentsHandler(paged(45));
+    server.use(d1.handler);
+    renderPage();
+
+    expect(await screen.findByText('Showing 1–10 of 45')).toBeInTheDocument();
+    expect(screen.getAllByRole('checkbox', { name: /^Select Post/ })).toHaveLength(10);
+    expect(d1.requests[0]!.url.searchParams.get('size')).toBe('10');
+  });
+
+  it('still shows 20 rows for size=20 in the URL (AC-20)', async () => {
+    const d1 = listDocumentsHandler(paged(45));
+    server.use(d1.handler);
+    const { router } = renderPage('/admin/content-types/article?size=20');
+
+    expect(await screen.findByText('Showing 1–20 of 45')).toBeInTheDocument();
+    expect(search(router)).toBe('?size=20');
+    expect(d1.requests[0]!.url.search).toBe('');
+  });
+
   it('moves to the next page through the URL', async () => {
     const d1 = listDocumentsHandler(paged(45));
     server.use(d1.handler);
     const { router, user } = renderPage();
 
-    await screen.findByText('Showing 1–20 of 45');
+    await screen.findByText('Showing 1–10 of 45');
     await user.click(screen.getByRole('button', { name: 'Next page' }));
 
     await waitFor(() => expect(search(router)).toBe('?page=2'));
-    expect(await screen.findByText('Showing 21–40 of 45')).toBeInTheDocument();
-    expect(d1.requests.at(-1)!.url.search).toBe('?start=20');
+    expect(await screen.findByText('Showing 11–20 of 45')).toBeInTheDocument();
+    expect(d1.requests.at(-1)!.url.searchParams.get('start')).toBe('10');
+    expect(d1.requests.at(-1)!.url.searchParams.get('size')).toBe('10');
   });
 
   it('changes the page size and resets to page 1', async () => {
@@ -182,7 +203,7 @@ describe('CollectionListPage pagination (AC-23)', () => {
     server.use(d1.handler);
     const { router, user } = renderPage('/admin/content-types/article?page=2');
 
-    await screen.findByText('Showing 21–40 of 45');
+    await screen.findByText('Showing 11–20 of 45');
     await user.click(screen.getByRole('combobox', { name: 'Rows per page' }));
     await user.click(await screen.findByRole('option', { name: '50' }));
 
@@ -195,7 +216,7 @@ describe('CollectionListPage pagination (AC-23)', () => {
 
     const { router } = renderPage('/admin/content-types/article?page=9');
 
-    await waitFor(() => expect(search(router)).toBe('?page=3'));
+    await waitFor(() => expect(search(router)).toBe('?page=5'));
     expect(router.state.historyAction).toBe('REPLACE');
     expect(await screen.findByText('Showing 41–45 of 45')).toBeInTheDocument();
   });
@@ -210,13 +231,13 @@ describe('CollectionListPage pagination (AC-23)', () => {
     );
     const { user } = renderPage();
 
-    await screen.findByText('Showing 1–20 of 45');
+    await screen.findByText('Showing 1–10 of 45');
     slow = true;
     await user.click(screen.getByRole('button', { name: 'Next page' }));
 
     expect(screen.getByRole('table')).toHaveAttribute('aria-busy', 'true');
     expect(screen.getByRole('link', { name: 'Post 1' })).toBeInTheDocument();
-    expect(await screen.findByRole('link', { name: 'Post 21' })).toBeInTheDocument();
+    expect(await screen.findByRole('link', { name: 'Post 11' })).toBeInTheDocument();
     expect(screen.getByRole('table')).not.toHaveAttribute('aria-busy');
   });
 });

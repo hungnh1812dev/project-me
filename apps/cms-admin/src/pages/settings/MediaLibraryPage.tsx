@@ -1,12 +1,15 @@
 import { useMemo, useState } from 'react';
 
-import { FileDropzone } from '@/components/form/FileDropzone';
-import { GatedButton } from '@/components/form/GatedButton';
+import { FileDropzone } from '@repo/ui/form/FileDropzone';
+import { GatedButton } from '@repo/ui/form/GatedButton';
+import { Pagination } from '@repo/ui/form/Pagination';
+
 import { useCan } from '@/features/auth/hooks/useCan';
 import { ListState } from '@/features/settings/components/ListState';
 import { LiveRegion } from '@/features/settings/components/LiveRegion';
 import { SearchField } from '@/features/settings/components/SearchField';
 import { useAnnouncer } from '@/features/settings/components/useAnnouncer';
+import { useListPaging } from '@/features/settings/hooks/useListPaging';
 import { useMediaList, useUploadMedia } from '@/features/settings/hooks/useMedia';
 import { formatBytes, UPLOAD_ACCEPT, uploadSummary } from '@/features/settings/media';
 import { filterBySearch } from '@/features/settings/search';
@@ -62,7 +65,7 @@ type Target = { asset: MediaAsset; session: number };
 
 /**
  * `/admin/settings/media` (gated by `media:read`): the asset grid, newest first, with a search on
- * the file name (AC-35, AC-4). Upload sends the picked or dropped files one at a time and lists
+ * the file name (AC-35, AC-4) and 10 cards per page with the page in the URL (Phase 6 AC-23). Upload sends the picked or dropped files one at a time and lists
  * their status (AC-36, AC-37); the batch summary is announced in the page's live region. Delete
  * confirms with the thumbnail (AC-38). Both actions are gated (AC-5).
  */
@@ -81,6 +84,7 @@ const MediaLibraryPage: React.FC = () => {
     () => filterBySearch(media.data ?? [], search, SEARCH_FIELDS),
     [media.data, search],
   );
+  const paging = useListPaging(media.data ? visible : undefined, search);
 
   const upload = async (files: File[]) => {
     setSummary('');
@@ -134,14 +138,23 @@ const MediaLibraryPage: React.FC = () => {
         visible={visible.length}
         search={search}
       >
-        <ul
-          aria-label="Media files"
-          className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4 xl:grid-cols-5"
-        >
-          {visible.map((asset) => (
-            <MediaCard key={asset.documentId} asset={asset} onDelete={openDelete} />
-          ))}
-        </ul>
+        <div className="flex flex-col gap-4">
+          <ul
+            aria-label="Media files"
+            className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4 xl:grid-cols-5"
+          >
+            {paging.rows.map((asset) => (
+              <MediaCard key={asset.documentId} asset={asset} onDelete={openDelete} />
+            ))}
+          </ul>
+          <Pagination
+            page={paging.page}
+            size={paging.size}
+            total={paging.total}
+            onPageChange={paging.onPageChange}
+            onSizeChange={paging.onSizeChange}
+          />
+        </div>
       </ListState>
       {target && (
         <DeleteMediaDialog

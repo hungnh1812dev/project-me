@@ -1,8 +1,9 @@
 import { UserIcon } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader } from '@/components/ui/card';
+import { Button } from '@repo/ui/components/button';
+import { Card, CardContent, CardDescription, CardHeader } from '@repo/ui/components/card';
+
 import { useAuth } from '@/features/auth/hooks/useAuth';
 
 /** `/admin`: a welcome card with a link to the profile (AC-38). */

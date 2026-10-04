@@ -1,9 +1,8 @@
 import { useId, useMemo, useState } from 'react';
 import { ChevronRightIcon } from 'lucide-react';
 
-import { GatedButton } from '@/components/form/GatedButton';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import { Badge } from '@repo/ui/components/badge';
+import { Button } from '@repo/ui/components/button';
 import {
   Table,
   TableBody,
@@ -12,17 +11,21 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
+} from '@repo/ui/components/table';
+import { GatedButton } from '@repo/ui/form/GatedButton';
+import { Pagination } from '@repo/ui/form/Pagination';
+import { cn } from '@repo/ui/lib/cn';
+
 import { useCan } from '@/features/auth/hooks/useCan';
 import type { Role } from '@/features/auth/types';
 import { ListState } from '@/features/settings/components/ListState';
 import { LiveRegion } from '@/features/settings/components/LiveRegion';
 import { SearchField } from '@/features/settings/components/SearchField';
 import { useAnnouncer } from '@/features/settings/components/useAnnouncer';
+import { useListPaging } from '@/features/settings/hooks/useListPaging';
 import { useRoles } from '@/features/settings/hooks/useRoles';
 import { groupSlugsByResource } from '@/features/settings/permissionTree';
 import { filterBySearch } from '@/features/settings/search';
-import { cn } from '@/utils/cn';
 
 import { DeleteRoleDialog } from './roles/DeleteRoleDialog';
 import { RoleFormDialog } from './roles/RoleFormDialog';
@@ -154,8 +157,9 @@ type Target = { kind: 'create' | 'edit' | 'delete'; role?: Role; session: number
 /**
  * `/admin/settings/roles` (gated by `role:read`): every role sorted by level then name, with slug,
  * level, permission count and a Default badge; a row expands to its permissions grouped by
- * resource (AC-18). A client-side search covers name and slug (AC-4), and New, Edit and Delete are
- * gated (AC-5, AC-19 to AC-21). No level-hierarchy rule applies to roles (D4).
+ * resource (AC-18). A client-side search covers name and slug (AC-4), the list pages 10 roles at a
+ * time with the page in the URL (Phase 6 AC-21; expanded rows don't count), and New, Edit and Delete
+ * are gated (AC-5, AC-19 to AC-21). No level-hierarchy rule applies to roles (D4).
  */
 const RolesPage: React.FC = () => {
   const roles = useRoles();
@@ -171,6 +175,8 @@ const RolesPage: React.FC = () => {
     () => filterBySearch(roles.data ?? [], search, SEARCH_FIELDS).sort(byLevelThenName),
     [roles.data, search],
   );
+
+  const paging = useListPaging(roles.data ? visible : undefined, search);
 
   const toggle = (id: string) =>
     setExpanded((previous) => {
@@ -218,38 +224,47 @@ const RolesPage: React.FC = () => {
         search={search}
         emptyAction={newButton}
       >
-        <div
-          role="region"
-          aria-label="Roles table"
-          tabIndex={0}
-          className="overflow-x-auto rounded-lg border focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring [&_[data-slot=table-container]]:overflow-visible"
-        >
-          <Table>
-            <TableCaption className="sr-only">Roles</TableCaption>
-            <TableHeader>
-              <TableRow>
-                <TableHead scope="col">Name</TableHead>
-                <TableHead scope="col">Slug</TableHead>
-                <TableHead scope="col">Level</TableHead>
-                <TableHead scope="col">Permissions</TableHead>
-                <TableHead scope="col">
-                  <span className="sr-only">Actions</span>
-                </TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {visible.map((role) => (
-                <RoleTableRow
-                  key={role.documentId}
-                  role={role}
-                  expanded={expanded.has(role.documentId)}
-                  onToggle={() => toggle(role.documentId)}
-                  onEdit={openDialog('edit')}
-                  onDelete={openDialog('delete')}
-                />
-              ))}
-            </TableBody>
-          </Table>
+        <div className="flex flex-col gap-4">
+          <div
+            role="region"
+            aria-label="Roles table"
+            tabIndex={0}
+            className="overflow-x-auto rounded-lg border focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring [&_[data-slot=table-container]]:overflow-visible"
+          >
+            <Table>
+              <TableCaption className="sr-only">Roles</TableCaption>
+              <TableHeader>
+                <TableRow>
+                  <TableHead scope="col">Name</TableHead>
+                  <TableHead scope="col">Slug</TableHead>
+                  <TableHead scope="col">Level</TableHead>
+                  <TableHead scope="col">Permissions</TableHead>
+                  <TableHead scope="col">
+                    <span className="sr-only">Actions</span>
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {paging.rows.map((role) => (
+                  <RoleTableRow
+                    key={role.documentId}
+                    role={role}
+                    expanded={expanded.has(role.documentId)}
+                    onToggle={() => toggle(role.documentId)}
+                    onEdit={openDialog('edit')}
+                    onDelete={openDialog('delete')}
+                  />
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+          <Pagination
+            page={paging.page}
+            size={paging.size}
+            total={paging.total}
+            onPageChange={paging.onPageChange}
+            onSizeChange={paging.onSizeChange}
+          />
         </div>
       </ListState>
       {(target?.kind === 'create' || target?.kind === 'edit') && (

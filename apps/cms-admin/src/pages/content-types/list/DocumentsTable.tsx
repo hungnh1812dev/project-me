@@ -1,8 +1,11 @@
-import { useEffect, useId, useRef } from 'react';
+import { useId } from 'react';
 import { ArrowDownIcon, ArrowUpIcon, ChevronsUpDownIcon } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
-import { TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Checkbox } from '@repo/ui/components/checkbox';
+import { TableBody, TableCell, TableHead, TableHeader, TableRow } from '@repo/ui/components/table';
+import { cn } from '@repo/ui/lib/cn';
+
 import {
   cellValue,
   entryLabeler,
@@ -18,7 +21,6 @@ import type {
   ListedDocumentItem,
   SortDir,
 } from '@/features/content/types';
-import { cn } from '@/utils/cn';
 
 import { StatusBadge } from '../editor/EditorHeader';
 
@@ -41,10 +43,10 @@ export interface DocumentsTableProps {
   regionRef?: React.Ref<HTMLDivElement>;
 }
 
-const BOX = 'size-5 shrink-0 cursor-pointer accent-primary lg:size-4';
-// The label pads the small native box out to a 44px target below `lg`.
-const BOX_TARGET =
-  'flex min-h-11 min-w-11 cursor-pointer items-center justify-center lg:min-h-8 lg:min-w-8';
+// The Checkbox's ::after is a 44px hit area; the cell keeps a 44px row below `lg`. In the dense
+// `lg` table the hit area shrinks to 32px (`lg:min-h-8`) so it never reaches the next row's box.
+const BOX = 'lg:after:-inset-2';
+const BOX_TARGET = 'flex min-h-11 min-w-11 items-center justify-center lg:min-h-8 lg:min-w-8';
 
 /** The columns shown, in order: the known `listFields`, then Status unless it is listed already. */
 function visibleColumns(listFields: readonly string[], catalog: ColumnCatalog): Column[] {
@@ -87,31 +89,35 @@ const SortHeader: React.FC<SortHeaderProps> = ({ column, active, sortDir, onSort
 };
 SortHeader.displayName = 'SortHeader';
 
-const HeaderCheckbox: React.FC<{
+/**
+ * A selection box (AC-12): the `@repo/ui` Checkbox named through `aria-labelledby` by sr-only text,
+ * which also keeps the name in the header cell's text. `indeterminate` gives `aria-checked="mixed"`.
+ */
+const SelectBox: React.FC<{
+  label: string;
   checked: boolean;
-  indeterminate: boolean;
-  disabled: boolean;
+  indeterminate?: boolean;
+  disabled?: boolean;
   onChange: () => void;
-}> = ({ checked, indeterminate, disabled, onChange }) => {
-  const ref = useRef<HTMLInputElement>(null);
-  useEffect(() => {
-    if (ref.current) ref.current.indeterminate = indeterminate;
-  }, [indeterminate]);
+}> = ({ label, checked, indeterminate = false, disabled, onChange }) => {
+  const labelId = useId();
   return (
-    <label className={BOX_TARGET}>
-      <input
-        ref={ref}
-        type="checkbox"
+    <div className={BOX_TARGET}>
+      <Checkbox
         className={BOX}
+        aria-labelledby={labelId}
         checked={checked}
+        indeterminate={indeterminate}
         disabled={disabled}
-        onChange={onChange}
+        onCheckedChange={onChange}
       />
-      <span className="sr-only">Select all entries on this page</span>
-    </label>
+      <span id={labelId} className="sr-only">
+        {label}
+      </span>
+    </div>
   );
 };
-HeaderCheckbox.displayName = 'HeaderCheckbox';
+SelectBox.displayName = 'SelectBox';
 
 interface CellProps {
   item: ListedDocumentItem;
@@ -130,7 +136,7 @@ const Cell: React.FC<CellProps> = ({ item, column, href, label }) => {
         <Link
           to={href}
           title={text}
-          className="block max-w-64 truncate font-medium text-primary underline-offset-4 hover:underline"
+          className="block max-w-64 truncate font-medium text-primary-ink underline-offset-4 hover:underline"
         >
           {text}
         </Link>
@@ -229,7 +235,8 @@ export const DocumentsTable: React.FC<DocumentsTableProps> = ({
         <TableHeader className="bg-muted/40">
           <TableRow className="hover:bg-transparent">
             <TableHead className="w-11 px-1">
-              <HeaderCheckbox
+              <SelectBox
+                label="Select all entries on this page"
                 checked={allSelected}
                 indeterminate={selectedOnPage > 0 && !allSelected}
                 disabled={pageIds.length === 0}
@@ -263,15 +270,11 @@ export const DocumentsTable: React.FC<DocumentsTableProps> = ({
             return (
               <TableRow key={item.documentId} data-state={isSelected ? 'selected' : undefined}>
                 <TableCell className="px-1">
-                  <label className={BOX_TARGET}>
-                    <input
-                      type="checkbox"
-                      className={BOX}
-                      checked={isSelected}
-                      onChange={() => toggle(item.documentId)}
-                    />
-                    <span className="sr-only">Select {label}</span>
-                  </label>
+                  <SelectBox
+                    label={`Select ${label}`}
+                    checked={isSelected}
+                    onChange={() => toggle(item.documentId)}
+                  />
                 </TableCell>
                 {columns.map((column) => (
                   <Cell

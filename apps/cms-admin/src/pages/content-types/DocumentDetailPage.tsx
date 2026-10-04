@@ -2,11 +2,12 @@ import { useCallback, useEffect, useState } from 'react';
 import { CopyIcon, Trash2Icon } from 'lucide-react';
 import { Navigate, useLocation, useNavigate, useParams } from 'react-router-dom';
 
-import { GatedButton } from '@/components/form/GatedButton';
-import { GatedMenuItem } from '@/components/form/GatedMenuItem';
+import { DropdownMenuSeparator } from '@repo/ui/components/dropdown-menu';
+import { GatedButton } from '@repo/ui/form/GatedButton';
+import { GatedMenuItem } from '@repo/ui/form/GatedMenuItem';
+import { UnsavedChangesDialog } from '@repo/ui/form/UnsavedChangesDialog';
+
 import { SchemaForm } from '@/components/form/SchemaForm';
-import { UnsavedChangesDialog } from '@/components/form/UnsavedChangesDialog';
-import { DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import type { Decision } from '@/features/auth/permissions/policies';
 import {
   useDuplicateDocument,

@@ -12,7 +12,7 @@ A pnpm + Turborepo monorepo with three independently deployable apps and a set o
 │   └── frontend/           # Next.js public site + BFF (route handlers)
 ├── packages/
 │   ├── types/              # @repo/types: shared TS types (empty for now)
-│   ├── ui/                 # @repo/ui: shared React components (empty for now)
+│   ├── ui/                 # @repo/ui: shared React components, form components and Tailwind theme
 │   ├── eslint-config/      # @repo/eslint-config: base flat config
 │   └── typescript-config/  # @repo/typescript-config: base tsconfig
 ├── .github/workflows/ci.yml  # CI/CD pipeline, see ci-cd.md
@@ -30,7 +30,20 @@ A pnpm + Turborepo monorepo with three independently deployable apps and a set o
 - **Internal dependencies:** use `workspace:*`.
 - **Lockfile:** there is one lockfile, the root `pnpm-lock.yaml`.
 
-No app depends on a `@repo/*` package yet. When one does, turbo's change detection will automatically rebuild that app when the package changes.
+`cms-admin` and `frontend` depend on `@repo/ui` (`workspace:*`), so turbo's change detection rebuilds both when the package changes, and `turbo prune` puts it in their Docker builds. No app depends on `@repo/types` yet.
+
+## Shared UI package (`@repo/ui`)
+
+`packages/ui` holds the shadcn/ui primitives (Base UI flavour), the generic form components (`Field`, `GatedButton`, `Pagination`, …), pure helpers (`cn`, `json`, `pagination`, `Decision`) and the shared Tailwind v4 theme. The admin-specific form components stay in cms-admin.
+
+- **No build step.** The package ships TypeScript source with subpath `exports` (`@repo/ui/components/*`, `@repo/ui/form/*`, `@repo/ui/hooks/*`, `@repo/ui/lib/*`, `@repo/ui/styles/theme.css`, `@repo/ui/styles/tokens`). Vite compiles it in cms-admin, and Next compiles it in frontend through `transpilePackages: ['@repo/ui']`.
+- **Theme.** Each app's global CSS imports `@repo/ui/styles/theme.css` and adds `@source '../../../../packages/ui/src'`, so Tailwind generates the package's classes.
+- **Client components.** Every `.tsx` module in `src/components` and `src/form` starts with `'use client'`, for Next's App Router.
+- **TypeScript 5 and 6.** The package is written under cms-admin's TS 6. `apps/frontend/src/ui-compile-check.ts` re-exports every entry so frontend's TS 5 typechecks it too; add new entries there.
+- **Boundaries.** Unit tests in the package fail on imports through `@/`, from `apps/*`, or from app-only libraries (router, axios, Redux, TanStack, react-hook-form), on a missing `'use client'`, and on raw hex or palette classes in any `.tsx` file of the package or cms-admin.
+- **Tests.** `pnpm --filter @repo/ui test`, or `test:cov` for the coverage gates (`src/form` at 70%, `src/lib` and `tokens.ts` at 85%; the vendored `src/components` are excluded). The root `pnpm test` runs them too.
+
+See [cms-admin's design system](../apps/cms-admin/docs/design-system.md) for the components, tokens and palette.
 
 ## Apps
 
@@ -44,13 +57,13 @@ Each app keeps its generator's own tooling and versions. That's why TypeScript a
 
 ## Turbo tasks
 
-| Task        | Depends on   | Notes                                                                                                                       |
-| ----------- | ------------ | --------------------------------------------------------------------------------------------------------------------------- |
-| `build`     | `^build`     | outputs `dist/**`, `.next/**` (minus cache)                                                                                 |
-| `typecheck` | `^typecheck` | `tsc --noEmit`. cms-admin uses `tsc -b --noEmit`. frontend runs `next typegen` first, because `next-env.d.ts` is gitignored |
-| `lint`      | `^lint`      |                                                                                                                             |
-| `test`      | `^build`     | runs cms-api and cms-admin unit tests (Vitest). e2e suites (`test:e2e`) and cms-admin coverage (`test:cov`) run per app     |
-| `dev`       | —            | persistent, not cached                                                                                                      |
+| Task        | Depends on   | Notes                                                                                                                               |
+| ----------- | ------------ | ----------------------------------------------------------------------------------------------------------------------------------- |
+| `build`     | `^build`     | outputs `dist/**`, `.next/**` (minus cache)                                                                                         |
+| `typecheck` | `^typecheck` | `tsc --noEmit`. cms-admin uses `tsc -b --noEmit`. frontend runs `next typegen` first, because `next-env.d.ts` is gitignored         |
+| `lint`      | `^lint`      |                                                                                                                                     |
+| `test`      | `^build`     | runs the cms-api, cms-admin and `@repo/ui` unit tests (Vitest). e2e suites (`test:e2e`) and coverage (`test:cov`) run per workspace |
+| `dev`       | —            | persistent, not cached                                                                                                              |
 
 Before changing `turbo.json`, read the docs bundled with the installed turbo (`node_modules/turbo/docs/`). See the root `AGENTS.md`.
 

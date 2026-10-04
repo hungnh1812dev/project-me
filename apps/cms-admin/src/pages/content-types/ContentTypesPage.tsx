@@ -1,8 +1,9 @@
 import { ChevronRightIcon } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
-import { Badge } from '@/components/ui/badge';
-import { Card } from '@/components/ui/card';
+import { Badge } from '@repo/ui/components/badge';
+import { Card } from '@repo/ui/components/card';
+
 import { useContentTypes } from '@/features/content/hooks/useContentTypes';
 import type { ContentTypeSummary } from '@/features/content/types';
 

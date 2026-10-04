@@ -481,3 +481,77 @@ describe('PermissionsPage delete (AC-7, AC-10, AC-11, AC-27)', () => {
     expect(rowOf('role:read')).toBeInTheDocument();
   });
 });
+
+describe('PermissionsPage paging by rows (Phase 6 AC-22, AC-24 to AC-26)', () => {
+  /** `docs` document permissions, then `roles` role permissions, unsorted. */
+  const many = (docs: number, roles: number) =>
+    [
+      ...Array.from({ length: roles }, (_, i) => `role:r${i + 1}`),
+      ...Array.from({ length: docs }, (_, i) => `document:d${String(i + 1).padStart(2, '0')}`),
+    ].map((slug) =>
+      makePermission({ documentId: `perm-${slug}`, slug, name: slug, description: null }),
+    );
+
+  const summaries = () =>
+    screen.getAllByRole('group').map((group) => group.querySelector('summary')?.textContent);
+
+  async function renderAt(route: string) {
+    const view = renderWithProviders(<PermissionsPage />, { auth: auth(), route });
+    await screen.findAllByRole('table');
+    return view;
+  }
+
+  it('pages 10 rows sorted by slug, and a split group keeps its full count on both pages', async () => {
+    mockApi(many(8, 4));
+    const { user } = await renderAt('/');
+
+    expect(summaries()).toEqual(['document8 permissions', 'role4 permissions']);
+    expect(slugsIn(screen.getByRole('table', { name: 'role permissions' }))).toEqual([
+      'role:r1',
+      'role:r2',
+    ]);
+    const nav = screen.getByRole('navigation', { name: 'Pagination' });
+    expect(nav).toHaveTextContent('Showing 1–10 of 12');
+
+    await user.click(within(nav).getByRole('button', { name: 'Next page' }));
+
+    expect(summaries()).toEqual(['role4 permissions']);
+    expect(slugsIn(screen.getByRole('table', { name: 'role permissions' }))).toEqual([
+      'role:r3',
+      'role:r4',
+    ]);
+  });
+
+  it('counts only the rows that match the search, and goes back to page 1', async () => {
+    mockApi(many(8, 4));
+    const { user } = await renderAt('/?page=2');
+
+    await user.type(screen.getByRole('searchbox', { name: 'Search permissions' }), 'role');
+
+    await waitFor(() => expect(summaries()).toEqual(['role4 permissions']));
+    expect(screen.getByRole('navigation', { name: 'Pagination' })).toHaveTextContent(
+      'Showing 1–4 of 4',
+    );
+  });
+
+  it('moves to the new last page when a delete empties the current one', async () => {
+    const { store } = mockApi(many(8, 3));
+    server.use(
+      deletePermissionHandler(({ params }) => {
+        store.permissions = store.permissions.filter((p) => p.documentId !== params.id);
+        return new HttpResponse(null, { status: 204 });
+      }).handler,
+    );
+    const { user } = await renderAt('/?page=2');
+    expect(summaries()).toEqual(['role3 permissions']);
+
+    await user.click(screen.getByRole('button', { name: 'Delete role:r3' }));
+    const dialog = await screen.findByRole('alertdialog');
+    await user.click(within(dialog).getByRole('button', { name: 'Delete permission' }));
+
+    expect(await screen.findByText('Permission "role:r3" deleted.')).toBeInTheDocument();
+    await waitFor(() =>
+      expect(summaries()).toEqual(['document8 permissions', 'role2 permissions']),
+    );
+  });
+});

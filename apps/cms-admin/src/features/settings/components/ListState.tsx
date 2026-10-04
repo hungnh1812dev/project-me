@@ -1,7 +1,8 @@
 import { AlertCircleIcon } from 'lucide-react';
 
-import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
+import { Button } from '@repo/ui/components/button';
+import { Skeleton } from '@repo/ui/components/skeleton';
+
 import type { ApiError } from '@/core/api/apiError';
 
 /** How a list names its items, for example `{ one: 'user', other: 'users' }`. */

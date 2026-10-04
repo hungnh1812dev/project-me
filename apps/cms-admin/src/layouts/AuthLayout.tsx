@@ -1,6 +1,12 @@
 import { LayersIcon } from 'lucide-react';
 
-import { Card, CardContent, CardDescription, CardFooter, CardHeader } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+} from '@repo/ui/components/card';
 
 interface AuthLayoutProps {
   /** The page heading (the only `<h1>`). */
@@ -21,7 +27,7 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ title, description, footer, chi
     <Card className="w-full max-w-[400px] gap-6 py-6 [--card-spacing:--spacing(6)] max-sm:max-w-none max-sm:rounded-none max-sm:ring-0">
       <CardHeader className="gap-3">
         <p className="flex items-center gap-2 text-sm font-semibold text-foreground">
-          <span className="flex size-8 items-center justify-center rounded-md bg-primary text-primary-foreground">
+          <span className="flex size-8 items-center justify-center rounded-md border border-primary-ink bg-primary text-primary-foreground">
             <LayersIcon aria-hidden="true" className="size-4" />
           </span>
           hungnhdev CMS

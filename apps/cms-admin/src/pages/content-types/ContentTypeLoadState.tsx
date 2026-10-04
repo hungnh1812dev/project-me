@@ -1,7 +1,8 @@
 import { ArrowLeftIcon } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
-import { Button } from '@/components/ui/button';
+import { Button } from '@repo/ui/components/button';
+
 import type { ApiError } from '@/core/api/apiError';
 
 const ALERT = 'text-sm text-destructive';

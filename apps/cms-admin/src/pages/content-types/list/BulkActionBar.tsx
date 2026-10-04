@@ -9,8 +9,10 @@ import {
   XIcon,
 } from 'lucide-react';
 
-import { GatedButton } from '@/components/form/GatedButton';
-import { Button } from '@/components/ui/button';
+import { Button } from '@repo/ui/components/button';
+import { GatedButton } from '@repo/ui/form/GatedButton';
+import { cn } from '@repo/ui/lib/cn';
+
 import {
   bulkDeleteSummary,
   bulkProgressText,
@@ -21,7 +23,6 @@ import {
 import { useBulkStatus } from '@/features/content/hooks/useBulkStatus';
 import { useContentTypeAccess } from '@/features/content/hooks/useContentTypeAccess';
 import type { ContentTypeRef, DocumentStatus } from '@/features/content/types';
-import { cn } from '@/utils/cn';
 
 import { actionErrorText } from '../actionError';
 import { BulkDeleteDialog } from './BulkDeleteDialog';

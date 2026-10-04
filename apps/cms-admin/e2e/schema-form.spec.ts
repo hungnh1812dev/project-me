@@ -3,6 +3,7 @@ import type { Page } from '@playwright/test';
 import type { Document } from '../src/features/content/types.ts';
 import type { MediaAsset } from '../src/features/settings/types.ts';
 import { FIELD_SHOWCASE, seedContent, STAMP } from './fixtures/contentFixtures.ts';
+import { editorText } from './fixtures/jsonEditor.ts';
 import { expect, ROLES, test, type MockApi } from './fixtures/mockApi.ts';
 
 // The schema form is checked through a single type built from the showcase fields, since the
@@ -41,9 +42,9 @@ function showcase(overrides: Partial<Document> = {}): Document {
 
 /** The `Field` wrapper of the control labelled `label`. */
 const fieldBox = async (page: Page, label: string) => {
+  // `has` pierces the JSON editor's shadow root, where an ancestor XPath can't.
   const box = await page
-    .getByLabel(label, { exact: true })
-    .locator('xpath=ancestor::*[@data-slot="field"][1]')
+    .locator('[data-slot="field"]', { has: page.getByLabel(label, { exact: true }) })
     .boundingBox();
   expect(box).not.toBeNull();
   return box!;
@@ -93,7 +94,9 @@ test('every primitive field renders its control with a visible label (AC-7)', as
   await expect(page.getByLabel('Title', { exact: true })).toHaveValue('Hello');
   await expect(page.getByLabel('Views')).toHaveValue('5');
   await expect(page.getByRole('switch', { name: 'Featured' })).toBeChecked();
-  await expect(page.getByLabel('Meta', { exact: true })).toHaveValue('{\n  "a": 1\n}');
+  await expect
+    .poll(() => editorText(page.getByLabel('Meta', { exact: true })))
+    .toBe('{\n  "a": 1\n}');
   for (const label of ['Title', 'Views', 'Featured', 'Meta'])
     await expect(page.locator('label', { hasText: new RegExp(`^${label}$`) })).toBeVisible();
 });
@@ -130,7 +133,7 @@ test('invalid JSON stays visible, shows its parse error and sends nothing (AC-8)
   await page.getByRole('button', { name: 'Save' }).click();
 
   await expect(page.getByRole('alert')).toContainText('Invalid JSON');
-  await expect(meta).toHaveValue('{"a":');
+  expect(await editorText(meta)).toBe('{"a":');
   await expect(meta).toBeFocused();
   expect(writes(mockApi)).toEqual([]);
 
@@ -139,6 +142,45 @@ test('invalid JSON stays visible, shows its parse error and sends nothing (AC-8)
   await page.getByRole('button', { name: 'Save' }).click();
   await expect(page.getByRole('status').filter({ hasText: 'Saved.' })).toBeAttached();
   expect(mockContent.single('showcase-single')).toMatchObject({ meta: { a: [1, 2] } });
+});
+
+test('JSON typed with the keyboard validates after blur, formats and saves (AC-17, AC-18, AC-22)', async ({
+  page,
+  mockApi,
+  mockContent,
+}) => {
+  await page.goto(URL);
+  const meta = page.getByRole('textbox', { name: 'Meta', exact: true });
+  const format = page
+    .locator('[data-slot="field"]', { has: meta })
+    .getByRole('button', { name: 'Format JSON' });
+  await meta.click();
+  await page.keyboard.press('ControlOrMeta+a');
+  await page.keyboard.press('Delete');
+
+  // closeBrackets adds the closing `}` and `]` the keys would also type, so type the inside only.
+  await page.keyboard.type('{"tags":["a"');
+  await expect(page.getByRole('alert')).toHaveCount(0); // no error before the first blur
+  await page.keyboard.press('Tab');
+  await expect(meta).not.toBeFocused();
+  expect(await editorText(meta)).toBe('{"tags":["a"]}');
+  await expect(page.getByRole('alert')).toHaveCount(0);
+
+  await format.click();
+  await expect.poll(() => editorText(meta)).toBe('{\n  "tags": [\n    "a"\n  ]\n}');
+
+  await meta.click();
+  await page.keyboard.press('ControlOrMeta+End');
+  await page.keyboard.type('x');
+  await expect(page.getByRole('alert')).toContainText('Invalid JSON'); // every change after blur
+  await expect(meta).toHaveAttribute('aria-invalid', 'true');
+  await page.keyboard.press('Backspace');
+  await expect(page.getByRole('alert')).toHaveCount(0);
+
+  await page.getByRole('button', { name: 'Save' }).click();
+  await expect(page.getByRole('status').filter({ hasText: 'Saved.' })).toBeAttached();
+  expect(writes(mockApi)).toHaveLength(1);
+  expect(mockContent.single('showcase-single')).toMatchObject({ meta: { tags: ['a'] } });
 });
 
 test('an unsupported field type shows a read-only preview and is sent back unchanged (AC-7)', async ({
@@ -489,7 +531,7 @@ const cover = (page: Page) => page.getByRole('group', { name: 'Cover image', exa
 /** Presses Tab until a radio of the open picker has focus. */
 async function tabToRadios(page: Page) {
   for (let i = 0; i < 10; i += 1) {
-    if (await page.evaluate('document.activeElement?.getAttribute("type") === "radio"')) return;
+    if (await page.evaluate('document.activeElement?.getAttribute("role") === "radio"')) return;
     await page.keyboard.press('Tab');
   }
   throw new Error('No radio took focus');
@@ -510,15 +552,22 @@ test('media: picks an asset with only the keyboard and saves the full asset (AC-
   await tabToRadios(page);
   await expect(dialog.getByRole('radio', { name: 'dog.png' })).toBeFocused();
   await page.keyboard.press('ArrowRight');
-  await expect(dialog.getByRole('radio', { name: 'cat.png' })).toBeChecked();
+  const catRadio = dialog.getByRole('radio', { name: 'cat.png' });
+  await expect(catRadio).toBeChecked();
+  await expect(catRadio).toHaveAttribute('data-slot', 'radio-group-item');
+  // The checked card shows the ring; the other card does not.
+  const ring = (name: string) =>
+    dialog
+      .getByRole('radio', { name })
+      .locator('xpath=ancestor::label[1]')
+      .evaluate((el) => el.ownerDocument.defaultView!.getComputedStyle(el).boxShadow);
+  expect(await ring('cat.png')).not.toBe('none');
+  expect(await ring('dog.png')).toBe('none');
   await page.keyboard.press('Enter');
 
   await expect(dialog).toHaveCount(0);
   await expect(cover(page).getByText('cat.png')).toBeVisible();
-  await expect(cover(page).getByRole('img', { name: 'cat.png' })).toHaveAttribute(
-    'src',
-    CAT.thumbnailUrl,
-  );
+  await expect(cover(page).getByRole('img', { name: 'cat.png' })).toHaveAttribute('src', CAT.url);
   await expect(
     page.getByRole('status').filter({ hasText: 'Cover image set to cat.png.' }),
   ).toBeAttached();
@@ -603,6 +652,42 @@ test('media: a documentId value resolves to the asset, or shows "File not found"
   // The resolved id is saved as the full asset; the unknown one goes back as it came.
   expect(data.coverImage).toEqual(CAT);
   expect(data.gallery).toEqual([{ caption: 'Gone', image: 'media-gone', tags: [] }]);
+});
+
+test('media: the preview is a 320px contain box with icon buttons and tooltips (AC-28, AC-31)', async ({
+  page,
+  mockApi,
+  mockContent,
+}) => {
+  await seedMedia(page, mockApi);
+  mockContent.setSingle('showcase-single', showcase({ coverImage: DOG }));
+  await page.goto(URL);
+
+  const img = cover(page).getByRole('img', { name: 'dog.png' });
+  await expect(img).toHaveAttribute('src', DOG.url);
+  await expect
+    .poll(() => img.evaluate((node) => (node as { naturalWidth: number }).naturalWidth))
+    .toBeGreaterThan(0);
+  await expect(img).toHaveCSS('object-fit', 'contain');
+  const box = await cover(page).locator('[data-slot="media-preview"]').boundingBox();
+  const group = await cover(page).boundingBox();
+  expect(box?.height).toBeGreaterThanOrEqual(320);
+  // Full width: the group's 8px padding and 1px border on each side.
+  expect(box?.width).toBeCloseTo((group?.width ?? 0) - 18, 0);
+  await expect(cover(page).getByText('1 × 1')).toBeVisible();
+
+  const choose = cover(page).getByRole('button', { name: 'Choose Cover image' });
+  const remove = cover(page).getByRole('button', { name: 'Remove Cover image' });
+  await expect(choose).toHaveText('');
+  await expect(remove).toHaveText('');
+  await choose.hover();
+  await expect(page.locator('[data-slot="tooltip-content"][data-open]')).toHaveText(
+    'Choose Cover image',
+  );
+  await remove.focus();
+  await expect(page.locator('[data-slot="tooltip-content"][data-open]')).toHaveText(
+    'Remove Cover image',
+  );
 });
 
 // XSS (AC-34)

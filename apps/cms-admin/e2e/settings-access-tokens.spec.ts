@@ -114,7 +114,8 @@ test('a super admin creates a token, copies its secret once, and it is gone afte
   ).toBeVisible();
 
   await dialog.getByRole('textbox', { name: 'Name' }).fill('Nightly export');
-  await dialog.getByRole('checkbox', { name: 'document' }).first().check();
+  await dialog.getByRole('checkbox', { name: 'document', exact: true }).check();
+  await expect(dialog.getByRole('checkbox', { name: 'document', exact: true })).toBeChecked();
   await expect(
     dialog.getByText("A token with no permissions can't call any protected endpoint."),
   ).toBeHidden();
@@ -282,4 +283,65 @@ test('at 375px the page and the token form do not scroll sideways', async ({ pag
   expect(
     await dialog.evaluate((element) => element.scrollWidth - element.clientWidth),
   ).toBeLessThanOrEqual(0);
+});
+
+/** Adds `count` tokens "Token 01"… after the three seeded ones. */
+function seedMany(mockApi: MockApi, count: number) {
+  for (let i = 1; i <= count; i += 1) {
+    const n = String(i).padStart(2, '0');
+    mockApi.settings.addAccessToken(token(`tok-${n}`, `Token ${n}`, ['document:read'], null));
+  }
+}
+
+const TOKENS_URL = '/admin/settings/access-tokens';
+
+test('tokens page 10 at a time with the page in the URL: next, Back, size, deep link, clamp and search reset (Phase 6 AC-21, AC-24, AC-25)', async ({
+  page,
+  mockApi,
+}) => {
+  seed(mockApi);
+  seedMany(mockApi, 9);
+  await openTokens(page);
+  const pagination = page.getByRole('navigation', { name: 'Pagination' });
+
+  await expect(pagination.getByText('Showing 1–10 of 12')).toBeVisible();
+  await pagination.getByRole('button', { name: 'Next page' }).click();
+  await expect(page).toHaveURL(`${TOKENS_URL}?page=2`);
+  await expect(row(page, 'Token 09')).toBeVisible();
+  await expect(row(page, 'Deploy bot')).toHaveCount(0);
+  await page.goBack();
+  await expect(page).toHaveURL(TOKENS_URL);
+  await expect(row(page, 'Deploy bot')).toBeVisible();
+
+  const sizeSelect = pagination.getByRole('combobox', { name: 'Rows per page' });
+  await sizeSelect.click();
+  await page.getByRole('option', { name: '20', exact: true }).click();
+  await expect(page).toHaveURL(`${TOKENS_URL}?size=20`);
+  await expect(pagination.getByText('Showing 1–12 of 12')).toBeVisible();
+
+  await page.goto(`${TOKENS_URL}?page=5`);
+  await expect(page).toHaveURL(`${TOKENS_URL}?page=2`);
+  await expect(pagination.getByText('Showing 11–12 of 12')).toBeVisible();
+
+  await page.getByRole('searchbox', { name: 'Search access tokens' }).fill('Token 0');
+  await expect(page).toHaveURL(TOKENS_URL);
+  await expect(pagination.getByText('Showing 1–9 of 9')).toBeVisible();
+});
+
+test('deleting the only token on the last page moves to the new last page (Phase 6 AC-26)', async ({
+  page,
+  mockApi,
+}) => {
+  seed(mockApi);
+  seedMany(mockApi, 8);
+  await page.goto(`${TOKENS_URL}?page=2`);
+  const pagination = page.getByRole('navigation', { name: 'Pagination' });
+  await expect(pagination.getByText('Showing 11–11 of 11')).toBeVisible();
+
+  await page.getByRole('button', { name: 'Delete Token 08' }).click();
+  await page.getByRole('alertdialog').getByRole('button', { name: 'Delete token' }).click();
+
+  await expect(page).toHaveURL(TOKENS_URL);
+  await expect(pagination.getByText('Showing 1–10 of 10')).toBeVisible();
+  await expect(page.getByText('Token "Token 08" deleted.')).toBeAttached();
 });

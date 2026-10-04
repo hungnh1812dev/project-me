@@ -2,10 +2,6 @@ import { useState } from 'react';
 import { PlusIcon, SearchIcon } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
-import { DatePicker } from '@/components/form/DatePicker';
-import { Field } from '@/components/form/Field';
-import { JsonInput } from '@/components/form/JsonInput';
-import { PasswordInput } from '@/components/form/PasswordInput';
 import {
   AlertDialog,
   AlertDialogClose,
@@ -15,9 +11,11 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
-import { Button } from '@/components/ui/button';
-import { Calendar } from '@/components/ui/calendar';
+} from '@repo/ui/components/alert-dialog';
+import { Badge } from '@repo/ui/components/badge';
+import { Button } from '@repo/ui/components/button';
+import { Calendar } from '@repo/ui/components/calendar';
+import { Checkbox } from '@repo/ui/components/checkbox';
 import {
   Dialog,
   DialogClose,
@@ -27,8 +25,9 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
+} from '@repo/ui/components/dialog';
+import { Input } from '@repo/ui/components/input';
+import { Label } from '@repo/ui/components/label';
 import {
   Popover,
   PopoverContent,
@@ -36,19 +35,55 @@ import {
   PopoverHeader,
   PopoverTitle,
   PopoverTrigger,
-} from '@/components/ui/popover';
+} from '@repo/ui/components/popover';
+import { RadioGroup, RadioGroupItem } from '@repo/ui/components/radio-group';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
-import { Textarea } from '@/components/ui/textarea';
+} from '@repo/ui/components/select';
+import { Switch } from '@repo/ui/components/switch';
+import { Textarea } from '@repo/ui/components/textarea';
+import { DatePicker } from '@repo/ui/form/DatePicker';
+import { Field } from '@repo/ui/form/Field';
+import { JsonInput } from '@repo/ui/form/JsonInput';
+import { PasswordInput } from '@repo/ui/form/PasswordInput';
+import { cn } from '@repo/ui/lib/cn';
 
 const VARIANTS = ['default', 'secondary', 'outline', 'ghost', 'destructive', 'link'] as const;
 const SIZES = ['sm', 'default', 'lg'] as const;
+const BADGE_VARIANTS = ['default', 'secondary', 'outline', 'highlight', 'destructive'] as const;
+
+/** The three button roles (AC-8): Action is the indigo fill, Normal the outline, Danger destructive. */
+const BUTTON_ROLES = [
+  { name: 'Action', variant: 'default' },
+  { name: 'Normal', variant: 'outline' },
+  { name: 'Danger', variant: 'destructive' },
+] as const;
+
+/**
+ * A labelled swatch for each colour token (AC-9). Literal classes for Tailwind. Fill swatches
+ * carry their name on the colour; `border` and `input` are boundary colours, so their name sits
+ * beside the block in `text-foreground` to keep 4.5:1.
+ */
+const SWATCHES = [
+  { name: 'primary', className: 'border-primary-ink bg-primary text-primary-foreground' },
+  {
+    name: 'primary-ink',
+    className: 'border-primary-ink bg-primary-ink text-highlight-foreground',
+  },
+  { name: 'secondary', className: 'bg-secondary text-secondary-foreground' },
+  { name: 'accent', className: 'bg-accent text-accent-foreground' },
+  { name: 'highlight', className: 'bg-highlight text-highlight-foreground' },
+  { name: 'destructive', className: 'bg-destructive text-destructive-foreground' },
+  { name: 'success', className: 'bg-success text-success-foreground' },
+  { name: 'warning', className: 'bg-warning text-warning-foreground' },
+  { name: 'muted', className: 'bg-muted text-muted-foreground' },
+  { name: 'border', className: 'bg-border', beside: true },
+  { name: 'input', className: 'bg-input', beside: true },
+] as const;
 
 const Section: React.FC<{ title: string; children: React.ReactNode }> = ({ title, children }) => (
   <section aria-labelledby={`ui-kit-${title}`} className="flex flex-col gap-4">
@@ -66,7 +101,13 @@ const JsonDemo: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   return (
     <Field label="Metadata" description="A JSON object." error={error}>
-      <JsonInput value={text} onChange={setText} onValidate={setError} expect="object" />
+      <JsonInput
+        label="Metadata"
+        value={text}
+        onChange={setText}
+        onValidate={setError}
+        expect="object"
+      />
     </Field>
   );
 };
@@ -164,6 +205,66 @@ const UiKitPage: React.FC = () => (
       </div>
     </section>
 
+    <section aria-labelledby="ui-kit-button-roles" className="flex flex-col gap-4">
+      <h2 id="ui-kit-button-roles" className="text-lg font-semibold">
+        Button roles
+      </h2>
+      <p className="text-muted-foreground">
+        Action for the one main step, Normal for everything else, Danger for removing things. Hover
+        or Tab to a button to see its hover and focus states.
+      </p>
+      {BUTTON_ROLES.map(({ name, variant }) => (
+        <div key={name} className="flex flex-wrap items-center gap-3">
+          <Button variant={variant}>{name}</Button>
+          <Button variant={variant} disabled>
+            {name} disabled
+          </Button>
+          <Button variant={variant} loading>
+            {name} loading
+          </Button>
+        </div>
+      ))}
+    </section>
+
+    <Section title="Colour">
+      {SWATCHES.map((swatch) =>
+        'beside' in swatch ? (
+          <div
+            key={swatch.name}
+            className="flex items-center gap-3 rounded-lg border px-4 py-6 font-mono text-sm text-foreground"
+          >
+            <span
+              aria-hidden="true"
+              data-swatch={swatch.name}
+              className={cn('size-8 shrink-0 rounded-md', swatch.className)}
+            />
+            <span>{swatch.name}</span>
+          </div>
+        ) : (
+          <div
+            key={swatch.name}
+            data-swatch={swatch.name}
+            className={cn('rounded-lg border px-4 py-6 font-mono text-sm', swatch.className)}
+          >
+            {swatch.name}
+          </div>
+        ),
+      )}
+    </Section>
+
+    <section aria-labelledby="ui-kit-Badge" className="flex flex-col gap-4">
+      <h2 id="ui-kit-Badge" className="text-lg font-semibold">
+        Badge
+      </h2>
+      <div className="flex flex-wrap items-center gap-3">
+        {BADGE_VARIANTS.map((variant) => (
+          <Badge key={variant} variant={variant} className="capitalize">
+            {variant}
+          </Badge>
+        ))}
+      </div>
+    </section>
+
     <Section title="Input">
       <Field label="Name" description="Shown on your profile.">
         <Input placeholder="Jane Doe" />
@@ -209,16 +310,19 @@ const UiKitPage: React.FC = () => (
     <Section title="JsonInput">
       <JsonDemo />
       <Field label="Settings">
-        <JsonInput defaultValue='{"theme":"dark"}' />
+        <JsonInput label="Settings" defaultValue='{"theme":"dark"}' />
       </Field>
       <Field label="Disabled JSON">
-        <JsonInput disabled defaultValue='{"locked":true}' />
+        <JsonInput label="Disabled JSON" disabled defaultValue='{"locked":true}' />
+      </Field>
+      <Field label="Read-only JSON">
+        <JsonInput label="Read-only JSON" readOnly defaultValue='{"fixed":true}' />
       </Field>
       <Field label="Invalid JSON" error='Invalid JSON: Unexpected token "x"'>
-        <JsonInput defaultValue="x" />
+        <JsonInput label="Invalid JSON" defaultValue="x" />
       </Field>
       <Field label="Schema" required>
-        <JsonInput />
+        <JsonInput label="Schema" />
       </Field>
     </Section>
 
@@ -238,6 +342,39 @@ const UiKitPage: React.FC = () => (
       <Field label="Visible" required>
         <Switch />
       </Field>
+    </Section>
+
+    <Section title="Checkbox">
+      {(
+        [
+          { id: 'ui-kit-subscribe', label: 'Subscribe' },
+          { id: 'ui-kit-checked', label: 'Checked', defaultChecked: true },
+          { id: 'ui-kit-mixed', label: 'Some selected', indeterminate: true },
+          { id: 'ui-kit-checkbox-disabled', label: 'Disabled checkbox', disabled: true },
+        ] as const
+      ).map(({ id, label, ...props }) => (
+        <div key={id} className="flex items-center gap-2">
+          <Checkbox id={id} {...props} />
+          <Label htmlFor={id}>{label}</Label>
+        </div>
+      ))}
+    </Section>
+
+    <Section title="RadioGroup">
+      <RadioGroup aria-label="Density" defaultValue="comfortable">
+        {(
+          [
+            { value: 'comfortable', label: 'Comfortable' },
+            { value: 'compact', label: 'Compact' },
+            { value: 'spacious', label: 'Spacious' },
+          ] as const
+        ).map(({ value, label }) => (
+          <div key={value} className="flex items-center gap-2">
+            <RadioGroupItem id={`ui-kit-density-${value}`} value={value} />
+            <Label htmlFor={`ui-kit-density-${value}`}>{label}</Label>
+          </div>
+        ))}
+      </RadioGroup>
     </Section>
 
     <Section title="Select">

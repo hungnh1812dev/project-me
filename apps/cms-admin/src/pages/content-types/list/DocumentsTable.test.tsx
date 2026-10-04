@@ -206,7 +206,7 @@ describe('DocumentsTable selection', () => {
 
     const all = screen.getByRole('checkbox', { name: 'Select all entries on this page' });
     expect(all).not.toBeChecked();
-    expect(all).toHaveProperty('indeterminate', false);
+    expect(all).toHaveAttribute('aria-checked', 'false');
     await user.click(all);
 
     expect(props.onSelectedChange).toHaveBeenCalledWith(new Set(['doc-a', 'doc-b']));
@@ -216,7 +216,7 @@ describe('DocumentsTable selection', () => {
     const { props, user } = renderTable({ selected: new Set(['doc-b']) });
 
     const all = screen.getByRole('checkbox', { name: 'Select all entries on this page' });
-    expect(all).toHaveProperty('indeterminate', true);
+    expect(all).toHaveAttribute('aria-checked', 'mixed');
     await user.click(all);
 
     expect(props.onSelectedChange).toHaveBeenCalledWith(new Set(['doc-a', 'doc-b']));
@@ -227,8 +227,34 @@ describe('DocumentsTable selection', () => {
 
     const all = screen.getByRole('checkbox', { name: 'Select all entries on this page' });
     expect(all).toBeChecked();
+    expect(all).toHaveAttribute('aria-checked', 'true');
     await user.click(all);
 
     expect(props.onSelectedChange).toHaveBeenCalledWith(new Set());
+  });
+
+  it('renders every box as the ui Checkbox with an explicit name (AC-12)', () => {
+    renderTable({ selected: new Set(['doc-a']) });
+
+    const boxes = screen.getAllByRole('checkbox');
+    expect(boxes).toHaveLength(3);
+    for (const box of boxes) {
+      expect(box).toHaveAttribute('data-slot', 'checkbox');
+      const labelId = box.getAttribute('aria-labelledby') ?? '';
+      expect(labelId).not.toBe('');
+      expect(document.getElementById(labelId)).not.toBeNull();
+    }
+    expect(screen.getByRole('checkbox', { name: 'Select Hello world' })).toHaveAttribute(
+      'aria-checked',
+      'true',
+    );
+  });
+
+  it('disables the header checkbox on an empty page', () => {
+    renderTable({ items: [] });
+
+    expect(
+      screen.getByRole('checkbox', { name: 'Select all entries on this page' }),
+    ).toHaveAttribute('aria-disabled', 'true');
   });
 });

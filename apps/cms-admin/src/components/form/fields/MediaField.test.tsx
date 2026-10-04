@@ -63,16 +63,14 @@ const save = async (view: ReturnType<typeof renderForm>) => {
 };
 
 describe('MediaField (AC-13)', () => {
-  it('shows the current asset with its thumbnail, name and size', async () => {
+  it('shows the current asset with its image, name, dimensions and size', async () => {
     mockMedia();
     renderForm({ coverImage: DOG });
 
     const group = field();
-    expect(within(group).getByRole('img', { name: 'dog.jpg' })).toHaveAttribute(
-      'src',
-      DOG.thumbnailUrl,
-    );
-    expect(within(group).getByText('dog.jpg')).toBeInTheDocument();
+    expect(within(group).getByRole('img', { name: 'dog.jpg' })).toBeInTheDocument();
+    expect(within(group).getByText('dog.jpg')).toHaveAttribute('title', 'dog.jpg');
+    expect(within(group).getByText('640 × 480')).toBeInTheDocument();
     expect(within(group).getByText('1.2 MB')).toBeInTheDocument();
     expect(within(group).getByRole('button', { name: 'Choose Cover image' })).toBeEnabled();
     expect(within(group).getByRole('button', { name: 'Remove Cover image' })).toBeEnabled();
@@ -135,6 +133,108 @@ describe('MediaField (AC-13)', () => {
   });
 });
 
+const preview = () => field().querySelector<HTMLElement>('[data-slot="media-preview"]')!;
+
+describe('MediaField preview (AC-28 to AC-30)', () => {
+  it('is a full-width box at least 320px tall on a muted background, kept before the image loads', () => {
+    mockMedia();
+    renderForm({ coverImage: DOG });
+
+    expect(preview()).toHaveClass('w-full', 'h-80', 'bg-muted', 'items-center', 'justify-center');
+  });
+
+  it('shows the full url with object-contain, lazily and with no referrer', () => {
+    mockMedia();
+    renderForm({ coverImage: DOG });
+    const img = within(preview()).getByRole('img', { name: 'dog.jpg' });
+
+    expect(img).toHaveAttribute('src', DOG.url);
+    expect(img).toHaveClass('object-contain');
+    expect(img).toHaveAttribute('loading', 'lazy');
+    expect(img).toHaveAttribute('referrerpolicy', 'no-referrer');
+  });
+
+  it('shows the placeholder named after the file for a url that is not allowlisted', () => {
+    mockMedia();
+    const evil = makeMediaAsset({ fileName: 'evil.png', url: 'javascript:alert(1)' });
+    renderForm({ coverImage: evil });
+
+    expect(within(preview()).getByRole('img', { name: 'evil.png' }).tagName).toBe('DIV');
+    expect(preview().querySelector('img')).toBeNull();
+  });
+
+  it('shows the loading state inside the same box', () => {
+    mockMedia();
+    renderForm({ coverImage: 'media-cat' });
+
+    expect(preview()).toHaveClass('h-80');
+    expect(within(preview()).getByText('Loading file…')).toBeInTheDocument();
+  });
+
+  it('shows the empty state inside the same box', () => {
+    mockMedia();
+    renderForm(null);
+
+    expect(preview()).toHaveClass('h-80');
+    expect(within(preview()).getByText('No file selected.')).toBeInTheDocument();
+  });
+
+  it('shows the missing state with the id inside the same box', async () => {
+    mockMedia();
+    renderForm({ coverImage: 'media-gone' });
+
+    expect(await within(preview()).findByText('File not found')).toBeInTheDocument();
+    expect(within(preview()).getByText('media-gone')).toHaveAttribute('title', 'media-gone');
+  });
+});
+
+const tooltip = () => document.querySelector('[data-slot="tooltip-content"]');
+
+describe('MediaField actions (AC-31)', () => {
+  it('renders Choose and Remove as icon buttons with hidden icons and their names', () => {
+    mockMedia();
+    renderForm({ coverImage: CAT });
+
+    for (const name of ['Choose Cover image', 'Remove Cover image']) {
+      const button = within(field()).getByRole('button', { name });
+      expect(button).toHaveClass('size-11', 'lg:size-9');
+      expect(button).toHaveTextContent('');
+      const icon = button.querySelector('svg');
+      expect(icon).toHaveAttribute('aria-hidden', 'true');
+    }
+    expect(
+      within(field()).getByRole('button', { name: 'Choose Cover image' }).querySelector('svg'),
+    ).toHaveClass('lucide-image-plus');
+    expect(
+      within(field()).getByRole('button', { name: 'Remove Cover image' }).querySelector('svg'),
+    ).toHaveClass('lucide-trash-2');
+  });
+
+  it('shows the name of Choose in a tooltip', async () => {
+    mockMedia();
+    const view = renderForm({ coverImage: CAT });
+
+    await view.user.hover(screen.getByRole('button', { name: 'Choose Cover image' }));
+    await waitFor(() => expect(tooltip()).toHaveTextContent('Choose Cover image'));
+  });
+
+  it('shows the name of Remove in a tooltip', async () => {
+    mockMedia();
+    const view = renderForm({ coverImage: CAT });
+
+    await view.user.hover(screen.getByRole('button', { name: 'Remove Cover image' }));
+    await waitFor(() => expect(tooltip()).toHaveTextContent('Remove Cover image'));
+  });
+
+  it('shows the denial reason in the tooltip of a gated Choose', async () => {
+    mockMedia();
+    const view = renderForm({ coverImage: CAT }, { permissions: [] });
+
+    await view.user.hover(screen.getByRole('button', { name: 'Choose Cover image' }));
+    await waitFor(() => expect(tooltip()).toHaveTextContent(/media:read/));
+  });
+});
+
 describe('MediaPickerDialog (AC-13)', () => {
   it('picks an asset with the keyboard alone', async () => {
     mockMedia();
@@ -174,6 +274,27 @@ describe('MediaPickerDialog (AC-13)', () => {
     expect(await save(view)).toEqual(DOG);
   });
 
+  it('renders each card as the ui RadioGroupItem named by the file name, and the card text selects it', async () => {
+    mockMedia();
+    const view = renderForm({ coverImage: CAT });
+
+    await view.user.click(screen.getByRole('button', { name: 'Choose Cover image' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Choose cover image' });
+    const group = await within(dialog).findByRole('radiogroup', { name: 'Media files' });
+    const cat = within(group).getByRole('radio', { name: 'cat.png' });
+    const dog = within(group).getByRole('radio', { name: 'dog.jpg' });
+
+    expect(group).toHaveAttribute('data-slot', 'radio-group');
+    expect(cat).toHaveAttribute('data-slot', 'radio-group-item');
+    expect(cat).toHaveAttribute('aria-checked', 'true');
+    expect(dog).toHaveAttribute('aria-checked', 'false');
+    expect(cat.closest('label')).toHaveClass('has-data-checked:ring-2');
+
+    await view.user.click(within(group).getByText('dog.jpg'));
+    expect(dog).toHaveAttribute('aria-checked', 'true');
+    expect(cat).toHaveAttribute('aria-checked', 'false');
+  });
+
   it('filters by file name, and Cancel keeps the value', async () => {
     mockMedia();
     const view = renderForm({ coverImage: CAT });
@@ -183,11 +304,8 @@ describe('MediaPickerDialog (AC-13)', () => {
     await within(dialog).findByRole('radiogroup', { name: 'Media files' });
     await view.user.type(within(dialog).getByRole('searchbox', { name: 'Search files' }), 'dog');
 
-    expect(
-      within(dialog)
-        .getAllByRole('radio')
-        .map((radio) => radio.getAttribute('aria-label')),
-    ).toEqual(['dog.jpg']);
+    expect(within(dialog).getAllByRole('radio')).toHaveLength(1);
+    expect(within(dialog).getByRole('radio', { name: 'dog.jpg' })).toBeInTheDocument();
     await view.user.click(within(dialog).getByRole('button', { name: 'Cancel' }));
 
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());

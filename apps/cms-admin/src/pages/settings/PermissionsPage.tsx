@@ -1,7 +1,6 @@
 import { useMemo, useState } from 'react';
 
-import { GatedButton } from '@/components/form/GatedButton';
-import { Badge } from '@/components/ui/badge';
+import { Badge } from '@repo/ui/components/badge';
 import {
   Table,
   TableBody,
@@ -10,14 +9,23 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
+} from '@repo/ui/components/table';
+import { GatedButton } from '@repo/ui/form/GatedButton';
+import { Pagination } from '@repo/ui/form/Pagination';
+
 import { useCan } from '@/features/auth/hooks/useCan';
 import type { Decision } from '@/features/auth/permissions/policies';
 import { ListState } from '@/features/settings/components/ListState';
 import { LiveRegion } from '@/features/settings/components/LiveRegion';
 import { SearchField } from '@/features/settings/components/SearchField';
 import { useAnnouncer } from '@/features/settings/components/useAnnouncer';
+import { useListPaging } from '@/features/settings/hooks/useListPaging';
 import { usePermissions } from '@/features/settings/hooks/usePermissions';
+import {
+  groupByResource,
+  sortBySlug,
+  type ResourceGroup,
+} from '@/features/settings/permissionGroups';
 import { filterBySearch } from '@/features/settings/search';
 import type { Permission } from '@/features/settings/types';
 
@@ -27,30 +35,18 @@ import { PermissionFormDialog } from './permissions/PermissionFormDialog';
 const NOUN = { one: 'permission', other: 'permissions' };
 const SEARCH_FIELDS = ['slug', 'name', 'description'] as const;
 
-interface ResourceGroup {
-  resource: string;
-  permissions: Permission[];
-}
-
-/** Groups by the slug's resource (before the first `:`), groups and rows sorted by slug (AC-24). */
-function groupByResource(permissions: readonly Permission[]): ResourceGroup[] {
-  const groups = new Map<string, Permission[]>();
-  for (const permission of [...permissions].sort((a, b) => a.slug.localeCompare(b.slug))) {
-    const resource = permission.slug.split(':')[0] ?? permission.slug;
-    groups.set(resource, [...(groups.get(resource) ?? []), permission]);
-  }
-  return [...groups].map(([resource, items]) => ({ resource, permissions: items }));
-}
-
 interface GroupProps {
-  group: ResourceGroup;
+  group: ResourceGroup<Permission>;
   canUpdate: Decision;
   canDelete: Decision;
   onEdit: (permission: Permission) => void;
   onDelete: (permission: Permission) => void;
 }
 
-/** One resource as a collapsible section with its count and table (AC-12, AC-24). */
+/**
+ * One resource as a collapsible section with its table (AC-12, AC-24). The count is the group's full
+ * match count, even when the current page shows only some of its rows (Phase 6 AC-22).
+ */
 const PermissionGroup: React.FC<GroupProps> = ({
   group,
   canUpdate,
@@ -58,8 +54,7 @@ const PermissionGroup: React.FC<GroupProps> = ({
   onEdit,
   onDelete,
 }) => {
-  const { resource, permissions } = group;
-  const count = permissions.length;
+  const { resource, permissions, total: count } = group;
   return (
     <details open className="group rounded-lg border">
       <summary className="flex min-h-11 cursor-pointer items-center gap-2 rounded-lg px-4 py-2 font-medium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring lg:min-h-10">
@@ -137,8 +132,9 @@ type Target = {
 
 /**
  * `/admin/settings/permissions` (gated by `permission:read`): the catalog grouped by resource
- * (AC-24), a client-side search over slug, name and description (AC-4), and the gated New, Edit
- * and Delete actions (AC-5, AC-25 to AC-27).
+ * (AC-24), a client-side search over slug, name and description (AC-4), paging by permission rows
+ * with the page in the URL (Phase 6 AC-22, D7), and the gated New, Edit and Delete actions (AC-5,
+ * AC-25 to AC-27).
  */
 const PermissionsPage: React.FC = () => {
   const permissions = usePermissions();
@@ -152,10 +148,11 @@ const PermissionsPage: React.FC = () => {
 
   const total = permissions.data?.length ?? 0;
   const visible = useMemo(
-    () => filterBySearch(permissions.data ?? [], search, SEARCH_FIELDS),
+    () => sortBySlug(filterBySearch(permissions.data ?? [], search, SEARCH_FIELDS)),
     [permissions.data, search],
   );
-  const groups = useMemo(() => groupByResource(visible), [visible]);
+  const paging = useListPaging(permissions.data ? visible : undefined, search);
+  const groups = useMemo(() => groupByResource(paging.rows, visible), [paging.rows, visible]);
 
   const openDialog = (kind: Target['kind']) => (permission?: Permission) => {
     setTarget((previous) => ({ kind, permission, session: (previous?.session ?? 0) + 1 }));
@@ -207,6 +204,13 @@ const PermissionsPage: React.FC = () => {
               onDelete={openDialog('delete')}
             />
           ))}
+          <Pagination
+            page={paging.page}
+            size={paging.size}
+            total={paging.total}
+            onPageChange={paging.onPageChange}
+            onSizeChange={paging.onSizeChange}
+          />
         </div>
       </ListState>
       {(target?.kind === 'create' || target?.kind === 'edit') && (

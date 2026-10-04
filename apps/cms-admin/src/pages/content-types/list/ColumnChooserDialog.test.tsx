@@ -32,10 +32,7 @@ function renderDialog(type: ContentType = TYPE, permissions = MANAGER) {
 const rowNames = () =>
   within(screen.getByRole('list', { name: 'Columns' }))
     .getAllByRole('checkbox')
-    .map(
-      (box) =>
-        box.getAttribute('aria-label') ?? (box as HTMLInputElement).labels?.[0]?.textContent ?? '',
-    );
+    .map((box) => document.getElementById(box.getAttribute('aria-labelledby') ?? '')?.textContent);
 
 describe('ColumnChooserDialog (AC-25)', () => {
   it('lists the chosen columns first, in order, then the other listable columns', () => {
@@ -58,6 +55,18 @@ describe('ColumnChooserDialog (AC-25)', () => {
     expect(screen.getByRole('checkbox', { name: 'Title' })).toBeChecked();
     expect(screen.getByRole('checkbox', { name: 'Updated' })).toBeChecked();
     expect(screen.getByRole('checkbox', { name: 'Views' })).not.toBeChecked();
+  });
+
+  it('renders the ui Checkbox, named by and toggled from its visible text (AC-12)', async () => {
+    const { user } = renderDialog();
+
+    const views = screen.getByRole('checkbox', { name: 'Views' });
+    expect(views).toHaveAttribute('data-slot', 'checkbox');
+    expect(views).toHaveAttribute('aria-checked', 'false');
+    await user.click(screen.getByText('Views'));
+    expect(views).toHaveAttribute('aria-checked', 'true');
+    await user.click(screen.getByText('Views'));
+    expect(views).toHaveAttribute('aria-checked', 'false');
   });
 
   it('disables Move up on the first row and Move down on the last', () => {

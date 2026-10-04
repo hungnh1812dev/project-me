@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { createMemoryRouter, Link, RouterProvider, useNavigate } from 'react-router-dom';
 import { describe, expect, it } from 'vitest';
 
-import { UnsavedChangesDialog } from '@/components/form/UnsavedChangesDialog';
+import { UnsavedChangesDialog } from '@repo/ui/form/UnsavedChangesDialog';
 
 import { useUnsavedChangesGuard } from './useUnsavedChangesGuard';
 

@@ -1,99 +1,112 @@
 # API client
 
-One axios instance, `cmsApi`, carries every HTTP call the admin makes. It adds the in-memory access token as a bearer, recovers from 401s with a single-flight token refresh, and normalizes every failure to one `ApiError` shape.
+One axios instance, `cmsApi`, carries every HTTP call the admin makes. It adds the in-memory access
+token as a bearer (only to the API origin), recovers from 401s with a single-flight token refresh,
+and normalizes every failure to one `ApiError` shape. Every data module builds on it.
 
-Source: `src/core/api/CmsApi.ts`, `src/core/api/apiError.ts`.
+## Feature
 
-## Contract
+### Contract
 
-| Export                      | From          | What it is                                                                                              |
-| --------------------------- | ------------- | ------------------------------------------------------------------------------------------------------- |
-| `cmsApi`                    | `CmsApi.ts`   | The axios instance: `baseURL = API_BASE_URL`, `withCredentials: true`, JSON `Content-Type` and `Accept` |
-| `configureCmsApi(handlers)` | `CmsApi.ts`   | Wires the session owner in once at startup (see below)                                                  |
-| `refreshAccessToken()`      | `CmsApi.ts`   | Single-flight `POST /auth/refresh`; resolves with the rotated token                                     |
-| `CmsApiHandlers`            | `CmsApi.ts`   | `{ getAccessToken, onTokenRefreshed, onSessionExpired }`                                                |
-| `ApiError`                  | `apiError.ts` | `Error` subclass: `{ status, message, messages, code?, body? }`                                         |
-| `toApiError(e)`             | `apiError.ts` | Normalizes anything thrown into an `ApiError` (returns an `ApiError` unchanged)                         |
-| `isApiError(e)`             | `apiError.ts` | Type guard (`instanceof ApiError`)                                                                      |
+| Export                      | What it is                                                                                              |
+| --------------------------- | ------------------------------------------------------------------------------------------------------- |
+| `cmsApi`                    | The axios instance: `baseURL = API_BASE_URL`, `withCredentials: true`, JSON `Content-Type` and `Accept` |
+| `configureCmsApi(handlers)` | Wires the session owner in once at startup                                                              |
+| `refreshAccessToken()`      | Single-flight `POST /auth/refresh`; resolves with the rotated token                                     |
+| `CmsApiHandlers`            | `{ getAccessToken, onTokenRefreshed, onSessionExpired }`                                                |
+| `ApiError`                  | `Error` subclass: `{ status, message, messages, code?, body? }`                                         |
+| `toApiError(e)`             | Normalizes anything thrown into an `ApiError` (an `ApiError` passes unchanged)                          |
+| `isApiError(e)`             | Type guard (`instanceof ApiError`)                                                                      |
+| `axiosBaseQuery`            | RTK Query base query over `cmsApi`; rejections become `{ error: ApiErrorData }` via `toApiErrorData`    |
 
-`API_BASE_URL` comes from `VITE_API_URL` (see [Testing and config](./testing-and-config.md#env-vars)). The module is React- and store-agnostic: it never imports the store. `makeStore()` in `src/app/store.ts` calls `configureCmsApi` (see [Auth session](./auth-session.md)):
+The module never imports the store. `makeStore()` calls `configureCmsApi` with `getAccessToken`
+(reads `state.auth.accessToken`), `onTokenRefreshed` (dispatches `tokenReceived`) and
+`onSessionExpired` (dispatches `sessionExpired`); until then the handlers are no-ops.
 
-```ts
-configureCmsApi({
-  getAccessToken: () => store.getState().auth.accessToken,
-  onTokenRefreshed: (token) => store.dispatch(tokenReceived(token)),
-  onSessionExpired: () => store.dispatch(sessionExpired()),
-});
-```
+`AxiosRequestConfig` gains two typed flags: `skipAuthRefresh` (a 401 on this request never
+refreshes; used by the bootstrap and the auth endpoints) and the internal `_retry` (a request is
+retried at most once).
 
-Until then the handlers are no-ops (no token, nothing stored).
+### Bearer interceptor (SEC-3)
 
-### Request config flags
+`Authorization: Bearer <token>` is set when a token exists **and** the resolved request URL
+(`baseURL` + `url`, relative resolved against `window.location.origin`) has the origin of
+`API_BASE_URL`. With the default relative base that is the page origin; with an absolute
+`VITE_API_URL`, only that host. Any other origin, or an unparsable URL, gets no header (fail closed),
+and a 401 from another origin is rejected as is: no refresh, no retry, no expiry. The token lives in
+the Redux store only, never in web storage.
 
-`AxiosRequestConfig` is augmented with two typed flags:
+### 401 refresh sequence
 
-- `skipAuthRefresh?: boolean`: a 401 on this request never triggers a refresh. Use it for the session bootstrap and the auth endpoints.
-- `_retry?: boolean`: internal. It marks the single retry after a refresh, so a request is retried at most once.
+On a 401 from anything except `/auth/login`, `/auth/refresh`, `/auth/logout` and `skipAuthRefresh`
+requests:
 
-## Bearer interceptor
+1. If the token was rotated while the request was in flight, retry at once with the current token.
+2. Otherwise join the shared recovery: one `POST /auth/refresh` (httpOnly cookie, empty body).
+   Concurrent 401s wait on the same promise, because the backend blacklists a consumed refresh
+   token and a second refresh would end the session.
+3. On success `onTokenRefreshed` stores the token and each waiter retries once with the new bearer.
+4. If the refresh fails, `onSessionExpired()` runs once and every waiter rejects with the original
+   401 `ApiError`.
+5. A retry that gets 401 again expires the session once; no second refresh.
 
-Each request gets `Authorization: Bearer <token>` when `getAccessToken()` returns a token, and no `Authorization` header otherwise. The token lives in the Redux store only (memory), never in web storage.
+Expiry is deduplicated by token, so a burst of late 401s reports it once; `configureCmsApi` resets
+the latch. `refreshAccessToken()` is the same function; it never calls `onSessionExpired` itself.
 
-The token goes only to the API origin (SEC-3). The interceptor resolves the request URL (`baseURL` + `url`, with a relative URL resolved against `window.location.origin`) and sets the header only when that URL's origin equals the origin of `API_BASE_URL`. With the default relative `/api/v1` base, the API origin is the page origin. With an absolute `VITE_API_URL`, it is that host, and the page origin no longer gets the token. An absolute or protocol-relative `url` on any other origin is sent without the header, and an unparsable URL fails closed (no header). A 401 from another origin is rejected as is: no refresh, no retry and no session expiry.
-
-## 401 refresh sequence
-
-On a 401 from any endpoint except `/auth/login`, `/auth/refresh` and `/auth/logout` (matched by path), and except requests with `skipAuthRefresh`:
-
-1. If the token was already rotated while the request was in flight (the current token differs from the one sent), the request is retried at once with the current token. No refresh goes out.
-2. Otherwise the request joins the shared recovery: one `POST /auth/refresh` (the refresh token is the httpOnly cookie, so the body is empty). Concurrent 401s wait on the same promise, so exactly one refresh goes out. This matters because the backend blacklists a consumed refresh token: a second refresh would end the session.
-3. On success, `onTokenRefreshed(accessToken)` stores the rotated token, and each waiting request is retried once with `Bearer <new token>`. The caller receives the retry's result.
-4. If the refresh fails (401, network error, anything), `onSessionExpired()` runs once, and every waiting caller rejects with the original `ApiError` (status 401).
-5. If a retry gets 401 again, `onSessionExpired()` runs once for that token and the caller rejects with the 401 `ApiError`. No second refresh happens.
-
-Expiry is deduplicated by token: a burst of 401s carrying the same token, including late ones that arrive after the session already expired, reports the expiry only once. `configureCmsApi` resets this latch.
-
-`refreshAccessToken()` is the same single-flight function. Session bootstrap (`bootstrapSession`) calls it directly. It rejects with an `ApiError` and never calls `onSessionExpired` itself: the caller decides what a failed refresh means.
-
-## Error shape
-
-Every rejection from `cmsApi` is already an `ApiError`:
-
-```ts
-class ApiError extends Error {
-  status: number; // HTTP status, or 0 when no response arrived
-  message: string; // human-readable, safe to show
-  messages: string[]; // every message (validation errors keep one entry each)
-  code?: string; // axios error code, for example ERR_BAD_REQUEST, ERR_NETWORK, ECONNABORTED
-  body?: unknown; // raw response body
-}
-```
+### Error shape
 
 | Failure                                     | `status` | `message`                                                       |
 | ------------------------------------------- | -------- | --------------------------------------------------------------- |
 | Nest `{ message: 'text' }`                  | HTTP     | `'text'`                                                        |
 | Nest `{ message: ['a', 'b'] }` (validation) | HTTP     | `'a, b'` (`messages` keeps `['a', 'b']`)                        |
-| Any other body (HTML, empty, no `message`)  | HTTP     | `Request failed with status <status>`                           |
-| Network error (no response)                 | 0        | `Cannot reach the server. Check your connection and try again.` |
+| Any other body                              | HTTP     | `Request failed with status <status>`                           |
+| Network error                               | 0        | `Cannot reach the server. Check your connection and try again.` |
 | Timeout (`ECONNABORTED`, `ETIMEDOUT`)       | 0        | `The request timed out. Try again.`                             |
-| Non-axios `Error` thrown                    | 0        | the error's message                                             |
-| Anything else thrown                        | 0        | `Something went wrong.` (`body` holds the thrown value)         |
+| Non-axios `Error`                           | 0        | the error's message                                             |
+| Anything else thrown                        | 0        | `Something went wrong.` (`body` holds the value)                |
 
-## How later code must use it
+`code` is the axios error code; the client-side codes `ERR_CLIENT_FORBIDDEN` and
+`ERR_CLIENT_VALIDATION` are added by the feature hooks.
 
-- **Every HTTP call goes through `cmsApi`.** Do not create another axios instance or call `fetch` directly, or the bearer and the refresh are lost.
-- **RTK Query:** `axiosBaseQuery` (`src/core/api/axiosBaseQuery.ts`) calls `cmsApi` and maps a rejection to `{ error: ApiErrorData }`, a plain copy of the `ApiError` fields made by `toApiErrorData(e)`. The `authApi` endpoints pass `skipAuthRefresh: true`; refresh is not an endpoint (use `refreshAccessToken()`).
-- **React Query (Phase 2+):** a query or mutation function calls `cmsApi` and lets the `ApiError` propagate, so `error` is typed as `ApiError`. Narrow `unknown` errors with `isApiError` or `toApiError`. Check `status === 403` to show a forbidden state; 401s have already been handled by the client. The content hooks follow this pattern; see [Content data](./content-data.md).
+### How later code must use it
+
+- **Every HTTP call goes through `cmsApi`.** No other axios instance and no direct `fetch`, or the
+  bearer and the refresh are lost.
+- **RTK Query** uses `axiosBaseQuery`; errors are the plain `ApiErrorData`.
+- **React Query** functions call `cmsApi` and let the `ApiError` propagate. Narrow with `isApiError`
+  or `toApiError`; check `status === 403` for a forbidden state (401s are already handled).
+
+### Decisions
+
+- **401 recovery lives in the axios interceptor**, not in an RTK Query base query, so RTK Query and
+  React Query share one refresh path.
+- **Token in the store, client store-agnostic** through `configureCmsApi`, which avoids a circular
+  import.
+- **`ApiError` is a class** so `instanceof` and stacks work; RTK Query state holds a plain copy
+  (`ApiErrorData`) because the store must stay serializable.
+- **`code` is the axios code**, not Nest's `error` text, so it means the same for HTTP and network
+  failures.
+
+## Files
+
+| File                           | Spec                                                                                                   |
+| ------------------------------ | ------------------------------------------------------------------------------------------------------ |
+| `src/core/api/CmsApi.ts`       | Exports `cmsApi`, `configureCmsApi`, `refreshAccessToken`, `CmsApiHandlers`. Bearer and refresh interceptors, expiry latch. |
+| `src/core/api/apiError.ts`     | Exports `ApiError`, `ApiErrorInit`, `toApiError`, `isApiError`. The one error shape and its mapping.   |
+| `src/core/api/axiosBaseQuery.ts` | Exports `axiosBaseQuery`, `AxiosQueryArgs`, `ApiErrorData`, `toApiErrorData`. RTK Query adapter.     |
 
 ## Testing
 
-- Unit tests: `src/core/api/apiError.test.ts`, `CmsApi.test.ts` (instance, bearer, error mapping) and `CmsApi.refresh.test.ts` (refresh, single-flight, expiry, skip rules). Run them with `pnpm --filter cms-admin exec vitest run src/core/api`.
-- They run against the MSW node server. A test wires a fake session with `configureCmsApi` and counts refresh calls in its `/auth/refresh` handler.
-- `src/test/msw/handlers.ts` has one default handler: `POST */api/v1/auth/refresh` answers 401 (no session cookie). Override it with `server.use(...)` to model a live session.
+- `src/core/api/apiError.test.ts`: every row of the error table.
+- `src/core/api/CmsApi.test.ts`: instance config, bearer only to the API origin, error mapping.
+- `src/core/api/CmsApi.refresh.test.ts`: refresh, single-flight, expiry dedup, skip rules. Tests wire
+  a fake session with `configureCmsApi` and count refresh calls in a `/auth/refresh` handler.
+- `src/core/api/axiosBaseQuery.test.ts`: success and error mapping, `ApiErrorData` passthrough.
+- `src/app/queryClient.integration.test.tsx`: a `useQuery` recovers from a 401 through one refresh.
+- Run: `pnpm --filter cms-admin exec vitest run src/core/api`.
 
-## Decisions
+## Related
 
-- **401 recovery lives in the axios interceptor, not in an RTK Query base query**, so RTK Query and React Query share one refresh path.
-- **Token in the store, client stays store-agnostic**, through `configureCmsApi`, which avoids a circular import between the store and the client.
-- **`ApiError` is a class**, so `instanceof` works and stack traces survive. RTK Query state holds a plain copy of its fields (`ApiErrorData`), because the store must stay serializable.
-- **`code` is the axios error code**, not Nest's `error` text, so it has one meaning for HTTP and network failures alike.
+- [Auth session](./auth-session.md) (owns the token and wires `configureCmsApi`)
+- [Testing and config](./testing-and-config.md) (`API_BASE_URL`, MSW defaults)
+- [Content data](./content-data.md) and [Settings foundation](./settings-foundation.md) (React Query users)

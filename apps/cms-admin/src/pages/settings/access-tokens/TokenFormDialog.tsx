@@ -1,9 +1,7 @@
 import { useRef, useState } from 'react';
 import { TriangleAlertIcon } from 'lucide-react';
 
-import { Field } from '@/components/form/Field';
-import { PermissionTree } from '@/components/form/PermissionTree';
-import { Button } from '@/components/ui/button';
+import { Button } from '@repo/ui/components/button';
 import {
   Dialog,
   DialogClose,
@@ -12,15 +10,18 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
+} from '@repo/ui/components/dialog';
+import { Input } from '@repo/ui/components/input';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from '@repo/ui/components/select';
+import { Field } from '@repo/ui/form/Field';
+
+import { PermissionTree } from '@/components/form/PermissionTree';
 import { useCreateAccessToken } from '@/features/settings/hooks/useAccessTokens';
 import { usePermissions } from '@/features/settings/hooks/usePermissions';
 import { EXPIRES_IN_OPTIONS, type ExpiresIn } from '@/features/settings/types';

@@ -317,3 +317,60 @@ describe('MediaLibraryPage thumbnail allowlist (P4-SEC-2, AC-18)', () => {
     );
   });
 });
+
+describe('MediaLibraryPage paging (Phase 6 AC-23 to AC-26)', () => {
+  /** `count` assets "file-01.png"…, newest first as M1 returns them. */
+  const manyAssets = (count: number) =>
+    Array.from({ length: count }, (_, i) => {
+      const n = String(i + 1).padStart(2, '0');
+      return makeMediaAsset({ documentId: `media-${n}`, fileName: `file-${n}.png` });
+    });
+
+  const fileNames = () => cards().map((card) => card.querySelector('p')?.textContent);
+
+  async function renderAt(route: string) {
+    const view = renderWithProviders(<MediaLibraryPage />, { auth: auth(), route });
+    await screen.findByRole('list', { name: 'Media files' });
+    return view;
+  }
+
+  it('shows 10 cards in list order with the pagination under the grid', async () => {
+    mockApi(manyAssets(12));
+    const { user } = await renderAt('/');
+
+    expect(fileNames()).toEqual(manyAssets(10).map((asset) => asset.fileName));
+    const nav = screen.getByRole('navigation', { name: 'Pagination' });
+    expect(nav).toHaveTextContent('Showing 1–10 of 12');
+
+    await user.click(within(nav).getByRole('button', { name: 'Next page' }));
+    expect(fileNames()).toEqual(['file-11.png', 'file-12.png']);
+  });
+
+  it('goes back to page 1 when the search changes', async () => {
+    mockApi(manyAssets(12));
+    const { user } = await renderAt('/?page=2');
+
+    await user.type(screen.getByRole('searchbox', { name: 'Search files' }), 'file');
+
+    await waitFor(() => expect(cards()).toHaveLength(10));
+  });
+
+  it('moves to the new last page when a delete empties the current one', async () => {
+    const { store } = mockApi(manyAssets(11));
+    server.use(
+      deleteMediaHandler(({ params }) => {
+        store.assets = store.assets.filter((asset) => asset.documentId !== params.id);
+        return new HttpResponse(null, { status: 204 });
+      }).handler,
+    );
+    const { user } = await renderAt('/?page=2');
+    expect(fileNames()).toEqual(['file-11.png']);
+
+    await user.click(screen.getByRole('button', { name: 'Delete file-11.png' }));
+    const dialog = await screen.findByRole('alertdialog');
+    await user.click(within(dialog).getByRole('button', { name: 'Delete file' }));
+
+    expect(await screen.findByText('File "file-11.png" deleted.')).toBeInTheDocument();
+    await waitFor(() => expect(cards()).toHaveLength(10));
+  });
+});

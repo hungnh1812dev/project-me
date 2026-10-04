@@ -1,12 +1,15 @@
 # Auth session
 
-The Redux store owns the whole session: the in-memory access token, the signed-in user, and the session status. RTK Query holds the auth endpoints. Thunks run the session lifecycle (bootstrap, login, logout), and a listener cleans up after an expired session. The shared React Query `QueryClient` lives next to the store, ready for Phase 2 data.
+The Redux store owns the whole session: the in-memory access token, the signed-in user and the
+session status. RTK Query holds the auth endpoints, thunks run bootstrap, login and logout, and a
+listener purges caches after an expired session. The shared React Query `QueryClient` lives next to
+the store. Every signed-in feature reads the user from here.
 
-Source: `src/app/{store.ts,hooks.ts,queryClient.ts,AppProvider.tsx}`, `src/core/api/{AuthApi.ts,axiosBaseQuery.ts}`, `src/features/auth/{types.ts,store/*,hooks/*}`.
+## Feature
 
-## State shape
+### State
 
-`state.auth` (`AuthState`, `src/features/auth/types.ts`):
+`state.auth` (`AuthState`):
 
 | Field         | Type                                                                     | Meaning                                                 |
 | ------------- | ------------------------------------------------------------------------ | ------------------------------------------------------- |
@@ -15,105 +18,127 @@ Source: `src/app/{store.ts,hooks.ts,queryClient.ts,AppProvider.tsx}`, `src/core/
 | `user`        | `MeUser \| null`                                                         | `GET /auth/me`; `user.role` is `Role \| null`           |
 | `error`       | `string \| null`                                                         | The bootstrap error, or the last login error message    |
 
-Reducers (`features/auth/store/AuthSlice.ts`): `tokenReceived(token)`, `userLoaded(user)` (sets `authenticated`), `statusChanged({ status, error? })`, `sessionCleared()` and `sessionExpired()` (both drop the token and user and end `unauthenticated`; only `sessionExpired` triggers the cache-reset listener).
+Reducers: `tokenReceived(token)`, `userLoaded(user)` (sets `authenticated`), `statusChanged`,
+`sessionCleared()` and `sessionExpired()` (both drop token and user and end `unauthenticated`; only
+`sessionExpired` triggers the cache-reset listener).
 
-Selectors (`features/auth/store/selectors.ts`, memoized with `createSelector`): `selectAuthStatus`, `selectIsAuthenticated`, `selectCurrentUser`, `selectRole`, `selectPermissions`. `selectPermissions` returns the same frozen `[]` whenever there is no user or no role, so components don't re-render for nothing.
+Selectors (memoized): `selectAuth`, `selectAuthStatus`, `selectIsAuthenticated`,
+`selectCurrentUser`, `selectRole`, `selectPermissions` (the same frozen `[]` without a user or role,
+so components don't re-render for nothing), `selectRoleLevel` (0 without a role) and `selectActor`
+(recomputed only when the user changes; used by [RBAC and ABAC](./rbac-abac.md)).
 
-## Store
+### Store
 
-`makeStore({ queryClient?, preloadedAuth? })` builds a store with the `auth` slice and the `authApi` reducer and middleware, and then calls `configureCmsApi`:
+`makeStore({ queryClient?, preloadedAuth? })` builds the `auth` slice plus the `authApi` reducer and
+middleware, then calls `configureCmsApi` (see [API client](./api-client.md)). The last store built
+owns `cmsApi`: the app builds one (`store`), each test its own. The `queryClient` is the thunk and
+listener extra argument (`StoreExtra`). Redux DevTools only in dev. Typed hooks `useAppDispatch`,
+`useAppSelector`.
 
-- `getAccessToken` reads `state.auth.accessToken`.
-- `onTokenRefreshed` dispatches `tokenReceived`.
-- `onSessionExpired` dispatches `sessionExpired`.
+### RTK Query auth API
 
-The last store built owns `cmsApi`. The app builds one (`store`), and each test builds its own. The `queryClient` is the thunk and listener extra argument (`StoreExtra`), so tests can pass a fresh one. Redux DevTools are on only in dev builds. Typed hooks: `useAppDispatch`, `useAppSelector` (`src/app/hooks.ts`). Types: `AppStore`, `RootState`, `AppDispatch`, `AppThunk<R>`.
+`authApi` uses `axiosBaseQuery`; errors are `ApiErrorData`. Endpoints: `hasUsers`
+(`GET /auth/has-users`), `login`, `me`, `logout`, plus the onboarding endpoints documented in
+[Onboarding and recovery](./onboarding-and-recovery.md). All pass `skipAuthRefresh: true`: the
+thunks decide what a 401 means. Refresh is not an endpoint; it is `refreshAccessToken()`.
 
-## RTK Query auth API
+### Bootstrap
 
-`authApi` (`src/core/api/AuthApi.ts`) uses `axiosBaseQuery`, so it shares `cmsApi`'s bearer and error normalization. Errors are `ApiErrorData` (a plain copy of `ApiError`, see [API client](./api-client.md)).
-
-| Endpoint   | Kind     | Request                           |
-| ---------- | -------- | --------------------------------- |
-| `hasUsers` | query    | `GET /auth/has-users`             |
-| `login`    | mutation | `POST /auth/login` `LoginRequest` |
-| `me`       | query    | `GET /auth/me`                    |
-| `logout`   | mutation | `POST /auth/logout`               |
-
-All four pass `skipAuthRefresh: true`: the thunks call them right after getting a token and decide what a 401 means. Refresh is not an endpoint: it is the shared single-flight `refreshAccessToken()`. Register, verify-OTP, resend, forgot and reset password come in small phase 1.6.
-
-## Bootstrap
-
-`bootstrapSession()` (`features/auth/store/sessionThunks.ts`) restores the session from the refresh cookie on page load:
+`bootstrapSession()` restores the session from the refresh cookie on page load:
 
 1. `status = 'loading'`.
-2. `refreshAccessToken()` → `tokenReceived(token)`. The token is stored before `/me` is called.
-3. `GET /auth/me` → `userLoaded(user)` → `authenticated`.
-4. A 401 from either call → `sessionCleared()` → `unauthenticated`, with no error message.
-5. A network error (status 0), 5xx or 429 is retried after `BOOTSTRAP_RETRY_DELAYS_MS` = 2000, 5000 and 10000 ms, then `status = 'error'` with the message. Any other status (for example a 404 from `/me` when the role is missing) goes to `error` at once.
+2. `refreshAccessToken()` → `tokenReceived` (stored before `/me`).
+3. `GET /auth/me` → `userLoaded` → `authenticated`.
+4. A 401 from either → `sessionCleared()` → `unauthenticated`, no error message.
+5. Status 0, 5xx or 429 retries after `BOOTSTRAP_RETRY_DELAYS_MS` (2000, 5000, 10000 ms), then
+   `error`. Any other status goes to `error` at once.
 
-Once a refresh has succeeded, retries redo only `/me`: the refresh rotated and blacklisted the old cookie, so refreshing again would be pointless.
+After a successful refresh, retries redo only `/me` (the old cookie is already blacklisted). A
+module-level latch makes it run **once per page load**, so StrictMode's double mount can't start two
+refreshes. `retryBootstrap()` starts a new run or joins the one in flight; `resetBootstrapLatch()` is
+for tests. `useSessionBootstrap()` dispatches it on mount inside `AppProvider`.
 
-A module-level latch makes it run **once per page load**, so React StrictMode's double mount can't start two refreshes (which would log the user out, because the backend blacklists a consumed refresh token). `retryBootstrap()` (the Retry button) starts a new run, or joins the run still in flight. `resetBootstrapLatch()` is for tests only.
+### Login and logout
 
-`useSessionBootstrap()` dispatches `bootstrapSession()` on mount. `AppProvider` runs it once, inside the Redux `Provider` and `QueryClientProvider`. `App.tsx` renders the router inside it (see [Routing and guards](./routing-and-guards.md)).
+`login({ email, password, rememberMe })`: `POST /auth/login` → `tokenReceived` → `GET /auth/me` →
+`authenticated`. It resolves `{ ok: true }` or `{ ok: false, message }` and never throws. Messages
+(`loginErrorMessage`): 401 "Invalid email or password.", 403 "Your email address isn't verified
+yet.", 429 "Too many attempts. Please try again later.", else the `ApiError` message. The mutation
+result is reset at once, so the token never sits in RTK Query state.
 
-## Login
+`logout()` signs out locally first (`sessionCleared`, `authApi.util.resetApiState()`,
+`queryClient.clear()`), then calls `POST /auth/logout` best-effort.
 
-`login({ email, password, rememberMe })`: `POST /auth/login` → `tokenReceived` → `GET /auth/me` → `authenticated`. It resolves with `LoginResult` (`{ ok: true }` or `{ ok: false, message }`) and never throws. On failure, the session is cleared, `status` is `unauthenticated` and `error` holds the message:
+### Session expiry
 
-| Status | Message                                    |
-| ------ | ------------------------------------------ |
-| 401    | Invalid email or password.                 |
-| 403    | Your email address isn't verified yet.     |
-| 429    | Too many attempts. Please try again later. |
-| other  | The normalized `ApiError` message          |
+When `cmsApi` can't recover from a 401 it dispatches `sessionExpired()`. A listener resets `authApi`
+and clears the React Query cache, so no data of the previous user survives; `RequireAuth` then sends
+the user to `/login` with the page in `from`.
 
-The login mutation result is reset right away, so the token never sits in the RTK Query state.
+### QueryClient
 
-## Logout
+`makeQueryClient()` / `queryClient`: `staleTime: 30_000`, `refetchOnWindowFocus: false`;
+`shouldRetryQuery` never retries a 4xx `ApiError` and retries anything else once; mutations never
+retry.
 
-`logout()` signs out locally first: `sessionCleared()`, `authApi.util.resetApiState()` and `queryClient.clear()`. Then it calls `POST /auth/logout` best-effort and ignores any failure. The final status is `unauthenticated`.
+### `useAuth` and `useCurrentUserQuery`
 
-## Session expiry
+`useAuth()` returns `{ status, user, role, permissions, login, logout, retryBootstrap }`.
+`useCurrentUserQuery()` refetches `GET /auth/me` through React Query and `cmsApi`
+(`CURRENT_USER_QUERY_KEY` = `['auth', 'me']`), so a 401 is refreshed transparently; the profile page
+and the settings hooks write to this key.
 
-When `cmsApi` cannot recover from a 401 (see [API client](./api-client.md#401-refresh-sequence)), it calls `onSessionExpired`, which dispatches `sessionExpired()`. A listener (`createListenerMiddleware`, in `makeStore`) then resets `authApi` and clears the React Query cache, so no data from the previous user survives. `RequireAuth` then sends the user to `/login`, remembering the page (see [Routing and guards](./routing-and-guards.md)).
+### Cookie notes
 
-## QueryClient
+The refresh token is an httpOnly cookie sent because `cmsApi` uses `withCredentials`. If login works
+but a reload logs out, check the backend's `COOKIE_SECURE` and `COOKIE_SAMESITE`: a `Secure` cookie
+is not stored over plain http.
 
-`src/app/queryClient.ts` exports the shared `queryClient` and `makeQueryClient()` (for tests):
+### Decisions
 
-- `staleTime: 30_000`, `refetchOnWindowFocus: false`.
-- Queries: `shouldRetryQuery` never retries a 4xx `ApiError` and retries anything else at most once.
-- Mutations never retry.
+- **Errors in RTK Query are plain objects** (`ApiErrorData`) so the store stays serializable.
+- **`login` resolves with a result instead of throwing**, and does not set `loading`, so guards
+  don't flash a loading view while the form is pending.
+- **Bootstrap 401 uses `sessionCleared`, not `sessionExpired`**: there was no session to purge.
+- **The token is never persisted.** A test spies on `Storage.prototype.setItem` across the whole
+  lifecycle.
 
-Query functions call `cmsApi` directly and let the `ApiError` propagate. 401s are already handled by the client: a test shows a `useQuery` recovering from a 401 through one refresh.
+## Files
 
-## useAuth
-
-`useAuth()` returns `{ status, user, role, permissions, login, logout, retryBootstrap }`. The actions dispatch the thunks above and return their promises.
-
-```tsx
-const { status, user, login } = useAuth();
-const result = await login({ email, password, rememberMe });
-if (!result.ok) setError(result.message);
-```
+| File                                          | Spec                                                                                                  |
+| --------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| `src/app/store.ts`                            | Exports `makeStore`, `store`, `StoreExtra`, `MakeStoreOptions`, `AppStore`, `RootState`, `AppDispatch`, `AppThunk`. Store, expiry listener, `configureCmsApi` wiring. |
+| `src/app/hooks.ts`                            | Exports `useAppDispatch`, `useAppSelector`.                                                           |
+| `src/app/queryClient.ts`                      | Exports `queryClient`, `makeQueryClient`, `shouldRetryQuery`. React Query defaults.                   |
+| `src/app/AppProvider.tsx`                     | Default export `AppProvider`: Redux, React Query and theme providers; runs the bootstrap once.        |
+| `src/core/api/AuthApi.ts`                     | Exports `authApi`: has-users, login, me, logout and the onboarding endpoints, all `skipAuthRefresh`.  |
+| `src/features/auth/types.ts`                  | Auth types: `Role`, `MeUser`, `AuthStatus`, `AuthState`, request and response shapes.                |
+| `src/features/auth/store/AuthSlice.ts`        | Exports `initialAuthState`, the five actions, default reducer.                                        |
+| `src/features/auth/store/selectors.ts`        | Exports the memoized auth, role, permission, level and actor selectors.                              |
+| `src/features/auth/store/sessionThunks.ts`    | Exports `bootstrapSession`, `retryBootstrap`, `resetBootstrapLatch`, `login`, `logout`, `loginErrorMessage`, `BOOTSTRAP_RETRY_DELAYS_MS`, `LoginResult`. |
+| `src/features/auth/hooks/useAuth.ts`          | Exports `useAuth`: session state plus bound thunks.                                                   |
+| `src/features/auth/hooks/useSessionBootstrap.ts` | Exports `useSessionBootstrap`: dispatches the bootstrap on mount.                                 |
+| `src/features/auth/hooks/useCurrentUserQuery.ts` | Exports `useCurrentUserQuery`, `CURRENT_USER_QUERY_KEY`. `/auth/me` through React Query.          |
 
 ## Testing
 
-- `src/test/renderWithProviders.tsx`: `renderWithProviders(ui, { auth, route, store, queryClient })` and `renderHookWithProviders(hook, options)` give each test a fresh store, `QueryClient` and memory router, with a preloaded auth state. They do not run the bootstrap.
-- `src/test/fixtures.ts`: `makeMeUser(overrides)`, `makeRole(overrides)`.
-- MSW defaults (`src/test/msw/handlers.ts`): refresh → 401 (no session), logout → 200.
+- `src/app/store.test.ts`, `src/app/AppProvider.test.tsx`, `src/app/queryClient.test.ts`,
+  `src/app/queryClient.integration.test.tsx` (401 recovery through React Query, AC-17).
+- `src/core/api/AuthApi.test.ts`: every endpoint's request and `skipAuthRefresh`.
+- `src/features/auth/store/AuthSlice.test.ts`, `selectors.test.ts`, `sessionThunks.test.ts`
+  (bootstrap backoff with `vi.useFakeTimers({ toFake: ['setTimeout'] })`, login messages, logout,
+  no web-storage writes).
+- `src/features/auth/hooks/useAuth.test.ts`, `useSessionBootstrap.test.tsx`,
+  `useCurrentUserQuery.test.ts`.
 - Call `resetBootstrapLatch()` in `beforeEach` in any test that bootstraps.
-- Bootstrap backoff tests use `vi.useFakeTimers({ toFake: ['setTimeout'] })` and `vi.advanceTimersByTimeAsync`.
-- A test spies on `Storage.prototype.setItem` across bootstrap, login, refresh, expiry and logout and asserts it is never called.
+- E2E flows (login, reload, logout, expiry, bootstrap Retry) are in `e2e/auth.spec.ts`, see
+  [Routing and guards](./routing-and-guards.md).
+- Run: `pnpm --filter cms-admin exec vitest run src/app src/features/auth/store src/features/auth/hooks`.
 
-## Cookie and proxy notes
+## Related
 
-The refresh token is an httpOnly cookie that the browser sends because `cmsApi` uses `withCredentials: true`. In dev, the Vite proxy makes the API same-origin, so the cookie is first-party on `localhost` (see [Testing and config](./testing-and-config.md#dev-proxy)). If login works but a reload logs the user out, check the backend's `COOKIE_SECURE` and `COOKIE_SAMESITE` settings: a `Secure` cookie is not stored over plain http. The token itself is never written to `localStorage`, `sessionStorage`, IndexedDB or a readable cookie.
-
-## Decisions
-
-- **Errors in RTK Query are plain objects** (`ApiErrorData`), because the store must stay serializable. `toApiErrorData` passes an existing `ApiErrorData` through, so code that catches an `unwrap()` rejection can normalize it the same way.
-- **`login` resolves with a result instead of throwing**, so pages show `message` without a try/catch. It does not set `status = 'loading'`, so guards don't flash a loading view while the login form is pending.
-- **Bootstrap 401 uses `sessionCleared`, not `sessionExpired`**: there was no previous session, so there is nothing to purge.
+- [API client](./api-client.md)
+- [RBAC and ABAC](./rbac-abac.md) (reads the actor)
+- [Routing and guards](./routing-and-guards.md) (`RequireAuth`, login page)
+- [Onboarding and recovery](./onboarding-and-recovery.md) (the other `authApi` endpoints)
+- [Theme](./theme.md) (`ThemeProvider` inside `AppProvider`)

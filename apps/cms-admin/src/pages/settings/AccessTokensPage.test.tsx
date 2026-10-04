@@ -466,3 +466,55 @@ describe('AccessTokensPage delete (AC-7, AC-10, AC-32)', () => {
     expect(await within(confirm).findByRole('alert')).toHaveTextContent('Token not found');
   });
 });
+
+describe('AccessTokensPage paging (Phase 6 AC-21, AC-24 to AC-26)', () => {
+  const manyTokens = (count: number) =>
+    Array.from({ length: count }, (_, i) => {
+      const n = String(i + 1).padStart(2, '0');
+      return makeAccessToken({ documentId: `tok-${n}`, name: `Token ${n}`, expiresAt: null });
+    });
+
+  async function renderAt(route: string) {
+    const view = renderWithProviders(<AccessTokensPage />, { auth: auth(), route });
+    await screen.findByRole('table', { name: 'Access tokens' });
+    return view;
+  }
+
+  it('shows 10 tokens with the pagination under the table, and opens a deep link', async () => {
+    mockApi(manyTokens(12));
+    await renderAt('/?page=2');
+
+    expect(namesInOrder()).toEqual(['Token 11', 'Token 12']);
+    expect(screen.getByRole('navigation', { name: 'Pagination' })).toHaveTextContent(
+      'Showing 11–12 of 12',
+    );
+  });
+
+  it('goes back to page 1 when the search changes', async () => {
+    mockApi(manyTokens(12));
+    const { user } = await renderAt('/?page=2');
+
+    await user.type(screen.getByRole('searchbox', { name: 'Search access tokens' }), 'token');
+
+    await waitFor(() => expect(namesInOrder()).toHaveLength(10));
+  });
+
+  it('moves to the new last page when a delete empties the current one', async () => {
+    const { store } = mockApi(manyTokens(11));
+    server.use(
+      deleteAccessTokenHandler(({ params }) => {
+        store.tokens = store.tokens.filter((token) => token.documentId !== params.id);
+        return new HttpResponse(null, { status: 204 });
+      }).handler,
+    );
+    const { user } = await renderAt('/?page=2');
+    expect(namesInOrder()).toEqual(['Token 11']);
+
+    await user.click(screen.getByRole('button', { name: 'Delete Token 11' }));
+    const confirm = await screen.findByRole('alertdialog');
+    await user.click(within(confirm).getByRole('button', { name: 'Delete token' }));
+
+    expect(await screen.findByText('Token "Token 11" deleted.')).toBeInTheDocument();
+    await waitFor(() => expect(namesInOrder()).toHaveLength(10));
+  });
+});

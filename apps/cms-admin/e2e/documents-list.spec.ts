@@ -1,3 +1,5 @@
+import type { Locator } from '@playwright/test';
+
 import { BLOG, blogPost, HOMEPAGE, seedContent } from './fixtures/contentFixtures.ts';
 import { expect, ROLES, test, type MockApi } from './fixtures/mockApi.ts';
 import type { MockContent } from './fixtures/mockContent.ts';
@@ -44,7 +46,7 @@ test('unknown params are dropped, the URL is rewritten in place and the page say
   await expect(page.getByRole('table', { name: 'Blog post entries' })).toBeVisible();
   await expect(page).toHaveURL(`${URL}?sortDir=asc`);
   await expect(page.getByText(IGNORED)).toHaveAttribute('role', 'status');
-  expect(listQueries(mockApi)).toEqual(['?sortDir=asc']);
+  expect(listQueries(mockApi)).toEqual(['?size=10&sortDir=asc']);
 
   // The rewrite replaced the entry: Back returns to the overview.
   await page.goBack();
@@ -64,7 +66,7 @@ test('a non-identifier orderBy is dropped before any request (AC-4)', async ({
   await expect(page).toHaveURL(URL);
   await expect(page.getByText(IGNORED)).toBeAttached();
   await expect(page.getByRole('table', { name: 'Blog post entries' })).toBeVisible();
-  expect(listQueries(mockApi)).toEqual(['']);
+  expect(listQueries(mockApi)).toEqual(['?size=10']);
 });
 
 test('the table shows the listFields, Status and formatted cells, and links each entry (AC-19)', async ({
@@ -114,7 +116,56 @@ test('the sort is read from the URL and sent with wire names (AC-20, AC-41)', as
 
   const rows = page.getByRole('table', { name: 'Blog post entries' }).getByRole('row');
   await expect(rows.nth(1)).toContainText('Post 1');
-  expect(listQueries(mockApi)).toEqual(['?orderBy=created_at&sortDir=asc']);
+  expect(listQueries(mockApi)).toEqual(['?size=10&orderBy=created_at&sortDir=asc']);
+});
+
+/** The ::after hit areas (box plus negative inset) of every checkbox, top to bottom. */
+type StyleOf = (el: unknown, pseudo: string) => Record<'left' | 'right' | 'top' | 'bottom', string>;
+const hitAreas = (boxes: Locator) =>
+  boxes.evaluateAll((els) =>
+    els.map((el) => {
+      const box = el.getBoundingClientRect();
+      const after = (globalThis as unknown as { getComputedStyle: StyleOf }).getComputedStyle(
+        el,
+        '::after',
+      );
+      const top = box.top + parseFloat(after.top);
+      const bottom = box.bottom - parseFloat(after.bottom);
+      return { top, bottom, width: box.width - parseFloat(after.left) - parseFloat(after.right) };
+    }),
+  );
+
+test('the selection boxes are named Checkboxes, the header goes mixed and hit areas never overlap (AC-12, AC-14)', async ({
+  page,
+  mockApi,
+  mockContent,
+}) => {
+  seedContent(mockContent);
+  signedInAs(mockApi);
+  const table = page.getByRole('table', { name: 'Blog post entries' });
+  const all = table.getByRole('checkbox', { name: 'Select all entries on this page' });
+  const boxes = table.locator('[data-slot="checkbox"]');
+
+  for (const width of [390, 1280]) {
+    await page.setViewportSize({ width, height: 844 });
+    await page.goto(URL);
+    await table.getByRole('checkbox', { name: 'Select Post 2' }).check();
+    await expect(all).toHaveAttribute('aria-checked', 'mixed');
+
+    const areas = await hitAreas(boxes);
+    expect(areas.length).toBeGreaterThan(2);
+    for (const [index, area] of areas.entries()) {
+      if (width < 1024) {
+        expect(area.width).toBeGreaterThanOrEqual(44);
+        expect(area.bottom - area.top).toBeGreaterThanOrEqual(44);
+      }
+      if (index > 0) expect(area.top).toBeGreaterThanOrEqual(areas[index - 1]!.bottom);
+    }
+  }
+
+  await all.click();
+  await expect(all).toHaveAttribute('aria-checked', 'true');
+  await expect(table.getByRole('checkbox', { checked: false })).toHaveCount(0);
 });
 
 test('clicking sortable headers sorts, writes the URL and clears the selection (AC-20)', async ({
@@ -156,7 +207,12 @@ test('clicking sortable headers sorts, writes the URL and clears the selection (
   await expect(table.getByRole('button', { name: 'Featured' })).toHaveCount(1);
   await expect
     .poll(() => listQueries(mockApi))
-    .toEqual(['', '?orderBy=views', '?orderBy=views&sortDir=asc', '?orderBy=updated_at']);
+    .toEqual([
+      '?size=10',
+      '?size=10&orderBy=views',
+      '?size=10&orderBy=views&sortDir=asc',
+      '?size=10&orderBy=updated_at',
+    ]);
 });
 
 test('search sends one debounced request, resets the page, writes q and survives a reload (AC-21)', async ({
@@ -167,7 +223,7 @@ test('search sends one debounced request, resets the page, writes q and survives
   seedPosts(mockContent, 25);
   signedInAs(mockApi);
   await page.goto(`${URL}?page=2`);
-  await expect(page.getByText('Showing 21–25 of 25')).toBeVisible();
+  await expect(page.getByText('Showing 11–20 of 25')).toBeVisible();
 
   const box = page.getByRole('searchbox', { name: 'Search entries' });
   await box.pressSequentially('Post 2', { delay: 30 });
@@ -176,7 +232,7 @@ test('search sends one debounced request, resets the page, writes q and survives
   expect(query(page.url()).has('page')).toBe(false);
   await expect(page.getByText('Showing 1–7 of 7')).toBeVisible();
   const searches = listQueries(mockApi).filter((q) => q.includes('search='));
-  expect(searches).toEqual(['?search=Post+2']);
+  expect(searches).toEqual(['?size=10&search=Post+2']);
 
   await page.reload();
   await expect(page.getByRole('searchbox', { name: 'Search entries' })).toHaveValue('Post 2');
@@ -186,7 +242,7 @@ test('search sends one debounced request, resets the page, writes q and survives
   );
 });
 
-test('pagination moves between pages, changes the size and clamps a page past the end (AC-23)', async ({
+test('pagination shows 10 rows by default, moves between pages, changes the size and clamps a page past the end (AC-23, AC-20, AC-27)', async ({
   page,
   mockApi,
   mockContent,
@@ -196,23 +252,36 @@ test('pagination moves between pages, changes the size and clamps a page past th
   await page.goto(URL);
 
   const pagination = page.getByRole('navigation', { name: 'Pagination' });
-  await expect(pagination.getByText('Showing 1–20 of 25')).toBeVisible();
+  await expect(pagination.getByText('Showing 1–10 of 25')).toBeVisible();
+  await expect(page.getByRole('table').getByRole('row')).toHaveCount(11); // header + 10 rows
+  expect(listQueries(mockApi)).toEqual(['?size=10']);
+  await expect(page).toHaveURL(URL);
   await expect(pagination.getByRole('button', { name: 'Previous page' })).toBeDisabled();
 
-  await pagination.getByRole('button', { name: 'Next page' }).click();
+  const next = pagination.getByRole('button', { name: 'Next page' });
+  await next.focus();
+  await page.keyboard.press('Enter');
   await expect(page).toHaveURL(`${URL}?page=2`);
+  await expect(pagination.getByText('Showing 11–20 of 25')).toBeVisible();
+  await expect(pagination.getByText('Page 2 of 3')).toBeVisible();
+  await expect(next).toBeFocused();
+  expect(query(`http://x${listQueries(mockApi).at(-1)}`).get('start')).toBe('10');
+
+  await page.keyboard.press('Enter');
+  await expect(page).toHaveURL(`${URL}?page=3`);
   await expect(pagination.getByText('Showing 21–25 of 25')).toBeVisible();
-  await expect(pagination.getByText('Page 2 of 2')).toBeVisible();
-  await expect(pagination.getByRole('button', { name: 'Next page' })).toBeDisabled();
-  expect(listQueries(mockApi)).toContain('?start=20');
+  await expect(next).toBeDisabled();
+  await expect(pagination.getByRole('button', { name: 'Previous page' })).toBeFocused();
 
-  await pagination.getByRole('combobox', { name: 'Rows per page' }).click();
-  await page.getByRole('option', { name: '10', exact: true }).click();
-  await expect(page).toHaveURL(`${URL}?size=10`);
-  await expect(pagination.getByText('Showing 1–10 of 25')).toBeVisible();
+  const sizeSelect = pagination.getByRole('combobox', { name: 'Rows per page' });
+  await sizeSelect.click();
+  await page.getByRole('option', { name: '20', exact: true }).click();
+  await expect(page).toHaveURL(`${URL}?size=20`);
+  await expect(pagination.getByText('Showing 1–20 of 25')).toBeVisible();
+  await expect(sizeSelect).toBeFocused();
 
-  await page.goto(`${URL}?page=9&size=10`);
-  await expect(page).toHaveURL(`${URL}?page=3&size=10`);
+  await page.goto(`${URL}?page=9`);
+  await expect(page).toHaveURL(`${URL}?page=3`);
   await expect(pagination.getByText('Showing 21–25 of 25')).toBeVisible();
 });
 
@@ -348,7 +417,7 @@ test('the list recovers transparently when the access token expires (AC-41)', as
     'GET /api/v1/content-types/blog 401',
     'POST /api/v1/auth/refresh 200',
     'GET /api/v1/content-types/blog 200',
-    `GET ${D1} 200`,
+    `GET ${D1}?size=10 200`,
   ]);
 });
 

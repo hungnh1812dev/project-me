@@ -1,20 +1,31 @@
 # CMS Admin docs
 
-Feature docs for `apps/cms-admin`. Each small phase adds or updates one page here.
+The admin single-page app (React, Vite) for managing content types, documents, users, roles, permissions, access tokens and media of the hungnhdev CMS.
 
-| Page                                                    | What it covers                                                                                                                                                                                                            |
-| ------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [Testing and config](./testing-and-config.md)           | Test scripts, coverage gates, MSW and Playwright conventions, env vars, dev proxy                                                                                                                                         |
-| [API client](./api-client.md)                           | `cmsApi`, bearer interceptor, single-flight 401 refresh, `ApiError` shape                                                                                                                                                 |
-| [Auth session](./auth-session.md)                       | Redux auth state, RTK Query auth API, bootstrap, login, logout, expiry, QueryClient                                                                                                                                       |
-| [RBAC and ABAC](./rbac-abac.md)                         | Permission rules, ABAC policy table, `usePermission`/`useCan`/`useRoleLevel`, `<Can>`                                                                                                                                     |
-| [Routing and guards](./routing-and-guards.md)           | Route table, `RequireAuth`/`RequireAccess`, login/profile/403 pages, e2e `mockApi`                                                                                                                                        |
-| [Design system](./design-system.md)                     | Styling decision, tokens, theme and pre-paint, fonts, primitives, inputs, `Field`, `JsonInput`                                                                                                                            |
-| [App shell](./app-shell.md)                             | Shell layout, nav model, settings links, breadcrumbs, responsive menu, storage keys, UI kit                                                                                                                               |
-| [Onboarding and recovery](./onboarding-and-recovery.md) | First-run redirect, register, verify OTP, forgot and reset password                                                                                                                                                       |
-| [Content data](./content-data.md)                       | Content-type and document hooks, `contentKeys`, invalidation matrix, per-slug ABAC, list query                                                                                                                            |
-| [Documents UI](./documents-ui.md)                       | Content-type overview, single-type editor, collection list (URL state, known-column check, filters, date picker, columns), create and detail pages, schema form, row and bulk actions, gating, test doubles, smoke status |
-| [Settings](./settings.md)                               | Settings pages (users, roles, permissions, access tokens, media, profile name), contract, `settingsKeys`, invalidation matrix, policy use, PermissionTree, secret handling, upload flow, mocks, a11y, smoke status        |
-| [Roadmap](./roadmap.md)                                 | Big phases 1–6 with status and outlines, deferred questions, known gaps, open security findings                                                                                                                           |
-
-The legacy app's docs are in [`../docs-old-dev/`](../docs-old-dev/) (reference only).
+| Module | Scope |
+| ------ | ----- |
+| [Testing and config](./testing-and-config.md) | Test scripts, coverage gates, MSW and Playwright setup, shared test helpers, alias, env vars, dev proxy |
+| [CSP and headers](./csp-and-headers.md) | Content-Security-Policy builder, Referrer-Policy, nginx image, image URL allowlist |
+| [API client](./api-client.md) | `cmsApi`, bearer only to the API origin, single-flight 401 refresh, `ApiError` |
+| [Auth session](./auth-session.md) | Redux auth state, RTK Query auth API, bootstrap, login, logout, expiry, QueryClient |
+| [RBAC and ABAC](./rbac-abac.md) | Permission rules, policy table, hooks, `<Can>`, `checkAccess`, `guard` |
+| [Routing and guards](./routing-and-guards.md) | Route table, `RequireAuth`, `RequireAccess`, login, home and 403 pages, e2e auth mock |
+| [Onboarding and recovery](./onboarding-and-recovery.md) | First-run redirect, register, verify OTP, forgot and reset password |
+| [Profile](./profile.md) | Own profile, inline name editing, log out |
+| [Design system](./design-system.md) | Styling stack, tokens and palette, button roles, JSON editor, `@repo/ui` usage (see also the [@repo/ui docs](../../../packages/ui/docs/README.md)), global CSS, UI kit page |
+| [Theme](./theme.md) | Light, dark and system theme, pre-paint script, `ThemeProvider` |
+| [App shell](./app-shell.md) | Shell layout, nav model, breadcrumbs, responsive menu, storage keys, `AuthLayout` |
+| [Content data](./content-data.md) | Content-type and document hooks, list query, `contentKeys`, invalidation, per-slug ABAC, content test doubles |
+| [Content-type pages](./content-type-pages.md) | Content-type overview, `:slug` dispatch, shared load states, paths and action errors |
+| [Documents list](./documents-list.md) | Collection list: URL state, known-column check, filters, columns, pagination, row and bulk actions |
+| [Single-type editor](./single-type-editor.md) | Load, save, publish and unpublish a single type |
+| [Document editor](./document-editor.md) | Create and detail pages, editor header, unsaved-changes guard, gating |
+| [Schema form](./schema-form.md) | Schema-driven react-hook-form form, field controls, richtext, media field and picker |
+| [Settings foundation](./settings-foundation.md) | Settings contract, `settingsKeys`, policy use, list blocks, pagination, validation, settings test doubles |
+| [Settings users](./settings-users.md) | Users list, change role, delete user |
+| [Settings roles](./settings-roles.md) | Roles CRUD, default-role rules, own-role refresh |
+| [Settings permissions](./settings-permissions.md) | Permission catalog CRUD, 409 conflict state, row-based paging |
+| [Settings access tokens](./settings-access-tokens.md) | Token create, revoke and delete, one-time secret handling |
+| [Settings media](./settings-media.md) | Media grid, upload flow, delete, `MediaThumbnail` |
+| [Settings permission tree](./settings-permission-tree.md) | `PermissionTree` picker shared by the role and token forms |
+| [Roadmap](./roadmap.md) | Big phases and status, deferred questions, known gaps, open security findings |

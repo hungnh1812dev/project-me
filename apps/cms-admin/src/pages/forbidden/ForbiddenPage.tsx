@@ -1,6 +1,7 @@
 import { Link, useLocation } from 'react-router-dom';
 
-import { Button } from '@/components/ui/button';
+import { Button } from '@repo/ui/components/button';
+
 import AuthLayout from '@/layouts/AuthLayout';
 
 function reasonFrom(state: unknown): string | null {

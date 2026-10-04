@@ -1,8 +1,8 @@
 import { useCallback, useRef, useState } from 'react';
 import { Outlet } from 'react-router-dom';
 
-import { Sidebar, SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
-import { TooltipProvider } from '@/components/ui/tooltip';
+import { Sidebar, SidebarInset, SidebarProvider } from '@repo/ui/components/sidebar';
+import { TooltipProvider } from '@repo/ui/components/tooltip';
 
 import { usePageTitleAndFocus } from '../hooks/usePageTitleAndFocus';
 import { readFlag, SIDEBAR_OPEN_KEY, writeFlag } from '../sidebarState';

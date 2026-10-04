@@ -1,10 +1,8 @@
 import { useId, useMemo, useRef, useState } from 'react';
 import { ChevronRightIcon } from 'lucide-react';
 
-import { GatedButton } from '@/components/form/GatedButton';
-import { SecretReveal } from '@/components/form/SecretReveal';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import { Badge } from '@repo/ui/components/badge';
+import { Button } from '@repo/ui/components/button';
 import {
   Table,
   TableBody,
@@ -13,17 +11,22 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
+} from '@repo/ui/components/table';
+import { GatedButton } from '@repo/ui/form/GatedButton';
+import { Pagination } from '@repo/ui/form/Pagination';
+import { SecretReveal } from '@repo/ui/form/SecretReveal';
+import { cn } from '@repo/ui/lib/cn';
+
 import { useCan } from '@/features/auth/hooks/useCan';
 import { ListState } from '@/features/settings/components/ListState';
 import { LiveRegion } from '@/features/settings/components/LiveRegion';
 import { SearchField } from '@/features/settings/components/SearchField';
 import { useAnnouncer } from '@/features/settings/components/useAnnouncer';
 import { useAccessTokens } from '@/features/settings/hooks/useAccessTokens';
+import { useListPaging } from '@/features/settings/hooks/useListPaging';
 import { groupSlugsByResource } from '@/features/settings/permissionTree';
 import { filterBySearch } from '@/features/settings/search';
 import type { AccessToken } from '@/features/settings/types';
-import { cn } from '@/utils/cn';
 
 import { DeleteTokenDialog } from './access-tokens/DeleteTokenDialog';
 import { RevokeTokenDialog } from './access-tokens/RevokeTokenDialog';
@@ -180,7 +183,8 @@ type Reveal = { secret: string; message: string };
 
 /**
  * `/admin/settings/access-tokens` (gated by `api_token:read`): every token with its name, an
- * expandable permission count, expiry and dates (AC-28). A client-side search covers name (AC-4).
+ * expandable permission count, expiry and dates (AC-28). A client-side search covers name (AC-4),
+ * and the list pages 10 tokens at a time with the page in the URL (Phase 6 AC-21).
  * New, Revoke and Delete are gated (AC-5). Create and Revoke end in the SecretReveal (AC-30): the
  * secret lives only in this page's state until Done clears it, and the success message is announced
  * then, once the modal no longer hides the page's live region (AC-33).
@@ -202,6 +206,8 @@ const AccessTokensPage: React.FC = () => {
     () => filterBySearch(tokens.data ?? [], search, SEARCH_FIELDS),
     [tokens.data, search],
   );
+
+  const paging = useListPaging(tokens.data ? visible : undefined, search);
 
   const toggle = (id: string) =>
     setExpanded((previous) => {
@@ -256,40 +262,49 @@ const AccessTokensPage: React.FC = () => {
         search={search}
         emptyAction={newButton}
       >
-        <div
-          role="region"
-          aria-label="Access tokens table"
-          tabIndex={0}
-          className="overflow-x-auto rounded-lg border focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring [&_[data-slot=table-container]]:overflow-visible"
-        >
-          <Table>
-            <TableCaption className="sr-only">Access tokens</TableCaption>
-            <TableHeader>
-              <TableRow>
-                <TableHead scope="col">Name</TableHead>
-                <TableHead scope="col">Permissions</TableHead>
-                <TableHead scope="col">Expires</TableHead>
-                <TableHead scope="col">Created</TableHead>
-                <TableHead scope="col">Updated</TableHead>
-                <TableHead scope="col">
-                  <span className="sr-only">Actions</span>
-                </TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {visible.map((token) => (
-                <TokenTableRow
-                  key={token.documentId}
-                  token={token}
-                  now={now}
-                  expanded={expanded.has(token.documentId)}
-                  onToggle={() => toggle(token.documentId)}
-                  onRevoke={openDialog('revoke')}
-                  onDelete={openDialog('delete')}
-                />
-              ))}
-            </TableBody>
-          </Table>
+        <div className="flex flex-col gap-4">
+          <div
+            role="region"
+            aria-label="Access tokens table"
+            tabIndex={0}
+            className="overflow-x-auto rounded-lg border focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring [&_[data-slot=table-container]]:overflow-visible"
+          >
+            <Table>
+              <TableCaption className="sr-only">Access tokens</TableCaption>
+              <TableHeader>
+                <TableRow>
+                  <TableHead scope="col">Name</TableHead>
+                  <TableHead scope="col">Permissions</TableHead>
+                  <TableHead scope="col">Expires</TableHead>
+                  <TableHead scope="col">Created</TableHead>
+                  <TableHead scope="col">Updated</TableHead>
+                  <TableHead scope="col">
+                    <span className="sr-only">Actions</span>
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {paging.rows.map((token) => (
+                  <TokenTableRow
+                    key={token.documentId}
+                    token={token}
+                    now={now}
+                    expanded={expanded.has(token.documentId)}
+                    onToggle={() => toggle(token.documentId)}
+                    onRevoke={openDialog('revoke')}
+                    onDelete={openDialog('delete')}
+                  />
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+          <Pagination
+            page={paging.page}
+            size={paging.size}
+            total={paging.total}
+            onPageChange={paging.onPageChange}
+            onSizeChange={paging.onSizeChange}
+          />
         </div>
       </ListState>
       {target?.kind === 'create' && (

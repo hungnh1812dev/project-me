@@ -68,8 +68,8 @@ describe('ContentTypePage (AC-32)', () => {
       'href',
       '/admin/content-types/article/doc-1',
     );
-    expect(screen.getByText('Showing 1–20 of 42')).toBeInTheDocument();
-    expect(d1.requests[0]!.url.search).toBe('?orderBy=created_at&sortDir=asc');
+    expect(screen.getByText('Showing 1–10 of 42')).toBeInTheDocument();
+    expect(d1.requests[0]!.url.search).toBe('?size=10&orderBy=created_at&sortDir=asc');
     expect(screen.queryByText(/^Kind:/)).not.toBeInTheDocument();
   });
 

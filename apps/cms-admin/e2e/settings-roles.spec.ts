@@ -86,9 +86,10 @@ test('a super admin creates a role with scoped document permissions', async ({ p
   const tree = dialog.getByRole('group', { name: 'Permissions' });
   await expect(tree.getByRole('group', { name: 'All content types' })).toBeVisible();
   await tree.getByRole('checkbox', { name: 'article', exact: true }).check();
-  await expect(tree.getByRole('checkbox', { name: 'document', exact: true })).toHaveJSProperty(
-    'indeterminate',
-    true,
+  // AC-11: the partial group is the @repo/ui Checkbox in the mixed state.
+  await expect(tree.getByRole('checkbox', { name: 'document', exact: true })).toHaveAttribute(
+    'aria-checked',
+    'mixed',
   );
   await expect(tree.getByRole('group', { name: 'document' })).toContainText('2 of 9');
   const request = page.waitForRequest(
@@ -271,4 +272,69 @@ test('at 375px the page and the role form do not scroll sideways', async ({ page
   expect(
     await dialog.evaluate((element) => element.scrollWidth - element.clientWidth),
   ).toBeLessThanOrEqual(0);
+});
+
+/** Adds `count` unused level-1 roles "Role 01"…, listed after Reviewer. */
+function seedMany(mockApi: MockApi, count: number) {
+  for (let i = 1; i <= count; i += 1) {
+    const n = String(i).padStart(2, '0');
+    mockApi.settings.addRole(customRole(`role_${n}`, `Role ${n}`, 1, ['document:read']));
+  }
+}
+
+const ROLES_URL = '/admin/settings/roles';
+
+test('roles page 10 at a time with the page in the URL: next, Back, size, deep link, clamp and search reset (Phase 6 AC-21, AC-24, AC-25)', async ({
+  page,
+  mockApi,
+}) => {
+  seed(mockApi);
+  seedMany(mockApi, 8);
+  await openRoles(page);
+  const pagination = page.getByRole('navigation', { name: 'Pagination' });
+  const names = page.getByRole('table', { name: 'Roles' }).locator('tbody tr td:first-child');
+
+  await expect(pagination.getByText('Showing 1–10 of 12')).toBeVisible();
+  await page.getByRole('button', { name: 'Writer: 2 permissions' }).click();
+  await expect(page.getByRole('region', { name: 'Writer permissions' })).toBeVisible();
+  await expect(pagination.getByText('Showing 1–10 of 12')).toBeVisible();
+
+  await pagination.getByRole('button', { name: 'Next page' }).click();
+  await expect(page).toHaveURL(`${ROLES_URL}?page=2`);
+  await expect(names).toHaveText(['Role 07', 'Role 08']);
+  await page.goBack();
+  await expect(page).toHaveURL(ROLES_URL);
+  await expect(pagination.getByText('Page 1 of 2')).toBeVisible();
+
+  const sizeSelect = pagination.getByRole('combobox', { name: 'Rows per page' });
+  await sizeSelect.click();
+  await page.getByRole('option', { name: '50', exact: true }).click();
+  await expect(page).toHaveURL(`${ROLES_URL}?size=50`);
+  await expect(pagination.getByText('Showing 1–12 of 12')).toBeVisible();
+
+  await page.goto(`${ROLES_URL}?page=7`);
+  await expect(page).toHaveURL(`${ROLES_URL}?page=2`);
+  await expect(names).toHaveText(['Role 07', 'Role 08']);
+
+  await page.getByRole('searchbox', { name: 'Search roles' }).fill('role_0');
+  await expect(page).toHaveURL(ROLES_URL);
+  await expect(pagination.getByText('Showing 1–8 of 8')).toBeVisible();
+});
+
+test('deleting the only role on the last page moves to the new last page (Phase 6 AC-26)', async ({
+  page,
+  mockApi,
+}) => {
+  seed(mockApi);
+  seedMany(mockApi, 7);
+  await page.goto(`${ROLES_URL}?page=2`);
+  const pagination = page.getByRole('navigation', { name: 'Pagination' });
+  await expect(pagination.getByText('Showing 11–11 of 11')).toBeVisible();
+
+  await page.getByRole('button', { name: 'Delete Role 07' }).click();
+  await page.getByRole('alertdialog').getByRole('button', { name: 'Delete role' }).click();
+
+  await expect(page).toHaveURL(ROLES_URL);
+  await expect(pagination.getByText('Showing 1–10 of 10')).toBeVisible();
+  await expect(page.getByText('Role "Role 07" deleted.')).toBeAttached();
 });

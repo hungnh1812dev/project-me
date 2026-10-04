@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import { ArrowDownIcon, ArrowUpIcon } from 'lucide-react';
 
-import { Button } from '@/components/ui/button';
+import { Button } from '@repo/ui/components/button';
+import { Checkbox } from '@repo/ui/components/checkbox';
 import {
   Dialog,
   DialogClose,
@@ -10,7 +11,8 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
+} from '@repo/ui/components/dialog';
+
 import { isApiError } from '@/core/api/apiError';
 import type { ColumnCatalog } from '@/features/content/columns';
 import { useUpdateListFields } from '@/features/content/hooks/useContentTypes';
@@ -18,7 +20,8 @@ import type { ContentType } from '@/features/content/types';
 
 const EMPTY = 'Choose at least one column.';
 const NO_ACCESS = "You don't have access to do this.";
-const BOX = 'size-5 shrink-0 cursor-pointer accent-primary lg:size-4';
+// Rows are 36px at `lg`, so the Checkbox's 44px ::after hit area shrinks to 32px there.
+const BOX = 'lg:after:-inset-2';
 
 const errorText = (error: unknown): string =>
   isApiError(error) && error.status === 403
@@ -52,6 +55,7 @@ const ChooserForm: React.FC<{
   const [choices, setChoices] = useState(() => initialChoices(type, catalog));
   const [problem, setProblem] = useState<string | null>(null);
   const save = useUpdateListFields(type.slug);
+  const baseId = useId();
 
   const move = (from: number, to: number) =>
     setChoices((current) => {
@@ -86,42 +90,55 @@ const ChooserForm: React.FC<{
       }}
     >
       <ul aria-label="Columns" className="flex flex-col divide-y rounded-md border">
-        {choices.map((choice, index) => (
-          <li key={choice.key} className="flex items-center gap-2 px-2">
-            <label className="flex min-h-11 flex-1 cursor-pointer items-center gap-3 lg:min-h-9">
-              <input
-                type="checkbox"
-                className={BOX}
-                checked={choice.checked}
-                onChange={() => {
-                  setProblem(null);
-                  setChoices((current) =>
-                    current.map((c) => (c.key === choice.key ? { ...c, checked: !c.checked } : c)),
-                  );
-                }}
-              />
-              {choice.label}
-            </label>
-            <Button
-              variant="ghost"
-              size="icon"
-              aria-label={`Move ${choice.label} up`}
-              disabled={index === 0}
-              onClick={() => move(index, index - 1)}
-            >
-              <ArrowUpIcon aria-hidden="true" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              aria-label={`Move ${choice.label} down`}
-              disabled={index === choices.length - 1}
-              onClick={() => move(index, index + 1)}
-            >
-              <ArrowDownIcon aria-hidden="true" />
-            </Button>
-          </li>
-        ))}
+        {choices.map((choice, index) => {
+          // `id` lands on Base UI's hidden input, so the `htmlFor` text click toggles the box (AC-12).
+          const id = `${baseId}-${choice.key}`;
+          return (
+            <li key={choice.key} className="flex items-center gap-2 px-2">
+              <div className="flex min-h-11 flex-1 items-center gap-3 lg:min-h-9">
+                <Checkbox
+                  id={id}
+                  className={BOX}
+                  aria-labelledby={`${id}-label`}
+                  checked={choice.checked}
+                  onCheckedChange={() => {
+                    setProblem(null);
+                    setChoices((current) =>
+                      current.map((c) =>
+                        c.key === choice.key ? { ...c, checked: !c.checked } : c,
+                      ),
+                    );
+                  }}
+                />
+                <label
+                  id={`${id}-label`}
+                  htmlFor={id}
+                  className="flex flex-1 cursor-pointer items-center self-stretch"
+                >
+                  {choice.label}
+                </label>
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label={`Move ${choice.label} up`}
+                disabled={index === 0}
+                onClick={() => move(index, index - 1)}
+              >
+                <ArrowUpIcon aria-hidden="true" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label={`Move ${choice.label} down`}
+                disabled={index === choices.length - 1}
+                onClick={() => move(index, index + 1)}
+              >
+                <ArrowDownIcon aria-hidden="true" />
+              </Button>
+            </li>
+          );
+        })}
       </ul>
       {problem && (
         <p role="alert" className="text-sm font-medium text-destructive">

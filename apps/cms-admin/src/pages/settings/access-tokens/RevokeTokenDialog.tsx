@@ -1,4 +1,5 @@
-import { ConfirmDialog } from '@/components/form/ConfirmDialog';
+import { ConfirmDialog } from '@repo/ui/form/ConfirmDialog';
+
 import { useRevokeAccessToken } from '@/features/settings/hooks/useAccessTokens';
 import type { AccessToken } from '@/features/settings/types';
 

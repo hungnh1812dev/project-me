@@ -25,7 +25,17 @@ const ARTICLE: ContentType = {
   updatedAt: STAMP,
 };
 
-const PAGES = [
+/**
+ * `seed` picks the fixtures: Jane (the default), the settings super admin, or the Phase 5 content
+ * manager. `ready` waits for what loads after the heading (a list, a lazy editor).
+ */
+const PAGES: {
+  path: string;
+  heading: string;
+  signedIn: boolean;
+  seed?: 'settings' | 'documents';
+  ready?: (page: Page) => Promise<void>;
+}[] = [
   { path: '/login', heading: 'Sign in', signedIn: false },
   { path: '/register', heading: 'Create account', signedIn: false },
   { path: '/forgot-password', heading: 'Reset your password', signedIn: false },
@@ -34,6 +44,30 @@ const PAGES = [
   { path: '/admin/profile', heading: 'Your profile', signedIn: true },
   { path: '/admin/content-types/article', heading: 'Article', signedIn: true },
   { path: '/admin/dev/ui-kit', heading: 'UI kit', signedIn: true },
+  // AC-16: the pages the palette change touches most.
+  {
+    path: '/admin/settings/users',
+    heading: 'Users',
+    signedIn: true,
+    seed: 'settings',
+    ready: (page) => expect(page.locator('[aria-busy="true"]')).toHaveCount(0),
+  },
+  {
+    path: '/admin/settings/media',
+    heading: 'Media library',
+    signedIn: true,
+    seed: 'settings',
+    ready: (page) => expect(page.locator('[aria-busy="true"]')).toHaveCount(0),
+  },
+  {
+    // The field showcase has a `media` field (Cover image).
+    path: '/admin/content-types/showcase/new',
+    heading: 'New entry',
+    signedIn: true,
+    seed: 'documents',
+    ready: (page) =>
+      expect(page.getByRole('group', { name: 'Cover image', exact: true })).toBeVisible(),
+  },
 ];
 const THEMES = ['light', 'dark'] as const;
 const DARK = /(^|\s)dark(\s|$)/;
@@ -75,18 +109,22 @@ async function expectNoBlockingViolations(page: Page, theme: string) {
   expect(blocking).toEqual([]);
 }
 
-for (const { path, heading, signedIn } of PAGES) {
+for (const { path, heading, signedIn, seed: fixtures, ready } of PAGES) {
   for (const theme of THEMES) {
     for (const width of WIDTHS) {
       test(`axe: ${path} has no serious or critical violations (${theme}, ${width}px)`, async ({
         page,
         mockApi,
+        mockContent,
       }) => {
-        seed(mockApi, signedIn);
+        if (fixtures === 'settings') seedSettings(mockApi);
+        else if (fixtures === 'documents') seedDocuments(mockApi, mockContent);
+        else seed(mockApi, signedIn);
         await prepare(page, theme, width);
 
         await page.goto(path);
         await expect(page.getByRole('heading', { level: 1, name: heading })).toBeVisible();
+        await ready?.(page);
 
         await expectNoBlockingViolations(page, theme);
       });
@@ -125,7 +163,9 @@ async function walkTabOrder(page: Page, cap = 120): Promise<TabStop[]> {
         : region
           ? region.tagName === 'DIV' ? 'nav' : region.tagName.toLowerCase()
           : 'other';
-      const name = (el.getAttribute('aria-label') || el.labels?.[0]?.textContent || el.textContent || el.getAttribute('name') || el.tagName)
+      const labelledBy = (el.getAttribute('aria-labelledby') || '').split(' ')
+        .map((id) => document.getElementById(id)?.textContent || '').join(' ').trim();
+      const name = (el.getAttribute('aria-label') || labelledBy || el.labels?.[0]?.textContent || el.textContent || el.getAttribute('name') || el.tagName)
         .trim().replace(/\\s+/g, ' ').slice(0, 40);
       const rect = el.getBoundingClientRect();
       if (!el.dataset.tabWalk) el.dataset.tabWalk = String(${i});
@@ -212,6 +252,11 @@ test('keyboard walk on the UI kit reaches every control with visible focus (AC-4
   await page.setViewportSize({ width: 1280, height: 812 });
   await page.goto('/admin/dev/ui-kit');
   await expect(page.getByRole('heading', { name: 'UI kit', level: 1 })).toBeVisible();
+  // The JSON editors load lazily; walk once every editor has replaced its skeleton.
+  await expect(page.locator('[data-slot="json-editor-skeleton"]')).toHaveCount(0);
+  await expect(page.locator('[data-slot="json-code-editor"] .cm-content')).toHaveCount(
+    await page.locator('[data-slot="json-input"]').count(),
+  );
 
   const stops = await walkTabOrder(page, 200);
   const inMain = stops.filter((s) => s.landmark === 'main');
@@ -319,7 +364,10 @@ async function openSettings(page: Page, path: string, heading: string) {
   await expect(page.locator('[aria-busy="true"]')).toHaveCount(0);
 }
 
-for (const { path, heading } of SETTINGS_PAGES) {
+// Users and Media run in the `PAGES` loop above with the same fixtures (AC-16).
+for (const { path, heading } of SETTINGS_PAGES.filter(
+  (s) => !PAGES.some((p) => p.path === s.path),
+)) {
   for (const theme of THEMES) {
     for (const width of WIDTHS) {
       test(`axe: ${path} has no serious or critical violations (${theme}, ${width}px)`, async ({
@@ -350,7 +398,15 @@ const SETTINGS_DIALOGS: {
     heading: 'Roles',
     open: async (page) => {
       await page.getByRole('button', { name: 'New role' }).click();
-      return page.getByRole('dialog', { name: 'New role' });
+      const dialog = page.getByRole('dialog', { name: 'New role' });
+      // AC-25: the ui Checkbox tree, with one checked box and its group in the mixed state.
+      const tree = dialog.getByRole('group', { name: 'Permissions' });
+      await tree.getByRole('checkbox', { name: 'media:manager' }).check();
+      await expect(tree.getByRole('checkbox', { name: 'media', exact: true })).toHaveAttribute(
+        'aria-checked',
+        'mixed',
+      );
+      return dialog;
     },
   },
   {
@@ -605,6 +661,31 @@ const DOCUMENT_SURFACES: { name: string; open: (page: Page) => Promise<void> }[]
   },
   { name: 'the create page with every field type', open: openShowcaseCreate },
   {
+    // AC-25: axe reaches into the JSON editor's open shadow root, valid and with a parse error.
+    name: 'the document editor with a JSON field',
+    open: async (page) => {
+      await openShowcaseCreate(page);
+      const meta = page.getByRole('textbox', { name: 'Meta', exact: true });
+      await expect(meta).toBeVisible();
+      await expect(
+        page.locator('[data-slot="field"]', { has: meta }).getByRole('button', {
+          name: 'Format JSON',
+        }),
+      ).toBeVisible();
+    },
+  },
+  {
+    name: 'the document editor with an invalid JSON field',
+    open: async (page) => {
+      await openShowcaseCreate(page);
+      const meta = page.getByRole('textbox', { name: 'Meta', exact: true });
+      await meta.fill('{"a":');
+      await meta.blur();
+      await expect(page.getByRole('alert')).toContainText('Invalid JSON');
+      await expect(meta).toHaveAttribute('aria-invalid', 'true');
+    },
+  },
+  {
     name: 'the detail page',
     open: async (page) => {
       await page.goto(`${BLOG_LIST}/blog-2`);
@@ -621,7 +702,10 @@ const DOCUMENT_SURFACES: { name: string; open: (page: Page) => Promise<void> }[]
         .getByRole('button', { name: 'Choose Cover image' })
         .click();
       const picker = page.getByRole('dialog', { name: 'Choose cover image' });
-      await expect(picker.getByRole('radio')).toHaveCount(1);
+      // AC-25: the ui RadioGroup, with a card selected.
+      await expect(picker.getByRole('radiogroup')).toBeVisible();
+      await picker.getByRole('radio', { name: 'cat.png' }).click();
+      await expect(picker.getByRole('radio', { name: 'cat.png' })).toBeChecked();
     },
   },
   {
@@ -687,7 +771,7 @@ test('keyboard walk on the list: toolbar, header checkbox, sort buttons, rows, p
   for (let n = 4; n <= 25; n += 1) mockContent.addDocument('blog', blogPost(n));
   await page.setViewportSize({ width: 1280, height: 812 });
   await page.goto(BLOG_LIST);
-  await expect(page.getByText('Showing 1–20 of 25')).toBeVisible();
+  await expect(page.getByText('Showing 1–10 of 25')).toBeVisible();
 
   const stops = await walkTabOrder(page, 300);
   const inMain = stops.filter((s) => s.inMain).map((s) => s.name);
@@ -706,9 +790,9 @@ test('keyboard walk on the list: toolbar, header checkbox, sort buttons, rows, p
     'Select Post 25',
     'Post 25',
     'Actions for Post 25',
-    'Select Post 6',
-    'Post 6',
-    'Actions for Post 6',
+    'Select Post 16',
+    'Post 16',
+    'Actions for Post 16',
     'Next page',
   ];
   expect(inMain.filter((n) => order.includes(n))).toEqual(order);

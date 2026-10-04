@@ -65,7 +65,9 @@ describe('PermissionTree (AC-23)', () => {
     render(<Harness />);
 
     const leaf = checkbox('role:read Read roles');
-    expect(leaf).toHaveAttribute('type', 'checkbox');
+    // The @repo/ui Checkbox (AC-11), named by its visible text through aria-labelledby.
+    expect(leaf).toHaveAttribute('data-slot', 'checkbox');
+    expect(leaf).toHaveAttribute('aria-labelledby');
     expect(leaf).toHaveAccessibleDescription('List roles.');
     expect(screen.getByText('role:read').tagName).toBe('CODE');
   });
@@ -95,9 +97,9 @@ describe('PermissionTree (AC-23)', () => {
   it('shows a partly selected group as indeterminate, and a group click selects all of it', async () => {
     const onChange = vi.fn();
     render(<Harness initial={['document:read:article']} onChange={onChange} />);
-    const documentBox = checkbox('document') as HTMLInputElement;
-    expect(documentBox.indeterminate).toBe(true);
-    expect(documentBox.checked).toBe(false);
+    const documentBox = checkbox('document');
+    expect(documentBox).toHaveAttribute('aria-checked', 'mixed');
+    expect(checkbox('Select all')).toHaveAttribute('aria-checked', 'mixed');
 
     await userEvent.click(documentBox);
 
@@ -106,7 +108,7 @@ describe('PermissionTree (AC-23)', () => {
       'document:read',
       'document:update:article',
     ]);
-    expect(documentBox.indeterminate).toBe(false);
+    expect(documentBox).toHaveAttribute('aria-checked', 'true');
     expect(documentBox).toBeChecked();
     expect(checkbox('article')).toBeChecked();
   });
@@ -190,6 +192,24 @@ describe('PermissionTree (AC-23)', () => {
     await userEvent.click(checkbox('Select all'));
 
     expect(onChange.mock.lastCall?.[0]).not.toContain('ghost:read');
+  });
+
+  it('gives every box an explicit name and toggles it from its visible text (AC-11)', async () => {
+    const onChange = vi.fn();
+    render(<Harness initial={['ghost:x']} onChange={onChange} />);
+
+    for (const box of screen.getAllByRole('checkbox')) {
+      expect(box).toHaveAttribute('data-slot', 'checkbox');
+      const labelIds = box.getAttribute('aria-labelledby') ?? '';
+      expect(labelIds).not.toBe('');
+      for (const labelId of labelIds.split(' ')) expect(document.getElementById(labelId)).not.toBeNull();
+    }
+    expect(checkbox('role')).toHaveAttribute('aria-checked', 'false');
+
+    await userEvent.click(screen.getByText('Read roles'));
+    expect(onChange).toHaveBeenLastCalledWith(['ghost:x', 'role:read']);
+    await userEvent.click(screen.getByText('Select all'));
+    expect(checkbox('Select all')).toBeChecked();
   });
 
   it('is operable with Tab and Space', async () => {

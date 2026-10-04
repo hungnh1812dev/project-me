@@ -1,4 +1,4 @@
-import { parseJson } from '@/utils/json';
+import { parseJson } from '@repo/ui/lib/json';
 
 import { readMediaValue } from './mediaValue';
 import { fieldKind } from './schema';

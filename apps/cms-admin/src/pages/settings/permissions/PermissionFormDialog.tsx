@@ -1,9 +1,8 @@
 import { useRef, useState } from 'react';
 import { InfoIcon } from 'lucide-react';
 
-import { Field } from '@/components/form/Field';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Button } from '@/components/ui/button';
+import { Alert, AlertDescription } from '@repo/ui/components/alert';
+import { Button } from '@repo/ui/components/button';
 import {
   Dialog,
   DialogClose,
@@ -12,9 +11,11 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
+} from '@repo/ui/components/dialog';
+import { Input } from '@repo/ui/components/input';
+import { Textarea } from '@repo/ui/components/textarea';
+import { Field } from '@repo/ui/form/Field';
+
 import { useCreatePermission, useUpdatePermission } from '@/features/settings/hooks/usePermissions';
 import type { Permission } from '@/features/settings/types';
 import {

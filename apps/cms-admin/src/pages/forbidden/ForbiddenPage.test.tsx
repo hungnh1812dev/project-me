@@ -23,7 +23,7 @@ describe('ForbiddenPage', () => {
     const main = screen.getByRole('main');
     expect(main).toHaveTextContent('hungnhdev CMS');
     expect(main.querySelector('[data-slot="card"]')).not.toBeNull();
-    expect(screen.getByRole('link', { name: 'Back to admin home' })).toHaveClass('text-primary');
+    expect(screen.getByRole('link', { name: 'Back to admin home' })).toHaveClass('text-primary-ink');
   });
 
   it('shows the reason passed by the guard', async () => {

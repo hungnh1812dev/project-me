@@ -11,12 +11,13 @@ import {
   DropdownMenuRadioItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { buttonVariants } from '@/components/ui/variants';
+} from '@repo/ui/components/dropdown-menu';
+import { buttonVariants } from '@repo/ui/components/variants';
+import { cn } from '@repo/ui/lib/cn';
+
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { isThemeChoice, type ThemeChoice } from '@/features/theme/theme';
 import { useTheme } from '@/features/theme/useTheme';
-import { cn } from '@/utils/cn';
 
 import { getInitials } from '../initials';
 
@@ -46,7 +47,7 @@ const UserMenu: React.FC = () => {
       >
         <span
           aria-hidden="true"
-          className="flex size-8 items-center justify-center rounded-full bg-primary text-xs font-semibold text-primary-foreground"
+          className="flex size-8 items-center justify-center rounded-full border border-primary-ink bg-primary text-xs font-semibold text-primary-foreground"
         >
           {getInitials(user?.name)}
         </span>

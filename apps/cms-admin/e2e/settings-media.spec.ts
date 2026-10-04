@@ -274,3 +274,68 @@ test('a thumbnail outside the allowlist is never requested and shows a placehold
   await expect(dialog.locator('img')).toHaveCount(0);
   expect(evilRequests).toEqual([]);
 });
+
+/** Adds `count` newer assets "file-01.png"…, so the newest ("file-<count>") comes first. */
+function seedMany(mockApi: MockApi, count: number) {
+  for (let i = 1; i <= count; i += 1) {
+    const n = String(i).padStart(2, '0');
+    mockApi.settings.addMedia(asset(`media-${n}`, `file-${n}.png`, `2026-02-${n}T00:00:00.000Z`));
+  }
+}
+
+const MEDIA_URL = '/admin/settings/media';
+
+test('the grid pages 10 cards, newest first, with the page in the URL: next, Back, size, deep link, clamp and search reset (Phase 6 AC-23 to AC-25)', async ({
+  page,
+  mockApi,
+}) => {
+  seed(mockApi);
+  seedMany(mockApi, 10);
+  await openMedia(page);
+  const pagination = page.getByRole('navigation', { name: 'Pagination' });
+
+  await expect(pagination.getByText('Showing 1–10 of 12')).toBeVisible();
+  await expect(grid(page).getByRole('listitem')).toHaveCount(10);
+  await expect(grid(page).getByRole('listitem').first()).toContainText('file-10.png');
+
+  await pagination.getByRole('button', { name: 'Next page' }).click();
+  await expect(page).toHaveURL(`${MEDIA_URL}?page=2`);
+  await expect(grid(page).getByRole('listitem')).toHaveCount(2);
+  await expect(card(page, DOG.fileName)).toBeVisible();
+  await expect(card(page, CAT.fileName)).toBeVisible();
+  await page.goBack();
+  await expect(page).toHaveURL(MEDIA_URL);
+  await expect(card(page, 'file-10.png')).toBeVisible();
+
+  const sizeSelect = pagination.getByRole('combobox', { name: 'Rows per page' });
+  await sizeSelect.click();
+  await page.getByRole('option', { name: '20', exact: true }).click();
+  await expect(page).toHaveURL(`${MEDIA_URL}?size=20`);
+  await expect(grid(page).getByRole('listitem')).toHaveCount(12);
+
+  await page.goto(`${MEDIA_URL}?page=3`);
+  await expect(page).toHaveURL(`${MEDIA_URL}?page=2`);
+  await expect(pagination.getByText('Showing 11–12 of 12')).toBeVisible();
+
+  await page.getByRole('searchbox', { name: 'Search files' }).fill('file-0');
+  await expect(page).toHaveURL(MEDIA_URL);
+  await expect(pagination.getByText('Showing 1–9 of 9')).toBeVisible();
+});
+
+test('deleting the only card on the last page moves to the new last page (Phase 6 AC-26)', async ({
+  page,
+  mockApi,
+}) => {
+  seed(mockApi);
+  seedMany(mockApi, 9);
+  await page.goto(`${MEDIA_URL}?page=2`);
+  const pagination = page.getByRole('navigation', { name: 'Pagination' });
+  await expect(pagination.getByText('Showing 11–11 of 11')).toBeVisible();
+
+  await page.getByRole('button', { name: 'Delete cat.png' }).click();
+  await page.getByRole('alertdialog').getByRole('button', { name: 'Delete file' }).click();
+
+  await expect(page).toHaveURL(MEDIA_URL);
+  await expect(pagination.getByText('Showing 1–10 of 10')).toBeVisible();
+  await expect(page.getByText('File "cat.png" deleted.')).toBeAttached();
+});
