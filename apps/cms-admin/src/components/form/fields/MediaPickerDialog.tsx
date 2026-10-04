@@ -11,6 +11,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@repo/ui/components/dialog';
+import { RadioGroup, RadioGroupItem } from '@repo/ui/components/radio-group';
 import { FileDropzone } from '@repo/ui/form/FileDropzone';
 
 import { useCan } from '@/features/auth/hooks/useCan';
@@ -37,8 +38,9 @@ export interface MediaPickerDialogProps {
 }
 
 /**
- * Picks an asset from the M1 list (AC-13): a search on the file name and a grid of native radio
- * options, so the arrow keys move the choice and Enter confirms it. Upload (gated by
+ * Picks an asset from the M1 list (AC-13): a search on the file name and a `RadioGroup` grid of
+ * cards, each a `RadioGroupItem` named by the file name, so the arrow keys move the choice and
+ * Enter confirms it. Upload (gated by
  * `upload media`) adds files, and a newly uploaded asset becomes the choice. Mount it with a fresh
  * `key` per opening.
  */
@@ -53,7 +55,7 @@ export const MediaPickerDialog: React.FC<MediaPickerDialogProps> = ({
   const uploads = useUploadMedia();
   const canUpload = useCan('upload', 'media');
   const queryClient = useQueryClient();
-  const groupName = useId();
+  const nameId = useId();
   const [search, setSearch] = useState('');
   const [choice, setChoice] = useState<string | null>(selectedId);
   const [summary, setSummary] = useState('');
@@ -126,39 +128,40 @@ export const MediaPickerDialog: React.FC<MediaPickerDialogProps> = ({
           visible={visible.length}
           search={search}
         >
-          <div
-            role="radiogroup"
+          <RadioGroup
             aria-label="Media files"
+            value={choice}
+            onValueChange={(value) => setChoice(value as string)}
             className="grid max-h-[45dvh] grid-cols-2 gap-3 overflow-y-auto p-1 sm:grid-cols-3 md:grid-cols-4"
           >
             {visible.map((asset) => (
               <label
                 key={asset.documentId}
-                className="flex min-w-0 cursor-pointer flex-col overflow-hidden rounded-lg border bg-card text-sm transition-colors hover:bg-accent has-checked:border-primary has-checked:ring-2 has-checked:ring-primary has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-ring"
+                className="relative flex min-w-0 cursor-pointer flex-col overflow-hidden rounded-lg border bg-card text-sm transition-colors hover:bg-accent has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-ring has-data-checked:border-primary has-data-checked:ring-2 has-data-checked:ring-primary"
               >
-                <input
-                  type="radio"
-                  name={groupName}
+                <RadioGroupItem
                   value={asset.documentId}
-                  aria-label={asset.fileName}
-                  checked={choice === asset.documentId}
-                  onChange={() => setChoice(asset.documentId)}
+                  aria-labelledby={`${nameId}-${asset.documentId}`}
                   onKeyDown={(event) => {
                     if (event.key !== 'Enter') return;
                     event.preventDefault();
                     confirm(asset);
                   }}
-                  className="sr-only"
+                  className="absolute top-2 left-2 z-10 bg-card after:hidden focus-visible:outline-none"
                 />
                 <span className="aspect-square overflow-hidden bg-muted" aria-hidden="true">
                   <MediaThumbnail asset={asset} width={160} height={160} loading="lazy" />
                 </span>
-                <span className="truncate px-2 py-1.5 font-medium" title={asset.fileName}>
+                <span
+                  id={`${nameId}-${asset.documentId}`}
+                  className="truncate px-2 py-1.5 font-medium"
+                  title={asset.fileName}
+                >
                   {asset.fileName}
                 </span>
               </label>
             ))}
-          </div>
+          </RadioGroup>
         </ListState>
         <DialogFooter>
           <DialogClose render={<Button variant="outline" />}>Cancel</DialogClose>

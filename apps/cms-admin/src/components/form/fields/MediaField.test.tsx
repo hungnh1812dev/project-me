@@ -274,6 +274,27 @@ describe('MediaPickerDialog (AC-13)', () => {
     expect(await save(view)).toEqual(DOG);
   });
 
+  it('renders each card as the ui RadioGroupItem named by the file name, and the card text selects it', async () => {
+    mockMedia();
+    const view = renderForm({ coverImage: CAT });
+
+    await view.user.click(screen.getByRole('button', { name: 'Choose Cover image' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Choose cover image' });
+    const group = await within(dialog).findByRole('radiogroup', { name: 'Media files' });
+    const cat = within(group).getByRole('radio', { name: 'cat.png' });
+    const dog = within(group).getByRole('radio', { name: 'dog.jpg' });
+
+    expect(group).toHaveAttribute('data-slot', 'radio-group');
+    expect(cat).toHaveAttribute('data-slot', 'radio-group-item');
+    expect(cat).toHaveAttribute('aria-checked', 'true');
+    expect(dog).toHaveAttribute('aria-checked', 'false');
+    expect(cat.closest('label')).toHaveClass('has-data-checked:ring-2');
+
+    await view.user.click(within(group).getByText('dog.jpg'));
+    expect(dog).toHaveAttribute('aria-checked', 'true');
+    expect(cat).toHaveAttribute('aria-checked', 'false');
+  });
+
   it('filters by file name, and Cancel keeps the value', async () => {
     mockMedia();
     const view = renderForm({ coverImage: CAT });
@@ -283,11 +304,8 @@ describe('MediaPickerDialog (AC-13)', () => {
     await within(dialog).findByRole('radiogroup', { name: 'Media files' });
     await view.user.type(within(dialog).getByRole('searchbox', { name: 'Search files' }), 'dog');
 
-    expect(
-      within(dialog)
-        .getAllByRole('radio')
-        .map((radio) => radio.getAttribute('aria-label')),
-    ).toEqual(['dog.jpg']);
+    expect(within(dialog).getAllByRole('radio')).toHaveLength(1);
+    expect(within(dialog).getByRole('radio', { name: 'dog.jpg' })).toBeInTheDocument();
     await view.user.click(within(dialog).getByRole('button', { name: 'Cancel' }));
 
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());

@@ -531,7 +531,7 @@ const cover = (page: Page) => page.getByRole('group', { name: 'Cover image', exa
 /** Presses Tab until a radio of the open picker has focus. */
 async function tabToRadios(page: Page) {
   for (let i = 0; i < 10; i += 1) {
-    if (await page.evaluate('document.activeElement?.getAttribute("type") === "radio"')) return;
+    if (await page.evaluate('document.activeElement?.getAttribute("role") === "radio"')) return;
     await page.keyboard.press('Tab');
   }
   throw new Error('No radio took focus');
@@ -552,7 +552,17 @@ test('media: picks an asset with only the keyboard and saves the full asset (AC-
   await tabToRadios(page);
   await expect(dialog.getByRole('radio', { name: 'dog.png' })).toBeFocused();
   await page.keyboard.press('ArrowRight');
-  await expect(dialog.getByRole('radio', { name: 'cat.png' })).toBeChecked();
+  const catRadio = dialog.getByRole('radio', { name: 'cat.png' });
+  await expect(catRadio).toBeChecked();
+  await expect(catRadio).toHaveAttribute('data-slot', 'radio-group-item');
+  // The checked card shows the ring; the other card does not.
+  const ring = (name: string) =>
+    dialog
+      .getByRole('radio', { name })
+      .locator('xpath=ancestor::label[1]')
+      .evaluate((el) => el.ownerDocument.defaultView!.getComputedStyle(el).boxShadow);
+  expect(await ring('cat.png')).not.toBe('none');
+  expect(await ring('dog.png')).toBe('none');
   await page.keyboard.press('Enter');
 
   await expect(dialog).toHaveCount(0);
