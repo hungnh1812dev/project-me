@@ -398,7 +398,15 @@ const SETTINGS_DIALOGS: {
     heading: 'Roles',
     open: async (page) => {
       await page.getByRole('button', { name: 'New role' }).click();
-      return page.getByRole('dialog', { name: 'New role' });
+      const dialog = page.getByRole('dialog', { name: 'New role' });
+      // AC-25: the ui Checkbox tree, with one checked box and its group in the mixed state.
+      const tree = dialog.getByRole('group', { name: 'Permissions' });
+      await tree.getByRole('checkbox', { name: 'media:manager' }).check();
+      await expect(tree.getByRole('checkbox', { name: 'media', exact: true })).toHaveAttribute(
+        'aria-checked',
+        'mixed',
+      );
+      return dialog;
     },
   },
   {
@@ -653,6 +661,31 @@ const DOCUMENT_SURFACES: { name: string; open: (page: Page) => Promise<void> }[]
   },
   { name: 'the create page with every field type', open: openShowcaseCreate },
   {
+    // AC-25: axe reaches into the JSON editor's open shadow root, valid and with a parse error.
+    name: 'the document editor with a JSON field',
+    open: async (page) => {
+      await openShowcaseCreate(page);
+      const meta = page.getByRole('textbox', { name: 'Meta', exact: true });
+      await expect(meta).toBeVisible();
+      await expect(
+        page.locator('[data-slot="field"]', { has: meta }).getByRole('button', {
+          name: 'Format JSON',
+        }),
+      ).toBeVisible();
+    },
+  },
+  {
+    name: 'the document editor with an invalid JSON field',
+    open: async (page) => {
+      await openShowcaseCreate(page);
+      const meta = page.getByRole('textbox', { name: 'Meta', exact: true });
+      await meta.fill('{"a":');
+      await meta.blur();
+      await expect(page.getByRole('alert')).toContainText('Invalid JSON');
+      await expect(meta).toHaveAttribute('aria-invalid', 'true');
+    },
+  },
+  {
     name: 'the detail page',
     open: async (page) => {
       await page.goto(`${BLOG_LIST}/blog-2`);
@@ -669,7 +702,10 @@ const DOCUMENT_SURFACES: { name: string; open: (page: Page) => Promise<void> }[]
         .getByRole('button', { name: 'Choose Cover image' })
         .click();
       const picker = page.getByRole('dialog', { name: 'Choose cover image' });
-      await expect(picker.getByRole('radio')).toHaveCount(1);
+      // AC-25: the ui RadioGroup, with a card selected.
+      await expect(picker.getByRole('radiogroup')).toBeVisible();
+      await picker.getByRole('radio', { name: 'cat.png' }).click();
+      await expect(picker.getByRole('radio', { name: 'cat.png' })).toBeChecked();
     },
   },
   {

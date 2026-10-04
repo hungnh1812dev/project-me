@@ -356,7 +356,7 @@ const hitArea = (locator: Locator) =>
 test('checkboxes show checked, mixed and disabled states and keep a 44px hit area (AC-14)', async ({
   page,
 }) => {
-  await page.setViewportSize({ width: 390, height: 844 });
+  await page.setViewportSize({ width: 375, height: 812 });
   const subscribe = page.getByRole('checkbox', { name: 'Subscribe' });
   await expect(subscribe).toHaveAttribute('aria-checked', 'false');
   await subscribe.focus();
@@ -382,7 +382,7 @@ test('checkboxes show checked, mixed and disabled states and keep a 44px hit are
 test('a radio group moves the selection with arrow keys and keeps a 44px hit area (AC-14)', async ({
   page,
 }) => {
-  await page.setViewportSize({ width: 390, height: 844 });
+  await page.setViewportSize({ width: 375, height: 812 });
   const group = page.getByRole('radiogroup', { name: 'Density' });
   const comfortable = group.getByRole('radio', { name: 'Comfortable' });
   const compact = group.getByRole('radio', { name: 'Compact' });
