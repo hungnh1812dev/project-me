@@ -1,3 +1,5 @@
+import type { Locator } from '@playwright/test';
+
 import { BLOG, blogPost, HOMEPAGE, seedContent } from './fixtures/contentFixtures.ts';
 import { expect, ROLES, test, type MockApi } from './fixtures/mockApi.ts';
 import type { MockContent } from './fixtures/mockContent.ts';
@@ -115,6 +117,55 @@ test('the sort is read from the URL and sent with wire names (AC-20, AC-41)', as
   const rows = page.getByRole('table', { name: 'Blog post entries' }).getByRole('row');
   await expect(rows.nth(1)).toContainText('Post 1');
   expect(listQueries(mockApi)).toEqual(['?size=10&orderBy=created_at&sortDir=asc']);
+});
+
+/** The ::after hit areas (box plus negative inset) of every checkbox, top to bottom. */
+type StyleOf = (el: unknown, pseudo: string) => Record<'left' | 'right' | 'top' | 'bottom', string>;
+const hitAreas = (boxes: Locator) =>
+  boxes.evaluateAll((els) =>
+    els.map((el) => {
+      const box = el.getBoundingClientRect();
+      const after = (globalThis as unknown as { getComputedStyle: StyleOf }).getComputedStyle(
+        el,
+        '::after',
+      );
+      const top = box.top + parseFloat(after.top);
+      const bottom = box.bottom - parseFloat(after.bottom);
+      return { top, bottom, width: box.width - parseFloat(after.left) - parseFloat(after.right) };
+    }),
+  );
+
+test('the selection boxes are named Checkboxes, the header goes mixed and hit areas never overlap (AC-12, AC-14)', async ({
+  page,
+  mockApi,
+  mockContent,
+}) => {
+  seedContent(mockContent);
+  signedInAs(mockApi);
+  const table = page.getByRole('table', { name: 'Blog post entries' });
+  const all = table.getByRole('checkbox', { name: 'Select all entries on this page' });
+  const boxes = table.locator('[data-slot="checkbox"]');
+
+  for (const width of [390, 1280]) {
+    await page.setViewportSize({ width, height: 844 });
+    await page.goto(URL);
+    await table.getByRole('checkbox', { name: 'Select Post 2' }).check();
+    await expect(all).toHaveAttribute('aria-checked', 'mixed');
+
+    const areas = await hitAreas(boxes);
+    expect(areas.length).toBeGreaterThan(2);
+    for (const [index, area] of areas.entries()) {
+      if (width < 1024) {
+        expect(area.width).toBeGreaterThanOrEqual(44);
+        expect(area.bottom - area.top).toBeGreaterThanOrEqual(44);
+      }
+      if (index > 0) expect(area.top).toBeGreaterThanOrEqual(areas[index - 1]!.bottom);
+    }
+  }
+
+  await all.click();
+  await expect(all).toHaveAttribute('aria-checked', 'true');
+  await expect(table.getByRole('checkbox', { checked: false })).toHaveCount(0);
 });
 
 test('clicking sortable headers sorts, writes the URL and clears the selection (AC-20)', async ({

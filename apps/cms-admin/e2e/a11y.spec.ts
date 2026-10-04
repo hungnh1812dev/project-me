@@ -163,7 +163,9 @@ async function walkTabOrder(page: Page, cap = 120): Promise<TabStop[]> {
         : region
           ? region.tagName === 'DIV' ? 'nav' : region.tagName.toLowerCase()
           : 'other';
-      const name = (el.getAttribute('aria-label') || el.labels?.[0]?.textContent || el.textContent || el.getAttribute('name') || el.tagName)
+      const labelledBy = (el.getAttribute('aria-labelledby') || '').split(' ')
+        .map((id) => document.getElementById(id)?.textContent || '').join(' ').trim();
+      const name = (el.getAttribute('aria-label') || labelledBy || el.labels?.[0]?.textContent || el.textContent || el.getAttribute('name') || el.tagName)
         .trim().replace(/\\s+/g, ' ').slice(0, 40);
       const rect = el.getBoundingClientRect();
       if (!el.dataset.tabWalk) el.dataset.tabWalk = String(${i});
