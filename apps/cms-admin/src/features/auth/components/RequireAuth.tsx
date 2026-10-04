@@ -35,7 +35,7 @@ const RequireAuth: React.FC = () => {
   }
   return (
     <div role="status" className={FULL_SCREEN}>
-      <Loader2Icon aria-hidden="true" className="size-6 animate-spin text-primary" />
+      <Loader2Icon aria-hidden="true" className="size-6 animate-spin text-primary-ink" />
       Connecting…
     </div>
   );

@@ -15,7 +15,7 @@ export interface DeletePermissionDialogProps {
   onDeleted: (message: string) => void;
 }
 
-const LINK = 'font-medium text-primary underline underline-offset-4';
+const LINK = 'font-medium text-primary-ink underline underline-offset-4';
 
 /**
  * Confirms deleting one permission, naming the slug (AC-7). Sends P4. On a 409 it switches to the

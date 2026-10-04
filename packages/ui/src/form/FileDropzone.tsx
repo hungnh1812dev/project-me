@@ -51,7 +51,7 @@ const STATUS: Record<FileStatusItem['status'], { label: string; icon: React.Reac
   },
   uploaded: {
     label: 'Uploaded',
-    icon: <CheckCircle2Icon aria-hidden="true" className="text-primary size-4" />,
+    icon: <CheckCircle2Icon aria-hidden="true" className="text-primary-ink size-4" />,
   },
   failed: {
     label: 'Failed',

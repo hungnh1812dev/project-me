@@ -131,7 +131,7 @@ const Cell: React.FC<CellProps> = ({ item, column, href, label }) => {
         <Link
           to={href}
           title={text}
-          className="block max-w-64 truncate font-medium text-primary underline-offset-4 hover:underline"
+          className="block max-w-64 truncate font-medium text-primary-ink underline-offset-4 hover:underline"
         >
           {text}
         </Link>

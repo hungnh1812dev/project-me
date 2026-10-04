@@ -77,18 +77,21 @@ test('fonts are self-hosted: no request goes to a font CDN', async ({ page }) =>
   await expect(page.locator('body')).toHaveCSS('font-family', /Fira Sans/);
 });
 
-for (const { choice, background, foreground, primary } of [
+// Expected values come from the SPEC colour table (stone and gold palette).
+for (const { choice, background, foreground, primary, primaryInk } of [
   {
     choice: 'light',
-    background: 'rgb(255, 255, 255)',
-    foreground: 'rgb(2, 6, 23)',
-    primary: 'rgb(124, 58, 237)',
+    background: 'rgb(250, 250, 249)', // #FAFAF9
+    foreground: 'rgb(43, 43, 43)', // #2B2B2B
+    primary: 'rgb(212, 175, 55)', // #D4AF37
+    primaryInk: 'rgb(122, 92, 20)', // #7A5C14
   },
   {
     choice: 'dark',
-    background: 'rgb(2, 6, 23)',
-    foreground: 'rgb(248, 250, 252)',
-    primary: 'rgb(167, 139, 250)',
+    background: 'rgb(28, 26, 23)', // #1C1A17
+    foreground: 'rgb(245, 245, 244)', // #F5F5F4
+    primary: 'rgb(212, 175, 55)', // #D4AF37
+    primaryInk: 'rgb(224, 192, 104)', // #E0C068
   },
 ]) {
   test(`the shared @repo/ui theme tokens reach the page in the ${choice} theme`, async ({
@@ -103,12 +106,14 @@ for (const { choice, background, foreground, primary } of [
     await expect(page.locator('body')).toHaveCSS('color', foreground);
     // The auth page's submit button uses the default (primary) variant.
     await expect(page.locator('button[type="submit"]')).toHaveCSS('background-color', primary);
+    await expect(page.locator('button[type="submit"]')).toHaveCSS('border-top-color', primaryInk);
   });
 }
 
 for (const { choice, primary, highlight } of [
-  { choice: 'light', primary: 'rgb(124, 58, 237)', highlight: 'rgb(194, 65, 12)' },
-  { choice: 'dark', primary: 'rgb(167, 139, 250)', highlight: 'rgb(251, 146, 60)' },
+  // SPEC colour table: primary #D4AF37 in both themes, highlight #7A5C14 / #E0C068.
+  { choice: 'light', primary: 'rgb(212, 175, 55)', highlight: 'rgb(122, 92, 20)' },
+  { choice: 'dark', primary: 'rgb(212, 175, 55)', highlight: 'rgb(224, 192, 104)' },
 ]) {
   test(`the UI kit shows the primary and highlight swatches and the highlight badge (${choice}, AC-14)`, async ({
     page,

@@ -80,7 +80,7 @@
       @apply border-l-2 border-border pl-4 text-muted-foreground;
     }
     a {
-      @apply text-primary underline underline-offset-4;
+      @apply text-primary-ink underline underline-offset-4;
     }
     code {
       @apply rounded bg-muted px-1 py-0.5 font-mono text-sm;

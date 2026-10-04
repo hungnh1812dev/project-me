@@ -270,8 +270,9 @@ test.describe('side menu', () => {
   });
 
   for (const { theme, highlight } of [
-    { theme: 'light', highlight: 'rgb(194, 65, 12)' },
-    { theme: 'dark', highlight: 'rgb(251, 146, 60)' },
+    // SPEC colour table: highlight is the deep gold #7A5C14 (light) / #E0C068 (dark).
+    { theme: 'light', highlight: 'rgb(122, 92, 20)' },
+    { theme: 'dark', highlight: 'rgb(224, 192, 104)' },
   ]) {
     test(`only the active link shows the highlight indicator (${theme}, AC-14)`, async ({
       page,
