@@ -65,7 +65,7 @@ describe('Checkbox', () => {
     expect(box.querySelector('[data-slot="checkbox-indicator"] svg')).toHaveClass('lucide-check');
   });
 
-  it('pairs the gold fill with a primary-ink border when checked or mixed', () => {
+  it('pairs the primary fill with a primary-ink border when checked or mixed', () => {
     render(<Checkbox aria-label="Done" />);
 
     expect(screen.getByRole('checkbox', { name: 'Done' })).toHaveClass(

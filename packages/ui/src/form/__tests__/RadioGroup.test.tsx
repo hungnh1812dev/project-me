@@ -76,7 +76,7 @@ describe('RadioGroup', () => {
     expect(screen.getByRole('radio', { name: 'a.png' })).toHaveAttribute('aria-checked', 'false');
   });
 
-  it('pairs the gold fill with a primary-ink border and widens the hit area to 44px', () => {
+  it('pairs the primary fill with a primary-ink border and widens the hit area to 44px', () => {
     render(<Files />);
 
     expect(screen.getByRole('radio', { name: 'a.png' })).toHaveClass(

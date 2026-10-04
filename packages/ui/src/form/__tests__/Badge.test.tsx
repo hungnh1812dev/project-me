@@ -31,7 +31,7 @@ describe('Badge', () => {
     );
   });
 
-  it('colours the link variant with primary-ink, not the gold primary', () => {
+  it('colours the link variant with primary-ink, not the primary fill colour', () => {
     render(<Badge variant="link">More</Badge>);
 
     expect(screen.getByText('More')).toHaveClass('text-primary-ink');

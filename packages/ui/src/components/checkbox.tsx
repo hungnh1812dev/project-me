@@ -9,7 +9,7 @@ type CheckboxProps = CheckboxPrimitive.Root.Props;
 
 /**
  * Base UI Checkbox (`role="checkbox"`). `indeterminate` shows a dash and sets `aria-checked="mixed"`.
- * The gold fill is always paired with a `primary-ink` border (checked or mixed), and the ::after
+ * The primary fill is always paired with a `primary-ink` border (checked or mixed), and the ::after
  * pseudo-element widens the 16px box to a 44px hit area without changing the layout.
  */
 const Checkbox: React.FC<CheckboxProps> = ({ className, ...props }) => (

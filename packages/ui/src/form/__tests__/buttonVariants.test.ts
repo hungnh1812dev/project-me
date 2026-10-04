@@ -8,7 +8,7 @@ const classesOf = (variant: Parameters<typeof buttonVariants>[0]): string[] =>
   cn(buttonVariants(variant)).split(/\s+/);
 
 describe('buttonVariants roles', () => {
-  it('renders the action (default) button as a gold fill with a primary-ink border (AC-6)', () => {
+  it('renders the action (default) button as a primary fill with a primary-ink border (AC-6)', () => {
     const classes = classesOf({ variant: 'default' });
 
     expect(classes).toEqual(
@@ -37,7 +37,7 @@ describe('buttonVariants roles', () => {
     );
   });
 
-  it('colours the link variant with primary-ink, not the gold primary (AC-7)', () => {
+  it('colours the link variant with primary-ink, not the primary fill colour (AC-7)', () => {
     const classes = classesOf({ variant: 'link' });
 
     expect(classes).toContain('text-primary-ink');

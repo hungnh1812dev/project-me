@@ -19,7 +19,7 @@ RadioGroup.displayName = 'RadioGroup';
 type RadioGroupItemProps = RadioPrimitive.Root.Props;
 
 /**
- * Base UI Radio (`role="radio"`). The gold fill is paired with a `primary-ink` border, and the
+ * Base UI Radio (`role="radio"`). The primary fill is paired with a `primary-ink` border, and the
  * ::after pseudo-element widens the 16px circle to a 44px hit area without changing the layout.
  */
 const RadioGroupItem: React.FC<RadioGroupItemProps> = ({ className, ...props }) => (

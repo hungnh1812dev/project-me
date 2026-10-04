@@ -4,17 +4,17 @@ import { join, relative, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 /**
- * Gold is never used as text: `#D4AF37` is only about 2:1 against the page, so links, text and
- * icons use the deep-gold `primary-ink` token instead (SPEC Design, WCAG 4.5:1 text / 3:1
- * graphics). Flags `text-primary` / `text-sidebar-primary` (and the `fill-` / `stroke-` /
+ * AC-5: primary is never used as text. The dark `primary` (`#4945FF`) is only 2.99:1 against the
+ * page, below the 4.5:1 text minimum, so links, text and icons use the `primary-ink` token instead
+ * (SPEC Design, WCAG 4.5:1 text / 3:1 graphics). Flags `text-primary` / `text-sidebar-primary` (and the `fill-` / `stroke-` /
  * `decoration-` forms, with or without a variant or `/NN`), but not the `-foreground` or `-ink`
  * tokens. Scans `.tsx`, `.ts` and `.css` in `packages/ui/src` and `apps/cms-admin/src`, tests
  * excluded.
  */
-const GOLD_TEXT = /(?<![\w-])(?:text|fill|stroke|decoration)-(?:sidebar-)?primary(?![\w-])/g;
+const PRIMARY_TEXT = /(?<![\w-])(?:text|fill|stroke|decoration)-(?:sidebar-)?primary(?![\w-])/g;
 
-const goldTextViolations = (source: string): string[] =>
-  [...source.matchAll(GOLD_TEXT)].map((m) => m[0]);
+const primaryTextViolations = (source: string): string[] =>
+  [...source.matchAll(PRIMARY_TEXT)].map((m) => m[0]);
 
 const isTest = (name: string): boolean => /\.(test|spec)\.tsx?$/.test(name);
 
@@ -30,11 +30,11 @@ const UI_SRC = import.meta.dirname;
 const REPO = resolve(UI_SRC, '../../..');
 const ADMIN_SRC = join(REPO, 'apps/cms-admin/src');
 
-describe('goldTextViolations', () => {
-  it('flags gold text, icon and underline classes, with a variant or opacity', () => {
+describe('primaryTextViolations', () => {
+  it('flags primary text, icon and underline classes, with a variant or opacity', () => {
     const source = `'text-primary', "hover:text-sidebar-primary", @apply text-primary/80 fill-primary stroke-primary decoration-primary;`;
 
-    expect(goldTextViolations(source)).toEqual([
+    expect(primaryTextViolations(source)).toEqual([
       'text-primary',
       'text-sidebar-primary',
       'text-primary',
@@ -47,11 +47,11 @@ describe('goldTextViolations', () => {
   it('allows the ink and foreground tokens', () => {
     const source = `'text-primary-ink text-primary-foreground text-sidebar-primary-foreground decoration-primary-ink'`;
 
-    expect(goldTextViolations(source)).toEqual([]);
+    expect(primaryTextViolations(source)).toEqual([]);
   });
 });
 
-describe('gold is never used as text', () => {
+describe('primary is never used as text (AC-5)', () => {
   const files = [...listSources(UI_SRC), ...listSources(ADMIN_SRC)];
 
   it('scans the admin globals and the documents table', () => {
@@ -62,6 +62,6 @@ describe('gold is never used as text', () => {
   });
 
   it.each(files.map((file) => [relative(REPO, file), file]))('%s', (_name, file) => {
-    expect(goldTextViolations(readFileSync(file, 'utf8'))).toEqual([]);
+    expect(primaryTextViolations(readFileSync(file, 'utf8'))).toEqual([]);
   });
 });
