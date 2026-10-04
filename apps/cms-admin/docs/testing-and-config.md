@@ -149,6 +149,7 @@ Production builds set `VITE_API_URL`, and the backend's `CORS_ORIGINS` must incl
 | `src/test/renderWithProviders.tsx` | Exports `renderWithProviders`, `renderHookWithProviders`, `renderRoutes`, `createProviders`, `ProviderOptions`. Fresh store, client and router per test. |
 | `src/test/fixtures.ts`        | Exports `makeRole`, `makeMeUser`, `makeUser`, `makePermission`, `makeAccessToken`, `makeAccessTokenSecret`, `makeMediaAsset`. |
 | `e2e/fixtures/mockApi.ts`     | The `test`/`expect` every spec imports: routes `/api/v1/**` to the in-memory backends and records requests. Auth behaviour is in [Routing and guards](./routing-and-guards.md). |
+| `e2e/fixtures/jsonEditor.ts`   | Exports `editorText`: reads the text of a CodeMirror content locator inside the JSON editor shadow root, for e2e specs. |
 
 ## Testing
 

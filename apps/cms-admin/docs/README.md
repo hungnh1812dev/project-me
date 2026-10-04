@@ -12,7 +12,7 @@ The admin single-page app (React, Vite) for managing content types, documents, u
 | [Routing and guards](./routing-and-guards.md) | Route table, `RequireAuth`, `RequireAccess`, login, home and 403 pages, e2e auth mock |
 | [Onboarding and recovery](./onboarding-and-recovery.md) | First-run redirect, register, verify OTP, forgot and reset password |
 | [Profile](./profile.md) | Own profile, inline name editing, log out |
-| [Design system](./design-system.md) | Styling stack, tokens and palette, `@repo/ui` usage, global CSS, UI kit page |
+| [Design system](./design-system.md) | Styling stack, tokens and palette, button roles, JSON editor, `@repo/ui` usage (see also the [@repo/ui docs](../../../packages/ui/docs/README.md)), global CSS, UI kit page |
 | [Theme](./theme.md) | Light, dark and system theme, pre-paint script, `ThemeProvider` |
 | [App shell](./app-shell.md) | Shell layout, nav model, breadcrumbs, responsive menu, storage keys, `AuthLayout` |
 | [Content data](./content-data.md) | Content-type and document hooks, list query, `contentKeys`, invalidation, per-slug ABAC, content test doubles |
