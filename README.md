@@ -2,13 +2,13 @@
 
 Personal website, a pnpm + Turborepo monorepo:
 
-| App | What | Stack |
-|---|---|---|
-| [`apps/frontend`](apps/frontend) | Public site + BFF | Next.js 16 |
-| [`apps/cms-admin`](apps/cms-admin) | Admin portal | React 19 + Vite 8, served by nginx |
-| [`apps/cms-api`](apps/cms-api) | Backend API | NestJS 12 |
+| App                                | What              | Stack                              |
+| ---------------------------------- | ----------------- | ---------------------------------- |
+| [`apps/frontend`](apps/frontend)   | Public site + BFF | Next.js 16                         |
+| [`apps/cms-admin`](apps/cms-admin) | Admin portal      | React 19 + Vite 8, served by nginx |
+| [`apps/cms-api`](apps/cms-api)     | Backend API       | NestJS 12                          |
 
-Shared code lives in [`packages/`](packages) (`@repo/types`, `@repo/ui`, `@repo/eslint-config`, `@repo/typescript-config`).
+Shared code lives in [`packages/`](packages) (`@repo/types`, `@repo/ui`, `@repo/eslint-config`, `@repo/typescript-config`). `@repo/ui` holds the shared React components and Tailwind theme; `cms-admin` and `frontend` depend on it.
 
 ## Requirements
 
@@ -32,10 +32,15 @@ All run from the repo root through Turborepo:
 pnpm build                           # build all apps
 pnpm lint                            # lint all apps
 pnpm turbo run typecheck             # typecheck all apps
-pnpm test                            # cms-api unit tests
+pnpm test                            # cms-api, cms-admin and @repo/ui unit tests
+pnpm --filter @repo/ui test:cov      # @repo/ui unit tests with coverage gates
 pnpm --filter cms-api test:e2e       # cms-api e2e tests
+pnpm --filter cms-admin test:cov     # cms-admin unit tests with coverage gates
+pnpm --filter cms-admin test:e2e     # cms-admin Playwright tests (mocked API)
 pnpm turbo run build --filter=frontend   # one app only
 ```
+
+Before the first cms-admin e2e run, install the browser once: `pnpm --filter cms-admin exec playwright install chromium`.
 
 ## Docker
 

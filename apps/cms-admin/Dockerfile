@@ -24,6 +24,9 @@ RUN --mount=type=cache,id=turbo-cms-admin,target=/app/.turbo/cache \
 
 # Serve static files with nginx
 FROM nginx:alpine AS runner
-COPY apps/cms-admin/nginx.conf /etc/nginx/conf.d/default.conf
+# nginx.conf is an envsubst template: the image renders it to /etc/nginx/conf.d/default.conf
+# at start-up. Empty defaults give a valid self-only CSP instead of a literal ${...}.
+ENV CSP_API_ORIGIN="" CSP_IMG_ORIGINS=""
+COPY apps/cms-admin/nginx.conf /etc/nginx/templates/default.conf.template
 COPY --from=builder /app/apps/cms-admin/dist /usr/share/nginx/html
 EXPOSE 80

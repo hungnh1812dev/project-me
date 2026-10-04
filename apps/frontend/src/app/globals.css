@@ -1,8 +1,15 @@
-@import "tailwindcss";
+@import 'tailwindcss';
+@import '@repo/ui/styles/theme.css';
+
+/* Scan the shared package too: its classes live outside this app's root. */
+@source '../../../../packages/ui/src';
 
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  /* Pinned to the pre-restyle shared values so the focus outline and default border stay put. */
+  --ring: #7c3aed;
+  --border: #e2e8f0;
 }
 
 @theme inline {

@@ -12,17 +12,17 @@ changes ──> checks ──> build ──> image ──> manifest ──> depl
 
 ## What runs where
 
-| Event | Jobs |
-|---|---|
+| Event                                            | Jobs                     |
+| ------------------------------------------------ | ------------------------ |
 | Pull request into `develop`, `staging` or `main` | changes → checks → build |
-| Push to `develop` | changes → checks → build |
-| Push to `staging` or `main` | the full pipeline |
+| Push to `develop`                                | changes → checks → build |
+| Push to `staging` or `main`                      | the full pipeline        |
 
-| Branch | Image platform | Build runner | GitHub Environment | Deployment repo branch |
-|---|---|---|---|---|
-| `develop` | — (no image) | — | — | — |
-| `staging` | `linux/arm64` (Ubuntu VM on Apple M1) | `ubuntu-24.04-arm` | `staging` | `staging` |
-| `main` | `linux/amd64` (Ubuntu on Intel) | `ubuntu-latest` | `production` | `main` |
+| Branch    | Image platform                        | Build runner       | GitHub Environment | Deployment repo branch |
+| --------- | ------------------------------------- | ------------------ | ------------------ | ---------------------- |
+| `develop` | — (no image)                          | —                  | —                  | —                      |
+| `staging` | `linux/arm64` (Ubuntu VM on Apple M1) | `ubuntu-24.04-arm` | `staging`          | `staging`              |
+| `main`    | `linux/amd64` (Ubuntu on Intel)       | `ubuntu-latest`    | `production`       | `main`                 |
 
 This mapping lives in one place: the `case` block in the `Resolve deploy target` step of the `changes` job. A push to any other branch doesn't trigger the workflow.
 
@@ -31,6 +31,7 @@ If no app is affected, every job after `changes` is skipped and the run is green
 ## Jobs
 
 **`changes`**
+
 - **Affected apps:** runs `turbo query affected` between the push's `before` commit (or the PR base) and the head. turbo runs through `npx` at the pinned `TURBO_VERSION`, with no `pnpm install`.
 - **Fallback:** a new branch or a force push has no usable base commit, so it builds all apps.
 - **Outputs:** `apps`, `any`, `publish`, `tag`, `branch`, `matrix`, `environment` and `deploy_ref`.
@@ -40,6 +41,7 @@ If no app is affected, every job after `changes` is skipped and the run is green
 **`build`:** `pnpm turbo run build --filter=<each affected app>`. This is the normal Node/Vite/Next build, and it catches breakage before Docker.
 
 **`image`**
+
 - Runs once per app × platform, on a native runner, so there's no QEMU emulation.
 - Builds `apps/<app>/Dockerfile` and pushes it to GHCR **untagged, by digest**, with a GitHub Actions layer cache per app and arch.
 - Hands the digest to `manifest` as a small artifact.
@@ -47,8 +49,9 @@ If no app is affected, every job after `changes` is skipped and the run is green
 **`manifest`:** once per app, it combines the digests into one image and tags it `<branch>-<sha7>` and `<branch>`.
 
 **`deploy`**
+
 - Checks out the deployment repo at the mapped branch.
-- Checks that every affected `<app>-sync.yaml` exists and has an `APP_IMAGE_TAG` key. It checks all of them before editing any, so a bad file never leaves a half-applied bump.
+- Checks that every affected `cluster/me/<staging|prod>/<app>-sync-overlay.yaml` exists and has an `APP_IMAGE_TAG` key. It checks all of them before editing any, so a bad file never leaves a half-applied bump.
 - Rewrites that key, makes one commit and pushes it.
 - If another push landed first, it rebases and retries, up to 3 times.
 - Runs one deploy at a time per Environment, and is never cancelled mid-way.
@@ -66,7 +69,7 @@ ghcr.io/hungnh1812dev/project-me/<app>:<branch>          # moving tag, convenien
 - **Deployment repo edit:** the bump changes exactly one line in each affected file, and the value is always quoted:
 
 ```yaml
-      APP_IMAGE_TAG: "staging-a1b2c3d"
+APP_IMAGE_TAG: 'staging-a1b2c3d'
 ```
 
 If a file already has that tag, nothing is committed and the job still succeeds. A trailing `# comment` on the `APP_IMAGE_TAG` line is dropped.
@@ -75,13 +78,13 @@ If a file already has that tag, nothing is committed and the job still succeeds.
 
 This is turbo's own change detection, measured on this repo:
 
-| Changed | Apps rebuilt |
-|---|---|
-| `apps/<app>/**` (including its Dockerfile) | that app |
-| `turbo.json` | all |
-| `packages/*` | apps that depend on the package (none yet) |
-| `pnpm-lock.yaml` | only apps whose resolved dependencies changed |
-| `README.md`, `docs/**`, `.nvmrc`, **`.github/workflows/ci.yml`** | none |
+| Changed                                                          | Apps rebuilt                                  |
+| ---------------------------------------------------------------- | --------------------------------------------- |
+| `apps/<app>/**` (including its Dockerfile)                       | that app                                      |
+| `turbo.json`                                                     | all                                           |
+| `packages/*`                                                     | apps that depend on the package (none yet)    |
+| `pnpm-lock.yaml`                                                 | only apps whose resolved dependencies changed |
+| `README.md`, `docs/**`, `.nvmrc`, **`.github/workflows/ci.yml`** | none                                          |
 
 A commit that only edits the workflow runs nothing after `changes`. To exercise a workflow change, include a change to an app, or touch `turbo.json`.
 
@@ -89,19 +92,19 @@ A commit that only edits the workflow runs nothing after `changes`. To exercise 
 
 In the GitHub repo, go to **Settings → Secrets and variables → Actions** and **Settings → Environments**:
 
-| Name | Kind | Scope | Value |
-|---|---|---|---|
-| `DEPLOYMENT_REPO` | variable | repository | `owner/repo` of the GitOps repo |
-| `DEPLOYMENT_REPO_TOKEN` | secret | repository | fine-grained PAT: **only** the deployment repo, **Contents: read and write** |
-| `DEPLOYMENT_CLUSTER_PATH` | variable | Environment `staging` | path to the cluster folder on the deployment repo's `staging` branch |
-| `DEPLOYMENT_CLUSTER_PATH` | variable | Environment `production` | path to the cluster folder on the deployment repo's `main` branch |
+| Name                    | Kind     | Scope      | Value                                                                        |
+| ----------------------- | -------- | ---------- | ---------------------------------------------------------------------------- |
+| `DEPLOYMENT_REPO`       | variable | repository | `owner/repo` of the GitOps repo                                              |
+| `DEPLOYMENT_REPO_TOKEN` | secret   | repository | fine-grained PAT: **only** the deployment repo, **Contents: read and write** |
 
 **In the deployment repo:**
+
 - **Branches:** `staging` and `main` must exist.
-- **Files:** under each branch's cluster path, `cms-api-sync.yaml`, `cms-admin-sync.yaml` and `frontend-sync.yaml` each need an `APP_IMAGE_TAG:` line.
+- **Files:** `cms-api-sync-overlay.yaml`, `cms-admin-sync-overlay.yaml` and `frontend-sync-overlay.yaml` each need an `APP_IMAGE_TAG:` line, under `cluster/me/staging/` on the `staging` branch and `cluster/me/prod/` on the `main` branch. The folders are set in the branch mapping `case` in `ci.yml`.
 - **Branch protection:** if a branch is protected, the token must be allowed to push to it.
 
 **GHCR:**
+
 - **Access:** packages are created on the first push and are **private** by default. Give the cluster an image pull secret, or make each package public.
 - **Repository link:** pushes made with `GITHUB_TOKEN` link the package to this repo automatically.
 
@@ -119,15 +122,14 @@ When editing `ci.yml`, keep shell steps compatible with bash 3.2 as well as 5, e
 
 ## Troubleshooting
 
-| Symptom | Cause / fix |
-|---|---|
-| `changes` fails with `No deploy target for branch` | The workflow was triggered for a branch missing from the mapping `case`. Add it there. |
-| `deploy` fails with `DEPLOYMENT_CLUSTER_PATH is not set` | The Environment (`staging` / `production`) is missing the variable. |
-| `deploy` fails with `<path>/<app>-sync.yaml not found` or `APP_IMAGE_TAG not found` | Wrong cluster path, or the file lacks the key. Nothing was committed. |
-| `deploy` fails on push (403) | The token lacks Contents write on the deployment repo, or branch protection blocks it. |
-| `deploy` fails after 3 retries, or on a rebase conflict | Someone edited the same line in the deployment repo concurrently. Re-run the job. |
-| Cluster can't pull the image | The GHCR package is private. See One-time setup. |
-| A workflow-only change didn't run anything | Expected. See "Which changes trigger which apps". |
+| Symptom                                                                                     | Cause / fix                                                                                                                   |
+| ------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| `changes` fails with `No deploy target for branch`                                          | The workflow was triggered for a branch missing from the mapping `case`. Add it there.                                        |
+| `deploy` fails with `<path>/<app>-sync-overlay.yaml not found` or `APP_IMAGE_TAG not found` | The file is missing from `cluster/me/staging/` or `cluster/me/prod/` on that branch, or lacks the key. Nothing was committed. |
+| `deploy` fails on push (403)                                                                | The token lacks Contents write on the deployment repo, or branch protection blocks it.                                        |
+| `deploy` fails after 3 retries, or on a rebase conflict                                     | Someone edited the same line in the deployment repo concurrently. Re-run the job.                                             |
+| Cluster can't pull the image                                                                | The GHCR package is private. See One-time setup.                                                                              |
+| A workflow-only change didn't run anything                                                  | Expected. See "Which changes trigger which apps".                                                                             |
 
 ## Design decisions
 
