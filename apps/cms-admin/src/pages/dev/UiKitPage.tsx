@@ -56,22 +56,33 @@ const VARIANTS = ['default', 'secondary', 'outline', 'ghost', 'destructive', 'li
 const SIZES = ['sm', 'default', 'lg'] as const;
 const BADGE_VARIANTS = ['default', 'secondary', 'outline', 'highlight', 'destructive'] as const;
 
-/** The three button roles (AC-8): Action is the gold fill, Normal the outline, Danger destructive. */
+/** The three button roles (AC-8): Action is the indigo fill, Normal the outline, Danger destructive. */
 const BUTTON_ROLES = [
   { name: 'Action', variant: 'default' },
   { name: 'Normal', variant: 'outline' },
   { name: 'Danger', variant: 'destructive' },
 ] as const;
 
-/** The semantic colour pairs, each as a token-class swatch (AC-14). Literal classes for Tailwind. */
+/**
+ * A labelled swatch for each colour token (AC-9). Literal classes for Tailwind. Fill swatches
+ * carry their name on the colour; `border` and `input` are boundary colours, so their name sits
+ * beside the block in `text-foreground` to keep 4.5:1.
+ */
 const SWATCHES = [
   { name: 'primary', className: 'border-primary-ink bg-primary text-primary-foreground' },
-  { name: 'highlight', className: 'bg-highlight text-highlight-foreground' },
+  {
+    name: 'primary-ink',
+    className: 'border-primary-ink bg-primary-ink text-highlight-foreground',
+  },
   { name: 'secondary', className: 'bg-secondary text-secondary-foreground' },
-  { name: 'muted', className: 'bg-muted text-muted-foreground' },
+  { name: 'accent', className: 'bg-accent text-accent-foreground' },
+  { name: 'highlight', className: 'bg-highlight text-highlight-foreground' },
   { name: 'destructive', className: 'bg-destructive text-destructive-foreground' },
   { name: 'success', className: 'bg-success text-success-foreground' },
   { name: 'warning', className: 'bg-warning text-warning-foreground' },
+  { name: 'muted', className: 'bg-muted text-muted-foreground' },
+  { name: 'border', className: 'bg-border', beside: true },
+  { name: 'input', className: 'bg-input', beside: true },
 ] as const;
 
 const Section: React.FC<{ title: string; children: React.ReactNode }> = ({ title, children }) => (
@@ -216,11 +227,29 @@ const UiKitPage: React.FC = () => (
     </section>
 
     <Section title="Colour">
-      {SWATCHES.map(({ name, className }) => (
-        <div key={name} className={cn('rounded-lg border px-4 py-6 font-mono text-sm', className)}>
-          {name}
-        </div>
-      ))}
+      {SWATCHES.map((swatch) =>
+        'beside' in swatch ? (
+          <div
+            key={swatch.name}
+            className="flex items-center gap-3 rounded-lg border px-4 py-6 font-mono text-sm text-foreground"
+          >
+            <span
+              aria-hidden="true"
+              data-swatch={swatch.name}
+              className={cn('size-8 shrink-0 rounded-md', swatch.className)}
+            />
+            <span>{swatch.name}</span>
+          </div>
+        ) : (
+          <div
+            key={swatch.name}
+            data-swatch={swatch.name}
+            className={cn('rounded-lg border px-4 py-6 font-mono text-sm', swatch.className)}
+          >
+            {swatch.name}
+          </div>
+        ),
+      )}
     </Section>
 
     <section aria-labelledby="ui-kit-Badge" className="flex flex-col gap-4">

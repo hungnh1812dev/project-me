@@ -140,3 +140,59 @@ for (const { choice, primary, highlight } of [
     );
   });
 }
+
+for (const { choice, swatches } of [
+  // SPEC colour table: the swatches added for AC-9, as computed background colours.
+  {
+    choice: 'light',
+    swatches: {
+      'primary-ink': 'rgb(73, 69, 255)', // #4945FF
+      accent: 'rgb(240, 240, 255)', // #F0F0FF
+      border: 'rgb(220, 220, 228)', // #DCDCE4
+      input: 'rgb(128, 128, 156)', // #80809C
+    },
+  },
+  {
+    choice: 'dark',
+    swatches: {
+      'primary-ink': 'rgb(154, 152, 255)', // #9A98FF
+      accent: 'rgb(50, 50, 77)', // #32324D
+      border: 'rgb(50, 50, 77)', // #32324D
+      input: 'rgb(142, 142, 169)', // #8E8EA9
+    },
+  },
+]) {
+  test(`the UI kit labels a swatch for every colour token (${choice}, AC-9)`, async ({
+    page,
+    mockApi,
+  }) => {
+    mockApi.addUser({ email: 'jane@example.com', name: 'Jane Doe', role: ROLES.contentEditor });
+    mockApi.signInAs('jane@example.com');
+    await storeTheme(page, choice);
+
+    await page.goto('/admin/dev/ui-kit');
+    const colour = page.getByRole('region', { name: 'Colour' });
+
+    for (const name of [
+      'primary',
+      'primary-ink',
+      'secondary',
+      'accent',
+      'highlight',
+      'destructive',
+      'success',
+      'warning',
+      'muted',
+      'border',
+      'input',
+    ]) {
+      await expect(colour.getByText(name, { exact: true })).toBeVisible();
+    }
+    for (const [name, background] of Object.entries(swatches)) {
+      await expect(colour.locator(`[data-swatch="${name}"]`)).toHaveCSS(
+        'background-color',
+        background,
+      );
+    }
+  });
+}

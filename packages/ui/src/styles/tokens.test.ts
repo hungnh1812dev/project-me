@@ -6,12 +6,12 @@ import { describe, expect, it } from 'vitest';
 
 import { SYNTAX_TOKENS } from '../lib/jsonEditor';
 import {
-  type ColorTokenName,
   COLOR_TOKEN_NAMES,
   contrastRatio,
   TEXT_PAIRS,
   THEME_TOKENS,
   UI_BOUNDARY_PAIRS,
+  type ColorTokenName,
   type ThemeName,
 } from './tokens';
 
@@ -96,7 +96,7 @@ const STRAPI_TABLE: Record<ThemeName, Record<ColorTokenName, string>> = {
     'muted-foreground': '#666687',
     accent: '#f0f0ff',
     'accent-foreground': '#32324d',
-    destructive: '#d02b20',
+    destructive: '#b72b1a',
     'destructive-foreground': '#ffffff',
     success: '#2f6846',
     'success-foreground': '#ffffff',
@@ -132,7 +132,7 @@ const STRAPI_TABLE: Record<ThemeName, Record<ColorTokenName, string>> = {
     'muted-foreground': '#a5a5ba',
     accent: '#32324d',
     'accent-foreground': '#ffffff',
-    destructive: '#ee5e52',
+    destructive: '#f38b83',
     'destructive-foreground': '#181826',
     success: '#5cb176',
     'success-foreground': '#181826',
@@ -188,8 +188,10 @@ describe('palette (AC-1, AC-3)', () => {
     }
   });
 
-  it('uses the five AA-derived values (Decision 3)', () => {
+  it('uses the AA-derived values (Decision 3)', () => {
     expect(THEME_TOKENS.light.input).toBe('#80809c');
+    expect(THEME_TOKENS.light.destructive).toBe('#b72b1a');
+    expect(THEME_TOKENS.dark.destructive).toBe('#f38b83');
     expect(THEME_TOKENS.light.warning).toBe('#a14f00');
     expect(THEME_TOKENS.light.success).toBe('#2f6846');
     expect(THEME_TOKENS.dark['primary-ink']).toBe('#9a98ff');
@@ -231,6 +233,32 @@ describe('palette (AC-1, AC-3)', () => {
     expect(contrastRatio(dark.primary, dark.background)).toBeLessThan(4.5);
     expect(contrastRatio(dark['primary-ink'], dark.background)).toBeGreaterThanOrEqual(3);
     expect(contrastRatio(dark['primary-ink'], dark.card)).toBeGreaterThanOrEqual(3);
+  });
+
+  it('keeps destructive text at 4.5:1 on its badge tint (AC-11)', () => {
+    // The destructive Badge is `text-destructive` on `bg-destructive/10` (light) or `/20` (dark).
+    const blend = (base: string, top: string, alpha: number) =>
+      `#${[1, 3, 5]
+        .map((i) => {
+          const [b, t] = [base, top].map((hex) => parseInt(hex.slice(i, i + 2), 16));
+          return Math.round(b * (1 - alpha) + t * alpha)
+            .toString(16)
+            .padStart(2, '0');
+        })
+        .join('')}`;
+    for (const [theme, alpha] of [
+      ['light', 0.1],
+      ['dark', 0.2],
+    ] as const) {
+      const tokens = THEME_TOKENS[theme];
+      for (const surface of ['background', 'card'] as const) {
+        const tint = blend(tokens[surface], tokens.destructive, alpha);
+        expect(
+          contrastRatio(tokens.destructive, tint),
+          `${theme} ${surface}`,
+        ).toBeGreaterThanOrEqual(4.5);
+      }
+    }
   });
 
   it('checks the AC-3 boundary pairs for 3:1', () => {

@@ -342,7 +342,7 @@ for (const { theme, background, primaryInk, input, secondary, destructive } of [
     primaryInk: 'rgb(73, 69, 255)', // #4945FF
     input: 'rgb(128, 128, 156)', // #80809C
     secondary: { fill: 'rgb(240, 240, 255)', text: 'rgb(39, 31, 224)' }, // #F0F0FF / #271FE0
-    destructive: 'rgb(208, 43, 32)', // #D02B20
+    destructive: 'rgb(183, 43, 26)', // #B72B1A
   },
   {
     theme: 'dark',
@@ -350,7 +350,7 @@ for (const { theme, background, primaryInk, input, secondary, destructive } of [
     primaryInk: 'rgb(154, 152, 255)', // #9A98FF
     input: 'rgb(142, 142, 169)', // #8E8EA9
     secondary: { fill: 'rgb(50, 50, 77)', text: 'rgb(154, 152, 255)' }, // #32324D / #9A98FF
-    destructive: 'rgb(238, 94, 82)', // #EE5E52
+    destructive: 'rgb(243, 139, 131)', // #F38B83
   },
 ]) {
   test(`button roles and checked controls use the Strapi palette (${theme}, AC-8)`, async ({
@@ -459,3 +459,34 @@ test('a radio group moves the selection with arrow keys and keeps a 44px hit are
   expect(area.width).toBeGreaterThanOrEqual(44);
   expect(area.height).toBeGreaterThanOrEqual(44);
 });
+
+for (const { theme, ring } of [
+  // SPEC focus rule: the 2px ring outline, #4945FF in light and #9A98FF in dark.
+  { theme: 'light', ring: 'rgb(73, 69, 255)' },
+  { theme: 'dark', ring: 'rgb(154, 152, 255)' },
+]) {
+  test(`a keyboard-focused button shows a 2px solid ring outline with a 2px offset (${theme}, AC-12)`, async ({
+    page,
+  }) => {
+    await page.addInitScript({
+      content: `window.localStorage.setItem('cms-admin:theme', '${theme}');`,
+    });
+    await page.reload();
+    if (theme === 'dark') await expect(page.locator('html')).toHaveClass(/\bdark\b/);
+    else await expect(page.locator('html')).not.toHaveClass(/\bdark\b/);
+
+    // Step back one stop from Action and Tab onto it, so the focus comes from the keyboard.
+    const roles = page.getByRole('region', { name: 'Button roles' });
+    const action = roles.getByRole('button', { name: 'Action', exact: true });
+    await action.focus();
+    await page.keyboard.press('Shift+Tab');
+    await expect(action).not.toBeFocused();
+    await page.keyboard.press('Tab');
+
+    await expect(action).toBeFocused();
+    await expect(action).toHaveCSS('outline-style', 'solid');
+    await expect(action).toHaveCSS('outline-width', '2px');
+    await expect(action).toHaveCSS('outline-offset', '2px');
+    await expect(action).toHaveCSS('outline-color', ring);
+  });
+}
