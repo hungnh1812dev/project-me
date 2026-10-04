@@ -33,9 +33,13 @@ RUN --mount=type=cache,id=turbo-cms-api,target=/app/.turbo/cache \
 FROM node:24-alpine AS runner
 ENV NODE_ENV=production
 WORKDIR /app
-COPY --from=prod-deps --chown=node:node /prod/cms-api/package.json ./package.json
-COPY --from=prod-deps --chown=node:node /prod/cms-api/node_modules ./node_modules
-COPY --from=builder --chown=node:node /app/apps/cms-api/dist ./dist
-USER node
+# Non-root runtime user abyss (UID/GID 1001), same as cms-admin; the base image's node (1000) is unused
+RUN addgroup -S -g 1001 abyss \
+    && adduser -S -D -H -u 1001 -G abyss -s /sbin/nologin abyss
+COPY --from=prod-deps --chown=1001:1001 /prod/cms-api/package.json ./package.json
+COPY --from=prod-deps --chown=1001:1001 /prod/cms-api/node_modules ./node_modules
+COPY --from=builder --chown=1001:1001 /app/apps/cms-api/dist ./dist
 EXPOSE 3000
+# Numeric, so Kubernetes runAsNonRoot can verify it
+USER 1001
 CMD ["node", "dist/main.js"]

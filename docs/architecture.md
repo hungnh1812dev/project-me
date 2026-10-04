@@ -15,7 +15,18 @@ A pnpm + Turborepo monorepo with three independently deployable apps and a set o
 │   ├── ui/                 # @repo/ui: shared React components, form components and Tailwind theme
 │   ├── eslint-config/      # @repo/eslint-config: base flat config
 │   └── typescript-config/  # @repo/typescript-config: base tsconfig
-├── .github/workflows/ci.yml  # CI/CD pipeline, see ci-cd.md
+├── .github/
+│   ├── workflows/
+│   │   ├── ci.yml          # entrypoint: triggers, changes, one call per affected app (see ci-cd.md)
+│   │   ├── cms-api.yml     # workflow_call: checks -> build -> publish(cms-api)
+│   │   ├── cms-admin.yml   # workflow_call: checks -> build -> publish(cms-admin, VITE_API_URL, smoke check)
+│   │   ├── frontend.yml    # workflow_call: checks -> build -> publish(frontend)
+│   │   └── _publish.yml    # workflow_call: image (+ non-root guard) -> manifest -> deploy for one app
+│   └── scripts/
+│       ├── affected.sh       # affected apps, image apps, workflow-file routing -> GITHUB_OUTPUT
+│       ├── affected.test.sh  # local assertions for affected.sh
+│       ├── image-user.sh     # non-root guard: numeric non-zero USER that matches id -u
+│       └── bundle-check.sh   # cms-admin bundle smoke check for the baked API base
 ├── docs/                   # this documentation
 ├── package.json            # private root: scripts -> turbo, pins pnpm via packageManager
 ├── pnpm-workspace.yaml     # apps/*, packages/*, build-script allowlist
@@ -50,7 +61,7 @@ See [cms-admin's design system](../apps/cms-admin/docs/design-system.md) for the
 | App         | Stack                                             | Dev command                       | Dev port | Lint                | Tests                                                 | Container port |
 | ----------- | ------------------------------------------------- | --------------------------------- | -------- | ------------------- | ----------------------------------------------------- | -------------- |
 | `cms-api`   | NestJS 12, TypeScript 6, ESM                      | `pnpm --filter cms-api start:dev` | 3000     | oxlint (type-aware) | Vitest (`test`, `test:e2e`)                           | 3000           |
-| `cms-admin` | Vite 8, React 19, TypeScript 6                    | `pnpm --filter cms-admin dev`     | 5173     | oxlint              | Vitest (`test`, `test:cov`) + Playwright (`test:e2e`) | 80 (nginx)     |
+| `cms-admin` | Vite 8, React 19, TypeScript 6                    | `pnpm --filter cms-admin dev`     | 5173     | oxlint              | Vitest (`test`, `test:cov`) + Playwright (`test:e2e`) | 8080 (nginx)   |
 | `frontend`  | Next.js 16.3 (App Router, Tailwind), TypeScript 5 | `pnpm --filter frontend dev`      | 3000     | ESLint 9            | none                                                  | 3000           |
 
 Each app keeps its generator's own tooling and versions. That's why TypeScript and lint tools differ between apps, and it's intentional. Nest 12 has no `dev` script, so `pnpm dev` at the root doesn't start cms-api.
@@ -71,13 +82,17 @@ Before changing `turbo.json`, read the docs bundled with the installed turbo (`n
 
 Every Dockerfile builds from the **repo root** (`docker build -f apps/<app>/Dockerfile .`) and isolates its app with `turbo prune <app> --docker`, so the image only contains that app and its workspace dependencies.
 
-| App         | Stages                                                     | Runtime                                                                       | Size (unpacked / compressed) |
-| ----------- | ---------------------------------------------------------- | ----------------------------------------------------------------------------- | ---------------------------- |
-| `cms-api`   | prepare (prune) → manifests → prod-deps / builder → runner | `node:24-alpine`, non-root `node` user, `node dist/main`                      | ~200MB / 64MB                |
-| `cms-admin` | prepare → builder → runner                                 | `nginx:alpine`: SPA fallback to `index.html`, long cache for `/assets/`       | ~93MB                        |
-| `frontend`  | prepare → builder → runner                                 | `node:24-alpine`, Next `output: 'standalone'`, `node apps/frontend/server.js` | ~217MB / 75MB                |
+| App         | Stages                                                     | Runtime                                                                       | Runtime user | Size (unpacked / compressed) |
+| ----------- | ---------------------------------------------------------- | ----------------------------------------------------------------------------- | ------------ | ---------------------------- |
+| `cms-api`   | prepare (prune) → manifests → prod-deps / builder → runner | `node:24-alpine`, `node dist/main`                                            | `abyss` 1001 | ~200MB / 64MB                |
+| `cms-admin` | prepare → builder → runner                                 | `nginx-unprivileged:alpine`, SPA fallback, `/assets/` cache                   | `abyss` 1001 | ~93MB                        |
+| `frontend`  | prepare → builder → runner                                 | `node:24-alpine`, Next `output: 'standalone'`, `node apps/frontend/server.js` | `abyss` 1001 | ~217MB / 75MB                |
 
 About 176MB of each Node image is the `node:24-alpine` base.
+
+**Runtime user.** Every runner stage creates the system user `abyss` (UID/GID **1001**, no home, shell `/sbin/nologin`), gives it the paths it writes or ships (cms-api and frontend copy with `--chown=1001:1001`; cms-admin chowns the nginx config and cache paths) and ends with a numeric `USER 1001`, so Kubernetes `runAsNonRoot` can verify it. The `node` user (1000) of `node:24-alpine` and nginx-unprivileged's `nginx` (101) stay in the base images, unused. In Kubernetes, use `runAsNonRoot: true` with `runAsUser: 1001`; cms-api and frontend overlays that pin `runAsUser`/`fsGroup` 1000 must move to 1001. CI enforces this with `.github/scripts/image-user.sh` before every push (see [ci-cd.md](ci-cd.md#non-root-guard)).
+
+**cms-admin API origin.** `VITE_API_URL` is a builder-stage build arg (`--build-arg VITE_API_URL=https://cms-api.example.com`), baked into the bundle by Vite. In CI it comes from the GitHub Environment variable of the same name; empty means the relative `/api/v1`. `.env*` files never reach any image (`.dockerignore`).
 
 **Why it's built this way:**
 
