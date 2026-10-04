@@ -326,12 +326,70 @@ test('the Button roles section shows action, normal and danger in every state (A
     await expect(idle).toHaveCSS('outline-style', 'solid');
   }
 
-  // Action is the gold fill with the primary-ink border, Danger the destructive fill.
+  // Action is the primary fill with the primary-ink border, Danger the destructive fill.
   const action = roles.getByRole('button', { name: 'Action', exact: true });
   await expect(action).not.toHaveCSS('border-top-color', 'rgba(0, 0, 0, 0)');
   const danger = roles.getByRole('button', { name: 'Danger', exact: true });
   await expect(danger).not.toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
 });
+
+// SPEC colour table (Strapi palette). Primary fills carry a primary-ink border (AC-4, AC-8).
+const PRIMARY = 'rgb(73, 69, 255)'; // #4945FF in both themes
+for (const { theme, background, primaryInk, input, secondary, destructive } of [
+  {
+    theme: 'light',
+    background: 'rgb(246, 246, 249)', // #F6F6F9
+    primaryInk: 'rgb(73, 69, 255)', // #4945FF
+    input: 'rgb(128, 128, 156)', // #80809C
+    secondary: { fill: 'rgb(240, 240, 255)', text: 'rgb(39, 31, 224)' }, // #F0F0FF / #271FE0
+    destructive: 'rgb(208, 43, 32)', // #D02B20
+  },
+  {
+    theme: 'dark',
+    background: 'rgb(24, 24, 38)', // #181826
+    primaryInk: 'rgb(154, 152, 255)', // #9A98FF
+    input: 'rgb(142, 142, 169)', // #8E8EA9
+    secondary: { fill: 'rgb(50, 50, 77)', text: 'rgb(154, 152, 255)' }, // #32324D / #9A98FF
+    destructive: 'rgb(238, 94, 82)', // #EE5E52
+  },
+]) {
+  test(`button roles and checked controls use the Strapi palette (${theme}, AC-8)`, async ({
+    page,
+  }) => {
+    await page.addInitScript({
+      content: `window.localStorage.setItem('cms-admin:theme', '${theme}');`,
+    });
+    await page.reload();
+    if (theme === 'dark') await expect(page.locator('html')).toHaveClass(/\bdark\b/);
+    else await expect(page.locator('html')).not.toHaveClass(/\bdark\b/);
+
+    const roles = page.getByRole('region', { name: 'Button roles' });
+    const action = roles.getByRole('button', { name: 'Action', exact: true });
+    await expect(action).toHaveCSS('background-color', PRIMARY);
+    await expect(action).toHaveCSS('border-top-color', primaryInk);
+
+    const normal = roles.getByRole('button', { name: 'Normal', exact: true });
+    await expect(normal).toHaveCSS('background-color', background);
+    await expect(normal).toHaveCSS('border-top-color', input);
+
+    const danger = roles.getByRole('button', { name: 'Danger', exact: true });
+    await expect(danger).toHaveCSS('background-color', destructive);
+
+    const second = page.getByRole('button', { name: 'secondary', exact: true });
+    await expect(second).toHaveCSS('background-color', secondary.fill);
+    await expect(second).toHaveCSS('color', secondary.text);
+
+    for (const control of [
+      page.getByRole('checkbox', { name: 'Checked' }),
+      page.getByRole('checkbox', { name: 'Some selected' }),
+      page.getByRole('radiogroup', { name: 'Density' }).getByRole('radio', { name: 'Comfortable' }),
+      page.getByRole('switch', { name: 'Published' }),
+    ]) {
+      await expect(control).toHaveCSS('background-color', PRIMARY);
+      await expect(control).toHaveCSS('border-top-color', primaryInk);
+    }
+  });
+}
 
 test('the Badge section shows the destructive badge (AC-9)', async ({ page }) => {
   const badges = page.getByRole('region', { name: 'Badge' });

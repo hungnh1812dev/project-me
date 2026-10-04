@@ -269,10 +269,22 @@ test.describe('side menu', () => {
     await expect(article).not.toHaveAttribute('aria-current');
   });
 
-  for (const { theme, highlight } of [
-    // SPEC colour table: highlight is the deep gold #7A5C14 (light) / #E0C068 (dark).
-    { theme: 'light', highlight: 'rgb(122, 92, 20)' },
-    { theme: 'dark', highlight: 'rgb(224, 192, 104)' },
+  for (const { theme, accent, accentForeground, highlight } of [
+    // SPEC colour table (Strapi palette): the active item has the sidebar-accent tint
+    // #F0F0FF / #181826 with sidebar-accent-foreground text #271FE0 / #9A98FF, and a
+    // 4px highlight (= primary-ink) left bar #4945FF / #9A98FF.
+    {
+      theme: 'light',
+      accent: 'rgb(240, 240, 255)',
+      accentForeground: 'rgb(39, 31, 224)',
+      highlight: 'rgb(73, 69, 255)',
+    },
+    {
+      theme: 'dark',
+      accent: 'rgb(24, 24, 38)',
+      accentForeground: 'rgb(154, 152, 255)',
+      highlight: 'rgb(154, 152, 255)',
+    },
   ]) {
     test(`only the active link shows the highlight indicator (${theme}, AC-14)`, async ({
       page,
@@ -289,12 +301,28 @@ test.describe('side menu', () => {
         menu(page)
           .getByRole('link', { name })
           .evaluate((el) => {
-            const before = el.ownerDocument.defaultView!.getComputedStyle(el, '::before');
-            return { content: before.content, background: before.backgroundColor };
+            const view = el.ownerDocument.defaultView!;
+            const before = view.getComputedStyle(el, '::before');
+            const self = view.getComputedStyle(el);
+            return {
+              content: before.content,
+              barColour: before.backgroundColor,
+              barWidth: before.width,
+              background: self.backgroundColor,
+              color: self.color,
+            };
           });
 
-      expect(await indicator('Users')).toEqual({ content: '""', background: highlight });
-      expect((await indicator('Roles')).content).toBe('none');
+      expect(await indicator('Users')).toEqual({
+        content: '""',
+        barColour: highlight,
+        barWidth: '4px',
+        background: accent,
+        color: accentForeground,
+      });
+      const inactive = await indicator('Roles');
+      expect(inactive.content).toBe('none');
+      expect(inactive.background).not.toBe(accent);
     });
   }
 

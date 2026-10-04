@@ -77,21 +77,21 @@ test('fonts are self-hosted: no request goes to a font CDN', async ({ page }) =>
   await expect(page.locator('body')).toHaveCSS('font-family', /Fira Sans/);
 });
 
-// Expected values come from the SPEC colour table (stone and gold palette).
+// Expected values come from the SPEC colour table (Strapi palette).
 for (const { choice, background, foreground, primary, primaryInk } of [
   {
     choice: 'light',
-    background: 'rgb(250, 250, 249)', // #FAFAF9
-    foreground: 'rgb(43, 43, 43)', // #2B2B2B
-    primary: 'rgb(212, 175, 55)', // #D4AF37
-    primaryInk: 'rgb(122, 92, 20)', // #7A5C14
+    background: 'rgb(246, 246, 249)', // #F6F6F9
+    foreground: 'rgb(50, 50, 77)', // #32324D
+    primary: 'rgb(73, 69, 255)', // #4945FF
+    primaryInk: 'rgb(73, 69, 255)', // #4945FF
   },
   {
     choice: 'dark',
-    background: 'rgb(28, 26, 23)', // #1C1A17
-    foreground: 'rgb(245, 245, 244)', // #F5F5F4
-    primary: 'rgb(212, 175, 55)', // #D4AF37
-    primaryInk: 'rgb(224, 192, 104)', // #E0C068
+    background: 'rgb(24, 24, 38)', // #181826
+    foreground: 'rgb(255, 255, 255)', // #FFFFFF
+    primary: 'rgb(73, 69, 255)', // #4945FF
+    primaryInk: 'rgb(154, 152, 255)', // #9A98FF
   },
 ]) {
   test(`the shared @repo/ui theme tokens reach the page in the ${choice} theme`, async ({
@@ -111,9 +111,9 @@ for (const { choice, background, foreground, primary, primaryInk } of [
 }
 
 for (const { choice, primary, highlight } of [
-  // SPEC colour table: primary #D4AF37 in both themes, highlight #7A5C14 / #E0C068.
-  { choice: 'light', primary: 'rgb(212, 175, 55)', highlight: 'rgb(122, 92, 20)' },
-  { choice: 'dark', primary: 'rgb(212, 175, 55)', highlight: 'rgb(224, 192, 104)' },
+  // SPEC colour table: primary #4945FF in both themes, highlight = primary-ink #4945FF / #9A98FF.
+  { choice: 'light', primary: 'rgb(73, 69, 255)', highlight: 'rgb(73, 69, 255)' },
+  { choice: 'dark', primary: 'rgb(73, 69, 255)', highlight: 'rgb(154, 152, 255)' },
 ]) {
   test(`the UI kit shows the primary and highlight swatches and the highlight badge (${choice}, AC-14)`, async ({
     page,
