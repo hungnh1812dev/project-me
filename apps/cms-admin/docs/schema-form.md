@@ -30,7 +30,7 @@ Fields render in `type.fields` order in a 6-column grid from `md` (`widthClass`:
 | -------------------- | ------------------------------------------------------------------------------------------- |
 | `text`, `number`     | `TextField`, `NumberField` (`Input`, `register`)                                            |
 | `boolean`            | `BooleanField` (`Switch` through `Controller`)                                              |
-| `json`               | `JsonField` (`JsonInput expect="any"`); invalid text stays visible and blocks the save      |
+| `json`               | `JsonField` (`JsonInput expect="any"`, CodeMirror editor); invalid text stays visible and blocks the save |
 | `richtext`           | `RichTextField`, lazy-loading `RichTextEditor` (Tiptap) behind a skeleton (D1)              |
 | `media`              | `MediaField` plus `MediaPickerDialog` (D4)                                                  |
 | `component`          | `ComponentField`: a `fieldset`; below the top level a `details` with an `entryHint` preview |
@@ -45,8 +45,22 @@ Fields render in `type.fields` order in a 6-column grid from `md` (`widthClass`:
   `injectCSS: false` (CSP). The value is HTML. When the loaded HTML doesn't survive a round trip
   (`changesOnRoundTrip`), the field warns (`ROUND_TRIP_WARNING`) that saving removes it. Only
   `RichTextEditor.tsx` imports `@tiptap/*`, so the editor is its own chunk.
-- **Media (D4).** The picker is a searchable radio grid of the M1 assets (arrow keys move, Enter
-  selects) with a `FileDropzone` gated by `upload media`; a new upload is selected. A save writes the
+- **JSON.** `JsonField` wraps the shared `JsonInput` in a `Controller` + `Field`: the value is text,
+  `rows={6}`, read-only when the form is. It passes the field `label` (which names the editor
+  content inside the `<repo-json-editor>` shadow root, where the `Field` label's `htmlFor` can't
+  reach) and the Controller `ref`, whose `focus()` moves focus into the editor, so an invalid save
+  focuses it. The editor is a lazy CodeMirror 6 chunk with a same-height skeleton, JSON
+  highlighting and line numbers; validation shows after the first blur and then on every change
+  ("Invalid JSON: <reason> (line L, column C)"), and `rulesFor` blocks the save on invalid text.
+  "Format JSON" pretty-prints. A form `reset` after save updates the editor text without losing its
+  undo history. Clicking the field label focuses the editor; Tab and Shift+Tab leave it. Details in
+  [Design system](./design-system.md#json-editor-jsoninput-on-codemirror-6) and
+  [CSP and headers](./csp-and-headers.md#json-editor-under-the-csp).
+- **Media (D4).** The picker is a `@repo/ui` `RadioGroup` ("Media files") of the M1 assets: each
+  card is a `<label>` around a `RadioGroupItem` named by the file name through `aria-labelledby`,
+  so the whole card is the hit area and `getByRole('radio', { name: <file name> })` finds it. One
+  Tab stop, arrow keys move the selection, Enter confirms (selects and closes); the checked card
+  shows the ring and the checked state. It is searchable with a `FileDropzone` gated by `upload media`; a new upload is selected. A save writes the
   full `MediaAsset`. A `documentId` string is resolved through the cached M1 list (`resolveMedia`);
   unresolved shows "File not found". The picker is not paginated (D8).
 
@@ -91,11 +105,11 @@ the breadcrumbs reuse them.
 | `src/components/form/fields/TextField.tsx`         | Exports `TextField`.                                                                  |
 | `src/components/form/fields/NumberField.tsx`       | Exports `NumberField`.                                                                |
 | `src/components/form/fields/BooleanField.tsx`      | Exports `BooleanField`.                                                               |
-| `src/components/form/fields/JsonField.tsx`         | Exports `JsonField`.                                                                  |
+| `src/components/form/fields/JsonField.tsx`         | Exports `JsonField`: `JsonInput` in a `Controller`, passes `label` and the focus ref. |
 | `src/components/form/fields/RichTextField.tsx`     | Exports `RichTextField`: lazy wrapper, round-trip warning.                            |
 | `src/components/form/fields/RichTextEditor.tsx`    | The Tiptap editor and toolbar (`RichTextEditorHandle`, `RichTextEditorProps`); the only `@tiptap/*` importer. |
 | `src/components/form/fields/MediaField.tsx`        | Exports `MediaField`: preview box, details row, Choose and Remove.                    |
-| `src/components/form/fields/MediaPickerDialog.tsx` | Exports `MediaPickerDialog`: searchable radio grid plus upload.                       |
+| `src/components/form/fields/MediaPickerDialog.tsx` | Exports `MediaPickerDialog`: searchable `RadioGroup` card grid plus upload.          |
 | `src/components/form/fields/ComponentField.tsx`    | Exports `ComponentField`, `ComponentChildren`.                                        |
 | `src/components/form/fields/RepeatableField.tsx`   | Exports `RepeatableField`: field array, focus moves, announcements.                   |
 | `src/components/form/fields/RepeatableEntry.tsx`   | Exports `RepeatableEntry`, `EntryAction`: one entry with its move and remove actions. |
@@ -113,8 +127,13 @@ the breadcrumbs reuse them.
 - `schema.test.ts`, `schemaForm.test.ts`, `richtext.test.ts`, `mediaValue.test.ts`. Branch coverage
   at the end of 5.9: `schema.ts` and `mediaValue.ts` 100%, `richtext.ts` 96.6%, `schemaForm.ts`
   93.2% (bar 90%).
-- `e2e/schema-form.spec.ts`: every field kind via `FIELD_SHOWCASE`, repeatables, richtext, media
-  picker. `csp.spec.ts` checks the editor and the open picker under the CSP.
+- Unit tests query the media cards with `getByRole('radio', { name })` and drive the JSON editor
+  through `EditorView` transactions (jsdom polyfills in `src/test/setup.ts`).
+- `e2e/schema-form.spec.ts`: every field kind via `FIELD_SHOWCASE`, repeatables, richtext, JSON
+  field typing, validation, save blocking, format and focus on an invalid save, and the media
+  picker radio group (arrow keys, Enter, names). `csp.spec.ts` checks the richtext editor, the JSON
+  editor and the open picker under the CSP on Chromium, Firefox and WebKit; `a11y.spec.ts` runs axe
+  on a document with a JSON field (valid and invalid) and the open picker with a card selected.
 - Run: `pnpm --filter cms-admin exec vitest run src/components/form src/features/content/schema` and
   `PLAYWRIGHT_BROWSERS_PATH=0 pnpm --filter cms-admin test:e2e e2e/schema-form.spec.ts`.
 

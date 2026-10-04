@@ -20,7 +20,9 @@ form-action 'self'; frame-ancestors 'none'
 
 One line in practice; empty origins are left out. Each origin must be a bare `http(s)://host[:port]`,
 otherwise the builder throws. There is no `'unsafe-inline'`: `index.html` loads `theme-init.js` as
-an external script, and Tiptap runs with `injectCSS: false`.
+an external script, Tiptap runs with `injectCSS: false`, and the JSON editor keeps its styles in a
+shadow root (below). The policy did not change for the luxury restyle; `csp.ts` and its test are
+untouched.
 
 | Variable          | Meaning                                                                                 |
 | ----------------- | --------------------------------------------------------------------------------------- |
@@ -52,6 +54,29 @@ curl -sI localhost:8081/admin   | grep -i -E 'content-security-policy|referrer-p
 curl -sI localhost:8081/healthz | grep -i -E 'content-security-policy|referrer-policy'  # neither
 ```
 
+### JSON editor under the CSP
+
+CodeMirror 6 (through style-mod) normally injects a `<style>` element into `document`, which
+`style-src 'self'` blocks. Instead of a nonce, `JsonInput` mounts the editor inside an **open shadow
+root** of the custom element `<repo-json-editor>` (form-associated, `delegatesFocus`, defined once).
+CodeMirror resolves its root to that ShadowRoot, so style-mod writes every rule into a constructed
+`CSSStyleSheet` in `shadowRoot.adoptedStyleSheets`. Constructed stylesheets and CSSOM
+`element.style` writes are not governed by `style-src`, so no `<style>` element is created and the
+policy stays `style-src 'self'` with no `'unsafe-inline'`, nonce or hash.
+
+- **Rejected: `EditorView.cspNonce`.** It would add `'nonce-…'` to `style-src`, and nginx and
+  `vite preview` would have to inject a fresh nonce into `index.html` and the header per request.
+- **Closed shadow roots are not allowed**: tests and axe must reach the editor.
+- **Supported browsers:** evergreen Chrome/Edge 73+, Firefox 101+ and Safari 16.4+ (constructable
+  stylesheets and `adoptedStyleSheets`). Older browsers would fall back to a `<style>` element inside
+  the shadow root, which the policy blocks, and show an unstyled editor; they are out of scope.
+- **Tolerated Chromium report.** When a single edit replaces a selection spanning several
+  `.cm-line`s, Chromium's native contenteditable code merges the lines through an inline-styled
+  span. The browser blocks that attribute and raises one `style-src-attr` report (`blockedURI`
+  `inline`, no source file); the editor stays styled and works. The CSP spec tolerates at most that
+  one report, only on the Chromium `csp` project; any other violation, or the same report on Firefox
+  or WebKit, still fails.
+
 ### Image URL allowlist
 
 `safeImageSrc(url, origins)` returns a URL safe to render, or `null`. It allows any absolute `https:`
@@ -67,7 +92,8 @@ allowed images with `referrerPolicy="no-referrer"` (see `MediaThumbnail` in
   nginx template against it, so the two can't drift.
 - **Runtime env, not build env.** The CSP origins are read by nginx at start, so the same image is
   promoted across environments.
-- **A library that needs inline scripts or styles is a stop-and-ask**, not a policy change.
+- **A library that needs inline scripts or styles is a stop-and-ask**, not a policy change. The
+  JSON editor is the worked example: a shadow root, not a nonce.
 - **Known gap:** nginx sends no `X-Content-Type-Options: nosniff` (H-SEC-3, see
   [Roadmap](./roadmap.md)).
 
@@ -87,18 +113,25 @@ allowed images with `referrerPolicy="no-referrer"` (see `MediaThumbnail` in
 - `src/core/security/nginxTemplate.test.ts`: the template carries the builder's policy on every app
   location and none on `/healthz`.
 - `src/core/security/safeImageSrc.test.ts`: allowed and rejected schemes and origins.
-- `e2e/csp.spec.ts` (project `csp`, built app on 5175 with `CSP_IMG_ORIGINS=https://media.example.test`):
+- `e2e/csp.spec.ts` (projects `csp`, `csp-firefox` and `csp-webkit`: Chromium, Firefox and WebKit on
+  the built app on 5175 with `CSP_IMG_ORIGINS=https://media.example.test`):
   the exact policy and `Referrer-Policy` headers plus the referrer meta (AC-11); `/login`, `/admin`
   and `/admin/settings/media` render with zero `securitypolicyviolation` events and the thumbnails
   load (AC-12); later phases added the document list, the open date picker, a detail page with the
   editor mounted and the open media picker; a control image from `https://blocked.example.test`
-  fires a violation, so the policy is really active.
+  fires a violation, so the policy is really active. The JSON editor test opens a document with a
+  JSON field and checks zero violations, the same `document` `<style>` count before and after the
+  editor mounts, `adoptedStyleSheets.length >= 1` on the host's shadow root, a visible line-number
+  gutter and a monospace `.cm-content`, also after formatting and typing (with the Chromium
+  tolerance above). Another test checks that clicking the field label focuses the editor and that
+  Tab and Shift+Tab leave and re-enter it. Every test runs on all three projects.
 - Run: `pnpm --filter cms-admin exec vitest run src/core/security` and
-  `PLAYWRIGHT_BROWSERS_PATH=0 pnpm --filter cms-admin test:e2e --project=csp`.
+  `PLAYWRIGHT_BROWSERS_PATH=0 pnpm --filter cms-admin test:e2e --project=csp --project=csp-firefox --project=csp-webkit`.
 
 ## Related
 
-- [Testing and config](./testing-and-config.md) (env vars, the `csp` Playwright project)
+- [Testing and config](./testing-and-config.md) (env vars, the `csp`, `csp-firefox` and `csp-webkit` Playwright projects)
+- [Design system](./design-system.md#json-editor-jsoninput-on-codemirror-6) (the JSON editor)
 - [Theme](./theme.md) (why `theme-init.js` is external)
 - [Settings media](./settings-media.md) and [Schema form](./schema-form.md) (use `safeImageSrc` through `MediaThumbnail`)
 - [Roadmap](./roadmap.md) (open header findings)

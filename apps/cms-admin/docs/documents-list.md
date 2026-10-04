@@ -61,8 +61,13 @@ allowed operators. `useDocumentList(ref, params, catalog)` runs it before any re
 - **Pagination.** The shared `Pagination` from `@repo/ui` (replaced `PaginationBar` in Phase 6). Old
   rows stay visible with `aria-busy` while the next page loads.
 - **Columns (D6).** A `GatedButton` on `configureColumns` opens "Choose columns": listable columns as
-  checkboxes with Move up and Move down, at least one kept ("Choose at least one column."). Save
-  sends C3; a 400 or 403 stays in the dialog. The choice applies to everyone.
+  `@repo/ui` `Checkbox` boxes with Move up and Move down, at least one kept ("Choose at least one
+  column."). Each box is named by its column label through `aria-labelledby`, and the label is a
+  `<label htmlFor>`, so clicking the visible text toggles the box. Save sends C3; a 400 or 403 stays
+  in the dialog. The choice applies to everyone.
+- **Hit areas.** Below `lg` each box has a 44px hit area in a 44px cell. In the dense `lg` table and
+  dialog the boxes add `lg:after:-inset-2` (cell `lg:min-h-8 lg:min-w-8`), so the hit area shrinks
+  to 32px and never reaches the next row's box.
 - **States.** Skeleton rows; error with Retry; "You don't have access to <type> entries."; "No
   entries yet." with Create entry; "No entries match your search or filters." with "Clear search and
   filters".
@@ -71,7 +76,10 @@ allowed operators. `useDocumentList(ref, params, catalog)` runs it before any re
 
 - **Row actions.** "Actions for <label>": Edit, Duplicate, Publish or Unpublish by status, Delete
   (confirmed). Outcomes are announced; a failure shows above the table.
-- **Selection.** Row checkboxes and a tri-state "Select all entries on this page". Any change of
+- **Selection.** Row boxes ("Select <label>") and a tri-state "Select all entries on this page", all
+  `@repo/ui` `Checkbox` named through `aria-labelledby` by sr-only text (`SelectBox`). Select all is
+  `indeterminate` (`aria-checked="mixed"`, a dash) when some rows are selected. No native checkbox
+  is left. Any change of
   page, size, sort, search or filters clears it. The bar shows "n selected", Clear selection,
   Publish selected and Unpublish selected (hidden without draft and publish) and Delete selected.
 - **Delete selected (D10)** confirms "Delete n entries?", sends one D10, shows "2 of 3 entries
@@ -130,6 +138,8 @@ sends nothing. Feedback goes through `useAnnouncer` and `LiveRegion`; dialog err
 - `listState.test.ts`, `columns.test.ts`, `filterLabels.test.ts`, `bulk.test.ts`,
   `hooks/useBulkStatus.test.ts`. Branch coverage at the end of 5.9: `listState.ts` and `bulk.ts`
   100%, `columns.ts` 97.6% (bar 90%, read from the report).
+- Unit and e2e tests find the boxes with `getByRole('checkbox', { name })`, never by tag or type
+  (guarded by `packages/ui/src/rawControls.test.ts`).
 - E2E: `e2e/documents-list.spec.ts` (sort from the URL, scoped 403, 401 refresh during a load,
   paging), `e2e/documents-filters.spec.ts` (filters, chips, date picker, dropped params),
   `e2e/documents-bulk.spec.ts` (selection, bulk publish and delete with failures, focus after
@@ -143,5 +153,5 @@ sends nothing. Feedback goes through `useAnnouncer` and `LiveRegion`; dialog err
 - [Content data](./content-data.md) (hooks, list query, `contentKeys`)
 - [Content-type pages](./content-type-pages.md), [Document editor](./document-editor.md)
 - [Schema form](./schema-form.md) (`schema.ts` field kinds and labels)
-- [Design system](./design-system.md) (`Pagination`, `DatePicker`, `GatedButton`)
+- [Design system](./design-system.md) (`Pagination`, `DatePicker`, `GatedButton`, `Checkbox`)
 - [Settings foundation](./settings-foundation.md) (`useAnnouncer`, `LiveRegion`)

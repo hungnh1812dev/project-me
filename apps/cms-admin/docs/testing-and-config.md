@@ -13,9 +13,10 @@ top of this. The Content-Security-Policy and the nginx image are in [CSP and hea
 | `pnpm --filter cms-admin test`                             | `vitest run`: all unit and integration tests, once            |
 | `pnpm --filter cms-admin test:watch`                       | `vitest` in watch mode                                        |
 | `pnpm --filter cms-admin test:cov`                         | `vitest run --coverage`, fails when a coverage gate is missed |
-| `pnpm --filter cms-admin exec playwright install chromium` | One-time browser download for e2e                             |
-| `pnpm --filter cms-admin test:e2e`                         | `playwright test`: both projects (`chromium` and `csp`)       |
-| `pnpm --filter cms-admin test:e2e --project=csp`           | Only the CSP check against the built app on port 5175         |
+| `PLAYWRIGHT_BROWSERS_PATH=0 pnpm --filter cms-admin exec playwright install chromium firefox webkit` | One-time browser download for e2e (Firefox and WebKit are needed by the CSP projects) |
+| `pnpm --filter cms-admin test:e2e`                         | `playwright test`: all four projects (`chromium`, `csp`, `csp-firefox`, `csp-webkit`) |
+| `pnpm --filter cms-admin test:e2e --project=csp`           | Only the CSP check against the built app on port 5175, in Chromium |
+| `pnpm --filter cms-admin test:e2e --project=csp-firefox --project=csp-webkit` | The same CSP spec in Firefox and WebKit |
 | `pnpm turbo run lint typecheck build --filter=cms-admin`   | oxlint, `tsc -b` and the production build                     |
 
 ### Unit tests (Vitest)
@@ -24,6 +25,15 @@ top of this. The Content-Security-Policy and the nginx image are in [CSP and hea
   `src/**/*.test.ts(x)` and import `describe`, `it`, `expect` and `vi` from `vitest` (no globals).
 - The setup registers the jest-dom matchers, runs RTL `cleanup` after each test, starts, resets and
   closes the MSW server, and stubs `matchMedia` and `ResizeObserver` for jsdom.
+- **CodeMirror polyfills.** jsdom has no layout, so the setup (like `packages/ui/src/test/setup.ts`)
+  adds `Range.prototype.getClientRects` / `getBoundingClientRect` returning empty rects, and a no-op
+  `document.execCommand` that CodeMirror calls on focus. Each is installed only when missing. Unit
+  tests drive the JSON editor through `EditorView` transactions and DOM focus and blur; layout,
+  typing and keyboard behaviour are covered in Playwright.
+- **Role-and-name queries.** Checkboxes and radios are Base UI elements, not native inputs, so tests
+  find them with `getByRole('checkbox' | 'radio', { name })`. `packages/ui/src/rawControls.test.ts`
+  fails on `input[type="checkbox"]`, `input[type="radio"]` or `.indeterminate` in any cms-admin
+  `src/**/*.test.tsx` or `e2e/**/*.ts` file.
 - Components: React Testing Library plus `@testing-library/user-event`.
 - **MSW.** The server runs with `onUnhandledRequest: 'error'`, so a request without a handler fails
   the test and no unit test reaches a real backend. Override per test with `server.use(...)`;
@@ -56,8 +66,11 @@ gone.
 
 ### E2E tests (Playwright)
 
-- Chromium only, specs in `e2e/*.spec.ts`. Two projects: `chromium` runs every spec except
-  `csp.spec.ts` against the dev server; `csp` runs only `csp.spec.ts` against the production build.
+- Specs in `e2e/*.spec.ts`. Four projects: `chromium` runs every spec except `csp.spec.ts` against
+  the dev server; `csp` (Chromium), `csp-firefox` (Desktop Firefox) and `csp-webkit` (Desktop
+  Safari) run only `csp.spec.ts` against the production build, because the JSON editor's
+  shadow-root styling (constructed stylesheets) is engine-specific. See
+  [CSP and headers](./csp-and-headers.md#json-editor-under-the-csp).
 - `webServer` starts `vite --port 5174 --strictPort` with `VITE_API_URL` empty (relative `/api/v1`),
   reused locally when already running, plus a `vite build` into `node_modules/.tmp/e2e-csp` (never
   `dist/`) served by `vite preview --port 5175`. Both start on every run.
@@ -69,7 +82,9 @@ gone.
 - `e2e/a11y.spec.ts` runs axe (`@axe-core/playwright`, `wcag2a`, `wcag2aa`, `wcag21aa`) on every
   surface in light and dark at 1280px and 375px and fails on any serious or critical violation; it
   also walks Tab order and dialog focus. What it covers per area is on each module page.
-- In this repo the browser is in `node_modules`, so run e2e as
+- Playwright CSS and role locators and axe pierce open shadow roots, so the in-shadow JSON editor
+  (`repo-json-editor .cm-content`, `getByRole('textbox', { name })`) is reachable directly.
+- In this repo the browsers are in `node_modules`, so run e2e as
   `PLAYWRIGHT_BROWSERS_PATH=0 pnpm --filter cms-admin test:e2e [e2e/<spec>.spec.ts]`. Reports go to
   `playwright-report/` and `test-results/` (git-ignored).
 
@@ -127,7 +142,8 @@ Production builds set `VITE_API_URL`, and the backend's `CORS_ORIGINS` must incl
 | `src/core/config/env.ts`      | Exports `API_BASE_URL`, `buildApiBaseUrl`. Builds the API base from `VITE_API_URL`.                    |
 | `src/vite-env.d.ts`           | Types `import.meta.env.VITE_API_URL`.                                                                  |
 | `src/utils/constants.ts`      | Placeholder for non-env constants (exports nothing yet).                                               |
-| `src/test/setup.ts`           | jest-dom matchers, RTL cleanup, MSW lifecycle, jsdom stubs.                                            |
+| `src/test/setup.ts`           | jest-dom matchers, RTL cleanup, MSW lifecycle, jsdom stubs, CodeMirror Range and `execCommand` polyfills. |
+| `playwright.config.ts`        | Projects `chromium`, `csp`, `csp-firefox`, `csp-webkit`; the dev server on 5174 and the built preview on 5175. |
 | `src/test/msw/server.ts`      | Exports `server`, the MSW node server with the default handlers.                                       |
 | `src/test/msw/handlers.ts`    | Exports `handlers`: refresh 401, logout 200, has-users `true`.                                         |
 | `src/test/renderWithProviders.tsx` | Exports `renderWithProviders`, `renderHookWithProviders`, `renderRoutes`, `createProviders`, `ProviderOptions`. Fresh store, client and router per test. |
@@ -138,6 +154,8 @@ Production builds set `VITE_API_URL`, and the backend's `CORS_ORIGINS` must incl
 
 - `src/test/smoke.test.ts`: MSW intercepts axios in jsdom.
 - `src/test/stubs.test.ts`: the jsdom `matchMedia` and `ResizeObserver` stubs.
+- `src/test/buildChunks.test.ts`: when `dist/` exists, `@codemirror` is in a separate chunk and not
+  in the entry chunk or its preloads (skipped without a build).
 - `src/test/noDangerousHtml.test.ts`: no `.tsx` file under `src/` uses `dangerouslySetInnerHTML`
   (AC-34).
 - `src/core/config/env.test.ts`: `buildApiBaseUrl` with empty, absolute and slash-suffixed values.

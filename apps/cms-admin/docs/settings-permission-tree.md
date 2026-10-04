@@ -1,7 +1,7 @@
 # Settings permission tree
 
 `PermissionTree`, the permission picker shared by the role form and the access-token form (Phase
-4.4): native checkboxes grouped by resource, content-type sub-groups under `document`, tri-state
+4.4): `@repo/ui` `Checkbox` boxes grouped by resource, content-type sub-groups under `document`, tri-state
 group boxes, a filter and Select all. It stays in the admin (not `@repo/ui`) because it reads the
 permission catalog.
 
@@ -15,10 +15,17 @@ permission catalog.
   sub-group per content-type slug (three segments). Selected slugs missing from the catalog go last
   under "Unknown permissions" ("Not in the permission catalog.", `UNKNOWN_GROUP_ID`); they stay
   listed after unchecking so they can be checked again.
-- **Controls.** All native checkboxes. A group has a tri-state box (`indeterminate` via a ref) with
+- **Controls.** Every box is the `@repo/ui` `Checkbox` (Base UI, `role="checkbox"`), rendered by the
+  internal `TriStateCheckbox`; there is no native checkbox left. A group box with some descendants
+  selected sets `indeterminate`, which shows a dash and exposes `aria-checked="mixed"`, next to
   "n of m selected"; toggling selects all descendants or clears them when all were selected
-  (`toggleNode`). A permission is named by its slug (and name when it adds anything) and described by
-  its description. Labels never wrap a control, so Tab and Space work everywhere.
+  (`toggleNode`). Checked and mixed boxes use the gold fill with a `primary-ink` border, with a 44px
+  hit area below `lg`.
+- **Names.** A wrapping `<label>` doesn't name a non-native checkbox, so each box gets
+  `aria-labelledby` pointing at its visible text: a permission by its slug (and name when it adds
+  anything), a group by its title. The description is wired through `aria-describedby`. The names
+  are the same as with the native boxes, so tests find each one with
+  `getByRole('checkbox', { name })`. Labels never wrap a control, so Tab and Space work everywhere.
 - **Filter and Select all.** "Filter permissions" matches slug, name or description; Enter in it
   doesn't submit the form. Select all and the counts act on the visible permissions and never add
   unknown slugs (R2 and R3 would reject them).
@@ -30,7 +37,9 @@ permission catalog.
 
 ### Decisions
 
-- **Native checkboxes**, not a tree widget, for predictable keyboard and screen-reader behaviour.
+- **Plain checkboxes**, not a tree widget, for predictable keyboard and screen-reader behaviour.
+  Since the luxury restyle they are the shared `Checkbox` instead of native inputs (a guard test in
+  `@repo/ui` blocks new native ones), with explicit names kept identical.
 - **Unknown slugs are kept, never added**, so editing a role never silently drops a grant and
   Select all never sends one the backend rejects.
 
@@ -44,11 +53,14 @@ permission catalog.
 ## Testing
 
 - `src/components/form/PermissionTree.test.tsx`, `src/features/settings/permissionTree.test.ts`.
-- Exercised end to end in `e2e/settings-roles.spec.ts` and `e2e/settings-access-tokens.spec.ts`;
-  `a11y.spec.ts` runs axe on the open Roles form with the tree.
+- Unit tests query boxes by role and name only and check `aria-checked="mixed"` on partial groups.
+- Exercised end to end in `e2e/settings-roles.spec.ts` and `e2e/settings-access-tokens.spec.ts`
+  (`getByRole('checkbox', { name })`); `a11y.spec.ts` runs axe on the open Roles form with the tree,
+  after checking one permission so a group is in the mixed state.
 - Run: `pnpm --filter cms-admin exec vitest run src/components/form/PermissionTree.test.tsx src/features/settings/permissionTree.test.ts`.
 
 ## Related
 
 - [Settings roles](./settings-roles.md), [Settings access tokens](./settings-access-tokens.md)
 - [Settings permissions](./settings-permissions.md) (the catalog)
+- [Design system](./design-system.md#components-the-admin-uses) (`Checkbox`)
