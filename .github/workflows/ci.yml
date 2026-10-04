@@ -263,6 +263,9 @@ jobs:
           DEPLOY_REF: ${{ needs.changes.outputs.deploy_ref }}
           CLUSTER_PATH: ${{ vars.DEPLOYMENT_CLUSTER_PATH }}
         run: |
+          echo env=${{ needs.changes.outputs.environment }}
+          echo repo=${{ vars.DEPLOYMENT_REPO }}
+          echo path=${{ vars.DEPLOYMENT_CLUSTER_PATH }}
           if [ -z "$CLUSTER_PATH" ]; then
             echo "::error::DEPLOYMENT_CLUSTER_PATH is not set for this environment"; exit 1
           fi
