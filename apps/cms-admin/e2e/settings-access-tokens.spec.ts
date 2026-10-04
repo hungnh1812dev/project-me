@@ -114,7 +114,8 @@ test('a super admin creates a token, copies its secret once, and it is gone afte
   ).toBeVisible();
 
   await dialog.getByRole('textbox', { name: 'Name' }).fill('Nightly export');
-  await dialog.getByRole('checkbox', { name: 'document' }).first().check();
+  await dialog.getByRole('checkbox', { name: 'document', exact: true }).check();
+  await expect(dialog.getByRole('checkbox', { name: 'document', exact: true })).toBeChecked();
   await expect(
     dialog.getByText("A token with no permissions can't call any protected endpoint."),
   ).toBeHidden();

@@ -1,8 +1,9 @@
-import { useEffect, useId, useMemo, useRef, useState } from 'react';
+import { useId, useMemo, useState } from 'react';
 import { InfoIcon, SearchIcon } from 'lucide-react';
 
 import { Alert, AlertDescription } from '@repo/ui/components/alert';
 import { Button } from '@repo/ui/components/button';
+import { Checkbox } from '@repo/ui/components/checkbox';
 import { Input } from '@repo/ui/components/input';
 import { Skeleton } from '@repo/ui/components/skeleton';
 import { Field } from '@repo/ui/form/Field';
@@ -40,33 +41,40 @@ export interface PermissionTreeProps {
 
 const NO_READ = 'Requires the "permission:read" permission to change permissions.';
 const UNKNOWN_DESCRIPTION = 'Not in the permission catalog.';
-const BOX = 'size-5 shrink-0 cursor-pointer accent-primary lg:size-4';
 
-interface CheckboxProps {
+interface TriStateCheckboxProps {
   id: string;
   state: NodeState;
-  describedBy: string;
+  /** The id of the visible text that names the box. */
+  labelledBy: string;
+  describedBy?: string;
+  className?: string;
   onToggle: () => void;
 }
 
-/** A native checkbox that also shows the indeterminate state. */
-const TriStateCheckbox: React.FC<CheckboxProps> = ({ id, state, describedBy, onToggle }) => {
-  const ref = useRef<HTMLInputElement>(null);
-  useEffect(() => {
-    if (ref.current) ref.current.indeterminate = state === 'indeterminate';
-  }, [state]);
-  return (
-    <input
-      ref={ref}
-      id={id}
-      type="checkbox"
-      className={BOX}
-      checked={state === 'checked'}
-      aria-describedby={describedBy}
-      onChange={onToggle}
-    />
-  );
-};
+/**
+ * The `@repo/ui` Checkbox (AC-11): `indeterminate` renders the dash and `aria-checked="mixed"`.
+ * It is named by its visible text through `aria-labelledby`; `id` lands on Base UI's hidden input,
+ * so a `<label htmlFor={id}>` click still toggles it.
+ */
+const TriStateCheckbox: React.FC<TriStateCheckboxProps> = ({
+  id,
+  state,
+  labelledBy,
+  describedBy,
+  className,
+  onToggle,
+}) => (
+  <Checkbox
+    id={id}
+    className={cn('cursor-pointer', className)}
+    checked={state === 'checked'}
+    indeterminate={state === 'indeterminate'}
+    aria-labelledby={labelledBy}
+    aria-describedby={describedBy}
+    onCheckedChange={() => onToggle()}
+  />
+);
 TriStateCheckbox.displayName = 'TriStateCheckbox';
 
 /** "n of m", with " selected" for screen readers. */
@@ -91,7 +99,7 @@ interface LeafProps {
   onToggle: () => void;
 }
 
-/** One permission: a native checkbox labelled by slug and name, described by its description. */
+/** One permission: a checkbox labelled by slug and name, described by its description. */
 const Leaf: React.FC<LeafProps> = ({ baseId, leaf, checked, onToggle }) => {
   const id = `${baseId}-p-${leaf.slug}`;
   const description = leaf.known ? leaf.description : UNKNOWN_DESCRIPTION;
@@ -100,16 +108,17 @@ const Leaf: React.FC<LeafProps> = ({ baseId, leaf, checked, onToggle }) => {
   const descriptionId = description ? `${id}-description` : undefined;
   return (
     <li className="flex items-start gap-3 px-3">
-      <input
+      <TriStateCheckbox
         id={id}
-        type="checkbox"
-        className={cn(BOX, 'mt-3 lg:mt-2')}
-        checked={checked}
-        aria-describedby={descriptionId}
-        onChange={onToggle}
+        className="mt-3.5 lg:mt-2"
+        state={checked ? 'checked' : 'unchecked'}
+        labelledBy={`${id}-label`}
+        describedBy={descriptionId}
+        onToggle={onToggle}
       />
       <div className="flex min-w-0 flex-1 flex-col pb-1.5">
         <label
+          id={`${id}-label`}
           htmlFor={id}
           className="flex min-h-11 cursor-pointer flex-wrap items-center gap-x-2 pt-1.5 lg:min-h-8 lg:pt-1"
         >
@@ -155,6 +164,7 @@ const Group: React.FC<GroupProps> = ({ baseId, node, value, onChange, depth }) =
         <TriStateCheckbox
           id={id}
           state={nodeState(node, value)}
+          labelledBy={`${id}-label`}
           describedBy={`${id}-count`}
           onToggle={() => onChange(toggleNode(node, value))}
         />
@@ -203,7 +213,8 @@ Group.displayName = 'Group';
  * per resource, `document` split by content type (D3), and selected slugs the catalog lacks under
  * "Unknown permissions" (still uncheckable and re-checkable). Each group has a tri-state checkbox
  * and an "n of m" count; Select all and the filter act on the visible, known permissions. All
- * controls are native checkboxes, so Tab and Space work, and no label wraps a control. Without
+ * boxes are `@repo/ui` Checkboxes named by their visible text, so Tab and Space work, a partial
+ * group is `aria-checked="mixed"`, and no label wraps a control. Without
  * `permission:read` it shows the current slugs read-only with a note.
  */
 export const PermissionTree: React.FC<PermissionTreeProps> = ({
@@ -314,10 +325,12 @@ export const PermissionTree: React.FC<PermissionTreeProps> = ({
             <TriStateCheckbox
               id={`${baseId}-all`}
               state={nodeState(root, value)}
+              labelledBy={`${baseId}-all-label`}
               describedBy={`${baseId}-all-count`}
               onToggle={() => onChange(toggleNode(root, value))}
             />
             <label
+              id={`${baseId}-all-label`}
               htmlFor={`${baseId}-all`}
               className="flex min-h-11 cursor-pointer items-center text-sm font-medium lg:min-h-9"
             >

@@ -86,9 +86,10 @@ test('a super admin creates a role with scoped document permissions', async ({ p
   const tree = dialog.getByRole('group', { name: 'Permissions' });
   await expect(tree.getByRole('group', { name: 'All content types' })).toBeVisible();
   await tree.getByRole('checkbox', { name: 'article', exact: true }).check();
-  await expect(tree.getByRole('checkbox', { name: 'document', exact: true })).toHaveJSProperty(
-    'indeterminate',
-    true,
+  // AC-11: the partial group is the @repo/ui Checkbox in the mixed state.
+  await expect(tree.getByRole('checkbox', { name: 'document', exact: true })).toHaveAttribute(
+    'aria-checked',
+    'mixed',
   );
   await expect(tree.getByRole('group', { name: 'document' })).toContainText('2 of 9');
   const request = page.waitForRequest(
