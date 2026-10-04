@@ -1,0 +1,297 @@
+import { useId } from 'react';
+import { ArrowDownIcon, ArrowUpIcon, ChevronsUpDownIcon } from 'lucide-react';
+import { Link } from 'react-router-dom';
+
+import { Checkbox } from '@repo/ui/components/checkbox';
+import { TableBody, TableCell, TableHead, TableHeader, TableRow } from '@repo/ui/components/table';
+import { cn } from '@repo/ui/lib/cn';
+
+import {
+  cellValue,
+  entryLabeler,
+  formatCell,
+  labelColumn,
+  STATUS_LABELS,
+  type Column,
+  type ColumnCatalog,
+} from '@/features/content/columns';
+import type {
+  ContentType,
+  DocumentStatus,
+  ListedDocumentItem,
+  SortDir,
+} from '@/features/content/types';
+
+import { StatusBadge } from '../editor/EditorHeader';
+
+export interface DocumentsTableProps {
+  type: Pick<ContentType, 'slug' | 'name' | 'listFields'>;
+  catalog: ColumnCatalog;
+  items: ListedDocumentItem[];
+  orderBy: string;
+  sortDir: SortDir;
+  /** Called with the next sort: a new column starts descending, the active one flips. */
+  onSortChange: (orderBy: string, sortDir: SortDir) => void;
+  /** The selected `documentId`s on this page. */
+  selected: ReadonlySet<string>;
+  onSelectedChange: (next: Set<string>) => void;
+  /** While the next page loads: the old rows stay, and the table is `aria-busy`. */
+  busy?: boolean;
+  /** The row actions, given the row and its label (as in its link and checkbox). */
+  renderActions?: (item: ListedDocumentItem, label: string) => React.ReactNode;
+  /** The focusable scroll region, for moving focus to the list after a delete. */
+  regionRef?: React.Ref<HTMLDivElement>;
+}
+
+// The Checkbox's ::after is a 44px hit area; the cell keeps a 44px row below `lg`. In the dense
+// `lg` table the hit area shrinks to 32px (`lg:min-h-8`) so it never reaches the next row's box.
+const BOX = 'lg:after:-inset-2';
+const BOX_TARGET = 'flex min-h-11 min-w-11 items-center justify-center lg:min-h-8 lg:min-w-8';
+
+/** The columns shown, in order: the known `listFields`, then Status unless it is listed already. */
+function visibleColumns(listFields: readonly string[], catalog: ColumnCatalog): Column[] {
+  const columns = listFields
+    .map((key) => catalog.byKey.get(key))
+    .filter((column): column is Column => column !== undefined && column.listable);
+  if (!columns.some((column) => column.key === 'status')) {
+    const status = catalog.byKey.get('status');
+    if (status) columns.push(status);
+  }
+  return columns;
+}
+
+const ARIA_SORT = { asc: 'ascending', desc: 'descending' } as const;
+
+interface SortHeaderProps {
+  column: Column;
+  active: boolean;
+  sortDir: SortDir;
+  onSort: () => void;
+}
+
+const SortHeader: React.FC<SortHeaderProps> = ({ column, active, sortDir, onSort }) => {
+  const Icon = !active ? ChevronsUpDownIcon : sortDir === 'asc' ? ArrowUpIcon : ArrowDownIcon;
+  return (
+    <TableHead aria-sort={active ? ARIA_SORT[sortDir] : 'none'} className="px-0">
+      <button
+        type="button"
+        onClick={onSort}
+        className={cn(
+          'inline-flex min-h-11 items-center gap-1 rounded-md px-2 font-medium hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring lg:min-h-8',
+          active ? 'text-foreground' : 'text-muted-foreground',
+        )}
+      >
+        {column.label}
+        <Icon aria-hidden="true" className="size-3.5 shrink-0" />
+      </button>
+    </TableHead>
+  );
+};
+SortHeader.displayName = 'SortHeader';
+
+/**
+ * A selection box (AC-12): the `@repo/ui` Checkbox named through `aria-labelledby` by sr-only text,
+ * which also keeps the name in the header cell's text. `indeterminate` gives `aria-checked="mixed"`.
+ */
+const SelectBox: React.FC<{
+  label: string;
+  checked: boolean;
+  indeterminate?: boolean;
+  disabled?: boolean;
+  onChange: () => void;
+}> = ({ label, checked, indeterminate = false, disabled, onChange }) => {
+  const labelId = useId();
+  return (
+    <div className={BOX_TARGET}>
+      <Checkbox
+        className={BOX}
+        aria-labelledby={labelId}
+        checked={checked}
+        indeterminate={indeterminate}
+        disabled={disabled}
+        onCheckedChange={onChange}
+      />
+      <span id={labelId} className="sr-only">
+        {label}
+      </span>
+    </div>
+  );
+};
+SelectBox.displayName = 'SelectBox';
+
+interface CellProps {
+  item: ListedDocumentItem;
+  column: Column;
+  href?: string;
+  label: string;
+}
+
+const Cell: React.FC<CellProps> = ({ item, column, href, label }) => {
+  const value = cellValue(item, column);
+  if (href) {
+    const display = formatCell(column.kind, value);
+    const text = display.text === '—' ? label : display.text;
+    return (
+      <TableCell>
+        <Link
+          to={href}
+          title={text}
+          className="block max-w-64 truncate font-medium text-primary-ink underline-offset-4 hover:underline"
+        >
+          {text}
+        </Link>
+      </TableCell>
+    );
+  }
+  if (column.kind === 'status' && Object.hasOwn(STATUS_LABELS, String(value))) {
+    return (
+      <TableCell>
+        <StatusBadge status={value as DocumentStatus} />
+      </TableCell>
+    );
+  }
+  const display = formatCell(column.kind, value);
+  if (column.kind === 'date' && display.title) {
+    return (
+      <TableCell className="text-muted-foreground tabular-nums">
+        <time dateTime={display.title} title={display.title}>
+          {display.text}
+        </time>
+      </TableCell>
+    );
+  }
+  return (
+    <TableCell className={cn(column.kind === 'number' && 'text-right tabular-nums')}>
+      <span title={display.title} className="block max-w-64 truncate">
+        {display.text}
+      </span>
+    </TableCell>
+  );
+};
+Cell.displayName = 'Cell';
+
+/**
+ * One page of a collection's entries (SPEC "Table"): a captioned table in a labelled, focusable
+ * scroll region. Columns are a selection checkbox, the `listFields`, Status and Actions. Cells use
+ * `formatCell`; the first text column (else `documentId`) links to the entry. Sortable headers are
+ * buttons with `aria-sort`. The header checkbox is tri-state and covers this page only.
+ */
+export const DocumentsTable: React.FC<DocumentsTableProps> = ({
+  type,
+  catalog,
+  items,
+  orderBy,
+  sortDir,
+  onSortChange,
+  selected,
+  onSelectedChange,
+  busy = false,
+  renderActions,
+  regionRef,
+}) => {
+  const captionId = useId();
+  const caption = `${type.name} entries`;
+  const shown = visibleColumns(type.listFields, catalog);
+  // The first text column links to the entry, else `documentId`.
+  const labelKey = labelColumn(type.listFields, catalog)?.key ?? 'documentId';
+  const linkColumn = catalog.byKey.get(labelKey);
+  const rowLabel = entryLabeler(type.listFields, catalog);
+  // With no text column listed, the documentId column is added first so every row has a link.
+  const columns =
+    shown.some((c) => c.key === labelKey) || !linkColumn ? shown : [linkColumn, ...shown];
+
+  const pageIds = items.map((item) => item.documentId);
+  const selectedOnPage = pageIds.filter((id) => selected.has(id)).length;
+  const allSelected = pageIds.length > 0 && selectedOnPage === pageIds.length;
+
+  const toggleAll = () => onSelectedChange(allSelected ? new Set() : new Set(pageIds));
+  const toggle = (id: string) => {
+    const next = new Set(selected);
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+    onSelectedChange(next);
+  };
+  const sortBy = (key: string) =>
+    onSortChange(key, key === orderBy ? (sortDir === 'desc' ? 'asc' : 'desc') : 'desc');
+  const hrefOf = (item: ListedDocumentItem) =>
+    `/admin/content-types/${encodeURIComponent(type.slug)}/${encodeURIComponent(item.documentId)}`;
+
+  return (
+    <div
+      ref={regionRef}
+      role="region"
+      aria-labelledby={captionId}
+      tabIndex={0}
+      className="relative w-full overflow-x-auto rounded-lg border focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+    >
+      <table
+        data-slot="table"
+        aria-busy={busy || undefined}
+        className={cn('w-full text-sm transition-opacity', busy && 'opacity-60')}
+      >
+        <caption id={captionId} className="sr-only">
+          {caption}
+        </caption>
+        <TableHeader className="bg-muted/40">
+          <TableRow className="hover:bg-transparent">
+            <TableHead className="w-11 px-1">
+              <SelectBox
+                label="Select all entries on this page"
+                checked={allSelected}
+                indeterminate={selectedOnPage > 0 && !allSelected}
+                disabled={pageIds.length === 0}
+                onChange={toggleAll}
+              />
+            </TableHead>
+            {columns.map((column) =>
+              column.sortable ? (
+                <SortHeader
+                  key={column.key}
+                  column={column}
+                  active={column.key === orderBy}
+                  sortDir={sortDir}
+                  onSort={() => sortBy(column.key)}
+                />
+              ) : (
+                <TableHead key={column.key} className="text-muted-foreground">
+                  {column.label}
+                </TableHead>
+              ),
+            )}
+            <TableHead className="w-11">
+              <span className="sr-only">Actions</span>
+            </TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {items.map((item) => {
+            const label = rowLabel(item);
+            const isSelected = selected.has(item.documentId);
+            return (
+              <TableRow key={item.documentId} data-state={isSelected ? 'selected' : undefined}>
+                <TableCell className="px-1">
+                  <SelectBox
+                    label={`Select ${label}`}
+                    checked={isSelected}
+                    onChange={() => toggle(item.documentId)}
+                  />
+                </TableCell>
+                {columns.map((column) => (
+                  <Cell
+                    key={column.key}
+                    item={item}
+                    column={column}
+                    label={label}
+                    href={column.key === labelKey ? hrefOf(item) : undefined}
+                  />
+                ))}
+                <TableCell className="text-right">{renderActions?.(item, label)}</TableCell>
+              </TableRow>
+            );
+          })}
+        </TableBody>
+      </table>
+    </div>
+  );
+};
+DocumentsTable.displayName = 'DocumentsTable';

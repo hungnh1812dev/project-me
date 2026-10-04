@@ -1,0 +1,155 @@
+/* Shared design tokens for every app (D2). Each app imports this right after
+   `@import 'tailwindcss';`, adds an `@source` for packages/ui/src, and keeps its own fonts.
+   Keep the colours in sync with ./tokens.ts (tokens.test.ts checks it). Palette: Strapi
+   admin, cool lavender-grey neutrals and an indigo primary; `primary-ink` is primary as text or
+   boundary: links, the focus ring and the 1px border every primary fill carries (in dark the
+   fill is 2.99:1 on the page, the ink border reaches 3:1). */
+
+/* `.dark` on <html> switches the tokens. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  --background: #f6f6f9;
+  --foreground: #32324d;
+  --card: #ffffff;
+  --card-foreground: #32324d;
+  --popover: #ffffff;
+  --popover-foreground: #32324d;
+  --primary: #4945ff;
+  --primary-foreground: #ffffff;
+  --primary-ink: #4945ff;
+  --secondary: #f0f0ff;
+  --secondary-foreground: #271fe0;
+  --muted: #eaeaef;
+  --muted-foreground: #666687;
+  --accent: #f0f0ff;
+  --accent-foreground: #32324d;
+  --destructive: #b72b1a;
+  --destructive-foreground: #ffffff;
+  --success: #2f6846;
+  --success-foreground: #ffffff;
+  --warning: #a14f00;
+  --warning-foreground: #ffffff;
+  --highlight: #4945ff;
+  --highlight-foreground: #ffffff;
+  --border: #dcdce4;
+  --input: #80809c;
+  --ring: #4945ff;
+  --sidebar: #ffffff;
+  --sidebar-foreground: #32324d;
+  --sidebar-primary: #4945ff;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #f0f0ff;
+  --sidebar-accent-foreground: #271fe0;
+  --sidebar-border: #eaeaef;
+  --sidebar-ring: #4945ff;
+  --radius: 0.5rem;
+  --motion-duration-fast: 150ms;
+  --motion-duration-normal: 200ms;
+  --motion-duration-slow: 300ms;
+  color-scheme: light;
+}
+
+.dark {
+  --background: #181826;
+  --foreground: #ffffff;
+  --card: #212134;
+  --card-foreground: #ffffff;
+  --popover: #212134;
+  --popover-foreground: #ffffff;
+  --primary: #4945ff;
+  --primary-foreground: #ffffff;
+  --primary-ink: #9a98ff;
+  --secondary: #32324d;
+  --secondary-foreground: #9a98ff;
+  --muted: #32324d;
+  --muted-foreground: #a5a5ba;
+  --accent: #32324d;
+  --accent-foreground: #ffffff;
+  --destructive: #f38b83;
+  --destructive-foreground: #181826;
+  --success: #5cb176;
+  --success-foreground: #181826;
+  --warning: #f29d41;
+  --warning-foreground: #181826;
+  --highlight: #9a98ff;
+  --highlight-foreground: #181826;
+  --border: #32324d;
+  --input: #8e8ea9;
+  --ring: #9a98ff;
+  --sidebar: #212134;
+  --sidebar-foreground: #ffffff;
+  --sidebar-primary: #4945ff;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #181826;
+  --sidebar-accent-foreground: #9a98ff;
+  --sidebar-border: #32324d;
+  --sidebar-ring: #9a98ff;
+  color-scheme: dark;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary-ink: var(--primary-ink);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-highlight: var(--highlight);
+  --color-highlight-foreground: var(--highlight-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --default-transition-duration: var(--motion-duration-normal);
+}
+
+@layer base {
+  * {
+    border-color: var(--border);
+  }
+
+  /* Visible keyboard focus on every element; primitives may add a ring utility on top. */
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+}
+
+/* Respect the OS "reduce motion" setting: no transitions or animations. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
