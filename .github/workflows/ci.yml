@@ -1,5 +1,6 @@
 # Docs: docs/ci-cd.md
 # push to staging/main:        changes -> checks -> build -> image -> manifest -> deploy
+#   (image/manifest/deploy only for apps whose build inputs changed; docs/tests-only changes stop at build)
 # push to develop, and PRs:    changes -> checks -> build
 name: CI
 
@@ -30,6 +31,7 @@ jobs:
     outputs:
       apps: ${{ steps.affected.outputs.apps }}
       any: ${{ steps.affected.outputs.any }}
+      image_apps: ${{ steps.affected.outputs.image_apps }}
       publish: ${{ steps.target.outputs.publish }}
       branch: ${{ steps.target.outputs.branch }}
       tag: ${{ steps.target.outputs.tag }}
@@ -55,14 +57,22 @@ jobs:
             apps=$(npx -y "turbo@${TURBO_VERSION}" query affected \
                 --packages "${packages[@]}" --base "$BASE_SHA" --head "$HEAD_SHA" \
               | jq -c '[.data.affectedPackages.items[] | select(.path | startswith("apps/")) | .name]')
+            # Apps whose build inputs changed (source, package.json, lockfile, Dockerfile; not
+            # docs or tests, see build.inputs in turbo.json): only these get a new image and deploy
+            image_apps=$(npx -y "turbo@${TURBO_VERSION}" query affected \
+                --tasks build --packages "${packages[@]}" --base "$BASE_SHA" --head "$HEAD_SHA" \
+              | jq -c --argjson all "$all" '[.data.affectedTasks.items[].package.name | select(IN($all[]))] | unique')
           else
             # New branch (before = 000…) or force push (before is gone): build everything
             echo "::notice::No usable base commit '${BASE_SHA}' for ${EVENT_NAME}; treating all apps as affected"
             apps=$all
+            image_apps=$all
           fi
           echo "Affected apps: $apps"
+          echo "Apps to build images for: $image_apps"
           {
             echo "apps=$apps"
+            echo "image_apps=$image_apps"
             echo "any=$(jq 'length > 0' <<<"$apps")"
           } >> "$GITHUB_OUTPUT"
 
@@ -72,7 +82,7 @@ jobs:
           EVENT_NAME: ${{ github.event_name }}
           BRANCH: ${{ github.event_name == 'pull_request' && github.base_ref || github.ref_name }}
           SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
-          APPS: ${{ steps.affected.outputs.apps }}
+          APPS: ${{ steps.affected.outputs.image_apps }}
         run: |
           # branch -> image platforms, GitHub Environment, deployment repo branch
           case "$BRANCH" in
@@ -200,7 +210,7 @@ jobs:
       packages: write
     strategy:
       matrix:
-        app: ${{ fromJSON(needs.changes.outputs.apps) }}
+        app: ${{ fromJSON(needs.changes.outputs.image_apps) }}
     steps:
       - uses: actions/download-artifact@v8
         with:
@@ -247,7 +257,7 @@ jobs:
         id: bump
         working-directory: deployment
         env:
-          APPS: ${{ needs.changes.outputs.apps }}
+          APPS: ${{ needs.changes.outputs.image_apps }}
           TAG: ${{ needs.changes.outputs.tag }}
           BRANCH: ${{ needs.changes.outputs.branch }}
           DEPLOY_REF: ${{ needs.changes.outputs.deploy_ref }}

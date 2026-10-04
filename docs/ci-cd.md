@@ -30,13 +30,16 @@ This mapping lives in one place: the `case` block in the `Resolve deploy target`
 
 If no app is affected, every job after `changes` is skipped and the run is green.
 
+If apps are affected but none of their build inputs changed (for example only docs or tests), `checks` and `build` still run, and `image`, `manifest` and `deploy` are skipped. No image is built and no tag is bumped.
+
 ## Jobs
 
 **`changes`**
 
 - **Affected apps:** runs `turbo query affected` between the push's `before` commit (or the PR base) and the head. turbo runs through `npx` at the pinned `TURBO_VERSION`, with no `pnpm install`.
 - **Fallback:** a new branch or a force push has no usable base commit, so it builds all apps.
-- **Outputs:** `apps`, `any`, `publish`, `tag`, `branch`, `matrix`, `environment` and `deploy_ref`.
+- **Image apps:** runs `turbo query affected --tasks build` over the same range. With `futureFlags.affectedUsingTaskInputs` in `turbo.json`, an app is listed only when a file matching its `build.inputs` changed, either in the app or in a workspace package it builds on. Those inputs are every tracked file except Markdown, `docs/`, `docs-*/`, `e2e/`, `test/`, `__tests__/`, `*.test.*`, `*.spec.*`, and the Vitest and Playwright configs. Root `package.json`, `turbo.json` and real lockfile changes count for every app. Only these apps get an image and a tag bump. If there's no usable base commit, every app is listed.
+- **Outputs:** `apps`, `any`, `image_apps`, `publish`, `tag`, `branch`, `matrix`, `environment` and `deploy_ref`.
 
 **`checks`:** `pnpm turbo run typecheck lint --filter=<each affected app>`.
 
@@ -48,12 +51,12 @@ If no app is affected, every job after `changes` is skipped and the run is green
 - Builds `apps/<app>/Dockerfile` and pushes it to GHCR **untagged, by digest**, with a GitHub Actions layer cache per app and arch.
 - Hands the digest to `manifest` as a small artifact.
 
-**`manifest`:** once per app, it combines the digests into one image and tags it `<branch>-<sha7>` and `<branch>`.
+**`manifest`:** once per image app, it combines the digests into one image and tags it `<branch>-<sha7>` and `<branch>`.
 
 **`deploy`**
 
 - Checks out the deployment repo at the mapped branch.
-- Checks that every affected `cluster/me/<staging|prod>/<app>-sync-overlay.yaml` exists and has an `APP_IMAGE_TAG` key. It checks all of them before editing any, so a bad file never leaves a half-applied bump.
+- Checks that every image app's `cluster/me/<staging|prod>/<app>-sync-overlay.yaml` exists and has an `APP_IMAGE_TAG` key. It checks all of them before editing any, so a bad file never leaves a half-applied bump.
 - Rewrites that key, makes one commit and pushes it.
 - If another push landed first, it rebases and retries, up to 3 times.
 - Runs one deploy at a time per Environment, and is never cancelled mid-way.
@@ -115,6 +118,7 @@ In the GitHub repo, go to **Settings → Secrets and variables → Actions** and
 ```bash
 pnpm install --frozen-lockfile
 pnpm turbo query affected --packages cms-api cms-admin frontend --base origin/staging --head HEAD
+pnpm turbo query affected --tasks build --packages cms-api cms-admin frontend --base origin/staging --head HEAD   # apps that get an image
 pnpm turbo run typecheck lint build --filter=cms-api
 docker build -f apps/cms-api/Dockerfile -t cms-api:local .
 docker run --rm -v "$PWD":/repo -w /repo rhysd/actionlint:latest   # lint the workflow (includes shellcheck)

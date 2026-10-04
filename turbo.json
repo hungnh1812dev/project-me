@@ -1,8 +1,25 @@
 {
   "$schema": "https://turborepo.com/schema.json",
+  "futureFlags": {
+    "affectedUsingTaskInputs": true
+  },
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "!**/*.md",
+        "!docs/**",
+        "!docs-*/**",
+        "!e2e/**",
+        "!test/**",
+        "!**/__tests__/**",
+        "!**/*.test.*",
+        "!**/*.spec.*",
+        "!**/*.e2e-spec.*",
+        "!vitest.config*",
+        "!playwright.config.*"
+      ],
       "outputs": ["dist/**", ".next/**", "!.next/cache/**"]
     },
     "dev": {
