@@ -49,7 +49,7 @@ Image check by hand:
 
 ```bash
 docker build -f apps/cms-admin/Dockerfile -t cms-admin .
-docker run --rm -p 8081:80 -e CSP_API_ORIGIN=https://api.example.test -e CSP_IMG_ORIGINS=https://cdn.example.test cms-admin
+docker run --rm -p 8081:8080 -e CSP_API_ORIGIN=https://api.example.test -e CSP_IMG_ORIGINS=https://cdn.example.test cms-admin
 curl -sI localhost:8081/admin   | grep -i -E 'content-security-policy|referrer-policy'  # both
 curl -sI localhost:8081/healthz | grep -i -E 'content-security-policy|referrer-policy'  # neither
 ```

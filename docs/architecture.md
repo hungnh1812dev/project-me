@@ -50,7 +50,7 @@ See [cms-admin's design system](../apps/cms-admin/docs/design-system.md) for the
 | App         | Stack                                             | Dev command                       | Dev port | Lint                | Tests                                                 | Container port |
 | ----------- | ------------------------------------------------- | --------------------------------- | -------- | ------------------- | ----------------------------------------------------- | -------------- |
 | `cms-api`   | NestJS 12, TypeScript 6, ESM                      | `pnpm --filter cms-api start:dev` | 3000     | oxlint (type-aware) | Vitest (`test`, `test:e2e`)                           | 3000           |
-| `cms-admin` | Vite 8, React 19, TypeScript 6                    | `pnpm --filter cms-admin dev`     | 5173     | oxlint              | Vitest (`test`, `test:cov`) + Playwright (`test:e2e`) | 80 (nginx)     |
+| `cms-admin` | Vite 8, React 19, TypeScript 6                    | `pnpm --filter cms-admin dev`     | 5173     | oxlint              | Vitest (`test`, `test:cov`) + Playwright (`test:e2e`) | 8080 (nginx)   |
 | `frontend`  | Next.js 16.3 (App Router, Tailwind), TypeScript 5 | `pnpm --filter frontend dev`      | 3000     | ESLint 9            | none                                                  | 3000           |
 
 Each app keeps its generator's own tooling and versions. That's why TypeScript and lint tools differ between apps, and it's intentional. Nest 12 has no `dev` script, so `pnpm dev` at the root doesn't start cms-api.
@@ -71,11 +71,11 @@ Before changing `turbo.json`, read the docs bundled with the installed turbo (`n
 
 Every Dockerfile builds from the **repo root** (`docker build -f apps/<app>/Dockerfile .`) and isolates its app with `turbo prune <app> --docker`, so the image only contains that app and its workspace dependencies.
 
-| App         | Stages                                                     | Runtime                                                                       | Size (unpacked / compressed) |
-| ----------- | ---------------------------------------------------------- | ----------------------------------------------------------------------------- | ---------------------------- |
-| `cms-api`   | prepare (prune) → manifests → prod-deps / builder → runner | `node:24-alpine`, non-root `node` user, `node dist/main`                      | ~200MB / 64MB                |
-| `cms-admin` | prepare → builder → runner                                 | `nginx:alpine`: SPA fallback to `index.html`, long cache for `/assets/`       | ~93MB                        |
-| `frontend`  | prepare → builder → runner                                 | `node:24-alpine`, Next `output: 'standalone'`, `node apps/frontend/server.js` | ~217MB / 75MB                |
+| App         | Stages                                                     | Runtime                                                                                   | Size (unpacked / compressed) |
+| ----------- | ---------------------------------------------------------- | ----------------------------------------------------------------------------------------- | ---------------------------- |
+| `cms-api`   | prepare (prune) → manifests → prod-deps / builder → runner | `node:24-alpine`, non-root `node` user, `node dist/main`                                  | ~200MB / 64MB                |
+| `cms-admin` | prepare → builder → runner                                 | `nginx-unprivileged:alpine`, non-root `abyss` user (1001), SPA fallback, `/assets/` cache | ~93MB                        |
+| `frontend`  | prepare → builder → runner                                 | `node:24-alpine`, Next `output: 'standalone'`, `node apps/frontend/server.js`             | ~217MB / 75MB                |
 
 About 176MB of each Node image is the `node:24-alpine` base.
 

@@ -22,11 +22,19 @@ COPY --from=prepare /app/out/full/ .
 RUN --mount=type=cache,id=turbo-cms-admin,target=/app/.turbo/cache \
     pnpm turbo run build --filter=cms-admin
 
-# Serve static files with nginx
-FROM nginx:alpine AS runner
+# Serve static files with nginx as the non-root user abyss (UID 1001), listening on 8080
+FROM nginxinc/nginx-unprivileged:alpine AS runner
+# The base image runs as nginx (101); swap in abyss and hand it the paths nginx writes at
+# start-up (rendered config in /etc/nginx/conf.d, cache in /var/cache/nginx; the pid is in /tmp)
+USER root
+RUN addgroup -S -g 1001 abyss \
+    && adduser -S -D -H -u 1001 -G abyss -s /sbin/nologin abyss \
+    && chown -R abyss:abyss /etc/nginx /var/cache/nginx
 # nginx.conf is an envsubst template: the image renders it to /etc/nginx/conf.d/default.conf
 # at start-up. Empty defaults give a valid self-only CSP instead of a literal ${...}.
 ENV CSP_API_ORIGIN="" CSP_IMG_ORIGINS=""
 COPY apps/cms-admin/nginx.conf /etc/nginx/templates/default.conf.template
 COPY --from=builder /app/apps/cms-admin/dist /usr/share/nginx/html
-EXPOSE 80
+EXPOSE 8080
+# Numeric, so Kubernetes runAsNonRoot can verify it
+USER 1001
