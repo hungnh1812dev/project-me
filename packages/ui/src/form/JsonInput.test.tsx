@@ -1,6 +1,7 @@
 import { createRef, useState } from 'react';
 import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { undo } from '@codemirror/commands';
 import { describe, expect, it, vi } from 'vitest';
 
 import { Field } from './Field';
@@ -170,6 +171,21 @@ describe('JsonInput', () => {
 
     typeText(ref, '');
     expect(format).toBeDisabled();
+  });
+
+  it('applies Format as one undoable replace (AC-18)', async () => {
+    const onChange = vi.fn();
+    const ref = createRef<JsonCodeEditorHandle>();
+    const { container } = render(<Harness ref={ref} initial="[1,2]" onChange={onChange} />);
+    await editorContent(container);
+
+    await userEvent.click(screen.getByRole('button', { name: 'Format JSON' }));
+    expect(docOf(ref)).toBe('[\n  1,\n  2\n]');
+    expect(onChange).toHaveBeenLastCalledWith('[\n  1,\n  2\n]');
+
+    act(() => void undo(ref.current!.view!));
+    expect(docOf(ref)).toBe('[1,2]');
+    expect(onChange).toHaveBeenLastCalledWith('[1,2]');
   });
 
   it('works uncontrolled from defaultValue', async () => {

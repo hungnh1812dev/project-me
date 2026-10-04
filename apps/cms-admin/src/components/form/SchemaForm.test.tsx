@@ -1,6 +1,8 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
+
+import { editorViewOf } from '@repo/ui/lib/jsonEditorView';
 
 import { ApiError } from '@/core/api/apiError';
 import type { DocumentData, FieldDefinition, FieldType } from '@/features/content/types';
@@ -210,6 +212,72 @@ describe('SchemaForm read-only mode (AC-14)', () => {
     renderForm({ readOnly: true });
 
     expect(screen.getByText("You don't have permission to edit this entry.")).toBeInTheDocument();
+  });
+});
+
+describe('SchemaForm JSON field (AC-20, AC-22)', () => {
+  const JSON_FIELDS: FieldDefinition[] = [{ name: 'meta', type: 'json' }];
+
+  /** Waits for the lazy editor and returns its in-shadow content and view. */
+  const metaEditor = async () => {
+    const content = await waitFor(() => {
+      const node = document
+        .querySelector('repo-json-editor')
+        ?.shadowRoot?.querySelector<HTMLElement>('.cm-content');
+      if (!node) throw new Error('editor not mounted yet');
+      return node;
+    });
+    const view = editorViewOf((content.getRootNode() as ShadowRoot).host);
+    if (!view) throw new Error('no EditorView');
+    const replace = (text: string) =>
+      act(() => {
+        view.dispatch({ changes: { from: 0, to: view.state.doc.length, insert: text } });
+      });
+    /** Ctrl+Z on the content, as the history keymap sees it. */
+    const undo = () =>
+      act(() => {
+        content.dispatchEvent(
+          new KeyboardEvent('keydown', { key: 'z', ctrlKey: true, bubbles: true }),
+        );
+      });
+    return { content, view, replace, undo };
+  };
+
+  it('shows the saved value after a save reset and keeps undo for later typing', async () => {
+    const onSubmit = vi.fn(async (data: DocumentData) => ({ ...data, meta: { saved: true } }));
+    const { onDirtyChange, user } = renderForm({
+      fields: JSON_FIELDS,
+      document: { meta: { a: 1 } },
+      onSubmit,
+    });
+    const { view, replace, undo } = await metaEditor();
+
+    replace('{"a": 2}');
+    await user.click(screen.getByRole('button', { name: 'Save' }));
+
+    await waitFor(() => expect(view.state.doc.toString()).toBe('{\n  "saved": true\n}'));
+    await waitFor(() => expect(onDirtyChange).toHaveBeenLastCalledWith(false));
+
+    act(() => {
+      view.dispatch({ changes: { from: view.state.doc.length - 2, insert: ',\n  "b": 1' } });
+    });
+    await waitFor(() => expect(onDirtyChange).toHaveBeenLastCalledWith(true));
+    expect(view.state.doc.toString()).toBe('{\n  "saved": true,\n  "b": 1\n}');
+    undo();
+    expect(view.state.doc.toString()).toBe('{\n  "saved": true\n}');
+    await waitFor(() => expect(onDirtyChange).toHaveBeenLastCalledWith(false));
+  });
+
+  it('focuses the editor on an invalid save and sends nothing', async () => {
+    const { onSubmit, user } = renderForm({ fields: JSON_FIELDS, document: { meta: { a: 1 } } });
+    const { content, replace } = await metaEditor();
+
+    replace('{"a":');
+    await user.click(screen.getByRole('button', { name: 'Save' }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(/^Invalid JSON: /);
+    expect(content.getRootNode()).toHaveProperty('activeElement', content);
+    expect(onSubmit).not.toHaveBeenCalled();
   });
 });
 

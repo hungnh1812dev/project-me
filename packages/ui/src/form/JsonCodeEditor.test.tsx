@@ -1,5 +1,6 @@
 import { createRef } from 'react';
 import { act, render } from '@testing-library/react';
+import { undo } from '@codemirror/commands';
 import { describe, expect, it, vi } from 'vitest';
 
 import { editorViewOf } from '../lib/jsonEditorView';
@@ -88,6 +89,12 @@ describe('JsonCodeEditor', () => {
     expect(hostOf(container)).toHaveAttribute('data-disabled');
   });
 
+  it('gives a disabled host the muted background (AC-19)', () => {
+    const { container } = render(<JsonCodeEditor disabled value="{}" label="M" />);
+
+    expect(hostOf(container)).toHaveClass('data-disabled:bg-muted');
+  });
+
   it('calls onChange with the full text on edits', () => {
     const onChange = vi.fn();
     const ref = createRef<JsonCodeEditorHandle>();
@@ -111,6 +118,34 @@ describe('JsonCodeEditor', () => {
 
     expect(ref.current?.view?.state.doc.toString()).toBe('[1]');
     expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it('keeps undo history across an outside value change (AC-22)', () => {
+    const ref = createRef<JsonCodeEditorHandle>();
+    const onChange = vi.fn();
+    const { rerender } = render(
+      <JsonCodeEditor ref={ref} value="{}" onChange={onChange} label="M" />,
+    );
+    const view = ref.current!.view!;
+
+    act(() => {
+      view.dispatch({ changes: { from: 1, insert: '"a":1' } });
+    });
+    // The parent echoes the typed value back: no extra transaction, so no extra undo step.
+    rerender(<JsonCodeEditor ref={ref} value='{"a":1}' onChange={onChange} label="M" />);
+    act(() => void undo(view));
+    expect(view.state.doc.toString()).toBe('{}');
+    expect(onChange).toHaveBeenLastCalledWith('{}');
+
+    // A reset from outside, then typing: undo reverts the typing only.
+    rerender(<JsonCodeEditor ref={ref} value="[1]" onChange={onChange} label="M" />);
+    act(() => {
+      view.dispatch({ changes: { from: 2, insert: ',2' } });
+    });
+    expect(onChange).toHaveBeenLastCalledWith('[1,2]');
+    act(() => void undo(view));
+    expect(view.state.doc.toString()).toBe('[1]');
+    expect(onChange).toHaveBeenLastCalledWith('[1]');
   });
 
   it('focuses the editor content through the ref and reports blur', () => {

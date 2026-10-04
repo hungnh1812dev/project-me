@@ -2,7 +2,7 @@
 
 import { useEffect, useImperativeHandle, useLayoutEffect, useRef } from 'react';
 import { closeBrackets, closeBracketsKeymap } from '@codemirror/autocomplete';
-import { defaultKeymap, history, historyKeymap } from '@codemirror/commands';
+import { defaultKeymap, history, historyKeymap, isolateHistory } from '@codemirror/commands';
 import { json } from '@codemirror/lang-json';
 import { bracketMatching, HighlightStyle, syntaxHighlighting } from '@codemirror/language';
 import { Annotation, Compartment, EditorState, type Extension } from '@codemirror/state';
@@ -228,7 +228,8 @@ const JsonCodeEditor: React.FC<JsonCodeEditorProps> = ({
     if (!view || !needsExternalSync(view.state.doc.toString(), value)) return;
     view.dispatch({
       changes: { from: 0, to: view.state.doc.length, insert: value },
-      annotations: external.of(true),
+      // Its own undo step, so later typing never merges into it (AC-22).
+      annotations: [external.of(true), isolateHistory.of('full')],
     });
   }, [value]);
 
@@ -241,7 +242,7 @@ const JsonCodeEditor: React.FC<JsonCodeEditorProps> = ({
       data-invalid={invalid ? '' : undefined}
       data-disabled={disabled ? '' : undefined}
       className={cn(
-        'border-input focus-within:outline-ring data-invalid:border-destructive block w-full overflow-hidden rounded-md border focus-within:outline-2 focus-within:outline-offset-2 data-disabled:cursor-not-allowed data-disabled:opacity-70',
+        'border-input focus-within:outline-ring data-invalid:border-destructive block w-full overflow-hidden rounded-md border focus-within:outline-2 focus-within:outline-offset-2 data-disabled:bg-muted data-disabled:cursor-not-allowed data-disabled:opacity-70',
         className,
       )}
     />

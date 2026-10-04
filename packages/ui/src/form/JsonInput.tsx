@@ -1,6 +1,6 @@
 'use client';
 
-import { lazy, Suspense, useState } from 'react';
+import { lazy, Suspense, useImperativeHandle, useRef, useState } from 'react';
 
 import { Button } from '../components/button';
 import { Skeleton } from '../components/skeleton';
@@ -91,13 +91,32 @@ export const JsonInput: React.FC<JsonInputProps> = ({
     if (shouldValidate(touched)) validate(next);
   };
 
+  const editorRef = useRef<JsonCodeEditorHandle>(null);
+  useImperativeHandle(ref, () => ({
+    focus: () => editorRef.current?.focus(),
+    get view() {
+      return editorRef.current?.view ?? null;
+    },
+  }));
+
+  /** One replace transaction, undoable like typing; its change reaches `update` via `onChange`. */
+  const format = () => {
+    const formatted = formatJson(text);
+    const view = editorRef.current?.view;
+    if (!view) return update(formatted);
+    view.dispatch({
+      changes: { from: 0, to: view.state.doc.length, insert: formatted },
+      userEvent: 'input.format',
+    });
+  };
+
   const invalid = Boolean(error) || ariaInvalid === true || ariaInvalid === 'true';
 
   return (
     <div data-slot="json-input" className="flex w-full flex-col gap-1">
       <Suspense fallback={<JsonEditorSkeleton />}>
         <JsonCodeEditor
-          ref={ref}
+          ref={editorRef}
           id={id}
           name={name}
           className={className}
@@ -123,7 +142,7 @@ export const JsonInput: React.FC<JsonInputProps> = ({
         size="sm"
         className="self-start"
         disabled={!canFormat(text, { disabled, readOnly })}
-        onClick={() => update(formatJson(text))}
+        onClick={format}
       >
         Format JSON
       </Button>
