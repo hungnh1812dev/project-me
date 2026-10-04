@@ -1,0 +1,134 @@
+# Docs: docs/ci-cd.md
+# cms-admin flow, called by ci.yml when cms-admin is affected: checks -> build -> [api-url -> publish]
+# api-url reads the Environment's VITE_API_URL; publish passes it as a build arg and smoke-checks the bundle.
+# publish runs _publish.yml only when the branch publishes and cms-admin's build inputs changed.
+# Status checks show as "cms-admin / Checks" and "cms-admin / Build".
+name: cms-admin
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        description: GitHub Environment for build and publish; empty on develop
+        type: string
+        required: true
+      publish:
+        description: The branch publishes images and deploys (push to staging or main)
+        type: boolean
+        required: true
+      image:
+        description: cms-admin's build inputs changed, so it gets a new image
+        type: boolean
+        required: true
+      matrix:
+        description: 'JSON {include: [{platform, arch, runner}]} for the image jobs'
+        type: string
+        required: true
+      tag:
+        description: Image tag, <branch>-<sha7>
+        type: string
+        required: true
+      branch:
+        description: Source branch
+        type: string
+        required: true
+      deploy_ref:
+        description: Deployment repo branch
+        type: string
+        required: true
+      image_prefix:
+        description: Registry prefix; the image is <image_prefix>/cms-admin
+        type: string
+        required: true
+      turbo_version:
+        description: turbo version, kept in sync with the Dockerfiles and the root package.json
+        type: string
+        required: true
+
+# Only the publish call is granted packages: write (for _publish.yml's image and manifest jobs)
+permissions:
+  contents: read
+
+env:
+  TURBO_VERSION: ${{ inputs.turbo_version }}
+
+jobs:
+  checks:
+    name: Checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Typecheck and lint
+        run: pnpm turbo run typecheck lint --filter=cms-admin
+
+  build:
+    name: Build
+    needs: checks
+    runs-on: ubuntu-latest
+    # staging -> staging, main -> production; empty on develop, so no Environment
+    environment: ${{ inputs.environment }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Build
+        run: pnpm turbo run build --filter=cms-admin
+
+  # VITE_API_URL is a GitHub Environment variable (not a secret: it ends up in the public bundle),
+  # so it can only be read in a job that runs in the Environment. Empty is allowed and means the
+  # admin calls the relative /api/v1 on its own origin.
+  api-url:
+    name: API URL
+    if: inputs.publish && inputs.image
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    outputs:
+      value: ${{ steps.read.outputs.value }}
+    steps:
+      - name: Read VITE_API_URL
+        id: read
+        env:
+          VITE_API_URL: ${{ vars.VITE_API_URL }}
+          ENVIRONMENT: ${{ inputs.environment }}
+        run: |
+          case "$VITE_API_URL" in
+            *$'\n'* | *$'\r'*) echo "::error::VITE_API_URL for ${ENVIRONMENT} must be a single line"; exit 1 ;;
+          esac
+          if [ -z "$VITE_API_URL" ]; then
+            echo "::notice::VITE_API_URL is empty for ${ENVIRONMENT}; the admin will call the relative /api/v1"
+          else
+            echo "VITE_API_URL for ${ENVIRONMENT}: ${VITE_API_URL}"
+          fi
+          echo "value=${VITE_API_URL}" >> "$GITHUB_OUTPUT"
+
+  publish:
+    name: Publish
+    needs: [build, api-url]
+    if: inputs.publish && inputs.image
+    permissions:
+      contents: read
+      packages: write
+    uses: ./.github/workflows/_publish.yml
+    secrets: inherit
+    with:
+      app: cms-admin
+      environment: ${{ inputs.environment }}
+      matrix: ${{ inputs.matrix }}
+      tag: ${{ inputs.tag }}
+      branch: ${{ inputs.branch }}
+      deploy_ref: ${{ inputs.deploy_ref }}
+      image_prefix: ${{ inputs.image_prefix }}
+      # Baked into the bundle by the builder stage; the smoke check asserts the same value
+      build_args: VITE_API_URL=${{ needs.api-url.outputs.value }}
+      smoke_check: true
+      smoke_api_url: ${{ needs.api-url.outputs.value }}

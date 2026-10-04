@@ -19,6 +19,10 @@ COPY --from=prepare /app/out/pnpm-lock.yaml /app/out/pnpm-workspace.yaml ./
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
     pnpm install --frozen-lockfile --store-dir /pnpm/store
 COPY --from=prepare /app/out/full/ .
+# Backend origin baked into the bundle by Vite at build time (no /api/v1, no trailing slash).
+# Empty keeps the relative /api/v1. Declared after install so it never invalidates the deps layer.
+ARG VITE_API_URL=""
+ENV VITE_API_URL=${VITE_API_URL}
 RUN --mount=type=cache,id=turbo-cms-admin,target=/app/.turbo/cache \
     pnpm turbo run build --filter=cms-admin
 
