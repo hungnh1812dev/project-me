@@ -5,10 +5,10 @@ The vendored shadcn (Base UI) components and small shared utilities. For anyone 
 ## Feature
 
 - Subpath exports only (`@repo/ui/components/*`), no barrel. Classes always go through `cn()`.
-- Button roles map onto existing variants: action = `default` (gold fill, `primary-ink` border), normal = `outline`, danger = `destructive`; `link` uses `text-primary-ink`. `controlClasses` is the shared input look.
+- Button roles map onto existing variants: action = `default` (indigo fill, `primary-ink` border, white label), normal = `outline`, danger = `destructive`; `link` uses `text-primary-ink`. `controlClasses` is the shared input look.
 - `Checkbox` supports `indeterminate` (`aria-checked="mixed"`), `primary-ink` checked border and a 44px hit area below `lg`. Native checkboxes are not allowed in admin code.
 - `RadioGroup` / `RadioGroupItem` (new): Base UI radio, one tab stop, arrow keys. Callers name the group and each item explicitly (`aria-label` or `aria-labelledby`).
-- `Badge` has the destructive pair that passes contrast and a `primary-ink` border on the default variant; `Switch` and the selected `Calendar` day carry `border-primary-ink` (gold-border rule).
+- `Badge` has the destructive pair that passes contrast and a `primary-ink` border on the default variant; `Switch` and the selected `Calendar` day carry `border-primary-ink` (primary-border rule).
 - Why: a wrapping `<label>` does not name a non-native `role="checkbox"`, hence the explicit names.
 
 ## Files
@@ -16,8 +16,8 @@ The vendored shadcn (Base UI) components and small shared utilities. For anyone 
 | File | Spec |
 | ---- | ---- |
 | `src/components/variants.ts` | Exports `buttonVariants`, `controlClasses`. The three button roles and shared control styling. |
-| `src/components/checkbox.tsx` | Exports `Checkbox`, `CheckboxProps`. Gold checked/mixed state, 44px hit area, invalid border. |
-| `src/components/radio-group.tsx` | Exports `RadioGroup`, `RadioGroupItem` and prop types. Same gold checked style as checkbox. |
+| `src/components/checkbox.tsx` | Exports `Checkbox`, `CheckboxProps`. Indigo checked/mixed state, 44px hit area, invalid border. |
+| `src/components/radio-group.tsx` | Exports `RadioGroup`, `RadioGroupItem` and prop types. Same indigo checked style as checkbox. |
 | `src/components/badge.tsx` | Exports `Badge`. Variants incl. `highlight` and `destructive`. |
 | `src/components/switch.tsx` | Exports `Switch`. Checked state has `primary-ink` border. |
 | `src/components/calendar.tsx` | Exports `Calendar`, `CalendarDayButton`. Selected day has `primary-ink` border. |

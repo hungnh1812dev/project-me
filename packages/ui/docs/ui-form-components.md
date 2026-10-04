@@ -4,7 +4,7 @@ Generic, data-layer-free form building blocks. Components that need Redux, route
 
 ## Feature
 
-`Field` (label, description, error wiring), `PasswordInput`, `GatedButton` / `GatedMenuItem` (fed a `Decision`), `ConfirmDialog`, `UnsavedChangesDialog`, `SecretReveal`, `FileDropzone`, `DatePicker`, `Pagination`. Behaviour is listed in [cms-admin Design system](../../../apps/cms-admin/docs/design-system.md#shared-package-repoui-phase-6-d1-to-d3). `FileDropzone` keeps its hidden `type="file"` input (shadcn has no file primitive); its uploaded icon uses `text-primary-ink`, since gold is never text.
+`Field` (label, description, error wiring), `PasswordInput`, `GatedButton` / `GatedMenuItem` (fed a `Decision`), `ConfirmDialog`, `UnsavedChangesDialog`, `SecretReveal`, `FileDropzone`, `DatePicker`, `Pagination`. Behaviour is listed in [cms-admin Design system](../../../apps/cms-admin/docs/design-system.md#shared-package-repoui-phase-6-d1-to-d3). `FileDropzone` keeps its hidden `type="file"` input (shadcn has no file primitive); its uploaded icon uses `text-primary-ink`, since primary is never text.
 
 ## Files
 

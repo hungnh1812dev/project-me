@@ -9,16 +9,16 @@ is its own module, [Theme](./theme.md).
 
 ### Stack
 
-| Concern    | Choice                                                                                                          |
-| ---------- | --------------------------------------------------------------------------------------------------------------- |
-| CSS        | Tailwind CSS v4 through `@tailwindcss/vite`. Tokens are CSS variables, mapped to utilities by `@theme inline`   |
-| Components | shadcn/ui in the Base UI flavour (`style: base-nova`), on `@base-ui/react`, vendored in `@repo/ui`              |
-| Variants   | `class-variance-authority`. Classes always go through `cn()` (`@repo/ui/lib/cn`)                                |
-| Animation  | `tw-animate-css`. `prefers-reduced-motion: reduce` turns transitions and animations off globally                |
-| Icons      | `lucide-react`. Decorative icons get `aria-hidden`; icon-only buttons get `aria-label`                          |
-| Fonts      | Fira Sans (400, 500, 600) and Fira Code, self-hosted through `@fontsource`. No font CDN. Fonts stay per app     |
-| Visual     | Quiet luxury on a minimal / Swiss, dense layout: warm stone neutrals, off-white canvas, metallic gold, charcoal |
-| Forms      | react-hook-form v7 for admin data forms; state never in component state                                         |
+| Concern    | Choice                                                                                                        |
+| ---------- | ------------------------------------------------------------------------------------------------------------- |
+| CSS        | Tailwind CSS v4 through `@tailwindcss/vite`. Tokens are CSS variables, mapped to utilities by `@theme inline` |
+| Components | shadcn/ui in the Base UI flavour (`style: base-nova`), on `@base-ui/react`, vendored in `@repo/ui`            |
+| Variants   | `class-variance-authority`. Classes always go through `cn()` (`@repo/ui/lib/cn`)                              |
+| Animation  | `tw-animate-css`. `prefers-reduced-motion: reduce` turns transitions and animations off globally              |
+| Icons      | `lucide-react`. Decorative icons get `aria-hidden`; icon-only buttons get `aria-label`                        |
+| Fonts      | Fira Sans (400, 500, 600) and Fira Code, self-hosted through `@fontsource`. No font CDN. Fonts stay per app   |
+| Visual     | Flat indigo on cool lavender-grey (Strapi-based), minimal / Swiss, dense layout                               |
+| Forms      | react-hook-form v7 for admin data forms; state never in component state                                       |
 
 Deviations: Fira Sans is the static `@fontsource/fira-sans` (no variable build exists), Fira Code is
 `@fontsource-variable/fira-code`. The primitives were written by hand from the shadcn Base UI source
@@ -54,33 +54,53 @@ Semantic token groups: surfaces (`background`, `card`, `popover`, `muted`, `seco
 so controls reach 3:1, `sidebar-border`), and `--radius`, fonts, `--motion-duration-*`. Values live
 in `packages/ui/src/styles/theme.css` (`:root` and `.dark`) and `tokens.ts`, always changed together.
 
-Luxury palette: an off-white page with white cards, charcoal text (not black), warm stone neutrals,
-solid metallic gold `#D4AF37` for the action fill (no gradient) and the new deep-gold `primary-ink`
-wherever gold has to be read as text or as a boundary.
+Strapi palette: a `#F6F6F9` page with white cards and nav, `#32324D` text and a solid indigo
+`#4945FF` action fill, following the Strapi Design System scales. `primary-ink` means "primary used
+as text or as a boundary". Src: **S** is an exact Strapi value (scale step), **D** an AA-derived
+value of the same hue where the Strapi value fails AA.
 
-| Token                                              | Light                   | Dark                  |
-| -------------------------------------------------- | ----------------------- | --------------------- |
-| `background`                                       | `#FAFAF9` off-white     | `#1C1A17`             |
-| `foreground`                                       | `#2B2B2B` charcoal      | `#F5F5F4`             |
-| `card`, `popover`                                  | `#FFFFFF`               | `#292524`             |
-| `card-foreground`, `popover-foreground`            | `#2B2B2B`               | `#F5F5F4`             |
-| `primary`, `sidebar-primary`                       | `#D4AF37` metallic gold | `#D4AF37`             |
-| `primary-foreground`, `sidebar-primary-foreground` | `#2B2B2B`               | `#1C1A17`             |
-| `primary-ink` (`--color-primary-ink`)              | `#7A5C14` deep gold     | `#E0C068`             |
-| `ring`, `sidebar-ring`                             | `#7A5C14`               | `#E0C068`             |
-| `secondary`, `muted`                               | `#F5F5F4`               | `#292524`             |
-| `secondary-foreground`                             | `#2B2B2B`               | `#F5F5F4`             |
-| `muted-foreground`                                 | `#57534E`               | `#A8A29E`             |
-| `accent` (hover tint)                              | `#F5F0E1`               | `#33302B`             |
-| `accent-foreground`                                | `#2B2B2B`               | `#F5F5F4`             |
-| `destructive` / fg                                 | `#B91C1C` / `#FFFFFF`   | `#F87171` / `#1C1A17` |
-| `success` / fg                                     | `#15803D` / `#FFFFFF`   | `#4ADE80` / `#1C1A17` |
-| `warning` / fg                                     | `#B45309` / `#FFFFFF`   | `#FBBF24` / `#1C1A17` |
-| `highlight` / fg                                   | `#7A5C14` / `#FFFFFF`   | `#E0C068` / `#1C1A17` |
-| `border`, `sidebar-border`                         | `#E7E5E4`               | `#33302B`             |
-| `input`                                            | `#78716C`               | `#8B847E`             |
-| `sidebar` / fg                                     | `#F5F5F4` / `#2B2B2B`   | `#1C1A17` / `#F5F5F4` |
-| `sidebar-accent` / fg                              | `#E7E5E4` / `#2B2B2B`   | `#33302B` / `#F5F5F4` |
+| Token                                              | Light                 | Src                       | Dark                  | Src                |
+| -------------------------------------------------- | --------------------- | ------------------------- | --------------------- | ------------------ |
+| `background`                                       | `#F6F6F9`             | S neutral100              | `#181826`             | S dark neutral100  |
+| `foreground`                                       | `#32324D`             | S neutral800              | `#FFFFFF`             | S dark neutral800  |
+| `card`, `popover`                                  | `#FFFFFF`             | S neutral0                | `#212134`             | S dark neutral0    |
+| `card-foreground`, `popover-foreground`            | `#32324D`             | S                         | `#FFFFFF`             | S                  |
+| `primary`, `sidebar-primary`                       | `#4945FF`             | S primary600              | `#4945FF`             | S buttonPrimary600 |
+| `primary-foreground`, `sidebar-primary-foreground` | `#FFFFFF`             | S                         | `#FFFFFF`             | S                  |
+| `primary-ink` (`--color-primary-ink`)              | `#4945FF`             | S primary600              | `#9A98FF`             | D                  |
+| `ring`, `sidebar-ring`                             | `#4945FF`             | S                         | `#9A98FF`             | D                  |
+| `secondary` / fg                                   | `#F0F0FF` / `#271FE0` | S primary100 / primary700 | `#32324D` / `#9A98FF` | S neutral150 / D   |
+| `muted`                                            | `#EAEAEF`             | S neutral150              | `#32324D`             | S                  |
+| `muted-foreground`                                 | `#666687`             | S neutral600              | `#A5A5BA`             | S dark neutral600  |
+| `accent` (hover tint) / fg                         | `#F0F0FF` / `#32324D` | S primary100 / neutral800 | `#32324D` / `#FFFFFF` | S                  |
+| `destructive` / fg                                 | `#B72B1A` / `#FFFFFF` | S danger700               | `#F38B83` / `#181826` | D                  |
+| `success` / fg                                     | `#2F6846` / `#FFFFFF` | S success700              | `#5CB176` / `#181826` | S success500       |
+| `warning` / fg                                     | `#A14F00` / `#FFFFFF` | D                         | `#F29D41` / `#181826` | S warning500       |
+| `highlight` / fg                                   | `#4945FF` / `#FFFFFF` | = `primary-ink`           | `#9A98FF` / `#181826` | = `primary-ink`    |
+| `border`                                           | `#DCDCE4`             | S neutral200              | `#32324D`             | S dark neutral150  |
+| `input`                                            | `#80809C`             | D                         | `#8E8EA9`             | D                  |
+| `sidebar` / fg                                     | `#FFFFFF` / `#32324D` | S                         | `#212134` / `#FFFFFF` | S                  |
+| `sidebar-accent` / fg (active, hover nav)          | `#F0F0FF` / `#271FE0` | S primary100 / primary700 | `#181826` / `#9A98FF` | S / D              |
+| `sidebar-border`                                   | `#EAEAEF`             | S neutral150              | `#32324D`             | S                  |
+
+Why the D values: light `input` (Strapi `#DCDCE4` is 1.36:1), light `warning` (Strapi `#D9822F` is
+2.92:1 with white), dark `primary-ink` / `ring` / `highlight` (Strapi `#7B79FF` is 3.54:1 on
+`#32324D`), dark `input` (Strapi `#666687` is 2.86:1), and dark `destructive` (Strapi `#EE5E52` is
+3.68:1 on its 20% badge tint over `card`). Light `success` uses success700 and light `destructive`
+danger700 (danger600 `#D02B20` is 4.14:1 on its 10% badge tint) for margin.
+
+Measured contrast (the repo's `contrastRatio`):
+
+- **Light.** Every text pair reaches at least 4.59:1 (lowest `muted-foreground` on `muted`), e.g.
+  `foreground`/`background` 11.46, `primary-foreground`/`primary` 5.87, `primary-ink`/`background`
+  5.44, `primary-ink`/`accent` 5.20, `sidebar-accent-foreground`/`sidebar-accent` 7.89,
+  `warning-foreground`/`warning` 5.78. The lowest boundary is `input`/`background` at 3.55:1; the
+  primary fill is 5.44:1 against the page.
+- **Dark.** Every text pair reaches at least 4.89:1 (lowest `primary-ink` on `accent` and
+  `secondary-foreground` on `secondary`); `destructive` reaches 4.62:1 on its 20% badge tint over
+  `card`. Every boundary reaches 3:1 (`input`/`card` 4.95). The primary fill `#4945FF` is only
+  2.99:1 against the page and 2.69:1 against cards, so it keeps a 1px `primary-ink` border
+  (`#9A98FF`, 6.94:1 on the page, 6.24:1 on cards).
 
 `apps/frontend/src/app/globals.css` pins `--ring: #7c3aed` and `--border: #e2e8f0` (the old values),
 so the public site's focus outline and default border don't change with this palette.
@@ -91,21 +111,24 @@ Rules:
   `palette.test.ts` scans every `.tsx` in `packages/ui/src` **and** `apps/cms-admin/src`.
 - `tokens.test.ts` keeps `tokens.ts` in sync with `theme.css` and checks 4.5:1 text pairs and 3:1
   control boundaries and focus rings in both themes.
-- **Gold-border rule.** The gold fill is only about 2.1:1 against the page, so every gold surface
-  carries a 1px `primary-ink` border (5.97:1 light, 9.85:1 dark). Any class string with
+- **Primary-border rule.** In dark the indigo fill is only 2.99:1 against the page, so every
+  primary surface carries a 1px `primary-ink` border (in light it matches the fill; in dark
+  `#9A98FF` is what reaches 3:1). Any class string with
   `bg-primary` or `bg-sidebar-primary` (the `/NN` hover and opacity forms excepted) must also have
-  `border-primary-ink`; `packages/ui/src/goldBorder.test.ts` scans `packages/ui/src` and
+  `border-primary-ink`; `packages/ui/src/primaryBorder.test.ts` scans `packages/ui/src` and
   `apps/cms-admin/src` and fails otherwise. Checked `Checkbox` and `RadioGroupItem`, the checked
   `Switch`, the `default` button and the `default` badge all follow it.
-- **Gold is never text.** Links, text, icons and underlines that should look gold use
+- **Primary is never text.** Links, text, icons and underlines in the primary colour use
   `text-primary-ink` (4.5:1), never `text-primary` / `text-sidebar-primary` (or the `fill-`,
-  `stroke-`, `decoration-` forms). `packages/ui/src/goldText.test.ts` scans `.tsx`, `.ts` and `.css`
-  in both trees. Labels on a gold fill use `primary-foreground` (charcoal).
+  `stroke-`, `decoration-` forms), because dark `primary` as text is only 2.99:1.
+  `packages/ui/src/primaryText.test.ts` scans `.tsx`, `.ts` and `.css` in both trees. Labels on a
+  primary fill use `primary-foreground` (white).
 - The highlight (D9) is used only for the active sidebar item's bar, the current page in
   `Pagination`, the `highlight` `Badge` variant, the editor's `true`/`false`/`null` colour and the UI
-  kit swatches. It is now deep gold (same values as `primary-ink`) so it doesn't clash with the gold
-  primary. A new use needs the same
-  contrast checks and a reason it isn't `primary`.
+  kit swatches. It takes the `primary-ink` values, following Strapi, which marks the active item and
+  the current page in primary; there is no second accent colour. The active nav item keeps its 4px
+  bar next to the `sidebar-accent` tint, so the state isn't shown by colour alone. A new use needs the same
+  contrast checks.
 - Focus: `:focus-visible` draws a 2px `ring` outline with 2px offset everywhere; only `main` and the
   page `<h1>` (focused programmatically after navigation) drop it.
 
@@ -113,13 +136,14 @@ Rules:
 
 Three roles map onto the existing variant names (none renamed, added or removed):
 
-| Role   | Variant       | Look                                                                                                   | Use                                                           |
-| ------ | ------------- | ------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------- |
-| Action | `default`     | gold `primary` fill, 1px `primary-ink` border, charcoal `primary-foreground` label, hover `primary/90` | The primary call to action, at most one per view area         |
-| Normal | `outline`     | `background` fill, `input` border, charcoal label, hover `accent`                                      | Everyday and secondary actions                                |
-| Danger | `destructive` | `destructive` fill, white label (light) / `#1C1A17` (dark), hover `destructive/90`                     | Destructive actions, behind `ConfirmDialog` when irreversible |
+| Role   | Variant       | Look                                                                                                  | Use                                                           |
+| ------ | ------------- | ----------------------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
+| Action | `default`     | indigo `primary` fill, 1px `primary-ink` border, white `primary-foreground` label, hover `primary/90` | The primary call to action, at most one per view area         |
+| Normal | `outline`     | `background` fill, `input` border, `foreground` label, hover `accent`                                 | Everyday and secondary actions                                |
+| Danger | `destructive` | `destructive` fill, white label (light) / `#181826` (dark), hover `destructive/90`                    | Destructive actions, behind `ConfirmDialog` when irreversible |
 
-`secondary` and `ghost` are unchanged; `link` uses `text-primary-ink`. Every role has the 2px `ring`
+`secondary` is the Strapi-style pale indigo tint (`#F0F0FF` / `#271FE0` light, `#32324D` /
+`#9A98FF` dark); `ghost` is unchanged; `link` uses `text-primary-ink`. Every role has the 2px `ring`
 focus outline, 50% opacity when disabled and a width-keeping spinner with `aria-busy` when
 `loading`. The UI kit shows the three roles in default, hover, focus, disabled and loading states
 in both themes (`e2e/inputs.spec.ts`).
@@ -132,11 +156,11 @@ Primitives (`@repo/ui/components`): `alert`, `alert-dialog`, `badge`, `breadcrum
 `tooltip`, `variants`. Controls are 44px tall below `lg` and 32–40px above. Both dialog popups set
 `aria-modal="true"` and trap and return focus.
 
-- **`Checkbox`** (Base UI, `role="checkbox"`): checked and `indeterminate` states paint the gold fill
+- **`Checkbox`** (Base UI, `role="checkbox"`): checked and `indeterminate` states paint the indigo fill
   with a `primary-ink` border and a `primary-foreground` check or dash; `indeterminate` is exposed
   as `aria-checked="mixed"`. Invalid shows the `destructive` border.
 - **`RadioGroup` / `RadioGroupItem`** (new, Base UI): one Tab stop, arrow keys move focus and
-  selection. Name the group with `aria-label` or `aria-labelledby`; checked items use the same gold
+  selection. Name the group with `aria-label` or `aria-labelledby`; checked items use the same indigo
   fill and `primary-ink` border.
 - **Hit areas.** Both boxes stay 16px visually; an `::after` (`after:-inset-3.5`) widens the hit
   area to 44×44px without changing layout. Dense lists (the documents table and the column chooser)
@@ -211,7 +235,7 @@ state), `RadioGroup` and `JsonInput` (default, disabled, read-only, invalid, emp
 1. Add it to `packages/ui`, not to an app: run the CLI there or copy the Base UI source into
    `packages/ui/src/components/<name>.tsx`.
 2. Review: `'use client'`, relative imports inside the package, arrow components with
-   `displayName`, semantic tokens only, every gold fill paired with `border-primary-ink`, gold never
+   `displayName`, semantic tokens only, every primary fill paired with `border-primary-ink`, primary never
    used as text, focus ring and 44px targets kept; the CLI must not touch
    `tsconfig.json`, `theme.css` or an app's dependencies.
 3. Our own behaviour goes in `packages/ui/src/form` (under the gates).
@@ -226,8 +250,12 @@ state), `RadioGroup` and `JsonInput` (default, disabled, read-only, invalid, emp
 - **Source package, no build step**, so both bundlers compile it and there is no stale `dist`.
 - **Data-layer components stay in the app**, which keeps the package free of router, Redux, React
   Query and react-hook-form.
-- **Luxury restyle.** Colours change only through tokens; button variant names stay; only native
+- **Earlier restyle.** Colours change only through tokens; button variant names stay; only native
   checkboxes and radios moved to primitives (no other new shadcn controls); fonts unchanged.
+- **Strapi restyle.** Colours only (radius, shadows, fonts, spacing and layout kept); AA first, so
+  failing Strapi values get an AA-derived value of the same hue (D); highlight = `primary-ink`; the
+  active nav item keeps its 4px bar; token names kept, the frontend keeps its `--ring`/`--border`
+  pins; the gold guards became `primaryBorder.test.ts` and `primaryText.test.ts`.
 - **CodeMirror in a shadow root instead of a CSP nonce.** A nonce would have changed `style-src`
   and needed per-request injection in nginx and `vite preview`; the shadow root keeps the policy.
 
@@ -254,10 +282,10 @@ The shared primitives, form components and tokens live in `packages/ui` (outside
 - `e2e/a11y.spec.ts` includes `/admin/dev/ui-kit` in both themes and both widths.
 - Package tests: `pnpm --filter @repo/ui test`.
   - `tokens.test.ts`: values match `theme.css`, text pairs 4.5:1, `input`/`ring`/`primary-ink` 3:1,
-    charcoal and off-white values, syntax colours 4.5:1.
+    the Strapi and AA-derived values, the destructive badge tint, syntax colours 4.5:1.
   - `palette.test.ts`: no raw hex or palette classes in `.tsx`.
-  - `goldBorder.test.ts`: every `bg-primary` / `bg-sidebar-primary` has `border-primary-ink`.
-  - `goldText.test.ts`: no `text-primary` (or `fill-`/`stroke-`/`decoration-`) gold text.
+  - `primaryBorder.test.ts`: every `bg-primary` / `bg-sidebar-primary` has `border-primary-ink`.
+  - `primaryText.test.ts`: no `text-primary` (or `fill-`/`stroke-`/`decoration-`) primary text.
   - `rawControls.test.ts`: no native checkbox or radio in `apps/cms-admin/src` (`type="file"` only
     in `FileDropzone`), and no `input[type="checkbox"]`, `input[type="radio"]` or `.indeterminate`
     selector in cms-admin unit tests or e2e specs: query by role and name.

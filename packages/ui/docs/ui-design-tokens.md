@@ -6,9 +6,9 @@ The semantic colour, radius and motion tokens for light and dark, shared by ever
 
 - `theme.css` holds the tokens for `:root` and `.dark`, `@custom-variant dark`, the `@theme inline` mapping (including `--color-primary-ink`), the global `:focus-visible` ring and the reduced-motion rule.
 - `tokens.ts` mirrors every colour as data, plus the text pairs and control-boundary pairs that must reach 4.5:1 and 3:1. `theme.css` and `tokens.ts` are always changed together; a test keeps them in sync.
-- Luxury palette: off-white page `#FAFAF9`, white cards, charcoal `#2B2B2B` text, warm stone neutrals, metallic gold `#D4AF37` fill and a new deep-gold `primary-ink` (`#7A5C14` light, `#E0C068` dark) for gold text, links, focus rings and gold-surface borders. Full table: [cms-admin Design system](../../../apps/cms-admin/docs/design-system.md#tokens-and-palette).
+- Strapi palette (Strapi Design System scales): `#F6F6F9` page, white cards, `#32324D` text, cool lavender-grey neutrals and an indigo `#4945FF` fill in both themes. `primary-ink` means "primary used as text or as a boundary" (`#4945FF` light, AA-derived `#9A98FF` dark) and drives text, links, focus rings, `highlight` and primary-surface borders. AA-derived values: light `input` `#80809C`, light `warning` `#A14F00`, dark `input` `#8E8EA9`, dark `destructive` `#F38B83`; light `success` `#2F6846` and `destructive` `#B72B1A` use the darker Strapi step. Every text pair reaches 4.59:1 light and 4.89:1 dark; every boundary 3:1. Full table: [cms-admin Design system](../../../apps/cms-admin/docs/design-system.md#tokens-and-palette).
 - Decision: tokens live in the shared package, not per app. `apps/frontend` pins `--ring` and `--border` to their old values so the public site does not change ([UI integration](../../../apps/frontend/docs/ui-integration.md)).
-- Decision: the gold fill is only about 2.1:1 on the page, so gold surfaces carry a `primary-ink` border rather than relying on the fill.
+- Decision: the dark indigo fill is only 2.99:1 on the page (2.69:1 on cards), so primary surfaces carry a `primary-ink` border (6.94:1 on the dark page) rather than relying on the fill. In light the border matches the fill.
 
 ## Files
 

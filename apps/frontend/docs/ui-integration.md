@@ -5,7 +5,7 @@ How `apps/frontend` consumes `@repo/ui` without changing its look when the share
 ## Feature
 
 - `ui-compile-check.ts` re-exports every `@repo/ui` primitive (now including `radio-group`), so `pnpm --filter frontend typecheck` proves each one compiles under Next.js (`transpilePackages`). A new primitive needs an entry here.
-- The shared theme moved to the luxury palette. Frontend renders only `--ring` and `--border` from it, so `globals.css` pins them to the old values (`--ring: #7c3aed`, `--border: #e2e8f0`). Decision: pin instead of restyling, because the public look is out of scope.
+- The shared theme moved to the Strapi palette; the pins stay. Frontend renders only `--ring` and `--border` from it, so `globals.css` pins them to the old values (`--ring: #7c3aed`, `--border: #e2e8f0`). Decision: pin instead of restyling, because the public look is out of scope.
 
 ## Files
 
