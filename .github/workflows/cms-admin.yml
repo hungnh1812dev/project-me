@@ -1,6 +1,6 @@
 # Docs: docs/ci-cd.md
-# cms-admin flow, called by ci.yml when cms-admin is affected: checks -> build -> [api-url -> publish]
-# api-url reads the Environment's VITE_API_URL; publish passes it as a build arg and smoke-checks the bundle.
+# cms-admin flow, called by ci.yml when cms-admin is affected: checks -> build -> [publish]
+# checks also reads the Environment's VITE_API_URL; publish passes it as a build arg and smoke-checks the bundle.
 # publish runs _publish.yml only when the branch publishes and cms-admin's build inputs changed.
 # Status checks show as "cms-admin / Checks" and "cms-admin / Build".
 name: cms-admin
@@ -56,7 +56,29 @@ jobs:
   checks:
     name: Checks
     runs-on: ubuntu-latest
+    # VITE_API_URL is a GitHub Environment variable (not a secret: it ends up in the public bundle),
+    # so it can only be read in a job that runs in the Environment. Empty on develop, so no Environment.
+    environment: ${{ inputs.environment }}
+    outputs:
+      api_url: ${{ steps.api-url.outputs.value }}
     steps:
+      # Empty is allowed and means the admin calls the relative /api/v1 on its own origin
+      - name: Read VITE_API_URL
+        id: api-url
+        if: inputs.publish && inputs.image
+        env:
+          VITE_API_URL: ${{ vars.VITE_API_URL }}
+          ENVIRONMENT: ${{ inputs.environment }}
+        run: |
+          case "$VITE_API_URL" in
+            *$'\n'* | *$'\r'*) echo "::error::VITE_API_URL for ${ENVIRONMENT} must be a single line"; exit 1 ;;
+          esac
+          if [ -z "$VITE_API_URL" ]; then
+            echo "::notice::VITE_API_URL is empty for ${ENVIRONMENT}; the admin will call the relative /api/v1"
+          else
+            echo "VITE_API_URL for ${ENVIRONMENT}: ${VITE_API_URL}"
+          fi
+          echo "value=${VITE_API_URL}" >> "$GITHUB_OUTPUT"
       - uses: actions/checkout@v7
       - uses: pnpm/action-setup@v6
       - uses: actions/setup-node@v7
@@ -84,36 +106,9 @@ jobs:
       - name: Build
         run: pnpm turbo run build --filter=cms-admin
 
-  # VITE_API_URL is a GitHub Environment variable (not a secret: it ends up in the public bundle),
-  # so it can only be read in a job that runs in the Environment. Empty is allowed and means the
-  # admin calls the relative /api/v1 on its own origin.
-  api-url:
-    name: API URL
-    if: inputs.publish && inputs.image
-    runs-on: ubuntu-latest
-    environment: ${{ inputs.environment }}
-    outputs:
-      value: ${{ steps.read.outputs.value }}
-    steps:
-      - name: Read VITE_API_URL
-        id: read
-        env:
-          VITE_API_URL: ${{ vars.VITE_API_URL }}
-          ENVIRONMENT: ${{ inputs.environment }}
-        run: |
-          case "$VITE_API_URL" in
-            *$'\n'* | *$'\r'*) echo "::error::VITE_API_URL for ${ENVIRONMENT} must be a single line"; exit 1 ;;
-          esac
-          if [ -z "$VITE_API_URL" ]; then
-            echo "::notice::VITE_API_URL is empty for ${ENVIRONMENT}; the admin will call the relative /api/v1"
-          else
-            echo "VITE_API_URL for ${ENVIRONMENT}: ${VITE_API_URL}"
-          fi
-          echo "value=${VITE_API_URL}" >> "$GITHUB_OUTPUT"
-
   publish:
     name: Publish
-    needs: [build, api-url]
+    needs: [checks, build]
     if: inputs.publish && inputs.image
     permissions:
       contents: read
@@ -129,6 +124,6 @@ jobs:
       deploy_ref: ${{ inputs.deploy_ref }}
       image_prefix: ${{ inputs.image_prefix }}
       # Baked into the bundle by the builder stage; the smoke check asserts the same value
-      build_args: VITE_API_URL=${{ needs.api-url.outputs.value }}
+      build_args: VITE_API_URL=${{ needs.checks.outputs.api_url }}
       smoke_check: true
-      smoke_api_url: ${{ needs.api-url.outputs.value }}
+      smoke_api_url: ${{ needs.checks.outputs.api_url }}
