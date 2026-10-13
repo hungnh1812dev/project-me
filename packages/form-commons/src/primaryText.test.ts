@@ -8,7 +8,7 @@ import { describe, expect, it } from 'vitest';
  * page, below the 4.5:1 text minimum, so links, text and icons use the `primary-ink` token instead
  * (SPEC Design, WCAG 4.5:1 text / 3:1 graphics). Flags `text-primary` / `text-sidebar-primary` (and the `fill-` / `stroke-` /
  * `decoration-` forms, with or without a variant or `/NN`), but not the `-foreground` or `-ink`
- * tokens. Scans `.tsx`, `.ts` and `.css` in `packages/ui/src` and `apps/cms-admin/src`, tests
+ * tokens. Scans `.tsx`, `.ts` and `.css` in `packages/form-commons/src` and `apps/cms-admin/src`, tests
  * excluded.
  */
 const PRIMARY_TEXT = /(?<![\w-])(?:text|fill|stroke|decoration)-(?:sidebar-)?primary(?![\w-])/g;

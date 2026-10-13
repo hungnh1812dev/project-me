@@ -1,4 +1,4 @@
-import type { Decision } from '@repo/ui/lib/decision';
+import type { Decision } from '@repo/form-commons/lib/decision';
 
 import { hasPermission } from './permissions';
 
@@ -10,7 +10,7 @@ export interface Actor {
   permissions: readonly string[];
 }
 
-/** The outcome of a policy check, shared with the gated `@repo/ui` form components. */
+/** The outcome of a policy check, shared with the gated `@repo/form-commons` form components. */
 export type { Decision };
 
 /** Attributes of the resource being acted on. Each subject reads only the fields it needs. */

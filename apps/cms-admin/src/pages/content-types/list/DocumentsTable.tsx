@@ -2,9 +2,9 @@ import { useId } from 'react';
 import { ArrowDownIcon, ArrowUpIcon, ChevronsUpDownIcon } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
-import { Checkbox } from '@repo/ui/components/checkbox';
-import { TableBody, TableCell, TableHead, TableHeader, TableRow } from '@repo/ui/components/table';
-import { cn } from '@repo/ui/lib/cn';
+import { Checkbox } from '@repo/form-commons/components/checkbox';
+import { TableBody, TableCell, TableHead, TableHeader, TableRow } from '@repo/form-commons/components/table';
+import { cn } from '@repo/form-commons/lib/cn';
 
 import {
   cellValue,
@@ -90,7 +90,7 @@ const SortHeader: React.FC<SortHeaderProps> = ({ column, active, sortDir, onSort
 SortHeader.displayName = 'SortHeader';
 
 /**
- * A selection box (AC-12): the `@repo/ui` Checkbox named through `aria-labelledby` by sr-only text,
+ * A selection box (AC-12): the `@repo/form-commons` Checkbox named through `aria-labelledby` by sr-only text,
  * which also keeps the name in the header cell's text. `indeterminate` gives `aria-checked="mixed"`.
  */
 const SelectBox: React.FC<{

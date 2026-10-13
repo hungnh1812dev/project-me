@@ -10,13 +10,13 @@ const globalsCss = readFileSync(resolve(process.cwd(), 'src/styles/globals.css')
 describe('globals.css', () => {
   it('imports the shared theme after tailwindcss', () => {
     const tailwind = globalsCss.indexOf("@import 'tailwindcss';");
-    const theme = globalsCss.indexOf("@import '@repo/ui/styles/theme.css';");
+    const theme = globalsCss.indexOf("@import '@repo/form-commons/styles/theme.css';");
     expect(tailwind).toBeGreaterThan(-1);
     expect(theme).toBeGreaterThan(tailwind);
   });
 
   it('scans the shared package for classes', () => {
-    expect(globalsCss).toContain("@source '../../../../packages/ui/src';");
+    expect(globalsCss).toContain("@source '../../../../packages/form-commons/src';");
   });
 
   it('declares no colour tokens of its own (they live in theme.css)', () => {

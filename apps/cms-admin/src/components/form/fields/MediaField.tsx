@@ -2,10 +2,10 @@ import { useEffect, useId, useRef, useState } from 'react';
 import { FileWarningIcon, ImageIcon, ImagePlusIcon, Trash2Icon } from 'lucide-react';
 import { Controller, useFormContext } from 'react-hook-form';
 
-import { Button } from '@repo/ui/components/button';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@repo/ui/components/tooltip';
-import { GatedButton } from '@repo/ui/form/GatedButton';
-import { cn } from '@repo/ui/lib/cn';
+import { Button } from '@repo/form-commons/components/button';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@repo/form-commons/components/tooltip';
+import { GatedButton } from '@repo/form-commons/form/GatedButton';
+import { cn } from '@repo/form-commons/lib/cn';
 
 import { useSchemaFormAnnounce, useSchemaFormReadOnly } from '@/components/form/schemaFormContext';
 import { readMediaValue, resolveMedia, type ResolvedMedia } from '@/features/content/mediaValue';

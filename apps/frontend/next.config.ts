@@ -4,8 +4,8 @@ import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
   output: 'standalone',
-  // @repo/ui ships TypeScript source, so Next compiles it like app code.
-  transpilePackages: ['@repo/ui'],
+  // @repo/form-commons ships TypeScript source, so Next compiles it like app code.
+  transpilePackages: ['@repo/form-commons'],
   // Trace from the monorepo root so files hoisted outside apps/frontend are included
   outputFileTracingRoot: path.join(import.meta.dirname, '../../'),
 };

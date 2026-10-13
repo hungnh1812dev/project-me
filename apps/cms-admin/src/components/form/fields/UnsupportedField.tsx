@@ -1,7 +1,7 @@
 import { useFormContext } from 'react-hook-form';
 
-import { Textarea } from '@repo/ui/components/textarea';
-import { Field } from '@repo/ui/form/Field';
+import { Textarea } from '@repo/form-commons/components/textarea';
+import { Field } from '@repo/form-commons/form/Field';
 
 export interface UnsupportedFieldProps {
   label: string;

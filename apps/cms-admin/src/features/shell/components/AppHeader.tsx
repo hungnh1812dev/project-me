@@ -1,5 +1,5 @@
-import { Separator } from '@repo/ui/components/separator';
-import { SidebarTrigger } from '@repo/ui/components/sidebar';
+import { Separator } from '@repo/form-commons/components/separator';
+import { SidebarTrigger } from '@repo/form-commons/components/sidebar';
 
 import Breadcrumbs from './Breadcrumbs';
 import UserMenu from './UserMenu';

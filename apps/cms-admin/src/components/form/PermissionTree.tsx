@@ -1,13 +1,13 @@
 import { useId, useMemo, useState } from 'react';
 import { InfoIcon, SearchIcon } from 'lucide-react';
 
-import { Alert, AlertDescription } from '@repo/ui/components/alert';
-import { Button } from '@repo/ui/components/button';
-import { Checkbox } from '@repo/ui/components/checkbox';
-import { Input } from '@repo/ui/components/input';
-import { Skeleton } from '@repo/ui/components/skeleton';
-import { Field } from '@repo/ui/form/Field';
-import { cn } from '@repo/ui/lib/cn';
+import { Alert, AlertDescription } from '@repo/form-commons/components/alert';
+import { Button } from '@repo/form-commons/components/button';
+import { Checkbox } from '@repo/form-commons/components/checkbox';
+import { Input } from '@repo/form-commons/components/input';
+import { Skeleton } from '@repo/form-commons/components/skeleton';
+import { Field } from '@repo/form-commons/form/Field';
+import { cn } from '@repo/form-commons/lib/cn';
 
 import {
   buildPermissionTree,
@@ -53,7 +53,7 @@ interface TriStateCheckboxProps {
 }
 
 /**
- * The `@repo/ui` Checkbox (AC-11): `indeterminate` renders the dash and `aria-checked="mixed"`.
+ * The `@repo/form-commons` Checkbox (AC-11): `indeterminate` renders the dash and `aria-checked="mixed"`.
  * It is named by its visible text through `aria-labelledby`; `id` lands on Base UI's hidden input,
  * so a `<label htmlFor={id}>` click still toggles it.
  */
@@ -213,7 +213,7 @@ Group.displayName = 'Group';
  * per resource, `document` split by content type (D3), and selected slugs the catalog lacks under
  * "Unknown permissions" (still uncheckable and re-checkable). Each group has a tri-state checkbox
  * and an "n of m" count; Select all and the filter act on the visible, known permissions. All
- * boxes are `@repo/ui` Checkboxes named by their visible text, so Tab and Space work, a partial
+ * boxes are `@repo/form-commons` Checkboxes named by their visible text, so Tab and Space work, a partial
  * group is `aria-checked="mixed"`, and no label wraps a control. Without
  * `permission:read` it shows the current slugs read-only with a note.
  */

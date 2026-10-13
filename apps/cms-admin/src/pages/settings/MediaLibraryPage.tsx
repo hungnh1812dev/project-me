@@ -1,8 +1,8 @@
 import { useMemo, useState } from 'react';
 
-import { FileDropzone } from '@repo/ui/form/FileDropzone';
-import { GatedButton } from '@repo/ui/form/GatedButton';
-import { Pagination } from '@repo/ui/form/Pagination';
+import { FileDropzone } from '@repo/form-commons/form/FileDropzone';
+import { GatedButton } from '@repo/form-commons/form/GatedButton';
+import { Pagination } from '@repo/form-commons/form/Pagination';
 
 import { useCan } from '@/features/auth/hooks/useCan';
 import { ListState } from '@/features/settings/components/ListState';

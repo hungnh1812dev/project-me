@@ -1,6 +1,6 @@
 import { useQueryClient } from '@tanstack/react-query';
 
-import { ConfirmDialog } from '@repo/ui/form/ConfirmDialog';
+import { ConfirmDialog } from '@repo/form-commons/form/ConfirmDialog';
 
 import type { Role } from '@/features/auth/types';
 import { useDeleteRole } from '@/features/settings/hooks/useRoles';

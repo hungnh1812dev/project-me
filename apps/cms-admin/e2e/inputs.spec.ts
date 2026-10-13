@@ -291,8 +291,8 @@ test('a Select in a Field is labelled and picks an option with the keyboard', as
   await expect(select).toBeFocused();
 });
 
-test('button classes from @repo/ui reach the app stylesheet', async ({ page }) => {
-  // Classes used only inside packages/ui go missing unless globals.css adds an @source for it.
+test('button classes from @repo/form-commons reach the app stylesheet', async ({ page }) => {
+  // Classes used only inside packages/form-commons go missing unless globals.css adds an @source for it.
   const destructive = page.getByRole('button', { name: 'destructive', exact: true });
   await expect(destructive).not.toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
 

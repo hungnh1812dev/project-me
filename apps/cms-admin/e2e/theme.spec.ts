@@ -94,7 +94,7 @@ for (const { choice, background, foreground, primary, primaryInk } of [
     primaryInk: 'rgb(154, 152, 255)', // #9A98FF
   },
 ]) {
-  test(`the shared @repo/ui theme tokens reach the page in the ${choice} theme`, async ({
+  test(`the shared @repo/form-commons theme tokens reach the page in the ${choice} theme`, async ({
     page,
   }) => {
     await storeTheme(page, choice);

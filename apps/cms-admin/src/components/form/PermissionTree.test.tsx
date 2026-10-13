@@ -65,7 +65,7 @@ describe('PermissionTree (AC-23)', () => {
     render(<Harness />);
 
     const leaf = checkbox('role:read Read roles');
-    // The @repo/ui Checkbox (AC-11), named by its visible text through aria-labelledby.
+    // The @repo/form-commons Checkbox (AC-11), named by its visible text through aria-labelledby.
     expect(leaf).toHaveAttribute('data-slot', 'checkbox');
     expect(leaf).toHaveAttribute('aria-labelledby');
     expect(leaf).toHaveAccessibleDescription('List roles.');

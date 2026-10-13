@@ -1,5 +1,5 @@
 /* Shared design tokens for every app (D2). Each app imports this right after
-   `@import 'tailwindcss';`, adds an `@source` for packages/ui/src, and keeps its own fonts.
+   `@import 'tailwindcss';`, adds an `@source` for packages/form-commons/src, and keeps its own fonts.
    Keep the colours in sync with ./tokens.ts (tokens.test.ts checks it). Palette: Strapi
    admin, cool lavender-grey neutrals and an indigo primary; `primary-ink` is primary as text or
    boundary: links, the focus ring and the 1px border every primary fill carries (in dark the

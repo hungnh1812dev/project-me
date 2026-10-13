@@ -11,9 +11,9 @@ import {
   DropdownMenuRadioItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@repo/ui/components/dropdown-menu';
-import { buttonVariants } from '@repo/ui/components/variants';
-import { cn } from '@repo/ui/lib/cn';
+} from '@repo/form-commons/components/dropdown-menu';
+import { buttonVariants } from '@repo/form-commons/components/variants';
+import { cn } from '@repo/form-commons/lib/cn';
 
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { isThemeChoice, type ThemeChoice } from '@/features/theme/theme';

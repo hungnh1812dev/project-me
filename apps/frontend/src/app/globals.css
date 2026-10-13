@@ -1,8 +1,8 @@
 @import 'tailwindcss';
-@import '@repo/ui/styles/theme.css';
+@import '@repo/form-commons/styles/theme.css';
 
 /* Scan the shared package too: its classes live outside this app's root. */
-@source '../../../../packages/ui/src';
+@source '../../../../packages/form-commons/src';
 
 :root {
   --background: #ffffff;

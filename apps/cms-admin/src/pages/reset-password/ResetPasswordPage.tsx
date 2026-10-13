@@ -1,10 +1,10 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 
-import { Alert } from '@repo/ui/components/alert';
-import { Button } from '@repo/ui/components/button';
-import { Field } from '@repo/ui/form/Field';
-import { PasswordInput } from '@repo/ui/form/PasswordInput';
+import { Alert } from '@repo/form-commons/components/alert';
+import { Button } from '@repo/form-commons/components/button';
+import { Field } from '@repo/form-commons/form/Field';
+import { PasswordInput } from '@repo/form-commons/form/PasswordInput';
 
 import { useResetPasswordMutation } from '@/core/api/AuthApi';
 import { toApiErrorData } from '@/core/api/axiosBaseQuery';

@@ -1,8 +1,8 @@
 import { useId, useMemo, useRef, useState } from 'react';
 import { ChevronRightIcon } from 'lucide-react';
 
-import { Badge } from '@repo/ui/components/badge';
-import { Button } from '@repo/ui/components/button';
+import { Badge } from '@repo/form-commons/components/badge';
+import { Button } from '@repo/form-commons/components/button';
 import {
   Table,
   TableBody,
@@ -11,11 +11,11 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@repo/ui/components/table';
-import { GatedButton } from '@repo/ui/form/GatedButton';
-import { Pagination } from '@repo/ui/form/Pagination';
-import { SecretReveal } from '@repo/ui/form/SecretReveal';
-import { cn } from '@repo/ui/lib/cn';
+} from '@repo/form-commons/components/table';
+import { GatedButton } from '@repo/form-commons/form/GatedButton';
+import { Pagination } from '@repo/form-commons/form/Pagination';
+import { SecretReveal } from '@repo/form-commons/form/SecretReveal';
+import { cn } from '@repo/form-commons/lib/cn';
 
 import { useCan } from '@/features/auth/hooks/useCan';
 import { ListState } from '@/features/settings/components/ListState';

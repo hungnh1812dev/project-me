@@ -9,15 +9,15 @@ import {
   BreadcrumbList,
   BreadcrumbPage,
   BreadcrumbSeparator,
-} from '@repo/ui/components/breadcrumb';
+} from '@repo/form-commons/components/breadcrumb';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@repo/ui/components/dropdown-menu';
-import { buttonVariants } from '@repo/ui/components/variants';
-import { cn } from '@repo/ui/lib/cn';
+} from '@repo/form-commons/components/dropdown-menu';
+import { buttonVariants } from '@repo/form-commons/components/variants';
+import { cn } from '@repo/form-commons/lib/cn';
 
 import type { Crumb } from '../breadcrumbs';
 import { useBreadcrumbs } from '../hooks/useBreadcrumbs';

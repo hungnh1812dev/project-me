@@ -1,7 +1,7 @@
 import { AlertCircleIcon } from 'lucide-react';
 
-import { Button } from '@repo/ui/components/button';
-import { Skeleton } from '@repo/ui/components/skeleton';
+import { Button } from '@repo/form-commons/components/button';
+import { Skeleton } from '@repo/form-commons/components/skeleton';
 
 import type { ApiError } from '@/core/api/apiError';
 

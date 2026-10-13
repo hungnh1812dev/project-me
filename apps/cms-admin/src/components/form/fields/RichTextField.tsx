@@ -2,9 +2,9 @@ import { lazy, Suspense, useId, useRef, useState } from 'react';
 import { TriangleAlertIcon } from 'lucide-react';
 import { Controller, useFormContext, useFormState } from 'react-hook-form';
 
-import { Label } from '@repo/ui/components/label';
-import { Skeleton } from '@repo/ui/components/skeleton';
-import { cn } from '@repo/ui/lib/cn';
+import { Label } from '@repo/form-commons/components/label';
+import { Skeleton } from '@repo/form-commons/components/skeleton';
+import { cn } from '@repo/form-commons/lib/cn';
 
 import { useSchemaFormReadOnly } from '@/components/form/schemaFormContext';
 import { ROUND_TRIP_WARNING } from '@/features/content/richtext';

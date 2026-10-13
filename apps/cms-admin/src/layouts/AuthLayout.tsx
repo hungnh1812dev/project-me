@@ -6,7 +6,7 @@ import {
   CardDescription,
   CardFooter,
   CardHeader,
-} from '@repo/ui/components/card';
+} from '@repo/form-commons/components/card';
 
 interface AuthLayoutProps {
   /** The page heading (the only `<h1>`). */

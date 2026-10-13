@@ -36,6 +36,12 @@ const listFiles = (dir: string): string[] =>
     return entry.isDirectory() ? listFiles(path) : [path];
   });
 
+/** The package's old name (AC-B6): no alias or re-export of it may remain. */
+const OLD_NAME = /^@repo\/ui(\/|$)/;
+
+const oldNameImports = (source: string): string[] =>
+  importSpecifiers(source).filter((spec) => OLD_NAME.test(spec));
+
 const sourceFiles = listFiles(SRC).filter((file) => /\.(ts|tsx)$/.test(file) && file !== SELF);
 const rel = (file: string): string => relative(SRC, file);
 
@@ -194,7 +200,7 @@ describe('shadcn CLI config (AC-8)', () => {
 
   it('every alias points inside the package', () => {
     const config = JSON.parse(readFileSync(CONFIG, 'utf8')) as { aliases: Record<string, string> };
-    const outside = Object.values(config.aliases).filter((alias) => !alias.startsWith('@repo/ui/'));
+    const outside = Object.values(config.aliases).filter((alias) => !alias.startsWith('@repo/form-commons/'));
 
     expect(outside).toEqual([]);
   });
@@ -204,4 +210,49 @@ describe('shadcn CLI config (AC-8)', () => {
 
     expect(existsSync(join(PACKAGE_ROOT, config.tailwind.css))).toBe(true);
   });
+});
+
+describe('oldNameImports', () => {
+  it('flags the old package name and its subpaths', () => {
+    const source = [
+      "import { Button } from '@repo/ui/components/button';",
+      "import '@repo/ui/styles/theme.css';",
+      "export * from '@repo/ui';",
+    ].join('\n');
+
+    expect(oldNameImports(source)).toEqual([
+      '@repo/ui/components/button',
+      '@repo/ui/styles/theme.css',
+      '@repo/ui',
+    ]);
+  });
+
+  it('allows the new name and look-alike packages', () => {
+    const source = [
+      "import { Button } from '@repo/form-commons/components/button';",
+      "import x from '@repo/ui-kit';",
+    ].join('\n');
+
+    expect(oldNameImports(source)).toEqual([]);
+  });
+});
+
+describe('no @repo/ui imports (AC-B6)', () => {
+  const ADMIN_SRC = join(SRC, '..', '..', '..', 'apps', 'cms-admin', 'src');
+  const files = [
+    ...sourceFiles,
+    ...listFiles(ADMIN_SRC).filter((file) => /\.(ts|tsx|css)$/.test(file)),
+  ];
+
+  it('has files to scan in the package and in cms-admin', () => {
+    expect(sourceFiles.length).toBeGreaterThan(0);
+    expect(files.length).toBeGreaterThan(sourceFiles.length);
+  });
+
+  it.each(files.map((file) => [relative(join(SRC, '..', '..', '..'), file), file]))(
+    '%s does not import @repo/ui',
+    (_name, file) => {
+      expect(oldNameImports(readFileSync(file, 'utf8'))).toEqual([]);
+    },
+  );
 });

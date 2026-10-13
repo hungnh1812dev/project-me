@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 
 /**
  * AC-17: components colour things through the semantic token classes only. This scans every
- * `.tsx` file in `packages/ui/src` and `apps/cms-admin/src` for raw hex colours and Tailwind
+ * `.tsx` file in `packages/form-commons/src` and `apps/cms-admin/src` for raw hex colours and Tailwind
  * palette classes (such as `bg-slate-100` or `text-violet-600`).
  */
 const PALETTE =
@@ -68,7 +68,7 @@ describe('paletteViolations', () => {
 });
 
 describe.each([
-  ['packages/ui/src', UI_SRC],
+  ['packages/form-commons/src', UI_SRC],
   ['apps/cms-admin/src', ADMIN_SRC],
 ])('%s', (_label, root) => {
   const files = listTsx(root);

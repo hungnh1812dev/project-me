@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
-import { clampPage, pageSlice } from '@repo/ui/lib/pagination';
+import { clampPage, pageSlice } from '@repo/form-commons/lib/pagination';
 
 import { parsePaging, serializePaging, type PageSize } from '../paging';
 

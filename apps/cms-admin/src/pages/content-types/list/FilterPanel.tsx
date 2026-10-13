@@ -1,17 +1,17 @@
 import { useId, useState } from 'react';
 import { PlusIcon, Trash2Icon } from 'lucide-react';
 
-import { Button } from '@repo/ui/components/button';
-import { Input } from '@repo/ui/components/input';
+import { Button } from '@repo/form-commons/components/button';
+import { Input } from '@repo/form-commons/components/input';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@repo/ui/components/select';
-import { DatePicker } from '@repo/ui/form/DatePicker';
-import { Field } from '@repo/ui/form/Field';
+} from '@repo/form-commons/components/select';
+import { DatePicker } from '@repo/form-commons/form/DatePicker';
+import { Field } from '@repo/form-commons/form/Field';
 
 import type { Column, ColumnCatalog } from '@/features/content/columns';
 import { operatorLabel } from '@/features/content/filterLabels';

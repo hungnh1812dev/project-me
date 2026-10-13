@@ -2,7 +2,7 @@ import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 
-import { editorViewOf } from '@repo/ui/lib/jsonEditorView';
+import { editorViewOf } from '@repo/form-commons/lib/jsonEditorView';
 
 import { ApiError } from '@/core/api/apiError';
 import type { DocumentData, FieldDefinition, FieldType } from '@/features/content/types';

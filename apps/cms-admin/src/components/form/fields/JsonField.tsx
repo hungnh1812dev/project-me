@@ -1,7 +1,7 @@
 import { Controller, useFormContext } from 'react-hook-form';
 
-import { Field } from '@repo/ui/form/Field';
-import { JsonInput } from '@repo/ui/form/JsonInput';
+import { Field } from '@repo/form-commons/form/Field';
+import { JsonInput } from '@repo/form-commons/form/JsonInput';
 
 import { useSchemaFormReadOnly } from '@/components/form/schemaFormContext';
 import { rulesFor } from '@/features/content/schemaForm';

@@ -1,7 +1,7 @@
 import { Loader2Icon } from 'lucide-react';
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
 
-import { Button } from '@repo/ui/components/button';
+import { Button } from '@repo/form-commons/components/button';
 
 import { useAuth } from '../hooks/useAuth';
 import { toRedirectState } from '../redirect';

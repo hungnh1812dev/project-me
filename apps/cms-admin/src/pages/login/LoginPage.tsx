@@ -1,13 +1,13 @@
 import { useState, type FormEvent } from 'react';
 import { Link, Navigate, useLocation } from 'react-router-dom';
 
-import { Alert } from '@repo/ui/components/alert';
-import { Button } from '@repo/ui/components/button';
-import { Checkbox } from '@repo/ui/components/checkbox';
-import { Input } from '@repo/ui/components/input';
-import { Label } from '@repo/ui/components/label';
-import { Field } from '@repo/ui/form/Field';
-import { PasswordInput } from '@repo/ui/form/PasswordInput';
+import { Alert } from '@repo/form-commons/components/alert';
+import { Button } from '@repo/form-commons/components/button';
+import { Checkbox } from '@repo/form-commons/components/checkbox';
+import { Input } from '@repo/form-commons/components/input';
+import { Label } from '@repo/form-commons/components/label';
+import { Field } from '@repo/form-commons/form/Field';
+import { PasswordInput } from '@repo/form-commons/form/PasswordInput';
 
 import { useHasUsersQuery } from '@/core/api/AuthApi';
 import { useAuth } from '@/features/auth/hooks/useAuth';

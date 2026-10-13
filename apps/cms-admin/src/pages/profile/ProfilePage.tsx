@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import { LogOutIcon, PencilIcon } from 'lucide-react';
 
-import { Alert } from '@repo/ui/components/alert';
-import { Badge } from '@repo/ui/components/badge';
-import { Button } from '@repo/ui/components/button';
-import { Card, CardContent, CardFooter, CardHeader } from '@repo/ui/components/card';
-import { Separator } from '@repo/ui/components/separator';
-import { cn } from '@repo/ui/lib/cn';
+import { Alert } from '@repo/form-commons/components/alert';
+import { Badge } from '@repo/form-commons/components/badge';
+import { Button } from '@repo/form-commons/components/button';
+import { Card, CardContent, CardFooter, CardHeader } from '@repo/form-commons/components/card';
+import { Separator } from '@repo/form-commons/components/separator';
+import { cn } from '@repo/form-commons/lib/cn';
 
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { useCurrentUserQuery } from '@/features/auth/hooks/useCurrentUserQuery';

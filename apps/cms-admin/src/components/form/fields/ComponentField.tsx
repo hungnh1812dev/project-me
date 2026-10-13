@@ -1,6 +1,6 @@
 import { useFormContext, useWatch } from 'react-hook-form';
 
-import { cn } from '@repo/ui/lib/cn';
+import { cn } from '@repo/form-commons/lib/cn';
 
 import { SchemaField } from '@/components/form/SchemaField';
 import { entryHint, widthClass } from '@/features/content/schema';

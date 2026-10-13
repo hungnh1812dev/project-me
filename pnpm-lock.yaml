@@ -32,9 +32,9 @@ importers:
       '@reduxjs/toolkit':
         specifier: ^2.13.0
         version: 2.13.0(react-redux@9.3.0(@types/react@19.2.18)(react@19.2.8)(redux@5.0.1))(react@19.2.8)
-      '@repo/ui':
+      '@repo/form-commons':
         specifier: workspace:*
-        version: link:../../packages/ui
+        version: link:../../packages/form-commons
       '@tanstack/react-query':
         specifier: ^5.104.0
         version: 5.104.0(react@19.2.8)
@@ -196,9 +196,9 @@ importers:
 
   apps/frontend:
     dependencies:
-      '@repo/ui':
+      '@repo/form-commons':
         specifier: workspace:*
-        version: link:../../packages/ui
+        version: link:../../packages/form-commons
       next:
         specifier: 16.3.6
         version: 16.3.6(@babel/core@7.29.7)(@playwright/test@1.63.0)(@types/node@20.19.43)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
@@ -236,15 +236,7 @@ importers:
 
   packages/eslint-config: {}
 
-  packages/types:
-    devDependencies:
-      '@repo/typescript-config':
-        specifier: workspace:*
-        version: link:../typescript-config
-
-  packages/typescript-config: {}
-
-  packages/ui:
+  packages/form-commons:
     dependencies:
       '@base-ui/react':
         specifier: ^1.8.0
@@ -331,6 +323,14 @@ importers:
       vitest:
         specifier: 4.1.2
         version: 4.1.2(@types/node@24.13.3)(jsdom@30.1.1(@noble/hashes@1.8.0))(msw@2.15.0(@types/node@24.13.3)(typescript@6.0.2))(vite@8.3.1(@types/node@24.13.3)(jiti@2.7.0))
+
+  packages/types:
+    devDependencies:
+      '@repo/typescript-config':
+        specifier: workspace:*
+        version: link:../typescript-config
+
+  packages/typescript-config: {}
 
 packages:
 

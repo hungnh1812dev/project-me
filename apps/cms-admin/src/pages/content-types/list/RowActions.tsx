@@ -2,15 +2,15 @@ import { useRef, useState } from 'react';
 import { CopyIcon, EllipsisIcon, PencilIcon, SendIcon, Trash2Icon, UndoIcon } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
-import { Button } from '@repo/ui/components/button';
+import { Button } from '@repo/form-commons/components/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@repo/ui/components/dropdown-menu';
-import { GatedMenuItem } from '@repo/ui/form/GatedMenuItem';
+} from '@repo/form-commons/components/dropdown-menu';
+import { GatedMenuItem } from '@repo/form-commons/form/GatedMenuItem';
 
 import {
   useDuplicateDocument,

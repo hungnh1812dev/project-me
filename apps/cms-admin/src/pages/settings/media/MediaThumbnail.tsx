@@ -1,6 +1,6 @@
 import { ImageOffIcon } from 'lucide-react';
 
-import { cn } from '@repo/ui/lib/cn';
+import { cn } from '@repo/form-commons/lib/cn';
 
 import { API_BASE_URL } from '@/core/config/env';
 import { safeImageSrc } from '@/core/security/safeImageSrc';

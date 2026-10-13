@@ -6,7 +6,7 @@ import { describe, expect, it } from 'vitest';
 /**
  * AC-4: in dark the primary fill is only 2.99:1 against the page, so every class string that paints
  * `bg-primary` or `bg-sidebar-primary` must also carry `border-primary-ink`. The `/NN` hover and
- * opacity forms are ignored. Scans `.tsx` in `packages/ui/src` and `apps/cms-admin/src` (tests
+ * opacity forms are ignored. Scans `.tsx` in `packages/form-commons/src` and `apps/cms-admin/src` (tests
  * excluded, they assert classes rather than render them) plus `components/variants.ts`.
  */
 const STRING_LITERAL = /'(?:[^'\\\n]|\\.)*'|"(?:[^"\\\n]|\\.)*"|`(?:[^`\\]|\\.)*`/g;

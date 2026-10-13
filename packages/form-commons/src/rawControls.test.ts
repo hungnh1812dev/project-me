@@ -4,7 +4,7 @@ import { basename, join, relative, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 /**
- * AC-10: `apps/cms-admin/src` renders checkboxes and radios only through the `@repo/ui` `Checkbox`
+ * AC-10: `apps/cms-admin/src` renders checkboxes and radios only through the `@repo/form-commons` `Checkbox`
  * and `RadioGroup`, so no `.tsx` there may set `type="checkbox"` or `type="radio"`, and
  * `type="file"` is allowed only inside `FileDropzone`.
  *

@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 
-import { Badge } from '@repo/ui/components/badge';
+import { Badge } from '@repo/form-commons/components/badge';
 import {
   Table,
   TableBody,
@@ -9,9 +9,9 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@repo/ui/components/table';
-import { GatedButton } from '@repo/ui/form/GatedButton';
-import { Pagination } from '@repo/ui/form/Pagination';
+} from '@repo/form-commons/components/table';
+import { GatedButton } from '@repo/form-commons/form/GatedButton';
+import { Pagination } from '@repo/form-commons/form/Pagination';
 
 import { useCan } from '@/features/auth/hooks/useCan';
 import type { Decision } from '@/features/auth/permissions/policies';

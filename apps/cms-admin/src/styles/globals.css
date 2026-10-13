@@ -1,9 +1,9 @@
 @import 'tailwindcss';
 @import 'tw-animate-css';
-@import '@repo/ui/styles/theme.css';
+@import '@repo/form-commons/styles/theme.css';
 
 /* Scan the shared package too: its classes live outside this app's root. */
-@source '../../../../packages/ui/src';
+@source '../../../../packages/form-commons/src';
 
 /* Self-hosted fonts (no third-party CDN). Fira Sans: only the weights the UI uses. */
 @import '@fontsource/fira-sans/400.css';

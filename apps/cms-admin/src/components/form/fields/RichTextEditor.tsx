@@ -17,10 +17,10 @@ import {
   StrikethroughIcon,
 } from 'lucide-react';
 
-import { Button } from '@repo/ui/components/button';
-import { Input } from '@repo/ui/components/input';
-import { Field } from '@repo/ui/form/Field';
-import { cn } from '@repo/ui/lib/cn';
+import { Button } from '@repo/form-commons/components/button';
+import { Input } from '@repo/form-commons/components/input';
+import { Field } from '@repo/form-commons/form/Field';
+import { cn } from '@repo/form-commons/lib/cn';
 
 import { changesOnRoundTrip, isAllowedHref, LINK_ERROR } from '@/features/content/richtext';
 

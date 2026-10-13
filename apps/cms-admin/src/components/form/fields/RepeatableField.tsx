@@ -2,8 +2,8 @@ import { useEffect, useRef } from 'react';
 import { Plus } from 'lucide-react';
 import { useFieldArray, useFormContext, useWatch } from 'react-hook-form';
 
-import { Button } from '@repo/ui/components/button';
-import { cn } from '@repo/ui/lib/cn';
+import { Button } from '@repo/form-commons/components/button';
+import { cn } from '@repo/form-commons/lib/cn';
 
 import { useSchemaFormAnnounce, useSchemaFormReadOnly } from '@/components/form/schemaFormContext';
 import { entryHint } from '@/features/content/schema';
