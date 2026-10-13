@@ -23,17 +23,6 @@ import RolesPage from '@/pages/settings/RolesPage';
 import UsersPage from '@/pages/settings/UsersPage';
 import VerifyOtpPage from '@/pages/verify-otp/VerifyOtpPage';
 
-/**
- * Dev-only showcase of the base inputs. Registered only when `import.meta.env.DEV`, and loaded
- * lazily, so production builds drop it entirely.
- */
-const uiKitRoute: RouteObject = {
-  path: 'dev/ui-kit',
-  // Shown while the lazy chunk loads on a first visit straight to this URL.
-  HydrateFallback: () => null,
-  lazy: async () => ({ Component: (await import('@/pages/dev/UiKitPage')).default }),
-};
-
 /** The page of each `SETTINGS_LINKS` key (AC-1). Every key has one; there is no placeholder. */
 const SETTINGS_PAGES: Record<string, ComponentType> = {
   users: UsersPage,
@@ -87,7 +76,6 @@ export const routes: RouteObject[] = [
               { path: ':slug/:documentId', element: <DocumentDetailPage /> },
             ],
           },
-          ...(import.meta.env.DEV ? [uiKitRoute] : []),
         ],
       },
     ],

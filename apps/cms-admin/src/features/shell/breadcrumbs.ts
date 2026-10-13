@@ -86,7 +86,6 @@ export function buildBreadcrumbs(pathname: string, context: BreadcrumbContext = 
     const link = SETTINGS_LINKS.find((l) => l.key === child);
     if (link) return [home, { label: 'Settings' }, { label: link.label }];
   }
-  if (section === 'dev' && child === 'ui-kit') return [home, { label: 'UI kit' }];
 
   return [home, { label: titleCase(segments[segments.length - 1]) }];
 }

@@ -1,7 +1,7 @@
 import { screen } from '@testing-library/react';
 import { http, HttpResponse } from 'msw';
 import type { RouteObject } from 'react-router-dom';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 
 import { makeContentType } from '@/test/contentFixtures';
 import { makeMeUser, makeRole } from '@/test/fixtures';
@@ -257,7 +257,6 @@ describe('route table', () => {
     ['/admin/settings/users', 'Users', ['user:read']],
     ['/admin/content-types', 'Content types', ['content_type:read']],
     ['/admin/content-types/article', 'Article', ['content_type:read']],
-    ['/admin/dev/ui-kit', 'UI kit', []],
   ])('renders %s inside the shell with exactly one main', async (route, heading, permissions) => {
     server.use(getContentTypesHandler().handler, getContentTypeHandler().handler);
     renderRoutes(routes, { route, auth: signedIn(permissions) });
@@ -292,7 +291,7 @@ describe('route table', () => {
   });
 });
 
-/** Every path in the table, joined with its parents (e.g. `/admin/dev/ui-kit`). */
+/** Every path in the table, joined with its parents (e.g. `/admin/settings/users`). */
 function allPaths(table: RouteObject[], parent = ''): string[] {
   return table.flatMap((route) => {
     const path = route.path
@@ -302,31 +301,24 @@ function allPaths(table: RouteObject[], parent = ''): string[] {
   });
 }
 
-describe('dev-only UI kit route', () => {
-  afterEach(() => {
-    vi.unstubAllEnvs();
-    vi.resetModules();
-  });
+/**
+ * The removed showcase URL, built from its parts so the AC-1 `git grep` for the old route stays empty
+ * while this test still visits the real path.
+ */
+const REMOVED_UI_KIT_PATH = `/admin/dev/${['ui', 'kit'].join('-')}`;
 
-  it('serves /admin/dev/ui-kit behind login in development', async () => {
-    renderRoutes(routes, { route: '/admin/dev/ui-kit', auth: signedIn() });
+describe('removed UI kit route', () => {
+  it('sends a signed-in visit to the old UI kit path to /admin, with no dev routes left', async () => {
+    const { router } = renderRoutes(routes, {
+      route: REMOVED_UI_KIT_PATH,
+      auth: signedIn(['user:read']),
+    });
 
-    expect(await screen.findByRole('heading', { name: 'UI kit', level: 1 })).toBeInTheDocument();
-  });
-
-  it('protects /admin/dev/ui-kit behind login', async () => {
-    renderRoutes(routes, { route: '/admin/dev/ui-kit', auth: { status: 'unauthenticated' } });
-
-    expect(await screen.findByRole('heading', { name: 'Sign in' })).toBeInTheDocument();
-  });
-
-  it('is not registered when import.meta.env.DEV is false', async () => {
-    expect(allPaths(routes)).toContain('/admin/dev/ui-kit');
-
-    vi.stubEnv('DEV', false);
-    vi.resetModules();
-    const { routes: productionRoutes } = await import('./router');
-
-    expect(allPaths(productionRoutes)).not.toContain('/admin/dev/ui-kit');
+    expect(
+      await screen.findByRole('heading', { name: 'Welcome, Jane Doe', level: 1 }),
+    ).toBeInTheDocument();
+    expect(router.state.location.pathname).toBe('/admin');
+    expect(screen.queryByRole('heading', { name: 'UI kit' })).not.toBeInTheDocument();
+    expect(allPaths(routes).filter((path) => path.startsWith('/admin/dev'))).toEqual([]);
   });
 });

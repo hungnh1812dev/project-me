@@ -24,7 +24,6 @@ describe('buildBreadcrumbs', () => {
     ['/admin/settings/permissions', [HOME, SETTINGS, { label: 'Permissions' }]],
     ['/admin/settings/access-tokens', [HOME, SETTINGS, { label: 'Access tokens' }]],
     ['/admin/settings/media', [HOME, SETTINGS, { label: 'Media library' }]],
-    ['/admin/dev/ui-kit', [HOME, { label: 'UI kit' }]],
     ['/admin/reports', [HOME, { label: 'Reports' }]],
     ['/admin/audit-log', [HOME, { label: 'Audit Log' }]],
     ['/admin/settings/unknown_page', [HOME, { label: 'Unknown Page' }]],
