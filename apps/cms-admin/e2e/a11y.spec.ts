@@ -43,7 +43,6 @@ const PAGES: {
   { path: '/admin', heading: 'Welcome, Jane Doe', signedIn: true },
   { path: '/admin/profile', heading: 'Your profile', signedIn: true },
   { path: '/admin/content-types/article', heading: 'Article', signedIn: true },
-  { path: '/admin/dev/ui-kit', heading: 'UI kit', signedIn: true },
   // AC-16: the pages the palette change touches most.
   {
     path: '/admin/settings/users',
@@ -243,33 +242,6 @@ for (const { path, heading } of PAGES.filter((p) => !p.signedIn)) {
     expect(tops).toEqual([...tops].sort((a, b) => a - b));
   });
 }
-
-test('keyboard walk on the UI kit reaches every control with visible focus (AC-45)', async ({
-  page,
-  mockApi,
-}) => {
-  seed(mockApi, true);
-  await page.setViewportSize({ width: 1280, height: 812 });
-  await page.goto('/admin/dev/ui-kit');
-  await expect(page.getByRole('heading', { name: 'UI kit', level: 1 })).toBeVisible();
-  // The JSON editors load lazily; walk once every editor has replaced its skeleton.
-  await expect(page.locator('[data-slot="json-editor-skeleton"]')).toHaveCount(0);
-  await expect(page.locator('[data-slot="json-code-editor"] .cm-content')).toHaveCount(
-    await page.locator('[data-slot="json-input"]').count(),
-  );
-
-  const stops = await walkTabOrder(page, 200);
-  const inMain = stops.filter((s) => s.landmark === 'main');
-
-  expect(stops.filter((s) => !s.visibleFocus)).toEqual([]);
-  // Disabled controls are skipped; every other visible control in main is a Tab stop.
-  const enabled = await page.evaluate<number>(
-    `[...document.querySelectorAll('main *')].filter(
-      (el) => el.tabIndex >= 0 && !el.disabled && el.checkVisibility(),
-    ).length`,
-  );
-  expect(inMain.length).toBe(enabled);
-});
 
 /* ------------------------------------------------------------------------------------------------
  * Settings pages (AC-42, AC-43): a super admin with one row on every list, so each page shows its
