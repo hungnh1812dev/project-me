@@ -111,10 +111,10 @@ describe('package boundaries (AC-5)', () => {
 describe("'use client' directive (AC-6)", () => {
   const clientModules = sourceFiles.filter((file) => {
     const path = rel(file).split('\\').join('/');
-    return /^(components|form)\/.*\.tsx$/.test(path) && !path.endsWith('.test.tsx');
+    return /^components\/(ui|forms)\/.*\.tsx$/.test(path) && !path.endsWith('.test.tsx');
   });
 
-  it('every .tsx module in components/ and form/ starts with the directive', () => {
+  it('every .tsx module in components/ui/ and components/forms/ starts with the directive', () => {
     const missing = clientModules
       .filter((file) => !startsWithUseClient(readFileSync(file, 'utf8')))
       .map(rel);
@@ -149,11 +149,11 @@ describe('primitives (AC-2)', () => {
     'tooltip',
   ] as const;
 
-  it.each(PRIMITIVES)('components/%s.tsx is in the package', (name) => {
-    expect(existsSync(join(SRC, 'components', `${name}.tsx`))).toBe(true);
+  it.each(PRIMITIVES)('components/ui/%s.tsx is in the package', (name) => {
+    expect(existsSync(join(SRC, 'components', 'ui', `${name}.tsx`))).toBe(true);
   });
 
-  it.each(['components/variants.ts', 'hooks/use-mobile.ts', 'hooks/use-sidebar.ts', 'lib/cn.ts'])(
+  it.each(['components/ui/variants.ts', 'hooks/use-mobile.ts', 'hooks/use-sidebar.ts', 'lib/cn.ts'])(
     '%s is in the package',
     (path) => {
       expect(existsSync(join(SRC, path))).toBe(true);
@@ -175,8 +175,12 @@ describe('generic form components (AC-3)', () => {
     'FileDropzone',
   ] as const;
 
-  it.each(FORM)('form/%s.tsx is in the package', (name) => {
-    expect(existsSync(join(SRC, 'form', `${name}.tsx`))).toBe(true);
+  it.each(FORM)('components/forms/%s.tsx is in the package', (name) => {
+    expect(existsSync(join(SRC, 'components', 'forms', `${name}.tsx`))).toBe(true);
+  });
+
+  it('the old form/ folder is gone', () => {
+    expect(existsSync(join(SRC, 'form'))).toBe(false);
   });
 
   it.each(['lib/json.ts', 'lib/decision.ts'])('%s is in the package', (path) => {
@@ -203,6 +207,42 @@ describe('shadcn CLI config (AC-8)', () => {
     const outside = Object.values(config.aliases).filter((alias) => !alias.startsWith('@repo/form-commons/'));
 
     expect(outside).toEqual([]);
+  });
+
+  it('shadcn adds primitives to components/ui (AC-B5)', () => {
+    const config = JSON.parse(readFileSync(CONFIG, 'utf8')) as { aliases: Record<string, string> };
+
+    expect(config.aliases).toEqual({
+      components: '@repo/form-commons/components',
+      ui: '@repo/form-commons/components/ui',
+      utils: '@repo/form-commons/lib/cn',
+      lib: '@repo/form-commons/lib',
+      hooks: '@repo/form-commons/hooks',
+    });
+  });
+
+  it('tsconfig maps the package alias to src so the shadcn CLI resolves every alias', () => {
+    const tsconfig = JSON.parse(readFileSync(join(PACKAGE_ROOT, 'tsconfig.json'), 'utf8')) as {
+      compilerOptions: { paths?: Record<string, string[]> };
+    };
+
+    expect(tsconfig.compilerOptions.paths).toEqual({ '@repo/form-commons/*': ['./src/*'] });
+  });
+
+  it('package exports match the components/ui and components/forms layout (AC-B1)', () => {
+    const pkg = JSON.parse(readFileSync(join(PACKAGE_ROOT, 'package.json'), 'utf8')) as {
+      exports: Record<string, string>;
+    };
+
+    expect(pkg.exports).toEqual({
+      './components/ui/variants': './src/components/ui/variants.ts',
+      './components/ui/*': './src/components/ui/*.tsx',
+      './components/forms/*': './src/components/forms/*.tsx',
+      './hooks/*': './src/hooks/*.ts',
+      './lib/*': './src/lib/*.ts',
+      './styles/theme.css': './src/styles/theme.css',
+      './styles/tokens': './src/styles/tokens.ts',
+    });
   });
 
   it('the Tailwind css entry is the package theme', () => {
@@ -253,6 +293,61 @@ describe('no @repo/ui imports (AC-B6)', () => {
     '%s does not import @repo/ui',
     (_name, file) => {
       expect(oldNameImports(readFileSync(file, 'utf8'))).toEqual([]);
+    },
+  );
+});
+
+/** Subpaths the package exports (AC-B8, AC-B10); anything else under the new name is stale. */
+const VALID_SUBPATH = /^@repo\/form-commons\/(components\/(ui|forms)\/[^/]+|hooks\/[^/]+|lib\/[^/]+|styles\/(theme\.css|tokens))$/;
+
+const staleSubpathImports = (source: string): string[] =>
+  importSpecifiers(source).filter(
+    (spec) => spec.startsWith('@repo/form-commons') && !VALID_SUBPATH.test(spec),
+  );
+
+describe('staleSubpathImports', () => {
+  it('flags the pre-split components/ and form/ subpaths', () => {
+    const source = [
+      "import { Button } from '@repo/form-commons/components/button';",
+      "import { buttonVariants } from '@repo/form-commons/components/variants';",
+      "import { Field } from '@repo/form-commons/form/Field';",
+    ].join('\n');
+
+    expect(staleSubpathImports(source)).toEqual([
+      '@repo/form-commons/components/button',
+      '@repo/form-commons/components/variants',
+      '@repo/form-commons/form/Field',
+    ]);
+  });
+
+  it('allows the exported subpaths', () => {
+    const source = [
+      "import { Button } from '@repo/form-commons/components/ui/button';",
+      "import { buttonVariants } from '@repo/form-commons/components/ui/variants';",
+      "import { Field } from '@repo/form-commons/components/forms/Field';",
+      "import { useIsMobile } from '@repo/form-commons/hooks/use-mobile';",
+      "import { cn } from '@repo/form-commons/lib/cn';",
+      "import { TOKENS } from '@repo/form-commons/styles/tokens';",
+      "@import '@repo/form-commons/styles/theme.css';",
+    ].join('\n');
+
+    expect(staleSubpathImports(source)).toEqual([]);
+  });
+});
+
+describe('consumers use the components/ui and components/forms subpaths (AC-B8, AC-B10)', () => {
+  const ROOT = join(SRC, '..', '..', '..');
+  const ADMIN = join(ROOT, 'apps', 'cms-admin');
+  const files = [
+    ...listFiles(join(ADMIN, 'src')),
+    ...listFiles(join(ADMIN, 'e2e')),
+    join(ROOT, 'apps', 'frontend', 'src', 'ui-compile-check.ts'),
+  ].filter((file) => /\.(ts|tsx|css)$/.test(file));
+
+  it.each(files.map((file) => [relative(ROOT, file), file]))(
+    '%s imports only exported subpaths',
+    (_name, file) => {
+      expect(staleSubpathImports(readFileSync(file, 'utf8'))).toEqual([]);
     },
   );
 });

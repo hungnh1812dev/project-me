@@ -1,4 +1,4 @@
-import { ConfirmDialog } from '@repo/form-commons/form/ConfirmDialog';
+import { ConfirmDialog } from '@repo/form-commons/components/forms/ConfirmDialog';
 
 import { useDeleteAccessToken } from '@/features/settings/hooks/useAccessTokens';
 import type { AccessToken } from '@/features/settings/types';

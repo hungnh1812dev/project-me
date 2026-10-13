@@ -1,8 +1,8 @@
 import { ChevronRightIcon } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
-import { Badge } from '@repo/form-commons/components/badge';
-import { Card } from '@repo/form-commons/components/card';
+import { Badge } from '@repo/form-commons/components/ui/badge';
+import { Card } from '@repo/form-commons/components/ui/card';
 
 import { useContentTypes } from '@/features/content/hooks/useContentTypes';
 import type { ContentTypeSummary } from '@/features/content/types';

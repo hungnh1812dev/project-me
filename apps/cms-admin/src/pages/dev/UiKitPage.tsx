@@ -11,11 +11,11 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from '@repo/form-commons/components/alert-dialog';
-import { Badge } from '@repo/form-commons/components/badge';
-import { Button } from '@repo/form-commons/components/button';
-import { Calendar } from '@repo/form-commons/components/calendar';
-import { Checkbox } from '@repo/form-commons/components/checkbox';
+} from '@repo/form-commons/components/ui/alert-dialog';
+import { Badge } from '@repo/form-commons/components/ui/badge';
+import { Button } from '@repo/form-commons/components/ui/button';
+import { Calendar } from '@repo/form-commons/components/ui/calendar';
+import { Checkbox } from '@repo/form-commons/components/ui/checkbox';
 import {
   Dialog,
   DialogClose,
@@ -25,9 +25,9 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@repo/form-commons/components/dialog';
-import { Input } from '@repo/form-commons/components/input';
-import { Label } from '@repo/form-commons/components/label';
+} from '@repo/form-commons/components/ui/dialog';
+import { Input } from '@repo/form-commons/components/ui/input';
+import { Label } from '@repo/form-commons/components/ui/label';
 import {
   Popover,
   PopoverContent,
@@ -35,21 +35,21 @@ import {
   PopoverHeader,
   PopoverTitle,
   PopoverTrigger,
-} from '@repo/form-commons/components/popover';
-import { RadioGroup, RadioGroupItem } from '@repo/form-commons/components/radio-group';
+} from '@repo/form-commons/components/ui/popover';
+import { RadioGroup, RadioGroupItem } from '@repo/form-commons/components/ui/radio-group';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@repo/form-commons/components/select';
-import { Switch } from '@repo/form-commons/components/switch';
-import { Textarea } from '@repo/form-commons/components/textarea';
-import { DatePicker } from '@repo/form-commons/form/DatePicker';
-import { Field } from '@repo/form-commons/form/Field';
-import { JsonInput } from '@repo/form-commons/form/JsonInput';
-import { PasswordInput } from '@repo/form-commons/form/PasswordInput';
+} from '@repo/form-commons/components/ui/select';
+import { Switch } from '@repo/form-commons/components/ui/switch';
+import { Textarea } from '@repo/form-commons/components/ui/textarea';
+import { DatePicker } from '@repo/form-commons/components/forms/DatePicker';
+import { Field } from '@repo/form-commons/components/forms/Field';
+import { JsonInput } from '@repo/form-commons/components/forms/JsonInput';
+import { PasswordInput } from '@repo/form-commons/components/forms/PasswordInput';
 import { cn } from '@repo/form-commons/lib/cn';
 
 const VARIANTS = ['default', 'secondary', 'outline', 'ghost', 'destructive', 'link'] as const;

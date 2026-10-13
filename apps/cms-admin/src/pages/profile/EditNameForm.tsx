@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 
-import { Button } from '@repo/form-commons/components/button';
-import { Input } from '@repo/form-commons/components/input';
-import { Field } from '@repo/form-commons/form/Field';
+import { Button } from '@repo/form-commons/components/ui/button';
+import { Input } from '@repo/form-commons/components/ui/input';
+import { Field } from '@repo/form-commons/components/forms/Field';
 
 import { useUpdateProfile } from '@/features/settings/hooks/useUpdateProfile';
 import { validateProfileName } from '@/features/settings/validation';

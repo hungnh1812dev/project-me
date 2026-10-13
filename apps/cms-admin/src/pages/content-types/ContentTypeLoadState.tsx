@@ -1,7 +1,7 @@
 import { ArrowLeftIcon } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
-import { Button } from '@repo/form-commons/components/button';
+import { Button } from '@repo/form-commons/components/ui/button';
 
 import type { ApiError } from '@/core/api/apiError';
 

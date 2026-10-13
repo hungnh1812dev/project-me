@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import { Plus } from 'lucide-react';
 import { useFieldArray, useFormContext, useWatch } from 'react-hook-form';
 
-import { Button } from '@repo/form-commons/components/button';
+import { Button } from '@repo/form-commons/components/ui/button';
 import { cn } from '@repo/form-commons/lib/cn';
 
 import { useSchemaFormAnnounce, useSchemaFormReadOnly } from '@/components/form/schemaFormContext';

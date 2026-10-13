@@ -6,9 +6,9 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@repo/form-commons/components/select';
-import { ConfirmDialog } from '@repo/form-commons/form/ConfirmDialog';
-import { Field } from '@repo/form-commons/form/Field';
+} from '@repo/form-commons/components/ui/select';
+import { ConfirmDialog } from '@repo/form-commons/components/forms/ConfirmDialog';
+import { Field } from '@repo/form-commons/components/forms/Field';
 
 import type { Role } from '@/features/auth/types';
 import { useAssignRole } from '@/features/settings/hooks/useUsers';

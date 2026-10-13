@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-import { ConfirmDialog, type ConfirmDialogProps } from '@repo/form-commons/form/ConfirmDialog';
+import { ConfirmDialog, type ConfirmDialogProps } from '@repo/form-commons/components/forms/ConfirmDialog';
 
 import { useDeleteDocument } from '@/features/content/hooks/useCollectionMutations';
 import type { ContentTypeRef } from '@/features/content/types';

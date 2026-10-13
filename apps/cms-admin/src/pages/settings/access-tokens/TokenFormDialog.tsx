@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react';
 import { TriangleAlertIcon } from 'lucide-react';
 
-import { Button } from '@repo/form-commons/components/button';
+import { Button } from '@repo/form-commons/components/ui/button';
 import {
   Dialog,
   DialogClose,
@@ -10,16 +10,16 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@repo/form-commons/components/dialog';
-import { Input } from '@repo/form-commons/components/input';
+} from '@repo/form-commons/components/ui/dialog';
+import { Input } from '@repo/form-commons/components/ui/input';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@repo/form-commons/components/select';
-import { Field } from '@repo/form-commons/form/Field';
+} from '@repo/form-commons/components/ui/select';
+import { Field } from '@repo/form-commons/components/forms/Field';
 
 import { PermissionTree } from '@/components/form/PermissionTree';
 import { useCreateAccessToken } from '@/features/settings/hooks/useAccessTokens';

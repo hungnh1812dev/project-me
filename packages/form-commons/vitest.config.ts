@@ -15,13 +15,13 @@ export default defineConfig({
       exclude: [
         'src/test/**',
         'src/**/*.test.{ts,tsx}',
-        // Vendored shadcn primitives; their custom behaviour is tested from src/form.
-        'src/components/**',
+        // Vendored shadcn primitives; their custom behaviour is tested from src/components/forms.
+        'src/components/ui/**',
       ],
       thresholds: {
         'src/lib/**/*.ts': LOGIC_THRESHOLD,
         'src/styles/tokens.ts': LOGIC_THRESHOLD,
-        'src/form/**/*.tsx': UI_THRESHOLD,
+        'src/components/forms/**/*.tsx': UI_THRESHOLD,
       },
     },
   },

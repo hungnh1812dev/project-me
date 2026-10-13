@@ -1,7 +1,7 @@
 import { useId, useMemo, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 
-import { Button } from '@repo/form-commons/components/button';
+import { Button } from '@repo/form-commons/components/ui/button';
 import {
   Dialog,
   DialogClose,
@@ -10,9 +10,9 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@repo/form-commons/components/dialog';
-import { RadioGroup, RadioGroupItem } from '@repo/form-commons/components/radio-group';
-import { FileDropzone } from '@repo/form-commons/form/FileDropzone';
+} from '@repo/form-commons/components/ui/dialog';
+import { RadioGroup, RadioGroupItem } from '@repo/form-commons/components/ui/radio-group';
+import { FileDropzone } from '@repo/form-commons/components/forms/FileDropzone';
 
 import { useCan } from '@/features/auth/hooks/useCan';
 import { ListState } from '@/features/settings/components/ListState';

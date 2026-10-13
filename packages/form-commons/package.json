@@ -4,9 +4,9 @@
   "private": true,
   "type": "module",
   "exports": {
-    "./components/variants": "./src/components/variants.ts",
-    "./components/*": "./src/components/*.tsx",
-    "./form/*": "./src/form/*.tsx",
+    "./components/ui/variants": "./src/components/ui/variants.ts",
+    "./components/ui/*": "./src/components/ui/*.tsx",
+    "./components/forms/*": "./src/components/forms/*.tsx",
     "./hooks/*": "./src/hooks/*.ts",
     "./lib/*": "./src/lib/*.ts",
     "./styles/theme.css": "./src/styles/theme.css",

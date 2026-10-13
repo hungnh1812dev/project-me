@@ -2,7 +2,7 @@ import { useId, useState, type ReactNode } from 'react';
 import { ChevronDownIcon, FileIcon, FilesIcon, type LucideIcon } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 
-import { Button } from '@repo/form-commons/components/button';
+import { Button } from '@repo/form-commons/components/ui/button';
 import {
   SidebarContent,
   SidebarGroup,
@@ -12,7 +12,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarMenuSkeleton,
-} from '@repo/form-commons/components/sidebar';
+} from '@repo/form-commons/components/ui/sidebar';
 import { useSidebar } from '@repo/form-commons/hooks/use-sidebar';
 import { cn } from '@repo/form-commons/lib/cn';
 

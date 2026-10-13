@@ -2,13 +2,13 @@ import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
 import { AlertCircleIcon, Columns3Icon, ListFilterIcon, PlusIcon, SearchIcon } from 'lucide-react';
 import { Link, useLocation, useSearchParams } from 'react-router-dom';
 
-import { Badge } from '@repo/form-commons/components/badge';
-import { Button } from '@repo/form-commons/components/button';
-import { Input } from '@repo/form-commons/components/input';
-import { Skeleton } from '@repo/form-commons/components/skeleton';
-import { Field } from '@repo/form-commons/form/Field';
-import { GatedButton } from '@repo/form-commons/form/GatedButton';
-import { Pagination } from '@repo/form-commons/form/Pagination';
+import { Badge } from '@repo/form-commons/components/ui/badge';
+import { Button } from '@repo/form-commons/components/ui/button';
+import { Input } from '@repo/form-commons/components/ui/input';
+import { Skeleton } from '@repo/form-commons/components/ui/skeleton';
+import { Field } from '@repo/form-commons/components/forms/Field';
+import { GatedButton } from '@repo/form-commons/components/forms/GatedButton';
+import { Pagination } from '@repo/form-commons/components/forms/Pagination';
 import { lastPage } from '@repo/form-commons/lib/pagination';
 
 import type { Decision } from '@/features/auth/permissions/policies';

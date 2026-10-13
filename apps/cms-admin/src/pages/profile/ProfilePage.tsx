@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { LogOutIcon, PencilIcon } from 'lucide-react';
 
-import { Alert } from '@repo/form-commons/components/alert';
-import { Badge } from '@repo/form-commons/components/badge';
-import { Button } from '@repo/form-commons/components/button';
-import { Card, CardContent, CardFooter, CardHeader } from '@repo/form-commons/components/card';
-import { Separator } from '@repo/form-commons/components/separator';
+import { Alert } from '@repo/form-commons/components/ui/alert';
+import { Badge } from '@repo/form-commons/components/ui/badge';
+import { Button } from '@repo/form-commons/components/ui/button';
+import { Card, CardContent, CardFooter, CardHeader } from '@repo/form-commons/components/ui/card';
+import { Separator } from '@repo/form-commons/components/ui/separator';
 import { cn } from '@repo/form-commons/lib/cn';
 
 import { useAuth } from '@/features/auth/hooks/useAuth';

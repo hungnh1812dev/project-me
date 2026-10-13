@@ -1,6 +1,6 @@
 import { Link, useLocation } from 'react-router-dom';
 
-import { Button } from '@repo/form-commons/components/button';
+import { Button } from '@repo/form-commons/components/ui/button';
 
 import AuthLayout from '@/layouts/AuthLayout';
 

@@ -1,8 +1,8 @@
 import { useRef, useState } from 'react';
 import { InfoIcon } from 'lucide-react';
 
-import { Alert, AlertDescription } from '@repo/form-commons/components/alert';
-import { Button } from '@repo/form-commons/components/button';
+import { Alert, AlertDescription } from '@repo/form-commons/components/ui/alert';
+import { Button } from '@repo/form-commons/components/ui/button';
 import {
   Dialog,
   DialogClose,
@@ -11,10 +11,10 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@repo/form-commons/components/dialog';
-import { Input } from '@repo/form-commons/components/input';
-import { Textarea } from '@repo/form-commons/components/textarea';
-import { Field } from '@repo/form-commons/form/Field';
+} from '@repo/form-commons/components/ui/dialog';
+import { Input } from '@repo/form-commons/components/ui/input';
+import { Textarea } from '@repo/form-commons/components/ui/textarea';
+import { Field } from '@repo/form-commons/components/forms/Field';
 
 import { useCreatePermission, useUpdatePermission } from '@/features/settings/hooks/usePermissions';
 import type { Permission } from '@/features/settings/types';

@@ -17,9 +17,9 @@ import {
   StrikethroughIcon,
 } from 'lucide-react';
 
-import { Button } from '@repo/form-commons/components/button';
-import { Input } from '@repo/form-commons/components/input';
-import { Field } from '@repo/form-commons/form/Field';
+import { Button } from '@repo/form-commons/components/ui/button';
+import { Input } from '@repo/form-commons/components/ui/input';
+import { Field } from '@repo/form-commons/components/forms/Field';
 import { cn } from '@repo/form-commons/lib/cn';
 
 import { changesOnRoundTrip, isAllowedHref, LINK_ERROR } from '@/features/content/richtext';

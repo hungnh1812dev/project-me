@@ -13,7 +13,7 @@
   "iconLibrary": "lucide",
   "aliases": {
     "components": "@repo/form-commons/components",
-    "ui": "@repo/form-commons/components",
+    "ui": "@repo/form-commons/components/ui",
     "utils": "@repo/form-commons/lib/cn",
     "lib": "@repo/form-commons/lib",
     "hooks": "@repo/form-commons/hooks"

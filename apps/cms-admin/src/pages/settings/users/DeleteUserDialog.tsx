@@ -1,4 +1,4 @@
-import { ConfirmDialog } from '@repo/form-commons/form/ConfirmDialog';
+import { ConfirmDialog } from '@repo/form-commons/components/forms/ConfirmDialog';
 
 import { useDeleteUser } from '@/features/settings/hooks/useUsers';
 import type { UserRow } from '@/features/settings/roleHierarchy';

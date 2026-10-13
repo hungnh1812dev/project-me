@@ -1,12 +1,12 @@
 import { EllipsisVerticalIcon } from 'lucide-react';
 
-import { Badge } from '@repo/form-commons/components/badge';
-import { Button } from '@repo/form-commons/components/button';
+import { Badge } from '@repo/form-commons/components/ui/badge';
+import { Button } from '@repo/form-commons/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuTrigger,
-} from '@repo/form-commons/components/dropdown-menu';
+} from '@repo/form-commons/components/ui/dropdown-menu';
 import { cn } from '@repo/form-commons/lib/cn';
 
 import { formatCell, STATUS_LABELS } from '@/features/content/columns';

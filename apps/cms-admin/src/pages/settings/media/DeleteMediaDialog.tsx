@@ -1,4 +1,4 @@
-import { ConfirmDialog } from '@repo/form-commons/form/ConfirmDialog';
+import { ConfirmDialog } from '@repo/form-commons/components/forms/ConfirmDialog';
 
 import { useDeleteMedia } from '@/features/settings/hooks/useMedia';
 import type { MediaAsset } from '@/features/settings/types';

@@ -9,8 +9,8 @@ import {
   XIcon,
 } from 'lucide-react';
 
-import { Button } from '@repo/form-commons/components/button';
-import { GatedButton } from '@repo/form-commons/form/GatedButton';
+import { Button } from '@repo/form-commons/components/ui/button';
+import { GatedButton } from '@repo/form-commons/components/forms/GatedButton';
 import { cn } from '@repo/form-commons/lib/cn';
 
 import {

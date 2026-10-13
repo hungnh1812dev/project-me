@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react';
 
-import { GatedButton } from '@repo/form-commons/form/GatedButton';
-import { UnsavedChangesDialog } from '@repo/form-commons/form/UnsavedChangesDialog';
+import { GatedButton } from '@repo/form-commons/components/forms/GatedButton';
+import { UnsavedChangesDialog } from '@repo/form-commons/components/forms/UnsavedChangesDialog';
 
 import { SchemaForm } from '@/components/form/SchemaForm';
 import { isApiError } from '@/core/api/apiError';

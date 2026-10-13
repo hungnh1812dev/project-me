@@ -11,7 +11,8 @@
     "declarationMap": false,
     "verbatimModuleSyntax": true,
     "noUnusedLocals": true,
-    "noUnusedParameters": true
+    "noUnusedParameters": true,
+    "paths": { "@repo/form-commons/*": ["./src/*"] }
   },
   "include": ["src", "vitest.config.ts"]
 }

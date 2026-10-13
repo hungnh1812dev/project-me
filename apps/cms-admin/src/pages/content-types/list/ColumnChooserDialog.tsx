@@ -1,8 +1,8 @@
 import { useId, useState } from 'react';
 import { ArrowDownIcon, ArrowUpIcon } from 'lucide-react';
 
-import { Button } from '@repo/form-commons/components/button';
-import { Checkbox } from '@repo/form-commons/components/checkbox';
+import { Button } from '@repo/form-commons/components/ui/button';
+import { Checkbox } from '@repo/form-commons/components/ui/checkbox';
 import {
   Dialog,
   DialogClose,
@@ -11,7 +11,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@repo/form-commons/components/dialog';
+} from '@repo/form-commons/components/ui/dialog';
 
 import { isApiError } from '@/core/api/apiError';
 import type { ColumnCatalog } from '@/features/content/columns';
