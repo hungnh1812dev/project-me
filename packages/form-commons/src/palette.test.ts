@@ -67,6 +67,14 @@ describe('paletteViolations', () => {
   });
 });
 
+describe('palette scan set', () => {
+  it('includes the stories (AC-19)', () => {
+    expect(listTsx(UI_SRC).map((file) => relative(REPO, file))).toContain(
+      'packages/form-commons/src/stories/sections/ButtonRolesSection.tsx',
+    );
+  });
+});
+
 describe.each([
   ['packages/form-commons/src', UI_SRC],
   ['apps/cms-admin/src', ADMIN_SRC],

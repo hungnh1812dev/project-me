@@ -1,4 +1,4 @@
-import { readdirSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { basename, join, relative, resolve } from 'node:path';
 
 import { describe, expect, it } from 'vitest';
@@ -39,6 +39,9 @@ const REPO = resolve(import.meta.dirname, '../../..');
 const ADMIN = join(REPO, 'apps/cms-admin');
 const ADMIN_SRC = join(ADMIN, 'src');
 const ADMIN_E2E = join(ADMIN, 'e2e');
+const FC = join(REPO, 'packages/form-commons');
+const FC_STORIES = join(FC, 'src/stories');
+const FC_E2E = join(FC, 'e2e');
 
 describe('rawControlViolations', () => {
   it('flags checkbox, radio and file input types in any quoting', () => {
@@ -112,6 +115,36 @@ describe('cms-admin tests query controls by role, not by tag or type (AC-32)', (
   it('scans the unit tests and the e2e specs', () => {
     expect(files.some((file) => file.endsWith('MediaField.test.tsx'))).toBe(true);
     expect(files.some((file) => file.endsWith('e2e/schema-form.spec.ts'))).toBe(true);
+  });
+
+  it.each(files.map((file) => [relative(REPO, file), file]))('%s', (_name, file) => {
+    expect(testSelectorViolations(readFileSync(file, 'utf8'))).toEqual([]);
+  });
+});
+
+describe('form-commons stories render no native checkbox or radio (AC-20, AC-10)', () => {
+  const files = listFiles(FC_STORIES, (name) => name.endsWith('.tsx'));
+
+  it('scans the story sections', () => {
+    expect(files.map((file) => relative(REPO, file))).toContain(
+      'packages/form-commons/src/stories/sections/CheckboxSection.tsx',
+    );
+  });
+
+  it.each(files.map((file) => [relative(REPO, file), file]))('%s', (_name, file) => {
+    expect(rawControlViolations(readFileSync(file, 'utf8'), basename(file))).toEqual([]);
+  });
+});
+
+describe('form-commons story tests query controls by role, not by tag or type (AC-20, AC-32)', () => {
+  // The e2e folder arrives with the Playwright harness (Task 12); until then there is nothing to scan.
+  const hasE2e = existsSync(FC_E2E);
+  const files = hasE2e ? listFiles(FC_E2E, (name) => name.endsWith('.ts')) : [];
+
+  it.runIf(hasE2e)('scans the story fixture', () => {
+    expect(files.map((file) => relative(REPO, file))).toContain(
+      'packages/form-commons/e2e/fixtures/story.ts',
+    );
   });
 
   it.each(files.map((file) => [relative(REPO, file), file]))('%s', (_name, file) => {

@@ -74,6 +74,12 @@ describe('primary fills carry the primary-ink border (AC-4)', () => {
     );
   });
 
+  it('scans the stories (AC-19)', () => {
+    expect(files.map((file) => relative(REPO, file))).toContain(
+      'packages/form-commons/src/stories/sections/ButtonRolesSection.tsx',
+    );
+  });
+
   it.each(files.map((file) => [relative(REPO, file), file]))('%s', (_name, file) => {
     expect(primaryBorderViolations(readFileSync(file, 'utf8'))).toEqual([]);
   });

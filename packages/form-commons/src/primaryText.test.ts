@@ -61,6 +61,12 @@ describe('primary is never used as text (AC-5)', () => {
     );
   });
 
+  it('scans the stories (AC-19)', () => {
+    expect(files.map((file) => relative(REPO, file))).toContain(
+      'packages/form-commons/src/stories/sections/ButtonRolesSection.tsx',
+    );
+  });
+
   it.each(files.map((file) => [relative(REPO, file), file]))('%s', (_name, file) => {
     expect(primaryTextViolations(readFileSync(file, 'utf8'))).toEqual([]);
   });

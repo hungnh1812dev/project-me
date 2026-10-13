@@ -45,6 +45,19 @@ const oldNameImports = (source: string): string[] =>
 const sourceFiles = listFiles(SRC).filter((file) => /\.(ts|tsx)$/.test(file) && file !== SELF);
 const rel = (file: string): string => relative(SRC, file);
 
+/** Storybook packages (AC-10): only `.storybook/**` and `src/stories/**` may import them. */
+const STORYBOOK = /^(storybook|@storybook\/[^/]+)(\/|$)/;
+
+const storybookImports = (source: string): string[] =>
+  importSpecifiers(source).filter((spec) => STORYBOOK.test(spec));
+
+const posix = (path: string): string => path.split('\\').join('/');
+
+/** `path` is relative to `src`. */
+const isInStories = (path: string): boolean => posix(path).startsWith('stories/');
+
+const isStoryFile = (path: string): boolean => /\.stories\.[^/]+$/.test(posix(path));
+
 describe('forbiddenImports', () => {
   it('flags the app alias, app paths and app-only libraries', () => {
     const source = [
@@ -106,6 +119,72 @@ describe('package boundaries (AC-5)', () => {
       expect(forbiddenImports(readFileSync(file, 'utf8'))).toEqual([]);
     },
   );
+});
+
+describe('storybookImports', () => {
+  it('flags the storybook package and any @storybook/* package', () => {
+    const source = [
+      "import type { Meta, StoryObj } from '@storybook/react-vite';",
+      "import { fn } from 'storybook/test';",
+      "import 'storybook';",
+      "const a11y = import('@storybook/addon-a11y');",
+    ].join('\n');
+
+    expect(storybookImports(source)).toEqual([
+      '@storybook/react-vite',
+      'storybook/test',
+      'storybook',
+      '@storybook/addon-a11y',
+    ]);
+  });
+
+  it('allows look-alike packages and relative story paths', () => {
+    const source = [
+      "import x from 'storybook-addon-x';",
+      "import { y } from '@storybooks/y';",
+      "import { ButtonSection } from '../stories/sections/ButtonSection';",
+    ].join('\n');
+
+    expect(storybookImports(source)).toEqual([]);
+  });
+});
+
+describe('isInStories / isStoryFile', () => {
+  it('recognises files under src/stories only', () => {
+    expect(isInStories('stories/UiKit.stories.tsx')).toBe(true);
+    expect(isInStories('stories/sections/Section.tsx')).toBe(true);
+    expect(isInStories('components/ui/stories/x.tsx')).toBe(false);
+    expect(isInStories('storiesX/a.tsx')).toBe(false);
+  });
+
+  it('recognises *.stories.* files by name', () => {
+    expect(isStoryFile('components/ui/button.stories.tsx')).toBe(true);
+    expect(isStoryFile('stories/Intro.stories.mdx')).toBe(true);
+    expect(isStoryFile('components/ui/button.tsx')).toBe(false);
+    expect(isStoryFile('stories/sections/Section.tsx')).toBe(false);
+  });
+});
+
+describe('stories boundaries (AC-18, AC-10)', () => {
+  const allFiles = listFiles(SRC).map(rel);
+
+  it('the scanned source set includes src/stories files', () => {
+    expect(sourceFiles.map(rel)).toContain(join('stories', 'UiKit.stories.tsx'));
+    expect(sourceFiles.map(rel)).toContain(join('stories', 'sections', 'Section.tsx'));
+  });
+
+  it('no *.stories.* file lives outside src/stories', () => {
+    expect(allFiles.filter((file) => isStoryFile(file) && !isInStories(file))).toEqual([]);
+  });
+
+  it('no file outside src/stories imports storybook or @storybook/*', () => {
+    const offenders = sourceFiles
+      .filter((file) => !isInStories(rel(file)))
+      .filter((file) => storybookImports(readFileSync(file, 'utf8')).length > 0)
+      .map(rel);
+
+    expect(offenders).toEqual([]);
+  });
 });
 
 describe("'use client' directive (AC-6)", () => {
