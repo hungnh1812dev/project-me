@@ -196,3 +196,18 @@ for (const { choice, swatches } of [
     }
   });
 }
+
+test('classes used only inside @repo/form-commons reach the app stylesheet on /login (AC-5)', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1280, height: 812 });
+  await page.goto('/login');
+
+  // PasswordInput adds the class `pr` + `-12` (padding-right 48px) to its input to make room for the
+  // show/hide toggle. No file under apps/cms-admin/src uses that class, so it only exists if
+  // globals.css has the @source line for packages/form-commons/src. The name is split here on
+  // purpose: Tailwind also scans e2e/, and a literal copy would generate the class by itself.
+  const password = page.getByLabel('Password', { exact: true });
+  await expect(page.getByRole('button', { name: 'Show password' })).toBeVisible();
+  await expect(password).toHaveCSS('padding-right', '48px');
+});
