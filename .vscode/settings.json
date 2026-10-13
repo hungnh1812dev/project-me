@@ -1,0 +1,36 @@
+{
+  // Rebuild outputs and caches: keep their change events away from tsserver and ESLint.
+  // .next/types and .next/dev/types stay watched so route types refresh during `next dev`.
+  "files.watcherExclude": {
+    "**/.next/cache/**": true,
+    "**/.next/server/**": true,
+    "**/.next/static/**": true,
+    "**/.next/standalone/**": true,
+    "**/.next/build/**": true,
+    "**/.next/turbopack/**": true,
+    "**/.next/dev/cache/**": true,
+    "**/.next/dev/server/**": true,
+    "**/.next/dev/static/**": true,
+    "**/.next/dev/build/**": true,
+    "**/.next/dev/logs/**": true,
+    "**/dist/**": true,
+    "**/.turbo/**": true,
+    "**/coverage/**": true,
+    "**/test-results/**": true,
+    "**/playwright-report/**": true,
+    "**/node_modules/.tmp/**": true
+  },
+  "search.exclude": {
+    "**/.next": true,
+    "**/dist": true,
+    "**/.turbo": true,
+    "**/coverage": true,
+    "**/test-results": true,
+    "**/playwright-report": true
+  },
+  // One workspace TypeScript (6.0.2) instead of the version bundled with VS Code.
+  "typescript.tsdk": "apps/cms-admin/node_modules/typescript/lib",
+  "typescript.enablePromptUseWorkspaceTsdk": true,
+  // Only apps/frontend uses ESLint; every other workspace uses oxlint.
+  "eslint.workingDirectories": [{ "directory": "apps/frontend", "changeProcessCWD": true }]
+}

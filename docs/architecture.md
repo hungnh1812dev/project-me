@@ -105,6 +105,68 @@ About 176MB of each Node image is the `node:24-alpine` base.
   - BuildKit cache mounts cover the pnpm store, turbo's cache and Next's build cache.
 - **In CI,** layer caching comes from the GitHub Actions cache (`type=gha`, one scope per app and arch). Cache mounts don't carry over between CI runs.
 
+## Editor and tooling performance
+
+Goal: less tsserver and ESLint CPU and memory in VS Code (idle, during `pnpm build` / `next dev`, and on CLI `lint` / `typecheck`) without weakening type safety or changing lint rules.
+
+### Committed VS Code settings
+
+| Setting (`.vscode/settings.json`)         | Value                                                                                                                                                                                          | Reason                                                                                                                                                                                                                                                           |
+| ----------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `files.watcherExclude`                    | `.next/{cache,server,static,standalone,build,turbopack}`, `.next/dev/{cache,server,static,build,logs}`, `dist`, `.turbo`, `coverage`, `test-results`, `playwright-report`, `node_modules/.tmp` | Build outputs and caches change on every rebuild. Each change event reaches tsserver and the ESLint server. `.next/types` and `.next/dev/types` stay watched on purpose: Next writes the route types there and tsserver must see them refresh during `next dev`. |
+| `search.exclude`                          | all of `.next`, `dist`, `.turbo`, `coverage`, `test-results`, `playwright-report`                                                                                                              | Search and quick-open skip generated files.                                                                                                                                                                                                                      |
+| `typescript.tsdk`                         | `apps/cms-admin/node_modules/typescript/lib`                                                                                                                                                   | One TypeScript (6.0.2, the version most workspaces use) instead of VS Code's bundled one.                                                                                                                                                                        |
+| `typescript.enablePromptUseWorkspaceTsdk` | `true`                                                                                                                                                                                         | VS Code asks once to switch to the workspace version. Accept it; the status bar then shows 6.0.2.                                                                                                                                                                |
+| `eslint.workingDirectories`               | `[{ "directory": "apps/frontend", "changeProcessCWD": true }]`                                                                                                                                 | Only `apps/frontend` uses ESLint. Without this the extension tries to resolve ESLint and a config for every file in the repo.                                                                                                                                    |
+
+`.vscode/extensions.json` recommends `dbaeumer.vscode-eslint` (frontend) and `oxc.oxc-vscode` (cms-admin, cms-api and form-commons, each with its own `.oxlintrc.json`).
+
+Defaults kept on purpose (not set in the committed settings): `eslint.run` (`onType`), `typescript.preferences.includePackageJsonAutoImports` (`auto`), `typescript.disableAutomaticTypeAcquisition` (`false`) and `oxc.typeAware` (off, so the editor doesn't run tsgolint; CLI and CI still run type-aware lint for cms-api).
+
+### tsgo opt-in (per developer)
+
+`@typescript/native-preview` (tsgo) is a root devDependency. It is the main lever for editor memory, but it stays opt-in and the committed settings never enable it. CLI `typecheck` keeps using each workspace's `tsc`.
+
+- **Turn on:** install the "TypeScript (Native Preview)" extension (`TypeScriptTeam.native-preview`), then add `"typescript.experimental.useTsgo": true` to your own User settings (not `.vscode/settings.json`) and run "Developer: Reload Window".
+- **Turn off:** set `typescript.experimental.useTsgo` to `false` (or remove it) and reload. The status bar goes back to TypeScript 6.0.2.
+- CLI check: `pnpm exec tsgo --version`.
+
+### cms-api tsconfig layout
+
+Filled in by phase 2.2 (solution-style `tsconfig.json` with `tsconfig.app.json` and `tsconfig.spec.json`).
+
+### Measuring
+
+- TS program: `(cd <workspace> && ./node_modules/.bin/tsc -p <tsconfig> --noEmit --extendedDiagnostics | grep -E '^(Files|Memory used|Total time)')`
+- File list: `(cd <workspace> && ./node_modules/.bin/tsc -p <tsconfig> --listFilesOnly)`
+- Typecheck / lint wall time: `(cd <workspace> && /usr/bin/time -p pnpm typecheck)` and `(cd <workspace> && /usr/bin/time -p pnpm lint)`. "Cold" is the first run, "warm" the second run with nothing changed.
+- ESLint files linted: `(cd apps/frontend && pnpm lint --debug 2>&1 | grep -c "Linting code for")`
+- cms-api build output: `pnpm --filter cms-api build && (cd apps/cms-api/dist && find . -type f -name '*.js' | sort | xargs shasum -a 256)`
+- Editor (manual, VS Code "Developer: Open Process Explorer"): open the same four files, one each from `apps/frontend/src`, `apps/cms-api/src`, `packages/form-commons/src` and `apps/cms-admin/src`. Read memory and CPU of the tsserver processes (`tsserver.js` / "TypeScript" rows under the extension host) and the ESLint server row in three cases: (a) idle for 2 minutes, then read; (b) during `pnpm build`, and during `pnpm --filter frontend dev` while saving a frontend file a few times; (c) during `pnpm turbo run lint typecheck --force`. Note the peak value for (b) and (c).
+
+### Before and after
+
+Before = 2026-10-13, after Part B (`@repo/form-commons`), Apple Silicon, Node 24. Memory is tsc's "Memory used" in KB / 1000. "To measure" rows follow the editor steps above.
+
+| Workspace    | Metric                                                            | Before                                                                                                                                               | After |
+| ------------ | ----------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- | ----- |
+| cms-api      | TS program (`tsconfig.json`): files / memory / time               | 801 / 192 MB / 1.6 s                                                                                                                                 |       |
+| cms-api      | `typecheck` cold (`--incremental false`) / warm                   | 0.7 s / 1.0 s (warm buildinfo sits in `dist/`, wiped by `nest build`)                                                                                |       |
+| cms-api      | `lint` (oxlint `--type-aware`) cold / warm                        | 0.75 s / 0.42 s, 0 findings                                                                                                                          |       |
+| cms-api      | `dist/`                                                           | 13 files (incl. `tsconfig.tsbuildinfo`); `.js` sha256: `app.controller` ddddb06b…, `app.module` e212b5b0…, `app.service` 95e26ee6…, `main` 8778e9a3… |       |
+| frontend     | TS program (`tsconfig.json`, TS 5.9.3): files / memory / time     | 1449 / 289 MB / 1.4 s                                                                                                                                |       |
+| frontend     | `typecheck` cold (`--incremental false`) / warm                   | 1.9 s / 1.6 s                                                                                                                                        |       |
+| frontend     | `lint` (ESLint, no cache) cold / warm; files linted               | 7.8 s / 1.5 s; 6                                                                                                                                     |       |
+| cms-admin    | TS program (`tsconfig.app.json`): files / memory / time           | 1994 / 571 MB / 5.5 s                                                                                                                                |       |
+| cms-admin    | `typecheck` (`tsc -b --noEmit`) run 1 / run 2                     | 5.7 s / 5.5 s                                                                                                                                        |       |
+| cms-admin    | `lint` (oxlint) cold / warm                                       | 0.46 s / 0.33 s                                                                                                                                      |       |
+| form-commons | TS program (`tsconfig.json`): files / memory / time               | 1307 / 348 MB / 2.1 s                                                                                                                                |       |
+| form-commons | `typecheck` run 1 / run 2                                         | 2.3 s / 2.4 s                                                                                                                                        |       |
+| form-commons | `lint` (oxlint) cold / warm                                       | 0.32 s / 0.34 s                                                                                                                                      |       |
+| editor       | (a) idle 2 min: tsserver memory / CPU; ESLint server memory / CPU | to measure                                                                                                                                           |       |
+| editor       | (b) `pnpm build` and `next dev` rebuilds: same four values (peak) | to measure                                                                                                                                           |       |
+| editor       | (c) CLI `lint typecheck --force`: same four values (peak)         | to measure                                                                                                                                           |       |
+
 ## Gotchas
 
 - **pnpm 11 argument passing:** pass extra args without `--`: `pnpm --filter frontend dev -p 3001`.
