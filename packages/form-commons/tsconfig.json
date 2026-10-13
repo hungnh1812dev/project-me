@@ -16,5 +16,5 @@
     "noUnusedParameters": true,
     "paths": { "@repo/form-commons/*": ["./src/*"] }
   },
-  "include": ["src", "vitest.config.ts"]
+  "include": ["src", "e2e", ".storybook", "playwright.config.ts", "vitest.config.ts"]
 }

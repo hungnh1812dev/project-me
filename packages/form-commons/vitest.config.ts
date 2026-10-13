@@ -17,6 +17,8 @@ export default defineConfig({
         'src/**/*.test.{ts,tsx}',
         // Vendored shadcn primitives; their custom behaviour is tested from src/components/forms.
         'src/components/ui/**',
+        // Storybook showcase, checked by the story tests (e2e/), not by unit coverage.
+        'src/stories/**',
       ],
       thresholds: {
         'src/lib/**/*.ts': LOGIC_THRESHOLD,
