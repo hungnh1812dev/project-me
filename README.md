@@ -48,15 +48,20 @@ Build from the repo root. Each Dockerfile isolates its app with `turbo prune`.
 
 ```bash
 docker build -f apps/cms-api/Dockerfile   -t cms-api .     # listens on 3000
-docker build -f apps/cms-admin/Dockerfile -t cms-admin .   # listens on 80
+docker build -f apps/cms-admin/Dockerfile -t cms-admin .   # listens on 8080
 docker build -f apps/frontend/Dockerfile  -t frontend .    # listens on 3000
+
+# cms-admin bakes its backend origin into the bundle at build time (empty: relative /api/v1)
+docker build -f apps/cms-admin/Dockerfile --build-arg VITE_API_URL=https://cms-api.example.com -t cms-admin .
 ```
+
+All images run as the non-root user `abyss`, numeric UID/GID **1001**. In Kubernetes, set `securityContext` to `runAsNonRoot: true` and `runAsUser: 1001`; cms-api and frontend used to run as UID 1000, so overlays that pin `runAsUser`/`fsGroup` 1000 must move to 1001. `.env*` files never reach an image.
 
 ## CI/CD
 
-GitHub Actions checks and builds every PR and every push to `develop`, `staging` and `main`, only for the apps that changed. On `staging` (arm64) and `main` (amd64), it also pushes images to GHCR and bumps `APP_IMAGE_TAG` in the deployment repo.
+GitHub Actions checks and builds every push to `develop`, `staging` and `main`, only for the apps that changed. There is one flow per app (`cms-api.yml`, `cms-admin.yml`, `frontend.yml`), called from the `ci.yml` entrypoint, so one app's failure never blocks another's deploy. On `staging` (arm64) and `main` (amd64), each changed app also pushes its image to GHCR (after a non-root guard) and bumps its own `APP_IMAGE_TAG` in the deployment repo, one commit per app.
 
 ## Docs
 
 - [docs/architecture.md](docs/architecture.md): repo layout, apps, turbo tasks, Docker images, gotchas
-- [docs/ci-cd.md](docs/ci-cd.md): the pipeline, branch → environment mapping, one-time GitHub setup, troubleshooting
+- [docs/ci-cd.md](docs/ci-cd.md): the entrypoint and per-app flows, branch → environment mapping, one-time GitHub setup (including `VITE_API_URL`), troubleshooting

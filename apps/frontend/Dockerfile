@@ -32,11 +32,15 @@ ENV NEXT_TELEMETRY_DISABLED=1
 ENV PORT=3000
 ENV HOSTNAME=0.0.0.0
 WORKDIR /app
+# Non-root runtime user abyss (UID/GID 1001), same as cms-admin; the base image's node (1000) is unused
+RUN addgroup -S -g 1001 abyss \
+    && adduser -S -D -H -u 1001 -G abyss -s /sbin/nologin abyss
 # Traced dependencies first (change rarely), then app code (changes often)
-COPY --from=builder --chown=node:node /app/apps/frontend/.next/standalone/node_modules ./node_modules
-COPY --from=builder --chown=node:node /app/apps/frontend/public ./apps/frontend/public
-COPY --from=builder --chown=node:node /app/apps/frontend/.next/static ./apps/frontend/.next/static
-COPY --from=builder --chown=node:node /app/apps/frontend/.next/standalone/apps ./apps
-USER node
+COPY --from=builder --chown=1001:1001 /app/apps/frontend/.next/standalone/node_modules ./node_modules
+COPY --from=builder --chown=1001:1001 /app/apps/frontend/public ./apps/frontend/public
+COPY --from=builder --chown=1001:1001 /app/apps/frontend/.next/static ./apps/frontend/.next/static
+COPY --from=builder --chown=1001:1001 /app/apps/frontend/.next/standalone/apps ./apps
 EXPOSE 3000
+# Numeric, so Kubernetes runAsNonRoot can verify it
+USER 1001
 CMD ["node", "apps/frontend/server.js"]

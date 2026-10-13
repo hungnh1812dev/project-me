@@ -1,0 +1,102 @@
+# Docs: docs/ci-cd.md
+# cms-api flow, called by ci.yml when cms-api is affected: checks -> build -> [publish]
+# publish runs _publish.yml only when the branch publishes and cms-api's build inputs changed.
+# Status checks show as "cms-api / Checks" and "cms-api / Build".
+name: cms-api
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        description: GitHub Environment for build and publish; empty on develop
+        type: string
+        required: true
+      publish:
+        description: The branch publishes images and deploys (push to staging or main)
+        type: boolean
+        required: true
+      image:
+        description: cms-api's build inputs changed, so it gets a new image
+        type: boolean
+        required: true
+      matrix:
+        description: 'JSON {include: [{platform, arch, runner}]} for the image jobs'
+        type: string
+        required: true
+      tag:
+        description: Image tag, <branch>-<sha7>
+        type: string
+        required: true
+      branch:
+        description: Source branch
+        type: string
+        required: true
+      deploy_ref:
+        description: Deployment repo branch
+        type: string
+        required: true
+      image_prefix:
+        description: Registry prefix; the image is <image_prefix>/cms-api
+        type: string
+        required: true
+      turbo_version:
+        description: turbo version, kept in sync with the Dockerfiles and the root package.json
+        type: string
+        required: true
+
+# Only the publish call is granted packages: write (for _publish.yml's image and manifest jobs)
+permissions:
+  contents: read
+
+env:
+  TURBO_VERSION: ${{ inputs.turbo_version }}
+
+jobs:
+  checks:
+    name: Checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Typecheck and lint
+        run: pnpm turbo run typecheck lint --filter=cms-api
+
+  build:
+    name: Build
+    needs: checks
+    runs-on: ubuntu-latest
+    # staging -> staging, main -> production; empty on develop, so no Environment
+    environment: ${{ inputs.environment }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Build
+        run: pnpm turbo run build --filter=cms-api
+
+  publish:
+    name: Publish
+    needs: build
+    if: inputs.publish && inputs.image
+    permissions:
+      contents: read
+      packages: write
+    uses: ./.github/workflows/_publish.yml
+    secrets: inherit
+    with:
+      app: cms-api
+      environment: ${{ inputs.environment }}
+      matrix: ${{ inputs.matrix }}
+      tag: ${{ inputs.tag }}
+      branch: ${{ inputs.branch }}
+      deploy_ref: ${{ inputs.deploy_ref }}
+      image_prefix: ${{ inputs.image_prefix }}

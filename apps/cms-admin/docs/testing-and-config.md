@@ -100,13 +100,23 @@ Documented in `.env.example` (no secrets). Vite only exposes names starting with
 
 | Variable                | Used by         | Meaning                                                                                   |
 | ----------------------- | --------------- | ----------------------------------------------------------------------------------------- |
-| `VITE_API_URL`          | the app (build) | Backend origin. Empty or unset in dev, so the proxy is used                               |
+| `VITE_API_URL`          | the app (build) | Backend origin. Empty or unset in dev, so the proxy is used. Docker build arg in the image |
 | `VITE_API_PROXY_TARGET` | Vite dev server | Where `/api` and `/health` are proxied in dev. Defaults to `http://localhost:8080`        |
 | `CSP_API_ORIGIN`        | nginx, preview  | See [CSP and headers](./csp-and-headers.md)                                               |
 | `CSP_IMG_ORIGINS`       | nginx, preview  | See [CSP and headers](./csp-and-headers.md)                                               |
 
 `API_BASE_URL` is `VITE_API_URL` with trailing slashes stripped plus `/api/v1`; empty gives the
 relative `/api/v1`.
+
+**In the Docker image,** `VITE_API_URL` is a build arg of the `builder` stage
+(`docker build --build-arg VITE_API_URL=https://cms-api.example.com …`), not a runtime variable:
+Vite bakes it into the bundle, and the `runner` stage never sees it. CI sets it from the GitHub
+Environment variable `VITE_API_URL` on `staging` / `production` (a variable, not a secret, since it
+ends up in the public bundle); empty or unset builds the relative `/api/v1`, and a bundle smoke
+check (`.github/scripts/bundle-check.sh`) asserts the baked value before the image is pushed. `.env`
+files never reach the image: `.dockerignore` excludes `**/.env*` (only `.env.example`, which Vite
+doesn't load, passes). Changing the origin means rebuilding the image. See
+[CI/CD](../../../docs/ci-cd.md#vite_api_url-cms-admin).
 
 ### Dev proxy
 
