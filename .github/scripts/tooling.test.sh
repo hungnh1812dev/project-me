@@ -168,7 +168,7 @@ for (const app of ["frontend", "cms-admin"]) {
 check "AC-21 eslint-config removed" '
 const { execSync } = require("child_process");
 expect(!fs.existsSync("packages/eslint-config"), "packages/eslint-config still exists");
-const refs = execSync("git grep -n \"@repo/eslint-config\" || true", { encoding: "utf8" }).trim();
+const refs = execSync("git grep -n \"@repo/eslint-config\" -- . \":!.github/scripts/tooling.test.sh\" \":!SPEC.md\" \":!tasks/\" || true", { encoding: "utf8" }).trim();
 expect(refs === "", `@repo/eslint-config referenced:\n${refs}`);
 expect(!fs.readFileSync("pnpm-lock.yaml", "utf8").includes("packages/eslint-config"), "pnpm-lock.yaml still lists packages/eslint-config");
 for (const f of ["README.md", "docs/architecture.md"]) {
