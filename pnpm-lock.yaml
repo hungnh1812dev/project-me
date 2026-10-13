@@ -237,8 +237,6 @@ importers:
         specifier: ^5
         version: 5.9.3
 
-  packages/eslint-config: {}
-
   packages/form-commons:
     dependencies:
       '@base-ui/react':

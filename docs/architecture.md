@@ -13,7 +13,6 @@ A pnpm + Turborepo monorepo with three independently deployable apps and a set o
 ├── packages/
 │   ├── types/              # @repo/types: shared TS types (empty for now)
 │   ├── form-commons/       # @repo/form-commons: shared UI primitives (components/ui), form components (components/forms) and Tailwind theme
-│   ├── eslint-config/      # @repo/eslint-config: base flat config
 │   └── typescript-config/  # @repo/typescript-config: base tsconfig
 ├── .github/
 │   ├── workflows/
@@ -25,12 +24,13 @@ A pnpm + Turborepo monorepo with three independently deployable apps and a set o
 │   └── scripts/
 │       ├── affected.sh       # affected apps, image apps, workflow-file routing -> GITHUB_OUTPUT
 │       ├── affected.test.sh  # local assertions for affected.sh
+│       ├── tooling.test.sh   # local config guard for editor and tooling settings
 │       ├── image-user.sh     # non-root guard: numeric non-zero USER that matches id -u
 │       └── bundle-check.sh   # cms-admin bundle smoke check for the baked API base
 ├── docs/                   # this documentation
 ├── package.json            # private root: scripts -> turbo, pins pnpm via packageManager
 ├── pnpm-workspace.yaml     # apps/*, packages/*, build-script allowlist
-├── turbo.json              # tasks: build, dev, lint, typecheck, test
+├── turbo.json              # tasks: build, dev, lint, typecheck, transit, test
 └── .nvmrc                  # 24
 ```
 
@@ -161,7 +161,12 @@ Defaults kept on purpose (not set in the committed settings): `eslint.run` (`onT
 - `turbo.json` follows the transit-node pattern from the bundled turbo docs (`crafting-your-repository/configuring-tasks.mdx`, "Dependent tasks that can be run in parallel"): `typecheck` depends on `^transit`, and `transit` depends on `^transit`. In `turbo run lint typecheck --dry=json` no lint task depends on a lint task and no typecheck task on a typecheck task; `frontend#typecheck` and `cms-admin#typecheck` depend only on `@repo/form-commons#transit`. The docs example uses `dependsOn: ["transit"]` (the package's own transit); `^transit` is used here so a docs-only edit in an app doesn't change the app's own transit hash.
 - `lint`, `typecheck` and `transit` use `inputs: ["$TURBO_DEFAULT$", "!**/*.md", "!docs/**"]` (`--dry=json` shows the resolved form without `$TURBO_DEFAULT$`).
 - Cache checks: a content edit in `packages/form-commons/src/lib/cn.ts` gives a MISS for `frontend#typecheck` and `cms-admin#typecheck` (HIT again after reverting); an edit to only `apps/cms-admin/docs/README.md` gives `FULL TURBO` for `pnpm turbo run lint typecheck`. Turbo hashes file contents, so a bare `touch` changes nothing.
-- AC-16, cms-admin memory: on the day of this phase, cms-admin's program is 1994 files / 620 to 626 MB with both the old and the new package configs (A/B run, 3 each). cms-admin's config doesn't read the package tsconfigs, so the change adds nothing; the rise from the 571 MB baseline is machine drift and is above the baseline plus 5% (600 MB) either way.
+- AC-16, cms-admin memory: on the day of this phase, cms-admin's program is 1994 files / 620 to 626 MB with both the old and the new package configs (A/B run, 3 each). cms-admin's config doesn't read the package tsconfigs, so the change adds nothing. 620 to 626 MB is within the SPEC baseline (624 MB) plus 5% (655 MB); it is only above the lower 571 MB reading taken in phase 2.1, and the A/B run shows that gap is machine drift, not growth.
+
+### Cleanup and guard
+
+- The unused shared ESLint config package was removed from `packages/` (no workspace imported it; frontend uses `eslint-config-next`, the other workspaces use oxlint).
+- `bash .github/scripts/tooling.test.sh` checks the committed settings and configs: `.vscode/settings.json` (watched and excluded paths, workspace TypeScript, ESLint scope, the defaults kept, no `useTsgo`), the cms-api tsconfig shape, the frontend tsconfig and `lint` script, package `incremental`, the turbo task graph from `--dry=json` (no lint-to-lint or typecheck-to-typecheck edges, apps' typecheck depends on `@repo/form-commons#transit`, docs excluded from inputs), the removed package and the stale-refs rule. Each check prints `PASS` or `FAIL`; any `FAIL` exits non-zero. It runs locally only, not in CI.
 
 ### Measuring
 
@@ -185,15 +190,21 @@ Before = 2026-10-13, after Part B (`@repo/form-commons`), Apple Silicon, Node 24
 | frontend     | TS program (`tsconfig.json`, TS 5.9.3): files / memory / time     | 1449 / 289 MB / 1.4 s                                                                                                                                | 1449 / 279 MB / 1.0 s warm (Program 0.78 s, no check); `--incremental false`: 1449 / 362 MB / 1.7 s; nothing under `.next/standalone`          |
 | frontend     | `typecheck` cold (`--incremental false`) / warm                   | 1.9 s / 1.6 s                                                                                                                                        | no tsbuildinfo 2.4 s / warm 1.6 s (67%, misses the 50% target: `tsc` program build ~0.78 s; split pnpm 0.25 s, typegen 0.25 s, tsc 1.1 s)      |
 | frontend     | `lint` (ESLint, no cache) cold / warm; files linted               | 7.8 s / 1.5 s; 6                                                                                                                                     | `--cache --cache-strategy content`: 1.6 s / 1.30 s (median of 9); 0 files warm, 1 after editing `page.tsx`; same findings (0) and print-config |
-| cms-admin    | TS program (`tsconfig.app.json`): files / memory / time           | 1994 / 571 MB / 5.5 s                                                                                                                                | config unchanged: 1994 / 623 MB / 4.6 to 5.4 s; same 620 to 626 MB with the pre-2.4 package configs (A/B), so drift, not growth                |
-| cms-admin    | `typecheck` (`tsc -b --noEmit`) run 1 / run 2                     | 5.7 s / 5.5 s                                                                                                                                        |                                                                                                                                                |
-| cms-admin    | `lint` (oxlint) cold / warm                                       | 0.46 s / 0.33 s                                                                                                                                      |                                                                                                                                                |
+| cms-admin    | TS program (`tsconfig.app.json`): files / memory / time           | 1994 / 624 MB / 6.4 s (SPEC); 571 MB / 5.5 s in phase 2.1                                                                                            | config unchanged: 1994 / 620 to 626 MB / 4.6 to 5.4 s; within 624 MB + 5%; same with the pre-2.4 package configs (A/B)                         |
+| cms-admin    | `typecheck` (`tsc -b --noEmit`) run 1 / run 2                     | 5.7 s / 5.5 s                                                                                                                                        | 7.4 s / 5.7 s (config unchanged)                                                                                                               |
+| cms-admin    | `lint` (oxlint) cold / warm                                       | 0.46 s / 0.33 s                                                                                                                                      | 0.73 s / 0.34 s (config unchanged)                                                                                                             |
 | form-commons | TS program (`tsconfig.json`): files / memory / time               | 1307 / 348 MB / 2.1 s                                                                                                                                | `incremental`: cold 1307 / 370 to 380 MB / 2.10 s, warm 1307 / 261 MB / 1.01 s (48%); `--incremental false`: 1307 / 340 to 343 MB              |
 | form-commons | `typecheck` run 1 / run 2                                         | 2.3 s / 2.4 s                                                                                                                                        | no tsbuildinfo 2.6 to 3.4 s / warm 1.4 to 1.6 s                                                                                                |
-| form-commons | `lint` (oxlint) cold / warm                                       | 0.32 s / 0.34 s                                                                                                                                      |                                                                                                                                                |
-| editor       | (a) idle 2 min: tsserver memory / CPU; ESLint server memory / CPU | to measure                                                                                                                                           |                                                                                                                                                |
-| editor       | (b) `pnpm build` and `next dev` rebuilds: same four values (peak) | to measure                                                                                                                                           |                                                                                                                                                |
-| editor       | (c) CLI `lint typecheck --force`: same four values (peak)         | to measure                                                                                                                                           |                                                                                                                                                |
+| form-commons | `lint` (oxlint) cold / warm                                       | 0.32 s / 0.34 s                                                                                                                                      | 0.70 s / 0.33 s (config unchanged)                                                                                                             |
+| editor       | (a) idle 2 min: tsserver memory / CPU; ESLint server memory / CPU | to measure                                                                                                                                           | to measure (steps in Measuring)                                                                                                                |
+| editor       | (b) `pnpm build` and `next dev` rebuilds: same four values (peak) | to measure                                                                                                                                           | to measure (steps in Measuring)                                                                                                                |
+| editor       | (c) CLI `lint typecheck --force`: same four values (peak)         | to measure                                                                                                                                           | to measure (steps in Measuring)                                                                                                                |
+
+Known gaps, accepted:
+
+- **frontend warm typecheck** is about 67% of a cold run, not 50% (AC-12). This is structural: warm `tsc` still builds the 1,449-file program (about 0.78 s), and pnpm start-up plus `next typegen` add about 0.5 s.
+- **cms-admin memory** reads 620 to 626 MB with an unchanged config, inside the SPEC baseline (624 MB) plus 5%, but above the lower 571 MB reading from phase 2.1 (machine drift, see AC-16 above).
+- **Editor rows** need a human with VS Code Process Explorer; follow the editor steps in Measuring and fill in both columns.
 
 ## Gotchas
 

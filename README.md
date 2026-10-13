@@ -8,7 +8,7 @@ Personal website, a pnpm + Turborepo monorepo:
 | [`apps/cms-admin`](apps/cms-admin) | Admin portal      | React 19 + Vite 8, served by nginx |
 | [`apps/cms-api`](apps/cms-api)     | Backend API       | NestJS 12                          |
 
-Shared code lives in [`packages/`](packages) (`@repo/types`, `@repo/form-commons`, `@repo/eslint-config`, `@repo/typescript-config`). `@repo/form-commons` holds the shared UI primitives (`components/ui`), form components (`components/forms`) and Tailwind theme; `cms-admin` and `frontend` depend on it.
+Shared code lives in [`packages/`](packages) (`@repo/types`, `@repo/form-commons`, `@repo/typescript-config`). `@repo/form-commons` holds the shared UI primitives (`components/ui`), form components (`components/forms`) and Tailwind theme; `cms-admin` and `frontend` depend on it.
 
 ## Requirements
 
