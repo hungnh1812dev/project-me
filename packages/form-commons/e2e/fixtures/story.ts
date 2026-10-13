@@ -24,9 +24,13 @@ export interface GotoStoryOptions {
   width?: number;
 }
 
-/** The URL of one story in the preview iframe, with the theme set through Storybook globals. */
+/**
+ * The URL of one story in the preview iframe, with the theme set through Storybook globals.
+ * `a11y.manual` stops addon-a11y from running axe on load, which would clash with the test's own
+ * axe run ("Axe is already running"); the panel can still run it by hand (AC-17).
+ */
 export const storyUrl = (id: string, theme: Theme = 'light'): string =>
-  `/iframe.html?id=${encodeURIComponent(id)}&viewMode=story&globals=theme:${theme}`;
+  `/iframe.html?id=${encodeURIComponent(id)}&viewMode=story&globals=theme:${theme};a11y.manual:!true`;
 
 /**
  * Opens a story with transitions off, then waits for the theme class on `<html>` and for fonts,
