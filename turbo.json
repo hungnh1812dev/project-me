@@ -27,10 +27,15 @@
       "persistent": true
     },
     "lint": {
-      "dependsOn": ["^lint"]
+      "inputs": ["$TURBO_DEFAULT$", "!**/*.md", "!docs/**"]
+    },
+    "transit": {
+      "dependsOn": ["^transit"],
+      "inputs": ["$TURBO_DEFAULT$", "!**/*.md", "!docs/**"]
     },
     "typecheck": {
-      "dependsOn": ["^typecheck"]
+      "dependsOn": ["^transit"],
+      "inputs": ["$TURBO_DEFAULT$", "!**/*.md", "!docs/**"]
     },
     "test": {
       "dependsOn": ["^build"]
