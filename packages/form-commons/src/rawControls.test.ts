@@ -1,4 +1,4 @@
-import { existsSync, readdirSync, readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { basename, join, relative, resolve } from 'node:path';
 
 import { describe, expect, it } from 'vitest';
@@ -137,11 +137,9 @@ describe('form-commons stories render no native checkbox or radio (AC-20, AC-10)
 });
 
 describe('form-commons story tests query controls by role, not by tag or type (AC-20, AC-32)', () => {
-  // The e2e folder arrives with the Playwright harness (Task 12); until then there is nothing to scan.
-  const hasE2e = existsSync(FC_E2E);
-  const files = hasE2e ? listFiles(FC_E2E, (name) => name.endsWith('.ts')) : [];
+  const files = listFiles(FC_E2E, (name) => name.endsWith('.ts'));
 
-  it.runIf(hasE2e)('scans the story fixture', () => {
+  it('scans the story fixture', () => {
     expect(files.map((file) => relative(REPO, file))).toContain(
       'packages/form-commons/e2e/fixtures/story.ts',
     );
