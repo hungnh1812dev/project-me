@@ -19,6 +19,12 @@ describe('globals.css', () => {
     expect(globalsCss).toContain("@source '../../../../packages/form-commons/src';");
   });
 
+  it('skips the Storybook stories so story-only classes never reach the app CSS (AC-25)', () => {
+    const scan = globalsCss.indexOf("@source '../../../../packages/form-commons/src';");
+    const skip = globalsCss.indexOf("@source not '../../../../packages/form-commons/src/stories';");
+    expect(skip).toBeGreaterThan(scan);
+  });
+
   it('declares no colour tokens of its own (they live in theme.css)', () => {
     expect(globalsCss).not.toMatch(/--(background|primary|ring):/);
     expect(globalsCss).not.toMatch(/^\.dark\s*{/m);

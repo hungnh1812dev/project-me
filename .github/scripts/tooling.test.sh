@@ -4,7 +4,10 @@
 # Checks AC-1 to AC-4 (.vscode/settings.json), no committed useTsgo, AC-7
 # (cms-api tsconfig shape), AC-12 (frontend tsconfig), AC-13 (frontend lint
 # script), AC-15 (package incremental), AC-17 and AC-18 (turbo task graph via
-# --dry=json), AC-21 (eslint-config removed) and the AC-B14 stale-refs rule.
+# --dry=json), AC-21 (eslint-config removed), the AC-B14 stale-refs rule and
+# "Storybook tasks and isolation" (AC-24 turbo storybook/build-storybook tasks,
+# build.inputs exclusions and form-commons#build dry-run inputs, AC-25 the
+# `@source not` stories line in both apps, AC-26 storybook-static gitignored).
 # Runs locally only; not part of CI.
 set -euo pipefail
 
@@ -51,13 +54,13 @@ const s = readJsonc(".vscode/settings.json");
 const w = s["files.watcherExclude"] ?? {};
 const next = ["cache", "server", "static", "standalone", "build", "turbopack"].map((d) => `**/.next/${d}/**`);
 const dev = ["cache", "server", "static", "build", "logs"].map((d) => `**/.next/dev/${d}/**`);
-const other = ["dist", ".turbo", "coverage", "test-results", "playwright-report", "node_modules/.tmp"].map((d) => `**/${d}/**`);
+const other = ["dist", ".turbo", "coverage", "test-results", "playwright-report", "storybook-static", "node_modules/.tmp"].map((d) => `**/${d}/**`);
 for (const k of [...next, ...dev, ...other]) expect(w[k] === true, `files.watcherExclude missing ${k}`);
 for (const k of Object.keys(w)) {
   expect(!/\.next\/(dev\/)?types|\.next\/?(\*\*)?$|\.next\/(dev\/)?\*\*$/.test(k), `files.watcherExclude must keep .next/types watched: ${k}`);
 }
 const se = s["search.exclude"] ?? {};
-for (const d of [".next", "dist", ".turbo", "coverage", "test-results", "playwright-report"]) {
+for (const d of [".next", "dist", ".turbo", "coverage", "test-results", "playwright-report", "storybook-static"]) {
   expect(se[`**/${d}`] === true || se[`**/${d}/**`] === true, `search.exclude missing ${d}`);
 }
 '
@@ -174,6 +177,42 @@ expect(!fs.readFileSync("pnpm-lock.yaml", "utf8").includes("packages/eslint-conf
 for (const f of ["README.md", "docs/architecture.md"]) {
   expect(!/eslint-config\//.test(fs.readFileSync(f, "utf8")), `${f} still lists the eslint-config package`);
 }
+'
+
+build_dry="${work}/build-dry.json"
+dev_dry="${work}/dev-dry.json"
+if ! pnpm turbo run build --filter=cms-admin --dry=json >"${build_dry}" 2>"${work}/build-dry.log" \
+  || ! pnpm turbo run build dev --dry=json >"${dev_dry}" 2>>"${work}/build-dry.log"; then
+  echo "FAIL turbo build --dry=json"
+  sed 's/^/  | /' "${work}/build-dry.log"
+  failed=$((failed + 1))
+fi
+
+check "AC-24 to AC-26 Storybook tasks and isolation" "const buildDry = '${build_dry}'; const devDry = '${dev_dry}';"'
+const t = readJsonc("turbo.json").tasks;
+expect(t.storybook?.cache === false && t.storybook?.persistent === true, "turbo.json storybook must set cache: false and persistent: true");
+const sb = t["build-storybook"] ?? {};
+expect(same(sb.outputs, ["storybook-static/**"]), `build-storybook outputs is ${JSON.stringify(sb.outputs)}`);
+expect(has(sb.inputs, ["$TURBO_DEFAULT$", "!**/*.md", "!docs/**", "!e2e/**", "!**/*.test.*", "!**/*.spec.*",
+  "!playwright.config.*", "!vitest.config*"]), `build-storybook inputs is ${JSON.stringify(sb.inputs)}`);
+expect(has(t.build?.inputs, ["!src/stories/**", "!.storybook/**", "!storybook-static/**"]), "build.inputs misses the story exclusions");
+expect(!(t.build?.dependsOn ?? []).some((d) => d.includes("storybook")), "build must not depend on build-storybook");
+const tasks = JSON.parse(fs.readFileSync(buildDry, "utf8")).tasks;
+const fc = tasks.find((x) => x.taskId === "@repo/form-commons#build");
+expect(fc, "@repo/form-commons#build missing from the cms-admin build dry run");
+const leaked = Object.keys(fc?.inputs ?? {}).filter((f) => /^(src\/stories\/|\.storybook\/|storybook-static\/)/.test(f));
+expect(leaked.length === 0, `@repo/form-commons#build inputs include story files: ${leaked.slice(0, 5).join(", ")}${leaked.length > 5 ? ", ..." : ""}`);
+const devTasks = JSON.parse(fs.readFileSync(devDry, "utf8")).tasks;
+expect(!devTasks.some((x) => x.task.includes("storybook")), "turbo run build dev schedules a storybook task");
+for (const f of ["apps/cms-admin/src/styles/globals.css", "apps/frontend/src/app/globals.css"]) {
+  const css = fs.readFileSync(f, "utf8");
+  const scan = css.indexOf("@source \x27../../../../packages/form-commons/src\x27;");
+  const skip = css.indexOf("@source not \x27../../../../packages/form-commons/src/stories\x27;");
+  expect(scan > -1 && skip > scan, `${f} lacks the @source not stories line after the @source line`);
+}
+const gi = fs.readFileSync(".gitignore", "utf8").split("\n").map((l) => l.trim());
+for (const p of ["storybook-static", "*storybook.log", "test-results", "playwright-report"]) expect(gi.includes(p), `.gitignore misses ${p}`);
+expect(fs.readFileSync(".prettierignore", "utf8").split("\n").map((l) => l.trim()).includes("storybook-static"), ".prettierignore misses storybook-static");
 '
 
 stale="$(grep -rn "@repo/ui\|packages/ui" --exclude-dir=node_modules --exclude-dir=.next \

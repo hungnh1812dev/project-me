@@ -18,11 +18,31 @@
         "!**/*.spec.*",
         "!**/*.e2e-spec.*",
         "!vitest.config*",
-        "!playwright.config.*"
+        "!playwright.config.*",
+        "!src/stories/**",
+        "!.storybook/**",
+        "!storybook-static/**"
       ],
       "outputs": ["dist/**", ".next/**", "!.next/cache/**"]
     },
+    "build-storybook": {
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "!**/*.md",
+        "!docs/**",
+        "!e2e/**",
+        "!**/*.test.*",
+        "!**/*.spec.*",
+        "!playwright.config.*",
+        "!vitest.config*"
+      ],
+      "outputs": ["storybook-static/**"]
+    },
     "dev": {
+      "cache": false,
+      "persistent": true
+    },
+    "storybook": {
       "cache": false,
       "persistent": true
     },

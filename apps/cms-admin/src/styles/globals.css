@@ -4,6 +4,7 @@
 
 /* Scan the shared package too: its classes live outside this app's root. */
 @source '../../../../packages/form-commons/src';
+@source not '../../../../packages/form-commons/src/stories';
 
 /* Self-hosted fonts (no third-party CDN). Fira Sans: only the weights the UI uses. */
 @import '@fontsource/fira-sans/400.css';

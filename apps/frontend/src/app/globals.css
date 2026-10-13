@@ -3,6 +3,7 @@
 
 /* Scan the shared package too: its classes live outside this app's root. */
 @source '../../../../packages/form-commons/src';
+@source not '../../../../packages/form-commons/src/stories';
 
 :root {
   --background: #ffffff;

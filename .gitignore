@@ -6,3 +6,7 @@ out
 coverage
 *.tsbuildinfo
 .DS_Store
+storybook-static
+*storybook.log
+test-results
+playwright-report

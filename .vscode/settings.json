@@ -18,6 +18,7 @@
     "**/coverage/**": true,
     "**/test-results/**": true,
     "**/playwright-report/**": true,
+    "**/storybook-static/**": true,
     "**/node_modules/.tmp/**": true
   },
   "search.exclude": {
@@ -26,7 +27,8 @@
     "**/.turbo": true,
     "**/coverage": true,
     "**/test-results": true,
-    "**/playwright-report": true
+    "**/playwright-report": true,
+    "**/storybook-static": true
   },
   // One workspace TypeScript (6.0.2) instead of the version bundled with VS Code.
   "typescript.tsdk": "apps/cms-admin/node_modules/typescript/lib",
