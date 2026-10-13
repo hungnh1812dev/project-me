@@ -133,7 +133,18 @@ Defaults kept on purpose (not set in the committed settings): `eslint.run` (`onT
 
 ### cms-api tsconfig layout
 
-Filled in by phase 2.2 (solution-style `tsconfig.json` with `tsconfig.app.json` and `tsconfig.spec.json`).
+`apps/cms-api` follows the cms-admin pattern: `tsconfig.json` is solution-style (`files: []`) and only references two projects.
+
+| File                  | Covers                                                                  | `types`                      | tsbuildinfo                                   |
+| --------------------- | ----------------------------------------------------------------------- | ---------------------------- | --------------------------------------------- |
+| `tsconfig.app.json`   | `src` without `*.spec.ts` (`composite`)                                 | `["node"]`                   | `node_modules/.tmp/tsconfig.app.tsbuildinfo`  |
+| `tsconfig.spec.json`  | `src/**/*.spec.ts`, `test/`, `vitest.config.ts`, `vitest.config.e2e.ts` | `["vitest/globals", "node"]` | `node_modules/.tmp/tsconfig.spec.tsbuildinfo` |
+| `tsconfig.build.json` | extends `tsconfig.app.json`, `rootDir: ./src`; used by `nest build`     | inherited                    | `dist/tsconfig.build.tsbuildinfo`             |
+
+- `typecheck` is `tsc -b --noEmit`. Its tsbuildinfo files live in `node_modules/.tmp/`, so `nest build` (`deleteOutDir`) doesn't wipe them and a warm run is cheap.
+- `tsconfig.build.json` writes its own tsbuildinfo into `dist/`. Sharing the app tsbuildinfo would make `nest build` overwrite it with build options, and the next `typecheck` would check the app project again. Inside `dist/` it is deleted with the output on every build, so a clean build always emits everything.
+- The spec project has no `references` to the app project: `tsc -b --noEmit` rejects a referenced project that doesn't emit (TS6310). Each first-party file belongs to exactly one project (the editor opens `tsconfig.app.json` for `src/app.service.ts` and `tsconfig.spec.json` for `src/app.controller.spec.ts`); the spec program still loads the `src` files that tests import.
+- `oxlint --type-aware` (tsgolint) resolves both referenced projects; a floating promise is reported in `src/` and in `test/`.
 
 ### Measuring
 
@@ -150,10 +161,10 @@ Before = 2026-10-13, after Part B (`@repo/form-commons`), Apple Silicon, Node 24
 
 | Workspace    | Metric                                                            | Before                                                                                                                                               | After |
 | ------------ | ----------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- | ----- |
-| cms-api      | TS program (`tsconfig.json`): files / memory / time               | 801 / 192 MB / 1.6 s                                                                                                                                 |       |
-| cms-api      | `typecheck` cold (`--incremental false`) / warm                   | 0.7 s / 1.0 s (warm buildinfo sits in `dist/`, wiped by `nest build`)                                                                                |       |
-| cms-api      | `lint` (oxlint `--type-aware`) cold / warm                        | 0.75 s / 0.42 s, 0 findings                                                                                                                          |       |
-| cms-api      | `dist/`                                                           | 13 files (incl. `tsconfig.tsbuildinfo`); `.js` sha256: `app.controller` ddddb06b…, `app.module` e212b5b0…, `app.service` 95e26ee6…, `main` 8778e9a3… |       |
+| cms-api      | TS program (`tsconfig.json`): files / memory / time               | 801 / 192 MB / 1.6 s                                                                                                                                 |       | app 639 / 128 MB / 0.45 s; spec 800 / 162 MB / 0.6 s (median of 5, `tsconfig.app.json` / `tsconfig.spec.json`)  |
+| cms-api      | `typecheck` cold (`--incremental false`) / warm                   | 0.7 s / 1.0 s (warm buildinfo sits in `dist/`, wiped by `nest build`)                                                                                |       | `tsc -b --noEmit`: 1.1 s (no tsbuildinfo) / 0.35 s, also right after `nest build`                               |
+| cms-api      | `lint` (oxlint `--type-aware`) cold / warm                        | 0.75 s / 0.42 s, 0 findings                                                                                                                          |       | 0.45 s warm, 0 findings                                                                                         |
+| cms-api      | `dist/`                                                           | 13 files (incl. `tsconfig.tsbuildinfo`); `.js` sha256: `app.controller` ddddb06b…, `app.module` e212b5b0…, `app.service` 95e26ee6…, `main` 8778e9a3… |       | 13 files (incl. `tsconfig.build.tsbuildinfo`); same file list and identical `.js` sha256 after two clean builds |
 | frontend     | TS program (`tsconfig.json`, TS 5.9.3): files / memory / time     | 1449 / 289 MB / 1.4 s                                                                                                                                |       |
 | frontend     | `typecheck` cold (`--incremental false`) / warm                   | 1.9 s / 1.6 s                                                                                                                                        |       |
 | frontend     | `lint` (ESLint, no cache) cold / warm; files linted               | 7.8 s / 1.5 s; 6                                                                                                                                     |       |
