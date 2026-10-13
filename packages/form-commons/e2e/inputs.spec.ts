@@ -1,6 +1,6 @@
-import { expect, test } from '@playwright/test';
+import { expect, type Locator, test } from '@playwright/test';
 
-import { editorText, gotoStory, storyUrl } from './fixtures/story';
+import { editorText, gotoStory, storyUrl, type Theme } from './fixtures/story';
 
 /**
  * Port of cms-admin `e2e/inputs.spec.ts` (AC-13). Titles and assertions are unchanged; only the
@@ -8,6 +8,16 @@ import { editorText, gotoStory, storyUrl } from './fixtures/story';
  */
 const JSON_INPUT_STORY = 'components-jsoninput--all-states';
 const OVERVIEW_STORY = 'ui-kit--overview';
+const SWITCH_STORY = 'components-switch--all-states';
+const INPUT_STORY = 'components-input--all-states';
+const TEXTAREA_STORY = 'components-textarea--all-states';
+const DIALOG_STORY = 'components-dialog--all-states';
+const SELECT_STORY = 'components-select--all-states';
+const BUTTON_STORY = 'components-button--all-states';
+const BUTTON_ROLES_STORY = 'components-button-roles--all-states';
+const BADGE_STORY = 'components-badge--all-states';
+const CHECKBOX_STORY = 'components-checkbox--all-states';
+const RADIO_GROUP_STORY = 'components-radiogroup--all-states';
 
 test.beforeEach(async ({ page }) => {
   await gotoStory(page, JSON_INPUT_STORY);
@@ -194,3 +204,317 @@ test('disabled controls ignore input', async ({ page }) => {
   await expect(input).toHaveValue('Read only');
   await expect(textarea).toHaveValue('Read only');
 });
+
+test('Space toggles a Switch and clicking its label toggles it back', async ({ page }) => {
+  await gotoStory(page, SWITCH_STORY);
+  const toggle = page.getByRole('switch', { name: 'Notifications' });
+  await expect(toggle).toHaveAttribute('aria-checked', 'false');
+
+  await toggle.focus();
+  await page.keyboard.press('Space');
+  await expect(toggle).toHaveAttribute('aria-checked', 'true');
+
+  await page.getByText('Notifications', { exact: true }).click();
+  await expect(toggle).toHaveAttribute('aria-checked', 'false');
+});
+
+test('the password toggle shows and hides the password', async ({ page }) => {
+  await gotoStory(page, INPUT_STORY);
+  const password = page.getByLabel('Password', { exact: true });
+  await password.fill('s3cret');
+  await expect(password).toHaveAttribute('type', 'password');
+
+  await page.getByRole('button', { name: 'Show password' }).click();
+
+  await expect(password).toHaveAttribute('type', 'text');
+  await expect(page.getByRole('button', { name: 'Hide password' })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  );
+
+  await page.getByRole('button', { name: 'Hide password' }).click();
+
+  await expect(password).toHaveAttribute('type', 'password');
+});
+
+test('the Textarea counter follows typing', async ({ page }) => {
+  await gotoStory(page, TEXTAREA_STORY);
+  const bio = page.getByRole('textbox', { name: 'Bio' });
+
+  await bio.fill('Hello');
+
+  await expect(page.getByText('5 / 120')).toBeVisible();
+});
+
+test('invalid controls carry aria-invalid with visible error text', async ({ page }) => {
+  // Spans the Input and Switch sections, so it uses the overview story.
+  await gotoStory(page, OVERVIEW_STORY);
+  await expect(page.getByRole('textbox', { name: 'Email' })).toHaveAttribute(
+    'aria-invalid',
+    'true',
+  );
+  await expect(
+    page.getByRole('alert').filter({ hasText: 'Enter a valid email address.' }),
+  ).toBeVisible();
+  await expect(page.getByRole('switch', { name: 'Accept terms' })).toHaveAttribute(
+    'aria-invalid',
+    'true',
+  );
+});
+
+test('keyboard focus shows a solid ring-coloured outline', async ({ page }) => {
+  await gotoStory(page, INPUT_STORY);
+  await page.getByRole('textbox', { name: 'Name', exact: true }).click();
+  await page.keyboard.press('Tab');
+
+  const username = page.getByRole('textbox', { name: 'Username' });
+  await expect(username).toBeFocused();
+  await expect(username).toHaveCSS('outline-style', 'solid');
+});
+
+test('a Dialog is modal, moves focus inside, closes on Escape and returns focus', async ({
+  page,
+}) => {
+  await gotoStory(page, DIALOG_STORY);
+  const trigger = page.getByRole('button', { name: 'Open dialog' });
+  await trigger.click();
+
+  const dialog = page.getByRole('dialog', { name: 'Rename item' });
+  await expect(dialog).toHaveAttribute('aria-modal', 'true');
+  await expect(dialog.getByRole('textbox', { name: 'Item name' })).toBeFocused();
+
+  await page.keyboard.press('Escape');
+
+  await expect(dialog).toHaveCount(0);
+  await expect(trigger).toBeFocused();
+});
+
+test('an AlertDialog is a modal alertdialog that closes from Cancel', async ({ page }) => {
+  await gotoStory(page, DIALOG_STORY);
+  const trigger = page.getByRole('button', { name: 'Open alert dialog' });
+  await trigger.click();
+
+  const dialog = page.getByRole('alertdialog', { name: 'Delete item?' });
+  await expect(dialog).toHaveAttribute('aria-modal', 'true');
+  await expect(dialog.getByRole('button', { name: 'Cancel' })).toBeFocused();
+
+  await dialog.getByRole('button', { name: 'Cancel' }).click();
+
+  await expect(dialog).toHaveCount(0);
+  await expect(trigger).toBeFocused();
+});
+
+test('a Select in a Field is labelled and picks an option with the keyboard', async ({ page }) => {
+  await gotoStory(page, SELECT_STORY);
+  const select = page.getByRole('combobox', { name: 'Expires in' });
+  await expect(select).toHaveText(/1 day/);
+
+  await select.focus();
+  await page.keyboard.press('Enter');
+  await page.getByRole('option', { name: '1 year' }).click();
+
+  await expect(select).toHaveText(/1 year/);
+  await expect(select).toBeFocused();
+});
+
+test('button classes from @repo/form-commons reach the app stylesheet', async ({ page }) => {
+  // In Storybook this proves the `@source` in `.storybook/preview.css` (AC-13); cms-admin keeps
+  // its own real-page check for `globals.css` (AC-5).
+  await gotoStory(page, BUTTON_STORY, { width: 1280 });
+  // Classes used only inside packages/form-commons go missing unless globals.css adds an @source for it.
+  const destructive = page.getByRole('button', { name: 'destructive', exact: true });
+  await expect(destructive).not.toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
+
+  const icon = page.getByRole('button', { name: 'Add item' });
+  await expect(icon).toHaveCSS('width', '36px'); // `lg:size-9` at the 1280px desktop viewport
+});
+
+test('the Button roles section shows action, normal and danger in every state (AC-8)', async ({
+  page,
+}) => {
+  await gotoStory(page, BUTTON_ROLES_STORY);
+  const roles = page.getByRole('region', { name: 'Button roles' });
+  await expect(roles).toBeVisible();
+
+  for (const role of ['Action', 'Normal', 'Danger']) {
+    const idle = roles.getByRole('button', { name: role, exact: true });
+    await expect(idle).toBeEnabled();
+    await expect(
+      roles.getByRole('button', { name: `${role} disabled`, exact: true }),
+    ).toBeDisabled();
+    const busy = roles.getByRole('button', { name: `${role} loading`, exact: true });
+    await expect(busy).toHaveAttribute('aria-busy', 'true');
+    await expect(busy).toHaveAttribute('aria-disabled', 'true');
+
+    // Hover changes the fill and keyboard focus draws the ring outline.
+    const before = await idle.evaluate(
+      (el) => el.ownerDocument.defaultView!.getComputedStyle(el).backgroundColor,
+    );
+    await idle.hover();
+    await expect(idle).not.toHaveCSS('background-color', before);
+    await idle.focus();
+    await expect(idle).toHaveCSS('outline-style', 'solid');
+  }
+
+  // Action is the primary fill with the primary-ink border, Danger the destructive fill.
+  const action = roles.getByRole('button', { name: 'Action', exact: true });
+  await expect(action).not.toHaveCSS('border-top-color', 'rgba(0, 0, 0, 0)');
+  const danger = roles.getByRole('button', { name: 'Danger', exact: true });
+  await expect(danger).not.toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
+});
+
+// SPEC colour table (Strapi palette). Primary fills carry a primary-ink border (AC-4, AC-8).
+const PRIMARY = 'rgb(73, 69, 255)'; // #4945FF in both themes
+for (const { theme, background, primaryInk, input, secondary, destructive } of [
+  {
+    theme: 'light',
+    background: 'rgb(246, 246, 249)', // #F6F6F9
+    primaryInk: 'rgb(73, 69, 255)', // #4945FF
+    input: 'rgb(128, 128, 156)', // #80809C
+    secondary: { fill: 'rgb(240, 240, 255)', text: 'rgb(39, 31, 224)' }, // #F0F0FF / #271FE0
+    destructive: 'rgb(183, 43, 26)', // #B72B1A
+  },
+  {
+    theme: 'dark',
+    background: 'rgb(24, 24, 38)', // #181826
+    primaryInk: 'rgb(154, 152, 255)', // #9A98FF
+    input: 'rgb(142, 142, 169)', // #8E8EA9
+    secondary: { fill: 'rgb(50, 50, 77)', text: 'rgb(154, 152, 255)' }, // #32324D / #9A98FF
+    destructive: 'rgb(243, 139, 131)', // #F38B83
+  },
+] satisfies { theme: Theme; [key: string]: unknown }[]) {
+  test(`button roles and checked controls use the Strapi palette (${theme}, AC-8)`, async ({
+    page,
+  }) => {
+    // Spans the Button roles, Button, Checkbox, RadioGroup and Switch sections; the theme comes
+    // from the Storybook globals instead of localStorage.
+    await gotoStory(page, OVERVIEW_STORY, { theme });
+    if (theme === 'dark') await expect(page.locator('html')).toHaveClass(/\bdark\b/);
+    else await expect(page.locator('html')).not.toHaveClass(/\bdark\b/);
+
+    const roles = page.getByRole('region', { name: 'Button roles' });
+    const action = roles.getByRole('button', { name: 'Action', exact: true });
+    await expect(action).toHaveCSS('background-color', PRIMARY);
+    await expect(action).toHaveCSS('border-top-color', primaryInk);
+
+    const normal = roles.getByRole('button', { name: 'Normal', exact: true });
+    await expect(normal).toHaveCSS('background-color', background);
+    await expect(normal).toHaveCSS('border-top-color', input);
+
+    const danger = roles.getByRole('button', { name: 'Danger', exact: true });
+    await expect(danger).toHaveCSS('background-color', destructive);
+
+    const second = page.getByRole('button', { name: 'secondary', exact: true });
+    await expect(second).toHaveCSS('background-color', secondary.fill);
+    await expect(second).toHaveCSS('color', secondary.text);
+
+    for (const control of [
+      page.getByRole('checkbox', { name: 'Checked' }),
+      page.getByRole('checkbox', { name: 'Some selected' }),
+      page.getByRole('radiogroup', { name: 'Density' }).getByRole('radio', { name: 'Comfortable' }),
+      page.getByRole('switch', { name: 'Published' }),
+    ]) {
+      await expect(control).toHaveCSS('background-color', PRIMARY);
+      await expect(control).toHaveCSS('border-top-color', primaryInk);
+    }
+  });
+}
+
+test('the Badge section shows the destructive badge (AC-9)', async ({ page }) => {
+  await gotoStory(page, BADGE_STORY);
+  const badges = page.getByRole('region', { name: 'Badge' });
+  await expect(badges.getByText('destructive', { exact: true })).toBeVisible();
+});
+
+/** Size of the element's ::after hit area (the box plus its negative inset). */
+type StyleOf = (el: unknown, pseudo: string) => Record<'left' | 'right' | 'top' | 'bottom', string>;
+const hitArea = (locator: Locator) =>
+  locator.evaluate((el) => {
+    const box = el.getBoundingClientRect();
+    const after = (globalThis as unknown as { getComputedStyle: StyleOf }).getComputedStyle(
+      el,
+      '::after',
+    );
+    return {
+      width: box.width - parseFloat(after.left) - parseFloat(after.right),
+      height: box.height - parseFloat(after.top) - parseFloat(after.bottom),
+    };
+  });
+
+test('checkboxes show checked, mixed and disabled states and keep a 44px hit area (AC-14)', async ({
+  page,
+}) => {
+  await gotoStory(page, CHECKBOX_STORY, { width: 375 });
+  const subscribe = page.getByRole('checkbox', { name: 'Subscribe' });
+  await expect(subscribe).toHaveAttribute('aria-checked', 'false');
+  await subscribe.focus();
+  await page.keyboard.press('Space');
+  await expect(subscribe).toHaveAttribute('aria-checked', 'true');
+  await page.getByText('Subscribe', { exact: true }).click();
+  await expect(subscribe).toHaveAttribute('aria-checked', 'false');
+
+  await expect(page.getByRole('checkbox', { name: 'Some selected' })).toHaveAttribute(
+    'aria-checked',
+    'mixed',
+  );
+  const disabled = page.getByRole('checkbox', { name: 'Disabled checkbox' });
+  await expect(disabled).toHaveAttribute('aria-disabled', 'true');
+
+  const checked = page.getByRole('checkbox', { name: 'Checked' });
+  await expect(checked).toHaveAttribute('aria-checked', 'true');
+  const area = await hitArea(checked);
+  expect(area.width).toBeGreaterThanOrEqual(44);
+  expect(area.height).toBeGreaterThanOrEqual(44);
+});
+
+test('a radio group moves the selection with arrow keys and keeps a 44px hit area (AC-14)', async ({
+  page,
+}) => {
+  await gotoStory(page, RADIO_GROUP_STORY, { width: 375 });
+  const group = page.getByRole('radiogroup', { name: 'Density' });
+  const comfortable = group.getByRole('radio', { name: 'Comfortable' });
+  const compact = group.getByRole('radio', { name: 'Compact' });
+  await expect(comfortable).toHaveAttribute('aria-checked', 'true');
+
+  await comfortable.focus();
+  await page.keyboard.press('ArrowDown');
+  await expect(compact).toBeFocused();
+  await expect(compact).toHaveAttribute('aria-checked', 'true');
+  await expect(comfortable).toHaveAttribute('aria-checked', 'false');
+
+  await page.getByText('Comfortable', { exact: true }).click();
+  await expect(comfortable).toHaveAttribute('aria-checked', 'true');
+
+  const area = await hitArea(compact);
+  expect(area.width).toBeGreaterThanOrEqual(44);
+  expect(area.height).toBeGreaterThanOrEqual(44);
+});
+
+for (const { theme, ring } of [
+  // SPEC focus rule: the 2px ring outline, #4945FF in light and #9A98FF in dark.
+  { theme: 'light', ring: 'rgb(73, 69, 255)' },
+  { theme: 'dark', ring: 'rgb(154, 152, 255)' },
+] satisfies { theme: Theme; ring: string }[]) {
+  test(`a keyboard-focused button shows a 2px solid ring outline with a 2px offset (${theme}, AC-12)`, async ({
+    page,
+  }) => {
+    // The theme comes from the Storybook globals instead of localStorage.
+    await gotoStory(page, BUTTON_ROLES_STORY, { theme });
+    if (theme === 'dark') await expect(page.locator('html')).toHaveClass(/\bdark\b/);
+    else await expect(page.locator('html')).not.toHaveClass(/\bdark\b/);
+
+    // Step back one stop from Action and Tab onto it, so the focus comes from the keyboard.
+    const roles = page.getByRole('region', { name: 'Button roles' });
+    const action = roles.getByRole('button', { name: 'Action', exact: true });
+    await action.focus();
+    await page.keyboard.press('Shift+Tab');
+    await expect(action).not.toBeFocused();
+    await page.keyboard.press('Tab');
+
+    await expect(action).toBeFocused();
+    await expect(action).toHaveCSS('outline-style', 'solid');
+    await expect(action).toHaveCSS('outline-width', '2px');
+    await expect(action).toHaveCSS('outline-offset', '2px');
+    await expect(action).toHaveCSS('outline-color', ring);
+  });
+}
