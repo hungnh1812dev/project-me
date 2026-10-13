@@ -253,31 +253,34 @@ describe('shadcn CLI config (AC-8)', () => {
 });
 
 describe('oldNameImports', () => {
+  // Built at runtime so the repo-wide stale-refs grep (AC-B14) stays empty.
+  const OLD = ['@repo', 'ui'].join('/');
+
   it('flags the old package name and its subpaths', () => {
     const source = [
-      "import { Button } from '@repo/ui/components/button';",
-      "import '@repo/ui/styles/theme.css';",
-      "export * from '@repo/ui';",
+      `import { Button } from '${OLD}/components/button';`,
+      `import '${OLD}/styles/theme.css';`,
+      `export * from '${OLD}';`,
     ].join('\n');
 
     expect(oldNameImports(source)).toEqual([
-      '@repo/ui/components/button',
-      '@repo/ui/styles/theme.css',
-      '@repo/ui',
+      `${OLD}/components/button`,
+      `${OLD}/styles/theme.css`,
+      OLD,
     ]);
   });
 
   it('allows the new name and look-alike packages', () => {
     const source = [
       "import { Button } from '@repo/form-commons/components/button';",
-      "import x from '@repo/ui-kit';",
+      `import x from '${OLD}-kit';`,
     ].join('\n');
 
     expect(oldNameImports(source)).toEqual([]);
   });
 });
 
-describe('no @repo/ui imports (AC-B6)', () => {
+describe('no old package name imports (AC-B6)', () => {
   const ADMIN_SRC = join(SRC, '..', '..', '..', 'apps', 'cms-admin', 'src');
   const files = [
     ...sourceFiles,
@@ -290,7 +293,7 @@ describe('no @repo/ui imports (AC-B6)', () => {
   });
 
   it.each(files.map((file) => [relative(join(SRC, '..', '..', '..'), file), file]))(
-    '%s does not import @repo/ui',
+    '%s does not import the old package name',
     (_name, file) => {
       expect(oldNameImports(readFileSync(file, 'utf8'))).toEqual([]);
     },

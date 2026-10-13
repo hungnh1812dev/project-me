@@ -56,7 +56,7 @@ Fields render in `type.fields` order in a 6-column grid from `md` (`widthClass`:
   undo history. Clicking the field label focuses the editor; Tab and Shift+Tab leave it. Details in
   [Design system](./design-system.md#json-editor-jsoninput-on-codemirror-6) and
   [CSP and headers](./csp-and-headers.md#json-editor-under-the-csp).
-- **Media (D4).** The picker is a `@repo/ui` `RadioGroup` ("Media files") of the M1 assets: each
+- **Media (D4).** The picker is a `@repo/form-commons` `RadioGroup` ("Media files") of the M1 assets: each
   card is a `<label>` around a `RadioGroupItem` named by the file name through `aria-labelledby`,
   so the whole card is the hit area and `getByRole('radio', { name: <file name> })` finds it. One
   Tab stop, arrow keys move the selection, Enter confirms (selects and closes); the checked card

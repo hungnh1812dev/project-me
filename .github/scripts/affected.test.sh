@@ -52,9 +52,9 @@ cd "${repo}"
 git config user.email test@example.test
 git config user.name test
 git config commit.gpgsign false
-mkdir -p apps/cms-admin/src apps/cms-api/test apps/frontend packages/ui .github/workflows .github/scripts
+mkdir -p apps/cms-admin/src apps/cms-api/test apps/frontend packages/form-commons .github/workflows .github/scripts
 touch README.md apps/cms-admin/src/main.ts apps/cms-api/test/app.e2e-spec.ts apps/frontend/index.ts \
-  packages/ui/index.ts .github/workflows/ci.yml .github/workflows/_publish.yml \
+  packages/form-commons/index.ts .github/workflows/ci.yml .github/workflows/_publish.yml \
   .github/workflows/frontend.yml .github/scripts/x.sh
 git add -A
 git commit -q -m init
@@ -117,7 +117,7 @@ run_case "cms-api tests only (AC-9)" "${b}" "${h}" \
   'apps=["cms-api"]' 'image_apps=[]' any=true \
   cms_api_affected=true cms_admin_affected=false frontend_affected=false "${no_images[@]}"
 
-read -r b h <<<"$(commit_change packages/ui/index.ts)"
+read -r b h <<<"$(commit_change packages/form-commons/index.ts)"
 run_case "non-app package only" "${b}" "${h}" \
   'apps=[]' 'image_apps=[]' any=false "${none_affected[@]}" "${no_images[@]}"
 

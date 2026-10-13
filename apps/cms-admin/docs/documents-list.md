@@ -58,10 +58,10 @@ allowed operators. `useDocumentList(ref, params, catalog)` runs it before any re
   then a value input for the kind (text, number, Yes/No select or `DatePicker`). Apply and Clear all
   write the URL and return focus to Filters. Active filters show as chips ("Featured is Yes,
   remove") labelled by `filterChipLabel`/`operatorLabel`. Dates go out as ISO strings.
-- **Pagination.** The shared `Pagination` from `@repo/ui` (replaced `PaginationBar` in Phase 6). Old
+- **Pagination.** The shared `Pagination` from `@repo/form-commons` (replaced `PaginationBar` in Phase 6). Old
   rows stay visible with `aria-busy` while the next page loads.
 - **Columns (D6).** A `GatedButton` on `configureColumns` opens "Choose columns": listable columns as
-  `@repo/ui` `Checkbox` boxes with Move up and Move down, at least one kept ("Choose at least one
+  `@repo/form-commons` `Checkbox` boxes with Move up and Move down, at least one kept ("Choose at least one
   column."). Each box is named by its column label through `aria-labelledby`, and the label is a
   `<label htmlFor>`, so clicking the visible text toggles the box. Save sends C3; a 400 or 403 stays
   in the dialog. The choice applies to everyone.
@@ -77,7 +77,7 @@ allowed operators. `useDocumentList(ref, params, catalog)` runs it before any re
 - **Row actions.** "Actions for <label>": Edit, Duplicate, Publish or Unpublish by status, Delete
   (confirmed). Outcomes are announced; a failure shows above the table.
 - **Selection.** Row boxes ("Select <label>") and a tri-state "Select all entries on this page", all
-  `@repo/ui` `Checkbox` named through `aria-labelledby` by sr-only text (`SelectBox`). Select all is
+  `@repo/form-commons` `Checkbox` named through `aria-labelledby` by sr-only text (`SelectBox`). Select all is
   `indeterminate` (`aria-checked="mixed"`, a dash) when some rows are selected. No native checkbox
   is left. Any change of
   page, size, sort, search or filters clears it. The bar shows "n selected", Clear selection,
@@ -139,7 +139,7 @@ sends nothing. Feedback goes through `useAnnouncer` and `LiveRegion`; dialog err
   `hooks/useBulkStatus.test.ts`. Branch coverage at the end of 5.9: `listState.ts` and `bulk.ts`
   100%, `columns.ts` 97.6% (bar 90%, read from the report).
 - Unit and e2e tests find the boxes with `getByRole('checkbox', { name })`, never by tag or type
-  (guarded by `packages/ui/src/rawControls.test.ts`).
+  (guarded by `packages/form-commons/src/rawControls.test.ts`).
 - E2E: `e2e/documents-list.spec.ts` (sort from the URL, scoped 403, 401 refresh during a load,
   paging), `e2e/documents-filters.spec.ts` (filters, chips, date picker, dropped params),
   `e2e/documents-bulk.spec.ts` (selection, bulk publish and delete with failures, focus after

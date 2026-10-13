@@ -25,13 +25,13 @@ top of this. The Content-Security-Policy and the nginx image are in [CSP and hea
   `src/**/*.test.ts(x)` and import `describe`, `it`, `expect` and `vi` from `vitest` (no globals).
 - The setup registers the jest-dom matchers, runs RTL `cleanup` after each test, starts, resets and
   closes the MSW server, and stubs `matchMedia` and `ResizeObserver` for jsdom.
-- **CodeMirror polyfills.** jsdom has no layout, so the setup (like `packages/ui/src/test/setup.ts`)
+- **CodeMirror polyfills.** jsdom has no layout, so the setup (like `packages/form-commons/src/test/setup.ts`)
   adds `Range.prototype.getClientRects` / `getBoundingClientRect` returning empty rects, and a no-op
   `document.execCommand` that CodeMirror calls on focus. Each is installed only when missing. Unit
   tests drive the JSON editor through `EditorView` transactions and DOM focus and blur; layout,
   typing and keyboard behaviour are covered in Playwright.
 - **Role-and-name queries.** Checkboxes and radios are Base UI elements, not native inputs, so tests
-  find them with `getByRole('checkbox' | 'radio', { name })`. `packages/ui/src/rawControls.test.ts`
+  find them with `getByRole('checkbox' | 'radio', { name })`. `packages/form-commons/src/rawControls.test.ts`
   fails on `input[type="checkbox"]`, `input[type="radio"]` or `.indeterminate` in any cms-admin
   `src/**/*.test.tsx` or `e2e/**/*.ts` file.
 - Components: React Testing Library plus `@testing-library/user-event`.
@@ -51,7 +51,7 @@ top of this. The Content-Security-Policy and the nginx image are in [CSP and hea
 
 `test:cov` uses the v8 provider over `src/**/*.{ts,tsx}`, excluding `src/main.tsx`, `*.d.ts`,
 `src/test/**`, type-only `types.ts` files and the tests. Since Phase 6 the vendored primitives, the
-generic form components and `json.ts` live in `@repo/ui`, which has its own gates (see
+generic form components and `json.ts` live in `@repo/form-commons`, which has its own gates (see
 [Design system](./design-system.md)).
 
 | Glob                                                                                      | Lines, statements, functions, branches |

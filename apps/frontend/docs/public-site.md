@@ -10,7 +10,7 @@ Root layout, home page and base CSS. `globals.css` sets background and foregroun
 
 | File | Spec |
 | ---- | ---- |
-| `src/app/globals.css` | Tailwind and `@repo/ui` theme import, base colours, pinned `--ring` / `--border`. |
+| `src/app/globals.css` | Tailwind and `@repo/form-commons` theme import, base colours, pinned `--ring` / `--border`. |
 | `src/app/layout.tsx` | Root layout. |
 | `src/app/page.tsx` | Home page. |
 | `src/app/favicon.ico` | Site icon. |

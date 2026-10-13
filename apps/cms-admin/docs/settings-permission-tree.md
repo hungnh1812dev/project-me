@@ -1,8 +1,8 @@
 # Settings permission tree
 
 `PermissionTree`, the permission picker shared by the role form and the access-token form (Phase
-4.4): `@repo/ui` `Checkbox` boxes grouped by resource, content-type sub-groups under `document`, tri-state
-group boxes, a filter and Select all. It stays in the admin (not `@repo/ui`) because it reads the
+4.4): `@repo/form-commons` `Checkbox` boxes grouped by resource, content-type sub-groups under `document`, tri-state
+group boxes, a filter and Select all. It stays in the admin (not `@repo/form-commons`) because it reads the
 permission catalog.
 
 ## Feature
@@ -15,7 +15,7 @@ permission catalog.
   sub-group per content-type slug (three segments). Selected slugs missing from the catalog go last
   under "Unknown permissions" ("Not in the permission catalog.", `UNKNOWN_GROUP_ID`); they stay
   listed after unchecking so they can be checked again.
-- **Controls.** Every box is the `@repo/ui` `Checkbox` (Base UI, `role="checkbox"`), rendered by the
+- **Controls.** Every box is the `@repo/form-commons` `Checkbox` (Base UI, `role="checkbox"`), rendered by the
   internal `TriStateCheckbox`; there is no native checkbox left. A group box with some descendants
   selected sets `indeterminate`, which shows a dash and exposes `aria-checked="mixed"`, next to
   "n of m selected"; toggling selects all descendants or clears them when all were selected
@@ -39,7 +39,7 @@ permission catalog.
 
 - **Plain checkboxes**, not a tree widget, for predictable keyboard and screen-reader behaviour.
   Since the luxury restyle they are the shared `Checkbox` instead of native inputs (a guard test in
-  `@repo/ui` blocks new native ones), with explicit names kept identical.
+  `@repo/form-commons` blocks new native ones), with explicit names kept identical.
 - **Unknown slugs are kept, never added**, so editing a role never silently drops a grant and
   Select all never sends one the backend rejects.
 

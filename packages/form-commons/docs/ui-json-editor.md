@@ -16,15 +16,15 @@
 
 | File | Spec |
 | ---- | ---- |
-| `src/form/JsonInput.tsx` | Exports `JsonInput`, `JsonInputProps`. Validation, format button, lazy loading and skeleton. |
-| `src/form/JsonCodeEditor.tsx` | Default export `JsonCodeEditor`; exports `JsonCodeEditorHandle`, `JsonCodeEditorProps`. Defines the host element, builds the `EditorView`, applies accessibility attributes. |
+| `src/components/forms/JsonInput.tsx` | Exports `JsonInput`, `JsonInputProps`. Validation, format button, lazy loading and skeleton. |
+| `src/components/forms/JsonCodeEditor.tsx` | Default export `JsonCodeEditor`; exports `JsonCodeEditorHandle`, `JsonCodeEditorProps`. Defines the host element, builds the `EditorView`, applies accessibility attributes. |
 | `src/lib/jsonEditor.ts` | Pure helpers: `shouldValidate`, `canFormat`, `needsExternalSync`, `takeOwnEcho`, `SYNTAX_TOKENS`, `highlightSpec`, `editorThemeSpec`, `disabledThemeSpec`, `editorSizeSpec`. No raw colours. |
 | `src/lib/jsonEditorView.ts` | Exports `editorViewOf`: finds the `EditorView` of a host element (tests and tooling). |
 | `src/lib/json.ts` | Exports `parseJson`, `formatJson`, `describeJsonError`, `JsonExpect` and result types. |
 
 ## Testing
 
-`src/form/JsonInput.test.tsx`, `src/form/JsonCodeEditor.test.tsx` (driven through `EditorView` transactions; no `<style>` added to `document`), `src/lib/jsonEditor.test.ts`, `src/lib/json.test.ts`. e2e in cms-admin (`e2e/inputs.spec.ts`, `e2e/csp.spec.ts`). Run: `pnpm --filter @repo/ui test`.
+`src/components/forms/JsonInput.test.tsx`, `src/components/forms/JsonCodeEditor.test.tsx` (driven through `EditorView` transactions; no `<style>` added to `document`), `src/lib/jsonEditor.test.ts`, `src/lib/json.test.ts`. e2e in cms-admin (`e2e/inputs.spec.ts`, `e2e/csp.spec.ts`). Run: `pnpm --filter @repo/form-commons test`.
 
 ## Related
 

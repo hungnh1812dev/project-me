@@ -1,6 +1,6 @@
 # UI design tokens
 
-The semantic colour, radius and motion tokens for light and dark, shared by every app that imports `@repo/ui/styles/theme.css`. For anyone changing the palette.
+The semantic colour, radius and motion tokens for light and dark, shared by every app that imports `@repo/form-commons/styles/theme.css`. For anyone changing the palette.
 
 ## Feature
 
@@ -20,7 +20,7 @@ The semantic colour, radius and motion tokens for light and dark, shared by ever
 ## Testing
 
 - `src/styles/tokens.test.ts`: values match `theme.css`, text pairs 4.5:1, `input`/`ring`/`primary-ink` boundaries 3:1, editor syntax colours 4.5:1 in both themes.
-- Run: `pnpm --filter @repo/ui test`.
+- Run: `pnpm --filter @repo/form-commons test`.
 
 ## Related
 

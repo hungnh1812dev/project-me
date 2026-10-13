@@ -30,7 +30,7 @@ with `contentTypeSlug`, global `document:<action>` slugs are scoped (`scopeToCon
 ### Policy table (ABAC)
 
 `can(actor, action, subject, attrs?)` returns `Decision { allowed, reason }` (the type comes from
-`@repo/ui/lib/decision`). **Deny by default**: an unknown subject or action (including inherited keys
+`@repo/form-commons/lib/decision`). **Deny by default**: an unknown subject or action (including inherited keys
 like `toString`) is denied. The actor is `{ userId, level, permissions }` from `toActor(user)`. The
 permission is checked first, then the conditions.
 

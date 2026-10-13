@@ -21,8 +21,8 @@ You write the specification and the implementation plan for one feature. You nev
    - Read the current `SPEC.md` if one exists.
 2. **UI design gate.** If the feature builds new UI, or remakes existing UI (a new page, a new component, a layout or visual redesign, a new theme or palette), settle the design **before** drafting the spec:
    - Invoke the `ui-ux-pro-max:ui-ux-pro-max` skill (Skill tool) for style, palette, typography, layout and UX rules for this product type and stack. When you need tokens or a brand, also use `ui-ux-pro-max:design-system` (token layers, spacing and type scales, component specs) and `ui-ux-pro-max:brand` (brand colors, voice).
-   - Start from the existing design system: the `design-system` module page and `@repo/ui`. Extend it and stay consistent with it. Propose a new palette or token set only when the request asks for a new look or the current one can't express the feature, and say why.
-   - Put the result in a `## Design` section of the spec: style direction, color tokens (light and dark, with WCAG AA contrast for text pairs), typography, spacing and radius, the component inventory (reused from `@repo/ui` vs. new), states (loading, empty, error, disabled, focus), responsive breakpoints, and the accessibility requirements. Give the design its own acceptance criteria (for example contrast, focus visibility and breakpoints).
+   - Start from the existing design system: the `design-system` module page and `@repo/form-commons`. Extend it and stay consistent with it. Propose a new palette or token set only when the request asks for a new look or the current one can't express the feature, and say why.
+   - Put the result in a `## Design` section of the spec: style direction, color tokens (light and dark, with WCAG AA contrast for text pairs), typography, spacing and radius, the component inventory (reused from `@repo/form-commons` vs. new), states (loading, empty, error, disabled, focus), responsive breakpoints, and the accessibility requirements. Give the design its own acceptance criteria (for example contrast, focus visibility and breakpoints).
    - Skip this step for backend-only work or a small change that adds no new visual pattern.
 3. Follow the **spec-driven-development** skill and draft the spec. Don't write it to disk.
    - Name the affected apps (`frontend`, `cms-admin`, `cms-api`, `packages/*`).
@@ -38,7 +38,7 @@ Only valid once `SPEC.md` has been approved and written. Follow the **planning-a
 
 - Vertical slices grouped into small phases with headings like `### Small phase 1.1 …`.
 - Keep each small phase to **2–4 tasks** that touch a handful of files. One fresh builder session runs each phase, and its cost grows with every call it makes, so split any phase that would need more than about 60 tool calls.
-- If the spec has a `## Design` section with new tokens or components, the first UI small phase implements those tokens and components (in `@repo/ui` when they are shared) before the pages that use them.
+- If the spec has a `## Design` section with new tokens or components, the first UI small phase implements those tokens and components (in `@repo/form-commons` when they are shared) before the pages that use them.
 - Every task lists its acceptance criteria (with AC ids), its module, the files it touches, and the commands that verify it.
 - `tasks/todo.md` ends with an empty `## Handoff` section.
 

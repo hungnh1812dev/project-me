@@ -1,6 +1,6 @@
 # Design system
 
-How the admin is styled: the stack, the semantic tokens and palette, the shared `@repo/ui` package
+How the admin is styled: the stack, the semantic tokens and palette, the shared `@repo/form-commons` package
 the admin consumes (primitives, generic form components), the app's own global CSS and fonts, and
 the dev-only UI kit page. For anyone building a screen or adding a component. The light/dark theme
 is its own module, [Theme](./theme.md).
@@ -12,8 +12,8 @@ is its own module, [Theme](./theme.md).
 | Concern    | Choice                                                                                                        |
 | ---------- | ------------------------------------------------------------------------------------------------------------- |
 | CSS        | Tailwind CSS v4 through `@tailwindcss/vite`. Tokens are CSS variables, mapped to utilities by `@theme inline` |
-| Components | shadcn/ui in the Base UI flavour (`style: base-nova`), on `@base-ui/react`, vendored in `@repo/ui`            |
-| Variants   | `class-variance-authority`. Classes always go through `cn()` (`@repo/ui/lib/cn`)                              |
+| Components | shadcn/ui in the Base UI flavour (`style: base-nova`), on `@base-ui/react`, vendored in `@repo/form-commons`            |
+| Variants   | `class-variance-authority`. Classes always go through `cn()` (`@repo/form-commons/lib/cn`)                              |
 | Animation  | `tw-animate-css`. `prefers-reduced-motion: reduce` turns transitions and animations off globally              |
 | Icons      | `lucide-react`. Decorative icons get `aria-hidden`; icon-only buttons get `aria-label`                        |
 | Fonts      | Fira Sans (400, 500, 600) and Fira Code, self-hosted through `@fontsource`. No font CDN. Fonts stay per app   |
@@ -22,18 +22,20 @@ is its own module, [Theme](./theme.md).
 
 Deviations: Fira Sans is the static `@fontsource/fira-sans` (no variable build exists), Fira Code is
 `@fontsource-variable/fira-code`. The primitives were written by hand from the shadcn Base UI source
-(the CLI could not run in this repo); `packages/ui/components.json` is kept for later CLI use.
+(the CLI could not run in this repo); `packages/form-commons/components.json` is kept for CLI use: its `ui` alias points at
+`@repo/form-commons/components/ui`, and the package `tsconfig.json` maps `@repo/form-commons/*` to
+`./src/*` so the CLI can resolve the aliases.
 
-### Shared package `@repo/ui` (Phase 6, D1 to D3)
+### Shared package `@repo/form-commons` (Phase 6, D1 to D3)
 
-- **D1 Package.** `packages/ui` is private ESM shipped as TypeScript source, compiled by each
+- **D1 Package.** `packages/form-commons` is private ESM shipped as TypeScript source, compiled by each
   consumer (Vite here, `transpilePackages` in frontend). Subpath exports only, no barrel:
-  `@repo/ui/components/*`, `/form/*`, `/hooks/*`, `/lib/*`, `/styles/theme.css`, `/styles/tokens`.
+  `@repo/form-commons/components/ui/*`, `/components/forms/*`, `/hooks/*`, `/lib/*`, `/styles/theme.css`, `/styles/tokens`.
   No re-export shims in the apps.
 - **D2 Tailwind sharing.** `theme.css` holds the tokens for `:root` and `.dark`, `@custom-variant
 dark`, the `@theme inline` mapping, radius and motion tokens, the global `:focus-visible` rule and
   the reduced-motion rule. The app's `globals.css` imports it and adds
-  `@source '../../../../packages/ui/src'` (Tailwind doesn't scan `node_modules`). Fonts, `body`
+  `@source '../../../../packages/form-commons/src'` (Tailwind doesn't scan `node_modules`). Fonts, `body`
   font settings, the `main`/`h1` focus exception and the `.rich-text` styles stay in `globals.css`.
 - **D3 Form split.** Generic components moved to the package (`Field`, `PasswordInput`, `JsonInput`,
   `DatePicker`, `ConfirmDialog`, `UnsavedChangesDialog`, `SecretReveal`, `GatedButton`,
@@ -42,9 +44,9 @@ dark`, the `@theme inline` mapping, radius and motion tokens, the global `:focus
   [Settings permission tree](./settings-permission-tree.md)). `Decision` comes from `lib/decision`.
 - **Boundaries.** The package's `boundaries.test.ts` fails on `@/` or `apps/*` imports, on
   `react-router*`, `axios`, Redux, TanStack or react-hook-form imports, and on a `.tsx` in
-  `components` or `form` without `'use client'`.
-- Package tests and gates run with `pnpm --filter @repo/ui test` / `test:cov` (`src/form/**/*.tsx`
-  70%, `src/lib/**/*.ts` and `tokens.ts` 85%, `src/components/**` excluded).
+  `components/ui` or `components/forms` without `'use client'`.
+- Package tests and gates run with `pnpm --filter @repo/form-commons test` / `test:cov` (`src/components/forms/**/*.tsx`
+  70%, `src/lib/**/*.ts` and `tokens.ts` 85%, `src/components/ui/**` excluded).
 
 ### Tokens and palette
 
@@ -52,7 +54,7 @@ Semantic token groups: surfaces (`background`, `card`, `popover`, `muted`, `seco
 `sidebar`, each with `-foreground`), accent (`primary`, `primary-ink`, `ring`, `sidebar-primary`,
 `sidebar-ring`), `highlight`, status (`destructive`, `success`, `warning`), lines (`border`, `input`
 so controls reach 3:1, `sidebar-border`), and `--radius`, fonts, `--motion-duration-*`. Values live
-in `packages/ui/src/styles/theme.css` (`:root` and `.dark`) and `tokens.ts`, always changed together.
+in `packages/form-commons/src/styles/theme.css` (`:root` and `.dark`) and `tokens.ts`, always changed together.
 
 Strapi palette: a `#F6F6F9` page with white cards and nav, `#32324D` text and a solid indigo
 `#4945FF` action fill, following the Strapi Design System scales. `primary-ink` means "primary used
@@ -108,20 +110,20 @@ so the public site's focus outline and default border don't change with this pal
 Rules:
 
 - Components use semantic token classes only: no raw hex and no palette classes. The package's
-  `palette.test.ts` scans every `.tsx` in `packages/ui/src` **and** `apps/cms-admin/src`.
+  `palette.test.ts` scans every `.tsx` in `packages/form-commons/src` **and** `apps/cms-admin/src`.
 - `tokens.test.ts` keeps `tokens.ts` in sync with `theme.css` and checks 4.5:1 text pairs and 3:1
   control boundaries and focus rings in both themes.
 - **Primary-border rule.** In dark the indigo fill is only 2.99:1 against the page, so every
   primary surface carries a 1px `primary-ink` border (in light it matches the fill; in dark
   `#9A98FF` is what reaches 3:1). Any class string with
   `bg-primary` or `bg-sidebar-primary` (the `/NN` hover and opacity forms excepted) must also have
-  `border-primary-ink`; `packages/ui/src/primaryBorder.test.ts` scans `packages/ui/src` and
+  `border-primary-ink`; `packages/form-commons/src/primaryBorder.test.ts` scans `packages/form-commons/src` and
   `apps/cms-admin/src` and fails otherwise. Checked `Checkbox` and `RadioGroupItem`, the checked
   `Switch`, the `default` button and the `default` badge all follow it.
 - **Primary is never text.** Links, text, icons and underlines in the primary colour use
   `text-primary-ink` (4.5:1), never `text-primary` / `text-sidebar-primary` (or the `fill-`,
   `stroke-`, `decoration-` forms), because dark `primary` as text is only 2.99:1.
-  `packages/ui/src/primaryText.test.ts` scans `.tsx`, `.ts` and `.css` in both trees. Labels on a
+  `packages/form-commons/src/primaryText.test.ts` scans `.tsx`, `.ts` and `.css` in both trees. Labels on a
   primary fill use `primary-foreground` (white).
 - The highlight (D9) is used only for the active sidebar item's bar, the current page in
   `Pagination`, the `highlight` `Badge` variant, the editor's `true`/`false`/`null` colour and the UI
@@ -150,7 +152,7 @@ in both themes (`e2e/inputs.spec.ts`).
 
 ### Components the admin uses
 
-Primitives (`@repo/ui/components`): `alert`, `alert-dialog`, `badge`, `breadcrumb`, `button`,
+Primitives (`@repo/form-commons/components/ui`): `alert`, `alert-dialog`, `badge`, `breadcrumb`, `button`,
 `calendar`, `card`, `checkbox`, `dialog`, `dropdown-menu`, `input`, `label`, `popover`,
 `radio-group`, `select`, `separator`, `sheet`, `sidebar`, `skeleton`, `switch`, `table`, `textarea`,
 `tooltip`, `variants`. Controls are 44px tall below `lg` and 32–40px above. Both dialog popups set
@@ -172,7 +174,7 @@ Primitives (`@repo/ui/components`): `alert`, `alert-dialog`, `badge`, `breadcrum
 - **No native controls.** `apps/cms-admin/src` has no `<input type="checkbox">` or
   `type="radio"`; `type="file"` is allowed only in `FileDropzone` (shadcn has no file primitive).
 
-Generic form components (`@repo/ui/form`), with the behaviour the admin relies on:
+Generic form components (`@repo/form-commons/components/forms`), with the behaviour the admin relies on:
 
 | Component              | Behaviour                                                                                                                                                                                                                                                                                                                                                                             |
 | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -196,7 +198,7 @@ Every input supports default, filled, disabled, invalid and required states.
   `onValueChange`, `expect`, `required`, `disabled`, `readOnly`, `name`, `id`, `aria-*`, `onBlur`,
   `rows`), plus an optional `label` used for the in-shadow name. The ref exposes `focus()` so
   react-hook-form focuses the editor on an invalid save.
-- **Lazy chunk.** `React.lazy` loads `form/JsonCodeEditor.tsx`, so `@codemirror/*` is its own chunk
+- **Lazy chunk.** `React.lazy` loads `components/forms/JsonCodeEditor.tsx`, so `@codemirror/*` is its own chunk
   and not in the entry chunk. While it loads, a read-only skeleton of the same height shows the
   text (no layout shift).
 - **Shadow root.** The view mounts inside `<repo-json-editor>`, a form-associated custom element
@@ -232,20 +234,20 @@ state), `RadioGroup` and `JsonInput` (default, disabled, read-only, invalid, emp
 
 ### Adding a shadcn component
 
-1. Add it to `packages/ui`, not to an app: run the CLI there or copy the Base UI source into
-   `packages/ui/src/components/<name>.tsx`.
+1. Add it to `packages/form-commons`, not to an app: run the CLI there or copy the Base UI source into
+   `packages/form-commons/src/components/ui/<name>.tsx`.
 2. Review: `'use client'`, relative imports inside the package, arrow components with
    `displayName`, semantic tokens only, every primary fill paired with `border-primary-ink`, primary never
    used as text, focus ring and 44px targets kept; the CLI must not touch
    `tsconfig.json`, `theme.css` or an app's dependencies.
-3. Our own behaviour goes in `packages/ui/src/form` (under the gates).
+3. Our own behaviour goes in `packages/form-commons/src/components/forms` (under the gates).
 4. Add the entry to `apps/frontend/src/ui-compile-check.ts`.
-5. Run `pnpm --filter @repo/ui test typecheck lint` and `pnpm --filter frontend typecheck`.
+5. Run `pnpm --filter @repo/form-commons test typecheck lint` and `pnpm --filter frontend typecheck`.
 6. Add it to the UI kit and, if user-visible, to `e2e/a11y.spec.ts`.
 
 ### Decisions
 
-- **App-local in Phase 3, shared in Phase 6.** The stack stayed; the primitives moved to `@repo/ui`
+- **App-local in Phase 3, shared in Phase 6.** The stack stayed; the primitives moved to `@repo/form-commons`
   once `apps/frontend` needed them.
 - **Source package, no build step**, so both bundlers compile it and there is no stale `dist`.
 - **Data-layer components stay in the app**, which keeps the package free of router, Redux, React
@@ -263,14 +265,14 @@ state), `RadioGroup` and `JsonInput` (default, disabled, read-only, invalid, emp
 
 | File                          | Spec                                                                                                                                           |
 | ----------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| `src/styles/globals.css`      | Imports Tailwind and `@repo/ui/styles/theme.css`, scans the package, fonts, focus exception, `.rich-text` styles. No colour tokens of its own. |
+| `src/styles/globals.css`      | Imports Tailwind and `@repo/form-commons/styles/theme.css`, scans the package, fonts, focus exception, `.rich-text` styles. No colour tokens of its own. |
 | `src/pages/dev/UiKitPage.tsx` | Default export `UiKitPage`: dev-only showcase of button roles, inputs, checkbox and radio states, `JsonInput`, swatches and badges.            |
 | `public/favicon.svg`          | The app icon.                                                                                                                                  |
 
-The shared primitives, form components and tokens live in `packages/ui` (outside this app): notably
-`styles/theme.css` + `styles/tokens.ts`, `components/variants.ts`, `components/checkbox.tsx`,
-`components/radio-group.tsx`, `components/badge.tsx`, `form/JsonInput.tsx`,
-`form/JsonCodeEditor.tsx`, `lib/jsonEditor.ts` and `lib/jsonEditorView.ts`.
+The shared primitives, form components and tokens live in `packages/form-commons` (outside this app): notably
+`styles/theme.css` + `styles/tokens.ts`, `components/ui/variants.ts`, `components/ui/checkbox.tsx`,
+`components/ui/radio-group.tsx`, `components/ui/badge.tsx`, `components/forms/JsonInput.tsx`,
+`components/forms/JsonCodeEditor.tsx`, `lib/jsonEditor.ts` and `lib/jsonEditorView.ts`.
 
 ## Testing
 
@@ -280,7 +282,7 @@ The shared primitives, form components and tokens live in `packages/ui` (outside
   states, 44px hit areas measured at 375px, and the JSON editor (name, description, format,
   read-only, disabled, no layout shift).
 - `e2e/a11y.spec.ts` includes `/admin/dev/ui-kit` in both themes and both widths.
-- Package tests: `pnpm --filter @repo/ui test`.
+- Package tests: `pnpm --filter @repo/form-commons test`.
   - `tokens.test.ts`: values match `theme.css`, text pairs 4.5:1, `input`/`ring`/`primary-ink` 3:1,
     the Strapi and AA-derived values, the destructive badge tint, syntax colours 4.5:1.
   - `palette.test.ts`: no raw hex or palette classes in `.tsx`.
