@@ -26,16 +26,16 @@ rules (kinds, labels, widths, entry labels) used by the list and the breadcrumbs
 Fields render in `type.fields` order in a 6-column grid from `md` (`widthClass`: `"100%"`, `"50%"`,
 `"1/3"`, else full). Labels come from `fieldLabel` ("coverImage" → "Cover image").
 
-| Type                 | Control                                                                                                     |
-| -------------------- | ----------------------------------------------------------------------------------------------------------- |
-| `text`, `number`     | `TextField`, `NumberField` (`Input` through `RHFField`; NumberField's "Enter a number." comes from `rules`) |
-| `boolean`            | `BooleanField` (`Switch` through `RHFField`)                                                                |
-| `json`               | `JsonField` (`JsonInput expect="any"`, CodeMirror editor); invalid text stays visible and blocks the save   |
-| `richtext`           | `RichTextField`, lazy-loading `RichTextEditor` (Tiptap) behind a skeleton (D1)                              |
-| `media`              | `MediaField` plus `MediaPickerDialog` (D4)                                                                  |
-| `component`          | `ComponentField`: a `fieldset`; below the top level a `details` with an `entryHint` preview                 |
-| repeatable component | `RepeatableField` + `RepeatableEntry` (`useFieldArray`, keyed by `field.id`)                                |
-| unknown type         | `UnsupportedField`: read-only JSON preview, "Unsupported field type "<type>""                               |
+| Type                 | Control                                                                                                            |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `text`, `number`     | `TextField`, `NumberField` (`Input` through `RHFField`; NumberField's "Enter a number." comes from `rules`)        |
+| `boolean`            | `BooleanField` (`Switch` through `RHFField`)                                                                       |
+| `json`               | `JsonField` (`JsonInput` through `RHFField`, `config.expect: any`); invalid text stays visible and blocks the save |
+| `richtext`           | `RichTextField`, lazy-loading `RichTextEditor` (Tiptap) behind a skeleton (D1)                                     |
+| `media`              | `MediaField` plus `MediaPickerDialog` (D4)                                                                         |
+| `component`          | `ComponentField`: a `fieldset`; below the top level a `details` with an `entryHint` preview                        |
+| repeatable component | `RepeatableField` + `RepeatableEntry` (`useFieldArray`, keyed by `field.id`)                                       |
+| unknown type         | `UnsupportedField`: read-only JSON preview, "Unsupported field type "<type>""                                      |
 
 - **Repeatables.** Entries are "<Field> item n" with Move up, Move down and Remove; "Add <field>
   item" appends. Focus goes to the new entry after Add, and to the next entry, previous one or Add
@@ -45,10 +45,10 @@ Fields render in `type.fields` order in a 6-column grid from `md` (`widthClass`:
   `injectCSS: false` (CSP). The value is HTML. When the loaded HTML doesn't survive a round trip
   (`changesOnRoundTrip`), the field warns (`ROUND_TRIP_WARNING`) that saving removes it. Only
   `RichTextEditor.tsx` imports `@tiptap/*`, so the editor is its own chunk.
-- **JSON.** `JsonField` wraps the shared `JsonInput` in a `Controller` + `Field`: the value is text,
-  `rows={6}`, read-only when the form is. It passes the field `label` (which names the editor
-  content inside the `<repo-json-editor>` shadow root, where the `Field` label's `htmlFor` can't
-  reach) and the Controller `ref`, whose `focus()` moves focus into the editor, so an invalid save
+- **JSON.** `JsonField` binds the shared `JsonInput` through `RHFField` (which renders the `Field`): the
+  value is text, `config` `{ label, expect: 'any', rows: 6 }`, read-only when the form is. The
+  `config.label` names the editor content inside the `<repo-json-editor>` shadow root, where the
+  `Field` label's `htmlFor` can't reach, and `RHFField` passes the field `ref`, whose `focus()` moves focus into the editor, so an invalid save
   focuses it. The editor is a lazy CodeMirror 6 chunk with a same-height skeleton, JSON
   highlighting and line numbers; validation shows after the first blur and then on every change
   ("Invalid JSON: <reason> (line L, column C)"), and `rulesFor` blocks the save on invalid text.
@@ -97,27 +97,27 @@ the breadcrumbs reuse them.
 
 ## Files
 
-| File                                               | Spec                                                                                                                              |
-| -------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| `src/components/form/SchemaForm.tsx`               | Exports `SchemaForm`, `SchemaFormProps`. RHF form, grid, 400 alert, read-only mode.                                               |
-| `src/components/form/SchemaField.tsx`              | Exports `SchemaField`, `SchemaFieldProps`. Picks the control for a field type.                                                    |
-| `src/components/form/schemaFormContext.ts`         | Exports `SchemaFormContext`, `useSchemaFormReadOnly`, `useSchemaFormAnnounce`, `useFieldError`.                                   |
-| `src/components/form/fields/TextField.tsx`         | Exports `TextField`: `Input` bound through `RHFField`; a non-string value shows as empty text.                                    |
-| `src/components/form/fields/NumberField.tsx`       | Exports `NumberField`: `Input` through `RHFField` with `rulesFor(field)`, `config` `inputMode: decimal`, `autoComplete: off`.     |
-| `src/components/form/fields/BooleanField.tsx`      | Exports `BooleanField`.                                                                                                           |
-| `src/components/form/fields/JsonField.tsx`         | Exports `JsonField`: `JsonInput` in a `Controller`, passes `label` and the focus ref.                                             |
-| `src/components/form/fields/RichTextField.tsx`     | Exports `RichTextField`: lazy wrapper, round-trip warning.                                                                        |
-| `src/components/form/fields/RichTextEditor.tsx`    | The Tiptap editor and toolbar (`RichTextEditorHandle`, `RichTextEditorProps`); the only `@tiptap/*` importer.                     |
-| `src/components/form/fields/MediaField.tsx`        | Exports `MediaField`: preview box, details row, Choose and Remove.                                                                |
-| `src/components/form/fields/MediaPickerDialog.tsx` | Exports `MediaPickerDialog`: searchable `RadioGroup` card grid plus upload.                                                       |
-| `src/components/form/fields/ComponentField.tsx`    | Exports `ComponentField`, `ComponentChildren`.                                                                                    |
-| `src/components/form/fields/RepeatableField.tsx`   | Exports `RepeatableField`: field array, focus moves, announcements.                                                               |
-| `src/components/form/fields/RepeatableEntry.tsx`   | Exports `RepeatableEntry`, `EntryAction`: one entry with its move and remove actions.                                             |
-| `src/components/form/fields/UnsupportedField.tsx`  | Exports `UnsupportedField`.                                                                                                       |
-| `src/features/content/schema.ts`                   | Pure field rules: kinds, sort/list/filter rules, widths, labels, entry labels.                                                    |
-| `src/features/content/schemaForm.ts`               | Exports `toFormValues`, `emptyValues`, `emptyEntry`, `toDocumentData`, `rulesFor`, `NUMBER_ERROR`, `FormValues`, `FieldRules`.    |
-| `src/features/content/richtext.ts`                 | Exports `isAllowedHref`, `normalizeRichText`, `changesOnRoundTrip`, `ALLOWED_LINK_PROTOCOLS`, `LINK_ERROR`, `ROUND_TRIP_WARNING`. |
-| `src/features/content/mediaValue.ts`               | Exports `isMediaAsset`, `readMediaValue`, `resolveMedia`, `MediaFormValue`, `ResolvedMedia`.                                      |
+| File                                               | Spec                                                                                                                                   |
+| -------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/components/form/SchemaForm.tsx`               | Exports `SchemaForm`, `SchemaFormProps`. RHF form, grid, 400 alert, read-only mode.                                                    |
+| `src/components/form/SchemaField.tsx`              | Exports `SchemaField`, `SchemaFieldProps`. Picks the control for a field type.                                                         |
+| `src/components/form/schemaFormContext.ts`         | Exports `SchemaFormContext`, `useSchemaFormReadOnly`, `useSchemaFormAnnounce`, `useFieldError`.                                        |
+| `src/components/form/fields/TextField.tsx`         | Exports `TextField`: `Input` bound through `RHFField`; a non-string value shows as empty text.                                         |
+| `src/components/form/fields/NumberField.tsx`       | Exports `NumberField`: `Input` through `RHFField` with `rulesFor(field)`, `config` `inputMode: decimal`, `autoComplete: off`.          |
+| `src/components/form/fields/BooleanField.tsx`      | Exports `BooleanField`.                                                                                                                |
+| `src/components/form/fields/JsonField.tsx`         | Exports `JsonField`: `JsonInput` through `RHFField` with `rulesFor(field)`; `config.label` names the editor, the field ref focuses it. |
+| `src/components/form/fields/RichTextField.tsx`     | Exports `RichTextField`: lazy wrapper, round-trip warning.                                                                             |
+| `src/components/form/fields/RichTextEditor.tsx`    | The Tiptap editor and toolbar (`RichTextEditorHandle`, `RichTextEditorProps`); the only `@tiptap/*` importer.                          |
+| `src/components/form/fields/MediaField.tsx`        | Exports `MediaField`: preview box, details row, Choose and Remove.                                                                     |
+| `src/components/form/fields/MediaPickerDialog.tsx` | Exports `MediaPickerDialog`: searchable `RadioGroup` card grid plus upload.                                                            |
+| `src/components/form/fields/ComponentField.tsx`    | Exports `ComponentField`, `ComponentChildren`.                                                                                         |
+| `src/components/form/fields/RepeatableField.tsx`   | Exports `RepeatableField`: field array, focus moves, announcements.                                                                    |
+| `src/components/form/fields/RepeatableEntry.tsx`   | Exports `RepeatableEntry`, `EntryAction`: one entry with its move and remove actions.                                                  |
+| `src/components/form/fields/UnsupportedField.tsx`  | Exports `UnsupportedField`.                                                                                                            |
+| `src/features/content/schema.ts`                   | Pure field rules: kinds, sort/list/filter rules, widths, labels, entry labels.                                                         |
+| `src/features/content/schemaForm.ts`               | Exports `toFormValues`, `emptyValues`, `emptyEntry`, `toDocumentData`, `rulesFor`, `NUMBER_ERROR`, `FormValues`, `FieldRules`.         |
+| `src/features/content/richtext.ts`                 | Exports `isAllowedHref`, `normalizeRichText`, `changesOnRoundTrip`, `ALLOWED_LINK_PROTOCOLS`, `LINK_ERROR`, `ROUND_TRIP_WARNING`.      |
+| `src/features/content/mediaValue.ts`               | Exports `isMediaAsset`, `readMediaValue`, `resolveMedia`, `MediaFormValue`, `ResolvedMedia`.                                           |
 
 ## Testing
 

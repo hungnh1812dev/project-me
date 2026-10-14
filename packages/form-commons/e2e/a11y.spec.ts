@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 
 import {
   expectNoBlockingViolations,
@@ -56,3 +56,95 @@ test('keyboard walk on the UI kit reaches every control with visible focus (AC-4
   expect(enabled).toBeGreaterThan(0);
   expect(stops.length).toBe(enabled);
 });
+
+/**
+ * The input stories (AC-18): every Playground, the RadioGroup `WithItems` story and the RHFField
+ * form. Each `play` function changes the value on load, so `settled` waits for its end state
+ * before axe runs or the keyboard walk starts.
+ */
+interface InputStory {
+  id: string;
+  settled: (page: Page) => Promise<void>;
+}
+
+const readoutIs = (text: string | RegExp) => async (page: Page) => {
+  await expect(page.getByRole('status', { name: 'Value' })).toHaveText(text, { timeout: 30_000 });
+};
+
+const INPUT_STORIES: readonly InputStory[] = [
+  { id: 'components-switch--playground', settled: readoutIs('true') },
+  { id: 'components-checkbox--playground', settled: readoutIs('true') },
+  { id: 'components-input--playground', settled: readoutIs('"Jane"') },
+  { id: 'components-input--password-playground', settled: readoutIs('"s3cret"') },
+  { id: 'components-textarea--playground', settled: readoutIs('"Hello"') },
+  {
+    id: 'components-jsoninput--playground',
+    settled: async (page) => {
+      await readoutIs('"[1]"')(page);
+      await expect(page.locator('[data-slot="json-editor-skeleton"]')).toHaveCount(0);
+    },
+  },
+  { id: 'components-select--playground', settled: readoutIs('"1d"') },
+  { id: 'components-radiogroup--playground', settled: readoutIs('"compact"') },
+  { id: 'components-radiogroup--with-items', settled: readoutIs('"scale"') },
+  {
+    id: 'components-datepicker--playground',
+    settled: async (page) => {
+      await expect(page.getByRole('button', { name: 'Publish date' })).toHaveText(/Jan 20, 2026/, {
+        timeout: 30_000,
+      });
+      await expect(page.getByRole('dialog', { name: 'Choose a date' })).toHaveCount(0);
+    },
+  },
+  {
+    id: 'components-rhffield--form',
+    settled: async (page) => {
+      // The play function has submitted the empty form.
+      await expect(page.getByRole('form', { name: 'Settings' }).getByRole('alert')).toHaveCount(3, {
+        timeout: 30_000,
+      });
+      await expect(page.locator('[data-slot="json-editor-skeleton"]')).toHaveCount(0);
+    },
+  },
+];
+
+for (const story of INPUT_STORIES) {
+  for (const theme of THEMES) {
+    for (const width of WIDTHS) {
+      test(`axe: ${story.id} has no serious or critical violations (${theme}, ${width}px, AC-18)`, async ({
+        page,
+      }) => {
+        await gotoStory(page, story.id, { theme, width });
+        await story.settled(page);
+
+        await expectNoBlockingViolations(page, theme);
+      });
+    }
+  }
+
+  test(`keyboard walk on ${story.id} reaches every control with visible focus (AC-18)`, async ({
+    page,
+  }) => {
+    await gotoStory(page, story.id, { width: 1280 });
+    await story.settled(page);
+    // The play left focus inside the story; restart the walk from a sentinel before the root.
+    await page.evaluate(`(() => {
+      const start = document.createElement('button');
+      start.dataset.walkStart = '';
+      start.textContent = 'start';
+      document.body.prepend(start);
+      start.focus();
+    })()`);
+
+    const stops = await walkTabOrder(page, 100);
+
+    expect(stops.length).toBeGreaterThan(0);
+    expect(stops.filter((s) => !s.visibleFocus)).toEqual([]);
+    const enabled = await page.evaluate<number>(
+      `[...document.querySelectorAll('#storybook-root *')].filter(
+        (el) => el.tabIndex >= 0 && !el.disabled && el.checkVisibility(),
+      ).length`,
+    );
+    expect(stops.length).toBe(enabled);
+  });
+}

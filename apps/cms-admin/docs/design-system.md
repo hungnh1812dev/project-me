@@ -39,13 +39,18 @@ dark`, the `@theme inline` mapping, radius and motion tokens, the global `:focus
   font settings, the `main`/`h1` focus exception and the `.rich-text` styles stay in `globals.css`.
 - **D3 Form split.** Generic components moved to the package (`Field`, `PasswordInput`, `JsonInput`,
   `DatePicker`, `ConfirmDialog`, `UnsavedChangesDialog`, `SecretReveal`, `GatedButton`,
-  `GatedMenuItem`, `FileDropzone`, `Pagination`). Components that use the admin's data layer stay in
+  `GatedMenuItem`, `FileDropzone`, `Pagination`). The inputs (`Input`, `PasswordInput`, `Textarea`,
+  `JsonInput`, `Switch`, `Checkbox`, `Select`, `RadioGroup`, `DatePicker`) share the package's input
+  contract (controlled `value`/`onChange`, one JSON `config`, no `defaultValue`), and react-hook-form
+  forms bind them through `@repo/form-commons/components/rhf/RHFField` instead of a hand-written
+  `Controller` + `Field`. Components that use the admin's data layer stay in
   `src/components/form` ([Schema form](./schema-form.md),
   [Settings permission tree](./settings-permission-tree.md)). `Decision` comes from `lib/decision`.
 - **Boundaries.** The package's `boundaries.test.ts` fails on `@/` or `apps/*` imports, on
-  `react-router*`, `axios`, Redux, TanStack or react-hook-form imports, and on a `.tsx` in
-  `components/ui` or `components/forms` without `'use client'`.
-- Package tests and gates run with `pnpm --filter @repo/form-commons test` / `test:cov` (`src/components/forms/**/*.tsx`
+  `react-router*`, `axios`, Redux or TanStack imports, on react-hook-form imports outside
+  `src/components/rhf/**` and `src/stories/**`, and on a `.tsx` in `components/ui`,
+  `components/forms` or `components/rhf` without `'use client'`.
+- Package tests and gates run with `pnpm --filter @repo/form-commons test` / `test:cov` (`src/components/forms/**/*.tsx` and `src/components/rhf/**/*.tsx`
   70%, `src/lib/**/*.ts` and `tokens.ts` 85%, `src/components/ui/**` excluded).
 
 ### Tokens and palette
@@ -194,10 +199,10 @@ Every input supports default, filled, disabled, invalid and required states.
 
 ### JSON editor (`JsonInput` on CodeMirror 6)
 
-- **API kept.** Same props as before (`value`, `defaultValue`, `onChange`, `onValidate`,
-  `onValueChange`, `expect`, `required`, `disabled`, `readOnly`, `name`, `id`, `aria-*`, `onBlur`,
-  `rows`), plus an optional `label` used for the in-shadow name. The ref exposes `focus()` so
-  react-hook-form focuses the editor on an invalid save.
+- **Input contract.** Controlled `value: string` / `onChange(value)` (no `defaultValue`),
+  `disabled`, `readOnly`, `required`, `name`, `id`, `aria-*`, `onBlur`, plus `onValidate` and
+  `onValueChange`; `config` holds `expect`, `rows`, `label` (the in-shadow name) and
+  `description`. The ref exposes `focus()`, so `RHFField` focuses the editor on an invalid save.
 - **Lazy chunk.** `React.lazy` loads `components/forms/JsonCodeEditor.tsx`, so `@codemirror/*` is its own chunk
   and not in the entry chunk. While it loads, a read-only skeleton of the same height shows the
   text (no layout shift).

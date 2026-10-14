@@ -4,7 +4,7 @@
 
 ## Feature
 
-- Public API unchanged (`value`, `defaultValue`, `onChange`, `onValidate`, `onValueChange`, `expect`, `required`, `disabled`, `readOnly`, `name`, `id`, `aria-*`, `onBlur`, `rows`), plus optional `label`. The ref exposes `focus()`.
+- On the [input contract](./ui-input-contract.md): controlled `value: string` and `onChange(value)` (no `defaultValue`), `disabled`, `readOnly`, `required`, `name`, `id`, `aria-*`, `onBlur`, and one JSON `config` with `expect`, `rows`, `label` (the in-shadow accessible name) and `description`. Extra callbacks: `onValidate(error)` and `onValueChange(parsed)`. The ref exposes `focus()`. In react-hook-form it binds through [`RHFField`](./ui-rhf-field.md), with `rules.validate` built on `parseJson`.
 - `React.lazy` loads `JsonCodeEditor`, so `@codemirror/*` is its own chunk; a same-height read-only skeleton shows meanwhile.
 - The view mounts in the open shadow root of `<repo-json-editor>` (form-associated, `delegatesFocus`). Styles go into a constructed stylesheet, so the CSP stays `style-src 'self'`. Decision: rejected a per-request nonce because it changes the policy; details in [cms-admin CSP and headers](../../../apps/cms-admin/docs/csp-and-headers.md#json-editor-under-the-csp). Needs constructable stylesheets (Chrome/Edge 73+, Firefox 101+, Safari 16.4+).
 - Themed only through `EditorView.theme` and `HighlightStyle` with `var(--token)` colours; the host carries border, focus, invalid and disabled styling via Tailwind.
@@ -24,7 +24,7 @@
 
 ## Testing
 
-`src/components/forms/JsonInput.test.tsx`, `src/components/forms/JsonCodeEditor.test.tsx` (driven through `EditorView` transactions; no `<style>` added to `document`), `src/lib/jsonEditor.test.ts`, `src/lib/json.test.ts`. Browser checks (blur error, object check, Format JSON, Tab and Shift+Tab, highlighting, skeleton height, name and description, label click, read-only and disabled) are story tests on the `Components/JsonInput` story in `e2e/inputs.spec.ts`; see [Storybook](./storybook.md). The CSP check stays in cms-admin (`e2e/csp.spec.ts`). Run: `pnpm --filter @repo/form-commons test`, and `PLAYWRIGHT_BROWSERS_PATH=0 pnpm --filter @repo/form-commons test:stories`.
+`src/components/forms/JsonInput.test.tsx`, `src/components/forms/JsonCodeEditor.test.tsx` (driven through `EditorView` transactions; no `<style>` added to `document`), `src/lib/jsonEditor.test.ts`, `src/lib/json.test.ts`. Browser checks (blur error, object check, Format JSON, Tab and Shift+Tab, highlighting, skeleton height, name and description, label click, read-only and disabled) are story tests on the `Components/JsonInput` story in `e2e/inputs.spec.ts`; the `Playground` story (typing, validation, Format JSON) is covered in `e2e/interact.spec.ts` and the axe matrix in `e2e/a11y.spec.ts`; see [Storybook](./storybook.md). The CSP check stays in cms-admin (`e2e/csp.spec.ts`). Run: `pnpm --filter @repo/form-commons test`, and `PLAYWRIGHT_BROWSERS_PATH=0 pnpm --filter @repo/form-commons test:stories`.
 
 ## Related
 

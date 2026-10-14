@@ -4,7 +4,7 @@ Generic, data-layer-free form building blocks. Components that need Redux or rou
 
 ## Feature
 
-`Field` (label, description, error wiring), `PasswordInput`, `GatedButton` / `GatedMenuItem` (fed a `Decision`), `ConfirmDialog`, `UnsavedChangesDialog`, `SecretReveal`, `FileDropzone`, `DatePicker`, `Pagination`. Behaviour is listed in [cms-admin Design system](../../../apps/cms-admin/docs/design-system.md#shared-package-repoform-commons-phase-6-d1-to-d3). `FileDropzone` keeps its hidden `type="file"` input (shadcn has no file primitive); its uploaded icon uses `text-primary-ink`, since primary is never text.
+`Field` (label, description, error wiring), `PasswordInput`, `GatedButton` / `GatedMenuItem` (fed a `Decision`), `ConfirmDialog`, `UnsavedChangesDialog`, `SecretReveal`, `FileDropzone`, `DatePicker`, `Pagination`. `PasswordInput` and `DatePicker` are on the [input contract](./ui-input-contract.md) (controlled `value`/`onChange`, one JSON `config`, no `defaultValue`). Behaviour is listed in [cms-admin Design system](../../../apps/cms-admin/docs/design-system.md#shared-package-repoform-commons-phase-6-d1-to-d3). `FileDropzone` keeps its hidden `type="file"` input (shadcn has no file primitive); its uploaded icon uses `text-primary-ink`, since primary is never text.
 
 ## Files
 
@@ -29,4 +29,4 @@ Generic, data-layer-free form building blocks. Components that need Redux or rou
 
 ## Related
 
-- [UI primitives](./ui-primitives.md), [UI JSON editor](./ui-json-editor.md)
+- [UI primitives](./ui-primitives.md), [UI JSON editor](./ui-json-editor.md), [UI input contract](./ui-input-contract.md), [UI RHF field](./ui-rhf-field.md)
