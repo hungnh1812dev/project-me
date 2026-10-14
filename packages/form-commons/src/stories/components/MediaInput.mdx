@@ -1,0 +1,75 @@
+import { ArgTypes, Canvas, Meta } from '@storybook/addon-docs/blocks';
+
+import * as MediaInputStories from './MediaInput.stories';
+
+<Meta of={MediaInputStories} />
+
+# MediaInput
+
+Shows the chosen image and lets people choose another from the media library, upload one, or remove it. The library and the upload come from a `MediaProvider`, so the component never fetches anything itself.
+
+## When to use
+
+- One image field: a cover image, a logo, an avatar.
+- Use a `FileDropzone` on its own when files are uploaded but not chosen from a library.
+
+## Usage
+
+Wrap the app (or a page or form) in a provider built from your data layer, then use `MediaInput` anywhere below it:
+
+```tsx
+import { MediaInput } from '@repo/form-commons/components/forms/MediaInput';
+import { MediaProvider } from '@repo/form-commons/components/forms/MediaProvider';
+
+<MediaProvider
+  value={{
+    items: assets, // undefined while loading
+    describe: (asset) => ({ id: asset.id, fileName: asset.name, url: asset.url }),
+    canBrowse: { allowed: true, reason: null },
+    canUpload: { allowed: true, reason: null },
+    upload: async (files) => ({ added: await uploadAll(files), summary: '1 of 1 file uploaded.' }),
+    uploads: batch,
+    uploading,
+    accept: 'image/png,image/jpeg',
+    uploadHint: 'or drop PNG or JPEG images here',
+  }}
+>
+  <Field label="Cover image">
+    <MediaInput value={cover} onChange={setCover} config={{ label: 'Cover image' }} />
+  </Field>
+</MediaProvider>;
+```
+
+The value is your own asset object, or an id still to look up, or `null`. cms-admin's provider is `CmsMediaProvider`.
+
+## Guidelines
+
+**Do**
+
+- Keep `describe` stable (define it once, outside render) and cheap; it runs for every asset.
+- Pass an `imageSrc` that only allows your image hosts. The default allows `https:` and the page's own origin.
+- Gate Choose and Upload with real permission decisions; a denial keeps the button visible with its reason.
+- Announce changes: pass `onAnnounce` to a live region.
+
+**Don't**
+
+- Don't use it outside a `MediaProvider`; it throws a clear error.
+- Don't put a URL in the value; store the asset (or its id) and let `describe` give the URL.
+
+## Accessibility and keyboard
+
+- The field is a `role="group"` named by `aria-labelledby` or `config.label`. Choose and Remove are icon buttons named `Choose <label>` and `Remove <label>`, with tooltips; after Remove, focus moves to Choose.
+- The picker is a dialog: a search box with a live result count, and a radio grid where the arrow keys move the choice and **Enter** confirms it. Select confirms with the mouse.
+- Images that `imageSrc` refuses show a placeholder named after the file, with no request.
+
+## States
+
+Empty, chosen, "File not found", read-only, loading, and Choose denied:
+
+<Canvas of={MediaInputStories.Default} />
+
+## Props
+
+Try it in the [Playground](?path=/story/components-mediainput--playground), with an in-memory library and a fake upload.
+
+<ArgTypes of={MediaInputStories} />

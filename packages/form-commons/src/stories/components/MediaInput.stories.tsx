@@ -43,7 +43,7 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 /** Empty, chosen, not found, read-only, loading and Choose denied, on the demo library. */
-export const AllStates: Story = {
+export const Default: Story = {
   parameters: { controls: { disable: true }, actions: { disable: true } },
   render: () => <MediaInputSection />,
 };

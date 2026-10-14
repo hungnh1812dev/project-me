@@ -60,6 +60,7 @@
     "@playwright/test": "1.63.0",
     "@repo/typescript-config": "workspace:*",
     "@storybook/addon-a11y": "10.6.1",
+    "@storybook/addon-docs": "10.6.1",
     "@storybook/addon-themes": "10.6.1",
     "@storybook/react-vite": "10.6.1",
     "@tailwindcss/vite": "4.3.3",

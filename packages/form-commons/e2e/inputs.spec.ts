@@ -6,18 +6,18 @@ import { editorText, gotoStory, storyUrl, type Theme } from './fixtures/story';
  * Port of cms-admin `e2e/inputs.spec.ts` (AC-13). Titles and assertions are unchanged; only the
  * navigation moves from the former cms-admin UI kit page to the stories.
  */
-const JSON_INPUT_STORY = 'components-jsoninput--all-states';
+const JSON_INPUT_STORY = 'components-jsoninput--default';
 const OVERVIEW_STORY = 'ui-kit--overview';
-const SWITCH_STORY = 'components-switch--all-states';
-const INPUT_STORY = 'components-input--all-states';
-const TEXTAREA_STORY = 'components-textarea--all-states';
-const DIALOG_STORY = 'components-dialog--all-states';
-const SELECT_STORY = 'components-select--all-states';
-const BUTTON_STORY = 'components-button--all-states';
-const BUTTON_ROLES_STORY = 'components-button-roles--all-states';
-const BADGE_STORY = 'components-badge--all-states';
-const CHECKBOX_STORY = 'components-checkbox--all-states';
-const RADIO_GROUP_STORY = 'components-radiogroup--all-states';
+const SWITCH_STORY = 'components-switch--default';
+const INPUT_STORY = 'components-input--default';
+const TEXTAREA_STORY = 'components-textarea--default';
+const DIALOG_STORY = 'components-dialog--default';
+const SELECT_STORY = 'components-select--default';
+const BUTTON_STORY = 'components-button--default';
+const BUTTON_ROLES_STORY = 'components-button-roles--default';
+const BADGE_STORY = 'components-badge--default';
+const CHECKBOX_STORY = 'components-checkbox--default';
+const RADIO_GROUP_STORY = 'components-radiogroup--default';
 
 test.beforeEach(async ({ page }) => {
   await gotoStory(page, JSON_INPUT_STORY);

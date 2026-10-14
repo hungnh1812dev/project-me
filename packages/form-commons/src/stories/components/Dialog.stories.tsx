@@ -11,4 +11,4 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 /** The "Rename item" dialog and the "Delete item?" alert dialog (AC-9). */
-export const AllStates: Story = {};
+export const Default: Story = {};

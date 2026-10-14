@@ -11,4 +11,4 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 /** Six variants, three sizes, the icon button, loading, disabled and "Link as button" (AC-9). */
-export const AllStates: Story = {};
+export const Default: Story = {};

@@ -112,8 +112,9 @@ const INPUT_STORIES: readonly InputStory[] = [
       await expect(page.getByRole('dialog', { name: 'Choose a date' })).toHaveCount(0);
     },
   },
+  { id: 'components-rhffield--playground', settled: readoutIs('"Launch"') },
   {
-    id: 'components-rhffield--form',
+    id: 'components-rhffield--default',
     settled: async (page) => {
       // The play function has submitted the empty form.
       await expect(page.getByRole('form', { name: 'Settings' }).getByRole('alert')).toHaveCount(3, {

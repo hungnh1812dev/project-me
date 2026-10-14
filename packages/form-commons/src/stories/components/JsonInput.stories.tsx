@@ -33,7 +33,7 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 /** Six JSON editors, including the controlled Metadata object demo (AC-9). */
-export const AllStates: Story = {
+export const Default: Story = {
   parameters: { controls: { disable: true }, actions: { disable: true } },
   render: () => <JsonInputSection />,
 };

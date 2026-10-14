@@ -61,7 +61,7 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 /** Content entries with sort, selection and actions, and a plain table. */
-export const AllStates: Story = {
+export const Default: Story = {
   parameters: { controls: { disable: true }, actions: { disable: true } },
   render: () => <DataTableSection />,
 };

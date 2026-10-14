@@ -21,7 +21,7 @@ const MEDIA_INPUT_PLAYGROUND = 'components-mediainput--playground';
 const RADIO_GROUP_PLAYGROUND = 'components-radiogroup--playground';
 const RADIO_GROUP_WITH_ITEMS = 'components-radiogroup--with-items';
 const DATE_PICKER_PLAYGROUND = 'components-datepicker--playground';
-const RHF_FIELD_FORM = 'components-rhffield--form';
+const RHF_FIELD_FORM = 'components-rhffield--default';
 
 test.beforeEach(async ({ page }) => {
   await gotoStory(page, SWITCH_PLAYGROUND);

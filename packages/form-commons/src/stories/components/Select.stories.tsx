@@ -36,7 +36,7 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 /** "Expires in" (1 hour, 1 day, 1 year) and "Disabled select" (AC-9). */
-export const AllStates: Story = {
+export const Default: Story = {
   parameters: { controls: { disable: true }, actions: { disable: true } },
   render: () => <SelectSection />,
 };

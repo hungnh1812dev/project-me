@@ -7,7 +7,7 @@ import { gotoStory, type Theme } from './fixtures/story';
  * expected colours. The theme comes from the Storybook theme global instead of `localStorage`.
  */
 const OVERVIEW_STORY = 'ui-kit--overview';
-const COLOUR_STORY = 'components-colour--all-states';
+const COLOUR_STORY = 'components-colour--default';
 
 for (const { choice, primary, highlight } of [
   // SPEC colour table: primary #4945FF in both themes, highlight = primary-ink #4945FF / #9A98FF.

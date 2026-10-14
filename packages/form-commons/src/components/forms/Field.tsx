@@ -7,10 +7,15 @@ import { Label } from '../ui/label';
 
 /** The props `Field` sets on its control. Any input primitive in this folder accepts them. */
 export interface FieldControlProps {
+  /** Set by `Field`, so its `<label htmlFor>` names the control. */
   id?: string;
+  /** Set by `Field` from its own `required`. */
   required?: boolean;
+  /** Set by `Field`: the ids of its description and error. */
   'aria-describedby'?: string;
+  /** Set by `Field` while it shows an error. */
   'aria-invalid'?: boolean | 'true' | 'false';
+  /** Set by `Field` from its own `required`. */
   'aria-required'?: boolean | 'true' | 'false';
 }
 

@@ -28,7 +28,7 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 /** Subscribe, Checked, Some selected (mixed) and Disabled checkbox (AC-9). */
-export const AllStates: Story = {
+export const Default: Story = {
   parameters: { controls: { disable: true }, actions: { disable: true } },
   render: () => <CheckboxSection />,
 };

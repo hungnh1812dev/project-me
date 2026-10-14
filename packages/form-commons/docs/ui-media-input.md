@@ -26,7 +26,7 @@
 
 ## Testing
 
-`src/components/forms/MediaInput.test.tsx` (states, Remove, read-only, gating, the picker's choice, Enter, search, list states, upload) and `src/lib/media.test.ts`. Stories: `Components/MediaInput` `AllStates` and `Playground`, and the MediaInput section of the UI kit overview. `e2e/interact.spec.ts` picks by keyboard, removes and uploads in the Playground; `e2e/a11y.spec.ts` runs axe and the keyboard walk on it. cms-admin keeps the field, permission, CSP and API tests (`MediaField.test.tsx`, `e2e/schema-form.spec.ts`, `e2e/content-permissions.spec.ts`, `e2e/csp.spec.ts`).
+`src/components/forms/MediaInput.test.tsx` (states, Remove, read-only, gating, the picker's choice, Enter, search, list states, upload) and `src/lib/media.test.ts`. Stories: `Components/MediaInput` `Default` and `Playground`, and the MediaInput section of the UI kit overview. `e2e/interact.spec.ts` picks by keyboard, removes and uploads in the Playground; `e2e/a11y.spec.ts` runs axe and the keyboard walk on it. cms-admin keeps the field, permission, CSP and API tests (`MediaField.test.tsx`, `e2e/schema-form.spec.ts`, `e2e/content-permissions.spec.ts`, `e2e/csp.spec.ts`).
 
 ## Related
 

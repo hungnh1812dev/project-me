@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { FormProvider, useForm } from 'react-hook-form';
-import { expect } from 'storybook/test';
+import { FormProvider, useForm, useWatch } from 'react-hook-form';
+import { expect, waitFor } from 'storybook/test';
 
 import { JsonInput } from '../../components/forms/JsonInput';
 import { RHFField } from '../../components/rhf/RHFField';
@@ -92,7 +92,7 @@ const SettingsForm: React.FC = () => {
       <pre
         role="status"
         aria-label="Submitted values"
-        className="rounded-md bg-muted p-3 font-mono text-sm whitespace-pre-wrap"
+        className="bg-muted rounded-md p-3 font-mono text-sm whitespace-pre-wrap"
       >
         {submitted ? JSON.stringify(submitted, null, 2) : 'Nothing submitted yet.'}
       </pre>
@@ -101,16 +101,83 @@ const SettingsForm: React.FC = () => {
 };
 SettingsForm.displayName = 'SettingsForm';
 
+interface PlaygroundFieldProps {
+  label: string;
+  description?: string;
+  /** The `rules.required` message; empty makes the field optional. */
+  requiredMessage: string;
+  hideLabel?: boolean;
+}
+
+/** The Playground's value, as the other Playgrounds show it. */
+const TitleReadout: React.FC = () => {
+  const value = useWatch<{ title: string }, 'title'>({ name: 'title' });
+  return (
+    <p className="text-muted-foreground text-sm">
+      Value:{' '}
+      <output aria-label="Value" className="text-foreground font-mono">
+        {JSON.stringify(value)}
+      </output>
+    </p>
+  );
+};
+TitleReadout.displayName = 'TitleReadout';
+
+/** One RHFField around an Input, in its own form; Submit runs the rules. */
+const PlaygroundField: React.FC<PlaygroundFieldProps> = ({
+  label,
+  description,
+  requiredMessage,
+  hideLabel,
+}) => {
+  const form = useForm<{ title: string }>({ defaultValues: { title: '' } });
+  return (
+    <FormProvider {...form}>
+      <form
+        aria-label="Playground"
+        noValidate
+        className="flex max-w-md flex-col gap-4"
+        onSubmit={form.handleSubmit(() => {})}
+      >
+        <RHFField<{ title: string }, 'title'>
+          name="title"
+          label={label}
+          description={description || undefined}
+          hideLabel={hideLabel}
+          rules={requiredMessage ? { required: requiredMessage } : undefined}
+        >
+          {(field) => <Input {...field} />}
+        </RHFField>
+        <Button type="submit" className="self-start">
+          Submit
+        </Button>
+        <TitleReadout />
+      </form>
+    </FormProvider>
+  );
+};
+PlaygroundField.displayName = 'PlaygroundField';
+
 const meta = {
   title: 'Components/RHFField',
-  parameters: { controls: { disable: true }, actions: { disable: true } },
-} satisfies Meta;
+  component: PlaygroundField,
+  args: {
+    label: 'Title',
+    description: 'Shown on the card.',
+    requiredMessage: 'Enter a title.',
+    hideLabel: false,
+  },
+} satisfies Meta<typeof PlaygroundField>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/** Empty submit shows every field's error; a valid submit shows the values as JSON (AC-16). */
-export const Form: Story = {
+/**
+ * A whole react-hook-form form: Input, Switch, Select and JsonInput through `RHFField`. Empty
+ * submit shows every field's error; a valid submit shows the values as JSON (AC-16).
+ */
+export const Default: Story = {
+  parameters: { controls: { disable: true }, actions: { disable: true } },
   render: () => <SettingsForm />,
   play: async ({ canvas, userEvent }) => {
     await userEvent.click(canvas.getByRole('button', { name: 'Submit' }));
@@ -124,5 +191,22 @@ export const Form: Story = {
     await expect(canvas.getByRole('status', { name: 'Submitted values' })).toHaveTextContent(
       'Nothing submitted yet.',
     );
+  },
+};
+
+/**
+ * One RHFField around an Input: `label`, `description`, the required message and `hideLabel` are
+ * Controls. Submit runs the rules; the error shows under the field and clears as you type.
+ */
+export const Playground: Story = {
+  play: async ({ canvas, userEvent }) => {
+    await userEvent.click(canvas.getByRole('button', { name: 'Submit' }));
+    await expect(await canvas.findByRole('alert')).toHaveTextContent('Enter a title.');
+
+    await userEvent.type(canvas.getByRole('textbox', { name: 'Title' }), 'Launch');
+    await waitFor(() =>
+      expect(canvas.getByRole('status', { name: 'Value' })).toHaveTextContent('"Launch"'),
+    );
+    await waitFor(() => expect(canvas.queryByRole('alert')).not.toBeInTheDocument());
   },
 };

@@ -32,7 +32,7 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 /** Seven labelled inputs: placeholder, filled, disabled, error, required, search and password (AC-9). */
-export const AllStates: Story = {
+export const Default: Story = {
   parameters: { controls: { disable: true }, actions: { disable: true } },
   render: () => <InputSection />,
 };

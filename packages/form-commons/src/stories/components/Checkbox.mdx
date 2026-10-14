@@ -1,0 +1,59 @@
+import { ArgTypes, Canvas, Meta } from '@storybook/addon-docs/blocks';
+
+import * as CheckboxStories from './Checkbox.stories';
+
+<Meta of={CheckboxStories} />
+
+# Checkbox
+
+A yes/no choice, or one item in a list of independent choices. It can also show "some selected".
+
+## When to use
+
+- Agreeing to something ("I accept the terms"), opting in, or picking rows in a list.
+- A "select all" box whose children are partly selected: set `config.indeterminate`.
+- Use a [Switch](?path=/docs/components-switch--overview) for a setting that is simply on or off.
+
+## Usage
+
+```tsx
+import { Checkbox } from '@repo/form-commons/components/ui/checkbox';
+import { Label } from '@repo/form-commons/components/ui/label';
+
+<div className="flex items-center gap-2">
+  <Checkbox id="subscribe" value={subscribed} onChange={setSubscribed} />
+  <Label htmlFor="subscribe">Subscribe to the newsletter</Label>
+</div>;
+```
+
+Inside a form, `Field` (or [RHFField](?path=/docs/components-rhffield--overview)) adds the description and error wiring.
+
+## Guidelines
+
+**Do**
+
+- Put the label to the right of the box and make it say what checking means.
+- Use `indeterminate` only for a parent of a partly selected group; clicking it should select all.
+
+**Don't**
+
+- Don't use a checkbox to start an action; use a button.
+- Don't write labels in the negative ("Don't send emails").
+
+## Accessibility and keyboard
+
+- `role="checkbox"` with `aria-checked` of `true`, `false` or `mixed`. Name it with a `<label htmlFor>` or `aria-labelledby`.
+- **Space** toggles it.
+- The 16px box has a 44px hit area (an invisible `::after`), so it is easy to tap without changing the layout.
+
+## States
+
+Unchecked, checked, mixed and disabled:
+
+<Canvas of={CheckboxStories.Default} />
+
+## Props
+
+The value is a `boolean`. Try it in the [Playground](?path=/story/components-checkbox--playground).
+
+<ArgTypes of={CheckboxStories} />

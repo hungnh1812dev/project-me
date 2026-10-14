@@ -12,21 +12,29 @@ export type JsonConfig = { [key: string]: JsonValue | undefined };
 
 /** The value half of every input: the parent owns the value. */
 export interface InputValueProps<T> {
+  /** The current value. The parent owns it; there is no `defaultValue`. */
   value: T;
+  /** Called with the next value (never the DOM event). Set it back as `value`. */
   onChange: (value: T) => void;
+  /** Called when focus leaves the control (react-hook-form marks the field touched). */
   onBlur?: () => void;
+  /** The form field name, for native form submission. */
   name?: string;
 }
 
 /** State flags every input accepts (Field/RHFField also set id and aria-*). */
 export interface InputStateProps {
+  /** Not focusable or editable, and not submitted. */
   disabled?: boolean;
+  /** Shown and focusable, but the value can't change. */
   readOnly?: boolean;
 }
 
 /** Names a control used without a `Field`, for example a search box. */
 export interface InputLabelProps {
+  /** The accessible name when there is no visible label. */
   'aria-label'?: string;
+  /** The id of the visible element that names the control. */
   'aria-labelledby'?: string;
 }
 
@@ -35,8 +43,11 @@ export type InputProps<T, C extends JsonConfig> = InputValueProps<T> &
   InputStateProps &
   FieldControlProps &
   InputLabelProps & {
+    /** The input's options, as plain JSON (no functions, elements or Dates). */
     config?: C;
+    /** Extra classes on the control's root. */
     className?: string;
+    /** The focusable element, for example for react-hook-form's focus on error. */
     ref?: Ref<HTMLElement>;
   };
 

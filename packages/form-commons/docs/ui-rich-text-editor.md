@@ -24,7 +24,7 @@
 
 ## Testing
 
-`src/components/forms/RichTextEditor.test.tsx` (toolbar keys, every format, links, round trip, outside value, handle, read-only) and `src/lib/richtext.test.ts`. Stories: `Components/RichTextEditor` `AllStates` (empty, every format, read-only, lost markup with the warning) and `Playground`, plus the RichTextEditor section of the UI kit overview. `e2e/interact.spec.ts` types, applies Bold and adds a link in the Playground; `e2e/a11y.spec.ts` runs axe and the keyboard walk on it and the overview; see [Storybook](./storybook.md). The field, lazy chunk and CSP checks stay in cms-admin (`RichTextField.test.tsx`, `e2e/schema-form.spec.ts`, `e2e/csp.spec.ts`). Run: `pnpm --filter @repo/form-commons test`, and `PLAYWRIGHT_BROWSERS_PATH=0 pnpm --filter @repo/form-commons test:stories`.
+`src/components/forms/RichTextEditor.test.tsx` (toolbar keys, every format, links, round trip, outside value, handle, read-only) and `src/lib/richtext.test.ts`. Stories: `Components/RichTextEditor` `Default` (empty, every format, read-only, lost markup with the warning) and `Playground`, plus the RichTextEditor section of the UI kit overview. `e2e/interact.spec.ts` types, applies Bold and adds a link in the Playground; `e2e/a11y.spec.ts` runs axe and the keyboard walk on it and the overview; see [Storybook](./storybook.md). The field, lazy chunk and CSP checks stay in cms-admin (`RichTextField.test.tsx`, `e2e/schema-form.spec.ts`, `e2e/csp.spec.ts`). Run: `pnpm --filter @repo/form-commons test`, and `PLAYWRIGHT_BROWSERS_PATH=0 pnpm --filter @repo/form-commons test:stories`.
 
 ## Related
 

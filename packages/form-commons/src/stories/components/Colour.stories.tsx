@@ -11,4 +11,4 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 /** The 11 colour-token swatches, each with its `data-swatch` and name (AC-9). */
-export const AllStates: Story = {};
+export const Default: Story = {};

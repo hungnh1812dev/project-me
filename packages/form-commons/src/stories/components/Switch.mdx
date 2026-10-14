@@ -1,0 +1,56 @@
+import { ArgTypes, Canvas, Meta } from '@storybook/addon-docs/blocks';
+
+import * as SwitchStories from './Switch.stories';
+
+<Meta of={SwitchStories} />
+
+# Switch
+
+Turns one setting on or off, with the effect applying as a setting rather than a choice in a list.
+
+## When to use
+
+- A single on/off setting: notifications, published, visible.
+- Use a [Checkbox](?path=/docs/components-checkbox--overview) for agreeing to something, for picking items in a list, or when "some" (mixed) is a state.
+- Use a [RadioGroup](?path=/docs/components-radiogroup--overview) when the two options need their own names ("Public" / "Private").
+
+## Usage
+
+```tsx
+import { Field } from '@repo/form-commons/components/forms/Field';
+import { Switch } from '@repo/form-commons/components/ui/switch';
+
+<Field label="Notifications" description="Email me when the content changes.">
+  <Switch value={notify} onChange={setNotify} />
+</Field>;
+```
+
+## Guidelines
+
+**Do**
+
+- Label the setting, not the action: "Notifications", not "Turn on notifications".
+- Use `description` to say what "on" does when it isn't obvious.
+
+**Don't**
+
+- Don't use a switch for something that needs a Save before it applies and could be confused with an instant toggle; say so in the description if it does.
+- Don't put the state in the label ("Notifications: on"); the switch shows it.
+
+## Accessibility and keyboard
+
+- A native `<button role="switch">` with `aria-checked`, named by the `Field` label; clicking the label toggles it.
+- **Space** or **Enter** toggles it.
+- With `name`, it submits `on` while on, like a native checkbox.
+
+## States
+
+Off, on, disabled, with an error, and required:
+
+<Canvas of={SwitchStories.Default} />
+
+## Props
+
+The value is a `boolean`. Try it in the [Playground](?path=/story/components-switch--playground).
+
+<ArgTypes of={SwitchStories} />

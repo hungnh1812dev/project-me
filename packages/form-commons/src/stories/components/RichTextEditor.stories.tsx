@@ -26,7 +26,7 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 /** Four editors: empty, every format, read-only, and lost markup with the round-trip warning. */
-export const AllStates: Story = {
+export const Default: Story = {
   parameters: { controls: { disable: true }, actions: { disable: true } },
   render: () => <RichTextEditorSection />,
 };
@@ -41,8 +41,8 @@ export const Playground: Story = {
     return <Controlled {...bind}>{(field) => <RichTextDemo {...args} {...field} />}</Controlled>;
   },
   play: async ({ canvas, userEvent }) => {
-    // The editor loads lazily, so wait for its textbox.
-    const editor = await canvas.findByRole('textbox', { name: 'Body' });
+    // The editor loads lazily (a cold dev server compiles the chunk first), so wait for its textbox.
+    const editor = await canvas.findByRole('textbox', { name: 'Body' }, { timeout: 10_000 });
     await userEvent.click(editor);
     await userEvent.click(canvas.getByRole('button', { name: 'Heading 2' }));
 

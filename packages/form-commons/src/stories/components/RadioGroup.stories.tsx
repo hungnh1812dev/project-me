@@ -37,7 +37,7 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 /** The "Density" group with Comfortable, Compact and Spacious (AC-9). */
-export const AllStates: Story = {
+export const Default: Story = {
   parameters: { controls: { disable: true }, actions: { disable: true } },
   render: () => <RadioGroupSection />,
 };

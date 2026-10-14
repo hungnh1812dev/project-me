@@ -1,0 +1,70 @@
+import { ArgTypes, Canvas, Meta } from '@storybook/addon-docs/blocks';
+
+import * as RHFFieldStories from './RHFField.stories';
+
+<Meta of={RHFFieldStories} />
+
+# RHFField
+
+`Field` bound to react-hook-form: it renders the label, description, required mark and error, and passes the field's value props to one input through a render prop.
+
+## When to use
+
+- Any input inside a react-hook-form form. It replaces a hand-written `Controller` plus `Field`.
+- Outside react-hook-form, use `Field` and pass `value` and `onChange` yourself.
+
+## Usage
+
+```tsx
+import { FormProvider, useForm } from 'react-hook-form';
+
+import { RHFField } from '@repo/form-commons/components/rhf/RHFField';
+import { Input } from '@repo/form-commons/components/ui/input';
+import { Switch } from '@repo/form-commons/components/ui/switch';
+
+type Settings = { title: string; notifications: boolean };
+
+const form = useForm<Settings>({ defaultValues: { title: '', notifications: false } });
+
+<FormProvider {...form}>
+  <form noValidate onSubmit={form.handleSubmit(save)}>
+    <RHFField<Settings, 'title'> name="title" label="Title" rules={{ required: 'Enter a title.' }}>
+      {(field) => <Input {...field} />}
+    </RHFField>
+    <RHFField<Settings, 'notifications'> name="notifications" label="Notifications">
+      {(field) => <Switch {...field} />}
+    </RHFField>
+  </form>
+</FormProvider>;
+```
+
+## Guidelines
+
+**Do**
+
+- Pass the type parameters (`<Settings, 'title'>`) so `field.value` is typed from the form.
+- Spread `field` onto exactly one input; it carries `value`, `onChange`, `onBlur`, `name`, `ref` and `disabled`.
+- Put the error message in `rules` ("Enter a title."); it becomes the Field error.
+- Use `noValidate` on the form so the browser's own bubbles don't compete with the field errors.
+
+**Don't**
+
+- Don't wrap the input in another `Field`; `RHFField` is the Field.
+- Don't set `required` and `rules.required` separately; `required` defaults to `!!rules.required`.
+
+## Accessibility and keyboard
+
+- The error is announced (`role="alert"`) and linked to the input with `aria-describedby`; the input gets `aria-invalid`.
+- On a failed submit, react-hook-form focuses the first invalid input through `field.ref`.
+
+## States
+
+A whole form: Input, Switch, Select and JsonInput. Submit it empty to see every error:
+
+<Canvas of={RHFFieldStories.Default} />
+
+## Props
+
+The table describes the Playground's single field (`label`, `description`, the required message, `hideLabel`). Try it in the [Playground](?path=/story/components-rhffield--playground).
+
+<ArgTypes of={RHFFieldStories} />
