@@ -38,9 +38,12 @@ pnpm --filter cms-api test:e2e       # cms-api e2e tests
 pnpm --filter cms-admin test:cov     # cms-admin unit tests with coverage gates
 pnpm --filter cms-admin test:e2e     # cms-admin Playwright tests (mocked API)
 pnpm turbo run build --filter=frontend   # one app only
+pnpm --filter @repo/form-commons storybook         # Storybook for the shared UI (:6006)
+pnpm --filter @repo/form-commons build-storybook   # static Storybook -> packages/form-commons/storybook-static
+pnpm --filter @repo/form-commons test:stories      # Playwright story tests against Storybook (:6007)
 ```
 
-Before the first cms-admin e2e run, install the browser once: `pnpm --filter cms-admin exec playwright install chromium`.
+Before the first cms-admin e2e run, install the browser once: `pnpm --filter cms-admin exec playwright install chromium`. Story tests need it too: `pnpm --filter @repo/form-commons exec playwright install chromium`. Storybook and the story tests run locally only, not in CI; see [form-commons Storybook](packages/form-commons/docs/storybook.md).
 
 ## Docker
 
