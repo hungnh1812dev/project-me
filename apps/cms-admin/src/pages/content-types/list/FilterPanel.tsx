@@ -110,12 +110,14 @@ const ValueInput: React.FC<{
   return (
     <Field label="Value" error={error}>
       <Input
-        type={column?.kind === 'number' ? 'number' : 'text'}
+        config={{
+          type: column?.kind === 'number' ? 'number' : 'text',
+          maxLength: MAX_LIST_TEXT_LENGTH,
+          autoComplete: 'off',
+        }}
         value={value}
         disabled={!column}
-        maxLength={MAX_LIST_TEXT_LENGTH}
-        autoComplete="off"
-        onChange={(event) => onChange(event.target.value)}
+        onChange={onChange}
       />
     </Field>
   );

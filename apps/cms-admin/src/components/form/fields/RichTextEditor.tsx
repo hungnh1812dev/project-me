@@ -166,6 +166,11 @@ const LinkPanel: React.FC<LinkPanelProps> = ({ editor, onClose }) => {
   const [href, setHref] = useState(typeof current === 'string' ? current : '');
   const [error, setError] = useState<string | undefined>();
   const active = editor.isActive('link');
+  const urlRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    urlRef.current?.focus();
+  }, []);
 
   const close = () => {
     onClose();
@@ -206,28 +211,31 @@ const LinkPanel: React.FC<LinkPanelProps> = ({ editor, onClose }) => {
 
   return (
     <div className="flex flex-col gap-2 border-b p-2 sm:flex-row sm:items-start">
-      <Field label="Link URL" hideLabel error={error} className="min-w-0 flex-1">
-        <Input
-          type="url"
-          inputMode="url"
-          placeholder="https://"
-          autoFocus
-          value={href}
-          onChange={(event) => {
-            setHref(event.target.value);
-            setError(undefined);
-          }}
-          onKeyDown={(event) => {
-            if (event.key === 'Enter') {
-              event.preventDefault();
-              apply();
-            } else if (event.key === 'Escape') {
-              event.preventDefault();
-              close();
-            }
-          }}
-        />
-      </Field>
+      {/* Enter applies and Escape closes; the keys bubble up from the URL input. */}
+      <div
+        className="min-w-0 flex-1"
+        onKeyDown={(event) => {
+          if (event.key === 'Enter') {
+            event.preventDefault();
+            apply();
+          } else if (event.key === 'Escape') {
+            event.preventDefault();
+            close();
+          }
+        }}
+      >
+        <Field label="Link URL" hideLabel error={error}>
+          <Input
+            ref={urlRef}
+            config={{ type: 'url', inputMode: 'url', placeholder: 'https://' }}
+            value={href}
+            onChange={(next) => {
+              setHref(next);
+              setError(undefined);
+            }}
+          />
+        </Field>
+      </div>
       <div className="flex flex-wrap gap-2">
         <Button type="button" size="sm" onClick={apply}>
           Apply

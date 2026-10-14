@@ -25,11 +25,9 @@ export const SearchField: React.FC<SearchFieldProps> = ({
   <div className={className}>
     <Field label={`Search ${noun.other}`} hideLabel>
       <Input
-        type="search"
+        config={{ type: 'search', placeholder: `Search ${noun.other}`, autoComplete: 'off' }}
         value={value}
-        onChange={(event) => onChange(event.target.value)}
-        placeholder={`Search ${noun.other}`}
-        autoComplete="off"
+        onChange={onChange}
         leading={<SearchIcon aria-hidden="true" />}
       />
     </Field>

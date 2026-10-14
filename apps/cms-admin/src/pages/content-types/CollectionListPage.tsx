@@ -297,12 +297,14 @@ const CollectionListPage: React.FC<{ type: ContentType }> = ({ type }) => {
         <div role="search" className="flex flex-wrap items-end gap-3">
           <Field label="Search entries" hideLabel className="w-full sm:max-w-xs">
             <Input
-              type="search"
+              config={{
+                type: 'search',
+                maxLength: MAX_LIST_TEXT_LENGTH,
+                placeholder: 'Search entries',
+                autoComplete: 'off',
+              }}
               value={draft}
-              maxLength={MAX_LIST_TEXT_LENGTH}
-              onChange={(event) => setDraft(event.target.value)}
-              placeholder="Search entries"
-              autoComplete="off"
+              onChange={setDraft}
               leading={<SearchIcon aria-hidden="true" />}
             />
           </Field>

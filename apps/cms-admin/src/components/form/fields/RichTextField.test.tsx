@@ -170,6 +170,22 @@ describe('RichTextField (AC-11, AC-12)', () => {
     await waitFor(() => expect(savedBody(onSubmit)).toBe('<p>Click</p>'));
   });
 
+  it('focuses the link URL box on open, and Escape closes it without a link', async () => {
+    const { onSubmit, user } = renderForm({ body: '<p>Click</p>' });
+    const box = await editor();
+    await user.click(box);
+    await user.keyboard('{Control>}a{/Control}');
+
+    await user.click(within(await toolbar()).getByRole('button', { name: 'Link' }));
+    const url = screen.getByRole('textbox', { name: 'Link URL' });
+    expect(url).toHaveFocus();
+    await user.keyboard('https://example.com{Escape}');
+
+    expect(screen.queryByRole('textbox', { name: 'Link URL' })).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Save' }));
+    await waitFor(() => expect(savedBody(onSubmit)).toBe('<p>Click</p>'));
+  });
+
   it('shows the D2 warning for markup the editor drops, and saving removes it', async () => {
     const { onSubmit, user } = renderForm({
       body: '<p class="lead">Kept text</p><script>window.__x = 1</script><img src="x">',

@@ -307,20 +307,26 @@ export const PermissionTree: React.FC<PermissionTreeProps> = ({
     body = (
       <>
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-          <Field label="Filter permissions" hideLabel className="min-w-0 flex-1 basis-48">
-            <Input
-              type="search"
-              value={filter}
-              onChange={(event) => setFilter(event.target.value)}
-              onKeyDown={(event) => {
-                // Enter filters; it must not submit the surrounding form.
-                if (event.key === 'Enter') event.preventDefault();
-              }}
-              placeholder="Filter permissions"
-              autoComplete="off"
-              leading={<SearchIcon aria-hidden="true" />}
-            />
-          </Field>
+          <div
+            className="min-w-0 flex-1 basis-48"
+            onKeyDown={(event) => {
+              // Enter filters; it must not submit the surrounding form.
+              if (event.key === 'Enter') event.preventDefault();
+            }}
+          >
+            <Field label="Filter permissions" hideLabel>
+              <Input
+                config={{
+                  type: 'search',
+                  placeholder: 'Filter permissions',
+                  autoComplete: 'off',
+                }}
+                value={filter}
+                onChange={setFilter}
+                leading={<SearchIcon aria-hidden="true" />}
+              />
+            </Field>
+          </div>
           <div className="flex items-center gap-3">
             <TriStateCheckbox
               id={`${baseId}-all`}

@@ -107,11 +107,11 @@ export const TokenFormDialog: React.FC<TokenFormDialogProps> = ({
               <Input
                 ref={nameRef}
                 value={name}
-                onChange={(event) => {
-                  setName(event.target.value);
-                  if (submitted) setNameError(validateTokenName(event.target.value));
+                onChange={(next) => {
+                  setName(next);
+                  if (submitted) setNameError(validateTokenName(next));
                 }}
-                autoComplete="off"
+                config={{ autoComplete: 'off' }}
               />
             </Field>
             <Select
