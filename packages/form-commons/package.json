@@ -18,7 +18,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:cov": "vitest run --coverage",
-    "storybook": "storybook dev -p 6006",
+    "storybook": "storybook dev -p 6006 --host localhost",
     "build-storybook": "storybook build",
     "test:stories": "playwright test"
   },
@@ -43,15 +43,15 @@
     "react-dom": "^19.2.8"
   },
   "devDependencies": {
-    "@axe-core/playwright": "^4.13.0",
-    "@fontsource-variable/fira-code": "^5.3.0",
-    "@fontsource/fira-sans": "^5.3.0",
+    "@axe-core/playwright": "4.13.0",
+    "@fontsource-variable/fira-code": "5.3.0",
+    "@fontsource/fira-sans": "5.3.0",
     "@playwright/test": "1.63.0",
     "@repo/typescript-config": "workspace:*",
     "@storybook/addon-a11y": "10.6.1",
     "@storybook/addon-themes": "10.6.1",
     "@storybook/react-vite": "10.6.1",
-    "@tailwindcss/vite": "^4.3.3",
+    "@tailwindcss/vite": "4.3.3",
     "@testing-library/jest-dom": "7.0.1",
     "@testing-library/react": "16.3.3",
     "@testing-library/user-event": "14.6.7",
@@ -64,7 +64,7 @@
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "storybook": "10.6.1",
-    "tailwindcss": "^4.3.3",
+    "tailwindcss": "4.3.3",
     "typescript": "6.0.2",
     "vite": "8.3.0",
     "vitest": "4.1.2"

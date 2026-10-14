@@ -16,7 +16,7 @@ export default defineConfig({
   },
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
   webServer: {
-    command: `storybook dev --ci -p ${PORT}`,
+    command: `storybook dev --ci -p ${PORT} --host localhost`,
     url: BASE_URL,
     reuseExistingServer: !process.env.CI,
     // The first Storybook start optimises deps, which can take a while.
