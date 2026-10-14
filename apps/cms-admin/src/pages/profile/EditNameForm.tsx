@@ -49,12 +49,7 @@ export const EditNameForm: React.FC<EditNameFormProps> = ({ name, onCancel, onSa
   return (
     <form noValidate onSubmit={submit} className="flex flex-col gap-3">
       <Field label="Name" hideLabel required error={error}>
-        <Input
-          ref={inputRef}
-          value={value}
-          onChange={(event) => change(event.target.value)}
-          autoComplete="name"
-        />
+        <Input ref={inputRef} value={value} onChange={change} config={{ autoComplete: 'name' }} />
       </Field>
       {update.error && (
         <p role="alert" className="text-sm font-medium text-destructive">

@@ -74,17 +74,17 @@ const ResetPasswordPage: React.FC = () => {
         <Field label="New password" required>
           <PasswordInput
             id="reset-password"
-            autoComplete="new-password"
+            config={{ autoComplete: 'new-password' }}
             value={password}
-            onChange={(event) => setPassword(event.target.value)}
+            onChange={setPassword}
           />
         </Field>
         <Field label="Confirm new password" required>
           <PasswordInput
             id="reset-confirmation"
-            autoComplete="new-password"
+            config={{ autoComplete: 'new-password' }}
             value={confirmation}
-            onChange={(event) => setConfirmation(event.target.value)}
+            onChange={setConfirmation}
           />
         </Field>
         {error && <Alert variant="destructive">{error}</Alert>}

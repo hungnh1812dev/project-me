@@ -72,18 +72,17 @@ const LoginPage: React.FC = () => {
         <Field label="Email" required>
           <Input
             id="login-email"
-            type="email"
-            autoComplete="username"
+            config={{ type: 'email', autoComplete: 'username' }}
             value={email}
-            onChange={(event) => setEmail(event.target.value)}
+            onChange={setEmail}
           />
         </Field>
         <Field label="Password" required>
           <PasswordInput
             id="login-password"
-            autoComplete="current-password"
+            config={{ autoComplete: 'current-password' }}
             value={password}
-            onChange={(event) => setPassword(event.target.value)}
+            onChange={setPassword}
           />
         </Field>
         <div className="flex items-center gap-2">

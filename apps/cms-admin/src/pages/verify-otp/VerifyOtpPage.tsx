@@ -92,22 +92,18 @@ const VerifyOtpPage: React.FC = () => {
         <Field label="Email" required>
           <Input
             id="verify-email"
-            type="email"
-            autoComplete="email"
+            config={{ type: 'email', autoComplete: 'email' }}
             value={email}
-            onChange={(event) => setEmail(event.target.value)}
+            onChange={setEmail}
           />
         </Field>
         <Field label="Verification code" required>
           <Input
             id="verify-otp"
-            type="text"
-            inputMode="numeric"
-            autoComplete="one-time-code"
-            maxLength={6}
+            config={{ inputMode: 'numeric', autoComplete: 'one-time-code', maxLength: 6 }}
             className="font-mono tracking-[0.3em]"
             value={otp}
-            onChange={(event) => setOtp(event.target.value.trim())}
+            onChange={(next) => setOtp(next.trim())}
           />
         </Field>
         {error && (

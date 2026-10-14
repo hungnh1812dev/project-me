@@ -77,17 +77,15 @@ const RegisterPage: React.FC = () => {
         {FIELDS.map(({ name, label, type, autoComplete }) => {
           const controlProps = {
             id: `register-${name}`,
-            autoComplete,
             value: form[name],
-            onChange: (event: React.ChangeEvent<HTMLInputElement>) =>
-              setForm({ ...form, [name]: event.target.value }),
+            onChange: (next: string) => setForm({ ...form, [name]: next }),
           };
           return (
             <Field key={name} label={label} required error={fieldErrors[name]}>
               {type === 'password' ? (
-                <PasswordInput {...controlProps} />
+                <PasswordInput {...controlProps} config={{ autoComplete }} />
               ) : (
-                <Input {...controlProps} type={type} />
+                <Input {...controlProps} config={{ type, autoComplete }} />
               )}
             </Field>
           );

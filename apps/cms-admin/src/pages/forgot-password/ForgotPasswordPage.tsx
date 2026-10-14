@@ -57,10 +57,9 @@ const ForgotPasswordPage: React.FC = () => {
         <Field label="Email" required>
           <Input
             id="forgot-email"
-            type="email"
-            autoComplete="email"
+            config={{ type: 'email', autoComplete: 'email' }}
             value={email}
-            onChange={(event) => setEmail(event.target.value)}
+            onChange={setEmail}
           />
         </Field>
         {error && <Alert variant="destructive">{error}</Alert>}
