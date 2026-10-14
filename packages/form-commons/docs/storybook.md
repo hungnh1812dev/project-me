@@ -28,6 +28,8 @@ Storybook 10 (`@storybook/react-vite`) for `@repo/form-commons`: one story per U
 | `e2e/a11y.spec.ts`                     | Axe matrix (light/dark, 1280px/375px) and keyboard walk on the overview story.                                                                                        |
 | `playwright.config.ts`                 | Chromium; `webServer` `storybook dev --ci -p 6007`, `reuseExistingServer` when not CI; `forbidOnly` and `retries` as in cms-admin.                                    |
 | `package.json`                         | Scripts `storybook`, `build-storybook`, `test:stories`; Storybook, Playwright and axe packages are devDependencies only.                                              |
+| `.oxlintrc.json`                       | Lint config; an override turns `react/only-export-components` off for `**/*.stories.tsx` (stories export `meta` and story objects).                                   |
+| `vitest.config.ts`                     | Unit-test config; excludes `src/stories/**` from coverage because the story tests in `e2e/` check them. (`tsconfig.json` is listed in UI primitives; it also includes `e2e`, `.storybook` and `playwright.config.ts`.) |
 | `storybook-static/`                    | `build-storybook` output, git- and prettier-ignored.                                                                                                                  |
 
 ## Testing
