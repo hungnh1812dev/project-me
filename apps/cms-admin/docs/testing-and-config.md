@@ -8,16 +8,16 @@ top of this. The Content-Security-Policy and the nginx image are in [CSP and hea
 
 ### Scripts
 
-| Command                                                    | What it does                                                  |
-| ---------------------------------------------------------- | ------------------------------------------------------------- |
-| `pnpm --filter cms-admin test`                             | `vitest run`: all unit and integration tests, once            |
-| `pnpm --filter cms-admin test:watch`                       | `vitest` in watch mode                                        |
-| `pnpm --filter cms-admin test:cov`                         | `vitest run --coverage`, fails when a coverage gate is missed |
+| Command                                                                                              | What it does                                                                          |
+| ---------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| `pnpm --filter cms-admin test`                                                                       | `vitest run`: all unit and integration tests, once                                    |
+| `pnpm --filter cms-admin test:watch`                                                                 | `vitest` in watch mode                                                                |
+| `pnpm --filter cms-admin test:cov`                                                                   | `vitest run --coverage`, fails when a coverage gate is missed                         |
 | `PLAYWRIGHT_BROWSERS_PATH=0 pnpm --filter cms-admin exec playwright install chromium firefox webkit` | One-time browser download for e2e (Firefox and WebKit are needed by the CSP projects) |
-| `pnpm --filter cms-admin test:e2e`                         | `playwright test`: all four projects (`chromium`, `csp`, `csp-firefox`, `csp-webkit`) |
-| `pnpm --filter cms-admin test:e2e --project=csp`           | Only the CSP check against the built app on port 5175, in Chromium |
-| `pnpm --filter cms-admin test:e2e --project=csp-firefox --project=csp-webkit` | The same CSP spec in Firefox and WebKit |
-| `pnpm turbo run lint typecheck build --filter=cms-admin`   | oxlint, `tsc -b` and the production build                     |
+| `pnpm --filter cms-admin test:e2e`                                                                   | `playwright test`: all four projects (`chromium`, `csp`, `csp-firefox`, `csp-webkit`) |
+| `pnpm --filter cms-admin test:e2e --project=csp`                                                     | Only the CSP check against the built app on port 5175, in Chromium                    |
+| `pnpm --filter cms-admin test:e2e --project=csp-firefox --project=csp-webkit`                        | The same CSP spec in Firefox and WebKit                                               |
+| `pnpm turbo run lint typecheck build --filter=cms-admin`                                             | oxlint, `tsc -b` and the production build                                             |
 
 ### Unit tests (Vitest)
 
@@ -81,7 +81,11 @@ gone.
   anything not modelled gets a Nest-style 404. No e2e test needs a live backend.
 - `e2e/a11y.spec.ts` runs axe (`@axe-core/playwright`, `wcag2a`, `wcag2aa`, `wcag21aa`) on every
   surface in light and dark at 1280px and 375px and fails on any serious or critical violation; it
-  also walks Tab order and dialog focus. What it covers per area is on each module page.
+  also walks Tab order and dialog focus. What it covers per area is on each module page. The
+  admin has no component showcase route: the shared components are checked (axe, keyboard walk,
+  states) by the Storybook story tests in `@repo/form-commons`, run with
+  `PLAYWRIGHT_BROWSERS_PATH=0 pnpm --filter @repo/form-commons test:stories` (see
+  [Storybook](../../../packages/form-commons/docs/storybook.md)).
 - Playwright CSS and role locators and axe pierce open shadow roots, so the in-shadow JSON editor
   (`repo-json-editor .cm-content`, `getByRole('textbox', { name })`) is reachable directly.
 - In this repo the browsers are in `node_modules`, so run e2e as
@@ -98,12 +102,12 @@ the three configs and `e2e/`.
 
 Documented in `.env.example` (no secrets). Vite only exposes names starting with `VITE_`.
 
-| Variable                | Used by         | Meaning                                                                                   |
-| ----------------------- | --------------- | ----------------------------------------------------------------------------------------- |
+| Variable                | Used by         | Meaning                                                                                    |
+| ----------------------- | --------------- | ------------------------------------------------------------------------------------------ |
 | `VITE_API_URL`          | the app (build) | Backend origin. Empty or unset in dev, so the proxy is used. Docker build arg in the image |
-| `VITE_API_PROXY_TARGET` | Vite dev server | Where `/api` and `/health` are proxied in dev. Defaults to `http://localhost:8080`        |
-| `CSP_API_ORIGIN`        | nginx, preview  | See [CSP and headers](./csp-and-headers.md)                                               |
-| `CSP_IMG_ORIGINS`       | nginx, preview  | See [CSP and headers](./csp-and-headers.md)                                               |
+| `VITE_API_PROXY_TARGET` | Vite dev server | Where `/api` and `/health` are proxied in dev. Defaults to `http://localhost:8080`         |
+| `CSP_API_ORIGIN`        | nginx, preview  | See [CSP and headers](./csp-and-headers.md)                                                |
+| `CSP_IMG_ORIGINS`       | nginx, preview  | See [CSP and headers](./csp-and-headers.md)                                                |
 
 `API_BASE_URL` is `VITE_API_URL` with trailing slashes stripped plus `/api/v1`; empty gives the
 relative `/api/v1`.
@@ -136,30 +140,30 @@ Production builds set `VITE_API_URL`, and the backend's `CORS_ORIGINS` must incl
 
 ## Files
 
-| File                          | Spec                                                                                                    |
-| ----------------------------- | ------------------------------------------------------------------------------------------------------- |
-| `package.json`                | Scripts (`dev`, `build`, `test`, `test:cov`, `test:e2e`, `lint`, `typecheck`) and dependencies.         |
-| `vite.config.ts`              | Vite + React + Tailwind plugins, the `@/` alias, the dev proxy and the `preview.headers` CSP.           |
-| `vitest.config.ts`            | jsdom environment, setup file, alias, coverage provider, includes, excludes and thresholds.             |
-| `playwright.config.ts`        | The `chromium` and `csp` projects and the two web servers (dev on 5174, built preview on 5175).         |
-| `tsconfig.json`               | Project references to the app and node configs.                                                        |
-| `tsconfig.app.json`           | Compiler options for `src`, including the `@/*` path.                                                  |
-| `tsconfig.node.json`          | Type-checks the configs and `e2e/`.                                                                    |
-| `.oxlintrc.json`              | oxlint rules for the app.                                                                              |
-| `.gitignore`                  | Ignores build output, coverage and Playwright reports.                                                 |
-| `.env.example`                | Names and meaning of every env var, no values that are secrets.                                        |
-| `README.md`                   | App readme: how to run, test and build.                                                                |
-| `src/core/config/env.ts`      | Exports `API_BASE_URL`, `buildApiBaseUrl`. Builds the API base from `VITE_API_URL`.                    |
-| `src/vite-env.d.ts`           | Types `import.meta.env.VITE_API_URL`.                                                                  |
-| `src/utils/constants.ts`      | Placeholder for non-env constants (exports nothing yet).                                               |
-| `src/test/setup.ts`           | jest-dom matchers, RTL cleanup, MSW lifecycle, jsdom stubs, CodeMirror Range and `execCommand` polyfills. |
-| `playwright.config.ts`        | Projects `chromium`, `csp`, `csp-firefox`, `csp-webkit`; the dev server on 5174 and the built preview on 5175. |
-| `src/test/msw/server.ts`      | Exports `server`, the MSW node server with the default handlers.                                       |
-| `src/test/msw/handlers.ts`    | Exports `handlers`: refresh 401, logout 200, has-users `true`.                                         |
-| `src/test/renderWithProviders.tsx` | Exports `renderWithProviders`, `renderHookWithProviders`, `renderRoutes`, `createProviders`, `ProviderOptions`. Fresh store, client and router per test. |
-| `src/test/fixtures.ts`        | Exports `makeRole`, `makeMeUser`, `makeUser`, `makePermission`, `makeAccessToken`, `makeAccessTokenSecret`, `makeMediaAsset`. |
-| `e2e/fixtures/mockApi.ts`     | The `test`/`expect` every spec imports: routes `/api/v1/**` to the in-memory backends and records requests. Auth behaviour is in [Routing and guards](./routing-and-guards.md). |
-| `e2e/fixtures/jsonEditor.ts`   | Exports `editorText`: reads the text of a CodeMirror content locator inside the JSON editor shadow root, for e2e specs. |
+| File                               | Spec                                                                                                                                                                            |
+| ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `package.json`                     | Scripts (`dev`, `build`, `test`, `test:cov`, `test:e2e`, `lint`, `typecheck`) and dependencies.                                                                                 |
+| `vite.config.ts`                   | Vite + React + Tailwind plugins, the `@/` alias, the dev proxy and the `preview.headers` CSP.                                                                                   |
+| `vitest.config.ts`                 | jsdom environment, setup file, alias, coverage provider, includes, excludes and thresholds.                                                                                     |
+| `playwright.config.ts`             | The `chromium` and `csp` projects and the two web servers (dev on 5174, built preview on 5175).                                                                                 |
+| `tsconfig.json`                    | Project references to the app and node configs.                                                                                                                                 |
+| `tsconfig.app.json`                | Compiler options for `src`, including the `@/*` path.                                                                                                                           |
+| `tsconfig.node.json`               | Type-checks the configs and `e2e/`.                                                                                                                                             |
+| `.oxlintrc.json`                   | oxlint rules for the app.                                                                                                                                                       |
+| `.gitignore`                       | Ignores build output, coverage and Playwright reports.                                                                                                                          |
+| `.env.example`                     | Names and meaning of every env var, no values that are secrets.                                                                                                                 |
+| `README.md`                        | App readme: how to run, test and build.                                                                                                                                         |
+| `src/core/config/env.ts`           | Exports `API_BASE_URL`, `buildApiBaseUrl`. Builds the API base from `VITE_API_URL`.                                                                                             |
+| `src/vite-env.d.ts`                | Types `import.meta.env.VITE_API_URL`.                                                                                                                                           |
+| `src/utils/constants.ts`           | Placeholder for non-env constants (exports nothing yet).                                                                                                                        |
+| `src/test/setup.ts`                | jest-dom matchers, RTL cleanup, MSW lifecycle, jsdom stubs, CodeMirror Range and `execCommand` polyfills.                                                                       |
+| `playwright.config.ts`             | Projects `chromium`, `csp`, `csp-firefox`, `csp-webkit`; the dev server on 5174 and the built preview on 5175.                                                                  |
+| `src/test/msw/server.ts`           | Exports `server`, the MSW node server with the default handlers.                                                                                                                |
+| `src/test/msw/handlers.ts`         | Exports `handlers`: refresh 401, logout 200, has-users `true`.                                                                                                                  |
+| `src/test/renderWithProviders.tsx` | Exports `renderWithProviders`, `renderHookWithProviders`, `renderRoutes`, `createProviders`, `ProviderOptions`. Fresh store, client and router per test.                        |
+| `src/test/fixtures.ts`             | Exports `makeRole`, `makeMeUser`, `makeUser`, `makePermission`, `makeAccessToken`, `makeAccessTokenSecret`, `makeMediaAsset`.                                                   |
+| `e2e/fixtures/mockApi.ts`          | The `test`/`expect` every spec imports: routes `/api/v1/**` to the in-memory backends and records requests. Auth behaviour is in [Routing and guards](./routing-and-guards.md). |
+| `e2e/fixtures/jsonEditor.ts`       | Exports `editorText`: reads the text of a CodeMirror content locator inside the JSON editor shadow root, for e2e specs.                                                         |
 
 ## Testing
 
@@ -172,7 +176,8 @@ Production builds set `VITE_API_URL`, and the backend's `CORS_ORIGINS` must incl
 - `src/core/config/env.test.ts`: `buildApiBaseUrl` with empty, absolute and slash-suffixed values.
 - `e2e/smoke.spec.ts`: the shell loads with the API mocked, and `/api/v1` calls are answered by the
   mock.
-- `e2e/a11y.spec.ts`: axe, Tab order and dialog focus across the app (details on each module page).
+- `e2e/a11y.spec.ts`: axe, Tab order and dialog focus across the app pages (details on each module
+  page); the shared components are covered by the `@repo/form-commons` story tests.
 - Run: `pnpm --filter cms-admin test`, `test:cov`, and
   `PLAYWRIGHT_BROWSERS_PATH=0 pnpm --filter cms-admin test:e2e`.
 

@@ -9,20 +9,19 @@ e2e auth backend (`mockApi`).
 
 ### Route table
 
-| Path                                                              | Guard                                                              | Page                                                                                | Notes                                                                                     |
-| ----------------------------------------------------------------- | ------------------------------------------------------------------ | ----------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
-| `/login`                                                          | none                                                               | `LoginPage`                                                                         | `AuthLayout`. A signed-in user goes on to `state.from` or `/admin`                        |
-| `/register`, `/verify-otp`, `/forgot-password`, `/reset-password` | none                                                               | see [Onboarding and recovery](./onboarding-and-recovery.md)                         | `AuthLayout`                                                                              |
-| `/403`                                                            | none                                                               | `ForbiddenPage`                                                                     | `AuthLayout`. Shows the guard's reason, links to `/admin`                                 |
-| `/admin`                                                          | `RequireAuth` → `AppShell`                                         | `AdminHomePage`                                                                     | Welcome card with a profile link                                                          |
-| `/admin/profile`                                                  | `RequireAuth` → `AppShell`                                         | `ProfilePage`                                                                       | See [Profile](./profile.md)                                                               |
-| `/admin/users`                                                    | `RequireAuth` → `AppShell`                                         | —                                                                                   | Redirects (`replace`) to `/admin/settings/users`                                          |
-| `/admin/settings/<key>`                                           | `RequireAuth` → `AppShell` → `RequireAccess <res>:read`            | `UsersPage`, `RolesPage`, `PermissionsPage`, `AccessTokensPage`, `MediaLibraryPage` | Mapped by `SETTINGS_PAGES`, a required `Record` with no placeholder fallback              |
-| `/admin/content-types`, `/admin/content-types/:slug`              | `RequireAuth` → `AppShell` → `RequireAccess can read content_type` | `ContentTypesPage`, `ContentTypePage`                                               | See [Content-type pages](./content-type-pages.md)                                         |
-| `/admin/content-types/:slug/new`                                  | same                                                               | `DocumentCreatePage`                                                                | The static `new` wins over `:documentId`. See [Document editor](./document-editor.md)     |
-| `/admin/content-types/:slug/:documentId`                          | same                                                               | `DocumentDetailPage`                                                                | See [Document editor](./document-editor.md)                                               |
-| `/admin/dev/ui-kit`                                               | `RequireAuth` → `AppShell`                                         | `UiKitPage` (lazy)                                                                  | Dev builds only, see [Design system](./design-system.md)                                  |
-| `*`                                                               | —                                                                  | —                                                                                   | Redirects to `/admin`                                                                     |
+| Path                                                              | Guard                                                              | Page                                                                                | Notes                                                                                 |
+| ----------------------------------------------------------------- | ------------------------------------------------------------------ | ----------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| `/login`                                                          | none                                                               | `LoginPage`                                                                         | `AuthLayout`. A signed-in user goes on to `state.from` or `/admin`                    |
+| `/register`, `/verify-otp`, `/forgot-password`, `/reset-password` | none                                                               | see [Onboarding and recovery](./onboarding-and-recovery.md)                         | `AuthLayout`                                                                          |
+| `/403`                                                            | none                                                               | `ForbiddenPage`                                                                     | `AuthLayout`. Shows the guard's reason, links to `/admin`                             |
+| `/admin`                                                          | `RequireAuth` → `AppShell`                                         | `AdminHomePage`                                                                     | Welcome card with a profile link                                                      |
+| `/admin/profile`                                                  | `RequireAuth` → `AppShell`                                         | `ProfilePage`                                                                       | See [Profile](./profile.md)                                                           |
+| `/admin/users`                                                    | `RequireAuth` → `AppShell`                                         | —                                                                                   | Redirects (`replace`) to `/admin/settings/users`                                      |
+| `/admin/settings/<key>`                                           | `RequireAuth` → `AppShell` → `RequireAccess <res>:read`            | `UsersPage`, `RolesPage`, `PermissionsPage`, `AccessTokensPage`, `MediaLibraryPage` | Mapped by `SETTINGS_PAGES`, a required `Record` with no placeholder fallback          |
+| `/admin/content-types`, `/admin/content-types/:slug`              | `RequireAuth` → `AppShell` → `RequireAccess can read content_type` | `ContentTypesPage`, `ContentTypePage`                                               | See [Content-type pages](./content-type-pages.md)                                     |
+| `/admin/content-types/:slug/new`                                  | same                                                               | `DocumentCreatePage`                                                                | The static `new` wins over `:documentId`. See [Document editor](./document-editor.md) |
+| `/admin/content-types/:slug/:documentId`                          | same                                                               | `DocumentDetailPage`                                                                | See [Document editor](./document-editor.md)                                           |
+| `*`                                                               | —                                                                  | —                                                                                   | Redirects to `/admin`                                                                 |
 
 `routes` is exported so tests can mount it in a memory router. `App.tsx` builds the browser router
 once (`createAppRouter()`) inside `AppProvider`; `main.tsx` mounts `App` in `StrictMode` and imports
@@ -32,12 +31,12 @@ once (`createAppRouter()`) inside `AppProvider`; `main.tsx` mounts `App` in `Str
 
 **`RequireAuth`** (layout route) acts on `state.auth.status`:
 
-| Status            | Renders                                                                             |
-| ----------------- | ----------------------------------------------------------------------------------- |
-| `idle`, `loading` | A full-screen `role="status"` "Connecting…" view                                    |
-| `authenticated`   | The matched child route                                                             |
-| `unauthenticated` | `<Navigate to="/login" replace state={{ from }}>`, `from` = path + query + hash     |
-| `error`           | `role="alert"` "Can't reach the server." with **Retry** (`retryBootstrap`)          |
+| Status            | Renders                                                                         |
+| ----------------- | ------------------------------------------------------------------------------- |
+| `idle`, `loading` | A full-screen `role="status"` "Connecting…" view                                |
+| `authenticated`   | The matched child route                                                         |
+| `unauthenticated` | `<Navigate to="/login" replace state={{ from }}>`, `from` = path + query + hash |
+| `error`           | `role="alert"` "Can't reach the server." with **Retry** (`retryBootstrap`)      |
 
 Session expiry needs no extra code: `sessionExpired` makes the status `unauthenticated`, so the guard
 redirects with the current page in `from` (AC-29).
@@ -65,13 +64,13 @@ use `<Can>` or the hooks from [RBAC and ABAC](./rbac-abac.md).
 
 The auto fixture records every call as `{ method, path, status }` in `mockApi.requests`.
 
-| Modelled              | Behaviour                                                                                       |
-| --------------------- | ----------------------------------------------------------------------------------------------- |
-| `GET /auth/has-users` | `true` once a user was added                                                                    |
-| `POST /auth/login`    | 401 unknown email or wrong password, 403 unverified, else a token and a new session             |
-| `POST /auth/refresh`  | 401 without a session, else rotates the session and issues a token                              |
-| `POST /auth/logout`   | Ends the session, always 200                                                                    |
-| `GET /auth/me`        | 401 unless the bearer is live, else the user                                                    |
+| Modelled              | Behaviour                                                                           |
+| --------------------- | ----------------------------------------------------------------------------------- |
+| `GET /auth/has-users` | `true` once a user was added                                                        |
+| `POST /auth/login`    | 401 unknown email or wrong password, 403 unverified, else a token and a new session |
+| `POST /auth/refresh`  | 401 without a session, else rotates the session and issues a token                  |
+| `POST /auth/logout`   | Ends the session, always 200                                                        |
+| `GET /auth/me`        | 401 unless the bearer is live, else the user                                        |
 
 Helpers: `addUser({ email, password?, name?, username?, verified?, role? })` (default role
 `ROLES.editor`, password `DEFAULT_PASSWORD`), `signInAs(email)` (a refresh-cookie session, so
@@ -98,24 +97,26 @@ without a cookie → 401; login with bad credentials → 401. The credentialed l
 
 ## Files
 
-| File                                          | Spec                                                                                        |
-| --------------------------------------------- | ------------------------------------------------------------------------------------------- |
-| `src/main.tsx`                                | Mounts `App` in `StrictMode`, imports `globals.css`.                                        |
-| `src/App.tsx`                                 | Default export `App`: builds the router once inside `AppProvider`.                          |
-| `src/app/router.tsx`                          | Exports `routes`, `createAppRouter`. The route table, `SETTINGS_PAGES`, the dev-only UI kit. |
-| `src/features/auth/components/RequireAuth.tsx`| Default export `RequireAuth`: status-driven layout guard.                                   |
+| File                                             | Spec                                                                                                         |
+| ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------ |
+| `src/main.tsx`                                   | Mounts `App` in `StrictMode`, imports `globals.css`.                                                         |
+| `src/App.tsx`                                    | Default export `App`: builds the router once inside `AppProvider`.                                           |
+| `src/app/router.tsx`                             | Exports `routes`, `createAppRouter`. The route table and `SETTINGS_PAGES`; no dev-only routes.               |
+| `src/features/auth/components/RequireAuth.tsx`   | Default export `RequireAuth`: status-driven layout guard.                                                    |
 | `src/features/auth/components/RequireAccess.tsx` | Default export `RequireAccess`, `RequireAccessProps`, `ForbiddenState`. Redirects to `/403` with the reason. |
-| `src/features/auth/redirect.ts`               | Exports `redirectTarget`, `toRedirectState`, `RedirectState`, `DEFAULT_AFTER_LOGIN`. Safe post-login target. |
-| `src/pages/login/LoginPage.tsx`               | Default export `LoginPage`: sign-in form, first-run redirect, notices.                       |
-| `src/pages/admin-home/AdminHomePage.tsx`      | Default export `AdminHomePage`: welcome card.                                               |
-| `src/pages/forbidden/ForbiddenPage.tsx`       | Default export `ForbiddenPage`: access denied with the reason.                              |
+| `src/features/auth/redirect.ts`                  | Exports `redirectTarget`, `toRedirectState`, `RedirectState`, `DEFAULT_AFTER_LOGIN`. Safe post-login target. |
+| `src/pages/login/LoginPage.tsx`                  | Default export `LoginPage`: sign-in form, first-run redirect, notices.                                       |
+| `src/pages/admin-home/AdminHomePage.tsx`         | Default export `AdminHomePage`: welcome card.                                                                |
+| `src/pages/forbidden/ForbiddenPage.tsx`          | Default export `ForbiddenPage`: access denied with the reason.                                               |
 
 The `mockApi` fixture file is listed under [Testing and config](./testing-and-config.md), which owns
 it; its auth behaviour is described here.
 
 ## Testing
 
-- `src/app/router.test.tsx`: the route table, redirects, the dev-only UI kit registration.
+- `src/app/router.test.tsx`: the route table and redirects; a signed-in visit to the removed UI kit
+  path lands on `/admin` and no `/admin/dev` route is left (the component showcase is Storybook in
+  `@repo/form-commons`).
 - `src/App.test.tsx`; `src/features/auth/components/RequireAuth.test.tsx`, `RequireAccess.test.tsx`;
   `src/features/auth/redirect.test.ts`.
 - `src/pages/login/LoginPage.test.tsx` (including the `has-users` cache regression),

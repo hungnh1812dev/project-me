@@ -12,8 +12,6 @@ cp apps/cms-admin/.env.example apps/cms-admin/.env.local   # optional, defaults 
 pnpm --filter cms-admin dev                    # :5173, proxies /api and /health to VITE_API_PROXY_TARGET
 ```
 
-In dev builds, the UI kit with every base input and state is at `/admin/dev/ui-kit` (signed in).
-
 Env vars (`VITE_API_URL`, `VITE_API_PROXY_TARGET`) are documented in [`.env.example`](./.env.example) and [Testing and config](./docs/testing-and-config.md).
 
 ## Commands

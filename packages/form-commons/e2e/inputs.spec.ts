@@ -4,7 +4,7 @@ import { editorText, gotoStory, storyUrl, type Theme } from './fixtures/story';
 
 /**
  * Port of cms-admin `e2e/inputs.spec.ts` (AC-13). Titles and assertions are unchanged; only the
- * navigation moves from `/admin/dev/ui-kit` to the stories.
+ * navigation moves from the former cms-admin UI kit page to the stories.
  */
 const JSON_INPUT_STORY = 'components-jsoninput--all-states';
 const OVERVIEW_STORY = 'ui-kit--overview';

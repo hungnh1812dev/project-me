@@ -2,7 +2,7 @@
 
 How the admin is styled: the stack, the semantic tokens and palette, the shared `@repo/form-commons` package
 the admin consumes (primitives, generic form components), the app's own global CSS and fonts, and
-the dev-only UI kit page. For anyone building a screen or adding a component. The light/dark theme
+where the component showcase lives (Storybook in `@repo/form-commons`). For anyone building a screen or adding a component. The light/dark theme
 is its own module, [Theme](./theme.md).
 
 ## Feature
@@ -12,8 +12,8 @@ is its own module, [Theme](./theme.md).
 | Concern    | Choice                                                                                                        |
 | ---------- | ------------------------------------------------------------------------------------------------------------- |
 | CSS        | Tailwind CSS v4 through `@tailwindcss/vite`. Tokens are CSS variables, mapped to utilities by `@theme inline` |
-| Components | shadcn/ui in the Base UI flavour (`style: base-nova`), on `@base-ui/react`, vendored in `@repo/form-commons`            |
-| Variants   | `class-variance-authority`. Classes always go through `cn()` (`@repo/form-commons/lib/cn`)                              |
+| Components | shadcn/ui in the Base UI flavour (`style: base-nova`), on `@base-ui/react`, vendored in `@repo/form-commons`  |
+| Variants   | `class-variance-authority`. Classes always go through `cn()` (`@repo/form-commons/lib/cn`)                    |
 | Animation  | `tw-animate-css`. `prefers-reduced-motion: reduce` turns transitions and animations off globally              |
 | Icons      | `lucide-react`. Decorative icons get `aria-hidden`; icon-only buttons get `aria-label`                        |
 | Fonts      | Fira Sans (400, 500, 600) and Fira Code, self-hosted through `@fontsource`. No font CDN. Fonts stay per app   |
@@ -147,8 +147,8 @@ Three roles map onto the existing variant names (none renamed, added or removed)
 `secondary` is the Strapi-style pale indigo tint (`#F0F0FF` / `#271FE0` light, `#32324D` /
 `#9A98FF` dark); `ghost` is unchanged; `link` uses `text-primary-ink`. Every role has the 2px `ring`
 focus outline, 50% opacity when disabled and a width-keeping spinner with `aria-busy` when
-`loading`. The UI kit shows the three roles in default, hover, focus, disabled and loading states
-in both themes (`e2e/inputs.spec.ts`).
+`loading`. The Button roles story in `@repo/form-commons` Storybook shows the three roles in
+default, hover, focus, disabled and loading states in both themes (`packages/form-commons/e2e/inputs.spec.ts`).
 
 ### Components the admin uses
 
@@ -223,14 +223,17 @@ Every input supports default, filled, disabled, invalid and required states.
 - **Pure helpers** in `lib/jsonEditor.ts` (validation timing, format enablement, controlled-sync
   decision, theme and size specs) are under the 85% `src/lib` gate.
 
-### UI kit route
+### Component showcase (Storybook)
 
-`/admin/dev/ui-kit` (`UiKitPage`) shows every base input in every state, the palette swatches and
-the badges, inside the shell. It is registered only when `import.meta.env.DEV` and loaded lazily, so
-production drops it (the router test checks registration; the release check greps `dist` for
-`UiKitPage`). It also shows the three button roles in every state, `Checkbox` (including the mixed
-state), `RadioGroup` and `JsonInput` (default, disabled, read-only, invalid, empty). The
-`destructive` badge is back in the Badge section: its pair now passes axe contrast in both themes.
+The admin has no showcase route. Every base input in every state, the button roles, `Checkbox`,
+`RadioGroup`, `JsonInput`, the palette swatches and the badges are stories in
+`packages/form-commons` Storybook (`pnpm --filter @repo/form-commons storybook`, port 6006), with a
+light/dark toolbar and the admin's fonts and base rules. Their Playwright story tests run with
+`PLAYWRIGHT_BROWSERS_PATH=0 pnpm --filter @repo/form-commons test:stories`. See
+[Storybook](../../../packages/form-commons/docs/storybook.md), which also maps every removed
+cms-admin UI kit test to its story test. `globals.css` adds
+`@source not '../../../../packages/form-commons/src/stories'` after the package `@source`, so no
+story-only class reaches the admin bundle.
 
 ### Adding a shadcn component
 
@@ -243,7 +246,8 @@ state), `RadioGroup` and `JsonInput` (default, disabled, read-only, invalid, emp
 3. Our own behaviour goes in `packages/form-commons/src/components/forms` (under the gates).
 4. Add the entry to `apps/frontend/src/ui-compile-check.ts`.
 5. Run `pnpm --filter @repo/form-commons test typecheck lint` and `pnpm --filter frontend typecheck`.
-6. Add it to the UI kit and, if user-visible, to `e2e/a11y.spec.ts`.
+6. Add a story under `packages/form-commons/src/stories/` and, if it is user-visible, a story test
+   in `packages/form-commons/e2e/`.
 
 ### Decisions
 
@@ -263,25 +267,29 @@ state), `RadioGroup` and `JsonInput` (default, disabled, read-only, invalid, emp
 
 ## Files
 
-| File                          | Spec                                                                                                                                           |
-| ----------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| `src/styles/globals.css`      | Imports Tailwind and `@repo/form-commons/styles/theme.css`, scans the package, fonts, focus exception, `.rich-text` styles. No colour tokens of its own. |
-| `src/pages/dev/UiKitPage.tsx` | Default export `UiKitPage`: dev-only showcase of button roles, inputs, checkbox and radio states, `JsonInput`, swatches and badges.            |
-| `public/favicon.svg`          | The app icon.                                                                                                                                  |
+| File                     | Spec                                                                                                                                                                               |
+| ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/styles/globals.css` | Imports Tailwind and `@repo/form-commons/styles/theme.css`, scans the package but not its `src/stories`, fonts, focus exception, `.rich-text` styles. No colour tokens of its own. |
+| `public/favicon.svg`     | The app icon.                                                                                                                                                                      |
 
 The shared primitives, form components and tokens live in `packages/form-commons` (outside this app): notably
 `styles/theme.css` + `styles/tokens.ts`, `components/ui/variants.ts`, `components/ui/checkbox.tsx`,
 `components/ui/radio-group.tsx`, `components/ui/badge.tsx`, `components/forms/JsonInput.tsx`,
-`components/forms/JsonCodeEditor.tsx`, `lib/jsonEditor.ts` and `lib/jsonEditorView.ts`.
+`components/forms/JsonCodeEditor.tsx`, `lib/jsonEditor.ts` and `lib/jsonEditorView.ts`. The stories
+and story tests are in `src/stories/` and `e2e/` there.
 
 ## Testing
 
-- `src/styles/globals.test.ts`: imports the shared theme after Tailwind, scans the package, declares
-  no colour tokens, self-hosts the fonts, sets the Fira families.
-- `e2e/inputs.spec.ts`: the UI kit inputs and their states, the button roles, checkbox and radio
-  states, 44px hit areas measured at 375px, and the JSON editor (name, description, format,
-  read-only, disabled, no layout shift).
-- `e2e/a11y.spec.ts` includes `/admin/dev/ui-kit` in both themes and both widths.
+- `src/styles/globals.test.ts`: imports the shared theme after Tailwind, scans the package, skips
+  its `src/stories` with `@source not` after the `@source` line, declares no colour tokens,
+  self-hosts the fonts, sets the Fira families.
+- `e2e/theme.spec.ts`: classes used only inside `@repo/form-commons` reach the app stylesheet on
+  `/login` (fails without the package `@source`).
+- Story tests (`PLAYWRIGHT_BROWSERS_PATH=0 pnpm --filter @repo/form-commons test:stories`): the
+  inputs and their states, the button roles, checkbox and radio states, 44px hit areas at 375px,
+  the JSON editor, the swatches and badges, and axe and the keyboard walk on the overview story in
+  both themes and both widths. The mapping from the removed cms-admin tests is in
+  [Storybook](../../../packages/form-commons/docs/storybook.md#mapping-of-the-removed-cms-admin-tests).
 - Package tests: `pnpm --filter @repo/form-commons test`.
   - `tokens.test.ts`: values match `theme.css`, text pairs 4.5:1, `input`/`ring`/`primary-ink` 3:1,
     the Strapi and AA-derived values, the destructive badge tint, syntax colours 4.5:1.
@@ -294,11 +302,11 @@ The shared primitives, form components and tokens live in `packages/form-commons
   - `boundaries.test.ts`, button variant tests, `JsonInput` / `JsonCodeEditor` tests (driven through
     `EditorView` transactions; no `<style>` added to `document`), `lib/jsonEditor.test.ts`.
 - Run: `pnpm --filter cms-admin exec vitest run src/styles` and
-  `PLAYWRIGHT_BROWSERS_PATH=0 pnpm --filter cms-admin test:e2e e2e/inputs.spec.ts`.
+  `PLAYWRIGHT_BROWSERS_PATH=0 pnpm --filter cms-admin test:e2e e2e/theme.spec.ts`.
 
 ## Related
 
 - [Theme](./theme.md)
 - [App shell](./app-shell.md) (sidebar, header)
 - [Schema form](./schema-form.md), [Settings permission tree](./settings-permission-tree.md) (admin-side form components)
-- [Routing and guards](./routing-and-guards.md) (UI kit route)
+- [Storybook](../../../packages/form-commons/docs/storybook.md) (component showcase and story tests)

@@ -57,17 +57,16 @@ every route keeps its `RequireAccess`. The active link has `aria-current="page"`
 `buildBreadcrumbs(pathname, { contentTypeName, entryLabel })` is pure; the last crumb is the current
 page and not a link.
 
-| Path                         | Trail                                                                   |
-| ---------------------------- | ----------------------------------------------------------------------- |
-| `/admin`                     | Home                                                                    |
-| `/admin/profile`             | Home › Profile                                                          |
-| `/admin/content-types`       | Home › Content types                                                    |
-| `/admin/content-types/:slug` | Home › Content types › _content-type name_ (the slug until known)       |
-| `…/:slug/new`                | Home › Content types › _content-type name_ › New entry                  |
-| `…/:slug/:documentId`        | Home › Content types › _content-type name_ › _entry label_              |
-| `/admin/settings/<key>`      | Home › Settings (text) › _link label_                                   |
-| `/admin/dev/ui-kit`          | Home › UI kit                                                           |
-| anything else                | Home › _last segment in Title Case_                                     |
+| Path                         | Trail                                                             |
+| ---------------------------- | ----------------------------------------------------------------- |
+| `/admin`                     | Home                                                              |
+| `/admin/profile`             | Home › Profile                                                    |
+| `/admin/content-types`       | Home › Content types                                              |
+| `/admin/content-types/:slug` | Home › Content types › _content-type name_ (the slug until known) |
+| `…/:slug/new`                | Home › Content types › _content-type name_ › New entry            |
+| `…/:slug/:documentId`        | Home › Content types › _content-type name_ › _entry label_        |
+| `/admin/settings/<key>`      | Home › Settings (text) › _link label_                             |
+| anything else                | Home › _last segment in Title Case_                               |
 
 `useBreadcrumbs()` reads names only from the React Query cache (type detail, then the list; on a
 document page `contentKeys.detail` named with `entryLabel`). It subscribes but never fetches; until
@@ -76,10 +75,10 @@ crumbs collapse into "More breadcrumbs".
 
 ### Responsive behaviour
 
-| Width           | Side menu                                                                                                       |
-| --------------- | --------------------------------------------------------------------------------------------------------------- |
+| Width           | Side menu                                                                                                      |
+| --------------- | -------------------------------------------------------------------------------------------------------------- |
 | ≥ 1024px (`lg`) | Docked, 16rem. "Toggle menu" or Ctrl/Cmd+B collapses it to a 3rem icon rail with tooltips. The state persists. |
-| < 1024px        | A modal off-canvas Sheet (18rem, `aria-modal`). Navigating closes it; Escape closes and returns focus.          |
+| < 1024px        | A modal off-canvas Sheet (18rem, `aria-modal`). Navigating closes it; Escape closes and returns focus.         |
 
 No horizontal page scroll down to 375px; controls are 44px tall below `lg`.
 
@@ -88,11 +87,11 @@ No horizontal page scroll down to 375px; controls are 44px tall below `lg`.
 All web-storage access in the app goes through `readStorage`/`writeStorage` (try/catch, in-memory
 fallback after a failed write).
 
-| Key                               | Value                       | Owner                                          |
-| --------------------------------- | --------------------------- | ---------------------------------------------- |
-| `cms-admin:theme`                 | `light`, `dark` or `system` | [Theme](./theme.md)                            |
-| `cms-admin:sidebar:open`          | `true` or `false`           | `AppShell` (`SIDEBAR_OPEN_KEY`)                |
-| `cms-admin:sidebar:group:<group>` | `true` or `false`           | `AppSidebar` (`sidebarGroupKey()`)             |
+| Key                               | Value                       | Owner                              |
+| --------------------------------- | --------------------------- | ---------------------------------- |
+| `cms-admin:theme`                 | `light`, `dark` or `system` | [Theme](./theme.md)                |
+| `cms-admin:sidebar:open`          | `true` or `false`           | `AppShell` (`SIDEBAR_OPEN_KEY`)    |
+| `cms-admin:sidebar:group:<group>` | `true` or `false`           | `AppSidebar` (`sidebarGroupKey()`) |
 
 ### Decisions
 
@@ -104,25 +103,25 @@ fallback after a failed write).
 
 ## Files
 
-| File                                             | Spec                                                                                   |
-| ------------------------------------------------ | -------------------------------------------------------------------------------------- |
-| `src/features/shell/components/AppShell.tsx`     | Default export `AppShell`: layout route, sidebar provider with persisted open state.   |
-| `src/features/shell/components/AppSidebar.tsx`   | Default export `AppSidebar`: Content and Settings groups, content status states.      |
-| `src/features/shell/components/AppHeader.tsx`    | Default export `AppHeader`: menu toggle, breadcrumbs, account menu.                   |
-| `src/features/shell/components/AppFooter.tsx`    | Default export `AppFooter`: product name, version, year.                              |
-| `src/features/shell/components/Breadcrumbs.tsx`  | Default export `Breadcrumbs`: renders the trail, collapses below `md`.                |
-| `src/features/shell/components/SkipLink.tsx`     | Default export `SkipLink`: "Skip to content".                                         |
-| `src/features/shell/components/UserMenu.tsx`     | Default export `UserMenu`: identity, Profile, Theme, Log out.                         |
-| `src/features/shell/hooks/useNavModel.ts`        | Exports `useNavModel`, `ContentStatus`, `NavModelState`.                              |
-| `src/features/shell/hooks/useBreadcrumbs.ts`     | Exports `useBreadcrumbs`: cache-only names for the trail.                             |
-| `src/features/shell/hooks/usePageTitleAndFocus.ts` | Exports `usePageTitleAndFocus`, `formatPageTitle`.                                  |
-| `src/features/shell/navigation.ts`               | Exports `buildNavModel`, `NavLinkItem`, `NavModel`. Pure menu model.                  |
-| `src/features/shell/breadcrumbs.ts`              | Exports `buildBreadcrumbs`, `contentTypeSlugOf`, `contentDocumentIdOf`, `NEW_ENTRY`, `Crumb`, `BreadcrumbContext`. Pure trail. |
-| `src/features/shell/settingsLinks.ts`            | Exports `SETTINGS_LINKS`, `SettingsLink`. The five settings entries and permissions.  |
-| `src/features/shell/sidebarState.ts`             | Exports `SIDEBAR_OPEN_KEY`, `sidebarGroupKey`, `readFlag`, `writeFlag`.              |
-| `src/features/shell/storage.ts`                  | Exports `readStorage`, `writeStorage`. Safe web-storage access for the whole app.     |
-| `src/features/shell/initials.ts`                 | Exports `getInitials`.                                                                 |
-| `src/layouts/AuthLayout.tsx`                     | Default export `AuthLayout`: centred card for public pages and `/403`.                |
+| File                                               | Spec                                                                                                                           |
+| -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| `src/features/shell/components/AppShell.tsx`       | Default export `AppShell`: layout route, sidebar provider with persisted open state.                                           |
+| `src/features/shell/components/AppSidebar.tsx`     | Default export `AppSidebar`: Content and Settings groups, content status states.                                               |
+| `src/features/shell/components/AppHeader.tsx`      | Default export `AppHeader`: menu toggle, breadcrumbs, account menu.                                                            |
+| `src/features/shell/components/AppFooter.tsx`      | Default export `AppFooter`: product name, version, year.                                                                       |
+| `src/features/shell/components/Breadcrumbs.tsx`    | Default export `Breadcrumbs`: renders the trail, collapses below `md`.                                                         |
+| `src/features/shell/components/SkipLink.tsx`       | Default export `SkipLink`: "Skip to content".                                                                                  |
+| `src/features/shell/components/UserMenu.tsx`       | Default export `UserMenu`: identity, Profile, Theme, Log out.                                                                  |
+| `src/features/shell/hooks/useNavModel.ts`          | Exports `useNavModel`, `ContentStatus`, `NavModelState`.                                                                       |
+| `src/features/shell/hooks/useBreadcrumbs.ts`       | Exports `useBreadcrumbs`: cache-only names for the trail.                                                                      |
+| `src/features/shell/hooks/usePageTitleAndFocus.ts` | Exports `usePageTitleAndFocus`, `formatPageTitle`.                                                                             |
+| `src/features/shell/navigation.ts`                 | Exports `buildNavModel`, `NavLinkItem`, `NavModel`. Pure menu model.                                                           |
+| `src/features/shell/breadcrumbs.ts`                | Exports `buildBreadcrumbs`, `contentTypeSlugOf`, `contentDocumentIdOf`, `NEW_ENTRY`, `Crumb`, `BreadcrumbContext`. Pure trail. |
+| `src/features/shell/settingsLinks.ts`              | Exports `SETTINGS_LINKS`, `SettingsLink`. The five settings entries and permissions.                                           |
+| `src/features/shell/sidebarState.ts`               | Exports `SIDEBAR_OPEN_KEY`, `sidebarGroupKey`, `readFlag`, `writeFlag`.                                                        |
+| `src/features/shell/storage.ts`                    | Exports `readStorage`, `writeStorage`. Safe web-storage access for the whole app.                                              |
+| `src/features/shell/initials.ts`                   | Exports `getInitials`.                                                                                                         |
+| `src/layouts/AuthLayout.tsx`                       | Default export `AuthLayout`: centred card for public pages and `/403`.                                                         |
 
 ## Testing
 

@@ -26,12 +26,12 @@ changes live. Users pick a theme in the header's account menu.
 
 ## Files
 
-| File                               | Spec                                                                                              |
-| ---------------------------------- | ------------------------------------------------------------------------------------------------- |
-| `src/features/theme/theme.ts`      | Exports `resolveTheme`, `readStoredTheme`, `writeStoredTheme`, `applyTheme`, `isThemeChoice`, `THEME_STORAGE_KEY`, `DEFAULT_THEME_CHOICE`, `SYSTEM_DARK_QUERY`, `ThemeChoice`, `ResolvedTheme`. Pure theme rules. |
-| `src/features/theme/ThemeProvider.tsx` | Default export `ThemeProvider`: holds the choice, applies it, follows OS changes.            |
-| `src/features/theme/useTheme.ts`   | Exports `useTheme`, `ThemeContext`, `ThemeContextValue`.                                          |
-| `public/theme-init.js`             | Pre-paint ES5 script; same rule as `resolveTheme`.                                                |
+| File                                   | Spec                                                                                                                                                                                                              |
+| -------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/features/theme/theme.ts`          | Exports `resolveTheme`, `readStoredTheme`, `writeStoredTheme`, `applyTheme`, `isThemeChoice`, `THEME_STORAGE_KEY`, `DEFAULT_THEME_CHOICE`, `SYSTEM_DARK_QUERY`, `ThemeChoice`, `ResolvedTheme`. Pure theme rules. |
+| `src/features/theme/ThemeProvider.tsx` | Default export `ThemeProvider`: holds the choice, applies it, follows OS changes.                                                                                                                                 |
+| `src/features/theme/useTheme.ts`       | Exports `useTheme`, `ThemeContext`, `ThemeContextValue`.                                                                                                                                                          |
+| `public/theme-init.js`                 | Pre-paint ES5 script; same rule as `resolveTheme`.                                                                                                                                                                |
 
 ## Testing
 
@@ -39,7 +39,11 @@ changes live. Users pick a theme in the header's account menu.
 - `src/features/theme/themeInit.test.ts`: runs `theme-init.js` in jsdom against the same table.
 - `src/features/theme/ThemeProvider.test.tsx`: choice changes and live OS changes.
 - `e2e/theme.spec.ts`: title, a stored dark choice before mount (no flash), System before and after
-  mount, light over a dark OS, blocked `localStorage`, no font CDN requests.
+  mount, light over a dark OS, blocked `localStorage`, no font CDN requests, the shared
+  `@repo/form-commons` tokens on `/login` in both themes, and classes used only inside the package
+  reaching the app stylesheet on `/login`. The swatch and badge colour checks in both themes are
+  story tests in `@repo/form-commons` (see
+  [Storybook](../../../packages/form-commons/docs/storybook.md)).
 - Run: `pnpm --filter cms-admin exec vitest run src/features/theme` and
   `PLAYWRIGHT_BROWSERS_PATH=0 pnpm --filter cms-admin test:e2e e2e/theme.spec.ts`.
 

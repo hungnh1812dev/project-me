@@ -14,7 +14,7 @@ import { SelectSection } from './sections/SelectSection';
 import { SwitchSection } from './sections/SwitchSection';
 import { TextareaSection } from './sections/TextareaSection';
 
-/** Every section on one page, in the order and layout of the former `/admin/dev/ui-kit` (AC-9). */
+/** Every section on one page, in the order and layout of the former cms-admin UI kit page (AC-9). */
 const UiKitOverview: React.FC = () => (
   <section aria-labelledby="ui-kit-title" className="flex flex-col gap-10 p-4 sm:p-6">
     <header className="flex flex-col gap-1">
