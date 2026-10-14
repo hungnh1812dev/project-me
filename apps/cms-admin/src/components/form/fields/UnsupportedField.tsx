@@ -11,6 +11,9 @@ export interface UnsupportedFieldProps {
   className?: string;
 }
 
+/** The preview is read-only, so there is no edit to keep. */
+const ignoreEdit = () => {};
+
 /**
  * A field the form can't edit (a type the client doesn't know): a read-only JSON preview. The value
  * is never registered or changed, so the save sends it back as it came.
@@ -27,8 +30,9 @@ export const UnsupportedField: React.FC<UnsupportedFieldProps> = ({
     <Field label={label} description={`Unsupported field type "${type}"`} className={className}>
       <Textarea
         readOnly
-        rows={4}
         value={value === undefined ? '' : JSON.stringify(value, null, 2)}
+        onChange={ignoreEdit}
+        config={{ rows: 4 }}
         className="font-mono text-muted-foreground"
       />
     </Field>

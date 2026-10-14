@@ -11,6 +11,8 @@ const SWITCH_PLAYGROUND = 'components-switch--playground';
 const CHECKBOX_PLAYGROUND = 'components-checkbox--playground';
 const INPUT_PLAYGROUND = 'components-input--playground';
 const PASSWORD_PLAYGROUND = 'components-input--password-playground';
+const TEXTAREA_PLAYGROUND = 'components-textarea--playground';
+const JSON_INPUT_PLAYGROUND = 'components-jsoninput--playground';
 
 test.beforeEach(async ({ page }) => {
   await gotoStory(page, SWITCH_PLAYGROUND);
@@ -85,6 +87,47 @@ test('the PasswordInput Playground readout follows typing and the toggle shows t
   await page.getByRole('button', { name: 'Show password' }).click();
   await expect(input).toHaveAttribute('type', 'text');
   await expect(input).toHaveValue('s3cret!!');
+});
+
+test('the Textarea Playground readout and counter follow typing, key by key', async ({ page }) => {
+  await gotoStory(page, TEXTAREA_PLAYGROUND);
+  const textarea = page.getByRole('textbox', { name: 'Bio' });
+  const readout = page.getByRole('status', { name: 'Value' });
+  // The play function has typed "Hello".
+  await expect(readout).toHaveText('"Hello"');
+  await expect(page.getByText('5 / 120')).toBeVisible();
+
+  await textarea.press('End');
+  await textarea.press('Enter');
+  await textarea.pressSequentially('World');
+  await expect(readout).toHaveText('"Hello\\nWorld"');
+  await expect(textarea).toHaveValue('Hello\nWorld');
+  await expect(page.getByText('11 / 120')).toBeVisible();
+
+  await textarea.clear();
+  await expect(readout).toHaveText('""');
+  await expect(page.getByText('0 / 120')).toBeVisible();
+});
+
+test('the JsonInput Playground readout follows typing, validation and Format JSON', async ({
+  page,
+}) => {
+  await gotoStory(page, JSON_INPUT_PLAYGROUND);
+  const editor = page.getByRole('textbox', { name: 'Settings' });
+  const readout = page.getByRole('status', { name: 'Value' });
+  // The play function has typed "[1]".
+  await expect(readout).toHaveText('"[1]"');
+
+  await editor.focus();
+  await editor.blur();
+  await expect(page.getByRole('alert')).toHaveText('Expected a JSON object.');
+
+  await editor.fill('{"a":1}');
+  await expect(readout).toHaveText('"{\\"a\\":1}"');
+  await expect(page.getByRole('alert')).toHaveCount(0);
+
+  await page.getByRole('button', { name: 'Format JSON' }).click();
+  await expect(readout).toHaveText('"{\\n  \\"a\\": 1\\n}"');
 });
 
 test('Input Playground args set the initial value and the read-only state', async ({ page }) => {

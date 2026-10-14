@@ -151,6 +151,16 @@ describe('JsonField (AC-7, AC-8, AC-17, AC-20)', () => {
     await waitFor(() => expect(screen.queryByRole('alert')).not.toBeInTheDocument());
   });
 
+  it('binds through RHFField: the label points at the editor and a missing value is empty text', async () => {
+    renderForm(null);
+
+    const { content, view } = await jsonEditor('Meta');
+    const host = (content.getRootNode() as ShadowRoot).host;
+    expect(screen.getByText('Meta', { selector: 'label' })).toHaveAttribute('for', host.id);
+    expect(view.state.doc.toString()).toBe('');
+    expect(screen.getByRole('button', { name: 'Format JSON' })).toBeDisabled();
+  });
+
   it('is read-only, with Format JSON disabled, in read-only mode', async () => {
     renderForm({ meta: '{"a":1}' }, true);
 
@@ -195,7 +205,9 @@ describe('UnsupportedField (AC-7)', () => {
 
 describe('JsonInput read-only', () => {
   it('disables Format JSON when read-only', () => {
-    render(<JsonInput label="Data" value='{"a":1}' readOnly />);
+    render(
+      <JsonInput value='{"a":1}' onChange={() => {}} readOnly config={{ label: 'Data' }} />,
+    );
 
     expect(screen.getByRole('button', { name: 'Format JSON' })).toBeDisabled();
   });

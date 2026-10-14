@@ -6,12 +6,14 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { Field } from './Field';
 import type { JsonCodeEditorHandle } from './JsonCodeEditor';
+import type { InputValueProps } from '../../lib/inputContract';
 import { JsonInput, type JsonInputProps } from './JsonInput';
 
 /** A Field wired to JsonInput the way pages use it. */
 const Harness: React.FC<Partial<JsonInputProps> & { initial?: string }> = ({
   initial = '',
   required,
+  config,
   ...props
 }) => {
   const [text, setText] = useState(initial);
@@ -19,15 +21,17 @@ const Harness: React.FC<Partial<JsonInputProps> & { initial?: string }> = ({
   return (
     <Field label="Metadata" error={error} required={required}>
       <JsonInput
-        label="Metadata"
         value={text}
         onChange={setText}
         onValidate={setError}
+        config={{ label: 'Metadata', ...config }}
         {...props}
       />
     </Field>
   );
 };
+
+const noop = () => {};
 
 /** Waits for the lazy editor and returns its in-shadow content element. */
 const editorContent = async (container: HTMLElement): Promise<HTMLElement> =>
@@ -140,7 +144,7 @@ describe('JsonInput', () => {
   });
 
   it('checks the expected kind', async () => {
-    const { container } = render(<Harness expect="object" initial="[1]" />);
+    const { container } = render(<Harness config={{ expect: 'object' }} initial="[1]" />);
 
     blur(await editorContent(container));
 
@@ -150,7 +154,7 @@ describe('JsonInput', () => {
   it('marks the editor invalid when the Field has an outside error', async () => {
     const { container } = render(
       <Field label="Data" error="Server rejected it">
-        <JsonInput label="Data" defaultValue="{}" />
+        <JsonInput value="{}" onChange={noop} config={{ label: 'Data' }} />
       </Field>,
     );
 
@@ -188,18 +192,96 @@ describe('JsonInput', () => {
     expect(onChange).toHaveBeenLastCalledWith('[1,2]');
   });
 
-  it('works uncontrolled from defaultValue', async () => {
-    const onChange = vi.fn();
+  it('calls onChange once per edit with the new text, never an event', async () => {
+    const onChange = vi.fn<(value: string) => void>();
     const ref = createRef<JsonCodeEditorHandle>();
     const { container } = render(
-      <JsonInput ref={ref} label="Data" defaultValue="[1,2]" onChange={onChange} />,
+      <JsonInput ref={ref} value="[1]" onChange={onChange} config={{ label: 'Data' }} />,
     );
     await editorContent(container);
 
-    await userEvent.click(screen.getByRole('button', { name: 'Format JSON' }));
+    typeText(ref, '[1, 2]');
 
-    expect(docOf(ref)).toBe('[\n  1,\n  2\n]');
-    expect(onChange).toHaveBeenCalledWith('[\n  1,\n  2\n]');
+    expect(onChange).toHaveBeenCalledTimes(1);
+    expect(onChange).toHaveBeenCalledWith('[1, 2]');
+  });
+
+  it('is controlled: the editor shows value and follows the value set by the parent', async () => {
+    const ref = createRef<JsonCodeEditorHandle>();
+    const { container, rerender } = render(
+      <JsonInput ref={ref} value="[1,2]" onChange={noop} config={{ label: 'Data' }} />,
+    );
+    await editorContent(container);
+    expect(docOf(ref)).toBe('[1,2]');
+
+    rerender(<JsonInput ref={ref} value='{"b":true}' onChange={noop} config={{ label: 'Data' }} />);
+
+    expect(docOf(ref)).toBe('{"b":true}');
+  });
+
+  it('holds no copy of the text: Format reads value, not the ignored edit', async () => {
+    const onChange = vi.fn();
+    const ref = createRef<JsonCodeEditorHandle>();
+    const { container } = render(
+      <JsonInput ref={ref} value="" onChange={onChange} config={{ label: 'Data' }} />,
+    );
+    await editorContent(container);
+    const format = screen.getByRole('button', { name: 'Format JSON' });
+
+    typeText(ref, '[1,2]');
+
+    expect(onChange).toHaveBeenCalledWith('[1,2]');
+    expect(format).toBeDisabled();
+  });
+
+  it('passes config to the editor: label, description, rows and expect', async () => {
+    const onValidate = vi.fn();
+    const { container } = render(
+      <JsonInput
+        value="[1]"
+        onChange={noop}
+        onValidate={onValidate}
+        config={{ label: 'Data', description: 'An object.', rows: 3, expect: 'object' }}
+      />,
+    );
+    const content = await editorContent(container);
+
+    expect(content).toHaveAttribute('aria-label', 'Data');
+    const node = (content.getRootNode() as ShadowRoot).getElementById(
+      content.getAttribute('aria-describedby') ?? '',
+    );
+    expect(node?.textContent).toBe('An object.');
+    blur(content);
+    expect(onValidate).toHaveBeenLastCalledWith('Expected a JSON object.');
+  });
+
+  it('names the editor from aria-label when there is no config label', async () => {
+    const { container } = render(<JsonInput aria-label="Payload" value="" onChange={noop} />);
+
+    expect(await editorContent(container)).toHaveAttribute('aria-label', 'Payload');
+  });
+
+  it('types its props on the contract: string value, no defaultValue or native props', () => {
+    const props: InputValueProps<string> = { value: '', onChange: noop };
+    // Type check only: rendering it would hand the editor an undefined text.
+    // @ts-expect-error value is required
+    const missingValue = () => <JsonInput onChange={noop} />;
+    expect(missingValue).toBeTypeOf('function');
+    render(
+      <>
+        <JsonInput {...props} config={{ label: 'A' }} />
+        {/* @ts-expect-error defaultValue is not part of the contract */}
+        <JsonInput value="" onChange={noop} defaultValue="{}" />
+        {/* @ts-expect-error expect lives in config */}
+        <JsonInput value="" onChange={noop} expect="object" />
+        {/* @ts-expect-error label lives in config */}
+        <JsonInput value="" onChange={noop} label="Data" />
+        {/* @ts-expect-error config is JSON only */}
+        <JsonInput value="" onChange={noop} config={{ label: () => 'x' }} />
+      </>,
+    );
+
+    expect(screen.getAllByRole('button', { name: 'Format JSON' })).toHaveLength(5);
   });
 
   it('blocks edits and disables Format while disabled', async () => {
@@ -223,7 +305,7 @@ describe('JsonInput', () => {
   it('mirrors the Field description and error into the in-shadow describedby node (AC-20)', async () => {
     const { container } = render(
       <Field label="Settings" description="Any JSON." error="Server says no">
-        <JsonInput label="Settings" defaultValue="{}" />
+        <JsonInput value="{}" onChange={noop} config={{ label: 'Settings' }} />
       </Field>,
     );
     const content = await editorContent(container);
@@ -238,7 +320,16 @@ describe('JsonInput', () => {
   it('forwards the ref to the editor handle and calls onBlur', async () => {
     const ref = createRef<JsonCodeEditorHandle>();
     const onBlur = vi.fn();
-    const { container } = render(<JsonInput ref={ref} label="Data" name="data" onBlur={onBlur} />);
+    const { container } = render(
+      <JsonInput
+        ref={ref}
+        value=""
+        onChange={noop}
+        config={{ label: 'Data' }}
+        name="data"
+        onBlur={onBlur}
+      />,
+    );
     const content = await editorContent(container);
 
     act(() => ref.current?.focus());

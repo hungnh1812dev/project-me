@@ -11,36 +11,57 @@ const JsonDemo: React.FC = () => {
   return (
     <Field label="Metadata" description="A JSON object." error={error}>
       <JsonInput
-        label="Metadata"
         value={text}
         onChange={setText}
         onValidate={setError}
-        expect="object"
+        config={{ label: 'Metadata', expect: 'object' }}
       />
     </Field>
   );
 };
 JsonDemo.displayName = 'JsonDemo';
 
-/** The UI kit's JsonInput section: controlled, filled, disabled, read-only, invalid, required (AC-9). */
-export const JsonInputSection: React.FC = () => (
-  <Section title="JsonInput">
-    <JsonDemo />
-    <Field label="Settings">
-      <JsonInput label="Settings" defaultValue='{"theme":"dark"}' />
-    </Field>
-    <Field label="Disabled JSON">
-      <JsonInput label="Disabled JSON" disabled defaultValue='{"locked":true}' />
-    </Field>
-    <Field label="Read-only JSON">
-      <JsonInput label="Read-only JSON" readOnly defaultValue='{"fixed":true}' />
-    </Field>
-    <Field label="Invalid JSON" error='Invalid JSON: Unexpected token "x"'>
-      <JsonInput label="Invalid JSON" defaultValue="x" />
-    </Field>
-    <Field label="Schema" required>
-      <JsonInput label="Schema" />
-    </Field>
-  </Section>
-);
+/** A fixed text the parent never changes (disabled and read-only editors). */
+const noop = () => {};
+
+/**
+ * The UI kit's JsonInput section: controlled, filled, disabled, read-only, invalid, required
+ * (AC-9), on local state.
+ */
+export const JsonInputSection: React.FC = () => {
+  const [settings, setSettings] = useState('{"theme":"dark"}');
+  const [invalid, setInvalid] = useState('x');
+  const [schema, setSchema] = useState('');
+
+  return (
+    <Section title="JsonInput">
+      <JsonDemo />
+      <Field label="Settings">
+        <JsonInput value={settings} onChange={setSettings} config={{ label: 'Settings' }} />
+      </Field>
+      <Field label="Disabled JSON">
+        <JsonInput
+          value='{"locked":true}'
+          onChange={noop}
+          disabled
+          config={{ label: 'Disabled JSON' }}
+        />
+      </Field>
+      <Field label="Read-only JSON">
+        <JsonInput
+          value='{"fixed":true}'
+          onChange={noop}
+          readOnly
+          config={{ label: 'Read-only JSON' }}
+        />
+      </Field>
+      <Field label="Invalid JSON" error='Invalid JSON: Unexpected token "x"'>
+        <JsonInput value={invalid} onChange={setInvalid} config={{ label: 'Invalid JSON' }} />
+      </Field>
+      <Field label="Schema" required>
+        <JsonInput value={schema} onChange={setSchema} config={{ label: 'Schema' }} />
+      </Field>
+    </Section>
+  );
+};
 JsonInputSection.displayName = 'JsonInputSection';

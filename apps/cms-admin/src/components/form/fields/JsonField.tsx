@@ -1,7 +1,5 @@
-import { Controller, useFormContext } from 'react-hook-form';
-
-import { Field } from '@repo/form-commons/components/forms/Field';
 import { JsonInput } from '@repo/form-commons/components/forms/JsonInput';
+import { RHFField } from '@repo/form-commons/components/rhf/RHFField';
 
 import { useSchemaFormReadOnly } from '@/components/form/schemaFormContext';
 import { rulesFor } from '@/features/content/schemaForm';
@@ -15,34 +13,24 @@ export interface JsonFieldProps {
 }
 
 /**
- * A `json` field: a `JsonInput` behind a `Controller`, holding text. Invalid text stays visible
- * and blocks the save with its parse error (`rulesFor`). The label names the in-shadow editor,
- * and the ref's `focus()` moves focus into it (an invalid save focuses it).
+ * A `json` field: a `JsonInput` bound through `RHFField`, holding text. Invalid text stays visible
+ * and blocks the save with its parse error (`rules.validate` from `parseJson`, via `rulesFor`).
+ * The label names the in-shadow editor, and the ref's `focus()` moves focus into it (an invalid
+ * save focuses it).
  */
 export const JsonField: React.FC<JsonFieldProps> = ({ field, label, name, className }) => {
-  const { control } = useFormContext();
   const readOnly = useSchemaFormReadOnly();
   return (
-    <Controller
-      control={control}
-      name={name}
-      rules={rulesFor(field)}
-      render={({ field: control, fieldState }) => (
-        <Field label={label} error={fieldState.error?.message} className={className}>
-          <JsonInput
-            ref={control.ref}
-            label={label}
-            name={control.name}
-            value={typeof control.value === 'string' ? control.value : ''}
-            onChange={control.onChange}
-            onBlur={control.onBlur}
-            readOnly={readOnly}
-            expect="any"
-            rows={6}
-          />
-        </Field>
+    <RHFField name={name} label={label} rules={rulesFor(field)} className={className}>
+      {(bound) => (
+        <JsonInput
+          {...bound}
+          value={typeof bound.value === 'string' ? bound.value : ''}
+          readOnly={readOnly}
+          config={{ label, expect: 'any', rows: 6 }}
+        />
       )}
-    />
+    </RHFField>
   );
 };
 JsonField.displayName = 'JsonField';

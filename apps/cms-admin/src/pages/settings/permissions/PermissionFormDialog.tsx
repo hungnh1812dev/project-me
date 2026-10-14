@@ -151,9 +151,8 @@ export const PermissionFormDialog: React.FC<PermissionFormDialogProps> = ({
           <Field label="Description" required error={errors.description}>
             <Textarea
               value={values.description}
-              onChange={(event) => change('description')(event.target.value)}
-              maxLength={PERMISSION_DESCRIPTION_MAX}
-              rows={3}
+              onChange={change('description')}
+              config={{ maxLength: PERMISSION_DESCRIPTION_MAX, rows: 3 }}
             />
           </Field>
           {!isEdit && (
