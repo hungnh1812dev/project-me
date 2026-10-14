@@ -43,14 +43,18 @@ test('keyboard walk on the UI kit reaches every control with visible focus (AC-4
   await expect(page.locator('[data-slot="json-code-editor"] .cm-content')).toHaveCount(
     await page.locator('[data-slot="json-input"]').count(),
   );
+  // So do the rich text editors.
+  await expect(page.locator('[data-slot="rich-text-skeleton"]')).toHaveCount(0);
 
   const stops = await walkTabOrder(page, 200);
 
   expect(stops.filter((s) => !s.visibleFocus)).toEqual([]);
-  // Disabled controls are skipped; every other visible control in the story root is a Tab stop.
+  // Disabled controls are skipped; every other visible control in the story root is a Tab stop,
+  // except links inside editable rich text, which the browser edits rather than tabs to.
   const enabled = await page.evaluate<number>(
     `[...document.querySelectorAll('#storybook-root *')].filter(
-      (el) => el.tabIndex >= 0 && !el.disabled && el.checkVisibility(),
+      (el) => el.tabIndex >= 0 && !el.disabled && el.checkVisibility()
+        && !el.parentElement?.closest('[contenteditable="true"]'),
     ).length`,
   );
   expect(enabled).toBeGreaterThan(0);
@@ -83,6 +87,10 @@ const INPUT_STORIES: readonly InputStory[] = [
       await readoutIs('"[1]"')(page);
       await expect(page.locator('[data-slot="json-editor-skeleton"]')).toHaveCount(0);
     },
+  },
+  {
+    id: 'components-richtexteditor--playground',
+    settled: readoutIs('"<h2>Hello world</h2>"'),
   },
   { id: 'components-select--playground', settled: readoutIs('"1d"') },
   { id: 'components-radiogroup--playground', settled: readoutIs('"compact"') },

@@ -36,10 +36,10 @@ Deviations: Fira Sans is the static `@fontsource/fira-sans` (no variable build e
 dark`, the `@theme inline` mapping, radius and motion tokens, the global `:focus-visible` rule and
   the reduced-motion rule. The app's `globals.css` imports it and adds
   `@source '../../../../packages/form-commons/src'` (Tailwind doesn't scan `node_modules`). Fonts, `body`
-  font settings, the `main`/`h1` focus exception and the `.rich-text` styles stay in `globals.css`.
+  font settings, and the `main`/`h1` focus exception stay in `globals.css`. The `.rich-text` styles moved to `theme.css` with the editor (D3 amended).
 - **D3 Form split.** Generic components moved to the package (`Field`, `PasswordInput`, `JsonInput`,
   `DatePicker`, `ConfirmDialog`, `UnsavedChangesDialog`, `SecretReveal`, `GatedButton`,
-  `GatedMenuItem`, `FileDropzone`, `Pagination`). The inputs (`Input`, `PasswordInput`, `Textarea`,
+  `GatedMenuItem`, `FileDropzone`, `Pagination`). D3 amended: `RichTextEditor` and `lib/richtext` moved too, so the editor has a Storybook story; `RichTextField` (the react-hook-form and schema-form wiring) stays here. The inputs (`Input`, `PasswordInput`, `Textarea`,
   `JsonInput`, `Switch`, `Checkbox`, `Select`, `RadioGroup`, `DatePicker`) share the package's input
   contract (controlled `value`/`onChange`, one JSON `config`, no `defaultValue`), and react-hook-form
   forms bind them through `@repo/form-commons/components/rhf/RHFField` instead of a hand-written
@@ -272,10 +272,10 @@ story-only class reaches the admin bundle.
 
 ## Files
 
-| File                     | Spec                                                                                                                                                                               |
-| ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `src/styles/globals.css` | Imports Tailwind and `@repo/form-commons/styles/theme.css`, scans the package but not its `src/stories`, fonts, focus exception, `.rich-text` styles. No colour tokens of its own. |
-| `public/favicon.svg`     | The app icon.                                                                                                                                                                      |
+| File                     | Spec                                                                                                                                                          |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/styles/globals.css` | Imports Tailwind and `@repo/form-commons/styles/theme.css`, scans the package but not its `src/stories`, fonts, focus exception. No colour tokens of its own. |
+| `public/favicon.svg`     | The app icon.                                                                                                                                                 |
 
 The shared primitives, form components and tokens live in `packages/form-commons` (outside this app): notably
 `styles/theme.css` + `styles/tokens.ts`, `components/ui/variants.ts`, `components/ui/checkbox.tsx`,

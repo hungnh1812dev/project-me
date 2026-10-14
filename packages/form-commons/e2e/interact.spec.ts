@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 
+import { LINK_ERROR } from '../src/lib/richtext';
 import { gotoStory } from './fixtures/story';
 
 /**
@@ -13,6 +14,7 @@ const INPUT_PLAYGROUND = 'components-input--playground';
 const PASSWORD_PLAYGROUND = 'components-input--password-playground';
 const TEXTAREA_PLAYGROUND = 'components-textarea--playground';
 const JSON_INPUT_PLAYGROUND = 'components-jsoninput--playground';
+const RICH_TEXT_PLAYGROUND = 'components-richtexteditor--playground';
 const SELECT_PLAYGROUND = 'components-select--playground';
 const RADIO_GROUP_PLAYGROUND = 'components-radiogroup--playground';
 const RADIO_GROUP_WITH_ITEMS = 'components-radiogroup--with-items';
@@ -133,6 +135,38 @@ test('the JsonInput Playground readout follows typing, validation and Format JSO
 
   await page.getByRole('button', { name: 'Format JSON' }).click();
   await expect(readout).toHaveText('"{\\n  \\"a\\": 1\\n}"');
+});
+
+test('the RichTextEditor Playground readout follows typing, toolbar marks and links', async ({
+  page,
+}) => {
+  await gotoStory(page, RICH_TEXT_PLAYGROUND);
+  const editor = page.getByRole('textbox', { name: 'Body' });
+  const readout = page.getByRole('status', { name: 'Value' });
+  const toolbar = page.getByRole('toolbar', { name: 'Body formatting' });
+  // The play function has turned the paragraph into a heading.
+  await expect(readout).toHaveText('"<h2>Hello world</h2>"');
+
+  await editor.click();
+  await page.keyboard.press('End');
+  await page.keyboard.press('Enter');
+  await page.keyboard.type('More');
+  await expect(readout).toHaveText('"<h2>Hello world</h2><p>More</p>"');
+
+  for (let i = 0; i < 'More'.length; i += 1) await page.keyboard.press('Shift+ArrowLeft');
+  await toolbar.getByRole('button', { name: 'Bold' }).click();
+  await expect(readout).toHaveText('"<h2>Hello world</h2><p><strong>More</strong></p>"');
+
+  await toolbar.getByRole('button', { name: 'Link' }).click();
+  const url = page.getByRole('textbox', { name: 'Link URL' });
+  await url.fill('javascript:alert(1)');
+  await url.press('Enter');
+  await expect(page.getByRole('alert')).toHaveText(LINK_ERROR);
+  await url.fill('https://example.com');
+  await url.press('Enter');
+  await expect(readout).toHaveText(
+    '"<h2>Hello world</h2><p><a href=\\"https://example.com\\"><strong>More</strong></a></p>"',
+  );
 });
 
 test('the Select Playground readout follows options picked by mouse and keyboard', async ({

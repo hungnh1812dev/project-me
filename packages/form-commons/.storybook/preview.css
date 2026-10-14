@@ -1,5 +1,5 @@
 /* Mirrors apps/cms-admin/src/styles/globals.css so stories render like the app (AC-8).
-   The app-only rules (`.rich-text`, the `main[tabindex='-1']` focus exception) are left out. */
+   The app-only rule (the `main[tabindex='-1']` focus exception) is left out. */
 @import 'tailwindcss';
 @import 'tw-animate-css';
 @import '../src/styles/theme.css';

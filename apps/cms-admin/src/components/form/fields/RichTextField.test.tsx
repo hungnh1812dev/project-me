@@ -2,7 +2,8 @@ import { fireEvent, render, screen, waitFor, within } from '@testing-library/rea
 import userEvent from '@testing-library/user-event';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 
-import { LINK_ERROR, ROUND_TRIP_WARNING } from '@/features/content/richtext';
+import { LINK_ERROR, ROUND_TRIP_WARNING } from '@repo/form-commons/lib/richtext';
+
 import type { DocumentData, FieldDefinition } from '@/features/content/types';
 
 import { SchemaForm } from '../SchemaForm';

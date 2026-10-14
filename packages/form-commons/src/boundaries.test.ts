@@ -289,6 +289,7 @@ describe('generic form components (AC-3)', () => {
     'Field',
     'PasswordInput',
     'JsonInput',
+    'RichTextEditor',
     'DatePicker',
     'ConfirmDialog',
     'UnsavedChangesDialog',
@@ -306,7 +307,7 @@ describe('generic form components (AC-3)', () => {
     expect(existsSync(join(SRC, 'form'))).toBe(false);
   });
 
-  it.each(['lib/json.ts', 'lib/decision.ts'])('%s is in the package', (path) => {
+  it.each(['lib/json.ts', 'lib/decision.ts', 'lib/richtext.ts'])('%s is in the package', (path) => {
     expect(existsSync(join(SRC, path))).toBe(true);
   });
 });

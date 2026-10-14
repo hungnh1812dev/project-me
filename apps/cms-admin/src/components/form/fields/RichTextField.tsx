@@ -2,17 +2,16 @@ import { lazy, Suspense, useId, useRef, useState } from 'react';
 import { TriangleAlertIcon } from 'lucide-react';
 import { Controller, useFormContext, useFormState } from 'react-hook-form';
 
+import type { RichTextEditorHandle } from '@repo/form-commons/components/forms/RichTextEditor';
 import { Label } from '@repo/form-commons/components/ui/label';
 import { Skeleton } from '@repo/form-commons/components/ui/skeleton';
 import { cn } from '@repo/form-commons/lib/cn';
+import { ROUND_TRIP_WARNING } from '@repo/form-commons/lib/richtext';
 
 import { useSchemaFormReadOnly } from '@/components/form/schemaFormContext';
-import { ROUND_TRIP_WARNING } from '@/features/content/richtext';
-
-import type { RichTextEditorHandle } from './RichTextEditor';
 
 // The only import of the editor: Tiptap and ProseMirror stay in this lazy chunk (AC-11).
-const RichTextEditor = lazy(() => import('./RichTextEditor'));
+const RichTextEditor = lazy(() => import('@repo/form-commons/components/forms/RichTextEditor'));
 
 export interface RichTextFieldProps {
   label: string;

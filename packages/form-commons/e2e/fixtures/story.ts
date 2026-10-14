@@ -83,7 +83,8 @@ export interface TabStop {
 
 /**
  * Presses Tab until focus leaves the document or comes back to the first stop, and records each
- * stop. A cap well above the real count turns a keyboard trap into a test failure.
+ * stop. Focus counts as visible with an outline or ring on the element, or with the outline the
+ * rich text editor's frame draws around its focused content. A cap well above the real count turns a keyboard trap into a test failure.
  */
 export async function walkTabOrder(page: Page, cap = 120): Promise<TabStop[]> {
   const stops: TabStop[] = [];
@@ -93,9 +94,14 @@ export async function walkTabOrder(page: Page, cap = 120): Promise<TabStop[]> {
     const stop = await page.evaluate<(TabStop & { key: string }) | null>(`(() => {
       const el = document.activeElement;
       if (!el || el === document.body) return null;
-      const style = getComputedStyle(el);
-      const outline = style.outlineStyle !== 'none' && parseFloat(style.outlineWidth) > 0;
-      const ring = style.boxShadow !== 'none';
+      const hasOutline = (node) => {
+        const style = getComputedStyle(node);
+        return style.outlineStyle !== 'none' && parseFloat(style.outlineWidth) > 0;
+      };
+      // The rich text editor draws its focus outline on its frame (focus-within), not the text.
+      const frame = el.closest('[data-slot="rich-text-editor"]');
+      const outline = hasOutline(el) || (!!frame && hasOutline(frame));
+      const ring = getComputedStyle(el).boxShadow !== 'none';
       const region = el.closest('[data-sidebar="sidebar"], header, main, footer');
       const landmark = el.matches('a[href="#main-content"]')
         ? 'skip'

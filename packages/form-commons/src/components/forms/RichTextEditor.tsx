@@ -1,3 +1,5 @@
+'use client';
+
 import { useEffect, useImperativeHandle, useLayoutEffect, useRef, useState } from 'react';
 import Link from '@tiptap/extension-link';
 import { EditorContent, useEditor, useEditorState, type Editor } from '@tiptap/react';
@@ -17,12 +19,11 @@ import {
   StrikethroughIcon,
 } from 'lucide-react';
 
-import { Field } from '@repo/form-commons/components/forms/Field';
-import { Button } from '@repo/form-commons/components/ui/button';
-import { Input } from '@repo/form-commons/components/ui/input';
-import { cn } from '@repo/form-commons/lib/cn';
-
-import { changesOnRoundTrip, isAllowedHref, LINK_ERROR } from '@/features/content/richtext';
+import { cn } from '../../lib/cn';
+import { changesOnRoundTrip, isAllowedHref, LINK_ERROR } from '../../lib/richtext';
+import { Button } from '../ui/button';
+import { Input } from '../ui/input';
+import { Field } from './Field';
 
 /** What a parent can do with the editor: focus it (react-hook-form focuses a field this way). */
 export interface RichTextEditorHandle {
@@ -333,9 +334,9 @@ const Toolbar: React.FC<ToolbarProps> = ({ editor, labelId, linkOpen, onLink }) 
 Toolbar.displayName = 'Toolbar';
 
 /**
- * The Tiptap richtext editor (D1). It lives in its own lazy chunk: only `RichTextField` imports
- * it, through `React.lazy`. `injectCSS: false` keeps Tiptap from adding a `<style>` element (the
- * CSP has no `'unsafe-inline'`); the editor's styles are the `.rich-text` rules in `globals.css`.
+ * The Tiptap richtext editor (D1). Import it through `React.lazy` so Tiptap and ProseMirror stay in
+ * their own chunk. `injectCSS: false` keeps Tiptap from adding a `<style>` element (the CSP has no
+ * `'unsafe-inline'`); the editor's styles are the `.rich-text` rules in `styles/theme.css`.
  */
 const RichTextEditor: React.FC<RichTextEditorProps> = ({
   id,
@@ -406,8 +407,8 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     <div
       data-slot="rich-text-editor"
       className={cn(
-        'overflow-hidden rounded-md border border-input bg-background text-foreground transition-colors',
-        'focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-ring',
+        'border-input bg-background text-foreground overflow-hidden rounded-md border transition-colors',
+        'focus-within:outline-ring focus-within:outline-2 focus-within:outline-offset-2',
         readOnly && 'bg-muted/40',
       )}
     >

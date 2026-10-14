@@ -10,6 +10,7 @@ import { DialogSection } from './sections/DialogSection';
 import { InputSection } from './sections/InputSection';
 import { JsonInputSection } from './sections/JsonInputSection';
 import { RadioGroupSection } from './sections/RadioGroupSection';
+import { RichTextEditorSection } from './sections/RichTextEditorSection';
 import { SelectSection } from './sections/SelectSection';
 import { SwitchSection } from './sections/SwitchSection';
 import { TextareaSection } from './sections/TextareaSection';
@@ -33,6 +34,7 @@ const UiKitOverview: React.FC = () => (
     <InputSection />
     <TextareaSection />
     <JsonInputSection />
+    <RichTextEditorSection />
     <SwitchSection />
     <CheckboxSection />
     <RadioGroupSection />
@@ -53,5 +55,5 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/** All 13 sections under the `h1` "UI kit"; each section is a region named by its `h2` (AC-9). */
+/** All 14 sections under the `h1` "UI kit"; each section is a region named by its `h2` (AC-9). */
 export const Overview: Story = {};
