@@ -153,6 +153,11 @@ test('the Select Playground readout follows options picked by mouse and keyboard
   await select.focus();
   await page.keyboard.press('Enter');
   await expect(page.getByRole('listbox')).toBeVisible();
+  // Base UI highlights the selected option as the popup opens but moves focus onto it a frame
+  // later; until then the keys still go to the trigger, so wait for the popup to own focus.
+  const current = page.getByRole('option', { name: '1 hour' });
+  await expect(current).toHaveAttribute('data-highlighted');
+  await expect(current).toBeFocused();
   await page.keyboard.press('ArrowDown');
   await expect(page.getByRole('option', { name: '1 day' })).toHaveAttribute('data-highlighted');
   await page.keyboard.press('Enter');
