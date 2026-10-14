@@ -31,6 +31,11 @@ const DOCUMENTED_CONFIGS: [string, JsonConfig][] = [
       autoComplete: 'email',
       inputMode: 'email',
       pattern: '.+@.+',
+      spellCheck: false,
+      autoFocus: true,
+      min: 1,
+      max: 100,
+      step: 1,
     } satisfies InputConfig,
   ],
   [

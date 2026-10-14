@@ -262,10 +262,15 @@ describe('RolesPage create (AC-8 to AC-11, AC-19)', () => {
     expect(within(dialog).getByRole('textbox', { name: 'Slug' })).toHaveAccessibleDescription(
       "Derived from the name until you edit it. It can't be changed later.",
     );
-    // Spell check stays off for the slug (inherited from its wrapper).
-    expect(
-      within(dialog).getByRole('textbox', { name: 'Slug' }).closest('[spellcheck]'),
-    ).toHaveAttribute('spellcheck', 'false');
+    // Spell check stays off for the slug, set on the input through config.
+    expect(within(dialog).getByRole('textbox', { name: 'Slug' })).toHaveAttribute(
+      'spellcheck',
+      'false',
+    );
+    const level = within(dialog).getByRole('spinbutton', { name: 'Level' });
+    expect(level).toHaveAttribute('min', '0');
+    expect(level).toHaveAttribute('max', '100');
+    expect(level).toHaveAttribute('step', '1');
     expect(await within(dialog).findByRole('checkbox', { name: 'Select all' })).toBeVisible();
   });
 

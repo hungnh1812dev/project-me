@@ -11,17 +11,17 @@ The shared props contract for every value-holding input (`Input`, `Textarea`, `P
 - `C` must extend `JsonConfig` (`{ [key: string]: JsonValue | undefined }`), so a config holds only JSON: no functions, ReactNodes or Dates. Non-JSON options stay as named props on the input (`leading`, `trailing`, JsonInput's `onValidate` / `onValueChange`).
 - Config types are type aliases, not interfaces, so they fit the `JsonConfig` index signature.
 
-| Input           | `T`                 | Config type           | Keys                                                                                    |
-| --------------- | ------------------- | --------------------- | --------------------------------------------------------------------------------------- |
-| `Input`         | `string`            | `InputConfig`         | `type`, `placeholder`, `maxLength`, `minLength`, `autoComplete`, `inputMode`, `pattern` |
-| `PasswordInput` | `string`            | `PasswordInputConfig` | `placeholder`, `autoComplete`                                                           |
-| `Textarea`      | `string`            | `TextareaConfig`      | `rows`, `maxLength`, `placeholder`                                                      |
-| `JsonInput`     | `string`            | `JsonInputConfig`     | `expect`, `rows`, `label`, `description`                                                |
-| `Switch`        | `boolean`           | `SwitchConfig`        | none                                                                                    |
-| `Checkbox`      | `boolean`           | `CheckboxConfig`      | `indeterminate`                                                                         |
-| `Select`        | `string \| null`    | `SelectConfig`        | `placeholder`, `options: InputOption[]`                                                 |
-| `RadioGroup`    | `string \| null`    | `RadioGroupConfig`    | `options: InputOption[]`, `orientation`                                                 |
-| `DatePicker`    | `Date \| undefined` | `DatePickerConfig`    | `locale`, `placeholder`                                                                 |
+| Input           | `T`                 | Config type           | Keys                                                                                                                                     |
+| --------------- | ------------------- | --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| `Input`         | `string`            | `InputConfig`         | `type`, `placeholder`, `maxLength`, `minLength`, `autoComplete`, `inputMode`, `pattern`, `spellCheck`, `autoFocus`, `min`, `max`, `step` |
+| `PasswordInput` | `string`            | `PasswordInputConfig` | `placeholder`, `autoComplete`                                                                                                            |
+| `Textarea`      | `string`            | `TextareaConfig`      | `rows`, `maxLength`, `placeholder`                                                                                                       |
+| `JsonInput`     | `string`            | `JsonInputConfig`     | `expect`, `rows`, `label`, `description`                                                                                                 |
+| `Switch`        | `boolean`           | `SwitchConfig`        | none                                                                                                                                     |
+| `Checkbox`      | `boolean`           | `CheckboxConfig`      | `indeterminate`                                                                                                                          |
+| `Select`        | `string \| null`    | `SelectConfig`        | `placeholder`, `options: InputOption[]`                                                                                                  |
+| `RadioGroup`    | `string \| null`    | `RadioGroupConfig`    | `options: InputOption[]`, `orientation`                                                                                                  |
+| `DatePicker`    | `Date \| undefined` | `DatePickerConfig`    | `locale`, `placeholder`                                                                                                                  |
 
 `isJsonConfig(value)` is the runtime guard: true for a plain object whose values are JSON (`undefined` allowed only for a top-level optional key). It rejects functions, React elements, Dates, class instances, `NaN`/`Infinity`, symbols, bigints, `undefined` inside arrays and cycles. Stories and tests use it to check a config before rendering it.
 

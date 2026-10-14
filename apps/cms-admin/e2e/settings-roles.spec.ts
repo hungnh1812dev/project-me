@@ -81,7 +81,15 @@ test('a super admin creates a role with scoped document permissions', async ({ p
   await expect(dialog.getByRole('textbox', { name: 'Name' })).toBeFocused();
   await dialog.getByRole('textbox', { name: 'Name' }).fill('Article writer');
   await expect(dialog.getByRole('textbox', { name: 'Slug' })).toHaveValue('article-writer');
-  await dialog.getByRole('spinbutton', { name: 'Level' }).fill('15');
+  await expect(dialog.getByRole('textbox', { name: 'Slug' })).toHaveAttribute(
+    'spellcheck',
+    'false',
+  );
+  const level = dialog.getByRole('spinbutton', { name: 'Level' });
+  await expect(level).toHaveAttribute('min', '0');
+  await expect(level).toHaveAttribute('max', '100');
+  await expect(level).toHaveAttribute('step', '1');
+  await level.fill('15');
 
   const tree = dialog.getByRole('group', { name: 'Permissions' });
   await expect(tree.getByRole('group', { name: 'All content types' })).toBeVisible();

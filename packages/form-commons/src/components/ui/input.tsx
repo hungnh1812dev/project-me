@@ -37,6 +37,11 @@ const Input: React.FC<InputProps> = ({
       autoComplete={config?.autoComplete}
       inputMode={config?.inputMode}
       pattern={config?.pattern}
+      spellCheck={config?.spellCheck}
+      autoFocus={config?.autoFocus}
+      min={config?.min}
+      max={config?.max}
+      step={config?.step}
       value={value}
       onChange={(event) => onChange(event.target.value)}
       className={cn(

@@ -18,6 +18,7 @@ import type { Role } from '@/features/auth/types';
 import { usePermissions } from '@/features/settings/hooks/usePermissions';
 import { useCreateRole, useUpdateRole } from '@/features/settings/hooks/useRoles';
 import {
+  ROLE_LEVEL_MAX,
   roleChanges,
   roleSlugFromName,
   validateRole,
@@ -140,30 +141,27 @@ export const RoleFormDialog: React.FC<RoleFormDialogProps> = ({
                 config={{ autoComplete: 'off' }}
               />
             </Field>
-            {/* Spell check stays off for the slug; the input inherits it from this wrapper. */}
-            <div spellCheck={false}>
-              <Field
-                label="Slug"
-                required={!isEdit}
-                description={
-                  isEdit
-                    ? "The slug can't be changed."
-                    : "Derived from the name until you edit it. It can't be changed later."
-                }
-                error={errors.slug ?? (duplicate ? DUPLICATE_SLUG : undefined)}
-              >
-                <Input
-                  value={values.slug}
-                  readOnly={isEdit}
-                  onChange={(slug) => {
-                    setSlugEdited(true);
-                    set({ ...values, slug });
-                  }}
-                  config={{ autoComplete: 'off' }}
-                  className="font-mono"
-                />
-              </Field>
-            </div>
+            <Field
+              label="Slug"
+              required={!isEdit}
+              description={
+                isEdit
+                  ? "The slug can't be changed."
+                  : "Derived from the name until you edit it. It can't be changed later."
+              }
+              error={errors.slug ?? (duplicate ? DUPLICATE_SLUG : undefined)}
+            >
+              <Input
+                value={values.slug}
+                readOnly={isEdit}
+                onChange={(slug) => {
+                  setSlugEdited(true);
+                  set({ ...values, slug });
+                }}
+                config={{ autoComplete: 'off', spellCheck: false }}
+                className="font-mono"
+              />
+            </Field>
           </div>
           <Field
             label="Level"
@@ -175,7 +173,13 @@ export const RoleFormDialog: React.FC<RoleFormDialogProps> = ({
             className="sm:max-w-48"
           >
             <Input
-              config={{ type: 'number', inputMode: 'numeric' }}
+              config={{
+                type: 'number',
+                inputMode: 'numeric',
+                min: 0,
+                max: ROLE_LEVEL_MAX,
+                step: 1,
+              }}
               value={values.level}
               disabled={locked}
               onChange={(level) => set({ ...values, level })}

@@ -52,6 +52,11 @@ export type InputConfig = {
   autoComplete?: string;
   inputMode?: 'none' | 'text' | 'tel' | 'url' | 'email' | 'numeric' | 'decimal' | 'search';
   pattern?: string;
+  spellCheck?: boolean;
+  autoFocus?: boolean;
+  min?: number;
+  max?: number;
+  step?: number;
 };
 export type PasswordInputConfig = { placeholder?: string; autoComplete?: string };
 export type TextareaConfig = { rows?: number; maxLength?: number; placeholder?: string };

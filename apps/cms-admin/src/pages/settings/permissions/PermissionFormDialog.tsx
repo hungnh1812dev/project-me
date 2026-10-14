@@ -118,28 +118,25 @@ export const PermissionFormDialog: React.FC<PermissionFormDialogProps> = ({
           </DialogDescription>
         </DialogHeader>
         <form noValidate onSubmit={submit} className="flex flex-col gap-4">
-          {/* Spell check stays off for the slug; the input inherits it from this wrapper. */}
-          <div spellCheck={false}>
-            <Field
-              label="Slug"
-              required={!isEdit}
-              description={
-                isEdit
-                  ? "The slug can't be changed."
-                  : "resource:action, lowercase. It can't be changed later."
-              }
-              error={errors.slug ?? (duplicate ? DUPLICATE_SLUG : undefined)}
-            >
-              <Input
-                ref={slugRef}
-                value={values.slug}
-                onChange={change('slug')}
-                readOnly={isEdit}
-                config={{ autoComplete: 'off' }}
-                className="font-mono"
-              />
-            </Field>
-          </div>
+          <Field
+            label="Slug"
+            required={!isEdit}
+            description={
+              isEdit
+                ? "The slug can't be changed."
+                : "resource:action, lowercase. It can't be changed later."
+            }
+            error={errors.slug ?? (duplicate ? DUPLICATE_SLUG : undefined)}
+          >
+            <Input
+              ref={slugRef}
+              value={values.slug}
+              onChange={change('slug')}
+              readOnly={isEdit}
+              config={{ autoComplete: 'off', spellCheck: false }}
+              className="font-mono"
+            />
+          </Field>
           <Field label="Name" required error={errors.name}>
             <Input
               ref={nameRef}

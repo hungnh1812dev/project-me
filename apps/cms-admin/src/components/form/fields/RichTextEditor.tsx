@@ -166,12 +166,6 @@ const LinkPanel: React.FC<LinkPanelProps> = ({ editor, onClose }) => {
   const [href, setHref] = useState(typeof current === 'string' ? current : '');
   const [error, setError] = useState<string | undefined>();
   const active = editor.isActive('link');
-  const urlRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    urlRef.current?.focus();
-  }, []);
-
   const close = () => {
     onClose();
     editor.commands.focus();
@@ -226,8 +220,7 @@ const LinkPanel: React.FC<LinkPanelProps> = ({ editor, onClose }) => {
       >
         <Field label="Link URL" hideLabel error={error}>
           <Input
-            ref={urlRef}
-            config={{ type: 'url', inputMode: 'url', placeholder: 'https://' }}
+            config={{ type: 'url', inputMode: 'url', placeholder: 'https://', autoFocus: true }}
             value={href}
             onChange={(next) => {
               setHref(next);

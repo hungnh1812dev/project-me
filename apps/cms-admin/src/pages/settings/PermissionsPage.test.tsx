@@ -247,8 +247,8 @@ describe('PermissionsPage create (AC-8 to AC-11, AC-25)', () => {
       "resource:action, lowercase. It can't be changed later.",
     );
     await waitFor(() => expect(slug).toHaveFocus());
-    // Spell check stays off for the slug (inherited from its wrapper).
-    expect(slug.closest('[spellcheck]')).toHaveAttribute('spellcheck', 'false');
+    // Spell check stays off for the slug, set on the input through config.
+    expect(slug).toHaveAttribute('spellcheck', 'false');
     expect(within(dialog).getByRole('textbox', { name: 'Description' })).toHaveAttribute(
       'maxlength',
       '500',

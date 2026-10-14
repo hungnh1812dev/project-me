@@ -47,6 +47,41 @@ describe('Input', () => {
     expect(input).toHaveAttribute('pattern', '.+@.+');
   });
 
+  it('maps spellCheck, min, max and step to the native attributes', () => {
+    render(
+      <Input
+        aria-label="Level"
+        value="1"
+        onChange={noop}
+        config={{ type: 'number', spellCheck: false, min: 1, max: 100, step: 5 }}
+      />,
+    );
+
+    const input = screen.getByRole('spinbutton', { name: 'Level' });
+    expect(input).toHaveAttribute('spellcheck', 'false');
+    expect(input).toHaveAttribute('min', '1');
+    expect(input).toHaveAttribute('max', '100');
+    expect(input).toHaveAttribute('step', '5');
+  });
+
+  it('renders spellcheck="true" when config.spellCheck is true', () => {
+    render(<Input aria-label="Bio" value="" onChange={noop} config={{ spellCheck: true }} />);
+
+    expect(screen.getByRole('textbox', { name: 'Bio' })).toHaveAttribute('spellcheck', 'true');
+  });
+
+  it('has focus after mount when config.autoFocus is true', () => {
+    render(<Input aria-label="URL" value="" onChange={noop} config={{ autoFocus: true }} />);
+
+    expect(screen.getByRole('textbox', { name: 'URL' })).toHaveFocus();
+  });
+
+  it('does not take focus on mount without config.autoFocus', () => {
+    render(<Input aria-label="URL" value="" onChange={noop} />);
+
+    expect(screen.getByRole('textbox', { name: 'URL' })).not.toHaveFocus();
+  });
+
   it('defaults to type="text" without a config', () => {
     render(<Input aria-label="Name" value="" onChange={noop} />);
 

@@ -71,6 +71,10 @@ test('a super admin creates a permission; a duplicate slug shows on the field', 
   const dialog = page.getByRole('dialog', { name: 'New permission' });
   await expect(dialog).toHaveAttribute('aria-modal', 'true');
   await expect(dialog.getByRole('textbox', { name: 'Slug' })).toBeFocused();
+  await expect(dialog.getByRole('textbox', { name: 'Slug' })).toHaveAttribute(
+    'spellcheck',
+    'false',
+  );
   await expect(dialog.getByRole('note')).toContainText('Creating a permission grants nothing');
 
   await dialog.getByRole('textbox', { name: 'Slug' }).fill('role:read');
