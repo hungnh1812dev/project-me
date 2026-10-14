@@ -7,7 +7,7 @@ The shared shadcn (Base UI) primitives, generic form components, JSON and rich t
 | [UI design tokens](./ui-design-tokens.md)           | `theme.css` and `tokens.ts`: Strapi palette, `primary-ink`, contrast data                                                 |
 | [UI input contract](./ui-input-contract.md)         | `lib/inputContract`: controlled value props, JSON-only `config` types per input, `isJsonConfig` guard                     |
 | [UI primitives](./ui-primitives.md)                 | `components/ui/*` (button variants, checkbox, radio group, badge, switch, calendar, ...), `cn`, sidebar hooks             |
-| [UI form components](./ui-form-components.md)       | `components/forms/*`: `Field`, dialogs, gated controls, dropzone, pagination and their pure helpers                       |
+| [UI form components](./ui-form-components.md)       | `components/forms/*`: `Field`, dialogs, gated controls, dropzone, pagination, `DataTable`, pure helpers                   |
 | [UI JSON editor](./ui-json-editor.md)               | `components/forms/JsonInput` on CodeMirror 6 in a shadow root, `JsonCodeEditor`, pure editor helpers                      |
 | [UI rich text editor](./ui-rich-text-editor.md)     | `components/forms/RichTextEditor` on Tiptap (toolbar, links, round-trip check), `lib/richtext`, `.rich-text` styles       |
 | [UI RHF field](./ui-rhf-field.md)                   | `components/rhf/RHFField`: `Field` bound to react-hook-form via `useController`, render-prop children typed from `name`   |

@@ -5,6 +5,7 @@ import { ButtonRolesSection } from './sections/ButtonRolesSection';
 import { ButtonSection } from './sections/ButtonSection';
 import { CheckboxSection } from './sections/CheckboxSection';
 import { ColourSection } from './sections/ColourSection';
+import { DataTableSection } from './sections/DataTableSection';
 import { DatePickerSection } from './sections/DatePickerSection';
 import { DialogSection } from './sections/DialogSection';
 import { InputSection } from './sections/InputSection';
@@ -41,6 +42,7 @@ const UiKitOverview: React.FC = () => (
     <SelectSection />
     <DatePickerSection />
     <DialogSection />
+    <DataTableSection />
   </section>
 );
 UiKitOverview.displayName = 'UiKitOverview';
@@ -55,5 +57,5 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/** All 14 sections under the `h1` "UI kit"; each section is a region named by its `h2` (AC-9). */
+/** All 15 sections under the `h1` "UI kit"; each section is a region named by its `h2` (AC-9). */
 export const Overview: Story = {};

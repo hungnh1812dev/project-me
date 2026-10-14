@@ -16,6 +16,7 @@ const TEXTAREA_PLAYGROUND = 'components-textarea--playground';
 const JSON_INPUT_PLAYGROUND = 'components-jsoninput--playground';
 const RICH_TEXT_PLAYGROUND = 'components-richtexteditor--playground';
 const SELECT_PLAYGROUND = 'components-select--playground';
+const DATA_TABLE_PLAYGROUND = 'components-datatable--playground';
 const RADIO_GROUP_PLAYGROUND = 'components-radiogroup--playground';
 const RADIO_GROUP_WITH_ITEMS = 'components-radiogroup--with-items';
 const DATE_PICKER_PLAYGROUND = 'components-datepicker--playground';
@@ -167,6 +168,37 @@ test('the RichTextEditor Playground readout follows typing, toolbar marks and li
   await expect(readout).toHaveText(
     '"<h2>Hello world</h2><p><a href=\\"https://example.com\\"><strong>More</strong></a></p>"',
   );
+});
+
+test('the DataTable Playground readout and rows follow sorting and selection', async ({ page }) => {
+  await gotoStory(page, DATA_TABLE_PLAYGROUND);
+  const table = page.getByRole('table', { name: 'Blog post entries' });
+  const readout = page.getByRole('status', { name: 'Value' });
+  const titles = () => table.locator('tbody tr td:nth-child(2)').allTextContents();
+  // The play function has sorted by Views.
+  await expect(readout).toHaveText('{"orderBy":"views","sortDir":"desc","selected":[]}');
+  expect((await titles())[0]).toBe('Hello world');
+
+  await page.getByRole('checkbox', { name: 'Select Hello world' }).click();
+  await expect(readout).toHaveText('{"orderBy":"views","sortDir":"desc","selected":["post-1"]}');
+
+  await page.getByRole('button', { name: 'Views' }).click();
+  await expect(readout).toHaveText('{"orderBy":"views","sortDir":"asc","selected":["post-1"]}');
+  await expect(page.getByRole('columnheader', { name: 'Views' })).toHaveAttribute(
+    'aria-sort',
+    'ascending',
+  );
+  expect((await titles())[0]).toBe('Draft: spring roadmap');
+
+  const all = page.getByRole('checkbox', { name: 'Select all entries on this page' });
+  await expect(all).toHaveAttribute('aria-checked', 'mixed');
+  await all.focus();
+  await page.keyboard.press('Space');
+  await expect(readout).toHaveText(
+    '{"orderBy":"views","sortDir":"asc","selected":["post-3","post-2","post-4","post-1"]}',
+  );
+  await page.keyboard.press('Space');
+  await expect(readout).toHaveText('{"orderBy":"views","sortDir":"asc","selected":[]}');
 });
 
 test('the Select Playground readout follows options picked by mouse and keyboard', async ({

@@ -92,6 +92,10 @@ const INPUT_STORIES: readonly InputStory[] = [
     id: 'components-richtexteditor--playground',
     settled: readoutIs('"<h2>Hello world</h2>"'),
   },
+  {
+    id: 'components-datatable--playground',
+    settled: readoutIs('{"orderBy":"views","sortDir":"desc","selected":[]}'),
+  },
   { id: 'components-select--playground', settled: readoutIs('"1d"') },
   { id: 'components-radiogroup--playground', settled: readoutIs('"compact"') },
   { id: 'components-radiogroup--with-items', settled: readoutIs('"scale"') },

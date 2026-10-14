@@ -291,6 +291,7 @@ describe('generic form components (AC-3)', () => {
     'JsonInput',
     'RichTextEditor',
     'DatePicker',
+    'DataTable',
     'ConfirmDialog',
     'UnsavedChangesDialog',
     'SecretReveal',
