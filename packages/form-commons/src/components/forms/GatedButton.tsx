@@ -2,10 +2,10 @@
 
 import { useId } from 'react';
 
-import { Button, type ButtonProps } from '../ui/button';
-import { Tooltip, TooltipContent, TooltipTrigger } from '../ui/tooltip';
 import { cn } from '../../lib/cn';
 import type { Decision } from '../../lib/decision';
+import { Button, type ButtonProps } from '../ui/button';
+import { Tooltip, TooltipContent, TooltipTrigger } from '../ui/tooltip';
 
 export type GatedButtonProps = ButtonProps & {
   /** From `useCan`. A denial keeps the button visible, focusable and inert (D5). */

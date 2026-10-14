@@ -11,6 +11,7 @@ How cms-api is typechecked, built and linted. Aimed at anyone touching tsconfig,
 - `tsconfig.build.json`: extends the app project with `rootDir: ./src`; used by `nest build`. It writes its tsbuildinfo into `dist/`.
 
 Decisions:
+
 - Separate build tsbuildinfo: sharing the app one would let `nest build` overwrite it with build options, and the next typecheck would re-check the app. In `dist/` it is deleted with the output, so a clean build always emits everything.
 - The spec project has no `references` to the app project: `tsc -b --noEmit` rejects a referenced project that doesn't emit (TS6310). Each file belongs to one project for the editor.
 - Lint is `oxlint --type-aware src/ test/`; the editor keeps `oxc.typeAware` off, CLI and CI run it.
@@ -19,14 +20,14 @@ Measurements and the verification method are in the "Editor and tooling performa
 
 ## Files
 
-| File | Spec |
-| ---- | ---- |
-| `tsconfig.json` | Solution root, references the app and spec projects only. |
-| `tsconfig.app.json` | Composite project for production sources. |
-| `tsconfig.spec.json` | Project for specs, e2e tests and vitest configs. |
-| `tsconfig.build.json` | Build project for `nest build`; own tsbuildinfo in `dist/`. |
-| `vitest.config.ts` | Unit test config (`**/*.spec.ts`, tsconfig paths). |
-| `vitest.config.e2e.ts` | e2e test config. |
+| File                   | Spec                                                        |
+| ---------------------- | ----------------------------------------------------------- |
+| `tsconfig.json`        | Solution root, references the app and spec projects only.   |
+| `tsconfig.app.json`    | Composite project for production sources.                   |
+| `tsconfig.spec.json`   | Project for specs, e2e tests and vitest configs.            |
+| `tsconfig.build.json`  | Build project for `nest build`; own tsbuildinfo in `dist/`. |
+| `vitest.config.ts`     | Unit test config (`**/*.spec.ts`, tsconfig paths).          |
+| `vitest.config.e2e.ts` | e2e test config.                                            |
 
 ## Testing
 

@@ -29,6 +29,7 @@ the schema form's media field reuses. For editors managing the images documents 
   While a batch runs the button is `loading` and new files are ignored. `items` drives the "Upload
   progress" list (Waiting, Uploading, Uploaded, "Failed: <reason>" in text, with an icon). At the end
   `uploadSummary` ("2 of 3 files uploaded.") shows under the list and is announced.
+
 - **Delete (M3, AC-38).** `DeleteMediaDialog` confirms `Delete "<file name>"?` with "Documents that
   use this image will show a broken image. This can't be undone.", the thumbnail and name, then M3.
   "File "<name>" deleted." is announced; errors stay in the dialog.
@@ -49,14 +50,14 @@ the schema form's media field reuses. For editors managing the images documents 
 
 ## Files
 
-| File                                           | Spec                                                                               |
-| ---------------------------------------------- | ---------------------------------------------------------------------------------- |
-| `src/pages/settings/MediaLibraryPage.tsx`      | Default export: grid, search, paging, upload, delete.                              |
-| `src/pages/settings/media/MediaThumbnail.tsx`  | Exports `MediaThumbnail`, `MediaThumbnailProps`. Allowlisted image or placeholder. |
-| `src/pages/settings/media/DeleteMediaDialog.tsx` | Exports `DeleteMediaDialog`: confirmed M3.                                       |
-| `src/features/settings/api/mediaApi.ts`        | Exports `getMedia`, `uploadMedia` (multipart), `deleteMedia` (M1–M3).             |
-| `src/features/settings/hooks/useMedia.ts`      | Exports `useMediaList`, `useUploadMedia`, `useDeleteMedia`, `UploadItem`, `UploadStatus`. |
-| `src/features/settings/media.ts`               | Exports `validateUploadFile`, `formatBytes`, `uploadErrorMessage`, `uploadSummary`, `UPLOAD_ACCEPT`, `UploadSummary`. |
+| File                                             | Spec                                                                                                                  |
+| ------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------- |
+| `src/pages/settings/MediaLibraryPage.tsx`        | Default export: grid, search, paging, upload, delete.                                                                 |
+| `src/pages/settings/media/MediaThumbnail.tsx`    | Exports `MediaThumbnail`, `MediaThumbnailProps`. Allowlisted image or placeholder.                                    |
+| `src/pages/settings/media/DeleteMediaDialog.tsx` | Exports `DeleteMediaDialog`: confirmed M3.                                                                            |
+| `src/features/settings/api/mediaApi.ts`          | Exports `getMedia`, `uploadMedia` (multipart), `deleteMedia` (M1–M3).                                                 |
+| `src/features/settings/hooks/useMedia.ts`        | Exports `useMediaList`, `useUploadMedia`, `useDeleteMedia`, `UploadItem`, `UploadStatus`.                             |
+| `src/features/settings/media.ts`                 | Exports `validateUploadFile`, `formatBytes`, `uploadErrorMessage`, `uploadSummary`, `UPLOAD_ACCEPT`, `UploadSummary`. |
 
 ## Testing
 

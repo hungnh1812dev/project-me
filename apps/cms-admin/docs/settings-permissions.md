@@ -38,15 +38,15 @@ permission is still in use. For administrators extending what roles and tokens c
 
 ## Files
 
-| File                                                     | Spec                                                                |
-| -------------------------------------------------------- | ------------------------------------------------------------------- |
-| `src/pages/settings/PermissionsPage.tsx`                 | Default export: grouped catalog, search, paging, actions.           |
-| `src/pages/settings/permissions/PermissionFormDialog.tsx`| Exports `PermissionFormDialog`: create and edit.                    |
-| `src/pages/settings/permissions/DeletePermissionDialog.tsx` | Exports `DeletePermissionDialog`: confirmed P4 with the conflict state. |
-| `src/features/settings/api/permissionsApi.ts`            | Exports `getPermissions`, `createPermission`, `updatePermission`, `deletePermission` and input types (P1–P4). |
-| `src/features/settings/hooks/usePermissions.ts`          | Exports `usePermissions`, `useCreatePermission`, `useUpdatePermission`, `useDeletePermission`, `UpdatePermissionVariables`. |
-| `src/features/settings/conflict.ts`                      | Exports `parsePermissionConflict`, `PermissionConflictSummary`. 409 body → sentence or server message. |
-| `src/features/settings/permissionGroups.ts`              | Exports `sortBySlug`, `groupByResource`, `ResourceGroup`. Row-based paging into groups. |
+| File                                                        | Spec                                                                                                                        |
+| ----------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `src/pages/settings/PermissionsPage.tsx`                    | Default export: grouped catalog, search, paging, actions.                                                                   |
+| `src/pages/settings/permissions/PermissionFormDialog.tsx`   | Exports `PermissionFormDialog`: create and edit.                                                                            |
+| `src/pages/settings/permissions/DeletePermissionDialog.tsx` | Exports `DeletePermissionDialog`: confirmed P4 with the conflict state.                                                     |
+| `src/features/settings/api/permissionsApi.ts`               | Exports `getPermissions`, `createPermission`, `updatePermission`, `deletePermission` and input types (P1–P4).               |
+| `src/features/settings/hooks/usePermissions.ts`             | Exports `usePermissions`, `useCreatePermission`, `useUpdatePermission`, `useDeletePermission`, `UpdatePermissionVariables`. |
+| `src/features/settings/conflict.ts`                         | Exports `parsePermissionConflict`, `PermissionConflictSummary`. 409 body → sentence or server message.                      |
+| `src/features/settings/permissionGroups.ts`                 | Exports `sortBySlug`, `groupByResource`, `ResourceGroup`. Row-based paging into groups.                                     |
 
 ## Testing
 

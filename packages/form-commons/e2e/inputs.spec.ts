@@ -1,4 +1,4 @@
-import { expect, type Locator, test } from '@playwright/test';
+import { expect, test, type Locator } from '@playwright/test';
 
 import { editorText, gotoStory, storyUrl, type Theme } from './fixtures/story';
 

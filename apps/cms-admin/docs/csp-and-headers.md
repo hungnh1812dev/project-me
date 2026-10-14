@@ -24,9 +24,9 @@ an external script, Tiptap runs with `injectCSS: false`, and the JSON editor kee
 shadow root (below). The policy did not change for the luxury restyle; `csp.ts` and its test are
 untouched.
 
-| Variable          | Meaning                                                                                 |
-| ----------------- | --------------------------------------------------------------------------------------- |
-| `CSP_API_ORIGIN`  | The API origin added to `img-src` and `connect-src`. Empty when the API is same-origin  |
+| Variable          | Meaning                                                                                      |
+| ----------------- | -------------------------------------------------------------------------------------------- |
+| `CSP_API_ORIGIN`  | The API origin added to `img-src` and `connect-src`. Empty when the API is same-origin       |
 | `CSP_IMG_ORIGINS` | Extra image origins (CDN, media host), space separated. Added to `img-src`. Empty by default |
 
 They are not `VITE_` vars, so they never reach the bundle: nginx reads them when the container
@@ -108,13 +108,13 @@ allowed images with `referrerPolicy="no-referrer"` (see `MediaThumbnail` in
 
 ## Files
 
-| File                               | Spec                                                                                             |
-| ---------------------------------- | ------------------------------------------------------------------------------------------------ |
-| `src/core/security/csp.ts`         | Exports `buildContentSecurityPolicy`, `CspOrigins`. Validates the origins and builds the policy. |
-| `src/core/security/safeImageSrc.ts`| Exports `safeImageSrc`, `ImageOrigins`. The image URL allowlist; fails closed to `null`.         |
-| `nginx.conf`                       | envsubst template: SPA serving, both headers on every app location, none on `/healthz`.          |
-| `Dockerfile`                       | Builds the app and the nginx image; defaults both `CSP_` vars to empty.                         |
-| `index.html`                       | The HTML shell: referrer meta, external `theme-init.js` before the module script.                |
+| File                                | Spec                                                                                             |
+| ----------------------------------- | ------------------------------------------------------------------------------------------------ |
+| `src/core/security/csp.ts`          | Exports `buildContentSecurityPolicy`, `CspOrigins`. Validates the origins and builds the policy. |
+| `src/core/security/safeImageSrc.ts` | Exports `safeImageSrc`, `ImageOrigins`. The image URL allowlist; fails closed to `null`.         |
+| `nginx.conf`                        | envsubst template: SPA serving, both headers on every app location, none on `/healthz`.          |
+| `Dockerfile`                        | Builds the app and the nginx image; defaults both `CSP_` vars to empty.                          |
+| `index.html`                        | The HTML shell: referrer meta, external `theme-init.js` before the module script.                |
 
 ## Testing
 

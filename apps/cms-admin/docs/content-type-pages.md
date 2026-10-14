@@ -9,12 +9,12 @@ to work on.
 
 ### Routes
 
-| Path                                     | Page                                                                            |
-| ---------------------------------------- | ------------------------------------------------------------------------------- |
-| `/admin/content-types`                   | `ContentTypesPage`: links grouped into Single types and Collection types, with "Draft & publish" when it is on |
+| Path                                     | Page                                                                                                                                     |
+| ---------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| `/admin/content-types`                   | `ContentTypesPage`: links grouped into Single types and Collection types, with "Draft & publish" when it is on                           |
 | `/admin/content-types/:slug`             | `ContentTypePage`: a single type opens [Single-type editor](./single-type-editor.md), a collection [Documents list](./documents-list.md) |
-| `/admin/content-types/:slug/new`         | [Document editor](./document-editor.md) (collection only)                      |
-| `/admin/content-types/:slug/:documentId` | [Document editor](./document-editor.md) (collection only)                      |
+| `/admin/content-types/:slug/new`         | [Document editor](./document-editor.md) (collection only)                                                                                |
+| `/admin/content-types/:slug/:documentId` | [Document editor](./document-editor.md) (collection only)                                                                                |
 
 All four sit behind `RequireAccess can read content_type`. An unknown slug shows "Content type not
 found." with a link back to the overview. Breadcrumbs and `document.title` follow
@@ -44,13 +44,13 @@ found." with a link back to the overview. Breadcrumbs and `document.title` follo
 
 ## Files
 
-| File                                             | Spec                                                                              |
-| ------------------------------------------------ | --------------------------------------------------------------------------------- |
-| `src/pages/content-types/ContentTypesPage.tsx`   | Default export: the C1 overview grouped into single and collection types.                  |
-| `src/pages/content-types/ContentTypePage.tsx`    | Default export: loads C2 and renders the single-type editor or the collection list. |
-| `src/pages/content-types/ContentTypeLoadState.tsx` | Exports `ContentTypeLoadState`, `BackLink`. Shared load, error, not-found states. |
-| `src/pages/content-types/paths.ts`               | Exports `listPath`, `documentPath`, `announcementOf`, `AnnounceState`.            |
-| `src/pages/content-types/actionError.ts`         | Exports `actionErrorText`, `NO_ACCESS`.                                           |
+| File                                               | Spec                                                                                |
+| -------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| `src/pages/content-types/ContentTypesPage.tsx`     | Default export: the C1 overview grouped into single and collection types.           |
+| `src/pages/content-types/ContentTypePage.tsx`      | Default export: loads C2 and renders the single-type editor or the collection list. |
+| `src/pages/content-types/ContentTypeLoadState.tsx` | Exports `ContentTypeLoadState`, `BackLink`. Shared load, error, not-found states.   |
+| `src/pages/content-types/paths.ts`                 | Exports `listPath`, `documentPath`, `announcementOf`, `AnnounceState`.              |
+| `src/pages/content-types/actionError.ts`           | Exports `actionErrorText`, `NO_ACCESS`.                                             |
 
 ## Testing
 

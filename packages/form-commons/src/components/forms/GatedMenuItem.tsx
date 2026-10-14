@@ -2,9 +2,9 @@
 
 import { useId } from 'react';
 
-import { DropdownMenuItem } from '../ui/dropdown-menu';
 import { cn } from '../../lib/cn';
 import type { Decision } from '../../lib/decision';
+import { DropdownMenuItem } from '../ui/dropdown-menu';
 
 export type GatedMenuItemProps = React.ComponentProps<typeof DropdownMenuItem> & {
   /** A denial keeps the item in the menu, `aria-disabled`, with the reason as its description. */

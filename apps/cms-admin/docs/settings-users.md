@@ -17,8 +17,8 @@ managing accounts. No control edits a name or password here (AC-17).
 - **Table.** Screen-reader caption, `scope="col"` headers, inside a labelled, focusable region
   ("Users table") that scrolls sideways at 375px instead of the page.
 - **Policy.** Each row computes `useCan('assign_role', 'user', { targetUserId, targetLevel,
-  newRoleLevel })` (with the highest assignable level) and `useCan('delete', 'user', { targetUserId,
-  targetLevel })`. `GatedButton`s "Change role for <email>" and "Delete <email>". Self, a target at or
+newRoleLevel })` (with the highest assignable level) and `useCan('delete', 'user', { targetUserId,
+targetLevel })`. `GatedButton`s "Change role for <email>" and "Delete <email>". Self, a target at or
   above the actor's level, an unknown level, or a missing permission deny with the policy's reason.
 - **Change role.** `ChangeRoleDialog`, a `ConfirmDialog` titled "Change the role of <email>?" with a
   `Select` of `assignableRoles(roles, actor.level)` (levels below the actor's, highest first,
@@ -37,14 +37,14 @@ managing accounts. No control edits a name or password here (AC-17).
 
 ## Files
 
-| File                                            | Spec                                                                             |
-| ----------------------------------------------- | -------------------------------------------------------------------------------- |
-| `src/pages/settings/UsersPage.tsx`              | Default export: list, search, paging, row actions, dialogs.                      |
-| `src/pages/settings/users/ChangeRoleDialog.tsx` | Exports `ChangeRoleDialog`: assignable-role select, U3.                          |
-| `src/pages/settings/users/DeleteUserDialog.tsx` | Exports `DeleteUserDialog`: confirmed U4.                                        |
+| File                                            | Spec                                                                                                                 |
+| ----------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| `src/pages/settings/UsersPage.tsx`              | Default export: list, search, paging, row actions, dialogs.                                                          |
+| `src/pages/settings/users/ChangeRoleDialog.tsx` | Exports `ChangeRoleDialog`: assignable-role select, U3.                                                              |
+| `src/pages/settings/users/DeleteUserDialog.tsx` | Exports `DeleteUserDialog`: confirmed U4.                                                                            |
 | `src/features/settings/api/usersApi.ts`         | Exports `getUsers`, `assignUserRole`, `deleteUser`, `updateUserName` (U1–U4; U2 is used by [Profile](./profile.md)). |
-| `src/features/settings/hooks/useUsers.ts`       | Exports `useUsers`, `useAssignRole`, `useDeleteUser` and their variable types.   |
-| `src/features/settings/roleHierarchy.ts`        | Exports `roleLevelOf`, `assignableRoles`, `usersWithRoles`, `UserRow`.           |
+| `src/features/settings/hooks/useUsers.ts`       | Exports `useUsers`, `useAssignRole`, `useDeleteUser` and their variable types.                                       |
+| `src/features/settings/roleHierarchy.ts`        | Exports `roleLevelOf`, `assignableRoles`, `usersWithRoles`, `UserRow`.                                               |
 
 ## Testing
 

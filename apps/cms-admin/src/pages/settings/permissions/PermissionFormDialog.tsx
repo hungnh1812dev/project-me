@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import { InfoIcon } from 'lucide-react';
 
+import { Field } from '@repo/form-commons/components/forms/Field';
 import { Alert, AlertDescription } from '@repo/form-commons/components/ui/alert';
 import { Button } from '@repo/form-commons/components/ui/button';
 import {
@@ -14,7 +15,6 @@ import {
 } from '@repo/form-commons/components/ui/dialog';
 import { Input } from '@repo/form-commons/components/ui/input';
 import { Textarea } from '@repo/form-commons/components/ui/textarea';
-import { Field } from '@repo/form-commons/components/forms/Field';
 
 import { useCreatePermission, useUpdatePermission } from '@/features/settings/hooks/usePermissions';
 import type { Permission } from '@/features/settings/types';

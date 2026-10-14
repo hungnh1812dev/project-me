@@ -2,10 +2,10 @@ import { useCallback, useEffect, useState } from 'react';
 import { CopyIcon, Trash2Icon } from 'lucide-react';
 import { Navigate, useLocation, useNavigate, useParams } from 'react-router-dom';
 
-import { DropdownMenuSeparator } from '@repo/form-commons/components/ui/dropdown-menu';
 import { GatedButton } from '@repo/form-commons/components/forms/GatedButton';
 import { GatedMenuItem } from '@repo/form-commons/components/forms/GatedMenuItem';
 import { UnsavedChangesDialog } from '@repo/form-commons/components/forms/UnsavedChangesDialog';
+import { DropdownMenuSeparator } from '@repo/form-commons/components/ui/dropdown-menu';
 
 import { SchemaForm } from '@/components/form/SchemaForm';
 import type { Decision } from '@/features/auth/permissions/policies';

@@ -1,7 +1,7 @@
 import { Controller, useFormContext } from 'react-hook-form';
 
-import { Switch } from '@repo/form-commons/components/ui/switch';
 import { Field } from '@repo/form-commons/components/forms/Field';
+import { Switch } from '@repo/form-commons/components/ui/switch';
 
 import { useSchemaFormReadOnly } from '@/components/form/schemaFormContext';
 

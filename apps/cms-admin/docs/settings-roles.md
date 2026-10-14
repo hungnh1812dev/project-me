@@ -38,12 +38,12 @@ administrators shaping who can do what.
 
 ## Files
 
-| File                                            | Spec                                                                       |
-| ----------------------------------------------- | -------------------------------------------------------------------------- |
-| `src/pages/settings/RolesPage.tsx`              | Default export: table, detail rows, search, paging, actions.               |
-| `src/pages/settings/roles/RoleFormDialog.tsx`   | Exports `RoleFormDialog`: create and edit with the PermissionTree.         |
-| `src/pages/settings/roles/DeleteRoleDialog.tsx` | Exports `DeleteRoleDialog`: confirmed R4 with the 409 conflict state.      |
-| `src/features/settings/api/rolesApi.ts`         | Exports `getRoles`, `createRole`, `updateRole`, `deleteRole` and input types (R1–R4). |
+| File                                            | Spec                                                                                          |
+| ----------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| `src/pages/settings/RolesPage.tsx`              | Default export: table, detail rows, search, paging, actions.                                  |
+| `src/pages/settings/roles/RoleFormDialog.tsx`   | Exports `RoleFormDialog`: create and edit with the PermissionTree.                            |
+| `src/pages/settings/roles/DeleteRoleDialog.tsx` | Exports `DeleteRoleDialog`: confirmed R4 with the 409 conflict state.                         |
+| `src/features/settings/api/rolesApi.ts`         | Exports `getRoles`, `createRole`, `updateRole`, `deleteRole` and input types (R1–R4).         |
 | `src/features/settings/hooks/useRoles.ts`       | Exports `useRoles`, `useCreateRole`, `useUpdateRole`, `useDeleteRole`, `UpdateRoleVariables`. |
 
 ## Testing

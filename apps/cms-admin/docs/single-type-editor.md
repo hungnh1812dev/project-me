@@ -21,9 +21,9 @@ with the [Schema form](./schema-form.md).
 
 ## Files
 
-| File                                               | Spec                                                                  |
-| -------------------------------------------------- | --------------------------------------------------------------------- |
-| `src/pages/content-types/SingleTypeEditorPage.tsx` | Default export: S1 to S4 around `SchemaForm` and `EditorHeader`.      |
+| File                                               | Spec                                                             |
+| -------------------------------------------------- | ---------------------------------------------------------------- |
+| `src/pages/content-types/SingleTypeEditorPage.tsx` | Default export: S1 to S4 around `SchemaForm` and `EditorHeader`. |
 
 ## Testing
 

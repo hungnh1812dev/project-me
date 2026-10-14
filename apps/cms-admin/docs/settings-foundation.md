@@ -49,33 +49,33 @@ the legacy docs in `../docs-old-dev/` and has not been checked against the real 
 `accessTokens()`, `media()`, each under `['settings']`. No optimistic updates; a failed mutation
 leaves the cache unchanged.
 
-| Mutation               | Invalidates                                               |
-| ---------------------- | --------------------------------------------------------- |
-| `useAssignRole`        | `users`                                                   |
-| `useDeleteUser`        | `users`                                                   |
-| `useCreateRole`        | `roles`                                                   |
-| `useUpdateRole`        | `roles`, `users` (and `['auth', 'me']` for your own role) |
-| `useDeleteRole`        | `roles`, `users`                                          |
-| `useCreatePermission`, `useUpdatePermission`, `useDeletePermission` | `permissions`  |
-| `useCreateAccessToken`, `useRevokeAccessToken`, `useDeleteAccessToken` | `accessTokens` |
-| `useUploadMedia`       | `media`, once per batch and only when a file uploaded     |
-| `useDeleteMedia`       | `media`                                                   |
-| `useUpdateProfile`     | `users` (and writes the new name to `['auth', 'me']`)     |
+| Mutation                                                               | Invalidates                                               |
+| ---------------------------------------------------------------------- | --------------------------------------------------------- |
+| `useAssignRole`                                                        | `users`                                                   |
+| `useDeleteUser`                                                        | `users`                                                   |
+| `useCreateRole`                                                        | `roles`                                                   |
+| `useUpdateRole`                                                        | `roles`, `users` (and `['auth', 'me']` for your own role) |
+| `useDeleteRole`                                                        | `roles`, `users`                                          |
+| `useCreatePermission`, `useUpdatePermission`, `useDeletePermission`    | `permissions`                                             |
+| `useCreateAccessToken`, `useRevokeAccessToken`, `useDeleteAccessToken` | `accessTokens`                                            |
+| `useUploadMedia`                                                       | `media`, once per batch and only when a file uploaded     |
+| `useDeleteMedia`                                                       | `media`                                                   |
+| `useUpdateProfile`                                                     | `users` (and writes the new name to `['auth', 'me']`)     |
 
 ### Policy use per page
 
 Every write control is a `GatedButton` fed by `useCan`, and each mutation hook calls `guard` with the
 same decision first.
 
-| Page          | Read              | Control                      | `useCan(action, subject, attrs)`                                       | Needs                |
-| ------------- | ----------------- | ---------------------------- | ---------------------------------------------------------------------- | -------------------- |
-| Users         | `user:read`       | Change role                  | `assign_role`, `user`, `{ targetUserId, targetLevel, newRoleLevel }`   | `user:role_manager`  |
-| Users         |                   | Delete                       | `delete`, `user`, `{ targetUserId, targetLevel }`                      | `user:manager`       |
-| Roles         | `role:read`       | New role, Edit, Delete       | `create` / `update` / `delete`, `role`, `{ isDefault }`                | `role:manager`       |
-| Permissions   | `permission:read` | New permission, Edit, Delete | `create` / `update` / `delete`, `permission`                           | `permission:manager` |
-| Access tokens | `api_token:read`  | New token, Revoke, Delete    | `create` / `revoke` / `delete`, `api_token`                            | `api_token:manager`  |
-| Media library | `media:read`      | Upload, Delete               | `upload` / `delete`, `media`                                           | `media:manager`      |
-| Profile       | signed in         | Edit name                    | none (U2 is bearer only for your own record)                           | —                    |
+| Page          | Read              | Control                      | `useCan(action, subject, attrs)`                                     | Needs                |
+| ------------- | ----------------- | ---------------------------- | -------------------------------------------------------------------- | -------------------- |
+| Users         | `user:read`       | Change role                  | `assign_role`, `user`, `{ targetUserId, targetLevel, newRoleLevel }` | `user:role_manager`  |
+| Users         |                   | Delete                       | `delete`, `user`, `{ targetUserId, targetLevel }`                    | `user:manager`       |
+| Roles         | `role:read`       | New role, Edit, Delete       | `create` / `update` / `delete`, `role`, `{ isDefault }`              | `role:manager`       |
+| Permissions   | `permission:read` | New permission, Edit, Delete | `create` / `update` / `delete`, `permission`                         | `permission:manager` |
+| Access tokens | `api_token:read`  | New token, Revoke, Delete    | `create` / `revoke` / `delete`, `api_token`                          | `api_token:manager`  |
+| Media library | `media:read`      | Upload, Delete               | `upload` / `delete`, `media`                                         | `media:manager`      |
+| Profile       | signed in         | Edit name                    | none (U2 is bearer only for your own record)                         | —                    |
 
 ### List building blocks
 
@@ -129,21 +129,21 @@ token with "1 month" and compare `expiresAt` with the creation time; record resu
 
 ## Files
 
-| File                                             | Spec                                                                                   |
-| ------------------------------------------------ | -------------------------------------------------------------------------------------- |
-| `src/features/settings/types.ts`                 | Exports `User`, `Permission`, `PermissionConflict`, `AccessToken`, `AccessTokenSecret`, `MediaAsset`, `ExpiresIn`, `EXPIRES_IN_OPTIONS`, `expiresInLabel`. |
-| `src/features/settings/queryKeys.ts`             | Exports `settingsKeys`.                                                                |
-| `src/features/settings/search.ts`                | Exports `filterBySearch`.                                                              |
-| `src/features/settings/paging.ts`                | Exports `parsePaging`, `serializePaging`, `DEFAULT_PAGING`, `PAGE_SIZES`, `Paging`, `PageSize`. |
-| `src/features/settings/validation.ts`            | Form rules for permissions, roles, tokens and the profile name (see above).           |
-| `src/features/settings/hooks/useListPaging.ts`   | Exports `useListPaging`, `ListPaging`. URL-backed client paging with clamping.         |
-| `src/features/settings/components/ListState.tsx` | Exports `ListState`, `ListStateProps`, `Noun`. The four list states.                   |
-| `src/features/settings/components/SearchField.tsx` | Exports `SearchField`, `SearchFieldProps`.                                           |
-| `src/features/settings/components/LiveRegion.tsx`| Exports `LiveRegion`.                                                                  |
-| `src/features/settings/components/useAnnouncer.ts` | Exports `useAnnouncer`.                                                              |
-| `src/test/msw/settingsHandlers.ts`               | One opt-in MSW recorder per contract row plus `settingsErrorReply` and `multipartFile`; records method, params, `Content-Type`, body. |
-| `src/test/nodeMultipart.ts`                      | Exports `useNodeFormData`, `uploadFile`. Node `FormData` for upload tests (jsdom's doesn't cross MSW). |
-| `e2e/fixtures/mockSettings.ts`                   | In-memory settings backend behind `mockApi` (also the `mockSettings` fixture); see below. |
+| File                                               | Spec                                                                                                                                                       |
+| -------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/features/settings/types.ts`                   | Exports `User`, `Permission`, `PermissionConflict`, `AccessToken`, `AccessTokenSecret`, `MediaAsset`, `ExpiresIn`, `EXPIRES_IN_OPTIONS`, `expiresInLabel`. |
+| `src/features/settings/queryKeys.ts`               | Exports `settingsKeys`.                                                                                                                                    |
+| `src/features/settings/search.ts`                  | Exports `filterBySearch`.                                                                                                                                  |
+| `src/features/settings/paging.ts`                  | Exports `parsePaging`, `serializePaging`, `DEFAULT_PAGING`, `PAGE_SIZES`, `Paging`, `PageSize`.                                                            |
+| `src/features/settings/validation.ts`              | Form rules for permissions, roles, tokens and the profile name (see above).                                                                                |
+| `src/features/settings/hooks/useListPaging.ts`     | Exports `useListPaging`, `ListPaging`. URL-backed client paging with clamping.                                                                             |
+| `src/features/settings/components/ListState.tsx`   | Exports `ListState`, `ListStateProps`, `Noun`. The four list states.                                                                                       |
+| `src/features/settings/components/SearchField.tsx` | Exports `SearchField`, `SearchFieldProps`.                                                                                                                 |
+| `src/features/settings/components/LiveRegion.tsx`  | Exports `LiveRegion`.                                                                                                                                      |
+| `src/features/settings/components/useAnnouncer.ts` | Exports `useAnnouncer`.                                                                                                                                    |
+| `src/test/msw/settingsHandlers.ts`                 | One opt-in MSW recorder per contract row plus `settingsErrorReply` and `multipartFile`; records method, params, `Content-Type`, body.                      |
+| `src/test/nodeMultipart.ts`                        | Exports `useNodeFormData`, `uploadFile`. Node `FormData` for upload tests (jsdom's doesn't cross MSW).                                                     |
+| `e2e/fixtures/mockSettings.ts`                     | In-memory settings backend behind `mockApi` (also the `mockSettings` fixture); see below.                                                                  |
 
 ## Testing
 

@@ -34,22 +34,22 @@ with `contentTypeSlug`, global `document:<action>` slugs are scoped (`scopeToCon
 like `toString`) is denied. The actor is `{ userId, level, permissions }` from `toActor(user)`. The
 permission is checked first, then the conditions.
 
-| Subject                            | Action                                           | Rule                                                                                                            |
-| ---------------------------------- | ------------------------------------------------ | --------------------------------------------------------------------------------------------------------------- |
-| `document`                         | `read`, `create`, `update`, `delete`             | `document:<action>`, or `document:<action>:<contentTypeSlug>` when given                                        |
-| `document`                         | `publish`, `unpublish`                           | As above, and denied when `draftToPublish === false`                                                            |
-| `content_type`                     | `read`                                           | `content_type:read`                                                                                             |
-| `content_type`                     | `configure`                                      | `content_type:manager`                                                                                          |
-| `user`                             | `read`                                           | `user:read`                                                                                                     |
-| `user`                             | `update`                                         | Own record allowed. Otherwise `user:manager` and `actor.level > targetLevel`                                    |
-| `user`                             | `delete`                                         | `user:manager`, not self, `actor.level > targetLevel`                                                           |
-| `user`                             | `assign_role`                                    | `user:role_manager`, not self, `actor.level > targetLevel`, `newRoleLevel < actor.level`                        |
-| `role`                             | `read`                                           | `role:read`                                                                                                     |
-| `role`                             | `create`                                         | `role:manager`                                                                                                  |
-| `role`                             | `update`                                         | `role:manager`; denied on a default role when `fields` includes `name` or `level`                               |
-| `role`                             | `delete`                                         | `role:manager`; denied on a default role                                                                        |
-| `permission`, `api_token`, `media` | `read`                                           | `<res>:read`                                                                                                    |
-| `permission`, `api_token`, `media` | `create`, `update`, `delete`, `revoke`, `upload` | `<res>:manager`                                                                                                 |
+| Subject                            | Action                                           | Rule                                                                                     |
+| ---------------------------------- | ------------------------------------------------ | ---------------------------------------------------------------------------------------- |
+| `document`                         | `read`, `create`, `update`, `delete`             | `document:<action>`, or `document:<action>:<contentTypeSlug>` when given                 |
+| `document`                         | `publish`, `unpublish`                           | As above, and denied when `draftToPublish === false`                                     |
+| `content_type`                     | `read`                                           | `content_type:read`                                                                      |
+| `content_type`                     | `configure`                                      | `content_type:manager`                                                                   |
+| `user`                             | `read`                                           | `user:read`                                                                              |
+| `user`                             | `update`                                         | Own record allowed. Otherwise `user:manager` and `actor.level > targetLevel`             |
+| `user`                             | `delete`                                         | `user:manager`, not self, `actor.level > targetLevel`                                    |
+| `user`                             | `assign_role`                                    | `user:role_manager`, not self, `actor.level > targetLevel`, `newRoleLevel < actor.level` |
+| `role`                             | `read`                                           | `role:read`                                                                              |
+| `role`                             | `create`                                         | `role:manager`                                                                           |
+| `role`                             | `update`                                         | `role:manager`; denied on a default role when `fields` includes `name` or `level`        |
+| `role`                             | `delete`                                         | `role:manager`; denied on a default role                                                 |
+| `permission`, `api_token`, `media` | `read`                                           | `<res>:read`                                                                             |
+| `permission`, `api_token`, `media` | `create`, `update`, `delete`, `revoke`, `upload` | `<res>:manager`                                                                          |
 
 An unknown `targetLevel` or `newRoleLevel` fails the condition. Denial reasons:
 `Requires the "<slug>" permission.`, `Requires one of the "<a>", "<b>" permissions.`,
@@ -104,16 +104,16 @@ is always called with the decision, so a page can render a disabled control with
 
 ## Files
 
-| File                                          | Spec                                                                                           |
-| --------------------------------------------- | ---------------------------------------------------------------------------------------------- |
-| `src/features/auth/permissions/permissions.ts`| Exports `hasPermission`, `hasAllPermissions`, `hasAnyPermission`, `hasRole`, `hasMinLevel`, `ROLE_LEVEL`. Pure RBAC. |
-| `src/features/auth/permissions/policies.ts`   | Exports `policies`, `Actor`, `PolicyAttrs`, `Policy`. The ABAC table.                          |
-| `src/features/auth/permissions/can.ts`        | Exports `can`, `toActor`, `checkPermissions`, `scopeToContentType`, `PermissionMode`, `PermissionOptions`. Deny-by-default engine. |
-| `src/features/auth/permissions/access.ts`     | Exports `checkAccess`, `AccessRequirements`. Combined route check for `RequireAccess`.         |
-| `src/features/auth/permissions/guard.ts`      | Exports `guard`. Turns a denied decision into a client 403 before any request.                 |
-| `src/features/auth/hooks/usePermission.ts`    | Exports `usePermission`, `usePermissionDecision`.                                              |
-| `src/features/auth/hooks/useCan.ts`           | Exports `useCan`, `useRoleLevel`.                                                              |
-| `src/features/auth/components/Can.tsx`        | Default export `Can`, `CanProps`. Declarative gate with fallback or render function.          |
+| File                                           | Spec                                                                                                                               |
+| ---------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| `src/features/auth/permissions/permissions.ts` | Exports `hasPermission`, `hasAllPermissions`, `hasAnyPermission`, `hasRole`, `hasMinLevel`, `ROLE_LEVEL`. Pure RBAC.               |
+| `src/features/auth/permissions/policies.ts`    | Exports `policies`, `Actor`, `PolicyAttrs`, `Policy`. The ABAC table.                                                              |
+| `src/features/auth/permissions/can.ts`         | Exports `can`, `toActor`, `checkPermissions`, `scopeToContentType`, `PermissionMode`, `PermissionOptions`. Deny-by-default engine. |
+| `src/features/auth/permissions/access.ts`      | Exports `checkAccess`, `AccessRequirements`. Combined route check for `RequireAccess`.                                             |
+| `src/features/auth/permissions/guard.ts`       | Exports `guard`. Turns a denied decision into a client 403 before any request.                                                     |
+| `src/features/auth/hooks/usePermission.ts`     | Exports `usePermission`, `usePermissionDecision`.                                                                                  |
+| `src/features/auth/hooks/useCan.ts`            | Exports `useCan`, `useRoleLevel`.                                                                                                  |
+| `src/features/auth/components/Can.tsx`         | Default export `Can`, `CanProps`. Declarative gate with fallback or render function.                                               |
 
 ## Testing
 

@@ -232,12 +232,14 @@ describe('primitives (AC-2)', () => {
     expect(existsSync(join(SRC, 'components', 'ui', `${name}.tsx`))).toBe(true);
   });
 
-  it.each(['components/ui/variants.ts', 'hooks/use-mobile.ts', 'hooks/use-sidebar.ts', 'lib/cn.ts'])(
-    '%s is in the package',
-    (path) => {
-      expect(existsSync(join(SRC, path))).toBe(true);
-    },
-  );
+  it.each([
+    'components/ui/variants.ts',
+    'hooks/use-mobile.ts',
+    'hooks/use-sidebar.ts',
+    'lib/cn.ts',
+  ])('%s is in the package', (path) => {
+    expect(existsSync(join(SRC, path))).toBe(true);
+  });
 });
 
 describe('generic form components (AC-3)', () => {
@@ -283,7 +285,9 @@ describe('shadcn CLI config (AC-8)', () => {
 
   it('every alias points inside the package', () => {
     const config = JSON.parse(readFileSync(CONFIG, 'utf8')) as { aliases: Record<string, string> };
-    const outside = Object.values(config.aliases).filter((alias) => !alias.startsWith('@repo/form-commons/'));
+    const outside = Object.values(config.aliases).filter(
+      (alias) => !alias.startsWith('@repo/form-commons/'),
+    );
 
     expect(outside).toEqual([]);
   });
@@ -380,7 +384,8 @@ describe('no old package name imports (AC-B6)', () => {
 });
 
 /** Subpaths the package exports (AC-B8, AC-B10); anything else under the new name is stale. */
-const VALID_SUBPATH = /^@repo\/form-commons\/(components\/(ui|forms)\/[^/]+|hooks\/[^/]+|lib\/[^/]+|styles\/(theme\.css|tokens))$/;
+const VALID_SUBPATH =
+  /^@repo\/form-commons\/(components\/(ui|forms)\/[^/]+|hooks\/[^/]+|lib\/[^/]+|styles\/(theme\.css|tokens))$/;
 
 const staleSubpathImports = (source: string): string[] =>
   importSpecifiers(source).filter(

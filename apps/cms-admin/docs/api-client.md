@@ -89,11 +89,11 @@ the latch. `refreshAccessToken()` is the same function; it never calls `onSessio
 
 ## Files
 
-| File                           | Spec                                                                                                   |
-| ------------------------------ | ------------------------------------------------------------------------------------------------------ |
-| `src/core/api/CmsApi.ts`       | Exports `cmsApi`, `configureCmsApi`, `refreshAccessToken`, `CmsApiHandlers`. Bearer and refresh interceptors, expiry latch. |
-| `src/core/api/apiError.ts`     | Exports `ApiError`, `ApiErrorInit`, `toApiError`, `isApiError`. The one error shape and its mapping.   |
-| `src/core/api/axiosBaseQuery.ts` | Exports `axiosBaseQuery`, `AxiosQueryArgs`, `ApiErrorData`, `toApiErrorData`. RTK Query adapter.     |
+| File                             | Spec                                                                                                                        |
+| -------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `src/core/api/CmsApi.ts`         | Exports `cmsApi`, `configureCmsApi`, `refreshAccessToken`, `CmsApiHandlers`. Bearer and refresh interceptors, expiry latch. |
+| `src/core/api/apiError.ts`       | Exports `ApiError`, `ApiErrorInit`, `toApiError`, `isApiError`. The one error shape and its mapping.                        |
+| `src/core/api/axiosBaseQuery.ts` | Exports `axiosBaseQuery`, `AxiosQueryArgs`, `ApiErrorData`, `toApiErrorData`. RTK Query adapter.                            |
 
 ## Testing
 

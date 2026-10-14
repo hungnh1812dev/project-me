@@ -65,11 +65,11 @@ date filter and a bulk delete with a failure; one save per field type checking t
 
 ## Files
 
-| File                                             | Spec                                                                         |
-| ------------------------------------------------ | ---------------------------------------------------------------------------- |
-| `src/pages/content-types/DocumentCreatePage.tsx` | Default export: D2 create page with route-level create check.               |
-| `src/pages/content-types/DocumentDetailPage.tsx` | Default export: D3 to D8 for one entry, mobile action bar.                  |
-| `src/pages/content-types/editor/EditorHeader.tsx`| Exports `EditorHeader`, `StatusBadge`, `EditorAudit`, `EditorHeaderProps`.   |
+| File                                                   | Spec                                                                                  |
+| ------------------------------------------------------ | ------------------------------------------------------------------------------------- |
+| `src/pages/content-types/DocumentCreatePage.tsx`       | Default export: D2 create page with route-level create check.                         |
+| `src/pages/content-types/DocumentDetailPage.tsx`       | Default export: D3 to D8 for one entry, mobile action bar.                            |
+| `src/pages/content-types/editor/EditorHeader.tsx`      | Exports `EditorHeader`, `StatusBadge`, `EditorAudit`, `EditorHeaderProps`.            |
 | `src/features/content/hooks/useUnsavedChangesGuard.ts` | Exports `useUnsavedChangesGuard`, `UnsavedChangesGuard`. Blocker plus `beforeunload`. |
 
 ## Testing

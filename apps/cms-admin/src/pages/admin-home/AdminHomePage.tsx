@@ -2,7 +2,12 @@ import { UserIcon } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 import { Button } from '@repo/form-commons/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader } from '@repo/form-commons/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+} from '@repo/form-commons/components/ui/card';
 
 import { useAuth } from '@/features/auth/hooks/useAuth';
 

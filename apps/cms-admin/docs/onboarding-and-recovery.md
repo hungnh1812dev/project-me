@@ -13,26 +13,26 @@ a fresh install and for users locked out of their account.
 /login ──"Forgot your password?"──▶ /forgot-password ──(email link)──▶ /reset-password?token=… ──200──▶ /login ("reset" notice)
 ```
 
-| Page               | Behaviour |
-| ------------------ | --------- |
-| `/login`           | `GET /auth/has-users` `false` redirects to `/register` (AC-31); a failed check is ignored. Shows `state.notice` in `role="status"`. |
-| `/register`        | "Set up admin account" when has-users is `false`, else "Create account". Client checks: name required; username 3–32 of `[a-zA-Z0-9_.-]`; valid email; password ≥ 8. Errors under each field (`aria-invalid`, `aria-describedby`). Sends `accountType: true`. 409 → "Email or username is already in use." Success → `/verify-otp` with `{ email }`. |
-| `/verify-otp`      | Email (prefilled from state, editable) and a 6-digit code (`inputmode="numeric"`, `autocomplete="one-time-code"`). **Resend code** posts `/auth/resend-otp`. 400 invalid or expired, 404 no account, 409 already verified plus "Go to sign in", 429 too many attempts. Success → `/login` with the "verified" notice. |
-| `/forgot-password` | Always shows "If that email exists, a reset link was sent." in `role="status"`, whatever the server answered, so it never reveals whether an account exists. |
+| Page               | Behaviour                                                                                                                                                                                                                                                                                                                                                                                          |
+| ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/login`           | `GET /auth/has-users` `false` redirects to `/register` (AC-31); a failed check is ignored. Shows `state.notice` in `role="status"`.                                                                                                                                                                                                                                                                |
+| `/register`        | "Set up admin account" when has-users is `false`, else "Create account". Client checks: name required; username 3–32 of `[a-zA-Z0-9_.-]`; valid email; password ≥ 8. Errors under each field (`aria-invalid`, `aria-describedby`). Sends `accountType: true`. 409 → "Email or username is already in use." Success → `/verify-otp` with `{ email }`.                                               |
+| `/verify-otp`      | Email (prefilled from state, editable) and a 6-digit code (`inputmode="numeric"`, `autocomplete="one-time-code"`). **Resend code** posts `/auth/resend-otp`. 400 invalid or expired, 404 no account, 409 already verified plus "Go to sign in", 429 too many attempts. Success → `/login` with the "verified" notice.                                                                              |
+| `/forgot-password` | Always shows "If that email exists, a reset link was sent." in `role="status"`, whatever the server answered, so it never reveals whether an account exists.                                                                                                                                                                                                                                       |
 | `/reset-password`  | Reads `?token` once into state, then replaces the history entry with `/reset-password` (no query, no new entry) so the token leaves the address bar, history and `Referer` (SEC-5). A reload after that shows "Link expired" (accepted trade-off). No token or a 400 → "Link expired" with "Request a new link". New password (≥ 8) plus confirmation. Success → `/login` with the "reset" notice. |
 
 ### Contract
 
 All under `/api/v1`, public, rate-limited (429), sent with `skipAuthRefresh`.
 
-| Endpoint (`authApi` hook)                                  | Body                                               | Success           | Errors handled         |
-| ---------------------------------------------------------- | -------------------------------------------------- | ----------------- | ---------------------- |
-| `GET /auth/has-users` (`useHasUsersQuery`)                 | —                                                  | `{ hasUsers }`    | ignored                |
-| `POST /auth/register` (`useRegisterMutation`)              | `{ email, name, username, password, accountType }` | 201 `{ message }` | 409, 429               |
-| `POST /auth/verify-otp` (`useVerifyOtpMutation`)           | `{ email, otp }`                                   | 200 `{ message }` | 400, 404, 409, 429     |
-| `POST /auth/resend-otp` (`useResendOtpMutation`)           | `{ email }`                                        | 200 `{ message }` | 404, 409, 429          |
-| `POST /auth/forgot-password` (`useForgotPasswordMutation`) | `{ email }`                                        | 200 `{ message }` | none shown             |
-| `POST /auth/reset-password` (`useResetPasswordMutation`)   | `{ token, newPassword }`                           | 200 `{ message }` | 400 → "Link expired"   |
+| Endpoint (`authApi` hook)                                  | Body                                               | Success           | Errors handled       |
+| ---------------------------------------------------------- | -------------------------------------------------- | ----------------- | -------------------- |
+| `GET /auth/has-users` (`useHasUsersQuery`)                 | —                                                  | `{ hasUsers }`    | ignored              |
+| `POST /auth/register` (`useRegisterMutation`)              | `{ email, name, username, password, accountType }` | 201 `{ message }` | 409, 429             |
+| `POST /auth/verify-otp` (`useVerifyOtpMutation`)           | `{ email, otp }`                                   | 200 `{ message }` | 400, 404, 409, 429   |
+| `POST /auth/resend-otp` (`useResendOtpMutation`)           | `{ email }`                                        | 200 `{ message }` | 404, 409, 429        |
+| `POST /auth/forgot-password` (`useForgotPasswordMutation`) | `{ email }`                                        | 200 `{ message }` | none shown           |
+| `POST /auth/reset-password` (`useResetPasswordMutation`)   | `{ token, newPassword }`                           | 200 `{ message }` | 400 → "Link expired" |
 
 Any other error shows `ApiError.message`. No env vars of its own.
 
@@ -49,13 +49,13 @@ Any other error shows `ApiError.message`. No env vars of its own.
 
 ## Files
 
-| File                                             | Spec                                                                                         |
-| ------------------------------------------------ | -------------------------------------------------------------------------------------------- |
-| `src/features/auth/onboarding.ts`                | Exports `validateRegister`, `validateEmail`, `validateOtp`, `validateNewPassword`, `registerErrorMessage`, `verifyOtpErrorMessage`, `resendOtpErrorMessage`, `emailFromState`, `loginNoticeState`, `loginNoticeMessage`, `MIN_PASSWORD_LENGTH`, `RegisterForm`, `RegisterErrors`, `LoginNotice`. Pure validation, messages and router-state helpers. |
-| `src/pages/register/RegisterPage.tsx`            | Default export `RegisterPage`: first-run or normal registration.                             |
-| `src/pages/verify-otp/VerifyOtpPage.tsx`         | Default export `VerifyOtpPage`: code entry and resend.                                       |
-| `src/pages/forgot-password/ForgotPasswordPage.tsx` | Default export `ForgotPasswordPage`: non-revealing reset request.                          |
-| `src/pages/reset-password/ResetPasswordPage.tsx` | Default export `ResetPasswordPage`: reads and strips the token, sets the new password.      |
+| File                                               | Spec                                                                                                                                                                                                                                                                                                                                                 |
+| -------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/features/auth/onboarding.ts`                  | Exports `validateRegister`, `validateEmail`, `validateOtp`, `validateNewPassword`, `registerErrorMessage`, `verifyOtpErrorMessage`, `resendOtpErrorMessage`, `emailFromState`, `loginNoticeState`, `loginNoticeMessage`, `MIN_PASSWORD_LENGTH`, `RegisterForm`, `RegisterErrors`, `LoginNotice`. Pure validation, messages and router-state helpers. |
+| `src/pages/register/RegisterPage.tsx`              | Default export `RegisterPage`: first-run or normal registration.                                                                                                                                                                                                                                                                                     |
+| `src/pages/verify-otp/VerifyOtpPage.tsx`           | Default export `VerifyOtpPage`: code entry and resend.                                                                                                                                                                                                                                                                                               |
+| `src/pages/forgot-password/ForgotPasswordPage.tsx` | Default export `ForgotPasswordPage`: non-revealing reset request.                                                                                                                                                                                                                                                                                    |
+| `src/pages/reset-password/ResetPasswordPage.tsx`   | Default export `ResetPasswordPage`: reads and strips the token, sets the new password.                                                                                                                                                                                                                                                               |
 
 The endpoints live in `src/core/api/AuthApi.ts`, owned by [Auth session](./auth-session.md).
 

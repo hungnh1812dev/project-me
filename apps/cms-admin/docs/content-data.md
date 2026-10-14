@@ -144,23 +144,23 @@ with `listFields` including `id`, through the dev proxy; record results here and
 
 ## Files
 
-| File                                              | Spec                                                                                    |
-| ------------------------------------------------- | --------------------------------------------------------------------------------------- |
-| `src/features/content/types.ts`                   | Wire and domain types: content types, fields, documents, list params and responses, `ContentTypeRef`. |
-| `src/features/content/api/contentTypesApi.ts`     | Exports `getContentTypes`, `getContentType`, `updateListFields` (C1–C3).                |
-| `src/features/content/api/documentsApi.ts`        | Exports the S1–S4 and D1–D10 request functions; unwraps `{ data }`.                     |
-| `src/features/content/listQuery.ts`               | Exports `normalizeListParams`, `validateListParams`, `listValidationError`, `toListSearchParams`, `toWireField`, `LIST_DEFAULTS`, `MAX_LIST_SIZE`, `MAX_LIST_TEXT_LENGTH`. |
-| `src/features/content/queryKeys.ts`               | Exports `contentKeys`.                                                                  |
-| `src/features/content/access.ts`                  | Exports `contentTypeAccess`, `filterReadableContentTypes`, `CONTENT_TYPE_ACTIONS`, `ContentTypeAction`, `ContentTypeAccess`. |
-| `src/features/content/hooks/useContentTypes.ts`   | Exports `useContentTypes`, `useContentType`, `useUpdateListFields`.                     |
-| `src/features/content/hooks/useSingleType.ts`     | Exports `useSingleTypeDocument`, `useSaveSingleType`, `usePublishSingleType`, `useUnpublishSingleType`. |
-| `src/features/content/hooks/useCollectionQueries.ts` | Exports `useDocumentList`, `useDocument`.                                            |
-| `src/features/content/hooks/useCollectionMutations.ts` | Exports the eight collection mutations (create to bulk delete).                    |
-| `src/features/content/hooks/useContentTypeAccess.ts` | Exports `useContentTypeAccess`.                                                      |
-| `src/test/contentFixtures.ts`                     | Exports `makeContentTypeSummary`, `makeContentType`, `makeFieldSet`, `makeDocument`, `makeListedItem`, `makeListResponse`. |
-| `src/test/msw/contentHandlers.ts`                 | One opt-in MSW recorder per contract row plus `errorReply`; records method, path, query, body. |
-| `e2e/fixtures/mockContent.ts`                     | In-memory content backend (`mockContent` fixture): bearer 401, global or scoped 403, 404, Mode B 400s, status moves draft → published → modified → draft, D9 all-or-nothing, D10 per-id `failDelete`, `saves` log. |
-| `e2e/fixtures/contentFixtures.ts`                 | `FIELD_SHOWCASE`, `BLOG`, `HOMEPAGE`, Mode B `CHANGELOG`, `blogPost(n)`, `seedContent`, `CONTENT_MANAGER`. |
+| File                                                   | Spec                                                                                                                                                                                                               |
+| ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `src/features/content/types.ts`                        | Wire and domain types: content types, fields, documents, list params and responses, `ContentTypeRef`.                                                                                                              |
+| `src/features/content/api/contentTypesApi.ts`          | Exports `getContentTypes`, `getContentType`, `updateListFields` (C1–C3).                                                                                                                                           |
+| `src/features/content/api/documentsApi.ts`             | Exports the S1–S4 and D1–D10 request functions; unwraps `{ data }`.                                                                                                                                                |
+| `src/features/content/listQuery.ts`                    | Exports `normalizeListParams`, `validateListParams`, `listValidationError`, `toListSearchParams`, `toWireField`, `LIST_DEFAULTS`, `MAX_LIST_SIZE`, `MAX_LIST_TEXT_LENGTH`.                                         |
+| `src/features/content/queryKeys.ts`                    | Exports `contentKeys`.                                                                                                                                                                                             |
+| `src/features/content/access.ts`                       | Exports `contentTypeAccess`, `filterReadableContentTypes`, `CONTENT_TYPE_ACTIONS`, `ContentTypeAction`, `ContentTypeAccess`.                                                                                       |
+| `src/features/content/hooks/useContentTypes.ts`        | Exports `useContentTypes`, `useContentType`, `useUpdateListFields`.                                                                                                                                                |
+| `src/features/content/hooks/useSingleType.ts`          | Exports `useSingleTypeDocument`, `useSaveSingleType`, `usePublishSingleType`, `useUnpublishSingleType`.                                                                                                            |
+| `src/features/content/hooks/useCollectionQueries.ts`   | Exports `useDocumentList`, `useDocument`.                                                                                                                                                                          |
+| `src/features/content/hooks/useCollectionMutations.ts` | Exports the eight collection mutations (create to bulk delete).                                                                                                                                                    |
+| `src/features/content/hooks/useContentTypeAccess.ts`   | Exports `useContentTypeAccess`.                                                                                                                                                                                    |
+| `src/test/contentFixtures.ts`                          | Exports `makeContentTypeSummary`, `makeContentType`, `makeFieldSet`, `makeDocument`, `makeListedItem`, `makeListResponse`.                                                                                         |
+| `src/test/msw/contentHandlers.ts`                      | One opt-in MSW recorder per contract row plus `errorReply`; records method, path, query, body.                                                                                                                     |
+| `e2e/fixtures/mockContent.ts`                          | In-memory content backend (`mockContent` fixture): bearer 401, global or scoped 403, 404, Mode B 400s, status moves draft → published → modified → draft, D9 all-or-nothing, D10 per-id `failDelete`, `saves` log. |
+| `e2e/fixtures/contentFixtures.ts`                      | `FIELD_SHOWCASE`, `BLOG`, `HOMEPAGE`, Mode B `CHANGELOG`, `blogPost(n)`, `seedContent`, `CONTENT_MANAGER`.                                                                                                         |
 
 ## Testing
 

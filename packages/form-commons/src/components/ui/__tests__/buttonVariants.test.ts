@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { buttonVariants } from '../variants';
 import { cn } from '../../../lib/cn';
+import { buttonVariants } from '../variants';
 
 // Call sites merge through `cn()`, so assert on the merged list.
 const classesOf = (variant: Parameters<typeof buttonVariants>[0]): string[] =>

@@ -105,20 +105,20 @@ is not stored over plain http.
 
 ## Files
 
-| File                                          | Spec                                                                                                  |
-| --------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
-| `src/app/store.ts`                            | Exports `makeStore`, `store`, `StoreExtra`, `MakeStoreOptions`, `AppStore`, `RootState`, `AppDispatch`, `AppThunk`. Store, expiry listener, `configureCmsApi` wiring. |
-| `src/app/hooks.ts`                            | Exports `useAppDispatch`, `useAppSelector`.                                                           |
-| `src/app/queryClient.ts`                      | Exports `queryClient`, `makeQueryClient`, `shouldRetryQuery`. React Query defaults.                   |
-| `src/app/AppProvider.tsx`                     | Default export `AppProvider`: Redux, React Query and theme providers; runs the bootstrap once.        |
-| `src/core/api/AuthApi.ts`                     | Exports `authApi`: has-users, login, me, logout and the onboarding endpoints, all `skipAuthRefresh`.  |
-| `src/features/auth/types.ts`                  | Auth types: `Role`, `MeUser`, `AuthStatus`, `AuthState`, request and response shapes.                |
-| `src/features/auth/store/AuthSlice.ts`        | Exports `initialAuthState`, the five actions, default reducer.                                        |
-| `src/features/auth/store/selectors.ts`        | Exports the memoized auth, role, permission, level and actor selectors.                              |
-| `src/features/auth/store/sessionThunks.ts`    | Exports `bootstrapSession`, `retryBootstrap`, `resetBootstrapLatch`, `login`, `logout`, `loginErrorMessage`, `BOOTSTRAP_RETRY_DELAYS_MS`, `LoginResult`. |
-| `src/features/auth/hooks/useAuth.ts`          | Exports `useAuth`: session state plus bound thunks.                                                   |
-| `src/features/auth/hooks/useSessionBootstrap.ts` | Exports `useSessionBootstrap`: dispatches the bootstrap on mount.                                 |
-| `src/features/auth/hooks/useCurrentUserQuery.ts` | Exports `useCurrentUserQuery`, `CURRENT_USER_QUERY_KEY`. `/auth/me` through React Query.          |
+| File                                             | Spec                                                                                                                                                                  |
+| ------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/app/store.ts`                               | Exports `makeStore`, `store`, `StoreExtra`, `MakeStoreOptions`, `AppStore`, `RootState`, `AppDispatch`, `AppThunk`. Store, expiry listener, `configureCmsApi` wiring. |
+| `src/app/hooks.ts`                               | Exports `useAppDispatch`, `useAppSelector`.                                                                                                                           |
+| `src/app/queryClient.ts`                         | Exports `queryClient`, `makeQueryClient`, `shouldRetryQuery`. React Query defaults.                                                                                   |
+| `src/app/AppProvider.tsx`                        | Default export `AppProvider`: Redux, React Query and theme providers; runs the bootstrap once.                                                                        |
+| `src/core/api/AuthApi.ts`                        | Exports `authApi`: has-users, login, me, logout and the onboarding endpoints, all `skipAuthRefresh`.                                                                  |
+| `src/features/auth/types.ts`                     | Auth types: `Role`, `MeUser`, `AuthStatus`, `AuthState`, request and response shapes.                                                                                 |
+| `src/features/auth/store/AuthSlice.ts`           | Exports `initialAuthState`, the five actions, default reducer.                                                                                                        |
+| `src/features/auth/store/selectors.ts`           | Exports the memoized auth, role, permission, level and actor selectors.                                                                                               |
+| `src/features/auth/store/sessionThunks.ts`       | Exports `bootstrapSession`, `retryBootstrap`, `resetBootstrapLatch`, `login`, `logout`, `loginErrorMessage`, `BOOTSTRAP_RETRY_DELAYS_MS`, `LoginResult`.              |
+| `src/features/auth/hooks/useAuth.ts`             | Exports `useAuth`: session state plus bound thunks.                                                                                                                   |
+| `src/features/auth/hooks/useSessionBootstrap.ts` | Exports `useSessionBootstrap`: dispatches the bootstrap on mount.                                                                                                     |
+| `src/features/auth/hooks/useCurrentUserQuery.ts` | Exports `useCurrentUserQuery`, `CURRENT_USER_QUERY_KEY`. `/auth/me` through React Query.                                                                              |
 
 ## Testing
 

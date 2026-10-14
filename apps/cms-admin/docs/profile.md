@@ -31,10 +31,10 @@ editing (Phase 4.7) and Log out. For every user, whatever their role.
 
 ## Files
 
-| File                                            | Spec                                                                            |
-| ----------------------------------------------- | ------------------------------------------------------------------------------- |
-| `src/pages/profile/ProfilePage.tsx`             | Default export: profile card, permissions, Edit name, Log out.                 |
-| `src/pages/profile/EditNameForm.tsx`            | Exports `EditNameForm`, `EditNameFormProps`: inline name form.                 |
+| File                                              | Spec                                                                                |
+| ------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| `src/pages/profile/ProfilePage.tsx`               | Default export: profile card, permissions, Edit name, Log out.                      |
+| `src/pages/profile/EditNameForm.tsx`              | Exports `EditNameForm`, `EditNameFormProps`: inline name form.                      |
 | `src/features/settings/hooks/useUpdateProfile.ts` | Exports `useUpdateProfile`, `UpdateProfileVariables`. U2, cache and session update. |
 
 ## Testing

@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
 
+import { Field } from '@repo/form-commons/components/forms/Field';
 import { Button } from '@repo/form-commons/components/ui/button';
 import {
   Dialog,
@@ -11,7 +12,6 @@ import {
   DialogTitle,
 } from '@repo/form-commons/components/ui/dialog';
 import { Input } from '@repo/form-commons/components/ui/input';
-import { Field } from '@repo/form-commons/components/forms/Field';
 
 import { PermissionTree } from '@/components/form/PermissionTree';
 import type { Role } from '@/features/auth/types';

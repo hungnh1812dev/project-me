@@ -2,9 +2,9 @@ import { useEffect, useId, useRef, useState } from 'react';
 import { FileWarningIcon, ImageIcon, ImagePlusIcon, Trash2Icon } from 'lucide-react';
 import { Controller, useFormContext } from 'react-hook-form';
 
+import { GatedButton } from '@repo/form-commons/components/forms/GatedButton';
 import { Button } from '@repo/form-commons/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@repo/form-commons/components/ui/tooltip';
-import { GatedButton } from '@repo/form-commons/components/forms/GatedButton';
 import { cn } from '@repo/form-commons/lib/cn';
 
 import { useSchemaFormAnnounce, useSchemaFormReadOnly } from '@/components/form/schemaFormContext';

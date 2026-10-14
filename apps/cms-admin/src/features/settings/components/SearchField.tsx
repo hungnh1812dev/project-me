@@ -1,7 +1,7 @@
 import { SearchIcon } from 'lucide-react';
 
-import { Input } from '@repo/form-commons/components/ui/input';
 import { Field } from '@repo/form-commons/components/forms/Field';
+import { Input } from '@repo/form-commons/components/ui/input';
 
 import type { Noun } from './ListState';
 

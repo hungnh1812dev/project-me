@@ -2,6 +2,7 @@ import { useRef, useState } from 'react';
 import { CopyIcon, EllipsisIcon, PencilIcon, SendIcon, Trash2Icon, UndoIcon } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
+import { GatedMenuItem } from '@repo/form-commons/components/forms/GatedMenuItem';
 import { Button } from '@repo/form-commons/components/ui/button';
 import {
   DropdownMenu,
@@ -10,7 +11,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@repo/form-commons/components/ui/dropdown-menu';
-import { GatedMenuItem } from '@repo/form-commons/components/forms/GatedMenuItem';
 
 import {
   useDuplicateDocument,

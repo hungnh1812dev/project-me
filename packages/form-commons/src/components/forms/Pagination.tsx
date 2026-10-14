@@ -3,10 +3,10 @@
 import { useEffect, useId, useRef } from 'react';
 import { ChevronLeftIcon, ChevronRightIcon } from 'lucide-react';
 
+import { lastPage } from '../../lib/pagination';
 import { Button } from '../ui/button';
 import { Label } from '../ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
-import { lastPage } from '../../lib/pagination';
 
 /** The page sizes offered when a list doesn't pass its own. */
 const DEFAULT_PAGE_SIZES = [10, 20, 50, 100] as const;
@@ -70,7 +70,7 @@ export const Pagination: React.FC<PaginationProps> = ({
       <p className="text-muted-foreground tabular-nums">{range}</p>
       <div className="flex flex-wrap items-center gap-3">
         <div className="flex items-center gap-2">
-          <Label id={sizeId} className="font-normal text-muted-foreground">
+          <Label id={sizeId} className="text-muted-foreground font-normal">
             Rows per page
           </Label>
           <Select
@@ -107,7 +107,7 @@ export const Pagination: React.FC<PaginationProps> = ({
             Page{' '}
             <span
               data-testid="pagination-current"
-              className="inline-block min-w-6 rounded-sm bg-highlight px-1 font-medium text-highlight-foreground"
+              className="bg-highlight text-highlight-foreground inline-block min-w-6 rounded-sm px-1 font-medium"
             >
               {page}
             </span>{' '}

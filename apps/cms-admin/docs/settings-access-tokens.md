@@ -21,7 +21,7 @@ secret exactly once. For administrators wiring other services to the CMS API.
 - **Revoke (T3) and delete (T4).** `RevokeTokenDialog` confirms `Revoke token "<name>"?` ("The
   current secret stops working immediately. A new secret will be shown once.") and sends `{}`; the
   record keeps its name, permissions and expiry. `DeleteTokenDialog` confirms `Delete token
-  "<name>"?`. Errors stay in the dialog.
+"<name>"?`. Errors stay in the dialog.
 - **Feedback.** `Token "<name>" deleted.` goes straight to the `LiveRegion`; `… created.` and
   `… revoked. Its new secret was shown once.` are announced when the reveal closes, because the modal
   hides the page's live region while open.
@@ -49,14 +49,14 @@ secret exactly once. For administrators wiring other services to the CMS API.
 
 ## Files
 
-| File                                                  | Spec                                                                 |
-| ----------------------------------------------------- | -------------------------------------------------------------------- |
-| `src/pages/settings/AccessTokensPage.tsx`             | Default export: table, paging, actions, the `reveal` state.          |
-| `src/pages/settings/access-tokens/TokenFormDialog.tsx`| Exports `TokenFormDialog`, `RevealedSecret`: T2 form, hands the secret on once. |
-| `src/pages/settings/access-tokens/RevokeTokenDialog.tsx` | Exports `RevokeTokenDialog`: confirmed T3, hands the new secret on. |
-| `src/pages/settings/access-tokens/DeleteTokenDialog.tsx` | Exports `DeleteTokenDialog`: confirmed T4.                        |
-| `src/features/settings/api/accessTokensApi.ts`        | Exports `getAccessTokens` (strips secrets), `createAccessToken`, `revokeAccessToken`, `deleteAccessToken`, `CreateAccessTokenInput`. |
-| `src/features/settings/hooks/useAccessTokens.ts`      | Exports `useAccessTokens`, `useCreateAccessToken`, `useRevokeAccessToken`, `useDeleteAccessToken`. `gcTime: 0` on the secret mutations. |
+| File                                                     | Spec                                                                                                                                    |
+| -------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/pages/settings/AccessTokensPage.tsx`                | Default export: table, paging, actions, the `reveal` state.                                                                             |
+| `src/pages/settings/access-tokens/TokenFormDialog.tsx`   | Exports `TokenFormDialog`, `RevealedSecret`: T2 form, hands the secret on once.                                                         |
+| `src/pages/settings/access-tokens/RevokeTokenDialog.tsx` | Exports `RevokeTokenDialog`: confirmed T3, hands the new secret on.                                                                     |
+| `src/pages/settings/access-tokens/DeleteTokenDialog.tsx` | Exports `DeleteTokenDialog`: confirmed T4.                                                                                              |
+| `src/features/settings/api/accessTokensApi.ts`           | Exports `getAccessTokens` (strips secrets), `createAccessToken`, `revokeAccessToken`, `deleteAccessToken`, `CreateAccessTokenInput`.    |
+| `src/features/settings/hooks/useAccessTokens.ts`         | Exports `useAccessTokens`, `useCreateAccessToken`, `useRevokeAccessToken`, `useDeleteAccessToken`. `gcTime: 0` on the secret mutations. |
 
 ## Testing
 

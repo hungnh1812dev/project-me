@@ -10,12 +10,12 @@ The Nest application skeleton: bootstrap, root module and the single hello route
 
 ## Files
 
-| File | Spec |
-| ---- | ---- |
-| `src/main.ts` | Bootstraps `AppModule` and starts the HTTP server. |
-| `src/app.module.ts` | Exports `AppModule`, the root module wiring the controller and service. |
-| `src/app.controller.ts` | Exports `AppController`; the root route, delegates to `AppService`. |
-| `src/app.service.ts` | Exports `AppService`; returns the greeting string. |
+| File                    | Spec                                                                    |
+| ----------------------- | ----------------------------------------------------------------------- |
+| `src/main.ts`           | Bootstraps `AppModule` and starts the HTTP server.                      |
+| `src/app.module.ts`     | Exports `AppModule`, the root module wiring the controller and service. |
+| `src/app.controller.ts` | Exports `AppController`; the root route, delegates to `AppService`.     |
+| `src/app.service.ts`    | Exports `AppService`; returns the greeting string.                      |
 
 ## Testing
 

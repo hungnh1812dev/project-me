@@ -3,17 +3,11 @@
 import { useId, useRef, useState } from 'react';
 import { CalendarIcon, XIcon } from 'lucide-react';
 
+import { cn } from '../../lib/cn';
 import { Button } from '../ui/button';
 import { Calendar } from '../ui/calendar';
-import {
-  Popover,
-  PopoverClose,
-  PopoverContent,
-  PopoverTitle,
-  PopoverTrigger,
-} from '../ui/popover';
+import { Popover, PopoverClose, PopoverContent, PopoverTitle, PopoverTrigger } from '../ui/popover';
 import { controlClasses } from '../ui/variants';
-import { cn } from '../../lib/cn';
 import type { FieldControlProps } from './Field';
 
 export interface DatePickerProps extends FieldControlProps {

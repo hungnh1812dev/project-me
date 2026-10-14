@@ -89,9 +89,7 @@ test('number and boolean filters serialise for their kind; chips and Clear all r
   await expect(table(page).getByRole('row')).toHaveCount(2);
   await expect(table(page).getByRole('link', { name: 'Post 3' })).toBeVisible();
   expect(decodedSearch(page)).toBe('?filters[featured][$eq]=false&filters[views][$gte]=20');
-  expect(lastQuery(mockApi)).toBe(
-    '?size=10&filters[featured][$eq]=false&filters[views][$gte]=20',
-  );
+  expect(lastQuery(mockApi)).toBe('?size=10&filters[featured][$eq]=false&filters[views][$gte]=20');
 
   await page.getByRole('button', { name: 'Featured is No, remove' }).click();
   await expect(table(page).getByRole('row')).toHaveCount(3);

@@ -2,10 +2,10 @@
 
 import { lazy, Suspense, useImperativeHandle, useRef, useState } from 'react';
 
-import { Button } from '../ui/button';
-import { Skeleton } from '../ui/skeleton';
 import { formatJson, parseJson, type JsonExpect } from '../../lib/json';
 import { canFormat, shouldValidate } from '../../lib/jsonEditor';
+import { Button } from '../ui/button';
+import { Skeleton } from '../ui/skeleton';
 import type { JsonCodeEditorHandle } from './JsonCodeEditor';
 
 /** CodeMirror loads in its own chunk, on first render of a JSON field. */

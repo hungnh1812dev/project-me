@@ -12,9 +12,9 @@ The semantic colour, radius and motion tokens for light and dark, shared by ever
 
 ## Files
 
-| File | Spec |
-| ---- | ---- |
-| `src/styles/theme.css` | CSS variables for both themes, Tailwind `@theme inline` mapping, focus and reduced-motion rules. |
+| File                   | Spec                                                                                                                                                    |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/styles/theme.css` | CSS variables for both themes, Tailwind `@theme inline` mapping, focus and reduced-motion rules.                                                        |
 | `src/styles/tokens.ts` | Exports `COLOR_TOKEN_NAMES`, `THEME_TOKENS`, `TEXT_PAIRS`, `UI_BOUNDARY_PAIRS`, `contrastRatio`, `ColorTokenName`, `ThemeName`. Must equal `theme.css`. |
 
 ## Testing

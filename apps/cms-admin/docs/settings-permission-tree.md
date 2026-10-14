@@ -45,10 +45,10 @@ permission catalog.
 
 ## Files
 
-| File                                     | Spec                                                                                         |
-| ---------------------------------------- | -------------------------------------------------------------------------------------------- |
-| `src/components/form/PermissionTree.tsx` | Exports `PermissionTree`, `PermissionTreeProps`. The picker UI and its states.               |
-| `src/features/settings/permissionTree.ts`| Exports `buildPermissionTree`, `nodeSlugs`, `countSelected`, `nodeState`, `toggleNode`, `toggleSlug`, `filterPermissionTree`, `groupSlugsByResource`, `UNKNOWN_GROUP_ID` and the node types. Pure tree logic. |
+| File                                      | Spec                                                                                                                                                                                                          |
+| ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/components/form/PermissionTree.tsx`  | Exports `PermissionTree`, `PermissionTreeProps`. The picker UI and its states.                                                                                                                                |
+| `src/features/settings/permissionTree.ts` | Exports `buildPermissionTree`, `nodeSlugs`, `countSelected`, `nodeState`, `toggleNode`, `toggleSlug`, `filterPermissionTree`, `groupSlugsByResource`, `UNKNOWN_GROUP_ID` and the node types. Pure tree logic. |
 
 ## Testing
 

@@ -65,7 +65,11 @@ describe('primaryBorderViolations', () => {
 });
 
 describe('primary fills carry the primary-ink border (AC-4)', () => {
-  const files = [...listTsx(UI_SRC), ...listTsx(ADMIN_SRC), join(UI_SRC, 'components/ui/variants.ts')];
+  const files = [
+    ...listTsx(UI_SRC),
+    ...listTsx(ADMIN_SRC),
+    join(UI_SRC, 'components/ui/variants.ts'),
+  ];
 
   it('scans a non-trivial set of files, including the button variants', () => {
     expect(files.length).toBeGreaterThan(50);

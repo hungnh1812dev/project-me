@@ -3,8 +3,8 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 
-import { Textarea } from '../textarea';
 import { Field } from '../../forms/Field';
+import { Textarea } from '../textarea';
 
 describe('Textarea', () => {
   it('defaults to 4 rows with vertical resizing only', () => {

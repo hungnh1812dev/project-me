@@ -114,22 +114,22 @@ sends nothing. Feedback goes through `useAnnouncer` and `LiveRegion`; dialog err
 
 ## Files
 
-| File                                               | Spec                                                                                  |
-| -------------------------------------------------- | ------------------------------------------------------------------------------------- |
-| `src/pages/content-types/CollectionListPage.tsx`   | Default export: the list page, URL sync, selection, bulk bar, dialogs.                |
-| `src/pages/content-types/list/DocumentsTable.tsx`  | Exports `DocumentsTable`: captioned, sortable, selectable table.                      |
-| `src/pages/content-types/list/FilterPanel.tsx`     | Exports `FilterPanel`: column, operator and value rows.                               |
-| `src/pages/content-types/list/FilterChips.tsx`     | Exports `FilterChips`: removable active-filter chips.                                 |
-| `src/pages/content-types/list/ColumnChooserDialog.tsx` | Exports `ColumnChooserDialog`: listable columns, order, C3 save.                  |
-| `src/pages/content-types/list/RowActions.tsx`      | Exports `RowActions`: per-row gated menu.                                             |
-| `src/pages/content-types/list/DeleteDocumentDialog.tsx` | Exports `DeleteDocumentDialog`: confirmed single delete.                         |
-| `src/pages/content-types/list/BulkActionBar.tsx`   | Exports `BulkActionBar`, `BulkSelectedEntry`: selection count and bulk actions.       |
-| `src/pages/content-types/list/BulkDeleteDialog.tsx`| Exports `BulkDeleteDialog`: confirmed D10 with per-failure lines.                     |
-| `src/features/content/listState.ts`                | Exports `parseListState`, `serializeListState`, `toListParams`, `DEFAULT_LIST_SIZE`, `DEFAULT_LIST_STATE`, `PAGE_SIZES` and the state types. URL ↔ state. |
-| `src/features/content/columns.ts`                  | Exports `buildColumnCatalog`, `validateListParamsForType`, `cellValue`, `formatCell`, `labelColumn`, `entryLabeler`, `STATUS_LABELS` and the column types. |
-| `src/features/content/filterLabels.ts`             | Exports `operatorLabel`, `filterChipLabel`.                                           |
-| `src/features/content/bulk.ts`                     | Exports `bulkDeleteSummary`, `planBulkStatus`, `bulkProgressText`, `bulkStatusSummary` and their types. |
-| `src/features/content/hooks/useBulkStatus.ts`      | Exports `useBulkStatus`, `BulkStatusProgress`, `BulkStatusResult`. Sequential bulk publish/unpublish. |
+| File                                                    | Spec                                                                                                                                                       |
+| ------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/pages/content-types/CollectionListPage.tsx`        | Default export: the list page, URL sync, selection, bulk bar, dialogs.                                                                                     |
+| `src/pages/content-types/list/DocumentsTable.tsx`       | Exports `DocumentsTable`: captioned, sortable, selectable table.                                                                                           |
+| `src/pages/content-types/list/FilterPanel.tsx`          | Exports `FilterPanel`: column, operator and value rows.                                                                                                    |
+| `src/pages/content-types/list/FilterChips.tsx`          | Exports `FilterChips`: removable active-filter chips.                                                                                                      |
+| `src/pages/content-types/list/ColumnChooserDialog.tsx`  | Exports `ColumnChooserDialog`: listable columns, order, C3 save.                                                                                           |
+| `src/pages/content-types/list/RowActions.tsx`           | Exports `RowActions`: per-row gated menu.                                                                                                                  |
+| `src/pages/content-types/list/DeleteDocumentDialog.tsx` | Exports `DeleteDocumentDialog`: confirmed single delete.                                                                                                   |
+| `src/pages/content-types/list/BulkActionBar.tsx`        | Exports `BulkActionBar`, `BulkSelectedEntry`: selection count and bulk actions.                                                                            |
+| `src/pages/content-types/list/BulkDeleteDialog.tsx`     | Exports `BulkDeleteDialog`: confirmed D10 with per-failure lines.                                                                                          |
+| `src/features/content/listState.ts`                     | Exports `parseListState`, `serializeListState`, `toListParams`, `DEFAULT_LIST_SIZE`, `DEFAULT_LIST_STATE`, `PAGE_SIZES` and the state types. URL ↔ state.  |
+| `src/features/content/columns.ts`                       | Exports `buildColumnCatalog`, `validateListParamsForType`, `cellValue`, `formatCell`, `labelColumn`, `entryLabeler`, `STATUS_LABELS` and the column types. |
+| `src/features/content/filterLabels.ts`                  | Exports `operatorLabel`, `filterChipLabel`.                                                                                                                |
+| `src/features/content/bulk.ts`                          | Exports `bulkDeleteSummary`, `planBulkStatus`, `bulkProgressText`, `bulkStatusSummary` and their types.                                                    |
+| `src/features/content/hooks/useBulkStatus.ts`           | Exports `useBulkStatus`, `BulkStatusProgress`, `BulkStatusResult`. Sequential bulk publish/unpublish.                                                      |
 
 ## Testing
 

@@ -202,7 +202,8 @@ describe('PermissionTree (AC-23)', () => {
       expect(box).toHaveAttribute('data-slot', 'checkbox');
       const labelIds = box.getAttribute('aria-labelledby') ?? '';
       expect(labelIds).not.toBe('');
-      for (const labelId of labelIds.split(' ')) expect(document.getElementById(labelId)).not.toBeNull();
+      for (const labelId of labelIds.split(' '))
+        expect(document.getElementById(labelId)).not.toBeNull();
     }
     expect(checkbox('role')).toHaveAttribute('aria-checked', 'false');
 

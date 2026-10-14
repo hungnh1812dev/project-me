@@ -3,7 +3,13 @@ import { ArrowDownIcon, ArrowUpIcon, ChevronsUpDownIcon } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 import { Checkbox } from '@repo/form-commons/components/ui/checkbox';
-import { TableBody, TableCell, TableHead, TableHeader, TableRow } from '@repo/form-commons/components/ui/table';
+import {
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@repo/form-commons/components/ui/table';
 import { cn } from '@repo/form-commons/lib/cn';
 
 import {

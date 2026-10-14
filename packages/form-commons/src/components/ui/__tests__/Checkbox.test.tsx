@@ -3,8 +3,8 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 
-import { Checkbox } from '../checkbox';
 import { Field } from '../../forms/Field';
+import { Checkbox } from '../checkbox';
 
 describe('Checkbox', () => {
   it('renders role="checkbox" named by its Field label and toggles with Space', async () => {
