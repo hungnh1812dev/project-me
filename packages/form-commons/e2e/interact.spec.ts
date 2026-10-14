@@ -17,6 +17,7 @@ const SELECT_PLAYGROUND = 'components-select--playground';
 const RADIO_GROUP_PLAYGROUND = 'components-radiogroup--playground';
 const RADIO_GROUP_WITH_ITEMS = 'components-radiogroup--with-items';
 const DATE_PICKER_PLAYGROUND = 'components-datepicker--playground';
+const RHF_FIELD_FORM = 'components-rhffield--form';
 
 test.beforeEach(async ({ page }) => {
   await gotoStory(page, SWITCH_PLAYGROUND);
@@ -234,6 +235,48 @@ test('the DatePicker Playground readout follows days picked by mouse, keyboard a
   await page.getByRole('button', { name: 'Clear date' }).click();
   await expect(readout).toHaveText('undefined');
   await expect(trigger).toHaveText(/Pick a date/);
+});
+
+test('the RHFField form shows the errors on empty submit and the values on valid submit', async ({
+  page,
+}) => {
+  await gotoStory(page, RHF_FIELD_FORM);
+  const form = page.getByRole('form', { name: 'Settings' });
+  const title = form.getByRole('textbox', { name: 'Title' });
+  const submitted = page.getByRole('status', { name: 'Submitted values' });
+  // The play function has submitted the empty form.
+  await expect(form.getByRole('alert')).toHaveText([
+    'Enter a title.',
+    'Pick an expiry.',
+    'This field is required.',
+  ]);
+  await expect(title).toHaveAttribute('aria-invalid', 'true');
+  await expect(submitted).toHaveText('Nothing submitted yet.');
+
+  await form.getByRole('button', { name: 'Submit' }).click();
+  await expect(form.getByRole('alert')).toHaveCount(3);
+  await expect(submitted).toHaveText('Nothing submitted yet.');
+
+  await title.fill('Launch');
+  await form.getByRole('switch', { name: 'Notifications' }).click();
+  await form.getByRole('combobox', { name: 'Expires in' }).click();
+  await page.getByRole('option', { name: '1 day' }).click();
+  const editor = form.getByRole('textbox', { name: 'Metadata' });
+  await editor.fill('[1]');
+  await form.getByRole('button', { name: 'Submit' }).click();
+  await expect(form.getByRole('alert')).toHaveText(['Expected a JSON object.']);
+  await expect(submitted).toHaveText('Nothing submitted yet.');
+
+  await editor.fill('{"a":1}');
+  await form.getByRole('button', { name: 'Submit' }).click();
+  await expect(form.getByRole('alert')).toHaveCount(0);
+  await expect(submitted).toHaveText(
+    JSON.stringify(
+      { title: 'Launch', notifications: true, expires: '1d', metadata: '{"a":1}' },
+      null,
+      2,
+    ),
+  );
 });
 
 test('Input Playground args set the initial value and the read-only state', async ({ page }) => {

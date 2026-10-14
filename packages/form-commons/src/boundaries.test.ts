@@ -18,11 +18,12 @@ const FORBIDDEN: readonly RegExp[] = [
   /^react-hook-form(\/|$)/,
 ];
 
-/** react-hook-form (D-1, AC-9): allowed only under `src/components/rhf/**`. */
+/** react-hook-form (D-1 amended, AC-9): allowed only under `src/components/rhf/**` and `src/stories/**`. */
 const RHF = /^react-hook-form(\/|$)/;
 
 /** `path` is relative to `src`. */
-const isInRhf = (path: string): boolean => /^components\/rhf\//.test(path.split('\\').join('/'));
+const mayImportRhf = (path: string): boolean =>
+  /^(components\/rhf|stories)\//.test(path.split('\\').join('/'));
 
 const SPECIFIER =
   /(?:\bfrom\s*|\bimport\s*\(?\s*|\brequire\s*\(\s*|\bexport\s*\*\s*from\s*)['"]([^'"]+)['"]/g;
@@ -33,7 +34,7 @@ const importSpecifiers = (source: string): string[] =>
 /** `path` (relative to `src`) decides whether react-hook-form is allowed. */
 const forbiddenImports = (source: string, path = ''): string[] =>
   importSpecifiers(source).filter(
-    (spec) => FORBIDDEN.some((rule) => rule.test(spec)) && !(RHF.test(spec) && isInRhf(path)),
+    (spec) => FORBIDDEN.some((rule) => rule.test(spec)) && !(RHF.test(spec) && mayImportRhf(path)),
   );
 
 const startsWithUseClient = (source: string): boolean =>
@@ -108,7 +109,7 @@ describe('forbiddenImports', () => {
     expect(forbiddenImports(source)).toEqual([]);
   });
 
-  it('allows react-hook-form under components/rhf/ only', () => {
+  it('allows react-hook-form under components/rhf/ and stories/ only (D-1 amended)', () => {
     const source = [
       "import { useController } from 'react-hook-form';",
       "import { cn } from '@/utils/cn';",
@@ -125,9 +126,15 @@ describe('forbiddenImports', () => {
       '@/utils/cn',
     ]);
     expect(forbiddenImports(source, 'stories/components/RHFField.stories.tsx')).toEqual([
+      '@/utils/cn',
+    ]);
+    expect(forbiddenImports(source, 'stories/sections/Section.tsx')).toEqual(['@/utils/cn']);
+    expect(forbiddenImports(source, 'components/ui/stories/x.tsx')).toEqual([
       'react-hook-form',
       '@/utils/cn',
     ]);
+    expect(forbiddenImports(source, 'storiesX/a.tsx')).toEqual(['react-hook-form', '@/utils/cn']);
+    expect(forbiddenImports(source, 'lib/form.ts')).toEqual(['react-hook-form', '@/utils/cn']);
   });
 });
 
