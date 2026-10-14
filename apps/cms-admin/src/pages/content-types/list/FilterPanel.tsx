@@ -85,7 +85,7 @@ const ValueInput: React.FC<{
         <DatePicker
           value={value === '' ? undefined : new Date(value)}
           onChange={(day) => onChange(day ? day.toISOString() : '')}
-          locale={locale}
+          config={{ locale }}
         />
       </Field>
     );

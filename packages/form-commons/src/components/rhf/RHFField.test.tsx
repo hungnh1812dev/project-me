@@ -1,12 +1,15 @@
 import { forwardRef } from 'react';
-import { act, render, screen } from '@testing-library/react';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { FormProvider, useForm, type UseFormReturn } from 'react-hook-form';
 import { describe, expect, it, vi } from 'vitest';
 
-import type { InputValueProps } from '../../lib/inputContract';
+import type { InputOption, InputValueProps } from '../../lib/inputContract';
+import { parseJson } from '../../lib/json';
 import { Field, type FieldControlProps } from '../forms/Field';
+import { JsonInput } from '../forms/JsonInput';
 import { Input } from '../ui/input';
+import { Select } from '../ui/select';
 import { Switch } from '../ui/switch';
 import { RHFField, type RHFFieldRenderProps } from './RHFField';
 
@@ -257,5 +260,130 @@ describe('RHFField', () => {
     );
 
     expect(screen.getAllByRole('switch')).toHaveLength(2);
+  });
+
+  describe('with Select and JsonInput', () => {
+    type Settings = { expires: string | null; meta: string };
+
+    const EXPIRES: InputOption[] = [
+      { value: '1h', label: '1 hour' },
+      { value: '1d', label: '1 day' },
+    ];
+
+    /** The JSON text must parse to an object (D-6: the parse message reaches RHFField through rules). */
+    const validateMeta = (text: string) => {
+      const result = parseJson(text, { required: true, expect: 'object' });
+      return result.ok || result.message;
+    };
+
+    const SettingsForm = ({
+      onSubmit,
+      onForm,
+    }: {
+      onSubmit: (values: Settings) => void;
+      onForm?: (form: UseFormReturn<Settings>) => void;
+    }) => {
+      const form = useForm<Settings>({ defaultValues: { expires: null, meta: '' } });
+      onForm?.(form);
+      return (
+        <FormProvider {...form}>
+          <form noValidate onSubmit={form.handleSubmit(onSubmit)}>
+            <RHFField<Settings, 'expires'>
+              name="expires"
+              label="Expires in"
+              rules={{ required: 'Pick an expiry.' }}
+            >
+              {(field) => (
+                <Select {...field} config={{ placeholder: 'Choose', options: EXPIRES }} />
+              )}
+            </RHFField>
+            <RHFField<Settings, 'meta'>
+              name="meta"
+              label="Metadata"
+              rules={{ validate: validateMeta }}
+            >
+              {(field) => <JsonInput {...field} config={{ label: 'Metadata', expect: 'object' }} />}
+            </RHFField>
+            <button type="submit">Save</button>
+          </form>
+        </FormProvider>
+      );
+    };
+
+    const editorText = () =>
+      document.querySelector('repo-json-editor')?.shadowRoot?.querySelector('.cm-content')
+        ?.textContent;
+
+    it('validates a Select on a string | null path and submits the picked value', async () => {
+      const onSubmit = vi.fn();
+      let form!: UseFormReturn<Settings>;
+      render(<SettingsForm onSubmit={onSubmit} onForm={(f) => (form = f)} />);
+      act(() => form.setValue('meta', '{}'));
+
+      await userEvent.click(screen.getByRole('button', { name: 'Save' }));
+      const select = screen.getByRole('combobox', { name: /Expires in/ });
+      expect(await screen.findByRole('alert')).toHaveTextContent('Pick an expiry.');
+      expect(select).toHaveAttribute('aria-invalid', 'true');
+      expect(select).toHaveAttribute('aria-required', 'true');
+      expect(onSubmit).not.toHaveBeenCalled();
+
+      await userEvent.click(select);
+      await userEvent.click(await screen.findByRole('option', { name: '1 day' }));
+      await waitFor(() => expect(screen.queryByRole('alert')).not.toBeInTheDocument());
+      expect(select).toHaveTextContent('1 day');
+
+      await userEvent.click(screen.getByRole('button', { name: 'Save' }));
+      expect(onSubmit).toHaveBeenCalledWith({ expires: '1d', meta: '{}' }, expect.anything());
+
+      act(() => form.reset({ expires: '1h', meta: '{}' }));
+      expect(select).toHaveTextContent('1 hour');
+    });
+
+    it('feeds the JsonInput parse message through rules.validate and submits valid text', async () => {
+      const onSubmit = vi.fn();
+      let form!: UseFormReturn<Settings>;
+      render(<SettingsForm onSubmit={onSubmit} onForm={(f) => (form = f)} />);
+      act(() => form.setValue('expires', '1h'));
+      await waitFor(() => expect(editorText()).toBe(''));
+
+      await userEvent.click(screen.getByRole('button', { name: 'Save' }));
+      expect(await screen.findByRole('alert')).toHaveTextContent('This field is required.');
+
+      act(() => form.setValue('meta', '[1]'));
+      await waitFor(() => expect(editorText()).toBe('[1]'));
+      await userEvent.click(screen.getByRole('button', { name: 'Save' }));
+      const expected = parseJson('[1]', { required: true, expect: 'object' });
+      expect(expected.ok).toBe(false);
+      await waitFor(() =>
+        expect(screen.getByRole('alert')).toHaveTextContent(expected.ok ? '' : expected.message),
+      );
+      expect(onSubmit).not.toHaveBeenCalled();
+
+      act(() => form.setValue('meta', '{"a":1}'));
+      await waitFor(() => expect(editorText()).toBe('{"a":1}'));
+      await userEvent.click(screen.getByRole('button', { name: 'Save' }));
+      await waitFor(() =>
+        expect(onSubmit).toHaveBeenCalledWith(
+          { expires: '1h', meta: '{"a":1}' },
+          expect.anything(),
+        ),
+      );
+      expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    });
+
+    it('rejects Select on a boolean path (type test)', () => {
+      render(
+        <Form>
+          {({ control }) => (
+            <RHFField control={control} name="published" label="Published as select">
+              {/* @ts-expect-error Select takes string | null, the path is boolean */}
+              {(field) => <Select {...field} config={{ options: EXPIRES }} />}
+            </RHFField>
+          )}
+        </Form>,
+      );
+
+      expect(screen.getByRole('combobox', { name: 'Published as select' })).toBeInTheDocument();
+    });
   });
 });

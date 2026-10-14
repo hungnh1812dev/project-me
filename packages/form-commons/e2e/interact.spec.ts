@@ -16,6 +16,7 @@ const JSON_INPUT_PLAYGROUND = 'components-jsoninput--playground';
 const SELECT_PLAYGROUND = 'components-select--playground';
 const RADIO_GROUP_PLAYGROUND = 'components-radiogroup--playground';
 const RADIO_GROUP_WITH_ITEMS = 'components-radiogroup--with-items';
+const DATE_PICKER_PLAYGROUND = 'components-datepicker--playground';
 
 test.beforeEach(async ({ page }) => {
   await gotoStory(page, SWITCH_PLAYGROUND);
@@ -200,6 +201,39 @@ test('the RadioGroup WithItems readout follows arrow keys and card clicks', asyn
     'aria-checked',
     'true',
   );
+});
+
+test('the DatePicker Playground readout follows days picked by mouse, keyboard and Clear', async ({
+  page,
+}) => {
+  await gotoStory(page, DATE_PICKER_PLAYGROUND);
+  const trigger = page.getByRole('button', { name: 'Publish date' });
+  const readout = page.getByRole('status', { name: 'Value' });
+  // The readout is `JSON.stringify` of a local-midnight Date, so compute it in the page's zone.
+  const readoutOf = (day: number) =>
+    page.evaluate((d) => JSON.stringify(new Date(2026, 0, d)), day);
+  // The play function has picked Jan 20, 2026.
+  await expect(readout).toHaveText(await readoutOf(20));
+  await expect(trigger).toHaveText(/Jan 20, 2026/);
+
+  await trigger.click();
+  const calendar = page.getByRole('dialog', { name: 'Choose a date' });
+  await calendar.locator('[data-day="2026-01-08"] button').click();
+  await expect(readout).toHaveText(await readoutOf(8));
+  await expect(trigger).toHaveText(/Jan 8, 2026/);
+  await expect(trigger).toBeFocused();
+
+  await page.keyboard.press('Enter');
+  await expect(calendar).toBeVisible();
+  await expect(calendar.locator('[data-day="2026-01-08"] button')).toBeFocused();
+  await page.keyboard.press('ArrowDown');
+  await page.keyboard.press('Enter');
+  await expect(readout).toHaveText(await readoutOf(15));
+  await expect(trigger).toBeFocused();
+
+  await page.getByRole('button', { name: 'Clear date' }).click();
+  await expect(readout).toHaveText('undefined');
+  await expect(trigger).toHaveText(/Pick a date/);
 });
 
 test('Input Playground args set the initial value and the read-only state', async ({ page }) => {
