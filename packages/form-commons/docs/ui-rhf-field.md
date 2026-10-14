@@ -1,0 +1,41 @@
+# UI RHF field
+
+`RHFField` is `Field` bound to react-hook-form through `useController`. It renders the same label, description, required mark and `aria-*` wiring as `Field`, takes the error from `fieldState.error.message`, and hands the bound value props to a render prop.
+
+## Feature
+
+- Props: everything `Field` takes except `error` and `children`, plus `name` (a `FieldPath` of the form values), optional `control` (falls back to `useFormContext()`) and optional `rules` (`useController` rules).
+- `children` is a render prop: `(field: RHFFieldRenderProps<TValues, TName>) => ReactElement`. `field` carries `value`, `onChange`, `onBlur`, `name`, `ref` and `disabled` from `useController`. `value` and `onChange` are typed `FieldPathValue<TValues, TName>`, so `{(field) => <Switch {...field} />}` compiles on a `boolean` path and fails on a `string` path.
+- The returned element is passed to `Field` as its child, so `Field` still sets `id`, `aria-describedby`, `aria-invalid` and `required` / `aria-required` on it.
+- `required` defaults to `!!rules.required`; an explicit `required` wins.
+- A rules (or resolver) error shows under the control as `role="alert"` and marks the control `aria-invalid="true"`; it clears once the value is valid. `reset()` and `setValue()` update the shown value, because every input is controlled.
+- Types are inferred from `control` when it is passed. With `FormProvider` and no `control`, pass the generics (`<RHFField<Values, 'title'> …>`) to get a typed `field`; otherwise the value is `any`.
+- Forms that use `required` fields should set `noValidate`, so the browser's own validation does not block react-hook-form's submit.
+
+```tsx
+<RHFField control={control} name="published" label="Published">
+  {(field) => <Switch {...field} />}
+</RHFField>
+
+<RHFField name="title" label="Title" rules={{ required: 'Enter a title.' }}>
+  {(field) => <Input {...field} />}
+</RHFField>
+```
+
+## Files
+
+| File                                   | Spec                                                                                                                                                     |
+| -------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/components/rhf/RHFField.tsx`      | Exports `RHFField`, `RHFFieldProps` and `RHFFieldRenderProps`. The only place in the package that imports `react-hook-form` (`'use client'` at the top). |
+| `src/components/rhf/RHFField.test.tsx` | Unit and type tests (see Testing).                                                                                                                       |
+| `package.json`                         | Export `./components/rhf/*`; `react-hook-form` as an optional peerDependency (`peerDependenciesMeta`) and a devDependency for tests.                     |
+
+Subpath: `@repo/form-commons/components/rhf/RHFField`. Consumers must install `react-hook-form` themselves (cms-admin does); the frontend does not import this subpath.
+
+## Testing
+
+`src/components/rhf/RHFField.test.tsx`: markup identical to `Field` with the same props; the render prop gets exactly `value`, `onChange`, `onBlur`, `name`, `ref`, `disabled`; a `rules.required` failure on submit shows the alert and `aria-invalid`, and fixing the value clears it; `required` default and override; `reset()` / `setValue()` update the control; explicit `control` without a provider and `FormProvider`; `Switch` on a boolean path; `@ts-expect-error` type tests for a mismatched input (`Switch` on a string path, `Input` on a boolean path) and an unknown path. `src/boundaries.test.ts` allows react-hook-form only under `src/components/rhf/**`. Run: `pnpm --filter @repo/form-commons test:cov` (the 70% UI gate applies to `src/components/rhf/**`).
+
+## Related
+
+- [UI form components](./ui-form-components.md) (`Field`), [UI input contract](./ui-input-contract.md), [UI testing and guards](./ui-testing-and-guards.md), [cms-admin Schema form](../../../apps/cms-admin/docs/schema-form.md)

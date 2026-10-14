@@ -7,6 +7,7 @@
     "./components/ui/variants": "./src/components/ui/variants.ts",
     "./components/ui/*": "./src/components/ui/*.tsx",
     "./components/forms/*": "./src/components/forms/*.tsx",
+    "./components/rhf/*": "./src/components/rhf/*.tsx",
     "./hooks/*": "./src/hooks/*.ts",
     "./lib/*": "./src/lib/*.ts",
     "./styles/theme.css": "./src/styles/theme.css",
@@ -40,7 +41,13 @@
   },
   "peerDependencies": {
     "react": "^19.2.8",
-    "react-dom": "^19.2.8"
+    "react-dom": "^19.2.8",
+    "react-hook-form": "^7.89.0"
+  },
+  "peerDependenciesMeta": {
+    "react-hook-form": {
+      "optional": true
+    }
   },
   "devDependencies": {
     "@axe-core/playwright": "4.13.0",
@@ -63,6 +70,7 @@
     "oxlint": "1.81.0",
     "react": "19.2.8",
     "react-dom": "19.2.8",
+    "react-hook-form": "7.89.0",
     "storybook": "10.6.1",
     "tailwindcss": "4.3.3",
     "typescript": "6.0.2",

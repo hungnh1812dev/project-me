@@ -345,6 +345,9 @@ importers:
       react-dom:
         specifier: 19.2.8
         version: 19.2.8(react@19.2.8)
+      react-hook-form:
+        specifier: 7.89.0
+        version: 7.89.0(@types/react@19.2.18)(react@19.2.8)
       storybook:
         specifier: 10.6.1
         version: 10.6.1(@types/react@19.2.18)(prettier@3.9.9)(react@19.2.8)

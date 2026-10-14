@@ -18,14 +18,23 @@ const FORBIDDEN: readonly RegExp[] = [
   /^react-hook-form(\/|$)/,
 ];
 
+/** react-hook-form (D-1, AC-9): allowed only under `src/components/rhf/**`. */
+const RHF = /^react-hook-form(\/|$)/;
+
+/** `path` is relative to `src`. */
+const isInRhf = (path: string): boolean => /^components\/rhf\//.test(path.split('\\').join('/'));
+
 const SPECIFIER =
   /(?:\bfrom\s*|\bimport\s*\(?\s*|\brequire\s*\(\s*|\bexport\s*\*\s*from\s*)['"]([^'"]+)['"]/g;
 
 const importSpecifiers = (source: string): string[] =>
   [...source.matchAll(SPECIFIER)].map((match) => match[1]);
 
-const forbiddenImports = (source: string): string[] =>
-  importSpecifiers(source).filter((spec) => FORBIDDEN.some((rule) => rule.test(spec)));
+/** `path` (relative to `src`) decides whether react-hook-form is allowed. */
+const forbiddenImports = (source: string, path = ''): string[] =>
+  importSpecifiers(source).filter(
+    (spec) => FORBIDDEN.some((rule) => rule.test(spec)) && !(RHF.test(spec) && isInRhf(path)),
+  );
 
 const startsWithUseClient = (source: string): boolean =>
   /^\s*(['"])use client\1;?/.test(source.replace(/^\uFEFF/, ''));
@@ -98,6 +107,28 @@ describe('forbiddenImports', () => {
 
     expect(forbiddenImports(source)).toEqual([]);
   });
+
+  it('allows react-hook-form under components/rhf/ only', () => {
+    const source = [
+      "import { useController } from 'react-hook-form';",
+      "import { cn } from '@/utils/cn';",
+    ].join('\n');
+
+    expect(forbiddenImports(source, 'components/rhf/RHFField.tsx')).toEqual(['@/utils/cn']);
+    expect(forbiddenImports(source, 'components/rhf/RHFField.test.tsx')).toEqual(['@/utils/cn']);
+    expect(forbiddenImports(source, 'components/forms/Field.tsx')).toEqual([
+      'react-hook-form',
+      '@/utils/cn',
+    ]);
+    expect(forbiddenImports(source, 'components/rhfx/A.tsx')).toEqual([
+      'react-hook-form',
+      '@/utils/cn',
+    ]);
+    expect(forbiddenImports(source, 'stories/components/RHFField.stories.tsx')).toEqual([
+      'react-hook-form',
+      '@/utils/cn',
+    ]);
+  });
 });
 
 describe('startsWithUseClient', () => {
@@ -116,7 +147,7 @@ describe('package boundaries (AC-5)', () => {
   it.each(sourceFiles.map((file) => [rel(file), file]))(
     '%s imports nothing from the apps or app-only libraries',
     (_name, file) => {
-      expect(forbiddenImports(readFileSync(file, 'utf8'))).toEqual([]);
+      expect(forbiddenImports(readFileSync(file, 'utf8'), rel(file))).toEqual([]);
     },
   );
 });
@@ -190,10 +221,14 @@ describe('stories boundaries (AC-18, AC-10)', () => {
 describe("'use client' directive (AC-6)", () => {
   const clientModules = sourceFiles.filter((file) => {
     const path = rel(file).split('\\').join('/');
-    return /^components\/(ui|forms)\/.*\.tsx$/.test(path) && !path.endsWith('.test.tsx');
+    return /^components\/(ui|forms|rhf)\/.*\.tsx$/.test(path) && !path.endsWith('.test.tsx');
   });
 
-  it('every .tsx module in components/ui/ and components/forms/ starts with the directive', () => {
+  it('scans components/rhf/', () => {
+    expect(clientModules.map(rel)).toContain(join('components', 'rhf', 'RHFField.tsx'));
+  });
+
+  it('every .tsx module in components/ui/, components/forms/ and components/rhf/ starts with the directive', () => {
     const missing = clientModules
       .filter((file) => !startsWithUseClient(readFileSync(file, 'utf8')))
       .map(rel);
@@ -312,7 +347,7 @@ describe('shadcn CLI config (AC-8)', () => {
     expect(tsconfig.compilerOptions.paths).toEqual({ '@repo/form-commons/*': ['./src/*'] });
   });
 
-  it('package exports match the components/ui and components/forms layout (AC-B1)', () => {
+  it('package exports match the components/ui, components/forms and components/rhf layout (AC-B1)', () => {
     const pkg = JSON.parse(readFileSync(join(PACKAGE_ROOT, 'package.json'), 'utf8')) as {
       exports: Record<string, string>;
     };
@@ -321,6 +356,7 @@ describe('shadcn CLI config (AC-8)', () => {
       './components/ui/variants': './src/components/ui/variants.ts',
       './components/ui/*': './src/components/ui/*.tsx',
       './components/forms/*': './src/components/forms/*.tsx',
+      './components/rhf/*': './src/components/rhf/*.tsx',
       './hooks/*': './src/hooks/*.ts',
       './lib/*': './src/lib/*.ts',
       './styles/theme.css': './src/styles/theme.css',
@@ -385,7 +421,7 @@ describe('no old package name imports (AC-B6)', () => {
 
 /** Subpaths the package exports (AC-B8, AC-B10); anything else under the new name is stale. */
 const VALID_SUBPATH =
-  /^@repo\/form-commons\/(components\/(ui|forms)\/[^/]+|hooks\/[^/]+|lib\/[^/]+|styles\/(theme\.css|tokens))$/;
+  /^@repo\/form-commons\/(components\/(ui|forms|rhf)\/[^/]+|hooks\/[^/]+|lib\/[^/]+|styles\/(theme\.css|tokens))$/;
 
 const staleSubpathImports = (source: string): string[] =>
   importSpecifiers(source).filter(
@@ -398,12 +434,14 @@ describe('staleSubpathImports', () => {
       "import { Button } from '@repo/form-commons/components/button';",
       "import { buttonVariants } from '@repo/form-commons/components/variants';",
       "import { Field } from '@repo/form-commons/form/Field';",
+      "import { RHFField } from '@repo/form-commons/components/rhf/nested/RHFField';",
     ].join('\n');
 
     expect(staleSubpathImports(source)).toEqual([
       '@repo/form-commons/components/button',
       '@repo/form-commons/components/variants',
       '@repo/form-commons/form/Field',
+      '@repo/form-commons/components/rhf/nested/RHFField',
     ]);
   });
 
@@ -412,6 +450,7 @@ describe('staleSubpathImports', () => {
       "import { Button } from '@repo/form-commons/components/ui/button';",
       "import { buttonVariants } from '@repo/form-commons/components/ui/variants';",
       "import { Field } from '@repo/form-commons/components/forms/Field';",
+      "import { RHFField } from '@repo/form-commons/components/rhf/RHFField';",
       "import { useIsMobile } from '@repo/form-commons/hooks/use-mobile';",
       "import { cn } from '@repo/form-commons/lib/cn';",
       "import { TOKENS } from '@repo/form-commons/styles/tokens';",

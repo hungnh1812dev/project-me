@@ -24,6 +24,7 @@ export default defineConfig({
         'src/lib/**/*.ts': LOGIC_THRESHOLD,
         'src/styles/tokens.ts': LOGIC_THRESHOLD,
         'src/components/forms/**/*.tsx': UI_THRESHOLD,
+        'src/components/rhf/**/*.tsx': UI_THRESHOLD,
       },
     },
   },

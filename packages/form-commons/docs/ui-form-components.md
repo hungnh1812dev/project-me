@@ -1,6 +1,6 @@
 # UI form components
 
-Generic, data-layer-free form building blocks. Components that need Redux, router or react-hook-form stay in cms-admin.
+Generic, data-layer-free form building blocks. Components that need Redux or router stay in cms-admin. The react-hook-form binding is [UI RHF field](./ui-rhf-field.md) (`components/rhf/RHFField`).
 
 ## Feature
 

@@ -63,6 +63,19 @@ describe('BooleanField (AC-7)', () => {
     expect(screen.getByRole('switch', { name: 'Featured' })).not.toBeChecked();
   });
 
+  it('turns a missing value on with one click and submits true', async () => {
+    const { onSubmit, user } = renderForm(null);
+
+    const toggle = screen.getByRole('switch', { name: 'Featured' });
+    await user.click(toggle);
+    expect(toggle).toBeChecked();
+    await save(user);
+
+    await waitFor(() =>
+      expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ featured: true })),
+    );
+  });
+
   it('cannot be toggled in read-only mode', async () => {
     const { user } = renderForm(undefined, true);
 

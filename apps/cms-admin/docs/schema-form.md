@@ -29,7 +29,7 @@ Fields render in `type.fields` order in a 6-column grid from `md` (`widthClass`:
 | Type                 | Control                                                                                                   |
 | -------------------- | --------------------------------------------------------------------------------------------------------- |
 | `text`, `number`     | `TextField`, `NumberField` (`Input`, `register`)                                                          |
-| `boolean`            | `BooleanField` (`Switch` through `Controller`)                                                            |
+| `boolean`            | `BooleanField` (`Switch` through `RHFField`)                                                              |
 | `json`               | `JsonField` (`JsonInput expect="any"`, CodeMirror editor); invalid text stays visible and blocks the save |
 | `richtext`           | `RichTextField`, lazy-loading `RichTextEditor` (Tiptap) behind a skeleton (D1)                            |
 | `media`              | `MediaField` plus `MediaPickerDialog` (D4)                                                                |
