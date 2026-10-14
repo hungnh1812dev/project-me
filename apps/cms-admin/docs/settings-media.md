@@ -10,7 +10,7 @@ the schema form's media field reuses. For editors managing the images documents 
   list ("Media files") of cards: 2 columns at 375px, 3 from `sm`, 4 from `lg`, 5 from `xl`. Each card
   has the thumbnail (`thumbnailUrl`, `alt` = file name, `loading="lazy"`, width and height attributes,
   in a fixed `aspect-square` box so nothing shifts), the file name (truncated, full in `title`),
-  "W × H", `formatBytes(size)` (binary units, one decimal) and the upload date. Search ("Search
+  "W × H", `formatBytes(size)` from `@repo/form-commons/lib/media` (binary units, one decimal) and the upload date. Search ("Search
   files") covers the file name. One page of cards with `Pagination` under it.
 - **Policy.** Upload `useCan('upload', 'media')`, Delete `useCan('delete', 'media')`, both
   `media:manager`. A denied Upload also ignores dropped files.
@@ -50,14 +50,15 @@ the schema form's media field reuses. For editors managing the images documents 
 
 ## Files
 
-| File                                             | Spec                                                                                                                  |
-| ------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------- |
-| `src/pages/settings/MediaLibraryPage.tsx`        | Default export: grid, search, paging, upload, delete.                                                                 |
-| `src/pages/settings/media/MediaThumbnail.tsx`    | Exports `MediaThumbnail`, `MediaThumbnailProps`. Allowlisted image or placeholder.                                    |
-| `src/pages/settings/media/DeleteMediaDialog.tsx` | Exports `DeleteMediaDialog`: confirmed M3.                                                                            |
-| `src/features/settings/api/mediaApi.ts`          | Exports `getMedia`, `uploadMedia` (multipart), `deleteMedia` (M1–M3).                                                 |
-| `src/features/settings/hooks/useMedia.ts`        | Exports `useMediaList`, `useUploadMedia`, `useDeleteMedia`, `UploadItem`, `UploadStatus`.                             |
-| `src/features/settings/media.ts`                 | Exports `validateUploadFile`, `formatBytes`, `uploadErrorMessage`, `uploadSummary`, `UPLOAD_ACCEPT`, `UploadSummary`. |
+| File                                                    | Spec                                                                                                               |
+| ------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `src/pages/settings/MediaLibraryPage.tsx`               | Default export: grid, search, paging, upload, delete.                                                              |
+| `src/pages/settings/media/MediaThumbnail.tsx`           | Exports `MediaThumbnail`, `MediaThumbnailProps`. Allowlisted image or placeholder.                                 |
+| `src/pages/settings/media/DeleteMediaDialog.tsx`        | Exports `DeleteMediaDialog`: confirmed M3.                                                                         |
+| `src/features/settings/api/mediaApi.ts`                 | Exports `getMedia`, `uploadMedia` (multipart), `deleteMedia` (M1–M3).                                              |
+| `src/features/settings/hooks/useMedia.ts`               | Exports `useMediaList`, `useUploadMedia`, `useDeleteMedia`, `UploadItem`, `UploadStatus`.                          |
+| `src/features/settings/media.ts`                        | Exports `validateUploadFile`, `uploadErrorMessage`, `uploadSummary`, `UPLOAD_ACCEPT`, `UploadSummary`.             |
+| `src/features/settings/components/CmsMediaProvider.tsx` | Exports `CmsMediaProvider`: the package `MediaProvider` on M1, M2, `useCan('upload', 'media')` and `safeImageSrc`. |
 
 ## Testing
 
@@ -74,5 +75,5 @@ the schema form's media field reuses. For editors managing the images documents 
 ## Related
 
 - [Settings foundation](./settings-foundation.md), [CSP and headers](./csp-and-headers.md)
-- [Schema form](./schema-form.md) (media field and picker reuse the hooks and `MediaThumbnail`)
+- [Schema form](./schema-form.md) (the media field and picker use these hooks through `CmsMediaProvider`)
 - [Design system](./design-system.md) (`FileDropzone`)

@@ -2,13 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { ApiError } from '@/core/api/apiError';
 
-import {
-  formatBytes,
-  UPLOAD_ACCEPT,
-  uploadErrorMessage,
-  uploadSummary,
-  validateUploadFile,
-} from './media';
+import { UPLOAD_ACCEPT, uploadErrorMessage, uploadSummary, validateUploadFile } from './media';
 
 describe('validateUploadFile (AC-36)', () => {
   it.each([
@@ -39,22 +33,6 @@ describe('validateUploadFile (AC-36)', () => {
 
   it('matches the file input accept list', () => {
     expect(UPLOAD_ACCEPT).toBe('image/png,image/jpeg');
-  });
-});
-
-describe('formatBytes (AC-35)', () => {
-  it.each([
-    [0, '0 B'],
-    [512, '512 B'],
-    [1023, '1023 B'],
-    [1024, '1 KB'],
-    [20480, '20 KB'],
-    [1536, '1.5 KB'],
-    [1258291, '1.2 MB'],
-    [5 * 1024 ** 3, '5 GB'],
-    [3 * 1024 ** 4, '3072 GB'],
-  ])('formats %d as %s', (bytes, label) => {
-    expect(formatBytes(bytes)).toBe(label);
   });
 });
 

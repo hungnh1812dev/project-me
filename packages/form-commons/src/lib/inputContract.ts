@@ -72,6 +72,8 @@ export type SelectConfig = { placeholder?: string; options: InputOption[] };
 /** `options` is left out when the items come from `RadioGroupItem` children instead. */
 export type RadioGroupConfig = { options?: InputOption[]; orientation?: 'horizontal' | 'vertical' };
 export type DatePickerConfig = { locale?: string; placeholder?: string };
+/** `label` names the group (when no `aria-labelledby`) and its Choose and Remove buttons. */
+export type MediaInputConfig = { label?: string };
 
 const isPlainObject = (value: object): boolean => {
   const proto: unknown = Object.getPrototypeOf(value);

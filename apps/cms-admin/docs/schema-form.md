@@ -32,7 +32,7 @@ Fields render in `type.fields` order in a 6-column grid from `md` (`widthClass`:
 | `boolean`            | `BooleanField` (`Switch` through `RHFField`)                                                                       |
 | `json`               | `JsonField` (`JsonInput` through `RHFField`, `config.expect: any`); invalid text stays visible and blocks the save |
 | `richtext`           | `RichTextField`, lazy-loading the package's `RichTextEditor` (Tiptap) behind a skeleton (D1)                       |
-| `media`              | `MediaField` plus `MediaPickerDialog` (D4)                                                                         |
+| `media`              | `MediaField` on the package `MediaInput`, fed by `CmsMediaProvider` (D4)                                           |
 | `component`          | `ComponentField`: a `fieldset`; below the top level a `details` with an `entryHint` preview                        |
 | repeatable component | `RepeatableField` + `RepeatableEntry` (`useFieldArray`, keyed by `field.id`)                                       |
 | unknown type         | `UnsupportedField`: read-only JSON preview, "Unsupported field type "<type>""                                      |
@@ -70,8 +70,8 @@ Fields render in `type.fields` order in a 6-column grid from `md` (`widthClass`:
 - A full-width box, 320px tall (`h-80`, `data-slot="media-preview"`), `muted` background, fixed size
   so nothing shifts while loading.
 - The asset's full `url` (not `thumbnailUrl`), `object-fit: contain`, `loading="lazy"`, through
-  `MediaThumbnail` with `fit="contain"` and `source="url"`, so it keeps the `safeImageSrc` allowlist
-  and `referrerPolicy="no-referrer"`. A non-allowlisted URL shows the named placeholder.
+  the package `MediaImage` with `CmsMediaProvider`'s `imageSrc`, so it keeps the `safeImageSrc`
+  allowlist and `referrerPolicy="no-referrer"`. A non-allowlisted URL shows the named placeholder.
 - Loading ("Loading file…"), empty ("No file selected.") and missing ("File not found" plus the id)
   use the same box.
 - Under it: the file name (truncated, full in `title`), "W × H · size", and the actions: Choose
@@ -99,25 +99,24 @@ the breadcrumbs reuse them.
 
 ## Files
 
-| File                                               | Spec                                                                                                                                   |
-| -------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
-| `src/components/form/SchemaForm.tsx`               | Exports `SchemaForm`, `SchemaFormProps`. RHF form, grid, 400 alert, read-only mode.                                                    |
-| `src/components/form/SchemaField.tsx`              | Exports `SchemaField`, `SchemaFieldProps`. Picks the control for a field type.                                                         |
-| `src/components/form/schemaFormContext.ts`         | Exports `SchemaFormContext`, `useSchemaFormReadOnly`, `useSchemaFormAnnounce`, `useFieldError`.                                        |
-| `src/components/form/fields/TextField.tsx`         | Exports `TextField`: `Input` bound through `RHFField`; a non-string value shows as empty text.                                         |
-| `src/components/form/fields/NumberField.tsx`       | Exports `NumberField`: `Input` through `RHFField` with `rulesFor(field)`, `config` `inputMode: decimal`, `autoComplete: off`.          |
-| `src/components/form/fields/BooleanField.tsx`      | Exports `BooleanField`.                                                                                                                |
-| `src/components/form/fields/JsonField.tsx`         | Exports `JsonField`: `JsonInput` through `RHFField` with `rulesFor(field)`; `config.label` names the editor, the field ref focuses it. |
-| `src/components/form/fields/RichTextField.tsx`     | Exports `RichTextField`: lazy-loads `@repo/form-commons/components/forms/RichTextEditor`, round-trip warning.                          |
-| `src/components/form/fields/MediaField.tsx`        | Exports `MediaField`: preview box, details row, Choose and Remove.                                                                     |
-| `src/components/form/fields/MediaPickerDialog.tsx` | Exports `MediaPickerDialog`: searchable `RadioGroup` card grid plus upload.                                                            |
-| `src/components/form/fields/ComponentField.tsx`    | Exports `ComponentField`, `ComponentChildren`.                                                                                         |
-| `src/components/form/fields/RepeatableField.tsx`   | Exports `RepeatableField`: field array, focus moves, announcements.                                                                    |
-| `src/components/form/fields/RepeatableEntry.tsx`   | Exports `RepeatableEntry`, `EntryAction`: one entry with its move and remove actions.                                                  |
-| `src/components/form/fields/UnsupportedField.tsx`  | Exports `UnsupportedField`.                                                                                                            |
-| `src/features/content/schema.ts`                   | Pure field rules: kinds, sort/list/filter rules, widths, labels, entry labels.                                                         |
-| `src/features/content/schemaForm.ts`               | Exports `toFormValues`, `emptyValues`, `emptyEntry`, `toDocumentData`, `rulesFor`, `NUMBER_ERROR`, `FormValues`, `FieldRules`.         |
-| `src/features/content/mediaValue.ts`               | Exports `isMediaAsset`, `readMediaValue`, `resolveMedia`, `MediaFormValue`, `ResolvedMedia`.                                           |
+| File                                              | Spec                                                                                                                                   |
+| ------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/components/form/SchemaForm.tsx`              | Exports `SchemaForm`, `SchemaFormProps`. RHF form, grid, 400 alert, read-only mode.                                                    |
+| `src/components/form/SchemaField.tsx`             | Exports `SchemaField`, `SchemaFieldProps`. Picks the control for a field type.                                                         |
+| `src/components/form/schemaFormContext.ts`        | Exports `SchemaFormContext`, `useSchemaFormReadOnly`, `useSchemaFormAnnounce`, `useFieldError`.                                        |
+| `src/components/form/fields/TextField.tsx`        | Exports `TextField`: `Input` bound through `RHFField`; a non-string value shows as empty text.                                         |
+| `src/components/form/fields/NumberField.tsx`      | Exports `NumberField`: `Input` through `RHFField` with `rulesFor(field)`, `config` `inputMode: decimal`, `autoComplete: off`.          |
+| `src/components/form/fields/BooleanField.tsx`     | Exports `BooleanField`.                                                                                                                |
+| `src/components/form/fields/JsonField.tsx`        | Exports `JsonField`: `JsonInput` through `RHFField` with `rulesFor(field)`; `config.label` names the editor, the field ref focuses it. |
+| `src/components/form/fields/RichTextField.tsx`    | Exports `RichTextField`: lazy-loads `@repo/form-commons/components/forms/RichTextEditor`, round-trip warning.                          |
+| `src/components/form/fields/MediaField.tsx`       | Exports `MediaField`: label, `CmsMediaProvider` and `MediaInput`; resolves a `documentId` to the asset as the clean value.             |
+| `src/components/form/fields/ComponentField.tsx`   | Exports `ComponentField`, `ComponentChildren`.                                                                                         |
+| `src/components/form/fields/RepeatableField.tsx`  | Exports `RepeatableField`: field array, focus moves, announcements.                                                                    |
+| `src/components/form/fields/RepeatableEntry.tsx`  | Exports `RepeatableEntry`, `EntryAction`: one entry with its move and remove actions.                                                  |
+| `src/components/form/fields/UnsupportedField.tsx` | Exports `UnsupportedField`.                                                                                                            |
+| `src/features/content/schema.ts`                  | Pure field rules: kinds, sort/list/filter rules, widths, labels, entry labels.                                                         |
+| `src/features/content/schemaForm.ts`              | Exports `toFormValues`, `emptyValues`, `emptyEntry`, `toDocumentData`, `rulesFor`, `NUMBER_ERROR`, `FormValues`, `FieldRules`.         |
+| `src/features/content/mediaValue.ts`              | Exports `isMediaAsset`, `readMediaValue`, `resolveMedia`, `MediaFormValue`, `ResolvedMedia`.                                           |
 
 ## Testing
 
@@ -141,5 +140,5 @@ the breadcrumbs reuse them.
 
 - [Document editor](./document-editor.md), [Single-type editor](./single-type-editor.md)
 - [Documents list](./documents-list.md) (uses `schema.ts`)
-- [Settings media](./settings-media.md) (`MediaThumbnail`, `useMediaList`, `useUploadMedia`)
+- [Settings media](./settings-media.md) (`CmsMediaProvider`, `useMediaList`, `useUploadMedia`), [form-commons UI media input](../../../packages/form-commons/docs/ui-media-input.md)
 - [Design system](./design-system.md), [CSP and headers](./csp-and-headers.md)

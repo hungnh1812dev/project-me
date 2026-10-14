@@ -96,6 +96,10 @@ const INPUT_STORIES: readonly InputStory[] = [
     id: 'components-datatable--playground',
     settled: readoutIs('{"orderBy":"views","sortDir":"desc","selected":[]}'),
   },
+  {
+    id: 'components-mediainput--playground',
+    settled: readoutIs(/"fileName":"logo\.png"/),
+  },
   { id: 'components-select--playground', settled: readoutIs('"1d"') },
   { id: 'components-radiogroup--playground', settled: readoutIs('"compact"') },
   { id: 'components-radiogroup--with-items', settled: readoutIs('"scale"') },

@@ -17,6 +17,7 @@ const JSON_INPUT_PLAYGROUND = 'components-jsoninput--playground';
 const RICH_TEXT_PLAYGROUND = 'components-richtexteditor--playground';
 const SELECT_PLAYGROUND = 'components-select--playground';
 const DATA_TABLE_PLAYGROUND = 'components-datatable--playground';
+const MEDIA_INPUT_PLAYGROUND = 'components-mediainput--playground';
 const RADIO_GROUP_PLAYGROUND = 'components-radiogroup--playground';
 const RADIO_GROUP_WITH_ITEMS = 'components-radiogroup--with-items';
 const DATE_PICKER_PLAYGROUND = 'components-datepicker--playground';
@@ -199,6 +200,47 @@ test('the DataTable Playground readout and rows follow sorting and selection', a
   );
   await page.keyboard.press('Space');
   await expect(readout).toHaveText('{"orderBy":"views","sortDir":"asc","selected":[]}');
+});
+
+test('the MediaInput Playground readout follows the picker, Remove and an upload', async ({
+  page,
+}) => {
+  await gotoStory(page, MEDIA_INPUT_PLAYGROUND);
+  const group = page.getByRole('group', { name: 'Cover image' });
+  const readout = page.getByRole('status', { name: 'Value' });
+  // The play function has chosen logo.png.
+  await expect(readout).toHaveText(/"fileName":"logo\.png"/);
+  await expect(group.getByRole('img', { name: 'logo.png' })).toBeVisible();
+  await expect(group.getByText('512 × 512')).toBeVisible();
+
+  // Search, then pick with the keyboard alone.
+  await group.getByRole('button', { name: 'Choose Cover image' }).click();
+  const dialog = page.getByRole('dialog', { name: 'Choose cover image' });
+  await dialog.getByRole('searchbox', { name: 'Search files' }).fill('team');
+  await expect(dialog.getByRole('radio')).toHaveCount(1);
+  await dialog.getByRole('radio', { name: 'team-photo.jpg' }).focus();
+  await page.keyboard.press('Enter');
+  await expect(dialog).toBeHidden();
+  await expect(readout).toHaveText(/"fileName":"team-photo\.jpg"/);
+
+  await group.getByRole('button', { name: 'Remove Cover image' }).click();
+  await expect(readout).toHaveText('null');
+  await expect(group.getByRole('button', { name: 'Choose Cover image' })).toBeFocused();
+
+  // An upload through the provider becomes the choice.
+  await group.getByRole('button', { name: 'Choose Cover image' }).click();
+  await dialog.locator('input[type="file"]').setInputFiles({
+    name: 'fresh.png',
+    mimeType: 'image/png',
+    buffer: Buffer.from('png'),
+  });
+  await expect(dialog.getByText('1 of 1 file uploaded.')).toBeVisible();
+  await expect(dialog.getByRole('radio', { name: 'fresh.png' })).toHaveAttribute(
+    'aria-checked',
+    'true',
+  );
+  await dialog.getByRole('button', { name: 'Select' }).click();
+  await expect(readout).toHaveText(/"fileName":"fresh\.png"/);
 });
 
 test('the Select Playground readout follows options picked by mouse and keyboard', async ({

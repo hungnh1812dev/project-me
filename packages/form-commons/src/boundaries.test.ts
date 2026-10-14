@@ -292,6 +292,10 @@ describe('generic form components (AC-3)', () => {
     'RichTextEditor',
     'DatePicker',
     'DataTable',
+    'MediaInput',
+    'MediaPickerDialog',
+    'MediaProvider',
+    'MediaImage',
     'ConfirmDialog',
     'UnsavedChangesDialog',
     'SecretReveal',
@@ -308,9 +312,12 @@ describe('generic form components (AC-3)', () => {
     expect(existsSync(join(SRC, 'form'))).toBe(false);
   });
 
-  it.each(['lib/json.ts', 'lib/decision.ts', 'lib/richtext.ts'])('%s is in the package', (path) => {
-    expect(existsSync(join(SRC, path))).toBe(true);
-  });
+  it.each(['lib/json.ts', 'lib/decision.ts', 'lib/richtext.ts', 'lib/media.ts'])(
+    '%s is in the package',
+    (path) => {
+      expect(existsSync(join(SRC, path))).toBe(true);
+    },
+  );
 });
 
 describe('shadcn CLI config (AC-8)', () => {

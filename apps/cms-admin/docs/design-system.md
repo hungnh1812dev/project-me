@@ -39,7 +39,7 @@ dark`, the `@theme inline` mapping, radius and motion tokens, the global `:focus
   font settings, and the `main`/`h1` focus exception stay in `globals.css`. The `.rich-text` styles moved to `theme.css` with the editor (D3 amended).
 - **D3 Form split.** Generic components moved to the package (`Field`, `PasswordInput`, `JsonInput`,
   `DatePicker`, `ConfirmDialog`, `UnsavedChangesDialog`, `SecretReveal`, `GatedButton`,
-  `GatedMenuItem`, `FileDropzone`, `Pagination`). D3 amended: `RichTextEditor`, `lib/richtext` and a generic `DataTable` (the table behind `DocumentsTable`) moved too, so they have Storybook stories; `RichTextField` (the react-hook-form and schema-form wiring) stays here. The inputs (`Input`, `PasswordInput`, `Textarea`,
+  `GatedMenuItem`, `FileDropzone`, `Pagination`). D3 amended: `RichTextEditor`, `lib/richtext`, a generic `DataTable` (the table behind `DocumentsTable`) and `MediaInput` with its picker (fed by a `MediaProvider`; cms-admin's is `CmsMediaProvider`) moved too, so they have Storybook stories; `MediaField` and `RichTextField` (the react-hook-form and schema-form wiring) stay here. The inputs (`Input`, `PasswordInput`, `Textarea`,
   `JsonInput`, `Switch`, `Checkbox`, `Select`, `RadioGroup`, `DatePicker`) share the package's input
   contract (controlled `value`/`onChange`, one JSON `config`, no `defaultValue`), and react-hook-form
   forms bind them through `@repo/form-commons/components/rhf/RHFField` instead of a hand-written

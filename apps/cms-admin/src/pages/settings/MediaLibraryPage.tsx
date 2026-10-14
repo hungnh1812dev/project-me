@@ -3,6 +3,7 @@ import { useMemo, useState } from 'react';
 import { FileDropzone } from '@repo/form-commons/components/forms/FileDropzone';
 import { GatedButton } from '@repo/form-commons/components/forms/GatedButton';
 import { Pagination } from '@repo/form-commons/components/forms/Pagination';
+import { formatBytes } from '@repo/form-commons/lib/media';
 
 import { useCan } from '@/features/auth/hooks/useCan';
 import { ListState } from '@/features/settings/components/ListState';
@@ -11,7 +12,7 @@ import { SearchField } from '@/features/settings/components/SearchField';
 import { useAnnouncer } from '@/features/settings/components/useAnnouncer';
 import { useListPaging } from '@/features/settings/hooks/useListPaging';
 import { useMediaList, useUploadMedia } from '@/features/settings/hooks/useMedia';
-import { formatBytes, UPLOAD_ACCEPT, uploadSummary } from '@/features/settings/media';
+import { UPLOAD_ACCEPT, uploadSummary } from '@/features/settings/media';
 import { filterBySearch } from '@/features/settings/search';
 import type { MediaAsset } from '@/features/settings/types';
 

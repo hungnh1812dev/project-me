@@ -20,20 +20,6 @@ export function validateUploadFile(file: Pick<File, 'name' | 'type'> & { size?: 
   return `${file.name}: only PNG and JPEG images are supported.`;
 }
 
-const UNITS = ['B', 'KB', 'MB', 'GB'] as const;
-
-/** A byte count in binary units with at most one decimal, for example "1.2 MB" (AC-35). */
-export function formatBytes(bytes: number): string {
-  let value = bytes;
-  let unit = 0;
-  while (value >= 1024 && unit < UNITS.length - 1) {
-    value /= 1024;
-    unit += 1;
-  }
-  const rounded = unit === 0 ? value : Math.round(value * 10) / 10;
-  return `${rounded} ${UNITS[unit]}`;
-}
-
 /** The reason a single upload failed (AC-37): 413 and 422 get fixed copy, others the server's. */
 export function uploadErrorMessage(error: ApiError): string {
   if (error.status === 413) return 'File is too large.';
