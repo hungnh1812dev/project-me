@@ -1,21 +1,44 @@
 'use client';
 
+import type { Ref } from 'react';
+
 import { cn } from '../../lib/cn';
+import type { InputProps as ContractProps, InputConfig } from '../../lib/inputContract';
 import { controlClasses } from './variants';
 
-type InputProps = Omit<React.ComponentProps<'input'>, 'type'> & {
-  type?: 'text' | 'email' | 'password' | 'search' | 'url' | 'tel' | 'number';
+type InputProps = Omit<ContractProps<string, InputConfig>, 'ref'> & {
+  ref?: Ref<HTMLInputElement>;
   /** A decorative icon before the text (give it `aria-hidden`). */
   leading?: React.ReactNode;
   /** A control after the text, such as the password show/hide toggle. */
   trailing?: React.ReactNode;
 };
 
-const Input: React.FC<InputProps> = ({ className, type = 'text', leading, trailing, ...props }) => {
+/**
+ * Controlled text input on the input contract: the parent owns `value` and gets the next string
+ * through `onChange`. `config` carries the JSON-only native options (`type` defaults to "text").
+ */
+const Input: React.FC<InputProps> = ({
+  value,
+  onChange,
+  config,
+  leading,
+  trailing,
+  className,
+  ...field
+}) => {
   const input = (
     <input
       data-slot="input"
-      type={type}
+      type={config?.type ?? 'text'}
+      placeholder={config?.placeholder}
+      maxLength={config?.maxLength}
+      minLength={config?.minLength}
+      autoComplete={config?.autoComplete}
+      inputMode={config?.inputMode}
+      pattern={config?.pattern}
+      value={value}
+      onChange={(event) => onChange(event.target.value)}
       className={cn(
         controlClasses,
         'h-11 px-3 py-2 lg:h-10',
@@ -23,7 +46,9 @@ const Input: React.FC<InputProps> = ({ className, type = 'text', leading, traili
         trailing != null && 'pr-12',
         className,
       )}
-      {...props}
+      {
+        ...field /* onBlur, name, ref, id, disabled, readOnly, required, aria-* only */
+      }
     />
   );
   if (leading == null && trailing == null) return input;

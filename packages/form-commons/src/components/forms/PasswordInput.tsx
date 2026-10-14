@@ -1,21 +1,31 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, type Ref } from 'react';
 import { EyeIcon, EyeOffIcon } from 'lucide-react';
 
+import type { InputProps, PasswordInputConfig } from '../../lib/inputContract';
 import { Button } from '../ui/button';
-import { Input, type InputProps } from '../ui/input';
+import { Input } from '../ui/input';
 
-export type PasswordInputProps = Omit<InputProps, 'type' | 'trailing'>;
+export type PasswordInputProps = Omit<InputProps<string, PasswordInputConfig>, 'ref'> & {
+  ref?: Ref<HTMLInputElement>;
+};
 
-/** A password Input with a show/hide toggle (`aria-label` and `aria-pressed`). */
-export const PasswordInput: React.FC<PasswordInputProps> = (props) => {
+/**
+ * A controlled password Input on the input contract, with a show/hide toggle (`aria-label` and
+ * `aria-pressed`). Only the shown/hidden state is local; the parent owns `value`.
+ */
+export const PasswordInput: React.FC<PasswordInputProps> = ({ config, ...props }) => {
   const [visible, setVisible] = useState(false);
 
   return (
     <Input
       {...props}
-      type={visible ? 'text' : 'password'}
+      config={{
+        type: visible ? 'text' : 'password',
+        placeholder: config?.placeholder,
+        autoComplete: config?.autoComplete,
+      }}
       trailing={
         <Button
           variant="ghost"

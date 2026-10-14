@@ -8,20 +8,20 @@ Generic, data-layer-free form building blocks. Components that need Redux or rou
 
 ## Files
 
-| File                                            | Spec                                                           |
-| ----------------------------------------------- | -------------------------------------------------------------- |
-| `src/components/forms/Field.tsx`                | `Field`: wires label, description, error to one control.       |
-| `src/components/forms/PasswordInput.tsx`        | `PasswordInput` with show/hide toggle.                         |
-| `src/components/forms/GatedButton.tsx`          | `GatedButton`: denied is `aria-disabled` with a reason.        |
-| `src/components/forms/GatedMenuItem.tsx`        | `GatedMenuItem`: same for menu items.                          |
-| `src/components/forms/ConfirmDialog.tsx`        | `ConfirmDialog` alertdialog.                                   |
-| `src/components/forms/UnsavedChangesDialog.tsx` | `UnsavedChangesDialog`.                                        |
-| `src/components/forms/SecretReveal.tsx`         | `SecretReveal`: one-time secret.                               |
-| `src/components/forms/FileDropzone.tsx`         | Exports `FileDropzone`, `FileDropzoneProps`, `FileStatusItem`. |
-| `src/components/forms/DatePicker.tsx`           | `DatePicker` (Calendar in a Popover).                          |
-| `src/components/forms/Pagination.tsx`           | `Pagination`, current page marked in `highlight`.              |
-| `src/lib/pagination.ts`                         | Exports `lastPage`, `clampPage`, `pageSlice`.                  |
-| `src/lib/decision.ts`                           | Exports the `Decision` type.                                   |
+| File                                            | Spec                                                                                                                                                  |
+| ----------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/components/forms/Field.tsx`                | `Field`: wires label, description, error to one control.                                                                                              |
+| `src/components/forms/PasswordInput.tsx`        | `PasswordInput` with show/hide toggle, on the input contract (`config`: `placeholder`, `autoComplete`; the toggle owns `type` and the trailing slot). |
+| `src/components/forms/GatedButton.tsx`          | `GatedButton`: denied is `aria-disabled` with a reason.                                                                                               |
+| `src/components/forms/GatedMenuItem.tsx`        | `GatedMenuItem`: same for menu items.                                                                                                                 |
+| `src/components/forms/ConfirmDialog.tsx`        | `ConfirmDialog` alertdialog.                                                                                                                          |
+| `src/components/forms/UnsavedChangesDialog.tsx` | `UnsavedChangesDialog`.                                                                                                                               |
+| `src/components/forms/SecretReveal.tsx`         | `SecretReveal`: one-time secret; a callback ref turns spellcheck off and selects the token on focus (Input takes no native event props).              |
+| `src/components/forms/FileDropzone.tsx`         | Exports `FileDropzone`, `FileDropzoneProps`, `FileStatusItem`.                                                                                        |
+| `src/components/forms/DatePicker.tsx`           | `DatePicker` (Calendar in a Popover).                                                                                                                 |
+| `src/components/forms/Pagination.tsx`           | `Pagination`, current page marked in `highlight`.                                                                                                     |
+| `src/lib/pagination.ts`                         | Exports `lastPage`, `clampPage`, `pageSlice`.                                                                                                         |
+| `src/lib/decision.ts`                           | Exports the `Decision` type.                                                                                                                          |
 
 ## Testing
 

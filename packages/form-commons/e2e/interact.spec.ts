@@ -9,6 +9,8 @@ import { gotoStory } from './fixtures/story';
  */
 const SWITCH_PLAYGROUND = 'components-switch--playground';
 const CHECKBOX_PLAYGROUND = 'components-checkbox--playground';
+const INPUT_PLAYGROUND = 'components-input--playground';
+const PASSWORD_PLAYGROUND = 'components-input--password-playground';
 
 test.beforeEach(async ({ page }) => {
   await gotoStory(page, SWITCH_PLAYGROUND);
@@ -48,6 +50,54 @@ test('the Checkbox Playground readout follows Space and label clicks', async ({ 
 
   await page.getByText('Subscribe', { exact: true }).click();
   await expect(readout).toHaveText('true');
+});
+
+test('the Input Playground readout follows typing, key by key', async ({ page }) => {
+  await gotoStory(page, INPUT_PLAYGROUND);
+  const input = page.getByRole('textbox', { name: 'Name' });
+  const readout = page.getByRole('status', { name: 'Value' });
+  // The play function has typed "Jane".
+  await expect(readout).toHaveText('"Jane"');
+  await expect(input).toHaveValue('Jane');
+
+  await input.press('End');
+  await input.pressSequentially(' Doe');
+  await expect(readout).toHaveText('"Jane Doe"');
+  await expect(input).toHaveValue('Jane Doe');
+
+  await input.clear();
+  await expect(readout).toHaveText('""');
+});
+
+test('the PasswordInput Playground readout follows typing and the toggle shows the text', async ({
+  page,
+}) => {
+  await gotoStory(page, PASSWORD_PLAYGROUND);
+  const input = page.getByLabel('Password', { exact: true });
+  const readout = page.getByRole('status', { name: 'Value' });
+  await expect(readout).toHaveText('"s3cret"');
+  await expect(input).toHaveAttribute('type', 'password');
+
+  await input.press('End');
+  await input.pressSequentially('!!');
+  await expect(readout).toHaveText('"s3cret!!"');
+
+  await page.getByRole('button', { name: 'Show password' }).click();
+  await expect(input).toHaveAttribute('type', 'text');
+  await expect(input).toHaveValue('s3cret!!');
+});
+
+test('Input Playground args set the initial value and the read-only state', async ({ page }) => {
+  await page.goto(
+    '/iframe.html?id=components-input--playground&viewMode=story&args=value:Ada;readOnly:!true&globals=a11y.manual:!true',
+  );
+  const input = page.getByRole('textbox', { name: 'Name' });
+
+  await expect(input).toHaveValue('Ada');
+  await expect(input).toHaveAttribute('readonly', '');
+  await input.pressSequentially('x');
+  await expect(input).toHaveValue('Ada');
+  await expect(page.getByRole('status', { name: 'Value' })).toHaveText('"Ada"');
 });
 
 test('Playground args set the initial value and state', async ({ page }) => {

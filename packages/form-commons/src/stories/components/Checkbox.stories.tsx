@@ -41,10 +41,12 @@ export const Playground: Story = {
   render: function Render({ value, onChange, ...args }) {
     const bind = useArgsValue(value, onChange);
     return (
-      <Controlled value={bind.value}>
-        <Field label="Subscribe">
-          <Checkbox {...args} {...bind} />
-        </Field>
+      <Controlled {...bind}>
+        {(field) => (
+          <Field label="Subscribe">
+            <Checkbox {...args} {...field} />
+          </Field>
+        )}
       </Controlled>
     );
   },

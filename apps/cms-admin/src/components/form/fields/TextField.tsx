@@ -1,6 +1,4 @@
-import { useFormContext } from 'react-hook-form';
-
-import { Field } from '@repo/form-commons/components/forms/Field';
+import { RHFField } from '@repo/form-commons/components/rhf/RHFField';
 import { Input } from '@repo/form-commons/components/ui/input';
 
 import { useSchemaFormReadOnly } from '@/components/form/schemaFormContext';
@@ -12,14 +10,19 @@ export interface TextFieldProps {
   className?: string;
 }
 
-/** A `text` field: an `Input` registered with react-hook-form. */
+/** A `text` field: an `Input` bound through `RHFField`. A missing value is empty text. */
 export const TextField: React.FC<TextFieldProps> = ({ label, name, className }) => {
-  const { register } = useFormContext();
   const readOnly = useSchemaFormReadOnly();
   return (
-    <Field label={label} className={className}>
-      <Input {...register(name)} readOnly={readOnly} />
-    </Field>
+    <RHFField name={name} label={label} className={className}>
+      {(field) => (
+        <Input
+          {...field}
+          value={typeof field.value === 'string' ? field.value : ''}
+          readOnly={readOnly}
+        />
+      )}
+    </RHFField>
   );
 };
 TextField.displayName = 'TextField';

@@ -4,11 +4,13 @@ import { describe, expect, it } from 'vitest';
 import { Input } from '../ui/input';
 import { Field } from './Field';
 
+const noop = () => {};
+
 describe('Field', () => {
   it('links a visible label to the control with a generated id', () => {
     render(
       <Field label="Name">
-        <Input />
+        <Input value="" onChange={noop} />
       </Field>,
     );
 
@@ -20,7 +22,7 @@ describe('Field', () => {
   it('uses the id it is given', () => {
     render(
       <Field label="Email" id="email">
-        <Input type="email" />
+        <Input value="" onChange={noop} config={{ type: 'email' }} />
       </Field>,
     );
 
@@ -30,7 +32,7 @@ describe('Field', () => {
   it('uses the id already set on the control', () => {
     render(
       <Field label="Email">
-        <Input id="own-id" />
+        <Input id="own-id" value="" onChange={noop} />
       </Field>,
     );
 
@@ -40,7 +42,7 @@ describe('Field', () => {
   it('describes the control with the description text', () => {
     render(
       <Field label="Slug" description="Lowercase letters and dashes.">
-        <Input />
+        <Input value="" onChange={noop} />
       </Field>,
     );
 
@@ -53,7 +55,7 @@ describe('Field', () => {
   it('shows the error as an alert, describes the control with it and marks it invalid', () => {
     render(
       <Field label="Slug" description="Lowercase only." error="Slug is taken.">
-        <Input />
+        <Input value="" onChange={noop} />
       </Field>,
     );
 
@@ -68,7 +70,7 @@ describe('Field', () => {
       <>
         <p id="extra">Extra hint</p>
         <Field label="Title" error="Required.">
-          <Input aria-describedby="extra" />
+          <Input aria-describedby="extra" value="" onChange={noop} />
         </Field>
       </>,
     );
@@ -79,7 +81,7 @@ describe('Field', () => {
   it('marks a required field visibly and sets required and aria-required', () => {
     render(
       <Field label="Title" required>
-        <Input />
+        <Input value="" onChange={noop} />
       </Field>,
     );
 
@@ -93,7 +95,7 @@ describe('Field', () => {
   it('can hide the label visually and keep the accessible name', () => {
     render(
       <Field label="Search" hideLabel>
-        <Input type="search" />
+        <Input value="" onChange={noop} config={{ type: 'search' }} />
       </Field>,
     );
 

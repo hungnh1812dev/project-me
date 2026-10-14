@@ -1,9 +1,7 @@
-import { useFormContext } from 'react-hook-form';
-
-import { Field } from '@repo/form-commons/components/forms/Field';
+import { RHFField } from '@repo/form-commons/components/rhf/RHFField';
 import { Input } from '@repo/form-commons/components/ui/input';
 
-import { useFieldError, useSchemaFormReadOnly } from '@/components/form/schemaFormContext';
+import { useSchemaFormReadOnly } from '@/components/form/schemaFormContext';
 import { rulesFor } from '@/features/content/schemaForm';
 import type { FieldDefinition } from '@/features/content/types';
 
@@ -15,24 +13,25 @@ export interface NumberFieldProps {
 }
 
 /**
- * A `number` field. The input keeps its text (a `type="number"` input would empty text that isn't
- * a number, so "Enter a number." could never show); `inputMode="decimal"` still brings up the
- * numeric keyboard. Empty text saves as `null`.
+ * A `number` field bound through `RHFField`, with "Enter a number." from `rules`. The input keeps
+ * its text (a `type="number"` input would empty text that isn't a number, so "Enter a number."
+ * could never show); `inputMode="decimal"` still brings up the numeric keyboard. Empty text saves
+ * as `null`.
  */
 export const NumberField: React.FC<NumberFieldProps> = ({ field, label, name, className }) => {
-  const { register } = useFormContext();
   const readOnly = useSchemaFormReadOnly();
-  const error = useFieldError(name);
   return (
-    <Field label={label} error={error} className={className}>
-      <Input
-        {...register(name, rulesFor(field))}
-        inputMode="decimal"
-        autoComplete="off"
-        readOnly={readOnly}
-        className="font-mono tabular-nums"
-      />
-    </Field>
+    <RHFField name={name} label={label} rules={rulesFor(field)} className={className}>
+      {(bound) => (
+        <Input
+          {...bound}
+          value={typeof bound.value === 'string' ? bound.value : ''}
+          config={{ inputMode: 'decimal', autoComplete: 'off' }}
+          readOnly={readOnly}
+          className="font-mono tabular-nums"
+        />
+      )}
+    </RHFField>
   );
 };
 NumberField.displayName = 'NumberField';

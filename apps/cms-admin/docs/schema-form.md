@@ -26,16 +26,16 @@ rules (kinds, labels, widths, entry labels) used by the list and the breadcrumbs
 Fields render in `type.fields` order in a 6-column grid from `md` (`widthClass`: `"100%"`, `"50%"`,
 `"1/3"`, else full). Labels come from `fieldLabel` ("coverImage" → "Cover image").
 
-| Type                 | Control                                                                                                   |
-| -------------------- | --------------------------------------------------------------------------------------------------------- |
-| `text`, `number`     | `TextField`, `NumberField` (`Input`, `register`)                                                          |
-| `boolean`            | `BooleanField` (`Switch` through `RHFField`)                                                              |
-| `json`               | `JsonField` (`JsonInput expect="any"`, CodeMirror editor); invalid text stays visible and blocks the save |
-| `richtext`           | `RichTextField`, lazy-loading `RichTextEditor` (Tiptap) behind a skeleton (D1)                            |
-| `media`              | `MediaField` plus `MediaPickerDialog` (D4)                                                                |
-| `component`          | `ComponentField`: a `fieldset`; below the top level a `details` with an `entryHint` preview               |
-| repeatable component | `RepeatableField` + `RepeatableEntry` (`useFieldArray`, keyed by `field.id`)                              |
-| unknown type         | `UnsupportedField`: read-only JSON preview, "Unsupported field type "<type>""                             |
+| Type                 | Control                                                                                                     |
+| -------------------- | ----------------------------------------------------------------------------------------------------------- |
+| `text`, `number`     | `TextField`, `NumberField` (`Input` through `RHFField`; NumberField's "Enter a number." comes from `rules`) |
+| `boolean`            | `BooleanField` (`Switch` through `RHFField`)                                                                |
+| `json`               | `JsonField` (`JsonInput expect="any"`, CodeMirror editor); invalid text stays visible and blocks the save   |
+| `richtext`           | `RichTextField`, lazy-loading `RichTextEditor` (Tiptap) behind a skeleton (D1)                              |
+| `media`              | `MediaField` plus `MediaPickerDialog` (D4)                                                                  |
+| `component`          | `ComponentField`: a `fieldset`; below the top level a `details` with an `entryHint` preview                 |
+| repeatable component | `RepeatableField` + `RepeatableEntry` (`useFieldArray`, keyed by `field.id`)                                |
+| unknown type         | `UnsupportedField`: read-only JSON preview, "Unsupported field type "<type>""                               |
 
 - **Repeatables.** Entries are "<Field> item n" with Move up, Move down and Remove; "Add <field>
   item" appends. Focus goes to the new entry after Add, and to the next entry, previous one or Add
@@ -102,8 +102,8 @@ the breadcrumbs reuse them.
 | `src/components/form/SchemaForm.tsx`               | Exports `SchemaForm`, `SchemaFormProps`. RHF form, grid, 400 alert, read-only mode.                                               |
 | `src/components/form/SchemaField.tsx`              | Exports `SchemaField`, `SchemaFieldProps`. Picks the control for a field type.                                                    |
 | `src/components/form/schemaFormContext.ts`         | Exports `SchemaFormContext`, `useSchemaFormReadOnly`, `useSchemaFormAnnounce`, `useFieldError`.                                   |
-| `src/components/form/fields/TextField.tsx`         | Exports `TextField`.                                                                                                              |
-| `src/components/form/fields/NumberField.tsx`       | Exports `NumberField`.                                                                                                            |
+| `src/components/form/fields/TextField.tsx`         | Exports `TextField`: `Input` bound through `RHFField`; a non-string value shows as empty text.                                    |
+| `src/components/form/fields/NumberField.tsx`       | Exports `NumberField`: `Input` through `RHFField` with `rulesFor(field)`, `config` `inputMode: decimal`, `autoComplete: off`.     |
 | `src/components/form/fields/BooleanField.tsx`      | Exports `BooleanField`.                                                                                                           |
 | `src/components/form/fields/JsonField.tsx`         | Exports `JsonField`: `JsonInput` in a `Controller`, passes `label` and the focus ref.                                             |
 | `src/components/form/fields/RichTextField.tsx`     | Exports `RichTextField`: lazy wrapper, round-trip warning.                                                                        |
@@ -122,7 +122,7 @@ the breadcrumbs reuse them.
 ## Testing
 
 - `SchemaForm.test.tsx`; `fields/fields.test.tsx`, `ComponentField.test.tsx`,
-  `RepeatableField.test.tsx`, `RichTextField.test.tsx`, `MediaField.test.tsx`. Controls are tested
+  `RepeatableField.test.tsx`, `RichTextField.test.tsx`, `MediaField.test.tsx`, `TextNumberField.test.tsx`. Controls are tested
   inside a real `useForm` provider.
 - `schema.test.ts`, `schemaForm.test.ts`, `richtext.test.ts`, `mediaValue.test.ts`. Branch coverage
   at the end of 5.9: `schema.ts` and `mediaValue.ts` 100%, `richtext.ts` 96.6%, `schemaForm.ts`

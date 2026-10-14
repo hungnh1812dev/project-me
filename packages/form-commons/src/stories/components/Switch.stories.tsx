@@ -35,10 +35,12 @@ export const Playground: Story = {
   render: function Render({ value, onChange, ...args }) {
     const bind = useArgsValue(value, onChange);
     return (
-      <Controlled value={bind.value}>
-        <Field label="Notifications">
-          <Switch {...args} {...bind} />
-        </Field>
+      <Controlled {...bind}>
+        {(field) => (
+          <Field label="Notifications">
+            <Switch {...args} {...field} />
+          </Field>
+        )}
       </Controlled>
     );
   },

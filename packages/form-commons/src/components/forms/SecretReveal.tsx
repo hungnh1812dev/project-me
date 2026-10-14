@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { CheckIcon, CopyIcon } from 'lucide-react';
 
 import {
@@ -31,6 +31,8 @@ const COPIED_MS = 2000;
 const COPIED = 'Copied.';
 const COPY_FAILED = "Couldn't copy. Select the token and copy it manually.";
 const ignoreDismiss = () => {};
+/** The token is read-only, so there are no edits to apply. */
+const ignoreEdit = () => {};
 
 /**
  * Shows a one-time secret (AC-34): an `alertdialog` titled "Copy your token now" with the secret in
@@ -46,6 +48,20 @@ export const SecretReveal: React.FC<SecretRevealProps> = ({ secret, onDone, fina
   const timerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   useEffect(() => () => clearTimeout(timerRef.current), []);
+
+  // Input takes no native event props or spellCheck, so the ref turns spellcheck off and selects
+  // the whole secret on focus.
+  const bindInput = useCallback((node: HTMLInputElement | null) => {
+    inputRef.current = node;
+    if (!node) return;
+    node.setAttribute('spellcheck', 'false');
+    const select = () => node.select();
+    node.addEventListener('focus', select);
+    return () => {
+      node.removeEventListener('focus', select);
+      inputRef.current = null;
+    };
+  }, []);
 
   // The next secret starts from a clean state.
   const done = () => {
@@ -86,13 +102,12 @@ export const SecretReveal: React.FC<SecretRevealProps> = ({ secret, onDone, fina
         <div className="flex flex-col gap-2">
           <Field label="Token">
             <Input
-              ref={inputRef}
+              ref={bindInput}
               value={secret ?? ''}
+              onChange={ignoreEdit}
               readOnly
-              autoComplete="off"
-              spellCheck={false}
+              config={{ autoComplete: 'off' }}
               className="font-mono"
-              onFocus={(event) => event.currentTarget.select()}
             />
           </Field>
           <p role="status" aria-live="polite" aria-atomic="true" className="text-sm">

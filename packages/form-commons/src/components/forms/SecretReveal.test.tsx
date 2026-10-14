@@ -39,6 +39,8 @@ describe('SecretReveal (AC-34)', () => {
 
     expect(input).toHaveValue(SECRET);
     expect(input).toHaveAttribute('readonly');
+    expect(input).toHaveAttribute('autocomplete', 'off');
+    expect(input).toHaveAttribute('spellcheck', 'false');
     expect(input.className).toMatch(/font-mono/);
   });
 
