@@ -100,8 +100,8 @@ const ChooserForm: React.FC<{
                   id={id}
                   className={BOX}
                   aria-labelledby={`${id}-label`}
-                  checked={choice.checked}
-                  onCheckedChange={() => {
+                  value={choice.checked}
+                  onChange={() => {
                     setProblem(null);
                     setChoices((current) =>
                       current.map((c) =>

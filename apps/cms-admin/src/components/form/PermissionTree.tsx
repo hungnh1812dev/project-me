@@ -53,7 +53,7 @@ interface TriStateCheckboxProps {
 }
 
 /**
- * The `@repo/form-commons` Checkbox (AC-11): `indeterminate` renders the dash and `aria-checked="mixed"`.
+ * The `@repo/form-commons` Checkbox (AC-11): `config.indeterminate` renders the dash and `aria-checked="mixed"`.
  * It is named by its visible text through `aria-labelledby`; `id` lands on Base UI's hidden input,
  * so a `<label htmlFor={id}>` click still toggles it.
  */
@@ -68,11 +68,11 @@ const TriStateCheckbox: React.FC<TriStateCheckboxProps> = ({
   <Checkbox
     id={id}
     className={cn('cursor-pointer', className)}
-    checked={state === 'checked'}
-    indeterminate={state === 'indeterminate'}
+    value={state === 'checked'}
+    config={{ indeterminate: state === 'indeterminate' }}
     aria-labelledby={labelledBy}
     aria-describedby={describedBy}
-    onCheckedChange={() => onToggle()}
+    onChange={() => onToggle()}
   />
 );
 TriStateCheckbox.displayName = 'TriStateCheckbox';

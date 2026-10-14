@@ -87,11 +87,7 @@ const LoginPage: React.FC = () => {
           />
         </Field>
         <div className="flex items-center gap-2">
-          <Checkbox
-            id="login-remember"
-            checked={rememberMe}
-            onCheckedChange={(checked) => setRememberMe(checked)}
-          />
+          <Checkbox id="login-remember" value={rememberMe} onChange={setRememberMe} />
           <Label htmlFor="login-remember">Remember me</Label>
         </div>
         {error && <Alert variant="destructive">{error}</Alert>}

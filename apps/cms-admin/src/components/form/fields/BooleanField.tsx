@@ -24,8 +24,8 @@ export const BooleanField: React.FC<BooleanFieldProps> = ({ label, name, classNa
           <Switch
             ref={field.ref}
             name={field.name}
-            checked={field.value === true}
-            onCheckedChange={field.onChange}
+            value={field.value === true}
+            onChange={field.onChange}
             onBlur={field.onBlur}
             readOnly={readOnly}
           />

@@ -97,7 +97,7 @@ SortHeader.displayName = 'SortHeader';
 
 /**
  * A selection box (AC-12): the `@repo/form-commons` Checkbox named through `aria-labelledby` by sr-only text,
- * which also keeps the name in the header cell's text. `indeterminate` gives `aria-checked="mixed"`.
+ * which also keeps the name in the header cell's text. `config.indeterminate` gives `aria-checked="mixed"`.
  */
 const SelectBox: React.FC<{
   label: string;
@@ -112,10 +112,10 @@ const SelectBox: React.FC<{
       <Checkbox
         className={BOX}
         aria-labelledby={labelId}
-        checked={checked}
-        indeterminate={indeterminate}
+        value={checked}
+        config={{ indeterminate }}
         disabled={disabled}
-        onCheckedChange={onChange}
+        onChange={() => onChange()}
       />
       <span id={labelId} className="sr-only">
         {label}
