@@ -1,7 +1,9 @@
 import { useState } from 'react';
+import { zodResolver } from '@hookform/resolvers/zod';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { FormProvider, useForm, useWatch } from 'react-hook-form';
 import { expect, waitFor } from 'storybook/test';
+import { z } from 'zod';
 
 import { JsonInput } from '../../components/forms/JsonInput';
 import { RHFField } from '../../components/rhf/RHFField';
@@ -101,13 +103,24 @@ const SettingsForm: React.FC = () => {
 };
 SettingsForm.displayName = 'SettingsForm';
 
+/** Where the Playground's rule lives: native `rules`, a per-field `schema`, or the form's `resolver`. */
+type Validation = 'rules' | 'schema' | 'resolver';
+
 interface PlaygroundFieldProps {
   label: string;
   description?: string;
-  /** The `rules.required` message; empty makes the field optional. */
+  /** The message for an empty title; empty makes the field optional. */
   requiredMessage: string;
+  /** The same rule three ways: `rules={{ required }}`, `schema={z.string().min(1)}`, or `zodResolver`. */
+  validation: Validation;
   hideLabel?: boolean;
 }
+
+type PlaygroundValues = { title: string };
+
+/** The title rule as a zod schema: non-empty when a message is set, else anything. */
+const titleSchema = (requiredMessage: string) =>
+  requiredMessage ? z.string().min(1, requiredMessage) : z.string();
 
 /** The Playground's value, as the other Playgrounds show it. */
 const TitleReadout: React.FC = () => {
@@ -124,13 +137,20 @@ const TitleReadout: React.FC = () => {
 TitleReadout.displayName = 'TitleReadout';
 
 /** One RHFField around an Input, in its own form; Submit runs the rules. */
-const PlaygroundField: React.FC<PlaygroundFieldProps> = ({
+const PlaygroundForm: React.FC<PlaygroundFieldProps> = ({
   label,
   description,
   requiredMessage,
+  validation,
   hideLabel,
 }) => {
-  const form = useForm<{ title: string }>({ defaultValues: { title: '' } });
+  const form = useForm<PlaygroundValues>({
+    defaultValues: { title: '' },
+    resolver:
+      validation === 'resolver'
+        ? zodResolver(z.object({ title: titleSchema(requiredMessage) }))
+        : undefined,
+  });
   return (
     <FormProvider {...form}>
       <form
@@ -139,12 +159,16 @@ const PlaygroundField: React.FC<PlaygroundFieldProps> = ({
         className="flex max-w-md flex-col gap-4"
         onSubmit={form.handleSubmit(() => {})}
       >
-        <RHFField<{ title: string }, 'title'>
+        <RHFField<PlaygroundValues, 'title'>
           name="title"
           label={label}
           description={description || undefined}
           hideLabel={hideLabel}
-          rules={requiredMessage ? { required: requiredMessage } : undefined}
+          required={Boolean(requiredMessage)}
+          rules={
+            validation === 'rules' && requiredMessage ? { required: requiredMessage } : undefined
+          }
+          schema={validation === 'schema' ? titleSchema(requiredMessage) : undefined}
         >
           {(field) => <Input {...field} />}
         </RHFField>
@@ -156,6 +180,12 @@ const PlaygroundField: React.FC<PlaygroundFieldProps> = ({
     </FormProvider>
   );
 };
+PlaygroundForm.displayName = 'PlaygroundForm';
+
+/** Remounts the form when `validation` changes, so a new resolver takes effect. */
+const PlaygroundField: React.FC<PlaygroundFieldProps> = (props) => (
+  <PlaygroundForm key={props.validation} {...props} />
+);
 PlaygroundField.displayName = 'PlaygroundField';
 
 const meta = {
@@ -165,7 +195,11 @@ const meta = {
     label: 'Title',
     description: 'Shown on the card.',
     requiredMessage: 'Enter a title.',
+    validation: 'rules',
     hideLabel: false,
+  },
+  argTypes: {
+    validation: { control: 'inline-radio', options: ['rules', 'schema', 'resolver'] },
   },
 } satisfies Meta<typeof PlaygroundField>;
 
@@ -195,8 +229,9 @@ export const Default: Story = {
 };
 
 /**
- * One RHFField around an Input: `label`, `description`, the required message and `hideLabel` are
- * Controls. Submit runs the rules; the error shows under the field and clears as you type.
+ * One RHFField around an Input: `label`, `description`, the required message, `validation` (native
+ * `rules`, a zod `schema` on the field, or a form-level `zodResolver`) and `hideLabel` are
+ * Controls. Submit runs the rule; the error shows under the field and clears as you type.
  */
 export const Playground: Story = {
   play: async ({ canvas, userEvent }) => {

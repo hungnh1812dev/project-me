@@ -52,5 +52,6 @@ export type { Decision } from '@repo/form-commons/lib/decision';
 export * as inputContract from '@repo/form-commons/lib/inputContract';
 export * as json from '@repo/form-commons/lib/json';
 export * as media from '@repo/form-commons/lib/media';
+export * as standardSchema from '@repo/form-commons/lib/standardSchema';
 export * as paginationHelpers from '@repo/form-commons/lib/pagination';
 export * as richtext from '@repo/form-commons/lib/richtext';

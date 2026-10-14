@@ -243,6 +243,28 @@ test('the MediaInput Playground readout follows the picker, Remove and an upload
   await expect(readout).toHaveText(/"fileName":"fresh\.png"/);
 });
 
+for (const validation of ['rules', 'schema', 'resolver'] as const) {
+  test(`the RHFField Playground validates through ${validation}`, async ({ page }) => {
+    await page.goto(
+      `/iframe.html?id=components-rhffield--playground&viewMode=story&args=validation:${validation}&globals=a11y.manual:!true`,
+    );
+    const title = page.getByRole('textbox', { name: 'Title' });
+    const readout = page.getByRole('status', { name: 'Value' });
+    // The play function has submitted empty, then typed "Launch".
+    await expect(readout).toHaveText('"Launch"');
+    await expect(title).toHaveAttribute('aria-required', 'true');
+
+    await title.clear();
+    await page.getByRole('button', { name: 'Submit' }).click();
+    await expect(page.getByRole('alert')).toHaveText('Enter a title.');
+    await expect(title).toHaveAttribute('aria-invalid', 'true');
+
+    await title.fill('Again');
+    await expect(readout).toHaveText('"Again"');
+    await expect(page.getByRole('alert')).toHaveCount(0);
+  });
+}
+
 test('the Select Playground readout follows options picked by mouse and keyboard', async ({
   page,
 }) => {

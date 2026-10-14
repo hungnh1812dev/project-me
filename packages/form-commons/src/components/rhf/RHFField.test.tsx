@@ -1,8 +1,11 @@
 import { forwardRef } from 'react';
+import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { FormProvider, useForm, type UseFormReturn } from 'react-hook-form';
+import { FormProvider, useForm, type Resolver, type UseFormReturn } from 'react-hook-form';
 import { describe, expect, it, vi } from 'vitest';
+import { z } from 'zod';
 
 import type { InputOption, InputValueProps } from '../../lib/inputContract';
 import { parseJson } from '../../lib/json';
@@ -38,15 +41,17 @@ const Form = ({
   onForm,
   disabled,
   provider = true,
+  resolver,
   children,
 }: {
   onSubmit?: (values: Values) => void;
   onForm?: (form: UseFormReturn<Values>) => void;
   disabled?: boolean;
   provider?: boolean;
+  resolver?: Resolver<Values>;
   children: (form: UseFormReturn<Values>) => React.ReactNode;
 }) => {
-  const form = useForm<Values>({ defaultValues: DEFAULTS, disabled });
+  const form = useForm<Values>({ defaultValues: DEFAULTS, disabled, resolver });
   onForm?.(form);
   const body = (
     <form noValidate onSubmit={form.handleSubmit(onSubmit)}>
@@ -385,5 +390,150 @@ describe('RHFField', () => {
 
       expect(screen.getByRole('combobox', { name: 'Published as select' })).toBeInTheDocument();
     });
+  });
+});
+
+describe('RHFField validation with a schema library', () => {
+  const titleField = (
+    props: Partial<React.ComponentProps<typeof RHFField<Values, 'title'>>> = {},
+  ) => (
+    <RHFField<Values, 'title'> name="title" label="Title" {...props}>
+      {(field) => <TextBox {...field} />}
+    </RHFField>
+  );
+  const save = () => userEvent.click(screen.getByRole('button', { name: 'Save' }));
+
+  it("shows a per-field schema's first issue, and submits once it passes", async () => {
+    const onSubmit = vi.fn();
+    render(
+      <Form onSubmit={onSubmit}>
+        {() => titleField({ schema: z.string().min(3, 'Use at least 3 characters.') })}
+      </Form>,
+    );
+
+    await userEvent.type(screen.getByRole('textbox', { name: 'Title' }), 'ab');
+    await save();
+    expect(await screen.findByRole('alert')).toHaveTextContent('Use at least 3 characters.');
+    expect(screen.getByRole('textbox', { name: 'Title' })).toHaveAttribute('aria-invalid', 'true');
+    expect(onSubmit).not.toHaveBeenCalled();
+
+    await userEvent.type(screen.getByRole('textbox', { name: 'Title' }), 'c');
+    await save();
+    await waitFor(() =>
+      expect(onSubmit).toHaveBeenCalledWith({ ...DEFAULTS, title: 'abc' }, expect.anything()),
+    );
+  });
+
+  it('runs native rules first, then the schema', async () => {
+    render(
+      <Form>
+        {() =>
+          titleField({
+            rules: { required: 'Enter a title.' },
+            schema: z.string().regex(/^[a-z]+$/, 'Use lowercase letters.'),
+          })
+        }
+      </Form>,
+    );
+
+    await save();
+    expect(await screen.findByRole('alert')).toHaveTextContent('Enter a title.');
+
+    await userEvent.type(screen.getByRole('textbox', { name: 'Title' }), 'ABC');
+    await save();
+    await waitFor(() =>
+      expect(screen.getByRole('alert')).toHaveTextContent('Use lowercase letters.'),
+    );
+  });
+
+  it.each([
+    ['a function', (value: string) => value !== 'draft' || 'Pick another title.'],
+    ['a map', { notDraft: (value: string) => value !== 'draft' || 'Pick another title.' }],
+  ])('keeps a rules.validate %s next to the schema', async (_kind, validate) => {
+    render(
+      <Form>
+        {() => titleField({ rules: { validate }, schema: z.string().max(5, 'Too long.') })}
+      </Form>,
+    );
+    const box = screen.getByRole('textbox', { name: 'Title' });
+
+    await userEvent.type(box, 'draft');
+    await save();
+    expect(await screen.findByRole('alert')).toHaveTextContent('Pick another title.');
+
+    await userEvent.clear(box);
+    await userEvent.type(box, 'toolong');
+    await save();
+    await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('Too long.'));
+  });
+
+  it('awaits an async schema', async () => {
+    render(
+      <Form>
+        {() =>
+          titleField({
+            schema: z.string().refine(async (title) => title !== 'home', 'That slug is taken.'),
+          })
+        }
+      </Form>,
+    );
+
+    await userEvent.type(screen.getByRole('textbox', { name: 'Title' }), 'home');
+    await save();
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('That slug is taken.');
+  });
+
+  it('does not set the required mark from a schema; required does', () => {
+    render(
+      <Form>
+        {() => (
+          <>
+            {titleField({ schema: z.string().min(1, 'Enter a title.') })}
+            <RHFField<Values, 'title'>
+              name="title"
+              label="Required title"
+              required
+              schema={z.string().min(1)}
+            >
+              {(field) => <TextBox {...field} />}
+            </RHFField>
+          </>
+        )}
+      </Form>,
+    );
+
+    expect(screen.getByRole('textbox', { name: 'Title' })).not.toHaveAttribute('aria-required');
+    expect(screen.getByRole('textbox', { name: /Required title/ })).toHaveAttribute(
+      'aria-required',
+      'true',
+    );
+  });
+
+  const formSchema = z.object({
+    title: z.string().min(1, 'Enter a title.'),
+    published: z.boolean(),
+  });
+
+  it.each([
+    ['zodResolver', zodResolver(formSchema)],
+    ['standardSchemaResolver', standardSchemaResolver(formSchema)],
+  ])("shows a form-level %s's error on the field, with no field rules", async (_name, resolver) => {
+    const onSubmit = vi.fn();
+    render(
+      <Form onSubmit={onSubmit} resolver={resolver}>
+        {() => titleField()}
+      </Form>,
+    );
+
+    await save();
+    expect(await screen.findByRole('alert')).toHaveTextContent('Enter a title.');
+    expect(onSubmit).not.toHaveBeenCalled();
+
+    await userEvent.type(screen.getByRole('textbox', { name: 'Title' }), 'Launch');
+    await save();
+    await waitFor(() =>
+      expect(onSubmit).toHaveBeenCalledWith({ ...DEFAULTS, title: 'Launch' }, expect.anything()),
+    );
   });
 });

@@ -38,6 +38,53 @@ const form = useForm<Settings>({ defaultValues: { title: '', notifications: fals
 </FormProvider>;
 ```
 
+## Validation
+
+Three ways to give a field its rules. They can be mixed; each field shows its first error.
+
+**Native rules**, react-hook-form's own `rules`:
+
+```tsx
+<RHFField<Settings, 'title'>
+  name="title"
+  label="Title"
+  rules={{
+    required: 'Enter a title.',
+    maxLength: { value: 80, message: 'Keep it under 80 characters.' },
+  }}
+>
+  {(field) => <Input {...field} />}
+</RHFField>
+```
+
+**A schema per field**, with any [Standard Schema](https://standardschema.dev) library (zod 3.24+ and 4, valibot, ArkType, ...). The first issue's message is the error. It runs after `rules`, next to any `rules.validate`, and async schemas are awaited:
+
+```tsx
+import { z } from 'zod';
+
+<RHFField<Settings, 'email'>
+  name="email"
+  label="Email"
+  required
+  schema={z.email('Enter a valid email address.')}
+>
+  {(field) => <Input {...field} config={{ type: 'email' }} />}
+</RHFField>;
+```
+
+`schemaRule(schema)` from `@repo/form-commons/lib/standardSchema` gives the same check as a plain `validate` function, for code that builds `rules` itself.
+
+**One schema for the whole form**, with a resolver from `@hookform/resolvers` (`zodResolver`, `valibotResolver`, `standardSchemaResolver`, ...). `RHFField` needs no `rules` then: it shows whatever error the resolver puts on its path.
+
+```tsx
+import { zodResolver } from '@hookform/resolvers/zod';
+
+const schema = z.object({ title: z.string().min(1, 'Enter a title.'), notifications: z.boolean() });
+const form = useForm<Settings>({ defaultValues, resolver: zodResolver(schema) });
+```
+
+A schema or resolver doesn't set the required mark; pass `required` on fields that must be filled. The package itself doesn't depend on zod or the resolvers: install the ones you use in the app.
+
 ## Guidelines
 
 **Do**
@@ -50,7 +97,8 @@ const form = useForm<Settings>({ defaultValues: { title: '', notifications: fals
 **Don't**
 
 - Don't wrap the input in another `Field`; `RHFField` is the Field.
-- Don't set `required` and `rules.required` separately; `required` defaults to `!!rules.required`.
+- Don't set `required` and `rules.required` separately; `required` defaults to `!!rules.required`. With a `schema` or a resolver, do set `required`.
+- Don't validate the same rule in a field schema and in the form resolver; pick one place per rule.
 
 ## Accessibility and keyboard
 
@@ -65,6 +113,6 @@ A whole form: Input, Switch, Select and JsonInput. Submit it empty to see every 
 
 ## Props
 
-The table describes the Playground's single field (`label`, `description`, the required message, `hideLabel`). Try it in the [Playground](?path=/story/components-rhffield--playground).
+The table describes the Playground's single field (`label`, `description`, the required message, `validation`, `hideLabel`). Switch `validation` between `rules`, `schema` and `resolver` to see the same rule each way. Try it in the [Playground](?path=/story/components-rhffield--playground).
 
 <ArgTypes of={RHFFieldStories} />
