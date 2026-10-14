@@ -5,6 +5,7 @@ The shared shadcn (Base UI) primitives, generic form components, JSON editor and
 | Module                                              | Scope                                                                                                                     |
 | --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
 | [UI design tokens](./ui-design-tokens.md)           | `theme.css` and `tokens.ts`: Strapi palette, `primary-ink`, contrast data                                                 |
+| [UI input contract](./ui-input-contract.md)         | `lib/inputContract`: controlled value props, JSON-only `config` types per input, `isJsonConfig` guard                     |
 | [UI primitives](./ui-primitives.md)                 | `components/ui/*` (button variants, checkbox, radio group, badge, switch, calendar, ...), `cn`, sidebar hooks             |
 | [UI form components](./ui-form-components.md)       | `components/forms/*`: `Field`, dialogs, gated controls, dropzone, pagination and their pure helpers                       |
 | [UI JSON editor](./ui-json-editor.md)               | `components/forms/JsonInput` on CodeMirror 6 in a shadow root, `JsonCodeEditor`, pure editor helpers                      |

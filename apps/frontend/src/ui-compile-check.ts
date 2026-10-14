@@ -42,5 +42,6 @@ export * as passwordInput from '@repo/form-commons/components/forms/PasswordInpu
 export * as secretReveal from '@repo/form-commons/components/forms/SecretReveal';
 export * as unsavedChangesDialog from '@repo/form-commons/components/forms/UnsavedChangesDialog';
 export type { Decision } from '@repo/form-commons/lib/decision';
+export * as inputContract from '@repo/form-commons/lib/inputContract';
 export * as json from '@repo/form-commons/lib/json';
 export * as paginationHelpers from '@repo/form-commons/lib/pagination';
