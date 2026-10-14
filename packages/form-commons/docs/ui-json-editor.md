@@ -10,6 +10,7 @@
 - Themed only through `EditorView.theme` and `HighlightStyle` with `var(--token)` colours; the host carries border, focus, invalid and disabled styling via Tailwind.
 - Extensions: JSON language, line numbers, bracket matching, auto-closing brackets, history, wrapping. No lint, folding, autocomplete UI or `indentWithTab` (no keyboard trap). `@codemirror/autocomplete` is a dependency only for the bracket closing.
 - Accessibility: in-shadow `role="textbox"` with `aria-label`, `aria-invalid`, `aria-required`, `aria-readonly`; `aria-describedby` points at an in-shadow node mirroring description and error; label clicks focus the editor through `ElementInternals.labels`.
+- Known limitation: the inner CodeMirror editor keeps its own document. When the parent ignores an edit (does not update `value` from `onChange`), the editor still shows the typed text, so the visible text and the controlled `value` can differ until the parent sets a new `value`.
 - Validation after first blur then on change, same `parseJson` messages, "Format JSON" button.
 
 ## Files

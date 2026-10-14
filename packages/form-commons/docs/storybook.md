@@ -47,6 +47,8 @@ PLAYWRIGHT_BROWSERS_PATH=0 pnpm --filter @repo/form-commons test:stories   # sto
 pnpm --filter @repo/form-commons exec playwright test --list               # list the story tests
 ```
 
+Known limitation: on this machine the Playwright browsers are installed in `apps/cms-admin/node_modules/.cache/ms-playwright`, so `test:stories` needs `PLAYWRIGHT_BROWSERS_PATH` set to that directory (absolute path) when `PLAYWRIGHT_BROWSERS_PATH=0` finds no browser.
+
 Story tests query by role and name, open `iframe.html?id=<id>&viewMode=story&globals=theme:<theme>`, and keep the original titles and AC tags. Storybook and the story tests are not in CI. The unit suite (`test`, `test:cov`) does not pick up `e2e/` or the stories.
 
 ### Mapping of the removed cms-admin tests

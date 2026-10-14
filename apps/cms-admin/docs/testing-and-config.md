@@ -91,6 +91,7 @@ gone.
 - In this repo the browsers are in `node_modules`, so run e2e as
   `PLAYWRIGHT_BROWSERS_PATH=0 pnpm --filter cms-admin test:e2e [e2e/<spec>.spec.ts]`. Reports go to
   `playwright-report/` and `test-results/` (git-ignored).
+- Known limitation: the browsers can instead live in `apps/cms-admin/node_modules/.cache/ms-playwright`; when `PLAYWRIGHT_BROWSERS_PATH=0` finds no browser, set `PLAYWRIGHT_BROWSERS_PATH` to that directory (absolute path) for cms-admin e2e and for form-commons `test:stories`.
 
 ### The `@/` alias
 
