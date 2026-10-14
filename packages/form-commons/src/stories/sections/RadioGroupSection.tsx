@@ -1,24 +1,28 @@
-import { Label } from '../../components/ui/label';
-import { RadioGroup, RadioGroupItem } from '../../components/ui/radio-group';
+import { useState } from 'react';
+
+import { RadioGroup } from '../../components/ui/radio-group';
+import type { InputOption } from '../../lib/inputContract';
 import { Section } from './Section';
 
-/** The UI kit's RadioGroup section: "Density" with three options (AC-9). */
-export const RadioGroupSection: React.FC = () => (
-  <Section title="RadioGroup">
-    <RadioGroup aria-label="Density" defaultValue="comfortable">
-      {(
-        [
-          { value: 'comfortable', label: 'Comfortable' },
-          { value: 'compact', label: 'Compact' },
-          { value: 'spacious', label: 'Spacious' },
-        ] as const
-      ).map(({ value, label }) => (
-        <div key={value} className="flex items-center gap-2">
-          <RadioGroupItem id={`ui-kit-density-${value}`} value={value} />
-          <Label htmlFor={`ui-kit-density-${value}`}>{label}</Label>
-        </div>
-      ))}
-    </RadioGroup>
-  </Section>
-);
+const DENSITY_OPTIONS: InputOption[] = [
+  { value: 'comfortable', label: 'Comfortable' },
+  { value: 'compact', label: 'Compact' },
+  { value: 'spacious', label: 'Spacious' },
+];
+
+/** The UI kit's RadioGroup section: "Density" with three options (AC-9), on local state. */
+export const RadioGroupSection: React.FC = () => {
+  const [density, setDensity] = useState<string | null>('comfortable');
+
+  return (
+    <Section title="RadioGroup">
+      <RadioGroup
+        aria-label="Density"
+        value={density}
+        onChange={setDensity}
+        config={{ options: DENSITY_OPTIONS }}
+      />
+    </Section>
+  );
+};
 RadioGroupSection.displayName = 'RadioGroupSection';

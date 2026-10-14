@@ -13,13 +13,7 @@ import {
   DialogTitle,
 } from '@repo/form-commons/components/ui/dialog';
 import { Input } from '@repo/form-commons/components/ui/input';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@repo/form-commons/components/ui/select';
+import { Select } from '@repo/form-commons/components/ui/select';
 
 import { PermissionTree } from '@/components/form/PermissionTree';
 import { useCreateAccessToken } from '@/features/settings/hooks/useAccessTokens';
@@ -114,26 +108,16 @@ export const TokenFormDialog: React.FC<TokenFormDialogProps> = ({
                 config={{ autoComplete: 'off' }}
               />
             </Field>
-            <Select
-              items={EXPIRES_ITEMS}
-              value={expiresIn}
-              onValueChange={(value) => {
-                if (value) setExpiresIn(value);
-              }}
-            >
-              <Field label="Expires">
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-              </Field>
-              <SelectContent>
-                {EXPIRES_ITEMS.map((item) => (
-                  <SelectItem key={item.value} value={item.value}>
-                    {item.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Field label="Expires">
+              <Select
+                value={expiresIn}
+                onChange={(next) => {
+                  const option = EXPIRES_IN_OPTIONS.find((candidate) => candidate.value === next);
+                  if (option) setExpiresIn(option.value);
+                }}
+                config={{ options: EXPIRES_ITEMS }}
+              />
+            </Field>
           </div>
           <PermissionTree
             value={permissions}

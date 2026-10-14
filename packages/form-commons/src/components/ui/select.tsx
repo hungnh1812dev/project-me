@@ -4,18 +4,12 @@ import { Select as SelectPrimitive } from '@base-ui/react/select';
 import { CheckIcon, ChevronDownIcon } from 'lucide-react';
 
 import { cn } from '../../lib/cn';
+import type { InputProps, SelectConfig } from '../../lib/inputContract';
 import { controlClasses } from './variants';
 
 // Vendored from shadcn/ui (base-nova) and adapted: arrow components, semantic tokens and 44px
-// touch targets below `lg`. Put `SelectTrigger` inside a `Field` so it gets the label and the
-// `aria-*` wiring; the popup goes next to it inside `Select`.
-
-const Select = SelectPrimitive.Root;
-
-const SelectGroup: React.FC<SelectPrimitive.Group.Props> = (props) => (
-  <SelectPrimitive.Group data-slot="select-group" {...props} />
-);
-SelectGroup.displayName = 'SelectGroup';
+// touch targets below `lg`. The parts below are internal: callers render `Select` on the input
+// contract and pass the choices as `config.options`.
 
 const SelectValue: React.FC<SelectPrimitive.Value.Props> = ({ className, ...props }) => (
   <SelectPrimitive.Value
@@ -86,15 +80,6 @@ const SelectContent: React.FC<SelectContentProps> = ({
 );
 SelectContent.displayName = 'SelectContent';
 
-const SelectLabel: React.FC<SelectPrimitive.GroupLabel.Props> = ({ className, ...props }) => (
-  <SelectPrimitive.GroupLabel
-    data-slot="select-label"
-    className={cn('text-muted-foreground px-2 py-1.5 text-xs font-medium', className)}
-    {...props}
-  />
-);
-SelectLabel.displayName = 'SelectLabel';
-
 const SelectItem: React.FC<SelectPrimitive.Item.Props> = ({ className, children, ...props }) => (
   <SelectPrimitive.Item
     data-slot="select-item"
@@ -112,22 +97,56 @@ const SelectItem: React.FC<SelectPrimitive.Item.Props> = ({ className, children,
 );
 SelectItem.displayName = 'SelectItem';
 
-const SelectSeparator: React.FC<SelectPrimitive.Separator.Props> = ({ className, ...props }) => (
-  <SelectPrimitive.Separator
-    data-slot="select-separator"
-    className={cn('bg-border -mx-1 my-1 h-px', className)}
-    {...props}
-  />
-);
-SelectSeparator.displayName = 'SelectSeparator';
+type SelectProps = InputProps<string | null, SelectConfig>;
 
-export {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectLabel,
-  SelectSeparator,
-  SelectTrigger,
-  SelectValue,
+/**
+ * Controlled Base UI Select (`role="combobox"` trigger and a listbox popup). The parent owns
+ * `value` (`null` while nothing is chosen) and gets the next value through `onChange`. The choices
+ * come from `config.options`, and `config.placeholder` shows while `value` is `null`. Put it in a
+ * `Field`: the id and `aria-*` land on the trigger, so the label names it.
+ */
+const Select: React.FC<SelectProps> = ({
+  value,
+  onChange,
+  onBlur,
+  name,
+  config,
+  disabled,
+  readOnly,
+  required,
+  className,
+  ref,
+  ...field
+}) => {
+  const options = config?.options ?? [];
+  return (
+    <SelectPrimitive.Root
+      items={options}
+      value={value}
+      onValueChange={(next) => onChange(next as string | null)}
+      name={name}
+      disabled={disabled}
+      readOnly={readOnly}
+      required={required}
+    >
+      <SelectTrigger
+        ref={ref as React.Ref<HTMLButtonElement>}
+        onBlur={onBlur}
+        className={className}
+        {...field}
+      >
+        <SelectValue placeholder={config?.placeholder} />
+      </SelectTrigger>
+      <SelectContent>
+        {options.map((option) => (
+          <SelectItem key={option.value} value={option.value}>
+            {option.label}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </SelectPrimitive.Root>
+  );
 };
+Select.displayName = 'Select';
+
+export { Select, type SelectProps };

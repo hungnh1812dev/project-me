@@ -5,13 +5,7 @@ import { DatePicker } from '@repo/form-commons/components/forms/DatePicker';
 import { Field } from '@repo/form-commons/components/forms/Field';
 import { Button } from '@repo/form-commons/components/ui/button';
 import { Input } from '@repo/form-commons/components/ui/input';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@repo/form-commons/components/ui/select';
+import { Select } from '@repo/form-commons/components/ui/select';
 
 import type { Column, ColumnCatalog } from '@/features/content/columns';
 import { operatorLabel } from '@/features/content/filterLabels';
@@ -76,24 +70,13 @@ const ValueInput: React.FC<{
 }> = ({ column, value, error, locale, onChange }) => {
   if (column?.kind === 'boolean') {
     return (
-      <Select
-        items={BOOLEAN_ITEMS}
-        value={value === '' ? null : value}
-        onValueChange={(next) => onChange(next ?? '')}
-      >
-        <Field label="Value" error={error}>
-          <SelectTrigger>
-            <SelectValue placeholder="Choose Yes or No" />
-          </SelectTrigger>
-        </Field>
-        <SelectContent>
-          {BOOLEAN_ITEMS.map((item) => (
-            <SelectItem key={item.value} value={item.value}>
-              {item.label}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+      <Field label="Value" error={error}>
+        <Select
+          value={value === '' ? null : value}
+          onChange={(next) => onChange(next ?? '')}
+          config={{ placeholder: 'Choose Yes or No', options: BOOLEAN_ITEMS }}
+        />
+      </Field>
     );
   }
   if (column?.kind === 'date') {
@@ -197,47 +180,26 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({ catalog, filters, onAp
               aria-label={`Filter ${n}`}
               className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.5fr)_auto] sm:items-start"
             >
-              <Select
-                items={fieldItems}
-                value={r.field === '' ? null : r.field}
-                onValueChange={(field) => {
-                  if (field !== null) patch(r.key, { field, op: '$eq', value: '' });
-                }}
-              >
-                <Field label="Field">
-                  <SelectTrigger>
-                    <SelectValue placeholder="Choose a field" />
-                  </SelectTrigger>
-                </Field>
-                <SelectContent>
-                  {fieldItems.map((item) => (
-                    <SelectItem key={item.value} value={item.value}>
-                      {item.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Select
-                items={opItems}
-                value={column ? r.op : null}
-                disabled={!column}
-                onValueChange={(op) => {
-                  if (op !== null) patch(r.key, { op });
-                }}
-              >
-                <Field label="Operator">
-                  <SelectTrigger>
-                    <SelectValue placeholder="Choose a field first" />
-                  </SelectTrigger>
-                </Field>
-                <SelectContent>
-                  {opItems.map((item) => (
-                    <SelectItem key={item.value} value={item.value}>
-                      {item.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Field label="Field">
+                <Select
+                  value={r.field === '' ? null : r.field}
+                  onChange={(field) => {
+                    if (field !== null) patch(r.key, { field, op: '$eq', value: '' });
+                  }}
+                  config={{ placeholder: 'Choose a field', options: fieldItems }}
+                />
+              </Field>
+              <Field label="Operator">
+                <Select
+                  value={column ? r.op : null}
+                  disabled={!column}
+                  onChange={(next) => {
+                    const op = column?.operators.find((candidate) => candidate === next);
+                    if (op) patch(r.key, { op });
+                  }}
+                  config={{ placeholder: 'Choose a field first', options: opItems }}
+                />
+              </Field>
               <ValueInput
                 key={r.field}
                 column={column}

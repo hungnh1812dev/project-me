@@ -69,7 +69,8 @@ export type JsonInputConfig = {
 export type SwitchConfig = Record<string, never>;
 export type CheckboxConfig = { indeterminate?: boolean };
 export type SelectConfig = { placeholder?: string; options: InputOption[] };
-export type RadioGroupConfig = { options: InputOption[]; orientation?: 'horizontal' | 'vertical' };
+/** `options` is left out when the items come from `RadioGroupItem` children instead. */
+export type RadioGroupConfig = { options?: InputOption[]; orientation?: 'horizontal' | 'vertical' };
 export type DatePickerConfig = { locale?: string; placeholder?: string };
 
 const isPlainObject = (value: object): boolean => {

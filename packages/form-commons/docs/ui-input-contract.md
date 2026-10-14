@@ -20,7 +20,7 @@ The shared props contract for every value-holding input (`Input`, `Textarea`, `P
 | `Switch`        | `boolean`           | `SwitchConfig`        | none                                                                                                                                     |
 | `Checkbox`      | `boolean`           | `CheckboxConfig`      | `indeterminate`                                                                                                                          |
 | `Select`        | `string \| null`    | `SelectConfig`        | `placeholder`, `options: InputOption[]`                                                                                                  |
-| `RadioGroup`    | `string \| null`    | `RadioGroupConfig`    | `options: InputOption[]`, `orientation`                                                                                                  |
+| `RadioGroup`    | `string \| null`    | `RadioGroupConfig`    | `options?: InputOption[]` or `RadioGroupItem` children (a union: exactly one), `orientation`                                             |
 | `DatePicker`    | `Date \| undefined` | `DatePickerConfig`    | `locale`, `placeholder`                                                                                                                  |
 
 `isJsonConfig(value)` is the runtime guard: true for a plain object whose values are JSON (`undefined` allowed only for a top-level optional key). It rejects functions, React elements, Dates, class instances, `NaN`/`Infinity`, symbols, bigints, `undefined` inside arrays and cycles. Stories and tests use it to check a config before rendering it.

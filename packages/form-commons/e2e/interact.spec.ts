@@ -13,6 +13,9 @@ const INPUT_PLAYGROUND = 'components-input--playground';
 const PASSWORD_PLAYGROUND = 'components-input--password-playground';
 const TEXTAREA_PLAYGROUND = 'components-textarea--playground';
 const JSON_INPUT_PLAYGROUND = 'components-jsoninput--playground';
+const SELECT_PLAYGROUND = 'components-select--playground';
+const RADIO_GROUP_PLAYGROUND = 'components-radiogroup--playground';
+const RADIO_GROUP_WITH_ITEMS = 'components-radiogroup--with-items';
 
 test.beforeEach(async ({ page }) => {
   await gotoStory(page, SWITCH_PLAYGROUND);
@@ -128,6 +131,75 @@ test('the JsonInput Playground readout follows typing, validation and Format JSO
 
   await page.getByRole('button', { name: 'Format JSON' }).click();
   await expect(readout).toHaveText('"{\\n  \\"a\\": 1\\n}"');
+});
+
+test('the Select Playground readout follows options picked by mouse and keyboard', async ({
+  page,
+}) => {
+  await gotoStory(page, SELECT_PLAYGROUND);
+  const select = page.getByRole('combobox', { name: 'Expires in' });
+  const readout = page.getByRole('status', { name: 'Value' });
+  // The play function has picked "1 day".
+  await expect(readout).toHaveText('"1d"');
+  await expect(select).toHaveText(/1 day/);
+
+  await select.click();
+  await page.getByRole('option', { name: '1 hour' }).click();
+  await expect(readout).toHaveText('"1h"');
+  await expect(select).toHaveText(/1 hour/);
+
+  await select.focus();
+  await page.keyboard.press('Enter');
+  await expect(page.getByRole('listbox')).toBeVisible();
+  await page.keyboard.press('ArrowDown');
+  await expect(page.getByRole('option', { name: '1 day' })).toHaveAttribute('data-highlighted');
+  await page.keyboard.press('Enter');
+  await expect(readout).toHaveText('"1d"');
+  await expect(select).toBeFocused();
+});
+
+test('the RadioGroup Playground readout follows arrow keys and label clicks', async ({ page }) => {
+  await gotoStory(page, RADIO_GROUP_PLAYGROUND);
+  const group = page.getByRole('radiogroup', { name: 'Density' });
+  const compact = group.getByRole('radio', { name: 'Compact' });
+  const readout = page.getByRole('status', { name: 'Value' });
+  // The play function has picked Compact.
+  await expect(readout).toHaveText('"compact"');
+  await expect(compact).toHaveAttribute('aria-checked', 'true');
+
+  await compact.focus();
+  await page.keyboard.press('ArrowDown');
+  await expect(readout).toHaveText('"spacious"');
+  await expect(group.getByRole('radio', { name: 'Spacious' })).toBeFocused();
+
+  await page.getByText('Comfortable', { exact: true }).click();
+  await expect(readout).toHaveText('"comfortable"');
+  await expect(group.getByRole('radio', { name: 'Comfortable' })).toHaveAttribute(
+    'aria-checked',
+    'true',
+  );
+});
+
+test('the RadioGroup WithItems readout follows arrow keys and card clicks', async ({ page }) => {
+  await gotoStory(page, RADIO_GROUP_WITH_ITEMS);
+  const group = page.getByRole('radiogroup', { name: 'Plan' });
+  const scale = group.getByRole('radio', { name: 'Scale' });
+  const readout = page.getByRole('status', { name: 'Value' });
+  // The play function has picked Scale.
+  await expect(readout).toHaveText('"scale"');
+  await expect(scale).toHaveAttribute('aria-checked', 'true');
+
+  await scale.focus();
+  await page.keyboard.press('ArrowLeft');
+  await expect(readout).toHaveText('"team"');
+  await expect(group.getByRole('radio', { name: 'Team' })).toBeFocused();
+
+  await page.getByText('1 site, 10 GB media').click();
+  await expect(readout).toHaveText('"starter"');
+  await expect(group.getByRole('radio', { name: 'Starter' })).toHaveAttribute(
+    'aria-checked',
+    'true',
+  );
 });
 
 test('Input Playground args set the initial value and the read-only state', async ({ page }) => {

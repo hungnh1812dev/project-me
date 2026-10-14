@@ -2,13 +2,7 @@ import { useState } from 'react';
 
 import { ConfirmDialog } from '@repo/form-commons/components/forms/ConfirmDialog';
 import { Field } from '@repo/form-commons/components/forms/Field';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@repo/form-commons/components/ui/select';
+import { Select } from '@repo/form-commons/components/ui/select';
 
 import type { Role } from '@/features/auth/types';
 import { useAssignRole } from '@/features/settings/hooks/useUsers';
@@ -43,7 +37,7 @@ export const ChangeRoleDialog: React.FC<ChangeRoleDialogProps> = ({
     roles.some((role) => role.documentId === row.user.roleId) ? row.user.roleId : null,
   );
   const [fieldError, setFieldError] = useState<string | null>(null);
-  const items = roles.map((role) => ({ value: role.documentId, label: roleLabel(role) }));
+  const options = roles.map((role) => ({ value: role.documentId, label: roleLabel(role) }));
   const { email } = row.user;
 
   const confirm = async () => {
@@ -71,27 +65,16 @@ export const ChangeRoleDialog: React.FC<ChangeRoleDialogProps> = ({
       onConfirm={confirm}
       error={assign.error?.message}
     >
-      <Select
-        items={items}
-        value={roleId}
-        onValueChange={(value) => {
-          setRoleId(value);
-          setFieldError(null);
-        }}
-      >
-        <Field label="Role" error={fieldError}>
-          <SelectTrigger>
-            <SelectValue placeholder="Choose a role" />
-          </SelectTrigger>
-        </Field>
-        <SelectContent>
-          {items.map((item) => (
-            <SelectItem key={item.value} value={item.value}>
-              {item.label}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+      <Field label="Role" error={fieldError}>
+        <Select
+          value={roleId}
+          onChange={(value) => {
+            setRoleId(value);
+            setFieldError(null);
+          }}
+          config={{ placeholder: 'Choose a role', options }}
+        />
+      </Field>
     </ConfirmDialog>
   );
 };

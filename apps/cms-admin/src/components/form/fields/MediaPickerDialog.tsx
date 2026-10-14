@@ -131,7 +131,7 @@ export const MediaPickerDialog: React.FC<MediaPickerDialogProps> = ({
           <RadioGroup
             aria-label="Media files"
             value={choice}
-            onValueChange={(value) => setChoice(value as string)}
+            onChange={setChoice}
             className="grid max-h-[45dvh] grid-cols-2 gap-3 overflow-y-auto p-1 sm:grid-cols-3 md:grid-cols-4"
           >
             {visible.map((asset) => (
