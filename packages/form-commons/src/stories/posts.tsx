@@ -1,4 +1,4 @@
-import type { DataTableColumn, SortDir } from '../components/forms/DataTable';
+import type { DataTableColumn, SortDir } from '../components/native/DataTable';
 import { Badge } from '../components/ui/badge';
 
 /** A content entry, as a collection list shows it. */

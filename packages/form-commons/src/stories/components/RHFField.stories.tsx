@@ -5,8 +5,8 @@ import { FormProvider, useForm, useWatch } from 'react-hook-form';
 import { expect, waitFor } from 'storybook/test';
 import { z } from 'zod';
 
-import { JsonInput } from '../../components/forms/JsonInput';
-import { RHFField } from '../../components/rhf/RHFField';
+import { RHFField } from '../../components/form/Field';
+import { JsonInput } from '../../components/native/JsonInput';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { Select } from '../../components/ui/select';

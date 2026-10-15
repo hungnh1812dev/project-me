@@ -1,8 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { expect, fn, waitFor } from 'storybook/test';
 
-import { Field } from '../../components/forms/Field';
-import { PasswordInput } from '../../components/forms/PasswordInput';
+import { Field } from '../../components/native/Field';
+import { PasswordInput } from '../../components/native/PasswordInput';
 import { Input } from '../../components/ui/input';
 import { Controlled, useArgsValue } from '../Controlled';
 import { InputSection } from '../sections/InputSection';

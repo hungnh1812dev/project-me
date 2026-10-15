@@ -3,14 +3,14 @@ import { lazy, Suspense, useId, useRef, useState } from 'react';
 import type {
   RichTextEditorHandle,
   RichTextEditorProps,
-} from '../../components/forms/RichTextEditor';
+} from '../../components/native/RichTextEditor';
 import { Label } from '../../components/ui/label';
 import { Skeleton } from '../../components/ui/skeleton';
 import { ROUND_TRIP_WARNING } from '../../lib/richtext';
 import { Section } from './Section';
 
 // Lazy, as cms-admin's RichTextField loads it: Tiptap stays in its own chunk.
-const RichTextEditor = lazy(() => import('../../components/forms/RichTextEditor'));
+const RichTextEditor = lazy(() => import('../../components/native/RichTextEditor'));
 
 export interface RichTextDemoProps extends Partial<
   Pick<RichTextEditorProps, 'onBlur' | 'onRoundTripLoss' | 'readOnly'>

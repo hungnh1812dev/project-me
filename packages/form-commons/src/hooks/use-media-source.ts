@@ -1,6 +1,6 @@
 import { createContext, useContext } from 'react';
 
-import type { FileStatusItem } from '../components/forms/FileDropzone';
+import type { FileStatusItem } from '../components/native/FileDropzone';
 import type { Decision } from '../lib/decision';
 import type { MediaFile } from '../lib/media';
 

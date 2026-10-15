@@ -1,7 +1,7 @@
 import { useMemo, useRef, useState, type ReactNode } from 'react';
 
-import type { FileStatusItem } from '../components/forms/FileDropzone';
-import { MediaProvider } from '../components/forms/MediaProvider';
+import type { FileStatusItem } from '../components/native/FileDropzone';
+import { MediaProvider } from '../components/native/MediaProvider';
 import type { MediaSource } from '../hooks/use-media-source';
 import type { Decision } from '../lib/decision';
 import { DEMO_ASSETS, demoImageSrc, describeDemoAsset, type DemoAsset } from './mediaLibrary';

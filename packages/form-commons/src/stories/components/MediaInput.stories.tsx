@@ -1,8 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { expect, fn, waitFor } from 'storybook/test';
 
-import { Field } from '../../components/forms/Field';
-import { MediaInput, type MediaInputProps } from '../../components/forms/MediaInput';
+import { Field } from '../../components/native/Field';
+import { MediaInput, type MediaInputProps } from '../../components/native/MediaInput';
 import { Controlled, useArgsValue } from '../Controlled';
 import { DemoMediaProvider } from '../DemoMediaProvider';
 import type { DemoAsset } from '../mediaLibrary';

@@ -2,8 +2,8 @@ import { useMemo } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { expect, fn, waitFor, within } from 'storybook/test';
 
-import { DatePicker } from '../../components/forms/DatePicker';
-import { Field } from '../../components/forms/Field';
+import { DatePicker } from '../../components/native/DatePicker';
+import { Field } from '../../components/native/Field';
 import { Controlled, useArgsValue } from '../Controlled';
 import { DatePickerSection } from '../sections/DatePickerSection';
 

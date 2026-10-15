@@ -1,7 +1,7 @@
 import { useState } from 'react';
 
-import { DatePicker } from '../../components/forms/DatePicker';
-import { Field } from '../../components/forms/Field';
+import { DatePicker } from '../../components/native/DatePicker';
+import { Field } from '../../components/native/Field';
 import { Button } from '../../components/ui/button';
 import { Calendar } from '../../components/ui/calendar';
 import {

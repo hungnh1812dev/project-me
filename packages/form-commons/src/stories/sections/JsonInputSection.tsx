@@ -1,7 +1,7 @@
 import { useState } from 'react';
 
-import { Field } from '../../components/forms/Field';
-import { JsonInput } from '../../components/forms/JsonInput';
+import { Field } from '../../components/native/Field';
+import { JsonInput } from '../../components/native/JsonInput';
 import { Section } from './Section';
 
 /** A controlled JsonInput in a Field, as pages wire it. */

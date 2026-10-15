@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { expect, fn, waitFor } from 'storybook/test';
 
-import { DataTable, type SortDir } from '../../components/forms/DataTable';
+import { DataTable, type SortDir } from '../../components/native/DataTable';
 import { Controlled, useArgsValue } from '../Controlled';
 import { POST_COLUMNS, POSTS, sortPosts } from '../posts';
 import { DataTableSection, PostActions } from '../sections/DataTableSection';

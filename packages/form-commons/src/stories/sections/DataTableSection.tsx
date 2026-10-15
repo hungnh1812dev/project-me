@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { EllipsisIcon } from 'lucide-react';
 
-import { DataTable, type SortDir } from '../../components/forms/DataTable';
+import { DataTable, type SortDir } from '../../components/native/DataTable';
 import { Button } from '../../components/ui/button';
 import { POST_COLUMNS, POSTS, sortPosts } from '../posts';
 import { Section } from './Section';

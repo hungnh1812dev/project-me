@@ -2,8 +2,8 @@ import { useState } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { expect, fn, waitFor } from 'storybook/test';
 
-import { Field } from '../../components/forms/Field';
-import { JsonInput, type JsonInputProps } from '../../components/forms/JsonInput';
+import { Field } from '../../components/native/Field';
+import { JsonInput, type JsonInputProps } from '../../components/native/JsonInput';
 import { editorViewOf } from '../../lib/jsonEditorView';
 import { Controlled, useArgsValue } from '../Controlled';
 import { JsonInputSection } from '../sections/JsonInputSection';

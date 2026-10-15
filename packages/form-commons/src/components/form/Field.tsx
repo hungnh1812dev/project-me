@@ -13,7 +13,11 @@ import {
 
 import type { InputValueProps } from '../../lib/inputContract';
 import { schemaRule, type StandardSchemaV1 } from '../../lib/standardSchema';
-import { Field, type FieldControlProps, type FieldProps } from '../forms/Field';
+import {
+  Field as NativeField,
+  type FieldControlProps as NativeFieldControlProps,
+  type FieldProps as NativeFieldProps,
+} from '../native/Field';
 
 /** What the `children` render prop gets: the controlled value props, typed from `name` (D-8). */
 export interface RHFFieldRenderProps<
@@ -26,10 +30,10 @@ export interface RHFFieldRenderProps<
   disabled?: boolean;
 }
 
-export interface RHFFieldProps<
+export interface FieldProps<
   TValues extends FieldValues = FieldValues,
   TName extends FieldPath<TValues> = FieldPath<TValues>,
-> extends Omit<FieldProps, 'error' | 'children'> {
+> extends Omit<NativeFieldProps, 'error' | 'children'> {
   name: TName;
   /** Defaults to the control from `useFormContext()`. */
   control?: Control<TValues>;
@@ -42,7 +46,9 @@ export interface RHFFieldProps<
    */
   schema?: StandardSchemaV1;
   /** Renders exactly one control from the bound field, for example `(field) => <Switch {...field} />`. */
-  children: (field: RHFFieldRenderProps<TValues, TName>) => React.ReactElement<FieldControlProps>;
+  children: (
+    field: RHFFieldRenderProps<TValues, TName>,
+  ) => React.ReactElement<NativeFieldControlProps>;
 }
 
 type Rules<TValues extends FieldValues, TName extends FieldPath<TValues>> = NonNullable<
@@ -55,7 +61,7 @@ type FieldValidate<TValues extends FieldValues, TName extends FieldPath<TValues>
 
 /** `rules` with `schema` added to `validate`, next to a `validate` function or map it already has. */
 function withSchema<TValues extends FieldValues, TName extends FieldPath<TValues>>(
-  rules: RHFFieldProps<TValues, TName>['rules'],
+  rules: FieldProps<TValues, TName>['rules'],
   schema: StandardSchemaV1,
 ): Rules<TValues, TName> {
   const fromSchema = schemaRule(schema) as FieldValidate<TValues, TName>;
@@ -74,7 +80,7 @@ function withSchema<TValues extends FieldValues, TName extends FieldPath<TValues
  * `aria-*` wiring are `Field`'s, the error is `fieldState.error.message`, and `required` defaults to
  * `!!rules.required`.
  */
-export const RHFField = <
+export const Field = <
   TValues extends FieldValues = FieldValues,
   TName extends FieldPath<TValues> = FieldPath<TValues>,
 >({
@@ -85,7 +91,7 @@ export const RHFField = <
   required,
   children,
   ...fieldProps
-}: RHFFieldProps<TValues, TName>): React.ReactElement => {
+}: FieldProps<TValues, TName>): React.ReactElement => {
   const { field, fieldState } = useController<TValues, TName>({
     name,
     control,
@@ -93,7 +99,7 @@ export const RHFField = <
   });
 
   return (
-    <Field
+    <NativeField
       {...fieldProps}
       error={fieldState.error?.message}
       required={required ?? Boolean(rules?.required)}
@@ -106,7 +112,7 @@ export const RHFField = <
         ref: field.ref,
         disabled: field.disabled,
       })}
-    </Field>
+    </NativeField>
   );
 };
-RHFField.displayName = 'RHFField';
+Field.displayName = 'RHFField';

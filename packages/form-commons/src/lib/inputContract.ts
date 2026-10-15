@@ -1,6 +1,6 @@
 import type { Ref } from 'react';
 
-import type { FieldControlProps } from '../components/forms/Field';
+import type { FieldControlProps } from '../components/native/Field';
 import type { JsonExpect } from './json';
 
 /** Values a `config` may hold: plain JSON, no functions, elements or Dates. */

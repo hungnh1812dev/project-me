@@ -6,8 +6,8 @@
   "exports": {
     "./components/ui/variants": "./src/components/ui/variants.ts",
     "./components/ui/*": "./src/components/ui/*.tsx",
-    "./components/forms/*": "./src/components/forms/*.tsx",
-    "./components/rhf/*": "./src/components/rhf/*.tsx",
+    "./native/*": "./src/components/native/*.tsx",
+    "./form/*": "./src/components/form/*.tsx",
     "./hooks/*": "./src/hooks/*.ts",
     "./lib/*": "./src/lib/*.ts",
     "./styles/theme.css": "./src/styles/theme.css",

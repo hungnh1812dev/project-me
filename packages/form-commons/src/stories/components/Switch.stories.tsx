@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { expect, fn, waitFor } from 'storybook/test';
 
-import { Field } from '../../components/forms/Field';
+import { Field } from '../../components/native/Field';
 import { Switch } from '../../components/ui/switch';
 import { Controlled, useArgsValue } from '../Controlled';
 import { SwitchSection } from '../sections/SwitchSection';

@@ -10,5 +10,12 @@
       "files": ["**/*.stories.tsx"],
       "rules": { "react/only-export-components": "off" }
     }
+  ],
+  "ignorePatterns": [
+    "./turbo",
+    "./coverage",
+    "./node_modules",
+    "./storybook-static",
+    "./test-results"
   ]
 }

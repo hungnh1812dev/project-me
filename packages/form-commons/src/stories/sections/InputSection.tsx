@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { SearchIcon } from 'lucide-react';
 
-import { Field } from '../../components/forms/Field';
-import { PasswordInput } from '../../components/forms/PasswordInput';
+import { Field } from '../../components/native/Field';
+import { PasswordInput } from '../../components/native/PasswordInput';
 import { Input } from '../../components/ui/input';
 import { Section } from './Section';
 

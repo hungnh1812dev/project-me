@@ -9,15 +9,18 @@ import { z } from 'zod';
 
 import type { InputOption, InputValueProps } from '../../lib/inputContract';
 import { parseJson } from '../../lib/json';
-import { Field, type FieldControlProps } from '../forms/Field';
-import { JsonInput } from '../forms/JsonInput';
+import {
+  Field as NativeField,
+  type FieldControlProps as NativeFieldControlProps,
+} from '../native/Field';
+import { JsonInput } from '../native/JsonInput';
 import { Input } from '../ui/input';
 import { Select } from '../ui/select';
 import { Switch } from '../ui/switch';
-import { RHFField, type RHFFieldRenderProps } from './RHFField';
+import { Field, type RHFFieldRenderProps } from './Field';
 
 /** A minimal controlled text input on the contract, so the tests don't depend on `Input`'s API. */
-const TextBox = forwardRef<HTMLInputElement, InputValueProps<string> & FieldControlProps>(
+const TextBox = forwardRef<HTMLInputElement, InputValueProps<string> & NativeFieldControlProps>(
   ({ value, onChange, onBlur, name, ...field }, ref) => (
     <input
       ref={ref}
@@ -65,16 +68,16 @@ const Form = ({
 describe('RHFField', () => {
   it('renders the same markup as Field (label, description, required mark, aria-*)', () => {
     const plain = render(
-      <Field label="Title" description="Shown on the page." id="title" required>
+      <NativeField label="Title" description="Shown on the page." id="title" required>
         <TextBox value="" onChange={() => {}} name="title" />
-      </Field>,
+      </NativeField>,
     );
     const fieldHtml = plain.container.querySelector('[data-slot="field"]')?.outerHTML;
     plain.unmount();
     const { container } = render(
       <Form>
         {() => (
-          <RHFField<Values, 'title'>
+          <Field<Values, 'title'>
             name="title"
             label="Title"
             description="Shown on the page."
@@ -82,7 +85,7 @@ describe('RHFField', () => {
             rules={{ required: 'Enter a title.' }}
           >
             {(field) => <TextBox {...field} />}
-          </RHFField>
+          </Field>
         )}
       </Form>,
     );
@@ -100,9 +103,9 @@ describe('RHFField', () => {
     render(
       <Form disabled>
         {() => (
-          <RHFField<Values, 'title'> name="title" label="Title">
+          <Field<Values, 'title'> name="title" label="Title">
             {children}
-          </RHFField>
+          </Field>
         )}
       </Form>,
     );
@@ -123,13 +126,9 @@ describe('RHFField', () => {
     render(
       <Form onSubmit={onSubmit}>
         {() => (
-          <RHFField<Values, 'title'>
-            name="title"
-            label="Title"
-            rules={{ required: 'Enter a title.' }}
-          >
+          <Field<Values, 'title'> name="title" label="Title" rules={{ required: 'Enter a title.' }}>
             {(field) => <TextBox {...field} />}
-          </RHFField>
+          </Field>
         )}
       </Form>,
     );
@@ -155,17 +154,17 @@ describe('RHFField', () => {
       <Form>
         {() => (
           <>
-            <RHFField<Values, 'title'> name="title" label="Title">
+            <Field<Values, 'title'> name="title" label="Title">
               {(field) => <TextBox {...field} />}
-            </RHFField>
-            <RHFField<Values, 'title'>
+            </Field>
+            <Field<Values, 'title'>
               name="title"
               label="Optional title"
               required={false}
               rules={{ required: 'Enter a title.' }}
             >
               {(field) => <TextBox {...field} />}
-            </RHFField>
+            </Field>
           </>
         )}
       </Form>,
@@ -180,9 +179,9 @@ describe('RHFField', () => {
     render(
       <Form onForm={(f) => (form = f)}>
         {() => (
-          <RHFField<Values, 'title'> name="title" label="Title">
+          <Field<Values, 'title'> name="title" label="Title">
             {(field) => <TextBox {...field} />}
-          </RHFField>
+          </Field>
         )}
       </Form>,
     );
@@ -200,9 +199,9 @@ describe('RHFField', () => {
     render(
       <Form provider={false} onSubmit={onSubmit}>
         {({ control }) => (
-          <RHFField control={control} name="title" label="Title">
+          <Field control={control} name="title" label="Title">
             {(field) => <TextBox {...field} />}
-          </RHFField>
+          </Field>
         )}
       </Form>,
     );
@@ -219,9 +218,9 @@ describe('RHFField', () => {
     render(
       <Form onSubmit={onSubmit} onForm={(f) => (form = f)}>
         {({ control }) => (
-          <RHFField control={control} name="published" label="Published">
+          <Field control={control} name="published" label="Published">
             {(field) => <Switch {...field} />}
-          </RHFField>
+          </Field>
         )}
       </Form>,
     );
@@ -243,22 +242,22 @@ describe('RHFField', () => {
       <Form>
         {({ control }) => (
           <>
-            <RHFField control={control} name="title" label="Title as switch">
+            <Field control={control} name="title" label="Title as switch">
               {/* @ts-expect-error Switch takes boolean, the path is string */}
               {(field) => <Switch {...field} />}
-            </RHFField>
-            <RHFField<Values, 'title'> name="title" label="Title as switch in context">
+            </Field>
+            <Field<Values, 'title'> name="title" label="Title as switch in context">
               {/* @ts-expect-error Switch takes boolean, the path is string */}
               {(field) => <Switch {...field} />}
-            </RHFField>
-            <RHFField control={control} name="published" label="Published as input">
+            </Field>
+            <Field control={control} name="published" label="Published as input">
               {/* @ts-expect-error Input takes string, the path is boolean */}
               {(field) => <Input {...field} />}
-            </RHFField>
+            </Field>
             {/* @ts-expect-error the path does not exist */}
-            <RHFField control={control} name="missing" label="Missing">
+            <Field control={control} name="missing" label="Missing">
               {() => <TextBox value="" onChange={() => {}} />}
-            </RHFField>
+            </Field>
           </>
         )}
       </Form>,
@@ -293,7 +292,7 @@ describe('RHFField', () => {
       return (
         <FormProvider {...form}>
           <form noValidate onSubmit={form.handleSubmit(onSubmit)}>
-            <RHFField<Settings, 'expires'>
+            <Field<Settings, 'expires'>
               name="expires"
               label="Expires in"
               rules={{ required: 'Pick an expiry.' }}
@@ -301,14 +300,14 @@ describe('RHFField', () => {
               {(field) => (
                 <Select {...field} config={{ placeholder: 'Choose', options: EXPIRES }} />
               )}
-            </RHFField>
-            <RHFField<Settings, 'meta'>
+            </Field>
+            <Field<Settings, 'meta'>
               name="meta"
               label="Metadata"
               rules={{ validate: validateMeta }}
             >
               {(field) => <JsonInput {...field} config={{ label: 'Metadata', expect: 'object' }} />}
-            </RHFField>
+            </Field>
             <button type="submit">Save</button>
           </form>
         </FormProvider>
@@ -380,10 +379,10 @@ describe('RHFField', () => {
       render(
         <Form>
           {({ control }) => (
-            <RHFField control={control} name="published" label="Published as select">
+            <Field control={control} name="published" label="Published as select">
               {/* @ts-expect-error Select takes string | null, the path is boolean */}
               {(field) => <Select {...field} config={{ options: EXPIRES }} />}
-            </RHFField>
+            </Field>
           )}
         </Form>,
       );
@@ -394,12 +393,10 @@ describe('RHFField', () => {
 });
 
 describe('RHFField validation with a schema library', () => {
-  const titleField = (
-    props: Partial<React.ComponentProps<typeof RHFField<Values, 'title'>>> = {},
-  ) => (
-    <RHFField<Values, 'title'> name="title" label="Title" {...props}>
+  const titleField = (props: Partial<React.ComponentProps<typeof Field<Values, 'title'>>> = {}) => (
+    <Field<Values, 'title'> name="title" label="Title" {...props}>
       {(field) => <TextBox {...field} />}
-    </RHFField>
+    </Field>
   );
   const save = () => userEvent.click(screen.getByRole('button', { name: 'Save' }));
 
@@ -490,14 +487,14 @@ describe('RHFField validation with a schema library', () => {
         {() => (
           <>
             {titleField({ schema: z.string().min(1, 'Enter a title.') })}
-            <RHFField<Values, 'title'>
+            <Field<Values, 'title'>
               name="title"
               label="Required title"
               required
               schema={z.string().min(1)}
             >
               {(field) => <TextBox {...field} />}
-            </RHFField>
+            </Field>
           </>
         )}
       </Form>,

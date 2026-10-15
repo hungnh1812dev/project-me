@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-import { Field } from '../../components/forms/Field';
+import { Field } from '../../components/native/Field';
 import { Switch } from '../../components/ui/switch';
 import { Section } from './Section';
 

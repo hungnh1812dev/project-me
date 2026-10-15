@@ -1,7 +1,7 @@
 import { useState } from 'react';
 
-import { Field } from '../../components/forms/Field';
-import { MediaInput } from '../../components/forms/MediaInput';
+import { Field } from '../../components/native/Field';
+import { MediaInput } from '../../components/native/MediaInput';
 import type { MediaValue } from '../../lib/media';
 import { DemoMediaProvider } from '../DemoMediaProvider';
 import { DEMO_ASSETS, type DemoAsset } from '../mediaLibrary';
