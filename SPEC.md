@@ -231,7 +231,7 @@ Every table has `id` (int identity PK), `created_at` and `updated_at`. User-faci
 
 | Table | Key columns |
 |---|---|
-| `accounts` | email UK (citext), password_hash, display_name, role_id FK, status (`invited\|active\|disabled`), token_version int, is_2fa_enabled, two_fa_method (`totp\|email`), totp_secret_enc, totp_last_step, deleted_at |
+| `accounts` | email UK (citext), password_hash, display_name, role_id FK, role_slug (composite FK (role_id, role_slug) → roles(id, slug), ADR 0002), status (`invited\|active\|disabled`), token_version int, is_2fa_enabled, two_fa_method (`totp\|email`), totp_secret_enc, totp_last_step, deleted_at |
 | `roles` | slug UK, name, rank, is_system, policy_version int |
 | `permissions` | role_id FK, subject (content type slug or system subject), action, readable_fields jsonb (null = all), writable_fields jsonb (null = all), conditions jsonb (DSL §8.3) |
 | `refresh_tokens` | account_id FK, family_id uuid, token_hash UK, replaced_by_id, user_agent, ip, expires_at, revoked_at |
