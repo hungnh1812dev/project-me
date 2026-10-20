@@ -2,6 +2,7 @@
   "folders": [
     { "name": "root", "path": "." },
     { "name": "@abyss/cms-api", "path": "apps/cms-api" },
+    { "name": "@abyss/form-commons", "path": "packages/form-commons" },
     { "name": "@abyss/prettier-config", "path": "packages/prettier-config" },
   ],
   "settings": {
