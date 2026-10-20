@@ -14,9 +14,11 @@ to the content engine (D10). Tables follow SPEC §8.1.
 | `pnpm --filter @abyss/cms-api db:seed`         | The seed alone (idempotent)                                                                                         |
 | `pnpm --filter @abyss/cms-api db:migrate:dev`  | Development only: create a migration from schema changes (`--create-only` to edit it first)                         |
 | `pnpm --filter @abyss/cms-api owner:bootstrap` | One-time owner creation (below)                                                                                     |
+| `pnpm --filter @abyss/cms-api owner:reset-2fa` | Break-glass: turn 2FA off for one account and end its sessions (below)                                              |
 
 Deploy order: `db:migrate`, then `content:migrate`, then start the API.
-In the image (no pnpm): `npm run db:migrate`, `npm run owner:bootstrap`.
+In the image (no pnpm): `npm run db:migrate`, `npm run owner:bootstrap`,
+`npm run owner:reset-2fa -- --email <address> --yes`.
 
 ## Hand-written SQL in the first migration
 
@@ -92,3 +94,23 @@ printf '%s\n' "$PASSWORD" | OWNER_EMAIL=me@example.com npm run owner:bootstrap -
   (`owner.role_missing`), or if the email already has an account
   (`owner.email_taken`; accounts are never promoted). Creates an `active`
   owner. The partial unique index backs this up.
+
+## owner:reset-2fa (T13a, break-glass)
+
+**Break-glass tool:** it turns 2FA off for any account, the owner included,
+with no password or code. Use it only after confirming the person's identity
+out of band.
+
+```bash
+pnpm --filter @abyss/cms-api owner:reset-2fa --email someone@example.com
+# no terminal (container): --yes is required
+npm run owner:reset-2fa -- --email someone@example.com --yes
+```
+
+- Prompts `[y/N]` on a terminal; without one, refuses unless `--yes`.
+- One transaction on `accounts`: `is_2fa_enabled = false`, `two_fa_method`,
+  `totp_secret_enc`, `totp_secret_kid` and `totp_last_step` set to null,
+  `token_version + 1`; every live `refresh_tokens` row of the account gets
+  `revoked_at`. Code: `src/modules/identity/two-factor-reset.ts`.
+- Exit 1 with nothing changed for an unknown or deleted email, or when 2FA
+  is already off. Details: cms-api README, "Break-glass 2FA reset".

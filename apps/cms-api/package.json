@@ -18,7 +18,8 @@
     "db:migrate": "prisma migrate deploy && node dist/modules/identity/cli/seed.js",
     "db:migrate:dev": "prisma migrate dev",
     "db:seed": "node dist/modules/identity/cli/seed.js",
-    "owner:bootstrap": "node dist/modules/identity/cli/owner-bootstrap.js"
+    "owner:bootstrap": "node dist/modules/identity/cli/owner-bootstrap.js",
+    "owner:reset-2fa": "node dist/modules/identity/cli/owner-reset-2fa.js"
   },
   "dependencies": {
     "@nestjs/common": "11.2.7",

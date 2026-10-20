@@ -34,6 +34,10 @@ DB_SEED_NOTHING="System roles already seeded."
 OWNER_BOOTSTRAP_CMD=(npm run --silent owner:bootstrap -- --password-stdin)
 OWNER_CREATED="Owner account created: "
 OWNER_EXISTS="An owner account already exists."
+RESET_2FA_CMD=(npm run --silent owner:reset-2fa --)
+RESET_2FA_UNKNOWN="No account with this email."
+RESET_2FA_NOT_ON="Two-factor authentication is not on for this account."
+RESET_2FA_NO_TTY="No terminal for the confirmation prompt."
 CONTENT_MIGRATE_CMD=(node dist/modules/content-engine/cli/migrate.js)
 CONTENT_MIGRATE_APPLIED="Applied "
 CONTENT_MIGRATE_NOTHING="No pending content migrations."
@@ -250,6 +254,14 @@ if [[ "$seed_output" == *"$SEED_2FA_ACCOUNT_DONE"* && "$seed_output" != *"$SMOKE
 else
   fail "seeding the e2e 2FA account: $seed_output"
 fi
+# Break-glass 2FA reset (T13a): refusals only, so no account state changes
+# (the owner login and refresh checks below still pass).
+in_api "owner:reset-2fa refuses an unknown email" "" 0 \
+  "$RESET_2FA_UNKNOWN" -- "${RESET_2FA_CMD[@]}" --email "nobody@$SMOKE_DOMAIN" --yes
+in_api "owner:reset-2fa refuses an account with 2FA off" "" 0 \
+  "$RESET_2FA_NOT_ON" -- "${RESET_2FA_CMD[@]}" --email "$SMOKE_OWNER_EMAIL" --yes
+in_api "owner:reset-2fa needs --yes without a terminal" "" 0 \
+  "$RESET_2FA_NO_TTY" -- "${RESET_2FA_CMD[@]}" --email "$SMOKE_OWNER_EMAIL"
 
 echo "content:migrate inside the cms-api image"
 in_api "first run applies the committed migrations" "" 1 \

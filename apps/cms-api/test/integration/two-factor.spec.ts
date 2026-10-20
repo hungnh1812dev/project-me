@@ -26,10 +26,15 @@ import {
   type MailSender,
 } from '../../src/infrastructure/mail/mail.port';
 import { SecretBox } from '../../src/modules/identity/crypto/secret-box';
-import { OTP, TOTP } from '../../src/modules/identity/identity.constants';
+import {
+  OTP,
+  TOTP,
+  TWO_FACTOR_RESET_ERRORS,
+} from '../../src/modules/identity/identity.constants';
 import { hashPassword } from '../../src/modules/identity/password-hasher';
 import { PasswordService } from '../../src/modules/identity/password.service';
 import { seedSystemRoles } from '../../src/modules/identity/system-roles.seed';
+import { resetTwoFactor } from '../../src/modules/identity/two-factor-reset';
 import { createCoreTemplate } from '../fixtures/core-db.fixture';
 import {
   devEnv,
@@ -632,6 +637,112 @@ describe('Two-factor authentication (D8, SPEC §9, T13; Postgres 16 via Testcont
       });
       expect(replay.status).toBe(HttpStatus.BAD_REQUEST);
       expect(errorCodeOf(replay)).toBe(AUTH_ERROR_CODES.TOTP_REQUIRED);
+    });
+  });
+
+  describe('owner:reset-2fa (T13a, break-glass)', () => {
+    async function liveRefreshTokens(accountId: number): Promise<number> {
+      return db.prisma.refreshToken.count({
+        where: { accountId, revokedAt: null },
+      });
+    }
+
+    it('turns TOTP off, clears the secret and ends every session', async () => {
+      const account = await createAccount();
+      const { accessToken } = await withTotp(account);
+      const tempToken = await loginForTempToken(account.email);
+      const before = await db.prisma.account.findUniqueOrThrow({
+        where: { id: account.id },
+      });
+      expect(await liveRefreshTokens(account.id)).toBeGreaterThan(0);
+
+      const result = await resetTwoFactor(
+        db.prisma,
+        ` ${account.email.toUpperCase()} `,
+      );
+      expect(result).toEqual({ email: account.email, previousMethod: 'totp' });
+
+      const after = await db.prisma.account.findUniqueOrThrow({
+        where: { id: account.id },
+      });
+      expect(after).toMatchObject({
+        is2faEnabled: false,
+        twoFaMethod: null,
+        totpSecretEnc: null,
+        totpSecretKid: null,
+        totpLastStep: null,
+        tokenVersion: before.tokenVersion + 1,
+      });
+      expect(await liveRefreshTokens(account.id)).toBe(0);
+      expect((await me(accessToken)).status).toBe(HttpStatus.UNAUTHORIZED);
+
+      // A temp token issued before the reset is dead too.
+      const verify = await post(VERIFY).send({ tempToken, code: '000000' });
+      expect(verify.status).toBe(HttpStatus.UNAUTHORIZED);
+      expect(errorCodeOf(verify)).toBe(AUTH_ERROR_CODES.INVALID_TEMP_TOKEN);
+
+      // The password alone signs in again.
+      expect((await me(await signIn(account.email))).status).toBe(
+        HttpStatus.OK,
+      );
+    });
+
+    it('works for the owner and for email 2FA', async () => {
+      const owner = await db.prisma.account.create({
+        data: {
+          email: 'tf-owner@example.test',
+          displayName: 'Owner',
+          passwordHash: await hashPassword(PASSWORD),
+          status: 'active',
+          role: { connect: { slug: 'owner' } },
+        },
+        select: { id: true, documentId: true, email: true },
+      });
+      await withEmail2fa(owner);
+
+      await expect(resetTwoFactor(db.prisma, owner.email)).resolves.toEqual({
+        email: owner.email,
+        previousMethod: 'email',
+      });
+      expect(await liveRefreshTokens(owner.id)).toBe(0);
+    });
+
+    it('refuses an unknown or deleted account', async () => {
+      await expect(
+        resetTwoFactor(db.prisma, 'nobody@example.test'),
+      ).rejects.toMatchObject({
+        code: TWO_FACTOR_RESET_ERRORS.ACCOUNT_NOT_FOUND,
+      });
+
+      const account = await createAccount();
+      await withTotp(account);
+      await db.prisma.account.update({
+        where: { id: account.id },
+        data: { deletedAt: new Date() },
+      });
+      await expect(
+        resetTwoFactor(db.prisma, account.email),
+      ).rejects.toMatchObject({
+        code: TWO_FACTOR_RESET_ERRORS.ACCOUNT_NOT_FOUND,
+      });
+    });
+
+    it('refuses an account with 2FA off and changes nothing', async () => {
+      const account = await createAccount();
+      await signIn(account.email);
+      const before = await db.prisma.account.findUniqueOrThrow({
+        where: { id: account.id },
+      });
+
+      await expect(
+        resetTwoFactor(db.prisma, account.email),
+      ).rejects.toMatchObject({ code: TWO_FACTOR_RESET_ERRORS.NOT_ENABLED });
+
+      const after = await db.prisma.account.findUniqueOrThrow({
+        where: { id: account.id },
+      });
+      expect(after.tokenVersion).toBe(before.tokenVersion);
+      expect(await liveRefreshTokens(account.id)).toBe(1);
     });
   });
 

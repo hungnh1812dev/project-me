@@ -126,8 +126,37 @@ AUTH_INVALID_CREDENTIALS` (enable/disable: wrong code / password; 403 so a
   client keeps its session), `409 AUTH_2FA_ALREADY_ENABLED`, `409
 AUTH_2FA_NOT_ENABLED`, `409 AUTH_2FA_SETUP_REQUIRED`, `400
 AUTH_INVALID_REQUEST`.
-- No recovery codes yet: a lost authenticator locks the account (password
-  reset also needs TOTP). Recovery is a follow-up task.
+- No recovery codes. A lost authenticator is recovered by an operator with
+  shell access through the break-glass `owner:reset-2fa` CLI (below).
+
+### Break-glass 2FA reset: `owner:reset-2fa` (T13a)
+
+> **Warning: break-glass tool.** It turns 2FA off for any account, the owner
+> included, without a password or code. Run it only after you have confirmed
+> the person's identity out of band, and only for the account they lost the
+> authenticator for. Anyone who can run it already has shell access to the
+> server and the full API config.
+
+```bash
+# locally (after a build):
+pnpm --filter @abyss/cms-api owner:reset-2fa --email someone@example.com
+# in the image (no terminal, so --yes is required):
+docker run --rm --env-file api.env abyss-cms-api npm run owner:reset-2fa -- --email someone@example.com --yes
+# a running compose service, with a prompt:
+docker compose exec cms-api npm run owner:reset-2fa -- --email someone@example.com
+```
+
+- On a terminal it asks `Turn off 2FA and end all sessions for <email>? [y/N]`
+  (default no). With no terminal, `--yes` is required, else it refuses.
+- One transaction: clears `two_fa_method`, the sealed TOTP secret, its kid and
+  `totp_last_step`, bumps `token_version` (access tokens and 2FA temp tokens
+  stop working) and revokes every refresh token. The person then signs in
+  with the password and can set up 2FA again.
+- Exit 1, nothing changed: unknown or deleted email (`No account with this
+email.`), 2FA already off, invalid email, missing `--email`, unknown
+  options, or no confirmation. Loads the full config like `owner:bootstrap`,
+  so pass the same env as the API. Prints no secrets.
+- Not audited yet (T17).
 
 ### Password lifecycle (T12)
 
@@ -250,6 +279,7 @@ and repository behaviour:
 | `db:migrate:dev`                 | Development: create a core migration from schema changes                                    |
 | `db:seed`                        | Seed system roles only (idempotent)                                                         |
 | `owner:bootstrap`                | Create the single owner (`OWNER_EMAIL`, hidden password prompt or `--password-stdin`)       |
+| `owner:reset-2fa`                | Break-glass: turn 2FA off for one account and end its sessions (`--email`, `--yes`)         |
 
 Integration tests start Postgres 16 with Testcontainers, so Docker must be
 running. Jest runs with `--experimental-vm-modules` because the Prisma 7
@@ -275,6 +305,8 @@ docker run --rm --env-file api.env abyss-cms-api npm run db:migrate
 docker run --rm --env-file api.env abyss-cms-api node dist/modules/content-engine/cli/migrate.js
 # once, on first deploy:
 docker run --rm -it --env-file api.env -e OWNER_EMAIL=me@example.com abyss-cms-api npm run owner:bootstrap
+# break-glass only, lost authenticator (see "Break-glass 2FA reset"):
+docker run --rm --env-file api.env abyss-cms-api npm run owner:reset-2fa -- --email someone@example.com --yes
 ```
 
 `pnpm smoke` (repo root) runs this image behind Traefik together with both

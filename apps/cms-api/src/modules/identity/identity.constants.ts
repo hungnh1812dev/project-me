@@ -44,6 +44,24 @@ export const OWNER_BOOTSTRAP_ERRORS = {
   INVALID_INPUT: 'owner.invalid_input',
 } as const;
 
+/** Error codes of `owner:reset-2fa` (T13a). */
+export const TWO_FACTOR_RESET_ERRORS = {
+  INVALID_INPUT: 'reset_2fa.invalid_input',
+  ACCOUNT_NOT_FOUND: 'reset_2fa.account_not_found',
+  NOT_ENABLED: 'reset_2fa.not_enabled',
+} as const;
+
+/** `owner:reset-2fa` options (parsed with node:util parseArgs, so no dashes). */
+export const RESET_2FA_OPTIONS = {
+  /** `--email <address>`: the account to reset. */
+  EMAIL: 'email',
+  /** `--yes`: skip the prompt; required where there is no terminal. */
+  YES: 'yes',
+} as const;
+
+/** Answers to the `owner:reset-2fa` prompt that mean yes (default is no). */
+export const CONFIRM_ANSWERS = ['y', 'yes'] as const;
+
 /** CLI-only environment keys (documented in .env.example). */
 export const OWNER_ENV_KEYS = {
   email: 'OWNER_EMAIL',
