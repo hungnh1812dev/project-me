@@ -1,0 +1,30 @@
+{
+  "name": "@abyss/prettier-config",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Shared Prettier config for the Abyss monorepo",
+  "main": "index.cjs",
+  "exports": {
+    ".": "./index.cjs"
+  },
+  "files": [
+    "index.cjs"
+  ],
+  "scripts": {
+    "test": "node --test",
+    "lint": "oxlint && eslint .",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "peerDependencies": {
+    "prettier": "^3.0.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "@types/node": "24.19.2",
+    "eslint": "10.13.0",
+    "globals": "17.13.0",
+    "oxlint": "1.89.0",
+    "prettier": "3.9.10",
+    "typescript": "6.0.3"
+  }
+}

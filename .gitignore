@@ -1,0 +1,16 @@
+# Dependencies
+node_modules/
+
+# Build and tool output
+dist/
+coverage/
+.turbo/
+*.tsbuildinfo
+
+# Environment files (only the example is committed)
+.env*
+!.env.example
+
+# OS / editor
+.DS_Store
+*.log

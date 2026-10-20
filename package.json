@@ -1,0 +1,22 @@
+{
+  "name": "abyss",
+  "private": true,
+  "packageManager": "pnpm@11.5.2",
+  "engines": {
+    "node": ">=24.0.0",
+    "pnpm": ">=11.0.0"
+  },
+  "scripts": {
+    "build": "turbo run build",
+    "test": "turbo run test",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "devDependencies": {
+    "@abyss/prettier-config": "workspace:*",
+    "prettier": "3.9.10",
+    "turbo": "2.11.9"
+  }
+}

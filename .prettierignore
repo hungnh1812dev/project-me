@@ -1,0 +1,13 @@
+node_modules/
+dist/
+coverage/
+.turbo/
+pnpm-lock.yaml
+
+# Legacy reference docs, kept as-is
+CMS_*.html
+
+# Agent tooling and approved planning docs are maintained outside the code format pass
+.claude/
+SPEC.md
+tasks/
