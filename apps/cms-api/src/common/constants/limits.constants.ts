@@ -4,6 +4,7 @@ const MS_PER_MINUTE = 60 * MS_PER_SECOND;
 /** Length of the auth throttling windows decided for T10. */
 const FIFTEEN_MINUTES_MS = 15 * MS_PER_MINUTE;
 const ONE_MINUTE_MS = MS_PER_MINUTE;
+const ONE_HOUR_MS = 60 * MS_PER_MINUTE;
 
 /** What a throttle rule counts per window. */
 export const RATE_LIMIT_KEY_SOURCES = {
@@ -45,10 +46,38 @@ export const RATE_LIMIT_POLICIES = {
       windowMs: FIFTEEN_MINUTES_MS,
     },
   ],
-  /** Attached by T12 (`POST /auth/otp/request`). The 5/hour per-account cap is OtpService's. */
+  /**
+   * `POST /auth/password/request-otp`. The email rule makes the 6th request
+   * per email and hour a 429 whether the account exists or not (§12-9, no
+   * enumeration); OtpService also caps codes per account in the DB.
+   */
   OTP_REQUEST: [
     {
       name: 'otp-request:ip',
+      keySource: RATE_LIMIT_KEY_SOURCES.IP,
+      limit: 5,
+      windowMs: FIFTEEN_MINUTES_MS,
+    },
+    {
+      name: 'otp-request:email',
+      keySource: RATE_LIMIT_KEY_SOURCES.EMAIL,
+      limit: 5,
+      windowMs: ONE_HOUR_MS,
+    },
+  ],
+  /** `POST /auth/password/reset` and `/set` (T12). Each code also allows 5 checks. */
+  PASSWORD_SUBMIT: [
+    {
+      name: 'password-submit:ip',
+      keySource: RATE_LIMIT_KEY_SOURCES.IP,
+      limit: 10,
+      windowMs: FIFTEEN_MINUTES_MS,
+    },
+  ],
+  /** `POST /auth/password/change` (T12): bounds current-password guessing. */
+  PASSWORD_CHANGE: [
+    {
+      name: 'password-change:ip',
       keySource: RATE_LIMIT_KEY_SOURCES.IP,
       limit: 5,
       windowMs: FIFTEEN_MINUTES_MS,
@@ -76,7 +105,7 @@ export const RATE_LIMIT_POLICIES = {
 export type RateLimitPolicy =
   (typeof RATE_LIMIT_POLICIES)[keyof typeof RATE_LIMIT_POLICIES];
 
-/** Longest window of any rule; expired counters are swept at most this often. */
+/** Expired counters are swept at most this often. */
 export const RATE_LIMIT_SWEEP_INTERVAL_MS = FIFTEEN_MINUTES_MS;
 
 /**

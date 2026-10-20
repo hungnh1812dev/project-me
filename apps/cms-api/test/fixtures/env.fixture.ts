@@ -10,6 +10,10 @@ export const TEST_DATABASE_URL =
 export const TEST_ADMIN_ORIGIN = 'https://admin.example.test';
 export const TEST_WEB_ORIGIN = 'https://example.test';
 export const TEST_JWT_KID = 'test-kid-1';
+export const TEST_SMTP_HOST = 'smtp.example.test';
+export const TEST_MAIL_FROM = 'Abyss CMS <no-reply@example.test>';
+export const TEST_SMTP_USER = 'mailer@example.test';
+export const TEST_SMTP_PASSWORD = 'smtp-app-password';
 
 export function devEnv(
   overrides: Record<string, string | undefined> = {},
@@ -24,6 +28,8 @@ export function productionEnv(
     NODE_ENV: 'production',
     DATABASE_URL: TEST_DATABASE_URL,
     MAIL_PROVIDER: 'smtp',
+    SMTP_HOST: TEST_SMTP_HOST,
+    MAIL_FROM: TEST_MAIL_FROM,
     ADMIN_ORIGIN: TEST_ADMIN_ORIGIN,
     WEB_ORIGIN: TEST_WEB_ORIGIN,
     JWT_ACCESS_KID: TEST_JWT_KID,

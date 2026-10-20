@@ -141,6 +141,14 @@ export class RefreshTokenService {
     await this.revokeFamilyTx(this.prisma, current.familyId, new Date());
   }
 
+  /** Password written (T12): every session of the account ends. */
+  async revokeAllForAccount(tx: Tx, accountId: number): Promise<void> {
+    await tx.refreshToken.updateMany({
+      where: { accountId, revokedAt: null },
+      data: { revokedAt: new Date() },
+    });
+  }
+
   private async handleReuse(
     tx: Tx,
     accountId: number,

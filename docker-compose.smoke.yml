@@ -1,6 +1,7 @@
 # Proxy smoke stack (T04). Mirrors production routing (SPEC §1, §6):
 #   <SMOKE_DOMAIN>          -> web, and /api/* -> cms-api (no StripPrefix)
 #   admin.<SMOKE_DOMAIN>    -> cms-admin
+#   mail.<SMOKE_DOMAIN>     -> Mailpit web UI + API (T12; catches every email)
 # Run it through `pnpm smoke` (scripts/smoke.sh), which sets every SMOKE_* value
 # below, generates throwaway secrets, runs the assertions and tears down.
 name: abyss-smoke
@@ -35,6 +36,21 @@ services:
       timeout: 3s
       retries: 15
 
+  # SMTP sink for OTP emails (T12): SMTP on 1025 without auth or TLS; the e2e
+  # suite reads codes from its API on 8025.
+  mailpit:
+    image: axllent/mailpit:v1.31.6
+    healthcheck:
+      test: ['CMD', '/mailpit', 'readyz']
+      interval: 2s
+      timeout: 3s
+      retries: 15
+    labels:
+      traefik.enable: 'true'
+      traefik.http.routers.mail.entrypoints: web
+      traefik.http.routers.mail.rule: Host(`mail.${SMOKE_DOMAIN}`)
+      traefik.http.services.mail.loadbalancer.server.port: '8025'
+
   cms-api:
     build:
       context: .
@@ -47,12 +63,18 @@ services:
       WEB_ORIGIN: ${SMOKE_WEB_ORIGIN:?set by scripts/smoke.sh}
       TRUST_PROXY_HOPS: '1'
       MAIL_PROVIDER: smtp
+      SMTP_HOST: mailpit
+      SMTP_PORT: '1025'
+      SMTP_SECURE: 'false'
+      MAIL_FROM: Abyss Smoke <no-reply@${SMOKE_DOMAIN}>
       JWT_ACCESS_SECRET: ${SMOKE_JWT_ACCESS_SECRET:?set by scripts/smoke.sh}
       JWT_ACCESS_KID: ${SMOKE_JWT_ACCESS_KID:?set by scripts/smoke.sh}
       OTP_PEPPER: ${SMOKE_OTP_PEPPER:?set by scripts/smoke.sh}
       TOTP_ENC_KEY: ${SMOKE_TOTP_ENC_KEY:?set by scripts/smoke.sh}
     depends_on:
       db:
+        condition: service_healthy
+      mailpit:
         condition: service_healthy
     healthcheck:
       test: ['CMD', 'wget', '-qO-', 'http://127.0.0.1:3000/api/v1/health/ready']

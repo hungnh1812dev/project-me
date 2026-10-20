@@ -31,6 +31,7 @@
     "cookie-parser": "1.4.7",
     "jsonwebtoken": "9.0.3",
     "kysely": "0.28.18",
+    "nodemailer": "10.1.7",
     "passport": "0.7.0",
     "passport-jwt": "4.0.1",
     "pg": "8.23.1",

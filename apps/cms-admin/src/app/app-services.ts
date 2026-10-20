@@ -3,6 +3,7 @@ import type { AxiosInstance } from 'axios';
 
 import { createAuthApi } from '../features/auth/auth.api';
 import { selectAccessToken } from '../features/auth/auth.slice';
+import { createPasswordApi } from '../features/auth/password.api';
 import { createSession } from '../features/auth/session';
 import { installAuthInterceptor } from '../lib/auth-interceptor';
 import { createAppStore } from './store';
@@ -23,7 +24,8 @@ export function createAppServices(
     refreshAccessToken: session.refreshAccessToken,
     onSessionExpired: session.expire,
   });
-  return { store, session, queryClient, removeInterceptor };
+  const passwordApi = createPasswordApi(client);
+  return { store, session, passwordApi, queryClient, removeInterceptor };
 }
 
 export type AppServices = ReturnType<typeof createAppServices>;

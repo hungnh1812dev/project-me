@@ -16,6 +16,13 @@ a list of keys and rules (never values). The boot log prints a summary with
 secrets and DB credentials redacted. Every key is documented in
 [`.env.example`](.env.example).
 
+Mail (`src/infrastructure/mail`): `MAIL_SENDER` port with a console adapter
+(development only: it logs whole messages, OTP codes included) and a generic
+SMTP adapter (nodemailer; e.g. Gmail via smtp.gmail.com:587 + App Password).
+`MAIL_PROVIDER=smtp` requires `SMTP_HOST` and `MAIL_FROM`; `SMTP_USER` and
+`SMTP_PASSWORD` go together or not at all. `SMTP_PASSWORD` is redacted in the
+boot summary but not length-checked (App Passwords are 16 characters).
+
 Production guards (`NODE_ENV=production`): `MAIL_PROVIDER=console` is
 rejected, and `JWT_ACCESS_SECRET`, `OTP_PEPPER`, `TOTP_ENC_KEY` are required and
 must be at least 32 bytes; `ADMIN_ORIGIN`, `WEB_ORIGIN` and `JWT_ACCESS_KID`
@@ -72,6 +79,40 @@ Path=/api/v1/auth`, 7 days, host-only (no `Domain`). The raw token is never
 - 2FA accounts get a signed 300 s temp token (`typ: 2fa`) and no session.
   This is a stub until T13 adds the verify endpoint and the attempt limit.
 
+### Password lifecycle (T12)
+
+| Method | Path                                | Auth                    | Body                                      | Response                  |
+| ------ | ----------------------------------- | ----------------------- | ----------------------------------------- | ------------------------- |
+| POST   | `/api/v1/auth/password/request-otp` | none                    | `{ email }`                               | `202`, empty body, always |
+| POST   | `/api/v1/auth/password/reset`       | none                    | `{ email, code, newPassword, totpCode? }` | `204`                     |
+| POST   | `/api/v1/auth/password/set`         | none                    | `{ email, code, newPassword }`            | `204` (invited -> active) |
+| POST   | `/api/v1/auth/password/change`      | `Authorization: Bearer` | `{ currentPassword, newPassword }`        | `204`                     |
+
+- `request-otp` answers before it even looks the email up; lookup, issue and
+  send run in the background (no enumeration through body or timing). The
+  purpose follows the account: invited -> `INVITE_SET_PASSWORD`, active ->
+  `RESET_PASSWORD`; unknown, disabled or deleted accounts get nothing (a
+  dummy HMAC keeps the work similar). Emails are plain text: the code, its
+  lifetime and the admin page URL (`ADMIN_ORIGIN` + `/reset-password` or
+  `/set-password`), no links.
+- `OtpService` (`otp.service.ts`): 6 digits, 300 s, stored as
+  HMAC-SHA256(`OTP_PEPPER`, `accountId:purpose:code`). 5 checks per code
+  (the 6th fails even when right), 5 codes per account per hour across all
+  purposes (6th -> 429), a new code invalidates older unused ones of the same
+  purpose, and use is atomic (`used_at` claimed in the password transaction).
+- Errors: `400 AUTH_INVALID_OTP` (wrong, expired, used or exhausted code, or
+  unknown email: one answer), `400 AUTH_WEAK_PASSWORD` (not 12-128 chars),
+  `400 AUTH_TOTP_REQUIRED` (reset of a TOTP account without a valid
+  authenticator code; until T13 the check fails closed), `401
+AUTH_INVALID_CREDENTIALS` (wrong current password), `400
+AUTH_INVALID_REQUEST` (malformed body).
+- Every password write bumps `token_version` and revokes every refresh token:
+  all sessions end, the caller's included. Nobody is signed in by these
+  endpoints.
+- The JWT guard compares `tv` with `accounts.token_version` on every request
+  (uncached) and rejects inactive or deleted accounts, so old access tokens
+  get 401 at once (§12-10). Caching and the `pv` check are T15.
+
 The readiness ping goes through the `DATABASE_HEALTH` token
 (`src/infrastructure/database/database-health.ts`), bound to
 `PrismaDatabaseHealth` (`SELECT 1` through `PrismaService`).
@@ -85,7 +126,9 @@ in `src/common/constants/limits.constants.ts` (`RATE_LIMIT_POLICIES`):
 | ------------------- | --------------------------------------------- |
 | `LOGIN`             | 10 / 15 min per IP, then 5 / 15 min per email |
 | `REFRESH`           | 30 / min per IP                               |
-| `OTP_REQUEST`       | 5 / 15 min per IP (attached by T12)           |
+| `OTP_REQUEST`       | 5 / 15 min per IP, then 5 / hour per email    |
+| `PASSWORD_SUBMIT`   | 10 / 15 min per IP (reset, set)               |
+| `PASSWORD_CHANGE`   | 5 / 15 min per IP                             |
 | `TWO_FACTOR_VERIFY` | 10 / 15 min per IP (attached by T13)          |
 
 - Apply with `@Throttle(RATE_LIMIT_POLICIES.X)` (`src/common/guards/throttle.guard.ts`),

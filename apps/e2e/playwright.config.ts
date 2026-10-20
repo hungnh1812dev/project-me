@@ -1,11 +1,12 @@
 import { defineConfig, devices } from '@playwright/test';
 
-import { CI_RETRIES, EXPECT_TIMEOUT_MS } from './src/constants';
+import { CI_RETRIES, EXPECT_TIMEOUT_MS, WORKERS } from './src/constants';
 import { e2eEnv } from './src/env';
 
 export default defineConfig({
   testDir: './tests',
   fullyParallel: false,
+  workers: WORKERS,
   forbidOnly: e2eEnv.ci,
   retries: e2eEnv.ci ? CI_RETRIES : 0,
   reporter: [['list'], ['html', { open: 'never' }]],

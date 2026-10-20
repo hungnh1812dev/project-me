@@ -13,14 +13,18 @@ export interface LoginError {
   message: string;
 }
 
-function rateLimitedMessage(retryAfter: unknown): string {
+/** Whole seconds from a `Retry-After` header, or undefined when unusable. */
+export function retryAfterSecondsOf(retryAfter: unknown): number | undefined {
   const seconds =
     typeof retryAfter === 'string' && /^\d+$/.test(retryAfter.trim())
       ? Number(retryAfter.trim())
       : Number.NaN;
-  if (!Number.isFinite(seconds) || seconds <= 0) {
-    return COPY.login.errors.rateLimited;
-  }
+  return Number.isFinite(seconds) && seconds > 0 ? seconds : undefined;
+}
+
+function rateLimitedMessage(retryAfter: unknown): string {
+  const seconds = retryAfterSecondsOf(retryAfter);
+  if (seconds === undefined) return COPY.login.errors.rateLimited;
   if (seconds < SECONDS_PER_MINUTE) {
     return COPY.login.errors.rateLimitedSeconds(seconds);
   }

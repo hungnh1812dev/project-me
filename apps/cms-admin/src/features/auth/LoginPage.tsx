@@ -3,14 +3,17 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation } from '@tanstack/react-query';
 import { useEffect, useRef, useState } from 'react';
 import { FormProvider, useForm } from 'react-hook-form';
-import { Navigate, useLocation } from 'react-router';
+import { Link, Navigate, useLocation } from 'react-router';
 import { z } from 'zod';
 
 import { useAppSelector } from '../../app/store';
 import { COPY } from '../../config/copy.constants';
 import { APP_ROUTES } from '../../config/routes';
 import { selectSessionStatus } from './auth.slice';
+import { AuthPageLayout } from './AuthPageLayout';
+import { FormAlert } from './FormAlert';
 import { type LoginError, toLoginError } from './login-error';
+import { type LoginNotice, loginNoticeOf } from './login-notice';
 import type { LoginLocationState } from './ProtectedRoute';
 import { useSession } from './session-context';
 import { SessionLoading } from './SessionLoading';
@@ -31,6 +34,11 @@ const ALERT_TONE: Record<LoginError['kind'], string> = {
   'rate-limited': 'bg-warning-soft text-warning-strong',
   network: 'bg-warning-soft text-warning-strong',
   unexpected: 'bg-destructive-soft text-destructive-strong',
+};
+
+const NOTICE_COPY: Record<LoginNotice, string> = {
+  'password-reset': COPY.login.notices.passwordReset,
+  'password-set': COPY.login.notices.passwordSet,
 };
 
 /** Only same-app paths, so router state can never redirect off-site. */
@@ -77,74 +85,84 @@ export function LoginPage() {
     return <Navigate to={returnPathOf(location.state)} replace />;
   }
 
+  // Hidden once the user tries to sign in, so it never sits next to an error.
+  const notice = signIn.isIdle ? loginNoticeOf(location.state) : undefined;
+
   const onSubmit = form.handleSubmit((values) => {
     setError(null);
     signIn.mutate({ email: values.email.trim(), password: values.password });
   });
 
   return (
-    <div className="min-h-dvh px-4 py-12 sm:py-20">
-      <main className="mx-auto w-full max-w-sm">
-        <p className="text-sm font-semibold">{COPY.app.name}</p>
-        {twoFactorRequired ? (
-          <TwoFactorPlaceholder
-            onBack={() => {
-              setTwoFactorRequired(false);
-              signIn.reset();
-            }}
-          />
-        ) : (
-          <>
-            <h1 className="mt-6 text-2xl font-semibold tracking-tight">
-              {COPY.login.title}
-            </h1>
-            <p className="mt-2 text-sm text-muted-foreground">
-              {COPY.login.description}
-            </p>
-            <FormProvider {...form}>
-              <form
-                noValidate
-                onSubmit={(event) => void onSubmit(event)}
-                className="mt-6 grid gap-4 rounded-md border border-border bg-card p-5"
-              >
-                {error !== null ? (
-                  <p
-                    role="alert"
-                    className={`rounded-md px-3 py-2 text-sm ${ALERT_TONE[error.kind]}`}
-                  >
-                    {error.message}
-                  </p>
-                ) : null}
-                <TextInput<LoginValues>
-                  name="email"
-                  label={COPY.login.emailLabel}
-                  type="email"
-                  autoComplete="username"
-                  inputMode="email"
-                  spellCheck={false}
-                  required
-                />
-                <TextInput<LoginValues>
-                  name="password"
-                  label={COPY.login.passwordLabel}
-                  type="password"
-                  autoComplete="current-password"
-                  required
-                />
-                <Button
-                  type="submit"
-                  variant="primary"
-                  className="mt-2 w-full"
-                  loading={signIn.isPending}
+    <AuthPageLayout>
+      {twoFactorRequired ? (
+        <TwoFactorPlaceholder
+          onBack={() => {
+            setTwoFactorRequired(false);
+            signIn.reset();
+          }}
+        />
+      ) : (
+        <>
+          <h1 className="mt-6 text-2xl font-semibold tracking-tight">
+            {COPY.login.title}
+          </h1>
+          <p className="mt-2 text-sm text-muted-foreground">
+            {COPY.login.description}
+          </p>
+          <FormProvider {...form}>
+            <form
+              noValidate
+              onSubmit={(event) => void onSubmit(event)}
+              className="mt-6 grid gap-4 rounded-md border border-border bg-card p-5"
+            >
+              {notice !== undefined ? (
+                <FormAlert tone="success">{NOTICE_COPY[notice]}</FormAlert>
+              ) : null}
+              {error !== null ? (
+                <p
+                  role="alert"
+                  className={`rounded-md px-3 py-2 text-sm ${ALERT_TONE[error.kind]}`}
                 >
-                  {COPY.login.submit}
-                </Button>
-              </form>
-            </FormProvider>
-          </>
-        )}
-      </main>
-    </div>
+                  {error.message}
+                </p>
+              ) : null}
+              <TextInput<LoginValues>
+                name="email"
+                label={COPY.login.emailLabel}
+                type="email"
+                autoComplete="username"
+                inputMode="email"
+                spellCheck={false}
+                required
+              />
+              <TextInput<LoginValues>
+                name="password"
+                label={COPY.login.passwordLabel}
+                type="password"
+                autoComplete="current-password"
+                required
+              />
+              <Button
+                type="submit"
+                variant="primary"
+                className="mt-2 w-full"
+                loading={signIn.isPending}
+              >
+                {COPY.login.submit}
+              </Button>
+            </form>
+          </FormProvider>
+          <p className="mt-4">
+            <Button asChild variant="link" className="h-auto px-0">
+              <Link to={APP_ROUTES.RESET_PASSWORD}>
+                {COPY.login.forgotPassword}
+              </Link>
+            </Button>
+          </p>
+        </>
+      )}
+    </AuthPageLayout>
   );
 }
 

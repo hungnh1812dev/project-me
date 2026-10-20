@@ -7,6 +7,7 @@ import {
   JWT_STRATEGY_NAME,
 } from '../../common/constants/auth.constants';
 import type { RequestWithId } from '../../common/middleware/request-id.middleware';
+import { PrismaService } from '../../infrastructure/database/prisma.service';
 import {
   type AccessTokenClaims,
   accessTokenClaimsSchema,
@@ -28,11 +29,16 @@ export interface AuthenticatedRequest extends RequestWithId {
 /**
  * Bearer access tokens (D9, D14). HS256 only: passport-jwt passes
  * `algorithms` to jsonwebtoken, which rejects every other alg and `none`.
- * Comparing `tv`/`pv` with the database is T15.
+ * `tv` is checked against the database on every request (§12-10, T12), so
+ * a password write or refresh-token reuse kills old access tokens at once.
+ * Caching it and checking `pv` is T15.
  */
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy, JWT_STRATEGY_NAME) {
-  constructor(tokens: AccessTokenService) {
+  constructor(
+    tokens: AccessTokenService,
+    private readonly prisma: PrismaService,
+  ) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       algorithms: [JWT_ALGORITHM],
@@ -49,11 +55,24 @@ export class JwtStrategy extends PassportStrategy(Strategy, JWT_STRATEGY_NAME) {
     });
   }
 
-  validate(payload: unknown): AuthenticatedAccount {
+  async validate(payload: unknown): Promise<AuthenticatedAccount> {
     const parsed = accessTokenClaimsSchema.safeParse(payload);
     if (!parsed.success) throw new UnauthorizedException();
     const claims: AccessTokenClaims = parsed.data;
-    // TODO(T15): compare claims.tv / claims.pv with the DB (cached) here.
+    // TODO(T15): VersionCache (invalidated on write, 5 s TTL) instead of
+    // this uncached lookup, and compare claims.pv with roles.policy_version.
+    const account = await this.prisma.account.findUnique({
+      where: { documentId: claims.sub },
+      select: { tokenVersion: true, status: true, deletedAt: true },
+    });
+    if (
+      account === null ||
+      account.tokenVersion !== claims.tv ||
+      account.status !== 'active' ||
+      account.deletedAt !== null
+    ) {
+      throw new UnauthorizedException();
+    }
     return {
       accountId: claims.sub,
       tokenVersion: claims.tv,

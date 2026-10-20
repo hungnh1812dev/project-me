@@ -166,4 +166,17 @@ describe('LoginPage', () => {
       ).toBeInTheDocument();
     });
   });
+
+  it('links to the password reset page', async () => {
+    await openLogin(() => ({ status: 500 }));
+    await userEvent.click(
+      screen.getByRole('link', { name: COPY.login.forgotPassword }),
+    );
+    expect(
+      screen.getByRole('heading', {
+        level: 1,
+        name: COPY.password.reset.requestTitle,
+      }),
+    ).toBeInTheDocument();
+  });
 });

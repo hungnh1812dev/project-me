@@ -9,3 +9,25 @@ export const CI_RETRIES = 1;
 
 /** Per-assertion timeout; the smoke stack runs production builds locally. */
 export const EXPECT_TIMEOUT_MS = 10_000;
+
+/** Password endpoints, relative to the API base URL (SPEC §9). */
+export const PASSWORD_PATHS = {
+  REQUEST_OTP: '/auth/password/request-otp',
+  RESET: '/auth/password/reset',
+} as const;
+
+/** Mailpit REST API paths (https://mailpit.axllent.org/docs/api-v1/). */
+export const MAILPIT_API = {
+  SEARCH: '/api/v1/search',
+  MESSAGE: '/api/v1/message',
+} as const;
+
+/** How long to wait for an OTP email to reach Mailpit, and how often to look. */
+export const MAIL_WAIT_TIMEOUT_MS = 15_000;
+export const MAIL_POLL_INTERVAL_MS = 500;
+
+/** cms-api emails a 6-digit code on a line of its own. */
+export const OTP_IN_MAIL = /^(\d{6})$/m;
+
+/** Only one worker: the reset spec changes the owner password other specs use. */
+export const WORKERS = 1;

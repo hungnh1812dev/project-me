@@ -22,3 +22,10 @@ export const RETRY_AFTER_HEADER = 'retry-after';
 
 /** `Authorization` header scheme for the in-memory access token (D14). */
 export const BEARER_PREFIX = 'Bearer ';
+
+/** `errorCode` values of cms-api the admin reacts to (SPEC §9). */
+export const API_ERROR_CODES = {
+  INVALID_OTP: 'AUTH_INVALID_OTP',
+  WEAK_PASSWORD: 'AUTH_WEAK_PASSWORD',
+  TOTP_REQUIRED: 'AUTH_TOTP_REQUIRED',
+} as const;

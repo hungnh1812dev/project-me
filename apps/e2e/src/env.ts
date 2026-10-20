@@ -16,6 +16,8 @@ export const e2eEnv = Object.freeze({
   apiBaseUrl: requireEnv('E2E_API_BASE_URL'),
   ownerEmail: requireEnv('E2E_OWNER_EMAIL'),
   ownerPassword: requireEnv('E2E_OWNER_PASSWORD'),
+  /** Mailpit (SMTP sink of the smoke stack), e.g. `http://mail.domain.localhost:8080`. */
+  mailpitUrl: requireEnv('E2E_MAILPIT_URL'),
   /** Set in CI to forbid `test.only` and retry once. */
   ci: process.env['CI'] !== undefined && process.env['CI'] !== '',
 });

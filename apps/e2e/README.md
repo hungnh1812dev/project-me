@@ -13,7 +13,13 @@ SMOKE_E2E=1 pnpm smoke
 `scripts/smoke.sh` builds the production images, runs `db:migrate` and
 `owner:bootstrap`, then runs `pnpm --filter @abyss/e2e test` with the `E2E_*`
 values below. It sets them from the stack, including the generated owner
-password. Then it tears the stack down.
+password and the Mailpit URL (`mail.<SMOKE_DOMAIN>`, the SMTP sink the stack
+sends OTP emails to). Then it tears the stack down.
+
+Specs run in one worker: `password-reset.spec.ts` changes the owner password
+(and puts it back at the end), so it must not overlap other specs. Codes are
+read from Mailpit's API through a browser tab (Chromium resolves
+`*.localhost` itself).
 
 ## Run against another stack
 

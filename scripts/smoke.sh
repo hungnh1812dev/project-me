@@ -2,7 +2,8 @@
 # Proxy smoke test (T04): builds and starts docker-compose.smoke.yml, checks
 # routing, trailing slashes and CORS through Traefik, runs db:migrate,
 # owner:bootstrap (T08) and content:migrate (T07) inside the cms-api image,
-# checks login/refresh (T09), then tears it down.
+# checks login/refresh (T09) and OTP mail delivery to Mailpit (T12), then
+# tears it down.
 #
 # Optional env:
 #   SMOKE_DOMAIN           base domain (default domain.localhost)
@@ -38,18 +39,22 @@ CONTENT_MIGRATE_APPLIED="Applied "
 CONTENT_MIGRATE_NOTHING="No pending content migrations."
 REFRESH_COOKIE_NAME="__Secure-abyss_rt"
 JWT_ACCESS_KID="smoke"
+RESET_MAIL_SUBJECT="Your Abyss CMS password reset code"
+MAIL_POLL_ATTEMPTS="15"
 
 export SMOKE_DOMAIN="${SMOKE_DOMAIN:-$DEFAULT_DOMAIN}"
 export SMOKE_HTTP_PORT="${SMOKE_HTTP_PORT:-$DEFAULT_HTTP_PORT}"
 TIMEOUT_SECONDS="${SMOKE_TIMEOUT_SECONDS:-$DEFAULT_TIMEOUT_SECONDS}"
 
 ADMIN_HOST="admin.$SMOKE_DOMAIN"
+MAIL_HOST="mail.$SMOKE_DOMAIN"
 PORT_SUFFIX=""
 if [[ "$SMOKE_HTTP_PORT" != "$HTTP_DEFAULT_PORT" ]]; then
   PORT_SUFFIX=":$SMOKE_HTTP_PORT"
 fi
 WEB_ORIGIN="http://$SMOKE_DOMAIN$PORT_SUFFIX"
 ADMIN_ORIGIN="http://$ADMIN_HOST$PORT_SUFFIX"
+MAILPIT_URL="http://$MAIL_HOST$PORT_SUFFIX"
 OTHER_ORIGIN="http://not-allowed.$SMOKE_DOMAIN$PORT_SUFFIX"
 export SMOKE_ADMIN_ORIGIN="$ADMIN_ORIGIN"
 export SMOKE_WEB_ORIGIN="$WEB_ORIGIN"
@@ -97,6 +102,7 @@ request() {
   STATUS="$(curl -sS -o "$BODY" -D "$HEADERS" -w '%{http_code}' \
     --resolve "$SMOKE_DOMAIN:$SMOKE_HTTP_PORT:$LOOPBACK" \
     --resolve "$ADMIN_HOST:$SMOKE_HTTP_PORT:$LOOPBACK" \
+    --resolve "$MAIL_HOST:$SMOKE_HTTP_PORT:$LOOPBACK" \
     -X "$method" "$@" "$url" || echo "000")"
 }
 
@@ -231,10 +237,26 @@ expect_status "refresh from the admin origin rotates the token" 200
 request POST "$WEB_ORIGIN$API_PREFIX/auth/register" -H 'Content-Type: application/json' --data '{}'
 expect_status "POST auth/register does not exist (SPEC §12-2)" 404
 
+echo "Password reset mail through SMTP to Mailpit (T12)"
+request POST "$WEB_ORIGIN$API_PREFIX/auth/password/request-otp" -H 'Content-Type: application/json' \
+  --data "$(printf '{"email":"%s"}' "$SMOKE_OWNER_EMAIL")"
+expect_status "request-otp answers 202" 202
+request POST "$WEB_ORIGIN$API_PREFIX/auth/password/request-otp" -H 'Content-Type: application/json' \
+  --data "$(printf '{"email":"nobody@%s"}' "$SMOKE_DOMAIN")"
+expect_status "request-otp answers 202 for an unknown email too" 202
+mail_seen=0
+for _ in $(seq "$MAIL_POLL_ATTEMPTS"); do
+  request GET "$MAILPIT_URL/api/v1/search?query=to:$SMOKE_OWNER_EMAIL"
+  if [[ "$STATUS" == "200" ]] && grep -q "$RESET_MAIL_SUBJECT" "$BODY"; then mail_seen=1; break; fi
+  sleep "$POLL_INTERVAL_SECONDS"
+done
+if [[ "$mail_seen" == "1" ]]; then pass "the reset code reaches Mailpit over SMTP"; else fail "no reset mail in Mailpit"; fi
+
 if [[ "${SMOKE_E2E:-}" == "1" ]]; then
   echo "Playwright e2e (@abyss/e2e)"
   if E2E_ADMIN_URL="$ADMIN_ORIGIN" E2E_API_BASE_URL="$SMOKE_API_BASE_URL" \
     E2E_OWNER_EMAIL="$SMOKE_OWNER_EMAIL" E2E_OWNER_PASSWORD="$SMOKE_OWNER_PASSWORD" \
+    E2E_MAILPIT_URL="$MAILPIT_URL" \
     pnpm --dir "$ROOT_DIR" --filter @abyss/e2e test; then
     pass "e2e suite"
   else

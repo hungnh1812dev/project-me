@@ -3,8 +3,12 @@ import {
   productionEnv,
   TEST_ADMIN_ORIGIN,
   TEST_JWT_KID,
+  TEST_MAIL_FROM,
   TEST_SECRET_32_BYTES,
   TEST_SHORT_SECRET,
+  TEST_SMTP_HOST,
+  TEST_SMTP_PASSWORD,
+  TEST_SMTP_USER,
 } from '../../test/fixtures/env.fixture';
 import {
   ConfigValidationError,
@@ -170,6 +174,82 @@ describe('loadAppConfig', () => {
     );
   });
 
+  describe('SMTP mail (T12)', () => {
+    const smtpEnv = (overrides: Record<string, string | undefined> = {}) =>
+      devEnv({
+        MAIL_PROVIDER: 'smtp',
+        SMTP_HOST: TEST_SMTP_HOST,
+        MAIL_FROM: TEST_MAIL_FROM,
+        ...overrides,
+      });
+
+    it('applies SMTP defaults and leaves auth off without credentials', () => {
+      const config = loadAppConfig(smtpEnv());
+      expect(config.mail).toEqual({
+        provider: 'smtp',
+        from: TEST_MAIL_FROM,
+        smtp: {
+          host: TEST_SMTP_HOST,
+          port: CONFIG_DEFAULTS.SMTP_PORT,
+          secure: CONFIG_DEFAULTS.SMTP_SECURE,
+          auth: undefined,
+        },
+      });
+    });
+
+    it('parses port, secure flag and credentials', () => {
+      const config = loadAppConfig(
+        smtpEnv({
+          SMTP_PORT: '465',
+          SMTP_SECURE: 'true',
+          SMTP_USER: TEST_SMTP_USER,
+          SMTP_PASSWORD: TEST_SMTP_PASSWORD,
+        }),
+      );
+      expect(config.mail.smtp).toEqual({
+        host: TEST_SMTP_HOST,
+        port: 465,
+        secure: true,
+        auth: { user: TEST_SMTP_USER, password: TEST_SMTP_PASSWORD },
+      });
+    });
+
+    it.each(['SMTP_HOST', 'MAIL_FROM'])(
+      'requires %s when MAIL_PROVIDER=smtp',
+      (key) => {
+        const error = configErrorOf(smtpEnv({ [key]: undefined }));
+        expect(error.issues).toContain(
+          `${key}: ${key} is required when MAIL_PROVIDER=smtp`,
+        );
+      },
+    );
+
+    it.each([
+      { SMTP_USER: TEST_SMTP_USER },
+      { SMTP_PASSWORD: TEST_SMTP_PASSWORD },
+    ])('requires SMTP_USER and SMTP_PASSWORD together (%o)', (overrides) => {
+      const error = configErrorOf(smtpEnv(overrides));
+      expect(error.issues).toEqual([
+        'SMTP_PASSWORD: SMTP_USER and SMTP_PASSWORD must be set together or both left empty',
+      ]);
+    });
+
+    it('ignores SMTP settings with the console provider', () => {
+      expect(loadAppConfig(devEnv()).mail.smtp).toBeUndefined();
+    });
+
+    it('accepts a short SMTP password (Gmail App Passwords are 16 chars)', () => {
+      expect(() =>
+        loadAppConfig(
+          productionEnv({
+            SMTP_USER: TEST_SMTP_USER,
+            SMTP_PASSWORD: TEST_SMTP_PASSWORD,
+          }),
+        ),
+      ).not.toThrow();
+    });
+  });
+
   describe('production guards (D17, SPEC §12-15)', () => {
     it('accepts a complete production environment', () => {
       const config = loadAppConfig(productionEnv());
@@ -256,6 +336,28 @@ describe('summarizeConfig', () => {
     expect(summary).not.toContain('abyss_test:');
     expect(summarizeConfig(config).database).toEqual({
       url: `postgresql://${REDACTED}@127.0.0.1:5432/abyss_test`,
+    });
+  });
+
+  it('redacts the SMTP password', () => {
+    const config = loadAppConfig(
+      productionEnv({
+        SMTP_USER: TEST_SMTP_USER,
+        SMTP_PASSWORD: TEST_SMTP_PASSWORD,
+      }),
+    );
+    const summary = summarizeConfig(config);
+    expect(JSON.stringify(summary)).not.toContain(TEST_SMTP_PASSWORD);
+    expect(summary.mail).toEqual({
+      provider: 'smtp',
+      from: TEST_MAIL_FROM,
+      smtp: {
+        host: TEST_SMTP_HOST,
+        port: CONFIG_DEFAULTS.SMTP_PORT,
+        secure: CONFIG_DEFAULTS.SMTP_SECURE,
+        user: TEST_SMTP_USER,
+        password: REDACTED,
+      },
     });
   });
 

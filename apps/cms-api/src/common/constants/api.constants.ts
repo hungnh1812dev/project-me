@@ -14,4 +14,12 @@ export const API_ROUTES = {
     LOGOUT: 'logout',
     ME: 'me',
   },
+  /** SPEC §9 password lifecycle (T12), under /auth/password. */
+  PASSWORD: {
+    ROOT: 'auth/password',
+    REQUEST_OTP: 'request-otp',
+    RESET: 'reset',
+    SET: 'set',
+    CHANGE: 'change',
+  },
 } as const;

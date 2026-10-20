@@ -21,6 +21,10 @@ export const CONFIG_DEFAULTS = {
   MAIL_PROVIDER: 'console',
   /** Key id used outside production when JWT_ACCESS_KID is unset. */
   JWT_ACCESS_KID: 'dev',
+  /** SMTP submission port (STARTTLS when the server offers it). */
+  SMTP_PORT: 587,
+  /** false = plain connect + STARTTLS upgrade; true = TLS from the start (465). */
+  SMTP_SECURE: false,
 } as const;
 
 /** JWT `kid` values: short, header- and log-safe. */

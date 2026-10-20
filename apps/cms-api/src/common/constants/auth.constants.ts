@@ -1,3 +1,7 @@
+import {
+  PASSWORD_MAX_LENGTH,
+  PASSWORD_MIN_LENGTH,
+} from '../../modules/identity/identity.constants';
 import { API_PREFIX, API_ROUTES } from './api.constants';
 
 const SECONDS_PER_MINUTE = 60;
@@ -67,6 +71,11 @@ export const AUTH_ERROR_CODES = {
   INVALID_REFRESH_TOKEN: 'AUTH_INVALID_REFRESH_TOKEN',
   ORIGIN_NOT_ALLOWED: 'AUTH_ORIGIN_NOT_ALLOWED',
   INVALID_REQUEST: 'AUTH_INVALID_REQUEST',
+  /** Wrong, expired, used or exhausted code, or unknown email: one answer (D8). */
+  INVALID_OTP: 'AUTH_INVALID_OTP',
+  WEAK_PASSWORD: 'AUTH_WEAK_PASSWORD',
+  /** Password reset of an account with TOTP needs an authenticator code (D8). */
+  TOTP_REQUIRED: 'AUTH_TOTP_REQUIRED',
 } as const;
 
 /** Client-facing messages. Identical for every login failure (no enumeration). */
@@ -76,4 +85,9 @@ export const AUTH_ERROR_MESSAGES = {
   ORIGIN_NOT_ALLOWED: 'Request origin is not allowed',
   INVALID_REQUEST: 'Email and password are required',
   JWT_NOT_CONFIGURED: 'JWT_ACCESS_SECRET is not configured',
+  INVALID_PASSWORD_REQUEST: 'The request is missing required fields',
+  INVALID_OTP: 'The code is invalid or has expired',
+  WEAK_PASSWORD: `Password must be ${PASSWORD_MIN_LENGTH} to ${PASSWORD_MAX_LENGTH} characters`,
+  TOTP_REQUIRED: 'A valid authenticator code is required',
+  WRONG_CURRENT_PASSWORD: 'Current password is incorrect',
 } as const;

@@ -52,3 +52,21 @@ export const OWNER_ENV_KEYS = {
 
 /** `owner:bootstrap --password-stdin`: read the password from stdin (CI, containers). */
 export const PASSWORD_STDIN_FLAG = '--password-stdin';
+
+/** SPEC §6 / D8: one-time codes (T12). */
+export const OTP = {
+  DIGITS: 6,
+  TTL_SECONDS: 300,
+  /** Checks allowed per code; the next check fails even with the right code (§12-9). */
+  MAX_ATTEMPTS: 5,
+  /** Codes issued per account per window, across all purposes (§12-9). */
+  MAX_ISSUED_PER_WINDOW: 5,
+  ISSUE_WINDOW_MS: 60 * 60 * 1_000,
+  HMAC_ALGORITHM: 'sha256',
+} as const;
+
+/** Admin console pages named in OTP emails (plain text, no links; T12). */
+export const ADMIN_PAGE_PATHS = {
+  RESET_PASSWORD: '/reset-password',
+  SET_PASSWORD: '/set-password',
+} as const;

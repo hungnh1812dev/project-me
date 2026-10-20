@@ -47,6 +47,9 @@ const PRODUCTION_REQUIRED_KEYS = [
   'JWT_ACCESS_KID',
 ] as const;
 
+/** Keys required whenever MAIL_PROVIDER=smtp (any NODE_ENV). */
+const SMTP_REQUIRED_KEYS = ['SMTP_HOST', 'MAIL_FROM'] as const;
+
 /**
  * Raw environment contract. Every key is listed in `.env.example`.
  * Production-only rules (D17) live in the `superRefine` below.
@@ -91,8 +94,45 @@ export const envSchema = z
     ),
     OTP_PEPPER: z.preprocess(emptyToUndefined, optionalSecret),
     TOTP_ENC_KEY: z.preprocess(emptyToUndefined, optionalSecret),
+    SMTP_HOST: z.preprocess(emptyToUndefined, z.string().min(1).optional()),
+    SMTP_PORT: z.preprocess(
+      emptyToUndefined,
+      z.coerce
+        .number()
+        .int()
+        .min(1)
+        .max(MAX_PORT)
+        .default(CONFIG_DEFAULTS.SMTP_PORT),
+    ),
+    SMTP_SECURE: z.preprocess(
+      emptyToUndefined,
+      z.stringbool().default(CONFIG_DEFAULTS.SMTP_SECURE),
+    ),
+    SMTP_USER: z.preprocess(emptyToUndefined, z.string().min(1).optional()),
+    SMTP_PASSWORD: z.preprocess(emptyToUndefined, z.string().min(1).optional()),
+    MAIL_FROM: z.preprocess(emptyToUndefined, z.string().min(1).optional()),
   })
   .superRefine((env, ctx) => {
+    if (env.MAIL_PROVIDER === 'smtp') {
+      for (const key of SMTP_REQUIRED_KEYS) {
+        if (env[key] === undefined) {
+          ctx.addIssue({
+            code: 'custom',
+            path: [key],
+            message: `${key} is required when MAIL_PROVIDER=smtp`,
+          });
+        }
+      }
+    }
+    if ((env.SMTP_USER === undefined) !== (env.SMTP_PASSWORD === undefined)) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['SMTP_PASSWORD'],
+        message:
+          'SMTP_USER and SMTP_PASSWORD must be set together or both left empty',
+      });
+    }
+
     if (env.NODE_ENV !== 'production') return;
 
     if (env.MAIL_PROVIDER === 'console') {

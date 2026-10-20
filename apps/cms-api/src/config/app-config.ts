@@ -29,12 +29,26 @@ export interface IAppConfig {
   };
   readonly mail: {
     readonly provider: Env['MAIL_PROVIDER'];
+    /** `From` header of outgoing mail; required when the provider is smtp. */
+    readonly from: string | undefined;
+    /** Set only when MAIL_PROVIDER=smtp. */
+    readonly smtp: SmtpConfig | undefined;
   };
   readonly secrets: {
     readonly jwtAccessSecret: string | undefined;
     readonly otpPepper: string | undefined;
     readonly totpEncKey: string | undefined;
   };
+}
+
+export interface SmtpConfig {
+  readonly host: string;
+  readonly port: number;
+  /** true = TLS from the start (465); false = STARTTLS when offered. */
+  readonly secure: boolean;
+  /** Unset = no SMTP auth (e.g. Mailpit). */
+  readonly auth:
+    { readonly user: string; readonly password: string } | undefined;
 }
 
 /** Thrown when the environment does not satisfy `envSchema`. Never includes values. */
@@ -89,13 +103,33 @@ export function loadAppConfig(rawEnv: RawEnv): IAppConfig {
       jwtAccessKid: env.JWT_ACCESS_KID ?? CONFIG_DEFAULTS.JWT_ACCESS_KID,
     },
     database: { url: env.DATABASE_URL },
-    mail: { provider: env.MAIL_PROVIDER },
+    mail: {
+      provider: env.MAIL_PROVIDER,
+      from: env.MAIL_FROM,
+      smtp: smtpConfigOf(env),
+    },
     secrets: {
       jwtAccessSecret: env.JWT_ACCESS_SECRET,
       otpPepper: env.OTP_PEPPER,
       totpEncKey: env.TOTP_ENC_KEY,
     },
   });
+}
+
+function smtpConfigOf(env: Env): SmtpConfig | undefined {
+  // env.schema.ts guarantees SMTP_HOST when the provider is smtp.
+  if (env.MAIL_PROVIDER !== 'smtp' || env.SMTP_HOST === undefined) {
+    return undefined;
+  }
+  return {
+    host: env.SMTP_HOST,
+    port: env.SMTP_PORT,
+    secure: env.SMTP_SECURE,
+    auth:
+      env.SMTP_USER === undefined || env.SMTP_PASSWORD === undefined
+        ? undefined
+        : { user: env.SMTP_USER, password: env.SMTP_PASSWORD },
+  };
 }
 
 /** Keeps scheme, host and database; drops credentials and query (may hold a password). */
@@ -116,7 +150,20 @@ export function summarizeConfig(config: IAppConfig): Record<string, unknown> {
     cors: config.cors,
     auth: config.auth,
     database: { url: redactDatabaseUrl(config.database.url) },
-    mail: config.mail,
+    mail: {
+      provider: config.mail.provider,
+      from: config.mail.from,
+      smtp:
+        config.mail.smtp === undefined
+          ? undefined
+          : {
+              host: config.mail.smtp.host,
+              port: config.mail.smtp.port,
+              secure: config.mail.smtp.secure,
+              user: config.mail.smtp.auth?.user,
+              password: secretState(config.mail.smtp.auth?.password),
+            },
+    },
     secrets: {
       jwtAccessSecret: secretState(config.secrets.jwtAccessSecret),
       otpPepper: secretState(config.secrets.otpPepper),
