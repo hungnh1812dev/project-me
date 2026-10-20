@@ -7,32 +7,33 @@ description: How the single worker's context is cleaned without losing progress 
 
 Goal: one worker for the whole project, kept cheap. Reuse it across tasks. Reset its context only when it is over **150k tokens**, and only **between** tasks.
 
-## The handoff file: `.claude/state/handoff.md`
+## Two files
 
-The worker keeps this current after every task. It must stay short (aim < 80 lines). It is a memory, not a log.
+- `.claude/state/handoff.md`: **current state only**, read in full by a fresh worker at start. Hard cap: about 40 lines / 3 KB.
+- `.claude/state/conventions.md`: stable project knowledge (stack facts, file layout, user decisions by area, gotchas). A fresh worker does **not** read it at start. It greps or reads only the section for the area its task touches, when it needs it.
+
+### handoff.md format
 
 ```markdown
 # Worker Handoff
 Updated: <YYYY-MM-DD> after <task ID>
 
-## Project facts learned
-- Stack, package manager, test / e2e / format commands that actually work
-- Where config, tokens, routes, and the i18n module live
-
-## Conventions confirmed by the user
-- <decision> (task ID)
-
 ## Done
-- <ID> <title> - <commit hash or "awaiting commit">
+- <ID> <title> - <commit hash>   (one line each, no detail)
 
 ## In progress / next
 - <ID> <state, exact next step>
+- open questions still provisional (one line each)
 
-## Gotchas
-- <things that cost time and will again>
+## Follow-ups
+- <item> -> <task that owns it>
 ```
 
-Remove anything that is no longer true. Don't paste code or diffs; point to file paths.
+### conventions.md
+
+Grouped by area (tooling, cms-api config, content engine, Prisma/identity, frontends, Docker/smoke, user decisions, gotchas). Add new stable facts to the right section after each task; remove anything no longer true.
+
+Rules for both: no code or diffs, point to file paths. If a fact will matter only for one area, it goes in conventions.md, not handoff.md.
 
 ## Reset sequence
 
@@ -42,7 +43,7 @@ Remove anything that is no longer true. Don't paste code or diffs; point to file
 | 2 | manager | Takes the higher of the reported usage and the worker's estimate. If ≤ 150k, sends the next task to the same worker. Stop here. |
 | 3 | manager | If > 150k, sends `CLEAN: write handoff and stop` |
 | 4 | worker | Makes sure handoff is complete, replies `HANDOFF WRITTEN`, stops |
-| 5 | manager | Stops the old instance, then starts one fresh `worker` with the same name: `Resume from .claude/state/handoff.md, then do:` + next task brief |
+| 5 | manager | Stops the old instance, then starts one fresh `worker` with the same name: `Resume from .claude/state/handoff.md, then do:` + next task brief. The brief quotes the SPEC excerpts the task needs (or names exact § numbers), so the worker doesn't read the whole SPEC. |
 | 6 | manager | Notes the reset on the board |
 
 Never reset in the middle of a task. Never run two workers at once.
