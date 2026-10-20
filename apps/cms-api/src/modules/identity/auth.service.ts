@@ -47,6 +47,12 @@ export interface CurrentAccountProfile {
   readonly twoFactorMethod: TwoFaMethod | null;
 }
 
+/** `refresh`: no refresh token inside the grace window (T11a). */
+export interface RefreshedTokens {
+  readonly accessToken: string;
+  readonly refreshToken: string | undefined;
+}
+
 /** What `startSession` needs of an account whose sign-in is complete. */
 export interface SessionAccount {
   readonly id: number;
@@ -166,7 +172,12 @@ export class AuthService implements OnModuleInit {
     };
   }
 
-  async refresh(rawToken: string, meta: ClientMeta): Promise<SessionTokens> {
+  /**
+   * Rotates the refresh token. `refreshToken` is undefined for a concurrent
+   * refresh inside the grace window (T11a): the browser already holds the
+   * successor, so the cookie is left alone.
+   */
+  async refresh(rawToken: string, meta: ClientMeta): Promise<RefreshedTokens> {
     const result = await this.refreshTokens.rotate(rawToken, meta);
     if (result.kind === 'reuse') {
       // TODO(T17): SecurityAuditService refresh-token reuse (family revoked, tv bumped).
@@ -174,7 +185,7 @@ export class AuthService implements OnModuleInit {
     }
     if (result.kind === 'invalid') throw invalidRefreshToken();
     return {
-      refreshToken: result.token,
+      refreshToken: result.kind === 'rotated' ? result.token : undefined,
       accessToken: this.accessTokens.signAccessToken({
         sub: result.account.documentId,
         tv: result.account.tokenVersion,

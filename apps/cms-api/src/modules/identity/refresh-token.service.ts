@@ -5,6 +5,7 @@ import { Injectable } from '@nestjs/common';
 import {
   REFRESH_TOKEN_BYTES,
   REFRESH_TOKEN_HASH_ALGORITHM,
+  REFRESH_TOKEN_REUSE_GRACE_MS,
   REFRESH_TOKEN_TTL_MS,
   USER_AGENT_MAX_LENGTH,
 } from '../../common/constants/auth.constants';
@@ -30,6 +31,11 @@ export type RotationResult =
       readonly token: string;
       readonly account: RotatedAccount;
     }
+  /**
+   * T11a: a concurrent refresh with a token rotated moments ago. Access
+   * token only; the refresh cookie already holds the successor.
+   */
+  | { readonly kind: 'grace'; readonly account: RotatedAccount }
   | { readonly kind: 'invalid' }
   | {
       readonly kind: 'reuse';
@@ -83,7 +89,9 @@ export class RefreshTokenService {
 
   /**
    * Swaps `rawToken` for a new token in the same family, atomically. Two
-   * concurrent refreshes with one token: the first wins, the second is reuse.
+   * concurrent refreshes with one token: the first wins; the second gets
+   * `grace` when it comes within REFRESH_TOKEN_REUSE_GRACE_MS and the
+   * successor is still unused (T11a), else it is reuse.
    */
   rotate(rawToken: string, meta: ClientMeta): Promise<RotationResult> {
     const tokenHash = hashRefreshToken(rawToken);
@@ -103,12 +111,12 @@ export class RefreshTokenService {
         },
       });
       if (current === null) return { kind: 'invalid' };
-      if (current.replacedById !== null) {
-        return this.handleReuse(tx, current.accountId, current.familyId);
-      }
-
       const now = new Date();
       const { account } = current;
+      if (current.replacedById !== null) {
+        return this.graceOrReuse(tx, current.id, now);
+      }
+
       if (current.revokedAt !== null || current.expiresAt <= now) {
         return { kind: 'invalid' };
       }
@@ -130,7 +138,10 @@ export class RefreshTokenService {
         data: { replacedById: next.id, revokedAt: now },
       });
       if (claimed.count === 0) {
-        return this.handleReuse(tx, current.accountId, current.familyId);
+        // A concurrent rotation won: drop the unused new token, then judge
+        // this request like any late one.
+        await tx.refreshToken.delete({ where: { id: next.id } });
+        return this.graceOrReuse(tx, current.id, now);
       }
 
       return {
@@ -158,6 +169,65 @@ export class RefreshTokenService {
   /** Password written (T12): every session of the account ends. */
   revokeAllForAccount(tx: Tx, accountId: number): Promise<void> {
     return revokeAllRefreshTokens(tx, accountId);
+  }
+
+  /**
+   * An already-rotated token came back. Grace (T11a) when it was rotated
+   * within the window, its successor is still live and unused and the
+   * account is active; anything else is reuse, as before.
+   */
+  private async graceOrReuse(
+    tx: Tx,
+    tokenId: number,
+    now: Date,
+  ): Promise<RotationResult> {
+    // Re-read: a rotation that won the row lock is committed by now.
+    const token = await tx.refreshToken.findUniqueOrThrow({
+      where: { id: tokenId },
+      select: {
+        accountId: true,
+        familyId: true,
+        revokedAt: true,
+        replacedBy: {
+          select: {
+            familyId: true,
+            replacedById: true,
+            revokedAt: true,
+            expiresAt: true,
+          },
+        },
+        account: {
+          select: {
+            documentId: true,
+            status: true,
+            deletedAt: true,
+            tokenVersion: true,
+            role: { select: { policyVersion: true } },
+          },
+        },
+      },
+    });
+    const { replacedBy: successor, account } = token;
+    const rotatedAt = token.revokedAt?.getTime();
+    const inGrace =
+      rotatedAt !== undefined &&
+      now.getTime() - rotatedAt <= REFRESH_TOKEN_REUSE_GRACE_MS &&
+      successor !== null &&
+      successor.familyId === token.familyId &&
+      successor.replacedById === null &&
+      successor.revokedAt === null &&
+      successor.expiresAt > now &&
+      account.status === 'active' &&
+      account.deletedAt === null;
+    if (!inGrace) return this.handleReuse(tx, token.accountId, token.familyId);
+    return {
+      kind: 'grace',
+      account: {
+        documentId: account.documentId,
+        tokenVersion: account.tokenVersion,
+        policyVersion: account.role.policyVersion,
+      },
+    };
   }
 
   private async handleReuse(

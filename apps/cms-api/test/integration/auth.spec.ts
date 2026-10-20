@@ -10,6 +10,7 @@ import {
   ACCESS_TOKEN_TTL_SECONDS,
   AUTH_ERROR_CODES,
   REFRESH_COOKIE,
+  REFRESH_TOKEN_REUSE_GRACE_MS,
   REFRESH_TOKEN_TTL_SECONDS,
   TOKEN_TYPES,
 } from '../../src/common/constants/auth.constants';
@@ -69,6 +70,10 @@ function refreshCookieHeader(res: request.Response): string {
 function refreshTokenOf(res: request.Response): string {
   const pair = refreshCookieHeader(res).split(';')[0] ?? '';
   return pair.slice(REFRESH_COOKIE.NAME.length + 1);
+}
+
+function hasRefreshCookie(res: request.Response): boolean {
+  return setCookies(res).some((c) => c.startsWith(`${REFRESH_COOKIE.NAME}=`));
 }
 
 function cookie(token: string): string {
@@ -165,6 +170,14 @@ describe('auth: login, JWT, refresh rotation, logout (Postgres 16 via Testcontai
       accessToken: (res.body as { accessToken: string }).accessToken,
       refreshToken: refreshTokenOf(res),
     };
+  }
+
+  /** Moves a rotated token's rotation time `ms` into the past. */
+  async function rotatedAgo(token: string, ms: number): Promise<void> {
+    await db.prisma.refreshToken.update({
+      where: { tokenHash: hashRefreshToken(token) },
+      data: { revokedAt: new Date(Date.now() - ms) },
+    });
   }
 
   function refresh(
@@ -521,11 +534,12 @@ describe('auth: login, JWT, refresh rotation, logout (Postgres 16 via Testcontai
       expect((await refresh(nextToken, TEST_ADMIN_ORIGIN)).status).toBe(200);
     });
 
-    it('treats reuse of a rotated token as theft: revokes the family and bumps token_version', async () => {
+    it('treats reuse of a rotated token after the grace window as theft: revokes the family and bumps token_version', async () => {
       const account = await createAccount();
       const otherSession = await signIn(account);
       const stolen = await signIn(account);
       const rotated = refreshTokenOf(await refresh(stolen.refreshToken));
+      await rotatedAgo(stolen.refreshToken, REFRESH_TOKEN_REUSE_GRACE_MS + 1);
       const versionBefore = await tokenVersion(account);
 
       const reuse = await refresh(stolen.refreshToken);
@@ -547,14 +561,83 @@ describe('auth: login, JWT, refresh rotation, logout (Postgres 16 via Testcontai
       expect((await tokenRow(otherSession.refreshToken)).revokedAt).toBeNull();
     });
 
-    it('lets only one of two concurrent refreshes with the same token win', async () => {
+    it('serves two concurrent refreshes with one token without revoking the family (T11a)', async () => {
       const account = await createAccount();
       const { refreshToken } = await signIn(account);
+      const versionBefore = await tokenVersion(account);
       const results = await Promise.all([
         refresh(refreshToken),
         refresh(refreshToken),
       ]);
-      expect(results.map((r) => r.status).sort()).toEqual([200, 401]);
+      expect(results.map((r) => r.status)).toEqual([200, 200]);
+      // One rotation: only the winner sets a new cookie.
+      const rotated = results.filter(hasRefreshCookie);
+      expect(rotated).toHaveLength(1);
+      const successor = refreshTokenOf(rotated[0] as request.Response);
+
+      const family = await db.prisma.refreshToken.findMany({
+        where: { familyId: (await tokenRow(refreshToken)).familyId },
+      });
+      expect(family).toHaveLength(2);
+      expect((await tokenRow(successor)).revokedAt).toBeNull();
+      expect(await tokenVersion(account)).toBe(versionBefore);
+      for (const res of results) {
+        const { accessToken } = res.body as { accessToken: string };
+        const me = await http()
+          .get(ME)
+          .set('Authorization', `Bearer ${accessToken}`);
+        expect(me.status).toBe(200);
+      }
+      expect((await refresh(successor)).status).toBe(200);
+    });
+
+    it('answers a late refresh inside the grace window with an access token only', async () => {
+      const account = await createAccount();
+      const { refreshToken } = await signIn(account);
+      const successor = refreshTokenOf(await refresh(refreshToken));
+      await rotatedAgo(refreshToken, REFRESH_TOKEN_REUSE_GRACE_MS - 1_000);
+
+      const late = await refresh(refreshToken);
+      expect(late.status).toBe(200);
+      expect(hasRefreshCookie(late)).toBe(false);
+      expect(
+        (
+          await http()
+            .get(ME)
+            .set(
+              'Authorization',
+              `Bearer ${(late.body as { accessToken: string }).accessToken}`,
+            )
+        ).status,
+      ).toBe(200);
+      expect((await tokenRow(successor)).revokedAt).toBeNull();
+      expect((await refresh(successor)).status).toBe(200);
+    });
+
+    it('treats a rotated token as reuse once its successor was used, even inside the window', async () => {
+      const account = await createAccount();
+      const { refreshToken } = await signIn(account);
+      const successor = refreshTokenOf(await refresh(refreshToken));
+      const third = refreshTokenOf(await refresh(successor));
+      const versionBefore = await tokenVersion(account);
+
+      expect((await refresh(refreshToken)).status).toBe(401);
+      expect((await tokenRow(third)).revokedAt).not.toBeNull();
+      expect(await tokenVersion(account)).toBe(versionBefore + 1);
+    });
+
+    it('treats a rotated token as reuse after logout, even inside the window', async () => {
+      const account = await createAccount();
+      const { refreshToken } = await signIn(account);
+      const successor = refreshTokenOf(await refresh(refreshToken));
+      await http()
+        .post(LOGOUT)
+        .set('Origin', TEST_ADMIN_ORIGIN)
+        .set('Cookie', cookie(successor));
+      const versionBefore = await tokenVersion(account);
+
+      expect((await refresh(refreshToken)).status).toBe(401);
+      expect(await tokenVersion(account)).toBe(versionBefore + 1);
     });
 
     it.each([

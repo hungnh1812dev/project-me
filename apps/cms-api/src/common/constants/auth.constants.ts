@@ -15,6 +15,18 @@ export const ACCESS_TOKEN_TTL_SECONDS = 15 * SECONDS_PER_MINUTE;
 export const REFRESH_TOKEN_TTL_SECONDS = 7 * SECONDS_PER_DAY;
 export const REFRESH_TOKEN_TTL_MS = REFRESH_TOKEN_TTL_SECONDS * MS_PER_SECOND;
 
+/**
+ * T11a: an already-rotated refresh token that comes back this soon after its
+ * rotation, while its successor is still unused, is a concurrent refresh
+ * (two tabs, a retried request), not reuse. 10 s covers one slow round trip
+ * plus tabs that wake from sleep together, and is tiny next to the 15 min
+ * access token. Such a request gets an access token only (no new refresh
+ * token), so a replay inside the window can't gain a lasting session.
+ */
+export const REFRESH_TOKEN_REUSE_GRACE_SECONDS = 10;
+export const REFRESH_TOKEN_REUSE_GRACE_MS =
+  REFRESH_TOKEN_REUSE_GRACE_SECONDS * MS_PER_SECOND;
+
 /** SPEC §6: 2FA temp token lifetime (300 s). */
 export const TWO_FACTOR_TEMP_TOKEN_TTL_SECONDS = 300;
 /** SPEC §6: code checks allowed per temp token; then the token is dead. */

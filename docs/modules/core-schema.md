@@ -57,6 +57,11 @@ Where SPEC §8.1 leaves a shape open, the conservative choice:
   `two_fa_method`, `totp_secret_enc` (text, `v1.<iv>.<ct>.<tag>` AES-256-GCM, T13),
   `totp_secret_kid` (key id for `TOTP_ENC_KEY` rotation), `totp_last_step`
   (int, last accepted time step).
+- **refresh_tokens**: one row per token (SHA-256 in `token_hash`), grouped
+  by `family_id`. A rotation sets `replaced_by_id` to the successor and
+  `revoked_at` to the rotation time; that `revoked_at` also anchors the 10 s
+  reuse grace window (T11a, `REFRESH_TOKEN_REUSE_GRACE_SECONDS`), so the
+  window needs no extra column. Logout and reuse revoke the whole family.
 - **permissions**: no unique constraint on (role, subject, action) yet, so
   T14 can decide whether several conditioned rows are allowed. Indexed on
   (role_id, subject).

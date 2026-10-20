@@ -141,7 +141,10 @@ export class AuthController {
     if (rawToken === undefined) throw invalidRefreshToken();
     try {
       const tokens = await this.auth.refresh(rawToken, this.clientMeta(req));
-      setRefreshCookie(res, tokens.refreshToken);
+      // Grace (T11a): no new token, the cookie keeps the successor.
+      if (tokens.refreshToken !== undefined) {
+        setRefreshCookie(res, tokens.refreshToken);
+      }
       return { accessToken: tokens.accessToken };
     } catch (error) {
       // A refused token is dead for good: drop it from the browser too.

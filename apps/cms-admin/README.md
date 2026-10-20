@@ -18,6 +18,14 @@ So far: sign-in (T11) and, behind it, a status page that calls
   `signOut`, `expire`), wired in `src/app/app-services.ts`. Every refresh goes
   through one single-flight call. The cookie rotates on use, so two parallel
   refreshes would look like token reuse and revoke the session.
+- **Across tabs** (T11a): `src/lib/cross-tab-refresh.ts`. Tabs take turns
+  under the Web Lock `abyss-admin:refresh`; the tab that refreshes posts the
+  new access token on the BroadcastChannel `abyss-admin:session`, and a tab
+  that waited uses it instead of sending its own refresh. If the message is
+  late, the waiting tab refreshes with the already rotated cookie (a normal
+  rotation). Without Web Locks each tab refreshes alone and cms-api's 10 s
+  grace window for a just-rotated token keeps the session alive. The token
+  only travels between same-origin tabs in memory, never into storage.
 - **Start-up**: `main.tsx` calls `session.restore()` once, outside React. Until
   it settles, protected routes show "Restoring your session" instead of the
   login page.

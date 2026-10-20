@@ -1,6 +1,15 @@
-import { deferred } from '../../../test/fake-api';
+import {
+  createFakeApi,
+  deferred,
+  TEST_API_BASE_URL,
+} from '../../../test/fake-api';
+import { fakeBus, fakeLocks } from '../../../test/fake-tabs';
 import { createTestServices, TEST_USER } from '../../../test/render-app';
+import { createAppStore } from '../../app/store';
 import { API_ENDPOINTS } from '../../config/endpoints';
+import { createApiClient } from '../../lib/api-client';
+import { createAuthApi } from './auth.api';
+import { createSession } from './session';
 
 const { LOGIN, REFRESH, LOGOUT, ME } = API_ENDPOINTS.AUTH;
 const { VERIFY } = API_ENDPOINTS.TWO_FACTOR;
@@ -137,5 +146,44 @@ describe('session', () => {
       user: null,
       endNotice: null,
     });
+  });
+});
+
+describe('session across tabs (T11a)', () => {
+  it('sends one network refresh when several tabs refresh at once', async () => {
+    const gate = deferred<void>();
+    let issued = 0;
+    const api = createFakeApi({
+      [`POST ${REFRESH}`]: async () => {
+        issued += 1;
+        await gate.promise;
+        return { status: 200, data: { accessToken: `t${issued}` } };
+      },
+    });
+    const client = createApiClient(TEST_API_BASE_URL, {
+      adapter: api.adapter,
+      withCredentials: true,
+    });
+    const locks = fakeLocks();
+    const bus = fakeBus();
+    const tabs = [1, 2, 3].map(() => {
+      const store = createAppStore();
+      const session = createSession({
+        dispatch: store.dispatch,
+        authApi: createAuthApi(client),
+        crossTab: { locks, channel: bus.channel(), lockName: 'test:refresh' },
+      });
+      return { store, session };
+    });
+
+    const refreshed = Promise.all(
+      tabs.map(({ session }) => session.refreshAccessToken()),
+    );
+    gate.resolve();
+    expect(await refreshed).toEqual(['t1', 't1', 't1']);
+    expect(api.callsTo(`POST ${REFRESH}`)).toHaveLength(1);
+    for (const { store } of tabs) {
+      expect(store.getState().auth.accessToken).toBe('t1');
+    }
   });
 });

@@ -1,5 +1,9 @@
 import type { Dispatch } from '@reduxjs/toolkit';
 
+import {
+  createCrossTabRefresh,
+  type CrossTabRefreshOptions,
+} from '../../lib/cross-tab-refresh';
 import { singleFlight } from '../../lib/single-flight';
 import type {
   AuthApi,
@@ -15,26 +19,35 @@ export interface SessionOptions {
   authApi: AuthApi;
   /** Called whenever the session ends (sign-out or expiry), e.g. to drop cached server data. */
   onSessionEnded?: () => void;
+  /** T11a: Web Locks + BroadcastChannel; omitted = this tab only. */
+  crossTab?: CrossTabRefreshOptions;
 }
 
 /**
  * Session lifecycle on top of the auth API and `authSlice`. Every refresh,
  * whether from app start or from the 401 interceptor, goes through one
- * single-flight call: the refresh cookie rotates on use, so two parallel
- * refreshes would look like token reuse and revoke the session.
+ * single-flight call, and across tabs through `createCrossTabRefresh`
+ * (T11a): the refresh cookie rotates on use, so parallel refreshes would
+ * look like token reuse and revoke the session.
  */
 export function createSession({
   dispatch,
   authApi,
   onSessionEnded,
+  crossTab,
 }: SessionOptions) {
   const end = (notice?: LoginNotice) => {
     dispatch(signedOut(notice));
     onSessionEnded?.();
   };
 
+  const refreshAcrossTabs =
+    crossTab === undefined
+      ? () => authApi.refresh()
+      : createCrossTabRefresh(() => authApi.refresh(), crossTab);
+
   const refreshAccessToken = singleFlight(async () => {
-    const token = await authApi.refresh();
+    const token = await refreshAcrossTabs();
     dispatch(accessTokenReceived(token));
     return token;
   });

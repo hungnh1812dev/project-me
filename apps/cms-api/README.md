@@ -57,7 +57,7 @@ at least 32 bytes too.
 | Method | Path                   | Auth                    | Response                                                                             |
 | ------ | ---------------------- | ----------------------- | ------------------------------------------------------------------------------------ |
 | POST   | `/api/v1/auth/login`   | none                    | `200 { accessToken }` + refresh cookie, or `200 { requires2FA, tempToken, methods }` |
-| POST   | `/api/v1/auth/refresh` | refresh cookie + Origin | `200 { accessToken }` + rotated refresh cookie                                       |
+| POST   | `/api/v1/auth/refresh` | refresh cookie + Origin | `200 { accessToken }` + rotated refresh cookie (no cookie inside the grace window)   |
 | POST   | `/api/v1/auth/logout`  | refresh cookie + Origin | `204`, family revoked, cookie cleared                                                |
 | GET    | `/api/v1/auth/me`      | `Authorization: Bearer` | `200 { id, email, displayName, role, twoFactorEnabled, twoFactorMethod }`            |
 
@@ -74,6 +74,17 @@ Path=/api/v1/auth`, 7 days, host-only (no `Domain`). The raw token is never
   stored, only its SHA-256. Every refresh rotates it within its family;
   presenting an already rotated token revokes the whole family and bumps
   `accounts.token_version`.
+- Grace window (T11a, `REFRESH_TOKEN_REUSE_GRACE_SECONDS` = 10 s): an
+  already rotated token is not treated as reuse when it comes back within
+  10 s of its rotation (`revoked_at`), its successor (`replaced_by_id`) is
+  still live and unused, and the account is active. That is a concurrent
+  refresh (two admin tabs, a retried request). It gets `200 { accessToken }`
+  with **no** `Set-Cookie`: no new refresh token is minted, so there is no
+  parallel token or family, and the browser keeps the successor the winning
+  request set. A replay inside the window gains at most one 15 min access
+  token (still checked against `token_version`). Outside the window, once
+  the successor was rotated, or after logout, reuse detection is unchanged.
+  The window lives in the existing row columns; no in-memory state.
 - `/auth/refresh` and `/auth/logout` require `Origin` to be exactly
   `WEB_ORIGIN` or `ADMIN_ORIGIN`, otherwise `403 AUTH_ORIGIN_NOT_ALLOWED`.
   CORS stays admin-only.
