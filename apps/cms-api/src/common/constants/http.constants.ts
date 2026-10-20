@@ -1,3 +1,5 @@
+import { RETRY_AFTER_HEADER } from './limits.constants';
+
 /** Header that carries the per-request correlation id, in and out. */
 export const REQUEST_ID_HEADER = 'x-request-id';
 
@@ -26,7 +28,14 @@ export const CORS_ALLOWED_HEADERS = [
   REQUEST_ID_HEADER,
 ] as const;
 
-export const CORS_EXPOSED_HEADERS = [REQUEST_ID_HEADER] as const;
+/**
+ * Response headers cross-origin JS may read: the request id, and
+ * `Retry-After` so the admin can say how long to wait after a 429 (T11).
+ */
+export const CORS_EXPOSED_HEADERS = [
+  REQUEST_ID_HEADER,
+  RETRY_AFTER_HEADER,
+] as const;
 
 /** How long browsers may cache a preflight result. */
 export const CORS_PREFLIGHT_MAX_AGE_SECONDS = 600;

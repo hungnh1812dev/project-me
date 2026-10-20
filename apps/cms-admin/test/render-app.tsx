@@ -1,0 +1,44 @@
+import { QueryClient } from '@tanstack/react-query';
+import { render } from '@testing-library/react';
+import { MemoryRouter } from 'react-router';
+
+import { App } from '../src/app/App';
+import { createAppServices } from '../src/app/app-services';
+import { AppProviders } from '../src/app/AppProviders';
+import type { CurrentUser } from '../src/features/auth/auth.slice';
+import { createApiClient } from '../src/lib/api-client';
+import { createFakeApi, type FakeHandler, TEST_API_BASE_URL } from './fake-api';
+
+export const TEST_USER: CurrentUser = {
+  id: 'acc_owner',
+  email: 'owner@domain.localhost',
+  displayName: 'Mai Tran',
+  role: 'owner',
+  twoFactorEnabled: false,
+};
+
+/** App services on a fake API, wired exactly like `main.tsx`. */
+export function createTestServices(handlers: Record<string, FakeHandler> = {}) {
+  const api = createFakeApi(handlers);
+  const client = createApiClient(TEST_API_BASE_URL, {
+    adapter: api.adapter,
+    withCredentials: true,
+  });
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
+  return { api, client, services: createAppServices(client, queryClient) };
+}
+
+export function renderApp(
+  services: ReturnType<typeof createAppServices>,
+  route = '/',
+) {
+  return render(
+    <AppProviders services={services}>
+      <MemoryRouter initialEntries={[route]}>
+        <App />
+      </MemoryRouter>
+    </AppProviders>,
+  );
+}

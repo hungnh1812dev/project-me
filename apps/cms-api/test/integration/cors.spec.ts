@@ -43,7 +43,7 @@ describe('CORS', () => {
       expect(res.headers['vary']).toMatch(/Origin/);
     });
 
-    it('allows the actual admin request and exposes the request id', async () => {
+    it('allows the actual admin request and exposes the request id and Retry-After', async () => {
       const res = await request(app.getHttpServer())
         .get(LIVE_PATH)
         .set('Origin', TEST_ADMIN_ORIGIN);
@@ -53,6 +53,9 @@ describe('CORS', () => {
       );
       expect(res.headers['access-control-expose-headers']).toMatch(
         /x-request-id/,
+      );
+      expect(res.headers['access-control-expose-headers']).toMatch(
+        /Retry-After/,
       );
     });
 

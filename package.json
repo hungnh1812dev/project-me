@@ -8,7 +8,8 @@
   },
   "scripts": {
     "build": "turbo run build",
-    "test": "turbo run test",
+    "test": "turbo run test --filter=!@abyss/e2e",
+    "e2e": "pnpm --filter @abyss/e2e test",
     "lint": "turbo run lint",
     "typecheck": "turbo run typecheck",
     "format": "prettier --write .",

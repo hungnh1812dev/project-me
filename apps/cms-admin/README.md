@@ -2,9 +2,40 @@
 
 Admin console. React 19 + Vite, served by nginx at `admin.<domain>`; it calls the API cross-origin (CORS with credentials, `ADMIN_ORIGIN` in cms-api).
 
-For now the app is a skeleton: one status page that calls
-`GET /api/v1/health/live` and renders a status card built with
-`@abyss/form-commons`.
+So far: sign-in (T11) and, behind it, a status page that calls
+`GET /api/v1/health/live`.
+
+## Auth (T11, D14)
+
+- **Session state**: Redux Toolkit `authSlice` (`src/features/auth/auth.slice.ts`):
+  `status` (`unknown` until the start-up refresh settles, then
+  `authenticated` / `anonymous`), the access token and the `/me` user. The
+  access token lives **in memory only**: never in localStorage,
+  sessionStorage or JS cookies. The Redux DevTools hook is off in production
+  builds. The refresh token is the API's HttpOnly `__Secure-abyss_rt` cookie,
+  which JS never sees.
+- **Session lifecycle**: `src/features/auth/session.ts` (`restore`, `signIn`,
+  `signOut`, `expire`), wired in `src/app/app-services.ts`. Every refresh goes
+  through one single-flight call. The cookie rotates on use, so two parallel
+  refreshes would look like token reuse and revoke the session.
+- **Start-up**: `main.tsx` calls `session.restore()` once, outside React. Until
+  it settles, protected routes show "Restoring your session" instead of the
+  login page.
+- **Interceptor**: `src/lib/auth-interceptor.ts` adds `Authorization: Bearer`.
+  On a 401 from a protected call it refreshes once, and concurrent 401s wait
+  for that same refresh. It then retries each call once. If the refresh fails,
+  or a retried call gets 401 again, the session ends and the router shows
+  `/login`. Requests flagged `skipAuthRefresh` (login, refresh, logout) are
+  never retried.
+- **Login errors** are generic (`login-error.ts`): incorrect credentials (any
+  4xx), rate limited (429; uses `Retry-After` when cms-api exposes it via CORS,
+  otherwise a generic wait message), network, unexpected.
+- **2FA**: a `requires2FA` login answer shows a placeholder until T13. The temp
+  token is dropped.
+- **Routes** (`src/config/routes.ts`): `/login`, and `/` behind
+  `ProtectedRoute` + `AppShell` (header with the user and "Sign out").
+
+End-to-end coverage lives in [`apps/e2e`](../e2e/README.md).
 
 ## Run
 

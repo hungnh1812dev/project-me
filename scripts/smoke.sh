@@ -9,6 +9,8 @@
 #   SMOKE_HTTP_PORT        host port Traefik listens on (default 8080)
 #   SMOKE_TIMEOUT_SECONDS  how long to wait for the stack (default 180)
 #   SMOKE_KEEP=1           leave the stack running afterwards (for browser checks)
+#   SMOKE_E2E=1            also run the Playwright suite (@abyss/e2e) against the
+#                          stack as the bootstrapped owner (T11)
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -174,6 +176,7 @@ request GET "$WEB_ORIGIN$API_PREFIX/health/live" -H "Origin: $ADMIN_ORIGIN"
 expect_status "actual cross-origin call" 200
 expect_header "actual call allows the admin origin" Access-Control-Allow-Origin "$ADMIN_ORIGIN"
 expect_header "actual call allows credentials" Access-Control-Allow-Credentials "true"
+expect_header "actual call exposes the request id and Retry-After (T11)" Access-Control-Expose-Headers "x-request-id,Retry-After"
 
 request GET "$WEB_ORIGIN$API_PREFIX/health/live" -H "Origin: $OTHER_ORIGIN"
 expect_header "another origin gets no Access-Control-Allow-Origin" Access-Control-Allow-Origin ""
@@ -227,6 +230,17 @@ request POST "$WEB_ORIGIN$API_PREFIX/auth/refresh" -H "Cookie: $refresh_cookie" 
 expect_status "refresh from the admin origin rotates the token" 200
 request POST "$WEB_ORIGIN$API_PREFIX/auth/register" -H 'Content-Type: application/json' --data '{}'
 expect_status "POST auth/register does not exist (SPEC §12-2)" 404
+
+if [[ "${SMOKE_E2E:-}" == "1" ]]; then
+  echo "Playwright e2e (@abyss/e2e)"
+  if E2E_ADMIN_URL="$ADMIN_ORIGIN" E2E_API_BASE_URL="$SMOKE_API_BASE_URL" \
+    E2E_OWNER_EMAIL="$SMOKE_OWNER_EMAIL" E2E_OWNER_PASSWORD="$SMOKE_OWNER_PASSWORD" \
+    pnpm --dir "$ROOT_DIR" --filter @abyss/e2e test; then
+    pass "e2e suite"
+  else
+    fail "e2e suite"
+  fi
+fi
 
 if ((FAILURES > 0)); then
   echo "Smoke test failed: $FAILURES check(s)." >&2
