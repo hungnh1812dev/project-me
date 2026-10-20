@@ -152,7 +152,7 @@ Naming rules: files are `kebab-case.ts`, and constants files end in `.constants.
 | Upload limits | image 10 MB · pdf 20 MB · video 100 MB |
 | Reviewer session | 24 h, 1 session per IP per 10 min, global cap 200 active |
 | Identifier rule | `^[a-z][a-z0-9_]*$`, max **63 bytes after composition** |
-| Core tables | `accounts`, `roles`, `permissions`, `refresh_tokens`, `otp_codes`, `api_tokens`, `reviewer_sessions`, `file_library`, `content_types`, `audit_logs`, `app_settings` |
+| Core tables | `accounts`, `roles`, `permissions`, `refresh_tokens`, `otp_codes`, `api_tokens`, `reviewer_sessions`, `file_library`, `audit_logs`, `app_settings` (content registry lives in `content._content_types` + `content._migrations`, owned by the content engine, not Prisma — decided at T06) |
 | Refresh cookie | `__Secure-abyss_rt`, host-only `domain.com`, `Path=/api/v1/auth`, `HttpOnly; Secure; SameSite=Strict` |
 | Origins | web + API: `https://domain.com` · admin: `https://admin.domain.com` (the only CORS origin, credentials on) |
 
@@ -239,7 +239,7 @@ Every table has `id` (int identity PK), `created_at` and `updated_at`. User-faci
 | `api_tokens` | name, token_prefix, token_hash UK, created_by_id FK (not null, ON DELETE CASCADE), scope jsonb, expires_at, revoked_at, last_used_at |
 | `reviewer_sessions` | account_id FK (ephemeral `reviewer` account), visitor_role, purpose_tags jsonb, notes (≤ 500 chars, plain text), ip_hmac, user_agent, expires_at, last_active_at |
 | `file_library` | file_name, mime_type, size, width, height, alt, storage_key UK, sha256, url, thumbnail_url, provider (`cloudinary\|preset`), is_reviewer_preset, deleted_at |
-| `content_types` | slug UK, kind (`single\|collection`), draft_and_publish bool, definition jsonb, definition_hash |
+| `content._content_types` (content engine, not Prisma) | slug UK, kind (`single\|collection`), draft_and_publish bool, definition jsonb, definition_hash |
 | `audit_logs` | bigint PK, actor_id (SET NULL), actor_type (`account\|api_token\|system`), action, subject, target_id, metadata jsonb (no field values), ip, created_at |
 | `app_settings` | key UK, value jsonb (e.g. `reviewer.enabled`) |
 
