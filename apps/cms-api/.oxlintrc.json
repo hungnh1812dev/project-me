@@ -1,0 +1,22 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["typescript", "jest", "node"],
+  "categories": {
+    "correctness": "error",
+    "suspicious": "warn"
+  },
+  "env": {
+    "node": true,
+    "jest": true
+  },
+  "ignorePatterns": ["dist", "coverage", "node_modules"],
+  "rules": {
+    "typescript/no-extraneous-class": [
+      "warn",
+      {
+        "allowWithDecorator": true,
+        "allowStaticOnly": true
+      }
+    ]
+  }
+}

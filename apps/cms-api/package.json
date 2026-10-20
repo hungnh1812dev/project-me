@@ -1,0 +1,46 @@
+{
+  "name": "@abyss/cms-api",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Abyss headless CMS REST API (NestJS on Express)",
+  "main": "dist/main.js",
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "start": "node dist/main.js",
+    "test": "jest",
+    "test:unit": "jest --selectProjects unit",
+    "test:integration": "jest --selectProjects integration",
+    "lint": "oxlint && eslint .",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@nestjs/common": "11.2.7",
+    "@nestjs/core": "11.2.7",
+    "@nestjs/platform-express": "11.2.7",
+    "pg": "8.23.1",
+    "reflect-metadata": "0.2.2",
+    "rxjs": "7.8.2",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@abyss/prettier-config": "workspace:*",
+    "@eslint/js": "10.0.1",
+    "@nestjs/testing": "11.2.7",
+    "@testcontainers/postgresql": "12.2.1",
+    "@types/express": "5.0.6",
+    "@types/jest": "30.0.0",
+    "@types/node": "24.19.2",
+    "@types/pg": "8.23.1",
+    "@types/supertest": "7.2.1",
+    "eslint": "10.13.0",
+    "globals": "17.13.0",
+    "jest": "30.5.2",
+    "oxlint": "1.88.0",
+    "prettier": "3.9.10",
+    "supertest": "7.3.1",
+    "testcontainers": "12.2.1",
+    "ts-jest": "29.4.15",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.71.2"
+  }
+}

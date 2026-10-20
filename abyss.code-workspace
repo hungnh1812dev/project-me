@@ -1,6 +1,7 @@
 {
   "folders": [
     { "name": "root", "path": "." },
+    { "name": "@abyss/cms-api", "path": "apps/cms-api" },
     { "name": "@abyss/prettier-config", "path": "packages/prettier-config" },
   ],
   "settings": {
