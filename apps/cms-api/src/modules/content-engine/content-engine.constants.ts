@@ -1,0 +1,214 @@
+/** Postgres schema that holds every generated content table (SPEC §8.2). */
+export const CONTENT_DB_SCHEMA = 'content';
+
+/** SPEC §6: max component nesting below the root. */
+export const MAX_COMPONENT_DEPTH = 3;
+
+/** SPEC §6: Postgres NAMEDATALEN - 1. Longer names are silently truncated by Postgres. */
+export const MAX_IDENTIFIER_BYTES = 63;
+
+/** SPEC §6: canonical rule every generated SQL identifier must match. */
+export const SQL_IDENTIFIER_PATTERN = /^[a-z][a-z0-9_]*$/;
+
+/** Content type slug as written in the definition (kebab-case, used in URLs). */
+export const SLUG_PATTERN = /^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/;
+
+/** Joins the slug and component field names into a component table name. */
+export const TABLE_PATH_SEPARATOR = '__';
+
+export const CONTENT_TYPE_KINDS = ['single', 'collection'] as const;
+
+export const SCALAR_FIELD_TYPES = [
+  'string',
+  'text',
+  'richtext',
+  'integer',
+  'decimal',
+  'boolean',
+  'date',
+  'datetime',
+  'json',
+  'media',
+] as const;
+
+export const COMPONENT_FIELD_TYPE = 'component';
+
+/** Stored as an int referencing `public.file_library(id)`. */
+export const MEDIA_FIELD_TYPE =
+  'media' satisfies (typeof SCALAR_FIELD_TYPES)[number];
+
+export const FIELD_TYPES = [
+  ...SCALAR_FIELD_TYPES,
+  COMPONENT_FIELD_TYPE,
+] as const;
+
+/** Engine-owned columns of every root table (SPEC §8.1 / §8.2). */
+export const ROOT_SYSTEM_COLUMNS = [
+  'id',
+  'document_id',
+  'version',
+  'published_at',
+  'locale',
+  'created_at',
+  'updated_at',
+  'created_by',
+  'updated_by',
+] as const;
+
+/** Engine-owned columns of every component table (SPEC §8.2). */
+export const COMPONENT_SYSTEM_COLUMNS = [
+  'id',
+  'component_uid',
+  'parent_id',
+  'order_index',
+] as const;
+
+/**
+ * Names the engine or API owns even without a column today (`status` is the
+ * draft/published filter). Fields may not use them anywhere.
+ */
+export const ENGINE_RESERVED_NAMES = [
+  ...new Set<string>([
+    ...ROOT_SYSTEM_COLUMNS,
+    ...COMPONENT_SYSTEM_COLUMNS,
+    'status',
+  ]),
+];
+
+/**
+ * Postgres reserved key words (both "reserved" and "reserved (can be function
+ * or type)" in the SQL Key Words appendix, PG 16). Neither kind can be used
+ * unquoted as a table or column name.
+ * Generated SQL quotes identifiers anyway; banning them keeps hand-written
+ * SQL and tooling safe.
+ */
+export const SQL_RESERVED_WORDS = [
+  'all',
+  'analyse',
+  'analyze',
+  'and',
+  'any',
+  'array',
+  'as',
+  'asc',
+  'asymmetric',
+  'authorization',
+  'binary',
+  'both',
+  'case',
+  'cast',
+  'check',
+  'collate',
+  'collation',
+  'column',
+  'concurrently',
+  'constraint',
+  'create',
+  'cross',
+  'current_catalog',
+  'current_date',
+  'current_role',
+  'current_schema',
+  'current_time',
+  'current_timestamp',
+  'current_user',
+  'default',
+  'deferrable',
+  'desc',
+  'distinct',
+  'do',
+  'else',
+  'end',
+  'except',
+  'false',
+  'fetch',
+  'for',
+  'foreign',
+  'freeze',
+  'from',
+  'full',
+  'grant',
+  'group',
+  'having',
+  'ilike',
+  'in',
+  'initially',
+  'inner',
+  'intersect',
+  'into',
+  'is',
+  'isnull',
+  'join',
+  'lateral',
+  'leading',
+  'left',
+  'like',
+  'limit',
+  'localtime',
+  'localtimestamp',
+  'natural',
+  'not',
+  'notnull',
+  'null',
+  'offset',
+  'on',
+  'only',
+  'or',
+  'order',
+  'outer',
+  'overlaps',
+  'placing',
+  'primary',
+  'references',
+  'returning',
+  'right',
+  'select',
+  'session_user',
+  'similar',
+  'some',
+  'symmetric',
+  'system_user',
+  'table',
+  'tablesample',
+  'then',
+  'to',
+  'trailing',
+  'true',
+  'union',
+  'unique',
+  'user',
+  'using',
+  'variadic',
+  'verbose',
+  'when',
+  'where',
+  'window',
+  'with',
+] as const;
+
+/** Suffixes appended to a table name for the objects T06 names explicitly. */
+export const RELATION_NAME_SUFFIXES = {
+  primaryKey: '_pk',
+  parentForeignKey: '_parent_fk',
+  parentOrderIndex: '_parent_idx',
+  draftUnique: '_draft_uq',
+  publishedUnique: '_published_uq',
+  publishedListIndex: '_published_idx',
+  mediaForeignKey: '_media_fk',
+} as const;
+
+/** Rule codes carried by every definition validation error. */
+export const DEFINITION_RULES = {
+  /** Shape is wrong: unknown key, wrong type, missing property. */
+  SCHEMA_INVALID: 'schema.invalid',
+  /** A name fails the slug pattern or its SQL form fails `^[a-z][a-z0-9_]*$`. */
+  IDENTIFIER_INVALID: 'identifier.invalid',
+  /** A name is an engine-owned column or a Postgres reserved word. */
+  IDENTIFIER_RESERVED: 'identifier.reserved',
+  /** A composed SQL name is longer than 63 bytes. */
+  IDENTIFIER_TOO_LONG: 'identifier.too_long',
+  /** Two names are equal after normalisation. */
+  IDENTIFIER_COLLISION: 'identifier.collision',
+  /** A component is nested deeper than MAX_COMPONENT_DEPTH. */
+  COMPONENT_DEPTH_EXCEEDED: 'component.depth_exceeded',
+} as const;

@@ -48,6 +48,14 @@ The readiness ping goes through the `DATABASE_HEALTH` token
 one-connection `pg` pool; T08 rebinds it to Prisma without touching the health
 module.
 
+## Content types
+
+Content types are JSON files in `content/schemas/` (e.g. `cv-page.json`).
+`src/modules/content-engine/definition.validator.ts` checks them (shape,
+naming, depth ≤ 3, 63-byte names, collisions) and returns structured errors;
+`naming.ts` is the single source of generated SQL names. Format and rules:
+[docs/modules/content-schema.md](../../docs/modules/content-schema.md).
+
 ## Scripts
 
 | Script                           | What it does                                                         |
