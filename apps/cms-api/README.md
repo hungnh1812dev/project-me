@@ -18,7 +18,8 @@ secrets and DB credentials redacted. Every key is documented in
 
 Production guards (`NODE_ENV=production`): `MAIL_PROVIDER=console` is
 rejected, and `JWT_ACCESS_SECRET`, `OTP_PEPPER`, `TOTP_ENC_KEY` are required and
-must be at least 32 bytes; `ADMIN_ORIGIN` is required.
+must be at least 32 bytes; `ADMIN_ORIGIN`, `WEB_ORIGIN` and `JWT_ACCESS_KID`
+are required.
 
 ## HTTP pipeline
 
@@ -42,6 +43,34 @@ must be at least 32 bytes; `ADMIN_ORIGIN` is required.
 | ------ | ---------------------- | ---------------------------------------------------------------------------------------------- |
 | GET    | `/api/v1/health/live`  | `200 { "status": "ok" }`                                                                       |
 | GET    | `/api/v1/health/ready` | `200 { "status": "ok" }`, or `503 { "status": "error" }` when the DB ping fails or exceeds 2 s |
+
+### Auth (T09, `src/modules/identity`)
+
+| Method | Path                   | Auth                    | Response                                                                             |
+| ------ | ---------------------- | ----------------------- | ------------------------------------------------------------------------------------ |
+| POST   | `/api/v1/auth/login`   | none                    | `200 { accessToken }` + refresh cookie, or `200 { requires2FA, tempToken, methods }` |
+| POST   | `/api/v1/auth/refresh` | refresh cookie + Origin | `200 { accessToken }` + rotated refresh cookie                                       |
+| POST   | `/api/v1/auth/logout`  | refresh cookie + Origin | `204`, family revoked, cookie cleared                                                |
+| GET    | `/api/v1/auth/me`      | `Authorization: Bearer` | `200 { id, email, displayName, role, twoFactorEnabled }`                             |
+
+- Login verifies Argon2id. Unknown email, wrong password and any account that
+  is not `active` (invited, disabled, deleted) get the same
+  `401 AUTH_INVALID_CREDENTIALS`; unknown emails are verified against a dummy
+  hash so the timing matches. There is no register route (invite-only).
+- Access token: HS256 only (any other `alg`, `none` included, is rejected),
+  15 min, claims `sub` (account document id), `tv`, `pv`, `kid`, `typ`. The
+  verification key is chosen by the `kid` header (`JWT_ACCESS_KID`).
+  Comparing `tv`/`pv` with the database is T15.
+- Refresh cookie `__Secure-abyss_rt`: `HttpOnly; Secure; SameSite=Strict;
+Path=/api/v1/auth`, 7 days, host-only (no `Domain`). The raw token is never
+  stored, only its SHA-256. Every refresh rotates it within its family;
+  presenting an already rotated token revokes the whole family and bumps
+  `accounts.token_version`.
+- `/auth/refresh` and `/auth/logout` require `Origin` to be exactly
+  `WEB_ORIGIN` or `ADMIN_ORIGIN`, otherwise `403 AUTH_ORIGIN_NOT_ALLOWED`.
+  CORS stays admin-only.
+- 2FA accounts get a signed 300 s temp token (`typ: 2fa`) and no session.
+  This is a stub until T13 adds the verify endpoint and the attempt limit.
 
 The readiness ping goes through the `DATABASE_HEALTH` token
 (`src/infrastructure/database/database-health.ts`), bound to

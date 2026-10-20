@@ -3,6 +3,7 @@ import { z } from 'zod';
 import {
   ALLOWED_ORIGIN_PROTOCOLS,
   CONFIG_DEFAULTS,
+  JWT_KID_PATTERN,
   MAIL_PROVIDERS,
   MAX_PORT,
   MIN_SECRET_BYTES,
@@ -26,6 +27,25 @@ function isHttpOrigin(value: string): boolean {
     return false;
   }
 }
+
+/** Optional exact origin (scheme + host [+ port]); empty = unset. */
+const optionalOrigin = z.preprocess(
+  emptyToUndefined,
+  z
+    .string()
+    .refine(isHttpOrigin, {
+      message:
+        'must be a bare http(s) origin, e.g. https://admin.example.com (no path or trailing slash)',
+    })
+    .optional(),
+);
+
+/** Keys that are optional in development but required in production. */
+const PRODUCTION_REQUIRED_KEYS = [
+  'ADMIN_ORIGIN',
+  'WEB_ORIGIN',
+  'JWT_ACCESS_KID',
+] as const;
 
 /**
  * Raw environment contract. Every key is listed in `.env.example`.
@@ -54,20 +74,21 @@ export const envSchema = z
         .transform((header) => header.toLowerCase())
         .optional(),
     ),
-    ADMIN_ORIGIN: z.preprocess(
-      emptyToUndefined,
-      z
-        .string()
-        .refine(isHttpOrigin, {
-          message:
-            'must be a bare http(s) origin, e.g. https://admin.example.com (no path or trailing slash)',
-        })
-        .optional(),
-    ),
+    ADMIN_ORIGIN: optionalOrigin,
+    WEB_ORIGIN: optionalOrigin,
     MAIL_PROVIDER: z
       .enum(MAIL_PROVIDERS)
       .default(CONFIG_DEFAULTS.MAIL_PROVIDER),
     JWT_ACCESS_SECRET: z.preprocess(emptyToUndefined, optionalSecret),
+    JWT_ACCESS_KID: z.preprocess(
+      emptyToUndefined,
+      z
+        .string()
+        .regex(JWT_KID_PATTERN, {
+          message: 'must be 1-64 characters of A-Z a-z 0-9 . _ -',
+        })
+        .optional(),
+    ),
     OTP_PEPPER: z.preprocess(emptyToUndefined, optionalSecret),
     TOTP_ENC_KEY: z.preprocess(emptyToUndefined, optionalSecret),
   })
@@ -82,12 +103,14 @@ export const envSchema = z
       });
     }
 
-    if (env.ADMIN_ORIGIN === undefined) {
-      ctx.addIssue({
-        code: 'custom',
-        path: ['ADMIN_ORIGIN'],
-        message: 'ADMIN_ORIGIN is required in production',
-      });
+    for (const key of PRODUCTION_REQUIRED_KEYS) {
+      if (env[key] === undefined) {
+        ctx.addIssue({
+          code: 'custom',
+          path: [key],
+          message: `${key} is required in production`,
+        });
+      }
     }
 
     for (const key of SECRET_ENV_KEYS) {

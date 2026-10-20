@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import { REDACTED } from './config.constants';
+import { CONFIG_DEFAULTS, REDACTED } from './config.constants';
 import { envSchema, type Env } from './env.schema';
 
 export interface IAppConfig {
@@ -14,6 +14,15 @@ export interface IAppConfig {
   readonly cors: {
     /** Exact origins allowed to call the API cross-origin with credentials. Empty = CORS off. */
     readonly allowedOrigins: readonly string[];
+  };
+  readonly auth: {
+    /**
+     * D14: origins allowed to use the refresh cookie (`/auth/refresh`,
+     * `/auth/logout`): web + admin. Empty = those endpoints always refuse.
+     */
+    readonly cookieOrigins: readonly string[];
+    /** Key id of JWT_ACCESS_SECRET; signed into every token header (D9). */
+    readonly jwtAccessKid: string;
   };
   readonly database: {
     readonly url: string;
@@ -72,6 +81,13 @@ export function loadAppConfig(rawEnv: RawEnv): IAppConfig {
     cors: {
       allowedOrigins: env.ADMIN_ORIGIN === undefined ? [] : [env.ADMIN_ORIGIN],
     },
+    auth: {
+      cookieOrigins: [env.WEB_ORIGIN, env.ADMIN_ORIGIN].filter(
+        (origin): origin is string => origin !== undefined,
+      ),
+      // Production requires an explicit kid (env.schema.ts).
+      jwtAccessKid: env.JWT_ACCESS_KID ?? CONFIG_DEFAULTS.JWT_ACCESS_KID,
+    },
     database: { url: env.DATABASE_URL },
     mail: { provider: env.MAIL_PROVIDER },
     secrets: {
@@ -98,6 +114,7 @@ export function summarizeConfig(config: IAppConfig): Record<string, unknown> {
     env: config.env,
     http: config.http,
     cors: config.cors,
+    auth: config.auth,
     database: { url: redactDatabaseUrl(config.database.url) },
     mail: config.mail,
     secrets: {

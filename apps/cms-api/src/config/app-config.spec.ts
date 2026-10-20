@@ -2,6 +2,7 @@ import {
   devEnv,
   productionEnv,
   TEST_ADMIN_ORIGIN,
+  TEST_JWT_KID,
   TEST_SECRET_32_BYTES,
   TEST_SHORT_SECRET,
 } from '../../test/fixtures/env.fixture';
@@ -72,6 +73,37 @@ describe('loadAppConfig', () => {
     },
   );
 
+  it('builds the refresh-cookie origin allowlist from WEB_ORIGIN and ADMIN_ORIGIN', () => {
+    expect(loadAppConfig(devEnv()).auth.cookieOrigins).toEqual([]);
+    expect(
+      loadAppConfig(
+        devEnv({
+          WEB_ORIGIN: 'https://example.com',
+          ADMIN_ORIGIN: 'https://admin.example.com',
+        }),
+      ).auth.cookieOrigins,
+    ).toEqual(['https://example.com', 'https://admin.example.com']);
+  });
+
+  it('keeps CORS admin-only when WEB_ORIGIN is set', () => {
+    const config = loadAppConfig(
+      devEnv({
+        WEB_ORIGIN: 'https://example.com',
+        ADMIN_ORIGIN: 'https://admin.example.com',
+      }),
+    );
+    expect(config.cors.allowedOrigins).toEqual(['https://admin.example.com']);
+  });
+
+  it('defaults the JWT key id outside production', () => {
+    expect(loadAppConfig(devEnv()).auth.jwtAccessKid).toBe(
+      CONFIG_DEFAULTS.JWT_ACCESS_KID,
+    );
+    expect(
+      loadAppConfig(devEnv({ JWT_ACCESS_KID: '2026-10' })).auth.jwtAccessKid,
+    ).toBe('2026-10');
+  });
+
   it('returns a deeply frozen object', () => {
     const config = loadAppConfig(devEnv());
     expect(Object.isFrozen(config)).toBe(true);
@@ -112,6 +144,21 @@ describe('loadAppConfig', () => {
       'ADMIN_ORIGIN',
     ],
     [
+      'WEB_ORIGIN with a path',
+      { WEB_ORIGIN: 'https://example.com/x' },
+      'WEB_ORIGIN',
+    ],
+    [
+      'JWT_ACCESS_KID with spaces',
+      { JWT_ACCESS_KID: 'key one' },
+      'JWT_ACCESS_KID',
+    ],
+    [
+      'over-long JWT_ACCESS_KID',
+      { JWT_ACCESS_KID: 'k'.repeat(65) },
+      'JWT_ACCESS_KID',
+    ],
+    [
       'header with spaces',
       { CLIENT_IP_HEADER: 'x forwarded' },
       'CLIENT_IP_HEADER',
@@ -142,10 +189,19 @@ describe('loadAppConfig', () => {
       expect(error.issues[0]).toMatch(/^MAIL_PROVIDER:/);
     });
 
-    it('rejects a missing ADMIN_ORIGIN', () => {
-      const error = configErrorOf(productionEnv({ ADMIN_ORIGIN: undefined }));
-      expect(error.issues).toContain(
-        'ADMIN_ORIGIN: ADMIN_ORIGIN is required in production',
+    it.each(['ADMIN_ORIGIN', 'WEB_ORIGIN', 'JWT_ACCESS_KID'])(
+      'rejects a missing %s',
+      (key) => {
+        const error = configErrorOf(productionEnv({ [key]: undefined }));
+        expect(error.issues).toContain(
+          `${key}: ${key} is required in production`,
+        );
+      },
+    );
+
+    it('uses the configured JWT key id', () => {
+      expect(loadAppConfig(productionEnv()).auth.jwtAccessKid).toBe(
+        TEST_JWT_KID,
       );
     });
 

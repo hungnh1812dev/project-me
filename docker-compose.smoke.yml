@@ -44,9 +44,11 @@ services:
       PORT: '3000'
       DATABASE_URL: postgresql://abyss:${SMOKE_DB_PASSWORD}@db:5432/abyss
       ADMIN_ORIGIN: ${SMOKE_ADMIN_ORIGIN:?set by scripts/smoke.sh}
+      WEB_ORIGIN: ${SMOKE_WEB_ORIGIN:?set by scripts/smoke.sh}
       TRUST_PROXY_HOPS: '1'
       MAIL_PROVIDER: smtp
       JWT_ACCESS_SECRET: ${SMOKE_JWT_ACCESS_SECRET:?set by scripts/smoke.sh}
+      JWT_ACCESS_KID: ${SMOKE_JWT_ACCESS_KID:?set by scripts/smoke.sh}
       OTP_PEPPER: ${SMOKE_OTP_PEPPER:?set by scripts/smoke.sh}
       TOTP_ENC_KEY: ${SMOKE_TOTP_ENC_KEY:?set by scripts/smoke.sh}
     depends_on:

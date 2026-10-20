@@ -7,4 +7,11 @@ export const API_ROUTES = {
     LIVE: 'live',
     READY: 'ready',
   },
+  AUTH: {
+    ROOT: 'auth',
+    LOGIN: 'login',
+    REFRESH: 'refresh',
+    LOGOUT: 'logout',
+    ME: 'me',
+  },
 } as const;

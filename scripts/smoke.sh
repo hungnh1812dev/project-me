@@ -2,7 +2,7 @@
 # Proxy smoke test (T04): builds and starts docker-compose.smoke.yml, checks
 # routing, trailing slashes and CORS through Traefik, runs db:migrate,
 # owner:bootstrap (T08) and content:migrate (T07) inside the cms-api image,
-# then tears it down.
+# checks login/refresh (T09), then tears it down.
 #
 # Optional env:
 #   SMOKE_DOMAIN           base domain (default domain.localhost)
@@ -34,6 +34,8 @@ OWNER_EXISTS="An owner account already exists."
 CONTENT_MIGRATE_CMD=(node dist/modules/content-engine/cli/migrate.js)
 CONTENT_MIGRATE_APPLIED="Applied "
 CONTENT_MIGRATE_NOTHING="No pending content migrations."
+REFRESH_COOKIE_NAME="__Secure-abyss_rt"
+JWT_ACCESS_KID="smoke"
 
 export SMOKE_DOMAIN="${SMOKE_DOMAIN:-$DEFAULT_DOMAIN}"
 export SMOKE_HTTP_PORT="${SMOKE_HTTP_PORT:-$DEFAULT_HTTP_PORT}"
@@ -48,6 +50,8 @@ WEB_ORIGIN="http://$SMOKE_DOMAIN$PORT_SUFFIX"
 ADMIN_ORIGIN="http://$ADMIN_HOST$PORT_SUFFIX"
 OTHER_ORIGIN="http://not-allowed.$SMOKE_DOMAIN$PORT_SUFFIX"
 export SMOKE_ADMIN_ORIGIN="$ADMIN_ORIGIN"
+export SMOKE_WEB_ORIGIN="$WEB_ORIGIN"
+export SMOKE_JWT_ACCESS_KID="$JWT_ACCESS_KID"
 export SMOKE_API_BASE_URL="$WEB_ORIGIN$API_PREFIX"
 
 # Throwaway values for this run only (production mode needs them).
@@ -206,6 +210,23 @@ in_api "first run applies the committed migrations" "" 1 \
   "$CONTENT_MIGRATE_APPLIED" -- "${CONTENT_MIGRATE_CMD[@]}"
 in_api "second run has nothing pending" "" 1 \
   "$CONTENT_MIGRATE_NOTHING" -- "${CONTENT_MIGRATE_CMD[@]}"
+
+echo "Auth through the proxy (T09)"
+login_body() { printf '{"email":"%s","password":"%s"}' "$SMOKE_OWNER_EMAIL" "$1"; }
+request POST "$WEB_ORIGIN$API_PREFIX/auth/login/" -H 'Content-Type: application/json' \
+  --data "$(login_body "$SMOKE_OWNER_PASSWORD")"
+expect_status "POST auth/login/ with trailing slash, right password (SPEC §12-17)" 200
+refresh_cookie="$(header Set-Cookie | sed -n "s/^\($REFRESH_COOKIE_NAME=[^;]*\);.*/\1/p")"
+if [[ -n "$refresh_cookie" ]]; then pass "login sets the refresh cookie"; else fail "login sets no refresh cookie"; fi
+request POST "$WEB_ORIGIN$API_PREFIX/auth/login/" -H 'Content-Type: application/json' \
+  --data "$(login_body "wrong-$SMOKE_OWNER_PASSWORD")"
+expect_status "POST auth/login/ with trailing slash, wrong password (SPEC §12-17)" 401
+request POST "$WEB_ORIGIN$API_PREFIX/auth/refresh" -H "Cookie: $refresh_cookie"
+expect_status "refresh without Origin is refused" 403
+request POST "$WEB_ORIGIN$API_PREFIX/auth/refresh" -H "Cookie: $refresh_cookie" -H "Origin: $ADMIN_ORIGIN"
+expect_status "refresh from the admin origin rotates the token" 200
+request POST "$WEB_ORIGIN$API_PREFIX/auth/register" -H 'Content-Type: application/json' --data '{}'
+expect_status "POST auth/register does not exist (SPEC §12-2)" 404
 
 if ((FAILURES > 0)); then
   echo "Smoke test failed: $FAILURES check(s)." >&2

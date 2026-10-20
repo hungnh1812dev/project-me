@@ -19,11 +19,16 @@ export const CONFIG_DEFAULTS = {
   PORT: 3000,
   TRUST_PROXY_HOPS: 1,
   MAIL_PROVIDER: 'console',
+  /** Key id used outside production when JWT_ACCESS_KID is unset. */
+  JWT_ACCESS_KID: 'dev',
 } as const;
+
+/** JWT `kid` values: short, header- and log-safe. */
+export const JWT_KID_PATTERN = /^[A-Za-z0-9._-]{1,64}$/;
 
 export const MAX_PORT = 65_535;
 
-/** `URL.protocol` values accepted for ADMIN_ORIGIN (CORS allowlist). */
+/** `URL.protocol` values accepted for ADMIN_ORIGIN and WEB_ORIGIN. */
 export const ALLOWED_ORIGIN_PROTOCOLS: readonly string[] = ['http:', 'https:'];
 
 /** Shown instead of secret values in the boot summary. */

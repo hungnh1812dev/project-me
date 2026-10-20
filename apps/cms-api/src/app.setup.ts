@@ -1,4 +1,5 @@
 import type { NestExpressApplication } from '@nestjs/platform-express';
+import cookieParser from 'cookie-parser';
 
 import { API_PREFIX } from './common/constants/api.constants';
 import {
@@ -25,6 +26,8 @@ export function configureApp(
   // D7: trust exactly N proxy hops, never `true`.
   app.set(EXPRESS_SETTINGS.TRUST_PROXY, config.http.trustProxyHops);
   app.use(requestIdMiddleware);
+  // Populates req.cookies; only the auth refresh/logout routes read it (D14).
+  app.use(cookieParser());
   // D14: only the configured admin origin, never a wildcard or a reflected origin.
   if (config.cors.allowedOrigins.length > 0) {
     app.enableCors({
