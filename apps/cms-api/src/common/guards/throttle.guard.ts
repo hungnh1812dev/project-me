@@ -99,7 +99,8 @@ export class ThrottleGuard implements CanActivate {
         `${rule.name}:${subject}`,
         rule.windowMs,
       );
-      if (hit.count > rule.limit) {
+      // A refused hit (store at capacity, T10a) answers exactly like a limit hit.
+      if (hit.refused === true || hit.count > rule.limit) {
         this.reject(http.getResponse<Response>(), hit.resetAt);
       }
     }

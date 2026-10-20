@@ -79,6 +79,19 @@ export type RateLimitPolicy =
 /** Longest window of any rule; expired counters are swept at most this often. */
 export const RATE_LIMIT_SWEEP_INTERVAL_MS = FIFTEEN_MINUTES_MS;
 
+/**
+ * T10a: most live counters the in-memory store holds, so an attacker rotating
+ * IPs or emails can't grow it without bound. Measured ~200-250 bytes per key
+ * (hashed email or IPv6 key), so ~12 MB at the cap: safe on a small VPS while
+ * far above what a small CMS uses in one 15-minute window (one login from a
+ * new IP and email takes 2 keys). At the cap, expired counters are swept; if
+ * it is still full, new keys are refused (429, fail closed).
+ */
+export const RATE_LIMIT_MAX_KEYS = 50_000;
+
+/** At most one "store full" warning per this interval while keys are refused. */
+export const RATE_LIMIT_CAPACITY_WARN_INTERVAL_MS = ONE_MINUTE_MS;
+
 /** `Retry-After` is whole seconds and at least this. */
 export const RETRY_AFTER_MIN_SECONDS = 1;
 export const RETRY_AFTER_HEADER = 'Retry-After';

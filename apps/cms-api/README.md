@@ -106,6 +106,15 @@ in `src/common/constants/limits.constants.ts` (`RATE_LIMIT_POLICIES`):
   Correct for one API replica only; counters reset on restart. Before running
   more than one replica, bind `RATE_LIMIT_STORE` to a Postgres or Redis
   implementation. Expired counters are swept every 15 minutes.
+- Store cap (T10a): at most `RATE_LIMIT_MAX_KEYS` (50,000, about 12 MB at
+  ~250 bytes per key) live counters, so rotating IPs or emails can't exhaust
+  memory. When a new key arrives at the cap, expired counters are swept
+  first; if the store is still full the request is refused with the same
+  `429` + `Retry-After` as a limit hit (fail closed). Existing keys keep
+  counting and live counters are never evicted. A `Rate-limit store full`
+  warning (refused count only, no IPs or emails) is logged at most once per
+  `RATE_LIMIT_CAPACITY_WARN_INTERVAL_MS` (1 min). Change the cap in
+  `limits.constants.ts`.
 
 ## Core database (Prisma)
 

@@ -3,6 +3,7 @@ import type { StartedPostgreSqlContainer } from '@testcontainers/postgresql';
 import request from 'supertest';
 
 import { Clock } from '../../src/common/clock';
+import { RATE_LIMIT_STORE_MAX_KEYS } from '../../src/common/rate-limit/rate-limit.store';
 import { ERROR_CODES } from '../../src/common/constants/error.constants';
 import {
   MS_PER_SECOND,
@@ -25,7 +26,7 @@ import {
   TEST_WEB_ORIGIN,
 } from '../fixtures/env.fixture';
 import { startPostgres } from '../fixtures/postgres.fixture';
-import { createTestApp } from '../fixtures/test-app';
+import { createTestApp, type ProviderOverride } from '../fixtures/test-app';
 
 const LOGIN = '/api/v1/auth/login';
 const REFRESH = '/api/v1/auth/refresh';
@@ -104,7 +105,10 @@ describe('rate limiting + client IP (D7, SPEC §12-8; Postgres 16 via Testcontai
     await postgres?.stop();
   });
 
-  async function startApp(overrides: Record<string, string> = {}) {
+  async function startApp(
+    overrides: Record<string, string> = {},
+    providers: readonly ProviderOverride[] = [],
+  ) {
     const app = await createTestApp(
       devEnv({
         DATABASE_URL: databaseUrl,
@@ -115,6 +119,7 @@ describe('rate limiting + client IP (D7, SPEC §12-8; Postgres 16 via Testcontai
         TRUST_PROXY_HOPS: '1',
         ...overrides,
       }),
+      providers,
     );
     const time = { now: START };
     jest.spyOn(app.get(Clock), 'now').mockImplementation(() => time.now);
@@ -303,6 +308,57 @@ describe('rate limiting + client IP (D7, SPEC §12-8; Postgres 16 via Testcontai
       }
       expect((await login(client)).status).toBe(429);
       expect((await login(nextIp())).status).toBe(401);
+    });
+  });
+
+  describe('with the store at its max-keys cap (T10a)', () => {
+    /** One login from a new IP and a new email takes two keys. */
+    const CAP = 4;
+    let app: NestExpressApplication;
+    let time: { now: number };
+
+    beforeAll(async () => {
+      ({ app, time } = await startApp({}, [
+        { token: RATE_LIMIT_STORE_MAX_KEYS, value: CAP },
+      ]));
+    });
+
+    afterAll(async () => {
+      await app?.close();
+    });
+
+    function login(clientIp: string, email: string) {
+      return request(app.getHttpServer())
+        .post(LOGIN)
+        .set('X-Forwarded-For', clientIp)
+        .send({ email, password: WRONG_PASSWORD });
+    }
+
+    it('answers 429 like a limit hit for new clients; known clients keep working', async () => {
+      const known = [
+        { ip: nextIp(), email: unknownEmail() },
+        { ip: nextIp(), email: unknownEmail() },
+      ];
+      for (const { ip, email } of known) {
+        expect((await login(ip, email)).status).toBe(401);
+      }
+
+      const refused = await login(nextIp(), unknownEmail());
+      expect(refused.status).toBe(429);
+      expect(errorBody(refused)).toEqual(TOO_MANY);
+      expect(refused.headers['retry-after']).toBe(
+        String(seconds(LOGIN_IP.windowMs)),
+      );
+
+      const first = known[0];
+      expect(first).toBeDefined();
+      expect((await login(first?.ip ?? '', first?.email ?? '')).status).toBe(
+        401,
+      );
+
+      // Once the counters expire, the sweep frees room for new clients.
+      time.now += LOGIN_IP.windowMs;
+      expect((await login(nextIp(), unknownEmail())).status).toBe(401);
     });
   });
 });
