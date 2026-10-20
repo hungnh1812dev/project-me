@@ -52,7 +52,7 @@ Where SPEC §8.1 leaves a shape open, the conservative choice:
 - **accounts**: `password_hash` nullable (invited accounts set it later);
   `status` defaults to `invited`; `token_version` and
   `roles.policy_version` start at 1; 2FA columns `is_2fa_enabled`,
-  `two_fa_method`, `totp_secret_enc` (text, envelope format owned by T11),
+  `two_fa_method`, `totp_secret_enc` (text, `v1.<iv>.<ct>.<tag>` AES-256-GCM, T13),
   `totp_secret_kid` (key id for `TOTP_ENC_KEY` rotation), `totp_last_step`
   (int, last accepted time step).
 - **permissions**: no unique constraint on (role, subject, action) yet, so

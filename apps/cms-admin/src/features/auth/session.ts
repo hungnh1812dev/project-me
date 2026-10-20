@@ -1,8 +1,14 @@
 import type { Dispatch } from '@reduxjs/toolkit';
 
 import { singleFlight } from '../../lib/single-flight';
-import type { AuthApi, LoginCredentials, LoginOutcome } from './auth.api';
+import type {
+  AuthApi,
+  LoginCredentials,
+  LoginOutcome,
+  TwoFactorVerification,
+} from './auth.api';
 import { accessTokenReceived, signedIn, signedOut } from './auth.slice';
+import type { LoginNotice } from './login-notice';
 
 export interface SessionOptions {
   dispatch: Dispatch;
@@ -22,8 +28,8 @@ export function createSession({
   authApi,
   onSessionEnded,
 }: SessionOptions) {
-  const end = () => {
-    dispatch(signedOut());
+  const end = (notice?: LoginNotice) => {
+    dispatch(signedOut(notice));
     onSessionEnded?.();
   };
 
@@ -35,6 +41,17 @@ export function createSession({
 
   const loadUser = async () => {
     dispatch(signedIn(await authApi.me()));
+  };
+
+  /** Stores a fresh access token, then loads the user; undone if /me fails. */
+  const startWith = async (accessToken: string) => {
+    dispatch(accessTokenReceived(accessToken));
+    try {
+      await loadUser();
+    } catch (error) {
+      dispatch(signedOut());
+      throw error;
+    }
   };
 
   return {
@@ -50,20 +67,26 @@ export function createSession({
       }
     },
 
-    /** Login, then /me. A 2FA answer stores nothing (T13). */
+    /**
+     * Login, then /me. A 2FA answer stores nothing: the caller keeps the temp
+     * token in memory for `completeTwoFactor`.
+     */
     signIn: async (credentials: LoginCredentials): Promise<LoginOutcome> => {
       const outcome = await authApi.login(credentials);
-      if (outcome.kind === 'signed-in') {
-        dispatch(accessTokenReceived(outcome.accessToken));
-        try {
-          await loadUser();
-        } catch (error) {
-          dispatch(signedOut());
-          throw error;
-        }
-      }
+      if (outcome.kind === 'signed-in') await startWith(outcome.accessToken);
       return outcome;
     },
+
+    /** Second login step (T13): the code for a temp token, then /me. */
+    completeTwoFactor: async (input: TwoFactorVerification): Promise<void> => {
+      await startWith(await authApi.verifyTwoFactor(input));
+    },
+
+    sendLoginEmailCode: (tempToken: string): Promise<void> =>
+      authApi.sendLoginEmailCode(tempToken),
+
+    /** Re-reads /me after a settings change (e.g. 2FA turned on). */
+    reloadUser: loadUser,
 
     /** Revokes the refresh token server-side; the local session ends either way. */
     signOut: async (): Promise<void> => {
@@ -76,9 +99,12 @@ export function createSession({
       }
     },
 
-    /** The interceptor could not renew the session. */
-    expire: (): void => {
-      end();
+    /**
+     * The session is gone: the interceptor could not renew it, or the server
+     * ended it (e.g. password changed, with a notice for the sign-in page).
+     */
+    expire: (notice?: LoginNotice): void => {
+      end(notice);
     },
   };
 }

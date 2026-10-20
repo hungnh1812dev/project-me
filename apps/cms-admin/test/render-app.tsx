@@ -15,6 +15,7 @@ export const TEST_USER: CurrentUser = {
   displayName: 'Mai Tran',
   role: 'owner',
   twoFactorEnabled: false,
+  twoFactorMethod: null,
 };
 
 /** App services on a fake API, wired exactly like `main.tsx`. */

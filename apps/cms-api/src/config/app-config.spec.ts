@@ -9,6 +9,8 @@ import {
   TEST_SMTP_HOST,
   TEST_SMTP_PASSWORD,
   TEST_SMTP_USER,
+  TEST_TOTP_ENC_KID,
+  TEST_TOTP_ENC_PREVIOUS_KID,
 } from '../../test/fixtures/env.fixture';
 import {
   ConfigValidationError,
@@ -269,7 +271,7 @@ describe('loadAppConfig', () => {
       expect(error.issues[0]).toMatch(/^MAIL_PROVIDER:/);
     });
 
-    it.each(['ADMIN_ORIGIN', 'WEB_ORIGIN', 'JWT_ACCESS_KID'])(
+    it.each(['ADMIN_ORIGIN', 'WEB_ORIGIN', 'JWT_ACCESS_KID', 'TOTP_ENC_KID'])(
       'rejects a missing %s',
       (key) => {
         const error = configErrorOf(productionEnv({ [key]: undefined }));
@@ -283,6 +285,22 @@ describe('loadAppConfig', () => {
       expect(loadAppConfig(productionEnv()).auth.jwtAccessKid).toBe(
         TEST_JWT_KID,
       );
+    });
+
+    it('uses the configured TOTP encryption key id', () => {
+      expect(loadAppConfig(productionEnv()).auth.totp.encKid).toBe(
+        TEST_TOTP_ENC_KID,
+      );
+    });
+
+    it('rejects a short TOTP_ENC_PREVIOUS_KEY', () => {
+      const error = configErrorOf(
+        productionEnv({
+          TOTP_ENC_PREVIOUS_KEY: TEST_SHORT_SECRET,
+          TOTP_ENC_PREVIOUS_KID: TEST_TOTP_ENC_PREVIOUS_KID,
+        }),
+      );
+      expect(error.issues[0]).toMatch(/^TOTP_ENC_PREVIOUS_KEY:/);
     });
 
     it('keeps the admin origin from production config', () => {
@@ -376,6 +394,54 @@ describe('summarizeConfig', () => {
       jwtAccessSecret: 'unset',
       otpPepper: 'unset',
       totpEncKey: 'unset',
+      totpEncPreviousKey: 'unset',
     });
+  });
+});
+
+describe('TOTP key config (T13)', () => {
+  it('defaults the key id and issuer outside production', () => {
+    expect(loadAppConfig(devEnv()).auth.totp).toEqual({
+      encKid: CONFIG_DEFAULTS.TOTP_ENC_KID,
+      previousEncKid: undefined,
+      issuer: CONFIG_DEFAULTS.TOTP_ISSUER,
+    });
+  });
+
+  it('reads the previous key pair and a custom issuer', () => {
+    const config = loadAppConfig(
+      devEnv({
+        TOTP_ENC_PREVIOUS_KEY: TEST_SECRET_32_BYTES,
+        TOTP_ENC_PREVIOUS_KID: TEST_TOTP_ENC_PREVIOUS_KID,
+        TOTP_ISSUER: 'Acme Admin',
+      }),
+    );
+    expect(config.auth.totp.previousEncKid).toBe(TEST_TOTP_ENC_PREVIOUS_KID);
+    expect(config.auth.totp.issuer).toBe('Acme Admin');
+    expect(config.secrets.totpEncPreviousKey).toBe(TEST_SECRET_32_BYTES);
+  });
+
+  it('requires the previous key and kid together', () => {
+    const error = configErrorOf(
+      devEnv({ TOTP_ENC_PREVIOUS_KEY: TEST_SECRET_32_BYTES }),
+    );
+    expect(error.issues[0]).toMatch(/^TOTP_ENC_PREVIOUS_KID:/);
+  });
+
+  it('rejects a previous kid equal to the current one', () => {
+    const error = configErrorOf(
+      devEnv({
+        TOTP_ENC_PREVIOUS_KEY: TEST_SECRET_32_BYTES,
+        TOTP_ENC_PREVIOUS_KID: CONFIG_DEFAULTS.TOTP_ENC_KID,
+      }),
+    );
+    expect(error.issues).toContain(
+      'TOTP_ENC_PREVIOUS_KID: TOTP_ENC_PREVIOUS_KID must differ from TOTP_ENC_KID',
+    );
+  });
+
+  it.each(['Acme:Admin', 'x'.repeat(65)])('rejects the issuer %s', (issuer) => {
+    const error = configErrorOf(devEnv({ TOTP_ISSUER: issuer }));
+    expect(error.issues[0]).toMatch(/^TOTP_ISSUER:/);
   });
 });

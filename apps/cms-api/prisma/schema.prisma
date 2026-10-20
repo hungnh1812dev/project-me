@@ -83,7 +83,7 @@ model Account {
   tokenVersion  Int           @default(1) @map("token_version")
   is2faEnabled  Boolean       @default(false) @map("is_2fa_enabled")
   twoFaMethod   TwoFaMethod?  @map("two_fa_method")
-  /// AES-256-GCM ciphertext of the TOTP secret (D8); format owned by T11.
+  /// AES-256-GCM ciphertext of the TOTP secret (D8); format in crypto/secret-box.ts.
   totpSecretEnc String?       @map("totp_secret_enc")
   /// Id of the TOTP_ENC_KEY that encrypted totp_secret_enc (key rotation).
   totpSecretKid String?       @map("totp_secret_kid")

@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ForbiddenException,
   Inject,
   Injectable,
   Logger,
@@ -72,8 +73,9 @@ function totpRequired(): BadRequestException {
   });
 }
 
-function wrongCurrentPassword(): UnauthorizedException {
-  return new UnauthorizedException({
+/** T13 Q14: 403, not 401, so the client doesn't take it for an expired session. */
+function wrongCurrentPassword(): ForbiddenException {
+  return new ForbiddenException({
     errorCode: AUTH_ERROR_CODES.INVALID_CREDENTIALS,
     message: AUTH_ERROR_MESSAGES.WRONG_CURRENT_PASSWORD,
   });

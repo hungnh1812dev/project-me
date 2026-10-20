@@ -9,6 +9,8 @@ import {
   MIN_SECRET_BYTES,
   NODE_ENVS,
   SECRET_ENV_KEYS,
+  TOTP_ISSUER_MAX_LENGTH,
+  TOTP_ISSUER_PATTERN,
 } from './config.constants';
 
 const optionalSecret = z.string().min(1).optional();
@@ -45,7 +47,19 @@ const PRODUCTION_REQUIRED_KEYS = [
   'ADMIN_ORIGIN',
   'WEB_ORIGIN',
   'JWT_ACCESS_KID',
+  'TOTP_ENC_KID',
 ] as const;
+
+/** Key id env vars (JWT and TOTP encryption keys): header- and log-safe. */
+const optionalKid = z.preprocess(
+  emptyToUndefined,
+  z
+    .string()
+    .regex(JWT_KID_PATTERN, {
+      message: 'must be 1-64 characters of A-Z a-z 0-9 . _ -',
+    })
+    .optional(),
+);
 
 /** Keys required whenever MAIL_PROVIDER=smtp (any NODE_ENV). */
 const SMTP_REQUIRED_KEYS = ['SMTP_HOST', 'MAIL_FROM'] as const;
@@ -83,17 +97,22 @@ export const envSchema = z
       .enum(MAIL_PROVIDERS)
       .default(CONFIG_DEFAULTS.MAIL_PROVIDER),
     JWT_ACCESS_SECRET: z.preprocess(emptyToUndefined, optionalSecret),
-    JWT_ACCESS_KID: z.preprocess(
+    JWT_ACCESS_KID: optionalKid,
+    OTP_PEPPER: z.preprocess(emptyToUndefined, optionalSecret),
+    TOTP_ENC_KEY: z.preprocess(emptyToUndefined, optionalSecret),
+    TOTP_ENC_KID: optionalKid,
+    TOTP_ENC_PREVIOUS_KEY: z.preprocess(emptyToUndefined, optionalSecret),
+    TOTP_ENC_PREVIOUS_KID: optionalKid,
+    TOTP_ISSUER: z.preprocess(
       emptyToUndefined,
       z
         .string()
-        .regex(JWT_KID_PATTERN, {
-          message: 'must be 1-64 characters of A-Z a-z 0-9 . _ -',
+        .trim()
+        .regex(TOTP_ISSUER_PATTERN, {
+          message: `must be 1-${TOTP_ISSUER_MAX_LENGTH} characters without a colon`,
         })
         .optional(),
     ),
-    OTP_PEPPER: z.preprocess(emptyToUndefined, optionalSecret),
-    TOTP_ENC_KEY: z.preprocess(emptyToUndefined, optionalSecret),
     SMTP_HOST: z.preprocess(emptyToUndefined, z.string().min(1).optional()),
     SMTP_PORT: z.preprocess(
       emptyToUndefined,
@@ -133,6 +152,26 @@ export const envSchema = z
       });
     }
 
+    if (
+      (env.TOTP_ENC_PREVIOUS_KEY === undefined) !==
+      (env.TOTP_ENC_PREVIOUS_KID === undefined)
+    ) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['TOTP_ENC_PREVIOUS_KID'],
+        message:
+          'TOTP_ENC_PREVIOUS_KEY and TOTP_ENC_PREVIOUS_KID must be set together or both left empty',
+      });
+    }
+    const totpEncKid = env.TOTP_ENC_KID ?? CONFIG_DEFAULTS.TOTP_ENC_KID;
+    if (env.TOTP_ENC_PREVIOUS_KID === totpEncKid) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['TOTP_ENC_PREVIOUS_KID'],
+        message: 'TOTP_ENC_PREVIOUS_KID must differ from TOTP_ENC_KID',
+      });
+    }
+
     if (env.NODE_ENV !== 'production') return;
 
     if (env.MAIL_PROVIDER === 'console') {
@@ -168,6 +207,16 @@ export const envSchema = z
           message: `${key} must be at least ${MIN_SECRET_BYTES} bytes in production`,
         });
       }
+    }
+    if (
+      env.TOTP_ENC_PREVIOUS_KEY !== undefined &&
+      Buffer.byteLength(env.TOTP_ENC_PREVIOUS_KEY, 'utf8') < MIN_SECRET_BYTES
+    ) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['TOTP_ENC_PREVIOUS_KEY'],
+        message: `TOTP_ENC_PREVIOUS_KEY must be at least ${MIN_SECRET_BYTES} bytes in production`,
+      });
     }
   });
 

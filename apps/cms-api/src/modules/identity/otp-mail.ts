@@ -24,9 +24,10 @@ const OTP_MAIL_COPY: Readonly<Record<OtpPurpose, OtpMailCopy>> = {
     intro: 'Use this code to reset your password:',
     pagePath: ADMIN_PAGE_PATHS.RESET_PASSWORD,
   },
+  /** Sign-in and turning email 2FA on/off share this purpose (T13 Q9). */
   LOGIN_2FA_EMAIL: {
-    subject: `Your ${PRODUCT_NAME} sign-in code`,
-    intro: 'Use this code to finish signing in:',
+    subject: `Your ${PRODUCT_NAME} verification code`,
+    intro: 'Use this code to confirm it is you:',
     pagePath: undefined,
   },
 };

@@ -35,6 +35,7 @@ describe('authSlice', () => {
       status: 'anonymous',
       accessToken: null,
       user: null,
+      endNotice: null,
     });
   });
 

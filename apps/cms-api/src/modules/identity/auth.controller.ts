@@ -63,7 +63,8 @@ function refreshCookieOf(req: Request): string | undefined {
   return typeof value === 'string' && value !== '' ? value : undefined;
 }
 
-function setRefreshCookie(res: Response, token: string): void {
+/** Sets the refresh cookie of a new session (login, 2FA verify, refresh). */
+export function setRefreshCookie(res: Response, token: string): void {
   res.cookie(REFRESH_COOKIE.NAME, token, {
     ...REFRESH_COOKIE_OPTIONS,
     maxAge: REFRESH_TOKEN_TTL_MS,
@@ -72,6 +73,18 @@ function setRefreshCookie(res: Response, token: string): void {
 
 function clearRefreshCookie(res: Response): void {
   res.clearCookie(REFRESH_COOKIE.NAME, REFRESH_COOKIE_OPTIONS);
+}
+
+/** User agent and client IP stored with a new refresh token. */
+export function clientMetaOf(
+  clientIp: ClientIpResolver,
+  req: Request,
+): ClientMeta {
+  const ip = clientIp.resolve(req);
+  return {
+    userAgent: req.get(USER_AGENT_HEADER),
+    ip: ip === UNKNOWN_CLIENT_IP ? undefined : ip,
+  };
 }
 
 /**
@@ -156,10 +169,6 @@ export class AuthController {
   }
 
   private clientMeta(req: Request): ClientMeta {
-    const ip = this.clientIp.resolve(req);
-    return {
-      userAgent: req.get(USER_AGENT_HEADER),
-      ip: ip === UNKNOWN_CLIENT_IP ? undefined : ip,
-    };
+    return clientMetaOf(this.clientIp, req);
   }
 }

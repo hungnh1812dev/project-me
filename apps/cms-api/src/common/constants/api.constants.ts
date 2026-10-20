@@ -22,4 +22,15 @@ export const API_ROUTES = {
     SET: 'set',
     CHANGE: 'change',
   },
+  /** SPEC §9 two-factor endpoints (T13), under /auth/2fa. */
+  TWO_FACTOR: {
+    ROOT: 'auth/2fa',
+    TOTP_SETUP: 'totp/setup',
+    ENABLE: 'enable',
+    DISABLE: 'disable',
+    VERIFY: 'verify',
+    EMAIL_CHALLENGE: 'email-challenge',
+    /** T13 Q9: emailed code for enable/disable of email 2FA (signed in). */
+    EMAIL_SEND_CODE: 'email/send-code',
+  },
 } as const;

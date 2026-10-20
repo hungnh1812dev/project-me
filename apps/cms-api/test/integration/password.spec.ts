@@ -550,14 +550,15 @@ describe('OTP + password lifecycle (D8, SPEC §12-9/10; Postgres 16 via Testcont
       expect(res.status).toBe(HttpStatus.UNAUTHORIZED);
     });
 
-    it('rejects a wrong current password with 401', async () => {
+    it('rejects a wrong current password with 403, keeping the session (T13 Q14)', async () => {
       const account = await createAccount();
       const { accessToken } = await signIn(account.email);
       const res = await post(CHANGE)
         .set('Authorization', `Bearer ${accessToken}`)
         .send({ currentPassword: NEW_PASSWORD, newPassword: NEW_PASSWORD });
-      expect(res.status).toBe(HttpStatus.UNAUTHORIZED);
+      expect(res.status).toBe(HttpStatus.FORBIDDEN);
       expect(errorCodeOf(res)).toBe(AUTH_ERROR_CODES.INVALID_CREDENTIALS);
+      expect((await me(accessToken)).status).toBe(HttpStatus.OK);
     });
 
     it('changes the password and ends every session, the current one included', async () => {

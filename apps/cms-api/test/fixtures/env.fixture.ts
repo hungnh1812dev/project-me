@@ -10,6 +10,8 @@ export const TEST_DATABASE_URL =
 export const TEST_ADMIN_ORIGIN = 'https://admin.example.test';
 export const TEST_WEB_ORIGIN = 'https://example.test';
 export const TEST_JWT_KID = 'test-kid-1';
+export const TEST_TOTP_ENC_KID = 'test-totp-kid-1';
+export const TEST_TOTP_ENC_PREVIOUS_KID = 'test-totp-kid-0';
 export const TEST_SMTP_HOST = 'smtp.example.test';
 export const TEST_MAIL_FROM = 'Abyss CMS <no-reply@example.test>';
 export const TEST_SMTP_USER = 'mailer@example.test';
@@ -36,6 +38,7 @@ export function productionEnv(
     JWT_ACCESS_SECRET: TEST_SECRET_32_BYTES,
     OTP_PEPPER: TEST_SECRET_32_BYTES,
     TOTP_ENC_KEY: TEST_SECRET_32_BYTES,
+    TOTP_ENC_KID: TEST_TOTP_ENC_KID,
     ...overrides,
   };
 }

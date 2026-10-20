@@ -25,8 +25,9 @@ boot summary but not length-checked (App Passwords are 16 characters).
 
 Production guards (`NODE_ENV=production`): `MAIL_PROVIDER=console` is
 rejected, and `JWT_ACCESS_SECRET`, `OTP_PEPPER`, `TOTP_ENC_KEY` are required and
-must be at least 32 bytes; `ADMIN_ORIGIN`, `WEB_ORIGIN` and `JWT_ACCESS_KID`
-are required.
+must be at least 32 bytes; `ADMIN_ORIGIN`, `WEB_ORIGIN`, `JWT_ACCESS_KID`
+and `TOTP_ENC_KID` are required. `TOTP_ENC_PREVIOUS_KEY` (when set) must be
+at least 32 bytes too.
 
 ## HTTP pipeline
 
@@ -58,7 +59,7 @@ are required.
 | POST   | `/api/v1/auth/login`   | none                    | `200 { accessToken }` + refresh cookie, or `200 { requires2FA, tempToken, methods }` |
 | POST   | `/api/v1/auth/refresh` | refresh cookie + Origin | `200 { accessToken }` + rotated refresh cookie                                       |
 | POST   | `/api/v1/auth/logout`  | refresh cookie + Origin | `204`, family revoked, cookie cleared                                                |
-| GET    | `/api/v1/auth/me`      | `Authorization: Bearer` | `200 { id, email, displayName, role, twoFactorEnabled }`                             |
+| GET    | `/api/v1/auth/me`      | `Authorization: Bearer` | `200 { id, email, displayName, role, twoFactorEnabled, twoFactorMethod }`            |
 
 - Login verifies Argon2id. Unknown email, wrong password and any account that
   is not `active` (invited, disabled, deleted) get the same
@@ -76,8 +77,57 @@ Path=/api/v1/auth`, 7 days, host-only (no `Domain`). The raw token is never
 - `/auth/refresh` and `/auth/logout` require `Origin` to be exactly
   `WEB_ORIGIN` or `ADMIN_ORIGIN`, otherwise `403 AUTH_ORIGIN_NOT_ALLOWED`.
   CORS stays admin-only.
-- 2FA accounts get a signed 300 s temp token (`typ: 2fa`) and no session.
-  This is a stub until T13 adds the verify endpoint and the attempt limit.
+- 2FA accounts get a signed 300 s temp token (`typ: 2fa`) and no session;
+  `methods` holds only the account's own method (`totp` or `email`). The
+  second step is `POST /auth/2fa/verify` (below).
+
+### Two-factor authentication (T13)
+
+| Method | Path                               | Auth                    | Body                         | Response                               |
+| ------ | ---------------------------------- | ----------------------- | ---------------------------- | -------------------------------------- |
+| POST   | `/api/v1/auth/2fa/totp/setup`      | `Authorization: Bearer` | none                         | `200 { otpauthUri, secret }`           |
+| POST   | `/api/v1/auth/2fa/enable`          | `Authorization: Bearer` | `{ method, password, code }` | `204`                                  |
+| POST   | `/api/v1/auth/2fa/disable`         | `Authorization: Bearer` | `{ password, code }`         | `204`                                  |
+| POST   | `/api/v1/auth/2fa/email/send-code` | `Authorization: Bearer` | none                         | `202`, empty body                      |
+| POST   | `/api/v1/auth/2fa/verify`          | none                    | `{ tempToken, code }`        | `200 { accessToken }` + refresh cookie |
+| POST   | `/api/v1/auth/2fa/email-challenge` | none                    | `{ tempToken }`              | `202`, empty body                      |
+
+- TOTP: SHA-1, 6 digits, 30 s, ±1 step, 160-bit secret (`otplib`). `setup`
+  stores a pending secret (replacing any earlier one) and returns the
+  `otpauth://` URI (issuer `TOTP_ISSUER`, label = email) plus the base32
+  secret; the admin renders the QR. `enable` with `method: "totp"` needs the
+  current password and a first code of that secret. A code is accepted only
+  when its time step is above `accounts.totp_last_step`, stored with a
+  conditional update (replays and concurrent duplicates fail).
+- Secret storage: AES-256-GCM, key = HKDF-SHA256(`TOTP_ENC_KEY`, info
+  `abyss/totp-secret/v1`), ciphertext `v1.<iv>.<ct>.<tag>` (base64url), AAD
+  `<documentId>:<kid>`, kid in `accounts.totp_secret_kid`. Rotation: move
+  the old key to `TOTP_ENC_PREVIOUS_KEY`/`_KID`, set a new
+  `TOTP_ENC_KEY`/`_KID`; each secret is re-encrypted with the new key after
+  its next valid code. Secrets under an unknown kid fail closed (logged).
+  Keep the previous key until no row has its kid
+  (`SELECT count(*) FROM accounts WHERE totp_secret_kid = '<old>'`).
+- Email 2FA: codes are `LOGIN_2FA_EMAIL` OTPs (same rules as above). Signed
+  in, `email/send-code` mails one for `enable` (`method: "email"`) or
+  `disable`; at login, `email-challenge` mails one for `verify`. TOTP
+  accounts get the 202 but no email.
+- Temp token: JWT `typ: 2fa` with `sub`, `tv`, `jti`, 300 s. `verify` counts
+  one of 5 attempts per `jti` in the in-memory `TwoFactorChallengeStore`
+  (one replica, like the rate-limit store; cap 10,000 live tokens, then 429)
+  and a success uses the token up. The token also dies when `token_version`
+  changes or 2FA is turned off.
+- Enable and disable do not end sessions. Password reset of a TOTP account
+  needs `totpCode` (checked by `TotpService`, step stored); email-2FA
+  accounts need no extra factor.
+- Errors: `401 AUTH_INVALID_TEMP_TOKEN` (expired, used, exhausted or forged
+  temp token), `401 AUTH_INVALID_2FA_CODE` (verify: wrong, replayed or
+  expired code), `403 AUTH_INVALID_2FA_CODE` / `403
+AUTH_INVALID_CREDENTIALS` (enable/disable: wrong code / password; 403 so a
+  client keeps its session), `409 AUTH_2FA_ALREADY_ENABLED`, `409
+AUTH_2FA_NOT_ENABLED`, `409 AUTH_2FA_SETUP_REQUIRED`, `400
+AUTH_INVALID_REQUEST`.
+- No recovery codes yet: a lost authenticator locks the account (password
+  reset also needs TOTP). Recovery is a follow-up task.
 
 ### Password lifecycle (T12)
 
@@ -103,8 +153,8 @@ Path=/api/v1/auth`, 7 days, host-only (no `Domain`). The raw token is never
 - Errors: `400 AUTH_INVALID_OTP` (wrong, expired, used or exhausted code, or
   unknown email: one answer), `400 AUTH_WEAK_PASSWORD` (not 12-128 chars),
   `400 AUTH_TOTP_REQUIRED` (reset of a TOTP account without a valid
-  authenticator code; until T13 the check fails closed), `401
-AUTH_INVALID_CREDENTIALS` (wrong current password), `400
+  authenticator code), `403 AUTH_INVALID_CREDENTIALS` (wrong current
+  password; 403, not 401, so the client keeps its session), `400
 AUTH_INVALID_REQUEST` (malformed body).
 - Every password write bumps `token_version` and revokes every refresh token:
   all sessions end, the caller's included. Nobody is signed in by these
@@ -122,14 +172,16 @@ The readiness ping goes through the `DATABASE_HEALTH` token
 Fixed windows, per resolved client IP and, for login, per email. Values live
 in `src/common/constants/limits.constants.ts` (`RATE_LIMIT_POLICIES`):
 
-| Policy              | Limit                                         |
-| ------------------- | --------------------------------------------- |
-| `LOGIN`             | 10 / 15 min per IP, then 5 / 15 min per email |
-| `REFRESH`           | 30 / min per IP                               |
-| `OTP_REQUEST`       | 5 / 15 min per IP, then 5 / hour per email    |
-| `PASSWORD_SUBMIT`   | 10 / 15 min per IP (reset, set)               |
-| `PASSWORD_CHANGE`   | 5 / 15 min per IP                             |
-| `TWO_FACTOR_VERIFY` | 10 / 15 min per IP (attached by T13)          |
+| Policy                       | Limit                                                         |
+| ---------------------------- | ------------------------------------------------------------- |
+| `LOGIN`                      | 10 / 15 min per IP, then 5 / 15 min per email                 |
+| `REFRESH`                    | 30 / min per IP                                               |
+| `OTP_REQUEST`                | 5 / 15 min per IP, then 5 / hour per email                    |
+| `PASSWORD_SUBMIT`            | 10 / 15 min per IP (reset, set)                               |
+| `PASSWORD_CHANGE`            | 5 / 15 min per IP                                             |
+| `TWO_FACTOR_VERIFY`          | 10 / 15 min per IP                                            |
+| `TWO_FACTOR_EMAIL_CHALLENGE` | 5 / 15 min per IP (email-challenge + email/send-code, shared) |
+| `TWO_FACTOR_MANAGE`          | 5 / 15 min per IP (totp/setup + enable + disable, shared)     |
 
 - Apply with `@Throttle(RATE_LIMIT_POLICIES.X)` (`src/common/guards/throttle.guard.ts`),
   placed last so it runs before the route's other guards. Over the limit:

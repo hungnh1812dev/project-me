@@ -3,6 +3,7 @@ import { createTestServices, TEST_USER } from '../../../test/render-app';
 import { API_ENDPOINTS } from '../../config/endpoints';
 
 const { LOGIN, REFRESH, LOGOUT, ME } = API_ENDPOINTS.AUTH;
+const { VERIFY } = API_ENDPOINTS.TWO_FACTOR;
 
 const meOk = () => ({ status: 200, data: TEST_USER });
 
@@ -17,6 +18,7 @@ describe('session', () => {
       status: 'authenticated',
       accessToken: 't1',
       user: TEST_USER,
+      endNotice: null,
     });
     expect(api.callsTo(`GET ${ME}`)[0]?.headers.get('Authorization')).toBe(
       'Bearer t1',
@@ -72,10 +74,33 @@ describe('session', () => {
       email: TEST_USER.email,
       password: 'pw',
     });
-    expect(outcome).toEqual({ kind: 'two-factor-required' });
+    expect(outcome).toEqual({
+      kind: 'two-factor-required',
+      tempToken: 'temp',
+      methods: ['totp'],
+    });
+    // The temp token stays with the caller, never in the store.
     expect(JSON.stringify(services.store.getState())).not.toContain('temp');
     expect(services.store.getState().auth.accessToken).toBeNull();
     expect(api.callsTo(`GET ${ME}`)).toHaveLength(0);
+  });
+
+  it('completes a 2FA sign-in with the code, then loads /me', async () => {
+    const { api, services } = createTestServices({
+      [`POST ${VERIFY}`]: () => ({ status: 200, data: { accessToken: 't3' } }),
+      [`GET ${ME}`]: meOk,
+    });
+    await services.session.completeTwoFactor({
+      tempToken: 'temp',
+      code: '123456',
+    });
+    expect(services.store.getState().auth).toMatchObject({
+      status: 'authenticated',
+      accessToken: 't3',
+    });
+    expect(api.callsTo(`POST ${VERIFY}`)[0]?.data).toBe(
+      JSON.stringify({ tempToken: 'temp', code: '123456' }),
+    );
   });
 
   it('signs out and clears the session even when logout fails', async () => {
@@ -110,6 +135,7 @@ describe('session', () => {
       status: 'anonymous',
       accessToken: null,
       user: null,
+      endNotice: null,
     });
   });
 });

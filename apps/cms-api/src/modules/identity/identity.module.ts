@@ -12,15 +12,17 @@ import { OtpService } from './otp.service';
 import { PasswordController } from './password.controller';
 import { PasswordService } from './password.service';
 import { RefreshTokenService } from './refresh-token.service';
-import {
-  FailClosedResetSecondFactor,
-  RESET_SECOND_FACTOR,
-} from './reset-second-factor';
+import { SecretBox } from './crypto/secret-box';
+import { RESET_SECOND_FACTOR } from './reset-second-factor';
+import { TotpService } from './totp.service';
+import { TwoFactorChallengeStore } from './two-factor-challenge.store';
+import { TwoFactorController } from './two-factor.controller';
+import { TwoFactorService } from './two-factor.service';
 
-/** Login, JWT, refresh rotation (T09); OTP + password lifecycle (T12). */
+/** Login, JWT, refresh rotation (T09); OTP + password lifecycle (T12); 2FA (T13). */
 @Module({
   imports: [DatabaseModule, MailModule, PassportModule],
-  controllers: [AuthController, PasswordController],
+  controllers: [AuthController, PasswordController, TwoFactorController],
   providers: [
     AccessTokenService,
     AllowedOriginGuard,
@@ -30,8 +32,12 @@ import {
     OtpService,
     PasswordService,
     RefreshTokenService,
-    // TODO(T13): bind to the real TOTP verifier.
-    { provide: RESET_SECOND_FACTOR, useClass: FailClosedResetSecondFactor },
+    SecretBox,
+    TotpService,
+    TwoFactorChallengeStore,
+    TwoFactorService,
+    // D8: a reset of a TOTP account needs a valid authenticator code.
+    { provide: RESET_SECOND_FACTOR, useExisting: TotpService },
   ],
   exports: [JwtAuthGuard, OtpService],
 })

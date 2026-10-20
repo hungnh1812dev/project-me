@@ -31,3 +31,13 @@ export const OTP_IN_MAIL = /^(\d{6})$/m;
 
 /** Only one worker: the reset spec changes the owner password other specs use. */
 export const WORKERS = 1;
+
+/** TOTP time step of cms-api (D8): codes change every 30 s. */
+export const TOTP_PERIOD_SECONDS = 30;
+export const MS_PER_SECOND = 1_000;
+
+/**
+ * The 2FA spec waits up to two TOTP steps for fresh codes (cms-api rejects a
+ * reused step) and reads two emails, so it needs more than the default 30 s.
+ */
+export const TWO_FACTOR_TEST_TIMEOUT_MS = 180_000;

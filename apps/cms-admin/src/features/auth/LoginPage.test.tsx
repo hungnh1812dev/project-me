@@ -126,33 +126,6 @@ describe('LoginPage', () => {
     );
   });
 
-  it('shows the 2FA placeholder, stores no token, and can go back', async () => {
-    const { api, services } = await openLogin(() => ({
-      status: 200,
-      data: { requires2FA: true, tempToken: 'temp', methods: ['totp'] },
-    }));
-    await fillAndSubmit();
-
-    const heading = await screen.findByRole('heading', {
-      level: 1,
-      name: COPY.login.twoFactor.title,
-    });
-    expect(heading).toHaveFocus();
-    expect(services.store.getState().auth).toMatchObject({
-      status: 'anonymous',
-      accessToken: null,
-    });
-    expect(api.callsTo(`GET ${ME}`)).toHaveLength(0);
-
-    await userEvent.click(
-      screen.getByRole('button', { name: COPY.login.twoFactor.back }),
-    );
-    expect(
-      screen.getByRole('heading', { level: 1, name: COPY.login.title }),
-    ).toBeInTheDocument();
-    expect(password()).toHaveValue('');
-  });
-
   it('sends an already signed-in user home', async () => {
     const { services } = createTestServices({
       [`POST ${REFRESH}`]: () => ({ status: 200, data: { accessToken: 't1' } }),

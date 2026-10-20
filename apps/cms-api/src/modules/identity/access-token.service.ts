@@ -1,5 +1,7 @@
+import { randomUUID } from 'node:crypto';
+
 import { Inject, Injectable } from '@nestjs/common';
-import { decode, sign } from 'jsonwebtoken';
+import { decode, sign, verify } from 'jsonwebtoken';
 import { z } from 'zod';
 
 import {
@@ -9,6 +11,8 @@ import {
   TOKEN_TYPES,
   TWO_FACTOR_TEMP_TOKEN_TTL_SECONDS,
 } from '../../common/constants/auth.constants';
+import { Clock } from '../../common/clock';
+import { MS_PER_SECOND } from '../../common/constants/limits.constants';
 import { type IAppConfig } from '../../config/app-config';
 import { APP_CONFIG } from '../../config/config.constants';
 
@@ -22,6 +26,26 @@ export const accessTokenClaimsSchema = z.object({
 });
 
 export type AccessTokenClaims = z.infer<typeof accessTokenClaimsSchema>;
+
+/** T13 Q7: 2FA temp token claims. `jti` keys the attempt counter. */
+const twoFactorTempTokenClaimsSchema = z.object({
+  sub: z.uuid(),
+  tv: z.int(),
+  jti: z.uuid(),
+  kid: z.string(),
+  typ: z.literal(TOKEN_TYPES.TWO_FACTOR),
+  exp: z.int(),
+});
+
+export type TwoFactorTempTokenClaims = z.infer<
+  typeof twoFactorTempTokenClaimsSchema
+>;
+
+/** Who a temp token is for: the account and its token_version at login. */
+export interface TwoFactorTempTokenSubject {
+  readonly sub: string;
+  readonly tv: number;
+}
 
 export interface AccessTokenSubject {
   /** `accounts.document_id` (never the sequential id). */
@@ -43,7 +67,10 @@ export class AccessTokenService {
   /** kid -> secret. One entry today; more kids would allow key rotation. */
   private readonly keys: ReadonlyMap<string, string>;
 
-  constructor(@Inject(APP_CONFIG) config: IAppConfig) {
+  constructor(
+    @Inject(APP_CONFIG) config: IAppConfig,
+    private readonly clock: Clock,
+  ) {
     this.kid = config.auth.jwtAccessKid;
     const secret = config.secrets.jwtAccessSecret;
     this.keys = new Map(secret === undefined ? [] : [[this.kid, secret]]);
@@ -57,14 +84,42 @@ export class AccessTokenService {
   }
 
   /**
-   * STUB until T13: a signed, short-lived `typ: 2fa` token. T13 adds the
-   * verify endpoint and the 5-attempt limit; nothing accepts it yet.
+   * The short-lived `typ: 2fa` token of a password-checked login (SPEC §6:
+   * 300 s). Its `jti` keys the 5-attempt counter (TwoFactorChallengeStore).
    */
-  signTwoFactorTempToken(sub: string): string {
+  signTwoFactorTempToken(subject: TwoFactorTempTokenSubject): string {
+    // `iat` (and so `exp`) from Clock, so tests can move past the 300 s.
     return this.sign(
-      { sub, typ: TOKEN_TYPES.TWO_FACTOR },
+      {
+        sub: subject.sub,
+        tv: subject.tv,
+        typ: TOKEN_TYPES.TWO_FACTOR,
+        iat: this.nowSeconds(),
+      },
       TWO_FACTOR_TEMP_TOKEN_TTL_SECONDS,
+      randomUUID(),
     );
+  }
+
+  /**
+   * Verifies a temp token (HS256 only, kid-matched key, not expired) and
+   * returns its claims, or undefined. Access tokens fail on `typ`.
+   */
+  verifyTwoFactorTempToken(
+    rawToken: string,
+  ): TwoFactorTempTokenClaims | undefined {
+    const key = this.keyFor(rawToken);
+    if (key === undefined) return undefined;
+    try {
+      const payload = verify(rawToken, key, {
+        algorithms: [JWT_ALGORITHM],
+        clockTimestamp: this.nowSeconds(),
+      });
+      const parsed = twoFactorTempTokenClaimsSchema.safeParse(payload);
+      return parsed.success ? parsed.data : undefined;
+    } catch {
+      return undefined;
+    }
   }
 
   /**
@@ -83,7 +138,15 @@ export class AccessTokenService {
     return this.keys.get(headerKid);
   }
 
-  private sign(payload: Record<string, unknown>, ttlSeconds: number): string {
+  private nowSeconds(): number {
+    return Math.floor(this.clock.now() / MS_PER_SECOND);
+  }
+
+  private sign(
+    payload: Record<string, unknown>,
+    ttlSeconds: number,
+    jwtId?: string,
+  ): string {
     const secret = this.keys.get(this.kid);
     if (secret === undefined) {
       throw new Error(AUTH_ERROR_MESSAGES.JWT_NOT_CONFIGURED);
@@ -92,6 +155,7 @@ export class AccessTokenService {
       algorithm: JWT_ALGORITHM,
       keyid: this.kid,
       expiresIn: ttlSeconds,
+      ...(jwtId === undefined ? {} : { jwtid: jwtId }),
     });
   }
 }

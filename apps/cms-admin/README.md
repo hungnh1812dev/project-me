@@ -30,10 +30,23 @@ So far: sign-in (T11) and, behind it, a status page that calls
 - **Login errors** are generic (`login-error.ts`): incorrect credentials (any
   4xx), rate limited (429; uses `Retry-After` when cms-api exposes it via CORS,
   otherwise a generic wait message), network, unexpected.
-- **2FA**: a `requires2FA` login answer shows a placeholder until T13. The temp
-  token is dropped.
-- **Routes** (`src/config/routes.ts`): `/login`, and `/` behind
-  `ProtectedRoute` + `AppShell` (header with the user and "Sign out").
+- **2FA (T13)**: a `requires2FA` login answer opens `TwoFactorModal` (native
+  `<dialog>` via `src/components/Modal.tsx`: focus trap, Esc closes). The temp
+  token stays in component state only. TOTP accounts type the app code;
+  email accounts get the code sent once on open (`use-email-code.ts`, resend
+  blocked for the 429 `Retry-After`) and a warning that TOTP is safer. A dead
+  temp token (5 wrong codes or 300 s) closes the dialog with a notice.
+- **Security settings** (`src/features/security`, `/settings/security`,
+  linked as "Security" in the header): 2FA status, TOTP setup (QR drawn
+  client-side with `qrcode.react` from the `otpauth://` URI, plus the
+  grouped manual key), email codes, turn off, all confirmed with code +
+  current password in dialogs; change password, which ends every session:
+  `session.expire('password-changed')` and the sign-in page shows why
+  (`auth.endNotice`). Re-auth failures come back as 403, so the interceptor
+  never treats them as an expired session.
+- **Routes** (`src/config/routes.ts`): `/login`, `/reset-password`,
+  `/set-password`, and `/` + `/settings/security` behind `ProtectedRoute` +
+  `AppShell` (header with the user, "Security" and "Sign out").
 
 End-to-end coverage lives in [`apps/e2e`](../e2e/README.md).
 

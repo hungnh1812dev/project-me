@@ -17,5 +17,15 @@ export const API_ENDPOINTS = {
     REQUEST_OTP: '/auth/password/request-otp',
     RESET: '/auth/password/reset',
     SET: '/auth/password/set',
+    CHANGE: '/auth/password/change',
+  },
+  /** T13 two-factor endpoints. */
+  TWO_FACTOR: {
+    TOTP_SETUP: '/auth/2fa/totp/setup',
+    ENABLE: '/auth/2fa/enable',
+    DISABLE: '/auth/2fa/disable',
+    VERIFY: '/auth/2fa/verify',
+    EMAIL_CHALLENGE: '/auth/2fa/email-challenge',
+    EMAIL_SEND_CODE: '/auth/2fa/email/send-code',
   },
 } as const;

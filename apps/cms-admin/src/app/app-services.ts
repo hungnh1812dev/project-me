@@ -5,6 +5,7 @@ import { createAuthApi } from '../features/auth/auth.api';
 import { selectAccessToken } from '../features/auth/auth.slice';
 import { createPasswordApi } from '../features/auth/password.api';
 import { createSession } from '../features/auth/session';
+import { createSecurityApi } from '../features/security/security.api';
 import { installAuthInterceptor } from '../lib/auth-interceptor';
 import { createAppStore } from './store';
 
@@ -22,10 +23,18 @@ export function createAppServices(
   const removeInterceptor = installAuthInterceptor(client, {
     getAccessToken: () => selectAccessToken(store.getState()),
     refreshAccessToken: session.refreshAccessToken,
-    onSessionExpired: session.expire,
+    onSessionExpired: () => session.expire(),
   });
   const passwordApi = createPasswordApi(client);
-  return { store, session, passwordApi, queryClient, removeInterceptor };
+  const securityApi = createSecurityApi(client);
+  return {
+    store,
+    session,
+    passwordApi,
+    securityApi,
+    queryClient,
+    removeInterceptor,
+  };
 }
 
 export type AppServices = ReturnType<typeof createAppServices>;

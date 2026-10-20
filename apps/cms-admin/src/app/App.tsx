@@ -5,6 +5,7 @@ import { LoginPage } from '../features/auth/LoginPage';
 import { ProtectedRoute } from '../features/auth/ProtectedRoute';
 import { ResetPasswordPage } from '../features/auth/ResetPasswordPage';
 import { SetPasswordPage } from '../features/auth/SetPasswordPage';
+import { SecuritySettingsPage } from '../features/security/SecuritySettingsPage';
 import { StatusPage } from '../features/status/StatusPage';
 import { AppShell } from './AppShell';
 
@@ -17,6 +18,10 @@ export function App() {
       <Route element={<ProtectedRoute />}>
         <Route element={<AppShell />}>
           <Route index element={<StatusPage />} />
+          <Route
+            path={APP_ROUTES.SECURITY_SETTINGS}
+            element={<SecuritySettingsPage />}
+          />
         </Route>
       </Route>
       <Route path="*" element={<Navigate to={APP_ROUTES.HOME} replace />} />

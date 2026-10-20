@@ -39,6 +39,34 @@ CONTENT_MIGRATE_APPLIED="Applied "
 CONTENT_MIGRATE_NOTHING="No pending content migrations."
 REFRESH_COOKIE_NAME="__Secure-abyss_rt"
 JWT_ACCESS_KID="smoke"
+TOTP_ENC_KID="smoke-totp"
+SEED_2FA_ACCOUNT_DONE="Seeded e2e 2FA account"
+# Creates the dedicated e2e 2FA account (T13): active admin, password from
+# stdin, hashed with the app's own Argon2id parameters. Keeps the owner's
+# 5-logins-per-15-min budget for the owner specs.
+SEED_2FA_ACCOUNT_JS="
+const { readFileSync } = require('node:fs');
+const { openPrisma } = require('./dist/infrastructure/database/prisma-client');
+const { hashPassword } = require('./dist/modules/identity/password-hasher');
+(async () => {
+  const passwordHash = await hashPassword(readFileSync(0, 'utf8').trim());
+  const db = openPrisma(process.env.DATABASE_URL);
+  try {
+    await db.prisma.account.create({
+      data: {
+        email: process.env.SEED_EMAIL,
+        displayName: 'E2E 2FA',
+        passwordHash,
+        status: 'active',
+        role: { connect: { slug: 'admin' } },
+      },
+    });
+  } finally {
+    await db.close();
+  }
+  console.log('$SEED_2FA_ACCOUNT_DONE');
+})().catch((error) => { console.error(error.message); process.exit(1); });
+"
 RESET_MAIL_SUBJECT="Your Abyss CMS password reset code"
 MAIL_POLL_ATTEMPTS="15"
 
@@ -59,6 +87,7 @@ OTHER_ORIGIN="http://not-allowed.$SMOKE_DOMAIN$PORT_SUFFIX"
 export SMOKE_ADMIN_ORIGIN="$ADMIN_ORIGIN"
 export SMOKE_WEB_ORIGIN="$WEB_ORIGIN"
 export SMOKE_JWT_ACCESS_KID="$JWT_ACCESS_KID"
+export SMOKE_TOTP_ENC_KID="$TOTP_ENC_KID"
 export SMOKE_API_BASE_URL="$WEB_ORIGIN$API_PREFIX"
 
 # Throwaway values for this run only (production mode needs them).
@@ -69,6 +98,8 @@ export SMOKE_OTP_PEPPER="$(random_secret)"
 export SMOKE_TOTP_ENC_KEY="$(random_secret)"
 SMOKE_OWNER_EMAIL="owner@$SMOKE_DOMAIN"
 SMOKE_OWNER_PASSWORD="$(random_secret)"
+SMOKE_2FA_EMAIL="e2e-2fa@$SMOKE_DOMAIN"
+SMOKE_2FA_PASSWORD="$(random_secret)"
 
 compose() { docker compose -f "$COMPOSE_FILE" "$@"; }
 
@@ -213,6 +244,12 @@ in_api "owner:bootstrap creates the owner" "$SMOKE_OWNER_PASSWORD" 1 \
   "$OWNER_CREATED$SMOKE_OWNER_EMAIL" -- "${OWNER_BOOTSTRAP_CMD[@]}"
 in_api "owner:bootstrap refuses a second owner" "$SMOKE_OWNER_PASSWORD" 0 \
   "$OWNER_EXISTS" -- "${OWNER_BOOTSTRAP_CMD[@]}"
+seed_output="$(printf '%s\n' "$SMOKE_2FA_PASSWORD" | compose exec -T -e SEED_EMAIL="$SMOKE_2FA_EMAIL" cms-api node -e "$SEED_2FA_ACCOUNT_JS" 2>&1)" || true
+if [[ "$seed_output" == *"$SEED_2FA_ACCOUNT_DONE"* && "$seed_output" != *"$SMOKE_2FA_PASSWORD"* ]]; then
+  pass "seeds the e2e 2FA account"
+else
+  fail "seeding the e2e 2FA account: $seed_output"
+fi
 
 echo "content:migrate inside the cms-api image"
 in_api "first run applies the committed migrations" "" 1 \
@@ -237,6 +274,13 @@ expect_status "refresh from the admin origin rotates the token" 200
 request POST "$WEB_ORIGIN$API_PREFIX/auth/register" -H 'Content-Type: application/json' --data '{}'
 expect_status "POST auth/register does not exist (SPEC §12-2)" 404
 
+echo "Two-factor endpoints (T13)"
+request POST "$WEB_ORIGIN$API_PREFIX/auth/2fa/totp/setup"
+expect_status "2fa/totp/setup needs a Bearer token" 401
+request POST "$WEB_ORIGIN$API_PREFIX/auth/2fa/verify" -H 'Content-Type: application/json' \
+  --data '{"tempToken":"forged","code":"123456"}'
+expect_status "2fa/verify rejects a forged temp token" 401
+
 echo "Password reset mail through SMTP to Mailpit (T12)"
 request POST "$WEB_ORIGIN$API_PREFIX/auth/password/request-otp" -H 'Content-Type: application/json' \
   --data "$(printf '{"email":"%s"}' "$SMOKE_OWNER_EMAIL")"
@@ -257,6 +301,7 @@ if [[ "${SMOKE_E2E:-}" == "1" ]]; then
   if E2E_ADMIN_URL="$ADMIN_ORIGIN" E2E_API_BASE_URL="$SMOKE_API_BASE_URL" \
     E2E_OWNER_EMAIL="$SMOKE_OWNER_EMAIL" E2E_OWNER_PASSWORD="$SMOKE_OWNER_PASSWORD" \
     E2E_MAILPIT_URL="$MAILPIT_URL" \
+    E2E_2FA_EMAIL="$SMOKE_2FA_EMAIL" E2E_2FA_PASSWORD="$SMOKE_2FA_PASSWORD" \
     pnpm --dir "$ROOT_DIR" --filter @abyss/e2e test; then
     pass "e2e suite"
   else

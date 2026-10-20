@@ -4,6 +4,7 @@ import { Provider } from 'react-redux';
 
 import { PasswordApiProvider } from '../features/auth/password-api-context';
 import { SessionProvider } from '../features/auth/session-context';
+import { SecurityApiProvider } from '../features/security/security-api-context';
 import type { AppServices } from './app-services';
 
 export function AppProviders({
@@ -12,7 +13,7 @@ export function AppProviders({
 }: {
   services: Pick<
     AppServices,
-    'store' | 'session' | 'passwordApi' | 'queryClient'
+    'store' | 'session' | 'passwordApi' | 'securityApi' | 'queryClient'
   >;
   children: ReactNode;
 }) {
@@ -21,7 +22,9 @@ export function AppProviders({
       <QueryClientProvider client={services.queryClient}>
         <SessionProvider session={services.session}>
           <PasswordApiProvider api={services.passwordApi}>
-            {children}
+            <SecurityApiProvider api={services.securityApi}>
+              {children}
+            </SecurityApiProvider>
           </PasswordApiProvider>
         </SessionProvider>
       </QueryClientProvider>

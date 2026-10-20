@@ -83,12 +83,36 @@ export const RATE_LIMIT_POLICIES = {
       windowMs: FIFTEEN_MINUTES_MS,
     },
   ],
-  /** Attached by T13 (`POST /auth/2fa/verify`). The 5 attempts per temp token are T13's. */
+  /** `POST /auth/2fa/verify`; each temp token also allows only 5 checks. */
   TWO_FACTOR_VERIFY: [
     {
       name: '2fa-verify:ip',
       keySource: RATE_LIMIT_KEY_SOURCES.IP,
       limit: 10,
+      windowMs: FIFTEEN_MINUTES_MS,
+    },
+  ],
+  /**
+   * `POST /auth/2fa/email-challenge` and `/auth/2fa/email/send-code` (T13,
+   * one shared counter); OtpService also caps codes per account in the DB.
+   */
+  TWO_FACTOR_EMAIL_CHALLENGE: [
+    {
+      name: '2fa-email:ip',
+      keySource: RATE_LIMIT_KEY_SOURCES.IP,
+      limit: 5,
+      windowMs: FIFTEEN_MINUTES_MS,
+    },
+  ],
+  /**
+   * `POST /auth/2fa/totp/setup`, `/enable` and `/disable` (T13, one shared
+   * counter): enable and disable test the current password.
+   */
+  TWO_FACTOR_MANAGE: [
+    {
+      name: '2fa-manage:ip',
+      keySource: RATE_LIMIT_KEY_SOURCES.IP,
+      limit: 5,
       windowMs: FIFTEEN_MINUTES_MS,
     },
   ],

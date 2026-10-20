@@ -18,9 +18,22 @@ interface TwoFactorRequiredResponse {
   methods: string[];
 }
 
-/** What a login attempt led to. The 2FA temp token is deliberately dropped (T13). */
+/** A password-checked login waiting for its second step (T13). */
+export interface TwoFactorChallenge {
+  /** Short-lived (300 s), kept in memory only, never stored. */
+  tempToken: string;
+  methods: string[];
+}
+
+export interface TwoFactorVerification {
+  tempToken: string;
+  code: string;
+}
+
+/** What a login attempt led to. */
 export type LoginOutcome =
-  { kind: 'signed-in'; accessToken: string } | { kind: 'two-factor-required' };
+  | { kind: 'signed-in'; accessToken: string }
+  | ({ kind: 'two-factor-required' } & TwoFactorChallenge);
 
 /**
  * Auth endpoints (SPEC §9). None of them goes through the refresh-and-retry
@@ -34,8 +47,31 @@ export function createAuthApi(client: AxiosInstance) {
         AccessTokenResponse | TwoFactorRequiredResponse
       >(API_ENDPOINTS.AUTH.LOGIN, credentials, { skipAuthRefresh: true });
       return 'requires2FA' in data
-        ? { kind: 'two-factor-required' }
+        ? {
+            kind: 'two-factor-required',
+            tempToken: data.tempToken,
+            methods: data.methods,
+          }
         : { kind: 'signed-in', accessToken: data.accessToken };
+    },
+
+    /** Second login step: a code for the temp token's account. */
+    async verifyTwoFactor(input: TwoFactorVerification): Promise<string> {
+      const { data } = await client.post<AccessTokenResponse>(
+        API_ENDPOINTS.TWO_FACTOR.VERIFY,
+        input,
+        { skipAuthRefresh: true },
+      );
+      return data.accessToken;
+    },
+
+    /** Emails the login code of an email-2FA account (202). */
+    async sendLoginEmailCode(tempToken: string): Promise<void> {
+      await client.post(
+        API_ENDPOINTS.TWO_FACTOR.EMAIL_CHALLENGE,
+        { tempToken },
+        { skipAuthRefresh: true },
+      );
     },
 
     /** Rotates the refresh cookie and returns a new access token. */

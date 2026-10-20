@@ -15,8 +15,18 @@ export const ACCESS_TOKEN_TTL_SECONDS = 15 * SECONDS_PER_MINUTE;
 export const REFRESH_TOKEN_TTL_SECONDS = 7 * SECONDS_PER_DAY;
 export const REFRESH_TOKEN_TTL_MS = REFRESH_TOKEN_TTL_SECONDS * MS_PER_SECOND;
 
-/** SPEC §6: 2FA temp token lifetime (300 s). Attempt counting is T13. */
+/** SPEC §6: 2FA temp token lifetime (300 s). */
 export const TWO_FACTOR_TEMP_TOKEN_TTL_SECONDS = 300;
+/** SPEC §6: code checks allowed per temp token; then the token is dead. */
+export const TWO_FACTOR_TEMP_TOKEN_MAX_ATTEMPTS = 5;
+/** Generous bound on a raw temp token (a JWT is ~300 characters). */
+export const TWO_FACTOR_TEMP_TOKEN_MAX_LENGTH = 2_048;
+/**
+ * Most live temp tokens the in-memory challenge store tracks (T13, Q7). Each
+ * entry is ~150 bytes; at the cap expired entries are swept, then new
+ * challenges are refused (429, fail closed) like the rate-limit store.
+ */
+export const TWO_FACTOR_CHALLENGE_MAX_KEYS = 10_000;
 
 /** D9: the only accepted JWT algorithm. Every other alg, `none` included, is rejected. */
 export const JWT_ALGORITHM = 'HS256';
@@ -76,6 +86,14 @@ export const AUTH_ERROR_CODES = {
   WEAK_PASSWORD: 'AUTH_WEAK_PASSWORD',
   /** Password reset of an account with TOTP needs an authenticator code (D8). */
   TOTP_REQUIRED: 'AUTH_TOTP_REQUIRED',
+  /** Wrong, replayed or expired 2FA code: one answer for all (T13). */
+  INVALID_2FA_CODE: 'AUTH_INVALID_2FA_CODE',
+  /** 2FA temp token expired, used up, already used or forged. */
+  INVALID_TEMP_TOKEN: 'AUTH_INVALID_TEMP_TOKEN',
+  TWO_FACTOR_ALREADY_ENABLED: 'AUTH_2FA_ALREADY_ENABLED',
+  TWO_FACTOR_NOT_ENABLED: 'AUTH_2FA_NOT_ENABLED',
+  /** Enable with TOTP before `POST /auth/2fa/totp/setup`. */
+  TWO_FACTOR_SETUP_REQUIRED: 'AUTH_2FA_SETUP_REQUIRED',
 } as const;
 
 /** Client-facing messages. Identical for every login failure (no enumeration). */
@@ -90,4 +108,10 @@ export const AUTH_ERROR_MESSAGES = {
   WEAK_PASSWORD: `Password must be ${PASSWORD_MIN_LENGTH} to ${PASSWORD_MAX_LENGTH} characters`,
   TOTP_REQUIRED: 'A valid authenticator code is required',
   WRONG_CURRENT_PASSWORD: 'Current password is incorrect',
+  INVALID_TWO_FACTOR_REQUEST: 'The request is missing required fields',
+  INVALID_2FA_CODE: 'The code is invalid or has expired',
+  INVALID_TEMP_TOKEN: 'Sign-in expired, sign in again',
+  TWO_FACTOR_ALREADY_ENABLED: 'Two-factor authentication is already on',
+  TWO_FACTOR_NOT_ENABLED: 'Two-factor authentication is off',
+  TWO_FACTOR_SETUP_REQUIRED: 'Set up the authenticator app first',
 } as const;

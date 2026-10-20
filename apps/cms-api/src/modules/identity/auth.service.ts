@@ -43,6 +43,16 @@ export interface CurrentAccountProfile {
   readonly displayName: string;
   readonly role: string;
   readonly twoFactorEnabled: boolean;
+  /** The 2FA method when 2FA is on, else null (T13 Q10). */
+  readonly twoFactorMethod: TwoFaMethod | null;
+}
+
+/** What `startSession` needs of an account whose sign-in is complete. */
+export interface SessionAccount {
+  readonly id: number;
+  readonly documentId: string;
+  readonly tokenVersion: number;
+  readonly policyVersion: number;
 }
 
 export function invalidCredentials(): UnauthorizedException {
@@ -115,23 +125,43 @@ export class AuthService implements OnModuleInit {
     }
 
     if (account.is2faEnabled) {
-      // STUB until T13: temp token is signed but nothing verifies it yet.
+      // Second step: POST /auth/2fa/verify with this token (T13).
       return {
         kind: 'two-factor',
-        tempToken: this.accessTokens.signTwoFactorTempToken(account.documentId),
+        tempToken: this.accessTokens.signTwoFactorTempToken({
+          sub: account.documentId,
+          tv: account.tokenVersion,
+        }),
+        // T13 Q8: only the configured method, never an email fallback.
         methods: account.twoFaMethod === null ? [] : [account.twoFaMethod],
       };
     }
 
     // TODO(T17): SecurityAuditService login success (same transaction, D15).
+    const session = await this.startSession(
+      {
+        id: account.id,
+        documentId: account.documentId,
+        tokenVersion: account.tokenVersion,
+        policyVersion: account.role.policyVersion,
+      },
+      meta,
+    );
+    return { kind: 'session', ...session };
+  }
+
+  /** Issues the refresh token and access token of a completed sign-in. */
+  async startSession(
+    account: SessionAccount,
+    meta: ClientMeta,
+  ): Promise<SessionTokens> {
     const refreshToken = await this.refreshTokens.issue(account.id, meta);
     return {
-      kind: 'session',
       refreshToken,
       accessToken: this.accessTokens.signAccessToken({
         sub: account.documentId,
         tv: account.tokenVersion,
-        pv: account.role.policyVersion,
+        pv: account.policyVersion,
       }),
     };
   }
@@ -170,6 +200,7 @@ export class AuthService implements OnModuleInit {
         status: true,
         deletedAt: true,
         is2faEnabled: true,
+        twoFaMethod: true,
       },
     });
     if (
@@ -185,6 +216,7 @@ export class AuthService implements OnModuleInit {
       displayName: account.displayName,
       role: account.roleSlug,
       twoFactorEnabled: account.is2faEnabled,
+      twoFactorMethod: account.is2faEnabled ? account.twoFaMethod : null,
     };
   }
 

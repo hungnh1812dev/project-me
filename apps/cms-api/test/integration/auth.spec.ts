@@ -328,7 +328,7 @@ describe('auth: login, JWT, refresh rotation, logout (Postgres 16 via Testcontai
       });
     });
 
-    it('answers 2FA accounts with a temp token and no session (T13 stub)', async () => {
+    it('answers 2FA accounts with a temp token and no session', async () => {
       const account = await createAccount({ twoFa: 'totp' });
       const res = await login(account.email);
       expect(res.status).toBe(200);
@@ -378,6 +378,7 @@ describe('auth: login, JWT, refresh rotation, logout (Postgres 16 via Testcontai
         displayName: expect.any(String) as unknown,
         role: 'editor',
         twoFactorEnabled: false,
+        twoFactorMethod: null,
       });
     });
 

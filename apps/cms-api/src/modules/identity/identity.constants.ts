@@ -70,3 +70,32 @@ export const ADMIN_PAGE_PATHS = {
   RESET_PASSWORD: '/reset-password',
   SET_PASSWORD: '/set-password',
 } as const;
+
+/**
+ * D8 / T13 Q3: TOTP as every authenticator app supports it (RFC 6238
+ * defaults): SHA-1, 6 digits, 30 s steps, ±1 step of clock drift, 160-bit
+ * secret. A code is accepted only when its step is above `totp_last_step`.
+ */
+export const TOTP = {
+  ALGORITHM: 'sha1',
+  DIGITS: 6,
+  PERIOD_SECONDS: 30,
+  TOLERANCE_STEPS: 1,
+  SECRET_BYTES: 20,
+} as const;
+
+/**
+ * D8 / T13 Q1: AES-256-GCM for stored TOTP secrets. The AES key is derived
+ * from TOTP_ENC_KEY with HKDF-SHA256 under `HKDF_INFO`; ciphertext is
+ * `v1.<iv>.<ct>.<tag>` (base64url) with AAD `<documentId>:<kid>`.
+ */
+export const SECRET_BOX = {
+  VERSION: 'v1',
+  SEPARATOR: '.',
+  CIPHER: 'aes-256-gcm',
+  HKDF_DIGEST: 'sha256',
+  HKDF_INFO: 'abyss/totp-secret/v1',
+  KEY_BYTES: 32,
+  IV_BYTES: 12,
+  TAG_BYTES: 16,
+} as const;

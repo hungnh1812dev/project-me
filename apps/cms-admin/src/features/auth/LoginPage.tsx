@@ -1,7 +1,7 @@
 import { Button, TextInput } from '@abyss/form-commons';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation } from '@tanstack/react-query';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { FormProvider, useForm } from 'react-hook-form';
 import { Link, Navigate, useLocation } from 'react-router';
 import { z } from 'zod';
@@ -9,7 +9,8 @@ import { z } from 'zod';
 import { useAppSelector } from '../../app/store';
 import { COPY } from '../../config/copy.constants';
 import { APP_ROUTES } from '../../config/routes';
-import { selectSessionStatus } from './auth.slice';
+import type { TwoFactorChallenge } from './auth.api';
+import { selectEndNotice, selectSessionStatus } from './auth.slice';
 import { AuthPageLayout } from './AuthPageLayout';
 import { FormAlert } from './FormAlert';
 import { type LoginError, toLoginError } from './login-error';
@@ -17,6 +18,7 @@ import { type LoginNotice, loginNoticeOf } from './login-notice';
 import type { LoginLocationState } from './ProtectedRoute';
 import { useSession } from './session-context';
 import { SessionLoading } from './SessionLoading';
+import { TwoFactorModal } from './TwoFactorModal';
 
 const loginSchema = z.object({
   email: z
@@ -39,6 +41,7 @@ const ALERT_TONE: Record<LoginError['kind'], string> = {
 const NOTICE_COPY: Record<LoginNotice, string> = {
   'password-reset': COPY.login.notices.passwordReset,
   'password-set': COPY.login.notices.passwordSet,
+  'password-changed': COPY.login.notices.passwordChanged,
 };
 
 /** Only same-app paths, so router state can never redirect off-site. */
@@ -53,10 +56,12 @@ function returnPathOf(state: unknown): string {
 
 export function LoginPage() {
   const status = useAppSelector(selectSessionStatus);
+  const endNotice = useAppSelector(selectEndNotice);
   const location = useLocation();
   const session = useSession();
   const [error, setError] = useState<LoginError | null>(null);
-  const [twoFactorRequired, setTwoFactorRequired] = useState(false);
+  const [challenge, setChallenge] = useState<TwoFactorChallenge | null>(null);
+  const [challengeExpired, setChallengeExpired] = useState(false);
 
   const form = useForm<LoginValues>({
     resolver: zodResolver(loginSchema),
@@ -70,7 +75,10 @@ export function LoginPage() {
       // A signed-in outcome re-renders into <Navigate> below.
       if (outcome.kind === 'two-factor-required') {
         form.resetField('password');
-        setTwoFactorRequired(true);
+        setChallenge({
+          tempToken: outcome.tempToken,
+          methods: outcome.methods,
+        });
       }
     },
     onError: (cause) => {
@@ -80,117 +88,99 @@ export function LoginPage() {
     },
   });
 
+  const closeChallenge = useCallback(() => {
+    setChallenge(null);
+    form.setFocus('password');
+  }, [form]);
+  const expireChallenge = useCallback(() => {
+    setChallengeExpired(true);
+    closeChallenge();
+  }, [closeChallenge]);
+
   if (status === 'unknown') return <SessionLoading />;
   if (status === 'authenticated') {
     return <Navigate to={returnPathOf(location.state)} replace />;
   }
 
   // Hidden once the user tries to sign in, so it never sits next to an error.
-  const notice = signIn.isIdle ? loginNoticeOf(location.state) : undefined;
+  const notice = signIn.isIdle
+    ? (loginNoticeOf(location.state) ?? endNotice ?? undefined)
+    : undefined;
 
   const onSubmit = form.handleSubmit((values) => {
     setError(null);
+    setChallengeExpired(false);
     signIn.mutate({ email: values.email.trim(), password: values.password });
   });
 
   return (
     <AuthPageLayout>
-      {twoFactorRequired ? (
-        <TwoFactorPlaceholder
-          onBack={() => {
-            setTwoFactorRequired(false);
-            signIn.reset();
-          }}
-        />
-      ) : (
-        <>
-          <h1 className="mt-6 text-2xl font-semibold tracking-tight">
-            {COPY.login.title}
-          </h1>
-          <p className="mt-2 text-sm text-muted-foreground">
-            {COPY.login.description}
-          </p>
-          <FormProvider {...form}>
-            <form
-              noValidate
-              onSubmit={(event) => void onSubmit(event)}
-              className="mt-6 grid gap-4 rounded-md border border-border bg-card p-5"
-            >
-              {notice !== undefined ? (
-                <FormAlert tone="success">{NOTICE_COPY[notice]}</FormAlert>
-              ) : null}
-              {error !== null ? (
-                <p
-                  role="alert"
-                  className={`rounded-md px-3 py-2 text-sm ${ALERT_TONE[error.kind]}`}
-                >
-                  {error.message}
-                </p>
-              ) : null}
-              <TextInput<LoginValues>
-                name="email"
-                label={COPY.login.emailLabel}
-                type="email"
-                autoComplete="username"
-                inputMode="email"
-                spellCheck={false}
-                required
-              />
-              <TextInput<LoginValues>
-                name="password"
-                label={COPY.login.passwordLabel}
-                type="password"
-                autoComplete="current-password"
-                required
-              />
-              <Button
-                type="submit"
-                variant="primary"
-                className="mt-2 w-full"
-                loading={signIn.isPending}
-              >
-                {COPY.login.submit}
-              </Button>
-            </form>
-          </FormProvider>
-          <p className="mt-4">
-            <Button asChild variant="link" className="h-auto px-0">
-              <Link to={APP_ROUTES.RESET_PASSWORD}>
-                {COPY.login.forgotPassword}
-              </Link>
-            </Button>
-          </p>
-        </>
-      )}
-    </AuthPageLayout>
-  );
-}
-
-/** Placeholder until the 2FA step exists (T13). Nothing is stored. */
-function TwoFactorPlaceholder({ onBack }: { onBack: () => void }) {
-  const headingRef = useRef<HTMLHeadingElement>(null);
-  useEffect(() => {
-    headingRef.current?.focus();
-  }, []);
-
-  return (
-    <section aria-labelledby="two-factor-title" className="mt-6">
-      <h1
-        id="two-factor-title"
-        ref={headingRef}
-        tabIndex={-1}
-        className="text-2xl font-semibold tracking-tight outline-none"
-      >
-        {COPY.login.twoFactor.title}
+      <h1 className="mt-6 text-2xl font-semibold tracking-tight">
+        {COPY.login.title}
       </h1>
-      <p className="mt-2 rounded-md bg-info-soft px-3 py-2 text-sm text-info-strong">
-        {COPY.login.twoFactor.description}
+      <p className="mt-2 text-sm text-muted-foreground">
+        {COPY.login.description}
       </p>
-      <div className="mt-6 flex justify-end">
-        <Button variant="secondary" onClick={onBack}>
-          {COPY.login.twoFactor.back}
+      <FormProvider {...form}>
+        <form
+          noValidate
+          onSubmit={(event) => void onSubmit(event)}
+          className="mt-6 grid gap-4 rounded-md border border-border bg-card p-5"
+        >
+          {notice !== undefined ? (
+            <FormAlert tone="success">{NOTICE_COPY[notice]}</FormAlert>
+          ) : null}
+          {challengeExpired ? (
+            <FormAlert tone="info">{COPY.login.twoFactor.expired}</FormAlert>
+          ) : null}
+          {error !== null ? (
+            <p
+              role="alert"
+              className={`rounded-md px-3 py-2 text-sm ${ALERT_TONE[error.kind]}`}
+            >
+              {error.message}
+            </p>
+          ) : null}
+          <TextInput<LoginValues>
+            name="email"
+            label={COPY.login.emailLabel}
+            type="email"
+            autoComplete="username"
+            inputMode="email"
+            spellCheck={false}
+            required
+          />
+          <TextInput<LoginValues>
+            name="password"
+            label={COPY.login.passwordLabel}
+            type="password"
+            autoComplete="current-password"
+            required
+          />
+          <Button
+            type="submit"
+            variant="primary"
+            className="mt-2 w-full"
+            loading={signIn.isPending}
+          >
+            {COPY.login.submit}
+          </Button>
+        </form>
+      </FormProvider>
+      <p className="mt-4">
+        <Button asChild variant="link" className="h-auto px-0">
+          <Link to={APP_ROUTES.RESET_PASSWORD}>
+            {COPY.login.forgotPassword}
+          </Link>
         </Button>
-      </div>
-    </section>
+      </p>
+      {challenge !== null ? (
+        <TwoFactorModal
+          challenge={challenge}
+          onCancel={closeChallenge}
+          onExpired={expireChallenge}
+        />
+      ) : null}
+    </AuthPageLayout>
   );
 }

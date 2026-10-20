@@ -23,6 +23,15 @@ export interface IAppConfig {
     readonly cookieOrigins: readonly string[];
     /** Key id of JWT_ACCESS_SECRET; signed into every token header (D9). */
     readonly jwtAccessKid: string;
+    /** TOTP secret encryption (D8, T13). Keys live in `secrets`. */
+    readonly totp: {
+      /** Key id of TOTP_ENC_KEY; stored with every encrypted secret. */
+      readonly encKid: string;
+      /** Key id of TOTP_ENC_PREVIOUS_KEY (rotation); undefined = none. */
+      readonly previousEncKid: string | undefined;
+      /** Issuer shown in authenticator apps. */
+      readonly issuer: string;
+    };
   };
   readonly database: {
     readonly url: string;
@@ -38,6 +47,8 @@ export interface IAppConfig {
     readonly jwtAccessSecret: string | undefined;
     readonly otpPepper: string | undefined;
     readonly totpEncKey: string | undefined;
+    /** Previous TOTP_ENC_KEY, kept to decrypt secrets during a rotation. */
+    readonly totpEncPreviousKey: string | undefined;
   };
 }
 
@@ -101,6 +112,12 @@ export function loadAppConfig(rawEnv: RawEnv): IAppConfig {
       ),
       // Production requires an explicit kid (env.schema.ts).
       jwtAccessKid: env.JWT_ACCESS_KID ?? CONFIG_DEFAULTS.JWT_ACCESS_KID,
+      totp: {
+        // Production requires an explicit kid (env.schema.ts).
+        encKid: env.TOTP_ENC_KID ?? CONFIG_DEFAULTS.TOTP_ENC_KID,
+        previousEncKid: env.TOTP_ENC_PREVIOUS_KID,
+        issuer: env.TOTP_ISSUER ?? CONFIG_DEFAULTS.TOTP_ISSUER,
+      },
     },
     database: { url: env.DATABASE_URL },
     mail: {
@@ -112,6 +129,7 @@ export function loadAppConfig(rawEnv: RawEnv): IAppConfig {
       jwtAccessSecret: env.JWT_ACCESS_SECRET,
       otpPepper: env.OTP_PEPPER,
       totpEncKey: env.TOTP_ENC_KEY,
+      totpEncPreviousKey: env.TOTP_ENC_PREVIOUS_KEY,
     },
   });
 }
@@ -168,6 +186,7 @@ export function summarizeConfig(config: IAppConfig): Record<string, unknown> {
       jwtAccessSecret: secretState(config.secrets.jwtAccessSecret),
       otpPepper: secretState(config.secrets.otpPepper),
       totpEncKey: secretState(config.secrets.totpEncKey),
+      totpEncPreviousKey: secretState(config.secrets.totpEncPreviousKey),
     },
   };
 }
