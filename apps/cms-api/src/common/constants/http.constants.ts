@@ -9,3 +9,24 @@ export const EXPRESS_SETTINGS = {
   STRICT_ROUTING: 'strict routing',
   TRUST_PROXY: 'trust proxy',
 } as const;
+
+/** CORS for the admin origin (SPEC §6, D14). Origins come from config only. */
+export const CORS_ALLOWED_METHODS = [
+  'GET',
+  'HEAD',
+  'POST',
+  'PUT',
+  'PATCH',
+  'DELETE',
+] as const;
+
+export const CORS_ALLOWED_HEADERS = [
+  'Authorization',
+  'Content-Type',
+  REQUEST_ID_HEADER,
+] as const;
+
+export const CORS_EXPOSED_HEADERS = [REQUEST_ID_HEADER] as const;
+
+/** How long browsers may cache a preflight result. */
+export const CORS_PREFLIGHT_MAX_AGE_SECONDS = 600;

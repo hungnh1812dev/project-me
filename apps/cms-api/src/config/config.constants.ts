@@ -23,5 +23,8 @@ export const CONFIG_DEFAULTS = {
 
 export const MAX_PORT = 65_535;
 
+/** `URL.protocol` values accepted for ADMIN_ORIGIN (CORS allowlist). */
+export const ALLOWED_ORIGIN_PROTOCOLS: readonly string[] = ['http:', 'https:'];
+
 /** Shown instead of secret values in the boot summary. */
 export const REDACTED = '[redacted]';

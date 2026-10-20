@@ -1,0 +1,88 @@
+# Proxy smoke stack (T04). Mirrors production routing (SPEC §1, §6):
+#   <SMOKE_DOMAIN>          -> web, and /api/* -> cms-api (no StripPrefix)
+#   admin.<SMOKE_DOMAIN>    -> cms-admin
+# Run it through `pnpm smoke` (scripts/smoke.sh), which sets every SMOKE_* value
+# below, generates throwaway secrets, runs the assertions and tears down.
+name: abyss-smoke
+
+services:
+  proxy:
+    image: traefik:v3.6
+    command:
+      - --providers.docker=true
+      - --providers.docker.exposedbydefault=false
+      - --entrypoints.web.address=:80
+      - --ping=true
+    ports:
+      - '${SMOKE_HTTP_PORT:?set by scripts/smoke.sh}:80'
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    healthcheck:
+      test: ['CMD', 'traefik', 'healthcheck', '--ping']
+      interval: 2s
+      timeout: 3s
+      retries: 15
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: abyss
+      POSTGRES_DB: abyss
+      POSTGRES_PASSWORD: ${SMOKE_DB_PASSWORD:?set by scripts/smoke.sh}
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U abyss -d abyss']
+      interval: 2s
+      timeout: 3s
+      retries: 15
+
+  cms-api:
+    build:
+      context: .
+      dockerfile: apps/cms-api/Dockerfile
+    environment:
+      NODE_ENV: production
+      PORT: '3000'
+      DATABASE_URL: postgresql://abyss:${SMOKE_DB_PASSWORD}@db:5432/abyss
+      ADMIN_ORIGIN: ${SMOKE_ADMIN_ORIGIN:?set by scripts/smoke.sh}
+      TRUST_PROXY_HOPS: '1'
+      MAIL_PROVIDER: smtp
+      JWT_ACCESS_SECRET: ${SMOKE_JWT_ACCESS_SECRET:?set by scripts/smoke.sh}
+      OTP_PEPPER: ${SMOKE_OTP_PEPPER:?set by scripts/smoke.sh}
+      TOTP_ENC_KEY: ${SMOKE_TOTP_ENC_KEY:?set by scripts/smoke.sh}
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ['CMD', 'wget', '-qO-', 'http://127.0.0.1:3000/api/v1/health/ready']
+      interval: 2s
+      timeout: 3s
+      retries: 30
+    labels:
+      traefik.enable: 'true'
+      traefik.http.routers.api.entrypoints: web
+      traefik.http.routers.api.rule: Host(`${SMOKE_DOMAIN:?set by scripts/smoke.sh}`) && PathPrefix(`/api`)
+      traefik.http.services.api.loadbalancer.server.port: '3000'
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      args:
+        VITE_API_BASE_URL: /api/v1
+    labels:
+      traefik.enable: 'true'
+      traefik.http.routers.web.entrypoints: web
+      traefik.http.routers.web.rule: Host(`${SMOKE_DOMAIN}`)
+      traefik.http.services.web.loadbalancer.server.port: '8080'
+
+  cms-admin:
+    build:
+      context: .
+      dockerfile: apps/cms-admin/Dockerfile
+      args:
+        VITE_API_BASE_URL: ${SMOKE_API_BASE_URL:?set by scripts/smoke.sh}
+    labels:
+      traefik.enable: 'true'
+      traefik.http.routers.admin.entrypoints: web
+      traefik.http.routers.admin.rule: Host(`admin.${SMOKE_DOMAIN}`)
+      traefik.http.services.admin.loadbalancer.server.port: '8080'

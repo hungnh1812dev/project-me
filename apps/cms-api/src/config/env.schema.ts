@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 import {
+  ALLOWED_ORIGIN_PROTOCOLS,
   CONFIG_DEFAULTS,
   MAIL_PROVIDERS,
   MAX_PORT,
@@ -13,6 +14,18 @@ const optionalSecret = z.string().min(1).optional();
 
 const emptyToUndefined = (value: unknown): unknown =>
   value === '' ? undefined : value;
+
+/** True for a bare http(s) origin: no path, query, fragment or trailing slash. */
+function isHttpOrigin(value: string): boolean {
+  try {
+    const url = new URL(value);
+    return (
+      ALLOWED_ORIGIN_PROTOCOLS.includes(url.protocol) && url.origin === value
+    );
+  } catch {
+    return false;
+  }
+}
 
 /**
  * Raw environment contract. Every key is listed in `.env.example`.
@@ -41,6 +54,16 @@ export const envSchema = z
         .transform((header) => header.toLowerCase())
         .optional(),
     ),
+    ADMIN_ORIGIN: z.preprocess(
+      emptyToUndefined,
+      z
+        .string()
+        .refine(isHttpOrigin, {
+          message:
+            'must be a bare http(s) origin, e.g. https://admin.example.com (no path or trailing slash)',
+        })
+        .optional(),
+    ),
     MAIL_PROVIDER: z
       .enum(MAIL_PROVIDERS)
       .default(CONFIG_DEFAULTS.MAIL_PROVIDER),
@@ -56,6 +79,14 @@ export const envSchema = z
         code: 'custom',
         path: ['MAIL_PROVIDER'],
         message: 'MAIL_PROVIDER=console is not allowed in production',
+      });
+    }
+
+    if (env.ADMIN_ORIGIN === undefined) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['ADMIN_ORIGIN'],
+        message: 'ADMIN_ORIGIN is required in production',
       });
     }
 

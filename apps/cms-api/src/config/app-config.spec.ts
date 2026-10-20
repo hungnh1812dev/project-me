@@ -1,6 +1,7 @@
 import {
   devEnv,
   productionEnv,
+  TEST_ADMIN_ORIGIN,
   TEST_SECRET_32_BYTES,
   TEST_SHORT_SECRET,
 } from '../../test/fixtures/env.fixture';
@@ -56,6 +57,21 @@ describe('loadAppConfig', () => {
     expect(config.secrets.otpPepper).toBeUndefined();
   });
 
+  it('leaves CORS off when ADMIN_ORIGIN is unset or empty', () => {
+    expect(loadAppConfig(devEnv()).cors.allowedOrigins).toEqual([]);
+    expect(
+      loadAppConfig(devEnv({ ADMIN_ORIGIN: '' })).cors.allowedOrigins,
+    ).toEqual([]);
+  });
+
+  it.each(['https://admin.example.com', 'http://admin.domain.localhost:8080'])(
+    'allows exactly the admin origin %s',
+    (origin) => {
+      const config = loadAppConfig(devEnv({ ADMIN_ORIGIN: origin }));
+      expect(config.cors.allowedOrigins).toEqual([origin]);
+    },
+  );
+
   it('returns a deeply frozen object', () => {
     const config = loadAppConfig(devEnv());
     expect(Object.isFrozen(config)).toBe(true);
@@ -79,6 +95,22 @@ describe('loadAppConfig', () => {
     ],
     ['unknown MAIL_PROVIDER', { MAIL_PROVIDER: 'pigeon' }, 'MAIL_PROVIDER'],
     ['unknown NODE_ENV', { NODE_ENV: 'staging' }, 'NODE_ENV'],
+    ['wildcard ADMIN_ORIGIN', { ADMIN_ORIGIN: '*' }, 'ADMIN_ORIGIN'],
+    [
+      'ADMIN_ORIGIN with a trailing slash',
+      { ADMIN_ORIGIN: 'https://admin.example.com/' },
+      'ADMIN_ORIGIN',
+    ],
+    [
+      'ADMIN_ORIGIN with a path',
+      { ADMIN_ORIGIN: 'https://admin.example.com/app' },
+      'ADMIN_ORIGIN',
+    ],
+    [
+      'non-http ADMIN_ORIGIN',
+      { ADMIN_ORIGIN: 'ftp://admin.example.com' },
+      'ADMIN_ORIGIN',
+    ],
     [
       'header with spaces',
       { CLIENT_IP_HEADER: 'x forwarded' },
@@ -108,6 +140,19 @@ describe('loadAppConfig', () => {
     it('rejects the default mail provider when MAIL_PROVIDER is unset', () => {
       const error = configErrorOf(productionEnv({ MAIL_PROVIDER: undefined }));
       expect(error.issues[0]).toMatch(/^MAIL_PROVIDER:/);
+    });
+
+    it('rejects a missing ADMIN_ORIGIN', () => {
+      const error = configErrorOf(productionEnv({ ADMIN_ORIGIN: undefined }));
+      expect(error.issues).toContain(
+        'ADMIN_ORIGIN: ADMIN_ORIGIN is required in production',
+      );
+    });
+
+    it('keeps the admin origin from production config', () => {
+      expect(loadAppConfig(productionEnv()).cors.allowedOrigins).toEqual([
+        TEST_ADMIN_ORIGIN,
+      ]);
     });
 
     it.each(SECRET_ENV_KEYS)('rejects a missing %s', (key) => {

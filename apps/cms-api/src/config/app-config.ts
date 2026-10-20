@@ -11,6 +11,10 @@ export interface IAppConfig {
     readonly trustProxyHops: number;
     readonly clientIpHeader: string | undefined;
   };
+  readonly cors: {
+    /** Exact origins allowed to call the API cross-origin with credentials. Empty = CORS off. */
+    readonly allowedOrigins: readonly string[];
+  };
   readonly database: {
     readonly url: string;
   };
@@ -65,6 +69,9 @@ export function loadAppConfig(rawEnv: RawEnv): IAppConfig {
       trustProxyHops: env.TRUST_PROXY_HOPS,
       clientIpHeader: env.CLIENT_IP_HEADER,
     },
+    cors: {
+      allowedOrigins: env.ADMIN_ORIGIN === undefined ? [] : [env.ADMIN_ORIGIN],
+    },
     database: { url: env.DATABASE_URL },
     mail: { provider: env.MAIL_PROVIDER },
     secrets: {
@@ -90,6 +97,7 @@ export function summarizeConfig(config: IAppConfig): Record<string, unknown> {
   return {
     env: config.env,
     http: config.http,
+    cors: config.cors,
     database: { url: redactDatabaseUrl(config.database.url) },
     mail: config.mail,
     secrets: {

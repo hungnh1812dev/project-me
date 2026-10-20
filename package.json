@@ -12,7 +12,8 @@
     "lint": "turbo run lint",
     "typecheck": "turbo run typecheck",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "smoke": "bash scripts/smoke.sh"
   },
   "devDependencies": {
     "@abyss/prettier-config": "workspace:*",

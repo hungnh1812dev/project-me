@@ -18,13 +18,17 @@ secrets and DB credentials redacted. Every key is documented in
 
 Production guards (`NODE_ENV=production`): `MAIL_PROVIDER=console` is
 rejected, and `JWT_ACCESS_SECRET`, `OTP_PEPPER`, `TOTP_ENC_KEY` are required and
-must be at least 32 bytes.
+must be at least 32 bytes; `ADMIN_ORIGIN` is required.
 
 ## HTTP pipeline
 
 - Global prefix `/api/v1`. Express `strict routing` is off, so `/x/` and `/x`
   hit the same route without a redirect.
 - `trust proxy` is set to `TRUST_PROXY_HOPS` (a number, never `true`).
+- CORS: only `ADMIN_ORIGIN` (the cms-admin origin, SPEC §6 / D14) may call
+  the API cross-origin, with credentials. The origin must be exact (no
+  wildcard, no path); unset means CORS is off, and production refuses to
+  start without it. `X-Request-Id` is exposed to the browser.
 - Each request gets an `X-Request-Id` (an inbound id is kept if it matches
   `[A-Za-z0-9._-]{1,128}`, otherwise a UUID is generated).
 - Every error returns `{ statusCode, errorCode, message, requestId }`.
@@ -56,3 +60,17 @@ module.
 
 Integration tests start Postgres 16 with Testcontainers, so Docker must be
 running.
+
+## Docker
+
+```bash
+docker build -f apps/cms-api/Dockerfile -t abyss-cms-api .   # from the repo root
+```
+
+Multi-stage: `turbo prune` keeps cms-api only, the build stage compiles it,
+and `pnpm deploy --prod` copies production dependencies into a runtime image
+that runs as the `node` user on port 3000. Pass config as env vars; `.env*`
+files are never copied into the build context (`.dockerignore`).
+
+`pnpm smoke` (repo root) runs this image behind Traefik together with both
+SPAs; see `scripts/smoke.sh`.

@@ -7,6 +7,8 @@ export const TEST_SHORT_SECRET = 'too-short-secret';
 export const TEST_DATABASE_URL =
   'postgresql://abyss_test:abyss_test_pw@127.0.0.1:5432/abyss_test';
 
+export const TEST_ADMIN_ORIGIN = 'https://admin.example.test';
+
 export function devEnv(
   overrides: Record<string, string | undefined> = {},
 ): Record<string, string | undefined> {
@@ -20,6 +22,7 @@ export function productionEnv(
     NODE_ENV: 'production',
     DATABASE_URL: TEST_DATABASE_URL,
     MAIL_PROVIDER: 'smtp',
+    ADMIN_ORIGIN: TEST_ADMIN_ORIGIN,
     JWT_ACCESS_SECRET: TEST_SECRET_32_BYTES,
     OTP_PEPPER: TEST_SECRET_32_BYTES,
     TOTP_ENC_KEY: TEST_SECRET_32_BYTES,
