@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Proxy smoke test (T04): builds and starts docker-compose.smoke.yml, checks
-# routing, trailing slashes and CORS through Traefik, then tears it down.
+# routing, trailing slashes and CORS through Traefik, runs content:migrate
+# inside the cms-api image (T07), then tears it down.
 #
 # Optional env:
 #   SMOKE_DOMAIN           base domain (default domain.localhost)
@@ -20,6 +21,10 @@ POLL_INTERVAL_SECONDS="2"
 LOOPBACK="127.0.0.1"
 API_PREFIX="/api/v1"
 HEALTH_OK_BODY='"status":"ok"'
+# Same command as the cms-api `content:migrate` script (no pnpm in the image).
+CONTENT_MIGRATE_CMD=(node dist/modules/content-engine/cli/migrate.js)
+CONTENT_MIGRATE_APPLIED="Applied "
+CONTENT_MIGRATE_NOTHING="No pending content migrations."
 
 export SMOKE_DOMAIN="${SMOKE_DOMAIN:-$DEFAULT_DOMAIN}"
 export SMOKE_HTTP_PORT="${SMOKE_HTTP_PORT:-$DEFAULT_HTTP_PORT}"
@@ -157,6 +162,19 @@ expect_header "actual call allows credentials" Access-Control-Allow-Credentials 
 
 request GET "$WEB_ORIGIN$API_PREFIX/health/live" -H "Origin: $OTHER_ORIGIN"
 expect_header "another origin gets no Access-Control-Allow-Origin" Access-Control-Allow-Origin ""
+
+echo "content:migrate inside the cms-api image"
+# migrate <label> <expected output fragment>
+migrate() {
+  local label="$1" expected="$2" output
+  if output="$(compose exec -T cms-api "${CONTENT_MIGRATE_CMD[@]}" 2>&1)"; then
+    if [[ "$output" == *"$expected"* ]]; then pass "$label"; else fail "$label: unexpected output: $output"; fi
+  else
+    fail "$label: exited non-zero: $output"
+  fi
+}
+migrate "first run applies the committed migrations" "$CONTENT_MIGRATE_APPLIED"
+migrate "second run has nothing pending" "$CONTENT_MIGRATE_NOTHING"
 
 if ((FAILURES > 0)); then
   echo "Smoke test failed: $FAILURES check(s)." >&2

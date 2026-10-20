@@ -256,3 +256,33 @@ export const DEFAULT_MIGRATION_LABEL = 'content';
 export const MIGRATION_FILE_PATTERN = /^(\d+)_([a-z0-9_]+)\.sql$/;
 export const SNAPSHOT_FORMAT_VERSION = 1;
 export const HASH_ALGORITHM = 'sha256';
+
+/**
+ * Which row of a document an operation targets (SPEC D11). The root tables
+ * have no status column: a draft row has `published_at IS NULL`, the
+ * published row has it set.
+ */
+export const CONTENT_STATUSES = ['draft', 'published'] as const;
+
+/** Codes carried by content engine runtime errors (registry and repository, T07). */
+export const CONTENT_ERROR_CODES = {
+  /** The slug is not in the registry. */
+  CONTENT_TYPE_UNKNOWN: 'content_type.unknown',
+  /** No root row for this document id + status. */
+  DOCUMENT_NOT_FOUND: 'document.not_found',
+  /** The tree input is malformed (wrong type, unknown key, too many items). */
+  TREE_INVALID: 'tree.invalid',
+  /** A `componentUid` or `documentId` is not a UUID. */
+  TREE_INVALID_UID: 'tree.invalid_uid',
+  /** The same `componentUid` appears twice in one list. */
+  TREE_DUPLICATE_UID: 'tree.duplicate_uid',
+  /** A `componentUid` sent to replaceTree does not exist under that parent and field. */
+  TREE_UNKNOWN_UID: 'tree.unknown_uid',
+} as const;
+
+/** Canonical UUID text form (any version), case-insensitive. */
+export const UUID_PATTERN =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/** A non-repeatable component holds at most this many items. */
+export const SINGLE_COMPONENT_MAX_ITEMS = 1;

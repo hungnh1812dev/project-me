@@ -55,7 +55,10 @@ Content types are JSON files in `content/schemas/` (e.g. `cv-page.json`).
 naming, depth ≤ 3, 63-byte names, collisions) and returns structured errors;
 `naming.ts` is the single source of generated SQL names. Tables are created
 only by migrations in `content/migrations/` (`content:generate`, then
-`content:migrate`). Format and rules:
+`content:migrate`). At runtime, `RegistryService` resolves a slug to its
+table plans and `ContentRepository` reads and writes whole documents (root +
+component tree) with batched, parameterized Kysely queries. Format, rules
+and repository behaviour:
 [docs/modules/content-schema.md](../../docs/modules/content-schema.md).
 
 ## Scripts
@@ -83,6 +86,13 @@ Multi-stage: `turbo prune` keeps cms-api only, the build stage compiles it,
 and `pnpm deploy --prod` copies production dependencies into a runtime image
 that runs as the `node` user on port 3000. Pass config as env vars; `.env*`
 files are never copied into the build context (`.dockerignore`).
+
+The image also carries `content/` (schemas and migrations), so content
+migrations run in the container before (re)starting the API:
+
+```bash
+docker run --rm -e DATABASE_URL=... abyss-cms-api node dist/modules/content-engine/cli/migrate.js
+```
 
 `pnpm smoke` (repo root) runs this image behind Traefik together with both
 SPAs; see `scripts/smoke.sh`.

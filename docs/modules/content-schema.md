@@ -285,3 +285,74 @@ wait and then find nothing to do; any failure rolls everything back.
 Migration files are trusted repository content built from validated
 definitions; every identifier is quoted, and no request input ever reaches
 DDL.
+
+In production, the cms-api image ships `content/` next to `dist/`, so run
+`node dist/modules/content-engine/cli/migrate.js` (what `content:migrate`
+runs) inside the container. `pnpm smoke` checks this.
+
+## Runtime: registry and repository
+
+Code: `src/modules/content-engine/{registry.service.ts,content.repository.ts,tree-loader.ts,tree-input.ts}`.
+
+**Registry.** `RegistryService.fromDatabase(db)` reads
+`content._content_types`, re-validates every definition and builds its
+`planTables()` plans into a table tree (`fromDefinitions()` does the same
+from JSON). `resolve(slug)` returns the plans or throws
+`UnknownContentTypeError` (`content_type.unknown`). A request slug is only a
+map key: every table and column name the repository uses comes from a plan,
+Kysely quotes it, and every value is a bound parameter.
+
+**Tree shape.** API field names on both sides; the plan maps them to
+columns (`teamSize` ⇄ `team_size`).
+
+```ts
+{ values: { position: 'Lead' },
+  components: { experience: [
+    { componentUid: '…', values: { company: 'Acme' },
+      components: { role: [{ values: { teamSize: 4 } }] } } ] } }
+```
+
+Loaded documents add the root system columns (`id`, `documentId`,
+`version`, `publishedAt`, …) and, per component, `id`, `componentUid`,
+`orderIndex`. Every planned field and component list is present (`null` /
+`[]` when empty). Values are raw from `pg` (`decimal` is a string, `json` is
+parsed); serialization and masking belong to the API layer (T16/T20).
+
+**Operations** (`ContentRepository`, all per slug):
+
+| Method                                                  | Behaviour                                                                                                                                           |
+| ------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `insertTree(trx, slug, input)`                          | Inserts the root row (`documentId`, `publishedAt` null = draft) and the whole tree. A sent `componentUid` is kept (publish clones), else a new one. |
+| `loadTrees(db, slug, { status, documentIds? })`         | 1 query for the roots, then 1 per component table whose parents have rows (`parent_id = ANY($1::int[])`), ordered by `order_index`.                 |
+| `replaceTree(trx, slug, { documentId, status }, input)` | Locks the root row, updates it in place, then syncs each component list that is present in the input (see below).                                   |
+
+`loadComponentTrees(db, root, rootIds)` (tree-loader) is exported for read
+paths that select roots themselves (filters, pagination).
+
+**replaceTree rules** (decisions, T07):
+
+- Present keys are authoritative, absent keys are untouched: a value key
+  overwrites the column (send `null` to clear), a component list replaces
+  the stored list of that parent. Omitting a key never deletes data, so a
+  client that does not see a field (masking, T16) cannot wipe it.
+- In a list, an item whose `componentUid` matches a stored item of the
+  same parent and field is updated in place (id and uid kept, `order_index`
+  = its position). An item without a uid is inserted with a new UUID. Stored
+  items not sent back are deleted, and their subtrees cascade.
+- A `componentUid` that is not stored under that parent and field is
+  rejected (`tree.unknown_uid`), never inserted or matched elsewhere, so a
+  request cannot reach another root's rows. Deletes are also scoped by
+  `parent_id`.
+- Version bump and OCC (T21), publish cloning (T22) are the caller's job.
+
+**Input checks** (`ContentTreeError`, with `code` and an input `path`), run
+before any SQL: unknown keys or fields (`tree.invalid`), a component that is
+not a list or has more than one item when not repeatable (`tree.invalid`),
+a `componentUid` or `documentId` that is not a UUID (`tree.invalid_uid`), the
+same uid twice in a list (`tree.duplicate_uid`). Value types are checked by
+the API layer and Postgres.
+
+**Transactions.** Writes take a Kysely `Transaction`: any error (from the
+repository or the caller) rolls back the whole document.
+`DocumentNotFoundError` (`document.not_found`) when the target row is
+missing.
