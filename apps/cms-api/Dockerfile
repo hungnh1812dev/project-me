@@ -26,14 +26,17 @@ RUN pnpm turbo run build --filter=@abyss/cms-api
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
     pnpm --filter @abyss/cms-api deploy --prod --legacy /prod/cms-api
 
-# 3. Runtime: production deps, dist and content/ (schemas + migrations, read
-#    by `content:migrate`), files owned by root, run as `node`.
+# 3. Runtime: production deps, dist (with the generated Prisma client),
+#    prisma/ + prisma.config.ts (read by `db:migrate`) and content/ (schemas +
+#    migrations, read by `content:migrate`), files owned by root, run as `node`.
 FROM ${NODE_IMAGE} AS runtime
 ENV NODE_ENV=production
 WORKDIR /app
 COPY --from=build /prod/cms-api/package.json ./package.json
 COPY --from=build /prod/cms-api/node_modules ./node_modules
 COPY --from=build /prod/cms-api/dist ./dist
+COPY --from=build /repo/apps/cms-api/prisma ./prisma
+COPY --from=build /repo/apps/cms-api/prisma.config.ts ./prisma.config.ts
 COPY --from=build /repo/apps/cms-api/content ./content
 USER node
 EXPOSE 3000

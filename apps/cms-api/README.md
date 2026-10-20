@@ -44,9 +44,18 @@ must be at least 32 bytes; `ADMIN_ORIGIN` is required.
 | GET    | `/api/v1/health/ready` | `200 { "status": "ok" }`, or `503 { "status": "error" }` when the DB ping fails or exceeds 2 s |
 
 The readiness ping goes through the `DATABASE_HEALTH` token
-(`src/infrastructure/database/database-health.ts`). T02 binds it to a
-one-connection `pg` pool; T08 rebinds it to Prisma without touching the health
-module.
+(`src/infrastructure/database/database-health.ts`), bound to
+`PrismaDatabaseHealth` (`SELECT 1` through `PrismaService`).
+
+## Core database (Prisma)
+
+Core tables (accounts, roles, permissions, tokens, media, audit, settings)
+live in schema `public`, managed by Prisma 7 with `@prisma/adapter-pg`
+(`prisma/schema.prisma`, `prisma.config.ts`). The client is generated into
+`src/generated/prisma` (gitignored); turbo runs `db:generate` before build,
+lint, typecheck and test. `db:migrate` applies migrations and seeds the six
+system roles; `owner:bootstrap` creates the single owner once. Decisions and
+usage: [docs/modules/core-schema.md](../../docs/modules/core-schema.md).
 
 ## Content types
 
@@ -72,9 +81,15 @@ and repository behaviour:
 | `typecheck`                      | `tsc --noEmit` over `src` and `test`                                                        |
 | `content:generate`               | Build, then write the next content migration (`--dry-run`, `--name`, `--allow-destructive`) |
 | `content:migrate`                | Apply pending content migrations (needs a build and `DATABASE_URL`)                         |
+| `db:generate`                    | Generate the Prisma client                                                                  |
+| `db:migrate`                     | Apply core Prisma migrations, then seed system roles (needs a build and `DATABASE_URL`)     |
+| `db:migrate:dev`                 | Development: create a core migration from schema changes                                    |
+| `db:seed`                        | Seed system roles only (idempotent)                                                         |
+| `owner:bootstrap`                | Create the single owner (`OWNER_EMAIL`, hidden password prompt or `--password-stdin`)       |
 
 Integration tests start Postgres 16 with Testcontainers, so Docker must be
-running.
+running. Jest runs with `--experimental-vm-modules` because the Prisma 7
+client loads its query compiler with a dynamic `import()`.
 
 ## Docker
 
@@ -87,11 +102,15 @@ and `pnpm deploy --prod` copies production dependencies into a runtime image
 that runs as the `node` user on port 3000. Pass config as env vars; `.env*`
 files are never copied into the build context (`.dockerignore`).
 
-The image also carries `content/` (schemas and migrations), so content
-migrations run in the container before (re)starting the API:
+The image also carries `prisma/`, `prisma.config.ts` and `content/`, so
+migrations run in the container before (re)starting the API, in this order
+(the CLIs load the full config, so pass the same env as the API):
 
 ```bash
-docker run --rm -e DATABASE_URL=... abyss-cms-api node dist/modules/content-engine/cli/migrate.js
+docker run --rm --env-file api.env abyss-cms-api npm run db:migrate
+docker run --rm --env-file api.env abyss-cms-api node dist/modules/content-engine/cli/migrate.js
+# once, on first deploy:
+docker run --rm -it --env-file api.env -e OWNER_EMAIL=me@example.com abyss-cms-api npm run owner:bootstrap
 ```
 
 `pnpm smoke` (repo root) runs this image behind Traefik together with both

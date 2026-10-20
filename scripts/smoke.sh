@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Proxy smoke test (T04): builds and starts docker-compose.smoke.yml, checks
-# routing, trailing slashes and CORS through Traefik, runs content:migrate
-# inside the cms-api image (T07), then tears it down.
+# routing, trailing slashes and CORS through Traefik, runs db:migrate,
+# owner:bootstrap (T08) and content:migrate (T07) inside the cms-api image,
+# then tears it down.
 #
 # Optional env:
 #   SMOKE_DOMAIN           base domain (default domain.localhost)
@@ -21,7 +22,15 @@ POLL_INTERVAL_SECONDS="2"
 LOOPBACK="127.0.0.1"
 API_PREFIX="/api/v1"
 HEALTH_OK_BODY='"status":"ok"'
-# Same command as the cms-api `content:migrate` script (no pnpm in the image).
+# cms-api package scripts run through npm inside the image (no pnpm there).
+DB_MIGRATE_CMD=(npm run --silent db:migrate)
+DB_MIGRATE_APPLIED="All migrations have been successfully applied."
+DB_MIGRATE_SEEDED="Seeded system roles: public, guest, reviewer, editor, admin, owner."
+DB_MIGRATE_NOTHING="No pending migrations to apply."
+DB_SEED_NOTHING="System roles already seeded."
+OWNER_BOOTSTRAP_CMD=(npm run --silent owner:bootstrap -- --password-stdin)
+OWNER_CREATED="Owner account created: "
+OWNER_EXISTS="An owner account already exists."
 CONTENT_MIGRATE_CMD=(node dist/modules/content-engine/cli/migrate.js)
 CONTENT_MIGRATE_APPLIED="Applied "
 CONTENT_MIGRATE_NOTHING="No pending content migrations."
@@ -47,6 +56,8 @@ export SMOKE_DB_PASSWORD="$(random_secret)"
 export SMOKE_JWT_ACCESS_SECRET="$(random_secret)"
 export SMOKE_OTP_PEPPER="$(random_secret)"
 export SMOKE_TOTP_ENC_KEY="$(random_secret)"
+SMOKE_OWNER_EMAIL="owner@$SMOKE_DOMAIN"
+SMOKE_OWNER_PASSWORD="$(random_secret)"
 
 compose() { docker compose -f "$COMPOSE_FILE" "$@"; }
 
@@ -163,18 +174,38 @@ expect_header "actual call allows credentials" Access-Control-Allow-Credentials 
 request GET "$WEB_ORIGIN$API_PREFIX/health/live" -H "Origin: $OTHER_ORIGIN"
 expect_header "another origin gets no Access-Control-Allow-Origin" Access-Control-Allow-Origin ""
 
-echo "content:migrate inside the cms-api image"
-# migrate <label> <expected output fragment>
-migrate() {
-  local label="$1" expected="$2" output
-  if output="$(compose exec -T cms-api "${CONTENT_MIGRATE_CMD[@]}" 2>&1)"; then
-    if [[ "$output" == *"$expected"* ]]; then pass "$label"; else fail "$label: unexpected output: $output"; fi
-  else
-    fail "$label: exited non-zero: $output"
-  fi
+# in_api <label> <stdin text> <expect success: 1|0> <expected fragments...> -- <command...>
+# Runs a command in the cms-api container; output must contain every fragment.
+in_api() {
+  local label="$1" input="$2" want_ok="$3" output ok=1 fragment
+  shift 3
+  local fragments=()
+  while [[ "$1" != "--" ]]; do fragments+=("$1"); shift; done
+  shift
+  output="$(printf '%s\n' "$input" | compose exec -T -e OWNER_EMAIL="$SMOKE_OWNER_EMAIL" cms-api "$@" 2>&1)" || ok=0
+  if [[ "$ok" != "$want_ok" ]]; then fail "$label: exit status mismatch: $output"; return; fi
+  for fragment in "${fragments[@]}"; do
+    if [[ "$output" != *"$fragment"* ]]; then fail "$label: missing '$fragment' in: $output"; return; fi
+  done
+  if [[ "$output" == *"$SMOKE_OWNER_PASSWORD"* ]]; then fail "$label: output contains the password"; return; fi
+  pass "$label"
 }
-migrate "first run applies the committed migrations" "$CONTENT_MIGRATE_APPLIED"
-migrate "second run has nothing pending" "$CONTENT_MIGRATE_NOTHING"
+
+echo "db:migrate + owner:bootstrap inside the cms-api image"
+in_api "db:migrate applies core migrations and seeds roles" "" 1 \
+  "$DB_MIGRATE_APPLIED" "$DB_MIGRATE_SEEDED" -- "${DB_MIGRATE_CMD[@]}"
+in_api "db:migrate again has nothing pending" "" 1 \
+  "$DB_MIGRATE_NOTHING" "$DB_SEED_NOTHING" -- "${DB_MIGRATE_CMD[@]}"
+in_api "owner:bootstrap creates the owner" "$SMOKE_OWNER_PASSWORD" 1 \
+  "$OWNER_CREATED$SMOKE_OWNER_EMAIL" -- "${OWNER_BOOTSTRAP_CMD[@]}"
+in_api "owner:bootstrap refuses a second owner" "$SMOKE_OWNER_PASSWORD" 0 \
+  "$OWNER_EXISTS" -- "${OWNER_BOOTSTRAP_CMD[@]}"
+
+echo "content:migrate inside the cms-api image"
+in_api "first run applies the committed migrations" "" 1 \
+  "$CONTENT_MIGRATE_APPLIED" -- "${CONTENT_MIGRATE_CMD[@]}"
+in_api "second run has nothing pending" "" 1 \
+  "$CONTENT_MIGRATE_NOTHING" -- "${CONTENT_MIGRATE_CMD[@]}"
 
 if ((FAILURES > 0)); then
   echo "Smoke test failed: $FAILURES check(s)." >&2

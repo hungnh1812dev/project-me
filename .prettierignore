@@ -3,6 +3,7 @@ dist/
 coverage/
 .turbo/
 pnpm-lock.yaml
+apps/cms-api/src/generated/
 
 # Legacy reference docs, kept as-is
 CMS_*.html

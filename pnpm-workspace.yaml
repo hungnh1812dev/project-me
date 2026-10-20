@@ -3,11 +3,16 @@ packages:
   - 'packages/*'
 
 # Dependency install scripts are off unless listed as true here.
-# None of these are needed: each ships prebuilt/pure-JS fallbacks.
+# The false ones are not needed: each ships prebuilt/pure-JS fallbacks
+# (argon2 ships glibc + musl prebuilds). True: @prisma/engines downloads the
+# schema engine used by `prisma migrate`; prisma only checks the Node version.
 allowBuilds:
   '@parcel/watcher': false
+  '@prisma/engines': true
+  argon2: false
   cpu-features: false
   esbuild: false
+  prisma: true
   protobufjs: false
   ssh2: false
   unrs-resolver: false

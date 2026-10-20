@@ -1,10 +1,14 @@
 import { Module } from '@nestjs/common';
 
 import { DATABASE_HEALTH } from './database-health';
-import { PgDatabaseHealth } from './pg-database-health';
+import { PrismaDatabaseHealth } from './prisma-database-health';
+import { PrismaService } from './prisma.service';
 
 @Module({
-  providers: [{ provide: DATABASE_HEALTH, useClass: PgDatabaseHealth }],
-  exports: [DATABASE_HEALTH],
+  providers: [
+    PrismaService,
+    { provide: DATABASE_HEALTH, useClass: PrismaDatabaseHealth },
+  ],
+  exports: [PrismaService, DATABASE_HEALTH],
 })
 export class DatabaseModule {}

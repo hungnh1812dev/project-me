@@ -9,7 +9,7 @@
     "node": true,
     "jest": true
   },
-  "ignorePatterns": ["dist", "coverage", "node_modules"],
+  "ignorePatterns": ["dist", "coverage", "node_modules", "src/generated"],
   "rules": {
     "typescript/no-extraneous-class": [
       "warn",
