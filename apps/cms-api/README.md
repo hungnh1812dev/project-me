@@ -53,18 +53,22 @@ module.
 Content types are JSON files in `content/schemas/` (e.g. `cv-page.json`).
 `src/modules/content-engine/definition.validator.ts` checks them (shape,
 naming, depth ≤ 3, 63-byte names, collisions) and returns structured errors;
-`naming.ts` is the single source of generated SQL names. Format and rules:
+`naming.ts` is the single source of generated SQL names. Tables are created
+only by migrations in `content/migrations/` (`content:generate`, then
+`content:migrate`). Format and rules:
 [docs/modules/content-schema.md](../../docs/modules/content-schema.md).
 
 ## Scripts
 
-| Script                           | What it does                                                         |
-| -------------------------------- | -------------------------------------------------------------------- |
-| `build`                          | `tsc` to `dist/`                                                     |
-| `test`                           | Unit (`src/**/*.spec.ts`) and integration (`test/integration`) tests |
-| `test:unit` / `test:integration` | One Jest project only                                                |
-| `lint`                           | Oxlint, then ESLint with typescript-eslint (type-aware)              |
-| `typecheck`                      | `tsc --noEmit` over `src` and `test`                                 |
+| Script                           | What it does                                                                                |
+| -------------------------------- | ------------------------------------------------------------------------------------------- |
+| `build`                          | `tsc` to `dist/`                                                                            |
+| `test`                           | Unit (`src/**/*.spec.ts`) and integration (`test/integration`) tests                        |
+| `test:unit` / `test:integration` | One Jest project only                                                                       |
+| `lint`                           | Oxlint, then ESLint with typescript-eslint (type-aware)                                     |
+| `typecheck`                      | `tsc --noEmit` over `src` and `test`                                                        |
+| `content:generate`               | Build, then write the next content migration (`--dry-run`, `--name`, `--allow-destructive`) |
+| `content:migrate`                | Apply pending content migrations (needs a build and `DATABASE_URL`)                         |
 
 Integration tests start Postgres 16 with Testcontainers, so Docker must be
 running.

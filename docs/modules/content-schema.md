@@ -11,6 +11,10 @@ generated, the definition must pass the validator.
 | Rules and errors     | `definition.validator.ts`                                         |
 | SQL name assembly    | `naming.ts` (the only place names are built; T06/T07 must use it) |
 | Limits, words, codes | `content-engine.constants.ts`                                     |
+| Diff → DDL (pure)    | `sql-generator.ts`                                                |
+| Files, snapshot      | `migration-files.ts`                                              |
+| Apply + bookkeeping  | `migration-runner.ts` (Kysely)                                    |
+| CLIs                 | `cli/generate.ts`, `cli/migrate.ts`                               |
 
 ## Top level
 
@@ -58,7 +62,7 @@ Every field has a `name` and a `type`. Optional on every field:
 | `media`     | one file from the media library (`file_library.id`) | `null`                 |
 | `component` | nested group of fields in its own table             | `null`                 |
 
-Column types are chosen by the SQL generator (T06), not by this format.
+Column types are chosen by the SQL generator; see [Migrations](#migrations).
 
 `media` holds a single file. For a list of files, use a repeatable component
 with a `media` field.
@@ -198,3 +202,86 @@ cv_page__reference          name, phone, role
 
 No field in `cv-page.json` is marked `sensitive` yet: which ones should be is
 open question Q5 (SPEC §14).
+
+## Migrations
+
+Content tables are never created at runtime. Changes go through two
+commands (run from `apps/cms-api`):
+
+```bash
+pnpm content:generate                     # build, diff, write content/migrations/NNNN_content.sql
+pnpm content:generate -- --dry-run        # print the SQL and destructive changes, write nothing
+pnpm content:generate -- --name add_github --allow-destructive
+pnpm build && pnpm content:migrate        # apply pending migrations (needs DATABASE_URL)
+```
+
+### content:generate
+
+1. Loads and validates every `content/schemas/*.json` (the file name must be
+   `<slug>.json`).
+2. Diffs them against `content/migrations/snapshot.json`, the state of all
+   definitions as of the latest migration (hash + definition per slug). The
+   snapshot is in the repo, so generating needs no database and gives the
+   same result on every machine.
+3. Writes `NNNN_<name>.sql` (next sequence number) and the new snapshot.
+   Nothing changed → nothing written. A change with no DDL (e.g. `string` →
+   `richtext`, `kind`) still writes a comment-only migration so the
+   `_content_types` row gets updated.
+
+| Change                                  | SQL                                  | Destructive? |
+| --------------------------------------- | ------------------------------------ | ------------ |
+| New content type / component            | `CREATE TABLE` + indexes             | no           |
+| New field                               | `ADD COLUMN` (nullable)              | no           |
+| Field type with a different column type | `ALTER COLUMN … TYPE … USING col::t` | yes          |
+| Removed field                           | `DROP COLUMN`                        | yes          |
+| Removed component / content type        | `DROP TABLE` (children first)        | yes          |
+| Renamed field                           | drop + add (data is not moved)       | yes          |
+
+Destructive changes fail with the list of changes unless `--allow-destructive`
+is passed. Review the SQL with `--dry-run` first.
+
+### Column types
+
+| Field type                   | Column                         |
+| ---------------------------- | ------------------------------ |
+| `string`, `text`, `richtext` | `text`                         |
+| `integer`, `media`           | `integer`                      |
+| `decimal`                    | `numeric` (no fixed precision) |
+| `boolean`                    | `boolean`                      |
+| `date`                       | `date`                         |
+| `datetime`                   | `timestamptz`                  |
+| `json`                       | `jsonb`                        |
+
+All field columns are nullable: `required` is enforced by the API (drafts may
+be incomplete), not by `NOT NULL`. Not generated yet: the `media` FK to
+`public.file_library` and the `created_by`/`updated_by` FKs to
+`public.accounts`, because those tables arrive with Prisma (T08/T27). The
+names are already reserved in `naming.ts`.
+
+System columns: root `id integer GENERATED ALWAYS AS IDENTITY`,
+`document_id uuid NOT NULL`, `version integer NOT NULL DEFAULT 1`,
+`published_at`/`locale` nullable, `created_at`/`updated_at timestamptz NOT
+NULL DEFAULT now()`, `created_by`/`updated_by integer`. Component `id`,
+`component_uid uuid NOT NULL` (set by the app), `parent_id integer NOT NULL`
+(`ON DELETE CASCADE` to the direct parent), `order_index integer NOT NULL
+DEFAULT 0`.
+
+### content:migrate
+
+Runs in **one transaction** under `pg_advisory_xact_lock`, so concurrent runs
+wait and then find nothing to do; any failure rolls everything back.
+
+1. Creates schema `content` and the bookkeeping tables if missing:
+   `content._migrations` (name, checksum, applied_at) and
+   `content._content_types` (slug, kind, draft_and_publish, definition,
+   definition_hash). The leading `_` means no slug can collide with them, and
+   Prisma, which owns `public`, never sees them.
+2. Refuses to run if an applied migration file was edited (checksum), is
+   missing, or a pending one is older than an applied one.
+3. Applies pending migrations in order and records each one.
+4. Upserts `_content_types` from `snapshot.json` (only rows whose hash
+   changed) and deletes rows for removed content types.
+
+Migration files are trusted repository content built from validated
+definitions; every identifier is quoted, and no request input ever reaches
+DDL.

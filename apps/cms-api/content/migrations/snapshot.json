@@ -1,0 +1,188 @@
+{
+  "formatVersion": 1,
+  "contentTypes": {
+    "cv-page": {
+      "hash": "9dc4ebf0c483ab1b299adbf2ecf0c8adb0d9b6b20b81626326bb2bcadeadb2c5",
+      "definition": {
+        "slug": "cv-page",
+        "kind": "collection",
+        "draftAndPublish": true,
+        "fields": [
+          {
+            "name": "position",
+            "type": "string"
+          },
+          {
+            "name": "isMain",
+            "type": "boolean"
+          },
+          {
+            "name": "company",
+            "type": "string"
+          },
+          {
+            "name": "summary",
+            "type": "richtext"
+          },
+          {
+            "name": "skill",
+            "type": "component",
+            "repeatable": true,
+            "fields": [
+              {
+                "name": "level",
+                "type": "string"
+              },
+              {
+                "name": "skill",
+                "type": "string"
+              }
+            ]
+          },
+          {
+            "name": "experience",
+            "type": "component",
+            "repeatable": true,
+            "fields": [
+              {
+                "name": "company",
+                "type": "string"
+              },
+              {
+                "name": "location",
+                "type": "string"
+              },
+              {
+                "name": "role",
+                "type": "component",
+                "repeatable": true,
+                "fields": [
+                  {
+                    "name": "position",
+                    "type": "string"
+                  },
+                  {
+                    "name": "period",
+                    "type": "string"
+                  },
+                  {
+                    "name": "teamSize",
+                    "type": "integer"
+                  },
+                  {
+                    "name": "projects",
+                    "type": "string"
+                  },
+                  {
+                    "name": "techStack",
+                    "type": "json"
+                  },
+                  {
+                    "name": "responsibilities",
+                    "type": "richtext"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "project",
+            "type": "component",
+            "repeatable": true,
+            "fields": [
+              {
+                "name": "name",
+                "type": "string"
+              },
+              {
+                "name": "teamSize",
+                "type": "integer"
+              },
+              {
+                "name": "role",
+                "type": "string"
+              },
+              {
+                "name": "liveLink",
+                "type": "string"
+              },
+              {
+                "name": "repositoryLink",
+                "type": "string"
+              },
+              {
+                "name": "techStack",
+                "type": "json"
+              },
+              {
+                "name": "responsibilities",
+                "type": "richtext"
+              }
+            ]
+          },
+          {
+            "name": "education",
+            "type": "component",
+            "repeatable": true,
+            "fields": [
+              {
+                "name": "degree",
+                "type": "string"
+              },
+              {
+                "name": "institution",
+                "type": "string"
+              },
+              {
+                "name": "period",
+                "type": "string"
+              },
+              {
+                "name": "location",
+                "type": "string"
+              },
+              {
+                "name": "description",
+                "type": "richtext"
+              }
+            ]
+          },
+          {
+            "name": "language",
+            "type": "component",
+            "repeatable": true,
+            "fields": [
+              {
+                "name": "language",
+                "type": "string"
+              },
+              {
+                "name": "level",
+                "type": "string"
+              }
+            ]
+          },
+          {
+            "name": "reference",
+            "type": "component",
+            "repeatable": true,
+            "fields": [
+              {
+                "name": "name",
+                "type": "string"
+              },
+              {
+                "name": "phone",
+                "type": "string"
+              },
+              {
+                "name": "role",
+                "type": "string"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

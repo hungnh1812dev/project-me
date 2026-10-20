@@ -212,3 +212,47 @@ export const DEFINITION_RULES = {
   /** A component is nested deeper than MAX_COMPONENT_DEPTH. */
   COMPONENT_DEPTH_EXCEEDED: 'component.depth_exceeded',
 } as const;
+
+/**
+ * Postgres column type per scalar field type (T06). `string`, `text` and
+ * `richtext` differ only in validation and editor, so they share `text`.
+ * `media` holds a `file_library.id`; its FK is added once that table exists.
+ */
+export const COLUMN_TYPES: Readonly<
+  Record<(typeof SCALAR_FIELD_TYPES)[number], string>
+> = {
+  string: 'text',
+  text: 'text',
+  richtext: 'text',
+  integer: 'integer',
+  decimal: 'numeric',
+  boolean: 'boolean',
+  date: 'date',
+  datetime: 'timestamptz',
+  json: 'jsonb',
+  media: 'integer',
+};
+
+/**
+ * Engine bookkeeping tables. They live in the `content` schema with a
+ * leading underscore, which no slug can produce, so they never collide with
+ * generated tables, and Prisma (which owns `public`) never sees them.
+ */
+export const META_TABLES = {
+  migrations: '_migrations',
+  contentTypes: '_content_types',
+} as const;
+
+/** Key for `pg_advisory_xact_lock`: serialises concurrent `content:migrate` runs. */
+export const MIGRATION_LOCK_KEY = 7_163_201_906;
+
+export const MIGRATION_FILE_EXTENSION = '.sql';
+export const MIGRATION_SNAPSHOT_FILE = 'snapshot.json';
+export const SCHEMA_FILE_EXTENSION = '.json';
+/** `0001_<label>.sql`: zero-padded sequence keeps lexical order = apply order. */
+export const MIGRATION_SEQUENCE_DIGITS = 4;
+export const MIGRATION_LABEL_PATTERN = /^[a-z0-9_]+$/;
+export const DEFAULT_MIGRATION_LABEL = 'content';
+export const MIGRATION_FILE_PATTERN = /^(\d+)_([a-z0-9_]+)\.sql$/;
+export const SNAPSHOT_FORMAT_VERSION = 1;
+export const HASH_ALGORITHM = 'sha256';
