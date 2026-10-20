@@ -76,6 +76,37 @@ The readiness ping goes through the `DATABASE_HEALTH` token
 (`src/infrastructure/database/database-health.ts`), bound to
 `PrismaDatabaseHealth` (`SELECT 1` through `PrismaService`).
 
+### Rate limits (T10)
+
+Fixed windows, per resolved client IP and, for login, per email. Values live
+in `src/common/constants/limits.constants.ts` (`RATE_LIMIT_POLICIES`):
+
+| Policy              | Limit                                         |
+| ------------------- | --------------------------------------------- |
+| `LOGIN`             | 10 / 15 min per IP, then 5 / 15 min per email |
+| `REFRESH`           | 30 / min per IP                               |
+| `OTP_REQUEST`       | 5 / 15 min per IP (attached by T12)           |
+| `TWO_FACTOR_VERIFY` | 10 / 15 min per IP (attached by T13)          |
+
+- Apply with `@Throttle(RATE_LIMIT_POLICIES.X)` (`src/common/guards/throttle.guard.ts`),
+  placed last so it runs before the route's other guards. Over the limit:
+  `429 TOO_MANY_REQUESTS` in the unified error shape plus `Retry-After`
+  (seconds). The body is the same whichever rule fired.
+- Client IP: `ClientIpResolver` (`src/common/client-ip.resolver.ts`) is the
+  only source. It reads `CLIENT_IP_HEADER` when configured, otherwise
+  `req.ip`, which trusts exactly `TRUST_PROXY_HOPS` entries of
+  `X-Forwarded-For`; anything a client prepends is ignored (SPEC §12-8).
+- The email key is trimmed, lower-cased and hashed; the database is never
+  consulted, so known and unknown emails behave identically.
+- Trade-off: anyone who knows an email can spend its 5 attempts and block
+  that account's password login for up to 15 minutes per window. Accepted
+  for v1 (short window, IP limit still applies to the attacker); revisit with
+  per-IP+email keys or CAPTCHA if abused.
+- Store: **in memory** (`InMemoryRateLimitStore` behind `RATE_LIMIT_STORE`).
+  Correct for one API replica only; counters reset on restart. Before running
+  more than one replica, bind `RATE_LIMIT_STORE` to a Postgres or Redis
+  implementation. Expired counters are swept every 15 minutes.
+
 ## Core database (Prisma)
 
 Core tables (accounts, roles, permissions, tokens, media, audit, settings)

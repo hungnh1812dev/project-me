@@ -14,6 +14,7 @@ import {
 } from '@nestjs/common';
 import type { CookieOptions, Request, Response } from 'express';
 
+import { ClientIpResolver } from '../../common/client-ip.resolver';
 import { API_ROUTES } from '../../common/constants/api.constants';
 import {
   AUTH_ERROR_CODES,
@@ -23,6 +24,11 @@ import {
   REFRESH_TOKEN_TTL_MS,
   USER_AGENT_HEADER,
 } from '../../common/constants/auth.constants';
+import {
+  RATE_LIMIT_POLICIES,
+  UNKNOWN_CLIENT_IP,
+} from '../../common/constants/limits.constants';
+import { Throttle } from '../../common/guards/throttle.guard';
 import { AllowedOriginGuard } from './allowed-origin.guard';
 import {
   AuthService,
@@ -51,10 +57,6 @@ export interface TwoFactorRequiredResponse {
   methods: readonly string[];
 }
 
-function clientMeta(req: Request): ClientMeta {
-  return { userAgent: req.get(USER_AGENT_HEADER), ip: req.ip };
-}
-
 function refreshCookieOf(req: Request): string | undefined {
   const cookies = req.cookies as Record<string, unknown> | undefined;
   const value = cookies?.[REFRESH_COOKIE.NAME];
@@ -79,11 +81,15 @@ function clearRefreshCookie(res: Response): void {
  */
 @Controller(API_ROUTES.AUTH.ROOT)
 export class AuthController {
-  constructor(private readonly auth: AuthService) {}
+  constructor(
+    private readonly auth: AuthService,
+    private readonly clientIp: ClientIpResolver,
+  ) {}
 
   @Post(API_ROUTES.AUTH.LOGIN)
   @HttpCode(HttpStatus.OK)
   @Header(NO_STORE_HEADER.NAME, NO_STORE_HEADER.VALUE)
+  @Throttle(RATE_LIMIT_POLICIES.LOGIN)
   async login(
     @Body() body: unknown,
     @Req() req: Request,
@@ -97,7 +103,7 @@ export class AuthController {
       });
     }
 
-    const result = await this.auth.login(parsed.data, clientMeta(req));
+    const result = await this.auth.login(parsed.data, this.clientMeta(req));
     if (result.kind === 'two-factor') {
       return {
         requires2FA: true,
@@ -113,6 +119,7 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @Header(NO_STORE_HEADER.NAME, NO_STORE_HEADER.VALUE)
   @UseGuards(AllowedOriginGuard)
+  @Throttle(RATE_LIMIT_POLICIES.REFRESH)
   async refresh(
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
@@ -120,7 +127,7 @@ export class AuthController {
     const rawToken = refreshCookieOf(req);
     if (rawToken === undefined) throw invalidRefreshToken();
     try {
-      const tokens = await this.auth.refresh(rawToken, clientMeta(req));
+      const tokens = await this.auth.refresh(rawToken, this.clientMeta(req));
       setRefreshCookie(res, tokens.refreshToken);
       return { accessToken: tokens.accessToken };
     } catch (error) {
@@ -146,5 +153,13 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   me(@Req() req: AuthenticatedRequest): Promise<CurrentAccountProfile> {
     return this.auth.me(req.user.accountId);
+  }
+
+  private clientMeta(req: Request): ClientMeta {
+    const ip = this.clientIp.resolve(req);
+    return {
+      userAgent: req.get(USER_AGENT_HEADER),
+      ip: ip === UNKNOWN_CLIENT_IP ? undefined : ip,
+    };
   }
 }

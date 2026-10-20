@@ -5,6 +5,7 @@ import type { StartedPostgreSqlContainer } from '@testcontainers/postgresql';
 import { decode, sign } from 'jsonwebtoken';
 import request from 'supertest';
 
+import { Clock } from '../../src/common/clock';
 import {
   ACCESS_TOKEN_TTL_SECONDS,
   AUTH_ERROR_CODES,
@@ -12,6 +13,7 @@ import {
   REFRESH_TOKEN_TTL_SECONDS,
   TOKEN_TYPES,
 } from '../../src/common/constants/auth.constants';
+import { RATE_LIMIT_SWEEP_INTERVAL_MS } from '../../src/common/constants/limits.constants';
 import {
   openPrisma,
   type PrismaHandle,
@@ -108,6 +110,12 @@ describe('auth: login, JWT, refresh rotation, logout (Postgres 16 via Testcontai
         WEB_ORIGIN: TEST_WEB_ORIGIN,
       }),
     );
+    // This suite tests auth, not throttling (rate-limit.spec.ts): every
+    // rate-limit lookup lands in a fresh window.
+    let fakeNow = Date.now();
+    jest
+      .spyOn(app.get(Clock), 'now')
+      .mockImplementation(() => (fakeNow += RATE_LIMIT_SWEEP_INTERVAL_MS));
   });
 
   afterAll(async () => {
