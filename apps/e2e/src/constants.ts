@@ -41,3 +41,8 @@ export const MS_PER_SECOND = 1_000;
  * reused step) and reads two emails, so it needs more than the default 30 s.
  */
 export const TWO_FACTOR_TEST_TIMEOUT_MS = 180_000;
+
+/** Smoke stack database container, used to seed media rows (no real uploads there). */
+export const SMOKE_DB_CONTAINER = 'abyss-smoke-db-1';
+export const SMOKE_DB_USER = 'abyss';
+export const SMOKE_DB_NAME = 'abyss';

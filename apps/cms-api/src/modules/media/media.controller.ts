@@ -1,4 +1,5 @@
 import {
+  Body,
   Controller,
   Delete,
   Get,
@@ -6,6 +7,7 @@ import {
   HttpCode,
   HttpStatus,
   Param,
+  Patch,
   Post,
   Query,
   Req,
@@ -32,7 +34,9 @@ import {
   JwtAuthGuard,
 } from '../identity/jwt.strategy';
 import { clientMetaOf } from '../identity/auth.controller';
+import { updateMediaSchema } from './media.requests';
 import { MediaDeleteService } from './media-delete.service';
+import { MediaUpdateService } from './media-update.service';
 import { type MediaPage, MediaService, type MediaView } from './media.service';
 
 /**
@@ -46,6 +50,7 @@ export class MediaController {
   constructor(
     private readonly media: MediaService,
     private readonly mediaDelete: MediaDeleteService,
+    private readonly mediaUpdate: MediaUpdateService,
     private readonly clientIp: ClientIpResolver,
   ) {}
 
@@ -71,6 +76,25 @@ export class MediaController {
     return this.media.list(
       req.user.actor,
       parseRequest(pageQuerySchema, query),
+    );
+  }
+
+  /** Alt text only (strict body); 404 for an unknown, deleted or out-of-scope file. */
+  @Patch(API_ROUTES.MEDIA.BY_ID)
+  @Header(NO_STORE_HEADER.NAME, NO_STORE_HEADER.VALUE)
+  @RequirePermission({
+    action: PermissionAction.update,
+    subject: MEDIA_SUBJECT,
+  })
+  update(
+    @Req() req: AuthenticatedRequest,
+    @Param(ID_PARAM) id: string,
+    @Body() body: unknown,
+  ): Promise<MediaView> {
+    return this.mediaUpdate.update(
+      requireAccountActor(req.user.actor),
+      parseRequest(documentIdSchema, id),
+      parseRequest(updateMediaSchema, body),
     );
   }
 

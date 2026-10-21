@@ -18,6 +18,7 @@ export function AppShell() {
   const showAccounts = caller.ready && caller.can('accounts', 'read');
   const showRoles = caller.ready && caller.can('roles', 'read');
   const showTokens = caller.ready && caller.can('api_tokens', 'read');
+  const showMedia = caller.ready && caller.can('media', 'read');
 
   return (
     <div className="min-h-dvh">
@@ -29,7 +30,7 @@ export function AppShell() {
           >
             {COPY.app.name}
           </Link>
-          {showAccounts || showRoles || showTokens ? (
+          {showAccounts || showRoles || showTokens || showMedia ? (
             <nav
               aria-label={COPY.access.nav.label}
               className="order-last flex basis-full items-center gap-1 sm:order-none sm:min-w-0 sm:flex-1 sm:basis-auto"
@@ -52,6 +53,13 @@ export function AppShell() {
                 <Button asChild variant="ghost" size="sm">
                   <NavLink to={APP_ROUTES.API_TOKENS}>
                     {COPY.access.nav.apiTokens}
+                  </NavLink>
+                </Button>
+              ) : null}
+              {showMedia ? (
+                <Button asChild variant="ghost" size="sm">
+                  <NavLink to={APP_ROUTES.MEDIA}>
+                    {COPY.access.nav.media}
                   </NavLink>
                 </Button>
               ) : null}

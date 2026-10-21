@@ -12,6 +12,8 @@ import type { ReactNode } from 'react';
 
 import { COPY } from '../../config/copy.constants';
 import { FIELD_TYPE } from '../../config/content.constants';
+import { MediaField } from '../media/MediaField';
+import { mediaToApi, mediaToForm } from '../media/media-field-value';
 import {
   booleanToForm,
   datetimeToApi,
@@ -58,7 +60,7 @@ const longText: FieldAdapter = {
   ),
 };
 
-/** media (T29) arrives with its editor. */
+/** Types without an editor yet: shown read-only and never sent. */
 const notEditable: FieldAdapter = {
   editable: false,
   toForm: identity,
@@ -135,7 +137,12 @@ export const FIELD_REGISTRY: Readonly<Record<string, FieldAdapter>> = {
       <RichtextInput name={name} label={label} labels={copy.richtext} />
     ),
   },
-  [FIELD_TYPE.MEDIA]: notEditable,
+  [FIELD_TYPE.MEDIA]: {
+    editable: true,
+    toForm: mediaToForm,
+    toApi: mediaToApi,
+    render: ({ name, label }) => <MediaField name={name} label={label} />,
+  },
 };
 
 /** Adapter for a type; unknown types are read-only rather than guessed. */

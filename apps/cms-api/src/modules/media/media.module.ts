@@ -7,6 +7,8 @@ import { ContentEngineModule } from '../content-engine/content-engine.module';
 import { IdentityModule } from '../identity/identity.module';
 import { MediaController } from './media.controller';
 import { MediaDeleteService } from './media-delete.service';
+import { MediaRefsService } from './media-refs.service';
+import { MediaUpdateService } from './media-update.service';
 import { MediaPurgeJob } from './media-purge.job';
 import { MediaService } from './media.service';
 import { UploadPipeline } from './upload.pipeline';
@@ -21,7 +23,14 @@ import { UploadPipeline } from './upload.pipeline';
     MediaStorageModule,
   ],
   controllers: [MediaController],
-  providers: [MediaService, MediaDeleteService, MediaPurgeJob, UploadPipeline],
-  exports: [MediaService],
+  providers: [
+    MediaService,
+    MediaDeleteService,
+    MediaUpdateService,
+    MediaRefsService,
+    MediaPurgeJob,
+    UploadPipeline,
+  ],
+  exports: [MediaService, MediaRefsService],
 })
 export class MediaModule {}

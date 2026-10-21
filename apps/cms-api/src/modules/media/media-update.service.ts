@@ -1,0 +1,74 @@
+import {
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+
+import { PermissionAction } from '../../generated/prisma/client';
+import { PrismaService } from '../../infrastructure/database/prisma.service';
+import { MEDIA_SUBJECT } from '../access/access.constants';
+import { AccessPolicyService } from '../access/access-policy.service';
+import type { AccountActor } from '../access/rank-rules';
+import { ContentDbProvider } from '../content-engine/content-database';
+import {
+  DELETED_AT_COLUMN,
+  MEDIA_ERROR_CODES,
+  MEDIA_ERROR_MESSAGES,
+  MEDIA_TABLE,
+} from './media.constants';
+import type { UpdateMediaRequest } from './media.requests';
+import { type MediaView, mediaViewOfRecord } from './media.service';
+
+/**
+ * `PATCH /media/:id` (T29): edits the alt text. Not audited: SPEC §7 lists
+ * media delete only. The policy row filter for `update` decides reachability.
+ */
+@Injectable()
+export class MediaUpdateService {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly content: ContentDbProvider,
+    private readonly access: AccessPolicyService,
+  ) {}
+
+  async update(
+    actor: AccountActor,
+    documentId: string,
+    body: UpdateMediaRequest,
+  ): Promise<MediaView> {
+    const { evaluator } = await this.access.policy();
+    const filter = evaluator.rowFilter(
+      actor,
+      PermissionAction.update,
+      MEDIA_SUBJECT,
+    );
+    if (!filter.allowed) throw new ForbiddenException();
+    const reachable = await this.content.db
+      .selectFrom(MEDIA_TABLE)
+      .select('id')
+      .where('document_id', '=', documentId)
+      .where(DELETED_AT_COLUMN, 'is', null)
+      .$if(filter.where !== null, (qb) =>
+        qb.where(filter.where as NonNullable<typeof filter.where>),
+      )
+      .executeTakeFirst();
+    if (reachable === undefined) throw notFound();
+    const { count } = await this.prisma.fileLibrary.updateMany({
+      where: { documentId, deletedAt: null },
+      data: { alt: body.alt, updatedById: actor.accountId },
+    });
+    if (count === 0) throw notFound();
+    const row = await this.prisma.fileLibrary.findFirst({
+      where: { documentId, deletedAt: null },
+    });
+    if (row === null) throw notFound();
+    return mediaViewOfRecord(row);
+  }
+}
+
+function notFound(): NotFoundException {
+  return new NotFoundException({
+    errorCode: MEDIA_ERROR_CODES.NOT_FOUND,
+    message: MEDIA_ERROR_MESSAGES.NOT_FOUND,
+  });
+}

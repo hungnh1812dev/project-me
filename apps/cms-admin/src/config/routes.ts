@@ -16,6 +16,8 @@ export const APP_ROUTES = {
   ROLE_PERMISSIONS: '/roles/:roleId',
   /** API tokens list, create, edit, revoke (T19). */
   API_TOKENS: '/api-tokens',
+  /** Media library: upload, alt text, delete (T29). */
+  MEDIA: '/media',
   /** New document of a content type (T23); `:slug` = content type. */
   CONTENT_NEW: '/content/:slug/new',
   /** Edit one document's draft (T23). */

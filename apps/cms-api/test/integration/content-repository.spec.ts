@@ -172,7 +172,7 @@ describe('ContentRepository on cv-page (Postgres 16 via Testcontainers)', () => 
       const type = registry.resolve(SLUG);
       expect(type.tables).toHaveLength(CV_PAGE_TABLE_COUNT);
       expect(type.root.plan.name).toBe('cv_page');
-      expect(registry.slugs()).toEqual([SLUG]);
+      expect(registry.slugs()).toEqual([SLUG, 'profile']);
     });
 
     it('rejects an unknown slug with a typed error before any SQL', async () => {

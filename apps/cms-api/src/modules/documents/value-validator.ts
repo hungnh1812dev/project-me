@@ -5,10 +5,11 @@ import { joinFieldPath } from '../access/field-paths';
 import type { FieldSelection } from '../access/policy-evaluator';
 import type { ScalarFieldType } from '../content-engine/definition.schema';
 import type { TableNode } from '../content-engine/registry.service';
-import type {
-  ComponentInput,
-  FieldValues,
-  TreeInput,
+import {
+  type ComponentInput,
+  type FieldValues,
+  isUuid,
+  type TreeInput,
 } from '../content-engine/tree-input';
 import { coerceFilterValue } from './document-filter';
 import {
@@ -43,11 +44,8 @@ function coerceValue(type: ScalarFieldType, value: unknown): unknown {
         ? value
         : undefined;
     case 'media':
-      return Number.isInteger(value) &&
-        (value as number) > 0 &&
-        (value as number) <= INT4_MAX
-        ? value
-        : undefined;
+      // The file's public `document_id`; the internal id never crosses the API.
+      return isUuid(value) ? value.toLowerCase() : undefined;
     case 'decimal':
       if (typeof value === 'number') {
         return Number.isFinite(value) ? value : undefined;

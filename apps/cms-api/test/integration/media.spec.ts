@@ -201,6 +201,7 @@ describe('media upload and list (T27; Postgres 16 via Testcontainers)', () => {
         'id',
         'isReviewerPreset',
         'mimeType',
+        'provider',
         'size',
         'thumbnailUrl',
         'url',

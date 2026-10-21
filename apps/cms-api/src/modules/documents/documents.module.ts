@@ -5,6 +5,7 @@ import { DatabaseModule } from '../../infrastructure/database/database.module';
 import { AccessModule } from '../access/access.module';
 import { ContentEngineModule } from '../content-engine/content-engine.module';
 import { IdentityModule } from '../identity/identity.module';
+import { MediaModule } from '../media/media.module';
 import { DocumentAuthGuard } from './document-auth.guard';
 import { DocumentsCommandService } from './documents.command.service';
 import { DocumentsController } from './documents.controller';
@@ -20,6 +21,7 @@ import { PublishService } from './publish.service';
     ContentEngineModule,
     DatabaseModule,
     IdentityModule,
+    MediaModule,
   ],
   controllers: [DocumentsController],
   providers: [

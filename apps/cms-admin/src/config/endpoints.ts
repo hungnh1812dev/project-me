@@ -52,6 +52,11 @@ export const API_ENDPOINTS = {
     LIST: '/content-types',
     ONE: (slug: string) => `/content-types/${encodeURIComponent(slug)}`,
   },
+  /** T27-T29 media library. `id` = the file's uuid. */
+  MEDIA: {
+    LIST: '/media',
+    ONE: (id: string) => `/media/${encodeURIComponent(id)}`,
+  },
   /** T20/T21 documents. `slug` = content type, `id` = document id. */
   DOCUMENTS: {
     BY_SLUG: (slug: string) => `/documents/${encodeURIComponent(slug)}`,

@@ -15,6 +15,7 @@ import {
   RecordSerializer,
   type SerializedRecord,
 } from '../access/record.serializer';
+import { MediaRefsService } from '../media/media-refs.service';
 import { ContentDbProvider } from '../content-engine/content-database';
 import { ContentRegistryProvider } from '../content-engine/content-engine.module';
 import { CONTENT_DB_SCHEMA } from '../content-engine/content-engine.constants';
@@ -64,6 +65,7 @@ export class DocumentsQueryService {
     private readonly access: AccessPolicyService,
     private readonly registry: ContentRegistryProvider,
     private readonly content: ContentDbProvider,
+    private readonly media: MediaRefsService,
   ) {}
 
   async list(
@@ -125,8 +127,10 @@ export class DocumentsQueryService {
     const documents = rows.map((row) =>
       toDocument(projected, row, trees.get(row.id as number) ?? {}),
     );
+    const data = new RecordSerializer(type).serializeMany(documents, access);
+    await this.media.embed(type.root, data);
     return {
-      data: new RecordSerializer(type).serializeMany(documents, access),
+      data,
       meta: {
         page: query.page,
         pageSize: query.pageSize,
@@ -169,7 +173,9 @@ export class DocumentsQueryService {
       row,
       trees.get(row.id as number) ?? {},
     );
-    return new RecordSerializer(type).serialize(document, access);
+    const record = new RecordSerializer(type).serialize(document, access);
+    await this.media.embed(type.root, [record]);
+    return record;
   }
 
   private async scope(

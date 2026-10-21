@@ -119,6 +119,15 @@ All bind to the surrounding `FormProvider` like `TextInput`.
   h1-h6, ul, ol, li, a with http/https/mailto/tel). Add a tag to the server
   allowlist before adding an extension. The server sanitizes again on write.
 
+### MediaInput
+
+Presentational field for one library file (cms-admin binds it to the form in `MediaField`).
+`value` is a `MediaInputFile | null` (preview, name, size, optional `mimeType` (absent on files embedded in documents), optional `provider`
+badge, date). Callbacks: `onOpenLibrary` (choose or replace), `onChange(file)`
+(a file picked from disk; the parent uploads it), `onRemove` (detach from the
+field), `onDelete` (delete from the library). A button shows only when its
+callback is given. All copy comes through the `labels` prop.
+
 ### Dialog
 
 shadcn `Dialog` (Radix): focus trap, inert page behind, Esc closes, focus

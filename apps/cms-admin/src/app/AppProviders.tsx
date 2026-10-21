@@ -4,6 +4,7 @@ import { Provider } from 'react-redux';
 
 import { AccessApiProvider } from '../features/access/access-api-context';
 import { ContentApiProvider } from '../features/content/content-api-context';
+import { MediaApiProvider } from '../features/media/media-api-context';
 import { PasswordApiProvider } from '../features/auth/password-api-context';
 import { SessionProvider } from '../features/auth/session-context';
 import { SecurityApiProvider } from '../features/security/security-api-context';
@@ -21,6 +22,7 @@ export function AppProviders({
     | 'securityApi'
     | 'accessApi'
     | 'contentApi'
+    | 'mediaApi'
     | 'queryClient'
   >;
   children: ReactNode;
@@ -33,7 +35,9 @@ export function AppProviders({
             <SecurityApiProvider api={services.securityApi}>
               <AccessApiProvider api={services.accessApi}>
                 <ContentApiProvider api={services.contentApi}>
-                  {children}
+                  <MediaApiProvider api={services.mediaApi}>
+                    {children}
+                  </MediaApiProvider>
                 </ContentApiProvider>
               </AccessApiProvider>
             </SecurityApiProvider>

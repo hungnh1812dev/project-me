@@ -58,6 +58,7 @@ describe('queryColumnOf', () => {
   });
 
   it.each([
+    'avatar',
     'meta',
     'reference',
     'reference.name',

@@ -183,6 +183,24 @@
           }
         ]
       }
+    },
+    "profile": {
+      "hash": "f7fc95c35a52a671afb52fbc47854367d1e52844c370b53b8420c56405fcab0b",
+      "definition": {
+        "slug": "profile",
+        "kind": "collection",
+        "draftAndPublish": true,
+        "fields": [
+          {
+            "name": "name",
+            "type": "string"
+          },
+          {
+            "name": "photo",
+            "type": "media"
+          }
+        ]
+      }
     }
   }
 }

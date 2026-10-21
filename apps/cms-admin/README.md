@@ -94,8 +94,15 @@ So far: sign-in (T11) and, behind it, a status page that calls
   depth limit; each item keeps its `componentUid` in form state
   (`ITEM_UID_KEY`). Masked fields (`_maskedFields`) show "Protected (***)",
   read-only, and are never sent. Richtext uses the Tiptap `RichtextInput` (sent as HTML,
-  blank = null). Media (T29) shows its stored value read-only and is never
-  sent until its editor exists.
+  blank = null). Media fields (T29, `features/media/MediaField.tsx`) hold the embedded file
+  the API returns and send only its uuid (null detaches); the field offers
+  the library picker (`MediaPickerDialog`, needs `media:read`) and upload
+  (needs `media:create`).
+  Media library (T29): `/media` (`features/media/`) lists files with upload,
+  alt text edit (PATCH, blank clears) and delete behind a confirm; a file
+  still attached to a document keeps the dialog open with the `MEDIA_IN_USE`
+  reason. Shown in the nav for roles with `media:read`; buttons follow the
+  `media` create/update/delete permissions.
   Create sends every filled field; save on an existing draft sends only the
   top-level fields and component lists that changed, plus `version`
   (`document-form.ts`). A 409 opens the conflict merge modal (T25, below);

@@ -55,13 +55,14 @@ describe('write value rules (T21)', () => {
           born: '2000-02-29',
           seenAt: '2026-03-01T10:00:00+02:00',
           meta: { any: ['json'] },
-          avatar: 5,
+          avatar: '0190A000-0000-7000-8000-000000000001',
         },
       },
       'update',
     );
     expect(out.values?.seenAt).toBe('2026-03-01T08:00:00.000Z');
     expect(out.values?.meta).toEqual({ any: ['json'] });
+    expect(out.values?.avatar).toBe('0190a000-0000-7000-8000-000000000001');
   });
 
   it.each([
@@ -74,6 +75,8 @@ describe('write value rules (T21)', () => {
     ['born', '2026-02-30'],
     ['seenAt', 'yesterday'],
     ['avatar', 0],
+    ['avatar', 5],
+    ['avatar', 'not-a-uuid'],
   ])('rejects %s = %p with 400 DOCUMENT_INVALID', (field, value) => {
     expect(() => run({ values: { [field]: value } }, 'update')).toThrow(
       BadRequestException,

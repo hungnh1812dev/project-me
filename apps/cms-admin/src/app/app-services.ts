@@ -11,6 +11,7 @@ import { createPasswordApi } from '../features/auth/password.api';
 import { createSession } from '../features/auth/session';
 import { createAccessApi } from '../features/access/access.api';
 import { createContentApi } from '../features/content/content.api';
+import { createMediaApi } from '../features/media/media.api';
 import { createSecurityApi } from '../features/security/security.api';
 import { installAuthInterceptor } from '../lib/auth-interceptor';
 import { browserCrossTabOptions } from '../lib/cross-tab-refresh';
@@ -37,6 +38,7 @@ export function createAppServices(
   const securityApi = createSecurityApi(client);
   const accessApi = createAccessApi(client);
   const contentApi = createContentApi(client);
+  const mediaApi = createMediaApi(client);
   return {
     store,
     session,
@@ -44,6 +46,7 @@ export function createAppServices(
     securityApi,
     accessApi,
     contentApi,
+    mediaApi,
     queryClient,
     removeInterceptor,
   };

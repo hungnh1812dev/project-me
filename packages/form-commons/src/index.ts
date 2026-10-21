@@ -72,3 +72,10 @@ export {
   type DiffViewerBlockProps,
   type DiffViewerOption,
 } from './components/forms/DiffViewerBlock';
+export {
+  MediaInput,
+  formatFileSize,
+  type MediaInputFile,
+  type MediaInputLabels,
+  type MediaInputProps,
+} from './components/forms/MediaInput';

@@ -19,6 +19,7 @@ import {
   type SerializedRecord,
 } from '../access/record.serializer';
 import { WriteAllowlist } from '../access/write-allowlist';
+import { MediaRefsService } from '../media/media-refs.service';
 import { ContentDbProvider } from '../content-engine/content-database';
 import { ContentRegistryProvider } from '../content-engine/content-engine.module';
 import { CONTENT_DB_SCHEMA } from '../content-engine/content-engine.constants';
@@ -68,7 +69,10 @@ type Predicate = Expression<SqlBool>;
 /** A write the actor has been checked for, ready for the transaction. */
 interface PreparedWrite {
   type: RegisteredContentType;
+  /** As sent: media values are file uuids (used for the 409 overlay). */
   tree: TreeInput;
+  /** Media values mapped to the stored file ids: what the repository writes. */
+  stored: TreeInput;
 }
 
 /**
@@ -90,6 +94,7 @@ export class DocumentsCommandService {
     private readonly access: AccessPolicyService,
     private readonly registry: ContentRegistryProvider,
     private readonly content: ContentDbProvider,
+    private readonly media: MediaRefsService,
   ) {}
 
   async create(
@@ -104,7 +109,7 @@ export class DocumentsCommandService {
     if (!evaluator.can(actor, PermissionAction.create, slug)) {
       throw new ForbiddenException();
     }
-    const { type, tree } = await this.prepare(
+    const { type, stored } = await this.prepare(
       actor,
       slug,
       body,
@@ -119,7 +124,7 @@ export class DocumentsCommandService {
     const id = await this.content.db.transaction().execute((trx) =>
       this.mapTreeErrors(() =>
         repository.insertTree(trx, slug, {
-          ...tree,
+          ...stored,
           documentId,
           publishedAt: type.definition.draftAndPublish ? null : new Date(),
           createdBy: actor.accountId,
@@ -142,7 +147,7 @@ export class DocumentsCommandService {
     const { evaluator } = await this.access.policy();
     const rowFilter = evaluator.rowFilter(actor, PermissionAction.update, slug);
     if (!rowFilter.allowed) throw new ForbiddenException();
-    const { type, tree } = await this.prepare(
+    const { type, tree, stored } = await this.prepare(
       actor,
       slug,
       body,
@@ -196,7 +201,7 @@ export class DocumentsCommandService {
         if (updated !== undefined) {
           await this.mapTreeErrors(() =>
             repository.replaceTree(trx, slug, ref, {
-              ...tree,
+              ...stored,
               updatedBy: actor.accountId,
             }),
           );
@@ -256,7 +261,7 @@ export class DocumentsCommandService {
     );
 
     if (outcome.kind === 'conflict') {
-      throw this.conflict(type, access, outcome, tree);
+      throw await this.conflict(type, access, outcome, tree);
     }
     return this.writeResult(
       actor,
@@ -300,7 +305,9 @@ export class DocumentsCommandService {
         )
       : undefined;
     if (document === undefined) return { documentId, version };
-    return new RecordSerializer(type).serialize(document, access);
+    const record = new RecordSerializer(type).serialize(document, access);
+    await this.media.embed(type.root, [record]);
+    return record;
   }
 
   /** Body -> the tree the repository may write; all 400s happen here. */
@@ -324,15 +331,19 @@ export class DocumentsCommandService {
       mode,
       writable: fields.writable,
     });
-    return { type, tree };
+    return {
+      type,
+      tree,
+      stored: await this.media.toStored(actor, type.root, tree),
+    };
   }
 
-  private conflict(
+  private async conflict(
     type: RegisteredContentType,
     access: ReturnType<typeof recordReadAccess>,
     outcome: { document: ContentDocument | null; current: number },
     tree: TreeInput,
-  ): ConflictException {
+  ): Promise<ConflictException> {
     const details: VersionConflictDetails = {
       currentVersion: outcome.current,
       server: null,
@@ -346,6 +357,7 @@ export class DocumentsCommandService {
         overlaySubmitted(outcome.document, tree),
         access,
       );
+      await this.media.embed(type.root, [details.server, details.submitted]);
       details.diff = diffRecords(details.server, details.submitted);
     }
     return new ConflictException({

@@ -105,7 +105,7 @@ const same = (a: unknown, b: unknown) =>
  * The request body for a form. A new document sends every filled field.
  * An update sends only the top-level fields (and component lists) that
  * differ from `initial`, so fields the role cannot change are never
- * resent. Masked paths and editors not built yet (richtext, media) are
+ * resent. Masked paths and editors not built yet are
  * never sent.
  */
 export function toDocumentTree(

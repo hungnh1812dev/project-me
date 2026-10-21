@@ -42,7 +42,8 @@ function invalid(message: string): BadRequestException {
 
 /**
  * The column of a root system field or top-level scalar field. Components,
- * nested paths and `json` fields (no equality or order) are not queryable.
+ * nested paths, `json` fields (no equality or order) and `media` fields (the
+ * stored internal id is private) are not queryable.
  * Call after `QueryGuard.assert`, which already checked the path exists and
  * is readable.
  * @throws BadRequestException when the path cannot be filtered or sorted.
@@ -60,8 +61,12 @@ export function queryColumnOf(
   }
   const column = type.root.columnsByField.get(path);
   const fieldType = column?.field.type;
+  // A media column holds the internal file id, which never crosses the API:
+  // filtering or sorting on it would leak it (T29).
   const kind =
-    fieldType === undefined || fieldType === COMPONENT_FIELD_TYPE
+    fieldType === undefined ||
+    fieldType === COMPONENT_FIELD_TYPE ||
+    fieldType === 'media'
       ? undefined
       : conditionKindOf(fieldType);
   if (column === undefined || kind === undefined) {

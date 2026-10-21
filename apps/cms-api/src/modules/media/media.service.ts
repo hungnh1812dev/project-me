@@ -29,6 +29,7 @@ export interface MediaView {
   readonly alt: string | null;
   readonly url: string;
   readonly thumbnailUrl: string | null;
+  readonly provider: string;
   readonly isReviewerPreset: boolean;
   readonly createdAt: string;
 }
@@ -48,6 +49,7 @@ interface MediaRow {
   alt: string | null;
   url: string;
   thumbnail_url: string | null;
+  provider: string;
   is_reviewer_preset: boolean;
   created_at: Date;
 }
@@ -62,6 +64,7 @@ const MEDIA_COLUMNS = [
   'alt',
   'url',
   'thumbnail_url',
+  'provider',
   'is_reviewer_preset',
   'created_at',
 ] as const;
@@ -77,8 +80,40 @@ function viewOf(row: MediaRow): MediaView {
     alt: row.alt,
     url: row.url,
     thumbnailUrl: row.thumbnail_url,
+    provider: row.provider,
     isReviewerPreset: row.is_reviewer_preset,
     createdAt: row.created_at.toISOString(),
+  };
+}
+
+/** The API view of a Prisma `file_library` row. */
+export function mediaViewOfRecord(row: {
+  documentId: string;
+  fileName: string;
+  mimeType: string;
+  size: number;
+  width: number | null;
+  height: number | null;
+  alt: string | null;
+  url: string;
+  thumbnailUrl: string | null;
+  provider: string;
+  isReviewerPreset: boolean;
+  createdAt: Date;
+}): MediaView {
+  return {
+    id: row.documentId,
+    fileName: row.fileName,
+    mimeType: row.mimeType,
+    size: row.size,
+    width: row.width,
+    height: row.height,
+    alt: row.alt,
+    url: row.url,
+    thumbnailUrl: row.thumbnailUrl,
+    provider: row.provider,
+    isReviewerPreset: row.isReviewerPreset,
+    createdAt: row.createdAt.toISOString(),
   };
 }
 
@@ -129,19 +164,7 @@ export class MediaService {
             updatedById: actor.accountId,
           },
         });
-        return {
-          id: row.documentId,
-          fileName: row.fileName,
-          mimeType: row.mimeType,
-          size: row.size,
-          width: row.width,
-          height: row.height,
-          alt: row.alt,
-          url: row.url,
-          thumbnailUrl: row.thumbnailUrl,
-          isReviewerPreset: row.isReviewerPreset,
-          createdAt: row.createdAt.toISOString(),
-        };
+        return mediaViewOfRecord(row);
       } catch (error) {
         await this.storage.delete(key, prepared.kind).catch(() => {
           this.logger.error(`Could not remove orphaned media object ${key}`);
