@@ -1,0 +1,400 @@
+import { randomUUID } from 'node:crypto';
+
+import {
+  BadRequestException,
+  ConflictException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import { type Expression, type Kysely, sql, type SqlBool } from 'kysely';
+
+import { PermissionAction } from '../../generated/prisma/client';
+import { AccessPolicyService } from '../access/access-policy.service';
+import type { ActorContext } from '../access/actor-context';
+import { projectTable, selectedColumns } from '../access/field-projection';
+import { recordReadAccess } from '../access/record-read-access';
+import {
+  RecordSerializer,
+  type SerializedRecord,
+} from '../access/record.serializer';
+import { WriteAllowlist } from '../access/write-allowlist';
+import { ContentDbProvider } from '../content-engine/content-database';
+import { ContentRegistryProvider } from '../content-engine/content-engine.module';
+import { CONTENT_DB_SCHEMA } from '../content-engine/content-engine.constants';
+import {
+  ContentRepository,
+  type ContentDocument,
+  toDocument,
+} from '../content-engine/content.repository';
+import type { RegisteredContentType } from '../content-engine/registry.service';
+import {
+  assertTreeInput,
+  ContentTreeError,
+  type TreeInput,
+} from '../content-engine/tree-input';
+import {
+  type ContentDatabase,
+  loadComponentTrees,
+} from '../content-engine/tree-loader';
+import { diffRecords, type DiffEntry, overlaySubmitted } from './diff';
+import {
+  DOCUMENT_ERROR_CODES,
+  DOCUMENT_ERROR_MESSAGES,
+} from './documents.constants';
+import { validateTreeValues, type WriteMode } from './value-validator';
+
+/** Body of `409 DOCUMENT_VERSION_CONFLICT` (SPEC §9), under `details`. */
+export interface VersionConflictDetails {
+  currentVersion: number;
+  /** The stored document as the actor may read it; null when the actor may not read this row. */
+  server: SerializedRecord | null;
+  /** The submitted changes applied on the stored document, serialized the same way. */
+  submitted: SerializedRecord | null;
+  diff: DiffEntry[];
+}
+
+/** What a successful write returns when the actor may not read the row it wrote. */
+export interface WrittenRef {
+  documentId: string;
+  version: number;
+}
+
+export type WriteResult = SerializedRecord | WrittenRef;
+
+type Db = Kysely<ContentDatabase>;
+type Predicate = Expression<SqlBool>;
+
+/** A write the actor has been checked for, ready for the transaction. */
+interface PreparedWrite {
+  type: RegisteredContentType;
+  tree: TreeInput;
+}
+
+/**
+ * SPEC §9 document writes (T21): create a draft, update with optimistic
+ * concurrency. Order of every write:
+ * 1. permission (guard) and the row-level `update` conditions (403/404);
+ * 2. body -> `WriteAllowlist` (D4) -> `assertTreeInput` -> value rules
+ *    (type, required, richtext sanitize) -> 400s, before any SQL;
+ * 3. one transaction: `UPDATE ... SET version = version + 1 WHERE version = $v`
+ *    (this takes the row lock), then `replaceTree`. No row updated = 409 or 404;
+ * 4. every body returned goes through `RecordSerializer` with the actor's
+ *    read access (D3), including the 409.
+ * Types without draft and publish store one live row (`published_at` set at
+ * create); the others store the draft row (`published_at` null).
+ */
+@Injectable()
+export class DocumentsCommandService {
+  constructor(
+    private readonly access: AccessPolicyService,
+    private readonly registry: ContentRegistryProvider,
+    private readonly content: ContentDbProvider,
+  ) {}
+
+  async create(
+    actor: ActorContext,
+    slug: string,
+    body: unknown,
+  ): Promise<WriteResult> {
+    if (actor.kind === 'anonymous' || actor.kind === 'reviewer') {
+      throw new ForbiddenException();
+    }
+    const { evaluator } = await this.access.policy();
+    if (!evaluator.can(actor, PermissionAction.create, slug)) {
+      throw new ForbiddenException();
+    }
+    const { type, tree } = await this.prepare(
+      actor,
+      slug,
+      body,
+      PermissionAction.create,
+      'create',
+    );
+    const readable = evaluator.fieldsFor(actor, slug).readable;
+    const access = recordReadAccess(actor, readable);
+    const repository = new ContentRepository(await this.registry.registry());
+
+    const documentId = randomUUID();
+    const id = await this.content.db.transaction().execute((trx) =>
+      this.mapTreeErrors(() =>
+        repository.insertTree(trx, slug, {
+          ...tree,
+          documentId,
+          publishedAt: type.definition.draftAndPublish ? null : new Date(),
+          createdBy: actor.accountId,
+        }),
+      ),
+    );
+    return this.writeResult(actor, slug, type, access, id, documentId, 1);
+  }
+
+  async update(
+    actor: ActorContext,
+    slug: string,
+    documentId: string,
+    version: number,
+    body: unknown,
+  ): Promise<WriteResult> {
+    if (actor.kind === 'anonymous' || actor.kind === 'reviewer') {
+      throw new ForbiddenException();
+    }
+    const { evaluator } = await this.access.policy();
+    const rowFilter = evaluator.rowFilter(actor, PermissionAction.update, slug);
+    if (!rowFilter.allowed) throw new ForbiddenException();
+    const { type, tree } = await this.prepare(
+      actor,
+      slug,
+      body,
+      PermissionAction.update,
+      'update',
+    );
+    const readFilter = evaluator.rowFilter(actor, PermissionAction.read, slug);
+    const access = recordReadAccess(
+      actor,
+      evaluator.fieldsFor(actor, slug).readable,
+    );
+
+    const target = (extra: Predicate | null): Predicate[] => [
+      sql<SqlBool>`${sql.ref('document_id')} = ${documentId}`,
+      sql<SqlBool>`${sql.ref('published_at')} ${
+        type.definition.draftAndPublish ? sql`is null` : sql`is not null`
+      }`,
+      ...(rowFilter.where === null ? [] : [rowFilter.where]),
+      ...(extra === null ? [] : [extra]),
+    ];
+    const repository = new ContentRepository(await this.registry.registry());
+    const table = type.root.plan.name;
+    const ref = {
+      documentId,
+      status: type.definition.draftAndPublish ? 'draft' : 'published',
+    } as const;
+
+    const outcome = await this.content.db.transaction().execute(
+      async (
+        trx,
+      ): Promise<
+        | { kind: 'updated'; id: number }
+        | {
+            kind: 'conflict';
+            document: ContentDocument | null;
+            current: number;
+          }
+      > => {
+        let update = trx
+          .withSchema(CONTENT_DB_SCHEMA)
+          .updateTable(table)
+          .set({
+            version: sql<number>`${sql.ref('version')} + 1`,
+          });
+        for (const predicate of target(
+          sql<SqlBool>`${sql.ref('version')} = ${version}`,
+        )) {
+          update = update.where(predicate);
+        }
+        const updated = await update.returning('id').executeTakeFirst();
+        if (updated !== undefined) {
+          await this.mapTreeErrors(() =>
+            repository.replaceTree(trx, slug, ref, {
+              ...tree,
+              updatedBy: actor.accountId,
+            }),
+          );
+          // The new content may take the row out of the actor's update
+          // conditions: refuse (rolls back) rather than let them move rows
+          // out of their own scope.
+          if (rowFilter.where !== null) {
+            const stillInScope = await trx
+              .withSchema(CONTENT_DB_SCHEMA)
+              .selectFrom(table)
+              .select('id')
+              .where(sql<SqlBool>`${sql.ref('id')} = ${updated.id}`)
+              .where(rowFilter.where)
+              .executeTakeFirst();
+            if (stillInScope === undefined) throw new ForbiddenException();
+          }
+          return { kind: 'updated', id: updated.id as number };
+        }
+
+        let currentQuery = trx
+          .withSchema(CONTENT_DB_SCHEMA)
+          .selectFrom(table)
+          .select('version');
+        for (const predicate of target(null)) {
+          currentQuery = currentQuery.where(predicate);
+        }
+        const current = await currentQuery.executeTakeFirst();
+        if (current === undefined) throw notFound();
+
+        const readable =
+          readFilter.allowed &&
+          (type.definition.draftAndPublish
+            ? evaluator.canReadDrafts(actor, slug)
+            : true);
+        const document = readable
+          ? await this.loadOne(
+              trx,
+              type,
+              access,
+              sql<SqlBool>`${sql.ref('document_id')} = ${documentId}`,
+              [
+                ...(type.definition.draftAndPublish
+                  ? [sql<SqlBool>`${sql.ref('published_at')} is null`]
+                  : [sql<SqlBool>`${sql.ref('published_at')} is not null`]),
+                ...(readFilter.allowed && readFilter.where !== null
+                  ? [readFilter.where]
+                  : []),
+              ],
+            )
+          : null;
+        return {
+          kind: 'conflict',
+          document: document ?? null,
+          current: current.version as number,
+        };
+      },
+    );
+
+    if (outcome.kind === 'conflict') {
+      throw this.conflict(type, access, outcome, tree);
+    }
+    return this.writeResult(
+      actor,
+      slug,
+      type,
+      access,
+      outcome.id,
+      documentId,
+      version + 1,
+    );
+  }
+
+  /**
+   * The body of a successful write: the record, serialized, only when the
+   * actor may read this very row (read permission, read row conditions and,
+   * for a draft, `canReadDrafts`: the same gate as the 409 body). Else just
+   * the ids, so a write is never a way to read what a read would refuse.
+   */
+  private async writeResult(
+    actor: ActorContext,
+    slug: string,
+    type: RegisteredContentType,
+    access: ReturnType<typeof recordReadAccess>,
+    id: number,
+    documentId: string,
+    version: number,
+  ): Promise<WriteResult> {
+    const { evaluator } = await this.access.policy();
+    const readFilter = evaluator.rowFilter(actor, PermissionAction.read, slug);
+    const mayRead =
+      readFilter.allowed &&
+      (!type.definition.draftAndPublish ||
+        evaluator.canReadDrafts(actor, slug));
+    const document = mayRead
+      ? await this.loadOne(
+          this.content.db,
+          type,
+          access,
+          sql<SqlBool>`${sql.ref('id')} = ${id}`,
+          readFilter.where === null ? [] : [readFilter.where],
+        )
+      : undefined;
+    if (document === undefined) return { documentId, version };
+    return new RecordSerializer(type).serialize(document, access);
+  }
+
+  /** Body -> the tree the repository may write; all 400s happen here. */
+  private async prepare(
+    actor: ActorContext,
+    slug: string,
+    body: unknown,
+    action: typeof PermissionAction.create | typeof PermissionAction.update,
+    mode: WriteMode,
+  ): Promise<PreparedWrite> {
+    const { catalog, evaluator } = await this.access.policy();
+    if (!catalog.isContentType(slug)) throw new NotFoundException();
+    const type = (await this.registry.registry()).resolve(slug);
+    const fields = evaluator.fieldsFor(actor, slug, action);
+    const allowed = new WriteAllowlist(type).apply(body, fields);
+    await this.mapTreeErrors(() => {
+      assertTreeInput(type.root, allowed);
+      return Promise.resolve();
+    });
+    const tree = validateTreeValues(type.root, allowed, {
+      mode,
+      writable: fields.writable,
+    });
+    return { type, tree };
+  }
+
+  private conflict(
+    type: RegisteredContentType,
+    access: ReturnType<typeof recordReadAccess>,
+    outcome: { document: ContentDocument | null; current: number },
+    tree: TreeInput,
+  ): ConflictException {
+    const details: VersionConflictDetails = {
+      currentVersion: outcome.current,
+      server: null,
+      submitted: null,
+      diff: [],
+    };
+    if (outcome.document !== null) {
+      const serializer = new RecordSerializer(type);
+      details.server = serializer.serialize(outcome.document, access);
+      details.submitted = serializer.serialize(
+        overlaySubmitted(outcome.document, tree),
+        access,
+      );
+      details.diff = diffRecords(details.server, details.submitted);
+    }
+    return new ConflictException({
+      errorCode: DOCUMENT_ERROR_CODES.VERSION_CONFLICT,
+      message: DOCUMENT_ERROR_MESSAGES.VERSION_CONFLICT,
+      details,
+    });
+  }
+
+  /** One root row with its tree, selecting only the columns the access may read. */
+  private async loadOne(
+    db: Db,
+    type: RegisteredContentType,
+    access: ReturnType<typeof recordReadAccess>,
+    where: Predicate,
+    more: readonly Predicate[] = [],
+  ): Promise<ContentDocument | undefined> {
+    const projected = projectTable(type.root, access.fields);
+    let query = db
+      .withSchema(CONTENT_DB_SCHEMA)
+      .selectFrom(type.root.plan.name)
+      .select(selectedColumns(projected, access))
+      .where(where);
+    for (const predicate of more) query = query.where(predicate);
+    const row = await query.limit(1).executeTakeFirst();
+    if (row === undefined) return undefined;
+    const trees = await loadComponentTrees(db, projected, [row.id as number]);
+    return toDocument(projected, row, trees.get(row.id as number) ?? {});
+  }
+
+  /** A tree rejected while writing (unknown uid, ...) is the client's fault: 400. */
+  private async mapTreeErrors<T>(run: () => Promise<T>): Promise<T> {
+    try {
+      return await run();
+    } catch (error) {
+      if (error instanceof ContentTreeError) {
+        throw new BadRequestException({
+          errorCode: error.code,
+          message: error.message,
+        });
+      }
+      throw error;
+    }
+  }
+}
+
+function notFound(): NotFoundException {
+  return new NotFoundException({
+    errorCode: DOCUMENT_ERROR_CODES.NOT_FOUND,
+    message: DOCUMENT_ERROR_MESSAGES.NOT_FOUND,
+  });
+}

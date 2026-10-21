@@ -184,6 +184,17 @@ describe('validatePermissionSet', () => {
     ).toContainEqual({ code, path });
   });
 
+  it('rejects conditions on create rows (T21)', () => {
+    expect(
+      issuesOf([{ subject: 'article', action: 'create', conditions: own }]),
+    ).toEqual([
+      expect.objectContaining({
+        code: ACCESS_ERROR_CODES.PERMISSION_INVALID_CONDITION,
+        path: [0, 'conditions'],
+      }),
+    ]);
+  });
+
   it('conditions may only use fields the set makes readable', () => {
     const conditions = { all: [{ field: 'priority', op: 'eq', value: 1 }] };
     expect(

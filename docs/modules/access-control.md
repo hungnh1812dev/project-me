@@ -257,6 +257,16 @@ Anonymous reads are throttled per IP (`RATE_LIMIT_POLICIES.DOCUMENT_READ_ANONYMO
 120/min, key source `ANONYMOUS_IP`, which skips every non-anonymous actor).
 Endpoint rules: `apps/cms-api/README.md` "Documents, read".
 
+**Document writes (T21).** `DocumentsCommandService`: `fieldsFor(actor, slug,
+'create' | 'update').writable` feeds `WriteAllowlist.apply` (the `version`
+key is removed from the body first), then `assertTreeInput`, then the value
+rules, then the transaction. The `update` `rowFilter` is in the WHERE of the
+OCC `UPDATE`. A 409 body (`server`, `submitted`, `diff`) is built only from
+`RecordSerializer` output made with the actor's **read** access and the
+**read** row filter, so an update-only actor, or one whose read conditions
+exclude the row, never gets raw or unreadable values back; the 200/201 bodies use the same gate (else only `{ documentId, version }`). After `replaceTree` the `update` row filter is checked again on the new content (403 + rollback). `create` rows take no conditions (validator). Writes are not throttled in v1 (user decision). Rules: README
+"Documents, write".
+
 ## Conditions DSL (SPEC §8.3)
 
 ```json

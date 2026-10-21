@@ -4,10 +4,19 @@ import type { RecordSystemField } from '../access/access.constants';
 /** Error codes of the documents API (T20). */
 export const DOCUMENT_ERROR_CODES = {
   NOT_FOUND: 'DOCUMENT_NOT_FOUND',
+  /** A write names a `version` that is no longer the stored one (SPEC §9). */
+  VERSION_CONFLICT: 'DOCUMENT_VERSION_CONFLICT',
+  /** A write value fails the field's type or `required` rule. */
+  INVALID: 'DOCUMENT_INVALID',
 } as const;
 
 export const DOCUMENT_ERROR_MESSAGES = {
   NOT_FOUND: 'Document not found.',
+  VERSION_CONFLICT:
+    'The document was changed by someone else. Review the current version and submit again.',
+  INVALID_BODY: 'The request body is not valid.',
+  REQUIRED: 'is required',
+  INVALID_TYPE: 'does not match the type of the field',
   DRAFTS_FORBIDDEN: 'You may not read drafts of this content type.',
   UNSUPPORTED_FIELD:
     'The field cannot be used in a filter or sort: only top-level scalar fields and system fields can.',
@@ -112,3 +121,9 @@ export const FILTER_VALUE_PATTERNS = {
 /** Integer columns are Postgres `integer`: a larger value would be a DB error. */
 export const INT4_MAX = 2_147_483_647;
 export const YEAR_ZERO_PREFIX = '0000';
+
+/** Body key of `PUT` carrying the version the client edited. */
+export const VERSION_BODY_KEY = 'version';
+
+/** Name of the placeholder uid of a submitted component item that has none yet. */
+export const NEW_ITEM_UID = '';

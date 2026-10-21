@@ -1,8 +1,11 @@
 import {
   Controller,
   Get,
+  Body,
   Header,
   Param,
+  Post,
+  Put,
   Query,
   Req,
   UseGuards,
@@ -32,6 +35,11 @@ import {
 import { CONTENT_STATUSES } from '../content-engine/content-engine.constants';
 import { DocumentAuthGuard, type DocumentRequest } from './document-auth.guard';
 import { parseListQuery } from './dto/list-documents.query';
+import { parseCreateBody, parseUpdateBody } from './dto/write-document.body';
+import {
+  DocumentsCommandService,
+  type WriteResult,
+} from './documents.command.service';
 import {
   type DocumentPage,
   DocumentsQueryService,
@@ -53,7 +61,10 @@ const detailQuerySchema = z.strictObject({
 @Controller(API_ROUTES.DOCUMENTS.ROOT)
 @UseGuards(DocumentAuthGuard, PermissionGuard)
 export class DocumentsController {
-  constructor(private readonly documents: DocumentsQueryService) {}
+  constructor(
+    private readonly documents: DocumentsQueryService,
+    private readonly commands: DocumentsCommandService,
+  ) {}
 
   @Get(API_ROUTES.DOCUMENTS.BY_SLUG)
   @Throttle(RATE_LIMIT_POLICIES.DOCUMENT_READ_ANONYMOUS)
@@ -89,6 +100,44 @@ export class DocumentsController {
       slug,
       parseRequest(documentIdSchema, documentId),
       status,
+    );
+  }
+
+  /** SPEC §9: creates the draft (version 1). `PermissionGuard` needs `create` on `:slug`. */
+  @Post(API_ROUTES.DOCUMENTS.BY_SLUG)
+  @RequirePermission({
+    action: PermissionAction.create,
+    subjectParam: SLUG_PARAM,
+  })
+  @Header(NO_STORE_HEADER.NAME, NO_STORE_HEADER.VALUE)
+  create(
+    @Req() req: DocumentRequest,
+    @Param(SLUG_PARAM) slug: string,
+    @Body() body: unknown,
+  ): Promise<WriteResult> {
+    return this.commands.create(req.user.actor, slug, parseCreateBody(body));
+  }
+
+  /** SPEC §9: update with optimistic concurrency; a stale `version` is a 409 with the masked conflict body. */
+  @Put(API_ROUTES.DOCUMENTS.BY_ID)
+  @RequirePermission({
+    action: PermissionAction.update,
+    subjectParam: SLUG_PARAM,
+  })
+  @Header(NO_STORE_HEADER.NAME, NO_STORE_HEADER.VALUE)
+  update(
+    @Req() req: DocumentRequest,
+    @Param(SLUG_PARAM) slug: string,
+    @Param(DOCUMENT_ID_PARAM) documentId: string,
+    @Body() body: unknown,
+  ): Promise<WriteResult> {
+    const { version, tree } = parseUpdateBody(body);
+    return this.commands.update(
+      req.user.actor,
+      slug,
+      parseRequest(documentIdSchema, documentId),
+      version,
+      tree,
     );
   }
 }

@@ -474,6 +474,16 @@ updatedAt createdBy updatedBy`); components, nested paths and `json` are
   they reject (401/403/404) is not counted.
 - Responses are `Cache-Control: no-store`.
 
+### Documents, write (T21, `src/modules/documents`)
+
+`POST /documents/:slug` and `PUT /documents/:slug/:documentId`. Auth: JWT account or API token (`DocumentAuthGuard`); anonymous and reviewer sessions get 403. Needs `create` / `update` on the content type, plus the `update` row conditions on PUT (a hidden row is 404 `DOCUMENT_NOT_FOUND`). Body = the document tree `{ values?, components? }`; PUT also needs `version` (the version the client edited; it is read first and never reaches the field allowlist).
+
+Order of every write: allowlist (D4: resent `"***"` dropped, `FIELD_UNKNOWN` / `FIELD_NOT_WRITABLE` 400) -> tree shape (`assertTreeInput`) -> value rules (`value-validator.ts`: type per field type, `required`, richtext through `sanitizeRichtext`, a stub until T24; 400 `DOCUMENT_INVALID`, message has the input path, never the value) -> one transaction.
+
+- **Create** inserts a draft (`published_at` null, `version` 1, `created_by` = the actor or the token creator). A type with `draftAndPublish: false` stores one live row instead (`published_at` set at create); PUT then updates that row. The response (201) is the new record serialized for the actor, but only when the actor may read that row (read permission, read row conditions, and `read`+`update` for a draft); otherwise it is just `{ documentId, version }`. `create` permissions take no conditions: saving a role with one is 400 `PERMISSION_INVALID_CONDITION`.
+- **Update**: `UPDATE ... SET version = version + 1 WHERE document_id AND version = $v` (takes the row lock) then `replaceTree`, in one transaction; after the write the row is re-checked against the `update` row conditions and the request is rolled back with 403 if the new content moved it out of scope. 200 returns the record under the same read gate as create (else `{ documentId, version }`). Of N concurrent updates with the same version exactly one wins.
+- **Conflict** (`409 DOCUMENT_VERSION_CONFLICT`): `details = { currentVersion, server, submitted, diff }`. `server` is the stored document and `submitted` the sent changes applied on it, both through `RecordSerializer` with the actor's read access (masked fields are `***` / `null`, `_maskedFields` listed). `diff` is computed from those serialized records (`diff.ts`): entries `{ path, change: added|removed|changed|moved, server?, submitted? }`; components are matched by `componentUid`, an item without uid is `[new#<index>]`. An actor without `read` on the row (or whose read conditions exclude it) gets `server`/`submitted` null and an empty diff; `currentVersion` is still returned.
+
 ### Security audit (T17, D15)
 
 `SecurityAuditService` (`src/modules/access/security-audit.service.ts`)

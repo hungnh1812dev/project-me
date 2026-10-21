@@ -199,6 +199,16 @@ export function validatePermissionSet(
       );
       return;
     }
+    if (conditions !== null && action === PermissionAction.create) {
+      issues.push(
+        issue(
+          ACCESS_ERROR_CODES.PERMISSION_INVALID_CONDITION,
+          [index, 'conditions'],
+          'create permissions take no conditions (a row does not exist yet)',
+        ),
+      );
+      return;
+    }
     rowIndexes.push(index);
     rows.push({
       subject,
