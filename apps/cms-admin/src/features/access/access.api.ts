@@ -80,13 +80,30 @@ interface ListBody<T> {
   data: T[];
 }
 
+/** Offset paging of `GET /accounts` (T17c). `total` counts every row. */
+export interface PageMeta {
+  page: number;
+  pageSize: number;
+  total: number;
+}
+
+export interface AccountsPage {
+  data: Account[];
+  meta: PageMeta;
+}
+
 /** Accounts, roles and content-type discovery (T17, T17b). Bearer via the interceptor. */
 export function createAccessApi(client: AxiosInstance) {
   const { ACCOUNTS, ROLES, CONTENT_TYPES } = API_ENDPOINTS;
   return {
-    listAccounts: async (): Promise<Account[]> => {
-      const { data } = await client.get<ListBody<Account>>(ACCOUNTS.LIST);
-      return data.data;
+    listAccounts: async (
+      page: number,
+      pageSize: number,
+    ): Promise<AccountsPage> => {
+      const { data } = await client.get<AccountsPage>(ACCOUNTS.LIST, {
+        params: { page, pageSize },
+      });
+      return data;
     },
 
     inviteAccount: async (
@@ -99,6 +116,19 @@ export function createAccessApi(client: AxiosInstance) {
     /** 204; bumps the token version and ends every session of the account. */
     disableAccount: async (id: string): Promise<void> => {
       await client.post(ACCOUNTS.DISABLE(id));
+    },
+
+    /** 204; a disabled account becomes active (or invited without a password). */
+    enableAccount: async (id: string): Promise<void> => {
+      await client.post(ACCOUNTS.ENABLE(id));
+    },
+
+    /** Issues and mails a new invite code; `invitationSent: false` = mail failed. */
+    resendInvite: async (id: string): Promise<{ invitationSent: boolean }> => {
+      const { data } = await client.post<{ invitationSent: boolean }>(
+        ACCOUNTS.RESEND_INVITE(id),
+      );
+      return data;
     },
 
     /** Rank descending. */

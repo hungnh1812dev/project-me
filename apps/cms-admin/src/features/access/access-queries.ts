@@ -1,5 +1,6 @@
-import { useQuery } from '@tanstack/react-query';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
 
+import { ACCOUNTS_PAGE_SIZE } from '../../config/access.constants';
 import { useAccessApi } from './access-api-context';
 
 /** React Query keys of the access pages. */
@@ -9,11 +10,13 @@ export const ACCESS_QUERY_KEYS = {
   contentTypes: ['access', 'content-types'],
 } as const;
 
-export function useAccountsQuery() {
+/** One page of accounts; actions invalidate the `accounts` prefix (all pages). */
+export function useAccountsQuery(page: number) {
   const api = useAccessApi();
   return useQuery({
-    queryKey: ACCESS_QUERY_KEYS.accounts,
-    queryFn: api.listAccounts,
+    queryKey: [...ACCESS_QUERY_KEYS.accounts, page],
+    queryFn: () => api.listAccounts(page, ACCOUNTS_PAGE_SIZE),
+    placeholderData: keepPreviousData,
   });
 }
 

@@ -52,8 +52,10 @@ So far: sign-in (T11) and, behind it, a status page that calls
   `session.expire('password-changed')` and the sign-in page shows why
   (`auth.endNotice`). Re-auth failures come back as 403, so the interceptor
   never treats them as an expired session.
-- **Access (T18)** (`src/features/access`): `/accounts` (list, invite
-  dialog, disable with a named confirmation), `/roles` and `/roles/:roleId`
+- **Access (T18)** (`src/features/access`): `/accounts` (paged list, invite
+  dialog, disable with a named confirmation, Enable and Resend invite without
+  confirmation (T18a), shown only on manageable rows and with `accounts:update` /
+  `accounts:create`), `/roles` and `/roles/:roleId`
   (permission matrix: subjects x actions; content rows open readable /
   writable field pickers fed by `GET /content-types`, sensitive fields
   flagged, and a collapsed "Advanced: row conditions" JSON textarea that the

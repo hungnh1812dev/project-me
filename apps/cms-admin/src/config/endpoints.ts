@@ -32,6 +32,9 @@ export const API_ENDPOINTS = {
   ACCOUNTS: {
     LIST: '/accounts',
     DISABLE: (id: string) => `/accounts/${encodeURIComponent(id)}/disable`,
+    ENABLE: (id: string) => `/accounts/${encodeURIComponent(id)}/enable`,
+    RESEND_INVITE: (id: string) =>
+      `/accounts/${encodeURIComponent(id)}/invite/resend`,
   },
   /** T17 roles API. `id` is the role's document id. */
   ROLES: {

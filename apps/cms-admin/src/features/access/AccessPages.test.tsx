@@ -144,12 +144,16 @@ async function open(
   return { api, services };
 }
 
+function accountsBody(list: Account[], page = 1, total = list.length) {
+  return { data: list, meta: { page, pageSize: 20, total } };
+}
+
 const adminUser: CurrentUser = { ...TEST_USER, id: 'acc_admin', role: 'admin' };
 
 describe('AccountsPage', () => {
   const listHandler: FakeHandler = () => ({
     status: 200,
-    data: { data: [linh] },
+    data: accountsBody([linh]),
   });
 
   it('lists accounts for the owner with invite and disable actions', async () => {
@@ -169,7 +173,7 @@ describe('AccountsPage', () => {
 
   it('shows an empty state that points to the first action', async () => {
     await open(APP_ROUTES.ACCOUNTS, TEST_USER, {
-      [`GET ${ACCOUNTS.LIST}`]: () => ({ status: 200, data: { data: [] } }),
+      [`GET ${ACCOUNTS.LIST}`]: () => ({ status: 200, data: accountsBody([]) }),
     });
     expect(await screen.findByText(copy.accounts.empty)).toBeInTheDocument();
     expect(screen.getByText(copy.accounts.emptyHint)).toBeInTheDocument();
@@ -182,7 +186,7 @@ describe('AccountsPage', () => {
         calls += 1;
         return calls === 1
           ? { status: 500 }
-          : { status: 200, data: { data: [linh] } };
+          : { status: 200, data: accountsBody([linh]) };
       },
     });
     const user = userEvent.setup();
@@ -212,7 +216,7 @@ describe('AccountsPage', () => {
     await open(APP_ROUTES.ACCOUNTS, TEST_USER, {
       [`GET ${ACCOUNTS.LIST}`]: () => ({
         status: 200,
-        data: { data: [{ ...linh, manageable: false }] },
+        data: accountsBody([{ ...linh, manageable: false }]),
       }),
     });
     expect(await screen.findByText('Linh Pham')).toBeInTheDocument();
@@ -453,6 +457,272 @@ describe('AccountsPage', () => {
     expect(
       await within(dialog).findByText(copy.errors.rankForbidden),
     ).toBeInTheDocument();
+  });
+});
+
+describe('AccountsPage enable, resend and paging', () => {
+  const disabledLinh = account({ ...linh, status: 'disabled' });
+  const invitedMai = account({
+    id: 'acc_mai',
+    email: 'mai@domain.localhost',
+    displayName: 'Mai Tran',
+    status: 'invited',
+  });
+  const list =
+    (accountRows: Account[]): FakeHandler =>
+    () => ({
+      status: 200,
+      data: accountsBody(accountRows),
+    });
+  const enableName = copy.accounts.enableLabel('Linh Pham');
+  const resendName = copy.accounts.resendLabel('Mai Tran');
+
+  it('shows Enable only on disabled rows and Resend only on invited rows', async () => {
+    await open(APP_ROUTES.ACCOUNTS, TEST_USER, {
+      [`GET ${ACCOUNTS.LIST}`]: list([disabledLinh, invitedMai]),
+    });
+    expect(
+      await screen.findByRole('button', { name: enableName }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: resendName }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', {
+        name: copy.accounts.enableLabel('Mai Tran'),
+      }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', {
+        name: copy.accounts.resendLabel('Linh Pham'),
+      }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', {
+        name: copy.accounts.disableLabel('Mai Tran'),
+      }),
+    ).toBeInTheDocument();
+  });
+
+  it('hides both actions for rows the caller cannot manage', async () => {
+    await open(APP_ROUTES.ACCOUNTS, TEST_USER, {
+      [`GET ${ACCOUNTS.LIST}`]: list([
+        { ...disabledLinh, manageable: false },
+        { ...invitedMai, manageable: false },
+      ]),
+    });
+    expect(await screen.findByText('Linh Pham')).toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: enableName }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: resendName }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('hides both actions when the role holds neither permission', async () => {
+    await open(APP_ROUTES.ACCOUNTS, adminUser, {
+      [`GET ${ACCOUNTS.LIST}`]: list([disabledLinh, invitedMai]),
+    });
+    expect(await screen.findByText('Linh Pham')).toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: enableName }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: resendName }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('enables an account without a confirmation and refreshes the list', async () => {
+    let enabled = false;
+    const { api } = await open(APP_ROUTES.ACCOUNTS, TEST_USER, {
+      [`GET ${ACCOUNTS.LIST}`]: () => ({
+        status: 200,
+        data: accountsBody([enabled ? linh : disabledLinh]),
+      }),
+      [`POST ${ACCOUNTS.ENABLE('acc_linh')}`]: () => {
+        enabled = true;
+        return { status: 204 };
+      },
+    });
+    const user = userEvent.setup();
+    await user.click(await screen.findByRole('button', { name: enableName }));
+    expect(
+      await screen.findByText(copy.accounts.enabled('Linh Pham')),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(api.callsTo(`POST ${ACCOUNTS.ENABLE('acc_linh')}`)).toHaveLength(1);
+    await waitFor(() =>
+      expect(
+        screen.queryByRole('button', { name: enableName }),
+      ).not.toBeInTheDocument(),
+    );
+  });
+
+  it('explains an enable that lost a race', async () => {
+    await open(APP_ROUTES.ACCOUNTS, TEST_USER, {
+      [`GET ${ACCOUNTS.LIST}`]: list([disabledLinh]),
+      [`POST ${ACCOUNTS.ENABLE('acc_linh')}`]: () => ({
+        status: 409,
+        data: { errorCode: 'ACCOUNT_NOT_DISABLED', message: 'x' },
+      }),
+    });
+    const user = userEvent.setup();
+    await user.click(await screen.findByRole('button', { name: enableName }));
+    expect(
+      await screen.findByText(copy.accounts.alreadyEnabled),
+    ).toBeInTheDocument();
+  });
+
+  it('shows a rank error from the server when enabling', async () => {
+    await open(APP_ROUTES.ACCOUNTS, TEST_USER, {
+      [`GET ${ACCOUNTS.LIST}`]: list([disabledLinh]),
+      [`POST ${ACCOUNTS.ENABLE('acc_linh')}`]: () => ({
+        status: 403,
+        data: { errorCode: 'ACCESS_RANK_FORBIDDEN', message: 'no' },
+      }),
+    });
+    const user = userEvent.setup();
+    await user.click(await screen.findByRole('button', { name: enableName }));
+    expect(
+      await screen.findByText(copy.errors.rankForbidden),
+    ).toBeInTheDocument();
+  });
+
+  it('resends an invite and says it was sent', async () => {
+    const { api } = await open(APP_ROUTES.ACCOUNTS, TEST_USER, {
+      [`GET ${ACCOUNTS.LIST}`]: list([invitedMai]),
+      [`POST ${ACCOUNTS.RESEND_INVITE('acc_mai')}`]: () => ({
+        status: 200,
+        data: { invitationSent: true },
+      }),
+    });
+    const user = userEvent.setup();
+    await user.click(await screen.findByRole('button', { name: resendName }));
+    expect(
+      await screen.findByText(copy.accounts.resent('mai@domain.localhost')),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(
+      api.callsTo(`POST ${ACCOUNTS.RESEND_INVITE('acc_mai')}`),
+    ).toHaveLength(1);
+  });
+
+  it('says the mail failed when invitationSent is false', async () => {
+    await open(APP_ROUTES.ACCOUNTS, TEST_USER, {
+      [`GET ${ACCOUNTS.LIST}`]: list([invitedMai]),
+      [`POST ${ACCOUNTS.RESEND_INVITE('acc_mai')}`]: () => ({
+        status: 200,
+        data: { invitationSent: false },
+      }),
+    });
+    const user = userEvent.setup();
+    await user.click(await screen.findByRole('button', { name: resendName }));
+    expect(
+      await screen.findByText(
+        copy.accounts.resentNoEmail('mai@domain.localhost'),
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it('shows a wait message from Retry-After when resend is throttled', async () => {
+    await open(APP_ROUTES.ACCOUNTS, TEST_USER, {
+      [`GET ${ACCOUNTS.LIST}`]: list([invitedMai]),
+      [`POST ${ACCOUNTS.RESEND_INVITE('acc_mai')}`]: () => ({
+        status: 429,
+        headers: { 'retry-after': '90' },
+      }),
+    });
+    const user = userEvent.setup();
+    await user.click(await screen.findByRole('button', { name: resendName }));
+    expect(
+      await screen.findByText(COPY.password.errors.rateLimitedMinutes(2)),
+    ).toBeInTheDocument();
+  });
+
+  it('pages through accounts and shows the range', async () => {
+    const second = account({
+      id: 'acc_two',
+      displayName: 'Second Person',
+      email: 'two@domain.localhost',
+    });
+    const { api } = await open(APP_ROUTES.ACCOUNTS, TEST_USER, {
+      [`GET ${ACCOUNTS.LIST}`]: (config) => {
+        const page = Number((config.params as { page: number }).page);
+        return {
+          status: 200,
+          data: accountsBody([page === 1 ? linh : second], page, 21),
+        };
+      },
+    });
+    const user = userEvent.setup();
+    expect(await screen.findByText('Linh Pham')).toBeInTheDocument();
+    expect(
+      screen.getByText(copy.accounts.pagination.range(1, 1, 21)),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: copy.accounts.pagination.previous }),
+    ).toBeDisabled();
+    await user.click(
+      screen.getByRole('button', { name: copy.accounts.pagination.next }),
+    );
+    expect(await screen.findByText('Second Person')).toBeInTheDocument();
+    expect(
+      screen.getByText(copy.accounts.pagination.range(21, 21, 21)),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: copy.accounts.pagination.next }),
+    ).toBeDisabled();
+    expect(api.callsTo(`GET ${ACCOUNTS.LIST}`).at(-1)?.params).toMatchObject({
+      page: 2,
+    });
+    await user.click(
+      screen.getByRole('button', { name: copy.accounts.pagination.previous }),
+    );
+    expect(await screen.findByText('Linh Pham')).toBeInTheDocument();
+  });
+
+  it('keeps the page after an action and steps back when the last row goes away', async () => {
+    const second = account({
+      id: 'acc_two',
+      displayName: 'Second Person',
+      email: 'two@domain.localhost',
+    });
+    let gone = false;
+    await open(APP_ROUTES.ACCOUNTS, TEST_USER, {
+      [`GET ${ACCOUNTS.LIST}`]: (config) => {
+        const page = Number((config.params as { page: number }).page);
+        if (page === 1)
+          return { status: 200, data: accountsBody([linh], 1, gone ? 1 : 21) };
+        return {
+          status: 200,
+          data: accountsBody(gone ? [] : [second], page, gone ? 1 : 21),
+        };
+      },
+      [`POST ${ACCOUNTS.DISABLE('acc_two')}`]: () => {
+        gone = true;
+        return { status: 204 };
+      },
+    });
+    const user = userEvent.setup();
+    await user.click(
+      await screen.findByRole('button', {
+        name: copy.accounts.pagination.next,
+      }),
+    );
+    await screen.findByText('Second Person');
+    await user.click(
+      screen.getByRole('button', {
+        name: copy.accounts.disableLabel('Second Person'),
+      }),
+    );
+    await user.click(
+      within(await screen.findByRole('dialog')).getByRole('button', {
+        name: copy.disable.submit('Second Person'),
+      }),
+    );
+    expect(await screen.findByText('Linh Pham')).toBeInTheDocument();
+    expect(screen.queryByText(copy.accounts.empty)).not.toBeInTheDocument();
   });
 });
 

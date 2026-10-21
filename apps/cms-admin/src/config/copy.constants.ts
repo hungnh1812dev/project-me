@@ -255,6 +255,28 @@ export const COPY = {
         'Your role cannot see accounts. Ask the owner if you need access.',
       empty: 'No accounts yet.',
       emptyHint: 'Invite the first person who should work in Abyss CMS.',
+      enable: 'Enable',
+      enableLabel: (name: string) => `Enable ${name}`,
+      resend: 'Resend invite',
+      resendLabel: (name: string) => `Resend invite to ${name}`,
+      enabled: (name: string) => `${name} is enabled and can sign in again.`,
+      enabledInvited: (name: string) =>
+        `${name} is enabled. They have not set a password yet, so resend the invite if they need a new code.`,
+      alreadyEnabled:
+        'That account is no longer disabled. The list is updated.',
+      resent: (email: string) =>
+        `New invitation sent to ${email}. Earlier codes no longer work.`,
+      resentNoEmail: (email: string) =>
+        `A new code was created for ${email}, but the email could not be sent. They can ask for a code on the Set password page.`,
+      notInvited:
+        'That account already set a password, so there is nothing to resend. The list is updated.',
+      pagination: {
+        label: 'Accounts pages',
+        range: (from: number, to: number, total: number) =>
+          `${from}\u2013${to} of ${total}`,
+        previous: 'Previous',
+        next: 'Next',
+      },
       disable: 'Disable',
       disableLabel: (name: string) => `Disable ${name}`,
       invited: (email: string) =>
@@ -299,7 +321,7 @@ export const COPY = {
     disable: {
       title: (name: string) => `Disable ${name}?`,
       description: (email: string) =>
-        `${email} is signed out everywhere and can no longer sign in. Re-enabling accounts is not available yet.`,
+        `${email} is signed out everywhere and can no longer sign in. You can enable the account again later.`,
       submit: (name: string) => `Disable ${name}`,
       cancel: 'Cancel',
     },

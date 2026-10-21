@@ -65,6 +65,9 @@ export const ACCOUNT_LIMITS = {
 /** Indentation step of nested fields in the field picker, in rem. */
 export const FIELD_PICKER_INDENT_REM = 1.25;
 
+/** Accounts per page of the accounts list (API default 20, max 100). */
+export const ACCOUNTS_PAGE_SIZE = 20;
+
 /** Skeleton rows shown while a table loads. */
 export const TABLE_SKELETON_ROWS = 3;
 

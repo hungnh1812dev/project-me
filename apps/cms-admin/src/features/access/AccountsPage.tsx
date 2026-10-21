@@ -5,7 +5,8 @@ import { useAppSelector } from '../../app/store';
 import { COPY } from '../../config/copy.constants';
 import { selectCurrentUser } from '../auth/auth.slice';
 import { FormAlert, type FormAlertTone } from '../auth/FormAlert';
-import type { Account, InvitedAccount } from './access.api';
+import type { Account, InvitedAccount, PageMeta } from './access.api';
+import { AccountRowActions } from './AccountRowActions';
 import { isForbidden } from './access-error';
 import { useAccountsQuery, useRolesQuery } from './access-queries';
 import { useCallerAccess } from './caller-access';
@@ -33,7 +34,8 @@ interface Notice {
 
 /** `/accounts` (T18): who can sign in; invite and disable. */
 export function AccountsPage() {
-  const accounts = useAccountsQuery();
+  const [page, setPage] = useState(1);
+  const accounts = useAccountsQuery(page);
   const roles = useRolesQuery();
   const caller = useCallerAccess();
   const me = useAppSelector(selectCurrentUser);
@@ -54,6 +56,15 @@ export function AccountsPage() {
 
   const canInvite = caller.ready && caller.can('accounts', 'create');
   const canDisable = caller.ready && caller.can('accounts', 'update');
+  const showActions = canDisable || canInvite;
+
+  // The last row of a page can go away (disabled elsewhere, role change);
+  // step back so the user never sits on an empty page past the end.
+  const meta = accounts.data?.meta;
+  const lastPage = meta
+    ? Math.max(1, Math.ceil(meta.total / meta.pageSize))
+    : 1;
+  if (page > lastPage) setPage(lastPage); // adjust during render, not in an effect
 
   const onInvited = (account: InvitedAccount) => {
     setInviteOpen(false);
@@ -112,7 +123,9 @@ export function AccountsPage() {
             onRetry={() => void accounts.refetch()}
           />
         )
-      ) : accounts.data.length === 0 ? (
+      ) : page > lastPage ? (
+        <TableSkeleton label={copy.loading} />
+      ) : accounts.data.data.length === 0 ? (
         <div className="grid justify-items-start gap-1">
           <p className="m-0 font-medium">{copy.empty}</p>
           <p className="m-0 text-sm text-muted-foreground">{copy.emptyHint}</p>
@@ -138,7 +151,7 @@ export function AccountsPage() {
                 <th scope="col" className="px-3 py-2 font-medium">
                   {copy.columns.created}
                 </th>
-                {canDisable ? (
+                {showActions ? (
                   <th scope="col" className="px-3 py-2 text-right font-medium">
                     <span className="sr-only">{copy.columns.actions}</span>
                   </th>
@@ -146,7 +159,7 @@ export function AccountsPage() {
               </tr>
             </thead>
             <tbody>
-              {accounts.data.map((account) => (
+              {accounts.data.data.map((account) => (
                 <tr key={account.id} className="border-t border-border">
                   <th scope="row" className="px-3 py-2 text-left font-normal">
                     <span className="font-medium">{account.displayName}</span>
@@ -175,9 +188,17 @@ export function AccountsPage() {
                   <td className="px-3 py-2 tabular-nums text-muted-foreground">
                     {dateFormat.format(new Date(account.createdAt))}
                   </td>
-                  {canDisable ? (
+                  {showActions ? (
                     <td className="px-3 py-2 text-right">
-                      {account.manageable && account.status !== 'disabled' ? (
+                      <AccountRowActions
+                        account={account}
+                        canEnable={canDisable}
+                        canResend={canInvite}
+                        onNotice={setNotice}
+                      />
+                      {canDisable &&
+                      account.manageable &&
+                      account.status !== 'disabled' ? (
                         <Button
                           type="button"
                           variant="ghost"
@@ -198,6 +219,11 @@ export function AccountsPage() {
               ))}
             </tbody>
           </table>
+          <Pagination
+            meta={accounts.data.meta}
+            count={accounts.data.data.length}
+            onPage={setPage}
+          />
         </div>
       )}
       <InviteDialog
@@ -214,5 +240,49 @@ export function AccountsPage() {
         onCloseAutoFocus={restoreFocus}
       />
     </div>
+  );
+}
+
+/** Previous / next with "x-y of total"; driven by the API's `meta`. */
+function Pagination({
+  meta,
+  count,
+  onPage,
+}: {
+  meta: PageMeta;
+  count: number;
+  onPage: (page: number) => void;
+}) {
+  const pageCopy = copy.pagination;
+  const from = (meta.page - 1) * meta.pageSize + 1;
+  const to = from + count - 1;
+  const hasNext = meta.page * meta.pageSize < meta.total;
+  return (
+    <nav
+      aria-label={pageCopy.label}
+      className="flex items-center justify-between gap-3 border-t border-border px-3 py-2 text-sm"
+    >
+      <span className="tabular-nums text-muted-foreground">
+        {pageCopy.range(from, to, meta.total)}
+      </span>
+      <span className="flex gap-2">
+        <Button
+          type="button"
+          size="sm"
+          disabled={meta.page <= 1}
+          onClick={() => onPage(meta.page - 1)}
+        >
+          {pageCopy.previous}
+        </Button>
+        <Button
+          type="button"
+          size="sm"
+          disabled={!hasNext}
+          onClick={() => onPage(meta.page + 1)}
+        >
+          {pageCopy.next}
+        </Button>
+      </span>
+    </nav>
   );
 }

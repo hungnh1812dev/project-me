@@ -155,7 +155,7 @@ test.describe.serial('owner: accounts and roles', () => {
     await page.keyboard.press('Escape');
   });
 
-  test('an invited account gets an email code, sets a password, and cannot sign in once disabled', async ({
+  test('an invited account gets an email code, sets a password, and cannot sign in once disabled, and can again once enabled', async ({
     browser,
   }) => {
     await page.goto('/accounts');
@@ -234,9 +234,104 @@ test.describe.serial('owner: accounts and roles', () => {
       await expect(
         inviteePage.getByText(COPY.login.errors.invalidCredentials),
       ).toBeVisible();
+
+      // Owner enables it again: no dialog, success notice, can sign in.
+      await row
+        .getByRole('button', { name: accounts.enableLabel(INVITEE_NAME) })
+        .click();
+      await expect(page.getByRole('dialog')).toHaveCount(0);
+      await expect(page.getByRole('status')).toHaveText(
+        accounts.enabled(INVITEE_NAME),
+      );
+      await expect(row).toContainText(accounts.status.active);
+      await expect(
+        row.getByRole('button', { name: accounts.enable }),
+      ).toHaveCount(0);
+      await signIn(inviteePage, INVITEE_EMAIL, INVITEE_PASSWORD);
+      await expect(
+        inviteePage.getByRole('button', { name: COPY.session.signOut }),
+      ).toBeVisible();
     } finally {
       await inviteeContext.close();
     }
+  });
+
+  test('resending an invite mails a new code; the older code stops working', async ({
+    browser,
+  }) => {
+    const email = `e2e-resend-${RUN_ID}@domain.localhost`;
+    const name = `Resend ${RUN_ID}`;
+    // Stays on /accounts from the test before: every full page load costs
+    // a silent refresh, and the refresh limit is 30 per minute per IP.
+    const seen = await mailIdsFor(context, email);
+    await page.getByRole('button', { name: accounts.invite }).click();
+    const dialog = page.getByRole('dialog', { name: invite.title });
+    await dialog.getByLabel(label(invite.emailLabel)).fill(email);
+    await dialog.getByLabel(label(invite.displayNameLabel)).fill(name);
+    await dialog.getByLabel(label(invite.roleLabel)).selectOption('Editor');
+    await dialog.getByRole('button', { name: invite.submit }).click();
+    await expect(dialog).toBeHidden();
+    const oldCode = await waitForCode(context, email, seen);
+
+    const row = accountRow(page, email);
+    await expect(row).toContainText(accounts.status.invited);
+    // Enable is for disabled rows only.
+    await expect(
+      row.getByRole('button', { name: accounts.enable }),
+    ).toHaveCount(0);
+    const afterInvite = await mailIdsFor(context, email);
+    await row.getByRole('button', { name: accounts.resendLabel(name) }).click();
+    await expect(page.getByRole('status')).toHaveText(accounts.resent(email));
+    const newCode = await waitForCode(context, email, afterInvite);
+
+    const inviteeContext = await browser.newContext();
+    const inviteePage = await inviteeContext.newPage();
+    // One page load only: each load of the app costs a silent refresh and
+    // the refresh limit is 30 per minute per IP for the whole suite.
+    await inviteePage.goto('/set-password');
+    const fillForm = async (code: string) => {
+      await inviteePage.getByLabel(label(COPY.password.emailLabel)).fill(email);
+      await inviteePage.getByLabel(label(COPY.password.codeLabel)).fill(code);
+      await inviteePage
+        .getByLabel(label(COPY.password.newPasswordLabel))
+        .fill(INVITEE_PASSWORD);
+      await inviteePage
+        .getByLabel(label(COPY.password.confirmPasswordLabel))
+        .fill(INVITEE_PASSWORD);
+      await inviteePage
+        .getByRole('button', { name: COPY.password.set.submit })
+        .click();
+    };
+    try {
+      if (newCode !== oldCode) {
+        await fillForm(oldCode);
+        await expect(inviteePage.getByRole('alert')).toBeVisible();
+      }
+      await fillForm(newCode);
+      await expect(inviteePage.getByRole('status')).toHaveText(
+        COPY.login.notices.passwordSet,
+      );
+    } finally {
+      await inviteeContext.close();
+    }
+  });
+
+  test('the accounts table shows its range and disables paging on a single page', async () => {
+    // Over 20 accounts would be needed to page; the smoke stack has a few.
+    const nav = page.getByRole('navigation', {
+      name: accounts.pagination.label,
+    });
+    const rows = await page
+      .getByRole('row')
+      .filter({ has: page.getByRole('cell') })
+      .count();
+    await expect(nav).toContainText(accounts.pagination.range(1, rows, rows));
+    await expect(
+      nav.getByRole('button', { name: accounts.pagination.previous }),
+    ).toBeDisabled();
+    await expect(
+      nav.getByRole('button', { name: accounts.pagination.next }),
+    ).toBeDisabled();
   });
 
   test('roles are listed by rank and the owner role has nothing to configure', async () => {
