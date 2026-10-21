@@ -166,12 +166,38 @@ Conventions for every task:
   - Verify: integration tests: the escalation matrix (admin vs admin, admin edits the admin role, assign owner) all 403; an audit row exists per event.
   - Files: `apps/cms-api/src/modules/access/{accounts.controller.ts,accounts.service.ts,roles.controller.ts,roles.service.ts,security-audit.service.ts}`
 
+- [ ] **T17a: Re-enable account + resend invite + invite rate limit (API)** · M · Deps: T17 · Q7-Q9 answered
+  - Acceptance:
+    - `POST /accounts/:id/enable` (`accounts:update`, D6 rank rule, never self): a `disabled` account goes back to `active` when it has a password, else to `invited` (Q7). Any other status → `409 ACCOUNT_NOT_DISABLED`. In one transaction with audit `account.enabled` (metadata: resulting status only); VersionCache invalidated; `204`. No `token_version` change (disable already bumped it).
+    - `POST /accounts/:id/invite/resend` (`accounts:create` (Q8), D6 rank rule, never self): only `invited` accounts, else `409 ACCOUNT_NOT_INVITED`. In one transaction: new `INVITE_SET_PASSWORD` code (older invite codes stop working; the 5-codes/hour DB cap answers 429 and rolls back) + audit `account.invite_resent`; then mails it. `200 { invitationSent }` with the same meaning as invite.
+    - Invite throttle (Q9): 10 / hour per actor + 20 / hour per IP, in memory; new key source `actor` (the caller's account; method-level `@Throttle` runs after the controller's `JwtAuthGuard` + `PermissionGuard`), policy `ACCOUNT_INVITE` shared by invite and resend, per actor and per IP. Over the limit: `429 TOO_MANY_REQUESTS` + `Retry-After`, nothing written or mailed.
+    - Docs: SPEC §9 Accounts row, `apps/cms-api/README.md` ("Accounts and roles", "Rate limits", "Security audit" action list), `docs/modules/access-control.md` if it lists account actions.
+  - Verify: integration tests: enable (disabled active editor → active and can log in; invited-then-disabled → invited; non-disabled 409; admin vs admin 403; self 403; audit row); resend (new code sets the password, old code → `AUTH_INVALID_OTP`; active account 409; 6th code in the hour 429 with no audit row); throttle (limit + 1 → 429 + `Retry-After`; two actors keep separate counters; resend and invite share one counter).
+  - Files: `apps/cms-api/src/modules/access/{accounts.controller.ts,accounts.service.ts,access-management.constants.ts,security-audit.constants.ts}`, `apps/cms-api/src/common/{constants/limits.constants.ts,guards/throttle.guard.ts}`, `apps/cms-api/test/integration/`, `apps/cms-api/README.md`, `SPEC.md` §9
+
+- [ ] **T17c: Pagination for GET /accounts + custom role cap** · S · Deps: T17 · Q10-Q12 answered
+  - Acceptance:
+    - `GET /accounts?page=&pageSize=` (Q10: offset, `page` ≥ 1 default 1, `pageSize` default 20 max 100, constants in `access-management.constants.ts`) → `200 { data: Account[], meta: { page, pageSize, total } }`, ordered by id ascending, no filters or search (Q12), deleted accounts excluded from `data` and `total`. Invalid or out-of-range params → `400 ACCESS_INVALID_REQUEST`. A page past the end → empty `data`, correct `total`.
+    - `GET /roles` stays a full, unpaginated list (Q11). Custom roles are capped at 50 (constant in `access-management.constants.ts`): `POST /roles` past the cap → `409 ROLE_LIMIT_REACHED`. System roles do not count.
+    - The page/meta shape is written down as the project list convention (README "HTTP pipeline" or `conventions.md`) so T20 documents, T27 media and the audit-log list reuse it.
+  - Verify: integration tests: 25 accounts → page 2 of size 20 holds 5 with `total` 25; `pageSize=101` and `page=0` → 400; deleted accounts not counted; the 51st custom role → 409 `ROLE_LIMIT_REACHED`.
+  - Files: `apps/cms-api/src/modules/access/{accounts.controller.ts,accounts.service.ts,access-management.requests.ts,access-management.constants.ts}` (+ `roles.service.ts` for the cap), `apps/cms-api/test/integration/`, `apps/cms-api/README.md`, `SPEC.md` §9
+
 - [ ] **T18: Accounts/roles/permissions admin UI** · M · Deps: T11, T17
   - Acceptance:
     - Accounts list + invite dialog + disable; Roles list + permission matrix editor with readable/writable field pickers per content type.
     - Actions not allowed for the current actor are hidden and are also rejected server-side (verified by test).
   - Verify: Vitest for the matrix editor; Playwright: owner invites an editor, sets field permissions.
   - Files: `apps/cms-admin/src/features/access/{AccountsPage,InviteDialog,RolesPage,PermissionMatrix}.tsx`, form-commons `SelectInput`/`CheckboxInput`/`Dialog` (add to the package with tests)
+
+- [ ] **T18a: Admin UI for enable, resend invite and accounts pagination** · M · Deps: T17a, T17c, T18 · Q13 answered
+  - Acceptance:
+    - Accounts page: "Enable" on disabled rows and "Resend invite" on invited rows, shown only when the row is `manageable` and the caller holds the needed permission (same `caller-access` hint as T18); server rejections still surface as errors.
+    - Resend shows a result message; `invitationSent: false` says the mail failed and the invitee can request a code. 429 shows a wait message using `Retry-After`.
+    - Pagination controls (previous / next, "x–y of total") driven by `meta`; the page survives a refetch after an action; the page clamps back when the last row of a page goes away.
+    - No confirm dialog for Enable or Resend invite (Q13); Disable keeps its confirm.
+  - Verify: Vitest (`AccessPages.test.tsx`): action visibility per status/manageable, resend success + mail-failure message, 429 message, page navigation. Playwright (e2e-tester, `apps/e2e`): owner disables then enables an editor who can log in again; owner resends an invite and the new Mailpit code sets the password.
+  - Files: `apps/cms-admin/src/features/access/{AccountsPage.tsx,access.api.ts,access-queries.ts,AccessPages.test.tsx}`, `apps/cms-admin/src/config/access.constants.ts`; e2e in `apps/e2e`
 
 - [ ] **T19: API tokens (API + UI)** · M · Deps: T15, T17
   - Acceptance:

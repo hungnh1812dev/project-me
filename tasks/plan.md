@@ -84,7 +84,11 @@ Phases 1 and 2 can run in parallel if more than one worker is available. This pr
 - T15 Revocation versions (token_version / policy_version) in JWT guard
 - T16 Field projection, masking serializer, write allowlist, filter/sort guard
 - T17 Accounts & roles management API (rank rules) + security audit
+- T17a Re-enable account + resend invite + invite rate limit (API)
+- T17b Read-only content types API (for the matrix pickers)
+- T17c Accounts list pagination + custom role cap of 50 (API)
 - T18 Accounts/roles/permissions admin UI
+- T18a Admin UI for enable, resend invite, accounts pagination (after T17a, T17c)
 - T19 API tokens (∩ creator, session-only management) API + UI
 
 **Checkpoint 3:** §12 items 4 (system subjects), 5, 6, 7, 11, 18 pass.

@@ -374,3 +374,10 @@ Coverage target: ≥ 80 % lines on `access`, `identity`, `documents` and `conten
 | Q4 | Real domain names, and is Cloudflare in front (affects `CLIENT_IP_HEADER` and Turnstile keys)? | — | T04, T31 |
 | Q5 | Which fields in `cv-page.json` are sensitive (masked for `public`/`reviewer` by default)? Candidates: `reference.phone`, any salary fields. | — | T30 |
 | Q6 | Should reviewers see anything beyond published content in v1 (e.g. read-only admin UI tour)? | Read-only admin UI with masked data, no drafts | T32 |
+| Q7 | Re-enabling a disabled account: which status does it get? | `active` if it has a password, else `invited` (an invitee disabled before setting a password stays able to use the invite flow) | T17a · **Answered: active if password, else invited** |
+| Q8 | Which permission may resend an invite? | `accounts:create` (it issues an invitation, same as invite); D6 rank rule applies | T17a · **Answered: `accounts:create`** |
+| Q9 | Invite throttle values (invite + resend share one counter)? | 10 / hour per actor and 20 / hour per IP, in-memory like the other limits | T17a · **Answered: 10/h per actor + 20/h per IP** |
+| Q10 | List pagination style (becomes the convention for documents, media, audit logs)? | Offset: `page` (default 1), `pageSize` (default 20, max 100), response `meta { page, pageSize, total }` | T17c · **Answered: Offset, as recommended** |
+| Q11 | Paginate `GET /roles` too? The invite role picker, the matrix and the caller-access hint need the full list. | No: keep a full list and cap custom roles at 50 (`409 ROLE_LIMIT_REACHED`) | T17c · **Answered: No pagination; cap 50** |
+| Q12 | Filters or search on the accounts list now? | None in v1 (few accounts); add `status` filter later if needed | T17c · **Answered: None in v1** |
+| Q13 | Confirm dialogs for Enable and Resend invite in the admin UI? | None (both reversible, no data loss); keep the confirm on Disable | T18a · **Answered: No confirm** |
