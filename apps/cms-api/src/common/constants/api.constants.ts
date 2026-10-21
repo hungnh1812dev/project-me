@@ -64,6 +64,8 @@ export const API_ROUTES = {
     ROOT: 'documents',
     BY_SLUG: ':slug',
     BY_ID: ':slug/:documentId',
+    PUBLISH: ':slug/:documentId/publish',
+    UNPUBLISH: ':slug/:documentId/unpublish',
   },
 } as const;
 

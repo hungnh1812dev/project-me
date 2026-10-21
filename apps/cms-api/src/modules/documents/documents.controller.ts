@@ -2,7 +2,10 @@ import {
   Controller,
   Get,
   Body,
+  Delete,
   Header,
+  HttpCode,
+  HttpStatus,
   Param,
   Post,
   Put,
@@ -35,11 +38,17 @@ import {
 import { CONTENT_STATUSES } from '../content-engine/content-engine.constants';
 import { DocumentAuthGuard, type DocumentRequest } from './document-auth.guard';
 import { parseListQuery } from './dto/list-documents.query';
-import { parseCreateBody, parseUpdateBody } from './dto/write-document.body';
+import {
+  parseCreateBody,
+  parsePublishBody,
+  parseUpdateBody,
+} from './dto/write-document.body';
 import {
   DocumentsCommandService,
   type WriteResult,
+  type WrittenRef,
 } from './documents.command.service';
+import { PublishService } from './publish.service';
 import {
   type DocumentPage,
   DocumentsQueryService,
@@ -64,6 +73,7 @@ export class DocumentsController {
   constructor(
     private readonly documents: DocumentsQueryService,
     private readonly commands: DocumentsCommandService,
+    private readonly publishing: PublishService,
   ) {}
 
   @Get(API_ROUTES.DOCUMENTS.BY_SLUG)
@@ -138,6 +148,66 @@ export class DocumentsController {
       parseRequest(documentIdSchema, documentId),
       version,
       tree,
+    );
+  }
+
+  /** SPEC §9: copies the draft over the published row; a stale `expectedVersion` is a 409. */
+  @Post(API_ROUTES.DOCUMENTS.PUBLISH)
+  @HttpCode(HttpStatus.OK)
+  @RequirePermission({
+    action: PermissionAction.publish,
+    subjectParam: SLUG_PARAM,
+  })
+  @Header(NO_STORE_HEADER.NAME, NO_STORE_HEADER.VALUE)
+  publish(
+    @Req() req: DocumentRequest,
+    @Param(SLUG_PARAM) slug: string,
+    @Param(DOCUMENT_ID_PARAM) documentId: string,
+    @Body() body: unknown,
+  ): Promise<WrittenRef> {
+    return this.publishing.publish(
+      req.user.actor,
+      slug,
+      parseRequest(documentIdSchema, documentId),
+      parsePublishBody(body),
+    );
+  }
+
+  /** SPEC §9: removes the published row; the draft stays. */
+  @Post(API_ROUTES.DOCUMENTS.UNPUBLISH)
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @RequirePermission({
+    action: PermissionAction.unpublish,
+    subjectParam: SLUG_PARAM,
+  })
+  unpublish(
+    @Req() req: DocumentRequest,
+    @Param(SLUG_PARAM) slug: string,
+    @Param(DOCUMENT_ID_PARAM) documentId: string,
+  ): Promise<void> {
+    return this.publishing.unpublish(
+      req.user.actor,
+      slug,
+      parseRequest(documentIdSchema, documentId),
+    );
+  }
+
+  /** SPEC §9: removes the draft and the published row. */
+  @Delete(API_ROUTES.DOCUMENTS.BY_ID)
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @RequirePermission({
+    action: PermissionAction.delete,
+    subjectParam: SLUG_PARAM,
+  })
+  remove(
+    @Req() req: DocumentRequest,
+    @Param(SLUG_PARAM) slug: string,
+    @Param(DOCUMENT_ID_PARAM) documentId: string,
+  ): Promise<void> {
+    return this.publishing.remove(
+      req.user.actor,
+      slug,
+      parseRequest(documentIdSchema, documentId),
     );
   }
 }

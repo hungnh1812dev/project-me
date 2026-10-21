@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { parseRequest } from '../../access/access-management.requests';
 import {
   DOCUMENT_ERROR_MESSAGES,
+  EXPECTED_VERSION_BODY_KEY,
   INT4_MAX,
   VERSION_BODY_KEY,
 } from '../documents.constants';
@@ -41,4 +42,13 @@ export function parseUpdateBody(body: unknown): {
   );
   const parsed = parseRequest(updateVersionSchema, body);
   return { version: parsed[VERSION_BODY_KEY], tree };
+}
+
+const publishBodySchema = z.strictObject({
+  [EXPECTED_VERSION_BODY_KEY]: versionSchema,
+});
+
+/** `POST .../publish` body: only the draft version being published. */
+export function parsePublishBody(body: unknown): number {
+  return parseRequest(publishBodySchema, body)[EXPECTED_VERSION_BODY_KEY];
 }

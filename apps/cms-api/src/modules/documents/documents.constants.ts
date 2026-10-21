@@ -8,6 +8,8 @@ export const DOCUMENT_ERROR_CODES = {
   VERSION_CONFLICT: 'DOCUMENT_VERSION_CONFLICT',
   /** A write value fails the field's type or `required` rule. */
   INVALID: 'DOCUMENT_INVALID',
+  /** Publish or unpublish on a content type without draft and publish. */
+  NOT_PUBLISHABLE: 'DOCUMENT_NOT_PUBLISHABLE',
 } as const;
 
 export const DOCUMENT_ERROR_MESSAGES = {
@@ -15,6 +17,9 @@ export const DOCUMENT_ERROR_MESSAGES = {
   VERSION_CONFLICT:
     'The document was changed by someone else. Review the current version and submit again.',
   INVALID_BODY: 'The request body is not valid.',
+  NOT_PUBLISHABLE: 'This content type has no draft and publish.',
+  PUBLISH_CONFLICT:
+    'The draft was changed since you loaded it. Reload it and publish again.',
   REQUIRED: 'is required',
   INVALID_TYPE: 'does not match the type of the field',
   DRAFTS_FORBIDDEN: 'You may not read drafts of this content type.',
@@ -124,6 +129,9 @@ export const YEAR_ZERO_PREFIX = '0000';
 
 /** Body key of `PUT` carrying the version the client edited. */
 export const VERSION_BODY_KEY = 'version';
+
+/** Body key of `POST .../publish`: the draft version the client reviewed. */
+export const EXPECTED_VERSION_BODY_KEY = 'expectedVersion';
 
 /** Name of the placeholder uid of a submitted component item that has none yet. */
 export const NEW_ITEM_UID = '';

@@ -25,6 +25,16 @@ const SERIALIZER_BUILDING_BLOCKS = [
   join('modules', 'access', 'access.constants.ts'),
 ];
 
+/**
+ * Publish (T22) copies a draft into the published row inside one transaction.
+ * The copied record is never part of a response (it returns `{ documentId,
+ * version }`), so these files need no serializer.
+ */
+const INTERNAL_COPY_FILES = [
+  join('modules', 'documents', 'publish.service.ts'),
+  join('modules', 'documents', 'tree-cloner.ts'),
+];
+
 const RECORD_LOADER_IMPORT =
   /(?:from|import\()\s*['"][^'"]*content-engine\/(?:content\.repository|tree-loader)['"]/;
 const SERIALIZER_IMPORT =
@@ -60,6 +70,7 @@ describe('RecordSerializer is the only record -> response path', () => {
         ({ file, text }) =>
           !file.startsWith(CONTENT_ENGINE_DIR) &&
           !SERIALIZER_BUILDING_BLOCKS.includes(file) &&
+          !INTERNAL_COPY_FILES.includes(file) &&
           RECORD_LOADER_IMPORT.test(text) &&
           !SERIALIZER_IMPORT.test(text),
       )
