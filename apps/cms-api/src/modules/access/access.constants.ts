@@ -1,6 +1,11 @@
 import { PermissionAction } from '../../generated/prisma/client';
-import { SCALAR_FIELD_TYPES } from '../content-engine/content-engine.constants';
+import {
+  type ROOT_SYSTEM_COLUMNS,
+  SCALAR_FIELD_TYPES,
+} from '../content-engine/content-engine.constants';
+import type { ContentDocument } from '../content-engine/content.repository';
 import type { SystemRoleSlug } from '../identity/identity.constants';
+import type { ActorKind } from './actor-context';
 
 /** Every permission action (SPEC §6), in enum order. */
 export const PERMISSION_ACTIONS = Object.values(PermissionAction);
@@ -117,6 +122,12 @@ export const ACCESS_ERROR_CODES = {
   PERMISSION_INVALID_ACTION: 'PERMISSION_INVALID_ACTION',
   PERMISSION_INVALID_FIELDS: 'PERMISSION_INVALID_FIELDS',
   TOKEN_SCOPE_INVALID: 'TOKEN_SCOPE_INVALID',
+  /** Filter, sort or search on a field the actor cannot read (SPEC D3). */
+  FIELD_NOT_READABLE: 'FIELD_NOT_READABLE',
+  /** Write payload sets a field the actor cannot write (SPEC D4). */
+  FIELD_NOT_WRITABLE: 'FIELD_NOT_WRITABLE',
+  /** Query or write payload names a field the content type does not have. */
+  FIELD_UNKNOWN: 'FIELD_UNKNOWN',
 } as const;
 
 export type AccessErrorCode =
@@ -194,3 +205,83 @@ export const VERSION_CACHE_TTL_MS = 5_000;
  * At the cap the oldest entry is dropped (it is re-read on next use).
  */
 export const VERSION_CACHE_MAX_ENTRIES = 1_000;
+
+/**
+ * SPEC §6 mask: the value an unreadable field takes in every response.
+ * Text-like types get the sentinel string, every other type and every
+ * component gets `null`.
+ */
+export const MASK_SENTINEL = '***';
+export const MASK_SENTINEL_FIELD_TYPES = [
+  'string',
+  'text',
+  'richtext',
+] as const satisfies readonly (typeof SCALAR_FIELD_TYPES)[number][];
+
+/** Key of the masked field paths in a serialized record (SPEC §6). */
+export const MASKED_FIELDS_KEY = '_maskedFields';
+
+/**
+ * Root system fields of a serialized record (decision T16). They are always
+ * readable: field lists cannot name them, and clients need them for
+ * identity, OCC and display. They may be filtered and sorted on. The
+ * internal row `id` is never sent (`documentId` and `componentUid` are the
+ * public keys).
+ */
+export const RECORD_SYSTEM_FIELDS = [
+  'documentId',
+  'version',
+  'publishedAt',
+  'locale',
+  'createdAt',
+  'updatedAt',
+  'createdBy',
+  'updatedBy',
+] as const satisfies readonly (keyof ContentDocument)[];
+
+export type RecordSystemField = (typeof RECORD_SYSTEM_FIELDS)[number];
+
+/** Root column of each record system field (names from ROOT_SYSTEM_COLUMNS). */
+export const RECORD_SYSTEM_COLUMNS = {
+  documentId: 'document_id',
+  version: 'version',
+  publishedAt: 'published_at',
+  locale: 'locale',
+  createdAt: 'created_at',
+  updatedAt: 'updated_at',
+  createdBy: 'created_by',
+  updatedBy: 'updated_by',
+} as const satisfies Record<
+  RecordSystemField,
+  (typeof ROOT_SYSTEM_COLUMNS)[number]
+>;
+
+/**
+ * System fields that name accounts, and the actor kinds that never see
+ * them (user decision T16): they are omitted from responses, not selected,
+ * and cannot be filtered, sorted or searched on. Signed-in accounts and API
+ * tokens keep them.
+ */
+export const ACCOUNT_REFERENCE_FIELDS = [
+  'createdBy',
+  'updatedBy',
+] as const satisfies readonly RecordSystemField[];
+export const ACCOUNT_REFERENCES_HIDDEN_FROM = [
+  'anonymous',
+  'reviewer',
+] as const satisfies readonly ActorKind[];
+
+/** Keys of the tree part of a write payload and of a component item. */
+export const WRITE_TREE_KEYS = {
+  VALUES: 'values',
+  COMPONENTS: 'components',
+  COMPONENT_UID: 'componentUid',
+} as const;
+
+/** Messages of the field errors (no raw values, client keys are not echoed). */
+export const FIELD_ERROR_MESSAGES = {
+  notReadable: (path: string) => `Field "${path}" is not readable.`,
+  notWritable: (path: string) => `Field "${path}" is not writable.`,
+  unknown: 'The request names a field this content type does not have.',
+  invalidPayload: 'The write payload is not a valid document tree.',
+} as const;

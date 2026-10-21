@@ -19,6 +19,7 @@ import {
 import {
   type FieldList,
   fieldListAllows,
+  fieldListReaches,
   unionFieldLists,
 } from './field-paths';
 import type { SubjectCatalog } from './subject-catalog';
@@ -42,6 +43,11 @@ export class FieldSelection {
   /** True when the field path (or a component containing it) is allowed. */
   allows(path: string): boolean {
     return fieldListAllows(this.paths, path);
+  }
+
+  /** True when the path or any field inside it is allowed (see `fieldListReaches`). */
+  reaches(path: string): boolean {
+    return fieldListReaches(this.paths, path);
   }
 }
 

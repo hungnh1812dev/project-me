@@ -3,8 +3,8 @@
 This module decides what an actor may do with a subject, which fields it may
 read or write, and which rows a conditioned permission reaches (SPEC §7
 D2–D6, §8.1, §8.3). It was built in T14 (rules) and wired into Nest in T15 (guard and revocation
-versions). Masking (T16), the management API (T17) and tokens (T19) build on
-it.
+versions). T16 added field masking. The management API (T17) and tokens
+(T19) build on it.
 
 | File                          | What it holds                                                                              |
 | ----------------------------- | ------------------------------------------------------------------------------------------ |
@@ -21,6 +21,12 @@ it.
 | `access-policy.service.ts`    | Builds the catalog + evaluator from the lazily loaded content registry (T15)               |
 | `access.module.ts`            | Nest wiring (imported by IdentityModule)                                                   |
 | `role-permissions.seed.ts`    | Default rows for system roles that have none                                               |
+| `field-projection.ts`         | `projectTable` / `selectedColumns`: never select unreadable columns (T16, D3)              |
+| `record.serializer.ts`        | `RecordSerializer`: the one record -> response path, masks + `_maskedFields` (T16)         |
+| `write-allowlist.ts`          | `WriteAllowlist`: client tree -> writable tree, drops masks, 400 otherwise (T16, D4)       |
+| `query.guard.ts`              | `QueryGuard`: filter/sort/search only on readable fields (T16, D3)                         |
+| `record-read-access.ts`       | `RecordReadAccess` / `recordReadAccess(actor, readable)`: fields + visible system fields   |
+| `field-errors.ts`             | The 400s of the field checks (`FIELD_NOT_READABLE`, `FIELD_NOT_WRITABLE`, `FIELD_UNKNOWN`) |
 
 ## Subjects and actions
 
@@ -84,6 +90,118 @@ covers its whole subtree. `null` means every field. Lists are only valid on
 a specific content type: `readable_fields` on `read` rows, and
 `writable_fields` on `create`/`update` rows. Every path must exist in the
 definition, with no duplicates.
+
+## Field masking and write allowlist (T16, D3/D4)
+
+Building blocks for the document endpoints (T20/T21). Each is created per
+content type (`new X(registry.resolve(slug))`). Reads take a
+`RecordReadAccess` from `recordReadAccess(actor, fieldsFor(...).readable)`:
+the readable content fields plus the system fields the actor kind may see.
+Writes take the `FieldAccess` from `fieldsFor()`.
+
+**Read path.** `projectTable(type.root, readable)` returns a copy of the
+plan tree with only readable columns, and without component tables that
+nothing readable lies in. Pass it where the registry root would go
+(`loadComponentTrees`, `rowToValues`, `selectedColumns(table, access)`
+for the root select), so masked columns never reach SQL. Then
+`RecordSerializer.serialize(record, access)` builds the response:
+
+```json
+{
+  "documentId": "…",
+  "version": 3,
+  "publishedAt": null,
+  "locale": null,
+  "createdAt": "…",
+  "updatedAt": "…",
+  "createdBy": 1,
+  "updatedBy": 2,
+  "values": { "position": "Lead", "company": "***", "salary": null },
+  "components": {
+    "reference": null,
+    "experience": [
+      {
+        "componentUid": "…",
+        "values": { "company": "***", "years": 4 },
+        "components": { "roles": [] }
+      }
+    ]
+  },
+  "_maskedFields": ["company", "salary", "reference", "experience.company"]
+}
+```
+
+Decisions (T16):
+
+- **Mask values** (SPEC §6): `"***"` for string/text/richtext, `null` for
+  every other type and for a masked component (single or repeatable).
+  A masked field gets its mask even when it is empty in the DB.
+- **`_maskedFields`** is one list at the root, in definition order, with
+  dotted definition paths and no item index (`experience.company`, not
+  `experience[0].company`): field permissions are the same for every item.
+  A fully masked component is listed once by its own path. A partly
+  readable component (some sub-field readable, e.g. `reference.name`) is
+  shown with its items, and its masked sub-fields are listed and masked in
+  every item. The list depends only on the definition and the selection,
+  not on the data.
+- **System fields** (`RECORD_SYSTEM_FIELDS`): `documentId`, `version`,
+  `publishedAt`, `locale`, `createdAt` and `updatedAt` are always readable
+  and may be filtered and sorted on. Field lists cannot name them.
+- **Account references** (user decision T16): `createdBy` and `updatedBy`
+  are shown to signed-in accounts and API tokens only. For anonymous and
+  reviewer actors (`ACCOUNT_REFERENCES_HIDDEN_FROM`) they are **omitted**
+  (the keys are absent, not masked, and not in `_maskedFields`, which lists
+  content fields only). `selectedColumns` does not select `created_by` /
+  `updated_by` for them, and `QueryGuard` rejects filter, sort and search on
+  them with 400 `FIELD_NOT_READABLE`. A row condition may still compare them
+  in the WHERE clause. Internal row ids and `orderIndex` are
+  never sent: `documentId` and `componentUid` are the public keys, and
+  list order is the item order.
+- The serializer builds its output from the definition, never by copying
+  the record. A raw value in the record for a masked field (a load without
+  the projection) is still masked, and keys the definition lacks are never
+  copied.
+- `SerializedRecord` is a branded type. Response types of document
+  endpoints must use it.
+
+**Only path.** The architecture test
+`record-serializer.architecture.spec.ts` (a static scan of `src/`) fails
+when:
+
+- a file outside the content engine imports `content.repository` or
+  `tree-loader` without also importing `record.serializer`;
+- a controller, filter, interceptor or gateway imports them at all;
+- a file other than the serializer casts to `SerializedRecord`.
+
+So list, detail, 409 conflict, bulk conflict, audit metadata and
+error-detail bodies all go through `serialize`.
+
+**Write path.** `WriteAllowlist.apply(payload, fields)` takes the tree part
+of a body (`{ values, components }`; T21 takes `version` off first) and
+returns the `TreeInput` to pass to `assertTreeInput` and `replaceTree` /
+`insertTree`:
+
+| Key in the payload                                    | Result                                          |
+| ----------------------------------------------------- | ----------------------------------------------- |
+| `_maskedFields` (root or item)                        | ignored                                         |
+| unreadable field carrying its mask (`"***"` / `null`) | dropped; the DB value is unchanged (absent key) |
+| field or key the definition does not have             | 400 `FIELD_UNKNOWN`                             |
+| any other field that is not writable                  | 400 `FIELD_NOT_WRITABLE`                        |
+| not an object / list where one is needed              | 400 `BAD_REQUEST`                               |
+
+A component list replaces the stored list (items not sent are deleted), so
+sending one needs the **whole component** writable. A grant on only some
+sub-fields (e.g. `writable: ["reference.phone"]`) does not allow sending
+`reference` (decision T16, fails closed). Inside a writable component,
+masked sub-fields that come back with their mask are dropped per item, so a
+matched item (`componentUid`) keeps them.
+
+**Query path.** `QueryGuard.assert({ filter, sort, search }, access)`
+takes the field paths a list query uses. System fields the access includes
+pass. An unknown path is 400 `FIELD_UNKNOWN`. An unreadable field, or
+`createdBy` / `updatedBy` for an anonymous or reviewer actor, is 400
+`FIELD_NOT_READABLE`.
+A free-text search must only search readable fields (T20).
 
 ## Conditions DSL (SPEC §8.3)
 

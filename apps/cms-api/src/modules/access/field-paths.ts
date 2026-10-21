@@ -29,6 +29,11 @@ export function fieldPathsOf(definition: ContentTypeDefinition): Set<string> {
   return paths;
 }
 
+/** `reference` + `phone` -> `reference.phone`; an empty prefix is the root. */
+export function joinFieldPath(prefix: string, name: string): string {
+  return prefix === '' ? name : `${prefix}${FIELD_PATH_SEPARATOR}${name}`;
+}
+
 /** True when `path` is `entry` or lies inside the component `entry`. */
 function covers(entry: string, path: string): boolean {
   return path === entry || path.startsWith(`${entry}${FIELD_PATH_SEPARATOR}`);
@@ -37,6 +42,18 @@ function covers(entry: string, path: string): boolean {
 /** True when the list allows `path` (null = all). */
 export function fieldListAllows(list: FieldList, path: string): boolean {
   return list === null || list.some((entry) => covers(entry, path));
+}
+
+/**
+ * True when the list allows `path` or something inside it: `reference.phone`
+ * reaches into `reference`. Used to keep a component that is only partly
+ * readable (its allowed sub-fields are still selected and shown).
+ */
+export function fieldListReaches(list: FieldList, path: string): boolean {
+  return (
+    list === null ||
+    list.some((entry) => covers(entry, path) || covers(path, entry))
+  );
 }
 
 /** Fields allowed by any of the lists (null wins). */
