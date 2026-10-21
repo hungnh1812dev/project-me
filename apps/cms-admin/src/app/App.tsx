@@ -1,6 +1,9 @@
 import { Navigate, Route, Routes } from 'react-router';
 
 import { APP_ROUTES } from '../config/routes';
+import { AccountsPage } from '../features/access/AccountsPage';
+import { RolePermissionsPage } from '../features/access/RolePermissionsPage';
+import { RolesPage } from '../features/access/RolesPage';
 import { LoginPage } from '../features/auth/LoginPage';
 import { ProtectedRoute } from '../features/auth/ProtectedRoute';
 import { ResetPasswordPage } from '../features/auth/ResetPasswordPage';
@@ -18,6 +21,12 @@ export function App() {
       <Route element={<ProtectedRoute />}>
         <Route element={<AppShell />}>
           <Route index element={<StatusPage />} />
+          <Route path={APP_ROUTES.ACCOUNTS} element={<AccountsPage />} />
+          <Route path={APP_ROUTES.ROLES} element={<RolesPage />} />
+          <Route
+            path={APP_ROUTES.ROLE_PERMISSIONS}
+            element={<RolePermissionsPage />}
+          />
           <Route
             path={APP_ROUTES.SECURITY_SETTINGS}
             element={<SecuritySettingsPage />}

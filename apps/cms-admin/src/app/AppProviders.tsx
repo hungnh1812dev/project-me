@@ -2,6 +2,7 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
 import { Provider } from 'react-redux';
 
+import { AccessApiProvider } from '../features/access/access-api-context';
 import { PasswordApiProvider } from '../features/auth/password-api-context';
 import { SessionProvider } from '../features/auth/session-context';
 import { SecurityApiProvider } from '../features/security/security-api-context';
@@ -13,7 +14,12 @@ export function AppProviders({
 }: {
   services: Pick<
     AppServices,
-    'store' | 'session' | 'passwordApi' | 'securityApi' | 'queryClient'
+    | 'store'
+    | 'session'
+    | 'passwordApi'
+    | 'securityApi'
+    | 'accessApi'
+    | 'queryClient'
   >;
   children: ReactNode;
 }) {
@@ -23,7 +29,9 @@ export function AppProviders({
         <SessionProvider session={services.session}>
           <PasswordApiProvider api={services.passwordApi}>
             <SecurityApiProvider api={services.securityApi}>
-              {children}
+              <AccessApiProvider api={services.accessApi}>
+                {children}
+              </AccessApiProvider>
             </SecurityApiProvider>
           </PasswordApiProvider>
         </SessionProvider>

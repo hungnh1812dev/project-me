@@ -52,9 +52,23 @@ So far: sign-in (T11) and, behind it, a status page that calls
   `session.expire('password-changed')` and the sign-in page shows why
   (`auth.endNotice`). Re-auth failures come back as 403, so the interceptor
   never treats them as an expired session.
+- **Access (T18)** (`src/features/access`): `/accounts` (list, invite
+  dialog, disable with a named confirmation), `/roles` and `/roles/:roleId`
+  (permission matrix: subjects x actions; content rows open readable /
+  writable field pickers fed by `GET /content-types`, sensitive fields
+  flagged, and a collapsed "Advanced: row conditions" JSON textarea that the
+  server validates). Saving sends the whole permission set (`PUT
+/roles/:id/permissions`); 400 issues and `PERMISSION_NOT_HELD` indexes are
+  mapped back to matrix rows. Actions are hidden from the caller's own role
+  rows in `GET /roles` (`caller-access.ts`; owner = all; Accounts / Roles nav
+  links hidden when not readable). This is only a hint: cms-api enforces
+  every rule and its answers (403, 404, 409) are handled in the UI. Dialogs
+  use the form-commons Radix `Dialog`; `components/Modal.tsx` (native
+  `<dialog>`, 2FA) is unchanged.
 - **Routes** (`src/config/routes.ts`): `/login`, `/reset-password`,
-  `/set-password`, and `/` + `/settings/security` behind `ProtectedRoute` +
-  `AppShell` (header with the user, "Security" and "Sign out").
+  `/set-password`, and `/`, `/settings/security`, `/accounts`, `/roles`,
+  `/roles/:roleId` behind `ProtectedRoute` + `AppShell` (header with the
+  user, Accounts / Roles links, "Security" and "Sign out").
 
 End-to-end coverage lives in [`apps/e2e`](../e2e/README.md).
 

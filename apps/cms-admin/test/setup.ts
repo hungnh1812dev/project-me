@@ -15,6 +15,15 @@ if (typeof HTMLDialogElement.prototype.showModal !== 'function') {
   };
 }
 
+// jsdom has no ResizeObserver; Radix (checkbox in a form) measures with it.
+if (typeof globalThis.ResizeObserver !== 'function') {
+  globalThis.ResizeObserver = class ResizeObserver {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  };
+}
+
 afterEach(() => {
   cleanup();
 });

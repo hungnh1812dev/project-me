@@ -1,0 +1,218 @@
+import { Button } from '@abyss/form-commons';
+import { useRef, useState } from 'react';
+
+import { useAppSelector } from '../../app/store';
+import { COPY } from '../../config/copy.constants';
+import { selectCurrentUser } from '../auth/auth.slice';
+import { FormAlert, type FormAlertTone } from '../auth/FormAlert';
+import type { Account, InvitedAccount } from './access.api';
+import { isForbidden } from './access-error';
+import { useAccountsQuery, useRolesQuery } from './access-queries';
+import { useCallerAccess } from './caller-access';
+import {
+  DisableAccountDialog,
+  type DisableOutcome,
+} from './DisableAccountDialog';
+import { InviteDialog } from './InviteDialog';
+import { LoadError, PageHeader, TableSkeleton } from './PageStates';
+
+const copy = COPY.access.accounts;
+
+const STATUS_CLASS: Record<Account['status'], string> = {
+  invited: 'bg-info-soft text-info-strong',
+  active: 'bg-success-soft text-success-strong',
+  disabled: 'bg-muted text-muted-foreground',
+};
+
+const dateFormat = new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' });
+
+interface Notice {
+  tone: FormAlertTone;
+  message: string;
+}
+
+/** `/accounts` (T18): who can sign in; invite and disable. */
+export function AccountsPage() {
+  const accounts = useAccountsQuery();
+  const roles = useRolesQuery();
+  const caller = useCallerAccess();
+  const me = useAppSelector(selectCurrentUser);
+  const [inviteOpen, setInviteOpen] = useState(false);
+  const [disabling, setDisabling] = useState<Account | null>(null);
+  const [notice, setNotice] = useState<Notice | null>(null);
+  const opener = useRef<HTMLElement | null>(null);
+  const headingRef = useRef<HTMLDivElement>(null);
+
+  // Radix has no trigger here (dialogs open from state), so put focus back
+  // on the button that opened it, or on the page heading if that row is gone.
+  const restoreFocus = (event: Event) => {
+    event.preventDefault();
+    const target = opener.current;
+    if (target?.isConnected) target.focus();
+    else headingRef.current?.querySelector('h1')?.focus();
+  };
+
+  const canInvite = caller.ready && caller.can('accounts', 'create');
+  const canDisable = caller.ready && caller.can('accounts', 'update');
+
+  const onInvited = (account: InvitedAccount) => {
+    setInviteOpen(false);
+    setNotice(
+      account.invitationSent
+        ? { tone: 'success', message: copy.invited(account.email) }
+        : { tone: 'warning', message: copy.invitedNoEmail(account.email) },
+    );
+  };
+
+  const onDisabled = (account: Account, outcome: DisableOutcome) => {
+    setDisabling(null);
+    setNotice(
+      outcome === 'disabled'
+        ? { tone: 'success', message: copy.disabled(account.displayName) }
+        : {
+            tone: 'info',
+            message: outcome === 'gone' ? copy.gone : copy.alreadyDisabled,
+          },
+    );
+  };
+
+  return (
+    <div ref={headingRef} className="grid grid-cols-[minmax(0,1fr)] gap-6">
+      <PageHeader
+        title={copy.title}
+        description={copy.description}
+        action={
+          canInvite ? (
+            <Button
+              type="button"
+              variant="primary"
+              onClick={(event) => {
+                opener.current = event.currentTarget;
+                setNotice(null);
+                setInviteOpen(true);
+              }}
+            >
+              {copy.invite}
+            </Button>
+          ) : null
+        }
+      />
+      {notice === null ? null : (
+        <FormAlert tone={notice.tone}>{notice.message}</FormAlert>
+      )}
+      {accounts.isPending ? (
+        <TableSkeleton label={copy.loading} />
+      ) : accounts.isError ? (
+        isForbidden(accounts.error) ? (
+          <FormAlert tone="info">{copy.forbidden}</FormAlert>
+        ) : (
+          <LoadError
+            message={copy.loadFailed}
+            retrying={accounts.isFetching}
+            onRetry={() => void accounts.refetch()}
+          />
+        )
+      ) : accounts.data.length === 0 ? (
+        <div className="grid justify-items-start gap-1">
+          <p className="m-0 font-medium">{copy.empty}</p>
+          <p className="m-0 text-sm text-muted-foreground">{copy.emptyHint}</p>
+        </div>
+      ) : (
+        <div className="relative overflow-x-auto rounded-md border border-border bg-card">
+          <table className="w-full border-collapse text-sm">
+            <caption className="sr-only">{copy.tableLabel}</caption>
+            <thead className="bg-muted text-left text-muted-foreground">
+              <tr>
+                <th scope="col" className="px-3 py-2 font-medium">
+                  {copy.columns.name}
+                </th>
+                <th scope="col" className="px-3 py-2 font-medium">
+                  {copy.columns.role}
+                </th>
+                <th scope="col" className="px-3 py-2 font-medium">
+                  {copy.columns.status}
+                </th>
+                <th scope="col" className="px-3 py-2 font-medium">
+                  {copy.columns.twoFactor}
+                </th>
+                <th scope="col" className="px-3 py-2 font-medium">
+                  {copy.columns.created}
+                </th>
+                {canDisable ? (
+                  <th scope="col" className="px-3 py-2 text-right font-medium">
+                    <span className="sr-only">{copy.columns.actions}</span>
+                  </th>
+                ) : null}
+              </tr>
+            </thead>
+            <tbody>
+              {accounts.data.map((account) => (
+                <tr key={account.id} className="border-t border-border">
+                  <th scope="row" className="px-3 py-2 text-left font-normal">
+                    <span className="font-medium">{account.displayName}</span>
+                    {account.id === me?.id ? (
+                      <span className="ml-2 text-xs text-muted-foreground">
+                        {copy.you}
+                      </span>
+                    ) : null}
+                    <span className="block text-muted-foreground">
+                      {account.email}
+                    </span>
+                  </th>
+                  <td className="px-3 py-2">{account.role.name}</td>
+                  <td className="px-3 py-2">
+                    <span
+                      className={`inline-block rounded-sm px-2 py-0.5 text-xs font-medium ${STATUS_CLASS[account.status]}`}
+                    >
+                      {copy.status[account.status]}
+                    </span>
+                  </td>
+                  <td className="px-3 py-2 text-muted-foreground">
+                    {account.twoFactorEnabled
+                      ? copy.twoFactorOn
+                      : copy.twoFactorOff}
+                  </td>
+                  <td className="px-3 py-2 tabular-nums text-muted-foreground">
+                    {dateFormat.format(new Date(account.createdAt))}
+                  </td>
+                  {canDisable ? (
+                    <td className="px-3 py-2 text-right">
+                      {account.manageable && account.status !== 'disabled' ? (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          aria-label={copy.disableLabel(account.displayName)}
+                          onClick={(event) => {
+                            opener.current = event.currentTarget;
+                            setNotice(null);
+                            setDisabling(account);
+                          }}
+                        >
+                          {copy.disable}
+                        </Button>
+                      ) : null}
+                    </td>
+                  ) : null}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+      <InviteDialog
+        open={inviteOpen}
+        onOpenChange={setInviteOpen}
+        roles={roles.data}
+        onInvited={onInvited}
+        onCloseAutoFocus={restoreFocus}
+      />
+      <DisableAccountDialog
+        account={disabling}
+        onClose={() => setDisabling(null)}
+        onDone={onDisabled}
+        onCloseAutoFocus={restoreFocus}
+      />
+    </div>
+  );
+}

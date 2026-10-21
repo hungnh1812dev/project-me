@@ -7,12 +7,12 @@ build it first through `^build`).
 
 ## Exports
 
-| Import                           | What                                                                                   |
-| -------------------------------- | -------------------------------------------------------------------------------------- |
-| `@abyss/form-commons`            | `Button`, `Input`, `Label`, `Field`, `TextInput`, `FIELD_ID_SUFFIX` (ESM + CJS + d.ts) |
-| `@abyss/form-commons/styles.css` | Compiled CSS: tokens + the utilities the components use, no reset                      |
-| `@abyss/form-commons/theme.css`  | Tailwind v4 `@theme` mapping + tokens, for apps that run Tailwind                      |
-| `@abyss/form-commons/tokens.css` | CSS variables only                                                                     |
+| Import                           | What                                                                                                                                                          |
+| -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `@abyss/form-commons`            | `Button`, `Input`, `Label`, `Field`, `TextInput`, `SelectInput`, `CheckboxInput`, `Checkbox`, `NativeSelect`, `Dialog*`, `FIELD_ID_SUFFIX` (ESM + CJS + d.ts) |
+| `@abyss/form-commons/styles.css` | Compiled CSS: tokens + the utilities the components use, no reset                                                                                             |
+| `@abyss/form-commons/theme.css`  | Tailwind v4 `@theme` mapping + tokens, for apps that run Tailwind                                                                                             |
+| `@abyss/form-commons/tokens.css` | CSS variables only                                                                                                                                            |
 
 JS has no side effects (`sideEffects` lists only CSS), so unused components
 are tree-shaken.
@@ -87,6 +87,21 @@ const form = useForm({ resolver: zodResolver(schema), mode: 'onTouched' });
 the native `required` attribute is never set, so the browser bubble does not
 compete with the inline error. Use `mode: 'onTouched'` for validation after
 blur.
+
+### SelectInput and CheckboxInput
+
+`SelectInput` is a native `<select>` inside `Field` (`options`, optional
+`placeholder` as the empty first option), registered with the surrounding
+`FormProvider` like `TextInput`. `CheckboxInput` binds a Radix `Checkbox` to a
+boolean field; the box sits left of its label, description and error below.
+
+### Dialog
+
+shadcn `Dialog` (Radix): focus trap, inert page behind, Esc closes, focus
+returns to the trigger. Compose `DialogContent`, `DialogHeader`,
+`DialogTitle` (required for accessibility), `DialogDescription` and
+`DialogFooter` (secondary left, primary right, end-aligned). Put a
+`DialogClose` Cancel button in the footer; there is no corner close button.
 
 ## Adding shadcn components
 

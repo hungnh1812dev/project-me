@@ -28,4 +28,18 @@ export const API_ENDPOINTS = {
     EMAIL_CHALLENGE: '/auth/2fa/email-challenge',
     EMAIL_SEND_CODE: '/auth/2fa/email/send-code',
   },
+  /** T17 accounts API. `id` is the account's document id. */
+  ACCOUNTS: {
+    LIST: '/accounts',
+    DISABLE: (id: string) => `/accounts/${encodeURIComponent(id)}/disable`,
+  },
+  /** T17 roles API. `id` is the role's document id. */
+  ROLES: {
+    LIST: '/roles',
+    PERMISSIONS: (id: string) => `/roles/${encodeURIComponent(id)}/permissions`,
+  },
+  /** T17b read-only content types (field paths for the permission matrix). */
+  CONTENT_TYPES: {
+    LIST: '/content-types',
+  },
 } as const;
