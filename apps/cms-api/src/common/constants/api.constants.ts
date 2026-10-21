@@ -46,7 +46,15 @@ export const API_ROUTES = {
     BY_ID: ':id',
     PERMISSIONS: ':id/permissions',
   },
+  /** SPEC §9 content types (T17b), read-only. `:slug` is a registry slug. */
+  CONTENT_TYPES: {
+    ROOT: 'content-types',
+    BY_SLUG: ':slug',
+  },
 } as const;
 
 /** Route param holding a document_id in API_ROUTES.ACCOUNTS / ROLES. */
 export const ID_PARAM = 'id';
+
+/** Route param holding a content type slug in API_ROUTES.CONTENT_TYPES. */
+export const SLUG_PARAM = 'slug';

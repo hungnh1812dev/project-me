@@ -59,6 +59,11 @@ export class SubjectCatalog {
     return this.isContentSubject(subject) ? PERMISSION_ACTIONS : [];
   }
 
+  /** Slugs of every registered content type (never `*`). */
+  contentTypeSlugs(): string[] {
+    return [...this.content.keys()];
+  }
+
   contentType(slug: string): RegisteredContentType | undefined {
     return this.content.get(slug);
   }

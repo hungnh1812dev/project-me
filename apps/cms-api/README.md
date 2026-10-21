@@ -307,6 +307,36 @@ ROLE_IN_USE` with `details.accountCount` while any account (disabled,
   messages, no values), `404 ACCOUNT_NOT_FOUND` / `ROLE_NOT_FOUND`, `409
 ROLE_SLUG_TAKEN`.
 
+### Content types (T17b, `src/modules/content-types`)
+
+Read-only discovery of the registered content types and their field paths,
+for the admin permission matrix now and the document UIs later. Both routes
+need `Authorization: Bearer` (an account session).
+
+| Method | Path                          | Response                                       |
+| ------ | ----------------------------- | ---------------------------------------------- |
+| GET    | `/api/v1/content-types`       | `200 { data: ContentType[] }` (sorted by slug) |
+| GET    | `/api/v1/content-types/:slug` | `200 ContentType`                              |
+
+- `ContentType`: `{ slug, kind, draftAndPublish, fields: Field[] }`.
+  `Field`: `{ path, type, system, component, repeatable, rootScalar,
+conditionKind, sensitive }`. Content fields come first, depth-first in
+  definition order (`reference`, then `reference.phone`), then the system
+  fields conditions may use (`createdBy`, `updatedBy`, `documentId`, with
+  `system: true` and `type` = their value kind). `conditionKind` is the value
+  kind a condition compares the field with, or `null` when conditions can't
+  use it (components, nested fields, `json`).
+- Filtering: a type is listed when the caller may `read` it; only the paths
+  its readable field list reaches are included (a component stays when one
+  of its fields is readable). Reviewers and anonymous actors never get
+  `createdBy` / `updatedBy`.
+- Callers with `roles:update` (and the owner) see every type and every field,
+  so they can build any role's matrix; the rank rule still limits which roles
+  they edit.
+- An unknown slug and one the caller cannot read both answer `404
+CONTENT_TYPE_NOT_FOUND` with the same message. The slug is only ever a
+  registry lookup key.
+
 ### Security audit (T17, D15)
 
 `SecurityAuditService` (`src/modules/access/security-audit.service.ts`)

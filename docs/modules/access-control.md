@@ -4,7 +4,9 @@ This module decides what an actor may do with a subject, which fields it may
 read or write, and which rows a conditioned permission reaches (SPEC §7
 D2–D6, §8.1, §8.3). It was built in T14 (rules) and wired into Nest in T15 (guard and revocation
 versions). T16 added field masking. T17 added the accounts and roles API,
-the rank rule and the security audit. Tokens (T19) build on it.
+the rank rule and the security audit. T17b added the read-only content
+types API (`src/modules/content-types/`), which uses the evaluator to filter
+types and fields. Tokens (T19) build on it.
 
 | File                                    | What it holds                                                                              |
 | --------------------------------------- | ------------------------------------------------------------------------------------------ |
@@ -107,6 +109,22 @@ covers its whole subtree. `null` means every field. Lists are only valid on
 a specific content type: `readable_fields` on `read` rows, and
 `writable_fields` on `create`/`update` rows. Every path must exist in the
 definition, with no duplicates.
+
+### Content types API (T17b)
+
+`GET /content-types` and `/content-types/:slug` describe each type's field
+paths with the same `FieldSelection` the serializer uses:
+
+- a type is visible when `can(actor, read, slug)`; its paths are those
+  `fieldsFor(actor, slug).readable.reaches(path)` keeps, and its system
+  fields follow `recordReadAccess` (no `createdBy` / `updatedBy` for
+  reviewers or anonymous actors);
+- an actor allowed `roles:update` (`FULL_CATALOG_PERMISSION`) sees every type
+  and field, since a role manager has to name fields it may not read itself
+  (decision T17b). Field names are schema, not record data, and the rank
+  rule still bounds which roles it can change;
+- a hidden type answers the same `404 CONTENT_TYPE_NOT_FOUND` as an unknown
+  one, so the API does not reveal which types exist.
 
 ## Field masking and write allowlist (T16, D3/D4)
 
