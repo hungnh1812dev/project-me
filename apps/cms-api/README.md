@@ -493,6 +493,10 @@ Order of every write: allowlist (D4: resent `"***"` dropped, `FIELD_UNKNOWN` / `
 - **Delete** deletes the draft and the published row (cascade): 204. Every row of the document must be inside the actor's `delete` conditions, else 404 and nothing is deleted. A `draftAndPublish: false` type deletes its one live row.
 - **Activity tracking** is a port (`src/infrastructure/activity`: `ActivityRecorder`, token `ACTIVITY_RECORDER`). Publish, unpublish and delete call `record({ action, subject, documentId, accountId, tokenId?, version? })` after the commit; a failure is logged, never returned. Only the `none` adapter exists (default): the `database` adapter (SPEC D15) is not built yet. Create/update do not emit events yet.
 
+### Documents, presence (T26, `src/modules/documents`)
+
+`POST /documents/:slug/:documentId/presence` (SPEC D16), body `{ state?: 'viewing' | 'editing' }` (default `editing`, nothing else allowed). Needs `update` on the content type and the document's draft row inside the actor's `update` row conditions (else 404). Only account sessions: anonymous, reviewer and API token callers get 403. Heartbeat every 20 s; an entry expires 45 s after its last heartbeat (`PRESENCE_TTL_MS`). 200 returns everyone active on the document, each `{ accountId, displayName, state, lastSeenAt }` and nothing else (`accountId` is the account's public UUID, the `id` of `GET /auth/me`, never the internal numeric id; the caller is included, clients filter themselves out). In-memory store, one replica; capped at `PRESENCE_MAX_ENTRIES` (new editors get 429 at the cap). No audit event (not a content change).
+
 ### Security audit (T17, D15)
 
 `SecurityAuditService` (`src/modules/access/security-audit.service.ts`)

@@ -66,6 +66,7 @@ export const API_ROUTES = {
     BY_ID: ':slug/:documentId',
     PUBLISH: ':slug/:documentId/publish',
     UNPUBLISH: ':slug/:documentId/unpublish',
+    PRESENCE: ':slug/:documentId/presence',
   },
 } as const;
 

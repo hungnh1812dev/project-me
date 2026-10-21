@@ -135,3 +135,16 @@ export const EXPECTED_VERSION_BODY_KEY = 'expectedVersion';
 
 /** Name of the placeholder uid of a submitted component item that has none yet. */
 export const NEW_ITEM_UID = '';
+
+/** SPEC D16 presence: a heartbeat keeps an editor listed for this long. */
+export const PRESENCE_TTL_MS = 45_000;
+
+/** Most live presence entries held in memory; at the cap new editors are refused (429). */
+export const PRESENCE_MAX_ENTRIES = 5_000;
+
+export const PRESENCE_STATES = ['viewing', 'editing'] as const;
+export type PresenceState = (typeof PRESENCE_STATES)[number];
+
+export const PRESENCE_MESSAGES = {
+  STORE_FULL: 'Too many active editors, try again later.',
+} as const;

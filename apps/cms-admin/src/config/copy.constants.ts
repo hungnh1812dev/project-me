@@ -573,6 +573,12 @@ export const COPY = {
     documentNotFound:
       'This document does not exist, or your role cannot read it.',
     retry: 'Try again',
+    presence: {
+      one: (name: string) => `${name} is also on this document.`,
+      two: (a: string, b: string) => `${a} and ${b} are also on this document.`,
+      many: (a: string, b: string, rest: number) =>
+        `${a}, ${b} and ${rest} more are also on this document.`,
+    },
     save: 'Save draft',
     saved: 'Draft saved.',
     created: 'Draft created.',

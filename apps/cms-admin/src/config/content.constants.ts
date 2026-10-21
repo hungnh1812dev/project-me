@@ -33,3 +33,12 @@ export const FIELD_TYPE = {
 
 /** Response key listing the paths the caller's role cannot read. */
 export const MASKED_FIELDS_KEY = '_maskedFields';
+
+/** Presence heartbeat period (SPEC D16); the server drops an entry after 45 s. */
+export const PRESENCE_HEARTBEAT_MS = 20_000;
+
+/** `state` values the presence endpoint accepts. */
+export const PRESENCE_STATE = {
+  VIEWING: 'viewing',
+  EDITING: 'editing',
+} as const;

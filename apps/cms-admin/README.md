@@ -112,6 +112,12 @@ So far: sign-in (T11) and, behind it, a status page that calls
   `currentVersion`; all-saved just reloads. A second 409 re-diffs inside the
   modal. If the role cannot read the row, or only masked fields differ, the
   page keeps the reload alert only.
+- **Presence (T26)** (`PresenceBanner`): on an existing document, a React Query
+  heartbeat `POST /documents/:slug/:id/presence` every 20 s
+  (`PRESENCE_HEARTBEAT_MS`) while the page is open; it stops on unmount. The
+  response includes the caller, who is filtered out by account id. Other
+  editors show as an info banner; a failed heartbeat (403, 404, network)
+  hides the banner.
 - **Routes** (`src/config/routes.ts`): `/login`, `/reset-password`,
   `/set-password`, and `/`, `/settings/security`, `/accounts`, `/roles`,
   `/roles/:roleId`, `/api-tokens`, `/content/:slug/new`,

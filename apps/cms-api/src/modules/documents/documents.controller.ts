@@ -48,6 +48,8 @@ import {
   type WriteResult,
   type WrittenRef,
 } from './documents.command.service';
+import { parsePresenceBody } from './dto/presence.body';
+import { type PresenceEntry, PresenceService } from './presence.service';
 import { PublishService } from './publish.service';
 import {
   type DocumentPage,
@@ -74,6 +76,7 @@ export class DocumentsController {
     private readonly documents: DocumentsQueryService,
     private readonly commands: DocumentsCommandService,
     private readonly publishing: PublishService,
+    private readonly presence: PresenceService,
   ) {}
 
   @Get(API_ROUTES.DOCUMENTS.BY_SLUG)
@@ -208,6 +211,31 @@ export class DocumentsController {
       req.user.actor,
       slug,
       parseRequest(documentIdSchema, documentId),
+    );
+  }
+
+  /**
+   * SPEC D16: heartbeat of an editor; returns who is active on the document
+   * (`{accountId, displayName, state, lastSeenAt}` each). Needs `update` on `:slug`.
+   */
+  @Post(API_ROUTES.DOCUMENTS.PRESENCE)
+  @HttpCode(HttpStatus.OK)
+  @RequirePermission({
+    action: PermissionAction.update,
+    subjectParam: SLUG_PARAM,
+  })
+  @Header(NO_STORE_HEADER.NAME, NO_STORE_HEADER.VALUE)
+  heartbeat(
+    @Req() req: DocumentRequest,
+    @Param(SLUG_PARAM) slug: string,
+    @Param(DOCUMENT_ID_PARAM) documentId: string,
+    @Body() body: unknown,
+  ): Promise<PresenceEntry[]> {
+    return this.presence.heartbeat(
+      req.user.actor,
+      slug,
+      parseRequest(documentIdSchema, documentId),
+      parsePresenceBody(body),
     );
   }
 }

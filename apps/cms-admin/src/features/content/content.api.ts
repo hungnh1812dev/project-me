@@ -42,6 +42,14 @@ export interface WrittenRef {
   version: number;
 }
 
+/** One co-editor as `POST .../presence` returns it (the caller is included). */
+export interface PresenceEntry {
+  accountId: string;
+  displayName: string;
+  state: 'viewing' | 'editing';
+  lastSeenAt: string;
+}
+
 /** Content types and one document's draft (T20, T21). Bearer via the interceptor. */
 export function createContentApi(client: AxiosInstance) {
   const { CONTENT_TYPES, DOCUMENTS } = API_ENDPOINTS;
@@ -84,6 +92,18 @@ export function createContentApi(client: AxiosInstance) {
       const { data } = await client.put<WrittenRef>(
         DOCUMENTS.BY_ID(slug, documentId),
         { ...tree, version },
+      );
+      return data;
+    },
+
+    /** Heartbeat: records the caller and lists everyone active on the draft. */
+    sendPresence: async (
+      slug: string,
+      documentId: string,
+    ): Promise<PresenceEntry[]> => {
+      const { data } = await client.post<PresenceEntry[]>(
+        DOCUMENTS.PRESENCE(slug, documentId),
+        {},
       );
       return data;
     },

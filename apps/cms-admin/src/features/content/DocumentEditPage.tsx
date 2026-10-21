@@ -16,6 +16,7 @@ import type { DocumentRecord, DocumentTree } from './content.api';
 import { type FormValues, toDocumentTree, toFormValues } from './document-form';
 import { DynamicFormRenderer } from './DynamicFormRenderer';
 import { buildFieldTree, type FieldNode } from './field-tree';
+import { PresenceBanner } from './PresenceBanner';
 import { maskedPathsOf, visibleEntries } from './merge.reducer';
 
 const copy = COPY.content;
@@ -91,6 +92,9 @@ export function DocumentEditPage() {
   return (
     <div className="grid gap-6">
       <PageHeader title={title} description={copy.description} />
+      {documentId === undefined ? null : (
+        <PresenceBanner slug={slug} documentId={documentId} />
+      )}
       {fields.length === 0 ? (
         <FormAlert tone="info">{copy.noFields}</FormAlert>
       ) : (

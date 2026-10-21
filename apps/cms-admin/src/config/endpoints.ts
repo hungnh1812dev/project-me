@@ -57,5 +57,7 @@ export const API_ENDPOINTS = {
     BY_SLUG: (slug: string) => `/documents/${encodeURIComponent(slug)}`,
     BY_ID: (slug: string, id: string) =>
       `/documents/${encodeURIComponent(slug)}/${encodeURIComponent(id)}`,
+    PRESENCE: (slug: string, id: string) =>
+      `/documents/${encodeURIComponent(slug)}/${encodeURIComponent(id)}/presence`,
   },
 } as const;

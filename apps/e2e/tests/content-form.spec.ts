@@ -124,12 +124,16 @@ async function applyFormat(
 const toolbarButton = (scope: Page | Locator, label: string) =>
   scope.getByRole('button', { name: label, exact: true });
 
+/** The presence heartbeat is a POST too, but not a write. */
+const PRESENCE_SUFFIX = '/presence';
+
 /** Writes (not reads) to the documents API, recorded for assertions. */
 function recordWrites(page: Page) {
   const writes: Request[] = [];
   const onRequest = (request: Request) => {
     if (
       request.url().includes(DOCUMENTS_PATH) &&
+      !request.url().endsWith(PRESENCE_SUFFIX) &&
       ['POST', 'PUT'].includes(request.method())
     ) {
       writes.push(request);
