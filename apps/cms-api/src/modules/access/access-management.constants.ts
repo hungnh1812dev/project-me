@@ -25,6 +25,11 @@ export const MANAGEMENT_ERROR_CODES = {
   ROLE_NOT_ASSIGNABLE: 'ROLE_NOT_ASSIGNABLE',
   /** Create of a custom role past MANAGEMENT_LIMITS.MAX_CUSTOM_ROLES (T17c). */
   ROLE_LIMIT_REACHED: 'ROLE_LIMIT_REACHED',
+  TOKEN_NOT_FOUND: 'API_TOKEN_NOT_FOUND',
+  /** Update or revoke of a token that is already revoked (T19). */
+  TOKEN_REVOKED: 'API_TOKEN_REVOKED',
+  /** A token scope entry the token's creator does not hold (D5, T19). */
+  TOKEN_SCOPE_NOT_HELD: 'API_TOKEN_SCOPE_NOT_HELD',
 } as const;
 
 export const MANAGEMENT_ERROR_MESSAGES = {
@@ -43,6 +48,10 @@ export const MANAGEMENT_ERROR_MESSAGES = {
   ROLE_SYSTEM_IMMUTABLE: 'System roles cannot be deleted or re-ranked.',
   ROLE_NOT_ASSIGNABLE: 'This role cannot be assigned to an account.',
   ROLE_LIMIT_REACHED: 'The maximum number of custom roles is reached.',
+  TOKEN_NOT_FOUND: 'API token not found.',
+  TOKEN_REVOKED: 'The API token is revoked.',
+  TOKEN_SCOPE_NOT_HELD:
+    'A token cannot be granted a permission its creator does not hold.',
 } as const;
 
 /**

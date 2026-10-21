@@ -48,6 +48,12 @@ export const API_ROUTES = {
     BY_ID: ':id',
     PERMISSIONS: ':id/permissions',
   },
+  /** SPEC §9 API tokens (T19). `:id` is the token's document_id. */
+  API_TOKENS: {
+    ROOT: 'api-tokens',
+    BY_ID: ':id',
+    REVOKE: ':id/revoke',
+  },
   /** SPEC §9 content types (T17b), read-only. `:slug` is a registry slug. */
   CONTENT_TYPES: {
     ROOT: 'content-types',

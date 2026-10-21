@@ -346,6 +346,54 @@ ROLE_IN_USE` with `details.accountCount` while any account (disabled,
   messages, no values), `404 ACCOUNT_NOT_FOUND` / `ROLE_NOT_FOUND`, `409
 ROLE_SLUG_TAKEN`.
 
+### API tokens (T19, D5, `src/modules/access`)
+
+Routes need `Authorization: Bearer` with an **account session** (JWT). An
+`ak_live_` token gets `401` there, any other actor kind `403`.
+
+| Method | Path                            | Permission          | Response                                  |
+| ------ | ------------------------------- | ------------------- | ----------------------------------------- |
+| GET    | `/api/v1/api-tokens`            | `api_tokens:read`   | `200 { data, meta }` (`?page=&pageSize=`) |
+| POST   | `/api/v1/api-tokens`            | `api_tokens:create` | `201` token view plus `token` (raw, once) |
+| PATCH  | `/api/v1/api-tokens/:id`        | `api_tokens:update` | `200` token view                          |
+| POST   | `/api/v1/api-tokens/:id/revoke` | `api_tokens:update` | `204`                                     |
+
+- Body of create: `{ name, scope, expiresAt? }`; update takes any of
+  `name`, `scope`, `expiresAt` (`null` removes the expiry). `scope` is
+  `{ permissions: [{ subject, action, readableFields?, writableFields? }] }`,
+  content subjects only (`*` or a registered slug), at most 200 entries.
+  `expiresAt` is ISO 8601 with an offset and must be in the future.
+- Token view: `id` (document_id), `name`, `tokenPrefix` (first 12 characters),
+  `scope`, `status` (`active|revoked|expired`), `expiresAt`, `lastUsedAt`,
+  `revokedAt`, `createdAt`, `createdBy {id, displayName}`. The raw token is
+  `ak_live_` + 32 random bytes in base64url; only its SHA-256 is stored, and
+  only the create response (`Cache-Control: no-store`) ever holds it.
+- Subset check (D5), on create **and** update: every scope entry must be held
+  by the token's creator (their current role rows: the action on that
+  subject, or on `*`, with a field list inside theirs; a `*` entry needs a
+  `*` row). Otherwise `403 API_TOKEN_SCOPE_NOT_HELD` with `details.indexes`.
+  When the Owner edits another account's token, the check runs against that
+  token's creator. The Owner holds everything. Row conditions are not
+  compared: the creator's conditions always apply at request time.
+- Visibility: the Owner sees and manages every token; anyone else only the
+  tokens they created. Another account's token answers `404
+API_TOKEN_NOT_FOUND`. A revoked token cannot be updated or revoked again
+  (`409 API_TOKEN_REVOKED`). Scope errors: `400 TOKEN_SCOPE_INVALID` or the
+  `PERMISSION_INVALID_*` codes of `validateTokenScope`.
+- Audit (same transaction as the write, subject `api_tokens`, target = the
+  token's document_id): `api_token.created` (`subjects`, `permissionCount`,
+  `hasExpiry`), `api_token.updated` (`fields` changed, plus `subjects` and
+  `permissionCount` when the scope changed), `api_token.revoked`. Never the
+  raw token.
+- Authentication on content routes (T20+): `@UseGuards(ApiTokenGuard,
+PermissionGuard)`. `ApiTokenGuard` hashes the bearer value (it must start
+  with `ak_live_`), looks it up by hash and sets `req.user.actor` with the
+  creator's **current** role, so effective permissions are scope ∩ creator
+  (§12-6). `401` for a missing, unknown, revoked or expired token, a
+  malformed stored scope, and a disabled, deleted or missing creator.
+  `last_used_at` is written at most once a minute (`updated_at` does not
+  move). Tokens are not cached: revocation applies on the next request.
+
 ### Content types (T17b, `src/modules/content-types`)
 
 Read-only discovery of the registered content types and their field paths,
@@ -388,7 +436,7 @@ in `security-audit.constants.ts` (`<domain>.<event>`): `auth.login_succeeded`
 / `disabled` / `verify_failed` / `manage_failed` / `reset_by_operator`,
 `account.invited` / `updated` / `role_changed` / `disabled` / `enabled`
 (metadata `status`) / `invite_resent` / `sessions_revoked`, `role.created` / `updated` / `deleted` /
-`permissions_replaced`.
+`permissions_replaced`, `api_token.created` / `updated` / `revoked`.
 
 - `target_id` is the target's `document_id`; `subject` is the system subject
   (`accounts`, `roles`) or null for sign-in and self-service events; `ip` is

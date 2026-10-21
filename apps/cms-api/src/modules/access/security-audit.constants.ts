@@ -33,6 +33,9 @@ export const AUDIT_ACTIONS = {
   ROLE_UPDATED: 'role.updated',
   ROLE_DELETED: 'role.deleted',
   ROLE_PERMISSIONS_REPLACED: 'role.permissions_replaced',
+  API_TOKEN_CREATED: 'api_token.created',
+  API_TOKEN_UPDATED: 'api_token.updated',
+  API_TOKEN_REVOKED: 'api_token.revoked',
 } as const;
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[keyof typeof AUDIT_ACTIONS];

@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 
 import { DatabaseModule } from '../../infrastructure/database/database.module';
 import { ContentEngineModule } from '../content-engine/content-engine.module';
+import { ApiTokenAuthenticator, ApiTokenGuard } from './api-token.guard';
 import { AccessPolicyService } from './access-policy.service';
 import { PermissionGuard } from './permission.guard';
 import { RolePermissionsService } from './role-permissions.service';
@@ -17,6 +18,8 @@ import { VersionCache } from './version-cache';
   imports: [DatabaseModule, ContentEngineModule],
   providers: [
     AccessPolicyService,
+    ApiTokenAuthenticator,
+    ApiTokenGuard,
     PermissionGuard,
     RolePermissionsService,
     SecurityAuditService,
@@ -24,6 +27,8 @@ import { VersionCache } from './version-cache';
   ],
   exports: [
     AccessPolicyService,
+    ApiTokenAuthenticator,
+    ApiTokenGuard,
     PermissionGuard,
     RolePermissionsService,
     SecurityAuditService,

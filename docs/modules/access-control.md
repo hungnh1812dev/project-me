@@ -6,7 +6,8 @@ D2–D6, §8.1, §8.3). It was built in T14 (rules) and wired into Nest in T15 (
 versions). T16 added field masking. T17 added the accounts and roles API,
 the rank rule and the security audit. T17b added the read-only content
 types API (`src/modules/content-types/`), which uses the evaluator to filter
-types and fields. Tokens (T19) build on it.
+types and fields. T19 added API tokens: the API, the subset check
+(`token-scope-subset.ts`) and `ApiTokenGuard`.
 
 | File                                    | What it holds                                                                                  |
 | --------------------------------------- | ---------------------------------------------------------------------------------------------- |
@@ -81,7 +82,13 @@ types and fields. Tokens (T19) build on it.
    no conditions of their own. A scope entry for a slug meets the creator's
    rows for that slug, or their `*` rows when they have none. A `*` entry
    meets every creator content row. For an owner creator, the scope applies
-   as written.
+   as written. At save time (create and update) the scope must also be a
+   **subset** of the creator's current rows (`scopeEntriesBeyondCreator`):
+   same action on the entry's subject (or on `*`, when the creator has no
+   row for that slug), field list inside the union of the creator's lists,
+   and a `*` entry only against `*` rows. Conditions are not compared. An
+   Owner editing another account's token is checked against that token's
+   creator. Later loss of a permission is handled by the intersection.
 8. `fieldsFor(actor, subject, writeAction = 'update')`: readable fields come
    from `read` rows, writable fields from `writeAction` rows. Field lists
    apply to content types only. A system subject is all or nothing.
