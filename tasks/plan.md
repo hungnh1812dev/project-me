@@ -6,7 +6,7 @@ Task tracking: `tasks/todo.md` is the source list. When running with `claude --a
 
 ## Overview
 
-v1 delivers a REST headless CMS (`cms-api`), an admin app (`cms-admin`), a public CV site (`web`) and a shared UI kit (`@abyss/form-commons`), with the security decisions D1–D17 in SPEC §7 built in from the start. GraphQL, Group 2 runtime DDL, reviewer write sandbox and S3 are v2.
+v1 delivers a REST headless CMS (`cms-api`) with a read-only GraphQL query API for documents (D18), an admin app (`cms-admin`), a public CV site (`web`, Next.js 16, reads content through GraphQL) and a shared UI kit (`@abyss/form-commons`), with the security decisions D1–D18 in SPEC §7 built in from the start. GraphQL mutations, Group 2 runtime DDL, reviewer write sandbox and S3 are v2.
 
 ## How this plan differs from the old HTML plan
 
@@ -112,7 +112,12 @@ Phases 1 and 2 can run in parallel if more than one worker is available. This pr
 **Checkpoint 5:** §12 item 13 passes; images can be attached to documents.
 
 ### Phase 6: Public web & reviewer
-- T30 Web CV showcase (public role, published only) (needs Q5)
+- GQ1 GraphQL schema builder + SDL print (needs Q-G1..Q-G3)
+- GQ2 GraphQL endpoint + resolvers over the document read path
+- GQ3 GraphQL limits + production hardening (needs Q-G4, Q-G5)
+- T30a Migrate apps/web to Next.js (skeleton parity)
+- T30b Smoke stack + script for the Next.js web
+- T30 Web CV showcase, Server Components fetching through GraphQL (needs Q-G6, Q-G7)
 - T31 Reviewer backend: settings, Turnstile session, ephemeral account, cleanup job (needs Q4)
 - T32 Reviewer UX in web + read-only admin + owner sessions log (needs Q6)
 - T33 Web login + session sharing with admin
@@ -138,7 +143,7 @@ Phases 1 and 2 can run in parallel if more than one worker is available. This pr
 |---|---|---|
 | Content engine harder than expected (tree diff, migrations) | High | Spiked in Phase 1; scope limited to additive migrations + explicit destructive flag |
 | Masking leaks through a path that skips the serializer | High | Single serializer; integration test asserts that no raw sensitive value appears in any response body for a masked role (snapshot scan) |
-| Scope creep back toward GraphQL/Group 2 | Medium | v2 backlog is explicit in SPEC §2; "Never" boundary |
+| Scope creep toward GraphQL mutations/Group 2 | Medium | v2 backlog is explicit in SPEC §2; "Never" boundary |
 | In-memory caches (revocation, presence, rate limit) wrong at >1 replica | Medium | v1 runs one replica; documented; revocation falls back to 5 s TTL |
 | Single VPS data loss | High | Deploy guide requires nightly `pg_dump` off-site + restore drill (T38) |
 | Tailwind duplication between ui-kit dist CSS and app CSS | Low | ui-kit ships prefixed/compiled CSS layer; verified in T03/T04 |

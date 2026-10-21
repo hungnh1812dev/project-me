@@ -1,6 +1,6 @@
 # Spec: Abyss Headless CMS & Portfolio (v1)
 
-Status: **Approved 2026-10-20** · Date: 2026-10-20 · Supersedes: `CMS_Requirements_And_Architecture_Spec.html`, `CMS_Implementation_Planning.html`, `CMS_Project_Tasks.html` (kept for history; where they disagree with this file, this file wins).
+Status: **Approved 2026-10-20**, amended 2026-10-21 (web on Next.js, GraphQL read API: §2, §3, §5, D17, D18, §9; D18 details pending Q-G1..Q-G7) · Date: 2026-10-20 · Supersedes: `CMS_Requirements_And_Architecture_Spec.html`, `CMS_Implementation_Planning.html`, `CMS_Project_Tasks.html` (kept for history; where they disagree with this file, this file wins).
 
 Related: [tasks/plan.md](tasks/plan.md) · [tasks/todo.md](tasks/todo.md)
 
@@ -12,7 +12,7 @@ Related: [tasks/plan.md](tasks/plan.md) · [tasks/todo.md](tasks/todo.md)
 2. One VPS, K3s + Traefik, **one replica per app in v1**. In-memory caches are acceptable only where marked, and each one says what changes at more than one replica.
 3. PostgreSQL 16, running in-cluster with a PVC. The separate deploy repo owns backups, and this repo documents what they must cover.
 4. Public self-registration is **off**. Accounts are created by invitation.
-5. v1 scope is cut down (see §2). GraphQL, Group 2 runtime DDL, reviewer write sandbox, S3 and Yup move to v2.
+5. v1 scope is cut down (see §2). GraphQL mutations/subscriptions (a read-only GraphQL query API is in v1, D18), Group 2 runtime DDL, reviewer write sandbox, S3 and Yup move to v2.
 6. Domains: `domain.com` (web + API under `/api/v1`) and `admin.domain.com` (cms-admin).
 
 ---
@@ -20,7 +20,7 @@ Related: [tasks/plan.md](tasks/plan.md) · [tasks/todo.md](tasks/todo.md)
 ## 1. Objective
 
 Build a headless CMS that:
-1. **Content hub:** the owner manages and publishes CV/portfolio content defined by JSON schemas (root + up to 3 nested component levels), served over REST.
+1. **Content hub:** the owner manages and publishes CV/portfolio content defined by JSON schemas (root + up to 3 nested component levels), served over REST, with a read-only GraphQL query API for document reads (D18).
 2. **Technical showcase:** it shows ERP-grade concerns that actually hold up under attack: hybrid RBAC + field-level permissions with `***` masking, draft/publish with optimistic concurrency and diff/merge, an always-on security audit, and a safe "Login as Reviewer" experience.
 
 Users and actors (threat model):
@@ -50,10 +50,11 @@ Success means every item in §12 has a passing automated test.
 | `identity` | Owner bootstrap, invitations, login, refresh rotation, OTP, TOTP 2FA, password lifecycle, rate limits | platform |
 | `access` | Roles, permissions, policy evaluation, field projection/masking, write allowlist, revocation versions, API tokens, security audit | identity |
 | `documents` | Document CRUD, OCC/409, draft/publish deep clone, presence, bulk (collections) | content-engine, access |
+| `graphql` | Read-only GraphQL over document reads (D18): schema generated from content definitions, same authz and serializer as REST | documents, access |
 | `media` | Upload pipeline, Cloudinary adapter, file library, safe delete | access |
 | `reviewer` | Reviewer toggle, session creation, field profile, owner log, cleanup | access, media |
 | `admin-app` | cms-admin UI | ui-kit + the API modules it uses |
-| `web-app` | Public CV site, login, reviewer entry | ui-kit, documents, reviewer |
+| `web-app` | Public CV site (Next.js), login, reviewer entry; reads content through `graphql` | ui-kit, graphql, reviewer |
 
 Build order: `platform` → (`ui-kit`, `content-engine`, `identity`) → `access` → (`documents`, `media`) → `reviewer` → app slices. UI work goes into each vertical slice; it is not a separate phase.
 
@@ -61,7 +62,7 @@ Build order: `platform` → (`ui-kit`, `content-engine`, `identity`) → `access
 Everything in the map above. Collections get bulk create/publish/unpublish/delete.
 
 ### Out of scope (v2 backlog — do not build in v1)
-GraphQL gateway · Group 2 owner-private runtime DDL · reviewer write sandbox · S3 adapter · Yup support · SSO across unrelated domains · multi-replica deployment.
+GraphQL mutations, subscriptions and non-document reads · Group 2 owner-private runtime DDL · reviewer write sandbox · S3 adapter · Yup support · SSO across unrelated domains · multi-replica deployment.
 
 ---
 
@@ -74,7 +75,9 @@ GraphQL gateway · Group 2 owner-private runtime DDL · reviewer write sandbox �
 | Core persistence | Prisma (PG schema `public`, system tables only) via `@prisma/adapter-pg` |
 | Content persistence | Generated SQL migrations in PG schema `content`; queries through **Kysely** with parameters only (decision D10; confirm, since it's a new dependency) |
 | Auth | Passport-JWT, `argon2` (Argon2id), `otplib` (TOTP) |
-| Frontends | React 19 + Vite, Redux Toolkit (session/UI), TanStack Query (server data), Axios |
+| GraphQL (cms-api) | `graphql` (graphql-js) with an in-house handler inside the Nest pipeline, no Apollo/Yoga (D18; dependency pending Q-G1) |
+| Admin (cms-admin) | React 19 + Vite SPA served by nginx, Redux Toolkit (session/UI), TanStack Query (server data), Axios, REST only |
+| Web (apps/web) | **Next.js 16 App Router** (pinned ≥ 16.2.5), `output: 'standalone'` run by Node (no nginx); Server Components by default; server data fetched **through GraphQL** (anonymous, from `API_INTERNAL_URL`, data cache `WEB_REVALIDATE_SECONDS`: 60 s production, 0 smoke); browser state with React context + TanStack Query + Axios, **no Redux**; DOMPurify on server and client (D13); Tailwind v4 via `@tailwindcss/postcss` |
 | UI kit | shadcn/ui + Tailwind, react-hook-form + Zod, Tiptap, CodeMirror 6 |
 | Media | Cloudinary, `sharp` for re-encoding, `file-type` for magic bytes |
 | Bot protection | Cloudflare Turnstile (server-side verification) |
@@ -115,20 +118,29 @@ abyss/
 ├── apps/
 │   ├── cms-api/                  # @abyss/cms-api
 │   │   ├── prisma/               # core schema + migrations (public)
-│   │   ├── content/              # schemas/*.json + generated migrations/
+│   │   ├── content/              # schemas/*.json + generated migrations/ + schema.graphql (printed SDL, D18)
 │   │   ├── src/
 │   │   │   ├── config/           # env.schema.ts (Zod), app-config.ts (frozen IAppConfig)
 │   │   │   ├── common/           # constants/, filters/, guards/, pipes/, serializers/
 │   │   │   ├── infrastructure/   # database/, mail/, media/, turnstile/
-│   │   │   └── modules/          # identity/, access/, content-engine/, documents/, media/, reviewer/, health/
+│   │   │   └── modules/          # identity/, access/, content-engine/, content-types/, documents/, graphql/, media/, reviewer/, health/
 │   │   └── test/                 # e2e/, fixtures/
 │   ├── cms-admin/src/{config, store, lib, features}
-│   ├── web/src/{config, store, lib, features}
+│   ├── web/                      # @abyss/web, Next.js 16 App Router, standalone Node server
+│   │   ├── next.config.ts · postcss.config.mjs · vitest.config.ts · Dockerfile · public/
+│   │   └── src/
+│   │       ├── proxy.ts          # per-request nonce + CSP header (D17)
+│   │       ├── app/              # routes: layout.tsx, page.tsx, not-found.tsx, error.tsx
+│   │       ├── config/           # env.server.ts (server-only), env.client.ts (NEXT_PUBLIC_* only), endpoints.ts, *.constants.ts
+│   │       ├── lib/              # api-client.ts (browser Axios), graphql/ (graphql-fetch.server.ts, graphql-request.ts), render-richtext.ts
+│   │       └── features/         # cv/, auth/, reviewer/, status/: *.query.ts (GraphQL documents), *.server.ts, client components
 │   └── e2e/                      # @abyss/e2e Playwright
 └── docs/{adr, modules, deployment}
 ```
 
-Naming rules: files are `kebab-case.ts`, and constants files end in `.constants.ts`. There is one endpoint map per frontend at `src/config/endpoints.ts`.
+Naming rules: files are `kebab-case.ts`, and constants files end in `.constants.ts`. There is one endpoint map per frontend at `src/config/endpoints.ts`. React component files keep `PascalCase.tsx`; Next.js route files keep their framework names (`page.tsx`, `layout.tsx`).
+
+Web rules: Server Components by default; `'use client'` only for state, effects, handlers, browser APIs, TanStack Query, react-hook-form or any `@abyss/form-commons` import. Files that read server env or call `API_INTERNAL_URL` import `server-only`. The Next server never sends, receives or stores a user token (no Server Actions, Route Handlers or `cookies()` for auth, D14); authenticated calls go from the browser with the in-memory Bearer token. There is no `store/` on web.
 
 ---
 
@@ -220,7 +232,18 @@ Naming rules: files are `kebab-case.ts`, and constants files end in `.constants.
 **D17 Production guards (config fail-fast).**
 - With `NODE_ENV=production`, Zod rejects `MAIL_PROVIDER=console`, any missing secret, and secrets shorter than 32 bytes.
 - The boot config summary redacts secrets.
-- Headers: HSTS, CSP per SPA (set by each app's nginx; the API sends `default-src 'none'`), `X-Content-Type-Options`, `Referrer-Policy`.
+- Headers on every app: HSTS, CSP, `X-Content-Type-Options: nosniff`, `Referrer-Policy`, no `X-Powered-By`.
+  - **API**: `default-src 'none'` on every route, `/graphql` included.
+  - **cms-admin**: CSP from its nginx config (unchanged): `script-src 'self'`, `connect-src` from env, `img-src` includes Cloudinary.
+  - **web (Next.js)**: CSP from `src/proxy.ts` with a fresh per-request nonce: `script-src 'self' 'nonce-<n>' 'strict-dynamic'` (+ the Turnstile origin, named constant), `connect-src` from env, `img-src` includes Cloudinary, `frame-ancestors 'none'`, `style-src` per Q-W4 (open: recommended `'self' 'nonce-<n>'` + `style-src-attr 'unsafe-inline'`). HSTS, nosniff, Referrer-Policy and `poweredByHeader: false` come from `next.config.ts`. Pages that carry the nonce render per request; the data cache still bounds calls to cms-api. `/_next/static` is outside the proxy matcher. Approved by the user 2026-10-21 (Q-W4).
+
+**D18 GraphQL read API.** Details and the schema contract: `docs/modules/graphql.md`, ADR 0003. Status: GraphQL in v1 decided by the user; the points below are planner recommendations pending Q-G1..Q-G7.
+- `POST /api/v1/graphql`, queries only, document reads only (no mutations, subscriptions, batching, GET or persisted queries). cms-admin stays on REST.
+- The schema is generated by a pure function from the content definitions (object type per content type and component, offset paging `page`/`pageSize` + `meta { page, pageSize, total }`, typed filter inputs with the REST operator sets and limits, sort ≤ 3 keys). It fails on any name clash; the printed SDL is committed (`content/schema.graphql`) and checked.
+- **Authz is the REST read path, not a copy:** `DocumentAuthGuard` (anonymous, JWT, API token per D5; reviewer from T32), then root resolvers call `DocumentsQueryService` unchanged (read + draft rule, row conditions, projection, `QueryGuard` → `FIELD_NOT_READABLE`, `RecordSerializer`, media embed). Nested fields only read the serialized record; no other data path (architecture test). A content type the actor cannot read fails validation exactly like an unknown field (hidden = unknown).
+- **Limits** (named constants): body 32 KiB, 2 000 parser tokens, depth 8, 5 root fields per operation (aliases count), 500 field nodes; the anonymous document read throttle counts each request once. No weighted cost (DB work per root field is fixed).
+- **Production:** introspection off, "Did you mean" suggestions stripped, no playground (any environment). Responses `Cache-Control: no-store`.
+- **Errors:** `{ data?, errors: [{ message, path?, locations?, extensions: { code, details?, requestId } }] }`; `code` reuses REST error codes plus `GRAPHQL_PARSE_FAILED`, `GRAPHQL_VALIDATION_FAILED`, `GRAPHQL_LIMIT_EXCEEDED`; HTTP 400 for parse/validation/limit errors, 200 once executed; failures before GraphQL (401, 413, 415, 429) keep the REST error shape. Never echo submitted values or log variables.
 
 ---
 
@@ -282,6 +305,7 @@ All routes sit under `/api/v1`. Errors use one shape: `{ statusCode, errorCode, 
 | Media | `POST /media` (multipart) · `GET /media` · `PATCH /media/:id` (alt) · `DELETE /media/:id` |
 | Reviewer | `GET /reviewer/status` · `POST /reviewer/sessions` (Turnstile) · `GET /reviewer/sessions` (owner) · `PUT /reviewer/settings` (owner) |
 | Audit | `GET /audit-logs` (owner) |
+| GraphQL (D18) | `POST /graphql` (queries only): per content type `<type>(documentId, status)` and, for collections, `<type>List(status, page, pageSize, sort, filter)` → `{ data, meta }`; same auth, masking and error codes as the document reads |
 
 `:slug` is always checked against the `content_types` registry before any SQL is built. It is never interpolated directly.
 
@@ -347,6 +371,7 @@ Coverage target: ≥ 80 % lines on `access`, `identity`, `documents` and `conten
 16. `cv-page.json` generates exactly the 8 tables in §8.2. A schema whose composed name exceeds 63 bytes fails generation with a clear error.
 17. `POST /api/v1/auth/login/` (trailing slash) through the Traefik-like proxy test returns 200/401, never 3xx.
 18. Every security event in D15 writes an `audit_logs` row, even when activity tracking is `none`.
+19. GraphQL returns the same masked values and `_maskedFields` as REST for each role; filter/sort on an unreadable field → `FIELD_NOT_READABLE`; a hidden content type gives the same error as an unknown one; `status: DRAFT` as anonymous/reviewer → `FORBIDDEN`; introspection is refused with `NODE_ENV=production`; each D18 limit rejects an over-limit query before any SQL runs.
 
 ---
 
@@ -381,3 +406,11 @@ Coverage target: ≥ 80 % lines on `access`, `identity`, `documents` and `conten
 | Q11 | Paginate `GET /roles` too? The invite role picker, the matrix and the caller-access hint need the full list. | No: keep a full list and cap custom roles at 50 (`409 ROLE_LIMIT_REACHED`) | T17c · **Answered: No pagination; cap 50** |
 | Q12 | Filters or search on the accounts list now? | None in v1 (few accounts); add `status` filter later if needed | T17c · **Answered: None in v1** |
 | Q13 | Confirm dialogs for Enable and Resend invite in the admin UI? | None (both reversible, no data loss); keep the confirm on Disable | T18a · **Answered: No confirm** |
+| Q-W4 | Web CSP `style-src` (D17) | `'self' 'nonce-<n>'` plus `style-src-attr 'unsafe-inline'` (React/Radix inline style attributes; attributes cannot run script) | T36 |
+| Q-G1 | GraphQL dependency | `graphql` (graphql-js, current stable, exact pin) in cms-api only, in-house handler; no Apollo/Yoga/`@nestjs/graphql` | GQ1 |
+| Q-G2 | GraphQL scope | Document reads only, queries only; admin stays on REST | GQ1 |
+| Q-G3 | GraphQL pagination | Offset, same as REST (Q10); cursors later if needed | GQ1 |
+| Q-G4 | GraphQL limits | Body 32 KiB, 2 000 tokens, depth 8, 5 root fields, 500 field nodes | GQ3 |
+| Q-G5 | Introspection in production | Off for everyone; tooling uses the committed SDL | GQ3 |
+| Q-G6 | Web GraphQL client | No client library (fetch on server, Axios in browser); `graphql` as a web devDependency for the SDL contract test | T30 |
+| Q-G7 | Which cv-page the web shows (it is a collection) | The published one with `isMain = true`, newest `updatedAt` if several; none → empty state | T30 |

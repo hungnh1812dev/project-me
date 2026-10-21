@@ -299,12 +299,75 @@ Conventions for every task:
 
 ## Phase 6: Public web & reviewer
 
-- [ ] **T30: Web CV showcase** · M · Deps: T20, T24, T03 · **Needs Q5**
+> **Replanned 2026-10-21: apps/web moves from React 19 + Vite to Next.js (App Router), and cms-api gets a read-only GraphQL API (SPEC D18, `docs/modules/graphql.md`).** Order: GQ1 → GQ2 → GQ3 (api-builder) in parallel with T30a → T30b (ui-builder); T30 needs GQ2 + T30b. T30, T32 (web part), T33, T36 and T38 are revised for it. Q-W1..Q-W10 are answered (handoff "Web on Next.js"); Q-W4 `style-src` and Q-G1..Q-G7 (SPEC §14) are open, and tasks follow the recommendation until answered. The web stack rules for every web task:
+> - Next.js 16 App Router, exact version pinned at or above 16.2.5 (CVE-2026-44581 fix), `output: 'standalone'`, run by Node (non-root) in its container. No nginx for web. (Q-W1, Q-W2)
+> - Server Components by default. A file becomes `'use client'` only for state, effects, event handlers, browser APIs, TanStack Query, react-hook-form or any `@abyss/form-commons` import (form-commons has no `'use client'` directive, so it is imported only from web client components). (Q-W9)
+> - Public content is fetched on the server **through GraphQL** (`POST ${API_INTERNAL_URL}/graphql`), anonymously (`public` role), from `API_INTERNAL_URL` (server-only runtime env), with a data cache of `WEB_REVALIDATE_SECONDS` (60 s production, 0 smoke). Browser refetches for a signed-in or reviewer actor send the same query documents to `NEXT_PUBLIC_API_BASE_URL` + `/graphql` with the Bearer token. No GraphQL client library (Q-G6). The server never sends, receives or stores a user token: the refresh cookie (Path `/api/v1/auth`) never reaches Next routes, and all authenticated calls go from the browser to `NEXT_PUBLIC_API_BASE_URL` with a Bearer token from memory (D14). No Server Actions or Route Handlers for auth. (Q-W3)
+> - Web security headers (CSP with a per-request nonce) come from Next.js (`src/proxy.ts` + `next.config.ts`), not nginx (Q-W4, T36).
+> - `src/config/env.ts` stays the only env reader, split into `env.server.ts` (`import 'server-only'`) and `env.client.ts` (`NEXT_PUBLIC_*` only, baked at build).
+> - Tests: Vitest + Testing Library (jsdom) for client components, sync Server Components and pure modules; async Server Components and SSR output are covered by Playwright in `apps/e2e` against the standalone container in the smoke stack.
+
+### GraphQL read API (cms-api, SPEC D18)
+
+- [ ] **GQ1: GraphQL schema builder + SDL print** · M · Deps: T20 · **Needs Q-G1, Q-G2, Q-G3** · api-builder · D18, §9, `docs/modules/graphql.md` "Schema"
   - Acceptance:
-    - The web renders published cv-page via the `public` role; masked fields show a "Sign in to view" placeholder; richtext rendered through DOMPurify (§12-14 render part).
-    - Seed: default `public`/`reviewer` field profiles mask the fields from Q5.
-  - Verify: Vitest for sections; Playwright: anonymous view shows placeholders, no raw sensitive values in network responses.
-  - Files: `apps/web/src/features/cv/{CvPage,sections/*}.tsx`, `apps/web/src/lib/render-richtext.ts`, `apps/cms-api/prisma/seed-profiles.ts`
+    - New dep `graphql` (exact pin, approved via Q-G1). `buildGraphqlSchema(definitions)` is a pure function (no Nest, no DB) producing the types, root fields, shared types, scalars (`Date`, `DateTime`, `Decimal`, `JSON`), `<Root>Page`, `<Root>Sort`/`<Root>SortField` and `<Root>Filter` inputs exactly as in the design doc; resolvers are attached later (GQ2), here fields read `values`/`components` of a `SerializedRecord`.
+    - Naming per the design doc; any clash (slug vs slug, `<x>List` vs another item field, generated vs shared type name) throws a typed error naming both sources; nothing is renamed.
+    - Filter inputs: one input per REST operator set; which field kinds are filterable/sortable and which operators each kind takes are read from the REST constants/table in `document-filter.ts` / `documents.constants.ts` (export them if needed), not re-declared.
+    - `pnpm --filter @abyss/cms-api graphql:print-schema` writes `apps/cms-api/content/schema.graphql` from `content/schemas/*.json` (no DB); `-- --check` exits 1 when the file is stale. The committed SDL is generated, never hand-edited.
+  - Verify: unit tests: SDL for `cv-page` + `profile` equals the committed `content/schema.graphql`; every field type maps as in the table; masked-capable content fields are nullable; repeatable component = nullable list; clash cases throw; `single` type gets only the item field. `graphql:print-schema -- --check` passes.
+  - Files: `apps/cms-api/src/modules/graphql/{graphql.constants.ts,schema/schema.builder.ts,schema/type-names.ts,schema/scalars.ts,schema/filter-inputs.ts,cli/print-schema.ts}`, specs, `apps/cms-api/content/schema.graphql`, `apps/cms-api/package.json` (dep + script)
+
+- [ ] **GQ2: GraphQL endpoint + resolvers over the document read path** · M · Deps: GQ1 · api-builder · D18, D3, D5, §12-19
+  - Acceptance:
+    - `POST /api/v1/graphql` (`API_ROUTES.GRAPHQL`) in `GraphqlModule`: `DocumentAuthGuard` + `DOCUMENT_READ_ANONYMOUS` throttle; JSON body `{ query, variables?, operationName? }` only (array/batch, missing query → 400; non-JSON → 415); parse → validate → execute with graphql-js; `Cache-Control: no-store`.
+    - Root resolvers convert args to `ListDocumentsQuery` (`FilterClause` per operator, values stringified, `SortKey`) or `(documentId, status)` and call `DocumentsQueryService.list`/`get` unchanged (`DocumentsModule` exports it). Item not found/hidden → `null`, no error. `single` types resolve through `list` with `pageSize` 1.
+    - `ContentTypeVisibilityRule(actor)`: a root field for a type the actor cannot `read` (incl. token scope) fails validation with the same message and code as an unknown field.
+    - Error format per the design doc (`extensions { code, details?, requestId }`; 400 for parse/validation, 200 after execution; Nest `HttpException`s from the service map to their `errorCode`; unknown errors → generic `INTERNAL_SERVER_ERROR`, logged with request id). New codes in `ERROR_CODES`. Variables are never logged or echoed.
+    - Architecture test: `src/modules/graphql/**` imports none of `content.repository`, `tree-loader`, `field-projection`, `kysely`.
+  - Verify: integration tests (`test/integration/graphql.spec.ts`, Testcontainers): for anonymous, an editor JWT and an API token, `cvPageList`/`cvPage` data equals the REST `GET /documents/cv-page` record re-shaped (same masked values and `_maskedFields`); filter on a masked field → `FIELD_NOT_READABLE`; `status: DRAFT` anonymous → `FORBIDDEN`; hidden type error equals unknown-field error; row conditions hide rows (null item, `total` excludes them); invalid Bearer → 401 REST shape; anonymous 121st request → 429; token creator lost `read` → hidden.
+  - Files: `apps/cms-api/src/modules/graphql/{graphql.module.ts,graphql.controller.ts,graphql.executor.ts,document.resolvers.ts,rules/visibility.rule.ts,error-format.ts}`, `apps/cms-api/src/modules/documents/documents.module.ts` (export), `apps/cms-api/src/app.module.ts`, `apps/cms-api/src/common/constants/*` (route, error codes), test file
+
+- [ ] **GQ3: GraphQL limits + production hardening + docs** · S · Deps: GQ2 · **Needs Q-G4, Q-G5** · api-builder · D18, D17
+  - Acceptance:
+    - `GRAPHQL_LIMITS` (named constants, values per Q-G4): body bytes (413 REST shape), parser `maxTokens`, `MaxDepthRule`, `MaxRootFieldsRule` (aliases count), `MaxFieldNodesRule` (after fragment expansion); over-limit → 400 `GRAPHQL_LIMIT_EXCEEDED` before any SQL runs.
+    - `NODE_ENV=production`: `NoSchemaIntrospectionCustomRule` on, "Did you mean" suggestions stripped from every message; no playground in any environment.
+    - Docs: `apps/cms-api/README.md` gains "GraphQL (D18)" (endpoint, auth, limits, errors, SDL script); `docs/modules/graphql.md` status → accepted with the final values; `apps/cms-api/.env.example` unchanged (no new env).
+  - Verify: unit tests per rule (at limit passes, limit + 1 fails, fragments and aliases counted); integration: the full cv-page web query passes all limits; introspection refused and suggestions absent with production config, allowed in test config; a query that exceeds a limit issues no SQL (Kysely query log count 0).
+  - Files: `apps/cms-api/src/modules/graphql/{rules/limits.rules.ts,graphql.executor.ts,graphql.constants.ts}`, specs, `apps/cms-api/README.md`, `docs/modules/graphql.md`
+
+- [ ] **T30a: Migrate apps/web to Next.js (skeleton parity)** · M · Deps: T04 · Q-W1..Q-W9 answered · ui-builder · §3, §5, D14, D17
+  - Acceptance:
+    - `@abyss/web` builds with `next build` (`output: 'standalone'`) and runs with `next start`/the standalone server; `pnpm --filter @abyss/web dev` serves on 5174 (`DEV_SERVER_PORT`) and forwards `/api` to `DEV_API_PROXY_TARGET` via a dev-only `rewrites()` (no rewrite in production builds).
+    - Parity with the T04 skeleton: `app/layout.tsx` (imports form-commons `styles.css` + app CSS, Tailwind v4 via `@tailwindcss/postcss`), `app/page.tsx` renders the status card; the status card is a client component that calls `/health/live` through `src/config/endpoints.ts` and the Axios client (trailing slashes stripped). `app/not-found.tsx` returns a real 404.
+    - Env: `env.client.ts` reads `NEXT_PUBLIC_API_BASE_URL` (required, fails the build when unset); `env.server.ts` (`server-only`) reads `API_INTERNAL_URL` and `WEB_REVALIDATE_SECONDS` at runtime with validation (invalid = fail start). `.env.example` lists every key; no `VITE_*` key remains.
+    - Lint: Oxlint + ESLint with the Next plugin (`@next/eslint-plugin-next`) and react-hooks; typecheck covers `next-env.d.ts`. Vitest config moves to `vitest.config.ts` (`@vitejs/plugin-react`, jsdom); existing tests (`App`, `api-client`, `strip-trailing-slashes`) pass, ported where they referenced `import.meta.env`.
+    - `apps/web/Dockerfile`: turbo prune + frozen install + `turbo run build --filter=@abyss/web`; build arg `NEXT_PUBLIC_API_BASE_URL` required; runtime stage copies `.next/standalone`, `.next/static` and `public/`, runs as a non-root user, `NEXT_TELEMETRY_DISABLED=1`, `HOSTNAME=0.0.0.0`, listens on `WEB_PORT` (named in `.env.example`), and has a `HEALTHCHECK` on `/`.
+    - Docs: `apps/web/README.md` rewritten for Next (scripts, env, Docker, server/client rule); ADR `docs/adr/0004-web-nextjs-app-router.md` records Q-W1..Q-W10 answers. SPEC §3/§5/D17 are already updated (planner, 2026-10-21); the builder reports any mismatch, never edits SPEC.
+  - Verify: `pnpm --filter @abyss/web build test lint typecheck` green; `docker build -f apps/web/Dockerfile --build-arg NEXT_PUBLIC_API_BASE_URL=/api/v1 .` succeeds and the container answers `/` with 200 as a non-root user; `pnpm format:check`.
+  - Files: `apps/web/{package.json,next.config.ts,postcss.config.mjs,vitest.config.ts,tsconfig.json,eslint.config.mjs,.oxlintrc.json,Dockerfile,.env.example,README.md}`, `apps/web/src/app/{layout,page,not-found}.tsx`, `apps/web/src/config/{env.client,env.server}.ts`, `apps/web/src/features/status/*`, `docs/adr/*`
+  - Deletions needing approval: `apps/web/{index.html,vite.config.ts,nginx.conf,src/main.tsx,src/vite-env.d.ts,src/config/env.ts}`, `apps/web/src/app/App.tsx` (+ test, if replaced by `page.tsx`); deps `vite`, `@tailwindcss/vite` from apps/web.
+  - New deps needing approval (§13): `next`, `server-only`, `@tailwindcss/postcss`, `@next/eslint-plugin-next` (Q-W7).
+
+- [ ] **T30b: Smoke stack + script for the Next.js web** · S · Deps: T30a · ui-builder, root files approved at dispatch (Q-W10) · §12-17, D17
+  - Acceptance:
+    - `docker-compose.smoke.yml` `web` service: build arg `NEXT_PUBLIC_API_BASE_URL: /api/v1`; runtime env `API_INTERNAL_URL: http://cms-api:3000/api/v1`, `WEB_REVALIDATE_SECONDS` (smoke value per Q-W3), `WEB_PORT`; healthcheck on `/`; `depends_on` cms-api healthy; Traefik `loadbalancer.server.port` = `WEB_PORT`. The `/api` router keeps priority over the web router (no StripPrefix).
+    - `scripts/smoke.sh`: replace the SPA-fallback assertion with: `/` → 200 HTML; an unknown path → 404 (never 3xx); a page path with a trailing slash → 308 with a relative `Location` (never an absolute `http://<container>` URL); `/_next/static/*` asset → `Cache-Control` immutable; the existing `/api` assertions (trailing-slash POST not 3xx, CORS) still pass.
+  - Verify: `pnpm smoke` green (one agent at a time on the shared stack).
+  - Files: `docker-compose.smoke.yml`, `scripts/smoke.sh`
+
+- [ ] **T30: Web CV showcase (Server Components, GraphQL)** · M · Deps: T30b, GQ2, T24, T03 · **Needs Q-G6, Q-G7** (Q5, Q-W3, Q-W6 answered) · ui-builder (+ e2e-tester for Playwright) · §3, §5, D13, D18, §12-4, §12-14
+  - Acceptance:
+    - `features/cv/cv.query.ts` holds the GraphQL query document (plain string, `operationName` set) and hand-written result types; it selects the cv-page via `cvPageList(filter: { isMain: { eq: true } }, sort: [{ field: updatedAt, direction: DESC }], pageSize: 1)` (per Q-G7) with every section the page renders and `_maskedFields`. `API_ENDPOINTS.GRAPHQL = '/graphql'` in `src/config/endpoints.ts`.
+    - `lib/graphql/graphql-fetch.server.ts` (`server-only`): `POST ${API_INTERNAL_URL}/graphql`, JSON body, no `Authorization`, no forwarded cookies or client IP headers, cached for `WEB_REVALIDATE_SECONDS`. The cache mechanism (fetch `next.revalidate` keyed by body, or `'use cache'` + `cacheLife`) is chosen from the Next 16 docs and recorded in `apps/web/README.md`. Non-200, a body without `data`, or any `errors` entry throws a typed error.
+    - `app/page.tsx` is an async Server Component: fetch through the module above and render the sections as Server Components. A fetch failure renders the error state (`app/error.tsx`; the HTTP status Next 16 gives a streamed error is documented in the README), never stale data from another actor; no cv-page → an empty state.
+    - Masked fields (`***`/`null` + `_maskedFields`) render a "Sign in to view" placeholder; the server HTML and the RSC payload never contain a raw masked value (only what the `public` role receives).
+    - Richtext is sanitized with DOMPurify before render on the server (`lib/render-richtext.ts`, server-only, Q-W6) and on the client when the authenticated view re-renders it (§12-14 render part). Allowlist mirrors cms-api `sanitize-html` config.
+    - A client `CvView` boundary takes the server data as `initialData` for a TanStack Query keyed by actor (`anonymous` vs account id); its query function is `lib/graphql/graphql-request.ts` (Axios client, `NEXT_PUBLIC_API_BASE_URL` + `/graphql`, Bearer from the session holder, same query document) so T33/T32 refetch with the actor's permissions without a reload.
+    - Contract test: `graphql` web devDependency (Q-G6); a Vitest test validates every `*.query.ts` document against `apps/cms-api/content/schema.graphql` (read by path; no cms-api import).
+    - Seed: default `public`/`reviewer` field profiles mask the Q5 fields (`reference.phone`, `company` root + `experience.company`, `github`, `email`); `cv-page.json` gains those fields only if the user confirms they are missing (report, do not guess).
+  - Verify: Vitest for section components, `render-richtext` (script/onerror stripped), `graphql-fetch.server` (errors entry → throws; no Authorization header sent) and the SDL contract test; Playwright (e2e-tester, `apps/e2e` gains `webUrl` in its env): anonymous view shows placeholders, the HTML response and all network responses contain no raw sensitive value, an injected `<img onerror>` does not execute.
+  - Files: `apps/web/src/app/{page,error}.tsx`, `apps/web/src/features/cv/{cv.query.ts,CvView.tsx,cv.server.ts,sections/*}`, `apps/web/src/lib/{graphql/graphql-fetch.server.ts,graphql/graphql-request.ts,render-richtext.ts}`, `apps/web/src/config/endpoints.ts`, `apps/web/test/graphql-contract.test.ts`, `apps/cms-api/prisma/seed-profiles.ts` (api-builder part, or split at dispatch); e2e: `apps/e2e/{src/env.ts,tests/web-cv.spec.ts}`
 
 - [ ] **T31: Reviewer backend** · M · Deps: T17, T27 · **Needs Q4**
   - Acceptance:
@@ -314,21 +377,24 @@ Conventions for every task:
   - Verify: integration tests (§12-3 API part, toggle-off revocation, caps).
   - Files: `apps/cms-api/src/modules/reviewer/{reviewer.controller.ts,reviewer.service.ts,reviewer-cleanup.job.ts}`, `apps/cms-api/src/infrastructure/turnstile/turnstile.client.ts`
 
-- [ ] **T32: Reviewer UX (web + admin) + owner log** · M · Deps: T31, T30, T18 · **Needs Q6**
+- [ ] **T32: Reviewer UX (web + admin) + owner log** · M · Deps: T31, T30, T33, T18 · **Needs Q6** · ui-builder (+ e2e-tester) · §12-3
   - Acceptance:
-    - The web "Reviewer access" multi-step dialog (role → purposes → notes + Turnstile, no PII) starts a session; reviewer view re-fetches with reviewer permissions.
+    - The web "Reviewer access" multi-step dialog (role → purposes → notes + Turnstile, no PII) is a client component (form-commons + react-hook-form) that starts a session from the browser; the reviewer access token stays in browser memory (same session holder as T33), and the reviewer view re-fetches the `CvView` GraphQL query (browser, Bearer reviewer token) with reviewer permissions. The Next server never sees the reviewer token.
+    - The Turnstile widget loads only inside the dialog, via `next/script` with the request nonce; the T36 web CSP allows the Turnstile origin in `script-src`/`frame-src` (named constant, not a literal).
     - cms-admin in reviewer mode: read-only banner, write actions hidden (and 403 server-side); owner "Reviewer sessions" page with notes rendered as text.
-  - Verify: Playwright full reviewer flow (§12-3 end to end), including draft → 403 and write → 403.
-  - Files: `apps/web/src/features/reviewer/ReviewerAccessDialog.tsx`, `apps/cms-admin/src/features/reviewer/{ReviewerBanner,ReviewerSessionsPage}.tsx`
+  - Verify: Playwright full reviewer flow (§12-3 end to end) starting on web, including draft → 403 and write → 403; no CSP violation in the console during the dialog.
+  - Files: `apps/web/src/features/reviewer/{ReviewerAccessDialog.tsx,reviewer.api.ts}`, `apps/cms-admin/src/features/reviewer/{ReviewerBanner,ReviewerSessionsPage}.tsx`
 
-- [ ] **T33: Web login + session sharing with admin** · S · Deps: T13, T30
+- [ ] **T33: Web login + session sharing with admin** · S · Deps: T13, T30, GQ2 · ui-builder (+ e2e-tester) · §6 (refresh cookie, origins), D14
   - Acceptance:
-    - The web login dialog (with 2FA step) reuses form-commons. After login the web refetches with the actor's permissions. The "Open CMS" link goes to the admin subdomain, where silent refresh works because the cookie is host-only on `domain.com` with Path `/api/v1/auth`.
-  - Verify: Playwright: log in on web, open admin without re-login.
-  - Files: `apps/web/src/features/auth/{WebLoginDialog.tsx,useWebSession.ts}`
+    - The web login dialog (with 2FA step) is a client component reusing form-commons; it calls `/auth/login` and `/auth/2fa/verify` from the browser at `NEXT_PUBLIC_API_BASE_URL` (same origin `domain.com`), so the API sets the host-only `__Secure-abyss_rt` cookie (Path `/api/v1/auth`). No Server Action, Route Handler or `cookies()` call touches auth.
+    - `useWebSession` (client context provider mounted in `app/layout.tsx` as a client island) keeps the access token in memory only, attempts one silent `/auth/refresh` on mount, and exposes the actor; after login/refresh the `CvView` query refetches through GraphQL from the browser (`graphql-request.ts`, Bearer token) with the actor's permissions; logout calls `/auth/logout` and falls back to the server-rendered public data. Session state uses React context + TanStack Query, no Redux (Q-W5).
+    - The "Open CMS" link goes to the admin subdomain, where silent refresh works because the cookie is host-only on `domain.com` with Path `/api/v1/auth`.
+  - Verify: Vitest for `useWebSession` (refresh-on-mount, logout reset) and the dialog's 2FA step; Playwright: log in on web, the masked fields resolve for the actor, open admin without re-login; a reload keeps the session via silent refresh.
+  - Files: `apps/web/src/features/auth/{WebLoginDialog.tsx,useWebSession.tsx,auth.api.ts}`, `apps/web/src/app/layout.tsx`
 
 ### Checkpoint 6
-- [ ] §12-3 green end to end; public site masks correctly; review with user
+- [ ] §12-3 and §12-19 green end to end; public site masks correctly in both the SSR HTML and client GraphQL refetches; web runs as the Next.js standalone container in the smoke stack; review with user
 
 ---
 
@@ -355,16 +421,18 @@ Conventions for every task:
 
 ## Phase 8: Hardening & deploy docs
 
-- [ ] **T36: Security headers + prod config audit** · S · Deps: T04, T33
+- [ ] **T36: Security headers + prod config audit** · M · Deps: T04, T33, T32, GQ3 · **Needs Q-W4** (style-src) · ui-builder (web, admin) + api-builder (cms-api) · D17, D18
   - Acceptance:
-    - Each SPA's nginx sends CSP (`script-src 'self'`; `connect-src` from env; `img-src` includes Cloudinary), HSTS, nosniff and Referrer-Policy. The API sends `default-src 'none'`; no duplicate CSP from Traefik.
-    - A checklist script asserts prod config refinements and headers against the smoke stack.
-  - Verify: `pnpm smoke` extended with header assertions.
-  - Files: `apps/{web,cms-admin}/nginx.conf`, `apps/cms-api/src/main.ts`, `scripts/smoke.sh`
+    - cms-admin nginx sends CSP (`script-src 'self'`; `connect-src` from env; `img-src` includes Cloudinary), HSTS, nosniff and Referrer-Policy.
+    - Web (Next.js): `src/proxy.ts` generates a per-request nonce and sends CSP `script-src 'self' 'nonce-<n>' 'strict-dynamic'` (+ Turnstile origin), `style-src` per Q-W4, `connect-src` from env, `img-src` includes Cloudinary, `frame-ancestors 'none'`; HSTS, nosniff, Referrer-Policy and `poweredByHeader: false` from `next.config.ts` `headers()`. Every page is dynamically rendered (nonce needs a request); the data cache from T30 still limits calls to cms-api. `/_next/static` is excluded from the proxy matcher.
+    - The API sends `default-src 'none'` and no `X-Powered-By` on every route including `POST /graphql`; no duplicate CSP from Traefik. Web `connect-src` covers the browser GraphQL calls (same origin `/api/v1/graphql`).
+    - A checklist script asserts prod config refinements and headers against the smoke stack (web: a fresh nonce per response and no `X-Powered-By`).
+  - Verify: `pnpm smoke` extended with header assertions; Playwright: web CV, login and reviewer dialog show no CSP violations in the console.
+  - Files: `apps/web/{src/proxy.ts,next.config.ts}`, `apps/cms-admin/nginx.conf`, `apps/cms-api/src/main.ts`, `scripts/smoke.sh`
 
 - [ ] **T37: Playwright suite consolidation + CI** · M · Deps: T35, T36
   - Acceptance:
-    - CI workflow runs build, lint, typecheck, unit/integration (Testcontainers) and Playwright on the compose stack, plus `pnpm audit --prod` with no high/critical findings.
+    - CI workflow runs build, lint, typecheck, unit/integration (Testcontainers) and Playwright on the compose stack, `content:generate --check` and `graphql:print-schema -- --check`, plus `pnpm audit --prod` with no high/critical findings.
     - Every §12 criterion is mapped to a test id in `docs/modules/success-criteria.md`.
   - Verify: CI green on a branch.
   - Files: `.github/workflows/ci.yml`, `apps/e2e/playwright.config.ts`, docs file
@@ -372,7 +440,8 @@ Conventions for every task:
 - [ ] **T38: Deployment guide for the deploy repo** · S · Deps: T36
   - Acceptance:
     - `docs/deployment/k3s-traefik.md` covers:
-      - IngressRoutes (web + `/api` on `domain.com`, admin on `admin.domain.com`; never StripPrefix)
+      - IngressRoutes (web + `/api` on `domain.com`, admin on `admin.domain.com`; never StripPrefix; `/api` matched before the web catch-all)
+      - web is a Node service (Next.js standalone on `WEB_PORT`, non-root, readiness probe on `/`), not nginx; build arg `NEXT_PUBLIC_API_BASE_URL` vs runtime env `API_INTERNAL_URL` (in-cluster cms-api Service URL) and `WEB_REVALIDATE_SECONDS`; resource requests for the Node process
       - Traefik service `externalTrafficPolicy: Local` and the `TRUST_PROXY_HOPS` value
       - migration Job order (`db:migrate` → `content:migrate`) before rollout
       - env contract table, secrets via SOPS/sealed-secrets
