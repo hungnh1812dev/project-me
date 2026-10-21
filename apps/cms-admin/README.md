@@ -98,9 +98,20 @@ So far: sign-in (T11) and, behind it, a status page that calls
   sent until its editor exists.
   Create sends every filled field; save on an existing draft sends only the
   top-level fields and component lists that changed, plus `version`
-  (`document-form.ts`). A 409 shows a reload button (conflict merge is T25),
+  (`document-form.ts`). A 409 opens the conflict merge modal (T25, below);
   a 400 `DOCUMENT_INVALID` shows the server's message. `required` is not in
   the content-types API, so required marks and errors come from the server.
+- **Conflict merge (T25)** (`ConflictMergeModal`, `merge.reducer.ts`,
+  `merge.tree.ts`, `merge.describe.ts`): a 409 `DOCUMENT_VERSION_CONFLICT` on
+  a draft save opens a modal listing the server's `diff` as form-commons
+  `DiffViewerBlock` cards (saved vs your version; default = keep yours; "Keep
+  all of mine" / "Take all saved"). Entries of masked fields (the 409's and
+  the form's `_maskedFields`) are dropped before display and never sent. Save
+  PUTs only the client choices (changed values; a touched component list is
+  sent whole, items named by `componentUid`, partial values) with the 409's
+  `currentVersion`; all-saved just reloads. A second 409 re-diffs inside the
+  modal. If the role cannot read the row, or only masked fields differ, the
+  page keeps the reload alert only.
 - **Routes** (`src/config/routes.ts`): `/login`, `/reset-password`,
   `/set-password`, and `/`, `/settings/security`, `/accounts`, `/roles`,
   `/roles/:roleId`, `/api-tokens`, `/content/:slug/new`,

@@ -330,6 +330,144 @@ describe('DocumentEditPage: edit draft', () => {
     expect(screen.getByLabelText('Position')).toHaveValue('Engineer');
   });
 
+  describe('conflict merge modal', () => {
+    const conflictBody = (diff: unknown[]) => ({
+      errorCode: 'DOCUMENT_VERSION_CONFLICT',
+      details: {
+        currentVersion: 5,
+        server: {
+          values: { position: 'Lead', company: '***' },
+          components: {},
+          _maskedFields: ['company'],
+        },
+        submitted: {
+          values: { position: 'Engineer!', company: '***' },
+          components: {},
+          _maskedFields: ['company'],
+        },
+        diff,
+      },
+    });
+    const positionDiff = {
+      path: 'values.position',
+      change: 'changed',
+      server: 'Lead',
+      submitted: 'Engineer!',
+    };
+
+    async function conflict(diff: unknown[], puts: unknown[]) {
+      await open(contentEditPath(SLUG, DOC_ID), {
+        [`GET ${DOCUMENTS.BY_ID(SLUG, DOC_ID)}`]: () => ({
+          status: 200,
+          data: draft({ _maskedFields: ['company'] }),
+        }),
+        [`PUT ${DOCUMENTS.BY_ID(SLUG, DOC_ID)}`]: (config) => {
+          puts.push(bodyOf(config));
+          return puts.length === 1
+            ? { status: 409, data: conflictBody(diff) }
+            : { status: 200, data: { documentId: DOC_ID, version: 6 } };
+        },
+      });
+      await userEvent.type(await screen.findByLabelText('Position'), '!');
+      await userEvent.click(screen.getByRole('button', { name: copy.save }));
+      return screen.findByRole('dialog', { name: copy.conflict.title });
+    }
+
+    it('shows the diff, never a masked field, and resubmits the choice with currentVersion', async () => {
+      const puts: unknown[] = [];
+      const dialog = await conflict(
+        [
+          positionDiff,
+          {
+            path: 'values.company',
+            change: 'changed',
+            server: '***',
+            submitted: 'Initech',
+          },
+        ],
+        puts,
+      );
+      expect(within(dialog).getByText('Lead')).toBeInTheDocument();
+      expect(within(dialog).getByText('Engineer!')).toBeInTheDocument();
+      expect(within(dialog).queryByText(/Initech/)).not.toBeInTheDocument();
+      expect(within(dialog).getByText(copy.conflict.summary(1))).toBeVisible();
+
+      await userEvent.click(
+        within(dialog).getByRole('button', { name: copy.conflict.save }),
+      );
+      await waitFor(() => expect(puts).toHaveLength(2));
+      expect(puts[1]).toEqual({
+        version: 5,
+        values: { position: 'Engineer!' },
+      });
+      await waitFor(() =>
+        expect(
+          screen.queryByRole('dialog', { name: copy.conflict.title }),
+        ).not.toBeInTheDocument(),
+      );
+    });
+
+    it('choosing the saved version sends nothing and reloads', async () => {
+      const puts: unknown[] = [];
+      const dialog = await conflict([positionDiff], puts);
+      await userEvent.click(
+        within(dialog).getByRole('radio', { name: /Saved version/ }),
+      );
+      await userEvent.click(
+        within(dialog).getByRole('button', { name: copy.conflict.save }),
+      );
+      await waitFor(() =>
+        expect(
+          screen.queryByRole('dialog', { name: copy.conflict.title }),
+        ).not.toBeInTheDocument(),
+      );
+      expect(puts).toHaveLength(1);
+    });
+
+    it('falls back to the reload alert when only masked fields differ', async () => {
+      const puts: unknown[] = [];
+      await open(contentEditPath(SLUG, DOC_ID), {
+        [`GET ${DOCUMENTS.BY_ID(SLUG, DOC_ID)}`]: () => ({
+          status: 200,
+          data: draft({ _maskedFields: ['company'] }),
+        }),
+        [`PUT ${DOCUMENTS.BY_ID(SLUG, DOC_ID)}`]: (config) => {
+          puts.push(bodyOf(config));
+          return {
+            status: 409,
+            data: conflictBody([
+              {
+                path: 'values.company',
+                change: 'changed',
+                server: '***',
+                submitted: 'Initech',
+              },
+            ]),
+          };
+        },
+      });
+      await userEvent.type(await screen.findByLabelText('Position'), '!');
+      await userEvent.click(screen.getByRole('button', { name: copy.save }));
+      expect(await screen.findByRole('alert')).toHaveTextContent(
+        copy.errors.conflict,
+      );
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    });
+
+    it('can be closed and reopened from the alert', async () => {
+      const dialog = await conflict([positionDiff], []);
+      await userEvent.click(
+        within(dialog).getByRole('button', { name: copy.conflict.cancel }),
+      );
+      await userEvent.click(
+        screen.getByRole('button', { name: copy.errors.reviewConflict }),
+      );
+      expect(
+        await screen.findByRole('dialog', { name: copy.conflict.title }),
+      ).toBeInTheDocument();
+    });
+  });
+
   it('shows a retry when the draft cannot be loaded', async () => {
     await open(contentEditPath(SLUG, DOC_ID), {
       [`GET ${DOCUMENTS.BY_ID(SLUG, DOC_ID)}`]: () => ({ status: 500 }),

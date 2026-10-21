@@ -391,6 +391,15 @@ test.describe.serial('owner: dynamic document form (cv-page)', () => {
 
     await field(other, 'Position').fill(`${POSITION_EDITED} B`);
     await saveButton(other).click();
+    // T25: the conflict opens the merge modal; Cancel leaves the alert.
+    const mergeDialog = other.getByRole('dialog', {
+      name: copy.conflict.title,
+    });
+    await expect(mergeDialog).toBeVisible();
+    await mergeDialog
+      .getByRole('button', { name: copy.conflict.cancel, exact: true })
+      .click();
+    await expect(mergeDialog).toBeHidden();
     await expect(other.getByRole('alert')).toContainText(copy.errors.conflict);
     // The typed value is still there until the user reloads.
     await expect(field(other, 'Position')).toHaveValue(`${POSITION_EDITED} B`);

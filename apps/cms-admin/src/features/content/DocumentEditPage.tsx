@@ -9,11 +9,14 @@ import { contentEditPath } from '../../config/routes';
 import { LoadError, PageHeader, TableSkeleton } from '../access/PageStates';
 import { FormAlert } from '../auth/FormAlert';
 import { useContentApi } from './content-api-context';
+import { ConflictMergeModal } from './ConflictMergeModal';
+import { type ConflictDetails, conflictDetailsOf } from './conflict';
 import { isMissing, toSaveError, type SaveError } from './content-error';
-import type { DocumentRecord } from './content.api';
+import type { DocumentRecord, DocumentTree } from './content.api';
 import { type FormValues, toDocumentTree, toFormValues } from './document-form';
 import { DynamicFormRenderer } from './DynamicFormRenderer';
 import { buildFieldTree, type FieldNode } from './field-tree';
+import { maskedPathsOf, visibleEntries } from './merge.reducer';
 
 const copy = COPY.content;
 
@@ -30,7 +33,7 @@ const QUERY_KEYS = {
 /**
  * `/content/:slug/new` and `/content/:slug/:documentId` (T23): the dynamic
  * form of one document's draft. Creating goes to the edit route; saving an
- * existing draft sends its version (a stale one is a 409, see T25 for merge).
+ * existing draft sends its version (a stale one is a 409 that opens the merge modal (T25)).
  */
 export function DocumentEditPage() {
   const { slug = '', documentId } = useParams();
@@ -131,6 +134,9 @@ function DocumentForm({
   const initial = useMemo(() => toFormValues(fields, record), [fields, record]);
   const form = useForm<FormValues>({ defaultValues: initial });
   const [error, setError] = useState<SaveError | null>(null);
+  const [conflict, setConflict] = useState<ConflictDetails | null>(null);
+  const [mergeOpen, setMergeOpen] = useState(false);
+  const [mergeError, setMergeError] = useState<string | null>(null);
 
   const save = useMutation({
     mutationFn: (values: FormValues) => {
@@ -163,6 +169,43 @@ function DocumentForm({
     onError: (failure) => {
       onNotice(null);
       setError(toSaveError(failure));
+      const details = conflictDetailsOf(failure);
+      // Only worth a merge when there is a difference the role may see.
+      const decidable =
+        details !== null &&
+        visibleEntries(details, maskedPathsOf(details, masked)).length > 0;
+      setConflict(decidable ? details : null);
+      setMergeOpen(decidable);
+      setMergeError(null);
+    },
+  });
+
+  const resolve = useMutation({
+    mutationFn: (input: { tree: DocumentTree; version: number }) =>
+      api.updateDocument(
+        slug,
+        record?.documentId ?? '',
+        input.version,
+        input.tree,
+      ),
+    onSuccess: async () => {
+      setError(null);
+      setConflict(null);
+      setMergeOpen(false);
+      await queryClient.invalidateQueries({
+        queryKey: QUERY_KEYS.draft(slug, record?.documentId ?? ''),
+      });
+      onNotice(copy.saved);
+    },
+    onError: (failure) => {
+      const details = conflictDetailsOf(failure);
+      if (details !== null) {
+        // Someone saved again while merging: diff against that version.
+        setConflict(details);
+        setMergeError(null);
+        return;
+      }
+      setMergeError(toSaveError(failure).message);
     },
   });
 
@@ -180,9 +223,20 @@ function DocumentForm({
           <div className="grid justify-items-start gap-3">
             <FormAlert tone={error.tone}>{error.message}</FormAlert>
             {error.conflict ? (
-              <Button type="button" onClick={onReload}>
-                {copy.errors.reload}
-              </Button>
+              <div className="flex flex-wrap gap-2">
+                {conflict === null ? null : (
+                  <Button
+                    type="button"
+                    variant="primary"
+                    onClick={() => setMergeOpen(true)}
+                  >
+                    {copy.errors.reviewConflict}
+                  </Button>
+                )}
+                <Button type="button" onClick={onReload}>
+                  {copy.errors.reload}
+                </Button>
+              </div>
             ) : null}
           </div>
         )}
@@ -196,6 +250,23 @@ function DocumentForm({
           </Button>
         </div>
       </form>
+      {conflict !== null && mergeOpen ? (
+        <ConflictMergeModal
+          details={conflict}
+          fields={fields}
+          formMasked={masked}
+          saving={resolve.isPending}
+          error={mergeError}
+          onResolve={(tree, version) => resolve.mutate({ tree, version })}
+          onUseSaved={() => {
+            setMergeOpen(false);
+            setConflict(null);
+            setError(null);
+            onReload();
+          }}
+          onClose={() => setMergeOpen(false)}
+        />
+      ) : null}
     </FormProvider>
   );
 }

@@ -626,6 +626,37 @@ export const COPY = {
       conflict:
         'Someone else saved this document first. Reload to see their version, then apply your changes again.',
       reload: 'Reload latest version',
+      reviewConflict: 'Review differences',
+    },
+    conflict: {
+      title: 'Resolve conflicting changes',
+      description:
+        'Someone saved this document after you opened it. For each difference, choose the version to keep, then save the merged draft.',
+      summary: (count: number) =>
+        count === 1 ? '1 difference' : `${count} differences`,
+      keepAllMine: 'Keep all of mine',
+      takeAllSaved: 'Use all saved',
+      saved: 'Saved version',
+      mine: 'Your version',
+      noValue: 'No value',
+      save: 'Save merged draft',
+      cancel: 'Cancel',
+      saving: 'Saving',
+      saveFailed:
+        'The merged draft could not be saved. Your choices are kept; try again.',
+      change: {
+        added: 'Added',
+        removed: 'Removed',
+        changed: 'Changed',
+        moved: 'Reordered',
+      },
+      titleSeparator: ' > ',
+      itemTitle: (label: string, position: number) => `${label} ${position}`,
+      itemCount: (count: number) => (count === 1 ? '1 item' : `${count} items`),
+      itemWithoutFields: 'Empty item',
+      order: (positions: readonly number[]) => `Order: ${positions.join(', ')}`,
+      yes: 'Yes',
+      no: 'No',
     },
   },
 } as const;

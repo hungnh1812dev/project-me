@@ -66,3 +66,9 @@ export {
   type RichtextInputProps,
   type RichtextLabels,
 } from './components/forms/RichtextInput';
+export {
+  DiffViewerBlock,
+  type DiffSide,
+  type DiffViewerBlockProps,
+  type DiffViewerOption,
+} from './components/forms/DiffViewerBlock';
