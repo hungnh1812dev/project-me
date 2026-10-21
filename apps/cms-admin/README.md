@@ -82,9 +82,28 @@ So far: sign-in (T11) and, behind it, a status page that calls
   hidden on revoked tokens; the nav link needs `api_tokens:read`. Grid cells
   the caller's role does not hold are disabled (hint only); a 403
   `API_TOKEN_SCOPE_NOT_HELD` marks the refused cells by `details.indexes`.
+- **Dynamic document form (T23)** (`src/features/content`):
+  `/content/:slug/new` and `/content/:slug/:documentId` (`DocumentEditPage`;
+  no list or nav link until T34). The form is built from
+  `GET /content-types/:slug` (`field-tree.ts` rebuilds the tree from the flat
+  path list) and the draft from `GET /documents/:slug/:id?status=draft`.
+  `DynamicFormRenderer` maps each field type to a form-commons input through
+  `field-registry.tsx` (string, text, integer, decimal, boolean, date,
+  datetime, json). `ComponentList` handles component fields (add, remove,
+  reorder; a non-repeatable component holds one item) and nests to the API's
+  depth limit; each item keeps its `componentUid` in form state
+  (`ITEM_UID_KEY`). Masked fields (`_maskedFields`) show "Protected (***)",
+  read-only, and are never sent. Richtext (T24) and media (T29) show their
+  stored value read-only and are never sent until their editors exist.
+  Create sends every filled field; save on an existing draft sends only the
+  top-level fields and component lists that changed, plus `version`
+  (`document-form.ts`). A 409 shows a reload button (conflict merge is T25),
+  a 400 `DOCUMENT_INVALID` shows the server's message. `required` is not in
+  the content-types API, so required marks and errors come from the server.
 - **Routes** (`src/config/routes.ts`): `/login`, `/reset-password`,
   `/set-password`, and `/`, `/settings/security`, `/accounts`, `/roles`,
-  `/roles/:roleId`, `/api-tokens` behind `ProtectedRoute` + `AppShell` (header with the
+  `/roles/:roleId`, `/api-tokens`, `/content/:slug/new`,
+  `/content/:slug/:documentId` behind `ProtectedRoute` + `AppShell` (header with the
   user, Accounts / Roles links, "Security" and "Sign out").
 
 End-to-end coverage lives in [`apps/e2e`](../e2e/README.md).

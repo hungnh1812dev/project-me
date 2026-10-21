@@ -561,4 +561,55 @@ export const COPY = {
       'The API did not respond. Check that cms-api is running and reachable through the proxy, then check again.',
     checkAgain: 'Check again',
   },
+  content: {
+    newTitle: (type: string) => `New ${type}`,
+    editTitle: (type: string) => `Edit ${type}`,
+    description:
+      'Changes are saved to the draft. Publishing is a separate step.',
+    loading: 'Loading the document',
+    loadFailed: 'The document could not be loaded.',
+    typeNotFound:
+      'This content type does not exist, or your role cannot read it.',
+    documentNotFound:
+      'This document does not exist, or your role cannot read it.',
+    retry: 'Try again',
+    save: 'Save draft',
+    saved: 'Draft saved.',
+    created: 'Draft created.',
+    noFields: 'Your role cannot see any fields of this content type.',
+    protectedValue: 'Protected (***)',
+    protectedHint: 'Your role cannot read or change this field.',
+    notEditableYet: 'Editing this field type is not available yet.',
+    emptyValue: 'No value',
+    invalidInteger: 'Enter a whole number, for example 12.',
+    invalidDecimal: 'Enter a number, for example 12.5.',
+    invalidJson: 'Enter valid JSON, for example ["React", "Node"].',
+    protectedGroup: (label: string) =>
+      `${label} is protected for your role and is left unchanged.`,
+    list: {
+      itemTitle: (label: string, index: number) => `${label} ${index + 1}`,
+      empty: (label: string) => `No ${label.toLowerCase()} yet.`,
+      add: (label: string) => `Add ${label.toLowerCase()}`,
+      remove: (label: string, index: number) =>
+        `Remove ${label.toLowerCase()} ${index + 1}`,
+      moveUp: (label: string, index: number) =>
+        `Move ${label.toLowerCase()} ${index + 1} up`,
+      moveDown: (label: string, index: number) =>
+        `Move ${label.toLowerCase()} ${index + 1} down`,
+      removeText: 'Remove',
+      upText: 'Up',
+      downText: 'Down',
+    },
+    errors: {
+      network:
+        'Could not reach the server. Your changes are still here; try saving again.',
+      unexpected: 'Something went wrong on our side. Try again in a moment.',
+      forbidden: 'Your role is not allowed to save this document.',
+      invalid: (detail: string) => `The server rejected the draft: ${detail}`,
+      invalidFallback: 'The server rejected the draft. Check the fields.',
+      conflict:
+        'Someone else saved this document first. Reload to see their version, then apply your changes again.',
+      reload: 'Reload latest version',
+    },
+  },
 } as const;

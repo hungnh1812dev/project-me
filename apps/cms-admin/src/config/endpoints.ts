@@ -50,5 +50,12 @@ export const API_ENDPOINTS = {
   /** T17b read-only content types (field paths for the permission matrix). */
   CONTENT_TYPES: {
     LIST: '/content-types',
+    ONE: (slug: string) => `/content-types/${encodeURIComponent(slug)}`,
+  },
+  /** T20/T21 documents. `slug` = content type, `id` = document id. */
+  DOCUMENTS: {
+    BY_SLUG: (slug: string) => `/documents/${encodeURIComponent(slug)}`,
+    BY_ID: (slug: string, id: string) =>
+      `/documents/${encodeURIComponent(slug)}/${encodeURIComponent(id)}`,
   },
 } as const;

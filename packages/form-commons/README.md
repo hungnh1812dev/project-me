@@ -7,12 +7,12 @@ build it first through `^build`).
 
 ## Exports
 
-| Import                           | What                                                                                                                                                          |
-| -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `@abyss/form-commons`            | `Button`, `Input`, `Label`, `Field`, `TextInput`, `SelectInput`, `CheckboxInput`, `Checkbox`, `NativeSelect`, `Dialog*`, `FIELD_ID_SUFFIX` (ESM + CJS + d.ts) |
-| `@abyss/form-commons/styles.css` | Compiled CSS: tokens + the utilities the components use, no reset                                                                                             |
-| `@abyss/form-commons/theme.css`  | Tailwind v4 `@theme` mapping + tokens, for apps that run Tailwind                                                                                             |
-| `@abyss/form-commons/tokens.css` | CSS variables only                                                                                                                                            |
+| Import                           | What                                                                                                                                                                                                                                                                            |
+| -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `@abyss/form-commons`            | `Button`, `Input`, `Label`, `Field`, `TextInput`, `SelectInput`, `CheckboxInput`, `Checkbox`, `TextAreaInput`, `NumberInput`, `SwitchInput`, `DatePicker`, `DateTimePicker`, `JsonInput`, `Textarea`, `Switch`, `NativeSelect`, `Dialog*`, `FIELD_ID_SUFFIX` (ESM + CJS + d.ts) |
+| `@abyss/form-commons/styles.css` | Compiled CSS: tokens + the utilities the components use, no reset                                                                                                                                                                                                               |
+| `@abyss/form-commons/theme.css`  | Tailwind v4 `@theme` mapping + tokens, for apps that run Tailwind                                                                                                                                                                                                               |
+| `@abyss/form-commons/tokens.css` | CSS variables only                                                                                                                                                                                                                                                              |
 
 JS has no side effects (`sideEffects` lists only CSS), so unused components
 are tree-shaken.
@@ -94,6 +94,24 @@ blur.
 `placeholder` as the empty first option), registered with the surrounding
 `FormProvider` like `TextInput`. `CheckboxInput` binds a Radix `Checkbox` to a
 boolean field; the box sits left of its label, description and error below.
+
+### TextAreaInput, NumberInput, SwitchInput, DatePicker, DateTimePicker, JsonInput
+
+All bind to the surrounding `FormProvider` like `TextInput`.
+
+- `TextAreaInput`: multi-line text in `Field`.
+- `NumberInput` (`mode="integer" | "decimal"`, required `invalidMessage`): the
+  form value stays the typed **string**, so values beyond 2^53 are never
+  rounded; convert at the edge (`BigInt(value)`). Empty is valid unless
+  `rules.required`.
+- `SwitchInput`: Radix `Switch` (`role="switch"`) for a boolean, laid out like
+  `CheckboxInput`.
+- `DatePicker` / `DateTimePicker`: native `date` / `datetime-local` inputs. The
+  value is the native string (`YYYY-MM-DD`, `YYYY-MM-DDTHH:mm`, no zone);
+  converting a datetime to an instant is the caller's job.
+- `JsonInput` (required `invalidMessage`): monospace textarea; value is the raw
+  text, blank means no value, invalid JSON is an error on blur / submit.
+  `isValidJsonText` is exported.
 
 ### Dialog
 

@@ -6,6 +6,7 @@ import { ApiTokensPage } from '../features/access/ApiTokensPage';
 import { RolePermissionsPage } from '../features/access/RolePermissionsPage';
 import { RolesPage } from '../features/access/RolesPage';
 import { LoginPage } from '../features/auth/LoginPage';
+import { DocumentEditPage } from '../features/content/DocumentEditPage';
 import { ProtectedRoute } from '../features/auth/ProtectedRoute';
 import { ResetPasswordPage } from '../features/auth/ResetPasswordPage';
 import { SetPasswordPage } from '../features/auth/SetPasswordPage';
@@ -25,6 +26,11 @@ export function App() {
           <Route path={APP_ROUTES.ACCOUNTS} element={<AccountsPage />} />
           <Route path={APP_ROUTES.ROLES} element={<RolesPage />} />
           <Route path={APP_ROUTES.API_TOKENS} element={<ApiTokensPage />} />
+          <Route path={APP_ROUTES.CONTENT_NEW} element={<DocumentEditPage />} />
+          <Route
+            path={APP_ROUTES.CONTENT_EDIT}
+            element={<DocumentEditPage />}
+          />
           <Route
             path={APP_ROUTES.ROLE_PERMISSIONS}
             element={<RolePermissionsPage />}

@@ -10,6 +10,7 @@ import { selectAccessToken } from '../features/auth/auth.slice';
 import { createPasswordApi } from '../features/auth/password.api';
 import { createSession } from '../features/auth/session';
 import { createAccessApi } from '../features/access/access.api';
+import { createContentApi } from '../features/content/content.api';
 import { createSecurityApi } from '../features/security/security.api';
 import { installAuthInterceptor } from '../lib/auth-interceptor';
 import { browserCrossTabOptions } from '../lib/cross-tab-refresh';
@@ -35,12 +36,14 @@ export function createAppServices(
   const passwordApi = createPasswordApi(client);
   const securityApi = createSecurityApi(client);
   const accessApi = createAccessApi(client);
+  const contentApi = createContentApi(client);
   return {
     store,
     session,
     passwordApi,
     securityApi,
     accessApi,
+    contentApi,
     queryClient,
     removeInterceptor,
   };

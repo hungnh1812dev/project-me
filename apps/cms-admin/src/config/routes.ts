@@ -16,7 +16,24 @@ export const APP_ROUTES = {
   ROLE_PERMISSIONS: '/roles/:roleId',
   /** API tokens list, create, edit, revoke (T19). */
   API_TOKENS: '/api-tokens',
+  /** New document of a content type (T23); `:slug` = content type. */
+  CONTENT_NEW: '/content/:slug/new',
+  /** Edit one document's draft (T23). */
+  CONTENT_EDIT: '/content/:slug/:documentId',
 } as const;
+
+/** `/content/<slug>/new` */
+export function contentNewPath(slug: string): string {
+  return APP_ROUTES.CONTENT_NEW.replace(':slug', encodeURIComponent(slug));
+}
+
+/** `/content/<slug>/<documentId>` */
+export function contentEditPath(slug: string, documentId: string): string {
+  return APP_ROUTES.CONTENT_EDIT.replace(
+    ':slug',
+    encodeURIComponent(slug),
+  ).replace(':documentId', encodeURIComponent(documentId));
+}
 
 /** `/roles/<id>`: the matrix page of one role. */
 export function rolePermissionsPath(roleId: string): string {
