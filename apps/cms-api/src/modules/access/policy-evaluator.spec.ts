@@ -152,6 +152,46 @@ describe('PolicyEvaluator role matrix (seeded defaults)', () => {
   });
 });
 
+describe('create rows with stored conditions (T21, fail closed)', () => {
+  const conditions = {
+    all: [{ field: 'priority', op: 'eq', value: 3 }],
+  };
+
+  it('grant nothing, whatever the rest of the row says', () => {
+    const actor = account(
+      customRole(20, [grant(CONTENT, create, { conditions })]),
+    );
+    expect(evaluator.can(actor, create, CONTENT)).toBe(false);
+    expect(evaluator.rowFilter(actor, create, CONTENT)).toEqual({
+      allowed: false,
+    });
+    expect(evaluator.fieldsFor(actor, CONTENT, create).writable.paths).toEqual(
+      [],
+    );
+  });
+
+  it('an unconditioned create row still grants', () => {
+    const actor = account(
+      customRole(20, [
+        grant(CONTENT, create, { conditions }),
+        grant(CONTENT, create),
+      ]),
+    );
+    expect(evaluator.can(actor, create, CONTENT)).toBe(true);
+  });
+
+  it('read and update rows keep their conditions', () => {
+    const actor = account(
+      customRole(20, [
+        grant(CONTENT, read, { conditions }),
+        grant(CONTENT, update, { conditions }),
+      ]),
+    );
+    expect(evaluator.can(actor, read, CONTENT)).toBe(true);
+    expect(evaluator.can(actor, update, CONTENT)).toBe(true);
+  });
+});
+
 describe('canReadDrafts (read + update)', () => {
   it.each<[SystemRoleSlug, boolean]>([
     ['owner', true],

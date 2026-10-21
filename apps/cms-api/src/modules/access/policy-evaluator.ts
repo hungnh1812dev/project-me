@@ -208,7 +208,14 @@ export class PolicyEvaluator {
     action: PermissionAction,
     subject: string,
   ): PermissionGrant[] {
-    const forAction = policy.grants.filter((grant) => grant.action === action);
+    // A create row has no existing row to test conditions against, so a
+    // stored one (written before the validator refused them) grants nothing:
+    // fail closed (T21).
+    const forAction = policy.grants.filter(
+      (grant) =>
+        grant.action === action &&
+        !(action === PermissionAction.create && grant.conditions !== null),
+    );
     const own = forAction.filter((grant) => grant.subject === subject);
     if (own.length > 0 || !this.subjects.isContentType(subject)) return own;
     return forAction.filter(
