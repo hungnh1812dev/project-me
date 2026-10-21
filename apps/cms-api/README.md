@@ -246,6 +246,10 @@ in `src/common/constants/limits.constants.ts` (`RATE_LIMIT_POLICIES`):
   suite (one IP, many sign-ins) is not throttled; with `NODE_ENV=production` setting either fails the start unless
   `ALLOW_LOGIN_RATE_LIMIT_OVERRIDE=smoke` (exact value; anything else is
   invalid) is also set, which only `docker-compose.smoke.yml` does.
+- Optional override (T18c): `REFRESH_RATE_LIMIT_IP` replaces the `refresh:ip`
+  limit (30 per minute per IP). Same validation and the same production
+  opt-in flag (`ALLOW_LOGIN_RATE_LIMIT_OVERRIDE=smoke`) as the login overrides;
+  only `docker-compose.smoke.yml` sets it.
 - Key sources: `ip`, `email` (body.email, hashed) and `actor` (the signed-in
   account id; needs `JwtAuthGuard` before it, which a method-level
   `@Throttle` is; skipped when there is no signed-in account).

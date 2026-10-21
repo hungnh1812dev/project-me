@@ -151,6 +151,9 @@ function rateLimitOverridesOf(env: Env): Record<string, number> {
   if (env.LOGIN_RATE_LIMIT_EMAIL !== undefined) {
     overrides[RATE_LIMIT_RULE_NAMES.LOGIN_EMAIL] = env.LOGIN_RATE_LIMIT_EMAIL;
   }
+  if (env.REFRESH_RATE_LIMIT_IP !== undefined) {
+    overrides[RATE_LIMIT_RULE_NAMES.REFRESH_IP] = env.REFRESH_RATE_LIMIT_IP;
+  }
   return overrides;
 }
 

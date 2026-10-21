@@ -50,10 +50,11 @@ const optionalRateLimit = z.preprocess(
   z.coerce.number().int().min(1).max(MAX_RATE_LIMIT_OVERRIDE).optional(),
 );
 
-/** Login limit overrides (T18b): refused in production unless explicitly opted in, so a stray value can't weaken D7. */
+/** Login and refresh limit overrides (T18b, T18c): refused in production unless explicitly opted in, so a stray value can't weaken D7. */
 const RATE_LIMIT_OVERRIDE_KEYS = [
   'LOGIN_RATE_LIMIT_IP',
   'LOGIN_RATE_LIMIT_EMAIL',
+  'REFRESH_RATE_LIMIT_IP',
 ] as const;
 
 /** Keys that are optional in development but required in production. */
@@ -111,6 +112,7 @@ export const envSchema = z
     ),
     LOGIN_RATE_LIMIT_IP: optionalRateLimit,
     LOGIN_RATE_LIMIT_EMAIL: optionalRateLimit,
+    REFRESH_RATE_LIMIT_IP: optionalRateLimit,
     ADMIN_ORIGIN: optionalOrigin,
     WEB_ORIGIN: optionalOrigin,
     MAIL_PROVIDER: z

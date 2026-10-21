@@ -467,6 +467,52 @@ describe('login rate-limit overrides (T18b)', () => {
   );
 });
 
+describe('refresh rate-limit override (T18c)', () => {
+  it('has no override by default', () => {
+    expect(loadAppConfig(devEnv()).rateLimit.limitOverrides).toEqual({});
+  });
+
+  it('reads the override, and an empty value counts as unset', () => {
+    expect(
+      loadAppConfig(devEnv({ REFRESH_RATE_LIMIT_IP: '500' })).rateLimit
+        .limitOverrides,
+    ).toEqual({ [RATE_LIMIT_RULE_NAMES.REFRESH_IP]: 500 });
+    expect(
+      loadAppConfig(devEnv({ REFRESH_RATE_LIMIT_IP: '' })).rateLimit
+        .limitOverrides,
+    ).toEqual({});
+  });
+
+  it('refuses it in production without the opt-in', () => {
+    const error = configErrorOf(
+      productionEnv({ REFRESH_RATE_LIMIT_IP: '500' }),
+    );
+    expect(error.issues[0]).toMatch(
+      /^REFRESH_RATE_LIMIT_IP: .*not allowed in production/,
+    );
+  });
+
+  it('accepts it in production with ALLOW_LOGIN_RATE_LIMIT_OVERRIDE=smoke', () => {
+    const config = loadAppConfig(
+      productionEnv({
+        ALLOW_LOGIN_RATE_LIMIT_OVERRIDE: 'smoke',
+        REFRESH_RATE_LIMIT_IP: '500',
+      }),
+    );
+    expect(config.rateLimit.limitOverrides).toEqual({
+      [RATE_LIMIT_RULE_NAMES.REFRESH_IP]: 500,
+    });
+  });
+
+  it.each(['0', '-1', '1.5', 'abc', '1000001'])(
+    'fails the start for REFRESH_RATE_LIMIT_IP=%s',
+    (value) => {
+      const error = configErrorOf(devEnv({ REFRESH_RATE_LIMIT_IP: value }));
+      expect(error.issues[0]).toMatch(/^REFRESH_RATE_LIMIT_IP:/);
+    },
+  );
+});
+
 describe('TOTP key config (T13)', () => {
   it('defaults the key id and issuer outside production', () => {
     expect(loadAppConfig(devEnv()).auth.totp).toEqual({

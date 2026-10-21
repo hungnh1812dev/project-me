@@ -32,10 +32,11 @@ export interface RateLimitRule {
   readonly windowMs: number;
 }
 
-/** Names of the rules whose limit `loadAppConfig` can override (T18b). */
+/** Names of the rules whose limit `loadAppConfig` can override (T18b, T18c). */
 export const RATE_LIMIT_RULE_NAMES = {
   LOGIN_IP: 'login:ip',
   LOGIN_EMAIL: 'login:email',
+  REFRESH_IP: 'refresh:ip',
 } as const;
 
 /**
@@ -149,7 +150,7 @@ export const RATE_LIMIT_POLICIES = {
   ],
   REFRESH: [
     {
-      name: 'refresh:ip',
+      name: RATE_LIMIT_RULE_NAMES.REFRESH_IP,
       keySource: RATE_LIMIT_KEY_SOURCES.IP,
       limit: 30,
       windowMs: ONE_MINUTE_MS,

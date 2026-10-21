@@ -45,7 +45,7 @@ export const TOTP_ISSUER_PATTERN = new RegExp(
 
 export const MAX_PORT = 65_535;
 
-/** The only accepted value of ALLOW_LOGIN_RATE_LIMIT_OVERRIDE (T18b). */
+/** The only accepted value of ALLOW_LOGIN_RATE_LIMIT_OVERRIDE (T18b; also gates REFRESH_RATE_LIMIT_IP, T18c). */
 export const LOGIN_RATE_LIMIT_OVERRIDE_OPT_IN = 'smoke';
 
 /** Upper bound of the optional login rate-limit overrides (T18b). */

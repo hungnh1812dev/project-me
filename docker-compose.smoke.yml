@@ -79,6 +79,8 @@ services:
       ALLOW_LOGIN_RATE_LIMIT_OVERRIDE: smoke
       LOGIN_RATE_LIMIT_IP: '10000'
       LOGIN_RATE_LIMIT_EMAIL: '10000'
+      # T18c: every e2e sign-in refreshes the session; same opt-in flag.
+      REFRESH_RATE_LIMIT_IP: '10000'
     depends_on:
       db:
         condition: service_healthy
