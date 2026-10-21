@@ -7,12 +7,12 @@ build it first through `^build`).
 
 ## Exports
 
-| Import                           | What                                                                                                                                                                                                                                                                            |
-| -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `@abyss/form-commons`            | `Button`, `Input`, `Label`, `Field`, `TextInput`, `SelectInput`, `CheckboxInput`, `Checkbox`, `TextAreaInput`, `NumberInput`, `SwitchInput`, `DatePicker`, `DateTimePicker`, `JsonInput`, `Textarea`, `Switch`, `NativeSelect`, `Dialog*`, `FIELD_ID_SUFFIX` (ESM + CJS + d.ts) |
-| `@abyss/form-commons/styles.css` | Compiled CSS: tokens + the utilities the components use, no reset                                                                                                                                                                                                               |
-| `@abyss/form-commons/theme.css`  | Tailwind v4 `@theme` mapping + tokens, for apps that run Tailwind                                                                                                                                                                                                               |
-| `@abyss/form-commons/tokens.css` | CSS variables only                                                                                                                                                                                                                                                              |
+| Import                           | What                                                                                                                                                                                                                                                                                             |
+| -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `@abyss/form-commons`            | `Button`, `Input`, `Label`, `Field`, `TextInput`, `SelectInput`, `CheckboxInput`, `Checkbox`, `TextAreaInput`, `NumberInput`, `SwitchInput`, `DatePicker`, `DateTimePicker`, `JsonInput`, `RichtextInput`, `Textarea`, `Switch`, `NativeSelect`, `Dialog*`, `FIELD_ID_SUFFIX` (ESM + CJS + d.ts) |
+| `@abyss/form-commons/styles.css` | Compiled CSS: tokens + the utilities the components use, no reset                                                                                                                                                                                                                                |
+| `@abyss/form-commons/theme.css`  | Tailwind v4 `@theme` mapping + tokens, for apps that run Tailwind                                                                                                                                                                                                                                |
+| `@abyss/form-commons/tokens.css` | CSS variables only                                                                                                                                                                                                                                                                               |
 
 JS has no side effects (`sideEffects` lists only CSS), so unused components
 are tree-shaken.
@@ -112,6 +112,12 @@ All bind to the surrounding `FormProvider` like `TextInput`.
 - `JsonInput` (required `invalidMessage`): monospace textarea; value is the raw
   text, blank means no value, invalid JSON is an error on blur / submit.
   `isValidJsonText` is exported.
+- `RichtextInput` (Tiptap; required `label: string` and `labels` for the toolbar
+  and link prompt): value is an HTML string, an empty document is `''`. The
+  extension set (`richtextExtensions`) is limited to what cms-api
+  `sanitizeRichtext` keeps (p, br, hr, strong, em, u, s, code, pre, blockquote,
+  h1-h6, ul, ol, li, a with http/https/mailto/tel). Add a tag to the server
+  allowlist before adding an extension. The server sanitizes again on write.
 
 ### Dialog
 

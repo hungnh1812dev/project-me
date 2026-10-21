@@ -3,6 +3,7 @@ import {
   DateTimePicker,
   JsonInput,
   NumberInput,
+  RichtextInput,
   SwitchInput,
   TextAreaInput,
   TextInput,
@@ -57,7 +58,7 @@ const longText: FieldAdapter = {
   ),
 };
 
-/** richtext (T24) and media (T29) arrive with their editors. */
+/** media (T29) arrives with its editor. */
 const notEditable: FieldAdapter = {
   editable: false,
   toForm: identity,
@@ -126,7 +127,14 @@ export const FIELD_REGISTRY: Readonly<Record<string, FieldAdapter>> = {
       />
     ),
   },
-  [FIELD_TYPE.RICHTEXT]: notEditable,
+  [FIELD_TYPE.RICHTEXT]: {
+    editable: true,
+    toForm: textToForm,
+    toApi: textToApi,
+    render: ({ name, label }) => (
+      <RichtextInput name={name} label={label} labels={copy.richtext} />
+    ),
+  },
   [FIELD_TYPE.MEDIA]: notEditable,
 };
 

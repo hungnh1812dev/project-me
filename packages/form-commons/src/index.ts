@@ -59,3 +59,10 @@ export {
   isValidJsonText,
   type JsonInputProps,
 } from './components/forms/JsonInput';
+export {
+  RichtextInput,
+  richtextExtensions,
+  normalizeRichtextHtml,
+  type RichtextInputProps,
+  type RichtextLabels,
+} from './components/forms/RichtextInput';

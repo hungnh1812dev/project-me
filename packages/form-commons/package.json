@@ -36,6 +36,9 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
+    "@tiptap/pm": "3.32.0",
+    "@tiptap/react": "3.32.0",
+    "@tiptap/starter-kit": "3.32.0",
     "class-variance-authority": "0.7.1",
     "cn": "0.5.0",
     "radix-ui": "1.8.1"

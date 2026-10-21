@@ -23,6 +23,14 @@ const RUN_ID = Date.now().toString(36);
 const POSITION = `E2E position ${RUN_ID}`;
 const POSITION_EDITED = `E2E position edited ${RUN_ID}`;
 const SKILL_NAMES = [`Alpha ${RUN_ID}`, `Beta ${RUN_ID}`, `Gamma ${RUN_ID}`];
+const RICH_TEXT = `Rich summary ${RUN_ID}`;
+const LIST_ITEM = `List item ${RUN_ID}`;
+const LINK_TEXT = 'Safe link';
+const BAD_LINK_TEXT = 'Bad link';
+const SAFE_LINK = 'https://example.com/e2e';
+const BAD_LINK = 'javascript:alert(1)';
+const FORMAT_SETTLE_MS = 300;
+const TOOLBAR_BUTTONS = 11;
 const HTTP_BAD_REQUEST = 400;
 const HTTP_CONFLICT = 409;
 const HTTP_SERVER_ERROR = 500;
@@ -91,6 +99,31 @@ const addButton = (scope: Page | Locator, label: string) =>
 const field = (scope: Page | Locator, label: string) =>
   scope.getByLabel(label, { exact: true });
 
+/** Selects the last `count` characters (Home/End differ between platforms). */
+async function selectBack(page: Page, count: number) {
+  for (let i = 0; i < count; i += 1) {
+    await page.keyboard.press('Shift+ArrowLeft');
+  }
+}
+
+const richtextEditor = (scope: Page | Locator, label: string) =>
+  scope.getByRole('textbox', { name: label, exact: true });
+
+/** Clicks a toolbar button and waits until focus is back in the editor. */
+async function applyFormat(
+  page: Page,
+  editor: Locator,
+  button: Locator,
+): Promise<void> {
+  await button.click();
+  await expect(editor).toBeFocused();
+  // Keys sent right after a toolbar click can be lost while the editor re-syncs.
+  await page.waitForTimeout(FORMAT_SETTLE_MS);
+}
+
+const toolbarButton = (scope: Page | Locator, label: string) =>
+  scope.getByRole('button', { name: label, exact: true });
+
 /** Writes (not reads) to the documents API, recorded for assertions. */
 function recordWrites(page: Page) {
   const writes: Request[] = [];
@@ -135,7 +168,7 @@ test.describe.serial('owner: dynamic document form (cv-page)', () => {
     await context.close();
   });
 
-  test('a new cv-page shows every field type, richtext as read-only', async () => {
+  test('a new cv-page shows every field type, richtext as an editor', async () => {
     await page.goto(contentNewPath(CV_SLUG));
     await expect(
       page.getByRole('heading', { level: 1, name: copy.newTitle(CV_SLUG) }),
@@ -143,9 +176,11 @@ test.describe.serial('owner: dynamic document form (cv-page)', () => {
     await expect(field(page, 'Position')).toBeVisible();
     await expect(page.getByRole('switch', { name: 'Is main' })).toBeVisible();
     await expect(field(page, 'Company')).toBeVisible();
-    const summary = field(page, 'Summary');
-    await expect(summary).toHaveAttribute('readonly', '');
-    await expect(page.getByText(copy.notEditableYet).first()).toBeVisible();
+    await expect(richtextEditor(page, 'Summary')).toBeVisible();
+    await expect(
+      page.getByRole('toolbar', { name: copy.richtext.toolbar }).first(),
+    ).toBeVisible();
+    await expect(page.getByText(copy.notEditableYet)).toHaveCount(0);
     for (const label of [
       'Skill',
       'Experience',
@@ -250,6 +285,75 @@ test.describe.serial('owner: dynamic document form (cv-page)', () => {
     await expect(field(page, 'Position')).toHaveValue(POSITION_EDITED);
   });
 
+  test('richtext: toolbar formatting, links and cleared text persist across reload', async () => {
+    const editor = richtextEditor(page, 'Summary');
+    const toolbar = page
+      .getByRole('toolbar', { name: copy.richtext.toolbar })
+      .first();
+    await editor.click();
+    await page.keyboard.type(RICH_TEXT);
+    await page.keyboard.press('ControlOrMeta+A');
+    await applyFormat(page, editor, toolbarButton(toolbar, copy.richtext.bold));
+    await expect(editor.locator('strong')).toContainText(RICH_TEXT);
+    await page.keyboard.press('ArrowRight');
+    await page.keyboard.press('Enter');
+    await applyFormat(
+      page,
+      editor,
+      toolbarButton(toolbar, copy.richtext.bulletList),
+    );
+    await page.keyboard.type(LIST_ITEM);
+    await expect(editor.locator('ul li')).toContainText(LIST_ITEM);
+
+    // https link kept; javascript: link refused by the editor or the server.
+    await page.keyboard.press('Enter');
+    await page.keyboard.press('Enter');
+    await page.keyboard.type(LINK_TEXT);
+    await selectBack(page, LINK_TEXT.length);
+    page.once('dialog', (dialog) => void dialog.accept(SAFE_LINK));
+    await applyFormat(page, editor, toolbarButton(toolbar, copy.richtext.link));
+    await expect(editor.locator('a')).toHaveAttribute('href', SAFE_LINK);
+    await page.keyboard.press('ArrowRight');
+    await page.keyboard.press('Enter');
+    await page.keyboard.type(BAD_LINK_TEXT);
+    await selectBack(page, BAD_LINK_TEXT.length);
+    page.once('dialog', (dialog) => void dialog.accept(BAD_LINK));
+    await applyFormat(page, editor, toolbarButton(toolbar, copy.richtext.link));
+
+    const recorder = recordWrites(page);
+    await saveDraftAndExpectNotice(page);
+    recorder.stop();
+    const sent = bodyOf(recorder.writes[0] as Request);
+    expect(JSON.stringify(sent)).toContain('<strong>');
+
+    await page.reload();
+    const reloaded = richtextEditor(page, 'Summary');
+    await expect(reloaded.locator('strong')).toContainText(RICH_TEXT);
+    await expect(reloaded.locator('ul li')).toContainText(LIST_ITEM);
+    await expect(reloaded.locator(`a[href="${SAFE_LINK}"]`)).toHaveCount(1);
+    await expect(reloaded.locator('a[href^="javascript"]')).toHaveCount(0);
+    await expect(reloaded).toContainText(BAD_LINK_TEXT);
+
+    // Clearing everything saves an empty value.
+    await reloaded.click();
+    await page.keyboard.press('ControlOrMeta+A');
+    await page.keyboard.press('Delete');
+    await saveDraftAndExpectNotice(page);
+    await page.reload();
+    await expect(richtextEditor(page, 'Summary')).toHaveText('');
+  });
+
+  test('richtext: keyboard reaches the toolbar and then the editor', async () => {
+    const first = toolbarButton(page, copy.richtext.bold).first();
+    await first.focus();
+    await expect(first).toBeFocused();
+    await expect(first).toHaveCSS('outline-style', /.*/);
+    for (let i = 0; i < TOOLBAR_BUTTONS; i += 1) {
+      await page.keyboard.press('Tab');
+    }
+    await expect(richtextEditor(page, 'Summary')).toBeFocused();
+  });
+
   test('reordering and removing skills keeps the same rows (component uid)', async () => {
     const skillValue = (index: number) =>
       field(item(page, 'Skill', index), 'Skill');
@@ -339,7 +443,7 @@ test.describe.serial('owner: dynamic document form (cv-page)', () => {
   });
 
   test('masked fields are read-only "Protected" and never sent', async () => {
-    const masked = ['company', 'reference.phone'];
+    const masked = ['company', 'reference.phone', 'summary'];
     await page.route(`**${DOCUMENTS_PATH}/*`, async (route) => {
       if (route.request().method() !== 'GET') return route.fallback();
       const response = await route.fetch();
@@ -355,6 +459,8 @@ test.describe.serial('owner: dynamic document form (cv-page)', () => {
     const company = field(page, 'Company');
     await expect(company).toHaveValue(copy.protectedValue);
     await expect(company).toHaveAttribute('readonly', '');
+    await expect(field(page, 'Summary')).toHaveValue(copy.protectedValue);
+    await expect(field(page, 'Summary')).toHaveAttribute('readonly', '');
 
     await field(page, 'Position').fill(`${POSITION_EDITED} masked`);
     await addButton(page, 'Reference').click();

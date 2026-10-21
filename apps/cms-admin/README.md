@@ -93,8 +93,9 @@ So far: sign-in (T11) and, behind it, a status page that calls
   reorder; a non-repeatable component holds one item) and nests to the API's
   depth limit; each item keeps its `componentUid` in form state
   (`ITEM_UID_KEY`). Masked fields (`_maskedFields`) show "Protected (***)",
-  read-only, and are never sent. Richtext (T24) and media (T29) show their
-  stored value read-only and are never sent until their editors exist.
+  read-only, and are never sent. Richtext uses the Tiptap `RichtextInput` (sent as HTML,
+  blank = null). Media (T29) shows its stored value read-only and is never
+  sent until its editor exists.
   Create sends every filled field; save on an existing draft sends only the
   top-level fields and component lists that changed, plus `version`
   (`document-form.ts`). A 409 shows a reload button (conflict merge is T25),

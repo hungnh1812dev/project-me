@@ -11,6 +11,21 @@ if (typeof globalThis.ResizeObserver !== 'function') {
   };
 }
 
+// jsdom has no layout APIs; ProseMirror (Tiptap) calls them on click and focus.
+if (typeof document.elementFromPoint !== 'function') {
+  document.elementFromPoint = () => null;
+}
+if (typeof Range.prototype.getClientRects !== 'function') {
+  Range.prototype.getClientRects = () => ({
+    length: 0,
+    item: () => null,
+    [Symbol.iterator]: [][Symbol.iterator],
+  });
+}
+if (typeof Range.prototype.getBoundingClientRect !== 'function') {
+  Range.prototype.getBoundingClientRect = () => new DOMRect();
+}
+
 afterEach(() => {
   cleanup();
 });

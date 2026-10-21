@@ -95,9 +95,13 @@ describe('toDocumentTree on create', () => {
     });
   });
 
-  it('never sends richtext (editor not built yet)', () => {
+  it('sends richtext as HTML and blank richtext as null', () => {
     const form = toFormValues(tree, null);
     form.summary = '<p>x</p>';
+    expect(toDocumentTree(tree, form, null, NONE).values).toMatchObject({
+      summary: '<p>x</p>',
+    });
+    form.summary = '';
     expect(toDocumentTree(tree, form, null, NONE).values).not.toHaveProperty(
       'summary',
     );
