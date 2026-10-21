@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from 'react-router';
 
 import { APP_ROUTES } from '../config/routes';
 import { AccountsPage } from '../features/access/AccountsPage';
+import { ApiTokensPage } from '../features/access/ApiTokensPage';
 import { RolePermissionsPage } from '../features/access/RolePermissionsPage';
 import { RolesPage } from '../features/access/RolesPage';
 import { LoginPage } from '../features/auth/LoginPage';
@@ -23,6 +24,7 @@ export function App() {
           <Route index element={<StatusPage />} />
           <Route path={APP_ROUTES.ACCOUNTS} element={<AccountsPage />} />
           <Route path={APP_ROUTES.ROLES} element={<RolesPage />} />
+          <Route path={APP_ROUTES.API_TOKENS} element={<ApiTokensPage />} />
           <Route
             path={APP_ROUTES.ROLE_PERMISSIONS}
             element={<RolePermissionsPage />}

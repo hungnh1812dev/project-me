@@ -41,6 +41,12 @@ export const API_ENDPOINTS = {
     LIST: '/roles',
     PERMISSIONS: (id: string) => `/roles/${encodeURIComponent(id)}/permissions`,
   },
+  /** T19 API tokens. `id` is the token's document id. */
+  API_TOKENS: {
+    LIST: '/api-tokens',
+    ONE: (id: string) => `/api-tokens/${encodeURIComponent(id)}`,
+    REVOKE: (id: string) => `/api-tokens/${encodeURIComponent(id)}/revoke`,
+  },
   /** T17b read-only content types (field paths for the permission matrix). */
   CONTENT_TYPES: {
     LIST: '/content-types',

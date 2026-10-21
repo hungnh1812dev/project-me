@@ -67,9 +67,24 @@ So far: sign-in (T11) and, behind it, a status page that calls
   every rule and its answers (403, 404, 409) are handled in the UI. Dialogs
   use the form-commons Radix `Dialog`; `components/Modal.tsx` (native
   `<dialog>`, 2FA) is unchanged.
+- **API tokens (T19)** (`/api-tokens`, `ApiTokensPage.tsx`): paged list
+  (name + token prefix, access summary, derived status, expiry, last used;
+  "Created by" appears when the list holds other accounts' tokens). Create
+  and Edit share `TokenFormDialog` (name, optional expiry date = end of that
+  day in the user's time zone, a content-only permission grid with field
+  pickers). Creating switches the same dialog to `TokenReveal`: the raw token
+  is shown once, with Copy, and can only be closed with "I have copied it"
+  (no Esc or outside click). It lives only in that component's state
+  (the create mutation has `gcTime: 0`) and is never in the list or any
+  cache. Edit sends only the changed fields (`name`, `scope`, `expiresAt`);
+  no change, no request. Revoke asks for a named confirmation. Create needs
+  `api_tokens:create`; Edit and Revoke need `api_tokens:update` and are
+  hidden on revoked tokens; the nav link needs `api_tokens:read`. Grid cells
+  the caller's role does not hold are disabled (hint only); a 403
+  `API_TOKEN_SCOPE_NOT_HELD` marks the refused cells by `details.indexes`.
 - **Routes** (`src/config/routes.ts`): `/login`, `/reset-password`,
   `/set-password`, and `/`, `/settings/security`, `/accounts`, `/roles`,
-  `/roles/:roleId` behind `ProtectedRoute` + `AppShell` (header with the
+  `/roles/:roleId`, `/api-tokens` behind `ProtectedRoute` + `AppShell` (header with the
   user, Accounts / Roles links, "Security" and "Sign out").
 
 End-to-end coverage lives in [`apps/e2e`](../e2e/README.md).

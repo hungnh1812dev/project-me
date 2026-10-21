@@ -73,3 +73,18 @@ export const TABLE_SKELETON_ROWS = 3;
 
 /** Spaces used when pretty-printing row conditions in the editor. */
 export const CONDITIONS_JSON_INDENT = 2;
+
+/** API tokens per page of the token list (API default 20, max 100). */
+export const API_TOKENS_PAGE_SIZE = 20;
+
+/** Input bounds of the API tokens API (cms-api API_TOKEN). */
+export const API_TOKEN_LIMITS = {
+  NAME_MAX_LENGTH: 100,
+  MAX_SCOPE_ENTRIES: 200,
+} as const;
+
+export const API_TOKEN_STATUSES = ['active', 'revoked', 'expired'] as const;
+export type ApiTokenStatus = (typeof API_TOKEN_STATUSES)[number];
+
+/** Hours, minutes and seconds that end a calendar day (token expiry date). */
+export const END_OF_DAY_TIME = '23:59:59';

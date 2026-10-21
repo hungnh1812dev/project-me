@@ -59,6 +59,7 @@ function indexesOf(details: Record<string, unknown>): number[] {
 const MESSAGE_BY_CODE: Readonly<Record<string, string>> = {
   [API_ERROR_CODES.ACCESS_RANK_FORBIDDEN]: copy.errors.rankForbidden,
   [API_ERROR_CODES.PERMISSION_NOT_HELD]: copy.errors.permissionNotHeld,
+  [API_ERROR_CODES.API_TOKEN_SCOPE_NOT_HELD]: copy.errors.scopeNotHeld,
 };
 
 export function toAccessError(error: unknown): AccessError {

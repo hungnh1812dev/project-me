@@ -5,7 +5,7 @@ import {
   TOTP_CODE_LENGTH,
   TOTP_PERIOD_SECONDS,
 } from './auth.constants';
-import { ACCOUNT_LIMITS } from './access.constants';
+import { ACCOUNT_LIMITS, API_TOKEN_LIMITS } from './access.constants';
 
 /** User-facing text. One place until an i18n module exists. */
 export const COPY = {
@@ -216,6 +216,7 @@ export const COPY = {
       label: 'Main',
       accounts: 'Accounts',
       roles: 'Roles',
+      apiTokens: 'API tokens',
     },
     errors: {
       network:
@@ -225,6 +226,8 @@ export const COPY = {
         'You can only manage accounts and roles ranked below your own role.',
       permissionNotHeld:
         'You cannot grant a permission you do not hold yourself. Remove the marked permissions and save again.',
+      scopeNotHeld:
+        'A token can only get permissions you hold yourself. Remove the marked permissions and save again.',
       retry: 'Try again',
     },
     accounts: {
@@ -323,6 +326,120 @@ export const COPY = {
       description: (email: string) =>
         `${email} is signed out everywhere and can no longer sign in. You can enable the account again later.`,
       submit: (name: string) => `Disable ${name}`,
+      cancel: 'Cancel',
+    },
+    apiTokens: {
+      title: 'API tokens',
+      description:
+        'Tokens let scripts and other systems call the content API. A token never has more than the account that created it.',
+      create: 'Create token',
+      tableLabel: 'API tokens',
+      columns: {
+        name: 'Token',
+        access: 'Access',
+        status: 'Status',
+        expires: 'Expires',
+        lastUsed: 'Last used',
+        createdBy: 'Created by',
+        actions: 'Actions',
+      },
+      status: {
+        active: 'Active',
+        revoked: 'Revoked',
+        expired: 'Expired',
+      },
+      noExpiry: 'Never',
+      neverUsed: 'Never',
+      you: 'You',
+      access: (permissions: number, subjects: string) =>
+        `${permissions} ${permissions === 1 ? 'permission' : 'permissions'} on ${subjects}`,
+      noAccess: 'No permissions',
+      loading: 'Loading API tokens',
+      loadFailed: 'Could not load the API tokens.',
+      forbidden:
+        'Your role cannot see API tokens. Ask the owner if you need access.',
+      empty: 'No API tokens yet.',
+      emptyHint:
+        'Create a token when a script or another system needs to read or write content.',
+      emptyHintReadOnly: 'Tokens created by your team appear here.',
+      edit: 'Edit',
+      editLabel: (name: string) => `Edit ${name}`,
+      revoke: 'Revoke',
+      revokeLabel: (name: string) => `Revoke ${name}`,
+      created: (name: string) =>
+        `Token ${name} is created. Anything using it can call the API now.`,
+      updated: (name: string) => `Token ${name} is updated.`,
+      revoked: (name: string) =>
+        `Token ${name} is revoked and no longer works.`,
+      alreadyRevoked: 'That token was already revoked. The list is updated.',
+      gone: 'That token no longer exists or you cannot manage it. The list is updated.',
+      pagination: {
+        label: 'API tokens pages',
+        range: (from: number, to: number, total: number) =>
+          `${from}\u2013${to} of ${total}`,
+        previous: 'Previous',
+        next: 'Next',
+      },
+    },
+    tokenForm: {
+      createTitle: 'Create an API token',
+      editTitle: (name: string) => `Edit ${name}`,
+      createDescription:
+        'Choose what the token may do. You see the token once, right after you create it.',
+      editDescription:
+        'Changes apply to the next request made with this token. The token itself does not change.',
+      nameLabel: 'Name',
+      nameHint: 'Say what uses it, for example "Website build".',
+      expiresLabel: 'Expires on',
+      expiresHint:
+        'Optional. The token stops working at the end of this day, in your time zone. Leave empty for no expiry.',
+      scopeTitle: 'Permissions',
+      scopeDescription:
+        'Content only. The token can never do more than your own role allows, even if you change roles later.',
+      submitCreate: 'Create token',
+      submitEdit: 'Save changes',
+      cancel: 'Cancel',
+      validation: {
+        nameRequired: 'Enter a name for the token.',
+        nameTooLong: `Use at most ${API_TOKEN_LIMITS.NAME_MAX_LENGTH} characters.`,
+        expiryPast: 'Choose today or a later date.',
+        expiryInvalid: 'Enter a valid date.',
+        scopeRequired: 'Choose at least one permission.',
+        scopeTooLong: `Use at most ${API_TOKEN_LIMITS.MAX_SCOPE_ENTRIES} permissions. Use "All content types" to cover more.`,
+      },
+      errors: {
+        invalid:
+          'Some details were not accepted. Check the marked fields and try again.',
+        revoked:
+          'This token was revoked in the meantime and cannot be changed.',
+      },
+    },
+    tokenScope: {
+      cellLabel: (action: string, subject: string) => `${action} ${subject}`,
+      fields: 'Fields',
+      fieldsLabel: (subject: string) => `Fields for ${subject}`,
+      fieldsEmpty: 'Choose an action in this row to limit its fields.',
+      notHeld: 'Not allowed by your role',
+      notHeldHint:
+        'Greyed-out boxes are permissions you do not hold yourself, so you cannot give them to a token.',
+    },
+    tokenReveal: {
+      title: (name: string) => `Copy the token for ${name}`,
+      description:
+        'This is the only time the token is shown. Store it in a password manager or your secret store now.',
+      warning:
+        'If you close this without copying it, the token cannot be shown again. You would have to create a new one.',
+      label: 'API token',
+      copy: 'Copy token',
+      copied: 'Copied to the clipboard.',
+      copyFailed: 'Could not copy automatically. Select the token and copy it.',
+      done: 'I have copied it',
+    },
+    revokeToken: {
+      title: (name: string) => `Revoke ${name}?`,
+      description:
+        'Anything using this token stops working immediately. This cannot be undone; create a new token if you need access again.',
+      submit: (name: string) => `Revoke ${name}`,
       cancel: 'Cancel',
     },
     roles: {

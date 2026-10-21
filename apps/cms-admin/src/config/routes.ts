@@ -14,6 +14,8 @@ export const APP_ROUTES = {
   ROLES: '/roles',
   /** One role's permission matrix (T18); `:roleId` = document id. */
   ROLE_PERMISSIONS: '/roles/:roleId',
+  /** API tokens list, create, edit, revoke (T19). */
+  API_TOKENS: '/api-tokens',
 } as const;
 
 /** `/roles/<id>`: the matrix page of one role. */

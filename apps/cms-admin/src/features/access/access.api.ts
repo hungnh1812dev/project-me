@@ -2,6 +2,7 @@ import type { AxiosInstance } from 'axios';
 
 import type {
   AccountStatus,
+  ApiTokenStatus,
   PermissionAction,
 } from '../../config/access.constants';
 import type { TwoFactorMethod } from '../../config/auth.constants';
@@ -76,6 +77,50 @@ export interface ContentType {
   fields: ContentTypeField[];
 }
 
+/** One entry of a token scope; a missing field list means all fields. */
+export interface TokenScopeEntry {
+  subject: string;
+  action: PermissionAction;
+  readableFields?: readonly string[] | null;
+  writableFields?: readonly string[] | null;
+}
+
+export interface ApiToken {
+  id: string;
+  name: string;
+  /** First characters of the token, to tell tokens apart. Never the secret. */
+  tokenPrefix: string;
+  scope: { permissions: TokenScopeEntry[] };
+  status: ApiTokenStatus;
+  expiresAt: string | null;
+  lastUsedAt: string | null;
+  revokedAt: string | null;
+  createdAt: string;
+  createdBy: { id: string; displayName: string };
+}
+
+/** The create answer is the only place the raw token ever appears. */
+export type CreatedApiToken = ApiToken & { token: string };
+
+export interface CreateApiTokenInput {
+  name: string;
+  scope: { permissions: readonly TokenScopeEntry[] };
+  /** ISO 8601 with an offset. */
+  expiresAt?: string;
+}
+
+export interface UpdateApiTokenInput {
+  name?: string;
+  scope?: { permissions: readonly TokenScopeEntry[] };
+  /** `null` removes the expiry. */
+  expiresAt?: string | null;
+}
+
+export interface ApiTokensPage {
+  data: ApiToken[];
+  meta: PageMeta;
+}
+
 interface ListBody<T> {
   data: T[];
 }
@@ -94,7 +139,7 @@ export interface AccountsPage {
 
 /** Accounts, roles and content-type discovery (T17, T17b). Bearer via the interceptor. */
 export function createAccessApi(client: AxiosInstance) {
-  const { ACCOUNTS, ROLES, CONTENT_TYPES } = API_ENDPOINTS;
+  const { ACCOUNTS, ROLES, CONTENT_TYPES, API_TOKENS } = API_ENDPOINTS;
   return {
     listAccounts: async (
       page: number,
@@ -145,6 +190,40 @@ export function createAccessApi(client: AxiosInstance) {
         permissions,
       });
       return data;
+    },
+
+    listApiTokens: async (
+      page: number,
+      pageSize: number,
+    ): Promise<ApiTokensPage> => {
+      const { data } = await client.get<ApiTokensPage>(API_TOKENS.LIST, {
+        params: { page, pageSize },
+      });
+      return data;
+    },
+
+    /** The answer holds the raw token; keep it out of any cache. */
+    createApiToken: async (
+      input: CreateApiTokenInput,
+    ): Promise<CreatedApiToken> => {
+      const { data } = await client.post<CreatedApiToken>(
+        API_TOKENS.LIST,
+        input,
+      );
+      return data;
+    },
+
+    updateApiToken: async (
+      id: string,
+      input: UpdateApiTokenInput,
+    ): Promise<ApiToken> => {
+      const { data } = await client.patch<ApiToken>(API_TOKENS.ONE(id), input);
+      return data;
+    },
+
+    /** 204; the token answers 401 from the next request on. */
+    revokeApiToken: async (id: string): Promise<void> => {
+      await client.post(API_TOKENS.REVOKE(id));
     },
 
     /** Sorted by slug. */

@@ -5,7 +5,7 @@ import { useAppSelector } from '../../app/store';
 import { COPY } from '../../config/copy.constants';
 import { selectCurrentUser } from '../auth/auth.slice';
 import { FormAlert, type FormAlertTone } from '../auth/FormAlert';
-import type { Account, InvitedAccount, PageMeta } from './access.api';
+import type { Account, InvitedAccount } from './access.api';
 import { AccountRowActions } from './AccountRowActions';
 import { isForbidden } from './access-error';
 import { useAccountsQuery, useRolesQuery } from './access-queries';
@@ -15,7 +15,7 @@ import {
   type DisableOutcome,
 } from './DisableAccountDialog';
 import { InviteDialog } from './InviteDialog';
-import { LoadError, PageHeader, TableSkeleton } from './PageStates';
+import { LoadError, PageHeader, Pagination, TableSkeleton } from './PageStates';
 
 const copy = COPY.access.accounts;
 
@@ -223,6 +223,7 @@ export function AccountsPage() {
             meta={accounts.data.meta}
             count={accounts.data.data.length}
             onPage={setPage}
+            copy={copy.pagination}
           />
         </div>
       )}
@@ -240,49 +241,5 @@ export function AccountsPage() {
         onCloseAutoFocus={restoreFocus}
       />
     </div>
-  );
-}
-
-/** Previous / next with "x-y of total"; driven by the API's `meta`. */
-function Pagination({
-  meta,
-  count,
-  onPage,
-}: {
-  meta: PageMeta;
-  count: number;
-  onPage: (page: number) => void;
-}) {
-  const pageCopy = copy.pagination;
-  const from = (meta.page - 1) * meta.pageSize + 1;
-  const to = from + count - 1;
-  const hasNext = meta.page * meta.pageSize < meta.total;
-  return (
-    <nav
-      aria-label={pageCopy.label}
-      className="flex items-center justify-between gap-3 border-t border-border px-3 py-2 text-sm"
-    >
-      <span className="tabular-nums text-muted-foreground">
-        {pageCopy.range(from, to, meta.total)}
-      </span>
-      <span className="flex gap-2">
-        <Button
-          type="button"
-          size="sm"
-          disabled={meta.page <= 1}
-          onClick={() => onPage(meta.page - 1)}
-        >
-          {pageCopy.previous}
-        </Button>
-        <Button
-          type="button"
-          size="sm"
-          disabled={!hasNext}
-          onClick={() => onPage(meta.page + 1)}
-        >
-          {pageCopy.next}
-        </Button>
-      </span>
-    </nav>
   );
 }
