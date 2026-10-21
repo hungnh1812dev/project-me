@@ -31,5 +31,6 @@ import { PublishService } from './publish.service';
     PublishService,
     PresenceService,
   ],
+  exports: [DocumentAuthGuard, DocumentsQueryService],
 })
 export class DocumentsModule {}

@@ -80,3 +80,46 @@ export const GRAPHQL_SCHEMA_ERROR_MESSAGES = {
   NO_CONTENT_TYPES:
     'GraphQL schema needs at least one content type: the Query type would have no fields.',
 } as const;
+
+/**
+ * Request limits (docs/modules/graphql.md "Limits", Q-G4). The endpoint uses
+ * `MAX_TOKENS` now; the other three rules and the body check land in GQ3.
+ */
+export const GRAPHQL_LIMITS = {
+  MAX_BODY_BYTES: 32 * 1024,
+  MAX_TOKENS: 2_000,
+  MAX_DEPTH: 8,
+  MAX_ROOT_FIELDS: 5,
+  MAX_FIELD_NODES: 500,
+  /** Per-caller schemas kept in memory (one per distinct readable set). */
+  MAX_CACHED_SCHEMAS: 64,
+} as const;
+
+/** Request body keys of `POST /graphql`. */
+export const GRAPHQL_REQUEST_MEDIA_TYPE = 'application/json';
+
+export const GRAPHQL_MESSAGES = {
+  UNSUPPORTED_MEDIA_TYPE: 'The request body must be application/json.',
+  INVALID_VARIABLES: 'The variables are not valid.',
+  /** Same text graphql-js gives an unknown field; the visibility rule reuses it. */
+  UNKNOWN_QUERY_FIELD: (field: string) =>
+    `Cannot query field "${field}" on type "${QUERY_TYPE_NAME}".`,
+  FILTER_TOO_MANY: 'Too many filter entries.',
+  FILTER_BAD_VALUE: 'Invalid filter value.',
+  SORT_DUPLICATE_OR_TOO_MANY: 'Too many or repeated sort keys.',
+  PAGE_OUT_OF_RANGE: 'page is out of range.',
+  PAGE_SIZE_OUT_OF_RANGE: 'pageSize is out of range.',
+  SERVER_ERROR: 'Internal server error',
+} as const;
+
+/** `Did you mean ...` hint graphql-js appends; never sent in production. */
+export const SUGGESTION_PATTERN = /\s*Did you mean[\s\S]*$/;
+/** graphql-js text of a variable coercion error (it echoes the value). */
+export const VARIABLE_ERROR_PATTERN = /^Variable "\$(\w+)"/;
+/** An unknown field on the Query type (hidden types look the same). */
+export const ROOT_UNKNOWN_FIELD_PATTERN = new RegExp(
+  `^Cannot query field "[^"]*" on type "${QUERY_TYPE_NAME}"\\.`,
+);
+
+/** Query field of the schema of a caller who can read no content type. */
+export const NO_READABLE_TYPES_FIELD = '_none';

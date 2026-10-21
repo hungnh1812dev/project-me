@@ -26,7 +26,7 @@ of `graphql` (graphql-js); no Apollo/Yoga/`@nestjs/graphql` (Q-G1).
    anonymous `public` role; present-but-invalid = 401) then the existing
    `DOCUMENT_READ_ANONYMOUS` throttle (one request counts once, anonymous
    only). Body must be `application/json` `{ query, variables?,
-   operationName? }`, at most `GRAPHQL_LIMITS.MAX_BODY_BYTES`; an array body
+operationName? }`, at most `GRAPHQL_LIMITS.MAX_BODY_BYTES`; an array body
    (batch) is 400. Errors at this stage use the REST error shape
    (`{ statusCode, errorCode, message, requestId }`): 401, 413, 415, 429.
    There is no `PermissionGuard`: the subject differs per root field.
@@ -41,10 +41,10 @@ of `graphql` (graphql-js); no Apollo/Yoga/`@nestjs/graphql` (Q-G1).
      actor cannot `read` (`evaluator.rowFilter(actor, read, slug).allowed`
      false, incl. a token scope without it) is reported **with exactly the
      same error as an unknown field** (`Cannot query field "x" on type
-     "Query".`). Hidden = unknown, as in REST (T17b: hidden = 404).
+"Query".`). Hidden = unknown, as in REST (T17b: hidden = 404).
    - production only: `NoSchemaIntrospectionCustomRule`, and "Did you mean"
      suggestions are stripped from every message.
-   Any validation failure: HTTP 400, `{ errors }`, nothing executed.
+     Any validation failure: HTTP 400, `{ errors }`, nothing executed.
 4. **Execute** (`operationName` honoured; only `query` operations exist).
    Root resolvers convert their arguments to the REST internal
    `ListDocumentsQuery` / `(documentId, status)` and call
@@ -69,14 +69,14 @@ differences are handled by step 3 visibility and by masking.
 
 ### Names
 
-| Source                          | GraphQL                                        | Example (`cv-page`)               |
-| ------------------------------- | ---------------------------------------------- | --------------------------------- |
-| content type slug (kebab-case)  | object type, PascalCase                        | `CvPage`                          |
-| component path                  | `<Root>_<Field>[_<Field>]`, PascalCase parts   | `CvPage_Experience_Role`          |
-| single item root field          | camelCase slug                                 | `cvPage`                          |
-| list root field (collection)    | camelCase slug + `List`                        | `cvPageList`                      |
-| page / filter / sort types      | `<Root>Page`, `<Root>Filter`, `<Root>Sort`, `<Root>SortField` | `CvPageFilter`        |
-| content field                   | the API field name, unchanged                  | `isMain`, `teamSize`              |
+| Source                         | GraphQL                                                       | Example (`cv-page`)      |
+| ------------------------------ | ------------------------------------------------------------- | ------------------------ |
+| content type slug (kebab-case) | object type, PascalCase                                       | `CvPage`                 |
+| component path                 | `<Root>_<Field>[_<Field>]`, PascalCase parts                  | `CvPage_Experience_Role` |
+| single item root field         | camelCase slug                                                | `cvPage`                 |
+| list root field (collection)   | camelCase slug + `List`                                       | `cvPageList`             |
+| page / filter / sort types     | `<Root>Page`, `<Root>Filter`, `<Root>Sort`, `<Root>SortField` | `CvPageFilter`           |
+| content field                  | the API field name, unchanged                                 | `isMain`, `teamSize`     |
 
 Root type names never contain `_`, so they cannot clash with component names.
 The builder **fails** (never renames) on any other clash: two slugs mapping to
@@ -87,15 +87,33 @@ generated name equal to a shared type (`Media`, `PageMeta`, `DocumentStatus`,
 ### Shared types
 
 ```graphql
-scalar Date        # "YYYY-MM-DD" (string on the wire, as in REST)
-scalar DateTime    # ISO 8601 string
-scalar Decimal     # decimal as string (exact, as in REST)
-scalar JSON        # free JSON value
-enum DocumentStatus { PUBLISHED DRAFT }
-enum SortDirection { ASC DESC }
-type PageMeta { page: Int! pageSize: Int! total: Int! }
-type Media { id: ID! fileName: String url: String thumbnailUrl: String
-             provider: String alt: String size: Int createdAt: DateTime }
+scalar Date # "YYYY-MM-DD" (string on the wire, as in REST)
+scalar DateTime # ISO 8601 string
+scalar Decimal # decimal as string (exact, as in REST)
+scalar JSON # free JSON value
+enum DocumentStatus {
+  PUBLISHED
+  DRAFT
+}
+enum SortDirection {
+  ASC
+  DESC
+}
+type PageMeta {
+  page: Int!
+  pageSize: Int!
+  total: Int!
+}
+type Media {
+  id: ID!
+  fileName: String
+  url: String
+  thumbnailUrl: String
+  provider: String
+  alt: String
+  size: Int
+  createdAt: DateTime
+}
 ```
 
 `Media` mirrors the T29 embed (`id` is the media uuid; the internal integer id
@@ -111,19 +129,27 @@ type CvPage {
   locale: String
   createdAt: DateTime!
   updatedAt: DateTime!
-  createdBy: Int          # null for anonymous / reviewer (REST omits the key)
+  createdBy: Int # null for anonymous / reviewer (REST omits the key)
   updatedBy: Int
-  position: String        # every content field is nullable: masked = "***" or null
+  position: String # every content field is nullable: masked = "***" or null
   isMain: Boolean
   company: String
-  summary: String         # richtext, sanitized HTML as stored
-  skill: [CvPage_Skill!]  # masked component = null (not [])
+  summary: String # richtext, sanitized HTML as stored
+  skill: [CvPage_Skill!] # masked component = null (not [])
   experience: [CvPage_Experience!]
   # project, education, language, reference ...
   _maskedFields: [String!]!
 }
-type CvPage_Experience { componentUid: ID! company: String location: String role: [CvPage_Experience_Role!] }
-type CvPagePage { data: [CvPage!]! meta: PageMeta! }
+type CvPage_Experience {
+  componentUid: ID!
+  company: String
+  location: String
+  role: [CvPage_Experience_Role!]
+}
+type CvPagePage {
+  data: [CvPage!]!
+  meta: PageMeta!
+}
 
 type Query {
   cvPage(documentId: ID!, status: DocumentStatus = PUBLISHED): CvPage
@@ -163,15 +189,15 @@ type Query {
   REST set: top-level scalar fields + system fields; no components, nested
   paths or `json`), typed by field kind with the REST operator set:
 
-  | Input            | Operators                        | Used for                        |
-  | ---------------- | -------------------------------- | ------------------------------- |
-  | `TextFilter`     | `eq ne in contains`              | string, text, richtext, locale  |
-  | `IntFilter`      | `eq ne in gt gte lt lte`         | integer, version, createdBy/updatedBy |
-  | `DecimalFilter`  | `eq ne in gt gte lt lte` (Decimal) | decimal                      |
-  | `DateFilter`     | `eq ne in gt gte lt lte` (Date)  | date                            |
+  | Input            | Operators                           | Used for                                    |
+  | ---------------- | ----------------------------------- | ------------------------------------------- |
+  | `TextFilter`     | `eq ne in contains`                 | string, text, richtext, locale              |
+  | `IntFilter`      | `eq ne in gt gte lt lte`            | integer, version, createdBy/updatedBy       |
+  | `DecimalFilter`  | `eq ne in gt gte lt lte` (Decimal)  | decimal                                     |
+  | `DateFilter`     | `eq ne in gt gte lt lte` (Date)     | date                                        |
   | `DateTimeFilter` | `eq ne in gt gte lt lte` (DateTime) | datetime, createdAt, updatedAt, publishedAt |
-  | `BooleanFilter`  | `eq ne in`                       | boolean                         |
-  | `IdFilter`       | `eq ne in`                       | documentId                      |
+  | `BooleanFilter`  | `eq ne in`                          | boolean                                     |
+  | `IdFilter`       | `eq ne in`                          | documentId                                  |
 
   Each set operator becomes one REST `FilterClause { path, op, values }`
   (values stringified), so the REST value typing, `QueryGuard`
@@ -183,29 +209,29 @@ type Query {
 
 ## Authorization (no new rules)
 
-| Rule                                  | Where it is enforced                                  |
-| ------------------------------------- | ----------------------------------------------------- |
-| Who may call (anon / JWT / token)     | `DocumentAuthGuard` (reviewer actor arrives with T32) |
-| `read` on the type, hidden = unknown  | `ContentTypeVisibilityRule` (validation) + service    |
-| drafts need read + update (else FORBIDDEN) | `DocumentsQueryService` scope                    |
-| row conditions (ABAC)                 | service SQL                                           |
-| field masking, `_maskedFields`        | `RecordSerializer` (only data path)                   |
-| filter/sort on unreadable field       | `QueryGuard` -> `FIELD_NOT_READABLE`                  |
-| token = scope ∩ creator's current rights | `ApiTokenGuard` / evaluator, per request (D5)      |
-| anonymous throttle                    | `DOCUMENT_READ_ANONYMOUS`, per HTTP request           |
+| Rule                                       | Where it is enforced                                  |
+| ------------------------------------------ | ----------------------------------------------------- |
+| Who may call (anon / JWT / token)          | `DocumentAuthGuard` (reviewer actor arrives with T32) |
+| `read` on the type, hidden = unknown       | `ContentTypeVisibilityRule` (validation) + service    |
+| drafts need read + update (else FORBIDDEN) | `DocumentsQueryService` scope                         |
+| row conditions (ABAC)                      | service SQL                                           |
+| field masking, `_maskedFields`             | `RecordSerializer` (only data path)                   |
+| filter/sort on unreadable field            | `QueryGuard` -> `FIELD_NOT_READABLE`                  |
+| token = scope ∩ creator's current rights   | `ApiTokenGuard` / evaluator, per request (D5)         |
+| anonymous throttle                         | `DOCUMENT_READ_ANONYMOUS`, per HTTP request           |
 
 Policy checks stay in `access` (SPEC §10); the GraphQL module never compares
 role slugs.
 
 ## Limits (`graphql.constants.ts`, named constants, provisional values Q-G4)
 
-| Constant          | Value  | Why                                                                     |
-| ----------------- | ------ | ----------------------------------------------------------------------- |
-| `MAX_BODY_BYTES`  | 32 KiB | query + variables; REST filters are far smaller                         |
-| `MAX_TOKENS`      | 2 000  | parser stops early on huge documents                                    |
-| `MAX_DEPTH`       | 8      | Query > list > data > 3 component levels > media > scalar = 7           |
-| `MAX_ROOT_FIELDS` | 5      | each root field is one REST-equivalent read (rows + count + tree)       |
-| `MAX_FIELD_NODES` | 500    | the full cv-page tree is ~60 fields; blocks alias spam                  |
+| Constant          | Value  | Why                                                               |
+| ----------------- | ------ | ----------------------------------------------------------------- |
+| `MAX_BODY_BYTES`  | 32 KiB | query + variables; REST filters are far smaller                   |
+| `MAX_TOKENS`      | 2 000  | parser stops early on huge documents                              |
+| `MAX_DEPTH`       | 8      | Query > list > data > 3 component levels > media > scalar = 7     |
+| `MAX_ROOT_FIELDS` | 5      | each root field is one REST-equivalent read (rows + count + tree) |
+| `MAX_FIELD_NODES` | 500    | the full cv-page tree is ~60 fields; blocks alias spam            |
 
 Why no weighted cost analysis: a root field's database work does not depend
 on its selection (the service loads the readable tree in a fixed number of
@@ -221,12 +247,18 @@ GraphQL-shaped once the request reaches step 2:
 ```json
 {
   "data": { "cvPageList": null },
-  "errors": [{
-    "message": "Field is not readable.",
-    "path": ["cvPageList"],
-    "locations": [{ "line": 1, "column": 3 }],
-    "extensions": { "code": "FIELD_NOT_READABLE", "details": { "field": "company" }, "requestId": "…" }
-  }]
+  "errors": [
+    {
+      "message": "Field is not readable.",
+      "path": ["cvPageList"],
+      "locations": [{ "line": 1, "column": 3 }],
+      "extensions": {
+        "code": "FIELD_NOT_READABLE",
+        "details": { "field": "company" },
+        "requestId": "…"
+      }
+    }
+  ]
 }
 ```
 
@@ -325,3 +357,31 @@ Architecture test (like `record-serializer.architecture.spec.ts`): files in
   (`documents/queryable-fields.ts`), shared with REST `queryColumnOf`.
 - `buildGraphqlSchema([])` throws `GraphqlSchemaError` (a `Query` type needs
   a field).
+
+## Implementation notes (GQ2)
+
+- Validation runs against the caller's own schema (`GraphqlSchemaProvider.schemaFor`):
+  only the content types the caller can read (with their Page / Filter / Sort
+  / component types), cached by the readable set (max `MAX_CACHED_SCHEMAS`).
+  A hidden type is absent, so graphql-js itself gives the unknown-field and
+  unknown-type errors: same count, messages and locations as for a name that
+  never existed (user decision: hidden types are invisible, type names too).
+  A caller who reads nothing gets a schema with a `_none` placeholder field.
+  `ContentTypeVisibilityRule` stays in the rule list as a second line of
+  defence. "Did you mean" hints name visible types only; on the `Query` type
+  they are stripped always, elsewhere only in production. The committed SDL
+  is the full owner schema, for tooling.
+- Resolvers are attached to the built schema (`attachDocumentResolvers`)
+  through `extensions.abyss`; the schema is built once from the registry in
+  `GraphqlSchemaProvider`. `toListQuery` (`list-arguments.ts`) holds the
+  `page` / `pageSize` / sort / filter range checks, since REST keeps them in
+  its query parser, not in the service.
+- A not-found item (`DOCUMENT_NOT_FOUND`) is `null`; any other service error
+  stays an error on that root field. Execution-time `INTERNAL_ERROR` (the REST
+  code for 5xx; the design text's `INTERNAL_SERVER_ERROR` is this) is generic.
+- Variable coercion errors are reworded to name the variable only (graphql-js
+  echoes the value).
+- Not in GQ2 (GQ3): the 32 KiB body check (Nest's default JSON parser limit
+  applies meanwhile), depth / root-field / field-node rules, and classifying
+  the `maxTokens` parse error as `GRAPHQL_LIMIT_EXCEEDED` (now
+  `GRAPHQL_PARSE_FAILED`).
