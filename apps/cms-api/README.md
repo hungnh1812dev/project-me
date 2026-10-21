@@ -258,8 +258,15 @@ live in schema `public`, managed by Prisma 7 with `@prisma/adapter-pg`
 (`prisma/schema.prisma`, `prisma.config.ts`). The client is generated into
 `src/generated/prisma` (gitignored); turbo runs `db:generate` before build,
 lint, typecheck and test. `db:migrate` applies migrations and seeds the six
-system roles; `owner:bootstrap` creates the single owner once. Decisions and
+system roles and their default permissions; `owner:bootstrap` creates the single owner once. Decisions and
 usage: [docs/modules/core-schema.md](../../docs/modules/core-schema.md).
+
+## Access control
+
+`src/modules/access/` decides what an actor (account, reviewer, API token,
+anonymous) may do: `PolicyEvaluator.can()` / `fieldsFor()` / `rowFilter()`,
+the conditions DSL compiler and the save-time validators T17/T19 call.
+Rules, the default role matrix and the DSL: [docs/modules/access-control.md](../../docs/modules/access-control.md).
 
 ## Content types
 
@@ -286,9 +293,9 @@ and repository behaviour:
 | `content:generate`               | Build, then write the next content migration (`--dry-run`, `--name`, `--allow-destructive`) |
 | `content:migrate`                | Apply pending content migrations (needs a build and `DATABASE_URL`)                         |
 | `db:generate`                    | Generate the Prisma client                                                                  |
-| `db:migrate`                     | Apply core Prisma migrations, then seed system roles (needs a build and `DATABASE_URL`)     |
+| `db:migrate`                     | Apply core Prisma migrations, then seed system roles + default permissions (needs a build)  |
 | `db:migrate:dev`                 | Development: create a core migration from schema changes                                    |
-| `db:seed`                        | Seed system roles only (idempotent)                                                         |
+| `db:seed`                        | Seed system roles + default permissions only (idempotent)                                   |
 | `owner:bootstrap`                | Create the single owner (`OWNER_EMAIL`, hidden password prompt or `--password-stdin`)       |
 | `owner:reset-2fa`                | Break-glass: turn 2FA off for one account and end its sessions (`--email`, `--yes`)         |
 

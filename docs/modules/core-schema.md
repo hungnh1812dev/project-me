@@ -10,7 +10,7 @@ to the content engine (D10). Tables follow SPEC §8.1.
 | Script                                         | What it does                                                                                                        |
 | ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
 | `pnpm --filter @abyss/cms-api db:generate`     | Generate the Prisma client into `src/generated/prisma` (gitignored; turbo runs it before build/lint/typecheck/test) |
-| `pnpm --filter @abyss/cms-api db:migrate`      | `prisma migrate deploy`, then the system roles seed (needs a build)                                                 |
+| `pnpm --filter @abyss/cms-api db:migrate`      | `prisma migrate deploy`, then the system roles + default permissions seed (needs a build)                           |
 | `pnpm --filter @abyss/cms-api db:seed`         | The seed alone (idempotent)                                                                                         |
 | `pnpm --filter @abyss/cms-api db:migrate:dev`  | Development only: create a migration from schema changes (`--create-only` to edit it first)                         |
 | `pnpm --filter @abyss/cms-api owner:bootstrap` | One-time owner creation (below)                                                                                     |
@@ -62,9 +62,10 @@ Where SPEC §8.1 leaves a shape open, the conservative choice:
   `revoked_at` to the rotation time; that `revoked_at` also anchors the 10 s
   reuse grace window (T11a, `REFRESH_TOKEN_REUSE_GRACE_SECONDS`), so the
   window needs no extra column. Logout and reuse revoke the whole family.
-- **permissions**: no unique constraint on (role, subject, action) yet, so
-  T14 can decide whether several conditioned rows are allowed. Indexed on
-  (role_id, subject).
+- **permissions**: no unique constraint on (role, subject, action): T14
+  allows several rows for the same pair (their fields add up and their
+  conditions are ORed, see [access-control.md](access-control.md)). Indexed
+  on (role_id, subject).
 - **Other text columns** (`ip`, `user_agent`, `subject`, `target_id`) are
   plain `text`; `reviewer_sessions.notes` is `varchar(500)`;
   `file_library.size` is `int` bytes (max upload 100 MB).
@@ -79,6 +80,11 @@ reviewer 20, editor 30, admin 40, owner 100` with `is_system = true`
 (`INSERT ... ON CONFLICT DO NOTHING`), never updates existing rows (names
 edited later survive), and fails if a role with a system slug is not that
 system role. Safe to run on every deploy.
+
+Then `src/modules/access/role-permissions.seed.ts` inserts the default
+permission rows (T14 matrix in [access-control.md](access-control.md)) into
+each system role that has **no** rows yet, under an advisory lock. A role the
+Owner already configured is never touched.
 
 ## owner:bootstrap (D1)
 
