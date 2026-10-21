@@ -32,6 +32,12 @@ export interface RateLimitRule {
   readonly windowMs: number;
 }
 
+/** Names of the rules whose limit `loadAppConfig` can override (T18b). */
+export const RATE_LIMIT_RULE_NAMES = {
+  LOGIN_IP: 'login:ip',
+  LOGIN_EMAIL: 'login:email',
+} as const;
+
 /**
  * D7 / T10 user decision: fixed-window limits of the auth endpoints. The
  * rules of one policy are checked in order and the first exhausted rule
@@ -40,13 +46,13 @@ export interface RateLimitRule {
 export const RATE_LIMIT_POLICIES = {
   LOGIN: [
     {
-      name: 'login:ip',
+      name: RATE_LIMIT_RULE_NAMES.LOGIN_IP,
       keySource: RATE_LIMIT_KEY_SOURCES.IP,
       limit: 10,
       windowMs: FIFTEEN_MINUTES_MS,
     },
     {
-      name: 'login:email',
+      name: RATE_LIMIT_RULE_NAMES.LOGIN_EMAIL,
       keySource: RATE_LIMIT_KEY_SOURCES.EMAIL,
       limit: 5,
       windowMs: FIFTEEN_MINUTES_MS,

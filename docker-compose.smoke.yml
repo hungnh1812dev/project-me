@@ -73,6 +73,12 @@ services:
       TOTP_ENC_KEY: ${SMOKE_TOTP_ENC_KEY:?set by scripts/smoke.sh}
       TOTP_ENC_KID: ${SMOKE_TOTP_ENC_KID:?set by scripts/smoke.sh}
       TOTP_ISSUER: Abyss Smoke
+      # T18b: the e2e suite signs in many times from one IP; raise the login
+      # limits here only (production keeps the defaults, 10 per IP / 5 per email).
+      # Production refuses the two limits below without this exact opt-in.
+      ALLOW_LOGIN_RATE_LIMIT_OVERRIDE: smoke
+      LOGIN_RATE_LIMIT_IP: '10000'
+      LOGIN_RATE_LIMIT_EMAIL: '10000'
     depends_on:
       db:
         condition: service_healthy

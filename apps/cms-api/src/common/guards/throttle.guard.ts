@@ -14,6 +14,8 @@ import {
 import { Reflector } from '@nestjs/core';
 import type { Request, Response } from 'express';
 
+import { type IAppConfig } from '../../config/app-config';
+import { APP_CONFIG } from '../../config/config.constants';
 import { ClientIpResolver } from '../client-ip.resolver';
 import { Clock } from '../clock';
 import { ERROR_CODES } from '../constants/error.constants';
@@ -105,6 +107,7 @@ export class ThrottleGuard implements CanActivate {
     private readonly clientIp: ClientIpResolver,
     @Inject(RATE_LIMIT_STORE) private readonly store: RateLimitStore,
     private readonly clock: Clock,
+    @Inject(APP_CONFIG) private readonly config: IAppConfig,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -125,11 +128,16 @@ export class ThrottleGuard implements CanActivate {
         rule.windowMs,
       );
       // A refused hit (store at capacity, T10a) answers exactly like a limit hit.
-      if (hit.refused === true || hit.count > rule.limit) {
+      if (hit.refused === true || hit.count > this.limitOf(rule)) {
         this.reject(http.getResponse<Response>(), hit.resetAt);
       }
     }
     return true;
+  }
+
+  /** The default limit, unless the config overrides this rule (T18b). */
+  private limitOf(rule: RateLimitRule): number {
+    return this.config.rateLimit.limitOverrides[rule.name] ?? rule.limit;
   }
 
   private reject(res: Response, resetAt: number): never {

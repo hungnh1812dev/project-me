@@ -1,5 +1,6 @@
 import { z } from 'zod';
 
+import { RATE_LIMIT_RULE_NAMES } from '../common/constants/limits.constants';
 import { CONFIG_DEFAULTS, REDACTED } from './config.constants';
 import { envSchema, type Env } from './env.schema';
 
@@ -35,6 +36,13 @@ export interface IAppConfig {
   };
   readonly database: {
     readonly url: string;
+  };
+  readonly rateLimit: {
+    /**
+     * Limit per rule name (`RateLimitRule.name`) replacing the default in
+     * `limits.constants.ts`. Empty = all defaults (T18b: the smoke stack only).
+     */
+    readonly limitOverrides: Readonly<Record<string, number>>;
   };
   readonly mail: {
     readonly provider: Env['MAIL_PROVIDER'];
@@ -120,6 +128,7 @@ export function loadAppConfig(rawEnv: RawEnv): IAppConfig {
       },
     },
     database: { url: env.DATABASE_URL },
+    rateLimit: { limitOverrides: rateLimitOverridesOf(env) },
     mail: {
       provider: env.MAIL_PROVIDER,
       from: env.MAIL_FROM,
@@ -132,6 +141,17 @@ export function loadAppConfig(rawEnv: RawEnv): IAppConfig {
       totpEncPreviousKey: env.TOTP_ENC_PREVIOUS_KEY,
     },
   });
+}
+
+function rateLimitOverridesOf(env: Env): Record<string, number> {
+  const overrides: Record<string, number> = {};
+  if (env.LOGIN_RATE_LIMIT_IP !== undefined) {
+    overrides[RATE_LIMIT_RULE_NAMES.LOGIN_IP] = env.LOGIN_RATE_LIMIT_IP;
+  }
+  if (env.LOGIN_RATE_LIMIT_EMAIL !== undefined) {
+    overrides[RATE_LIMIT_RULE_NAMES.LOGIN_EMAIL] = env.LOGIN_RATE_LIMIT_EMAIL;
+  }
+  return overrides;
 }
 
 function smtpConfigOf(env: Env): SmtpConfig | undefined {
@@ -168,6 +188,7 @@ export function summarizeConfig(config: IAppConfig): Record<string, unknown> {
     cors: config.cors,
     auth: config.auth,
     database: { url: redactDatabaseUrl(config.database.url) },
+    rateLimit: config.rateLimit,
     mail: {
       provider: config.mail.provider,
       from: config.mail.from,

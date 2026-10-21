@@ -45,6 +45,12 @@ export const TOTP_ISSUER_PATTERN = new RegExp(
 
 export const MAX_PORT = 65_535;
 
+/** The only accepted value of ALLOW_LOGIN_RATE_LIMIT_OVERRIDE (T18b). */
+export const LOGIN_RATE_LIMIT_OVERRIDE_OPT_IN = 'smoke';
+
+/** Upper bound of the optional login rate-limit overrides (T18b). */
+export const MAX_RATE_LIMIT_OVERRIDE = 1_000_000;
+
 /** `URL.protocol` values accepted for ADMIN_ORIGIN and WEB_ORIGIN. */
 export const ALLOWED_ORIGIN_PROTOCOLS: readonly string[] = ['http:', 'https:'];
 

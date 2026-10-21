@@ -4,8 +4,10 @@ import {
   ALLOWED_ORIGIN_PROTOCOLS,
   CONFIG_DEFAULTS,
   JWT_KID_PATTERN,
+  LOGIN_RATE_LIMIT_OVERRIDE_OPT_IN,
   MAIL_PROVIDERS,
   MAX_PORT,
+  MAX_RATE_LIMIT_OVERRIDE,
   MIN_SECRET_BYTES,
   NODE_ENVS,
   SECRET_ENV_KEYS,
@@ -41,6 +43,18 @@ const optionalOrigin = z.preprocess(
     })
     .optional(),
 );
+
+/** Optional positive-integer override of a rate-limit rule; empty = unset. */
+const optionalRateLimit = z.preprocess(
+  emptyToUndefined,
+  z.coerce.number().int().min(1).max(MAX_RATE_LIMIT_OVERRIDE).optional(),
+);
+
+/** Login limit overrides (T18b): refused in production unless explicitly opted in, so a stray value can't weaken D7. */
+const RATE_LIMIT_OVERRIDE_KEYS = [
+  'LOGIN_RATE_LIMIT_IP',
+  'LOGIN_RATE_LIMIT_EMAIL',
+] as const;
 
 /** Keys that are optional in development but required in production. */
 const PRODUCTION_REQUIRED_KEYS = [
@@ -91,6 +105,12 @@ export const envSchema = z
         .transform((header) => header.toLowerCase())
         .optional(),
     ),
+    ALLOW_LOGIN_RATE_LIMIT_OVERRIDE: z.preprocess(
+      emptyToUndefined,
+      z.literal(LOGIN_RATE_LIMIT_OVERRIDE_OPT_IN).optional(),
+    ),
+    LOGIN_RATE_LIMIT_IP: optionalRateLimit,
+    LOGIN_RATE_LIMIT_EMAIL: optionalRateLimit,
     ADMIN_ORIGIN: optionalOrigin,
     WEB_ORIGIN: optionalOrigin,
     MAIL_PROVIDER: z
@@ -173,6 +193,19 @@ export const envSchema = z
     }
 
     if (env.NODE_ENV !== 'production') return;
+
+    for (const key of RATE_LIMIT_OVERRIDE_KEYS) {
+      if (
+        env[key] !== undefined &&
+        env.ALLOW_LOGIN_RATE_LIMIT_OVERRIDE !== LOGIN_RATE_LIMIT_OVERRIDE_OPT_IN
+      ) {
+        ctx.addIssue({
+          code: 'custom',
+          path: [key],
+          message: `${key} is not allowed in production without ALLOW_LOGIN_RATE_LIMIT_OVERRIDE=${LOGIN_RATE_LIMIT_OVERRIDE_OPT_IN}`,
+        });
+      }
+    }
 
     if (env.MAIL_PROVIDER === 'console') {
       ctx.addIssue({

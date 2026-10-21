@@ -239,6 +239,13 @@ in `src/common/constants/limits.constants.ts` (`RATE_LIMIT_POLICIES`):
 | `TWO_FACTOR_MANAGE`          | 5 / 15 min per IP (totp/setup + enable + disable, shared)     |
 | `ACCOUNT_INVITE`             | 20 / hour per IP, then 10 / hour per caller (invite + resend) |
 
+- Optional override (T18b): `LOGIN_RATE_LIMIT_IP` and `LOGIN_RATE_LIMIT_EMAIL`
+  replace the `login:ip` (10) and `login:email` (5) limits per 15 min. Read at
+  startup (positive integer, at most 1,000,000; invalid fails the start).
+  Unset = defaults. Only `docker-compose.smoke.yml` sets them, so the e2e
+  suite (one IP, many sign-ins) is not throttled; with `NODE_ENV=production` setting either fails the start unless
+  `ALLOW_LOGIN_RATE_LIMIT_OVERRIDE=smoke` (exact value; anything else is
+  invalid) is also set, which only `docker-compose.smoke.yml` does.
 - Key sources: `ip`, `email` (body.email, hashed) and `actor` (the signed-in
   account id; needs `JwtAuthGuard` before it, which a method-level
   `@Throttle` is; skipped when there is no signed-in account).

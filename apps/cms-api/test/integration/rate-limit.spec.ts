@@ -126,6 +126,46 @@ describe('rate limiting + client IP (D7, SPEC §12-8; Postgres 16 via Testcontai
     return { app, time };
   }
 
+  describe('with login limit overrides (T18b)', () => {
+    const OVERRIDE_IP = LOGIN_IP.limit + 3;
+    const OVERRIDE_EMAIL = LOGIN_EMAIL.limit + 3;
+    let app: NestExpressApplication;
+
+    beforeAll(async () => {
+      ({ app } = await startApp({
+        LOGIN_RATE_LIMIT_IP: String(OVERRIDE_IP),
+        LOGIN_RATE_LIMIT_EMAIL: String(OVERRIDE_EMAIL),
+      }));
+    });
+
+    afterAll(async () => {
+      await app?.close();
+    });
+
+    function login(clientIp: string, email: string) {
+      return request(app.getHttpServer())
+        .post(LOGIN)
+        .set('X-Forwarded-For', clientIp)
+        .send({ email, password: WRONG_PASSWORD });
+    }
+
+    it('applies the IP override instead of the default', async () => {
+      const ip = nextIp();
+      for (let i = 0; i < OVERRIDE_IP; i += 1) {
+        expect((await login(ip, unknownEmail())).status).toBe(401);
+      }
+      expect((await login(ip, unknownEmail())).status).toBe(429);
+    });
+
+    it('applies the email override instead of the default', async () => {
+      const email = unknownEmail();
+      for (let i = 0; i < OVERRIDE_EMAIL; i += 1) {
+        expect((await login(nextIp(), email)).status).toBe(401);
+      }
+      expect((await login(nextIp(), email)).status).toBe(429);
+    });
+  });
+
   describe('with X-Forwarded-For and TRUST_PROXY_HOPS=1', () => {
     let app: NestExpressApplication;
     let time: { now: number };

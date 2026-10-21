@@ -17,6 +17,7 @@ import {
   loadAppConfig,
   summarizeConfig,
 } from './app-config';
+import { RATE_LIMIT_RULE_NAMES } from '../common/constants/limits.constants';
 import { CONFIG_DEFAULTS, REDACTED, SECRET_ENV_KEYS } from './config.constants';
 
 function configErrorOf(
@@ -397,6 +398,73 @@ describe('summarizeConfig', () => {
       totpEncPreviousKey: 'unset',
     });
   });
+});
+
+describe('login rate-limit overrides (T18b)', () => {
+  it('has no overrides by default', () => {
+    expect(loadAppConfig(devEnv()).rateLimit.limitOverrides).toEqual({});
+  });
+
+  it('reads both overrides, and an empty value counts as unset', () => {
+    const config = loadAppConfig(
+      devEnv({ LOGIN_RATE_LIMIT_IP: '500', LOGIN_RATE_LIMIT_EMAIL: '' }),
+    );
+    expect(config.rateLimit.limitOverrides).toEqual({
+      [RATE_LIMIT_RULE_NAMES.LOGIN_IP]: 500,
+    });
+  });
+
+  it.each(['LOGIN_RATE_LIMIT_IP', 'LOGIN_RATE_LIMIT_EMAIL'])(
+    'refuses %s in production without the opt-in',
+    (key) => {
+      const error = configErrorOf(productionEnv({ [key]: '500' }));
+      expect(error.issues[0]).toMatch(
+        new RegExp(`^${key}: .*not allowed in production`),
+      );
+    },
+  );
+
+  it('accepts the overrides in production with ALLOW_LOGIN_RATE_LIMIT_OVERRIDE=smoke', () => {
+    const config = loadAppConfig(
+      productionEnv({
+        ALLOW_LOGIN_RATE_LIMIT_OVERRIDE: 'smoke',
+        LOGIN_RATE_LIMIT_IP: '500',
+        LOGIN_RATE_LIMIT_EMAIL: '400',
+      }),
+    );
+    expect(config.rateLimit.limitOverrides).toEqual({
+      [RATE_LIMIT_RULE_NAMES.LOGIN_IP]: 500,
+      [RATE_LIMIT_RULE_NAMES.LOGIN_EMAIL]: 400,
+    });
+  });
+
+  it.each(['yes', 'true', 'SMOKE', '1'])(
+    'refuses the opt-in value %s',
+    (value) => {
+      const error = configErrorOf(
+        productionEnv({
+          ALLOW_LOGIN_RATE_LIMIT_OVERRIDE: value,
+          LOGIN_RATE_LIMIT_IP: '500',
+        }),
+      );
+      expect(error.issues[0]).toMatch(/^ALLOW_LOGIN_RATE_LIMIT_OVERRIDE:/);
+    },
+  );
+
+  it('accepts the overrides without the opt-in outside production', () => {
+    expect(
+      loadAppConfig(devEnv({ LOGIN_RATE_LIMIT_IP: '500' })).rateLimit
+        .limitOverrides,
+    ).toEqual({ [RATE_LIMIT_RULE_NAMES.LOGIN_IP]: 500 });
+  });
+
+  it.each(['0', '-1', '1.5', 'abc', '1000001'])(
+    'fails the start for LOGIN_RATE_LIMIT_EMAIL=%s',
+    (value) => {
+      const error = configErrorOf(devEnv({ LOGIN_RATE_LIMIT_EMAIL: value }));
+      expect(error.issues[0]).toMatch(/^LOGIN_RATE_LIMIT_EMAIL:/);
+    },
+  );
 });
 
 describe('TOTP key config (T13)', () => {
