@@ -8,6 +8,11 @@ export const COPY = {
     description:
       'The public site is not live yet. This page confirms the site can reach the content API through the same domain.',
   },
+  notFound: {
+    title: 'Page not found',
+    description:
+      'There is nothing at this address. Check the link and try again.',
+  },
   status: {
     cardTitle: 'Content API',
     cardDescription: 'Liveness check on the API this site loads content from.',

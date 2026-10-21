@@ -1,8 +1,10 @@
+'use client';
+
 import { Button } from '@abyss/form-commons';
 
 import { COPY } from '../../config/copy.constants';
 import { API_ENDPOINTS } from '../../config/endpoints';
-import { appEnv } from '../../config/env';
+import { appEnv } from '../../config/env.client';
 import { type LiveHealthState, useLiveHealth } from './use-live-health';
 
 const BADGE_TONE: Record<LiveHealthState, string> = {

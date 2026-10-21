@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 
 import { COPY } from '../config/copy.constants';
 import { fetchLiveHealth } from '../features/status/health.api';
-import { App } from './App';
+import HomePage from './page';
 
 vi.mock('../features/status/health.api', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../features/status/health.api')>()),
@@ -13,25 +13,25 @@ vi.mock('../features/status/health.api', async (importOriginal) => ({
 
 const fetchLiveHealthMock = vi.mocked(fetchLiveHealth);
 
-function renderApp() {
+function renderPage() {
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
   return render(
     <QueryClientProvider client={client}>
-      <App />
+      <HomePage />
     </QueryClientProvider>,
   );
 }
 
-describe('App', () => {
+describe('HomePage', () => {
   beforeEach(() => {
     fetchLiveHealthMock.mockReset();
   });
 
   it('renders the status page and reports a healthy API', async () => {
     fetchLiveHealthMock.mockResolvedValue({ status: 'ok' });
-    renderApp();
+    renderPage();
 
     expect(
       screen.getByRole('heading', { level: 1, name: COPY.page.title }),
@@ -48,7 +48,7 @@ describe('App', () => {
     fetchLiveHealthMock
       .mockRejectedValueOnce(new Error('Network Error'))
       .mockResolvedValue({ status: 'ok' });
-    renderApp();
+    renderPage();
 
     expect(await screen.findByRole('alert')).toHaveTextContent(
       COPY.status.errorHint,
@@ -67,7 +67,7 @@ describe('App', () => {
 
   it('treats an unexpected health body as unreachable', async () => {
     fetchLiveHealthMock.mockResolvedValue({ status: 'error' });
-    renderApp();
+    renderPage();
     expect(await screen.findByRole('alert')).toBeInTheDocument();
   });
 });

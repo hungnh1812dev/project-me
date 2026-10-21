@@ -12,3 +12,7 @@ CMS_*.html
 .claude/
 SPEC.md
 tasks/
+
+# Next.js output and generated types
+.next/
+next-env.d.ts

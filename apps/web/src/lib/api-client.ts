@@ -1,6 +1,6 @@
 import axios, { type AxiosInstance, type CreateAxiosDefaults } from 'axios';
 
-import { appEnv } from '../config/env';
+import { appEnv } from '../config/env.client';
 import { API_TIMEOUT_MS } from '../config/http.constants';
 import { stripTrailingSlashes } from './strip-trailing-slashes';
 
