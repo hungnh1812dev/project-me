@@ -8,12 +8,8 @@ import {
   RECORD_SYSTEM_FIELDS,
   type RecordSystemField,
 } from '../access/access.constants';
-import {
-  conditionKindOf,
-  type ConditionValueKind,
-} from '../access/conditions.compiler';
+import type { ConditionValueKind } from '../access/conditions.compiler';
 import { CONDITION_UUID_PATTERN } from '../access/access.constants';
-import { COMPONENT_FIELD_TYPE } from '../content-engine/content-engine.constants';
 import type { RegisteredContentType } from '../content-engine/registry.service';
 import type { FilterClause, SortKey } from './dto/list-documents.query';
 import {
@@ -24,6 +20,7 @@ import {
   SYSTEM_FIELD_KINDS,
   YEAR_ZERO_PREFIX,
 } from './documents.constants';
+import { queryKindOfField } from './queryable-fields';
 
 /** A root column a list query may filter or sort on. */
 export interface QueryColumn {
@@ -60,15 +57,8 @@ export function queryColumnOf(
     };
   }
   const column = type.root.columnsByField.get(path);
-  const fieldType = column?.field.type;
-  // A media column holds the internal file id, which never crosses the API:
-  // filtering or sorting on it would leak it (T29).
   const kind =
-    fieldType === undefined ||
-    fieldType === COMPONENT_FIELD_TYPE ||
-    fieldType === 'media'
-      ? undefined
-      : conditionKindOf(fieldType);
+    column === undefined ? undefined : queryKindOfField(column.field);
   if (column === undefined || kind === undefined) {
     throw invalid(DOCUMENT_ERROR_MESSAGES.UNSUPPORTED_FIELD);
   }
