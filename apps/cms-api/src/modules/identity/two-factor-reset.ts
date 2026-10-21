@@ -1,6 +1,8 @@
 import { z } from 'zod';
 
 import type { PrismaClient, TwoFaMethod } from '../../generated/prisma/client';
+import { AUDIT_ACTIONS } from '../access/security-audit.constants';
+import { writeAuditLog } from '../access/security-audit.service';
 import { TWO_FACTOR_RESET_ERRORS } from './identity.constants';
 import { revokeAllRefreshTokens } from './refresh-token.service';
 
@@ -47,7 +49,7 @@ export function parseResetEmail(email: string): string {
  * account (any role, the owner included) and ends all its sessions. One
  * transaction clears the method and the sealed TOTP secret, kid and last
  * step, bumps token_version (access tokens and 2FA temp tokens die on their
- * next check) and revokes every refresh token. A deleted account counts as
+ * next check), revokes every refresh token and writes the audit row. A deleted account counts as
  * unknown; an account with 2FA off is refused and left untouched.
  */
 export async function resetTwoFactor(
@@ -59,7 +61,7 @@ export async function resetTwoFactor(
   return prisma.$transaction(async (tx) => {
     const account = await tx.account.findFirst({
       where: { email, deletedAt: null },
-      select: { id: true, email: true, twoFaMethod: true },
+      select: { id: true, documentId: true, email: true, twoFaMethod: true },
     });
     if (account === null) {
       throw new TwoFactorResetError(
@@ -88,7 +90,14 @@ export async function resetTwoFactor(
       );
     }
     await revokeAllRefreshTokens(tx, account.id);
-    // TODO(T17): SecurityAuditService 2FA reset by operator (D15).
+    // D15: an operator at the CLI, so actor_type system and no IP.
+    await writeAuditLog(tx, {
+      actor: { type: 'system' },
+      action: AUDIT_ACTIONS.TWO_FACTOR_RESET_BY_OPERATOR,
+      subject: 'accounts',
+      targetId: account.documentId,
+      metadata: { previousMethod: account.twoFaMethod },
+    });
     return { email: account.email, previousMethod: account.twoFaMethod };
   });
 }

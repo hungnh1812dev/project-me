@@ -11,8 +11,20 @@ import {
   AUTH_ERROR_MESSAGES,
   DUMMY_PASSWORD_BYTES,
 } from '../../common/constants/auth.constants';
-import { type TwoFaMethod } from '../../generated/prisma/client';
+import {
+  type AccountStatus,
+  type TwoFaMethod,
+} from '../../generated/prisma/client';
 import { PrismaService } from '../../infrastructure/database/prisma.service';
+import {
+  AUDIT_ACTIONS,
+  LOGIN_FAILURE_REASONS,
+  type LoginFailureReason,
+} from '../access/security-audit.constants';
+import {
+  SecurityAuditService,
+  selfActor,
+} from '../access/security-audit.service';
 import { AccessTokenService } from './access-token.service';
 import { hashPassword, verifyPassword } from './password-hasher';
 import { type ClientMeta, RefreshTokenService } from './refresh-token.service';
@@ -75,6 +87,24 @@ export function invalidRefreshToken(): UnauthorizedException {
   });
 }
 
+/** Why a sign-in fails, or undefined when it may go on (T17 Q4 reasons). */
+function loginFailureReason(
+  account: {
+    readonly passwordHash: string | null;
+    readonly status: AccountStatus;
+    readonly deletedAt: Date | null;
+  } | null,
+  passwordOk: boolean,
+): LoginFailureReason | undefined {
+  if (account === null) return LOGIN_FAILURE_REASONS.UNKNOWN_ACCOUNT;
+  if (account.passwordHash === null) return LOGIN_FAILURE_REASONS.NO_PASSWORD;
+  if (!passwordOk) return LOGIN_FAILURE_REASONS.BAD_PASSWORD;
+  if (account.status !== 'active' || account.deletedAt !== null) {
+    return LOGIN_FAILURE_REASONS.NOT_ACTIVE;
+  }
+  return undefined;
+}
+
 @Injectable()
 export class AuthService implements OnModuleInit {
   /**
@@ -88,6 +118,7 @@ export class AuthService implements OnModuleInit {
     private readonly prisma: PrismaService,
     private readonly accessTokens: AccessTokenService,
     private readonly refreshTokens: RefreshTokenService,
+    private readonly audit: SecurityAuditService,
   ) {}
 
   async onModuleInit(): Promise<void> {
@@ -119,16 +150,25 @@ export class AuthService implements OnModuleInit {
       (this.dummyHash ??= await this.createDummyHash());
     const passwordOk = await verifyPassword(passwordHash, credentials.password);
 
-    if (
-      account === null ||
-      account.passwordHash === null ||
-      !passwordOk ||
-      account.status !== 'active' ||
-      account.deletedAt !== null
-    ) {
-      // TODO(T17): SecurityAuditService login failure (same transaction, D15).
+    const failure = loginFailureReason(account, passwordOk);
+    if (failure !== undefined) {
+      // No write to share a transaction with: a standalone row (T17 Q4).
+      await this.audit.recordStandalone({
+        actor: selfActor(account?.id ?? null),
+        action: AUDIT_ACTIONS.AUTH_LOGIN_FAILED,
+        targetId: account?.documentId ?? null,
+        metadata:
+          account === null
+            ? {
+                reason: failure,
+                emailHmac: this.audit.emailHmac(credentials.email),
+              }
+            : { reason: failure },
+        ip: meta.ip,
+      });
       throw invalidCredentials();
     }
+    if (account === null) throw invalidCredentials();
 
     if (account.is2faEnabled) {
       // Second step: POST /auth/2fa/verify with this token (T13).
@@ -143,7 +183,6 @@ export class AuthService implements OnModuleInit {
       };
     }
 
-    // TODO(T17): SecurityAuditService login success (same transaction, D15).
     const session = await this.startSession(
       {
         id: account.id,
@@ -156,12 +195,27 @@ export class AuthService implements OnModuleInit {
     return { kind: 'session', ...session };
   }
 
-  /** Issues the refresh token and access token of a completed sign-in. */
+  /**
+   * Issues the refresh token and access token of a completed sign-in, with
+   * its `auth.login_succeeded` row in the same transaction (D15).
+   * `twoFactorMethod`: the second factor used, null for password only.
+   */
   async startSession(
     account: SessionAccount,
     meta: ClientMeta,
+    twoFactorMethod: TwoFaMethod | null = null,
   ): Promise<SessionTokens> {
-    const refreshToken = await this.refreshTokens.issue(account.id, meta);
+    const refreshToken = await this.prisma.$transaction(async (tx) => {
+      const token = await this.refreshTokens.issue(account.id, meta, tx);
+      await this.audit.record(tx, {
+        actor: selfActor(account.id),
+        action: AUDIT_ACTIONS.AUTH_LOGIN_SUCCEEDED,
+        targetId: account.documentId,
+        metadata: { twoFactorMethod },
+        ip: meta.ip,
+      });
+      return token;
+    });
     return {
       refreshToken,
       accessToken: this.accessTokens.signAccessToken({
@@ -180,7 +234,7 @@ export class AuthService implements OnModuleInit {
   async refresh(rawToken: string, meta: ClientMeta): Promise<RefreshedTokens> {
     const result = await this.refreshTokens.rotate(rawToken, meta);
     if (result.kind === 'reuse') {
-      // TODO(T17): SecurityAuditService refresh-token reuse (family revoked, tv bumped).
+      // Audited inside the rotation transaction (RefreshTokenService).
       throw invalidRefreshToken();
     }
     if (result.kind === 'invalid') throw invalidRefreshToken();
@@ -194,10 +248,9 @@ export class AuthService implements OnModuleInit {
     };
   }
 
-  async logout(rawToken: string | undefined): Promise<void> {
+  async logout(rawToken: string | undefined, meta: ClientMeta): Promise<void> {
     if (rawToken === undefined) return;
-    // TODO(T17): SecurityAuditService token revoke (logout).
-    await this.refreshTokens.revokeFamilyOf(rawToken);
+    await this.refreshTokens.revokeFamilyOf(rawToken, meta);
   }
 
   async me(accountDocumentId: string): Promise<CurrentAccountProfile> {

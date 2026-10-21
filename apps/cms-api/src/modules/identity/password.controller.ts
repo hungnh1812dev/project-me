@@ -9,8 +9,10 @@ import {
   Req,
   UseGuards,
 } from '@nestjs/common';
+import type { Request } from 'express';
 import { type z } from 'zod';
 
+import { ClientIpResolver } from '../../common/client-ip.resolver';
 import { API_ROUTES } from '../../common/constants/api.constants';
 import {
   AUTH_ERROR_CODES,
@@ -19,6 +21,7 @@ import {
 } from '../../common/constants/auth.constants';
 import { RATE_LIMIT_POLICIES } from '../../common/constants/limits.constants';
 import { Throttle } from '../../common/guards/throttle.guard';
+import { clientMetaOf } from './auth.controller';
 import { type AuthenticatedRequest, JwtAuthGuard } from './jwt.strategy';
 import {
   changePasswordSchema,
@@ -45,30 +48,42 @@ function parseBody<T>(schema: z.ZodType<T>, body: unknown): T {
  */
 @Controller(API_ROUTES.PASSWORD.ROOT)
 export class PasswordController {
-  constructor(private readonly passwords: PasswordService) {}
+  constructor(
+    private readonly passwords: PasswordService,
+    private readonly clientIp: ClientIpResolver,
+  ) {}
 
   /** Always 202 with an empty body, known email or not (D8). */
   @Post(API_ROUTES.PASSWORD.REQUEST_OTP)
   @HttpCode(HttpStatus.ACCEPTED)
   @Throttle(RATE_LIMIT_POLICIES.OTP_REQUEST)
-  requestOtp(@Body() body: unknown): void {
-    this.passwords.requestOtp(parseBody(requestOtpSchema, body).email);
+  requestOtp(@Body() body: unknown, @Req() req: Request): void {
+    this.passwords.requestOtp(
+      parseBody(requestOtpSchema, body).email,
+      clientMetaOf(this.clientIp, req),
+    );
   }
 
   @Post(API_ROUTES.PASSWORD.RESET)
   @HttpCode(HttpStatus.NO_CONTENT)
   @Header(NO_STORE_HEADER.NAME, NO_STORE_HEADER.VALUE)
   @Throttle(RATE_LIMIT_POLICIES.PASSWORD_SUBMIT)
-  reset(@Body() body: unknown): Promise<void> {
-    return this.passwords.reset(parseBody(resetPasswordSchema, body));
+  reset(@Body() body: unknown, @Req() req: Request): Promise<void> {
+    return this.passwords.reset(
+      parseBody(resetPasswordSchema, body),
+      clientMetaOf(this.clientIp, req),
+    );
   }
 
   @Post(API_ROUTES.PASSWORD.SET)
   @HttpCode(HttpStatus.NO_CONTENT)
   @Header(NO_STORE_HEADER.NAME, NO_STORE_HEADER.VALUE)
   @Throttle(RATE_LIMIT_POLICIES.PASSWORD_SUBMIT)
-  set(@Body() body: unknown): Promise<void> {
-    return this.passwords.set(parseBody(setPasswordSchema, body));
+  set(@Body() body: unknown, @Req() req: Request): Promise<void> {
+    return this.passwords.set(
+      parseBody(setPasswordSchema, body),
+      clientMetaOf(this.clientIp, req),
+    );
   }
 
   @Post(API_ROUTES.PASSWORD.CHANGE)
@@ -83,6 +98,7 @@ export class PasswordController {
     return this.passwords.change(
       req.user.accountId,
       parseBody(changePasswordSchema, body),
+      clientMetaOf(this.clientIp, req),
     );
   }
 }

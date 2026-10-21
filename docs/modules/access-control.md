@@ -3,30 +3,35 @@
 This module decides what an actor may do with a subject, which fields it may
 read or write, and which rows a conditioned permission reaches (SPEC §7
 D2–D6, §8.1, §8.3). It was built in T14 (rules) and wired into Nest in T15 (guard and revocation
-versions). T16 added field masking. The management API (T17) and tokens
-(T19) build on it.
+versions). T16 added field masking. T17 added the accounts and roles API,
+the rank rule and the security audit. Tokens (T19) build on it.
 
-| File                          | What it holds                                                                              |
-| ----------------------------- | ------------------------------------------------------------------------------------------ |
-| `access.constants.ts`         | Subjects, actions per subject, DSL operators/variables/limits, error codes, default matrix |
-| `actor-context.ts`            | `ActorContext`, `RolePolicy`, token scope, `rolePolicyFromRows`, scope ∩ creator           |
-| `subject-catalog.ts`          | Known subjects (`*`, registry slugs, system subjects), field paths, DSL field catalog      |
-| `policy-evaluator.ts`         | `PolicyEvaluator.can / canReadDrafts / fieldsFor / rowFilter`                              |
-| `conditions.compiler.ts`      | DSL validation and compilation to parameterized Kysely SQL                                 |
-| `permission.validator.ts`     | Save-time checks: `validatePermissionSet` (T17), `validateTokenScope` (T19)                |
-| `permission.decorator.ts`     | `@RequirePermission()` metadata (read by the T15 guard)                                    |
-| `version-cache.ts`            | D9 in-process cache of account `tv`/status/role and role `pv`/permission rows (T15)        |
-| `role-permissions.service.ts` | The one write path for a role's rows: replace + bump `policy_version` + invalidate (T15)   |
-| `permission.guard.ts`         | Enforces `@RequirePermission()` with the evaluator (T15)                                   |
-| `access-policy.service.ts`    | Builds the catalog + evaluator from the lazily loaded content registry (T15)               |
-| `access.module.ts`            | Nest wiring (imported by IdentityModule)                                                   |
-| `role-permissions.seed.ts`    | Default rows for system roles that have none                                               |
-| `field-projection.ts`         | `projectTable` / `selectedColumns`: never select unreadable columns (T16, D3)              |
-| `record.serializer.ts`        | `RecordSerializer`: the one record -> response path, masks + `_maskedFields` (T16)         |
-| `write-allowlist.ts`          | `WriteAllowlist`: client tree -> writable tree, drops masks, 400 otherwise (T16, D4)       |
-| `query.guard.ts`              | `QueryGuard`: filter/sort/search only on readable fields (T16, D3)                         |
-| `record-read-access.ts`       | `RecordReadAccess` / `recordReadAccess(actor, readable)`: fields + visible system fields   |
-| `field-errors.ts`             | The 400s of the field checks (`FIELD_NOT_READABLE`, `FIELD_NOT_WRITABLE`, `FIELD_UNKNOWN`) |
+| File                                    | What it holds                                                                              |
+| --------------------------------------- | ------------------------------------------------------------------------------------------ |
+| `access.constants.ts`                   | Subjects, actions per subject, DSL operators/variables/limits, error codes, default matrix |
+| `actor-context.ts`                      | `ActorContext`, `RolePolicy`, token scope, `rolePolicyFromRows`, scope ∩ creator           |
+| `subject-catalog.ts`                    | Known subjects (`*`, registry slugs, system subjects), field paths, DSL field catalog      |
+| `policy-evaluator.ts`                   | `PolicyEvaluator.can / canReadDrafts / fieldsFor / rowFilter`                              |
+| `conditions.compiler.ts`                | DSL validation and compilation to parameterized Kysely SQL                                 |
+| `permission.validator.ts`               | Save-time checks: `validatePermissionSet` (T17), `validateTokenScope` (T19)                |
+| `permission.decorator.ts`               | `@RequirePermission()` metadata (read by the T15 guard)                                    |
+| `version-cache.ts`                      | D9 in-process cache of account `tv`/status/role and role `pv`/permission rows (T15)        |
+| `role-permissions.service.ts`           | The one write path for a role's rows: replace + bump `policy_version` + invalidate (T15)   |
+| `permission.guard.ts`                   | Enforces `@RequirePermission()` with the evaluator (T15)                                   |
+| `access-policy.service.ts`              | Builds the catalog + evaluator from the lazily loaded content registry (T15)               |
+| `access.module.ts`                      | Nest wiring (imported by IdentityModule)                                                   |
+| `role-permissions.seed.ts`              | Default rows for system roles that have none                                               |
+| `field-projection.ts`                   | `projectTable` / `selectedColumns`: never select unreadable columns (T16, D3)              |
+| `record.serializer.ts`                  | `RecordSerializer`: the one record -> response path, masks + `_maskedFields` (T16)         |
+| `write-allowlist.ts`                    | `WriteAllowlist`: client tree -> writable tree, drops masks, 400 otherwise (T16, D4)       |
+| `query.guard.ts`                        | `QueryGuard`: filter/sort/search only on readable fields (T16, D3)                         |
+| `record-read-access.ts`                 | `RecordReadAccess` / `recordReadAccess(actor, readable)`: fields + visible system fields   |
+| `field-errors.ts`                       | The 400s of the field checks (`FIELD_NOT_READABLE`, `FIELD_NOT_WRITABLE`, `FIELD_UNKNOWN`) |
+| `rank-rules.ts`                         | D6: `outranks` / `assertOutranks`, `requireAccountActor`, `grantsBeyondActor` (T17)        |
+| `accounts.{controller,service}.ts`      | `/accounts`: list, invite, update, disable, revoke sessions (T17)                          |
+| `roles.{controller,service}.ts`         | `/roles`: list, create, update, delete, replace permissions (T17)                          |
+| `access-management.*.ts`                | T17 request schemas, error codes, limits; `AccessManagementModule` (imports identity)      |
+| `security-audit.{constants,service}.ts` | D15 `SecurityAuditService`, `writeAuditLog` (also used by the CLI), action names           |
 
 ## Subjects and actions
 
@@ -79,8 +84,20 @@ versions). T16 added field masking. The management API (T17) and tokens
    from `read` rows, writable fields from `writeAction` rows. Field lists
    apply to content types only. A system subject is all or nothing.
 
-The rank rule (target rank < actor rank, D6) is not part of the evaluator;
-T17 enforces it.
+The rank rule (target rank < actor rank, D6) is not part of the evaluator.
+The T17 services enforce it inside each write transaction, with the target
+row locked (`rank-rules.ts`):
+
+- account writes: the target's current role rank and any role being
+  assigned must be below the actor's rank; the actor never targets itself;
+- role writes: the role's rank and any new rank must be below the actor's;
+- permission sets: on top of the rank, a non-owner may grant a system
+  subject action only if it holds that action itself (`grantsBeyondActor`).
+  Content subjects are bounded by the rank rule alone; field-level subsets
+  are not compared.
+
+Only `account` actors pass `requireAccountActor`; tokens are content-only
+and reviewers read-only, so the guard already denies them system subjects.
 
 ## Field lists
 
@@ -284,21 +301,21 @@ fields are allowed and there are no conditions.
 **Invalidation.** Every write in the process calls `VersionCache` **after**
 its commit:
 
-| Write                         | Where                                                                | Invalidates |
-| ----------------------------- | -------------------------------------------------------------------- | ----------- |
-| Password change, reset or set | `password.service.ts`                                                | the account |
-| Refresh-token reuse           | `refresh-token.service.ts`                                           | the account |
-| Role permission changes       | `RolePermissionsService.replacePermissions` (bumps `policy_version`) | the role    |
+| Write                                                | Where                                                                | Invalidates |
+| ---------------------------------------------------- | -------------------------------------------------------------------- | ----------- |
+| Password change, reset or set                        | `password.service.ts`                                                | the account |
+| Refresh-token reuse                                  | `refresh-token.service.ts`                                           | the account |
+| Role permission changes                              | `RolePermissionsService.replacePermissions` (bumps `policy_version`) | the role    |
+| Account role/name change, disable, revoke sessions   | `accounts.service.ts` (disable/revoke bump `tv`)                     | the account |
+| Role rename/re-rank (bumps `policy_version`), delete | `roles.service.ts`                                                   | the role    |
 
 A read that started before an invalidation is not cached (generation
 check), so it cannot re-cache pre-write data. Writes the process cannot see
 (the `owner:reset-2fa` CLI, another replica, manual SQL) take effect within
 `VERSION_CACHE_TTL_MS` (5 s).
 
-T17 must call `VersionCache.invalidateAccount()` after committing any
-account write: disable, role change, delete, or session revoke with a `tv`
-bump. For permission writes it must call
-`RolePermissionsService.replacePermissions()`, adding its audit row through
+Permission writes go through `RolePermissionsService.replacePermissions()`
+only; T17 adds its audit row (and a locked rank re-check) through
 `alsoInTransaction`.
 
 **Swap point (more than one replica).** `VersionCache` and the rate-limit

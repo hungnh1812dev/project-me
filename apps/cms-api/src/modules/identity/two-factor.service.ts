@@ -21,12 +21,21 @@ import {
 } from '../../common/constants/limits.constants';
 import { type IAppConfig } from '../../config/app-config';
 import { APP_CONFIG } from '../../config/config.constants';
-import { type TwoFaMethod } from '../../generated/prisma/client';
+import { type Prisma, type TwoFaMethod } from '../../generated/prisma/client';
 import { PrismaService } from '../../infrastructure/database/prisma.service';
 import {
   MAIL_SENDER,
   type MailSender,
 } from '../../infrastructure/mail/mail.port';
+import {
+  AUDIT_ACTIONS,
+  REAUTH_FAILURE_REASONS,
+  TWO_FACTOR_OPERATIONS,
+} from '../access/security-audit.constants';
+import {
+  SecurityAuditService,
+  selfActor,
+} from '../access/security-audit.service';
 import {
   AccessTokenService,
   type TwoFactorTempTokenClaims,
@@ -46,6 +55,17 @@ import {
 } from './two-factor.requests';
 
 const LOGGER_CONTEXT = 'TwoFactorService';
+
+type TwoFactorOperation =
+  (typeof TWO_FACTOR_OPERATIONS)[keyof typeof TWO_FACTOR_OPERATIONS];
+type ReauthFailureReason =
+  (typeof REAUTH_FAILURE_REASONS)[keyof typeof REAUTH_FAILURE_REASONS];
+
+/** The account an audit row names (actor and target are the same here). */
+interface AuditedAccount {
+  readonly id: number;
+  readonly documentId: string;
+}
 const EMAIL_CODE_PURPOSE = 'LOGIN_2FA_EMAIL';
 
 /** `POST /auth/2fa/totp/setup`: the QR is rendered by the client (T13 Q5). */
@@ -147,6 +167,7 @@ export class TwoFactorService {
     private readonly challenges: TwoFactorChallengeStore,
     private readonly accessTokens: AccessTokenService,
     private readonly auth: AuthService,
+    private readonly audit: SecurityAuditService,
     @Inject(MAIL_SENDER) private readonly mail: MailSender,
     @Inject(APP_CONFIG) private readonly config: IAppConfig,
   ) {}
@@ -177,77 +198,119 @@ export class TwoFactorService {
   async enable(
     accountDocumentId: string,
     input: EnableTwoFactorRequest,
+    meta: ClientMeta,
   ): Promise<void> {
     const account = await this.signedInAccount(accountDocumentId);
     if (account.is2faEnabled) throw alreadyEnabled();
-    await this.checkPassword(account.passwordHash, input.password);
+    const operation = TWO_FACTOR_OPERATIONS.ENABLE;
+    await this.checkPassword(account, input.password, operation, meta);
+    const badCode = async (): Promise<HttpException> => {
+      await this.manageFailed(
+        account,
+        operation,
+        REAUTH_FAILURE_REASONS.BAD_CODE,
+        meta,
+      );
+      return invalidTwoFactorCode(HttpStatus.FORBIDDEN);
+    };
 
     if (input.method === 'totp') {
       const secret = this.totp.openSecret(account);
       if (secret === undefined) throw setupRequired();
       const step = await this.totp.matchStep(secret, input.code, null);
-      if (step === undefined) throw invalidTwoFactorCode(HttpStatus.FORBIDDEN);
-      const enabled = await this.prisma.account.updateMany({
-        // Same pending secret: a setup in between makes this code stale.
-        where: {
-          id: account.id,
-          is2faEnabled: false,
-          totpSecretEnc: account.totpSecretEnc,
-        },
-        data: { is2faEnabled: true, twoFaMethod: 'totp', totpLastStep: step },
+      if (step === undefined) throw await badCode();
+      const enabled = await this.prisma.$transaction(async (tx) => {
+        const written = await tx.account.updateMany({
+          // Same pending secret: a setup in between makes this code stale.
+          where: {
+            id: account.id,
+            is2faEnabled: false,
+            totpSecretEnc: account.totpSecretEnc,
+          },
+          data: {
+            is2faEnabled: true,
+            twoFaMethod: 'totp',
+            totpLastStep: step,
+          },
+        });
+        if (written.count > 0) {
+          await this.recordChange(tx, account, 'totp', true, meta);
+        }
+        return written.count > 0;
       });
-      if (enabled.count === 0) throw invalidTwoFactorCode(HttpStatus.FORBIDDEN);
-      // TODO(T17): SecurityAuditService 2FA enabled (method only, D15).
+      if (!enabled) throw await badCode();
       return;
     }
 
-    await this.useEmailCode(account.id, input.code, HttpStatus.FORBIDDEN, {
+    await this.useEmailCode(account.id, input.code, {
       where: { is2faEnabled: false },
       data: { is2faEnabled: true, twoFaMethod: 'email', ...CLEARED_TOTP },
       onMissed: alreadyEnabled,
+      onBadCode: badCode,
+      alsoInTransaction: (tx) =>
+        this.recordChange(tx, account, 'email', true, meta),
     });
-    // TODO(T17): SecurityAuditService 2FA enabled (method only, D15).
   }
 
   /** D8: current password plus a code of the active method. */
   async disable(
     accountDocumentId: string,
     input: DisableTwoFactorRequest,
+    meta: ClientMeta,
   ): Promise<void> {
     const account = await this.signedInAccount(accountDocumentId);
-    if (!account.is2faEnabled || account.twoFaMethod === null) {
+    const method = account.twoFaMethod;
+    if (!account.is2faEnabled || method === null) {
       throw notEnabled();
     }
-    await this.checkPassword(account.passwordHash, input.password);
+    const operation = TWO_FACTOR_OPERATIONS.DISABLE;
+    await this.checkPassword(account, input.password, operation, meta);
+    const badCode = async (): Promise<HttpException> => {
+      await this.manageFailed(
+        account,
+        operation,
+        REAUTH_FAILURE_REASONS.BAD_CODE,
+        meta,
+      );
+      return invalidTwoFactorCode(HttpStatus.FORBIDDEN);
+    };
 
     const off = { is2faEnabled: false, twoFaMethod: null, ...CLEARED_TOTP };
-    if (account.twoFaMethod === 'totp') {
+    if (method === 'totp') {
       if (!(await this.totp.verifyAccountCode(account, input.code))) {
-        throw invalidTwoFactorCode(HttpStatus.FORBIDDEN);
+        throw await badCode();
       }
-      const disabled = await this.prisma.account.updateMany({
-        where: { id: account.id, is2faEnabled: true },
-        data: off,
+      await this.prisma.$transaction(async (tx) => {
+        const disabled = await tx.account.updateMany({
+          where: { id: account.id, is2faEnabled: true },
+          data: off,
+        });
+        if (disabled.count === 0) throw notEnabled();
+        await this.recordChange(tx, account, method, false, meta);
       });
-      if (disabled.count === 0) throw notEnabled();
-    } else {
-      await this.useEmailCode(account.id, input.code, HttpStatus.FORBIDDEN, {
-        where: { is2faEnabled: true, twoFaMethod: 'email' },
-        data: off,
-        onMissed: notEnabled,
-      });
+      return;
     }
-    // TODO(T17): SecurityAuditService 2FA disabled (D15).
+    await this.useEmailCode(account.id, input.code, {
+      where: { is2faEnabled: true, twoFaMethod: 'email' },
+      data: off,
+      onMissed: notEnabled,
+      onBadCode: badCode,
+      alsoInTransaction: (tx) =>
+        this.recordChange(tx, account, method, false, meta),
+    });
   }
 
   /**
    * Emails a LOGIN_2FA_EMAIL code to the signed-in account, for enabling or
    * disabling email 2FA. Nothing is sent while TOTP is on (it has no use).
    */
-  async sendEmailCode(accountDocumentId: string): Promise<void> {
+  async sendEmailCode(
+    accountDocumentId: string,
+    meta: ClientMeta,
+  ): Promise<void> {
     const account = await this.signedInAccount(accountDocumentId);
     if (account.is2faEnabled && account.twoFaMethod !== 'email') return;
-    await this.sendCode(account.id, account.email);
+    await this.sendCode(account.id, account.email, meta);
   }
 
   /**
@@ -270,13 +333,19 @@ export class TwoFactorService {
         ? await this.totp.verifyAccountCode(account, input.code)
         : await this.tryEmailCode(account.id, input.code);
     if (!ok) {
-      // TODO(T17): SecurityAuditService 2FA login failure (D15).
+      // No write to share a transaction with: a standalone row.
+      await this.audit.recordStandalone({
+        actor: selfActor(account.id),
+        action: AUDIT_ACTIONS.TWO_FACTOR_VERIFY_FAILED,
+        targetId: account.documentId,
+        metadata: { method: account.twoFaMethod },
+        ip: meta.ip,
+      });
       throw invalidTwoFactorCode(HttpStatus.UNAUTHORIZED);
     }
     if (!this.challenges.markUsed(claims.jti, expiresAt)) {
       throw invalidTempToken();
     }
-    // TODO(T17): SecurityAuditService login success (2FA, D15).
     return this.auth.startSession(
       {
         id: account.id,
@@ -285,16 +354,17 @@ export class TwoFactorService {
         policyVersion: account.role.policyVersion,
       },
       meta,
+      account.twoFaMethod,
     );
   }
 
   /** Emails the login code of an email-2FA account; no-op for TOTP. */
-  async emailChallenge(rawTempToken: string): Promise<void> {
+  async emailChallenge(rawTempToken: string, meta: ClientMeta): Promise<void> {
     const claims = this.tempTokenClaims(rawTempToken);
     if (!this.challenges.isLive(claims.jti)) throw invalidTempToken();
     const account = await this.challengeAccount(claims);
     if (account.twoFaMethod !== 'email') return;
-    await this.sendCode(account.id, account.email);
+    await this.sendCode(account.id, account.email, meta);
   }
 
   private tempTokenClaims(rawTempToken: string): TwoFactorTempTokenClaims {
@@ -338,16 +408,58 @@ export class TwoFactorService {
   }
 
   private async checkPassword(
-    passwordHash: string | null,
+    account: AuditedAccount & { readonly passwordHash: string | null },
     password: string,
+    operation: TwoFactorOperation,
+    meta: ClientMeta,
   ): Promise<void> {
     if (
-      passwordHash === null ||
-      !(await verifyPassword(passwordHash, password))
+      account.passwordHash === null ||
+      !(await verifyPassword(account.passwordHash, password))
     ) {
-      // TODO(T17): SecurityAuditService 2FA change failure (D15).
+      await this.manageFailed(
+        account,
+        operation,
+        REAUTH_FAILURE_REASONS.BAD_PASSWORD,
+        meta,
+      );
       throw wrongPassword();
     }
+  }
+
+  /** `two_factor.manage_failed`: standalone, nothing else is written. */
+  private manageFailed(
+    account: AuditedAccount,
+    operation: TwoFactorOperation,
+    reason: ReauthFailureReason,
+    meta: ClientMeta,
+  ): Promise<void> {
+    return this.audit.recordStandalone({
+      actor: selfActor(account.id),
+      action: AUDIT_ACTIONS.TWO_FACTOR_MANAGE_FAILED,
+      targetId: account.documentId,
+      metadata: { operation, reason },
+      ip: meta.ip,
+    });
+  }
+
+  /** `two_factor.enabled` / `.disabled` in the transaction of the change. */
+  private recordChange(
+    tx: Prisma.TransactionClient,
+    account: AuditedAccount,
+    method: TwoFaMethod,
+    enabled: boolean,
+    meta: ClientMeta,
+  ): Promise<void> {
+    return this.audit.record(tx, {
+      actor: selfActor(account.id),
+      action: enabled
+        ? AUDIT_ACTIONS.TWO_FACTOR_ENABLED
+        : AUDIT_ACTIONS.TWO_FACTOR_DISABLED,
+      targetId: account.documentId,
+      metadata: { method },
+      ip: meta.ip,
+    });
   }
 
   /** Login step: checks and uses up an emailed code. */
@@ -362,14 +474,14 @@ export class TwoFactorService {
   }
 
   /**
-   * Enable/disable with an emailed code: the code is used up and the account
-   * written in one transaction. `where` guards against a concurrent change;
-   * when it matches nothing, `onMissed` is thrown.
+   * Enable/disable with an emailed code: the code is used up, the account
+   * written and `alsoInTransaction` run (the audit row) in one transaction.
+   * `where` guards against a concurrent change; when it matches nothing,
+   * `onMissed` is thrown. A wrong or spent code throws `onBadCode()`.
    */
   private async useEmailCode(
     accountId: number,
     code: string,
-    failStatus: HttpStatus,
     change: {
       readonly where: { is2faEnabled: boolean; twoFaMethod?: TwoFaMethod };
       readonly data: {
@@ -380,27 +492,37 @@ export class TwoFactorService {
         totpLastStep: null;
       };
       readonly onMissed: () => HttpException;
+      readonly onBadCode: () => Promise<HttpException>;
+      readonly alsoInTransaction: (
+        tx: Prisma.TransactionClient,
+      ) => Promise<void>;
     },
   ): Promise<void> {
-    if (!isOtpCodeFormat(code)) throw invalidTwoFactorCode(failStatus);
+    if (!isOtpCodeFormat(code)) throw await change.onBadCode();
     const otpId = await this.otp.verify(accountId, EMAIL_CODE_PURPOSE, code);
-    if (otpId === undefined) throw invalidTwoFactorCode(failStatus);
-    await this.prisma.$transaction(async (tx) => {
-      if (!(await this.otp.consume(tx, otpId))) {
-        throw invalidTwoFactorCode(failStatus);
-      }
+    if (otpId === undefined) throw await change.onBadCode();
+    const consumed = await this.prisma.$transaction(async (tx) => {
+      if (!(await this.otp.consume(tx, otpId))) return false;
       const written = await tx.account.updateMany({
         where: { id: accountId, ...change.where },
         data: change.data,
       });
       if (written.count === 0) throw change.onMissed();
+      await change.alsoInTransaction(tx);
+      return true;
     });
+    if (!consumed) throw await change.onBadCode();
   }
 
   /** Issues a LOGIN_2FA_EMAIL code (429 past the hourly cap) and mails it. */
-  private async sendCode(accountId: number, email: string): Promise<void> {
-    // TODO(T17): SecurityAuditService OTP issued (purpose only, never the code).
-    const code = await this.otp.issue(accountId, EMAIL_CODE_PURPOSE);
+  private async sendCode(
+    accountId: number,
+    email: string,
+    meta: ClientMeta,
+  ): Promise<void> {
+    const code = await this.otp.issue(accountId, EMAIL_CODE_PURPOSE, {
+      ip: meta.ip,
+    });
     try {
       await this.mail.send(
         buildOtpMail(

@@ -24,6 +24,15 @@ import {
   type MailSender,
 } from '../../infrastructure/mail/mail.port';
 import { PrismaService } from '../../infrastructure/database/prisma.service';
+import {
+  AUDIT_ACTIONS,
+  type AuditAction,
+  REAUTH_FAILURE_REASONS,
+} from '../access/security-audit.constants';
+import {
+  SecurityAuditService,
+  selfActor,
+} from '../access/security-audit.service';
 import { VersionCache } from '../access/version-cache';
 import { OTP } from './identity.constants';
 import { buildOtpMail } from './otp-mail';
@@ -35,7 +44,7 @@ import {
   type ResetPasswordRequest,
   type SetPasswordRequest,
 } from './password.requests';
-import { RefreshTokenService } from './refresh-token.service';
+import { type ClientMeta, RefreshTokenService } from './refresh-token.service';
 import {
   RESET_SECOND_FACTOR,
   type ResetSecondFactor,
@@ -99,6 +108,7 @@ export class PasswordService implements OnApplicationShutdown {
     private readonly otp: OtpService,
     private readonly refreshTokens: RefreshTokenService,
     private readonly versions: VersionCache,
+    private readonly audit: SecurityAuditService,
     @Inject(MAIL_SENDER) private readonly mail: MailSender,
     @Inject(RESET_SECOND_FACTOR)
     private readonly secondFactor: ResetSecondFactor,
@@ -111,8 +121,8 @@ export class PasswordService implements OnApplicationShutdown {
    * lookup, issue and send run in the background; failures are logged
    * without the email or the code.
    */
-  requestOtp(email: string): void {
-    const task = this.issueAndSend(email).catch((error: unknown) => {
+  requestOtp(email: string, meta: ClientMeta): void {
+    const task = this.issueAndSend(email, meta).catch((error: unknown) => {
       // Name and code only: SMTP error messages can echo the recipient.
       const name = error instanceof Error ? error.name : typeof error;
       const code = (error as { code?: unknown } | null)?.code;
@@ -134,7 +144,7 @@ export class PasswordService implements OnApplicationShutdown {
   }
 
   /** Forgotten password: emailed RESET_PASSWORD code (+ TOTP when enabled). */
-  async reset(input: ResetPasswordRequest): Promise<void> {
+  async reset(input: ResetPasswordRequest, meta: ClientMeta): Promise<void> {
     if (!isAcceptablePassword(input.newPassword)) throw weakPassword();
     const account = await this.findForCode(input.email, 'active');
     const otpId = await this.checkCode(account, 'RESET_PASSWORD', input.code);
@@ -144,12 +154,15 @@ export class PasswordService implements OnApplicationShutdown {
       if (!ok) throw totpRequired();
     }
 
-    await this.writePassword(account.id, input.newPassword, otpId);
-    // TODO(T17): SecurityAuditService password reset (same transaction, D15).
+    await this.writePassword(account, input.newPassword, {
+      otpId,
+      action: AUDIT_ACTIONS.PASSWORD_RESET,
+      meta,
+    });
   }
 
   /** Invite: emailed INVITE_SET_PASSWORD code; the account becomes active. */
-  async set(input: SetPasswordRequest): Promise<void> {
+  async set(input: SetPasswordRequest, meta: ClientMeta): Promise<void> {
     if (!isAcceptablePassword(input.newPassword)) throw weakPassword();
     const account = await this.findForCode(input.email, 'invited');
     const otpId = await this.checkCode(
@@ -157,21 +170,30 @@ export class PasswordService implements OnApplicationShutdown {
       'INVITE_SET_PASSWORD',
       input.code,
     );
-    await this.writePassword(account.id, input.newPassword, otpId, {
-      status: 'active',
+    await this.writePassword(account, input.newPassword, {
+      otpId,
+      action: AUDIT_ACTIONS.PASSWORD_SET,
+      meta,
+      extra: { status: 'active' },
     });
-    // TODO(T17): SecurityAuditService invite accepted / password set (D15).
   }
 
   /** Signed in: needs the current password. Ends every session (Q4 option a). */
   async change(
     accountDocumentId: string,
     input: ChangePasswordRequest,
+    meta: ClientMeta,
   ): Promise<void> {
     if (!isAcceptablePassword(input.newPassword)) throw weakPassword();
     const account = await this.prisma.account.findUnique({
       where: { documentId: accountDocumentId },
-      select: { id: true, passwordHash: true, status: true, deletedAt: true },
+      select: {
+        id: true,
+        documentId: true,
+        passwordHash: true,
+        status: true,
+        deletedAt: true,
+      },
     });
     if (
       account === null ||
@@ -182,14 +204,22 @@ export class PasswordService implements OnApplicationShutdown {
       throw new UnauthorizedException();
     }
     if (!(await verifyPassword(account.passwordHash, input.currentPassword))) {
-      // TODO(T17): SecurityAuditService password change failure (D15).
+      await this.audit.recordStandalone({
+        actor: selfActor(account.id),
+        action: AUDIT_ACTIONS.PASSWORD_CHANGE_FAILED,
+        targetId: account.documentId,
+        metadata: { reason: REAUTH_FAILURE_REASONS.BAD_PASSWORD },
+        ip: meta.ip,
+      });
       throw wrongCurrentPassword();
     }
-    await this.writePassword(account.id, input.newPassword);
-    // TODO(T17): SecurityAuditService password change (same transaction, D15).
+    await this.writePassword(account, input.newPassword, {
+      action: AUDIT_ACTIONS.PASSWORD_CHANGED,
+      meta,
+    });
   }
 
-  private async issueAndSend(email: string): Promise<void> {
+  private async issueAndSend(email: string, meta: ClientMeta): Promise<void> {
     const account = await this.prisma.account.findUnique({
       where: { email },
       select: { id: true, email: true, status: true, deletedAt: true },
@@ -204,8 +234,7 @@ export class PasswordService implements OnApplicationShutdown {
       return;
     }
 
-    // TODO(T17): SecurityAuditService OTP issued (purpose only, never the code).
-    const code = await this.otp.issue(account.id, purpose);
+    const code = await this.otp.issue(account.id, purpose, { ip: meta.ip });
     await this.mail.send(
       buildOtpMail(
         account.email,
@@ -221,6 +250,7 @@ export class PasswordService implements OnApplicationShutdown {
       where: { email },
       select: {
         id: true,
+        documentId: true,
         status: true,
         deletedAt: true,
         is2faEnabled: true,
@@ -250,28 +280,46 @@ export class PasswordService implements OnApplicationShutdown {
   }
 
   /**
-   * Stores the new hash, bumps token_version and revokes every refresh token
-   * in one transaction; with `otpId`, the code is used up in it too (a
-   * concurrent request with the same code loses and gets AUTH_INVALID_OTP).
+   * Stores the new hash, bumps token_version, revokes every refresh token
+   * and writes the audit row in one transaction; with `otpId`, the code is
+   * used up in it too (a concurrent request with the same code loses and
+   * gets AUTH_INVALID_OTP).
    */
   private async writePassword(
-    accountId: number,
+    account: { readonly id: number; readonly documentId: string },
     newPassword: string,
-    otpId?: number,
-    extra: Pick<Prisma.AccountUpdateInput, 'status'> = {},
+    write: {
+      readonly action: AuditAction;
+      readonly meta: ClientMeta;
+      readonly otpId?: number;
+      readonly extra?: Pick<Prisma.AccountUpdateInput, 'status'>;
+    },
   ): Promise<void> {
     const passwordHash = await hashPassword(newPassword);
     await this.prisma.$transaction(async (tx) => {
-      if (otpId !== undefined && !(await this.otp.consume(tx, otpId))) {
+      if (
+        write.otpId !== undefined &&
+        !(await this.otp.consume(tx, write.otpId))
+      ) {
         throw invalidOtp();
       }
       await tx.account.update({
-        where: { id: accountId },
-        data: { ...extra, passwordHash, tokenVersion: { increment: 1 } },
+        where: { id: account.id },
+        data: {
+          ...write.extra,
+          passwordHash,
+          tokenVersion: { increment: 1 },
+        },
       });
-      await this.refreshTokens.revokeAllForAccount(tx, accountId);
+      await this.refreshTokens.revokeAllForAccount(tx, account.id);
+      await this.audit.record(tx, {
+        actor: selfActor(account.id),
+        action: write.action,
+        targetId: account.documentId,
+        ip: write.meta.ip,
+      });
     });
     // After the commit (D9): old access tokens get 401 on the next request.
-    this.versions.invalidateAccount(accountId);
+    this.versions.invalidateAccount(account.id);
   }
 }

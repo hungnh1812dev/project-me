@@ -21,12 +21,15 @@ export interface ErrorResponseBody {
   statusCode: number;
   errorCode: string;
   message: string;
+  /** Machine-readable context of a client error (SPEC §9), e.g. validation issues. */
+  details?: unknown;
   requestId: string | undefined;
 }
 
 interface ExceptionResponseObject {
   errorCode?: unknown;
   message?: unknown;
+  details?: unknown;
 }
 
 const SERVER_ERROR_MIN_STATUS: number = HttpStatus.INTERNAL_SERVER_ERROR;
@@ -62,8 +65,15 @@ function errorCodeFrom(exception: HttpException, status: number): string {
   return ERROR_CODE_BY_STATUS[status] ?? fallback;
 }
 
+/** `details` of a client error; server errors never expose any. */
+function detailsFrom(exception: HttpException, status: number): unknown {
+  if (isServerError(status)) return undefined;
+  const response = exception.getResponse();
+  return isObject(response) ? response.details : undefined;
+}
+
 /**
- * Turns every thrown value into `{ statusCode, errorCode, message, requestId }`.
+ * Turns every thrown value into `{ statusCode, errorCode, message, details?, requestId }`.
  * Unknown errors become a generic 500; their details go to the log only.
  */
 @Catch()
@@ -86,6 +96,8 @@ export class HttpExceptionFilter implements ExceptionFilter {
           : messageFrom(exception),
         requestId: req.requestId,
       };
+      const details = detailsFrom(exception, status);
+      if (details !== undefined) body.details = details;
     } else {
       body = {
         statusCode: HttpStatus.INTERNAL_SERVER_ERROR,

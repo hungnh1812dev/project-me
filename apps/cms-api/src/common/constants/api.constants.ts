@@ -33,4 +33,20 @@ export const API_ROUTES = {
     /** T13 Q9: emailed code for enable/disable of email 2FA (signed in). */
     EMAIL_SEND_CODE: 'email/send-code',
   },
+  /** SPEC §9 accounts (T17). `:id` is the account's document_id. */
+  ACCOUNTS: {
+    ROOT: 'accounts',
+    BY_ID: ':id',
+    DISABLE: ':id/disable',
+    REVOKE_SESSIONS: ':id/sessions/revoke',
+  },
+  /** SPEC §9 roles (T17). `:id` is the role's document_id. */
+  ROLES: {
+    ROOT: 'roles',
+    BY_ID: ':id',
+    PERMISSIONS: ':id/permissions',
+  },
 } as const;
+
+/** Route param holding a document_id in API_ROUTES.ACCOUNTS / ROLES. */
+export const ID_PARAM = 'id';

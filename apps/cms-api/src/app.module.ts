@@ -3,6 +3,7 @@ import { type DynamicModule, Module } from '@nestjs/common';
 import { type IAppConfig } from './config/app-config';
 import { RateLimitModule } from './common/rate-limit/rate-limit.module';
 import { ConfigModule } from './config/config.module';
+import { AccessManagementModule } from './modules/access/access-management.module';
 import { HealthModule } from './modules/health/health.module';
 import { IdentityModule } from './modules/identity/identity.module';
 
@@ -16,6 +17,7 @@ export class AppModule {
         RateLimitModule,
         HealthModule,
         IdentityModule,
+        AccessManagementModule,
       ],
     };
   }

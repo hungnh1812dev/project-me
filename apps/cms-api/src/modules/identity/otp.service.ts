@@ -12,6 +12,12 @@ import { type IAppConfig } from '../../config/app-config';
 import { APP_CONFIG } from '../../config/config.constants';
 import { type OtpPurpose, type Prisma } from '../../generated/prisma/client';
 import { PrismaService } from '../../infrastructure/database/prisma.service';
+import { AUDIT_ACTIONS } from '../access/security-audit.constants';
+import {
+  type AuditActor,
+  SecurityAuditService,
+  selfActor,
+} from '../access/security-audit.service';
 import { OTP } from './identity.constants';
 
 type Tx = Prisma.TransactionClient;
@@ -20,6 +26,15 @@ const OTP_CODE_PATTERN = new RegExp(`^\\d{${OTP.DIGITS}}$`);
 const OTP_CODE_SPACE = 10 ** OTP.DIGITS;
 /** Stands in for the account id when hashing for an unknown email. */
 const DUMMY_ACCOUNT_ID = 0;
+
+/** Who asked for a code and where from (the `auth.otp_issued` row). */
+export interface OtpIssueOptions {
+  /** Default: the account itself. An invite names the inviter. */
+  readonly actor?: AuditActor | undefined;
+  readonly ip?: string | undefined;
+  /** Issue inside the caller's transaction (e.g. with the invited account). */
+  readonly tx?: Tx | undefined;
+}
 
 /** True when `code` has the shape of an OTP (exactly 6 digits). */
 export function isOtpCodeFormat(code: string): boolean {
@@ -60,25 +75,33 @@ export class OtpService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly clock: Clock,
+    private readonly audit: SecurityAuditService,
     @Inject(APP_CONFIG) private readonly config: IAppConfig,
   ) {}
 
   /**
    * Creates a code and returns it in clear (for the email only). Earlier
    * unused codes of the same account and purpose stop working. Throws 429
-   * when the account already got 5 codes within the window.
+   * when the account already got 5 codes within the window. Writes the
+   * `auth.otp_issued` row (purpose only, never the code) in the same
+   * transaction (D15).
    */
-  issue(accountId: number, purpose: OtpPurpose): Promise<string> {
+  issue(
+    accountId: number,
+    purpose: OtpPurpose,
+    options: OtpIssueOptions = {},
+  ): Promise<string> {
     const pepper = this.pepper();
     const now = this.clock.now();
     const code = randomInt(0, OTP_CODE_SPACE)
       .toString()
       .padStart(OTP.DIGITS, '0');
 
-    return this.prisma.$transaction(async (tx) => {
+    const run = async (tx: Tx): Promise<string> => {
       // Row lock on the account: concurrent issues for it run one at a time,
       // so the count below can't be raced past the cap.
-      await tx.$queryRaw`SELECT id FROM accounts WHERE id = ${accountId} FOR UPDATE`;
+      const locked = await tx.$queryRaw<{ document_id: string }[]>`
+        SELECT document_id FROM accounts WHERE id = ${accountId} FOR UPDATE`;
       const recent = await tx.otpCode.count({
         where: {
           accountId,
@@ -106,8 +129,18 @@ export class OtpService {
           expiresAt: new Date(now + OTP.TTL_SECONDS * MS_PER_SECOND),
         },
       });
+      await this.audit.record(tx, {
+        actor: options.actor ?? selfActor(accountId),
+        action: AUDIT_ACTIONS.AUTH_OTP_ISSUED,
+        targetId: locked[0]?.document_id ?? null,
+        metadata: { purpose },
+        ip: options.ip,
+      });
       return code;
-    });
+    };
+    return options.tx === undefined
+      ? this.prisma.$transaction(run)
+      : run(options.tx);
   }
 
   /**

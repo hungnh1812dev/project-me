@@ -40,10 +40,11 @@ at least 32 bytes too.
   start without it. `X-Request-Id` is exposed to the browser.
 - Each request gets an `X-Request-Id` (an inbound id is kept if it matches
   `[A-Za-z0-9._-]{1,128}`, otherwise a UUID is generated).
-- Every error returns `{ statusCode, errorCode, message, requestId }`.
-  5xx responses use a generic message; details go to the log only. To return
-  a specific code, throw an `HttpException` whose response object has an
-  `errorCode` property.
+- Every error returns `{ statusCode, errorCode, message, details?, requestId }`.
+  5xx responses use a generic message and never carry `details`; internals go
+  to the log only. To return a specific code, throw an `HttpException` whose
+  response object has an `errorCode` property (and optionally `details`, for
+  client errors only: e.g. validation issue paths, never submitted values).
 
 ## Endpoints
 
@@ -167,7 +168,8 @@ docker compose exec cms-api npm run owner:reset-2fa -- --email someone@example.c
 email.`), 2FA already off, invalid email, missing `--email`, unknown
   options, or no confirmation. Loads the full config like `owner:bootstrap`,
   so pass the same env as the API. Prints no secrets.
-- Not audited yet (T17).
+- Audited in the same transaction: `two_factor.reset_by_operator` with
+  `actor_type: system`, no actor id, no IP, metadata `{ previousMethod }`.
 
 ### Password lifecycle (T12)
 
@@ -250,6 +252,87 @@ in `src/common/constants/limits.constants.ts` (`RATE_LIMIT_POLICIES`):
   warning (refused count only, no IPs or emails) is logged at most once per
   `RATE_LIMIT_CAPACITY_WARN_INTERVAL_MS` (1 min). Change the cap in
   `limits.constants.ts`.
+
+### Accounts and roles (T17, `src/modules/access`)
+
+All routes need `Authorization: Bearer` (an account session; API tokens and
+reviewers never reach them) plus the permission named. `:id` is always a
+`document_id` (UUID); internal ids are never exposed.
+
+| Method | Path                                   | Permission        | Body                                | Response                                |
+| ------ | -------------------------------------- | ----------------- | ----------------------------------- | --------------------------------------- |
+| GET    | `/api/v1/accounts`                     | `accounts:read`   | none                                | `200 { data: Account[] }` (not deleted) |
+| POST   | `/api/v1/accounts`                     | `accounts:create` | `{ email, displayName, roleId }`    | `201 Account & { invitationSent }`      |
+| PATCH  | `/api/v1/accounts/:id`                 | `accounts:update` | `{ displayName?, roleId? }` (one+)  | `200 Account`                           |
+| POST   | `/api/v1/accounts/:id/disable`         | `accounts:update` | none                                | `204`                                   |
+| POST   | `/api/v1/accounts/:id/sessions/revoke` | `accounts:update` | none                                | `204`                                   |
+| GET    | `/api/v1/roles`                        | `roles:read`      | none                                | `200 { data: Role[] }` (rank desc)      |
+| POST   | `/api/v1/roles`                        | `roles:create`    | `{ slug, name, rank }` (rank 11–39) | `201 Role`                              |
+| PATCH  | `/api/v1/roles/:id`                    | `roles:update`    | `{ name?, rank? }` (one+)           | `200 Role`                              |
+| DELETE | `/api/v1/roles/:id`                    | `roles:delete`    | none                                | `204`                                   |
+| PUT    | `/api/v1/roles/:id/permissions`        | `roles:update`    | `{ permissions: PermissionRow[] }`  | `200 Role`                              |
+
+- `Account`: `{ id, email, displayName, status, twoFactorEnabled,
+twoFactorMethod, role: { id, slug, name, rank }, createdAt, manageable }`.
+  `Role`: `{ id, slug, name, rank, isSystem, accountCount, permissions,
+manageable }`. `manageable` says whether the caller may change it (D6), so
+  the admin UI can hide actions; the server enforces it anyway.
+- **D6 rank rule** on every write: the target account's role, any role being
+  assigned, the role being edited and any new rank must all be strictly
+  below the caller's rank. Nobody targets their own account (the owner
+  included). So an admin cannot touch another admin, the admin role or its
+  permissions, and nobody can assign `owner`. Violations: `403
+ACCESS_RANK_FORBIDDEN`.
+- `public` and `reviewer` cannot be assigned to accounts (`400
+ROLE_NOT_ASSIGNABLE`). A permission set may not grant a system subject
+  action the caller lacks itself (`403 PERMISSION_NOT_HELD`, `details.indexes`),
+  so an admin cannot hand out `audit_logs`.
+- Invite (Q2): creates an `invited` account plus its `INVITE_SET_PASSWORD`
+  code in one transaction (the 5-codes/hour cap answers 429 and rolls it
+  back), then emails the code. `invitationSent: false` means delivery failed;
+  the invitee can still ask for a code with `request-otp`. The email is
+  immutable afterwards (PATCH rejects it). Taken email: `409
+ACCOUNT_EMAIL_TAKEN`.
+- Disable bumps `token_version` and revokes every refresh token (`409
+ACCOUNT_ALREADY_DISABLED` the second time); revoke sessions does the same
+  without the status change. A role change applies on the next request.
+  No re-enable or resend-invite endpoint yet.
+- Roles: slugs are kebab-case and immutable; system roles keep their rank
+  and can't be deleted (`409 ROLE_SYSTEM_IMMUTABLE`). Delete answers `409
+ROLE_IN_USE` with `details.accountCount` while any account (disabled,
+  invited or deleted too) holds the role. Permission rows are validated with
+  `validatePermissionSet` (`400` with the first issue's code and
+  `details.issues`).
+- Other errors: `400 ACCESS_INVALID_REQUEST` (`details.issues` = paths and
+  messages, no values), `404 ACCOUNT_NOT_FOUND` / `ROLE_NOT_FOUND`, `409
+ROLE_SLUG_TAKEN`.
+
+### Security audit (T17, D15)
+
+`SecurityAuditService` (`src/modules/access/security-audit.service.ts`)
+writes one `audit_logs` row per security event, always on, in the same
+transaction as the change it records. Events with no write of their own
+(failed sign-in, failed re-auth) insert a standalone row. Action names live
+in `security-audit.constants.ts` (`<domain>.<event>`): `auth.login_succeeded`
+/ `login_failed` / `logout` / `refresh_reuse_detected` / `otp_issued`,
+`password.reset` / `set` / `changed` / `change_failed`, `two_factor.enabled`
+/ `disabled` / `verify_failed` / `manage_failed` / `reset_by_operator`,
+`account.invited` / `updated` / `role_changed` / `disabled` /
+`sessions_revoked`, `role.created` / `updated` / `deleted` /
+`permissions_replaced`.
+
+- `target_id` is the target's `document_id`; `subject` is the system subject
+  (`accounts`, `roles`) or null for sign-in and self-service events; `ip` is
+  the resolved client IP.
+- Metadata holds names only: field names, role slugs, a 2FA method, an OTP
+  purpose, a reason. Never field values, codes, passwords or tokens.
+- `auth.login_failed` reasons: `unknown_account`, `no_password`,
+  `bad_password`, `not_active`. An unknown email gets no actor and no raw
+  email, only `emailHmac`: HMAC-SHA256 of the trimmed, lower-cased email
+  under a key derived from `OTP_PEPPER` with HKDF (`abyss/audit-email/v1`),
+  so repeated attempts on one address can be linked. Null when `OTP_PEPPER`
+  is unset (development only).
+- No read endpoint yet (`GET /audit-logs` is a later task).
 
 ## Core database (Prisma)
 

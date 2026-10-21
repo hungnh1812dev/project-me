@@ -11,6 +11,11 @@ import {
 } from '../../common/constants/auth.constants';
 import { type Prisma } from '../../generated/prisma/client';
 import { PrismaService } from '../../infrastructure/database/prisma.service';
+import { AUDIT_ACTIONS } from '../access/security-audit.constants';
+import {
+  SecurityAuditService,
+  selfActor,
+} from '../access/security-audit.service';
 import { VersionCache } from '../access/version-cache';
 
 /** Where a refresh token was issued from (stored for session listings). */
@@ -78,16 +83,19 @@ export class RefreshTokenService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly versions: VersionCache,
+    private readonly audit: SecurityAuditService,
   ) {}
 
-  /** Starts a new family for a fresh login. Returns the raw token. */
-  async issue(accountId: number, meta: ClientMeta): Promise<string> {
-    const { token } = await this.create(
-      this.prisma,
-      accountId,
-      randomUUID(),
-      meta,
-    );
+  /**
+   * Starts a new family for a fresh login. Returns the raw token. Pass `tx`
+   * to issue it inside the caller's transaction (with its audit row).
+   */
+  async issue(
+    accountId: number,
+    meta: ClientMeta,
+    tx: Tx = this.prisma,
+  ): Promise<string> {
+    const { token } = await this.create(tx, accountId, randomUUID(), meta);
     return token;
   }
 
@@ -119,7 +127,7 @@ export class RefreshTokenService {
         const now = new Date();
         const { account } = current;
         if (current.replacedById !== null) {
-          return this.graceOrReuse(tx, current.id, now);
+          return this.graceOrReuse(tx, current.id, now, meta);
         }
 
         if (current.revokedAt !== null || current.expiresAt <= now) {
@@ -146,7 +154,7 @@ export class RefreshTokenService {
           // A concurrent rotation won: drop the unused new token, then judge
           // this request like any late one.
           await tx.refreshToken.delete({ where: { id: next.id } });
-          return this.graceOrReuse(tx, current.id, now);
+          return this.graceOrReuse(tx, current.id, now, meta);
         }
 
         return {
@@ -166,14 +174,29 @@ export class RefreshTokenService {
     return result;
   }
 
-  /** Logout: revokes the family of `rawToken`, whatever its state. */
-  async revokeFamilyOf(rawToken: string): Promise<void> {
+  /**
+   * Logout: revokes the family of `rawToken`, whatever its state, and
+   * audits it (D15 token revoke) in the same transaction.
+   */
+  async revokeFamilyOf(rawToken: string, meta: ClientMeta): Promise<void> {
     const current = await this.prisma.refreshToken.findUnique({
       where: { tokenHash: hashRefreshToken(rawToken) },
-      select: { familyId: true },
+      select: {
+        familyId: true,
+        accountId: true,
+        account: { select: { documentId: true } },
+      },
     });
     if (current === null) return;
-    await this.revokeFamilyTx(this.prisma, current.familyId, new Date());
+    await this.prisma.$transaction(async (tx) => {
+      await this.revokeFamilyTx(tx, current.familyId, new Date());
+      await this.audit.record(tx, {
+        actor: selfActor(current.accountId),
+        action: AUDIT_ACTIONS.AUTH_LOGOUT,
+        targetId: current.account.documentId,
+        ip: meta.ip,
+      });
+    });
   }
 
   /** Password written (T12): every session of the account ends. */
@@ -190,6 +213,7 @@ export class RefreshTokenService {
     tx: Tx,
     tokenId: number,
     now: Date,
+    meta: ClientMeta,
   ): Promise<RotationResult> {
     // Re-read: a rotation that won the row lock is committed by now.
     const token = await tx.refreshToken.findUniqueOrThrow({
@@ -229,7 +253,14 @@ export class RefreshTokenService {
       successor.expiresAt > now &&
       account.status === 'active' &&
       account.deletedAt === null;
-    if (!inGrace) return this.handleReuse(tx, token.accountId, token.familyId);
+    if (!inGrace) {
+      return this.handleReuse(
+        tx,
+        { id: token.accountId, documentId: account.documentId },
+        token.familyId,
+        meta,
+      );
+    }
     return {
       kind: 'grace',
       account: {
@@ -242,15 +273,22 @@ export class RefreshTokenService {
 
   private async handleReuse(
     tx: Tx,
-    accountId: number,
+    account: { readonly id: number; readonly documentId: string },
     familyId: string,
+    meta: ClientMeta,
   ): Promise<RotationResult> {
     await this.revokeFamilyTx(tx, familyId, new Date());
     await tx.account.update({
-      where: { id: accountId },
+      where: { id: account.id },
       data: { tokenVersion: { increment: 1 } },
     });
-    return { kind: 'reuse', accountId, familyId };
+    await this.audit.record(tx, {
+      actor: selfActor(account.id),
+      action: AUDIT_ACTIONS.AUTH_REFRESH_REUSE_DETECTED,
+      targetId: account.documentId,
+      ip: meta.ip,
+    });
+    return { kind: 'reuse', accountId: account.id, familyId };
   }
 
   private async revokeFamilyTx(

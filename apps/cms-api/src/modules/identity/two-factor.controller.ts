@@ -79,6 +79,7 @@ export class TwoFactorController {
     return this.twoFactor.enable(
       req.user.accountId,
       parseBody(enableTwoFactorSchema, body),
+      clientMetaOf(this.clientIp, req),
     );
   }
 
@@ -93,6 +94,7 @@ export class TwoFactorController {
     return this.twoFactor.disable(
       req.user.accountId,
       parseBody(disableTwoFactorSchema, body),
+      clientMetaOf(this.clientIp, req),
     );
   }
 
@@ -101,7 +103,10 @@ export class TwoFactorController {
   @UseGuards(JwtAuthGuard)
   @Throttle(RATE_LIMIT_POLICIES.TWO_FACTOR_EMAIL_CHALLENGE)
   sendEmailCode(@Req() req: AuthenticatedRequest): Promise<void> {
-    return this.twoFactor.sendEmailCode(req.user.accountId);
+    return this.twoFactor.sendEmailCode(
+      req.user.accountId,
+      clientMetaOf(this.clientIp, req),
+    );
   }
 
   /** Same response as a password-only login: access token + refresh cookie. */
@@ -126,9 +131,10 @@ export class TwoFactorController {
   @Post(API_ROUTES.TWO_FACTOR.EMAIL_CHALLENGE)
   @HttpCode(HttpStatus.ACCEPTED)
   @Throttle(RATE_LIMIT_POLICIES.TWO_FACTOR_EMAIL_CHALLENGE)
-  emailChallenge(@Body() body: unknown): Promise<void> {
+  emailChallenge(@Body() body: unknown, @Req() req: Request): Promise<void> {
     return this.twoFactor.emailChallenge(
       parseBody(emailChallengeSchema, body).tempToken,
+      clientMetaOf(this.clientIp, req),
     );
   }
 }

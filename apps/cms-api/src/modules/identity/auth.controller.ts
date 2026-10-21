@@ -160,7 +160,7 @@ export class AuthController {
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
   ): Promise<void> {
-    await this.auth.logout(refreshCookieOf(req));
+    await this.auth.logout(refreshCookieOf(req), this.clientMeta(req));
     clearRefreshCookie(res);
   }
 

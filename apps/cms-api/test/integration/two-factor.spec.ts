@@ -25,6 +25,10 @@ import {
   type MailMessage,
   type MailSender,
 } from '../../src/infrastructure/mail/mail.port';
+import {
+  AUDIT_ACTIONS,
+  type AuditAction,
+} from '../../src/modules/access/security-audit.constants';
 import { SecretBox } from '../../src/modules/identity/crypto/secret-box';
 import {
   OTP,
@@ -174,6 +178,15 @@ describe('Two-factor authentication (D8, SPEC §9, T13; Postgres 16 via Testcont
     now += STEP_MS;
   }
 
+  /** Metadata of the audit rows of `action` that target the account. */
+  async function auditMetadata(action: AuditAction, documentId: string) {
+    const rows = await db.prisma.auditLog.findMany({
+      where: { action, targetId: documentId },
+      orderBy: { id: 'asc' },
+    });
+    return rows.map((row) => row.metadata);
+  }
+
   async function createAccount(): Promise<Account> {
     accountCount += 1;
     return db.prisma.account.create({
@@ -295,6 +308,12 @@ describe('Two-factor authentication (D8, SPEC §9, T13; Postgres 16 via Testcont
       expect(res.status).toBe(HttpStatus.FORBIDDEN);
       expect(errorCodeOf(res)).toBe(AUTH_ERROR_CODES.INVALID_CREDENTIALS);
       expect((await me(accessToken)).status).toBe(HttpStatus.OK);
+      expect(
+        await auditMetadata(
+          AUDIT_ACTIONS.TWO_FACTOR_MANAGE_FAILED,
+          account.documentId,
+        ),
+      ).toEqual([{ operation: 'enable', reason: 'bad_password' }]);
     });
 
     it('rejects a wrong first code with 403', async () => {
@@ -308,11 +327,23 @@ describe('Two-factor authentication (D8, SPEC §9, T13; Postgres 16 via Testcont
       });
       expect(res.status).toBe(HttpStatus.FORBIDDEN);
       expect(errorCodeOf(res)).toBe(AUTH_ERROR_CODES.INVALID_2FA_CODE);
+      expect(
+        await auditMetadata(
+          AUDIT_ACTIONS.TWO_FACTOR_MANAGE_FAILED,
+          account.documentId,
+        ),
+      ).toEqual([{ operation: 'enable', reason: 'bad_code' }]);
     });
 
     it('enables TOTP, shows it in /me and refuses a second setup', async () => {
       const account = await createAccount();
       const { accessToken } = await withTotp(account);
+      expect(
+        await auditMetadata(
+          AUDIT_ACTIONS.TWO_FACTOR_ENABLED,
+          account.documentId,
+        ),
+      ).toEqual([{ method: 'totp' }]);
       // Enabling does not end the session (T13 Q10).
       const profile = await me(accessToken);
       expect(profile.status).toBe(HttpStatus.OK);
@@ -359,6 +390,13 @@ describe('Two-factor authentication (D8, SPEC §9, T13; Postgres 16 via Testcont
       const { accessToken } = res.body as { accessToken: string };
       expect((await me(accessToken)).status).toBe(HttpStatus.OK);
       expect(setCookies(res)).toHaveLength(1);
+      // The TOTP-enable flow signed in once with the password only.
+      expect(
+        await auditMetadata(
+          AUDIT_ACTIONS.AUTH_LOGIN_SUCCEEDED,
+          account.documentId,
+        ),
+      ).toContainEqual({ twoFactorMethod: 'totp' });
     });
 
     it('rejects a replayed code, even with a new temp token', async () => {
@@ -387,6 +425,12 @@ describe('Two-factor authentication (D8, SPEC §9, T13; Postgres 16 via Testcont
         const wrong = await post(VERIFY).send({ tempToken, code: '000000' });
         expect(errorCodeOf(wrong)).toBe(AUTH_ERROR_CODES.INVALID_2FA_CODE);
       }
+      expect(
+        await auditMetadata(
+          AUDIT_ACTIONS.TWO_FACTOR_VERIFY_FAILED,
+          account.documentId,
+        ),
+      ).toHaveLength(TWO_FACTOR_TEMP_TOKEN_MAX_ATTEMPTS);
       const res = await post(VERIFY).send({
         tempToken,
         code: await totpNow(secret),
@@ -512,6 +556,21 @@ describe('Two-factor authentication (D8, SPEC §9, T13; Postgres 16 via Testcont
         code: await totpNow(secret),
       });
       expect(ok.status).toBe(HttpStatus.NO_CONTENT);
+      expect(
+        await auditMetadata(
+          AUDIT_ACTIONS.TWO_FACTOR_MANAGE_FAILED,
+          account.documentId,
+        ),
+      ).toEqual([
+        { operation: 'disable', reason: 'bad_password' },
+        { operation: 'disable', reason: 'bad_code' },
+      ]);
+      expect(
+        await auditMetadata(
+          AUDIT_ACTIONS.TWO_FACTOR_DISABLED,
+          account.documentId,
+        ),
+      ).toEqual([{ method: 'totp' }]);
       const row = await db.prisma.account.findUniqueOrThrow({
         where: { id: account.id },
         select: {
@@ -573,6 +632,20 @@ describe('Two-factor authentication (D8, SPEC §9, T13; Postgres 16 via Testcont
         code: lastCodeMailedTo(account.email),
       });
       expect(off.status).toBe(HttpStatus.NO_CONTENT);
+      for (const action of [
+        AUDIT_ACTIONS.TWO_FACTOR_ENABLED,
+        AUDIT_ACTIONS.TWO_FACTOR_DISABLED,
+      ]) {
+        expect(await auditMetadata(action, account.documentId)).toEqual([
+          { method: 'email' },
+        ]);
+      }
+      const issued = await auditMetadata(
+        AUDIT_ACTIONS.AUTH_OTP_ISSUED,
+        account.documentId,
+      );
+      expect(issued.length).toBeGreaterThanOrEqual(3);
+      expect(issued).toContainEqual({ purpose: 'LOGIN_2FA_EMAIL' });
     });
 
     it('rejects a used email code', async () => {
@@ -661,6 +734,20 @@ describe('Two-factor authentication (D8, SPEC §9, T13; Postgres 16 via Testcont
         ` ${account.email.toUpperCase()} `,
       );
       expect(result).toEqual({ email: account.email, previousMethod: 'totp' });
+      const audit = await db.prisma.auditLog.findMany({
+        where: {
+          action: AUDIT_ACTIONS.TWO_FACTOR_RESET_BY_OPERATOR,
+          targetId: account.documentId,
+        },
+      });
+      expect(audit).toHaveLength(1);
+      expect(audit[0]).toMatchObject({
+        actorId: null,
+        actorType: 'system',
+        subject: 'accounts',
+        ip: null,
+        metadata: { previousMethod: 'totp' },
+      });
 
       const after = await db.prisma.account.findUniqueOrThrow({
         where: { id: account.id },
