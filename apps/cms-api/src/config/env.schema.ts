@@ -6,6 +6,7 @@ import {
   JWT_KID_PATTERN,
   LOGIN_RATE_LIMIT_OVERRIDE_OPT_IN,
   MAIL_PROVIDERS,
+  MEDIA_PROVIDERS,
   MAX_PORT,
   MAX_RATE_LIMIT_OVERRIDE,
   MIN_SECRET_BYTES,
@@ -75,6 +76,13 @@ const optionalKid = z.preprocess(
     })
     .optional(),
 );
+
+/** Keys required whenever MEDIA_PROVIDER=cloudinary (any NODE_ENV). */
+const CLOUDINARY_REQUIRED_KEYS = [
+  'CLOUDINARY_CLOUD_NAME',
+  'CLOUDINARY_API_KEY',
+  'CLOUDINARY_API_SECRET',
+] as const;
 
 /** Keys required whenever MAIL_PROVIDER=smtp (any NODE_ENV). */
 const SMTP_REQUIRED_KEYS = ['SMTP_HOST', 'MAIL_FROM'] as const;
@@ -152,6 +160,25 @@ export const envSchema = z
     SMTP_USER: z.preprocess(emptyToUndefined, z.string().min(1).optional()),
     SMTP_PASSWORD: z.preprocess(emptyToUndefined, z.string().min(1).optional()),
     MAIL_FROM: z.preprocess(emptyToUndefined, z.string().min(1).optional()),
+    MEDIA_PROVIDER: z
+      .enum(MEDIA_PROVIDERS)
+      .default(CONFIG_DEFAULTS.MEDIA_PROVIDER),
+    CLOUDINARY_CLOUD_NAME: z.preprocess(
+      emptyToUndefined,
+      z.string().min(1).optional(),
+    ),
+    CLOUDINARY_API_KEY: z.preprocess(
+      emptyToUndefined,
+      z.string().min(1).optional(),
+    ),
+    CLOUDINARY_API_SECRET: z.preprocess(
+      emptyToUndefined,
+      z.string().min(1).optional(),
+    ),
+    CLOUDINARY_FOLDER: z.preprocess(
+      emptyToUndefined,
+      z.string().min(1).optional(),
+    ),
   })
   .superRefine((env, ctx) => {
     if (env.MAIL_PROVIDER === 'smtp') {
@@ -161,6 +188,17 @@ export const envSchema = z
             code: 'custom',
             path: [key],
             message: `${key} is required when MAIL_PROVIDER=smtp`,
+          });
+        }
+      }
+    }
+    if (env.MEDIA_PROVIDER === 'cloudinary') {
+      for (const key of CLOUDINARY_REQUIRED_KEYS) {
+        if (env[key] === undefined) {
+          ctx.addIssue({
+            code: 'custom',
+            path: [key],
+            message: `${key} is required when MEDIA_PROVIDER=cloudinary`,
           });
         }
       }
@@ -207,6 +245,14 @@ export const envSchema = z
           message: `${key} is not allowed in production without ALLOW_LOGIN_RATE_LIMIT_OVERRIDE=${LOGIN_RATE_LIMIT_OVERRIDE_OPT_IN}`,
         });
       }
+    }
+
+    if (env.MEDIA_PROVIDER === 'fake') {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['MEDIA_PROVIDER'],
+        message: 'MEDIA_PROVIDER=fake is not allowed in production',
+      });
     }
 
     if (env.MAIL_PROVIDER === 'console') {

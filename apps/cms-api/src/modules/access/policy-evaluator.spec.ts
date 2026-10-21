@@ -454,4 +454,54 @@ describe('rowFilter', () => {
       parameters: [null],
     });
   });
+
+  describe('media row filter (T27)', () => {
+    const MEDIA = 'media';
+    const presetSql = (filter: RowFilter) => {
+      if (!filter.allowed || filter.where === null) return filter;
+      return db
+        .selectFrom('file_library')
+        .selectAll()
+        .where(filter.where)
+        .compile();
+    };
+
+    it('restricts the reviewer to preset rows through the policy, not the role name', () => {
+      const renamed = { ...systemRole('reviewer'), slug: 'renamed-reviewer' };
+      const compiled = presetSql(
+        evaluator.rowFilter(reviewerActor(7, 3, renamed), read, MEDIA),
+      );
+      expect(compiled).toMatchObject({
+        sql: 'select * from "file_library" where "is_reviewer_preset" = true',
+      });
+    });
+
+    it('also restricts anonymous actors holding a media read row', () => {
+      const role = systemRole('public', [grant(MEDIA, read)]);
+      expect(
+        presetSql(evaluator.rowFilter(anonymousActor(role), read, MEDIA)),
+      ).toMatchObject({
+        sql: 'select * from "file_library" where "is_reviewer_preset" = true',
+      });
+    });
+
+    it('leaves accounts unrestricted', () => {
+      expect(
+        evaluator.rowFilter(account(systemRole('editor')), read, MEDIA),
+      ).toEqual({ allowed: true, where: null });
+      expect(
+        evaluator.rowFilter(account(systemRole('owner')), read, MEDIA),
+      ).toEqual({ allowed: true, where: null });
+    });
+
+    it('does not touch content subjects for the reviewer', () => {
+      expect(
+        evaluator.rowFilter(
+          reviewerActor(7, 3, systemRole('reviewer')),
+          read,
+          CONTENT,
+        ),
+      ).toEqual({ allowed: true, where: null });
+    });
+  });
 });

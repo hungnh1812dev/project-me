@@ -29,7 +29,10 @@
     "@prisma/adapter-pg": "7.10.1",
     "@prisma/client": "7.10.1",
     "argon2": "0.45.1",
+    "busboy": "1.6.0",
+    "cloudinary": "2.11.0",
     "cookie-parser": "1.4.7",
+    "file-type": "22.2.0",
     "jsonwebtoken": "9.0.3",
     "kysely": "0.28.18",
     "nodemailer": "10.1.7",
@@ -41,6 +44,7 @@
     "reflect-metadata": "0.2.2",
     "rxjs": "7.8.2",
     "sanitize-html": "^2.18.1",
+    "sharp": "0.35.5",
     "zod": "4.6.7"
   },
   "devDependencies": {
@@ -48,6 +52,7 @@
     "@eslint/js": "10.0.1",
     "@nestjs/testing": "11.2.7",
     "@testcontainers/postgresql": "12.2.1",
+    "@types/busboy": "1.5.5",
     "@types/cookie-parser": "1.4.10",
     "@types/express": "5.0.6",
     "@types/jest": "30.0.0",

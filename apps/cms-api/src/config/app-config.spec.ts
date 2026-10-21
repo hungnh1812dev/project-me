@@ -2,6 +2,9 @@ import {
   devEnv,
   productionEnv,
   TEST_ADMIN_ORIGIN,
+  TEST_CLOUDINARY_API_KEY,
+  TEST_CLOUDINARY_API_SECRET,
+  TEST_CLOUDINARY_CLOUD_NAME,
   TEST_JWT_KID,
   TEST_MAIL_FROM,
   TEST_SECRET_32_BYTES,
@@ -343,6 +346,74 @@ describe('loadAppConfig', () => {
       );
       expect(error.issues).toHaveLength(3);
     });
+  });
+});
+
+describe('media provider (T27)', () => {
+  it('defaults to the fake provider outside production', () => {
+    const config = loadAppConfig(devEnv());
+    expect(config.media).toEqual({ provider: 'fake', cloudinary: undefined });
+  });
+
+  it('reads the Cloudinary settings', () => {
+    const config = loadAppConfig(
+      productionEnv({ CLOUDINARY_FOLDER: 'abyss/media' }),
+    );
+    expect(config.media).toEqual({
+      provider: 'cloudinary',
+      cloudinary: {
+        cloudName: TEST_CLOUDINARY_CLOUD_NAME,
+        apiKey: TEST_CLOUDINARY_API_KEY,
+        apiSecret: TEST_CLOUDINARY_API_SECRET,
+        folder: 'abyss/media',
+      },
+    });
+  });
+
+  it.each([
+    'CLOUDINARY_CLOUD_NAME',
+    'CLOUDINARY_API_KEY',
+    'CLOUDINARY_API_SECRET',
+  ])(
+    'requires %s when MEDIA_PROVIDER=cloudinary, in any environment',
+    (key) => {
+      const error = configErrorOf(
+        devEnv({
+          MEDIA_PROVIDER: 'cloudinary',
+          CLOUDINARY_CLOUD_NAME: TEST_CLOUDINARY_CLOUD_NAME,
+          CLOUDINARY_API_KEY: TEST_CLOUDINARY_API_KEY,
+          CLOUDINARY_API_SECRET: TEST_CLOUDINARY_API_SECRET,
+          [key]: undefined,
+        }),
+      );
+      expect(error.issues).toEqual([
+        `${key}: ${key} is required when MEDIA_PROVIDER=cloudinary`,
+      ]);
+    },
+  );
+
+  it('rejects MEDIA_PROVIDER=fake in production, also when unset', () => {
+    for (const provider of ['fake', undefined]) {
+      const error = configErrorOf(productionEnv({ MEDIA_PROVIDER: provider }));
+      expect(error.issues).toContain(
+        'MEDIA_PROVIDER: MEDIA_PROVIDER=fake is not allowed in production',
+      );
+    }
+  });
+
+  it('rejects an unknown provider', () => {
+    expect(configErrorOf(devEnv({ MEDIA_PROVIDER: 's3' })).issues[0]).toMatch(
+      /^MEDIA_PROVIDER:/,
+    );
+  });
+
+  it('redacts the API key and secret in the summary', () => {
+    const summary = JSON.stringify(
+      summarizeConfig(loadAppConfig(productionEnv())),
+    );
+    expect(summary).not.toContain(TEST_CLOUDINARY_API_KEY);
+    expect(summary).not.toContain(TEST_CLOUDINARY_API_SECRET);
+    expect(summary).toContain(TEST_CLOUDINARY_CLOUD_NAME);
   });
 });
 

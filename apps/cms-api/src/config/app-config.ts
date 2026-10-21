@@ -51,6 +51,11 @@ export interface IAppConfig {
     /** Set only when MAIL_PROVIDER=smtp. */
     readonly smtp: SmtpConfig | undefined;
   };
+  readonly media: {
+    readonly provider: Env['MEDIA_PROVIDER'];
+    /** Set only when MEDIA_PROVIDER=cloudinary. */
+    readonly cloudinary: CloudinaryConfig | undefined;
+  };
   readonly secrets: {
     readonly jwtAccessSecret: string | undefined;
     readonly otpPepper: string | undefined;
@@ -68,6 +73,14 @@ export interface SmtpConfig {
   /** Unset = no SMTP auth (e.g. Mailpit). */
   readonly auth:
     { readonly user: string; readonly password: string } | undefined;
+}
+
+export interface CloudinaryConfig {
+  readonly cloudName: string;
+  readonly apiKey: string;
+  readonly apiSecret: string;
+  /** Folder every object is stored under; undefined = the account root. */
+  readonly folder: string | undefined;
 }
 
 /** Thrown when the environment does not satisfy `envSchema`. Never includes values. */
@@ -134,6 +147,10 @@ export function loadAppConfig(rawEnv: RawEnv): IAppConfig {
       from: env.MAIL_FROM,
       smtp: smtpConfigOf(env),
     },
+    media: {
+      provider: env.MEDIA_PROVIDER,
+      cloudinary: cloudinaryConfigOf(env),
+    },
     secrets: {
       jwtAccessSecret: env.JWT_ACCESS_SECRET,
       otpPepper: env.OTP_PEPPER,
@@ -155,6 +172,24 @@ function rateLimitOverridesOf(env: Env): Record<string, number> {
     overrides[RATE_LIMIT_RULE_NAMES.REFRESH_IP] = env.REFRESH_RATE_LIMIT_IP;
   }
   return overrides;
+}
+
+function cloudinaryConfigOf(env: Env): CloudinaryConfig | undefined {
+  // env.schema.ts guarantees the three keys when the provider is cloudinary.
+  if (
+    env.MEDIA_PROVIDER !== 'cloudinary' ||
+    env.CLOUDINARY_CLOUD_NAME === undefined ||
+    env.CLOUDINARY_API_KEY === undefined ||
+    env.CLOUDINARY_API_SECRET === undefined
+  ) {
+    return undefined;
+  }
+  return {
+    cloudName: env.CLOUDINARY_CLOUD_NAME,
+    apiKey: env.CLOUDINARY_API_KEY,
+    apiSecret: env.CLOUDINARY_API_SECRET,
+    folder: env.CLOUDINARY_FOLDER,
+  };
 }
 
 function smtpConfigOf(env: Env): SmtpConfig | undefined {
@@ -204,6 +239,18 @@ export function summarizeConfig(config: IAppConfig): Record<string, unknown> {
               secure: config.mail.smtp.secure,
               user: config.mail.smtp.auth?.user,
               password: secretState(config.mail.smtp.auth?.password),
+            },
+    },
+    media: {
+      provider: config.media.provider,
+      cloudinary:
+        config.media.cloudinary === undefined
+          ? undefined
+          : {
+              cloudName: config.media.cloudinary.cloudName,
+              apiKey: secretState(config.media.cloudinary.apiKey),
+              apiSecret: secretState(config.media.cloudinary.apiSecret),
+              folder: config.media.cloudinary.folder,
             },
     },
     secrets: {

@@ -17,6 +17,10 @@ export const TEST_MAIL_FROM = 'Abyss CMS <no-reply@example.test>';
 export const TEST_SMTP_USER = 'mailer@example.test';
 export const TEST_SMTP_PASSWORD = 'smtp-app-password';
 
+export const TEST_CLOUDINARY_CLOUD_NAME = 'test-cloud';
+export const TEST_CLOUDINARY_API_KEY = 'test-cloudinary-key';
+export const TEST_CLOUDINARY_API_SECRET = 'test-cloudinary-secret';
+
 export function devEnv(
   overrides: Record<string, string | undefined> = {},
 ): Record<string, string | undefined> {
@@ -30,6 +34,10 @@ export function productionEnv(
     NODE_ENV: 'production',
     DATABASE_URL: TEST_DATABASE_URL,
     MAIL_PROVIDER: 'smtp',
+    MEDIA_PROVIDER: 'cloudinary',
+    CLOUDINARY_CLOUD_NAME: TEST_CLOUDINARY_CLOUD_NAME,
+    CLOUDINARY_API_KEY: TEST_CLOUDINARY_API_KEY,
+    CLOUDINARY_API_SECRET: TEST_CLOUDINARY_API_SECRET,
     SMTP_HOST: TEST_SMTP_HOST,
     MAIL_FROM: TEST_MAIL_FROM,
     ADMIN_ORIGIN: TEST_ADMIN_ORIGIN,

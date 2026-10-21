@@ -73,6 +73,12 @@ services:
       TOTP_ENC_KEY: ${SMOKE_TOTP_ENC_KEY:?set by scripts/smoke.sh}
       TOTP_ENC_KID: ${SMOKE_TOTP_ENC_KID:?set by scripts/smoke.sh}
       TOTP_ISSUER: Abyss Smoke
+      # T27: production rejects MEDIA_PROVIDER=fake. Dummy Cloudinary values:
+      # the stack boots, real uploads are not exercised here.
+      MEDIA_PROVIDER: cloudinary
+      CLOUDINARY_CLOUD_NAME: smoke-dummy
+      CLOUDINARY_API_KEY: smoke-dummy-key
+      CLOUDINARY_API_SECRET: smoke-dummy-secret
       # T18b: the e2e suite signs in many times from one IP; raise the login
       # limits here only (production keeps the defaults, 10 per IP / 5 per email).
       # Production refuses the two limits below without this exact opt-in.

@@ -63,6 +63,10 @@ export const SYSTEM_SUBJECT_ACTIONS = {
   reviewer_settings: [PermissionAction.read, PermissionAction.update],
 } as const satisfies Record<string, readonly PermissionAction[]>;
 
+/** The file library subject (T27); read-only actors only see preset rows. */
+export const MEDIA_SUBJECT =
+  'media' satisfies keyof typeof SYSTEM_SUBJECT_ACTIONS;
+
 export type SystemSubject = keyof typeof SYSTEM_SUBJECT_ACTIONS;
 
 export const SYSTEM_SUBJECTS = Object.keys(

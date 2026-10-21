@@ -238,6 +238,7 @@ in `src/common/constants/limits.constants.ts` (`RATE_LIMIT_POLICIES`):
 | `TWO_FACTOR_EMAIL_CHALLENGE` | 5 / 15 min per IP (email-challenge + email/send-code, shared) |
 | `TWO_FACTOR_MANAGE`          | 5 / 15 min per IP (totp/setup + enable + disable, shared)     |
 | `ACCOUNT_INVITE`             | 20 / hour per IP, then 10 / hour per caller (invite + resend) |
+| `MEDIA_UPLOAD`               | 120 / hour per IP, then 60 / hour per caller (`POST /media`)  |
 
 - Optional override (T18b): `LOGIN_RATE_LIMIT_IP` and `LOGIN_RATE_LIMIT_EMAIL`
   replace the `login:ip` (10) and `login:email` (5) limits per 15 min. Read at
@@ -496,6 +497,16 @@ Order of every write: allowlist (D4: resent `"***"` dropped, `FIELD_UNKNOWN` / `
 ### Documents, presence (T26, `src/modules/documents`)
 
 `POST /documents/:slug/:documentId/presence` (SPEC D16), body `{ state?: 'viewing' | 'editing' }` (default `editing`, nothing else allowed). Needs `update` on the content type and the document's draft row inside the actor's `update` row conditions (else 404). Only account sessions: anonymous, reviewer and API token callers get 403. Heartbeat every 20 s; an entry expires 45 s after its last heartbeat (`PRESENCE_TTL_MS`). 200 returns everyone active on the document, each `{ accountId, displayName, state, lastSeenAt }` and nothing else (`accountId` is the account's public UUID, the `id` of `GET /auth/me`, never the internal numeric id; the caller is included, clients filter themselves out). In-memory store, one replica; capped at `PRESENCE_MAX_ENTRIES` (new editors get 429 at the cap). No audit event (not a content change).
+
+### Media (T27, D12, `src/modules/media`, `src/infrastructure/media`)
+
+- `POST /media`: `multipart/form-data`, one `file` part and an optional `alt` text field (max 500 characters); any other part is 400 `MEDIA_INVALID_UPLOAD`, a non-multipart body is 415. Needs `media` `create`; JWT sessions only. Throttled by `MEDIA_UPLOAD`. 201 returns `{ id, fileName, mimeType, size, width, height, alt, url, thumbnailUrl, isReviewerPreset, createdAt }` (`id` = `document_id`; the storage key and hash are never returned).
+- Pipeline (`upload.pipeline.ts`): `busboy` streams the file to a temp file (deleted afterwards), so a request is never buffered whole. The type is detected from the magic bytes with `file-type`; the declared type and the file name are ignored. Allowlist: JPEG, PNG, WebP, GIF, AVIF, PDF, MP4. Anything else, SVG and HTML included, is 415 `MEDIA_UNSUPPORTED_TYPE`. Limits per detected type (`MEDIA_MAX_BYTES`): image 10 MB, pdf 20 MB, video 100 MB; over the limit stops the stream and answers 413 `MEDIA_FILE_TOO_LARGE`; a `Content-Length` far above the largest limit is refused up front.
+- Images are decoded and re-encoded with sharp in the same format (orientation applied, ICC profile kept, no EXIF/GPS/XMP, input capped at 50 million pixels); bytes that pass the magic check but do not decode are 415. This also drops anything appended to the image (polyglots). PDF and MP4 are stored as received (their magic bytes are checked, not their content); they are served from the storage provider's domain, never the API's.
+- The storage key is a UUIDv7 (`src/common/uuidv7.ts`); the full SHA-256 of the stored bytes is kept in `file_library.sha256` (no dedupe yet). The file name is kept only for display (path and control characters removed, 255 characters). If the row cannot be written, the stored object is removed again.
+- Storage port: `MEDIA_STORAGE` (`storage.port.ts`: `put`, `delete`). `MEDIA_PROVIDER=fake` keeps bytes in memory (dev and tests, rejected in production); `cloudinary` uploads with the SDK (`CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`, optional `CLOUDINARY_FOLDER`; all three required with that provider). Rows from both are stored with `provider = cloudinary`. Images get a thumbnail URL (320 px longest side); PDF is stored as a Cloudinary `raw` resource, video as `video`.
+- `GET /media?page=&pageSize=` (the shared list convention): newest first, soft-deleted rows hidden. Needs `media` `read`. The policy row filter (`PolicyEvaluator.rowFilter`) limits read-only actors (reviewer, anonymous) to `is_reviewer_preset = true` rows, whatever their role is called. Reviewer sessions reach this route at T32.
+- Not here: `PATCH /media/:id` (alt), delete and purge (T28).
 
 ### Security audit (T17, D15)
 

@@ -4,6 +4,7 @@ import { PermissionAction } from '../../generated/prisma/client';
 import {
   CONTENT_WILDCARD_SUBJECT,
   type FieldWriteAction,
+  MEDIA_SUBJECT,
 } from './access.constants';
 import {
   type ActorContext,
@@ -138,6 +139,31 @@ export class PolicyEvaluator {
    * (e.g. its field was removed) grants nothing: it fails closed.
    */
   rowFilter(
+    actor: ActorContext,
+    action: PermissionAction,
+    subject: string,
+    table?: string,
+  ): RowFilter {
+    const filter = this.conditionRowFilter(actor, action, subject, table);
+    if (!filter.allowed) return filter;
+    const policy = this.policyOf(actor);
+    if (subject !== MEDIA_SUBJECT || !policy.readOnly) return filter;
+    // Read-only actors (reviewer, anonymous) only see preset media (T27).
+    const column =
+      table === undefined
+        ? 'is_reviewer_preset'
+        : `${table}.is_reviewer_preset`;
+    const preset = sql<SqlBool>`${sql.ref(column)} = true`;
+    return {
+      allowed: true,
+      where:
+        filter.where === null
+          ? preset
+          : sql<SqlBool>`(${filter.where} and ${preset})`,
+    };
+  }
+
+  private conditionRowFilter(
     actor: ActorContext,
     action: PermissionAction,
     subject: string,

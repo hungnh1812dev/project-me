@@ -68,6 +68,10 @@ export const API_ROUTES = {
     UNPUBLISH: ':slug/:documentId/unpublish',
     PRESENCE: ':slug/:documentId/presence',
   },
+  /** SPEC §9 media (T27 upload + list). */
+  MEDIA: {
+    ROOT: 'media',
+  },
 } as const;
 
 /** Route param holding a document_id in API_ROUTES.ACCOUNTS / ROLES. */
