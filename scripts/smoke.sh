@@ -24,6 +24,10 @@ SECRET_BYTES="32"
 POLL_INTERVAL_SECONDS="2"
 LOOPBACK="127.0.0.1"
 API_PREFIX="/api/v1"
+# Web (Next.js) routing checks: a path that never exists, and the same path
+# with a trailing slash (Next.js redirects before routing: 308 to the slashless form).
+WEB_UNKNOWN_PATH="/this-page-does-not-exist"
+WEB_SLASH_PATH="$WEB_UNKNOWN_PATH/"
 HEALTH_OK_BODY='"status":"ok"'
 # cms-api package scripts run through npm inside the image (no pnpm there).
 DB_MIGRATE_CMD=(npm run --silent db:migrate)
@@ -187,9 +191,30 @@ done
 
 echo "Routing"
 request GET "$WEB_ORIGIN/"
-expect_status "web SPA /" 200
-request GET "$WEB_ORIGIN/some/client/route"
-expect_status "web SPA fallback for a client route" 200
+expect_status "web /" 200
+# Next.js, not an SPA: an unknown path is a real 404, never a 3xx or 200 fallback.
+request GET "$WEB_ORIGIN$WEB_UNKNOWN_PATH"
+expect_status "web unknown path is a 404 (no SPA fallback)" 404
+# Trailing-slash page: Next.js answers 308 with a relative Location (never the
+# container's own http://<host>:<port> URL).
+request GET "$WEB_ORIGIN$WEB_SLASH_PATH"
+expect_status "web page with a trailing slash redirects" 308
+web_location="$(header Location)"
+if [[ "$web_location" == "$WEB_UNKNOWN_PATH" ]]; then
+  pass "web redirect Location is relative ($web_location)"
+else
+  fail "web redirect Location: expected '$WEB_UNKNOWN_PATH', got '$web_location'"
+fi
+# A hashed build asset is cached as immutable.
+request GET "$WEB_ORIGIN/"
+web_asset="$(grep -oE '/_next/static/[^"]+\.(js|css)' "$BODY" | head -n 1 || true)"
+if [[ -z "$web_asset" ]]; then
+  fail "web home page references no /_next/static asset"
+else
+  request GET "$WEB_ORIGIN$web_asset"
+  expect_status "web static asset $web_asset" 200
+  if [[ "$(header Cache-Control)" == *immutable* ]]; then pass "web static asset is cached as immutable"; else fail "web static asset Cache-Control: '$(header Cache-Control)'"; fi
+fi
 request GET "$ADMIN_ORIGIN/"
 expect_status "admin SPA /" 200
 request GET "$ADMIN_ORIGIN/accounts/settings"
