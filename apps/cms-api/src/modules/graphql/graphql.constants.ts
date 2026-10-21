@@ -82,8 +82,9 @@ export const GRAPHQL_SCHEMA_ERROR_MESSAGES = {
 } as const;
 
 /**
- * Request limits (docs/modules/graphql.md "Limits", Q-G4). The endpoint uses
- * `MAX_TOKENS` now; the other three rules and the body check land in GQ3.
+ * Request limits (docs/modules/graphql.md "Limits", Q-G4). Body size is
+ * checked before parsing (413), the rest while parsing and validating
+ * (400 `GRAPHQL_LIMIT_EXCEEDED`).
  */
 export const GRAPHQL_LIMITS = {
   MAX_BODY_BYTES: 32 * 1024,
@@ -94,6 +95,21 @@ export const GRAPHQL_LIMITS = {
   /** Per-caller schemas kept in memory (one per distinct readable set). */
   MAX_CACHED_SCHEMAS: 64,
 } as const;
+
+/** Why a document is over a limit (never echoes any of its content). */
+export const GRAPHQL_LIMIT_MESSAGES = {
+  BODY_TOO_LARGE: `The request body is larger than ${GRAPHQL_LIMITS.MAX_BODY_BYTES} bytes.`,
+  TOKENS: `The query has more than ${GRAPHQL_LIMITS.MAX_TOKENS} tokens.`,
+  DEPTH: `The query is nested deeper than ${GRAPHQL_LIMITS.MAX_DEPTH} levels.`,
+  ROOT_FIELDS: `The query selects more than ${GRAPHQL_LIMITS.MAX_ROOT_FIELDS} root fields (aliases count).`,
+  FIELD_NODES: `The query selects more than ${GRAPHQL_LIMITS.MAX_FIELD_NODES} fields in total.`,
+} as const;
+
+/** graphql-js text of the parser's `maxTokens` abort. */
+export const TOKEN_LIMIT_PATTERN = /Document contains more than \d+ tokens/;
+
+/** Dev-only introspection roots; left out of the depth, root and node counts. */
+export const INTROSPECTION_ROOT_FIELDS = ['__schema', '__type'] as const;
 
 /** Request body keys of `POST /graphql`. */
 export const GRAPHQL_REQUEST_MEDIA_TYPE = 'application/json';

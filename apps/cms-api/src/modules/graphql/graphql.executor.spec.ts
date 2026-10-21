@@ -72,7 +72,34 @@ describe('GraphqlExecutor', () => {
     const result = await executor(false).run(actor, { query }, 'rid');
     expect(result.status).toBe(400);
     expect(result.body.errors?.[0]?.extensions.code).toBe(
+      'GRAPHQL_LIMIT_EXCEEDED',
+    );
+  });
+
+  it('keeps a plain syntax error as GRAPHQL_PARSE_FAILED', async () => {
+    const result = await executor(false).run(actor, { query: '{ ' }, 'rid');
+    expect(result.status).toBe(400);
+    expect(result.body.errors?.[0]?.extensions.code).toBe(
       'GRAPHQL_PARSE_FAILED',
     );
+  });
+
+  it('refuses an over-limit document before loading the policy or schema', async () => {
+    const policy = jest.fn();
+    const schemaFor = jest.fn();
+    const guarded = new GraphqlExecutor(
+      { schemaFor } as unknown as GraphqlSchemaProvider,
+      { policy } as unknown as AccessPolicyService,
+      { isProduction: false } as IAppConfig,
+    );
+    const query = `{ ${'a { '.repeat(9)}x${' }'.repeat(9)} }`;
+    const result = await guarded.run(actor, { query }, 'rid');
+    expect(result.status).toBe(400);
+    expect(result.body.data).toBeUndefined();
+    expect(result.body.errors?.[0]?.extensions.code).toBe(
+      'GRAPHQL_LIMIT_EXCEEDED',
+    );
+    expect(policy).not.toHaveBeenCalled();
+    expect(schemaFor).not.toHaveBeenCalled();
   });
 });

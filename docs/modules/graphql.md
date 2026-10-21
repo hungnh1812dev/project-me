@@ -1,8 +1,7 @@
 # GraphQL read API (cms-api)
 
-Status: **proposed** (planner design, 2026-10-21). SPEC D18. Open items are
-marked `(Q-G#)` and listed at the end; until the user answers, builders follow
-the recommendation. ADR: [0003](../adr/0003-graphql-read-gateway.md).
+Status: **accepted** (user answers Q-G1..Q-G7, 2026-10-21; limits built in GQ3). SPEC D18. The
+`(Q-G#)` markers and the questions at the end record the decisions. ADR: [0003](../adr/0003-graphql-read-gateway.md).
 
 ## Scope
 
@@ -28,11 +27,19 @@ of `graphql` (graphql-js); no Apollo/Yoga/`@nestjs/graphql` (Q-G1).
    only). Body must be `application/json` `{ query, variables?,
 operationName? }`, at most `GRAPHQL_LIMITS.MAX_BODY_BYTES`; an array body
    (batch) is 400. Errors at this stage use the REST error shape
-   (`{ statusCode, errorCode, message, requestId }`): 401, 413, 415, 429.
+   (`{ statusCode, errorCode, message, requestId }`): 401, 415, 429. The
+   413 for a body over the limit is the exception: it uses the GraphQL
+   error shape (`{ errors: [{ message, extensions: { code:
+"PAYLOAD_TOO_LARGE", requestId } }] }`) and is sent by a middleware
+   (`graphql-body-limit.middleware.ts`) mounted before Nest's JSON parser,
+   from `Content-Length` or by counting a chunked body.
    There is no `PermissionGuard`: the subject differs per root field.
-2. **Parse** with `maxTokens = GRAPHQL_LIMITS.MAX_TOKENS`.
+2. **Parse** with `maxTokens = GRAPHQL_LIMITS.MAX_TOKENS`; the parser's
+   abort is reported as `GRAPHQL_LIMIT_EXCEEDED`, not a syntax error. The
+   depth, root-field and field-node rules then run alone, first, before the
+   access policy or the caller's schema is loaded.
 3. **Validate** with the graphql-js specified rules plus:
-   - `MaxDepthRule` (`MAX_DEPTH`), counted after fragment expansion;
+   - `MaxDepthRule` (`MAX_DEPTH`), counted after fragment expansion; the root field is level 1;
    - `MaxRootFieldsRule` (`MAX_ROOT_FIELDS`, aliases count; each root field
      costs one REST read);
    - `MaxFieldNodesRule` (`MAX_FIELD_NODES`, total selected fields after
@@ -229,7 +236,7 @@ role slugs.
 | ----------------- | ------ | ----------------------------------------------------------------- |
 | `MAX_BODY_BYTES`  | 32 KiB | query + variables; REST filters are far smaller                   |
 | `MAX_TOKENS`      | 2 000  | parser stops early on huge documents                              |
-| `MAX_DEPTH`       | 8      | Query > list > data > 3 component levels > media > scalar = 7     |
+| `MAX_DEPTH`       | 8      | list > data > 3 component levels > media > scalar = 7 (root = 1)  |
 | `MAX_ROOT_FIELDS` | 5      | each root field is one REST-equivalent read (rows + count + tree) |
 | `MAX_FIELD_NODES` | 500    | the full cv-page tree is ~60 fields; blocks alias spam            |
 
@@ -385,3 +392,18 @@ Architecture test (like `record-serializer.architecture.spec.ts`): files in
   applies meanwhile), depth / root-field / field-node rules, and classifying
   the `maxTokens` parse error as `GRAPHQL_LIMIT_EXCEEDED` (now
   `GRAPHQL_PARSE_FAILED`).
+
+## Implementation notes (GQ3)
+
+- `rules/limits.rules.ts`: `MaxDepthRule`, `MaxRootFieldsRule`,
+  `MaxFieldNodesRule`. One memoized walk per operation expands fragments and
+  inline fragments (each fragment is measured once, so fragments that spread
+  each other many times stay linear; a cycle counts as empty and is reported
+  by graphql-js's own rule). Each operation of a document is judged alone.
+  Aliases and repeated fields each count. `__schema` / `__type` (dev
+  introspection roots) are left out of all three counts; production refuses
+  them in validation.
+- Every limit error carries `extensions.code = GRAPHQL_LIMIT_EXCEEDED`
+  (`error-format.ts` keeps it); messages never echo the query.
+- The body cap counts bytes on the wire. A gzip-compressed body is counted
+  compressed; the global 100 KB parser limit still bounds the inflated size.

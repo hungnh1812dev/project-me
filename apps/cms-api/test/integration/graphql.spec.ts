@@ -1,4 +1,6 @@
 import { randomUUID } from 'node:crypto';
+import { request as httpRequest } from 'node:http';
+import type { AddressInfo } from 'node:net';
 
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import type { StartedPostgreSqlContainer } from '@testcontainers/postgresql';
@@ -31,6 +33,7 @@ import { createCoreTemplate } from '../fixtures/core-db.fixture';
 import {
   dbEnvOf,
   devEnv,
+  productionEnv,
   TEST_ADMIN_ORIGIN,
   TEST_JWT_KID,
   TEST_SECRET_32_BYTES,
@@ -38,6 +41,8 @@ import {
 } from '../fixtures/env.fixture';
 import { startPostgres } from '../fixtures/postgres.fixture';
 import { createTestApp } from '../fixtures/test-app';
+import { AccessPolicyService } from '../../src/modules/access/access-policy.service';
+import { DocumentsQueryService } from '../../src/modules/documents/documents.query.service';
 
 const PASSWORD = 'correct horse battery staple';
 const DOCUMENTS = '/api/v1/documents';
@@ -173,6 +178,7 @@ describe('GraphQL read API (GQ2; Postgres 16 via Testcontainers)', () => {
   let narrowReader: string;
   let priorityThree: string;
   let publicRoleId: string;
+  let prodApp: NestExpressApplication;
 
   beforeAll(async () => {
     postgres = await startPostgres();
@@ -246,6 +252,18 @@ describe('GraphQL read API (GQ2; Postgres 16 via Testcontainers)', () => {
     const roles = await db.prisma.role.findMany({
       select: { slug: true, documentId: true },
     });
+    prodApp = await createTestApp(
+      productionEnv({
+        ...dbEnvOf(databaseUrl),
+        TRUST_PROXY_HOPS: '1',
+      }),
+      [
+        {
+          token: ContentRegistryProvider,
+          value: { registry: () => Promise.resolve(registry) },
+        },
+      ],
+    );
     publicRoleId = roles.find((r) => r.slug === 'public')?.documentId ?? '';
     owner = await signedIn('owner');
     editor = await signedIn('editor');
@@ -272,6 +290,7 @@ describe('GraphQL read API (GQ2; Postgres 16 via Testcontainers)', () => {
 
   afterAll(async () => {
     await app?.close();
+    await prodApp?.close();
     await content?.destroy();
     await db?.close();
     await postgres?.stop();
@@ -820,6 +839,187 @@ describe('GraphQL read API (GQ2; Postgres 16 via Testcontainers)', () => {
             })
           ).status,
         ).toBe(200);
+      }
+    });
+  });
+
+  describe('limits (GQ3)', () => {
+    const LIMITS = { body: 32 * 1024, rootFields: 5, depth: 8, nodes: 500 };
+    const nestedQuery = (levels: number) =>
+      `{ ${'a { '.repeat(levels - 1)}x${' }'.repeat(levels - 1)} }`;
+    const padded = (bytes: number) => {
+      const query = '{ articleList(pageSize: 1) { meta { total } } }';
+      return JSON.stringify({ query: `${query}${' '.repeat(bytes - 1000)}` });
+    };
+    const code = (res: { body: unknown }) =>
+      (res.body as GqlBody).errors?.map((e) => e.extensions.code);
+
+    const spies = () => {
+      const list = jest.spyOn(app.get(DocumentsQueryService), 'list');
+      const policy = jest.spyOn(app.get(AccessPolicyService), 'policy');
+      return { list, policy };
+    };
+    afterEach(() => jest.restoreAllMocks());
+
+    it('answers a body over 32 KiB with 413 in the GraphQL error shape, running nothing', async () => {
+      const { list, policy } = spies();
+      const res = await http()
+        .post(GRAPHQL)
+        .set(asAnonymous())
+        .set('Content-Type', 'application/json')
+        .send(padded(LIMITS.body + 1_000));
+      expect(res.status).toBe(413);
+      expect(res.body).toMatchObject({
+        errors: [
+          {
+            message: expect.any(String) as string,
+            extensions: {
+              code: 'PAYLOAD_TOO_LARGE',
+              requestId: expect.any(String) as string,
+            },
+          },
+        ],
+      });
+      expect((res.body as { data?: unknown }).data).toBeUndefined();
+      expect(list).not.toHaveBeenCalled();
+      expect(policy).not.toHaveBeenCalled();
+    });
+
+    it('a chunked body over 32 KiB gets one 413 and never reaches the controller', async () => {
+      const { list, policy } = spies();
+      const server = app.getHttpServer();
+      if (!server.listening) {
+        await new Promise<void>((resolve) => server.listen(0, resolve));
+      }
+      const { port } = server.address() as AddressInfo;
+      const query = '{ articleList(pageSize: 1) { meta { total } } }';
+      const body = JSON.stringify({ query: query + ' '.repeat(50 * 1024) });
+      const answer = await new Promise<{ status: number; text: string }>(
+        (resolve, reject) => {
+          const req = httpRequest(
+            {
+              port,
+              method: 'POST',
+              path: GRAPHQL,
+              headers: {
+                'Content-Type': 'application/json',
+                'Transfer-Encoding': 'chunked',
+                'X-Forwarded-For': nextIp(),
+              },
+            },
+            (res) => {
+              let text = '';
+              res.on('data', (chunk: Buffer) => (text += chunk.toString()));
+              res.on('end', () =>
+                resolve({ status: res.statusCode ?? 0, text }),
+              );
+            },
+          );
+          req.on('error', reject);
+          const half = Math.floor(body.length / 2);
+          req.write(body.slice(0, half));
+          req.end(body.slice(half));
+        },
+      );
+      expect(answer.status).toBe(413);
+      expect(
+        (JSON.parse(answer.text) as GqlBody).errors?.map(
+          (e) => e.extensions.code,
+        ),
+      ).toEqual(['PAYLOAD_TOO_LARGE']);
+      await new Promise((resolve) => setTimeout(resolve, 200));
+      expect(list).not.toHaveBeenCalled();
+      expect(policy).not.toHaveBeenCalled();
+    });
+
+    it('accepts a body just under 32 KiB', async () => {
+      const res = await http()
+        .post(GRAPHQL)
+        .set(asAnonymous())
+        .set('Content-Type', 'application/json')
+        .send(padded(LIMITS.body - 10));
+      expect(res.status).toBe(200);
+    });
+
+    it.each([
+      ['token', `{ ${'articleList '.repeat(2_100)} }`],
+      ['depth', nestedQuery(LIMITS.depth + 1)],
+      [
+        'root fields',
+        `{ ${Array.from({ length: LIMITS.rootFields + 1 }, (_, i) => `r${i}: articleList(pageSize: 1) { meta { total } }`).join(' ')} }`,
+      ],
+      [
+        'field nodes',
+        `{ articleList { data { ${Array.from({ length: LIMITS.nodes }, (_, i) => `f${i}: title`).join(' ')} } } }`,
+      ],
+    ])(
+      '%s overflow is 400 GRAPHQL_LIMIT_EXCEEDED and runs no read',
+      async (_n, query) => {
+        const { list, policy } = spies();
+        const res = await gql(query);
+        expect(res.status).toBe(400);
+        expect(bodyOf(res).data).toBeUndefined();
+        expect(code(res)).toEqual(['GRAPHQL_LIMIT_EXCEEDED']);
+        expect(list).not.toHaveBeenCalled();
+        expect(policy).not.toHaveBeenCalled();
+      },
+    );
+
+    it('five aliased root fields pass and are all read', async () => {
+      const query = `{ ${Array.from({ length: LIMITS.rootFields }, (_, i) => `r${i}: articleList(pageSize: 1) { meta { total } }`).join(' ')} }`;
+      const res = await gql(query);
+      expect(res.status).toBe(200);
+      expect(Object.keys(bodyOf(res).data ?? {})).toHaveLength(
+        LIMITS.rootFields,
+      );
+    });
+
+    it('the full article query with a component passes every limit', async () => {
+      const res = await gql(
+        `{ articleList { data { ${ARTICLE_FIELDS} } meta { page pageSize total } } }`,
+      );
+      expect(res.status).toBe(200);
+      expect(bodyOf(res).errors).toBeUndefined();
+    });
+  });
+
+  describe('production hardening', () => {
+    const prodGql = (query: string) =>
+      request(prodApp.getHttpServer())
+        .post(GRAPHQL)
+        .set(asAnonymous())
+        .send({ query });
+
+    it('refuses introspection in production and allows it in the test config', async () => {
+      const query = '{ __schema { queryType { name } } }';
+      const prod = await prodGql(query);
+      expect(prod.status).toBe(400);
+      expect(bodyOf(prod).data).toBeUndefined();
+      expect(bodyOf(prod).errors?.[0]?.extensions.code).toBe(
+        'GRAPHQL_VALIDATION_FAILED',
+      );
+      expect((await gql(query)).status).toBe(200);
+      expect((await gql('{ __type(name: "Article") { name } }')).status).toBe(
+        200,
+      );
+      expect(
+        (await prodGql('{ __type(name: "Article") { name } }')).status,
+      ).toBe(400);
+    });
+
+    it('strips "Did you mean" suggestions in production only', async () => {
+      const query = '{ articleList { data { titl } } }';
+      const prod = await prodGql(query);
+      expect(JSON.stringify(prod.body)).not.toContain('Did you mean');
+      expect(JSON.stringify((await gql(query)).body)).toContain('Did you mean');
+    });
+
+    it('serves no playground or GET page', async () => {
+      for (const server of [app, prodApp]) {
+        const res = await request(server.getHttpServer())
+          .get(GRAPHQL)
+          .set(asAnonymous());
+        expect(res.status).toBe(404);
       }
     });
   });

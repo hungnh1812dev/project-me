@@ -20,8 +20,14 @@ import {
   formatGraphqlError,
   type GraphqlPhase,
 } from './error-format';
-import { GRAPHQL_LIMITS } from './graphql.constants';
+import { ERROR_CODES } from '../../common/constants/error.constants';
+import {
+  GRAPHQL_LIMIT_MESSAGES,
+  GRAPHQL_LIMITS,
+  TOKEN_LIMIT_PATTERN,
+} from './graphql.constants';
 import { GraphqlSchemaProvider } from './graphql.schema.provider';
+import { findLimitViolations } from './rules/limits.rules';
 import { ContentTypeVisibilityRule } from './rules/visibility.rule';
 
 export interface GraphqlRequest {
@@ -75,8 +81,12 @@ export class GraphqlExecutor {
     try {
       document = parse(request.query, { maxTokens: GRAPHQL_LIMITS.MAX_TOKENS });
     } catch (error) {
-      return fail('parse', [toGraphqlError(error)]);
+      return fail('parse', [toParseError(error)]);
     }
+
+    // Over a limit: answered before the access policy or any schema is loaded.
+    const overLimit = findLimitViolations(document);
+    if (overLimit.length > 0) return fail('validate', overLimit);
 
     const { evaluator } = await this.access.policy();
     const canRead = (slug: string) =>
@@ -122,8 +132,11 @@ export class GraphqlExecutor {
   }
 }
 
-function toGraphqlError(error: unknown): GraphQLError {
-  return error instanceof GraphQLError
-    ? error
-    : new GraphQLError(String(error));
+/** The parser's `maxTokens` abort is a limit error, not a syntax error. */
+function toParseError(error: unknown): GraphQLError {
+  if (!(error instanceof GraphQLError)) return new GraphQLError(String(error));
+  if (!TOKEN_LIMIT_PATTERN.test(error.message)) return error;
+  return new GraphQLError(GRAPHQL_LIMIT_MESSAGES.TOKENS, {
+    extensions: { code: ERROR_CODES.GRAPHQL_LIMIT_EXCEEDED },
+  });
 }

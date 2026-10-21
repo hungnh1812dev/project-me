@@ -108,6 +108,12 @@ function classify(
       message: INTERNAL_ERROR_MESSAGE,
     };
   }
+  if (error.extensions['code'] === ERROR_CODES.GRAPHQL_LIMIT_EXCEEDED) {
+    return {
+      code: ERROR_CODES.GRAPHQL_LIMIT_EXCEEDED,
+      message: error.message,
+    };
+  }
   if (phase !== 'execute') {
     return { code: PHASE_CODES[phase], message: error.message };
   }
