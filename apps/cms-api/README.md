@@ -16,6 +16,15 @@ a list of keys and rules (never values). The boot log prints a summary with
 secrets and DB credentials redacted. Every key is documented in
 [`.env.example`](.env.example).
 
+Database: the connection comes from `DB_HOST`, `DB_NAME`, `DB_USERNAME` and
+`DB_PASSWORD` (all required) and `DB_PORT` (default 5432, the PostgreSQL
+port). They replace the old `DATABASE_URL`, which is no longer read. The
+values stay separate fields all the way to the `pg` pool (no URL is built), so
+a password with `@ : / ? # %` needs no encoding. Only the Prisma CLI
+(`prisma.config.ts`) needs a URL; it builds one from the same `DB_*` values
+with the URL API, which encodes them. The boot summary shows host, port,
+database and user, and the password as redacted.
+
 Mail (`src/infrastructure/mail`): `MAIL_SENDER` port with a console adapter
 (development only: it logs whole messages, OTP codes included) and a generic
 SMTP adapter (nodemailer; e.g. Gmail via smtp.gmail.com:587 + App Password).
@@ -583,7 +592,7 @@ and repository behaviour:
 | `lint`                           | Oxlint, then ESLint with typescript-eslint (type-aware)                                     |
 | `typecheck`                      | `tsc --noEmit` over `src` and `test`                                                        |
 | `content:generate`               | Build, then write the next content migration (`--dry-run`, `--name`, `--allow-destructive`) |
-| `content:migrate`                | Apply pending content migrations (needs a build and `DATABASE_URL`)                         |
+| `content:migrate`                | Apply pending content migrations (needs a build and the `DB_*` connection)                  |
 | `db:generate`                    | Generate the Prisma client                                                                  |
 | `db:migrate`                     | Apply core Prisma migrations, then seed system roles + default permissions (needs a build)  |
 | `db:migrate:dev`                 | Development: create a core migration from schema changes                                    |

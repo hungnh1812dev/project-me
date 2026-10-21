@@ -2,6 +2,7 @@ import { Inject, Injectable, Logger, Module } from '@nestjs/common';
 
 import { type IAppConfig } from '../../config/app-config';
 import { APP_CONFIG } from '../../config/config.constants';
+import { type DatabaseConnection } from '../../infrastructure/database/database-config';
 import { createMigrationDb } from './cli/migrate';
 import { CONTENT_NOT_MIGRATED_PG_CODES } from './content-engine.constants';
 import { ContentDbProvider } from './content-database';
@@ -25,9 +26,9 @@ function isNotMigrated(error: unknown): boolean {
  * empty: every content subject is unknown and so denied (fails closed).
  */
 export async function loadContentRegistry(
-  databaseUrl: string,
+  connection: DatabaseConnection,
 ): Promise<RegistryService> {
-  const db = createMigrationDb(databaseUrl);
+  const db = createMigrationDb(connection);
   try {
     return await RegistryService.fromDatabase(db);
   } catch (error) {
@@ -67,7 +68,7 @@ export class ContentRegistryProvider {
 
   /** Overridable in tests (fixture registries). */
   protected load(): Promise<RegistryService> {
-    return loadContentRegistry(this.config.database.url);
+    return loadContentRegistry(this.config.database);
   }
 }
 

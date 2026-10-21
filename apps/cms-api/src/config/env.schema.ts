@@ -100,7 +100,19 @@ export const envSchema = z
       .min(1)
       .max(MAX_PORT)
       .default(CONFIG_DEFAULTS.PORT),
-    DATABASE_URL: z.url({ protocol: /^postgres(ql)?$/ }),
+    DB_HOST: z.string().min(1),
+    DB_PORT: z.preprocess(
+      emptyToUndefined,
+      z.coerce
+        .number()
+        .int()
+        .min(1)
+        .max(MAX_PORT)
+        .default(CONFIG_DEFAULTS.DB_PORT),
+    ),
+    DB_NAME: z.string().min(1),
+    DB_USERNAME: z.string().min(1),
+    DB_PASSWORD: z.string().min(1),
     TRUST_PROXY_HOPS: z.coerce
       .number()
       .int()

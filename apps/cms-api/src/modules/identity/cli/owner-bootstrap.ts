@@ -45,7 +45,7 @@ async function main(): Promise<void> {
   }
   const password = await readPassword(process.argv.slice(2));
 
-  const { prisma, close } = openPrisma(config.database.url);
+  const { prisma, close } = openPrisma(config.database);
   try {
     const owner = await bootstrapOwner(prisma, {
       email,

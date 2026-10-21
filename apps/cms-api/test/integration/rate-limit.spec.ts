@@ -19,6 +19,7 @@ import { hashPassword } from '../../src/modules/identity/password-hasher';
 import { seedSystemRoles } from '../../src/modules/identity/system-roles.seed';
 import { createCoreTemplate } from '../fixtures/core-db.fixture';
 import {
+  dbEnvOf,
   devEnv,
   TEST_ADMIN_ORIGIN,
   TEST_JWT_KID,
@@ -111,7 +112,7 @@ describe('rate limiting + client IP (D7, SPEC §12-8; Postgres 16 via Testcontai
   ) {
     const app = await createTestApp(
       devEnv({
-        DATABASE_URL: databaseUrl,
+        ...dbEnvOf(databaseUrl),
         JWT_ACCESS_SECRET: TEST_SECRET_32_BYTES,
         JWT_ACCESS_KID: TEST_JWT_KID,
         ADMIN_ORIGIN: TEST_ADMIN_ORIGIN,

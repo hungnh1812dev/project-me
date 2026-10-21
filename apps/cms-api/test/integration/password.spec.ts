@@ -32,6 +32,7 @@ import { PasswordService } from '../../src/modules/identity/password.service';
 import { seedSystemRoles } from '../../src/modules/identity/system-roles.seed';
 import { createCoreTemplate } from '../fixtures/core-db.fixture';
 import {
+  dbEnvOf,
   devEnv,
   TEST_ADMIN_ORIGIN,
   TEST_JWT_KID,
@@ -115,7 +116,7 @@ describe('OTP + password lifecycle (D8, SPEC §12-9/10; Postgres 16 via Testcont
     mail = new CapturingMailSender();
     app = await createTestApp(
       devEnv({
-        DATABASE_URL: databaseUrl,
+        ...dbEnvOf(databaseUrl),
         JWT_ACCESS_SECRET: TEST_SECRET_32_BYTES,
         JWT_ACCESS_KID: TEST_JWT_KID,
         OTP_PEPPER: TEST_SECRET_32_BYTES,

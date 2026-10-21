@@ -212,7 +212,7 @@ commands (run from `apps/cms-api`):
 pnpm content:generate                     # build, diff, write content/migrations/NNNN_content.sql
 pnpm content:generate -- --dry-run        # print the SQL and destructive changes, write nothing
 pnpm content:generate -- --name add_github --allow-destructive
-pnpm build && pnpm content:migrate        # apply pending migrations (needs DATABASE_URL)
+pnpm build && pnpm content:migrate        # apply pending migrations (needs the DB_* connection variables)
 ```
 
 ### content:generate

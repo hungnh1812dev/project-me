@@ -2,7 +2,7 @@ import type { NestExpressApplication } from '@nestjs/platform-express';
 import type { StartedPostgreSqlContainer } from '@testcontainers/postgresql';
 import request from 'supertest';
 
-import { devEnv } from '../fixtures/env.fixture';
+import { dbEnvOf, devEnv } from '../fixtures/env.fixture';
 import {
   startPostgres,
   unreachableDatabaseUrl,
@@ -16,7 +16,7 @@ describe('health (Postgres 16 via Testcontainers)', () => {
   beforeAll(async () => {
     postgres = await startPostgres();
     app = await createTestApp(
-      devEnv({ DATABASE_URL: postgres.getConnectionUri() }),
+      devEnv({ ...dbEnvOf(postgres.getConnectionUri()) }),
     );
   });
 
@@ -57,7 +57,7 @@ describe('health with the database down', () => {
 
   beforeAll(async () => {
     app = await createTestApp(
-      devEnv({ DATABASE_URL: await unreachableDatabaseUrl() }),
+      devEnv({ ...dbEnvOf(await unreachableDatabaseUrl()) }),
     );
   });
 

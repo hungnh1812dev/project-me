@@ -86,7 +86,7 @@ async function main(): Promise<void> {
     throw new CliInputError('Cancelled. Nothing changed.');
   }
 
-  const { prisma, close } = openPrisma(config.database.url);
+  const { prisma, close } = openPrisma(config.database);
   try {
     const result = await resetTwoFactor(prisma, email);
     process.stdout.write(

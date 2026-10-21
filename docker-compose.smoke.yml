@@ -58,7 +58,11 @@ services:
     environment:
       NODE_ENV: production
       PORT: '3000'
-      DATABASE_URL: postgresql://abyss:${SMOKE_DB_PASSWORD}@db:5432/abyss
+      DB_HOST: db
+      DB_PORT: '5432'
+      DB_NAME: abyss
+      DB_USERNAME: abyss
+      DB_PASSWORD: ${SMOKE_DB_PASSWORD}
       ADMIN_ORIGIN: ${SMOKE_ADMIN_ORIGIN:?set by scripts/smoke.sh}
       WEB_ORIGIN: ${SMOKE_WEB_ORIGIN:?set by scripts/smoke.sh}
       TRUST_PROXY_HOPS: '1'

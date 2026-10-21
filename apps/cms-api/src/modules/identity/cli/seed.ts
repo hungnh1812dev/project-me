@@ -9,7 +9,7 @@ import { seedSystemRoles } from '../system-roles.seed';
  */
 async function main(): Promise<void> {
   const config = loadAppConfig(process.env);
-  const { prisma, close } = openPrisma(config.database.url);
+  const { prisma, close } = openPrisma(config.database);
   try {
     const inserted = await seedSystemRoles(prisma);
     process.stdout.write(

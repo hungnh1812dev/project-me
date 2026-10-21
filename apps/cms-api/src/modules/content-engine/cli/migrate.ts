@@ -3,6 +3,10 @@ import { Pool } from 'pg';
 
 import { loadAppConfig } from '../../../config/app-config';
 import {
+  type DatabaseConnection,
+  poolOptionsOf,
+} from '../../../infrastructure/database/database-config';
+import {
   type ContentMetaDatabase,
   type MigrateResult,
   runContentMigrations,
@@ -13,11 +17,11 @@ import { DEFAULT_CONTENT_PATHS } from './content-paths';
 const MIGRATE_POOL_SIZE = 1;
 
 export function createMigrationDb(
-  connectionString: string,
+  connection: DatabaseConnection,
 ): Kysely<ContentMetaDatabase> {
   return new Kysely<ContentMetaDatabase>({
     dialect: new PostgresDialect({
-      pool: new Pool({ connectionString, max: MIGRATE_POOL_SIZE }),
+      pool: new Pool({ ...poolOptionsOf(connection), max: MIGRATE_POOL_SIZE }),
     }),
   });
 }
@@ -40,7 +44,7 @@ function report(result: MigrateResult): string {
 
 async function main(): Promise<void> {
   const config = loadAppConfig(process.env);
-  const db = createMigrationDb(config.database.url);
+  const db = createMigrationDb(config.database);
   try {
     const result = await runContentMigrations(
       db,

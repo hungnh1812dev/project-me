@@ -1,7 +1,7 @@
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import request from 'supertest';
 
-import { devEnv } from '../fixtures/env.fixture';
+import { dbEnvOf, devEnv } from '../fixtures/env.fixture';
 import { unreachableDatabaseUrl } from '../fixtures/postgres.fixture';
 import { createTestApp } from '../fixtures/test-app';
 
@@ -14,7 +14,7 @@ describe('HTTP pipeline', () => {
   beforeAll(async () => {
     app = await createTestApp(
       devEnv({
-        DATABASE_URL: await unreachableDatabaseUrl(),
+        ...dbEnvOf(await unreachableDatabaseUrl()),
         TRUST_PROXY_HOPS: '2',
       }),
     );

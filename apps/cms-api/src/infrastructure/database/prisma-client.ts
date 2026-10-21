@@ -2,6 +2,7 @@ import { PrismaPg } from '@prisma/adapter-pg';
 import { Pool } from 'pg';
 
 import { PrismaClient } from '../../generated/prisma/client';
+import { type DatabaseConnection, poolOptionsOf } from './database-config';
 
 export { PrismaClient };
 
@@ -10,11 +11,11 @@ export { PrismaClient };
  * error cannot crash the process (the next query reports it) and the pool
  * can be closed explicitly.
  */
-export function createPgAdapter(connectionString: string): {
+export function createPgAdapter(connection: DatabaseConnection): {
   adapter: PrismaPg;
   pool: Pool;
 } {
-  const pool = new Pool({ connectionString });
+  const pool = new Pool(poolOptionsOf(connection));
   pool.on('error', () => undefined);
   return { adapter: new PrismaPg(pool), pool };
 }
@@ -25,8 +26,8 @@ export interface PrismaHandle {
 }
 
 /** A standalone client for CLIs and tests. Call `close()` when done. */
-export function openPrisma(connectionString: string): PrismaHandle {
-  const { adapter, pool } = createPgAdapter(connectionString);
+export function openPrisma(connection: DatabaseConnection): PrismaHandle {
+  const { adapter, pool } = createPgAdapter(connection);
   const prisma = new PrismaClient({ adapter });
   return {
     prisma,

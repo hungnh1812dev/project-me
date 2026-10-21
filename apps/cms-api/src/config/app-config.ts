@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 import { RATE_LIMIT_RULE_NAMES } from '../common/constants/limits.constants';
+import type { DatabaseConfig } from '../infrastructure/database/database-config';
 import { CONFIG_DEFAULTS, REDACTED } from './config.constants';
 import { envSchema, type Env } from './env.schema';
 
@@ -34,9 +35,7 @@ export interface IAppConfig {
       readonly issuer: string;
     };
   };
-  readonly database: {
-    readonly url: string;
-  };
+  readonly database: Readonly<DatabaseConfig>;
   readonly rateLimit: {
     /**
      * Limit per rule name (`RateLimitRule.name`) replacing the default in
@@ -140,7 +139,13 @@ export function loadAppConfig(rawEnv: RawEnv): IAppConfig {
         issuer: env.TOTP_ISSUER ?? CONFIG_DEFAULTS.TOTP_ISSUER,
       },
     },
-    database: { url: env.DATABASE_URL },
+    database: {
+      host: env.DB_HOST,
+      port: env.DB_PORT,
+      database: env.DB_NAME,
+      user: env.DB_USERNAME,
+      password: env.DB_PASSWORD,
+    },
     rateLimit: { limitOverrides: rateLimitOverridesOf(env) },
     mail: {
       provider: env.MAIL_PROVIDER,
@@ -208,13 +213,6 @@ function smtpConfigOf(env: Env): SmtpConfig | undefined {
   };
 }
 
-/** Keeps scheme, host and database; drops credentials and query (may hold a password). */
-function redactDatabaseUrl(url: string): string {
-  const parsed = new URL(url);
-  const credentials = parsed.username || parsed.password ? `${REDACTED}@` : '';
-  return `${parsed.protocol}//${credentials}${parsed.host}${parsed.pathname}`;
-}
-
 /** Loggable view of the config: secrets show only whether they are set. */
 export function summarizeConfig(config: IAppConfig): Record<string, unknown> {
   const secretState = (value: string | undefined): string =>
@@ -225,7 +223,13 @@ export function summarizeConfig(config: IAppConfig): Record<string, unknown> {
     http: config.http,
     cors: config.cors,
     auth: config.auth,
-    database: { url: redactDatabaseUrl(config.database.url) },
+    database: {
+      host: config.database.host,
+      port: config.database.port,
+      database: config.database.database,
+      user: config.database.user,
+      password: REDACTED,
+    },
     rateLimit: config.rateLimit,
     mail: {
       provider: config.mail.provider,

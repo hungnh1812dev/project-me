@@ -54,7 +54,13 @@ const { openPrisma } = require('./dist/infrastructure/database/prisma-client');
 const { hashPassword } = require('./dist/modules/identity/password-hasher');
 (async () => {
   const passwordHash = await hashPassword(readFileSync(0, 'utf8').trim());
-  const db = openPrisma(process.env.DATABASE_URL);
+  const db = openPrisma({
+    host: process.env.DB_HOST,
+    port: Number(process.env.DB_PORT),
+    database: process.env.DB_NAME,
+    user: process.env.DB_USERNAME,
+    password: process.env.DB_PASSWORD,
+  });
   try {
     await db.prisma.account.create({
       data: {

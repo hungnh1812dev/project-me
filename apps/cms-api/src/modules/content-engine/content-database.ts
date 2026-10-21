@@ -4,6 +4,10 @@ import { type ClientConfig, Pool, types } from 'pg';
 
 import { type IAppConfig } from '../../config/app-config';
 import { APP_CONFIG } from '../../config/config.constants';
+import {
+  type DatabaseConnection,
+  poolOptionsOf,
+} from '../../infrastructure/database/database-config';
 import { CONTENT_POOL_MAX_CONNECTIONS } from './content-engine.constants';
 import type { ContentDatabase } from './tree-loader';
 
@@ -36,10 +40,10 @@ export const CONTENT_TYPE_PARSERS: PgTypes = {
 };
 
 export function createContentDb(
-  connectionString: string,
+  connection: DatabaseConnection,
 ): Kysely<ContentDatabase> {
   const pool = new Pool({
-    connectionString,
+    ...poolOptionsOf(connection),
     max: CONTENT_POOL_MAX_CONNECTIONS,
     types: CONTENT_TYPE_PARSERS,
   });
@@ -59,7 +63,7 @@ export class ContentDbProvider implements OnModuleDestroy {
   readonly db: Kysely<ContentDatabase>;
 
   constructor(@Inject(APP_CONFIG) config: IAppConfig) {
-    this.db = createContentDb(config.database.url);
+    this.db = createContentDb(config.database);
   }
 
   async onModuleDestroy(): Promise<void> {

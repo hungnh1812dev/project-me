@@ -5,6 +5,10 @@ import {
   TEST_CLOUDINARY_API_KEY,
   TEST_CLOUDINARY_API_SECRET,
   TEST_CLOUDINARY_CLOUD_NAME,
+  TEST_DB_HOST,
+  TEST_DB_NAME,
+  TEST_DB_PASSWORD,
+  TEST_DB_USERNAME,
   TEST_JWT_KID,
   TEST_MAIL_FROM,
   TEST_SECRET_32_BYTES,
@@ -43,6 +47,39 @@ describe('loadAppConfig', () => {
     expect(config.mail.provider).toBe('console');
     expect(config.isProduction).toBe(false);
     expect(config.secrets.jwtAccessSecret).toBeUndefined();
+  });
+
+  it('reads the database connection from separate DB_* keys', () => {
+    const config = loadAppConfig(devEnv({ DB_PORT: '6543' }));
+    expect(config.database).toEqual({
+      host: TEST_DB_HOST,
+      port: 6543,
+      database: TEST_DB_NAME,
+      user: TEST_DB_USERNAME,
+      password: TEST_DB_PASSWORD,
+    });
+  });
+
+  it('defaults DB_PORT to the PostgreSQL port when unset or empty', () => {
+    for (const DB_PORT of [undefined, '']) {
+      const config = loadAppConfig(devEnv({ DB_PORT }));
+      expect(config.database.port).toBe(CONFIG_DEFAULTS.DB_PORT);
+    }
+  });
+
+  it('keeps a password with reserved characters as is', () => {
+    const password = 'p@ss:w/rd?#%&=';
+    const config = loadAppConfig(devEnv({ DB_PASSWORD: password }));
+    expect(config.database.password).toBe(password);
+  });
+
+  it('no longer accepts DATABASE_URL as the connection', () => {
+    expect(() =>
+      loadAppConfig({
+        NODE_ENV: 'test',
+        DATABASE_URL: 'postgresql://u:p@h:5432/d',
+      }),
+    ).toThrow(/DB_HOST/);
   });
 
   it('coerces numeric keys and lowercases the client IP header', () => {
@@ -122,12 +159,14 @@ describe('loadAppConfig', () => {
   });
 
   it.each([
-    ['missing DATABASE_URL', { DATABASE_URL: undefined }, 'DATABASE_URL'],
-    [
-      'non-postgres DATABASE_URL',
-      { DATABASE_URL: 'mysql://h/db' },
-      'DATABASE_URL',
-    ],
+    ['missing DB_HOST', { DB_HOST: undefined }, 'DB_HOST'],
+    ['empty DB_HOST', { DB_HOST: '' }, 'DB_HOST'],
+    ['missing DB_NAME', { DB_NAME: undefined }, 'DB_NAME'],
+    ['missing DB_USERNAME', { DB_USERNAME: undefined }, 'DB_USERNAME'],
+    ['missing DB_PASSWORD', { DB_PASSWORD: undefined }, 'DB_PASSWORD'],
+    ['empty DB_PASSWORD', { DB_PASSWORD: '' }, 'DB_PASSWORD'],
+    ['non-numeric DB_PORT', { DB_PORT: 'abc' }, 'DB_PORT'],
+    ['out of range DB_PORT', { DB_PORT: '70000' }, 'DB_PORT'],
     ['non-numeric PORT', { PORT: 'abc' }, 'PORT'],
     ['out of range PORT', { PORT: '70000' }, 'PORT'],
     [
@@ -422,10 +461,13 @@ describe('summarizeConfig', () => {
     const config = loadAppConfig(productionEnv());
     const summary = JSON.stringify(summarizeConfig(config));
     expect(summary).not.toContain(TEST_SECRET_32_BYTES);
-    expect(summary).not.toContain('abyss_test_pw');
-    expect(summary).not.toContain('abyss_test:');
+    expect(summary).not.toContain(TEST_DB_PASSWORD);
     expect(summarizeConfig(config).database).toEqual({
-      url: `postgresql://${REDACTED}@127.0.0.1:5432/abyss_test`,
+      host: TEST_DB_HOST,
+      port: 5432,
+      database: TEST_DB_NAME,
+      user: TEST_DB_USERNAME,
+      password: REDACTED,
     });
   });
 
@@ -448,15 +490,6 @@ describe('summarizeConfig', () => {
         user: TEST_SMTP_USER,
         password: REDACTED,
       },
-    });
-  });
-
-  it('drops the query string, which may carry a password', () => {
-    const config = loadAppConfig(
-      devEnv({ DATABASE_URL: 'postgresql://db.local/app?password=hunter2' }),
-    );
-    expect(summarizeConfig(config).database).toEqual({
-      url: 'postgresql://db.local/app',
     });
   });
 

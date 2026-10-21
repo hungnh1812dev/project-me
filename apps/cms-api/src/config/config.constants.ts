@@ -18,6 +18,8 @@ export const SECRET_ENV_KEYS = [
 export const CONFIG_DEFAULTS = {
   NODE_ENV: 'development',
   PORT: 3000,
+  /** PostgreSQL default port, used when DB_PORT is unset. */
+  DB_PORT: 5432,
   TRUST_PROXY_HOPS: 1,
   MAIL_PROVIDER: 'console',
   /** In-memory storage for development and tests; production needs cloudinary (T27). */

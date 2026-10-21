@@ -4,8 +4,31 @@
 export const TEST_SECRET_32_BYTES = 'test-secret-value-0123456789abcdef';
 export const TEST_SHORT_SECRET = 'too-short-secret';
 
-export const TEST_DATABASE_URL =
-  'postgresql://abyss_test:abyss_test_pw@127.0.0.1:5432/abyss_test';
+export const TEST_DB_HOST = '127.0.0.1';
+export const TEST_DB_PORT = '5432';
+export const TEST_DB_NAME = 'abyss_test';
+export const TEST_DB_USERNAME = 'abyss_test';
+export const TEST_DB_PASSWORD = 'abyss_test_pw';
+
+/** DB_* env values for a connection URL (Testcontainers hands out URLs). */
+export function dbEnvOf(databaseUrl: string): Record<string, string> {
+  const url = new URL(databaseUrl);
+  return {
+    DB_HOST: url.hostname,
+    DB_PORT: url.port,
+    DB_NAME: decodeURIComponent(url.pathname.slice(1)),
+    DB_USERNAME: decodeURIComponent(url.username),
+    DB_PASSWORD: decodeURIComponent(url.password),
+  };
+}
+
+export const TEST_DB_ENV: Record<string, string> = {
+  DB_HOST: TEST_DB_HOST,
+  DB_PORT: TEST_DB_PORT,
+  DB_NAME: TEST_DB_NAME,
+  DB_USERNAME: TEST_DB_USERNAME,
+  DB_PASSWORD: TEST_DB_PASSWORD,
+};
 
 export const TEST_ADMIN_ORIGIN = 'https://admin.example.test';
 export const TEST_WEB_ORIGIN = 'https://example.test';
@@ -24,7 +47,7 @@ export const TEST_CLOUDINARY_API_SECRET = 'test-cloudinary-secret';
 export function devEnv(
   overrides: Record<string, string | undefined> = {},
 ): Record<string, string | undefined> {
-  return { NODE_ENV: 'test', DATABASE_URL: TEST_DATABASE_URL, ...overrides };
+  return { NODE_ENV: 'test', ...TEST_DB_ENV, ...overrides };
 }
 
 export function productionEnv(
@@ -32,7 +55,7 @@ export function productionEnv(
 ): Record<string, string | undefined> {
   return {
     NODE_ENV: 'production',
-    DATABASE_URL: TEST_DATABASE_URL,
+    ...TEST_DB_ENV,
     MAIL_PROVIDER: 'smtp',
     MEDIA_PROVIDER: 'cloudinary',
     CLOUDINARY_CLOUD_NAME: TEST_CLOUDINARY_CLOUD_NAME,

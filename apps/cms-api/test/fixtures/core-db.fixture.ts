@@ -5,6 +5,8 @@ import { promisify } from 'node:util';
 
 import { Client } from 'pg';
 
+import { dbEnvOf } from './env.fixture';
+
 const run = promisify(execFile);
 const APP_ROOT = join(__dirname, '..', '..');
 const PRISMA_BIN = join(APP_ROOT, 'node_modules', '.bin', 'prisma');
@@ -13,7 +15,7 @@ const PRISMA_BIN = join(APP_ROOT, 'node_modules', '.bin', 'prisma');
 export async function migrateCore(databaseUrl: string): Promise<void> {
   await run(PRISMA_BIN, ['migrate', 'deploy'], {
     cwd: APP_ROOT,
-    env: { ...process.env, DATABASE_URL: databaseUrl },
+    env: { ...process.env, ...dbEnvOf(databaseUrl) },
   });
 }
 

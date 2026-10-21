@@ -11,7 +11,7 @@ export class PrismaService extends PrismaClient implements OnModuleDestroy {
   private readonly pool: Pool;
 
   constructor(@Inject(APP_CONFIG) config: IAppConfig) {
-    const { adapter, pool } = createPgAdapter(config.database.url);
+    const { adapter, pool } = createPgAdapter(config.database);
     super({ adapter });
     this.pool = pool;
   }

@@ -29,6 +29,7 @@ import {
 } from '../fixtures/access.fixture';
 import { createCoreTemplate } from '../fixtures/core-db.fixture';
 import {
+  dbEnvOf,
   devEnv,
   TEST_ADMIN_ORIGIN,
   TEST_JWT_KID,
@@ -226,7 +227,7 @@ describe('document read API (T20; Postgres 16 via Testcontainers)', () => {
 
     app = await createTestApp(
       devEnv({
-        DATABASE_URL: databaseUrl,
+        ...dbEnvOf(databaseUrl),
         JWT_ACCESS_SECRET: TEST_SECRET_32_BYTES,
         JWT_ACCESS_KID: TEST_JWT_KID,
         OTP_PEPPER: TEST_SECRET_32_BYTES,

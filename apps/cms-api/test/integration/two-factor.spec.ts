@@ -41,6 +41,7 @@ import { seedSystemRoles } from '../../src/modules/identity/system-roles.seed';
 import { resetTwoFactor } from '../../src/modules/identity/two-factor-reset';
 import { createCoreTemplate } from '../fixtures/core-db.fixture';
 import {
+  dbEnvOf,
   devEnv,
   TEST_ADMIN_ORIGIN,
   TEST_JWT_KID,
@@ -110,7 +111,7 @@ describe('Two-factor authentication (D8, SPEC §9, T13; Postgres 16 via Testcont
 
   const appEnv = (databaseUrl: string) =>
     devEnv({
-      DATABASE_URL: databaseUrl,
+      ...dbEnvOf(databaseUrl),
       JWT_ACCESS_SECRET: TEST_SECRET_32_BYTES,
       JWT_ACCESS_KID: TEST_JWT_KID,
       OTP_PEPPER: TEST_SECRET_32_BYTES,
