@@ -59,6 +59,12 @@ export const API_ROUTES = {
     ROOT: 'content-types',
     BY_SLUG: ':slug',
   },
+  /** SPEC §9 documents (T20 read). `:documentId` is the record's document_id. */
+  DOCUMENTS: {
+    ROOT: 'documents',
+    BY_SLUG: ':slug',
+    BY_ID: ':slug/:documentId',
+  },
 } as const;
 
 /** Route param holding a document_id in API_ROUTES.ACCOUNTS / ROLES. */
@@ -66,3 +72,6 @@ export const ID_PARAM = 'id';
 
 /** Route param holding a content type slug in API_ROUTES.CONTENT_TYPES. */
 export const SLUG_PARAM = 'slug';
+
+/** Route param holding a record's document_id in API_ROUTES.DOCUMENTS. */
+export const DOCUMENT_ID_PARAM = 'documentId';

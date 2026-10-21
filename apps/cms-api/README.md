@@ -424,6 +424,56 @@ conditionKind, sensitive }`. Content fields come first, depth-first in
 CONTENT_TYPE_NOT_FOUND` with the same message. The slug is only ever a
   registry lookup key.
 
+### Documents, read (T20, `src/modules/documents`)
+
+| Method | Path                                  | Response                                                 |
+| ------ | ------------------------------------- | -------------------------------------------------------- |
+| GET    | `/api/v1/documents/:slug`             | `200 { data: Record[], meta { page, pageSize, total } }` |
+| GET    | `/api/v1/documents/:slug/:documentId` | `200 Record`, or `404 DOCUMENT_NOT_FOUND`                |
+
+- **Who**: `DocumentAuthGuard` accepts a JWT session, an API token
+  (`Bearer ak_live_...`) or **no `Authorization` header** (the anonymous
+  `public` role, `AnonymousActorService`). A header that is present but
+  invalid is always 401; it never falls back to anonymous. Then
+  `PermissionGuard` needs `read` on `:slug` (unknown slug 404, no `read` 403).
+  If the `public` role is missing, anonymous requests get 401.
+- **`status`**: `published` (default) or `draft`. `draft` needs `read` and
+  `update` on the type (so reviewers, anonymous visitors and read-only tokens
+  get 403). A type with `draftAndPublish: false` has live rows: `status` does
+  not filter them (the draft permission rule still applies).
+- **Paging**: `page` (default 1, max 10000), `pageSize` (default 20, max 100),
+  `meta.total` counts every matching row. Default order `-updatedAt`; ties
+  are broken by row id.
+- **`sort`**: comma-separated, `-` prefix for descending, at most 3 keys:
+  `sort=-priority,title`.
+- **`filter`** (flat keys, at most 10): `filter[title]=x` (same as
+  `filter[title][eq]=x`), `filter[priority][gte]=3`, `filter[priority][in]=1&filter[priority][in]=2`
+  (up to 20 values). Operators: `eq ne in gt gte lt lte contains`, by field
+  kind (`contains` is a case-insensitive substring match for text fields and
+  escapes `%` / `_`; ordering operators for numbers, dates and datetimes;
+  booleans and uuids take `eq ne in`). Values are typed by the column
+  (integers fit Postgres `integer`, dates are `YYYY-MM-DD`, datetimes are
+  ISO 8601 with an offset or a plain date). Fields: top-level scalar fields
+  and the system fields (`documentId version publishedAt locale createdAt
+updatedAt createdBy updatedBy`); components, nested paths and `json` are
+  400 `BAD_REQUEST`. No free-text `search` yet.
+- **Errors (400)**: unknown field `FIELD_UNKNOWN`; a field the actor cannot
+  read (including `createdBy` / `updatedBy` for anonymous and reviewer) `FIELD_NOT_READABLE`; unknown
+  parameter, operator or malformed value `ACCESS_INVALID_REQUEST` / `BAD_REQUEST`.
+  Errors never echo the submitted value.
+- **Body**: a `SerializedRecord` ([masking](../../docs/modules/access-control.md)):
+  unreadable fields are `"***"` / `null` and listed in `_maskedFields`; their
+  columns are never selected. The role's row conditions apply to list, total
+  and detail (a hidden row is a 404). `date` fields are `"YYYY-MM-DD"`
+  strings (the content pool's pg date parser returns text, no time-zone
+  shift); `decimal` fields are strings.
+- **Throttle**: anonymous reads only, 120 per minute per client IP
+  (fixed window, in memory): the 121st gets `429 TOO_MANY_REQUESTS` with
+  `Retry-After`. Signed-in accounts and API tokens are not counted. The
+  throttle runs after `DocumentAuthGuard` and `PermissionGuard`, so a request
+  they reject (401/403/404) is not counted.
+- Responses are `Cache-Control: no-store`.
+
 ### Security audit (T17, D15)
 
 `SecurityAuditService` (`src/modules/access/security-audit.service.ts`)

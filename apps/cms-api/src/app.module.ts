@@ -5,6 +5,7 @@ import { RateLimitModule } from './common/rate-limit/rate-limit.module';
 import { ConfigModule } from './config/config.module';
 import { AccessManagementModule } from './modules/access/access-management.module';
 import { ContentTypesModule } from './modules/content-types/content-types.module';
+import { DocumentsModule } from './modules/documents/documents.module';
 import { HealthModule } from './modules/health/health.module';
 import { IdentityModule } from './modules/identity/identity.module';
 
@@ -20,6 +21,7 @@ export class AppModule {
         IdentityModule,
         AccessManagementModule,
         ContentTypesModule,
+        DocumentsModule,
       ],
     };
   }

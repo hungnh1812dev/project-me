@@ -4,6 +4,7 @@ import { type IAppConfig } from '../../config/app-config';
 import { APP_CONFIG } from '../../config/config.constants';
 import { createMigrationDb } from './cli/migrate';
 import { CONTENT_NOT_MIGRATED_PG_CODES } from './content-engine.constants';
+import { ContentDbProvider } from './content-database';
 import { RegistryService } from './registry.service';
 
 const LOGGER_CONTEXT = 'ContentRegistry';
@@ -71,7 +72,7 @@ export class ContentRegistryProvider {
 }
 
 @Module({
-  providers: [ContentRegistryProvider],
-  exports: [ContentRegistryProvider],
+  providers: [ContentRegistryProvider, ContentDbProvider],
+  exports: [ContentRegistryProvider, ContentDbProvider],
 })
 export class ContentEngineModule {}

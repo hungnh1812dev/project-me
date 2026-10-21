@@ -116,7 +116,8 @@ function toColumnValues(
   return row;
 }
 
-function toDocument(
+/** Maps a root row (selected with its projected columns) and its trees to a document. */
+export function toDocument(
   root: TableNode,
   row: ContentRow,
   components: ComponentTrees,

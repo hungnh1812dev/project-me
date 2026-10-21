@@ -292,3 +292,6 @@ export const CONTENT_NOT_MIGRATED_PG_CODES: readonly string[] = [
   '42P01', // undefined_table
   '3F000', // invalid_schema_name
 ];
+
+/** Most connections of the app's content pool (reads of the document API). */
+export const CONTENT_POOL_MAX_CONNECTIONS = 10;

@@ -79,6 +79,13 @@ function actorKeyOf(req: Request): string | undefined {
   return String(actor.accountId);
 }
 
+/** Anonymous requests only (the actor is set by an earlier guard). */
+function anonymousFlagOf(req: Request): boolean {
+  const actor = (req as Request & { user?: { actor?: { kind?: unknown } } })
+    .user?.actor;
+  return actor?.kind === 'anonymous';
+}
+
 function subjectOf(
   rule: RateLimitRule,
   req: Request,
@@ -87,6 +94,8 @@ function subjectOf(
   switch (rule.keySource) {
     case RATE_LIMIT_KEY_SOURCES.IP:
       return clientIp.resolve(req);
+    case RATE_LIMIT_KEY_SOURCES.ANONYMOUS_IP:
+      return anonymousFlagOf(req) ? clientIp.resolve(req) : undefined;
     case RATE_LIMIT_KEY_SOURCES.EMAIL:
       return emailKeyOf(req);
     case RATE_LIMIT_KEY_SOURCES.ACTOR:

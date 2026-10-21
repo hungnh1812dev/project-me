@@ -18,6 +18,11 @@ export const RATE_LIMIT_KEY_SOURCES = {
    * `@Throttle` does). No signed-in account means the rule is skipped.
    */
   ACTOR: 'actor',
+  /**
+   * The resolved client IP, counted only for anonymous requests (T20): a
+   * signed-in caller is skipped. Needs the authentication guard to run first.
+   */
+  ANONYMOUS_IP: 'anonymous-ip',
 } as const;
 
 export type RateLimitKeySource =
@@ -146,6 +151,18 @@ export const RATE_LIMIT_POLICIES = {
       keySource: RATE_LIMIT_KEY_SOURCES.ACTOR,
       limit: 10,
       windowMs: ONE_HOUR_MS,
+    },
+  ],
+  /**
+   * Anonymous `GET /documents/...` (T20, user decision): 120 per minute per
+   * IP. Signed-in accounts and API tokens are not counted. In memory.
+   */
+  DOCUMENT_READ_ANONYMOUS: [
+    {
+      name: 'document-read:anonymous-ip',
+      keySource: RATE_LIMIT_KEY_SOURCES.ANONYMOUS_IP,
+      limit: 120,
+      windowMs: ONE_MINUTE_MS,
     },
   ],
   REFRESH: [

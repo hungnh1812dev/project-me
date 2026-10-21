@@ -17,7 +17,7 @@ export const documentIdSchema = z.uuid();
 const DIGITS = /^\d{1,9}$/;
 
 /** A query-string integer: digits only, so `1.5`, `-1` and `1e2` fail. */
-function queryInt(min: number, max: number, fallback: number) {
+export function queryInt(min: number, max: number, fallback: number) {
   return z
     .string()
     .regex(DIGITS)

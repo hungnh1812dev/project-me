@@ -15,6 +15,9 @@ export type SystemRoleSlug = (typeof SYSTEM_ROLES)[number]['slug'];
 
 export const OWNER_ROLE_SLUG = 'owner' satisfies SystemRoleSlug;
 
+/** The role of requests without credentials (SPEC §1). */
+export const PUBLIC_ROLE_SLUG = 'public' satisfies SystemRoleSlug;
+
 /** SPEC §6: rank range for custom roles. */
 export const CUSTOM_ROLE_RANK = { min: 11, max: 39 } as const;
 

@@ -243,7 +243,19 @@ takes the field paths a list query uses. System fields the access includes
 pass. An unknown path is 400 `FIELD_UNKNOWN`. An unreadable field, or
 `createdBy` / `updatedBy` for an anonymous or reviewer actor, is 400
 `FIELD_NOT_READABLE`.
-A free-text search must only search readable fields (T20).
+T20 (`DocumentsQueryService.list`) calls it with the `filter` and `sort`
+paths before any SQL is built; a free-text search (not built yet) must only
+search readable fields.
+
+**Document reads (T20).** `DocumentAuthGuard` (JWT, `ak_live_` token, or no
+header = `AnonymousActorService`) then `PermissionGuard`. For every read the
+service builds `recordReadAccess(actor, fieldsFor().readable)` once and
+passes it to `projectTable` / `selectedColumns`, `QueryGuard.assert` and
+`RecordSerializer.serialize`. `status=draft` needs `canReadDrafts`. The
+actor's `rowFilter` is part of the WHERE clause of list, total and detail.
+Anonymous reads are throttled per IP (`RATE_LIMIT_POLICIES.DOCUMENT_READ_ANONYMOUS`,
+120/min, key source `ANONYMOUS_IP`, which skips every non-anonymous actor).
+Endpoint rules: `apps/cms-api/README.md` "Documents, read".
 
 ## Conditions DSL (SPEC §8.3)
 
