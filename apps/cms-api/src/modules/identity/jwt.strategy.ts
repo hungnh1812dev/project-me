@@ -7,7 +7,8 @@ import {
   JWT_STRATEGY_NAME,
 } from '../../common/constants/auth.constants';
 import type { RequestWithId } from '../../common/middleware/request-id.middleware';
-import { PrismaService } from '../../infrastructure/database/prisma.service';
+import { type ActorContext, accountActor } from '../access/actor-context';
+import { VersionCache } from '../access/version-cache';
 import {
   type AccessTokenClaims,
   accessTokenClaimsSchema,
@@ -19,7 +20,10 @@ export interface AuthenticatedAccount {
   /** `accounts.document_id`. */
   readonly accountId: string;
   readonly tokenVersion: number;
+  /** The role's current `policy_version` (may be newer than the token's `pv`). */
   readonly policyVersion: number;
+  /** Who is asking, with the role's current permissions (T14/T15). */
+  readonly actor: ActorContext;
 }
 
 export interface AuthenticatedRequest extends RequestWithId {
@@ -29,15 +33,20 @@ export interface AuthenticatedRequest extends RequestWithId {
 /**
  * Bearer access tokens (D9, D14). HS256 only: passport-jwt passes
  * `algorithms` to jsonwebtoken, which rejects every other alg and `none`.
- * `tv` is checked against the database on every request (§12-10, T12), so
- * a password write or refresh-token reuse kills old access tokens at once.
- * Caching it and checking `pv` is T15.
+ * D9 / T15: `tv` and `pv` are compared with the database through
+ * VersionCache on every request.
+ * - `tv` below the account's token_version (password write, refresh-token
+ *   reuse, 2FA reset), or an account that is not active -> 401.
+ * - `pv` never rejects: the request is evaluated with the role's current
+ *   permissions, so a permission change applies on the next request with
+ *   the same token (§12-11). A `pv` above the cached version forces a
+ *   re-read of the role.
  */
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy, JWT_STRATEGY_NAME) {
   constructor(
     tokens: AccessTokenService,
-    private readonly prisma: PrismaService,
+    private readonly versions: VersionCache,
   ) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
@@ -59,24 +68,22 @@ export class JwtStrategy extends PassportStrategy(Strategy, JWT_STRATEGY_NAME) {
     const parsed = accessTokenClaimsSchema.safeParse(payload);
     if (!parsed.success) throw new UnauthorizedException();
     const claims: AccessTokenClaims = parsed.data;
-    // TODO(T15): VersionCache (invalidated on write, 5 s TTL) instead of
-    // this uncached lookup, and compare claims.pv with roles.policy_version.
-    const account = await this.prisma.account.findUnique({
-      where: { documentId: claims.sub },
-      select: { tokenVersion: true, status: true, deletedAt: true },
-    });
+    const account = await this.versions.account(claims.sub, claims.tv);
     if (
       account === null ||
       account.tokenVersion !== claims.tv ||
       account.status !== 'active' ||
-      account.deletedAt !== null
+      account.deleted
     ) {
       throw new UnauthorizedException();
     }
+    const role = await this.versions.rolePolicy(account.roleId, claims.pv);
+    if (role === null) throw new UnauthorizedException();
     return {
       accountId: claims.sub,
       tokenVersion: claims.tv,
-      policyVersion: claims.pv,
+      policyVersion: role.policyVersion,
+      actor: accountActor(account.id, role),
     };
   }
 }

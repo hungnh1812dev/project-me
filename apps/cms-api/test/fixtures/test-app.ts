@@ -1,3 +1,4 @@
+import type { DynamicModule, Type } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import { Test } from '@nestjs/testing';
@@ -8,20 +9,27 @@ import { loadAppConfig } from '../../src/config/app-config';
 
 /** A provider value to replace, e.g. a small store cap. */
 export interface ProviderOverride {
-  readonly token: symbol;
+  /** A DI token: a symbol or a provider class. */
+  readonly token: symbol | Type;
   readonly value: unknown;
 }
 
 /**
  * Builds the app exactly like `bootstrap`, without listening on a port.
- * `overrides` swap provider values through `@nestjs/testing`.
+ * `overrides` swap provider values through `@nestjs/testing`; `testModules`
+ * add test-only modules (e.g. a probe controller), never production routes.
  */
 export async function createTestApp(
   rawEnv: Record<string, string | undefined>,
   overrides: readonly ProviderOverride[] = [],
+  testModules: readonly (Type | DynamicModule)[] = [],
 ): Promise<NestExpressApplication> {
   const config = loadAppConfig(rawEnv);
-  const app = await createApp(AppModule.forRoot(config), overrides);
+  const app = await createApp(
+    AppModule.forRoot(config),
+    overrides,
+    testModules,
+  );
   configureApp(app, config);
   await app.init();
   return app;
@@ -30,11 +38,12 @@ export async function createTestApp(
 async function createApp(
   root: ReturnType<typeof AppModule.forRoot>,
   overrides: readonly ProviderOverride[],
+  testModules: readonly (Type | DynamicModule)[],
 ): Promise<NestExpressApplication> {
-  if (overrides.length === 0) {
+  if (overrides.length === 0 && testModules.length === 0) {
     return NestFactory.create<NestExpressApplication>(root, { logger: false });
   }
-  let builder = Test.createTestingModule({ imports: [root] });
+  let builder = Test.createTestingModule({ imports: [root, ...testModules] });
   for (const { token, value } of overrides) {
     builder = builder.overrideProvider(token).useValue(value);
   }

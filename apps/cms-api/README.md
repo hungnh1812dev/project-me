@@ -266,7 +266,10 @@ usage: [docs/modules/core-schema.md](../../docs/modules/core-schema.md).
 `src/modules/access/` decides what an actor (account, reviewer, API token,
 anonymous) may do: `PolicyEvaluator.can()` / `fieldsFor()` / `rowFilter()`,
 the conditions DSL compiler and the save-time validators T17/T19 call.
-Rules, the default role matrix and the DSL: [docs/modules/access-control.md](../../docs/modules/access-control.md).
+Routes opt in with `@UseGuards(JwtAuthGuard, PermissionGuard)` and
+`@RequirePermission(...)`. `tv`/`pv` revocation goes through the in-process
+`VersionCache` (5 s TTL, one replica; swap it before scaling out).
+Rules, the default role matrix, the DSL and the revocation flow: [docs/modules/access-control.md](../../docs/modules/access-control.md).
 
 ## Content types
 

@@ -24,6 +24,7 @@ import {
   type MailSender,
 } from '../../infrastructure/mail/mail.port';
 import { PrismaService } from '../../infrastructure/database/prisma.service';
+import { VersionCache } from '../access/version-cache';
 import { OTP } from './identity.constants';
 import { buildOtpMail } from './otp-mail';
 import { isOtpCodeFormat, OtpService } from './otp.service';
@@ -97,6 +98,7 @@ export class PasswordService implements OnApplicationShutdown {
     private readonly prisma: PrismaService,
     private readonly otp: OtpService,
     private readonly refreshTokens: RefreshTokenService,
+    private readonly versions: VersionCache,
     @Inject(MAIL_SENDER) private readonly mail: MailSender,
     @Inject(RESET_SECOND_FACTOR)
     private readonly secondFactor: ResetSecondFactor,
@@ -269,5 +271,7 @@ export class PasswordService implements OnApplicationShutdown {
       });
       await this.refreshTokens.revokeAllForAccount(tx, accountId);
     });
+    // After the commit (D9): old access tokens get 401 on the next request.
+    this.versions.invalidateAccount(accountId);
   }
 }

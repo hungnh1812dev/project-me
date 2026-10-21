@@ -286,3 +286,9 @@ export const UUID_PATTERN =
 
 /** A non-repeatable component holds at most this many items. */
 export const SINGLE_COMPONENT_MAX_ITEMS = 1;
+
+/** Postgres errors meaning `content:migrate` never ran on this database. */
+export const CONTENT_NOT_MIGRATED_PG_CODES: readonly string[] = [
+  '42P01', // undefined_table
+  '3F000', // invalid_schema_name
+];

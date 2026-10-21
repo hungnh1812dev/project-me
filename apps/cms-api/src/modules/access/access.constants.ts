@@ -180,3 +180,17 @@ export const DEFAULT_ROLE_PERMISSIONS: Readonly<
     { subject: CONTENT_WILDCARD_SUBJECT, actions: [PermissionAction.read] },
   ],
 };
+
+/**
+ * D9: how long a cached account/role version may be served without a DB
+ * read. Writes in this process invalidate at once; the TTL bounds staleness
+ * for writes this process cannot see (another replica, a CLI).
+ */
+export const VERSION_CACHE_TTL_MS = 5_000;
+
+/**
+ * Most entries per VersionCache map (accounts, roles). The CMS has a handful
+ * of accounts and roles; the cap only bounds memory if something goes wrong.
+ * At the cap the oldest entry is dropped (it is re-read on next use).
+ */
+export const VERSION_CACHE_MAX_ENTRIES = 1_000;

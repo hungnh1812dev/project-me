@@ -11,6 +11,7 @@ import {
 } from '../../common/constants/auth.constants';
 import { type Prisma } from '../../generated/prisma/client';
 import { PrismaService } from '../../infrastructure/database/prisma.service';
+import { VersionCache } from '../access/version-cache';
 
 /** Where a refresh token was issued from (stored for session listings). */
 export interface ClientMeta {
@@ -74,7 +75,10 @@ export function hashRefreshToken(rawToken: string): string {
  */
 @Injectable()
 export class RefreshTokenService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly versions: VersionCache,
+  ) {}
 
   /** Starts a new family for a fresh login. Returns the raw token. */
   async issue(accountId: number, meta: ClientMeta): Promise<string> {
@@ -93,67 +97,73 @@ export class RefreshTokenService {
    * `grace` when it comes within REFRESH_TOKEN_REUSE_GRACE_MS and the
    * successor is still unused (T11a), else it is reuse.
    */
-  rotate(rawToken: string, meta: ClientMeta): Promise<RotationResult> {
+  async rotate(rawToken: string, meta: ClientMeta): Promise<RotationResult> {
     const tokenHash = hashRefreshToken(rawToken);
-    return this.prisma.$transaction(async (tx): Promise<RotationResult> => {
-      const current = await tx.refreshToken.findUnique({
-        where: { tokenHash },
-        include: {
-          account: {
-            select: {
-              documentId: true,
-              status: true,
-              deletedAt: true,
-              tokenVersion: true,
-              role: { select: { policyVersion: true } },
+    const result = await this.prisma.$transaction(
+      async (tx): Promise<RotationResult> => {
+        const current = await tx.refreshToken.findUnique({
+          where: { tokenHash },
+          include: {
+            account: {
+              select: {
+                documentId: true,
+                status: true,
+                deletedAt: true,
+                tokenVersion: true,
+                role: { select: { policyVersion: true } },
+              },
             },
           },
-        },
-      });
-      if (current === null) return { kind: 'invalid' };
-      const now = new Date();
-      const { account } = current;
-      if (current.replacedById !== null) {
-        return this.graceOrReuse(tx, current.id, now);
-      }
+        });
+        if (current === null) return { kind: 'invalid' };
+        const now = new Date();
+        const { account } = current;
+        if (current.replacedById !== null) {
+          return this.graceOrReuse(tx, current.id, now);
+        }
 
-      if (current.revokedAt !== null || current.expiresAt <= now) {
-        return { kind: 'invalid' };
-      }
-      if (account.status !== 'active' || account.deletedAt !== null) {
-        await this.revokeFamilyTx(tx, current.familyId, now);
-        return { kind: 'invalid' };
-      }
+        if (current.revokedAt !== null || current.expiresAt <= now) {
+          return { kind: 'invalid' };
+        }
+        if (account.status !== 'active' || account.deletedAt !== null) {
+          await this.revokeFamilyTx(tx, current.familyId, now);
+          return { kind: 'invalid' };
+        }
 
-      const next = await this.create(
-        tx,
-        current.accountId,
-        current.familyId,
-        meta,
-      );
-      // Row lock: a concurrent rotation of the same token waits here, then
-      // sees replaced_by_id set and claims nothing.
-      const claimed = await tx.refreshToken.updateMany({
-        where: { id: current.id, replacedById: null, revokedAt: null },
-        data: { replacedById: next.id, revokedAt: now },
-      });
-      if (claimed.count === 0) {
-        // A concurrent rotation won: drop the unused new token, then judge
-        // this request like any late one.
-        await tx.refreshToken.delete({ where: { id: next.id } });
-        return this.graceOrReuse(tx, current.id, now);
-      }
+        const next = await this.create(
+          tx,
+          current.accountId,
+          current.familyId,
+          meta,
+        );
+        // Row lock: a concurrent rotation of the same token waits here, then
+        // sees replaced_by_id set and claims nothing.
+        const claimed = await tx.refreshToken.updateMany({
+          where: { id: current.id, replacedById: null, revokedAt: null },
+          data: { replacedById: next.id, revokedAt: now },
+        });
+        if (claimed.count === 0) {
+          // A concurrent rotation won: drop the unused new token, then judge
+          // this request like any late one.
+          await tx.refreshToken.delete({ where: { id: next.id } });
+          return this.graceOrReuse(tx, current.id, now);
+        }
 
-      return {
-        kind: 'rotated',
-        token: next.token,
-        account: {
-          documentId: account.documentId,
-          tokenVersion: account.tokenVersion,
-          policyVersion: account.role.policyVersion,
-        },
-      };
-    });
+        return {
+          kind: 'rotated',
+          token: next.token,
+          account: {
+            documentId: account.documentId,
+            tokenVersion: account.tokenVersion,
+            policyVersion: account.role.policyVersion,
+          },
+        };
+      },
+    );
+    // Reuse bumped token_version: old access tokens die on the next request.
+    if (result.kind === 'reuse')
+      this.versions.invalidateAccount(result.accountId);
+    return result;
   }
 
   /** Logout: revokes the family of `rawToken`, whatever its state. */
