@@ -46,6 +46,19 @@ at least 32 bytes too.
   response object has an `errorCode` property (and optionally `details`, for
   client errors only: e.g. validation issue paths, never submitted values).
 
+## List pagination convention
+
+Paginated lists (`GET /accounts` now; documents, media and audit logs reuse
+it) use offset paging: `?page=` (integer >= 1, default 1) and `?pageSize=`
+(1-100, default 20). The response is `{ data: [...], meta: { page, pageSize,
+total } }`; `total` counts every matching row, a page past the end has an empty
+`data`. Digits only; any bad value or unknown query key is `400
+ACCESS_INVALID_REQUEST`. Order is fixed per endpoint (accounts: id ascending);
+there are no filters yet. Constants: `PAGINATION` in
+`src/modules/access/access-management.constants.ts`. `GET /roles` stays a full
+list; custom roles are capped at 50 (`MAX_CUSTOM_ROLES`, system roles do not
+count).
+
 ## Endpoints
 
 | Method | Path                   | Response                                                                                       |
@@ -263,20 +276,20 @@ All routes need `Authorization: Bearer` (an account session; API tokens and
 reviewers never reach them) plus the permission named. `:id` is always a
 `document_id` (UUID); internal ids are never exposed.
 
-| Method | Path                                   | Permission        | Body                                | Response                                |
-| ------ | -------------------------------------- | ----------------- | ----------------------------------- | --------------------------------------- |
-| GET    | `/api/v1/accounts`                     | `accounts:read`   | none                                | `200 { data: Account[] }` (not deleted) |
-| POST   | `/api/v1/accounts`                     | `accounts:create` | `{ email, displayName, roleId }`    | `201 Account & { invitationSent }`      |
-| PATCH  | `/api/v1/accounts/:id`                 | `accounts:update` | `{ displayName?, roleId? }` (one+)  | `200 Account`                           |
-| POST   | `/api/v1/accounts/:id/disable`         | `accounts:update` | none                                | `204`                                   |
-| POST   | `/api/v1/accounts/:id/enable`          | `accounts:update` | none                                | `204`                                   |
-| POST   | `/api/v1/accounts/:id/invite/resend`   | `accounts:create` | none                                | `200 { invitationSent }`                |
-| POST   | `/api/v1/accounts/:id/sessions/revoke` | `accounts:update` | none                                | `204`                                   |
-| GET    | `/api/v1/roles`                        | `roles:read`      | none                                | `200 { data: Role[] }` (rank desc)      |
-| POST   | `/api/v1/roles`                        | `roles:create`    | `{ slug, name, rank }` (rank 11–39) | `201 Role`                              |
-| PATCH  | `/api/v1/roles/:id`                    | `roles:update`    | `{ name?, rank? }` (one+)           | `200 Role`                              |
-| DELETE | `/api/v1/roles/:id`                    | `roles:delete`    | none                                | `204`                                   |
-| PUT    | `/api/v1/roles/:id/permissions`        | `roles:update`    | `{ permissions: PermissionRow[] }`  | `200 Role`                              |
+| Method | Path                                   | Permission        | Body                                | Response                                                  |
+| ------ | -------------------------------------- | ----------------- | ----------------------------------- | --------------------------------------------------------- |
+| GET    | `/api/v1/accounts`                     | `accounts:read`   | `?page=&pageSize=`                  | `200 { data: Account[], meta }` (paged)                   |
+| POST   | `/api/v1/accounts`                     | `accounts:create` | `{ email, displayName, roleId }`    | `201 Account & { invitationSent }`                        |
+| PATCH  | `/api/v1/accounts/:id`                 | `accounts:update` | `{ displayName?, roleId? }` (one+)  | `200 Account`                                             |
+| POST   | `/api/v1/accounts/:id/disable`         | `accounts:update` | none                                | `204`                                                     |
+| POST   | `/api/v1/accounts/:id/enable`          | `accounts:update` | none                                | `204`                                                     |
+| POST   | `/api/v1/accounts/:id/invite/resend`   | `accounts:create` | none                                | `200 { invitationSent }`                                  |
+| POST   | `/api/v1/accounts/:id/sessions/revoke` | `accounts:update` | none                                | `204`                                                     |
+| GET    | `/api/v1/roles`                        | `roles:read`      | none                                | `200 { data: Role[] }` (rank desc)                        |
+| POST   | `/api/v1/roles`                        | `roles:create`    | `{ slug, name, rank }` (rank 11–39) | `201 Role`; `409 ROLE_LIMIT_REACHED` past 50 custom roles |
+| PATCH  | `/api/v1/roles/:id`                    | `roles:update`    | `{ name?, rank? }` (one+)           | `200 Role`                                                |
+| DELETE | `/api/v1/roles/:id`                    | `roles:delete`    | none                                | `204`                                                     |
+| PUT    | `/api/v1/roles/:id/permissions`        | `roles:update`    | `{ permissions: PermissionRow[] }`  | `200 Role`                                                |
 
 - `Account`: `{ id, email, displayName, status, twoFactorEnabled,
 twoFactorMethod, role: { id, slug, name, rank }, createdAt, manageable }`.

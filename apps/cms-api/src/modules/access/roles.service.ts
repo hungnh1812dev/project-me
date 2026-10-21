@@ -13,6 +13,7 @@ import { AccessPolicyService } from './access-policy.service';
 import {
   MANAGEMENT_ERROR_CODES,
   MANAGEMENT_ERROR_MESSAGES,
+  MANAGEMENT_LIMITS,
 } from './access-management.constants';
 import type {
   CreateRoleRequest,
@@ -38,6 +39,8 @@ import { VersionCache } from './version-cache';
 type Tx = Prisma.TransactionClient;
 
 const ROLES_SUBJECT = 'roles';
+/** Advisory-lock key serialising custom role creation (the 50-role cap). */
+const ROLE_CAP_LOCK = 1_700_017_003;
 /** Postgres unique violation, as Prisma reports it. */
 const UNIQUE_VIOLATION = 'P2002';
 
@@ -150,6 +153,15 @@ export class RolesService {
     assertOutranks(actor, input.rank);
     try {
       const row = await this.prisma.$transaction(async (tx) => {
+        // Serialised so two creates cannot both pass the cap (Q11).
+        await tx.$executeRaw`SELECT pg_advisory_xact_lock(${ROLE_CAP_LOCK})`;
+        const customRoles = await tx.role.count({ where: { isSystem: false } });
+        if (customRoles >= MANAGEMENT_LIMITS.MAX_CUSTOM_ROLES) {
+          throw new ConflictException({
+            errorCode: MANAGEMENT_ERROR_CODES.ROLE_LIMIT_REACHED,
+            message: MANAGEMENT_ERROR_MESSAGES.ROLE_LIMIT_REACHED,
+          });
+        }
         const created = await tx.role.create({
           data: {
             slug: input.slug,

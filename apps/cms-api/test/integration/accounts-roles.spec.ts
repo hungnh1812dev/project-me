@@ -811,6 +811,64 @@ describe('accounts & roles API + security audit (T17, §12-7, §12-18; Postgres 
     });
   });
 
+  describe('accounts pagination (T17c)', () => {
+    type Page = {
+      data: { id: string }[];
+      meta: { page: number; pageSize: number; total: number };
+    };
+    const pageOf = (query: string) =>
+      http().get(`${ACCOUNTS}${query}`).set(bearer(owner.token));
+
+    it('pages by offset with a stable order and a total that skips deleted accounts', async () => {
+      const deleted = await createAccount('editor');
+      await db.prisma.account.update({
+        where: { id: deleted.id },
+        data: { deletedAt: new Date() },
+      });
+      const live = await db.prisma.account.count({
+        where: { deletedAt: null },
+      });
+      for (let i = live; i < 25; i += 1) await createAccount('editor');
+      const total = await db.prisma.account.count({
+        where: { deletedAt: null },
+      });
+
+      const first = await pageOf('');
+      expect(first.status).toBe(200);
+      const firstBody = first.body as Page;
+      expect(firstBody.meta).toEqual({ page: 1, pageSize: 20, total });
+      expect(firstBody.data).toHaveLength(20);
+      expect(firstBody.data.map((a) => a.id)).not.toContain(deleted.documentId);
+
+      const second = (await pageOf('?page=2')).body as Page;
+      expect(second.meta).toEqual({ page: 2, pageSize: 20, total });
+      expect(second.data).toHaveLength(Math.min(20, total - 20));
+      const ids = [...firstBody.data, ...second.data].map((a) => a.id);
+      expect(new Set(ids).size).toBe(ids.length);
+
+      const small = (await pageOf('?pageSize=3&page=2')).body as Page;
+      expect(small.data.map((a) => a.id)).toEqual(ids.slice(3, 6));
+    });
+
+    it('a page past the end is empty with the real total', async () => {
+      const res = await pageOf('?page=999');
+      expect(res.status).toBe(200);
+      const body = res.body as Page;
+      expect(body.data).toEqual([]);
+      expect(body.meta.page).toBe(999);
+      expect(body.meta.total).toBeGreaterThan(0);
+    });
+
+    it.each(['page=0', 'pageSize=101', 'pageSize=0', 'page=x', 'q=a'])(
+      '400 ACCESS_INVALID_REQUEST for ?%s',
+      async (query) => {
+        const res = await pageOf(`?${query}`);
+        expect(res.status).toBe(400);
+        expect(errorCodeOf(res)).toBe(MANAGEMENT_ERROR_CODES.INVALID_REQUEST);
+      },
+    );
+  });
+
   describe('roles', () => {
     it('lists roles highest rank first with permissions; owner has no rows', async () => {
       const res = await http().get(ROLES).set(bearer(admin.token));
@@ -950,6 +1008,30 @@ describe('accounts & roles API + security audit (T17, §12-7, §12-18; Postgres 
       ).toBeNull();
       const [row] = await auditRows(AUDIT_ACTIONS.ROLE_DELETED, free.id);
       expect(row?.metadata).toEqual({ slug: 't17-free' });
+    });
+
+    it('caps custom roles at 50: the 51st is 409 ROLE_LIMIT_REACHED, system roles do not count', async () => {
+      const existing = await db.prisma.role.count({
+        where: { isSystem: false },
+      });
+      for (let i = existing; i < 50; i += 1) {
+        await db.prisma.role.create({
+          data: { slug: `t17c-cap-${i}`, name: `Cap ${i}`, rank: 15 },
+        });
+      }
+      const res = await http()
+        .post(ROLES)
+        .set(bearer(owner.token))
+        .send({ slug: 't17c-over', name: 'Over', rank: 15 });
+      expect(res.status).toBe(409);
+      expect(errorCodeOf(res)).toBe(MANAGEMENT_ERROR_CODES.ROLE_LIMIT_REACHED);
+      expect(await db.prisma.role.count({ where: { slug: 't17c-over' } })).toBe(
+        0,
+      );
+      const list = await http().get(ROLES).set(bearer(owner.token));
+      expect((list.body as { data: unknown[] }).data.length).toBeGreaterThan(
+        50,
+      );
     });
   });
 

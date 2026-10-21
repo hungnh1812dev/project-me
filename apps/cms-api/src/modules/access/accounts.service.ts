@@ -32,6 +32,8 @@ import {
 } from './access-management.constants';
 import type {
   InviteAccountRequest,
+  PageMeta,
+  PageQuery,
   UpdateAccountRequest,
 } from './access-management.requests';
 import {
@@ -62,6 +64,12 @@ export interface AccountRoleView {
   readonly slug: string;
   readonly name: string;
   readonly rank: number;
+}
+
+/** `GET /accounts` response (Q10). */
+export interface AccountPage {
+  readonly data: AccountView[];
+  readonly meta: PageMeta;
 }
 
 /** `GET /accounts` item. No password, secret or token data. */
@@ -162,14 +170,26 @@ export class AccountsService {
     @Inject(APP_CONFIG) private readonly config: IAppConfig,
   ) {}
 
-  /** Every account that is not deleted, oldest first. */
-  async list(actor: AccountActor): Promise<AccountView[]> {
-    const rows = await this.prisma.account.findMany({
-      where: { deletedAt: null },
-      select: ACCOUNT_SELECT,
-      orderBy: { id: 'asc' },
-    });
-    return rows.map((row) => this.view(actor, row));
+  /** One page of the accounts that are not deleted, oldest first (Q10). */
+  async list(
+    actor: AccountActor,
+    { page, pageSize }: PageQuery,
+  ): Promise<AccountPage> {
+    const where = { deletedAt: null };
+    const [rows, total] = await Promise.all([
+      this.prisma.account.findMany({
+        where,
+        select: ACCOUNT_SELECT,
+        orderBy: { id: 'asc' },
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+      }),
+      this.prisma.account.count({ where }),
+    ]);
+    return {
+      data: rows.map((row) => this.view(actor, row)),
+      meta: { page, pageSize, total },
+    };
   }
 
   /**

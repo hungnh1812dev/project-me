@@ -8,6 +8,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   Req,
   UseGuards,
 } from '@nestjs/common';
@@ -26,10 +27,12 @@ import {
 import {
   documentIdSchema,
   inviteAccountSchema,
+  pageQuerySchema,
   parseRequest,
   updateAccountSchema,
 } from './access-management.requests';
 import {
+  type AccountPage,
   type AccountView,
   AccountsService,
   type InvitedAccountView,
@@ -57,9 +60,10 @@ export class AccountsController {
   @RequirePermission({ action: PermissionAction.read, subject: SUBJECT })
   async list(
     @Req() req: AuthenticatedRequest,
-  ): Promise<{ data: AccountView[] }> {
+    @Query() query: unknown,
+  ): Promise<AccountPage> {
     const actor = requireAccountActor(req.user.actor);
-    return { data: await this.accounts.list(actor) };
+    return this.accounts.list(actor, parseRequest(pageQuerySchema, query));
   }
 
   /** Invite (Q2): 201 with the account; the invitee gets an emailed code. */

@@ -3,6 +3,7 @@ import { BadRequestException } from '@nestjs/common';
 import {
   createRoleSchema,
   inviteAccountSchema,
+  pageQuerySchema,
   parseRequest,
   updateAccountSchema,
   updateRoleSchema,
@@ -76,5 +77,37 @@ describe('accounts & roles request schemas (T17)', () => {
       details: { issues: [{ path: ['email'] }] },
     });
     expect(JSON.stringify(response)).not.toContain('secret-value');
+  });
+});
+
+describe('page query schema (T17c, Q10)', () => {
+  it('defaults to page 1 of 20', () => {
+    expect(parseRequest(pageQuerySchema, {})).toEqual({
+      page: 1,
+      pageSize: 20,
+    });
+  });
+
+  it('parses digit strings', () => {
+    expect(
+      parseRequest(pageQuerySchema, { page: '3', pageSize: '100' }),
+    ).toEqual({ page: 3, pageSize: 100 });
+  });
+
+  it.each([
+    { page: '0' },
+    { page: '-1' },
+    { page: '1.5' },
+    { page: '1e2' },
+    { page: 'abc' },
+    { page: '' },
+    { pageSize: '0' },
+    { pageSize: '101' },
+    { page: ['1', '2'] },
+    { search: 'x' },
+  ])('rejects %j with ACCESS_INVALID_REQUEST', (query) => {
+    expect(errorOf(() => parseRequest(pageQuerySchema, query))).toBeInstanceOf(
+      BadRequestException,
+    );
   });
 });

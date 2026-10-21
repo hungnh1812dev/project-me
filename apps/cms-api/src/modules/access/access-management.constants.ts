@@ -23,6 +23,8 @@ export const MANAGEMENT_ERROR_CODES = {
   ROLE_SYSTEM_IMMUTABLE: 'ROLE_SYSTEM_IMMUTABLE',
   /** The role is not meant for invited accounts (see UNASSIGNABLE_ROLE_SLUGS). */
   ROLE_NOT_ASSIGNABLE: 'ROLE_NOT_ASSIGNABLE',
+  /** Create of a custom role past MANAGEMENT_LIMITS.MAX_CUSTOM_ROLES (T17c). */
+  ROLE_LIMIT_REACHED: 'ROLE_LIMIT_REACHED',
 } as const;
 
 export const MANAGEMENT_ERROR_MESSAGES = {
@@ -40,6 +42,7 @@ export const MANAGEMENT_ERROR_MESSAGES = {
   ROLE_IN_USE: 'The role is still assigned to accounts.',
   ROLE_SYSTEM_IMMUTABLE: 'System roles cannot be deleted or re-ranked.',
   ROLE_NOT_ASSIGNABLE: 'This role cannot be assigned to an account.',
+  ROLE_LIMIT_REACHED: 'The maximum number of custom roles is reached.',
 } as const;
 
 /**
@@ -59,6 +62,18 @@ export const MANAGEMENT_LIMITS = {
   ROLE_SLUG_MAX_LENGTH: 64,
   /** Rows in one `PUT /roles/:id/permissions` body. */
   MAX_PERMISSIONS_PER_ROLE: 500,
+  /** Custom roles (`is_system = false`); system roles do not count (Q11). */
+  MAX_CUSTOM_ROLES: 50,
+} as const;
+
+/**
+ * Offset pagination of list endpoints (Q10): `?page=&pageSize=` in, `meta`
+ * out. The project list convention; documents, media and audit logs reuse it.
+ */
+export const PAGINATION = {
+  FIRST_PAGE: 1,
+  DEFAULT_PAGE_SIZE: 20,
+  MAX_PAGE_SIZE: 100,
 } as const;
 
 /** Fields `account.updated` / `role.updated` may name in `metadata.fields`. */
