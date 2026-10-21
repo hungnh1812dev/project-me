@@ -224,7 +224,11 @@ in `src/common/constants/limits.constants.ts` (`RATE_LIMIT_POLICIES`):
 | `TWO_FACTOR_VERIFY`          | 10 / 15 min per IP                                            |
 | `TWO_FACTOR_EMAIL_CHALLENGE` | 5 / 15 min per IP (email-challenge + email/send-code, shared) |
 | `TWO_FACTOR_MANAGE`          | 5 / 15 min per IP (totp/setup + enable + disable, shared)     |
+| `ACCOUNT_INVITE`             | 20 / hour per IP, then 10 / hour per caller (invite + resend) |
 
+- Key sources: `ip`, `email` (body.email, hashed) and `actor` (the signed-in
+  account id; needs `JwtAuthGuard` before it, which a method-level
+  `@Throttle` is; skipped when there is no signed-in account).
 - Apply with `@Throttle(RATE_LIMIT_POLICIES.X)` (`src/common/guards/throttle.guard.ts`),
   placed last so it runs before the route's other guards. Over the limit:
   `429 TOO_MANY_REQUESTS` in the unified error shape plus `Retry-After`
@@ -265,6 +269,8 @@ reviewers never reach them) plus the permission named. `:id` is always a
 | POST   | `/api/v1/accounts`                     | `accounts:create` | `{ email, displayName, roleId }`    | `201 Account & { invitationSent }`      |
 | PATCH  | `/api/v1/accounts/:id`                 | `accounts:update` | `{ displayName?, roleId? }` (one+)  | `200 Account`                           |
 | POST   | `/api/v1/accounts/:id/disable`         | `accounts:update` | none                                | `204`                                   |
+| POST   | `/api/v1/accounts/:id/enable`          | `accounts:update` | none                                | `204`                                   |
+| POST   | `/api/v1/accounts/:id/invite/resend`   | `accounts:create` | none                                | `200 { invitationSent }`                |
 | POST   | `/api/v1/accounts/:id/sessions/revoke` | `accounts:update` | none                                | `204`                                   |
 | GET    | `/api/v1/roles`                        | `roles:read`      | none                                | `200 { data: Role[] }` (rank desc)      |
 | POST   | `/api/v1/roles`                        | `roles:create`    | `{ slug, name, rank }` (rank 11–39) | `201 Role`                              |
@@ -277,6 +283,15 @@ twoFactorMethod, role: { id, slug, name, rank }, createdAt, manageable }`.
   `Role`: `{ id, slug, name, rank, isSystem, accountCount, permissions,
 manageable }`. `manageable` says whether the caller may change it (D6), so
   the admin UI can hide actions; the server enforces it anyway.
+- **Enable** (T17a): only a `disabled` account (else `409
+ACCOUNT_NOT_DISABLED`); it becomes `active` when it has a password, else
+  `invited`. `token_version` is unchanged (disable already bumped it).
+  **Resend invite**: only `invited` accounts (else `409 ACCOUNT_NOT_INVITED`);
+  issues a new invite code (older invite codes stop working; the 5 codes per
+  account and hour cap answers 429 and rolls back) and mails it;
+  `invitationSent` means the same as for invite. Both follow the D6 rank rule
+  and never target the caller. Invite and resend share the `ACCOUNT_INVITE`
+  throttle (429 + `Retry-After`, nothing written or mailed).
 - **D6 rank rule** on every write: the target account's role, any role being
   assigned, the role being edited and any new rank must all be strictly
   below the caller's rank. Nobody targets their own account (the owner
@@ -347,8 +362,8 @@ in `security-audit.constants.ts` (`<domain>.<event>`): `auth.login_succeeded`
 / `login_failed` / `logout` / `refresh_reuse_detected` / `otp_issued`,
 `password.reset` / `set` / `changed` / `change_failed`, `two_factor.enabled`
 / `disabled` / `verify_failed` / `manage_failed` / `reset_by_operator`,
-`account.invited` / `updated` / `role_changed` / `disabled` /
-`sessions_revoked`, `role.created` / `updated` / `deleted` /
+`account.invited` / `updated` / `role_changed` / `disabled` / `enabled`
+(metadata `status`) / `invite_resent` / `sessions_revoked`, `role.created` / `updated` / `deleted` /
 `permissions_replaced`.
 
 - `target_id` is the target's `document_id`; `subject` is the system subject

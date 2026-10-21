@@ -272,7 +272,7 @@ All routes sit under `/api/v1`. Errors use one shape: `{ statusCode, errorCode, 
 | Auth | `POST /auth/login` → `{ accessToken }` or `{ requires2FA, tempToken, methods }` · `POST /auth/2fa/verify` · `POST /auth/2fa/email-challenge` · `POST /auth/refresh` (cookie) · `POST /auth/logout` (cookie) · `GET /auth/me` |
 | 2FA setup | `POST /auth/2fa/totp/setup` · `POST /auth/2fa/enable` · `POST /auth/2fa/disable` (password + code) |
 | Password | `POST /auth/password/request-otp` (always 202) · `POST /auth/password/reset` · `POST /auth/password/set` (invite) · `POST /auth/password/change` |
-| Accounts | `GET/POST /accounts` (invite) · `PATCH /accounts/:id` · `POST /accounts/:id/disable` · `POST /accounts/:id/sessions/revoke` |
+| Accounts | `GET/POST /accounts` (invite) · `PATCH /accounts/:id` · `POST /accounts/:id/disable` · `POST /accounts/:id/enable` · `POST /accounts/:id/invite/resend` · `POST /accounts/:id/sessions/revoke` |
 | Roles | `GET/POST /roles` · `PATCH/DELETE /roles/:id` · `PUT /roles/:id/permissions` |
 | API tokens | `GET/POST /api-tokens` · `PATCH /api-tokens/:id` · `POST /api-tokens/:id/revoke` |
 | Content types | `GET /content-types` (filtered to subjects the actor can read) · `GET /content-types/:slug` |

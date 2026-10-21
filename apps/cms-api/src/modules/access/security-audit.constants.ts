@@ -26,6 +26,8 @@ export const AUDIT_ACTIONS = {
   ACCOUNT_UPDATED: 'account.updated',
   ACCOUNT_ROLE_CHANGED: 'account.role_changed',
   ACCOUNT_DISABLED: 'account.disabled',
+  ACCOUNT_ENABLED: 'account.enabled',
+  ACCOUNT_INVITE_RESENT: 'account.invite_resent',
   ACCOUNT_SESSIONS_REVOKED: 'account.sessions_revoked',
   ROLE_CREATED: 'role.created',
   ROLE_UPDATED: 'role.updated',

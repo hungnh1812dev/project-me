@@ -15,6 +15,8 @@ import {
 import { ClientIpResolver } from '../../common/client-ip.resolver';
 import { API_ROUTES, ID_PARAM } from '../../common/constants/api.constants';
 import { NO_STORE_HEADER } from '../../common/constants/auth.constants';
+import { RATE_LIMIT_POLICIES } from '../../common/constants/limits.constants';
+import { Throttle } from '../../common/guards/throttle.guard';
 import { PermissionAction } from '../../generated/prisma/client';
 import { clientMetaOf } from '../identity/auth.controller';
 import {
@@ -63,6 +65,7 @@ export class AccountsController {
   /** Invite (Q2): 201 with the account; the invitee gets an emailed code. */
   @Post()
   @RequirePermission({ action: PermissionAction.create, subject: SUBJECT })
+  @Throttle(RATE_LIMIT_POLICIES.ACCOUNT_INVITE)
   invite(
     @Req() req: AuthenticatedRequest,
     @Body() body: unknown,
@@ -97,6 +100,36 @@ export class AccountsController {
     @Param(ID_PARAM) id: string,
   ): Promise<void> {
     return this.accounts.disable(
+      requireAccountActor(req.user.actor),
+      parseRequest(documentIdSchema, id),
+      clientMetaOf(this.clientIp, req),
+    );
+  }
+
+  @Post(API_ROUTES.ACCOUNTS.ENABLE)
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @RequirePermission({ action: PermissionAction.update, subject: SUBJECT })
+  enable(
+    @Req() req: AuthenticatedRequest,
+    @Param(ID_PARAM) id: string,
+  ): Promise<void> {
+    return this.accounts.enable(
+      requireAccountActor(req.user.actor),
+      parseRequest(documentIdSchema, id),
+      clientMetaOf(this.clientIp, req),
+    );
+  }
+
+  /** Q8: needs `accounts:create`, like the invite it repeats. */
+  @Post(API_ROUTES.ACCOUNTS.RESEND_INVITE)
+  @HttpCode(HttpStatus.OK)
+  @RequirePermission({ action: PermissionAction.create, subject: SUBJECT })
+  @Throttle(RATE_LIMIT_POLICIES.ACCOUNT_INVITE)
+  resendInvite(
+    @Req() req: AuthenticatedRequest,
+    @Param(ID_PARAM) id: string,
+  ): Promise<{ invitationSent: boolean }> {
+    return this.accounts.resendInvite(
       requireAccountActor(req.user.actor),
       parseRequest(documentIdSchema, id),
       clientMetaOf(this.clientIp, req),

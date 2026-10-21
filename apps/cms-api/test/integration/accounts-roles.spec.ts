@@ -588,6 +588,229 @@ describe('accounts & roles API + security audit (T17, §12-7, §12-18; Postgres 
     });
   });
 
+  describe('enable and resend invite (T17a)', () => {
+    async function invitedAccount(roleSlug = 'editor') {
+      accountCount += 1;
+      return db.prisma.account.create({
+        data: {
+          email: `t17a-invitee${accountCount}@example.test`,
+          displayName: `Invitee ${accountCount}`,
+          status: 'invited',
+          role: { connect: { slug: roleSlug } },
+        },
+        select: { id: true, documentId: true, email: true },
+      });
+    }
+
+    const codeFor = (email: string): string | undefined =>
+      mail.sent
+        .filter((m) => m.to === email)
+        .at(-1)
+        ?.text.match(CODE_PATTERN)?.[0];
+
+    const disable = (actor: Signed, documentId: string) =>
+      http().post(`${ACCOUNTS}/${documentId}/disable`).set(bearer(actor.token));
+    const enable = (actor: Signed, documentId: string) =>
+      http().post(`${ACCOUNTS}/${documentId}/enable`).set(bearer(actor.token));
+    const resend = (actor: Signed, documentId: string) =>
+      http()
+        .post(`${ACCOUNTS}/${documentId}/invite/resend`)
+        .set(bearer(actor.token));
+
+    it('enable: a disabled account with a password is active again and can log in', async () => {
+      const target = await signedIn('editor');
+      expect((await disable(admin, target.documentId)).status).toBe(204);
+      expect((await login(target.email)).status).toBe(401);
+
+      const res = await enable(admin, target.documentId);
+      expect(res.status).toBe(204);
+      const row = await db.prisma.account.findUniqueOrThrow({
+        where: { id: target.id },
+        select: { status: true },
+      });
+      expect(row.status).toBe('active');
+      expect((await login(target.email)).status).toBe(200);
+      // The token issued before the disable stays dead (no token_version change).
+      expect((await http().get(ME).set(bearer(target.token))).status).toBe(401);
+
+      const [audit] = await auditRows(
+        AUDIT_ACTIONS.ACCOUNT_ENABLED,
+        target.documentId,
+      );
+      expect(audit).toMatchObject({
+        actorId: admin.id,
+        subject: 'accounts',
+        metadata: { status: 'active' },
+      });
+    });
+
+    it('enable: a disabled account without a password goes back to invited', async () => {
+      const target = await invitedAccount();
+      expect((await disable(admin, target.documentId)).status).toBe(204);
+      expect((await enable(admin, target.documentId)).status).toBe(204);
+      const row = await db.prisma.account.findUniqueOrThrow({
+        where: { id: target.id },
+        select: { status: true },
+      });
+      expect(row.status).toBe('invited');
+      const [audit] = await auditRows(
+        AUDIT_ACTIONS.ACCOUNT_ENABLED,
+        target.documentId,
+      );
+      expect(audit?.metadata).toEqual({ status: 'invited' });
+    });
+
+    it('enable: 409 unless disabled; 403 for equal rank and for oneself; 404 for unknown ids', async () => {
+      const editor = await signedIn('editor');
+      const notDisabled = await enable(admin, editor.documentId);
+      expect(notDisabled.status).toBe(409);
+      expect(errorCodeOf(notDisabled)).toBe(
+        MANAGEMENT_ERROR_CODES.ACCOUNT_NOT_DISABLED,
+      );
+      const otherAdmin = await signedIn('admin');
+      expect((await disable(owner, otherAdmin.documentId)).status).toBe(204);
+      const peer = await enable(admin, otherAdmin.documentId);
+      expect(peer.status).toBe(403);
+      expect(errorCodeOf(peer)).toBe(MANAGEMENT_ERROR_CODES.RANK_FORBIDDEN);
+      expect((await enable(admin, admin.documentId)).status).toBe(403);
+      expect((await enable(admin, UNKNOWN_ID)).status).toBe(404);
+      expect((await enable(admin, 'not-a-uuid')).status).toBe(400);
+      expect(
+        (await http().post(`${ACCOUNTS}/${editor.documentId}/enable`)).status,
+      ).toBe(401);
+      const noAccess = await enable(editor, editor.documentId);
+      expect(noAccess.status).toBe(403);
+    });
+
+    it('resend: a new code sets the password, the old code stops working, audited', async () => {
+      const inviter = await signedIn('admin');
+      const target = await invitedAccount();
+      expect((await resend(inviter, target.documentId)).status).toBe(200);
+      const oldCode = codeFor(target.email);
+      const res = await resend(inviter, target.documentId);
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual({ invitationSent: true });
+      const newCode = codeFor(target.email);
+      expect(newCode).toBeDefined();
+      expect(newCode).not.toBe(oldCode);
+
+      const setWith = (code: string | undefined) =>
+        http()
+          .post(SET_PASSWORD)
+          .set('X-Forwarded-For', nextIp())
+          .send({ email: target.email, code, newPassword: NEW_PASSWORD });
+      const stale = await setWith(oldCode);
+      expect(stale.status).toBe(400);
+      expect(errorCodeOf(stale)).toBe('AUTH_INVALID_OTP');
+      expect((await setWith(newCode)).status).toBe(204);
+      expect((await login(target.email, NEW_PASSWORD)).status).toBe(200);
+
+      const rows = await auditRows(
+        AUDIT_ACTIONS.ACCOUNT_INVITE_RESENT,
+        target.documentId,
+      );
+      expect(rows).toHaveLength(2);
+      expect(rows[0]).toMatchObject({
+        actorId: inviter.id,
+        subject: 'accounts',
+      });
+    });
+
+    it('resend: 409 for non-invited accounts; needs accounts:create; rank and self rules apply', async () => {
+      const actor = await signedIn('admin');
+      const active = await signedIn('editor');
+      const notInvited = await resend(actor, active.documentId);
+      expect(notInvited.status).toBe(409);
+      expect(errorCodeOf(notInvited)).toBe(
+        MANAGEMENT_ERROR_CODES.ACCOUNT_NOT_INVITED,
+      );
+      expect((await resend(actor, actor.documentId)).status).toBe(403);
+      expect((await resend(actor, UNKNOWN_ID)).status).toBe(404);
+      const target = await invitedAccount();
+      expect((await resend(active, target.documentId)).status).toBe(403);
+      const sentBefore = mail.sent.length;
+      const peerInvite = await invitedAccount('admin');
+      expect((await resend(actor, peerInvite.documentId)).status).toBe(403);
+      expect(mail.sent).toHaveLength(sentBefore);
+    });
+
+    it('resend: the hourly code cap answers 429 and leaves no audit row for the refused code', async () => {
+      const inviter = await signedIn('admin');
+      const target = await invitedAccount();
+      // The account has no code yet: five resends fill the 5-per-hour cap.
+      for (let i = 0; i < 5; i += 1) {
+        expect((await resend(inviter, target.documentId)).status).toBe(200);
+      }
+      const refused = await resend(inviter, target.documentId);
+      expect(refused.status).toBe(429);
+      expect(
+        await auditRows(AUDIT_ACTIONS.ACCOUNT_INVITE_RESENT, target.documentId),
+      ).toHaveLength(5);
+    });
+
+    it('invite throttle: the 11th invite or resend by one caller is 429 with Retry-After, nothing written', async () => {
+      const inviter = await signedIn('admin');
+      const other = await signedIn('admin');
+      const target = await invitedAccount();
+      const invite = (actor: Signed, n: number) =>
+        http()
+          .post(ACCOUNTS)
+          .set(bearer(actor.token))
+          .send({
+            email: `t17a-throttle-${actor.id}-${n}@example.test`,
+            displayName: 'Throttled',
+            roleId: roleIds.editor,
+          });
+      // Invite and resend share one counter: 5 + 5 = 10 allowed.
+      for (let i = 0; i < 5; i += 1) {
+        expect((await invite(inviter, i)).status).toBe(201);
+      }
+      for (let i = 0; i < 5; i += 1) {
+        expect((await resend(inviter, target.documentId)).status).toBe(200);
+      }
+      const sentBefore = mail.sent.length;
+      const accountsBefore = await db.prisma.account.count();
+      const blocked = await invite(inviter, 99);
+      expect(blocked.status).toBe(429);
+      expect(errorCodeOf(blocked)).toBe(ERROR_CODES.TOO_MANY_REQUESTS);
+      expect(Number(blocked.headers['retry-after'])).toBeGreaterThan(0);
+      expect((await resend(inviter, target.documentId)).status).toBe(429);
+      expect(mail.sent).toHaveLength(sentBefore);
+      expect(await db.prisma.account.count()).toBe(accountsBefore);
+      // Another caller keeps its own counter.
+      expect((await invite(other, 0)).status).toBe(201);
+    });
+  });
+
+  describe('invite throttle per IP (T17a)', () => {
+    it('the 21st invite or resend from one IP is 429 even across callers', async () => {
+      const callers = await Promise.all([
+        signedIn('admin'),
+        signedIn('admin'),
+        signedIn('admin'),
+      ]);
+      const sharedIp = '10.9.9.9';
+      const statuses: number[] = [];
+      for (let i = 0; i < 21; i += 1) {
+        const caller = callers[i % callers.length] as Signed;
+        const res = await http()
+          .post(ACCOUNTS)
+          .set({ Authorization: `Bearer ${caller.token}` })
+          .set('X-Forwarded-For', sharedIp)
+          .send({
+            email: `t17a-ip-${i}@example.test`,
+            displayName: 'Ip limited',
+            roleId: roleIds.editor,
+          });
+        statuses.push(res.status);
+      }
+      expect(statuses.slice(0, 20).every((status) => status === 201)).toBe(
+        true,
+      );
+      expect(statuses[20]).toBe(429);
+    });
+  });
+
   describe('roles', () => {
     it('lists roles highest rank first with permissions; owner has no rows', async () => {
       const res = await http().get(ROLES).set(bearer(admin.token));

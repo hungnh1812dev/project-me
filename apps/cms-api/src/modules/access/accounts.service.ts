@@ -313,6 +313,76 @@ export class AccountsService {
     this.versions.invalidateAccount(accountId);
   }
 
+  /**
+   * Re-enables a disabled account (T17a, Q7): back to `active` when it has a
+   * password, else to `invited` (it never finished its invite). No
+   * token_version change: disable already bumped it, so old tokens stay dead.
+   */
+  async enable(
+    actor: AccountActor,
+    documentId: string,
+    meta: ClientMeta,
+  ): Promise<void> {
+    const accountId = await this.prisma.$transaction(async (tx) => {
+      const target = await this.lockManageable(tx, actor, documentId);
+      if (target.status !== 'disabled') {
+        throw new ConflictException({
+          errorCode: MANAGEMENT_ERROR_CODES.ACCOUNT_NOT_DISABLED,
+          message: MANAGEMENT_ERROR_MESSAGES.ACCOUNT_NOT_DISABLED,
+        });
+      }
+      const credentials = await tx.account.findUniqueOrThrow({
+        where: { id: target.id },
+        select: { passwordHash: true },
+      });
+      const status: AccountStatus =
+        credentials.passwordHash === null ? 'invited' : 'active';
+      await tx.account.update({
+        where: { id: target.id },
+        data: { status, updatedBy: { connect: { id: actor.accountId } } },
+      });
+      await this.recordAccount(tx, auditActorOf(actor), target, meta, {
+        action: AUDIT_ACTIONS.ACCOUNT_ENABLED,
+        metadata: { status },
+      });
+      return target.id;
+    });
+    this.versions.invalidateAccount(accountId);
+  }
+
+  /**
+   * Issues a new invite code for an `invited` account (T17a). The new code
+   * and the audit row commit together (older invite codes stop working; the
+   * hourly code cap answers 429 and rolls everything back), then it is
+   * mailed. `invitationSent` means what it means for `invite`.
+   */
+  async resendInvite(
+    actor: AccountActor,
+    documentId: string,
+    meta: ClientMeta,
+  ): Promise<{ invitationSent: boolean }> {
+    const auditActor = auditActorOf(actor);
+    const issued = await this.prisma.$transaction(async (tx) => {
+      const target = await this.lockManageable(tx, actor, documentId);
+      if (target.status !== 'invited') {
+        throw new ConflictException({
+          errorCode: MANAGEMENT_ERROR_CODES.ACCOUNT_NOT_INVITED,
+          message: MANAGEMENT_ERROR_MESSAGES.ACCOUNT_NOT_INVITED,
+        });
+      }
+      await this.recordAccount(tx, auditActor, target, meta, {
+        action: AUDIT_ACTIONS.ACCOUNT_INVITE_RESENT,
+      });
+      const code = await this.otp.issue(target.id, INVITE_PURPOSE, {
+        actor: auditActor,
+        ip: meta.ip,
+        tx,
+      });
+      return { row: target, code };
+    });
+    return { invitationSent: await this.sendInvite(issued.row, issued.code) };
+  }
+
   /** Signs the account out everywhere: token_version bump + refresh tokens revoked. */
   async revokeSessions(
     actor: AccountActor,

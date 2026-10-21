@@ -64,6 +64,34 @@ function emailKeyOf(req: Request): string | undefined {
     .digest('hex');
 }
 
+/** Account id of the signed-in caller; other actors and anonymous are skipped. */
+function actorKeyOf(req: Request): string | undefined {
+  const actor = (
+    req as Request & {
+      user?: { actor?: { kind?: unknown; accountId?: unknown } };
+    }
+  ).user?.actor;
+  if (actor?.kind !== 'account' || typeof actor.accountId !== 'number') {
+    return undefined;
+  }
+  return String(actor.accountId);
+}
+
+function subjectOf(
+  rule: RateLimitRule,
+  req: Request,
+  clientIp: ClientIpResolver,
+): string | undefined {
+  switch (rule.keySource) {
+    case RATE_LIMIT_KEY_SOURCES.IP:
+      return clientIp.resolve(req);
+    case RATE_LIMIT_KEY_SOURCES.EMAIL:
+      return emailKeyOf(req);
+    case RATE_LIMIT_KEY_SOURCES.ACTOR:
+      return actorKeyOf(req);
+  }
+}
+
 /**
  * Fixed-window throttle (D7, T10). Each rule of the policy counts one hit per
  * request under `<rule name>:<IP | email hash>`; the first rule over its
@@ -89,10 +117,7 @@ export class ThrottleGuard implements CanActivate {
     const http = context.switchToHttp();
     const req = http.getRequest<Request>();
     for (const rule of rules) {
-      const subject =
-        rule.keySource === RATE_LIMIT_KEY_SOURCES.IP
-          ? this.clientIp.resolve(req)
-          : emailKeyOf(req);
+      const subject = subjectOf(rule, req, this.clientIp);
       if (subject === undefined) continue;
 
       const hit = await this.store.hit(

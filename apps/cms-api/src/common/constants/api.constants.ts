@@ -39,6 +39,8 @@ export const API_ROUTES = {
     BY_ID: ':id',
     DISABLE: ':id/disable',
     REVOKE_SESSIONS: ':id/sessions/revoke',
+    ENABLE: ':id/enable',
+    RESEND_INVITE: ':id/invite/resend',
   },
   /** SPEC §9 roles (T17). `:id` is the role's document_id. */
   ROLES: {

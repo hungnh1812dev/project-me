@@ -11,6 +11,10 @@ export const MANAGEMENT_ERROR_CODES = {
   ACCOUNT_NOT_FOUND: 'ACCOUNT_NOT_FOUND',
   ACCOUNT_EMAIL_TAKEN: 'ACCOUNT_EMAIL_TAKEN',
   ACCOUNT_ALREADY_DISABLED: 'ACCOUNT_ALREADY_DISABLED',
+  /** Enable of an account that is not disabled (T17a). */
+  ACCOUNT_NOT_DISABLED: 'ACCOUNT_NOT_DISABLED',
+  /** Resend of an invite to an account that is not `invited` (T17a). */
+  ACCOUNT_NOT_INVITED: 'ACCOUNT_NOT_INVITED',
   ROLE_NOT_FOUND: 'ROLE_NOT_FOUND',
   ROLE_SLUG_TAKEN: 'ROLE_SLUG_TAKEN',
   /** Delete of a role some account (any status, deleted included) holds. */
@@ -29,6 +33,8 @@ export const MANAGEMENT_ERROR_MESSAGES = {
   ACCOUNT_NOT_FOUND: 'Account not found.',
   ACCOUNT_EMAIL_TAKEN: 'An account with this email already exists.',
   ACCOUNT_ALREADY_DISABLED: 'The account is already disabled.',
+  ACCOUNT_NOT_DISABLED: 'The account is not disabled.',
+  ACCOUNT_NOT_INVITED: 'The account has no pending invitation.',
   ROLE_NOT_FOUND: 'Role not found.',
   ROLE_SLUG_TAKEN: 'A role with this slug already exists.',
   ROLE_IN_USE: 'The role is still assigned to accounts.',

@@ -12,6 +12,12 @@ export const RATE_LIMIT_KEY_SOURCES = {
   IP: 'ip',
   /** `body.email`, trimmed and lower-cased, hashed. Never checked against the DB. */
   EMAIL: 'email',
+  /**
+   * The signed-in caller (`req.user.actor.accountId`). Only for routes behind
+   * `JwtAuthGuard`: the throttle guard must run after it (method-level
+   * `@Throttle` does). No signed-in account means the rule is skipped.
+   */
+  ACTOR: 'actor',
 } as const;
 
 export type RateLimitKeySource =
@@ -114,6 +120,25 @@ export const RATE_LIMIT_POLICIES = {
       keySource: RATE_LIMIT_KEY_SOURCES.IP,
       limit: 5,
       windowMs: FIFTEEN_MINUTES_MS,
+    },
+  ],
+  /**
+   * `POST /accounts` and `POST /accounts/:id/invite/resend` (T17a, Q9): one
+   * shared counter per caller and per IP, so invite and resend can't be used
+   * to mail-bomb. In memory (one replica).
+   */
+  ACCOUNT_INVITE: [
+    {
+      name: 'account-invite:ip',
+      keySource: RATE_LIMIT_KEY_SOURCES.IP,
+      limit: 20,
+      windowMs: ONE_HOUR_MS,
+    },
+    {
+      name: 'account-invite:actor',
+      keySource: RATE_LIMIT_KEY_SOURCES.ACTOR,
+      limit: 10,
+      windowMs: ONE_HOUR_MS,
     },
   ],
   REFRESH: [
