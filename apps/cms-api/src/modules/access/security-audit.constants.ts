@@ -36,6 +36,7 @@ export const AUDIT_ACTIONS = {
   API_TOKEN_CREATED: 'api_token.created',
   API_TOKEN_UPDATED: 'api_token.updated',
   API_TOKEN_REVOKED: 'api_token.revoked',
+  MEDIA_DELETED: 'media.deleted',
 } as const;
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[keyof typeof AUDIT_ACTIONS];

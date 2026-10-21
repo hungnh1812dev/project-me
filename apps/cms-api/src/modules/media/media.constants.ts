@@ -65,6 +65,9 @@ export const MEDIA_ERROR_CODES = {
   INVALID_UPLOAD: 'MEDIA_INVALID_UPLOAD',
   UNSUPPORTED_TYPE: 'MEDIA_UNSUPPORTED_TYPE',
   FILE_TOO_LARGE: 'MEDIA_FILE_TOO_LARGE',
+  NOT_FOUND: 'MEDIA_NOT_FOUND',
+  /** Delete refused: a draft or published document still uses the file. */
+  IN_USE: 'MEDIA_IN_USE',
 } as const;
 
 export const MEDIA_ERROR_MESSAGES = {
@@ -76,9 +79,19 @@ export const MEDIA_ERROR_MESSAGES = {
     'This file type is not allowed. Allowed: JPEG, PNG, WebP, GIF, AVIF, PDF and MP4.',
   UNREADABLE_IMAGE: 'The image could not be read.',
   FILE_TOO_LARGE: 'The file is larger than the limit for its type.',
+  NOT_FOUND: 'File not found.',
+  IN_USE: 'The file is used by a document. Remove it from the document first.',
 } as const;
 
 /** `GET /media` accepts the shared page query only. */
 export const MEDIA_ORDER = { CREATED_AT: 'created_at', ID: 'id' } as const;
 
 export const MEDIA_TABLE = 'public.file_library';
+export const DELETED_AT_COLUMN = 'deleted_at';
+
+/** Soft-deleted files are purged from storage once older than this (SPEC §9). */
+export const MEDIA_PURGE_GRACE_MS = 24 * 60 * 60 * 1000;
+/** The purge job runs this often, in-process (one replica; see README). */
+export const MEDIA_PURGE_INTERVAL_MS = 60 * 60 * 1000;
+/** Rows read per query during a purge run (a run walks all eligible rows). */
+export const MEDIA_PURGE_BATCH_SIZE = 100;

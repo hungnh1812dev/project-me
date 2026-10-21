@@ -15,7 +15,7 @@ import type { PageMeta, PageQuery } from '../access/access-management.requests';
 import type { ActorContext } from '../access/actor-context';
 import type { AccountActor } from '../access/rank-rules';
 import { ContentDbProvider } from '../content-engine/content-database';
-import { MEDIA_ORDER, MEDIA_TABLE } from './media.constants';
+import { DELETED_AT_COLUMN, MEDIA_ORDER, MEDIA_TABLE } from './media.constants';
 import { UploadPipeline } from './upload.pipeline';
 
 /** A library file as the API returns it: no storage key, no internal id. */
@@ -65,8 +65,6 @@ const MEDIA_COLUMNS = [
   'is_reviewer_preset',
   'created_at',
 ] as const;
-
-const DELETED_AT_COLUMN = 'deleted_at';
 
 function viewOf(row: MediaRow): MediaView {
   return {

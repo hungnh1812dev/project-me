@@ -6,6 +6,8 @@ import { AccessModule } from '../access/access.module';
 import { ContentEngineModule } from '../content-engine/content-engine.module';
 import { IdentityModule } from '../identity/identity.module';
 import { MediaController } from './media.controller';
+import { MediaDeleteService } from './media-delete.service';
+import { MediaPurgeJob } from './media-purge.job';
 import { MediaService } from './media.service';
 import { UploadPipeline } from './upload.pipeline';
 
@@ -19,7 +21,7 @@ import { UploadPipeline } from './upload.pipeline';
     MediaStorageModule,
   ],
   controllers: [MediaController],
-  providers: [MediaService, UploadPipeline],
+  providers: [MediaService, MediaDeleteService, MediaPurgeJob, UploadPipeline],
   exports: [MediaService],
 })
 export class MediaModule {}

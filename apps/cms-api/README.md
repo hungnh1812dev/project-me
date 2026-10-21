@@ -506,7 +506,9 @@ Order of every write: allowlist (D4: resent `"***"` dropped, `FIELD_UNKNOWN` / `
 - The storage key is a UUIDv7 (`src/common/uuidv7.ts`); the full SHA-256 of the stored bytes is kept in `file_library.sha256` (no dedupe yet). The file name is kept only for display (path and control characters removed, 255 characters). If the row cannot be written, the stored object is removed again.
 - Storage port: `MEDIA_STORAGE` (`storage.port.ts`: `put`, `delete`). `MEDIA_PROVIDER=fake` keeps bytes in memory (dev and tests, rejected in production); `cloudinary` uploads with the SDK (`CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`, optional `CLOUDINARY_FOLDER`; all three required with that provider). Rows from both are stored with `provider = cloudinary`. Images get a thumbnail URL (320 px longest side); PDF is stored as a Cloudinary `raw` resource, video as `video`.
 - `GET /media?page=&pageSize=` (the shared list convention): newest first, soft-deleted rows hidden. Needs `media` `read`. The policy row filter (`PolicyEvaluator.rowFilter`) limits read-only actors (reviewer, anonymous) to `is_reviewer_preset = true` rows, whatever their role is called. Reviewer sessions reach this route at T32.
-- Not here: `PATCH /media/:id` (alt), delete and purge (T28).
+- `DELETE /media/:id` (T28, `media-delete.service.ts`): needs `media` `delete` (row filter applied; JWT sessions only). 204 on success: soft delete (`deleted_at`) plus a `media.deleted` audit row (subject `media`, target = the file's `document_id`, metadata `{ mimeType }`) in the same transaction. 409 `MEDIA_IN_USE` while any `media` column of any content table (root or component, draft or published row) holds the file; the check runs under a row lock on the file. 404 `MEDIA_NOT_FOUND` for an unknown, already deleted or out-of-scope file; 400 for a non-UUID id.
+- Purge (`media-purge.job.ts`): an in-process job, hourly (`MEDIA_PURGE_INTERVAL_MS`), removes the stored object and then the row of files soft-deleted over 24 h ago (`MEDIA_PURGE_GRACE_MS`), walking all eligible rows in id order in batches of 100 (rows that stay never block later ones). A file a document points at again is skipped. Every replica runs it (harmless). A failed storage delete is logged and retried next run. Known limit: a document can attach the file between the reference check and the row delete; the object is then gone while the document still points at the (deleted) row.
+- Not here: `PATCH /media/:id` (alt).
 
 ### Security audit (T17, D15)
 
@@ -520,7 +522,8 @@ in `security-audit.constants.ts` (`<domain>.<event>`): `auth.login_succeeded`
 / `disabled` / `verify_failed` / `manage_failed` / `reset_by_operator`,
 `account.invited` / `updated` / `role_changed` / `disabled` / `enabled`
 (metadata `status`) / `invite_resent` / `sessions_revoked`, `role.created` / `updated` / `deleted` /
-`permissions_replaced`, `api_token.created` / `updated` / `revoked`.
+`permissions_replaced`, `api_token.created` / `updated` / `revoked`,
+`media.deleted`.
 
 - `target_id` is the target's `document_id`; `subject` is the system subject
   (`accounts`, `roles`) or null for sign-in and self-service events; `ip` is
