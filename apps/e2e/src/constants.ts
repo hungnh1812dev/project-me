@@ -49,6 +49,7 @@ export const SMOKE_DB_NAME = 'abyss';
 
 /** HTTP statuses the specs assert on. */
 export const HTTP = {
+  OK: 200,
   UNAUTHORIZED: 401,
   NOT_FOUND: 404,
 } as const;

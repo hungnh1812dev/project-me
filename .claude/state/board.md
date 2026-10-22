@@ -54,6 +54,6 @@ Source: `tasks/todo.md` "Ad-hoc: Base config" (D2) · Order: core-builder (A) ->
 | ID | Title | Scope | Status | Commit |
 |---|---|---|---|---|
 | OS1 | Owner setup API (/setup/status, /setup/owner) + shared bootstrap audit | core-builder | done | c324e6b |
-| OS2 | Admin /setup page + login notice | ui-builder | in-progress | - |
+| OS2 | Admin /setup page + login notice | ui-builder | done | d4c929e |
 | OS3 | Smoke stack creates owner via setup route; deploy and local docs | core-builder | done | a668623 |
-| OS4 | e2e for closed state + browser check on fresh DB | qc | todo | - |
+| OS4 | e2e for closed state + browser check on fresh DB | qc | in-progress | - |
