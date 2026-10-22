@@ -301,7 +301,7 @@ Secrets never go into the deploy repo in plain text. Pick one:
 - **SOPS + age**: keep `cms-api-secrets.sops.yaml` in the deploy repo, encrypted to an age key; the cluster decrypts with Flux/Argo's SOPS support (or `sops -d | kubectl apply -f -` in a manual flow). Keep the private age key off the repo and back it up separately.
 - **sealed-secrets**: run the controller in the cluster, create the Secret locally, `kubeseal` it, commit the `SealedSecret`. Back up the controller's sealing key; without it the committed files cannot be decrypted after a cluster rebuild.
 
-Either way: one Secret per app, rotate with the KID variables (`JWT_ACCESS_KID`, `TOTP_ENC_KID`) changed together with the key, and restart the pod after any Secret change (env is read at start).
+Layout, creation and rotation with SOPS are in `docs/deployment/k3s-secrets-sops.md`. Either way: one Secret per app, rotate with the KID variables (`JWT_ACCESS_KID`, `TOTP_ENC_KID`) changed together with the key, and restart the pod after any Secret change (env is read at start).
 
 ## 7. PostgreSQL: storage, nightly dump, restore drill
 
