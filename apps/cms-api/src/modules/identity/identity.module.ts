@@ -10,6 +10,8 @@ import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { JwtAuthGuard, JwtStrategy } from './jwt.strategy';
 import { OtpService } from './otp.service';
+import { OwnerSetupController } from './owner-setup.controller';
+import { OwnerSetupService } from './owner-setup.service';
 import { PasswordController } from './password.controller';
 import { PasswordService } from './password.service';
 import { RefreshTokenService } from './refresh-token.service';
@@ -23,7 +25,12 @@ import { TwoFactorService } from './two-factor.service';
 /** Login, JWT, refresh rotation (T09); OTP + password lifecycle (T12); 2FA (T13). */
 @Module({
   imports: [AccessModule, DatabaseModule, MailModule, PassportModule],
-  controllers: [AuthController, PasswordController, TwoFactorController],
+  controllers: [
+    AuthController,
+    OwnerSetupController,
+    PasswordController,
+    TwoFactorController,
+  ],
   providers: [
     AccessTokenService,
     AllowedOriginGuard,
@@ -31,6 +38,7 @@ import { TwoFactorService } from './two-factor.service';
     JwtAuthGuard,
     JwtStrategy,
     OtpService,
+    OwnerSetupService,
     PasswordService,
     RefreshTokenService,
     SecretBox,

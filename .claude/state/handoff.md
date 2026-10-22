@@ -16,6 +16,8 @@ Updated: 2026-10-22 after T32 (trimmed to open work; history in archive/handoff-
 - D2 step B (ui) built - blocked on deleting apps/{cms-admin,web}/.oxlintrc.json and packages/form-commons/.oxlintrc.json (approval); next: user approves, run pnpm lint, then step C (qc).
 - D3 base-config dist build - awaiting checks/commit; next: qc-cli (fresh clone, Docker builds when daemon is up).
 - T37g Remove e2e from CI - deletions done; awaiting checks; next: qc-cli, security-qc (Risk high).
+- F1 Prettier ignore for e2e output - awaiting commit; next: user commits .prettierignore.
+- OS1 Owner setup API - awaiting checks/commit (Risk high; security-qc before commit); next: qc-cli, security-qc, then OS2 and OS3. Notes: displayName must be omitted (not '') when blank (same rules as the CLI); CLI audit row is a system actor with targetId; 404 message is `Cannot POST <url>` to match an unknown route.
 - Phase 5 (Media): checkpoint still pending user review.
 - Next: Phase 6 phase checks (T38 done); Phase 5 checkpoint still pending.
 
@@ -102,3 +104,7 @@ Updated: 2026-10-22 after T32 (trimmed to open work; history in archive/handoff-
 - Root start scripts (user, 2026-10-22): `start:dev` runs dev for cms-admin and web in parallel (cms-api excluded). cms-api starts with its existing `start` script (no new dev script). Root package.json scripts: start:dev, start:cms-admin, start:web, start:cms-api. Ad-hoc S1, core-builder scope (root package.json).
 - User decision (2026-10-22): e2e does NOT run in GitHub CI. Remove the CI e2e job (T37f scope: no e2e in CI). Image publish (T37e) is NOT gated on e2e; publish after CI checks (lint, typecheck, unit tests, build) pass. e2e stays local only (`pnpm smoke`, `pnpm e2e:spec`). Replan T37 (e2e job removed; T37e gate changed; Q-T37-8 and Q-T37-10 are resolved by this).
 - T37g answers (user, 2026-10-22): delete `.github/workflows/e2e.yml`, `scripts/e2e-stack.sh` and `scripts/stack/web-build.env` (approve each deletion when it comes up). Publish does NOT wait for the repo job (format:check and audit); it waits only for the app checks, as in T37e/T37g.
+- Fix request (user, 2026-10-22): `pnpm format:check` fails on gitignored apps/e2e report output (playwright-report/, test-results/). Fix: add these output folders to `.prettierignore` (root config, core-builder). Ad-hoc F1.
+- Owner creation on k3s (user, 2026-10-22): the user rejects `kubectl exec` and the one-shot Job. Chosen: a one-time setup page (like Strapi), open only while no owner exists, guarded by a setup token from a k8s secret. This reverses Q2 (invite-only) and success criterion 1 ("no HTTP route creates an owner"). Needs a spec change (planner DESIGN), then a task, then a security-qc review (high risk: identity module). Keep owner:bootstrap CLI as a fallback unless the user says otherwise.
+- Owner setup answers (user, 2026-10-22): Q-OS1 login page after setup (no direct sign-in). Q-OS2 status route needs no token. Q-OS3 no completed marker (setup closed by owner row + removing token). Q-OS4 smoke creates owner via the setup route. ADR 0005 accepted.
+- OS1 security answers (user, 2026-10-22): closed response keeps the same body as an unknown route; headers may differ (no-store, throttle 429 stay). Add a 100-character cap on displayName in the shared rule (setup route and CLI).

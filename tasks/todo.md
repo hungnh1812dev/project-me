@@ -595,3 +595,61 @@ Conventions for every task:
     - `pnpm turbo run typecheck lint --filter=@abyss/cms-api --filter=@abyss/cms-admin --filter=@abyss/web` (CI checks command) passes.
     - `docker build -f apps/cms-api/Dockerfile .`, `docker build -f apps/web/Dockerfile --build-arg NEXT_PUBLIC_API_BASE_URL=<smoke value> .`, `docker build -f apps/cms-admin/Dockerfile --build-arg VITE_API_BASE_URL=<smoke value> .` succeed (values as in `docker-compose.smoke.yml`); the build log shows `@abyss/base-config:build` before the app build. If the Docker daemon is down, report it as not run.
     - `pnpm exec prettier --write` on the changed files; `git status --porcelain` shows only the files listed above.
+
+## Ad-hoc: Owner setup
+
+User decision 2026-10-22 (handoff.md, "Owner creation on k3s"): a one-time setup page, open only while no owner exists, guarded by a setup token from the k8s Secret; `owner:bootstrap` stays as the fallback. Design: `docs/modules/owner-setup.md`; decision: `docs/adr/0005-one-time-owner-setup-route.md`; spec: SPEC §1, D1, D15, D17, §9, §12-1, Q2 (amended 2026-10-22). Build order: OS1 -> OS2 and OS3 (parallel) -> OS4. **Needs Q-OS1..Q-OS4** (SPEC §14; builders follow the recommended answers until answered).
+
+- [ ] **OS1: Owner setup API (`/setup/status`, `/setup/owner`) + shared bootstrap audit** · M · Deps: none · core-builder · **Risk high (identity module) · Security gate: yes** (security-qc before OS2/OS3 build on it) · **Needs Q-OS1, Q-OS2, Q-OS3** · SPEC D1, D15, D17, §9, §12-1 · Design: `docs/modules/owner-setup.md` (API, Setup token, Rate limits, Audit, Code changes)
+  - Acceptance:
+    - Config: optional `OWNER_SETUP_TOKEN` in `env.schema.ts` / `app-config.ts`; with `NODE_ENV=production` and the key set, a value under `MIN_SECRET_BYTES` fails boot; empty string = unset; boot summary shows `[redacted]` when set. Not added to `SECRET_ENV_KEYS` (not required). `.env.example` documents it (how to generate, remove after setup).
+    - `bootstrapOwner(prisma, input, options?)` writes `owner.created` (`{ channel: 'setup_page' | 'cli' }`, actor = the new owner) inside its transaction; the `owner:bootstrap` CLI passes `channel: 'cli'`. Existing error codes and CLI behaviour unchanged.
+    - `GET /api/v1/setup/status` -> `200 { open }`, `Cache-Control: no-store`; `open` is true only while the token is configured and no live owner exists. Throttle `SETUP_STATUS` (`setup-status:ip`, 30/min).
+    - `POST /api/v1/setup/owner` in the documented order: throttle `SETUP_SUBMIT` (`setup-submit:ip`, 5 / 15 min) -> closed (no token configured, latch set, or owner exists) -> `404 NOT_FOUND` with the same body as an unknown route -> token check (string <= `SETUP_TOKEN_MAX_LENGTH`, SHA-256 digests compared with `crypto.timingSafeEqual`) -> `401 SETUP_TOKEN_INVALID` -> body validation (same rules as `parseOwnerInput`) -> `400` naming fields only -> `bootstrapOwner(..., { channel: 'setup_page' })` -> `201 { email }`. `OWNER_EXISTS` -> 404 and latch; `EMAIL_TAKEN` -> `409 OWNER_EMAIL_TAKEN`; `ROLE_MISSING` -> 503. No cookie, no access token in any answer.
+    - Wrong token never runs Argon2 (unit test with a spy on the hasher) and never parses the rest of the body.
+    - In-process latch: after an owner is seen or created, no further owner `SELECT` per request (unit test).
+    - `owner.setup_rejected` (`recordStandalone`, anonymous, `{ reason: 'bad_token' | 'closed' }`) on a wrong token, and on a closed submit that carries a non-empty `setupToken`; no row for a closed submit without one. No audit row, log line or error body contains the token, the password or the submitted email.
+    - Boot (and post-setup) warning `OWNER_SETUP_TOKEN is set but an owner exists; remove it from the secret.` when both hold; never prints the value.
+    - New constants only (no literals): `API_ROUTES.SETUP`, `ERROR_CODES.SETUP_TOKEN_INVALID` / `OWNER_EMAIL_TAKEN`, `RATE_LIMIT_POLICIES.SETUP_STATUS` / `SETUP_SUBMIT`, `AUDIT_ACTIONS.OWNER_CREATED` / `OWNER_SETUP_REJECTED`, `SETUP_TOKEN_MAX_LENGTH`, setup channels.
+    - Docs: `apps/cms-api/README.md` gets an "Owner setup" section (route, token, close + rotate, CLI fallback); `docs/modules/success-criteria.md` row for §12-1 updated if it lists one.
+  - Verify:
+    - Unit: `setup-token.ts` (equal, different, different length, non-string, over-length), service latch and error mapping, config (production short token fails, unset ok, redaction).
+    - Integration (Testcontainers): status open/closed (no token configured; token + no owner; owner exists); submit with no token configured -> 404; wrong token -> 401 + `owner.setup_rejected` row; valid -> 201, account active with role owner, `owner.created` row with `channel: 'setup_page'`; second valid submit -> 404; CLI after setup -> `owner.exists`; setup after CLI -> 404; concurrent: 5 parallel valid submits + 1 `bootstrapOwner` CLI call -> exactly one owner, the rest 404 / `owner.exists`; existing non-owner email -> 409 and the account is not promoted; 6th submit from one IP in the window -> 429; no `Set-Cookie` and no `accessToken` on 201; X-Forwarded-For spoof does not change the throttle key (D7).
+    - Existing `owner-bootstrap.spec.ts` and CLI tests still pass; the CLI writes `owner.created` with `channel: 'cli'`.
+    - `pnpm --filter @abyss/cms-api test:unit`, `test:integration`, `pnpm --filter @abyss/cms-api lint`, `typecheck`; Prettier on changed files.
+  - Files: `apps/cms-api/src/modules/identity/{owner-setup.controller.ts,owner-setup.service.ts,owner-setup.requests.ts,setup-token.ts,owner-bootstrap.ts,identity.constants.ts,identity.module.ts,cli/owner-bootstrap.ts}` + specs, `apps/cms-api/src/modules/access/security-audit.constants.ts`, `apps/cms-api/src/common/constants/{api.constants.ts,error.constants.ts,limits.constants.ts}`, `apps/cms-api/src/config/{env.schema.ts,app-config.ts,config.constants.ts}` + spec, `apps/cms-api/test/integration/owner-setup.*`, `apps/cms-api/.env.example`, `apps/cms-api/README.md`, `docs/modules/success-criteria.md`.
+
+- [ ] **OS2: Admin owner setup page + login notice** · M · Deps: OS1 (security pass) · ui-builder · **Risk high (`apps/cms-admin/src/features/auth`) · Security gate: yes** · **Needs Q-OS1, Q-OS2** · SPEC D1, §9 · Design: `docs/modules/owner-setup.md` (Admin console)
+  - Acceptance:
+    - `APP_ROUTES.SETUP = '/setup'`, public route outside `ProtectedRoute`, `AuthPageLayout`.
+    - `setup.api.ts`: `getSetupStatus()`, `createOwner()`; query key `['setup','status']`.
+    - Login page: when status `open`, an info notice "This console has no owner yet." with a primary link-button "Set up the owner account" to `/setup`; nothing extra when closed or when the status call fails.
+    - `OwnerSetupPage`: status closed -> redirect to `/login` (replace); fields Setup token (password type, `autocomplete="off"`), Email, Display name (optional), Password (min 12 hint), Repeat password (client-side match only, not sent); submit "Create owner account" with loading state.
+    - Error mapping: 401 -> token field error; 400 -> field errors from `details`; 409 -> email field error; 404 -> `/login` with "Setup is already complete. Sign in."; 429 -> form alert; other -> generic alert.
+    - Success: form state cleared, status query invalidated, navigate to `/login` with the notice "Owner account created. Sign in, then turn on two-factor in Security settings." and the email prefilled.
+    - The token is never read from or written to the URL, local/session storage or the Redux store.
+    - Copy and styling follow the `ui-direction` skill; labels tied to inputs, errors announced (`aria-describedby` / `role="alert"` as in the other auth pages).
+    - `apps/cms-admin/README.md` lists the `/setup` route.
+  - Verify:
+    - Vitest: status open shows the login notice, closed hides it, error hides it; setup page redirects when closed; mismatch of repeat password blocks submit; each error mapping above; success navigates with notice and email; the request body has no `repeatPassword`; the token is not in `window.location` after submit.
+    - `pnpm --filter @abyss/cms-admin test`, `lint`, `typecheck`, `build`; Prettier on changed files.
+    - Browser (qc, in OS4).
+  - Files: `apps/cms-admin/src/config/routes.ts`, `apps/cms-admin/src/app/App.tsx`, `apps/cms-admin/src/features/auth/{setup.api.ts,OwnerSetupPage.tsx,OwnerSetupPage.test.tsx,setup-error.ts,setup-error.test.ts,LoginPage.tsx,LoginPage.test.tsx,login-notice.ts}`, `apps/cms-admin/README.md`.
+
+- [ ] **OS3: Smoke stack creates the owner through the setup route; deploy and local docs** · S · Deps: OS1 (security pass) · core-builder (also assigned `docs/deployment/*.md` and `docs/local-run.md` for this task) · **Needs Q-OS4** · SPEC D1, §12-1
+  - Acceptance:
+    - `scripts/stack/cms-api.env` sets a test `OWNER_SETUP_TOKEN` (clearly a test value, >= 32 bytes so a production-mode boot would also accept it).
+    - `scripts/smoke.sh` (and `scripts/lib/stack-seed.sh` if it creates the owner) creates the owner with curl against `POST /api/v1/setup/owner`, asserting first: status `open: true`; wrong token -> 401; then valid -> 201; then status `open: false`; second submit -> 404; then `owner:bootstrap` refuses (existing "refuses a second owner" check). Same email/password as today, so the e2e owner login is unchanged. The token never appears in smoke output.
+    - `docs/deployment/k3s-traefik.md` "First install: the owner": setup page as the primary path (generate token, add to the SOPS Secret, roll out, open `admin.<domain>/setup`, create owner, remove the token, restart), CLI as fallback; `docs/deployment/k3s-secrets-sops.md` lists `OWNER_SETUP_TOKEN` (secret, optional, remove after setup, rotate by replacing + restart); `docs/local-run.md` mentions both ways.
+  - Verify:
+    - `SMOKE_E2E=1 pnpm smoke` passes (all existing e2e green; the new setup assertions print pass).
+    - `grep -rn "<the test token>" scripts/ docker-compose.smoke.yml` shows it only in `scripts/stack/cms-api.env`; smoke log has no token value.
+    - Prettier on changed docs.
+  - Files: `scripts/stack/cms-api.env`, `scripts/smoke.sh`, `scripts/lib/stack-seed.sh`, `docs/deployment/k3s-traefik.md`, `docs/deployment/k3s-secrets-sops.md`, `docs/local-run.md`.
+
+- [ ] **OS4: e2e and browser check of the owner setup** · S · Deps: OS2, OS3 · qc · SPEC §12-1
+  - Acceptance:
+    - `apps/e2e/tests/owner-setup.spec.ts` (closed state on the smoke stack, where the owner exists): `/setup` redirects to `/login`; the login page shows no setup notice; `POST /api/v1/setup/owner` with any token -> 404.
+    - Browser check of the open state on a fresh database (cms-api `start` per `docs/local-run.md` with `OWNER_SETUP_TOKEN` set and no owner, cms-admin dev): login notice visible; wrong token shows the token error; valid submit lands on `/login` with the notice and prefilled email; owner signs in; `/setup` then redirects; no console errors or CSP violations; the token is not in the URL or storage (DevTools Application tab).
+  - Verify: `pnpm e2e:spec tests/owner-setup.spec.ts` on a kept smoke stack; full `SMOKE_E2E=1 pnpm smoke` green; browser check notes in the unit record.
+  - Files: `apps/e2e/tests/owner-setup.spec.ts`.

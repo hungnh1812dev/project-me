@@ -22,6 +22,10 @@ export const AUDIT_ACTIONS = {
   TWO_FACTOR_MANAGE_FAILED: 'two_factor.manage_failed',
   /** `owner:reset-2fa` (actor_type system). */
   TWO_FACTOR_RESET_BY_OPERATOR: 'two_factor.reset_by_operator',
+  /** The single owner was created (`channel`: setup_page or cli; ADR 0005). */
+  OWNER_CREATED: 'owner.created',
+  /** Anonymous setup attempt refused (`reason`: bad_token or closed). */
+  OWNER_SETUP_REJECTED: 'owner.setup_rejected',
   ACCOUNT_INVITED: 'account.invited',
   ACCOUNT_UPDATED: 'account.updated',
   ACCOUNT_ROLE_CHANGED: 'account.role_changed',
@@ -58,6 +62,24 @@ export const LOGIN_FAILURE_REASONS = {
 
 export type LoginFailureReason =
   (typeof LOGIN_FAILURE_REASONS)[keyof typeof LOGIN_FAILURE_REASONS];
+
+/** `owner.created` metadata `channel`. */
+export const OWNER_CREATED_CHANNELS = {
+  SETUP_PAGE: 'setup_page',
+  CLI: 'cli',
+} as const;
+
+export type OwnerCreatedChannel =
+  (typeof OWNER_CREATED_CHANNELS)[keyof typeof OWNER_CREATED_CHANNELS];
+
+/** `owner.setup_rejected` metadata `reason`: a fixed set, nothing else. */
+export const SETUP_REJECTION_REASONS = {
+  BAD_TOKEN: 'bad_token',
+  CLOSED: 'closed',
+} as const;
+
+export type SetupRejectionReason =
+  (typeof SETUP_REJECTION_REASONS)[keyof typeof SETUP_REJECTION_REASONS];
 
 /** `reason` of a failed re-authentication (password change, 2FA on/off). */
 export const REAUTH_FAILURE_REASONS = {

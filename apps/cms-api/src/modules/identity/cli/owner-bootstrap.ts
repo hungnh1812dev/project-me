@@ -1,5 +1,6 @@
 import { loadAppConfig } from '../../../config/app-config';
 import { openPrisma } from '../../../infrastructure/database/prisma-client';
+import { OWNER_CREATED_CHANNELS } from '../../access/security-audit.constants';
 import { OWNER_ENV_KEYS, PASSWORD_STDIN_FLAG } from '../identity.constants';
 import { bootstrapOwner } from '../owner-bootstrap';
 import {
@@ -47,11 +48,15 @@ async function main(): Promise<void> {
 
   const { prisma, close } = openPrisma(config.database);
   try {
-    const owner = await bootstrapOwner(prisma, {
-      email,
-      displayName: process.env[OWNER_ENV_KEYS.displayName],
-      password,
-    });
+    const owner = await bootstrapOwner(
+      prisma,
+      {
+        email,
+        displayName: process.env[OWNER_ENV_KEYS.displayName],
+        password,
+      },
+      { channel: OWNER_CREATED_CHANNELS.CLI },
+    );
     process.stdout.write(`Owner account created: ${owner.email}\n`);
   } finally {
     await close();

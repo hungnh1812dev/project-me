@@ -43,4 +43,17 @@ Source: `tasks/todo.md` "Ad-hoc: Base config" (D2) · Order: core-builder (A) ->
 ## Phase 8 (CI change): T37g
 | ID | Title | Scope | Status | Commit |
 |---|---|---|---|---|
-| T37g | Remove e2e from CI; publish gated on app checks only | core-builder | in-progress | - |
+| T37g | Remove e2e from CI; publish gated on app checks only | core-builder | done | 9afb986 |
+
+## Ad-hoc: Format check fix
+| ID | Title | Scope | Status | Commit |
+|---|---|---|---|---|
+| F1 | Ignore apps/e2e report output in prettier (format:check passes) | core-builder | done | b71cf76 |
+
+## Ad-hoc: Owner setup
+| ID | Title | Scope | Status | Commit |
+|---|---|---|---|---|
+| OS1 | Owner setup API (/setup/status, /setup/owner) + shared bootstrap audit | core-builder | in-progress | - |
+| OS2 | Admin /setup page + login notice | ui-builder | todo | - |
+| OS3 | Smoke stack creates owner via setup route; deploy and local docs | core-builder | todo | - |
+| OS4 | e2e for closed state + browser check on fresh DB | qc | todo | - |

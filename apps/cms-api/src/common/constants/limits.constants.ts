@@ -183,6 +183,27 @@ export const RATE_LIMIT_POLICIES = {
       windowMs: ONE_HOUR_MS,
     },
   ],
+  /**
+   * `POST /setup/owner` (ADR 0005). The token has 256 bits, so this does not
+   * stop guessing; it bounds audit noise and Argon2 work per IP.
+   */
+  SETUP_SUBMIT: [
+    {
+      name: 'setup-submit:ip',
+      keySource: RATE_LIMIT_KEY_SOURCES.IP,
+      limit: 5,
+      windowMs: FIFTEEN_MINUTES_MS,
+    },
+  ],
+  /** `GET /setup/status` (ADR 0005): public, one small read. */
+  SETUP_STATUS: [
+    {
+      name: 'setup-status:ip',
+      keySource: RATE_LIMIT_KEY_SOURCES.IP,
+      limit: 30,
+      windowMs: ONE_MINUTE_MS,
+    },
+  ],
   /** `GET /reviewer/status` (T31): public, one small read. In memory. */
   REVIEWER_STATUS: [
     {

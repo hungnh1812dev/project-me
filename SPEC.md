@@ -1,6 +1,6 @@
 # Spec: Abyss Headless CMS & Portfolio (v1)
 
-Status: **Approved 2026-10-20**, amended 2026-10-21 (web on Next.js, GraphQL read API: §2, §3, §5, D17, D18, §9; D18 details pending Q-G1..Q-G7) · Date: 2026-10-20 · Supersedes: `CMS_Requirements_And_Architecture_Spec.html`, `CMS_Implementation_Planning.html`, `CMS_Project_Tasks.html` (kept for history; where they disagree with this file, this file wins).
+Status: **Approved 2026-10-20**, amended 2026-10-21 (web on Next.js, GraphQL read API: §2, §3, §5, D17, D18, §9; D18 details pending Q-G1..Q-G7), amended 2026-10-22 (one-time owner setup route: §1, §2, D1, D15, D17, §9, §12-1, Q2; details pending Q-OS1..Q-OS4) · Date: 2026-10-20 · Supersedes: `CMS_Requirements_And_Architecture_Spec.html`, `CMS_Implementation_Planning.html`, `CMS_Project_Tasks.html` (kept for history; where they disagree with this file, this file wins).
 
 Related: [tasks/plan.md](tasks/plan.md) · [tasks/todo.md](tasks/todo.md)
 
@@ -31,7 +31,7 @@ Users and actors (threat model):
 | Reviewer | Self-service session (Turnstile + rate limit), 24h, when Owner enables it | Read published content through the `reviewer` role's field profile, browse preset media. **No writes, no drafts.** |
 | Editor (rank 30) | Invitation | Permissions granted to their role |
 | Admin (rank 40) | Invitation | Manage accounts/roles/tokens **strictly below** rank 40, plus their role's content permissions |
-| Owner (rank 100) | `owner:bootstrap` CLI only | Everything |
+| Owner (rank 100) | One-time setup page with the setup token while no owner exists, or the `owner:bootstrap` CLI (D1) | Everything |
 | API token | Created by an Admin/Owner session | ≤ creator's **current** permissions, content endpoints only |
 
 Success means every item in §12 has a passing automated test.
@@ -47,7 +47,7 @@ Success means every item in §12 has a passing automated test.
 | `platform` | Monorepo, tooling, config/env validation, HTTP pipeline, health, Docker | — |
 | `ui-kit` | `@abyss/form-commons`: shadcn base + form components, built to `dist/` | platform |
 | `content-engine` | JSON schema → validated definition → SQL migrations for `content` schema, tree repository | platform |
-| `identity` | Owner bootstrap, invitations, login, refresh rotation, OTP, TOTP 2FA, password lifecycle, rate limits | platform |
+| `identity` | Owner bootstrap (CLI + one-time setup route), invitations, login, refresh rotation, OTP, TOTP 2FA, password lifecycle, rate limits | platform |
 | `access` | Roles, permissions, policy evaluation, field projection/masking, write allowlist, revocation versions, API tokens, security audit | identity |
 | `documents` | Document CRUD, OCC/409, draft/publish deep clone, presence, bulk (collections) | content-engine, access |
 | `graphql` | Read-only GraphQL over document reads (D18): schema generated from content definitions, same authz and serializer as REST | documents, access |
@@ -172,7 +172,10 @@ Web rules: Server Components by default; `'use client'` only for state, effects,
 
 ## 7. Security Decisions (fixes for review findings C1–C8 and related)
 
-**D1 Owner bootstrap (C1).** No "first verified user becomes owner". The `owner:bootstrap` CLI takes `OWNER_EMAIL` and an interactive password, runs in a transaction with `pg_advisory_xact_lock`, and refuses if an owner exists. A partial unique index `ON accounts ((1)) WHERE role_slug = 'owner' AND deleted_at IS NULL` enforces a single owner. Self-registration endpoints don't exist in v1.
+**D1 Owner bootstrap (C1).** No "first verified user becomes owner". The owner is created exactly once, by one of two paths that share one function (`bootstrapOwner`): it runs in a transaction with `pg_advisory_xact_lock`, refuses if an owner exists or the email is taken, and never promotes an existing account. A partial unique index `ON accounts ((1)) WHERE role_slug = 'owner' AND deleted_at IS NULL` enforces a single owner. Self-registration endpoints don't exist in v1. Amended 2026-10-22 (user decision, ADR 0005, design `docs/modules/owner-setup.md`):
+- **Setup route (primary on k3s):** `POST /setup/owner` with `{ setupToken, email, displayName?, password }`, open only while `OWNER_SETUP_TOKEN` is configured **and** no live owner exists; otherwise `404`. The token is checked first (SHA-256 digests compared with `timingSafeEqual`), before body validation or password hashing; wrong token → `401 SETUP_TOKEN_INVALID`. Success → `201 { email }`, no session (the owner signs in through `/auth/login`). Throttled per IP. The admin console shows the setup page only while `GET /setup/status` says `open`, and never takes the token from the URL.
+- **CLI (fallback):** `owner:bootstrap` takes `OWNER_EMAIL` and an interactive password (or `--password-stdin`); it works with or without a setup token.
+- **Closing:** the route closes itself once an owner exists. The operator removes `OWNER_SETUP_TOKEN` from the Secret after setup; cms-api logs a warning (no value) while the token is set and an owner exists.
 
 **D2 Reviewer isolation (C2, C3).** Reviewers are **read-only**. They see only published content, filtered through the `reviewer` role's field profile, which the Owner edits like any role and which starts with every sensitive field masked. Reviewers never see drafts. No reviewer data lands in content tables, so there is no `reviewerSessionId` column. Reviewer write sandboxes are v2 and must use a separate PG schema.
 
@@ -223,7 +226,7 @@ Web rules: Server Components by default; `'use client'` only for state, effects,
 **D14 Topology and CSRF.** The API accepts the refresh cookie only on `/api/v1/auth/refresh` and `/logout`. Those endpoints also require `Origin` ∈ the allowlist. The access token lives in memory and travels as a Bearer header. Admin runs on its own subdomain so that XSS in public content can't run in the admin origin.
 
 **D15 Audit.**
-- `SecurityAuditService` is always on and writes in the same transaction for login success and failure, 2FA changes, password changes, role, permission and account changes, token create and revoke, reviewer toggle and media delete.
+- `SecurityAuditService` is always on and writes in the same transaction for login success and failure, 2FA changes, password changes, role, permission and account changes, token create and revoke, reviewer toggle, media delete, owner creation (`owner.created`, channel `setup_page` or `cli`) and rejected owner-setup attempts (`owner.setup_rejected`, no token, password or email stored).
 - Activity tracking (content edits) stays pluggable (`none | database`).
 - Audit metadata never stores field values, only field names.
 
@@ -232,6 +235,7 @@ Web rules: Server Components by default; `'use client'` only for state, effects,
 **D17 Production guards (config fail-fast).**
 - With `NODE_ENV=production`, Zod rejects `MAIL_PROVIDER=console`, any missing secret, and secrets shorter than 32 bytes.
 - The boot config summary redacts secrets.
+- `OWNER_SETUP_TOKEN` is optional; when set with `NODE_ENV=production` it must be at least 32 bytes (D1).
 - Headers on every app: HSTS, CSP, `X-Content-Type-Options: nosniff`, `Referrer-Policy`, no `X-Powered-By`.
   - **API**: `default-src 'none'` on every route, `/graphql` included.
   - **cms-admin**: CSP from its nginx config (unchanged): `script-src 'self'`, `connect-src` from env, `img-src` includes Cloudinary.
@@ -305,6 +309,7 @@ All routes sit under `/api/v1`. Errors use one shape: `{ statusCode, errorCode, 
 | Media | `POST /media` (multipart) · `GET /media` · `PATCH /media/:id` (alt) · `DELETE /media/:id` |
 | Reviewer | `GET /reviewer/status` · `POST /reviewer/sessions` (Turnstile) · `GET /reviewer/sessions` (owner) · `PUT /reviewer/settings` (owner) |
 | Audit | `GET /audit-logs` (owner) |
+| Owner setup (D1) | `GET /setup/status` → `{ open }` · `POST /setup/owner` (setup token in body) → `201 { email }`; `404` once an owner exists or when no token is configured |
 | GraphQL (D18) | `POST /graphql` (queries only): per content type `<type>(documentId, status)` and, for collections, `<type>List(status, page, pageSize, sort, filter)` → `{ data, meta }`; same auth, masking and error codes as the document reads |
 
 `:slug` is always checked against the `content_types` registry before any SQL is built. It is never interpolated directly.
@@ -353,7 +358,7 @@ Coverage target: ≥ 80 % lines on `access`, `identity`, `documents` and `conten
 
 ## 12. Success Criteria (each one is an automated test)
 
-1. `owner:bootstrap` succeeds once. A second run fails. No HTTP route can create an owner.
+1. The owner can be created once: by `owner:bootstrap` or by `POST /setup/owner` with the valid setup token. A second attempt by either path fails; concurrent attempts (route + CLI) give exactly one owner. The setup route answers 401 for a wrong token, 404 when no token is configured or an owner exists. No other HTTP route can create an owner.
 2. There is no self-registration route (`POST /auth/register` → 404).
 3. A reviewer session can read published content only; masked fields stay `***`; `status=draft` → 403; any write → 403.
 4. A role without read on a field gets `***`/`null` plus `_maskedFields`. Filtering or sorting on that field → 400. A 409 conflict body for that role contains no raw value of that field.
@@ -394,7 +399,7 @@ Coverage target: ≥ 80 % lines on `access`, `identity`, `documents` and `conten
 | # | Question | Recommendation | Blocks |
 |---|---|---|---|
 | Q1 | Use Kysely for content queries (new dependency) instead of Prisma for content tables? | Yes: Prisma can't model runtime-defined tables safely, and Kysely keeps parameterized, typed-ish SQL | T06 · **Answered: Yes (Kysely)** |
-| Q2 | Confirm self-registration is removed in v1 (invite-only)? | Yes | T09 · **Answered: Yes, invite-only** |
+| Q2 | Confirm self-registration is removed in v1 (invite-only)? | Yes | T09 · **Answered: Yes, invite-only** · Amended 2026-10-22: still no self-registration; the single exception is the one-time, token-guarded owner setup (D1, ADR 0005) |
 | Q3 | Should email-OTP 2FA be allowed, or TOTP only? Email-as-2FA means email compromise = account takeover. | Allow it, show a warning, recommend TOTP | T13 · **Answered: TOTP + email OTP, with warning** |
 | Q4 | Real domain names, and is Cloudflare in front (affects `CLIENT_IP_HEADER` and Turnstile keys)? | — | T04, T31 |
 | Q5 | Which fields in `cv-page.json` are sensitive (masked for `public`/`reviewer` by default)? Candidates: `reference.phone`, any salary fields. | — | T30 |
@@ -414,3 +419,7 @@ Coverage target: ≥ 80 % lines on `access`, `identity`, `documents` and `conten
 | Q-G5 | Introspection in production | Off for everyone; tooling uses the committed SDL | GQ3 |
 | Q-G6 | Web GraphQL client | No client library (fetch on server, Axios in browser); `graphql` as a web devDependency for the SDL contract test | T30 |
 | Q-G7 | Which cv-page the web shows (it is a collection) | The published one with `isMain = true`, newest `updatedAt` if several; none → empty state | T30 |
+| Q-OS1 | After a successful setup, sign the owner in at once or send them to the login page? | Login page with the email prefilled and a "turn on two-factor" notice: one path issues sessions (throttles, login audit); costs one extra step | OS1, OS2 |
+| Q-OS2 | Should `GET /setup/status` need no token? It tells anyone a fresh instance awaits setup. | Yes, no token: the console must know whether to show the page; the window is short and the submit still needs the token | OS1, OS2 |
+| Q-OS3 | Persist a "setup completed" marker so setup never reopens, even if the owner row is deleted in SQL with a token still configured? | No marker (no schema change); rely on the owner row, the boot warning and removing the token after setup | OS1 |
+| Q-OS4 | How does the smoke stack create its owner? | Through the setup route (curl, test token in `scripts/stack/cms-api.env`), then assert `owner:bootstrap` refuses; the CLI's create path stays covered by integration tests | OS3 |

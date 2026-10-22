@@ -191,6 +191,7 @@ export const envSchema = z
       emptyToUndefined,
       z.string().min(1).optional(),
     ),
+    OWNER_SETUP_TOKEN: z.preprocess(emptyToUndefined, optionalSecret),
     TURNSTILE_SECRET_KEY: z.preprocess(emptyToUndefined, optionalSecret),
     TURNSTILE_EXPECTED_HOSTNAME: z.preprocess(
       emptyToUndefined,
@@ -312,6 +313,16 @@ export const envSchema = z
           message: `${key} must be at least ${MIN_SECRET_BYTES} bytes in production`,
         });
       }
+    }
+    if (
+      env.OWNER_SETUP_TOKEN !== undefined &&
+      Buffer.byteLength(env.OWNER_SETUP_TOKEN, 'utf8') < MIN_SECRET_BYTES
+    ) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['OWNER_SETUP_TOKEN'],
+        message: `OWNER_SETUP_TOKEN must be at least ${MIN_SECRET_BYTES} bytes in production`,
+      });
     }
     if (
       env.TOTP_ENC_PREVIOUS_KEY !== undefined &&

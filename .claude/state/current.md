@@ -1,36 +1,40 @@
-# Current Unit: T37g
-## T37g Remove e2e from CI; publish gated on app checks only
+# Current Unit: OS1
+## OS1 Owner setup API (/setup/status, /setup/owner) + shared bootstrap audit
 Status: ready-for-checks
-What was built: removed the e2e job and `e2e` output from ci.yml and affected.sh; `publish-<app>` now `needs: [changes, <app>]` and checks only the app result (not the repo job). Comments and docs say e2e is local only. The three files were deleted by the manager after user approval.
+What was built: Public `GET /api/v1/setup/status` and `POST /api/v1/setup/owner` in the identity module, open only while `OWNER_SETUP_TOKEN` is set and no live owner exists. Token compared by SHA-256 digest + timingSafeEqual before body parse or Argon2; in-process latch; closed submit answers the unknown-route 404. `bootstrapOwner()` takes optional `{ channel, ip }` and writes `owner.created` in its transaction (CLI passes `cli`, system actor). `owner.setup_rejected` written standalone. Optional env key with production 32-byte check, redacted in the boot summary; boot/post-setup warning while the token is still set.
 Changed files:
-- .github/workflows/ci.yml - e2e job and output removed; publish needs/if no longer mention e2e; header comment
-- .github/workflows/_publish.yml - header comment only
-- .github/scripts/affected.sh - `e2e` output, E2E_PATHS and e2e_files logic removed
-- .github/scripts/affected.test.sh - e2e expectations, e2e-path loop and e2e-only fixtures removed (13 cases remain)
-- scripts/lib/stack-seed.sh, scripts/stack/cms-api.env, scripts/smoke.sh, docker-compose.smoke.yml - comments only
-- docs/ci-cd.md - flow, jobs table, change detection, "e2e (local only)" section, Publish gate
-- apps/e2e/README.md - one line: e2e runs locally only
+- apps/cms-api/src/modules/identity/owner-setup.{controller,service,requests}.ts, setup-token.ts - new route, service (latch, mapping, audit), pure token compare
+- apps/cms-api/src/modules/identity/{owner-bootstrap.ts,cli/owner-bootstrap.ts,identity.constants.ts,identity.module.ts} - audit options, shared schema export, constants, wiring
+- apps/cms-api/src/modules/access/security-audit.constants.ts - OWNER_CREATED, OWNER_SETUP_REJECTED, channels, reasons
+- apps/cms-api/src/common/constants/{api,error,limits}.constants.ts - SETUP routes, 2 error codes, SETUP_SUBMIT / SETUP_STATUS policies
+- apps/cms-api/src/config/{env.schema,app-config}.ts (+ spec) - OWNER_SETUP_TOKEN
+- apps/cms-api/src/modules/identity/{setup-token.spec,owner-setup.service.spec}.ts, apps/cms-api/test/integration/owner-setup.spec.ts - tests
+- apps/cms-api/{.env.example,README.md}, docs/modules/success-criteria.md - docs
 Behaviour to verify:
-- `bash .github/scripts/affected.test.sh` - 13 passed
-- actionlint (docker) - clean on .github (run while e2e.yml still exists)
-- publish-<app> `if` - still has always() + publish + <app>_image + <app> result == success; no e2e reference
-- After deletions: `grep -rnE "e2e\.yml|e2e-stack|needs\.e2e|outputs\.e2e|E2E_PATHS" .github` and `grep -rn "e2e-stack\|e2e-in-ci\|web-build.env" scripts docs apps/e2e/README.md docker-compose.smoke.yml` find nothing (verified: nothing found)
-Security-relevant: the condition that lets publish-<app> push images (packages: write) and bump the deploy repo is now: push to staging/main + <app>_image + <app> flow success (always() kept). Permissions, secrets, inputs unchanged. No longer gated on e2e (user decision) or on the repo job (user decision).
-Checks needed: qc-cli (affected.test.sh, actionlint, greps above; smoke not needed: comment-only changes in scripts/compose)
-Risk: high (Security gate: yes, changes the publish gating condition)
-Verification: format pass (changed files; pnpm format:check only warns on gitignored apps/e2e report artifacts) · build/type-check n/a · unit tests pass (affected.test.sh 13) · docs docs/ci-cd.md, apps/e2e/README.md
+- GET /setup/status - no token configured: `{open:false}`; token + no owner: `{open:true}` (no credentials, no-store); owner exists: false; 31st call per minute per IP -> 429
+- POST /setup/owner, no token configured or owner exists - 404 with the unknown-route body (message `Cannot POST /api/v1/setup/owner`), token or not
+- POST wrong/missing/non-string/over-256 token - 401 SETUP_TOKEN_INVALID, `owner.setup_rejected` {reason: bad_token}, no Argon2, no account; wrong token + invalid body is still 401
+- POST valid token, valid body - 201 `{email}`, no Set-Cookie, no token in body; account active role owner with argon2id hash; `owner.created` {channel: setup_page}, actor = new owner, targetId, ip; then login works
+- Invalid body with right token - 400 field paths only; existing email - 409 OWNER_EMAIL_TAKEN, account not promoted; roles unseeded - 503
+- 5 parallel submits + 1 CLI call - exactly one owner, the rest 404 / `owner.exists`; CLI after setup refuses; page after CLI 404; CLI row is system actor `{channel: cli}`
+- 6th submit per IP in 15 min -> 429; forged leading X-Forwarded-For entries do not change the key
+Security-relevant: new unauthenticated write route that creates the owner (identity module). Token check order, constant-time compare, closed = 404 (no oracle), latch, advisory lock + single-owner index, throttles (5/15 min submit, 30/min status), audit rows with no token/password/email, no session issued, env secret not in summary/logs. Status route is public by user decision (Q-OS2). No new dependencies.
+Checks needed: qc-cli (`pnpm --filter @abyss/cms-api test:integration` owner-setup.spec.ts; curl status/submit against a running API with OWNER_SETUP_TOKEN set)
+Risk: high (identity module; new unauthenticated route that creates the owner; Security gate: yes)
+Verification: format pass · build/type-check pass (typecheck, build, lint) · unit tests pass (940) · integration pass (473, incl. 19 new) · docs apps/cms-api/README.md, apps/cms-api/.env.example, docs/modules/success-criteria.md
 Proposed commit: |
-  ci(root): remove e2e from CI and gate publish on app checks only
+  feat(apps/cms-api): add one-time owner setup route guarded by a setup token
 
-  e2e no longer runs in GitHub CI (local only via pnpm smoke and
-  pnpm e2e:spec). publish-<app> now waits only for the app flow.
-  Drops the e2e job and output, the e2e routing in affected.sh and its
-  tests, and updates docs and comments.
+  GET /setup/status and POST /setup/owner create the single owner while
+  OWNER_SETUP_TOKEN is set and no owner exists (ADR 0005). The token is
+  checked in constant time before the body is parsed or a password is
+  hashed; closed answers the unknown-route 404. The route and the
+  owner:bootstrap CLI share bootstrapOwner(), which now writes an
+  owner.created audit row; rejected attempts write owner.setup_rejected.
 
   Affected:
-  - .github
-  - scripts
+  - apps/cms-api
   - docs
-  - apps/e2e (README line)
-Deletions needing approval: none (e2e.yml, e2e-stack.sh, web-build.env approved and deleted; greps return nothing, actionlint clean, affected.test.sh 13 passed)
+Deletions needing approval: none
 Fix log:
+- security answer: displayName max 100 -> OWNER_DISPLAY_NAME_MAX_LENGTH in the shared ownerInputSchema (setup route and CLI); unit + integration tests added; closed 404 body unchanged

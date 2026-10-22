@@ -167,6 +167,40 @@ AUTH_INVALID_REQUEST`.
 - No recovery codes. A lost authenticator is recovered by an operator with
   shell access through the break-glass `owner:reset-2fa` CLI (below).
 
+### Owner setup (ADR 0005, `src/modules/identity`)
+
+The one owner is created either by the `owner:bootstrap` CLI (fallback) or by a
+one-time setup request guarded by a setup token. Design:
+[docs/modules/owner-setup.md](../../docs/modules/owner-setup.md).
+
+| Method | Path                   | Auth              | Body                                            | Response                                                                                                                      |
+| ------ | ---------------------- | ----------------- | ----------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| GET    | `/api/v1/setup/status` | none (30/min/IP)  | none                                            | `200 { open }`, `Cache-Control: no-store`                                                                                     |
+| POST   | `/api/v1/setup/owner`  | token in the body | `{ setupToken, email, displayName?, password }` | `201 { email }`; `401 SETUP_TOKEN_INVALID`; `400` fields; `409 OWNER_EMAIL_TAKEN`; `404` when closed; `429` (5 per 15 min/IP) |
+
+- **Open** only while `OWNER_SETUP_TOKEN` is set and no live owner exists.
+  Closed, the submit route answers `404 NOT_FOUND` exactly like an unknown
+  route (token or not), and `status` says `{ open: false }`.
+- The token is checked first (SHA-256 digests, `timingSafeEqual`), before the
+  body is parsed or a password is hashed. A missing, non-string or over-long
+  (256+) token counts as wrong (401).
+- No session comes out of setup: the owner signs in on the normal login, then
+  turns on two-factor. Route and CLI share `bootstrapOwner()` (advisory lock,
+  single-owner index), so exactly one owner exists whatever the mix of callers;
+  the loser gets 404 (route) or `owner.exists` (CLI).
+- Audit: `owner.created` (`channel` `setup_page` or `cli`) and
+  `owner.setup_rejected` (`reason` `bad_token`, or `closed` when a closed
+  submit carried a token). No token, password or email is stored.
+- **Generate** the token with `openssl rand -base64 32` and put it in the
+  cms-api Secret as `OWNER_SETUP_TOKEN` (never a build arg, never in the admin
+  or web). Production needs at least 32 bytes.
+- **Close and rotate:** setup closes itself when the owner exists. Then remove
+  `OWNER_SETUP_TOKEN` from the Secret and restart; until then cms-api logs
+  `OWNER_SETUP_TOKEN is set but an owner exists; remove it from the secret.`
+  To rotate before use, replace the value and restart (the old one stops
+  working at once). If the owner row is ever deleted in SQL while a token is
+  still configured, setup reopens to whoever holds the token.
+
 ### Break-glass 2FA reset: `owner:reset-2fa` (T13a)
 
 > **Warning: break-glass tool.** It turns 2FA off for any account, the owner
@@ -664,23 +698,23 @@ every message. No environment serves a playground; use the committed SDL
 
 ## Scripts
 
-| Script                           | What it does                                                                                 |
-| -------------------------------- | -------------------------------------------------------------------------------------------- |
-| `build`                          | `tsc` to `dist/`                                                                             |
-| `test`                           | Unit (`src/**/*.spec.ts`) and integration (`test/integration`) tests                         |
-| `test:unit` / `test:integration` | One Jest project only                                                                        |
-| `lint`                           | Oxlint, then ESLint with typescript-eslint (type-aware)                                      |
-| `typecheck`                      | `tsc --noEmit` over `src` and `test`                                                         |
-| `content:generate`               | Build, then write the next content migration (`--dry-run`, `--name`, `--allow-destructive`)  |
-| `graphql:print-schema`           | Build, then write `content/schema.graphql` from `content/schemas` (`--check` fails if stale) |
-| `content:migrate`                | Apply pending content migrations (needs a build and the `DB_*` connection)                   |
-| `deploy:migrate`                 | Init-container command: `db:migrate`, then `content:migrate` (stops at first failure)        |
-| `db:generate`                    | Generate the Prisma client                                                                   |
-| `db:migrate`                     | Apply core Prisma migrations, then seed system roles + default permissions (needs a build)   |
-| `db:migrate:dev`                 | Development: create a core migration from schema changes                                     |
-| `db:seed`                        | Seed system roles + default permissions only (idempotent)                                    |
-| `owner:bootstrap`                | Create the single owner (`OWNER_EMAIL`, hidden password prompt or `--password-stdin`)        |
-| `owner:reset-2fa`                | Break-glass: turn 2FA off for one account and end its sessions (`--email`, `--yes`)          |
+| Script                           | What it does                                                                                                       |
+| -------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `build`                          | `tsc` to `dist/`                                                                                                   |
+| `test`                           | Unit (`src/**/*.spec.ts`) and integration (`test/integration`) tests                                               |
+| `test:unit` / `test:integration` | One Jest project only                                                                                              |
+| `lint`                           | Oxlint, then ESLint with typescript-eslint (type-aware)                                                            |
+| `typecheck`                      | `tsc --noEmit` over `src` and `test`                                                                               |
+| `content:generate`               | Build, then write the next content migration (`--dry-run`, `--name`, `--allow-destructive`)                        |
+| `graphql:print-schema`           | Build, then write `content/schema.graphql` from `content/schemas` (`--check` fails if stale)                       |
+| `content:migrate`                | Apply pending content migrations (needs a build and the `DB_*` connection)                                         |
+| `deploy:migrate`                 | Init-container command: `db:migrate`, then `content:migrate` (stops at first failure)                              |
+| `db:generate`                    | Generate the Prisma client                                                                                         |
+| `db:migrate`                     | Apply core Prisma migrations, then seed system roles + default permissions (needs a build)                         |
+| `db:migrate:dev`                 | Development: create a core migration from schema changes                                                           |
+| `db:seed`                        | Seed system roles + default permissions only (idempotent)                                                          |
+| `owner:bootstrap`                | Create the single owner (`OWNER_EMAIL`, hidden password prompt or `--password-stdin`); fallback to the setup route |
+| `owner:reset-2fa`                | Break-glass: turn 2FA off for one account and end its sessions (`--email`, `--yes`)                                |
 
 Integration tests start Postgres 16 with Testcontainers, so Docker must be
 running. Jest runs with `--experimental-vm-modules` because the Prisma 7

@@ -2,8 +2,15 @@ import { z } from 'zod';
 
 import type { PrismaClient } from '../../generated/prisma/client';
 import {
+  AUDIT_ACTIONS,
+  OWNER_CREATED_CHANNELS,
+  type OwnerCreatedChannel,
+} from '../access/security-audit.constants';
+import { selfActor, writeAuditLog } from '../access/security-audit.service';
+import {
   OWNER_BOOTSTRAP_ERRORS,
   OWNER_BOOTSTRAP_LOCK_KEY,
+  OWNER_DISPLAY_NAME_MAX_LENGTH,
   OWNER_ROLE_SLUG,
   PASSWORD_MAX_LENGTH,
   PASSWORD_MIN_LENGTH,
@@ -31,19 +38,32 @@ export interface OwnerBootstrapInput {
   password: string;
 }
 
+/** Who creates the owner; decides the `owner.created` audit row (ADR 0005). */
+export interface OwnerBootstrapOptions {
+  readonly channel: OwnerCreatedChannel;
+  /** Client IP of the setup request; the CLI has none. */
+  readonly ip?: string | undefined;
+}
+
 export interface OwnerAccount {
   id: number;
   documentId: string;
   email: string;
 }
 
-const ownerInputSchema = z.object({
+/** Shared by the CLI and the setup route, so both enforce the same rules. */
+export const ownerInputSchema = z.object({
   email: z
     .string()
     .trim()
     .toLowerCase()
     .pipe(z.email({ message: 'must be a valid email address' })),
-  displayName: z.string().trim().min(1).optional(),
+  displayName: z
+    .string()
+    .trim()
+    .min(1)
+    .max(OWNER_DISPLAY_NAME_MAX_LENGTH)
+    .optional(),
   password: z
     .string()
     .min(PASSWORD_MIN_LENGTH, {
@@ -81,11 +101,14 @@ export function parseOwnerInput(input: OwnerBootstrapInput): {
  * `pg_advisory_xact_lock`, refuses if a live owner exists or the email is
  * taken, and inserts an active account with the system `owner` role.
  * Concurrent runs queue on the lock; the partial unique index
- * `accounts_single_owner_uq` is the last line of defence.
+ * `accounts_single_owner_uq` is the last line of defence. With `options`, the
+ * `owner.created` audit row is written in the same transaction (D15): the
+ * setup page's row names the new owner as actor, the CLI's is a system row.
  */
 export async function bootstrapOwner(
   prisma: PrismaClient,
   input: OwnerBootstrapInput,
+  options?: OwnerBootstrapOptions,
 ): Promise<OwnerAccount> {
   const { email, displayName, password } = parseOwnerInput(input);
   const passwordHash = await hashPassword(password);
@@ -126,7 +149,7 @@ export async function bootstrapOwner(
       );
     }
 
-    return tx.account.create({
+    const created = await tx.account.create({
       data: {
         email,
         displayName,
@@ -136,5 +159,19 @@ export async function bootstrapOwner(
       },
       select: { id: true, documentId: true, email: true },
     });
+    if (options !== undefined) {
+      await writeAuditLog(tx, {
+        actor:
+          options.channel === OWNER_CREATED_CHANNELS.CLI
+            ? { type: 'system' }
+            : selfActor(created.id),
+        action: AUDIT_ACTIONS.OWNER_CREATED,
+        subject: 'accounts',
+        targetId: created.documentId,
+        metadata: { channel: options.channel },
+        ip: options.ip,
+      });
+    }
+    return created;
   });
 }

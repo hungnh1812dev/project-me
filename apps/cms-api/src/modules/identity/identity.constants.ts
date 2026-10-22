@@ -50,6 +50,24 @@ export const OWNER_BOOTSTRAP_ERRORS = {
   INVALID_INPUT: 'owner.invalid_input',
 } as const;
 
+/** Longest owner display name, for the setup route and the CLI alike. */
+export const OWNER_DISPLAY_NAME_MAX_LENGTH = 100;
+
+/** Longest setup token the route compares; anything longer counts as wrong. */
+export const SETUP_TOKEN_MAX_LENGTH = 256;
+/** The token is compared as digests of this algorithm (equal length, no early exit). */
+export const SETUP_TOKEN_DIGEST_ALGORITHM = 'sha256';
+
+/** Messages of the owner setup route (ADR 0005). Never include submitted values. */
+export const OWNER_SETUP_MESSAGES = {
+  TOKEN_INVALID: 'The setup token is not valid.',
+  EMAIL_TAKEN: 'An account with this email already exists.',
+  UNAVAILABLE: 'Setup is not available yet.',
+  /** Logged at boot and after setup while the token is still configured. */
+  TOKEN_STILL_SET:
+    'OWNER_SETUP_TOKEN is set but an owner exists; remove it from the secret.',
+} as const;
+
 /** Error codes of `owner:reset-2fa` (T13a). */
 export const TWO_FACTOR_RESET_ERRORS = {
   INVALID_INPUT: 'reset_2fa.invalid_input',

@@ -28,6 +28,16 @@ describe('parseOwnerInput', () => {
     ).toBe('Hung');
   });
 
+  it('accepts a 100-character display name and rejects 101', () => {
+    const input = { email: 'me@example.com', password: VALID_PASSWORD };
+    expect(
+      parseOwnerInput({ ...input, displayName: 'n'.repeat(100) }).displayName,
+    ).toHaveLength(100);
+    expect(() =>
+      parseOwnerInput({ ...input, displayName: 'n'.repeat(101) }),
+    ).toThrow(OwnerBootstrapError);
+  });
+
   it.each([
     ['a bad email', { email: 'not-an-email', password: VALID_PASSWORD }],
     [

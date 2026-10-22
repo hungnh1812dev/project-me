@@ -70,6 +70,11 @@ export interface IAppConfig {
      * sessions are refused (503), never skipped.
      */
     readonly turnstileSecretKey: string | undefined;
+    /**
+     * One-time owner setup token (ADR 0005). Optional: unset, the setup
+     * route is closed (404). Remove it after the owner exists.
+     */
+    readonly ownerSetupToken: string | undefined;
   };
 }
 
@@ -172,6 +177,7 @@ export function loadAppConfig(rawEnv: RawEnv): IAppConfig {
       totpEncKey: env.TOTP_ENC_KEY,
       totpEncPreviousKey: env.TOTP_ENC_PREVIOUS_KEY,
       turnstileSecretKey: env.TURNSTILE_SECRET_KEY,
+      ownerSetupToken: env.OWNER_SETUP_TOKEN,
     },
   });
 }
@@ -275,6 +281,7 @@ export function summarizeConfig(config: IAppConfig): Record<string, unknown> {
       totpEncKey: secretState(config.secrets.totpEncKey),
       totpEncPreviousKey: secretState(config.secrets.totpEncPreviousKey),
       turnstileSecretKey: secretState(config.secrets.turnstileSecretKey),
+      ownerSetupToken: secretState(config.secrets.ownerSetupToken),
     },
   };
 }

@@ -14,6 +14,12 @@ export const API_ROUTES = {
     LOGOUT: 'logout',
     ME: 'me',
   },
+  /** Owner setup (ADR 0005): public, open only while no owner exists. */
+  SETUP: {
+    ROOT: 'setup',
+    STATUS: 'status',
+    OWNER: 'owner',
+  },
   /** SPEC §9 password lifecycle (T12), under /auth/password. */
   PASSWORD: {
     ROOT: 'auth/password',

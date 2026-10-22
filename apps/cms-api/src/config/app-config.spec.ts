@@ -116,6 +116,49 @@ describe('loadAppConfig', () => {
     expect(JSON.stringify(summarizeConfig(config))).not.toContain('ts-secret');
   });
 
+  describe('OWNER_SETUP_TOKEN (ADR 0005)', () => {
+    it('is unset by default and when empty', () => {
+      expect(loadAppConfig(devEnv()).secrets.ownerSetupToken).toBeUndefined();
+      expect(
+        loadAppConfig(devEnv({ OWNER_SETUP_TOKEN: '' })).secrets
+          .ownerSetupToken,
+      ).toBeUndefined();
+      expect(
+        loadAppConfig(productionEnv()).secrets.ownerSetupToken,
+      ).toBeUndefined();
+    });
+
+    it('is redacted in the summary, and shown as unset when missing', () => {
+      const set = summarizeConfig(
+        loadAppConfig(devEnv({ OWNER_SETUP_TOKEN: 'setup-token-value' })),
+      );
+      expect(JSON.stringify(set)).not.toContain('setup-token-value');
+      expect(set.secrets).toMatchObject({ ownerSetupToken: REDACTED });
+      expect(summarizeConfig(loadAppConfig(devEnv())).secrets).toMatchObject({
+        ownerSetupToken: 'unset',
+      });
+    });
+
+    it('may be short outside production, but not in production', () => {
+      expect(
+        loadAppConfig(devEnv({ OWNER_SETUP_TOKEN: TEST_SHORT_SECRET })).secrets
+          .ownerSetupToken,
+      ).toBe(TEST_SHORT_SECRET);
+      const error = configErrorOf(
+        productionEnv({ OWNER_SETUP_TOKEN: TEST_SHORT_SECRET }),
+      );
+      expect(error.issues).toContain(
+        'OWNER_SETUP_TOKEN: OWNER_SETUP_TOKEN must be at least 32 bytes in production',
+      );
+      expect(error.message).not.toContain(TEST_SHORT_SECRET);
+      expect(
+        loadAppConfig(
+          productionEnv({ OWNER_SETUP_TOKEN: TEST_SECRET_32_BYTES }),
+        ).secrets.ownerSetupToken,
+      ).toBe(TEST_SECRET_32_BYTES);
+    });
+  });
+
   it('leaves CORS off when ADMIN_ORIGIN is unset or empty', () => {
     expect(loadAppConfig(devEnv()).cors.allowedOrigins).toEqual([]);
     expect(
@@ -512,6 +555,7 @@ describe('summarizeConfig', () => {
       totpEncKey: 'unset',
       totpEncPreviousKey: 'unset',
       turnstileSecretKey: 'unset',
+      ownerSetupToken: 'unset',
     });
   });
 });

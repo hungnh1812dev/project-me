@@ -148,6 +148,13 @@ Phases 1 and 2 can run in parallel if more than one worker is available. This pr
 - D2 `packages/prettier-config` -> `packages/base-config` (`@abyss/base-config`, exports `prettier`, `eslint`, `oxlint`); every app and package extends it locally. core-builder (step A: package, repo-wide rename, cms-api, e2e config) -> ui-builder (step B: cms-admin, web, form-commons) -> qc (step C: CLI checks). Needs Q-BC1..Q-BC4. Done; its Q-BC4 "no build step" contract is superseded by D3.
 - D3 Build `@abyss/base-config` to `dist/` with `tsc` (ESM + `.d.ts`), exports `types`/`import`/`default` -> dist; turbo `^build` orders it before consumers (lint, typecheck, test, Docker builds); root `format` / `format:check` build it first; fresh-clone check. core-builder; deps D2. Needs Q-D3-1, Q-D3-2.
 
+### Ad-hoc: Owner setup
+Design `docs/modules/owner-setup.md`, ADR 0005; SPEC D1, §12-1 amended 2026-10-22. Needs Q-OS1..Q-OS4.
+- OS1 Owner setup API (`GET /setup/status`, `POST /setup/owner`, `OWNER_SETUP_TOKEN`, throttles, audit, shared `bootstrapOwner`). core-builder; security gate.
+- OS2 Admin `/setup` page + login notice. ui-builder; deps OS1; security gate.
+- OS3 Smoke creates the owner via the setup route; deploy/local docs. core-builder; deps OS1.
+- OS4 e2e (closed state) + browser check (open state on a fresh DB). qc; deps OS2, OS3.
+
 ## Risks and Mitigations
 
 | Risk | Impact | Mitigation |
