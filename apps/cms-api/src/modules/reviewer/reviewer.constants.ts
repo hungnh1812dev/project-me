@@ -31,6 +31,11 @@ export const REVIEWER_ACCOUNT = {
   EMAIL_PREFIX: 'reviewer-',
   EMAIL_DOMAIN: 'reviewer.invalid',
   DISPLAY_NAME: 'Reviewer',
+  /**
+   * `accounts.token_version` a session is created with (the column default).
+   * Switching off bumps it, so any other value means the session was revoked.
+   */
+  INITIAL_TOKEN_VERSION: 1,
 } as const;
 
 /** Keyed HMAC of the visitor IP (`reviewer_sessions.ip_hmac`), derived from OTP_PEPPER. */

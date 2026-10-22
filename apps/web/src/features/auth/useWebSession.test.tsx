@@ -200,3 +200,33 @@ import { StrictMode } from 'react';
 function StrictModeWrapper({ children }: { children: ReactNode }) {
   return <StrictMode>{children}</StrictMode>;
 }
+
+describe('reviewer session (T32)', () => {
+  it('holds a reviewer token in memory and ends it without calling the API', async () => {
+    const api = fakeApi();
+    const { result } = setup(api);
+    await waitFor(() => expect(result.current.status).toBe('anonymous'));
+
+    await act(() => result.current.startReviewerSession('rev-tok'));
+    expect(result.current.status).toBe('authenticated');
+    expect(result.current.kind).toBe('reviewer');
+    expect(result.current.getAccessToken()).toBe('rev-tok');
+
+    await act(() => result.current.signOut());
+    expect(api.logout).not.toHaveBeenCalled();
+    expect(result.current.status).toBe('anonymous');
+    expect(result.current.getAccessToken()).toBeNull();
+  });
+
+  it('drops the token when /auth/me refuses it', async () => {
+    const api = fakeApi({
+      me: vi.fn<AuthApi['me']>().mockRejectedValue(new Error('401')),
+    });
+    const { result } = setup(api);
+    await waitFor(() => expect(result.current.status).toBe('anonymous'));
+    await expect(
+      act(() => result.current.startReviewerSession('bad')),
+    ).rejects.toThrow('401');
+    expect(result.current.getAccessToken()).toBeNull();
+  });
+});

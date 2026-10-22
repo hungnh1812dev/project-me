@@ -13,6 +13,11 @@ export const API_ENDPOINTS = {
     LOGOUT: '/auth/logout',
     ME: '/auth/me',
   },
+  /** T31 reviewer sessions: status is public, sessions is public for POST. */
+  REVIEWER: {
+    STATUS: '/reviewer/status',
+    SESSIONS: '/reviewer/sessions',
+  },
   TWO_FACTOR: {
     VERIFY: '/auth/2fa/verify',
     EMAIL_CHALLENGE: '/auth/2fa/email-challenge',

@@ -1,5 +1,5 @@
 import { stripTrailingSlashes } from '../lib/strip-trailing-slashes';
-import { optionalLinkTarget, requireEnv } from './require-env';
+import { optionalLinkTarget, optionalText, requireEnv } from './require-env';
 
 /**
  * Typed, validated view of the browser-visible env. `NEXT_PUBLIC_*` values are
@@ -21,4 +21,10 @@ export const appEnv = Object.freeze({
     'NEXT_PUBLIC_ADMIN_URL',
     process.env.NEXT_PUBLIC_ADMIN_URL,
   ),
+  /**
+   * Cloudflare Turnstile site key (public by design). Optional: without it
+   * the "Reviewer access" entry is hidden, since a session cannot be started
+   * without the widget.
+   */
+  turnstileSiteKey: optionalText(process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY),
 });

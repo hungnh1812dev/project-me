@@ -4,9 +4,12 @@ import { useMemo, useState } from 'react';
 import { FormProvider, useForm } from 'react-hook-form';
 import { useNavigate, useParams } from 'react-router';
 
+import { useAppSelector } from '../../app/store';
 import { COPY } from '../../config/copy.constants';
+import { REVIEWER_ROLE_SLUG } from '../../config/reviewer.constants';
 import { contentEditPath } from '../../config/routes';
 import { LoadError, PageHeader, TableSkeleton } from '../access/PageStates';
+import { selectCurrentUser } from '../auth/auth.slice';
 import { FormAlert } from '../auth/FormAlert';
 import { useContentApi } from './content-api-context';
 import { ConflictMergeModal } from './ConflictMergeModal';
@@ -129,6 +132,8 @@ function DocumentForm({
   onNotice: (notice: string | null) => void;
 }) {
   const api = useContentApi();
+  const readOnly =
+    useAppSelector(selectCurrentUser)?.role === REVIEWER_ROLE_SLUG;
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const masked = useMemo<ReadonlySet<string>>(
@@ -247,12 +252,17 @@ function DocumentForm({
         {notice === null ? null : (
           <FormAlert tone="success">{notice}</FormAlert>
         )}
-        <DynamicFormRenderer fields={fields} masked={masked} />
-        <div className="flex justify-end">
-          <Button type="submit" variant="primary" loading={save.isPending}>
-            {copy.save}
-          </Button>
-        </div>
+        {/* A reviewer reads only: inputs are disabled and there is no Save. */}
+        <fieldset disabled={readOnly} className="m-0 min-w-0 border-0 p-0">
+          <DynamicFormRenderer fields={fields} masked={masked} />
+        </fieldset>
+        {readOnly ? null : (
+          <div className="flex justify-end">
+            <Button type="submit" variant="primary" loading={save.isPending}>
+              {copy.save}
+            </Button>
+          </div>
+        )}
       </form>
       {conflict !== null && mergeOpen ? (
         <ConflictMergeModal

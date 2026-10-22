@@ -18,6 +18,8 @@ export const APP_ROUTES = {
   API_TOKENS: '/api-tokens',
   /** Media library: upload, alt text, delete (T29). */
   MEDIA: '/media',
+  /** Reviewer switch and sessions log, owner only (T32). */
+  REVIEWER_SESSIONS: '/reviewer',
   /** New document of a content type (T23); `:slug` = content type. */
   CONTENT_NEW: '/content/:slug/new',
   /** Edit one document's draft (T23). */

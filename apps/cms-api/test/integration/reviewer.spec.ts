@@ -429,6 +429,10 @@ describe('reviewer backend (T31, D2; Postgres 16 via Testcontainers)', () => {
       where: { slug: 'reviewer' },
     });
     expect((await setEnabled(false)).status).toBe(200);
+    const listed = await http().get(`${REVIEWER}/sessions`).set(bearer(owner));
+    const rows = (listed.body as { data: { active: boolean }[] }).data;
+    expect(rows.length).toBeGreaterThan(0);
+    expect(rows.every((row) => !row.active)).toBe(true);
     const roleAfter = await db.prisma.role.findUniqueOrThrow({
       where: { slug: 'reviewer' },
     });

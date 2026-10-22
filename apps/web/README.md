@@ -78,6 +78,26 @@ tokens only (`bg-card`, `text-muted-foreground`).
 - No page refetches data per actor yet: the CV page (T30) was skipped, so the
   GraphQL refetch with the Bearer token has nothing to attach to.
 
+## Reviewer access (T32)
+
+- The header shows "Reviewer access" to anonymous visitors when cms-api's
+  public `GET /reviewer/status` says the owner switched it on **and**
+  `NEXT_PUBLIC_TURNSTILE_SITE_KEY` is set (build-time, public, optional).
+- `ReviewerAccessDialog` (client component, form-commons + react-hook-form) has
+  three steps: role (Recruiter, Peer / colleague, Other), purposes (Hiring,
+  Project scoping, Networking, Other) and notes + Turnstile. No personal data
+  is asked. `POST /reviewer/sessions` goes from the browser; the 24 h access
+  token is held by `useWebSession` in memory (`kind: 'reviewer'`), never in
+  storage and never sent to the Next server. There is no refresh cookie, so a
+  reload ends the review; "End review" drops the token locally.
+- Turnstile loads through `next/script` only while the dialog's last step is
+  open (`challenges.cloudflare.com`, constant `TURNSTILE` in
+  `src/config/reviewer.constants.ts`). The T36 CSP must allow that origin in
+  `script-src` and `frame-src` and pass the request nonce to the script.
+- There is no page to refetch per actor yet (T30 skipped), so the reviewer
+  view today is the session itself; pages added later read the token with
+  `useWebSession().getAccessToken()`.
+
 ## Docker
 
 ```bash
@@ -87,7 +107,7 @@ docker run -e API_INTERNAL_URL=http://cms-api:3000/api/v1 -p 8080:8080 abyss-web
 
 Multi-stage: `turbo prune`, a frozen install, `turbo run build`, then the
 standalone server (`.next/standalone`, `.next/static`, `public/`) on Node as
-the non-root `node` user. The build fails without `NEXT_PUBLIC_API_BASE_URL`; `NEXT_PUBLIC_ADMIN_URL` is an optional build arg.
+the non-root `node` user. The build fails without `NEXT_PUBLIC_API_BASE_URL`; `NEXT_PUBLIC_ADMIN_URL` and `NEXT_PUBLIC_TURNSTILE_SITE_KEY` are optional build args.
 Runtime env: `API_INTERNAL_URL`, `WEB_REVALIDATE_SECONDS`, `WEB_PORT` (default
 8080). `HEALTHCHECK` requests `/`. Telemetry is off (`NEXT_TELEMETRY_DISABLED=1`).
 

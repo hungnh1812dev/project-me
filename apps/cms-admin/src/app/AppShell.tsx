@@ -3,10 +3,15 @@ import { useState } from 'react';
 import { Link, NavLink, Outlet } from 'react-router';
 
 import { COPY } from '../config/copy.constants';
+import {
+  REVIEWER_ROLE_SLUG,
+  REVIEWER_SETTINGS_SUBJECT,
+} from '../config/reviewer.constants';
 import { APP_ROUTES } from '../config/routes';
 import { useCallerAccess } from '../features/access/caller-access';
 import { selectCurrentUser } from '../features/auth/auth.slice';
 import { useSession } from '../features/auth/session-context';
+import { ReviewerBanner } from '../features/reviewer/ReviewerBanner';
 import { useAppSelector } from './store';
 
 /** Layout of every signed-in page: header with the user and sign-out. */
@@ -19,6 +24,9 @@ export function AppShell() {
   const showRoles = caller.ready && caller.can('roles', 'read');
   const showTokens = caller.ready && caller.can('api_tokens', 'read');
   const showMedia = caller.ready && caller.can('media', 'read');
+  const showReviewer =
+    caller.ready && caller.can(REVIEWER_SETTINGS_SUBJECT, 'read');
+  const isReviewer = user?.role === REVIEWER_ROLE_SLUG;
 
   return (
     <div className="min-h-dvh">
@@ -30,7 +38,11 @@ export function AppShell() {
           >
             {COPY.app.name}
           </Link>
-          {showAccounts || showRoles || showTokens || showMedia ? (
+          {showAccounts ||
+          showRoles ||
+          showTokens ||
+          showMedia ||
+          showReviewer ? (
             <nav
               aria-label={COPY.access.nav.label}
               className="order-last flex basis-full items-center gap-1 sm:order-none sm:min-w-0 sm:flex-1 sm:basis-auto"
@@ -63,6 +75,13 @@ export function AppShell() {
                   </NavLink>
                 </Button>
               ) : null}
+              {showReviewer ? (
+                <Button asChild variant="ghost" size="sm">
+                  <NavLink to={APP_ROUTES.REVIEWER_SESSIONS}>
+                    {COPY.access.nav.reviewer}
+                  </NavLink>
+                </Button>
+              ) : null}
             </nav>
           ) : null}
           <nav
@@ -73,11 +92,13 @@ export function AppShell() {
               <span className="sr-only">{COPY.session.signedInAs} </span>
               <span className="text-foreground">{user?.displayName}</span>
             </p>
-            <Button asChild variant="ghost" size="sm">
-              <Link to={APP_ROUTES.SECURITY_SETTINGS}>
-                {COPY.session.securityLink}
-              </Link>
-            </Button>
+            {isReviewer ? null : (
+              <Button asChild variant="ghost" size="sm">
+                <Link to={APP_ROUTES.SECURITY_SETTINGS}>
+                  {COPY.session.securityLink}
+                </Link>
+              </Button>
+            )}
             <Button
               size="sm"
               loading={signingOut}
@@ -92,6 +113,7 @@ export function AppShell() {
           </nav>
         </div>
       </header>
+      {isReviewer ? <ReviewerBanner /> : null}
       <main className="mx-auto max-w-5xl px-4 py-8 sm:px-6 sm:py-12">
         <Outlet />
       </main>

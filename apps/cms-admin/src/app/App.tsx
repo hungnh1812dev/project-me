@@ -11,6 +11,7 @@ import { ProtectedRoute } from '../features/auth/ProtectedRoute';
 import { ResetPasswordPage } from '../features/auth/ResetPasswordPage';
 import { SetPasswordPage } from '../features/auth/SetPasswordPage';
 import { MediaLibraryPage } from '../features/media/MediaLibraryPage';
+import { ReviewerSessionsPage } from '../features/reviewer/ReviewerSessionsPage';
 import { SecuritySettingsPage } from '../features/security/SecuritySettingsPage';
 import { StatusPage } from '../features/status/StatusPage';
 import { AppShell } from './AppShell';
@@ -28,6 +29,10 @@ export function App() {
           <Route path={APP_ROUTES.ROLES} element={<RolesPage />} />
           <Route path={APP_ROUTES.API_TOKENS} element={<ApiTokensPage />} />
           <Route path={APP_ROUTES.MEDIA} element={<MediaLibraryPage />} />
+          <Route
+            path={APP_ROUTES.REVIEWER_SESSIONS}
+            element={<ReviewerSessionsPage />}
+          />
           <Route path={APP_ROUTES.CONTENT_NEW} element={<DocumentEditPage />} />
           <Route
             path={APP_ROUTES.CONTENT_EDIT}

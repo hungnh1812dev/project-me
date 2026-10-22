@@ -40,7 +40,7 @@ async function signIn(page: Page, email: string, password: string) {
 }
 
 // The profile form has one fieldset (the photo field); it has no accessible name.
-const photoField = (page: Page) => page.getByRole('group');
+const photoField = (page: Page) => page.getByRole('group', { name: 'Photo' });
 
 const saveButton = (page: Page) =>
   page.getByRole('button', { name: content.save, exact: true });

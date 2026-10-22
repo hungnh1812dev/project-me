@@ -296,7 +296,7 @@ export class ReviewerService {
           userAgent: true,
           createdAt: true,
           expiresAt: true,
-          account: { select: { documentId: true } },
+          account: { select: { documentId: true, tokenVersion: true } },
         },
       }),
     ]);
@@ -314,7 +314,10 @@ export class ReviewerService {
         userAgent: row.userAgent,
         createdAt: row.createdAt.toISOString(),
         expiresAt: row.expiresAt.toISOString(),
-        active: row.expiresAt.getTime() > now,
+        // Expired, or revoked by a switch-off (token_version bumped).
+        active:
+          row.expiresAt.getTime() > now &&
+          row.account.tokenVersion === REVIEWER_ACCOUNT.INITIAL_TOKEN_VERSION,
       })),
       meta: { page: query.page, pageSize: query.pageSize, total },
     };

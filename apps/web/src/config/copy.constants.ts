@@ -15,6 +15,72 @@ export const COPY = {
     signOutFailed:
       'Sign-out did not reach the server, so you are still signed in. Try again.',
     signedInAs: (name: string) => `Signed in as ${name}`,
+    reviewing: 'Reviewing as a guest',
+    endReview: 'End review',
+  },
+  reviewer: {
+    open: 'Reviewer access',
+    title: 'Request reviewer access',
+    description:
+      'Look around as a read-only guest for 24 hours. Tell us a little about your visit; please do not include personal details.',
+    stepLabel: (step: number, total: number) => `Step ${step} of ${total}`,
+    back: 'Back',
+    next: 'Next',
+    cancel: 'Cancel',
+    submit: 'Start review',
+    steps: {
+      role: 'Who are you?',
+      purposes: 'Why are you visiting?',
+      notes: 'Anything else?',
+    },
+    role: {
+      label: 'Your role',
+      placeholder: 'Choose a role',
+      other: 'Other',
+      otherLabel: 'Describe your role',
+    },
+    purposes: {
+      legend: 'Purpose of your visit',
+      hint: 'Optional. Pick all that apply.',
+      other: 'Other',
+      otherLabel: 'Describe your purpose',
+    },
+    notes: {
+      label: 'Notes for the site owner',
+      hint: (max: number) => `Optional. Plain text, up to ${max} characters.`,
+      count: (used: number, max: number) => `${used} / ${max}`,
+    },
+    turnstile: {
+      label: 'Verification',
+      loading: 'Loading the verification check',
+      required: 'Complete the verification check to continue.',
+      expired: 'The verification check expired. Complete it again.',
+      failed:
+        'The verification check could not load. Check your connection and reload the page.',
+    },
+    validation: {
+      roleRequired: 'Choose your role.',
+      roleOtherRequired: 'Describe your role.',
+      purposeOtherRequired: 'Describe your purpose, or untick Other.',
+      notesTooLong: (max: number) => `Use at most ${max} characters.`,
+    },
+    errors: {
+      disabled: 'Reviewer access is switched off right now.',
+      unavailable:
+        'Reviewer access is temporarily unavailable. Try again later.',
+      turnstileFailed:
+        'The verification check did not pass. Complete it again and retry.',
+      ipLimited: 'A review session was already started from this connection.',
+      ipLimitedSeconds: (seconds: number) =>
+        `A review session was already started from this connection. Try again in ${seconds} ${seconds === 1 ? 'second' : 'seconds'}.`,
+      ipLimitedMinutes: (minutes: number) =>
+        `A review session was already started from this connection. Try again in ${minutes} ${minutes === 1 ? 'minute' : 'minutes'}.`,
+      capacity: 'Too many review sessions are active. Try again later.',
+      invalid: 'Some of your answers were not accepted. Check them and retry.',
+      network:
+        'Could not reach the server. Check your connection and try again.',
+      unexpected: 'Something went wrong on our side. Try again in a moment.',
+    },
   },
   login: {
     title: 'Sign in',

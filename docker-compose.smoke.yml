@@ -91,6 +91,10 @@ services:
       LOGIN_RATE_LIMIT_EMAIL: '10000'
       # T18c: every e2e sign-in refreshes the session; same opt-in flag.
       REFRESH_RATE_LIMIT_IP: '10000'
+      # T32: Cloudflare's public always-pass Turnstile test secret. Smoke only,
+      # never in production config. Verification still calls Cloudflare, so the
+      # reviewer e2e needs internet.
+      TURNSTILE_SECRET_KEY: 1x0000000000000000000000000000000AA
     depends_on:
       db:
         condition: service_healthy
@@ -115,6 +119,9 @@ services:
       dockerfile: apps/web/Dockerfile
       args:
         NEXT_PUBLIC_API_BASE_URL: /api/v1
+        # T32: Cloudflare's public always-pass Turnstile test site key (smoke
+        # build only; production builds use the real key).
+        NEXT_PUBLIC_TURNSTILE_SITE_KEY: 1x00000000000000000000AA
     environment:
       API_INTERNAL_URL: http://cms-api:3000/api/v1
       # Smoke runs with no data cache (Q-W3); production uses 60.

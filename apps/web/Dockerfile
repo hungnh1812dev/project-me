@@ -32,6 +32,9 @@ ENV NEXT_PUBLIC_API_BASE_URL=$NEXT_PUBLIC_API_BASE_URL
 # Optional: target of the "Open CMS" link. Empty hides the link.
 ARG NEXT_PUBLIC_ADMIN_URL=
 ENV NEXT_PUBLIC_ADMIN_URL=$NEXT_PUBLIC_ADMIN_URL
+# Optional: Cloudflare Turnstile site key (public). Empty hides "Reviewer access".
+ARG NEXT_PUBLIC_TURNSTILE_SITE_KEY=
+ENV NEXT_PUBLIC_TURNSTILE_SITE_KEY=$NEXT_PUBLIC_TURNSTILE_SITE_KEY
 RUN pnpm turbo run build --filter=@abyss/web
 
 # 3. Runtime: the Next.js standalone server on Node, as the non-root `node` user.

@@ -52,6 +52,12 @@ export const API_ENDPOINTS = {
     LIST: '/content-types',
     ONE: (slug: string) => `/content-types/${encodeURIComponent(slug)}`,
   },
+  /** T31 reviewer sessions (owner) and the on/off switch. */
+  REVIEWER: {
+    STATUS: '/reviewer/status',
+    SESSIONS: '/reviewer/sessions',
+    SETTINGS: '/reviewer/settings',
+  },
   /** T27-T29 media library. `id` = the file's uuid. */
   MEDIA: {
     LIST: '/media',

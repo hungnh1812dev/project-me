@@ -7,6 +7,7 @@ import { ContentApiProvider } from '../features/content/content-api-context';
 import { MediaApiProvider } from '../features/media/media-api-context';
 import { PasswordApiProvider } from '../features/auth/password-api-context';
 import { SessionProvider } from '../features/auth/session-context';
+import { ReviewerApiProvider } from '../features/reviewer/reviewer-api-context';
 import { SecurityApiProvider } from '../features/security/security-api-context';
 import type { AppServices } from './app-services';
 
@@ -23,6 +24,7 @@ export function AppProviders({
     | 'accessApi'
     | 'contentApi'
     | 'mediaApi'
+    | 'reviewerApi'
     | 'queryClient'
   >;
   children: ReactNode;
@@ -36,7 +38,9 @@ export function AppProviders({
               <AccessApiProvider api={services.accessApi}>
                 <ContentApiProvider api={services.contentApi}>
                   <MediaApiProvider api={services.mediaApi}>
-                    {children}
+                    <ReviewerApiProvider api={services.reviewerApi}>
+                      {children}
+                    </ReviewerApiProvider>
                   </MediaApiProvider>
                 </ContentApiProvider>
               </AccessApiProvider>

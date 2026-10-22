@@ -133,6 +133,22 @@ So far: sign-in (T11) and, behind it, a status page that calls
 
 End-to-end coverage lives in [`apps/e2e`](../e2e/README.md).
 
+## Reviewer access (T32)
+
+- `/reviewer` (nav "Reviewers", needs `reviewer_settings:read`; owner by
+  default): the on/off switch (`PUT /reviewer/settings`, needs `update`;
+  switching off asks first because it ends every live reviewer session) and
+  the log of sessions (`GET /reviewer/sessions`: visitor role, purposes,
+  notes, browser, start, active/ended). Notes and browser strings come from
+  visitors and are rendered as text only; the IP is never shown.
+- Reviewer mode: an account whose role is `reviewer` sees a read-only banner,
+  no Security link and no write controls (the document form is disabled and
+  has no Save). This is a hint only; cms-api answers 403 to every write.
+- The reviewer session is started on the public site (apps/web). Its token is
+  kept in that page's memory with no refresh cookie, so the admin console has
+  no way to continue it yet; the banner covers a reviewer token that reaches
+  the console some other way.
+
 ## Run
 
 ```bash

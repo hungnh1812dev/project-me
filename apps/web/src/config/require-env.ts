@@ -7,6 +7,12 @@ export function requireEnv(name: string, value: string | undefined): string {
   return value;
 }
 
+/** A trimmed optional value, or undefined when unset or blank. */
+export function optionalText(value: string | undefined): string | undefined {
+  const trimmed = value?.trim() ?? '';
+  return trimmed === '' ? undefined : trimmed;
+}
+
 const BACKSLASH = '\\';
 const LAST_CONTROL_CODE = 0x1f;
 const DELETE_CODE = 0x7f;
