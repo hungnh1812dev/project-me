@@ -132,10 +132,19 @@ Phases 1 and 2 can run in parallel if more than one worker is available. This pr
 
 ### Phase 8: Hardening & deploy docs
 - T36 Security headers + CSP per app + prod config audit
-- T37 Playwright critical-flow suite consolidation + CI workflow
-- T38 Deployment guide for the deploy repo (Traefik, migrations Job, backups, IP policy)
+- T37 split (REPLAN 2026-10-22, re-scoped after the user's "T37 correction": compose is local-test only, never in CI), build order: T37a + T37c + T37d (parallel) -> T37b -> T37f -> T37e
+  - T37a cms-api init container command `deploy:migrate` (db:migrate -> content:migrate), numeric USER, smoke `cms-api-init` service (core-builder, security gate)
+  - T37b CI checks + build generated from `.github_template/` into `.github/workflows/` (replaces the old untracked ci.yml; no compose, no e2e) (core-builder)
+  - T37c web image numeric non-root user (ui-builder)
+  - T37d Playwright consolidation + §12 success-criteria map (qc)
+  - T37f e2e in CI on a `docker run` stack of the per-service images (Traefik + Postgres + Mailpit + cms-api init/main + web + cms-admin), shared seeding with local smoke (core-builder; needs Q-T37-10)
+  - T37e image publish (one image per service, from each Dockerfile) + deploy-repo bump from the template, gated on e2e per Q-T37-8 (core-builder, security gate; needs Q-T37-8, Q-T37-9)
+- T38 Deployment guide for the deploy repo (Traefik, cms-api init + main container, backups, IP policy); deps T36, T37a
 
 **Checkpoint 8 (release):** all §12 criteria green in CI; deploy guide reviewed.
+
+### Ad-hoc: Base config
+- D2 `packages/prettier-config` -> `packages/base-config` (`@abyss/base-config`, exports `prettier`, `eslint`, `oxlint`); every app and package extends it locally. core-builder (step A: package, repo-wide rename, cms-api, e2e config) -> ui-builder (step B: cms-admin, web, form-commons) -> qc (step C: CLI checks). Needs Q-BC1..Q-BC4.
 
 ## Risks and Mitigations
 
