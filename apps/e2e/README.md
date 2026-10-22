@@ -49,6 +49,10 @@ docker compose -p abyss-smoke down -v           # when done
 answers. The kept stack keeps its data and rate-limit counters between runs.
 `SMOKE_NO_BUILD=1` reuses the last built images when only tests changed.
 
+## Run against the CI stack
+
+`bash scripts/e2e-stack.sh` starts the built images with plain `docker run` (the stack CI uses), seeds it and runs this suite; see [docs/ci-cd.md](../../docs/ci-cd.md#e2e-in-ci).
+
 ## Run against another stack
 
 Set the keys from [`.env.example`](.env.example) in the shell, then

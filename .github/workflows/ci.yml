@@ -1,7 +1,8 @@
 # Docs: docs/ci-cd.md
 # Entrypoint: changes -> one flow per affected app (cms-api.yml, cms-admin.yml, web.yml)
 #   each flow: checks -> build; a repo-wide job (format, audit) always runs.
-#   e2e (T37f) and publish (T37e, _publish.yml) are added later; CI never starts the local smoke stack.
+#   e2e (e2e.yml) runs when any app or the e2e suite changed, on a docker-run stack of the built images.
+#   publish (T37e, _publish.yml) is added later; CI never starts the local smoke stack.
 # The app flows never depend on each other, so one app failing never skips another.
 name: CI
 
@@ -39,6 +40,7 @@ jobs:
       web_affected: ${{ steps.affected.outputs.web_affected }}
       web_image: ${{ steps.affected.outputs.web_image }}
       web_matrix: ${{ steps.target.outputs.web_matrix }}
+      e2e: ${{ steps.affected.outputs.e2e }}
       publish: ${{ steps.target.outputs.publish }}
       branch: ${{ steps.target.outputs.branch }}
       tag: ${{ steps.target.outputs.tag }}
@@ -144,5 +146,16 @@ jobs:
     needs: changes
     if: needs.changes.outputs.web_affected == 'true'
     uses: ./.github/workflows/web.yml
+    with:
+      turbo_version: ${{ needs.changes.outputs.turbo_version }}
+
+  # Status check shows as "e2e / Playwright"
+  e2e:
+    name: e2e
+    needs: changes
+    if: needs.changes.outputs.e2e == 'true'
+    uses: ./.github/workflows/e2e.yml
+    permissions:
+      contents: read
     with:
       turbo_version: ${{ needs.changes.outputs.turbo_version }}

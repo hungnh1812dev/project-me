@@ -56,46 +56,19 @@ services:
     build:
       context: .
       dockerfile: apps/cms-api/Dockerfile
+    # Static settings: scripts/stack/cms-api.env (shared with the CI e2e stack).
+    env_file: &cms-api-env-file
+      - scripts/stack/cms-api.env
     environment: &cms-api-env
-      NODE_ENV: production
-      PORT: '3000'
-      DB_HOST: db
-      DB_PORT: '5432'
-      DB_NAME: abyss
-      DB_USERNAME: abyss
       DB_PASSWORD: ${SMOKE_DB_PASSWORD}
       ADMIN_ORIGIN: ${SMOKE_ADMIN_ORIGIN:?set by scripts/smoke.sh}
       WEB_ORIGIN: ${SMOKE_WEB_ORIGIN:?set by scripts/smoke.sh}
-      TRUST_PROXY_HOPS: '1'
-      MAIL_PROVIDER: smtp
-      SMTP_HOST: mailpit
-      SMTP_PORT: '1025'
-      SMTP_SECURE: 'false'
       MAIL_FROM: Abyss Smoke <no-reply@${SMOKE_DOMAIN}>
       JWT_ACCESS_SECRET: ${SMOKE_JWT_ACCESS_SECRET:?set by scripts/smoke.sh}
       JWT_ACCESS_KID: ${SMOKE_JWT_ACCESS_KID:?set by scripts/smoke.sh}
       OTP_PEPPER: ${SMOKE_OTP_PEPPER:?set by scripts/smoke.sh}
       TOTP_ENC_KEY: ${SMOKE_TOTP_ENC_KEY:?set by scripts/smoke.sh}
       TOTP_ENC_KID: ${SMOKE_TOTP_ENC_KID:?set by scripts/smoke.sh}
-      TOTP_ISSUER: Abyss Smoke
-      # T27: production rejects MEDIA_PROVIDER=fake. Dummy Cloudinary values:
-      # the stack boots, real uploads are not exercised here.
-      MEDIA_PROVIDER: cloudinary
-      CLOUDINARY_CLOUD_NAME: smoke-dummy
-      CLOUDINARY_API_KEY: smoke-dummy-key
-      CLOUDINARY_API_SECRET: smoke-dummy-secret
-      # T18b: the e2e suite signs in many times from one IP; raise the login
-      # limits here only (production keeps the defaults, 10 per IP / 5 per email).
-      # Production refuses the two limits below without this exact opt-in.
-      ALLOW_LOGIN_RATE_LIMIT_OVERRIDE: smoke
-      LOGIN_RATE_LIMIT_IP: '10000'
-      LOGIN_RATE_LIMIT_EMAIL: '10000'
-      # T18c: every e2e sign-in refreshes the session; same opt-in flag.
-      REFRESH_RATE_LIMIT_IP: '10000'
-      # T32: Cloudflare's public always-pass Turnstile test secret. Smoke only,
-      # never in production config. Verification still calls Cloudflare, so the
-      # reviewer e2e needs internet.
-      TURNSTILE_SECRET_KEY: 1x0000000000000000000000000000000AA
     depends_on:
       cms-api-init:
         condition: service_completed_successfully
@@ -123,6 +96,7 @@ services:
       context: .
       dockerfile: apps/cms-api/Dockerfile
     command: ['npm', 'run', '--silent', 'deploy:migrate']
+    env_file: *cms-api-env-file
     environment: *cms-api-env
     depends_on:
       db:

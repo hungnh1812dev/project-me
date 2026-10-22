@@ -3,10 +3,11 @@
 # which get a new image and deploy.
 # Usage: EVENT_NAME=push BASE_SHA=<sha> HEAD_SHA=<sha> TURBO_VERSION=<x.y.z> affected.sh
 #   TURBO_BIN  optional turbo executable (tests); default `npx -y turbo@$TURBO_VERSION`
-# Writes apps, image_apps, any and <app>_affected / <app>_image (cms_api_*,
+# Writes apps, image_apps, any, e2e and <app>_affected / <app>_image (cms_api_*,
 # cms_admin_*, web_*) to $GITHUB_OUTPUT, or to stdout when it is unset.
 # Without a usable base commit (new branch, force push) every app is affected
-# and gets an image. Workflow-file changes add apps to `apps` only, never to
+# and gets an image. `e2e` is true when any app is affected or a file of the e2e
+# suite or its stack changed (E2E_PATHS below). Workflow-file changes add apps to `apps` only, never to
 # `image_apps`: .github/workflows/<app>.yml adds that app; ci.yml, _publish.yml
 # and .github/scripts/** add all apps.
 set -euo pipefail
@@ -37,6 +38,9 @@ turbo() {
   fi
 }
 
+# Files outside the apps that the e2e job runs or depends on (git pathspecs)
+E2E_PATHS=(apps/e2e scripts/e2e-stack.sh scripts/lib scripts/stack .github/workflows/e2e.yml)
+
 all="$(jq -cn '$ARGS.positional' --args "${packages[@]}")"
 
 if [ -n "${BASE_SHA}" ] && git cat-file -e "${BASE_SHA}^{commit}" 2>/dev/null; then
@@ -63,6 +67,7 @@ if [ -n "${BASE_SHA}" ] && git cat-file -e "${BASE_SHA}^{commit}" 2>/dev/null; t
         done ;;
     esac
   done < <(git diff --name-only "${BASE_SHA}" "${HEAD_SHA}" -- .github)
+  e2e_files="$(git diff --name-only "${BASE_SHA}" "${HEAD_SHA}" -- "${E2E_PATHS[@]}")"
   if [ -n "${routed}" ]; then
     echo "Workflow files changed; checks and build only for:${routed}"
     # shellcheck disable=SC2086 # word-split the space-separated app list on purpose
@@ -73,7 +78,9 @@ else
   echo "::notice::No usable base commit '${BASE_SHA}' for ${EVENT_NAME}; treating all apps as affected"
   apps="${all}"
   image_apps="${all}"
+  e2e_files=all
 fi
+e2e="$(jq -n --argjson apps "${apps}" --arg files "${e2e_files}" '($apps | length > 0) or ($files != "")')"
 
 echo "Affected apps: ${apps}"
 echo "Apps to build images for: ${image_apps}"
@@ -82,6 +89,7 @@ echo "Apps to build images for: ${image_apps}"
   echo "apps=${apps}"
   echo "image_apps=${image_apps}"
   echo "any=$(jq 'length > 0' <<<"${apps}")"
+  echo "e2e=${e2e}"
   for app in "${packages[@]}"; do
     key="${app//-/_}"
     echo "${key}_affected=$(jq --arg app "${app}" 'index($app) != null' <<<"${apps}")"

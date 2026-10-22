@@ -20,6 +20,7 @@ failed=0
 cat >"${stub}" <<'STUB'
 #!/usr/bin/env bash
 # Stub for `turbo query affected [--tasks build] --packages ... --base B --head H`
+# (like turbo with --packages, it never reports apps/e2e: that package is not in the list)
 set -euo pipefail
 tasks='' base='' head=''
 while [ "$#" -gt 0 ]; do
@@ -34,12 +35,12 @@ files="$(git diff --name-only "${base}" "${head}")"
 if [ -z "${tasks}" ]; then
   # Includes a non-app package so the script's apps/ filter is exercised
   printf '%s\n' "${files}" | jq -R -s -c '
-    [split("\n")[] | select(startswith("apps/") or startswith("packages/"))
+    [split("\n")[] | select(startswith("apps/") or startswith("packages/")) | select(startswith("apps/e2e/") | not)
      | split("/")[0:2] | {name: ("@abyss/" + .[1]), path: join("/")}] | unique
     | {data: {affectedPackages: {items: .}}}'
 else
   printf '%s\n' "${files}" | jq -R -s -c '
-    [split("\n")[] | select(startswith("apps/"))
+    [split("\n")[] | select(startswith("apps/")) | select(startswith("apps/e2e/") | not)
      | select((endswith(".md") or test("/test/") or test("\\.test\\.")) | not)
      | split("/")[1] | {package: {name: ("@abyss/" + .)}}] | unique
     | {data: {affectedTasks: {items: .}}}'
@@ -52,10 +53,11 @@ cd "${repo}"
 git config user.email test@example.test
 git config user.name test
 git config commit.gpgsign false
-mkdir -p apps/cms-admin/src apps/cms-api/test apps/web packages/form-commons .github/workflows .github/scripts
+mkdir -p apps/cms-admin/src apps/cms-api/test apps/web apps/e2e/tests packages/form-commons .github/workflows .github/scripts scripts/lib scripts/stack
 touch README.md apps/cms-admin/src/main.ts apps/cms-api/test/app.e2e-spec.ts apps/web/index.ts \
   packages/form-commons/index.ts .github/workflows/ci.yml .github/workflows/_publish.yml \
-  .github/workflows/web.yml .github/scripts/x.sh
+  .github/workflows/web.yml .github/workflows/e2e.yml .github/scripts/x.sh \
+  apps/e2e/tests/a.spec.ts scripts/e2e-stack.sh scripts/smoke.sh scripts/lib/stack-seed.sh scripts/stack/cms-api.env
 git add -A
 git commit -q -m init
 
@@ -104,13 +106,13 @@ all='["cms-admin","cms-api","web"]'
 
 read -r b h <<<"$(commit_change apps/cms-admin/src/main.ts)"
 run_case "cms-admin only" "${b}" "${h}" \
-  'apps=["cms-admin"]' 'image_apps=["cms-admin"]' any=true \
+  'apps=["cms-admin"]' 'image_apps=["cms-admin"]' any=true e2e=true \
   cms_admin_affected=true cms_admin_image=true \
   cms_api_affected=false cms_api_image=false web_affected=false web_image=false
 
 read -r b h <<<"$(commit_change README.md)"
 run_case "README only" "${b}" "${h}" \
-  'apps=[]' 'image_apps=[]' any=false "${none_affected[@]}" "${no_images[@]}"
+  'apps=[]' 'image_apps=[]' any=false e2e=false "${none_affected[@]}" "${no_images[@]}"
 
 read -r b h <<<"$(commit_change apps/cms-api/test/app.e2e-spec.ts)"
 run_case "cms-api tests only" "${b}" "${h}" \
@@ -119,7 +121,7 @@ run_case "cms-api tests only" "${b}" "${h}" \
 
 read -r b h <<<"$(commit_change packages/form-commons/index.ts)"
 run_case "non-app package only" "${b}" "${h}" \
-  'apps=[]' 'image_apps=[]' any=false "${none_affected[@]}" "${no_images[@]}"
+  'apps=[]' 'image_apps=[]' any=false e2e=false "${none_affected[@]}" "${no_images[@]}"
 
 read -r b h <<<"$(commit_change .github/workflows/web.yml)"
 run_case "web.yml" "${b}" "${h}" \
@@ -144,9 +146,21 @@ run_case "cms-admin source + web.yml" "${b}" "${h}" \
   'apps=["cms-admin","web"]' 'image_apps=["cms-admin"]' any=true \
   cms_admin_image=true web_affected=true web_image=false cms_api_affected=false
 
+# Files of the e2e suite and its stack run e2e without affecting any app
+for f in apps/e2e/tests/a.spec.ts scripts/e2e-stack.sh scripts/lib/stack-seed.sh \
+  scripts/stack/cms-api.env .github/workflows/e2e.yml; do
+  read -r b h <<<"$(commit_change "${f}")"
+  run_case "e2e only: ${f}" "${b}" "${h}" 'apps=[]' 'image_apps=[]' any=false e2e=true \
+    "${none_affected[@]}" "${no_images[@]}"
+done
+
+# A script that only local smoke uses does not run e2e
+read -r b h <<<"$(commit_change scripts/smoke.sh)"
+run_case "scripts/smoke.sh only" "${b}" "${h}" 'apps=[]' any=false e2e=false
+
 h="$(git rev-parse HEAD)"
 run_case "no base, zero SHA" 0000000000000000000000000000000000000000 "${h}" \
-  "apps=${all}" "image_apps=${all}" any=true \
+  "apps=${all}" "image_apps=${all}" any=true e2e=true \
   cms_api_affected=true cms_admin_affected=true web_affected=true \
   cms_api_image=true cms_admin_image=true web_image=true
 
