@@ -1,9 +1,9 @@
 # Docs: docs/ci-cd.md
 # Entrypoint: changes -> one flow per affected app (cms-api.yml, cms-admin.yml, web.yml)
 #   each flow: checks -> build; a repo-wide job (format, audit) always runs.
-#   e2e (e2e.yml) runs when any app or the e2e suite changed, on a docker-run stack of the built images.
+#   e2e does not run in CI (local only: `pnpm smoke`, `pnpm e2e:spec`).
 #   publish-<app> (_publish.yml): image -> manifest -> deploy bump, only on a push to staging/main, only when
-#   the app's build inputs changed and both the app flow and e2e succeeded. CI never starts the local smoke stack.
+#   the app's build inputs changed and the app flow succeeded. CI never starts the local smoke stack.
 # The app flows never depend on each other, so one app failing never skips another.
 name: CI
 
@@ -41,7 +41,6 @@ jobs:
       web_affected: ${{ steps.affected.outputs.web_affected }}
       web_image: ${{ steps.affected.outputs.web_image }}
       web_matrix: ${{ steps.target.outputs.web_matrix }}
-      e2e: ${{ steps.affected.outputs.e2e }}
       publish: ${{ steps.target.outputs.publish }}
       branch: ${{ steps.target.outputs.branch }}
       tag: ${{ steps.target.outputs.tag }}
@@ -150,24 +149,13 @@ jobs:
     with:
       turbo_version: ${{ needs.changes.outputs.turbo_version }}
 
-  # Status check shows as "e2e / Playwright"
-  e2e:
-    name: e2e
-    needs: changes
-    if: needs.changes.outputs.e2e == 'true'
-    uses: ./.github/workflows/e2e.yml
-    permissions:
-      contents: read
-    with:
-      turbo_version: ${{ needs.changes.outputs.turbo_version }}
-
   publish-cms-api:
     name: publish cms-api
-    needs: [changes, cms-api, e2e]
-    # always(): run even though a sibling app flow failed or was skipped; only this app and e2e must be green
+    needs: [changes, cms-api]
+    # always(): run even though a sibling app flow failed or was skipped; only this app must be green
     if: >-
       always() && needs.changes.outputs.publish == 'true' && needs.changes.outputs.cms_api_image == 'true'
-      && needs.cms-api.result == 'success' && needs.e2e.result == 'success'
+      && needs.cms-api.result == 'success'
     uses: ./.github/workflows/_publish.yml
     # Called workflow's jobs get at most these; only its image and manifest jobs use packages: write
     permissions:
@@ -186,11 +174,11 @@ jobs:
 
   publish-cms-admin:
     name: publish cms-admin
-    needs: [changes, cms-admin, e2e]
-    # always(): run even though a sibling app flow failed or was skipped; only this app and e2e must be green
+    needs: [changes, cms-admin]
+    # always(): run even though a sibling app flow failed or was skipped; only this app must be green
     if: >-
       always() && needs.changes.outputs.publish == 'true' && needs.changes.outputs.cms_admin_image == 'true'
-      && needs.cms-admin.result == 'success' && needs.e2e.result == 'success'
+      && needs.cms-admin.result == 'success'
     uses: ./.github/workflows/_publish.yml
     # Called workflow's jobs get at most these; only its image and manifest jobs use packages: write
     permissions:
@@ -209,11 +197,11 @@ jobs:
 
   publish-web:
     name: publish web
-    needs: [changes, web, e2e]
-    # always(): run even though a sibling app flow failed or was skipped; only this app and e2e must be green
+    needs: [changes, web]
+    # always(): run even though a sibling app flow failed or was skipped; only this app must be green
     if: >-
       always() && needs.changes.outputs.publish == 'true' && needs.changes.outputs.web_image == 'true'
-      && needs.web.result == 'success' && needs.e2e.result == 'success'
+      && needs.web.result == 'success'
     uses: ./.github/workflows/_publish.yml
     # Called workflow's jobs get at most these; only its image and manifest jobs use packages: write
     permissions:

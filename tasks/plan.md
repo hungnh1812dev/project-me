@@ -132,16 +132,17 @@ Phases 1 and 2 can run in parallel if more than one worker is available. This pr
 
 ### Phase 8: Hardening & deploy docs
 - T36 Security headers + CSP per app + prod config audit
-- T37 split (REPLAN 2026-10-22, re-scoped after the user's "T37 correction": compose is local-test only, never in CI), build order: T37a + T37c + T37d (parallel) -> T37b -> T37f -> T37e
+- T37 split (REPLAN 2026-10-22, re-scoped after the user's "T37 correction": compose is local-test only, never in CI; second REPLAN 2026-10-22: e2e does NOT run in GitHub CI, it stays local only via `SMOKE_E2E=1 pnpm smoke` / `pnpm e2e:spec`), build order: T37a + T37c + T37d (parallel) -> T37b -> T37e -> T37g
   - T37a cms-api init container command `deploy:migrate` (db:migrate -> content:migrate), numeric USER, smoke `cms-api-init` service (core-builder, security gate)
   - T37b CI checks + build generated from `.github_template/` into `.github/workflows/` (replaces the old untracked ci.yml; no compose, no e2e) (core-builder)
   - T37c web image numeric non-root user (ui-builder)
-  - T37d Playwright consolidation + §12 success-criteria map (qc)
-  - T37f e2e in CI on a `docker run` stack of the per-service images (Traefik + Postgres + Mailpit + cms-api init/main + web + cms-admin), shared seeding with local smoke (core-builder; needs Q-T37-10)
-  - T37e image publish (one image per service, from each Dockerfile) + deploy-repo bump from the template, gated on e2e per Q-T37-8 (core-builder, security gate; needs Q-T37-8, Q-T37-9)
+  - T37d Playwright consolidation + §12 success-criteria map (qc; local e2e)
+  - T37f removed (e2e in CI; was built @ a2897da, its CI wiring is undone by T37g)
+  - T37e image publish (one image per service, from each Dockerfile; one cms-api image for init + main, Q-T37-9) + deploy-repo bump from the template, gated on the app's CI checks only (lint, typecheck, unit tests, build), not on e2e (core-builder, security gate)
+  - T37g remove the CI e2e job, `e2e.yml` and the `e2e` affected output; `publish-<app>` needs only `[changes, <app>]`; docs say e2e is local only (core-builder, security gate; needs Q-T37-12 on deleting `scripts/e2e-stack.sh`)
 - T38 Deployment guide for the deploy repo (Traefik, cms-api init + main container, backups, IP policy); deps T36, T37a
 
-**Checkpoint 8 (release):** all §12 criteria green in CI; deploy guide reviewed.
+**Checkpoint 8 (release):** all §12 criteria green (Jest/Vitest ones in the CI app flows, Playwright ones locally with `SMOKE_E2E=1 pnpm smoke`; no e2e in CI); deploy guide reviewed.
 
 ### Ad-hoc: Base config
 - D2 `packages/prettier-config` -> `packages/base-config` (`@abyss/base-config`, exports `prettier`, `eslint`, `oxlint`); every app and package extends it locally. core-builder (step A: package, repo-wide rename, cms-api, e2e config) -> ui-builder (step B: cms-admin, web, form-commons) -> qc (step C: CLI checks). Needs Q-BC1..Q-BC4. Done; its Q-BC4 "no build step" contract is superseded by D3.

@@ -56,7 +56,7 @@ services:
     build:
       context: .
       dockerfile: apps/cms-api/Dockerfile
-    # Static settings: scripts/stack/cms-api.env (shared with the CI e2e stack).
+    # Static settings: scripts/stack/cms-api.env (local only).
     env_file: &cms-api-env-file
       - scripts/stack/cms-api.env
     environment: &cms-api-env

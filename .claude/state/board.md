@@ -33,4 +33,14 @@ Source: `tasks/todo.md` "Ad-hoc: Base config" (D2) · Order: core-builder (A) ->
 ## Ad-hoc: Base config (D3)
 | ID | Title | Scope | Status | Commit |
 |---|---|---|---|---|
-| D3 | Build @abyss/base-config to dist/ and export from dist (supersedes D2 Q-BC4) | core-builder | in-progress | - |
+| D3 | Build @abyss/base-config to dist/ and export from dist (supersedes D2 Q-BC4) | core-builder | done | 1713a2d |
+
+## Ad-hoc: Root start scripts
+| ID | Title | Scope | Status | Commit |
+|---|---|---|---|---|
+| S1 | Root start scripts: start:dev, start:cms-admin, start:web, start:cms-api | core-builder | done | c2c80a8 |
+
+## Phase 8 (CI change): T37g
+| ID | Title | Scope | Status | Commit |
+|---|---|---|---|---|
+| T37g | Remove e2e from CI; publish gated on app checks only | core-builder | in-progress | - |

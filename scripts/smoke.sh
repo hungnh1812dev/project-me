@@ -20,7 +20,7 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-# Shared with scripts/e2e-stack.sh: log fragments, account seeding, E2E_* export.
+# Log fragments, account seeding, E2E_* export.
 # shellcheck source=lib/stack-seed.sh
 source "$ROOT_DIR/scripts/lib/stack-seed.sh"
 COMPOSE_FILE="$ROOT_DIR/docker-compose.smoke.yml"

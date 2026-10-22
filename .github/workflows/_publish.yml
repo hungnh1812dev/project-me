@@ -1,5 +1,5 @@
 # Docs: docs/ci-cd.md
-# Shared publish for one app, called by the publish-<app> jobs of ci.yml (after the app flow and e2e passed):
+# Shared publish for one app, called by the publish-<app> jobs of ci.yml (after the app flow passed; e2e does not run in CI):
 #   image (per platform: build -> non-root guard -> bundle check (cms-admin) -> push by digest)
 #   -> manifest (<branch>-<sha7> and <branch>) -> deploy (bump <app>-sync-overlay.yaml)
 # One production image per service, built straight from apps/<app>/Dockerfile.

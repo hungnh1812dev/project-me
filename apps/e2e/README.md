@@ -51,7 +51,7 @@ answers. The kept stack keeps its data and rate-limit counters between runs.
 
 ## Run against the CI stack
 
-`bash scripts/e2e-stack.sh` starts the built images with plain `docker run` (the stack CI uses), seeds it and runs this suite; see [docs/ci-cd.md](../../docs/ci-cd.md#e2e-in-ci).
+e2e runs locally only; CI does not run it.
 
 ## Run against another stack
 

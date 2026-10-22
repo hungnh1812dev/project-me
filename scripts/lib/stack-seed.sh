@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
-# Shared by scripts/smoke.sh (compose) and scripts/e2e-stack.sh (docker run):
-# the migration/owner log fragments, the e2e account seeding and the E2E_*
-# export, so the two stacks never drift. Source it; do not run it.
+# Used by scripts/smoke.sh (local compose stack): the migration/owner log
+# fragments, the e2e account seeding and the E2E_* export. Source it; do not run it.
 #
 # The caller defines these functions before calling the helpers below:
 #   api_exec [docker exec options...] -- <command...>

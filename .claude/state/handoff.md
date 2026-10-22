@@ -2,6 +2,7 @@
 Updated: 2026-10-22 after T32 (trimmed to open work; history in archive/handoff-archive.md)
 
 ## In progress / next
+- S1 Root start scripts - awaiting commit; next: user needs apps/web env (API_INTERNAL_URL) and cms-api DB_* env exported to run start:web / start:dev / start:cms-api.
 - T32 Reviewer UX (web + admin) + owner log - ready-for-checks; next: qc (browser: reviewer flow on rebuilt smoke, needs internet) + security-qc (Risk high: apps/web/src/features/auth). Provisional: no CvView refetch (T30 skipped); web reviewer button hidden unless NEXT_PUBLIC_TURNSTILE_SITE_KEY set and status on; reviewer session has no refresh (reload ends it); admin has no entry path for a reviewer token yet; no Turnstile nonce (T36).
 - T32 user answers: visitor roles Recruiter, Peer / colleague (+ Other, free text); purpose tags Hiring, Project scoping, Networking (+ Other, free text); Cloudflare public Turnstile test keys in docker-compose.smoke.yml and the smoke web build only; production keys come from the user.
 - T35 Bulk UI - awaiting checks/commit; next: qc (browser: list, select 5 -> publish, delete confirm, import) on a rebuilt smoke stack. Provisional: selection is per page; actions run non-atomic; import non-atomic by default and trims succeeded items from the text; list shows drafts only (no published-state column); no nav link to `/content/:slug` yet; columns = first 3 root scalar fields.
@@ -14,6 +15,7 @@ Updated: 2026-10-22 after T32 (trimmed to open work; history in archive/handoff-
 - D1 done @ bfa3455 (user committed; docs only). Open: SOPS flow untested on a cluster; try once on a scratch namespace. cms-api does not load .env itself (guide uses set -a; . ./.env).
 - D2 step B (ui) built - blocked on deleting apps/{cms-admin,web}/.oxlintrc.json and packages/form-commons/.oxlintrc.json (approval); next: user approves, run pnpm lint, then step C (qc).
 - D3 base-config dist build - awaiting checks/commit; next: qc-cli (fresh clone, Docker builds when daemon is up).
+- T37g Remove e2e from CI - deletions done; awaiting checks; next: qc-cli, security-qc (Risk high).
 - Phase 5 (Media): checkpoint still pending user review.
 - Next: Phase 6 phase checks (T38 done); Phase 5 checkpoint still pending.
 
@@ -39,7 +41,7 @@ Updated: 2026-10-22 after T32 (trimmed to open work; history in archive/handoff-
 - T35 done @ b8b2f13 (user committed; QC recheck 103/104, the one failure was the flaky media-attach test, passed on re-run; focus-return fixed). Tooling chore (e2e:spec runner, smoke.sh kept-stack env) committed separately after review.
 - T36 done (user committed 2 commits: cms-api headers, then web/admin CSP nonces + smoke). QC recheck 2 passed 104/104; admin style nonce via nginx + meta, Radix and Tiptap styles covered; no hash (scrollbar width varies).
 
-- T37f: apps/e2e hardcodes the DB container `abyss-smoke-db-1` (src/constants.ts SMOKE_DB_CONTAINER; reviewer.spec.ts, seed-media.ts run `docker exec` psql), so e2e-stack.sh names its Postgres container that too (cannot run beside `pnpm smoke`) -> qc: read the name from an env var, then e2e-stack.sh can use `abyss-e2e-db`.
+- T37f (superseded by T37g, e2e-stack.sh goes away): apps/e2e hardcodes the DB container `abyss-smoke-db-1` (src/constants.ts SMOKE_DB_CONTAINER; reviewer.spec.ts, seed-media.ts run `docker exec` psql), so e2e-stack.sh names its Postgres container that too (cannot run beside `pnpm smoke`) -> qc: read the name from an env var, then e2e-stack.sh can use `abyss-e2e-db`.
 - T37f: actionlint 1.7.12 runs via docker (`rhysd/actionlint`), clean on .github (also closes the T37b open item). CI run itself unverified until the user pushes.
 
 ## T37 answers (user, 2026-10-22)
@@ -97,3 +99,6 @@ Updated: 2026-10-22 after T32 (trimmed to open work; history in archive/handoff-
 - D2 step B committed as 1018286. Step C qc CLI pass. Docker builds not run (daemon down).
 - User decision (2026-10-22): build `@abyss/base-config` to JS with a `dist/` folder and export from dist. This replaces Q-BC4 (TS direct, no build). Needs a new task (REPLAN D2 -> D3); core-builder owns packages/base-config.
 - D3 answers (user, 2026-10-22): exports get `types`, `import` and `default` (all to dist/), so the seven .prettierrc.cjs files stay unchanged. No install hook: build with turbo and the root format scripts, and the README says to run `pnpm --filter @abyss/base-config build` once after a fresh clone.
+- Root start scripts (user, 2026-10-22): `start:dev` runs dev for cms-admin and web in parallel (cms-api excluded). cms-api starts with its existing `start` script (no new dev script). Root package.json scripts: start:dev, start:cms-admin, start:web, start:cms-api. Ad-hoc S1, core-builder scope (root package.json).
+- User decision (2026-10-22): e2e does NOT run in GitHub CI. Remove the CI e2e job (T37f scope: no e2e in CI). Image publish (T37e) is NOT gated on e2e; publish after CI checks (lint, typecheck, unit tests, build) pass. e2e stays local only (`pnpm smoke`, `pnpm e2e:spec`). Replan T37 (e2e job removed; T37e gate changed; Q-T37-8 and Q-T37-10 are resolved by this).
+- T37g answers (user, 2026-10-22): delete `.github/workflows/e2e.yml`, `scripts/e2e-stack.sh` and `scripts/stack/web-build.env` (approve each deletion when it comes up). Publish does NOT wait for the repo job (format:check and audit); it waits only for the app checks, as in T37e/T37g.
