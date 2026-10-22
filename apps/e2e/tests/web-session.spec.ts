@@ -9,9 +9,10 @@ import { mailIdsFor, waitForCode } from '../src/mailpit';
 /**
  * T33: apps/web sign-in dialog and in-memory session. Only reader accounts
  * (role guest, no permission) may hold a web session; owner / admin / editor
- * are refused. Login budget (limit 5 per email, 10 per IP in 15 min): owner 1
- * (4 used by earlier specs), reader 1, reader with email codes 1, one wrong
- * password on an unknown email. The steps change nothing but sessions, so no retries.
+ * are refused. Self-contained: it uses the seeded reader accounts and the
+ * owner, reads no state from other specs (the smoke stack lifts the login
+ * limits, so spec order spends no shared login budget). The steps change
+ * nothing but sessions, so no retries.
  */
 test.describe.configure({ retries: 0 });
 

@@ -45,6 +45,9 @@ const photoField = (page: Page) => page.getByRole('group', { name: 'Photo' });
 const saveButton = (page: Page) =>
   page.getByRole('button', { name: content.save, exact: true });
 
+/** The API route; the admin page `/media` has the same tail on another origin. */
+const MEDIA_API_PATH = `${new URL(e2eEnv.apiBaseUrl).pathname}/media`;
+
 const libraryRow = (page: Page, name: string) =>
   page.getByRole('row').filter({ hasText: name });
 
@@ -221,20 +224,24 @@ test.describe.serial('owner: attach media to a profile', () => {
   test('uploading in the field attaches the new file; the console stayed clean', async () => {
     // Real uploads cannot succeed on the smoke stack (dummy Cloudinary), so the
     // POST answers with the seeded third file; the attach and save are real.
-    const listed = page
-      .waitForResponse(
-        (r) =>
-          r.url().includes('/api/v1/media') && r.request().method() === 'GET',
-      )
-      .then((r) => r.json() as Promise<{ data: Array<{ fileName: string }> }>);
-    await page.goto('/media');
-    const library = await listed;
-    const third = library.data.find((f) => f.fileName === THIRD_FILE_NAME);
-    expect(third).toBeDefined();
+    // The list body is read inside the route handler: reading it from a
+    // response promise fails when the page navigates away first.
+    type Listed = { data: Array<{ fileName: string }> };
+    let third: { fileName: string } | undefined;
     await page.route(
-      (url) => url.pathname.endsWith('/media'),
-      (route) => {
-        if (route.request().method() !== 'POST') return route.fallback();
+      (url) => url.pathname === MEDIA_API_PATH,
+      async (route) => {
+        const method = route.request().method();
+        if (method === 'GET') {
+          const response = await route.fetch();
+          if (response.ok()) {
+            const body = (await response.json()) as Listed;
+            third =
+              body.data.find((f) => f.fileName === THIRD_FILE_NAME) ?? third;
+          }
+          return route.fulfill({ response });
+        }
+        if (method !== 'POST') return route.fallback();
         return route.fulfill({
           status: 201,
           contentType: 'application/json',
@@ -247,6 +254,9 @@ test.describe.serial('owner: attach media to a profile', () => {
         });
       },
     );
+    await page.goto('/media');
+    await expect(libraryRow(page, THIRD_FILE_NAME)).toBeVisible();
+    expect(third).toBeDefined();
     await page.goto(editUrl);
     await photoField(page).getByTestId('media-file-input').setInputFiles({
       name: THIRD_FILE_NAME,

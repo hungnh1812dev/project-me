@@ -46,3 +46,9 @@ export const TWO_FACTOR_TEST_TIMEOUT_MS = 180_000;
 export const SMOKE_DB_CONTAINER = 'abyss-smoke-db-1';
 export const SMOKE_DB_USER = 'abyss';
 export const SMOKE_DB_NAME = 'abyss';
+
+/** HTTP statuses the specs assert on. */
+export const HTTP = {
+  UNAUTHORIZED: 401,
+  NOT_FOUND: 404,
+} as const;
