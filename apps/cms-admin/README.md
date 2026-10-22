@@ -213,3 +213,22 @@ routes. The build fails without `VITE_API_BASE_URL`.
 | `test`      | Vitest + Testing Library (jsdom)                                              |
 | `lint`      | Oxlint (react, jsx-a11y, vitest) then ESLint (typescript-eslint, react-hooks) |
 | `typecheck` | `tsc --noEmit`                                                                |
+
+## Security headers (SPEC D17, T36)
+
+nginx sends the CSP, HSTS, `nosniff` and `Referrer-Policy` on every response
+(every location includes `/etc/nginx/conf.d/security-headers.inc`, rendered at
+container start by `nginx/15-security-headers.sh` from
+`nginx/security-headers.inc.template`). The CSP is
+`script-src 'self'`, `style-src 'self' 'nonce-<$request_id>'` + `style-src-attr 'unsafe-inline'`,
+`img-src 'self' data: blob:` + Cloudinary, `frame-ancestors 'none'`.
+`connect-src` is `'self'` plus the API **origin** (a CSP host-source with a path
+matches that exact URL only): the origin of the `VITE_API_BASE_URL` the image
+was built with, or the runtime env `CSP_CONNECT_SRC` (space-separated origins)
+when set.
+
+The nonce exists because Radix dialogs inject a scroll-lock `<style>` whose
+content depends on the measured scrollbar width, so a fixed sha256 hash would
+differ per OS/browser. nginx uses `$request_id` (128 random bits) as the nonce
+and adds `<meta name="csp-nonce">` to the HTML shell (`sub_filter`);
+`src/main.tsx` hands it to react-remove-scroll-bar through `get-nonce`.

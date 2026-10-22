@@ -92,8 +92,8 @@ tokens only (`bg-card`, `text-muted-foreground`).
   reload ends the review; "End review" drops the token locally.
 - Turnstile loads through `next/script` only while the dialog's last step is
   open (`challenges.cloudflare.com`, constant `TURNSTILE` in
-  `src/config/reviewer.constants.ts`). The T36 CSP must allow that origin in
-  `script-src` and `frame-src` and pass the request nonce to the script.
+  `src/config/reviewer.constants.ts`). The CSP allows that origin in
+  `script-src` and `frame-src`; `next/script` stamps the request nonce on it.
 - There is no page to refetch per actor yet (T30 skipped), so the reviewer
   view today is the session itself; pages added later read the token with
   `useWebSession().getAccessToken()`.
@@ -121,3 +121,24 @@ Runtime env: `API_INTERNAL_URL`, `WEB_REVALIDATE_SECONDS`, `WEB_PORT` (default
 | `test`      | Vitest + Testing Library (jsdom)                                                    |
 | `lint`      | Oxlint (react, jsx-a11y, vitest) then ESLint (typescript-eslint, react-hooks, Next) |
 | `typecheck` | `next typegen`, then `tsc --noEmit`                                                 |
+
+## Security headers (SPEC D17, T36)
+
+- `src/proxy.ts` makes a fresh nonce per request and sets
+  `Content-Security-Policy` on the forwarded request (Next.js stamps the nonce
+  on its scripts) and on the response. The policy is built in
+  `src/lib/content-security-policy.ts`: `script-src 'self' 'nonce-<n>'
+'strict-dynamic'` + the Turnstile origin, `style-src 'self' 'nonce-<n>'` with
+  `style-src-attr 'unsafe-inline'` (Q-W4), `connect-src 'self'` plus the origin
+  of `NEXT_PUBLIC_API_BASE_URL` when it is absolute, `img-src` with Cloudinary,
+  `frame-src` Turnstile, `frame-ancestors 'none'`. Dev adds `'unsafe-eval'` and
+  `ws:`. Origins and header values are constants in `src/config/security*.ts`.
+- Radix dialogs inject a scroll-lock `<style>` through react-remove-scroll-bar;
+  `app/CspNonce.tsx` passes it the request nonce (`get-nonce` `setNonce`) so
+  `style-src` stays nonce-only.
+- `next.config.ts` adds HSTS, `nosniff` and `Referrer-Policy` to every route.
+- The proxy matcher skips `/api/`, `/_next/static`, `/_next/image` and
+  prefetches. The root layout awaits `connection()`, so every page renders per
+  request (the server data cache from `WEB_REVALIDATE_SECONDS` still applies).
+- `scripts/smoke.sh` asserts the headers, the nonce match and a fresh nonce
+  per response.

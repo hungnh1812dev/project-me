@@ -16,6 +16,20 @@ import { Button } from '@/components/ui/button';
 /** Link schemes the editor accepts; same set as the server allowlist. */
 const LINK_PROTOCOLS = ['http', 'https', 'mailto', 'tel'];
 
+/**
+ * Tiptap injects its base CSS as a <style>; under a nonce-based `style-src` it
+ * needs the page's nonce, which the host app publishes in this meta tag.
+ */
+const CSP_NONCE_META_SELECTOR = 'meta[name="csp-nonce"]';
+
+function readCspNonce(): string | undefined {
+  if (typeof document === 'undefined') return undefined;
+  const content = document
+    .querySelector(CSP_NONCE_META_SELECTOR)
+    ?.getAttribute('content');
+  return content || undefined;
+}
+
 /** What an empty Tiptap document serializes to. */
 const EMPTY_DOC_HTML = '<p></p>';
 
@@ -201,6 +215,7 @@ function RichtextInput<TFieldValues extends FieldValues = FieldValues>({
     content: value,
     editable: !disabled,
     immediatelyRender: false,
+    injectNonce: readCspNonce(),
     editorProps: {
       attributes: {
         role: 'textbox',

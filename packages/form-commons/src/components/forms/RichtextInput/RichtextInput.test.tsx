@@ -88,6 +88,26 @@ describe('RichtextInput', () => {
     expect(onValid.mock.calls[0]?.[0].body).toContain('there');
   });
 
+  it('stamps the page CSP nonce on the style Tiptap injects', async () => {
+    const meta = document.createElement('meta');
+    meta.name = 'csp-nonce';
+    meta.content = 'test-nonce';
+    document.head.appendChild(meta);
+    document
+      .querySelectorAll('style[data-tiptap-style]')
+      .forEach((node) => node.remove());
+    render(
+      <TestForm<{ body: string }> options={{ defaultValues: { body: '' } }}>
+        <RichtextInput name="body" label="Summary" labels={LABELS} />
+      </TestForm>,
+    );
+    await screen.findByRole('textbox', { name: 'Summary' });
+    expect(
+      document.querySelector('style[data-tiptap-style]')?.getAttribute('nonce'),
+    ).toBe('test-nonce');
+    meta.remove();
+  });
+
   it('toggles bold from the toolbar', async () => {
     const onValid = vi.fn<(values: { body: string }) => void>();
     render(

@@ -1,18 +1,30 @@
 import './app.css';
 
 import type { Metadata } from 'next';
+import { headers } from 'next/headers';
+import { connection } from 'next/server';
 import type { ReactNode } from 'react';
 
+import { NONCE_HEADER } from '../config/security.constants';
 import { COPY } from '../config/copy.constants';
 import { AccountMenu } from '../features/auth/AccountMenu';
+import { CspNonce } from './CspNonce';
 import { Providers } from './providers';
 
 export const metadata: Metadata = { title: COPY.app.name };
 
-export default function RootLayout({ children }: { children: ReactNode }) {
+export default async function RootLayout({
+  children,
+}: {
+  children: ReactNode;
+}) {
+  // The CSP nonce is made per request, so every page renders per request.
+  await connection();
+  const nonce = (await headers()).get(NONCE_HEADER);
   return (
     <html lang="en">
       <body>
+        <CspNonce nonce={nonce} />
         <Providers>
           <div className="min-h-dvh">
             <header className="border-b border-border bg-card">

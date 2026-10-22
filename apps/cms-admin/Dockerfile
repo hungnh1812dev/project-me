@@ -34,5 +34,13 @@ RUN pnpm turbo run build --filter=@abyss/cms-admin
 # 3. Runtime: static files on unprivileged nginx (runs as uid 101, port 8080).
 FROM ${NGINX_IMAGE} AS runtime
 COPY apps/cms-admin/nginx.conf /etc/nginx/conf.d/default.conf
+# Rendered at container start by the entrypoint script below (envsubst).
+COPY apps/cms-admin/nginx/security-headers.inc.template /etc/nginx/security/security-headers.inc.template
+# CSP connect-src: 15-security-headers.sh derives the API *origin* from the API
+# URL the bundle was built with. Set CSP_CONNECT_SRC at run time (space
+# separated origins) to override.
+COPY --chmod=755 apps/cms-admin/nginx/15-security-headers.sh /docker-entrypoint.d/15-security-headers.sh
+ARG VITE_API_BASE_URL
+ENV CSP_API_URL=$VITE_API_BASE_URL
 COPY --from=build /repo/apps/cms-admin/dist /usr/share/nginx/html
 EXPOSE 8080
