@@ -43,11 +43,16 @@ pnpm content:migrate        # content-type tables from content/migrations
 pnpm start                  # http://localhost:3000/api/v1, health: /api/v1/health/ready
 ```
 
-(`pnpm deploy:migrate` runs the two migrate steps in order.) After a code change, `pnpm build` again, then `pnpm start`. Create the one owner account once:
+(`pnpm deploy:migrate` runs the two migrate steps in order.) After a code change, `pnpm build` again, then `pnpm start`. Create the one owner account once, in either way:
+
+- **Setup page:** export `OWNER_SETUP_TOKEN` (at least 32 bytes in production, any non-empty value in development; `openssl rand -base64 32`) before `pnpm start`, run the admin (`pnpm --filter @abyss/cms-admin dev`), open `http://admin.domain.localhost:5173/setup`, enter the token and the owner details, then sign in on the login page. The page closes itself once an owner exists; unset the token afterwards.
+- **CLI:**
 
 ```
 OWNER_EMAIL=you@example.com pnpm owner:bootstrap     # password at a hidden prompt
 ```
+
+A second owner is refused either way.
 
 Required keys, from `apps/cms-api/.env.example` (the file documents every key; the app refuses to start on a bad value and lists the failing keys, never the values):
 
@@ -60,7 +65,7 @@ Required keys, from `apps/cms-api/.env.example` (the file documents every key; t
 | `MAIL_PROVIDER`                                    | `console` (OTP codes appear in the cms-api log)                               |
 | `MEDIA_PROVIDER`                                   | `fake` (uploads kept in memory, lost on restart)                              |
 
-Optional locally: `TRUST_PROXY_HOPS` (1), `CLIENT_IP_HEADER`, `SMTP_*` and `MAIL_FROM` (with `smtp`), `CLOUDINARY_*` (with `cloudinary`), `TURNSTILE_SECRET_KEY` and `TURNSTILE_EXPECTED_HOSTNAME` (reviewer sessions; unset answers 503), `TOTP_ENC_KID`, `JWT_ACCESS_KID`, `TOTP_ENC_PREVIOUS_*`, `TOTP_ISSUER`. CLI-only: `OWNER_EMAIL`, `OWNER_DISPLAY_NAME`. Do not set the `*_RATE_LIMIT_*` keys; they are for the smoke stack.
+Optional locally: `TRUST_PROXY_HOPS` (1), `CLIENT_IP_HEADER`, `SMTP_*` and `MAIL_FROM` (with `smtp`), `CLOUDINARY_*` (with `cloudinary`), `TURNSTILE_SECRET_KEY` and `TURNSTILE_EXPECTED_HOSTNAME` (reviewer sessions; unset answers 503), `TOTP_ENC_KID`, `JWT_ACCESS_KID`, `TOTP_ENC_PREVIOUS_*`, `TOTP_ISSUER`. `OWNER_SETUP_TOKEN` (opens the one-time owner setup page). CLI-only: `OWNER_EMAIL`, `OWNER_DISPLAY_NAME`. Do not set the `*_RATE_LIMIT_*` keys; they are for the smoke stack.
 
 Tests: `pnpm --filter @abyss/cms-api test:unit`, and `test:integration` (Testcontainers; Docker must be running).
 

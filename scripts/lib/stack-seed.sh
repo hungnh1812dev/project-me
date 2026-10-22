@@ -15,7 +15,6 @@ DB_MIGRATE_SEEDED="Seeded system roles: public, guest, reviewer, editor, admin, 
 CONTENT_MIGRATE_APPLIED="Applied "
 # cms-api package scripts run through npm inside the image (no pnpm there).
 OWNER_BOOTSTRAP_CMD=(npm run --silent owner:bootstrap -- --password-stdin)
-OWNER_CREATED="Owner account created: "
 
 STACK_SECRET_BYTES="32"
 SEED_2FA_ACCOUNT_DONE="Seeded e2e 2FA account"

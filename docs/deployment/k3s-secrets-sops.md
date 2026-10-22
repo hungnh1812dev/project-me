@@ -6,15 +6,16 @@ Status: nothing here was run against a cluster (no cluster available). The `sops
 
 ## 1. Which keys are secret
 
-| App       | Secret keys (go in the encrypted Secret)                                                                                                                                                          | Not secret                                                              |
-| --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
-| cms-api   | `DB_PASSWORD`, `JWT_ACCESS_SECRET`, `OTP_PEPPER`, `TOTP_ENC_KEY`, `CLOUDINARY_API_SECRET`, `TURNSTILE_SECRET_KEY`, `SMTP_USER`, `SMTP_PASSWORD`, `TOTP_ENC_PREVIOUS_KEY` (only during a rotation) | everything else in `apps/cms-api/.env.example`: put it in the ConfigMap |
-| web       | none                                                                                                                                                                                              | all of `apps/web/.env.example` (`NEXT_PUBLIC_*` are public by design)   |
-| cms-admin | none                                                                                                                                                                                              | `VITE_API_BASE_URL` (build arg), `CSP_CONNECT_SRC`                      |
+| App       | Secret keys (go in the encrypted Secret)                                                                                                                                                                                                           | Not secret                                                              |
+| --------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| cms-api   | `DB_PASSWORD`, `JWT_ACCESS_SECRET`, `OTP_PEPPER`, `TOTP_ENC_KEY`, `CLOUDINARY_API_SECRET`, `TURNSTILE_SECRET_KEY`, `SMTP_USER`, `SMTP_PASSWORD`, `TOTP_ENC_PREVIOUS_KEY` (only during a rotation), `OWNER_SETUP_TOKEN` (only during first install) | everything else in `apps/cms-api/.env.example`: put it in the ConfigMap |
+| web       | none                                                                                                                                                                                                                                               | all of `apps/web/.env.example` (`NEXT_PUBLIC_*` are public by design)   |
+| cms-admin | none                                                                                                                                                                                                                                               | `VITE_API_BASE_URL` (build arg), `CSP_CONNECT_SRC`                      |
 
 Notes:
 
 - `SMTP_USER` and `SMTP_PASSWORD` are set both or neither. `CLOUDINARY_API_SECRET` is required with `MEDIA_PROVIDER=cloudinary`. `TURNSTILE_SECRET_KEY` unset makes `POST /reviewer/sessions` answer 503. `JWT_ACCESS_SECRET`, `OTP_PEPPER` and `TOTP_ENC_KEY` must each be at least 32 bytes (`openssl rand -base64 48`).
+- `OWNER_SETUP_TOKEN` is optional and temporary: it opens the one-time owner setup page. Add it for the first install (at least 32 bytes in production, `openssl rand -base64 32`), create the owner, then remove it and restart. See "First install: the owner" in `docs/deployment/k3s-traefik.md`.
 - The key ids (`JWT_ACCESS_KID`, `TOTP_ENC_KID`, `TOTP_ENC_PREVIOUS_KID`) are labels, not secrets; keep them in the ConfigMap.
 - The Turnstile **site** key is public and is a web build arg, not a cluster secret.
 - Other secrets exist outside the cluster and are not covered by this file: `DEPLOYMENT_REPO_TOKEN` and the registry login live in GitHub Environments (`docs/ci-cd.md`). The backup CronJob also needs its rclone remote config; if it reads `cms-api-secrets` (as in the k3s guide's example) add those keys to the same encrypted file, or better give the job its own Secret.
@@ -64,6 +65,7 @@ stringData:
   TURNSTILE_SECRET_KEY: <value>
   SMTP_USER: <value>
   SMTP_PASSWORD: <value>
+  # OWNER_SETUP_TOKEN: <value>   # first install only; remove after the owner exists
 ```
 
 ## 3. One-time setup
@@ -123,7 +125,7 @@ This is already in the Deployment of the k3s guide (section 3). Why the init con
 
 Env values are read once at process start: after any Secret change, restart (section 7). `envFrom` of a Secret does not update a running container.
 
-Manual one-time jobs (`owner:bootstrap`, `owner:reset-2fa`) run with `kubectl exec` inside the running main container, so they already have the Secret in their environment; the password is typed at a prompt and never stored in a file.
+The owner is created through the setup page with `OWNER_SETUP_TOKEN` (see section 1), not a shell. Manual one-time jobs (`owner:bootstrap`, `owner:reset-2fa`) run with `kubectl exec` inside the running main container, so they already have the Secret in their environment; the password is typed at a prompt and never stored in a file.
 
 **web:** no Secret and no `envFrom` of a Secret. Its `NEXT_PUBLIC_*` values are build arguments (GitHub Environment variables) and its runtime values (`API_INTERNAL_URL`, `WEB_REVALIDATE_SECONDS`) are plain `env` entries. The server calls cms-api anonymously.
 
@@ -148,6 +150,7 @@ The restart also reruns the init container, so a wrong database password shows u
 | `TOTP_ENC_KEY`               | move the old key to `TOTP_ENC_PREVIOUS_KEY`, its id to `TOTP_ENC_PREVIOUS_KID`, set the new key and a new `TOTP_ENC_KID`, restart. Remove the previous pair after every user has signed in with a valid code once (each secret is re-encrypted on its next valid code) | no user is locked out; the previous pair must be set both or neither and its id must differ from the current one               |
 | `CLOUDINARY_API_SECRET`      | rotate in the Cloudinary console, update the Secret, restart                                                                                                                                                                                                           | uploads fail between the two steps                                                                                             |
 | `TURNSTILE_SECRET_KEY`       | rotate in the Cloudflare dashboard, update, restart                                                                                                                                                                                                                    | reviewer sessions fail between the two steps                                                                                   |
+| `OWNER_SETUP_TOKEN`          | not rotated: replace it with a new value and restart if it leaked before setup, and remove it once the owner exists                                                                                                                                                    | the old token stops working at once; with no owner yet the new one opens setup, with an owner the route stays closed (404)     |
 | `SMTP_USER`, `SMTP_PASSWORD` | rotate at the mail provider, update both, restart                                                                                                                                                                                                                      | OTP mail fails between the two steps                                                                                           |
 
 Rotate the **age keys** separately from the values:

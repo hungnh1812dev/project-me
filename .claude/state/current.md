@@ -38,3 +38,36 @@ Proposed commit: |
 Deletions needing approval: none
 Fix log:
 - security answer: displayName max 100 -> OWNER_DISPLAY_NAME_MAX_LENGTH in the shared ownerInputSchema (setup route and CLI); unit + integration tests added; closed 404 body unchanged
+
+## OS3 Smoke stack creates the owner through the setup route; deploy and local docs
+Status: ready-for-checks
+What was built: smoke.sh creates the owner with curl against `/setup/owner` (status open, wrong token 401, valid 201, no cookie/accessToken, status closed, second submit 404), then `owner:bootstrap` refuses. The test token is only in `scripts/stack/cms-api.env`; smoke.sh reads it from there. Docs: setup page is the primary owner path, CLI the fallback.
+Changed files:
+- scripts/stack/cms-api.env - test `OWNER_SETUP_TOKEN` (>= 32 bytes)
+- scripts/smoke.sh - setup-route assertions replace "owner:bootstrap creates the owner"
+- scripts/lib/stack-seed.sh - removed unused `OWNER_CREATED`
+- docs/deployment/k3s-traefik.md - "First install: the owner" rewritten (token, setup page, remove token; CLI fallback)
+- docs/deployment/k3s-secrets-sops.md - `OWNER_SETUP_TOKEN` in secrets table, notes, template, rotate table
+- docs/local-run.md - both owner paths, optional key
+Behaviour to verify:
+- `SMOKE_E2E=1 pnpm smoke` - passes (ran: 106/106 e2e, 7 new setup lines print ok)
+- token appears only in scripts/stack/cms-api.env and not in the smoke log (checked: 0 log hits)
+- OS4 note: setup submit throttle is 5 per 15 min per IP; smoke uses 3 submits, so a spec adding a submit has 2 left
+Security-relevant: none new in product code; adds a test setup token to the smoke stack env (public test value, smoke only); docs describe removing the token after setup.
+Checks needed: qc-cli (SMOKE_E2E=1 pnpm smoke)
+Risk: normal
+Verification: format pass · build/type-check n/a · unit tests n/a (smoke 106 passed) · docs docs/deployment/k3s-traefik.md, docs/deployment/k3s-secrets-sops.md, docs/local-run.md
+Proposed commit: |
+  feat(scripts,docs): create the smoke owner through the setup route
+
+  smoke.sh now creates the owner with POST /setup/owner using a test
+  OWNER_SETUP_TOKEN from scripts/stack/cms-api.env, asserts the status,
+  wrong-token, closed and second-submit cases, then checks that
+  owner:bootstrap refuses. The k3s and local-run docs describe the setup
+  page as the primary owner path and the CLI as the fallback.
+
+  Affected:
+  - scripts
+  - docs
+Deletions needing approval: none
+Fix log:

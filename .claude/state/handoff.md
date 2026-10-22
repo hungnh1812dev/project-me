@@ -17,6 +17,7 @@ Updated: 2026-10-22 after T32 (trimmed to open work; history in archive/handoff-
 - D3 base-config dist build - awaiting checks/commit; next: qc-cli (fresh clone, Docker builds when daemon is up).
 - T37g Remove e2e from CI - deletions done; awaiting checks; next: qc-cli, security-qc (Risk high).
 - F1 Prettier ignore for e2e output - awaiting commit; next: user commits .prettierignore.
+- OS3 Smoke owner via setup route + docs - awaiting checks/commit; next: qc-cli.
 - OS1 Owner setup API - awaiting checks/commit (Risk high; security-qc before commit); next: qc-cli, security-qc, then OS2 and OS3. Notes: displayName must be omitted (not '') when blank (same rules as the CLI); CLI audit row is a system actor with targetId; 404 message is `Cannot POST <url>` to match an unknown route.
 - Phase 5 (Media): checkpoint still pending user review.
 - Next: Phase 6 phase checks (T38 done); Phase 5 checkpoint still pending.

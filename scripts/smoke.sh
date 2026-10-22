@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 # Proxy smoke test (T04): builds and starts docker-compose.smoke.yml, checks
 # routing, trailing slashes and CORS through Traefik, checks the cms-api-init
-# container (deploy:migrate, T37a), runs owner:bootstrap (T08) and re-runs the
-# migrations inside the cms-api image,
+# container (deploy:migrate, T37a), creates the owner through the setup route
+# (OS3), checks that owner:bootstrap (T08) refuses and re-runs the migrations
+# inside the cms-api image,
 # checks login/refresh (T09) and OTP mail delivery to Mailpit (T12), then
 # tears it down.
 #
@@ -48,6 +49,12 @@ DB_MIGRATE_CMD=(npm run --silent db:migrate)
 DB_MIGRATE_NOTHING="No pending migrations to apply."
 DB_SEED_NOTHING="System roles already seeded."
 OWNER_EXISTS="An owner account already exists."
+# The test setup token lives only in scripts/stack/cms-api.env (compose reads it
+# from there); it is read from that file here and never printed.
+CMS_API_ENV_FILE="$ROOT_DIR/scripts/stack/cms-api.env"
+SETUP_TOKEN_KEY="OWNER_SETUP_TOKEN"
+SETUP_STATUS_OPEN='"open":true'
+SETUP_STATUS_CLOSED='"open":false'
 RESET_2FA_CMD=(npm run --silent owner:reset-2fa --)
 RESET_2FA_UNKNOWN="No account with this email."
 RESET_2FA_NOT_ON="Two-factor authentication is not on for this account."
@@ -328,13 +335,36 @@ for fragment in "$DB_MIGRATE_APPLIED" "$DB_MIGRATE_SEEDED" "$CONTENT_MIGRATE_APP
   if [[ "$init_log" == *"$fragment"* ]]; then pass "$INIT_SERVICE log has '$fragment'"; else fail "$INIT_SERVICE log lacks '$fragment': $init_log"; fi
 done
 
-echo "Migrations again + owner:bootstrap inside the cms-api image"
-in_api "db:migrate again has nothing pending" "" 1 \
-  "$DB_MIGRATE_NOTHING" "$DB_SEED_NOTHING" -- "${DB_MIGRATE_CMD[@]}"
-in_api "owner:bootstrap creates the owner" "$STACK_OWNER_PASSWORD" 1 \
-  "$OWNER_CREATED$STACK_OWNER_EMAIL" -- "${OWNER_BOOTSTRAP_CMD[@]}"
+echo "Owner setup route (OS3) + owner:bootstrap refusal"
+setup_token="$(sed -n "s/^$SETUP_TOKEN_KEY=//p" "$CMS_API_ENV_FILE")"
+if [[ -z "$setup_token" ]]; then fail "$SETUP_TOKEN_KEY is not set in $CMS_API_ENV_FILE"; fi
+# setup_body <token>: the owner setup request body (the owner credentials of this run).
+setup_body() {
+  printf '{"setupToken":"%s","email":"%s","displayName":"Owner","password":"%s"}' \
+    "$1" "$STACK_OWNER_EMAIL" "$STACK_OWNER_PASSWORD"
+}
+setup_status_is() {
+  request GET "$WEB_ORIGIN$API_PREFIX/setup/status"
+  if [[ "$STATUS" == "200" && "$(cat "$BODY")" == *"$1"* ]]; then pass "$2"; else fail "$2: $STATUS $(cat "$BODY")"; fi
+}
+setup_status_is "$SETUP_STATUS_OPEN" "setup status is open before the owner exists"
+request POST "$WEB_ORIGIN$API_PREFIX/setup/owner" -H 'Content-Type: application/json' \
+  --data "$(setup_body "wrong-$setup_token")"
+expect_status "setup with a wrong token is refused" 401
+request POST "$WEB_ORIGIN$API_PREFIX/setup/owner" -H 'Content-Type: application/json' \
+  --data "$(setup_body "$setup_token")"
+expect_status "setup with the right token creates the owner" 201
+if [[ -z "$(header Set-Cookie)" && "$(cat "$BODY")" != *accessToken* ]]; then pass "setup answer carries no cookie and no access token"; else fail "setup answer carries a session"; fi
+setup_status_is "$SETUP_STATUS_CLOSED" "setup status is closed after the owner exists"
+request POST "$WEB_ORIGIN$API_PREFIX/setup/owner" -H 'Content-Type: application/json' \
+  --data "$(setup_body "$setup_token")"
+expect_status "a second setup submit is a 404" 404
 in_api "owner:bootstrap refuses a second owner" "$STACK_OWNER_PASSWORD" 0 \
   "$OWNER_EXISTS" -- "${OWNER_BOOTSTRAP_CMD[@]}"
+
+echo "Migrations again inside the cms-api image"
+in_api "db:migrate again has nothing pending" "" 1 \
+  "$DB_MIGRATE_NOTHING" "$DB_SEED_NOTHING" -- "${DB_MIGRATE_CMD[@]}"
 stack_seed_extra_accounts
 # Break-glass 2FA reset (T13a): refusals only, so no account state changes
 # (the owner login and refresh checks below still pass).

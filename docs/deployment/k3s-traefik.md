@@ -112,7 +112,7 @@ One Deployment, one pod template, **the same image for both containers**:
 Behaviour to rely on:
 
 - The main container starts only after the init container **exits 0**. A failed migration leaves the pod in `Init:Error` / `Init:CrashLoopBackOff` and, with `maxUnavailable: 0`, the old ReplicaSet keeps serving. Look at it with `kubectl logs <pod> -c migrate`.
-- It applies only **committed** migrations. It never runs `content:generate` (CI fails a missing migration with `content:generate --check`) and never runs `owner:bootstrap`.
+- It applies only **committed** migrations. It never runs `content:generate` (CI fails a missing migration with `content:generate --check`) and never creates the owner (setup page or `owner:bootstrap`, see First install).
 - Concurrent runs are safe: Prisma takes its own migrate lock and the content runner takes `pg_advisory_xact_lock`. v1 still runs a single replica.
 - The command is safe to re-run: with nothing pending it prints "No pending migrations to apply." / "No pending content migrations." and exits 0.
 - During a rollout the old pod keeps running against the **new** schema while the init container runs. Destructive content migrations (drop or rename a column or content type) therefore need expand/contract: release 1 adds the new shape and the code that tolerates both, release 2 removes the old one.
@@ -189,14 +189,23 @@ Probes: `GET /api/v1/health/live` and `/ready` answer `{"status":"ok"}` only. `r
 
 ### First install: the owner
 
-`owner:bootstrap` is a one-time manual step, never part of init. After the first rollout is ready:
+The owner is created once, through the admin setup page (primary) or the `owner:bootstrap` CLI (fallback). Neither is part of init. The setup page is open only while `OWNER_SETUP_TOKEN` is set and no owner exists; with no token configured the route answers 404.
+
+1. Generate a token (at least 32 bytes): `openssl rand -base64 32`.
+2. Add it to the encrypted Secret as `OWNER_SETUP_TOKEN` (`docs/deployment/k3s-secrets-sops.md`), apply, and roll out cms-api so both containers read it.
+3. Open `https://admin.<domain>/setup`, enter the token, the owner email, an optional display name and a password (12 characters or more), and submit. The page sends you to the login page; sign in, then turn on two-factor in Security settings.
+4. Remove `OWNER_SETUP_TOKEN` from the Secret, apply and restart. Once an owner exists the route is closed anyway (404), and cms-api logs a warning at boot while the token is still set. Leaving it in the Secret only keeps a dead credential around.
+
+A wrong token answers 401 and is audited (`owner.setup_rejected`); the route is throttled to 5 submits per 15 minutes per client IP. The token goes only in the request body, never in a URL, and is never a build arg.
+
+Fallback, when the setup page is not usable (for example the admin is not deployed yet):
 
 ```
 kubectl -n <namespace> exec -it deploy/cms-api -c cms-api -- \
   env OWNER_EMAIL=owner@domain.com npm run owner:bootstrap
 ```
 
-The password is typed at a hidden prompt (use `--password-stdin` to pipe it). A second run refuses: there is one owner. Enable two-factor for it right after the first sign-in. Break-glass: `npm run owner:reset-2fa -- --email <email>` the same way.
+The password is typed at a hidden prompt (use `--password-stdin` to pipe it). Both paths share one rule: a second owner is refused (`OWNER_EXISTS` from the CLI, 404 from the route). Break-glass: `npm run owner:reset-2fa -- --email <email>` the same way as the CLI above.
 
 ## 4. web
 
