@@ -1,49 +1,103 @@
 ---
 name: session-handoff
-description: How the single worker's context is cleaned without losing progress - the 150k-token threshold, the handoff file format, and the reset sequence between manager and worker. Use when a worker finishes a task, when the manager checks worker token usage, or when a fresh worker resumes.
+description: The shared state files that carry knowledge between per-task agents - project profile, board, handoff, conventions, current unit record, findings, archive - with their formats, size limits, and who writes, reads, clears and archives each one. Use when the manager sets up a project or dispatches, closes a task or a phase, or when the user answers a question.
 ---
 
 # Session Handoff
 
-Goal: one worker for the whole project, kept cheap. Reuse it across tasks. Reset its context only when it is over **150k tokens**, and only **between** tasks.
+Every unit (task or batch) gets fresh agents, and the manager's message is only the task ID. Agents learn what to do from the files below. Nothing else carries over, so anything an agent needs must be written down here. All files live in `.claude/state/`. Rules for all: short, no pasted code or diffs, point to file paths.
 
-## Two files
+**Live files hold only what is still open.** Finished work leaves them: git holds the code history, module READMEs and `docs/` hold the module details, and `archive/` holds the rest for later lookup. No agent reads `archive/` at start; grep it only when needed.
 
-- `.claude/state/handoff.md`: **current state only**, read in full by a fresh worker at start. Hard cap: about 40 lines / 3 KB.
-- `.claude/state/conventions.md`: stable project knowledge (stack facts, file layout, user decisions by area, gotchas). A fresh worker does **not** read it at start. It greps or reads only the section for the area its task touches, when it needs it.
+## Files
 
-### handoff.md format
+| File | Written by | Read by | Limit | Cleared / archived |
+|---|---|---|---|---|
+| `project.md` | manager, with the user | every agent, in full, at start | one line per item | never |
+| `board.md` | manager | builders (grep the task's row); manager | active phases only | a phase moves to `archive/board-archive.md` when its checkpoint passes |
+| `handoff.md` | builders; manager adds user answers | builders and planner, in full, at start | ~3 KB | a task's lines are removed when it is committed with all checks passed |
+| `conventions.md` | builders | grep the needed section only | ~10 KB | stale or module-only facts move to `archive/conventions-archive.md` |
+| `current.md` | builder of the unit (format in `worker-flow`) | checkers, manager | one unit | manager resets after the unit's last commit |
+| `findings/<unit or phase>-<qc or security>.md` | the checker that failed | builder in a fix round | - | **that checker deletes it when its re-check passes** |
+| `archive/*.md` | manager | nobody at start; grep on demand | - | never |
+
+## project.md (project profile)
+
+Created once per project by the manager, with the user. Every value comes from the user or the repo; never guess. One line per item.
 
 ```markdown
-# Worker Handoff
-Updated: <YYYY-MM-DD> after <task ID>
-
-## Done
-- <ID> <title> - <commit hash>   (one line each, no detail)
-
-## In progress / next
-- <ID> <state, exact next step>
-- open questions still provisional (one line each)
-
-## Follow-ups
-- <item> -> <task that owns it>
+# Project Profile
+Tasks: <file holding each task's acceptance/verify/files, and how to find one by ID>
+Phases: <file holding each phase's goal/inputs/outputs/exit criteria, or none (flat list)>
+Spec: <path, or none>
+Scopes:
+- core-builder: <paths>
+- ui-builder: <paths>
+- qc: <e2e test dir>
+High-risk paths: <paths where any change gets a security review before commit>
+Stack: <one line per scope>
+Commands:
+- install / build / type-check / unit test / format / e2e / dependency audit / run app: <command each, or n/a>
+E2E tests: <dir and runner, or none>
+Docs to keep current: <READMEs, API docs, ADR dir, env example file>
+Security rules: <docs with this project's authz / audit / data rules, or none>
 ```
 
-### conventions.md
+## board.md
 
-Grouped by area (tooling, cms-api config, content engine, Prisma/identity, frontends, Docker/smoke, user decisions, gotchas). Add new stable facts to the right section after each task; remove anything no longer true.
+```markdown
+# Board - <project>
+Source: <task file> · Spec: <path>
+Decisions: <open or project-wide decisions, one line>
+Open risks: <one line>
 
-Rules for both: no code or diffs, point to file paths. If a fact will matter only for one area, it goes in conventions.md, not handoff.md.
+## Phase <n>: <name>
+Base: <hash> · Phase checks: qc <pending|pass> · security <pending|pass> · Checkpoint: <pending|passed date>
 
-## Reset sequence
+| ID | Title | Scope | Status | Commit |
+|---|---|---|---|---|
 
-| Step | Who | Action |
+## Notes
+- <only items still open for the active phases; at most ~10 lines>
+```
+
+No log. Events worth keeping go into a commit message, `handoff.md` (while open), or `conventions.md` (if lasting).
+
+## handoff.md
+
+```markdown
+# Handoff
+Updated: <YYYY-MM-DD> after <task ID>
+
+## In progress / next
+- <ID> <title> - <state, exact next step>
+- <ID> user answers: <one line each>
+
+## Follow-ups
+- <item> -> <owner task, or unscheduled>
+```
+
+Only unfinished work: tasks not yet committed or with checks pending, user answers for those tasks, and open follow-ups. No `Done` list (the board and git have it).
+
+## conventions.md
+
+Cross-cutting knowledge every builder may need, one line per fact, grouped under: Tooling, Testing & smoke, Frontend, Backend, User decisions in force, Gotchas. Module structure and API details belong in the module's README / `docs/modules/`, not here.
+
+## Findings files
+
+`findings/<unit>-qc.md` or `findings/<unit>-security.md` for a unit; `findings/<phase>-qc.md` or `findings/<phase>-security.md` for the end-of-phase checks; `findings/audit-<YYYY-MM-DD>-qc.md` for an audit. Written only when a check fails, overwritten on each failed re-check. Each finding: severity, scope that owns the fix (`core-builder` / `ui-builder`), what is wrong, where (`file:line`), repro or evidence, suggested fix. When the re-check passes, the checker that wrote it deletes it, so later agents never read resolved issues.
+
+## Who does what
+
+| When | Who | Action |
 |---|---|---|
-| 1 | worker | Finishes the current task, updates handoff, reports `session_tokens` |
-| 2 | manager | Takes the higher of the reported usage and the worker's estimate. If ≤ 150k, sends the next task to the same worker. Stop here. |
-| 3 | manager | If > 150k, sends `CLEAN: write handoff and stop` |
-| 4 | worker | Makes sure handoff is complete, replies `HANDOFF WRITTEN`, stops |
-| 5 | manager | Stops the old instance, then starts one fresh `worker` with the same name: `Resume from .claude/state/handoff.md, then do:` + next task brief. The brief quotes the SPEC excerpts the task needs (or names exact § numbers), so the worker doesn't read the whole SPEC. |
-| 6 | manager | Notes the reset on the board |
-
-Never reset in the middle of a task. Never run two workers at once.
+| New project | manager | Creates `project.md` with the user, plus empty board and handoff |
+| Phase starts | manager | Writes `Base: <HEAD hash>` under the phase heading on the board |
+| Before dispatch | manager | Sets the board row to `in-progress`; makes sure every decision the task needs is in handoff.md or conventions.md |
+| Unit finished | builder | Completes `current.md`; adds its line and follow-ups to handoff.md; adds cross-cutting facts to conventions.md |
+| User answers a question | manager | Writes the answers under `In progress / next` before resuming the agent |
+| Check passes | checker | Deletes its own findings file for the unit, if one exists |
+| Commit made | manager | Records the hash on the board; moves lasting user answers to conventions.md "User decisions in force" (one line each); **removes the task's lines from handoff.md**; after the unit's last commit, resets `current.md` |
+| Phase ends | manager | Runs qc `REGRESSION` then security-qc `PHASE`; writes the results under the phase heading |
+| Checkpoint passes | manager | **Moves the phase section to `archive/board-archive.md`**; clears its Notes; moves stale conventions to `archive/conventions-archive.md` |
+| handoff.md over ~3 KB or conventions.md over ~10 KB | manager | Trims: closed items out of handoff; module-only or stale facts from conventions into the archive |

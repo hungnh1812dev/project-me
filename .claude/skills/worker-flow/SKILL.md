@@ -1,67 +1,117 @@
 ---
 name: worker-flow
-description: The fixed pipeline the worker runs for every task - receive, decompose, implement, unit test, Chrome MCP / e2e test, security test, docs, report. Use whenever the worker starts a task from the manager.
+description: The pipeline every builder agent (core-builder, ui-builder) runs for a task - load the task from the state files, implement, unit test, docs, write the unit record, report - plus the rules all builders share. Project-agnostic; project specifics come from .claude/state/project.md. Preloaded by the builder agents.
 ---
 
-# Worker Flow
+# Worker Flow (builders)
 
-Run these steps in order for every task. Each step names the skill to invoke. Do not move on until the step's exit check passes.
+Run these steps in order for every task. Your agent file says which skills you may load at each step; load each one only when you reach its step, and no others. Do not move on until the step's exit check passes. Browser testing and the security review are done by other agents, working from your `current.md`. The state files you write and their formats are under "State files" below.
 
-## 1. Receive
-- Read the task brief. Restate the goal and acceptance criteria in 2-3 lines.
-- List any assumption you would have to make. If there is one that matters, **stop and report `blocked`** with questions. Do not guess.
+## 1. Load the task
+The manager's message is only `TASK <ID>` (or `BATCH: ...`) plus optional notes. Find out what to do from the files, reading only what you need:
+
+1. `.claude/state/project.md`: in full. It names the task source, spec, your scope, stack, and commands.
+2. `.claude/state/board.md`: grep the task's row, plus the decision lines at the top.
+3. The task source from `project.md`: that task's entry only (acceptance, verify, files, dependencies, spec refs).
+4. `.claude/state/handoff.md`: in full (it is short). Take the user answers, provisional decisions, and follow-ups that name this task.
+5. The spec: only the sections the task entry cites. Never the whole file.
+6. `.claude/state/conventions.md`: grep only the section for your area, when you need it. For the history of a finished area, grep `.claude/state/archive/` (never read it in full).
+7. The code and docs for the files the entry lists. Module details live in each module's README / `docs/modules/`, not in the state files.
+
+Then restate the goal and acceptance criteria in 2-3 lines (for yourself). If the files disagree, `project.md` lacks something you need, or you would have to make an assumption that matters, **stop and report `blocked`** with questions. Do not guess.
+
+Overwrite `.claude/state/current.md` with the unit header (`# Current Unit: <unit>`), unless you are the second builder of the same task: then add your section below the first builder's.
 
 Exit: every acceptance criterion is clear and testable.
 
-## 2. Decompose
-- Skill: `agent-skills:planning-and-task-breakdown`
-- Split the task into small subtasks (vertical slices), each verifiable on its own.
-- Read only the code you need (`agent-skills:context-engineering`).
-
-Exit: a short subtask checklist.
+## 2. Plan
+Make a short subtask checklist (vertical slices, each verifiable on its own).
 
 ## 3. Implement
-- Skills: `agent-skills:incremental-implementation`, plus as relevant:
-  - UI → `agent-skills:frontend-ui-engineering` + `ui-ux-pro-max:ui-ux-pro-max` + project `ui-direction`
-  - API / module boundaries → `agent-skills:api-and-interface-design`
-  - Framework or library APIs → `agent-skills:source-driven-development` (check the official docs, don't rely on memory)
-  - React / Next.js → `react-best-practices`
 - Follow `code-standards` (no hardcoding, config and tokens only).
 - One slice at a time: build, run, then the next slice.
 
-Exit: all subtasks implemented, project builds and type-checks.
+Exit: all subtasks implemented; the build and type-check commands from `project.md` pass.
 
 ## 4. Unit test
-- Skill: `agent-skills:test-driven-development`
 - Cover the acceptance criteria, edge cases, and error paths. For bugs, write a failing test first.
 - Run the whole affected package's test suite, not just the new tests.
 
-Exit: all tests pass. Report the count.
+Exit: all tests pass. Note the count.
 
-## 5. Browser / e2e test
-- Skill: `agent-skills:browser-testing-with-devtools` (Chrome DevTools MCP or Claude in Chrome MCP). Use the project's e2e runner (e.g. Playwright) if one exists.
-- Walk the real user flow: happy path, validation errors, empty / loading / error states, keyboard navigation.
-- Check the console for errors and the network tab for failed or unexpected requests.
-- For UI, check against `ui-direction` and run `web-design-guidelines` on the changed screens.
-
-Exit: flow works in the real browser with a clean console. Not applicable for non-UI tasks (say why).
-
-## 6. Security test
-- Skill: `agent-skills:security-and-hardening`
-- Check: input validation, authz on every new endpoint, injection (SQL / XSS / command), secrets in code or logs, unsafe dependencies (`npm audit` or the equivalent for the package manager in use), sensitive data in client bundles.
-
-Exit: no open findings, or findings listed in the report with severity.
-
-## 7. Docs
-- Skill: `agent-skills:documentation-and-adrs`
-- Update the affected app/package README, API docs, and `.env.example` for new config keys (names and descriptions only, never real values).
-- Write an ADR for any non-obvious architectural decision.
+## 5. Docs
+- Update the docs `project.md` lists as "Docs to keep current" for what you changed, including the env example for new config keys (names and descriptions only, never real values).
+- Write an ADR only for a non-obvious architectural decision.
 
 Exit: docs match the code.
 
-## 8. Finish
-1. Run Prettier on the changed files (see `code-standards`).
-2. Re-run the tests if Prettier changed anything.
+## 6. Finish
+1. Run the format command on the changed files (see `code-standards`).
+2. Re-run the tests if formatting changed anything.
 3. Write the proposed commit message (`commit-convention`).
-4. Update `.claude/state/handoff.md` with a short entry for this task (`session-handoff`).
-5. Return the `WORKER REPORT`.
+4. Complete your task section in `current.md`. Be precise in "Behaviour to verify" and "Security-relevant": the checkers test and review only what you list there plus the diff. Set these two fields by rule, not by feel:
+   - `Checks needed`: `qc-browser (<flows>)` when the task changes something a user sees in a page; `qc-cli (<e2e/API tests>)` when it changes behaviour with no UI output (endpoint, data, CLI); `none (<reason>)` only for docs, comments, or tooling with no runtime effect.
+   - `Risk: high (<why>)` when the task touches a high-risk path in `project.md`, has `Security gate: yes` in its task entry, or adds or changes auth, sessions, tokens, crypto, permissions, raw SQL built from input, file upload, or payments. Otherwise `Risk: normal`.
+5. Update `handoff.md` and `conventions.md` (rules under "State files").
+6. Return the report.
+
+## Batches
+
+If the message starts with `BATCH:`, load the shared files once, then run steps 1-6 for each task in order, one `current.md` section per task. Keep each task's changes to its own files where you can. If two tasks must change the same file, note it in the second task's section so the manager can ask the user how to commit them. If a task ends `blocked` or `failed`, stop there and do not start the remaining tasks.
+
+## Fix rounds
+
+The manager sends `FIX <unit>: <findings file>` (or `FIX <phase>: ...` after the phase checks: fix only the findings tagged with your scope, and start a fresh `current.md` named `<phase>-fix`). Read that file, fix each finding within the task scope, re-run steps 4 and 6 (steps 1-3 of Finish), and add a line per finding to the `Fix log` in `current.md`. Do not delete the findings file; the checker does that when its re-check passes. If a finding needs a design change or is outside the scope, report `blocked` instead of working around it.
+
+## State files
+
+All in `.claude/state/`. Short, no pasted code or diffs, point to file paths.
+
+`current.md` (unit record): overwrite it at the start of a unit, complete it at finish, add to the fix log after each fix round. Checkers test and review only what it lists. One section per task in a batch:
+
+```markdown
+# Current Unit: <unit>
+## <ID> <title>
+Status: ready-for-checks | blocked | failed
+What was built: <2-4 lines, by feature>
+Changed files:
+- <path> - <what changed, a few words>
+Behaviour to verify:
+- <user flow or endpoint> - <expected result>
+Security-relevant: <new endpoints, auth/permission paths, input handling, new deps, or none>
+Checks needed: qc-browser (<flows>) | qc-cli (<tests>) | none (reason)
+Risk: high (<why>) | normal
+Verification: format <pass|n/a> · build/type-check <pass|fail> · unit tests <pass (n)|fail> · docs <paths|n/a>
+Proposed commit: |
+  <message per commit-convention>
+Deletions needing approval: <list or none>
+Fix log:
+- round <n>: <finding> -> <what changed>
+```
+
+Keep the fix log to one line per finding.
+
+`handoff.md`: holds only unfinished work. At finish, put one line for your task under `In progress / next` (`<ID> <title> - awaiting checks/commit; next: <step>`) and add follow-ups you found under `Follow-ups` (`<item> -> <owner task or "unscheduled">`). Never add history; the manager removes the lines when the task is committed.
+
+`conventions.md`: only cross-cutting facts every builder needs (tooling, test setup, gotchas, user decisions still in force), one line each, under the matching section. Module structure and API details go into that module's README or `docs/modules/`, not here.
+
+## Rules
+
+- You have no channel to the user. When something is unclear, stop that part of the work and report `blocked` with numbered, concrete questions, with options and your recommendation where you have one.
+- You never commit. Stage nothing; propose the commit message.
+- Never read or edit `.env*` files (except `.env.example`).
+- Never delete files. List them under "Deletions needing approval" in `current.md`.
+- Never touch code outside the task scope or outside your scope in `project.md`. If the task needs the other builder's scope, say so in the report.
+- Never add `Co-Authored-By` or any AI attribution to commit messages.
+
+## Report (your final message is this block only)
+
+Details live in `current.md`; do not repeat them here. No greeting, no narrative, no code.
+
+```
+BUILD REPORT
+unit: <unit>
+status: ready-for-checks | blocked | failed     (per task for a batch: <ID> <status>)
+record: .claude/state/current.md
+questions: <numbered list, only when blocked>
+```
