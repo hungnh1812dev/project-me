@@ -14,7 +14,7 @@ export interface SaveError {
   conflict: boolean;
 }
 
-function serverMessage(error: unknown): string | undefined {
+export function serverMessage(error: unknown): string | undefined {
   if (!isAxiosError(error)) return undefined;
   const message = (error.response?.data as { message?: unknown } | null)
     ?.message;

@@ -68,6 +68,9 @@ export const API_ENDPOINTS = {
     BY_SLUG: (slug: string) => `/documents/${encodeURIComponent(slug)}`,
     BY_ID: (slug: string, id: string) =>
       `/documents/${encodeURIComponent(slug)}/${encodeURIComponent(id)}`,
+    /** T34 bulk: `action` is create | publish | unpublish | delete. */
+    BULK: (slug: string, action: string) =>
+      `/documents/${encodeURIComponent(slug)}/bulk/${encodeURIComponent(action)}`,
     PRESENCE: (slug: string, id: string) =>
       `/documents/${encodeURIComponent(slug)}/${encodeURIComponent(id)}/presence`,
   },

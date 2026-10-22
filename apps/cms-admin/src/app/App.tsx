@@ -6,6 +6,7 @@ import { ApiTokensPage } from '../features/access/ApiTokensPage';
 import { RolePermissionsPage } from '../features/access/RolePermissionsPage';
 import { RolesPage } from '../features/access/RolesPage';
 import { LoginPage } from '../features/auth/LoginPage';
+import { CollectionListPage } from '../features/content/CollectionListPage';
 import { DocumentEditPage } from '../features/content/DocumentEditPage';
 import { ProtectedRoute } from '../features/auth/ProtectedRoute';
 import { ResetPasswordPage } from '../features/auth/ResetPasswordPage';
@@ -32,6 +33,10 @@ export function App() {
           <Route
             path={APP_ROUTES.REVIEWER_SESSIONS}
             element={<ReviewerSessionsPage />}
+          />
+          <Route
+            path={APP_ROUTES.CONTENT_LIST}
+            element={<CollectionListPage />}
           />
           <Route path={APP_ROUTES.CONTENT_NEW} element={<DocumentEditPage />} />
           <Route

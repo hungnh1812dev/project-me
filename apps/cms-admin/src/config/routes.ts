@@ -20,11 +20,18 @@ export const APP_ROUTES = {
   MEDIA: '/media',
   /** Reviewer switch and sessions log, owner only (T32). */
   REVIEWER_SESSIONS: '/reviewer',
+  /** Collection list with bulk actions (T35); `:slug` = content type. */
+  CONTENT_LIST: '/content/:slug',
   /** New document of a content type (T23); `:slug` = content type. */
   CONTENT_NEW: '/content/:slug/new',
   /** Edit one document's draft (T23). */
   CONTENT_EDIT: '/content/:slug/:documentId',
 } as const;
+
+/** `/content/<slug>` */
+export function contentListPath(slug: string): string {
+  return APP_ROUTES.CONTENT_LIST.replace(':slug', encodeURIComponent(slug));
+}
 
 /** `/content/<slug>/new` */
 export function contentNewPath(slug: string): string {

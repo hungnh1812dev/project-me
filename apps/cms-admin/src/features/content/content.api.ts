@@ -1,11 +1,12 @@
 import type { AxiosInstance } from 'axios';
 
 import {
+  type BulkAction,
   DOCUMENT_STATUS,
   MASKED_FIELDS_KEY,
 } from '../../config/content.constants';
 import { API_ENDPOINTS } from '../../config/endpoints';
-import type { ContentType } from '../access/access.api';
+import type { ContentType, PageMeta } from '../access/access.api';
 
 export type FieldValueMap = Record<string, unknown>;
 
@@ -50,12 +51,89 @@ export interface PresenceEntry {
   lastSeenAt: string;
 }
 
+/** One row of `GET /documents/:slug` (system fields the caller may not see are absent). */
+export interface DocumentListItem {
+  documentId: string;
+  version: number;
+  updatedAt?: string;
+  values: FieldValueMap;
+}
+
+export interface DocumentList {
+  data: DocumentListItem[];
+  meta: PageMeta;
+}
+
+export interface DocumentListQuery {
+  page: number;
+  pageSize: number;
+  /** `-field` for descending; omitted = the API's default (`-updatedAt`). */
+  sort?: string | undefined;
+  /** Draft rows for draft-and-publish types. */
+  draft: boolean;
+}
+
+/** An item of a bulk request: a new tree, or a reference to a document. */
+export type BulkItem =
+  DocumentTree | { documentId: string; expectedVersion?: number };
+
+export interface BulkItemOk {
+  index: number;
+  status: 'ok';
+  documentId: string;
+  version?: number;
+}
+
+export interface BulkItemError {
+  index: number;
+  status: 'error';
+  statusCode: number;
+  errorCode: string;
+  message: string;
+}
+
+/** Body of a successful bulk request (also an atomic one). */
+export interface BulkResponse {
+  atomic: boolean;
+  succeeded: number;
+  failed: number;
+  results: (BulkItemOk | BulkItemError)[];
+}
+
 /** Content types and one document's draft (T20, T21). Bearer via the interceptor. */
 export function createContentApi(client: AxiosInstance) {
   const { CONTENT_TYPES, DOCUMENTS } = API_ENDPOINTS;
   return {
     getContentType: async (slug: string): Promise<ContentType> => {
       const { data } = await client.get<ContentType>(CONTENT_TYPES.ONE(slug));
+      return data;
+    },
+
+    list: async (
+      slug: string,
+      { page, pageSize, sort, draft }: DocumentListQuery,
+    ): Promise<DocumentList> => {
+      const { data } = await client.get<DocumentList>(DOCUMENTS.BY_SLUG(slug), {
+        params: {
+          page,
+          pageSize,
+          ...(sort === undefined ? {} : { sort }),
+          ...(draft ? { status: DOCUMENT_STATUS.DRAFT } : {}),
+        },
+      });
+      return data;
+    },
+
+    bulk: async (
+      slug: string,
+      action: BulkAction,
+      items: readonly BulkItem[],
+      atomic: boolean,
+    ): Promise<BulkResponse> => {
+      const { data } = await client.post<BulkResponse>(
+        DOCUMENTS.BULK(slug, action),
+        { atomic, items },
+      );
       return data;
     },
 

@@ -128,6 +128,19 @@ badge, date). Callbacks: `onOpenLibrary` (choose or replace), `onChange(file)`
 field), `onDelete` (delete from the library). A button shows only when its
 callback is given. All copy comes through the `labels` prop.
 
+### SortableSheet, TablePagination, BulkActionBar
+
+Generic table parts (all copy through `labels`). `SortableSheet<TRow>`: `columns`
+(`key`, `header`, `renderCell`, `sortable`, `align`, `rowHeader`), `rows`,
+`getRowId`, `getRowLabel`; sorting is reported through `onSortChange(sort)`
+(new key ascending, same key flips) and applied by the parent (the header shows
+`aria-sort`). Passing `onSelectedChange` adds the checkbox column (header box is
+indeterminate when partly selected); selection is by row id. `TablePagination`
+shows "from-to of total" with previous / next (parent owns `page`).
+`BulkActionBar` shows "n selected" with one button per action (variant by
+meaning) and a clear button; it renders nothing at zero selected, and `busy`
+disables it.
+
 ### Dialog
 
 shadcn `Dialog` (Radix): focus trap, inert page behind, Esc closes, focus

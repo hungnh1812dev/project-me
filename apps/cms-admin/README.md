@@ -125,9 +125,28 @@ So far: sign-in (T11) and, behind it, a status page that calls
   response includes the caller, who is filtered out by account id. Other
   editors show as an info banner; a failed heartbeat (403, 404, network)
   hides the banner.
+- **Collection list and bulk (T35)** (`CollectionListPage`, `BulkCreateDialog`,
+  `BulkDeleteDialog`, `bulk.ts`): `/content/:slug` lists a collection (drafts
+  for draft-and-publish types, `GET /documents/:slug?status=draft`, 20 per
+  page) in a form-commons `SortableSheet`: up to three root scalar columns of
+  the type plus Updated, server-side sort (default `-updatedAt`), paging.
+  Rows are selectable when the role holds `publish`, `unpublish` or `delete`
+  on the type (or `*`); the bar offers Publish / Unpublish / Delete (delete
+  asks first and names the count). Actions run non-atomic (`POST
+/documents/:slug/bulk/<action>`, publish sends each row's `version` as
+  `expectedVersion`); the page shows "Published 4 of 5" with a reason per failed
+  document and keeps those rows selected. Selection covers the current page only
+  (20 < the 50-item limit) and resets on page or sort change. "Import
+  documents" (needs `create`) takes a JSON array of up to 50 document trees
+  (`{ values, components }`), checked client-side (valid JSON, array, 1-50
+  objects) and then per item by the server. Default is non-atomic: created
+  items are removed from the text so a retry cannot duplicate them, and each
+  failed item is listed by position; "All or nothing" sends `atomic: true` and
+  shows the one failing item. Single types show an explanation instead of a
+  list. There is no nav link yet; open the route directly.
 - **Routes** (`src/config/routes.ts`): `/login`, `/reset-password`,
   `/set-password`, and `/`, `/settings/security`, `/accounts`, `/roles`,
-  `/roles/:roleId`, `/api-tokens`, `/content/:slug/new`,
+  `/roles/:roleId`, `/api-tokens`, `/content/:slug`, `/content/:slug/new`,
   `/content/:slug/:documentId` behind `ProtectedRoute` + `AppShell` (header with the
   user, Accounts / Roles links, "Security" and "Sign out").
 
