@@ -37,7 +37,7 @@ ARG NEXT_PUBLIC_TURNSTILE_SITE_KEY=
 ENV NEXT_PUBLIC_TURNSTILE_SITE_KEY=$NEXT_PUBLIC_TURNSTILE_SITE_KEY
 RUN pnpm turbo run build --filter=@abyss/web
 
-# 3. Runtime: the Next.js standalone server on Node, as the non-root `node` user.
+# 3. Runtime: the Next.js standalone server on Node, as the numeric non-root user 1000:1000 (the base image's `node`).
 #    Server env (API_INTERNAL_URL, WEB_REVALIDATE_SECONDS) is set at run time.
 FROM ${NODE_IMAGE} AS runtime
 ENV NODE_ENV=production
@@ -46,10 +46,10 @@ ENV HOSTNAME=0.0.0.0
 ENV WEB_PORT=8080
 WORKDIR /app
 # The standalone output keeps the monorepo layout: the server is apps/web/server.js.
-COPY --from=build --chown=node:node /repo/apps/web/.next/standalone ./
-COPY --from=build --chown=node:node /repo/apps/web/.next/static ./apps/web/.next/static
-COPY --from=build --chown=node:node /repo/apps/web/public ./apps/web/public
-USER node
+COPY --from=build --chown=1000:1000 /repo/apps/web/.next/standalone ./
+COPY --from=build --chown=1000:1000 /repo/apps/web/.next/static ./apps/web/.next/static
+COPY --from=build --chown=1000:1000 /repo/apps/web/public ./apps/web/public
+USER 1000:1000
 EXPOSE 8080
 HEALTHCHECK --interval=10s --timeout=3s --start-period=10s --retries=3 \
   CMD wget -q -O /dev/null "http://127.0.0.1:${WEB_PORT}/" || exit 1
