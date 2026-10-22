@@ -2,7 +2,8 @@
 # Entrypoint: changes -> one flow per affected app (cms-api.yml, cms-admin.yml, web.yml)
 #   each flow: checks -> build; a repo-wide job (format, audit) always runs.
 #   e2e (e2e.yml) runs when any app or the e2e suite changed, on a docker-run stack of the built images.
-#   publish (T37e, _publish.yml) is added later; CI never starts the local smoke stack.
+#   publish-<app> (_publish.yml): image -> manifest -> deploy bump, only on a push to staging/main, only when
+#   the app's build inputs changed and both the app flow and e2e succeeded. CI never starts the local smoke stack.
 # The app flows never depend on each other, so one app failing never skips another.
 name: CI
 
@@ -23,7 +24,7 @@ permissions:
 env:
   # Keep in sync with the Dockerfiles and the root package.json
   TURBO_VERSION: 2.11.9
-  # ghcr.io/<owner>/<repo>/<app>; GHCR needs lowercase names (used by T37e)
+  # ghcr.io/<owner>/<repo>/<app>; GHCR needs lowercase names
   IMAGE_PREFIX: ghcr.io/hungnh1812dev/project-me
 
 jobs:
@@ -50,7 +51,7 @@ jobs:
       turbo_version: ${{ steps.target.outputs.turbo_version }}
       image_prefix: ${{ steps.target.outputs.image_prefix }}
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           # turbo and the workflow-file routing need the history between base and head
           fetch-depth: 0
@@ -74,7 +75,7 @@ jobs:
           WEB_IMAGE: ${{ steps.affected.outputs.web_image }}
         run: |
           # branch -> image platforms, GitHub Environment, deployment repo branch
-          # (consumed by T37e; nothing here assumes these branches exist)
+          # (consumed by the publish-<app> jobs; nothing here assumes these branches exist)
           case "$BRANCH" in
             develop) platforms='[]';              environment='';           deploy_ref='' ;;     # checks + build only
             staging) platforms='["linux/arm64"]'; environment=staging;    deploy_ref=staging ;; # Ubuntu VM on Apple M1
@@ -112,9 +113,9 @@ jobs:
     name: Repo checks
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
-      - uses: pnpm/action-setup@v6
-      - uses: actions/setup-node@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version-file: .nvmrc
           cache: pnpm
@@ -158,4 +159,73 @@ jobs:
     permissions:
       contents: read
     with:
+      turbo_version: ${{ needs.changes.outputs.turbo_version }}
+
+  publish-cms-api:
+    name: publish cms-api
+    needs: [changes, cms-api, e2e]
+    # always(): run even though a sibling app flow failed or was skipped; only this app and e2e must be green
+    if: >-
+      always() && needs.changes.outputs.publish == 'true' && needs.changes.outputs.cms_api_image == 'true'
+      && needs.cms-api.result == 'success' && needs.e2e.result == 'success'
+    uses: ./.github/workflows/_publish.yml
+    # Called workflow's jobs get at most these; only its image and manifest jobs use packages: write
+    permissions:
+      contents: read
+      packages: write
+    secrets: inherit
+    with:
+      app: cms-api
+      environment: ${{ needs.changes.outputs.environment }}
+      matrix: ${{ needs.changes.outputs.cms_api_matrix }}
+      tag: ${{ needs.changes.outputs.tag }}
+      branch: ${{ needs.changes.outputs.branch }}
+      deploy_ref: ${{ needs.changes.outputs.deploy_ref }}
+      image_prefix: ${{ needs.changes.outputs.image_prefix }}
+      turbo_version: ${{ needs.changes.outputs.turbo_version }}
+
+  publish-cms-admin:
+    name: publish cms-admin
+    needs: [changes, cms-admin, e2e]
+    # always(): run even though a sibling app flow failed or was skipped; only this app and e2e must be green
+    if: >-
+      always() && needs.changes.outputs.publish == 'true' && needs.changes.outputs.cms_admin_image == 'true'
+      && needs.cms-admin.result == 'success' && needs.e2e.result == 'success'
+    uses: ./.github/workflows/_publish.yml
+    # Called workflow's jobs get at most these; only its image and manifest jobs use packages: write
+    permissions:
+      contents: read
+      packages: write
+    secrets: inherit
+    with:
+      app: cms-admin
+      environment: ${{ needs.changes.outputs.environment }}
+      matrix: ${{ needs.changes.outputs.cms_admin_matrix }}
+      tag: ${{ needs.changes.outputs.tag }}
+      branch: ${{ needs.changes.outputs.branch }}
+      deploy_ref: ${{ needs.changes.outputs.deploy_ref }}
+      image_prefix: ${{ needs.changes.outputs.image_prefix }}
+      turbo_version: ${{ needs.changes.outputs.turbo_version }}
+
+  publish-web:
+    name: publish web
+    needs: [changes, web, e2e]
+    # always(): run even though a sibling app flow failed or was skipped; only this app and e2e must be green
+    if: >-
+      always() && needs.changes.outputs.publish == 'true' && needs.changes.outputs.web_image == 'true'
+      && needs.web.result == 'success' && needs.e2e.result == 'success'
+    uses: ./.github/workflows/_publish.yml
+    # Called workflow's jobs get at most these; only its image and manifest jobs use packages: write
+    permissions:
+      contents: read
+      packages: write
+    secrets: inherit
+    with:
+      app: web
+      environment: ${{ needs.changes.outputs.environment }}
+      matrix: ${{ needs.changes.outputs.web_matrix }}
+      tag: ${{ needs.changes.outputs.tag }}
+      branch: ${{ needs.changes.outputs.branch }}
+      deploy_ref: ${{ needs.changes.outputs.deploy_ref }}
+      image_prefix: ${{ needs.changes.outputs.image_prefix }}
       turbo_version: ${{ needs.changes.outputs.turbo_version }}

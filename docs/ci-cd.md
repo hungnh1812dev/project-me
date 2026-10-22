@@ -12,7 +12,7 @@ push to develop / staging / main
   -> cms-admin     Checks -> Build   (when cms-admin is affected)
   -> web           Checks -> Build   (when web is affected)
   -> e2e           Playwright on a docker-run stack of the built images (when any app or the e2e suite changed)
-  -> publish       added by T37e (images, deploy bump)
+  -> publish-<app> image -> manifest -> deploy bump (push to staging/main, app image changed, app flow and e2e green)
 ```
 
 The app flows never depend on each other, so one failing app does not skip another. Docker compose is local-test only (`docker-compose.smoke.yml`); no CI workflow or script runs or references it. The `e2e` job is independent of the app flows (it builds its own images), so a failing Checks job does not skip it and the reverse.
@@ -27,13 +27,14 @@ The app flows never depend on each other, so one failing app does not skip anoth
 | `cms-admin` Checks | `turbo run typecheck lint`, `pnpm --filter @abyss/cms-admin test`                                                                                                     |
 | `web` Checks       | `turbo run typecheck lint`, `pnpm --filter @abyss/web test`                                                                                                           |
 | `<app>` Build      | `pnpm turbo run build --filter=@abyss/<app>` (no Docker image here)                                                                                                   |
+| `publish-<app>`    | `_publish.yml`: per-platform image (build, non-root guard, admin bundle check, push by digest), manifest, deploy bump. See "Publish".                                 |
 | `e2e` Playwright   | Builds the three images, starts them with `docker run` (`scripts/e2e-stack.sh`), runs `@abyss/e2e`. See "e2e in CI".                                                  |
 
 ## Change detection
 
 `turbo.json` `build.inputs` excludes docs and tests, so a docs or test only change runs checks and build but gets no new image (`<app>_image=false`). A change to `.github/workflows/<app>.yml` re-runs that app; `ci.yml`, `_publish.yml` and `.github/scripts/**` re-run all apps. Output `e2e` is true when any app is affected or a file under `apps/e2e/`, `scripts/e2e-stack.sh`, `scripts/lib/`, `scripts/stack/` or `.github/workflows/e2e.yml` changed (`scripts/smoke.sh` and the compose file do not trigger it). A new branch or force push treats every app as affected.
 
-Branches: `develop` runs checks and build only; `staging` and `main` are the publish targets (T37e). Nothing assumes they exist yet. `pull_request` is commented out in `ci.yml`.
+Branches: `develop` runs checks and build only; `staging` and `main` are the publish targets. Nothing assumes they exist yet. `pull_request` is commented out in `ci.yml`.
 
 ## Run the checks locally
 
@@ -53,7 +54,7 @@ bash .github/scripts/affected.test.sh
 
 ## e2e in CI
 
-`.github/workflows/e2e.yml` (status check `e2e / Playwright`, called by the `e2e` job of `ci.yml`, `contents: read`, no secrets, 45 minute limit) builds the three images from their Dockerfiles with `docker/build-push-action` (`load: true`, GitHub Actions cache per app), then runs `bash scripts/e2e-stack.sh` with `E2E_NO_BUILD=1`. No docker compose. The images are built for e2e only: web with the Cloudflare test Turnstile site key and `/api/v1` (`scripts/stack/web-build.env`), cms-admin with `VITE_API_BASE_URL=http://domain.localhost:8080/api/v1`. They are not the images that T37e publishes.
+`.github/workflows/e2e.yml` (status check `e2e / Playwright`, called by the `e2e` job of `ci.yml`, `contents: read`, no secrets, 45 minute limit) builds the three images from their Dockerfiles with `docker/build-push-action` (`load: true`, GitHub Actions cache per app), then runs `bash scripts/e2e-stack.sh` with `E2E_NO_BUILD=1`. No docker compose. The images are built for e2e only: web with the Cloudflare test Turnstile site key and `/api/v1` (`scripts/stack/web-build.env`), cms-admin with `VITE_API_BASE_URL=http://domain.localhost:8080/api/v1`. They are not the images that publish builds.
 
 Topology, as in production, on the Docker network `abyss-e2e` (containers `abyss-e2e-*`, all labelled `abyss.stack=e2e`):
 
@@ -85,3 +86,45 @@ docker ps -aq --filter label=abyss.stack=e2e | xargs docker rm -fv; docker netwo
 Shared with local smoke so the two never drift: `scripts/lib/stack-seed.sh` (log fragments, account seeding, `E2E_*` export) and `scripts/stack/cms-api.env` (static, non-secret cms-api settings; compose reads it through `env_file:`, the script through `--env-file`). In CI the workflow adds the stack hosts to `/etc/hosts`, because Node does not resolve `*.localhost` on every runner (Chromium does).
 
 Lint the workflows with `docker run --rm -v "$PWD":/repo -w /repo rhysd/actionlint:latest`.
+
+## Publish
+
+`publish-cms-api`, `publish-cms-admin` and `publish-web` in `ci.yml` call `.github/workflows/_publish.yml`. Each runs only when all of these hold: the event is a push to `staging` or `main`, the app's build inputs changed (`<app>_image`), the app flow (`Checks` and `Build`) succeeded and `e2e` succeeded (`needs: [changes, <app>, e2e]` with `always()` and result checks; a skipped e2e means no publish). A failing sibling app does not block another app's publish.
+
+Images, one per service, built straight from `apps/<app>/Dockerfile` by `docker/build-push-action` (docker compose is never used):
+
+| Image                                        | Used by                                                                                                   |
+| -------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| `ghcr.io/hungnh1812dev/project-me/cms-api`   | both cms-api containers: init (`npm run deploy:migrate`) and main (`node dist/main.js`); one tag for both |
+| `ghcr.io/hungnh1812dev/project-me/cms-admin` | admin console (nginx, uid 101)                                                                            |
+| `ghcr.io/hungnh1812dev/project-me/web`       | public site (Next.js standalone, uid 1000)                                                                |
+
+Tags: `<branch>-<sha7>` and the moving `<branch>`. Platforms: `staging` linux/arm64, `main` linux/amd64 (one native runner per platform). Per platform: build and load, non-root guard (`.github/scripts/image-user.sh`: numeric non-zero `USER`, checked with `id -u`), for cms-admin `.github/scripts/bundle-check.sh` (the bundle contains `VITE_API_BASE_URL`), then push by digest; the manifest job merges the digests and applies both tags; the deploy job bumps `APP_IMAGE_TAG` in `<DEPLOYMENT_CLUSTER_PATH>/<app>-sync-overlay.yaml` of the deploy repo (commit and push with retry on a race). For cms-api the one tag in `cms-api-sync-overlay.yaml` is what both containers use.
+
+Least privilege: workflow default `contents: read`; `packages: write` only on the image and manifest jobs (the call job grants the ceiling); the deploy job has no `packages` access and uses only `DEPLOYMENT_REPO_TOKEN`: the checkout does not persist it (`persist-credentials: false`) and only the push step receives it, as a per-command header.
+
+Every action in every workflow is pinned to a full commit SHA with the tag as a comment (resolved from the latest tag of the major version the template used). Bump them deliberately; adding Dependabot (`github-actions` ecosystem) is recommended. The registry login uses the run's `GITHUB_TOKEN`.
+
+### What you must create in GitHub
+
+Two Environments, `staging` and `production` (Settings > Environments). Required on each: **Deployment branches and tags = Selected branches**, `staging` only on the `staging` Environment and `main` only on `production`. This rule, not the workflow, is what stops any other branch from reading the Environment's variables and `DEPLOYMENT_REPO_TOKEN` or deploying; without it a pushed `feature/x` workflow could declare `environment: production`. Also protect the `staging` and `main` branches (pull request review required) so a push there implies review, and add required reviewers on `production` if you want a manual gate. In each Environment:
+
+| Kind     | Name                             | Meaning                                                                                                                                                                      |
+| -------- | -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| variable | `DEPLOYMENT_REPO`                | `owner/repo` of the deploy repo                                                                                                                                              |
+| variable | `DEPLOYMENT_CLUSTER_PATH`        | directory in the deploy repo holding `<app>-sync-overlay.yaml` (each with an `APP_IMAGE_TAG:` line)                                                                          |
+| variable | `VITE_API_BASE_URL`              | cms-admin build arg, full API base, required (for example `https://domain.com/api/v1`)                                                                                       |
+| variable | `NEXT_PUBLIC_API_BASE_URL`       | web build arg, required (`/api/v1` when the API is on the web host)                                                                                                          |
+| variable | `NEXT_PUBLIC_ADMIN_URL`          | web build arg, optional (admin console URL)                                                                                                                                  |
+| variable | `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | web build arg, optional (real Cloudflare Turnstile site key; empty hides the reviewer entry)                                                                                 |
+| secret   | `DEPLOYMENT_REPO_TOKEN`          | Environment secret only, never a repository secret. Fine-grained personal access token (or GitHub App token) limited to the deploy repo with `contents: write` and an expiry |
+
+Build args are variables, never secrets: they are baked into the public bundles. A missing required variable fails the image job before the build. The deploy repo branches `staging` and `main` must exist. Registry packages are created on the first push under the repo; after that, set the package visibility or access you need. Nothing was run against GitHub yet: the first real publish is checked after the first push.
+
+Run the guards locally against an image you built:
+
+```
+docker build -f apps/cms-admin/Dockerfile --build-arg VITE_API_BASE_URL=https://domain.com/api/v1 -t cms-admin:ci .
+bash .github/scripts/image-user.sh cms-admin:ci
+bash .github/scripts/bundle-check.sh cms-admin:ci https://domain.com/api/v1
+```
