@@ -121,6 +121,8 @@ Two Environments, `staging` and `production` (Settings > Environments). Required
 
 Build args are variables, never secrets: they are baked into the public bundles. A missing required variable fails the image job before the build. The deploy repo branches `staging` and `main` must exist. Registry packages are created on the first push under the repo; after that, set the package visibility or access you need. Nothing was run against GitHub yet: the first real publish is checked after the first push.
 
+How the published images are deployed (K3s, Traefik, init and main container, env contract, backups): `docs/deployment/k3s-traefik.md`.
+
 Run the guards locally against an image you built:
 
 ```
