@@ -1,29 +1,32 @@
-# Current Unit: D2 step B (ui-builder)
-## D2-B base-config for cms-admin, web, form-commons
-Status: ready-for-checks (pnpm lint blocked until the .oxlintrc.json files are deleted, approval needed)
-What was built: each project's eslint.config.mjs now spreads baseEslint (shared TS rules) and keeps React hooks, Next (web) and browser globals local. New oxlint.config.ts per project extends baseOxlint and keeps react, jsx-a11y, vitest plugins, browser env, react-in-jsx-scope off. @eslint/js and typescript-eslint dropped from the three package.json (now via base-config). READMEs lint rows updated.
+# Current Unit: D3
+## D3 Build @abyss/base-config to dist/ and export from dist
+Status: ready-for-checks
+What was built: base-config now compiles with tsc (tsconfig.build.json) to dist/{prettier,eslint,oxlint}.{js,d.ts}; exports map has types/import/default pointing at dist/. Package turbo.json makes test depend on build. Root format and format:check build base-config first. README updated (dist, turbo, one manual build for editors).
 Changed files:
-- apps/{cms-admin,web}/eslint.config.mjs, packages/form-commons/eslint.config.mjs - use @abyss/base-config/eslint
-- apps/{cms-admin,web}/oxlint.config.ts, packages/form-commons/oxlint.config.ts - new, extend base oxlint
-- apps/{cms-admin,web}/package.json, packages/form-commons/package.json - removed @eslint/js, typescript-eslint
-- pnpm-lock.yaml - importers updated
-- apps/{cms-admin,web}/README.md, packages/form-commons/README.md - lint row
+- packages/base-config/package.json - exports to dist, files: dist, build script
+- packages/base-config/tsconfig.build.json - new, emit config
+- packages/base-config/turbo.json - new, test dependsOn build
+- packages/base-config/README.md - dist wording, build script row
+- package.json - format scripts run the base-config build first
 Behaviour to verify:
-- After the deletions below: `pnpm lint` in the three projects passes (oxlint refuses to run while both .oxlintrc.json and oxlint.config.ts exist). ESLint alone passes now; oxlint passes with `-c oxlint.config.ts`.
+- With dist absent: pnpm format:check, lint, typecheck, test:unit pass (done by builder).
+- turbo dry run shows @abyss/base-config#build before cms-api and web lint.
 Security-relevant: none
-Checks needed: none (tooling only, no runtime effect)
+Checks needed: qc-cli (fresh clone run of format:check, lint, typecheck, test; three Docker image builds once daemon is up)
 Risk: normal
-Verification: format pass · build/type-check pass (typecheck) · unit tests pass (cms-admin 289, web 99, form-commons 89) · docs READMEs
+Verification: format pass · build/type-check pass · unit tests pass (base-config 6; cms-api test:unit and ui packages pass; cms-api integration not run, Docker down) · docs packages/base-config/README.md
 Proposed commit: |
-  chore(apps/cms-admin,apps/web,packages/form-commons): use base-config eslint and oxlint
+  build(packages/base-config,root): build base-config to dist and export from dist
 
-  Each project spreads the shared ESLint base and extends the shared
-  Oxlint base, keeping React, Next and Vitest rules local. Drop the
-  direct @eslint/js and typescript-eslint dependencies.
+  Compile the shared Prettier, ESLint and Oxlint configs with tsc and point
+  the exports (types, import, default) at dist/. Turbo test depends on
+  build, and the root format scripts build base-config first.
 
   Affected:
-  - apps/cms-admin
-  - apps/web
-  - packages/form-commons
-Deletions needing approval: apps/cms-admin/.oxlintrc.json, apps/web/.oxlintrc.json, packages/form-commons/.oxlintrc.json (replaced by oxlint.config.ts; eslint.config.mjs files were edited in place, not deleted)
+  - packages/base-config
+Deletions needing approval: none
+Not run: Docker builds (daemon down); full git-clone fresh check (verified in place by deleting dist before each command). pnpm format:check warns only on gitignored apps/e2e report artifacts.
+Stale lines: SPEC.md and conventions.md line 11 ("until D2 lands", "until D2: @abyss/prettier-config") are outdated; SPEC.md already mentions dist.
 Fix log:
+Fix log:
+- round 1: F1 typecheck failed without dist -> packages/base-config/turbo.json: typecheck dependsOn ["$TURBO_EXTENDS$", "build"]; verified with dist removed and turbo --force (pass).

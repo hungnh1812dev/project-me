@@ -4,10 +4,15 @@ Shared Prettier, ESLint and Oxlint configs for every app and package in the
 Abyss monorepo. The shared configs hold only the rules all projects agree on.
 Each project imports them and adds its own plugins, globals and rules.
 
-The sources are TypeScript files in `src/`, loaded directly (Node 24 strips the
-types), so there is no build step and `pnpm format` / `pnpm lint` work on a
-fresh clone. They use erasable TypeScript syntax only (no enums, no
-namespaces) and explicit `.ts` import extensions.
+The sources are TypeScript files in `src/` (erasable syntax only, no enums or
+namespaces). They are built with `tsc` to `dist/` (ESM, with `.d.ts` files),
+and every export points at `dist/`. Turbo builds the package before any
+consumer's `lint`, `typecheck`, `test` or `build`, and the root `pnpm format`
+and `pnpm format:check` build it first, so nothing needs a manual build.
+
+After a fresh clone, editor integrations (the ESLint and Prettier extensions)
+do not run turbo. Run `pnpm --filter @abyss/base-config build` once so they
+find `dist/`.
 
 ## Exports
 
@@ -76,6 +81,7 @@ Run `pnpm format` from the repository root before every commit.
 
 | Script                                       | What it does                                                               |
 | -------------------------------------------- | -------------------------------------------------------------------------- |
+| `pnpm --filter @abyss/base-config build`     | `tsc` from `src` to `dist/`                                                |
 | `pnpm --filter @abyss/base-config test`      | Checks each export loads, formats as expected and resolves in each project |
 | `pnpm --filter @abyss/base-config lint`      | Oxlint, then ESLint                                                        |
 | `pnpm --filter @abyss/base-config typecheck` | `tsc` over `src`, `test` and the root config files                         |

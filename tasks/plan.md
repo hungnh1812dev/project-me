@@ -144,7 +144,8 @@ Phases 1 and 2 can run in parallel if more than one worker is available. This pr
 **Checkpoint 8 (release):** all §12 criteria green in CI; deploy guide reviewed.
 
 ### Ad-hoc: Base config
-- D2 `packages/prettier-config` -> `packages/base-config` (`@abyss/base-config`, exports `prettier`, `eslint`, `oxlint`); every app and package extends it locally. core-builder (step A: package, repo-wide rename, cms-api, e2e config) -> ui-builder (step B: cms-admin, web, form-commons) -> qc (step C: CLI checks). Needs Q-BC1..Q-BC4.
+- D2 `packages/prettier-config` -> `packages/base-config` (`@abyss/base-config`, exports `prettier`, `eslint`, `oxlint`); every app and package extends it locally. core-builder (step A: package, repo-wide rename, cms-api, e2e config) -> ui-builder (step B: cms-admin, web, form-commons) -> qc (step C: CLI checks). Needs Q-BC1..Q-BC4. Done; its Q-BC4 "no build step" contract is superseded by D3.
+- D3 Build `@abyss/base-config` to `dist/` with `tsc` (ESM + `.d.ts`), exports `types`/`import`/`default` -> dist; turbo `^build` orders it before consumers (lint, typecheck, test, Docker builds); root `format` / `format:check` build it first; fresh-clone check. core-builder; deps D2. Needs Q-D3-1, Q-D3-2.
 
 ## Risks and Mitigations
 

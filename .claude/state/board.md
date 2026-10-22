@@ -29,3 +29,8 @@ Source: `tasks/todo.md` "Ad-hoc: Base config" (D2) · Order: core-builder (A) ->
 | ID | Title | Scope | Status | Commit |
 |---|---|---|---|---|
 | D2 | Rename prettier-config to base-config (@abyss/base-config): prettier, eslint, oxlint exports for all apps and packages | core-builder, ui-builder, qc | done (steps A 76d9058, B 1018286; C qc pass) | 76d9058, 1018286 |
+
+## Ad-hoc: Base config (D3)
+| ID | Title | Scope | Status | Commit |
+|---|---|---|---|---|
+| D3 | Build @abyss/base-config to dist/ and export from dist (supersedes D2 Q-BC4) | core-builder | in-progress | - |

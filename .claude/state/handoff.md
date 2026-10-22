@@ -13,6 +13,7 @@ Updated: 2026-10-22 after T32 (trimmed to open work; history in archive/handoff-
 - T37e Image publish + deploy bump - awaiting checks/commit (Risk high; security-qc before commit); next: qc-cli, then T38. First real publish unverified until the user pushes and creates the Environments (docs/ci-cd.md "Publish").
 - D1 done @ bfa3455 (user committed; docs only). Open: SOPS flow untested on a cluster; try once on a scratch namespace. cms-api does not load .env itself (guide uses set -a; . ./.env).
 - D2 step B (ui) built - blocked on deleting apps/{cms-admin,web}/.oxlintrc.json and packages/form-commons/.oxlintrc.json (approval); next: user approves, run pnpm lint, then step C (qc).
+- D3 base-config dist build - awaiting checks/commit; next: qc-cli (fresh clone, Docker builds when daemon is up).
 - Phase 5 (Media): checkpoint still pending user review.
 - Next: Phase 6 phase checks (T38 done); Phase 5 checkpoint still pending.
 
@@ -95,3 +96,4 @@ Updated: 2026-10-22 after T32 (trimmed to open work; history in archive/handoff-
 - D2 step A committed as 76d9058 (user approved). Step B next.
 - D2 step B committed as 1018286. Step C qc CLI pass. Docker builds not run (daemon down).
 - User decision (2026-10-22): build `@abyss/base-config` to JS with a `dist/` folder and export from dist. This replaces Q-BC4 (TS direct, no build). Needs a new task (REPLAN D2 -> D3); core-builder owns packages/base-config.
+- D3 answers (user, 2026-10-22): exports get `types`, `import` and `default` (all to dist/), so the seven .prettierrc.cjs files stay unchanged. No install hook: build with turbo and the root format scripts, and the README says to run `pnpm --filter @abyss/base-config build` once after a fresh clone.

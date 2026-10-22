@@ -5,14 +5,27 @@
   "description": "Shared Prettier, ESLint and Oxlint configs for the Abyss monorepo",
   "type": "module",
   "exports": {
-    "./prettier": "./src/prettier.ts",
-    "./eslint": "./src/eslint.ts",
-    "./oxlint": "./src/oxlint.ts"
+    "./prettier": {
+      "types": "./dist/prettier.d.ts",
+      "import": "./dist/prettier.js",
+      "default": "./dist/prettier.js"
+    },
+    "./eslint": {
+      "types": "./dist/eslint.d.ts",
+      "import": "./dist/eslint.js",
+      "default": "./dist/eslint.js"
+    },
+    "./oxlint": {
+      "types": "./dist/oxlint.d.ts",
+      "import": "./dist/oxlint.js",
+      "default": "./dist/oxlint.js"
+    }
   },
   "files": [
-    "src"
+    "dist"
   ],
   "scripts": {
+    "build": "tsc -p tsconfig.build.json",
     "test": "node --test",
     "lint": "oxlint && eslint .",
     "typecheck": "tsc -p tsconfig.json"
