@@ -76,11 +76,12 @@ export class AccessTokenService {
     this.keys = new Map(secret === undefined ? [] : [[this.kid, secret]]);
   }
 
-  signAccessToken(subject: AccessTokenSubject): string {
-    return this.sign(
-      { ...subject, typ: TOKEN_TYPES.ACCESS },
-      ACCESS_TOKEN_TTL_SECONDS,
-    );
+  /** `ttlSeconds` defaults to the 15 min access token; reviewer sessions pass 24 h (T31). */
+  signAccessToken(
+    subject: AccessTokenSubject,
+    ttlSeconds: number = ACCESS_TOKEN_TTL_SECONDS,
+  ): string {
+    return this.sign({ ...subject, typ: TOKEN_TYPES.ACCESS }, ttlSeconds);
   }
 
   /**

@@ -79,6 +79,13 @@ export const API_ROUTES = {
   },
   /** SPEC D18 GraphQL read API: one POST endpoint, queries only. */
   GRAPHQL: 'graphql',
+  /** SPEC §9 reviewer (T31). */
+  REVIEWER: {
+    ROOT: 'reviewer',
+    STATUS: 'status',
+    SESSIONS: 'sessions',
+    SETTINGS: 'settings',
+  },
   /** SPEC §9 media (T27 upload + list, T28 delete). */
   MEDIA: {
     ROOT: 'media',

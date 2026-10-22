@@ -16,6 +16,7 @@ function setup() {
     status: 'active',
     deletedAt: null,
     roleId: 5,
+    reviewerSessions: [],
   };
   const role = {
     id: 5,

@@ -37,6 +37,10 @@ export const AUDIT_ACTIONS = {
   API_TOKEN_UPDATED: 'api_token.updated',
   API_TOKEN_REVOKED: 'api_token.revoked',
   MEDIA_DELETED: 'media.deleted',
+  /** Owner turned reviewer access on or off (T31, D15). */
+  REVIEWER_SETTINGS_CHANGED: 'reviewer.settings_changed',
+  /** A visitor started a reviewer session (T31); actor = the new reviewer account. */
+  REVIEWER_SESSION_CREATED: 'reviewer.session_created',
 } as const;
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[keyof typeof AUDIT_ACTIONS];

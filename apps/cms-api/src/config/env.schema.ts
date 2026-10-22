@@ -191,6 +191,18 @@ export const envSchema = z
       emptyToUndefined,
       z.string().min(1).optional(),
     ),
+    TURNSTILE_SECRET_KEY: z.preprocess(emptyToUndefined, optionalSecret),
+    TURNSTILE_EXPECTED_HOSTNAME: z.preprocess(
+      emptyToUndefined,
+      z
+        .string()
+        .trim()
+        .toLowerCase()
+        .regex(/^[a-z0-9]([a-z0-9.-]*[a-z0-9])?$/, {
+          message: 'must be a bare hostname, e.g. domain.com',
+        })
+        .optional(),
+    ),
   })
   .superRefine((env, ctx) => {
     if (env.MAIL_PROVIDER === 'smtp') {

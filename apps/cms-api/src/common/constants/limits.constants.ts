@@ -183,6 +183,27 @@ export const RATE_LIMIT_POLICIES = {
       windowMs: ONE_HOUR_MS,
     },
   ],
+  /** `GET /reviewer/status` (T31): public, one small read. In memory. */
+  REVIEWER_STATUS: [
+    {
+      name: 'reviewer-status:ip',
+      keySource: RATE_LIMIT_KEY_SOURCES.IP,
+      limit: 120,
+      windowMs: ONE_MINUTE_MS,
+    },
+  ],
+  /**
+   * `POST /reviewer/sessions` (T31): bounds Turnstile calls and body parsing
+   * per IP. The binding rule (1 session per IP per 10 min) lives in the DB.
+   */
+  REVIEWER_SESSION_ATTEMPTS: [
+    {
+      name: 'reviewer-session:ip',
+      keySource: RATE_LIMIT_KEY_SOURCES.IP,
+      limit: 20,
+      windowMs: 10 * MS_PER_MINUTE,
+    },
+  ],
   REFRESH: [
     {
       name: RATE_LIMIT_RULE_NAMES.REFRESH_IP,

@@ -7,7 +7,12 @@ import {
   JWT_STRATEGY_NAME,
 } from '../../common/constants/auth.constants';
 import type { RequestWithId } from '../../common/middleware/request-id.middleware';
-import { type ActorContext, accountActor } from '../access/actor-context';
+import {
+  type ActorContext,
+  accountActor,
+  reviewerActor,
+} from '../access/actor-context';
+import { REVIEWER_ROLE_SLUG } from './identity.constants';
 import { VersionCache } from '../access/version-cache';
 import {
   type AccessTokenClaims,
@@ -79,11 +84,18 @@ export class JwtStrategy extends PassportStrategy(Strategy, JWT_STRATEGY_NAME) {
     }
     const role = await this.versions.rolePolicy(account.roleId, claims.pv);
     if (role === null) throw new UnauthorizedException();
+    // D2: a reviewer-role account is always the read-only reviewer actor,
+    // whatever the role rows say. No session row = no access.
+    let actor = accountActor(account.id, role);
+    if (role.slug === REVIEWER_ROLE_SLUG) {
+      if (account.reviewerSessionId === null) throw new UnauthorizedException();
+      actor = reviewerActor(account.id, account.reviewerSessionId, role);
+    }
     return {
       accountId: claims.sub,
       tokenVersion: claims.tv,
       policyVersion: role.policyVersion,
-      actor: accountActor(account.id, role),
+      actor,
     };
   }
 }

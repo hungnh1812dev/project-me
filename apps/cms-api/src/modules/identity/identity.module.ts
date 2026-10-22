@@ -40,6 +40,6 @@ import { TwoFactorService } from './two-factor.service';
     // D8: a reset of a TOTP account needs a valid authenticator code.
     { provide: RESET_SECOND_FACTOR, useExisting: TotpService },
   ],
-  exports: [JwtAuthGuard, OtpService],
+  exports: [AccessTokenService, JwtAuthGuard, OtpService],
 })
 export class IdentityModule {}

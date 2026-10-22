@@ -77,7 +77,9 @@ types and fields. T19 added API tokens: the API, the subset check
    role's rows say (D2). They never get drafts, and nothing is writable for
    them. On the `media` subject `rowFilter` adds `is_reviewer_preset = true`
    for such actors (T27), so the file library shows them preset files only;
-   this keys on the actor kind, not on a role name.
+   this keys on the actor kind, not on a role name. `JwtStrategy` makes an
+   account whose role is `reviewer` the `reviewer` actor (T31), so the rule
+   holds even if the owner edits the reviewer role's rows.
 7. **API tokens** reach content subjects only. Effective permissions are
    the scope ∩ the creator's **current** role rows (D5): actions and field
    lists intersect, and the creator's conditions always apply. Tokens have

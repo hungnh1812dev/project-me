@@ -27,6 +27,7 @@ import {
   clientMetaOf,
   setRefreshCookie,
 } from './auth.controller';
+import { requireAccountActor } from '../access/rank-rules';
 import { type AuthenticatedRequest, JwtAuthGuard } from './jwt.strategy';
 import {
   disableTwoFactorSchema,
@@ -65,6 +66,7 @@ export class TwoFactorController {
   @UseGuards(JwtAuthGuard)
   @Throttle(RATE_LIMIT_POLICIES.TWO_FACTOR_MANAGE)
   setupTotp(@Req() req: AuthenticatedRequest): Promise<TotpSetupResponse> {
+    requireAccountActor(req.user.actor);
     return this.twoFactor.setupTotp(req.user.accountId);
   }
 
@@ -76,6 +78,7 @@ export class TwoFactorController {
     @Req() req: AuthenticatedRequest,
     @Body() body: unknown,
   ): Promise<void> {
+    requireAccountActor(req.user.actor);
     return this.twoFactor.enable(
       req.user.accountId,
       parseBody(enableTwoFactorSchema, body),
@@ -91,6 +94,7 @@ export class TwoFactorController {
     @Req() req: AuthenticatedRequest,
     @Body() body: unknown,
   ): Promise<void> {
+    requireAccountActor(req.user.actor);
     return this.twoFactor.disable(
       req.user.accountId,
       parseBody(disableTwoFactorSchema, body),
@@ -103,6 +107,7 @@ export class TwoFactorController {
   @UseGuards(JwtAuthGuard)
   @Throttle(RATE_LIMIT_POLICIES.TWO_FACTOR_EMAIL_CHALLENGE)
   sendEmailCode(@Req() req: AuthenticatedRequest): Promise<void> {
+    requireAccountActor(req.user.actor);
     return this.twoFactor.sendEmailCode(
       req.user.accountId,
       clientMetaOf(this.clientIp, req),

@@ -105,6 +105,17 @@ describe('loadAppConfig', () => {
     expect(config.secrets.otpPepper).toBeUndefined();
   });
 
+  it('reads the optional Turnstile secret and redacts it in the summary', () => {
+    expect(loadAppConfig(devEnv()).secrets.turnstileSecretKey).toBeUndefined();
+    expect(
+      loadAppConfig(devEnv({ TURNSTILE_SECRET_KEY: '' })).secrets
+        .turnstileSecretKey,
+    ).toBeUndefined();
+    const config = loadAppConfig(devEnv({ TURNSTILE_SECRET_KEY: 'ts-secret' }));
+    expect(config.secrets.turnstileSecretKey).toBe('ts-secret');
+    expect(JSON.stringify(summarizeConfig(config))).not.toContain('ts-secret');
+  });
+
   it('leaves CORS off when ADMIN_ORIGIN is unset or empty', () => {
     expect(loadAppConfig(devEnv()).cors.allowedOrigins).toEqual([]);
     expect(
@@ -500,6 +511,7 @@ describe('summarizeConfig', () => {
       otpPepper: 'unset',
       totpEncKey: 'unset',
       totpEncPreviousKey: 'unset',
+      turnstileSecretKey: 'unset',
     });
   });
 });

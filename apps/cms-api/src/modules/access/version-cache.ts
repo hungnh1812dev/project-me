@@ -17,6 +17,8 @@ export interface AccountVersions {
   status: AccountStatus;
   deleted: boolean;
   roleId: number;
+  /** The reviewer session of an ephemeral reviewer account (D2); null otherwise. */
+  reviewerSessionId: number | null;
 }
 
 interface Entry<T> {
@@ -135,6 +137,7 @@ export class VersionCache {
         status: true,
         deletedAt: true,
         roleId: true,
+        reviewerSessions: { select: { id: true }, take: 1 },
       },
     });
     const value =
@@ -147,6 +150,7 @@ export class VersionCache {
             status: row.status,
             deleted: row.deletedAt !== null,
             roleId: row.roleId,
+            reviewerSessionId: row.reviewerSessions[0]?.id ?? null,
           };
     this.accounts.setIfUnchanged(documentId, value, generation);
     return value;

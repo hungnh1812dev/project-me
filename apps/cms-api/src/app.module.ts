@@ -10,6 +10,7 @@ import { GraphqlModule } from './modules/graphql/graphql.module';
 import { HealthModule } from './modules/health/health.module';
 import { IdentityModule } from './modules/identity/identity.module';
 import { MediaModule } from './modules/media/media.module';
+import { ReviewerModule } from './modules/reviewer/reviewer.module';
 
 @Module({})
 export class AppModule {
@@ -26,6 +27,7 @@ export class AppModule {
         DocumentsModule,
         GraphqlModule,
         MediaModule,
+        ReviewerModule,
       ],
     };
   }

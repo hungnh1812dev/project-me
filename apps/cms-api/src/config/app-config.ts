@@ -55,12 +55,21 @@ export interface IAppConfig {
     /** Set only when MEDIA_PROVIDER=cloudinary. */
     readonly cloudinary: CloudinaryConfig | undefined;
   };
+  readonly reviewer: {
+    /** Hostname Turnstile replies must name (T31); undefined = not checked. */
+    readonly turnstileExpectedHostname: string | undefined;
+  };
   readonly secrets: {
     readonly jwtAccessSecret: string | undefined;
     readonly otpPepper: string | undefined;
     readonly totpEncKey: string | undefined;
     /** Previous TOTP_ENC_KEY, kept to decrypt secrets during a rotation. */
     readonly totpEncPreviousKey: string | undefined;
+    /**
+     * Cloudflare Turnstile secret key (T31). Optional: unset, reviewer
+     * sessions are refused (503), never skipped.
+     */
+    readonly turnstileSecretKey: string | undefined;
   };
 }
 
@@ -156,11 +165,13 @@ export function loadAppConfig(rawEnv: RawEnv): IAppConfig {
       provider: env.MEDIA_PROVIDER,
       cloudinary: cloudinaryConfigOf(env),
     },
+    reviewer: { turnstileExpectedHostname: env.TURNSTILE_EXPECTED_HOSTNAME },
     secrets: {
       jwtAccessSecret: env.JWT_ACCESS_SECRET,
       otpPepper: env.OTP_PEPPER,
       totpEncKey: env.TOTP_ENC_KEY,
       totpEncPreviousKey: env.TOTP_ENC_PREVIOUS_KEY,
+      turnstileSecretKey: env.TURNSTILE_SECRET_KEY,
     },
   });
 }
@@ -257,11 +268,13 @@ export function summarizeConfig(config: IAppConfig): Record<string, unknown> {
               folder: config.media.cloudinary.folder,
             },
     },
+    reviewer: config.reviewer,
     secrets: {
       jwtAccessSecret: secretState(config.secrets.jwtAccessSecret),
       otpPepper: secretState(config.secrets.otpPepper),
       totpEncKey: secretState(config.secrets.totpEncKey),
       totpEncPreviousKey: secretState(config.secrets.totpEncPreviousKey),
+      turnstileSecretKey: secretState(config.secrets.turnstileSecretKey),
     },
   };
 }

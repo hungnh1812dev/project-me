@@ -19,6 +19,7 @@ import {
   MAIL_SENDER,
   type MailSender,
 } from '../../infrastructure/mail/mail.port';
+import { REVIEWER_ROLE_SLUG } from '../identity/identity.constants';
 import { buildOtpMail } from '../identity/otp-mail';
 import { OtpService } from '../identity/otp.service';
 import {
@@ -175,7 +176,8 @@ export class AccountsService {
     actor: AccountActor,
     { page, pageSize }: PageQuery,
   ): Promise<AccountPage> {
-    const where = { deletedAt: null };
+    // Ephemeral reviewer accounts belong to the reviewer module (T31).
+    const where = { deletedAt: null, roleSlug: { not: REVIEWER_ROLE_SLUG } };
     const [rows, total] = await Promise.all([
       this.prisma.account.findMany({
         where,
@@ -426,7 +428,7 @@ export class AccountsService {
 
   /**
    * The target account, row-locked for this transaction, after the D6
-   * checks: 404 when unknown or deleted, 403 for the actor itself or an
+   * checks: 404 when unknown, deleted or a reviewer account (T31), 403 for the actor itself or an
    * account of equal or higher rank.
    */
   private async lockManageable(
@@ -437,6 +439,7 @@ export class AccountsService {
     const locked = await tx.$queryRaw<{ id: number }[]>`
       SELECT id FROM accounts
       WHERE document_id = ${documentId}::uuid AND deleted_at IS NULL
+        AND role_slug <> ${REVIEWER_ROLE_SLUG}
       FOR UPDATE`;
     const id = locked[0]?.id;
     if (id === undefined) throw accountNotFound();

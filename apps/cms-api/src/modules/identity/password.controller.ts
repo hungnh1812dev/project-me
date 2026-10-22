@@ -22,6 +22,7 @@ import {
 import { RATE_LIMIT_POLICIES } from '../../common/constants/limits.constants';
 import { Throttle } from '../../common/guards/throttle.guard';
 import { clientMetaOf } from './auth.controller';
+import { requireAccountActor } from '../access/rank-rules';
 import { type AuthenticatedRequest, JwtAuthGuard } from './jwt.strategy';
 import {
   changePasswordSchema,
@@ -95,6 +96,7 @@ export class PasswordController {
     @Req() req: AuthenticatedRequest,
     @Body() body: unknown,
   ): Promise<void> {
+    requireAccountActor(req.user.actor);
     return this.passwords.change(
       req.user.accountId,
       parseBody(changePasswordSchema, body),

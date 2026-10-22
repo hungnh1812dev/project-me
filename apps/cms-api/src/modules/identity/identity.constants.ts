@@ -15,6 +15,9 @@ export type SystemRoleSlug = (typeof SYSTEM_ROLES)[number]['slug'];
 
 export const OWNER_ROLE_SLUG = 'owner' satisfies SystemRoleSlug;
 
+/** The role of ephemeral reviewer accounts (D2, T31). */
+export const REVIEWER_ROLE_SLUG = 'reviewer' satisfies SystemRoleSlug;
+
 /** The role of requests without credentials (SPEC §1). */
 export const PUBLIC_ROLE_SLUG = 'public' satisfies SystemRoleSlug;
 
