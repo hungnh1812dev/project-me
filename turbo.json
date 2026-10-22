@@ -3,6 +3,14 @@
   "tasks": {
     "build": {
       "dependsOn": ["^build", "db:generate"],
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "!**/*.md",
+        "!docs/**",
+        "!**/*.spec.*",
+        "!**/*.test.*",
+        "!test/**"
+      ],
       "outputs": ["dist/**"]
     },
     "test": {

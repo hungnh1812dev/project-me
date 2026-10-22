@@ -1,0 +1,60 @@
+# Docs: docs/ci-cd.md
+# cms-api flow, called by ci.yml when cms-api is affected: checks -> build
+# Publishing is added by T37e (docs/ci-cd.md); no image is built here.
+# Status checks show as "cms-api / Checks" and "cms-api / Build".
+name: cms-api
+
+on:
+  workflow_call:
+    inputs:
+      turbo_version:
+        description: turbo version, kept in sync with the Dockerfiles and the root package.json
+        type: string
+        required: true
+
+# Read-only: checks and build push nothing
+permissions:
+  contents: read
+
+env:
+  TURBO_VERSION: ${{ inputs.turbo_version }}
+
+jobs:
+  checks:
+    name: Checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Typecheck and lint
+        run: pnpm turbo run typecheck lint --filter=@abyss/cms-api
+      - name: Unit tests
+        run: pnpm --filter @abyss/cms-api test:unit
+      # Testcontainers starts PostgreSQL on the runner's Docker
+      - name: Integration tests
+        run: pnpm --filter @abyss/cms-api test:integration
+      # Fail when the committed migrations or GraphQL SDL are behind the content types
+      - name: Content migrations are committed
+        run: pnpm --filter @abyss/cms-api content:generate -- --check
+      - name: GraphQL SDL is committed
+        run: pnpm --filter @abyss/cms-api graphql:print-schema -- --check
+
+  build:
+    name: Build
+    needs: checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Build
+        run: pnpm turbo run build --filter=@abyss/cms-api

@@ -1,0 +1,52 @@
+# Docs: docs/ci-cd.md
+# cms-admin flow, called by ci.yml when cms-admin is affected: checks -> build
+# Publishing is added by T37e (docs/ci-cd.md); no image is built here.
+# Status checks show as "cms-admin / Checks" and "cms-admin / Build".
+name: cms-admin
+
+on:
+  workflow_call:
+    inputs:
+      turbo_version:
+        description: turbo version, kept in sync with the Dockerfiles and the root package.json
+        type: string
+        required: true
+
+# Read-only: checks and build push nothing
+permissions:
+  contents: read
+
+env:
+  TURBO_VERSION: ${{ inputs.turbo_version }}
+
+jobs:
+  checks:
+    name: Checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Typecheck and lint
+        run: pnpm turbo run typecheck lint --filter=@abyss/cms-admin
+      - name: Unit tests
+        run: pnpm --filter @abyss/cms-admin test
+
+  build:
+    name: Build
+    needs: checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Build
+        run: pnpm turbo run build --filter=@abyss/cms-admin

@@ -72,6 +72,22 @@ export async function generateContentMigration(
   return { status: 'written', fileName, sql, plan };
 }
 
+/**
+ * `--check`: a dry run that fails when the committed migrations are behind the
+ * schemas (CI uses it so a schema change cannot land without its migration).
+ */
+export async function checkContentMigrations(
+  options: GenerateOptions,
+): Promise<GenerateResult> {
+  const result = await generateContentMigration({ ...options, dryRun: true });
+  if (result.status !== 'no-changes') {
+    throw new ContentEngineError(
+      `Content types changed without a migration. Run content:generate and commit the result.\n${report(result)}`,
+    );
+  }
+  return result;
+}
+
 function report(result: GenerateResult): string {
   switch (result.status) {
     case 'no-changes':
@@ -97,14 +113,18 @@ async function main(): Promise<void> {
       name: { type: 'string', default: DEFAULT_MIGRATION_LABEL },
       'allow-destructive': { type: 'boolean', default: false },
       'dry-run': { type: 'boolean', default: false },
+      check: { type: 'boolean', default: false },
     },
   });
-  const result = await generateContentMigration({
+  const options: GenerateOptions = {
     ...DEFAULT_CONTENT_PATHS,
     label: values.name,
     allowDestructive: values['allow-destructive'],
     dryRun: values['dry-run'],
-  });
+  };
+  const result = values.check
+    ? await checkContentMigrations(options)
+    : await generateContentMigration(options);
   process.stdout.write(`${report(result)}\n`);
 }
 
