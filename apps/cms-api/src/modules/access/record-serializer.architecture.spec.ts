@@ -28,11 +28,13 @@ const SERIALIZER_BUILDING_BLOCKS = [
 /**
  * Publish (T22) copies a draft into the published row inside one transaction.
  * The copied record is never part of a response (it returns `{ documentId,
- * version }`), so these files need no serializer.
+ * version }`), so these files need no serializer. Bulk (T34) only inserts
+ * trees through the repository and answers with ids and versions.
  */
 const INTERNAL_COPY_FILES = [
   join('modules', 'documents', 'publish.service.ts'),
   join('modules', 'documents', 'tree-cloner.ts'),
+  join('modules', 'documents', 'bulk.service.ts'),
 ];
 
 const RECORD_LOADER_IMPORT =

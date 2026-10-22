@@ -165,33 +165,68 @@ export class ContentRepository {
     slug: string,
     input: InsertTreeInput,
   ): Promise<number> {
+    const [id] = await this.insertTrees(trx, slug, [input]);
+    return id as number;
+  }
+
+  /**
+   * Inserts many documents at once (T34): one INSERT for all roots, then one
+   * INSERT per component table and level for all their items, each
+   * `RETURNING id`. Returns the root ids in input order.
+   */
+  async insertTrees(
+    trx: Transaction<ContentDatabase>,
+    slug: string,
+    inputs: readonly InsertTreeInput[],
+  ): Promise<number[]> {
+    if (inputs.length === 0) return [];
     const { root } = this.registry.resolve(slug);
-    const { documentId, publishedAt, locale, createdBy, ...tree } = input;
-    assertDocumentId(documentId, 'documentId');
-    assertTreeInput(root, tree);
+    const prepared = inputs.map((input) => {
+      const { documentId, publishedAt, locale, createdBy, ...tree } = input;
+      assertDocumentId(documentId, 'documentId');
+      assertTreeInput(root, tree);
+      return { documentId, publishedAt, locale, createdBy, tree };
+    });
 
     const inserted = await trx
       .withSchema(CONTENT_DB_SCHEMA)
       .insertInto(root.plan.name)
-      .values({
-        ...toColumnValues(root, tree.values),
-        document_id: documentId,
-        published_at: publishedAt,
-        locale: locale ?? null,
-        created_by: createdBy ?? null,
-        updated_by: createdBy ?? null,
-      })
-      .returning('id')
-      .executeTakeFirstOrThrow();
-    const id = inserted.id as number;
+      .values(
+        prepared.map(
+          ({ documentId, publishedAt, locale, createdBy, tree }) => ({
+            ...toColumnValues(root, tree.values),
+            document_id: documentId,
+            published_at: publishedAt,
+            locale: locale ?? null,
+            created_by: createdBy ?? null,
+            updated_by: createdBy ?? null,
+          }),
+        ),
+      )
+      .returning(['id', 'document_id', 'published_at'])
+      .execute();
+    // Match by (document_id, published_at) rather than trusting row order.
+    const idByDocument = new Map(
+      inserted.map((row) => [row.document_id as string, row.id as number]),
+    );
+    const ids = prepared.map(({ documentId }) => {
+      const id = idByDocument.get(documentId);
+      if (id === undefined) throw new Error('insert returned no id');
+      return id;
+    });
 
     await this.syncChildren(
       trx,
       root,
-      [{ id, isNew: true, components: tree.components, path: ['components'] }],
+      prepared.map(({ tree }, index) => ({
+        id: ids[index] as number,
+        isNew: true,
+        components: tree.components,
+        path: ['components'],
+      })),
       'insert',
     );
-    return id;
+    return ids;
   }
 
   /**

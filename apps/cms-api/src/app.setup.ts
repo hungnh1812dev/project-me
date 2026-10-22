@@ -12,6 +12,7 @@ import {
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { requestIdMiddleware } from './common/middleware/request-id.middleware';
 import { type IAppConfig } from './config/app-config';
+import { bulkBodyLimit } from './modules/documents/bulk-body-limit.middleware';
 import { graphqlBodyLimit } from './modules/graphql/graphql-body-limit.middleware';
 
 /**
@@ -31,6 +32,11 @@ export function configureApp(
   app.use(cookieParser());
   // D18: the GraphQL body cap (32 KiB) applies before Nest's JSON parser.
   app.use(`/${API_PREFIX}/${API_ROUTES.GRAPHQL}`, graphqlBodyLimit);
+  // SPEC §6: bulk bodies may be up to 1 MB (the global parser stops at 100 KB).
+  app.use(
+    `/${API_PREFIX}/${API_ROUTES.DOCUMENTS.ROOT}/${API_ROUTES.DOCUMENTS.BULK_PREFIX}`,
+    bulkBodyLimit,
+  );
   // D14: only the configured admin origin, never a wildcard or a reflected origin.
   if (config.cors.allowedOrigins.length > 0) {
     app.enableCors({

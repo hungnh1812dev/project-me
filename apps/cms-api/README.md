@@ -503,6 +503,18 @@ Order of every write: allowlist (D4: resent `"***"` dropped, `FIELD_UNKNOWN` / `
 - **Delete** deletes the draft and the published row (cascade): 204. Every row of the document must be inside the actor's `delete` conditions, else 404 and nothing is deleted. A `draftAndPublish: false` type deletes its one live row.
 - **Activity tracking** is a port (`src/infrastructure/activity`: `ActivityRecorder`, token `ACTIVITY_RECORDER`). Publish, unpublish and delete call `record({ action, subject, documentId, accountId, tokenId?, version? })` after the commit; a failure is logged, never returned. Only the `none` adapter exists (default): the `database` adapter (SPEC D15) is not built yet. Create/update do not emit events yet.
 
+### Documents, bulk (T34, `src/modules/documents/bulk.*`)
+
+`POST /documents/:slug/bulk/create|publish|unpublish|delete`, body `{ atomic: boolean, items: [...] }`. **Collections only**: a single type is 400 `DOCUMENT_BULK_NOT_COLLECTION`. Auth and permissions as the single-document routes (JWT account or API token; anonymous and reviewer 403; the route's action on `:slug` is needed, else 403). Limits: 1 to 50 items (`DOCUMENT_BULK_LIMIT`), 200 component rows per create item (that item is rejected with `DOCUMENT_BULK_LIMIT`), body 1 MB (413 `PAYLOAD_TOO_LARGE`, middleware `bulk-body-limit.middleware.ts`; other routes keep Nest's 100 KB parser).
+
+- **Items**: `create` = a document tree (`{ values?, components? }`, same allowlist and value rules as `POST /documents/:slug`, checked per item); `publish` = `{ documentId, expectedVersion }`; `unpublish` / `delete` = `{ documentId }`. Malformed publish/unpublish/delete items and repeated `documentId`s are 400 for the whole request.
+- **`atomic: true`**: one transaction. The first failing item aborts everything: the request fails with that item's status and error code, and `details: { index, details }`. Nothing is written.
+- **`atomic: false`**: always 200 with `{ atomic, succeeded, failed, results }`; `results[i]` is `{ index, status: 'ok', documentId, version? }` or `{ index, status: 'error', statusCode, errorCode, message, details? }`. Non-create items run in one transaction with a savepoint per item, so a failed item undoes only itself. Valid create items are inserted together.
+- **Per item rules** are those of T21/T22 (reused code: `DocumentsCommandService.prepareCreate`, `PublishService.publishIn/unpublishIn/removeIn`): stale `expectedVersion` is 409 `DOCUMENT_VERSION_CONFLICT { currentVersion }`; rows outside the action's row conditions are 404 `DOCUMENT_NOT_FOUND` (not 403); publish/unpublish on a `draftAndPublish: false` type is 400 `DOCUMENT_NOT_PUBLISHABLE` for the whole request.
+- **Batched inserts**: `ContentRepository.insertTrees` writes all roots in one INSERT and each component table level in one INSERT, all `RETURNING id`; the statement count does not grow with the item count.
+- **Bodies hold ids and versions only** (create: `{ documentId, version: 1 }`), never records. Publish/unpublish/delete tell the activity port after commit, per succeeded item.
+- Routing: `BulkController` is registered before `DocumentsController` so `bulk` is never read as a `:documentId`.
+
 ### Documents, presence (T26, `src/modules/documents`)
 
 `POST /documents/:slug/:documentId/presence` (SPEC D16), body `{ state?: 'viewing' | 'editing' }` (default `editing`, nothing else allowed). Needs `update` on the content type and the document's draft row inside the actor's `update` row conditions (else 404). Only account sessions: anonymous, reviewer and API token callers get 403. Heartbeat every 20 s; an entry expires 45 s after its last heartbeat (`PRESENCE_TTL_MS`). 200 returns everyone active on the document, each `{ accountId, displayName, state, lastSeenAt }` and nothing else (`accountId` is the account's public UUID, the `id` of `GET /auth/me`, never the internal numeric id; the caller is included, clients filter themselves out). In-memory store, one replica; capped at `PRESENCE_MAX_ENTRIES` (new editors get 429 at the cap). No audit event (not a content change).
@@ -582,23 +594,75 @@ component tree) with batched, parameterized Kysely queries. Format, rules
 and repository behaviour:
 [docs/modules/content-schema.md](../../docs/modules/content-schema.md).
 
+## GraphQL schema (D18)
+
+`src/modules/graphql/schema/schema.builder.ts` builds the GraphQL schema from
+the content definitions with a pure function (`buildGraphqlSchema`: no Nest,
+no database). The generated SDL is committed as `content/schema.graphql`
+(never hand-edit it): run `pnpm --filter @abyss/cms-api graphql:print-schema`
+after changing `content/schemas/*.json`; `-- --check` exits 1 when the file
+is stale. A name clash (two slugs, `<x>List` vs another item field, a type
+named like a shared one) fails the build of the schema and renames nothing.
+Design: [docs/modules/graphql.md](../../docs/modules/graphql.md).
+
+### GraphQL endpoint (GQ2, `src/modules/graphql`)
+
+`POST /api/v1/graphql`, queries only, JSON body `{ query, variables?,
+operationName? }` (non-JSON is 415, an array or a missing `query` is 400).
+Same callers as document reads (`DocumentAuthGuard`: JWT, API token, or no
+header = `public`; an invalid credential is 401 in the REST error shape) and
+the same anonymous throttle (120/min/IP, one request counts once). Root
+fields read through `DocumentsQueryService` unchanged, so masking, row
+conditions, drafts (`status: DRAFT` needs read + update) and `QueryGuard`
+behave as in REST. `page` 1..10000, `pageSize` 1..100, at most 3 distinct
+sort keys, filter count and value limits as REST; empty `sort` = newest
+`updatedAt` first. A content type the caller cannot read is reported exactly
+like an unknown field (400, no `data`). Errors after parsing are
+`{ errors: [{ message, path, extensions: { code, details?, requestId } }] }`
+with the REST `errorCode` values plus `GRAPHQL_PARSE_FAILED`,
+`GRAPHQL_VALIDATION_FAILED` and `GRAPHQL_LIMIT_EXCEEDED`; 400 before
+execution, 200 after.
+
+**Limits** (`GRAPHQL_LIMITS` in `graphql.constants.ts`):
+
+| Limit           | Value  | Over the limit                                                |
+| --------------- | ------ | ------------------------------------------------------------- |
+| Body size       | 32 KiB | 413 `PAYLOAD_TOO_LARGE`, GraphQL error shape, body not parsed |
+| Parser tokens   | 2000   | 400 `GRAPHQL_LIMIT_EXCEEDED`                                  |
+| Field depth     | 8      | 400 `GRAPHQL_LIMIT_EXCEEDED`                                  |
+| Root fields     | 5      | 400 `GRAPHQL_LIMIT_EXCEEDED` (aliases count)                  |
+| Selected fields | 500    | 400 `GRAPHQL_LIMIT_EXCEEDED` (after fragment expansion)       |
+
+The body cap is a middleware on the GraphQL path, mounted before Nest's JSON
+parser (`graphql-body-limit.middleware.ts`). The token, depth, root-field and
+field-node checks run before the access policy or the schema is loaded, so an
+over-limit query costs no database work. Each operation of a document is
+judged on its own. Dev introspection roots (`__schema`, `__type`) are not
+counted; production refuses introspection anyway.
+
+**Production** (`NODE_ENV=production`): introspection is refused for everyone
+(400 `GRAPHQL_VALIDATION_FAILED`) and "Did you mean" hints are removed from
+every message. No environment serves a playground; use the committed SDL
+(`content/schema.graphql`) or an external GraphQL client. No new env keys.
+
 ## Scripts
 
-| Script                           | What it does                                                                                |
-| -------------------------------- | ------------------------------------------------------------------------------------------- |
-| `build`                          | `tsc` to `dist/`                                                                            |
-| `test`                           | Unit (`src/**/*.spec.ts`) and integration (`test/integration`) tests                        |
-| `test:unit` / `test:integration` | One Jest project only                                                                       |
-| `lint`                           | Oxlint, then ESLint with typescript-eslint (type-aware)                                     |
-| `typecheck`                      | `tsc --noEmit` over `src` and `test`                                                        |
-| `content:generate`               | Build, then write the next content migration (`--dry-run`, `--name`, `--allow-destructive`) |
-| `content:migrate`                | Apply pending content migrations (needs a build and the `DB_*` connection)                  |
-| `db:generate`                    | Generate the Prisma client                                                                  |
-| `db:migrate`                     | Apply core Prisma migrations, then seed system roles + default permissions (needs a build)  |
-| `db:migrate:dev`                 | Development: create a core migration from schema changes                                    |
-| `db:seed`                        | Seed system roles + default permissions only (idempotent)                                   |
-| `owner:bootstrap`                | Create the single owner (`OWNER_EMAIL`, hidden password prompt or `--password-stdin`)       |
-| `owner:reset-2fa`                | Break-glass: turn 2FA off for one account and end its sessions (`--email`, `--yes`)         |
+| Script                           | What it does                                                                                 |
+| -------------------------------- | -------------------------------------------------------------------------------------------- |
+| `build`                          | `tsc` to `dist/`                                                                             |
+| `test`                           | Unit (`src/**/*.spec.ts`) and integration (`test/integration`) tests                         |
+| `test:unit` / `test:integration` | One Jest project only                                                                        |
+| `lint`                           | Oxlint, then ESLint with typescript-eslint (type-aware)                                      |
+| `typecheck`                      | `tsc --noEmit` over `src` and `test`                                                         |
+| `content:generate`               | Build, then write the next content migration (`--dry-run`, `--name`, `--allow-destructive`)  |
+| `graphql:print-schema`           | Build, then write `content/schema.graphql` from `content/schemas` (`--check` fails if stale) |
+| `content:migrate`                | Apply pending content migrations (needs a build and the `DB_*` connection)                   |
+| `db:generate`                    | Generate the Prisma client                                                                   |
+| `db:migrate`                     | Apply core Prisma migrations, then seed system roles + default permissions (needs a build)   |
+| `db:migrate:dev`                 | Development: create a core migration from schema changes                                     |
+| `db:seed`                        | Seed system roles + default permissions only (idempotent)                                    |
+| `owner:bootstrap`                | Create the single owner (`OWNER_EMAIL`, hidden password prompt or `--password-stdin`)        |
+| `owner:reset-2fa`                | Break-glass: turn 2FA off for one account and end its sessions (`--email`, `--yes`)          |
 
 Integration tests start Postgres 16 with Testcontainers, so Docker must be
 running. Jest runs with `--experimental-vm-modules` because the Prisma 7

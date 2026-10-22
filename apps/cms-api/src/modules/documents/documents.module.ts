@@ -6,6 +6,8 @@ import { AccessModule } from '../access/access.module';
 import { ContentEngineModule } from '../content-engine/content-engine.module';
 import { IdentityModule } from '../identity/identity.module';
 import { MediaModule } from '../media/media.module';
+import { BulkController } from './bulk.controller';
+import { BulkService } from './bulk.service';
 import { DocumentAuthGuard } from './document-auth.guard';
 import { DocumentsCommandService } from './documents.command.service';
 import { DocumentsController } from './documents.controller';
@@ -23,12 +25,14 @@ import { PublishService } from './publish.service';
     IdentityModule,
     MediaModule,
   ],
-  controllers: [DocumentsController],
+  // BulkController first: `documents/:slug/bulk/publish` must not match `:slug/:documentId/publish`.
+  controllers: [BulkController, DocumentsController],
   providers: [
     DocumentAuthGuard,
     DocumentsQueryService,
     DocumentsCommandService,
     PublishService,
+    BulkService,
     PresenceService,
   ],
   exports: [DocumentAuthGuard, DocumentsQueryService],

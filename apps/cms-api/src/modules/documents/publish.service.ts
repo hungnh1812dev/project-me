@@ -7,7 +7,7 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { sql, type SqlBool } from 'kysely';
+import { type Kysely, sql, type SqlBool, type Transaction } from 'kysely';
 
 import { PermissionAction } from '../../generated/prisma/client';
 import {
@@ -21,6 +21,7 @@ import { ContentDbProvider } from '../content-engine/content-database';
 import { CONTENT_DB_SCHEMA } from '../content-engine/content-engine.constants';
 import { ContentRegistryProvider } from '../content-engine/content-engine.module';
 import { ContentRepository } from '../content-engine/content.repository';
+import type { ContentDatabase } from '../content-engine/tree-loader';
 import type { RegisteredContentType } from '../content-engine/registry.service';
 import {
   DOCUMENT_ERROR_CODES,
@@ -32,6 +33,13 @@ import { cloneTree } from './tree-cloner';
 type RowFilter = ReturnType<
   Awaited<ReturnType<AccessPolicyService['policy']>>['evaluator']['rowFilter']
 >;
+
+/** Who may act on which type, and the rows the action's conditions reach. */
+export interface ActionScope {
+  type: RegisteredContentType;
+  filter: Extract<RowFilter, { allowed: true }>;
+  accountId: number;
+}
 
 /**
  * SPEC §9 publish, unpublish and delete (T22), all on the document's two
@@ -63,82 +71,87 @@ export class PublishService {
     documentId: string,
     expectedVersion: number,
   ): Promise<WrittenRef> {
-    const { type, filter, accountId } = await this.begin(
-      actor,
-      slug,
-      PermissionAction.publish,
-      true,
-    );
-    const repository = new ContentRepository(await this.registry.registry());
-    const table = type.root.plan.name;
-
-    const version = await this.content.db.transaction().execute(async (trx) => {
-      let lock = trx
-        .withSchema(CONTENT_DB_SCHEMA)
-        .selectFrom(table)
-        .select(['id', 'version', 'created_by'])
-        .where(sql<SqlBool>`${sql.ref('document_id')} = ${documentId}`)
-        .where(sql<SqlBool>`${sql.ref('published_at')} is null`);
-      if (filter.where !== null) lock = lock.where(filter.where);
-      const draft = await lock.forUpdate().executeTakeFirst();
-      if (draft === undefined) throw notFound();
-      const draftVersion = draft.version as number;
-      if (draftVersion !== expectedVersion) {
-        throw new ConflictException({
-          errorCode: DOCUMENT_ERROR_CODES.VERSION_CONFLICT,
-          message: DOCUMENT_ERROR_MESSAGES.PUBLISH_CONFLICT,
-          details: { currentVersion: draftVersion },
-        });
-      }
-
-      // The row about to be replaced must be in the actor's publish scope too.
-      const db = trx.withSchema(CONTENT_DB_SCHEMA);
-      const existing = await db
-        .selectFrom(table)
-        .select('id')
-        .where(sql<SqlBool>`${sql.ref('document_id')} = ${documentId}`)
-        .where(sql<SqlBool>`${sql.ref('published_at')} is not null`)
-        .forUpdate()
-        .executeTakeFirst();
-      if (existing !== undefined && filter.where !== null) {
-        const inScope = await db
-          .selectFrom(table)
-          .select('id')
-          .where(sql<SqlBool>`${sql.ref('id')} = ${existing.id}`)
-          .where(filter.where)
-          .executeTakeFirst();
-        if (inScope === undefined) throw notFound();
-      }
-
-      const [stored] = await repository.loadTrees(trx, slug, {
-        status: 'draft',
-        documentIds: [documentId],
-      });
-      if (stored === undefined) throw notFound();
-
-      await trx
-        .withSchema(CONTENT_DB_SCHEMA)
-        .deleteFrom(table)
-        .where(sql<SqlBool>`${sql.ref('document_id')} = ${documentId}`)
-        .where(sql<SqlBool>`${sql.ref('published_at')} is not null`)
-        .execute();
-      const publishedId = await repository.insertTree(trx, slug, {
-        ...cloneTree(stored),
-        documentId,
-        publishedAt: new Date(),
-        createdBy: stored.createdBy,
-      });
-      await trx
-        .withSchema(CONTENT_DB_SCHEMA)
-        .updateTable(table)
-        .set({ version: draftVersion, updated_by: accountId })
-        .where(sql<SqlBool>`${sql.ref('id')} = ${publishedId}`)
-        .execute();
-      return draftVersion;
-    });
-
+    const scope = await this.begin(actor, slug, PermissionAction.publish, true);
+    const version = await this.content.db
+      .transaction()
+      .execute((trx) =>
+        this.publishIn(trx, scope, slug, documentId, expectedVersion),
+      );
     await this.track(actor, 'publish', slug, documentId, version);
     return { documentId, version };
+  }
+
+  /** The publish steps inside the caller's transaction (also used per item by bulk, T34). */
+  async publishIn(
+    trx: Transaction<ContentDatabase>,
+    scope: ActionScope,
+    slug: string,
+    documentId: string,
+    expectedVersion: number,
+  ): Promise<number> {
+    const { type, filter, accountId } = scope;
+    const repository = new ContentRepository(await this.registry.registry());
+    const table = type.root.plan.name;
+    let lock = trx
+      .withSchema(CONTENT_DB_SCHEMA)
+      .selectFrom(table)
+      .select(['id', 'version', 'created_by'])
+      .where(sql<SqlBool>`${sql.ref('document_id')} = ${documentId}`)
+      .where(sql<SqlBool>`${sql.ref('published_at')} is null`);
+    if (filter.where !== null) lock = lock.where(filter.where);
+    const draft = await lock.forUpdate().executeTakeFirst();
+    if (draft === undefined) throw notFound();
+    const draftVersion = draft.version as number;
+    if (draftVersion !== expectedVersion) {
+      throw new ConflictException({
+        errorCode: DOCUMENT_ERROR_CODES.VERSION_CONFLICT,
+        message: DOCUMENT_ERROR_MESSAGES.PUBLISH_CONFLICT,
+        details: { currentVersion: draftVersion },
+      });
+    }
+
+    // The row about to be replaced must be in the actor's publish scope too.
+    const db = trx.withSchema(CONTENT_DB_SCHEMA);
+    const existing = await db
+      .selectFrom(table)
+      .select('id')
+      .where(sql<SqlBool>`${sql.ref('document_id')} = ${documentId}`)
+      .where(sql<SqlBool>`${sql.ref('published_at')} is not null`)
+      .forUpdate()
+      .executeTakeFirst();
+    if (existing !== undefined && filter.where !== null) {
+      const inScope = await db
+        .selectFrom(table)
+        .select('id')
+        .where(sql<SqlBool>`${sql.ref('id')} = ${existing.id}`)
+        .where(filter.where)
+        .executeTakeFirst();
+      if (inScope === undefined) throw notFound();
+    }
+
+    const [stored] = await repository.loadTrees(trx, slug, {
+      status: 'draft',
+      documentIds: [documentId],
+    });
+    if (stored === undefined) throw notFound();
+
+    await db
+      .deleteFrom(table)
+      .where(sql<SqlBool>`${sql.ref('document_id')} = ${documentId}`)
+      .where(sql<SqlBool>`${sql.ref('published_at')} is not null`)
+      .execute();
+    const publishedId = await repository.insertTree(trx, slug, {
+      ...cloneTree(stored),
+      documentId,
+      publishedAt: new Date(),
+      createdBy: stored.createdBy,
+    });
+    await db
+      .updateTable(table)
+      .set({ version: draftVersion, updated_by: accountId })
+      .where(sql<SqlBool>`${sql.ref('id')} = ${publishedId}`)
+      .execute();
+    return draftVersion;
   }
 
   async unpublish(
@@ -146,21 +159,30 @@ export class PublishService {
     slug: string,
     documentId: string,
   ): Promise<void> {
-    const { type, filter } = await this.begin(
+    const scope = await this.begin(
       actor,
       slug,
       PermissionAction.unpublish,
       true,
     );
-    let remove = this.content.db
+    await this.unpublishIn(this.content.db, scope, documentId);
+    await this.track(actor, 'unpublish', slug, documentId);
+  }
+
+  /** Deletes the published row on `db` (a transaction for bulk, T34); 404 if out of scope. */
+  async unpublishIn(
+    db: Kysely<ContentDatabase>,
+    scope: ActionScope,
+    documentId: string,
+  ): Promise<void> {
+    let remove = db
       .withSchema(CONTENT_DB_SCHEMA)
-      .deleteFrom(type.root.plan.name)
+      .deleteFrom(scope.type.root.plan.name)
       .where(sql<SqlBool>`${sql.ref('document_id')} = ${documentId}`)
       .where(sql<SqlBool>`${sql.ref('published_at')} is not null`);
-    if (filter.where !== null) remove = remove.where(filter.where);
+    if (scope.filter.where !== null) remove = remove.where(scope.filter.where);
     const removed = await remove.returning('id').executeTakeFirst();
     if (removed === undefined) throw notFound();
-    await this.track(actor, 'unpublish', slug, documentId);
   }
 
   async remove(
@@ -168,51 +190,52 @@ export class PublishService {
     slug: string,
     documentId: string,
   ): Promise<void> {
-    const { type, filter } = await this.begin(
-      actor,
-      slug,
-      PermissionAction.delete,
-      false,
-    );
-    const table = type.root.plan.name;
-    await this.content.db.transaction().execute(async (trx) => {
-      const db = trx.withSchema(CONTENT_DB_SCHEMA);
-      const rows = await db
-        .selectFrom(table)
-        .select('id')
-        .where(sql<SqlBool>`${sql.ref('document_id')} = ${documentId}`)
-        .forUpdate()
-        .execute();
-      if (rows.length === 0) throw notFound();
-      if (filter.where !== null) {
-        const reachable = await db
-          .selectFrom(table)
-          .select('id')
-          .where(sql<SqlBool>`${sql.ref('document_id')} = ${documentId}`)
-          .where(filter.where)
-          .execute();
-        // Both rows or none: a delete never leaves half a document behind.
-        if (reachable.length !== rows.length) throw notFound();
-      }
-      await db
-        .deleteFrom(table)
-        .where(sql<SqlBool>`${sql.ref('document_id')} = ${documentId}`)
-        .execute();
-    });
+    const scope = await this.begin(actor, slug, PermissionAction.delete, false);
+    await this.content.db
+      .transaction()
+      .execute((trx) => this.removeIn(trx, scope, documentId));
     await this.track(actor, 'delete', slug, documentId);
   }
 
+  /** Deletes both rows inside the caller's transaction (also per item for bulk, T34). */
+  async removeIn(
+    trx: Transaction<ContentDatabase>,
+    scope: ActionScope,
+    documentId: string,
+  ): Promise<void> {
+    const { type, filter } = scope;
+    const table = type.root.plan.name;
+    const db = trx.withSchema(CONTENT_DB_SCHEMA);
+    const rows = await db
+      .selectFrom(table)
+      .select('id')
+      .where(sql<SqlBool>`${sql.ref('document_id')} = ${documentId}`)
+      .forUpdate()
+      .execute();
+    if (rows.length === 0) throw notFound();
+    if (filter.where !== null) {
+      const reachable = await db
+        .selectFrom(table)
+        .select('id')
+        .where(sql<SqlBool>`${sql.ref('document_id')} = ${documentId}`)
+        .where(filter.where)
+        .execute();
+      // Both rows or none: a delete never leaves half a document behind.
+      if (reachable.length !== rows.length) throw notFound();
+    }
+    await db
+      .deleteFrom(table)
+      .where(sql<SqlBool>`${sql.ref('document_id')} = ${documentId}`)
+      .execute();
+  }
+
   /** Who may act and on which type; the row filter narrows the rows. */
-  private async begin(
+  async begin(
     actor: ActorContext,
     slug: string,
     action: PermissionAction,
     needsDraftAndPublish: boolean,
-  ): Promise<{
-    type: RegisteredContentType;
-    filter: Extract<RowFilter, { allowed: true }>;
-    accountId: number;
-  }> {
+  ): Promise<ActionScope> {
     if (actor.kind === 'anonymous' || actor.kind === 'reviewer') {
       throw new ForbiddenException();
     }
@@ -231,7 +254,7 @@ export class PublishService {
   }
 
   /** Tell the activity adapter after commit; its failure never fails the request. */
-  private async track(
+  async track(
     actor: ActorContext,
     action: ContentActivityEvent['action'],
     subject: string,

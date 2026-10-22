@@ -67,6 +67,15 @@ export const API_ROUTES = {
     PUBLISH: ':slug/:documentId/publish',
     UNPUBLISH: ':slug/:documentId/unpublish',
     PRESENCE: ':slug/:documentId/presence',
+    /**
+     * SPEC §9 bulk (T34): `BulkController` lives under `documents/:slug/bulk`
+     * and is registered before `DocumentsController` (`bulk` is no document id).
+     */
+    BULK_PREFIX: ':slug/bulk',
+    BULK_CREATE: 'create',
+    BULK_PUBLISH: 'publish',
+    BULK_UNPUBLISH: 'unpublish',
+    BULK_DELETE: 'delete',
   },
   /** SPEC D18 GraphQL read API: one POST endpoint, queries only. */
   GRAPHQL: 'graphql',

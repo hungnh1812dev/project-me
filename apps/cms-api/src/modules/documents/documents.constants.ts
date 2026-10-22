@@ -10,6 +10,10 @@ export const DOCUMENT_ERROR_CODES = {
   INVALID: 'DOCUMENT_INVALID',
   /** Publish or unpublish on a content type without draft and publish. */
   NOT_PUBLISHABLE: 'DOCUMENT_NOT_PUBLISHABLE',
+  /** A bulk request on a single type (SPEC §9: bulk is for collections). */
+  BULK_NOT_COLLECTION: 'DOCUMENT_BULK_NOT_COLLECTION',
+  /** A bulk request over the item, component row or body limits. */
+  BULK_LIMIT: 'DOCUMENT_BULK_LIMIT',
 } as const;
 
 export const DOCUMENT_ERROR_MESSAGES = {
@@ -23,6 +27,8 @@ export const DOCUMENT_ERROR_MESSAGES = {
   REQUIRED: 'is required',
   INVALID_TYPE: 'does not match the type of the field',
   DRAFTS_FORBIDDEN: 'You may not read drafts of this content type.',
+  BULK_NOT_COLLECTION: 'Bulk requests are only available for collections.',
+  BULK_DUPLICATE_DOCUMENT: 'The same document appears twice in the request.',
   UNSUPPORTED_FIELD:
     'The field cannot be used in a filter or sort: only top-level scalar fields and system fields can.',
   UNSUPPORTED_OPERATOR: 'The operator cannot be used with this field.',
@@ -148,3 +154,36 @@ export type PresenceState = (typeof PRESENCE_STATES)[number];
 export const PRESENCE_MESSAGES = {
   STORE_FULL: 'Too many active editors, try again later.',
 } as const;
+
+/** SPEC §6 bulk limits (T34). */
+export const BULK_LIMITS = {
+  MAX_ITEMS: 50,
+  MAX_COMPONENT_ROWS_PER_ITEM: 200,
+  MAX_BODY_BYTES: 1024 * 1024,
+} as const;
+
+export const BULK_MESSAGES = {
+  TOO_MANY_ITEMS: `A bulk request holds at most ${BULK_LIMITS.MAX_ITEMS} items.`,
+  TOO_MANY_COMPONENT_ROWS: `An item holds at most ${BULK_LIMITS.MAX_COMPONENT_ROWS_PER_ITEM} component rows.`,
+  BODY_TOO_LARGE: `The request body is larger than ${BULK_LIMITS.MAX_BODY_BYTES} bytes.`,
+  INVALID_JSON: 'The request body is not valid JSON.',
+} as const;
+
+/** Body keys of `POST /documents/:slug/bulk/*`. */
+export const BULK_BODY_KEYS = {
+  ATOMIC: 'atomic',
+  ITEMS: 'items',
+  DOCUMENT_ID: 'documentId',
+} as const;
+
+/** Per-item outcome in a bulk response. */
+export const BULK_ITEM_STATUS = { OK: 'ok', ERROR: 'error' } as const;
+
+/** The bulk operations, one route each. */
+export const BULK_OPERATIONS = [
+  'create',
+  'publish',
+  'unpublish',
+  'delete',
+] as const;
+export type BulkOperation = (typeof BULK_OPERATIONS)[number];

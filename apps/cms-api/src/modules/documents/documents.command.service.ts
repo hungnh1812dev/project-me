@@ -67,7 +67,7 @@ type Db = Kysely<ContentDatabase>;
 type Predicate = Expression<SqlBool>;
 
 /** A write the actor has been checked for, ready for the transaction. */
-interface PreparedWrite {
+export interface PreparedWrite {
   type: RegisteredContentType;
   /** As sent: media values are file uuids (used for the 409 overlay). */
   tree: TreeInput;
@@ -308,6 +308,15 @@ export class DocumentsCommandService {
     const record = new RecordSerializer(type).serialize(document, access);
     await this.media.embed(type.root, [record]);
     return record;
+  }
+
+  /** One bulk-create item (T34): the same checks as `create`, no SQL write. */
+  prepareCreate(
+    actor: ActorContext,
+    slug: string,
+    body: unknown,
+  ): Promise<PreparedWrite> {
+    return this.prepare(actor, slug, body, PermissionAction.create, 'create');
   }
 
   /** Body -> the tree the repository may write; all 400s happen here. */
