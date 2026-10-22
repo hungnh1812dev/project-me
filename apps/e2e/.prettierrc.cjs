@@ -1,1 +1,1 @@
-module.exports = require('@abyss/prettier-config');
+module.exports = require('@abyss/base-config/prettier').default;

@@ -1,14 +1,12 @@
-// @ts-check
+import type { Config } from 'prettier';
 
 /**
  * Shared Prettier options for every Abyss app and package.
  * Values follow the code style in SPEC.md §10 (single quotes, semicolons,
  * trailing commas); everything else is the Prettier default, stated explicitly
  * so a Prettier upgrade cannot silently change the output.
- *
- * @type {import('prettier').Config}
  */
-const config = {
+const config: Config = {
   printWidth: 80,
   tabWidth: 2,
   useTabs: false,
@@ -23,4 +21,4 @@ const config = {
   endOfLine: 'lf',
 };
 
-module.exports = config;
+export default config;

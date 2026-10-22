@@ -11,8 +11,7 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "devDependencies": {
-    "@abyss/prettier-config": "workspace:*",
-    "@eslint/js": "10.0.1",
+    "@abyss/base-config": "workspace:*",
     "@playwright/test": "1.64.0",
     "@types/node": "24.19.2",
     "eslint": "10.13.0",
@@ -20,7 +19,6 @@
     "otplib": "13.5.0",
     "oxlint": "1.88.0",
     "prettier": "3.9.10",
-    "typescript": "6.0.3",
-    "typescript-eslint": "8.71.2"
+    "typescript": "6.0.3"
   }
 }

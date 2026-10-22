@@ -8,9 +8,9 @@ importers:
 
   .:
     devDependencies:
-      '@abyss/prettier-config':
+      '@abyss/base-config':
         specifier: workspace:*
-        version: link:packages/prettier-config
+        version: link:packages/base-config
       prettier:
         specifier: 3.9.10
         version: 3.9.10
@@ -60,9 +60,9 @@ importers:
         specifier: 4.6.7
         version: 4.6.7
     devDependencies:
-      '@abyss/prettier-config':
+      '@abyss/base-config':
         specifier: workspace:*
-        version: link:../../packages/prettier-config
+        version: link:../../packages/base-config
       '@eslint/js':
         specifier: 10.0.1
         version: 10.0.1(eslint@10.13.0(jiti@2.7.0))
@@ -202,12 +202,9 @@ importers:
         specifier: 4.6.7
         version: 4.6.7
     devDependencies:
-      '@abyss/prettier-config':
+      '@abyss/base-config':
         specifier: workspace:*
-        version: link:../../packages/prettier-config
-      '@eslint/js':
-        specifier: 10.0.1
-        version: 10.0.1(eslint@10.13.0(jiti@2.7.0))
+        version: link:../../packages/base-config
       '@nestjs/testing':
         specifier: 11.2.7
         version: 11.2.7(@nestjs/common@11.2.7(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.2.7)(@nestjs/platform-express@11.2.7)
@@ -271,18 +268,12 @@ importers:
       typescript:
         specifier: 6.0.3
         version: 6.0.3
-      typescript-eslint:
-        specifier: 8.71.2
-        version: 8.71.2(eslint@10.13.0(jiti@2.7.0))(typescript@6.0.3)
 
   apps/e2e:
     devDependencies:
-      '@abyss/prettier-config':
+      '@abyss/base-config':
         specifier: workspace:*
-        version: link:../../packages/prettier-config
-      '@eslint/js':
-        specifier: 10.0.1
-        version: 10.0.1(eslint@10.13.0(jiti@2.7.0))
+        version: link:../../packages/base-config
       '@playwright/test':
         specifier: 1.64.0
         version: 1.64.0
@@ -307,9 +298,6 @@ importers:
       typescript:
         specifier: 6.0.3
         version: 6.0.3
-      typescript-eslint:
-        specifier: 8.71.2
-        version: 8.71.2(eslint@10.13.0(jiti@2.7.0))(typescript@6.0.3)
 
   apps/web:
     dependencies:
@@ -347,9 +335,9 @@ importers:
         specifier: 0.0.1
         version: 0.0.1
     devDependencies:
-      '@abyss/prettier-config':
+      '@abyss/base-config':
         specifier: workspace:*
-        version: link:../../packages/prettier-config
+        version: link:../../packages/base-config
       '@eslint/js':
         specifier: 10.0.1
         version: 10.0.1(eslint@10.13.0(jiti@2.7.0))
@@ -411,6 +399,34 @@ importers:
         specifier: 5.0.5
         version: 5.0.5(@types/node@24.19.2)(jsdom@30.1.3(@noble/hashes@2.4.0))(vite@8.3.4(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1))
 
+  packages/base-config:
+    dependencies:
+      '@eslint/js':
+        specifier: 10.0.1
+        version: 10.0.1(eslint@10.13.0(jiti@2.7.0))
+      globals:
+        specifier: 17.13.0
+        version: 17.13.0
+      typescript-eslint:
+        specifier: 8.71.2
+        version: 8.71.2(eslint@10.13.0(jiti@2.7.0))(typescript@6.0.3)
+    devDependencies:
+      '@types/node':
+        specifier: 24.19.2
+        version: 24.19.2
+      eslint:
+        specifier: 10.13.0
+        version: 10.13.0(jiti@2.7.0)
+      oxlint:
+        specifier: 1.88.0
+        version: 1.88.0
+      prettier:
+        specifier: 3.9.10
+        version: 3.9.10
+      typescript:
+        specifier: 6.0.3
+        version: 6.0.3
+
   packages/form-commons:
     dependencies:
       '@tiptap/pm':
@@ -432,9 +448,9 @@ importers:
         specifier: 1.8.1
         version: 1.8.1(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
     devDependencies:
-      '@abyss/prettier-config':
+      '@abyss/base-config':
         specifier: workspace:*
-        version: link:../prettier-config
+        version: link:../base-config
       '@eslint/js':
         specifier: 10.0.1
         version: 10.0.1(eslint@10.13.0(jiti@2.7.0))
@@ -513,30 +529,6 @@ importers:
       zod:
         specifier: 4.6.7
         version: 4.6.7
-
-  packages/prettier-config:
-    devDependencies:
-      '@eslint/js':
-        specifier: 10.0.1
-        version: 10.0.1(eslint@10.13.0(jiti@2.7.0))
-      '@types/node':
-        specifier: 24.19.2
-        version: 24.19.2
-      eslint:
-        specifier: 10.13.0
-        version: 10.13.0(jiti@2.7.0)
-      globals:
-        specifier: 17.13.0
-        version: 17.13.0
-      oxlint:
-        specifier: 1.88.0
-        version: 1.88.0
-      prettier:
-        specifier: 3.9.10
-        version: 3.9.10
-      typescript:
-        specifier: 6.0.3
-        version: 6.0.3
 
 packages:
 

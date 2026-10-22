@@ -3,11 +3,12 @@
   "compilerOptions": {
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
-    "allowJs": true,
-    "checkJs": true,
+    "allowImportingTsExtensions": true,
+    "rewriteRelativeImportExtensions": true,
+    "erasableSyntaxOnly": true,
     "noEmit": true,
     "declaration": false,
     "types": ["node"]
   },
-  "include": ["*.cjs", "test/**/*.cjs", "*.mjs"]
+  "include": ["src/**/*.ts", "test/**/*.ts", "*.config.ts"]
 }

@@ -112,7 +112,7 @@ abyss/
 ├── abyss.code-workspace          # multi-root: one folder per app/package
 ├── pnpm-workspace.yaml · turbo.json · tsconfig.base.json (compilerOptions only)
 ├── packages/
-│   ├── prettier-config/          # @abyss/prettier-config
+│   ├── base-config/              # @abyss/base-config: exports prettier, eslint, oxlint
 │   └── form-commons/             # @abyss/form-commons, exports ./dist only
 │       └── src/{components/ui, components/forms, constants}
 ├── apps/
@@ -334,7 +334,7 @@ export class DocumentsController {
 - No literals for routes, limits, headers, cookie names or URLs. They live in `common/constants/*.constants.ts` or in config (project `code-standards` skill).
 - Services take an explicit `ActorContext`. Policy checks live in `access`, never inline `role === 'x'`.
 - DTOs are validated with Zod (`nestjs-zod`). One schema per DTO, and the shared schema types are exported for the frontends.
-- Prettier from `@abyss/prettier-config`. ESLint + Oxlint per project.
+- Prettier, ESLint and Oxlint from `@abyss/base-config` (`/prettier`, `/eslint`, `/oxlint`): the base holds the shared rules; each project extends it locally with its own plugins and rules (React, Next, Nest, Playwright).
 
 ---
 

@@ -28,7 +28,7 @@
     "zod": "4.6.7"
   },
   "devDependencies": {
-    "@abyss/prettier-config": "workspace:*",
+    "@abyss/base-config": "workspace:*",
     "@eslint/js": "10.0.1",
     "@tailwindcss/vite": "4.3.3",
     "@testing-library/jest-dom": "7.0.1",

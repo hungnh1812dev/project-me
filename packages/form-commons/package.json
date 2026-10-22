@@ -49,7 +49,7 @@
     "react-hook-form": "^7.55.0"
   },
   "devDependencies": {
-    "@abyss/prettier-config": "workspace:*",
+    "@abyss/base-config": "workspace:*",
     "@eslint/js": "10.0.1",
     "@hookform/resolvers": "5.9.2",
     "@tailwindcss/cli": "4.3.3",
