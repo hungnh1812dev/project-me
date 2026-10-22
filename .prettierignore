@@ -22,3 +22,7 @@ apps/cms-api/content/schema.graphql
 
 # Template reference only
 .github_template/
+
+# Playwright output (apps/e2e), gitignored
+apps/e2e/playwright-report/
+apps/e2e/test-results/
