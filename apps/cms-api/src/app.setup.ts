@@ -10,6 +10,7 @@ import {
   EXPRESS_SETTINGS,
 } from './common/constants/http.constants';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
+import { securityHeadersMiddleware } from './common/middleware/security-headers.middleware';
 import { requestIdMiddleware } from './common/middleware/request-id.middleware';
 import { type IAppConfig } from './config/app-config';
 import { bulkBodyLimit } from './modules/documents/bulk-body-limit.middleware';
@@ -27,6 +28,10 @@ export function configureApp(
   app.set(EXPRESS_SETTINGS.STRICT_ROUTING, false);
   // D7: trust exactly N proxy hops, never `true`.
   app.set(EXPRESS_SETTINGS.TRUST_PROXY, config.http.trustProxyHops);
+  // D17: no framework fingerprint on any response.
+  app.set(EXPRESS_SETTINGS.X_POWERED_BY, false);
+  // D17: first in the chain, so parser errors (413/415) and CORS preflights carry it too.
+  app.use(securityHeadersMiddleware);
   app.use(requestIdMiddleware);
   // Populates req.cookies; only the auth refresh/logout routes read it (D14).
   app.use(cookieParser());
