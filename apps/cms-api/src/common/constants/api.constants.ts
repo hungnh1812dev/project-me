@@ -68,6 +68,8 @@ export const API_ROUTES = {
     UNPUBLISH: ':slug/:documentId/unpublish',
     PRESENCE: ':slug/:documentId/presence',
   },
+  /** SPEC D18 GraphQL read API: one POST endpoint, queries only. */
+  GRAPHQL: 'graphql',
   /** SPEC §9 media (T27 upload + list, T28 delete). */
   MEDIA: {
     ROOT: 'media',

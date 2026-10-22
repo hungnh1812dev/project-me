@@ -1,7 +1,7 @@
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import cookieParser from 'cookie-parser';
 
-import { API_PREFIX } from './common/constants/api.constants';
+import { API_PREFIX, API_ROUTES } from './common/constants/api.constants';
 import {
   CORS_ALLOWED_HEADERS,
   CORS_ALLOWED_METHODS,
@@ -12,6 +12,7 @@ import {
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { requestIdMiddleware } from './common/middleware/request-id.middleware';
 import { type IAppConfig } from './config/app-config';
+import { graphqlBodyLimit } from './modules/graphql/graphql-body-limit.middleware';
 
 /**
  * Pipeline shared by `main.ts` and the integration tests, so tests run
@@ -28,6 +29,8 @@ export function configureApp(
   app.use(requestIdMiddleware);
   // Populates req.cookies; only the auth refresh/logout routes read it (D14).
   app.use(cookieParser());
+  // D18: the GraphQL body cap (32 KiB) applies before Nest's JSON parser.
+  app.use(`/${API_PREFIX}/${API_ROUTES.GRAPHQL}`, graphqlBodyLimit);
   // D14: only the configured admin origin, never a wildcard or a reflected origin.
   if (config.cors.allowedOrigins.length > 0) {
     app.enableCors({

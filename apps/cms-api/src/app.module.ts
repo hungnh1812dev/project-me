@@ -6,6 +6,7 @@ import { ConfigModule } from './config/config.module';
 import { AccessManagementModule } from './modules/access/access-management.module';
 import { ContentTypesModule } from './modules/content-types/content-types.module';
 import { DocumentsModule } from './modules/documents/documents.module';
+import { GraphqlModule } from './modules/graphql/graphql.module';
 import { HealthModule } from './modules/health/health.module';
 import { IdentityModule } from './modules/identity/identity.module';
 import { MediaModule } from './modules/media/media.module';
@@ -23,6 +24,7 @@ export class AppModule {
         AccessManagementModule,
         ContentTypesModule,
         DocumentsModule,
+        GraphqlModule,
         MediaModule,
       ],
     };
