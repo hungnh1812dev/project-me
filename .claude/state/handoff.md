@@ -19,6 +19,7 @@ Updated: 2026-10-22 after T32 (trimmed to open work; history in archive/handoff-
 - F1 Prettier ignore for e2e output - awaiting commit; next: user commits .prettierignore.
 - OS3 Smoke owner via setup route + docs - awaiting checks/commit; next: qc-cli.
 - OS1 Owner setup API - awaiting checks/commit (Risk high; security-qc before commit); next: qc-cli, security-qc, then OS2 and OS3. Notes: displayName must be omitted (not '') when blank (same rules as the CLI); CLI audit row is a system actor with targetId; 404 message is `Cannot POST <url>` to match an unknown route.
+- OS2 Admin owner setup page + login notice - awaiting checks (Risk high); next: qc-browser (in OS4), security-qc. Provisional: the login link-button is `secondary` (not `primary`, ui-direction allows one primary per view; spec says primary); a failed status call on /setup shows a warning with retry.
 - Phase 5 (Media): checkpoint still pending user review.
 - Next: Phase 6 phase checks (T38 done); Phase 5 checkpoint still pending.
 
@@ -109,3 +110,4 @@ Updated: 2026-10-22 after T32 (trimmed to open work; history in archive/handoff-
 - Owner creation on k3s (user, 2026-10-22): the user rejects `kubectl exec` and the one-shot Job. Chosen: a one-time setup page (like Strapi), open only while no owner exists, guarded by a setup token from a k8s secret. This reverses Q2 (invite-only) and success criterion 1 ("no HTTP route creates an owner"). Needs a spec change (planner DESIGN), then a task, then a security-qc review (high risk: identity module). Keep owner:bootstrap CLI as a fallback unless the user says otherwise.
 - Owner setup answers (user, 2026-10-22): Q-OS1 login page after setup (no direct sign-in). Q-OS2 status route needs no token. Q-OS3 no completed marker (setup closed by owner row + removing token). Q-OS4 smoke creates owner via the setup route. ADR 0005 accepted.
 - OS1 security answers (user, 2026-10-22): closed response keeps the same body as an unknown route; headers may differ (no-store, throttle 429 stay). Add a 100-character cap on displayName in the shared rule (setup route and CLI).
+- OS2 answers (user, 2026-10-23): the login 'Set up the owner account' link stays secondary (one primary per view; this overrides the spec's primary). On status-call failure the setup page shows a warning with Try again and no form.

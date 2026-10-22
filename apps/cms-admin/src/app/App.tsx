@@ -9,6 +9,7 @@ import { LoginPage } from '../features/auth/LoginPage';
 import { CollectionListPage } from '../features/content/CollectionListPage';
 import { DocumentEditPage } from '../features/content/DocumentEditPage';
 import { ProtectedRoute } from '../features/auth/ProtectedRoute';
+import { OwnerSetupPage } from '../features/auth/OwnerSetupPage';
 import { ResetPasswordPage } from '../features/auth/ResetPasswordPage';
 import { SetPasswordPage } from '../features/auth/SetPasswordPage';
 import { MediaLibraryPage } from '../features/media/MediaLibraryPage';
@@ -21,6 +22,7 @@ export function App() {
   return (
     <Routes>
       <Route path={APP_ROUTES.LOGIN} element={<LoginPage />} />
+      <Route path={APP_ROUTES.SETUP} element={<OwnerSetupPage />} />
       <Route path={APP_ROUTES.RESET_PASSWORD} element={<ResetPasswordPage />} />
       <Route path={APP_ROUTES.SET_PASSWORD} element={<SetPasswordPage />} />
       <Route element={<ProtectedRoute />}>

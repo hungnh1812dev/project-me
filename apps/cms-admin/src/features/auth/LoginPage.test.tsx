@@ -152,4 +152,48 @@ describe('LoginPage', () => {
       }),
     ).toBeInTheDocument();
   });
+
+  describe('owner setup prompt', () => {
+    const SETUP_STATUS = `GET ${API_ENDPOINTS.SETUP.STATUS}`;
+
+    async function openLoginWithStatus(statusReply: () => FakeReply) {
+      const { services } = createTestServices({
+        [`POST ${REFRESH}`]: () => ({ status: 401 }),
+        [SETUP_STATUS]: statusReply,
+      });
+      await services.session.restore();
+      renderApp(services, APP_ROUTES.LOGIN);
+    }
+
+    it('offers the owner setup while it is open', async () => {
+      await openLoginWithStatus(() => ({ status: 200, data: { open: true } }));
+      expect(
+        await screen.findByText(COPY.login.setupPrompt.message),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByRole('link', { name: COPY.login.setupPrompt.action }),
+      ).toHaveAttribute('href', APP_ROUTES.SETUP);
+    });
+
+    it('shows nothing extra when the setup is closed', async () => {
+      await openLoginWithStatus(() => ({ status: 200, data: { open: false } }));
+      await waitFor(() => {
+        expect(
+          screen.queryByText(COPY.login.setupPrompt.message),
+        ).not.toBeInTheDocument();
+      });
+    });
+
+    it('shows nothing extra when the status call fails', async () => {
+      await openLoginWithStatus(() => ({ status: 500 }));
+      await waitFor(() => {
+        expect(
+          screen.queryByText(COPY.login.setupPrompt.message),
+        ).not.toBeInTheDocument();
+      });
+      expect(
+        screen.getByRole('heading', { level: 1, name: COPY.login.title }),
+      ).toBeInTheDocument();
+    });
+  });
 });

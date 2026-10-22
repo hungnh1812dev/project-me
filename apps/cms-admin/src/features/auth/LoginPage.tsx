@@ -12,13 +12,14 @@ import { APP_ROUTES } from '../../config/routes';
 import type { TwoFactorChallenge } from './auth.api';
 import { selectEndNotice, selectSessionStatus } from './auth.slice';
 import { AuthPageLayout } from './AuthPageLayout';
-import { FormAlert } from './FormAlert';
+import { FormAlert, type FormAlertTone } from './FormAlert';
 import { type LoginError, toLoginError } from './login-error';
-import { type LoginNotice, loginNoticeOf } from './login-notice';
+import { type LoginNotice, loginEmailOf, loginNoticeOf } from './login-notice';
 import type { LoginLocationState } from './ProtectedRoute';
 import { useSession } from './session-context';
 import { SessionLoading } from './SessionLoading';
 import { TwoFactorModal } from './TwoFactorModal';
+import { useSetupStatus } from './use-setup-status';
 
 const loginSchema = z.object({
   email: z
@@ -42,6 +43,16 @@ const NOTICE_COPY: Record<LoginNotice, string> = {
   'password-reset': COPY.login.notices.passwordReset,
   'password-set': COPY.login.notices.passwordSet,
   'password-changed': COPY.login.notices.passwordChanged,
+  'owner-created': COPY.login.notices.ownerCreated,
+  'setup-complete': COPY.login.notices.setupComplete,
+};
+
+const NOTICE_TONE: Record<LoginNotice, FormAlertTone> = {
+  'password-reset': 'success',
+  'password-set': 'success',
+  'password-changed': 'success',
+  'owner-created': 'success',
+  'setup-complete': 'info',
 };
 
 /** Only same-app paths, so router state can never redirect off-site. */
@@ -59,13 +70,15 @@ export function LoginPage() {
   const endNotice = useAppSelector(selectEndNotice);
   const location = useLocation();
   const session = useSession();
+  // A failed status call shows nothing extra: setup is never the default.
+  const isSetupOpen = useSetupStatus().data?.open === true;
   const [error, setError] = useState<LoginError | null>(null);
   const [challenge, setChallenge] = useState<TwoFactorChallenge | null>(null);
   const [challengeExpired, setChallengeExpired] = useState(false);
 
   const form = useForm<LoginValues>({
     resolver: zodResolver(loginSchema),
-    defaultValues: { email: '', password: '' },
+    defaultValues: { email: loginEmailOf(location.state), password: '' },
     mode: 'onTouched',
   });
 
@@ -121,6 +134,16 @@ export function LoginPage() {
       <p className="mt-2 text-sm text-muted-foreground">
         {COPY.login.description}
       </p>
+      {isSetupOpen ? (
+        <div className="mt-6 grid gap-3">
+          <FormAlert tone="info">{COPY.login.setupPrompt.message}</FormAlert>
+          <div>
+            <Button asChild variant="secondary">
+              <Link to={APP_ROUTES.SETUP}>{COPY.login.setupPrompt.action}</Link>
+            </Button>
+          </div>
+        </div>
+      ) : null}
       <FormProvider {...form}>
         <form
           noValidate
@@ -128,7 +151,9 @@ export function LoginPage() {
           className="mt-6 grid gap-4 rounded-md border border-border bg-card p-5"
         >
           {notice !== undefined ? (
-            <FormAlert tone="success">{NOTICE_COPY[notice]}</FormAlert>
+            <FormAlert tone={NOTICE_TONE[notice]}>
+              {NOTICE_COPY[notice]}
+            </FormAlert>
           ) : null}
           {challengeExpired ? (
             <FormAlert tone="info">{COPY.login.twoFactor.expired}</FormAlert>

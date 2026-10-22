@@ -71,3 +71,42 @@ Proposed commit: |
   - docs
 Deletions needing approval: none
 Fix log:
+
+## OS2 Admin owner setup page + login notice
+Status: ready-for-checks
+What was built: Public `/setup` page (OwnerSetupPage) that redirects to `/login` when `GET /setup/status` is closed, and creates the owner through `POST /setup/owner`; error mapping per status (401 token field, 400 field issues, 409 email, 404 to login with notice, 429/other alert). Login page shows an info notice + "Set up the owner account" link while the status is open, and accepts two new notices (owner created with email prefilled; setup already complete). New `setup.api.ts` (public, `skipAuthRefresh`), context provider, `useSetupStatus` hook (key `['setup','status']`).
+Changed files:
+- apps/cms-admin/src/features/auth/{OwnerSetupPage.tsx,setup.api.ts,setup-api-context.tsx,use-setup-status.ts,setup-error.ts} - new page, API, status hook, error mapping
+- apps/cms-admin/src/features/auth/{LoginPage.tsx,login-notice.ts} - setup prompt, two notices, email prefill from router state
+- apps/cms-admin/src/features/access/access-error.ts - exports `apiIssuesOf` (additive)
+- apps/cms-admin/src/{app/App.tsx,app/AppProviders.tsx,app/app-services.ts} - route and provider wiring
+- apps/cms-admin/src/config/{routes,endpoints,http.constants,auth.constants,copy.constants}.ts - SETUP route/endpoints, OWNER_EMAIL_TAKEN, limits, copy
+- apps/cms-admin/src/features/auth/{OwnerSetupPage.test.tsx,setup-error.test.ts,LoginPage.test.tsx} - tests
+- apps/cms-admin/README.md - `/setup` documented
+Behaviour to verify:
+- Fresh DB, token set: `/login` shows "This console has no owner yet." and the "Set up the owner account" link to `/setup`; the sign-in form still works
+- `/setup` when an owner exists: redirects to `/login` (no notice, no setup prompt)
+- Wrong token: error "This setup token is not valid." on the token field, other fields kept
+- Short/invalid values: inline errors; repeat password mismatch blocks submit with no request
+- Valid submit: lands on `/login` with "Owner account created. Sign in, then turn on two-factor in Security settings." and the email prefilled; the owner signs in; `/setup` then redirects to `/login`
+- Setup closed while the form is open (owner created elsewhere): submit goes to `/login` with "Setup is already complete. Sign in."
+- Token is not in the URL, localStorage, sessionStorage; token and passwords are password-type fields; network tab shows no `repeatPassword`; no console errors or CSP violations
+- Status call failing on `/setup`: warning + "Try again"; on `/login`: nothing extra
+Security-relevant: Unauthenticated page that sends the setup token and the owner password to `POST /setup/owner` (HTTPS via the API base URL). Token and passwords only in react-hook-form state, cleared on success; token never in URL, storage or Redux; requests use `skipAuthRefresh` and no Bearer. Server issue messages are shown as field text (React-escaped). No new dependencies.
+Checks needed: qc-browser (setup open/closed on a fresh DB: login notice, wrong token, validation, success to login with prefilled email, owner login, /setup redirect, storage and URL clean, console clean)
+Risk: high (apps/cms-admin/src/features/auth; owner creation and setup token handling)
+Verification: format pass · build/type-check pass (typecheck, lint, build) · unit tests pass (310; 36 files) · docs apps/cms-admin/README.md
+Proposed commit: |
+  feat(apps/cms-admin): add owner setup page and login notice
+
+  Public /setup page creates the single owner through POST /setup/owner
+  while cms-api reports the setup open; it redirects to /login when
+  closed. The login page links to it while open and shows a notice with
+  the email prefilled after the owner is created. The setup token and
+  passwords stay in form state only.
+
+  Affected:
+  - apps/cms-admin
+Deletions needing approval: none
+Fix log:
+

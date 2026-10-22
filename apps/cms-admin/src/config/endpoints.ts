@@ -13,6 +13,11 @@ export const API_ENDPOINTS = {
     LOGOUT: '/auth/logout',
     ME: '/auth/me',
   },
+  /** One-time owner setup; public, no token needed for the status. */
+  SETUP: {
+    STATUS: '/setup/status',
+    OWNER: '/setup/owner',
+  },
   PASSWORD: {
     REQUEST_OTP: '/auth/password/request-otp',
     RESET: '/auth/password/reset',

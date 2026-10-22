@@ -8,6 +8,7 @@ import {
 import { createAuthApi } from '../features/auth/auth.api';
 import { selectAccessToken } from '../features/auth/auth.slice';
 import { createPasswordApi } from '../features/auth/password.api';
+import { createSetupApi } from '../features/auth/setup.api';
 import { createSession } from '../features/auth/session';
 import { createAccessApi } from '../features/access/access.api';
 import { createContentApi } from '../features/content/content.api';
@@ -36,6 +37,7 @@ export function createAppServices(
     onSessionExpired: () => session.expire(),
   });
   const passwordApi = createPasswordApi(client);
+  const setupApi = createSetupApi(client);
   const securityApi = createSecurityApi(client);
   const accessApi = createAccessApi(client);
   const contentApi = createContentApi(client);
@@ -45,6 +47,7 @@ export function createAppServices(
     store,
     session,
     passwordApi,
+    setupApi,
     securityApi,
     accessApi,
     contentApi,

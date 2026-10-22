@@ -2,6 +2,8 @@
 export const APP_ROUTES = {
   HOME: '/',
   LOGIN: '/login',
+  /** One-time owner setup, open only while the instance has no owner. */
+  SETUP: '/setup',
   /** Named in the reset email (cms-api ADMIN_PAGE_PATHS); keep in sync. */
   RESET_PASSWORD: '/reset-password',
   /** Named in the invitation email (cms-api ADMIN_PAGE_PATHS); keep in sync. */

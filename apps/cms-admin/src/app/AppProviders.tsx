@@ -6,6 +6,7 @@ import { AccessApiProvider } from '../features/access/access-api-context';
 import { ContentApiProvider } from '../features/content/content-api-context';
 import { MediaApiProvider } from '../features/media/media-api-context';
 import { PasswordApiProvider } from '../features/auth/password-api-context';
+import { SetupApiProvider } from '../features/auth/setup-api-context';
 import { SessionProvider } from '../features/auth/session-context';
 import { ReviewerApiProvider } from '../features/reviewer/reviewer-api-context';
 import { SecurityApiProvider } from '../features/security/security-api-context';
@@ -20,6 +21,7 @@ export function AppProviders({
     | 'store'
     | 'session'
     | 'passwordApi'
+    | 'setupApi'
     | 'securityApi'
     | 'accessApi'
     | 'contentApi'
@@ -34,17 +36,19 @@ export function AppProviders({
       <QueryClientProvider client={services.queryClient}>
         <SessionProvider session={services.session}>
           <PasswordApiProvider api={services.passwordApi}>
-            <SecurityApiProvider api={services.securityApi}>
-              <AccessApiProvider api={services.accessApi}>
-                <ContentApiProvider api={services.contentApi}>
-                  <MediaApiProvider api={services.mediaApi}>
-                    <ReviewerApiProvider api={services.reviewerApi}>
-                      {children}
-                    </ReviewerApiProvider>
-                  </MediaApiProvider>
-                </ContentApiProvider>
-              </AccessApiProvider>
-            </SecurityApiProvider>
+            <SetupApiProvider api={services.setupApi}>
+              <SecurityApiProvider api={services.securityApi}>
+                <AccessApiProvider api={services.accessApi}>
+                  <ContentApiProvider api={services.contentApi}>
+                    <MediaApiProvider api={services.mediaApi}>
+                      <ReviewerApiProvider api={services.reviewerApi}>
+                        {children}
+                      </ReviewerApiProvider>
+                    </MediaApiProvider>
+                  </ContentApiProvider>
+                </AccessApiProvider>
+              </SecurityApiProvider>
+            </SetupApiProvider>
           </PasswordApiProvider>
         </SessionProvider>
       </QueryClientProvider>

@@ -7,6 +7,11 @@ import type { FormAlertTone } from '../auth/FormAlert';
 
 const copy = COPY.access;
 
+/** Field issues of a 400 answer; empty for any other failure. */
+export function apiIssuesOf(error: unknown): ApiIssue[] {
+  return issuesOf(detailsOf(error));
+}
+
 /** One issue of a 400 `details.issues` (paths name the request body). */
 export interface ApiIssue {
   path: readonly (string | number)[];

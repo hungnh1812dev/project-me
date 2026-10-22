@@ -144,7 +144,16 @@ So far: sign-in (T11) and, behind it, a status page that calls
   failed item is listed by position; "All or nothing" sends `atomic: true` and
   shows the one failing item. Single types show an explanation instead of a
   list. There is no nav link yet; open the route directly.
-- **Routes** (`src/config/routes.ts`): `/login`, `/reset-password`,
+- **Owner setup** (OS2, `/setup`): public page, reachable only while
+  `GET /setup/status` says `open` (else it redirects to `/login`). Fields: setup
+  token (`OWNER_SETUP_TOKEN` of cms-api, password type, kept in form state only,
+  never in the URL, storage or store), email, optional display name, password and
+  a client-side repeat. 401 marks the token field, 400 the named fields, 409 the
+  email, 404 returns to `/login` ("Setup is already complete"), 429 shows the wait
+  time. Success clears the form and goes to `/login` with a notice and the email
+  prefilled. The login page shows a "no owner yet" notice with a link to `/setup`
+  while the status is open (nothing when closed or when the call fails).
+- **Routes** (`src/config/routes.ts`): `/login`, `/setup`, `/reset-password`,
   `/set-password`, and `/`, `/settings/security`, `/accounts`, `/roles`,
   `/roles/:roleId`, `/api-tokens`, `/content/:slug`, `/content/:slug/new`,
   `/content/:slug/:documentId` behind `ProtectedRoute` + `AppShell` (header with the

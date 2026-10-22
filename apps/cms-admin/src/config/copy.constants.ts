@@ -31,6 +31,13 @@ export const COPY = {
       passwordSet: 'Your password is set. Sign in to start using Abyss CMS.',
       passwordChanged:
         'Your password was changed and every session was signed out. Sign in with the new password.',
+      ownerCreated:
+        'Owner account created. Sign in, then turn on two-factor in Security settings.',
+      setupComplete: 'Setup is already complete. Sign in.',
+    },
+    setupPrompt: {
+      message: 'This console has no owner yet.',
+      action: 'Set up the owner account',
     },
     validation: {
       emailRequired: 'Enter your email address.',
@@ -74,6 +81,40 @@ export const COPY = {
         unsupportedMethod:
           'This account uses a verification method the admin console does not support. Contact the owner.',
       },
+    },
+  },
+  setup: {
+    title: 'Set up the owner account',
+    description:
+      'Create the one owner account. You need the setup token from the cms-api secret (OWNER_SETUP_TOKEN).',
+    checking: 'Checking the setup status',
+    statusFailed:
+      'Could not check whether setup is open. Check your connection and try again.',
+    retry: 'Try again',
+    tokenLabel: 'Setup token',
+    emailLabel: 'Email',
+    displayNameLabel: 'Display name (optional)',
+    displayNameHint: 'Defaults to the part of your email before the @.',
+    passwordLabel: 'Password',
+    passwordHint: `${PASSWORD_LENGTH.MIN} to ${PASSWORD_LENGTH.MAX} characters. A few unrelated words work well.`,
+    confirmPasswordLabel: 'Repeat password',
+    submit: 'Create owner account',
+    validation: {
+      tokenRequired: 'Enter the setup token.',
+      emailRequired: 'Enter your email address.',
+      emailInvalid: 'Enter an email like name@example.com.',
+      displayNameTooLong: 'Use at most 100 characters.',
+      passwordTooShort: `Use at least ${PASSWORD_LENGTH.MIN} characters.`,
+      passwordTooLong: `Use at most ${PASSWORD_LENGTH.MAX} characters.`,
+      passwordsDiffer: 'The two passwords do not match.',
+    },
+    errors: {
+      tokenInvalid: 'This setup token is not valid.',
+      emailTaken: 'An account with this email already exists.',
+      rateLimited: 'Too many attempts. Wait a few minutes and try again.',
+      network:
+        'Could not reach the server. Check your connection and try again.',
+      unexpected: 'Something went wrong on our side. Try again in a moment.',
     },
   },
   password: {
