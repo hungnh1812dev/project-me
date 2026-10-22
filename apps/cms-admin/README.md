@@ -206,13 +206,13 @@ routes. The build fails without `VITE_API_BASE_URL`.
 
 ## Scripts
 
-| Script      | What it does                                                                  |
-| ----------- | ----------------------------------------------------------------------------- |
-| `dev`       | Vite dev server                                                               |
-| `build`     | Production bundle in `dist/`                                                  |
-| `test`      | Vitest + Testing Library (jsdom)                                              |
-| `lint`      | Oxlint (react, jsx-a11y, vitest) then ESLint (typescript-eslint, react-hooks) |
-| `typecheck` | `tsc --noEmit`                                                                |
+| Script      | What it does                                                                          |
+| ----------- | ------------------------------------------------------------------------------------- |
+| `dev`       | Vite dev server                                                                       |
+| `build`     | Production bundle in `dist/`                                                          |
+| `test`      | Vitest + Testing Library (jsdom)                                                      |
+| `lint`      | Oxlint (base-config + react, jsx-a11y, vitest) then ESLint (base-config, react-hooks) |
+| `typecheck` | `tsc --noEmit`                                                                        |
 
 ## Security headers (SPEC D17, T36)
 

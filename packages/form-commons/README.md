@@ -159,9 +159,9 @@ Then restyle to semantic tokens and export it from `src/index.ts`.
 
 ## Scripts
 
-| Script      | What it does                                                                  |
-| ----------- | ----------------------------------------------------------------------------- |
-| `build`     | tsup (ESM, CJS, d.ts) + Tailwind CLI for `dist/styles.css`                    |
-| `test`      | Vitest + Testing Library (jsdom)                                              |
-| `lint`      | Oxlint (react, jsx-a11y, vitest) then ESLint (typescript-eslint, react-hooks) |
-| `typecheck` | `tsc --noEmit`                                                                |
+| Script      | What it does                                                                          |
+| ----------- | ------------------------------------------------------------------------------------- |
+| `build`     | tsup (ESM, CJS, d.ts) + Tailwind CLI for `dist/styles.css`                            |
+| `test`      | Vitest + Testing Library (jsdom)                                                      |
+| `lint`      | Oxlint (base-config + react, jsx-a11y, vitest) then ESLint (base-config, react-hooks) |
+| `typecheck` | `tsc --noEmit`                                                                        |

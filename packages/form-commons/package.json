@@ -50,7 +50,6 @@
   },
   "devDependencies": {
     "@abyss/base-config": "workspace:*",
-    "@eslint/js": "10.0.1",
     "@hookform/resolvers": "5.9.2",
     "@tailwindcss/cli": "4.3.3",
     "@testing-library/jest-dom": "7.0.1",
@@ -72,7 +71,6 @@
     "tailwindcss": "4.3.3",
     "tsup": "9.0.0",
     "typescript": "6.0.3",
-    "typescript-eslint": "8.71.2",
     "vite": "8.3.4",
     "vitest": "5.0.5",
     "zod": "4.6.7"

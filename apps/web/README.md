@@ -113,14 +113,14 @@ Runtime env: `API_INTERNAL_URL`, `WEB_REVALIDATE_SECONDS`, `WEB_PORT` (default
 
 ## Scripts
 
-| Script      | What it does                                                                        |
-| ----------- | ----------------------------------------------------------------------------------- |
-| `dev`       | Next dev server (Turbopack)                                                         |
-| `build`     | Production build into `.next/` (standalone output)                                  |
-| `start`     | Next production server on `WEB_PORT`                                                |
-| `test`      | Vitest + Testing Library (jsdom)                                                    |
-| `lint`      | Oxlint (react, jsx-a11y, vitest) then ESLint (typescript-eslint, react-hooks, Next) |
-| `typecheck` | `next typegen`, then `tsc --noEmit`                                                 |
+| Script      | What it does                                                                                |
+| ----------- | ------------------------------------------------------------------------------------------- |
+| `dev`       | Next dev server (Turbopack)                                                                 |
+| `build`     | Production build into `.next/` (standalone output)                                          |
+| `start`     | Next production server on `WEB_PORT`                                                        |
+| `test`      | Vitest + Testing Library (jsdom)                                                            |
+| `lint`      | Oxlint (base-config + react, jsx-a11y, vitest) then ESLint (base-config, react-hooks, Next) |
+| `typecheck` | `next typegen`, then `tsc --noEmit`                                                         |
 
 ## Security headers (SPEC D17, T36)
 
