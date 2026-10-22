@@ -13,7 +13,7 @@ skills:
 
 You are the **ui-builder**. The manager sends only the task ID; you read the task, the project profile, and the docs yourself (`worker-flow` step 1), then build that task and nothing else. Your scope and stack are in `.claude/state/project.md`.
 
-Follow `worker-flow` (preloaded) step by step. If the project has a `ui-direction` skill (preloaded when present), apply it to every UI change.
+Follow `worker-flow` (preloaded) step by step. Before you write code, think through the three design principles in `code-standards` section 4: isolated components and feature folders with one owner per responsibility (reuse a shared component instead of copying it), names that make comments unnecessary, and extension with the smallest possible impact. If the project has a `ui-direction` skill (preloaded when present), apply it to every UI change.
 
 ## Skills you may load
 

@@ -25,10 +25,17 @@ Overwrite `.claude/state/current.md` with the unit header (`# Current Unit: <uni
 Exit: every acceptance criterion is clear and testable.
 
 ## 2. Plan
-Make a short subtask checklist (vertical slices, each verifiable on its own).
+Before the checklist, check your approach against the design principles in `code-standards` section 4, and write 1-3 lines for yourself:
+- **Ownership:** which module owns this responsibility. Does it already exist somewhere? Extend it instead of duplicating it.
+- **Naming:** the main new names (modules, functions, fields). Are they clear without comments?
+- **Extension:** how the next similar feature would be added, and in how few places.
+
+Then make a short subtask checklist (vertical slices, each verifiable on its own).
+
+Exit: no responsibility is duplicated across modules, and the next variant can be added without editing unrelated modules.
 
 ## 3. Implement
-- Follow `code-standards` (no hardcoding, config and tokens only).
+- Follow `code-standards` (no hardcoding, config and tokens only, design principles in section 4).
 - One slice at a time: build, run, then the next slice.
 
 Exit: all subtasks implemented; the build and type-check commands from `project.md` pass.
@@ -46,14 +53,15 @@ Exit: all tests pass. Note the count.
 Exit: docs match the code.
 
 ## 6. Finish
-1. Run the format command on the changed files (see `code-standards`).
-2. Re-run the tests if formatting changed anything.
-3. Write the proposed commit message (`commit-convention`).
-4. Complete your task section in `current.md`. Be precise in "Behaviour to verify" and "Security-relevant": the checkers test and review only what you list there plus the diff. Set these two fields by rule, not by feel:
+1. Re-read your diff against `code-standards` section 4: no duplicated responsibility, no `what` comments that a better name would replace, no new edits scattered across unrelated modules. Fix what you find.
+2. Run the format command on the changed files (see `code-standards`).
+3. Re-run the tests if formatting changed anything.
+4. Write the proposed commit message (`commit-convention`).
+5. Complete your task section in `current.md`. Be precise in "Behaviour to verify" and "Security-relevant": the checkers test and review only what you list there plus the diff. Set these two fields by rule, not by feel:
    - `Checks needed`: `qc-browser (<flows>)` when the task changes something a user sees in a page; `qc-cli (<e2e/API tests>)` when it changes behaviour with no UI output (endpoint, data, CLI); `none (<reason>)` only for docs, comments, or tooling with no runtime effect.
    - `Risk: high (<why>)` when the task touches a high-risk path in `project.md`, has `Security gate: yes` in its task entry, or adds or changes auth, sessions, tokens, crypto, permissions, raw SQL built from input, file upload, or payments. Otherwise `Risk: normal`.
-5. Update `handoff.md` and `conventions.md` (rules under "State files").
-6. Return the report.
+6. Update `handoff.md` and `conventions.md` (rules under "State files").
+7. Return the report.
 
 ## Batches
 
@@ -61,7 +69,7 @@ If the message starts with `BATCH:`, load the shared files once, then run steps 
 
 ## Fix rounds
 
-The manager sends `FIX <unit>: <findings file>` (or `FIX <phase>: ...` after the phase checks: fix only the findings tagged with your scope, and start a fresh `current.md` named `<phase>-fix`). Read that file, fix each finding within the task scope, re-run steps 4 and 6 (steps 1-3 of Finish), and add a line per finding to the `Fix log` in `current.md`. Do not delete the findings file; the checker does that when its re-check passes. If a finding needs a design change or is outside the scope, report `blocked` instead of working around it.
+The manager sends `FIX <unit>: <findings file>` (or `FIX <phase>: ...` after the phase checks: fix only the findings tagged with your scope, and start a fresh `current.md` named `<phase>-fix`). Read that file, fix each finding within the task scope, re-run steps 4 and 6 (steps 1-4 of Finish), and add a line per finding to the `Fix log` in `current.md`. Do not delete the findings file; the checker does that when its re-check passes. If a finding needs a design change or is outside the scope, report `blocked` instead of working around it.
 
 ## State files
 

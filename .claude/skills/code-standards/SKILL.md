@@ -1,6 +1,6 @@
 ---
 name: code-standards
-description: Project code rules - run Prettier after every finished feature and before any commit, no hardcoded values, never guess (ask instead). Use whenever writing or changing code in this project.
+description: Project code rules - run Prettier after every finished feature and before any commit, no hardcoded values, never guess (ask instead), and the design principles (isolated modules, names over comments, extensible with minimal impact). Use whenever planning, writing or changing code in this project.
 ---
 
 # Code Standards
@@ -42,8 +42,34 @@ If any of these is unclear, stop and ask (the worker reports `blocked`, the mana
 
 Give options and a recommendation with the question so the user can answer fast.
 
-## 4. General
+## 4. Design principles: think before you build
 
-- Match the surrounding code's style, naming, and comment density.
+Before planning or writing code, check the approach against these three. If one of them cannot be met without a design change outside the task, report `blocked` with options instead of compromising silently.
+
+### 4.1 Isolated modules, one owner per responsibility
+
+- Each module owns one responsibility and exposes it through a small public interface; other modules use that interface, never its internals.
+- Before adding logic, search for where that responsibility already lives. Extend the owner; do not re-implement the same behaviour in a second module.
+- Keep dependencies one-directional. No circular imports, no reaching into another module's private files or tables.
+- Shared logic goes into one shared module that both sides depend on, not into copies.
+
+### 4.2 Readable code: names over comments
+
+- Names say what a thing is or does: `expiresAt`, `isPublished`, `findActiveSessionsByUser()`, not `data`, `tmp`, `flag`, `handle()`.
+- Booleans read as questions (`is`, `has`, `can`, `should`); functions start with a verb; units go in the name when they matter (`timeoutMs`).
+- If you need a comment to explain *what* code does, rename or extract a well-named function instead.
+- Comments are for what names cannot say: *why* a non-obvious choice was made, a constraint, a workaround with its reason. Public interfaces may keep their doc comments.
+- Keep functions short and at one level of abstraction.
+
+### 4.3 Extensible with minimal impact
+
+- Adding a new variant (a type, provider, field, role, screen) should mean adding code in one place, not editing many files. Prefer registries, maps, and interfaces over growing `if`/`switch` chains spread across modules.
+- Depend on interfaces and config, not on concrete implementations, where a second implementation is realistic.
+- Changes to an existing public interface are additive (new optional fields or parameters) wherever possible, so existing callers keep working.
+- Do not build for imagined future needs. Leave a clean extension point; do not implement the extensions.
+
+## 5. General
+
+- Match the surrounding code's style and naming; where it conflicts with section 4, follow section 4 in new code and do not rewrite the old code.
 - Stay in the task's scope. No drive-by refactors.
 - Never read or edit `.env*` files (except `.env.example`).
