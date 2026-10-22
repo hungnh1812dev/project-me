@@ -235,6 +235,10 @@ describe('reviewer backend (T31, D2; Postgres 16 via Testcontainers)', () => {
       .get('/api/v1/auth/me')
       .set(bearer(body.accessToken));
     expect(me.body).toMatchObject({ role: 'reviewer' });
+    // T33a: a reviewer session lists read permissions only.
+    const { permissions } = me.body as { permissions: string[] };
+    expect(permissions.length).toBeGreaterThan(0);
+    expect(permissions.every((entry) => entry.endsWith(':read'))).toBe(true);
 
     const list = await http()
       .get(`${DOCS}?status=published`)

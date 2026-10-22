@@ -29,6 +29,7 @@ import {
   UNKNOWN_CLIENT_IP,
 } from '../../common/constants/limits.constants';
 import { Throttle } from '../../common/guards/throttle.guard';
+import { AccessPolicyService } from '../access/access-policy.service';
 import { AllowedOriginGuard } from './allowed-origin.guard';
 import {
   AuthService,
@@ -97,6 +98,7 @@ export class AuthController {
   constructor(
     private readonly auth: AuthService,
     private readonly clientIp: ClientIpResolver,
+    private readonly access: AccessPolicyService,
   ) {}
 
   @Post(API_ROUTES.AUTH.LOGIN)
@@ -167,8 +169,13 @@ export class AuthController {
   @Get(API_ROUTES.AUTH.ME)
   @Header(NO_STORE_HEADER.NAME, NO_STORE_HEADER.VALUE)
   @UseGuards(JwtAuthGuard)
-  me(@Req() req: AuthenticatedRequest): Promise<CurrentAccountProfile> {
-    return this.auth.me(req.user.accountId);
+  async me(@Req() req: AuthenticatedRequest): Promise<CurrentAccountProfile> {
+    const profile = await this.auth.me(req.user.accountId);
+    const { evaluator } = await this.access.policy();
+    return {
+      ...profile,
+      permissions: evaluator.effectivePermissions(req.user.actor),
+    };
   }
 
   private clientMeta(req: Request): ClientMeta {

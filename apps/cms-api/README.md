@@ -77,13 +77,14 @@ count).
 
 ### Auth (T09, `src/modules/identity`)
 
-| Method | Path                   | Auth                    | Response                                                                             |
-| ------ | ---------------------- | ----------------------- | ------------------------------------------------------------------------------------ |
-| POST   | `/api/v1/auth/login`   | none                    | `200 { accessToken }` + refresh cookie, or `200 { requires2FA, tempToken, methods }` |
-| POST   | `/api/v1/auth/refresh` | refresh cookie + Origin | `200 { accessToken }` + rotated refresh cookie (no cookie inside the grace window)   |
-| POST   | `/api/v1/auth/logout`  | refresh cookie + Origin | `204`, family revoked, cookie cleared                                                |
-| GET    | `/api/v1/auth/me`      | `Authorization: Bearer` | `200 { id, email, displayName, role, twoFactorEnabled, twoFactorMethod }`            |
+| Method | Path                   | Auth                    | Response                                                                               |
+| ------ | ---------------------- | ----------------------- | -------------------------------------------------------------------------------------- |
+| POST   | `/api/v1/auth/login`   | none                    | `200 { accessToken }` + refresh cookie, or `200 { requires2FA, tempToken, methods }`   |
+| POST   | `/api/v1/auth/refresh` | refresh cookie + Origin | `200 { accessToken }` + rotated refresh cookie (no cookie inside the grace window)     |
+| POST   | `/api/v1/auth/logout`  | refresh cookie + Origin | `204`, family revoked, cookie cleared                                                  |
+| GET    | `/api/v1/auth/me`      | `Authorization: Bearer` | `200 { id, email, displayName, role, twoFactorEnabled, twoFactorMethod, permissions }` |
 
+- `permissions` (T33a) is the caller's effective `subject:action` strings (e.g. `article:read`, `roles:update`), sorted, listing concrete content types and system subjects (never `*`); conditions are ignored. Owner gets every valid action; reviewer and public roles only `:read`. It carries no secrets.
 - Login verifies Argon2id. Unknown email, wrong password and any account that
   is not `active` (invited, disabled, deleted) get the same
   `401 AUTH_INVALID_CREDENTIALS`; unknown emails are verified against a dummy

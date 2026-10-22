@@ -393,6 +393,7 @@ describe('auth: login, JWT, refresh rotation, logout (Postgres 16 via Testcontai
         role: 'editor',
         twoFactorEnabled: false,
         twoFactorMethod: null,
+        permissions: expect.any(Array) as unknown,
       });
     });
 

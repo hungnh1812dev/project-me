@@ -505,3 +505,53 @@ describe('rowFilter', () => {
     });
   });
 });
+
+describe('PolicyEvaluator.effectivePermissions (T33a)', () => {
+  const OWNER_COUNT =
+    2 * PERMISSION_ACTIONS.length +
+    Object.values(SYSTEM_SUBJECT_ACTIONS).reduce(
+      (sum, actions) => sum + actions.length,
+      0,
+    );
+
+  it('lists every action on every known subject for the owner', () => {
+    const list = evaluator.effectivePermissions(account(systemRole('owner')));
+    expect(list).toHaveLength(OWNER_COUNT);
+    expect(list).toContain('article:publish');
+    expect(list).toContain('roles:update');
+    expect(list.some((entry) => entry.startsWith('*'))).toBe(false);
+  });
+
+  it('expands the editor wildcard rows to concrete content types', () => {
+    const list = evaluator.effectivePermissions(account(systemRole('editor')));
+    expect(list).toContain('article:update');
+    expect(list).toContain('note:publish');
+    expect(list).toContain('media:create');
+    expect(list).not.toContain('article:delete');
+    expect(list.some((entry) => entry.startsWith('accounts:'))).toBe(false);
+  });
+
+  it('gives reader actors read permissions only', () => {
+    const actors: ActorContext[] = [
+      account(systemRole('reviewer')),
+      reviewerActor(7, 3, systemRole('reviewer')),
+      anonymousActor(systemRole('public')),
+    ];
+    for (const actor of actors) {
+      const list = evaluator.effectivePermissions(actor);
+      expect(list.length).toBeGreaterThan(0);
+      expect(list.every((entry) => entry.endsWith(':read'))).toBe(true);
+    }
+    expect(
+      evaluator.effectivePermissions(anonymousActor(systemRole('public'))),
+    ).toEqual(['article:read', 'note:read']);
+  });
+
+  it('is empty for guest and sorted', () => {
+    expect(
+      evaluator.effectivePermissions(account(systemRole('guest'))),
+    ).toEqual([]);
+    const list = evaluator.effectivePermissions(account(systemRole('owner')));
+    expect(list).toEqual([...list].sort());
+  });
+});

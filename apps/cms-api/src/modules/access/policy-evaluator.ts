@@ -5,6 +5,8 @@ import {
   CONTENT_WILDCARD_SUBJECT,
   type FieldWriteAction,
   MEDIA_SUBJECT,
+  PERMISSION_STRING_SEPARATOR,
+  SYSTEM_SUBJECT_ACTIONS,
 } from './access.constants';
 import {
   type ActorContext,
@@ -91,6 +93,27 @@ export class PolicyEvaluator {
     const policy = this.policyOf(actor);
     if (!this.reachable(policy, action, subject)) return false;
     return policy.full || this.grantsFor(policy, action, subject).length > 0;
+  }
+
+  /**
+   * Every `subject:action` string the actor may use on a known subject
+   * (T33a), sorted. Conditions are ignored, as in `can()`. Never contains
+   * the `*` wildcard: it lists concrete content types and system subjects.
+   */
+  effectivePermissions(actor: ActorContext): string[] {
+    const subjects = [
+      ...this.subjects.contentTypeSlugs(),
+      ...Object.keys(SYSTEM_SUBJECT_ACTIONS),
+    ];
+    const out: string[] = [];
+    for (const subject of subjects) {
+      for (const action of this.subjects.actionsFor(subject)) {
+        if (this.can(actor, action, subject)) {
+          out.push(`${subject}${PERMISSION_STRING_SEPARATOR}${action}`);
+        }
+      }
+    }
+    return out.sort();
   }
 
   /** Drafts need `read` + `update` (decision T14); never for read-only actors. */

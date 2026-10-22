@@ -57,7 +57,12 @@ export interface CurrentAccountProfile {
   readonly twoFactorEnabled: boolean;
   /** The 2FA method when 2FA is on, else null (T13 Q10). */
   readonly twoFactorMethod: TwoFaMethod | null;
+  /** Effective `subject:action` permissions of the caller, sorted (T33a). */
+  readonly permissions: readonly string[];
 }
+
+/** What `AuthService.me` returns: the profile before permissions are added. */
+export type AccountProfile = Omit<CurrentAccountProfile, 'permissions'>;
 
 /** `refresh`: no refresh token inside the grace window (T11a). */
 export interface RefreshedTokens {
@@ -253,7 +258,7 @@ export class AuthService implements OnModuleInit {
     await this.refreshTokens.revokeFamilyOf(rawToken, meta);
   }
 
-  async me(accountDocumentId: string): Promise<CurrentAccountProfile> {
+  async me(accountDocumentId: string): Promise<AccountProfile> {
     const account = await this.prisma.account.findUnique({
       where: { documentId: accountDocumentId },
       select: {

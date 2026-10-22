@@ -29,6 +29,9 @@ export type FieldWriteAction = (typeof FIELD_WRITE_ACTIONS)[number];
  */
 export const CONTENT_WILDCARD_SUBJECT = '*';
 
+/** Joins subject and action in a permission string, e.g. `articles:read`. */
+export const PERMISSION_STRING_SEPARATOR = ':';
+
 /**
  * Non-content subjects (decision T14) and the actions valid on each.
  * Names use underscores, so they can never equal a content slug
