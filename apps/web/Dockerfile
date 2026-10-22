@@ -29,6 +29,9 @@ COPY --from=prune /repo/tsconfig.base.json ./
 ARG NEXT_PUBLIC_API_BASE_URL
 RUN test -n "$NEXT_PUBLIC_API_BASE_URL" || (echo "NEXT_PUBLIC_API_BASE_URL build arg is required" >&2; exit 1)
 ENV NEXT_PUBLIC_API_BASE_URL=$NEXT_PUBLIC_API_BASE_URL
+# Optional: target of the "Open CMS" link. Empty hides the link.
+ARG NEXT_PUBLIC_ADMIN_URL=
+ENV NEXT_PUBLIC_ADMIN_URL=$NEXT_PUBLIC_ADMIN_URL
 RUN pnpm turbo run build --filter=@abyss/web
 
 # 3. Runtime: the Next.js standalone server on Node, as the non-root `node` user.

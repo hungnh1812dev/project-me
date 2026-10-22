@@ -19,4 +19,8 @@ export function createApiClient(
   return client;
 }
 
-export const apiClient = createApiClient(appEnv.apiBaseUrl);
+// Sends the host-only refresh cookie (Path /api/v1/auth) with auth calls; the
+// cookie is set by cms-api on this site's own origin (SPEC §6, D14).
+export const apiClient = createApiClient(appEnv.apiBaseUrl, {
+  withCredentials: true,
+});

@@ -55,6 +55,29 @@ Styling: Tailwind v4 through `@tailwindcss/postcss` with the form-commons theme
 (`src/app/app.css`, imported by `src/app/layout.tsx`). Components use semantic
 tokens only (`bg-card`, `text-muted-foreground`).
 
+## Sign-in and session (T33)
+
+- The header "Sign in" opens `WebLoginDialog` (email + password, then the 2FA
+  code when the account has it). Calls go from the browser to
+  `NEXT_PUBLIC_API_BASE_URL` (`/auth/login`, `/auth/2fa/verify`,
+  `/auth/refresh`, `/auth/logout`, `/auth/me`); cms-api sets the host-only
+  `__Secure-abyss_rt` refresh cookie (Path `/api/v1/auth`). No Server Action,
+  Route Handler or `cookies()` call touches auth, and the Next server never
+  sees a token.
+- `useWebSession` (`WebSessionProvider`, mounted in `src/app/providers.tsx`)
+  keeps the access token in memory only, tries one silent refresh on mount,
+  and exposes `status`, `user`, `getAccessToken()`, sign-in, 2FA and sign-out.
+- Reader roles only: after each sign-in or refresh, `/auth/me` `permissions`
+  (`subject:action`) is checked. Any action other than `read` (editor, admin,
+  owner) is privileged: the token is dropped, the web stays anonymous and the
+  dialog points to the admin console. A missing list counts as privileged.
+  A failed sign-out keeps the session and shows an error to retry.
+- "Open CMS" links to `NEXT_PUBLIC_ADMIN_URL` (build-time, optional, http(s)
+  URL or path); the admin signs in silently from the same cookie. Unset hides
+  the link.
+- No page refetches data per actor yet: the CV page (T30) was skipped, so the
+  GraphQL refetch with the Bearer token has nothing to attach to.
+
 ## Docker
 
 ```bash
@@ -64,7 +87,7 @@ docker run -e API_INTERNAL_URL=http://cms-api:3000/api/v1 -p 8080:8080 abyss-web
 
 Multi-stage: `turbo prune`, a frozen install, `turbo run build`, then the
 standalone server (`.next/standalone`, `.next/static`, `public/`) on Node as
-the non-root `node` user. The build fails without `NEXT_PUBLIC_API_BASE_URL`.
+the non-root `node` user. The build fails without `NEXT_PUBLIC_API_BASE_URL`; `NEXT_PUBLIC_ADMIN_URL` is an optional build arg.
 Runtime env: `API_INTERNAL_URL`, `WEB_REVALIDATE_SECONDS`, `WEB_PORT` (default
 8080). `HEALTHCHECK` requests `/`. Telemetry is off (`NEXT_TELEMETRY_DISABLED=1`).
 

@@ -16,6 +16,10 @@ values below. It sets them from the stack, including the generated owner
 password and the Mailpit URL (`mail.<SMOKE_DOMAIN>`, the SMTP sink the stack
 sends OTP emails to). Then it tears the stack down.
 
+The web session spec signs in with two seeded read-only (`guest` role)
+accounts, `e2e-reader@` and `e2e-reader-2fa@<SMOKE_DOMAIN>` (the second has
+email 2FA on), passed as `E2E_READER_*` and `E2E_READER_2FA_*`.
+
 The 2FA spec uses its own account (`e2e-2fa@<SMOKE_DOMAIN>`, seeded by
 `scripts/smoke.sh` as an active admin with a generated password), because
 the owner already spends 4 of the 5 logins per email per 15 minutes (smoke +

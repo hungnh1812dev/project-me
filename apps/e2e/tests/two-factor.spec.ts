@@ -3,6 +3,7 @@ import { expect, type Locator, type Page, test } from '@playwright/test';
 import { COPY } from '../../cms-admin/src/config/copy.constants';
 import { TWO_FACTOR_TEST_TIMEOUT_MS } from '../src/constants';
 import { e2eEnv } from '../src/env';
+import { TWO_FACTOR_CHANGED_PASSWORD as NEW_PASSWORD } from '../src/two-factor-account';
 import { mailIdsFor, waitForCode } from '../src/mailpit';
 import { freshTotpCode } from '../src/totp';
 
@@ -16,7 +17,6 @@ import { freshTotpCode } from '../src/totp';
  */
 test.describe.configure({ mode: 'serial', retries: 0 });
 
-const NEW_PASSWORD = `${e2eEnv.twoFactorPassword.slice(0, 100)}-changed`;
 const security = COPY.security;
 const label = (name: string) => new RegExp(`^${name}`);
 

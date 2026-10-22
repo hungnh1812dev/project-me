@@ -7,4 +7,14 @@ export const API_ENDPOINTS = {
     LIVE: '/health/live',
     READY: '/health/ready',
   },
+  AUTH: {
+    LOGIN: '/auth/login',
+    REFRESH: '/auth/refresh',
+    LOGOUT: '/auth/logout',
+    ME: '/auth/me',
+  },
+  TWO_FACTOR: {
+    VERIFY: '/auth/2fa/verify',
+    EMAIL_CHALLENGE: '/auth/2fa/email-challenge',
+  },
 } as const;

@@ -69,10 +69,11 @@ const { hashPassword } = require('./dist/modules/identity/password-hasher');
     await db.prisma.account.create({
       data: {
         email: process.env.SEED_EMAIL,
-        displayName: 'E2E 2FA',
+        displayName: process.env.SEED_NAME || 'E2E 2FA',
         passwordHash,
         status: 'active',
-        role: { connect: { slug: 'admin' } },
+        role: { connect: { slug: process.env.SEED_ROLE || 'admin' } },
+        ...(process.env.SEED_EMAIL_2FA ? { is2faEnabled: true, twoFaMethod: 'email' } : {}),
       },
     });
   } finally {
@@ -114,6 +115,10 @@ SMOKE_OWNER_EMAIL="owner@$SMOKE_DOMAIN"
 SMOKE_OWNER_PASSWORD="$(random_secret)"
 SMOKE_2FA_EMAIL="e2e-2fa@$SMOKE_DOMAIN"
 SMOKE_2FA_PASSWORD="$(random_secret)"
+SMOKE_READER_EMAIL="e2e-reader@$SMOKE_DOMAIN"
+SMOKE_READER_PASSWORD="$(random_secret)"
+SMOKE_READER2FA_EMAIL="e2e-reader-2fa@$SMOKE_DOMAIN"
+SMOKE_READER2FA_PASSWORD="$(random_secret)"
 
 compose() { docker compose -f "$COMPOSE_FILE" "$@"; }
 
@@ -285,6 +290,8 @@ if [[ "$seed_output" == *"$SEED_2FA_ACCOUNT_DONE"* && "$seed_output" != *"$SMOKE
 else
   fail "seeding the e2e 2FA account: $seed_output"
 fi
+printf '%s\n' "$SMOKE_READER_PASSWORD" | compose exec -T -e SEED_ROLE=guest -e SEED_NAME=Reader -e SEED_EMAIL="$SMOKE_READER_EMAIL" cms-api node -e "$SEED_2FA_ACCOUNT_JS" >/dev/null && pass "seeds reader"
+printf '%s\n' "$SMOKE_READER2FA_PASSWORD" | compose exec -T -e SEED_ROLE=guest -e SEED_NAME=Reader2fa -e SEED_EMAIL_2FA=1 -e SEED_EMAIL="$SMOKE_READER2FA_EMAIL" cms-api node -e "$SEED_2FA_ACCOUNT_JS" >/dev/null && pass "seeds reader 2fa"
 # Break-glass 2FA reset (T13a): refusals only, so no account state changes
 # (the owner login and refresh checks below still pass).
 in_api "owner:reset-2fa refuses an unknown email" "" 0 \
@@ -344,7 +351,7 @@ if [[ "${SMOKE_E2E:-}" == "1" ]]; then
   if E2E_ADMIN_URL="$ADMIN_ORIGIN" E2E_API_BASE_URL="$SMOKE_API_BASE_URL" \
     E2E_OWNER_EMAIL="$SMOKE_OWNER_EMAIL" E2E_OWNER_PASSWORD="$SMOKE_OWNER_PASSWORD" \
     E2E_MAILPIT_URL="$MAILPIT_URL" \
-    E2E_2FA_EMAIL="$SMOKE_2FA_EMAIL" E2E_2FA_PASSWORD="$SMOKE_2FA_PASSWORD" \
+    E2E_READER_EMAIL="$SMOKE_READER_EMAIL" E2E_READER_PASSWORD="$SMOKE_READER_PASSWORD" E2E_READER_2FA_EMAIL="$SMOKE_READER2FA_EMAIL" E2E_READER_2FA_PASSWORD="$SMOKE_READER2FA_PASSWORD" E2E_2FA_EMAIL="$SMOKE_2FA_EMAIL" E2E_2FA_PASSWORD="$SMOKE_2FA_PASSWORD" \
     pnpm --dir "$ROOT_DIR" --filter @abyss/e2e test; then
     pass "e2e suite"
   else

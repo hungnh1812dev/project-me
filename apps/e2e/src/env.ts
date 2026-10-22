@@ -14,6 +14,8 @@ export const e2eEnv = Object.freeze({
   adminUrl: requireEnv('E2E_ADMIN_URL'),
   /** Base URL of cms-api as the admin calls it, e.g. `http://domain.localhost:8080/api/v1`. */
   apiBaseUrl: requireEnv('E2E_API_BASE_URL'),
+  /** Origin of apps/web: the web is served on the API's origin (same domain, `/api` prefix). */
+  webUrl: new URL(requireEnv('E2E_API_BASE_URL')).origin,
   ownerEmail: requireEnv('E2E_OWNER_EMAIL'),
   ownerPassword: requireEnv('E2E_OWNER_PASSWORD'),
   /**
@@ -22,6 +24,15 @@ export const e2eEnv = Object.freeze({
    */
   twoFactorEmail: requireEnv('E2E_2FA_EMAIL'),
   twoFactorPassword: requireEnv('E2E_2FA_PASSWORD'),
+  /**
+   * Reader accounts seeded by scripts/smoke.sh (T33): role `guest`, so
+   * `/auth/me` lists no permission and the web may share their session. The
+   * 2FA one has email codes on. Kept apart from the owner / admin accounts.
+   */
+  readerEmail: requireEnv('E2E_READER_EMAIL'),
+  readerPassword: requireEnv('E2E_READER_PASSWORD'),
+  reader2faEmail: requireEnv('E2E_READER_2FA_EMAIL'),
+  reader2faPassword: requireEnv('E2E_READER_2FA_PASSWORD'),
   /** Mailpit (SMTP sink of the smoke stack), e.g. `http://mail.domain.localhost:8080`. */
   mailpitUrl: requireEnv('E2E_MAILPIT_URL'),
   /** Set in CI to forbid `test.only` and retry once. */
