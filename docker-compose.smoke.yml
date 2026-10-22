@@ -52,10 +52,11 @@ services:
       traefik.http.services.mail.loadbalancer.server.port: '8025'
 
   cms-api:
+    image: abyss-smoke-cms-api
     build:
       context: .
       dockerfile: apps/cms-api/Dockerfile
-    environment:
+    environment: &cms-api-env
       NODE_ENV: production
       PORT: '3000'
       DB_HOST: db
@@ -96,6 +97,8 @@ services:
       # reviewer e2e needs internet.
       TURNSTILE_SECRET_KEY: 1x0000000000000000000000000000000AA
     depends_on:
+      cms-api-init:
+        condition: service_completed_successfully
       db:
         condition: service_healthy
       mailpit:
@@ -110,6 +113,20 @@ services:
       traefik.http.routers.api.entrypoints: web
       traefik.http.routers.api.rule: Host(`${SMOKE_DOMAIN:?set by scripts/smoke.sh}`) && PathPrefix(`/api`)
       traefik.http.services.api.loadbalancer.server.port: '3000'
+
+  # T37a: init container. Same image and env as cms-api, different command:
+  # applies committed core + content migrations, then exits. cms-api starts only
+  # after it exits 0. Never runs content:generate or owner:bootstrap.
+  cms-api-init:
+    image: abyss-smoke-cms-api
+    build:
+      context: .
+      dockerfile: apps/cms-api/Dockerfile
+    command: ['npm', 'run', '--silent', 'deploy:migrate']
+    environment: *cms-api-env
+    depends_on:
+      db:
+        condition: service_healthy
 
   # T30b: Next.js standalone server (T30a). Server env is read at run time;
   # NEXT_PUBLIC_API_BASE_URL is baked into the browser bundle at build time.

@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Proxy smoke test (T04): builds and starts docker-compose.smoke.yml, checks
-# routing, trailing slashes and CORS through Traefik, runs db:migrate,
-# owner:bootstrap (T08) and content:migrate (T07) inside the cms-api image,
+# routing, trailing slashes and CORS through Traefik, checks the cms-api-init
+# container (deploy:migrate, T37a), runs owner:bootstrap (T08) and re-runs the
+# migrations inside the cms-api image,
 # checks login/refresh (T09) and OTP mail delivery to Mailpit (T12), then
 # tears it down.
 #
@@ -39,6 +40,8 @@ REFERRER_POLICY_VALUE="strict-origin-when-cross-origin"
 API_CSP_VALUE="default-src 'none'; frame-ancestors 'none'"
 TURNSTILE_ORIGIN="https://challenges.cloudflare.com"
 CLOUDINARY_ORIGIN="https://res.cloudinary.com"
+INIT_SERVICE="cms-api-init"
+INIT_EXIT_CODE_FORMAT='{{.State.ExitCode}}'
 # cms-api package scripts run through npm inside the image (no pnpm there).
 DB_MIGRATE_CMD=(npm run --silent db:migrate)
 DB_MIGRATE_APPLIED="All migrations have been successfully applied."
@@ -140,7 +143,7 @@ cleanup() {
   local code=$?
   if [[ $code -ne 0 ]]; then
     echo "--- cms-api logs ---" >&2
-    compose logs --no-color --tail 50 cms-api >&2 || true
+    compose logs --no-color --tail 50 cms-api-init cms-api >&2 || true
   fi
   if [[ "${SMOKE_KEEP:-}" == "1" ]]; then
     echo "SMOKE_KEEP=1: stack left running. Stop it with: docker compose -p abyss-smoke down -v"
@@ -355,9 +358,16 @@ in_api() {
   pass "$label"
 }
 
-echo "db:migrate + owner:bootstrap inside the cms-api image"
-in_api "db:migrate applies core migrations and seeds roles" "" 1 \
-  "$DB_MIGRATE_APPLIED" "$DB_MIGRATE_SEEDED" -- "${DB_MIGRATE_CMD[@]}"
+echo "Init container ($INIT_SERVICE: deploy:migrate, T37a)"
+init_container="$(compose ps --all --quiet "$INIT_SERVICE")"
+init_exit="$(docker inspect --format "$INIT_EXIT_CODE_FORMAT" "$init_container" 2>/dev/null || echo "missing")"
+if [[ "$init_exit" == "0" ]]; then pass "$INIT_SERVICE exited 0"; else fail "$INIT_SERVICE exit code: $init_exit"; fi
+init_log="$(compose logs --no-color "$INIT_SERVICE" 2>&1 || true)"
+for fragment in "$DB_MIGRATE_APPLIED" "$DB_MIGRATE_SEEDED" "$CONTENT_MIGRATE_APPLIED"; do
+  if [[ "$init_log" == *"$fragment"* ]]; then pass "$INIT_SERVICE log has '$fragment'"; else fail "$INIT_SERVICE log lacks '$fragment': $init_log"; fi
+done
+
+echo "Migrations again + owner:bootstrap inside the cms-api image"
 in_api "db:migrate again has nothing pending" "" 1 \
   "$DB_MIGRATE_NOTHING" "$DB_SEED_NOTHING" -- "${DB_MIGRATE_CMD[@]}"
 in_api "owner:bootstrap creates the owner" "$SMOKE_OWNER_PASSWORD" 1 \
@@ -381,10 +391,7 @@ in_api "owner:reset-2fa refuses an account with 2FA off" "" 0 \
 in_api "owner:reset-2fa needs --yes without a terminal" "" 0 \
   "$RESET_2FA_NO_TTY" -- "${RESET_2FA_CMD[@]}" --email "$SMOKE_OWNER_EMAIL"
 
-echo "content:migrate inside the cms-api image"
-in_api "first run applies the committed migrations" "" 1 \
-  "$CONTENT_MIGRATE_APPLIED" -- "${CONTENT_MIGRATE_CMD[@]}"
-in_api "second run has nothing pending" "" 1 \
+in_api "content:migrate again has nothing pending" "" 1 \
   "$CONTENT_MIGRATE_NOTHING" -- "${CONTENT_MIGRATE_CMD[@]}"
 
 echo "Auth through the proxy (T09)"

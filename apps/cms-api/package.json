@@ -15,6 +15,7 @@
     "content:generate": "tsc -p tsconfig.build.json && node dist/modules/content-engine/cli/generate.js",
     "graphql:print-schema": "tsc -p tsconfig.build.json && node dist/modules/graphql/cli/print-schema.js",
     "content:migrate": "node dist/modules/content-engine/cli/migrate.js",
+    "deploy:migrate": "npm run --silent db:migrate && npm run --silent content:migrate",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate deploy && node dist/modules/identity/cli/seed.js",
     "db:migrate:dev": "prisma migrate dev",

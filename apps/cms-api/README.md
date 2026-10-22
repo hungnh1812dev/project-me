@@ -674,6 +674,7 @@ every message. No environment serves a playground; use the committed SDL
 | `content:generate`               | Build, then write the next content migration (`--dry-run`, `--name`, `--allow-destructive`)  |
 | `graphql:print-schema`           | Build, then write `content/schema.graphql` from `content/schemas` (`--check` fails if stale) |
 | `content:migrate`                | Apply pending content migrations (needs a build and the `DB_*` connection)                   |
+| `deploy:migrate`                 | Init-container command: `db:migrate`, then `content:migrate` (stops at first failure)        |
 | `db:generate`                    | Generate the Prisma client                                                                   |
 | `db:migrate`                     | Apply core Prisma migrations, then seed system roles + default permissions (needs a build)   |
 | `db:migrate:dev`                 | Development: create a core migration from schema changes                                     |
@@ -693,14 +694,39 @@ docker build -f apps/cms-api/Dockerfile -t abyss-cms-api .   # from the repo roo
 
 Multi-stage: `turbo prune` keeps cms-api only, the build stage compiles it,
 and `pnpm deploy --prod` copies production dependencies into a runtime image
-that runs as the `node` user on port 3000. Pass config as env vars; `.env*`
+that runs as the numeric `node` user (`USER 1000:1000`) on port 3000. Pass config as env vars; `.env*`
 files are never copied into the build context (`.dockerignore`).
 
-The image also carries `prisma/`, `prisma.config.ts` and `content/`, so
-migrations run in the container before (re)starting the API, in this order
-(the CLIs load the full config, so pass the same env as the API):
+### Two containers: init + main (T37a)
+
+cms-api ships as one image run as two containers in one pod (or compose
+project). Same image, different command; no second Dockerfile.
+
+| Container | Command                   | Does                                                                                                              |
+| --------- | ------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| init      | `npm run deploy:migrate`  | `db:migrate` (Prisma `migrate deploy` + role seed), then `content:migrate` (committed `content/migrations/*.sql`) |
+| main      | `node dist/main.js` (CMD) | Serves the API; runs no migrations                                                                                |
+
+- Order: core migrations first, content migrations second. It stops at the
+  first failure with a non-zero exit, so the main container never starts on
+  a half-migrated database (compose: `depends_on` with
+  `service_completed_successfully`; Kubernetes: `initContainers`).
+- Idempotent: a second run prints "No pending migrations to apply." and "No
+  pending content migrations." and exits 0. Concurrent runs are safe (Prisma
+  migrate lock; the content runner takes `pg_advisory_xact_lock`).
+- Applies committed migrations only. It never runs `content:generate` (no
+  schema parsing or merging at deploy time; CI checks that the committed
+  migrations are current) and never runs `owner:bootstrap` (a manual,
+  one-time step).
+- Env: the full API config, same as the main container (the CLIs load it):
+  `DB_*`, `JWT_*`, `OTP_PEPPER`, `TOTP_ENC_*`, `ADMIN_ORIGIN`, `WEB_ORIGIN`,
+  `MAIL_*`, `MEDIA_*` (see `.env.example`).
+
+The individual steps can also be run by hand, in this order:
 
 ```bash
+docker run --rm --env-file api.env abyss-cms-api npm run deploy:migrate   # init container command
+# or the two steps separately:
 docker run --rm --env-file api.env abyss-cms-api npm run db:migrate
 docker run --rm --env-file api.env abyss-cms-api node dist/modules/content-engine/cli/migrate.js
 # once, on first deploy:

@@ -28,7 +28,8 @@ RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
 
 # 3. Runtime: production deps, dist (with the generated Prisma client),
 #    prisma/ + prisma.config.ts (read by `db:migrate`) and content/ (schemas +
-#    migrations, read by `content:migrate`), files owned by root, run as `node`.
+#    migrations, read by `content:migrate`), files owned by root, run as the numeric `node` user (1000:1000; Kubernetes
+#    runAsNonRoot can only verify a UID).
 FROM ${NODE_IMAGE} AS runtime
 ENV NODE_ENV=production
 WORKDIR /app
@@ -38,6 +39,6 @@ COPY --from=build /prod/cms-api/dist ./dist
 COPY --from=build /repo/apps/cms-api/prisma ./prisma
 COPY --from=build /repo/apps/cms-api/prisma.config.ts ./prisma.config.ts
 COPY --from=build /repo/apps/cms-api/content ./content
-USER node
+USER 1000:1000
 EXPOSE 3000
 CMD ["node", "dist/main.js"]
