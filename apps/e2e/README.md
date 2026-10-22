@@ -32,6 +32,23 @@ Specs run in one worker: `password-reset.spec.ts` changes the owner password
 read from Mailpit's API through a browser tab (Chromium resolves
 `*.localhost` itself).
 
+## Run single specs against a kept stack
+
+A full smoke run rebuilds every image. To iterate on a few specs, keep the
+stack once and run specs against it:
+
+```sh
+SMOKE_KEEP=1 SMOKE_E2E=1 pnpm smoke             # once: build, seed, full suite
+pnpm e2e:spec tests/reviewer.spec.ts            # seconds, no rebuild
+pnpm e2e:spec tests/reviewer.spec.ts -g "starts" # one test
+docker compose -p abyss-smoke down -v           # when done
+```
+
+`SMOKE_KEEP=1` writes the generated `E2E_*` values to `.smoke/e2e-vars.sh`
+(gitignored, mode 600); `pnpm e2e:spec` reads it and checks the stack still
+answers. The kept stack keeps its data and rate-limit counters between runs.
+`SMOKE_NO_BUILD=1` reuses the last built images when only tests changed.
+
 ## Run against another stack
 
 Set the keys from [`.env.example`](.env.example) in the shell, then

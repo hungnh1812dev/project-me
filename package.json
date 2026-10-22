@@ -14,7 +14,8 @@
     "typecheck": "turbo run typecheck",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "smoke": "bash scripts/smoke.sh"
+    "smoke": "bash scripts/smoke.sh",
+    "e2e:spec": "bash scripts/e2e-spec.sh"
   },
   "devDependencies": {
     "@abyss/prettier-config": "workspace:*",

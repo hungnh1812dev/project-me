@@ -10,8 +10,12 @@
 #   SMOKE_HTTP_PORT        host port Traefik listens on (default 8080)
 #   SMOKE_TIMEOUT_SECONDS  how long to wait for the stack (default 180)
 #   SMOKE_KEEP=1           leave the stack running afterwards (for browser checks)
+#                          and write the e2e env to .smoke/e2e-vars.sh, so
+#                          `pnpm e2e:spec <spec>` can run single specs against it
 #   SMOKE_E2E=1            also run the Playwright suite (@abyss/e2e) against the
 #                          stack as the bootstrapped owner (T11)
+#   SMOKE_NO_BUILD=1       reuse the images from the last build (only when no
+#                          product code changed since, e.g. e2e-only edits)
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -84,6 +88,9 @@ const { hashPassword } = require('./dist/modules/identity/password-hasher');
 "
 RESET_MAIL_SUBJECT="Your Abyss CMS password reset code"
 MAIL_POLL_ATTEMPTS="15"
+# Written only with SMOKE_KEEP=1 (gitignored, mode 600): the e2e env of the kept
+# stack, read by scripts/e2e-spec.sh. Removed when the stack is torn down here.
+E2E_VARS_FILE="$ROOT_DIR/.smoke/e2e-vars.sh"
 
 export SMOKE_DOMAIN="${SMOKE_DOMAIN:-$DEFAULT_DOMAIN}"
 export SMOKE_HTTP_PORT="${SMOKE_HTTP_PORT:-$DEFAULT_HTTP_PORT}"
@@ -133,6 +140,7 @@ cleanup() {
     echo "SMOKE_KEEP=1: stack left running. Stop it with: docker compose -p abyss-smoke down -v"
   else
     compose down -v --remove-orphans >/dev/null 2>&1 || true
+    rm -f "$E2E_VARS_FILE"
   fi
   rm -rf "$WORK_DIR"
   exit "$code"
@@ -175,8 +183,15 @@ expect_header() {
   if [[ "$actual" == "$expected" ]]; then pass "$label"; else fail "$label: $name expected '$expected', got '$actual'"; fi
 }
 
+BUILD_FLAG=(--build)
+if [[ "${SMOKE_NO_BUILD:-}" == "1" ]]; then
+  BUILD_FLAG=()
+  echo "SMOKE_NO_BUILD=1: reusing the last built images."
+fi
+# A fresh stack gets new secrets: any vars file from an earlier stack is stale.
+rm -f "$E2E_VARS_FILE"
 echo "Building and starting the smoke stack ($WEB_ORIGIN, $ADMIN_ORIGIN)..."
-compose up --build --detach --wait --wait-timeout "$TIMEOUT_SECONDS"
+compose up ${BUILD_FLAG[@]+"${BUILD_FLAG[@]}"} --detach --wait --wait-timeout "$TIMEOUT_SECONDS"
 
 echo "Waiting for the API behind the proxy..."
 deadline=$((SECONDS + TIMEOUT_SECONDS))
@@ -346,13 +361,28 @@ for _ in $(seq "$MAIL_POLL_ATTEMPTS"); do
 done
 if [[ "$mail_seen" == "1" ]]; then pass "the reset code reaches Mailpit over SMTP"; else fail "no reset mail in Mailpit"; fi
 
+export E2E_ADMIN_URL="$ADMIN_ORIGIN" E2E_API_BASE_URL="$SMOKE_API_BASE_URL" \
+  E2E_OWNER_EMAIL="$SMOKE_OWNER_EMAIL" E2E_OWNER_PASSWORD="$SMOKE_OWNER_PASSWORD" \
+  E2E_MAILPIT_URL="$MAILPIT_URL" \
+  E2E_READER_EMAIL="$SMOKE_READER_EMAIL" E2E_READER_PASSWORD="$SMOKE_READER_PASSWORD" \
+  E2E_READER_2FA_EMAIL="$SMOKE_READER2FA_EMAIL" E2E_READER_2FA_PASSWORD="$SMOKE_READER2FA_PASSWORD" \
+  E2E_2FA_EMAIL="$SMOKE_2FA_EMAIL" E2E_2FA_PASSWORD="$SMOKE_2FA_PASSWORD"
+E2E_VARS=(E2E_ADMIN_URL E2E_API_BASE_URL E2E_OWNER_EMAIL E2E_OWNER_PASSWORD E2E_MAILPIT_URL
+  E2E_READER_EMAIL E2E_READER_PASSWORD E2E_READER_2FA_EMAIL E2E_READER_2FA_PASSWORD
+  E2E_2FA_EMAIL E2E_2FA_PASSWORD)
+
+if [[ "${SMOKE_KEEP:-}" == "1" ]]; then
+  mkdir -p "$(dirname "$E2E_VARS_FILE")"
+  (
+    umask 077
+    for name in "${E2E_VARS[@]}"; do printf 'export %s=%q\n' "$name" "${!name}"; done >"$E2E_VARS_FILE"
+  )
+  pass "e2e env written for pnpm e2e:spec (.smoke/e2e-vars.sh)"
+fi
+
 if [[ "${SMOKE_E2E:-}" == "1" ]]; then
   echo "Playwright e2e (@abyss/e2e)"
-  if E2E_ADMIN_URL="$ADMIN_ORIGIN" E2E_API_BASE_URL="$SMOKE_API_BASE_URL" \
-    E2E_OWNER_EMAIL="$SMOKE_OWNER_EMAIL" E2E_OWNER_PASSWORD="$SMOKE_OWNER_PASSWORD" \
-    E2E_MAILPIT_URL="$MAILPIT_URL" \
-    E2E_READER_EMAIL="$SMOKE_READER_EMAIL" E2E_READER_PASSWORD="$SMOKE_READER_PASSWORD" E2E_READER_2FA_EMAIL="$SMOKE_READER2FA_EMAIL" E2E_READER_2FA_PASSWORD="$SMOKE_READER2FA_PASSWORD" E2E_2FA_EMAIL="$SMOKE_2FA_EMAIL" E2E_2FA_PASSWORD="$SMOKE_2FA_PASSWORD" \
-    pnpm --dir "$ROOT_DIR" --filter @abyss/e2e test; then
+  if pnpm --dir "$ROOT_DIR" --filter @abyss/e2e test; then
     pass "e2e suite"
   else
     fail "e2e suite"

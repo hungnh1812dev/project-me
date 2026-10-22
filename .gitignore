@@ -17,3 +17,6 @@ apps/cms-api/src/generated/
 # OS / editor
 .DS_Store
 *.log
+
+# Kept smoke stack env for pnpm e2e:spec (throwaway secrets)
+.smoke/
