@@ -1,13 +1,14 @@
 import { loadAppConfig } from '../../../config/app-config';
 import { openPrisma } from '../../../infrastructure/database/prisma-client';
 import { OWNER_CREATED_CHANNELS } from '../../security-audit';
-import { OWNER_ENV_KEYS, PASSWORD_STDIN_FLAG } from '../identity.constants';
+import { PASSWORD_STDIN_FLAG } from '../identity.constants';
 import { bootstrapOwner } from '../owner-bootstrap';
 import {
   CliInputError,
   promptHidden,
   readPasswordFromStream,
 } from './password-input';
+import { readOwnerEnv } from './read-owner-env';
 
 /**
  * `owner:bootstrap` (D1): creates the single owner. Email from OWNER_EMAIL
@@ -40,10 +41,7 @@ async function readPassword(argv: readonly string[]): Promise<string> {
 
 async function main(): Promise<void> {
   const config = loadAppConfig(process.env);
-  const email = process.env[OWNER_ENV_KEYS.email];
-  if (email === undefined || email.trim() === '') {
-    throw new CliInputError(`${OWNER_ENV_KEYS.email} is required.`);
-  }
+  const { email, displayName } = readOwnerEnv(process.env);
   const password = await readPassword(process.argv.slice(2));
 
   const { prisma, close } = openPrisma(config.database);
@@ -52,7 +50,7 @@ async function main(): Promise<void> {
       prisma,
       {
         email,
-        displayName: process.env[OWNER_ENV_KEYS.displayName],
+        displayName,
         password,
       },
       { channel: OWNER_CREATED_CHANNELS.CLI },
