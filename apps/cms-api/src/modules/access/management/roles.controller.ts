@@ -14,7 +14,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 
-import { ClientIpResolver } from '../../../common/client-ip.resolver';
+import { ClientIpResolver } from '../../../common/http/client-ip.resolver';
 import { API_ROUTES, ID_PARAM } from '../../../common/constants/api.constants';
 import { NO_STORE_HEADER } from '../../../common/constants/http.constants';
 import { PermissionAction } from '../../../generated/prisma/client';

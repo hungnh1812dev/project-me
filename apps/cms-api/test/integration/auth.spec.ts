@@ -5,7 +5,7 @@ import type { StartedPostgreSqlContainer } from '@testcontainers/postgresql';
 import { decode, sign } from 'jsonwebtoken';
 import request from 'supertest';
 
-import { Clock } from '../../src/common/clock';
+import { Clock } from '../../src/common/time/clock';
 import {
   ACCESS_TOKEN_TTL_SECONDS,
   AUTH_ERROR_CODES,

@@ -8,7 +8,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 
-import { Clock } from '../../../common/clock';
+import { Clock } from '../../../common/time/clock';
 import { Prisma } from '../../../generated/prisma/client';
 import { PrismaService } from '../../../infrastructure/database/prisma.service';
 import type { ClientMeta } from '../../../common/http/client-meta';

@@ -4,7 +4,7 @@ import type { Request } from 'express';
 
 import type { IAppConfig } from '../../config/app-config';
 import type { RateLimitOverrideEnvKey } from '../../config/config.constants';
-import type { ClientIpResolver } from '../client-ip.resolver';
+import type { ClientIpResolver } from '../http/client-ip.resolver';
 import {
   RATE_LIMIT_KEY_SOURCES,
   type RateLimitRule,
@@ -48,6 +48,10 @@ async function rejectedRulesAfter(
     store,
     { now: () => 0 },
     { rateLimit: { limitOverrides: overrides } } as unknown as IAppConfig,
+    {
+      accountSubjectOf: () => undefined,
+      isAnonymousRequest: () => false,
+    },
   );
   const rejected: string[] = [];
   const response = {

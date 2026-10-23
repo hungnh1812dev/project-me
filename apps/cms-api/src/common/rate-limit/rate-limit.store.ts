@@ -1,6 +1,6 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 
-import { Clock } from '../clock';
+import { Clock } from '../time/clock';
 import {
   RATE_LIMIT_CAPACITY_WARN_INTERVAL_MS,
   RATE_LIMIT_SWEEP_INTERVAL_MS,

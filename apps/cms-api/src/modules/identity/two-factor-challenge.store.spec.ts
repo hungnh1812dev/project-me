@@ -1,4 +1,4 @@
-import { Clock } from '../../common/clock';
+import { Clock } from '../../common/time/clock';
 import {
   TWO_FACTOR_CHALLENGE_MAX_KEYS,
   TWO_FACTOR_TEMP_TOKEN_MAX_ATTEMPTS,

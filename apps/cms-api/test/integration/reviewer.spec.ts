@@ -6,7 +6,7 @@ import type { Kysely } from 'kysely';
 import { Client } from 'pg';
 import request from 'supertest';
 
-import { Clock } from '../../src/common/clock';
+import { Clock } from '../../src/common/time/clock';
 import {
   openPrisma,
   type PrismaHandle,

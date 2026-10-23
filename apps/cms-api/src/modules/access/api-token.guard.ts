@@ -9,7 +9,7 @@ import {
 } from '@nestjs/common';
 import type { Request } from 'express';
 
-import { Clock } from '../../common/clock';
+import { Clock } from '../../common/time/clock';
 import { PrismaService } from '../../infrastructure/database/prisma.service';
 import { API_TOKEN, BEARER_PATTERN } from './api-token.constants';
 import {

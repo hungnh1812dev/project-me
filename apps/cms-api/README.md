@@ -312,7 +312,11 @@ holds only the mechanism (rule type, key sources, window lengths, store caps):
   placed last so it runs before the route's other guards. Over the limit:
   `429 TOO_MANY_REQUESTS` in the unified error shape plus `Retry-After`
   (seconds). The body is the same whichever rule fired.
-- Client IP: `ClientIpResolver` (`src/common/client-ip.resolver.ts`) is the
+- Who the caller is: `RateLimitModule.forRoot({ subjectResolver })` is called only
+  from `app.module.ts`; access binds `ActorThrottleSubjectResolver`
+  (`common/rate-limit` owns the `ThrottleSubjectResolver` port). `Clock` and
+  `ClientIpResolver` come from the global `ClockModule` and `ClientIpModule`.
+- Client IP: `ClientIpResolver` (`src/common/http/client-ip.resolver.ts`) is the
   only source. It reads `CLIENT_IP_HEADER` when configured, otherwise
   `req.ip`, which trusts exactly `TRUST_PROXY_HOPS` entries of
   `X-Forwarded-For`; anything a client prepends is ignored (SPEC §12-8).

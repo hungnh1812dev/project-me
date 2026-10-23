@@ -11,7 +11,7 @@ import {
 } from '@nestjs/common';
 import type { Request } from 'express';
 
-import { ClientIpResolver } from '../../common/client-ip.resolver';
+import { ClientIpResolver } from '../../common/http/client-ip.resolver';
 import { API_ROUTES } from '../../common/constants/api.constants';
 import { NO_STORE_HEADER } from '../../common/constants/http.constants';
 import { IDENTITY_RATE_LIMIT_POLICIES } from './identity.rate-limits.constants';

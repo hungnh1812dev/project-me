@@ -11,7 +11,7 @@ import type { NestExpressApplication } from '@nestjs/platform-express';
 import type { StartedPostgreSqlContainer } from '@testcontainers/postgresql';
 import request from 'supertest';
 
-import { Clock } from '../../src/common/clock';
+import { Clock } from '../../src/common/time/clock';
 import { ERROR_CODES } from '../../src/common/constants/error.constants';
 import { PermissionAction } from '../../src/generated/prisma/client';
 import {

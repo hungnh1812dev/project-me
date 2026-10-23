@@ -16,8 +16,8 @@ import type { Request, Response } from 'express';
 
 import { type IAppConfig } from '../../config/app-config';
 import { APP_CONFIG } from '../../config/config.constants';
-import { ClientIpResolver } from '../client-ip.resolver';
-import { Clock } from '../clock';
+import { ClientIpResolver } from '../http/client-ip.resolver';
+import { Clock } from '../time/clock';
 import { ERROR_CODES } from '../constants/error.constants';
 import {
   MS_PER_SECOND,
@@ -33,6 +33,10 @@ import {
   RATE_LIMIT_STORE,
   type RateLimitStore,
 } from '../rate-limit/rate-limit.store';
+import {
+  THROTTLE_SUBJECT_RESOLVER,
+  type ThrottleSubjectResolver,
+} from '../rate-limit/throttle-subject-resolver';
 
 export const RATE_LIMIT_POLICY_METADATA = 'abyss:rate-limit-policy';
 
@@ -66,40 +70,21 @@ function emailKeyOf(req: Request): string | undefined {
     .digest('hex');
 }
 
-/** Account id of the signed-in caller; other actors and anonymous are skipped. */
-function actorKeyOf(req: Request): string | undefined {
-  const actor = (
-    req as Request & {
-      user?: { actor?: { kind?: unknown; accountId?: unknown } };
-    }
-  ).user?.actor;
-  if (actor?.kind !== 'account' || typeof actor.accountId !== 'number') {
-    return undefined;
-  }
-  return String(actor.accountId);
-}
-
-/** Anonymous requests only (the actor is set by an earlier guard). */
-function anonymousFlagOf(req: Request): boolean {
-  const actor = (req as Request & { user?: { actor?: { kind?: unknown } } })
-    .user?.actor;
-  return actor?.kind === 'anonymous';
-}
-
 function subjectOf(
   rule: RateLimitRule,
   req: Request,
   clientIp: ClientIpResolver,
+  actors: ThrottleSubjectResolver,
 ): string | undefined {
   switch (rule.keySource) {
     case RATE_LIMIT_KEY_SOURCES.IP:
       return clientIp.resolve(req);
     case RATE_LIMIT_KEY_SOURCES.ANONYMOUS_IP:
-      return anonymousFlagOf(req) ? clientIp.resolve(req) : undefined;
+      return actors.isAnonymousRequest(req) ? clientIp.resolve(req) : undefined;
     case RATE_LIMIT_KEY_SOURCES.EMAIL:
       return emailKeyOf(req);
     case RATE_LIMIT_KEY_SOURCES.ACTOR:
-      return actorKeyOf(req);
+      return actors.accountSubjectOf(req);
   }
 }
 
@@ -117,6 +102,8 @@ export class ThrottleGuard implements CanActivate {
     @Inject(RATE_LIMIT_STORE) private readonly store: RateLimitStore,
     private readonly clock: Clock,
     @Inject(APP_CONFIG) private readonly config: IAppConfig,
+    @Inject(THROTTLE_SUBJECT_RESOLVER)
+    private readonly subjectResolver: ThrottleSubjectResolver,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -129,7 +116,7 @@ export class ThrottleGuard implements CanActivate {
     const http = context.switchToHttp();
     const req = http.getRequest<Request>();
     for (const rule of rules) {
-      const subject = subjectOf(rule, req, this.clientIp);
+      const subject = subjectOf(rule, req, this.clientIp, this.subjectResolver);
       if (subject === undefined) continue;
 
       const hit = await this.store.hit(

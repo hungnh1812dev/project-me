@@ -20,6 +20,7 @@ export {
   type ActorContext,
   type RolePolicy,
 } from './actor-context';
+export { ActorThrottleSubjectResolver } from './actor-throttle-subject.resolver';
 export { AnonymousActorService } from './anonymous-actor.service';
 export { API_TOKEN } from './api-token.constants';
 export { ApiTokenAuthenticator } from './api-token.guard';

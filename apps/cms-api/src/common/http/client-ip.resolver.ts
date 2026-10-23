@@ -3,9 +3,9 @@ import { isIP } from 'node:net';
 import { Inject, Injectable } from '@nestjs/common';
 import type { Request } from 'express';
 
-import { UNKNOWN_CLIENT_IP } from './constants/limits.constants';
-import { type IAppConfig } from '../config/app-config';
-import { APP_CONFIG } from '../config/config.constants';
+import { UNKNOWN_CLIENT_IP } from '../constants/limits.constants';
+import { type IAppConfig } from '../../config/app-config';
+import { APP_CONFIG } from '../../config/config.constants';
 
 /** Prefix Node puts on IPv4 peers of a dual-stack socket. */
 const IPV4_MAPPED_PREFIX = '::ffff:';

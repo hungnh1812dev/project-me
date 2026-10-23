@@ -4,7 +4,7 @@ import {
   devEnv,
   TEST_SECRET_32_BYTES,
 } from '../../../test/fixtures/env.fixture';
-import { Clock } from '../../common/clock';
+import { Clock } from '../../common/time/clock';
 import { MS_PER_SECOND } from '../../common/constants/limits.constants';
 import { loadAppConfig } from '../../config/app-config';
 import { CONFIG_DEFAULTS } from '../../config/config.constants';

@@ -149,7 +149,7 @@ abyss/
 │   │   │   ├── main.ts · bootstrap.ts · app.module.ts · app.setup.ts   # composition root
 │   │   │   ├── architecture/     # import-graph helper + architecture specs, module-edges.constants.ts (R1-01, R1-03)
 │   │   │   ├── config/           # env.schema.ts (Zod), app-config.ts (frozen IAppConfig), config.constants.ts, config.module.ts
-│   │   │   ├── common/           # constants/, filters/, guards/, http/, middleware/, rate-limit/, client-ip.resolver.ts, clock.ts
+│   │   │   ├── common/           # constants/, filters/, guards/, http/ (incl. client-ip.module.ts), middleware/, rate-limit/, time/ (clock.module.ts)
 │   │   │   ├── generated/        # Prisma client (generated; never edited)
 │   │   │   ├── infrastructure/   # adapters behind *.port.ts: activity/, database/, mail/, media/, turnstile/
 │   │   │   └── modules/          # one folder per §2 module, each with an index.ts facade: identity/, access/ (core + management/, R1-10),

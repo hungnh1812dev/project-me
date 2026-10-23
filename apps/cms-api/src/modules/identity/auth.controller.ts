@@ -14,7 +14,7 @@ import {
 } from '@nestjs/common';
 import type { Request, Response } from 'express';
 
-import { ClientIpResolver } from '../../common/client-ip.resolver';
+import { ClientIpResolver } from '../../common/http/client-ip.resolver';
 import { API_ROUTES } from '../../common/constants/api.constants';
 import { NO_STORE_HEADER } from '../../common/constants/http.constants';
 import {

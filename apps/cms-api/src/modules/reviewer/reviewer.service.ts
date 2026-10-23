@@ -10,7 +10,7 @@ import {
   ServiceUnavailableException,
 } from '@nestjs/common';
 
-import { Clock } from '../../common/clock';
+import { Clock } from '../../common/time/clock';
 import { MS_PER_SECOND } from '../../common/constants/limits.constants';
 import { UNKNOWN_CLIENT_IP } from '../../common/constants/limits.constants';
 import { USER_AGENT_MAX_LENGTH } from '../identity';

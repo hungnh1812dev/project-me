@@ -2,7 +2,7 @@ import { createHmac, randomInt, timingSafeEqual } from 'node:crypto';
 
 import { HttpException, HttpStatus, Inject, Injectable } from '@nestjs/common';
 
-import { Clock } from '../../common/clock';
+import { Clock } from '../../common/time/clock';
 import { ERROR_CODES } from '../../common/constants/error.constants';
 import {
   MS_PER_SECOND,

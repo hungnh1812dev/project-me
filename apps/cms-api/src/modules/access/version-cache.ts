@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 
-import { Clock } from '../../common/clock';
+import { Clock } from '../../common/time/clock';
 import type { AccountStatus } from '../../generated/prisma/client';
 import { PrismaService } from '../../infrastructure/database/prisma.service';
 import {

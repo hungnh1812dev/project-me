@@ -1,8 +1,11 @@
 import { type DynamicModule, Module } from '@nestjs/common';
 
 import { type IAppConfig } from './config/app-config';
+import { ClientIpModule } from './common/http/client-ip.module';
 import { RateLimitModule } from './common/rate-limit/rate-limit.module';
+import { ClockModule } from './common/time/clock.module';
 import { ConfigModule } from './config/config.module';
+import { ActorThrottleSubjectResolver } from './modules/access';
 import { AccessManagementModule } from './modules/access/management';
 import { ContentTypesModule } from './modules/content-types';
 import { DocumentsModule } from './modules/documents';
@@ -19,7 +22,11 @@ export class AppModule {
       module: AppModule,
       imports: [
         ConfigModule.forRoot(config),
-        RateLimitModule,
+        ClockModule,
+        ClientIpModule,
+        RateLimitModule.forRoot({
+          subjectResolver: ActorThrottleSubjectResolver,
+        }),
         HealthModule,
         IdentityModule,
         AccessManagementModule,

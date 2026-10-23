@@ -5,7 +5,7 @@ import {
   type OnModuleDestroy,
 } from '@nestjs/common';
 
-import { Clock } from '../../common/clock';
+import { Clock } from '../../common/time/clock';
 import { PrismaService } from '../../infrastructure/database/prisma.service';
 import { VersionCache, REVIEWER_ROLE_SLUG } from '../access';
 import {

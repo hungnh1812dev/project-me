@@ -4,7 +4,7 @@ import type { StartedPostgreSqlContainer } from '@testcontainers/postgresql';
 import { generate } from 'otplib';
 import request from 'supertest';
 
-import { Clock } from '../../src/common/clock';
+import { Clock } from '../../src/common/time/clock';
 import {
   AUTH_ERROR_CODES,
   TWO_FACTOR_TEMP_TOKEN_MAX_ATTEMPTS,

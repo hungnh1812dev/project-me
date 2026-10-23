@@ -1,4 +1,4 @@
-import { Clock } from '../../common/clock';
+import { Clock } from '../../common/time/clock';
 import type { PrismaService } from '../../infrastructure/database/prisma.service';
 import { VERSION_CACHE_TTL_MS } from './access.constants';
 import { VersionCache } from './version-cache';

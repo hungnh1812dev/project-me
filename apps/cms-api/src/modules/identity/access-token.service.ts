@@ -12,7 +12,7 @@ import {
   TOKEN_TYPES,
   TWO_FACTOR_TEMP_TOKEN_TTL_SECONDS,
 } from './identity-auth.constants';
-import { Clock } from '../../common/clock';
+import { Clock } from '../../common/time/clock';
 import { MS_PER_SECOND } from '../../common/constants/limits.constants';
 import { type IAppConfig } from '../../config/app-config';
 import { APP_CONFIG } from '../../config/config.constants';

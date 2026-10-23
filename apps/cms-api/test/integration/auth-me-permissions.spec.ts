@@ -2,7 +2,7 @@ import type { NestExpressApplication } from '@nestjs/platform-express';
 import type { StartedPostgreSqlContainer } from '@testcontainers/postgresql';
 import request from 'supertest';
 
-import { Clock } from '../../src/common/clock';
+import { Clock } from '../../src/common/time/clock';
 import {
   openPrisma,
   type PrismaHandle,

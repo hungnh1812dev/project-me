@@ -1,9 +1,9 @@
 import type { Request } from 'express';
 
-import { devEnv } from '../../test/fixtures/env.fixture';
-import { loadAppConfig } from '../config/app-config';
+import { devEnv } from '../../../test/fixtures/env.fixture';
+import { loadAppConfig } from '../../config/app-config';
 import { ClientIpResolver } from './client-ip.resolver';
-import { UNKNOWN_CLIENT_IP } from './constants/limits.constants';
+import { UNKNOWN_CLIENT_IP } from '../constants/limits.constants';
 
 const CF_HEADER = 'cf-connecting-ip';
 

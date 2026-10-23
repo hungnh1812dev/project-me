@@ -1,7 +1,5 @@
-import { Global, Module } from '@nestjs/common';
+import { type DynamicModule, Global, Module, type Type } from '@nestjs/common';
 
-import { ClientIpResolver } from '../client-ip.resolver';
-import { Clock } from '../clock';
 import { RATE_LIMIT_MAX_KEYS } from '../constants/limits.constants';
 import { ThrottleGuard } from '../guards/throttle.guard';
 import {
@@ -9,22 +7,34 @@ import {
   RATE_LIMIT_STORE,
   RATE_LIMIT_STORE_MAX_KEYS,
 } from './rate-limit.store';
+import {
+  THROTTLE_SUBJECT_RESOLVER,
+  type ThrottleSubjectResolver,
+} from './throttle-subject-resolver';
+
+export interface RateLimitModuleOptions {
+  readonly subjectResolver: Type<ThrottleSubjectResolver>;
+}
 
 /**
- * Client IP resolution and throttling (T10). Global so any feature module can
- * use `@Throttle(...)` and `ClientIpResolver`. Swap `RATE_LIMIT_STORE` for a
- * shared store before running more than one API replica.
+ * Throttling (T10). Global so any feature module can use `@Throttle(...)`.
+ * Needs the global `ClockModule` and `ClientIpModule`. Swap `RATE_LIMIT_STORE`
+ * for a shared store before running more than one API replica.
  */
 @Global()
-@Module({
-  providers: [
-    Clock,
-    ClientIpResolver,
-    { provide: RATE_LIMIT_STORE_MAX_KEYS, useValue: RATE_LIMIT_MAX_KEYS },
-    InMemoryRateLimitStore,
-    { provide: RATE_LIMIT_STORE, useExisting: InMemoryRateLimitStore },
-    ThrottleGuard,
-  ],
-  exports: [Clock, ClientIpResolver, RATE_LIMIT_STORE, ThrottleGuard],
-})
-export class RateLimitModule {}
+@Module({})
+export class RateLimitModule {
+  static forRoot({ subjectResolver }: RateLimitModuleOptions): DynamicModule {
+    return {
+      module: RateLimitModule,
+      providers: [
+        { provide: THROTTLE_SUBJECT_RESOLVER, useClass: subjectResolver },
+        { provide: RATE_LIMIT_STORE_MAX_KEYS, useValue: RATE_LIMIT_MAX_KEYS },
+        InMemoryRateLimitStore,
+        { provide: RATE_LIMIT_STORE, useExisting: InMemoryRateLimitStore },
+        ThrottleGuard,
+      ],
+      exports: [RATE_LIMIT_STORE, THROTTLE_SUBJECT_RESOLVER, ThrottleGuard],
+    };
+  }
+}
