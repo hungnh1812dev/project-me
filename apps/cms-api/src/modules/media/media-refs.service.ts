@@ -10,8 +10,12 @@ import {
 import { ContentDbProvider } from '../content-engine/content-database';
 import type { TableNode } from '../content-engine/registry.service';
 import type { FieldValues, TreeInput } from '../content-engine/tree-input';
-import { DOCUMENT_ERROR_CODES } from '../documents/documents.constants';
-import { DELETED_AT_COLUMN, MEDIA_TABLE } from './media.constants';
+import {
+  DELETED_AT_COLUMN,
+  MEDIA_REF_ERROR_CODES,
+  MEDIA_TABLE,
+  mediaRefInvalidMessage,
+} from './media.constants';
 
 /** A file as a document read embeds it. The internal integer id is never part of it. */
 export interface EmbeddedMedia {
@@ -148,8 +152,8 @@ export class MediaRefsService {
       const id = ids.get(values[name] as string);
       if (id === undefined) {
         throw new BadRequestException({
-          errorCode: DOCUMENT_ERROR_CODES.INVALID,
-          message: `${path} refers to a file that does not exist`,
+          errorCode: MEDIA_REF_ERROR_CODES.INVALID,
+          message: mediaRefInvalidMessage(path),
         });
       }
       values[name] = id;

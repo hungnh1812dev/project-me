@@ -83,6 +83,20 @@ export const MEDIA_ERROR_MESSAGES = {
   IN_USE: 'The file is used by a document. Remove it from the document first.',
 } as const;
 
+/**
+ * A document write that points a media field at a file it cannot use. The
+ * wire value equals the documents module's invalid-body code, so clients see
+ * one shape. Missing, deleted and unreadable files all answer with this code
+ * and `mediaRefInvalidMessage`, so the answer never reveals that a file exists.
+ */
+export const MEDIA_REF_ERROR_CODES = {
+  INVALID: 'DOCUMENT_INVALID',
+} as const;
+
+export function mediaRefInvalidMessage(inputPath: string): string {
+  return `${inputPath} refers to a file that does not exist`;
+}
+
 /** `GET /media` accepts the shared page query only. */
 export const MEDIA_ORDER = { CREATED_AT: 'created_at', ID: 'id' } as const;
 

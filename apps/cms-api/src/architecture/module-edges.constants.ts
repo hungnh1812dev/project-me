@@ -89,10 +89,4 @@ export interface KnownViolation {
   removedBy: string;
 }
 
-export const KNOWN_VIOLATIONS: readonly KnownViolation[] = [
-  {
-    from: 'modules/media/media-refs.service.ts',
-    to: 'modules/documents/documents.constants.ts',
-    removedBy: 'R1-13',
-  },
-];
+export const KNOWN_VIOLATIONS: readonly KnownViolation[] = [];
