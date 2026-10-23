@@ -10,6 +10,9 @@ const MS_PER_SECOND = 1_000;
 /** SPEC §6: access token lifetime (15 min). */
 export const ACCESS_TOKEN_TTL_SECONDS = 15 * SECONDS_PER_MINUTE;
 
+/** SPEC §6: a reviewer session lasts 24 h; its access token expires then too. */
+export const REVIEWER_SESSION_TTL_SECONDS = 24 * 60 * SECONDS_PER_MINUTE;
+
 /** SPEC §6: refresh token lifetime (7 days), restarted on every rotation. */
 export const REFRESH_TOKEN_TTL_SECONDS = 7 * SECONDS_PER_DAY;
 export const REFRESH_TOKEN_TTL_MS = REFRESH_TOKEN_TTL_SECONDS * MS_PER_SECOND;

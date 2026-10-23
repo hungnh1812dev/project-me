@@ -1,12 +1,12 @@
+import { REVIEWER_SESSION_TTL_SECONDS } from '../identity';
+
 const MS_PER_SECOND = 1_000;
 const MS_PER_MINUTE = 60 * MS_PER_SECOND;
-const SECONDS_PER_HOUR = 3_600;
 
 /** `app_settings.key` holding the owner's reviewer toggle (value: boolean). */
 export const REVIEWER_ENABLED_SETTING_KEY = 'reviewer.enabled';
 
-/** SPEC §6: a reviewer session lasts 24 h (its access token expires then too). */
-export const REVIEWER_SESSION_TTL_SECONDS = 24 * SECONDS_PER_HOUR;
+/** The session row ends when the access token does; identity owns the lifetime. */
 export const REVIEWER_SESSION_TTL_MS =
   REVIEWER_SESSION_TTL_SECONDS * MS_PER_SECOND;
 

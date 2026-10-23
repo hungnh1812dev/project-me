@@ -4,7 +4,7 @@ import type { PrismaClient, TwoFaMethod } from '../../generated/prisma/client';
 import { AUDIT_ACTIONS } from '../security-audit/security-audit.constants';
 import { writeAuditLog } from '../security-audit/security-audit.service';
 import { TWO_FACTOR_RESET_ERRORS } from './identity.constants';
-import { revokeAllRefreshTokens } from './refresh-token.service';
+import { revokeAllSessions } from './session-revocation';
 
 type TwoFactorResetErrorCode =
   (typeof TWO_FACTOR_RESET_ERRORS)[keyof typeof TWO_FACTOR_RESET_ERRORS];
@@ -80,7 +80,6 @@ export async function resetTwoFactor(
         totpSecretEnc: null,
         totpSecretKid: null,
         totpLastStep: null,
-        tokenVersion: { increment: 1 },
       },
     });
     if (reset.count === 0) {
@@ -89,7 +88,7 @@ export async function resetTwoFactor(
         'Two-factor authentication is not on for this account. Nothing changed.',
       );
     }
-    await revokeAllRefreshTokens(tx, account.id);
+    await revokeAllSessions(tx, account.id);
     // D15: an operator at the CLI, so actor_type system and no IP.
     await writeAuditLog(tx, {
       actor: { type: 'system' },

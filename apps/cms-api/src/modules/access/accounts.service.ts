@@ -25,7 +25,7 @@ import {
 } from './roles/system-roles';
 import { buildOtpMail } from '../identity/otp-mail';
 import { OtpService } from '../identity/otp.service';
-import { revokeAllRefreshTokens } from '../identity/refresh-token.service';
+import { revokeAllSessions } from '../identity/session-revocation';
 import { type ClientMeta } from '../../common/http/client-meta';
 import {
   MANAGEMENT_ERROR_CODES,
@@ -321,11 +321,10 @@ export class AccountsService {
         where: { id: target.id },
         data: {
           status: 'disabled',
-          tokenVersion: { increment: 1 },
           updatedBy: { connect: { id: actor.accountId } },
         },
       });
-      await revokeAllRefreshTokens(tx, target.id);
+      await revokeAllSessions(tx, target.id);
       await this.recordAccount(tx, auditActorOf(actor), target, meta, {
         action: AUDIT_ACTIONS.ACCOUNT_DISABLED,
       });
@@ -412,11 +411,7 @@ export class AccountsService {
   ): Promise<void> {
     const accountId = await this.prisma.$transaction(async (tx) => {
       const target = await this.lockManageable(tx, actor, documentId);
-      await tx.account.update({
-        where: { id: target.id },
-        data: { tokenVersion: { increment: 1 } },
-      });
-      await revokeAllRefreshTokens(tx, target.id);
+      await revokeAllSessions(tx, target.id);
       await this.recordAccount(tx, auditActorOf(actor), target, meta, {
         action: AUDIT_ACTIONS.ACCOUNT_SESSIONS_REVOKED,
       });

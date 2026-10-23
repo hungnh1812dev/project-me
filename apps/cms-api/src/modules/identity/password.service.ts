@@ -44,7 +44,7 @@ import {
   type ResetPasswordRequest,
   type SetPasswordRequest,
 } from './password.requests';
-import { RefreshTokenService } from './refresh-token.service';
+import { revokeAllSessions } from './session-revocation';
 import { type ClientMeta } from '../../common/http/client-meta';
 import {
   RESET_SECOND_FACTOR,
@@ -107,7 +107,6 @@ export class PasswordService implements OnApplicationShutdown {
   constructor(
     private readonly prisma: PrismaService,
     private readonly otp: OtpService,
-    private readonly refreshTokens: RefreshTokenService,
     private readonly versions: VersionCache,
     private readonly audit: SecurityAuditService,
     @Inject(MAIL_SENDER) private readonly mail: MailSender,
@@ -309,10 +308,9 @@ export class PasswordService implements OnApplicationShutdown {
         data: {
           ...write.extra,
           passwordHash,
-          tokenVersion: { increment: 1 },
         },
       });
-      await this.refreshTokens.revokeAllForAccount(tx, account.id);
+      await revokeAllSessions(tx, account.id);
       await this.audit.record(tx, {
         actor: selfActor(account.id),
         action: write.action,

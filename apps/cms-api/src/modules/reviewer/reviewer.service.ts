@@ -44,7 +44,6 @@ import {
   REVIEWER_MAX_ACTIVE_SESSIONS,
   REVIEWER_SESSION_LOCK,
   REVIEWER_SESSION_TTL_MS,
-  REVIEWER_SESSION_TTL_SECONDS,
 } from './reviewer.constants';
 import type {
   CreateReviewerSessionRequest,
@@ -269,14 +268,11 @@ export class ReviewerService {
     });
 
     return {
-      accessToken: this.tokens.signAccessToken(
-        {
-          sub: created.account.documentId,
-          tv: created.account.tokenVersion,
-          pv: created.policyVersion,
-        },
-        REVIEWER_SESSION_TTL_SECONDS,
-      ),
+      accessToken: this.tokens.signReviewerSessionToken({
+        sub: created.account.documentId,
+        tv: created.account.tokenVersion,
+        pv: created.policyVersion,
+      }),
       expiresAt: expiresAt.toISOString(),
     };
   }

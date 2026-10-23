@@ -94,7 +94,7 @@ function parseBindings(clause: string): NameBinding[] | 'all' {
   });
 }
 
-function withoutComments(text: string): string {
+export function withoutComments(text: string): string {
   return text.replace(BLOCK_COMMENT, '').replace(LINE_COMMENT, '$1');
 }
 

@@ -8,6 +8,7 @@ import {
   ACCESS_TOKEN_TTL_SECONDS,
   AUTH_ERROR_MESSAGES,
   JWT_ALGORITHM,
+  REVIEWER_SESSION_TTL_SECONDS,
   TOKEN_TYPES,
   TWO_FACTOR_TEMP_TOKEN_TTL_SECONDS,
 } from './identity-auth.constants';
@@ -76,12 +77,20 @@ export class AccessTokenService {
     this.keys = new Map(secret === undefined ? [] : [[this.kid, secret]]);
   }
 
-  /** `ttlSeconds` defaults to the 15 min access token; reviewer sessions pass 24 h (T31). */
-  signAccessToken(
-    subject: AccessTokenSubject,
-    ttlSeconds: number = ACCESS_TOKEN_TTL_SECONDS,
-  ): string {
-    return this.sign({ ...subject, typ: TOKEN_TYPES.ACCESS }, ttlSeconds);
+  /** The 15 min access token. */
+  signAccessToken(subject: AccessTokenSubject): string {
+    return this.sign(
+      { ...subject, typ: TOKEN_TYPES.ACCESS },
+      ACCESS_TOKEN_TTL_SECONDS,
+    );
+  }
+
+  /** The 24 h access token of a reviewer session (T31); same claims and `typ` as any access token. */
+  signReviewerSessionToken(subject: AccessTokenSubject): string {
+    return this.sign(
+      { ...subject, typ: TOKEN_TYPES.ACCESS },
+      REVIEWER_SESSION_TTL_SECONDS,
+    );
   }
 
   /**

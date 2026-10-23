@@ -9,6 +9,7 @@ import {
   REFRESH_TOKEN_REUSE_GRACE_SECONDS,
   REFRESH_TOKEN_TTL_MS,
   REFRESH_TOKEN_TTL_SECONDS,
+  REVIEWER_SESSION_TTL_SECONDS,
   TOKEN_TYPES,
   TWO_FACTOR_TEMP_TOKEN_TTL_SECONDS,
 } from './identity-auth.constants';
@@ -43,6 +44,7 @@ describe('auth security constants (pinned literals)', () => {
     expect(REFRESH_TOKEN_TTL_SECONDS).toBe(604_800);
     expect(REFRESH_TOKEN_REUSE_GRACE_SECONDS).toBe(10);
     expect(TWO_FACTOR_TEMP_TOKEN_TTL_SECONDS).toBe(300);
+    expect(REVIEWER_SESSION_TTL_SECONDS).toBe(86_400);
   });
 
   it('pins the derived lifetimes in milliseconds', () => {

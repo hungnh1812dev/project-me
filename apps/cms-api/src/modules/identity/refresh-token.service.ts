@@ -46,20 +46,6 @@ export type RotationResult =
 
 type Tx = Prisma.TransactionClient;
 
-/**
- * Revokes every live refresh token of an account. Shared by RefreshTokenService
- * and the `owner:reset-2fa` CLI, which runs without Nest.
- */
-export async function revokeAllRefreshTokens(
-  tx: Tx,
-  accountId: number,
-): Promise<void> {
-  await tx.refreshToken.updateMany({
-    where: { accountId, revokedAt: null },
-    data: { revokedAt: new Date() },
-  });
-}
-
 export function hashRefreshToken(rawToken: string): string {
   return createHash(REFRESH_TOKEN_HASH_ALGORITHM)
     .update(rawToken)
@@ -192,11 +178,6 @@ export class RefreshTokenService {
         ip: meta.ip,
       });
     });
-  }
-
-  /** Password written (T12): every session of the account ends. */
-  revokeAllForAccount(tx: Tx, accountId: number): Promise<void> {
-    return revokeAllRefreshTokens(tx, accountId);
   }
 
   /**
