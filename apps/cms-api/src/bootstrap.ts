@@ -6,7 +6,8 @@ import type { NestExpressApplication } from '@nestjs/platform-express';
 
 import { AppModule } from './app.module';
 import { configureApp } from './app.setup';
-import { loadAppConfig, summarizeConfig } from './config/app-config';
+import { loadAppConfig } from './config/app-config';
+import { summarizeConfig } from './config/config-summary';
 
 type RawEnv = Readonly<Record<string, string | undefined>>;
 

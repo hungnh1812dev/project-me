@@ -65,7 +65,7 @@ Required keys, from `apps/cms-api/.env.example` (the file documents every key; t
 | `MAIL_PROVIDER`                                    | `console` (OTP codes appear in the cms-api log)                               |
 | `MEDIA_PROVIDER`                                   | `fake` (uploads kept in memory, lost on restart)                              |
 
-Optional locally: `TRUST_PROXY_HOPS` (1), `CLIENT_IP_HEADER`, `SMTP_*` and `MAIL_FROM` (with `smtp`), `CLOUDINARY_*` (with `cloudinary`), `TURNSTILE_SECRET_KEY` and `TURNSTILE_EXPECTED_HOSTNAME` (reviewer sessions; unset answers 503), `TOTP_ENC_KID`, `JWT_ACCESS_KID`, `TOTP_ENC_PREVIOUS_*`, `TOTP_ISSUER`. `OWNER_SETUP_TOKEN` (opens the one-time owner setup page). CLI-only: `OWNER_EMAIL`, `OWNER_DISPLAY_NAME`. Do not set the `*_RATE_LIMIT_*` keys; they are for the smoke stack.
+Every other key is optional locally. `apps/cms-api/.env.example` is the list: it names each key, says when it applies and what the default is, and marks the CLI-only ones (`OWNER_EMAIL`, `OWNER_DISPLAY_NAME`). A spec (`config/env-example.parity.spec.ts`) fails when that file and the config schema drift apart. Do not set the `*_RATE_LIMIT_*` keys; they are for the smoke stack.
 
 Tests: `pnpm --filter @abyss/cms-api test:unit`, and `test:integration` (Testcontainers; Docker must be running).
 

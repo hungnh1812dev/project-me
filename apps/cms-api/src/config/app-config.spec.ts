@@ -19,11 +19,8 @@ import {
   TEST_TOTP_ENC_KID,
   TEST_TOTP_ENC_PREVIOUS_KID,
 } from '../../test/fixtures/env.fixture';
-import {
-  ConfigValidationError,
-  loadAppConfig,
-  summarizeConfig,
-} from './app-config';
+import { ConfigValidationError, loadAppConfig } from './app-config';
+import { summarizeConfig } from './config-summary';
 import {
   CONFIG_DEFAULTS,
   OPTIONAL_SECRET_ENV_KEYS,
@@ -536,56 +533,6 @@ describe('media provider (T27)', () => {
     expect(summary).not.toContain(TEST_CLOUDINARY_API_KEY);
     expect(summary).not.toContain(TEST_CLOUDINARY_API_SECRET);
     expect(summary).toContain(TEST_CLOUDINARY_CLOUD_NAME);
-  });
-});
-
-describe('summarizeConfig', () => {
-  it('redacts secrets and database credentials', () => {
-    const config = loadAppConfig(productionEnv());
-    const summary = JSON.stringify(summarizeConfig(config));
-    expect(summary).not.toContain(TEST_SECRET_32_BYTES);
-    expect(summary).not.toContain(TEST_DB_PASSWORD);
-    expect(summarizeConfig(config).database).toEqual({
-      host: TEST_DB_HOST,
-      port: 5432,
-      database: TEST_DB_NAME,
-      user: TEST_DB_USERNAME,
-      password: REDACTED,
-    });
-  });
-
-  it('redacts the SMTP password', () => {
-    const config = loadAppConfig(
-      productionEnv({
-        SMTP_USER: TEST_SMTP_USER,
-        SMTP_PASSWORD: TEST_SMTP_PASSWORD,
-      }),
-    );
-    const summary = summarizeConfig(config);
-    expect(JSON.stringify(summary)).not.toContain(TEST_SMTP_PASSWORD);
-    expect(summary.mail).toEqual({
-      provider: 'smtp',
-      from: TEST_MAIL_FROM,
-      smtp: {
-        host: TEST_SMTP_HOST,
-        port: CONFIG_DEFAULTS.SMTP_PORT,
-        secure: CONFIG_DEFAULTS.SMTP_SECURE,
-        user: TEST_SMTP_USER,
-        password: REDACTED,
-      },
-    });
-  });
-
-  it('shows unset secrets as unset', () => {
-    const summary = summarizeConfig(loadAppConfig(devEnv()));
-    expect(summary.secrets).toEqual({
-      jwtAccessSecret: 'unset',
-      otpPepper: 'unset',
-      totpEncKey: 'unset',
-      totpEncPreviousKey: 'unset',
-      turnstileSecretKey: 'unset',
-      ownerSetupToken: 'unset',
-    });
   });
 });
 

@@ -4,7 +4,6 @@ import type { DatabaseConfig } from '../infrastructure/database/database-config'
 import {
   CONFIG_DEFAULTS,
   RATE_LIMIT_OVERRIDE_ENV_KEYS,
-  REDACTED,
   type RateLimitOverrideEnvKey,
 } from './config.constants';
 import { envSchema, type Env } from './env.schema';
@@ -231,61 +230,5 @@ function smtpConfigOf(env: Env): SmtpConfig | undefined {
       env.SMTP_USER === undefined || env.SMTP_PASSWORD === undefined
         ? undefined
         : { user: env.SMTP_USER, password: env.SMTP_PASSWORD },
-  };
-}
-
-/** Loggable view of the config: secrets show only whether they are set. */
-export function summarizeConfig(config: IAppConfig): Record<string, unknown> {
-  const secretState = (value: string | undefined): string =>
-    value === undefined ? 'unset' : REDACTED;
-
-  return {
-    env: config.env,
-    http: config.http,
-    cors: config.cors,
-    auth: config.auth,
-    database: {
-      host: config.database.host,
-      port: config.database.port,
-      database: config.database.database,
-      user: config.database.user,
-      password: REDACTED,
-    },
-    rateLimit: config.rateLimit,
-    mail: {
-      provider: config.mail.provider,
-      from: config.mail.from,
-      smtp:
-        config.mail.smtp === undefined
-          ? undefined
-          : {
-              host: config.mail.smtp.host,
-              port: config.mail.smtp.port,
-              secure: config.mail.smtp.secure,
-              user: config.mail.smtp.auth?.user,
-              password: secretState(config.mail.smtp.auth?.password),
-            },
-    },
-    media: {
-      provider: config.media.provider,
-      cloudinary:
-        config.media.cloudinary === undefined
-          ? undefined
-          : {
-              cloudName: config.media.cloudinary.cloudName,
-              apiKey: secretState(config.media.cloudinary.apiKey),
-              apiSecret: secretState(config.media.cloudinary.apiSecret),
-              folder: config.media.cloudinary.folder,
-            },
-    },
-    reviewer: config.reviewer,
-    secrets: {
-      jwtAccessSecret: secretState(config.secrets.jwtAccessSecret),
-      otpPepper: secretState(config.secrets.otpPepper),
-      totpEncKey: secretState(config.secrets.totpEncKey),
-      totpEncPreviousKey: secretState(config.secrets.totpEncPreviousKey),
-      turnstileSecretKey: secretState(config.secrets.turnstileSecretKey),
-      ownerSetupToken: secretState(config.secrets.ownerSetupToken),
-    },
   };
 }
