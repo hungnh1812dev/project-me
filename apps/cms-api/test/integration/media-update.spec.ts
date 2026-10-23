@@ -7,7 +7,7 @@ import {
   openPrisma,
   type PrismaHandle,
 } from '../../src/infrastructure/database/prisma-client';
-import { seedRolePermissions } from '../../src/modules/access/role-permissions.seed';
+import { seedRolePermissions } from '../../src/modules/access/roles/role-permissions.seed';
 import { ContentRegistryProvider } from '../../src/modules/content-engine/content-engine.module';
 import { RegistryService } from '../../src/modules/content-engine/registry.service';
 import {
@@ -15,7 +15,7 @@ import {
   planMigration,
 } from '../../src/modules/content-engine/sql-generator';
 import { hashPassword } from '../../src/modules/identity/password-hasher';
-import { seedSystemRoles } from '../../src/modules/identity/system-roles.seed';
+import { seedSystemRoles } from '../../src/modules/access/roles/system-roles.seed';
 import { createCoreTemplate } from '../fixtures/core-db.fixture';
 import {
   dbEnvOf,

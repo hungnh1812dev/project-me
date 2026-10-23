@@ -12,7 +12,7 @@ import {
   accountActor,
   reviewerActor,
 } from '../access/actor-context';
-import { REVIEWER_ROLE_SLUG } from './identity.constants';
+import { REVIEWER_ROLE_SLUG } from '../access/roles/system-roles';
 import { VersionCache } from '../access/version-cache';
 import {
   type AccessTokenClaims,

@@ -1,5 +1,5 @@
-import type { PrismaClient } from '../../generated/prisma/client';
-import { SYSTEM_ROLES } from './identity.constants';
+import type { PrismaClient } from '../../../generated/prisma/client';
+import { SYSTEM_ROLES } from './system-roles';
 
 export class SystemRoleSeedError extends Error {
   constructor(message: string) {
@@ -26,7 +26,12 @@ export async function seedSystemRoles(prisma: PrismaClient): Promise<string[]> {
   );
 
   await prisma.role.createMany({
-    data: SYSTEM_ROLES.map((role) => ({ ...role, isSystem: true })),
+    data: SYSTEM_ROLES.map(({ slug, name, rank }) => ({
+      slug,
+      name,
+      rank,
+      isSystem: true,
+    })),
     skipDuplicates: true,
   });
 

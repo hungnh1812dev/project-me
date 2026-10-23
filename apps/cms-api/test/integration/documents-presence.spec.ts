@@ -8,7 +8,7 @@ import {
   openPrisma,
   type PrismaHandle,
 } from '../../src/infrastructure/database/prisma-client';
-import { seedRolePermissions } from '../../src/modules/access/role-permissions.seed';
+import { seedRolePermissions } from '../../src/modules/access/roles/role-permissions.seed';
 import { createContentDb } from '../../src/modules/content-engine/content-database';
 import { ContentRegistryProvider } from '../../src/modules/content-engine/content-engine.module';
 import { RegistryService } from '../../src/modules/content-engine/registry.service';
@@ -18,7 +18,7 @@ import {
 } from '../../src/modules/content-engine/sql-generator';
 import type { ContentDatabase } from '../../src/modules/content-engine/tree-loader';
 import { hashPassword } from '../../src/modules/identity/password-hasher';
-import { seedSystemRoles } from '../../src/modules/identity/system-roles.seed';
+import { seedSystemRoles } from '../../src/modules/access/roles/system-roles.seed';
 import {
   ARTICLE_DEFINITION,
   NOTE_DEFINITION,

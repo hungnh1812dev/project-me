@@ -25,7 +25,7 @@ import { ApiTokenGuard } from '../../src/modules/access/api-token.guard';
 import { API_TOKEN } from '../../src/modules/access/api-tokens.constants';
 import { RequirePermission } from '../../src/modules/access/permission.decorator';
 import { PermissionGuard } from '../../src/modules/access/permission.guard';
-import { seedRolePermissions } from '../../src/modules/access/role-permissions.seed';
+import { seedRolePermissions } from '../../src/modules/access/roles/role-permissions.seed';
 import {
   AUDIT_ACTIONS,
   type AuditAction,
@@ -33,7 +33,7 @@ import {
 import { ContentRegistryProvider } from '../../src/modules/content-engine/content-engine.module';
 import { RegistryService } from '../../src/modules/content-engine/registry.service';
 import { hashPassword } from '../../src/modules/identity/password-hasher';
-import { seedSystemRoles } from '../../src/modules/identity/system-roles.seed';
+import { seedSystemRoles } from '../../src/modules/access/roles/system-roles.seed';
 import { ARTICLE_DEFINITION } from '../fixtures/access.fixture';
 import { createCoreTemplate } from '../fixtures/core-db.fixture';
 import {

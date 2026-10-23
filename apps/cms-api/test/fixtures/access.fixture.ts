@@ -1,8 +1,4 @@
 import type { PermissionAction } from '../../src/generated/prisma/client';
-import {
-  DEFAULT_ROLE_PERMISSIONS,
-  type DefaultPermission,
-} from '../../src/modules/access/access.constants';
 import type {
   PermissionGrant,
   RolePolicy,
@@ -10,9 +6,11 @@ import type {
 import { SubjectCatalog } from '../../src/modules/access/subject-catalog';
 import { RegistryService } from '../../src/modules/content-engine/registry.service';
 import {
+  DEFAULT_ROLE_PERMISSIONS,
+  type DefaultPermission,
   SYSTEM_ROLES,
   type SystemRoleSlug,
-} from '../../src/modules/identity/identity.constants';
+} from '../../src/modules/access/roles/system-roles';
 
 /** Two small content types: one with a nested component, one flat. */
 export const ARTICLE_DEFINITION = {

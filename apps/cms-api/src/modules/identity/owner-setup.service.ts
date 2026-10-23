@@ -21,9 +21,9 @@ import {
 import { SecurityAuditService } from '../security-audit/security-audit.service';
 import {
   OWNER_BOOTSTRAP_ERRORS,
-  OWNER_ROLE_SLUG,
   OWNER_SETUP_MESSAGES,
 } from './identity.constants';
+import { OWNER_ROLE_SLUG } from '../access/roles/system-roles';
 import { bootstrapOwner, OwnerBootstrapError } from './owner-bootstrap';
 import {
   carriesSetupToken,

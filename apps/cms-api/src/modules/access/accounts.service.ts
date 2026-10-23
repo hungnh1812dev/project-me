@@ -19,7 +19,10 @@ import {
   MAIL_SENDER,
   type MailSender,
 } from '../../infrastructure/mail/mail.port';
-import { REVIEWER_ROLE_SLUG } from '../identity/identity.constants';
+import {
+  REVIEWER_ROLE_SLUG,
+  UNASSIGNABLE_ROLE_SLUGS,
+} from './roles/system-roles';
 import { buildOtpMail } from '../identity/otp-mail';
 import { OtpService } from '../identity/otp.service';
 import {
@@ -29,7 +32,6 @@ import {
 import {
   MANAGEMENT_ERROR_CODES,
   MANAGEMENT_ERROR_MESSAGES,
-  UNASSIGNABLE_ROLE_SLUGS,
 } from './access-management.constants';
 import type {
   InviteAccountRequest,

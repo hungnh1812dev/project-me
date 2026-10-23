@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 import type { PermissionAction } from '../../generated/prisma/client';
-import { OWNER_ROLE_SLUG } from '../identity/identity.constants';
+import { OWNER_ROLE_SLUG } from './roles/system-roles';
 import {
   CONTENT_WILDCARD_SUBJECT,
   PERMISSION_ACTIONS,

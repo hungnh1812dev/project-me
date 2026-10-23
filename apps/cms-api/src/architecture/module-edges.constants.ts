@@ -102,26 +102,6 @@ export const KNOWN_VIOLATIONS: readonly KnownViolation[] = [
     removedBy: 'R1-08',
   },
   {
-    from: 'modules/access/access-management.requests.ts',
-    to: 'modules/content-engine/content-engine.constants.ts',
-    removedBy: 'R1-06',
-  },
-  {
-    from: 'modules/access/access.constants.ts',
-    to: 'modules/identity/identity.constants.ts',
-    removedBy: 'R1-05',
-  },
-  {
-    from: 'modules/access/actor-context.ts',
-    to: 'modules/identity/identity.constants.ts',
-    removedBy: 'R1-05',
-  },
-  {
-    from: 'modules/access/anonymous-actor.service.ts',
-    to: 'modules/identity/identity.constants.ts',
-    removedBy: 'R1-05',
-  },
-  {
     from: 'modules/access/api-token.guard.ts',
     to: 'modules/access/api-tokens.constants.ts',
     removedBy: 'R1-10',
@@ -129,11 +109,6 @@ export const KNOWN_VIOLATIONS: readonly KnownViolation[] = [
   {
     from: 'modules/access/rank-rules.ts',
     to: 'modules/access/access-management.constants.ts',
-    removedBy: 'R1-05',
-  },
-  {
-    from: 'modules/access/role-permissions.seed.ts',
-    to: 'modules/identity/identity.constants.ts',
     removedBy: 'R1-05',
   },
   {

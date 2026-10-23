@@ -32,7 +32,7 @@ import {
 import { VersionCache } from '../access/version-cache';
 import type { AccountActor } from '../access/rank-rules';
 import { AccessTokenService } from '../identity/access-token.service';
-import { REVIEWER_ROLE_SLUG } from '../identity/identity.constants';
+import { REVIEWER_ROLE_SLUG } from '../access/roles/system-roles';
 import type { ClientMeta } from '../identity/refresh-token.service';
 import {
   REVIEWER_ACCOUNT,

@@ -1,9 +1,8 @@
-import type { PrismaClient } from '../../generated/prisma/client';
-import { SYSTEM_ROLES } from '../identity/identity.constants';
-import {
-  DEFAULT_ROLE_PERMISSIONS,
-  ROLE_PERMISSIONS_SEED_LOCK_KEY,
-} from './access.constants';
+import type { PrismaClient } from '../../../generated/prisma/client';
+import { DEFAULT_ROLE_PERMISSIONS, SYSTEM_ROLES } from './system-roles';
+
+/** Key for `pg_advisory_xact_lock`: serialises concurrent permission seeds. */
+const ROLE_PERMISSIONS_SEED_LOCK_KEY = 7_163_201_908n;
 
 /**
  * Seeds the default permission rows (decision T14) into each system role

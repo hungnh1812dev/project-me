@@ -5,16 +5,14 @@ import {
   openPrisma,
   type PrismaHandle,
 } from '../../src/infrastructure/database/prisma-client';
-import {
-  OWNER_BOOTSTRAP_ERRORS,
-  SYSTEM_ROLES,
-} from '../../src/modules/identity/identity.constants';
+import { SYSTEM_ROLES } from '../../src/modules/access/roles/system-roles';
+import { OWNER_BOOTSTRAP_ERRORS } from '../../src/modules/identity/identity.constants';
 import {
   bootstrapOwner,
   OwnerBootstrapError,
 } from '../../src/modules/identity/owner-bootstrap';
 import { verifyPassword } from '../../src/modules/identity/password-hasher';
-import { seedSystemRoles } from '../../src/modules/identity/system-roles.seed';
+import { seedSystemRoles } from '../../src/modules/access/roles/system-roles.seed';
 import { createCoreTemplate } from '../fixtures/core-db.fixture';
 import { startPostgres } from '../fixtures/postgres.fixture';
 

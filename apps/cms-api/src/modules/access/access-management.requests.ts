@@ -2,8 +2,7 @@ import { BadRequestException } from '@nestjs/common';
 import { z } from 'zod';
 
 import { EMAIL_MAX_LENGTH } from '../../common/constants/auth.constants';
-import { SLUG_PATTERN } from '../content-engine/content-engine.constants';
-import { CUSTOM_ROLE_RANK } from '../identity/identity.constants';
+import { CUSTOM_ROLE_RANK, ROLE_SLUG_PATTERN } from './roles/system-roles';
 import {
   MANAGEMENT_ERROR_CODES,
   MANAGEMENT_ERROR_MESSAGES,
@@ -87,7 +86,7 @@ export const createRoleSchema = z.strictObject({
   slug: z
     .string()
     .max(MANAGEMENT_LIMITS.ROLE_SLUG_MAX_LENGTH)
-    .regex(SLUG_PATTERN),
+    .regex(ROLE_SLUG_PATTERN),
   name: roleName,
   rank: customRank,
 });

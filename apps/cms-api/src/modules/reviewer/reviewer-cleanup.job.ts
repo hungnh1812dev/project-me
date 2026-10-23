@@ -8,7 +8,7 @@ import {
 import { Clock } from '../../common/clock';
 import { PrismaService } from '../../infrastructure/database/prisma.service';
 import { VersionCache } from '../access/version-cache';
-import { REVIEWER_ROLE_SLUG } from '../identity/identity.constants';
+import { REVIEWER_ROLE_SLUG } from '../access/roles/system-roles';
 import {
   REVIEWER_CLEANUP_BATCH_SIZE,
   REVIEWER_CLEANUP_INTERVAL_MS,

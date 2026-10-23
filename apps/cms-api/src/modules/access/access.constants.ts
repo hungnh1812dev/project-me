@@ -4,7 +4,6 @@ import {
   SCALAR_FIELD_TYPES,
 } from '../content-engine/content-engine.constants';
 import type { ContentDocument } from '../content-engine/content.repository';
-import type { SystemRoleSlug } from '../identity/identity.constants';
 import type { ActorKind } from './actor-context';
 
 /** Every permission action (SPEC §6), in enum order. */
@@ -142,62 +141,6 @@ export type AccessErrorCode =
 
 /** Metadata key of `@RequirePermission()` (read by the T15 guard). */
 export const PERMISSION_METADATA_KEY = 'abyss:access:permission';
-
-/** Key for `pg_advisory_xact_lock`: serialises concurrent permission seeds. */
-export const ROLE_PERMISSIONS_SEED_LOCK_KEY = 7_163_201_908n;
-
-export interface DefaultPermission {
-  subject: string;
-  actions: readonly PermissionAction[];
-}
-
-/**
- * Default rows per system role (decision T14), seeded only into a role that
- * has no permission rows yet. `owner` needs none: the evaluator grants it
- * everything on known subjects. `guest` gets nothing until defined.
- * Fields are all (null) and there are no conditions; field profiles for
- * sensitive fields are seeded by T30.
- */
-export const DEFAULT_ROLE_PERMISSIONS: Readonly<
-  Record<SystemRoleSlug, readonly DefaultPermission[]>
-> = {
-  owner: [],
-  admin: [
-    { subject: CONTENT_WILDCARD_SUBJECT, actions: PERMISSION_ACTIONS },
-    { subject: 'accounts', actions: SYSTEM_SUBJECT_ACTIONS.accounts },
-    { subject: 'roles', actions: SYSTEM_SUBJECT_ACTIONS.roles },
-    { subject: 'api_tokens', actions: SYSTEM_SUBJECT_ACTIONS.api_tokens },
-    { subject: 'media', actions: SYSTEM_SUBJECT_ACTIONS.media },
-  ],
-  editor: [
-    {
-      subject: CONTENT_WILDCARD_SUBJECT,
-      actions: [
-        PermissionAction.read,
-        PermissionAction.create,
-        PermissionAction.update,
-        PermissionAction.publish,
-        PermissionAction.unpublish,
-      ],
-    },
-    {
-      subject: 'media',
-      actions: [
-        PermissionAction.read,
-        PermissionAction.create,
-        PermissionAction.update,
-      ],
-    },
-  ],
-  guest: [],
-  reviewer: [
-    { subject: CONTENT_WILDCARD_SUBJECT, actions: [PermissionAction.read] },
-    { subject: 'media', actions: [PermissionAction.read] },
-  ],
-  public: [
-    { subject: CONTENT_WILDCARD_SUBJECT, actions: [PermissionAction.read] },
-  ],
-};
 
 /**
  * D9: how long a cached account/role version may be served without a DB

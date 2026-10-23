@@ -1,5 +1,3 @@
-import type { SystemRoleSlug } from '../identity/identity.constants';
-
 /** Error codes of the accounts and roles API (T17). */
 export const MANAGEMENT_ERROR_CODES = {
   /** Body or params fail the request schema; `details.issues` lists paths. */
@@ -21,7 +19,7 @@ export const MANAGEMENT_ERROR_CODES = {
   ROLE_IN_USE: 'ROLE_IN_USE',
   /** Delete of a system role, or a rank change on one (SPEC §6, D6). */
   ROLE_SYSTEM_IMMUTABLE: 'ROLE_SYSTEM_IMMUTABLE',
-  /** The role is not meant for invited accounts (see UNASSIGNABLE_ROLE_SLUGS). */
+  /** The role is not meant for invited accounts (see UNASSIGNABLE_ROLE_SLUGS in roles/system-roles.ts). */
   ROLE_NOT_ASSIGNABLE: 'ROLE_NOT_ASSIGNABLE',
   /** Create of a custom role past MANAGEMENT_LIMITS.MAX_CUSTOM_ROLES (T17c). */
   ROLE_LIMIT_REACHED: 'ROLE_LIMIT_REACHED',
@@ -53,16 +51,6 @@ export const MANAGEMENT_ERROR_MESSAGES = {
   TOKEN_SCOPE_NOT_HELD:
     'A token cannot be granted a permission its creator does not hold.',
 } as const;
-
-/**
- * System roles never given to an invited account: `public` is the anonymous
- * visitor and `reviewer` belongs to ephemeral reviewer sessions (D2, T31).
- * `owner` is out of reach anyway (no rank is above it, D6).
- */
-export const UNASSIGNABLE_ROLE_SLUGS: readonly SystemRoleSlug[] = [
-  'public',
-  'reviewer',
-];
 
 /** Input bounds of the accounts and roles API. */
 export const MANAGEMENT_LIMITS = {

@@ -1,29 +1,3 @@
-/**
- * System roles (SPEC §6). Slug and rank are immutable; the migration pins the
- * same pairs in a CHECK constraint and a trigger, so keep both in sync.
- */
-export const SYSTEM_ROLES = [
-  { slug: 'public', name: 'Public', rank: 0 },
-  { slug: 'guest', name: 'Guest', rank: 10 },
-  { slug: 'reviewer', name: 'Reviewer', rank: 20 },
-  { slug: 'editor', name: 'Editor', rank: 30 },
-  { slug: 'admin', name: 'Admin', rank: 40 },
-  { slug: 'owner', name: 'Owner', rank: 100 },
-] as const;
-
-export type SystemRoleSlug = (typeof SYSTEM_ROLES)[number]['slug'];
-
-export const OWNER_ROLE_SLUG = 'owner' satisfies SystemRoleSlug;
-
-/** The role of ephemeral reviewer accounts (D2, T31). */
-export const REVIEWER_ROLE_SLUG = 'reviewer' satisfies SystemRoleSlug;
-
-/** The role of requests without credentials (SPEC §1). */
-export const PUBLIC_ROLE_SLUG = 'public' satisfies SystemRoleSlug;
-
-/** SPEC §6: rank range for custom roles. */
-export const CUSTOM_ROLE_RANK = { min: 11, max: 39 } as const;
-
 /** D8: minimum password length. */
 export const PASSWORD_MIN_LENGTH = 12;
 /** Upper bound so hashing cost stays predictable (decision T08). */
