@@ -96,6 +96,13 @@ export const GRAPHQL_LIMITS = {
   MAX_CACHED_SCHEMAS: 64,
 } as const;
 
+/** GraphQL-only `extensions.code` values (SPEC D18); the rest reuse REST codes. */
+export const GRAPHQL_ERROR_CODES = {
+  PARSE_FAILED: 'GRAPHQL_PARSE_FAILED',
+  VALIDATION_FAILED: 'GRAPHQL_VALIDATION_FAILED',
+  LIMIT_EXCEEDED: 'GRAPHQL_LIMIT_EXCEEDED',
+} as const;
+
 /** Why a document is over a limit (never echoes any of its content). */
 export const GRAPHQL_LIMIT_MESSAGES = {
   BODY_TOO_LARGE: `The request body is larger than ${GRAPHQL_LIMITS.MAX_BODY_BYTES} bytes.`,

@@ -19,8 +19,8 @@ import {
   formatGraphqlError,
   type GraphqlPhase,
 } from './error-format';
-import { ERROR_CODES } from '../../common/constants/error.constants';
 import {
+  GRAPHQL_ERROR_CODES,
   GRAPHQL_LIMIT_MESSAGES,
   GRAPHQL_LIMITS,
   TOKEN_LIMIT_PATTERN,
@@ -136,6 +136,6 @@ function toParseError(error: unknown): GraphQLError {
   if (!(error instanceof GraphQLError)) return new GraphQLError(String(error));
   if (!TOKEN_LIMIT_PATTERN.test(error.message)) return error;
   return new GraphQLError(GRAPHQL_LIMIT_MESSAGES.TOKENS, {
-    extensions: { code: ERROR_CODES.GRAPHQL_LIMIT_EXCEEDED },
+    extensions: { code: GRAPHQL_ERROR_CODES.LIMIT_EXCEEDED },
   });
 }

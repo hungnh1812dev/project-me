@@ -104,6 +104,3 @@ export const ID_PARAM = 'id';
 
 /** Route param holding a content type slug in API_ROUTES.CONTENT_TYPES. */
 export const SLUG_PARAM = 'slug';
-
-/** Route param holding a record's document_id in API_ROUTES.DOCUMENTS. */
-export const DOCUMENT_ID_PARAM = 'documentId';

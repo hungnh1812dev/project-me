@@ -21,6 +21,7 @@ import {
 import { SecurityAuditService } from '../security-audit';
 import {
   OWNER_BOOTSTRAP_ERRORS,
+  OWNER_SETUP_ERROR_CODES,
   OWNER_SETUP_MESSAGES,
 } from './identity.constants';
 import { OWNER_ROLE_SLUG } from '../access';
@@ -92,7 +93,7 @@ export class OwnerSetupService implements OnApplicationBootstrap {
     if (!isSetupTokenValid(submittedSetupToken(body), configured)) {
       await this.reject(SETUP_REJECTION_REASONS.BAD_TOKEN, meta);
       throw new UnauthorizedException({
-        errorCode: ERROR_CODES.SETUP_TOKEN_INVALID,
+        errorCode: OWNER_SETUP_ERROR_CODES.TOKEN_INVALID,
         message: OWNER_SETUP_MESSAGES.TOKEN_INVALID,
       });
     }
@@ -114,7 +115,7 @@ export class OwnerSetupService implements OnApplicationBootstrap {
           return this.refuseClosed(body, meta);
         case OWNER_BOOTSTRAP_ERRORS.EMAIL_TAKEN:
           throw new ConflictException({
-            errorCode: ERROR_CODES.OWNER_EMAIL_TAKEN,
+            errorCode: OWNER_SETUP_ERROR_CODES.EMAIL_TAKEN,
             message: OWNER_SETUP_MESSAGES.EMAIL_TAKEN,
           });
         case OWNER_BOOTSTRAP_ERRORS.ROLE_MISSING:

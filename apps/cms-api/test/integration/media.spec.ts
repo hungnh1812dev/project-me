@@ -10,7 +10,6 @@ import {
 } from '../../src/infrastructure/database/prisma-client';
 import { FakeMediaStorage } from '../../src/infrastructure/media/fake.adapter';
 import { MEDIA_STORAGE } from '../../src/infrastructure/media/storage.port';
-import { UUID_V7_PATTERN } from '../../src/common/uuidv7';
 import { reviewerActor } from '../../src/modules/access/actor-context';
 import { seedRolePermissions } from '../../src/modules/access/roles/role-permissions.seed';
 import { ContentRegistryProvider } from '../../src/modules/content-engine/content-registry.provider';
@@ -51,6 +50,8 @@ const MEDIA = '/api/v1/media';
 const LOGIN = '/api/v1/auth/login';
 const ROLES = '/api/v1/roles';
 const OCTET_RANGE = 250;
+const UUID_V7_PATTERN =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
 
 let ipCounter = 0;
 function nextIp(): string {

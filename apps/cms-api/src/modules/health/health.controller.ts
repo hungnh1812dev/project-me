@@ -13,7 +13,7 @@ import {
   HEALTH_STATUS,
   type HealthStatus,
   READINESS_DB_TIMEOUT_MS,
-} from '../../common/constants/health.constants';
+} from './health.constants';
 import {
   DATABASE_HEALTH,
   type DatabaseHealth,

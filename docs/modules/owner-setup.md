@@ -33,7 +33,7 @@ Order of checks in `POST /setup/owner`:
 
 `GET /setup/status` returns `open = tokenConfigured && !latch && !ownerExists`. It needs no token: the admin console must know whether to show the setup page. It reveals only "this instance has no owner yet and expects a setup", which the operator causes on purpose and which lasts minutes.
 
-New error codes in `ERROR_CODES`: `SETUP_TOKEN_INVALID`, `OWNER_EMAIL_TAKEN`. Route constants: `API_ROUTES.SETUP = { ROOT: 'setup', STATUS: 'status', OWNER: 'owner' }`.
+New error codes in `OWNER_SETUP_ERROR_CODES` (`identity.constants.ts`): `SETUP_TOKEN_INVALID`, `OWNER_EMAIL_TAKEN`. Route constants: `API_ROUTES.SETUP = { ROOT: 'setup', STATUS: 'status', OWNER: 'owner' }`.
 
 ### In-process latch
 

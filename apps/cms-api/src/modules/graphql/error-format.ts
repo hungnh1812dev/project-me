@@ -7,6 +7,7 @@ import {
   INTERNAL_ERROR_MESSAGE,
 } from '../../common/constants/error.constants';
 import {
+  GRAPHQL_ERROR_CODES,
   GRAPHQL_MESSAGES,
   ROOT_UNKNOWN_FIELD_PATTERN,
   SUGGESTION_PATTERN,
@@ -73,8 +74,8 @@ function fromHttpException(exception: HttpException): {
 }
 
 const PHASE_CODES = {
-  parse: ERROR_CODES.GRAPHQL_PARSE_FAILED,
-  validate: ERROR_CODES.GRAPHQL_VALIDATION_FAILED,
+  parse: GRAPHQL_ERROR_CODES.PARSE_FAILED,
+  validate: GRAPHQL_ERROR_CODES.VALIDATION_FAILED,
 } as const;
 
 /** Variable errors name the variable only: the message echoes the value. */
@@ -108,9 +109,9 @@ function classify(
       message: INTERNAL_ERROR_MESSAGE,
     };
   }
-  if (error.extensions['code'] === ERROR_CODES.GRAPHQL_LIMIT_EXCEEDED) {
+  if (error.extensions['code'] === GRAPHQL_ERROR_CODES.LIMIT_EXCEEDED) {
     return {
-      code: ERROR_CODES.GRAPHQL_LIMIT_EXCEEDED,
+      code: GRAPHQL_ERROR_CODES.LIMIT_EXCEEDED,
       message: error.message,
     };
   }
@@ -120,7 +121,7 @@ function classify(
   if (error.path === undefined || error.path.length === 0) {
     // Raised by graphql-js before any field ran: bad variables or operation.
     return {
-      code: ERROR_CODES.GRAPHQL_VALIDATION_FAILED,
+      code: GRAPHQL_ERROR_CODES.VALIDATION_FAILED,
       message: variableMessage(error.message),
     };
   }

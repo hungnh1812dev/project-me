@@ -273,7 +273,7 @@ GraphQL-shaped once the request reaches step 2:
   (`FIELD_NOT_READABLE`, `FIELD_UNKNOWN`, `BAD_REQUEST`,
   `ACCESS_INVALID_REQUEST`, `FORBIDDEN`, `INTERNAL_SERVER_ERROR`) plus
   `GRAPHQL_PARSE_FAILED`, `GRAPHQL_VALIDATION_FAILED`,
-  `GRAPHQL_LIMIT_EXCEEDED` (in `ERROR_CODES`).
+  `GRAPHQL_LIMIT_EXCEEDED` (in `GRAPHQL_ERROR_CODES`, `graphql.constants.ts`).
 - `details` only for client errors and never carries a submitted value
   (same rule as the REST filter). 5xx-class errors: generic message, no
   `details`, logged server-side with the request id.

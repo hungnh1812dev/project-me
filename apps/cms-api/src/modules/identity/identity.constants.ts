@@ -32,6 +32,12 @@ export const SETUP_TOKEN_MAX_LENGTH = 256;
 /** The token is compared as digests of this algorithm (equal length, no early exit). */
 export const SETUP_TOKEN_DIGEST_ALGORITHM = 'sha256';
 
+/** Machine-readable `errorCode`s of the owner setup route (ADR 0005). */
+export const OWNER_SETUP_ERROR_CODES = {
+  TOKEN_INVALID: 'SETUP_TOKEN_INVALID',
+  EMAIL_TAKEN: 'OWNER_EMAIL_TAKEN',
+} as const;
+
 /** Messages of the owner setup route (ADR 0005). Never include submitted values. */
 export const OWNER_SETUP_MESSAGES = {
   TOKEN_INVALID: 'The setup token is not valid.',

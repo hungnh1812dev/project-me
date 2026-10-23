@@ -15,11 +15,7 @@ import {
 } from '@nestjs/common';
 import { z } from 'zod';
 
-import {
-  API_ROUTES,
-  DOCUMENT_ID_PARAM,
-  SLUG_PARAM,
-} from '../../common/constants/api.constants';
+import { API_ROUTES, SLUG_PARAM } from '../../common/constants/api.constants';
 import { Throttle } from '../../common/guards/throttle.guard';
 import { RATE_LIMIT_POLICIES } from '../../common/constants/limits.constants';
 import { NO_STORE_HEADER } from '../../common/constants/http.constants';
@@ -35,6 +31,7 @@ import {
 } from '../access';
 import {
   DEFAULT_DOCUMENT_STATUS,
+  DOCUMENT_ID_PARAM,
   DOCUMENT_QUERY_KEYS,
 } from './documents.constants';
 import { CONTENT_STATUSES } from '../content-engine';

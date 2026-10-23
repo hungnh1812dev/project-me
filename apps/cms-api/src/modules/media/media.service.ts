@@ -2,7 +2,7 @@ import type { IncomingMessage } from 'node:http';
 
 import { ForbiddenException, Inject, Injectable, Logger } from '@nestjs/common';
 
-import { uuidv7 } from '../../common/uuidv7';
+import { uuidv7 } from './uuidv7';
 import { MediaProvider, PermissionAction } from '../../generated/prisma/client';
 import { PrismaService } from '../../infrastructure/database/prisma.service';
 import {

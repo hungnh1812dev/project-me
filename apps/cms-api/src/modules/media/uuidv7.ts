@@ -10,10 +10,6 @@ const VERSION_MASK = 0x0f;
 const VARIANT_RFC = 0x80;
 const VARIANT_MASK = 0x3f;
 
-/** Canonical 8-4-4-4-12 form of a UUID v7. */
-export const UUID_V7_PATTERN =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
-
 /**
  * RFC 9562 UUID v7: a 48-bit millisecond timestamp followed by random bits,
  * so keys sort by creation time and are not guessable. `nowMs` is for tests.

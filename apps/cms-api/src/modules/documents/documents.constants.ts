@@ -1,5 +1,8 @@
 import { type ConditionValueKind, type RecordSystemField } from '../access';
 
+/** Route param holding a record's document_id in API_ROUTES.DOCUMENTS. */
+export const DOCUMENT_ID_PARAM = 'documentId';
+
 /** Error codes of the documents API (T20). */
 export const DOCUMENT_ERROR_CODES = {
   NOT_FOUND: 'DOCUMENT_NOT_FOUND',

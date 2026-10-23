@@ -13,8 +13,8 @@ import {
   type ValidationRule,
 } from 'graphql';
 
-import { ERROR_CODES } from '../../../common/constants/error.constants';
 import {
+  GRAPHQL_ERROR_CODES,
   GRAPHQL_LIMIT_MESSAGES,
   GRAPHQL_LIMITS,
   INTROSPECTION_ROOT_FIELDS,
@@ -101,7 +101,7 @@ function limitError(
 ): GraphQLError {
   return new GraphQLError(message, {
     nodes: node,
-    extensions: { code: ERROR_CODES.GRAPHQL_LIMIT_EXCEEDED },
+    extensions: { code: GRAPHQL_ERROR_CODES.LIMIT_EXCEEDED },
   });
 }
 
