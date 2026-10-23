@@ -1,9 +1,14 @@
-import { readdirSync, readFileSync } from 'node:fs';
-import { join, relative, sep } from 'node:path';
+import { join, sep } from 'node:path';
+
+import {
+  listSourceFiles,
+  reachedFilesOf,
+} from '../../architecture/import-graph';
 
 /**
  * Architecture test for SPEC D3: `RecordSerializer` is the only path from a
- * loaded content record to a response. Static rules over `src/`:
+ * loaded content record to a response. Static rules over `src/`, checked on
+ * the files imports resolve to (facades are followed), not on path strings:
  *
  * 1. Outside the content engine, a file that imports the record loaders
  *    (`content.repository`, `tree-loader`) must also import
@@ -17,7 +22,7 @@ import { join, relative, sep } from 'node:path';
 
 const SRC_ROOT = join(__dirname, '..', '..');
 const CONTENT_ENGINE_DIR = join('modules', 'content-engine') + sep;
-const GENERATED_DIR = 'generated' + sep;
+const GENERATED_DIR = 'generated';
 const SERIALIZER_FILE = join('modules', 'access', 'record.serializer.ts');
 /** Files that only use the record types to build the serializer itself. */
 const SERIALIZER_BUILDING_BLOCKS = [
@@ -37,44 +42,51 @@ const INTERNAL_COPY_FILES = [
   join('modules', 'documents', 'bulk.service.ts'),
 ];
 
-const RECORD_LOADER_IMPORT =
-  /(?:from|import\()\s*['"][^'"]*content-engine\/(?:content\.repository|tree-loader)['"]/;
-const SERIALIZER_IMPORT =
-  /(?:from|import\()\s*['"][^'"]*access\/record\.serializer['"]|from\s*['"]\.\/record\.serializer['"]/;
+const RECORD_LOADER_FILES = [
+  join('modules', 'content-engine', 'content.repository.ts'),
+  join('modules', 'content-engine', 'tree-loader.ts'),
+];
 const BOUNDARY_FILE = /\.(?:controller|filter|interceptor|gateway)\.ts$/;
 const SERIALIZED_CAST = /\bas\s+SerializedRecord\b/;
 
-function sourceFiles(dir: string): string[] {
-  return readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
-    const path = join(dir, entry.name);
-    if (entry.isDirectory()) return sourceFiles(path);
-    return entry.name.endsWith('.ts') && !entry.name.endsWith('.spec.ts')
-      ? [path]
-      : [];
-  });
-}
+const files = listSourceFiles(SRC_ROOT, { excludeDirs: [GENERATED_DIR] }).map(
+  (source) => ({
+    file: source.file,
+    text: source.text,
+    reached: reachedFilesOf(SRC_ROOT, source),
+  }),
+);
 
-const files = sourceFiles(SRC_ROOT)
-  .map((path) => ({
-    file: relative(SRC_ROOT, path),
-    text: readFileSync(path, 'utf8'),
-  }))
-  .filter(({ file }) => !file.startsWith(GENERATED_DIR));
+const importsRecordLoader = (reached: Set<string>) =>
+  RECORD_LOADER_FILES.some((loader) => reached.has(loader));
 
 describe('RecordSerializer is the only record -> response path', () => {
   it('scans the source tree', () => {
+    expect(files.length).toBeGreaterThan(0);
     expect(files.some(({ file }) => file === SERIALIZER_FILE)).toBe(true);
+    expect(
+      RECORD_LOADER_FILES.every((loader) =>
+        files.some(({ file }) => file === loader),
+      ),
+    ).toBe(true);
+  });
+
+  it('still finds real edges: the serializer reaches the record loaders', () => {
+    const serializer = files.find(({ file }) => file === SERIALIZER_FILE);
+    expect(
+      serializer !== undefined && importsRecordLoader(serializer.reached),
+    ).toBe(true);
   });
 
   it('record loaders are only used next to the serializer', () => {
     const offenders = files
       .filter(
-        ({ file, text }) =>
+        ({ file, reached }) =>
           !file.startsWith(CONTENT_ENGINE_DIR) &&
           !SERIALIZER_BUILDING_BLOCKS.includes(file) &&
           !INTERNAL_COPY_FILES.includes(file) &&
-          RECORD_LOADER_IMPORT.test(text) &&
-          !SERIALIZER_IMPORT.test(text),
+          importsRecordLoader(reached) &&
+          !reached.has(SERIALIZER_FILE),
       )
       .map(({ file }) => file);
     expect(offenders).toEqual([]);
@@ -83,8 +95,8 @@ describe('RecordSerializer is the only record -> response path', () => {
   it('HTTP boundary files never import record loaders', () => {
     const offenders = files
       .filter(
-        ({ file, text }) =>
-          BOUNDARY_FILE.test(file) && RECORD_LOADER_IMPORT.test(text),
+        ({ file, reached }) =>
+          BOUNDARY_FILE.test(file) && importsRecordLoader(reached),
       )
       .map(({ file }) => file);
     expect(offenders).toEqual([]);
@@ -101,21 +113,6 @@ describe('RecordSerializer is the only record -> response path', () => {
   });
 
   it('the rules match what they are meant to catch', () => {
-    expect(
-      RECORD_LOADER_IMPORT.test(
-        "import { loadComponentTrees } from '../content-engine/tree-loader';",
-      ),
-    ).toBe(true);
-    expect(
-      RECORD_LOADER_IMPORT.test(
-        "import type { ContentDocument } from '../content-engine/content.repository';",
-      ),
-    ).toBe(true);
-    expect(
-      SERIALIZER_IMPORT.test(
-        "import { RecordSerializer } from '../access/record.serializer';",
-      ),
-    ).toBe(true);
     expect(BOUNDARY_FILE.test('documents/documents.controller.ts')).toBe(true);
     expect(SERIALIZED_CAST.test('return body as SerializedRecord;')).toBe(true);
   });

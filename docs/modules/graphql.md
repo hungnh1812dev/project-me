@@ -312,8 +312,8 @@ apps/cms-api/src/modules/graphql/
 ```
 
 Architecture test (like `record-serializer.architecture.spec.ts`): files in
-`modules/graphql` must not import `content.repository`, `tree-loader`,
-`field-projection` or Kysely; reads go through `DocumentsQueryService` only.
+`modules/graphql` must not reach `content.repository`, `tree-loader` or
+`field-projection` (resolved files, facades followed) or import Kysely; reads go through `DocumentsQueryService` only.
 
 ## apps/web usage
 

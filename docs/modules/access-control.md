@@ -212,7 +212,11 @@ Decisions (T16):
 
 **Only path.** The architecture test
 `record-serializer.architecture.spec.ts` (a static scan of `src/`) fails
-when:
+when the following holds. Imports are resolved to the real file by
+`src/architecture/import-graph.ts` (an `index.ts` facade is followed to the
+file that defines each symbol), and `facade-reexports.architecture.spec.ts`
+fails when a module `index.ts` re-exports `content.repository`,
+`tree-loader` or `field-projection`:
 
 - a file outside the content engine imports `content.repository` or
   `tree-loader` without also importing `record.serializer`;
