@@ -1,6 +1,6 @@
 # Spec: Abyss Headless CMS & Portfolio (v1)
 
-Status: **Approved 2026-10-20**, amended 2026-10-21 (web on Next.js, GraphQL read API: §2, §3, §5, D17, D18, §9; D18 details pending Q-G1..Q-G7), amended 2026-10-22 (one-time owner setup route: §1, §2, D1, D15, D17, §9, §12-1, Q2; details pending Q-OS1..Q-OS4) · Date: 2026-10-20 · Supersedes: `CMS_Requirements_And_Architecture_Spec.html`, `CMS_Implementation_Planning.html`, `CMS_Project_Tasks.html` (kept for history; where they disagree with this file, this file wins).
+Status: **Approved 2026-10-20**, amended 2026-10-21 (web on Next.js, GraphQL read API: §2, §3, §5, D17, D18, §9; D18 details pending Q-G1..Q-G7), amended 2026-10-22 (one-time owner setup route: §1, §2, D1, D15, D17, §9, §12-1, Q2; details pending Q-OS1..Q-OS4), amended 2026-10-23 (smoke seed CLI: D1, D15, D17, Q2), amended 2026-10-23 (R1-00 module directions from the audit: §2, §5, §10 constants line) · Date: 2026-10-20 · Supersedes: `CMS_Requirements_And_Architecture_Spec.html`, `CMS_Implementation_Planning.html`, `CMS_Project_Tasks.html` (kept for history; where they disagree with this file, this file wins).
 
 Related: [tasks/plan.md](tasks/plan.md) · [tasks/todo.md](tasks/todo.md)
 
@@ -44,19 +44,42 @@ Success means every item in §12 has a passing automated test.
 
 | Module id | Responsibility | Depends on |
 |---|---|---|
-| `platform` | Monorepo, tooling, config/env validation, HTTP pipeline, health, Docker | — |
+| `platform` | Monorepo, tooling, config/env validation (`src/config`), HTTP pipeline and shared helpers (`src/common`), adapters behind ports (`src/infrastructure`: activity, database, mail, media storage, Turnstile), Prisma client (`src/generated`), Docker | — |
 | `ui-kit` | `@abyss/form-commons`: shadcn base + form components, built to `dist/` | platform |
 | `content-engine` | JSON schema → validated definition → SQL migrations for `content` schema, tree repository | platform |
-| `identity` | Owner bootstrap (CLI + one-time setup route), invitations, login, refresh rotation, OTP, TOTP 2FA, password lifecycle, rate limits | platform |
-| `access` | Roles, permissions, policy evaluation, field projection/masking, write allowlist, revocation versions, API tokens, security audit | identity |
-| `documents` | Document CRUD, OCC/409, draft/publish deep clone, presence, bulk (collections) | content-engine, access |
-| `graphql` | Read-only GraphQL over document reads (D18): schema generated from content definitions, same authz and serializer as REST | documents, access |
-| `media` | Upload pipeline, Cloudinary adapter, file library, safe delete | access |
-| `reviewer` | Reviewer toggle, session creation, field profile, owner log, cleanup | access, media |
+| `health` | Liveness and readiness endpoints | platform |
+| `access` core | Policy evaluation, actor context, system roles and default permissions, subject catalog, field projection/masking, record serializer, write allowlist, revocation versions, permission and API-token guards, rank rules | platform, content-engine |
+| `security-audit` | Security audit log (D15): `SecurityAuditService`, `writeAuditLog`, audit actions and reasons, email HMAC | platform, access core (types only) |
+| `identity` | Owner bootstrap (CLI + one-time setup route), smoke seed CLI, invitation acceptance, login, refresh rotation and session revocation, access-token issuing (incl. reviewer tokens), OTP, TOTP 2FA, password lifecycle, rate limits | platform, access core, security-audit |
+| `access` management | Accounts, roles and API tokens: their admin endpoints, services, requests and constants (`access/management/`) | platform, access core, identity, security-audit |
+| `access` document auth | `DocumentAuthGuard` for document reads (JWT, API token or anonymous), in its own small module (`access/document-auth.*`) | platform, access core, identity |
+| `content-types` | Read-only content-type catalog, filtered by the caller's permissions (feeds the admin permission matrix) | platform, content-engine, access core, identity (auth guard only) |
+| `media` | Upload pipeline, storage port use, file library, media references, safe delete | platform, content-engine, access core, identity (auth guard only), security-audit |
+| `documents` | Document CRUD, OCC/409, draft/publish deep clone, presence, bulk (collections) | platform, content-engine, access core, access document auth, media |
+| `graphql` | Read-only GraphQL over document reads (D18): schema generated from content definitions, same authz and serializer as REST | platform, content-engine, access core, access document auth, documents |
+| `reviewer` | Reviewer toggle, session creation, field profile, owner log, cleanup | platform, access core, identity, security-audit |
 | `admin-app` | cms-admin UI | ui-kit + the API modules it uses |
-| `web-app` | Public CV site (Next.js), login, reviewer entry; reads content through `graphql` | ui-kit, graphql, reviewer |
+| `web-app` | Public CV site (Next.js), login, reviewer entry; reads content through `graphql` | ui-kit, graphql, identity, reviewer |
 
-Build order: `platform` → (`ui-kit`, `content-engine`, `identity`) → `access` → (`documents`, `media`) → `reviewer` → app slices. UI work goes into each vertical slice; it is not a separate phase.
+Dependency order (lowest first): `platform` → (`ui-kit`, `content-engine`, `health`) → `access` core → `security-audit` → `identity` → (`access` management, `access` document auth, `content-types`, `media`, `reviewer`) → `documents` → `graphql` → app slices. UI work goes into each vertical slice; it is not a separate phase.
+
+### Module directions (cms-api)
+
+Amended 2026-10-23 (R1-00, audit G6): the map above follows the code and the approved R1 fixes. It is the one authority for which module may import which.
+
+- A file in module A may import from module B only when B is in A's "Depends on" cell. There are no cycles. `apps/cms-api/src/architecture/module-edges.constants.ts` (`ALLOWED_MODULE_EDGES`, R1-03) mirrors the cms-api rows of the table row for row; a change to one is a change to both.
+- `platform` (`src/common`, `src/config`, `src/infrastructure`, `src/generated`) never imports `src/modules/**`. The composition root (`app.module.ts`, `app.setup.ts`, `bootstrap.ts`, `main.ts`) may import any module.
+- `access` is one folder with three parts. Core is every file in `access/` except `access/management/**` and `access/document-auth.*`. Core never imports `identity`; only management and document auth do. `AccessModule` (core) imports `ContentEngineModule`.
+- "types only" means `import type` (security-audit uses the `ActorContext` and `SystemSubject` types). "auth guard only" means the JWT guard and `AuthenticatedRequest` and nothing else.
+- Other modules use a module through its `index.ts` (public interface), never its internal files (R1-11, R1-14).
+- Edges the code still has but the table does not allow are listed in `KNOWN_VIOLATIONS` (R1-03) until the R1 task that removes them; R1-14 ends with that list empty. Today these are: `identity` -> `access` files outside core (security audit, management requests, role seeds) and `access` core -> `identity` (R1-04, R1-05, R1-06, R1-10), `media -> identity` beyond the auth guard (`ClientMeta`, `clientMetaOf`; R1-06), `common -> identity` (R1-08), `media -> documents` (R1-13), and `documents -> identity` / `graphql -> identity` (R1-12). `reviewer -> media` was in the map before and is dropped; the code has no such edge.
+- Adding a module: add one row to this table and one entry to `ALLOWED_MODULE_EDGES` in the same change.
+
+### Frontend directions
+
+- **cms-admin layers** (higher may import lower, never the reverse): `main.tsx` → `app/` (composition root: store, providers, shell, routes) → `features/*` → `components/`, `lib/` → `config/`. `lib/` and `components/` import no feature and no `app/`; features import no `app/`. Only `app/` imports `features/auth/app-wiring.ts`.
+- **cms-admin feature order** (a feature imports only features to its left, through their `index.ts`): `auth` < `security` < `content-types` < `access` < `media` < `content`, `reviewer`. `status` imports no other feature. `content-types` owns the `ContentType` / `ContentTypeField` model and `getContentTypes`, which `access`, `media`, `content` and `reviewer` read.
+- **web layers**: `app/` (routes, providers, shell incl. `AccountMenu`) → `features/*` → `features/session` → `lib/` → `config/`. `auth` and `reviewer` never import each other; both use `session` and `lib/`. `status` (and `cv`, when it is built) import no feature other than `session`. Cross-feature imports go through `index.ts`.
 
 ### In scope (v1)
 Everything in the map above. Collections get bulk create/publish/unpublish/delete.
@@ -120,25 +143,56 @@ abyss/
 │   │   ├── prisma/               # core schema + migrations (public)
 │   │   ├── content/              # schemas/*.json + generated migrations/ + schema.graphql (printed SDL, D18)
 │   │   ├── src/
-│   │   │   ├── config/           # env.schema.ts (Zod), app-config.ts (frozen IAppConfig)
-│   │   │   ├── common/           # constants/, filters/, guards/, pipes/, serializers/
-│   │   │   ├── infrastructure/   # database/, mail/, media/, turnstile/
-│   │   │   └── modules/          # identity/, access/, content-engine/, content-types/, documents/, graphql/, media/, reviewer/, health/
-│   │   └── test/                 # e2e/, fixtures/
-│   ├── cms-admin/src/{config, store, lib, features}
+│   │   │   ├── main.ts · bootstrap.ts · app.module.ts · app.setup.ts   # composition root
+│   │   │   ├── architecture/     # import-graph helper + architecture specs, module-edges.constants.ts (R1-01, R1-03)
+│   │   │   ├── config/           # env.schema.ts (Zod), app-config.ts (frozen IAppConfig), config.constants.ts, config.module.ts
+│   │   │   ├── common/           # constants/, filters/, guards/, middleware/, rate-limit/, sanitize/, client-ip.resolver.ts, clock.ts, uuidv7.ts
+│   │   │   ├── generated/        # Prisma client (generated; never edited)
+│   │   │   ├── infrastructure/   # adapters behind *.port.ts: activity/, database/, mail/, media/, turnstile/
+│   │   │   └── modules/          # one folder per §2 module, each with an index.ts facade: identity/, access/ (core + management/, R1-10),
+│   │   │                         # security-audit/ (R1-04), content-engine/, content-types/, documents/, graphql/, media/, reviewer/, health/
+│   │   └── test/                 # integration/, fixtures/
+│   ├── cms-admin/                # @abyss/cms-admin, React 19 + Vite SPA
+│   │   └── src/
+│   │       ├── main.tsx          # entry
+│   │       ├── app/              # composition root: store.ts, query-client.ts, app-services.ts, AppProviders.tsx, App.tsx (routes), AppShell.tsx
+│   │       ├── features/         # auth/, security/, content-types/, access/, media/, content/, reviewer/, status/: pages, *.api.ts, auth.slice.ts, *-queries.ts, <feature>.constants.ts
+│   │       ├── components/       # app UI shared by features, no feature knowledge (Modal.tsx)
+│   │       ├── lib/              # api-client.ts and other feature-free helpers
+│   │       ├── config/           # env.ts, endpoints.ts, routes.ts, http.constants.ts, auth.constants.ts, copy.constants.ts
+│   │       └── styles/           # app.css
 │   ├── web/                      # @abyss/web, Next.js 16 App Router, standalone Node server
 │   │   ├── next.config.ts · postcss.config.mjs · vitest.config.ts · Dockerfile · public/
 │   │   └── src/
 │   │       ├── proxy.ts          # per-request nonce + CSP header (D17)
-│   │       ├── app/              # routes: layout.tsx, page.tsx, not-found.tsx, error.tsx
-│   │       ├── config/           # env.server.ts (server-only), env.client.ts (NEXT_PUBLIC_* only), endpoints.ts, *.constants.ts
-│   │       ├── lib/              # api-client.ts (browser Axios), graphql/ (graphql-fetch.server.ts, graphql-request.ts), render-richtext.ts
-│   │       └── features/         # cv/, auth/, reviewer/, status/: *.query.ts (GraphQL documents), *.server.ts, client components
+│   │       ├── instrumentation.ts · instrumentation-node.ts
+│   │       ├── app/              # routes and shell: layout.tsx, page.tsx, not-found.tsx, providers.tsx, query-client.ts, CspNonce.tsx, AccountMenu.tsx (R3-13)
+│   │       ├── config/           # env.server.ts (server-only), env.client.ts (NEXT_PUBLIC_* only), require-env.ts, endpoints.ts, shared *.constants.ts
+│   │       ├── lib/              # api-client.ts (browser Axios), content-security-policy.ts, api-failure.ts (R3-14); graphql/ and render-richtext.ts come with the CV page (T30)
+│   │       └── features/         # session/ (who is signed in + in-memory token, R3-13), auth/ (sign-in UI), reviewer/, status/, cv/ (T30):
+│   │                             # *.api.ts, *.query.ts (GraphQL documents), *.server.ts, client components
 │   └── e2e/                      # @abyss/e2e Playwright
 └── docs/{adr, modules, deployment}
 ```
 
-Naming rules: files are `kebab-case.ts`, and constants files end in `.constants.ts`. There is one endpoint map per frontend at `src/config/endpoints.ts`. React component files keep `PascalCase.tsx`; Next.js route files keep their framework names (`page.tsx`, `layout.tsx`).
+Items marked with a task ID (R1-xx, R3-xx, T30) are approved but not built yet; that task creates them.
+
+Naming rules: files are `kebab-case.ts`. React component files keep `PascalCase.tsx`; Next.js route files keep their framework names (`page.tsx`, `layout.tsx`). There is one endpoint map per frontend at `src/config/endpoints.ts`. A dotted suffix names the file's role:
+
+| Suffix | Where | Holds |
+|---|---|---|
+| `.constants.ts` | all | named constants (placement below) |
+| `.module.ts`, `.controller.ts`, `.service.ts`, `.guard.ts` | cms-api | Nest roles |
+| `.requests.ts` | cms-api | the Zod request schemas and parsers of one controller |
+| `.port.ts` | cms-api `infrastructure/` | the interface and injection token an adapter implements |
+| `.routes.ts` | cms-api | one module's route group (R2-10); `common` keeps only the API prefix and shared params |
+| `.architecture.spec.ts` | cms-api | structure guards (import graph, metadata) |
+| `.api.ts` | cms-admin, web | one feature's HTTP calls |
+| `.slice.ts` | cms-admin | a Redux Toolkit slice (only `auth.slice.ts` today) |
+| `.query.ts`, `.server.ts` | web | a GraphQL document; server-only code |
+| `.spec.ts` / `.test.ts(x)` | cms-api / frontends | tests |
+
+Constants placement (Q-A1): a constant lives next to the one module or feature that owns it, in `<module>.constants.ts` (cms-api) or `features/<feature>/<feature>.constants.ts` (frontends). Other modules or features read it through the owner's `index.ts`. cms-api `common/constants/` and frontend `config/` hold only values shared by several modules or by the app shell (env, endpoints, routes, HTTP, auth, copy).
 
 Web rules: Server Components by default; `'use client'` only for state, effects, handlers, browser APIs, TanStack Query, react-hook-form or any `@abyss/form-commons` import. Files that read server env or call `API_INTERNAL_URL` import `server-only`. The Next server never sends, receives or stores a user token (no Server Actions, Route Handlers or `cookies()` for auth, D14); authenticated calls go from the browser with the in-memory Bearer token. There is no `store/` on web.
 
@@ -176,6 +230,7 @@ Web rules: Server Components by default; `'use client'` only for state, effects,
 - **Setup route (primary on k3s):** `POST /setup/owner` with `{ setupToken, email, displayName?, password }`, open only while `OWNER_SETUP_TOKEN` is configured **and** no live owner exists; otherwise `404`. The token is checked first (SHA-256 digests compared with `timingSafeEqual`), before body validation or password hashing; wrong token → `401 SETUP_TOKEN_INVALID`. Success → `201 { email }`, no session (the owner signs in through `/auth/login`). Throttled per IP. The admin console shows the setup page only while `GET /setup/status` says `open`, and never takes the token from the URL.
 - **CLI (fallback):** `owner:bootstrap` takes `OWNER_EMAIL` and an interactive password (or `--password-stdin`); it works with or without a setup token.
 - **Closing:** the route closes itself once an owner exists. The operator removes `OWNER_SETUP_TOKEN` from the Secret after setup; cms-api logs a warning (no value) while the token is set and an owner exists.
+- **Smoke seed CLI (test stacks only; amended 2026-10-23, user decision, audit AUD-AU5-03):** `seed:account` is an identity CLI, not an HTTP route. It creates active test accounts for the smoke / e2e stack. Roles are an explicit allowlist (`admin`, `guest`); `owner`, `reviewer` and custom roles are always refused. It refuses a taken email and never updates or promotes an existing account. The password comes from stdin only. With `NODE_ENV=production` it refuses unless `ALLOW_ACCOUNT_SEED=smoke` is passed on that one invocation (never in deployed config, see D17). Each account it creates writes `account.seeded` (D15).
 
 **D2 Reviewer isolation (C2, C3).** Reviewers are **read-only**. They see only published content, filtered through the `reviewer` role's field profile, which the Owner edits like any role and which starts with every sensitive field masked. Reviewers never see drafts. No reviewer data lands in content tables, so there is no `reviewerSessionId` column. Reviewer write sandboxes are v2 and must use a separate PG schema.
 
@@ -226,7 +281,7 @@ Web rules: Server Components by default; `'use client'` only for state, effects,
 **D14 Topology and CSRF.** The API accepts the refresh cookie only on `/api/v1/auth/refresh` and `/logout`. Those endpoints also require `Origin` ∈ the allowlist. The access token lives in memory and travels as a Bearer header. Admin runs on its own subdomain so that XSS in public content can't run in the admin origin.
 
 **D15 Audit.**
-- `SecurityAuditService` is always on and writes in the same transaction for login success and failure, 2FA changes, password changes, role, permission and account changes, token create and revoke, reviewer toggle, media delete, owner creation (`owner.created`, channel `setup_page` or `cli`) and rejected owner-setup attempts (`owner.setup_rejected`, no token, password or email stored).
+- `SecurityAuditService` is always on and writes in the same transaction for login success and failure, 2FA changes, password changes, role, permission and account changes, token create and revoke, reviewer toggle, media delete, owner creation (`owner.created`, channel `setup_page` or `cli`), rejected owner-setup attempts (`owner.setup_rejected`, no token, password or email stored) and test accounts created by the smoke seed CLI (`account.seeded`, channel `cli_seed`, metadata = role slug and channel only; D1).
 - Activity tracking (content edits) stays pluggable (`none | database`).
 - Audit metadata never stores field values, only field names.
 
@@ -236,6 +291,7 @@ Web rules: Server Components by default; `'use client'` only for state, effects,
 - With `NODE_ENV=production`, Zod rejects `MAIL_PROVIDER=console`, any missing secret, and secrets shorter than 32 bytes.
 - The boot config summary redacts secrets.
 - `OWNER_SETUP_TOKEN` is optional; when set with `NODE_ENV=production` it must be at least 32 bytes (D1).
+- `ALLOW_ACCOUNT_SEED` is not an app setting. The server schema does not accept it, and it never appears in `.env.example`, the smoke env file, compose or k3s manifests. Only the `seed:account` CLI reads it, passed on one invocation, and it must equal exactly `smoke` (D1).
 - Headers on every app: HSTS, CSP, `X-Content-Type-Options: nosniff`, `Referrer-Policy`, no `X-Powered-By`.
   - **API**: `default-src 'none'` on every route, `/graphql` included.
   - **cms-admin**: CSP from its nginx config (unchanged): `script-src 'self'`, `connect-src` from env, `img-src` includes Cloudinary.
@@ -336,7 +392,7 @@ export class DocumentsController {
 }
 ```
 
-- No literals for routes, limits, headers, cookie names or URLs. They live in `common/constants/*.constants.ts` or in config (project `code-standards` skill).
+- No literals for routes, limits, headers, cookie names or URLs. They live in the owning module's `*.constants.ts`, in `common/constants/*.constants.ts` when shared, or in config (§5 constants placement; project `code-standards` skill).
 - Services take an explicit `ActorContext`. Policy checks live in `access`, never inline `role === 'x'`.
 - DTOs are validated with Zod (`nestjs-zod`). One schema per DTO, and the shared schema types are exported for the frontends.
 - Prettier, ESLint and Oxlint from `@abyss/base-config` (`/prettier`, `/eslint`, `/oxlint`): the base holds the shared rules; each project extends it locally with its own plugins and rules (React, Next, Nest, Playwright). The package is built with `tsc` to `dist/` (ESM + `.d.ts`) and its exports point at `dist/`; turbo builds it before any consumer task (D3).
@@ -399,7 +455,7 @@ Coverage target: ≥ 80 % lines on `access`, `identity`, `documents` and `conten
 | # | Question | Recommendation | Blocks |
 |---|---|---|---|
 | Q1 | Use Kysely for content queries (new dependency) instead of Prisma for content tables? | Yes: Prisma can't model runtime-defined tables safely, and Kysely keeps parameterized, typed-ish SQL | T06 · **Answered: Yes (Kysely)** |
-| Q2 | Confirm self-registration is removed in v1 (invite-only)? | Yes | T09 · **Answered: Yes, invite-only** · Amended 2026-10-22: still no self-registration; the single exception is the one-time, token-guarded owner setup (D1, ADR 0005) |
+| Q2 | Confirm self-registration is removed in v1 (invite-only)? | Yes | T09 · **Answered: Yes, invite-only** · Amended 2026-10-22: still no self-registration; the single exception is the one-time, token-guarded owner setup (D1, ADR 0005) · Amended 2026-10-23: still no self-registration route; test stacks may also create accounts through the `seed:account` CLI, which is CLI only and refused in production without a per-invocation opt-in (D1, D17) |
 | Q3 | Should email-OTP 2FA be allowed, or TOTP only? Email-as-2FA means email compromise = account takeover. | Allow it, show a warning, recommend TOTP | T13 · **Answered: TOTP + email OTP, with warning** |
 | Q4 | Real domain names, and is Cloudflare in front (affects `CLIENT_IP_HEADER` and Turnstile keys)? | — | T04, T31 |
 | Q5 | Which fields in `cv-page.json` are sensitive (masked for `public`/`reviewer` by default)? Candidates: `reference.phone`, any salary fields. | — | T30 |
