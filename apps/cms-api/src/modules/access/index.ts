@@ -42,7 +42,12 @@ export {
   type SerializedRecord,
 } from './record.serializer';
 export { seedRolePermissions } from './roles/role-permissions.seed';
-export { OWNER_ROLE_SLUG, REVIEWER_ROLE_SLUG } from './roles/system-roles';
+export {
+  ADMIN_ROLE_SLUG,
+  GUEST_ROLE_SLUG,
+  OWNER_ROLE_SLUG,
+  REVIEWER_ROLE_SLUG,
+} from './roles/system-roles';
 export { seedSystemRoles } from './roles/system-roles.seed';
 export { SubjectCatalog } from './subject-catalog';
 export { VersionCache } from './version-cache';

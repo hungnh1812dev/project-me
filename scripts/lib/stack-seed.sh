@@ -17,40 +17,12 @@ CONTENT_MIGRATE_APPLIED="Applied "
 OWNER_BOOTSTRAP_CMD=(npm run --silent owner:bootstrap -- --password-stdin)
 
 STACK_SECRET_BYTES="32"
-SEED_2FA_ACCOUNT_DONE="Seeded e2e 2FA account"
-# Creates a dedicated e2e account (T13): active, password from stdin, hashed
-# with the app's own Argon2id parameters. Keeps the owner's 5-logins-per-15-min
-# budget for the owner specs.
-SEED_2FA_ACCOUNT_JS="
-const { readFileSync } = require('node:fs');
-const { openPrisma } = require('./dist/infrastructure/database/prisma-client');
-const { hashPassword } = require('./dist/modules/identity/password-hasher');
-(async () => {
-  const passwordHash = await hashPassword(readFileSync(0, 'utf8').trim());
-  const db = openPrisma({
-    host: process.env.DB_HOST,
-    port: Number(process.env.DB_PORT),
-    database: process.env.DB_NAME,
-    user: process.env.DB_USERNAME,
-    password: process.env.DB_PASSWORD,
-  });
-  try {
-    await db.prisma.account.create({
-      data: {
-        email: process.env.SEED_EMAIL,
-        displayName: process.env.SEED_NAME || 'E2E 2FA',
-        passwordHash,
-        status: 'active',
-        role: { connect: { slug: process.env.SEED_ROLE || 'admin' } },
-        ...(process.env.SEED_EMAIL_2FA ? { is2faEnabled: true, twoFaMethod: 'email' } : {}),
-      },
-    });
-  } finally {
-    await db.close();
-  }
-  console.log('$SEED_2FA_ACCOUNT_DONE');
-})().catch((error) => { console.error(error.message); process.exit(1); });
-"
+# Creates the dedicated e2e accounts with the cms-api `seed:account` CLI (R1-16):
+# active, password from stdin, hashed with the app's own Argon2id parameters,
+# audited. The smoke-only opt-in is passed on each call, never in deployed config.
+# Keeps the owner's 5-logins-per-15-min budget for the owner specs.
+SEED_ACCOUNT_OPT_IN_ENV="ALLOW_ACCOUNT_SEED=smoke"
+SEED_ACCOUNT_DONE="Seeded account:"
 
 # The variables the Playwright suite reads (apps/e2e/src/env.ts).
 E2E_VARS=(E2E_ADMIN_URL E2E_API_BASE_URL E2E_OWNER_EMAIL E2E_OWNER_PASSWORD E2E_MAILPIT_URL
@@ -72,28 +44,37 @@ stack_generate_credentials() {
   STACK_READER2FA_PASSWORD="$(stack_random_secret)"
 }
 
-# stack_seed_account <password> [docker exec options...]: runs the seed script
-# in cms-api and prints its output (the caller checks it). Options carry SEED_*.
+# stack_seed_account <password> <seed:account options...>: runs the CLI in
+# cms-api and prints its output (the caller checks it).
 stack_seed_account() {
   local password="$1"
   shift
-  printf '%s\n' "$password" | api_exec "$@" -- node -e "$SEED_2FA_ACCOUNT_JS" 2>&1
+  printf '%s\n' "$password" | api_exec -e "$SEED_ACCOUNT_OPT_IN_ENV" -- \
+    npm run --silent seed:account -- --password-stdin "$@" 2>&1
+}
+
+# stack_check_seed <label> <password> <seed:account options...>: reports one
+# seed call; the password never reaches the report (output is redacted).
+stack_check_seed() {
+  local label="$1" password="$2" seed_output
+  shift 2
+  seed_output="$(stack_seed_account "$password" "$@")" || true
+  if [[ "$seed_output" == *"$SEED_ACCOUNT_DONE"* && "$seed_output" != *"$password"* ]]; then
+    pass "$label"
+  else
+    fail "$label: ${seed_output//$password/***}"
+  fi
 }
 
 # stack_seed_extra_accounts: the e2e 2FA account (admin) and the two reader
 # accounts (guest; the second with email 2FA on).
 stack_seed_extra_accounts() {
-  local seed_output
-  seed_output="$(stack_seed_account "$STACK_2FA_PASSWORD" -e SEED_EMAIL="$STACK_2FA_EMAIL")" || true
-  if [[ "$seed_output" == *"$SEED_2FA_ACCOUNT_DONE"* && "$seed_output" != *"$STACK_2FA_PASSWORD"* ]]; then
-    pass "seeds the e2e 2FA account"
-  else
-    fail "seeding the e2e 2FA account: ${seed_output//$STACK_2FA_PASSWORD/***}"
-  fi
-  if stack_seed_account "$STACK_READER_PASSWORD" -e SEED_ROLE=guest -e SEED_NAME=Reader \
-    -e SEED_EMAIL="$STACK_READER_EMAIL" >/dev/null; then pass "seeds reader"; else fail "seeds reader"; fi
-  if stack_seed_account "$STACK_READER2FA_PASSWORD" -e SEED_ROLE=guest -e SEED_NAME=Reader2fa \
-    -e SEED_EMAIL_2FA=1 -e SEED_EMAIL="$STACK_READER2FA_EMAIL" >/dev/null; then pass "seeds reader 2fa"; else fail "seeds reader 2fa"; fi
+  stack_check_seed "seeds the e2e 2FA account" "$STACK_2FA_PASSWORD" \
+    --email "$STACK_2FA_EMAIL" --role admin
+  stack_check_seed "seeds reader" "$STACK_READER_PASSWORD" \
+    --email "$STACK_READER_EMAIL" --role guest
+  stack_check_seed "seeds reader 2fa" "$STACK_READER2FA_PASSWORD" \
+    --email "$STACK_READER2FA_EMAIL" --role guest --email-2fa
 }
 
 # stack_export_e2e_env <admin origin> <api base url> <mailpit url>

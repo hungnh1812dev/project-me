@@ -699,23 +699,24 @@ every message. No environment serves a playground; use the committed SDL
 
 ## Scripts
 
-| Script                           | What it does                                                                                                       |
-| -------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
-| `build`                          | `tsc` to `dist/`                                                                                                   |
-| `test`                           | Unit (`src/**/*.spec.ts`) and integration (`test/integration`) tests                                               |
-| `test:unit` / `test:integration` | One Jest project only                                                                                              |
-| `lint`                           | Oxlint, then ESLint with typescript-eslint (type-aware)                                                            |
-| `typecheck`                      | `tsc --noEmit` over `src` and `test`                                                                               |
-| `content:generate`               | Build, then write the next content migration (`--dry-run`, `--name`, `--allow-destructive`)                        |
-| `graphql:print-schema`           | Build, then write `content/schema.graphql` from `content/schemas` (`--check` fails if stale)                       |
-| `content:migrate`                | Apply pending content migrations (needs a build and the `DB_*` connection)                                         |
-| `deploy:migrate`                 | Init-container command: `db:migrate`, then `content:migrate` (stops at first failure)                              |
-| `db:generate`                    | Generate the Prisma client                                                                                         |
-| `db:migrate`                     | Apply core Prisma migrations, then seed system roles + default permissions (needs a build)                         |
-| `db:migrate:dev`                 | Development: create a core migration from schema changes                                                           |
-| `db:seed`                        | Seed system roles + default permissions only (idempotent)                                                          |
-| `owner:bootstrap`                | Create the single owner (`OWNER_EMAIL`, hidden password prompt or `--password-stdin`); fallback to the setup route |
-| `owner:reset-2fa`                | Break-glass: turn 2FA off for one account and end its sessions (`--email`, `--yes`)                                |
+| Script                           | What it does                                                                                                                                                                                                 |
+| -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `build`                          | `tsc` to `dist/`                                                                                                                                                                                             |
+| `test`                           | Unit (`src/**/*.spec.ts`) and integration (`test/integration`) tests                                                                                                                                         |
+| `test:unit` / `test:integration` | One Jest project only                                                                                                                                                                                        |
+| `lint`                           | Oxlint, then ESLint with typescript-eslint (type-aware)                                                                                                                                                      |
+| `typecheck`                      | `tsc --noEmit` over `src` and `test`                                                                                                                                                                         |
+| `content:generate`               | Build, then write the next content migration (`--dry-run`, `--name`, `--allow-destructive`)                                                                                                                  |
+| `graphql:print-schema`           | Build, then write `content/schema.graphql` from `content/schemas` (`--check` fails if stale)                                                                                                                 |
+| `content:migrate`                | Apply pending content migrations (needs a build and the `DB_*` connection)                                                                                                                                   |
+| `deploy:migrate`                 | Init-container command: `db:migrate`, then `content:migrate` (stops at first failure)                                                                                                                        |
+| `db:generate`                    | Generate the Prisma client                                                                                                                                                                                   |
+| `db:migrate`                     | Apply core Prisma migrations, then seed system roles + default permissions (needs a build)                                                                                                                   |
+| `db:migrate:dev`                 | Development: create a core migration from schema changes                                                                                                                                                     |
+| `db:seed`                        | Seed system roles + default permissions only (idempotent)                                                                                                                                                    |
+| `owner:bootstrap`                | Create the single owner (`OWNER_EMAIL`, hidden password prompt or `--password-stdin`); fallback to the setup route                                                                                           |
+| `owner:reset-2fa`                | Break-glass: turn 2FA off for one account and end its sessions (`--email`, `--yes`)                                                                                                                          |
+| `seed:account`                   | Smoke stacks only: create one active test account (`--email`, `--role admin\|guest`, `--email-2fa`, `--password-stdin`); in production needs `ALLOW_ACCOUNT_SEED=smoke` on that one command, never in config |
 
 Integration tests start Postgres 16 with Testcontainers, so Docker must be
 running. Jest runs with `--experimental-vm-modules` because the Prisma 7

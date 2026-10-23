@@ -1,3 +1,5 @@
+import { ADMIN_ROLE_SLUG, GUEST_ROLE_SLUG } from '../access';
+
 /** D8: minimum password length. */
 export const PASSWORD_MIN_LENGTH = 12;
 /** Upper bound so hashing cost stays predictable (decision T08). */
@@ -74,6 +76,38 @@ export const OWNER_ENV_KEYS = {
 
 /** `owner:bootstrap --password-stdin`: read the password from stdin (CI, containers). */
 export const PASSWORD_STDIN_FLAG = '--password-stdin';
+
+/**
+ * `seed:account` (smoke stacks only, SPEC D1). Roles it may create: an
+ * explicit allowlist. `owner` and `reviewer` are never in it.
+ */
+export const SEED_ACCOUNT_ROLES: readonly string[] = [
+  ADMIN_ROLE_SLUG,
+  GUEST_ROLE_SLUG,
+];
+
+/** Per-invocation opt-in that `seed:account` demands when NODE_ENV=production (D17). */
+export const SEED_ACCOUNT_OPT_IN = {
+  ENV_KEY: 'ALLOW_ACCOUNT_SEED',
+  VALUE: 'smoke',
+} as const;
+
+/** `seed:account` options (parsed with node:util parseArgs, so no dashes). */
+export const SEED_ACCOUNT_OPTIONS = {
+  EMAIL: 'email',
+  ROLE: 'role',
+  /** Turns on email 2FA for the seeded account. */
+  EMAIL_2FA: 'email-2fa',
+  PASSWORD_STDIN: 'password-stdin',
+} as const;
+
+/** Error codes of `seed:account`. */
+export const SEED_ACCOUNT_ERRORS = {
+  NOT_ALLOWED: 'seed_account.not_allowed',
+  INVALID_INPUT: 'seed_account.invalid_input',
+  ROLE_REFUSED: 'seed_account.role_refused',
+  EMAIL_TAKEN: 'seed_account.email_taken',
+} as const;
 
 /** SPEC §6 / D8: one-time codes (T12). */
 export const OTP = {

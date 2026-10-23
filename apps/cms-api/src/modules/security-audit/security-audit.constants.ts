@@ -26,6 +26,8 @@ export const AUDIT_ACTIONS = {
   OWNER_CREATED: 'owner.created',
   /** Anonymous setup attempt refused (`reason`: bad_token or closed). */
   OWNER_SETUP_REJECTED: 'owner.setup_rejected',
+  /** Test account created by the smoke-only `seed:account` CLI (actor_type system; D1, D15). */
+  ACCOUNT_SEEDED: 'account.seeded',
   ACCOUNT_INVITED: 'account.invited',
   ACCOUNT_UPDATED: 'account.updated',
   ACCOUNT_ROLE_CHANGED: 'account.role_changed',
@@ -71,6 +73,9 @@ export const OWNER_CREATED_CHANNELS = {
 
 export type OwnerCreatedChannel =
   (typeof OWNER_CREATED_CHANNELS)[keyof typeof OWNER_CREATED_CHANNELS];
+
+/** `account.seeded` metadata `channel`. */
+export const ACCOUNT_SEEDED_CHANNEL = 'cli_seed';
 
 /** `owner.setup_rejected` metadata `reason`: a fixed set, nothing else. */
 export const SETUP_REJECTION_REASONS = {
