@@ -6,7 +6,7 @@ import {
   valueFromASTUntyped,
 } from 'graphql';
 
-import { FILTER_VALUE_PATTERNS } from '../../documents';
+import { VALUE_PATTERNS } from '../../content-engine';
 import { SCALAR_NAMES } from '../graphql.constants';
 
 /** Length of `YYYY-MM-DD`. */
@@ -50,13 +50,13 @@ export const DateScalar = new GraphQLScalarType<string, string>({
   coerceInputValue: (value) =>
     patterned(
       expectString(value, SCALAR_NAMES.DATE),
-      FILTER_VALUE_PATTERNS.DATE,
+      VALUE_PATTERNS.DATE,
       SCALAR_NAMES.DATE,
     ),
   coerceInputLiteral: (node) =>
     patterned(
       stringLiteral(node, SCALAR_NAMES.DATE),
-      FILTER_VALUE_PATTERNS.DATE,
+      VALUE_PATTERNS.DATE,
       SCALAR_NAMES.DATE,
     ),
 });
@@ -69,13 +69,13 @@ export const DateTimeScalar = new GraphQLScalarType<string, string>({
   coerceInputValue: (value) =>
     patterned(
       expectString(value, SCALAR_NAMES.DATE_TIME),
-      FILTER_VALUE_PATTERNS.DATETIME,
+      VALUE_PATTERNS.DATETIME,
       SCALAR_NAMES.DATE_TIME,
     ),
   coerceInputLiteral: (node) =>
     patterned(
       stringLiteral(node, SCALAR_NAMES.DATE_TIME),
-      FILTER_VALUE_PATTERNS.DATETIME,
+      VALUE_PATTERNS.DATETIME,
       SCALAR_NAMES.DATE_TIME,
     ),
 });
@@ -91,13 +91,13 @@ export const DecimalScalar = new GraphQLScalarType<string, string>({
   coerceInputValue: (value) =>
     patterned(
       expectString(value, SCALAR_NAMES.DECIMAL),
-      FILTER_VALUE_PATTERNS.DECIMAL,
+      VALUE_PATTERNS.DECIMAL,
       SCALAR_NAMES.DECIMAL,
     ),
   coerceInputLiteral: (node) =>
     patterned(
       stringLiteral(node, SCALAR_NAMES.DECIMAL),
-      FILTER_VALUE_PATTERNS.DECIMAL,
+      VALUE_PATTERNS.DECIMAL,
       SCALAR_NAMES.DECIMAL,
     ),
 });

@@ -122,18 +122,8 @@ export const SYSTEM_FIELD_KINDS: Readonly<
 /** Tie-break of every list order, so pages never overlap. */
 export const LIST_TIEBREAK_COLUMN = 'id';
 
-export const FILTER_VALUE_PATTERNS = {
-  INTEGER: /^-?\d{1,15}$/,
-  DECIMAL: /^-?\d{1,30}(?:\.\d{1,12})?$/,
-  DATE: /^\d{4}-\d{2}-\d{2}$/,
-  DATETIME:
-    /^\d{4}-\d{2}-\d{2}(?:T\d{2}:\d{2}(?::\d{2}(?:\.\d{1,6})?)?(?:Z|[+-]\d{2}:\d{2}))?$/,
-  LIKE_SPECIALS: /[\\%_]/g,
-} as const;
-
-/** Integer columns are Postgres `integer`: a larger value would be a DB error. */
-export const INT4_MAX = 2_147_483_647;
-export const YEAR_ZERO_PREFIX = '0000';
+/** Characters `contains` must escape so the value matches literally. */
+export const LIKE_SPECIALS_PATTERN = /[\\%_]/g;
 
 /** Body key of `PUT` carrying the version the client edited. */
 export const VERSION_BODY_KEY = 'version';

@@ -21,6 +21,12 @@ export {
 export {
   FIELD_TYPE_SPECS,
   fieldTypeOf,
+  INT4_MAX,
+  parseDate,
+  parseDatetime,
+  parseUuid,
+  UUID_PATTERN,
+  VALUE_PATTERNS,
   type FieldTypeSpec,
   type FieldValueKind,
   type GraphqlOutputName,

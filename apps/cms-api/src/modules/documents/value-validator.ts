@@ -1,20 +1,16 @@
 import { BadRequestException } from '@nestjs/common';
 
-import { sanitizeRichtext } from '../../common/sanitize/richtext.sanitizer';
 import { joinFieldPath, type FieldSelection } from '../access';
-import type { ScalarFieldType } from '../content-engine';
-import type { TableNode } from '../content-engine';
 import {
   type ComponentInput,
+  fieldTypeOf,
   type FieldValues,
-  isUuid,
+  type TableNode,
   type TreeInput,
 } from '../content-engine';
-import { coerceFilterValue } from './document-filter';
 import {
   DOCUMENT_ERROR_CODES,
   DOCUMENT_ERROR_MESSAGES,
-  INT4_MAX,
 } from './documents.constants';
 
 export type WriteMode = 'create' | 'update';
@@ -23,48 +19,6 @@ export interface TreeValidationOptions {
   mode: WriteMode;
   /** Fields the actor may write: a missing required field only counts when the actor could have sent it. */
   writable: FieldSelection;
-}
-
-const DECIMAL_STRING = /^-?\d{1,30}(?:\.\d{1,12})?$/;
-
-/**
- * Checks one value against its field type and returns the value to store
- * (datetimes normalized to ISO, richtext sanitized). `undefined` = invalid.
- */
-function coerceValue(type: ScalarFieldType, value: unknown): unknown {
-  switch (type) {
-    case 'string':
-    case 'text':
-      return typeof value === 'string' ? value : undefined;
-    case 'richtext':
-      return typeof value === 'string' ? sanitizeRichtext(value) : undefined;
-    case 'integer':
-      return Number.isInteger(value) && Math.abs(value as number) <= INT4_MAX
-        ? value
-        : undefined;
-    case 'media':
-      // The file's public `document_id`; the internal id never crosses the API.
-      return isUuid(value) ? value.toLowerCase() : undefined;
-    case 'decimal':
-      if (typeof value === 'number') {
-        return Number.isFinite(value) ? value : undefined;
-      }
-      return typeof value === 'string' && DECIMAL_STRING.test(value)
-        ? value
-        : undefined;
-    case 'boolean':
-      return typeof value === 'boolean' ? value : undefined;
-    case 'date':
-      return typeof value === 'string'
-        ? coerceFilterValue('date', value)
-        : undefined;
-    case 'datetime':
-      return typeof value === 'string'
-        ? coerceFilterValue('datetime', value)
-        : undefined;
-    case 'json':
-      return value;
-  }
 }
 
 const at = (base: string, rest: string) =>
@@ -97,7 +51,8 @@ function validateValues(
       output[name] = null;
       continue;
     }
-    const coerced = coerceValue(column.field.type as ScalarFieldType, value);
+    // A type with no registry entry (a component) never reaches a value column.
+    const coerced = fieldTypeOf(column.field.type)?.coerceValue(value);
     if (coerced === undefined) {
       throw invalid(path, DOCUMENT_ERROR_MESSAGES.INVALID_TYPE);
     }
@@ -189,7 +144,8 @@ function validateLevel(
  * - every sent value must match its field type (400 `DOCUMENT_INVALID`);
  * - a `required` field cannot be set to null; on create, and for new
  *   component items, a required field the actor may write must be sent;
- * - richtext goes through `sanitizeRichtext`; datetimes are normalized.
+ * - each value is coerced by its field type's registry rule (richtext is
+ *   sanitized, datetimes normalized).
  * Messages carry the input path only, never the value.
  * Tree shape (unknown keys, uids) was checked by `assertTreeInput`.
  */

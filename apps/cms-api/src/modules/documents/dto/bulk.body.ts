@@ -13,8 +13,8 @@ import {
   DOCUMENT_ERROR_CODES,
   DOCUMENT_ERROR_MESSAGES,
   EXPECTED_VERSION_BODY_KEY,
-  INT4_MAX,
 } from '../documents.constants';
+import { INT4_MAX } from '../../content-engine';
 
 export interface BulkRequest<Item> {
   atomic: boolean;

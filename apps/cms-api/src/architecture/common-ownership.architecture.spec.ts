@@ -1,5 +1,3 @@
-import { join } from 'node:path';
-
 import { listSourceFiles, reachedFilesOf } from './import-graph';
 import { nodeOfFile, SRC_ROOT } from './module-graph';
 
@@ -11,12 +9,7 @@ import { nodeOfFile, SRC_ROOT } from './module-graph';
  */
 const COMMON_DIRECTORY = 'common';
 
-const SINGLE_MODULE_ALLOWLIST = new Map<string, string>([
-  [
-    join(COMMON_DIRECTORY, 'sanitize', 'richtext.sanitizer.ts'),
-    'documents only; reshaped and moved by R2-02',
-  ],
-]);
+const SINGLE_MODULE_ALLOWLIST = new Map<string, string>();
 
 describe('common/ ownership (D1)', () => {
   const sources = listSourceFiles(SRC_ROOT);

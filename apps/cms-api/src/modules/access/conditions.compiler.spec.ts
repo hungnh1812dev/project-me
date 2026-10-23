@@ -67,6 +67,7 @@ describe('validateConditions', () => {
     ['eq', 'documentId', '0190a3c2-7b1e-7c3d-9f00-000000000001'],
     ['eq', 'priority', '$actor.roleRank'],
     ['ne', 'updatedBy', '$actor.id'],
+    ['ne', 'releasedAt', '2026-03-01T10:00:00+07:00'],
     ['eq', 'title', null],
   ])('accepts %s on %s', (op, field, value) => {
     expect(validateConditions(clause(field, op, value), catalog).ok).toBe(true);
@@ -160,6 +161,10 @@ describe('validateConditions', () => {
       ['a string for a boolean', 'featured', 'true'],
       ['a bad date', 'releaseDate', '2026-13-45'],
       ['a non-date', 'releaseDate', "2026-01-01' or '1'='1"],
+      ['year zero as a date', 'releaseDate', '0000-01-01'],
+      ['a loosely parseable datetime', 'releasedAt', 'March 1, 2026'],
+      ['an impossible day as a datetime', 'releasedAt', '2026-02-31T10:00:00Z'],
+      ['year zero as a datetime', 'releasedAt', '0000-01-01T00:00:00Z'],
       ['a non-uuid', 'documentId', "x' or 1=1 --"],
       ['a variable on a string field', 'title', '$actor.id'],
       [

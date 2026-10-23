@@ -5,9 +5,9 @@ import { parseRequest } from '../../../common/http/request-parsing';
 import {
   DOCUMENT_ERROR_MESSAGES,
   EXPECTED_VERSION_BODY_KEY,
-  INT4_MAX,
   VERSION_BODY_KEY,
 } from '../documents.constants';
+import { INT4_MAX } from '../../content-engine';
 import { ERROR_CODES } from '../../../common/constants/error.constants';
 
 const versionSchema = z.int().min(1).max(INT4_MAX);

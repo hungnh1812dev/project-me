@@ -5,7 +5,6 @@ export {
 } from './access-policy.service';
 export {
   CONDITION_SYSTEM_FIELDS,
-  CONDITION_UUID_PATTERN,
   MASKED_FIELDS_KEY,
   MEDIA_SUBJECT,
   RECORD_SYSTEM_COLUMNS,

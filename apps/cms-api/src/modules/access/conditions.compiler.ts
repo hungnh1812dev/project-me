@@ -1,15 +1,19 @@
 import { type Expression, type RawBuilder, sql, type SqlBool } from 'kysely';
 import { z } from 'zod';
 
-import type { ScalarFieldType } from '../content-engine';
+import {
+  parseDate,
+  parseDatetime,
+  parseUuid,
+  type FieldValueKind,
+  type ScalarFieldType,
+} from '../content-engine';
 import {
   ACCESS_ERROR_CODES,
-  CONDITION_DATE_PATTERN,
   CONDITION_FIELD_TYPES,
   CONDITION_LIMITS,
   CONDITION_OPERATORS,
   CONDITION_SYSTEM_FIELDS,
-  CONDITION_UUID_PATTERN,
   CONDITION_VARIABLE_PREFIX,
   CONDITION_VARIABLES,
 } from './access.constants';
@@ -38,8 +42,7 @@ export interface ConditionSet {
 }
 
 /** What a value is compared as; decides which literals and variables are valid. */
-export type ConditionValueKind =
-  'string' | 'integer' | 'decimal' | 'boolean' | 'date' | 'datetime' | 'uuid';
+export type ConditionValueKind = FieldValueKind;
 
 export interface ConditionField {
   column: string;
@@ -168,21 +171,22 @@ function literalProblem(
     case 'boolean':
       return typeof value === 'boolean' ? undefined : 'expected a boolean';
     case 'date':
-      return typeof value === 'string' &&
-        CONDITION_DATE_PATTERN.test(value) &&
-        Number.isFinite(Date.parse(value))
+      return typeof value === 'string' && parseDate(value) !== undefined
         ? undefined
         : 'expected a date (YYYY-MM-DD)';
     case 'datetime':
-      return typeof value === 'string' &&
-        value.length <= CONDITION_LIMITS.MAX_STRING_LENGTH &&
-        Number.isFinite(Date.parse(value))
+      return typeof value === 'string' && parseDatetime(value) !== undefined
         ? undefined
         : 'expected an ISO date-time';
     case 'uuid':
-      return typeof value === 'string' && CONDITION_UUID_PATTERN.test(value)
+      return typeof value === 'string' && parseUuid(value) !== undefined
         ? undefined
         : 'expected a UUID';
+    default: {
+      // A kind added without a literal rule rejects every literal.
+      const unreachable: never = kind;
+      return `unsupported field kind "${String(unreachable)}"`;
+    }
   }
 }
 

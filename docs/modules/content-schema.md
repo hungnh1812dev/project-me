@@ -5,17 +5,17 @@ A content type is defined in one JSON file per type under
 into tables in the Postgres schema `content` (SPEC §8.2). Before any SQL is
 generated, the definition must pass the validator.
 
-| Piece                | File (in `apps/cms-api/src/modules/content-engine/`)                   |
-| -------------------- | ---------------------------------------------------------------------- |
-| Shape (Zod)          | `definition.schema.ts`                                                 |
-| Rules and errors     | `definition.validator.ts`                                              |
-| SQL name assembly    | `naming.ts` (the only place names are built; T06/T07 must use it)      |
-| Limits, words, codes | `content-engine.constants.ts`                                          |
-| Field type behaviour | `field-types/` (`FIELD_TYPE_SPECS`, `fieldTypeOf`: one entry per type) |
-| Diff → DDL (pure)    | `sql-generator.ts`                                                     |
-| Files, snapshot      | `migration-files.ts`                                                   |
-| Apply + bookkeeping  | `migration-runner.ts` (Kysely)                                         |
-| CLIs                 | `cli/generate.ts`, `cli/migrate.ts`                                    |
+| Piece                | File (in `apps/cms-api/src/modules/content-engine/`)                                                                                                                                   |
+| -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Shape (Zod)          | `definition.schema.ts`                                                                                                                                                                 |
+| Rules and errors     | `definition.validator.ts`                                                                                                                                                              |
+| SQL name assembly    | `naming.ts` (the only place names are built; T06/T07 must use it)                                                                                                                      |
+| Limits, words, codes | `content-engine.constants.ts`                                                                                                                                                          |
+| Field type behaviour | `field-types/` (`FIELD_TYPE_SPECS`, `fieldTypeOf`: one entry per type, including `coerceValue`; value patterns, `INT4_MAX` and the date/datetime/uuid parsers are exported next to it) |
+| Diff → DDL (pure)    | `sql-generator.ts`                                                                                                                                                                     |
+| Files, snapshot      | `migration-files.ts`                                                                                                                                                                   |
+| Apply + bookkeeping  | `migration-runner.ts` (Kysely)                                                                                                                                                         |
+| CLIs                 | `cli/generate.ts`, `cli/migrate.ts`                                                                                                                                                    |
 
 ## Top level
 

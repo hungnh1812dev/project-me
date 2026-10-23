@@ -8,17 +8,21 @@ import {
   RECORD_SYSTEM_FIELDS,
   type RecordSystemField,
   type ConditionValueKind,
-  CONDITION_UUID_PATTERN,
 } from '../access';
-import type { RegisteredContentType } from '../content-engine';
+import {
+  INT4_MAX,
+  parseDate,
+  parseDatetime,
+  parseUuid,
+  VALUE_PATTERNS,
+  type RegisteredContentType,
+} from '../content-engine';
 import type { FilterClause, SortKey } from './dto/list-documents.query';
 import {
   DOCUMENT_ERROR_MESSAGES,
-  FILTER_VALUE_PATTERNS,
-  INT4_MAX,
+  LIKE_SPECIALS_PATTERN,
   OPERATORS_BY_KIND,
   SYSTEM_FIELD_KINDS,
-  YEAR_ZERO_PREFIX,
 } from './documents.constants';
 import { queryKindOfField } from './queryable-fields';
 
@@ -67,17 +71,6 @@ export function queryColumnOf(
 
 type FilterValue = string | number | boolean;
 
-/** Postgres has no year 0, and rejects it with an error (a 500, not a 400). */
-const hasYearZero = (raw: string) => raw.startsWith(YEAR_ZERO_PREFIX);
-
-function validDate(raw: string): boolean {
-  return (
-    FILTER_VALUE_PATTERNS.DATE.test(raw) &&
-    !hasYearZero(raw) &&
-    new Date(`${raw}T00:00:00Z`).toISOString().startsWith(raw)
-  );
-}
-
 /** A URL string as the typed value its column compares with; undefined = invalid. */
 export function coerceFilterValue(
   kind: ConditionValueKind,
@@ -88,33 +81,31 @@ export function coerceFilterValue(
       return raw;
     case 'integer': {
       const value = Number(raw);
-      return FILTER_VALUE_PATTERNS.INTEGER.test(raw) &&
-        Math.abs(value) <= INT4_MAX
+      return VALUE_PATTERNS.INTEGER.test(raw) && Math.abs(value) <= INT4_MAX
         ? value
         : undefined;
     }
     case 'decimal':
-      return FILTER_VALUE_PATTERNS.DECIMAL.test(raw) ? raw : undefined;
+      return VALUE_PATTERNS.DECIMAL.test(raw) ? raw : undefined;
     case 'boolean':
       if (raw === 'true') return true;
       return raw === 'false' ? false : undefined;
     case 'date':
-      return validDate(raw) ? raw : undefined;
-    case 'datetime': {
-      const time = Date.parse(raw);
-      return FILTER_VALUE_PATTERNS.DATETIME.test(raw) &&
-        !hasYearZero(raw) &&
-        Number.isFinite(time)
-        ? new Date(time).toISOString()
-        : undefined;
-    }
+      return parseDate(raw);
+    case 'datetime':
+      return parseDatetime(raw);
     case 'uuid':
-      return CONDITION_UUID_PATTERN.test(raw) ? raw.toLowerCase() : undefined;
+      return parseUuid(raw);
+    default: {
+      // A kind added without a rule here is refused, never passed through.
+      const unreachable: never = kind;
+      return unreachable;
+    }
   }
 }
 
 function escapeLike(raw: string): string {
-  return raw.replace(FILTER_VALUE_PATTERNS.LIKE_SPECIALS, '\\$&');
+  return raw.replace(LIKE_SPECIALS_PATTERN, '\\$&');
 }
 
 /**

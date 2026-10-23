@@ -116,11 +116,6 @@ export const CONDITION_LIMITS = {
   MAX_STRING_LENGTH: 255,
 } as const;
 
-/** Formats a date / datetime literal must match before it reaches SQL. */
-export const CONDITION_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
-export const CONDITION_UUID_PATTERN =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
 /** Error codes of permission / token scope validation (T17 and T19 return them). */
 export const ACCESS_ERROR_CODES = {
   PERMISSION_INVALID_CONDITION: 'PERMISSION_INVALID_CONDITION',

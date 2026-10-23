@@ -79,3 +79,66 @@ describe('field type registry', () => {
     );
   });
 });
+
+describe('coerceValue', () => {
+  const coerce = (type: string, value: unknown) =>
+    fieldTypeOf(type)?.coerceValue(value);
+
+  it('sanitizes richtext and never stores it raw', () => {
+    const out = coerce('richtext', '<p>hi</p><img src=x onerror=alert(1)>');
+    expect(out).toBe('<p>hi</p>');
+    expect(coerce('richtext', 5)).toBeUndefined();
+  });
+
+  it('keeps text as it is and refuses non-strings', () => {
+    expect(coerce('text', '<b>x</b>')).toBe('<b>x</b>');
+    expect(coerce('string', 1)).toBeUndefined();
+  });
+
+  it.each([
+    ['integer', 7, 7],
+    ['integer', 2_147_483_647, 2_147_483_647],
+    ['decimal', '1.50', '1.50'],
+    ['decimal', 1.5, 1.5],
+    ['boolean', false, false],
+    ['date', '2026-02-28', '2026-02-28'],
+    ['datetime', '2026-03-01T10:00:00+07:00', '2026-03-01T03:00:00.000Z'],
+    [
+      'media',
+      '0A0A0A0A-0A0A-4A0A-8A0A-0A0A0A0A0A0A',
+      '0a0a0a0a-0a0a-4a0a-8a0a-0a0a0a0a0a0a',
+    ],
+  ])('%s accepts %p', (type, value, expected) => {
+    expect(coerce(type, value)).toBe(expected);
+  });
+
+  it.each([
+    ['integer', 1.5],
+    ['integer', 2_147_483_648],
+    ['integer', '1'],
+    ['decimal', Infinity],
+    ['decimal', '1,5'],
+    ['boolean', 'true'],
+    ['date', '2026-02-31'],
+    ['date', '0000-01-01'],
+    ['date', '2026-13-45'],
+    ['datetime', 'yesterday'],
+    ['datetime', '2026-02-31T10:00:00Z'],
+    ['datetime', '2026-02-31'],
+    ['datetime', '0000-01-01T00:00:00Z'],
+    ['media', 12],
+    ['media', 'not-a-uuid'],
+  ])('%s refuses %p', (type, value) => {
+    expect(coerce(type, value)).toBeUndefined();
+  });
+
+  it('passes any json value through', () => {
+    expect(coerce('json', [1, { a: null }])).toEqual([1, { a: null }]);
+  });
+
+  it('has a rule for every scalar type', () => {
+    for (const type of SCALAR_FIELD_TYPES) {
+      expect(typeof FIELD_TYPE_SPECS[type].coerceValue).toBe('function');
+    }
+  });
+});

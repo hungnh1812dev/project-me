@@ -35,6 +35,13 @@ export interface FieldTypeSpec {
   /** The column holds a `file_library.id` that must be embedded on read and protected from deletion. */
   readonly referencesMedia: boolean;
   readonly graphqlOutput: GraphqlOutputName;
+  /**
+   * Checks an API body value and returns the value to store (datetimes
+   * normalized, richtext sanitized); `undefined` = the value does not fit
+   * the type. Never throws, never returns the input unchecked for a type
+   * that has a rule.
+   */
+  readonly coerceValue: (value: unknown) => unknown;
   /** API value -> column value, for types the driver cannot send as they are. */
   readonly encodeForColumn?: (value: unknown) => unknown;
 }

@@ -1,8 +1,8 @@
 import {
   CONTENT_ERROR_CODES,
   SINGLE_COMPONENT_MAX_ITEMS,
-  UUID_PATTERN,
 } from './content-engine.constants';
+import { UUID_PATTERN } from './field-types';
 import { formatDefinitionPath } from './definition.validator';
 import { ContentEngineError } from './migration-files';
 import type { TableNode } from './registry.service';

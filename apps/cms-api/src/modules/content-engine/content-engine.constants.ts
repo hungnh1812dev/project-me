@@ -260,10 +260,6 @@ export const CONTENT_ERROR_CODES = {
   TREE_UNKNOWN_UID: 'tree.unknown_uid',
 } as const;
 
-/** Canonical UUID text form (any version), case-insensitive. */
-export const UUID_PATTERN =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
 /** A non-repeatable component holds at most this many items. */
 export const SINGLE_COMPONENT_MAX_ITEMS = 1;
 
