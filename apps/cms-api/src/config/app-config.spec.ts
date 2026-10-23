@@ -24,7 +24,12 @@ import {
   loadAppConfig,
   summarizeConfig,
 } from './app-config';
-import { CONFIG_DEFAULTS, REDACTED, SECRET_ENV_KEYS } from './config.constants';
+import {
+  CONFIG_DEFAULTS,
+  OPTIONAL_SECRET_ENV_KEYS,
+  REDACTED,
+  SECRET_ENV_KEYS,
+} from './config.constants';
 
 function configErrorOf(
   env: Record<string, string | undefined>,
@@ -419,6 +424,31 @@ describe('loadAppConfig', () => {
       );
       expect(error.message).not.toContain(TEST_SHORT_SECRET);
     });
+
+    it.each(OPTIONAL_SECRET_ENV_KEYS)(
+      'rejects a short optional %s without echoing it',
+      (key) => {
+        const error = configErrorOf(
+          productionEnv({
+            [key]: TEST_SHORT_SECRET,
+            TOTP_ENC_PREVIOUS_KID: TEST_TOTP_ENC_PREVIOUS_KID,
+          }),
+        );
+        expect(error.issues).toContain(
+          `${key}: ${key} must be at least 32 bytes in production`,
+        );
+        expect(error.message).not.toContain(TEST_SHORT_SECRET);
+      },
+    );
+
+    it.each(OPTIONAL_SECRET_ENV_KEYS)(
+      'accepts %s unset in production',
+      (key) => {
+        expect(() =>
+          loadAppConfig(productionEnv({ [key]: undefined })),
+        ).not.toThrow();
+      },
+    );
 
     it('measures secret length in bytes, not characters', () => {
       // 16 two-byte characters = 32 bytes.

@@ -15,6 +15,12 @@ export const SECRET_ENV_KEYS = [
   'TOTP_ENC_KEY',
 ] as const;
 
+/** Secrets that may be unset, but are length-checked in production when set. */
+export const OPTIONAL_SECRET_ENV_KEYS = [
+  'OWNER_SETUP_TOKEN',
+  'TOTP_ENC_PREVIOUS_KEY',
+] as const;
+
 export const CONFIG_DEFAULTS = {
   NODE_ENV: 'development',
   PORT: 3000,

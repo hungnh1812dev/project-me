@@ -7,21 +7,20 @@ import {
   LOGIN_RATE_LIMIT_OVERRIDE_OPT_IN,
   MAIL_PROVIDERS,
   MEDIA_PROVIDERS,
-  MAX_PORT,
   MAX_RATE_LIMIT_OVERRIDE,
-  MIN_SECRET_BYTES,
   NODE_ENVS,
   RATE_LIMIT_OVERRIDE_ENV_KEYS,
   type RateLimitOverrideEnvKey,
-  SECRET_ENV_KEYS,
   TOTP_ISSUER_MAX_LENGTH,
   TOTP_ISSUER_PATTERN,
 } from './config.constants';
-
-const optionalSecret = z.string().min(1).optional();
-
-const emptyToUndefined = (value: unknown): unknown =>
-  value === '' ? undefined : value;
+import {
+  emptyToUndefined,
+  optionalSecret,
+  optionalText,
+  portNumber,
+} from './env-validators';
+import { ENV_RULES } from './env-rules';
 
 /** True for a bare http(s) origin: no path, query, fragment or trailing slash. */
 function isHttpOrigin(value: string): boolean {
@@ -57,14 +56,6 @@ const rateLimitOverrideShape = Object.fromEntries(
   RATE_LIMIT_OVERRIDE_ENV_KEYS.map((key) => [key, optionalRateLimit]),
 ) as Record<RateLimitOverrideEnvKey, typeof optionalRateLimit>;
 
-/** Keys that are optional in development but required in production. */
-const PRODUCTION_REQUIRED_KEYS = [
-  'ADMIN_ORIGIN',
-  'WEB_ORIGIN',
-  'JWT_ACCESS_KID',
-  'TOTP_ENC_KID',
-] as const;
-
 /** Key id env vars (JWT and TOTP encryption keys): header- and log-safe. */
 const optionalKid = z.preprocess(
   emptyToUndefined,
@@ -76,16 +67,6 @@ const optionalKid = z.preprocess(
     .optional(),
 );
 
-/** Keys required whenever MEDIA_PROVIDER=cloudinary (any NODE_ENV). */
-const CLOUDINARY_REQUIRED_KEYS = [
-  'CLOUDINARY_CLOUD_NAME',
-  'CLOUDINARY_API_KEY',
-  'CLOUDINARY_API_SECRET',
-] as const;
-
-/** Keys required whenever MAIL_PROVIDER=smtp (any NODE_ENV). */
-const SMTP_REQUIRED_KEYS = ['SMTP_HOST', 'MAIL_FROM'] as const;
-
 /**
  * Raw environment contract. Every key is listed in `.env.example`.
  * Production-only rules (D17) live in the `superRefine` below.
@@ -93,22 +74,9 @@ const SMTP_REQUIRED_KEYS = ['SMTP_HOST', 'MAIL_FROM'] as const;
 export const envSchema = z
   .object({
     NODE_ENV: z.enum(NODE_ENVS).default(CONFIG_DEFAULTS.NODE_ENV),
-    PORT: z.coerce
-      .number()
-      .int()
-      .min(1)
-      .max(MAX_PORT)
-      .default(CONFIG_DEFAULTS.PORT),
+    PORT: portNumber(CONFIG_DEFAULTS.PORT),
     DB_HOST: z.string().min(1),
-    DB_PORT: z.preprocess(
-      emptyToUndefined,
-      z.coerce
-        .number()
-        .int()
-        .min(1)
-        .max(MAX_PORT)
-        .default(CONFIG_DEFAULTS.DB_PORT),
-    ),
+    DB_PORT: portNumber(CONFIG_DEFAULTS.DB_PORT),
     DB_NAME: z.string().min(1),
     DB_USERNAME: z.string().min(1),
     DB_PASSWORD: z.string().min(1),
@@ -135,12 +103,12 @@ export const envSchema = z
     MAIL_PROVIDER: z
       .enum(MAIL_PROVIDERS)
       .default(CONFIG_DEFAULTS.MAIL_PROVIDER),
-    JWT_ACCESS_SECRET: z.preprocess(emptyToUndefined, optionalSecret),
+    JWT_ACCESS_SECRET: optionalSecret,
     JWT_ACCESS_KID: optionalKid,
-    OTP_PEPPER: z.preprocess(emptyToUndefined, optionalSecret),
-    TOTP_ENC_KEY: z.preprocess(emptyToUndefined, optionalSecret),
+    OTP_PEPPER: optionalSecret,
+    TOTP_ENC_KEY: optionalSecret,
     TOTP_ENC_KID: optionalKid,
-    TOTP_ENC_PREVIOUS_KEY: z.preprocess(emptyToUndefined, optionalSecret),
+    TOTP_ENC_PREVIOUS_KEY: optionalSecret,
     TOTP_ENC_PREVIOUS_KID: optionalKid,
     TOTP_ISSUER: z.preprocess(
       emptyToUndefined,
@@ -152,44 +120,24 @@ export const envSchema = z
         })
         .optional(),
     ),
-    SMTP_HOST: z.preprocess(emptyToUndefined, z.string().min(1).optional()),
-    SMTP_PORT: z.preprocess(
-      emptyToUndefined,
-      z.coerce
-        .number()
-        .int()
-        .min(1)
-        .max(MAX_PORT)
-        .default(CONFIG_DEFAULTS.SMTP_PORT),
-    ),
+    SMTP_HOST: optionalText,
+    SMTP_PORT: portNumber(CONFIG_DEFAULTS.SMTP_PORT),
     SMTP_SECURE: z.preprocess(
       emptyToUndefined,
       z.stringbool().default(CONFIG_DEFAULTS.SMTP_SECURE),
     ),
-    SMTP_USER: z.preprocess(emptyToUndefined, z.string().min(1).optional()),
-    SMTP_PASSWORD: z.preprocess(emptyToUndefined, z.string().min(1).optional()),
-    MAIL_FROM: z.preprocess(emptyToUndefined, z.string().min(1).optional()),
+    SMTP_USER: optionalText,
+    SMTP_PASSWORD: optionalText,
+    MAIL_FROM: optionalText,
     MEDIA_PROVIDER: z
       .enum(MEDIA_PROVIDERS)
       .default(CONFIG_DEFAULTS.MEDIA_PROVIDER),
-    CLOUDINARY_CLOUD_NAME: z.preprocess(
-      emptyToUndefined,
-      z.string().min(1).optional(),
-    ),
-    CLOUDINARY_API_KEY: z.preprocess(
-      emptyToUndefined,
-      z.string().min(1).optional(),
-    ),
-    CLOUDINARY_API_SECRET: z.preprocess(
-      emptyToUndefined,
-      z.string().min(1).optional(),
-    ),
-    CLOUDINARY_FOLDER: z.preprocess(
-      emptyToUndefined,
-      z.string().min(1).optional(),
-    ),
-    OWNER_SETUP_TOKEN: z.preprocess(emptyToUndefined, optionalSecret),
-    TURNSTILE_SECRET_KEY: z.preprocess(emptyToUndefined, optionalSecret),
+    CLOUDINARY_CLOUD_NAME: optionalText,
+    CLOUDINARY_API_KEY: optionalText,
+    CLOUDINARY_API_SECRET: optionalText,
+    CLOUDINARY_FOLDER: optionalText,
+    OWNER_SETUP_TOKEN: optionalSecret,
+    TURNSTILE_SECRET_KEY: optionalSecret,
     TURNSTILE_EXPECTED_HOSTNAME: z.preprocess(
       emptyToUndefined,
       z
@@ -203,134 +151,7 @@ export const envSchema = z
     ),
   })
   .superRefine((env, ctx) => {
-    if (env.MAIL_PROVIDER === 'smtp') {
-      for (const key of SMTP_REQUIRED_KEYS) {
-        if (env[key] === undefined) {
-          ctx.addIssue({
-            code: 'custom',
-            path: [key],
-            message: `${key} is required when MAIL_PROVIDER=smtp`,
-          });
-        }
-      }
-    }
-    if (env.MEDIA_PROVIDER === 'cloudinary') {
-      for (const key of CLOUDINARY_REQUIRED_KEYS) {
-        if (env[key] === undefined) {
-          ctx.addIssue({
-            code: 'custom',
-            path: [key],
-            message: `${key} is required when MEDIA_PROVIDER=cloudinary`,
-          });
-        }
-      }
-    }
-    if ((env.SMTP_USER === undefined) !== (env.SMTP_PASSWORD === undefined)) {
-      ctx.addIssue({
-        code: 'custom',
-        path: ['SMTP_PASSWORD'],
-        message:
-          'SMTP_USER and SMTP_PASSWORD must be set together or both left empty',
-      });
-    }
-
-    if (
-      (env.TOTP_ENC_PREVIOUS_KEY === undefined) !==
-      (env.TOTP_ENC_PREVIOUS_KID === undefined)
-    ) {
-      ctx.addIssue({
-        code: 'custom',
-        path: ['TOTP_ENC_PREVIOUS_KID'],
-        message:
-          'TOTP_ENC_PREVIOUS_KEY and TOTP_ENC_PREVIOUS_KID must be set together or both left empty',
-      });
-    }
-    const totpEncKid = env.TOTP_ENC_KID ?? CONFIG_DEFAULTS.TOTP_ENC_KID;
-    if (env.TOTP_ENC_PREVIOUS_KID === totpEncKid) {
-      ctx.addIssue({
-        code: 'custom',
-        path: ['TOTP_ENC_PREVIOUS_KID'],
-        message: 'TOTP_ENC_PREVIOUS_KID must differ from TOTP_ENC_KID',
-      });
-    }
-
-    if (env.NODE_ENV !== 'production') return;
-
-    for (const key of RATE_LIMIT_OVERRIDE_ENV_KEYS) {
-      if (
-        env[key] !== undefined &&
-        env.ALLOW_LOGIN_RATE_LIMIT_OVERRIDE !== LOGIN_RATE_LIMIT_OVERRIDE_OPT_IN
-      ) {
-        ctx.addIssue({
-          code: 'custom',
-          path: [key],
-          message: `${key} is not allowed in production without ALLOW_LOGIN_RATE_LIMIT_OVERRIDE=${LOGIN_RATE_LIMIT_OVERRIDE_OPT_IN}`,
-        });
-      }
-    }
-
-    if (env.MEDIA_PROVIDER === 'fake') {
-      ctx.addIssue({
-        code: 'custom',
-        path: ['MEDIA_PROVIDER'],
-        message: 'MEDIA_PROVIDER=fake is not allowed in production',
-      });
-    }
-
-    if (env.MAIL_PROVIDER === 'console') {
-      ctx.addIssue({
-        code: 'custom',
-        path: ['MAIL_PROVIDER'],
-        message: 'MAIL_PROVIDER=console is not allowed in production',
-      });
-    }
-
-    for (const key of PRODUCTION_REQUIRED_KEYS) {
-      if (env[key] === undefined) {
-        ctx.addIssue({
-          code: 'custom',
-          path: [key],
-          message: `${key} is required in production`,
-        });
-      }
-    }
-
-    for (const key of SECRET_ENV_KEYS) {
-      const value = env[key];
-      if (value === undefined) {
-        ctx.addIssue({
-          code: 'custom',
-          path: [key],
-          message: `${key} is required in production`,
-        });
-      } else if (Buffer.byteLength(value, 'utf8') < MIN_SECRET_BYTES) {
-        ctx.addIssue({
-          code: 'custom',
-          path: [key],
-          message: `${key} must be at least ${MIN_SECRET_BYTES} bytes in production`,
-        });
-      }
-    }
-    if (
-      env.OWNER_SETUP_TOKEN !== undefined &&
-      Buffer.byteLength(env.OWNER_SETUP_TOKEN, 'utf8') < MIN_SECRET_BYTES
-    ) {
-      ctx.addIssue({
-        code: 'custom',
-        path: ['OWNER_SETUP_TOKEN'],
-        message: `OWNER_SETUP_TOKEN must be at least ${MIN_SECRET_BYTES} bytes in production`,
-      });
-    }
-    if (
-      env.TOTP_ENC_PREVIOUS_KEY !== undefined &&
-      Buffer.byteLength(env.TOTP_ENC_PREVIOUS_KEY, 'utf8') < MIN_SECRET_BYTES
-    ) {
-      ctx.addIssue({
-        code: 'custom',
-        path: ['TOTP_ENC_PREVIOUS_KEY'],
-        message: `TOTP_ENC_PREVIOUS_KEY must be at least ${MIN_SECRET_BYTES} bytes in production`,
-      });
-    }
+    for (const rule of ENV_RULES) rule(env, ctx);
   });
 
 export type Env = z.infer<typeof envSchema>;
