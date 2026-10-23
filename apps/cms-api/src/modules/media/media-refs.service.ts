@@ -7,7 +7,11 @@ import {
   AccessPolicyService,
   type ActorContext,
 } from '../access';
-import { ContentDbProvider } from '../content-engine';
+import {
+  ContentDbProvider,
+  ContentRegistryProvider,
+  mediaFieldNamesByTable,
+} from '../content-engine';
 import type { TableNode } from '../content-engine';
 import type { FieldValues, TreeInput } from '../content-engine';
 import {
@@ -40,14 +44,15 @@ type MediaSlot = { values: FieldValues; name: string; path: string };
 
 /** Every `media` field value in the tree, with its input path. */
 function mediaSlots(
+  mediaFields: ReadonlyMap<string, readonly string[]>,
   table: TableNode,
   node: TreeNodeLike,
   path: string,
   out: MediaSlot[] = [],
 ): MediaSlot[] {
   if (node.values !== undefined) {
-    for (const [name, column] of table.columnsByField) {
-      if (column.field.type === 'media' && name in node.values) {
+    for (const name of mediaFields.get(table.plan.name) ?? []) {
+      if (name in node.values) {
         out.push({
           values: node.values,
           name,
@@ -59,6 +64,7 @@ function mediaSlots(
   for (const { field, table: child } of table.components) {
     (node.components?.[field.name] ?? []).forEach((item, index) =>
       mediaSlots(
+        mediaFields,
         child,
         item,
         `${path}components.${field.name}[${index}].`,
@@ -107,7 +113,16 @@ export class MediaRefsService {
   constructor(
     private readonly content: ContentDbProvider,
     private readonly access: AccessPolicyService,
+    private readonly registry: ContentRegistryProvider,
   ) {}
+
+  private async slotsOf(
+    root: TableNode,
+    nodes: readonly TreeNodeLike[],
+  ): Promise<MediaSlot[]> {
+    const mediaFields = mediaFieldNamesByTable(await this.registry.registry());
+    return nodes.flatMap((node) => mediaSlots(mediaFields, root, node, ''));
+  }
 
   /**
    * A copy of the validated tree with every media uuid replaced by the
@@ -121,7 +136,7 @@ export class MediaRefsService {
     tree: TreeInput,
   ): Promise<TreeInput> {
     const copy = cloneTree(tree);
-    const slots = mediaSlots(root, copy, '').filter(
+    const slots = (await this.slotsOf(root, [copy])).filter(
       ({ values, name }) => values[name] !== null,
     );
     if (slots.length === 0) return copy;
@@ -170,7 +185,7 @@ export class MediaRefsService {
     root: TableNode,
     records: readonly T[],
   ): Promise<void> {
-    const slots = records.flatMap((record) => mediaSlots(root, record, ''));
+    const slots = await this.slotsOf(root, records);
     const present = slots.filter(({ values, name }) => values[name] != null);
     if (present.length === 0) return;
     const ints = new Set<number>();

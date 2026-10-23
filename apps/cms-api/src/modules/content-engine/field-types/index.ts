@@ -11,3 +11,8 @@ export {
   VALUE_PATTERNS,
   YEAR_ZERO_PREFIX,
 } from './value-patterns';
+export {
+  mediaColumnsOf,
+  mediaFieldNamesByTable,
+  type MediaColumnRef,
+} from './media-columns';

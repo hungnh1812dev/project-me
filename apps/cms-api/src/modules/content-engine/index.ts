@@ -22,6 +22,8 @@ export {
   FIELD_TYPE_SPECS,
   fieldTypeOf,
   INT4_MAX,
+  mediaColumnsOf,
+  mediaFieldNamesByTable,
   parseDate,
   parseDatetime,
   parseUuid,
@@ -30,6 +32,7 @@ export {
   type FieldTypeSpec,
   type FieldValueKind,
   type GraphqlOutputName,
+  type MediaColumnRef,
 } from './field-types';
 export { loadDefinitions } from './migration-files';
 export {
