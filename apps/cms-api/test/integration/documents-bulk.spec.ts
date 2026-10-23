@@ -386,6 +386,14 @@ describe('document bulk (T34; Postgres 16 via Testcontainers)', () => {
       expect(big.status).toBe(200);
     });
 
+    it('accepts a 500 KB bulk body, past the 100 KB global parser', async () => {
+      const big = await bulk('article', 'create', owner, {
+        atomic: false,
+        items: [article('z'.repeat(500 * 1024))],
+      });
+      expect(big.status).toBe(200);
+    });
+
     it('rejects malformed JSON with 400 and unknown envelope keys', async () => {
       const bad = await http()
         .post(`${DOCUMENTS}/article/bulk/create`)

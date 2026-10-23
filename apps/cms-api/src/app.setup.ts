@@ -1,7 +1,7 @@
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import cookieParser from 'cookie-parser';
 
-import { API_PREFIX, API_ROUTES } from './common/constants/api.constants';
+import { API_PREFIX } from './common/constants/api.constants';
 import {
   CORS_ALLOWED_HEADERS,
   CORS_ALLOWED_METHODS,
@@ -13,8 +13,11 @@ import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { securityHeadersMiddleware } from './common/middleware/security-headers.middleware';
 import { requestIdMiddleware } from './common/middleware/request-id.middleware';
 import { type IAppConfig } from './config/app-config';
-import { bulkBodyLimit } from './modules/documents';
-import { graphqlBodyLimit } from './modules/graphql';
+import { BULK_BODY_LIMIT_MOUNT_PATH, bulkBodyLimit } from './modules/documents';
+import {
+  GRAPHQL_BODY_LIMIT_MOUNT_PATH,
+  graphqlBodyLimit,
+} from './modules/graphql';
 
 /**
  * Pipeline shared by `main.ts` and the integration tests, so tests run
@@ -36,12 +39,9 @@ export function configureApp(
   // Populates req.cookies; only the auth refresh/logout routes read it (D14).
   app.use(cookieParser());
   // D18: the GraphQL body cap (32 KiB) applies before Nest's JSON parser.
-  app.use(`/${API_PREFIX}/${API_ROUTES.GRAPHQL}`, graphqlBodyLimit);
+  app.use(GRAPHQL_BODY_LIMIT_MOUNT_PATH, graphqlBodyLimit);
   // SPEC §6: bulk bodies may be up to 1 MB (the global parser stops at 100 KB).
-  app.use(
-    `/${API_PREFIX}/${API_ROUTES.DOCUMENTS.ROOT}/${API_ROUTES.DOCUMENTS.BULK_PREFIX}`,
-    bulkBodyLimit,
-  );
+  app.use(BULK_BODY_LIMIT_MOUNT_PATH, bulkBodyLimit);
   // D14: only the configured admin origin, never a wildcard or a reflected origin.
   if (config.cors.allowedOrigins.length > 0) {
     app.enableCors({

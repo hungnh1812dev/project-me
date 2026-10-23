@@ -9,11 +9,13 @@ import {
 import type { Response } from 'express';
 
 import {
-  ERROR_CODE_BY_STATUS,
   ERROR_CODES,
-  type ErrorCode,
   INTERNAL_ERROR_MESSAGE,
 } from '../constants/error.constants';
+import {
+  describeHttpException,
+  isServerErrorStatus,
+} from '../http/describe-http-exception';
 import type { RequestWithId } from '../middleware/request-id.middleware';
 
 /** The one error shape every endpoint returns. */
@@ -24,52 +26,6 @@ export interface ErrorResponseBody {
   /** Machine-readable context of a client error (SPEC §9), e.g. validation issues. */
   details?: unknown;
   requestId: string | undefined;
-}
-
-interface ExceptionResponseObject {
-  errorCode?: unknown;
-  message?: unknown;
-  details?: unknown;
-}
-
-const SERVER_ERROR_MIN_STATUS: number = HttpStatus.INTERNAL_SERVER_ERROR;
-
-function isServerError(status: number): boolean {
-  return status >= SERVER_ERROR_MIN_STATUS;
-}
-
-function isObject(value: unknown): value is ExceptionResponseObject {
-  return typeof value === 'object' && value !== null;
-}
-
-function messageFrom(exception: HttpException): string {
-  const response = exception.getResponse();
-  if (typeof response === 'string') return response;
-  if (isObject(response)) {
-    if (typeof response.message === 'string') return response.message;
-    if (Array.isArray(response.message)) {
-      return response.message.filter((m) => typeof m === 'string').join('; ');
-    }
-  }
-  return exception.message;
-}
-
-function errorCodeFrom(exception: HttpException, status: number): string {
-  const response = exception.getResponse();
-  if (isObject(response) && typeof response.errorCode === 'string') {
-    return response.errorCode;
-  }
-  const fallback: ErrorCode = isServerError(status)
-    ? ERROR_CODES.INTERNAL_ERROR
-    : ERROR_CODES.HTTP_ERROR;
-  return ERROR_CODE_BY_STATUS[status] ?? fallback;
-}
-
-/** `details` of a client error; server errors never expose any. */
-function detailsFrom(exception: HttpException, status: number): unknown {
-  if (isServerError(status)) return undefined;
-  const response = exception.getResponse();
-  return isObject(response) ? response.details : undefined;
 }
 
 /**
@@ -87,17 +43,14 @@ export class HttpExceptionFilter implements ExceptionFilter {
 
     let body: ErrorResponseBody;
     if (exception instanceof HttpException) {
-      const status = exception.getStatus();
+      const described = describeHttpException(exception);
       body = {
-        statusCode: status,
-        errorCode: errorCodeFrom(exception, status),
-        message: isServerError(status)
-          ? INTERNAL_ERROR_MESSAGE
-          : messageFrom(exception),
+        statusCode: described.statusCode,
+        errorCode: described.errorCode,
+        message: described.message,
         requestId: req.requestId,
       };
-      const details = detailsFrom(exception, status);
-      if (details !== undefined) body.details = details;
+      if (described.details !== undefined) body.details = described.details;
     } else {
       body = {
         statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
@@ -107,7 +60,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
       };
     }
 
-    if (isServerError(body.statusCode)) {
+    if (isServerErrorStatus(body.statusCode)) {
       this.logger.error(
         `requestId=${body.requestId ?? 'none'} ${req.method} ${req.path}`,
         exception instanceof Error ? exception.stack : undefined,

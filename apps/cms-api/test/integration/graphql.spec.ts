@@ -885,6 +885,16 @@ describe('GraphQL read API (GQ2; Postgres 16 via Testcontainers)', () => {
       expect(policy).not.toHaveBeenCalled();
     });
 
+    it('answers a 33 KiB POST with 413 in the GraphQL error shape', async () => {
+      const res = await http()
+        .post(GRAPHQL)
+        .set(asAnonymous())
+        .set('Content-Type', 'application/json')
+        .send(padded(33 * 1024 + 1_000));
+      expect(res.status).toBe(413);
+      expect(code(res)).toEqual(['PAYLOAD_TOO_LARGE']);
+    });
+
     it('a chunked body over 32 KiB gets one 413 and never reaches the controller', async () => {
       const { list, policy } = spies();
       const server = app.getHttpServer();

@@ -1,5 +1,8 @@
 export { parseListQuery } from './dto/list-documents.query';
-export { bulkBodyLimit } from './bulk-body-limit.middleware';
+export {
+  BULK_BODY_LIMIT_MOUNT_PATH,
+  bulkBodyLimit,
+} from './bulk-body-limit.middleware';
 export type {
   FilterClause,
   ListDocumentsQuery,

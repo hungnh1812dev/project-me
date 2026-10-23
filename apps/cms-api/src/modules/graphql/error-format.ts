@@ -1,11 +1,11 @@
-import { HttpException, HttpStatus, Logger } from '@nestjs/common';
+import { HttpException, Logger } from '@nestjs/common';
 import { GraphQLError } from 'graphql';
 
 import {
-  ERROR_CODE_BY_STATUS,
   ERROR_CODES,
   INTERNAL_ERROR_MESSAGE,
 } from '../../common/constants/error.constants';
+import { describeHttpException } from '../../common/http/describe-http-exception';
 import {
   GRAPHQL_ERROR_CODES,
   GRAPHQL_MESSAGES,
@@ -32,44 +32,21 @@ export interface ErrorFormatOptions {
 }
 
 const logger = new Logger('GraphQL');
-const SERVER_ERROR_MIN_STATUS: number = HttpStatus.INTERNAL_SERVER_ERROR;
-
-interface HttpResponseObject {
-  errorCode?: unknown;
-  message?: unknown;
-  details?: unknown;
-}
-
-const isObject = (value: unknown): value is HttpResponseObject =>
-  typeof value === 'object' && value !== null;
-
-/** `errorCode` / message / details of a Nest exception, as REST would send them. */
+/** Same description as REST; a server error is always `INTERNAL_ERROR` here. */
 function fromHttpException(exception: HttpException): {
   code: string;
   message: string;
   details?: unknown;
   serverError: boolean;
 } {
-  const status = exception.getStatus();
-  const response = exception.getResponse();
-  const serverError = status >= SERVER_ERROR_MIN_STATUS;
-  const named = isObject(response) ? response : {};
-  const code =
-    typeof named.errorCode === 'string'
-      ? named.errorCode
-      : (ERROR_CODE_BY_STATUS[status] ??
-        (serverError ? ERROR_CODES.INTERNAL_ERROR : ERROR_CODES.HTTP_ERROR));
-  const message =
-    typeof response === 'string'
-      ? response
-      : typeof named.message === 'string'
-        ? named.message
-        : exception.message;
+  const described = describeHttpException(exception);
   return {
-    code: serverError ? ERROR_CODES.INTERNAL_ERROR : code,
-    message: serverError ? INTERNAL_ERROR_MESSAGE : message,
-    details: serverError ? undefined : named.details,
-    serverError,
+    code: described.isServerError
+      ? ERROR_CODES.INTERNAL_ERROR
+      : described.errorCode,
+    message: described.message,
+    details: described.details,
+    serverError: described.isServerError,
   };
 }
 

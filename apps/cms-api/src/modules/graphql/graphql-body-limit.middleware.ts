@@ -1,10 +1,19 @@
 import { HttpStatus } from '@nestjs/common';
 import type { NextFunction, Response } from 'express';
 
+import { API_PREFIX, API_ROUTES } from '../../common/constants/api.constants';
 import { NO_STORE_HEADER } from '../../common/constants/http.constants';
 import { ERROR_CODES } from '../../common/constants/error.constants';
+import {
+  closeAfterAnswer,
+  createByteCounter,
+  declaresBodyOver,
+} from '../../common/middleware/byte-limit';
 import type { RequestWithId } from '../../common/middleware/request-id.middleware';
 import { GRAPHQL_LIMIT_MESSAGES, GRAPHQL_LIMITS } from './graphql.constants';
+
+/** Where `app.setup.ts` mounts the limit: before Nest's JSON parser, so never via `configure(consumer)`. */
+export const GRAPHQL_BODY_LIMIT_MOUNT_PATH = `/${API_PREFIX}/${API_ROUTES.GRAPHQL}`;
 
 /** Events a body parser waits on to finish or abort a request body. */
 const STREAM_EVENTS = ['data', 'end', 'close', 'aborted'] as const;
@@ -33,8 +42,7 @@ function tooLarge(req: RequestWithId, res: Response): void {
   // listeners (ours is already past), stop reading, and close the socket once
   // the answer is out.
   for (const event of STREAM_EVENTS) req.removeAllListeners(event);
-  req.pause();
-  res.once('finish', () => req.destroy());
+  closeAfterAnswer(req, res);
 }
 
 /**
@@ -52,15 +60,13 @@ export function graphqlBodyLimit(
     next();
     return;
   }
-  const declared = Number(req.headers['content-length']);
-  if (Number.isFinite(declared) && declared > GRAPHQL_LIMITS.MAX_BODY_BYTES) {
+  if (declaresBodyOver(req, GRAPHQL_LIMITS.MAX_BODY_BYTES)) {
     tooLarge(req, res);
     return;
   }
-  let received = 0;
+  const exceedsLimit = createByteCounter(GRAPHQL_LIMITS.MAX_BODY_BYTES);
   req.on('data', (chunk: Buffer) => {
-    received += chunk.length;
-    if (received > GRAPHQL_LIMITS.MAX_BODY_BYTES) tooLarge(req, res);
+    if (exceedsLimit(chunk)) tooLarge(req, res);
   });
   next();
 }

@@ -1,9 +1,18 @@
 import { HttpStatus } from '@nestjs/common';
 import type { NextFunction, Request, Response } from 'express';
 
+import { API_PREFIX, API_ROUTES } from '../../common/constants/api.constants';
 import { ERROR_CODES } from '../../common/constants/error.constants';
+import {
+  closeAfterAnswer,
+  createByteCounter,
+  declaresBodyOver,
+} from '../../common/middleware/byte-limit';
 import type { RequestWithId } from '../../common/middleware/request-id.middleware';
 import { BULK_LIMITS, BULK_MESSAGES } from './documents.constants';
+
+/** Where `app.setup.ts` mounts the limit: before Nest's JSON parser, so never via `configure(consumer)`. */
+export const BULK_BODY_LIMIT_MOUNT_PATH = `/${API_PREFIX}/${API_ROUTES.DOCUMENTS.ROOT}/${API_ROUTES.DOCUMENTS.BULK_PREFIX}`;
 
 function reject(
   req: RequestWithId,
@@ -19,8 +28,7 @@ function reject(
     message,
     requestId: req.requestId,
   });
-  req.pause();
-  res.once('finish', () => req.destroy());
+  closeAfterAnswer(req, res);
 }
 
 /**
@@ -48,18 +56,16 @@ export function bulkBodyLimit(
       ERROR_CODES.PAYLOAD_TOO_LARGE,
       BULK_MESSAGES.BODY_TOO_LARGE,
     );
-  const declared = Number(req.headers['content-length']);
-  if (Number.isFinite(declared) && declared > BULK_LIMITS.MAX_BODY_BYTES) {
+  if (declaresBodyOver(req, BULK_LIMITS.MAX_BODY_BYTES)) {
     tooLarge();
     return;
   }
   const chunks: Buffer[] = [];
-  let received = 0;
+  const exceedsLimit = createByteCounter(BULK_LIMITS.MAX_BODY_BYTES);
   let aborted = false;
   req.on('data', (chunk: Buffer) => {
     if (aborted) return;
-    received += chunk.length;
-    if (received > BULK_LIMITS.MAX_BODY_BYTES) {
+    if (exceedsLimit(chunk)) {
       aborted = true;
       chunks.length = 0;
       tooLarge();
