@@ -214,26 +214,6 @@ export const DEFINITION_RULES = {
 } as const;
 
 /**
- * Postgres column type per scalar field type (T06). `string`, `text` and
- * `richtext` differ only in validation and editor, so they share `text`.
- * `media` holds a `file_library.id`; its FK is added once that table exists.
- */
-export const COLUMN_TYPES: Readonly<
-  Record<(typeof SCALAR_FIELD_TYPES)[number], string>
-> = {
-  string: 'text',
-  text: 'text',
-  richtext: 'text',
-  integer: 'integer',
-  decimal: 'numeric',
-  boolean: 'boolean',
-  date: 'date',
-  datetime: 'timestamptz',
-  json: 'jsonb',
-  media: 'integer',
-};
-
-/**
  * Engine bookkeeping tables. They live in the `content` schema with a
  * leading underscore, which no slug can produce, so they never collide with
  * generated tables, and Prisma (which owns `public`) never sees them.

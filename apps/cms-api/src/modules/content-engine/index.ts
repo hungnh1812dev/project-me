@@ -18,6 +18,13 @@ export {
   type FieldDefinition,
   type ScalarFieldType,
 } from './definition.schema';
+export {
+  FIELD_TYPE_SPECS,
+  fieldTypeOf,
+  type FieldTypeSpec,
+  type FieldValueKind,
+  type GraphqlOutputName,
+} from './field-types';
 export { loadDefinitions } from './migration-files';
 export {
   RegistryService,

@@ -1,7 +1,6 @@
 import { createHash } from 'node:crypto';
 
 import {
-  COLUMN_TYPES,
   COMPONENT_SYSTEM_COLUMNS,
   CONTENT_DB_SCHEMA,
   HASH_ALGORITHM,
@@ -12,6 +11,7 @@ import {
   type ContentTypeDefinition,
   isComponentField,
 } from './definition.schema';
+import { FIELD_TYPE_SPECS } from './field-types';
 import {
   type ColumnPlan,
   planTables,
@@ -87,7 +87,7 @@ export function columnType(column: ColumnPlan): string {
   if (isComponentField(field)) {
     throw new Error(`Component field "${field.name}" has no column type`);
   }
-  return COLUMN_TYPES[field.type];
+  return FIELD_TYPE_SPECS[field.type].columnType;
 }
 
 function sortKeys(value: unknown): unknown {

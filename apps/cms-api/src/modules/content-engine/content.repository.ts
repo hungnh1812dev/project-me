@@ -8,6 +8,7 @@ import {
   type CONTENT_STATUSES,
   ROOT_SYSTEM_COLUMNS,
 } from './content-engine.constants';
+import { fieldTypeOf } from './field-types';
 import { ContentEngineError } from './migration-files';
 import type {
   ComponentTableNode,
@@ -97,9 +98,7 @@ interface ParentWrite {
   path: TreePath;
 }
 
-const JSON_FIELD_TYPE = 'json';
-
-/** API values -> column values. `json` is sent as text so arrays stay JSON, not PG arrays. */
+/** API values -> column values; a type's `encodeForColumn` applies to non-null values. */
 function toColumnValues(
   table: TableNode,
   values: FieldValues | undefined,
@@ -108,10 +107,9 @@ function toColumnValues(
   for (const [name, value] of Object.entries(values ?? {})) {
     const column = table.columnsByField.get(name);
     if (column === undefined || value === undefined) continue;
+    const encode = fieldTypeOf(column.field.type)?.encodeForColumn;
     row[column.name] =
-      column.field.type === JSON_FIELD_TYPE && value !== null
-        ? JSON.stringify(value)
-        : value;
+      encode !== undefined && value !== null ? encode(value) : value;
   }
   return row;
 }
