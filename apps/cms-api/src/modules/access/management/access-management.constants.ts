@@ -1,7 +1,5 @@
 /** Error codes of the accounts and roles API (T17). */
 export const MANAGEMENT_ERROR_CODES = {
-  /** D6 / §12-7: the target's rank is not below the actor's, or it is the actor. */
-  RANK_FORBIDDEN: 'ACCESS_RANK_FORBIDDEN',
   /** A permission set grants a system subject action the actor lacks. */
   PERMISSION_NOT_HELD: 'PERMISSION_NOT_HELD',
   ACCOUNT_NOT_FOUND: 'ACCOUNT_NOT_FOUND',
@@ -29,8 +27,6 @@ export const MANAGEMENT_ERROR_CODES = {
 } as const;
 
 export const MANAGEMENT_ERROR_MESSAGES = {
-  RANK_FORBIDDEN:
-    'You can only manage accounts and roles ranked below your own role.',
   PERMISSION_NOT_HELD: 'You cannot grant a permission you do not hold.',
   ACCOUNT_NOT_FOUND: 'Account not found.',
   ACCOUNT_EMAIL_TAKEN: 'An account with this email already exists.',

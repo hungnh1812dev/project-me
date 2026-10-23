@@ -8,7 +8,7 @@ import { firstValueFrom, isObservable } from 'rxjs';
 
 import { AnonymousActorService } from '../access/anonymous-actor.service';
 import { ApiTokenAuthenticator } from '../access/api-token.guard';
-import { API_TOKEN } from '../access/api-tokens.constants';
+import { API_TOKEN } from '../access/api-token.constants';
 import type { ActorContext } from '../access/actor-context';
 import { JwtAuthGuard } from '../identity/jwt.strategy';
 

@@ -8,7 +8,6 @@ import {
   MODULE_NODES,
   MODULES_DIRECTORY,
   PLATFORM_DIRECTORIES,
-  PRE_SPLIT_MANAGEMENT_FILE,
   type ModuleNode,
 } from './module-edges.constants';
 
@@ -37,7 +36,6 @@ export function nodeOfFile(file: string): ModuleNode | null {
   }
   const [first = ''] = rest;
   if (first === ACCESS_MANAGEMENT_DIRECTORY) return 'access-management';
-  if (PRE_SPLIT_MANAGEMENT_FILE.test(first)) return 'access-management';
   if (DOCUMENT_AUTH_FILE.test(first)) return 'access-document-auth';
   return 'access-core';
 }

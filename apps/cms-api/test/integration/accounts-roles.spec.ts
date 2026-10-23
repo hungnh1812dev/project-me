@@ -13,9 +13,12 @@ import {
   type MailMessage,
   type MailSender,
 } from '../../src/infrastructure/mail/mail.port';
-import { ACCESS_ERROR_CODES } from '../../src/modules/access/access.constants';
+import {
+  ACCESS_ERROR_CODES,
+  RANK_FORBIDDEN_ERROR,
+} from '../../src/modules/access/access.constants';
 import { INVALID_REQUEST_ERROR } from '../../src/common/http/request-parsing';
-import { MANAGEMENT_ERROR_CODES } from '../../src/modules/access/access-management.constants';
+import { MANAGEMENT_ERROR_CODES } from '../../src/modules/access/management/access-management.constants';
 import { seedRolePermissions } from '../../src/modules/access/roles/role-permissions.seed';
 import {
   AUDIT_ACTIONS,
@@ -215,7 +218,7 @@ describe('accounts & roles API + security audit (T17, §12-7, §12-18; Postgres 
         .set(bearer(admin.token));
       for (const res of [patch, disable, revoke]) {
         expect(res.status).toBe(403);
-        expect(errorCodeOf(res)).toBe(MANAGEMENT_ERROR_CODES.RANK_FORBIDDEN);
+        expect(errorCodeOf(res)).toBe(RANK_FORBIDDEN_ERROR.CODE);
       }
       expect((await http().get(ME).set(bearer(other.token))).status).toBe(200);
     });
@@ -235,7 +238,7 @@ describe('accounts & roles API + security audit (T17, §12-7, §12-18; Postgres 
         .send({ permissions: [] });
       for (const res of [permissions, rename, ownerRole]) {
         expect(res.status).toBe(403);
-        expect(errorCodeOf(res)).toBe(MANAGEMENT_ERROR_CODES.RANK_FORBIDDEN);
+        expect(errorCodeOf(res)).toBe(RANK_FORBIDDEN_ERROR.CODE);
       }
       const rows = await db.prisma.permission.count({
         where: { role: { slug: 'admin' } },
@@ -267,7 +270,7 @@ describe('accounts & roles API + security audit (T17, §12-7, §12-18; Postgres 
       ]);
       for (const res of attempts) {
         expect(res.status).toBe(403);
-        expect(errorCodeOf(res)).toBe(MANAGEMENT_ERROR_CODES.RANK_FORBIDDEN);
+        expect(errorCodeOf(res)).toBe(RANK_FORBIDDEN_ERROR.CODE);
       }
       const after = await db.prisma.account.findUniqueOrThrow({
         where: { id: editor.id },
@@ -293,7 +296,7 @@ describe('accounts & roles API + security audit (T17, §12-7, §12-18; Postgres 
         .set(bearer(admin.token));
       for (const res of [assignOwner, ownerSelf, adminSelf, adminOnOwner]) {
         expect(res.status).toBe(403);
-        expect(errorCodeOf(res)).toBe(MANAGEMENT_ERROR_CODES.RANK_FORBIDDEN);
+        expect(errorCodeOf(res)).toBe(RANK_FORBIDDEN_ERROR.CODE);
       }
     });
 
@@ -322,7 +325,7 @@ describe('accounts & roles API + security audit (T17, §12-7, §12-18; Postgres 
         .send({ rank: 39 });
       for (const res of [create, raise]) {
         expect(res.status).toBe(403);
-        expect(errorCodeOf(res)).toBe(MANAGEMENT_ERROR_CODES.RANK_FORBIDDEN);
+        expect(errorCodeOf(res)).toBe(RANK_FORBIDDEN_ERROR.CODE);
       }
     });
 
@@ -673,7 +676,7 @@ describe('accounts & roles API + security audit (T17, §12-7, §12-18; Postgres 
       expect((await disable(owner, otherAdmin.documentId)).status).toBe(204);
       const peer = await enable(admin, otherAdmin.documentId);
       expect(peer.status).toBe(403);
-      expect(errorCodeOf(peer)).toBe(MANAGEMENT_ERROR_CODES.RANK_FORBIDDEN);
+      expect(errorCodeOf(peer)).toBe(RANK_FORBIDDEN_ERROR.CODE);
       expect((await enable(admin, admin.documentId)).status).toBe(403);
       expect((await enable(admin, UNKNOWN_ID)).status).toBe(404);
       expect((await enable(admin, 'not-a-uuid')).status).toBe(400);

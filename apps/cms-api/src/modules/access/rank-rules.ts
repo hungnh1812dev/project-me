@@ -2,10 +2,7 @@ import { ForbiddenException } from '@nestjs/common';
 
 import type { PermissionGrant } from './actor-context';
 import { type ActorContext, isOwnerRole } from './actor-context';
-import {
-  MANAGEMENT_ERROR_CODES,
-  MANAGEMENT_ERROR_MESSAGES,
-} from './access-management.constants';
+import { RANK_FORBIDDEN_ERROR } from './access.constants';
 import type { PolicyEvaluator } from './policy-evaluator';
 import type { SubjectCatalog } from './subject-catalog';
 
@@ -32,8 +29,8 @@ export function outranks(actor: ActorContext, targetRank: number): boolean {
 
 export function rankForbidden(): ForbiddenException {
   return new ForbiddenException({
-    errorCode: MANAGEMENT_ERROR_CODES.RANK_FORBIDDEN,
-    message: MANAGEMENT_ERROR_MESSAGES.RANK_FORBIDDEN,
+    errorCode: RANK_FORBIDDEN_ERROR.CODE,
+    message: RANK_FORBIDDEN_ERROR.MESSAGE,
   });
 }
 

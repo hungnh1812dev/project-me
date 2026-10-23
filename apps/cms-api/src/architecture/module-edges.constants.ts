@@ -72,13 +72,6 @@ export const MODULES_DIRECTORY = 'modules';
 export const ACCESS_MODULE_DIRECTORY = 'access';
 export const ACCESS_MANAGEMENT_DIRECTORY = 'management';
 
-/**
- * Files of `modules/access/` that belong to the management node before
- * R1-10 moves them into `access/management/`. Remove with R1-10.
- */
-export const PRE_SPLIT_MANAGEMENT_FILE =
-  /^(?:accounts|roles|api-tokens|access-management)[.-]/;
-
 /** Files of `modules/access/` that are the document-auth node (R1-12). */
 export const DOCUMENT_AUTH_FILE = /^document-auth\./;
 
@@ -96,21 +89,6 @@ export interface KnownViolation {
 }
 
 export const KNOWN_VIOLATIONS: readonly KnownViolation[] = [
-  {
-    from: 'modules/access/api-token.guard.ts',
-    to: 'modules/access/api-tokens.constants.ts',
-    removedBy: 'R1-10',
-  },
-  {
-    from: 'modules/access/rank-rules.ts',
-    to: 'modules/access/access-management.constants.ts',
-    removedBy: 'R1-05',
-  },
-  {
-    from: 'modules/documents/document-auth.guard.ts',
-    to: 'modules/access/api-tokens.constants.ts',
-    removedBy: 'R1-12',
-  },
   {
     from: 'modules/documents/document-auth.guard.ts',
     to: 'modules/identity/jwt.strategy.ts',

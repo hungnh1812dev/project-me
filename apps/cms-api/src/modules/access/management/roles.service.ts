@@ -6,10 +6,13 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 
-import { type PermissionAction, Prisma } from '../../generated/prisma/client';
-import { PrismaService } from '../../infrastructure/database/prisma.service';
-import type { ClientMeta } from '../../common/http/client-meta';
-import { AccessPolicyService } from './access-policy.service';
+import {
+  type PermissionAction,
+  Prisma,
+} from '../../../generated/prisma/client';
+import { PrismaService } from '../../../infrastructure/database/prisma.service';
+import type { ClientMeta } from '../../../common/http/client-meta';
+import { AccessPolicyService } from '../access-policy.service';
 import {
   MANAGEMENT_ERROR_CODES,
   MANAGEMENT_ERROR_MESSAGES,
@@ -19,25 +22,25 @@ import type {
   CreateRoleRequest,
   UpdateRoleRequest,
 } from './access-management.requests';
-import { type PermissionGrant, rolePolicyFromRows } from './actor-context';
-import { validatePermissionSet } from './permission.validator';
+import { type PermissionGrant, rolePolicyFromRows } from '../actor-context';
+import { validatePermissionSet } from '../permission.validator';
 import {
   type AccountActor,
   assertOutranks,
   grantsBeyondActor,
   outranks,
-} from './rank-rules';
-import { RolePermissionsService } from './role-permissions.service';
+} from '../rank-rules';
+import { RolePermissionsService } from '../role-permissions.service';
 import {
   AUDIT_ACTIONS,
   type AuditAction,
-} from '../security-audit/security-audit.constants';
+} from '../../security-audit/security-audit.constants';
 import {
   type AuditMetadata,
   auditActorOf,
   SecurityAuditService,
-} from '../security-audit/security-audit.service';
-import { VersionCache } from './version-cache';
+} from '../../security-audit/security-audit.service';
+import { VersionCache } from '../version-cache';
 
 type Tx = Prisma.TransactionClient;
 

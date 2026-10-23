@@ -67,7 +67,7 @@ total } }`; `total` counts every matching row, a page past the end has an empty
 `data`. Digits only; any bad value or unknown query key is `400
 ACCESS_INVALID_REQUEST`. Order is fixed per endpoint (accounts: id ascending);
 there are no filters yet. Constants: `PAGINATION` in
-`src/modules/access/access-management.constants.ts`. `GET /roles` stays a full
+`src/modules/access/management/access-management.constants.ts`. `GET /roles` stays a full
 list; custom roles are capped at 50 (`MAX_CUSTOM_ROLES`, system roles do not
 count).
 

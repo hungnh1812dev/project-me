@@ -3,7 +3,7 @@ import { type DynamicModule, Module } from '@nestjs/common';
 import { type IAppConfig } from './config/app-config';
 import { RateLimitModule } from './common/rate-limit/rate-limit.module';
 import { ConfigModule } from './config/config.module';
-import { AccessManagementModule } from './modules/access/access-management.module';
+import { AccessManagementModule } from './modules/access/management/access-management.module';
 import { ContentTypesModule } from './modules/content-types/content-types.module';
 import { DocumentsModule } from './modules/documents/documents.module';
 import { GraphqlModule } from './modules/graphql/graphql.module';

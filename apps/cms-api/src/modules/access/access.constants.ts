@@ -139,6 +139,12 @@ export const ACCESS_ERROR_CODES = {
 export type AccessErrorCode =
   (typeof ACCESS_ERROR_CODES)[keyof typeof ACCESS_ERROR_CODES];
 
+/** D6 / §12-7: the target's rank is not below the actor's, or it is the actor. */
+export const RANK_FORBIDDEN_ERROR = {
+  CODE: 'ACCESS_RANK_FORBIDDEN',
+  MESSAGE: 'You can only manage accounts and roles ranked below your own role.',
+} as const;
+
 /** Metadata key of `@RequirePermission()` (read by the T15 guard). */
 export const PERMISSION_METADATA_KEY = 'abyss:access:permission';
 

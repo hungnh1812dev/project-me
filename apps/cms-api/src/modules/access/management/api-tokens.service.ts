@@ -8,11 +8,11 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 
-import { Clock } from '../../common/clock';
-import { Prisma } from '../../generated/prisma/client';
-import { PrismaService } from '../../infrastructure/database/prisma.service';
-import type { ClientMeta } from '../../common/http/client-meta';
-import { ACCESS_ERROR_CODES } from './access.constants';
+import { Clock } from '../../../common/clock';
+import { Prisma } from '../../../generated/prisma/client';
+import { PrismaService } from '../../../infrastructure/database/prisma.service';
+import type { ClientMeta } from '../../../common/http/client-meta';
+import { ACCESS_ERROR_CODES } from '../access.constants';
 import {
   MANAGEMENT_ERROR_CODES,
   MANAGEMENT_ERROR_MESSAGES,
@@ -21,17 +21,17 @@ import {
   invalidRequest,
   type PageMeta,
   type PageQuery,
-} from '../../common/http/request-parsing';
-import { AccessPolicyService } from './access-policy.service';
+} from '../../../common/http/request-parsing';
+import { AccessPolicyService } from '../access-policy.service';
 import {
   type RolePolicy,
   type TokenScope,
   isOwnerRole,
   parseTokenScope,
-} from './actor-context';
-import { hashApiToken } from './api-token.guard';
+} from '../actor-context';
+import { hashApiToken } from '../api-token.guard';
+import { API_TOKEN } from '../api-token.constants';
 import {
-  API_TOKEN,
   API_TOKEN_STATUSES,
   API_TOKEN_UPDATABLE_FIELDS,
   type ApiTokenStatus,
@@ -40,19 +40,19 @@ import type {
   CreateApiTokenRequest,
   UpdateApiTokenRequest,
 } from './api-tokens.requests';
-import { validateTokenScope } from './permission.validator';
-import type { AccountActor } from './rank-rules';
+import { validateTokenScope } from '../permission.validator';
+import type { AccountActor } from '../rank-rules';
 import {
   AUDIT_ACTIONS,
   type AuditAction,
-} from '../security-audit/security-audit.constants';
+} from '../../security-audit/security-audit.constants';
 import {
   type AuditMetadata,
   auditActorOf,
   SecurityAuditService,
-} from '../security-audit/security-audit.service';
-import { scopeEntriesBeyondCreator } from './token-scope-subset';
-import { VersionCache } from './version-cache';
+} from '../../security-audit/security-audit.service';
+import { scopeEntriesBeyondCreator } from '../token-scope-subset';
+import { VersionCache } from '../version-cache';
 
 type Tx = Prisma.TransactionClient;
 

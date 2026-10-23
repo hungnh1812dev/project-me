@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import { API_TOKEN } from './api-tokens.constants';
+import { API_TOKEN } from '../api-token.constants';
 
 const name = z.string().trim().min(1).max(API_TOKEN.NAME_MAX_LENGTH);
 

@@ -1,10 +1,10 @@
 import { Module } from '@nestjs/common';
 
-import { DatabaseModule } from '../../infrastructure/database/database.module';
-import { MailModule } from '../../infrastructure/mail/mail.module';
-import { IdentityModule } from '../identity/identity.module';
-import { SecurityAuditModule } from '../security-audit/security-audit.module';
-import { AccessModule } from './access.module';
+import { DatabaseModule } from '../../../infrastructure/database/database.module';
+import { MailModule } from '../../../infrastructure/mail/mail.module';
+import { IdentityModule } from '../../identity/identity.module';
+import { SecurityAuditModule } from '../../security-audit/security-audit.module';
+import { AccessModule } from '../access.module';
 import { AccountsController } from './accounts.controller';
 import { AccountsService } from './accounts.service';
 import { ApiTokensController } from './api-tokens.controller';

@@ -7,26 +7,26 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 
-import { type IAppConfig } from '../../config/app-config';
-import { APP_CONFIG } from '../../config/config.constants';
+import { type IAppConfig } from '../../../config/app-config';
+import { APP_CONFIG } from '../../../config/config.constants';
 import {
   type AccountStatus,
   Prisma,
   type TwoFaMethod,
-} from '../../generated/prisma/client';
-import { PrismaService } from '../../infrastructure/database/prisma.service';
+} from '../../../generated/prisma/client';
+import { PrismaService } from '../../../infrastructure/database/prisma.service';
 import {
   MAIL_SENDER,
   type MailSender,
-} from '../../infrastructure/mail/mail.port';
+} from '../../../infrastructure/mail/mail.port';
 import {
   REVIEWER_ROLE_SLUG,
   UNASSIGNABLE_ROLE_SLUGS,
-} from './roles/system-roles';
-import { buildOtpMail } from '../identity/otp-mail';
-import { OtpService } from '../identity/otp.service';
-import { revokeAllSessions } from '../identity/session-revocation';
-import { type ClientMeta } from '../../common/http/client-meta';
+} from '../roles/system-roles';
+import { buildOtpMail } from '../../identity/otp-mail';
+import { OtpService } from '../../identity/otp.service';
+import { revokeAllSessions } from '../../identity/session-revocation';
+import { type ClientMeta } from '../../../common/http/client-meta';
 import {
   MANAGEMENT_ERROR_CODES,
   MANAGEMENT_ERROR_MESSAGES,
@@ -35,20 +35,20 @@ import type {
   InviteAccountRequest,
   UpdateAccountRequest,
 } from './access-management.requests';
-import type { PageMeta, PageQuery } from '../../common/http/request-parsing';
+import type { PageMeta, PageQuery } from '../../../common/http/request-parsing';
 import {
   type AccountActor,
   assertOutranks,
   outranks,
   rankForbidden,
-} from './rank-rules';
-import { AUDIT_ACTIONS } from '../security-audit/security-audit.constants';
+} from '../rank-rules';
+import { AUDIT_ACTIONS } from '../../security-audit/security-audit.constants';
 import {
   type AuditActor,
   auditActorOf,
   SecurityAuditService,
-} from '../security-audit/security-audit.service';
-import { VersionCache } from './version-cache';
+} from '../../security-audit/security-audit.service';
+import { VersionCache } from '../version-cache';
 
 type Tx = Prisma.TransactionClient;
 
