@@ -17,7 +17,8 @@ const GENERATED_DIRECTORY = 'generated';
 
 /** Files whose quoted slugs name routes, modules or handler labels. */
 const NON_ROLE_LITERAL_FILES = [
-  join('common', 'constants', 'api.constants.ts'),
+  join('modules', 'identity', 'identity.routes.ts'),
+  join('modules', 'reviewer', 'reviewer.routes.ts'),
   join('architecture', 'module-edges.constants.ts'),
   join('architecture', 'public-handlers.constants.ts'),
 ];

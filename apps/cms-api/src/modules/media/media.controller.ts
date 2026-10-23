@@ -15,7 +15,8 @@ import {
 } from '@nestjs/common';
 
 import { ClientIpResolver } from '../../common/http/client-ip.resolver';
-import { API_ROUTES, ID_PARAM } from '../../common/constants/api.constants';
+import { ID_PARAM } from '../../common/constants/api.constants';
+import { MEDIA_ROUTES } from './media.routes';
 import { NO_STORE_HEADER } from '../../common/constants/http.constants';
 import { MEDIA_RATE_LIMIT_POLICIES } from './media.rate-limits.constants';
 import { Throttle } from '../../common/guards/throttle.guard';
@@ -43,7 +44,7 @@ import { type MediaPage, MediaService, type MediaView } from './media.service';
  * `PermissionGuard` needs `media` create / read. The multipart body is read
  * by `UploadPipeline` straight from the request, never buffered whole.
  */
-@Controller(API_ROUTES.MEDIA.ROOT)
+@Controller(MEDIA_ROUTES.ROOT)
 @UseGuards(JwtAuthGuard, PermissionGuard)
 export class MediaController {
   constructor(
@@ -79,7 +80,7 @@ export class MediaController {
   }
 
   /** Alt text only (strict body); 404 for an unknown, deleted or out-of-scope file. */
-  @Patch(API_ROUTES.MEDIA.BY_ID)
+  @Patch(MEDIA_ROUTES.BY_ID)
   @Header(NO_STORE_HEADER.NAME, NO_STORE_HEADER.VALUE)
   @RequirePermission({
     action: PermissionAction.update,
@@ -98,7 +99,7 @@ export class MediaController {
   }
 
   /** Soft delete; 409 `MEDIA_IN_USE` while a document references the file. */
-  @Delete(API_ROUTES.MEDIA.BY_ID)
+  @Delete(MEDIA_ROUTES.BY_ID)
   @HttpCode(HttpStatus.NO_CONTENT)
   @RequirePermission({
     action: PermissionAction.delete,

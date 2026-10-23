@@ -20,7 +20,7 @@ Everything below runs inside the normal Nest HTTP pipeline (request id, CORS,
 global error filter, `TRUST_PROXY_HOPS`). The GraphQL part is in-house on top
 of `graphql` (graphql-js); no Apollo/Yoga/`@nestjs/graphql` (Q-G1).
 
-1. **Transport** (`GraphqlController`, `@Post(API_ROUTES.GRAPHQL)`):
+1. **Transport** (`GraphqlController`, `@Post(GRAPHQL_ROUTE)`):
    `DocumentAuthGuard` (JWT, API token, or no `Authorization` header =
    anonymous `public` role; present-but-invalid = 401) then the existing
    `DOCUMENT_READ_ANONYMOUS` throttle (one request counts once, anonymous
@@ -296,7 +296,7 @@ GraphQL-shaped once the request reaches step 2:
 apps/cms-api/src/modules/graphql/
 ├── graphql.module.ts           # imports AccessModule, DocumentsModule (exports DocumentsQueryService), ContentEngineModule
 ├── graphql.constants.ts        # GRAPHQL_LIMITS, shared type names
-├── graphql.controller.ts       # POST API_ROUTES.GRAPHQL, guards + throttle, body checks
+├── graphql.controller.ts       # POST GRAPHQL_ROUTE, guards + throttle, body checks
 ├── graphql.executor.ts         # parse -> validate (rules) -> execute -> format
 ├── schema/
 │   ├── schema.builder.ts       # buildGraphqlSchema(definitions): pure, cached by the module; scalar field output types come from the field-type registry (`graphqlOutput`)

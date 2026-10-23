@@ -1,7 +1,8 @@
 import type { CookieOptions } from 'express';
 
 import { PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH } from './identity.constants';
-import { API_PREFIX, API_ROUTES } from '../../common/constants/api.constants';
+import { API_PREFIX } from '../../common/constants/api.constants';
+import { AUTH_ROUTES } from './identity.routes';
 
 const SECONDS_PER_MINUTE = 60;
 const SECONDS_PER_DAY = 24 * 60 * SECONDS_PER_MINUTE;
@@ -65,7 +66,7 @@ export const REFRESH_TOKEN_HASH_ALGORITHM = 'sha256';
 /** SPEC §6 / D14: refresh cookie. Host-only: never set a Domain attribute. */
 export const REFRESH_COOKIE = {
   NAME: '__Secure-abyss_rt',
-  PATH: `/${API_PREFIX}/${API_ROUTES.AUTH.ROOT}`,
+  PATH: `/${API_PREFIX}/${AUTH_ROUTES.ROOT}`,
   HTTP_ONLY: true,
   SECURE: true,
   SAME_SITE: 'strict',

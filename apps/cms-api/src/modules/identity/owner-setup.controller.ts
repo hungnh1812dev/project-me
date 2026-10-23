@@ -12,7 +12,7 @@ import {
 import type { Request } from 'express';
 
 import { ClientIpResolver } from '../../common/http/client-ip.resolver';
-import { API_ROUTES } from '../../common/constants/api.constants';
+import { SETUP_ROUTES } from './identity.routes';
 import { NO_STORE_HEADER } from '../../common/constants/http.constants';
 import { IDENTITY_RATE_LIMIT_POLICIES } from './identity.rate-limits.constants';
 import { Throttle } from '../../common/guards/throttle.guard';
@@ -24,21 +24,21 @@ import { OwnerSetupService, SetupClosedError } from './owner-setup.service';
  * (no token configured, or an owner exists), the submit route answers exactly
  * like an unknown route. No cookie and no access token in any answer.
  */
-@Controller(API_ROUTES.SETUP.ROOT)
+@Controller(SETUP_ROUTES.ROOT)
 export class OwnerSetupController {
   constructor(
     private readonly setup: OwnerSetupService,
     private readonly clientIp: ClientIpResolver,
   ) {}
 
-  @Get(API_ROUTES.SETUP.STATUS)
+  @Get(SETUP_ROUTES.STATUS)
   @Header(NO_STORE_HEADER.NAME, NO_STORE_HEADER.VALUE)
   @Throttle(IDENTITY_RATE_LIMIT_POLICIES.SETUP_STATUS)
   async status(): Promise<{ open: boolean }> {
     return { open: await this.setup.isOpen() };
   }
 
-  @Post(API_ROUTES.SETUP.OWNER)
+  @Post(SETUP_ROUTES.OWNER)
   @HttpCode(HttpStatus.CREATED)
   @Header(NO_STORE_HEADER.NAME, NO_STORE_HEADER.VALUE)
   @Throttle(IDENTITY_RATE_LIMIT_POLICIES.SETUP_SUBMIT)

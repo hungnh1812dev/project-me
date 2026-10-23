@@ -15,7 +15,8 @@ import {
 } from '@nestjs/common';
 
 import { ClientIpResolver } from '../../../common/http/client-ip.resolver';
-import { API_ROUTES, ID_PARAM } from '../../../common/constants/api.constants';
+import { ID_PARAM } from '../../../common/constants/api.constants';
+import { ROLES_ROUTES } from '../access.routes';
 import { NO_STORE_HEADER } from '../../../common/constants/http.constants';
 import { PermissionAction } from '../../../generated/prisma/client';
 import { clientMetaOf } from '../../../common/http/client-meta';
@@ -40,7 +41,7 @@ const SUBJECT = 'roles';
  * SPEC §9 roles (T17). The guard checks the `roles` permission; the
  * service enforces D6 (role rank below the actor's) and system-role rules.
  */
-@Controller(API_ROUTES.ROLES.ROOT)
+@Controller(ROLES_ROUTES.ROOT)
 @UseGuards(JwtAuthGuard, PermissionGuard)
 export class RolesController {
   constructor(
@@ -68,7 +69,7 @@ export class RolesController {
     );
   }
 
-  @Patch(API_ROUTES.ROLES.BY_ID)
+  @Patch(ROLES_ROUTES.BY_ID)
   @RequirePermission({ action: PermissionAction.update, subject: SUBJECT })
   update(
     @Req() req: AuthenticatedRequest,
@@ -83,7 +84,7 @@ export class RolesController {
     );
   }
 
-  @Delete(API_ROUTES.ROLES.BY_ID)
+  @Delete(ROLES_ROUTES.BY_ID)
   @HttpCode(HttpStatus.NO_CONTENT)
   @RequirePermission({ action: PermissionAction.delete, subject: SUBJECT })
   remove(
@@ -98,7 +99,7 @@ export class RolesController {
   }
 
   /** Replaces the whole set: `{ permissions: [...] }` (T14 row shape). */
-  @Put(API_ROUTES.ROLES.PERMISSIONS)
+  @Put(ROLES_ROUTES.PERMISSIONS)
   @RequirePermission({ action: PermissionAction.update, subject: SUBJECT })
   replacePermissions(
     @Req() req: AuthenticatedRequest,

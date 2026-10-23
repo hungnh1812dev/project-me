@@ -13,7 +13,7 @@ import {
 import type { Response } from 'express';
 import { z } from 'zod';
 
-import { API_ROUTES } from '../../common/constants/api.constants';
+import { GRAPHQL_ROUTE } from './graphql.routes';
 import { NO_STORE_HEADER } from '../../common/constants/http.constants';
 import { ERROR_CODES } from '../../common/constants/error.constants';
 import { Throttle } from '../../common/guards/throttle.guard';
@@ -44,7 +44,7 @@ const requestSchema = z.object({
  * is no `PermissionGuard`: the subject differs per root field, so access is
  * decided per field by validation and by `DocumentsQueryService`.
  */
-@Controller(API_ROUTES.GRAPHQL)
+@Controller(GRAPHQL_ROUTE)
 @UseGuards(DocumentAuthGuard)
 export class GraphqlController {
   constructor(private readonly executor: GraphqlExecutor) {}

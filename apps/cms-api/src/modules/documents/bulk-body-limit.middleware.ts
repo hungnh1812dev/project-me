@@ -1,7 +1,8 @@
 import { HttpStatus } from '@nestjs/common';
 import type { NextFunction, Request, Response } from 'express';
 
-import { API_PREFIX, API_ROUTES } from '../../common/constants/api.constants';
+import { API_PREFIX } from '../../common/constants/api.constants';
+import { DOCUMENTS_ROUTES } from './documents.routes';
 import { ERROR_CODES } from '../../common/constants/error.constants';
 import {
   closeAfterAnswer,
@@ -12,7 +13,7 @@ import type { RequestWithId } from '../../common/middleware/request-id.middlewar
 import { BULK_LIMITS, BULK_MESSAGES } from './documents.constants';
 
 /** Where `app.setup.ts` mounts the limit: before Nest's JSON parser, so never via `configure(consumer)`. */
-export const BULK_BODY_LIMIT_MOUNT_PATH = `/${API_PREFIX}/${API_ROUTES.DOCUMENTS.ROOT}/${API_ROUTES.DOCUMENTS.BULK_PREFIX}`;
+export const BULK_BODY_LIMIT_MOUNT_PATH = `/${API_PREFIX}/${DOCUMENTS_ROUTES.ROOT}/${DOCUMENTS_ROUTES.BULK_PREFIX}`;
 
 function reject(
   req: RequestWithId,

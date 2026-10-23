@@ -14,7 +14,8 @@ import {
 } from '@nestjs/common';
 
 import { ClientIpResolver } from '../../../common/http/client-ip.resolver';
-import { API_ROUTES, ID_PARAM } from '../../../common/constants/api.constants';
+import { ID_PARAM } from '../../../common/constants/api.constants';
+import { API_TOKENS_ROUTES } from '../access.routes';
 import { NO_STORE_HEADER } from '../../../common/constants/http.constants';
 import { PermissionAction } from '../../../generated/prisma/client';
 import { clientMetaOf } from '../../../common/http/client-meta';
@@ -46,7 +47,7 @@ const SUBJECT = 'api_tokens';
  * actor kind with 403 (D5). The service scopes each call to the caller's
  * own tokens unless they are the Owner.
  */
-@Controller(API_ROUTES.API_TOKENS.ROOT)
+@Controller(API_TOKENS_ROUTES.ROOT)
 @UseGuards(JwtAuthGuard, PermissionGuard)
 export class ApiTokensController {
   constructor(
@@ -82,7 +83,7 @@ export class ApiTokensController {
     );
   }
 
-  @Patch(API_ROUTES.API_TOKENS.BY_ID)
+  @Patch(API_TOKENS_ROUTES.BY_ID)
   @RequirePermission({ action: PermissionAction.update, subject: SUBJECT })
   update(
     @Req() req: AuthenticatedRequest,
@@ -97,7 +98,7 @@ export class ApiTokensController {
     );
   }
 
-  @Post(API_ROUTES.API_TOKENS.REVOKE)
+  @Post(API_TOKENS_ROUTES.REVOKE)
   @HttpCode(HttpStatus.NO_CONTENT)
   @RequirePermission({ action: PermissionAction.update, subject: SUBJECT })
   revoke(

@@ -14,7 +14,8 @@ import {
 } from '@nestjs/common';
 
 import { ClientIpResolver } from '../../../common/http/client-ip.resolver';
-import { API_ROUTES, ID_PARAM } from '../../../common/constants/api.constants';
+import { ID_PARAM } from '../../../common/constants/api.constants';
+import { ACCOUNTS_ROUTES } from '../access.routes';
 import { NO_STORE_HEADER } from '../../../common/constants/http.constants';
 import { ACCESS_RATE_LIMIT_POLICIES } from '../access.rate-limits.constants';
 import { Throttle } from '../../../common/guards/throttle.guard';
@@ -46,7 +47,7 @@ const SUBJECT = 'accounts';
  * SPEC §9 accounts (T17). The guard checks the `accounts` permission; the
  * service enforces D6 (target rank below the actor's, never itself).
  */
-@Controller(API_ROUTES.ACCOUNTS.ROOT)
+@Controller(ACCOUNTS_ROUTES.ROOT)
 @UseGuards(JwtAuthGuard, PermissionGuard)
 export class AccountsController {
   constructor(
@@ -80,7 +81,7 @@ export class AccountsController {
     );
   }
 
-  @Patch(API_ROUTES.ACCOUNTS.BY_ID)
+  @Patch(ACCOUNTS_ROUTES.BY_ID)
   @RequirePermission({ action: PermissionAction.update, subject: SUBJECT })
   update(
     @Req() req: AuthenticatedRequest,
@@ -95,7 +96,7 @@ export class AccountsController {
     );
   }
 
-  @Post(API_ROUTES.ACCOUNTS.DISABLE)
+  @Post(ACCOUNTS_ROUTES.DISABLE)
   @HttpCode(HttpStatus.NO_CONTENT)
   @RequirePermission({ action: PermissionAction.update, subject: SUBJECT })
   disable(
@@ -109,7 +110,7 @@ export class AccountsController {
     );
   }
 
-  @Post(API_ROUTES.ACCOUNTS.ENABLE)
+  @Post(ACCOUNTS_ROUTES.ENABLE)
   @HttpCode(HttpStatus.NO_CONTENT)
   @RequirePermission({ action: PermissionAction.update, subject: SUBJECT })
   enable(
@@ -124,7 +125,7 @@ export class AccountsController {
   }
 
   /** Q8: needs `accounts:create`, like the invite it repeats. */
-  @Post(API_ROUTES.ACCOUNTS.RESEND_INVITE)
+  @Post(ACCOUNTS_ROUTES.RESEND_INVITE)
   @HttpCode(HttpStatus.OK)
   @RequirePermission({ action: PermissionAction.create, subject: SUBJECT })
   @Throttle(ACCESS_RATE_LIMIT_POLICIES.ACCOUNT_INVITE)
@@ -139,7 +140,7 @@ export class AccountsController {
     );
   }
 
-  @Post(API_ROUTES.ACCOUNTS.REVOKE_SESSIONS)
+  @Post(ACCOUNTS_ROUTES.REVOKE_SESSIONS)
   @HttpCode(HttpStatus.NO_CONTENT)
   @RequirePermission({ action: PermissionAction.update, subject: SUBJECT })
   revokeSessions(

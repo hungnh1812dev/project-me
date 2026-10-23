@@ -15,7 +15,7 @@ import {
 import type { Request, Response } from 'express';
 
 import { ClientIpResolver } from '../../common/http/client-ip.resolver';
-import { API_ROUTES } from '../../common/constants/api.constants';
+import { REVIEWER_ROUTES } from './reviewer.routes';
 import { NO_STORE_HEADER } from '../../common/constants/http.constants';
 import { RETRY_AFTER_HEADER } from '../../common/constants/limits.constants';
 import { Throttle } from '../../common/guards/throttle.guard';
@@ -51,14 +51,14 @@ const SETTINGS_SUBJECT = 'reviewer_settings';
  * visitor has no account yet. The owner routes need a JWT session and the
  * `reviewer_settings` permission (owner only by default).
  */
-@Controller(API_ROUTES.REVIEWER.ROOT)
+@Controller(REVIEWER_ROUTES.ROOT)
 export class ReviewerController {
   constructor(
     private readonly reviewer: ReviewerService,
     private readonly clientIp: ClientIpResolver,
   ) {}
 
-  @Get(API_ROUTES.REVIEWER.STATUS)
+  @Get(REVIEWER_ROUTES.STATUS)
   @Header(NO_STORE_HEADER.NAME, NO_STORE_HEADER.VALUE)
   @Throttle(REVIEWER_RATE_LIMIT_POLICIES.REVIEWER_STATUS)
   status(): Promise<ReviewerStatusView> {
@@ -66,7 +66,7 @@ export class ReviewerController {
   }
 
   /** 201 with a 24 h access token, shown once. Turnstile is verified server-side. */
-  @Post(API_ROUTES.REVIEWER.SESSIONS)
+  @Post(REVIEWER_ROUTES.SESSIONS)
   @Header(NO_STORE_HEADER.NAME, NO_STORE_HEADER.VALUE)
   @Throttle(REVIEWER_RATE_LIMIT_POLICIES.REVIEWER_SESSION_ATTEMPTS)
   async createSession(
@@ -86,7 +86,7 @@ export class ReviewerController {
     }
   }
 
-  @Get(API_ROUTES.REVIEWER.SESSIONS)
+  @Get(REVIEWER_ROUTES.SESSIONS)
   @Header(NO_STORE_HEADER.NAME, NO_STORE_HEADER.VALUE)
   @UseGuards(JwtAuthGuard, PermissionGuard)
   @RequirePermission({
@@ -101,7 +101,7 @@ export class ReviewerController {
     return this.reviewer.listSessions(parseRequest(pageQuerySchema, query));
   }
 
-  @Put(API_ROUTES.REVIEWER.SETTINGS)
+  @Put(REVIEWER_ROUTES.SETTINGS)
   @HttpCode(HttpStatus.OK)
   @Header(NO_STORE_HEADER.NAME, NO_STORE_HEADER.VALUE)
   @UseGuards(JwtAuthGuard, PermissionGuard)

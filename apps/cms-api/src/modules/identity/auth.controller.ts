@@ -15,7 +15,7 @@ import {
 import type { Request, Response } from 'express';
 
 import { ClientIpResolver } from '../../common/http/client-ip.resolver';
-import { API_ROUTES } from '../../common/constants/api.constants';
+import { AUTH_ROUTES } from './identity.routes';
 import { NO_STORE_HEADER } from '../../common/constants/http.constants';
 import {
   AUTH_ERROR_CODES,
@@ -70,7 +70,7 @@ function clearRefreshCookie(res: Response): void {
  * `POST /auth/register` is a plain 404. The refresh cookie is read only by
  * `refresh` and `logout` (D14), both behind the Origin allowlist.
  */
-@Controller(API_ROUTES.AUTH.ROOT)
+@Controller(AUTH_ROUTES.ROOT)
 export class AuthController {
   constructor(
     private readonly auth: AuthService,
@@ -78,7 +78,7 @@ export class AuthController {
     private readonly access: AccessPolicyService,
   ) {}
 
-  @Post(API_ROUTES.AUTH.LOGIN)
+  @Post(AUTH_ROUTES.LOGIN)
   @HttpCode(HttpStatus.OK)
   @Header(NO_STORE_HEADER.NAME, NO_STORE_HEADER.VALUE)
   @Throttle(IDENTITY_RATE_LIMIT_POLICIES.LOGIN)
@@ -107,7 +107,7 @@ export class AuthController {
     return { accessToken: result.accessToken };
   }
 
-  @Post(API_ROUTES.AUTH.REFRESH)
+  @Post(AUTH_ROUTES.REFRESH)
   @HttpCode(HttpStatus.OK)
   @Header(NO_STORE_HEADER.NAME, NO_STORE_HEADER.VALUE)
   @UseGuards(AllowedOriginGuard)
@@ -132,7 +132,7 @@ export class AuthController {
     }
   }
 
-  @Post(API_ROUTES.AUTH.LOGOUT)
+  @Post(AUTH_ROUTES.LOGOUT)
   @HttpCode(HttpStatus.NO_CONTENT)
   @UseGuards(AllowedOriginGuard)
   async logout(
@@ -143,7 +143,7 @@ export class AuthController {
     clearRefreshCookie(res);
   }
 
-  @Get(API_ROUTES.AUTH.ME)
+  @Get(AUTH_ROUTES.ME)
   @Header(NO_STORE_HEADER.NAME, NO_STORE_HEADER.VALUE)
   @UseGuards(JwtAuthGuard)
   async me(@Req() req: AuthenticatedRequest): Promise<CurrentAccountProfile> {

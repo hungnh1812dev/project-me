@@ -15,7 +15,8 @@ import {
 } from '@nestjs/common';
 import { z } from 'zod';
 
-import { API_ROUTES, SLUG_PARAM } from '../../common/constants/api.constants';
+import { SLUG_PARAM } from '../../common/constants/api.constants';
+import { DOCUMENTS_ROUTES } from './documents.routes';
 import { Throttle } from '../../common/guards/throttle.guard';
 import { DOCUMENTS_RATE_LIMIT_POLICIES } from './documents.rate-limits.constants';
 import { NO_STORE_HEADER } from '../../common/constants/http.constants';
@@ -71,7 +72,7 @@ const detailQuerySchema = z.strictObject({
  * then needs `read` on the `:slug` content type. Bodies are
  * `SerializedRecord`s only: field masking happens in the service.
  */
-@Controller(API_ROUTES.DOCUMENTS.ROOT)
+@Controller(DOCUMENTS_ROUTES.ROOT)
 @UseGuards(DocumentAuthGuard, PermissionGuard)
 export class DocumentsController {
   constructor(
@@ -81,7 +82,7 @@ export class DocumentsController {
     private readonly presence: PresenceService,
   ) {}
 
-  @Get(API_ROUTES.DOCUMENTS.BY_SLUG)
+  @Get(DOCUMENTS_ROUTES.BY_SLUG)
   @Throttle(DOCUMENTS_RATE_LIMIT_POLICIES.DOCUMENT_READ_ANONYMOUS)
   @RequirePermission({
     action: PermissionAction.read,
@@ -96,7 +97,7 @@ export class DocumentsController {
     return this.documents.list(req.user.actor, slug, parseListQuery(query));
   }
 
-  @Get(API_ROUTES.DOCUMENTS.BY_ID)
+  @Get(DOCUMENTS_ROUTES.BY_ID)
   @Throttle(DOCUMENTS_RATE_LIMIT_POLICIES.DOCUMENT_READ_ANONYMOUS)
   @RequirePermission({
     action: PermissionAction.read,
@@ -119,7 +120,7 @@ export class DocumentsController {
   }
 
   /** SPEC §9: creates the draft (version 1). `PermissionGuard` needs `create` on `:slug`. */
-  @Post(API_ROUTES.DOCUMENTS.BY_SLUG)
+  @Post(DOCUMENTS_ROUTES.BY_SLUG)
   @RequirePermission({
     action: PermissionAction.create,
     subjectParam: SLUG_PARAM,
@@ -134,7 +135,7 @@ export class DocumentsController {
   }
 
   /** SPEC §9: update with optimistic concurrency; a stale `version` is a 409 with the masked conflict body. */
-  @Put(API_ROUTES.DOCUMENTS.BY_ID)
+  @Put(DOCUMENTS_ROUTES.BY_ID)
   @RequirePermission({
     action: PermissionAction.update,
     subjectParam: SLUG_PARAM,
@@ -157,7 +158,7 @@ export class DocumentsController {
   }
 
   /** SPEC §9: copies the draft over the published row; a stale `expectedVersion` is a 409. */
-  @Post(API_ROUTES.DOCUMENTS.PUBLISH)
+  @Post(DOCUMENTS_ROUTES.PUBLISH)
   @HttpCode(HttpStatus.OK)
   @RequirePermission({
     action: PermissionAction.publish,
@@ -179,7 +180,7 @@ export class DocumentsController {
   }
 
   /** SPEC §9: removes the published row; the draft stays. */
-  @Post(API_ROUTES.DOCUMENTS.UNPUBLISH)
+  @Post(DOCUMENTS_ROUTES.UNPUBLISH)
   @HttpCode(HttpStatus.NO_CONTENT)
   @RequirePermission({
     action: PermissionAction.unpublish,
@@ -198,7 +199,7 @@ export class DocumentsController {
   }
 
   /** SPEC §9: removes the draft and the published row. */
-  @Delete(API_ROUTES.DOCUMENTS.BY_ID)
+  @Delete(DOCUMENTS_ROUTES.BY_ID)
   @HttpCode(HttpStatus.NO_CONTENT)
   @RequirePermission({
     action: PermissionAction.delete,
@@ -220,7 +221,7 @@ export class DocumentsController {
    * SPEC D16: heartbeat of an editor; returns who is active on the document
    * (`{accountId, displayName, state, lastSeenAt}` each). Needs `update` on `:slug`.
    */
-  @Post(API_ROUTES.DOCUMENTS.PRESENCE)
+  @Post(DOCUMENTS_ROUTES.PRESENCE)
   @HttpCode(HttpStatus.OK)
   @RequirePermission({
     action: PermissionAction.update,

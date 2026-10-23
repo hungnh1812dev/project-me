@@ -8,7 +8,7 @@ import {
 } from '@nestjs/common';
 import type { Response } from 'express';
 
-import { API_ROUTES } from '../../common/constants/api.constants';
+import { HEALTH_ROUTES } from './health.routes';
 import {
   HEALTH_STATUS,
   type HealthStatus,
@@ -24,7 +24,7 @@ export interface HealthResponse {
 }
 
 /** Probes return `{ status }` only, never internals (SPEC §6). */
-@Controller(API_ROUTES.HEALTH.ROOT)
+@Controller(HEALTH_ROUTES.ROOT)
 export class HealthController {
   private readonly logger = new Logger(HealthController.name);
 
@@ -32,12 +32,12 @@ export class HealthController {
     @Inject(DATABASE_HEALTH) private readonly database: DatabaseHealth,
   ) {}
 
-  @Get(API_ROUTES.HEALTH.LIVE)
+  @Get(HEALTH_ROUTES.LIVE)
   live(): HealthResponse {
     return { status: HEALTH_STATUS.OK };
   }
 
-  @Get(API_ROUTES.HEALTH.READY)
+  @Get(HEALTH_ROUTES.READY)
   async ready(
     @Res({ passthrough: true }) res: Response,
   ): Promise<HealthResponse> {

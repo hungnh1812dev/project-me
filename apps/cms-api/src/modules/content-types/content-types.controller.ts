@@ -1,6 +1,7 @@
 import { Controller, Get, Header, Param, Req, UseGuards } from '@nestjs/common';
 
-import { API_ROUTES, SLUG_PARAM } from '../../common/constants/api.constants';
+import { SLUG_PARAM } from '../../common/constants/api.constants';
+import { CONTENT_TYPES_ROUTES } from './content-types.routes';
 import { NO_STORE_HEADER } from '../../common/constants/http.constants';
 import { type AuthenticatedRequest, JwtAuthGuard } from '../identity';
 import type { ContentTypeView } from './content-type.view';
@@ -11,7 +12,7 @@ import { ContentTypesService } from './content-types.service';
  * subject is per type, so the service filters by `read` on each slug and
  * answers 404 for a type the caller cannot read.
  */
-@Controller(API_ROUTES.CONTENT_TYPES.ROOT)
+@Controller(CONTENT_TYPES_ROUTES.ROOT)
 @UseGuards(JwtAuthGuard)
 export class ContentTypesController {
   constructor(private readonly contentTypes: ContentTypesService) {}
@@ -24,7 +25,7 @@ export class ContentTypesController {
     return { data: await this.contentTypes.list(req.user.actor) };
   }
 
-  @Get(API_ROUTES.CONTENT_TYPES.BY_SLUG)
+  @Get(CONTENT_TYPES_ROUTES.BY_SLUG)
   @Header(NO_STORE_HEADER.NAME, NO_STORE_HEADER.VALUE)
   get(
     @Req() req: AuthenticatedRequest,

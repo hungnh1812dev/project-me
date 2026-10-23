@@ -10,7 +10,8 @@ import {
   UseGuards,
 } from '@nestjs/common';
 
-import { API_ROUTES, SLUG_PARAM } from '../../common/constants/api.constants';
+import { SLUG_PARAM } from '../../common/constants/api.constants';
+import { DOCUMENTS_ROUTES } from './documents.routes';
 import { NO_STORE_HEADER } from '../../common/constants/http.constants';
 import { PermissionAction } from '../../generated/prisma/client';
 import { RequirePermission, PermissionGuard } from '../access';
@@ -31,12 +32,12 @@ import {
  * needs its action on `:slug` (`PermissionGuard`); rows and fields are then
  * checked per item in `BulkService`.
  */
-@Controller(`${API_ROUTES.DOCUMENTS.ROOT}/${API_ROUTES.DOCUMENTS.BULK_PREFIX}`)
+@Controller(`${DOCUMENTS_ROUTES.ROOT}/${DOCUMENTS_ROUTES.BULK_PREFIX}`)
 @UseGuards(DocumentAuthGuard, PermissionGuard)
 export class BulkController {
   constructor(private readonly bulk: BulkService) {}
 
-  @Post(API_ROUTES.DOCUMENTS.BULK_CREATE)
+  @Post(DOCUMENTS_ROUTES.BULK_CREATE)
   @HttpCode(HttpStatus.OK)
   @RequirePermission({
     action: PermissionAction.create,
@@ -51,7 +52,7 @@ export class BulkController {
     return this.bulk.create(req.user.actor, slug, parseBulkCreateBody(body));
   }
 
-  @Post(API_ROUTES.DOCUMENTS.BULK_PUBLISH)
+  @Post(DOCUMENTS_ROUTES.BULK_PUBLISH)
   @HttpCode(HttpStatus.OK)
   @RequirePermission({
     action: PermissionAction.publish,
@@ -66,7 +67,7 @@ export class BulkController {
     return this.bulk.publish(req.user.actor, slug, parseBulkPublishBody(body));
   }
 
-  @Post(API_ROUTES.DOCUMENTS.BULK_UNPUBLISH)
+  @Post(DOCUMENTS_ROUTES.BULK_UNPUBLISH)
   @HttpCode(HttpStatus.OK)
   @RequirePermission({
     action: PermissionAction.unpublish,
@@ -85,7 +86,7 @@ export class BulkController {
     );
   }
 
-  @Post(API_ROUTES.DOCUMENTS.BULK_DELETE)
+  @Post(DOCUMENTS_ROUTES.BULK_DELETE)
   @HttpCode(HttpStatus.OK)
   @RequirePermission({
     action: PermissionAction.delete,

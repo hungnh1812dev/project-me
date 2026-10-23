@@ -14,7 +14,7 @@ import type { Request, Response } from 'express';
 import { type z } from 'zod';
 
 import { ClientIpResolver } from '../../common/http/client-ip.resolver';
-import { API_ROUTES } from '../../common/constants/api.constants';
+import { TWO_FACTOR_ROUTES } from './identity.routes';
 import { NO_STORE_HEADER } from '../../common/constants/http.constants';
 import {
   AUTH_ERROR_CODES,
@@ -50,14 +50,14 @@ function parseBody<T>(schema: z.ZodType<T>, body: unknown): T {
  * the temp token from `POST /auth/login`; the rest need a Bearer token.
  * Re-auth failures of signed-in calls answer 403 (T13 Q14).
  */
-@Controller(API_ROUTES.TWO_FACTOR.ROOT)
+@Controller(TWO_FACTOR_ROUTES.ROOT)
 export class TwoFactorController {
   constructor(
     private readonly twoFactor: TwoFactorService,
     private readonly clientIp: ClientIpResolver,
   ) {}
 
-  @Post(API_ROUTES.TWO_FACTOR.TOTP_SETUP)
+  @Post(TWO_FACTOR_ROUTES.TOTP_SETUP)
   @HttpCode(HttpStatus.OK)
   @Header(NO_STORE_HEADER.NAME, NO_STORE_HEADER.VALUE)
   @UseGuards(JwtAuthGuard)
@@ -67,7 +67,7 @@ export class TwoFactorController {
     return this.twoFactor.setupTotp(req.user.accountId);
   }
 
-  @Post(API_ROUTES.TWO_FACTOR.ENABLE)
+  @Post(TWO_FACTOR_ROUTES.ENABLE)
   @HttpCode(HttpStatus.NO_CONTENT)
   @UseGuards(JwtAuthGuard)
   @Throttle(IDENTITY_RATE_LIMIT_POLICIES.TWO_FACTOR_MANAGE)
@@ -83,7 +83,7 @@ export class TwoFactorController {
     );
   }
 
-  @Post(API_ROUTES.TWO_FACTOR.DISABLE)
+  @Post(TWO_FACTOR_ROUTES.DISABLE)
   @HttpCode(HttpStatus.NO_CONTENT)
   @UseGuards(JwtAuthGuard)
   @Throttle(IDENTITY_RATE_LIMIT_POLICIES.TWO_FACTOR_MANAGE)
@@ -99,7 +99,7 @@ export class TwoFactorController {
     );
   }
 
-  @Post(API_ROUTES.TWO_FACTOR.EMAIL_SEND_CODE)
+  @Post(TWO_FACTOR_ROUTES.EMAIL_SEND_CODE)
   @HttpCode(HttpStatus.ACCEPTED)
   @UseGuards(JwtAuthGuard)
   @Throttle(IDENTITY_RATE_LIMIT_POLICIES.TWO_FACTOR_EMAIL_CHALLENGE)
@@ -112,7 +112,7 @@ export class TwoFactorController {
   }
 
   /** Same response as a password-only login: access token + refresh cookie. */
-  @Post(API_ROUTES.TWO_FACTOR.VERIFY)
+  @Post(TWO_FACTOR_ROUTES.VERIFY)
   @HttpCode(HttpStatus.OK)
   @Header(NO_STORE_HEADER.NAME, NO_STORE_HEADER.VALUE)
   @Throttle(IDENTITY_RATE_LIMIT_POLICIES.TWO_FACTOR_VERIFY)
@@ -130,7 +130,7 @@ export class TwoFactorController {
   }
 
   /** 202 with an empty body; a TOTP account gets no email. */
-  @Post(API_ROUTES.TWO_FACTOR.EMAIL_CHALLENGE)
+  @Post(TWO_FACTOR_ROUTES.EMAIL_CHALLENGE)
   @HttpCode(HttpStatus.ACCEPTED)
   @Throttle(IDENTITY_RATE_LIMIT_POLICIES.TWO_FACTOR_EMAIL_CHALLENGE)
   emailChallenge(@Body() body: unknown, @Req() req: Request): Promise<void> {

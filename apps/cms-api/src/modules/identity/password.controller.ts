@@ -13,7 +13,7 @@ import type { Request } from 'express';
 import { type z } from 'zod';
 
 import { ClientIpResolver } from '../../common/http/client-ip.resolver';
-import { API_ROUTES } from '../../common/constants/api.constants';
+import { PASSWORD_ROUTES } from './identity.routes';
 import { NO_STORE_HEADER } from '../../common/constants/http.constants';
 import {
   AUTH_ERROR_CODES,
@@ -47,7 +47,7 @@ function parseBody<T>(schema: z.ZodType<T>, body: unknown): T {
  * SPEC §9 password endpoints (T12). None of them signs the user in: after a
  * reset, set or change every session is gone and the user logs in again.
  */
-@Controller(API_ROUTES.PASSWORD.ROOT)
+@Controller(PASSWORD_ROUTES.ROOT)
 export class PasswordController {
   constructor(
     private readonly passwords: PasswordService,
@@ -55,7 +55,7 @@ export class PasswordController {
   ) {}
 
   /** Always 202 with an empty body, known email or not (D8). */
-  @Post(API_ROUTES.PASSWORD.REQUEST_OTP)
+  @Post(PASSWORD_ROUTES.REQUEST_OTP)
   @HttpCode(HttpStatus.ACCEPTED)
   @Throttle(IDENTITY_RATE_LIMIT_POLICIES.OTP_REQUEST)
   requestOtp(@Body() body: unknown, @Req() req: Request): void {
@@ -65,7 +65,7 @@ export class PasswordController {
     );
   }
 
-  @Post(API_ROUTES.PASSWORD.RESET)
+  @Post(PASSWORD_ROUTES.RESET)
   @HttpCode(HttpStatus.NO_CONTENT)
   @Header(NO_STORE_HEADER.NAME, NO_STORE_HEADER.VALUE)
   @Throttle(IDENTITY_RATE_LIMIT_POLICIES.PASSWORD_SUBMIT)
@@ -76,7 +76,7 @@ export class PasswordController {
     );
   }
 
-  @Post(API_ROUTES.PASSWORD.SET)
+  @Post(PASSWORD_ROUTES.SET)
   @HttpCode(HttpStatus.NO_CONTENT)
   @Header(NO_STORE_HEADER.NAME, NO_STORE_HEADER.VALUE)
   @Throttle(IDENTITY_RATE_LIMIT_POLICIES.PASSWORD_SUBMIT)
@@ -87,7 +87,7 @@ export class PasswordController {
     );
   }
 
-  @Post(API_ROUTES.PASSWORD.CHANGE)
+  @Post(PASSWORD_ROUTES.CHANGE)
   @HttpCode(HttpStatus.NO_CONTENT)
   @Header(NO_STORE_HEADER.NAME, NO_STORE_HEADER.VALUE)
   @UseGuards(JwtAuthGuard)
