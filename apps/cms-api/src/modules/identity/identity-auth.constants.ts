@@ -1,8 +1,7 @@
-import {
-  PASSWORD_MAX_LENGTH,
-  PASSWORD_MIN_LENGTH,
-} from '../../modules/identity/identity.constants';
-import { API_PREFIX, API_ROUTES } from './api.constants';
+import type { CookieOptions } from 'express';
+
+import { PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH } from './identity.constants';
+import { API_PREFIX, API_ROUTES } from '../../common/constants/api.constants';
 
 const SECONDS_PER_MINUTE = 60;
 const SECONDS_PER_DAY = 24 * 60 * SECONDS_PER_MINUTE;
@@ -69,14 +68,16 @@ export const REFRESH_COOKIE = {
   SAME_SITE: 'strict',
 } as const;
 
-/** Token responses must never be cached. */
-export const NO_STORE_HEADER = { NAME: 'Cache-Control', VALUE: 'no-store' };
+/** SPEC §6 attributes. No `domain`: the cookie must stay host-only. */
+export const REFRESH_COOKIE_OPTIONS: CookieOptions = {
+  httpOnly: REFRESH_COOKIE.HTTP_ONLY,
+  secure: REFRESH_COOKIE.SECURE,
+  sameSite: REFRESH_COOKIE.SAME_SITE,
+  path: REFRESH_COOKIE.PATH,
+};
 
 /** Request header checked by the refresh/logout Origin allowlist (D14). */
 export const ORIGIN_HEADER = 'origin';
-
-/** Request header stored with each refresh token. */
-export const USER_AGENT_HEADER = 'user-agent';
 
 /** RFC 5321 path limit; longer input can't be a stored email. */
 export const EMAIL_MAX_LENGTH = 254;

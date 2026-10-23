@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import { TWO_FACTOR_TEMP_TOKEN_MAX_LENGTH } from '../../common/constants/auth.constants';
+import { TWO_FACTOR_TEMP_TOKEN_MAX_LENGTH } from './identity-auth.constants';
 import { PASSWORD_MAX_LENGTH, TOTP } from './identity.constants';
 
 /**

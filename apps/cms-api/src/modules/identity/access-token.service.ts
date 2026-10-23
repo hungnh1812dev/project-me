@@ -10,7 +10,7 @@ import {
   JWT_ALGORITHM,
   TOKEN_TYPES,
   TWO_FACTOR_TEMP_TOKEN_TTL_SECONDS,
-} from '../../common/constants/auth.constants';
+} from './identity-auth.constants';
 import { Clock } from '../../common/clock';
 import { MS_PER_SECOND } from '../../common/constants/limits.constants';
 import { type IAppConfig } from '../../config/app-config';

@@ -11,7 +11,7 @@ import {
   AUTH_ERROR_CODES,
   AUTH_ERROR_MESSAGES,
   ORIGIN_HEADER,
-} from '../../common/constants/auth.constants';
+} from './identity-auth.constants';
 import { type IAppConfig } from '../../config/app-config';
 import { APP_CONFIG } from '../../config/config.constants';
 

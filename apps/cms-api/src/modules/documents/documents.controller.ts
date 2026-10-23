@@ -22,7 +22,7 @@ import {
 } from '../../common/constants/api.constants';
 import { Throttle } from '../../common/guards/throttle.guard';
 import { RATE_LIMIT_POLICIES } from '../../common/constants/limits.constants';
-import { NO_STORE_HEADER } from '../../common/constants/auth.constants';
+import { NO_STORE_HEADER } from '../../common/constants/http.constants';
 import { PermissionAction } from '../../generated/prisma/client';
 import {
   documentIdSchema,

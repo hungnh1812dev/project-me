@@ -15,11 +15,11 @@ import { type z } from 'zod';
 
 import { ClientIpResolver } from '../../common/client-ip.resolver';
 import { API_ROUTES } from '../../common/constants/api.constants';
+import { NO_STORE_HEADER } from '../../common/constants/http.constants';
 import {
   AUTH_ERROR_CODES,
   AUTH_ERROR_MESSAGES,
-  NO_STORE_HEADER,
-} from '../../common/constants/auth.constants';
+} from './identity-auth.constants';
 import { RATE_LIMIT_POLICIES } from '../../common/constants/limits.constants';
 import { Throttle } from '../../common/guards/throttle.guard';
 import { type AccessTokenResponse, setRefreshCookie } from './auth.controller';

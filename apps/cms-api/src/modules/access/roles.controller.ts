@@ -16,7 +16,7 @@ import {
 
 import { ClientIpResolver } from '../../common/client-ip.resolver';
 import { API_ROUTES, ID_PARAM } from '../../common/constants/api.constants';
-import { NO_STORE_HEADER } from '../../common/constants/auth.constants';
+import { NO_STORE_HEADER } from '../../common/constants/http.constants';
 import { PermissionAction } from '../../generated/prisma/client';
 import { clientMetaOf } from '../../common/http/client-meta';
 import {

@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import { EMAIL_MAX_LENGTH } from '../../common/constants/auth.constants';
+import { EMAIL_MAX_LENGTH } from './identity-auth.constants';
 import {
   OTP,
   PASSWORD_MAX_LENGTH,

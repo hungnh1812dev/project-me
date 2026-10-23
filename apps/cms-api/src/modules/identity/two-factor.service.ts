@@ -13,7 +13,7 @@ import {
 import {
   AUTH_ERROR_CODES,
   AUTH_ERROR_MESSAGES,
-} from '../../common/constants/auth.constants';
+} from './identity-auth.constants';
 import { ERROR_CODES } from '../../common/constants/error.constants';
 import {
   MS_PER_SECOND,

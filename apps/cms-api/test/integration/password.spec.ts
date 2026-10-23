@@ -6,7 +6,7 @@ import type { StartedPostgreSqlContainer } from '@testcontainers/postgresql';
 import request from 'supertest';
 
 import { Clock } from '../../src/common/clock';
-import { AUTH_ERROR_CODES } from '../../src/common/constants/auth.constants';
+import { AUTH_ERROR_CODES } from '../../src/modules/identity/identity-auth.constants';
 import { ERROR_CODES } from '../../src/common/constants/error.constants';
 import {
   MS_PER_SECOND,

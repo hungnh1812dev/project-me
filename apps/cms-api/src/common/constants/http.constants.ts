@@ -48,3 +48,9 @@ export const CORS_PREFLIGHT_MAX_AGE_SECONDS = 600;
 export const CONTENT_SECURITY_POLICY_HEADER = 'content-security-policy';
 export const API_CONTENT_SECURITY_POLICY =
   "default-src 'none'; frame-ancestors 'none'";
+
+/** Token responses must never be cached. */
+export const NO_STORE_HEADER = { NAME: 'Cache-Control', VALUE: 'no-store' };
+
+/** Request header stored with each refresh token. */
+export const USER_AGENT_HEADER = 'user-agent';

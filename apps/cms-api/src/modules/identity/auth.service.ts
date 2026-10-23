@@ -10,7 +10,7 @@ import {
   AUTH_ERROR_CODES,
   AUTH_ERROR_MESSAGES,
   DUMMY_PASSWORD_BYTES,
-} from '../../common/constants/auth.constants';
+} from './identity-auth.constants';
 import {
   type AccountStatus,
   type TwoFaMethod,

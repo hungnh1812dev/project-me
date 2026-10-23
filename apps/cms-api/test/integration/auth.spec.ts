@@ -13,7 +13,7 @@ import {
   REFRESH_TOKEN_REUSE_GRACE_MS,
   REFRESH_TOKEN_TTL_SECONDS,
   TOKEN_TYPES,
-} from '../../src/common/constants/auth.constants';
+} from '../../src/modules/identity/identity-auth.constants';
 import { RATE_LIMIT_SWEEP_INTERVAL_MS } from '../../src/common/constants/limits.constants';
 import {
   openPrisma,

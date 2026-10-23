@@ -16,7 +16,7 @@ import type { Request, Response } from 'express';
 
 import { ClientIpResolver } from '../../common/client-ip.resolver';
 import { API_ROUTES } from '../../common/constants/api.constants';
-import { NO_STORE_HEADER } from '../../common/constants/auth.constants';
+import { NO_STORE_HEADER } from '../../common/constants/http.constants';
 import {
   RATE_LIMIT_POLICIES,
   RETRY_AFTER_HEADER,

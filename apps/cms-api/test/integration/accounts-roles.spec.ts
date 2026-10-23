@@ -2,7 +2,7 @@ import type { NestExpressApplication } from '@nestjs/platform-express';
 import type { StartedPostgreSqlContainer } from '@testcontainers/postgresql';
 import request from 'supertest';
 
-import { REFRESH_COOKIE } from '../../src/common/constants/auth.constants';
+import { REFRESH_COOKIE } from '../../src/modules/identity/identity-auth.constants';
 import { ERROR_CODES } from '../../src/common/constants/error.constants';
 import {
   openPrisma,

@@ -8,7 +8,7 @@ import {
   REFRESH_TOKEN_REUSE_GRACE_MS,
   REFRESH_TOKEN_TTL_MS,
   USER_AGENT_MAX_LENGTH,
-} from '../../common/constants/auth.constants';
+} from './identity-auth.constants';
 import { type Prisma } from '../../generated/prisma/client';
 import { PrismaService } from '../../infrastructure/database/prisma.service';
 import { AUDIT_ACTIONS } from '../security-audit/security-audit.constants';

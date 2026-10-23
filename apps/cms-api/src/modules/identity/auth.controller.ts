@@ -12,17 +12,18 @@ import {
   UnauthorizedException,
   UseGuards,
 } from '@nestjs/common';
-import type { CookieOptions, Request, Response } from 'express';
+import type { Request, Response } from 'express';
 
 import { ClientIpResolver } from '../../common/client-ip.resolver';
 import { API_ROUTES } from '../../common/constants/api.constants';
+import { NO_STORE_HEADER } from '../../common/constants/http.constants';
 import {
   AUTH_ERROR_CODES,
   AUTH_ERROR_MESSAGES,
-  NO_STORE_HEADER,
   REFRESH_COOKIE,
+  REFRESH_COOKIE_OPTIONS,
   REFRESH_TOKEN_TTL_MS,
-} from '../../common/constants/auth.constants';
+} from './identity-auth.constants';
 import { RATE_LIMIT_POLICIES } from '../../common/constants/limits.constants';
 import { type ClientMeta, clientMetaOf } from '../../common/http/client-meta';
 import { Throttle } from '../../common/guards/throttle.guard';
@@ -35,14 +36,6 @@ import {
 } from './auth.service';
 import { type AuthenticatedRequest, JwtAuthGuard } from './jwt.strategy';
 import { loginRequestSchema } from './login.request';
-
-/** SPEC §6 attributes. No `domain`: the cookie must stay host-only. */
-const REFRESH_COOKIE_OPTIONS: CookieOptions = {
-  httpOnly: REFRESH_COOKIE.HTTP_ONLY,
-  secure: REFRESH_COOKIE.SECURE,
-  sameSite: REFRESH_COOKIE.SAME_SITE,
-  path: REFRESH_COOKIE.PATH,
-};
 
 export interface AccessTokenResponse {
   accessToken: string;

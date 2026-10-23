@@ -1,7 +1,7 @@
 import { Controller, Get, Header, Param, Req, UseGuards } from '@nestjs/common';
 
 import { API_ROUTES, SLUG_PARAM } from '../../common/constants/api.constants';
-import { NO_STORE_HEADER } from '../../common/constants/auth.constants';
+import { NO_STORE_HEADER } from '../../common/constants/http.constants';
 import {
   type AuthenticatedRequest,
   JwtAuthGuard,

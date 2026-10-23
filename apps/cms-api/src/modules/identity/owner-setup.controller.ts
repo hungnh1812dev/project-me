@@ -13,7 +13,7 @@ import type { Request } from 'express';
 
 import { ClientIpResolver } from '../../common/client-ip.resolver';
 import { API_ROUTES } from '../../common/constants/api.constants';
-import { NO_STORE_HEADER } from '../../common/constants/auth.constants';
+import { NO_STORE_HEADER } from '../../common/constants/http.constants';
 import { RATE_LIMIT_POLICIES } from '../../common/constants/limits.constants';
 import { Throttle } from '../../common/guards/throttle.guard';
 import { clientMetaOf } from '../../common/http/client-meta';

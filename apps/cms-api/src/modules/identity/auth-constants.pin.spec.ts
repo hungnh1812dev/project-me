@@ -1,14 +1,17 @@
+import { NO_STORE_HEADER } from '../../common/constants/http.constants';
 import {
   ACCESS_TOKEN_TTL_SECONDS,
   JWT_ALGORITHM,
-  NO_STORE_HEADER,
   REFRESH_COOKIE,
+  REFRESH_COOKIE_OPTIONS,
   REFRESH_TOKEN_BYTES,
+  REFRESH_TOKEN_REUSE_GRACE_MS,
   REFRESH_TOKEN_REUSE_GRACE_SECONDS,
+  REFRESH_TOKEN_TTL_MS,
   REFRESH_TOKEN_TTL_SECONDS,
   TOKEN_TYPES,
   TWO_FACTOR_TEMP_TOKEN_TTL_SECONDS,
-} from '../../common/constants/auth.constants';
+} from './identity-auth.constants';
 
 /**
  * Security constants pinned as literals (SPEC D9, D14). If a refactor changes
@@ -40,6 +43,21 @@ describe('auth security constants (pinned literals)', () => {
     expect(REFRESH_TOKEN_TTL_SECONDS).toBe(604_800);
     expect(REFRESH_TOKEN_REUSE_GRACE_SECONDS).toBe(10);
     expect(TWO_FACTOR_TEMP_TOKEN_TTL_SECONDS).toBe(300);
+  });
+
+  it('pins the derived lifetimes in milliseconds', () => {
+    expect(REFRESH_TOKEN_TTL_MS).toBe(604_800_000);
+    expect(REFRESH_TOKEN_REUSE_GRACE_MS).toBe(10_000);
+  });
+
+  it('maps the refresh cookie to host-only, httpOnly, secure, strict options', () => {
+    expect(REFRESH_COOKIE_OPTIONS).toStrictEqual({
+      httpOnly: true,
+      secure: true,
+      sameSite: 'strict',
+      path: '/api/v1/auth',
+    });
+    expect(Object.keys(REFRESH_COOKIE_OPTIONS)).not.toContain('domain');
   });
 
   it('pins the refresh token entropy', () => {

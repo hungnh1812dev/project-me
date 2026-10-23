@@ -9,7 +9,7 @@ import {
   AUTH_ERROR_CODES,
   TWO_FACTOR_TEMP_TOKEN_MAX_ATTEMPTS,
   TWO_FACTOR_TEMP_TOKEN_TTL_SECONDS,
-} from '../../src/common/constants/auth.constants';
+} from '../../src/modules/identity/identity-auth.constants';
 import { ERROR_CODES } from '../../src/common/constants/error.constants';
 import {
   MS_PER_SECOND,

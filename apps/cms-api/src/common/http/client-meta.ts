@@ -1,7 +1,7 @@
 import type { Request } from 'express';
 
 import { ClientIpResolver } from '../client-ip.resolver';
-import { USER_AGENT_HEADER } from '../constants/auth.constants';
+import { USER_AGENT_HEADER } from '../constants/http.constants';
 import { UNKNOWN_CLIENT_IP } from '../constants/limits.constants';
 
 /** Where a refresh token was issued from (stored for session listings). */

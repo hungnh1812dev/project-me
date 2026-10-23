@@ -11,7 +11,7 @@ import {
 } from '@nestjs/common';
 
 import { API_ROUTES, SLUG_PARAM } from '../../common/constants/api.constants';
-import { NO_STORE_HEADER } from '../../common/constants/auth.constants';
+import { NO_STORE_HEADER } from '../../common/constants/http.constants';
 import { PermissionAction } from '../../generated/prisma/client';
 import { RequirePermission } from '../access/permission.decorator';
 import { PermissionGuard } from '../access/permission.guard';

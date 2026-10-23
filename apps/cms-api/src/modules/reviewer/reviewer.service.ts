@@ -13,7 +13,7 @@ import {
 import { Clock } from '../../common/clock';
 import { MS_PER_SECOND } from '../../common/constants/limits.constants';
 import { UNKNOWN_CLIENT_IP } from '../../common/constants/limits.constants';
-import { USER_AGENT_MAX_LENGTH } from '../../common/constants/auth.constants';
+import { USER_AGENT_MAX_LENGTH } from '../identity';
 import { type IAppConfig } from '../../config/app-config';
 import { APP_CONFIG } from '../../config/config.constants';
 import type { Prisma } from '../../generated/prisma/client';

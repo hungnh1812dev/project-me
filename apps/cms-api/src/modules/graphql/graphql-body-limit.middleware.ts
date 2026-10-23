@@ -1,7 +1,7 @@
 import { HttpStatus } from '@nestjs/common';
 import type { NextFunction, Response } from 'express';
 
-import { NO_STORE_HEADER } from '../../common/constants/auth.constants';
+import { NO_STORE_HEADER } from '../../common/constants/http.constants';
 import { ERROR_CODES } from '../../common/constants/error.constants';
 import type { RequestWithId } from '../../common/middleware/request-id.middleware';
 import { GRAPHQL_LIMIT_MESSAGES, GRAPHQL_LIMITS } from './graphql.constants';

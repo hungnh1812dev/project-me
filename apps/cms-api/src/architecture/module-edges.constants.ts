@@ -97,11 +97,6 @@ export interface KnownViolation {
 
 export const KNOWN_VIOLATIONS: readonly KnownViolation[] = [
   {
-    from: 'common/constants/auth.constants.ts',
-    to: 'modules/identity/identity.constants.ts',
-    removedBy: 'R1-08',
-  },
-  {
     from: 'modules/access/api-token.guard.ts',
     to: 'modules/access/api-tokens.constants.ts',
     removedBy: 'R1-10',
