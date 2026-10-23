@@ -26,11 +26,11 @@ import { PermissionAction } from '../../generated/prisma/client';
 import {
   pageQuerySchema,
   parseRequest,
-} from '../access/access-management.requests';
+} from '../../common/http/request-parsing';
 import { RequirePermission } from '../access/permission.decorator';
 import { PermissionGuard } from '../access/permission.guard';
 import { requireAccountActor } from '../access/rank-rules';
-import { clientMetaOf } from '../identity/auth.controller';
+import { clientMetaOf } from '../../common/http/client-meta';
 import {
   type AuthenticatedRequest,
   JwtAuthGuard,

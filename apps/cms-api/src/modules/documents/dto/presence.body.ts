@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import { parseRequest } from '../../access/access-management.requests';
+import { parseRequest } from '../../../common/http/request-parsing';
 import { PRESENCE_STATES, type PresenceState } from '../documents.constants';
 
 const presenceBodySchema = z.strictObject({

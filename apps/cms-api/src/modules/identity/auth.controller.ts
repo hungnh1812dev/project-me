@@ -22,12 +22,9 @@ import {
   NO_STORE_HEADER,
   REFRESH_COOKIE,
   REFRESH_TOKEN_TTL_MS,
-  USER_AGENT_HEADER,
 } from '../../common/constants/auth.constants';
-import {
-  RATE_LIMIT_POLICIES,
-  UNKNOWN_CLIENT_IP,
-} from '../../common/constants/limits.constants';
+import { RATE_LIMIT_POLICIES } from '../../common/constants/limits.constants';
+import { type ClientMeta, clientMetaOf } from '../../common/http/client-meta';
 import { Throttle } from '../../common/guards/throttle.guard';
 import { AccessPolicyService } from '../access/access-policy.service';
 import { AllowedOriginGuard } from './allowed-origin.guard';
@@ -38,7 +35,6 @@ import {
 } from './auth.service';
 import { type AuthenticatedRequest, JwtAuthGuard } from './jwt.strategy';
 import { loginRequestSchema } from './login.request';
-import { type ClientMeta } from './refresh-token.service';
 
 /** SPEC §6 attributes. No `domain`: the cookie must stay host-only. */
 const REFRESH_COOKIE_OPTIONS: CookieOptions = {
@@ -74,18 +70,6 @@ export function setRefreshCookie(res: Response, token: string): void {
 
 function clearRefreshCookie(res: Response): void {
   res.clearCookie(REFRESH_COOKIE.NAME, REFRESH_COOKIE_OPTIONS);
-}
-
-/** User agent and client IP stored with a new refresh token. */
-export function clientMetaOf(
-  clientIp: ClientIpResolver,
-  req: Request,
-): ClientMeta {
-  const ip = clientIp.resolve(req);
-  return {
-    userAgent: req.get(USER_AGENT_HEADER),
-    ip: ip === UNKNOWN_CLIENT_IP ? undefined : ip,
-  };
 }
 
 /**

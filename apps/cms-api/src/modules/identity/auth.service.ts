@@ -27,7 +27,8 @@ import {
 } from '../security-audit/security-audit.service';
 import { AccessTokenService } from './access-token.service';
 import { hashPassword, verifyPassword } from './password-hasher';
-import { type ClientMeta, RefreshTokenService } from './refresh-token.service';
+import { RefreshTokenService } from './refresh-token.service';
+import { type ClientMeta } from '../../common/http/client-meta';
 
 export interface LoginCredentials {
   readonly email: string;

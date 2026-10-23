@@ -25,20 +25,17 @@ import {
 } from './roles/system-roles';
 import { buildOtpMail } from '../identity/otp-mail';
 import { OtpService } from '../identity/otp.service';
-import {
-  type ClientMeta,
-  revokeAllRefreshTokens,
-} from '../identity/refresh-token.service';
+import { revokeAllRefreshTokens } from '../identity/refresh-token.service';
+import { type ClientMeta } from '../../common/http/client-meta';
 import {
   MANAGEMENT_ERROR_CODES,
   MANAGEMENT_ERROR_MESSAGES,
 } from './access-management.constants';
 import type {
   InviteAccountRequest,
-  PageMeta,
-  PageQuery,
   UpdateAccountRequest,
 } from './access-management.requests';
+import type { PageMeta, PageQuery } from '../../common/http/request-parsing';
 import {
   type AccountActor,
   assertOutranks,

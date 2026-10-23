@@ -27,7 +27,7 @@ import { PermissionAction } from '../../generated/prisma/client';
 import {
   documentIdSchema,
   parseRequest,
-} from '../access/access-management.requests';
+} from '../../common/http/request-parsing';
 import { RequirePermission } from '../access/permission.decorator';
 import { PermissionGuard } from '../access/permission.guard';
 import type { SerializedRecord } from '../access/record.serializer';

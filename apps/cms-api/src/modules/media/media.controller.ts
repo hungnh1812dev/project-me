@@ -25,7 +25,7 @@ import {
   documentIdSchema,
   pageQuerySchema,
   parseRequest,
-} from '../access/access-management.requests';
+} from '../../common/http/request-parsing';
 import { RequirePermission } from '../access/permission.decorator';
 import { PermissionGuard } from '../access/permission.guard';
 import { requireAccountActor } from '../access/rank-rules';
@@ -33,7 +33,7 @@ import {
   type AuthenticatedRequest,
   JwtAuthGuard,
 } from '../identity/jwt.strategy';
-import { clientMetaOf } from '../identity/auth.controller';
+import { clientMetaOf } from '../../common/http/client-meta';
 import { updateMediaSchema } from './media.requests';
 import { MediaDeleteService } from './media-delete.service';
 import { MediaUpdateService } from './media-update.service';

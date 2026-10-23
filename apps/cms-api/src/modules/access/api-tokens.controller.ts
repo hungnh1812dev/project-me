@@ -17,7 +17,7 @@ import { ClientIpResolver } from '../../common/client-ip.resolver';
 import { API_ROUTES, ID_PARAM } from '../../common/constants/api.constants';
 import { NO_STORE_HEADER } from '../../common/constants/auth.constants';
 import { PermissionAction } from '../../generated/prisma/client';
-import { clientMetaOf } from '../identity/auth.controller';
+import { clientMetaOf } from '../../common/http/client-meta';
 import {
   type AuthenticatedRequest,
   JwtAuthGuard,
@@ -26,7 +26,7 @@ import {
   documentIdSchema,
   pageQuerySchema,
   parseRequest,
-} from './access-management.requests';
+} from '../../common/http/request-parsing';
 import {
   type ApiTokenPage,
   type ApiTokenView,

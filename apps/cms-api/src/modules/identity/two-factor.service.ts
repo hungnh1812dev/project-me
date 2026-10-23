@@ -45,7 +45,7 @@ import { SecretBox } from './crypto/secret-box';
 import { buildOtpMail } from './otp-mail';
 import { isOtpCodeFormat, OtpService } from './otp.service';
 import { verifyPassword } from './password-hasher';
-import { type ClientMeta } from './refresh-token.service';
+import { type ClientMeta } from '../../common/http/client-meta';
 import { TOTP_ACCOUNT_SELECT, TotpService } from './totp.service';
 import { TwoFactorChallengeStore } from './two-factor-challenge.store';
 import {

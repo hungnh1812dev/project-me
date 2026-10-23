@@ -5,7 +5,7 @@ import { ERROR_CODES } from '../../../common/constants/error.constants';
 import {
   documentIdSchema,
   parseRequest,
-} from '../../access/access-management.requests';
+} from '../../../common/http/request-parsing';
 import {
   BULK_BODY_KEYS,
   BULK_LIMITS,

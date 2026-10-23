@@ -16,7 +16,7 @@ import { API_ROUTES } from '../../common/constants/api.constants';
 import { NO_STORE_HEADER } from '../../common/constants/auth.constants';
 import { RATE_LIMIT_POLICIES } from '../../common/constants/limits.constants';
 import { Throttle } from '../../common/guards/throttle.guard';
-import { clientMetaOf } from './auth.controller';
+import { clientMetaOf } from '../../common/http/client-meta';
 import { OwnerSetupService, SetupClosedError } from './owner-setup.service';
 
 /**

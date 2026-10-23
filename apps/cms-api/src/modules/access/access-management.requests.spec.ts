@@ -3,11 +3,13 @@ import { BadRequestException } from '@nestjs/common';
 import {
   createRoleSchema,
   inviteAccountSchema,
-  pageQuerySchema,
-  parseRequest,
   updateAccountSchema,
   updateRoleSchema,
 } from './access-management.requests';
+import {
+  pageQuerySchema,
+  parseRequest,
+} from '../../common/http/request-parsing';
 
 const ROLE_ID = '0195f3a0-0000-7000-8000-000000000001';
 

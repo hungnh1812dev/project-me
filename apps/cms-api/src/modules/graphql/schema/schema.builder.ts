@@ -20,7 +20,7 @@ import {
   RECORD_SYSTEM_FIELDS,
   type RecordSystemField,
 } from '../../access/access.constants';
-import { PAGINATION } from '../../access/access-management.constants';
+import { PAGINATION } from '../../../common/http/request-parsing';
 import type { SerializedComponent } from '../../access/record.serializer';
 import { CONTENT_STATUSES } from '../../content-engine/content-engine.constants';
 import {

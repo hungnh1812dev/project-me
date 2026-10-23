@@ -44,7 +44,8 @@ import {
   type ResetPasswordRequest,
   type SetPasswordRequest,
 } from './password.requests';
-import { type ClientMeta, RefreshTokenService } from './refresh-token.service';
+import { RefreshTokenService } from './refresh-token.service';
+import { type ClientMeta } from '../../common/http/client-meta';
 import {
   RESET_SECOND_FACTOR,
   type ResetSecondFactor,

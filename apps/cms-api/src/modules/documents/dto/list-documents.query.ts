@@ -4,8 +4,8 @@ import {
   invalidRequest,
   parseRequest,
   queryInt,
-} from '../../access/access-management.requests';
-import { PAGINATION } from '../../access/access-management.constants';
+} from '../../../common/http/request-parsing';
+import { PAGINATION } from '../../../common/http/request-parsing';
 import { CONTENT_STATUSES } from '../../content-engine/content-engine.constants';
 import {
   DEFAULT_DOCUMENT_STATUS,

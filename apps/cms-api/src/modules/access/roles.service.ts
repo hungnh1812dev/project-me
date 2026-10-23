@@ -8,7 +8,7 @@ import {
 
 import { type PermissionAction, Prisma } from '../../generated/prisma/client';
 import { PrismaService } from '../../infrastructure/database/prisma.service';
-import type { ClientMeta } from '../identity/refresh-token.service';
+import type { ClientMeta } from '../../common/http/client-meta';
 import { AccessPolicyService } from './access-policy.service';
 import {
   MANAGEMENT_ERROR_CODES,

@@ -1,8 +1,8 @@
 import {
   invalidRequest,
   type RequestIssue,
-} from '../access/access-management.requests';
-import { PAGINATION } from '../access/access-management.constants';
+} from '../../common/http/request-parsing';
+import { PAGINATION } from '../../common/http/request-parsing';
 import {
   DOCUMENT_QUERY_KEYS,
   DOCUMENT_QUERY_LIMITS,

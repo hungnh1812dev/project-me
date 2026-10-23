@@ -19,7 +19,7 @@ import { ERROR_CODES } from '../../common/constants/error.constants';
 import { RATE_LIMIT_POLICIES } from '../../common/constants/limits.constants';
 import { Throttle } from '../../common/guards/throttle.guard';
 import type { RequestWithId } from '../../common/middleware/request-id.middleware';
-import { parseRequest } from '../access/access-management.requests';
+import { parseRequest } from '../../common/http/request-parsing';
 import {
   DocumentAuthGuard,
   type DocumentRequest,

@@ -21,7 +21,7 @@ import {
 } from '../../common/constants/auth.constants';
 import { RATE_LIMIT_POLICIES } from '../../common/constants/limits.constants';
 import { Throttle } from '../../common/guards/throttle.guard';
-import { clientMetaOf } from './auth.controller';
+import { clientMetaOf } from '../../common/http/client-meta';
 import { requireAccountActor } from '../access/rank-rules';
 import { type AuthenticatedRequest, JwtAuthGuard } from './jwt.strategy';
 import {

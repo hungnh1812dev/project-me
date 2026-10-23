@@ -1,7 +1,7 @@
 import { BadRequestException } from '@nestjs/common';
 import { z } from 'zod';
 
-import { parseRequest } from '../../access/access-management.requests';
+import { parseRequest } from '../../../common/http/request-parsing';
 import {
   DOCUMENT_ERROR_MESSAGES,
   EXPECTED_VERSION_BODY_KEY,

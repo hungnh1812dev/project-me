@@ -11,7 +11,7 @@ import {
 import { Clock } from '../../common/clock';
 import { Prisma } from '../../generated/prisma/client';
 import { PrismaService } from '../../infrastructure/database/prisma.service';
-import type { ClientMeta } from '../identity/refresh-token.service';
+import type { ClientMeta } from '../../common/http/client-meta';
 import { ACCESS_ERROR_CODES } from './access.constants';
 import {
   MANAGEMENT_ERROR_CODES,
@@ -21,7 +21,7 @@ import {
   invalidRequest,
   type PageMeta,
   type PageQuery,
-} from './access-management.requests';
+} from '../../common/http/request-parsing';
 import { AccessPolicyService } from './access-policy.service';
 import {
   type RolePolicy,

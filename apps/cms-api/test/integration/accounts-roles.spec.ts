@@ -14,6 +14,7 @@ import {
   type MailSender,
 } from '../../src/infrastructure/mail/mail.port';
 import { ACCESS_ERROR_CODES } from '../../src/modules/access/access.constants';
+import { INVALID_REQUEST_ERROR } from '../../src/common/http/request-parsing';
 import { MANAGEMENT_ERROR_CODES } from '../../src/modules/access/access-management.constants';
 import { seedRolePermissions } from '../../src/modules/access/roles/role-permissions.seed';
 import {
@@ -433,7 +434,7 @@ describe('accounts & roles API + security audit (T17, §12-7, §12-18; Postgres 
         .set(bearer(admin.token))
         .send({ email: 'not-an-email', displayName: '', roleId: 'x' });
       expect(invalid.status).toBe(400);
-      expect(errorCodeOf(invalid)).toBe(MANAGEMENT_ERROR_CODES.INVALID_REQUEST);
+      expect(errorCodeOf(invalid)).toBe(INVALID_REQUEST_ERROR.CODE);
       expect(JSON.stringify(invalid.body)).not.toContain('not-an-email');
 
       const reviewer = await http()
@@ -865,7 +866,7 @@ describe('accounts & roles API + security audit (T17, §12-7, §12-18; Postgres 
       async (query) => {
         const res = await pageOf(`?${query}`);
         expect(res.status).toBe(400);
-        expect(errorCodeOf(res)).toBe(MANAGEMENT_ERROR_CODES.INVALID_REQUEST);
+        expect(errorCodeOf(res)).toBe(INVALID_REQUEST_ERROR.CODE);
       },
     );
   });

@@ -1,7 +1,5 @@
 /** Error codes of the accounts and roles API (T17). */
 export const MANAGEMENT_ERROR_CODES = {
-  /** Body or params fail the request schema; `details.issues` lists paths. */
-  INVALID_REQUEST: 'ACCESS_INVALID_REQUEST',
   /** D6 / §12-7: the target's rank is not below the actor's, or it is the actor. */
   RANK_FORBIDDEN: 'ACCESS_RANK_FORBIDDEN',
   /** A permission set grants a system subject action the actor lacks. */
@@ -31,7 +29,6 @@ export const MANAGEMENT_ERROR_CODES = {
 } as const;
 
 export const MANAGEMENT_ERROR_MESSAGES = {
-  INVALID_REQUEST: 'The request is invalid.',
   RANK_FORBIDDEN:
     'You can only manage accounts and roles ranked below your own role.',
   PERMISSION_NOT_HELD: 'You cannot grant a permission you do not hold.',
@@ -61,16 +58,6 @@ export const MANAGEMENT_LIMITS = {
   MAX_PERMISSIONS_PER_ROLE: 500,
   /** Custom roles (`is_system = false`); system roles do not count (Q11). */
   MAX_CUSTOM_ROLES: 50,
-} as const;
-
-/**
- * Offset pagination of list endpoints (Q10): `?page=&pageSize=` in, `meta`
- * out. The project list convention; documents, media and audit logs reuse it.
- */
-export const PAGINATION = {
-  FIRST_PAGE: 1,
-  DEFAULT_PAGE_SIZE: 20,
-  MAX_PAGE_SIZE: 100,
 } as const;
 
 /** Fields `account.updated` / `role.updated` may name in `metadata.fields`. */

@@ -1,4 +1,4 @@
-import { parseRequest } from '../access/access-management.requests';
+import { parseRequest } from '../../common/http/request-parsing';
 import { ownerInputSchema, type OwnerBootstrapInput } from './owner-bootstrap';
 
 /** The setup token is read apart (it is checked before anything else). */

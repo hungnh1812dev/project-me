@@ -11,7 +11,7 @@ import {
 } from '../../infrastructure/media/storage.port';
 import { MEDIA_SUBJECT } from '../access/access.constants';
 import { AccessPolicyService } from '../access/access-policy.service';
-import type { PageMeta, PageQuery } from '../access/access-management.requests';
+import type { PageMeta, PageQuery } from '../../common/http/request-parsing';
 import type { ActorContext } from '../access/actor-context';
 import type { AccountActor } from '../access/rank-rules';
 import { ContentDbProvider } from '../content-engine/content-database';

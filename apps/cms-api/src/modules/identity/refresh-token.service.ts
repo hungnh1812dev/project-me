@@ -12,17 +12,12 @@ import {
 import { type Prisma } from '../../generated/prisma/client';
 import { PrismaService } from '../../infrastructure/database/prisma.service';
 import { AUDIT_ACTIONS } from '../security-audit/security-audit.constants';
+import type { ClientMeta } from '../../common/http/client-meta';
 import {
   SecurityAuditService,
   selfActor,
 } from '../security-audit/security-audit.service';
 import { VersionCache } from '../access/version-cache';
-
-/** Where a refresh token was issued from (stored for session listings). */
-export interface ClientMeta {
-  readonly userAgent: string | undefined;
-  readonly ip: string | undefined;
-}
 
 /** Account fields needed to sign an access token after a rotation. */
 export interface RotatedAccount {

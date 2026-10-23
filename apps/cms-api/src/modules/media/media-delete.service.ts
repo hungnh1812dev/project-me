@@ -17,7 +17,7 @@ import {
 } from '../security-audit/security-audit.service';
 import { ContentDbProvider } from '../content-engine/content-database';
 import { ContentRegistryProvider } from '../content-engine/content-engine.module';
-import type { ClientMeta } from '../identity/refresh-token.service';
+import type { ClientMeta } from '../../common/http/client-meta';
 import {
   DELETED_AT_COLUMN,
   MEDIA_ERROR_CODES,

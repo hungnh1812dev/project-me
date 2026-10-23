@@ -1,6 +1,6 @@
 import { BadRequestException } from '@nestjs/common';
 
-import { PAGINATION } from '../access/access-management.constants';
+import { PAGINATION } from '../../common/http/request-parsing';
 import { DOCUMENT_QUERY_LIMITS } from '../documents/documents.constants';
 import { type ListArguments, toListQuery } from './list-arguments';
 

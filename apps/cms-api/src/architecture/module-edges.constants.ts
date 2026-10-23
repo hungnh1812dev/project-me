@@ -122,54 +122,9 @@ export const KNOWN_VIOLATIONS: readonly KnownViolation[] = [
     removedBy: 'R1-12',
   },
   {
-    from: 'modules/documents/documents.controller.ts',
-    to: 'modules/access/access-management.requests.ts',
-    removedBy: 'R1-06',
-  },
-  {
     from: 'modules/documents/documents.module.ts',
     to: 'modules/identity/identity.module.ts',
     removedBy: 'R1-12',
-  },
-  {
-    from: 'modules/documents/dto/bulk.body.ts',
-    to: 'modules/access/access-management.requests.ts',
-    removedBy: 'R1-06',
-  },
-  {
-    from: 'modules/documents/dto/list-documents.query.ts',
-    to: 'modules/access/access-management.requests.ts',
-    removedBy: 'R1-06',
-  },
-  {
-    from: 'modules/documents/dto/list-documents.query.ts',
-    to: 'modules/access/access-management.constants.ts',
-    removedBy: 'R1-06',
-  },
-  {
-    from: 'modules/documents/dto/presence.body.ts',
-    to: 'modules/access/access-management.requests.ts',
-    removedBy: 'R1-06',
-  },
-  {
-    from: 'modules/documents/dto/write-document.body.ts',
-    to: 'modules/access/access-management.requests.ts',
-    removedBy: 'R1-06',
-  },
-  {
-    from: 'modules/graphql/cli/print-schema.ts',
-    to: 'modules/access/access-management.constants.ts',
-    removedBy: 'R1-06',
-  },
-  {
-    from: 'modules/graphql/document.resolvers.ts',
-    to: 'modules/access/access-management.requests.ts',
-    removedBy: 'R1-06',
-  },
-  {
-    from: 'modules/graphql/graphql.controller.ts',
-    to: 'modules/access/access-management.requests.ts',
-    removedBy: 'R1-06',
   },
   {
     from: 'modules/graphql/graphql.module.ts',
@@ -177,53 +132,8 @@ export const KNOWN_VIOLATIONS: readonly KnownViolation[] = [
     removedBy: 'R1-12',
   },
   {
-    from: 'modules/graphql/graphql.schema.provider.ts',
-    to: 'modules/access/access-management.constants.ts',
-    removedBy: 'R1-06',
-  },
-  {
-    from: 'modules/graphql/list-arguments.ts',
-    to: 'modules/access/access-management.requests.ts',
-    removedBy: 'R1-06',
-  },
-  {
-    from: 'modules/graphql/list-arguments.ts',
-    to: 'modules/access/access-management.constants.ts',
-    removedBy: 'R1-06',
-  },
-  {
-    from: 'modules/graphql/schema/schema.builder.ts',
-    to: 'modules/access/access-management.constants.ts',
-    removedBy: 'R1-06',
-  },
-  {
-    from: 'modules/identity/owner-setup.requests.ts',
-    to: 'modules/access/access-management.requests.ts',
-    removedBy: 'R1-06',
-  },
-  {
     from: 'modules/media/media-refs.service.ts',
     to: 'modules/documents/documents.constants.ts',
     removedBy: 'R1-13',
-  },
-  {
-    from: 'modules/media/media.controller.ts',
-    to: 'modules/access/access-management.requests.ts',
-    removedBy: 'R1-06',
-  },
-  {
-    from: 'modules/media/media.service.ts',
-    to: 'modules/access/access-management.requests.ts',
-    removedBy: 'R1-06',
-  },
-  {
-    from: 'modules/reviewer/reviewer.controller.ts',
-    to: 'modules/access/access-management.requests.ts',
-    removedBy: 'R1-06',
-  },
-  {
-    from: 'modules/reviewer/reviewer.service.ts',
-    to: 'modules/access/access-management.requests.ts',
-    removedBy: 'R1-06',
   },
 ];
