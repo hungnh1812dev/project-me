@@ -7,7 +7,7 @@ import {
   seededRandom,
 } from '../../../test/fixtures/masking.fixture';
 import type { ContentDocument } from '../content-engine/content.repository';
-import type { TableNode } from '../content-engine/registry.service';
+import type { TableNode } from '../content-engine';
 import {
   type ComponentTrees,
   rowToValues,

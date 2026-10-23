@@ -4,8 +4,8 @@ import { parseArgs } from 'node:util';
 
 import { printSchema } from 'graphql';
 
-import { DEFAULT_CONTENT_PATHS } from '../../content-engine/cli/content-paths';
-import { loadDefinitions } from '../../content-engine/migration-files';
+import { DEFAULT_CONTENT_PATHS } from '../../content-engine';
+import { loadDefinitions } from '../../content-engine';
 import { GRAPHQL_SDL_FILE_NAME } from '../graphql.constants';
 import { buildGraphqlSchema } from '../schema/schema.builder';
 

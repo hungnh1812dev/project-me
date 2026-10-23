@@ -23,12 +23,12 @@ import {
   type TurnstileVerifier,
 } from '../../infrastructure/turnstile/turnstile.port';
 import type { PageMeta, PageQuery } from '../../common/http/request-parsing';
-import { AUDIT_ACTIONS } from '../security-audit/security-audit.constants';
+import { AUDIT_ACTIONS } from '../security-audit';
 import {
   auditActorOf,
   SecurityAuditService,
   selfActor,
-} from '../security-audit/security-audit.service';
+} from '../security-audit';
 import { VersionCache, type AccountActor, REVIEWER_ROLE_SLUG } from '../access';
 import { AccessTokenService } from '../identity';
 import type { ClientMeta } from '../../common/http/client-meta';

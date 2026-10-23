@@ -19,21 +19,21 @@ import {
   WriteAllowlist,
 } from '../access';
 import { projectTable, selectedColumns } from '../access/field-projection';
-import { MediaRefsService } from '../media/media-refs.service';
-import { ContentDbProvider } from '../content-engine/content-database';
-import { ContentRegistryProvider } from '../content-engine/content-engine.module';
-import { CONTENT_DB_SCHEMA } from '../content-engine/content-engine.constants';
+import { MediaRefsService } from '../media';
+import { ContentDbProvider } from '../content-engine';
+import { ContentRegistryProvider } from '../content-engine';
+import { CONTENT_DB_SCHEMA } from '../content-engine';
 import {
   ContentRepository,
   type ContentDocument,
   toDocument,
 } from '../content-engine/content.repository';
-import type { RegisteredContentType } from '../content-engine/registry.service';
+import type { RegisteredContentType } from '../content-engine';
 import {
   assertTreeInput,
   ContentTreeError,
   type TreeInput,
-} from '../content-engine/tree-input';
+} from '../content-engine';
 import {
   type ContentDatabase,
   loadComponentTrees,

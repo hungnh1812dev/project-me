@@ -1,7 +1,20 @@
-import { collectCrossNodeEdges, SRC_ROOT } from './module-graph';
+import { existsSync, readdirSync } from 'node:fs';
+import { join } from 'node:path';
+
+import {
+  collectCrossNodeEdges,
+  collectNodeImports,
+  SRC_ROOT,
+  type NodeImport,
+} from './module-graph';
+import {
+  authGuardOnlyViolations,
+  typesOnlyViolations,
+} from './module-sub-rules';
 import {
   ALLOWED_MODULE_EDGES,
   KNOWN_VIOLATIONS,
+  MODULES_DIRECTORY,
   MODULE_NODES,
   type ModuleNode,
 } from './module-edges.constants';
@@ -95,5 +108,84 @@ describe('module dependency guard (SPEC §2)', () => {
       ),
     ]);
     expect(cycle).toBeNull();
+  });
+});
+
+describe('module facades (SPEC §2)', () => {
+  const modulesDirectory = join(SRC_ROOT, MODULES_DIRECTORY);
+  const moduleFolders = readdirSync(modulesDirectory, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => entry.name);
+
+  it('every module folder has an index.ts', () => {
+    expect(moduleFolders.length).toBeGreaterThan(0);
+    const withoutFacade = moduleFolders.filter(
+      (name) => !existsSync(join(modulesDirectory, name, 'index.ts')),
+    );
+    expect(withoutFacade).toEqual([]);
+  });
+});
+
+describe('module sub-rules (SPEC §2)', () => {
+  const imports = collectNodeImports(SRC_ROOT);
+
+  const importOf = (overrides: Partial<NodeImport>): NodeImport => ({
+    file: 'modules/x/file.ts',
+    fromNode: 'media',
+    toNodes: ['identity'],
+    importedNames: ['JwtAuthGuard'],
+    isTypeOnly: false,
+    ...overrides,
+  });
+
+  it('scans the source tree and finds node imports', () => {
+    expect(imports.length).toBeGreaterThan(0);
+    expect(
+      imports.some(
+        ({ fromNode, toNodes }) =>
+          fromNode === 'security-audit' && toNodes.includes('access-core'),
+      ),
+    ).toBe(true);
+    expect(
+      imports.some(
+        ({ fromNode, toNodes }) =>
+          fromNode === 'media' && toNodes.includes('identity'),
+      ),
+    ).toBe(true);
+  });
+
+  it('security-audit imports access core with `import type` only', () => {
+    expect(typesOnlyViolations(imports)).toEqual([]);
+  });
+
+  it('content-types and media import only the JWT guard from identity', () => {
+    expect(authGuardOnlyViolations(imports)).toEqual([]);
+  });
+
+  it('the types-only rule catches a value import and accepts a type import', () => {
+    const edge: Partial<NodeImport> = {
+      fromNode: 'security-audit',
+      toNodes: ['access-core'],
+    };
+    expect(typesOnlyViolations([importOf({ ...edge })])).toHaveLength(1);
+    expect(
+      typesOnlyViolations([importOf({ ...edge, isTypeOnly: true })]),
+    ).toEqual([]);
+  });
+
+  it('the auth-guard-only rule catches other identity names and wildcard forms', () => {
+    expect(
+      authGuardOnlyViolations([
+        importOf({ importedNames: ['IdentityModule'] }),
+      ]),
+    ).toHaveLength(1);
+    expect(
+      authGuardOnlyViolations([importOf({ importedNames: 'all' })]),
+    ).toHaveLength(1);
+    expect(
+      authGuardOnlyViolations([
+        importOf({ importedNames: ['JwtAuthGuard', 'AuthenticatedRequest'] }),
+      ]),
+    ).toEqual([]);
   });
 });

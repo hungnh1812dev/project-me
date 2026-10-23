@@ -13,7 +13,7 @@ import { MEDIA_STORAGE } from '../../src/infrastructure/media/storage.port';
 import { UUID_V7_PATTERN } from '../../src/common/uuidv7';
 import { reviewerActor } from '../../src/modules/access/actor-context';
 import { seedRolePermissions } from '../../src/modules/access/roles/role-permissions.seed';
-import { ContentRegistryProvider } from '../../src/modules/content-engine/content-engine.module';
+import { ContentRegistryProvider } from '../../src/modules/content-engine/content-registry.provider';
 import { RegistryService } from '../../src/modules/content-engine/registry.service';
 import { hashPassword } from '../../src/modules/identity/password-hasher';
 import { seedSystemRoles } from '../../src/modules/access/roles/system-roles.seed';

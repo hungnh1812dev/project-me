@@ -16,7 +16,7 @@ import {
   createContentDb,
 } from '../../src/modules/content-engine/content-database';
 import { CONTENT_TYPE_PARSERS } from '../../src/modules/content-engine/content-database';
-import { ContentRegistryProvider } from '../../src/modules/content-engine/content-engine.module';
+import { ContentRegistryProvider } from '../../src/modules/content-engine/content-registry.provider';
 import { RegistryService } from '../../src/modules/content-engine/registry.service';
 import {
   emptySnapshot,

@@ -6,11 +6,8 @@ import {
   parseRequest,
 } from '../../common/http/request-parsing';
 import { type ActorContext, type SerializedRecord } from '../access';
-import { DOCUMENT_ERROR_CODES } from '../documents/documents.constants';
-import type {
-  DocumentPage,
-  DocumentsQueryService,
-} from '../documents/documents.query.service';
+import { DOCUMENT_ERROR_CODES } from '../documents';
+import type { DocumentPage, DocumentsQueryService } from '../documents';
 import {
   type RootFieldExtension,
   ROOT_FIELD_EXTENSION_KEY,

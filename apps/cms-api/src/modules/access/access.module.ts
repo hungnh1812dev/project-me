@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 
 import { DatabaseModule } from '../../infrastructure/database/database.module';
-import { ContentEngineModule } from '../content-engine/content-engine.module';
+import { ContentEngineModule } from '../content-engine';
 import { AnonymousActorService } from './anonymous-actor.service';
 import { ApiTokenAuthenticator, ApiTokenGuard } from './api-token.guard';
 import { AccessPolicyService } from './access-policy.service';

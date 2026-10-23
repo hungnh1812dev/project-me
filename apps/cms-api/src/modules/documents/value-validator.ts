@@ -2,14 +2,14 @@ import { BadRequestException } from '@nestjs/common';
 
 import { sanitizeRichtext } from '../../common/sanitize/richtext.sanitizer';
 import { joinFieldPath, type FieldSelection } from '../access';
-import type { ScalarFieldType } from '../content-engine/definition.schema';
-import type { TableNode } from '../content-engine/registry.service';
+import type { ScalarFieldType } from '../content-engine';
+import type { TableNode } from '../content-engine';
 import {
   type ComponentInput,
   type FieldValues,
   isUuid,
   type TreeInput,
-} from '../content-engine/tree-input';
+} from '../content-engine';
 import { coerceFilterValue } from './document-filter';
 import {
   DOCUMENT_ERROR_CODES,

@@ -6,7 +6,7 @@ import {
 
 import { type IAppConfig } from '../../config/app-config';
 import type { PrismaService } from '../../infrastructure/database/prisma.service';
-import type { SecurityAuditService } from '../security-audit/security-audit.service';
+import type { SecurityAuditService } from '../security-audit';
 import { SETUP_TOKEN_MAX_LENGTH } from './identity.constants';
 import { hashPassword } from './password-hasher';
 import { OwnerSetupService, SetupClosedError } from './owner-setup.service';

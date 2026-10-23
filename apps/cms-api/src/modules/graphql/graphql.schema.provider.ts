@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { GraphQLObjectType, GraphQLSchema, GraphQLString } from 'graphql';
 
-import { ContentRegistryProvider } from '../content-engine/content-engine.module';
-import type { ContentTypeDefinition } from '../content-engine/definition.schema';
-import { DocumentsQueryService } from '../documents/documents.query.service';
+import { ContentRegistryProvider } from '../content-engine';
+import type { ContentTypeDefinition } from '../content-engine';
+import { DocumentsQueryService } from '../documents';
 import { attachDocumentResolvers } from './document.resolvers';
 import {
   GRAPHQL_LIMITS,

@@ -4,13 +4,13 @@ import { type IAppConfig } from './config/app-config';
 import { RateLimitModule } from './common/rate-limit/rate-limit.module';
 import { ConfigModule } from './config/config.module';
 import { AccessManagementModule } from './modules/access/management';
-import { ContentTypesModule } from './modules/content-types/content-types.module';
-import { DocumentsModule } from './modules/documents/documents.module';
-import { GraphqlModule } from './modules/graphql/graphql.module';
-import { HealthModule } from './modules/health/health.module';
+import { ContentTypesModule } from './modules/content-types';
+import { DocumentsModule } from './modules/documents';
+import { GraphqlModule } from './modules/graphql';
+import { HealthModule } from './modules/health';
 import { IdentityModule } from './modules/identity';
-import { MediaModule } from './modules/media/media.module';
-import { ReviewerModule } from './modules/reviewer/reviewer.module';
+import { MediaModule } from './modules/media';
+import { ReviewerModule } from './modules/reviewer';
 
 @Module({})
 export class AppModule {

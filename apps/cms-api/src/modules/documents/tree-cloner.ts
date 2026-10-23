@@ -3,7 +3,7 @@ import type {
   ComponentInput,
   ComponentsInput,
   TreeInput,
-} from '../content-engine/tree-input';
+} from '../content-engine';
 import type { ComponentTrees } from '../content-engine/tree-loader';
 
 function cloneComponents(trees: ComponentTrees): ComponentsInput {

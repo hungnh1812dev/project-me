@@ -3,9 +3,8 @@ import { Module } from '@nestjs/common';
 import { DatabaseModule } from '../../infrastructure/database/database.module';
 import { MediaStorageModule } from '../../infrastructure/media/media-storage.module';
 import { AccessModule } from '../access';
-import { ContentEngineModule } from '../content-engine/content-engine.module';
-import { IdentityModule } from '../identity';
-import { SecurityAuditModule } from '../security-audit/security-audit.module';
+import { ContentEngineModule } from '../content-engine';
+import { SecurityAuditModule } from '../security-audit';
 import { MediaController } from './media.controller';
 import { MediaDeleteService } from './media-delete.service';
 import { MediaRefsService } from './media-refs.service';
@@ -20,7 +19,6 @@ import { UploadPipeline } from './upload.pipeline';
     AccessModule,
     ContentEngineModule,
     DatabaseModule,
-    IdentityModule,
     MediaStorageModule,
     SecurityAuditModule,
   ],

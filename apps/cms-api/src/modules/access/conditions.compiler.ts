@@ -1,7 +1,7 @@
 import { type Expression, type RawBuilder, sql, type SqlBool } from 'kysely';
 import { z } from 'zod';
 
-import type { ScalarFieldType } from '../content-engine/definition.schema';
+import type { ScalarFieldType } from '../content-engine';
 import {
   ACCESS_ERROR_CODES,
   CONDITION_DATE_PATTERN,

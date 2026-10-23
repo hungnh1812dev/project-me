@@ -11,7 +11,7 @@ import {
   AccessPolicyService,
   type AccountActor,
 } from '../access';
-import { ContentDbProvider } from '../content-engine/content-database';
+import { ContentDbProvider } from '../content-engine';
 import {
   DELETED_AT_COLUMN,
   MEDIA_ERROR_CODES,

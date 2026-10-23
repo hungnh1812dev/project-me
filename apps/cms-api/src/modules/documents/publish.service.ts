@@ -16,12 +16,12 @@ import {
   type ContentActivityEvent,
 } from '../../infrastructure/activity/activity.port';
 import { AccessPolicyService, type ActorContext } from '../access';
-import { ContentDbProvider } from '../content-engine/content-database';
-import { CONTENT_DB_SCHEMA } from '../content-engine/content-engine.constants';
-import { ContentRegistryProvider } from '../content-engine/content-engine.module';
+import { ContentDbProvider } from '../content-engine';
+import { CONTENT_DB_SCHEMA } from '../content-engine';
+import { ContentRegistryProvider } from '../content-engine';
 import { ContentRepository } from '../content-engine/content.repository';
 import type { ContentDatabase } from '../content-engine/tree-loader';
-import type { RegisteredContentType } from '../content-engine/registry.service';
+import type { RegisteredContentType } from '../content-engine';
 import {
   DOCUMENT_ERROR_CODES,
   DOCUMENT_ERROR_MESSAGES,

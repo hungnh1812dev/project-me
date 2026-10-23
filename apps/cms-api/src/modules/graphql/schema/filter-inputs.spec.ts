@@ -1,4 +1,4 @@
-import { OPERATORS_BY_KIND } from '../../documents/documents.constants';
+import { OPERATORS_BY_KIND } from '../../documents';
 import { FILTER_INPUTS, filterToClauses, sortToKeys } from './filter-inputs';
 
 describe('FILTER_INPUTS', () => {

@@ -34,6 +34,8 @@ interface ModuleStatement {
 
 export interface ResolvedImport {
   specifier: string;
+  /** Names the statement brings in; `'all'` for namespace, default, star, bare and dynamic forms. */
+  importedNames: string[] | 'all';
   /** Real files the import reaches. Empty for packages and non-ts files. */
   targets: string[];
 }
@@ -287,13 +289,19 @@ export function resolveImports(absolutePath: string): ResolvedImport[] {
   const text = readFileSync(absolutePath, 'utf8');
   return parseStatements(text).map((statement) => {
     const target = resolveSpecifier(absolutePath, statement.specifier);
-    if (target === null) return { specifier: statement.specifier, targets: [] };
-    const requested =
+    const importedNames =
       statement.bindings === 'all'
         ? 'all'
         : statement.bindings.map((binding) => binding.imported);
-    const targets = followReexports(target, requested, new Set());
-    return { specifier: statement.specifier, targets: [...new Set(targets)] };
+    if (target === null) {
+      return { specifier: statement.specifier, importedNames, targets: [] };
+    }
+    const targets = followReexports(target, importedNames, new Set());
+    return {
+      specifier: statement.specifier,
+      importedNames,
+      targets: [...new Set(targets)],
+    };
   });
 }
 

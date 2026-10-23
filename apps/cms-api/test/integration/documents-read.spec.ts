@@ -13,7 +13,7 @@ import {
 import { MASKED_FIELDS_KEY } from '../../src/modules/access/access.constants';
 import { seedRolePermissions } from '../../src/modules/access/roles/role-permissions.seed';
 import { createContentDb } from '../../src/modules/content-engine/content-database';
-import { ContentRegistryProvider } from '../../src/modules/content-engine/content-engine.module';
+import { ContentRegistryProvider } from '../../src/modules/content-engine/content-registry.provider';
 import { ContentRepository } from '../../src/modules/content-engine/content.repository';
 import { RegistryService } from '../../src/modules/content-engine/registry.service';
 import {

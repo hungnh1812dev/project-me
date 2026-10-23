@@ -22,19 +22,16 @@ import {
   type SerializedComponent,
 } from '../../access';
 import { PAGINATION } from '../../../common/http/request-parsing';
-import { CONTENT_STATUSES } from '../../content-engine/content-engine.constants';
+import { CONTENT_STATUSES } from '../../content-engine';
 import {
   type ComponentFieldDefinition,
   type ContentTypeDefinition,
   type FieldDefinition,
   isComponentField,
   type ScalarFieldType,
-} from '../../content-engine/definition.schema';
-import {
-  DEFAULT_DOCUMENT_STATUS,
-  SYSTEM_FIELD_KINDS,
-} from '../../documents/documents.constants';
-import { queryKindOfField } from '../../documents/queryable-fields';
+} from '../../content-engine';
+import { DEFAULT_DOCUMENT_STATUS, SYSTEM_FIELD_KINDS } from '../../documents';
+import { queryKindOfField } from '../../documents';
 import {
   COMPONENT_UID_FIELD,
   GRAPHQL_SCHEMA_ERROR_MESSAGES,

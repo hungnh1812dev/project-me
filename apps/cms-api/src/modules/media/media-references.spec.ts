@@ -1,4 +1,4 @@
-import { RegistryService } from '../content-engine/registry.service';
+import { RegistryService } from '../content-engine';
 import { mediaReferenceQuery } from './media-references';
 
 const WITH_MEDIA = {

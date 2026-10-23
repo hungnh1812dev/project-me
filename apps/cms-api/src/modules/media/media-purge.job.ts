@@ -12,7 +12,7 @@ import {
   MEDIA_STORAGE,
   type MediaStorage,
 } from '../../infrastructure/media/storage.port';
-import { ContentRegistryProvider } from '../content-engine/content-engine.module';
+import { ContentRegistryProvider } from '../content-engine';
 import {
   allowedMediaTypeOf,
   MEDIA_PURGE_BATCH_SIZE,

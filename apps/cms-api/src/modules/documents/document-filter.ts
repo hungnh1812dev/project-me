@@ -10,7 +10,7 @@ import {
   type ConditionValueKind,
   CONDITION_UUID_PATTERN,
 } from '../access';
-import type { RegisteredContentType } from '../content-engine/registry.service';
+import type { RegisteredContentType } from '../content-engine';
 import type { FilterClause, SortKey } from './dto/list-documents.query';
 import {
   DOCUMENT_ERROR_MESSAGES,

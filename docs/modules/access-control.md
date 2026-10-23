@@ -229,6 +229,18 @@ fails when a module `index.ts` re-exports `content.repository`,
 So list, detail, 409 conflict, bulk conflict, audit metadata and
 error-detail bodies all go through `serialize`.
 
+**Facades (R1-14).** Every folder under `src/modules/` has an `index.ts`, and
+code outside a module imports it through that file only (ESLint
+`no-restricted-imports`, patterns in `apps/cms-api/eslint.config.mjs`).
+Named exceptions, each kept out of the facade on purpose: `content.repository`
+and `tree-loader` in `content-engine`, `field-projection` and `document-auth`
+in `access`. `modules.architecture.spec.ts` also enforces the two SPEC §2
+sub-rules: `security-audit` imports access core with `import type` only, and
+`content-types` and `media` import only `JwtAuthGuard` and
+`AuthenticatedRequest` from `identity` (their Nest modules do not import
+`IdentityModule`; the `jwt` passport strategy is registered by the
+`IdentityModule` the app loads).
+
 **Write path.** `WriteAllowlist.apply(payload, fields)` takes the tree part
 of a body (`{ values, components }`; T21 takes `version` off first) and
 returns the `TreeInput` to pass to `assertTreeInput` and `replaceTree` /

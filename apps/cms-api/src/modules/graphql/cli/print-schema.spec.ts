@@ -2,7 +2,7 @@ import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { DEFAULT_CONTENT_PATHS } from '../../content-engine/cli/content-paths';
+import { DEFAULT_CONTENT_PATHS } from '../../content-engine';
 import { DEFAULT_SDL_FILE, printSchemaFile } from './print-schema';
 
 const DEFINITION = JSON.stringify({

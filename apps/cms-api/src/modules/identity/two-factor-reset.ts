@@ -1,8 +1,8 @@
 import { z } from 'zod';
 
 import type { PrismaClient, TwoFaMethod } from '../../generated/prisma/client';
-import { AUDIT_ACTIONS } from '../security-audit/security-audit.constants';
-import { writeAuditLog } from '../security-audit/security-audit.service';
+import { AUDIT_ACTIONS } from '../security-audit';
+import { writeAuditLog } from '../security-audit';
 import { TWO_FACTOR_RESET_ERRORS } from './identity.constants';
 import { revokeAllSessions } from './session-revocation';
 

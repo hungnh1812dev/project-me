@@ -15,13 +15,13 @@ import {
 } from '../../common/constants/error.constants';
 import { PermissionAction } from '../../generated/prisma/client';
 import { AccessPolicyService, type ActorContext } from '../access';
-import { ContentDbProvider } from '../content-engine/content-database';
-import { ContentRegistryProvider } from '../content-engine/content-engine.module';
+import { ContentDbProvider } from '../content-engine';
+import { ContentRegistryProvider } from '../content-engine';
 import {
   ContentRepository,
   type InsertTreeInput,
 } from '../content-engine/content.repository';
-import { ContentTreeError } from '../content-engine/tree-input';
+import { ContentTreeError } from '../content-engine';
 import {
   BULK_ITEM_STATUS,
   BULK_LIMITS,

@@ -1,13 +1,10 @@
-import type {
-  RegisteredContentType,
-  TableNode,
-} from '../content-engine/registry.service';
+import type { RegisteredContentType, TableNode } from '../content-engine';
 import type {
   ComponentInput,
   ComponentsInput,
   FieldValues,
   TreeInput,
-} from '../content-engine/tree-input';
+} from '../content-engine';
 import { MASKED_FIELDS_KEY, WRITE_TREE_KEYS } from './access.constants';
 import { fieldErrors } from './field-errors';
 import { joinFieldPath } from './field-paths';

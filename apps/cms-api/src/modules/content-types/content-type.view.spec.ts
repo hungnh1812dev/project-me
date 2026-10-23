@@ -5,7 +5,7 @@ import {
   recordReadAccess,
   SubjectCatalog,
 } from '../access';
-import { RegistryService } from '../content-engine/registry.service';
+import { RegistryService } from '../content-engine';
 import { contentTypeView } from './content-type.view';
 
 const PROFILE = {

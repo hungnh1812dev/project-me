@@ -12,16 +12,12 @@ import {
 } from 'graphql';
 
 import { type ConditionValueKind } from '../../access';
-import type {
-  FilterClause,
-  SortDirection,
-  SortKey,
-} from '../../documents/dto/list-documents.query';
+import type { FilterClause, SortDirection, SortKey } from '../../documents';
 import {
   FILTER_OPERATORS,
   type FilterOperator,
   OPERATORS_BY_KIND,
-} from '../../documents/documents.constants';
+} from '../../documents';
 import { FILTER_INPUT_NAMES } from '../graphql.constants';
 import { DateScalar, DateTimeScalar, DecimalScalar } from './scalars';
 

@@ -31,11 +31,8 @@ import {
   AUDIT_ACTIONS,
   REAUTH_FAILURE_REASONS,
   TWO_FACTOR_OPERATIONS,
-} from '../security-audit/security-audit.constants';
-import {
-  SecurityAuditService,
-  selfActor,
-} from '../security-audit/security-audit.service';
+} from '../security-audit';
+import { SecurityAuditService, selfActor } from '../security-audit';
 import {
   AccessTokenService,
   type TwoFactorTempTokenClaims,

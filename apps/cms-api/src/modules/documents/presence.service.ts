@@ -10,9 +10,9 @@ import { sql, type SqlBool } from 'kysely';
 import { PermissionAction } from '../../generated/prisma/client';
 import { PrismaService } from '../../infrastructure/database/prisma.service';
 import { AccessPolicyService, type ActorContext } from '../access';
-import { ContentDbProvider } from '../content-engine/content-database';
-import { CONTENT_DB_SCHEMA } from '../content-engine/content-engine.constants';
-import { ContentRegistryProvider } from '../content-engine/content-engine.module';
+import { ContentDbProvider } from '../content-engine';
+import { CONTENT_DB_SCHEMA } from '../content-engine';
+import { ContentRegistryProvider } from '../content-engine';
 import {
   DOCUMENT_ERROR_CODES,
   DOCUMENT_ERROR_MESSAGES,

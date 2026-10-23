@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 
-import { ContentRegistryProvider } from '../content-engine/content-engine.module';
-import type { RegistryService } from '../content-engine/registry.service';
+import { ContentRegistryProvider } from '../content-engine';
+import type { RegistryService } from '../content-engine';
 import { PolicyEvaluator } from './policy-evaluator';
 import { SubjectCatalog } from './subject-catalog';
 

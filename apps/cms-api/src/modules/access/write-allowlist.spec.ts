@@ -5,7 +5,7 @@ import {
   profileType,
   rawRecord,
 } from '../../../test/fixtures/masking.fixture';
-import { assertTreeInput } from '../content-engine/tree-input';
+import { assertTreeInput } from '../content-engine';
 import {
   ACCESS_ERROR_CODES,
   MASK_SENTINEL,

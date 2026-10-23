@@ -1,4 +1,4 @@
-import type { RegisteredContentType } from '../content-engine/registry.service';
+import type { RegisteredContentType } from '../content-engine';
 import {
   RECORD_SYSTEM_FIELDS,
   type RecordSystemField,

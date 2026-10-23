@@ -1,6 +1,6 @@
 import { loadAppConfig } from '../../../config/app-config';
 import { openPrisma } from '../../../infrastructure/database/prisma-client';
-import { OWNER_CREATED_CHANNELS } from '../../security-audit/security-audit.constants';
+import { OWNER_CREATED_CHANNELS } from '../../security-audit';
 import { OWNER_ENV_KEYS, PASSWORD_STDIN_FLAG } from '../identity.constants';
 import { bootstrapOwner } from '../owner-bootstrap';
 import {

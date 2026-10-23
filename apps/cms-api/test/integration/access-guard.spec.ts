@@ -26,7 +26,7 @@ import { PermissionGuard } from '../../src/modules/access/permission.guard';
 import { RolePermissionsService } from '../../src/modules/access/role-permissions.service';
 import { seedRolePermissions } from '../../src/modules/access/roles/role-permissions.seed';
 import { VersionCache } from '../../src/modules/access/version-cache';
-import { ContentRegistryProvider } from '../../src/modules/content-engine/content-engine.module';
+import { ContentRegistryProvider } from '../../src/modules/content-engine/content-registry.provider';
 import { RegistryService } from '../../src/modules/content-engine/registry.service';
 import { IdentityModule } from '../../src/modules/identity/identity.module';
 import { JwtAuthGuard } from '../../src/modules/identity/jwt.strategy';

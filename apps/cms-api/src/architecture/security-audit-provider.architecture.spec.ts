@@ -2,7 +2,7 @@ import 'reflect-metadata';
 
 import { join } from 'node:path';
 
-import { SecurityAuditService } from '../modules/security-audit/security-audit.service';
+import { SecurityAuditService } from '../modules/security-audit';
 import { listSourceFiles } from './import-graph';
 
 /**

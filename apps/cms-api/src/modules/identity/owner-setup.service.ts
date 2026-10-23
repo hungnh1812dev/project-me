@@ -17,8 +17,8 @@ import {
   OWNER_CREATED_CHANNELS,
   SETUP_REJECTION_REASONS,
   type SetupRejectionReason,
-} from '../security-audit/security-audit.constants';
-import { SecurityAuditService } from '../security-audit/security-audit.service';
+} from '../security-audit';
+import { SecurityAuditService } from '../security-audit';
 import {
   OWNER_BOOTSTRAP_ERRORS,
   OWNER_SETUP_MESSAGES,

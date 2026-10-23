@@ -6,7 +6,7 @@ import {
   valueFromASTUntyped,
 } from 'graphql';
 
-import { FILTER_VALUE_PATTERNS } from '../../documents/documents.constants';
+import { FILTER_VALUE_PATTERNS } from '../../documents';
 import { SCALAR_NAMES } from '../graphql.constants';
 
 /** Length of `YYYY-MM-DD`. */

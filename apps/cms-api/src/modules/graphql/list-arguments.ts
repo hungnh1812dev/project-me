@@ -7,13 +7,9 @@ import {
   DOCUMENT_QUERY_KEYS,
   DOCUMENT_QUERY_LIMITS,
   SORT_DEFAULT,
-} from '../documents/documents.constants';
-import type {
-  FilterClause,
-  ListDocumentsQuery,
-  SortKey,
-} from '../documents/dto/list-documents.query';
-import type { CONTENT_STATUSES } from '../content-engine/content-engine.constants';
+} from '../documents';
+import type { FilterClause, ListDocumentsQuery, SortKey } from '../documents';
+import type { CONTENT_STATUSES } from '../content-engine';
 import { GRAPHQL_MESSAGES } from './graphql.constants';
 import { filterToClauses, sortToKeys } from './schema/filter-inputs';
 

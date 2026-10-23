@@ -8,7 +8,7 @@ import {
   type PrismaHandle,
 } from '../../src/infrastructure/database/prisma-client';
 import { seedRolePermissions } from '../../src/modules/access/roles/role-permissions.seed';
-import { ContentRegistryProvider } from '../../src/modules/content-engine/content-engine.module';
+import { ContentRegistryProvider } from '../../src/modules/content-engine/content-registry.provider';
 import { RegistryService } from '../../src/modules/content-engine/registry.service';
 import { hashPassword } from '../../src/modules/identity/password-hasher';
 import { seedSystemRoles } from '../../src/modules/access/roles/system-roles.seed';

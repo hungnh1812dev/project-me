@@ -16,7 +16,7 @@ import {
   type AccountActor,
 } from '../access';
 import type { PageMeta, PageQuery } from '../../common/http/request-parsing';
-import { ContentDbProvider } from '../content-engine/content-database';
+import { ContentDbProvider } from '../content-engine';
 import { DELETED_AT_COLUMN, MEDIA_ORDER, MEDIA_TABLE } from './media.constants';
 import { UploadPipeline } from './upload.pipeline';
 

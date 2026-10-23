@@ -37,7 +37,7 @@ import {
   DEFAULT_DOCUMENT_STATUS,
   DOCUMENT_QUERY_KEYS,
 } from './documents.constants';
-import { CONTENT_STATUSES } from '../content-engine/content-engine.constants';
+import { CONTENT_STATUSES } from '../content-engine';
 import {
   DocumentAuthGuard,
   type DocumentRequest,

@@ -1,9 +1,6 @@
-import {
-  CONTENT_DB_SCHEMA,
-  MEDIA_FIELD_TYPE,
-} from '../content-engine/content-engine.constants';
-import type { RegistryService } from '../content-engine/registry.service';
-import { quoteIdentifier } from '../content-engine/sql-generator';
+import { CONTENT_DB_SCHEMA, MEDIA_FIELD_TYPE } from '../content-engine';
+import type { RegistryService } from '../content-engine';
+import { quoteIdentifier } from '../content-engine';
 
 /** Anything that can run raw SQL: a Prisma client or transaction. */
 export interface RawQueryRunner {

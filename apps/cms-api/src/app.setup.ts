@@ -13,8 +13,8 @@ import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { securityHeadersMiddleware } from './common/middleware/security-headers.middleware';
 import { requestIdMiddleware } from './common/middleware/request-id.middleware';
 import { type IAppConfig } from './config/app-config';
-import { bulkBodyLimit } from './modules/documents/bulk-body-limit.middleware';
-import { graphqlBodyLimit } from './modules/graphql/graphql-body-limit.middleware';
+import { bulkBodyLimit } from './modules/documents';
+import { graphqlBodyLimit } from './modules/graphql';
 
 /**
  * Pipeline shared by `main.ts` and the integration tests, so tests run

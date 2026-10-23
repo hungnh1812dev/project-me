@@ -6,7 +6,7 @@ import {
   type SerializedRecord,
 } from '../access';
 import type { ContentDocument } from '../content-engine/content.repository';
-import type { ComponentInput, TreeInput } from '../content-engine/tree-input';
+import type { ComponentInput, TreeInput } from '../content-engine';
 import type {
   ComponentNode,
   ComponentTrees,

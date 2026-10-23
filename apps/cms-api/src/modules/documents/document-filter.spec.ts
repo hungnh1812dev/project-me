@@ -7,7 +7,7 @@ import {
 import { DummyDriver, Kysely } from 'kysely';
 
 import { ARTICLE_DEFINITION } from '../../../test/fixtures/access.fixture';
-import { RegistryService } from '../content-engine/registry.service';
+import { RegistryService } from '../content-engine';
 import {
   coerceFilterValue,
   filterExpression,

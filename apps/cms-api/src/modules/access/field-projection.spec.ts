@@ -3,7 +3,7 @@ import {
   ACTORS_BY_KIND,
   profileType,
 } from '../../../test/fixtures/masking.fixture';
-import type { TableNode } from '../content-engine/registry.service';
+import type { TableNode } from '../content-engine';
 import { projectTable, selectedColumns } from './field-projection';
 import { FieldSelection } from './policy-evaluator';
 import { recordReadAccess } from './record-read-access';

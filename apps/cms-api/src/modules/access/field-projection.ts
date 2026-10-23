@@ -1,4 +1,4 @@
-import type { TableNode } from '../content-engine/registry.service';
+import type { TableNode } from '../content-engine';
 import { joinFieldPath } from './field-paths';
 import type { FieldSelection } from './policy-evaluator';
 import {

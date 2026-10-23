@@ -42,15 +42,12 @@ import type {
 } from './api-tokens.requests';
 import { validateTokenScope } from '../permission.validator';
 import type { AccountActor } from '../rank-rules';
-import {
-  AUDIT_ACTIONS,
-  type AuditAction,
-} from '../../security-audit/security-audit.constants';
+import { AUDIT_ACTIONS, type AuditAction } from '../../security-audit';
 import {
   type AuditMetadata,
   auditActorOf,
   SecurityAuditService,
-} from '../../security-audit/security-audit.service';
+} from '../../security-audit';
 import { scopeEntriesBeyondCreator } from '../token-scope-subset';
 import { VersionCache } from '../version-cache';
 

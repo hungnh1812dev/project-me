@@ -15,15 +15,15 @@ import {
   type SerializedRecord,
 } from '../access';
 import { projectTable, selectedColumns } from '../access/field-projection';
-import { MediaRefsService } from '../media/media-refs.service';
-import { ContentDbProvider } from '../content-engine/content-database';
-import { ContentRegistryProvider } from '../content-engine/content-engine.module';
-import { CONTENT_DB_SCHEMA } from '../content-engine/content-engine.constants';
+import { MediaRefsService } from '../media';
+import { ContentDbProvider } from '../content-engine';
+import { ContentRegistryProvider } from '../content-engine';
+import { CONTENT_DB_SCHEMA } from '../content-engine';
 import {
   type ContentStatus,
   toDocument,
 } from '../content-engine/content.repository';
-import type { RegisteredContentType } from '../content-engine/registry.service';
+import type { RegisteredContentType } from '../content-engine';
 import { loadComponentTrees } from '../content-engine/tree-loader';
 import type { ListDocumentsQuery } from './dto/list-documents.query';
 import { filterExpression, queryColumnOf, sortTarget } from './document-filter';

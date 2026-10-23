@@ -10,7 +10,7 @@ import {
 import { FakeMediaStorage } from '../../src/infrastructure/media/fake.adapter';
 import { MEDIA_STORAGE } from '../../src/infrastructure/media/storage.port';
 import { seedRolePermissions } from '../../src/modules/access/roles/role-permissions.seed';
-import { ContentRegistryProvider } from '../../src/modules/content-engine/content-engine.module';
+import { ContentRegistryProvider } from '../../src/modules/content-engine/content-registry.provider';
 import { RegistryService } from '../../src/modules/content-engine/registry.service';
 import {
   emptySnapshot,

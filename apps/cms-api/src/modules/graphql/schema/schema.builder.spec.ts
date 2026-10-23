@@ -12,9 +12,9 @@ import {
   validate,
 } from 'graphql';
 
-import type { ContentTypeDefinition } from '../../content-engine/definition.schema';
-import { DEFAULT_CONTENT_PATHS } from '../../content-engine/cli/content-paths';
-import { loadDefinitions } from '../../content-engine/migration-files';
+import type { ContentTypeDefinition } from '../../content-engine';
+import { DEFAULT_CONTENT_PATHS } from '../../content-engine';
+import { loadDefinitions } from '../../content-engine';
 import {
   GRAPHQL_SDL_FILE_NAME,
   ROOT_FIELD_EXTENSION_KEY,

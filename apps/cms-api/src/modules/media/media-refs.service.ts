@@ -7,9 +7,9 @@ import {
   AccessPolicyService,
   type ActorContext,
 } from '../access';
-import { ContentDbProvider } from '../content-engine/content-database';
-import type { TableNode } from '../content-engine/registry.service';
-import type { FieldValues, TreeInput } from '../content-engine/tree-input';
+import { ContentDbProvider } from '../content-engine';
+import type { TableNode } from '../content-engine';
+import type { FieldValues, TreeInput } from '../content-engine';
 import {
   DELETED_AT_COLUMN,
   MEDIA_REF_ERROR_CODES,

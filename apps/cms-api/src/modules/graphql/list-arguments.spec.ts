@@ -1,7 +1,7 @@
 import { BadRequestException } from '@nestjs/common';
 
 import { PAGINATION } from '../../common/http/request-parsing';
-import { DOCUMENT_QUERY_LIMITS } from '../documents/documents.constants';
+import { DOCUMENT_QUERY_LIMITS } from '../documents';
 import { type ListArguments, toListQuery } from './list-arguments';
 
 const base: ListArguments = {

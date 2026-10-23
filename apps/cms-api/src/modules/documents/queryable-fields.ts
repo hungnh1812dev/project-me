@@ -1,6 +1,6 @@
 import { conditionKindOf, type ConditionValueKind } from '../access';
-import { COMPONENT_FIELD_TYPE } from '../content-engine/content-engine.constants';
-import type { FieldDefinition } from '../content-engine/definition.schema';
+import { COMPONENT_FIELD_TYPE } from '../content-engine';
+import type { FieldDefinition } from '../content-engine';
 
 /**
  * What a top-level content field compares and sorts as in a document list

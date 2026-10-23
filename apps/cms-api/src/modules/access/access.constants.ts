@@ -2,7 +2,7 @@ import { PermissionAction } from '../../generated/prisma/client';
 import {
   type ROOT_SYSTEM_COLUMNS,
   SCALAR_FIELD_TYPES,
-} from '../content-engine/content-engine.constants';
+} from '../content-engine';
 import type { ContentDocument } from '../content-engine/content.repository';
 import type { ActorKind } from './actor-context';
 

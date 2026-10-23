@@ -12,13 +12,10 @@ import {
   AccessPolicyService,
   type AccountActor,
 } from '../access';
-import { AUDIT_ACTIONS } from '../security-audit/security-audit.constants';
-import {
-  auditActorOf,
-  SecurityAuditService,
-} from '../security-audit/security-audit.service';
-import { ContentDbProvider } from '../content-engine/content-database';
-import { ContentRegistryProvider } from '../content-engine/content-engine.module';
+import { AUDIT_ACTIONS } from '../security-audit';
+import { auditActorOf, SecurityAuditService } from '../security-audit';
+import { ContentDbProvider } from '../content-engine';
+import { ContentRegistryProvider } from '../content-engine';
 import type { ClientMeta } from '../../common/http/client-meta';
 import {
   DELETED_AT_COLUMN,

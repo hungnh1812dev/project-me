@@ -6,7 +6,7 @@ import {
   queryInt,
 } from '../../../common/http/request-parsing';
 import { PAGINATION } from '../../../common/http/request-parsing';
-import { CONTENT_STATUSES } from '../../content-engine/content-engine.constants';
+import { CONTENT_STATUSES } from '../../content-engine';
 import {
   DEFAULT_DOCUMENT_STATUS,
   DOCUMENT_QUERY_KEYS,

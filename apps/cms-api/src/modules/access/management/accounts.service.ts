@@ -40,12 +40,12 @@ import {
   outranks,
   rankForbidden,
 } from '../rank-rules';
-import { AUDIT_ACTIONS } from '../../security-audit/security-audit.constants';
+import { AUDIT_ACTIONS } from '../../security-audit';
 import {
   type AuditActor,
   auditActorOf,
   SecurityAuditService,
-} from '../../security-audit/security-audit.service';
+} from '../../security-audit';
 import { VersionCache } from '../version-cache';
 
 type Tx = Prisma.TransactionClient;

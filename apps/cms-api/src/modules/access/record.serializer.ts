@@ -1,14 +1,11 @@
 import type { ContentDocument } from '../content-engine/content.repository';
-import type { FieldDefinition } from '../content-engine/definition.schema';
-import type {
-  RegisteredContentType,
-  TableNode,
-} from '../content-engine/registry.service';
+import type { FieldDefinition } from '../content-engine';
+import type { RegisteredContentType, TableNode } from '../content-engine';
 import type {
   ComponentNode,
   ComponentTrees,
 } from '../content-engine/tree-loader';
-import type { FieldValues } from '../content-engine/tree-input';
+import type { FieldValues } from '../content-engine';
 import {
   MASK_SENTINEL,
   MASK_SENTINEL_FIELD_TYPES,

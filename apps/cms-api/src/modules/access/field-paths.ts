@@ -2,7 +2,7 @@ import {
   type ContentTypeDefinition,
   type FieldDefinition,
   isComponentField,
-} from '../content-engine/definition.schema';
+} from '../content-engine';
 import { FIELD_PATH_SEPARATOR } from './access.constants';
 
 /**

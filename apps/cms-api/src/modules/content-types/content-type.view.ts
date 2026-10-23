@@ -10,8 +10,8 @@ import {
   type ContentTypeKind,
   type FieldDefinition,
   isComponentField,
-} from '../content-engine/definition.schema';
-import type { RegisteredContentType } from '../content-engine/registry.service';
+} from '../content-engine';
+import type { RegisteredContentType } from '../content-engine';
 
 type SystemConditionField = keyof typeof CONDITION_SYSTEM_FIELDS;
 

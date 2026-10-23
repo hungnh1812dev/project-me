@@ -18,7 +18,7 @@ import {
 import { seedRolePermissions } from '../../src/modules/access/roles/role-permissions.seed';
 import { AUDIT_ACTIONS } from '../../src/modules/security-audit/security-audit.constants';
 import { createContentDb } from '../../src/modules/content-engine/content-database';
-import { ContentRegistryProvider } from '../../src/modules/content-engine/content-engine.module';
+import { ContentRegistryProvider } from '../../src/modules/content-engine/content-registry.provider';
 import { ContentRepository } from '../../src/modules/content-engine/content.repository';
 import { RegistryService } from '../../src/modules/content-engine/registry.service';
 import {

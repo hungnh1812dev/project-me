@@ -20,11 +20,8 @@ import {
   AUDIT_ACTIONS,
   LOGIN_FAILURE_REASONS,
   type LoginFailureReason,
-} from '../security-audit/security-audit.constants';
-import {
-  SecurityAuditService,
-  selfActor,
-} from '../security-audit/security-audit.service';
+} from '../security-audit';
+import { SecurityAuditService, selfActor } from '../security-audit';
 import { AccessTokenService } from './access-token.service';
 import { hashPassword, verifyPassword } from './password-hasher';
 import { RefreshTokenService } from './refresh-token.service';

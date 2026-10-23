@@ -11,12 +11,9 @@ import {
 } from './identity-auth.constants';
 import { type Prisma } from '../../generated/prisma/client';
 import { PrismaService } from '../../infrastructure/database/prisma.service';
-import { AUDIT_ACTIONS } from '../security-audit/security-audit.constants';
+import { AUDIT_ACTIONS } from '../security-audit';
 import type { ClientMeta } from '../../common/http/client-meta';
-import {
-  SecurityAuditService,
-  selfActor,
-} from '../security-audit/security-audit.service';
+import { SecurityAuditService, selfActor } from '../security-audit';
 import { VersionCache } from '../access';
 
 /** Account fields needed to sign an access token after a rotation. */

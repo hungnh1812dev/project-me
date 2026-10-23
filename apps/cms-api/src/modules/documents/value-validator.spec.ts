@@ -1,7 +1,7 @@
 import { BadRequestException } from '@nestjs/common';
 
 import { FieldSelection } from '../access';
-import { RegistryService } from '../content-engine/registry.service';
+import { RegistryService } from '../content-engine';
 import { profileType } from '../../../test/fixtures/masking.fixture';
 import { validateTreeValues } from './value-validator';
 
