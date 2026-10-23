@@ -50,7 +50,7 @@ Once the service sees an owner (at boot, on any status or submit call, or after 
   - Rotate before use (token leaked, or the setup is postponed): put a new value in the Secret and restart; the old value stops working at once because the env is read at boot.
   - If the owner row is ever removed by hand in SQL, the setup reopens only if a token is still configured. Removing the token after setup is what keeps it shut; the boot warning is the reminder.
 
-## Rate limits (new `RATE_LIMIT_POLICIES` entries, in-memory like the others)
+## Rate limits (`IDENTITY_RATE_LIMIT_POLICIES` entries, in-memory like the others)
 
 | Policy         | Rule name         | Key              | Limit        |
 | -------------- | ----------------- | ---------------- | ------------ |
@@ -92,7 +92,7 @@ No row ever holds the token, the password or (for rejected attempts) the email.
 ## Code changes (for OS1 / OS2)
 
 - `bootstrapOwner(prisma, input, options?)`: new optional `options` `{ channel, audit }` so the `owner.created` row is written inside its transaction. The CLI passes `channel: 'cli'`. Existing behaviour and error codes stay.
-- New in `apps/cms-api/src/modules/identity`: `owner-setup.controller.ts`, `owner-setup.service.ts` (latch, token compare, error mapping), `owner-setup.requests.ts` (Zod DTO), `setup-token.ts` (hash + timing-safe compare, pure, unit-tested). Constants in `identity.constants.ts` (`SETUP_TOKEN_MAX_LENGTH`, setup channels), route constants in `api.constants.ts`, policies in `limits.constants.ts`, env in `env.schema.ts` / `app-config.ts` / `.env.example`.
+- New in `apps/cms-api/src/modules/identity`: `owner-setup.controller.ts`, `owner-setup.service.ts` (latch, token compare, error mapping), `owner-setup.requests.ts` (Zod DTO), `setup-token.ts` (hash + timing-safe compare, pure, unit-tested). Constants in `identity.constants.ts` (`SETUP_TOKEN_MAX_LENGTH`, setup channels), route constants in `api.constants.ts`, policies in `identity.rate-limits.constants.ts`, env in `env.schema.ts` / `app-config.ts` / `.env.example`.
 - No DB schema change: there is no "setup completed" table; the owner row is the state.
 
 ## Not in scope

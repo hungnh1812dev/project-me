@@ -17,7 +17,7 @@ import { z } from 'zod';
 
 import { API_ROUTES, SLUG_PARAM } from '../../common/constants/api.constants';
 import { Throttle } from '../../common/guards/throttle.guard';
-import { RATE_LIMIT_POLICIES } from '../../common/constants/limits.constants';
+import { DOCUMENTS_RATE_LIMIT_POLICIES } from './documents.rate-limits.constants';
 import { NO_STORE_HEADER } from '../../common/constants/http.constants';
 import { PermissionAction } from '../../generated/prisma/client';
 import {
@@ -82,7 +82,7 @@ export class DocumentsController {
   ) {}
 
   @Get(API_ROUTES.DOCUMENTS.BY_SLUG)
-  @Throttle(RATE_LIMIT_POLICIES.DOCUMENT_READ_ANONYMOUS)
+  @Throttle(DOCUMENTS_RATE_LIMIT_POLICIES.DOCUMENT_READ_ANONYMOUS)
   @RequirePermission({
     action: PermissionAction.read,
     subjectParam: SLUG_PARAM,
@@ -97,7 +97,7 @@ export class DocumentsController {
   }
 
   @Get(API_ROUTES.DOCUMENTS.BY_ID)
-  @Throttle(RATE_LIMIT_POLICIES.DOCUMENT_READ_ANONYMOUS)
+  @Throttle(DOCUMENTS_RATE_LIMIT_POLICIES.DOCUMENT_READ_ANONYMOUS)
   @RequirePermission({
     action: PermissionAction.read,
     subjectParam: SLUG_PARAM,

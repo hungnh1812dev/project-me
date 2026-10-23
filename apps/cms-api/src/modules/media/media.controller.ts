@@ -17,7 +17,7 @@ import {
 import { ClientIpResolver } from '../../common/client-ip.resolver';
 import { API_ROUTES, ID_PARAM } from '../../common/constants/api.constants';
 import { NO_STORE_HEADER } from '../../common/constants/http.constants';
-import { RATE_LIMIT_POLICIES } from '../../common/constants/limits.constants';
+import { MEDIA_RATE_LIMIT_POLICIES } from './media.rate-limits.constants';
 import { Throttle } from '../../common/guards/throttle.guard';
 import { PermissionAction } from '../../generated/prisma/client';
 import {
@@ -56,7 +56,7 @@ export class MediaController {
   /** `multipart/form-data`: one `file` part, optional `alt` text field. */
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  @Throttle(RATE_LIMIT_POLICIES.MEDIA_UPLOAD)
+  @Throttle(MEDIA_RATE_LIMIT_POLICIES.MEDIA_UPLOAD)
   @RequirePermission({
     action: PermissionAction.create,
     subject: MEDIA_SUBJECT,

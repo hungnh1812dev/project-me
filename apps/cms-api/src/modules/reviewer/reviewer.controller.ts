@@ -17,11 +17,9 @@ import type { Request, Response } from 'express';
 import { ClientIpResolver } from '../../common/client-ip.resolver';
 import { API_ROUTES } from '../../common/constants/api.constants';
 import { NO_STORE_HEADER } from '../../common/constants/http.constants';
-import {
-  RATE_LIMIT_POLICIES,
-  RETRY_AFTER_HEADER,
-} from '../../common/constants/limits.constants';
+import { RETRY_AFTER_HEADER } from '../../common/constants/limits.constants';
 import { Throttle } from '../../common/guards/throttle.guard';
+import { REVIEWER_RATE_LIMIT_POLICIES } from './reviewer.rate-limits.constants';
 import { PermissionAction } from '../../generated/prisma/client';
 import {
   pageQuerySchema,
@@ -62,7 +60,7 @@ export class ReviewerController {
 
   @Get(API_ROUTES.REVIEWER.STATUS)
   @Header(NO_STORE_HEADER.NAME, NO_STORE_HEADER.VALUE)
-  @Throttle(RATE_LIMIT_POLICIES.REVIEWER_STATUS)
+  @Throttle(REVIEWER_RATE_LIMIT_POLICIES.REVIEWER_STATUS)
   status(): Promise<ReviewerStatusView> {
     return this.reviewer.status();
   }
@@ -70,7 +68,7 @@ export class ReviewerController {
   /** 201 with a 24 h access token, shown once. Turnstile is verified server-side. */
   @Post(API_ROUTES.REVIEWER.SESSIONS)
   @Header(NO_STORE_HEADER.NAME, NO_STORE_HEADER.VALUE)
-  @Throttle(RATE_LIMIT_POLICIES.REVIEWER_SESSION_ATTEMPTS)
+  @Throttle(REVIEWER_RATE_LIMIT_POLICIES.REVIEWER_SESSION_ATTEMPTS)
   async createSession(
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,

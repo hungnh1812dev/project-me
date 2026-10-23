@@ -20,6 +20,7 @@ export {
   SYSTEM_FIELD_KINDS,
   type FilterOperator,
 } from './documents.constants';
+export { DOCUMENTS_RATE_LIMIT_POLICIES } from './documents.rate-limits.constants';
 export { DocumentsModule } from './documents.module';
 export {
   DocumentsQueryService,

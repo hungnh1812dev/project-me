@@ -16,7 +16,6 @@ import { z } from 'zod';
 import { API_ROUTES } from '../../common/constants/api.constants';
 import { NO_STORE_HEADER } from '../../common/constants/http.constants';
 import { ERROR_CODES } from '../../common/constants/error.constants';
-import { RATE_LIMIT_POLICIES } from '../../common/constants/limits.constants';
 import { Throttle } from '../../common/guards/throttle.guard';
 import type { RequestWithId } from '../../common/middleware/request-id.middleware';
 import { parseRequest } from '../../common/http/request-parsing';
@@ -24,6 +23,7 @@ import {
   DocumentAuthGuard,
   type DocumentRequest,
 } from '../access/document-auth';
+import { DOCUMENTS_RATE_LIMIT_POLICIES } from '../documents';
 import {
   GRAPHQL_MESSAGES,
   GRAPHQL_REQUEST_MEDIA_TYPE,
@@ -51,7 +51,7 @@ export class GraphqlController {
 
   @Post()
   @HttpCode(HttpStatus.OK)
-  @Throttle(RATE_LIMIT_POLICIES.DOCUMENT_READ_ANONYMOUS)
+  @Throttle(DOCUMENTS_RATE_LIMIT_POLICIES.DOCUMENT_READ_ANONYMOUS)
   @Header(NO_STORE_HEADER.NAME, NO_STORE_HEADER.VALUE)
   async query(
     @Req() req: DocumentRequest & RequestWithId,

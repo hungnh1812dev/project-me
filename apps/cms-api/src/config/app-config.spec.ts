@@ -24,7 +24,6 @@ import {
   loadAppConfig,
   summarizeConfig,
 } from './app-config';
-import { RATE_LIMIT_RULE_NAMES } from '../common/constants/limits.constants';
 import { CONFIG_DEFAULTS, REDACTED, SECRET_ENV_KEYS } from './config.constants';
 
 function configErrorOf(
@@ -570,7 +569,7 @@ describe('login rate-limit overrides (T18b)', () => {
       devEnv({ LOGIN_RATE_LIMIT_IP: '500', LOGIN_RATE_LIMIT_EMAIL: '' }),
     );
     expect(config.rateLimit.limitOverrides).toEqual({
-      [RATE_LIMIT_RULE_NAMES.LOGIN_IP]: 500,
+      LOGIN_RATE_LIMIT_IP: 500,
     });
   });
 
@@ -593,8 +592,8 @@ describe('login rate-limit overrides (T18b)', () => {
       }),
     );
     expect(config.rateLimit.limitOverrides).toEqual({
-      [RATE_LIMIT_RULE_NAMES.LOGIN_IP]: 500,
-      [RATE_LIMIT_RULE_NAMES.LOGIN_EMAIL]: 400,
+      LOGIN_RATE_LIMIT_IP: 500,
+      LOGIN_RATE_LIMIT_EMAIL: 400,
     });
   });
 
@@ -615,7 +614,7 @@ describe('login rate-limit overrides (T18b)', () => {
     expect(
       loadAppConfig(devEnv({ LOGIN_RATE_LIMIT_IP: '500' })).rateLimit
         .limitOverrides,
-    ).toEqual({ [RATE_LIMIT_RULE_NAMES.LOGIN_IP]: 500 });
+    ).toEqual({ LOGIN_RATE_LIMIT_IP: 500 });
   });
 
   it.each(['0', '-1', '1.5', 'abc', '1000001'])(
@@ -636,7 +635,7 @@ describe('refresh rate-limit override (T18c)', () => {
     expect(
       loadAppConfig(devEnv({ REFRESH_RATE_LIMIT_IP: '500' })).rateLimit
         .limitOverrides,
-    ).toEqual({ [RATE_LIMIT_RULE_NAMES.REFRESH_IP]: 500 });
+    ).toEqual({ REFRESH_RATE_LIMIT_IP: 500 });
     expect(
       loadAppConfig(devEnv({ REFRESH_RATE_LIMIT_IP: '' })).rateLimit
         .limitOverrides,
@@ -660,7 +659,7 @@ describe('refresh rate-limit override (T18c)', () => {
       }),
     );
     expect(config.rateLimit.limitOverrides).toEqual({
-      [RATE_LIMIT_RULE_NAMES.REFRESH_IP]: 500,
+      REFRESH_RATE_LIMIT_IP: 500,
     });
   });
 

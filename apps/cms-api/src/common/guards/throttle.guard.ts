@@ -34,11 +34,11 @@ import {
   type RateLimitStore,
 } from '../rate-limit/rate-limit.store';
 
-const RATE_LIMIT_POLICY_METADATA = 'abyss:rate-limit-policy';
+export const RATE_LIMIT_POLICY_METADATA = 'abyss:rate-limit-policy';
 
 /**
- * Throttles a route with a policy from `RATE_LIMIT_POLICIES`, e.g.
- * `@Throttle(RATE_LIMIT_POLICIES.LOGIN)`. Put it last (closest to the method)
+ * Throttles a route with a policy of its own module, e.g.
+ * `@Throttle(IDENTITY_RATE_LIMIT_POLICIES.LOGIN)`. Put it last (closest to the method)
  * so it runs before the route's other guards.
  */
 export function Throttle(policy: RateLimitPolicy): MethodDecorator {
@@ -144,9 +144,13 @@ export class ThrottleGuard implements CanActivate {
     return true;
   }
 
-  /** The default limit, unless the config overrides this rule (T18b). */
+  /** The default limit, unless the config overrides the env key the rule declares (T18b). */
   private limitOf(rule: RateLimitRule): number {
-    return this.config.rateLimit.limitOverrides[rule.name] ?? rule.limit;
+    if (rule.limitOverrideEnvKey === undefined) return rule.limit;
+    return (
+      this.config.rateLimit.limitOverrides[rule.limitOverrideEnvKey] ??
+      rule.limit
+    );
   }
 
   private reject(res: Response, resetAt: number): never {

@@ -19,7 +19,7 @@ import {
   AUTH_ERROR_CODES,
   AUTH_ERROR_MESSAGES,
 } from './identity-auth.constants';
-import { RATE_LIMIT_POLICIES } from '../../common/constants/limits.constants';
+import { IDENTITY_RATE_LIMIT_POLICIES } from './identity.rate-limits.constants';
 import { Throttle } from '../../common/guards/throttle.guard';
 import { clientMetaOf } from '../../common/http/client-meta';
 import { requireAccountActor } from '../access';
@@ -57,7 +57,7 @@ export class PasswordController {
   /** Always 202 with an empty body, known email or not (D8). */
   @Post(API_ROUTES.PASSWORD.REQUEST_OTP)
   @HttpCode(HttpStatus.ACCEPTED)
-  @Throttle(RATE_LIMIT_POLICIES.OTP_REQUEST)
+  @Throttle(IDENTITY_RATE_LIMIT_POLICIES.OTP_REQUEST)
   requestOtp(@Body() body: unknown, @Req() req: Request): void {
     this.passwords.requestOtp(
       parseBody(requestOtpSchema, body).email,
@@ -68,7 +68,7 @@ export class PasswordController {
   @Post(API_ROUTES.PASSWORD.RESET)
   @HttpCode(HttpStatus.NO_CONTENT)
   @Header(NO_STORE_HEADER.NAME, NO_STORE_HEADER.VALUE)
-  @Throttle(RATE_LIMIT_POLICIES.PASSWORD_SUBMIT)
+  @Throttle(IDENTITY_RATE_LIMIT_POLICIES.PASSWORD_SUBMIT)
   reset(@Body() body: unknown, @Req() req: Request): Promise<void> {
     return this.passwords.reset(
       parseBody(resetPasswordSchema, body),
@@ -79,7 +79,7 @@ export class PasswordController {
   @Post(API_ROUTES.PASSWORD.SET)
   @HttpCode(HttpStatus.NO_CONTENT)
   @Header(NO_STORE_HEADER.NAME, NO_STORE_HEADER.VALUE)
-  @Throttle(RATE_LIMIT_POLICIES.PASSWORD_SUBMIT)
+  @Throttle(IDENTITY_RATE_LIMIT_POLICIES.PASSWORD_SUBMIT)
   set(@Body() body: unknown, @Req() req: Request): Promise<void> {
     return this.passwords.set(
       parseBody(setPasswordSchema, body),
@@ -91,7 +91,7 @@ export class PasswordController {
   @HttpCode(HttpStatus.NO_CONTENT)
   @Header(NO_STORE_HEADER.NAME, NO_STORE_HEADER.VALUE)
   @UseGuards(JwtAuthGuard)
-  @Throttle(RATE_LIMIT_POLICIES.PASSWORD_CHANGE)
+  @Throttle(IDENTITY_RATE_LIMIT_POLICIES.PASSWORD_CHANGE)
   change(
     @Req() req: AuthenticatedRequest,
     @Body() body: unknown,

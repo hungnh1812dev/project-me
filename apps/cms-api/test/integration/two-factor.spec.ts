@@ -11,10 +11,8 @@ import {
   TWO_FACTOR_TEMP_TOKEN_TTL_SECONDS,
 } from '../../src/modules/identity/identity-auth.constants';
 import { ERROR_CODES } from '../../src/common/constants/error.constants';
-import {
-  MS_PER_SECOND,
-  RATE_LIMIT_POLICIES,
-} from '../../src/common/constants/limits.constants';
+import { MS_PER_SECOND } from '../../src/common/constants/limits.constants';
+import { IDENTITY_RATE_LIMIT_POLICIES } from '../../src/modules/identity/identity.rate-limits.constants';
 import { loadAppConfig } from '../../src/config/app-config';
 import {
   openPrisma,
@@ -836,7 +834,7 @@ describe('Two-factor authentication (D8, SPEC §9, T13; Postgres 16 via Testcont
 
   describe('rate limits', () => {
     it('throttles the 6th setup/enable/disable per IP within 15 minutes', async () => {
-      const [rule] = RATE_LIMIT_POLICIES.TWO_FACTOR_MANAGE;
+      const [rule] = IDENTITY_RATE_LIMIT_POLICIES.TWO_FACTOR_MANAGE;
       const ip = nextIp();
       const paths = [SETUP, ENABLE, DISABLE];
       for (let i = 0; i < rule.limit; i += 1) {
@@ -848,7 +846,7 @@ describe('Two-factor authentication (D8, SPEC §9, T13; Postgres 16 via Testcont
     });
 
     it('throttles the 6th email challenge per IP within 15 minutes', async () => {
-      const [rule] = RATE_LIMIT_POLICIES.TWO_FACTOR_EMAIL_CHALLENGE;
+      const [rule] = IDENTITY_RATE_LIMIT_POLICIES.TWO_FACTOR_EMAIL_CHALLENGE;
       const ip = nextIp();
       for (let i = 0; i < rule.limit; i += 1) {
         await post(EMAIL_CHALLENGE, ip).send({});

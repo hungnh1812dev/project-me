@@ -1,8 +1,12 @@
 import { z } from 'zod';
 
-import { RATE_LIMIT_RULE_NAMES } from '../common/constants/limits.constants';
 import type { DatabaseConfig } from '../infrastructure/database/database-config';
-import { CONFIG_DEFAULTS, REDACTED } from './config.constants';
+import {
+  CONFIG_DEFAULTS,
+  RATE_LIMIT_OVERRIDE_ENV_KEYS,
+  REDACTED,
+  type RateLimitOverrideEnvKey,
+} from './config.constants';
 import { envSchema, type Env } from './env.schema';
 
 export interface IAppConfig {
@@ -38,10 +42,13 @@ export interface IAppConfig {
   readonly database: Readonly<DatabaseConfig>;
   readonly rateLimit: {
     /**
-     * Limit per rule name (`RateLimitRule.name`) replacing the default in
-     * `limits.constants.ts`. Empty = all defaults (T18b: the smoke stack only).
+     * Limit per env key, replacing the default of the rule that declares it
+     * (`RateLimitRule.limitOverrideEnvKey`). Empty = all defaults (T18b: the
+     * smoke stack only).
      */
-    readonly limitOverrides: Readonly<Record<string, number>>;
+    readonly limitOverrides: Readonly<
+      Partial<Record<RateLimitOverrideEnvKey, number>>
+    >;
   };
   readonly mail: {
     readonly provider: Env['MAIL_PROVIDER'];
@@ -182,18 +189,15 @@ export function loadAppConfig(rawEnv: RawEnv): IAppConfig {
   });
 }
 
-function rateLimitOverridesOf(env: Env): Record<string, number> {
-  const overrides: Record<string, number> = {};
-  if (env.LOGIN_RATE_LIMIT_IP !== undefined) {
-    overrides[RATE_LIMIT_RULE_NAMES.LOGIN_IP] = env.LOGIN_RATE_LIMIT_IP;
-  }
-  if (env.LOGIN_RATE_LIMIT_EMAIL !== undefined) {
-    overrides[RATE_LIMIT_RULE_NAMES.LOGIN_EMAIL] = env.LOGIN_RATE_LIMIT_EMAIL;
-  }
-  if (env.REFRESH_RATE_LIMIT_IP !== undefined) {
-    overrides[RATE_LIMIT_RULE_NAMES.REFRESH_IP] = env.REFRESH_RATE_LIMIT_IP;
-  }
-  return overrides;
+function rateLimitOverridesOf(
+  env: Env,
+): Partial<Record<RateLimitOverrideEnvKey, number>> {
+  return Object.fromEntries(
+    RATE_LIMIT_OVERRIDE_ENV_KEYS.flatMap((key) => {
+      const limit = env[key];
+      return limit === undefined ? [] : [[key, limit]];
+    }),
+  );
 }
 
 function cloudinaryConfigOf(env: Env): CloudinaryConfig | undefined {

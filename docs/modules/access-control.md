@@ -276,7 +276,7 @@ service builds `recordReadAccess(actor, fieldsFor().readable)` once and
 passes it to `projectTable` / `selectedColumns`, `QueryGuard.assert` and
 `RecordSerializer.serialize`. `status=draft` needs `canReadDrafts`. The
 actor's `rowFilter` is part of the WHERE clause of list, total and detail.
-Anonymous reads are throttled per IP (`RATE_LIMIT_POLICIES.DOCUMENT_READ_ANONYMOUS`,
+Anonymous reads are throttled per IP (`DOCUMENTS_RATE_LIMIT_POLICIES.DOCUMENT_READ_ANONYMOUS`,
 120/min, key source `ANONYMOUS_IP`, which skips every non-anonymous actor).
 Endpoint rules: `apps/cms-api/README.md` "Documents, read".
 

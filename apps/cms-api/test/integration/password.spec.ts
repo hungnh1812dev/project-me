@@ -8,10 +8,8 @@ import request from 'supertest';
 import { Clock } from '../../src/common/clock';
 import { AUTH_ERROR_CODES } from '../../src/modules/identity/identity-auth.constants';
 import { ERROR_CODES } from '../../src/common/constants/error.constants';
-import {
-  MS_PER_SECOND,
-  RATE_LIMIT_POLICIES,
-} from '../../src/common/constants/limits.constants';
+import { MS_PER_SECOND } from '../../src/common/constants/limits.constants';
+import { IDENTITY_RATE_LIMIT_POLICIES } from '../../src/modules/identity/identity.rate-limits.constants';
 import {
   openPrisma,
   type PrismaHandle,
@@ -300,7 +298,7 @@ describe('OTP + password lifecycle (D8, SPEC §12-9/10; Postgres 16 via Testcont
 
     it('answers the 6th request per email within the hour with 429, known or not (§12-9)', async () => {
       const account = await createAccount();
-      const [, emailRule] = RATE_LIMIT_POLICIES.OTP_REQUEST;
+      const [, emailRule] = IDENTITY_RATE_LIMIT_POLICIES.OTP_REQUEST;
       for (const email of [account.email, 'ghost-limit@example.test']) {
         for (let i = 0; i < emailRule.limit; i += 1) {
           expect((await post(REQUEST_OTP).send({ email })).status).toBe(
@@ -581,7 +579,7 @@ describe('OTP + password lifecycle (D8, SPEC §12-9/10; Postgres 16 via Testcont
     });
 
     it('throttles the 6th change per IP within 15 minutes', async () => {
-      const [rule] = RATE_LIMIT_POLICIES.PASSWORD_CHANGE;
+      const [rule] = IDENTITY_RATE_LIMIT_POLICIES.PASSWORD_CHANGE;
       const ip = nextIp();
       for (let i = 0; i < rule.limit; i += 1) {
         await post(CHANGE, ip).send({});

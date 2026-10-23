@@ -11,6 +11,8 @@ import {
   MAX_RATE_LIMIT_OVERRIDE,
   MIN_SECRET_BYTES,
   NODE_ENVS,
+  RATE_LIMIT_OVERRIDE_ENV_KEYS,
+  type RateLimitOverrideEnvKey,
   SECRET_ENV_KEYS,
   TOTP_ISSUER_MAX_LENGTH,
   TOTP_ISSUER_PATTERN,
@@ -51,12 +53,9 @@ const optionalRateLimit = z.preprocess(
   z.coerce.number().int().min(1).max(MAX_RATE_LIMIT_OVERRIDE).optional(),
 );
 
-/** Login and refresh limit overrides (T18b, T18c): refused in production unless explicitly opted in, so a stray value can't weaken D7. */
-const RATE_LIMIT_OVERRIDE_KEYS = [
-  'LOGIN_RATE_LIMIT_IP',
-  'LOGIN_RATE_LIMIT_EMAIL',
-  'REFRESH_RATE_LIMIT_IP',
-] as const;
+const rateLimitOverrideShape = Object.fromEntries(
+  RATE_LIMIT_OVERRIDE_ENV_KEYS.map((key) => [key, optionalRateLimit]),
+) as Record<RateLimitOverrideEnvKey, typeof optionalRateLimit>;
 
 /** Keys that are optional in development but required in production. */
 const PRODUCTION_REQUIRED_KEYS = [
@@ -130,9 +129,7 @@ export const envSchema = z
       emptyToUndefined,
       z.literal(LOGIN_RATE_LIMIT_OVERRIDE_OPT_IN).optional(),
     ),
-    LOGIN_RATE_LIMIT_IP: optionalRateLimit,
-    LOGIN_RATE_LIMIT_EMAIL: optionalRateLimit,
-    REFRESH_RATE_LIMIT_IP: optionalRateLimit,
+    ...rateLimitOverrideShape,
     ADMIN_ORIGIN: optionalOrigin,
     WEB_ORIGIN: optionalOrigin,
     MAIL_PROVIDER: z
@@ -259,7 +256,7 @@ export const envSchema = z
 
     if (env.NODE_ENV !== 'production') return;
 
-    for (const key of RATE_LIMIT_OVERRIDE_KEYS) {
+    for (const key of RATE_LIMIT_OVERRIDE_ENV_KEYS) {
       if (
         env[key] !== undefined &&
         env.ALLOW_LOGIN_RATE_LIMIT_OVERRIDE !== LOGIN_RATE_LIMIT_OVERRIDE_OPT_IN

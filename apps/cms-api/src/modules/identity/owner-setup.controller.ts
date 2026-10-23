@@ -14,7 +14,7 @@ import type { Request } from 'express';
 import { ClientIpResolver } from '../../common/client-ip.resolver';
 import { API_ROUTES } from '../../common/constants/api.constants';
 import { NO_STORE_HEADER } from '../../common/constants/http.constants';
-import { RATE_LIMIT_POLICIES } from '../../common/constants/limits.constants';
+import { IDENTITY_RATE_LIMIT_POLICIES } from './identity.rate-limits.constants';
 import { Throttle } from '../../common/guards/throttle.guard';
 import { clientMetaOf } from '../../common/http/client-meta';
 import { OwnerSetupService, SetupClosedError } from './owner-setup.service';
@@ -33,7 +33,7 @@ export class OwnerSetupController {
 
   @Get(API_ROUTES.SETUP.STATUS)
   @Header(NO_STORE_HEADER.NAME, NO_STORE_HEADER.VALUE)
-  @Throttle(RATE_LIMIT_POLICIES.SETUP_STATUS)
+  @Throttle(IDENTITY_RATE_LIMIT_POLICIES.SETUP_STATUS)
   async status(): Promise<{ open: boolean }> {
     return { open: await this.setup.isOpen() };
   }
@@ -41,7 +41,7 @@ export class OwnerSetupController {
   @Post(API_ROUTES.SETUP.OWNER)
   @HttpCode(HttpStatus.CREATED)
   @Header(NO_STORE_HEADER.NAME, NO_STORE_HEADER.VALUE)
-  @Throttle(RATE_LIMIT_POLICIES.SETUP_SUBMIT)
+  @Throttle(IDENTITY_RATE_LIMIT_POLICIES.SETUP_SUBMIT)
   async createOwner(
     @Body() body: unknown,
     @Req() req: Request,

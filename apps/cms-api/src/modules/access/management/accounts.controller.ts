@@ -16,7 +16,7 @@ import {
 import { ClientIpResolver } from '../../../common/client-ip.resolver';
 import { API_ROUTES, ID_PARAM } from '../../../common/constants/api.constants';
 import { NO_STORE_HEADER } from '../../../common/constants/http.constants';
-import { RATE_LIMIT_POLICIES } from '../../../common/constants/limits.constants';
+import { ACCESS_RATE_LIMIT_POLICIES } from '../access.rate-limits.constants';
 import { Throttle } from '../../../common/guards/throttle.guard';
 import { PermissionAction } from '../../../generated/prisma/client';
 import { clientMetaOf } from '../../../common/http/client-meta';
@@ -68,7 +68,7 @@ export class AccountsController {
   /** Invite (Q2): 201 with the account; the invitee gets an emailed code. */
   @Post()
   @RequirePermission({ action: PermissionAction.create, subject: SUBJECT })
-  @Throttle(RATE_LIMIT_POLICIES.ACCOUNT_INVITE)
+  @Throttle(ACCESS_RATE_LIMIT_POLICIES.ACCOUNT_INVITE)
   invite(
     @Req() req: AuthenticatedRequest,
     @Body() body: unknown,
@@ -127,7 +127,7 @@ export class AccountsController {
   @Post(API_ROUTES.ACCOUNTS.RESEND_INVITE)
   @HttpCode(HttpStatus.OK)
   @RequirePermission({ action: PermissionAction.create, subject: SUBJECT })
-  @Throttle(RATE_LIMIT_POLICIES.ACCOUNT_INVITE)
+  @Throttle(ACCESS_RATE_LIMIT_POLICIES.ACCOUNT_INVITE)
   resendInvite(
     @Req() req: AuthenticatedRequest,
     @Param(ID_PARAM) id: string,

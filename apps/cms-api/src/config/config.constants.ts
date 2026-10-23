@@ -53,6 +53,21 @@ export const MAX_PORT = 65_535;
 /** The only accepted value of ALLOW_LOGIN_RATE_LIMIT_OVERRIDE (T18b; also gates REFRESH_RATE_LIMIT_IP, T18c). */
 export const LOGIN_RATE_LIMIT_OVERRIDE_OPT_IN = 'smoke';
 
+/**
+ * Env keys that may replace one rate-limit rule's limit (T18b, T18c). Config
+ * names env keys only; a rule opts in with `limitOverrideEnvKey`. Refused in
+ * production unless ALLOW_LOGIN_RATE_LIMIT_OVERRIDE opts in, so a stray value
+ * can't weaken D7.
+ */
+export const RATE_LIMIT_OVERRIDE_ENV_KEYS = [
+  'LOGIN_RATE_LIMIT_IP',
+  'LOGIN_RATE_LIMIT_EMAIL',
+  'REFRESH_RATE_LIMIT_IP',
+] as const;
+
+export type RateLimitOverrideEnvKey =
+  (typeof RATE_LIMIT_OVERRIDE_ENV_KEYS)[number];
+
 /** Upper bound of the optional login rate-limit overrides (T18b). */
 export const MAX_RATE_LIMIT_OVERRIDE = 1_000_000;
 

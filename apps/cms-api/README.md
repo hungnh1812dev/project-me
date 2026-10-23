@@ -271,8 +271,10 @@ The readiness ping goes through the `DATABASE_HEALTH` token
 
 ### Rate limits (T10)
 
-Fixed windows, per resolved client IP and, for login, per email. Values live
-in `src/common/constants/limits.constants.ts` (`RATE_LIMIT_POLICIES`):
+Fixed windows, per resolved client IP and, for login, per email. Each module
+owns its policies in `src/modules/<module>/<module>.rate-limits.constants.ts`
+(identity, access, documents, media, reviewer); `src/common/constants/limits.constants.ts`
+holds only the mechanism (rule type, key sources, window lengths, store caps):
 
 | Policy                       | Limit                                                         |
 | ---------------------------- | ------------------------------------------------------------- |
@@ -298,10 +300,15 @@ in `src/common/constants/limits.constants.ts` (`RATE_LIMIT_POLICIES`):
   limit (30 per minute per IP). Same validation and the same production
   opt-in flag (`ALLOW_LOGIN_RATE_LIMIT_OVERRIDE=smoke`) as the login overrides;
   only `docker-compose.smoke.yml` sets it.
+- Limit overrides: a rule opts in with `limitOverrideEnvKey`; the key must be in
+  `RATE_LIMIT_OVERRIDE_ENV_KEYS` (`src/config/config.constants.ts`), which also
+  drives the env parsing and the production opt-in check. Identity's
+  `rateLimitOverrideBindings` lists the pairs. A rule name must be unique across
+  all modules (one shared counter store; an architecture spec checks it).
 - Key sources: `ip`, `email` (body.email, hashed) and `actor` (the signed-in
   account id; needs `JwtAuthGuard` before it, which a method-level
   `@Throttle` is; skipped when there is no signed-in account).
-- Apply with `@Throttle(RATE_LIMIT_POLICIES.X)` (`src/common/guards/throttle.guard.ts`),
+- Apply with `@Throttle(<MODULE>_RATE_LIMIT_POLICIES.X)` (`src/common/guards/throttle.guard.ts`),
   placed last so it runs before the route's other guards. Over the limit:
   `429 TOO_MANY_REQUESTS` in the unified error shape plus `Retry-After`
   (seconds). The body is the same whichever rule fired.
@@ -327,7 +334,7 @@ in `src/common/constants/limits.constants.ts` (`RATE_LIMIT_POLICIES`):
   counting and live counters are never evicted. A `Rate-limit store full`
   warning (refused count only, no IPs or emails) is logged at most once per
   `RATE_LIMIT_CAPACITY_WARN_INTERVAL_MS` (1 min). Change the cap in
-  `limits.constants.ts`.
+  `src/common/constants/limits.constants.ts`.
 
 ### Accounts and roles (T17, `src/modules/access`)
 

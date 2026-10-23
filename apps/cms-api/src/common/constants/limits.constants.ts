@@ -1,10 +1,13 @@
-export const MS_PER_SECOND = 1_000;
-const MS_PER_MINUTE = 60 * MS_PER_SECOND;
+import type { RateLimitOverrideEnvKey } from '../../config/config.constants';
 
-/** Length of the auth throttling windows decided for T10. */
-const FIFTEEN_MINUTES_MS = 15 * MS_PER_MINUTE;
-const ONE_MINUTE_MS = MS_PER_MINUTE;
-const ONE_HOUR_MS = 60 * MS_PER_MINUTE;
+export const MS_PER_SECOND = 1_000;
+export const MS_PER_MINUTE = 60 * MS_PER_SECOND;
+
+/** Window lengths shared by the modules' rate-limit policies. */
+export const FIFTEEN_MINUTES_MS = 15 * MS_PER_MINUTE;
+export const ONE_MINUTE_MS = MS_PER_MINUTE;
+export const ONE_HOUR_MS = 60 * MS_PER_MINUTE;
+export const TEN_MINUTES_MS = 10 * MS_PER_MINUTE;
 
 /** What a throttle rule counts per window. */
 export const RATE_LIMIT_KEY_SOURCES = {
@@ -35,208 +38,16 @@ export interface RateLimitRule {
   /** Requests allowed per window; the next one gets 429. */
   readonly limit: number;
   readonly windowMs: number;
+  /**
+   * Env key that may replace `limit` (T18b, T18c). Only the keys listed in
+   * `RATE_LIMIT_OVERRIDE_ENV_KEYS` are accepted; the config parses and guards
+   * them, the guard applies them.
+   */
+  readonly limitOverrideEnvKey?: RateLimitOverrideEnvKey;
 }
 
-/** Names of the rules whose limit `loadAppConfig` can override (T18b, T18c). */
-export const RATE_LIMIT_RULE_NAMES = {
-  LOGIN_IP: 'login:ip',
-  LOGIN_EMAIL: 'login:email',
-  REFRESH_IP: 'refresh:ip',
-} as const;
-
-/**
- * D7 / T10 user decision: fixed-window limits of the auth endpoints. The
- * rules of one policy are checked in order and the first exhausted rule
- * answers 429, so put the IP rule first.
- */
-export const RATE_LIMIT_POLICIES = {
-  LOGIN: [
-    {
-      name: RATE_LIMIT_RULE_NAMES.LOGIN_IP,
-      keySource: RATE_LIMIT_KEY_SOURCES.IP,
-      limit: 10,
-      windowMs: FIFTEEN_MINUTES_MS,
-    },
-    {
-      name: RATE_LIMIT_RULE_NAMES.LOGIN_EMAIL,
-      keySource: RATE_LIMIT_KEY_SOURCES.EMAIL,
-      limit: 5,
-      windowMs: FIFTEEN_MINUTES_MS,
-    },
-  ],
-  /**
-   * `POST /auth/password/request-otp`. The email rule makes the 6th request
-   * per email and hour a 429 whether the account exists or not (§12-9, no
-   * enumeration); OtpService also caps codes per account in the DB.
-   */
-  OTP_REQUEST: [
-    {
-      name: 'otp-request:ip',
-      keySource: RATE_LIMIT_KEY_SOURCES.IP,
-      limit: 5,
-      windowMs: FIFTEEN_MINUTES_MS,
-    },
-    {
-      name: 'otp-request:email',
-      keySource: RATE_LIMIT_KEY_SOURCES.EMAIL,
-      limit: 5,
-      windowMs: ONE_HOUR_MS,
-    },
-  ],
-  /** `POST /auth/password/reset` and `/set` (T12). Each code also allows 5 checks. */
-  PASSWORD_SUBMIT: [
-    {
-      name: 'password-submit:ip',
-      keySource: RATE_LIMIT_KEY_SOURCES.IP,
-      limit: 10,
-      windowMs: FIFTEEN_MINUTES_MS,
-    },
-  ],
-  /** `POST /auth/password/change` (T12): bounds current-password guessing. */
-  PASSWORD_CHANGE: [
-    {
-      name: 'password-change:ip',
-      keySource: RATE_LIMIT_KEY_SOURCES.IP,
-      limit: 5,
-      windowMs: FIFTEEN_MINUTES_MS,
-    },
-  ],
-  /** `POST /auth/2fa/verify`; each temp token also allows only 5 checks. */
-  TWO_FACTOR_VERIFY: [
-    {
-      name: '2fa-verify:ip',
-      keySource: RATE_LIMIT_KEY_SOURCES.IP,
-      limit: 10,
-      windowMs: FIFTEEN_MINUTES_MS,
-    },
-  ],
-  /**
-   * `POST /auth/2fa/email-challenge` and `/auth/2fa/email/send-code` (T13,
-   * one shared counter); OtpService also caps codes per account in the DB.
-   */
-  TWO_FACTOR_EMAIL_CHALLENGE: [
-    {
-      name: '2fa-email:ip',
-      keySource: RATE_LIMIT_KEY_SOURCES.IP,
-      limit: 5,
-      windowMs: FIFTEEN_MINUTES_MS,
-    },
-  ],
-  /**
-   * `POST /auth/2fa/totp/setup`, `/enable` and `/disable` (T13, one shared
-   * counter): enable and disable test the current password.
-   */
-  TWO_FACTOR_MANAGE: [
-    {
-      name: '2fa-manage:ip',
-      keySource: RATE_LIMIT_KEY_SOURCES.IP,
-      limit: 5,
-      windowMs: FIFTEEN_MINUTES_MS,
-    },
-  ],
-  /**
-   * `POST /accounts` and `POST /accounts/:id/invite/resend` (T17a, Q9): one
-   * shared counter per caller and per IP, so invite and resend can't be used
-   * to mail-bomb. In memory (one replica).
-   */
-  ACCOUNT_INVITE: [
-    {
-      name: 'account-invite:ip',
-      keySource: RATE_LIMIT_KEY_SOURCES.IP,
-      limit: 20,
-      windowMs: ONE_HOUR_MS,
-    },
-    {
-      name: 'account-invite:actor',
-      keySource: RATE_LIMIT_KEY_SOURCES.ACTOR,
-      limit: 10,
-      windowMs: ONE_HOUR_MS,
-    },
-  ],
-  /**
-   * Anonymous `GET /documents/...` (T20, user decision): 120 per minute per
-   * IP. Signed-in accounts and API tokens are not counted. In memory.
-   */
-  DOCUMENT_READ_ANONYMOUS: [
-    {
-      name: 'document-read:anonymous-ip',
-      keySource: RATE_LIMIT_KEY_SOURCES.ANONYMOUS_IP,
-      limit: 120,
-      windowMs: ONE_MINUTE_MS,
-    },
-  ],
-  /**
-   * `POST /media` (T27): uploads re-encode images and call the storage
-   * provider, so they are bounded per signed-in caller and per IP. In memory.
-   */
-  MEDIA_UPLOAD: [
-    {
-      name: 'media-upload:ip',
-      keySource: RATE_LIMIT_KEY_SOURCES.IP,
-      limit: 120,
-      windowMs: ONE_HOUR_MS,
-    },
-    {
-      name: 'media-upload:actor',
-      keySource: RATE_LIMIT_KEY_SOURCES.ACTOR,
-      limit: 60,
-      windowMs: ONE_HOUR_MS,
-    },
-  ],
-  /**
-   * `POST /setup/owner` (ADR 0005). The token has 256 bits, so this does not
-   * stop guessing; it bounds audit noise and Argon2 work per IP.
-   */
-  SETUP_SUBMIT: [
-    {
-      name: 'setup-submit:ip',
-      keySource: RATE_LIMIT_KEY_SOURCES.IP,
-      limit: 5,
-      windowMs: FIFTEEN_MINUTES_MS,
-    },
-  ],
-  /** `GET /setup/status` (ADR 0005): public, one small read. */
-  SETUP_STATUS: [
-    {
-      name: 'setup-status:ip',
-      keySource: RATE_LIMIT_KEY_SOURCES.IP,
-      limit: 30,
-      windowMs: ONE_MINUTE_MS,
-    },
-  ],
-  /** `GET /reviewer/status` (T31): public, one small read. In memory. */
-  REVIEWER_STATUS: [
-    {
-      name: 'reviewer-status:ip',
-      keySource: RATE_LIMIT_KEY_SOURCES.IP,
-      limit: 120,
-      windowMs: ONE_MINUTE_MS,
-    },
-  ],
-  /**
-   * `POST /reviewer/sessions` (T31): bounds Turnstile calls and body parsing
-   * per IP. The binding rule (1 session per IP per 10 min) lives in the DB.
-   */
-  REVIEWER_SESSION_ATTEMPTS: [
-    {
-      name: 'reviewer-session:ip',
-      keySource: RATE_LIMIT_KEY_SOURCES.IP,
-      limit: 20,
-      windowMs: 10 * MS_PER_MINUTE,
-    },
-  ],
-  REFRESH: [
-    {
-      name: RATE_LIMIT_RULE_NAMES.REFRESH_IP,
-      keySource: RATE_LIMIT_KEY_SOURCES.IP,
-      limit: 30,
-      windowMs: ONE_MINUTE_MS,
-    },
-  ],
-} as const satisfies Record<string, readonly RateLimitRule[]>;
-
-export type RateLimitPolicy =
-  (typeof RATE_LIMIT_POLICIES)[keyof typeof RATE_LIMIT_POLICIES];
+/** The rules a route is throttled by, checked in order; the IP rule goes first. */
+export type RateLimitPolicy = readonly RateLimitRule[];
 
 /** Expired counters are swept at most this often. */
 export const RATE_LIMIT_SWEEP_INTERVAL_MS = FIFTEEN_MINUTES_MS;

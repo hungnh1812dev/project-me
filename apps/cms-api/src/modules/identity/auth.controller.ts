@@ -24,7 +24,7 @@ import {
   REFRESH_COOKIE_OPTIONS,
   REFRESH_TOKEN_TTL_MS,
 } from './identity-auth.constants';
-import { RATE_LIMIT_POLICIES } from '../../common/constants/limits.constants';
+import { IDENTITY_RATE_LIMIT_POLICIES } from './identity.rate-limits.constants';
 import { type ClientMeta, clientMetaOf } from '../../common/http/client-meta';
 import { Throttle } from '../../common/guards/throttle.guard';
 import { AccessPolicyService } from '../access';
@@ -81,7 +81,7 @@ export class AuthController {
   @Post(API_ROUTES.AUTH.LOGIN)
   @HttpCode(HttpStatus.OK)
   @Header(NO_STORE_HEADER.NAME, NO_STORE_HEADER.VALUE)
-  @Throttle(RATE_LIMIT_POLICIES.LOGIN)
+  @Throttle(IDENTITY_RATE_LIMIT_POLICIES.LOGIN)
   async login(
     @Body() body: unknown,
     @Req() req: Request,
@@ -111,7 +111,7 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @Header(NO_STORE_HEADER.NAME, NO_STORE_HEADER.VALUE)
   @UseGuards(AllowedOriginGuard)
-  @Throttle(RATE_LIMIT_POLICIES.REFRESH)
+  @Throttle(IDENTITY_RATE_LIMIT_POLICIES.REFRESH)
   async refresh(
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,

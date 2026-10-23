@@ -20,7 +20,7 @@ import {
   AUTH_ERROR_CODES,
   AUTH_ERROR_MESSAGES,
 } from './identity-auth.constants';
-import { RATE_LIMIT_POLICIES } from '../../common/constants/limits.constants';
+import { IDENTITY_RATE_LIMIT_POLICIES } from './identity.rate-limits.constants';
 import { Throttle } from '../../common/guards/throttle.guard';
 import { type AccessTokenResponse, setRefreshCookie } from './auth.controller';
 import { clientMetaOf } from '../../common/http/client-meta';
@@ -61,7 +61,7 @@ export class TwoFactorController {
   @HttpCode(HttpStatus.OK)
   @Header(NO_STORE_HEADER.NAME, NO_STORE_HEADER.VALUE)
   @UseGuards(JwtAuthGuard)
-  @Throttle(RATE_LIMIT_POLICIES.TWO_FACTOR_MANAGE)
+  @Throttle(IDENTITY_RATE_LIMIT_POLICIES.TWO_FACTOR_MANAGE)
   setupTotp(@Req() req: AuthenticatedRequest): Promise<TotpSetupResponse> {
     requireAccountActor(req.user.actor);
     return this.twoFactor.setupTotp(req.user.accountId);
@@ -70,7 +70,7 @@ export class TwoFactorController {
   @Post(API_ROUTES.TWO_FACTOR.ENABLE)
   @HttpCode(HttpStatus.NO_CONTENT)
   @UseGuards(JwtAuthGuard)
-  @Throttle(RATE_LIMIT_POLICIES.TWO_FACTOR_MANAGE)
+  @Throttle(IDENTITY_RATE_LIMIT_POLICIES.TWO_FACTOR_MANAGE)
   enable(
     @Req() req: AuthenticatedRequest,
     @Body() body: unknown,
@@ -86,7 +86,7 @@ export class TwoFactorController {
   @Post(API_ROUTES.TWO_FACTOR.DISABLE)
   @HttpCode(HttpStatus.NO_CONTENT)
   @UseGuards(JwtAuthGuard)
-  @Throttle(RATE_LIMIT_POLICIES.TWO_FACTOR_MANAGE)
+  @Throttle(IDENTITY_RATE_LIMIT_POLICIES.TWO_FACTOR_MANAGE)
   disable(
     @Req() req: AuthenticatedRequest,
     @Body() body: unknown,
@@ -102,7 +102,7 @@ export class TwoFactorController {
   @Post(API_ROUTES.TWO_FACTOR.EMAIL_SEND_CODE)
   @HttpCode(HttpStatus.ACCEPTED)
   @UseGuards(JwtAuthGuard)
-  @Throttle(RATE_LIMIT_POLICIES.TWO_FACTOR_EMAIL_CHALLENGE)
+  @Throttle(IDENTITY_RATE_LIMIT_POLICIES.TWO_FACTOR_EMAIL_CHALLENGE)
   sendEmailCode(@Req() req: AuthenticatedRequest): Promise<void> {
     requireAccountActor(req.user.actor);
     return this.twoFactor.sendEmailCode(
@@ -115,7 +115,7 @@ export class TwoFactorController {
   @Post(API_ROUTES.TWO_FACTOR.VERIFY)
   @HttpCode(HttpStatus.OK)
   @Header(NO_STORE_HEADER.NAME, NO_STORE_HEADER.VALUE)
-  @Throttle(RATE_LIMIT_POLICIES.TWO_FACTOR_VERIFY)
+  @Throttle(IDENTITY_RATE_LIMIT_POLICIES.TWO_FACTOR_VERIFY)
   async verify(
     @Body() body: unknown,
     @Req() req: Request,
@@ -132,7 +132,7 @@ export class TwoFactorController {
   /** 202 with an empty body; a TOTP account gets no email. */
   @Post(API_ROUTES.TWO_FACTOR.EMAIL_CHALLENGE)
   @HttpCode(HttpStatus.ACCEPTED)
-  @Throttle(RATE_LIMIT_POLICIES.TWO_FACTOR_EMAIL_CHALLENGE)
+  @Throttle(IDENTITY_RATE_LIMIT_POLICIES.TWO_FACTOR_EMAIL_CHALLENGE)
   emailChallenge(@Body() body: unknown, @Req() req: Request): Promise<void> {
     return this.twoFactor.emailChallenge(
       parseBody(emailChallengeSchema, body).tempToken,

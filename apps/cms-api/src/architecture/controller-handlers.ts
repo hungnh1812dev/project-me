@@ -7,6 +7,8 @@ import { PERMISSION_METADATA_KEY } from '../modules/access/access.constants';
 import type { PermissionRequirement } from '../modules/access/permission.decorator';
 import { PermissionGuard } from '../modules/access/permission.guard';
 import { DocumentAuthGuard } from '../modules/access/document-auth.guard';
+import { RATE_LIMIT_POLICY_METADATA } from '../common/guards/throttle.guard';
+import type { RateLimitPolicy } from '../common/constants/limits.constants';
 import { JwtAuthGuard } from '../modules/identity/jwt.strategy';
 import type { PublicHandlerReason } from './public-handlers.constants';
 
@@ -31,6 +33,8 @@ export interface DiscoveredHandler {
   requirement: PermissionRequirement | undefined;
   /** Class guards first, then method guards: the order Nest runs them. */
   guards: GuardClass[];
+  /** Rules of the method-level `@Throttle`; undefined when not throttled. */
+  throttlePolicy: RateLimitPolicy | undefined;
 }
 
 /** The guard each non-public reason promises (see PUBLIC_HANDLERS). */
@@ -91,6 +95,10 @@ export function handlersOf(controller: ControllerClass): DiscoveredHandler[] {
         PermissionRequirement | undefined
       >(PERMISSION_METADATA_KEY, [method as HandlerFunction, controller]),
       guards: [...guardsDeclaredOn(controller), ...guardsDeclaredOn(method)],
+      throttlePolicy: Reflect.getMetadata(
+        RATE_LIMIT_POLICY_METADATA,
+        method,
+      ) as RateLimitPolicy | undefined,
     };
   });
 }

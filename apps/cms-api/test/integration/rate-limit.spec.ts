@@ -8,9 +8,9 @@ import { ERROR_CODES } from '../../src/common/constants/error.constants';
 import {
   MS_PER_SECOND,
   RATE_LIMIT_MESSAGE,
-  RATE_LIMIT_POLICIES,
   RATE_LIMIT_SWEEP_INTERVAL_MS,
 } from '../../src/common/constants/limits.constants';
+import { IDENTITY_RATE_LIMIT_POLICIES } from '../../src/modules/identity/identity.rate-limits.constants';
 import {
   openPrisma,
   type PrismaHandle,
@@ -36,8 +36,8 @@ const WRONG_PASSWORD = 'incorrect horse battery staple';
 const CF_HEADER = 'cf-connecting-ip';
 const START = 1_700_000_000_000;
 
-const [LOGIN_IP, LOGIN_EMAIL] = RATE_LIMIT_POLICIES.LOGIN;
-const [REFRESH_IP] = RATE_LIMIT_POLICIES.REFRESH;
+const [LOGIN_IP, LOGIN_EMAIL] = IDENTITY_RATE_LIMIT_POLICIES.LOGIN;
+const [REFRESH_IP] = IDENTITY_RATE_LIMIT_POLICIES.REFRESH;
 
 let ipCounter = 0;
 const OCTET_RANGE = 250;

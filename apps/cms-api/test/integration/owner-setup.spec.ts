@@ -2,7 +2,7 @@ import type { NestExpressApplication } from '@nestjs/platform-express';
 import type { StartedPostgreSqlContainer } from '@testcontainers/postgresql';
 import request from 'supertest';
 
-import { RATE_LIMIT_POLICIES } from '../../src/common/constants/limits.constants';
+import { IDENTITY_RATE_LIMIT_POLICIES } from '../../src/modules/identity/identity.rate-limits.constants';
 import {
   openPrisma,
   type PrismaHandle,
@@ -35,8 +35,8 @@ const TOKEN = 'integration-setup-token-0123456789abcdef';
 const PASSWORD = 'correct horse battery staple';
 const CONCURRENT_SUBMITS = 5;
 const OCTET_RANGE = 250;
-const SUBMIT_LIMIT = RATE_LIMIT_POLICIES.SETUP_SUBMIT[0].limit;
-const STATUS_LIMIT = RATE_LIMIT_POLICIES.SETUP_STATUS[0].limit;
+const SUBMIT_LIMIT = IDENTITY_RATE_LIMIT_POLICIES.SETUP_SUBMIT[0].limit;
+const STATUS_LIMIT = IDENTITY_RATE_LIMIT_POLICIES.SETUP_STATUS[0].limit;
 
 let ipCounter = 0;
 /** A fresh client address per call, so throttles never leak between tests. */
