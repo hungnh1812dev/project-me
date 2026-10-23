@@ -586,11 +586,12 @@ Order of every write: allowlist (D4: resent `"***"` dropped, `FIELD_UNKNOWN` / `
 
 ### Security audit (T17, D15)
 
-`SecurityAuditService` (`src/modules/access/security-audit.service.ts`)
+`SecurityAuditService` (`src/modules/security-audit/security-audit.service.ts`,
+provided only by `SecurityAuditModule`)
 writes one `audit_logs` row per security event, always on, in the same
 transaction as the change it records. Events with no write of their own
 (failed sign-in, failed re-auth) insert a standalone row. Action names live
-in `security-audit.constants.ts` (`<domain>.<event>`): `auth.login_succeeded`
+in `src/modules/security-audit/security-audit.constants.ts` (`<domain>.<event>`): `auth.login_succeeded`
 / `login_failed` / `logout` / `refresh_reuse_detected` / `otp_issued`,
 `password.reset` / `set` / `changed` / `change_failed`, `two_factor.enabled`
 / `disabled` / `verify_failed` / `manage_failed` / `reset_by_operator`,

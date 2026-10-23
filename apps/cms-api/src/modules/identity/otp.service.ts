@@ -12,12 +12,12 @@ import { type IAppConfig } from '../../config/app-config';
 import { APP_CONFIG } from '../../config/config.constants';
 import { type OtpPurpose, type Prisma } from '../../generated/prisma/client';
 import { PrismaService } from '../../infrastructure/database/prisma.service';
-import { AUDIT_ACTIONS } from '../access/security-audit.constants';
+import { AUDIT_ACTIONS } from '../security-audit/security-audit.constants';
 import {
   type AuditActor,
   SecurityAuditService,
   selfActor,
-} from '../access/security-audit.service';
+} from '../security-audit/security-audit.service';
 import { OTP } from './identity.constants';
 
 type Tx = Prisma.TransactionClient;

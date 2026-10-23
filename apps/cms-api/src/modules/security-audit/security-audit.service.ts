@@ -9,8 +9,8 @@ import {
   type Prisma,
 } from '../../generated/prisma/client';
 import { PrismaService } from '../../infrastructure/database/prisma.service';
-import type { SystemSubject } from './access.constants';
-import type { ActorContext } from './actor-context';
+import type { SystemSubject } from '../access/access.constants';
+import type { ActorContext } from '../access/actor-context';
 import { AUDIT_EMAIL_HMAC, type AuditAction } from './security-audit.constants';
 
 /** Who did it. `accountId` null: a sign-in attempt for an unknown email. */

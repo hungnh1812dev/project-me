@@ -4,6 +4,7 @@ import { PassportModule } from '@nestjs/passport';
 import { DatabaseModule } from '../../infrastructure/database/database.module';
 import { MailModule } from '../../infrastructure/mail/mail.module';
 import { AccessModule } from '../access/access.module';
+import { SecurityAuditModule } from '../security-audit/security-audit.module';
 import { AccessTokenService } from './access-token.service';
 import { AllowedOriginGuard } from './allowed-origin.guard';
 import { AuthController } from './auth.controller';
@@ -24,7 +25,13 @@ import { TwoFactorService } from './two-factor.service';
 
 /** Login, JWT, refresh rotation (T09); OTP + password lifecycle (T12); 2FA (T13). */
 @Module({
-  imports: [AccessModule, DatabaseModule, MailModule, PassportModule],
+  imports: [
+    AccessModule,
+    DatabaseModule,
+    MailModule,
+    PassportModule,
+    SecurityAuditModule,
+  ],
   controllers: [
     AuthController,
     OwnerSetupController,

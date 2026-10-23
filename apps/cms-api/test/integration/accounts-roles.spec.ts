@@ -20,7 +20,7 @@ import {
   AUDIT_ACTIONS,
   type AuditAction,
   LOGIN_FAILURE_REASONS,
-} from '../../src/modules/access/security-audit.constants';
+} from '../../src/modules/security-audit/security-audit.constants';
 import { ContentRegistryProvider } from '../../src/modules/content-engine/content-engine.module';
 import { RegistryService } from '../../src/modules/content-engine/registry.service';
 import { hashPassword } from '../../src/modules/identity/password-hasher';

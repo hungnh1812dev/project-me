@@ -31,11 +31,11 @@ import {
   AUDIT_ACTIONS,
   REAUTH_FAILURE_REASONS,
   TWO_FACTOR_OPERATIONS,
-} from '../access/security-audit.constants';
+} from '../security-audit/security-audit.constants';
 import {
   SecurityAuditService,
   selfActor,
-} from '../access/security-audit.service';
+} from '../security-audit/security-audit.service';
 import {
   AccessTokenService,
   type TwoFactorTempTokenClaims,

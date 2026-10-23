@@ -10,11 +10,11 @@ import { PrismaService } from '../../infrastructure/database/prisma.service';
 import { MEDIA_SUBJECT } from '../access/access.constants';
 import { AccessPolicyService } from '../access/access-policy.service';
 import type { AccountActor } from '../access/rank-rules';
-import { AUDIT_ACTIONS } from '../access/security-audit.constants';
+import { AUDIT_ACTIONS } from '../security-audit/security-audit.constants';
 import {
   auditActorOf,
   SecurityAuditService,
-} from '../access/security-audit.service';
+} from '../security-audit/security-audit.service';
 import { ContentDbProvider } from '../content-engine/content-database';
 import { ContentRegistryProvider } from '../content-engine/content-engine.module';
 import type { ClientMeta } from '../identity/refresh-token.service';

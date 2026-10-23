@@ -3,6 +3,7 @@ import { Module } from '@nestjs/common';
 import { DatabaseModule } from '../../infrastructure/database/database.module';
 import { MailModule } from '../../infrastructure/mail/mail.module';
 import { IdentityModule } from '../identity/identity.module';
+import { SecurityAuditModule } from '../security-audit/security-audit.module';
 import { AccessModule } from './access.module';
 import { AccountsController } from './accounts.controller';
 import { AccountsService } from './accounts.service';
@@ -17,7 +18,13 @@ import { RolesService } from './roles.service';
  * AccessModule for the version cache and the audit.
  */
 @Module({
-  imports: [AccessModule, DatabaseModule, IdentityModule, MailModule],
+  imports: [
+    AccessModule,
+    DatabaseModule,
+    IdentityModule,
+    MailModule,
+    SecurityAuditModule,
+  ],
   controllers: [AccountsController, ApiTokensController, RolesController],
   providers: [AccountsService, ApiTokensService, RolesService],
 })

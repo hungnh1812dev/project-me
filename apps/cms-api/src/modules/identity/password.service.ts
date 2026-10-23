@@ -28,11 +28,11 @@ import {
   AUDIT_ACTIONS,
   type AuditAction,
   REAUTH_FAILURE_REASONS,
-} from '../access/security-audit.constants';
+} from '../security-audit/security-audit.constants';
 import {
   SecurityAuditService,
   selfActor,
-} from '../access/security-audit.service';
+} from '../security-audit/security-audit.service';
 import { VersionCache } from '../access/version-cache';
 import { OTP } from './identity.constants';
 import { buildOtpMail } from './otp-mail';

@@ -16,7 +16,7 @@ import {
   type TurnstileOutcome,
 } from '../../src/infrastructure/turnstile/turnstile.port';
 import { seedRolePermissions } from '../../src/modules/access/role-permissions.seed';
-import { AUDIT_ACTIONS } from '../../src/modules/access/security-audit.constants';
+import { AUDIT_ACTIONS } from '../../src/modules/security-audit/security-audit.constants';
 import { createContentDb } from '../../src/modules/content-engine/content-database';
 import { ContentRegistryProvider } from '../../src/modules/content-engine/content-engine.module';
 import { ContentRepository } from '../../src/modules/content-engine/content.repository';

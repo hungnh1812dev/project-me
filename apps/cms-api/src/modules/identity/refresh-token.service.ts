@@ -11,11 +11,11 @@ import {
 } from '../../common/constants/auth.constants';
 import { type Prisma } from '../../generated/prisma/client';
 import { PrismaService } from '../../infrastructure/database/prisma.service';
-import { AUDIT_ACTIONS } from '../access/security-audit.constants';
+import { AUDIT_ACTIONS } from '../security-audit/security-audit.constants';
 import {
   SecurityAuditService,
   selfActor,
-} from '../access/security-audit.service';
+} from '../security-audit/security-audit.service';
 import { VersionCache } from '../access/version-cache';
 
 /** Where a refresh token was issued from (stored for session listings). */

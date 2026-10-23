@@ -5,8 +5,11 @@ import {
   AUDIT_ACTIONS,
   OWNER_CREATED_CHANNELS,
   type OwnerCreatedChannel,
-} from '../access/security-audit.constants';
-import { selfActor, writeAuditLog } from '../access/security-audit.service';
+} from '../security-audit/security-audit.constants';
+import {
+  selfActor,
+  writeAuditLog,
+} from '../security-audit/security-audit.service';
 import {
   OWNER_BOOTSTRAP_ERRORS,
   OWNER_BOOTSTRAP_LOCK_KEY,

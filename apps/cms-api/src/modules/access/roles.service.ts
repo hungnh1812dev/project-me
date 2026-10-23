@@ -28,12 +28,15 @@ import {
   outranks,
 } from './rank-rules';
 import { RolePermissionsService } from './role-permissions.service';
-import { AUDIT_ACTIONS, type AuditAction } from './security-audit.constants';
+import {
+  AUDIT_ACTIONS,
+  type AuditAction,
+} from '../security-audit/security-audit.constants';
 import {
   type AuditMetadata,
   auditActorOf,
   SecurityAuditService,
-} from './security-audit.service';
+} from '../security-audit/security-audit.service';
 import { VersionCache } from './version-cache';
 
 type Tx = Prisma.TransactionClient;

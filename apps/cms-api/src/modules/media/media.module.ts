@@ -5,6 +5,7 @@ import { MediaStorageModule } from '../../infrastructure/media/media-storage.mod
 import { AccessModule } from '../access/access.module';
 import { ContentEngineModule } from '../content-engine/content-engine.module';
 import { IdentityModule } from '../identity/identity.module';
+import { SecurityAuditModule } from '../security-audit/security-audit.module';
 import { MediaController } from './media.controller';
 import { MediaDeleteService } from './media-delete.service';
 import { MediaRefsService } from './media-refs.service';
@@ -21,6 +22,7 @@ import { UploadPipeline } from './upload.pipeline';
     DatabaseModule,
     IdentityModule,
     MediaStorageModule,
+    SecurityAuditModule,
   ],
   controllers: [MediaController],
   providers: [
