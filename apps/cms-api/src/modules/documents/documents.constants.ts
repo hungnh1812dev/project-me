@@ -46,6 +46,7 @@ export const DOCUMENT_QUERY_KEYS = {
   PAGE: 'page',
   PAGE_SIZE: 'pageSize',
   SORT: 'sort',
+  FILTER: 'filter',
 } as const;
 
 /** `filter[field]=v` (same as `eq`) and `filter[field][op]=v`. */
@@ -94,6 +95,17 @@ export const SORT_SEPARATOR = ',';
 export const SORT_DEFAULT: readonly { path: string; direction: 'desc' }[] = [
   { path: 'updatedAt', direction: 'desc' },
 ];
+
+/** Why a list query was refused; shared by REST and GraphQL. */
+export const LIST_QUERY_MESSAGES = {
+  FILTER_TOO_MANY: 'Too many filter entries.',
+  FILTER_BAD_PATH: 'Malformed filter parameter.',
+  FILTER_BAD_VALUE: 'Invalid filter value.',
+  SORT_BAD_KEY: 'Invalid sort key.',
+  SORT_DUPLICATE_OR_TOO_MANY: 'Too many or repeated sort keys.',
+  PAGE_OUT_OF_RANGE: 'page is out of range.',
+  PAGE_SIZE_OUT_OF_RANGE: 'pageSize is out of range.',
+} as const;
 
 export const DOCUMENT_QUERY_LIMITS = {
   MAX_FILTERS: 10,

@@ -1,3 +1,4 @@
+export { parseListQuery } from './dto/list-documents.query';
 export { bulkBodyLimit } from './bulk-body-limit.middleware';
 export type {
   FilterClause,
@@ -21,4 +22,5 @@ export {
   DocumentsQueryService,
   type DocumentPage,
 } from './documents.query.service';
+export { normalizeListQuery } from './list-query.normalizer';
 export { queryKindOfField } from './queryable-fields';

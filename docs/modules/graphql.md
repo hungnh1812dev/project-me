@@ -381,9 +381,10 @@ Architecture test (like `record-serializer.architecture.spec.ts`): files in
   is the full owner schema, for tooling.
 - Resolvers are attached to the built schema (`attachDocumentResolvers`)
   through `extensions.abyss`; the schema is built once from the registry in
-  `GraphqlSchemaProvider`. `toListQuery` (`list-arguments.ts`) holds the
-  `page` / `pageSize` / sort / filter range checks, since REST keeps them in
-  its query parser, not in the service.
+  `GraphqlSchemaProvider`. `toListQuery` (`list-arguments.ts`) maps the
+  arguments to the REST shapes and calls `normalizeListQuery` (documents),
+  the same range check `parseListQuery` runs for REST. `QueryGuard` stays in
+  the service.
 - A not-found item (`DOCUMENT_NOT_FOUND`) is `null`; any other service error
   stays an error on that root field. Execution-time `INTERNAL_ERROR` (the REST
   code for 5xx; the design text's `INTERNAL_SERVER_ERROR` is this) is generic.

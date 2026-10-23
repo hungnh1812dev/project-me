@@ -129,11 +129,6 @@ export const GRAPHQL_MESSAGES = {
   /** Same text graphql-js gives an unknown field; the visibility rule reuses it. */
   UNKNOWN_QUERY_FIELD: (field: string) =>
     `Cannot query field "${field}" on type "${QUERY_TYPE_NAME}".`,
-  FILTER_TOO_MANY: 'Too many filter entries.',
-  FILTER_BAD_VALUE: 'Invalid filter value.',
-  SORT_DUPLICATE_OR_TOO_MANY: 'Too many or repeated sort keys.',
-  PAGE_OUT_OF_RANGE: 'page is out of range.',
-  PAGE_SIZE_OUT_OF_RANGE: 'pageSize is out of range.',
   SERVER_ERROR: 'Internal server error',
 } as const;
 

@@ -2,10 +2,10 @@ import { z } from 'zod';
 
 import {
   invalidRequest,
+  PAGINATION,
   parseRequest,
   queryInt,
 } from '../../../common/http/request-parsing';
-import { PAGINATION } from '../../../common/http/request-parsing';
 import { CONTENT_STATUSES } from '../../content-engine';
 import {
   DEFAULT_DOCUMENT_STATUS,
@@ -16,10 +16,11 @@ import {
   FILTER_KEY_PREFIX,
   FILTER_OPERATORS,
   type FilterOperator,
-  SORT_DEFAULT,
+  LIST_QUERY_MESSAGES,
   SORT_DESCENDING_PREFIX,
   SORT_SEPARATOR,
 } from '../documents.constants';
+import { normalizeListQuery } from '../list-query.normalizer';
 
 type ContentStatus = (typeof CONTENT_STATUSES)[number];
 
@@ -45,9 +46,6 @@ export interface ListDocumentsQuery {
   filters: FilterClause[];
 }
 
-const FIELD_PATH_PATTERN =
-  /^[A-Za-z][A-Za-z0-9_]*(?:\.[A-Za-z][A-Za-z0-9_]*)*$/;
-
 const paramsSchema = z.strictObject({
   [DOCUMENT_QUERY_KEYS.STATUS]: z
     .enum(CONTENT_STATUSES)
@@ -55,12 +53,12 @@ const paramsSchema = z.strictObject({
     .transform((value): ContentStatus => value ?? DEFAULT_DOCUMENT_STATUS),
   [DOCUMENT_QUERY_KEYS.PAGE]: queryInt(
     PAGINATION.FIRST_PAGE,
-    DOCUMENT_QUERY_LIMITS.MAX_PAGE,
+    Number.MAX_SAFE_INTEGER,
     PAGINATION.FIRST_PAGE,
   ),
   [DOCUMENT_QUERY_KEYS.PAGE_SIZE]: queryInt(
     1,
-    PAGINATION.MAX_PAGE_SIZE,
+    Number.MAX_SAFE_INTEGER,
     PAGINATION.DEFAULT_PAGE_SIZE,
   ),
   [DOCUMENT_QUERY_KEYS.SORT]: z
@@ -73,54 +71,27 @@ const isOperator = (op: string): op is FilterOperator =>
   (FILTER_OPERATORS as readonly string[]).includes(op);
 
 function badFilter(message: string): never {
-  throw invalidRequest([{ path: ['filter'], message }]);
+  throw invalidRequest([{ path: [DOCUMENT_QUERY_KEYS.FILTER], message }]);
 }
 
 function parseSort(raw: string | undefined): SortKey[] {
-  if (raw === undefined) return SORT_DEFAULT.map((key) => ({ ...key }));
-  const keys = raw.split(SORT_SEPARATOR).map((part): SortKey => {
+  if (raw === undefined) return [];
+  return raw.split(SORT_SEPARATOR).map((part): SortKey => {
     const descending = part.startsWith(SORT_DESCENDING_PREFIX);
     const path = descending ? part.slice(SORT_DESCENDING_PREFIX.length) : part;
-    if (!FIELD_PATH_PATTERN.test(path)) {
-      throw invalidRequest([
-        { path: [DOCUMENT_QUERY_KEYS.SORT], message: 'Invalid sort key.' },
-      ]);
-    }
     return { path, direction: descending ? 'desc' : 'asc' };
   });
-  if (
-    keys.length > DOCUMENT_QUERY_LIMITS.MAX_SORT_KEYS ||
-    new Set(keys.map((key) => key.path)).size !== keys.length
-  ) {
-    throw invalidRequest([
-      {
-        path: [DOCUMENT_QUERY_KEYS.SORT],
-        message: `At most ${DOCUMENT_QUERY_LIMITS.MAX_SORT_KEYS} different sort keys.`,
-      },
-    ]);
-  }
-  return keys;
 }
 
 function parseFilter(key: string, raw: unknown): FilterClause {
   const match = FILTER_KEY_PATTERN.exec(key);
   const path = match?.[1];
   const op = match?.[2] ?? FILTER_DEFAULT_OPERATOR;
-  if (path === undefined || !FIELD_PATH_PATTERN.test(path)) {
-    return badFilter('Malformed filter parameter.');
-  }
+  if (path === undefined) return badFilter(LIST_QUERY_MESSAGES.FILTER_BAD_PATH);
   if (!isOperator(op)) return badFilter('Unknown filter operator.');
   const values = Array.isArray(raw) ? raw : [raw];
-  if (
-    !values.every((value): value is string => typeof value === 'string') ||
-    values.length === 0 ||
-    (op !== 'in' && values.length !== 1) ||
-    values.length > DOCUMENT_QUERY_LIMITS.MAX_IN_VALUES ||
-    values.some(
-      (value) => value.length > DOCUMENT_QUERY_LIMITS.MAX_VALUE_LENGTH,
-    )
-  ) {
-    return badFilter('Invalid filter value.');
+  if (!values.every((value): value is string => typeof value === 'string')) {
+    return badFilter(LIST_QUERY_MESSAGES.FILTER_BAD_VALUE);
   }
   return { path, op, values };
 }
@@ -141,14 +112,11 @@ export function parseListQuery(query: unknown): ListDocumentsQuery {
     entries.filter(([key]) => !key.startsWith(FILTER_KEY_PREFIX)),
   );
   const params = parseRequest(paramsSchema, rest);
-  if (filterEntries.length > DOCUMENT_QUERY_LIMITS.MAX_FILTERS) {
-    badFilter(`At most ${DOCUMENT_QUERY_LIMITS.MAX_FILTERS} filters.`);
-  }
-  return {
+  return normalizeListQuery({
     status: params.status,
     page: params.page,
     pageSize: params.pageSize,
     sort: parseSort(params.sort),
     filters: filterEntries.map(([key, value]) => parseFilter(key, value)),
-  };
+  });
 }

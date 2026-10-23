@@ -1,7 +1,7 @@
 import { BadRequestException } from '@nestjs/common';
 
 import { PAGINATION } from '../../common/http/request-parsing';
-import { DOCUMENT_QUERY_LIMITS } from '../documents';
+import { DOCUMENT_QUERY_LIMITS, parseListQuery } from '../documents';
 import { type ListArguments, toListQuery } from './list-arguments';
 
 const base: ListArguments = {
@@ -127,5 +127,74 @@ describe('toListQuery', () => {
       return undefined;
     })();
     expect(JSON.stringify(error?.getResponse())).not.toContain('xxx');
+  });
+});
+
+describe('REST and GraphQL list limits', () => {
+  const longValue = 'x'.repeat(DOCUMENT_QUERY_LIMITS.MAX_VALUE_LENGTH + 1);
+  const keysOf = (n: number) => ['a', 'b', 'c', 'd'].slice(0, n).join(',');
+  const manyFilters = DOCUMENT_QUERY_LIMITS.MAX_FILTERS + 1;
+  const manyValues = DOCUMENT_QUERY_LIMITS.MAX_IN_VALUES + 1;
+
+  const cases: [string, Record<string, unknown>, Partial<ListArguments>][] = [
+    ['page 0', { page: '0' }, { page: 0 }],
+    [
+      'page past the maximum',
+      { page: String(DOCUMENT_QUERY_LIMITS.MAX_PAGE + 1) },
+      { page: DOCUMENT_QUERY_LIMITS.MAX_PAGE + 1 },
+    ],
+    ['pageSize 0', { pageSize: '0' }, { pageSize: 0 }],
+    [
+      'pageSize past the maximum',
+      { pageSize: String(PAGINATION.MAX_PAGE_SIZE + 1) },
+      { pageSize: PAGINATION.MAX_PAGE_SIZE + 1 },
+    ],
+    [
+      'too many sort keys',
+      { sort: keysOf(4) },
+      {
+        sort: keysOf(4)
+          .split(',')
+          .map((field) => ({ field })),
+      },
+    ],
+    [
+      'a repeated sort key',
+      { sort: 'a,a' },
+      { sort: [{ field: 'a' }, { field: 'a' }] },
+    ],
+    [
+      'too many filters',
+      Object.fromEntries(
+        Array.from({ length: manyFilters }, (_, i) => [`filter[f${i}]`, 'x']),
+      ),
+      {
+        filter: Object.fromEntries(
+          Array.from({ length: manyFilters }, (_, i) => [`f${i}`, { eq: 'x' }]),
+        ),
+      },
+    ],
+    [
+      'too many in values',
+      { 'filter[t][in]': Array.from({ length: manyValues }, () => 'x') },
+      { filter: { t: { in: Array.from({ length: manyValues }, () => 'x') } } },
+    ],
+    [
+      'an overlong value',
+      { 'filter[t]': longValue },
+      { filter: { t: { eq: longValue } } },
+    ],
+    [
+      'an empty in list',
+      { 'filter[t][in]': [] },
+      { filter: { t: { in: [] } } },
+    ],
+  ];
+
+  it.each(cases)('both reject %s', (_name, restQuery, graphqlOverride) => {
+    expect(() => parseListQuery(restQuery)).toThrow(BadRequestException);
+    expect(() => toListQuery({ ...base, ...graphqlOverride })).toThrow(
+      BadRequestException,
+    );
   });
 });
