@@ -4,13 +4,12 @@ import { z } from 'zod';
 import {
   parseDate,
   parseDatetime,
+  fieldTypeOf,
   parseUuid,
   type FieldValueKind,
-  type ScalarFieldType,
 } from '../content-engine';
 import {
   ACCESS_ERROR_CODES,
-  CONDITION_FIELD_TYPES,
   CONDITION_LIMITS,
   CONDITION_OPERATORS,
   CONDITION_SYSTEM_FIELDS,
@@ -101,31 +100,8 @@ const conditionSetSchema = z.strictObject({
 });
 
 /** Content field type -> comparison kind; `undefined` = not usable in a condition. */
-export function conditionKindOf(
-  type: ScalarFieldType,
-): ConditionValueKind | undefined {
-  if (!(CONDITION_FIELD_TYPES as readonly string[]).includes(type)) {
-    return undefined;
-  }
-  switch (type) {
-    case 'string':
-    case 'text':
-    case 'richtext':
-      return 'string';
-    case 'integer':
-    case 'media':
-      return 'integer';
-    case 'decimal':
-      return 'decimal';
-    case 'boolean':
-      return 'boolean';
-    case 'date':
-      return 'date';
-    case 'datetime':
-      return 'datetime';
-    default:
-      return undefined;
-  }
+export function conditionKindOf(type: string): ConditionValueKind | undefined {
+  return fieldTypeOf(type)?.conditionKind ?? undefined;
 }
 
 /** The root system columns every subject's conditions may use (decision T14). */

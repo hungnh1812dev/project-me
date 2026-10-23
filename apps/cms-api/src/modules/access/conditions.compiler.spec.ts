@@ -12,6 +12,7 @@ import { testCatalog } from '../../../test/fixtures/access.fixture';
 import { ACCESS_ERROR_CODES, CONDITION_LIMITS } from './access.constants';
 import {
   compileConditions,
+  conditionKindOf,
   type ConditionActor,
   InvalidConditionError,
   validateConditions,
@@ -307,4 +308,23 @@ describe('compileConditions with an actor without id', () => {
       parameters: [null],
     });
   });
+});
+
+describe('conditionKindOf', () => {
+  it.each([
+    ['string', 'string'],
+    ['richtext', 'string'],
+    ['integer', 'integer'],
+    ['media', 'integer'],
+    ['datetime', 'datetime'],
+  ])('maps %s to %s', (type, kind) => {
+    expect(conditionKindOf(type)).toBe(kind);
+  });
+
+  it.each(['json', 'component', 'constructor', 'nope'])(
+    'refuses %s',
+    (type) => {
+      expect(conditionKindOf(type)).toBeUndefined();
+    },
+  );
 });

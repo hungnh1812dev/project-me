@@ -1,8 +1,5 @@
 import { PermissionAction } from '../../generated/prisma/client';
-import {
-  type ROOT_SYSTEM_COLUMNS,
-  SCALAR_FIELD_TYPES,
-} from '../content-engine';
+import { type ROOT_SYSTEM_COLUMNS } from '../content-engine';
 import type { ContentDocument } from '../content-engine/content.repository';
 import type { ActorKind } from './actor-context';
 
@@ -101,11 +98,6 @@ export const CONDITION_SYSTEM_FIELDS = {
   documentId: { column: 'document_id', kind: 'uuid' },
 } as const;
 
-/** Scalar field types a condition may compare (no json: no meaningful equality). */
-export const CONDITION_FIELD_TYPES = SCALAR_FIELD_TYPES.filter(
-  (type) => type !== 'json',
-);
-
 /** Bounds that keep a stored condition (and its SQL) small. */
 export const CONDITION_LIMITS = {
   /** Clauses in one `all` list. */
@@ -159,15 +151,10 @@ export const VERSION_CACHE_MAX_ENTRIES = 1_000;
 
 /**
  * SPEC §6 mask: the value an unreadable field takes in every response.
- * Text-like types get the sentinel string, every other type and every
- * component gets `null`.
+ * Which types get the sentinel is the registry's `maskedValue`; access
+ * decides to mask, the registry only gives the shape.
  */
 export const MASK_SENTINEL = '***';
-export const MASK_SENTINEL_FIELD_TYPES = [
-  'string',
-  'text',
-  'richtext',
-] as const satisfies readonly (typeof SCALAR_FIELD_TYPES)[number][];
 
 /** Key of the masked field paths in a serialized record (SPEC §6). */
 export const MASKED_FIELDS_KEY = '_maskedFields';

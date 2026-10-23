@@ -5,10 +5,9 @@ import type {
   ComponentNode,
   ComponentTrees,
 } from '../content-engine/tree-loader';
-import type { FieldValues } from '../content-engine';
+import { fieldTypeOf, type FieldValues } from '../content-engine';
 import {
   MASK_SENTINEL,
-  MASK_SENTINEL_FIELD_TYPES,
   MASKED_FIELDS_KEY,
   RECORD_SYSTEM_FIELDS,
   type RecordSystemField,
@@ -45,13 +44,13 @@ export type SerializedRecord = Partial<
   readonly [serializedBrand]: true;
 };
 
-const SENTINEL_TYPES: ReadonlySet<string> = new Set(MASK_SENTINEL_FIELD_TYPES);
-
 /** SPEC §6: `"***"` for string/text/richtext, `null` for every other type and components. */
 export function maskValueFor(
   field: FieldDefinition,
 ): typeof MASK_SENTINEL | null {
-  return SENTINEL_TYPES.has(field.type) ? MASK_SENTINEL : null;
+  return fieldTypeOf(field.type)?.maskedValue === 'sentinel'
+    ? MASK_SENTINEL
+    : null;
 }
 
 /**

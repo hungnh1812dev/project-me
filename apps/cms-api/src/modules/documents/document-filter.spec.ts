@@ -12,6 +12,7 @@ import {
   coerceFilterValue,
   filterExpression,
   queryColumnOf,
+  sortTarget,
 } from './document-filter';
 
 const type = RegistryService.fromDefinitions([ARTICLE_DEFINITION]).resolve(
@@ -67,6 +68,29 @@ describe('queryColumnOf', () => {
     'constructor',
   ])('refuses %s', (path) => {
     expect(() => queryColumnOf(type, path)).toThrow(BadRequestException);
+  });
+});
+
+describe('media fields', () => {
+  const mediaType = RegistryService.fromDefinitions([
+    {
+      slug: 'gallery',
+      kind: 'collection',
+      draftAndPublish: false,
+      fields: [{ name: 'cover', type: 'media' }],
+    },
+  ]).resolve('gallery');
+
+  it('refuses a media field as a filter target', () => {
+    expect(() => queryColumnOf(mediaType, 'cover')).toThrow(
+      BadRequestException,
+    );
+  });
+
+  it('refuses a media field as a sort key', () => {
+    expect(() =>
+      sortTarget(mediaType, { path: 'cover', direction: 'asc' }),
+    ).toThrow(BadRequestException);
   });
 });
 
