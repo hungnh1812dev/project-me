@@ -14,14 +14,14 @@ import {
   GraphQLString,
 } from 'graphql';
 
-import type { ConditionValueKind } from '../../access/conditions.compiler';
 import {
+  type ConditionValueKind,
   MASKED_FIELDS_KEY,
   RECORD_SYSTEM_FIELDS,
   type RecordSystemField,
-} from '../../access/access.constants';
+  type SerializedComponent,
+} from '../../access';
 import { PAGINATION } from '../../../common/http/request-parsing';
-import type { SerializedComponent } from '../../access/record.serializer';
 import { CONTENT_STATUSES } from '../../content-engine/content-engine.constants';
 import {
   type ComponentFieldDefinition,

@@ -1,8 +1,10 @@
 import { systemRole } from '../../../test/fixtures/access.fixture';
-import { reviewerActor } from '../access/actor-context';
-import { FieldSelection } from '../access/policy-evaluator';
-import { recordReadAccess } from '../access/record-read-access';
-import { SubjectCatalog } from '../access/subject-catalog';
+import {
+  reviewerActor,
+  FieldSelection,
+  recordReadAccess,
+  SubjectCatalog,
+} from '../access';
 import { RegistryService } from '../content-engine/registry.service';
 import { contentTypeView } from './content-type.view';
 

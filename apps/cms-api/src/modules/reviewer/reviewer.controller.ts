@@ -27,14 +27,13 @@ import {
   pageQuerySchema,
   parseRequest,
 } from '../../common/http/request-parsing';
-import { RequirePermission } from '../access/permission.decorator';
-import { PermissionGuard } from '../access/permission.guard';
-import { requireAccountActor } from '../access/rank-rules';
-import { clientMetaOf } from '../../common/http/client-meta';
 import {
-  type AuthenticatedRequest,
-  JwtAuthGuard,
-} from '../identity/jwt.strategy';
+  RequirePermission,
+  PermissionGuard,
+  requireAccountActor,
+} from '../access';
+import { clientMetaOf } from '../../common/http/client-meta';
+import { type AuthenticatedRequest, JwtAuthGuard } from '../identity';
 import {
   createReviewerSessionSchema,
   reviewerSettingsSchema,

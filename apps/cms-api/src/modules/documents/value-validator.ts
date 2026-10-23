@@ -1,8 +1,7 @@
 import { BadRequestException } from '@nestjs/common';
 
 import { sanitizeRichtext } from '../../common/sanitize/richtext.sanitizer';
-import { joinFieldPath } from '../access/field-paths';
-import type { FieldSelection } from '../access/policy-evaluator';
+import { joinFieldPath, type FieldSelection } from '../access';
 import type { ScalarFieldType } from '../content-engine/definition.schema';
 import type { TableNode } from '../content-engine/registry.service';
 import {

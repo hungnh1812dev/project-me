@@ -1,6 +1,6 @@
 import { ForbiddenException } from '@nestjs/common';
 
-import type { ActorContext, RolePolicy } from '../access/actor-context';
+import { type ActorContext, type RolePolicy } from '../access';
 import { PRESENCE_MAX_ENTRIES, PRESENCE_TTL_MS } from './documents.constants';
 import { PresenceService } from './presence.service';
 

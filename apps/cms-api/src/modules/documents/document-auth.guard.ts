@@ -6,11 +6,13 @@ import {
 import type { Request } from 'express';
 import { firstValueFrom, isObservable } from 'rxjs';
 
-import { AnonymousActorService } from '../access/anonymous-actor.service';
-import { ApiTokenAuthenticator } from '../access/api-token.guard';
-import { API_TOKEN } from '../access/api-token.constants';
-import type { ActorContext } from '../access/actor-context';
-import { JwtAuthGuard } from '../identity/jwt.strategy';
+import {
+  AnonymousActorService,
+  ApiTokenAuthenticator,
+  API_TOKEN,
+  type ActorContext,
+} from '../access';
+import { JwtAuthGuard } from '../identity';
 
 /** What this guard leaves on `req.user` for `PermissionGuard` and the controller. */
 export interface DocumentRequest extends Request {

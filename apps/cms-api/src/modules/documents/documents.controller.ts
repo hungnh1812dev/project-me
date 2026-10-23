@@ -28,9 +28,11 @@ import {
   documentIdSchema,
   parseRequest,
 } from '../../common/http/request-parsing';
-import { RequirePermission } from '../access/permission.decorator';
-import { PermissionGuard } from '../access/permission.guard';
-import type { SerializedRecord } from '../access/record.serializer';
+import {
+  RequirePermission,
+  PermissionGuard,
+  type SerializedRecord,
+} from '../access';
 import {
   DEFAULT_DOCUMENT_STATUS,
   DOCUMENT_QUERY_KEYS,

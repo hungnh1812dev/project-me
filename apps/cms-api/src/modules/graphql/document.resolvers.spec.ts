@@ -1,7 +1,7 @@
 import { NotFoundException } from '@nestjs/common';
 import { execute, parse } from 'graphql';
 
-import type { ActorContext } from '../access/actor-context';
+import { type ActorContext } from '../access';
 import type { DocumentsQueryService } from '../documents/documents.query.service';
 import { attachDocumentResolvers } from './document.resolvers';
 import { buildGraphqlSchema } from './schema/schema.builder';

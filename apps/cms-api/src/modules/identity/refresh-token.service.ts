@@ -17,7 +17,7 @@ import {
   SecurityAuditService,
   selfActor,
 } from '../security-audit/security-audit.service';
-import { VersionCache } from '../access/version-cache';
+import { VersionCache } from '../access';
 
 /** Account fields needed to sign an access token after a rotation. */
 export interface RotatedAccount {

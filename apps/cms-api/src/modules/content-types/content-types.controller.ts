@@ -2,10 +2,7 @@ import { Controller, Get, Header, Param, Req, UseGuards } from '@nestjs/common';
 
 import { API_ROUTES, SLUG_PARAM } from '../../common/constants/api.constants';
 import { NO_STORE_HEADER } from '../../common/constants/http.constants';
-import {
-  type AuthenticatedRequest,
-  JwtAuthGuard,
-} from '../identity/jwt.strategy';
+import { type AuthenticatedRequest, JwtAuthGuard } from '../identity';
 import type { ContentTypeView } from './content-type.view';
 import { ContentTypesService } from './content-types.service';
 

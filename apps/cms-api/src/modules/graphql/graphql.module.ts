@@ -1,9 +1,9 @@
 import { Module } from '@nestjs/common';
 
-import { AccessModule } from '../access/access.module';
+import { AccessModule } from '../access';
 import { ContentEngineModule } from '../content-engine/content-engine.module';
 import { DocumentsModule } from '../documents/documents.module';
-import { IdentityModule } from '../identity/identity.module';
+import { IdentityModule } from '../identity';
 import { GraphqlController } from './graphql.controller';
 import { GraphqlExecutor } from './graphql.executor';
 import { GraphqlSchemaProvider } from './graphql.schema.provider';

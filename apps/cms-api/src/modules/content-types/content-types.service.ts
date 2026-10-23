@@ -4,11 +4,11 @@ import { PermissionAction } from '../../generated/prisma/client';
 import {
   type AccessPolicy,
   AccessPolicyService,
-} from '../access/access-policy.service';
-import { RECORD_SYSTEM_FIELDS } from '../access/access.constants';
-import type { ActorContext } from '../access/actor-context';
-import { FieldSelection } from '../access/policy-evaluator';
-import { recordReadAccess } from '../access/record-read-access';
+  RECORD_SYSTEM_FIELDS,
+  type ActorContext,
+  FieldSelection,
+  recordReadAccess,
+} from '../access';
 import {
   type ContentTypeView,
   contentTypeView,

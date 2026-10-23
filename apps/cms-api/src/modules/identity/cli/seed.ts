@@ -1,7 +1,6 @@
 import { loadAppConfig } from '../../../config/app-config';
 import { openPrisma } from '../../../infrastructure/database/prisma-client';
-import { seedRolePermissions } from '../../access/roles/role-permissions.seed';
-import { seedSystemRoles } from '../../access/roles/system-roles.seed';
+import { seedRolePermissions, seedSystemRoles } from '../../access';
 
 /**
  * `db:seed` (also the last step of `db:migrate`): idempotent system roles

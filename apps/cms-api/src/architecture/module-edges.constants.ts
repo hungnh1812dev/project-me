@@ -78,7 +78,8 @@ export const DOCUMENT_AUTH_FILE = /^document-auth\./;
 /**
  * Edges the code still has but the table does not allow. Each later R1 task
  * removes its entries; R1-14 ends with the list empty. A file-level entry
- * stays valid only while that exact import exists.
+ * stays valid only while that exact import exists. A facade is followed, so
+ * an edge through `index.ts` is listed for both the facade and the real file.
  */
 export interface KnownViolation {
   /** Path relative to `src/`. */
@@ -102,6 +103,21 @@ export const KNOWN_VIOLATIONS: readonly KnownViolation[] = [
   {
     from: 'modules/graphql/graphql.module.ts',
     to: 'modules/identity/identity.module.ts',
+    removedBy: 'R1-12',
+  },
+  {
+    from: 'modules/documents/document-auth.guard.ts',
+    to: 'modules/identity/index.ts',
+    removedBy: 'R1-12',
+  },
+  {
+    from: 'modules/documents/documents.module.ts',
+    to: 'modules/identity/index.ts',
+    removedBy: 'R1-12',
+  },
+  {
+    from: 'modules/graphql/graphql.module.ts',
+    to: 'modules/identity/index.ts',
     removedBy: 'R1-12',
   },
   {

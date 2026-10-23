@@ -1,11 +1,11 @@
 import {
   CONDITION_SYSTEM_FIELDS,
   type RecordSystemField,
-} from '../access/access.constants';
-import type { ConditionValueKind } from '../access/conditions.compiler';
-import { joinFieldPath } from '../access/field-paths';
-import type { FieldSelection } from '../access/policy-evaluator';
-import type { SubjectCatalog } from '../access/subject-catalog';
+  type ConditionValueKind,
+  joinFieldPath,
+  type FieldSelection,
+  type SubjectCatalog,
+} from '../access';
 import {
   type ContentTypeKind,
   type FieldDefinition,

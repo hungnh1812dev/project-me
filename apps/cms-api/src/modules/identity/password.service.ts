@@ -33,7 +33,7 @@ import {
   SecurityAuditService,
   selfActor,
 } from '../security-audit/security-audit.service';
-import { VersionCache } from '../access/version-cache';
+import { VersionCache } from '../access';
 import { OTP } from './identity.constants';
 import { buildOtpMail } from './otp-mail';
 import { isOtpCodeFormat, OtpService } from './otp.service';

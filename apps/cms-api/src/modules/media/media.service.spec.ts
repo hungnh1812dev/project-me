@@ -1,9 +1,8 @@
 import { Readable } from 'node:stream';
 
 import { FakeMediaStorage } from '../../infrastructure/media/fake.adapter';
-import type { AccountActor } from '../access/rank-rules';
+import { type AccountActor, type AccessPolicyService } from '../access';
 import { systemRole } from '../../../test/fixtures/access.fixture';
-import type { AccessPolicyService } from '../access/access-policy.service';
 import type { ContentDbProvider } from '../content-engine/content-database';
 import { MediaService } from './media.service';
 import type {

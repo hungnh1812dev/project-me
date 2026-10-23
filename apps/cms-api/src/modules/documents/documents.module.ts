@@ -2,9 +2,9 @@ import { Module } from '@nestjs/common';
 
 import { ActivityModule } from '../../infrastructure/activity/activity.module';
 import { DatabaseModule } from '../../infrastructure/database/database.module';
-import { AccessModule } from '../access/access.module';
+import { AccessModule } from '../access';
 import { ContentEngineModule } from '../content-engine/content-engine.module';
-import { IdentityModule } from '../identity/identity.module';
+import { IdentityModule } from '../identity';
 import { MediaModule } from '../media/media.module';
 import { BulkController } from './bulk.controller';
 import { BulkService } from './bulk.service';

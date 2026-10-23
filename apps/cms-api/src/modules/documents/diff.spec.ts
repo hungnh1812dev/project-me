@@ -1,5 +1,4 @@
-import { RecordSerializer } from '../access/record.serializer';
-import { FieldSelection } from '../access/policy-evaluator';
+import { RecordSerializer, FieldSelection } from '../access';
 import {
   accountAccess,
   profileType,

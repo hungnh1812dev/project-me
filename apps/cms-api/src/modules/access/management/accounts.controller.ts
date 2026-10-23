@@ -20,10 +20,7 @@ import { RATE_LIMIT_POLICIES } from '../../../common/constants/limits.constants'
 import { Throttle } from '../../../common/guards/throttle.guard';
 import { PermissionAction } from '../../../generated/prisma/client';
 import { clientMetaOf } from '../../../common/http/client-meta';
-import {
-  type AuthenticatedRequest,
-  JwtAuthGuard,
-} from '../../identity/jwt.strategy';
+import { type AuthenticatedRequest, JwtAuthGuard } from '../../identity';
 import {
   inviteAccountSchema,
   updateAccountSchema,

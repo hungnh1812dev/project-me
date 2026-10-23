@@ -13,8 +13,7 @@ import {
 import { API_ROUTES, SLUG_PARAM } from '../../common/constants/api.constants';
 import { NO_STORE_HEADER } from '../../common/constants/http.constants';
 import { PermissionAction } from '../../generated/prisma/client';
-import { RequirePermission } from '../access/permission.decorator';
-import { PermissionGuard } from '../access/permission.guard';
+import { RequirePermission, PermissionGuard } from '../access';
 import { type BulkResponse, BulkService } from './bulk.service';
 import { DocumentAuthGuard, type DocumentRequest } from './document-auth.guard';
 import {

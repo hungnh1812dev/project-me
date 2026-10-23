@@ -24,7 +24,7 @@ import { RATE_LIMIT_POLICIES } from '../../common/constants/limits.constants';
 import { Throttle } from '../../common/guards/throttle.guard';
 import { type AccessTokenResponse, setRefreshCookie } from './auth.controller';
 import { clientMetaOf } from '../../common/http/client-meta';
-import { requireAccountActor } from '../access/rank-rules';
+import { requireAccountActor } from '../access';
 import { type AuthenticatedRequest, JwtAuthGuard } from './jwt.strategy';
 import {
   disableTwoFactorSchema,

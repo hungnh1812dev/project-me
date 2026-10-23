@@ -1,5 +1,5 @@
 import { PermissionAction } from '../../generated/prisma/client';
-import type { SystemSubject } from '../access/access.constants';
+import { type SystemSubject } from '../access';
 
 /** Error codes of the content types API (T17b). */
 export const CONTENT_TYPES_ERROR_CODES = {

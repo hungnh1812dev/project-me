@@ -23,7 +23,7 @@ import {
   OWNER_BOOTSTRAP_ERRORS,
   OWNER_SETUP_MESSAGES,
 } from './identity.constants';
-import { OWNER_ROLE_SLUG } from '../access/roles/system-roles';
+import { OWNER_ROLE_SLUG } from '../access';
 import { bootstrapOwner, OwnerBootstrapError } from './owner-bootstrap';
 import {
   carriesSetupToken,

@@ -2,11 +2,7 @@ import { TEST_SECRET_32_BYTES } from '../../../test/fixtures/env.fixture';
 import { systemRole } from '../../../test/fixtures/access.fixture';
 import { type IAppConfig } from '../../config/app-config';
 import type { PrismaService } from '../../infrastructure/database/prisma.service';
-import {
-  accountActor,
-  anonymousActor,
-  apiTokenActor,
-} from '../access/actor-context';
+import { accountActor, anonymousActor, apiTokenActor } from '../access';
 import { AUDIT_ACTIONS } from './security-audit.constants';
 import {
   auditActorOf,

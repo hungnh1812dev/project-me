@@ -2,8 +2,8 @@ import { Module } from '@nestjs/common';
 
 import { DatabaseModule } from '../../infrastructure/database/database.module';
 import { TurnstileModule } from '../../infrastructure/turnstile/turnstile.module';
-import { AccessModule } from '../access/access.module';
-import { IdentityModule } from '../identity/identity.module';
+import { AccessModule } from '../access';
+import { IdentityModule } from '../identity';
 import { SecurityAuditModule } from '../security-audit/security-audit.module';
 import { ReviewerCleanupJob } from './reviewer-cleanup.job';
 import { ReviewerController } from './reviewer.controller';

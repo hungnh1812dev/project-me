@@ -20,19 +20,18 @@ import { NO_STORE_HEADER } from '../../common/constants/http.constants';
 import { RATE_LIMIT_POLICIES } from '../../common/constants/limits.constants';
 import { Throttle } from '../../common/guards/throttle.guard';
 import { PermissionAction } from '../../generated/prisma/client';
-import { MEDIA_SUBJECT } from '../access/access.constants';
+import {
+  MEDIA_SUBJECT,
+  RequirePermission,
+  PermissionGuard,
+  requireAccountActor,
+} from '../access';
 import {
   documentIdSchema,
   pageQuerySchema,
   parseRequest,
 } from '../../common/http/request-parsing';
-import { RequirePermission } from '../access/permission.decorator';
-import { PermissionGuard } from '../access/permission.guard';
-import { requireAccountActor } from '../access/rank-rules';
-import {
-  type AuthenticatedRequest,
-  JwtAuthGuard,
-} from '../identity/jwt.strategy';
+import { type AuthenticatedRequest, JwtAuthGuard } from '../identity';
 import { clientMetaOf } from '../../common/http/client-meta';
 import { updateMediaSchema } from './media.requests';
 import { MediaDeleteService } from './media-delete.service';

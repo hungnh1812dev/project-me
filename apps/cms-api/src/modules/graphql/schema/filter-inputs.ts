@@ -11,7 +11,7 @@ import {
   GraphQLString,
 } from 'graphql';
 
-import type { ConditionValueKind } from '../../access/conditions.compiler';
+import { type ConditionValueKind } from '../../access';
 import type {
   FilterClause,
   SortDirection,

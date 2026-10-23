@@ -1,10 +1,10 @@
 import { isDeepStrictEqual } from 'node:util';
 
-import type {
-  SerializedComponent,
-  SerializedComponents,
-  SerializedRecord,
-} from '../access/record.serializer';
+import {
+  type SerializedComponent,
+  type SerializedComponents,
+  type SerializedRecord,
+} from '../access';
 import type { ContentDocument } from '../content-engine/content.repository';
 import type { ComponentInput, TreeInput } from '../content-engine/tree-input';
 import type {

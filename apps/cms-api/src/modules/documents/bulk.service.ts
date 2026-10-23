@@ -14,8 +14,7 @@ import {
   ERROR_CODES,
 } from '../../common/constants/error.constants';
 import { PermissionAction } from '../../generated/prisma/client';
-import { AccessPolicyService } from '../access/access-policy.service';
-import type { ActorContext } from '../access/actor-context';
+import { AccessPolicyService, type ActorContext } from '../access';
 import { ContentDbProvider } from '../content-engine/content-database';
 import { ContentRegistryProvider } from '../content-engine/content-engine.module';
 import {

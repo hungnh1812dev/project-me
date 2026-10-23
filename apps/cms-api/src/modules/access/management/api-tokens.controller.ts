@@ -18,10 +18,7 @@ import { API_ROUTES, ID_PARAM } from '../../../common/constants/api.constants';
 import { NO_STORE_HEADER } from '../../../common/constants/http.constants';
 import { PermissionAction } from '../../../generated/prisma/client';
 import { clientMetaOf } from '../../../common/http/client-meta';
-import {
-  type AuthenticatedRequest,
-  JwtAuthGuard,
-} from '../../identity/jwt.strategy';
+import { type AuthenticatedRequest, JwtAuthGuard } from '../../identity';
 import {
   documentIdSchema,
   pageQuerySchema,

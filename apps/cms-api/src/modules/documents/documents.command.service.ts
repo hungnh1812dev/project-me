@@ -10,15 +10,15 @@ import {
 import { type Expression, type Kysely, sql, type SqlBool } from 'kysely';
 
 import { PermissionAction } from '../../generated/prisma/client';
-import { AccessPolicyService } from '../access/access-policy.service';
-import type { ActorContext } from '../access/actor-context';
-import { projectTable, selectedColumns } from '../access/field-projection';
-import { recordReadAccess } from '../access/record-read-access';
 import {
+  AccessPolicyService,
+  type ActorContext,
+  recordReadAccess,
   RecordSerializer,
   type SerializedRecord,
-} from '../access/record.serializer';
-import { WriteAllowlist } from '../access/write-allowlist';
+  WriteAllowlist,
+} from '../access';
+import { projectTable, selectedColumns } from '../access/field-projection';
 import { MediaRefsService } from '../media/media-refs.service';
 import { ContentDbProvider } from '../content-engine/content-database';
 import { ContentRegistryProvider } from '../content-engine/content-engine.module';

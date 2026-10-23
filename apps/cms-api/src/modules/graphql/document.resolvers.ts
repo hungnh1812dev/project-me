@@ -5,8 +5,7 @@ import {
   documentIdSchema,
   parseRequest,
 } from '../../common/http/request-parsing';
-import type { ActorContext } from '../access/actor-context';
-import type { SerializedRecord } from '../access/record.serializer';
+import { type ActorContext, type SerializedRecord } from '../access';
 import { DOCUMENT_ERROR_CODES } from '../documents/documents.constants';
 import type {
   DocumentPage,

@@ -11,8 +11,7 @@ import {
 
 import { type IAppConfig } from '../../config/app-config';
 import { APP_CONFIG } from '../../config/config.constants';
-import { AccessPolicyService } from '../access/access-policy.service';
-import type { ActorContext } from '../access/actor-context';
+import { AccessPolicyService, type ActorContext } from '../access';
 import { PermissionAction } from '../../generated/prisma/client';
 import type { GraphqlContext } from './document.resolvers';
 import {

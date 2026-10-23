@@ -1,7 +1,4 @@
-import {
-  conditionKindOf,
-  type ConditionValueKind,
-} from '../access/conditions.compiler';
+import { conditionKindOf, type ConditionValueKind } from '../access';
 import { COMPONENT_FIELD_TYPE } from '../content-engine/content-engine.constants';
 import type { FieldDefinition } from '../content-engine/definition.schema';
 

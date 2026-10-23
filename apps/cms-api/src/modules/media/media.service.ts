@@ -9,11 +9,13 @@ import {
   MEDIA_STORAGE,
   type MediaStorage,
 } from '../../infrastructure/media/storage.port';
-import { MEDIA_SUBJECT } from '../access/access.constants';
-import { AccessPolicyService } from '../access/access-policy.service';
+import {
+  MEDIA_SUBJECT,
+  AccessPolicyService,
+  type ActorContext,
+  type AccountActor,
+} from '../access';
 import type { PageMeta, PageQuery } from '../../common/http/request-parsing';
-import type { ActorContext } from '../access/actor-context';
-import type { AccountActor } from '../access/rank-rules';
 import { ContentDbProvider } from '../content-engine/content-database';
 import { DELETED_AT_COLUMN, MEDIA_ORDER, MEDIA_TABLE } from './media.constants';
 import { UploadPipeline } from './upload.pipeline';

@@ -6,15 +6,15 @@ import {
 import { type Expression, sql, type SqlBool } from 'kysely';
 
 import { PermissionAction } from '../../generated/prisma/client';
-import { AccessPolicyService } from '../access/access-policy.service';
-import type { ActorContext } from '../access/actor-context';
-import { projectTable, selectedColumns } from '../access/field-projection';
-import { QueryGuard } from '../access/query.guard';
-import { recordReadAccess } from '../access/record-read-access';
 import {
+  AccessPolicyService,
+  type ActorContext,
+  QueryGuard,
+  recordReadAccess,
   RecordSerializer,
   type SerializedRecord,
-} from '../access/record.serializer';
+} from '../access';
+import { projectTable, selectedColumns } from '../access/field-projection';
 import { MediaRefsService } from '../media/media-refs.service';
 import { ContentDbProvider } from '../content-engine/content-database';
 import { ContentRegistryProvider } from '../content-engine/content-engine.module';

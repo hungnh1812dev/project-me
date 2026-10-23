@@ -1,5 +1,4 @@
-import type { ConditionValueKind } from '../access/conditions.compiler';
-import type { RecordSystemField } from '../access/access.constants';
+import { type ConditionValueKind, type RecordSystemField } from '../access';
 
 /** Error codes of the documents API (T20). */
 export const DOCUMENT_ERROR_CODES = {

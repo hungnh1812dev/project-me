@@ -23,9 +23,7 @@ import {
   REVIEWER_ROLE_SLUG,
   UNASSIGNABLE_ROLE_SLUGS,
 } from '../roles/system-roles';
-import { buildOtpMail } from '../../identity/otp-mail';
-import { OtpService } from '../../identity/otp.service';
-import { revokeAllSessions } from '../../identity/session-revocation';
+import { buildOtpMail, OtpService, revokeAllSessions } from '../../identity';
 import { type ClientMeta } from '../../../common/http/client-meta';
 import {
   MANAGEMENT_ERROR_CODES,

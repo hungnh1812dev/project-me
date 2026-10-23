@@ -3,7 +3,7 @@ import { PassportModule } from '@nestjs/passport';
 
 import { DatabaseModule } from '../../infrastructure/database/database.module';
 import { MailModule } from '../../infrastructure/mail/mail.module';
-import { AccessModule } from '../access/access.module';
+import { AccessModule } from '../access';
 import { SecurityAuditModule } from '../security-audit/security-audit.module';
 import { AccessTokenService } from './access-token.service';
 import { AllowedOriginGuard } from './allowed-origin.guard';

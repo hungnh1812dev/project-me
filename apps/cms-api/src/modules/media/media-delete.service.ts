@@ -7,9 +7,11 @@ import {
 
 import { PermissionAction } from '../../generated/prisma/client';
 import { PrismaService } from '../../infrastructure/database/prisma.service';
-import { MEDIA_SUBJECT } from '../access/access.constants';
-import { AccessPolicyService } from '../access/access-policy.service';
-import type { AccountActor } from '../access/rank-rules';
+import {
+  MEDIA_SUBJECT,
+  AccessPolicyService,
+  type AccountActor,
+} from '../access';
 import { AUDIT_ACTIONS } from '../security-audit/security-audit.constants';
 import {
   auditActorOf,

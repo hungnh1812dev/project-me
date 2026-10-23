@@ -29,10 +29,8 @@ import {
   SecurityAuditService,
   selfActor,
 } from '../security-audit/security-audit.service';
-import { VersionCache } from '../access/version-cache';
-import type { AccountActor } from '../access/rank-rules';
-import { AccessTokenService } from '../identity/access-token.service';
-import { REVIEWER_ROLE_SLUG } from '../access/roles/system-roles';
+import { VersionCache, type AccountActor, REVIEWER_ROLE_SLUG } from '../access';
+import { AccessTokenService } from '../identity';
 import type { ClientMeta } from '../../common/http/client-meta';
 import {
   REVIEWER_ACCOUNT,

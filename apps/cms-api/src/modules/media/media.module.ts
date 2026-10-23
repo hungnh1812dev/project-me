@@ -2,9 +2,9 @@ import { Module } from '@nestjs/common';
 
 import { DatabaseModule } from '../../infrastructure/database/database.module';
 import { MediaStorageModule } from '../../infrastructure/media/media-storage.module';
-import { AccessModule } from '../access/access.module';
+import { AccessModule } from '../access';
 import { ContentEngineModule } from '../content-engine/content-engine.module';
-import { IdentityModule } from '../identity/identity.module';
+import { IdentityModule } from '../identity';
 import { SecurityAuditModule } from '../security-audit/security-audit.module';
 import { MediaController } from './media.controller';
 import { MediaDeleteService } from './media-delete.service';

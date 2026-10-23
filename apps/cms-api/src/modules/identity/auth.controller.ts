@@ -27,7 +27,7 @@ import {
 import { RATE_LIMIT_POLICIES } from '../../common/constants/limits.constants';
 import { type ClientMeta, clientMetaOf } from '../../common/http/client-meta';
 import { Throttle } from '../../common/guards/throttle.guard';
-import { AccessPolicyService } from '../access/access-policy.service';
+import { AccessPolicyService } from '../access';
 import { AllowedOriginGuard } from './allowed-origin.guard';
 import {
   AuthService,

@@ -2,9 +2,11 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { sql } from 'kysely';
 
 import { PermissionAction } from '../../generated/prisma/client';
-import { MEDIA_SUBJECT } from '../access/access.constants';
-import { AccessPolicyService } from '../access/access-policy.service';
-import type { ActorContext } from '../access/actor-context';
+import {
+  MEDIA_SUBJECT,
+  AccessPolicyService,
+  type ActorContext,
+} from '../access';
 import { ContentDbProvider } from '../content-engine/content-database';
 import type { TableNode } from '../content-engine/registry.service';
 import type { FieldValues, TreeInput } from '../content-engine/tree-input';

@@ -7,9 +7,9 @@ import {
   RECORD_SYSTEM_COLUMNS,
   RECORD_SYSTEM_FIELDS,
   type RecordSystemField,
-} from '../access/access.constants';
-import type { ConditionValueKind } from '../access/conditions.compiler';
-import { CONDITION_UUID_PATTERN } from '../access/access.constants';
+  type ConditionValueKind,
+  CONDITION_UUID_PATTERN,
+} from '../access';
 import type { RegisteredContentType } from '../content-engine/registry.service';
 import type { FilterClause, SortKey } from './dto/list-documents.query';
 import {

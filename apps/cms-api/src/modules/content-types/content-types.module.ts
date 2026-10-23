@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 
-import { AccessModule } from '../access/access.module';
-import { IdentityModule } from '../identity/identity.module';
+import { AccessModule } from '../access';
+import { IdentityModule } from '../identity';
 import { ContentTypesController } from './content-types.controller';
 import { ContentTypesService } from './content-types.service';
 

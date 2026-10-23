@@ -8,9 +8,9 @@ import {
   type ActorContext,
   accountActor,
   reviewerActor,
-} from '../access/actor-context';
-import { REVIEWER_ROLE_SLUG } from '../access/roles/system-roles';
-import { VersionCache } from '../access/version-cache';
+  REVIEWER_ROLE_SLUG,
+  VersionCache,
+} from '../access';
 import {
   type AccessTokenClaims,
   accessTokenClaimsSchema,
