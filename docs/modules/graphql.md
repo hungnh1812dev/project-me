@@ -299,7 +299,8 @@ apps/cms-api/src/modules/graphql/
 ├── graphql.controller.ts       # POST API_ROUTES.GRAPHQL, guards + throttle, body checks
 ├── graphql.executor.ts         # parse -> validate (rules) -> execute -> format
 ├── schema/
-│   ├── schema.builder.ts       # buildGraphqlSchema(definitions): pure, cached by the module
+│   ├── schema.builder.ts       # buildGraphqlSchema(definitions): pure, cached by the module; scalar field output types come from the field-type registry (`graphqlOutput`)
+│   ├── shared-types.ts         # DocumentStatus, SortDirection, PageMeta, Media
 │   ├── type-names.ts           # naming + collision checks
 │   ├── scalars.ts              # Date, DateTime, Decimal, JSON
 │   └── filter-inputs.ts        # kind -> filter input, args -> FilterClause/SortKey

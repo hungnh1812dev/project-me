@@ -22,11 +22,12 @@ import {
   type SerializedComponent,
 } from '../../access';
 import { PAGINATION } from '../../../common/http/request-parsing';
-import { CONTENT_STATUSES } from '../../content-engine';
 import {
   type ComponentFieldDefinition,
   type ContentTypeDefinition,
   type FieldDefinition,
+  fieldTypeOf,
+  type GraphqlOutputName,
   isComponentField,
   type ScalarFieldType,
 } from '../../content-engine';
@@ -39,7 +40,6 @@ import {
   ROOT_FIELD_EXTENSION_KEY,
   ROOT_OPERATIONS,
   type RootFieldExtension,
-  SHARED_TYPE_NAMES,
 } from '../graphql.constants';
 import { FILTER_INPUTS } from './filter-inputs';
 import {
@@ -48,6 +48,12 @@ import {
   DecimalScalar,
   JsonScalar,
 } from './scalars';
+import {
+  DocumentStatusEnum,
+  MediaType,
+  PageMetaType,
+  SortDirectionEnum,
+} from './shared-types';
 import {
   componentTypeName,
   GraphqlNameClashError,
@@ -75,43 +81,6 @@ const nonNull = <T extends GraphQLNullableOutputType>(type: T) =>
 const listOf = <T extends GraphQLNullableOutputType>(type: T) =>
   new GraphQLList(new GraphQLNonNull(type));
 
-const DocumentStatusEnum = new GraphQLEnumType({
-  name: SHARED_TYPE_NAMES.DOCUMENT_STATUS,
-  description: 'Which version of a document to read.',
-  values: Object.fromEntries(
-    CONTENT_STATUSES.map((status) => [status.toUpperCase(), { value: status }]),
-  ),
-});
-
-const SortDirectionEnum = new GraphQLEnumType({
-  name: SHARED_TYPE_NAMES.SORT_DIRECTION,
-  values: { ASC: { value: 'asc' }, DESC: { value: 'desc' } },
-});
-
-const PageMetaType = new GraphQLObjectType({
-  name: SHARED_TYPE_NAMES.PAGE_META,
-  fields: {
-    page: { type: nonNull(GraphQLInt) },
-    pageSize: { type: nonNull(GraphQLInt) },
-    total: { type: nonNull(GraphQLInt) },
-  },
-});
-
-/** Mirrors the media embed of a document read (T29); the internal id never appears. */
-const MediaType = new GraphQLObjectType({
-  name: SHARED_TYPE_NAMES.MEDIA,
-  fields: {
-    id: { type: nonNull(GraphQLID) },
-    fileName: { type: GraphQLString },
-    url: { type: GraphQLString },
-    thumbnailUrl: { type: GraphQLString },
-    provider: { type: GraphQLString },
-    alt: { type: GraphQLString },
-    size: { type: GraphQLInt },
-    createdAt: { type: DateTimeScalar },
-  },
-});
-
 const SHARED_TYPES = [
   DateScalar,
   DateTimeScalar,
@@ -124,20 +93,29 @@ const SHARED_TYPES = [
   ...Object.values(FILTER_INPUTS),
 ];
 
-const SCALAR_OUTPUT_TYPES: Readonly<
-  Record<ScalarFieldType, GraphQLOutputType>
+/** The graphql type object behind each name a field-type spec declares. */
+const GRAPHQL_OUTPUT_TYPES: Readonly<
+  Record<GraphqlOutputName, GraphQLOutputType>
 > = {
-  string: GraphQLString,
-  text: GraphQLString,
-  richtext: GraphQLString,
-  integer: GraphQLInt,
-  decimal: DecimalScalar,
-  boolean: GraphQLBoolean,
-  date: DateScalar,
-  datetime: DateTimeScalar,
-  json: JsonScalar,
-  media: MediaType,
+  String: GraphQLString,
+  Int: GraphQLInt,
+  Decimal: DecimalScalar,
+  Boolean: GraphQLBoolean,
+  Date: DateScalar,
+  DateTime: DateTimeScalar,
+  Json: JsonScalar,
+  Media: MediaType,
 };
+
+function outputTypeOfScalar(fieldType: ScalarFieldType): GraphQLOutputType {
+  const spec = fieldTypeOf(fieldType);
+  if (spec === undefined) {
+    throw new GraphqlSchemaError(
+      GRAPHQL_SCHEMA_ERROR_MESSAGES.UNKNOWN_FIELD_TYPE(fieldType),
+    );
+  }
+  return GRAPHQL_OUTPUT_TYPES[spec.graphqlOutput];
+}
 
 /** System fields of a record; `createdBy` / `updatedBy` are absent for some actors. */
 const SYSTEM_OUTPUT_TYPES: Readonly<
@@ -190,7 +168,7 @@ function contentFieldConfigs(
       };
     } else {
       configs[name] = {
-        type: SCALAR_OUTPUT_TYPES[field.type],
+        type: outputTypeOfScalar(field.type),
         resolve: (source) => source.values[name] ?? null,
       };
     }

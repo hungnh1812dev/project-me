@@ -79,6 +79,8 @@ export interface RootFieldExtension {
 export const GRAPHQL_SCHEMA_ERROR_MESSAGES = {
   NO_CONTENT_TYPES:
     'GraphQL schema needs at least one content type: the Query type would have no fields.',
+  UNKNOWN_FIELD_TYPE: (fieldType: string) =>
+    `Field type "${fieldType}" has no entry in the field-type registry.`,
 } as const;
 
 /**
