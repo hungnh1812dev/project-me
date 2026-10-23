@@ -9,34 +9,35 @@ types API (`src/modules/content-types/`), which uses the evaluator to filter
 types and fields. T19 added API tokens: the API, the subset check
 (`token-scope-subset.ts`) and `ApiTokenGuard`.
 
-| File                                          | What it holds                                                                                    |
-| --------------------------------------------- | ------------------------------------------------------------------------------------------------ |
-| `access.constants.ts`                         | Subjects, actions per subject, DSL operators/variables/limits, error codes, default matrix       |
-| `actor-context.ts`                            | `ActorContext`, `RolePolicy`, token scope, `rolePolicyFromRows`, scope ∩ creator                 |
-| `subject-catalog.ts`                          | Known subjects (`*`, registry slugs, system subjects), field paths, DSL field catalog            |
-| `policy-evaluator.ts`                         | `PolicyEvaluator.can / canReadDrafts / fieldsFor / rowFilter`                                    |
-| `conditions.compiler.ts`                      | DSL validation and compilation to parameterized Kysely SQL                                       |
-| `permission.validator.ts`                     | Save-time checks: `validatePermissionSet` (T17), `validateTokenScope` (T19)                      |
-| `permission.decorator.ts`                     | `@RequirePermission()` metadata (read by the T15 guard)                                          |
-| `version-cache.ts`                            | D9 in-process cache of account `tv`/status/role and role `pv`/permission rows (T15)              |
-| `role-permissions.service.ts`                 | The one write path for a role's rows: replace + bump `policy_version` + invalidate (T15)         |
-| `permission.guard.ts`                         | Enforces `@RequirePermission()` with the evaluator (T15)                                         |
-| `access-policy.service.ts`                    | Builds the catalog + evaluator from the lazily loaded content registry (T15)                     |
-| `access.module.ts`                            | Nest wiring (imported by IdentityModule)                                                         |
-| `role-permissions.seed.ts`                    | Default rows for system roles that have none                                                     |
-| `field-projection.ts`                         | `projectTable` / `selectedColumns`: never select unreadable columns (T16, D3)                    |
-| `record.serializer.ts`                        | `RecordSerializer`: the one record -> response path, masks + `_maskedFields` (T16)               |
-| `write-allowlist.ts`                          | `WriteAllowlist`: client tree -> writable tree, drops masks, 400 otherwise (T16, D4)             |
-| `query.guard.ts`                              | `QueryGuard`: filter/sort/search only on readable fields (T16, D3)                               |
-| `record-read-access.ts`                       | `RecordReadAccess` / `recordReadAccess(actor, readable)`: fields + visible system fields         |
-| `field-errors.ts`                             | The 400s of the field checks (`FIELD_NOT_READABLE`, `FIELD_NOT_WRITABLE`, `FIELD_UNKNOWN`)       |
-| `rank-rules.ts`                               | D6: `outranks` / `assertOutranks`, `requireAccountActor`, `grantsBeyondActor` (T17)              |
-| `api-token.constants.ts`                      | `API_TOKEN`: token format and limits, used by the API token guard and the document-auth guard    |
-| `management/accounts.{controller,service}.ts` | `/accounts`: list, invite, resend invite, update, disable, enable, revoke sessions (T17, T17a)   |
-| `management/roles.{controller,service}.ts`    | `/roles`: list, create, update, delete, replace permissions (T17)                                |
-| `management/api-tokens.*.ts`                  | `/api-tokens`: controller, service, request schemas, statuses (T19)                              |
-| `management/access-management.*.ts`           | T17 request schemas, error codes, limits; `AccessManagementModule` (imports identity)            |
-| `../security-audit/`                          | D15 module (R1-04): `SecurityAuditService`, `writeAuditLog` (also used by the CLI), action names |
+| File                                          | What it holds                                                                                                               |
+| --------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `access.constants.ts`                         | Subjects, actions per subject, DSL operators/variables/limits, error codes, default matrix                                  |
+| `actor-context.ts`                            | `ActorContext`, `RolePolicy`, token scope, `rolePolicyFromRows`, scope ∩ creator                                            |
+| `subject-catalog.ts`                          | Known subjects (`*`, registry slugs, system subjects), field paths, DSL field catalog                                       |
+| `policy-evaluator.ts`                         | `PolicyEvaluator.can / canReadDrafts / fieldsFor / rowFilter`                                                               |
+| `conditions.compiler.ts`                      | DSL validation and compilation to parameterized Kysely SQL                                                                  |
+| `permission.validator.ts`                     | Save-time checks: `validatePermissionSet` (T17), `validateTokenScope` (T19)                                                 |
+| `permission.decorator.ts`                     | `@RequirePermission()` metadata (read by the T15 guard)                                                                     |
+| `version-cache.ts`                            | D9 in-process cache of account `tv`/status/role and role `pv`/permission rows (T15)                                         |
+| `role-permissions.service.ts`                 | The one write path for a role's rows: replace + bump `policy_version` + invalidate (T15)                                    |
+| `permission.guard.ts`                         | Enforces `@RequirePermission()` with the evaluator (T15)                                                                    |
+| `access-policy.service.ts`                    | Builds the catalog + evaluator from the lazily loaded content registry (T15)                                                |
+| `access.module.ts`                            | Nest wiring (imported by IdentityModule)                                                                                    |
+| `role-permissions.seed.ts`                    | Default rows for system roles that have none                                                                                |
+| `field-projection.ts`                         | `projectTable` / `selectedColumns`: never select unreadable columns (T16, D3)                                               |
+| `record.serializer.ts`                        | `RecordSerializer`: the one record -> response path, masks + `_maskedFields` (T16)                                          |
+| `write-allowlist.ts`                          | `WriteAllowlist`: client tree -> writable tree, drops masks, 400 otherwise (T16, D4)                                        |
+| `query.guard.ts`                              | `QueryGuard`: filter/sort/search only on readable fields (T16, D3)                                                          |
+| `record-read-access.ts`                       | `RecordReadAccess` / `recordReadAccess(actor, readable)`: fields + visible system fields                                    |
+| `field-errors.ts`                             | The 400s of the field checks (`FIELD_NOT_READABLE`, `FIELD_NOT_WRITABLE`, `FIELD_UNKNOWN`)                                  |
+| `rank-rules.ts`                               | D6: `outranks` / `assertOutranks`, `requireAccountActor`, `grantsBeyondActor` (T17)                                         |
+| `api-token.constants.ts`                      | `API_TOKEN` (token format and limits) and the one `BEARER_PATTERN`, used by both guards                                     |
+| `document-auth.{guard,module}.ts`             | `DocumentAuthGuard` (R1-12), own `DocumentAuthModule`; facade `document-auth.ts` (not in `index.ts`: identity imports that) |
+| `management/accounts.{controller,service}.ts` | `/accounts`: list, invite, resend invite, update, disable, enable, revoke sessions (T17, T17a)                              |
+| `management/roles.{controller,service}.ts`    | `/roles`: list, create, update, delete, replace permissions (T17)                                                           |
+| `management/api-tokens.*.ts`                  | `/api-tokens`: controller, service, request schemas, statuses (T19)                                                         |
+| `management/access-management.*.ts`           | T17 request schemas, error codes, limits; `AccessManagementModule` (imports identity)                                       |
+| `../security-audit/`                          | D15 module (R1-04): `SecurityAuditService`, `writeAuditLog` (also used by the CLI), action names                            |
 
 ## Subjects and actions
 

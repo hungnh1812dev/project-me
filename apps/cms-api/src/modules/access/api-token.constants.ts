@@ -1,3 +1,6 @@
+/** `Authorization: Bearer <credential>`; group 1 is the credential. */
+export const BEARER_PATTERN = /^Bearer (\S+)$/i;
+
 /** API tokens (SPEC D5, T19). */
 export const API_TOKEN = {
   /** Every raw token starts with this; anything else is not a token. */

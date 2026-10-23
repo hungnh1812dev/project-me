@@ -23,7 +23,7 @@ import { parseRequest } from '../../common/http/request-parsing';
 import {
   DocumentAuthGuard,
   type DocumentRequest,
-} from '../documents/document-auth.guard';
+} from '../access/document-auth';
 import {
   GRAPHQL_MESSAGES,
   GRAPHQL_REQUEST_MEDIA_TYPE,

@@ -6,20 +6,16 @@ import {
 import type { Request } from 'express';
 import { firstValueFrom, isObservable } from 'rxjs';
 
-import {
-  AnonymousActorService,
-  ApiTokenAuthenticator,
-  API_TOKEN,
-  type ActorContext,
-} from '../access';
 import { JwtAuthGuard } from '../identity';
+import { type ActorContext } from './actor-context';
+import { AnonymousActorService } from './anonymous-actor.service';
+import { API_TOKEN, BEARER_PATTERN } from './api-token.constants';
+import { ApiTokenAuthenticator } from './api-token.guard';
 
 /** What this guard leaves on `req.user` for `PermissionGuard` and the controller. */
 export interface DocumentRequest extends Request {
   user: { actor: ActorContext };
 }
-
-const BEARER_PATTERN = /^Bearer (\S+)$/i;
 
 /**
  * Who is reading content (SPEC §1, D5). One guard for the three kinds:

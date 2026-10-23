@@ -10,9 +10,11 @@ import globals from 'globals';
 const DEEP_IMPORT_PATTERNS = {
   identity: '(^|/)identity/.+',
   // `access/management` is the facade of the management sub-folder.
+  // `access/document-auth` is the facade of the document-auth part (not in
+  // `index.ts`: identity imports that, and document-auth imports identity).
   // `access/field-projection` is not in the facade (it bypasses masking, see
   // facade-reexports.architecture.spec.ts); module-edge specs say who may use it.
-  access: '(^|/)access/(?!management$|field-projection$).+',
+  access: '(^|/)access/(?!management$|document-auth$|field-projection$).+',
 };
 
 const deepImportBan = (...moduleNames) => ({

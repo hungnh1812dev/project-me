@@ -6,7 +6,7 @@ import { Reflector } from '@nestjs/core';
 import { PERMISSION_METADATA_KEY } from '../modules/access/access.constants';
 import type { PermissionRequirement } from '../modules/access/permission.decorator';
 import { PermissionGuard } from '../modules/access/permission.guard';
-import { DocumentAuthGuard } from '../modules/documents/document-auth.guard';
+import { DocumentAuthGuard } from '../modules/access/document-auth.guard';
 import { JwtAuthGuard } from '../modules/identity/jwt.strategy';
 import type { PublicHandlerReason } from './public-handlers.constants';
 

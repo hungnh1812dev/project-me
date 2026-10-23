@@ -11,7 +11,7 @@ import type { Request } from 'express';
 
 import { Clock } from '../../common/clock';
 import { PrismaService } from '../../infrastructure/database/prisma.service';
-import { API_TOKEN } from './api-token.constants';
+import { API_TOKEN, BEARER_PATTERN } from './api-token.constants';
 import {
   type ActorContext,
   apiTokenActor,
@@ -21,7 +21,6 @@ import {
 import { VersionCache } from './version-cache';
 
 const LOGGER_CONTEXT = 'ApiTokenGuard';
-const BEARER_PATTERN = /^Bearer (\S+)$/i;
 /** Longest raw token we hash: the prefix plus 43 base64url characters, with room. */
 const MAX_RAW_TOKEN_LENGTH = 128;
 

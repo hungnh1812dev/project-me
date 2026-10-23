@@ -91,36 +91,6 @@ export interface KnownViolation {
 
 export const KNOWN_VIOLATIONS: readonly KnownViolation[] = [
   {
-    from: 'modules/documents/document-auth.guard.ts',
-    to: 'modules/identity/jwt.strategy.ts',
-    removedBy: 'R1-12',
-  },
-  {
-    from: 'modules/documents/documents.module.ts',
-    to: 'modules/identity/identity.module.ts',
-    removedBy: 'R1-12',
-  },
-  {
-    from: 'modules/graphql/graphql.module.ts',
-    to: 'modules/identity/identity.module.ts',
-    removedBy: 'R1-12',
-  },
-  {
-    from: 'modules/documents/document-auth.guard.ts',
-    to: 'modules/identity/index.ts',
-    removedBy: 'R1-12',
-  },
-  {
-    from: 'modules/documents/documents.module.ts',
-    to: 'modules/identity/index.ts',
-    removedBy: 'R1-12',
-  },
-  {
-    from: 'modules/graphql/graphql.module.ts',
-    to: 'modules/identity/index.ts',
-    removedBy: 'R1-12',
-  },
-  {
     from: 'modules/media/media-refs.service.ts',
     to: 'modules/documents/documents.constants.ts',
     removedBy: 'R1-13',

@@ -38,7 +38,10 @@ import {
   DOCUMENT_QUERY_KEYS,
 } from './documents.constants';
 import { CONTENT_STATUSES } from '../content-engine/content-engine.constants';
-import { DocumentAuthGuard, type DocumentRequest } from './document-auth.guard';
+import {
+  DocumentAuthGuard,
+  type DocumentRequest,
+} from '../access/document-auth';
 import { parseListQuery } from './dto/list-documents.query';
 import {
   parseCreateBody,

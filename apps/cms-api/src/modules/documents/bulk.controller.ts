@@ -15,7 +15,10 @@ import { NO_STORE_HEADER } from '../../common/constants/http.constants';
 import { PermissionAction } from '../../generated/prisma/client';
 import { RequirePermission, PermissionGuard } from '../access';
 import { type BulkResponse, BulkService } from './bulk.service';
-import { DocumentAuthGuard, type DocumentRequest } from './document-auth.guard';
+import {
+  DocumentAuthGuard,
+  type DocumentRequest,
+} from '../access/document-auth';
 import {
   parseBulkCreateBody,
   parseBulkDocumentsBody,

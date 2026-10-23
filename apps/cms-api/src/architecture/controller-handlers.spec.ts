@@ -9,7 +9,7 @@ import {
   isPermissionEnforced,
   PermissionGuard,
 } from './controller-handlers';
-import { DocumentAuthGuard } from '../modules/documents/document-auth.guard';
+import { DocumentAuthGuard } from '../modules/access/document-auth.guard';
 import { JwtAuthGuard } from '../modules/identity/jwt.strategy';
 
 const READ_ROLES = {
