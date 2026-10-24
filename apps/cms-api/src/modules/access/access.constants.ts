@@ -20,7 +20,7 @@ export const FIELD_WRITE_ACTIONS = [
 export type FieldWriteAction = (typeof FIELD_WRITE_ACTIONS)[number];
 
 /**
- * Subject of a permission row that covers every content type (decision T14).
+ * Subject of a permission row that covers every content type.
  * It never covers a system subject. A row for a specific slug overrides it.
  */
 export const CONTENT_WILDCARD_SUBJECT = '*';
@@ -29,7 +29,7 @@ export const CONTENT_WILDCARD_SUBJECT = '*';
 export const PERMISSION_STRING_SEPARATOR = ':';
 
 /**
- * Non-content subjects (decision T14) and the actions valid on each.
+ * Non-content subjects and the actions valid on each.
  * Names use underscores, so they can never equal a content slug
  * (content slugs are kebab-case, see SLUG_PATTERN).
  */
@@ -62,7 +62,7 @@ export const SYSTEM_SUBJECT_ACTIONS = {
   reviewer_settings: [PermissionAction.read, PermissionAction.update],
 } as const satisfies Record<string, readonly PermissionAction[]>;
 
-/** The file library subject (T27); read-only actors only see preset rows. */
+/** The file library subject; read-only actors only see preset rows. */
 export const MEDIA_SUBJECT =
   'media' satisfies keyof typeof SYSTEM_SUBJECT_ACTIONS;
 
@@ -89,8 +89,7 @@ export const CONDITION_VARIABLES = {
 export const CONDITION_VARIABLE_PREFIX = '$';
 
 /**
- * Root system columns a condition may use besides the content fields
- * (decision T14): DSL name -> column and the value kind it compares with.
+ * Root system columns a condition may use besides the content fields: DSL name -> column and the value kind it compares with.
  */
 export const CONDITION_SYSTEM_FIELDS = {
   createdBy: { column: 'created_by', kind: 'integer' },
@@ -108,7 +107,7 @@ export const CONDITION_LIMITS = {
   MAX_STRING_LENGTH: 255,
 } as const;
 
-/** Error codes of permission / token scope validation (T17 and T19 return them). */
+/** Error codes of permission / token scope validation (role and token writes return them). */
 export const ACCESS_ERROR_CODES = {
   PERMISSION_INVALID_CONDITION: 'PERMISSION_INVALID_CONDITION',
   PERMISSION_INVALID_SUBJECT: 'PERMISSION_INVALID_SUBJECT',
@@ -132,7 +131,7 @@ export const RANK_FORBIDDEN_ERROR = {
   MESSAGE: 'You can only manage accounts and roles ranked below your own role.',
 } as const;
 
-/** Metadata key of `@RequirePermission()` (read by the T15 guard). */
+/** Metadata key of `@RequirePermission()` (read by `PermissionGuard`). */
 export const PERMISSION_METADATA_KEY = 'abyss:access:permission';
 
 /**
@@ -162,7 +161,7 @@ export const MASK_SENTINEL = '***';
 export const MASKED_FIELDS_KEY = '_maskedFields';
 
 /**
- * Root system fields of a serialized record (decision T16). They are always
+ * Root system fields of a serialized record. They are always
  * readable: field lists cannot name them, and clients need them for
  * identity, OCC and display. They may be filtered and sorted on. The
  * internal row `id` is never sent (`documentId` and `componentUid` are the
@@ -198,7 +197,7 @@ export const RECORD_SYSTEM_COLUMNS = {
 
 /**
  * System fields that name accounts, and the actor kinds that never see
- * them (user decision T16): they are omitted from responses, not selected,
+ * them: they are omitted from responses, not selected,
  * and cannot be filtered, sorted or searched on. Signed-in accounts and API
  * tokens keep them.
  */

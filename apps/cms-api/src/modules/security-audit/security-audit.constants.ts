@@ -1,5 +1,5 @@
 /**
- * D15 security audit (T17). Action names are `<domain>.<event>` in lower
+ * D15 security audit. Action names are `<domain>.<event>` in lower
  * snake case. Rows never hold field values or secrets: metadata carries
  * names only (field names, role slugs, a method, a purpose, a reason).
  */
@@ -43,15 +43,15 @@ export const AUDIT_ACTIONS = {
   API_TOKEN_UPDATED: 'api_token.updated',
   API_TOKEN_REVOKED: 'api_token.revoked',
   MEDIA_DELETED: 'media.deleted',
-  /** Owner turned reviewer access on or off (T31, D15). */
+  /** Owner turned reviewer access on or off (D15). */
   REVIEWER_SETTINGS_CHANGED: 'reviewer.settings_changed',
-  /** A visitor started a reviewer session (T31); actor = the new reviewer account. */
+  /** A visitor started a reviewer session; actor = the new reviewer account. */
   REVIEWER_SESSION_CREATED: 'reviewer.session_created',
 } as const;
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[keyof typeof AUDIT_ACTIONS];
 
-/** `auth.login_failed` metadata `reason` (T17 Q4): a fixed set, nothing else. */
+/** `auth.login_failed` metadata `reason`: a fixed set, nothing else. */
 export const LOGIN_FAILURE_REASONS = {
   /** No account with this email: actor_id null, email only as a keyed HMAC. */
   UNKNOWN_ACCOUNT: 'unknown_account',
@@ -100,7 +100,7 @@ export const TWO_FACTOR_OPERATIONS = {
 
 /**
  * Keyed HMAC of a normalized email for `auth.login_failed` with an unknown
- * account (T17 Q4): repeated attempts on one address can be linked without
+ * account: repeated attempts on one address can be linked without
  * storing the address. The key is derived from OTP_PEPPER with HKDF under
  * its own `info`, so it never equals the OTP key (no new env key).
  */

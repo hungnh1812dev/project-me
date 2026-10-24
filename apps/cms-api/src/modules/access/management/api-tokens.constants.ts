@@ -1,4 +1,4 @@
-/** API token states and fields (SPEC D5, T19). */
+/** API token states and fields (SPEC D5). */
 /** Derived from the stored row; never stored. */
 export const API_TOKEN_STATUSES = {
   ACTIVE: 'active',

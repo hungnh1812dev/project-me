@@ -28,7 +28,7 @@ export const accessTokenClaimsSchema = z.object({
 
 export type AccessTokenClaims = z.infer<typeof accessTokenClaimsSchema>;
 
-/** T13 Q7: 2FA temp token claims. `jti` keys the attempt counter. */
+/** 2FA temp token claims. `jti` keys the attempt counter. */
 const twoFactorTempTokenClaimsSchema = z.object({
   sub: z.uuid(),
   tv: z.int(),
@@ -85,7 +85,7 @@ export class AccessTokenService {
     );
   }
 
-  /** The 24 h access token of a reviewer session (T31); same claims and `typ` as any access token. */
+  /** The 24 h access token of a reviewer session; same claims and `typ` as any access token. */
   signReviewerSessionToken(subject: AccessTokenSubject): string {
     return this.sign(
       { ...subject, typ: TOKEN_TYPES.ACCESS },

@@ -30,7 +30,7 @@ export type RotationResult =
       readonly account: RotatedAccount;
     }
   /**
-   * T11a: a concurrent refresh with a token rotated moments ago. Access
+   * A concurrent refresh with a token rotated moments ago. Access
    * token only; the refresh cookie already holds the successor.
    */
   | { readonly kind: 'grace'; readonly account: RotatedAccount }
@@ -81,7 +81,7 @@ export class RefreshTokenService {
    * Swaps `rawToken` for a new token in the same family, atomically. Two
    * concurrent refreshes with one token: the first wins; the second gets
    * `grace` when it comes within REFRESH_TOKEN_REUSE_GRACE_MS and the
-   * successor is still unused (T11a), else it is reuse.
+   * successor is still unused, else it is reuse.
    */
   async rotate(rawToken: string, meta: ClientMeta): Promise<RotationResult> {
     const tokenHash = hashRefreshToken(rawToken);
@@ -178,7 +178,7 @@ export class RefreshTokenService {
   }
 
   /**
-   * An already-rotated token came back. Grace (T11a) when it was rotated
+   * An already-rotated token came back. Grace when it was rotated
    * within the window, its successor is still live and unused and the
    * account is active; anything else is reuse, as before.
    */

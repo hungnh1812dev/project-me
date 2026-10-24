@@ -72,7 +72,7 @@ const NO_ACCESS: FieldAccess = {
 };
 
 /**
- * The one place that decides what an actor may do with a subject (T14).
+ * The one place that decides what an actor may do with a subject.
  *
  * Rules:
  * - An unknown subject (not a registered content type, not a system
@@ -96,8 +96,8 @@ export class PolicyEvaluator {
   }
 
   /**
-   * Every `subject:action` string the actor may use on a known subject
-   * (T33a), sorted. Conditions are ignored, as in `can()`. Never contains
+   * Every `subject:action` string the actor may use on a known subject,
+   * sorted. Conditions are ignored, as in `can()`. Never contains
    * the `*` wildcard: it lists concrete content types and system subjects.
    */
   effectivePermissions(actor: ActorContext): string[] {
@@ -116,7 +116,7 @@ export class PolicyEvaluator {
     return out.sort();
   }
 
-  /** Drafts need `read` + `update` (decision T14); never for read-only actors. */
+  /** Drafts need `read` + `update`; never for read-only actors. */
   canReadDrafts(actor: ActorContext, subject: string): boolean {
     if (!this.subjects.isContentType(subject)) return false;
     return (
@@ -171,7 +171,7 @@ export class PolicyEvaluator {
     if (!filter.allowed) return filter;
     const policy = this.policyOf(actor);
     if (subject !== MEDIA_SUBJECT || !policy.readOnly) return filter;
-    // Read-only actors (reviewer, anonymous) only see preset media (T27).
+    // Read-only actors (reviewer, anonymous) only see preset media.
     const column =
       table === undefined
         ? 'is_reviewer_preset'
@@ -259,7 +259,7 @@ export class PolicyEvaluator {
   ): PermissionGrant[] {
     // A create row has no existing row to test conditions against, so a
     // stored one (written before the validator refused them) grants nothing:
-    // fail closed (T21).
+    // fail closed.
     const forAction = policy.grants.filter(
       (grant) =>
         grant.action === action &&

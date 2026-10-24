@@ -41,7 +41,7 @@ export function hashApiToken(raw: string): string {
 }
 
 /**
- * D5 token authentication for content endpoints (T20+): `Authorization:
+ * D5 token authentication for content endpoints: `Authorization:
  * Bearer ak_live_...`, looked up by the SHA-256 of the raw value. The actor
  * carries the creator's **current** role, so effective permissions are the
  * token scope ∩ the creator's permissions at this request (§12-6).

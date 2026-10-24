@@ -8,7 +8,7 @@ import {
 } from './identity.constants';
 
 /**
- * Bodies of the password endpoints (SPEC §9, T12). Shape checks only. The
+ * Bodies of the password endpoints (SPEC §9). Shape checks only. The
  * new password is any string here; its length rule (D8) is checked apart so
  * it can answer AUTH_WEAK_PASSWORD. Codes of the wrong shape fall through to
  * the OTP check and fail like a wrong code.

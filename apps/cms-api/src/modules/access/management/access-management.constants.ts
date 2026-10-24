@@ -1,13 +1,13 @@
-/** Error codes of the accounts and roles API (T17). */
+/** Error codes of the accounts and roles API. */
 export const MANAGEMENT_ERROR_CODES = {
   /** A permission set grants a system subject action the actor lacks. */
   PERMISSION_NOT_HELD: 'PERMISSION_NOT_HELD',
   ACCOUNT_NOT_FOUND: 'ACCOUNT_NOT_FOUND',
   ACCOUNT_EMAIL_TAKEN: 'ACCOUNT_EMAIL_TAKEN',
   ACCOUNT_ALREADY_DISABLED: 'ACCOUNT_ALREADY_DISABLED',
-  /** Enable of an account that is not disabled (T17a). */
+  /** Enable of an account that is not disabled. */
   ACCOUNT_NOT_DISABLED: 'ACCOUNT_NOT_DISABLED',
-  /** Resend of an invite to an account that is not `invited` (T17a). */
+  /** Resend of an invite to an account that is not `invited`. */
   ACCOUNT_NOT_INVITED: 'ACCOUNT_NOT_INVITED',
   ROLE_NOT_FOUND: 'ROLE_NOT_FOUND',
   ROLE_SLUG_TAKEN: 'ROLE_SLUG_TAKEN',
@@ -17,12 +17,12 @@ export const MANAGEMENT_ERROR_CODES = {
   ROLE_SYSTEM_IMMUTABLE: 'ROLE_SYSTEM_IMMUTABLE',
   /** The role is not meant for invited accounts (see UNASSIGNABLE_ROLE_SLUGS in roles/system-roles.ts). */
   ROLE_NOT_ASSIGNABLE: 'ROLE_NOT_ASSIGNABLE',
-  /** Create of a custom role past MANAGEMENT_LIMITS.MAX_CUSTOM_ROLES (T17c). */
+  /** Create of a custom role past MANAGEMENT_LIMITS.MAX_CUSTOM_ROLES. */
   ROLE_LIMIT_REACHED: 'ROLE_LIMIT_REACHED',
   TOKEN_NOT_FOUND: 'API_TOKEN_NOT_FOUND',
-  /** Update or revoke of a token that is already revoked (T19). */
+  /** Update or revoke of a token that is already revoked. */
   TOKEN_REVOKED: 'API_TOKEN_REVOKED',
-  /** A token scope entry the token's creator does not hold (D5, T19). */
+  /** A token scope entry the token's creator does not hold (D5). */
   TOKEN_SCOPE_NOT_HELD: 'API_TOKEN_SCOPE_NOT_HELD',
 } as const;
 
@@ -52,7 +52,7 @@ export const MANAGEMENT_LIMITS = {
   ROLE_SLUG_MAX_LENGTH: 64,
   /** Rows in one `PUT /roles/:id/permissions` body. */
   MAX_PERMISSIONS_PER_ROLE: 500,
-  /** Custom roles (`is_system = false`); system roles do not count (Q11). */
+  /** Custom roles (`is_system = false`); system roles do not count. */
   MAX_CUSTOM_ROLES: 50,
 } as const;
 

@@ -64,7 +64,7 @@ export interface AccountRoleView {
   readonly rank: number;
 }
 
-/** `GET /accounts` response (Q10). */
+/** `GET /accounts` response. */
 export interface AccountPage {
   readonly data: AccountView[];
   readonly meta: PageMeta;
@@ -149,7 +149,7 @@ function isAssignable(role: RoleRow): boolean {
 }
 
 /**
- * Accounts API (SPEC §9, T17). Invite-only (Q2). Every write checks D6
+ * Accounts API (SPEC §9). Invite-only. Every write checks D6
  * inside its transaction, with the target row locked: the actor must
  * outrank the target account and any role it assigns, and never targets
  * itself. Each write commits its audit row with it (D15) and then drops the
@@ -168,12 +168,12 @@ export class AccountsService {
     @Inject(APP_CONFIG) private readonly config: IAppConfig,
   ) {}
 
-  /** One page of the accounts that are not deleted, oldest first (Q10). */
+  /** One page of the accounts that are not deleted, oldest first. */
   async list(
     actor: AccountActor,
     { page, pageSize }: PageQuery,
   ): Promise<AccountPage> {
-    // Ephemeral reviewer accounts belong to the reviewer module (T31).
+    // Ephemeral reviewer accounts belong to the reviewer module.
     const where = { deletedAt: null, roleSlug: { not: REVIEWER_ROLE_SLUG } };
     const [rows, total] = await Promise.all([
       this.prisma.account.findMany({
@@ -332,7 +332,7 @@ export class AccountsService {
   }
 
   /**
-   * Re-enables a disabled account (T17a, Q7): back to `active` when it has a
+   * Re-enables a disabled account: back to `active` when it has a
    * password, else to `invited` (it never finished its invite). No
    * token_version change: disable already bumped it, so old tokens stay dead.
    */
@@ -369,7 +369,7 @@ export class AccountsService {
   }
 
   /**
-   * Issues a new invite code for an `invited` account (T17a). The new code
+   * Issues a new invite code for an `invited` account. The new code
    * and the audit row commit together (older invite codes stop working; the
    * hourly code cap answers 429 and rolls everything back), then it is
    * mailed. `invitationSent` means what it means for `invite`.
@@ -420,7 +420,7 @@ export class AccountsService {
 
   /**
    * The target account, row-locked for this transaction, after the D6
-   * checks: 404 when unknown, deleted or a reviewer account (T31), 403 for the actor itself or an
+   * checks: 404 when unknown, deleted or a reviewer account, 403 for the actor itself or an
    * account of equal or higher rank.
    */
   private async lockManageable(

@@ -63,7 +63,7 @@ interface AuditedAccount {
 }
 const EMAIL_CODE_PURPOSE = 'LOGIN_2FA_EMAIL';
 
-/** `POST /auth/2fa/totp/setup`: the QR is rendered by the client (T13 Q5). */
+/** `POST /auth/2fa/totp/setup`: the QR is rendered by the client. */
 export interface TotpSetupResponse {
   readonly otpauthUri: string;
   /** Base32 secret for "can't scan? enter this key". */
@@ -107,7 +107,7 @@ function invalidTempToken(): UnauthorizedException {
   });
 }
 
-/** T13 Q14: a signed-in re-auth failure is 403, so the client keeps its session. */
+/** A signed-in re-auth failure is 403, so the client keeps its session. */
 function wrongPassword(): ForbiddenException {
   return new ForbiddenException({
     errorCode: AUTH_ERROR_CODES.INVALID_CREDENTIALS,
@@ -145,10 +145,10 @@ function challengeStoreFull(): HttpException {
 }
 
 /**
- * Two-factor authentication (SPEC §9, D8, T13): TOTP setup, enable and
+ * Two-factor authentication (SPEC §9, D8): TOTP setup, enable and
  * disable (password + code) for the signed-in account, and the second login
  * step with the temp token from `POST /auth/login`. Email 2FA codes are
- * LOGIN_2FA_EMAIL OTPs (T13 Q9).
+ * LOGIN_2FA_EMAIL OTPs.
  */
 @Injectable()
 export class TwoFactorService {

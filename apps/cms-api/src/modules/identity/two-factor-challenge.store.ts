@@ -23,7 +23,7 @@ export type ChallengeAttempt =
   | 'refused';
 
 /**
- * T13 Q7: per temp token (`jti`) state for SPEC §6 "5 attempts": attempts
+ * Per temp token (`jti`) state for SPEC §6 "5 attempts": attempts
  * counted and single use. In memory, like the rate-limit store, so one
  * replica only; a restart forgets counters, but tokens still expire after
  * 300 s and verify stays IP-throttled. Capped at

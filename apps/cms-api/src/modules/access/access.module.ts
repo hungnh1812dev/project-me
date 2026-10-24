@@ -10,7 +10,7 @@ import { RolePermissionsService } from './role-permissions.service';
 import { VersionCache } from './version-cache';
 
 /**
- * Authorization (T14/T15): revocation versions, the policy evaluator over
+ * Authorization: revocation versions, the policy evaluator over
  * the content registry, the `@RequirePermission` guard and the one write
  * path for role permissions.
  */

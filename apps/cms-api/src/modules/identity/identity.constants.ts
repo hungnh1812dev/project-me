@@ -3,11 +3,11 @@ import { ADMIN_ROLE_SLUG, GUEST_ROLE_SLUG } from '../access';
 
 /** D8: minimum password length. */
 export const PASSWORD_MIN_LENGTH = 12;
-/** Upper bound so hashing cost stays predictable (decision T08). */
+/** Upper bound so hashing cost stays predictable. */
 export const PASSWORD_MAX_LENGTH = 128;
 
 /**
- * Argon2id parameters (D8; SPEC names the algorithm only, decision T08):
+ * Argon2id parameters (D8; SPEC names the algorithm only):
  * 64 MiB, 3 passes, 4 lanes. Above the OWASP minimum (19 MiB, t=2, p=1).
  */
 export const ARGON2_OPTIONS = {
@@ -51,7 +51,7 @@ export const OWNER_SETUP_MESSAGES = {
     'OWNER_SETUP_TOKEN is set but an owner exists; remove it from the secret.',
 } as const;
 
-/** Error codes of `owner:reset-2fa` (T13a). */
+/** Error codes of `owner:reset-2fa`. */
 export const TWO_FACTOR_RESET_ERRORS = {
   INVALID_INPUT: 'reset_2fa.invalid_input',
   ACCOUNT_NOT_FOUND: 'reset_2fa.account_not_found',
@@ -110,7 +110,7 @@ export const SEED_ACCOUNT_ERRORS = {
   EMAIL_TAKEN: 'seed_account.email_taken',
 } as const;
 
-/** SPEC §6 / D8: one-time codes (T12). */
+/** SPEC §6 / D8: one-time codes. */
 export const OTP = {
   DIGITS: 6,
   TTL_SECONDS: 300,
@@ -122,14 +122,14 @@ export const OTP = {
   HMAC_ALGORITHM: 'sha256',
 } as const;
 
-/** Admin console pages named in OTP emails (plain text, no links; T12). */
+/** Admin console pages named in OTP emails (plain text, no links). */
 export const ADMIN_PAGE_PATHS = {
   RESET_PASSWORD: '/reset-password',
   SET_PASSWORD: '/set-password',
 } as const;
 
 /**
- * D8 / T13 Q3: TOTP as every authenticator app supports it (RFC 6238
+ * D8: TOTP as every authenticator app supports it (RFC 6238
  * defaults): SHA-1, 6 digits, 30 s steps, ±1 step of clock drift, 160-bit
  * secret. A code is accepted only when its step is above `totp_last_step`.
  */
@@ -142,7 +142,7 @@ export const TOTP = {
 } as const;
 
 /**
- * D8 / T13 Q1: AES-256-GCM for stored TOTP secrets. The AES key is derived
+ * D8: AES-256-GCM for stored TOTP secrets. The AES key is derived
  * from TOTP_ENC_KEY with HKDF-SHA256 under `HKDF_INFO`; ciphertext is
  * `v1.<iv>.<ct>.<tag>` (base64url) with AAD `<documentId>:<kid>`.
  */

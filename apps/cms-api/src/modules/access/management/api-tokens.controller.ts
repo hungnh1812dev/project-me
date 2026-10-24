@@ -42,7 +42,7 @@ import { requireAccountActor } from '../rank-rules';
 const SUBJECT = 'api_tokens';
 
 /**
- * SPEC §9 API tokens (T19). JWT sessions only: `JwtAuthGuard` rejects an
+ * SPEC §9 API tokens. JWT sessions only: `JwtAuthGuard` rejects an
  * `ak_live_` token with 401 and `requireAccountActor` rejects every other
  * actor kind with 403 (D5). The service scopes each call to the caller's
  * own tokens unless they are the Owner.

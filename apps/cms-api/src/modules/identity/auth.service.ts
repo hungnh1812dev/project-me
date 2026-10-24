@@ -53,16 +53,16 @@ export interface CurrentAccountProfile {
   readonly displayName: string;
   readonly role: string;
   readonly twoFactorEnabled: boolean;
-  /** The 2FA method when 2FA is on, else null (T13 Q10). */
+  /** The 2FA method when 2FA is on, else null. */
   readonly twoFactorMethod: TwoFaMethod | null;
-  /** Effective `subject:action` permissions of the caller, sorted (T33a). */
+  /** Effective `subject:action` permissions of the caller, sorted. */
   readonly permissions: readonly string[];
 }
 
 /** What `AuthService.me` returns: the profile before permissions are added. */
 export type AccountProfile = Omit<CurrentAccountProfile, 'permissions'>;
 
-/** `refresh`: no refresh token inside the grace window (T11a). */
+/** `refresh`: no refresh token inside the grace window. */
 export interface RefreshedTokens {
   readonly accessToken: string;
   readonly refreshToken: string | undefined;
@@ -90,7 +90,7 @@ export function invalidRefreshToken(): UnauthorizedException {
   });
 }
 
-/** Why a sign-in fails, or undefined when it may go on (T17 Q4 reasons). */
+/** Why a sign-in fails, or undefined when it may go on. */
 function loginFailureReason(
   account: {
     readonly passwordHash: string | null;
@@ -155,7 +155,7 @@ export class AuthService implements OnModuleInit {
 
     const failure = loginFailureReason(account, passwordOk);
     if (failure !== undefined) {
-      // No write to share a transaction with: a standalone row (T17 Q4).
+      // No write to share a transaction with: a standalone row.
       await this.audit.recordStandalone({
         actor: selfActor(account?.id ?? null),
         action: AUDIT_ACTIONS.AUTH_LOGIN_FAILED,
@@ -174,14 +174,14 @@ export class AuthService implements OnModuleInit {
     if (account === null) throw invalidCredentials();
 
     if (account.is2faEnabled) {
-      // Second step: POST /auth/2fa/verify with this token (T13).
+      // Second step: POST /auth/2fa/verify with this token.
       return {
         kind: 'two-factor',
         tempToken: this.accessTokens.signTwoFactorTempToken({
           sub: account.documentId,
           tv: account.tokenVersion,
         }),
-        // T13 Q8: only the configured method, never an email fallback.
+        // Only the configured method, never an email fallback.
         methods: account.twoFaMethod === null ? [] : [account.twoFaMethod],
       };
     }
@@ -231,7 +231,7 @@ export class AuthService implements OnModuleInit {
 
   /**
    * Rotates the refresh token. `refreshToken` is undefined for a concurrent
-   * refresh inside the grace window (T11a): the browser already holds the
+   * refresh inside the grace window: the browser already holds the
    * successor, so the cookie is left alone.
    */
   async refresh(rawToken: string, meta: ClientMeta): Promise<RefreshedTokens> {

@@ -66,7 +66,7 @@ function clearRefreshCookie(res: Response): void {
 }
 
 /**
- * SPEC §9 auth endpoints. There is no register route (Q2 invite-only), so
+ * SPEC §9 auth endpoints. There is no register route (invite-only), so
  * `POST /auth/register` is a plain 404. The refresh cookie is read only by
  * `refresh` and `logout` (D14), both behind the Origin allowlist.
  */
@@ -120,7 +120,7 @@ export class AuthController {
     if (rawToken === undefined) throw invalidRefreshToken();
     try {
       const tokens = await this.auth.refresh(rawToken, this.clientMeta(req));
-      // Grace (T11a): no new token, the cookie keeps the successor.
+      // Grace: no new token, the cookie keeps the successor.
       if (tokens.refreshToken !== undefined) {
         setRefreshCookie(res, tokens.refreshToken);
       }

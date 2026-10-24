@@ -33,7 +33,7 @@ function isPlainObject(value: unknown): value is PlainObject {
  * - Any other field that is not writable → 400 `FIELD_NOT_WRITABLE`.
  *
  * Sending a component list replaces that list (items not sent are deleted),
- * so it needs the whole component to be writable (decision T16): write
+ * so it needs the whole component to be writable: write
  * access to only some sub-fields does not allow sending the list.
  * Value types and tree shape (uids, item counts) are checked later by
  * `assertTreeInput` and Postgres.

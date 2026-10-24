@@ -23,7 +23,7 @@ import { TwoFactorChallengeStore } from './two-factor-challenge.store';
 import { TwoFactorController } from './two-factor.controller';
 import { TwoFactorService } from './two-factor.service';
 
-/** Login, JWT, refresh rotation (T09); OTP + password lifecycle (T12); 2FA (T13). */
+/** Login, JWT, refresh rotation; OTP + password lifecycle; 2FA. */
 @Module({
   imports: [
     AccessModule,

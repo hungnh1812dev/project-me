@@ -21,7 +21,7 @@ export const REFRESH_TOKEN_TTL_SECONDS = 7 * SECONDS_PER_DAY;
 export const REFRESH_TOKEN_TTL_MS = REFRESH_TOKEN_TTL_SECONDS * MS_PER_SECOND;
 
 /**
- * T11a: an already-rotated refresh token that comes back this soon after its
+ * An already-rotated refresh token that comes back this soon after its
  * rotation, while its successor is still unused, is a concurrent refresh
  * (two tabs, a retried request), not reuse. 10 s covers one slow round trip
  * plus tabs that wake from sleep together, and is tiny next to the 15 min
@@ -39,7 +39,7 @@ export const TWO_FACTOR_TEMP_TOKEN_MAX_ATTEMPTS = 5;
 /** Generous bound on a raw temp token (a JWT is ~300 characters). */
 export const TWO_FACTOR_TEMP_TOKEN_MAX_LENGTH = 2_048;
 /**
- * Most live temp tokens the in-memory challenge store tracks (T13, Q7). Each
+ * Most live temp tokens the in-memory challenge store tracks. Each
  * entry is ~150 bytes; at the cap expired entries are swept, then new
  * challenges are refused (429, fail closed) like the rate-limit store.
  */
@@ -105,7 +105,7 @@ export const AUTH_ERROR_CODES = {
   WEAK_PASSWORD: 'AUTH_WEAK_PASSWORD',
   /** Password reset of an account with TOTP needs an authenticator code (D8). */
   TOTP_REQUIRED: 'AUTH_TOTP_REQUIRED',
-  /** Wrong, replayed or expired 2FA code: one answer for all (T13). */
+  /** Wrong, replayed or expired 2FA code: one answer for all. */
   INVALID_2FA_CODE: 'AUTH_INVALID_2FA_CODE',
   /** 2FA temp token expired, used up, already used or forged. */
   INVALID_TEMP_TOKEN: 'AUTH_INVALID_TEMP_TOKEN',

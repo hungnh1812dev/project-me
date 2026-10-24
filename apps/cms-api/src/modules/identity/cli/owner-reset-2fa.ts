@@ -72,7 +72,7 @@ async function confirm(email: string): Promise<boolean> {
 }
 
 /**
- * `owner:reset-2fa` (T13a): break-glass recovery for a lost authenticator.
+ * `owner:reset-2fa`: break-glass recovery for a lost authenticator.
  * Turns 2FA off for one account (any role, the owner included) and ends all
  * its sessions. Asks for confirmation on a terminal; elsewhere `--yes` is
  * required. Prints no secrets. Exit 1 on any refusal (unknown account, 2FA

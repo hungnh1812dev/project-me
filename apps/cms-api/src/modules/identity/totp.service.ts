@@ -28,7 +28,7 @@ export interface TotpAccount {
 }
 
 /**
- * TOTP (D8, T13): secrets, otpauth URIs and code checks with replay
+ * TOTP (D8): secrets, otpauth URIs and code checks with replay
  * protection. A code is accepted only when its time step is above
  * `accounts.totp_last_step`, and the step is stored with a conditional
  * update, so of two requests with the same code only one wins. Also the

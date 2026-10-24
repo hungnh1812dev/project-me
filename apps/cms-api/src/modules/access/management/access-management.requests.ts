@@ -11,7 +11,7 @@ const displayName = z
   .min(1)
   .max(MANAGEMENT_LIMITS.DISPLAY_NAME_MAX_LENGTH);
 
-/** `POST /accounts`: invite-only (Q2), the invitee sets the password. */
+/** `POST /accounts`: invite-only, the invitee sets the password. */
 export const inviteAccountSchema = z.strictObject({
   email: z.string().trim().toLowerCase().max(EMAIL_MAX_LENGTH).pipe(z.email()),
   displayName,
@@ -19,7 +19,7 @@ export const inviteAccountSchema = z.strictObject({
   roleId: documentIdSchema,
 });
 
-/** `PATCH /accounts/:id`: display name and role only, never the email (T17 Q2). */
+/** `PATCH /accounts/:id`: display name and role only, never the email. */
 export const updateAccountSchema = z
   .strictObject({
     displayName: displayName.optional(),

@@ -16,7 +16,7 @@ export interface PermissionWriteOptions {
   /** Account making the change (`created_by` / `updated_by`). */
   actorId?: number | undefined;
   /**
-   * Extra writes in the same transaction (T17: the D15 audit row). The
+   * Extra writes in the same transaction (the D15 audit row). The
    * cache is dropped only after the whole transaction commits.
    */
   alsoInTransaction?:
@@ -25,11 +25,11 @@ export interface PermissionWriteOptions {
 }
 
 /**
- * The only write path for a role's permission rows (T15). It replaces the
+ * The only write path for a role's permission rows. It replaces the
  * whole set and bumps `roles.policy_version` in one transaction, then drops
  * the cached role, so the next request is evaluated with the new rows
  * (§12-11). Callers validate first (`validatePermissionSet`) and enforce the
- * rank rule (D6, T17); this service checks neither.
+ * rank rule (D6); this service checks neither.
  */
 @Injectable()
 export class RolePermissionsService {

@@ -13,7 +13,7 @@ import { RolesController } from './roles.controller';
 import { RolesService } from './roles.service';
 
 /**
- * Accounts, roles (T17) and API tokens (T19) API. A module of its own because it needs
+ * Accounts, roles and API tokens API. A module of its own because it needs
  * identity (OTP invites, JWT guard) while identity already imports
  * AccessModule for the version cache and the audit.
  */

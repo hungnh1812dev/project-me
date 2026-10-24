@@ -5,7 +5,7 @@ import { DEFAULT_ROLE_PERMISSIONS, SYSTEM_ROLES } from './system-roles';
 const ROLE_PERMISSIONS_SEED_LOCK_KEY = 7_163_201_908n;
 
 /**
- * Seeds the default permission rows (decision T14) into each system role
+ * Seeds the default permission rows into each system role
  * that has none yet, so the Owner's later edits are never overwritten.
  * Idempotent; run after `seedSystemRoles`. Returns the slugs it seeded.
  */

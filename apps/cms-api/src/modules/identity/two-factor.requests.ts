@@ -4,7 +4,7 @@ import { TWO_FACTOR_TEMP_TOKEN_MAX_LENGTH } from './identity-auth.constants';
 import { PASSWORD_MAX_LENGTH, TOTP } from './identity.constants';
 
 /**
- * Bodies of the 2FA endpoints (SPEC §9, T13 Q10). Shape checks only; codes
+ * Bodies of the 2FA endpoints (SPEC §9). Shape checks only; codes
  * of the wrong shape fail like a wrong code.
  */
 const code = z

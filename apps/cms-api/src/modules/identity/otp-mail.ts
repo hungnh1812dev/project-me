@@ -12,7 +12,7 @@ interface OtpMailCopy {
   readonly pagePath: string | undefined;
 }
 
-/** English copy per purpose (T12: plain text, the code only, no links). */
+/** English copy per purpose (plain text, the code only, no links). */
 const OTP_MAIL_COPY: Readonly<Record<OtpPurpose, OtpMailCopy>> = {
   INVITE_SET_PASSWORD: {
     subject: `Your ${PRODUCT_NAME} invitation code`,
@@ -24,7 +24,7 @@ const OTP_MAIL_COPY: Readonly<Record<OtpPurpose, OtpMailCopy>> = {
     intro: 'Use this code to reset your password:',
     pagePath: ADMIN_PAGE_PATHS.RESET_PASSWORD,
   },
-  /** Sign-in and turning email 2FA on/off share this purpose (T13 Q9). */
+  /** Sign-in and turning email 2FA on/off share this purpose. */
   LOGIN_2FA_EMAIL: {
     subject: `Your ${PRODUCT_NAME} verification code`,
     intro: 'Use this code to confirm it is you:',

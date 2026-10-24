@@ -46,7 +46,7 @@ function aadOf(context: string, kid: string): Buffer {
 }
 
 /**
- * D8 / T13 Q1: AES-256-GCM with the current TOTP_ENC_KEY (`seal`) and the
+ * D8: AES-256-GCM with the current TOTP_ENC_KEY (`seal`) and the
  * current or previous key (`open`), picked by the stored kid. An unknown kid
  * or a tampered ciphertext throws (fail closed).
  */

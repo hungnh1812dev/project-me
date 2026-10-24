@@ -24,7 +24,7 @@ export interface AuthenticatedAccount {
   readonly tokenVersion: number;
   /** The role's current `policy_version` (may be newer than the token's `pv`). */
   readonly policyVersion: number;
-  /** Who is asking, with the role's current permissions (T14/T15). */
+  /** Who is asking, with the role's current permissions. */
   readonly actor: ActorContext;
 }
 
@@ -35,7 +35,7 @@ export interface AuthenticatedRequest extends RequestWithId {
 /**
  * Bearer access tokens (D9, D14). HS256 only: passport-jwt passes
  * `algorithms` to jsonwebtoken, which rejects every other alg and `none`.
- * D9 / T15: `tv` and `pv` are compared with the database through
+ * D9: `tv` and `pv` are compared with the database through
  * VersionCache on every request.
  * - `tv` below the account's token_version (password write, refresh-token
  *   reuse, 2FA reset), or an account that is not active -> 401.

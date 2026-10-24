@@ -7,7 +7,7 @@ import { fieldErrors } from './field-errors';
 import { fieldPathsOf } from './field-paths';
 import type { RecordReadAccess } from './record-read-access';
 
-/** Field paths a list query uses, by purpose (T20 parses them from the URL). */
+/** Field paths a list query uses, by purpose (parsed from the URL). */
 export interface QueryFieldUse {
   filter?: readonly string[] | undefined;
   sort?: readonly string[] | undefined;
@@ -23,7 +23,7 @@ function isRecordSystemField(path: string): path is RecordSystemField {
 /**
  * SPEC D3: a query may only filter, sort or search on fields the actor can
  * read, so a masked value cannot be probed through result counts or order.
- * Not a Nest guard: the documents query service (T20) calls `assert` before
+ * Not a Nest guard: the documents query service calls `assert` before
  * building SQL.
  *
  * - Root system fields the access includes are allowed (`documentId`,

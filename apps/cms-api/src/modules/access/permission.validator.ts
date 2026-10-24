@@ -17,8 +17,8 @@ import { type FieldList, unionFieldLists } from './field-paths';
 import type { SubjectCatalog } from './subject-catalog';
 
 /**
- * Save-time checks for a role's permission set (T17 calls this before
- * writing rows) and for API token scopes (T19). Everything the evaluator
+ * Save-time checks for a role's permission set (called before rows
+ * are written) and for API token scopes. Everything the evaluator
  * and compiler later trust is enforced here.
  */
 
@@ -112,7 +112,7 @@ function checkFieldList(
 }
 
 /**
- * Validates a role's full permission set (the PUT body of T17). Conditions
+ * Validates a role's full permission set (the PUT body of a role). Conditions
  * may only compare fields the same set makes readable for that subject.
  * Returns the rows ready to store, or every issue found.
  */
@@ -269,9 +269,9 @@ function readableIn(
 }
 
 /**
- * Validates an API token scope (decision T14, used by T19): content
+ * Validates an API token scope (used by API token writes): content
  * subjects only, actions valid on them, field lists as for permissions.
- * The subset check against the creator (D5) belongs to T19.
+ * The subset check against the creator (D5) belongs to the API token service.
  */
 export function validateTokenScope(
   input: unknown,

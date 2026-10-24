@@ -32,7 +32,7 @@ export type SerializedComponents = Record<string, SerializedComponent[] | null>;
  * (`createdBy` / `updatedBy` for anonymous and reviewer actors) are
  * omitted, not masked: they are not content fields, so they are not listed
  * in `_maskedFields` either. The brand means only `RecordSerializer`
- * can produce one: response types of document endpoints (T20/T21) must use
+ * can produce one: response types of document endpoints must use
  * it, so a raw `ContentDocument` cannot be returned by mistake.
  */
 export type SerializedRecord = Partial<

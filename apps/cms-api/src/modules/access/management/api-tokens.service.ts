@@ -164,7 +164,7 @@ function subjectsOf(scope: TokenScope): string[] {
 }
 
 /**
- * API tokens (SPEC D5, T19). Create, update and revoke run only for a
+ * API tokens (SPEC D5). Create, update and revoke run only for a
  * signed-in account (the controller's `requireAccountActor`; a token cannot
  * reach this controller). Each write and its audit row share a transaction.
  */

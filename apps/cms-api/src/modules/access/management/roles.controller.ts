@@ -38,7 +38,7 @@ import { type RoleView, RolesService } from './roles.service';
 const SUBJECT = 'roles';
 
 /**
- * SPEC §9 roles (T17). The guard checks the `roles` permission; the
+ * SPEC §9 roles. The guard checks the `roles` permission; the
  * service enforces D6 (role rank below the actor's) and system-role rules.
  */
 @Controller(ROLES_ROUTES.ROOT)
@@ -98,7 +98,7 @@ export class RolesController {
     );
   }
 
-  /** Replaces the whole set: `{ permissions: [...] }` (T14 row shape). */
+  /** Replaces the whole set: `{ permissions: [...] }` (permission row shape). */
   @Put(ROLES_ROUTES.PERMISSIONS)
   @RequirePermission({ action: PermissionAction.update, subject: SUBJECT })
   replacePermissions(

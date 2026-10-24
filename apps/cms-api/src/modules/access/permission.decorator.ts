@@ -17,7 +17,7 @@ export type PermissionRequirement =
 
 /**
  * Declares the permission a handler needs. Only metadata: the guard that
- * reads it and calls `PolicyEvaluator.can()` is T15.
+ * reads it and calls `PolicyEvaluator.can()` is `PermissionGuard`.
  */
 export const RequirePermission = (requirement: PermissionRequirement) =>
   SetMetadata(PERMISSION_METADATA_KEY, requirement);

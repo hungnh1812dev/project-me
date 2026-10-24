@@ -6,7 +6,7 @@ import {
 
 export const ACCESS_RATE_LIMIT_POLICIES = {
   /**
-   * `POST /accounts` and `POST /accounts/:id/invite/resend` (T17a, Q9): one
+   * `POST /accounts` and `POST /accounts/:id/invite/resend`: one
    * shared counter per caller and per IP, so invite and resend can't be used
    * to mail-bomb. In memory (one replica).
    */

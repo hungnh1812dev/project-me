@@ -29,7 +29,7 @@ export interface RolePolicy {
   permissions: readonly PermissionGrant[];
 }
 
-/** `api_tokens.scope` (decision T14, reused by T19). Content subjects only. */
+/** `api_tokens.scope` (reused by API tokens). Content subjects only. */
 export interface TokenScopeEntry {
   subject: string;
   action: PermissionAction;
@@ -229,7 +229,7 @@ function intersectGrant(
       entry.writableFields ?? null,
       creatorGrant.writableFields,
     ),
-    // The creator's row conditions always apply; tokens have none (decision T14).
+    // The creator's row conditions always apply; tokens have none.
     conditions: creatorGrant.conditions,
   };
 }

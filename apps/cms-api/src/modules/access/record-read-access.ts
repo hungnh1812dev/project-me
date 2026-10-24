@@ -31,7 +31,7 @@ const PUBLIC_SYSTEM_FIELDS: ReadonlySet<RecordSystemField> = new Set(
   RECORD_SYSTEM_FIELDS.filter((field) => !ACCOUNT_REFERENCES.has(field)),
 );
 
-/** Anonymous visitors and reviewers never see `createdBy` / `updatedBy` (decision T16). */
+/** Anonymous visitors and reviewers never see `createdBy` / `updatedBy`. */
 export function recordReadAccess(
   actor: ActorContext,
   fields: FieldSelection,

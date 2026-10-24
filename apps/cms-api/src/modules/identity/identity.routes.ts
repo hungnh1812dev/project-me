@@ -13,7 +13,7 @@ export const SETUP_ROUTES = {
   OWNER: 'owner',
 } as const;
 
-/** SPEC §9 password lifecycle (T12), under /auth/password. */
+/** SPEC §9 password lifecycle, under /auth/password. */
 export const PASSWORD_ROUTES = {
   ROOT: `${AUTH_ROUTES.ROOT}/password`,
   REQUEST_OTP: 'request-otp',
@@ -22,7 +22,7 @@ export const PASSWORD_ROUTES = {
   CHANGE: 'change',
 } as const;
 
-/** SPEC §9 two-factor endpoints (T13), under /auth/2fa. */
+/** SPEC §9 two-factor endpoints, under /auth/2fa. */
 export const TWO_FACTOR_ROUTES = {
   ROOT: `${AUTH_ROUTES.ROOT}/2fa`,
   TOTP_SETUP: 'totp/setup',
@@ -30,6 +30,6 @@ export const TWO_FACTOR_ROUTES = {
   DISABLE: 'disable',
   VERIFY: 'verify',
   EMAIL_CHALLENGE: 'email-challenge',
-  /** T13 Q9: emailed code for enable/disable of email 2FA (signed in). */
+  /** Emailed code for enable/disable of email 2FA (signed in). */
   EMAIL_SEND_CODE: 'email/send-code',
 } as const;

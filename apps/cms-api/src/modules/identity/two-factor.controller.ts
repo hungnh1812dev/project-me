@@ -46,9 +46,9 @@ function parseBody<T>(schema: z.ZodType<T>, body: unknown): T {
 }
 
 /**
- * SPEC §9 two-factor endpoints (T13). `verify` and `email-challenge` take
+ * SPEC §9 two-factor endpoints. `verify` and `email-challenge` take
  * the temp token from `POST /auth/login`; the rest need a Bearer token.
- * Re-auth failures of signed-in calls answer 403 (T13 Q14).
+ * Re-auth failures of signed-in calls answer 403.
  */
 @Controller(TWO_FACTOR_ROUTES.ROOT)
 export class TwoFactorController {

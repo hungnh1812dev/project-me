@@ -115,11 +115,11 @@ function isUniqueViolation(error: unknown): boolean {
 }
 
 /**
- * Roles API (SPEC §9, T17). Every write requires the actor to outrank the
+ * Roles API (SPEC §9). Every write requires the actor to outrank the
  * role (and any new rank it sets, D6), so an admin can never touch `admin`
  * or `owner`. Writes bump `policy_version`, commit their audit row with them
  * (D15) and drop the role from the VersionCache after the commit. Permission
- * rows are written only through RolePermissionsService (T15).
+ * rows are written only through RolePermissionsService.
  */
 @Injectable()
 export class RolesService {
@@ -156,7 +156,7 @@ export class RolesService {
     assertOutranks(actor, input.rank);
     try {
       const row = await this.prisma.$transaction(async (tx) => {
-        // Serialised so two creates cannot both pass the cap (Q11).
+        // Serialised so two creates cannot both pass the cap.
         await tx.$executeRaw`SELECT pg_advisory_xact_lock(${ROLE_CAP_LOCK})`;
         const customRoles = await tx.role.count({ where: { isSystem: false } });
         if (customRoles >= MANAGEMENT_LIMITS.MAX_CUSTOM_ROLES) {
@@ -238,7 +238,7 @@ export class RolesService {
   }
 
   /**
-   * Deletes a custom role no account holds (T17 Q1): 409 ROLE_IN_USE with
+   * Deletes a custom role no account holds: 409 ROLE_IN_USE with
    * the count otherwise, deleted and disabled accounts included; 409
    * ROLE_SYSTEM_IMMUTABLE for a system role.
    */

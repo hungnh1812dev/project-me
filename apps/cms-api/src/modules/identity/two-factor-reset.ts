@@ -45,7 +45,7 @@ export function parseResetEmail(email: string): string {
 }
 
 /**
- * Break-glass 2FA recovery (T13a, `owner:reset-2fa`): turns 2FA off for one
+ * Break-glass 2FA recovery (`owner:reset-2fa`): turns 2FA off for one
  * account (any role, the owner included) and ends all its sessions. One
  * transaction clears the method and the sealed TOTP secret, kid and last
  * step, bumps token_version (access tokens and 2FA temp tokens die on their

@@ -52,7 +52,7 @@ const LOGGER_CONTEXT = 'PasswordService';
 /** Hashed for unknown emails so they cost the same HMAC as a real check. */
 const PLACEHOLDER_CODE = '0'.repeat(OTP.DIGITS);
 
-/** Account status -> the code `request-otp` sends (Q3 decision, T12). */
+/** Account status -> the code `request-otp` sends. */
 const OTP_PURPOSE_BY_STATUS: Readonly<
   Partial<Record<AccountStatus, OtpPurpose>>
 > = {
@@ -81,7 +81,7 @@ function totpRequired(): BadRequestException {
   });
 }
 
-/** T13 Q14: 403, not 401, so the client doesn't take it for an expired session. */
+/** 403, not 401, so the client doesn't take it for an expired session. */
 function wrongCurrentPassword(): ForbiddenException {
   return new ForbiddenException({
     errorCode: AUTH_ERROR_CODES.INVALID_CREDENTIALS,
@@ -90,7 +90,7 @@ function wrongCurrentPassword(): ForbiddenException {
 }
 
 /**
- * Password lifecycle (SPEC §9, D8, T12): emailed codes for reset and invite,
+ * Password lifecycle (SPEC §9, D8): emailed codes for reset and invite,
  * and change while signed in. Every password write bumps `token_version`
  * and revokes every refresh token of the account (§12-10), so all sessions
  * end, the current one included.
@@ -175,7 +175,7 @@ export class PasswordService implements OnApplicationShutdown {
     });
   }
 
-  /** Signed in: needs the current password. Ends every session (Q4 option a). */
+  /** Signed in: needs the current password. Ends every session. */
   async change(
     accountDocumentId: string,
     input: ChangePasswordRequest,

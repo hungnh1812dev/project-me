@@ -20,7 +20,7 @@ interface WithActor {
 }
 
 /**
- * Enforces `@RequirePermission()` with the PolicyEvaluator (T15). Use it
+ * Enforces `@RequirePermission()` with the PolicyEvaluator. Use it
  * after an authentication guard: `@UseGuards(JwtAuthGuard, PermissionGuard)`.
  * - no metadata -> allowed (the route needs authentication only);
  * - no actor on the request -> 401;

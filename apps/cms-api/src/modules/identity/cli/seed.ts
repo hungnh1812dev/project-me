@@ -4,7 +4,7 @@ import { seedRolePermissions, seedSystemRoles } from '../../access';
 
 /**
  * `db:seed` (also the last step of `db:migrate`): idempotent system roles
- * seed, then default permissions for roles that have none (T14).
+ * seed, then default permissions for roles that have none.
  */
 async function main(): Promise<void> {
   const config = loadAppConfig(process.env);

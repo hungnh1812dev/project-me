@@ -104,7 +104,7 @@ export function conditionKindOf(type: string): ConditionValueKind | undefined {
   return fieldTypeOf(type)?.conditionKind ?? undefined;
 }
 
-/** The root system columns every subject's conditions may use (decision T14). */
+/** The root system columns every subject's conditions may use. */
 export function systemConditionField(
   field: string,
 ): ConditionField | undefined {
@@ -168,8 +168,7 @@ function literalProblem(
 
 /**
  * Checks raw JSON against the DSL: shape, operators, fields (via the
- * catalog), literal types and variables. Call it when a permission is saved
- * (T17); the compiler runs it again so a hand-edited row fails closed.
+ * catalog), literal types and variables. Call it when a permission is saved; the compiler runs it again so a hand-edited row fails closed.
  */
 export function validateConditions(
   raw: unknown,

@@ -7,7 +7,7 @@ import {
 } from '../../common/constants/limits.constants';
 import type { RateLimitOverrideEnvKey } from '../../config/config.constants';
 
-/** Names of the rules whose limit an env key can override (T18b, T18c). */
+/** Names of the rules whose limit an env key can override. */
 export const RATE_LIMIT_RULE_NAMES = {
   LOGIN_IP: 'login:ip',
   LOGIN_EMAIL: 'login:email',
@@ -15,7 +15,7 @@ export const RATE_LIMIT_RULE_NAMES = {
 } as const;
 
 /**
- * D7 / T10 user decision: fixed-window limits of the auth endpoints. The
+ * D7 user decision: fixed-window limits of the auth endpoints. The
  * rules of one policy are checked in order and the first exhausted rule
  * answers 429, so put the IP rule first.
  */
@@ -55,7 +55,7 @@ export const IDENTITY_RATE_LIMIT_POLICIES = {
       windowMs: ONE_HOUR_MS,
     },
   ],
-  /** `POST /auth/password/reset` and `/set` (T12). Each code also allows 5 checks. */
+  /** `POST /auth/password/reset` and `/set`. Each code also allows 5 checks. */
   PASSWORD_SUBMIT: [
     {
       name: 'password-submit:ip',
@@ -64,7 +64,7 @@ export const IDENTITY_RATE_LIMIT_POLICIES = {
       windowMs: FIFTEEN_MINUTES_MS,
     },
   ],
-  /** `POST /auth/password/change` (T12): bounds current-password guessing. */
+  /** `POST /auth/password/change`: bounds current-password guessing. */
   PASSWORD_CHANGE: [
     {
       name: 'password-change:ip',
@@ -83,8 +83,8 @@ export const IDENTITY_RATE_LIMIT_POLICIES = {
     },
   ],
   /**
-   * `POST /auth/2fa/email-challenge` and `/auth/2fa/email/send-code` (T13,
-   * one shared counter); OtpService also caps codes per account in the DB.
+   * `POST /auth/2fa/email-challenge` and `/auth/2fa/email/send-code` (one
+   * shared counter); OtpService also caps codes per account in the DB.
    */
   TWO_FACTOR_EMAIL_CHALLENGE: [
     {
@@ -95,7 +95,7 @@ export const IDENTITY_RATE_LIMIT_POLICIES = {
     },
   ],
   /**
-   * `POST /auth/2fa/totp/setup`, `/enable` and `/disable` (T13, one shared
+   * `POST /auth/2fa/totp/setup`, `/enable` and `/disable` (one shared
    * counter): enable and disable test the current password.
    */
   TWO_FACTOR_MANAGE: [

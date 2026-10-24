@@ -44,7 +44,7 @@ function parseBody<T>(schema: z.ZodType<T>, body: unknown): T {
 }
 
 /**
- * SPEC §9 password endpoints (T12). None of them signs the user in: after a
+ * SPEC §9 password endpoints. None of them signs the user in: after a
  * reset, set or change every session is gone and the user logs in again.
  */
 @Controller(PASSWORD_ROUTES.ROOT)

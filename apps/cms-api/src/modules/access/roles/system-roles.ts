@@ -17,11 +17,11 @@ interface SystemRoleDefinition {
   /**
    * False for roles never given to an invited account: `public` is the
    * anonymous visitor and `reviewer` belongs to ephemeral reviewer sessions
-   * (D2, T31). `owner` is out of reach anyway (no rank is above it, D6).
+   * (D2). `owner` is out of reach anyway (no rank is above it, D6).
    */
   assignable: boolean;
   /**
-   * Rows seeded only into a role that has none yet (decision T14). `owner`
+   * Rows seeded only into a role that has none yet. `owner`
    * needs none: the evaluator grants it everything on known subjects. Fields
    * are all (null) and there are no conditions.
    */
@@ -116,7 +116,7 @@ export const ADMIN_ROLE_SLUG = 'admin' satisfies SystemRoleSlug;
 
 export const GUEST_ROLE_SLUG = 'guest' satisfies SystemRoleSlug;
 
-/** The role of ephemeral reviewer accounts (D2, T31). */
+/** The role of ephemeral reviewer accounts (D2). */
 export const REVIEWER_ROLE_SLUG = 'reviewer' satisfies SystemRoleSlug;
 
 /** The role of requests without credentials (SPEC §1). */

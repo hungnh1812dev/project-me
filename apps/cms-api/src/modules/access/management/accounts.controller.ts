@@ -44,7 +44,7 @@ import { requireAccountActor } from '../rank-rules';
 const SUBJECT = 'accounts';
 
 /**
- * SPEC §9 accounts (T17). The guard checks the `accounts` permission; the
+ * SPEC §9 accounts. The guard checks the `accounts` permission; the
  * service enforces D6 (target rank below the actor's, never itself).
  */
 @Controller(ACCOUNTS_ROUTES.ROOT)
@@ -66,7 +66,7 @@ export class AccountsController {
     return this.accounts.list(actor, parseRequest(pageQuerySchema, query));
   }
 
-  /** Invite (Q2): 201 with the account; the invitee gets an emailed code. */
+  /** Invite: 201 with the account; the invitee gets an emailed code. */
   @Post()
   @RequirePermission({ action: PermissionAction.create, subject: SUBJECT })
   @Throttle(ACCESS_RATE_LIMIT_POLICIES.ACCOUNT_INVITE)
@@ -124,7 +124,7 @@ export class AccountsController {
     );
   }
 
-  /** Q8: needs `accounts:create`, like the invite it repeats. */
+  /** Needs `accounts:create`, like the invite it repeats. */
   @Post(ACCOUNTS_ROUTES.RESEND_INVITE)
   @HttpCode(HttpStatus.OK)
   @RequirePermission({ action: PermissionAction.create, subject: SUBJECT })
