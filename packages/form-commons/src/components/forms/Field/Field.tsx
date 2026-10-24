@@ -2,7 +2,7 @@ import * as React from 'react';
 import { cn } from 'cn';
 
 import { Label } from '@/components/ui/label';
-import { FIELD_ID_SUFFIX } from '@/constants/field.constants';
+import { useFieldIds } from '@/components/forms/field-wiring';
 
 /** Props a control must spread to be linked to its label and helper text. */
 export interface FieldControlProps {
@@ -40,17 +40,12 @@ function Field({
   className,
   children,
 }: FieldProps) {
-  const generatedId = React.useId();
-  const controlId = id ?? generatedId;
-  const descriptionId = `${controlId}-${FIELD_ID_SUFFIX.DESCRIPTION}`;
-  const errorId = `${controlId}-${FIELD_ID_SUFFIX.ERROR}`;
   const hasDescription = description !== undefined && description !== null;
   const hasError = error !== undefined && error !== '';
-
-  const describedBy =
-    [hasDescription && descriptionId, hasError && errorId]
-      .filter(Boolean)
-      .join(' ') || undefined;
+  const { controlId, descriptionId, errorId, describedBy } = useFieldIds(id, {
+    hasDescription,
+    hasError,
+  });
 
   return (
     <div

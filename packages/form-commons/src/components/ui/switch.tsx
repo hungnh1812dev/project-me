@@ -2,6 +2,8 @@ import * as React from 'react';
 import { cn } from 'cn';
 import { Switch as SwitchPrimitive } from 'radix-ui';
 
+import { CONTROL_FOCUS_RING_ONLY_CLASSES } from '@/components/ui/control.constants';
+
 /** shadcn switch (Radix) restyled to semantic tokens. */
 function Switch({
   className,
@@ -12,7 +14,7 @@ function Switch({
       data-slot="switch"
       className={cn(
         'peer inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full border border-transparent bg-input transition-[color,box-shadow] outline-none',
-        'focus-visible:ring-[3px] focus-visible:ring-ring/50',
+        CONTROL_FOCUS_RING_ONLY_CLASSES,
         'data-[state=checked]:bg-primary',
         'disabled:cursor-not-allowed disabled:opacity-50',
         'aria-invalid:ring-[3px] aria-invalid:ring-destructive/20',

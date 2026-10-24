@@ -7,12 +7,12 @@ build it first through `^build`).
 
 ## Exports
 
-| Import                           | What                                                                                                                                                                                                                                                                                             |
-| -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Import                           | What                                                                                                                                                                                                                                                                                                          |
+| -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `@abyss/form-commons`            | `Button`, `Input`, `Label`, `Field`, `FormAlert`, `TextInput`, `SelectInput`, `CheckboxInput`, `Checkbox`, `TextAreaInput`, `NumberInput`, `SwitchInput`, `DatePicker`, `DateTimePicker`, `JsonInput`, `RichtextInput`, `Textarea`, `Switch`, `NativeSelect`, `Dialog*`, `FIELD_ID_SUFFIX` (ESM + CJS + d.ts) |
-| `@abyss/form-commons/styles.css` | Compiled CSS: tokens + the utilities the components use, no reset                                                                                                                                                                                                                                |
-| `@abyss/form-commons/theme.css`  | Tailwind v4 `@theme` mapping + tokens, for apps that run Tailwind                                                                                                                                                                                                                                |
-| `@abyss/form-commons/tokens.css` | CSS variables only                                                                                                                                                                                                                                                                               |
+| `@abyss/form-commons/styles.css` | Compiled CSS: tokens + the utilities the components use, no reset                                                                                                                                                                                                                                             |
+| `@abyss/form-commons/theme.css`  | Tailwind v4 `@theme` mapping + tokens, for apps that run Tailwind                                                                                                                                                                                                                                             |
+| `@abyss/form-commons/tokens.css` | CSS variables only                                                                                                                                                                                                                                                                                            |
 
 JS has no side effects (`sideEffects` lists only CSS), so unused components
 are tree-shaken.
@@ -148,6 +148,15 @@ returns to the trigger. Compose `DialogContent`, `DialogHeader`,
 `DialogTitle` (required for accessibility), `DialogDescription` and
 `DialogFooter` (secondary left, primary right, end-aligned). Put a
 `DialogClose` Cancel button in the footer; there is no corner close button.
+
+## Internals for a new input
+
+Not exported. A new input reuses `src/components/forms/field-wiring.ts`
+(`useRegisteredField` for native controls, `useRequiredFormContext` plus
+`useFieldIds` for controller-based ones, `NativeFieldProps` for the props type)
+and the focus / invalid classes in `src/components/ui/control.constants.ts`.
+`src/architecture.spec.ts` fails when those rules are copied back into a
+component.
 
 ## Adding shadcn components
 

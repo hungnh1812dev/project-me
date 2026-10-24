@@ -3,11 +3,13 @@ import {
   type FieldPath,
   type FieldValues,
   type RegisterOptions,
-  useFormContext,
-  useFormState,
 } from 'react-hook-form';
 
 import { Field } from '@/components/forms/Field';
+import {
+  type NativeFieldProps,
+  useRegisteredField,
+} from '@/components/forms/field-wiring';
 import { NativeSelect } from '@/components/ui/native-select';
 
 export interface SelectOption {
@@ -16,22 +18,9 @@ export interface SelectOption {
   disabled?: boolean | undefined;
 }
 
-type NativeSelectProps = Omit<
-  React.ComponentProps<'select'>,
-  | 'name'
-  | 'id'
-  | 'ref'
-  | 'required'
-  | 'defaultValue'
-  | 'children'
-  | 'aria-invalid'
-  | 'aria-describedby'
-  | 'aria-required'
->;
-
 export interface SelectInputProps<
   TFieldValues extends FieldValues = FieldValues,
-> extends NativeSelectProps {
+> extends Omit<NativeFieldProps<'select'>, 'children'> {
   name: FieldPath<TFieldValues>;
   label: React.ReactNode;
   options: readonly SelectOption[];
@@ -60,17 +49,11 @@ function SelectInput<TFieldValues extends FieldValues = FieldValues>({
   onBlur,
   ...selectProps
 }: SelectInputProps<TFieldValues>) {
-  const form = useFormContext<TFieldValues>();
-  if (!form) {
-    throw new Error(
-      'SelectInput must be rendered inside a react-hook-form <FormProvider>.',
-    );
-  }
-
-  const formState = useFormState({ control: form.control, name });
-  const { error } = form.getFieldState(name, formState);
-  const registration = form.register(name, rules);
-  const isRequired = required ?? Boolean(rules?.required);
+  const { registration, error, isRequired } = useRegisteredField<TFieldValues>(
+    name,
+    rules,
+    required,
+  );
 
   return (
     <Field

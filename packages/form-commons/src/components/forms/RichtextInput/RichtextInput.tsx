@@ -6,11 +6,15 @@ import {
   type FieldValues,
   type RegisterOptions,
   useController,
-  useFormContext,
 } from 'react-hook-form';
 import { cn } from 'cn';
 
 import { Field } from '@/components/forms/Field';
+import { useRequiredFormContext } from '@/components/forms/field-wiring';
+import {
+  CONTROL_FOCUS_WITHIN_CLASSES,
+  CONTROL_INVALID_CLASSES,
+} from '@/components/ui/control.constants';
 import { Button } from '@/components/ui/button';
 
 /** Link schemes the editor accepts; same set as the server allowlist. */
@@ -195,12 +199,7 @@ function RichtextInput<TFieldValues extends FieldValues = FieldValues>({
   id,
   fieldClassName,
 }: RichtextInputProps<TFieldValues>) {
-  const form = useFormContext<TFieldValues>();
-  if (!form) {
-    throw new Error(
-      'RichtextInput must be rendered inside a react-hook-form <FormProvider>.',
-    );
-  }
+  const form = useRequiredFormContext<TFieldValues>();
   const { field, fieldState } = useController({
     name,
     control: form.control,
@@ -255,8 +254,9 @@ function RichtextInput<TFieldValues extends FieldValues = FieldValues>({
           data-slot="richtext"
           aria-invalid={control['aria-invalid']}
           className={cn(
-            'rounded-md border border-input bg-card focus-within:border-ring focus-within:ring-[3px] focus-within:ring-ring/50',
-            'aria-invalid:border-destructive aria-invalid:ring-destructive/20',
+            'rounded-md border border-input bg-card',
+            CONTROL_FOCUS_WITHIN_CLASSES,
+            CONTROL_INVALID_CLASSES,
             disabled && 'opacity-50',
           )}
         >

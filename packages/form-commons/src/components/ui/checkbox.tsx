@@ -2,6 +2,11 @@ import * as React from 'react';
 import { cn } from 'cn';
 import { Checkbox as CheckboxPrimitive } from 'radix-ui';
 
+import {
+  CONTROL_FOCUS_CLASSES,
+  CONTROL_INVALID_CLASSES,
+} from '@/components/ui/control.constants';
+
 /**
  * shadcn checkbox (Radix) restyled to semantic tokens. `checked` may be
  * `'indeterminate'` for a partly selected group. Icons are inline so the
@@ -16,10 +21,10 @@ function Checkbox({
       data-slot="checkbox"
       className={cn(
         'peer size-4 shrink-0 cursor-pointer rounded-sm border border-input bg-card text-primary-foreground transition-[color,box-shadow] outline-none',
-        'focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50',
+        CONTROL_FOCUS_CLASSES,
         'data-[state=checked]:border-primary data-[state=checked]:bg-primary data-[state=indeterminate]:border-primary data-[state=indeterminate]:bg-primary',
         'disabled:cursor-not-allowed disabled:opacity-50',
-        'aria-invalid:border-destructive aria-invalid:ring-destructive/20',
+        CONTROL_INVALID_CLASSES,
         className,
       )}
       {...props}

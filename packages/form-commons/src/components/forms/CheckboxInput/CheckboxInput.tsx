@@ -5,12 +5,14 @@ import {
   type FieldValues,
   type RegisterOptions,
   useController,
-  useFormContext,
 } from 'react-hook-form';
 
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-import { FIELD_ID_SUFFIX } from '@/constants/field.constants';
+import {
+  useFieldIds,
+  useRequiredFormContext,
+} from '@/components/forms/field-wiring';
 
 export interface CheckboxInputProps<
   TFieldValues extends FieldValues = FieldValues,
@@ -38,12 +40,7 @@ function CheckboxInput<TFieldValues extends FieldValues = FieldValues>({
   id,
   className,
 }: CheckboxInputProps<TFieldValues>) {
-  const form = useFormContext<TFieldValues>();
-  if (!form) {
-    throw new Error(
-      'CheckboxInput must be rendered inside a react-hook-form <FormProvider>.',
-    );
-  }
+  const form = useRequiredFormContext<TFieldValues>();
   const {
     field: { ref: attachElement, ...field },
     fieldState,
@@ -52,17 +49,13 @@ function CheckboxInput<TFieldValues extends FieldValues = FieldValues>({
     control: form.control,
     ...(rules === undefined ? {} : { rules }),
   });
-  const generatedId = React.useId();
-  const controlId = id ?? generatedId;
-  const descriptionId = `${controlId}-${FIELD_ID_SUFFIX.DESCRIPTION}`;
-  const errorId = `${controlId}-${FIELD_ID_SUFFIX.ERROR}`;
   const hasDescription = description !== undefined && description !== null;
   const errorMessage = fieldState.error?.message;
   const hasError = errorMessage !== undefined && errorMessage !== '';
-  const describedBy =
-    [hasDescription && descriptionId, hasError && errorId]
-      .filter(Boolean)
-      .join(' ') || undefined;
+  const { controlId, descriptionId, errorId, describedBy } = useFieldIds(id, {
+    hasDescription,
+    hasError,
+  });
 
   return (
     <div
