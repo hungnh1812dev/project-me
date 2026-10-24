@@ -1,8 +1,7 @@
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
-import { fileURLToPath } from 'node:url';
 
-const COMPONENTS_DIR = fileURLToPath(new URL('./components', import.meta.url));
+const COMPONENTS_DIR = join(process.cwd(), 'src', 'components');
 const FIELD_WIRING_FILE = join('forms', 'field-wiring.ts');
 const CONTROL_CONSTANTS_FILE = join('ui', 'control.constants.ts');
 
