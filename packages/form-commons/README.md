@@ -7,12 +7,12 @@ build it first through `^build`).
 
 ## Exports
 
-| Import                           | What                                                                                                                                                                                                                                                                                                          |
-| -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Import                           | What                                                                                                                                                                                                                                                                                                                   |
+| -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `@abyss/form-commons`            | `Button`, `Input`, `Label`, `Field`, `FormAlert`, `TextInput`, `SelectInput`, `CheckboxInput`, `Checkbox`, `TextAreaInput`, `NumberInput`, `SwitchInput`, `DatePicker`, `DateTimePicker`, `JsonInput`, `RichtextInput`, `Textarea`, `Radio`, `Switch`, `NativeSelect`, `Dialog*`, `FIELD_ID_SUFFIX` (ESM + CJS + d.ts) |
-| `@abyss/form-commons/styles.css` | Compiled CSS: tokens + the utilities the components use, no reset                                                                                                                                                                                                                                             |
-| `@abyss/form-commons/theme.css`  | Tailwind v4 `@theme` mapping + tokens, for apps that run Tailwind                                                                                                                                                                                                                                             |
-| `@abyss/form-commons/tokens.css` | CSS variables only                                                                                                                                                                                                                                                                                            |
+| `@abyss/form-commons/styles.css` | Compiled CSS: tokens + the utilities the components use, no reset                                                                                                                                                                                                                                                      |
+| `@abyss/form-commons/theme.css`  | Tailwind v4 `@theme` mapping + tokens, for apps that run Tailwind                                                                                                                                                                                                                                                      |
+| `@abyss/form-commons/tokens.css` | CSS variables only                                                                                                                                                                                                                                                                                                     |
 
 JS has no side effects (`sideEffects` lists only CSS), so unused components
 are tree-shaken.
@@ -130,7 +130,8 @@ callback is given. All copy comes through the `labels` prop.
 
 ### SortableSheet, TablePagination, BulkActionBar
 
-Generic table parts (all copy through `labels`). `SortableSheet<TRow>`: `columns`
+Generic table parts (all copy through `labels`; `SortableSheet` needs `labels`
+only when it is selectable). `SortableSheet<TRow>`: `columns`
 (`key`, `header`, `renderCell`, `sortable`, `align`, `rowHeader`), `rows`,
 `getRowId`, `getRowLabel`; sorting is reported through `onSortChange(sort)`
 (new key ascending, same key flips) and applied by the parent (the header shows

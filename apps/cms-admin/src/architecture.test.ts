@@ -1,5 +1,5 @@
 import { readdirSync, readFileSync, statSync } from 'node:fs';
-import { join, resolve } from 'node:path';
+import { basename, join, resolve } from 'node:path';
 
 import * as appWiring from './features/auth/app-wiring';
 import * as authFacade from './features/auth';
@@ -121,5 +121,17 @@ describe('auth feature boundary', () => {
       'createSession',
       'installAuthInterceptor',
     ]);
+  });
+});
+
+describe('list tables', () => {
+  const MATRIX_FILES = ['PermissionMatrix.tsx', 'TokenScopeEditor.tsx'];
+
+  it('keeps hand-written tables to the two matrices; lists use SortableSheet', () => {
+    const withTable = sourceFilesIn(resolve(import.meta.dirname))
+      .filter((file) => readFileSync(file, 'utf8').includes('<table'))
+      .map((file) => basename(file))
+      .sort();
+    expect(withTable).toEqual(MATRIX_FILES);
   });
 });

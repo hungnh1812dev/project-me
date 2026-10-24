@@ -41,7 +41,8 @@ export interface SortableSheetProps<TRow> {
   /** Shows a checkbox column when `onSelectedChange` is given. */
   selectedIds?: ReadonlySet<string> | undefined;
   onSelectedChange?: ((next: Set<string>) => void) | undefined;
-  labels: SortableSheetLabels;
+  /** Needed only when the sheet is selectable. */
+  labels?: SortableSheetLabels | undefined;
   /** Dims the rows while a new page or sort loads. */
   busy?: boolean | undefined;
   className?: string | undefined;
@@ -152,7 +153,7 @@ function SortableSheet<TRow>({
             {selectable ? (
               <th scope="col" className="w-10 px-3 py-2">
                 <Checkbox
-                  aria-label={labels.selectAll}
+                  aria-label={labels?.selectAll}
                   checked={
                     allSelected
                       ? true
@@ -214,7 +215,7 @@ function SortableSheet<TRow>({
                 {selectable ? (
                   <td className="w-10 px-3 py-2">
                     <Checkbox
-                      aria-label={labels.selectRow(getRowLabel(row))}
+                      aria-label={labels?.selectRow(getRowLabel(row))}
                       checked={isSelected}
                       onCheckedChange={() => toggleRow(id)}
                     />

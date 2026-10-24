@@ -68,6 +68,20 @@ describe('SortableSheet', () => {
     expect(screen.getByRole('cell', { name: '5' })).toHaveClass('text-right');
   });
 
+  it('renders a plain list without labels or a checkbox column', () => {
+    render(
+      <SortableSheet
+        caption="People"
+        columns={COLUMNS}
+        rows={ROWS}
+        getRowId={(r) => r.id}
+        getRowLabel={(r) => r.name}
+      />,
+    );
+    expect(screen.queryByRole('checkbox')).not.toBeInTheDocument();
+    expect(screen.getByRole('rowheader', { name: 'Ada' })).toBeInTheDocument();
+  });
+
   it('reports ascending first, then flips the same column', async () => {
     const onSort = vi.fn<(sort: SheetSort) => void>();
     const user = userEvent.setup();

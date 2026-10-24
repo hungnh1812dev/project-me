@@ -1,8 +1,13 @@
 import { Link } from 'react-router';
 
-import { FormAlert } from '@abyss/form-commons';
+import {
+  FormAlert,
+  type SheetColumn,
+  SortableSheet,
+} from '@abyss/form-commons';
 import { COPY } from '../../config/copy.constants';
 import { rolePermissionsPath } from '../../config/routes';
+import type { Role } from './access.api';
 import { isForbidden } from './access-error';
 import { useRolesQuery } from './access-queries';
 import {
@@ -35,55 +40,53 @@ export function RolesPage() {
       ) : roles.data.length === 0 ? (
         <p className="m-0 text-sm text-muted-foreground">{copy.empty}</p>
       ) : (
-        <div className="relative overflow-x-auto rounded-md border border-border bg-card">
-          <table className="w-full border-collapse text-sm">
-            <caption className="sr-only">{copy.tableLabel}</caption>
-            <thead className="bg-muted text-left text-muted-foreground">
-              <tr>
-                <th scope="col" className="px-3 py-2 font-medium">
-                  {copy.columns.name}
-                </th>
-                <th scope="col" className="px-3 py-2 text-right font-medium">
-                  {copy.columns.rank}
-                </th>
-                <th scope="col" className="px-3 py-2 text-right font-medium">
-                  {copy.columns.accounts}
-                </th>
-                <th scope="col" className="px-3 py-2 font-medium">
-                  {copy.columns.type}
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {roles.data.map((role) => (
-                <tr key={role.id} className="border-t border-border">
-                  <th scope="row" className="px-3 py-2 text-left font-normal">
-                    <Link
-                      to={rolePermissionsPath(role.id)}
-                      aria-label={copy.open(role.name)}
-                      className="rounded-sm font-medium text-primary underline-offset-4 outline-none hover:underline focus-visible:ring-[3px] focus-visible:ring-ring/50"
-                    >
-                      {role.name}
-                    </Link>
-                    <span className="ml-2 font-mono text-xs text-muted-foreground">
-                      {role.slug}
-                    </span>
-                  </th>
-                  <td className="px-3 py-2 text-right tabular-nums">
-                    {role.rank}
-                  </td>
-                  <td className="px-3 py-2 text-right tabular-nums">
-                    {role.accountCount}
-                  </td>
-                  <td className="px-3 py-2 text-muted-foreground">
-                    {role.isSystem ? copy.system : copy.custom}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <SortableSheet
+          caption={copy.tableLabel}
+          columns={ROLE_COLUMNS}
+          rows={roles.data}
+          getRowId={(role) => role.id}
+          getRowLabel={(role) => role.name}
+        />
       )}
     </div>
   );
 }
+
+const ROLE_COLUMNS: readonly SheetColumn<Role>[] = [
+  {
+    key: 'name',
+    header: copy.columns.name,
+    rowHeader: true,
+    renderCell: (role) => (
+      <>
+        <Link
+          to={rolePermissionsPath(role.id)}
+          aria-label={copy.open(role.name)}
+          className="rounded-sm font-medium text-primary underline-offset-4 outline-none hover:underline focus-visible:ring-[3px] focus-visible:ring-ring/50"
+        >
+          {role.name}
+        </Link>
+        <span className="ml-2 font-mono text-xs font-normal text-muted-foreground">
+          {role.slug}
+        </span>
+      </>
+    ),
+  },
+  {
+    key: 'rank',
+    header: copy.columns.rank,
+    align: 'right',
+    renderCell: (role) => role.rank,
+  },
+  {
+    key: 'accounts',
+    header: copy.columns.accounts,
+    align: 'right',
+    renderCell: (role) => role.accountCount,
+  },
+  {
+    key: 'type',
+    header: copy.columns.type,
+    renderCell: (role) => (role.isSystem ? copy.system : copy.custom),
+  },
+];

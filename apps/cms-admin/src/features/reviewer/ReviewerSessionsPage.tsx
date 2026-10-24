@@ -10,6 +10,8 @@ import {
   Label,
   Switch,
   FormAlert,
+  type SheetColumn,
+  SortableSheet,
 } from '@abyss/form-commons';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useId, useState } from 'react';
@@ -72,23 +74,14 @@ export function ReviewerSessionsPage() {
         </div>
       ) : (
         <div className="relative overflow-x-auto rounded-md border border-border bg-card">
-          <table className="w-full border-collapse text-sm">
-            <caption className="sr-only">{copy.tableLabel}</caption>
-            <thead className="bg-muted text-left text-muted-foreground">
-              <tr>
-                {Object.values(copy.columns).map((label) => (
-                  <th key={label} scope="col" className="px-3 py-2 font-medium">
-                    {label}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((session) => (
-                <SessionRow key={session.id} session={session} />
-              ))}
-            </tbody>
-          </table>
+          <SortableSheet
+            className="rounded-none border-0"
+            caption={copy.tableLabel}
+            columns={SESSION_COLUMNS}
+            rows={rows}
+            getRowId={(session) => session.id}
+            getRowLabel={(session) => session.visitorRole}
+          />
           {sessions.data === undefined ? null : (
             <Pagination
               meta={sessions.data.meta}
@@ -104,53 +97,74 @@ export function ReviewerSessionsPage() {
 }
 
 /** Notes and the browser string come from a visitor: shown as text, never HTML. */
-function SessionRow({ session }: { session: ReviewerSession }) {
-  const status = session.active ? 'active' : 'ended';
-  return (
-    <tr className="border-t border-border align-top">
-      <th scope="row" className="px-3 py-2 text-left font-medium">
-        {session.visitorRole}
-      </th>
-      <td className="px-3 py-2 text-muted-foreground">
-        {session.purposeTags.length === 0
-          ? copy.noPurposes
-          : session.purposeTags.join(', ')}
-      </td>
-      <td className="max-w-72 px-3 py-2">
-        {session.notes === null || session.notes === '' ? (
-          <span className="text-muted-foreground">{copy.noNotes}</span>
-        ) : (
-          <span className="whitespace-pre-wrap break-words">
-            {session.notes}
-          </span>
-        )}
-      </td>
-      <td
-        className="max-w-48 px-3 py-2 text-muted-foreground"
+const SESSION_COLUMNS: readonly SheetColumn<ReviewerSession>[] = [
+  {
+    key: 'visitor',
+    header: copy.columns.visitor,
+    rowHeader: true,
+    renderCell: (session) => session.visitorRole,
+  },
+  {
+    key: 'purposes',
+    header: copy.columns.purposes,
+    renderCell: (session) =>
+      session.purposeTags.length === 0
+        ? copy.noPurposes
+        : session.purposeTags.join(', '),
+  },
+  {
+    key: 'notes',
+    header: copy.columns.notes,
+    renderCell: (session) =>
+      session.notes === null || session.notes === '' ? (
+        <span className="text-muted-foreground">{copy.noNotes}</span>
+      ) : (
+        <span className="block max-w-72 whitespace-pre-wrap break-words text-foreground">
+          {session.notes}
+        </span>
+      ),
+  },
+  {
+    key: 'browser',
+    header: copy.columns.browser,
+    renderCell: (session) => (
+      <span
+        className="line-clamp-2 max-w-48 break-words"
         title={session.userAgent ?? undefined}
       >
-        <span className="line-clamp-2 break-words">
-          {session.userAgent ?? copy.noBrowser}
-        </span>
-      </td>
-      <td className="px-3 py-2 tabular-nums text-muted-foreground">
-        {formatDateTime(session.createdAt)}
-      </td>
-      <td className="px-3 py-2">
-        <span
-          className={`inline-block rounded-sm px-2 py-0.5 text-xs font-medium ${STATUS_CLASS[status]}`}
-        >
-          {copy.status[status]}
-        </span>
-        {session.active ? (
-          <span className="mt-1 block text-xs tabular-nums text-muted-foreground">
-            {copy.until(formatDateTime(session.expiresAt))}
+        {session.userAgent ?? copy.noBrowser}
+      </span>
+    ),
+  },
+  {
+    key: 'started',
+    header: copy.columns.started,
+    renderCell: (session) => (
+      <span className="tabular-nums">{formatDateTime(session.createdAt)}</span>
+    ),
+  },
+  {
+    key: 'status',
+    header: copy.columns.status,
+    renderCell: (session) => {
+      const status = session.active ? 'active' : 'ended';
+      return (
+        <>
+          <span
+            className={`inline-block rounded-sm px-2 py-0.5 text-xs font-medium ${STATUS_CLASS[status]}`}
+          >
+            {copy.status[status]}
           </span>
-        ) : null}
-      </td>
-    </tr>
-  );
-}
+          {session.active ? (
+            <span className="mt-1 block text-xs tabular-nums text-muted-foreground">
+              {copy.until(formatDateTime(session.expiresAt))}
+            </span>
+          ) : null}
+        </>
+      );
+    },
+  },
+];
 
 /** The owner's toggle. Switching off asks first: it ends live sessions. */
 function AccessSwitch() {
