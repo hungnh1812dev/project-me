@@ -16,10 +16,8 @@ import {
   CONTROL_INVALID_CLASSES,
 } from '@/components/ui/control.constants';
 import { Button } from '@/components/ui/button';
+import { RICHTEXT_LINK_PROTOCOLS } from '@/constants/richtext.constants';
 import { CSP_NONCE_META_NAME } from '@/constants/security.constants';
-
-/** Link schemes the editor accepts; same set as the server allowlist. */
-const LINK_PROTOCOLS = ['http', 'https', 'mailto', 'tel'];
 
 /**
  * Tiptap injects its base CSS as a <style>; under a nonce-based `style-src` it
@@ -48,7 +46,7 @@ export const richtextExtensions = [
     link: {
       openOnClick: false,
       autolink: false,
-      protocols: LINK_PROTOCOLS,
+      protocols: RICHTEXT_LINK_PROTOCOLS,
       HTMLAttributes: { class: null, target: null, rel: null },
     },
     codeBlock: { HTMLAttributes: { class: null } },
