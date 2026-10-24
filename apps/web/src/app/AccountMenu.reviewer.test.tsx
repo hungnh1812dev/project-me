@@ -58,4 +58,23 @@ describe('account menu reviewer entry', () => {
       screen.queryByRole('button', { name: COPY.reviewer.open }),
     ).not.toBeInTheDocument();
   });
+
+  it('never reads the switch for a signed-in user', async () => {
+    isEnabled.mockClear();
+    isEnabled.mockResolvedValue(true);
+    render(
+      <Wrapper
+        api={fakeApi({
+          refresh: vi.fn<() => Promise<string>>().mockResolvedValue('tok'),
+        })}
+      >
+        <AccountMenu />
+      </Wrapper>,
+    );
+    await screen.findByRole('button', { name: COPY.session.signOut });
+    expect(isEnabled).not.toHaveBeenCalled();
+    expect(
+      screen.queryByRole('button', { name: COPY.reviewer.open }),
+    ).not.toBeInTheDocument();
+  });
 });

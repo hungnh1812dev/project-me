@@ -4,7 +4,7 @@ import Script from 'next/script';
 import { useEffect, useRef, useState } from 'react';
 
 import { COPY } from '../../config/copy.constants';
-import { TURNSTILE } from '../../config/reviewer.constants';
+import { TURNSTILE } from '../../config/security.constants';
 import './turnstile';
 
 const copy = COPY.reviewer.turnstile;

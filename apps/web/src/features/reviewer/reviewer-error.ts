@@ -1,5 +1,6 @@
 import { COPY } from '../../config/copy.constants';
-import { HTTP_STATUS, REVIEWER_ERROR_CODES } from '../../config/http.constants';
+import { HTTP_STATUS } from '../../config/http.constants';
+import { REVIEWER_ERROR_CODES } from '../../config/reviewer.constants';
 import type { Alert } from '../../lib/alert';
 import { type ApiFailure, formatRetryAfter } from '../../lib/api-failure';
 

@@ -319,3 +319,20 @@ test('the code step: a dead temp token returns to the credentials with a notice,
   ).toBeVisible();
   await expect(page.getByText(/^Signed in as /)).toHaveCount(0);
 });
+
+test('a signed-in reader gets no Reviewer access button and no reviewer status call', async ({
+  page,
+}) => {
+  await page.goto(e2eEnv.webUrl);
+  await openDialog(page);
+  const statusCalls: string[] = [];
+  page.on('request', (req) => {
+    if (req.url().endsWith('/reviewer/status')) statusCalls.push(req.url());
+  });
+  await fillCredentials(page, e2eEnv.readerEmail, e2eEnv.readerPassword);
+  await expect(signOutButton(page)).toBeVisible();
+  await expect(
+    page.getByRole('button', { name: COPY.reviewer.open, exact: true }),
+  ).toHaveCount(0);
+  expect(statusCalls).toEqual([]);
+});

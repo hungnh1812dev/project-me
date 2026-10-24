@@ -28,9 +28,11 @@ export const REVIEWER_PURPOSE_TAGS = [
 /** How often the reviewer-enabled flag is re-read while the page is open. */
 export const REVIEWER_STATUS_STALE_MS = 60_000;
 
-/** Cloudflare Turnstile (explicit rendering). The only third-party origin. */
-export const TURNSTILE = {
-  SCRIPT_ORIGIN: 'https://challenges.cloudflare.com',
-  SCRIPT_URL:
-    'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit',
+/** `errorCode` values of cms-api reviewer failures the UI branches on (T31). */
+export const REVIEWER_ERROR_CODES = {
+  DISABLED: 'REVIEWER_DISABLED',
+  UNAVAILABLE: 'REVIEWER_UNAVAILABLE',
+  TURNSTILE_FAILED: 'REVIEWER_TURNSTILE_FAILED',
+  IP_LIMITED: 'REVIEWER_IP_LIMITED',
+  CAPACITY_REACHED: 'REVIEWER_CAPACITY_REACHED',
 } as const;

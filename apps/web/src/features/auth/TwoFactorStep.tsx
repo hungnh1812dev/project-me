@@ -11,7 +11,7 @@ import {
   type TwoFactorMethod,
 } from '../../config/auth.constants';
 import { COPY } from '../../config/copy.constants';
-import { API_ERROR_CODES } from '../../config/http.constants';
+import { API_ERROR_CODES } from '../../config/auth.constants';
 import type { Alert } from '../../lib/alert';
 import type { ApiFailure } from '../../lib/api-failure';
 import type { TwoFactorChallenge } from '../session';

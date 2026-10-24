@@ -18,18 +18,3 @@ export const RETRY_AFTER_HEADER = 'retry-after';
 
 export const SECONDS_PER_MINUTE = 60;
 export const MS_PER_SECOND = 1000;
-
-/** `errorCode` values of cms-api auth failures the UI branches on. */
-export const API_ERROR_CODES = {
-  INVALID_2FA_CODE: 'AUTH_INVALID_2FA_CODE',
-  INVALID_TEMP_TOKEN: 'AUTH_INVALID_TEMP_TOKEN',
-} as const;
-
-/** `errorCode` values of cms-api reviewer failures the UI branches on (T31). */
-export const REVIEWER_ERROR_CODES = {
-  DISABLED: 'REVIEWER_DISABLED',
-  UNAVAILABLE: 'REVIEWER_UNAVAILABLE',
-  TURNSTILE_FAILED: 'REVIEWER_TURNSTILE_FAILED',
-  IP_LIMITED: 'REVIEWER_IP_LIMITED',
-  CAPACITY_REACHED: 'REVIEWER_CAPACITY_REACHED',
-} as const;

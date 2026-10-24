@@ -13,3 +13,9 @@ export const READ_ACTION = 'read';
 
 /** Scheme of the per-call `Authorization` header; never a client default. */
 export const BEARER_PREFIX = 'Bearer ';
+
+/** `errorCode` values of cms-api auth failures the UI branches on. */
+export const API_ERROR_CODES = {
+  INVALID_2FA_CODE: 'AUTH_INVALID_2FA_CODE',
+  INVALID_TEMP_TOKEN: 'AUTH_INVALID_TEMP_TOKEN',
+} as const;

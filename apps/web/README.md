@@ -47,6 +47,15 @@ in a production build.
 - `src/config/endpoints.ts` is the single map of API paths.
 - `src/config/copy.constants.ts` holds user-facing text until an i18n module
   exists.
+- `config/**` may use pure `lib` helpers (`strip-trailing-slashes`,
+  `safe-link-target`) but never `lib/api-client` or a feature (ESLint). Error
+  codes live with their feature constants (`auth.constants`,
+  `reviewer.constants`); third-party origins in `security.constants`.
+- `src/lib/safe-link-target.ts` decides what may be an `href` (http(s) URL or
+  same-origin path); `optionalLinkTarget` in `require-env.ts` uses it.
+- `features/reviewer/reviewer.queries.ts` owns the reviewer API instance, the
+  query key and `useReviewerEnabled()` (anonymous visitor plus Turnstile site
+  key only).
 - `src/lib/api-client.ts` is the browser Axios instance. It strips trailing
   slashes from every request path (SPEC §6), so no proxy can answer with a
   redirect.
@@ -97,7 +106,7 @@ tokens only (`bg-card`, `text-muted-foreground`).
   reload ends the review; "End review" drops the token locally.
 - Turnstile loads through `next/script` only while the dialog's last step is
   open (`challenges.cloudflare.com`, constant `TURNSTILE` in
-  `src/config/reviewer.constants.ts`). The CSP allows that origin in
+  `src/config/security.constants.ts`). The CSP allows that origin in
   `script-src` and `frame-src`; `next/script` stamps the request nonce on it.
 - There is no page to refetch per actor yet (T30 skipped), so the reviewer
   view today is the session itself; pages added later read the token with

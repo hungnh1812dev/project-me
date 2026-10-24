@@ -26,14 +26,13 @@ import {
 } from '../../config/reviewer.constants';
 import { apiFailureOf } from '../../lib/api-failure';
 import { useWebSession } from '../session';
-import { apiClient } from '../../lib/api-client';
-import { createReviewerApi, type ReviewerApi } from './reviewer.api';
+import { type ReviewerApi } from './reviewer.api';
+import { reviewerApi } from './reviewer.queries';
 import { reviewerAlertOf, type ReviewerAlert } from './reviewer-error';
 import { TurnstileWidget } from './TurnstileWidget';
 
 const copy = COPY.reviewer;
 const limits = REVIEWER_INPUT_LIMITS;
-const defaultApi = createReviewerApi(apiClient);
 
 export interface ReviewerFormValues {
   role: string;
@@ -91,7 +90,7 @@ export function ReviewerAccessDialog({
   open,
   onOpenChange,
   siteKey,
-  api = defaultApi,
+  api = reviewerApi,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;

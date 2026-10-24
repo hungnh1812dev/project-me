@@ -40,6 +40,34 @@ export default [
     [TEST_UTILS_BAN],
     [...TEST_FILES, 'src/features/**'],
   ),
+  // config is the lowest layer: it may use pure lib helpers, never the API
+  // client or a feature.
+  restrictImports(
+    ['src/config/**'],
+    [
+      TEST_UTILS_BAN,
+      {
+        group: ['**/lib/api-client'],
+        message: 'config may not depend on the API client.',
+      },
+      {
+        regex: '^\\.\\./features(/|$)',
+        message: 'config may not depend on a feature.',
+      },
+    ],
+    TEST_FILES,
+  ),
+  restrictImports(
+    ['src/config/security.constants.ts'],
+    [
+      TEST_UTILS_BAN,
+      {
+        group: ['./reviewer.constants'],
+        message: 'Third-party origins live in security.constants itself.',
+      },
+    ],
+    TEST_FILES,
+  ),
   restrictImports(
     ['src/features/**'],
     [DEEP_FEATURE_IMPORT_BAN, TEST_UTILS_BAN],

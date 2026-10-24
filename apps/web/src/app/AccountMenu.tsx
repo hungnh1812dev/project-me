@@ -1,18 +1,13 @@
 'use client';
 
 import { Button } from '@abyss/form-commons';
-import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 
 import { COPY } from '../config/copy.constants';
 import { appEnv } from '../config/env.client';
-import { REVIEWER_STATUS_STALE_MS } from '../config/reviewer.constants';
-import { apiClient } from '../lib/api-client';
 import { WebLoginDialog } from '../features/auth';
-import { createReviewerApi, ReviewerAccessDialog } from '../features/reviewer';
+import { ReviewerAccessDialog, useReviewerEnabled } from '../features/reviewer';
 import { useWebSession } from '../features/session';
-
-const reviewerApi = createReviewerApi(apiClient);
 
 /** Header controls: sign in, or the account name with Open CMS and sign out. */
 export function AccountMenu() {
@@ -20,15 +15,7 @@ export function AccountMenu() {
   const [loginOpen, setLoginOpen] = useState(false);
   const [reviewerOpen, setReviewerOpen] = useState(false);
   const siteKey = appEnv.turnstileSiteKey;
-  // Only an anonymous visitor can ask for reviewer access, and only when the
-  // owner switched it on and the widget is configured.
-  const reviewerEnabled = useQuery({
-    queryKey: ['reviewer', 'status'],
-    queryFn: reviewerApi.isEnabled,
-    enabled: siteKey !== undefined && status === 'anonymous',
-    staleTime: REVIEWER_STATUS_STALE_MS,
-    retry: false,
-  });
+  const isReviewerEnabled = useReviewerEnabled();
   const [signingOut, setSigningOut] = useState(false);
   const [signOutFailed, setSignOutFailed] = useState(false);
 
@@ -47,7 +34,7 @@ export function AccountMenu() {
         >
           {COPY.session.signIn}
         </Button>
-        {siteKey !== undefined && reviewerEnabled.data === true ? (
+        {siteKey !== undefined && isReviewerEnabled ? (
           <>
             <Button
               size="sm"

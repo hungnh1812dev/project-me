@@ -1,3 +1,4 @@
+import { isSafeLinkTarget } from '../lib/safe-link-target';
 import { stripTrailingSlashes } from '../lib/strip-trailing-slashes';
 
 export function requireEnv(name: string, value: string | undefined): string {
@@ -11,35 +12,6 @@ export function requireEnv(name: string, value: string | undefined): string {
 export function optionalText(value: string | undefined): string | undefined {
   const trimmed = value?.trim() ?? '';
   return trimmed === '' ? undefined : trimmed;
-}
-
-const BACKSLASH = '\\';
-const LAST_CONTROL_CODE = 0x1f;
-const DELETE_CODE = 0x7f;
-
-function hasUnsafeChar(value: string): boolean {
-  return [...value].some((char) => {
-    const code = char.charCodeAt(0);
-    return (
-      char === BACKSLASH || code <= LAST_CONTROL_CODE || code === DELETE_CODE
-    );
-  });
-}
-const PROBE_ORIGIN = 'http://probe.invalid';
-const WEB_PROTOCOLS = new Set(['http:', 'https:']);
-
-function isSafeLinkTarget(value: string): boolean {
-  // Backslashes and control characters are rewritten by browsers
-  // (`/\host` -> `//host`, tabs dropped), so they never pass.
-  if (hasUnsafeChar(value)) return false;
-  try {
-    if (value.startsWith('/')) {
-      return new URL(value, PROBE_ORIGIN).origin === PROBE_ORIGIN;
-    }
-    return WEB_PROTOCOLS.has(new URL(value).protocol);
-  } catch {
-    return false;
-  }
 }
 
 /**
