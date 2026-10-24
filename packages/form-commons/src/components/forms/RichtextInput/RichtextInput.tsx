@@ -37,7 +37,7 @@ function readCspNonce(): string | undefined {
 const EMPTY_DOC_HTML = '<p></p>';
 
 /**
- * Extensions kept to what cms-api `sanitizeRichtext` allows (T24): paragraphs,
+ * Extensions kept to what cms-api `sanitizeRichtext` allows: paragraphs,
  * line breaks, rules, bold/italic/underline/strike, code, quotes, headings,
  * lists and links. Add a tag here only after adding it to the server list.
  */

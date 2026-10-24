@@ -28,7 +28,7 @@ export type SessionStatus = 'unknown' | 'anonymous' | 'authenticated';
 
 /**
  * `account` = a reader account signed in (refresh cookie, silent refresh).
- * `reviewer` = a reviewer session (T32): access token only, no cookie, gone
+ * `reviewer` = a reviewer session: access token only, no cookie, gone
  * on reload.
  */
 export type SessionKind = 'account' | 'reviewer';
@@ -48,7 +48,7 @@ export interface WebSession {
   completeTwoFactor: (input: TwoFactorVerification) => Promise<void>;
   sendLoginEmailCode: (tempToken: string) => Promise<void>;
   /**
-   * Holds a reviewer access token from `POST /reviewer/sessions` (T32). Same
+   * Holds a reviewer access token from `POST /reviewer/sessions`. Same
    * holder as the account token: memory only, never sent to the Next server.
    */
   startReviewerSession: (accessToken: string) => Promise<void>;

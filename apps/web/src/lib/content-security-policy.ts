@@ -34,7 +34,7 @@ export function originOf(value: string): string | null {
 }
 
 /**
- * Web CSP (SPEC D17, Q-W4). Scripts need the nonce; `strict-dynamic` lets
+ * Web CSP (SPEC D17). Scripts need the nonce; `strict-dynamic` lets
  * those scripts load Turnstile. `style-src` carries the nonce for stylesheets
  * and `style-src-attr 'unsafe-inline'` covers React/Radix style attributes
  * (attributes cannot run script).

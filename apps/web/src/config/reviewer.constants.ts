@@ -1,5 +1,5 @@
 /**
- * Reviewer access dialog (T32). Limits mirror cms-api's
+ * Reviewer access dialog. Limits mirror cms-api's
  * `REVIEWER_INPUT_LIMITS`; the server validates everything again.
  */
 export const REVIEWER_INPUT_LIMITS = {
@@ -12,13 +12,13 @@ export const REVIEWER_INPUT_LIMITS = {
 /** Form value of the "Other, free text" choice. */
 export const REVIEWER_OTHER_VALUE = '__other__';
 
-/** Visitor roles offered in the dialog (user answer, T32). */
+/** Visitor roles offered in the dialog. */
 export const REVIEWER_VISITOR_ROLES = [
   'Recruiter',
   'Peer / colleague',
 ] as const;
 
-/** Purpose tags offered in the dialog (user answer, T32). */
+/** Purpose tags offered in the dialog. */
 export const REVIEWER_PURPOSE_TAGS = [
   'Hiring',
   'Project scoping',
@@ -28,7 +28,7 @@ export const REVIEWER_PURPOSE_TAGS = [
 /** How often the reviewer-enabled flag is re-read while the page is open. */
 export const REVIEWER_STATUS_STALE_MS = 60_000;
 
-/** `errorCode` values of cms-api reviewer failures the UI branches on (T31). */
+/** `errorCode` values of cms-api reviewer failures the UI branches on. */
 export const REVIEWER_ERROR_CODES = {
   DISABLED: 'REVIEWER_DISABLED',
   UNAVAILABLE: 'REVIEWER_UNAVAILABLE',

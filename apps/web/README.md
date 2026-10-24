@@ -64,7 +64,7 @@ Styling: Tailwind v4 through `@tailwindcss/postcss` with the form-commons theme
 (`src/app/app.css`, imported by `src/app/layout.tsx`). Components use semantic
 tokens only (`bg-card`, `text-muted-foreground`).
 
-## Sign-in and session (T33)
+## Sign-in and session
 
 - The header "Sign in" opens `WebLoginDialog` (email + password, then the 2FA
   code when the account has it). Calls go from the browser to
@@ -89,10 +89,10 @@ tokens only (`bg-card`, `text-muted-foreground`).
 - "Open CMS" links to `NEXT_PUBLIC_ADMIN_URL` (build-time, optional, http(s)
   URL or path); the admin signs in silently from the same cookie. Unset hides
   the link.
-- No page refetches data per actor yet: the CV page (T30) was skipped, so the
+- No page refetches data per actor yet: the CV page was skipped, so the
   GraphQL refetch with the Bearer token has nothing to attach to.
 
-## Reviewer access (T32)
+## Reviewer access
 
 - The header shows "Reviewer access" to anonymous visitors when cms-api's
   public `GET /reviewer/status` says the owner switched it on **and**
@@ -108,7 +108,7 @@ tokens only (`bg-card`, `text-muted-foreground`).
   open (`challenges.cloudflare.com`, constant `TURNSTILE` in
   `src/config/security.constants.ts`). The CSP allows that origin in
   `script-src` and `frame-src`; `next/script` stamps the request nonce on it.
-- There is no page to refetch per actor yet (T30 skipped), so the reviewer
+- There is no page to refetch per actor yet (the CV page was skipped), so the reviewer
   view today is the session itself; pages added later read the token with
   `useWebSession().getAccessToken()`.
 
@@ -136,14 +136,14 @@ Runtime env: `API_INTERNAL_URL`, `WEB_REVALIDATE_SECONDS`, `WEB_PORT` (default
 | `lint`      | Oxlint (base-config + react, jsx-a11y, vitest) then ESLint (base-config, react-hooks, Next) |
 | `typecheck` | `next typegen`, then `tsc --noEmit`                                                         |
 
-## Security headers (SPEC D17, T36)
+## Security headers (SPEC D17)
 
 - `src/proxy.ts` makes a fresh nonce per request and sets
   `Content-Security-Policy` on the forwarded request (Next.js stamps the nonce
   on its scripts) and on the response. The policy is built in
   `src/lib/content-security-policy.ts`: `script-src 'self' 'nonce-<n>'
 'strict-dynamic'` + the Turnstile origin, `style-src 'self' 'nonce-<n>'` with
-  `style-src-attr 'unsafe-inline'` (Q-W4), `connect-src 'self'` plus the origin
+  `style-src-attr 'unsafe-inline'`, `connect-src 'self'` plus the origin
   of `NEXT_PUBLIC_API_BASE_URL` when it is absolute, `img-src` with Cloudinary,
   `frame-src` Turnstile, `frame-ancestors 'none'`. Dev adds `'unsafe-eval'` and
   `ws:`. Origins and header values are constants in `src/config/security*.ts`.

@@ -18,7 +18,7 @@ export interface CurrentUser {
   email: string;
   displayName: string;
   role: string;
-  /** `subject:action` strings, e.g. `article:update` (T33a). */
+  /** `subject:action` strings, e.g. `article:update`. */
   permissions: string[];
 }
 

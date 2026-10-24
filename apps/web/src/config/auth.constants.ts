@@ -5,7 +5,7 @@ export const LOGIN_CODE_LENGTH = 6;
 export const TWO_FACTOR_METHODS = ['totp', 'email'] as const;
 export type TwoFactorMethod = (typeof TWO_FACTOR_METHODS)[number];
 
-/** Permission strings from `/auth/me` are `subject:action` (T33a). */
+/** Permission strings from `/auth/me` are `subject:action`. */
 export const PERMISSION_STRING_SEPARATOR = ':';
 
 /** The only action a reader role holds; any other action is privileged. */

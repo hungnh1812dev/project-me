@@ -13,7 +13,7 @@ export const API_ENDPOINTS = {
     LOGOUT: '/auth/logout',
     ME: '/auth/me',
   },
-  /** T31 reviewer sessions: status is public, sessions is public for POST. */
+  /** Reviewer sessions: status is public, sessions is public for POST. */
   REVIEWER: {
     STATUS: '/reviewer/status',
     SESSIONS: '/reviewer/sessions',

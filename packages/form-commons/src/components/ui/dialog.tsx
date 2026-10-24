@@ -69,7 +69,7 @@ function DialogHeader({ className, ...props }: React.ComponentProps<'div'>) {
   );
 }
 
-/** Buttons: secondary left, primary right, aligned to the end (T03). */
+/** Buttons: secondary left, primary right, aligned to the end. */
 function DialogFooter({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div

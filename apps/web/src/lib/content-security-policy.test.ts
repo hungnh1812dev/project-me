@@ -26,7 +26,7 @@ describe('buildContentSecurityPolicy', () => {
     expect(script).not.toContain('unsafe-eval');
   });
 
-  it('uses nonce styles with inline style attributes only (Q-W4)', () => {
+  it('uses nonce styles with inline style attributes only', () => {
     const csp = build('/api/v1');
     expect(directive(csp, 'style-src')).toBe("style-src 'self' 'nonce-abc123'");
     expect(directive(csp, 'style-src-attr')).toBe(

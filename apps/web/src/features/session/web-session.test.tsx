@@ -285,7 +285,7 @@ function StrictModeWrapper({ children }: { children: ReactNode }) {
   return <StrictMode>{children}</StrictMode>;
 }
 
-describe('reviewer session (T32)', () => {
+describe('reviewer session', () => {
   it('holds a reviewer token in memory and ends it without calling the API', async () => {
     const api = fakeApi();
     const { result } = setup(api);
