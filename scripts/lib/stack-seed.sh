@@ -27,7 +27,9 @@ SEED_ACCOUNT_DONE="Seeded account:"
 # The variables the Playwright suite reads (apps/e2e/src/env.ts).
 E2E_VARS=(E2E_ADMIN_URL E2E_API_BASE_URL E2E_OWNER_EMAIL E2E_OWNER_PASSWORD E2E_MAILPIT_URL
   E2E_READER_EMAIL E2E_READER_PASSWORD E2E_READER_2FA_EMAIL E2E_READER_2FA_PASSWORD
-  E2E_2FA_EMAIL E2E_2FA_PASSWORD)
+  E2E_2FA_EMAIL E2E_2FA_PASSWORD E2E_DB_CONTAINER E2E_DB_USER E2E_DB_NAME)
+DB_SERVICE="db"
+DB_CONTAINER_NAME_FORMAT='{{.Name}}'
 
 stack_random_secret() { openssl rand -hex "$STACK_SECRET_BYTES"; }
 
@@ -40,8 +42,8 @@ stack_generate_credentials() {
   STACK_2FA_PASSWORD="$(stack_random_secret)"
   STACK_READER_EMAIL="e2e-reader@$domain"
   STACK_READER_PASSWORD="$(stack_random_secret)"
-  STACK_READER2FA_EMAIL="e2e-reader-2fa@$domain"
-  STACK_READER2FA_PASSWORD="$(stack_random_secret)"
+  STACK_READER_2FA_EMAIL="e2e-reader-2fa@$domain"
+  STACK_READER_2FA_PASSWORD="$(stack_random_secret)"
 }
 
 # stack_seed_account <password> <seed:account options...>: runs the CLI in
@@ -73,15 +75,29 @@ stack_seed_extra_accounts() {
     --email "$STACK_2FA_EMAIL" --role admin
   stack_check_seed "seeds reader" "$STACK_READER_PASSWORD" \
     --email "$STACK_READER_EMAIL" --role guest
-  stack_check_seed "seeds reader 2fa" "$STACK_READER2FA_PASSWORD" \
-    --email "$STACK_READER2FA_EMAIL" --role guest --email-2fa
+  stack_check_seed "seeds reader 2fa" "$STACK_READER_2FA_PASSWORD" \
+    --email "$STACK_READER_2FA_EMAIL" --role guest --email-2fa
 }
 
-# stack_export_e2e_env <admin origin> <api base url> <mailpit url>
+# stack_resolve_db_identity: the running db service's container name, user and
+# database, read from compose (the service's own POSTGRES_* settings).
+# Needs the caller's compose function.
+stack_resolve_db_identity() {
+  local container_id
+  container_id="$(compose ps --quiet "$DB_SERVICE")"
+  STACK_DB_CONTAINER="$(docker inspect --format "$DB_CONTAINER_NAME_FORMAT" "$container_id")"
+  STACK_DB_CONTAINER="${STACK_DB_CONTAINER#/}"
+  STACK_DB_USER="$(compose exec -T "$DB_SERVICE" printenv POSTGRES_USER)"
+  STACK_DB_NAME="$(compose exec -T "$DB_SERVICE" printenv POSTGRES_DB)"
+}
+
+# stack_export_e2e_env <admin origin> <api base url> <mailpit url>: exports every
+# name in E2E_VARS from the STACK_* variable of the same name (E2E_X <- STACK_X).
 stack_export_e2e_env() {
-  export E2E_ADMIN_URL="$1" E2E_API_BASE_URL="$2" E2E_MAILPIT_URL="$3" \
-    E2E_OWNER_EMAIL="$STACK_OWNER_EMAIL" E2E_OWNER_PASSWORD="$STACK_OWNER_PASSWORD" \
-    E2E_READER_EMAIL="$STACK_READER_EMAIL" E2E_READER_PASSWORD="$STACK_READER_PASSWORD" \
-    E2E_READER_2FA_EMAIL="$STACK_READER2FA_EMAIL" E2E_READER_2FA_PASSWORD="$STACK_READER2FA_PASSWORD" \
-    E2E_2FA_EMAIL="$STACK_2FA_EMAIL" E2E_2FA_PASSWORD="$STACK_2FA_PASSWORD"
+  STACK_ADMIN_URL="$1" STACK_API_BASE_URL="$2" STACK_MAILPIT_URL="$3"
+  local name source
+  for name in "${E2E_VARS[@]}"; do
+    source="STACK_${name#E2E_}"
+    export "$name=${!source}"
+  done
 }

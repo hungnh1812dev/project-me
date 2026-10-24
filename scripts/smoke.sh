@@ -416,6 +416,7 @@ for _ in $(seq "$MAIL_POLL_ATTEMPTS"); do
 done
 if [[ "$mail_seen" == "1" ]]; then pass "the reset code reaches Mailpit over SMTP"; else fail "no reset mail in Mailpit"; fi
 
+stack_resolve_db_identity
 stack_export_e2e_env "$ADMIN_ORIGIN" "$SMOKE_API_BASE_URL" "$MAILPIT_URL"
 
 if [[ "${SMOKE_KEEP:-}" == "1" ]]; then
