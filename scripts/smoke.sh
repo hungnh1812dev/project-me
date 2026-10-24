@@ -23,6 +23,9 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 # Log fragments, account seeding, E2E_* export.
 # shellcheck source=lib/stack-seed.sh
 source "$ROOT_DIR/scripts/lib/stack-seed.sh"
+# Every cms-api value this script asserts (messages, header values, cookie name).
+# shellcheck source=lib/expected-output.sh
+source "$ROOT_DIR/scripts/lib/expected-output.sh"
 COMPOSE_FILE="$ROOT_DIR/docker-compose.smoke.yml"
 DEFAULT_DOMAIN="domain.localhost"
 DEFAULT_HTTP_PORT="8080"
@@ -36,34 +39,21 @@ API_PREFIX="/api/v1"
 WEB_UNKNOWN_PATH="/this-page-does-not-exist"
 WEB_SLASH_PATH="$WEB_UNKNOWN_PATH/"
 HEALTH_OK_BODY='"status":"ok"'
-# Security header values (SPEC D17); keep in step with the app configs.
-HSTS_VALUE="max-age=63072000; includeSubDomains"
-REFERRER_POLICY_VALUE="strict-origin-when-cross-origin"
-API_CSP_VALUE="default-src 'none'; frame-ancestors 'none'"
 TURNSTILE_ORIGIN="https://challenges.cloudflare.com"
 CLOUDINARY_ORIGIN="https://res.cloudinary.com"
 INIT_SERVICE="cms-api-init"
 INIT_EXIT_CODE_FORMAT='{{.State.ExitCode}}'
 DB_MIGRATE_CMD=(npm run --silent db:migrate)
-DB_MIGRATE_NOTHING="No pending migrations to apply."
-DB_SEED_NOTHING="System roles already seeded."
-OWNER_EXISTS="An owner account already exists."
+RESET_2FA_CMD=(npm run --silent owner:reset-2fa --)
+CONTENT_MIGRATE_CMD=(node dist/modules/content-engine/cli/migrate.js)
 # The test setup token lives only in scripts/stack/cms-api.env (compose reads it
 # from there); it is read from that file here and never printed.
 CMS_API_ENV_FILE="$ROOT_DIR/scripts/stack/cms-api.env"
 SETUP_TOKEN_KEY="OWNER_SETUP_TOKEN"
 SETUP_STATUS_OPEN='"open":true'
 SETUP_STATUS_CLOSED='"open":false'
-RESET_2FA_CMD=(npm run --silent owner:reset-2fa --)
-RESET_2FA_UNKNOWN="No account with this email."
-RESET_2FA_NOT_ON="Two-factor authentication is not on for this account."
-RESET_2FA_NO_TTY="No terminal for the confirmation prompt."
-CONTENT_MIGRATE_CMD=(node dist/modules/content-engine/cli/migrate.js)
-CONTENT_MIGRATE_NOTHING="No pending content migrations."
-REFRESH_COOKIE_NAME="__Secure-abyss_rt"
 JWT_ACCESS_KID="smoke"
 TOTP_ENC_KID="smoke-totp"
-RESET_MAIL_SUBJECT="Your Abyss CMS password reset code"
 MAIL_POLL_ATTEMPTS="15"
 # Written only with SMOKE_KEEP=1 (gitignored, mode 600): the e2e env of the kept
 # stack, read by scripts/e2e-spec.sh. Removed when the stack is torn down here.
@@ -228,8 +218,24 @@ header_count() {
     tolower($1) == name { n++ } END { print n + 0 }
   ' "$HEADERS"
 }
+# Header values the first checked response (web /) sent; every later response
+# must send the same ones, so the web, admin and 404 pages cannot drift apart.
+COMMON_HEADER_NAMES=(Strict-Transport-Security X-Content-Type-Options Referrer-Policy)
+expect_common_headers_agree() {
+  local label="$1" name actual first_file
+  for name in "${COMMON_HEADER_NAMES[@]}"; do
+    actual="$(header "$name")"
+    first_file="$WORK_DIR/first-$name"
+    if [[ ! -f "$first_file" ]]; then
+      printf '%s' "$actual" >"$first_file"
+    elif [[ "$actual" != "$(cat "$first_file")" ]]; then
+      fail "$label: $name differs from web /: '$actual' vs '$(cat "$first_file")'"
+    fi
+  done
+}
 expect_common_security_headers() {
   local label="$1"
+  expect_common_headers_agree "$label"
   expect_header "$label sends HSTS" Strict-Transport-Security "$HSTS_VALUE"
   expect_header "$label sends nosniff" X-Content-Type-Options nosniff
   expect_header "$label sends Referrer-Policy" Referrer-Policy "$REFERRER_POLICY_VALUE"

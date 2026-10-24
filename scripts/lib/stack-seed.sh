@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
-# Used by scripts/smoke.sh (local compose stack): the migration/owner log
-# fragments, the e2e account seeding and the E2E_* export. Source it; do not run it.
+# Used by scripts/smoke.sh (local compose stack): the e2e account seeding and
+# the E2E_* export. Source it; do not run it. The expected output strings it
+# checks (SEED_ACCOUNT_DONE) come from scripts/lib/expected-output.sh, which the
+# caller sources.
 #
 # The caller defines these functions before calling the helpers below:
 #   api_exec [docker exec options...] -- <command...>
@@ -9,10 +11,6 @@
 #       report one check
 # and sets (see stack_generate_credentials) the STACK_* credentials.
 
-# Log lines of the cms-api init container (deploy:migrate).
-DB_MIGRATE_APPLIED="All migrations have been successfully applied."
-DB_MIGRATE_SEEDED="Seeded system roles: public, guest, reviewer, editor, admin, owner."
-CONTENT_MIGRATE_APPLIED="Applied "
 # cms-api package scripts run through npm inside the image (no pnpm there).
 OWNER_BOOTSTRAP_CMD=(npm run --silent owner:bootstrap -- --password-stdin)
 
@@ -22,7 +20,6 @@ STACK_SECRET_BYTES="32"
 # audited. The smoke-only opt-in is passed on each call, never in deployed config.
 # Keeps the owner's 5-logins-per-15-min budget for the owner specs.
 SEED_ACCOUNT_OPT_IN_ENV="ALLOW_ACCOUNT_SEED=smoke"
-SEED_ACCOUNT_DONE="Seeded account:"
 
 # The variables the Playwright suite reads (apps/e2e/src/env.ts).
 E2E_VARS=(E2E_ADMIN_URL E2E_API_BASE_URL E2E_OWNER_EMAIL E2E_OWNER_PASSWORD E2E_MAILPIT_URL
