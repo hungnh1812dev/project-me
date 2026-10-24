@@ -103,7 +103,10 @@ tokens only (`bg-card`, `text-muted-foreground`).
   is asked. `POST /reviewer/sessions` goes from the browser; the 24 h access
   token is held by `useWebSession` in memory (`kind: 'reviewer'`), never in
   storage and never sent to the Next server. There is no refresh cookie, so a
-  reload ends the review; "End review" drops the token locally.
+  reload ends the review; "End review" drops the token locally. The dialog
+  only handles step navigation and submit; each step is its own component
+  (`RoleStep`, `PurposesStep`, `NotesStep`), form values and `toSessionInput`
+  live in `reviewer-form.ts`, and `use-human-check.tsx` owns the Turnstile token.
 - Turnstile loads through `next/script` only while the dialog's last step is
   open (`challenges.cloudflare.com`, constant `TURNSTILE` in
   `src/config/security.constants.ts`). The CSP allows that origin in

@@ -2,83 +2,37 @@
 
 import {
   Button,
-  CheckboxInput,
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  SelectInput,
-  TextAreaInput,
-  TextInput,
   FormAlert,
 } from '@abyss/form-commons';
 import { useMutation } from '@tanstack/react-query';
 import { type FormEvent, useState } from 'react';
-import { FormProvider, useForm, useWatch } from 'react-hook-form';
+import { FormProvider, useForm } from 'react-hook-form';
 
 import { COPY } from '../../config/copy.constants';
-import {
-  REVIEWER_INPUT_LIMITS,
-  REVIEWER_OTHER_VALUE,
-  REVIEWER_PURPOSE_TAGS,
-  REVIEWER_VISITOR_ROLES,
-} from '../../config/reviewer.constants';
 import { apiFailureOf } from '../../lib/api-failure';
 import { useWebSession } from '../session';
+import { NotesStep } from './NotesStep';
+import { PurposesStep } from './PurposesStep';
 import { type ReviewerApi } from './reviewer.api';
 import { reviewerApi } from './reviewer.queries';
 import { reviewerAlertOf, type ReviewerAlert } from './reviewer-error';
-import { TurnstileWidget } from './TurnstileWidget';
+import {
+  DEFAULT_VALUES,
+  LAST_STEP,
+  STEP_FIELDS,
+  toSessionInput,
+  type ReviewerFormValues,
+} from './reviewer-form';
+import { RoleStep } from './RoleStep';
+import { useHumanCheck } from './use-human-check';
 
 const copy = COPY.reviewer;
-const limits = REVIEWER_INPUT_LIMITS;
-
-export interface ReviewerFormValues {
-  role: string;
-  roleOther: string;
-  purposeChecks: boolean[];
-  purposeOtherChecked: boolean;
-  purposeOther: string;
-  notes: string;
-}
-
-type FieldName = keyof ReviewerFormValues | `purposeChecks.${number}`;
-
-/** Fields validated before moving past each step. */
-const STEP_FIELDS: readonly (readonly FieldName[])[] = [
-  ['role', 'roleOther'],
-  ['purposeOtherChecked', 'purposeOther'],
-  ['notes'],
-];
-const LAST_STEP = STEP_FIELDS.length - 1;
-
-const DEFAULT_VALUES: ReviewerFormValues = {
-  role: '',
-  roleOther: '',
-  purposeChecks: REVIEWER_PURPOSE_TAGS.map(() => false),
-  purposeOtherChecked: false,
-  purposeOther: '',
-  notes: '',
-};
-
-/** The request body for the API, from the form's answers. */
-export function toSessionInput(values: ReviewerFormValues) {
-  const visitorRole = (
-    values.role === REVIEWER_OTHER_VALUE ? values.roleOther : values.role
-  ).trim();
-  const purposeTags = REVIEWER_PURPOSE_TAGS.filter(
-    (_, index) => values.purposeChecks[index] === true,
-  ) as string[];
-  if (values.purposeOtherChecked) purposeTags.push(values.purposeOther.trim());
-  const notes = values.notes.trim();
-  return { visitorRole, purposeTags, ...(notes === '' ? {} : { notes }) };
-}
-
-const ROLE_OPTIONS = [
-  ...REVIEWER_VISITOR_ROLES.map((role) => ({ value: role, label: role })),
-  { value: REVIEWER_OTHER_VALUE, label: copy.role.other },
-];
+const STEP_TITLES = [copy.steps.role, copy.steps.purposes, copy.steps.notes];
 
 /**
  * Three-step "Reviewer access" dialog: role, purposes, notes + Turnstile.
@@ -123,22 +77,13 @@ function ReviewerFlow({
   const session = useWebSession();
   const [step, setStep] = useState(0);
   const [alert, setAlert] = useState<ReviewerAlert | null>(null);
-  const [token, setToken] = useState<string | null>(null);
-  const [tokenError, setTokenError] = useState<string | null>(null);
-  const [challengeKey, setChallengeKey] = useState(0);
-  const [hasScriptFailed, setHasScriptFailed] = useState(false);
+  const humanCheck = useHumanCheck(siteKey);
 
   const form = useForm<ReviewerFormValues>({
     defaultValues: DEFAULT_VALUES,
     mode: 'onTouched',
     shouldUnregister: false,
   });
-  const role = useWatch({ control: form.control, name: 'role' });
-  const isOtherPurposeChecked = useWatch({
-    control: form.control,
-    name: 'purposeOtherChecked',
-  });
-  const notesLength = useWatch({ control: form.control, name: 'notes' }).length;
 
   const start = useMutation({
     mutationFn: async (turnstileToken: string) => {
@@ -152,11 +97,7 @@ function ReviewerFlow({
     onError: (cause) => {
       const next = reviewerAlertOf(apiFailureOf(cause));
       setAlert(next);
-      if (next.shouldResetChallenge) {
-        // A Turnstile token works once.
-        setToken(null);
-        setChallengeKey((key) => key + 1);
-      }
+      if (next.shouldResetChallenge) humanCheck.renewChallenge();
     },
   });
 
@@ -169,12 +110,8 @@ function ReviewerFlow({
 
   const submitLast = form.handleSubmit(() => {
     setAlert(null);
-    if (token === null) {
-      setTokenError(copy.turnstile.required);
-      return;
-    }
-    setTokenError(null);
-    start.mutate(token);
+    const token = humanCheck.requireToken();
+    if (token !== null) start.mutate(token);
   });
 
   // Enter on an earlier step moves on; only the last step submits.
@@ -198,106 +135,18 @@ function ReviewerFlow({
             </span>
             {' - '}
             <span className="font-medium text-foreground">
-              {[copy.steps.role, copy.steps.purposes, copy.steps.notes][step]}
+              {STEP_TITLES[step]}
             </span>
           </p>
           {alert !== null ? (
             <FormAlert tone={alert.tone}>{alert.message}</FormAlert>
           ) : null}
 
-          <div hidden={step !== 0} className="grid gap-4">
-            <SelectInput<ReviewerFormValues>
-              name="role"
-              label={copy.role.label}
-              placeholder={copy.role.placeholder}
-              options={ROLE_OPTIONS}
-              rules={{ required: copy.validation.roleRequired }}
-            />
-            {role === REVIEWER_OTHER_VALUE ? (
-              <TextInput<ReviewerFormValues>
-                name="roleOther"
-                label={copy.role.otherLabel}
-                maxLength={limits.VISITOR_ROLE_MAX_LENGTH}
-                rules={{
-                  validate: (value) =>
-                    String(value).trim() !== '' ||
-                    copy.validation.roleOtherRequired,
-                }}
-              />
-            ) : null}
-          </div>
-
-          <fieldset hidden={step !== 1} className="m-0 grid gap-3 border-0 p-0">
-            <legend className="mb-1 p-0 text-sm font-medium">
-              {copy.purposes.legend}
-            </legend>
-            <p className="m-0 text-sm text-muted-foreground">
-              {copy.purposes.hint}
-            </p>
-            {REVIEWER_PURPOSE_TAGS.map((tag, index) => (
-              <CheckboxInput<ReviewerFormValues>
-                key={tag}
-                name={`purposeChecks.${index}`}
-                label={tag}
-              />
-            ))}
-            <CheckboxInput<ReviewerFormValues>
-              name="purposeOtherChecked"
-              label={copy.purposes.other}
-            />
-            {isOtherPurposeChecked ? (
-              <TextInput<ReviewerFormValues>
-                name="purposeOther"
-                label={copy.purposes.otherLabel}
-                maxLength={limits.PURPOSE_TAG_MAX_LENGTH}
-                rules={{
-                  validate: (value) =>
-                    String(value).trim() !== '' ||
-                    copy.validation.purposeOtherRequired,
-                }}
-              />
-            ) : null}
-          </fieldset>
-
-          <div hidden={step !== LAST_STEP} className="grid gap-4">
-            <TextAreaInput<ReviewerFormValues>
-              name="notes"
-              label={copy.notes.label}
-              description={`${copy.notes.hint(limits.NOTES_MAX_LENGTH)} ${copy.notes.count(notesLength, limits.NOTES_MAX_LENGTH)}`}
-              rows={4}
-              rules={{
-                maxLength: {
-                  value: limits.NOTES_MAX_LENGTH,
-                  message: copy.validation.notesTooLong(
-                    limits.NOTES_MAX_LENGTH,
-                  ),
-                },
-              }}
-            />
-            {step === LAST_STEP ? (
-              <div className="grid gap-1">
-                <TurnstileWidget
-                  siteKey={siteKey}
-                  key={challengeKey}
-                  hasScriptFailed={hasScriptFailed}
-                  onFailed={() => setHasScriptFailed(true)}
-                  onToken={(value) => {
-                    setToken(value);
-                    setTokenError(null);
-                  }}
-                  onExpired={() => {
-                    setToken(null);
-                    setTokenError(copy.turnstile.expired);
-                  }}
-                />
-                {tokenError !== null ? (
-                  <p role="alert" className="text-sm text-destructive-strong">
-                    {tokenError}
-                  </p>
-                ) : null}
-              </div>
-            ) : null}
-          </div>
+          <RoleStep isActive={step === 0} />
+          <PurposesStep isActive={step === 1} />
+          <NotesStep isActive={step === LAST_STEP}>
+            {step === LAST_STEP ? humanCheck.field : null}
+          </NotesStep>
 
           {/* Enter must move on even with two text inputs in the form. */}
           {step < LAST_STEP ? (
@@ -317,8 +166,7 @@ function ReviewerFlow({
                 disabled={start.isPending}
                 onClick={() => {
                   // The challenge unmounts with the last step.
-                  setToken(null);
-                  setTokenError(null);
+                  humanCheck.discard();
                   setStep((current) => current - 1);
                 }}
               >

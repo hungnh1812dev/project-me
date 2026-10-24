@@ -317,6 +317,77 @@ test.describe('reviewer access', () => {
     await page.close();
   });
 
+  test('Back keeps the answers, an expired check shows its message, and Back discards the token', async () => {
+    const page = await context.newPage();
+    // A stand-in Turnstile that lets the test pass and expire the check.
+    await page.route(TURNSTILE_HOST, (route) =>
+      route.fulfill({
+        contentType: 'text/javascript',
+        body: `window.turnstile = {
+          render: (_el, options) => { window.__turnstile = options; return 'w'; },
+          remove: () => {},
+          reset: () => {},
+        };`,
+      }),
+    );
+    let posted = 0;
+    page.on('request', (req) => {
+      if (req.method() === 'POST' && req.url().endsWith(SESSIONS_PATH)) {
+        posted += 1;
+      }
+    });
+    await page.goto(e2eEnv.webUrl);
+    await openButton(page).click();
+    await dialog(page)
+      .getByLabel(label(copy.role.label))
+      .selectOption('Recruiter');
+    await next(page).click();
+    await dialog(page).getByLabel(copy.purposes.other, { exact: true }).check();
+    await dialog(page)
+      .getByLabel(label(copy.purposes.otherLabel))
+      .fill(OTHER_PURPOSE);
+    await next(page).click();
+    await expect(step(page, 3)).toBeVisible();
+    await dialog(page).getByLabel(label(copy.notes.label)).fill('kept notes');
+
+    const fire = (callback: 'callback' | 'expired-callback') =>
+      page.evaluate((name) => {
+        const options = (
+          window as unknown as {
+            __turnstile: Record<string, (token?: string) => void>;
+          }
+        ).__turnstile;
+        options[name]('stub-token');
+      }, callback);
+
+    await fire('callback');
+    await fire('expired-callback');
+    await expect(dialog(page).getByText(copy.turnstile.expired)).toBeVisible();
+    await submit(page).click();
+    await expect(dialog(page).getByText(copy.turnstile.required)).toBeVisible();
+    expect(posted).toBe(0);
+
+    await fire('callback');
+    await dialog(page).getByRole('button', { name: copy.back }).click();
+    await expect(
+      dialog(page).getByLabel(label(copy.purposes.otherLabel)),
+    ).toHaveValue(OTHER_PURPOSE);
+    await dialog(page).getByRole('button', { name: copy.back }).click();
+    await expect(dialog(page).getByLabel(label(copy.role.label))).toHaveValue(
+      'Recruiter',
+    );
+    await next(page).click();
+    await next(page).click();
+    await expect(dialog(page).getByLabel(label(copy.notes.label))).toHaveValue(
+      'kept notes',
+    );
+    // The token from before Back is gone: submitting needs a new check.
+    await submit(page).click();
+    await expect(dialog(page).getByText(copy.turnstile.required)).toBeVisible();
+    expect(posted).toBe(0);
+    await page.close();
+  });
+
   test('a passing check starts a reviewer session held in memory only', async () => {
     const page = await context.newPage();
     const consoleProblems: string[] = [];

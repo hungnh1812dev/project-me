@@ -5,11 +5,8 @@ import { COPY } from '../../config/copy.constants';
 import { REVIEWER_OTHER_VALUE } from '../../config/reviewer.constants';
 import { fakeApi, httpError, Wrapper } from '../session/session-test-utils';
 import { useWebSession } from '../session';
-import {
-  ReviewerAccessDialog,
-  toSessionInput,
-  type ReviewerFormValues,
-} from './ReviewerAccessDialog';
+import { ReviewerAccessDialog } from './ReviewerAccessDialog';
+import { toSessionInput, type ReviewerFormValues } from './reviewer-form';
 import type { AuthApi } from '../session/auth.api';
 import type { ReviewerApi } from './reviewer.api';
 
