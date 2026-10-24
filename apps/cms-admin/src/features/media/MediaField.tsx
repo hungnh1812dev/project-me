@@ -55,7 +55,7 @@ export function MediaField({ name, label }: { name: string; label: string }) {
               }
             : undefined
         }
-        onChange={
+        onFilePick={
           canCreate
             ? (file) => {
                 setUploadError(null);

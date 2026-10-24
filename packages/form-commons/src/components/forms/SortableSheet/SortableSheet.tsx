@@ -110,24 +110,24 @@ function SortableSheet<TRow>({
   busy = false,
   className,
 }: SortableSheetProps<TRow>) {
-  const selectable = onSelectedChange !== undefined;
-  const selected = selectedIds ?? new Set<string>();
+  const isSelectable = onSelectedChange !== undefined;
+  const selectedIdSet = selectedIds ?? new Set<string>();
   const ids = rows.map(getRowId);
-  const selectedCount = ids.filter((id) => selected.has(id)).length;
-  const allSelected = ids.length > 0 && selectedCount === ids.length;
+  const selectedCount = ids.filter((id) => selectedIdSet.has(id)).length;
+  const isAllSelected = ids.length > 0 && selectedCount === ids.length;
 
   const toggleAll = () => {
     if (onSelectedChange === undefined) return;
-    const next = new Set(selected);
+    const next = new Set(selectedIdSet);
     for (const id of ids) {
-      if (allSelected) next.delete(id);
+      if (isAllSelected) next.delete(id);
       else next.add(id);
     }
     onSelectedChange(next);
   };
   const toggleRow = (id: string) => {
     if (onSelectedChange === undefined) return;
-    const next = new Set(selected);
+    const next = new Set(selectedIdSet);
     if (next.has(id)) next.delete(id);
     else next.add(id);
     onSelectedChange(next);
@@ -150,12 +150,12 @@ function SortableSheet<TRow>({
         <caption className="sr-only">{caption}</caption>
         <thead className="bg-muted text-left text-muted-foreground">
           <tr>
-            {selectable ? (
+            {isSelectable ? (
               <th scope="col" className="w-10 px-3 py-2">
                 <Checkbox
                   aria-label={labels?.selectAll}
                   checked={
-                    allSelected
+                    isAllSelected
                       ? true
                       : selectedCount > 0
                         ? 'indeterminate'
@@ -167,32 +167,35 @@ function SortableSheet<TRow>({
               </th>
             ) : null}
             {columns.map((column) => {
-              const active = sort?.key === column.key ? sort.direction : null;
-              const sortable =
+              const activeDirection =
+                sort?.key === column.key ? sort.direction : null;
+              const isSortable =
                 column.sortable === true && onSortChange !== undefined;
               return (
                 <th
                   key={column.key}
                   scope="col"
                   aria-sort={
-                    sortable && active !== null ? ARIA_SORT[active] : undefined
+                    isSortable && activeDirection !== null
+                      ? ARIA_SORT[activeDirection]
+                      : undefined
                   }
                   className={cn(
                     'px-3 py-2 font-medium',
                     column.align === 'right' && 'text-right',
                   )}
                 >
-                  {sortable ? (
+                  {isSortable ? (
                     <button
                       type="button"
                       onClick={() => onSortChange(nextSort(sort, column.key))}
                       className={cn(
                         'inline-flex cursor-pointer items-center gap-1 rounded-sm font-medium outline-none hover:text-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50',
-                        active !== null && 'text-foreground',
+                        activeDirection !== null && 'text-foreground',
                       )}
                     >
                       {column.header}
-                      <SortIndicator direction={active} />
+                      <SortIndicator direction={activeDirection} />
                     </button>
                   ) : (
                     column.header
@@ -205,14 +208,14 @@ function SortableSheet<TRow>({
         <tbody>
           {rows.map((row) => {
             const id = getRowId(row);
-            const isSelected = selected.has(id);
+            const isSelected = selectedIdSet.has(id);
             return (
               <tr
                 key={id}
                 data-state={isSelected ? 'selected' : undefined}
                 className="border-t border-border data-[state=selected]:bg-accent"
               >
-                {selectable ? (
+                {isSelectable ? (
                   <td className="w-10 px-3 py-2">
                     <Checkbox
                       aria-label={labels?.selectRow(getRowLabel(row))}

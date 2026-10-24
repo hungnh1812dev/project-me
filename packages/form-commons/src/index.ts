@@ -87,15 +87,15 @@ export {
   type SheetSortDirection,
   type SortableSheetLabels,
   type SortableSheetProps,
-} from './components/forms/Sheet';
+} from './components/forms/SortableSheet';
 export {
   TablePagination,
   type TablePaginationLabels,
   type TablePaginationProps,
-} from './components/forms/Pagination';
+} from './components/forms/TablePagination';
 export {
   BulkActionBar,
   type BulkAction,
   type BulkActionBarLabels,
   type BulkActionBarProps,
-} from './components/forms/Blocks/BulkActionBar';
+} from './components/forms/BulkActionBar';

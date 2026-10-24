@@ -44,6 +44,8 @@ export interface MediaInputProps {
   id?: string | undefined;
   className?: string | undefined;
   /** A file picked from the disk; the parent uploads it and sets `value`. */
+  onFilePick?: ((file: File) => void) | undefined;
+  /** @deprecated Use `onFilePick`; this is not a change event, it starts an upload. */
   onChange?: ((file: File) => void) | undefined;
   /** Detach the file from this field (the file stays in the library). */
   onRemove?: (() => void) | undefined;
@@ -73,8 +75,10 @@ export function formatFileSize(bytes: number): string {
 function fileKind(file: MediaInputFile): string {
   const fromType = file.mimeType?.split('/')[1];
   if (fromType !== undefined && fromType !== '') return fromType;
-  const dot = file.fileName.lastIndexOf('.');
-  return dot === -1 ? '' : file.fileName.slice(dot + 1);
+  const extensionDotIndex = file.fileName.lastIndexOf('.');
+  return extensionDotIndex === -1
+    ? ''
+    : file.fileName.slice(extensionDotIndex + 1);
 }
 
 const dateFormat = new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' });
@@ -93,12 +97,14 @@ function MediaInput({
   disabled = false,
   id,
   className,
+  onFilePick,
   onChange,
   onRemove,
   onDelete,
   onOpenLibrary,
 }: MediaInputProps) {
-  const fileInput = React.useRef<HTMLInputElement>(null);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const handleFilePick = onFilePick ?? onChange;
   const preview =
     value === null
       ? null
@@ -172,18 +178,18 @@ function MediaInput({
                 {value === null ? labels.choose : labels.replace}
               </Button>
             )}
-            {onChange === undefined ? null : (
+            {handleFilePick === undefined ? null : (
               <>
                 <Button
                   type="button"
                   size="sm"
                   disabled={disabled}
-                  onClick={() => fileInput.current?.click()}
+                  onClick={() => fileInputRef.current?.click()}
                 >
                   {labels.upload}
                 </Button>
                 <input
-                  ref={fileInput}
+                  ref={fileInputRef}
                   type="file"
                   hidden
                   tabIndex={-1}
@@ -191,7 +197,7 @@ function MediaInput({
                   onChange={(event) => {
                     const file = event.currentTarget.files?.[0];
                     event.currentTarget.value = '';
-                    if (file !== undefined) onChange(file);
+                    if (file !== undefined) handleFilePick(file);
                   }}
                 />
               </>

@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { vi } from 'vitest';
 import type { Editor } from '@tiptap/react';
 
-import { TestForm } from '../test-form';
+import { TestForm } from '../../../../test/test-form';
 import {
   normalizeRichtextHtml,
   RichtextInput,

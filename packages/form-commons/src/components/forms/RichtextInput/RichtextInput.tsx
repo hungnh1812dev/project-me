@@ -92,7 +92,7 @@ export interface RichtextInputProps<
 interface ToolbarAction {
   key: string;
   label: string;
-  active: boolean;
+  isActive: boolean;
   run: () => void;
 }
 
@@ -105,61 +105,61 @@ function toolbarActions(
     {
       key: 'bold',
       label: labels.bold,
-      active: editor.isActive('bold'),
+      isActive: editor.isActive('bold'),
       run: () => void chain().toggleBold().run(),
     },
     {
       key: 'italic',
       label: labels.italic,
-      active: editor.isActive('italic'),
+      isActive: editor.isActive('italic'),
       run: () => void chain().toggleItalic().run(),
     },
     {
       key: 'underline',
       label: labels.underline,
-      active: editor.isActive('underline'),
+      isActive: editor.isActive('underline'),
       run: () => void chain().toggleUnderline().run(),
     },
     {
       key: 'strike',
       label: labels.strike,
-      active: editor.isActive('strike'),
+      isActive: editor.isActive('strike'),
       run: () => void chain().toggleStrike().run(),
     },
     {
       key: 'code',
       label: labels.code,
-      active: editor.isActive('code'),
+      isActive: editor.isActive('code'),
       run: () => void chain().toggleCode().run(),
     },
     {
       key: 'heading',
       label: labels.heading,
-      active: editor.isActive('heading', { level: 2 }),
+      isActive: editor.isActive('heading', { level: 2 }),
       run: () => void chain().toggleHeading({ level: 2 }).run(),
     },
     {
       key: 'bulletList',
       label: labels.bulletList,
-      active: editor.isActive('bulletList'),
+      isActive: editor.isActive('bulletList'),
       run: () => void chain().toggleBulletList().run(),
     },
     {
       key: 'orderedList',
       label: labels.orderedList,
-      active: editor.isActive('orderedList'),
+      isActive: editor.isActive('orderedList'),
       run: () => void chain().toggleOrderedList().run(),
     },
     {
       key: 'blockquote',
       label: labels.blockquote,
-      active: editor.isActive('blockquote'),
+      isActive: editor.isActive('blockquote'),
       run: () => void chain().toggleBlockquote().run(),
     },
     {
       key: 'link',
       label: labels.link,
-      active: editor.isActive('link'),
+      isActive: editor.isActive('link'),
       run: () => {
         const href = window.prompt(labels.linkPrompt);
         if (href === null) return;
@@ -176,7 +176,7 @@ function toolbarActions(
     {
       key: 'unlink',
       label: labels.unlink,
-      active: false,
+      isActive: false,
       run: () => void chain().extendMarkRange('link').unsetLink().run(),
     },
   ];
@@ -272,8 +272,8 @@ function RichtextInput<TFieldValues extends FieldValues = FieldValues>({
                   size="sm"
                   variant="ghost"
                   disabled={disabled}
-                  aria-pressed={action.active}
-                  className={cn(action.active && 'bg-accent')}
+                  aria-pressed={action.isActive}
+                  className={cn(action.isActive && 'bg-accent')}
                   onClick={action.run}
                 >
                   {action.label}

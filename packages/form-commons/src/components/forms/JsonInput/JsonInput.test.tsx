@@ -2,7 +2,7 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { vi } from 'vitest';
 
-import { TestForm } from '../test-form';
+import { TestForm } from '../../../../test/test-form';
 import { isValidJsonText, JsonInput } from './JsonInput';
 
 describe('isValidJsonText', () => {

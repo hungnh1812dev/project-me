@@ -72,7 +72,7 @@ describe('MediaInput', () => {
     const onOpenLibrary = vi.fn<() => void>();
     const onRemove = vi.fn<() => void>();
     const onDelete = vi.fn<() => void>();
-    const onChange = vi.fn<(file: File) => void>();
+    const onFilePick = vi.fn<(file: File) => void>();
     render(
       <MediaInput
         label="Photo"
@@ -81,7 +81,7 @@ describe('MediaInput', () => {
         onOpenLibrary={onOpenLibrary}
         onRemove={onRemove}
         onDelete={onDelete}
-        onChange={onChange}
+        onFilePick={onFilePick}
       />,
     );
     await userEvent.click(screen.getByRole('button', { name: 'Replace' }));
@@ -94,7 +94,37 @@ describe('MediaInput', () => {
     expect(onOpenLibrary).toHaveBeenCalledOnce();
     expect(onRemove).toHaveBeenCalledOnce();
     expect(onDelete).toHaveBeenCalledOnce();
+    expect(onFilePick).toHaveBeenCalledWith(picked);
+  });
+
+  it('keeps the deprecated onChange working and prefers onFilePick', async () => {
+    const onChange = vi.fn<(file: File) => void>();
+    const onFilePick = vi.fn<(file: File) => void>();
+    const picked = new File(['x'], 'new.png', { type: 'image/png' });
+    const { rerender } = render(
+      <MediaInput
+        label="Photo"
+        labels={labels}
+        value={null}
+        onChange={onChange}
+      />,
+    );
+    await userEvent.upload(screen.getByTestId('media-file-input'), picked);
     expect(onChange).toHaveBeenCalledWith(picked);
+
+    onChange.mockClear();
+    rerender(
+      <MediaInput
+        label="Photo"
+        labels={labels}
+        value={null}
+        onChange={onChange}
+        onFilePick={onFilePick}
+      />,
+    );
+    await userEvent.upload(screen.getByTestId('media-file-input'), picked);
+    expect(onFilePick).toHaveBeenCalledWith(picked);
+    expect(onChange).not.toHaveBeenCalled();
   });
 
   it('disables actions and shows the error', () => {

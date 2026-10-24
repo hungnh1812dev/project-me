@@ -131,9 +131,10 @@ All bind to the surrounding `FormProvider` like `TextInput`.
 
 Presentational field for one library file (cms-admin binds it to the form in `MediaField`).
 `value` is a `MediaInputFile | null` (preview, name, size, optional `mimeType` (absent on files embedded in documents), optional `provider`
-badge, date). Callbacks: `onOpenLibrary` (choose or replace), `onChange(file)`
-(a file picked from disk; the parent uploads it), `onRemove` (detach from the
-field), `onDelete` (delete from the library). A button shows only when its
+badge, date). Callbacks: `onOpenLibrary` (choose or replace), `onFilePick(file)`
+(a file picked from disk; the parent uploads it; `onChange` is a deprecated alias),
+`onRemove` (detach from the field, the file stays in the library), `onDelete`
+(delete from the library). A button shows only when its
 callback is given. All copy comes through the `labels` prop.
 
 ### SortableSheet, TablePagination, BulkActionBar

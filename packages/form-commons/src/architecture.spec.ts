@@ -33,6 +33,17 @@ describe('kit architecture', () => {
     expect(filesContaining('FIELD_ID_SUFFIX', FIELD_WIRING_FILE)).toEqual([]);
   });
 
+  it('names every component folder after the file that holds the component', () => {
+    const formsDir = join(COMPONENTS_DIR, 'forms');
+    const foldersWithoutOwnFile = readdirSync(formsDir)
+      .filter((entry) => statSync(join(formsDir, entry)).isDirectory())
+      .filter(
+        (folder) =>
+          !readdirSync(join(formsDir, folder)).includes(`${folder}.tsx`),
+      );
+    expect(foldersWithoutOwnFile).toEqual([]);
+  });
+
   it('keeps the invalid control classes in control.constants only', () => {
     expect(
       filesContaining(
