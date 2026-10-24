@@ -12,17 +12,10 @@ import {
   createSession,
   installAuthInterceptor,
 } from '../features/auth/app-wiring';
-import { createPasswordApi } from '../features/auth/password.api';
-import { createSetupApi } from '../features/auth/setup.api';
-import { createAccessApi } from '../features/access/access.api';
-import { createContentApi } from '../features/content/content.api';
-import { createMediaApi } from '../features/media/media.api';
-import { createReviewerApi } from '../features/reviewer/reviewer.api';
-import { createSecurityApi } from '../features/security/security.api';
-import { createHealthApi } from '../features/status/health.api';
+import { FEATURE_LIST } from '../features/registry';
 import { createAppStore } from './store';
 
-/** Wires store, session and the API client's auth interceptor together. */
+/** Wires store, session, every feature API and the client's auth interceptor. */
 export function createAppServices(
   client: AxiosInstance,
   queryClient: QueryClient,
@@ -39,28 +32,10 @@ export function createAppServices(
     refreshAccessToken: session.refreshAccessToken,
     onSessionExpired: () => session.expire(),
   });
-  const passwordApi = createPasswordApi(client);
-  const setupApi = createSetupApi(client);
-  const securityApi = createSecurityApi(client);
-  const accessApi = createAccessApi(client);
-  const contentApi = createContentApi(client);
-  const mediaApi = createMediaApi(client);
-  const reviewerApi = createReviewerApi(client);
-  const healthApi = createHealthApi(client);
-  return {
-    store,
-    session,
-    passwordApi,
-    setupApi,
-    securityApi,
-    accessApi,
-    contentApi,
-    mediaApi,
-    reviewerApi,
-    healthApi,
-    queryClient,
-    removeInterceptor,
-  };
+  const apiProviders = FEATURE_LIST.flatMap(
+    (feature) => feature.apiServices ?? [],
+  ).map((service) => service.provideFor(client));
+  return { store, session, apiProviders, queryClient, removeInterceptor };
 }
 
 export type AppServices = ReturnType<typeof createAppServices>;

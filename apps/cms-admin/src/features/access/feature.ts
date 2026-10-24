@@ -1,12 +1,15 @@
 import { COPY } from '../../config/copy.constants';
 import { APP_ROUTES } from '../../config/routes';
-import type { Feature } from '../../lib/feature-definition';
+import { defineApiService, type Feature } from '../../lib/feature-definition';
+import { AccessApiProvider } from './access-api-context';
+import { createAccessApi } from './access.api';
 import { AccountsPage } from './AccountsPage';
 import { ApiTokensPage } from './ApiTokensPage';
 import { RolePermissionsPage } from './RolePermissionsPage';
 import { RolesPage } from './RolesPage';
 
 export const accessFeature: Feature = {
+  apiServices: [defineApiService(createAccessApi, AccessApiProvider)],
   routes: [
     { path: APP_ROUTES.ACCOUNTS, Component: AccountsPage },
     { path: APP_ROUTES.ROLES, Component: RolesPage },

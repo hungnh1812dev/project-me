@@ -1,5 +1,9 @@
 import { APP_ROUTES } from '../../config/routes';
-import type { Feature } from '../../lib/feature-definition';
+import { defineApiService, type Feature } from '../../lib/feature-definition';
+import { PasswordApiProvider } from './password-api-context';
+import { createPasswordApi } from './password.api';
+import { SetupApiProvider } from './setup-api-context';
+import { createSetupApi } from './setup.api';
 import { LoginPage } from './LoginPage';
 import { OwnerSetupPage } from './OwnerSetupPage';
 import { ResetPasswordPage } from './ResetPasswordPage';
@@ -17,6 +21,10 @@ export const PUBLIC_ROUTE_PATHS: readonly string[] = [
 ];
 
 export const authFeature: Feature = {
+  apiServices: [
+    defineApiService(createPasswordApi, PasswordApiProvider),
+    defineApiService(createSetupApi, SetupApiProvider),
+  ],
   routes: [
     { path: APP_ROUTES.LOGIN, Component: LoginPage },
     { path: APP_ROUTES.SETUP, Component: OwnerSetupPage },

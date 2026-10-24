@@ -174,9 +174,12 @@ So far: sign-in (T11) and, behind it, a status page that calls
   `/content/:slug/:documentId` behind `ProtectedRoute` + `AppShell` (header with the
   user, Accounts / Roles links, "Security" and "Sign out").
 - **Feature registry** (`src/features/registry.ts`): each feature folder has a
-  `feature.ts` with its `routes` and optional `navItems` (label, path, permission
-  subject and action). `app/app-routes.tsx` and `AppShell` iterate the registry;
-  nav order is registry order. Routes are protected unless listed in
+  `feature.ts` with its `routes`, optional `navItems` (label, path, permission
+  subject and action) and optional `apiServices` (`defineApiService(createXApi,
+XApiProvider)`). `app/app-routes.tsx` and `AppShell` iterate the registry;
+  nav order is registry order. `app/app-services.ts` builds each feature API
+  from the registry and `AppProviders` nests the providers inside the session
+  provider. Routes are protected unless listed in
   `PUBLIC_ROUTE_PATHS` (`features/auth/feature.ts`, the four auth pages). A new
   feature is one folder with `feature.ts` plus one line in the registry.
 
