@@ -34,6 +34,8 @@ types and fields. T19 added API tokens: the API, the subset check
 | `api-token.constants.ts`                      | `API_TOKEN` (token format and limits) and the one `BEARER_PATTERN`, used by both guards                                     |
 | `document-auth.{guard,module}.ts`             | `DocumentAuthGuard` (R1-12), own `DocumentAuthModule`; facade `document-auth.ts` (not in `index.ts`: identity imports that) |
 | `management/accounts.{controller,service}.ts` | `/accounts`: list, invite, resend invite, update, disable, enable, revoke sessions (T17, T17a)                              |
+| `management/invitations.service.ts`           | invite and resend invite (rank check, assignable role, invite code, mail)                                                   |
+| `management/account-records.ts`               | shared account row select, view, row locks (`lockManageableAccount`, `lockAssignableRole`) and audit write                  |
 | `management/roles.{controller,service}.ts`    | `/roles`: list, create, update, delete, replace permissions (T17)                                                           |
 | `management/api-tokens.*.ts`                  | `/api-tokens`: controller, service, request schemas, statuses (T19)                                                         |
 | `management/access-management.*.ts`           | T17 request schemas, error codes, limits; `AccessManagementModule` (imports identity)                                       |

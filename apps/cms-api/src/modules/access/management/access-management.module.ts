@@ -9,6 +9,7 @@ import { AccountsController } from './accounts.controller';
 import { AccountsService } from './accounts.service';
 import { ApiTokensController } from './api-tokens.controller';
 import { ApiTokensService } from './api-tokens.service';
+import { InvitationsService } from './invitations.service';
 import { RolesController } from './roles.controller';
 import { RolesService } from './roles.service';
 
@@ -26,6 +27,11 @@ import { RolesService } from './roles.service';
     SecurityAuditModule,
   ],
   controllers: [AccountsController, ApiTokensController, RolesController],
-  providers: [AccountsService, ApiTokensService, RolesService],
+  providers: [
+    AccountsService,
+    ApiTokensService,
+    InvitationsService,
+    RolesService,
+  ],
 })
 export class AccessManagementModule {}

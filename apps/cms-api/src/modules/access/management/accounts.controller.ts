@@ -31,12 +31,12 @@ import {
   pageQuerySchema,
   parseRequest,
 } from '../../../common/http/request-parsing';
+import { type AccountView } from './account-records';
+import { type AccountPage, AccountsService } from './accounts.service';
 import {
-  type AccountPage,
-  type AccountView,
-  AccountsService,
+  InvitationsService,
   type InvitedAccountView,
-} from './accounts.service';
+} from './invitations.service';
 import { RequirePermission } from '../permission.decorator';
 import { PermissionGuard } from '../permission.guard';
 import { requireAccountActor } from '../rank-rules';
@@ -52,6 +52,7 @@ const SUBJECT = 'accounts';
 export class AccountsController {
   constructor(
     private readonly accounts: AccountsService,
+    private readonly invitations: InvitationsService,
     private readonly clientIp: ClientIpResolver,
   ) {}
 
@@ -74,7 +75,7 @@ export class AccountsController {
     @Req() req: AuthenticatedRequest,
     @Body() body: unknown,
   ): Promise<InvitedAccountView> {
-    return this.accounts.invite(
+    return this.invitations.invite(
       requireAccountActor(req.user.actor),
       parseRequest(inviteAccountSchema, body),
       clientMetaOf(this.clientIp, req),
@@ -133,7 +134,7 @@ export class AccountsController {
     @Req() req: AuthenticatedRequest,
     @Param(ID_PARAM) id: string,
   ): Promise<{ invitationSent: boolean }> {
-    return this.accounts.resendInvite(
+    return this.invitations.resendInvite(
       requireAccountActor(req.user.actor),
       parseRequest(documentIdSchema, id),
       clientMetaOf(this.clientIp, req),
