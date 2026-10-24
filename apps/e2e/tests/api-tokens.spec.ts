@@ -286,6 +286,89 @@ test.describe.serial('owner: API tokens', () => {
     await expect(row.getByRole('button')).toHaveCount(0);
   });
 
+  test('failed create and edit map each API error to alert, marked cells or a notice', async () => {
+    const answer = (
+      status: number,
+      errorCode: string,
+      details: Record<string, unknown> = {},
+    ) => ({
+      status,
+      contentType: 'application/json',
+      body: JSON.stringify({ statusCode: status, errorCode, details }),
+    });
+    const tokensUrl = /\/api-tokens(\/[^/?]+)?$/;
+    const fillCreate = async (dialog: Locator) => {
+      await dialog.getByLabel(label(form.nameLabel)).fill(`E2E fail ${RUN_ID}`);
+      await cell(dialog, matrix.actions.read, matrix.wildcard).check();
+    };
+
+    // Create: scope not held marks the cell and shows the alert.
+    await page.route(tokensUrl, (route) =>
+      route.request().method() === 'POST'
+        ? route.fulfill(
+            answer(403, 'API_TOKEN_SCOPE_NOT_HELD', { indexes: [0] }),
+          )
+        : route.fallback(),
+    );
+    await createButton(page).click();
+    const dialog = createDialog(page);
+    await fillCreate(dialog);
+    await dialog.getByRole('button', { name: form.submitCreate }).click();
+    await expect(dialog).toContainText(access.errors.scopeNotHeld);
+    await expect(
+      cell(dialog, matrix.actions.read, matrix.wildcard),
+    ).toHaveAttribute('aria-invalid', 'true');
+    await expect(dialog).toBeVisible();
+
+    // Create: a 400 shows the expiry field error, marked cells and the alert.
+    await page.unroute(tokensUrl);
+    await page.route(tokensUrl, (route) =>
+      route.request().method() === 'POST'
+        ? route.fulfill(
+            answer(400, 'VALIDATION_FAILED', {
+              issues: [
+                { path: ['expiresAt'], message: 'Server says bad expiry' },
+                { path: ['permissions', 0, 'action'], message: 'bad action' },
+              ],
+            }),
+          )
+        : route.fallback(),
+    );
+    await dialog.getByRole('button', { name: form.submitCreate }).click();
+    await expect(dialog).toContainText('Server says bad expiry');
+    await expect(dialog).toContainText(form.errors.invalid);
+    await expect(
+      cell(dialog, matrix.actions.read, matrix.wildcard),
+    ).toHaveAttribute('aria-invalid', 'true');
+    await page.unroute(tokensUrl);
+    await page.keyboard.press('Escape');
+    await expect(dialog).toBeHidden();
+
+    // Edit: revoked or deleted meanwhile closes with an info notice.
+    for (const [errorCode, status, message] of [
+      ['API_TOKEN_REVOKED', 409, tokens.alreadyRevoked],
+      ['API_TOKEN_NOT_FOUND', 404, tokens.gone],
+    ] as const) {
+      await page.route(tokensUrl, (route) =>
+        route.request().method() === 'PATCH'
+          ? route.fulfill(answer(status, errorCode))
+          : route.fallback(),
+      );
+      const row = tokenRow(page, RENAMED);
+      await row
+        .getByRole('button', { name: tokens.editLabel(RENAMED) })
+        .click();
+      const edit = page.getByRole('dialog', {
+        name: form.editTitle(RENAMED),
+      });
+      await edit.getByLabel(label(form.nameLabel)).fill(`${RENAMED} x`);
+      await edit.getByRole('button', { name: form.submitEdit }).click();
+      await expect(edit).toBeHidden();
+      await expect(page.getByRole('status')).toHaveText(message);
+      await page.unroute(tokensUrl);
+    }
+  });
+
   test('the raw token authenticates nothing on /api-tokens (sessions only)', async () => {
     const response = await context.request.get(
       `${e2eEnv.apiBaseUrl}/api-tokens`,

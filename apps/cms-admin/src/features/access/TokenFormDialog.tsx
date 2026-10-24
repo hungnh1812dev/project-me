@@ -11,43 +11,33 @@ import {
   FormAlert,
 } from '@abyss/form-commons';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { FormProvider, useForm } from 'react-hook-form';
 import { z } from 'zod';
 
-import { API_TOKEN_LIMITS } from '../../config/http.constants';
 import { type PermissionAction } from './access.constants';
 import { COPY } from '../../config/copy.constants';
-import { API_ERROR_CODES, HTTP_STATUS } from '../../config/http.constants';
-import type { ApiToken, UpdateApiTokenInput } from './access.api';
-import { useAccessApi } from './access-api-context';
-import { toAccessError } from './access-error';
-import { ACCESS_QUERY_KEYS, useContentTypesQuery } from './access-queries';
+import { API_TOKEN_LIMITS } from '../../config/http.constants';
+import type { ApiToken } from './access.api';
+import { useContentTypesQuery } from './access-queries';
 import { useCallerAccess } from './caller-access';
 import { LoadError } from '../../components/PageStates';
-import { cellIssues, cellsAt, type CellRef } from './permission-matrix';
-import { endOfDay, expiryIso, localDateOf } from './token-expiry';
+import { endOfDay, localDateOf } from './token-expiry';
 import {
-  sameScopeEntries,
   scopeFromEntries,
   scopeSubjectOrder,
   type ScopeState,
-  serializeScope,
 } from './token-scope';
 import { TokenReveal } from './TokenReveal';
 import { TokenScopeEditor } from './TokenScopeEditor';
+import { type TokenDialogOutcome, useTokenSubmit } from './use-token-submit';
+
+export type { TokenDialogOutcome } from './use-token-submit';
 
 const copy = COPY.access.tokenForm;
 
 export type TokenDialogTarget =
   { mode: 'create' } | { mode: 'edit'; token: ApiToken };
-
-export type TokenDialogOutcome =
-  | { kind: 'created'; name: string }
-  | { kind: 'updated'; name: string }
-  | { kind: 'revoked-meanwhile' }
-  | { kind: 'gone' };
 
 const formSchema = z.object({
   name: z
@@ -113,28 +103,20 @@ function TokenFormBody({
   onDone: (outcome: TokenDialogOutcome) => void;
   onLockChange: (locked: boolean) => void;
 }) {
-  const api = useAccessApi();
-  const queryClient = useQueryClient();
   const caller = useCallerAccess();
   const contentTypes = useContentTypesQuery();
   const editing = target.mode === 'edit' ? target.token : null;
-  const initialEntries = editing?.scope.permissions;
-  const initialExpiry = localDateOf(editing?.expiresAt ?? null);
 
   const [scope, setScope] = useState<ScopeState>(() =>
-    scopeFromEntries(initialEntries ?? []),
+    scopeFromEntries(editing?.scope.permissions ?? []),
   );
-  const [scopeError, setScopeError] = useState<string | null>(null);
-  const [alert, setAlert] = useState<string | null>(null);
-  const [marked, setMarked] = useState<ReadonlySet<string>>(new Set());
-  const [created, setCreated] = useState<{
-    name: string;
-    token: string;
-  } | null>(null);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
-    defaultValues: { name: editing?.name ?? '', expiresOn: initialExpiry },
+    defaultValues: {
+      name: editing?.name ?? '',
+      expiresOn: localDateOf(editing?.expiresAt ?? null),
+    },
     mode: 'onTouched',
   });
 
@@ -146,117 +128,23 @@ function TokenFormBody({
     caller.can(subject, action) ||
     (subject !== '*' && caller.can('*', action));
 
-  const refresh = () =>
-    queryClient.invalidateQueries({ queryKey: ACCESS_QUERY_KEYS.apiTokens });
-
-  const fail = (cause: unknown, cells: readonly CellRef[]) => {
-    const error = toAccessError(cause);
-    onLockChange(false);
-    switch (error.errorCode) {
-      case API_ERROR_CODES.API_TOKEN_NOT_FOUND:
-        void refresh();
-        onDone({ kind: 'gone' });
-        return;
-      case API_ERROR_CODES.API_TOKEN_REVOKED:
-        void refresh();
-        onDone({ kind: 'revoked-meanwhile' });
-        return;
-      case API_ERROR_CODES.API_TOKEN_SCOPE_NOT_HELD:
-        setMarked(cellsAt(error.indexes, cells));
-        setAlert(error.message);
-        return;
-      default: {
-        if (error.status !== HTTP_STATUS.BAD_REQUEST) {
-          setAlert(error.message);
-          return;
-        }
-        // 400: bad body, scope or expiry; issue paths name the request body.
-        const expiry = error.issues.find((i) => i.path[0] === 'expiresAt');
-        if (expiry !== undefined) {
-          form.setError('expiresOn', { message: expiry.message });
-        }
-        const scopeIssues = error.issues
-          .filter((i) => i.path[0] === 'permissions')
-          .map((i) => ({ ...i, path: i.path.slice(1) }));
-        setMarked(new Set(cellIssues(scopeIssues, cells).keys()));
-        setAlert(copy.errors.invalid);
-      }
-    }
-  };
-
-  const create = useMutation({
-    // The answer holds the raw token: do not keep it in the mutation cache.
-    gcTime: 0,
-    mutationFn: api.createApiToken,
-    onSuccess: (token) => {
-      void refresh();
-      setCreated({ name: token.name, token: token.token });
-      onLockChange(true);
-    },
+  const {
+    submit,
+    pending,
+    alert,
+    scopeError,
+    marked,
+    created,
+    clearScopeMarks,
+  } = useTokenSubmit({
+    editing,
+    form,
+    scope,
+    subjects,
+    onClose,
+    onDone,
+    onLockChange,
   });
-
-  const update = useMutation({
-    mutationFn: (input: UpdateApiTokenInput) =>
-      api.updateApiToken(editing?.id ?? '', input),
-    onSuccess: (token) => {
-      void refresh();
-      onLockChange(false);
-      onDone({ kind: 'updated', name: token.name });
-    },
-  });
-
-  const pending = create.isPending || update.isPending;
-
-  /** Message when the scope cannot be sent, else null. */
-  const scopeProblem = (entries: readonly unknown[]): string | null => {
-    if (entries.length === 0) return copy.validation.scopeRequired;
-    if (entries.length > API_TOKEN_LIMITS.MAX_SCOPE_ENTRIES) {
-      return copy.validation.scopeTooLong;
-    }
-    return null;
-  };
-
-  const submit = form.handleSubmit(
-    (values) => {
-      setAlert(null);
-      setMarked(new Set());
-      const { entries, cells } = serializeScope(scope, subjects);
-      const problem = scopeProblem(entries);
-      setScopeError(problem);
-      if (problem !== null) return;
-      const name = values.name.trim();
-      const expiresIso =
-        values.expiresOn === '' ? null : expiryIso(values.expiresOn);
-
-      if (editing === null) {
-        onLockChange(true);
-        create.mutate(
-          {
-            name,
-            scope: { permissions: entries },
-            ...(expiresIso === null ? {} : { expiresAt: expiresIso }),
-          },
-          { onError: (cause) => fail(cause, cells) },
-        );
-        return;
-      }
-
-      const input: UpdateApiTokenInput = {};
-      if (name !== editing.name) input.name = name;
-      if (!sameScopeEntries(entries, initialEntries ?? [])) {
-        input.scope = { permissions: entries };
-      }
-      if (values.expiresOn !== initialExpiry) input.expiresAt = expiresIso;
-      if (Object.keys(input).length === 0) {
-        onClose();
-        return;
-      }
-      onLockChange(true);
-      update.mutate(input, { onError: (cause) => fail(cause, cells) });
-    },
-    // Show the scope problem together with the field errors.
-    () => setScopeError(scopeProblem(serializeScope(scope, subjects).entries)),
-  );
 
   if (created !== null) {
     return (
@@ -323,8 +211,7 @@ function TokenFormBody({
                 state={scope}
                 onChange={(change) => {
                   setScope(change);
-                  setScopeError(null);
-                  setMarked(new Set());
+                  clearScopeMarks();
                 }}
                 contentTypes={contentTypes.data ?? []}
                 subjects={subjects}
