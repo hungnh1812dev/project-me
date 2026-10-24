@@ -3,14 +3,14 @@ import { useState } from 'react';
 import { Link, NavLink, Outlet } from 'react-router';
 
 import { COPY } from '../config/copy.constants';
-import {
-  REVIEWER_ROLE_SLUG,
-  REVIEWER_SETTINGS_SUBJECT,
-} from '../config/reviewer.constants';
+import { REVIEWER_ROLE_SLUG } from '../config/reviewer.constants';
 import { APP_ROUTES } from '../config/routes';
 import { useCallerAccess } from '../features/access/caller-access';
 import { useCurrentUser, useSession } from '../features/auth';
+import { FEATURE_LIST } from '../features/registry';
 import { ReviewerBanner } from '../features/reviewer/ReviewerBanner';
+
+const NAV_ITEMS = FEATURE_LIST.flatMap((feature) => feature.navItems ?? []);
 
 /** Layout of every signed-in page: header with the user and sign-out. */
 export function AppShell() {
@@ -18,12 +18,9 @@ export function AppShell() {
   const session = useSession();
   const [signingOut, setSigningOut] = useState(false);
   const caller = useCallerAccess();
-  const showAccounts = caller.ready && caller.can('accounts', 'read');
-  const showRoles = caller.ready && caller.can('roles', 'read');
-  const showTokens = caller.ready && caller.can('api_tokens', 'read');
-  const showMedia = caller.ready && caller.can('media', 'read');
-  const showReviewer =
-    caller.ready && caller.can(REVIEWER_SETTINGS_SUBJECT, 'read');
+  const visibleNavItems = caller.ready
+    ? NAV_ITEMS.filter((item) => caller.can(item.subject, item.action))
+    : [];
   const isReviewer = user?.role === REVIEWER_ROLE_SLUG;
 
   return (
@@ -36,50 +33,16 @@ export function AppShell() {
           >
             {COPY.app.name}
           </Link>
-          {showAccounts ||
-          showRoles ||
-          showTokens ||
-          showMedia ||
-          showReviewer ? (
+          {visibleNavItems.length > 0 ? (
             <nav
               aria-label={COPY.access.nav.label}
               className="order-last flex basis-full items-center gap-1 sm:order-none sm:min-w-0 sm:flex-1 sm:basis-auto"
             >
-              {showAccounts ? (
-                <Button asChild variant="ghost" size="sm">
-                  <NavLink to={APP_ROUTES.ACCOUNTS}>
-                    {COPY.access.nav.accounts}
-                  </NavLink>
+              {visibleNavItems.map((item) => (
+                <Button key={item.path} asChild variant="ghost" size="sm">
+                  <NavLink to={item.path}>{item.label}</NavLink>
                 </Button>
-              ) : null}
-              {showRoles ? (
-                <Button asChild variant="ghost" size="sm">
-                  <NavLink to={APP_ROUTES.ROLES}>
-                    {COPY.access.nav.roles}
-                  </NavLink>
-                </Button>
-              ) : null}
-              {showTokens ? (
-                <Button asChild variant="ghost" size="sm">
-                  <NavLink to={APP_ROUTES.API_TOKENS}>
-                    {COPY.access.nav.apiTokens}
-                  </NavLink>
-                </Button>
-              ) : null}
-              {showMedia ? (
-                <Button asChild variant="ghost" size="sm">
-                  <NavLink to={APP_ROUTES.MEDIA}>
-                    {COPY.access.nav.media}
-                  </NavLink>
-                </Button>
-              ) : null}
-              {showReviewer ? (
-                <Button asChild variant="ghost" size="sm">
-                  <NavLink to={APP_ROUTES.REVIEWER_SESSIONS}>
-                    {COPY.access.nav.reviewer}
-                  </NavLink>
-                </Button>
-              ) : null}
+              ))}
             </nav>
           ) : null}
           <nav

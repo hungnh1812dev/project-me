@@ -31,12 +31,24 @@ function sourceFilesIn(dir: string): string[] {
   });
 }
 
+function featureFolders(): string[] {
+  return readdirSync(FEATURES_DIR)
+    .map((entry) => join(FEATURES_DIR, entry))
+    .filter((path) => statSync(path).isDirectory());
+}
+
+// `../x` means a sibling feature only inside a feature folder; files directly
+// in features/ (the registry) reach lib/ and config/ the same way.
 function deepCrossFeatureImports(): string[] {
-  return sourceFilesIn(FEATURES_DIR).flatMap((file) =>
-    [...readFileSync(file, 'utf8').matchAll(SIBLING_FEATURE_IMPORT)]
-      .filter(([, , subpath]) => subpath !== undefined)
-      .map(([statement]) => `${file.replace(FEATURES_DIR, '')}: ${statement}`),
-  );
+  return featureFolders()
+    .flatMap(sourceFilesIn)
+    .flatMap((file) =>
+      [...readFileSync(file, 'utf8').matchAll(SIBLING_FEATURE_IMPORT)]
+        .filter(([, , subpath]) => subpath !== undefined)
+        .map(
+          ([statement]) => `${file.replace(FEATURES_DIR, '')}: ${statement}`,
+        ),
+    );
 }
 
 const FACADE_EXPORTS: Record<string, string[]> = {

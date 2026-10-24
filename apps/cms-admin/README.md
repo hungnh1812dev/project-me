@@ -173,6 +173,12 @@ So far: sign-in (T11) and, behind it, a status page that calls
   `/roles/:roleId`, `/api-tokens`, `/content/:slug`, `/content/:slug/new`,
   `/content/:slug/:documentId` behind `ProtectedRoute` + `AppShell` (header with the
   user, Accounts / Roles links, "Security" and "Sign out").
+- **Feature registry** (`src/features/registry.ts`): each feature folder has a
+  `feature.ts` with its `routes` and optional `navItems` (label, path, permission
+  subject and action). `app/app-routes.tsx` and `AppShell` iterate the registry;
+  nav order is registry order. Routes are protected unless listed in
+  `PUBLIC_ROUTE_PATHS` (`features/auth/feature.ts`, the four auth pages). A new
+  feature is one folder with `feature.ts` plus one line in the registry.
 
 End-to-end coverage lives in [`apps/e2e`](../e2e/README.md).
 
