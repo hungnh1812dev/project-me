@@ -33,7 +33,7 @@ const resetSchema = z
 type ResetValues = z.input<typeof resetSchema>;
 
 /**
- * Forgotten password (T12): ask for a code by email, then enter it with the
+ * Forgotten password: ask for a code by email, then enter it with the
  * new password. The first step never says whether the email has an account.
  */
 export function ResetPasswordPage() {

@@ -16,7 +16,7 @@ export interface MediaFile {
   thumbnailUrl: string | null;
   isReviewerPreset: boolean;
   createdAt: string;
-  /** Storage provider; sent once the API exposes it (T29 attach contract). */
+  /** Storage provider; sent once the API exposes it (attach contract). */
   provider?: string;
 }
 
@@ -28,7 +28,7 @@ export interface MediaPage {
 const FILE_FIELD = 'file';
 const ALT_FIELD = 'alt';
 
-/** Media library calls (T27-T29). Bearer via the interceptor. */
+/** Media library calls. Bearer via the interceptor. */
 export function createMediaApi(client: AxiosInstance) {
   const { MEDIA } = API_ENDPOINTS;
   return {

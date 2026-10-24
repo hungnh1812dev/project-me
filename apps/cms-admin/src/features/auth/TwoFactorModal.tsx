@@ -68,7 +68,7 @@ function alertOf(failure: ApiFailure): Alert | 'expired' {
 }
 
 /**
- * Second sign-in step (T13): the code for the temp token from login. On
+ * Second sign-in step (D8): the code for the temp token from login. On
  * success the session starts and the login page moves on by itself.
  * `onExpired` = the temp token died (5 wrong codes or 300 s): sign in again.
  */

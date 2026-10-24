@@ -34,7 +34,7 @@ interface Notice {
   message: string;
 }
 
-/** `/media` (T29): the file library with upload, alt text edit and delete. */
+/** `/media`: the file library with upload, alt text edit and delete. */
 export function MediaLibraryPage() {
   const [page, setPage] = useState(1);
   const media = useMediaQuery(page);

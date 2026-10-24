@@ -27,7 +27,7 @@ export interface ChangePasswordInput {
 }
 
 /**
- * Security settings of the signed-in account (T13). Bearer token through the
+ * Security settings of the signed-in account. Bearer token through the
  * interceptor; re-auth failures come back as 403, so they never look like an
  * expired session.
  */

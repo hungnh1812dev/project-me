@@ -16,7 +16,7 @@ export interface SetPasswordInput {
 }
 
 /**
- * Password endpoints for signed-out users (SPEC §9, T12). No Bearer token
+ * Password endpoints for signed-out users (SPEC §9). No Bearer token
  * and no refresh-and-retry: a 401 here is the answer.
  */
 export function createPasswordApi(client: AxiosInstance) {

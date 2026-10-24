@@ -69,7 +69,7 @@ function sentenceOf(message: string): string {
 }
 
 /**
- * One-time owner setup (OS2). Reachable only while cms-api says the setup is
+ * One-time owner setup (D1). Reachable only while cms-api says the setup is
  * open. The token and passwords live in form state only: never in the URL,
  * storage or the store, and they are cleared on success.
  */

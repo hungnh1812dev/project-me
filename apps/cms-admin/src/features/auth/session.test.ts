@@ -149,7 +149,7 @@ describe('session', () => {
   });
 });
 
-describe('session across tabs (T11a)', () => {
+describe('session across tabs', () => {
   it('sends one network refresh when several tabs refresh at once', async () => {
     const gate = deferred<void>();
     let issued = 0;

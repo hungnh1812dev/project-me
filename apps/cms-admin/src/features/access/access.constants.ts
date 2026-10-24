@@ -1,5 +1,5 @@
 /**
- * Access-control vocabulary of cms-api (T14/T17), mirrored for the admin UI.
+ * Access-control vocabulary of cms-api, mirrored for the admin UI.
  * Keep in sync with apps/cms-api/src/modules/access/access.constants.ts and
  * access-management.constants.ts; the server validates everything anyway.
  */
@@ -42,7 +42,7 @@ export const SYSTEM_SUBJECTS = Object.keys(
 /** The owner holds every permission without rows (SPEC §1). */
 export const OWNER_ROLE_SLUG = 'owner';
 
-/** System roles that are never given to an invited account (T17). */
+/** System roles that are never given to an invited account. */
 export const UNASSIGNABLE_ROLE_SLUGS: readonly string[] = [
   'public',
   'reviewer',

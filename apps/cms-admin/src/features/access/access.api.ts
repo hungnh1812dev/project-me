@@ -113,7 +113,7 @@ export interface AccountsPage {
   meta: PageMeta;
 }
 
-/** Accounts, roles and content-type discovery (T17, T17b). Bearer via the interceptor. */
+/** Accounts, roles and content-type discovery. Bearer via the interceptor. */
 export function createAccessApi(client: AxiosInstance) {
   const { ACCOUNTS, ROLES, API_TOKENS } = API_ENDPOINTS;
   return {

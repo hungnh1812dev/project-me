@@ -9,7 +9,7 @@ import type { FieldList, TokenScopeEntry } from './access.api';
 import type { CellRef, FieldListKind } from './permission-matrix';
 
 /**
- * Editing model of an API token scope (T19): one cell per content subject
+ * Editing model of an API token scope: one cell per content subject
  * and action, each with the field lists the API accepts on it. Simpler than
  * the role matrix: no conditions, no system subjects.
  */

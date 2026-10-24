@@ -101,7 +101,7 @@ export interface BulkResponse {
   results: (BulkItemOk | BulkItemError)[];
 }
 
-/** Content types and one document's draft (T20, T21). Bearer via the interceptor. */
+/** Content types and one document's draft. Bearer via the interceptor. */
 export function createContentApi(client: AxiosInstance) {
   const { CONTENT_TYPES, DOCUMENTS } = API_ENDPOINTS;
   return {

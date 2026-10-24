@@ -36,7 +36,7 @@ interface Notice {
   message: string;
 }
 
-/** `/api-tokens` (T19): who may call the API with a key, and what each key may do. */
+/** `/api-tokens`: who may call the API with a key, and what each key may do. */
 export function ApiTokensPage() {
   const [page, setPage] = useState(1);
   const tokens = useApiTokensQuery(page);

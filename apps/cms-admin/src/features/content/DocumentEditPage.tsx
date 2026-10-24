@@ -28,9 +28,9 @@ import { maskedPathsOf, visibleEntries } from './merge.reducer';
 const copy = COPY.content;
 
 /**
- * `/content/:slug/new` and `/content/:slug/:documentId` (T23): the dynamic
+ * `/content/:slug/new` and `/content/:slug/:documentId`: the dynamic
  * form of one document's draft. Creating goes to the edit route; saving an
- * existing draft sends its version (a stale one is a 409 that opens the merge modal (T25)).
+ * existing draft sends its version (a stale one is a 409 that opens the merge modal).
  */
 export function DocumentEditPage() {
   const { slug = '', documentId } = useParams();

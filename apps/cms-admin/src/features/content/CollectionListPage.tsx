@@ -77,7 +77,7 @@ function toItem(action: BulkAction, row: DocumentListItem): BulkItem {
 }
 
 /**
- * `/content/:slug` (T35): the draft list of a collection with sortable
+ * `/content/:slug`: the draft list of a collection with sortable
  * columns, paging, bulk publish / unpublish / delete and JSON import.
  */
 export function CollectionListPage() {

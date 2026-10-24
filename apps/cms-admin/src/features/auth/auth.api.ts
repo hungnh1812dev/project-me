@@ -18,7 +18,7 @@ interface TwoFactorRequiredResponse {
   methods: string[];
 }
 
-/** A password-checked login waiting for its second step (T13). */
+/** A password-checked login waiting for its second step. */
 export interface TwoFactorChallenge {
   /** Short-lived (300 s), kept in memory only, never stored. */
   tempToken: string;

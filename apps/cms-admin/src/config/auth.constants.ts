@@ -1,4 +1,4 @@
-/** Slug of the system role every reviewer session holds (T31); read by any feature that shows a read-only mode. */
+/** Slug of the system role every reviewer session holds; read by any feature that shows a read-only mode. */
 export const REVIEWER_ROLE_SLUG = 'reviewer';
 
 /** D8 password rule, mirrored from cms-api so the form can explain it up front. */
@@ -30,7 +30,7 @@ export const TWO_FACTOR_METHODS = ['totp', 'email'] as const;
 export type TwoFactorMethod = (typeof TWO_FACTOR_METHODS)[number];
 
 /**
- * Cross-tab refresh (T11a): Web Locks name that lets one tab refresh at a
+ * Cross-tab refresh: Web Locks name that lets one tab refresh at a
  * time, and the BroadcastChannel on which it shares the new access token.
  */
 export const REFRESH_LOCK_NAME = 'abyss-admin:refresh';

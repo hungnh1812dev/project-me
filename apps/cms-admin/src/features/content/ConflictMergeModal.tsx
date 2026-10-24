@@ -44,7 +44,7 @@ export interface ConflictMergeModalProps {
 }
 
 /**
- * Field-level diff of a 409 (T25). Each difference is a pair of cards the
+ * Field-level diff of a 409. Each difference is a pair of cards the
  * user picks from (default: keep their own edit); the result is sent with
  * the version the server reported. Masked fields are filtered out first.
  */

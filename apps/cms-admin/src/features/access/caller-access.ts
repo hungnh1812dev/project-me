@@ -4,8 +4,8 @@ import type { Role } from './access.api';
 import { useRolesQuery } from './access-queries';
 
 /**
- * What the signed-in account may do on system subjects, for hiding actions
- * (T18 Q3). Derived from its own role's rows in `GET /roles`; the owner may
+ * What the signed-in account may do on system subjects, for hiding actions.
+ * Derived from its own role's rows in `GET /roles`; the owner may
  * do everything. Only a UI hint: cms-api enforces every rule itself.
  */
 export interface CallerAccess {

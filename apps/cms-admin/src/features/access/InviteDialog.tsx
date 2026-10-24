@@ -57,7 +57,7 @@ export function assignableRoles(roles: readonly Role[]): Role[] {
 }
 
 /**
- * Invite dialog (T18). Roles come from the roles list the page already
+ * Invite dialog. Roles come from the roles list the page already
  * loaded; the server re-checks rank and assignability.
  */
 export function InviteDialog({

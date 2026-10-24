@@ -20,7 +20,7 @@ export function createApiClient(
 }
 
 // Cross-origin (admin.<domain> -> <domain>): send cookies, so a CORS setup
-// without `Access-Control-Allow-Credentials` fails now, not at login (T11).
+// without `Access-Control-Allow-Credentials` fails now, not at login (D14).
 export const apiClient = createApiClient(appEnv.apiBaseUrl, {
   withCredentials: true,
 });

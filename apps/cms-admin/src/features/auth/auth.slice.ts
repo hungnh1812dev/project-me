@@ -10,7 +10,7 @@ export interface CurrentUser {
   displayName: string;
   role: string;
   twoFactorEnabled: boolean;
-  /** Null while 2FA is off (T13). */
+  /** Null while 2FA is off. */
   twoFactorMethod: TwoFactorMethod | null;
 }
 

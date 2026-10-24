@@ -2,7 +2,7 @@ import { COPY } from '../../config/copy.constants';
 import { ChangePasswordSection } from './ChangePasswordSection';
 import { TwoFactorSection } from './TwoFactorSection';
 
-/** `/settings/security` (T13): two-factor and password of the signed-in account. */
+/** `/settings/security`: two-factor and password of the signed-in account. */
 export function SecuritySettingsPage() {
   return (
     <div className="grid gap-6">

@@ -16,8 +16,8 @@ export interface RowNotice {
 }
 
 /**
- * Enable and Resend invite of one account row (T18a). Neither asks for
- * confirmation (Q13): both are reversible and mail nothing destructive.
+ * Enable and Resend invite of one account row. Neither asks for
+ * confirmation: both are reversible and mail nothing destructive.
  * Disable stays a dialog on the page.
  */
 export function AccountRowActions({

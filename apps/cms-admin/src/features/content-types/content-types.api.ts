@@ -2,7 +2,7 @@ import type { AxiosInstance } from 'axios';
 
 import { API_ENDPOINTS } from '../../config/endpoints';
 
-/** A field of a content type (T17b). */
+/** A field of a content type. */
 export interface ContentTypeField {
   path: string;
   type: string;

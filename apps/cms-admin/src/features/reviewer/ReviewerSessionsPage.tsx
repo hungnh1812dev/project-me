@@ -42,7 +42,7 @@ const STATUS_CLASS = {
   ended: 'bg-muted text-muted-foreground',
 } as const;
 
-/** `/reviewer` (T32, owner): the on/off switch and who asked for access. */
+/** `/reviewer` (owner): the on/off switch and who asked for access. */
 export function ReviewerSessionsPage() {
   const [page, setPage] = useState(1);
   const sessions = useReviewerSessionsQuery(page);

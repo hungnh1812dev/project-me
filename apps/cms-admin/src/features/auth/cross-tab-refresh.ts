@@ -41,9 +41,9 @@ function isRefreshedMessage(data: unknown): data is RefreshedMessage {
 }
 
 /**
- * T11a: coordinates refreshes across admin tabs. The refresh cookie is
- * shared by all tabs and rotates on use, so tabs take turns under a Web
- * Lock: a tab that waited reuses the token another tab got after it asked
+ * Coordinates refreshes across admin tabs (D9: reuse of a rotated token
+ * revokes the family). The refresh cookie is shared by all tabs and rotates
+ * on use, so tabs take turns under a Web Lock: a tab that waited reuses the token another tab got after it asked
  * (shared over BroadcastChannel) instead of sending a refresh of its own.
  * If that message comes late, the waiting tab refreshes with the already
  * rotated cookie, which is a normal rotation, not reuse. Without Web Locks

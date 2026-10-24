@@ -36,7 +36,7 @@ const changeSchema = z
 type ChangeValues = z.input<typeof changeSchema>;
 
 /**
- * Change password (T12 API, T13 UI). Success ends every session, this one
+ * Change password. Success ends every session, this one
  * included, so the user lands on sign-in with a notice.
  */
 export function ChangePasswordSection() {

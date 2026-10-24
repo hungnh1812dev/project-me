@@ -11,7 +11,7 @@ import {
 import type { FieldList, PermissionRow } from './access.api';
 
 /**
- * Editing model of a role's permission set (T18). One cell per subject and
+ * Editing model of a role's permission set. One cell per subject and
  * action. A cell edits its first row; further rows for the same cell (only
  * possible through the API) are kept unchanged so a save never loses them.
  * Conditions are edited as text and parsed on save.

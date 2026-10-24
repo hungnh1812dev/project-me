@@ -8,25 +8,25 @@ export const APP_ROUTES = {
   RESET_PASSWORD: '/reset-password',
   /** Named in the invitation email (cms-api ADMIN_PAGE_PATHS); keep in sync. */
   SET_PASSWORD: '/set-password',
-  /** Two-factor and password settings of the signed-in account (T13). */
+  /** Two-factor and password settings of the signed-in account. */
   SECURITY_SETTINGS: '/settings/security',
-  /** Accounts list + invite (T18). */
+  /** Accounts list + invite. */
   ACCOUNTS: '/accounts',
-  /** Roles list (T18). */
+  /** Roles list. */
   ROLES: '/roles',
-  /** One role's permission matrix (T18); `:roleId` = document id. */
+  /** One role's permission matrix; `:roleId` = document id. */
   ROLE_PERMISSIONS: '/roles/:roleId',
-  /** API tokens list, create, edit, revoke (T19). */
+  /** API tokens list, create, edit, revoke. */
   API_TOKENS: '/api-tokens',
-  /** Media library: upload, alt text, delete (T29). */
+  /** Media library: upload, alt text, delete. */
   MEDIA: '/media',
-  /** Reviewer switch and sessions log, owner only (T32). */
+  /** Reviewer switch and sessions log, owner only. */
   REVIEWER_SESSIONS: '/reviewer',
-  /** Collection list with bulk actions (T35); `:slug` = content type. */
+  /** Collection list with bulk actions; `:slug` = content type. */
   CONTENT_LIST: '/content/:slug',
-  /** New document of a content type (T23); `:slug` = content type. */
+  /** New document of a content type; `:slug` = content type. */
   CONTENT_NEW: '/content/:slug/new',
-  /** Edit one document's draft (T23). */
+  /** Edit one document's draft. */
   CONTENT_EDIT: '/content/:slug/:documentId',
 } as const;
 

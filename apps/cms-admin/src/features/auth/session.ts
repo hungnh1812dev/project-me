@@ -19,7 +19,7 @@ export interface SessionOptions {
   authApi: AuthApi;
   /** Called whenever the session ends (sign-out or expiry), e.g. to drop cached server data. */
   onSessionEnded?: () => void;
-  /** T11a: Web Locks + BroadcastChannel; omitted = this tab only. */
+  /** Web Locks + BroadcastChannel; omitted = this tab only. */
   crossTab?: CrossTabRefreshOptions;
 }
 
@@ -27,7 +27,7 @@ export interface SessionOptions {
  * Session lifecycle on top of the auth API and `authSlice`. Every refresh,
  * whether from app start or from the 401 interceptor, goes through one
  * single-flight call, and across tabs through `createCrossTabRefresh`
- * (T11a): the refresh cookie rotates on use, so parallel refreshes would
+ * (D9). The refresh cookie rotates on use, so parallel refreshes would
  * look like token reuse and revoke the session.
  */
 export function createSession({
@@ -90,7 +90,7 @@ export function createSession({
       return outcome;
     },
 
-    /** Second login step (T13): the code for a temp token, then /me. */
+    /** Second login step: the code for a temp token, then /me. */
     completeTwoFactor: async (input: TwoFactorVerification): Promise<void> => {
       await startWith(await authApi.verifyTwoFactor(input));
     },

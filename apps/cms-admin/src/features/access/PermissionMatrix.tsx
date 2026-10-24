@@ -30,7 +30,7 @@ export interface PermissionMatrixProps {
   editable: boolean;
   /**
    * Whether the caller may grant a system subject action (it must hold it
-   * itself, T17 PERMISSION_NOT_HELD). Content actions are always grantable.
+   * itself, else PERMISSION_NOT_HELD). Content actions are always grantable.
    */
   canGrant: (subject: string, action: PermissionAction) => boolean;
   /** Server messages per cell key (400 issues). */
@@ -50,7 +50,7 @@ export function subjectLabel(subject: string, known: boolean): string {
 }
 
 /**
- * Role permission matrix (T18): rows are subjects, columns actions. Content
+ * Role permission matrix: rows are subjects, columns actions. Content
  * rows open a details row with field pickers and the row conditions.
  */
 export function PermissionMatrix(props: PermissionMatrixProps) {

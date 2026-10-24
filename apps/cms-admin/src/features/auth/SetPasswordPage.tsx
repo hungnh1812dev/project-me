@@ -29,7 +29,7 @@ const setSchema = z
 type SetValues = z.input<typeof setSchema>;
 
 /**
- * Invitation (T12): the invited person enters the emailed code and chooses
+ * Invitation: the invited person enters the emailed code and chooses
  * a password; the account becomes active. A fresh code can be requested
  * here, since one lasts only a few minutes.
  */

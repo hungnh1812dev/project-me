@@ -18,7 +18,7 @@ import {
 
 const copy = COPY.access.roles;
 
-/** `/roles` (T18): every role, highest rank first; opens a role's matrix. */
+/** `/roles`: every role, highest rank first; opens a role's matrix. */
 export function RolesPage() {
   const roles = useRolesQuery();
 

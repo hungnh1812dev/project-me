@@ -43,7 +43,7 @@ interface Notice {
   message: string;
 }
 
-/** `/accounts` (T18): who can sign in; invite and disable. */
+/** `/accounts`: who can sign in; invite and disable. */
 export function AccountsPage() {
   const [page, setPage] = useState(1);
   const accounts = useAccountsQuery(page);

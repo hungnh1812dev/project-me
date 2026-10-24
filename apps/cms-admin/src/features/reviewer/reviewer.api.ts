@@ -31,7 +31,7 @@ export function createReviewerApi(client: AxiosInstance) {
       return data.enabled === true;
     },
 
-    /** Switching off also ends every live reviewer session (T31). */
+    /** Switching off also ends every live reviewer session. */
     setEnabled: async (enabled: boolean): Promise<boolean> => {
       const { data } = await client.put<{ enabled: boolean }>(
         REVIEWER.SETTINGS,

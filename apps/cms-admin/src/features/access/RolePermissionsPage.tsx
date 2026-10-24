@@ -36,7 +36,7 @@ import { OWNER_ROLE_SLUG } from './access.constants';
 
 const copy = COPY.access;
 
-/** `/roles/:roleId` (T18): one role's permission matrix. */
+/** `/roles/:roleId`: one role's permission matrix. */
 export function RolePermissionsPage() {
   const { roleId } = useParams();
   const roles = useRolesQuery();

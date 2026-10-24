@@ -31,7 +31,7 @@ function groupSecret(secret: string): string {
 }
 
 /**
- * TOTP setup (T13): a fresh secret on open, shown as QR and key; turning on
+ * TOTP setup: a fresh secret on open, shown as QR and key; turning on
  * needs the app's current code and the password.
  */
 export function TotpSetupDialog({
@@ -131,7 +131,7 @@ export function TotpSetupDialog({
   );
 }
 
-/** Email 2FA (Q3): weaker, so the dialog says so; the first code goes out on open. */
+/** Email 2FA: weaker, so the dialog says so; the first code goes out on open. */
 export function EmailTwoFactorDialog({
   email,
   onClose,

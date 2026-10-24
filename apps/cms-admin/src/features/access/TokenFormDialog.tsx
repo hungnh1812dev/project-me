@@ -64,7 +64,7 @@ const formSchema = z.object({
 type FormValues = z.input<typeof formSchema>;
 
 /**
- * Create or edit an API token (T19). Creating switches the same dialog to
+ * Create or edit an API token. Creating switches the same dialog to
  * the one-time token view; the raw token lives only in that view's state and
  * is gone when the dialog closes.
  */
