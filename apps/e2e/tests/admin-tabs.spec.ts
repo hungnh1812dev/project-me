@@ -1,13 +1,13 @@
 import { expect, type Page, test } from '@playwright/test';
 
-import { COPY } from '../../cms-admin/src/config/copy.constants';
+import { ADMIN_COPY } from '../src/app-contracts';
 import { AUTH_REFRESH_PATH } from '../src/constants';
 import { e2eEnv } from '../src/env';
 
 const homeHeading = (page: Page) =>
-  page.getByRole('heading', { level: 1, name: COPY.page.title });
+  page.getByRole('heading', { level: 1, name: ADMIN_COPY.page.title });
 const loginHeading = (page: Page) =>
-  page.getByRole('heading', { level: 1, name: COPY.login.title });
+  page.getByRole('heading', { level: 1, name: ADMIN_COPY.login.title });
 
 /** Statuses of every refresh call the page makes from now on. */
 function recordRefreshes(page: Page): number[] {
@@ -29,10 +29,12 @@ test('two admin tabs that refresh at the same moment both stay signed in', async
 }) => {
   await page.goto('/');
   await page
-    .getByRole('textbox', { name: COPY.login.emailLabel })
+    .getByRole('textbox', { name: ADMIN_COPY.login.emailLabel })
     .fill(e2eEnv.ownerEmail);
-  await page.getByLabel(COPY.login.passwordLabel).fill(e2eEnv.ownerPassword);
-  await page.getByRole('button', { name: COPY.login.submit }).click();
+  await page
+    .getByLabel(ADMIN_COPY.login.passwordLabel)
+    .fill(e2eEnv.ownerPassword);
+  await page.getByRole('button', { name: ADMIN_COPY.login.submit }).click();
   await expect(homeHeading(page)).toBeVisible();
 
   // Second tab: same browser context, so the same refresh cookie.
@@ -56,6 +58,6 @@ test('two admin tabs that refresh at the same moment both stay signed in', async
   await page.reload();
   await expect(homeHeading(page)).toBeVisible();
 
-  await page.getByRole('button', { name: COPY.session.signOut }).click();
+  await page.getByRole('button', { name: ADMIN_COPY.session.signOut }).click();
   await expect(loginHeading(page)).toBeVisible();
 });

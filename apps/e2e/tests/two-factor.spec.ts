@@ -1,6 +1,6 @@
 import { expect, type Locator, type Page, test } from '@playwright/test';
 
-import { COPY } from '../../cms-admin/src/config/copy.constants';
+import { ADMIN_COPY } from '../src/app-contracts';
 import { TWO_FACTOR_TEST_TIMEOUT_MS } from '../src/constants';
 import { e2eEnv } from '../src/env';
 import { TWO_FACTOR_CHANGED_PASSWORD as NEW_PASSWORD } from '../src/two-factor-account';
@@ -17,38 +17,40 @@ import { freshTotpCode } from '../src/totp';
  */
 test.describe.configure({ mode: 'serial', retries: 0 });
 
-const security = COPY.security;
+const security = ADMIN_COPY.security;
 const label = (name: string) => new RegExp(`^${name}`);
 
 async function signIn(page: Page): Promise<void> {
   await page.goto('/login');
   await page
-    .getByRole('textbox', { name: COPY.login.emailLabel })
+    .getByRole('textbox', { name: ADMIN_COPY.login.emailLabel })
     .fill(e2eEnv.twoFactorEmail);
   await page
-    .getByLabel(COPY.login.passwordLabel)
+    .getByLabel(ADMIN_COPY.login.passwordLabel)
     .fill(e2eEnv.twoFactorPassword);
-  await page.getByRole('button', { name: COPY.login.submit }).click();
+  await page.getByRole('button', { name: ADMIN_COPY.login.submit }).click();
 }
 
 /** Signed in: the shell shows. After a sign-out the app returns to the last page. */
 async function expectSignedIn(page: Page): Promise<void> {
   await expect(
-    page.getByRole('button', { name: COPY.session.signOut }),
+    page.getByRole('button', { name: ADMIN_COPY.session.signOut }),
   ).toBeVisible();
 }
 
 async function openSecurity(page: Page): Promise<void> {
-  await page.getByRole('link', { name: COPY.session.securityLink }).click();
+  await page
+    .getByRole('link', { name: ADMIN_COPY.session.securityLink })
+    .click();
   await expect(
     page.getByRole('heading', { level: 1, name: security.title }),
   ).toBeVisible();
 }
 
 async function signOut(page: Page): Promise<void> {
-  await page.getByRole('button', { name: COPY.session.signOut }).click();
+  await page.getByRole('button', { name: ADMIN_COPY.session.signOut }).click();
   await expect(
-    page.getByRole('heading', { level: 1, name: COPY.login.title }),
+    page.getByRole('heading', { level: 1, name: ADMIN_COPY.login.title }),
   ).toBeVisible();
 }
 
@@ -111,20 +113,20 @@ test('an account turns on TOTP, signs in with it, switches to email codes and ch
   // Login 2: password, then the authenticator code in the challenge dialog.
   await signIn(page);
   const challenge = page.getByRole('dialog', {
-    name: COPY.login.twoFactor.title,
+    name: ADMIN_COPY.login.twoFactor.title,
   });
   await expect(challenge).toBeVisible();
   await expect(
-    challenge.getByLabel(label(COPY.login.twoFactor.totpLabel)),
+    challenge.getByLabel(label(ADMIN_COPY.login.twoFactor.totpLabel)),
   ).toBeFocused();
   await clickBackdrop(page);
   await expect(challenge).toBeVisible();
   const second = await freshTotpCode(secret, first.step);
   await challenge
-    .getByLabel(label(COPY.login.twoFactor.totpLabel))
+    .getByLabel(label(ADMIN_COPY.login.twoFactor.totpLabel))
     .fill(second.code);
   await challenge
-    .getByRole('button', { name: COPY.login.twoFactor.submit })
+    .getByRole('button', { name: ADMIN_COPY.login.twoFactor.submit })
     .click();
   await expectSignedIn(page);
 
@@ -177,7 +179,7 @@ test('an account turns on TOTP, signs in with it, switches to email codes and ch
   await signIn(page);
   await expect(challenge).toBeVisible();
   await expect(
-    challenge.getByText(COPY.login.twoFactor.emailWarning),
+    challenge.getByText(ADMIN_COPY.login.twoFactor.emailWarning),
   ).toBeVisible();
   const loginCode = await waitForCode(
     context,
@@ -192,10 +194,10 @@ test('an account turns on TOTP, signs in with it, switches to email codes and ch
     seenAfterLogin,
   );
   await challenge
-    .getByLabel(label(COPY.login.twoFactor.emailLabel))
+    .getByLabel(label(ADMIN_COPY.login.twoFactor.emailLabel))
     .fill(loginCode);
   await challenge
-    .getByRole('button', { name: COPY.login.twoFactor.submit })
+    .getByRole('button', { name: ADMIN_COPY.login.twoFactor.submit })
     .click();
   await expectSignedIn(page);
 
@@ -205,18 +207,18 @@ test('an account turns on TOTP, signs in with it, switches to email codes and ch
     .getByLabel(label(security.fields.currentPassword))
     .fill(e2eEnv.twoFactorPassword);
   await page
-    .getByLabel(label(COPY.password.newPasswordLabel))
+    .getByLabel(label(ADMIN_COPY.password.newPasswordLabel))
     .fill(NEW_PASSWORD);
   await page
-    .getByLabel(label(COPY.password.confirmPasswordLabel))
+    .getByLabel(label(ADMIN_COPY.password.confirmPasswordLabel))
     .fill(NEW_PASSWORD);
   await page
     .getByRole('button', { name: security.changePassword.submit })
     .click();
   await expect(
-    page.getByRole('heading', { level: 1, name: COPY.login.title }),
+    page.getByRole('heading', { level: 1, name: ADMIN_COPY.login.title }),
   ).toBeVisible();
   await expect(
-    page.getByText(COPY.login.notices.passwordChanged),
+    page.getByText(ADMIN_COPY.login.notices.passwordChanged),
   ).toBeVisible();
 });

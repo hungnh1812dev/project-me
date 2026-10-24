@@ -7,12 +7,14 @@ import {
   test,
 } from '@playwright/test';
 
-import { API_ERROR_CODES } from '../../cms-admin/src/config/http.constants';
-import { COPY } from '../../cms-admin/src/config/copy.constants';
-import { contentNewPath } from '../../cms-admin/src/config/routes';
+import {
+  ADMIN_COPY,
+  API_ERROR_CODES,
+  contentNewPath,
+} from '../src/app-contracts';
 import { e2eEnv } from '../src/env';
 
-const copy = COPY.content;
+const copy = ADMIN_COPY.content;
 const list = copy.list;
 
 const CV_SLUG = 'cv-page';
@@ -38,11 +40,13 @@ const DOCUMENTS_PATH = `/documents/${CV_SLUG}`;
 
 async function signIn(page: Page, email: string, password: string) {
   await page.goto('/login');
-  await page.getByRole('textbox', { name: COPY.login.emailLabel }).fill(email);
-  await page.getByLabel(COPY.login.passwordLabel).fill(password);
-  await page.getByRole('button', { name: COPY.login.submit }).click();
+  await page
+    .getByRole('textbox', { name: ADMIN_COPY.login.emailLabel })
+    .fill(email);
+  await page.getByLabel(ADMIN_COPY.login.passwordLabel).fill(password);
+  await page.getByRole('button', { name: ADMIN_COPY.login.submit }).click();
   await expect(
-    page.getByRole('button', { name: COPY.session.signOut }),
+    page.getByRole('button', { name: ADMIN_COPY.session.signOut }),
   ).toBeVisible();
 }
 

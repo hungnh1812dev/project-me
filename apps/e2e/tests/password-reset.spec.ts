@@ -1,6 +1,6 @@
 import { expect, type Page, test } from '@playwright/test';
 
-import { COPY } from '../../cms-admin/src/config/copy.constants';
+import { ADMIN_COPY } from '../src/app-contracts';
 import { PASSWORD_PATHS } from '../src/constants';
 import { e2eEnv } from '../src/env';
 import { mailIdsFor, waitForCode } from '../src/mailpit';
@@ -33,10 +33,10 @@ async function postFromAdmin(
 
 async function signIn(page: Page, password: string) {
   await page
-    .getByRole('textbox', { name: COPY.login.emailLabel })
+    .getByRole('textbox', { name: ADMIN_COPY.login.emailLabel })
     .fill(e2eEnv.ownerEmail);
-  await page.getByLabel(COPY.login.passwordLabel).fill(password);
-  await page.getByRole('button', { name: COPY.login.submit }).click();
+  await page.getByLabel(ADMIN_COPY.login.passwordLabel).fill(password);
+  await page.getByRole('button', { name: ADMIN_COPY.login.submit }).click();
 }
 
 test('the owner resets a forgotten password with an emailed code', async ({
@@ -44,39 +44,46 @@ test('the owner resets a forgotten password with an emailed code', async ({
   context,
 }) => {
   await page.goto('/login');
-  await page.getByRole('link', { name: COPY.login.forgotPassword }).click();
+  await page
+    .getByRole('link', { name: ADMIN_COPY.login.forgotPassword })
+    .click();
   await expect(
     page.getByRole('heading', {
       level: 1,
-      name: COPY.password.reset.requestTitle,
+      name: ADMIN_COPY.password.reset.requestTitle,
     }),
   ).toBeVisible();
 
   // Step 1: ask for a code.
   const seen = await mailIdsFor(context, e2eEnv.ownerEmail);
   await page
-    .getByLabel(label(COPY.password.emailLabel))
+    .getByLabel(label(ADMIN_COPY.password.emailLabel))
     .fill(e2eEnv.ownerEmail);
   await page
-    .getByRole('button', { name: COPY.password.reset.sendCode })
+    .getByRole('button', { name: ADMIN_COPY.password.reset.sendCode })
     .click();
   await expect(
-    page.getByRole('heading', { level: 1, name: COPY.password.reset.title }),
+    page.getByRole('heading', {
+      level: 1,
+      name: ADMIN_COPY.password.reset.title,
+    }),
   ).toBeFocused();
 
   // Step 2: the code from Mailpit plus the new password.
   const code = await waitForCode(context, e2eEnv.ownerEmail, seen);
-  await page.getByLabel(label(COPY.password.codeLabel)).fill(code);
+  await page.getByLabel(label(ADMIN_COPY.password.codeLabel)).fill(code);
   await page
-    .getByLabel(label(COPY.password.newPasswordLabel))
+    .getByLabel(label(ADMIN_COPY.password.newPasswordLabel))
     .fill(TEMPORARY_PASSWORD);
   await page
-    .getByLabel(label(COPY.password.confirmPasswordLabel))
+    .getByLabel(label(ADMIN_COPY.password.confirmPasswordLabel))
     .fill(TEMPORARY_PASSWORD);
-  await page.getByRole('button', { name: COPY.password.reset.submit }).click();
+  await page
+    .getByRole('button', { name: ADMIN_COPY.password.reset.submit })
+    .click();
 
   await expect(page.getByRole('status')).toHaveText(
-    COPY.login.notices.passwordReset,
+    ADMIN_COPY.login.notices.passwordReset,
   );
   await expect(page).toHaveURL(/\/login$/);
 
@@ -85,7 +92,7 @@ test('the owner resets a forgotten password with an emailed code', async ({
   // 5-per-15-min email limit across smoke + e2e.)
   await signIn(page, TEMPORARY_PASSWORD);
   await expect(
-    page.getByRole('heading', { level: 1, name: COPY.page.title }),
+    page.getByRole('heading', { level: 1, name: ADMIN_COPY.page.title }),
   ).toBeVisible();
 
   // Put the original password back for the other specs and later runs.
@@ -107,6 +114,6 @@ test('the owner resets a forgotten password with an emailed code', async ({
   // The reset ended this session too: the next API call sends us to sign in.
   await page.reload();
   await expect(
-    page.getByRole('heading', { level: 1, name: COPY.login.title }),
+    page.getByRole('heading', { level: 1, name: ADMIN_COPY.login.title }),
   ).toBeVisible();
 });

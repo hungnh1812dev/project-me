@@ -6,16 +6,17 @@ import {
   test,
 } from '@playwright/test';
 
-import { COPY } from '../../cms-admin/src/config/copy.constants';
-import { contentListPath } from '../../cms-admin/src/config/routes';
+import { ADMIN_COPY, contentListPath } from '../src/app-contracts';
 import { e2eEnv } from '../src/env';
 
 /** R3-11: the collection list reads cell text, sortability and alignment from the field registry. */
 
-const list = COPY.content.collection;
+const list = ADMIN_COPY.content.collection;
 const HTTP_OK = 200;
 const HTTP_NO_CONTENT = 204;
 const MASKED = '***';
+const cellText = (value: unknown): string =>
+  typeof value === 'string' ? value : JSON.stringify(value ?? '');
 const API_PATTERN =
   /\/api\/v1\/(content-types|documents)\/(listmix|listtime)(\?.*)?$/;
 const PAGE_SIZE = 25;
@@ -135,9 +136,7 @@ async function mockCollections(context: BrowserContext, sorts: string[]) {
     const name = sort.replace(/^-/, '');
     if (name !== '' && name !== 'updatedAt') {
       rows.sort((l, r) =>
-        String(l.values[name] ?? '').localeCompare(
-          String(r.values[name] ?? ''),
-        ),
+        cellText(l.values[name]).localeCompare(cellText(r.values[name])),
       );
       if (sort.startsWith('-')) rows.reverse();
     }
@@ -165,12 +164,14 @@ const whitespaceTolerant = (text: string): RegExp =>
 async function signIn(page: Page) {
   await page.goto('/login');
   await page
-    .getByRole('textbox', { name: COPY.login.emailLabel })
+    .getByRole('textbox', { name: ADMIN_COPY.login.emailLabel })
     .fill(e2eEnv.ownerEmail);
-  await page.getByLabel(COPY.login.passwordLabel).fill(e2eEnv.ownerPassword);
-  await page.getByRole('button', { name: COPY.login.submit }).click();
+  await page
+    .getByLabel(ADMIN_COPY.login.passwordLabel)
+    .fill(e2eEnv.ownerPassword);
+  await page.getByRole('button', { name: ADMIN_COPY.login.submit }).click();
   await expect(
-    page.getByRole('button', { name: COPY.session.signOut }),
+    page.getByRole('button', { name: ADMIN_COPY.session.signOut }),
   ).toBeVisible();
 }
 

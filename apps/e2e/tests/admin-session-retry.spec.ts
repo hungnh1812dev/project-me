@@ -1,6 +1,6 @@
 import { expect, type Page, test } from '@playwright/test';
 
-import { COPY } from '../../cms-admin/src/config/copy.constants';
+import { ADMIN_COPY } from '../src/app-contracts';
 import { AUTH_REFRESH_PATH } from '../src/constants';
 import { e2eEnv } from '../src/env';
 
@@ -9,19 +9,24 @@ const ACCOUNTS_URL = `${e2eEnv.apiBaseUrl}/accounts`;
 const REFRESH_URL = `${e2eEnv.apiBaseUrl}${AUTH_REFRESH_PATH}`;
 
 const accountsHeading = (page: Page) =>
-  page.getByRole('heading', { level: 1, name: COPY.access.accounts.title });
+  page.getByRole('heading', {
+    level: 1,
+    name: ADMIN_COPY.access.accounts.title,
+  });
 const loginHeading = (page: Page) =>
-  page.getByRole('heading', { level: 1, name: COPY.login.title });
+  page.getByRole('heading', { level: 1, name: ADMIN_COPY.login.title });
 
 async function signIn(page: Page) {
   await page.goto('/login');
   await page
-    .getByRole('textbox', { name: COPY.login.emailLabel })
+    .getByRole('textbox', { name: ADMIN_COPY.login.emailLabel })
     .fill(e2eEnv.ownerEmail);
-  await page.getByLabel(COPY.login.passwordLabel).fill(e2eEnv.ownerPassword);
-  await page.getByRole('button', { name: COPY.login.submit }).click();
+  await page
+    .getByLabel(ADMIN_COPY.login.passwordLabel)
+    .fill(e2eEnv.ownerPassword);
+  await page.getByRole('button', { name: ADMIN_COPY.login.submit }).click();
   await expect(
-    page.getByRole('heading', { level: 1, name: COPY.page.title }),
+    page.getByRole('heading', { level: 1, name: ADMIN_COPY.page.title }),
   ).toBeVisible();
 }
 
@@ -56,7 +61,7 @@ test('a 401 on a protected call refreshes once and retries it', async ({
   await page.goto('/accounts');
   await expect(accountsHeading(page)).toBeVisible();
   await expect(
-    page.getByRole('button', { name: COPY.access.accounts.invite }),
+    page.getByRole('button', { name: ADMIN_COPY.access.accounts.invite }),
   ).toBeVisible();
   expect(refused).toBe(1);
   // One refresh for the page start, one for the 401 - never a loop.

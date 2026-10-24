@@ -1,7 +1,6 @@
 import { expect, type Page, test } from '@playwright/test';
 
-import { COPY as ADMIN_COPY } from '../../cms-admin/src/config/copy.constants';
-import { COPY } from '../../web/src/config/copy.constants';
+import { ADMIN_COPY, WEB_COPY } from '../src/app-contracts';
 import { AUTH_REFRESH_PATH, REFRESH_COOKIE_NAME } from '../src/constants';
 import { e2eEnv } from '../src/env';
 import { mailIdsFor, waitForCode } from '../src/mailpit';
@@ -16,9 +15,9 @@ import { mailIdsFor, waitForCode } from '../src/mailpit';
  */
 test.describe.configure({ retries: 0 });
 
-const login = COPY.login;
+const login = WEB_COPY.login;
 const headerSignIn = (page: Page) =>
-  page.getByRole('button', { name: COPY.session.signIn, exact: true });
+  page.getByRole('button', { name: WEB_COPY.session.signIn, exact: true });
 const dialog = (page: Page) => page.getByRole('dialog');
 
 const EMPTY_STORAGE = { local: [], session: [], cookie: '' };
@@ -46,7 +45,7 @@ async function fillCredentials(
 }
 
 const signOutButton = (page: Page) =>
-  page.getByRole('button', { name: COPY.session.signOut });
+  page.getByRole('button', { name: WEB_COPY.session.signOut });
 
 test('anonymous visit shows Sign in; the dialog validates, closes with Esc and Cancel, and reopens clean', async ({
   page,
@@ -138,7 +137,7 @@ test('a reader signs in on the web, stays signed in on reload, shares the sessio
 
   // The "Open CMS" link needs NEXT_PUBLIC_ADMIN_URL, which the smoke stack leaves unset.
   await expect(
-    page.getByRole('link', { name: COPY.session.openCms }),
+    page.getByRole('link', { name: WEB_COPY.session.openCms }),
   ).toHaveCount(0);
 
   await page.reload();
@@ -156,7 +155,7 @@ test('a reader signs in on the web, stays signed in on reload, shares the sessio
   const failLogout = '**/auth/logout';
   await page.route(failLogout, (route) => route.fulfill({ status: 500 }));
   await signOutButton(page).click();
-  await expect(page.getByText(COPY.session.signOutFailed)).toBeVisible();
+  await expect(page.getByText(WEB_COPY.session.signOutFailed)).toBeVisible();
   await expect(signOutButton(page)).toBeVisible();
   await expect(headerSignIn(page)).toHaveCount(0);
   await page.unroute(failLogout);
@@ -375,7 +374,7 @@ test('a signed-in reader gets no Reviewer access button and no reviewer status c
   await fillCredentials(page, e2eEnv.readerEmail, e2eEnv.readerPassword);
   await expect(signOutButton(page)).toBeVisible();
   await expect(
-    page.getByRole('button', { name: COPY.reviewer.open, exact: true }),
+    page.getByRole('button', { name: WEB_COPY.reviewer.open, exact: true }),
   ).toHaveCount(0);
   expect(statusCalls).toEqual([]);
 });

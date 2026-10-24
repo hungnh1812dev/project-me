@@ -1,10 +1,9 @@
 import { type Page, expect, test } from '@playwright/test';
 
-import { COPY } from '../../cms-admin/src/config/copy.constants';
-import { MEDIA_PAGE_SIZE } from '../../cms-admin/src/features/media/media.constants';
+import { ADMIN_COPY, MEDIA_PAGE_SIZE } from '../src/app-contracts';
 import { e2eEnv } from '../src/env';
 
-const copy = COPY.media;
+const copy = ADMIN_COPY.media;
 const HTTP_OK = 200;
 const HTTP_NO_CONTENT = 204;
 const MEDIA_LIST_PATTERN = /\/api\/v1\/media(\?.*)?$/;
@@ -14,12 +13,14 @@ const TOTAL = MEDIA_PAGE_SIZE + LAST_PAGE_ROWS;
 async function signIn(page: Page) {
   await page.goto('/login');
   await page
-    .getByRole('textbox', { name: COPY.login.emailLabel })
+    .getByRole('textbox', { name: ADMIN_COPY.login.emailLabel })
     .fill(e2eEnv.ownerEmail);
-  await page.getByLabel(COPY.login.passwordLabel).fill(e2eEnv.ownerPassword);
-  await page.getByRole('button', { name: COPY.login.submit }).click();
+  await page
+    .getByLabel(ADMIN_COPY.login.passwordLabel)
+    .fill(e2eEnv.ownerPassword);
+  await page.getByRole('button', { name: ADMIN_COPY.login.submit }).click();
   await expect(
-    page.getByRole('button', { name: COPY.session.signOut }),
+    page.getByRole('button', { name: ADMIN_COPY.session.signOut }),
   ).toBeVisible();
 }
 

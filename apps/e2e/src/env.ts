@@ -35,6 +35,10 @@ export const e2eEnv = Object.freeze({
   reader2faPassword: requireEnv('E2E_READER_2FA_PASSWORD'),
   /** Mailpit (SMTP sink of the smoke stack), e.g. `http://mail.domain.localhost:8080`. */
   mailpitUrl: requireEnv('E2E_MAILPIT_URL'),
+  /** Smoke database container, user and name, read from compose by scripts/smoke.sh. */
+  dbContainer: requireEnv('E2E_DB_CONTAINER'),
+  dbUser: requireEnv('E2E_DB_USER'),
+  dbName: requireEnv('E2E_DB_NAME'),
   /** Set in CI to forbid `test.only` and retry once. */
   ci: process.env['CI'] !== undefined && process.env['CI'] !== '',
 });

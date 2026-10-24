@@ -6,13 +6,15 @@ import {
   test,
 } from '@playwright/test';
 
-import { COPY } from '../../cms-admin/src/config/copy.constants';
-import { API_ERROR_CODES } from '../../cms-admin/src/config/http.constants';
-import { MEDIA_ALT_MAX_LENGTH } from '../../cms-admin/src/features/media/media.constants';
+import {
+  ADMIN_COPY,
+  API_ERROR_CODES,
+  MEDIA_ALT_MAX_LENGTH,
+} from '../src/app-contracts';
 import { e2eEnv } from '../src/env';
 
-const copy = COPY.media;
-const access = COPY.access;
+const copy = ADMIN_COPY.media;
+const access = ADMIN_COPY.access;
 
 const RUN_ID = Date.now().toString(36);
 const FILE_NAME = `e2e-media-${RUN_ID}.png`;
@@ -153,11 +155,13 @@ function cors(route: Route): Record<string, string> {
 
 async function signIn(page: Page, email: string, password: string) {
   await page.goto('/login');
-  await page.getByRole('textbox', { name: COPY.login.emailLabel }).fill(email);
-  await page.getByLabel(COPY.login.passwordLabel).fill(password);
-  await page.getByRole('button', { name: COPY.login.submit }).click();
+  await page
+    .getByRole('textbox', { name: ADMIN_COPY.login.emailLabel })
+    .fill(email);
+  await page.getByLabel(ADMIN_COPY.login.passwordLabel).fill(password);
+  await page.getByRole('button', { name: ADMIN_COPY.login.submit }).click();
   await expect(
-    page.getByRole('button', { name: COPY.session.signOut }),
+    page.getByRole('button', { name: ADMIN_COPY.session.signOut }),
   ).toBeVisible();
 }
 

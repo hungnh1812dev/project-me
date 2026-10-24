@@ -6,14 +6,16 @@ import {
   test,
 } from '@playwright/test';
 
-import { PRESENCE_HEARTBEAT_MS } from '../../cms-admin/src/features/content/content.constants';
-import { COPY } from '../../cms-admin/src/config/copy.constants';
-import { contentNewPath } from '../../cms-admin/src/config/routes';
+import {
+  ADMIN_COPY,
+  PRESENCE_HEARTBEAT_MS,
+  contentNewPath,
+} from '../src/app-contracts';
 import { e2eEnv } from '../src/env';
 import { mailIdsFor, waitForCode } from '../src/mailpit';
 
-const copy = COPY.content;
-const access = COPY.access;
+const copy = ADMIN_COPY.content;
+const access = ADMIN_COPY.access;
 const CV_SLUG = 'cv-page';
 const EDIT_URL = /\/content\/cv-page\/[0-9a-f-]{36}$/;
 const RUN_ID = Date.now().toString(36);
@@ -42,11 +44,13 @@ function recordBeats(page: Page) {
 
 async function signIn(page: Page, email: string, password: string) {
   await page.goto('/login');
-  await page.getByRole('textbox', { name: COPY.login.emailLabel }).fill(email);
-  await page.getByLabel(COPY.login.passwordLabel).fill(password);
-  await page.getByRole('button', { name: COPY.login.submit }).click();
+  await page
+    .getByRole('textbox', { name: ADMIN_COPY.login.emailLabel })
+    .fill(email);
+  await page.getByLabel(ADMIN_COPY.login.passwordLabel).fill(password);
+  await page.getByRole('button', { name: ADMIN_COPY.login.submit }).click();
   await expect(
-    page.getByRole('button', { name: COPY.session.signOut }),
+    page.getByRole('button', { name: ADMIN_COPY.session.signOut }),
   ).toBeVisible();
 }
 
@@ -107,19 +111,21 @@ test.describe.serial('presence banner (cv-page, two accounts)', () => {
     editor = await editorContext.newPage();
     editor.on('pageerror', (error) => consoleProblems.push(error.message));
     await editor.goto('/set-password');
-    await editor.getByLabel(label(COPY.password.emailLabel)).fill(EDITOR_EMAIL);
-    await editor.getByLabel(label(COPY.password.codeLabel)).fill(code);
     await editor
-      .getByLabel(label(COPY.password.newPasswordLabel))
+      .getByLabel(label(ADMIN_COPY.password.emailLabel))
+      .fill(EDITOR_EMAIL);
+    await editor.getByLabel(label(ADMIN_COPY.password.codeLabel)).fill(code);
+    await editor
+      .getByLabel(label(ADMIN_COPY.password.newPasswordLabel))
       .fill(EDITOR_PASSWORD);
     await editor
-      .getByLabel(label(COPY.password.confirmPasswordLabel))
+      .getByLabel(label(ADMIN_COPY.password.confirmPasswordLabel))
       .fill(EDITOR_PASSWORD);
     await editor
-      .getByRole('button', { name: COPY.password.set.submit })
+      .getByRole('button', { name: ADMIN_COPY.password.set.submit })
       .click();
     await expect(editor.getByRole('status')).toHaveText(
-      COPY.login.notices.passwordSet,
+      ADMIN_COPY.login.notices.passwordSet,
     );
     await signIn(editor, EDITOR_EMAIL, EDITOR_PASSWORD);
   });

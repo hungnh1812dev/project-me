@@ -1,6 +1,6 @@
 import { expect, type Page, test } from '@playwright/test';
 
-import { COPY } from '../../cms-admin/src/config/copy.constants';
+import { ADMIN_COPY } from '../src/app-contracts';
 import { e2eEnv } from '../src/env';
 
 const MISSING_PROVIDER_PATTERN = /must be used (inside|within)/i;
@@ -46,11 +46,15 @@ test('owner: every feature page loads, then signs out', async ({ page }) => {
   const errors = collectProviderErrors(page);
   await page.goto('/login');
   await page
-    .getByRole('textbox', { name: COPY.login.emailLabel })
+    .getByRole('textbox', { name: ADMIN_COPY.login.emailLabel })
     .fill(e2eEnv.ownerEmail);
-  await page.getByLabel(COPY.login.passwordLabel).fill(e2eEnv.ownerPassword);
-  await page.getByRole('button', { name: COPY.login.submit }).click();
-  const signOut = page.getByRole('button', { name: COPY.session.signOut });
+  await page
+    .getByLabel(ADMIN_COPY.login.passwordLabel)
+    .fill(e2eEnv.ownerPassword);
+  await page.getByRole('button', { name: ADMIN_COPY.login.submit }).click();
+  const signOut = page.getByRole('button', {
+    name: ADMIN_COPY.session.signOut,
+  });
   await expect(signOut).toBeVisible();
 
   for (const path of PAGE_PATHS) {

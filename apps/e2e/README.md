@@ -57,7 +57,17 @@ e2e runs locally only; CI does not run it.
 
 Set the keys from [`.env.example`](.env.example) in the shell, then
 `pnpm --filter @abyss/e2e test` (or `pnpm e2e` at the root).
-`src/env.ts` is the only reader of `process.env`.
+`src/env.ts` is the only reader of `process.env`. `pnpm --filter @abyss/e2e
+test:contract` checks (no stack needed) that `.env.example`, `E2E_VARS` in
+`scripts/lib/stack-seed.sh` and `env.ts` list the same `E2E_*` names.
+
+## Module rules
+
+- `src/app-contracts.ts` is the only file that imports from an app's `src`
+  (copy, routes, constants); specs import those names from it. Lint enforces it.
+- `src/smoke-database.ts` is the only file that runs `docker exec` / SQL (smoke
+  database from `E2E_DB_*`); it refuses an API host that does not end in
+  `.localhost`.
 
 ## Secure cookies over http://\*.localhost
 

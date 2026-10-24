@@ -7,12 +7,11 @@ import {
   test,
 } from '@playwright/test';
 
-import { COPY } from '../../cms-admin/src/config/copy.constants';
-import { contentNewPath } from '../../cms-admin/src/config/routes';
+import { ADMIN_COPY, contentNewPath } from '../src/app-contracts';
 import { e2eEnv } from '../src/env';
 import { mailIdsFor, waitForCode } from '../src/mailpit';
 
-const copy = COPY.content;
+const copy = ADMIN_COPY.content;
 const merge = copy.conflict;
 const list = copy.list;
 
@@ -25,11 +24,13 @@ const SKILLS = ['Alpha', 'Beta', 'Gamma'].map((name) => `${name} ${RUN_ID}`);
 
 async function signIn(page: Page, email: string, password: string) {
   await page.goto('/login');
-  await page.getByRole('textbox', { name: COPY.login.emailLabel }).fill(email);
-  await page.getByLabel(COPY.login.passwordLabel).fill(password);
-  await page.getByRole('button', { name: COPY.login.submit }).click();
+  await page
+    .getByRole('textbox', { name: ADMIN_COPY.login.emailLabel })
+    .fill(email);
+  await page.getByLabel(ADMIN_COPY.login.passwordLabel).fill(password);
+  await page.getByRole('button', { name: ADMIN_COPY.login.submit }).click();
   await expect(
-    page.getByRole('button', { name: COPY.session.signOut }),
+    page.getByRole('button', { name: ADMIN_COPY.session.signOut }),
   ).toBeVisible();
 }
 
@@ -373,7 +374,7 @@ test.describe.serial('owner: conflict merge modal (cv-page)', () => {
 
   test.describe
     .serial('role with masked fields (Editor, cv-page reads Position only)', () => {
-    const access = COPY.access;
+    const access = ADMIN_COPY.access;
     const EDITOR_EMAIL = `e2e-masked-${RUN_ID}@domain.localhost`;
     const EDITOR_NAME = `Masked ${RUN_ID}`;
     const EDITOR_PASSWORD = `${e2eEnv.ownerPassword.slice(0, 40)}-masked`;
@@ -437,20 +438,20 @@ test.describe.serial('owner: conflict merge modal (cv-page)', () => {
       editor.on('pageerror', (error) => consoleProblems.push(error.message));
       await editor.goto('/set-password');
       await editor
-        .getByLabel(label(COPY.password.emailLabel))
+        .getByLabel(label(ADMIN_COPY.password.emailLabel))
         .fill(EDITOR_EMAIL);
-      await editor.getByLabel(label(COPY.password.codeLabel)).fill(code);
+      await editor.getByLabel(label(ADMIN_COPY.password.codeLabel)).fill(code);
       await editor
-        .getByLabel(label(COPY.password.newPasswordLabel))
+        .getByLabel(label(ADMIN_COPY.password.newPasswordLabel))
         .fill(EDITOR_PASSWORD);
       await editor
-        .getByLabel(label(COPY.password.confirmPasswordLabel))
+        .getByLabel(label(ADMIN_COPY.password.confirmPasswordLabel))
         .fill(EDITOR_PASSWORD);
       await editor
-        .getByRole('button', { name: COPY.password.set.submit })
+        .getByRole('button', { name: ADMIN_COPY.password.set.submit })
         .click();
       await expect(editor.getByRole('status')).toHaveText(
-        COPY.login.notices.passwordSet,
+        ADMIN_COPY.login.notices.passwordSet,
       );
 
       await openEditorRole(b);

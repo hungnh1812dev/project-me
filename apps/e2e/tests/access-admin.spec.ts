@@ -1,10 +1,10 @@
 import { type BrowserContext, expect, type Page, test } from '@playwright/test';
 
-import { COPY } from '../../cms-admin/src/config/copy.constants';
+import { ADMIN_COPY } from '../src/app-contracts';
 import { e2eEnv } from '../src/env';
 import { mailIdsFor, waitForCode } from '../src/mailpit';
 
-const access = COPY.access;
+const access = ADMIN_COPY.access;
 const accounts = access.accounts;
 const invite = access.invite;
 
@@ -24,9 +24,11 @@ const label = (name: string) => new RegExp(`^${name}`);
 
 async function signIn(page: Page, email: string, password: string) {
   await page.goto('/login');
-  await page.getByRole('textbox', { name: COPY.login.emailLabel }).fill(email);
-  await page.getByLabel(COPY.login.passwordLabel).fill(password);
-  await page.getByRole('button', { name: COPY.login.submit }).click();
+  await page
+    .getByRole('textbox', { name: ADMIN_COPY.login.emailLabel })
+    .fill(email);
+  await page.getByLabel(ADMIN_COPY.login.passwordLabel).fill(password);
+  await page.getByRole('button', { name: ADMIN_COPY.login.submit }).click();
 }
 
 const accountRow = (page: Page, email: string) =>
@@ -62,7 +64,7 @@ test.describe.serial('owner: accounts and roles', () => {
     page = await context.newPage();
     await signIn(page, e2eEnv.ownerEmail, e2eEnv.ownerPassword);
     await expect(
-      page.getByRole('button', { name: COPY.session.signOut }),
+      page.getByRole('button', { name: ADMIN_COPY.session.signOut }),
     ).toBeVisible();
   });
 
@@ -185,24 +187,26 @@ test.describe.serial('owner: accounts and roles', () => {
       await expect(
         inviteePage.getByRole('heading', {
           level: 1,
-          name: COPY.password.set.title,
+          name: ADMIN_COPY.password.set.title,
         }),
       ).toBeVisible();
       await inviteePage
-        .getByLabel(label(COPY.password.emailLabel))
+        .getByLabel(label(ADMIN_COPY.password.emailLabel))
         .fill(INVITEE_EMAIL);
-      await inviteePage.getByLabel(label(COPY.password.codeLabel)).fill(code);
       await inviteePage
-        .getByLabel(label(COPY.password.newPasswordLabel))
+        .getByLabel(label(ADMIN_COPY.password.codeLabel))
+        .fill(code);
+      await inviteePage
+        .getByLabel(label(ADMIN_COPY.password.newPasswordLabel))
         .fill(INVITEE_PASSWORD);
       await inviteePage
-        .getByLabel(label(COPY.password.confirmPasswordLabel))
+        .getByLabel(label(ADMIN_COPY.password.confirmPasswordLabel))
         .fill(INVITEE_PASSWORD);
       await inviteePage
-        .getByRole('button', { name: COPY.password.set.submit })
+        .getByRole('button', { name: ADMIN_COPY.password.set.submit })
         .click();
       await expect(inviteePage.getByRole('status')).toHaveText(
-        COPY.login.notices.passwordSet,
+        ADMIN_COPY.login.notices.passwordSet,
       );
 
       // Owner disables the now-active account: confirmation names it.
@@ -232,7 +236,7 @@ test.describe.serial('owner: accounts and roles', () => {
       // The disabled account cannot sign in.
       await signIn(inviteePage, INVITEE_EMAIL, INVITEE_PASSWORD);
       await expect(
-        inviteePage.getByText(COPY.login.errors.invalidCredentials),
+        inviteePage.getByText(ADMIN_COPY.login.errors.invalidCredentials),
       ).toBeVisible();
 
       // Owner enables it again: no dialog, success notice, can sign in.
@@ -249,7 +253,7 @@ test.describe.serial('owner: accounts and roles', () => {
       ).toHaveCount(0);
       await signIn(inviteePage, INVITEE_EMAIL, INVITEE_PASSWORD);
       await expect(
-        inviteePage.getByRole('button', { name: COPY.session.signOut }),
+        inviteePage.getByRole('button', { name: ADMIN_COPY.session.signOut }),
       ).toBeVisible();
     } finally {
       await inviteeContext.close();
@@ -290,16 +294,20 @@ test.describe.serial('owner: accounts and roles', () => {
     // the refresh limit is 30 per minute per IP for the whole suite.
     await inviteePage.goto('/set-password');
     const fillForm = async (code: string) => {
-      await inviteePage.getByLabel(label(COPY.password.emailLabel)).fill(email);
-      await inviteePage.getByLabel(label(COPY.password.codeLabel)).fill(code);
       await inviteePage
-        .getByLabel(label(COPY.password.newPasswordLabel))
+        .getByLabel(label(ADMIN_COPY.password.emailLabel))
+        .fill(email);
+      await inviteePage
+        .getByLabel(label(ADMIN_COPY.password.codeLabel))
+        .fill(code);
+      await inviteePage
+        .getByLabel(label(ADMIN_COPY.password.newPasswordLabel))
         .fill(INVITEE_PASSWORD);
       await inviteePage
-        .getByLabel(label(COPY.password.confirmPasswordLabel))
+        .getByLabel(label(ADMIN_COPY.password.confirmPasswordLabel))
         .fill(INVITEE_PASSWORD);
       await inviteePage
-        .getByRole('button', { name: COPY.password.set.submit })
+        .getByRole('button', { name: ADMIN_COPY.password.set.submit })
         .click();
     };
     try {
@@ -309,7 +317,7 @@ test.describe.serial('owner: accounts and roles', () => {
       }
       await fillForm(newCode);
       await expect(inviteePage.getByRole('status')).toHaveText(
-        COPY.login.notices.passwordSet,
+        ADMIN_COPY.login.notices.passwordSet,
       );
     } finally {
       await inviteeContext.close();
@@ -465,7 +473,7 @@ test.describe('admin: limited by its own permissions and rank', () => {
   }) => {
     await signIn(page, e2eEnv.twoFactorEmail, e2eEnv.twoFactorPassword);
     await expect(
-      page.getByRole('button', { name: COPY.session.signOut }),
+      page.getByRole('button', { name: ADMIN_COPY.session.signOut }),
     ).toBeVisible();
     const nav = page.getByRole('navigation', { name: access.nav.label });
     await expect(

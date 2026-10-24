@@ -1,7 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-import { COPY } from '../../cms-admin/src/config/copy.constants';
-import { APP_ROUTES } from '../../cms-admin/src/config/routes';
+import { ADMIN_COPY, APP_ROUTES } from '../src/app-contracts';
 import { HTTP } from '../src/constants';
 import { e2eEnv } from '../src/env';
 
@@ -28,13 +27,17 @@ test('/setup redirects to /login and the login page offers no setup', async ({
 
   await expect(page).toHaveURL(new RegExp(`${APP_ROUTES.LOGIN}$`));
   await expect(
-    page.getByRole('heading', { level: 1, name: COPY.login.title }),
+    page.getByRole('heading', { level: 1, name: ADMIN_COPY.login.title }),
   ).toBeVisible();
-  await expect(page.getByText(COPY.login.setupPrompt.message)).toHaveCount(0);
   await expect(
-    page.getByRole('link', { name: COPY.login.setupPrompt.action }),
+    page.getByText(ADMIN_COPY.login.setupPrompt.message),
   ).toHaveCount(0);
-  await expect(page.getByText(COPY.login.notices.ownerCreated)).toHaveCount(0);
+  await expect(
+    page.getByRole('link', { name: ADMIN_COPY.login.setupPrompt.action }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByText(ADMIN_COPY.login.notices.ownerCreated),
+  ).toHaveCount(0);
 });
 
 test('the setup status is closed and a submit is answered like an unknown route', async ({

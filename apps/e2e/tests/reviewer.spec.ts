@@ -1,5 +1,3 @@
-import { execFileSync } from 'node:child_process';
-
 import {
   type APIRequestContext,
   type BrowserContext,
@@ -8,15 +6,10 @@ import {
   test,
 } from '@playwright/test';
 
-import { COPY as ADMIN_COPY } from '../../cms-admin/src/config/copy.constants';
-import { COPY } from '../../web/src/config/copy.constants';
-import {
-  NOTES_MAX_LENGTH,
-  SMOKE_DB_CONTAINER,
-  SMOKE_DB_NAME,
-  SMOKE_DB_USER,
-} from '../src/constants';
+import { ADMIN_COPY, WEB_COPY } from '../src/app-contracts';
+import { NOTES_MAX_LENGTH } from '../src/constants';
 import { e2eEnv } from '../src/env';
+import { clearReviewerSessions } from '../src/smoke-database';
 
 /**
  * Reviewer access. Web dialog (anonymous visitor), the reviewer token
@@ -28,7 +21,7 @@ import { e2eEnv } from '../src/env';
  */
 test.describe.configure({ mode: 'serial', retries: 0 });
 
-const copy = COPY.reviewer;
+const copy = WEB_COPY.reviewer;
 const admin = ADMIN_COPY.reviewer;
 const RUN_ID = Date.now().toString(36);
 const XSS_NOTES = `<img src=x onerror=alert(1)> ${RUN_ID}`;
@@ -57,22 +50,6 @@ const step = (page: Page, n: number) =>
   dialog(page).getByText(copy.stepLabel(n, 3));
 const url = (path: string) => `${e2eEnv.apiBaseUrl}${path}`;
 const bearer = (token: string) => ({ Authorization: `Bearer ${token}` });
-
-function sql(statement: string): void {
-  execFileSync('docker', [
-    'exec',
-    SMOKE_DB_CONTAINER,
-    'psql',
-    '-v',
-    'ON_ERROR_STOP=1',
-    '-U',
-    SMOKE_DB_USER,
-    '-d',
-    SMOKE_DB_NAME,
-    '-c',
-    statement,
-  ]);
-}
 
 async function ownerToken(request: APIRequestContext): Promise<string> {
   const res = await request.post(url('/auth/login'), {
@@ -123,7 +100,7 @@ test.describe('reviewer access', () => {
   let reviewerToken = '';
 
   test.beforeAll(async ({ browser, playwright }) => {
-    sql('DELETE FROM reviewer_sessions');
+    clearReviewerSessions();
     context = await browser.newContext();
     const api = await playwright.request.newContext();
     owner = await ownerToken(api);
@@ -143,7 +120,7 @@ test.describe('reviewer access', () => {
     await page.goto(e2eEnv.webUrl);
     expect(await (await status).json()).toEqual({ enabled: false });
     await expect(
-      page.getByRole('button', { name: COPY.session.signIn }),
+      page.getByRole('button', { name: WEB_COPY.session.signIn }),
     ).toBeVisible();
     await expect(openButton(page)).toHaveCount(0);
     await page.close();
@@ -173,7 +150,7 @@ test.describe('reviewer access', () => {
     );
     await page.goto(e2eEnv.webUrl);
     await expect(
-      page.getByRole('button', { name: COPY.session.signIn }),
+      page.getByRole('button', { name: WEB_COPY.session.signIn }),
     ).toBeVisible();
     await expect(openButton(page)).toHaveCount(0);
     await page.unroute('**/reviewer/status');
@@ -357,7 +334,7 @@ test.describe('reviewer access', () => {
             __turnstile: Record<string, (token?: string) => void>;
           }
         ).__turnstile;
-        options[name]('stub-token');
+        options[name]?.('stub-token');
       }, callback);
 
     await fire('callback');
@@ -414,13 +391,13 @@ test.describe('reviewer access', () => {
       .accessToken;
     expect(reviewerToken).not.toBe('');
 
-    await expect(page.getByText(COPY.session.reviewing)).toBeVisible();
+    await expect(page.getByText(WEB_COPY.session.reviewing)).toBeVisible();
     await expect(
-      page.getByRole('button', { name: COPY.session.endReview }),
+      page.getByRole('button', { name: WEB_COPY.session.endReview }),
     ).toBeVisible();
     await expect(openButton(page)).toHaveCount(0);
     await expect(
-      page.getByRole('link', { name: COPY.session.openCms }),
+      page.getByRole('link', { name: WEB_COPY.session.openCms }),
     ).toHaveCount(0);
     expect(
       consoleProblems.filter((text) => /content security policy/i.test(text)),
@@ -442,9 +419,9 @@ test.describe('reviewer access', () => {
     // A reload is anonymous again: nothing persisted.
     await page.reload();
     await expect(
-      page.getByRole('button', { name: COPY.session.signIn }),
+      page.getByRole('button', { name: WEB_COPY.session.signIn }),
     ).toBeVisible();
-    await expect(page.getByText(COPY.session.reviewing)).toHaveCount(0);
+    await expect(page.getByText(WEB_COPY.session.reviewing)).toHaveCount(0);
 
     // End review is local: the token stays valid until it expires.
     await page.close();
@@ -508,7 +485,7 @@ test.describe('reviewer access', () => {
       ).toBeVisible({ timeout: 8_000 });
     }).toPass({ timeout: 30_000 });
     await expect(dialog(page)).toBeVisible();
-    await expect(page.getByText(COPY.session.reviewing)).toHaveCount(0);
+    await expect(page.getByText(WEB_COPY.session.reviewing)).toHaveCount(0);
 
     await page.close();
   });
@@ -599,7 +576,7 @@ test.describe('reviewer access', () => {
         timeout: 8_000,
       });
     }).toPass({ timeout: 30_000 });
-    await expect(page.getByText(COPY.session.reviewing)).toHaveCount(0);
+    await expect(page.getByText(WEB_COPY.session.reviewing)).toHaveCount(0);
     await page.close();
   });
 

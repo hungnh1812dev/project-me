@@ -6,13 +6,12 @@ import {
   test,
 } from '@playwright/test';
 
-import { COPY } from '../../cms-admin/src/config/copy.constants';
-import { contentNewPath } from '../../cms-admin/src/config/routes';
+import { ADMIN_COPY, contentNewPath } from '../src/app-contracts';
 import { e2eEnv } from '../src/env';
-import { seedMediaFiles } from '../src/seed-media';
+import { insertLibraryFiles } from '../src/smoke-database';
 
-const copy = COPY.media;
-const content = COPY.content;
+const copy = ADMIN_COPY.media;
+const content = ADMIN_COPY.content;
 
 const PROFILE_SLUG = 'profile';
 const EDIT_URL = /\/content\/profile\/[0-9a-f-]{36}$/;
@@ -31,11 +30,13 @@ const png = () => Buffer.from(PNG_BASE64, 'base64');
 
 async function signIn(page: Page, email: string, password: string) {
   await page.goto('/login');
-  await page.getByRole('textbox', { name: COPY.login.emailLabel }).fill(email);
-  await page.getByLabel(COPY.login.passwordLabel).fill(password);
-  await page.getByRole('button', { name: COPY.login.submit }).click();
+  await page
+    .getByRole('textbox', { name: ADMIN_COPY.login.emailLabel })
+    .fill(email);
+  await page.getByLabel(ADMIN_COPY.login.passwordLabel).fill(password);
+  await page.getByRole('button', { name: ADMIN_COPY.login.submit }).click();
   await expect(
-    page.getByRole('button', { name: COPY.session.signOut }),
+    page.getByRole('button', { name: ADMIN_COPY.session.signOut }),
   ).toBeVisible();
 }
 
@@ -69,7 +70,7 @@ test.describe.serial('owner: attach media to a profile', () => {
       if (m.type() === 'error') consoleProblems.push(m.text());
     });
     await signIn(page, e2eEnv.ownerEmail, e2eEnv.ownerPassword);
-    seedMediaFiles([FILE_NAME, SECOND_FILE_NAME, THIRD_FILE_NAME]);
+    insertLibraryFiles([FILE_NAME, SECOND_FILE_NAME, THIRD_FILE_NAME]);
   });
 
   test.afterAll(async () => {

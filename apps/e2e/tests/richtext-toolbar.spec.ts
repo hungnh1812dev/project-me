@@ -1,10 +1,9 @@
 import { expect, type Locator, type Page, test } from '@playwright/test';
 
-import { COPY } from '../../cms-admin/src/config/copy.constants';
-import { contentNewPath } from '../../cms-admin/src/config/routes';
+import { ADMIN_COPY, contentNewPath } from '../src/app-contracts';
 import { e2eEnv } from '../src/env';
 
-const richtext = COPY.content.richtext;
+const richtext = ADMIN_COPY.content.richtext;
 
 const RICHTEXT_SLUG = 'cv-page';
 const FIELD_LABEL = 'Summary';
@@ -32,12 +31,14 @@ const TOGGLES: readonly Toggle[] = [
 async function signIn(page: Page) {
   await page.goto('/login');
   await page
-    .getByRole('textbox', { name: COPY.login.emailLabel })
+    .getByRole('textbox', { name: ADMIN_COPY.login.emailLabel })
     .fill(e2eEnv.ownerEmail);
-  await page.getByLabel(COPY.login.passwordLabel).fill(e2eEnv.ownerPassword);
-  await page.getByRole('button', { name: COPY.login.submit }).click();
+  await page
+    .getByLabel(ADMIN_COPY.login.passwordLabel)
+    .fill(e2eEnv.ownerPassword);
+  await page.getByRole('button', { name: ADMIN_COPY.login.submit }).click();
   await expect(
-    page.getByRole('button', { name: COPY.session.signOut }),
+    page.getByRole('button', { name: ADMIN_COPY.session.signOut }),
   ).toBeVisible();
 }
 

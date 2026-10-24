@@ -1,15 +1,15 @@
 import { expect, test } from '@playwright/test';
 
 import { e2eEnv } from '../src/env';
-import { COPY } from '../../cms-admin/src/config/copy.constants';
+import { ADMIN_COPY } from '../src/app-contracts';
 
 /** A list shows its empty state, not a table, until the first row exists. */
 const LIST_ROUTES = [
-  { path: '/reviewer', empty: COPY.reviewer.empty },
-  { path: '/roles', empty: COPY.access.roles.empty },
-  { path: '/accounts', empty: COPY.access.accounts.empty },
-  { path: '/api-tokens', empty: COPY.access.apiTokens.empty },
-  { path: '/media', empty: COPY.media.empty },
+  { path: '/reviewer', empty: ADMIN_COPY.reviewer.empty },
+  { path: '/roles', empty: ADMIN_COPY.access.roles.empty },
+  { path: '/accounts', empty: ADMIN_COPY.access.accounts.empty },
+  { path: '/api-tokens', empty: ADMIN_COPY.access.apiTokens.empty },
+  { path: '/media', empty: ADMIN_COPY.media.empty },
 ];
 
 test('admin list tables have no sort buttons and no selection column', async ({
@@ -17,12 +17,14 @@ test('admin list tables have no sort buttons and no selection column', async ({
 }) => {
   await page.goto('/login');
   await page
-    .getByRole('textbox', { name: COPY.login.emailLabel })
+    .getByRole('textbox', { name: ADMIN_COPY.login.emailLabel })
     .fill(e2eEnv.ownerEmail);
-  await page.getByLabel(COPY.login.passwordLabel).fill(e2eEnv.ownerPassword);
-  await page.getByRole('button', { name: COPY.login.submit }).click();
+  await page
+    .getByLabel(ADMIN_COPY.login.passwordLabel)
+    .fill(e2eEnv.ownerPassword);
+  await page.getByRole('button', { name: ADMIN_COPY.login.submit }).click();
   await expect(
-    page.getByRole('button', { name: COPY.session.signOut }),
+    page.getByRole('button', { name: ADMIN_COPY.session.signOut }),
   ).toBeVisible();
 
   for (const { path, empty } of LIST_ROUTES) {

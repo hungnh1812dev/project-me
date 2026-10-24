@@ -1,13 +1,13 @@
 import { expect, type Page, test } from '@playwright/test';
 
-import { COPY } from '../../cms-admin/src/config/copy.constants';
+import { ADMIN_COPY } from '../src/app-contracts';
 import { AUTH_REFRESH_PATH, REFRESH_COOKIE_NAME } from '../src/constants';
 import { e2eEnv } from '../src/env';
 
 const homeHeading = (page: Page) =>
-  page.getByRole('heading', { level: 1, name: COPY.page.title });
+  page.getByRole('heading', { level: 1, name: ADMIN_COPY.page.title });
 const loginHeading = (page: Page) =>
-  page.getByRole('heading', { level: 1, name: COPY.login.title });
+  page.getByRole('heading', { level: 1, name: ADMIN_COPY.login.title });
 
 /** What JS on the page can see: no token may be there (D14). */
 async function browserStorage(page: Page) {
@@ -26,14 +26,16 @@ test('the owner signs in, stays signed in across a reload, and signs out', async
   await expect(loginHeading(page)).toBeVisible();
 
   await page
-    .getByRole('textbox', { name: COPY.login.emailLabel })
+    .getByRole('textbox', { name: ADMIN_COPY.login.emailLabel })
     .fill(e2eEnv.ownerEmail);
-  await page.getByLabel(COPY.login.passwordLabel).fill(e2eEnv.ownerPassword);
-  await page.getByRole('button', { name: COPY.login.submit }).click();
+  await page
+    .getByLabel(ADMIN_COPY.login.passwordLabel)
+    .fill(e2eEnv.ownerPassword);
+  await page.getByRole('button', { name: ADMIN_COPY.login.submit }).click();
 
   await expect(homeHeading(page)).toBeVisible();
   await expect(
-    page.getByRole('button', { name: COPY.session.signOut }),
+    page.getByRole('button', { name: ADMIN_COPY.session.signOut }),
   ).toBeVisible();
 
   // The refresh cookie is HttpOnly + Secure + Strict on the API host, and
@@ -62,7 +64,7 @@ test('the owner signs in, stays signed in across a reload, and signs out', async
   expect((await refreshed).status()).toBe(200);
   await expect(homeHeading(page)).toBeVisible();
 
-  await page.getByRole('button', { name: COPY.session.signOut }).click();
+  await page.getByRole('button', { name: ADMIN_COPY.session.signOut }).click();
   await expect(loginHeading(page)).toBeVisible();
 
   await page.reload();
@@ -79,17 +81,17 @@ test('a wrong password shows the invalid-credentials message as an alert', async
 }) => {
   await page.goto('/');
   await page
-    .getByRole('textbox', { name: COPY.login.emailLabel })
+    .getByRole('textbox', { name: ADMIN_COPY.login.emailLabel })
     .fill(e2eEnv.ownerEmail);
   await page
-    .getByLabel(COPY.login.passwordLabel)
+    .getByLabel(ADMIN_COPY.login.passwordLabel)
     .fill(`${e2eEnv.ownerPassword}-wrong`);
-  await page.getByRole('button', { name: COPY.login.submit }).click();
+  await page.getByRole('button', { name: ADMIN_COPY.login.submit }).click();
 
   await expect(
     page
       .getByRole('alert')
-      .filter({ hasText: COPY.login.errors.invalidCredentials }),
+      .filter({ hasText: ADMIN_COPY.login.errors.invalidCredentials }),
   ).toBeVisible();
   await expect(loginHeading(page)).toBeVisible();
 });
@@ -102,10 +104,10 @@ const SECONDS_PER_MINUTE = 60;
 async function submitLogin(page: Page) {
   await page.goto('/');
   await page
-    .getByRole('textbox', { name: COPY.login.emailLabel })
+    .getByRole('textbox', { name: ADMIN_COPY.login.emailLabel })
     .fill(e2eEnv.ownerEmail);
-  await page.getByLabel(COPY.login.passwordLabel).fill('any-password-1');
-  await page.getByRole('button', { name: COPY.login.submit }).click();
+  await page.getByLabel(ADMIN_COPY.login.passwordLabel).fill('any-password-1');
+  await page.getByRole('button', { name: ADMIN_COPY.login.submit }).click();
 }
 
 const loginAlert = (page: Page, text: string) =>
@@ -129,14 +131,20 @@ test('a rate-limited login names the wait from Retry-After, in seconds or minute
 
   await submitLogin(page);
   await expect(
-    loginAlert(page, COPY.login.errors.rateLimitedSeconds(RETRY_AFTER_SECONDS)),
+    loginAlert(
+      page,
+      ADMIN_COPY.login.errors.rateLimitedSeconds(RETRY_AFTER_SECONDS),
+    ),
   ).toBeVisible();
 
   retryAfter = String(RETRY_AFTER_MINUTES * SECONDS_PER_MINUTE);
-  await page.getByLabel(COPY.login.passwordLabel).fill('any-password-1');
-  await page.getByRole('button', { name: COPY.login.submit }).click();
+  await page.getByLabel(ADMIN_COPY.login.passwordLabel).fill('any-password-1');
+  await page.getByRole('button', { name: ADMIN_COPY.login.submit }).click();
   await expect(
-    loginAlert(page, COPY.login.errors.rateLimitedMinutes(RETRY_AFTER_MINUTES)),
+    loginAlert(
+      page,
+      ADMIN_COPY.login.errors.rateLimitedMinutes(RETRY_AFTER_MINUTES),
+    ),
   ).toBeVisible();
 });
 
@@ -145,7 +153,7 @@ test('a login that cannot reach the API shows the network message', async ({
 }) => {
   await page.route(LOGIN_URL_PATTERN, (route) => route.abort('failed'));
   await submitLogin(page);
-  await expect(loginAlert(page, COPY.login.errors.network)).toBeVisible();
+  await expect(loginAlert(page, ADMIN_COPY.login.errors.network)).toBeVisible();
   await expect(loginHeading(page)).toBeVisible();
 });
 
@@ -161,6 +169,6 @@ test('any other 4xx on login shows the one generic invalid-credentials message',
   );
   await submitLogin(page);
   await expect(
-    loginAlert(page, COPY.login.errors.invalidCredentials),
+    loginAlert(page, ADMIN_COPY.login.errors.invalidCredentials),
   ).toBeVisible();
 });
