@@ -29,9 +29,8 @@ import {
 import { COPY } from '../../config/copy.constants';
 import { API_ERROR_CODES } from '../../config/http.constants';
 import { contentEditPath, contentNewPath } from '../../config/routes';
-import { isForbidden } from '../access/access-error';
 import type { ContentTypeField } from '../content-types';
-import { useCallerAccess } from '../access/caller-access';
+import { isForbidden, useCallerAccess } from '../access';
 import {
   LoadError,
   PageHeader,

@@ -14,12 +14,21 @@ So far: sign-in (T11) and, behind it, a status page that calls
   sessionStorage or JS cookies. The Redux DevTools hook is off in production
   builds. The refresh token is the API's HttpOnly `__Secure-abyss_rt` cookie,
   which JS never sees.
-- **Auth facade**: other features import only `useCurrentUser`, `useSession`
-  and the `Session` type from `src/features/auth` (`index.ts`).
-  `src/features/auth/app-wiring.ts` (`createSession`, `createAuthApi`,
-  `authReducer`, `accessTokenOf`) is for `src/app/**` only; ESLint blocks
-  `app/**` imports from features and lib, and features imports from lib.
-  `src/architecture.spec.ts` pins the export lists.
+- **Feature facades**: every feature that another feature or `app/` uses has an
+  `index.ts` with named exports only. Features import each other only through
+  that `index.ts`, never a deep path, and only downward in the SPEC §2 order
+  auth < security < content-types < access < media < content, reviewer
+  (`content-types` and `status` import no feature). ESLint
+  (`eslint.config.mjs`, `FEATURE_TIERS`) enforces both; test files may go deep
+  for `vi.mock`. `src/architecture.test.ts` pins each facade's export list and
+  checks every cross-feature import targets an `index.ts`.
+- **Auth facade**: besides `useCurrentUser`, `useSession` and the `Session`
+  type, it shares `useEmailCode` and the password form pieces
+  (`newPasswordShape`, `passwordsMatch`, `PASSWORDS_MATCH_ISSUE`) with
+  `security`. `src/features/auth/app-wiring.ts` (`createSession`,
+  `createAuthApi`, `authReducer`, `accessTokenOf`, interceptor and cross-tab
+  helpers) is for `src/app/**` only; ESLint blocks `app/**` imports from
+  features and lib, and features imports from lib.
 - **Session lifecycle**: `src/features/auth/session.ts` (`restore`, `signIn`,
   `signOut`, `expire`), wired in `src/app/app-services.ts`. Every refresh goes
   through one single-flight call. The cookie rotates on use, so two parallel

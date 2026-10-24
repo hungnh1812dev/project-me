@@ -5,7 +5,7 @@ import { useController } from 'react-hook-form';
 
 import { COPY } from '../../config/copy.constants';
 import { MEDIA_SUBJECT } from '../../config/media.constants';
-import { useCallerAccess } from '../access/caller-access';
+import { useCallerAccess } from '../access';
 import { useMediaApi } from './media-api-context';
 import { toMediaError } from './media-error';
 import { libraryFileToInput, mediaToForm } from './media-field-value';

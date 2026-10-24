@@ -16,8 +16,7 @@ import { useId, useState } from 'react';
 
 import { COPY } from '../../config/copy.constants';
 import { REVIEWER_SETTINGS_SUBJECT } from '../../config/reviewer.constants';
-import { isForbidden, toAccessError } from '../access/access-error';
-import { useCallerAccess } from '../access/caller-access';
+import { isForbidden, toAccessError, useCallerAccess } from '../access';
 import {
   LoadError,
   PageHeader,

@@ -12,12 +12,13 @@ import { z } from 'zod';
 
 import { PASSWORD_LENGTH } from '../../config/auth.constants';
 import { COPY } from '../../config/copy.constants';
-import { useCurrentUser, useSession } from '../auth';
 import {
   newPasswordShape,
   passwordsMatch,
   PASSWORDS_MATCH_ISSUE,
-} from '../auth/password-form';
+  useCurrentUser,
+  useSession,
+} from '../auth';
 import { useSecurityApi } from './security-api-context';
 import { toSecurityError } from './security-error';
 

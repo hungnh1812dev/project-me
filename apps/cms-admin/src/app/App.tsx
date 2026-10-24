@@ -1,20 +1,21 @@
 import { Navigate, Route, Routes } from 'react-router';
 
 import { APP_ROUTES } from '../config/routes';
-import { AccountsPage } from '../features/access/AccountsPage';
-import { ApiTokensPage } from '../features/access/ApiTokensPage';
-import { RolePermissionsPage } from '../features/access/RolePermissionsPage';
-import { RolesPage } from '../features/access/RolesPage';
+import {
+  AccountsPage,
+  ApiTokensPage,
+  RolePermissionsPage,
+  RolesPage,
+} from '../features/access';
 import { LoginPage } from '../features/auth/LoginPage';
-import { CollectionListPage } from '../features/content/CollectionListPage';
-import { DocumentEditPage } from '../features/content/DocumentEditPage';
+import { CollectionListPage, DocumentEditPage } from '../features/content';
 import { ProtectedRoute } from '../features/auth/ProtectedRoute';
 import { OwnerSetupPage } from '../features/auth/OwnerSetupPage';
 import { ResetPasswordPage } from '../features/auth/ResetPasswordPage';
 import { SetPasswordPage } from '../features/auth/SetPasswordPage';
-import { MediaLibraryPage } from '../features/media/MediaLibraryPage';
-import { ReviewerSessionsPage } from '../features/reviewer/ReviewerSessionsPage';
-import { SecuritySettingsPage } from '../features/security/SecuritySettingsPage';
+import { MediaLibraryPage } from '../features/media';
+import { ReviewerSessionsPage } from '../features/reviewer';
+import { SecuritySettingsPage } from '../features/security';
 import { StatusPage } from '../features/status/StatusPage';
 import { AppShell } from './AppShell';
 

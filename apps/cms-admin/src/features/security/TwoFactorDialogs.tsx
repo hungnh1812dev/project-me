@@ -10,7 +10,7 @@ import {
   type TwoFactorMethod,
 } from '../../config/auth.constants';
 import { COPY } from '../../config/copy.constants';
-import { useEmailCode } from '../auth/use-email-code';
+import { useEmailCode } from '../auth';
 import { ConfirmWithCodeForm } from './ConfirmWithCodeForm';
 import { useSecurityApi } from './security-api-context';
 import { toSecurityError } from './security-error';

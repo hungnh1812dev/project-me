@@ -18,7 +18,7 @@ import {
 } from '../../config/auth.constants';
 import { COPY } from '../../config/copy.constants';
 import { type ApiFailure, rateLimitedMessage } from '../../lib/api-failure';
-import type { useEmailCode } from '../auth/use-email-code';
+import type { useEmailCode } from '../auth';
 import { toSecurityError } from './security-error';
 
 const copy = COPY.security;

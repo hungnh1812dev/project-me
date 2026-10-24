@@ -11,7 +11,7 @@ import {
 import { useState } from 'react';
 
 import { COPY } from '../../config/copy.constants';
-import { isForbidden } from '../access/access-error';
+import { isForbidden } from '../access';
 import { LoadError, TableSkeleton } from '../../components/PageStates';
 import { Pagination } from '../../components/Pagination';
 import { useMediaQuery } from './media-queries';

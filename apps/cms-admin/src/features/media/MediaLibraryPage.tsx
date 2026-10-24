@@ -9,8 +9,7 @@ import { useRef, useState } from 'react';
 
 import { COPY } from '../../config/copy.constants';
 import { MEDIA_ACCEPT, MEDIA_SUBJECT } from '../../config/media.constants';
-import { isForbidden } from '../access/access-error';
-import { useCallerAccess } from '../access/caller-access';
+import { isForbidden, useCallerAccess } from '../access';
 import {
   LoadError,
   PageHeader,

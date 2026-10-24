@@ -12,8 +12,7 @@ import type { ReactNode } from 'react';
 
 import { COPY } from '../../config/copy.constants';
 import { FIELD_TYPE } from '../../config/content.constants';
-import { MediaField } from '../media/MediaField';
-import { mediaToApi, mediaToForm } from '../media/media-field-value';
+import { MediaField, mediaToApi, mediaToForm } from '../media';
 import {
   booleanToForm,
   datetimeToApi,
