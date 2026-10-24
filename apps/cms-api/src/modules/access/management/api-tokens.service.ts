@@ -40,7 +40,7 @@ import type {
   CreateApiTokenRequest,
   UpdateApiTokenRequest,
 } from './api-tokens.requests';
-import { validateTokenScope } from '../permission.validator';
+import { validateTokenScope } from '../token-scope.validator';
 import type { AccountActor } from '../rank-rules';
 import { AUDIT_ACTIONS, type AuditAction } from '../../security-audit';
 import {

@@ -23,7 +23,7 @@ import type {
   UpdateRoleRequest,
 } from './access-management.requests';
 import { type PermissionGrant, rolePolicyFromRows } from '../actor-context';
-import { validatePermissionSet } from '../permission.validator';
+import { validatePermissionSet } from '../permission-set.validator';
 import {
   type AccountActor,
   assertOutranks,

@@ -12,11 +12,14 @@ types and fields. T19 added API tokens: the API, the subset check
 | File                                          | What it holds                                                                                                               |
 | --------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
 | `access.constants.ts`                         | Subjects, actions per subject, DSL operators/variables/limits, error codes, default matrix                                  |
-| `actor-context.ts`                            | `ActorContext`, `RolePolicy`, token scope, `rolePolicyFromRows`, scope ∩ creator                                            |
+| `actor-context.ts`                            | `ActorContext`, `RolePolicy`, token scope, `rolePolicyFromRows`, actor builders                                             |
+| `effective-policy.ts`                         | `effectivePolicy`: one resolver per actor kind (owner, read-only clamp, token scope ∩ creator)                              |
 | `subject-catalog.ts`                          | Known subjects (`*`, registry slugs, system subjects), field paths, DSL field catalog                                       |
 | `policy-evaluator.ts`                         | `PolicyEvaluator.can / canReadDrafts / fieldsFor / rowFilter`                                                               |
 | `conditions.compiler.ts`                      | DSL validation and compilation to parameterized Kysely SQL                                                                  |
-| `permission.validator.ts`                     | Save-time checks: `validatePermissionSet` (T17), `validateTokenScope` (T19)                                                 |
+| `permission-set.validator.ts`                 | Save-time check of a role's permission set: `validatePermissionSet`                                                         |
+| `token-scope.validator.ts`                    | Save-time check of an API token scope: `validateTokenScope`                                                                 |
+| `field-list.check.ts`, `validation-issue.ts`  | Field-list check and issue types shared by the two validators                                                               |
 | `permission.decorator.ts`                     | `@RequirePermission()` metadata (read by the T15 guard)                                                                     |
 | `version-cache.ts`                            | D9 in-process cache of account `tv`/status/role and role `pv`/permission rows (T15)                                         |
 | `role-permissions.service.ts`                 | The one write path for a role's rows: replace + bump `policy_version` + invalidate (T15)                                    |

@@ -166,6 +166,91 @@ function literalProblem(
   }
 }
 
+function conditionIssue(
+  path: (string | number)[],
+  message: string,
+): ConditionIssue {
+  return {
+    code: ACCESS_ERROR_CODES.PERMISSION_INVALID_CONDITION,
+    path,
+    message,
+  };
+}
+
+type ParsedClause = z.infer<typeof conditionSetSchema>['all'][number];
+
+function shapeIssuesOf(error: z.ZodError): ConditionIssue[] {
+  return error.issues.map((zodIssue) =>
+    conditionIssue(
+      zodIssue.path.filter(
+        (segment): segment is string | number => typeof segment !== 'symbol',
+      ),
+      zodIssue.message,
+    ),
+  );
+}
+
+function inClauseIssues(
+  value: ParsedClause['value'],
+  kind: ConditionValueKind,
+  clausePath: (string | number)[],
+): ConditionIssue[] {
+  const valuePath = [...clausePath, 'value'];
+  if (!Array.isArray(value)) {
+    return [conditionIssue(valuePath, '"in" expects an array')];
+  }
+  if (value.length === 0 || value.length > CONDITION_LIMITS.MAX_IN_VALUES) {
+    return [
+      conditionIssue(
+        valuePath,
+        `"in" expects 1 to ${CONDITION_LIMITS.MAX_IN_VALUES} values`,
+      ),
+    ];
+  }
+  const issues: ConditionIssue[] = [];
+  value.forEach((item, itemIndex) => {
+    const problem =
+      item === null ? '"in" values cannot be null' : literalProblem(item, kind);
+    if (problem !== undefined) {
+      issues.push(conditionIssue([...valuePath, itemIndex], problem));
+    }
+  });
+  return issues;
+}
+
+function singleValueIssues(
+  clause: ParsedClause,
+  kind: ConditionValueKind,
+  clausePath: (string | number)[],
+): ConditionIssue[] {
+  const valuePath = [...clausePath, 'value'];
+  if (Array.isArray(clause.value)) {
+    return [conditionIssue(valuePath, `"${clause.op}" expects one value`)];
+  }
+  const problem = literalProblem(clause.value, kind);
+  return problem === undefined ? [] : [conditionIssue(valuePath, problem)];
+}
+
+function clauseIssues(
+  clause: ParsedClause,
+  index: number,
+  catalog: ConditionFieldCatalog,
+): ConditionIssue[] {
+  const clausePath = ['all', index];
+  const field = catalog(clause.field);
+  if (field === undefined) {
+    return [
+      conditionIssue(
+        [...clausePath, 'field'],
+        `field "${clause.field}" cannot be used in a condition`,
+      ),
+    ];
+  }
+  return clause.op === 'in'
+    ? inClauseIssues(clause.value, field.kind, clausePath)
+    : singleValueIssues(clause, field.kind, clausePath);
+}
+
 /**
  * Checks raw JSON against the DSL: shape, operators, fields (via the
  * catalog), literal types and variables. Call it when a permission is saved; the compiler runs it again so a hand-edited row fails closed.
@@ -174,80 +259,13 @@ export function validateConditions(
   raw: unknown,
   catalog: ConditionFieldCatalog,
 ): ConditionValidation {
-  const issue = (
-    path: (string | number)[],
-    message: string,
-  ): ConditionIssue => ({
-    code: ACCESS_ERROR_CODES.PERMISSION_INVALID_CONDITION,
-    path,
-    message,
-  });
-
   const parsed = conditionSetSchema.safeParse(raw);
   if (!parsed.success) {
-    return {
-      ok: false,
-      issues: parsed.error.issues.map((zodIssue) =>
-        issue(
-          zodIssue.path.filter(
-            (segment): segment is string | number =>
-              typeof segment !== 'symbol',
-          ),
-          zodIssue.message,
-        ),
-      ),
-    };
+    return { ok: false, issues: shapeIssuesOf(parsed.error) };
   }
-
-  const issues: ConditionIssue[] = [];
-  parsed.data.all.forEach((clause, index) => {
-    const at = ['all', index];
-    const field = catalog(clause.field);
-    if (field === undefined) {
-      issues.push(
-        issue(
-          [...at, 'field'],
-          `field "${clause.field}" cannot be used in a condition`,
-        ),
-      );
-      return;
-    }
-    if (clause.op === 'in') {
-      if (!Array.isArray(clause.value)) {
-        issues.push(issue([...at, 'value'], '"in" expects an array'));
-        return;
-      }
-      if (
-        clause.value.length === 0 ||
-        clause.value.length > CONDITION_LIMITS.MAX_IN_VALUES
-      ) {
-        issues.push(
-          issue(
-            [...at, 'value'],
-            `"in" expects 1 to ${CONDITION_LIMITS.MAX_IN_VALUES} values`,
-          ),
-        );
-        return;
-      }
-      clause.value.forEach((value, valueIndex) => {
-        const problem =
-          value === null
-            ? '"in" values cannot be null'
-            : literalProblem(value, field.kind);
-        if (problem !== undefined) {
-          issues.push(issue([...at, 'value', valueIndex], problem));
-        }
-      });
-      return;
-    }
-    if (Array.isArray(clause.value)) {
-      issues.push(issue([...at, 'value'], `"${clause.op}" expects one value`));
-      return;
-    }
-    const problem = literalProblem(clause.value, field.kind);
-    if (problem !== undefined) issues.push(issue([...at, 'value'], problem));
-  });
-
+  const issues = parsed.data.all.flatMap((clause, index) =>
+    clauseIssues(clause, index, catalog),
+  );
   return issues.length > 0
     ? { ok: false, issues }
     : { ok: true, conditions: parsed.data };

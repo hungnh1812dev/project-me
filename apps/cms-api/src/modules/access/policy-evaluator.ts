@@ -8,12 +8,8 @@ import {
   PERMISSION_STRING_SEPARATOR,
   SYSTEM_SUBJECT_ACTIONS,
 } from './access.constants';
-import {
-  type ActorContext,
-  type EffectivePolicy,
-  effectivePolicy,
-  type PermissionGrant,
-} from './actor-context';
+import { type ActorContext, type PermissionGrant } from './actor-context';
+import { type EffectivePolicy, effectivePolicy } from './effective-policy';
 import {
   compileConditions,
   type ConditionActor,
