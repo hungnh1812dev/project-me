@@ -40,6 +40,7 @@ export {
   type CheckboxInputProps,
 } from './components/forms/CheckboxInput';
 export { Textarea } from './components/ui/textarea';
+export { Radio } from './components/ui/radio';
 export { Switch } from './components/ui/switch';
 export {
   TextAreaInput,

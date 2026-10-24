@@ -504,5 +504,15 @@ test.describe('admin: limited by its own permissions and rank', () => {
     for (const box of await page.getByRole('checkbox').all()) {
       await expect(box).toBeDisabled();
     }
+
+    // The field picker of a view-only role ignores changes too.
+    await page
+      .getByRole('button', {
+        name: access.matrix.detailsLabel(CONTENT_TYPE_SLUG),
+      })
+      .click();
+    for (const radio of await page.getByRole('radio').all()) {
+      await expect(radio).toBeDisabled();
+    }
   });
 });

@@ -103,6 +103,15 @@ const NO_DATE_FORMATTER = {
     "NewExpression[callee.object.name='Intl'][callee.property.name='DateTimeFormat']",
   message: 'Format dates through lib/date-format.ts.',
 };
+const NO_RAW_RADIO = {
+  selector:
+    "JSXOpeningElement[name.name='input'] > JSXAttribute[name.name='type'][value.value='radio']",
+  message: 'Use Radio from @abyss/form-commons.',
+};
+const NO_RAW_TEXTAREA = {
+  selector: "JSXOpeningElement[name.name='textarea']",
+  message: 'Use Textarea from @abyss/form-commons.',
+};
 const NO_LITERAL_QUERY_KEY = {
   selector: "Property[key.name='queryKey'] > ArrayExpression",
   message:
@@ -136,6 +145,8 @@ export default [
         'error',
         NO_DATE_FORMATTER,
         NO_LITERAL_QUERY_KEY,
+        NO_RAW_RADIO,
+        NO_RAW_TEXTAREA,
       ],
     },
   },
@@ -147,6 +158,13 @@ export default [
   },
   {
     files: QUERY_KEY_OWNERS,
-    rules: { 'no-restricted-syntax': ['error', NO_DATE_FORMATTER] },
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        NO_DATE_FORMATTER,
+        NO_RAW_RADIO,
+        NO_RAW_TEXTAREA,
+      ],
+    },
   },
 ];

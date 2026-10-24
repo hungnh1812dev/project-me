@@ -1,5 +1,6 @@
 import * as React from 'react';
 import { cn } from 'cn';
+import { Radio } from '@/components/ui/radio';
 
 export type DiffSide = 'server' | 'client';
 
@@ -75,13 +76,11 @@ function DiffViewerBlock({
               )}
             >
               <span className="flex items-center gap-2 font-medium text-foreground">
-                <input
-                  type="radio"
+                <Radio
                   name={name}
                   value={side}
                   checked={selected}
                   onChange={() => onChoiceChange(side)}
-                  className="size-4 accent-primary"
                 />
                 {option.label}
               </span>

@@ -1,4 +1,4 @@
-import { Checkbox } from '@abyss/form-commons';
+import { Checkbox, Radio } from '@abyss/form-commons';
 import { useId } from 'react';
 
 import { FIELD_PICKER_INDENT_REM } from './access.constants';
@@ -41,20 +41,18 @@ export function FieldPicker({
       <legend className="mb-1 text-sm font-medium">{legend}</legend>
       <div className="flex flex-wrap gap-x-5 gap-y-1 text-sm">
         <label className="inline-flex items-center gap-2">
-          <input
-            type="radio"
+          <Radio
             name={name}
-            className="size-4 accent-primary"
+            disabled={disabled}
             checked={value === null}
             onChange={() => onChange(null)}
           />
           {copy.all}
         </label>
         <label className="inline-flex items-center gap-2">
-          <input
-            type="radio"
+          <Radio
             name={name}
-            className="size-4 accent-primary"
+            disabled={disabled}
             checked={value !== null}
             onChange={() => onChange([])}
           />

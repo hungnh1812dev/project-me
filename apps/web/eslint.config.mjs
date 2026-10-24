@@ -24,6 +24,16 @@ const restrictImports = (files, patterns, ignores = []) => ({
   rules: { 'no-restricted-imports': ['error', { patterns }] },
 });
 
+const NO_RAW_RADIO = {
+  selector:
+    "JSXOpeningElement[name.name='input'] > JSXAttribute[name.name='type'][value.value='radio']",
+  message: 'Use Radio from @abyss/form-commons.',
+};
+const NO_RAW_TEXTAREA = {
+  selector: "JSXOpeningElement[name.name='textarea']",
+  message: 'Use Textarea from @abyss/form-commons.',
+};
+
 export default [
   ...baseEslint({
     tsconfigRootDir: import.meta.dirname,
@@ -94,4 +104,10 @@ export default [
     ],
     TEST_FILES,
   ),
+  {
+    files: ['src/**'],
+    rules: {
+      'no-restricted-syntax': ['error', NO_RAW_RADIO, NO_RAW_TEXTAREA],
+    },
+  },
 ];

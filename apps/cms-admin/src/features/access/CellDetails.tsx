@@ -1,3 +1,4 @@
+import { Textarea } from '@abyss/form-commons';
 import { useId } from 'react';
 
 import { COPY } from '../../config/copy.constants';
@@ -144,7 +145,7 @@ function ConditionsEditor({
         <label htmlFor={id} className="text-sm font-medium">
           {copy.conditions.label(actionLabel)}
         </label>
-        <textarea
+        <Textarea
           id={id}
           value={text}
           disabled={disabled}
@@ -153,7 +154,7 @@ function ConditionsEditor({
           aria-invalid={invalidJson || undefined}
           aria-describedby={invalidJson ? `${hintId} ${errorId}` : hintId}
           onChange={(event) => onChange(event.target.value)}
-          className="w-full min-w-0 rounded-md border border-input bg-card px-3 py-2 font-mono text-sm text-foreground outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive"
+          className="font-mono text-sm"
         />
         <p id={hintId} className="m-0 text-sm text-muted-foreground">
           {copy.conditions.hint}
