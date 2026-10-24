@@ -86,11 +86,13 @@ export class ApiTokenAuthenticator {
       throw new UnauthorizedException();
     }
 
-    const creator = await this.versions.account(row.createdBy.documentId);
-    if (creator === null || creator.status !== 'active' || creator.deleted) {
+    const creator = await this.versions.getAccountVersions(
+      row.createdBy.documentId,
+    );
+    if (creator === null || creator.status !== 'active' || creator.isDeleted) {
       throw new UnauthorizedException();
     }
-    const role = await this.versions.rolePolicy(creator.roleId);
+    const role = await this.versions.getRolePolicy(creator.roleId);
     if (role === null) throw new UnauthorizedException();
 
     let actor: ActorContext;

@@ -70,16 +70,19 @@ export class JwtStrategy extends PassportStrategy(Strategy, JWT_STRATEGY_NAME) {
     const parsed = accessTokenClaimsSchema.safeParse(payload);
     if (!parsed.success) throw new UnauthorizedException();
     const claims: AccessTokenClaims = parsed.data;
-    const account = await this.versions.account(claims.sub, claims.tv);
+    const account = await this.versions.getAccountVersions(
+      claims.sub,
+      claims.tv,
+    );
     if (
       account === null ||
       account.tokenVersion !== claims.tv ||
       account.status !== 'active' ||
-      account.deleted
+      account.isDeleted
     ) {
       throw new UnauthorizedException();
     }
-    const role = await this.versions.rolePolicy(account.roleId, claims.pv);
+    const role = await this.versions.getRolePolicy(account.roleId, claims.pv);
     if (role === null) throw new UnauthorizedException();
     // D2: a reviewer-role account is always the read-only reviewer actor,
     // whatever the role rows say. No session row = no access.

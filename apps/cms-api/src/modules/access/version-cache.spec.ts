@@ -45,36 +45,36 @@ function setup() {
 describe('VersionCache', () => {
   it('serves from memory within the TTL and re-reads after it', async () => {
     const t = setup();
-    await t.cache.account(DOC_ID);
-    await t.cache.account(DOC_ID);
+    await t.cache.getAccountVersions(DOC_ID);
+    await t.cache.getAccountVersions(DOC_ID);
     expect(t.findAccount).toHaveBeenCalledTimes(1);
     t.advance(VERSION_CACHE_TTL_MS);
-    await t.cache.account(DOC_ID);
+    await t.cache.getAccountVersions(DOC_ID);
     expect(t.findAccount).toHaveBeenCalledTimes(2);
   });
 
   it('invalidation forces a re-read', async () => {
     const t = setup();
-    await t.cache.account(DOC_ID);
-    await t.cache.rolePolicy(5);
+    await t.cache.getAccountVersions(DOC_ID);
+    await t.cache.getRolePolicy(5);
     t.cache.invalidateAccount(1);
     t.cache.invalidateRole(5);
     t.account.status = 'disabled';
     t.role.policyVersion = 2;
-    expect((await t.cache.account(DOC_ID))?.status).toBe('disabled');
-    expect((await t.cache.rolePolicy(5))?.policyVersion).toBe(2);
+    expect((await t.cache.getAccountVersions(DOC_ID))?.status).toBe('disabled');
+    expect((await t.cache.getRolePolicy(5))?.policyVersion).toBe(2);
   });
 
   it('a token newer than the cache forces a re-read', async () => {
     const t = setup();
-    await t.cache.account(DOC_ID, 1);
-    await t.cache.rolePolicy(5, 1);
+    await t.cache.getAccountVersions(DOC_ID, 1);
+    await t.cache.getRolePolicy(5, 1);
     t.account.tokenVersion = 2;
     t.role.policyVersion = 3;
-    expect((await t.cache.account(DOC_ID, 2))?.tokenVersion).toBe(2);
-    expect((await t.cache.rolePolicy(5, 3))?.policyVersion).toBe(3);
+    expect((await t.cache.getAccountVersions(DOC_ID, 2))?.tokenVersion).toBe(2);
+    expect((await t.cache.getRolePolicy(5, 3))?.policyVersion).toBe(3);
     // An older claim is served from the cache (the guard then rejects tv).
-    await t.cache.account(DOC_ID, 1);
+    await t.cache.getAccountVersions(DOC_ID, 1);
     expect(t.findAccount).toHaveBeenCalledTimes(2);
   });
 
@@ -88,11 +88,11 @@ describe('VersionCache', () => {
         release = () => resolve(snapshot);
       });
     });
-    const stale = t.cache.rolePolicy(5);
+    const stale = t.cache.getRolePolicy(5);
     t.role.policyVersion = 2;
     t.cache.invalidateRole(5);
     release();
     expect((await stale)?.policyVersion).toBe(1);
-    expect((await t.cache.rolePolicy(5))?.policyVersion).toBe(2);
+    expect((await t.cache.getRolePolicy(5))?.policyVersion).toBe(2);
   });
 });

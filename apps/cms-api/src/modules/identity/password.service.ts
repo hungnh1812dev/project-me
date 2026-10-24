@@ -296,7 +296,7 @@ export class PasswordService implements OnApplicationShutdown {
     await this.prisma.$transaction(async (tx) => {
       if (
         write.otpId !== undefined &&
-        !(await this.otp.consume(tx, write.otpId))
+        !(await this.otp.tryConsume(tx, write.otpId))
       ) {
         throw invalidOtp();
       }

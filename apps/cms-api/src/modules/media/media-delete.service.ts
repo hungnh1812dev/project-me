@@ -23,7 +23,7 @@ import {
   MEDIA_ERROR_MESSAGES,
   MEDIA_TABLE,
 } from './media.constants';
-import { isMediaReferenced } from './media-references';
+import { isMediaReferenced } from './media-usage';
 
 /**
  * `DELETE /media/:id`: soft delete, refused with 409 `MEDIA_IN_USE`

@@ -214,7 +214,7 @@ export class TwoFactorService {
       if (secret === undefined) throw setupRequired();
       const step = await this.totp.matchStep(secret, input.code, null);
       if (step === undefined) throw await badCode();
-      const enabled = await this.prisma.$transaction(async (tx) => {
+      const wasEnabled = await this.prisma.$transaction(async (tx) => {
         const written = await tx.account.updateMany({
           // Same pending secret: a setup in between makes this code stale.
           where: {
@@ -233,13 +233,17 @@ export class TwoFactorService {
         }
         return written.count > 0;
       });
-      if (!enabled) throw await badCode();
+      if (!wasEnabled) throw await badCode();
       return;
     }
 
     await this.useEmailCode(account.id, input.code, {
       where: { is2faEnabled: false },
-      data: { is2faEnabled: true, twoFaMethod: 'email', ...CLEARED_TOTP },
+      accountPatch: {
+        is2faEnabled: true,
+        twoFaMethod: 'email',
+        ...CLEARED_TOTP,
+      },
       onMissed: alreadyEnabled,
       onBadCode: badCode,
       alsoInTransaction: (tx) =>
@@ -287,7 +291,7 @@ export class TwoFactorService {
     }
     await this.useEmailCode(account.id, input.code, {
       where: { is2faEnabled: true, twoFaMethod: 'email' },
-      data: off,
+      accountPatch: off,
       onMissed: notEnabled,
       onBadCode: badCode,
       alsoInTransaction: (tx) =>
@@ -317,8 +321,8 @@ export class TwoFactorService {
     meta: ClientMeta,
   ): Promise<SessionTokens> {
     const claims = this.tempTokenClaims(input.tempToken);
-    const expiresAt = claims.exp * MS_PER_SECOND;
-    const attempt = this.challenges.attempt(claims.jti, expiresAt);
+    const expiresAtMs = claims.exp * MS_PER_SECOND;
+    const attempt = this.challenges.attempt(claims.jti, expiresAtMs);
     if (attempt === 'refused') throw challengeStoreFull();
     if (attempt === 'exhausted') throw invalidTempToken();
 
@@ -338,7 +342,7 @@ export class TwoFactorService {
       });
       throw invalidTwoFactorCode(HttpStatus.UNAUTHORIZED);
     }
-    if (!this.challenges.markUsed(claims.jti, expiresAt)) {
+    if (!this.challenges.tryMarkUsed(claims.jti, expiresAtMs)) {
       throw invalidTempToken();
     }
     return this.auth.startSession(
@@ -443,12 +447,12 @@ export class TwoFactorService {
     tx: Prisma.TransactionClient,
     account: AuditedAccount,
     method: TwoFaMethod,
-    enabled: boolean,
+    isEnabled: boolean,
     meta: ClientMeta,
   ): Promise<void> {
     return this.audit.record(tx, {
       actor: selfActor(account.id),
-      action: enabled
+      action: isEnabled
         ? AUDIT_ACTIONS.TWO_FACTOR_ENABLED
         : AUDIT_ACTIONS.TWO_FACTOR_DISABLED,
       targetId: account.documentId,
@@ -465,7 +469,7 @@ export class TwoFactorService {
     if (!isOtpCodeFormat(code)) return false;
     const otpId = await this.otp.verify(accountId, EMAIL_CODE_PURPOSE, code);
     if (otpId === undefined) return false;
-    return this.prisma.$transaction((tx) => this.otp.consume(tx, otpId));
+    return this.prisma.$transaction((tx) => this.otp.tryConsume(tx, otpId));
   }
 
   /**
@@ -479,7 +483,7 @@ export class TwoFactorService {
     code: string,
     change: {
       readonly where: { is2faEnabled: boolean; twoFaMethod?: TwoFaMethod };
-      readonly data: {
+      readonly accountPatch: {
         is2faEnabled: boolean;
         twoFaMethod: TwoFaMethod | null;
         totpSecretEnc: null;
@@ -497,10 +501,10 @@ export class TwoFactorService {
     const otpId = await this.otp.verify(accountId, EMAIL_CODE_PURPOSE, code);
     if (otpId === undefined) throw await change.onBadCode();
     const consumed = await this.prisma.$transaction(async (tx) => {
-      if (!(await this.otp.consume(tx, otpId))) return false;
+      if (!(await this.otp.tryConsume(tx, otpId))) return false;
       const written = await tx.account.updateMany({
         where: { id: accountId, ...change.where },
-        data: change.data,
+        data: change.accountPatch,
       });
       if (written.count === 0) throw change.onMissed();
       await change.alsoInTransaction(tx);

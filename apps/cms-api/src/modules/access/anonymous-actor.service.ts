@@ -26,7 +26,7 @@ export class AnonymousActorService {
   /** @throws UnauthorizedException when the `public` role does not exist. */
   async actor(): Promise<ActorContext> {
     const roleId = await this.roleId();
-    const role = await this.versions.rolePolicy(roleId);
+    const role = await this.versions.getRolePolicy(roleId);
     if (role === null) {
       this.publicRoleId = undefined;
       throw new UnauthorizedException();

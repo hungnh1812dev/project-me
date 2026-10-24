@@ -72,7 +72,7 @@ export class TotpService implements ResetSecondFactor {
     afterStep: number | null,
   ): Promise<number | undefined> {
     if (!isTotpCodeFormat(code)) return undefined;
-    const result = await verify({
+    const totpVerification = await verify({
       secret,
       token: code,
       algorithm: TOTP.ALGORITHM,
@@ -83,7 +83,9 @@ export class TotpService implements ResetSecondFactor {
       ...(afterStep === null ? {} : { afterTimeStep: afterStep }),
     });
     // otplib's result type also covers HOTP, which has no timeStep.
-    return result.valid && 'timeStep' in result ? result.timeStep : undefined;
+    return totpVerification.valid && 'timeStep' in totpVerification
+      ? totpVerification.timeStep
+      : undefined;
   }
 
   /** Decrypts the stored secret; undefined (logged) when it can't be opened. */

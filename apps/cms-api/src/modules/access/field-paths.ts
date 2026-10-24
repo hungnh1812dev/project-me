@@ -66,8 +66,10 @@ export function unionFieldLists(lists: readonly FieldList[]): FieldList {
 export function intersectFieldLists(a: FieldList, b: FieldList): FieldList {
   if (a === null) return b;
   if (b === null) return a;
-  const result = new Set<string>();
-  for (const path of a) if (fieldListAllows(b, path)) result.add(path);
-  for (const path of b) if (fieldListAllows(a, path)) result.add(path);
-  return [...result];
+  const intersectedPaths = new Set<string>();
+  for (const path of a)
+    if (fieldListAllows(b, path)) intersectedPaths.add(path);
+  for (const path of b)
+    if (fieldListAllows(a, path)) intersectedPaths.add(path);
+  return [...intersectedPaths];
 }

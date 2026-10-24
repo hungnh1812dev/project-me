@@ -238,7 +238,7 @@ describe('reviewer and anonymous actors', () => {
     expect(evaluator.can(actor, del, 'media')).toBe(false);
     expect(evaluator.canReadDrafts(actor, CONTENT)).toBe(false);
     const fields = evaluator.fieldsFor(actor, CONTENT);
-    expect(fields.readable.all).toBe(true);
+    expect(fields.readable.isUnrestricted).toBe(true);
     expect(fields.writable.paths).toEqual([]);
   });
 });
@@ -247,8 +247,8 @@ describe('fieldsFor', () => {
   it('owner and default roles: all fields', () => {
     for (const slug of ['owner', 'admin', 'editor'] as const) {
       const fields = evaluator.fieldsFor(account(systemRole(slug)), CONTENT);
-      expect(fields.readable.all).toBe(true);
-      expect(fields.writable.all).toBe(true);
+      expect(fields.readable.isUnrestricted).toBe(true);
+      expect(fields.writable.isUnrestricted).toBe(true);
     }
   });
 
@@ -269,9 +269,11 @@ describe('fieldsFor', () => {
     expect(fields.readable.allows('reference.name')).toBe(true);
     expect(fields.readable.allows('reference.phone')).toBe(false);
     expect(fields.readable.allows('body')).toBe(false);
-    expect(fields.writable.all).toBe(true);
+    expect(fields.writable.isUnrestricted).toBe(true);
     // Other content types still get the * row.
-    expect(evaluator.fieldsFor(account(role), 'note').readable.all).toBe(true);
+    expect(
+      evaluator.fieldsFor(account(role), 'note').readable.isUnrestricted,
+    ).toBe(true);
   });
 
   it('rows at the same level add up; a component path covers its subtree', () => {
@@ -360,7 +362,9 @@ describe('API tokens (scope ∩ creator current permissions, D5)', () => {
     expect(fields.readable.allows('reference.phone')).toBe(true);
     expect(fields.readable.allows('body')).toBe(false);
     expect(fields.writable.paths).toEqual(['body']);
-    expect(evaluator.fieldsFor(actor, 'note').readable.all).toBe(true);
+    expect(evaluator.fieldsFor(actor, 'note').readable.isUnrestricted).toBe(
+      true,
+    );
   });
 
   it('keeps the creator’s conditions', () => {

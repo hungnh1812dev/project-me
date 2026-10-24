@@ -19,7 +19,7 @@ import {
   WriteAllowlist,
 } from '../access';
 import { projectTable, selectedColumns } from '../access/field-projection';
-import { MediaRefsService } from '../media';
+import { DocumentMediaService } from '../media';
 import { ContentDbProvider } from '../content-engine';
 import { ContentRegistryProvider } from '../content-engine';
 import { CONTENT_DB_SCHEMA } from '../content-engine';
@@ -94,7 +94,7 @@ export class DocumentsCommandService {
     private readonly access: AccessPolicyService,
     private readonly registry: ContentRegistryProvider,
     private readonly content: ContentDbProvider,
-    private readonly media: MediaRefsService,
+    private readonly media: DocumentMediaService,
   ) {}
 
   async create(

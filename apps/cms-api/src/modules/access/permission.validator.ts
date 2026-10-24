@@ -63,7 +63,7 @@ function checkFieldList(
   catalog: SubjectCatalog,
   raw: unknown,
   subject: string,
-  usedByAction: boolean,
+  isUsedByAction: boolean,
   path: (string | number)[],
   issues: AccessIssue[],
 ): FieldList {
@@ -78,10 +78,10 @@ function checkFieldList(
     );
     return null;
   }
-  const list = parsed.data;
-  if (list === null) return null;
+  const fieldList = parsed.data;
+  if (fieldList === null) return null;
   const known = catalog.fieldPaths(subject);
-  if (known === undefined || !usedByAction) {
+  if (known === undefined || !isUsedByAction) {
     issues.push(
       issue(
         ACCESS_ERROR_CODES.PERMISSION_INVALID_FIELDS,
@@ -94,7 +94,7 @@ function checkFieldList(
     return null;
   }
   const seen = new Set<string>();
-  list.forEach((field, index) => {
+  fieldList.forEach((field, index) => {
     if (!known.has(field) || seen.has(field)) {
       issues.push(
         issue(
@@ -108,7 +108,7 @@ function checkFieldList(
     }
     seen.add(field);
   });
-  return list;
+  return fieldList;
 }
 
 /**
@@ -222,12 +222,12 @@ export function validatePermissionSet(
   // Conditions second: they depend on what the whole set makes readable.
   rows.forEach((row, rowIndex) => {
     if (row.conditions === null) return;
-    const result = validateConditions(
+    const conditionsCheck = validateConditions(
       row.conditions,
       catalog.conditionFields(row.subject, readableIn(rows, row.subject)),
     );
-    if (!result.ok) {
-      for (const conditionIssue of result.issues) {
+    if (!conditionsCheck.ok) {
+      for (const conditionIssue of conditionsCheck.issues) {
         issues.push(
           issue(
             conditionIssue.code,

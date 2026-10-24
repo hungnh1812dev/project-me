@@ -145,7 +145,7 @@ export class OtpService {
    * Checks `code` against the live code of (account, purpose) without using
    * it up. Every check counts one attempt, committed at once; once 5 are
    * spent every further check fails, even with the right code. Returns the
-   * row id to pass to `consume`, or undefined.
+   * row id to pass to `tryConsume`, or undefined.
    */
   async verify(
     accountId: number,
@@ -183,7 +183,7 @@ export class OtpService {
    * Marks a verified code used, inside the caller's transaction. Atomic:
    * of two concurrent requests holding the same code only one gets true.
    */
-  async consume(tx: Tx, otpId: number): Promise<boolean> {
+  async tryConsume(tx: Tx, otpId: number): Promise<boolean> {
     const now = new Date(this.clock.now());
     const claimed = await tx.otpCode.updateMany({
       where: { id: otpId, usedAt: null, expiresAt: { gt: now } },

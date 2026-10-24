@@ -5,11 +5,11 @@ describe('parseResetArgs', () => {
   it('reads --email and --yes', () => {
     expect(parseResetArgs(['--email', 'a@example.com', '--yes'])).toEqual({
       email: 'a@example.com',
-      yes: true,
+      hasYesFlag: true,
     });
     expect(parseResetArgs(['--email=a@example.com'])).toEqual({
       email: 'a@example.com',
-      yes: false,
+      hasYesFlag: false,
     });
   });
 

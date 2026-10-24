@@ -15,7 +15,7 @@ export interface AccountVersions {
   documentId: string;
   tokenVersion: number;
   status: AccountStatus;
-  deleted: boolean;
+  isDeleted: boolean;
   roleId: number;
   /** The reviewer session of an ephemeral reviewer account (D2); null otherwise. */
   reviewerSessionId: number | null;
@@ -114,7 +114,7 @@ export class VersionCache {
    * Account by `document_id` (the JWT `sub`); null if it does not exist.
    * `minTokenVersion`: re-read when the cache holds an older version.
    */
-  async account(
+  async getAccountVersions(
     documentId: string,
     minTokenVersion?: number,
   ): Promise<AccountVersions | null> {
@@ -148,7 +148,7 @@ export class VersionCache {
             documentId: row.documentId,
             tokenVersion: row.tokenVersion,
             status: row.status,
-            deleted: row.deletedAt !== null,
+            isDeleted: row.deletedAt !== null,
             roleId: row.roleId,
             reviewerSessionId: row.reviewerSessions[0]?.id ?? null,
           };
@@ -160,7 +160,7 @@ export class VersionCache {
    * A role with its permission rows; null if it does not exist.
    * `minPolicyVersion`: re-read when the cache holds an older version.
    */
-  async rolePolicy(
+  async getRolePolicy(
     roleId: number,
     minPolicyVersion?: number,
   ): Promise<RolePolicy | null> {

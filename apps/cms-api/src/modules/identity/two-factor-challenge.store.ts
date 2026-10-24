@@ -8,9 +8,9 @@ import {
 
 interface ChallengeEntry {
   attempts: number;
-  used: boolean;
+  hasBeenUsed: boolean;
   /** Epoch ms when the temp token expires; the entry can go after it. */
-  readonly expiresAt: number;
+  readonly expiresAtMs: number;
 }
 
 /** Outcome of asking to check a code with a temp token. */
@@ -36,10 +36,13 @@ export class TwoFactorChallengeStore {
   constructor(private readonly clock: Clock) {}
 
   /** Counts one code check for `jti` unless the token is used or spent. */
-  attempt(jti: string, expiresAt: number): ChallengeAttempt {
-    const entry = this.entryFor(jti, expiresAt);
+  attempt(jti: string, expiresAtMs: number): ChallengeAttempt {
+    const entry = this.entryFor(jti, expiresAtMs);
     if (entry === undefined) return 'refused';
-    if (entry.used || entry.attempts >= TWO_FACTOR_TEMP_TOKEN_MAX_ATTEMPTS) {
+    if (
+      entry.hasBeenUsed ||
+      entry.attempts >= TWO_FACTOR_TEMP_TOKEN_MAX_ATTEMPTS
+    ) {
       return 'exhausted';
     }
     entry.attempts += 1;
@@ -51,7 +54,8 @@ export class TwoFactorChallengeStore {
     const entry = this.entries.get(jti);
     return (
       entry === undefined ||
-      (!entry.used && entry.attempts < TWO_FACTOR_TEMP_TOKEN_MAX_ATTEMPTS)
+      (!entry.hasBeenUsed &&
+        entry.attempts < TWO_FACTOR_TEMP_TOKEN_MAX_ATTEMPTS)
     );
   }
 
@@ -59,21 +63,28 @@ export class TwoFactorChallengeStore {
    * Marks the token used after a correct code. False when it already was
    * (a concurrent request won), so only one session is issued.
    */
-  markUsed(jti: string, expiresAt: number): boolean {
-    const entry = this.entries.get(jti) ?? this.entryFor(jti, expiresAt);
-    if (entry === undefined || entry.used) return false;
-    entry.used = true;
+  tryMarkUsed(jti: string, expiresAtMs: number): boolean {
+    const entry = this.entries.get(jti) ?? this.entryFor(jti, expiresAtMs);
+    if (entry === undefined || entry.hasBeenUsed) return false;
+    entry.hasBeenUsed = true;
     return true;
   }
 
-  private entryFor(jti: string, expiresAt: number): ChallengeEntry | undefined {
+  private entryFor(
+    jti: string,
+    expiresAtMs: number,
+  ): ChallengeEntry | undefined {
     const existing = this.entries.get(jti);
     if (existing !== undefined) return existing;
     if (this.entries.size >= TWO_FACTOR_CHALLENGE_MAX_KEYS) {
       this.sweep();
       if (this.entries.size >= TWO_FACTOR_CHALLENGE_MAX_KEYS) return undefined;
     }
-    const entry: ChallengeEntry = { attempts: 0, used: false, expiresAt };
+    const entry: ChallengeEntry = {
+      attempts: 0,
+      hasBeenUsed: false,
+      expiresAtMs,
+    };
     this.entries.set(jti, entry);
     return entry;
   }
@@ -81,7 +92,7 @@ export class TwoFactorChallengeStore {
   private sweep(): void {
     const now = this.clock.now();
     for (const [jti, entry] of this.entries) {
-      if (entry.expiresAt <= now) this.entries.delete(jti);
+      if (entry.expiresAtMs <= now) this.entries.delete(jti);
     }
   }
 }

@@ -106,10 +106,10 @@ const FILE_COLUMNS = [
  * Document <-> media file mapping. Documents speak the file's public
  * `document_id` (uuid); `media` columns store `file_library.id`. Writes map
  * uuid -> id here, reads embed the file instead of the id. The reference
- * check of a delete (`media-references.ts`) works on the stored ids.
+ * check of a delete (`media-usage.ts`) works on the stored ids.
  */
 @Injectable()
-export class MediaRefsService {
+export class DocumentMediaService {
   constructor(
     private readonly content: ContentDbProvider,
     private readonly access: AccessPolicyService,

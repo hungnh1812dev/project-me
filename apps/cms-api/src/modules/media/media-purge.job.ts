@@ -19,7 +19,7 @@ import {
   MEDIA_PURGE_GRACE_MS,
   MEDIA_PURGE_INTERVAL_MS,
 } from './media.constants';
-import { isMediaReferenced } from './media-references';
+import { isMediaReferenced } from './media-usage';
 
 /** What one purge run did. */
 export interface PurgeResult {

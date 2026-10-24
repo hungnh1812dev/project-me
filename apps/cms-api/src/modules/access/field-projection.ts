@@ -22,7 +22,7 @@ export function projectTable(
   readable: FieldSelection,
   prefix = '',
 ): TableNode {
-  if (readable.all) return table;
+  if (readable.isUnrestricted) return table;
   const columns = table.plan.columns.filter((column) =>
     readable.allows(joinFieldPath(prefix, column.field.name)),
   );

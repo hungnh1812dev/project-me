@@ -85,7 +85,7 @@ export class RefreshTokenService {
    */
   async rotate(rawToken: string, meta: ClientMeta): Promise<RotationResult> {
     const tokenHash = hashRefreshToken(rawToken);
-    const result = await this.prisma.$transaction(
+    const rotation = await this.prisma.$transaction(
       async (tx): Promise<RotationResult> => {
         const current = await tx.refreshToken.findUnique({
           where: { tokenHash },
@@ -147,9 +147,9 @@ export class RefreshTokenService {
       },
     );
     // Reuse bumped token_version: old access tokens die on the next request.
-    if (result.kind === 'reuse')
-      this.versions.invalidateAccount(result.accountId);
-    return result;
+    if (rotation.kind === 'reuse')
+      this.versions.invalidateAccount(rotation.accountId);
+    return rotation;
   }
 
   /**

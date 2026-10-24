@@ -39,8 +39,8 @@ describe('TwoFactorChallengeStore (SPEC §6: 5 attempts per temp token)', () => 
   it('is single use', () => {
     expect(store.isLive('a')).toBe(true);
     expect(store.attempt('a', START + TTL_MS)).toBe('allowed');
-    expect(store.markUsed('a', START + TTL_MS)).toBe(true);
-    expect(store.markUsed('a', START + TTL_MS)).toBe(false);
+    expect(store.tryMarkUsed('a', START + TTL_MS)).toBe(true);
+    expect(store.tryMarkUsed('a', START + TTL_MS)).toBe(false);
     expect(store.isLive('a')).toBe(false);
     expect(store.attempt('a', START + TTL_MS)).toBe('exhausted');
   });

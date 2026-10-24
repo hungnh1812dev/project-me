@@ -97,11 +97,11 @@ function loginFailureReason(
     readonly status: AccountStatus;
     readonly deletedAt: Date | null;
   } | null,
-  passwordOk: boolean,
+  isPasswordCorrect: boolean,
 ): LoginFailureReason | undefined {
   if (account === null) return LOGIN_FAILURE_REASONS.UNKNOWN_ACCOUNT;
   if (account.passwordHash === null) return LOGIN_FAILURE_REASONS.NO_PASSWORD;
-  if (!passwordOk) return LOGIN_FAILURE_REASONS.BAD_PASSWORD;
+  if (!isPasswordCorrect) return LOGIN_FAILURE_REASONS.BAD_PASSWORD;
   if (account.status !== 'active' || account.deletedAt !== null) {
     return LOGIN_FAILURE_REASONS.NOT_ACTIVE;
   }
@@ -151,9 +151,12 @@ export class AuthService implements OnModuleInit {
     const passwordHash =
       account?.passwordHash ??
       (this.dummyHash ??= await this.createDummyHash());
-    const passwordOk = await verifyPassword(passwordHash, credentials.password);
+    const isPasswordCorrect = await verifyPassword(
+      passwordHash,
+      credentials.password,
+    );
 
-    const failure = loginFailureReason(account, passwordOk);
+    const failure = loginFailureReason(account, isPasswordCorrect);
     if (failure !== undefined) {
       // No write to share a transaction with: a standalone row.
       await this.audit.recordStandalone({
@@ -235,18 +238,18 @@ export class AuthService implements OnModuleInit {
    * successor, so the cookie is left alone.
    */
   async refresh(rawToken: string, meta: ClientMeta): Promise<RefreshedTokens> {
-    const result = await this.refreshTokens.rotate(rawToken, meta);
-    if (result.kind === 'reuse') {
+    const rotation = await this.refreshTokens.rotate(rawToken, meta);
+    if (rotation.kind === 'reuse') {
       // Audited inside the rotation transaction (RefreshTokenService).
       throw invalidRefreshToken();
     }
-    if (result.kind === 'invalid') throw invalidRefreshToken();
+    if (rotation.kind === 'invalid') throw invalidRefreshToken();
     return {
-      refreshToken: result.kind === 'rotated' ? result.token : undefined,
+      refreshToken: rotation.kind === 'rotated' ? rotation.token : undefined,
       accessToken: this.accessTokens.signAccessToken({
-        sub: result.account.documentId,
-        tv: result.account.tokenVersion,
-        pv: result.account.policyVersion,
+        sub: rotation.account.documentId,
+        tv: rotation.account.tokenVersion,
+        pv: rotation.account.policyVersion,
       }),
     };
   }

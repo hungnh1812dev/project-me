@@ -245,7 +245,7 @@ export function intersectTokenScope(
   creatorGrants: readonly PermissionGrant[],
   isContentSubject: (subject: string) => boolean,
 ): PermissionGrant[] {
-  const result: PermissionGrant[] = [];
+  const intersectedGrants: PermissionGrant[] = [];
   for (const entry of scope.permissions) {
     if (!isContentSubject(entry.subject)) continue;
     const sameAction = creatorGrants.filter(
@@ -254,7 +254,7 @@ export function intersectTokenScope(
     );
     if (entry.subject === CONTENT_WILDCARD_SUBJECT) {
       for (const grant of sameAction) {
-        result.push(intersectGrant(entry, grant, grant.subject));
+        intersectedGrants.push(intersectGrant(entry, grant, grant.subject));
       }
       continue;
     }
@@ -268,10 +268,10 @@ export function intersectTokenScope(
             (grant) => grant.subject === CONTENT_WILDCARD_SUBJECT,
           );
     for (const grant of matching) {
-      result.push(intersectGrant(entry, grant, entry.subject));
+      intersectedGrants.push(intersectGrant(entry, grant, entry.subject));
     }
   }
-  return result;
+  return intersectedGrants;
 }
 
 type PolicyResolver<A extends ActorContext> = (

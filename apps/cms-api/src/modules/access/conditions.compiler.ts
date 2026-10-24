@@ -299,9 +299,10 @@ export function compileConditions(
   actor: ConditionActor,
   table?: string,
 ): Expression<SqlBool> {
-  const result = validateConditions(raw, catalog);
-  if (!result.ok) throw new InvalidConditionError(result.issues);
-  const clauses = result.conditions.all.map((clause) => {
+  const conditionsCheck = validateConditions(raw, catalog);
+  if (!conditionsCheck.ok)
+    throw new InvalidConditionError(conditionsCheck.issues);
+  const clauses = conditionsCheck.conditions.all.map((clause) => {
     const field = catalog(clause.field);
     if (field === undefined) throw new InvalidConditionError([]);
     return compileClause(clause, field, actor, table);

@@ -7,7 +7,7 @@ import { ContentEngineModule } from '../content-engine';
 import { SecurityAuditModule } from '../security-audit';
 import { MediaController } from './media.controller';
 import { MediaDeleteService } from './media-delete.service';
-import { MediaRefsService } from './media-refs.service';
+import { DocumentMediaService } from './document-media.service';
 import { MediaUpdateService } from './media-update.service';
 import { MediaPurgeJob } from './media-purge.job';
 import { MediaService } from './media.service';
@@ -27,10 +27,10 @@ import { UploadPipeline } from './upload.pipeline';
     MediaService,
     MediaDeleteService,
     MediaUpdateService,
-    MediaRefsService,
+    DocumentMediaService,
     MediaPurgeJob,
     UploadPipeline,
   ],
-  exports: [MediaService, MediaRefsService],
+  exports: [MediaService, DocumentMediaService],
 })
 export class MediaModule {}

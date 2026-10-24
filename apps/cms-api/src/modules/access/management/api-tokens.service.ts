@@ -359,7 +359,7 @@ export class ApiTokensService {
 
   /** The token creator's current role (the owner updating a token of an admin). */
   private async creatorRole(row: TokenRow): Promise<RolePolicy> {
-    const role = await this.versions.rolePolicy(row.createdBy.roleId);
+    const role = await this.versions.getRolePolicy(row.createdBy.roleId);
     if (role === null) throw tokenNotFound();
     return role;
   }

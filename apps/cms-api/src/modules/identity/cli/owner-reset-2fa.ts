@@ -12,7 +12,7 @@ const EMAIL_FLAG = `--${RESET_2FA_OPTIONS.EMAIL}`;
 
 export interface ResetArgs {
   email: string;
-  yes: boolean;
+  hasYesFlag: boolean;
 }
 
 /** `--email <address> [--yes]`. Unknown options and stray values are refused. */
@@ -37,7 +37,7 @@ export function parseResetArgs(argv: readonly string[]): ResetArgs {
   if (email === undefined || email.trim() === '') {
     throw new CliInputError(`${EMAIL_FLAG} is required.`);
   }
-  return { email, yes: values[RESET_2FA_OPTIONS.YES] === true };
+  return { email, hasYesFlag: values[RESET_2FA_OPTIONS.YES] === true };
 }
 
 /** True for "y" / "yes" (any case); anything else, Enter included, is no. */
@@ -82,15 +82,15 @@ async function main(): Promise<void> {
   const config = loadAppConfig(process.env);
   const args = parseResetArgs(process.argv.slice(2));
   const email = parseResetEmail(args.email);
-  if (!args.yes && !(await confirm(email))) {
+  if (!args.hasYesFlag && !(await confirm(email))) {
     throw new CliInputError('Cancelled. Nothing changed.');
   }
 
   const { prisma, close } = openPrisma(config.database);
   try {
-    const result = await resetTwoFactor(prisma, email);
+    const twoFactorReset = await resetTwoFactor(prisma, email);
     process.stdout.write(
-      `Two-factor authentication turned off for ${result.email} (was ${result.previousMethod ?? 'unknown'}). All sessions ended.\n`,
+      `Two-factor authentication turned off for ${twoFactorReset.email} (was ${twoFactorReset.previousMethod ?? 'unknown'}). All sessions ended.\n`,
     );
   } finally {
     await close();

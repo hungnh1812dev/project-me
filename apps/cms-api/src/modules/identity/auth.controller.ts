@@ -95,16 +95,19 @@ export class AuthController {
       });
     }
 
-    const result = await this.auth.login(parsed.data, this.clientMeta(req));
-    if (result.kind === 'two-factor') {
+    const loginOutcome = await this.auth.login(
+      parsed.data,
+      this.clientMeta(req),
+    );
+    if (loginOutcome.kind === 'two-factor') {
       return {
         requires2FA: true,
-        tempToken: result.tempToken,
-        methods: result.methods,
+        tempToken: loginOutcome.tempToken,
+        methods: loginOutcome.methods,
       };
     }
-    setRefreshCookie(res, result.refreshToken);
-    return { accessToken: result.accessToken };
+    setRefreshCookie(res, loginOutcome.refreshToken);
+    return { accessToken: loginOutcome.accessToken };
   }
 
   @Post(AUTH_ROUTES.REFRESH)

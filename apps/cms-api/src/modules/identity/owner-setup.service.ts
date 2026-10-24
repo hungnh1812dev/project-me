@@ -69,7 +69,7 @@ export class OwnerSetupService implements OnApplicationBootstrap {
   async onApplicationBootstrap(): Promise<void> {
     if (this.token === undefined) return;
     try {
-      await this.ownerSeen();
+      await this.hasOwnerAccount();
     } catch {
       // The database may not be reachable yet; the first request decides.
     }
@@ -77,7 +77,7 @@ export class OwnerSetupService implements OnApplicationBootstrap {
 
   async isOpen(): Promise<boolean> {
     if (this.token === undefined || this.closed) return false;
-    return !(await this.ownerSeen());
+    return !(await this.hasOwnerAccount());
   }
 
   /** `body` is the raw JSON body; the token is checked before anything else is read. */
@@ -130,7 +130,7 @@ export class OwnerSetupService implements OnApplicationBootstrap {
   }
 
   /** True once a live owner exists; sets the latch and warns on the first sight. */
-  private async ownerSeen(): Promise<boolean> {
+  private async hasOwnerAccount(): Promise<boolean> {
     if (this.closed) return true;
     const owner = await this.prisma.account.findFirst({
       where: { roleSlug: OWNER_ROLE_SLUG, deletedAt: null },

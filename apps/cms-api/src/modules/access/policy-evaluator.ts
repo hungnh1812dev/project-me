@@ -39,7 +39,7 @@ export class FieldSelection {
     return list === null ? FieldSelection.ALL : new FieldSelection(list);
   }
 
-  get all(): boolean {
+  get isUnrestricted(): boolean {
     return this.paths === null;
   }
 
@@ -105,15 +105,17 @@ export class PolicyEvaluator {
       ...this.subjects.contentTypeSlugs(),
       ...Object.keys(SYSTEM_SUBJECT_ACTIONS),
     ];
-    const out: string[] = [];
+    const permissionStrings: string[] = [];
     for (const subject of subjects) {
       for (const action of this.subjects.actionsFor(subject)) {
         if (this.can(actor, action, subject)) {
-          out.push(`${subject}${PERMISSION_STRING_SEPARATOR}${action}`);
+          permissionStrings.push(
+            `${subject}${PERMISSION_STRING_SEPARATOR}${action}`,
+          );
         }
       }
     }
-    return out.sort();
+    return permissionStrings.sort();
   }
 
   /** Drafts need `read` + `update`; never for read-only actors. */

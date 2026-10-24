@@ -258,7 +258,7 @@ export class UploadPipeline {
     let headLength = 0;
     let detected: { mimeType: AllowedMime; kind: MediaKind } | undefined;
     let size = 0;
-    const handle = await open(path, 'wx');
+    const fileHandle = await open(path, 'wx');
 
     const accept = async (): Promise<void> => {
       const sniffed = await fileTypeFromBuffer(Buffer.concat(head));
@@ -276,7 +276,7 @@ export class UploadPipeline {
         throw tooLarge();
       }
       hash.update(chunk);
-      await handle.write(chunk);
+      await fileHandle.write(chunk);
     };
 
     try {
@@ -298,7 +298,7 @@ export class UploadPipeline {
         for (const part of head) await write(part);
       }
     } finally {
-      await handle.close();
+      await fileHandle.close();
     }
     if (detected === undefined || size === 0) {
       throw unsupportedType(MEDIA_ERROR_MESSAGES.UNSUPPORTED_TYPE);
