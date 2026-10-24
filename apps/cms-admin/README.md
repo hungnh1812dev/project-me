@@ -24,7 +24,7 @@ So far: sign-in (T11) and, behind it, a status page that calls
   `signOut`, `expire`), wired in `src/app/app-services.ts`. Every refresh goes
   through one single-flight call. The cookie rotates on use, so two parallel
   refreshes would look like token reuse and revoke the session.
-- **Across tabs** (T11a): `src/lib/cross-tab-refresh.ts`. Tabs take turns
+- **Across tabs** (T11a): `src/features/auth/cross-tab-refresh.ts`. Tabs take turns
   under the Web Lock `abyss-admin:refresh`; the tab that refreshes posts the
   new access token on the BroadcastChannel `abyss-admin:session`, and a tab
   that waited uses it instead of sending its own refresh. If the message is
@@ -35,7 +35,7 @@ So far: sign-in (T11) and, behind it, a status page that calls
 - **Start-up**: `main.tsx` calls `session.restore()` once, outside React. Until
   it settles, protected routes show "Restoring your session" instead of the
   login page.
-- **Interceptor**: `src/lib/auth-interceptor.ts` adds `Authorization: Bearer`.
+- **Interceptor**: `src/features/auth/auth-interceptor.ts` adds `Authorization: Bearer`.
   On a 401 from a protected call it refreshes once, and concurrent 401s wait
   for that same refresh. It then retries each call once. If the refresh fails,
   or a retried call gets 401 again, the session ends and the router shows

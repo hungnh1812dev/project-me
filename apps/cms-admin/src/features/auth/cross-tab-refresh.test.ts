@@ -1,5 +1,5 @@
-import { deferred } from '../../test/fake-api';
-import { fakeBus, fakeLocks } from '../../test/fake-tabs';
+import { deferred } from '../../../test/fake-api';
+import { fakeBus, fakeLocks } from '../../../test/fake-tabs';
 import { createCrossTabRefresh } from './cross-tab-refresh';
 
 const LOCK = 'test:refresh';

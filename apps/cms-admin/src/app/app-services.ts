@@ -8,7 +8,9 @@ import {
 import {
   accessTokenOf,
   createAuthApi,
+  browserCrossTabOptions,
   createSession,
+  installAuthInterceptor,
 } from '../features/auth/app-wiring';
 import { createPasswordApi } from '../features/auth/password.api';
 import { createSetupApi } from '../features/auth/setup.api';
@@ -17,8 +19,6 @@ import { createContentApi } from '../features/content/content.api';
 import { createMediaApi } from '../features/media/media.api';
 import { createReviewerApi } from '../features/reviewer/reviewer.api';
 import { createSecurityApi } from '../features/security/security.api';
-import { installAuthInterceptor } from '../lib/auth-interceptor';
-import { browserCrossTabOptions } from '../lib/cross-tab-refresh';
 import { createAppStore } from './store';
 
 /** Wires store, session and the API client's auth interceptor together. */

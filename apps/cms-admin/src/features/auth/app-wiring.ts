@@ -6,6 +6,8 @@ import type { AuthRootState } from './auth-hooks';
  * the session and the API client needs. Features use `./index.ts`.
  */
 export { createAuthApi } from './auth.api';
+export { browserCrossTabOptions } from './cross-tab-refresh';
+export { installAuthInterceptor } from './auth-interceptor';
 export { createSession } from './session';
 
 /** Reducer map, so the state key stays owned by auth. */

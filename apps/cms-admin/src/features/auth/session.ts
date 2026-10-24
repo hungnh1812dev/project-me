@@ -3,8 +3,8 @@ import type { Dispatch } from '@reduxjs/toolkit';
 import {
   createCrossTabRefresh,
   type CrossTabRefreshOptions,
-} from '../../lib/cross-tab-refresh';
-import { singleFlight } from '../../lib/single-flight';
+} from './cross-tab-refresh';
+import { singleFlight } from './single-flight';
 import type {
   AuthApi,
   LoginCredentials,

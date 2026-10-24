@@ -1,7 +1,7 @@
 import type {
   RefreshChannel,
   RefreshLocks,
-} from '../src/lib/cross-tab-refresh';
+} from '../src/features/auth/cross-tab-refresh';
 
 /** Fakes for simulating several admin tabs in one test (T11a). */
 
