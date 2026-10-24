@@ -671,6 +671,17 @@ is stale. A name clash (two slugs, `<x>List` vs another item field, a type
 named like a shared one) fails the build of the schema and renames nothing.
 Design: [docs/modules/graphql.md](../../docs/modules/graphql.md).
 
+### Public constants snapshot
+
+`content/public-constants.json` holds the cms-api constants that the admin,
+web, kit and e2e suite mirror (password bounds, OTP and TOTP lengths, setup
+token max, reviewer input limits, refresh cookie name, error codes,
+permission actions, system subjects, richtext URL schemes). It is built by
+`src/contract/public-constants.ts` from `*.constants.ts` exports only, so no
+env value or secret can reach it. Run `pnpm --filter @abyss/cms-api
+contract:print` after changing a mirrored constant; `-- --check` (CI) exits 1
+when the file is stale. Only client tests import the JSON.
+
 ### GraphQL endpoint (GQ2, `src/modules/graphql`)
 
 `POST /api/v1/graphql`, queries only, JSON body `{ query, variables?,
@@ -722,6 +733,7 @@ every message. No environment serves a playground; use the committed SDL
 | `typecheck`                      | `tsc --noEmit` over `src` and `test`                                                                                                                                                                         |
 | `content:generate`               | Build, then write the next content migration (`--dry-run`, `--name`, `--allow-destructive`)                                                                                                                  |
 | `graphql:print-schema`           | Build, then write `content/schema.graphql` from `content/schemas` (`--check` fails if stale)                                                                                                                 |
+| `contract:print`                 | Build, then write `content/public-constants.json` from the `*.constants.ts` exports the clients mirror (`--check` fails if stale)                                                                            |
 | `content:migrate`                | Apply pending content migrations (needs a build and the `DB_*` connection)                                                                                                                                   |
 | `deploy:migrate`                 | Init-container command: `db:migrate`, then `content:migrate` (stops at first failure)                                                                                                                        |
 | `db:generate`                    | Generate the Prisma client                                                                                                                                                                                   |

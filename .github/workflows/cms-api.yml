@@ -43,6 +43,9 @@ jobs:
         run: pnpm --filter @abyss/cms-api content:generate -- --check
       - name: GraphQL SDL is committed
         run: pnpm --filter @abyss/cms-api graphql:print-schema -- --check
+      # Fail when the public constants snapshot is behind the *.constants.ts files
+      - name: Public constants snapshot is committed
+        run: pnpm --filter @abyss/cms-api contract:print -- --check
 
   build:
     name: Build

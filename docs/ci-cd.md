@@ -18,15 +18,15 @@ The app flows never depend on each other, so one failing app does not skip anoth
 
 ## Jobs
 
-| Job                | What it runs                                                                                                                                                          |
-| ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `changes`          | Lists affected apps (`apps`, `<app>_affected`, `<app>_image`) and resolves the branch target. Routing is tested by `bash .github/scripts/affected.test.sh`.           |
-| `repo`             | `pnpm format:check`, `pnpm audit --prod --audit-level high`                                                                                                           |
-| `cms-api` Checks   | `turbo run typecheck lint`, `test:unit`, `test:integration` (Testcontainers on the runner's Docker), `content:generate -- --check`, `graphql:print-schema -- --check` |
-| `cms-admin` Checks | `turbo run typecheck lint`, `pnpm --filter @abyss/cms-admin test`                                                                                                     |
-| `web` Checks       | `turbo run typecheck lint`, `pnpm --filter @abyss/web test`                                                                                                           |
-| `<app>` Build      | `pnpm turbo run build --filter=@abyss/<app>` (no Docker image here)                                                                                                   |
-| `publish-<app>`    | `_publish.yml`: per-platform image (build, non-root guard, admin bundle check, push by digest), manifest, deploy bump. See "Publish".                                 |
+| Job                | What it runs                                                                                                                                                                                       |
+| ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `changes`          | Lists affected apps (`apps`, `<app>_affected`, `<app>_image`) and resolves the branch target. Routing is tested by `bash .github/scripts/affected.test.sh`.                                        |
+| `repo`             | `pnpm format:check`, `pnpm audit --prod --audit-level high`                                                                                                                                        |
+| `cms-api` Checks   | `turbo run typecheck lint`, `test:unit`, `test:integration` (Testcontainers on the runner's Docker), `content:generate -- --check`, `graphql:print-schema -- --check`, `contract:print -- --check` |
+| `cms-admin` Checks | `turbo run typecheck lint`, `pnpm --filter @abyss/cms-admin test`                                                                                                                                  |
+| `web` Checks       | `turbo run typecheck lint`, `pnpm --filter @abyss/web test`                                                                                                                                        |
+| `<app>` Build      | `pnpm turbo run build --filter=@abyss/<app>` (no Docker image here)                                                                                                                                |
+| `publish-<app>`    | `_publish.yml`: per-platform image (build, non-root guard, admin bundle check, push by digest), manifest, deploy bump. See "Publish".                                                              |
 
 ## Change detection
 
@@ -42,6 +42,7 @@ pnpm turbo run typecheck lint test --filter=@abyss/<cms-api|cms-admin|web>
 pnpm --filter @abyss/cms-api test:integration         # Docker must be running
 pnpm --filter @abyss/cms-api content:generate -- --check
 pnpm --filter @abyss/cms-api graphql:print-schema -- --check
+pnpm --filter @abyss/cms-api contract:print -- --check
 pnpm turbo run build --filter=@abyss/<app>
 pnpm format:check
 pnpm audit --prod --audit-level high

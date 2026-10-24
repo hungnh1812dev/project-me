@@ -271,3 +271,11 @@ export const CONTENT_NOT_MIGRATED_PG_CODES: readonly string[] = [
 
 /** Most connections of the app's content pool (reads of the document API). */
 export const CONTENT_POOL_MAX_CONNECTIONS = 10;
+
+/** URL schemes a stored richtext link may use; the admin editor offers the same list. */
+export const RICHTEXT_ALLOWED_URL_SCHEMES = [
+  'http',
+  'https',
+  'mailto',
+  'tel',
+] as const;

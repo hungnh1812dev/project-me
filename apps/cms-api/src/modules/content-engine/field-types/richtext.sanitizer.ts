@@ -1,5 +1,7 @@
 import sanitizeHtml from 'sanitize-html';
 
+import { RICHTEXT_ALLOWED_URL_SCHEMES } from '../content-engine.constants';
+
 /**
  * Cleans richtext HTML before it is stored (SPEC D13, storage part).
  * Allowlist only: anything not listed (script, style, iframe, event handler
@@ -31,8 +33,6 @@ const ALLOWED_TAGS = [
   'a',
 ];
 
-const ALLOWED_URL_SCHEMES = ['http', 'https', 'mailto', 'tel'];
-
 /** Tags whose inner text is dropped together with the tag. */
 const DISCARD_CONTENT_TAGS = [
   'script',
@@ -45,7 +45,7 @@ const DISCARD_CONTENT_TAGS = [
 const OPTIONS: sanitizeHtml.IOptions = {
   allowedTags: ALLOWED_TAGS,
   allowedAttributes: { a: ['href', 'title', 'target', 'rel'] },
-  allowedSchemes: ALLOWED_URL_SCHEMES,
+  allowedSchemes: [...RICHTEXT_ALLOWED_URL_SCHEMES],
   allowedSchemesAppliedToAttributes: ['href'],
   allowProtocolRelative: false,
   disallowedTagsMode: 'discard',

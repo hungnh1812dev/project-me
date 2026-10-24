@@ -1,0 +1,122 @@
+{
+  "password": {
+    "minLength": 12,
+    "maxLength": 128
+  },
+  "ownerDisplayNameMaxLength": 100,
+  "setupTokenMaxLength": 256,
+  "otp": {
+    "digits": 6,
+    "ttlSeconds": 300
+  },
+  "totp": {
+    "digits": 6,
+    "periodSeconds": 30
+  },
+  "refreshCookieName": "__Secure-abyss_rt",
+  "reviewerInputLimits": {
+    "VISITOR_ROLE_MAX_LENGTH": 64,
+    "PURPOSE_TAG_MAX_LENGTH": 40,
+    "PURPOSE_TAGS_MAX": 10,
+    "NOTES_MAX_LENGTH": 500
+  },
+  "errorCodes": {
+    "common": {
+      "BAD_REQUEST": "BAD_REQUEST",
+      "UNAUTHORIZED": "UNAUTHORIZED",
+      "FORBIDDEN": "FORBIDDEN",
+      "NOT_FOUND": "NOT_FOUND",
+      "METHOD_NOT_ALLOWED": "METHOD_NOT_ALLOWED",
+      "CONFLICT": "CONFLICT",
+      "PAYLOAD_TOO_LARGE": "PAYLOAD_TOO_LARGE",
+      "UNSUPPORTED_MEDIA_TYPE": "UNSUPPORTED_MEDIA_TYPE",
+      "UNPROCESSABLE_ENTITY": "UNPROCESSABLE_ENTITY",
+      "TOO_MANY_REQUESTS": "TOO_MANY_REQUESTS",
+      "SERVICE_UNAVAILABLE": "SERVICE_UNAVAILABLE",
+      "HTTP_ERROR": "HTTP_ERROR",
+      "INTERNAL_ERROR": "INTERNAL_ERROR"
+    },
+    "auth": {
+      "INVALID_CREDENTIALS": "AUTH_INVALID_CREDENTIALS",
+      "INVALID_REFRESH_TOKEN": "AUTH_INVALID_REFRESH_TOKEN",
+      "ORIGIN_NOT_ALLOWED": "AUTH_ORIGIN_NOT_ALLOWED",
+      "INVALID_REQUEST": "AUTH_INVALID_REQUEST",
+      "INVALID_OTP": "AUTH_INVALID_OTP",
+      "WEAK_PASSWORD": "AUTH_WEAK_PASSWORD",
+      "TOTP_REQUIRED": "AUTH_TOTP_REQUIRED",
+      "INVALID_2FA_CODE": "AUTH_INVALID_2FA_CODE",
+      "INVALID_TEMP_TOKEN": "AUTH_INVALID_TEMP_TOKEN",
+      "TWO_FACTOR_ALREADY_ENABLED": "AUTH_2FA_ALREADY_ENABLED",
+      "TWO_FACTOR_NOT_ENABLED": "AUTH_2FA_NOT_ENABLED",
+      "TWO_FACTOR_SETUP_REQUIRED": "AUTH_2FA_SETUP_REQUIRED"
+    },
+    "ownerSetup": {
+      "TOKEN_INVALID": "SETUP_TOKEN_INVALID",
+      "EMAIL_TAKEN": "OWNER_EMAIL_TAKEN"
+    },
+    "reviewer": {
+      "DISABLED": "REVIEWER_DISABLED",
+      "UNAVAILABLE": "REVIEWER_UNAVAILABLE",
+      "TURNSTILE_FAILED": "REVIEWER_TURNSTILE_FAILED",
+      "IP_LIMITED": "REVIEWER_IP_LIMITED",
+      "CAPACITY_REACHED": "REVIEWER_CAPACITY_REACHED"
+    },
+    "access": {
+      "PERMISSION_INVALID_CONDITION": "PERMISSION_INVALID_CONDITION",
+      "PERMISSION_INVALID_SUBJECT": "PERMISSION_INVALID_SUBJECT",
+      "PERMISSION_INVALID_ACTION": "PERMISSION_INVALID_ACTION",
+      "PERMISSION_INVALID_FIELDS": "PERMISSION_INVALID_FIELDS",
+      "TOKEN_SCOPE_INVALID": "TOKEN_SCOPE_INVALID",
+      "FIELD_NOT_READABLE": "FIELD_NOT_READABLE",
+      "FIELD_NOT_WRITABLE": "FIELD_NOT_WRITABLE",
+      "FIELD_UNKNOWN": "FIELD_UNKNOWN"
+    }
+  },
+  "permissionActions": [
+    "read",
+    "create",
+    "update",
+    "delete",
+    "publish",
+    "unpublish"
+  ],
+  "systemSubjects": {
+    "accounts": [
+      "read",
+      "create",
+      "update",
+      "delete"
+    ],
+    "roles": [
+      "read",
+      "create",
+      "update",
+      "delete"
+    ],
+    "api_tokens": [
+      "read",
+      "create",
+      "update",
+      "delete"
+    ],
+    "media": [
+      "read",
+      "create",
+      "update",
+      "delete"
+    ],
+    "audit_logs": [
+      "read"
+    ],
+    "reviewer_settings": [
+      "read",
+      "update"
+    ]
+  },
+  "richtextUrlSchemes": [
+    "http",
+    "https",
+    "mailto",
+    "tel"
+  ]
+}

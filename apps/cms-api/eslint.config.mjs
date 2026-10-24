@@ -77,7 +77,8 @@ export default [
   timeConversionLiteralBan,
   {
     files: ['src/**/*.ts'],
-    ignores: ['src/modules/**', 'src/architecture/**'],
+    // reason: src/contract reads `*.constants.ts` files directly, by design (Q-A4).
+    ignores: ['src/modules/**', 'src/architecture/**', 'src/contract/**'],
     ...deepImportBan(moduleNames),
   },
   ...moduleNames.map((ownName) => ({
