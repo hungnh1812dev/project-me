@@ -5,7 +5,7 @@ import {
   CONTENT_WILDCARD_SUBJECT,
   PERMISSION_ACTIONS,
   type PermissionAction,
-} from '../../config/access.constants';
+} from './access.constants';
 import { COPY } from '../../config/copy.constants';
 import type { ContentType } from '../content-types';
 import { FieldPicker } from './FieldPicker';

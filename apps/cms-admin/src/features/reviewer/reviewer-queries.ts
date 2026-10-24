@@ -1,6 +1,6 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 
-import { REVIEWER_SESSIONS_PAGE_SIZE } from '../../config/reviewer.constants';
+import { REVIEWER_SESSIONS_PAGE_SIZE } from './reviewer.constants';
 import { useReviewerApi } from './reviewer-api-context';
 
 export const REVIEWER_QUERY_KEYS = {

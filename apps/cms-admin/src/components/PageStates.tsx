@@ -1,8 +1,10 @@
 import { Button, FormAlert } from '@abyss/form-commons';
 import type { ReactNode } from 'react';
 
-import { TABLE_SKELETON_ROWS } from '../config/access.constants';
 import { COPY } from '../config/copy.constants';
+
+/** Skeleton rows shown while a table loads. */
+const TABLE_SKELETON_ROWS = 3;
 
 /** Page title block of a list page. */
 export function PageHeader({

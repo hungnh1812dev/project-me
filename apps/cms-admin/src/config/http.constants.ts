@@ -76,3 +76,15 @@ export const API_ERROR_CODES = {
 
 /** Milliseconds per second (Retry-After is in seconds). */
 export const MS_PER_SECOND = 1_000;
+
+/** Input bounds of the accounts API (cms-api MANAGEMENT_LIMITS / auth constants). */
+export const ACCOUNT_LIMITS = {
+  DISPLAY_NAME_MAX_LENGTH: 100,
+  EMAIL_MAX_LENGTH: 254,
+} as const;
+
+/** Input bounds of the API tokens API (cms-api API_TOKEN). */
+export const API_TOKEN_LIMITS = {
+  NAME_MAX_LENGTH: 100,
+  MAX_SCOPE_ENTRIES: 200,
+} as const;

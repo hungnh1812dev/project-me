@@ -1,7 +1,7 @@
 import { Checkbox } from '@abyss/form-commons';
 import { useId } from 'react';
 
-import { FIELD_PICKER_INDENT_REM } from '../../config/access.constants';
+import { FIELD_PICKER_INDENT_REM } from './access.constants';
 import { COPY } from '../../config/copy.constants';
 import type { ContentTypeField } from '../content-types';
 import type { FieldList } from './access.api';

@@ -23,11 +23,8 @@ import {
   COLLECTION_KIND,
   LIST_MAX_VALUE_COLUMNS,
   LIST_UPDATED_KEY,
-} from '../../config/content.constants';
-import {
-  CONTENT_WILDCARD_SUBJECT,
-  type PermissionAction,
-} from '../../config/access.constants';
+} from './content.constants';
+import { CONTENT_WILDCARD_SUBJECT, type PermissionAction } from '../access';
 import { COPY } from '../../config/copy.constants';
 import { API_ERROR_CODES } from '../../config/http.constants';
 import { contentEditPath, contentNewPath } from '../../config/routes';

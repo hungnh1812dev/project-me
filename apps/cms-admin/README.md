@@ -221,6 +221,11 @@ pnpm --filter @abyss/cms-admin dev       # http://localhost:5173 (DEV_SERVER_POR
   until an i18n module exists. Sections live in `src/config/copy/*.copy.ts`
   (shared text and nav labels in `common.copy.ts`) and are joined in
   `copy/index.ts`; only that folder imports a section file (ESLint).
+- `src/config/` keeps only cross-feature constants (`http.constants`,
+  `auth.constants`, `routes`). A feature's own constants live in
+  `src/features/<name>/<name>.constants.ts`; other code reads them through
+  that feature's `index.ts` (ESLint forbids importing another feature's
+  constants file).
 - `src/lib/api-client.ts` is the Axios instance. It strips trailing slashes
   from every request path (`src/config/strip-trailing-slashes.ts`, SPEC §6), so no proxy can answer with a redirect.
 

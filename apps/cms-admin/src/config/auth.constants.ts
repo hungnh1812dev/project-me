@@ -1,3 +1,6 @@
+/** Slug of the system role every reviewer session holds (T31); read by any feature that shows a read-only mode. */
+export const REVIEWER_ROLE_SLUG = 'reviewer';
+
 /** D8 password rule, mirrored from cms-api so the form can explain it up front. */
 export const PASSWORD_LENGTH = { MIN: 12, MAX: 128 } as const;
 

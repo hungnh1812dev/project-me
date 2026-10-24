@@ -55,6 +55,8 @@ const FACADE_EXPORTS: Record<string, string[]> = {
   access: [
     'AccountsPage',
     'ApiTokensPage',
+    'CONTENT_WILDCARD_SUBJECT',
+    'PermissionAction',
     'RolePermissionsPage',
     'RolesPage',
     'isForbidden',
@@ -73,7 +75,7 @@ const FACADE_EXPORTS: Record<string, string[]> = {
   content: ['CollectionListPage', 'DocumentEditPage'],
   media: ['MediaField', 'MediaLibraryPage', 'mediaToApi', 'mediaToForm'],
   reviewer: ['ReviewerSessionsPage'],
-  security: ['SecuritySettingsPage'],
+  security: ['CSP_NONCE_META_NAME', 'SecuritySettingsPage'],
 };
 
 describe('feature facades', () => {

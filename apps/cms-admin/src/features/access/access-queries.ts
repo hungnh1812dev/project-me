@@ -1,9 +1,6 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 
-import {
-  ACCOUNTS_PAGE_SIZE,
-  API_TOKENS_PAGE_SIZE,
-} from '../../config/access.constants';
+import { ACCOUNTS_PAGE_SIZE, API_TOKENS_PAGE_SIZE } from './access.constants';
 import { useAccessApi } from './access-api-context';
 
 /** React Query keys of the access pages. */

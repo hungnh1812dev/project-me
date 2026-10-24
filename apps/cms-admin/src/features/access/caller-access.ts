@@ -1,7 +1,4 @@
-import {
-  OWNER_ROLE_SLUG,
-  type PermissionAction,
-} from '../../config/access.constants';
+import { OWNER_ROLE_SLUG, type PermissionAction } from './access.constants';
 import { useCurrentUser } from '../auth';
 import type { Role } from './access.api';
 import { useRolesQuery } from './access-queries';

@@ -4,7 +4,7 @@ import { useFieldArray, useFormContext } from 'react-hook-form';
 import {
   MAX_COMPONENT_DEPTH,
   SINGLE_COMPONENT_MAX_ITEMS,
-} from '../../config/content.constants';
+} from './content.constants';
 import { COPY } from '../../config/copy.constants';
 import { emptyItem } from './document-form';
 import { DynamicFormRenderer } from './DynamicFormRenderer';

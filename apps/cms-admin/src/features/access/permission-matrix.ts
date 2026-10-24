@@ -7,7 +7,7 @@ import {
   SYSTEM_SUBJECT_ACTIONS,
   SYSTEM_SUBJECTS,
   WRITABLE_FIELD_ACTIONS,
-} from '../../config/access.constants';
+} from './access.constants';
 import type { FieldList, PermissionRow } from './access.api';
 
 /**

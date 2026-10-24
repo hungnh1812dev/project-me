@@ -1,5 +1,5 @@
 import { COPY } from '../../config/copy.constants';
-import { FIELD_TYPE } from '../../config/content.constants';
+import { FIELD_TYPE } from './content.constants';
 import type { ConflictDetails, ConflictItem, DiffEntry } from './conflict';
 import { type FieldNode } from './field-tree';
 import { fieldPathOf, isMaskedPath, parseEntryPath } from './merge.reducer';

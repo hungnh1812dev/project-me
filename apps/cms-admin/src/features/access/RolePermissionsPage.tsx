@@ -32,7 +32,7 @@ import {
   serializeMatrix,
   subjectOrder,
 } from './permission-matrix';
-import { OWNER_ROLE_SLUG } from '../../config/access.constants';
+import { OWNER_ROLE_SLUG } from './access.constants';
 
 const copy = COPY.access;
 

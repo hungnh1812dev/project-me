@@ -17,13 +17,9 @@ import { useState } from 'react';
 import { FormProvider, useForm } from 'react-hook-form';
 import { z } from 'zod';
 
-import {
-  ACCOUNT_LIMITS,
-  OWNER_ROLE_SLUG,
-  UNASSIGNABLE_ROLE_SLUGS,
-} from '../../config/access.constants';
+import { OWNER_ROLE_SLUG, UNASSIGNABLE_ROLE_SLUGS } from './access.constants';
 import { COPY } from '../../config/copy.constants';
-import { API_ERROR_CODES } from '../../config/http.constants';
+import { ACCOUNT_LIMITS, API_ERROR_CODES } from '../../config/http.constants';
 import type { InvitedAccount, Role } from './access.api';
 import { useAccessApi } from './access-api-context';
 import { toAccessError } from './access-error';

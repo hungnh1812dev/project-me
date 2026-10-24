@@ -16,10 +16,8 @@ import { useState } from 'react';
 import { FormProvider, useForm } from 'react-hook-form';
 import { z } from 'zod';
 
-import {
-  API_TOKEN_LIMITS,
-  type PermissionAction,
-} from '../../config/access.constants';
+import { API_TOKEN_LIMITS } from '../../config/http.constants';
+import { type PermissionAction } from './access.constants';
 import { COPY } from '../../config/copy.constants';
 import { API_ERROR_CODES, HTTP_STATUS } from '../../config/http.constants';
 import type { ApiToken, UpdateApiTokenInput } from './access.api';

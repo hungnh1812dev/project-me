@@ -5,7 +5,7 @@ import { FormProvider, useForm } from 'react-hook-form';
 import { useNavigate, useParams } from 'react-router';
 
 import { COPY } from '../../config/copy.constants';
-import { REVIEWER_ROLE_SLUG } from '../../config/reviewer.constants';
+import { REVIEWER_ROLE_SLUG } from '../../config/auth.constants';
 import { contentEditPath } from '../../config/routes';
 import {
   LoadError,

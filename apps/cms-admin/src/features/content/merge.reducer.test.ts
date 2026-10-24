@@ -1,4 +1,4 @@
-import { MASKED_FIELDS_KEY } from '../../config/content.constants';
+import { MASKED_FIELDS_KEY } from './content.constants';
 import { conflictDetails, UID_A, UID_B } from './merge.test-data';
 import {
   INITIAL_MERGE_STATE,

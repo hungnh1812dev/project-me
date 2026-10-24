@@ -15,7 +15,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useId, useState } from 'react';
 
 import { COPY } from '../../config/copy.constants';
-import { REVIEWER_SETTINGS_SUBJECT } from '../../config/reviewer.constants';
+import { REVIEWER_SETTINGS_SUBJECT } from './reviewer.constants';
 import { isForbidden, toAccessError, useCallerAccess } from '../access';
 import {
   LoadError,

@@ -4,7 +4,7 @@ import {
   type PermissionAction,
   READABLE_FIELD_ACTIONS,
   WRITABLE_FIELD_ACTIONS,
-} from '../../config/access.constants';
+} from './access.constants';
 import type { FieldList, TokenScopeEntry } from './access.api';
 import type { CellRef, FieldListKind } from './permission-matrix';
 

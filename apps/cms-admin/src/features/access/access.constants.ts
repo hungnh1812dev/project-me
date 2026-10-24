@@ -4,17 +4,12 @@
  * access-management.constants.ts; the server validates everything anyway.
  */
 
-/** Every permission action, in the server's enum order (matrix columns). */
-export const PERMISSION_ACTIONS = [
-  'read',
-  'create',
-  'update',
-  'delete',
-  'publish',
-  'unpublish',
-] as const;
+import type { PermissionAction } from '../../lib/permission-action';
 
-export type PermissionAction = (typeof PERMISSION_ACTIONS)[number];
+export {
+  PERMISSION_ACTIONS,
+  type PermissionAction,
+} from '../../lib/permission-action';
 
 /** Row subject covering every content type (never a system subject). */
 export const CONTENT_WILDCARD_SUBJECT = '*';
@@ -56,32 +51,17 @@ export const UNASSIGNABLE_ROLE_SLUGS: readonly string[] = [
 export const ACCOUNT_STATUSES = ['invited', 'active', 'disabled'] as const;
 export type AccountStatus = (typeof ACCOUNT_STATUSES)[number];
 
-/** Input bounds of the accounts API (cms-api MANAGEMENT_LIMITS / auth constants). */
-export const ACCOUNT_LIMITS = {
-  DISPLAY_NAME_MAX_LENGTH: 100,
-  EMAIL_MAX_LENGTH: 254,
-} as const;
-
 /** Indentation step of nested fields in the field picker, in rem. */
 export const FIELD_PICKER_INDENT_REM = 1.25;
 
 /** Accounts per page of the accounts list (API default 20, max 100). */
 export const ACCOUNTS_PAGE_SIZE = 20;
 
-/** Skeleton rows shown while a table loads. */
-export const TABLE_SKELETON_ROWS = 3;
-
 /** Spaces used when pretty-printing row conditions in the editor. */
 export const CONDITIONS_JSON_INDENT = 2;
 
 /** API tokens per page of the token list (API default 20, max 100). */
 export const API_TOKENS_PAGE_SIZE = 20;
-
-/** Input bounds of the API tokens API (cms-api API_TOKEN). */
-export const API_TOKEN_LIMITS = {
-  NAME_MAX_LENGTH: 100,
-  MAX_SCOPE_ENTRIES: 200,
-} as const;
 
 export const API_TOKEN_STATUSES = ['active', 'revoked', 'expired'] as const;
 export type ApiTokenStatus = (typeof API_TOKEN_STATUSES)[number];

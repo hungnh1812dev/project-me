@@ -12,7 +12,7 @@ import { useRestoreFocus } from '../../components/use-restore-focus';
 import { formatDate } from '../../lib/date-format';
 
 import { COPY } from '../../config/copy.constants';
-import { MEDIA_ACCEPT, MEDIA_SUBJECT } from '../../config/media.constants';
+import { MEDIA_ACCEPT, MEDIA_SUBJECT } from './media.constants';
 import { isForbidden, useCallerAccess } from '../access';
 import {
   LoadError,

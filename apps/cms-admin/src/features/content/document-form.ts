@@ -1,4 +1,4 @@
-import { ITEM_UID_KEY } from '../../config/content.constants';
+import { ITEM_UID_KEY } from './content.constants';
 import type {
   ComponentItem,
   DocumentRecord,

@@ -15,7 +15,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { FormProvider, useForm, useWatch } from 'react-hook-form';
 
-import { BULK_ACTION, BULK_MAX_ITEMS } from '../../config/content.constants';
+import { BULK_ACTION, BULK_MAX_ITEMS } from './content.constants';
 import { COPY } from '../../config/copy.constants';
 import { failedItems, itemReason, toBulkFailure } from './bulk';
 import { useContentApi } from './content-api-context';

@@ -1,4 +1,4 @@
-import { END_OF_DAY_TIME } from '../../config/access.constants';
+import { END_OF_DAY_TIME } from './access.constants';
 
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 const MONTH_OFFSET = 1;

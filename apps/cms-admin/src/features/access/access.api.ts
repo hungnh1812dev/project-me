@@ -4,7 +4,7 @@ import type {
   AccountStatus,
   ApiTokenStatus,
   PermissionAction,
-} from '../../config/access.constants';
+} from './access.constants';
 import type { TwoFactorMethod } from '../../config/auth.constants';
 import { API_ENDPOINTS } from '../../config/endpoints';
 import type { PageMeta } from '../../lib/api-types';

@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Link, NavLink, Outlet } from 'react-router';
 
 import { COPY } from '../config/copy.constants';
-import { REVIEWER_ROLE_SLUG } from '../config/reviewer.constants';
+import { REVIEWER_ROLE_SLUG } from '../config/auth.constants';
 import { APP_ROUTES } from '../config/routes';
 import { useCallerAccess } from '../features/access/caller-access';
 import { useCurrentUser, useSession } from '../features/auth';

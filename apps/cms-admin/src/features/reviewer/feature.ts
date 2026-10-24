@@ -1,4 +1,4 @@
-import { REVIEWER_SETTINGS_SUBJECT } from '../../config/reviewer.constants';
+import { REVIEWER_SETTINGS_SUBJECT } from './reviewer.constants';
 import { COPY } from '../../config/copy.constants';
 import { APP_ROUTES } from '../../config/routes';
 import { defineApiService, type Feature } from '../../lib/feature-definition';

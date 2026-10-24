@@ -30,6 +30,17 @@ const COPY_SIBLING_BAN = {
   message: 'A copy section file imports no other section; only common.copy.',
 };
 
+const FEATURE_CONSTANTS_BAN = {
+  group: ['**/features/*/*.constants'],
+  message:
+    'A feature constants file belongs to its feature; export what others need through its index.ts.',
+};
+const SIBLING_FEATURE_CONSTANTS_BAN = {
+  regex: '^\\.\\./[^./][^/]*/[^/]+\\.constants$',
+  message:
+    'A feature constants file belongs to its feature; export what others need through its index.ts.',
+};
+
 const importBoundary = (files, patterns, ignores = []) => ({
   files,
   ignores,
@@ -72,6 +83,7 @@ const featureOrderBoundary = (feature) => {
     WIRING_BAN,
     APP_BAN,
     API_CLIENT_BAN,
+    SIBLING_FEATURE_CONSTANTS_BAN,
     {
       regex: '^\\.\\./[^./][^/]*/',
       message: 'Import another feature through its index.ts, not a deep path.',
@@ -104,16 +116,17 @@ export default [
   { languageOptions: { globals: globals.browser } },
   importBoundary(
     ['src/**'],
-    [WIRING_BAN],
+    [WIRING_BAN, FEATURE_CONSTANTS_BAN],
     ['src/app/**', 'src/architecture.test.ts'],
   ),
   importBoundary(['src/features/**'], [WIRING_BAN, APP_BAN, API_CLIENT_BAN]),
+  importBoundary(['src/app/**'], [FEATURE_CONSTANTS_BAN]),
   importBoundary(['src/lib/**'], [WIRING_BAN, APP_BAN, FEATURES_BAN]),
   ...ALL_FEATURES.map(featureOrderBoundary),
   // Tests build a real client with createApiClient, so only they may reach lib/api-client.
   importBoundary(
     TEST_FILES.map((pattern) => `src/features/${pattern}`),
-    [WIRING_BAN, APP_BAN],
+    [WIRING_BAN, APP_BAN, SIBLING_FEATURE_CONSTANTS_BAN],
   ),
   {
     files: ['src/**'],

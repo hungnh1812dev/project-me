@@ -4,7 +4,7 @@ import {
   type BulkAction,
   DOCUMENT_STATUS,
   MASKED_FIELDS_KEY,
-} from '../../config/content.constants';
+} from './content.constants';
 import { API_ENDPOINTS } from '../../config/endpoints';
 import type { PageMeta } from '../../lib/api-types';
 import type { ContentType } from '../content-types';

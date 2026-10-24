@@ -1,6 +1,6 @@
 import { isAxiosError } from 'axios';
 
-import { BULK_ITEM_STATUS } from '../../config/content.constants';
+import { BULK_ITEM_STATUS } from './content.constants';
 import { COPY } from '../../config/copy.constants';
 import { API_ERROR_CODES, HTTP_STATUS } from '../../config/http.constants';
 import { apiFailureOf, rateLimitedMessage } from '../../lib/api-failure';

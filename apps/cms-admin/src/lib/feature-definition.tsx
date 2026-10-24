@@ -1,7 +1,7 @@
 import type { AxiosInstance } from 'axios';
 import type { ComponentType, ReactNode } from 'react';
 
-import type { PermissionAction } from '../config/access.constants';
+import type { PermissionAction } from './permission-action';
 import type { ApiProviderProps } from './create-api-context';
 
 export interface FeatureRoute {

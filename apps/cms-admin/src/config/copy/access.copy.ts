@@ -1,4 +1,4 @@
-import { ACCOUNT_LIMITS, API_TOKEN_LIMITS } from '../access.constants';
+import { ACCOUNT_LIMITS, API_TOKEN_LIMITS } from '../http.constants';
 
 export const ACCESS_COPY = {
   errors: {

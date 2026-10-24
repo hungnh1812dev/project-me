@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 
 import { FormAlert } from '@abyss/form-commons';
-import { PRESENCE_HEARTBEAT_MS } from '../../config/content.constants';
+import { PRESENCE_HEARTBEAT_MS } from './content.constants';
 import { COPY } from '../../config/copy.constants';
 import { useCurrentUser } from '../auth';
 import { useContentApi } from './content-api-context';

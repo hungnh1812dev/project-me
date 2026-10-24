@@ -1,5 +1,5 @@
 import { CV_PAGE_TYPE } from '../../../test/cv-page.fixture';
-import { ITEM_UID_KEY } from '../../config/content.constants';
+import { ITEM_UID_KEY } from './content.constants';
 import {
   emptyItem,
   type FormValues,

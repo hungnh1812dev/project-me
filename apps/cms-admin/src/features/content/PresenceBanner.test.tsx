@@ -8,7 +8,7 @@ import {
 } from '../../../test/render-app';
 import { CV_PAGE_TYPE } from '../../../test/cv-page.fixture';
 import { API_ENDPOINTS } from '../../config/endpoints';
-import { PRESENCE_HEARTBEAT_MS } from '../../config/content.constants';
+import { PRESENCE_HEARTBEAT_MS } from './content.constants';
 import { contentEditPath } from '../../config/routes';
 
 const { REFRESH, ME } = API_ENDPOINTS.AUTH;

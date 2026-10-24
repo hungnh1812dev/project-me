@@ -11,7 +11,7 @@ import {
 import type { ReactNode } from 'react';
 
 import { COPY } from '../../config/copy.constants';
-import { FIELD_TYPE, MASKED_VALUE } from '../../config/content.constants';
+import { FIELD_TYPE, MASKED_VALUE } from './content.constants';
 import { formatDateTime } from '../../lib/date-format';
 import { MediaField, mediaToApi, mediaToForm } from '../media';
 import {
