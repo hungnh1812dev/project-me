@@ -22,7 +22,7 @@ import {
   type ApiFailure,
   apiFailureOf,
   rateLimitedMessage,
-} from './api-failure';
+} from '../../lib/api-failure';
 import type { TwoFactorChallenge } from './auth.api';
 import { useSession } from './session-context';
 import { useEmailCode } from './use-email-code';

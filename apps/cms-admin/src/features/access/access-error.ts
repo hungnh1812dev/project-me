@@ -1,22 +1,15 @@
-import { isAxiosError } from 'axios';
-
 import { type FormAlertTone } from '@abyss/form-commons';
 import { COPY } from '../../config/copy.constants';
 import { API_ERROR_CODES, HTTP_STATUS } from '../../config/http.constants';
-import { apiFailureOf, rateLimitedMessage } from '../auth/api-failure';
+import {
+  type ApiIssue,
+  apiDetailsOf,
+  apiFailureOf,
+  apiIssuesOf,
+  rateLimitedMessage,
+} from '../../lib/api-failure';
 
 const copy = COPY.access;
-
-/** Field issues of a 400 answer; empty for any other failure. */
-export function apiIssuesOf(error: unknown): ApiIssue[] {
-  return issuesOf(detailsOf(error));
-}
-
-/** One issue of a 400 `details.issues` (paths name the request body). */
-export interface ApiIssue {
-  path: readonly (string | number)[];
-  message: string;
-}
 
 /** A failed accounts/roles call, reduced to what the pages branch on. */
 export interface AccessError {
@@ -28,30 +21,6 @@ export interface AccessError {
   issues: ApiIssue[];
   /** PERMISSION_NOT_HELD: indexes of the offending rows. */
   indexes: number[];
-}
-
-function detailsOf(error: unknown): Record<string, unknown> {
-  if (!isAxiosError(error)) return {};
-  const details = (error.response?.data as { details?: unknown } | null)
-    ?.details;
-  return typeof details === 'object' && details !== null
-    ? (details as Record<string, unknown>)
-    : {};
-}
-
-function issuesOf(details: Record<string, unknown>): ApiIssue[] {
-  const raw = details.issues;
-  if (!Array.isArray(raw)) return [];
-  return raw.flatMap((item: unknown) => {
-    if (typeof item !== 'object' || item === null) return [];
-    const { path, message } = item as { path?: unknown; message?: unknown };
-    if (!Array.isArray(path) || typeof message !== 'string') return [];
-    const parts = path.filter(
-      (part): part is string | number =>
-        typeof part === 'string' || typeof part === 'number',
-    );
-    return [{ path: parts, message }];
-  });
 }
 
 function indexesOf(details: Record<string, unknown>): number[] {
@@ -88,7 +57,7 @@ export function toAccessError(error: unknown): AccessError {
     case 'unexpected':
       return { ...base, tone: 'error', message: copy.errors.unexpected };
     case 'http': {
-      const details = detailsOf(error);
+      const details = apiDetailsOf(error);
       const known =
         failure.errorCode === undefined
           ? undefined
@@ -98,7 +67,7 @@ export function toAccessError(error: unknown): AccessError {
         status: failure.status,
         tone: 'error',
         message: known ?? copy.errors.unexpected,
-        issues: issuesOf(details),
+        issues: apiIssuesOf(error),
         indexes: indexesOf(details),
       };
     }

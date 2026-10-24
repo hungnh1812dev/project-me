@@ -1,6 +1,6 @@
 import { COPY } from '../../config/copy.constants';
 import { API_ERROR_CODES, HTTP_STATUS } from '../../config/http.constants';
-import { apiFailureOf, rateLimitedMessage } from '../auth/api-failure';
+import { apiFailureOf, rateLimitedMessage } from '../../lib/api-failure';
 
 const copy = COPY.media.errors;
 

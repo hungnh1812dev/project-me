@@ -93,3 +93,74 @@ test('a wrong password shows the invalid-credentials message as an alert', async
   ).toBeVisible();
   await expect(loginHeading(page)).toBeVisible();
 });
+
+const LOGIN_URL_PATTERN = '**/auth/login';
+const RETRY_AFTER_SECONDS = 30;
+const RETRY_AFTER_MINUTES = 3;
+const SECONDS_PER_MINUTE = 60;
+
+async function submitLogin(page: Page) {
+  await page.goto('/');
+  await page
+    .getByRole('textbox', { name: COPY.login.emailLabel })
+    .fill(e2eEnv.ownerEmail);
+  await page.getByLabel(COPY.login.passwordLabel).fill('any-password-1');
+  await page.getByRole('button', { name: COPY.login.submit }).click();
+}
+
+const loginAlert = (page: Page, text: string) =>
+  page.getByRole('alert').filter({ hasText: text });
+
+test('a rate-limited login names the wait from Retry-After, in seconds or minutes', async ({
+  page,
+}) => {
+  let retryAfter = String(RETRY_AFTER_SECONDS);
+  await page.route(LOGIN_URL_PATTERN, (route) =>
+    route.fulfill({
+      status: 429,
+      headers: {
+        'retry-after': retryAfter,
+        'access-control-expose-headers': 'Retry-After',
+      },
+      contentType: 'application/json',
+      body: JSON.stringify({ errorCode: 'RATE_LIMITED' }),
+    }),
+  );
+
+  await submitLogin(page);
+  await expect(
+    loginAlert(page, COPY.login.errors.rateLimitedSeconds(RETRY_AFTER_SECONDS)),
+  ).toBeVisible();
+
+  retryAfter = String(RETRY_AFTER_MINUTES * SECONDS_PER_MINUTE);
+  await page.getByLabel(COPY.login.passwordLabel).fill('any-password-1');
+  await page.getByRole('button', { name: COPY.login.submit }).click();
+  await expect(
+    loginAlert(page, COPY.login.errors.rateLimitedMinutes(RETRY_AFTER_MINUTES)),
+  ).toBeVisible();
+});
+
+test('a login that cannot reach the API shows the network message', async ({
+  page,
+}) => {
+  await page.route(LOGIN_URL_PATTERN, (route) => route.abort('failed'));
+  await submitLogin(page);
+  await expect(loginAlert(page, COPY.login.errors.network)).toBeVisible();
+  await expect(loginHeading(page)).toBeVisible();
+});
+
+test('any other 4xx on login shows the one generic invalid-credentials message', async ({
+  page,
+}) => {
+  await page.route(LOGIN_URL_PATTERN, (route) =>
+    route.fulfill({
+      status: 403,
+      contentType: 'application/json',
+      body: JSON.stringify({ errorCode: 'ACCOUNT_LOCKED' }),
+    }),
+  );
+  await submitLogin(page);
+  await expect(
+    loginAlert(page, COPY.login.errors.invalidCredentials),
+  ).toBeVisible();
+});

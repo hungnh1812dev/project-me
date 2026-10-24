@@ -1,7 +1,11 @@
 import { COPY } from '../../config/copy.constants';
 import { API_ERROR_CODES, HTTP_STATUS } from '../../config/http.constants';
-import { type ApiIssue, apiIssuesOf } from '../access/access-error';
-import { apiFailureOf, rateLimitedMessage } from './api-failure';
+import {
+  type ApiIssue,
+  apiFailureOf,
+  apiIssuesOf,
+  rateLimitedMessage,
+} from '../../lib/api-failure';
 
 /** A failed `POST /setup/owner`, reduced to what the setup page does next. */
 export type SetupError =

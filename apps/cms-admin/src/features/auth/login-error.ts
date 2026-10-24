@@ -2,6 +2,7 @@ import { isAxiosError } from 'axios';
 
 import { COPY } from '../../config/copy.constants';
 import { HTTP_STATUS, RETRY_AFTER_HEADER } from '../../config/http.constants';
+import { retryAfterSecondsOf } from '../../lib/api-failure';
 
 const SECONDS_PER_MINUTE = 60;
 
@@ -11,15 +12,6 @@ export type LoginErrorKind =
 export interface LoginError {
   kind: LoginErrorKind;
   message: string;
-}
-
-/** Whole seconds from a `Retry-After` header, or undefined when unusable. */
-export function retryAfterSecondsOf(retryAfter: unknown): number | undefined {
-  const seconds =
-    typeof retryAfter === 'string' && /^\d+$/.test(retryAfter.trim())
-      ? Number(retryAfter.trim())
-      : Number.NaN;
-  return Number.isFinite(seconds) && seconds > 0 ? seconds : undefined;
 }
 
 function rateLimitedMessage(retryAfter: unknown): string {

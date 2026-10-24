@@ -17,7 +17,7 @@ import {
   type TwoFactorMethod,
 } from '../../config/auth.constants';
 import { COPY } from '../../config/copy.constants';
-import { type ApiFailure, rateLimitedMessage } from '../auth/api-failure';
+import { type ApiFailure, rateLimitedMessage } from '../../lib/api-failure';
 import type { useEmailCode } from '../auth/use-email-code';
 import { toSecurityError } from './security-error';
 

@@ -6,7 +6,7 @@ import {
   HTTP_STATUS,
   RETRY_AFTER_HEADER,
 } from '../../config/http.constants';
-import { retryAfterSecondsOf } from './login-error';
+import { retryAfterSecondsOf } from '../../lib/api-failure';
 
 const SECONDS_PER_MINUTE = 60;
 
