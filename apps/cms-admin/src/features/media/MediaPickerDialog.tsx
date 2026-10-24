@@ -66,7 +66,7 @@ export function MediaPickerDialog({
           ) : (
             <LoadError
               message={COPY.media.loadFailed}
-              retrying={media.isFetching}
+              isRetrying={media.isFetching}
               onRetry={() => void media.refetch()}
             />
           )

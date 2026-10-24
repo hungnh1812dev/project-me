@@ -37,7 +37,7 @@ export type LoginOutcome =
 
 /**
  * Auth endpoints (SPEC §9). None of them goes through the refresh-and-retry
- * interceptor (`skipAuthRefresh`): a 401 here is the answer, not an expired
+ * interceptor (`shouldSkipAuthRefresh`): a 401 here is the answer, not an expired
  * token.
  */
 export function createAuthApi(client: AxiosInstance) {
@@ -45,7 +45,7 @@ export function createAuthApi(client: AxiosInstance) {
     async login(credentials: LoginCredentials): Promise<LoginOutcome> {
       const { data } = await client.post<
         AccessTokenResponse | TwoFactorRequiredResponse
-      >(API_ENDPOINTS.AUTH.LOGIN, credentials, { skipAuthRefresh: true });
+      >(API_ENDPOINTS.AUTH.LOGIN, credentials, { shouldSkipAuthRefresh: true });
       return 'requires2FA' in data
         ? {
             kind: 'two-factor-required',
@@ -60,7 +60,7 @@ export function createAuthApi(client: AxiosInstance) {
       const { data } = await client.post<AccessTokenResponse>(
         API_ENDPOINTS.TWO_FACTOR.VERIFY,
         input,
-        { skipAuthRefresh: true },
+        { shouldSkipAuthRefresh: true },
       );
       return data.accessToken;
     },
@@ -70,7 +70,7 @@ export function createAuthApi(client: AxiosInstance) {
       await client.post(
         API_ENDPOINTS.TWO_FACTOR.EMAIL_CHALLENGE,
         { tempToken },
-        { skipAuthRefresh: true },
+        { shouldSkipAuthRefresh: true },
       );
     },
 
@@ -79,14 +79,14 @@ export function createAuthApi(client: AxiosInstance) {
       const { data } = await client.post<AccessTokenResponse>(
         API_ENDPOINTS.AUTH.REFRESH,
         undefined,
-        { skipAuthRefresh: true },
+        { shouldSkipAuthRefresh: true },
       );
       return data.accessToken;
     },
 
     async logout(): Promise<void> {
       await client.post(API_ENDPOINTS.AUTH.LOGOUT, undefined, {
-        skipAuthRefresh: true,
+        shouldSkipAuthRefresh: true,
       });
     },
 

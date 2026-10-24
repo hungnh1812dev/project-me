@@ -33,7 +33,7 @@ export interface ConflictMergeModalProps {
   fields: readonly FieldNode[];
   /** Paths the form already knows are masked for this role. */
   formMasked: ReadonlySet<string>;
-  saving: boolean;
+  isSaving: boolean;
   /** A failed resubmit (not a new conflict), shown inside the modal. */
   error: string | null;
   /** Resubmit `tree` against `currentVersion`. */
@@ -57,7 +57,7 @@ function MergeDialog({
   details,
   fields,
   formMasked,
-  saving,
+  isSaving,
   error,
   onResolve,
   onUseSaved,
@@ -132,14 +132,14 @@ function MergeDialog({
         </div>
         <DialogFooter>
           <DialogClose asChild>
-            <Button type="button" disabled={saving}>
+            <Button type="button" disabled={isSaving}>
               {copy.cancel}
             </Button>
           </DialogClose>
           <Button
             type="button"
             variant="primary"
-            loading={saving}
+            loading={isSaving}
             onClick={() => {
               const tree = buildResolvedTree(details, entries, state, masked);
               if (tree.values === undefined && tree.components === undefined) {

@@ -167,12 +167,15 @@ export function BulkCreateDialog({
             className="grid gap-4"
             onSubmit={(event) =>
               void form.handleSubmit((values) => {
-                const result = parseImportText(values.payload);
-                if ('items' in result) {
+                const parsedImport = parseImportText(values.payload);
+                if ('items' in parsedImport) {
                   setAlert(null);
                   setProblems([]);
                   setPartial(null);
-                  run.mutate({ items: result.items, atomic: values.atomic });
+                  run.mutate({
+                    items: parsedImport.items,
+                    atomic: values.atomic,
+                  });
                 }
               })(event)
             }
@@ -207,8 +210,8 @@ export function BulkCreateDialog({
               rules={{
                 required: copy.empty,
                 validate: (value) => {
-                  const result = parseImportText(String(value));
-                  return 'error' in result ? result.error : true;
+                  const parsedImport = parseImportText(String(value));
+                  return 'error' in parsedImport ? parsedImport.error : true;
                 },
               }}
             />

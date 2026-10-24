@@ -33,7 +33,7 @@ export function RolesPage() {
         ) : (
           <LoadError
             message={copy.loadFailed}
-            retrying={roles.isFetching}
+            isRetrying={roles.isFetching}
             onRetry={() => void roles.refetch()}
           />
         )

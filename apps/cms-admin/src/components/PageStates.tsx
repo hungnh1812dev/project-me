@@ -59,16 +59,16 @@ export function TableSkeleton({ label }: { label: string }) {
 export function LoadError({
   message,
   onRetry,
-  retrying,
+  isRetrying,
 }: {
   message: string;
   onRetry: () => void;
-  retrying: boolean;
+  isRetrying: boolean;
 }) {
   return (
     <div className="grid justify-items-start gap-3">
       <FormAlert tone="error">{message}</FormAlert>
-      <Button type="button" loading={retrying} onClick={onRetry}>
+      <Button type="button" loading={isRetrying} onClick={onRetry}>
         {COPY.common.retry}
       </Button>
     </div>

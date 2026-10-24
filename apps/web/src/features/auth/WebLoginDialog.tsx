@@ -54,7 +54,7 @@ function LoginFlow({ onClose }: { onClose: () => void }) {
   const session = useWebSession();
   const [alert, setAlert] = useState<Alert | null>(null);
   const [challenge, setChallenge] = useState<TwoFactorChallenge | null>(null);
-  const [expired, setExpired] = useState(false);
+  const [hasExpired, setHasExpired] = useState(false);
 
   const form = useForm<LoginValues>({
     defaultValues: { email: '', password: '' },
@@ -83,13 +83,13 @@ function LoginFlow({ onClose }: { onClose: () => void }) {
     form.setFocus('password');
   }, [form]);
   const expireChallenge = useCallback(() => {
-    setExpired(true);
+    setHasExpired(true);
     closeChallenge();
   }, [closeChallenge]);
 
   const onSubmit = form.handleSubmit((values) => {
     setAlert(null);
-    setExpired(false);
+    setHasExpired(false);
     signIn.mutate({ email: values.email.trim(), password: values.password });
   });
 
@@ -124,7 +124,7 @@ function LoginFlow({ onClose }: { onClose: () => void }) {
           onSubmit={(event) => void onSubmit(event)}
           className="grid gap-4"
         >
-          {expired ? (
+          {hasExpired ? (
             <FormAlert tone="info">{copy.twoFactor.expired}</FormAlert>
           ) : null}
           {alert !== null ? (

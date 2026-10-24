@@ -77,7 +77,7 @@ export function DocumentEditPage() {
         ) : (
           <LoadError
             message={copy.loadFailed}
-            retrying={failed.isFetching}
+            isRetrying={failed.isFetching}
             onRetry={() => void failed.refetch()}
           />
         )}
@@ -261,7 +261,7 @@ function DocumentForm({
           details={conflict}
           fields={fields}
           formMasked={masked}
-          saving={resolve.isPending}
+          isSaving={resolve.isPending}
           error={mergeError}
           onResolve={(tree, version) => resolve.mutate({ tree, version })}
           onUseSaved={() => {

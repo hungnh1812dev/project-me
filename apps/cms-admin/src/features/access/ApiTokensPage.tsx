@@ -48,8 +48,8 @@ export function ApiTokensPage() {
   const headingRef = useRef<HTMLDivElement>(null);
   const { rememberOpener, restoreFocus } = useRestoreFocus(headingRef);
 
-  const canCreate = caller.ready && caller.can('api_tokens', 'create');
-  const canChange = caller.ready && caller.can('api_tokens', 'update');
+  const canCreate = caller.isReady && caller.can('api_tokens', 'create');
+  const canChange = caller.isReady && caller.can('api_tokens', 'update');
 
   const meta = tokens.data?.meta;
   const lastPage = useClampedPage(page, setPage, meta);
@@ -132,7 +132,7 @@ export function ApiTokensPage() {
         ) : (
           <LoadError
             message={copy.loadFailed}
-            retrying={tokens.isFetching}
+            isRetrying={tokens.isFetching}
             onRetry={() => void tokens.refetch()}
           />
         )

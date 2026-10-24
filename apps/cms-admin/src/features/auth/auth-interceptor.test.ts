@@ -124,7 +124,7 @@ describe('installAuthInterceptor', () => {
       const { api, client, refreshRuns, onSessionExpired } = setup();
       api.handlers[`POST ${path}`] = () => ({ status: 401 });
       await expect(
-        client.post(path, undefined, { skipAuthRefresh: true }),
+        client.post(path, undefined, { shouldSkipAuthRefresh: true }),
       ).rejects.toMatchObject({ response: { status: 401 } });
       expect(api.calls).toHaveLength(1);
       expect(api.calls[0]?.headers.get('Authorization')).toBeUndefined();

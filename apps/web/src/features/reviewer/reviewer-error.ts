@@ -16,20 +16,23 @@ function ipLimitedMessage(seconds: number | undefined): string {
 
 export interface ReviewerAlert extends Alert {
   /** The Turnstile token was spent or rejected: ask for a new challenge. */
-  resetChallenge: boolean;
+  shouldResetChallenge: boolean;
 }
 
 /** A failed `POST /reviewer/sessions` -> the alert above the dialog's form. */
 export function reviewerAlertOf(failure: ApiFailure): ReviewerAlert {
-  const warn = (message: string, resetChallenge = true): ReviewerAlert => ({
+  const warn = (
+    message: string,
+    shouldResetChallenge = true,
+  ): ReviewerAlert => ({
     tone: 'warning',
     message,
-    resetChallenge,
+    shouldResetChallenge,
   });
   const fail = (message: string): ReviewerAlert => ({
     tone: 'error',
     message,
-    resetChallenge: true,
+    shouldResetChallenge: true,
   });
   switch (failure.kind) {
     case 'rate-limited':

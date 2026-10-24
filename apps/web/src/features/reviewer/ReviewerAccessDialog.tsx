@@ -126,7 +126,7 @@ function ReviewerFlow({
   const [token, setToken] = useState<string | null>(null);
   const [tokenError, setTokenError] = useState<string | null>(null);
   const [challengeKey, setChallengeKey] = useState(0);
-  const [scriptFailed, setScriptFailed] = useState(false);
+  const [hasScriptFailed, setHasScriptFailed] = useState(false);
 
   const form = useForm<ReviewerFormValues>({
     defaultValues: DEFAULT_VALUES,
@@ -134,7 +134,7 @@ function ReviewerFlow({
     shouldUnregister: false,
   });
   const role = useWatch({ control: form.control, name: 'role' });
-  const otherPurpose = useWatch({
+  const isOtherPurposeChecked = useWatch({
     control: form.control,
     name: 'purposeOtherChecked',
   });
@@ -152,7 +152,7 @@ function ReviewerFlow({
     onError: (cause) => {
       const next = reviewerAlertOf(apiFailureOf(cause));
       setAlert(next);
-      if (next.resetChallenge) {
+      if (next.shouldResetChallenge) {
         // A Turnstile token works once.
         setToken(null);
         setChallengeKey((key) => key + 1);
@@ -245,7 +245,7 @@ function ReviewerFlow({
               name="purposeOtherChecked"
               label={copy.purposes.other}
             />
-            {otherPurpose ? (
+            {isOtherPurposeChecked ? (
               <TextInput<ReviewerFormValues>
                 name="purposeOther"
                 label={copy.purposes.otherLabel}
@@ -279,8 +279,8 @@ function ReviewerFlow({
                 <TurnstileWidget
                   siteKey={siteKey}
                   key={challengeKey}
-                  failed={scriptFailed}
-                  onFailed={() => setScriptFailed(true)}
+                  hasScriptFailed={hasScriptFailed}
+                  onFailed={() => setHasScriptFailed(true)}
                   onToken={(value) => {
                     setToken(value);
                     setTokenError(null);

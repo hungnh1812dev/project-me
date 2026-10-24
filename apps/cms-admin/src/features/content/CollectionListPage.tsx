@@ -92,8 +92,8 @@ export function CollectionListPage() {
   });
   const [selected, setSelected] = useState<ReadonlySet<string>>(new Set());
   const [banner, setBanner] = useState<Banner | null>(null);
-  const [confirmingDelete, setConfirmingDelete] = useState(false);
-  const [importing, setImporting] = useState(false);
+  const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
   // Controlled dialogs have no trigger, so Radix cannot restore focus itself.
   const { rememberOpener, restoreFocus } = useRestoreFocus();
 
@@ -113,7 +113,7 @@ export function CollectionListPage() {
   );
 
   const can = (action: PermissionAction) =>
-    caller.ready &&
+    caller.isReady &&
     (caller.can(slug, action) || caller.can(CONTENT_WILDCARD_SUBJECT, action));
   const canCreate = can('create');
   const canPublish = draftAndPublish && can('publish');
@@ -274,7 +274,7 @@ export function CollectionListPage() {
             loading: inFlight === BULK_ACTION.DELETE,
             onClick: () => {
               rememberOpener(document.activeElement);
-              setConfirmingDelete(true);
+              setIsConfirmingDelete(true);
             },
           },
         ]
@@ -298,7 +298,7 @@ export function CollectionListPage() {
               onClick={(event) => {
                 rememberOpener(event.currentTarget);
                 setBanner(null);
-                setImporting(true);
+                setIsImporting(true);
               }}
             >
               {bulkCopy.import}
@@ -329,7 +329,7 @@ export function CollectionListPage() {
         ) : (
           <LoadError
             message={list.loadFailed}
-            retrying={type.isFetching}
+            isRetrying={type.isFetching}
             onRetry={() => void type.refetch()}
           />
         )}
@@ -397,7 +397,7 @@ export function CollectionListPage() {
         ) : (
           <LoadError
             message={list.loadFailed}
-            retrying={documents.isFetching}
+            isRetrying={documents.isFetching}
             onRetry={() => void documents.refetch()}
           />
         )
@@ -468,20 +468,20 @@ export function CollectionListPage() {
         onCloseAutoFocus={restoreFocus}
         count={selectedRows.length}
         draftAndPublish={draftAndPublish}
-        open={confirmingDelete}
-        onClose={() => setConfirmingDelete(false)}
+        open={isConfirmingDelete}
+        onClose={() => setIsConfirmingDelete(false)}
         onConfirm={() => {
-          setConfirmingDelete(false);
+          setIsConfirmingDelete(false);
           start(BULK_ACTION.DELETE);
         }}
       />
       <BulkCreateDialog
         onCloseAutoFocus={restoreFocus}
         slug={slug}
-        open={importing}
-        onClose={() => setImporting(false)}
+        open={isImporting}
+        onClose={() => setIsImporting(false)}
         onImported={(count) => {
-          setImporting(false);
+          setIsImporting(false);
           setPage(1);
           setSort({ key: LIST_UPDATED_KEY, direction: 'desc' });
           setBanner({ kind: 'imported', count });

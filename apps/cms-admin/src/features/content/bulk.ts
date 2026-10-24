@@ -36,9 +36,9 @@ export interface BulkFailure {
 
 function atomicIndexOf(error: unknown): number | undefined {
   if (!isAxiosError(error)) return undefined;
-  const data = error.response?.data as
+  const responseBody = error.response?.data as
     { details?: { index?: unknown } } | undefined;
-  const index = data?.details?.index;
+  const index = responseBody?.details?.index;
   return typeof index === 'number' && Number.isInteger(index) && index >= 0
     ? index
     : undefined;

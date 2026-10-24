@@ -11,8 +11,8 @@ function pad(value: number): string {
 /** Local end of the chosen day, or null when `date` is not `YYYY-MM-DD`. */
 export function endOfDay(date: string): Date | null {
   if (!DATE_PATTERN.test(date)) return null;
-  const result = new Date(`${date}T${END_OF_DAY_TIME}`);
-  return Number.isNaN(result.getTime()) ? null : result;
+  const endOfDayDate = new Date(`${date}T${END_OF_DAY_TIME}`);
+  return Number.isNaN(endOfDayDate.getTime()) ? null : endOfDayDate;
 }
 
 /** ISO 8601 (with offset) for the API, or null for an invalid date. */

@@ -23,14 +23,14 @@ export function createSetupApi(client: AxiosInstance) {
     getSetupStatus: async (): Promise<SetupStatus> => {
       const { data } = await client.get<SetupStatus>(
         API_ENDPOINTS.SETUP.STATUS,
-        { skipAuthRefresh: true },
+        { shouldSkipAuthRefresh: true },
       );
       return data;
     },
 
     createOwner: async (input: CreateOwnerInput): Promise<void> => {
       await client.post(API_ENDPOINTS.SETUP.OWNER, input, {
-        skipAuthRefresh: true,
+        shouldSkipAuthRefresh: true,
       });
     },
   };

@@ -315,7 +315,7 @@ function TokenFormBody({
             {contentTypes.isError ? (
               <LoadError
                 message={COPY.access.role.contentTypesFailed}
-                retrying={contentTypes.isFetching}
+                isRetrying={contentTypes.isFetching}
                 onRetry={() => void contentTypes.refetch()}
               />
             ) : (

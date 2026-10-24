@@ -30,7 +30,7 @@ describe('useEmailCode cooldown', () => {
       .fn<() => Promise<void>>()
       .mockRejectedValue(rateLimitedWith(String(retryAfterSeconds)));
     const hook = renderHook(() => useEmailCode(send), { wrapper });
-    await waitFor(() => expect(hook.result.current.coolingDown).toBe(true));
+    await waitFor(() => expect(hook.result.current.isCoolingDown).toBe(true));
     return hook;
   }
 
@@ -41,13 +41,13 @@ describe('useEmailCode cooldown', () => {
     vi.useFakeTimers({ shouldAdvanceTime: true });
     const { result } = await renderRateLimited(HUGE_RETRY_AFTER_SECONDS);
     await act(() => vi.advanceTimersByTimeAsync(MS_PER_SECOND));
-    expect(result.current.coolingDown).toBe(true);
+    expect(result.current.isCoolingDown).toBe(true);
   });
 
   it('releases the resend after a normal Retry-After', async () => {
     vi.useFakeTimers({ shouldAdvanceTime: true });
     const { result } = await renderRateLimited(2);
     await act(() => vi.advanceTimersByTimeAsync(2 * MS_PER_SECOND));
-    expect(result.current.coolingDown).toBe(false);
+    expect(result.current.isCoolingDown).toBe(false);
   });
 });

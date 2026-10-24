@@ -1,5 +1,5 @@
 import { MASKED_FIELDS_KEY } from './content.constants';
-import { conflictDetails, UID_A, UID_B } from './merge.test-data';
+import { conflictDetails, UID_A, UID_B } from '../../../test/merge.fixture';
 import {
   INITIAL_MERGE_STATE,
   isMaskedPath,

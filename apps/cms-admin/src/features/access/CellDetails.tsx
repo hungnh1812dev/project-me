@@ -90,8 +90,8 @@ export function CellDetails({
               actionLabel={actionLabel}
               text={cell.conditionsText}
               disabled={!editable}
-              invalidJson={badJson}
-              forceOpen={badJson || messages.length > 0}
+              isJsonInvalid={badJson}
+              shouldForceOpen={badJson || messages.length > 0}
               onChange={(text) =>
                 onChange((current) => setConditionsText(current, ref, text))
               }
@@ -119,15 +119,15 @@ function ConditionsEditor({
   actionLabel,
   text,
   disabled,
-  invalidJson,
-  forceOpen,
+  isJsonInvalid,
+  shouldForceOpen,
   onChange,
 }: {
   actionLabel: string;
   text: string;
   disabled: boolean;
-  invalidJson: boolean;
-  forceOpen: boolean;
+  isJsonInvalid: boolean;
+  shouldForceOpen: boolean;
   onChange: (text: string) => void;
 }) {
   const id = useId();
@@ -136,7 +136,7 @@ function ConditionsEditor({
   return (
     <details
       className="group rounded-md border border-border bg-card"
-      open={forceOpen || text.trim() !== '' ? true : undefined}
+      open={shouldForceOpen || text.trim() !== '' ? true : undefined}
     >
       <summary className="cursor-pointer rounded-md px-3 py-2 text-sm font-medium outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50">
         {copy.conditions.summary(actionLabel)}
@@ -151,15 +151,15 @@ function ConditionsEditor({
           disabled={disabled}
           spellCheck={false}
           rows={4}
-          aria-invalid={invalidJson || undefined}
-          aria-describedby={invalidJson ? `${hintId} ${errorId}` : hintId}
+          aria-invalid={isJsonInvalid || undefined}
+          aria-describedby={isJsonInvalid ? `${hintId} ${errorId}` : hintId}
           onChange={(event) => onChange(event.target.value)}
           className="font-mono text-sm"
         />
         <p id={hintId} className="m-0 text-sm text-muted-foreground">
           {copy.conditions.hint}
         </p>
-        {invalidJson ? (
+        {isJsonInvalid ? (
           <p id={errorId} className="m-0 text-sm text-destructive-strong">
             {copy.conditions.invalidJson}
           </p>

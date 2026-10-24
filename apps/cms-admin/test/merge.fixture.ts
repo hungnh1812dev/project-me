@@ -1,4 +1,7 @@
-import type { ConflictDetails, ConflictItem } from './conflict';
+import type {
+  ConflictDetails,
+  ConflictItem,
+} from '../src/features/content/conflict';
 
 export const UID_A = '00000000-0000-4000-8000-00000000000a';
 export const UID_B = '00000000-0000-4000-8000-00000000000b';

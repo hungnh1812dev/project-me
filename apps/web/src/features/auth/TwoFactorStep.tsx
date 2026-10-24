@@ -150,7 +150,7 @@ function CodeForm({
       ? alertOf(email.failure)
       : null;
   const shown = alert ?? (sendAlert === 'expired' ? null : sendAlert);
-  const resent = method === 'email' && email.sentCount > 1 && shown === null;
+  const wasResent = method === 'email' && email.sentCount > 1 && shown === null;
 
   return (
     <FormProvider {...form}>
@@ -168,7 +168,7 @@ function CodeForm({
         {shown !== null ? (
           <FormAlert tone={shown.tone}>{shown.message}</FormAlert>
         ) : null}
-        {resent ? <FormAlert tone="info">{copy.resent}</FormAlert> : null}
+        {wasResent ? <FormAlert tone="info">{copy.resent}</FormAlert> : null}
         <TextInput<CodeValues>
           name="code"
           label={method === 'email' ? copy.emailLabel : copy.totpLabel}
@@ -191,7 +191,7 @@ function CodeForm({
               variant="link"
               className="h-auto px-0"
               loading={email.isSending}
-              disabled={email.coolingDown}
+              disabled={email.isCoolingDown}
               onClick={email.resend}
             >
               {copy.resend}

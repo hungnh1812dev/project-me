@@ -63,7 +63,7 @@ export function ReviewerSessionsPage() {
         ) : (
           <LoadError
             message={copy.loadFailed}
-            retrying={sessions.isFetching}
+            isRetrying={sessions.isFetching}
             onRetry={() => void sessions.refetch()}
           />
         )
@@ -177,7 +177,7 @@ function AccessSwitch() {
   const [failed, setFailed] = useState<string | null>(null);
 
   const canChange =
-    caller.ready && caller.can(REVIEWER_SETTINGS_SUBJECT, 'update');
+    caller.isReady && caller.can(REVIEWER_SETTINGS_SUBJECT, 'update');
 
   const change = useMutation({
     mutationFn: api.setEnabled,
@@ -207,7 +207,7 @@ function AccessSwitch() {
     return (
       <LoadError
         message={copy.switch.loadFailed}
-        retrying={enabled.isFetching}
+        isRetrying={enabled.isFetching}
         onRetry={() => void enabled.refetch()}
       />
     );

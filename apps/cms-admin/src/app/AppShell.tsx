@@ -16,9 +16,9 @@ const NAV_ITEMS = FEATURE_LIST.flatMap((feature) => feature.navItems ?? []);
 export function AppShell() {
   const user = useCurrentUser();
   const session = useSession();
-  const [signingOut, setSigningOut] = useState(false);
+  const [isSigningOut, setIsSigningOut] = useState(false);
   const caller = useCallerAccess();
-  const visibleNavItems = caller.ready
+  const visibleNavItems = caller.isReady
     ? NAV_ITEMS.filter((item) => caller.can(item.subject, item.action))
     : [];
   const isReviewer = user?.role === REVIEWER_ROLE_SLUG;
@@ -62,9 +62,9 @@ export function AppShell() {
             )}
             <Button
               size="sm"
-              loading={signingOut}
+              loading={isSigningOut}
               onClick={() => {
-                setSigningOut(true);
+                setIsSigningOut(true);
                 // The session ends either way; this component then unmounts.
                 void session.signOut();
               }}

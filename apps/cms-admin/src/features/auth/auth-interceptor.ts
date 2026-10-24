@@ -12,7 +12,7 @@ declare module 'axios' {
      * Auth endpoints (login, refresh, logout): no Bearer header, and a 401 is
      * returned as is, never refreshed and retried.
      */
-    skipAuthRefresh?: boolean;
+    shouldSkipAuthRefresh?: boolean;
   }
 }
 
@@ -22,7 +22,7 @@ interface AuthRequestConfig extends InternalAxiosRequestConfig {
   /** Access token this attempt was sent with. */
   authToken?: string | null;
   /** Set on the one retry after a refresh, so a request never loops. */
-  authRetried?: boolean;
+  wasAuthRetried?: boolean;
 }
 
 export interface AuthInterceptorOptions {
@@ -47,7 +47,7 @@ export function installAuthInterceptor(
 ): () => void {
   const requestId = client.interceptors.request.use((config) => {
     const authConfig = config as AuthRequestConfig;
-    if (authConfig.skipAuthRefresh === true) return authConfig;
+    if (authConfig.shouldSkipAuthRefresh === true) return authConfig;
     const token = options.getAccessToken();
     authConfig.authToken = token;
     if (token !== null) {
@@ -66,8 +66,9 @@ export function installAuthInterceptor(
         throw error;
       }
       const config = error.config as AuthRequestConfig | undefined;
-      if (config === undefined || config.skipAuthRefresh === true) throw error;
-      if (config.authRetried === true) {
+      if (config === undefined || config.shouldSkipAuthRefresh === true)
+        throw error;
+      if (config.wasAuthRetried === true) {
         options.onSessionExpired();
         throw error;
       }
@@ -81,7 +82,7 @@ export function installAuthInterceptor(
           throw error;
         }
       }
-      config.authRetried = true;
+      config.wasAuthRetried = true;
       return client.request(config);
     },
   );

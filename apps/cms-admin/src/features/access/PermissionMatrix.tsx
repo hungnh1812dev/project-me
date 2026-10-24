@@ -68,7 +68,7 @@ export function PermissionMatrix(props: PermissionMatrixProps) {
         description={copy.contentDescription}
         subjects={order.content}
         known={known}
-        withDetails
+        showsDetails
       />
       <MatrixSection
         {...props}
@@ -76,7 +76,7 @@ export function PermissionMatrix(props: PermissionMatrixProps) {
         description={copy.systemDescription}
         subjects={order.system}
         known={known}
-        withDetails={false}
+        showsDetails={false}
         footnote={
           props.editable && anyNotGrantable ? copy.notHeldHint : undefined
         }
@@ -90,7 +90,7 @@ function MatrixSection({
   description,
   subjects,
   known,
-  withDetails,
+  showsDetails,
   footnote,
   ...props
 }: PermissionMatrixProps & {
@@ -98,7 +98,7 @@ function MatrixSection({
   description: string;
   subjects: readonly string[];
   known: ReadonlySet<string>;
-  withDetails: boolean;
+  showsDetails: boolean;
   footnote?: string | undefined;
 }) {
   const [open, setOpen] = useState<ReadonlySet<string>>(new Set());
@@ -135,7 +135,7 @@ function MatrixSection({
                   {copy.actions[action]}
                 </th>
               ))}
-              {withDetails ? (
+              {showsDetails ? (
                 <th scope="col" className="px-3 py-2">
                   <span className="sr-only">{copy.details}</span>
                 </th>
@@ -188,7 +188,7 @@ function MatrixSection({
                         )}
                       </td>
                     ))}
-                    {withDetails ? (
+                    {showsDetails ? (
                       <td className="px-3 py-2 text-right">
                         <Button
                           type="button"
@@ -207,7 +207,7 @@ function MatrixSection({
                       </td>
                     ) : null}
                   </tr>
-                  {withDetails && (isOpen || rowErrors) ? (
+                  {showsDetails && (isOpen || rowErrors) ? (
                     <tr id={detailsId} className="border-t border-border">
                       <td
                         colSpan={PERMISSION_ACTIONS.length + 2}
@@ -230,7 +230,7 @@ function MatrixSection({
           </tbody>
         </table>
       </div>
-      {withDetails ? null : (
+      {showsDetails ? null : (
         <SystemErrors errors={props.errors} subjects={subjects} known={known} />
       )}
       {footnote === undefined ? null : (

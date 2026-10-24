@@ -17,7 +17,7 @@ export function useEmailCode(
 ) {
   const [sentCount, setSentCount] = useState(0);
   const [failure, setFailure] = useState<ApiFailure | null>(null);
-  const [coolingDown, setCoolingDown] = useState(false);
+  const [isCoolingDown, setIsCoolingDown] = useState(false);
   const autoSent = useRef(false);
   const cooldownTimer = useRef<ReturnType<typeof setTimeout> | undefined>(
     undefined,
@@ -35,10 +35,10 @@ export function useEmailCode(
         mapped.kind === 'rate-limited' &&
         mapped.retryAfterSeconds !== undefined
       ) {
-        setCoolingDown(true);
+        setIsCoolingDown(true);
         clearTimeout(cooldownTimer.current);
         cooldownTimer.current = setTimeout(
-          () => setCoolingDown(false),
+          () => setIsCoolingDown(false),
           Math.min(
             mapped.retryAfterSeconds * MS_PER_SECOND,
             MAX_TIMER_DELAY_MS,
@@ -63,6 +63,6 @@ export function useEmailCode(
     /** Successful sends so far (1 after the automatic one). */
     sentCount,
     failure,
-    coolingDown,
+    isCoolingDown,
   };
 }

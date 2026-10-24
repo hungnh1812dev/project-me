@@ -56,8 +56,8 @@ export function AccountsPage() {
   const headingRef = useRef<HTMLDivElement>(null);
   const { rememberOpener, restoreFocus } = useRestoreFocus(headingRef);
 
-  const canInvite = caller.ready && caller.can('accounts', 'create');
-  const canDisable = caller.ready && caller.can('accounts', 'update');
+  const canInvite = caller.isReady && caller.can('accounts', 'create');
+  const canDisable = caller.isReady && caller.can('accounts', 'update');
   const showActions = canDisable || canInvite;
 
   const meta = accounts.data?.meta;
@@ -130,7 +130,7 @@ export function AccountsPage() {
         ) : (
           <LoadError
             message={copy.loadFailed}
-            retrying={accounts.isFetching}
+            isRetrying={accounts.isFetching}
             onRetry={() => void accounts.refetch()}
           />
         )

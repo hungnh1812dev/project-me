@@ -26,19 +26,19 @@ export function createPasswordApi(client: AxiosInstance) {
       await client.post(
         API_ENDPOINTS.PASSWORD.REQUEST_OTP,
         { email },
-        { skipAuthRefresh: true },
+        { shouldSkipAuthRefresh: true },
       );
     },
 
     reset: async (input: ResetPasswordInput): Promise<void> => {
       await client.post(API_ENDPOINTS.PASSWORD.RESET, input, {
-        skipAuthRefresh: true,
+        shouldSkipAuthRefresh: true,
       });
     },
 
     setPassword: async (input: SetPasswordInput): Promise<void> => {
       await client.post(API_ENDPOINTS.PASSWORD.SET, input, {
-        skipAuthRefresh: true,
+        shouldSkipAuthRefresh: true,
       });
     },
   };

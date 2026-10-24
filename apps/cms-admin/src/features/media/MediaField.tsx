@@ -23,8 +23,8 @@ export function MediaField({ name, label }: { name: string; label: string }) {
   const [picking, setPicking] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
 
-  const canRead = caller.ready && caller.can(MEDIA_SUBJECT, 'read');
-  const canCreate = caller.ready && caller.can(MEDIA_SUBJECT, 'create');
+  const canRead = caller.isReady && caller.can(MEDIA_SUBJECT, 'read');
+  const canCreate = caller.isReady && caller.can(MEDIA_SUBJECT, 'create');
 
   const upload = useMutation({
     mutationFn: (file: File) => api.upload(file),

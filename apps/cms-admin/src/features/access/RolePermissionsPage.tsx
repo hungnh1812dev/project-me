@@ -69,7 +69,7 @@ export function RolePermissionsPage() {
                 : copy.roles.loadFailed
               : copy.role.contentTypesFailed
           }
-          retrying={roles.isFetching || contentTypes.isFetching}
+          isRetrying={roles.isFetching || contentTypes.isFetching}
           onRetry={() => {
             if (failedRoles) void roles.refetch();
             else void contentTypes.refetch();

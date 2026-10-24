@@ -16,14 +16,14 @@ const copy = COPY.reviewer.turnstile;
  */
 export function TurnstileWidget({
   siteKey,
-  failed,
+  hasScriptFailed,
   onFailed,
   onToken,
   onExpired,
 }: {
   siteKey: string;
   /** Held by the parent so it survives a remount (Back and Next). */
-  failed: boolean;
+  hasScriptFailed: boolean;
   onFailed: () => void;
   onToken: (token: string) => void;
   onExpired: () => void;
@@ -63,7 +63,7 @@ export function TurnstileWidget({
         onError={onFailed}
       />
       <div ref={container} className="min-h-16" />
-      {failed ? (
+      {hasScriptFailed ? (
         <p role="alert" className="text-sm text-destructive-strong">
           {copy.failed}
         </p>

@@ -48,9 +48,9 @@ export function MediaLibraryPage() {
   const { rememberOpener, restoreFocus } = useRestoreFocus(headingRef);
   const fileInput = useRef<HTMLInputElement>(null);
 
-  const canCreate = caller.ready && caller.can(MEDIA_SUBJECT, 'create');
-  const canUpdate = caller.ready && caller.can(MEDIA_SUBJECT, 'update');
-  const canDelete = caller.ready && caller.can(MEDIA_SUBJECT, 'delete');
+  const canCreate = caller.isReady && caller.can(MEDIA_SUBJECT, 'create');
+  const canUpdate = caller.isReady && caller.can(MEDIA_SUBJECT, 'update');
+  const canDelete = caller.isReady && caller.can(MEDIA_SUBJECT, 'delete');
 
   useClampedPage(page, setPage, media.data?.meta);
 
@@ -131,7 +131,7 @@ export function MediaLibraryPage() {
         ) : (
           <LoadError
             message={copy.loadFailed}
-            retrying={media.isFetching}
+            isRetrying={media.isFetching}
             onRetry={() => void media.refetch()}
           />
         )

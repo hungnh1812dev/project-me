@@ -203,7 +203,7 @@ export function serializeMatrix(
   state: MatrixState,
   order: readonly string[],
 ): SerializedMatrix {
-  const result: SerializedMatrix = {
+  const serialized: SerializedMatrix = {
     rows: [],
     cells: [],
     invalidConditions: [],
@@ -218,16 +218,16 @@ export function serializeMatrix(
       if (cell === undefined) continue;
       const ref = { subject, action };
       const parsed = parseConditions(cell.conditionsText);
-      if (!parsed.ok) result.invalidConditions.push(ref);
+      if (!parsed.ok) serialized.invalidConditions.push(ref);
       cell.rows.forEach((row, index) => {
-        result.rows.push(
+        serialized.rows.push(
           index === 0 && parsed.ok ? { ...row, conditions: parsed.value } : row,
         );
-        result.cells.push(ref);
+        serialized.cells.push(ref);
       });
     }
   }
-  return result;
+  return serialized;
 }
 
 /** Same grants as `rows`? Used for the unsaved-changes state. */

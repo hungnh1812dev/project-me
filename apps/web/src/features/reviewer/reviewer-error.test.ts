@@ -10,11 +10,11 @@ describe('reviewerAlertOf', () => {
     ['REVIEWER_TURNSTILE_FAILED', errors.turnstileFailed, true],
     ['REVIEWER_IP_LIMITED', errors.ipLimited, true],
     ['REVIEWER_CAPACITY_REACHED', errors.capacity, true],
-  ])('%s', (errorCode, message, resetChallenge) => {
+  ])('%s', (errorCode, message, shouldResetChallenge) => {
     expect(reviewerAlertOf({ kind: 'http', status: 403, errorCode })).toEqual({
       tone: 'warning',
       message,
-      resetChallenge,
+      shouldResetChallenge,
     });
   });
 

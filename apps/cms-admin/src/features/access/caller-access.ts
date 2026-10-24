@@ -10,7 +10,7 @@ import { useRolesQuery } from './access-queries';
  */
 export interface CallerAccess {
   /** False until the roles answer is in (nothing is shown meanwhile). */
-  ready: boolean;
+  isReady: boolean;
   isOwner: boolean;
   can: (subject: string, action: PermissionAction) => boolean;
 }
@@ -25,7 +25,7 @@ const EVERYTHING: CallerAccess['can'] = () => true;
 export function callerAccessOf(
   roleSlug: string | undefined,
   roles: readonly Role[] | undefined,
-): Omit<CallerAccess, 'ready'> {
+): Omit<CallerAccess, 'isReady'> {
   if (roleSlug === OWNER_ROLE_SLUG) return { isOwner: true, can: EVERYTHING };
   const own = roles?.find((role) => role.slug === roleSlug);
   if (own === undefined) return { isOwner: false, can: NOTHING };
@@ -43,7 +43,7 @@ export function useCallerAccess(): CallerAccess {
   const roles = useRolesQuery();
   const isOwner = user?.role === OWNER_ROLE_SLUG;
   return {
-    ready: isOwner || !roles.isPending,
+    isReady: isOwner || !roles.isPending,
     ...callerAccessOf(user?.role, roles.data),
   };
 }
