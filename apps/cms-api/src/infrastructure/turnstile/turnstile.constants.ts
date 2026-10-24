@@ -7,9 +7,6 @@ export const TURNSTILE_SITEVERIFY_URL =
 /** Verification must not hold a request open longer than this. */
 export const TURNSTILE_TIMEOUT_MS = 5 * MS_PER_SECOND;
 
-/** Cloudflare documents response tokens of at most 2048 characters. */
-export const TURNSTILE_TOKEN_MAX_LENGTH = 2_048;
-
 /** Form fields of the siteverify request. */
 export const TURNSTILE_FIELDS = {
   SECRET: 'secret',

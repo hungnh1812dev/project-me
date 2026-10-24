@@ -28,6 +28,21 @@ export interface CloudinaryClient {
   thumbnailUrl(publicId: string): string;
 }
 
+/** Options of every upload: fixed id, never overwrite, no name guessing. */
+export function cloudinaryUploadOptions(
+  publicId: string,
+  resourceType: ResourceType,
+) {
+  return {
+    public_id: publicId,
+    resource_type: resourceType,
+    type: 'upload',
+    overwrite: false,
+    use_filename: false,
+    unique_filename: false,
+  } as const;
+}
+
 /** SDK-backed client. Credentials come from the validated config only. */
 export function createCloudinaryClient(
   config: CloudinaryConfig,
@@ -42,14 +57,7 @@ export function createCloudinaryClient(
     uploadStream: (publicId, resourceType, body) =>
       new Promise((resolve, reject) => {
         const sink = cloudinary.uploader.upload_stream(
-          {
-            public_id: publicId,
-            resource_type: resourceType,
-            type: 'upload',
-            overwrite: false,
-            use_filename: false,
-            unique_filename: false,
-          },
+          cloudinaryUploadOptions(publicId, resourceType),
           (error, result) => {
             if (error !== undefined || result === undefined) {
               reject(

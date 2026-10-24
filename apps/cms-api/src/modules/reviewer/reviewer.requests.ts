@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import { TURNSTILE_TOKEN_MAX_LENGTH } from '../../infrastructure/turnstile/turnstile.constants';
+import { TURNSTILE_TOKEN_MAX_LENGTH } from '../../infrastructure/turnstile/turnstile.port';
 import { REVIEWER_INPUT_LIMITS } from './reviewer.constants';
 
 const TAB = 9;

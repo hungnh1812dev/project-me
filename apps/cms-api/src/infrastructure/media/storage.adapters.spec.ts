@@ -2,6 +2,7 @@ import { Readable } from 'node:stream';
 
 import {
   CloudinaryMediaStorage,
+  cloudinaryUploadOptions,
   type CloudinaryClient,
 } from './cloudinary.adapter';
 import { FakeMediaStorage } from './fake.adapter';
@@ -98,5 +99,18 @@ describe('CloudinaryMediaStorage', () => {
     const { client, calls } = stubClient();
     await new CloudinaryMediaStorage(client, 'abyss').delete(KEY, 'pdf');
     expect(calls).toEqual([['destroy', `abyss/${KEY}.pdf`, 'raw']]);
+  });
+});
+
+describe('cloudinaryUploadOptions', () => {
+  it('pins the id and forbids overwrite and name guessing', () => {
+    expect(cloudinaryUploadOptions('folder/abc', 'raw')).toEqual({
+      public_id: 'folder/abc',
+      resource_type: 'raw',
+      type: 'upload',
+      overwrite: false,
+      use_filename: false,
+      unique_filename: false,
+    });
   });
 });

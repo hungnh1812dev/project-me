@@ -1,6 +1,9 @@
 /** DI token for the Turnstile verifier (T31). */
 export const TURNSTILE_VERIFIER = Symbol('TURNSTILE_VERIFIER');
 
+/** Cloudflare documents response tokens of at most 2048 characters. */
+export const TURNSTILE_TOKEN_MAX_LENGTH = 2_048;
+
 /**
  * `passed`: the challenge was solved. `failed`: Cloudflare refused the token.
  * `unavailable`: no answer (not configured, network error, bad reply); the
