@@ -1,20 +1,19 @@
 import { COPY } from '../../config/copy.constants';
-import {
-  HTTP_STATUS,
-  REVIEWER_ERROR_CODES,
-  SECONDS_PER_MINUTE,
-} from '../../config/http.constants';
-import type { ApiFailure, LoginAlert } from '../auth/api-failure';
+import { HTTP_STATUS, REVIEWER_ERROR_CODES } from '../../config/http.constants';
+import type { Alert } from '../../lib/alert';
+import { type ApiFailure, formatRetryAfter } from '../../lib/api-failure';
 
 const copy = COPY.reviewer.errors;
 
 function ipLimitedMessage(seconds: number | undefined): string {
-  if (seconds === undefined) return copy.ipLimited;
-  if (seconds < SECONDS_PER_MINUTE) return copy.ipLimitedSeconds(seconds);
-  return copy.ipLimitedMinutes(Math.ceil(seconds / SECONDS_PER_MINUTE));
+  return formatRetryAfter(seconds, {
+    waitUnknown: copy.ipLimited,
+    inSeconds: copy.ipLimitedSeconds,
+    inMinutes: copy.ipLimitedMinutes,
+  });
 }
 
-export interface ReviewerAlert extends LoginAlert {
+export interface ReviewerAlert extends Alert {
   /** The Turnstile token was spent or rejected: ask for a new challenge. */
   resetChallenge: boolean;
 }
@@ -36,7 +35,6 @@ export function reviewerAlertOf(failure: ApiFailure): ReviewerAlert {
       return warn(ipLimitedMessage(failure.retryAfterSeconds));
     case 'network':
       return warn(copy.network);
-    case 'privileged':
     case 'unexpected':
       return fail(copy.unexpected);
     case 'http':

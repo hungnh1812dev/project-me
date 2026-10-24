@@ -4,6 +4,7 @@ import { API_ENDPOINTS } from '../../config/endpoints';
 import {
   PERMISSION_STRING_SEPARATOR,
   READ_ACTION,
+  BEARER_PREFIX,
 } from '../../config/auth.constants';
 
 export interface LoginCredentials {
@@ -118,7 +119,7 @@ export function createAuthApi(client: AxiosInstance) {
 
     async me(accessToken: string): Promise<CurrentUser> {
       const { data } = await client.get<CurrentUser>(API_ENDPOINTS.AUTH.ME, {
-        headers: { Authorization: `Bearer ${accessToken}` },
+        headers: { Authorization: `${BEARER_PREFIX}${accessToken}` },
       });
       return data;
     },

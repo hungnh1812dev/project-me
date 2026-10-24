@@ -10,3 +10,6 @@ export const PERMISSION_STRING_SEPARATOR = ':';
 
 /** The only action a reader role holds; any other action is privileged. */
 export const READ_ACTION = 'read';
+
+/** Scheme of the per-call `Authorization` header; never a client default. */
+export const BEARER_PREFIX = 'Bearer ';

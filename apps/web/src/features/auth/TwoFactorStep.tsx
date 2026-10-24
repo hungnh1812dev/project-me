@@ -12,13 +12,10 @@ import {
 } from '../../config/auth.constants';
 import { COPY } from '../../config/copy.constants';
 import { API_ERROR_CODES } from '../../config/http.constants';
-import {
-  type ApiFailure,
-  apiFailureOf,
-  type LoginAlert,
-  rateLimitedMessage,
-} from './api-failure';
+import type { Alert } from '../../lib/alert';
+import type { ApiFailure } from '../../lib/api-failure';
 import type { TwoFactorChallenge } from './auth.api';
+import { loginErrorAlertOf, rateLimitedMessage } from './login-alerts';
 import { useEmailCode } from './use-email-code';
 import { useWebSession } from './useWebSession';
 
@@ -34,7 +31,7 @@ function methodOf(methods: readonly string[]): TwoFactorMethod | undefined {
 }
 
 /** Failure -> alert, or 'expired' when the temp token is dead. */
-function alertOf(failure: ApiFailure): LoginAlert | 'expired' {
+function alertOf(failure: ApiFailure): Alert | 'expired' {
   switch (failure.kind) {
     case 'rate-limited':
       return {
@@ -43,8 +40,6 @@ function alertOf(failure: ApiFailure): LoginAlert | 'expired' {
       };
     case 'network':
       return { tone: 'warning', message: COPY.login.errors.network };
-    case 'privileged':
-      return { tone: 'warning', message: COPY.login.errors.privileged };
     case 'http':
       if (failure.errorCode === API_ERROR_CODES.INVALID_TEMP_TOKEN) {
         return 'expired';
@@ -112,7 +107,7 @@ function CodeForm({
   onDone: () => void;
 }) {
   const session = useWebSession();
-  const [alert, setAlert] = useState<LoginAlert | null>(null);
+  const [alert, setAlert] = useState<Alert | null>(null);
   const email = useEmailCode(
     method === 'email'
       ? () => session.sendLoginEmailCode(tempToken)
@@ -134,7 +129,7 @@ function CodeForm({
     mutationFn: session.completeTwoFactor,
     onSuccess: onDone,
     onError: (cause) => {
-      const mapped = alertOf(apiFailureOf(cause));
+      const mapped = loginErrorAlertOf(cause, alertOf);
       if (mapped === 'expired') {
         onExpired();
         return;

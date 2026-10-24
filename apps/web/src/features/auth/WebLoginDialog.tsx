@@ -15,12 +15,9 @@ import { useCallback, useState } from 'react';
 import { FormProvider, useForm } from 'react-hook-form';
 
 import { COPY } from '../../config/copy.constants';
-import {
-  apiFailureOf,
-  credentialAlertOf,
-  type LoginAlert,
-} from './api-failure';
+import type { Alert } from '../../lib/alert';
 import type { TwoFactorChallenge } from './auth.api';
+import { credentialAlertOf, loginErrorAlertOf } from './login-alerts';
 import { TwoFactorStep } from './TwoFactorStep';
 import { useWebSession } from './useWebSession';
 
@@ -55,7 +52,7 @@ export function WebLoginDialog({
 
 function LoginFlow({ onClose }: { onClose: () => void }) {
   const session = useWebSession();
-  const [alert, setAlert] = useState<LoginAlert | null>(null);
+  const [alert, setAlert] = useState<Alert | null>(null);
   const [challenge, setChallenge] = useState<TwoFactorChallenge | null>(null);
   const [expired, setExpired] = useState(false);
 
@@ -75,7 +72,7 @@ function LoginFlow({ onClose }: { onClose: () => void }) {
       setChallenge({ tempToken: outcome.tempToken, methods: outcome.methods });
     },
     onError: (cause) => {
-      setAlert(credentialAlertOf(apiFailureOf(cause)));
+      setAlert(loginErrorAlertOf(cause, credentialAlertOf));
       form.resetField('password');
       form.setFocus('password');
     },

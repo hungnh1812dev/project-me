@@ -1,4 +1,5 @@
-import { type CurrentUser, isPrivileged } from './auth.api';
+import { createApiClient } from '../../lib/api-client';
+import { createAuthApi, type CurrentUser, isPrivileged } from './auth.api';
 import { TEST_USER } from './test-utils';
 
 function userWith(permissions: string[]): CurrentUser {
@@ -27,5 +28,26 @@ describe('isPrivileged', () => {
     const user = { ...TEST_USER } as Partial<CurrentUser>;
     delete user.permissions;
     expect(isPrivileged(user as CurrentUser)).toBe(true);
+  });
+});
+
+describe('me', () => {
+  it('sends the exact Bearer header on that call only', async () => {
+    const seen: unknown[] = [];
+    const client = createApiClient('/api/v1', {
+      adapter: (config) => {
+        seen.push(config.headers.get('Authorization'));
+        return Promise.resolve({
+          data: TEST_USER,
+          status: 200,
+          statusText: 'OK',
+          headers: {},
+          config,
+        });
+      },
+    });
+    await createAuthApi(client).me('tok');
+    await createAuthApi(client).refresh();
+    expect(seen).toEqual(['Bearer tok', undefined]);
   });
 });

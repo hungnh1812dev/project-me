@@ -227,3 +227,95 @@ test('a reader with email codes signs in on the web through the code step', asyn
   await signOutButton(page).click();
   await expect(headerSignIn(page)).toBeVisible();
 });
+
+const rateLimitedBody = { errorCode: 'RATE_LIMITED' };
+
+test('a rate-limited sign-in names the wait in seconds or minutes, and an offline server shows the network warning', async ({
+  page,
+}) => {
+  const loginRoute = '**/auth/login';
+  await page.goto(e2eEnv.webUrl);
+  await openDialog(page);
+
+  await page.route(loginRoute, (route) =>
+    route.fulfill({
+      status: 429,
+      headers: { 'retry-after': '30' },
+      json: rateLimitedBody,
+    }),
+  );
+  await fillCredentials(page, e2eEnv.readerEmail, 'x');
+  await expect(
+    dialog(page).getByText(login.errors.rateLimitedSeconds(30)),
+  ).toBeVisible();
+
+  await page.unroute(loginRoute);
+  await page.route(loginRoute, (route) =>
+    route.fulfill({
+      status: 429,
+      headers: { 'retry-after': '120' },
+      json: rateLimitedBody,
+    }),
+  );
+  await dialog(page).getByLabel(login.passwordLabel).fill('x');
+  await dialog(page).getByRole('button', { name: login.submit }).click();
+  await expect(
+    dialog(page).getByText(login.errors.rateLimitedMinutes(2)),
+  ).toBeVisible();
+
+  await page.unroute(loginRoute);
+  await page.route(loginRoute, (route) =>
+    route.fulfill({ status: 429, json: rateLimitedBody }),
+  );
+  await dialog(page).getByLabel(login.passwordLabel).fill('x');
+  await dialog(page).getByRole('button', { name: login.submit }).click();
+  await expect(dialog(page).getByText(login.errors.rateLimited)).toBeVisible();
+
+  await page.unroute(loginRoute);
+  await page.route(loginRoute, (route) => route.abort('connectionrefused'));
+  await dialog(page).getByLabel(login.passwordLabel).fill('x');
+  await dialog(page).getByRole('button', { name: login.submit }).click();
+  await expect(dialog(page).getByText(login.errors.network)).toBeVisible();
+  await expect(page.getByText(/^Signed in as /)).toHaveCount(0);
+});
+
+test('the code step: a dead temp token returns to the credentials with a notice, and a rate-limited resend names the wait', async ({
+  page,
+  context,
+}) => {
+  await page.goto(e2eEnv.webUrl);
+  await openDialog(page);
+  const seen = await mailIdsFor(context, e2eEnv.reader2faEmail);
+  await fillCredentials(page, e2eEnv.reader2faEmail, e2eEnv.reader2faPassword);
+  const step = page.getByRole('dialog', { name: login.twoFactor.title });
+  await expect(step).toBeVisible();
+  await waitForCode(context, e2eEnv.reader2faEmail, seen);
+
+  await page.route('**/auth/2fa/email-challenge', (route) =>
+    route.fulfill({
+      status: 429,
+      headers: { 'retry-after': '45' },
+      json: rateLimitedBody,
+    }),
+  );
+  await step.getByRole('button', { name: login.twoFactor.resend }).click();
+  await expect(
+    step.getByText(login.errors.rateLimitedSeconds(45)),
+  ).toBeVisible();
+
+  await page.route('**/auth/2fa/verify', (route) =>
+    route.fulfill({
+      status: 401,
+      json: { errorCode: 'AUTH_INVALID_TEMP_TOKEN' },
+    }),
+  );
+  await step
+    .getByLabel(new RegExp(`^${login.twoFactor.emailLabel}`))
+    .fill('123456');
+  await step.getByRole('button', { name: login.twoFactor.submit }).click();
+  await expect(dialog(page).getByText(login.twoFactor.expired)).toBeVisible();
+  await expect(
+    dialog(page).getByRole('textbox', { name: login.emailLabel }),
+  ).toBeVisible();
+  await expect(page.getByText(/^Signed in as /)).toHaveCount(0);
+});

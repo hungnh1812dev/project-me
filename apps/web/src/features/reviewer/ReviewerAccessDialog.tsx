@@ -24,7 +24,7 @@ import {
   REVIEWER_PURPOSE_TAGS,
   REVIEWER_VISITOR_ROLES,
 } from '../../config/reviewer.constants';
-import { apiFailureOf } from '../auth/api-failure';
+import { apiFailureOf } from '../../lib/api-failure';
 import { useWebSession } from '../auth/useWebSession';
 import { apiClient } from '../../lib/api-client';
 import { createReviewerApi, type ReviewerApi } from './reviewer.api';

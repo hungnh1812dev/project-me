@@ -4,7 +4,7 @@ import { useMutation } from '@tanstack/react-query';
 import { useEffect, useRef, useState } from 'react';
 
 import { MS_PER_SECOND } from '../../config/http.constants';
-import { type ApiFailure, apiFailureOf } from './api-failure';
+import { type ApiFailure, apiFailureOf } from '../../lib/api-failure';
 
 /**
  * Sends emailed 2FA codes: once on mount (the ref survives the StrictMode
