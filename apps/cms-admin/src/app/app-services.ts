@@ -19,6 +19,7 @@ import { createContentApi } from '../features/content/content.api';
 import { createMediaApi } from '../features/media/media.api';
 import { createReviewerApi } from '../features/reviewer/reviewer.api';
 import { createSecurityApi } from '../features/security/security.api';
+import { createHealthApi } from '../features/status/health.api';
 import { createAppStore } from './store';
 
 /** Wires store, session and the API client's auth interceptor together. */
@@ -45,6 +46,7 @@ export function createAppServices(
   const contentApi = createContentApi(client);
   const mediaApi = createMediaApi(client);
   const reviewerApi = createReviewerApi(client);
+  const healthApi = createHealthApi(client);
   return {
     store,
     session,
@@ -55,6 +57,7 @@ export function createAppServices(
     contentApi,
     mediaApi,
     reviewerApi,
+    healthApi,
     queryClient,
     removeInterceptor,
   };

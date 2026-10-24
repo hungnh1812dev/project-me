@@ -1,14 +1,16 @@
 import { useQuery } from '@tanstack/react-query';
 
 import { HEALTH_STATUS_OK } from '../../config/http.constants';
-import { fetchLiveHealth, HEALTH_QUERY_KEYS } from './health.api';
+import { useHealthApi } from './health-api-context';
+import { HEALTH_QUERY_KEYS } from './health.api';
 
 export type LiveHealthState = 'checking' | 'ok' | 'error';
 
 export function useLiveHealth() {
+  const healthApi = useHealthApi();
   const query = useQuery({
     queryKey: HEALTH_QUERY_KEYS.live,
-    queryFn: fetchLiveHealth,
+    queryFn: healthApi.fetchLive,
   });
 
   const state: LiveHealthState = query.isPending

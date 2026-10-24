@@ -10,6 +10,11 @@ const APP_BAN = {
   group: ['**/app', '**/app/**'],
   message: 'Features and lib never import from app/; app wires them.',
 };
+const API_CLIENT_BAN = {
+  group: ['**/lib/api-client'],
+  message:
+    'Features receive an axios client from app/ and never import lib/api-client.',
+};
 const FEATURES_BAN = {
   group: ['**/features', '**/features/**'],
   message: 'lib/ never depends on features.',
@@ -51,6 +56,7 @@ const featureOrderBoundary = (feature) => {
   const patterns = [
     WIRING_BAN,
     APP_BAN,
+    API_CLIENT_BAN,
     {
       regex: '^\\.\\./[^./][^/]*/',
       message: 'Import another feature through its index.ts, not a deep path.',
@@ -74,7 +80,12 @@ export default [
     [WIRING_BAN],
     ['src/app/**', 'src/architecture.test.ts'],
   ),
-  importBoundary(['src/features/**'], [WIRING_BAN, APP_BAN]),
+  importBoundary(['src/features/**'], [WIRING_BAN, APP_BAN, API_CLIENT_BAN]),
   importBoundary(['src/lib/**'], [WIRING_BAN, APP_BAN, FEATURES_BAN]),
   ...ALL_FEATURES.map(featureOrderBoundary),
+  // Tests build a real client with createApiClient, so only they may reach lib/api-client.
+  importBoundary(
+    TEST_FILES.map((pattern) => `src/features/${pattern}`),
+    [WIRING_BAN, APP_BAN],
+  ),
 ];

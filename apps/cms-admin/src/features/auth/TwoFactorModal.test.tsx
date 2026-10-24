@@ -10,12 +10,6 @@ import {
 import { COPY } from '../../config/copy.constants';
 import { API_ENDPOINTS } from '../../config/endpoints';
 import { APP_ROUTES } from '../../config/routes';
-import { fetchLiveHealth } from '../status/health.api';
-
-vi.mock('../status/health.api', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('../status/health.api')>()),
-  fetchLiveHealth: vi.fn<typeof fetchLiveHealth>(),
-}));
 
 const { LOGIN, REFRESH, ME } = API_ENDPOINTS.AUTH;
 const { VERIFY, EMAIL_CHALLENGE } = API_ENDPOINTS.TWO_FACTOR;
@@ -50,10 +44,6 @@ const codeInput = (dialog: HTMLElement, label: string) =>
   within(dialog).getByLabelText(new RegExp(`^${label}`));
 
 describe('TwoFactorModal (login second step)', () => {
-  beforeEach(() => {
-    vi.mocked(fetchLiveHealth).mockResolvedValue({ status: 'ok' });
-  });
-
   it('signs in with an authenticator code', async () => {
     const { api, services, dialog } = await openChallenge('totp', {
       [`POST ${VERIFY}`]: () => ({ status: 200, data: { accessToken: 't9' } }),

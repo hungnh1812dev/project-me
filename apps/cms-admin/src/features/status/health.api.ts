@@ -1,5 +1,6 @@
+import type { AxiosInstance } from 'axios';
+
 import { API_ENDPOINTS } from '../../config/endpoints';
-import { apiClient } from '../../lib/api-client';
 
 export interface HealthResponse {
   status: string;
@@ -9,9 +10,15 @@ export const HEALTH_QUERY_KEYS = {
   live: ['health', 'live'],
 } as const;
 
-export async function fetchLiveHealth(): Promise<HealthResponse> {
-  const response = await apiClient.get<HealthResponse>(
-    API_ENDPOINTS.HEALTH.LIVE,
-  );
-  return response.data;
+export function createHealthApi(client: AxiosInstance) {
+  return {
+    fetchLive: async (): Promise<HealthResponse> => {
+      const response = await client.get<HealthResponse>(
+        API_ENDPOINTS.HEALTH.LIVE,
+      );
+      return response.data;
+    },
+  };
 }
+
+export type HealthApi = ReturnType<typeof createHealthApi>;

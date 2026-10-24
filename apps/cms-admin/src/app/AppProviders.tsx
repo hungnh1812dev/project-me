@@ -10,6 +10,7 @@ import { SetupApiProvider } from '../features/auth/setup-api-context';
 import { SessionProvider } from '../features/auth/session-context';
 import { ReviewerApiProvider } from '../features/reviewer/reviewer-api-context';
 import { SecurityApiProvider } from '../features/security/security-api-context';
+import { HealthApiProvider } from '../features/status/health-api-context';
 import type { AppServices } from './app-services';
 
 export function AppProviders({
@@ -27,6 +28,7 @@ export function AppProviders({
     | 'contentApi'
     | 'mediaApi'
     | 'reviewerApi'
+    | 'healthApi'
     | 'queryClient'
   >;
   children: ReactNode;
@@ -42,7 +44,9 @@ export function AppProviders({
                   <ContentApiProvider api={services.contentApi}>
                     <MediaApiProvider api={services.mediaApi}>
                       <ReviewerApiProvider api={services.reviewerApi}>
-                        {children}
+                        <HealthApiProvider api={services.healthApi}>
+                          {children}
+                        </HealthApiProvider>
                       </ReviewerApiProvider>
                     </MediaApiProvider>
                   </ContentApiProvider>

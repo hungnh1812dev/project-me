@@ -10,12 +10,6 @@ import {
 import { COPY } from '../../config/copy.constants';
 import { API_ENDPOINTS } from '../../config/endpoints';
 import { APP_ROUTES } from '../../config/routes';
-import { fetchLiveHealth } from '../status/health.api';
-
-vi.mock('../status/health.api', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('../status/health.api')>()),
-  fetchLiveHealth: vi.fn<typeof fetchLiveHealth>(),
-}));
 
 const { LOGIN, REFRESH, ME } = API_ENDPOINTS.AUTH;
 const PASSWORD = 'correct horse battery staple';
@@ -42,10 +36,6 @@ async function fillAndSubmit(pw = PASSWORD) {
 }
 
 describe('LoginPage', () => {
-  beforeEach(() => {
-    vi.mocked(fetchLiveHealth).mockResolvedValue({ status: 'ok' });
-  });
-
   it('labels its fields and focuses the first invalid one on submit', async () => {
     const { api } = await openLogin(() => ({ status: 500 }));
     expect(

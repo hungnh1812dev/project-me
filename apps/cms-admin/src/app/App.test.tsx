@@ -1,7 +1,11 @@
 import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
-import { deferred, type FakeReply } from '../../test/fake-api';
+import {
+  deferred,
+  type FakeHandler,
+  type FakeReply,
+} from '../../test/fake-api';
 import {
   createTestServices,
   renderApp,
@@ -9,21 +13,15 @@ import {
 } from '../../test/render-app';
 import { COPY } from '../config/copy.constants';
 import { API_ENDPOINTS } from '../config/endpoints';
-import { fetchLiveHealth } from '../features/status/health.api';
-
-vi.mock('../features/status/health.api', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('../features/status/health.api')>()),
-  fetchLiveHealth: vi.fn<typeof fetchLiveHealth>(),
-}));
-
-const fetchLiveHealthMock = vi.mocked(fetchLiveHealth);
 const { REFRESH, LOGOUT, ME } = API_ENDPOINTS.AUTH;
+const HEALTH_LIVE = `GET ${API_ENDPOINTS.HEALTH.LIVE}`;
 
-function signedInServices() {
+function signedInServices(extraHandlers: Record<string, FakeHandler> = {}) {
   return createTestServices({
     [`POST ${REFRESH}`]: () => ({ status: 200, data: { accessToken: 't1' } }),
     [`GET ${ME}`]: () => ({ status: 200, data: TEST_USER }),
     [`POST ${LOGOUT}`]: () => ({ status: 204 }),
+    ...extraHandlers,
   });
 }
 
@@ -31,11 +29,6 @@ const loginHeading = () =>
   screen.findByRole('heading', { level: 1, name: COPY.login.title });
 
 describe('App', () => {
-  beforeEach(() => {
-    fetchLiveHealthMock.mockReset();
-    fetchLiveHealthMock.mockResolvedValue({ status: 'ok' });
-  });
-
   it('shows a loading state, not the login page, while the session restores', async () => {
     const gate = deferred<FakeReply>();
     const { services } = createTestServices({
@@ -99,10 +92,13 @@ describe('App', () => {
   });
 
   it('shows the error state and recovers on "check again"', async () => {
-    fetchLiveHealthMock
-      .mockRejectedValueOnce(new Error('Network Error'))
-      .mockResolvedValue({ status: 'ok' });
-    const { services } = signedInServices();
+    let healthCalls = 0;
+    const { services } = signedInServices({
+      [HEALTH_LIVE]: () =>
+        ++healthCalls === 1
+          ? 'network-error'
+          : { status: 200, data: { status: 'ok' } },
+    });
     await services.session.restore();
     renderApp(services);
 
@@ -117,8 +113,9 @@ describe('App', () => {
   });
 
   it('treats an unexpected health body as unreachable', async () => {
-    fetchLiveHealthMock.mockResolvedValue({ status: 'error' });
-    const { services } = signedInServices();
+    const { services } = signedInServices({
+      [HEALTH_LIVE]: () => ({ status: 200, data: { status: 'error' } }),
+    });
     await services.session.restore();
     renderApp(services);
     expect(await screen.findByRole('alert')).toBeInTheDocument();
