@@ -7,7 +7,7 @@ import {
 } from '@playwright/test';
 
 import { COPY } from '../../cms-admin/src/config/copy.constants';
-import { MEDIA_PAGE_SIZE } from '../../cms-admin/src/config/media.constants';
+import { MEDIA_PAGE_SIZE } from '../../cms-admin/src/features/media/media.constants';
 import { e2eEnv } from '../src/env';
 
 const copy = COPY.media;

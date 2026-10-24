@@ -6,7 +6,7 @@ import {
   test,
 } from '@playwright/test';
 
-import { PRESENCE_HEARTBEAT_MS } from '../../cms-admin/src/config/content.constants';
+import { PRESENCE_HEARTBEAT_MS } from '../../cms-admin/src/features/content/content.constants';
 import { COPY } from '../../cms-admin/src/config/copy.constants';
 import { contentNewPath } from '../../cms-admin/src/config/routes';
 import { e2eEnv } from '../src/env';

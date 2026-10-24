@@ -8,7 +8,7 @@ import {
 
 import { COPY } from '../../cms-admin/src/config/copy.constants';
 import { API_ERROR_CODES } from '../../cms-admin/src/config/http.constants';
-import { MEDIA_ALT_MAX_LENGTH } from '../../cms-admin/src/config/media.constants';
+import { MEDIA_ALT_MAX_LENGTH } from '../../cms-admin/src/features/media/media.constants';
 import { e2eEnv } from '../src/env';
 
 const copy = COPY.media;
