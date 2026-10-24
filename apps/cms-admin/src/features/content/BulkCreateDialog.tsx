@@ -20,7 +20,7 @@ import { COPY } from '../../config/copy.constants';
 import { failedItems, itemReason, toBulkFailure } from './bulk';
 import { useContentApi } from './content-api-context';
 import type { DocumentTree } from './content.api';
-import { CONTENT_LIST_QUERY_KEY } from './content-queries';
+import { CONTENT_QUERY_KEYS } from './content-queries';
 
 const copy = COPY.content.bulk.importDialog;
 
@@ -98,7 +98,7 @@ export function BulkCreateDialog({
     onSuccess: (response, input) => {
       if (response.succeeded > 0) {
         void queryClient.invalidateQueries({
-          queryKey: [...CONTENT_LIST_QUERY_KEY, slug],
+          queryKey: CONTENT_QUERY_KEYS.list(slug),
         });
       }
       const failed = failedItems(response);

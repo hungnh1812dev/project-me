@@ -1,6 +1,10 @@
 import { Button, FormAlert, type FormAlertTone } from '@abyss/form-commons';
 import { useRef, useState } from 'react';
 
+import { useClampedPage } from '../../components/use-clamped-page';
+import { useRestoreFocus } from '../../components/use-restore-focus';
+import { formatDate } from '../../lib/date-format';
+
 import { COPY } from '../../config/copy.constants';
 import { useCurrentUser } from '../auth';
 import type { Account, InvitedAccount } from './access.api';
@@ -28,8 +32,6 @@ const STATUS_CLASS: Record<Account['status'], string> = {
   disabled: 'bg-muted text-muted-foreground',
 };
 
-const dateFormat = new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' });
-
 interface Notice {
   tone: FormAlertTone;
   message: string;
@@ -45,29 +47,15 @@ export function AccountsPage() {
   const [inviteOpen, setInviteOpen] = useState(false);
   const [disabling, setDisabling] = useState<Account | null>(null);
   const [notice, setNotice] = useState<Notice | null>(null);
-  const opener = useRef<HTMLElement | null>(null);
   const headingRef = useRef<HTMLDivElement>(null);
-
-  // Radix has no trigger here (dialogs open from state), so put focus back
-  // on the button that opened it, or on the page heading if that row is gone.
-  const restoreFocus = (event: Event) => {
-    event.preventDefault();
-    const target = opener.current;
-    if (target?.isConnected) target.focus();
-    else headingRef.current?.querySelector('h1')?.focus();
-  };
+  const { rememberOpener, restoreFocus } = useRestoreFocus(headingRef);
 
   const canInvite = caller.ready && caller.can('accounts', 'create');
   const canDisable = caller.ready && caller.can('accounts', 'update');
   const showActions = canDisable || canInvite;
 
-  // The last row of a page can go away (disabled elsewhere, role change);
-  // step back so the user never sits on an empty page past the end.
   const meta = accounts.data?.meta;
-  const lastPage = meta
-    ? Math.max(1, Math.ceil(meta.total / meta.pageSize))
-    : 1;
-  if (page > lastPage) setPage(lastPage); // adjust during render, not in an effect
+  const lastPage = useClampedPage(page, setPage, meta);
 
   const onInvited = (account: InvitedAccount) => {
     setInviteOpen(false);
@@ -80,6 +68,7 @@ export function AccountsPage() {
 
   const onDisabled = (account: Account, outcome: DisableOutcome) => {
     setDisabling(null);
+    if (outcome === 'gone') rememberOpener(null);
     setNotice(
       outcome === 'disabled'
         ? { tone: 'success', message: copy.disabled(account.displayName) }
@@ -101,7 +90,7 @@ export function AccountsPage() {
               type="button"
               variant="primary"
               onClick={(event) => {
-                opener.current = event.currentTarget;
+                rememberOpener(event.currentTarget);
                 setNotice(null);
                 setInviteOpen(true);
               }}
@@ -189,7 +178,7 @@ export function AccountsPage() {
                       : copy.twoFactorOff}
                   </td>
                   <td className="px-3 py-2 tabular-nums text-muted-foreground">
-                    {dateFormat.format(new Date(account.createdAt))}
+                    {formatDate(account.createdAt)}
                   </td>
                   {showActions ? (
                     <td className="px-3 py-2 text-right">
@@ -208,7 +197,7 @@ export function AccountsPage() {
                           size="sm"
                           aria-label={copy.disableLabel(account.displayName)}
                           onClick={(event) => {
-                            opener.current = event.currentTarget;
+                            rememberOpener(event.currentTarget);
                             setNotice(null);
                             setDisabling(account);
                           }}

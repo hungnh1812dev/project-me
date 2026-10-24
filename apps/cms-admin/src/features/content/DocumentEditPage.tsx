@@ -14,6 +14,7 @@ import {
 } from '../../components/PageStates';
 import { useCurrentUser } from '../auth';
 import { useContentApi } from './content-api-context';
+import { CONTENT_QUERY_KEYS } from './content-queries';
 import { ConflictMergeModal } from './ConflictMergeModal';
 import { type ConflictDetails, conflictDetailsOf } from './conflict';
 import { isMissing, toSaveError, type SaveError } from './content-error';
@@ -26,16 +27,6 @@ import { maskedPathsOf, visibleEntries } from './merge.reducer';
 
 const copy = COPY.content;
 
-const QUERY_KEYS = {
-  type: (slug: string) => ['content', 'type', slug],
-  draft: (slug: string, documentId: string) => [
-    'content',
-    'draft',
-    slug,
-    documentId,
-  ],
-} as const;
-
 /**
  * `/content/:slug/new` and `/content/:slug/:documentId` (T23): the dynamic
  * form of one document's draft. Creating goes to the edit route; saving an
@@ -47,12 +38,12 @@ export function DocumentEditPage() {
   // Held here: the form remounts when a save brings a new version.
   const [notice, setNotice] = useState<string | null>(null);
   const type = useQuery({
-    queryKey: QUERY_KEYS.type(slug),
+    queryKey: CONTENT_QUERY_KEYS.type(slug),
     queryFn: () => api.getContentType(slug),
   });
   const draftAndPublish = type.data?.draftAndPublish ?? false;
   const draft = useQuery({
-    queryKey: QUERY_KEYS.draft(slug, documentId ?? ''),
+    queryKey: CONTENT_QUERY_KEYS.draft(slug, documentId ?? ''),
     queryFn: () => api.getDraft(slug, documentId ?? '', draftAndPublish),
     enabled: documentId !== undefined && type.isSuccess,
   });
@@ -172,7 +163,7 @@ function DocumentForm({
         return;
       }
       await queryClient.invalidateQueries({
-        queryKey: QUERY_KEYS.draft(slug, record.documentId),
+        queryKey: CONTENT_QUERY_KEYS.draft(slug, record.documentId),
       });
       onNotice(copy.saved);
     },
@@ -203,7 +194,7 @@ function DocumentForm({
       setConflict(null);
       setMergeOpen(false);
       await queryClient.invalidateQueries({
-        queryKey: QUERY_KEYS.draft(slug, record?.documentId ?? ''),
+        queryKey: CONTENT_QUERY_KEYS.draft(slug, record?.documentId ?? ''),
       });
       onNotice(copy.saved);
     },

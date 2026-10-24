@@ -7,6 +7,10 @@ import {
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRef, useState } from 'react';
 
+import { useClampedPage } from '../../components/use-clamped-page';
+import { useRestoreFocus } from '../../components/use-restore-focus';
+import { formatDate } from '../../lib/date-format';
+
 import { COPY } from '../../config/copy.constants';
 import { MEDIA_ACCEPT, MEDIA_SUBJECT } from '../../config/media.constants';
 import { isForbidden, useCallerAccess } from '../access';
@@ -25,7 +29,6 @@ import type { MediaFile } from './media.api';
 
 const copy = COPY.media;
 const IMAGE_PREFIX = 'image/';
-const dateFormat = new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' });
 
 interface Notice {
   tone: FormAlertTone;
@@ -63,8 +66,8 @@ export function MediaLibraryPage() {
   const [editing, setEditing] = useState<MediaFile | null>(null);
   const [deleting, setDeleting] = useState<MediaFile | null>(null);
   const [notice, setNotice] = useState<Notice | null>(null);
-  const opener = useRef<HTMLElement | null>(null);
   const headingRef = useRef<HTMLDivElement>(null);
+  const { rememberOpener, restoreFocus } = useRestoreFocus(headingRef);
   const fileInput = useRef<HTMLInputElement>(null);
 
   const canCreate = caller.ready && caller.can(MEDIA_SUBJECT, 'create');
@@ -72,20 +75,10 @@ export function MediaLibraryPage() {
   const canDelete = caller.ready && caller.can(MEDIA_SUBJECT, 'delete');
   const showActions = canUpdate || canDelete;
 
-  const meta = media.data?.meta;
-  const lastPage = meta
-    ? Math.max(1, Math.ceil(meta.total / meta.pageSize))
-    : 1;
-  if (page > lastPage) setPage(lastPage);
+  useClampedPage(page, setPage, media.data?.meta);
 
-  const restoreFocus = (event: Event) => {
-    event.preventDefault();
-    const target = opener.current;
-    if (target?.isConnected) target.focus();
-    else headingRef.current?.querySelector('h1')?.focus();
-  };
   const open = (event: { currentTarget: HTMLElement }, next: () => void) => {
-    opener.current = event.currentTarget;
+    rememberOpener(event.currentTarget);
     setNotice(null);
     next();
   };
@@ -214,7 +207,7 @@ export function MediaLibraryPage() {
                     {formatFileSize(file.size)}
                   </td>
                   <td className="px-3 py-2 tabular-nums text-muted-foreground">
-                    {dateFormat.format(new Date(file.createdAt))}
+                    {formatDate(file.createdAt)}
                   </td>
                   {showActions ? (
                     <td className="whitespace-nowrap px-3 py-2 text-right">
@@ -281,6 +274,7 @@ export function MediaLibraryPage() {
         onClose={() => setDeleting(null)}
         onDone={(file, outcome) => {
           setDeleting(null);
+          rememberOpener(null); // the file's row is gone, so focus goes to the heading
           setNotice(
             outcome === 'deleted'
               ? {

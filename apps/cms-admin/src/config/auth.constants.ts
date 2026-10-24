@@ -7,9 +7,6 @@ export const OWNER_DISPLAY_NAME_MAX_LENGTH = 100;
 /** Longest setup token cms-api accepts (SETUP_TOKEN_MAX_LENGTH). */
 export const SETUP_TOKEN_MAX_LENGTH = 256;
 
-/** Query key of the public setup status. */
-export const SETUP_STATUS_QUERY_KEY = ['setup', 'status'] as const;
-
 /** Emailed one-time codes (SPEC §6): 6 digits, valid for 5 minutes. */
 export const OTP_CODE_LENGTH = 6;
 export const OTP_TTL_MINUTES = 5;

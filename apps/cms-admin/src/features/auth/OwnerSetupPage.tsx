@@ -9,7 +9,6 @@ import { z } from 'zod';
 import {
   OWNER_DISPLAY_NAME_MAX_LENGTH,
   PASSWORD_LENGTH,
-  SETUP_STATUS_QUERY_KEY,
   SETUP_TOKEN_MAX_LENGTH,
 } from '../../config/auth.constants';
 import { COPY } from '../../config/copy.constants';
@@ -20,7 +19,7 @@ import type { LoginNoticeState } from './login-notice';
 import { emailField } from './password-form';
 import { useSetupApi } from './setup-api-context';
 import { toSetupError } from './setup-error';
-import { useSetupStatus } from './use-setup-status';
+import { SETUP_STATUS_QUERY_KEY, useSetupStatus } from './use-setup-status';
 
 const { validation } = COPY.setup;
 

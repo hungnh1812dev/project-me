@@ -31,6 +31,9 @@ export const FIELD_TYPE = {
   COMPONENT: 'component',
 } as const;
 
+/** Placeholder cms-api sends for a value the caller's role cannot read. */
+export const MASKED_VALUE = '***';
+
 /** Response key listing the paths the caller's role cannot read. */
 export const MASKED_FIELDS_KEY = '_maskedFields';
 

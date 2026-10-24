@@ -10,8 +10,12 @@ import {
   type FormAlertTone,
 } from '@abyss/form-commons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useMemo, useRef, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router';
+
+import { useClampedPage } from '../../components/use-clamped-page';
+import { useRestoreFocus } from '../../components/use-restore-focus';
+import { formatDateTime } from '../../lib/date-format';
 
 import {
   BULK_ACTION,
@@ -21,6 +25,7 @@ import {
   LIST_MAX_VALUE_COLUMNS,
   LIST_SORTABLE_TYPES,
   LIST_UPDATED_KEY,
+  MASKED_VALUE,
 } from '../../config/content.constants';
 import {
   CONTENT_WILDCARD_SUBJECT,
@@ -41,20 +46,12 @@ import { BulkDeleteDialog } from './BulkDeleteDialog';
 import { failedItems, itemReason, toBulkFailure } from './bulk';
 import { useContentApi } from './content-api-context';
 import { isMissing } from './content-error';
-import {
-  CONTENT_LIST_QUERY_KEY,
-  useDocumentListQuery,
-} from './content-queries';
+import { CONTENT_QUERY_KEYS, useDocumentListQuery } from './content-queries';
 import type { BulkItem, DocumentListItem } from './content.api';
 
 const copy = COPY.content;
 const list = copy.collection;
 const bulkCopy = copy.bulk;
-
-const dateTimeFormat = new Intl.DateTimeFormat(undefined, {
-  dateStyle: 'medium',
-  timeStyle: 'short',
-});
 
 /** What the page says after a bulk action or an import. */
 type Banner =
@@ -72,11 +69,11 @@ function formatValue(field: ContentTypeField, value: unknown): string {
   if (value === null || value === undefined || value === '') {
     return list.emptyValue;
   }
-  if (value === '***') return list.protectedValue;
+  if (value === MASKED_VALUE) return list.protectedValue;
   if (field.type === FIELD_TYPE.BOOLEAN) return value ? list.yes : list.no;
   if (field.type === FIELD_TYPE.DATETIME && typeof value === 'string') {
     const date = new Date(value);
-    return Number.isNaN(date.getTime()) ? value : dateTimeFormat.format(date);
+    return Number.isNaN(date.getTime()) ? value : formatDateTime(date);
   }
   return typeof value === 'string' || typeof value === 'number'
     ? String(value)
@@ -115,18 +112,10 @@ export function CollectionListPage() {
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [importing, setImporting] = useState(false);
   // Controlled dialogs have no trigger, so Radix cannot restore focus itself.
-  const opener = useRef<HTMLElement | null>(null);
-  const rememberOpener = (element: Element | null) => {
-    opener.current = element instanceof HTMLElement ? element : null;
-  };
-  const restoreFocus = (event: Event) => {
-    event.preventDefault();
-    const target = opener.current;
-    if (target?.isConnected) target.focus();
-  };
+  const { rememberOpener, restoreFocus } = useRestoreFocus();
 
   const type = useQuery({
-    queryKey: ['content', 'type', slug],
+    queryKey: CONTENT_QUERY_KEYS.type(slug),
     queryFn: () => api.getContentType(slug),
   });
   const draftAndPublish = type.data?.draftAndPublish ?? false;
@@ -165,10 +154,7 @@ export function CollectionListPage() {
 
   const rows = documents.data?.data ?? [];
   const meta = documents.data?.meta;
-  const lastPage = meta
-    ? Math.max(1, Math.ceil(meta.total / meta.pageSize))
-    : 1;
-  if (page > lastPage) setPage(lastPage);
+  useClampedPage(page, setPage, meta);
 
   const nameOf = (row: DocumentListItem): string => {
     const first = valueFields[0];
@@ -213,11 +199,11 @@ export function CollectionListPage() {
         ) : valueFields.length === 0 ? (
           <Button asChild variant="link" className="h-auto p-0">
             <Link to={contentEditPath(slug, row.documentId)}>
-              {dateTimeFormat.format(new Date(row.updatedAt))}
+              {formatDateTime(row.updatedAt)}
             </Link>
           </Button>
         ) : (
-          dateTimeFormat.format(new Date(row.updatedAt))
+          formatDateTime(row.updatedAt)
         ),
     },
   ];
@@ -234,7 +220,7 @@ export function CollectionListPage() {
       ),
     onSuccess: (response, input) => {
       void queryClient.invalidateQueries({
-        queryKey: [...CONTENT_LIST_QUERY_KEY, slug],
+        queryKey: CONTENT_QUERY_KEYS.list(slug),
       });
       const failures = failedItems(response).map((item) => {
         const row = input.rows[item.index];

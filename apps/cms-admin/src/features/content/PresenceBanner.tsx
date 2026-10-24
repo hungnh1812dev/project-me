@@ -5,6 +5,7 @@ import { PRESENCE_HEARTBEAT_MS } from '../../config/content.constants';
 import { COPY } from '../../config/copy.constants';
 import { useCurrentUser } from '../auth';
 import { useContentApi } from './content-api-context';
+import { CONTENT_QUERY_KEYS } from './content-queries';
 import type { PresenceEntry } from './content.api';
 
 const copy = COPY.content.presence;
@@ -32,7 +33,7 @@ export function PresenceBanner({
   const api = useContentApi();
   const me = useCurrentUser();
   const presence = useQuery({
-    queryKey: ['content', 'presence', slug, documentId],
+    queryKey: CONTENT_QUERY_KEYS.presence(slug, documentId),
     queryFn: () => api.sendPresence(slug, documentId),
     refetchInterval: PRESENCE_HEARTBEAT_MS,
     refetchOnWindowFocus: false,

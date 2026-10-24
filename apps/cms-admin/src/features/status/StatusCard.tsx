@@ -3,6 +3,7 @@ import { Button } from '@abyss/form-commons';
 import { COPY } from '../../config/copy.constants';
 import { API_ENDPOINTS } from '../../config/endpoints';
 import { appEnv } from '../../config/env';
+import { formatTime } from '../../lib/date-format';
 import { type LiveHealthState, useLiveHealth } from './use-live-health';
 
 const BADGE_TONE: Record<LiveHealthState, string> = {
@@ -16,8 +17,6 @@ const DOT_TONE: Record<LiveHealthState, string> = {
   ok: 'bg-success',
   error: 'bg-destructive',
 };
-
-const timeFormat = new Intl.DateTimeFormat(undefined, { timeStyle: 'medium' });
 
 export function StatusCard() {
   const { state, isFetching, lastCheckedAt, refetch } = useLiveHealth();
@@ -59,7 +58,7 @@ export function StatusCard() {
         <dd className="tabular-nums">
           {lastCheckedAt ? (
             <time dateTime={lastCheckedAt.toISOString()}>
-              {timeFormat.format(lastCheckedAt)}
+              {formatTime(lastCheckedAt)}
             </time>
           ) : (
             COPY.status.notCheckedYet

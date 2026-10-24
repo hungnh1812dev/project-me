@@ -71,6 +71,18 @@ const featureOrderBoundary = (feature) => {
   return importBoundary([`src/features/${feature}/**`], patterns, TEST_FILES);
 };
 
+const NO_DATE_FORMATTER = {
+  selector:
+    "NewExpression[callee.object.name='Intl'][callee.property.name='DateTimeFormat']",
+  message: 'Format dates through lib/date-format.ts.',
+};
+const NO_LITERAL_QUERY_KEY = {
+  selector: "Property[key.name='queryKey'] > ArrayExpression",
+  message:
+    'Query keys come from the feature owner (*-queries.ts, use-setup-status.ts), not literals.',
+};
+const QUERY_KEY_OWNERS = ['src/**/*-queries.ts', 'src/**/use-setup-status.ts'];
+
 export default [
   ...baseEslint({ tsconfigRootDir: import.meta.dirname }),
   reactHooks.configs.flat['recommended-latest'],
@@ -88,4 +100,19 @@ export default [
     TEST_FILES.map((pattern) => `src/features/${pattern}`),
     [WIRING_BAN, APP_BAN],
   ),
+  {
+    files: ['src/**'],
+    ignores: [...TEST_FILES, ...QUERY_KEY_OWNERS, 'src/lib/date-format.ts'],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        NO_DATE_FORMATTER,
+        NO_LITERAL_QUERY_KEY,
+      ],
+    },
+  },
+  {
+    files: QUERY_KEY_OWNERS,
+    rules: { 'no-restricted-syntax': ['error', NO_DATE_FORMATTER] },
+  },
 ];

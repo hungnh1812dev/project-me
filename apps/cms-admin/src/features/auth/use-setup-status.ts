@@ -1,7 +1,9 @@
 import { useQuery } from '@tanstack/react-query';
 
-import { SETUP_STATUS_QUERY_KEY } from '../../config/auth.constants';
 import { useSetupApi } from './setup-api-context';
+
+/** Query key of the public setup status. */
+export const SETUP_STATUS_QUERY_KEY = ['setup', 'status'] as const;
 
 /** Whether the owner setup is open. Always fresh: setup closes within minutes. */
 export function useSetupStatus() {

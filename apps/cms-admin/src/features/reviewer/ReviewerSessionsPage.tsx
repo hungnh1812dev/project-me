@@ -23,6 +23,8 @@ import {
   TableSkeleton,
 } from '../../components/PageStates';
 import { Pagination } from '../../components/Pagination';
+import { useClampedPage } from '../../components/use-clamped-page';
+import { formatDateTime } from '../../lib/date-format';
 import { useReviewerApi } from './reviewer-api-context';
 import {
   REVIEWER_QUERY_KEYS,
@@ -32,11 +34,6 @@ import {
 import type { ReviewerSession } from './reviewer.api';
 
 const copy = COPY.reviewer;
-
-const dateTimeFormat = new Intl.DateTimeFormat(undefined, {
-  dateStyle: 'medium',
-  timeStyle: 'short',
-});
 
 const STATUS_CLASS = {
   active: 'bg-success-soft text-success-strong',
@@ -48,11 +45,7 @@ export function ReviewerSessionsPage() {
   const [page, setPage] = useState(1);
   const sessions = useReviewerSessionsQuery(page);
 
-  const meta = sessions.data?.meta;
-  const lastPage = meta
-    ? Math.max(1, Math.ceil(meta.total / meta.pageSize))
-    : 1;
-  if (page > lastPage) setPage(lastPage); // adjust during render, not in an effect
+  useClampedPage(page, setPage, sessions.data?.meta);
 
   const rows = sessions.data?.data ?? [];
 
@@ -141,7 +134,7 @@ function SessionRow({ session }: { session: ReviewerSession }) {
         </span>
       </td>
       <td className="px-3 py-2 tabular-nums text-muted-foreground">
-        {dateTimeFormat.format(new Date(session.createdAt))}
+        {formatDateTime(session.createdAt)}
       </td>
       <td className="px-3 py-2">
         <span
@@ -151,7 +144,7 @@ function SessionRow({ session }: { session: ReviewerSession }) {
         </span>
         {session.active ? (
           <span className="mt-1 block text-xs tabular-nums text-muted-foreground">
-            {copy.until(dateTimeFormat.format(new Date(session.expiresAt)))}
+            {copy.until(formatDateTime(session.expiresAt))}
           </span>
         ) : null}
       </td>

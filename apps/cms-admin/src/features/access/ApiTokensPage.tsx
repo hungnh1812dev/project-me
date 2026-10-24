@@ -1,6 +1,10 @@
 import { Button, FormAlert, type FormAlertTone } from '@abyss/form-commons';
 import { useRef, useState } from 'react';
 
+import { useClampedPage } from '../../components/use-clamped-page';
+import { useRestoreFocus } from '../../components/use-restore-focus';
+import { formatDate } from '../../lib/date-format';
+
 import { COPY } from '../../config/copy.constants';
 import { useCurrentUser } from '../auth';
 import type { ApiToken } from './access.api';
@@ -30,8 +34,6 @@ const STATUS_CLASS: Record<ApiToken['status'], string> = {
   revoked: 'bg-muted text-muted-foreground',
 };
 
-const dateFormat = new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' });
-
 interface Notice {
   tone: FormAlertTone;
   message: string;
@@ -55,31 +57,17 @@ export function ApiTokensPage() {
   const [dialog, setDialog] = useState<TokenDialogTarget | null>(null);
   const [revoking, setRevoking] = useState<ApiToken | null>(null);
   const [notice, setNotice] = useState<Notice | null>(null);
-  const opener = useRef<HTMLElement | null>(null);
   const headingRef = useRef<HTMLDivElement>(null);
-
-  // Dialogs open from state (no Radix trigger), so put focus back on the
-  // button that opened them, or on the heading when that row is gone.
-  const restoreFocus = (event: Event) => {
-    event.preventDefault();
-    const target = opener.current;
-    if (target?.isConnected) target.focus();
-    else headingRef.current?.querySelector('h1')?.focus();
-  };
+  const { rememberOpener, restoreFocus } = useRestoreFocus(headingRef);
 
   const canCreate = caller.ready && caller.can('api_tokens', 'create');
   const canChange = caller.ready && caller.can('api_tokens', 'update');
 
-  // The last row of a page can go away (revoked elsewhere); step back so the
-  // user never sits on an empty page past the end.
   const meta = tokens.data?.meta;
-  const lastPage = meta
-    ? Math.max(1, Math.ceil(meta.total / meta.pageSize))
-    : 1;
-  if (page > lastPage) setPage(lastPage); // adjust during render, not in an effect
+  const lastPage = useClampedPage(page, setPage, meta);
 
   const open = (event: { currentTarget: HTMLElement }, next: () => void) => {
-    opener.current = event.currentTarget;
+    rememberOpener(event.currentTarget);
     setNotice(null);
     next();
   };
@@ -104,6 +92,7 @@ export function ApiTokensPage() {
 
   const onRevoked = (token: ApiToken, outcome: RevokeOutcome) => {
     setRevoking(null);
+    if (outcome === 'gone') rememberOpener(null);
     setNotice(
       outcome === 'revoked'
         ? { tone: 'success', message: copy.revoked(token.name) }
@@ -221,12 +210,12 @@ export function ApiTokensPage() {
                     <td className="px-3 py-2 tabular-nums text-muted-foreground">
                       {token.expiresAt === null
                         ? copy.noExpiry
-                        : dateFormat.format(new Date(token.expiresAt))}
+                        : formatDate(token.expiresAt)}
                     </td>
                     <td className="px-3 py-2 tabular-nums text-muted-foreground">
                       {token.lastUsedAt === null
                         ? copy.neverUsed
-                        : dateFormat.format(new Date(token.lastUsedAt))}
+                        : formatDate(token.lastUsedAt)}
                     </td>
                     {showCreator ? (
                       <td className="px-3 py-2 text-muted-foreground">
