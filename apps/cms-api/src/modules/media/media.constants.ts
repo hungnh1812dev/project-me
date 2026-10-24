@@ -34,6 +34,13 @@ export const ALLOWED_MEDIA_TYPES = {
 
 export type AllowedMime = keyof typeof ALLOWED_MEDIA_TYPES;
 
+/** The allowlisted MIME types of kind `image`; each needs a re-encoder. */
+export type ImageMime = {
+  [M in AllowedMime]: (typeof ALLOWED_MEDIA_TYPES)[M]['kind'] extends 'image'
+    ? M
+    : never;
+}[AllowedMime];
+
 export function allowedMediaTypeOf(mime: string): AllowedMediaType | undefined {
   return Object.hasOwn(ALLOWED_MEDIA_TYPES, mime)
     ? ALLOWED_MEDIA_TYPES[mime as AllowedMime]

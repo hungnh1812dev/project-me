@@ -24,6 +24,7 @@ import {
   allowedMediaTypeOf,
   FALLBACK_FILE_NAME,
   FILE_NAME_MAX_LENGTH,
+  type ImageMime,
   IMAGE_QUALITY,
   MAX_IMAGE_PIXELS,
   MEDIA_ERROR_CODES,
@@ -61,6 +62,23 @@ export interface PreparedUpload {
   readonly height: number | null;
   /** A fresh stream of the bytes to store. */
   open(): Readable;
+}
+
+type ImageEncoder = (image: sharp.Sharp) => Promise<Buffer>;
+
+/** One re-encoder per allowlisted image type; adding an image MIME fails to compile until it has one. */
+const IMAGE_ENCODERS: Record<ImageMime, ImageEncoder> = {
+  'image/jpeg': (image) => image.jpeg({ quality: IMAGE_QUALITY }).toBuffer(),
+  'image/png': (image) => image.png().toBuffer(),
+  'image/webp': (image) => image.webp({ quality: IMAGE_QUALITY }).toBuffer(),
+  'image/gif': (image) => image.gif().toBuffer(),
+  'image/avif': (image) => image.avif({ quality: IMAGE_QUALITY }).toBuffer(),
+};
+
+function imageEncoderOf(mimeType: string): ImageEncoder | undefined {
+  return Object.hasOwn(IMAGE_ENCODERS, mimeType)
+    ? IMAGE_ENCODERS[mimeType as ImageMime]
+    : undefined;
 }
 
 function unsupportedType(message: string): HttpException {
@@ -320,6 +338,10 @@ export class UploadPipeline {
    * that pass the magic-byte check but do not decode are refused.
    */
   private async reencode(received: ReceivedUpload): Promise<Buffer> {
+    const encode = imageEncoderOf(received.mimeType);
+    if (encode === undefined) {
+      throw unsupportedType(MEDIA_ERROR_MESSAGES.UNSUPPORTED_TYPE);
+    }
     try {
       const input = await readFile(received.path);
       const image = sharp(input, {
@@ -328,20 +350,7 @@ export class UploadPipeline {
       })
         .rotate()
         .keepIccProfile();
-      switch (received.mimeType) {
-        case 'image/jpeg':
-          return await image.jpeg({ quality: IMAGE_QUALITY }).toBuffer();
-        case 'image/png':
-          return await image.png().toBuffer();
-        case 'image/webp':
-          return await image.webp({ quality: IMAGE_QUALITY }).toBuffer();
-        case 'image/gif':
-          return await image.gif().toBuffer();
-        case 'image/avif':
-          return await image.avif({ quality: IMAGE_QUALITY }).toBuffer();
-        default:
-          throw unsupportedType(MEDIA_ERROR_MESSAGES.UNSUPPORTED_TYPE);
-      }
+      return await encode(image);
     } catch (error) {
       if (error instanceof HttpException) throw error;
       throw unsupportedType(MEDIA_ERROR_MESSAGES.UNREADABLE_IMAGE);

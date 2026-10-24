@@ -274,6 +274,57 @@ export function intersectTokenScope(
   return result;
 }
 
+type PolicyResolver<A extends ActorContext> = (
+  actor: A,
+  isContentSubject: (subject: string) => boolean,
+) => EffectivePolicy;
+
+function readOnlyPolicy(actor: ActorContext): EffectivePolicy {
+  // D2 / SPEC §1: read only, published only, whatever the role rows say.
+  return {
+    full: false,
+    contentOnly: false,
+    readOnly: true,
+    grants: actor.role.permissions.filter((grant) =>
+      (READ_ONLY_ACTIONS as readonly PermissionAction[]).includes(grant.action),
+    ),
+  };
+}
+
+/** One resolver per actor kind, no default: a new kind fails to compile until it has one. */
+const POLICY_RESOLVERS: {
+  [K in ActorKind]: PolicyResolver<Extract<ActorContext, { kind: K }>>;
+} = {
+  account: (actor) => {
+    const owner = isOwnerRole(actor.role);
+    return {
+      full: owner,
+      contentOnly: false,
+      readOnly: false,
+      grants: owner ? [] : actor.role.permissions,
+    };
+  },
+  api_token: (actor, isContentSubject) => {
+    const scopeGrants = isOwnerRole(actor.role)
+      ? actor.scope.permissions
+          .filter((entry) => isContentSubject(entry.subject))
+          .map(scopeEntryAsGrant)
+      : intersectTokenScope(
+          actor.scope,
+          actor.role.permissions,
+          isContentSubject,
+        );
+    return {
+      full: false,
+      contentOnly: true,
+      readOnly: false,
+      grants: scopeGrants,
+    };
+  },
+  reviewer: readOnlyPolicy,
+  anonymous: readOnlyPolicy,
+};
+
 /**
  * Resolves the actor to the grants that apply. `isContentSubject` says
  * whether a subject is `*` or a registered content type.
@@ -282,44 +333,6 @@ export function effectivePolicy(
   actor: ActorContext,
   isContentSubject: (subject: string) => boolean,
 ): EffectivePolicy {
-  const owner = isOwnerRole(actor.role);
-  switch (actor.kind) {
-    case 'account':
-      return {
-        full: owner,
-        contentOnly: false,
-        readOnly: false,
-        grants: owner ? [] : actor.role.permissions,
-      };
-    case 'api_token': {
-      const scopeGrants = owner
-        ? actor.scope.permissions
-            .filter((entry) => isContentSubject(entry.subject))
-            .map(scopeEntryAsGrant)
-        : intersectTokenScope(
-            actor.scope,
-            actor.role.permissions,
-            isContentSubject,
-          );
-      return {
-        full: false,
-        contentOnly: true,
-        readOnly: false,
-        grants: scopeGrants,
-      };
-    }
-    case 'reviewer':
-    case 'anonymous':
-      // D2 / SPEC §1: read only, published only, whatever the role rows say.
-      return {
-        full: false,
-        contentOnly: false,
-        readOnly: true,
-        grants: actor.role.permissions.filter((grant) =>
-          (READ_ONLY_ACTIONS as readonly PermissionAction[]).includes(
-            grant.action,
-          ),
-        ),
-      };
-  }
+  const resolve = POLICY_RESOLVERS[actor.kind] as PolicyResolver<ActorContext>;
+  return resolve(actor, isContentSubject);
 }

@@ -18,6 +18,7 @@ export {
   apiTokenActor,
   reviewerActor,
   type ActorContext,
+  type ActorKind,
   type RolePolicy,
 } from './actor-context';
 export { ActorThrottleSubjectResolver } from './actor-throttle-subject.resolver';

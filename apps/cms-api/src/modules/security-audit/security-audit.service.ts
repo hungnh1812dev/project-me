@@ -9,7 +9,7 @@ import {
   type Prisma,
 } from '../../generated/prisma/client';
 import { PrismaService } from '../../infrastructure/database/prisma.service';
-import type { SystemSubject, ActorContext } from '../access';
+import type { ActorContext, ActorKind, SystemSubject } from '../access';
 import { AUDIT_EMAIL_HMAC, type AuditAction } from './security-audit.constants';
 
 /** Who did it. `accountId` null: a sign-in attempt for an unknown email. */
@@ -83,21 +83,25 @@ export async function writeAuditLog(
   });
 }
 
+type AuditActorOf<A extends ActorContext> = (actor: A) => AuditActor;
+
+/** One mapping per actor kind, no default. Reviewers and anonymous are audited as accounts. */
+const AUDIT_ACTORS: {
+  [K in ActorKind]: AuditActorOf<Extract<ActorContext, { kind: K }>>;
+} = {
+  api_token: (actor) => ({
+    type: 'api_token',
+    accountId: actor.accountId,
+    tokenId: actor.tokenId,
+  }),
+  account: (actor) => ({ type: 'account', accountId: actor.accountId }),
+  reviewer: (actor) => ({ type: 'account', accountId: actor.accountId }),
+  anonymous: () => ({ type: 'account', accountId: null }),
+};
+
 /** The audit actor of an authenticated request. */
 export function auditActorOf(actor: ActorContext): AuditActor {
-  switch (actor.kind) {
-    case 'api_token':
-      return {
-        type: 'api_token',
-        accountId: actor.accountId,
-        tokenId: actor.tokenId,
-      };
-    case 'account':
-    case 'reviewer':
-      return { type: 'account', accountId: actor.accountId };
-    case 'anonymous':
-      return { type: 'account', accountId: null };
-  }
+  return (AUDIT_ACTORS[actor.kind] as AuditActorOf<ActorContext>)(actor);
 }
 
 /**
