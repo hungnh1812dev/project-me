@@ -4,7 +4,7 @@
 # container (deploy:migrate), creates the owner through the setup route, checks
 # that owner:bootstrap refuses and re-runs the migrations inside the cms-api
 # image, checks login/refresh and OTP mail delivery to Mailpit, then tears it
-# down.
+# down. The check groups live in scripts/smoke/<group>.sh.
 #
 # Optional env:
 #   SMOKE_DOMAIN           base domain (default domain.localhost)
@@ -26,6 +26,11 @@ source "$ROOT_DIR/scripts/lib/stack-seed.sh"
 # Every cms-api value this script asserts (messages, header values, cookie name).
 # shellcheck source=lib/expected-output.sh
 source "$ROOT_DIR/scripts/lib/expected-output.sh"
+# Check sections: each defines check_<section>() functions, run in order below.
+for section_file in routing security-headers cors init-container owner-setup auth mail; do
+  # shellcheck source=/dev/null
+  source "$ROOT_DIR/scripts/smoke/$section_file.sh"
+done
 COMPOSE_FILE="$ROOT_DIR/docker-compose.smoke.yml"
 DEFAULT_DOMAIN="domain.localhost"
 DEFAULT_HTTP_PORT="8080"
@@ -39,22 +44,8 @@ API_PREFIX="/api/v1"
 WEB_UNKNOWN_PATH="/this-page-does-not-exist"
 WEB_SLASH_PATH="$WEB_UNKNOWN_PATH/"
 HEALTH_OK_BODY='"status":"ok"'
-TURNSTILE_ORIGIN="https://challenges.cloudflare.com"
-CLOUDINARY_ORIGIN="https://res.cloudinary.com"
-INIT_SERVICE="cms-api-init"
-INIT_EXIT_CODE_FORMAT='{{.State.ExitCode}}'
-DB_MIGRATE_CMD=(npm run --silent db:migrate)
-RESET_2FA_CMD=(npm run --silent owner:reset-2fa --)
-CONTENT_MIGRATE_CMD=(node dist/modules/content-engine/cli/migrate.js)
-# The test setup token lives only in scripts/stack/cms-api.env (compose reads it
-# from there); it is read from that file here and never printed.
-CMS_API_ENV_FILE="$ROOT_DIR/scripts/stack/cms-api.env"
-SETUP_TOKEN_KEY="OWNER_SETUP_TOKEN"
-SETUP_STATUS_OPEN='"open":true'
-SETUP_STATUS_CLOSED='"open":false'
 JWT_ACCESS_KID="smoke"
 TOTP_ENC_KID="smoke-totp"
-MAIL_POLL_ATTEMPTS="15"
 # Written only with SMOKE_KEEP=1 (gitignored, mode 600): the e2e env of the kept
 # stack, read by scripts/e2e-spec.sh. Removed when the stack is torn down here.
 E2E_VARS_FILE="$ROOT_DIR/.smoke/e2e-vars.sh"
@@ -154,6 +145,23 @@ expect_header() {
   if [[ "$actual" == "$expected" ]]; then pass "$label"; else fail "$label: $name expected '$expected', got '$actual'"; fi
 }
 
+# in_api <label> <stdin text> <expect success: 1|0> <expected fragments...> -- <command...>
+# Runs a command in the cms-api container; output must contain every fragment.
+in_api() {
+  local label="$1" input="$2" want_ok="$3" output ok=1 fragment
+  shift 3
+  local fragments=()
+  while [[ "$1" != "--" ]]; do fragments+=("$1"); shift; done
+  shift
+  output="$(printf '%s\n' "$input" | api_exec -e OWNER_EMAIL="$STACK_OWNER_EMAIL" -- "$@" 2>&1)" || ok=0
+  if [[ "$ok" != "$want_ok" ]]; then fail "$label: exit status mismatch: $output"; return; fi
+  for fragment in "${fragments[@]}"; do
+    if [[ "$output" != *"$fragment"* ]]; then fail "$label: missing '$fragment' in: $output"; return; fi
+  done
+  if [[ "$output" == *"$STACK_OWNER_PASSWORD"* ]]; then fail "$label: output contains the password"; return; fi
+  pass "$label"
+}
+
 BUILD_FLAG=(--build)
 if [[ "${SMOKE_NO_BUILD:-}" == "1" ]]; then
   BUILD_FLAG=()
@@ -180,247 +188,18 @@ until api_ready; do
   sleep "$POLL_INTERVAL_SECONDS"
 done
 
-echo "Routing"
-request GET "$WEB_ORIGIN/"
-expect_status "web /" 200
-# Next.js, not an SPA: an unknown path is a real 404, never a 3xx or 200 fallback.
-request GET "$WEB_ORIGIN$WEB_UNKNOWN_PATH"
-expect_status "web unknown path is a 404 (no SPA fallback)" 404
-# Trailing-slash page: Next.js answers 308 with a relative Location (never the
-# container's own http://<host>:<port> URL).
-request GET "$WEB_ORIGIN$WEB_SLASH_PATH"
-expect_status "web page with a trailing slash redirects" 308
-web_location="$(header Location)"
-if [[ "$web_location" == "$WEB_UNKNOWN_PATH" ]]; then
-  pass "web redirect Location is relative ($web_location)"
-else
-  fail "web redirect Location: expected '$WEB_UNKNOWN_PATH', got '$web_location'"
-fi
-# A hashed build asset is cached as immutable.
-request GET "$WEB_ORIGIN/"
-web_asset="$(grep -oE '/_next/static/[^"]+\.(js|css)' "$BODY" | head -n 1 || true)"
-if [[ -z "$web_asset" ]]; then
-  fail "web home page references no /_next/static asset"
-else
-  request GET "$WEB_ORIGIN$web_asset"
-  expect_status "web static asset $web_asset" 200
-  if [[ "$(header Cache-Control)" == *immutable* ]]; then pass "web static asset is cached as immutable"; else fail "web static asset Cache-Control: '$(header Cache-Control)'"; fi
-fi
-request GET "$ADMIN_ORIGIN/"
-expect_status "admin SPA /" 200
-request GET "$ADMIN_ORIGIN/accounts/settings"
-expect_status "admin SPA fallback for a client route" 200
+check_routing
+check_security_headers
+check_health
+check_trailing_slashes
+check_cors
 
-echo "Security headers (SPEC D17)"
-# header_count <name>: how many times the last response sent a header.
-header_count() {
-  awk -v name="$(echo "$1" | tr '[:upper:]' '[:lower:]')" -F':' '
-    tolower($1) == name { n++ } END { print n + 0 }
-  ' "$HEADERS"
-}
-# Header values the first checked response (web /) sent; every later response
-# must send the same ones, so the web, admin and 404 pages cannot drift apart.
-COMMON_HEADER_NAMES=(Strict-Transport-Security X-Content-Type-Options Referrer-Policy)
-expect_common_headers_agree() {
-  local label="$1" name actual first_file
-  for name in "${COMMON_HEADER_NAMES[@]}"; do
-    actual="$(header "$name")"
-    first_file="$WORK_DIR/first-$name"
-    if [[ ! -f "$first_file" ]]; then
-      printf '%s' "$actual" >"$first_file"
-    elif [[ "$actual" != "$(cat "$first_file")" ]]; then
-      fail "$label: $name differs from web /: '$actual' vs '$(cat "$first_file")'"
-    fi
-  done
-}
-expect_common_security_headers() {
-  local label="$1"
-  expect_common_headers_agree "$label"
-  expect_header "$label sends HSTS" Strict-Transport-Security "$HSTS_VALUE"
-  expect_header "$label sends nosniff" X-Content-Type-Options nosniff
-  expect_header "$label sends Referrer-Policy" Referrer-Policy "$REFERRER_POLICY_VALUE"
-  expect_header "$label sends no X-Powered-By" X-Powered-By ""
-}
-nonce_of() { header Content-Security-Policy | sed -n "s/.*'nonce-\([^']*\)'.*/\1/p" | head -n 1; }
-
-request GET "$WEB_ORIGIN/"
-expect_common_security_headers "web /"
-web_csp="$(header Content-Security-Policy)"
-web_nonce_1="$(nonce_of)"
-if [[ -n "$web_nonce_1" ]]; then pass "web CSP carries a script nonce"; else fail "web CSP has no nonce: '$web_csp'"; fi
-if [[ "$web_csp" == *"script-src 'self' 'nonce-"*"'strict-dynamic'"*"$TURNSTILE_ORIGIN"* ]]; then pass "web CSP script-src: nonce + strict-dynamic + Turnstile"; else fail "web CSP script-src: '$web_csp'"; fi
-if [[ "$web_csp" == *"frame-ancestors 'none'"* && "$web_csp" == *"style-src-attr 'unsafe-inline'"* && "$web_csp" == *"$CLOUDINARY_ORIGIN"* ]]; then pass "web CSP has frame-ancestors, style-src-attr and Cloudinary img-src"; else fail "web CSP directives: '$web_csp'"; fi
-# The nonce on the page must match the header, and change on every response.
-if grep -q "nonce=\"$web_nonce_1\"" "$BODY"; then pass "web page scripts carry the header nonce"; else fail "web page has no script with the header nonce"; fi
-request GET "$WEB_ORIGIN/"
-web_nonce_2="$(nonce_of)"
-if [[ -n "$web_nonce_2" && "$web_nonce_2" != "$web_nonce_1" ]]; then pass "web nonce is fresh per response"; else fail "web nonce repeated: '$web_nonce_1' '$web_nonce_2'"; fi
-request GET "$WEB_ORIGIN$WEB_UNKNOWN_PATH"
-expect_common_security_headers "web 404"
-
-request GET "$ADMIN_ORIGIN/"
-expect_common_security_headers "admin /"
-admin_csp="$(header Content-Security-Policy)"
-if [[ "$admin_csp" == *"script-src 'self';"* && "$admin_csp" == *"connect-src 'self' $WEB_ORIGIN;"* && "$admin_csp" == *"$CLOUDINARY_ORIGIN"* ]]; then pass "admin CSP: script-src self, connect-src is the API origin (no path), Cloudinary img-src"; else fail "admin CSP: '$admin_csp'"; fi
-# style-src carries a per-request nonce (Radix scroll-lock style); the HTML
-# shell exposes the same value in a meta tag, and it changes per response.
-admin_style_nonce="$(nonce_of)"
-if [[ -n "$admin_style_nonce" && "$admin_csp" == *"style-src 'self' 'nonce-$admin_style_nonce';"* ]]; then pass "admin style-src has a nonce (no unsafe-inline)"; else fail "admin style-src: '$admin_csp'"; fi
-if grep -q "<meta name=\"csp-nonce\" content=\"$admin_style_nonce\">" "$BODY"; then pass "admin HTML meta csp-nonce matches the header"; else fail "admin HTML has no matching csp-nonce meta"; fi
-request GET "$ADMIN_ORIGIN/"
-if [[ -n "$(nonce_of)" && "$(nonce_of)" != "$admin_style_nonce" ]]; then pass "admin nonce is fresh per response"; else fail "admin nonce repeated"; fi
-request GET "$ADMIN_ORIGIN/accounts/settings"
-expect_common_security_headers "admin client route"
-if grep -q "<meta name=\"csp-nonce\" content=\"$(nonce_of)\">" "$BODY"; then pass "admin client route HTML carries the matching nonce meta"; else fail "admin client route has no matching nonce meta"; fi
-
-request GET "$WEB_ORIGIN$API_PREFIX/health/live"
-expect_header "API sends default-src 'none'" Content-Security-Policy "$API_CSP_VALUE"
-if [[ "$(header_count Content-Security-Policy)" == "1" ]]; then pass "API has exactly one CSP header (Traefik adds none)"; else fail "API CSP header count: $(header_count Content-Security-Policy)"; fi
-expect_header "API sends no X-Powered-By" X-Powered-By ""
-request POST "$WEB_ORIGIN$API_PREFIX/graphql" -H 'Content-Type: application/json' --data '{"query":"{__typename}"}'
-expect_header "POST /graphql sends default-src 'none'" Content-Security-Policy "$API_CSP_VALUE"
-expect_header "POST /graphql sends no X-Powered-By" X-Powered-By ""
-
-echo "Health through the proxy"
-request GET "$WEB_ORIGIN$API_PREFIX/health/ready"
-expect_status "GET health/ready" 200
-if grep -q "$HEALTH_OK_BODY" "$BODY"; then pass "health/ready body is {status: ok}"; else fail "health/ready body: $(cat "$BODY")"; fi
-
-echo "Trailing slashes (SPEC §12-17: never 3xx)"
-request GET "$WEB_ORIGIN$API_PREFIX/health/live/"
-expect_status "GET health/live/ with trailing slash" 200
-request POST "$WEB_ORIGIN$API_PREFIX/health/live/" -H 'Content-Type: application/json' --data '{}'
-if [[ "$STATUS" =~ ^3 || "$STATUS" == "000" ]]; then
-  fail "POST with trailing slash returned $STATUS"
-else
-  pass "POST with trailing slash is not a redirect ($STATUS)"
-fi
-
-echo "CORS admin -> API"
-request OPTIONS "$WEB_ORIGIN$API_PREFIX/health/live" \
-  -H "Origin: $ADMIN_ORIGIN" \
-  -H 'Access-Control-Request-Method: POST' \
-  -H 'Access-Control-Request-Headers: authorization,content-type'
-expect_status "preflight" 204
-expect_header "preflight allows the admin origin" Access-Control-Allow-Origin "$ADMIN_ORIGIN"
-expect_header "preflight allows credentials" Access-Control-Allow-Credentials "true"
-
-request GET "$WEB_ORIGIN$API_PREFIX/health/live" -H "Origin: $ADMIN_ORIGIN"
-expect_status "actual cross-origin call" 200
-expect_header "actual call allows the admin origin" Access-Control-Allow-Origin "$ADMIN_ORIGIN"
-expect_header "actual call allows credentials" Access-Control-Allow-Credentials "true"
-expect_header "actual call exposes the request id and Retry-After" Access-Control-Expose-Headers "x-request-id,Retry-After"
-
-request GET "$WEB_ORIGIN$API_PREFIX/health/live" -H "Origin: $OTHER_ORIGIN"
-expect_header "another origin gets no Access-Control-Allow-Origin" Access-Control-Allow-Origin ""
-
-# in_api <label> <stdin text> <expect success: 1|0> <expected fragments...> -- <command...>
-# Runs a command in the cms-api container; output must contain every fragment.
-in_api() {
-  local label="$1" input="$2" want_ok="$3" output ok=1 fragment
-  shift 3
-  local fragments=()
-  while [[ "$1" != "--" ]]; do fragments+=("$1"); shift; done
-  shift
-  output="$(printf '%s\n' "$input" | api_exec -e OWNER_EMAIL="$STACK_OWNER_EMAIL" -- "$@" 2>&1)" || ok=0
-  if [[ "$ok" != "$want_ok" ]]; then fail "$label: exit status mismatch: $output"; return; fi
-  for fragment in "${fragments[@]}"; do
-    if [[ "$output" != *"$fragment"* ]]; then fail "$label: missing '$fragment' in: $output"; return; fi
-  done
-  if [[ "$output" == *"$STACK_OWNER_PASSWORD"* ]]; then fail "$label: output contains the password"; return; fi
-  pass "$label"
-}
-
-echo "Init container ($INIT_SERVICE: deploy:migrate)"
-init_container="$(compose ps --all --quiet "$INIT_SERVICE")"
-init_exit="$(docker inspect --format "$INIT_EXIT_CODE_FORMAT" "$init_container" 2>/dev/null || echo "missing")"
-if [[ "$init_exit" == "0" ]]; then pass "$INIT_SERVICE exited 0"; else fail "$INIT_SERVICE exit code: $init_exit"; fi
-init_log="$(compose logs --no-color "$INIT_SERVICE" 2>&1 || true)"
-for fragment in "$DB_MIGRATE_APPLIED" "$DB_MIGRATE_SEEDED" "$CONTENT_MIGRATE_APPLIED"; do
-  if [[ "$init_log" == *"$fragment"* ]]; then pass "$INIT_SERVICE log has '$fragment'"; else fail "$INIT_SERVICE log lacks '$fragment': $init_log"; fi
-done
-
-echo "Owner setup route + owner:bootstrap refusal"
-setup_token="$(sed -n "s/^$SETUP_TOKEN_KEY=//p" "$CMS_API_ENV_FILE")"
-if [[ -z "$setup_token" ]]; then fail "$SETUP_TOKEN_KEY is not set in $CMS_API_ENV_FILE"; fi
-# setup_body <token>: the owner setup request body (the owner credentials of this run).
-setup_body() {
-  printf '{"setupToken":"%s","email":"%s","displayName":"Owner","password":"%s"}' \
-    "$1" "$STACK_OWNER_EMAIL" "$STACK_OWNER_PASSWORD"
-}
-setup_status_is() {
-  request GET "$WEB_ORIGIN$API_PREFIX/setup/status"
-  if [[ "$STATUS" == "200" && "$(cat "$BODY")" == *"$1"* ]]; then pass "$2"; else fail "$2: $STATUS $(cat "$BODY")"; fi
-}
-setup_status_is "$SETUP_STATUS_OPEN" "setup status is open before the owner exists"
-request POST "$WEB_ORIGIN$API_PREFIX/setup/owner" -H 'Content-Type: application/json' \
-  --data "$(setup_body "wrong-$setup_token")"
-expect_status "setup with a wrong token is refused" 401
-request POST "$WEB_ORIGIN$API_PREFIX/setup/owner" -H 'Content-Type: application/json' \
-  --data "$(setup_body "$setup_token")"
-expect_status "setup with the right token creates the owner" 201
-if [[ -z "$(header Set-Cookie)" && "$(cat "$BODY")" != *accessToken* ]]; then pass "setup answer carries no cookie and no access token"; else fail "setup answer carries a session"; fi
-setup_status_is "$SETUP_STATUS_CLOSED" "setup status is closed after the owner exists"
-request POST "$WEB_ORIGIN$API_PREFIX/setup/owner" -H 'Content-Type: application/json' \
-  --data "$(setup_body "$setup_token")"
-expect_status "a second setup submit is a 404" 404
-in_api "owner:bootstrap refuses a second owner" "$STACK_OWNER_PASSWORD" 0 \
-  "$OWNER_EXISTS" -- "${OWNER_BOOTSTRAP_CMD[@]}"
-
-echo "Migrations again inside the cms-api image"
-in_api "db:migrate again has nothing pending" "" 1 \
-  "$DB_MIGRATE_NOTHING" "$DB_SEED_NOTHING" -- "${DB_MIGRATE_CMD[@]}"
-stack_seed_extra_accounts
-# Break-glass 2FA reset: refusals only, so no account state changes
-# (the owner login and refresh checks below still pass).
-in_api "owner:reset-2fa refuses an unknown email" "" 0 \
-  "$RESET_2FA_UNKNOWN" -- "${RESET_2FA_CMD[@]}" --email "nobody@$SMOKE_DOMAIN" --yes
-in_api "owner:reset-2fa refuses an account with 2FA off" "" 0 \
-  "$RESET_2FA_NOT_ON" -- "${RESET_2FA_CMD[@]}" --email "$STACK_OWNER_EMAIL" --yes
-in_api "owner:reset-2fa needs --yes without a terminal" "" 0 \
-  "$RESET_2FA_NO_TTY" -- "${RESET_2FA_CMD[@]}" --email "$STACK_OWNER_EMAIL"
-
-in_api "content:migrate again has nothing pending" "" 1 \
-  "$CONTENT_MIGRATE_NOTHING" -- "${CONTENT_MIGRATE_CMD[@]}"
-
-echo "Auth through the proxy"
-login_body() { printf '{"email":"%s","password":"%s"}' "$STACK_OWNER_EMAIL" "$1"; }
-request POST "$WEB_ORIGIN$API_PREFIX/auth/login/" -H 'Content-Type: application/json' \
-  --data "$(login_body "$STACK_OWNER_PASSWORD")"
-expect_status "POST auth/login/ with trailing slash, right password (SPEC §12-17)" 200
-refresh_cookie="$(header Set-Cookie | sed -n "s/^\($REFRESH_COOKIE_NAME=[^;]*\);.*/\1/p")"
-if [[ -n "$refresh_cookie" ]]; then pass "login sets the refresh cookie"; else fail "login sets no refresh cookie"; fi
-request POST "$WEB_ORIGIN$API_PREFIX/auth/login/" -H 'Content-Type: application/json' \
-  --data "$(login_body "wrong-$STACK_OWNER_PASSWORD")"
-expect_status "POST auth/login/ with trailing slash, wrong password (SPEC §12-17)" 401
-request POST "$WEB_ORIGIN$API_PREFIX/auth/refresh" -H "Cookie: $refresh_cookie"
-expect_status "refresh without Origin is refused" 403
-request POST "$WEB_ORIGIN$API_PREFIX/auth/refresh" -H "Cookie: $refresh_cookie" -H "Origin: $ADMIN_ORIGIN"
-expect_status "refresh from the admin origin rotates the token" 200
-request POST "$WEB_ORIGIN$API_PREFIX/auth/register" -H 'Content-Type: application/json' --data '{}'
-expect_status "POST auth/register does not exist (SPEC §12-2)" 404
-
-echo "Two-factor endpoints"
-request POST "$WEB_ORIGIN$API_PREFIX/auth/2fa/totp/setup"
-expect_status "2fa/totp/setup needs a Bearer token" 401
-request POST "$WEB_ORIGIN$API_PREFIX/auth/2fa/verify" -H 'Content-Type: application/json' \
-  --data '{"tempToken":"forged","code":"123456"}'
-expect_status "2fa/verify rejects a forged temp token" 401
-
-echo "Password reset mail through SMTP to Mailpit"
-request POST "$WEB_ORIGIN$API_PREFIX/auth/password/request-otp" -H 'Content-Type: application/json' \
-  --data "$(printf '{"email":"%s"}' "$STACK_OWNER_EMAIL")"
-expect_status "request-otp answers 202" 202
-request POST "$WEB_ORIGIN$API_PREFIX/auth/password/request-otp" -H 'Content-Type: application/json' \
-  --data "$(printf '{"email":"nobody@%s"}' "$SMOKE_DOMAIN")"
-expect_status "request-otp answers 202 for an unknown email too" 202
-mail_seen=0
-for _ in $(seq "$MAIL_POLL_ATTEMPTS"); do
-  request GET "$MAILPIT_URL/api/v1/search?query=to:$STACK_OWNER_EMAIL"
-  if [[ "$STATUS" == "200" ]] && grep -q "$RESET_MAIL_SUBJECT" "$BODY"; then mail_seen=1; break; fi
-  sleep "$POLL_INTERVAL_SECONDS"
-done
-if [[ "$mail_seen" == "1" ]]; then pass "the reset code reaches Mailpit over SMTP"; else fail "no reset mail in Mailpit"; fi
+check_init_container
+check_owner_setup
+check_migrations_again
+check_auth
+check_two_factor
+check_mail
 
 stack_resolve_db_identity
 stack_export_e2e_env "$ADMIN_ORIGIN" "$SMOKE_API_BASE_URL" "$MAILPIT_URL"
