@@ -2,7 +2,7 @@ import axios, { type AxiosInstance, type CreateAxiosDefaults } from 'axios';
 
 import { appEnv } from '../config/env';
 import { API_TIMEOUT_MS } from '../config/http.constants';
-import { stripTrailingSlashes } from './strip-trailing-slashes';
+import { stripTrailingSlashes } from '../config/strip-trailing-slashes';
 
 /** Axios instance for cms-api. Every request path loses its trailing slash. */
 export function createApiClient(

@@ -1,8 +1,8 @@
 import { Navigate, Outlet, useLocation } from 'react-router';
 
-import { useAppSelector } from '../../app/store';
 import { APP_ROUTES } from '../../config/routes';
 import { selectSessionStatus } from './auth.slice';
+import { useAuthSelector } from './auth-hooks';
 import { SessionLoading } from './SessionLoading';
 
 /** Where to return after signing in; kept in router state, not the URL. */
@@ -12,7 +12,7 @@ export interface LoginLocationState {
 
 /** Renders child routes only for a signed-in user. */
 export function ProtectedRoute() {
-  const status = useAppSelector(selectSessionStatus);
+  const status = useAuthSelector(selectSessionStatus);
   const location = useLocation();
 
   if (status === 'unknown') return <SessionLoading />;

@@ -1,9 +1,8 @@
-import { useAppSelector } from '../../app/store';
 import {
   OWNER_ROLE_SLUG,
   type PermissionAction,
 } from '../../config/access.constants';
-import { selectCurrentUser } from '../auth/auth.slice';
+import { useCurrentUser } from '../auth';
 import type { Role } from './access.api';
 import { useRolesQuery } from './access-queries';
 
@@ -43,7 +42,7 @@ export function callerAccessOf(
 }
 
 export function useCallerAccess(): CallerAccess {
-  const user = useAppSelector(selectCurrentUser);
+  const user = useCurrentUser();
   const roles = useRolesQuery();
   const isOwner = user?.role === OWNER_ROLE_SLUG;
   return {

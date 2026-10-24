@@ -10,16 +10,14 @@ import { useState } from 'react';
 import { FormProvider, useForm } from 'react-hook-form';
 import { z } from 'zod';
 
-import { useAppSelector } from '../../app/store';
 import { PASSWORD_LENGTH } from '../../config/auth.constants';
 import { COPY } from '../../config/copy.constants';
-import { selectCurrentUser } from '../auth/auth.slice';
+import { useCurrentUser, useSession } from '../auth';
 import {
   newPasswordShape,
   passwordsMatch,
   PASSWORDS_MATCH_ISSUE,
 } from '../auth/password-form';
-import { useSession } from '../auth/session-context';
 import { useSecurityApi } from './security-api-context';
 import { toSecurityError } from './security-error';
 
@@ -43,7 +41,7 @@ type ChangeValues = z.input<typeof changeSchema>;
 export function ChangePasswordSection() {
   const security = useSecurityApi();
   const session = useSession();
-  const user = useAppSelector(selectCurrentUser);
+  const user = useCurrentUser();
   const [alert, setAlert] = useState<{
     tone: FormAlertTone;
     message: string;

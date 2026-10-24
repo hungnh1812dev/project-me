@@ -1,10 +1,9 @@
 import { useQuery } from '@tanstack/react-query';
 
 import { FormAlert } from '@abyss/form-commons';
-import { useAppSelector } from '../../app/store';
 import { PRESENCE_HEARTBEAT_MS } from '../../config/content.constants';
 import { COPY } from '../../config/copy.constants';
-import { selectCurrentUser } from '../auth/auth.slice';
+import { useCurrentUser } from '../auth';
 import { useContentApi } from './content-api-context';
 import type { PresenceEntry } from './content.api';
 
@@ -31,7 +30,7 @@ export function PresenceBanner({
   documentId: string;
 }) {
   const api = useContentApi();
-  const me = useAppSelector(selectCurrentUser);
+  const me = useCurrentUser();
   const presence = useQuery({
     queryKey: ['content', 'presence', slug, documentId],
     queryFn: () => api.sendPresence(slug, documentId),

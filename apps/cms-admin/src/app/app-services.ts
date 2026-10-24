@@ -5,11 +5,13 @@ import {
   REFRESH_LOCK_NAME,
   SESSION_CHANNEL_NAME,
 } from '../config/auth.constants';
-import { createAuthApi } from '../features/auth/auth.api';
-import { selectAccessToken } from '../features/auth/auth.slice';
+import {
+  accessTokenOf,
+  createAuthApi,
+  createSession,
+} from '../features/auth/app-wiring';
 import { createPasswordApi } from '../features/auth/password.api';
 import { createSetupApi } from '../features/auth/setup.api';
-import { createSession } from '../features/auth/session';
 import { createAccessApi } from '../features/access/access.api';
 import { createContentApi } from '../features/content/content.api';
 import { createMediaApi } from '../features/media/media.api';
@@ -32,7 +34,7 @@ export function createAppServices(
     crossTab: browserCrossTabOptions(REFRESH_LOCK_NAME, SESSION_CHANNEL_NAME),
   });
   const removeInterceptor = installAuthInterceptor(client, {
-    getAccessToken: () => selectAccessToken(store.getState()),
+    getAccessToken: () => accessTokenOf(store.getState()),
     refreshAccessToken: session.refreshAccessToken,
     onSessionExpired: () => session.expire(),
   });

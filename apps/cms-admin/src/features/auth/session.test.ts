@@ -5,7 +5,7 @@ import {
 } from '../../../test/fake-api';
 import { fakeBus, fakeLocks } from '../../../test/fake-tabs';
 import { createTestServices, TEST_USER } from '../../../test/render-app';
-import { createAppStore } from '../../app/store';
+import { createAuthTestStore } from './auth-test-store';
 import { API_ENDPOINTS } from '../../config/endpoints';
 import { createApiClient } from '../../lib/api-client';
 import { createAuthApi } from './auth.api';
@@ -167,7 +167,7 @@ describe('session across tabs (T11a)', () => {
     const locks = fakeLocks();
     const bus = fakeBus();
     const tabs = [1, 2, 3].map(() => {
-      const store = createAppStore();
+      const store = createAuthTestStore();
       const session = createSession({
         dispatch: store.dispatch,
         authApi: createAuthApi(client),

@@ -11,11 +11,11 @@ import { FormProvider, useForm } from 'react-hook-form';
 import { Link, Navigate, useLocation } from 'react-router';
 import { z } from 'zod';
 
-import { useAppSelector } from '../../app/store';
 import { COPY } from '../../config/copy.constants';
 import { APP_ROUTES } from '../../config/routes';
 import type { TwoFactorChallenge } from './auth.api';
 import { selectEndNotice, selectSessionStatus } from './auth.slice';
+import { useAuthSelector } from './auth-hooks';
 import { AuthPageLayout } from './AuthPageLayout';
 import { type LoginError, toLoginError } from './login-error';
 import { type LoginNotice, loginEmailOf, loginNoticeOf } from './login-notice';
@@ -70,8 +70,8 @@ function returnPathOf(state: unknown): string {
 }
 
 export function LoginPage() {
-  const status = useAppSelector(selectSessionStatus);
-  const endNotice = useAppSelector(selectEndNotice);
+  const status = useAuthSelector(selectSessionStatus);
+  const endNotice = useAuthSelector(selectEndNotice);
   const location = useLocation();
   const session = useSession();
   // A failed status call shows nothing extra: setup is never the default.

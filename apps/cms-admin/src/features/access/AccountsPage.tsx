@@ -1,9 +1,8 @@
 import { Button, FormAlert, type FormAlertTone } from '@abyss/form-commons';
 import { useRef, useState } from 'react';
 
-import { useAppSelector } from '../../app/store';
 import { COPY } from '../../config/copy.constants';
-import { selectCurrentUser } from '../auth/auth.slice';
+import { useCurrentUser } from '../auth';
 import type { Account, InvitedAccount } from './access.api';
 import { AccountRowActions } from './AccountRowActions';
 import { isForbidden } from './access-error';
@@ -37,7 +36,7 @@ export function AccountsPage() {
   const accounts = useAccountsQuery(page);
   const roles = useRolesQuery();
   const caller = useCallerAccess();
-  const me = useAppSelector(selectCurrentUser);
+  const me = useCurrentUser();
   const [inviteOpen, setInviteOpen] = useState(false);
   const [disabling, setDisabling] = useState<Account | null>(null);
   const [notice, setNotice] = useState<Notice | null>(null);

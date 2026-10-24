@@ -4,12 +4,11 @@ import { useMemo, useState } from 'react';
 import { FormProvider, useForm } from 'react-hook-form';
 import { useNavigate, useParams } from 'react-router';
 
-import { useAppSelector } from '../../app/store';
 import { COPY } from '../../config/copy.constants';
 import { REVIEWER_ROLE_SLUG } from '../../config/reviewer.constants';
 import { contentEditPath } from '../../config/routes';
 import { LoadError, PageHeader, TableSkeleton } from '../access/PageStates';
-import { selectCurrentUser } from '../auth/auth.slice';
+import { useCurrentUser } from '../auth';
 import { useContentApi } from './content-api-context';
 import { ConflictMergeModal } from './ConflictMergeModal';
 import { type ConflictDetails, conflictDetailsOf } from './conflict';
@@ -131,8 +130,7 @@ function DocumentForm({
   onNotice: (notice: string | null) => void;
 }) {
   const api = useContentApi();
-  const readOnly =
-    useAppSelector(selectCurrentUser)?.role === REVIEWER_ROLE_SLUG;
+  const readOnly = useCurrentUser()?.role === REVIEWER_ROLE_SLUG;
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const masked = useMemo<ReadonlySet<string>>(

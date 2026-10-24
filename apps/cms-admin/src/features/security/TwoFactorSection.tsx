@@ -1,10 +1,8 @@
 import { Button, FormAlert, type FormAlertTone } from '@abyss/form-commons';
 import { useCallback, useState } from 'react';
 
-import { useAppSelector } from '../../app/store';
 import { COPY } from '../../config/copy.constants';
-import { selectCurrentUser } from '../auth/auth.slice';
-import { useSession } from '../auth/session-context';
+import { useCurrentUser, useSession } from '../auth';
 import {
   DisableTwoFactorDialog,
   EmailTwoFactorDialog,
@@ -22,7 +20,7 @@ interface Notice {
 
 /** Status of 2FA plus the actions that change it; each opens a dialog. */
 export function TwoFactorSection() {
-  const user = useAppSelector(selectCurrentUser);
+  const user = useCurrentUser();
   const session = useSession();
   const [dialog, setDialog] = useState<OpenDialog>(null);
   const [notice, setNotice] = useState<Notice | null>(null);

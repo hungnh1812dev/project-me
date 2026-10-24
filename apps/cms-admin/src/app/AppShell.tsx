@@ -9,14 +9,12 @@ import {
 } from '../config/reviewer.constants';
 import { APP_ROUTES } from '../config/routes';
 import { useCallerAccess } from '../features/access/caller-access';
-import { selectCurrentUser } from '../features/auth/auth.slice';
-import { useSession } from '../features/auth/session-context';
+import { useCurrentUser, useSession } from '../features/auth';
 import { ReviewerBanner } from '../features/reviewer/ReviewerBanner';
-import { useAppSelector } from './store';
 
 /** Layout of every signed-in page: header with the user and sign-out. */
 export function AppShell() {
-  const user = useAppSelector(selectCurrentUser);
+  const user = useCurrentUser();
   const session = useSession();
   const [signingOut, setSigningOut] = useState(false);
   const caller = useCallerAccess();

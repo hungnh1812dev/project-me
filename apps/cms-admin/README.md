@@ -14,6 +14,12 @@ So far: sign-in (T11) and, behind it, a status page that calls
   sessionStorage or JS cookies. The Redux DevTools hook is off in production
   builds. The refresh token is the API's HttpOnly `__Secure-abyss_rt` cookie,
   which JS never sees.
+- **Auth facade**: other features import only `useCurrentUser`, `useSession`
+  and the `Session` type from `src/features/auth` (`index.ts`).
+  `src/features/auth/app-wiring.ts` (`createSession`, `createAuthApi`,
+  `authReducer`, `accessTokenOf`) is for `src/app/**` only; ESLint blocks
+  `app/**` imports from features and lib, and features imports from lib.
+  `src/architecture.spec.ts` pins the export lists.
 - **Session lifecycle**: `src/features/auth/session.ts` (`restore`, `signIn`,
   `signOut`, `expire`), wired in `src/app/app-services.ts`. Every refresh goes
   through one single-flight call. The cookie rotates on use, so two parallel
@@ -196,7 +202,7 @@ pnpm --filter @abyss/cms-admin dev       # http://localhost:5173 (DEV_SERVER_POR
 - `src/config/copy.constants.ts` holds user-facing text until an i18n module
   exists.
 - `src/lib/api-client.ts` is the Axios instance. It strips trailing slashes
-  from every request path (SPEC §6), so no proxy can answer with a redirect.
+  from every request path (`src/config/strip-trailing-slashes.ts`, SPEC §6), so no proxy can answer with a redirect.
 
 Styling: Tailwind v4 with the form-commons theme (`src/styles/app.css`).
 Components use semantic tokens only (`bg-card`, `text-muted-foreground`).

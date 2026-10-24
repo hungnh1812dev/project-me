@@ -1,4 +1,4 @@
-import { createAppStore } from '../../app/store';
+import { createAuthTestStore } from './auth-test-store';
 import {
   accessTokenReceived,
   selectAccessToken,
@@ -11,13 +11,13 @@ import { TEST_USER } from '../../../test/render-app';
 
 describe('authSlice', () => {
   it('starts unknown, so nothing renders as signed out before the silent refresh', () => {
-    const store = createAppStore();
+    const store = createAuthTestStore();
     expect(selectSessionStatus(store.getState())).toBe('unknown');
     expect(selectAccessToken(store.getState())).toBeNull();
   });
 
   it('keeps the token, then becomes authenticated with the /me user', () => {
-    const store = createAppStore();
+    const store = createAuthTestStore();
     store.dispatch(accessTokenReceived('token-1'));
     expect(selectSessionStatus(store.getState())).toBe('unknown');
     store.dispatch(signedIn(TEST_USER));
@@ -27,7 +27,7 @@ describe('authSlice', () => {
   });
 
   it('clears token and user on sign-out', () => {
-    const store = createAppStore();
+    const store = createAuthTestStore();
     store.dispatch(accessTokenReceived('token-1'));
     store.dispatch(signedIn(TEST_USER));
     store.dispatch(signedOut());
@@ -41,7 +41,7 @@ describe('authSlice', () => {
 
   it('never writes the token to browser storage or cookies', () => {
     const setItem = vi.spyOn(Storage.prototype, 'setItem');
-    const store = createAppStore();
+    const store = createAuthTestStore();
     store.dispatch(accessTokenReceived('token-1'));
     store.dispatch(signedIn(TEST_USER));
     expect(setItem).not.toHaveBeenCalled();
