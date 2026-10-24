@@ -7,7 +7,12 @@ import type { ApiToken } from './access.api';
 import { isForbidden } from './access-error';
 import { useApiTokensQuery } from './access-queries';
 import { useCallerAccess } from './caller-access';
-import { LoadError, PageHeader, Pagination, TableSkeleton } from './PageStates';
+import {
+  LoadError,
+  PageHeader,
+  TableSkeleton,
+} from '../../components/PageStates';
+import { Pagination } from '../../components/Pagination';
 import { RevokeTokenDialog, type RevokeOutcome } from './RevokeTokenDialog';
 import { scopeSummary } from './token-scope';
 import {

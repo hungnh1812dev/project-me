@@ -27,7 +27,7 @@ import { useAccessApi } from './access-api-context';
 import { toAccessError } from './access-error';
 import { ACCESS_QUERY_KEYS, useContentTypesQuery } from './access-queries';
 import { useCallerAccess } from './caller-access';
-import { LoadError } from './PageStates';
+import { LoadError } from '../../components/PageStates';
 import { cellIssues, cellsAt, type CellRef } from './permission-matrix';
 import { endOfDay, expiryIso, localDateOf } from './token-expiry';
 import {

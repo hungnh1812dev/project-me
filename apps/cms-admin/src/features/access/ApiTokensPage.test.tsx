@@ -11,7 +11,8 @@ import { COPY } from '../../config/copy.constants';
 import { API_ENDPOINTS } from '../../config/endpoints';
 import { APP_ROUTES } from '../../config/routes';
 import type { CurrentUser } from '../auth/auth.slice';
-import type { ApiToken, ContentType, PermissionRow, Role } from './access.api';
+import type { ContentType } from '../content-types';
+import type { ApiToken, PermissionRow, Role } from './access.api';
 
 const { REFRESH, ME } = API_ENDPOINTS.AUTH;
 const { API_TOKENS, ROLES, CONTENT_TYPES } = API_ENDPOINTS;

@@ -13,7 +13,12 @@ import {
   type DisableOutcome,
 } from './DisableAccountDialog';
 import { InviteDialog } from './InviteDialog';
-import { LoadError, PageHeader, Pagination, TableSkeleton } from './PageStates';
+import {
+  LoadError,
+  PageHeader,
+  TableSkeleton,
+} from '../../components/PageStates';
+import { Pagination } from '../../components/Pagination';
 
 const copy = COPY.access.accounts;
 

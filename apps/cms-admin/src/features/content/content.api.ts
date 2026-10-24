@@ -6,7 +6,8 @@ import {
   MASKED_FIELDS_KEY,
 } from '../../config/content.constants';
 import { API_ENDPOINTS } from '../../config/endpoints';
-import type { ContentType, PageMeta } from '../access/access.api';
+import type { PageMeta } from '../../lib/api-types';
+import type { ContentType } from '../content-types';
 
 export type FieldValueMap = Record<string, unknown>;
 

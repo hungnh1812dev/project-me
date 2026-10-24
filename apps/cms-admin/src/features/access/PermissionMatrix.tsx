@@ -7,7 +7,7 @@ import {
   type PermissionAction,
 } from '../../config/access.constants';
 import { COPY } from '../../config/copy.constants';
-import type { ContentType } from './access.api';
+import type { ContentType } from '../content-types';
 import { CellDetails } from './CellDetails';
 import {
   actionsFor,

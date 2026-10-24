@@ -30,9 +30,13 @@ import { COPY } from '../../config/copy.constants';
 import { API_ERROR_CODES } from '../../config/http.constants';
 import { contentEditPath, contentNewPath } from '../../config/routes';
 import { isForbidden } from '../access/access-error';
-import type { ContentTypeField } from '../access/access.api';
+import type { ContentTypeField } from '../content-types';
 import { useCallerAccess } from '../access/caller-access';
-import { LoadError, PageHeader, TableSkeleton } from '../access/PageStates';
+import {
+  LoadError,
+  PageHeader,
+  TableSkeleton,
+} from '../../components/PageStates';
 import { BulkCreateDialog } from './BulkCreateDialog';
 import { BulkDeleteDialog } from './BulkDeleteDialog';
 import { failedItems, itemReason, toBulkFailure } from './bulk';

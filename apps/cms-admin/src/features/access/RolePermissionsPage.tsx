@@ -6,7 +6,8 @@ import { Link, useParams } from 'react-router';
 import { COPY } from '../../config/copy.constants';
 import { API_ERROR_CODES, HTTP_STATUS } from '../../config/http.constants';
 import { APP_ROUTES } from '../../config/routes';
-import type { ContentType, Role } from './access.api';
+import type { ContentType } from '../content-types';
+import type { Role } from './access.api';
 import { useAccessApi } from './access-api-context';
 import { toAccessError } from './access-error';
 import {
@@ -15,7 +16,11 @@ import {
   useRolesQuery,
 } from './access-queries';
 import { useCallerAccess } from './caller-access';
-import { LoadError, PageHeader, TableSkeleton } from './PageStates';
+import {
+  LoadError,
+  PageHeader,
+  TableSkeleton,
+} from '../../components/PageStates';
 import { PermissionMatrix } from './PermissionMatrix';
 import {
   cellIssues,

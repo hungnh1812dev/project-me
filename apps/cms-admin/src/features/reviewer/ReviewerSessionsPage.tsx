@@ -21,9 +21,9 @@ import { useCallerAccess } from '../access/caller-access';
 import {
   LoadError,
   PageHeader,
-  Pagination,
   TableSkeleton,
-} from '../access/PageStates';
+} from '../../components/PageStates';
+import { Pagination } from '../../components/Pagination';
 import { useReviewerApi } from './reviewer-api-context';
 import {
   REVIEWER_QUERY_KEYS,

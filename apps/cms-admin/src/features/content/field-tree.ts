@@ -1,4 +1,4 @@
-import type { ContentTypeField } from '../access/access.api';
+import type { ContentTypeField } from '../content-types';
 
 /** A content field arranged as a tree (components hold their fields). */
 export interface FieldNode {

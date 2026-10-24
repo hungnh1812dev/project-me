@@ -3,7 +3,8 @@ import { useId } from 'react';
 
 import { FIELD_PICKER_INDENT_REM } from '../../config/access.constants';
 import { COPY } from '../../config/copy.constants';
-import type { ContentTypeField, FieldList } from './access.api';
+import type { ContentTypeField } from '../content-types';
+import type { FieldList } from './access.api';
 import { isCoveredBy, toggleField } from './permission-matrix';
 
 const copy = COPY.access.fields;

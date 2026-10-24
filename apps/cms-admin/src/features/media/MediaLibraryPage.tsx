@@ -14,9 +14,9 @@ import { useCallerAccess } from '../access/caller-access';
 import {
   LoadError,
   PageHeader,
-  Pagination,
   TableSkeleton,
-} from '../access/PageStates';
+} from '../../components/PageStates';
+import { Pagination } from '../../components/Pagination';
 import { DeleteMediaDialog } from './DeleteMediaDialog';
 import { EditAltDialog } from './EditAltDialog';
 import { useMediaApi } from './media-api-context';

@@ -5,7 +5,11 @@ import { COPY } from '../../config/copy.constants';
 import { rolePermissionsPath } from '../../config/routes';
 import { isForbidden } from './access-error';
 import { useRolesQuery } from './access-queries';
-import { LoadError, PageHeader, TableSkeleton } from './PageStates';
+import {
+  LoadError,
+  PageHeader,
+  TableSkeleton,
+} from '../../components/PageStates';
 
 const copy = COPY.access.roles;
 

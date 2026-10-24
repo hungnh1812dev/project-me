@@ -4,7 +4,7 @@ import { resolve } from 'node:path';
 import type {
   ContentType,
   ContentTypeField,
-} from '../src/features/access/access.api';
+} from '../src/features/content-types';
 
 interface Definition {
   name: string;

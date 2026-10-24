@@ -7,7 +7,11 @@ import { useNavigate, useParams } from 'react-router';
 import { COPY } from '../../config/copy.constants';
 import { REVIEWER_ROLE_SLUG } from '../../config/reviewer.constants';
 import { contentEditPath } from '../../config/routes';
-import { LoadError, PageHeader, TableSkeleton } from '../access/PageStates';
+import {
+  LoadError,
+  PageHeader,
+  TableSkeleton,
+} from '../../components/PageStates';
 import { useCurrentUser } from '../auth';
 import { useContentApi } from './content-api-context';
 import { ConflictMergeModal } from './ConflictMergeModal';

@@ -9,6 +9,9 @@ import { ACCOUNT_LIMITS, API_TOKEN_LIMITS } from './access.constants';
 
 /** User-facing text. One place until an i18n module exists. */
 export const COPY = {
+  common: {
+    retry: 'Try again',
+  },
   app: {
     name: 'Abyss CMS',
   },

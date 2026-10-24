@@ -7,6 +7,8 @@ import type {
 } from '../../config/access.constants';
 import type { TwoFactorMethod } from '../../config/auth.constants';
 import { API_ENDPOINTS } from '../../config/endpoints';
+import type { PageMeta } from '../../lib/api-types';
+import { getContentTypes } from '../content-types';
 
 /** `null` = every field; otherwise API field paths (`reference.phone`). */
 export type FieldList = readonly string[] | null;
@@ -58,25 +60,6 @@ export interface InviteAccountInput {
 
 export type InvitedAccount = Account & { invitationSent: boolean };
 
-/** A field of a content type (T17b). */
-export interface ContentTypeField {
-  path: string;
-  type: string;
-  system: boolean;
-  component: boolean;
-  repeatable: boolean;
-  rootScalar: boolean;
-  conditionKind: string | null;
-  sensitive: boolean;
-}
-
-export interface ContentType {
-  slug: string;
-  kind: string;
-  draftAndPublish: boolean;
-  fields: ContentTypeField[];
-}
-
 /** One entry of a token scope; a missing field list means all fields. */
 export interface TokenScopeEntry {
   subject: string;
@@ -125,13 +108,6 @@ interface ListBody<T> {
   data: T[];
 }
 
-/** Offset paging of `GET /accounts` (T17c). `total` counts every row. */
-export interface PageMeta {
-  page: number;
-  pageSize: number;
-  total: number;
-}
-
 export interface AccountsPage {
   data: Account[];
   meta: PageMeta;
@@ -139,7 +115,7 @@ export interface AccountsPage {
 
 /** Accounts, roles and content-type discovery (T17, T17b). Bearer via the interceptor. */
 export function createAccessApi(client: AxiosInstance) {
-  const { ACCOUNTS, ROLES, CONTENT_TYPES, API_TOKENS } = API_ENDPOINTS;
+  const { ACCOUNTS, ROLES, API_TOKENS } = API_ENDPOINTS;
   return {
     listAccounts: async (
       page: number,
@@ -227,12 +203,7 @@ export function createAccessApi(client: AxiosInstance) {
     },
 
     /** Sorted by slug. */
-    listContentTypes: async (): Promise<ContentType[]> => {
-      const { data } = await client.get<ListBody<ContentType>>(
-        CONTENT_TYPES.LIST,
-      );
-      return data.data;
-    },
+    listContentTypes: () => getContentTypes(client),
   };
 }
 

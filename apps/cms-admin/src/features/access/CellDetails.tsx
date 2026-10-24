@@ -1,7 +1,7 @@
 import { useId } from 'react';
 
 import { COPY } from '../../config/copy.constants';
-import type { ContentType } from './access.api';
+import type { ContentType } from '../content-types';
 import { FieldPicker } from './FieldPicker';
 import type { PermissionMatrixProps } from './PermissionMatrix';
 import {

@@ -10,7 +10,7 @@ import {
 import { COPY } from '../../config/copy.constants';
 import { API_ENDPOINTS } from '../../config/endpoints';
 import { contentListPath } from '../../config/routes';
-import type { ContentType } from '../access/access.api';
+import type { ContentType } from '../content-types';
 import type { DocumentListItem } from './content.api';
 
 const { REFRESH, ME } = API_ENDPOINTS.AUTH;
