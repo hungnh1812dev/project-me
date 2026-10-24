@@ -28,7 +28,7 @@ export interface ErrorFormatOptions {
   phase: GraphqlPhase;
   requestId: string | undefined;
   /** Production: no "Did you mean" suggestions anywhere. */
-  stripSuggestions: boolean;
+  shouldStripSuggestions: boolean;
 }
 
 const logger = new Logger('GraphQL');
@@ -37,7 +37,7 @@ function fromHttpException(exception: HttpException): {
   code: string;
   message: string;
   details?: unknown;
-  serverError: boolean;
+  isServerError: boolean;
 } {
   const described = describeHttpException(exception);
   return {
@@ -46,7 +46,7 @@ function fromHttpException(exception: HttpException): {
       : described.errorCode,
     message: described.message,
     details: described.details,
-    serverError: described.isServerError,
+    isServerError: described.isServerError,
   };
 }
 
@@ -70,7 +70,7 @@ function classify(
   const original = error.originalError;
   if (original instanceof HttpException) {
     const mapped = fromHttpException(original);
-    if (mapped.serverError) {
+    if (mapped.isServerError) {
       logger.error(`Resolver failed: ${original.message}`, original.stack);
     }
     return mapped;
@@ -125,7 +125,7 @@ export function formatGraphqlError(
     // A hint on the Query type could name a type the actor may not see, so
     // those are always stripped; every other hint only in production.
     message:
-      options.stripSuggestions || ROOT_UNKNOWN_FIELD_PATTERN.test(message)
+      options.shouldStripSuggestions || ROOT_UNKNOWN_FIELD_PATTERN.test(message)
         ? message.replace(SUGGESTION_PATTERN, '')
         : message,
     extensions,

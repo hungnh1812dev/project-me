@@ -22,7 +22,7 @@ export interface PrintSchemaOptions {
   schemasDir: string;
   sdlFile: string;
   /** Write nothing; report whether the file is up to date. */
-  check: boolean;
+  shouldCheckOnly: boolean;
 }
 
 export type PrintSchemaResult =
@@ -44,13 +44,13 @@ export async function renderSdl(schemasDir: string): Promise<string> {
   return `${printSchema(buildGraphqlSchema(definitions))}\n`;
 }
 
-/** Writes the SDL, or with `check` compares it with the committed file. */
+/** Writes the SDL, or with `shouldCheckOnly` compares it with the committed file. */
 export async function printSchemaFile(
   options: PrintSchemaOptions,
 ): Promise<PrintSchemaResult> {
   const sdl = await renderSdl(options.schemasDir);
   const current = await readIfPresent(options.sdlFile);
-  if (!options.check) {
+  if (!options.shouldCheckOnly) {
     if (current === sdl) return { status: 'up-to-date' };
     await writeFile(options.sdlFile, sdl, UTF8);
     return { status: 'written' };
@@ -69,7 +69,7 @@ async function main(): Promise<void> {
   const result = await printSchemaFile({
     schemasDir: DEFAULT_CONTENT_PATHS.schemasDir,
     sdlFile: DEFAULT_SDL_FILE,
-    check: values.check,
+    shouldCheckOnly: values.check,
   });
   switch (result.status) {
     case 'written':

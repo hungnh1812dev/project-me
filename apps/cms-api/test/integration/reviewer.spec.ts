@@ -14,6 +14,7 @@ import {
 import {
   TURNSTILE_VERIFIER,
   type TurnstileOutcome,
+  type TurnstileVerifier,
 } from '../../src/infrastructure/turnstile/turnstile.port';
 import { seedRolePermissions } from '../../src/modules/access/roles/role-permissions.seed';
 import { AUDIT_ACTIONS } from '../../src/modules/security-audit/security-audit.constants';
@@ -61,9 +62,9 @@ function nextIp(): string {
 
 const outcome: { value: TurnstileOutcome } = { value: 'passed' };
 const verifier = {
-  configured: true,
+  isConfigured: true,
   verify: (): Promise<TurnstileOutcome> => Promise.resolve(outcome.value),
-};
+} satisfies TurnstileVerifier;
 
 const SESSION_BODY = {
   visitorRole: 'Recruiter',

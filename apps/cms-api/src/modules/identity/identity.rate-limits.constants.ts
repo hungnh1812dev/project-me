@@ -24,14 +24,14 @@ export const IDENTITY_RATE_LIMIT_POLICIES = {
     {
       name: RATE_LIMIT_RULE_NAMES.LOGIN_IP,
       keySource: RATE_LIMIT_KEY_SOURCES.IP,
-      limit: 10,
+      maxHits: 10,
       windowMs: FIFTEEN_MINUTES_MS,
       limitOverrideEnvKey: 'LOGIN_RATE_LIMIT_IP',
     },
     {
       name: RATE_LIMIT_RULE_NAMES.LOGIN_EMAIL,
       keySource: RATE_LIMIT_KEY_SOURCES.EMAIL,
-      limit: 5,
+      maxHits: 5,
       windowMs: FIFTEEN_MINUTES_MS,
       limitOverrideEnvKey: 'LOGIN_RATE_LIMIT_EMAIL',
     },
@@ -45,13 +45,13 @@ export const IDENTITY_RATE_LIMIT_POLICIES = {
     {
       name: 'otp-request:ip',
       keySource: RATE_LIMIT_KEY_SOURCES.IP,
-      limit: 5,
+      maxHits: 5,
       windowMs: FIFTEEN_MINUTES_MS,
     },
     {
       name: 'otp-request:email',
       keySource: RATE_LIMIT_KEY_SOURCES.EMAIL,
-      limit: 5,
+      maxHits: 5,
       windowMs: ONE_HOUR_MS,
     },
   ],
@@ -60,7 +60,7 @@ export const IDENTITY_RATE_LIMIT_POLICIES = {
     {
       name: 'password-submit:ip',
       keySource: RATE_LIMIT_KEY_SOURCES.IP,
-      limit: 10,
+      maxHits: 10,
       windowMs: FIFTEEN_MINUTES_MS,
     },
   ],
@@ -69,7 +69,7 @@ export const IDENTITY_RATE_LIMIT_POLICIES = {
     {
       name: 'password-change:ip',
       keySource: RATE_LIMIT_KEY_SOURCES.IP,
-      limit: 5,
+      maxHits: 5,
       windowMs: FIFTEEN_MINUTES_MS,
     },
   ],
@@ -78,7 +78,7 @@ export const IDENTITY_RATE_LIMIT_POLICIES = {
     {
       name: '2fa-verify:ip',
       keySource: RATE_LIMIT_KEY_SOURCES.IP,
-      limit: 10,
+      maxHits: 10,
       windowMs: FIFTEEN_MINUTES_MS,
     },
   ],
@@ -90,7 +90,7 @@ export const IDENTITY_RATE_LIMIT_POLICIES = {
     {
       name: '2fa-email:ip',
       keySource: RATE_LIMIT_KEY_SOURCES.IP,
-      limit: 5,
+      maxHits: 5,
       windowMs: FIFTEEN_MINUTES_MS,
     },
   ],
@@ -102,7 +102,7 @@ export const IDENTITY_RATE_LIMIT_POLICIES = {
     {
       name: '2fa-manage:ip',
       keySource: RATE_LIMIT_KEY_SOURCES.IP,
-      limit: 5,
+      maxHits: 5,
       windowMs: FIFTEEN_MINUTES_MS,
     },
   ],
@@ -114,7 +114,7 @@ export const IDENTITY_RATE_LIMIT_POLICIES = {
     {
       name: 'setup-submit:ip',
       keySource: RATE_LIMIT_KEY_SOURCES.IP,
-      limit: 5,
+      maxHits: 5,
       windowMs: FIFTEEN_MINUTES_MS,
     },
   ],
@@ -123,7 +123,7 @@ export const IDENTITY_RATE_LIMIT_POLICIES = {
     {
       name: 'setup-status:ip',
       keySource: RATE_LIMIT_KEY_SOURCES.IP,
-      limit: 30,
+      maxHits: 30,
       windowMs: ONE_MINUTE_MS,
     },
   ],
@@ -131,7 +131,7 @@ export const IDENTITY_RATE_LIMIT_POLICIES = {
     {
       name: RATE_LIMIT_RULE_NAMES.REFRESH_IP,
       keySource: RATE_LIMIT_KEY_SOURCES.IP,
-      limit: 30,
+      maxHits: 30,
       windowMs: ONE_MINUTE_MS,
       limitOverrideEnvKey: 'REFRESH_RATE_LIMIT_IP',
     },

@@ -48,12 +48,12 @@ function overlayComponents(
   base: ComponentTrees,
   sent: Record<string, ComponentInput[]> | undefined,
 ): ComponentTrees {
-  const result: ComponentTrees = { ...base };
+  const mergedTrees: ComponentTrees = { ...base };
   for (const [name, items] of Object.entries(sent ?? {})) {
     const stored = new Map(
       (base[name] ?? []).map((node) => [node.componentUid, node]),
     );
-    result[name] = items.map((item, index): ComponentNode => {
+    mergedTrees[name] = items.map((item, index): ComponentNode => {
       const known =
         item.componentUid === undefined
           ? undefined
@@ -67,7 +67,7 @@ function overlayComponents(
       };
     });
   }
-  return result;
+  return mergedTrees;
 }
 
 /** A numeric string and a number with the same value are equal (`"1.50"` vs `1.5`). */

@@ -127,10 +127,13 @@ export class DocumentsQueryService {
     const documents = rows.map((row) =>
       toDocument(projected, row, trees.get(row.id as number) ?? {}),
     );
-    const data = new RecordSerializer(type).serializeMany(documents, access);
-    await this.media.embed(type.root, data);
+    const serializedRecords = new RecordSerializer(type).serializeMany(
+      documents,
+      access,
+    );
+    await this.media.embed(type.root, serializedRecords);
     return {
-      data,
+      data: serializedRecords,
       meta: {
         page: query.page,
         pageSize: query.pageSize,

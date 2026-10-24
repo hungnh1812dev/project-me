@@ -70,7 +70,7 @@ export class GraphqlExecutor {
           formatGraphqlError(error, {
             phase,
             requestId,
-            stripSuggestions: this.config.isProduction,
+            shouldStripSuggestions: this.config.isProduction,
           }),
         ),
       },
@@ -99,7 +99,7 @@ export class GraphqlExecutor {
     if (invalid.length > 0) return fail('validate', invalid);
 
     const contextValue: GraphqlContext = { actor };
-    const result = await execute({
+    const executionResult = await execute({
       schema,
       document,
       variableValues: request.variables ?? undefined,
@@ -107,14 +107,14 @@ export class GraphqlExecutor {
       contextValue,
     });
     const phase: GraphqlPhase = 'execute';
-    const errors = result.errors?.map((error) =>
+    const errors = executionResult.errors?.map((error) =>
       formatGraphqlError(error, {
         phase,
         requestId,
-        stripSuggestions: this.config.isProduction,
+        shouldStripSuggestions: this.config.isProduction,
       }),
     );
-    if (!('data' in result) || result.data === undefined) {
+    if (!('data' in executionResult) || executionResult.data === undefined) {
       // Variables or operation rejected before any field ran.
       return {
         status: HTTP_BAD_REQUEST,
@@ -125,8 +125,8 @@ export class GraphqlExecutor {
       status: HTTP_OK,
       body:
         errors === undefined
-          ? { data: result.data }
-          : { data: result.data, errors },
+          ? { data: executionResult.data }
+          : { data: executionResult.data, errors },
     };
   }
 }

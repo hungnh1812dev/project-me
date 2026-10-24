@@ -13,7 +13,7 @@ export const DOCUMENTS_RATE_LIMIT_POLICIES = {
     {
       name: 'document-read:anonymous-ip',
       keySource: RATE_LIMIT_KEY_SOURCES.ANONYMOUS_IP,
-      limit: 120,
+      maxHits: 120,
       windowMs: ONE_MINUTE_MS,
     },
   ],

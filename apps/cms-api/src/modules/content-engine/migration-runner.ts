@@ -144,7 +144,7 @@ export async function runContentMigrations(
         definition: JSON.stringify(entry.definition),
         definition_hash: entry.hash,
       };
-      const result = await meta
+      const upsertOutcome = await meta
         .insertInto(META_TABLES.contentTypes)
         .values(row)
         .onConflict((conflict) =>
@@ -164,7 +164,7 @@ export async function runContentMigrations(
             ),
         )
         .executeTakeFirst();
-      if (Number(result.numInsertedOrUpdatedRows ?? 0) > 0) upserted.push(slug);
+      if (Number(upsertOutcome.numInsertedOrUpdatedRows ?? 0) > 0) upserted.push(slug);
     }
 
     const slugs = Object.keys(snapshot.contentTypes);

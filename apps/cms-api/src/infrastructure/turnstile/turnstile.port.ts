@@ -13,7 +13,7 @@ export type TurnstileOutcome = 'passed' | 'failed' | 'unavailable';
 
 export interface TurnstileVerifier {
   /** False when no secret key is set: `verify` then always answers `unavailable`. */
-  readonly configured: boolean;
+  readonly isConfigured: boolean;
   /** Server-side verification of the widget's response token. */
   verify(responseToken: string, remoteIp?: string): Promise<TurnstileOutcome>;
 }

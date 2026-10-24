@@ -113,15 +113,15 @@ export class RegistryService {
 
   /** Validates the definitions (alone and as a set) and plans their tables. */
   static fromDefinitions(definitions: readonly unknown[]): RegistryService {
-    const result = validateDefinitions(definitions);
-    if (!result.ok) {
+    const validation = validateDefinitions(definitions);
+    if (!validation.ok) {
       throw new ContentEngineError(
         'Content type registry contains an invalid definition.',
       );
     }
     return new RegistryService(
       new Map(
-        result.definitions.map(({ definition, tables }) => [
+        validation.definitions.map(({ definition, tables }) => [
           definition.slug,
           register(definition, tables),
         ]),

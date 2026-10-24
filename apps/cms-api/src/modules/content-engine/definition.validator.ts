@@ -268,19 +268,19 @@ export function validateDefinitions(
   const names: OwnedName[] = [];
 
   inputs.forEach((input, index) => {
-    const result = validateDefinition(input);
-    if (!result.ok) {
+    const validation = validateDefinition(input);
+    if (!validation.ok) {
       errors.push(
-        ...result.errors.map((error) => ({
+        ...validation.errors.map((error) => ({
           ...error,
           path: [index, ...error.path],
         })),
       );
       return;
     }
-    valid.push({ definition: result.definition, tables: result.tables });
+    valid.push({ definition: validation.definition, tables: validation.tables });
     names.push(
-      ...schemaNames(result.tables).map((entry) => ({
+      ...schemaNames(validation.tables).map((entry) => ({
         ...entry,
         path: [index, ...entry.path],
       })),

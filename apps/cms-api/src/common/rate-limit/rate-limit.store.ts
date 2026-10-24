@@ -17,7 +17,7 @@ export interface RateLimitHit {
    * capacity). The hit was not counted; callers must treat it as over the
    * limit, with `resetAt` as the earliest time to retry.
    */
-  readonly refused?: boolean;
+  readonly isRefused?: boolean;
 }
 
 /**
@@ -82,7 +82,7 @@ export class InMemoryRateLimitStore implements RateLimitStore {
       return Promise.resolve({
         count: 0,
         resetAt: this.earliestResetAt,
-        refused: true,
+        isRefused: true,
       });
     }
     if (counter === undefined || counter.resetAt <= now) {

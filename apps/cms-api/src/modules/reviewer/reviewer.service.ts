@@ -205,7 +205,7 @@ export class ReviewerService {
     ip: string | undefined,
     userAgent: string | undefined,
   ): Promise<CreatedReviewerSessionView> {
-    if (!this.turnstile.configured || this.ipKey === undefined) {
+    if (!this.turnstile.isConfigured || this.ipKey === undefined) {
       throw unavailable();
     }
     const ipHmac = this.hmacOf(ip ?? UNKNOWN_CLIENT_IP, this.ipKey);

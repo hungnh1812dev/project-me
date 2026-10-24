@@ -7,15 +7,15 @@ import type {
 import type { ComponentTrees } from '../content-engine/tree-loader';
 
 function cloneComponents(trees: ComponentTrees): ComponentsInput {
-  const result: ComponentsInput = {};
+  const clonedComponents: ComponentsInput = {};
   for (const [field, nodes] of Object.entries(trees)) {
-    result[field] = nodes.map((node): ComponentInput => ({
+    clonedComponents[field] = nodes.map((node): ComponentInput => ({
       componentUid: node.componentUid,
       values: { ...node.values },
       components: cloneComponents(node.components),
     }));
   }
-  return result;
+  return clonedComponents;
 }
 
 /**

@@ -300,7 +300,7 @@ describe('OTP + password lifecycle (D8, SPEC §12-9/10; Postgres 16 via Testcont
       const account = await createAccount();
       const [, emailRule] = IDENTITY_RATE_LIMIT_POLICIES.OTP_REQUEST;
       for (const email of [account.email, 'ghost-limit@example.test']) {
-        for (let i = 0; i < emailRule.limit; i += 1) {
+        for (let i = 0; i < emailRule.maxHits; i += 1) {
           expect((await post(REQUEST_OTP).send({ email })).status).toBe(
             HttpStatus.ACCEPTED,
           );
@@ -581,7 +581,7 @@ describe('OTP + password lifecycle (D8, SPEC §12-9/10; Postgres 16 via Testcont
     it('throttles the 6th change per IP within 15 minutes', async () => {
       const [rule] = IDENTITY_RATE_LIMIT_POLICIES.PASSWORD_CHANGE;
       const ip = nextIp();
-      for (let i = 0; i < rule.limit; i += 1) {
+      for (let i = 0; i < rule.maxHits; i += 1) {
         await post(CHANGE, ip).send({});
       }
       const res = await post(CHANGE, ip).send({});

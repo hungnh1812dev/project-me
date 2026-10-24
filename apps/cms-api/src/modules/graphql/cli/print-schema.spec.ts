@@ -29,26 +29,26 @@ describe('print-schema', () => {
 
   it('writes the SDL, then reports it up to date', async () => {
     expect(
-      await printSchemaFile({ schemasDir, sdlFile, check: false }),
+      await printSchemaFile({ schemasDir, sdlFile, shouldCheckOnly: false }),
     ).toEqual({
       status: 'written',
     });
     expect(await readFile(sdlFile, 'utf8')).toContain('noteList(');
     expect(
-      await printSchemaFile({ schemasDir, sdlFile, check: false }),
+      await printSchemaFile({ schemasDir, sdlFile, shouldCheckOnly: false }),
     ).toEqual({
       status: 'up-to-date',
     });
   });
 
-  it('--check reports missing and stale files and writes nothing', async () => {
-    expect(await printSchemaFile({ schemasDir, sdlFile, check: true })).toEqual(
+  it('--shouldCheckOnly reports missing and stale files and writes nothing', async () => {
+    expect(await printSchemaFile({ schemasDir, sdlFile, shouldCheckOnly: true })).toEqual(
       {
         status: 'missing',
       },
     );
     await writeFile(sdlFile, 'type Query { stale: Int }\n');
-    expect(await printSchemaFile({ schemasDir, sdlFile, check: true })).toEqual(
+    expect(await printSchemaFile({ schemasDir, sdlFile, shouldCheckOnly: true })).toEqual(
       {
         status: 'stale',
       },
@@ -56,12 +56,12 @@ describe('print-schema', () => {
     expect(await readFile(sdlFile, 'utf8')).toBe('type Query { stale: Int }\n');
   });
 
-  it('--check passes for the committed SDL of the real definitions', async () => {
+  it('--shouldCheckOnly passes for the committed SDL of the real definitions', async () => {
     expect(
       await printSchemaFile({
         schemasDir: DEFAULT_CONTENT_PATHS.schemasDir,
         sdlFile: DEFAULT_SDL_FILE,
-        check: true,
+        shouldCheckOnly: true,
       }),
     ).toEqual({ status: 'up-to-date' });
   });

@@ -11,7 +11,7 @@ export const REVIEWER_RATE_LIMIT_POLICIES = {
     {
       name: 'reviewer-status:ip',
       keySource: RATE_LIMIT_KEY_SOURCES.IP,
-      limit: 120,
+      maxHits: 120,
       windowMs: ONE_MINUTE_MS,
     },
   ],
@@ -23,7 +23,7 @@ export const REVIEWER_RATE_LIMIT_POLICIES = {
     {
       name: 'reviewer-session:ip',
       keySource: RATE_LIMIT_KEY_SOURCES.IP,
-      limit: 20,
+      maxHits: 20,
       windowMs: TEN_MINUTES_MS,
     },
   ],

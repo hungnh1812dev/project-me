@@ -14,13 +14,13 @@ export const ACCESS_RATE_LIMIT_POLICIES = {
     {
       name: 'account-invite:ip',
       keySource: RATE_LIMIT_KEY_SOURCES.IP,
-      limit: 20,
+      maxHits: 20,
       windowMs: ONE_HOUR_MS,
     },
     {
       name: 'account-invite:actor',
       keySource: RATE_LIMIT_KEY_SOURCES.ACTOR,
-      limit: 10,
+      maxHits: 10,
       windowMs: ONE_HOUR_MS,
     },
   ],

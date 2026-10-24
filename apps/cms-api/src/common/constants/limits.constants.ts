@@ -34,10 +34,10 @@ export interface RateLimitRule {
   readonly name: string;
   readonly keySource: RateLimitKeySource;
   /** Requests allowed per window; the next one gets 429. */
-  readonly limit: number;
+  readonly maxHits: number;
   readonly windowMs: number;
   /**
-   * Env key that may replace `limit`. Only the keys listed in
+   * Env key that may replace `maxHits`. Only the keys listed in
    * `RATE_LIMIT_OVERRIDE_ENV_KEYS` are accepted; the config parses and guards
    * them, the guard applies them.
    */

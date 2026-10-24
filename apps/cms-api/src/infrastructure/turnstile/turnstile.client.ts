@@ -15,14 +15,14 @@ const siteverifyResponseSchema = z.object({
   'error-codes': z.array(z.string()).optional(),
 });
 
-export type FetchFn = (
+export type HttpFetch = (
   url: string,
   init: { method: string; body: URLSearchParams; signal: AbortSignal },
 ) => Promise<{ ok: boolean; json(): Promise<unknown> }>;
 
 /** Used when TURNSTILE_SECRET_KEY is unset: never verifies, so callers fail closed. */
 export class UnconfiguredTurnstileVerifier implements TurnstileVerifier {
-  readonly configured = false;
+  readonly isConfigured = false;
 
   verify(): Promise<TurnstileOutcome> {
     return Promise.resolve('unavailable');
@@ -31,10 +31,10 @@ export class UnconfiguredTurnstileVerifier implements TurnstileVerifier {
 
 /** Cloudflare Turnstile siteverify over HTTPS. The secret never leaves this class. */
 export class TurnstileClient implements TurnstileVerifier {
-  readonly configured = true;
+  readonly isConfigured = true;
   private readonly logger = new Logger(TurnstileClient.name);
 
-  private readonly fetchFn: FetchFn;
+  private readonly fetchFn: HttpFetch;
   private readonly expectedHostname: string | undefined;
 
   /**
@@ -43,7 +43,7 @@ export class TurnstileClient implements TurnstileVerifier {
    */
   constructor(
     private readonly secretKey: string,
-    options: { fetchFn?: FetchFn; expectedHostname?: string | undefined } = {},
+    options: { fetchFn?: HttpFetch; expectedHostname?: string | undefined } = {},
   ) {
     this.fetchFn = options.fetchFn ?? fetch;
     this.expectedHostname = options.expectedHostname;
@@ -53,27 +53,31 @@ export class TurnstileClient implements TurnstileVerifier {
     responseToken: string,
     remoteIp?: string,
   ): Promise<TurnstileOutcome> {
-    const body = new URLSearchParams({
+    const formFields = new URLSearchParams({
       [TURNSTILE_FIELDS.SECRET]: this.secretKey,
       [TURNSTILE_FIELDS.RESPONSE]: responseToken,
     });
-    if (remoteIp !== undefined) body.set(TURNSTILE_FIELDS.REMOTE_IP, remoteIp);
+    if (remoteIp !== undefined) {
+      formFields.set(TURNSTILE_FIELDS.REMOTE_IP, remoteIp);
+    }
     try {
-      const res = await this.fetchFn(TURNSTILE_SITEVERIFY_URL, {
+      const reply = await this.fetchFn(TURNSTILE_SITEVERIFY_URL, {
         method: 'POST',
-        body,
+        body: formFields,
         signal: AbortSignal.timeout(TURNSTILE_TIMEOUT_MS),
       });
-      if (!res.ok) return 'unavailable';
-      const parsed = siteverifyResponseSchema.safeParse(await res.json());
-      if (!parsed.success) return 'unavailable';
-      if (parsed.data.success) {
+      if (!reply.ok) return 'unavailable';
+      const parsedReply = siteverifyResponseSchema.safeParse(
+        await reply.json(),
+      );
+      if (!parsedReply.success) return 'unavailable';
+      if (parsedReply.data.success) {
         const wrongHost =
           this.expectedHostname !== undefined &&
-          parsed.data.hostname?.toLowerCase() !== this.expectedHostname;
+          parsedReply.data.hostname?.toLowerCase() !== this.expectedHostname;
         return wrongHost ? 'failed' : 'passed';
       }
-      return parsed.data['error-codes']?.includes(TURNSTILE_INTERNAL_ERROR) ===
+      return parsedReply.data['error-codes']?.includes(TURNSTILE_INTERNAL_ERROR) ===
         true
         ? 'unavailable'
         : 'failed';

@@ -15,14 +15,14 @@ import { RATE_LIMIT_POLICY_METADATA, ThrottleGuard } from './throttle.guard';
 const OVERRIDDEN_RULE: RateLimitRule = {
   name: 'a:ip',
   keySource: RATE_LIMIT_KEY_SOURCES.IP,
-  limit: 10,
+  maxHits: 10,
   windowMs: 1_000,
   limitOverrideEnvKey: 'LOGIN_RATE_LIMIT_IP',
 };
 const OTHER_RULE: RateLimitRule = {
   name: 'b:ip',
   keySource: RATE_LIMIT_KEY_SOURCES.IP,
-  limit: 10,
+  maxHits: 10,
   windowMs: 1_000,
 };
 

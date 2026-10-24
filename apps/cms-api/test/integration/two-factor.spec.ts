@@ -837,7 +837,7 @@ describe('Two-factor authentication (D8, SPEC §9, T13; Postgres 16 via Testcont
       const [rule] = IDENTITY_RATE_LIMIT_POLICIES.TWO_FACTOR_MANAGE;
       const ip = nextIp();
       const paths = [SETUP, ENABLE, DISABLE];
-      for (let i = 0; i < rule.limit; i += 1) {
+      for (let i = 0; i < rule.maxHits; i += 1) {
         await post(paths[i % paths.length] ?? SETUP, ip).send({});
       }
       const res = await post(SETUP, ip).send({});
@@ -848,7 +848,7 @@ describe('Two-factor authentication (D8, SPEC §9, T13; Postgres 16 via Testcont
     it('throttles the 6th email challenge per IP within 15 minutes', async () => {
       const [rule] = IDENTITY_RATE_LIMIT_POLICIES.TWO_FACTOR_EMAIL_CHALLENGE;
       const ip = nextIp();
-      for (let i = 0; i < rule.limit; i += 1) {
+      for (let i = 0; i < rule.maxHits; i += 1) {
         await post(EMAIL_CHALLENGE, ip).send({});
       }
       const res = await post(SEND_CODE, ip).send({});

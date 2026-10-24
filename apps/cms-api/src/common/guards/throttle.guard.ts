@@ -70,7 +70,7 @@ function emailKeyOf(req: Request): string | undefined {
     .digest('hex');
 }
 
-function subjectOf(
+function counterKeyOf(
   rule: RateLimitRule,
   req: Request,
   clientIp: ClientIpResolver,
@@ -116,15 +116,20 @@ export class ThrottleGuard implements CanActivate {
     const http = context.switchToHttp();
     const req = http.getRequest<Request>();
     for (const rule of rules) {
-      const subject = subjectOf(rule, req, this.clientIp, this.subjectResolver);
-      if (subject === undefined) continue;
+      const counterKey = counterKeyOf(
+        rule,
+        req,
+        this.clientIp,
+        this.subjectResolver,
+      );
+      if (counterKey === undefined) continue;
 
       const hit = await this.store.hit(
-        `${rule.name}:${subject}`,
+        `${rule.name}:${counterKey}`,
         rule.windowMs,
       );
       // A refused hit (store at capacity) answers exactly like a limit hit.
-      if (hit.refused === true || hit.count > this.limitOf(rule)) {
+      if (hit.isRefused === true || hit.count > this.limitOf(rule)) {
         this.reject(http.getResponse<Response>(), hit.resetAt);
       }
     }
@@ -133,10 +138,10 @@ export class ThrottleGuard implements CanActivate {
 
   /** The default limit, unless the config overrides the env key the rule declares. */
   private limitOf(rule: RateLimitRule): number {
-    if (rule.limitOverrideEnvKey === undefined) return rule.limit;
+    if (rule.limitOverrideEnvKey === undefined) return rule.maxHits;
     return (
       this.config.rateLimit.limitOverrides[rule.limitOverrideEnvKey] ??
-      rule.limit
+      rule.maxHits
     );
   }
 

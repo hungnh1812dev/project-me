@@ -101,7 +101,7 @@ describe('rate-limit policies', () => {
         rules.map((rule) => [
           rule.name,
           rule.keySource,
-          rule.limit,
+          rule.maxHits,
           rule.windowMs,
         ]),
       ]),

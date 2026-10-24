@@ -76,9 +76,9 @@ export async function loadDefinitions(
     }
   }
 
-  const result = validateDefinitions(inputs);
-  if (!result.ok) {
-    const lines = result.errors.map((error) => {
+  const validation = validateDefinitions(inputs);
+  if (!validation.ok) {
+    const lines = validation.errors.map((error) => {
       const [index, ...path] = error.path;
       const file = typeof index === 'number' ? files[index] : undefined;
       return `${file ?? '?'} ${formatDefinitionPath(path)} [${error.rule}] ${error.message}`;
@@ -88,7 +88,7 @@ export async function loadDefinitions(
     );
   }
 
-  const definitions = result.definitions.map((entry) => entry.definition);
+  const definitions = validation.definitions.map((entry) => entry.definition);
   definitions.forEach((definition, index) => {
     const expected = `${definition.slug}${SCHEMA_FILE_EXTENSION}`;
     if (files[index] !== expected) {
@@ -176,17 +176,17 @@ export async function readSnapshot(
     throw new ContentEngineError(`${MIGRATION_SNAPSHOT_FILE}: invalid format`);
   }
   const slugs = Object.keys(parsed.data.contentTypes);
-  const result = validateDefinitions(
+  const validation = validateDefinitions(
     slugs.map((slug) => parsed.data.contentTypes[slug]?.definition),
   );
-  if (!result.ok) {
+  if (!validation.ok) {
     throw new ContentEngineError(
       `${MIGRATION_SNAPSHOT_FILE}: contains an invalid definition`,
     );
   }
 
   const snapshot = emptySnapshot();
-  result.definitions.forEach(({ definition }, index) => {
+  validation.definitions.forEach(({ definition }, index) => {
     const key = slugs[index];
     const stored =
       key === undefined ? undefined : parsed.data.contentTypes[key];

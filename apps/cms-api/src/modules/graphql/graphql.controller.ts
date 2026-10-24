@@ -65,12 +65,12 @@ export class GraphqlController {
       });
     }
     const request = parseRequest(requestSchema, body);
-    const result = await this.executor.run(
+    const graphqlResponse = await this.executor.run(
       req.user.actor,
       request,
       req.requestId,
     );
-    res.status(result.status);
-    return result.body;
+    res.status(graphqlResponse.status);
+    return graphqlResponse.body;
   }
 }

@@ -1,7 +1,7 @@
-import { TurnstileClient, type FetchFn } from './turnstile.client';
+import { TurnstileClient, type HttpFetch } from './turnstile.client';
 import { TURNSTILE_SITEVERIFY_URL } from './turnstile.constants';
 
-function replying(json: unknown, ok = true): FetchFn {
+function replying(json: unknown, ok = true): HttpFetch {
   return () => Promise.resolve({ ok, json: () => Promise.resolve(json) });
 }
 

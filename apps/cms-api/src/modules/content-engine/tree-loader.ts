@@ -64,10 +64,10 @@ export async function loadComponentTrees(
   root: TableNode,
   rootIds: readonly number[],
 ): Promise<Map<number, ComponentTrees>> {
-  const result = new Map<number, ComponentTrees>(
+  const treesByParentId = new Map<number, ComponentTrees>(
     rootIds.map((id) => [id, emptyComponents(root)]),
   );
-  const queue: PendingLevel[] = [{ table: root, containers: result }];
+  const queue: PendingLevel[] = [{ table: root, containers: treesByParentId }];
 
   for (let level = queue.shift(); level; level = queue.shift()) {
     const parentIds = [...level.containers.keys()];
@@ -103,5 +103,5 @@ export async function loadComponentTrees(
       queue.push({ table, containers: children });
     }
   }
-  return result;
+  return treesByParentId;
 }

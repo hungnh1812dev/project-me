@@ -12,7 +12,7 @@ import { formatGraphqlError } from './error-format';
 const options = {
   phase: 'execute',
   requestId: 'req-1',
-  stripSuggestions: false,
+  shouldStripSuggestions: false,
 } as const;
 const wrapped = (
   original: unknown,
@@ -112,7 +112,7 @@ describe('formatGraphqlError', () => {
       'Did you mean',
     );
     expect(
-      formatGraphqlError(other, { ...validate, stripSuggestions: true })
+      formatGraphqlError(other, { ...validate, shouldStripSuggestions: true })
         .message,
     ).toBe('Cannot query field "titl" on type "Article".');
   });

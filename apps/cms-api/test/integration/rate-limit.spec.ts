@@ -128,8 +128,8 @@ describe('rate limiting + client IP (D7, SPEC §12-8; Postgres 16 via Testcontai
   }
 
   describe('with login limit overrides (T18b)', () => {
-    const OVERRIDE_IP = LOGIN_IP.limit + 3;
-    const OVERRIDE_EMAIL = LOGIN_EMAIL.limit + 3;
+    const OVERRIDE_IP = LOGIN_IP.maxHits + 3;
+    const OVERRIDE_EMAIL = LOGIN_EMAIL.maxHits + 3;
     let app: NestExpressApplication;
 
     beforeAll(async () => {
@@ -202,7 +202,7 @@ describe('rate limiting + client IP (D7, SPEC §12-8; Postgres 16 via Testcontai
 
     it('keys the IP limit on the real client, whatever XFF it forges (§12-8)', async () => {
       const attacker = nextIp();
-      for (let i = 0; i < LOGIN_IP.limit; i += 1) {
+      for (let i = 0; i < LOGIN_IP.maxHits; i += 1) {
         expect((await login(attacker, unknownEmail())).status).toBe(401);
       }
       const blocked = await login(attacker, unknownEmail());
@@ -226,7 +226,7 @@ describe('rate limiting + client IP (D7, SPEC §12-8; Postgres 16 via Testcontai
     it('limits per email across IPs, case- and whitespace-insensitively', async () => {
       const email = unknownEmail();
       const spellings = [email, email.toUpperCase(), ` ${email} `];
-      for (let i = 0; i < LOGIN_EMAIL.limit; i += 1) {
+      for (let i = 0; i < LOGIN_EMAIL.maxHits; i += 1) {
         const spelling = spellings[i % spellings.length] ?? email;
         expect((await login(nextIp(), spelling)).status).toBe(401);
       }
@@ -241,7 +241,7 @@ describe('rate limiting + client IP (D7, SPEC §12-8; Postgres 16 via Testcontai
     it('keeps the IP and email counters independent', async () => {
       // Exhaust one IP with fresh emails: those emails stay usable elsewhere.
       const busyIp = nextIp();
-      const emails = Array.from({ length: LOGIN_IP.limit }, unknownEmail);
+      const emails = Array.from({ length: LOGIN_IP.maxHits }, unknownEmail);
       for (const email of emails) {
         expect((await login(busyIp, email)).status).toBe(401);
       }
@@ -250,7 +250,7 @@ describe('rate limiting + client IP (D7, SPEC §12-8; Postgres 16 via Testcontai
 
       // Exhaust one email from many IPs: those IPs stay usable for others.
       const target = unknownEmail();
-      const ips = Array.from({ length: LOGIN_EMAIL.limit }, nextIp);
+      const ips = Array.from({ length: LOGIN_EMAIL.maxHits }, nextIp);
       for (const ip of ips) {
         expect((await login(ip, target)).status).toBe(401);
       }
@@ -260,7 +260,7 @@ describe('rate limiting + client IP (D7, SPEC §12-8; Postgres 16 via Testcontai
 
     it('counts down Retry-After and resets after the window', async () => {
       const ip = nextIp();
-      for (let i = 0; i < LOGIN_IP.limit; i += 1) {
+      for (let i = 0; i < LOGIN_IP.maxHits; i += 1) {
         await login(ip, unknownEmail());
       }
       const elapsedMs = LOGIN_IP.windowMs / 3;
@@ -278,7 +278,7 @@ describe('rate limiting + client IP (D7, SPEC §12-8; Postgres 16 via Testcontai
     it('throttles a known and an unknown email identically', async () => {
       const run = async (email: string) => {
         const results: unknown[] = [];
-        for (let i = 0; i <= LOGIN_EMAIL.limit; i += 1) {
+        for (let i = 0; i <= LOGIN_EMAIL.maxHits; i += 1) {
           const res = await login(nextIp(), email);
           results.push({
             body: errorBody(res),
@@ -297,7 +297,7 @@ describe('rate limiting + client IP (D7, SPEC §12-8; Postgres 16 via Testcontai
     });
 
     it('blocks a correct password too once the email limit is used up', async () => {
-      for (let i = 0; i < LOGIN_EMAIL.limit; i += 1) {
+      for (let i = 0; i < LOGIN_EMAIL.maxHits; i += 1) {
         await login(nextIp(), knownEmail);
       }
       expect((await login(nextIp(), knownEmail, PASSWORD)).status).toBe(429);
@@ -311,7 +311,7 @@ describe('rate limiting + client IP (D7, SPEC §12-8; Postgres 16 via Testcontai
         request(app.getHttpServer())
           .post(REFRESH)
           .set('X-Forwarded-For', `${spoofedIp()}, ${ip}`);
-      for (let i = 0; i < REFRESH_IP.limit; i += 1) {
+      for (let i = 0; i < REFRESH_IP.maxHits; i += 1) {
         expect((await refresh()).status).toBe(403);
       }
       const blocked = await refresh();
@@ -344,7 +344,7 @@ describe('rate limiting + client IP (D7, SPEC §12-8; Postgres 16 via Testcontai
 
     it('keys on the configured header and ignores X-Forwarded-For', async () => {
       const client = nextIp();
-      for (let i = 0; i < LOGIN_IP.limit; i += 1) {
+      for (let i = 0; i < LOGIN_IP.maxHits; i += 1) {
         expect((await login(client)).status).toBe(401);
       }
       expect((await login(client)).status).toBe(429);

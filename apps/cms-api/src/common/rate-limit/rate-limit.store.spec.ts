@@ -85,7 +85,7 @@ describe('InMemoryRateLimitStore', () => {
       expect(await store.hit('new', WINDOW_MS)).toEqual({
         count: 0,
         resetAt: START + WINDOW_MS,
-        refused: true,
+        isRefused: true,
       });
       expect(store.size).toBe(CAP);
       expect(await store.hit('k0', WINDOW_MS)).toEqual({
@@ -107,7 +107,7 @@ describe('InMemoryRateLimitStore', () => {
       await store.hit('short', WINDOW_MS);
       await store.hit('long-a', WINDOW_MS * 2);
       await store.hit('long-b', WINDOW_MS * 2);
-      expect((await store.hit('new', WINDOW_MS)).refused).toBe(true);
+      expect((await store.hit('new', WINDOW_MS)).isRefused).toBe(true);
 
       // Before the periodic sweep is due, only "short" has expired.
       clock.time = START + WINDOW_MS;
@@ -117,7 +117,7 @@ describe('InMemoryRateLimitStore', () => {
       });
       expect(store.size).toBe(CAP);
       expect((await store.hit('long-a', WINDOW_MS)).count).toBe(2);
-      expect((await store.hit('other', WINDOW_MS)).refused).toBe(true);
+      expect((await store.hit('other', WINDOW_MS)).isRefused).toBe(true);
     });
 
     it('gives the earliest expiry as resetAt of a refused hit', async () => {
