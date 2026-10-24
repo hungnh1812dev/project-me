@@ -19,7 +19,7 @@ import {
 import { e2eEnv } from '../src/env';
 
 /**
- * T32: reviewer access. Web dialog (anonymous visitor), the reviewer token
+ * Reviewer access. Web dialog (anonymous visitor), the reviewer token
  * held in memory, API refusals for a reviewer, and the owner's /reviewer page.
  * Needs internet: the smoke stack verifies Turnstile tokens against Cloudflare
  * with the public always-pass test keys. cms-api allows one session per IP per

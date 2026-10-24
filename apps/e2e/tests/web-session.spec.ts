@@ -7,7 +7,7 @@ import { e2eEnv } from '../src/env';
 import { mailIdsFor, waitForCode } from '../src/mailpit';
 
 /**
- * T33: apps/web sign-in dialog and in-memory session. Only reader accounts
+ * apps/web sign-in dialog and in-memory session. Only reader accounts
  * (role guest, no permission) may hold a web session; owner / admin / editor
  * are refused. Self-contained: it uses the seeded reader accounts and the
  * owner, reads no state from other specs (the smoke stack lifts the login

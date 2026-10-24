@@ -8,7 +8,7 @@ import { mailIdsFor, waitForCode } from '../src/mailpit';
 import { freshTotpCode } from '../src/totp';
 
 /**
- * T13 on the dedicated 2FA account (seeded by scripts/smoke.sh), never the
+ * Covers 2FA on the dedicated 2FA account (seeded by scripts/smoke.sh), never the
  * owner. Rate-limit budget of this spec, all from one IP within 15 min:
  * 3 logins for this email (limit 5), 4 setup/enable/disable (limit 5),
  * 2 email-code sends (limit 5), 2 verifies (limit 10), 1 password change.

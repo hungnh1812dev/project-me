@@ -395,7 +395,7 @@ test.describe.serial('owner: dynamic document form (cv-page)', () => {
 
     await field(other, 'Position').fill(`${POSITION_EDITED} B`);
     await saveButton(other).click();
-    // T25: the conflict opens the merge modal; Cancel leaves the alert.
+    // The conflict opens the merge modal; Cancel leaves the alert.
     const mergeDialog = other.getByRole('dialog', {
       name: copy.conflict.title,
     });

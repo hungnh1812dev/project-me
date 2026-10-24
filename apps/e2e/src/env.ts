@@ -19,13 +19,13 @@ export const e2eEnv = Object.freeze({
   ownerEmail: requireEnv('E2E_OWNER_EMAIL'),
   ownerPassword: requireEnv('E2E_OWNER_PASSWORD'),
   /**
-   * Dedicated 2FA account seeded by scripts/smoke.sh (T13), so the 2FA spec
+   * Dedicated 2FA account seeded by scripts/smoke.sh, so the 2FA spec
    * never spends the owner's login budget (5 per email per 15 min).
    */
   twoFactorEmail: requireEnv('E2E_2FA_EMAIL'),
   twoFactorPassword: requireEnv('E2E_2FA_PASSWORD'),
   /**
-   * Reader accounts seeded by scripts/smoke.sh (T33): role `guest`, so
+   * Reader accounts seeded by scripts/smoke.sh: role `guest`, so
    * `/auth/me` lists no permission and the web may share their session. The
    * 2FA one has email codes on. Kept apart from the owner / admin accounts.
    */

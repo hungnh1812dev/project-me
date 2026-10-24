@@ -23,7 +23,7 @@ function recordRefreshes(page: Page): number[] {
   return statuses;
 }
 
-test('two admin tabs that refresh at the same moment both stay signed in (T11a)', async ({
+test('two admin tabs that refresh at the same moment both stay signed in', async ({
   page,
   context,
 }) => {
