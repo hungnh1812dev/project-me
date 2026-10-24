@@ -21,7 +21,9 @@ import { RESET_SECOND_FACTOR } from './reset-second-factor';
 import { TotpService } from './totp.service';
 import { TwoFactorChallengeStore } from './two-factor-challenge.store';
 import { TwoFactorController } from './two-factor.controller';
-import { TwoFactorService } from './two-factor.service';
+import { TwoFactorEmailCodeSender } from './two-factor-email-code.sender';
+import { TwoFactorLoginService } from './two-factor-login.service';
+import { TwoFactorManagementService } from './two-factor-management.service';
 
 /** Login, JWT, refresh rotation; OTP + password lifecycle; 2FA. */
 @Module({
@@ -51,7 +53,9 @@ import { TwoFactorService } from './two-factor.service';
     SecretBox,
     TotpService,
     TwoFactorChallengeStore,
-    TwoFactorService,
+    TwoFactorEmailCodeSender,
+    TwoFactorLoginService,
+    TwoFactorManagementService,
     // D8: a reset of a TOTP account needs a valid authenticator code.
     { provide: RESET_SECOND_FACTOR, useExisting: TotpService },
   ],

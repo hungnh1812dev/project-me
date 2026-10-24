@@ -32,7 +32,11 @@ import {
   enableTwoFactorSchema,
   verifyTwoFactorSchema,
 } from './two-factor.requests';
-import { type TotpSetupResponse, TwoFactorService } from './two-factor.service';
+import { TwoFactorLoginService } from './two-factor-login.service';
+import {
+  type TotpSetupResponse,
+  TwoFactorManagementService,
+} from './two-factor-management.service';
 
 function parseBody<T>(schema: z.ZodType<T>, body: unknown): T {
   const parsed = schema.safeParse(body);
@@ -53,7 +57,8 @@ function parseBody<T>(schema: z.ZodType<T>, body: unknown): T {
 @Controller(TWO_FACTOR_ROUTES.ROOT)
 export class TwoFactorController {
   constructor(
-    private readonly twoFactor: TwoFactorService,
+    private readonly management: TwoFactorManagementService,
+    private readonly login: TwoFactorLoginService,
     private readonly clientIp: ClientIpResolver,
   ) {}
 
@@ -64,7 +69,7 @@ export class TwoFactorController {
   @Throttle(IDENTITY_RATE_LIMIT_POLICIES.TWO_FACTOR_MANAGE)
   setupTotp(@Req() req: AuthenticatedRequest): Promise<TotpSetupResponse> {
     requireAccountActor(req.user.actor);
-    return this.twoFactor.setupTotp(req.user.accountId);
+    return this.management.setupTotp(req.user.accountId);
   }
 
   @Post(TWO_FACTOR_ROUTES.ENABLE)
@@ -76,7 +81,7 @@ export class TwoFactorController {
     @Body() body: unknown,
   ): Promise<void> {
     requireAccountActor(req.user.actor);
-    return this.twoFactor.enable(
+    return this.management.enable(
       req.user.accountId,
       parseBody(enableTwoFactorSchema, body),
       clientMetaOf(this.clientIp, req),
@@ -92,7 +97,7 @@ export class TwoFactorController {
     @Body() body: unknown,
   ): Promise<void> {
     requireAccountActor(req.user.actor);
-    return this.twoFactor.disable(
+    return this.management.disable(
       req.user.accountId,
       parseBody(disableTwoFactorSchema, body),
       clientMetaOf(this.clientIp, req),
@@ -105,7 +110,7 @@ export class TwoFactorController {
   @Throttle(IDENTITY_RATE_LIMIT_POLICIES.TWO_FACTOR_EMAIL_CHALLENGE)
   sendEmailCode(@Req() req: AuthenticatedRequest): Promise<void> {
     requireAccountActor(req.user.actor);
-    return this.twoFactor.sendEmailCode(
+    return this.management.sendEmailCode(
       req.user.accountId,
       clientMetaOf(this.clientIp, req),
     );
@@ -121,7 +126,7 @@ export class TwoFactorController {
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
   ): Promise<AccessTokenResponse> {
-    const tokens = await this.twoFactor.verifyLogin(
+    const tokens = await this.login.verifyLogin(
       parseBody(verifyTwoFactorSchema, body),
       clientMetaOf(this.clientIp, req),
     );
@@ -134,7 +139,7 @@ export class TwoFactorController {
   @HttpCode(HttpStatus.ACCEPTED)
   @Throttle(IDENTITY_RATE_LIMIT_POLICIES.TWO_FACTOR_EMAIL_CHALLENGE)
   emailChallenge(@Body() body: unknown, @Req() req: Request): Promise<void> {
-    return this.twoFactor.emailChallenge(
+    return this.login.emailChallenge(
       parseBody(emailChallengeSchema, body).tempToken,
       clientMetaOf(this.clientIp, req),
     );

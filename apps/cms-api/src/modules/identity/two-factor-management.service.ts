@@ -3,10 +3,7 @@ import {
   ForbiddenException,
   HttpException,
   HttpStatus,
-  Inject,
   Injectable,
-  Logger,
-  ServiceUnavailableException,
   UnauthorizedException,
 } from '@nestjs/common';
 
@@ -14,42 +11,29 @@ import {
   AUTH_ERROR_CODES,
   AUTH_ERROR_MESSAGES,
 } from './identity-auth.constants';
-import { ERROR_CODES } from '../../common/constants/error.constants';
-import { RATE_LIMIT_MESSAGE } from '../../common/constants/limits.constants';
-import { MS_PER_SECOND } from '../../common/constants/time.constants';
-import { type IAppConfig } from '../../config/app-config';
-import { APP_CONFIG } from '../../config/config.constants';
 import { type Prisma, type TwoFaMethod } from '../../generated/prisma/client';
 import { PrismaService } from '../../infrastructure/database/prisma.service';
-import {
-  MAIL_SENDER,
-  type MailSender,
-} from '../../infrastructure/mail/mail.port';
 import {
   AUDIT_ACTIONS,
   REAUTH_FAILURE_REASONS,
   TWO_FACTOR_OPERATIONS,
 } from '../security-audit';
 import { SecurityAuditService, selfActor } from '../security-audit';
-import {
-  AccessTokenService,
-  type TwoFactorTempTokenClaims,
-} from './access-token.service';
-import { AuthService, type SessionTokens } from './auth.service';
 import { SecretBox } from './crypto/secret-box';
-import { buildOtpMail } from './otp-mail';
 import { isOtpCodeFormat, OtpService } from './otp.service';
 import { verifyPassword } from './password-hasher';
 import { type ClientMeta } from '../../common/http/client-meta';
-import { TOTP_ACCOUNT_SELECT, TotpService } from './totp.service';
-import { TwoFactorChallengeStore } from './two-factor-challenge.store';
+import { TotpService } from './totp.service';
+import { TwoFactorEmailCodeSender } from './two-factor-email-code.sender';
+import {
+  EMAIL_CODE_PURPOSE,
+  invalidTwoFactorCode,
+  TWO_FACTOR_ACCOUNT_SELECT,
+} from './two-factor.shared';
 import {
   type DisableTwoFactorRequest,
   type EnableTwoFactorRequest,
-  type VerifyTwoFactorRequest,
 } from './two-factor.requests';
-
-const LOGGER_CONTEXT = 'TwoFactorService';
 
 type TwoFactorOperation =
   (typeof TWO_FACTOR_OPERATIONS)[keyof typeof TWO_FACTOR_OPERATIONS];
@@ -61,8 +45,6 @@ interface AuditedAccount {
   readonly id: number;
   readonly documentId: string;
 }
-const EMAIL_CODE_PURPOSE = 'LOGIN_2FA_EMAIL';
-
 /** `POST /auth/2fa/totp/setup`: the QR is rendered by the client. */
 export interface TotpSetupResponse {
   readonly otpauthUri: string;
@@ -70,42 +52,12 @@ export interface TotpSetupResponse {
   readonly secret: string;
 }
 
-/** Account columns every 2FA operation reads. */
-const TWO_FACTOR_ACCOUNT_SELECT = {
-  ...TOTP_ACCOUNT_SELECT,
-  email: true,
-  passwordHash: true,
-  status: true,
-  deletedAt: true,
-  tokenVersion: true,
-  is2faEnabled: true,
-  twoFaMethod: true,
-  role: { select: { policyVersion: true } },
-} as const;
-
 /** Fields written when 2FA goes off or switches to email. */
 const CLEARED_TOTP = {
   totpSecretEnc: null,
   totpSecretKid: null,
   totpLastStep: null,
 } as const;
-
-function invalidTwoFactorCode(status: HttpStatus): HttpException {
-  return new HttpException(
-    {
-      errorCode: AUTH_ERROR_CODES.INVALID_2FA_CODE,
-      message: AUTH_ERROR_MESSAGES.INVALID_2FA_CODE,
-    },
-    status,
-  );
-}
-
-function invalidTempToken(): UnauthorizedException {
-  return new UnauthorizedException({
-    errorCode: AUTH_ERROR_CODES.INVALID_TEMP_TOKEN,
-    message: AUTH_ERROR_MESSAGES.INVALID_TEMP_TOKEN,
-  });
-}
 
 /** A signed-in re-auth failure is 403, so the client keeps its session. */
 function wrongPassword(): ForbiddenException {
@@ -136,35 +88,20 @@ function setupRequired(): ConflictException {
   });
 }
 
-/** Challenge store full (fail closed): same body as the throttle guard. */
-function challengeStoreFull(): HttpException {
-  return new HttpException(
-    { errorCode: ERROR_CODES.TOO_MANY_REQUESTS, message: RATE_LIMIT_MESSAGE },
-    HttpStatus.TOO_MANY_REQUESTS,
-  );
-}
-
 /**
- * Two-factor authentication (SPEC §9, D8): TOTP setup, enable and
- * disable (password + code) for the signed-in account, and the second login
- * step with the temp token from `POST /auth/login`. Email 2FA codes are
- * LOGIN_2FA_EMAIL OTPs.
+ * Two-factor management (SPEC §9, D8): TOTP setup, enable and disable
+ * (password + code) for the signed-in account. The second login step is
+ * `TwoFactorLoginService`.
  */
 @Injectable()
-export class TwoFactorService {
-  private readonly logger = new Logger(LOGGER_CONTEXT);
-
+export class TwoFactorManagementService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly totp: TotpService,
     private readonly secretBox: SecretBox,
     private readonly otp: OtpService,
-    private readonly challenges: TwoFactorChallengeStore,
-    private readonly accessTokens: AccessTokenService,
-    private readonly auth: AuthService,
     private readonly audit: SecurityAuditService,
-    @Inject(MAIL_SENDER) private readonly mail: MailSender,
-    @Inject(APP_CONFIG) private readonly config: IAppConfig,
+    private readonly emailCodes: TwoFactorEmailCodeSender,
   ) {}
 
   /**
@@ -309,86 +246,7 @@ export class TwoFactorService {
   ): Promise<void> {
     const account = await this.signedInAccount(accountDocumentId);
     if (account.is2faEnabled && account.twoFaMethod !== 'email') return;
-    await this.sendCode(account.id, account.email, meta);
-  }
-
-  /**
-   * Second login step. Every call counts one of the token's 5 attempts; a
-   * correct code uses the token up and starts the session.
-   */
-  async verifyLogin(
-    input: VerifyTwoFactorRequest,
-    meta: ClientMeta,
-  ): Promise<SessionTokens> {
-    const claims = this.tempTokenClaims(input.tempToken);
-    const expiresAtMs = claims.exp * MS_PER_SECOND;
-    const attempt = this.challenges.attempt(claims.jti, expiresAtMs);
-    if (attempt === 'refused') throw challengeStoreFull();
-    if (attempt === 'exhausted') throw invalidTempToken();
-
-    const account = await this.challengeAccount(claims);
-    const ok =
-      account.twoFaMethod === 'totp'
-        ? await this.totp.verifyAccountCode(account, input.code)
-        : await this.tryEmailCode(account.id, input.code);
-    if (!ok) {
-      // No write to share a transaction with: a standalone row.
-      await this.audit.recordStandalone({
-        actor: selfActor(account.id),
-        action: AUDIT_ACTIONS.TWO_FACTOR_VERIFY_FAILED,
-        targetId: account.documentId,
-        metadata: { method: account.twoFaMethod },
-        ip: meta.ip,
-      });
-      throw invalidTwoFactorCode(HttpStatus.UNAUTHORIZED);
-    }
-    if (!this.challenges.tryMarkUsed(claims.jti, expiresAtMs)) {
-      throw invalidTempToken();
-    }
-    return this.auth.startSession(
-      {
-        id: account.id,
-        documentId: account.documentId,
-        tokenVersion: account.tokenVersion,
-        policyVersion: account.role.policyVersion,
-      },
-      meta,
-      account.twoFaMethod,
-    );
-  }
-
-  /** Emails the login code of an email-2FA account; no-op for TOTP. */
-  async emailChallenge(rawTempToken: string, meta: ClientMeta): Promise<void> {
-    const claims = this.tempTokenClaims(rawTempToken);
-    if (!this.challenges.isLive(claims.jti)) throw invalidTempToken();
-    const account = await this.challengeAccount(claims);
-    if (account.twoFaMethod !== 'email') return;
-    await this.sendCode(account.id, account.email, meta);
-  }
-
-  private tempTokenClaims(rawTempToken: string): TwoFactorTempTokenClaims {
-    const claims = this.accessTokens.verifyTwoFactorTempToken(rawTempToken);
-    if (claims === undefined) throw invalidTempToken();
-    return claims;
-  }
-
-  /** The temp token's account, still active, same token_version, 2FA on. */
-  private async challengeAccount(claims: TwoFactorTempTokenClaims) {
-    const account = await this.prisma.account.findUnique({
-      where: { documentId: claims.sub },
-      select: TWO_FACTOR_ACCOUNT_SELECT,
-    });
-    if (
-      account === null ||
-      account.status !== 'active' ||
-      account.deletedAt !== null ||
-      account.tokenVersion !== claims.tv ||
-      !account.is2faEnabled ||
-      account.twoFaMethod === null
-    ) {
-      throw invalidTempToken();
-    }
-    return { ...account, twoFaMethod: account.twoFaMethod };
+    await this.emailCodes.send(account.id, account.email, meta);
   }
 
   private async signedInAccount(accountDocumentId: string) {
@@ -461,17 +319,6 @@ export class TwoFactorService {
     });
   }
 
-  /** Login step: checks and uses up an emailed code. */
-  private async tryEmailCode(
-    accountId: number,
-    code: string,
-  ): Promise<boolean> {
-    if (!isOtpCodeFormat(code)) return false;
-    const otpId = await this.otp.verify(accountId, EMAIL_CODE_PURPOSE, code);
-    if (otpId === undefined) return false;
-    return this.prisma.$transaction((tx) => this.otp.tryConsume(tx, otpId));
-  }
-
   /**
    * Enable/disable with an emailed code: the code is used up, the account
    * written and `alsoInTransaction` run (the audit row) in one transaction.
@@ -511,34 +358,5 @@ export class TwoFactorService {
       return true;
     });
     if (!consumed) throw await change.onBadCode();
-  }
-
-  /** Issues a LOGIN_2FA_EMAIL code (429 past the hourly cap) and mails it. */
-  private async sendCode(
-    accountId: number,
-    email: string,
-    meta: ClientMeta,
-  ): Promise<void> {
-    const code = await this.otp.issue(accountId, EMAIL_CODE_PURPOSE, {
-      ip: meta.ip,
-    });
-    try {
-      await this.mail.send(
-        buildOtpMail(
-          email,
-          EMAIL_CODE_PURPOSE,
-          code,
-          this.config.cors.allowedOrigins[0],
-        ),
-      );
-    } catch (error) {
-      // Name and code only: SMTP error messages can echo the recipient.
-      const name = error instanceof Error ? error.name : typeof error;
-      const errorCode = (error as { code?: unknown } | null)?.code;
-      this.logger.warn(
-        `2FA code not delivered: ${name}${typeof errorCode === 'string' ? ` (${errorCode})` : ''}`,
-      );
-      throw new ServiceUnavailableException();
-    }
   }
 }
