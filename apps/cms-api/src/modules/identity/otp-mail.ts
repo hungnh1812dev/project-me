@@ -1,8 +1,8 @@
 import { type OtpPurpose } from '../../generated/prisma/client';
 import { type MailMessage } from '../../infrastructure/mail/mail.port';
+import { SECONDS_PER_MINUTE } from '../../common/constants/time.constants';
 import { ADMIN_PAGE_PATHS, OTP } from './identity.constants';
 
-const SECONDS_PER_MINUTE = 60;
 const PRODUCT_NAME = 'Abyss CMS';
 
 interface OtpMailCopy {

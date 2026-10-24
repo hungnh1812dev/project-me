@@ -1,4 +1,4 @@
-const MS_PER_SECOND = 1_000;
+import { MS_PER_SECOND } from '../../common/constants/time.constants';
 
 /** Cloudflare's server-side verification endpoint (provider contract, not config). */
 export const TURNSTILE_SITEVERIFY_URL =

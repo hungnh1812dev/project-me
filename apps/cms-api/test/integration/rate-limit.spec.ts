@@ -3,10 +3,10 @@ import type { StartedPostgreSqlContainer } from '@testcontainers/postgresql';
 import request from 'supertest';
 
 import { Clock } from '../../src/common/time/clock';
+import { MS_PER_SECOND } from '../../src/common/constants/time.constants';
 import { RATE_LIMIT_STORE_MAX_KEYS } from '../../src/common/rate-limit/rate-limit.store';
 import { ERROR_CODES } from '../../src/common/constants/error.constants';
 import {
-  MS_PER_SECOND,
   RATE_LIMIT_MESSAGE,
   RATE_LIMIT_SWEEP_INTERVAL_MS,
 } from '../../src/common/constants/limits.constants';

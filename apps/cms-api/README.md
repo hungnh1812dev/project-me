@@ -274,7 +274,10 @@ The readiness ping goes through the `DATABASE_HEALTH` token
 Fixed windows, per resolved client IP and, for login, per email. Each module
 owns its policies in `src/modules/<module>/<module>.rate-limits.constants.ts`
 (identity, access, documents, media, reviewer); `src/common/constants/limits.constants.ts`
-holds only the mechanism (rule type, key sources, window lengths, store caps):
+holds only the mechanism (rule type, key sources, window lengths, store caps).
+Unit conversions (`MS_PER_SECOND`, `SECONDS_PER_DAY`, ...) are declared only in
+`src/common/constants/time.constants.ts`; a lint rule rejects a literal `1000` in
+any other `*.constants.ts`:
 
 | Policy                       | Limit                                                         |
 | ---------------------------- | ------------------------------------------------------------- |

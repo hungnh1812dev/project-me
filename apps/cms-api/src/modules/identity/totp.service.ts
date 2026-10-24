@@ -2,7 +2,7 @@ import { Inject, Injectable, Logger } from '@nestjs/common';
 import { generateSecret, generateURI, verify } from 'otplib';
 
 import { Clock } from '../../common/time/clock';
-import { MS_PER_SECOND } from '../../common/constants/limits.constants';
+import { MS_PER_SECOND } from '../../common/constants/time.constants';
 import { type IAppConfig } from '../../config/app-config';
 import { APP_CONFIG } from '../../config/config.constants';
 import { PrismaService } from '../../infrastructure/database/prisma.service';

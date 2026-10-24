@@ -4,10 +4,8 @@ import { HttpException, HttpStatus, Inject, Injectable } from '@nestjs/common';
 
 import { Clock } from '../../common/time/clock';
 import { ERROR_CODES } from '../../common/constants/error.constants';
-import {
-  MS_PER_SECOND,
-  RATE_LIMIT_MESSAGE,
-} from '../../common/constants/limits.constants';
+import { RATE_LIMIT_MESSAGE } from '../../common/constants/limits.constants';
+import { MS_PER_SECOND } from '../../common/constants/time.constants';
 import { type IAppConfig } from '../../config/app-config';
 import { APP_CONFIG } from '../../config/config.constants';
 import { type OtpPurpose, type Prisma } from '../../generated/prisma/client';

@@ -1,12 +1,10 @@
 import type { RateLimitOverrideEnvKey } from '../../config/config.constants';
-
-export const MS_PER_SECOND = 1_000;
-export const MS_PER_MINUTE = 60 * MS_PER_SECOND;
+import { MS_PER_HOUR, MS_PER_MINUTE } from './time.constants';
 
 /** Window lengths shared by the modules' rate-limit policies. */
 export const FIFTEEN_MINUTES_MS = 15 * MS_PER_MINUTE;
 export const ONE_MINUTE_MS = MS_PER_MINUTE;
-export const ONE_HOUR_MS = 60 * MS_PER_MINUTE;
+export const ONE_HOUR_MS = MS_PER_HOUR;
 export const TEN_MINUTES_MS = 10 * MS_PER_MINUTE;
 
 /** What a throttle rule counts per window. */

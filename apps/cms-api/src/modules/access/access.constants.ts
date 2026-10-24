@@ -147,6 +147,8 @@ export const VERSION_CACHE_TTL_MS = 5_000;
  * of accounts and roles; the cap only bounds memory if something goes wrong.
  * At the cap the oldest entry is dropped (it is re-read on next use).
  */
+// An entry count, not a time unit.
+// eslint-disable-next-line no-restricted-syntax
 export const VERSION_CACHE_MAX_ENTRIES = 1_000;
 
 /**

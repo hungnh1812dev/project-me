@@ -1,3 +1,4 @@
+import { MS_PER_HOUR } from '../../common/constants/time.constants';
 import type { MediaKind } from '../../infrastructure/media/media.constants';
 
 const BYTES_PER_MB = 1024 * 1024;
@@ -104,8 +105,8 @@ export const MEDIA_TABLE = 'public.file_library';
 export const DELETED_AT_COLUMN = 'deleted_at';
 
 /** Soft-deleted files are purged from storage once older than this (SPEC §9). */
-export const MEDIA_PURGE_GRACE_MS = 24 * 60 * 60 * 1000;
+export const MEDIA_PURGE_GRACE_MS = 24 * MS_PER_HOUR;
 /** The purge job runs this often, in-process (one replica; see README). */
-export const MEDIA_PURGE_INTERVAL_MS = 60 * 60 * 1000;
+export const MEDIA_PURGE_INTERVAL_MS = MS_PER_HOUR;
 /** Rows read per query during a purge run (a run walks all eligible rows). */
 export const MEDIA_PURGE_BATCH_SIZE = 100;

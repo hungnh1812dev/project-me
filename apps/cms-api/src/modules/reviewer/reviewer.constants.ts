@@ -1,7 +1,9 @@
 import { REVIEWER_SESSION_TTL_SECONDS } from '../identity';
 
-const MS_PER_SECOND = 1_000;
-const MS_PER_MINUTE = 60 * MS_PER_SECOND;
+import {
+  MS_PER_MINUTE,
+  MS_PER_SECOND,
+} from '../../common/constants/time.constants';
 
 /** `app_settings.key` holding the owner's reviewer toggle (value: boolean). */
 export const REVIEWER_ENABLED_SETTING_KEY = 'reviewer.enabled';

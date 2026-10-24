@@ -8,7 +8,7 @@ import request from 'supertest';
 import { Clock } from '../../src/common/time/clock';
 import { AUTH_ERROR_CODES } from '../../src/modules/identity/identity-auth.constants';
 import { ERROR_CODES } from '../../src/common/constants/error.constants';
-import { MS_PER_SECOND } from '../../src/common/constants/limits.constants';
+import { MS_PER_SECOND } from '../../src/common/constants/time.constants';
 import { IDENTITY_RATE_LIMIT_POLICIES } from '../../src/modules/identity/identity.rate-limits.constants';
 import {
   openPrisma,

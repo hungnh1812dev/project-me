@@ -2,17 +2,19 @@ import type { CookieOptions } from 'express';
 
 import { PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH } from './identity.constants';
 import { API_PREFIX } from '../../common/constants/api.constants';
+import {
+  MS_PER_SECOND,
+  SECONDS_PER_DAY,
+  SECONDS_PER_HOUR,
+  SECONDS_PER_MINUTE,
+} from '../../common/constants/time.constants';
 import { AUTH_ROUTES } from './identity.routes';
-
-const SECONDS_PER_MINUTE = 60;
-const SECONDS_PER_DAY = 24 * 60 * SECONDS_PER_MINUTE;
-const MS_PER_SECOND = 1_000;
 
 /** SPEC §6: access token lifetime (15 min). */
 export const ACCESS_TOKEN_TTL_SECONDS = 15 * SECONDS_PER_MINUTE;
 
 /** SPEC §6: a reviewer session lasts 24 h; its access token expires then too. */
-export const REVIEWER_SESSION_TTL_SECONDS = 24 * 60 * SECONDS_PER_MINUTE;
+export const REVIEWER_SESSION_TTL_SECONDS = 24 * SECONDS_PER_HOUR;
 
 /** SPEC §6: refresh token lifetime (7 days), restarted on every rotation. */
 export const REFRESH_TOKEN_TTL_SECONDS = 7 * SECONDS_PER_DAY;

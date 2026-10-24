@@ -52,12 +52,29 @@ const deepImportBan = (bannedModules) => ({
   },
 });
 
+/** Unit conversions live in `time.constants.ts`; 1000 in other constants files is a ms/s factor. */
+const timeConversionLiteralBan = {
+  files: ['src/**/*.constants.ts'],
+  ignores: ['src/common/constants/time.constants.ts'],
+  rules: {
+    'no-restricted-syntax': [
+      'error',
+      {
+        selector: 'Literal[value=1000]',
+        message:
+          'Compose a unit from common/constants/time.constants.ts instead of writing 1000.',
+      },
+    ],
+  },
+};
+
 export default [
   ...baseEslint({
     tsconfigRootDir: import.meta.dirname,
     ignores: ['src/generated/**'],
   }),
   { languageOptions: { globals: globals.node } },
+  timeConversionLiteralBan,
   {
     files: ['src/**/*.ts'],
     ignores: ['src/modules/**', 'src/architecture/**'],

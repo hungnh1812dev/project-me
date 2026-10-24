@@ -5,7 +5,7 @@ import {
   TEST_SECRET_32_BYTES,
 } from '../../../test/fixtures/env.fixture';
 import { Clock } from '../../common/time/clock';
-import { MS_PER_SECOND } from '../../common/constants/limits.constants';
+import { MS_PER_SECOND } from '../../common/constants/time.constants';
 import { loadAppConfig } from '../../config/app-config';
 import { CONFIG_DEFAULTS } from '../../config/config.constants';
 import { type PrismaService } from '../../infrastructure/database/prisma.service';

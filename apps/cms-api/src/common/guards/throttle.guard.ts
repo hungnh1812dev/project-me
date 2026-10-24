@@ -18,9 +18,9 @@ import { type IAppConfig } from '../../config/app-config';
 import { APP_CONFIG } from '../../config/config.constants';
 import { ClientIpResolver } from '../http/client-ip.resolver';
 import { Clock } from '../time/clock';
+import { MS_PER_SECOND } from '../constants/time.constants';
 import { ERROR_CODES } from '../constants/error.constants';
 import {
-  MS_PER_SECOND,
   RATE_LIMIT_KEY_HASH_ALGORITHM,
   RATE_LIMIT_KEY_SOURCES,
   RATE_LIMIT_MESSAGE,

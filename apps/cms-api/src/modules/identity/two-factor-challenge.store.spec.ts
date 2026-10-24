@@ -4,7 +4,7 @@ import {
   TWO_FACTOR_TEMP_TOKEN_MAX_ATTEMPTS,
   TWO_FACTOR_TEMP_TOKEN_TTL_SECONDS,
 } from './identity-auth.constants';
-import { MS_PER_SECOND } from '../../common/constants/limits.constants';
+import { MS_PER_SECOND } from '../../common/constants/time.constants';
 import { TwoFactorChallengeStore } from './two-factor-challenge.store';
 
 const START = 1_700_000_000_000;

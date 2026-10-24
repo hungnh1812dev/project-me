@@ -1,3 +1,4 @@
+import { MS_PER_HOUR } from '../../common/constants/time.constants';
 import { ADMIN_ROLE_SLUG, GUEST_ROLE_SLUG } from '../access';
 
 /** D8: minimum password length. */
@@ -117,7 +118,7 @@ export const OTP = {
   MAX_ATTEMPTS: 5,
   /** Codes issued per account per window, across all purposes (§12-9). */
   MAX_ISSUED_PER_WINDOW: 5,
-  ISSUE_WINDOW_MS: 60 * 60 * 1_000,
+  ISSUE_WINDOW_MS: MS_PER_HOUR,
   HMAC_ALGORITHM: 'sha256',
 } as const;
 
