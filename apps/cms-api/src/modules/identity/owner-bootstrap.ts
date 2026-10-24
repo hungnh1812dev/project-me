@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import type { PrismaClient } from '../../generated/prisma/client';
+import type { Prisma, PrismaClient } from '../../generated/prisma/client';
 import {
   AUDIT_ACTIONS,
   OWNER_CREATED_CHANNELS,
@@ -16,6 +16,8 @@ import {
 } from './identity.constants';
 import { OWNER_ROLE_SLUG } from '../access';
 import { hashPassword } from './password-hasher';
+
+type Tx = Prisma.TransactionClient;
 
 type OwnerBootstrapErrorCode =
   (typeof OWNER_BOOTSTRAP_ERRORS)[keyof typeof OWNER_BOOTSTRAP_ERRORS];
@@ -115,39 +117,9 @@ export async function bootstrapOwner(
 
   return prisma.$transaction(async (tx) => {
     await tx.$executeRaw`SELECT pg_advisory_xact_lock(${OWNER_BOOTSTRAP_LOCK_KEY})`;
-
-    const owner = await tx.account.findFirst({
-      where: { roleSlug: OWNER_ROLE_SLUG, deletedAt: null },
-      select: { id: true },
-    });
-    if (owner !== null) {
-      throw new OwnerBootstrapError(
-        OWNER_BOOTSTRAP_ERRORS.OWNER_EXISTS,
-        'An owner account already exists. owner:bootstrap runs only once.',
-      );
-    }
-
-    const role = await tx.role.findUnique({
-      where: { slug: OWNER_ROLE_SLUG },
-      select: { id: true, isSystem: true },
-    });
-    if (role === null || !role.isSystem) {
-      throw new OwnerBootstrapError(
-        OWNER_BOOTSTRAP_ERRORS.ROLE_MISSING,
-        'The system owner role is missing. Run db:migrate (it seeds the roles) first.',
-      );
-    }
-
-    const taken = await tx.account.findUnique({
-      where: { email },
-      select: { id: true },
-    });
-    if (taken !== null) {
-      throw new OwnerBootstrapError(
-        OWNER_BOOTSTRAP_ERRORS.EMAIL_TAKEN,
-        'An account with this email already exists; existing accounts are never promoted to owner.',
-      );
-    }
+    await assertNoLiveOwner(tx);
+    const roleId = await findSystemOwnerRoleId(tx);
+    await assertEmailFree(tx, email);
 
     const created = await tx.account.create({
       data: {
@@ -155,23 +127,69 @@ export async function bootstrapOwner(
         displayName,
         passwordHash,
         status: 'active',
-        role: { connect: { id_slug: { id: role.id, slug: OWNER_ROLE_SLUG } } },
+        role: { connect: { id_slug: { id: roleId, slug: OWNER_ROLE_SLUG } } },
       },
       select: { id: true, documentId: true, email: true },
     });
-    if (options !== undefined) {
-      await writeAuditLog(tx, {
-        actor:
-          options.channel === OWNER_CREATED_CHANNELS.CLI
-            ? { type: 'system' }
-            : selfActor(created.id),
-        action: AUDIT_ACTIONS.OWNER_CREATED,
-        subject: 'accounts',
-        targetId: created.documentId,
-        metadata: { channel: options.channel },
-        ip: options.ip,
-      });
-    }
+    if (options !== undefined) await recordOwnerCreated(tx, created, options);
     return created;
+  });
+}
+
+async function assertNoLiveOwner(tx: Tx): Promise<void> {
+  const owner = await tx.account.findFirst({
+    where: { roleSlug: OWNER_ROLE_SLUG, deletedAt: null },
+    select: { id: true },
+  });
+  if (owner !== null) {
+    throw new OwnerBootstrapError(
+      OWNER_BOOTSTRAP_ERRORS.OWNER_EXISTS,
+      'An owner account already exists. owner:bootstrap runs only once.',
+    );
+  }
+}
+
+async function findSystemOwnerRoleId(tx: Tx): Promise<number> {
+  const role = await tx.role.findUnique({
+    where: { slug: OWNER_ROLE_SLUG },
+    select: { id: true, isSystem: true },
+  });
+  if (role === null || !role.isSystem) {
+    throw new OwnerBootstrapError(
+      OWNER_BOOTSTRAP_ERRORS.ROLE_MISSING,
+      'The system owner role is missing. Run db:migrate (it seeds the roles) first.',
+    );
+  }
+  return role.id;
+}
+
+async function assertEmailFree(tx: Tx, email: string): Promise<void> {
+  const taken = await tx.account.findUnique({
+    where: { email },
+    select: { id: true },
+  });
+  if (taken !== null) {
+    throw new OwnerBootstrapError(
+      OWNER_BOOTSTRAP_ERRORS.EMAIL_TAKEN,
+      'An account with this email already exists; existing accounts are never promoted to owner.',
+    );
+  }
+}
+
+async function recordOwnerCreated(
+  tx: Tx,
+  created: { readonly id: number; readonly documentId: string },
+  options: OwnerBootstrapOptions,
+): Promise<void> {
+  await writeAuditLog(tx, {
+    actor:
+      options.channel === OWNER_CREATED_CHANNELS.CLI
+        ? { type: 'system' }
+        : selfActor(created.id),
+    action: AUDIT_ACTIONS.OWNER_CREATED,
+    subject: 'accounts',
+    targetId: created.documentId,
+    metadata: { channel: options.channel },
+    ip: options.ip,
   });
 }

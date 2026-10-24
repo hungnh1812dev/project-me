@@ -90,13 +90,22 @@ export function invalidRefreshToken(): UnauthorizedException {
   });
 }
 
+/** The account columns a sign-in reads. */
+interface LoginAccount {
+  readonly id: number;
+  readonly documentId: string;
+  readonly passwordHash: string | null;
+  readonly status: AccountStatus;
+  readonly deletedAt: Date | null;
+  readonly tokenVersion: number;
+  readonly is2faEnabled: boolean;
+  readonly twoFaMethod: TwoFaMethod | null;
+  readonly role: { readonly policyVersion: number };
+}
+
 /** Why a sign-in fails, or undefined when it may go on. */
 function loginFailureReason(
-  account: {
-    readonly passwordHash: string | null;
-    readonly status: AccountStatus;
-    readonly deletedAt: Date | null;
-  } | null,
+  account: LoginAccount | null,
   isPasswordCorrect: boolean,
 ): LoginFailureReason | undefined {
   if (account === null) return LOGIN_FAILURE_REASONS.UNKNOWN_ACCOUNT;
@@ -132,8 +141,36 @@ export class AuthService implements OnModuleInit {
     credentials: LoginCredentials,
     meta: ClientMeta,
   ): Promise<LoginResult> {
-    const account = await this.prisma.account.findUnique({
-      where: { email: credentials.email },
+    const account = await this.findLoginAccount(credentials.email);
+    const isPasswordCorrect = await this.verifyPasswordAgainstAnyHash(
+      account,
+      credentials.password,
+    );
+
+    const failure = loginFailureReason(account, isPasswordCorrect);
+    if (failure !== undefined) {
+      await this.recordLoginFailure(account, failure, credentials.email, meta);
+      throw invalidCredentials();
+    }
+    if (account === null) throw invalidCredentials();
+
+    if (account.is2faEnabled) return this.startTwoFactorStep(account);
+
+    const session = await this.startSession(
+      {
+        id: account.id,
+        documentId: account.documentId,
+        tokenVersion: account.tokenVersion,
+        policyVersion: account.role.policyVersion,
+      },
+      meta,
+    );
+    return { kind: 'session', ...session };
+  }
+
+  private findLoginAccount(email: string): Promise<LoginAccount | null> {
+    return this.prisma.account.findUnique({
+      where: { email },
       select: {
         id: true,
         documentId: true,
@@ -146,59 +183,49 @@ export class AuthService implements OnModuleInit {
         role: { select: { policyVersion: true } },
       },
     });
+  }
 
-    // Always run exactly one Argon2id verify, whatever the account state.
+  /** Always runs exactly one Argon2id verify, whatever the account state. */
+  private async verifyPasswordAgainstAnyHash(
+    account: LoginAccount | null,
+    password: string,
+  ): Promise<boolean> {
     const passwordHash =
       account?.passwordHash ??
       (this.dummyHash ??= await this.createDummyHash());
-    const isPasswordCorrect = await verifyPassword(
-      passwordHash,
-      credentials.password,
-    );
+    return verifyPassword(passwordHash, password);
+  }
 
-    const failure = loginFailureReason(account, isPasswordCorrect);
-    if (failure !== undefined) {
-      // No write to share a transaction with: a standalone row.
-      await this.audit.recordStandalone({
-        actor: selfActor(account?.id ?? null),
-        action: AUDIT_ACTIONS.AUTH_LOGIN_FAILED,
-        targetId: account?.documentId ?? null,
-        metadata:
-          account === null
-            ? {
-                reason: failure,
-                emailHmac: this.audit.emailHmac(credentials.email),
-              }
-            : { reason: failure },
-        ip: meta.ip,
-      });
-      throw invalidCredentials();
-    }
-    if (account === null) throw invalidCredentials();
+  private async recordLoginFailure(
+    account: LoginAccount | null,
+    reason: LoginFailureReason,
+    email: string,
+    meta: ClientMeta,
+  ): Promise<void> {
+    // No write to share a transaction with: a standalone row.
+    await this.audit.recordStandalone({
+      actor: selfActor(account?.id ?? null),
+      action: AUDIT_ACTIONS.AUTH_LOGIN_FAILED,
+      targetId: account?.documentId ?? null,
+      metadata:
+        account === null
+          ? { reason, emailHmac: this.audit.emailHmac(email) }
+          : { reason },
+      ip: meta.ip,
+    });
+  }
 
-    if (account.is2faEnabled) {
-      // Second step: POST /auth/2fa/verify with this token.
-      return {
-        kind: 'two-factor',
-        tempToken: this.accessTokens.signTwoFactorTempToken({
-          sub: account.documentId,
-          tv: account.tokenVersion,
-        }),
-        // Only the configured method, never an email fallback.
-        methods: account.twoFaMethod === null ? [] : [account.twoFaMethod],
-      };
-    }
-
-    const session = await this.startSession(
-      {
-        id: account.id,
-        documentId: account.documentId,
-        tokenVersion: account.tokenVersion,
-        policyVersion: account.role.policyVersion,
-      },
-      meta,
-    );
-    return { kind: 'session', ...session };
+  /** Second step: POST /auth/2fa/verify with the returned token. */
+  private startTwoFactorStep(account: LoginAccount): LoginResult {
+    return {
+      kind: 'two-factor',
+      tempToken: this.accessTokens.signTwoFactorTempToken({
+        sub: account.documentId,
+        tv: account.tokenVersion,
+      }),
+      // Only the configured method, never an email fallback.
+      methods: account.twoFaMethod === null ? [] : [account.twoFaMethod],
+    };
   }
 
   /**
