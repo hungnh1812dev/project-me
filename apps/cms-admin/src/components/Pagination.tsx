@@ -1,4 +1,4 @@
-import { Button } from '@abyss/form-commons';
+import { TablePagination } from '@abyss/form-commons';
 
 import type { PageMeta } from '../lib/api-types';
 
@@ -9,7 +9,7 @@ export interface PaginationCopy {
   next: string;
 }
 
-/** Previous / next with "x-y of total"; driven by the API's `meta`. */
+/** The kit `TablePagination`, driven by the API's `meta`. */
 export function Pagination({
   meta,
   count,
@@ -22,35 +22,19 @@ export function Pagination({
   onPage: (page: number) => void;
   copy: PaginationCopy;
 }) {
-  const from = (meta.page - 1) * meta.pageSize + 1;
-  const to = from + count - 1;
-  const hasNext = meta.page * meta.pageSize < meta.total;
   return (
-    <nav
-      aria-label={copy.label}
-      className="flex items-center justify-between gap-3 border-t border-border px-3 py-2 text-sm"
-    >
-      <span className="tabular-nums text-muted-foreground">
-        {copy.range(from, to, meta.total)}
-      </span>
-      <span className="flex gap-2">
-        <Button
-          type="button"
-          size="sm"
-          disabled={meta.page <= 1}
-          onClick={() => onPage(meta.page - 1)}
-        >
-          {copy.previous}
-        </Button>
-        <Button
-          type="button"
-          size="sm"
-          disabled={!hasNext}
-          onClick={() => onPage(meta.page + 1)}
-        >
-          {copy.next}
-        </Button>
-      </span>
-    </nav>
+    <TablePagination
+      page={meta.page}
+      pageSize={meta.pageSize}
+      total={meta.total}
+      count={count}
+      onPageChange={onPage}
+      labels={{
+        nav: copy.label,
+        previous: copy.previous,
+        next: copy.next,
+        range: copy.range,
+      }}
+    />
   );
 }
