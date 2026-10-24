@@ -21,11 +21,8 @@ import {
   BULK_ACTION,
   type BulkAction,
   COLLECTION_KIND,
-  FIELD_TYPE,
   LIST_MAX_VALUE_COLUMNS,
-  LIST_SORTABLE_TYPES,
   LIST_UPDATED_KEY,
-  MASKED_VALUE,
 } from '../../config/content.constants';
 import {
   CONTENT_WILDCARD_SUBJECT,
@@ -34,7 +31,6 @@ import {
 import { COPY } from '../../config/copy.constants';
 import { API_ERROR_CODES } from '../../config/http.constants';
 import { contentEditPath, contentNewPath } from '../../config/routes';
-import type { ContentTypeField } from '../content-types';
 import { isForbidden, useCallerAccess } from '../access';
 import {
   LoadError,
@@ -46,6 +42,11 @@ import { BulkDeleteDialog } from './BulkDeleteDialog';
 import { failedItems, itemReason, toBulkFailure } from './bulk';
 import { useContentApi } from './content-api-context';
 import { isMissing } from './content-error';
+import {
+  formatListValue,
+  isSortableListType,
+  listAlignmentOf,
+} from './field-registry';
 import { CONTENT_QUERY_KEYS, useDocumentListQuery } from './content-queries';
 import type { BulkItem, DocumentListItem } from './content.api';
 
@@ -64,21 +65,6 @@ type Banner =
       done: number;
       failures: { name: string; reason: string }[];
     };
-
-function formatValue(field: ContentTypeField, value: unknown): string {
-  if (value === null || value === undefined || value === '') {
-    return list.emptyValue;
-  }
-  if (value === MASKED_VALUE) return list.protectedValue;
-  if (field.type === FIELD_TYPE.BOOLEAN) return value ? list.yes : list.no;
-  if (field.type === FIELD_TYPE.DATETIME && typeof value === 'string') {
-    const date = new Date(value);
-    return Number.isNaN(date.getTime()) ? value : formatDateTime(date);
-  }
-  return typeof value === 'string' || typeof value === 'number'
-    ? String(value)
-    : list.emptyValue;
-}
 
 function bannerTone(banner: Banner): FormAlertTone {
   if (banner.kind === 'imported') return 'success';
@@ -146,7 +132,7 @@ export function CollectionListPage() {
             field.rootScalar &&
             !field.system &&
             !field.component &&
-            LIST_SORTABLE_TYPES.includes(field.type),
+            isSortableListType(field.type),
         )
         .slice(0, LIST_MAX_VALUE_COLUMNS),
     [type.data],
@@ -159,7 +145,9 @@ export function CollectionListPage() {
   const nameOf = (row: DocumentListItem): string => {
     const first = valueFields[0];
     const text =
-      first === undefined ? '' : formatValue(first, row.values[first.path]);
+      first === undefined
+        ? ''
+        : formatListValue(first.type, row.values[first.path]);
     return text === '' ||
       text === list.emptyValue ||
       text === list.protectedValue
@@ -173,10 +161,7 @@ export function CollectionListPage() {
       header: field.path,
       sortable: true,
       rowHeader: index === 0,
-      align:
-        field.type === FIELD_TYPE.INTEGER || field.type === FIELD_TYPE.DECIMAL
-          ? 'right'
-          : 'left',
+      align: listAlignmentOf(field.type),
       renderCell: (row) =>
         index === 0 ? (
           <Button asChild variant="link" className="h-auto p-0">
@@ -185,7 +170,7 @@ export function CollectionListPage() {
             </Link>
           </Button>
         ) : (
-          formatValue(field, row.values[field.path])
+          formatListValue(field.type, row.values[field.path])
         ),
     })),
     {

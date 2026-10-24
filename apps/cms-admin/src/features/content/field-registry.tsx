@@ -11,7 +11,8 @@ import {
 import type { ReactNode } from 'react';
 
 import { COPY } from '../../config/copy.constants';
-import { FIELD_TYPE } from '../../config/content.constants';
+import { FIELD_TYPE, MASKED_VALUE } from '../../config/content.constants';
+import { formatDateTime } from '../../lib/date-format';
 import { MediaField, mediaToApi, mediaToForm } from '../media';
 import {
   booleanToForm,
@@ -26,6 +27,7 @@ import {
 } from './field-values';
 
 const copy = COPY.content;
+const listCopy = copy.collection;
 
 export interface FieldRenderProps {
   /** Form path including item indexes (`experience.0.company`). */
@@ -41,12 +43,19 @@ export interface FieldAdapter {
   /** Form value -> API value; null clears the field. */
   toApi: (value: unknown) => unknown;
   render: (props: FieldRenderProps) => ReactNode;
+  /** Text for a present list cell; defaults to plain strings and numbers. */
+  formatForList?: (value: unknown) => string | null;
+  /** True: the type can be a list column the API sorts by. */
+  isSortable?: boolean;
+  /** Column alignment in the list; defaults to left. */
+  listAlignment?: 'left' | 'right';
 }
 
 const identity = (value: unknown): unknown => value ?? null;
 
 const text: FieldAdapter = {
   editable: true,
+  isSortable: true,
   toForm: textToForm,
   toApi: textToApi,
   render: ({ name, label }) => <TextInput name={name} label={label} />,
@@ -67,12 +76,26 @@ const notEditable: FieldAdapter = {
   render: () => null,
 };
 
+function datetimeForList(value: unknown): string | null {
+  if (typeof value !== 'string') return null;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? value : formatDateTime(date);
+}
+
+function plainForList(value: unknown): string | null {
+  return typeof value === 'string' || typeof value === 'number'
+    ? String(value)
+    : null;
+}
+
 /** The single map from field type to its input (SPEC: registry, not a switch). */
 export const FIELD_REGISTRY: Readonly<Record<string, FieldAdapter>> = {
   [FIELD_TYPE.STRING]: text,
   [FIELD_TYPE.TEXT]: longText,
   [FIELD_TYPE.INTEGER]: {
     editable: true,
+    isSortable: true,
+    listAlignment: 'right',
     toForm: numberToForm,
     toApi: integerToApi,
     render: ({ name, label }) => (
@@ -86,6 +109,8 @@ export const FIELD_REGISTRY: Readonly<Record<string, FieldAdapter>> = {
   },
   [FIELD_TYPE.DECIMAL]: {
     editable: true,
+    isSortable: true,
+    listAlignment: 'right',
     toForm: numberToForm,
     toApi: textToApi,
     render: ({ name, label }) => (
@@ -99,18 +124,23 @@ export const FIELD_REGISTRY: Readonly<Record<string, FieldAdapter>> = {
   },
   [FIELD_TYPE.BOOLEAN]: {
     editable: true,
+    isSortable: true,
+    formatForList: (value) => (value ? listCopy.yes : listCopy.no),
     toForm: booleanToForm,
     toApi: (value) => value === true,
     render: ({ name, label }) => <SwitchInput name={name} label={label} />,
   },
   [FIELD_TYPE.DATE]: {
     editable: true,
+    isSortable: true,
     toForm: textToForm,
     toApi: textToApi,
     render: ({ name, label }) => <DatePicker name={name} label={label} />,
   },
   [FIELD_TYPE.DATETIME]: {
     editable: true,
+    isSortable: true,
+    formatForList: datetimeForList,
     toForm: datetimeToForm,
     toApi: datetimeToApi,
     render: ({ name, label }) => <DateTimePicker name={name} label={label} />,
@@ -147,4 +177,22 @@ export const FIELD_REGISTRY: Readonly<Record<string, FieldAdapter>> = {
 /** Adapter for a type; unknown types are read-only rather than guessed. */
 export function adapterFor(type: string): FieldAdapter {
   return FIELD_REGISTRY[type] ?? notEditable;
+}
+
+export function isSortableListType(type: string): boolean {
+  return adapterFor(type).isSortable === true;
+}
+
+export function listAlignmentOf(type: string): 'left' | 'right' {
+  return adapterFor(type).listAlignment ?? 'left';
+}
+
+/** Cell text for a list column: empty and masked values are shared by all types. */
+export function formatListValue(type: string, value: unknown): string {
+  if (value === null || value === undefined || value === '') {
+    return listCopy.emptyValue;
+  }
+  if (value === MASKED_VALUE) return listCopy.protectedValue;
+  const format = adapterFor(type).formatForList ?? plainForList;
+  return format(value) ?? listCopy.emptyValue;
 }

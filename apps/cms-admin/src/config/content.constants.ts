@@ -71,16 +71,5 @@ export const BULK_ITEM_STATUS = { OK: 'ok', ERROR: 'error' } as const;
 /** System sort key of the list (cms-api default order is `-updatedAt`). */
 export const LIST_UPDATED_KEY = 'updatedAt';
 
-/** Field types a list column can show and the API can sort by. */
-export const LIST_SORTABLE_TYPES: readonly string[] = [
-  FIELD_TYPE.STRING,
-  FIELD_TYPE.TEXT,
-  FIELD_TYPE.INTEGER,
-  FIELD_TYPE.DECIMAL,
-  FIELD_TYPE.BOOLEAN,
-  FIELD_TYPE.DATE,
-  FIELD_TYPE.DATETIME,
-];
-
 /** `kind` of a content type that holds many documents (bulk works on these). */
 export const COLLECTION_KIND = 'collection';
