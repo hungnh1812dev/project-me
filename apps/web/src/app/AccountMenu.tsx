@@ -4,14 +4,13 @@ import { Button } from '@abyss/form-commons';
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 
-import { COPY } from '../../config/copy.constants';
-import { appEnv } from '../../config/env.client';
-import { REVIEWER_STATUS_STALE_MS } from '../../config/reviewer.constants';
-import { apiClient } from '../../lib/api-client';
-import { createReviewerApi } from '../reviewer/reviewer.api';
-import { ReviewerAccessDialog } from '../reviewer/ReviewerAccessDialog';
-import { useWebSession } from './useWebSession';
-import { WebLoginDialog } from './WebLoginDialog';
+import { COPY } from '../config/copy.constants';
+import { appEnv } from '../config/env.client';
+import { REVIEWER_STATUS_STALE_MS } from '../config/reviewer.constants';
+import { apiClient } from '../lib/api-client';
+import { WebLoginDialog } from '../features/auth';
+import { createReviewerApi, ReviewerAccessDialog } from '../features/reviewer';
+import { useWebSession } from '../features/session';
 
 const reviewerApi = createReviewerApi(apiClient);
 

@@ -64,8 +64,13 @@ tokens only (`bg-card`, `text-muted-foreground`).
   `__Secure-abyss_rt` refresh cookie (Path `/api/v1/auth`). No Server Action,
   Route Handler or `cookies()` call touches auth, and the Next server never
   sees a token.
-- `useWebSession` (`WebSessionProvider`, mounted in `src/app/providers.tsx`)
-  keeps the access token in memory only, tries one silent refresh on mount,
+- `features/session` owns the session: `useWebSession` and `WebSessionProvider`
+  (mounted in `src/app/providers.tsx`), the auth API and the one
+  `PrivilegedAccessError`. `features/auth` (sign-in dialog) and
+  `features/reviewer` build on it and never import each other; `app/AccountMenu`
+  composes them. Lint bans deep imports between features and test utilities in
+  production code; `src/architecture.test.ts` fails on a directory cycle. The
+  provider keeps the access token in memory only, tries one silent refresh on mount,
   and exposes `status`, `user`, `getAccessToken()`, sign-in, 2FA and sign-out.
 - Reader roles only: after each sign-in or refresh, `/auth/me` `permissions`
   (`subject:action`) is checked. Any action other than `read` (editor, admin,

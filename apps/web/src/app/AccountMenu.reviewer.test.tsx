@@ -1,20 +1,22 @@
 import { render, screen } from '@testing-library/react';
 
-import { COPY } from '../../config/copy.constants';
-import { AccountMenu } from '../auth/AccountMenu';
-import { fakeApi, Wrapper } from '../auth/test-utils';
+import { COPY } from '../config/copy.constants';
+import { AccountMenu } from './AccountMenu';
+import { fakeApi, Wrapper } from '../features/session/session-test-utils';
 
 const isEnabled = vi.hoisted(() => vi.fn<() => Promise<boolean>>());
 
-vi.mock('../../config/env.client', () => ({
+vi.mock('../config/env.client', () => ({
   appEnv: {
     apiBaseUrl: '/api/v1',
     adminUrl: undefined,
     turnstileSiteKey: 'site-key',
   },
 }));
-vi.mock('./reviewer.api', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('./reviewer.api')>()),
+vi.mock('../features/reviewer/reviewer.api', async (importOriginal) => ({
+  ...(await importOriginal<
+    typeof import('../features/reviewer/reviewer.api')
+  >()),
   createReviewerApi: () => ({
     isEnabled,
     createSession: vi.fn<() => Promise<never>>(),

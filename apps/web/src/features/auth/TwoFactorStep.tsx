@@ -14,10 +14,10 @@ import { COPY } from '../../config/copy.constants';
 import { API_ERROR_CODES } from '../../config/http.constants';
 import type { Alert } from '../../lib/alert';
 import type { ApiFailure } from '../../lib/api-failure';
-import type { TwoFactorChallenge } from './auth.api';
+import type { TwoFactorChallenge } from '../session';
 import { loginErrorAlertOf, rateLimitedMessage } from './login-alerts';
 import { useEmailCode } from './use-email-code';
-import { useWebSession } from './useWebSession';
+import { useWebSession } from '../session';
 
 const copy = COPY.login.twoFactor;
 const CODE_PATTERN = new RegExp(`^\\d{${LOGIN_CODE_LENGTH}}$`);

@@ -1,6 +1,6 @@
-import { createApiClient } from '../../lib/api-client';
+import { apiClient, createApiClient } from '../../lib/api-client';
 import { createAuthApi, type CurrentUser, isPrivileged } from './auth.api';
-import { TEST_USER } from './test-utils';
+import { TEST_USER } from './session-test-utils';
 
 function userWith(permissions: string[]): CurrentUser {
   return { ...TEST_USER, permissions };
@@ -31,6 +31,16 @@ describe('isPrivileged', () => {
   });
 });
 
+describe('isPrivileged fails closed (I1)', () => {
+  it.each([null, 'article:read', { 0: 'article:read' }])(
+    'is true when permissions is %j, not an array',
+    (permissions) => {
+      const user = { ...TEST_USER, permissions } as unknown as CurrentUser;
+      expect(isPrivileged(user)).toBe(true);
+    },
+  );
+});
+
 describe('me', () => {
   it('sends the exact Bearer header on that call only', async () => {
     const seen: unknown[] = [];
@@ -49,5 +59,21 @@ describe('me', () => {
     await createAuthApi(client).me('tok');
     await createAuthApi(client).refresh();
     expect(seen).toEqual(['Bearer tok', undefined]);
+  });
+
+  it('leaves no Authorization default on the shared apiClient', () => {
+    const headers = apiClient.defaults.headers as unknown as Record<
+      string,
+      unknown
+    >;
+    const sections = [headers, ...Object.values(headers)];
+    expect(
+      sections.some(
+        (section) =>
+          typeof section === 'object' &&
+          section !== null &&
+          'Authorization' in section,
+      ),
+    ).toBe(false);
   });
 });

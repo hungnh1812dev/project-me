@@ -7,7 +7,7 @@ import type { ReactNode } from 'react';
 
 import { NONCE_HEADER } from '../config/security.constants';
 import { COPY } from '../config/copy.constants';
-import { AccountMenu } from '../features/auth/AccountMenu';
+import { AccountMenu } from './AccountMenu';
 import { CspNonce } from './CspNonce';
 import { Providers } from './providers';
 

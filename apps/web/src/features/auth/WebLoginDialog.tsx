@@ -16,10 +16,10 @@ import { FormProvider, useForm } from 'react-hook-form';
 
 import { COPY } from '../../config/copy.constants';
 import type { Alert } from '../../lib/alert';
-import type { TwoFactorChallenge } from './auth.api';
+import type { TwoFactorChallenge } from '../session';
 import { credentialAlertOf, loginErrorAlertOf } from './login-alerts';
 import { TwoFactorStep } from './TwoFactorStep';
-import { useWebSession } from './useWebSession';
+import { useWebSession } from '../session';
 
 const copy = COPY.login;
 const EMAIL_SHAPE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;

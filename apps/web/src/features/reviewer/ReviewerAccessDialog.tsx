@@ -25,7 +25,7 @@ import {
   REVIEWER_VISITOR_ROLES,
 } from '../../config/reviewer.constants';
 import { apiFailureOf } from '../../lib/api-failure';
-import { useWebSession } from '../auth/useWebSession';
+import { useWebSession } from '../session';
 import { apiClient } from '../../lib/api-client';
 import { createReviewerApi, type ReviewerApi } from './reviewer.api';
 import { reviewerAlertOf, type ReviewerAlert } from './reviewer-error';

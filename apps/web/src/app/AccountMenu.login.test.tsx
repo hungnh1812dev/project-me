@@ -1,16 +1,16 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
-import { COPY } from '../../config/copy.constants';
+import { COPY } from '../config/copy.constants';
 import { AccountMenu } from './AccountMenu';
-import type { AuthApi } from './auth.api';
+import type { AuthApi } from '../features/session/auth.api';
 import {
   fakeApi,
   httpError,
   PRIVILEGED_USER,
   TEST_USER,
   Wrapper,
-} from './test-utils';
+} from '../features/session/session-test-utils';
 
 const login = COPY.login;
 

@@ -3,14 +3,14 @@ import userEvent from '@testing-library/user-event';
 
 import { COPY } from '../../config/copy.constants';
 import { REVIEWER_OTHER_VALUE } from '../../config/reviewer.constants';
-import { fakeApi, httpError, Wrapper } from '../auth/test-utils';
-import { useWebSession } from '../auth/useWebSession';
+import { fakeApi, httpError, Wrapper } from '../session/session-test-utils';
+import { useWebSession } from '../session';
 import {
   ReviewerAccessDialog,
   toSessionInput,
   type ReviewerFormValues,
 } from './ReviewerAccessDialog';
-import type { AuthApi } from '../auth/auth.api';
+import type { AuthApi } from '../session/auth.api';
 import type { ReviewerApi } from './reviewer.api';
 
 // The real widget loads Cloudflare's script; tests stand in for it.

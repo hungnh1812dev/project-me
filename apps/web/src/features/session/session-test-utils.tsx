@@ -4,7 +4,7 @@ import type { ReactNode } from 'react';
 import type { Mock } from 'vitest';
 
 import type { AuthApi, CurrentUser } from './auth.api';
-import { WebSessionProvider } from './useWebSession';
+import { WebSessionProvider } from './web-session';
 
 export const TEST_USER: CurrentUser = {
   id: 'acc-1',

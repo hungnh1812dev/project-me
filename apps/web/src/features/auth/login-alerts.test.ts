@@ -1,7 +1,7 @@
 import { AxiosError } from 'axios';
 
 import { COPY } from '../../config/copy.constants';
-import { PrivilegedAccessError } from './auth.api';
+import { PrivilegedAccessError } from '../session';
 import { credentialAlertOf, loginErrorAlertOf } from './login-alerts';
 
 const { errors } = COPY.login;

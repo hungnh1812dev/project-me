@@ -2,8 +2,13 @@ import { act, renderHook, waitFor } from '@testing-library/react';
 import type { ReactNode } from 'react';
 
 import { type AuthApi, PrivilegedAccessError } from './auth.api';
-import { fakeApi, PRIVILEGED_USER, TEST_USER, Wrapper } from './test-utils';
-import { useWebSession } from './useWebSession';
+import {
+  fakeApi,
+  PRIVILEGED_USER,
+  TEST_USER,
+  Wrapper,
+} from './session-test-utils';
+import { useWebSession } from './web-session';
 
 function setup(api = fakeApi()) {
   const wrapper = ({ children }: { children: ReactNode }) => (
@@ -186,6 +191,85 @@ describe('useWebSession', () => {
       ).rejects.toBeInstanceOf(PrivilegedAccessError);
     });
     expect(result.current.status).toBe('anonymous');
+  });
+
+  it('does not revoke the refresh family after the silent refresh (I3)', async () => {
+    const api = fakeApi({
+      refresh: vi.fn<AuthApi['refresh']>().mockResolvedValue('tok'),
+      me: vi.fn<AuthApi['me']>().mockResolvedValue(PRIVILEGED_USER),
+    });
+    const { result } = setup(api);
+    await waitFor(() => expect(result.current.status).toBe('anonymous'));
+    expect(api.logout).not.toHaveBeenCalled();
+  });
+
+  it('revokes the refresh family when a privileged 2FA completes (I3)', async () => {
+    const api = fakeApi({
+      verifyTwoFactor: vi
+        .fn<AuthApi['verifyTwoFactor']>()
+        .mockResolvedValue('adm'),
+      me: vi.fn<AuthApi['me']>().mockResolvedValue(PRIVILEGED_USER),
+    });
+    const { result } = setup(api);
+    await waitFor(() => expect(result.current.status).toBe('anonymous'));
+    await act(async () => {
+      await expect(
+        result.current.completeTwoFactor({ tempToken: 't', code: '123456' }),
+      ).rejects.toBeInstanceOf(PrivilegedAccessError);
+    });
+    expect(api.logout).toHaveBeenCalledTimes(1);
+    expect(result.current.getAccessToken()).toBeNull();
+  });
+
+  it('refuses a privileged reviewer token without revoking anything (I3)', async () => {
+    const api = fakeApi({
+      me: vi.fn<AuthApi['me']>().mockResolvedValue(PRIVILEGED_USER),
+    });
+    const { result } = setup(api);
+    await waitFor(() => expect(result.current.status).toBe('anonymous'));
+    await act(async () => {
+      await expect(
+        result.current.startReviewerSession('rev'),
+      ).rejects.toBeInstanceOf(PrivilegedAccessError);
+    });
+    expect(api.logout).not.toHaveBeenCalled();
+    expect(result.current.getAccessToken()).toBeNull();
+  });
+
+  it('holds no token while the account is still loading (I2)', async () => {
+    let finishMe: (user: typeof TEST_USER) => void = () => undefined;
+    const api = fakeApi({
+      me: vi.fn<AuthApi['me']>().mockReturnValue(
+        new Promise((resolve) => {
+          finishMe = resolve;
+        }),
+      ),
+    });
+    const { result } = setup(api);
+    await waitFor(() => expect(result.current.status).toBe('anonymous'));
+    let pending: Promise<void> = Promise.resolve();
+    act(() => {
+      pending = result.current.startReviewerSession('rev');
+    });
+    expect(result.current.getAccessToken()).toBeNull();
+    await act(async () => {
+      finishMe(TEST_USER);
+      await pending;
+    });
+    expect(result.current.getAccessToken()).toBe('rev');
+  });
+
+  it('keeps the token out of state, context fields and storage (I4)', async () => {
+    const api = fakeApi({
+      refresh: vi.fn<AuthApi['refresh']>().mockResolvedValue('secret-tok'),
+    });
+    const { result } = setup(api);
+    await waitFor(() => expect(result.current.status).toBe('authenticated'));
+    const { getAccessToken, ...fields } = result.current;
+    expect(getAccessToken()).toBe('secret-tok');
+    expect(JSON.stringify(fields)).not.toContain('secret-tok');
+    expect(JSON.stringify({ ...localStorage })).not.toContain('secret-tok');
+    expect(JSON.stringify({ ...sessionStorage })).not.toContain('secret-tok');
   });
 
   it('throws outside the provider', () => {

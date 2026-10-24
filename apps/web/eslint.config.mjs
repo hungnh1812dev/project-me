@@ -3,6 +3,27 @@ import nextPlugin from '@next/eslint-plugin-next';
 import reactHooks from 'eslint-plugin-react-hooks';
 import globals from 'globals';
 
+const TEST_FILES = ['**/*.test.{ts,tsx}'];
+
+const DEEP_FEATURE_IMPORT_BAN = {
+  regex: '^\\.\\./[^./][^/]*/',
+  message: 'Import another feature through its index.ts, not a deep path.',
+};
+const TEST_UTILS_BAN = {
+  group: ['**/*test-utils*'],
+  message: 'Test utilities are for *.test.* files only.',
+};
+const siblingFeatureBan = (feature) => ({
+  regex: `^\\.\\./${feature}$`,
+  message: `features/${feature} and this feature may not depend on each other.`,
+});
+
+const restrictImports = (files, patterns, ignores = []) => ({
+  files,
+  ignores,
+  rules: { 'no-restricted-imports': ['error', { patterns }] },
+});
+
 export default [
   ...baseEslint({
     tsconfigRootDir: import.meta.dirname,
@@ -12,4 +33,37 @@ export default [
   reactHooks.configs.flat['recommended-latest'],
   nextPlugin.configs['core-web-vitals'],
   { languageOptions: { globals: globals.browser } },
+  // A later config replaces earlier no-restricted-imports options, so each
+  // block below repeats the bans that apply to its files.
+  restrictImports(
+    ['src/**'],
+    [TEST_UTILS_BAN],
+    [...TEST_FILES, 'src/features/**'],
+  ),
+  restrictImports(
+    ['src/features/**'],
+    [DEEP_FEATURE_IMPORT_BAN, TEST_UTILS_BAN],
+    TEST_FILES,
+  ),
+  // auth and reviewer both build on session and never on each other.
+  restrictImports(
+    ['src/features/auth/**'],
+    [DEEP_FEATURE_IMPORT_BAN, TEST_UTILS_BAN, siblingFeatureBan('reviewer')],
+    TEST_FILES,
+  ),
+  restrictImports(
+    ['src/features/reviewer/**'],
+    [DEEP_FEATURE_IMPORT_BAN, TEST_UTILS_BAN, siblingFeatureBan('auth')],
+    TEST_FILES,
+  ),
+  restrictImports(
+    ['src/features/session/**'],
+    [
+      DEEP_FEATURE_IMPORT_BAN,
+      TEST_UTILS_BAN,
+      siblingFeatureBan('auth'),
+      siblingFeatureBan('reviewer'),
+    ],
+    TEST_FILES,
+  ),
 ];

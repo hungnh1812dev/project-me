@@ -6,7 +6,7 @@ import {
   apiFailureOf,
   formatRetryAfter,
 } from '../../lib/api-failure';
-import { PrivilegedAccessError } from './auth.api';
+import { PrivilegedAccessError } from '../session';
 
 const { errors } = COPY.login;
 
