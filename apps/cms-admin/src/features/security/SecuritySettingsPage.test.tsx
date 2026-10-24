@@ -105,6 +105,29 @@ describe('SecuritySettingsPage', () => {
     );
   });
 
+  it('keeps the TOTP setup open on an overlay click and drops the secret on Esc', async () => {
+    await openSecurity([TEST_USER], {
+      [`POST ${TOTP_SETUP}`]: () => ({
+        status: 200,
+        data: { otpauthUri: 'otpauth://totp/x', secret: SECRET },
+      }),
+    });
+    await userEvent.click(
+      screen.getByRole('button', { name: copy.twoFactor.setUpTotp }),
+    );
+    const dialog = await screen.findByRole('dialog');
+    await within(dialog).findByTestId('totp-secret');
+
+    const overlay = document.querySelector('[data-slot="dialog-overlay"]');
+    expect(overlay).not.toBeNull();
+    await userEvent.click(overlay as Element);
+    expect(screen.getByTestId('totp-secret')).toBeInTheDocument();
+
+    await userEvent.keyboard('{Escape}');
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(screen.queryByTestId('totp-secret')).toBeNull();
+  });
+
   it('marks a wrong password (403) without ending the session', async () => {
     const { api, services } = await openSecurity([TEST_USER], {
       [`POST ${TOTP_SETUP}`]: () => ({

@@ -52,6 +52,11 @@ async function signOut(page: Page): Promise<void> {
   ).toBeVisible();
 }
 
+/** Click the page corner, which is the dialog overlay while a dialog is open. */
+async function clickBackdrop(page: Page): Promise<void> {
+  await page.mouse.click(2, 2);
+}
+
 async function confirm(
   dialog: Locator,
   codeLabel: string,
@@ -85,10 +90,13 @@ test('an account turns on TOTP, signs in with it, switches to email codes and ch
   await expect(
     setup.getByRole('img', { name: security.totpSetup.qrLabel }),
   ).toBeVisible();
-  const secret = (
-    (await setup.getByTestId('totp-secret').textContent()) ?? ''
-  ).replaceAll(' ', '');
+  const shownSecret =
+    (await setup.getByTestId('totp-secret').textContent()) ?? '';
+  const secret = shownSecret.replaceAll(' ', '');
   expect(secret).toMatch(/^[A-Z2-7]{32}$/);
+  await clickBackdrop(page);
+  await expect(setup).toBeVisible();
+  await expect(setup.getByTestId('totp-secret')).toHaveText(shownSecret);
   const first = await freshTotpCode(secret, undefined);
   await confirm(
     setup,
@@ -106,6 +114,11 @@ test('an account turns on TOTP, signs in with it, switches to email codes and ch
     name: COPY.login.twoFactor.title,
   });
   await expect(challenge).toBeVisible();
+  await expect(
+    challenge.getByLabel(label(COPY.login.twoFactor.totpLabel)),
+  ).toBeFocused();
+  await clickBackdrop(page);
+  await expect(challenge).toBeVisible();
   const second = await freshTotpCode(secret, first.step);
   await challenge
     .getByLabel(label(COPY.login.twoFactor.totpLabel))
@@ -119,6 +132,12 @@ test('an account turns on TOTP, signs in with it, switches to email codes and ch
   await openSecurity(page);
   await page.getByRole('button', { name: security.twoFactor.turnOff }).click();
   const disable = page.getByRole('dialog', { name: security.disable.title });
+  await clickBackdrop(page);
+  await expect(disable).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(disable).toBeHidden();
+  await page.getByRole('button', { name: security.twoFactor.turnOff }).click();
+  await expect(disable).toBeVisible();
   const third = await freshTotpCode(secret, second.step);
   await confirm(
     disable,
@@ -164,6 +183,13 @@ test('an account turns on TOTP, signs in with it, switches to email codes and ch
     context,
     e2eEnv.twoFactorEmail,
     seenBeforeLogin,
+  );
+  // A backdrop click keeps the dialog and does not mail another code.
+  const seenAfterLogin = await mailIdsFor(context, e2eEnv.twoFactorEmail);
+  await clickBackdrop(page);
+  await expect(challenge).toBeVisible();
+  expect(await mailIdsFor(context, e2eEnv.twoFactorEmail)).toEqual(
+    seenAfterLogin,
   );
   await challenge
     .getByLabel(label(COPY.login.twoFactor.emailLabel))

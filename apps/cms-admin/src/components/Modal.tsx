@@ -1,9 +1,19 @@
-import { type ReactNode, useEffect, useId, useRef } from 'react';
+import type { ReactNode } from 'react';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@abyss/form-commons';
 
 /**
- * Modal dialog on the native `<dialog>` (`showModal`): the browser traps
- * focus, makes the page behind inert and closes on Esc, which calls
- * `onClose`. Mount it to open, unmount to close.
+ * Modal for the two-factor flows, on the kit `Dialog`. Mount it to open,
+ * unmount to close: no `forceMount`, so the TOTP secret and temp token leave
+ * the DOM with it. Only Esc and the caller's own cancel button close it; an
+ * outside click or an autofill overlay taking focus must not drop a code
+ * entry halfway.
  */
 export function Modal({
   title,
@@ -17,53 +27,26 @@ export function Modal({
   onClose: () => void;
   children: ReactNode;
 }) {
-  const ref = useRef<HTMLDialogElement>(null);
-  const titleId = useId();
-  const descriptionId = useId();
-
-  useEffect(() => {
-    const dialog = ref.current;
-    if (dialog === null) return;
-    if (!dialog.open) dialog.showModal();
-    return () => {
-      dialog.close();
-    };
-  }, []);
-
   return (
-    <dialog
-      ref={ref}
-      aria-labelledby={titleId}
-      aria-describedby={description === undefined ? undefined : descriptionId}
-      onCancel={(event) => {
-        // Let React state decide: the dialog closes when it unmounts.
-        event.preventDefault();
-        onClose();
-      }}
-      className="m-auto w-full max-w-md rounded-lg border border-border bg-card p-0 text-card-foreground shadow-lg backdrop:bg-foreground/40"
-    >
-      <div className="grid gap-4 p-5">
-        <div className="grid gap-1.5">
-          <h2 id={titleId} className="text-lg font-semibold tracking-tight">
-            {title}
-          </h2>
+    <Dialog open onOpenChange={(open) => (open ? undefined : onClose())}>
+      <DialogContent
+        onInteractOutside={(event) => event.preventDefault()}
+        {...(description === undefined
+          ? { 'aria-describedby': undefined }
+          : {})}
+      >
+        <DialogHeader>
+          <DialogTitle>{title}</DialogTitle>
           {description === undefined ? null : (
-            <div id={descriptionId} className="text-sm text-muted-foreground">
-              {description}
-            </div>
+            <DialogDescription asChild>
+              <div>{description}</div>
+            </DialogDescription>
           )}
-        </div>
+        </DialogHeader>
         {children}
-      </div>
-    </dialog>
+      </DialogContent>
+    </Dialog>
   );
 }
 
-/** Dialog buttons: secondary left, primary right, aligned to the end (T03). */
-export function ModalActions({ children }: { children: ReactNode }) {
-  return (
-    <div className="mt-2 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-      {children}
-    </div>
-  );
-}
+export const ModalActions = DialogFooter;

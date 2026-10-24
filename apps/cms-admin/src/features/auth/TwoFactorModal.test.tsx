@@ -110,6 +110,23 @@ describe('TwoFactorModal (login second step)', () => {
     expect(screen.getByLabelText(/^Password/)).toHaveValue('');
   });
 
+  it('opens with focus on the code field', async () => {
+    const { dialog } = await openChallenge('totp');
+    expect(codeInput(dialog, copy.totpLabel)).toHaveFocus();
+  });
+
+  it('ignores a click on the overlay and closes on Esc', async () => {
+    await openChallenge('totp');
+    const overlay = document.querySelector('[data-slot="dialog-overlay"]');
+    expect(overlay).not.toBeNull();
+    await userEvent.click(overlay as Element);
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+
+    await userEvent.keyboard('{Escape}');
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(screen.getByLabelText(/^Password/)).toHaveValue('');
+  });
+
   it('sends the email code once on open, warns, and resends on request', async () => {
     const { api, dialog } = await openChallenge('email', {
       [`POST ${EMAIL_CHALLENGE}`]: () => ({ status: 202 }),

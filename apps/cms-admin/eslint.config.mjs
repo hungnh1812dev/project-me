@@ -112,6 +112,10 @@ const NO_RAW_TEXTAREA = {
   selector: "JSXOpeningElement[name.name='textarea']",
   message: 'Use Textarea from @abyss/form-commons.',
 };
+const NO_NATIVE_DIALOG = {
+  selector: "JSXOpeningElement[name.name='dialog']",
+  message: 'Use Dialog from @abyss/form-commons.',
+};
 const NO_LITERAL_QUERY_KEY = {
   selector: "Property[key.name='queryKey'] > ArrayExpression",
   message:
@@ -147,6 +151,7 @@ export default [
         NO_LITERAL_QUERY_KEY,
         NO_RAW_RADIO,
         NO_RAW_TEXTAREA,
+        NO_NATIVE_DIALOG,
       ],
     },
   },
@@ -164,6 +169,7 @@ export default [
         NO_DATE_FORMATTER,
         NO_RAW_RADIO,
         NO_RAW_TEXTAREA,
+        NO_NATIVE_DIALOG,
       ],
     },
   },

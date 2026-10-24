@@ -53,8 +53,9 @@ So far: sign-in (T11) and, behind it, a status page that calls
 - **Login errors** are generic (`login-error.ts`): incorrect credentials (any
   4xx), rate limited (429; uses `Retry-After` when cms-api exposes it via CORS,
   otherwise a generic wait message), network, unexpected.
-- **2FA (T13)**: a `requires2FA` login answer opens `TwoFactorModal` (native
-  `<dialog>` via `src/components/Modal.tsx`: focus trap, Esc closes). The temp
+- **2FA (T13)**: a `requires2FA` login answer opens `TwoFactorModal` (kit
+  `Dialog` via `src/components/Modal.tsx`: focus trap, Esc closes, an outside
+  click does not). The temp
   token stays in component state only. TOTP accounts type the app code;
   email accounts get the code sent once on open (`use-email-code.ts`, resend
   blocked for the 429 `Retry-After`) and a warning that TOTP is safer. A dead
@@ -80,8 +81,8 @@ So far: sign-in (T11) and, behind it, a status page that calls
   rows in `GET /roles` (`caller-access.ts`; owner = all; Accounts / Roles nav
   links hidden when not readable). This is only a hint: cms-api enforces
   every rule and its answers (403, 404, 409) are handled in the UI. Dialogs
-  use the form-commons Radix `Dialog`; `components/Modal.tsx` (native
-  `<dialog>`, 2FA) is unchanged.
+  use the form-commons Radix `Dialog`; `components/Modal.tsx` (2FA) wraps it
+  and ignores outside clicks and focus. A lint rule forbids `<dialog`.
 - **API tokens (T19)** (`/api-tokens`, `ApiTokensPage.tsx`): paged list
   (name + token prefix, access summary, derived status, expiry, last used;
   "Created by" appears when the list holds other accounts' tokens). Create
