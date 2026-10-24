@@ -5,9 +5,9 @@ import {
   MAX_IDENTIFIER_BYTES,
   SLUG_PATTERN,
   SQL_IDENTIFIER_PATTERN,
-  SQL_RESERVED_WORDS,
   TABLE_PATH_SEPARATOR,
 } from './content-engine.constants';
+import { SQL_RESERVED_WORDS } from './sql-reserved-words.constants';
 import {
   type ContentTypeDefinition,
   contentTypeDefinitionSchema,
@@ -278,7 +278,10 @@ export function validateDefinitions(
       );
       return;
     }
-    valid.push({ definition: validation.definition, tables: validation.tables });
+    valid.push({
+      definition: validation.definition,
+      tables: validation.tables,
+    });
     names.push(
       ...schemaNames(validation.tables).map((entry) => ({
         ...entry,

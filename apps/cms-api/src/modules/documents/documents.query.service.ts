@@ -19,10 +19,8 @@ import { DocumentMediaService } from '../media';
 import { ContentDbProvider } from '../content-engine';
 import { ContentRegistryProvider } from '../content-engine';
 import { CONTENT_DB_SCHEMA } from '../content-engine';
-import {
-  type ContentStatus,
-  toDocument,
-} from '../content-engine/content.repository';
+import type { ContentStatus } from '../content-engine/content.repository';
+import { toDocument } from '../content-engine/content-row-mapping';
 import type { RegisteredContentType } from '../content-engine';
 import { loadComponentTrees } from '../content-engine/tree-loader';
 import type { ListDocumentsQuery } from './dto/list-documents.query';

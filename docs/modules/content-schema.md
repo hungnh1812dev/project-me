@@ -300,7 +300,7 @@ runs) inside the container. `pnpm smoke` checks this.
 
 ## Runtime: registry and repository
 
-Code: `src/modules/content-engine/{registry.service.ts,content.repository.ts,tree-loader.ts,tree-input.ts}`.
+Code: `src/modules/content-engine/{registry.service.ts,content.repository.ts,component-table-sync.ts,content-row-mapping.ts,tree-loader.ts,tree-input.ts}`.
 
 **Registry.** `RegistryService.fromDatabase(db)` reads
 `content._content_types`, re-validates every definition and builds its

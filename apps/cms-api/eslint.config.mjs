@@ -21,10 +21,12 @@ const DEEP_IMPORT_PATTERNS = {
   // `access/field-projection` is not in the facade (it bypasses masking, see
   // facade-reexports.architecture.spec.ts); module-edge specs say who may use it.
   access: '(^|/)access/(?!management$|document-auth$|field-projection$).+',
-  // `content.repository` and `tree-loader` are not in the facade for the same
-  // reason: only the files the record-serializer architecture spec names use them.
+  // `content.repository`, `content-row-mapping` and `tree-loader` are not in the
+  // facade for the same reason: only the files the record-serializer
+  // architecture spec names use them.
   'content-engine': modulePath('content-engine', [
     'content\\.repository',
+    'content-row-mapping',
     'tree-loader',
   ]),
   documents: modulePath('documents'),

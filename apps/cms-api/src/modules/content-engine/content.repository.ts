@@ -1,5 +1,3 @@
-import { randomUUID } from 'node:crypto';
-
 import { type Kysely, sql, type Transaction } from 'kysely';
 
 import {
@@ -8,31 +6,20 @@ import {
   type CONTENT_STATUSES,
   ROOT_SYSTEM_COLUMNS,
 } from './content-engine.constants';
-import { fieldTypeOf } from './field-types';
+import { syncChildren } from './component-table-sync';
+import type { ContentDocument } from './content-row-mapping';
+import { toColumnValues, toDocument } from './content-row-mapping';
 import { ContentEngineError } from './migration-files';
-import type {
-  ComponentTableNode,
-  RegistryService,
-  TableNode,
-} from './registry.service';
+import type { RegistryService } from './registry.service';
 import {
   assertTreeInput,
-  type ComponentInput,
-  type ComponentsInput,
   ContentTreeError,
-  type FieldValues,
   isUuid,
   type TreeInput,
-  type TreePath,
 } from './tree-input';
-import {
-  anyInt,
-  type ComponentTrees,
-  type ContentDatabase,
-  type ContentRow,
-  loadComponentTrees,
-  rowToValues,
-} from './tree-loader';
+import { type ContentDatabase, loadComponentTrees } from './tree-loader';
+
+export type { ContentDocument };
 
 export type ContentStatus = (typeof CONTENT_STATUSES)[number];
 
@@ -60,21 +47,6 @@ export interface LoadTreesQuery {
   documentIds?: readonly string[] | undefined;
 }
 
-/** A root row with its component tree. `values` and `components` use API names. */
-export interface ContentDocument {
-  id: number;
-  documentId: string;
-  version: number;
-  publishedAt: Date | null;
-  locale: string | null;
-  createdAt: Date;
-  updatedAt: Date;
-  createdBy: number | null;
-  updatedBy: number | null;
-  values: FieldValues;
-  components: ComponentTrees;
-}
-
 export class DocumentNotFoundError extends ContentEngineError {
   readonly code = CONTENT_ERROR_CODES.DOCUMENT_NOT_FOUND;
 
@@ -87,54 +59,6 @@ export class DocumentNotFoundError extends ContentEngineError {
   }
 }
 
-type WriteMode = 'insert' | 'replace';
-
-interface ParentWrite {
-  id: number;
-  /** Inserted by this call, so it has no stored children yet. */
-  isNew: boolean;
-  components: ComponentsInput | undefined;
-  /** Input path of `components`, for error messages. */
-  path: TreePath;
-}
-
-/** API values -> column values; a type's `encodeForColumn` applies to non-null values. */
-function toColumnValues(
-  table: TableNode,
-  values: FieldValues | undefined,
-): ContentRow {
-  const row: ContentRow = {};
-  for (const [name, value] of Object.entries(values ?? {})) {
-    const column = table.columnsByField.get(name);
-    if (column === undefined || value === undefined) continue;
-    const encode = fieldTypeOf(column.field.type)?.encodeForColumn;
-    row[column.name] =
-      encode !== undefined && value !== null ? encode(value) : value;
-  }
-  return row;
-}
-
-/** Maps a root row (selected with its projected columns) and its trees to a document. */
-export function toDocument(
-  root: TableNode,
-  row: ContentRow,
-  components: ComponentTrees,
-): ContentDocument {
-  return {
-    id: row.id as number,
-    documentId: row.document_id as string,
-    version: row.version as number,
-    publishedAt: (row.published_at as Date | null) ?? null,
-    locale: (row.locale as string | null) ?? null,
-    createdAt: row.created_at as Date,
-    updatedAt: row.updated_at as Date,
-    createdBy: (row.created_by as number | null) ?? null,
-    updatedBy: (row.updated_by as number | null) ?? null,
-    values: rowToValues(root, row),
-    components,
-  };
-}
-
 function assertDocumentId(documentId: unknown, path: string): void {
   if (!isUuid(documentId)) {
     throw new ContentTreeError(
@@ -144,8 +68,6 @@ function assertDocumentId(documentId: unknown, path: string): void {
     );
   }
 }
-
-const uidKey = (parentId: number, uid: string) => `${parentId}:${uid}`;
 
 /**
  * Reads and writes content documents (root row + component tree, depth ≤ 3)
@@ -213,7 +135,7 @@ export class ContentRepository {
       return id;
     });
 
-    await this.syncChildren(
+    await syncChildren(
       trx,
       root,
       prepared.map(({ tree }, index) => ({
@@ -315,142 +237,12 @@ export class ContentRepository {
       .where('id', '=', id)
       .execute();
 
-    await this.syncChildren(
+    await syncChildren(
       trx,
       root,
       [{ id, isNew: false, components: tree.components, path: ['components'] }],
       'replace',
     );
     return id;
-  }
-
-  /** Writes every component table below `table`, one level at a time. */
-  private async syncChildren(
-    trx: Transaction<ContentDatabase>,
-    table: TableNode,
-    parents: ParentWrite[],
-    mode: WriteMode,
-  ): Promise<void> {
-    for (const component of table.components) {
-      const targets = parents.flatMap((parent) => {
-        const items = parent.components?.[component.field.name];
-        return items === undefined ? [] : [{ parent, items }];
-      });
-      if (targets.length > 0) {
-        await this.syncComponentTable(trx, component, targets, mode);
-      }
-    }
-  }
-
-  private async syncComponentTable(
-    trx: Transaction<ContentDatabase>,
-    component: ComponentTableNode,
-    targets: { parent: ParentWrite; items: ComponentInput[] }[],
-    mode: WriteMode,
-  ): Promise<void> {
-    const { table, field } = component;
-    const db = trx.withSchema(CONTENT_DB_SCHEMA);
-    const storedParentIds = targets
-      .filter(({ parent }) => !parent.isNew)
-      .map(({ parent }) => parent.id);
-
-    // Stored items of exactly these parents: the only rows this call may touch.
-    const stored = new Map<string, number>();
-    if (storedParentIds.length > 0) {
-      const rows = await db
-        .selectFrom(table.plan.name)
-        .select(['id', 'parent_id', 'component_uid'])
-        .where('parent_id', '=', anyInt(storedParentIds))
-        .execute();
-      for (const row of rows) {
-        stored.set(
-          uidKey(row.parent_id as number, row.component_uid as string),
-          row.id as number,
-        );
-      }
-    }
-
-    const kept = new Set<number>();
-    const updates: { id: number; parentId: number; row: ContentRow }[] = [];
-    const inserts: ContentRow[] = [];
-    const insertedItems = new Map<
-      string,
-      { item: ComponentInput; path: TreePath }
-    >();
-    const next: ParentWrite[] = [];
-
-    for (const { parent, items } of targets) {
-      items.forEach((item, index) => {
-        const itemPath = [...parent.path, field.name, index];
-        const childPath = [...itemPath, 'components'];
-        const sentUid = item.componentUid?.toLowerCase();
-        const row = {
-          ...toColumnValues(table, item.values),
-          order_index: index,
-        };
-        if (mode === 'replace' && sentUid !== undefined) {
-          const id = stored.get(uidKey(parent.id, sentUid));
-          if (id === undefined) {
-            throw new ContentTreeError(
-              CONTENT_ERROR_CODES.TREE_UNKNOWN_UID,
-              [...itemPath, 'componentUid'],
-              `not an item of this ${field.name} list`,
-            );
-          }
-          kept.add(id);
-          updates.push({ id, parentId: parent.id, row });
-          next.push({
-            id,
-            isNew: false,
-            components: item.components,
-            path: childPath,
-          });
-          return;
-        }
-        // Insert keeps a sent uid (publish clones draft -> published with the same uids).
-        const uid = sentUid ?? randomUUID();
-        insertedItems.set(uidKey(parent.id, uid), { item, path: childPath });
-        inserts.push({ ...row, parent_id: parent.id, component_uid: uid });
-      });
-    }
-
-    const removed = [...stored.values()].filter((id) => !kept.has(id));
-    if (removed.length > 0) {
-      await db
-        .deleteFrom(table.plan.name)
-        .where('id', '=', anyInt(removed))
-        .where('parent_id', '=', anyInt(storedParentIds))
-        .execute();
-    }
-
-    for (const update of updates) {
-      await db
-        .updateTable(table.plan.name)
-        .set(update.row)
-        .where('id', '=', update.id)
-        .where('parent_id', '=', update.parentId)
-        .execute();
-    }
-
-    if (inserts.length > 0) {
-      const rows = await db
-        .insertInto(table.plan.name)
-        .values(inserts)
-        .returning(['id', 'parent_id', 'component_uid'])
-        .execute();
-      for (const row of rows) {
-        const inserted = insertedItems.get(
-          uidKey(row.parent_id as number, row.component_uid as string),
-        );
-        next.push({
-          id: row.id as number,
-          isNew: true,
-          components: inserted?.item.components,
-          path: inserted?.path ?? [],
-        });
-      }
-    }
-
-    if (next.length > 0) await this.syncChildren(trx, table, next, mode);
   }
 }

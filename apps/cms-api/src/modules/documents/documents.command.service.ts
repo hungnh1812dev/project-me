@@ -26,8 +26,8 @@ import { CONTENT_DB_SCHEMA } from '../content-engine';
 import {
   ContentRepository,
   type ContentDocument,
-  toDocument,
 } from '../content-engine/content.repository';
+import { toDocument } from '../content-engine/content-row-mapping';
 import type { RegisteredContentType } from '../content-engine';
 import {
   assertTreeInput,
