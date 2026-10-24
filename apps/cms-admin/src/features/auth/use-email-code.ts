@@ -1,7 +1,7 @@
 import { useMutation } from '@tanstack/react-query';
 import { useEffect, useRef, useState } from 'react';
 
-import { MS_PER_SECOND } from '../../config/http.constants';
+import { MAX_TIMER_DELAY_MS, MS_PER_SECOND } from '../../config/http.constants';
 import { type ApiFailure, apiFailureOf } from '../../lib/api-failure';
 
 /**
@@ -38,7 +38,10 @@ export function useEmailCode(
         clearTimeout(cooldownTimer.current);
         cooldownTimer.current = setTimeout(
           () => setCoolingDown(false),
-          mapped.retryAfterSeconds * MS_PER_SECOND,
+          Math.min(
+            mapped.retryAfterSeconds * MS_PER_SECOND,
+            MAX_TIMER_DELAY_MS,
+          ),
         );
       }
     },

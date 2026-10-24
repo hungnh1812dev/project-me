@@ -77,6 +77,9 @@ export const API_ERROR_CODES = {
 /** Milliseconds per second (Retry-After is in seconds). */
 export const MS_PER_SECOND = 1_000;
 
+/** Largest delay setTimeout accepts; a longer one fires at once (32-bit overflow). */
+export const MAX_TIMER_DELAY_MS = 2_147_483_647;
+
 /** Input bounds of the accounts API (cms-api MANAGEMENT_LIMITS / auth constants). */
 export const ACCOUNT_LIMITS = {
   DISPLAY_NAME_MAX_LENGTH: 100,

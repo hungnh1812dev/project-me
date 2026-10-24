@@ -18,3 +18,6 @@ export const RETRY_AFTER_HEADER = 'retry-after';
 
 export const SECONDS_PER_MINUTE = 60;
 export const MS_PER_SECOND = 1000;
+
+/** Largest delay setTimeout accepts; a longer one fires at once (32-bit overflow). */
+export const MAX_TIMER_DELAY_MS = 2_147_483_647;

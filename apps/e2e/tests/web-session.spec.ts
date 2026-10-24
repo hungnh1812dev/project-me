@@ -320,6 +320,49 @@ test('the code step: a dead temp token returns to the credentials with a notice,
   await expect(page.getByText(/^Signed in as /)).toHaveCount(0);
 });
 
+const HUGE_RETRY_AFTER_SECONDS = 3_000_000;
+const SHORT_RETRY_AFTER_SECONDS = 2;
+const COOLDOWN_SETTLE_MS = 1500;
+
+test('the code step: a resend after a 429 stays blocked for a huge Retry-After and frees after a short one', async ({
+  page,
+  context,
+}) => {
+  await page.goto(e2eEnv.webUrl);
+  await openDialog(page);
+  const seen = await mailIdsFor(context, e2eEnv.reader2faEmail);
+  await fillCredentials(page, e2eEnv.reader2faEmail, e2eEnv.reader2faPassword);
+  const step = page.getByRole('dialog', { name: login.twoFactor.title });
+  await expect(step).toBeVisible();
+  await waitForCode(context, e2eEnv.reader2faEmail, seen);
+  const resend = step.getByRole('button', { name: login.twoFactor.resend });
+
+  const challengeRoute = '**/auth/2fa/email-challenge';
+  await page.route(challengeRoute, (route) =>
+    route.fulfill({
+      status: 429,
+      headers: { 'retry-after': String(SHORT_RETRY_AFTER_SECONDS) },
+      json: rateLimitedBody,
+    }),
+  );
+  await resend.click();
+  await expect(resend).toBeDisabled();
+  await expect(resend).toBeEnabled({ timeout: COOLDOWN_SETTLE_MS * 4 });
+
+  await page.unroute(challengeRoute);
+  await page.route(challengeRoute, (route) =>
+    route.fulfill({
+      status: 429,
+      headers: { 'retry-after': String(HUGE_RETRY_AFTER_SECONDS) },
+      json: rateLimitedBody,
+    }),
+  );
+  await resend.click();
+  await expect(resend).toBeDisabled();
+  await page.waitForTimeout(COOLDOWN_SETTLE_MS);
+  await expect(resend).toBeDisabled();
+});
+
 test('a signed-in reader gets no Reviewer access button and no reviewer status call', async ({
   page,
 }) => {
