@@ -17,6 +17,7 @@ export {
 } from './components/forms/FormAlert';
 export { TextInput, type TextInputProps } from './components/forms/TextInput';
 export { FIELD_ID_SUFFIX } from './constants/field.constants';
+export { CSP_NONCE_META_NAME } from './constants/security.constants';
 export { Checkbox } from './components/ui/checkbox';
 export { NativeSelect } from './components/ui/native-select';
 export {
@@ -72,12 +73,6 @@ export {
   type RichtextInputProps,
   type RichtextLabels,
 } from './components/forms/RichtextInput';
-export {
-  DiffViewerBlock,
-  type DiffSide,
-  type DiffViewerBlockProps,
-  type DiffViewerOption,
-} from './components/forms/DiffViewerBlock';
 export {
   MediaInput,
   formatFileSize,

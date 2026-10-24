@@ -126,8 +126,8 @@ So far: sign-in (T11) and, behind it, a status page that calls
   the content-types API, so required marks and errors come from the server.
 - **Conflict merge (T25)** (`ConflictMergeModal`, `merge.reducer.ts`,
   `merge.tree.ts`, `merge.describe.ts`): a 409 `DOCUMENT_VERSION_CONFLICT` on
-  a draft save opens a modal listing the server's `diff` as form-commons
-  `DiffViewerBlock` cards (saved vs your version; default = keep yours; "Keep
+  a draft save opens a modal listing the server's `diff` as `DiffViewerBlock` cards (local to
+  `features/content`; saved vs your version; default = keep yours; "Keep
   all of mine" / "Take all saved"). Entries of masked fields (the 409's and
   the form's `_maskedFields`) are dropped before display and never sent. Save
   PUTs only the client choices (changed values; a touched component list is

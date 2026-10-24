@@ -16,6 +16,7 @@ import {
   CONTROL_INVALID_CLASSES,
 } from '@/components/ui/control.constants';
 import { Button } from '@/components/ui/button';
+import { CSP_NONCE_META_NAME } from '@/constants/security.constants';
 
 /** Link schemes the editor accepts; same set as the server allowlist. */
 const LINK_PROTOCOLS = ['http', 'https', 'mailto', 'tel'];
@@ -24,7 +25,7 @@ const LINK_PROTOCOLS = ['http', 'https', 'mailto', 'tel'];
  * Tiptap injects its base CSS as a <style>; under a nonce-based `style-src` it
  * needs the page's nonce, which the host app publishes in this meta tag.
  */
-const CSP_NONCE_META_SELECTOR = 'meta[name="csp-nonce"]';
+const CSP_NONCE_META_SELECTOR = `meta[name="${CSP_NONCE_META_NAME}"]`;
 
 function readCspNonce(): string | undefined {
   if (typeof document === 'undefined') return undefined;

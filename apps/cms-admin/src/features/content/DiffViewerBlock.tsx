@@ -1,6 +1,5 @@
-import * as React from 'react';
-import { cn } from 'cn';
-import { Radio } from '@/components/ui/radio';
+import { Radio } from '@abyss/form-commons';
+import type { ReactNode } from 'react';
 
 export type DiffSide = 'server' | 'client';
 
@@ -8,7 +7,7 @@ export interface DiffViewerOption {
   /** Short name of the side ("Saved version", "Your version"). */
   label: string;
   /** What this side holds. `null` renders `emptyText`. */
-  content: React.ReactNode | null;
+  content: ReactNode | null;
 }
 
 export interface DiffViewerBlockProps {
@@ -24,10 +23,13 @@ export interface DiffViewerBlockProps {
   onChoiceChange: (side: DiffSide) => void;
   /** Shown for a side with no value. */
   emptyText: string;
-  className?: string | undefined;
 }
 
 const SIDES: readonly DiffSide[] = ['server', 'client'];
+const OPTION_CLASSES =
+  'grid min-w-0 cursor-pointer content-start gap-1 rounded-md border p-2 text-sm has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring';
+const SELECTED_OPTION_CLASSES = 'border-primary bg-info-soft';
+const IDLE_OPTION_CLASSES = 'border-border bg-background hover:bg-muted';
 
 /**
  * One difference between two versions of a value. Each side is a radio
@@ -43,16 +45,12 @@ function DiffViewerBlock({
   choice,
   onChoiceChange,
   emptyText,
-  className,
 }: DiffViewerBlockProps) {
   const options: Record<DiffSide, DiffViewerOption> = { server, client };
   return (
     <fieldset
       data-slot="diff-viewer-block"
-      className={cn(
-        'm-0 grid min-w-0 gap-2 rounded-md border border-border bg-card p-3',
-        className,
-      )}
+      className="m-0 grid min-w-0 gap-2 rounded-md border border-border bg-card p-3"
     >
       <legend className="sr-only">{title}</legend>
       <div className="flex items-center justify-between gap-2" aria-hidden>
@@ -68,12 +66,7 @@ function DiffViewerBlock({
           return (
             <label
               key={side}
-              className={cn(
-                'grid min-w-0 cursor-pointer content-start gap-1 rounded-md border p-2 text-sm has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring',
-                selected
-                  ? 'border-primary bg-info-soft'
-                  : 'border-border bg-background hover:bg-muted',
-              )}
+              className={`${OPTION_CLASSES} ${selected ? SELECTED_OPTION_CLASSES : IDLE_OPTION_CLASSES}`}
             >
               <span className="flex items-center gap-2 font-medium text-foreground">
                 <Radio

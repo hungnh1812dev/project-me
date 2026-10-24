@@ -75,7 +75,7 @@ const FACADE_EXPORTS: Record<string, string[]> = {
   content: ['CollectionListPage', 'DocumentEditPage'],
   media: ['MediaField', 'MediaLibraryPage', 'mediaToApi', 'mediaToForm'],
   reviewer: ['ReviewerSessionsPage'],
-  security: ['CSP_NONCE_META_NAME', 'SecuritySettingsPage'],
+  security: ['SecuritySettingsPage'],
 };
 
 describe('feature facades', () => {

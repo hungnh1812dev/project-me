@@ -1,5 +1,6 @@
 import './styles/app.css';
 
+import { CSP_NONCE_META_NAME } from '@abyss/form-commons';
 import { setNonce } from 'get-nonce';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
@@ -9,7 +10,6 @@ import { App } from './app/App';
 import { AppProviders } from './app/AppProviders';
 import { createAppServices } from './app/app-services';
 import { createQueryClient } from './app/query-client';
-import { CSP_NONCE_META_NAME } from './features/security';
 import { apiClient } from './lib/api-client';
 
 const rootElement = document.getElementById('root');
