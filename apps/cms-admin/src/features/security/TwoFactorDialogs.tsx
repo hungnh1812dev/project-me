@@ -1,4 +1,4 @@
-import { Button } from '@abyss/form-commons';
+import { Button, FormAlert } from '@abyss/form-commons';
 import { useMutation } from '@tanstack/react-query';
 import { QRCodeSVG } from 'qrcode.react';
 import { useEffect, useRef } from 'react';
@@ -10,7 +10,6 @@ import {
   type TwoFactorMethod,
 } from '../../config/auth.constants';
 import { COPY } from '../../config/copy.constants';
-import { FormAlert } from '../auth/FormAlert';
 import { useEmailCode } from '../auth/use-email-code';
 import { ConfirmWithCodeForm } from './ConfirmWithCodeForm';
 import { useSecurityApi } from './security-api-context';

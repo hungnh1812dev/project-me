@@ -1,4 +1,9 @@
-import { Button, TextInput } from '@abyss/form-commons';
+import {
+  Button,
+  TextInput,
+  FormAlert,
+  type FormAlertTone,
+} from '@abyss/form-commons';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
@@ -19,7 +24,6 @@ import {
   rateLimitedMessage,
 } from './api-failure';
 import type { TwoFactorChallenge } from './auth.api';
-import { FormAlert, type FormAlertTone } from './FormAlert';
 import { useSession } from './session-context';
 import { useEmailCode } from './use-email-code';
 

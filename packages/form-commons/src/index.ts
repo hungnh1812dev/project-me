@@ -10,6 +10,11 @@ export {
   type FieldControlProps,
   type FieldProps,
 } from './components/forms/Field';
+export {
+  FormAlert,
+  type FormAlertProps,
+  type FormAlertTone,
+} from './components/forms/FormAlert';
 export { TextInput, type TextInputProps } from './components/forms/TextInput';
 export { FIELD_ID_SUFFIX } from './constants/field.constants';
 export { Checkbox } from './components/ui/checkbox';

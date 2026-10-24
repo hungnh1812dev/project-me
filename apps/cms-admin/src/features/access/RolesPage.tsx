@@ -1,8 +1,8 @@
 import { Link } from 'react-router';
 
+import { FormAlert } from '@abyss/form-commons';
 import { COPY } from '../../config/copy.constants';
 import { rolePermissionsPath } from '../../config/routes';
-import { FormAlert } from '../auth/FormAlert';
 import { isForbidden } from './access-error';
 import { useRolesQuery } from './access-queries';
 import { LoadError, PageHeader, TableSkeleton } from './PageStates';

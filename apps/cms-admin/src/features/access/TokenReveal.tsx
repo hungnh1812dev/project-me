@@ -6,11 +6,11 @@ import {
   DialogTitle,
   Input,
   Label,
+  FormAlert,
 } from '@abyss/form-commons';
 import { useId, useRef, useState } from 'react';
 
 import { COPY } from '../../config/copy.constants';
-import { FormAlert } from '../auth/FormAlert';
 
 const copy = COPY.access.tokenReveal;
 

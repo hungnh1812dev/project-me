@@ -1,10 +1,9 @@
-import { Button } from '@abyss/form-commons';
+import { Button, FormAlert, type FormAlertTone } from '@abyss/form-commons';
 import { useRef, useState } from 'react';
 
 import { useAppSelector } from '../../app/store';
 import { COPY } from '../../config/copy.constants';
 import { selectCurrentUser } from '../auth/auth.slice';
-import { FormAlert, type FormAlertTone } from '../auth/FormAlert';
 import type { ApiToken } from './access.api';
 import { isForbidden } from './access-error';
 import { useApiTokensQuery } from './access-queries';

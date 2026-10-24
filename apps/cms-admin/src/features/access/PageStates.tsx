@@ -1,9 +1,8 @@
-import { Button } from '@abyss/form-commons';
+import { Button, FormAlert } from '@abyss/form-commons';
 import type { ReactNode } from 'react';
 
 import { TABLE_SKELETON_ROWS } from '../../config/access.constants';
 import { COPY } from '../../config/copy.constants';
-import { FormAlert } from '../auth/FormAlert';
 import type { PageMeta } from './access.api';
 
 /** Page title block of the access pages. */

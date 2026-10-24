@@ -6,13 +6,13 @@ import {
   DialogHeader,
   DialogTitle,
   formatFileSize,
+  FormAlert,
 } from '@abyss/form-commons';
 import { useState } from 'react';
 
 import { COPY } from '../../config/copy.constants';
 import { isForbidden } from '../access/access-error';
 import { LoadError, Pagination, TableSkeleton } from '../access/PageStates';
-import { FormAlert } from '../auth/FormAlert';
 import { useMediaQuery } from './media-queries';
 import type { MediaFile } from './media.api';
 

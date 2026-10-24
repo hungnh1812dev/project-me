@@ -9,6 +9,7 @@ import {
   DialogTitle,
   Label,
   Switch,
+  FormAlert,
 } from '@abyss/form-commons';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useId, useState } from 'react';
@@ -23,7 +24,6 @@ import {
   Pagination,
   TableSkeleton,
 } from '../access/PageStates';
-import { FormAlert } from '../auth/FormAlert';
 import { useReviewerApi } from './reviewer-api-context';
 import {
   REVIEWER_QUERY_KEYS,

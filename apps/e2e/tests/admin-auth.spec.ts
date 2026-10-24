@@ -73,3 +73,23 @@ test('the owner signs in, stays signed in across a reload, and signs out', async
     ),
   ).toEqual([]);
 });
+
+test('a wrong password shows the invalid-credentials message as an alert', async ({
+  page,
+}) => {
+  await page.goto('/');
+  await page
+    .getByRole('textbox', { name: COPY.login.emailLabel })
+    .fill(e2eEnv.ownerEmail);
+  await page
+    .getByLabel(COPY.login.passwordLabel)
+    .fill(`${e2eEnv.ownerPassword}-wrong`);
+  await page.getByRole('button', { name: COPY.login.submit }).click();
+
+  await expect(
+    page
+      .getByRole('alert')
+      .filter({ hasText: COPY.login.errors.invalidCredentials }),
+  ).toBeVisible();
+  await expect(loginHeading(page)).toBeVisible();
+});

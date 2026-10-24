@@ -1,4 +1,9 @@
-import { Button, formatFileSize } from '@abyss/form-commons';
+import {
+  Button,
+  formatFileSize,
+  FormAlert,
+  type FormAlertTone,
+} from '@abyss/form-commons';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRef, useState } from 'react';
 
@@ -12,7 +17,6 @@ import {
   Pagination,
   TableSkeleton,
 } from '../access/PageStates';
-import { FormAlert, type FormAlertTone } from '../auth/FormAlert';
 import { DeleteMediaDialog } from './DeleteMediaDialog';
 import { EditAltDialog } from './EditAltDialog';
 import { useMediaApi } from './media-api-context';

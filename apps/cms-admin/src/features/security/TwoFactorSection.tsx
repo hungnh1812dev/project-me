@@ -1,10 +1,9 @@
-import { Button } from '@abyss/form-commons';
+import { Button, FormAlert, type FormAlertTone } from '@abyss/form-commons';
 import { useCallback, useState } from 'react';
 
 import { useAppSelector } from '../../app/store';
 import { COPY } from '../../config/copy.constants';
 import { selectCurrentUser } from '../auth/auth.slice';
-import { FormAlert, type FormAlertTone } from '../auth/FormAlert';
 import { useSession } from '../auth/session-context';
 import {
   DisableTwoFactorDialog,

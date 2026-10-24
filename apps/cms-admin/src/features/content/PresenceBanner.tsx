@@ -1,10 +1,10 @@
 import { useQuery } from '@tanstack/react-query';
 
+import { FormAlert } from '@abyss/form-commons';
 import { useAppSelector } from '../../app/store';
 import { PRESENCE_HEARTBEAT_MS } from '../../config/content.constants';
 import { COPY } from '../../config/copy.constants';
 import { selectCurrentUser } from '../auth/auth.slice';
-import { FormAlert } from '../auth/FormAlert';
 import { useContentApi } from './content-api-context';
 import type { PresenceEntry } from './content.api';
 

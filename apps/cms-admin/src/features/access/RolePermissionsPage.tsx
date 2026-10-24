@@ -1,4 +1,4 @@
-import { Button } from '@abyss/form-commons';
+import { Button, FormAlert, type FormAlertTone } from '@abyss/form-commons';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { Link, useParams } from 'react-router';
@@ -6,7 +6,6 @@ import { Link, useParams } from 'react-router';
 import { COPY } from '../../config/copy.constants';
 import { API_ERROR_CODES, HTTP_STATUS } from '../../config/http.constants';
 import { APP_ROUTES } from '../../config/routes';
-import { FormAlert, type FormAlertTone } from '../auth/FormAlert';
 import type { ContentType, Role } from './access.api';
 import { useAccessApi } from './access-api-context';
 import { toAccessError } from './access-error';

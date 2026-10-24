@@ -6,6 +6,8 @@ import {
   type SheetSort,
   SortableSheet,
   TablePagination,
+  FormAlert,
+  type FormAlertTone,
 } from '@abyss/form-commons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useMemo, useRef, useState } from 'react';
@@ -31,7 +33,6 @@ import { isForbidden } from '../access/access-error';
 import type { ContentTypeField } from '../access/access.api';
 import { useCallerAccess } from '../access/caller-access';
 import { LoadError, PageHeader, TableSkeleton } from '../access/PageStates';
-import { FormAlert, type FormAlertTone } from '../auth/FormAlert';
 import { BulkCreateDialog } from './BulkCreateDialog';
 import { BulkDeleteDialog } from './BulkDeleteDialog';
 import { failedItems, itemReason, toBulkFailure } from './bulk';

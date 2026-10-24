@@ -8,6 +8,7 @@ import {
   DialogHeader,
   DialogTitle,
   TextAreaInput,
+  FormAlert,
 } from '@abyss/form-commons';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
@@ -15,7 +16,6 @@ import { FormProvider, useForm } from 'react-hook-form';
 
 import { COPY } from '../../config/copy.constants';
 import { MEDIA_ALT_MAX_LENGTH } from '../../config/media.constants';
-import { FormAlert } from '../auth/FormAlert';
 import { useMediaApi } from './media-api-context';
 import { toMediaError } from './media-error';
 import { MEDIA_QUERY_KEY } from './media-queries';

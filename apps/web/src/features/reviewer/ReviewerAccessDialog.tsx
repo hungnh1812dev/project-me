@@ -11,6 +11,7 @@ import {
   SelectInput,
   TextAreaInput,
   TextInput,
+  FormAlert,
 } from '@abyss/form-commons';
 import { useMutation } from '@tanstack/react-query';
 import { type FormEvent, useState } from 'react';
@@ -24,7 +25,6 @@ import {
   REVIEWER_VISITOR_ROLES,
 } from '../../config/reviewer.constants';
 import { apiFailureOf } from '../auth/api-failure';
-import { FormAlert } from '../auth/FormAlert';
 import { useWebSession } from '../auth/useWebSession';
 import { apiClient } from '../../lib/api-client';
 import { createReviewerApi, type ReviewerApi } from './reviewer.api';

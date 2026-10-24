@@ -1,6 +1,6 @@
 'use client';
 
-import { Button, TextInput } from '@abyss/form-commons';
+import { Button, TextInput, FormAlert } from '@abyss/form-commons';
 import { useMutation } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { FormProvider, useForm } from 'react-hook-form';
@@ -19,7 +19,6 @@ import {
   rateLimitedMessage,
 } from './api-failure';
 import type { TwoFactorChallenge } from './auth.api';
-import { FormAlert } from './FormAlert';
 import { useEmailCode } from './use-email-code';
 import { useWebSession } from './useWebSession';
 

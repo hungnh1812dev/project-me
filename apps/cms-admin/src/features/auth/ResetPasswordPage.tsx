@@ -1,4 +1,4 @@
-import { Button, TextInput } from '@abyss/form-commons';
+import { Button, TextInput, FormAlert } from '@abyss/form-commons';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation } from '@tanstack/react-query';
 import { useEffect, useRef, useState } from 'react';
@@ -11,7 +11,6 @@ import { COPY } from '../../config/copy.constants';
 import { APP_ROUTES } from '../../config/routes';
 import { AuthPageLayout } from './AuthPageLayout';
 import { BackToSignIn } from './BackToSignIn';
-import { FormAlert } from './FormAlert';
 import type { LoginNoticeState } from './login-notice';
 import { usePasswordApi } from './password-api-context';
 import { type PasswordError, toPasswordError } from './password-error';

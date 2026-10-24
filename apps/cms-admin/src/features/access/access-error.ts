@@ -1,9 +1,9 @@
 import { isAxiosError } from 'axios';
 
+import { type FormAlertTone } from '@abyss/form-commons';
 import { COPY } from '../../config/copy.constants';
 import { API_ERROR_CODES, HTTP_STATUS } from '../../config/http.constants';
 import { apiFailureOf, rateLimitedMessage } from '../auth/api-failure';
-import type { FormAlertTone } from '../auth/FormAlert';
 
 const copy = COPY.access;
 

@@ -8,6 +8,7 @@ import {
   DialogHeader,
   DialogTitle,
   TextInput,
+  FormAlert,
 } from '@abyss/form-commons';
 import { useMutation } from '@tanstack/react-query';
 import { useCallback, useState } from 'react';
@@ -20,7 +21,6 @@ import {
   type LoginAlert,
 } from './api-failure';
 import type { TwoFactorChallenge } from './auth.api';
-import { FormAlert } from './FormAlert';
 import { TwoFactorStep } from './TwoFactorStep';
 import { useWebSession } from './useWebSession';
 

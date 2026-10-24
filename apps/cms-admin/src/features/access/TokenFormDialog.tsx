@@ -8,6 +8,7 @@ import {
   DialogHeader,
   DialogTitle,
   TextInput,
+  FormAlert,
 } from '@abyss/form-commons';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -21,7 +22,6 @@ import {
 } from '../../config/access.constants';
 import { COPY } from '../../config/copy.constants';
 import { API_ERROR_CODES, HTTP_STATUS } from '../../config/http.constants';
-import { FormAlert } from '../auth/FormAlert';
 import type { ApiToken, UpdateApiTokenInput } from './access.api';
 import { useAccessApi } from './access-api-context';
 import { toAccessError } from './access-error';

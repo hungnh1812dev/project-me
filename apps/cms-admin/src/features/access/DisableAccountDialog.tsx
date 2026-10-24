@@ -7,13 +7,13 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  FormAlert,
 } from '@abyss/form-commons';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 
 import { COPY } from '../../config/copy.constants';
 import { API_ERROR_CODES } from '../../config/http.constants';
-import { FormAlert } from '../auth/FormAlert';
 import type { Account } from './access.api';
 import { useAccessApi } from './access-api-context';
 import { toAccessError } from './access-error';

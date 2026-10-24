@@ -1,4 +1,9 @@
-import { Button, TextInput } from '@abyss/form-commons';
+import {
+  Button,
+  TextInput,
+  FormAlert,
+  type FormAlertTone,
+} from '@abyss/form-commons';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation } from '@tanstack/react-query';
 import { type ReactNode, useState } from 'react';
@@ -13,7 +18,6 @@ import {
 } from '../../config/auth.constants';
 import { COPY } from '../../config/copy.constants';
 import { type ApiFailure, rateLimitedMessage } from '../auth/api-failure';
-import { FormAlert, type FormAlertTone } from '../auth/FormAlert';
 import type { useEmailCode } from '../auth/use-email-code';
 import { toSecurityError } from './security-error';
 

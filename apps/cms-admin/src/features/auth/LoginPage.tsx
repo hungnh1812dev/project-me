@@ -1,4 +1,9 @@
-import { Button, TextInput } from '@abyss/form-commons';
+import {
+  Button,
+  TextInput,
+  FormAlert,
+  type FormAlertTone,
+} from '@abyss/form-commons';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation } from '@tanstack/react-query';
 import { useCallback, useState } from 'react';
@@ -12,7 +17,6 @@ import { APP_ROUTES } from '../../config/routes';
 import type { TwoFactorChallenge } from './auth.api';
 import { selectEndNotice, selectSessionStatus } from './auth.slice';
 import { AuthPageLayout } from './AuthPageLayout';
-import { FormAlert, type FormAlertTone } from './FormAlert';
 import { type LoginError, toLoginError } from './login-error';
 import { type LoginNotice, loginEmailOf, loginNoticeOf } from './login-notice';
 import type { LoginLocationState } from './ProtectedRoute';

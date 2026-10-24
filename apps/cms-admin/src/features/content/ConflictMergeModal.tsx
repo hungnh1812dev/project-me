@@ -8,11 +8,11 @@ import {
   DialogHeader,
   DialogTitle,
   DiffViewerBlock,
+  FormAlert,
 } from '@abyss/form-commons';
 import { useMemo, useReducer } from 'react';
 
 import { COPY } from '../../config/copy.constants';
-import { FormAlert } from '../auth/FormAlert';
 import type { ConflictDetails } from './conflict';
 import type { DocumentTree } from './content.api';
 import type { FieldNode } from './field-tree';
