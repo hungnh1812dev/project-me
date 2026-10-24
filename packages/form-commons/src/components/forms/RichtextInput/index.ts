@@ -1,7 +1,3 @@
-export {
-  RichtextInput,
-  richtextExtensions,
-  normalizeRichtextHtml,
-  type RichtextInputProps,
-  type RichtextLabels,
-} from './RichtextInput';
+export { RichtextInput, type RichtextInputProps } from './RichtextInput';
+export { richtextExtensions, normalizeRichtextHtml } from './richtext.config';
+export type { RichtextLabels } from './richtext-toolbar';

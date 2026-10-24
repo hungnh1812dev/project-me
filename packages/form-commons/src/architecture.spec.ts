@@ -4,6 +4,7 @@ import { join } from 'node:path';
 const SRC_DIR = join(process.cwd(), 'src');
 const COMPONENTS_DIR = join(process.cwd(), 'src', 'components');
 const FIELD_WIRING_FILE = join('forms', 'field-wiring.ts');
+const MAX_SOURCE_LINES = 300;
 const CONTROL_CONSTANTS_FILE = join('ui', 'control.constants.ts');
 
 function listSourceFiles(dir: string): string[] {
@@ -82,6 +83,14 @@ describe('comments carry no backlog IDs', () => {
       }))
       .filter(({ ids }) => ids.length > 0);
     expect(offenders).toEqual([]);
+  });
+
+  it('keeps every source file at or under the line limit', () => {
+    const oversized = listSourceFiles(SRC_DIR).filter(
+      (path) =>
+        readFileSync(path, 'utf8').split('\n').length > MAX_SOURCE_LINES,
+    );
+    expect(oversized).toEqual([]);
   });
 
   describe('the guard itself', () => {

@@ -1,6 +1,5 @@
 import * as React from 'react';
-import { EditorContent, useEditor, type Editor } from '@tiptap/react';
-import StarterKit from '@tiptap/starter-kit';
+import { EditorContent, useEditor } from '@tiptap/react';
 import {
   type FieldPath,
   type FieldValues,
@@ -16,64 +15,16 @@ import {
   CONTROL_INVALID_CLASSES,
 } from '@/components/ui/control.constants';
 import { Button } from '@/components/ui/button';
-import { RICHTEXT_LINK_PROTOCOLS } from '@/constants/richtext.constants';
-import { CSP_NONCE_META_NAME } from '@/constants/security.constants';
 
-/**
- * Tiptap injects its base CSS as a <style>; under a nonce-based `style-src` it
- * needs the page's nonce, which the host app publishes in this meta tag.
- */
-const CSP_NONCE_META_SELECTOR = `meta[name="${CSP_NONCE_META_NAME}"]`;
+import {
+  normalizeRichtextHtml,
+  readCspNonce,
+  richtextExtensions,
+} from './richtext.config';
+import { RICHTEXT_CONTENT_CLASS } from './richtext.styles';
+import { buildRichtextToolbar, type RichtextLabels } from './richtext-toolbar';
 
-function readCspNonce(): string | undefined {
-  if (typeof document === 'undefined') return undefined;
-  const content = document
-    .querySelector(CSP_NONCE_META_SELECTOR)
-    ?.getAttribute('content');
-  return content || undefined;
-}
-
-/** What an empty Tiptap document serializes to. */
-const EMPTY_DOC_HTML = '<p></p>';
-
-/**
- * Extensions kept to what cms-api `sanitizeRichtext` allows: paragraphs,
- * line breaks, rules, bold/italic/underline/strike, code, quotes, headings,
- * lists and links. Add a tag here only after adding it to the server list.
- */
-export const richtextExtensions = [
-  StarterKit.configure({
-    link: {
-      openOnClick: false,
-      autolink: false,
-      protocols: RICHTEXT_LINK_PROTOCOLS,
-      HTMLAttributes: { class: null, target: null, rel: null },
-    },
-    codeBlock: { HTMLAttributes: { class: null } },
-  }),
-];
-
-/** Empty editor content is stored as '' (no value), not '<p></p>'. */
-export function normalizeRichtextHtml(html: string): string {
-  return html === EMPTY_DOC_HTML ? '' : html;
-}
-
-export interface RichtextLabels {
-  toolbar: string;
-  bold: string;
-  italic: string;
-  underline: string;
-  strike: string;
-  code: string;
-  heading: string;
-  bulletList: string;
-  orderedList: string;
-  blockquote: string;
-  link: string;
-  unlink: string;
-  /** Shown by the link prompt. */
-  linkPrompt: string;
-}
+export type { RichtextLabels };
 
 export interface RichtextInputProps<
   TFieldValues extends FieldValues = FieldValues,
@@ -87,99 +38,6 @@ export interface RichtextInputProps<
   disabled?: boolean;
   id?: string | undefined;
   fieldClassName?: string | undefined;
-}
-
-interface ToolbarAction {
-  key: string;
-  label: string;
-  isActive: boolean;
-  run: () => void;
-}
-
-function toolbarActions(
-  editor: Editor,
-  labels: RichtextLabels,
-): ToolbarAction[] {
-  const chain = () => editor.chain().focus();
-  return [
-    {
-      key: 'bold',
-      label: labels.bold,
-      isActive: editor.isActive('bold'),
-      run: () => void chain().toggleBold().run(),
-    },
-    {
-      key: 'italic',
-      label: labels.italic,
-      isActive: editor.isActive('italic'),
-      run: () => void chain().toggleItalic().run(),
-    },
-    {
-      key: 'underline',
-      label: labels.underline,
-      isActive: editor.isActive('underline'),
-      run: () => void chain().toggleUnderline().run(),
-    },
-    {
-      key: 'strike',
-      label: labels.strike,
-      isActive: editor.isActive('strike'),
-      run: () => void chain().toggleStrike().run(),
-    },
-    {
-      key: 'code',
-      label: labels.code,
-      isActive: editor.isActive('code'),
-      run: () => void chain().toggleCode().run(),
-    },
-    {
-      key: 'heading',
-      label: labels.heading,
-      isActive: editor.isActive('heading', { level: 2 }),
-      run: () => void chain().toggleHeading({ level: 2 }).run(),
-    },
-    {
-      key: 'bulletList',
-      label: labels.bulletList,
-      isActive: editor.isActive('bulletList'),
-      run: () => void chain().toggleBulletList().run(),
-    },
-    {
-      key: 'orderedList',
-      label: labels.orderedList,
-      isActive: editor.isActive('orderedList'),
-      run: () => void chain().toggleOrderedList().run(),
-    },
-    {
-      key: 'blockquote',
-      label: labels.blockquote,
-      isActive: editor.isActive('blockquote'),
-      run: () => void chain().toggleBlockquote().run(),
-    },
-    {
-      key: 'link',
-      label: labels.link,
-      isActive: editor.isActive('link'),
-      run: () => {
-        const href = window.prompt(labels.linkPrompt);
-        if (href === null) return;
-        if (href.trim() === '') {
-          void chain().extendMarkRange('link').unsetLink().run();
-          return;
-        }
-        void chain()
-          .extendMarkRange('link')
-          .setLink({ href: href.trim() })
-          .run();
-      },
-    },
-    {
-      key: 'unlink',
-      label: labels.unlink,
-      isActive: false,
-      run: () => void chain().extendMarkRange('link').unsetLink().run(),
-    },
-  ];
 }
 
 /**
@@ -265,7 +123,7 @@ function RichtextInput<TFieldValues extends FieldValues = FieldValues>({
               aria-label={labels.toolbar}
               className="flex flex-wrap gap-1 border-b border-input p-1"
             >
-              {toolbarActions(editor, labels).map((action) => (
+              {buildRichtextToolbar(editor, labels).map((action) => (
                 <Button
                   key={action.key}
                   type="button"
@@ -284,7 +142,7 @@ function RichtextInput<TFieldValues extends FieldValues = FieldValues>({
           <EditorContent
             editor={editor}
             id={control.id}
-            className="[&_.tiptap]:min-h-32 [&_.tiptap]:px-3 [&_.tiptap]:py-2 [&_.tiptap]:text-sm [&_.tiptap]:outline-none [&_.tiptap_a]:text-primary [&_.tiptap_a]:underline [&_.tiptap_blockquote]:border-l-2 [&_.tiptap_blockquote]:pl-3 [&_.tiptap_h1]:text-xl [&_.tiptap_h2]:text-lg [&_.tiptap_ol]:list-decimal [&_.tiptap_ol]:pl-5 [&_.tiptap_pre]:font-mono [&_.tiptap_ul]:list-disc [&_.tiptap_ul]:pl-5"
+            className={RICHTEXT_CONTENT_CLASS}
           />
         </div>
       )}

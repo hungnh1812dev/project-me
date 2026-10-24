@@ -9,7 +9,7 @@ import {
   RichtextInput,
   richtextExtensions,
   type RichtextLabels,
-} from './RichtextInput';
+} from '.';
 
 const LABELS: RichtextLabels = {
   toolbar: 'Formatting',
