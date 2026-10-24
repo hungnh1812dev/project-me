@@ -2,9 +2,9 @@
 export const DATABASE_HEALTH = Symbol('DATABASE_HEALTH');
 
 /**
- * The only thing health needs from the database layer. T02 implements it
- * with a bare `pg` pool; T08 can rebind the token to a Prisma-backed
- * implementation without touching the health module.
+ * The only thing health needs from the database layer. The implementation is
+ * bound to `DATABASE_HEALTH` in `DatabaseModule` (Prisma-backed), so the health
+ * module does not depend on it.
  */
 export interface DatabaseHealth {
   /** Resolves when the DB answers a trivial query; rejects otherwise. */

@@ -15,7 +15,7 @@ import type { RegisteredContentType } from '../content-engine';
 
 type SystemConditionField = keyof typeof CONDITION_SYSTEM_FIELDS;
 
-/** A content field of a type, at any depth (T17b). */
+/** A content field of a type, at any depth. */
 export interface ContentFieldView {
   /** API field path as permission field lists name it: `reference.phone`. */
   readonly path: string;
@@ -72,7 +72,7 @@ const SYSTEM_CONDITION_FIELDS = Object.keys(
 
 /**
  * Describes a registered type with the fields `visible` allows. Paths come
- * from the definition through the T16 helpers; condition kinds come from the
+ * from the definition through the definition helpers; condition kinds come from the
  * catalog (the content engine's table plan), so no naming rule is repeated.
  */
 export function contentTypeView(

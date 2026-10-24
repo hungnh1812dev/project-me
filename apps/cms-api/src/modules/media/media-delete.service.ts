@@ -26,7 +26,7 @@ import {
 import { isMediaReferenced } from './media-references';
 
 /**
- * `DELETE /media/:id` (T28): soft delete, refused with 409 `MEDIA_IN_USE`
+ * `DELETE /media/:id`: soft delete, refused with 409 `MEDIA_IN_USE`
  * while a draft or published document still uses the file. The stored object
  * stays until `MediaPurgeJob` removes it after the grace period.
  */

@@ -9,7 +9,7 @@ import { ReviewerCleanupJob } from './reviewer-cleanup.job';
 import { ReviewerController } from './reviewer.controller';
 import { ReviewerService } from './reviewer.service';
 
-/** Reviewer toggle, sessions and cleanup (T31, D2). */
+/** Reviewer toggle, sessions and cleanup (D2). */
 @Module({
   imports: [
     AccessModule,

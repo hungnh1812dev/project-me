@@ -44,7 +44,7 @@ export interface DocumentRef {
 
 export interface InsertTreeInput extends TreeInput {
   documentId: string;
-  /** null = the draft row; a timestamp = the published row (T22 clones into it). */
+  /** null = the draft row; a timestamp = the published row (publish clones into it). */
   publishedAt: Date | null;
   locale?: string | null | undefined;
   createdBy?: number | null | undefined;
@@ -168,7 +168,7 @@ export class ContentRepository {
   }
 
   /**
-   * Inserts many documents at once (T34): one INSERT for all roots, then one
+   * Inserts many documents at once: one INSERT for all roots, then one
    * INSERT per component table and level for all their items, each
    * `RETURNING id`. Returns the root ids in input order.
    */
@@ -280,7 +280,7 @@ export class ContentRepository {
    * A uid that does not exist under that parent and field is rejected, so
    * rows of another root or another branch can never be reached.
    * The root row is locked (FOR UPDATE) for the rest of the transaction.
-   * Version/OCC is the caller's job (T21). Returns the root id.
+   * Version/OCC is the caller's job. Returns the root id.
    */
   async replaceTree(
     trx: Transaction<ContentDatabase>,
@@ -407,7 +407,7 @@ export class ContentRepository {
           });
           return;
         }
-        // Insert keeps a sent uid (T22 clones draft -> published with the same uids).
+        // Insert keeps a sent uid (publish clones draft -> published with the same uids).
         const uid = sentUid ?? randomUUID();
         insertedItems.set(uidKey(parent.id, uid), { item, path: childPath });
         inserts.push({ ...row, parent_id: parent.id, component_uid: uid });

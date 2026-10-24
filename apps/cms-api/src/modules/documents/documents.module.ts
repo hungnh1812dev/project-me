@@ -14,7 +14,7 @@ import { DocumentsQueryService } from './documents.query.service';
 import { PresenceService } from './presence.service';
 import { PublishService } from './publish.service';
 
-/** Document reads (T20), writes (T21), publish and delete (T22): JWT, API token or anonymous, through the access layer. */
+/** Document reads, writes, publish and delete: JWT, API token or anonymous, through the access layer. */
 @Module({
   imports: [
     ActivityModule,

@@ -31,7 +31,7 @@ export const CORS_ALLOWED_HEADERS = [
 
 /**
  * Response headers cross-origin JS may read: the request id, and
- * `Retry-After` so the admin can say how long to wait after a 429 (T11).
+ * `Retry-After` so the admin can say how long to wait after a 429.
  */
 export const CORS_EXPOSED_HEADERS = [
   REQUEST_ID_HEADER,

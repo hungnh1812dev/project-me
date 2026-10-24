@@ -28,13 +28,13 @@ export const CONFIG_DEFAULTS = {
   DB_PORT: 5432,
   TRUST_PROXY_HOPS: 1,
   MAIL_PROVIDER: 'console',
-  /** In-memory storage for development and tests; production needs cloudinary (T27). */
+  /** In-memory storage for development and tests; production needs cloudinary. */
   MEDIA_PROVIDER: 'fake',
   /** Key id used outside production when JWT_ACCESS_KID is unset. */
   JWT_ACCESS_KID: 'dev',
   /** Key id used outside production when TOTP_ENC_KID is unset. */
   TOTP_ENC_KID: 'dev',
-  /** Issuer shown in authenticator apps (T13, Q4). */
+  /** Issuer shown in authenticator apps. */
   TOTP_ISSUER: 'Abyss CMS',
   /** SMTP submission port (STARTTLS when the server offers it). */
   SMTP_PORT: 587,
@@ -56,11 +56,11 @@ export const TOTP_ISSUER_PATTERN = new RegExp(
 
 export const MAX_PORT = 65_535;
 
-/** The only accepted value of ALLOW_LOGIN_RATE_LIMIT_OVERRIDE (T18b; also gates REFRESH_RATE_LIMIT_IP, T18c). */
+/** The only accepted value of ALLOW_LOGIN_RATE_LIMIT_OVERRIDE (also gates REFRESH_RATE_LIMIT_IP). */
 export const LOGIN_RATE_LIMIT_OVERRIDE_OPT_IN = 'smoke';
 
 /**
- * Env keys that may replace one rate-limit rule's limit (T18b, T18c). Config
+ * Env keys that may replace one rate-limit rule's limit. Config
  * names env keys only; a rule opts in with `limitOverrideEnvKey`. Refused in
  * production unless ALLOW_LOGIN_RATE_LIMIT_OVERRIDE opts in, so a stray value
  * can't weaken D7.
@@ -74,7 +74,7 @@ export const RATE_LIMIT_OVERRIDE_ENV_KEYS = [
 export type RateLimitOverrideEnvKey =
   (typeof RATE_LIMIT_OVERRIDE_ENV_KEYS)[number];
 
-/** Upper bound of the optional login rate-limit overrides (T18b). */
+/** Upper bound of the optional login rate-limit overrides. */
 export const MAX_RATE_LIMIT_OVERRIDE = 1_000_000;
 
 /** `URL.protocol` values accepted for ADMIN_ORIGIN and WEB_ORIGIN. */

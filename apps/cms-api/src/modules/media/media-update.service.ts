@@ -22,7 +22,7 @@ import type { UpdateMediaRequest } from './media.requests';
 import { type MediaView, mediaViewOfRecord } from './media.service';
 
 /**
- * `PATCH /media/:id` (T29): edits the alt text. Not audited: SPEC §7 lists
+ * `PATCH /media/:id`: edits the alt text. Not audited: SPEC §7 lists
  * media delete only. The policy row filter for `update` decides reachability.
  */
 @Injectable()

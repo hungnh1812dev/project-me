@@ -118,7 +118,7 @@ function atomicFailure(index: number, parts: ErrorParts): HttpException {
 }
 
 /**
- * SPEC §9 bulk (T34), collections only. Every item goes through the same
+ * SPEC §9 bulk, collections only. Every item goes through the same
  * checks as the single-document write (policy, row conditions, allowlist,
  * value rules, OCC for publish), reusing `DocumentsCommandService` and
  * `PublishService`.

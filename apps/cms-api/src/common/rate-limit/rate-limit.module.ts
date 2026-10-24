@@ -17,7 +17,7 @@ export interface RateLimitModuleOptions {
 }
 
 /**
- * Throttling (T10). Global so any feature module can use `@Throttle(...)`.
+ * Throttling. Global so any feature module can use `@Throttle(...)`.
  * Needs the global `ClockModule` and `ClientIpModule`. Swap `RATE_LIMIT_STORE`
  * for a shared store before running more than one API replica.
  */

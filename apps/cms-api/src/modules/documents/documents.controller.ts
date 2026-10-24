@@ -67,7 +67,7 @@ const detailQuerySchema = z.strictObject({
 });
 
 /**
- * SPEC §9 document reads (T20). `DocumentAuthGuard` accepts a JWT session,
+ * SPEC §9 document reads. `DocumentAuthGuard` accepts a JWT session,
  * an API token or no credentials (the `public` role); `PermissionGuard`
  * then needs `read` on the `:slug` content type. Bodies are
  * `SerializedRecord`s only: field masking happens in the service.

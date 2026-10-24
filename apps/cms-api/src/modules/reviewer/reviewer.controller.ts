@@ -47,7 +47,7 @@ import {
 const SETTINGS_SUBJECT = 'reviewer_settings';
 
 /**
- * SPEC §9 reviewer (T31). `status` and `sessions` (POST) are public: the
+ * SPEC §9 reviewer. `status` and `sessions` (POST) are public: the
  * visitor has no account yet. The owner routes need a JWT session and the
  * `reviewer_settings` permission (owner only by default).
  */

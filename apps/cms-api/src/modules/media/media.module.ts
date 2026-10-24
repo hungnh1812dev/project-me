@@ -13,7 +13,7 @@ import { MediaPurgeJob } from './media-purge.job';
 import { MediaService } from './media.service';
 import { UploadPipeline } from './upload.pipeline';
 
-/** File library: streaming upload pipeline, storage port and list (T27). */
+/** File library: streaming upload pipeline, storage port and list. */
 @Module({
   imports: [
     AccessModule,

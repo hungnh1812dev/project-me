@@ -8,7 +8,7 @@ import type { ContentTypeView } from './content-type.view';
 import { ContentTypesService } from './content-types.service';
 
 /**
- * SPEC §9 content types (T17b), read-only. No `@RequirePermission`: the
+ * SPEC §9 content types, read-only. No `@RequirePermission`: the
  * subject is per type, so the service filters by `read` on each slug and
  * answers 404 for a type the caller cannot read.
  */

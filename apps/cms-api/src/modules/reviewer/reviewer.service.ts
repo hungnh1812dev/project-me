@@ -109,7 +109,7 @@ function unavailable(): ServiceUnavailableException {
 }
 
 /**
- * Reviewer access (D2, T31). The owner's toggle lives in `app_settings`;
+ * Reviewer access (D2). The owner's toggle lives in `app_settings`;
  * switching it off bumps the reviewer role's `policy_version` and every
  * reviewer account's `token_version`, so live sessions get 401 on their next
  * request. A visitor passes Turnstile and gets an ephemeral `reviewer`

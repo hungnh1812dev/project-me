@@ -6,7 +6,7 @@ import {
 } from '../../common/constants/limits.constants';
 
 export const REVIEWER_RATE_LIMIT_POLICIES = {
-  /** `GET /reviewer/status` (T31): public, one small read. In memory. */
+  /** `GET /reviewer/status`: public, one small read. In memory. */
   REVIEWER_STATUS: [
     {
       name: 'reviewer-status:ip',
@@ -16,7 +16,7 @@ export const REVIEWER_RATE_LIMIT_POLICIES = {
     },
   ],
   /**
-   * `POST /reviewer/sessions` (T31): bounds Turnstile calls and body parsing
+   * `POST /reviewer/sessions`: bounds Turnstile calls and body parsing
    * per IP. The binding rule (1 session per IP per 10 min) lives in the DB.
    */
   REVIEWER_SESSION_ATTEMPTS: [

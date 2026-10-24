@@ -7,7 +7,7 @@ import {
 import type { RootFieldExtension } from '../graphql.constants';
 
 /**
- * Hidden = unknown (SPEC D18, as in REST T17b): a root field of a content
+ * Hidden = unknown (SPEC D18, as in the REST content types API): a root field of a content
  * type the actor cannot read is reported with exactly the text and shape of
  * an unknown field, so the response never tells a hidden type from a typo.
  * `canRead(slug)` is the access layer's answer (`rowFilter(...).allowed`);

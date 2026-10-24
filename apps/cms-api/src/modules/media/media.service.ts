@@ -119,7 +119,7 @@ export function mediaViewOfRecord(row: {
   };
 }
 
-/** File library: upload (T27) and list. */
+/** File library: upload and list. */
 @Injectable()
 export class MediaService {
   private readonly logger = new Logger(MediaService.name);

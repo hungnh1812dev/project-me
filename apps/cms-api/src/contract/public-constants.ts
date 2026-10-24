@@ -25,7 +25,7 @@ import {
 
 /**
  * The cms-api constants that the admin, the web, the kit and the e2e suite
- * mirror (Q-A4). Built from `*.constants.ts` exports only: no env value and
+ * mirror. Built from `*.constants.ts` exports only: no env value and
  * no secret can reach the file. Add a key here when a client mirrors a new
  * constant.
  */

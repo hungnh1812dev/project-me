@@ -40,7 +40,7 @@ import { MediaUpdateService } from './media-update.service';
 import { type MediaPage, MediaService, type MediaView } from './media.service';
 
 /**
- * SPEC §9 media (T27). JWT sessions only (a reviewer session joins at T32).
+ * SPEC §9 media. JWT sessions only.
  * `PermissionGuard` needs `media` create / read. The multipart body is read
  * by `UploadPipeline` straight from the request, never buffered whole.
  */

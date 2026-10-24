@@ -16,7 +16,7 @@ const keepText = (value: string): string => value;
 /**
  * `date` columns come back as the text Postgres sends (`2026-03-01`), not a
  * JS Date: a Date is midnight in the server's time zone and would shift the
- * calendar day when serialized to UTC (decision T20). Every other type
+ * calendar day when serialized to UTC (decided for date columns). Every other type
  * keeps pg's default parser.
  */
 const DATE_OID: number = types.builtins.DATE;

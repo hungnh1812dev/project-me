@@ -6,7 +6,7 @@ import {
 
 export const DOCUMENTS_RATE_LIMIT_POLICIES = {
   /**
-   * Anonymous `GET /documents/...` (T20, user decision): 120 per minute per
+   * Anonymous `GET /documents/...` (user decision): 120 per minute per
    * IP. Signed-in accounts and API tokens are not counted. In memory.
    */
   DOCUMENT_READ_ANONYMOUS: [

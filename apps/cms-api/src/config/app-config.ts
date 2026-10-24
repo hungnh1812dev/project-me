@@ -28,7 +28,7 @@ export interface IAppConfig {
     readonly cookieOrigins: readonly string[];
     /** Key id of JWT_ACCESS_SECRET; signed into every token header (D9). */
     readonly jwtAccessKid: string;
-    /** TOTP secret encryption (D8, T13). Keys live in `secrets`. */
+    /** TOTP secret encryption (D8). Keys live in `secrets`. */
     readonly totp: {
       /** Key id of TOTP_ENC_KEY; stored with every encrypted secret. */
       readonly encKid: string;
@@ -42,8 +42,8 @@ export interface IAppConfig {
   readonly rateLimit: {
     /**
      * Limit per env key, replacing the default of the rule that declares it
-     * (`RateLimitRule.limitOverrideEnvKey`). Empty = all defaults (T18b: the
-     * smoke stack only).
+     * (`RateLimitRule.limitOverrideEnvKey`). Empty = all defaults (used by the smoke
+     * stack only).
      */
     readonly limitOverrides: Readonly<
       Partial<Record<RateLimitOverrideEnvKey, number>>
@@ -62,7 +62,7 @@ export interface IAppConfig {
     readonly cloudinary: CloudinaryConfig | undefined;
   };
   readonly reviewer: {
-    /** Hostname Turnstile replies must name (T31); undefined = not checked. */
+    /** Hostname Turnstile replies must name; undefined = not checked. */
     readonly turnstileExpectedHostname: string | undefined;
   };
   readonly secrets: {
@@ -72,7 +72,7 @@ export interface IAppConfig {
     /** Previous TOTP_ENC_KEY, kept to decrypt secrets during a rotation. */
     readonly totpEncPreviousKey: string | undefined;
     /**
-     * Cloudflare Turnstile secret key (T31). Optional: unset, reviewer
+     * Cloudflare Turnstile secret key. Optional: unset, reviewer
      * sessions are refused (503), never skipped.
      */
     readonly turnstileSecretKey: string | undefined;

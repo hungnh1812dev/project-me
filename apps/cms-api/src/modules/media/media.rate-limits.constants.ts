@@ -6,7 +6,7 @@ import {
 
 export const MEDIA_RATE_LIMIT_POLICIES = {
   /**
-   * `POST /media` (T27): uploads re-encode images and call the storage
+   * `POST /media`: uploads re-encode images and call the storage
    * provider, so they are bounded per signed-in caller and per IP. In memory.
    */
   MEDIA_UPLOAD: [

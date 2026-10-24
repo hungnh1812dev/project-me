@@ -1,4 +1,4 @@
-/** DI token for the Turnstile verifier (T31). */
+/** DI token for the Turnstile verifier. */
 export const TURNSTILE_VERIFIER = Symbol('TURNSTILE_VERIFIER');
 
 /** Cloudflare documents response tokens of at most 2048 characters. */

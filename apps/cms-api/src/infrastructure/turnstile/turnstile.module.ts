@@ -17,7 +17,7 @@ export function createTurnstileVerifier(config: IAppConfig): TurnstileVerifier {
       });
 }
 
-/** Provides `TURNSTILE_VERIFIER` (T31). */
+/** Provides `TURNSTILE_VERIFIER`. */
 @Module({
   providers: [
     {

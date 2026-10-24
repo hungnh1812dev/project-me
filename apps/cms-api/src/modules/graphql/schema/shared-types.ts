@@ -33,7 +33,7 @@ export const PageMetaType = new GraphQLObjectType({
   },
 });
 
-/** Mirrors the media embed of a document read (T29); the internal id never appears. */
+/** Mirrors the media embed of a document read; the internal id never appears. */
 export const MediaType = new GraphQLObjectType({
   name: SHARED_TYPE_NAMES.MEDIA,
   fields: {

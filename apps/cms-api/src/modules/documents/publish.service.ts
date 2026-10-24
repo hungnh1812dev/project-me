@@ -41,7 +41,7 @@ export interface ActionScope {
 }
 
 /**
- * SPEC §9 publish, unpublish and delete (T22), all on the document's two
+ * SPEC §9 publish, unpublish and delete, all on the document's two
  * rows (draft `published_at is null`, published `published_at is not null`).
  * - publish: locks the draft (`FOR UPDATE`), checks `expectedVersion` (409),
  *   then in the same transaction replaces the published row with a deep copy
@@ -80,7 +80,7 @@ export class PublishService {
     return { documentId, version };
   }
 
-  /** The publish steps inside the caller's transaction (also used per item by bulk, T34). */
+  /** The publish steps inside the caller's transaction (also used per item by bulk). */
   async publishIn(
     trx: Transaction<ContentDatabase>,
     scope: ActionScope,
@@ -168,7 +168,7 @@ export class PublishService {
     await this.track(actor, 'unpublish', slug, documentId);
   }
 
-  /** Deletes the published row on `db` (a transaction for bulk, T34); 404 if out of scope. */
+  /** Deletes the published row on `db` (a transaction for bulk); 404 if out of scope. */
   async unpublishIn(
     db: Kysely<ContentDatabase>,
     scope: ActionScope,
@@ -196,7 +196,7 @@ export class PublishService {
     await this.track(actor, 'delete', slug, documentId);
   }
 
-  /** Deletes both rows inside the caller's transaction (also per item for bulk, T34). */
+  /** Deletes both rows inside the caller's transaction (also per item for bulk). */
   async removeIn(
     trx: Transaction<ContentDatabase>,
     scope: ActionScope,

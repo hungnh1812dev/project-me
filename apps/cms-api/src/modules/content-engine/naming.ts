@@ -14,8 +14,8 @@ import {
 
 /**
  * The single place where SQL names are composed from a definition.
- * The validator (T05) checks exactly these names; the SQL generator (T06)
- * and repository (T07) must use them too, never their own string building.
+ * The validator checks exactly these names; the SQL generator
+ * and repository must use them too, never their own string building.
  * Rules are documented in docs/modules/content-schema.md ("Naming").
  */
 

@@ -186,7 +186,7 @@ export const SQL_RESERVED_WORDS = [
   'with',
 ] as const;
 
-/** Suffixes appended to a table name for the objects T06 names explicitly. */
+/** Suffixes appended to a table name for the objects the SQL generator names explicitly. */
 export const RELATION_NAME_SUFFIXES = {
   primaryKey: '_pk',
   parentForeignKey: '_parent_fk',
@@ -244,7 +244,7 @@ export const HASH_ALGORITHM = 'sha256';
  */
 export const CONTENT_STATUSES = ['draft', 'published'] as const;
 
-/** Codes carried by content engine runtime errors (registry and repository, T07). */
+/** Codes carried by content engine runtime errors (registry and repository). */
 export const CONTENT_ERROR_CODES = {
   /** The slug is not in the registry. */
   CONTENT_TYPE_UNKNOWN: 'content_type.unknown',

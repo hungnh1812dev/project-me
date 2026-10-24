@@ -3,7 +3,7 @@ import { Injectable } from '@nestjs/common';
 import { type DatabaseHealth } from './database-health';
 import { PrismaService } from './prisma.service';
 
-/** Readiness ping through the app's Prisma client (T08 rebind of the T02 seam). */
+/** Readiness ping through the app's Prisma client (the `DATABASE_HEALTH` implementation). */
 @Injectable()
 export class PrismaDatabaseHealth implements DatabaseHealth {
   constructor(private readonly prisma: PrismaService) {}

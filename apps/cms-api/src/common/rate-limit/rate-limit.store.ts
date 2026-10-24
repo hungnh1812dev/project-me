@@ -45,7 +45,7 @@ interface Counter {
  *
  * Memory stays bounded twice over: expired counters are swept at most once
  * per `RATE_LIMIT_SWEEP_INTERVAL_MS`, and the map never holds more than
- * `maxKeys` counters (T10a). When a new key arrives at the cap, expired
+ * `maxKeys` counters. When a new key arrives at the cap, expired
  * counters are swept first; if the map is still full the key is refused
  * (fail closed) and a throttled warning is logged. Live counters are never
  * evicted, since that would let an attacker reset someone's limit.

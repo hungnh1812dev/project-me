@@ -76,7 +76,7 @@ export interface PreparedWrite {
 }
 
 /**
- * SPEC §9 document writes (T21): create a draft, update with optimistic
+ * SPEC §9 document writes: create a draft, update with optimistic
  * concurrency. Order of every write:
  * 1. permission (guard) and the row-level `update` conditions (403/404);
  * 2. body -> `WriteAllowlist` (D4) -> `assertTreeInput` -> value rules
@@ -310,7 +310,7 @@ export class DocumentsCommandService {
     return record;
   }
 
-  /** One bulk-create item (T34): the same checks as `create`, no SQL write. */
+  /** One bulk-create item: the same checks as `create`, no SQL write. */
   prepareCreate(
     actor: ActorContext,
     slug: string,

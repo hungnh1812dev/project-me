@@ -89,7 +89,7 @@ function subjectOf(
 }
 
 /**
- * Fixed-window throttle (D7, T10). Each rule of the policy counts one hit per
+ * Fixed-window throttle (D7). Each rule of the policy counts one hit per
  * request under `<rule name>:<IP | email hash>`; the first rule over its
  * limit answers 429 in the unified error shape with `Retry-After`. The body
  * and header are the same whichever rule fired.
@@ -123,7 +123,7 @@ export class ThrottleGuard implements CanActivate {
         `${rule.name}:${subject}`,
         rule.windowMs,
       );
-      // A refused hit (store at capacity, T10a) answers exactly like a limit hit.
+      // A refused hit (store at capacity) answers exactly like a limit hit.
       if (hit.refused === true || hit.count > this.limitOf(rule)) {
         this.reject(http.getResponse<Response>(), hit.resetAt);
       }
@@ -131,7 +131,7 @@ export class ThrottleGuard implements CanActivate {
     return true;
   }
 
-  /** The default limit, unless the config overrides the env key the rule declares (T18b). */
+  /** The default limit, unless the config overrides the env key the rule declares. */
   private limitOf(rule: RateLimitRule): number {
     if (rule.limitOverrideEnvKey === undefined) return rule.limit;
     return (

@@ -2,7 +2,7 @@ import { BadRequestException } from '@nestjs/common';
 import { z } from 'zod';
 
 /**
- * Offset pagination of list endpoints (Q10): `?page=&pageSize=` in, `meta`
+ * Offset pagination of list endpoints: `?page=&pageSize=` in, `meta`
  * out. The project list convention; documents, media and audit logs reuse it.
  */
 export const PAGINATION = {
@@ -17,7 +17,7 @@ export const INVALID_REQUEST_ERROR = {
   MESSAGE: 'The request is invalid.',
 } as const;
 
-/** `:id` of /accounts and /roles: always a `document_id` (T17 Q5). */
+/** `:id` of /accounts and /roles: always a `document_id`. */
 export const documentIdSchema = z.uuid();
 
 const DIGITS = /^\d{1,9}$/;
@@ -33,7 +33,7 @@ export function queryInt(min: number, max: number, fallback: number) {
     .transform((value) => value ?? fallback);
 }
 
-/** `?page=&pageSize=` of a paginated list (Q10); nothing else is accepted (Q12). */
+/** `?page=&pageSize=` of a paginated list; nothing else is accepted. */
 export const pageQuerySchema = z.strictObject({
   page: queryInt(
     PAGINATION.FIRST_PAGE,

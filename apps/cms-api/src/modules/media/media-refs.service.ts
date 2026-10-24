@@ -103,7 +103,7 @@ const FILE_COLUMNS = [
 ] as const;
 
 /**
- * Document <-> media file mapping (T29). Documents speak the file's public
+ * Document <-> media file mapping. Documents speak the file's public
  * `document_id` (uuid); `media` columns store `file_library.id`. Writes map
  * uuid -> id here, reads embed the file instead of the id. The reference
  * check of a delete (`media-references.ts`) works on the stored ids.

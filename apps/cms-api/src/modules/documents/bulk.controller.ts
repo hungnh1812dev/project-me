@@ -27,7 +27,7 @@ import {
 } from './dto/bulk.body';
 
 /**
- * SPEC §9 bulk (T34), collections only. Registered before
+ * SPEC §9 bulk, collections only. Registered before
  * `DocumentsController` so `bulk` is never read as a document id. Each route
  * needs its action on `:slug` (`PermissionGuard`); rows and fields are then
  * checked per item in `BulkService`.

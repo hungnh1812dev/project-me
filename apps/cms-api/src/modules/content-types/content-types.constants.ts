@@ -1,7 +1,7 @@
 import { PermissionAction } from '../../generated/prisma/client';
 import { type SystemSubject } from '../access';
 
-/** Error codes of the content types API (T17b). */
+/** Error codes of the content types API. */
 export const CONTENT_TYPES_ERROR_CODES = {
   /**
    * The slug is not registered, or the caller may not read it. Both answer
@@ -17,7 +17,7 @@ export const CONTENT_TYPES_ERROR_MESSAGES = {
 /**
  * Callers allowed this permission see every content type and every field,
  * whatever they can read themselves: building a role's permission matrix
- * needs the whole catalog (decision T17b). The rank rule still bounds the
+ * needs the whole catalog (decided for the permission matrix). The rank rule still bounds the
  * roles they can edit.
  */
 export const FULL_CATALOG_PERMISSION = {

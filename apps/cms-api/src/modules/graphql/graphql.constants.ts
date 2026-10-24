@@ -84,7 +84,7 @@ export const GRAPHQL_SCHEMA_ERROR_MESSAGES = {
 } as const;
 
 /**
- * Request limits (docs/modules/graphql.md "Limits", Q-G4). Body size is
+ * Request limits (docs/modules/graphql.md "Limits"). Body size is
  * checked before parsing (413), the rest while parsing and validating
  * (400 `GRAPHQL_LIMIT_EXCEEDED`).
  */

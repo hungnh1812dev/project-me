@@ -20,7 +20,7 @@ export const RATE_LIMIT_KEY_SOURCES = {
    */
   ACTOR: 'actor',
   /**
-   * The resolved client IP, counted only for anonymous requests (T20): a
+   * The resolved client IP, counted only for anonymous requests: a
    * signed-in caller is skipped. Needs the authentication guard to run first.
    */
   ANONYMOUS_IP: 'anonymous-ip',
@@ -37,7 +37,7 @@ export interface RateLimitRule {
   readonly limit: number;
   readonly windowMs: number;
   /**
-   * Env key that may replace `limit` (T18b, T18c). Only the keys listed in
+   * Env key that may replace `limit`. Only the keys listed in
    * `RATE_LIMIT_OVERRIDE_ENV_KEYS` are accepted; the config parses and guards
    * them, the guard applies them.
    */
@@ -51,7 +51,7 @@ export type RateLimitPolicy = readonly RateLimitRule[];
 export const RATE_LIMIT_SWEEP_INTERVAL_MS = FIFTEEN_MINUTES_MS;
 
 /**
- * T10a: most live counters the in-memory store holds, so an attacker rotating
+ * Most live counters the in-memory store holds, so an attacker rotating
  * IPs or emails can't grow it without bound. Measured ~200-250 bytes per key
  * (hashed email or IPv6 key), so ~12 MB at the cap: safe on a small VPS while
  * far above what a small CMS uses in one 15-minute window (one login from a

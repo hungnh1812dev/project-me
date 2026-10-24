@@ -26,7 +26,7 @@ const FULL_VISIBILITY: FieldVisibility = {
 };
 
 /**
- * SPEC §9 content types (T17b): the registered types and their field paths,
+ * SPEC §9 content types: the registered types and their field paths,
  * filtered to what the caller may read. Role managers see the whole catalog
  * (FULL_CATALOG_PERMISSION) so they can build permission matrices.
  */

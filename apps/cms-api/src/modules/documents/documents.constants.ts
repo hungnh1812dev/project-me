@@ -3,7 +3,7 @@ import { type ConditionValueKind, type RecordSystemField } from '../access';
 /** Route param holding a record's document_id in DOCUMENTS_ROUTES. */
 export const DOCUMENT_ID_PARAM = 'documentId';
 
-/** Error codes of the documents API (T20). */
+/** Error codes of the documents API. */
 export const DOCUMENT_ERROR_CODES = {
   NOT_FOUND: 'DOCUMENT_NOT_FOUND',
   /** A write names a `version` that is no longer the stored one (SPEC §9). */
@@ -159,7 +159,7 @@ export const PRESENCE_MESSAGES = {
   STORE_FULL: 'Too many active editors, try again later.',
 } as const;
 
-/** SPEC §6 bulk limits (T34). */
+/** SPEC §6 bulk limits. */
 export const BULK_LIMITS = {
   MAX_ITEMS: 50,
   MAX_COMPONENT_ROWS_PER_ITEM: 200,

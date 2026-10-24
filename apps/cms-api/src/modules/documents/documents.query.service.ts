@@ -49,7 +49,7 @@ interface ReadScope {
 }
 
 /**
- * SPEC §9 document reads (T20). Every read follows the same order:
+ * SPEC §9 document reads. Every read follows the same order:
  * 1. the actor needs `read` (403) and, for `status=draft`, read + update (403);
  * 2. fields: `fieldsFor().readable` -> `recordReadAccess` -> projected
  *    columns, so a masked column is never selected (D3);

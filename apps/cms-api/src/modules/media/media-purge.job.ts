@@ -30,7 +30,7 @@ export interface PurgeResult {
 
 /**
  * Removes the stored object of files soft-deleted more than 24 h ago, then
- * the row (T28). A file that a document points at again is left alone. Runs
+ * the row. A file that a document points at again is left alone. Runs
  * in-process on an interval: with several replicas every one runs it, which
  * is harmless (deleting a missing object is not an error).
  */

@@ -14,7 +14,7 @@ import {
 } from './reviewer.constants';
 
 /**
- * Deletes reviewer accounts whose session has expired (T31). The session row
+ * Deletes reviewer accounts whose session has expired. The session row
  * and refresh/OTP rows go with the account (cascade); audit rows keep their
  * text and lose only the actor link (SET NULL). In-process on an interval;
  * several replicas each run it, which is harmless.

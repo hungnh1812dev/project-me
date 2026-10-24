@@ -96,6 +96,14 @@ function parseBindings(clause: string): NameBinding[] | 'all' {
   });
 }
 
+export function commentsOf(text: string): string[] {
+  const blocks = [...text.matchAll(BLOCK_COMMENT)].map(([block]) => block);
+  const lines = [...text.replace(BLOCK_COMMENT, '').matchAll(LINE_COMMENT)].map(
+    ([line]) => line,
+  );
+  return [...blocks, ...lines];
+}
+
 export function withoutComments(text: string): string {
   return text.replace(BLOCK_COMMENT, '').replace(LINE_COMMENT, '$1');
 }
