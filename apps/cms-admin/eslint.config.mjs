@@ -20,10 +20,25 @@ const FEATURES_BAN = {
   message: 'lib/ never depends on features.',
 };
 
+const COPY_FILE_BAN = {
+  group: ['**/config/copy/*.copy'],
+  message:
+    'Read text through COPY (config/copy.constants); a section file belongs to config/copy/ only.',
+};
+const COPY_SIBLING_BAN = {
+  regex: '^\\./(?!common\\.copy$)[^/]+\\.copy$',
+  message: 'A copy section file imports no other section; only common.copy.',
+};
+
 const importBoundary = (files, patterns, ignores = []) => ({
   files,
   ignores,
-  rules: { 'no-restricted-imports': ['error', { patterns }] },
+  rules: {
+    'no-restricted-imports': [
+      'error',
+      { patterns: [...patterns, COPY_FILE_BAN] },
+    ],
+  },
 });
 
 // SPEC §2 import order, lowest first. A feature may import only from tiers
@@ -109,6 +124,12 @@ export default [
         NO_DATE_FORMATTER,
         NO_LITERAL_QUERY_KEY,
       ],
+    },
+  },
+  {
+    files: ['src/config/copy/*.copy.ts'],
+    rules: {
+      'no-restricted-imports': ['error', { patterns: [COPY_SIBLING_BAN] }],
     },
   },
   {

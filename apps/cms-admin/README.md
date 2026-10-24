@@ -208,8 +208,10 @@ pnpm --filter @abyss/cms-admin dev       # http://localhost:5173 (DEV_SERVER_POR
   key is documented in [`.env.example`](.env.example). `VITE_*` values are
   baked in at build time, so they are public: never put secrets there.
 - `src/config/endpoints.ts` is the single map of API paths.
-- `src/config/copy.constants.ts` holds user-facing text until an i18n module
-  exists.
+- `src/config/copy.constants.ts` re-exports `COPY`, the user-facing text
+  until an i18n module exists. Sections live in `src/config/copy/*.copy.ts`
+  (shared text and nav labels in `common.copy.ts`) and are joined in
+  `copy/index.ts`; only that folder imports a section file (ESLint).
 - `src/lib/api-client.ts` is the Axios instance. It strips trailing slashes
   from every request path (`src/config/strip-trailing-slashes.ts`, SPEC §6), so no proxy can answer with a redirect.
 
