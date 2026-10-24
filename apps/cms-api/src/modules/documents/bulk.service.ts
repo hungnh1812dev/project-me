@@ -3,16 +3,12 @@ import { randomUUID } from 'node:crypto';
 import {
   BadRequestException,
   ForbiddenException,
-  HttpException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
 import { sql } from 'kysely';
 
-import {
-  ERROR_CODE_BY_STATUS,
-  ERROR_CODES,
-} from '../../common/constants/error.constants';
+import { ERROR_CODES } from '../../common/constants/error.constants';
 import { PermissionAction } from '../../generated/prisma/client';
 import { AccessPolicyService, type ActorContext } from '../access';
 import { ContentDbProvider } from '../content-engine';
@@ -22,6 +18,13 @@ import {
   type InsertTreeInput,
 } from '../content-engine/content.repository';
 import { ContentTreeError } from '../content-engine';
+import {
+  asItemError,
+  atomicFailure,
+  type BulkItemError,
+  type ErrorParts,
+  itemError,
+} from './bulk-errors';
 import {
   BULK_ITEM_STATUS,
   BULK_LIMITS,
@@ -49,15 +52,6 @@ export interface BulkItemOk {
   version?: number;
 }
 
-export interface BulkItemError {
-  index: number;
-  status: typeof BULK_ITEM_STATUS.ERROR;
-  statusCode: number;
-  errorCode: string;
-  message: string;
-  details?: unknown;
-}
-
 export type BulkItemResult = BulkItemOk | BulkItemError;
 
 export interface BulkResponse {
@@ -65,56 +59,6 @@ export interface BulkResponse {
   succeeded: number;
   failed: number;
   results: BulkItemResult[];
-}
-
-interface ErrorParts {
-  statusCode: number;
-  errorCode: string;
-  message: string;
-  details?: unknown;
-}
-
-function errorParts(error: HttpException): ErrorParts {
-  const statusCode = error.getStatus();
-  const response = error.getResponse();
-  const object =
-    typeof response === 'object' && response !== null
-      ? (response as Record<string, unknown>)
-      : {};
-  const message =
-    typeof object.message === 'string'
-      ? object.message
-      : Array.isArray(object.message)
-        ? object.message.filter((m) => typeof m === 'string').join('; ')
-        : error.message;
-  return {
-    statusCode,
-    errorCode:
-      typeof object.errorCode === 'string'
-        ? object.errorCode
-        : (ERROR_CODE_BY_STATUS[statusCode] ?? ERROR_CODES.HTTP_ERROR),
-    message,
-    ...(object.details === undefined ? {} : { details: object.details }),
-  };
-}
-
-/** A client error of one item; a server error is never an item result. */
-function asItemError(error: unknown): ErrorParts | null {
-  if (!(error instanceof HttpException)) return null;
-  const parts = errorParts(error);
-  return parts.statusCode >= 500 ? null : parts;
-}
-
-/** Atomic mode: the request fails with the first item's error, naming the item. */
-function atomicFailure(index: number, parts: ErrorParts): HttpException {
-  return new HttpException(
-    {
-      errorCode: parts.errorCode,
-      message: parts.message,
-      details: { index, details: parts.details },
-    },
-    parts.statusCode,
-  );
 }
 
 /**
@@ -390,10 +334,6 @@ const ACTIONS = {
   unpublish: PermissionAction.unpublish,
   delete: PermissionAction.delete,
 } as const;
-
-function itemError(index: number, parts: ErrorParts): BulkItemError {
-  return { index, status: BULK_ITEM_STATUS.ERROR, ...parts };
-}
 
 /** A create item must be an object; anything else is that item's 400. */
 function asTree(item: unknown): Record<string, unknown> {

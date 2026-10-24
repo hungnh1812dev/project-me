@@ -11,6 +11,7 @@ import { type Expression, type Kysely, sql, type SqlBool } from 'kysely';
 
 import { PermissionAction } from '../../generated/prisma/client';
 import {
+  type AccessPolicy,
   AccessPolicyService,
   type ActorContext,
   recordReadAccess,
@@ -65,6 +66,26 @@ export type WriteResult = SerializedRecord | WrittenRef;
 
 type Db = Kysely<ContentDatabase>;
 type Predicate = Expression<SqlBool>;
+
+/** The row an update addresses: its table, document, which copy, and the actor's update conditions. */
+interface UpdateTarget {
+  table: string;
+  documentId: string;
+  /** True: the draft copy (`published_at` null); false: the single live copy. */
+  isDraftRow: boolean;
+  updateScope: Predicate | null;
+}
+
+interface ReadScope {
+  readable: boolean;
+  where: Predicate | null;
+}
+
+interface ConflictOutcome {
+  kind: 'conflict';
+  document: ContentDocument | null;
+  current: number;
+}
 
 /** A write the actor has been checked for, ready for the transaction. */
 export interface PreparedWrite {
@@ -154,111 +175,38 @@ export class DocumentsCommandService {
       PermissionAction.update,
       'update',
     );
-    const readFilter = evaluator.rowFilter(actor, PermissionAction.read, slug);
     const access = recordReadAccess(
       actor,
       evaluator.fieldsFor(actor, slug).readable,
     );
-
-    const target = (extra: Predicate | null): Predicate[] => [
-      sql<SqlBool>`${sql.ref('document_id')} = ${documentId}`,
-      sql<SqlBool>`${sql.ref('published_at')} ${
-        type.definition.draftAndPublish ? sql`is null` : sql`is not null`
-      }`,
-      ...(rowFilter.where === null ? [] : [rowFilter.where]),
-      ...(extra === null ? [] : [extra]),
-    ];
-    const repository = new ContentRepository(await this.registry.registry());
-    const table = type.root.plan.name;
-    const ref = {
+    const target: UpdateTarget = {
+      table: type.root.plan.name,
       documentId,
-      status: type.definition.draftAndPublish ? 'draft' : 'published',
-    } as const;
+      isDraftRow: type.definition.draftAndPublish,
+      updateScope: rowFilter.where,
+    };
+    const repository = new ContentRepository(await this.registry.registry());
 
-    const outcome = await this.content.db.transaction().execute(
-      async (
-        trx,
-      ): Promise<
-        | { kind: 'updated'; id: number }
-        | {
-            kind: 'conflict';
-            document: ContentDocument | null;
-            current: number;
-          }
-      > => {
-        let update = trx
-          .withSchema(CONTENT_DB_SCHEMA)
-          .updateTable(table)
-          .set({
-            version: sql<number>`${sql.ref('version')} + 1`,
-          });
-        for (const predicate of target(
-          sql<SqlBool>`${sql.ref('version')} = ${version}`,
-        )) {
-          update = update.where(predicate);
-        }
-        const updated = await update.returning('id').executeTakeFirst();
-        if (updated !== undefined) {
-          await this.mapTreeErrors(() =>
-            repository.replaceTree(trx, slug, ref, {
-              ...stored,
-              updatedBy: actor.accountId,
-            }),
-          );
-          // The new content may take the row out of the actor's update
-          // conditions: refuse (rolls back) rather than let them move rows
-          // out of their own scope.
-          if (rowFilter.where !== null) {
-            const stillInScope = await trx
-              .withSchema(CONTENT_DB_SCHEMA)
-              .selectFrom(table)
-              .select('id')
-              .where(sql<SqlBool>`${sql.ref('id')} = ${updated.id}`)
-              .where(rowFilter.where)
-              .executeTakeFirst();
-            if (stillInScope === undefined) throw new ForbiddenException();
-          }
-          return { kind: 'updated', id: updated.id as number };
-        }
-
-        let currentQuery = trx
-          .withSchema(CONTENT_DB_SCHEMA)
-          .selectFrom(table)
-          .select('version');
-        for (const predicate of target(null)) {
-          currentQuery = currentQuery.where(predicate);
-        }
-        const current = await currentQuery.executeTakeFirst();
-        if (current === undefined) throw notFound();
-
-        const readable =
-          readFilter.allowed &&
-          (type.definition.draftAndPublish
-            ? evaluator.canReadDrafts(actor, slug)
-            : true);
-        const document = readable
-          ? await this.loadOne(
-              trx,
-              type,
-              access,
-              sql<SqlBool>`${sql.ref('document_id')} = ${documentId}`,
-              [
-                ...(type.definition.draftAndPublish
-                  ? [sql<SqlBool>`${sql.ref('published_at')} is null`]
-                  : [sql<SqlBool>`${sql.ref('published_at')} is not null`]),
-                ...(readFilter.allowed && readFilter.where !== null
-                  ? [readFilter.where]
-                  : []),
-              ],
-            )
-          : null;
-        return {
-          kind: 'conflict',
-          document: document ?? null,
-          current: current.version as number,
-        };
-      },
-    );
+    const outcome = await this.content.db.transaction().execute(async (trx) => {
+      const updated = await this.bumpVersion(trx, target, version);
+      if (updated === undefined) {
+        const readScope = this.readScope(actor, slug, type, evaluator);
+        return this.describeConflict(trx, type, access, target, readScope);
+      }
+      await this.mapTreeErrors(() =>
+        repository.replaceTree(
+          trx,
+          slug,
+          {
+            documentId,
+            status: target.isDraftRow ? 'draft' : 'published',
+          },
+          { ...stored, updatedBy: actor.accountId },
+        ),
+      );
+      await this.assertStillInUpdateScope(trx, target, updated.id);
+      return { kind: 'updated', id: updated.id } as const;
+    });
 
     if (outcome.kind === 'conflict') {
       throw await this.conflict(type, access, outcome, tree);
@@ -272,6 +220,100 @@ export class DocumentsCommandService {
       documentId,
       version + 1,
     );
+  }
+
+  /** `SET version = version + 1 WHERE version = $v`: takes the row lock; undefined when no row matched. */
+  private async bumpVersion(
+    trx: Db,
+    target: UpdateTarget,
+    expectedVersion: number,
+  ): Promise<{ id: number } | undefined> {
+    let update = trx
+      .withSchema(CONTENT_DB_SCHEMA)
+      .updateTable(target.table)
+      .set({ version: sql<number>`${sql.ref('version')} + 1` });
+    for (const predicate of targetPredicates(
+      target,
+      sql<SqlBool>`${sql.ref('version')} = ${expectedVersion}`,
+    )) {
+      update = update.where(predicate);
+    }
+    const updated = await update.returning('id').executeTakeFirst();
+    return updated === undefined ? undefined : { id: updated.id as number };
+  }
+
+  /**
+   * The new content may take the row out of the actor's update conditions:
+   * refuse (rolls back) rather than let them move rows out of their own scope.
+   */
+  private async assertStillInUpdateScope(
+    trx: Db,
+    target: UpdateTarget,
+    id: number,
+  ): Promise<void> {
+    if (target.updateScope === null) return;
+    const stillInScope = await trx
+      .withSchema(CONTENT_DB_SCHEMA)
+      .selectFrom(target.table)
+      .select('id')
+      .where(sql<SqlBool>`${sql.ref('id')} = ${id}`)
+      .where(target.updateScope)
+      .executeTakeFirst();
+    if (stillInScope === undefined) throw new ForbiddenException();
+  }
+
+  /** What the actor may read of the draft or live row, for the 409 body. */
+  private readScope(
+    actor: ActorContext,
+    slug: string,
+    type: RegisteredContentType,
+    evaluator: AccessPolicy['evaluator'],
+  ): ReadScope {
+    const readFilter = evaluator.rowFilter(actor, PermissionAction.read, slug);
+    if (!readFilter.allowed) return { readable: false, where: null };
+    const readable = type.definition.draftAndPublish
+      ? evaluator.canReadDrafts(actor, slug)
+      : true;
+    return { readable, where: readFilter.where };
+  }
+
+  /** No row matched the version: 404 if the row is gone, else the 409 outcome. */
+  private async describeConflict(
+    trx: Db,
+    type: RegisteredContentType,
+    access: ReturnType<typeof recordReadAccess>,
+    target: UpdateTarget,
+    readScope: ReadScope,
+  ): Promise<ConflictOutcome> {
+    let currentQuery = trx
+      .withSchema(CONTENT_DB_SCHEMA)
+      .selectFrom(target.table)
+      .select('version');
+    for (const predicate of targetPredicates(target, null)) {
+      currentQuery = currentQuery.where(predicate);
+    }
+    const current = await currentQuery.executeTakeFirst();
+    if (current === undefined) throw notFound();
+
+    const document = readScope.readable
+      ? await this.loadOne(
+          trx,
+          type,
+          access,
+          sql<SqlBool>`${sql.ref('document_id')} = ${target.documentId}`,
+          [
+            sql<SqlBool>`${sql.ref('published_at')} ${
+              target.isDraftRow ? sql`is null` : sql`is not null`
+            }`,
+            ...(readScope.where === null ? [] : [readScope.where]),
+          ],
+        )
+      : undefined;
+    return {
+      kind: 'conflict',
+      document: document ?? null,
+      current: current.version as number,
+    };
   }
 
   /**
@@ -350,7 +392,7 @@ export class DocumentsCommandService {
   private async conflict(
     type: RegisteredContentType,
     access: ReturnType<typeof recordReadAccess>,
-    outcome: { document: ContentDocument | null; current: number },
+    outcome: ConflictOutcome,
     tree: TreeInput,
   ): Promise<ConflictException> {
     const details: VersionConflictDetails = {
@@ -411,6 +453,20 @@ export class DocumentsCommandService {
       throw error;
     }
   }
+}
+
+function targetPredicates(
+  target: UpdateTarget,
+  extra: Predicate | null,
+): Predicate[] {
+  return [
+    sql<SqlBool>`${sql.ref('document_id')} = ${target.documentId}`,
+    sql<SqlBool>`${sql.ref('published_at')} ${
+      target.isDraftRow ? sql`is null` : sql`is not null`
+    }`,
+    ...(target.updateScope === null ? [] : [target.updateScope]),
+    ...(extra === null ? [] : [extra]),
+  ];
 }
 
 function notFound(): NotFoundException {
