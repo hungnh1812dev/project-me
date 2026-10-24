@@ -1,11 +1,10 @@
 #!/usr/bin/env bash
-# Proxy smoke test (T04): builds and starts docker-compose.smoke.yml, checks
+# Proxy smoke test: builds and starts docker-compose.smoke.yml, checks
 # routing, trailing slashes and CORS through Traefik, checks the cms-api-init
-# container (deploy:migrate, T37a), creates the owner through the setup route
-# (OS3), checks that owner:bootstrap (T08) refuses and re-runs the migrations
-# inside the cms-api image,
-# checks login/refresh (T09) and OTP mail delivery to Mailpit (T12), then
-# tears it down.
+# container (deploy:migrate), creates the owner through the setup route, checks
+# that owner:bootstrap refuses and re-runs the migrations inside the cms-api
+# image, checks login/refresh and OTP mail delivery to Mailpit, then tears it
+# down.
 #
 # Optional env:
 #   SMOKE_DOMAIN           base domain (default domain.localhost)
@@ -15,7 +14,7 @@
 #                          and write the e2e env to .smoke/e2e-vars.sh, so
 #                          `pnpm e2e:spec <spec>` can run single specs against it
 #   SMOKE_E2E=1            also run the Playwright suite (@abyss/e2e) against the
-#                          stack as the bootstrapped owner (T11)
+#                          stack as the bootstrapped owner
 #   SMOKE_NO_BUILD=1       reuse the images from the last build (only when no
 #                          product code changed since, e.g. e2e-only edits)
 set -euo pipefail
@@ -304,7 +303,7 @@ request GET "$WEB_ORIGIN$API_PREFIX/health/live" -H "Origin: $ADMIN_ORIGIN"
 expect_status "actual cross-origin call" 200
 expect_header "actual call allows the admin origin" Access-Control-Allow-Origin "$ADMIN_ORIGIN"
 expect_header "actual call allows credentials" Access-Control-Allow-Credentials "true"
-expect_header "actual call exposes the request id and Retry-After (T11)" Access-Control-Expose-Headers "x-request-id,Retry-After"
+expect_header "actual call exposes the request id and Retry-After" Access-Control-Expose-Headers "x-request-id,Retry-After"
 
 request GET "$WEB_ORIGIN$API_PREFIX/health/live" -H "Origin: $OTHER_ORIGIN"
 expect_header "another origin gets no Access-Control-Allow-Origin" Access-Control-Allow-Origin ""
@@ -326,7 +325,7 @@ in_api() {
   pass "$label"
 }
 
-echo "Init container ($INIT_SERVICE: deploy:migrate, T37a)"
+echo "Init container ($INIT_SERVICE: deploy:migrate)"
 init_container="$(compose ps --all --quiet "$INIT_SERVICE")"
 init_exit="$(docker inspect --format "$INIT_EXIT_CODE_FORMAT" "$init_container" 2>/dev/null || echo "missing")"
 if [[ "$init_exit" == "0" ]]; then pass "$INIT_SERVICE exited 0"; else fail "$INIT_SERVICE exit code: $init_exit"; fi
@@ -335,7 +334,7 @@ for fragment in "$DB_MIGRATE_APPLIED" "$DB_MIGRATE_SEEDED" "$CONTENT_MIGRATE_APP
   if [[ "$init_log" == *"$fragment"* ]]; then pass "$INIT_SERVICE log has '$fragment'"; else fail "$INIT_SERVICE log lacks '$fragment': $init_log"; fi
 done
 
-echo "Owner setup route (OS3) + owner:bootstrap refusal"
+echo "Owner setup route + owner:bootstrap refusal"
 setup_token="$(sed -n "s/^$SETUP_TOKEN_KEY=//p" "$CMS_API_ENV_FILE")"
 if [[ -z "$setup_token" ]]; then fail "$SETUP_TOKEN_KEY is not set in $CMS_API_ENV_FILE"; fi
 # setup_body <token>: the owner setup request body (the owner credentials of this run).
@@ -366,7 +365,7 @@ echo "Migrations again inside the cms-api image"
 in_api "db:migrate again has nothing pending" "" 1 \
   "$DB_MIGRATE_NOTHING" "$DB_SEED_NOTHING" -- "${DB_MIGRATE_CMD[@]}"
 stack_seed_extra_accounts
-# Break-glass 2FA reset (T13a): refusals only, so no account state changes
+# Break-glass 2FA reset: refusals only, so no account state changes
 # (the owner login and refresh checks below still pass).
 in_api "owner:reset-2fa refuses an unknown email" "" 0 \
   "$RESET_2FA_UNKNOWN" -- "${RESET_2FA_CMD[@]}" --email "nobody@$SMOKE_DOMAIN" --yes
@@ -378,7 +377,7 @@ in_api "owner:reset-2fa needs --yes without a terminal" "" 0 \
 in_api "content:migrate again has nothing pending" "" 1 \
   "$CONTENT_MIGRATE_NOTHING" -- "${CONTENT_MIGRATE_CMD[@]}"
 
-echo "Auth through the proxy (T09)"
+echo "Auth through the proxy"
 login_body() { printf '{"email":"%s","password":"%s"}' "$STACK_OWNER_EMAIL" "$1"; }
 request POST "$WEB_ORIGIN$API_PREFIX/auth/login/" -H 'Content-Type: application/json' \
   --data "$(login_body "$STACK_OWNER_PASSWORD")"
@@ -395,14 +394,14 @@ expect_status "refresh from the admin origin rotates the token" 200
 request POST "$WEB_ORIGIN$API_PREFIX/auth/register" -H 'Content-Type: application/json' --data '{}'
 expect_status "POST auth/register does not exist (SPEC §12-2)" 404
 
-echo "Two-factor endpoints (T13)"
+echo "Two-factor endpoints"
 request POST "$WEB_ORIGIN$API_PREFIX/auth/2fa/totp/setup"
 expect_status "2fa/totp/setup needs a Bearer token" 401
 request POST "$WEB_ORIGIN$API_PREFIX/auth/2fa/verify" -H 'Content-Type: application/json' \
   --data '{"tempToken":"forged","code":"123456"}'
 expect_status "2fa/verify rejects a forged temp token" 401
 
-echo "Password reset mail through SMTP to Mailpit (T12)"
+echo "Password reset mail through SMTP to Mailpit"
 request POST "$WEB_ORIGIN$API_PREFIX/auth/password/request-otp" -H 'Content-Type: application/json' \
   --data "$(printf '{"email":"%s"}' "$STACK_OWNER_EMAIL")"
 expect_status "request-otp answers 202" 202

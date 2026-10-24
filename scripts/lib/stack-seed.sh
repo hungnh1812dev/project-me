@@ -9,7 +9,7 @@
 #       report one check
 # and sets (see stack_generate_credentials) the STACK_* credentials.
 
-# Log lines of the cms-api init container (deploy:migrate, T37a).
+# Log lines of the cms-api init container (deploy:migrate).
 DB_MIGRATE_APPLIED="All migrations have been successfully applied."
 DB_MIGRATE_SEEDED="Seeded system roles: public, guest, reviewer, editor, admin, owner."
 CONTENT_MIGRATE_APPLIED="Applied "
@@ -17,7 +17,7 @@ CONTENT_MIGRATE_APPLIED="Applied "
 OWNER_BOOTSTRAP_CMD=(npm run --silent owner:bootstrap -- --password-stdin)
 
 STACK_SECRET_BYTES="32"
-# Creates the dedicated e2e accounts with the cms-api `seed:account` CLI (R1-16):
+# Creates the dedicated e2e accounts with the cms-api `seed:account` CLI:
 # active, password from stdin, hashed with the app's own Argon2id parameters,
 # audited. The smoke-only opt-in is passed on each call, never in deployed config.
 # Keeps the owner's 5-logins-per-15-min budget for the owner specs.

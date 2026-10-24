@@ -1,6 +1,6 @@
 # Docs: docs/ci-cd.md
 # cms-api flow, called by ci.yml when cms-api is affected: checks -> build
-# Publishing is added by T37e (docs/ci-cd.md); no image is built here.
+# This flow builds no image; publishing runs from ci.yml through _publish.yml (docs/ci-cd.md).
 # Status checks show as "cms-api / Checks" and "cms-api / Build".
 name: cms-api
 

@@ -1,6 +1,6 @@
 # Docs: docs/ci-cd.md
 # web flow, called by ci.yml when web is affected: checks -> build
-# Publishing is added by T37e (docs/ci-cd.md); no image is built here.
+# This flow builds no image; publishing runs from ci.yml through _publish.yml (docs/ci-cd.md).
 # Status checks show as "web / Checks" and "web / Build".
 name: web
 

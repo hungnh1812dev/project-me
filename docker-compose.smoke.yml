@@ -1,7 +1,7 @@
-# Proxy smoke stack (T04). Mirrors production routing (SPEC §1, §6):
+# Proxy smoke stack. Mirrors production routing (SPEC §1, §6):
 #   <SMOKE_DOMAIN>          -> web, and /api/* -> cms-api (no StripPrefix)
 #   admin.<SMOKE_DOMAIN>    -> cms-admin
-#   mail.<SMOKE_DOMAIN>     -> Mailpit web UI + API (T12; catches every email)
+#   mail.<SMOKE_DOMAIN>     -> Mailpit web UI + API (catches every email)
 # Run it through `pnpm smoke` (scripts/smoke.sh), which sets every SMOKE_* value
 # below, generates throwaway secrets, runs the assertions and tears down.
 name: abyss-smoke
@@ -36,7 +36,7 @@ services:
       timeout: 3s
       retries: 15
 
-  # SMTP sink for OTP emails (T12): SMTP on 1025 without auth or TLS; the e2e
+  # SMTP sink for OTP emails: SMTP on 1025 without auth or TLS; the e2e
   # suite reads codes from its API on 8025.
   mailpit:
     image: axllent/mailpit:v1.31.6
@@ -87,7 +87,7 @@ services:
       traefik.http.routers.api.rule: Host(`${SMOKE_DOMAIN:?set by scripts/smoke.sh}`) && PathPrefix(`/api`)
       traefik.http.services.api.loadbalancer.server.port: '3000'
 
-  # T37a: init container. Same image and env as cms-api, different command:
+  # Init container. Same image and env as cms-api, different command:
   # applies committed core + content migrations, then exits. cms-api starts only
   # after it exits 0. Never runs content:generate or owner:bootstrap.
   cms-api-init:
@@ -102,7 +102,7 @@ services:
       db:
         condition: service_healthy
 
-  # T30b: Next.js standalone server (T30a). Server env is read at run time;
+  # Next.js standalone server. Server env is read at run time;
   # NEXT_PUBLIC_API_BASE_URL is baked into the browser bundle at build time.
   web:
     build:
@@ -110,12 +110,12 @@ services:
       dockerfile: apps/web/Dockerfile
       args:
         NEXT_PUBLIC_API_BASE_URL: /api/v1
-        # T32: Cloudflare's public always-pass Turnstile test site key (smoke
+        # Cloudflare's public always-pass Turnstile test site key (smoke
         # build only; production builds use the real key).
         NEXT_PUBLIC_TURNSTILE_SITE_KEY: 1x00000000000000000000AA
     environment:
       API_INTERNAL_URL: http://cms-api:3000/api/v1
-      # Smoke runs with no data cache (Q-W3); production uses 60.
+      # Smoke runs with no data cache; production uses 60.
       WEB_REVALIDATE_SECONDS: '0'
       WEB_PORT: ${WEB_PORT:-8080}
     depends_on:
