@@ -205,15 +205,44 @@ export class ReviewerService {
     ip: string | undefined,
     userAgent: string | undefined,
   ): Promise<CreatedReviewerSessionView> {
-    if (!this.turnstile.isConfigured || this.ipKey === undefined) {
-      throw unavailable();
-    }
-    const ipHmac = this.hmacOf(ip ?? UNKNOWN_CLIENT_IP, this.ipKey);
+    const ipKey = this.requireAvailable();
+    const ipHmac = this.hmacOf(ip ?? UNKNOWN_CLIENT_IP, ipKey);
 
     // Cheap refusals first, so a refused visitor never spends a Turnstile call.
     await this.assertAllowed(this.prisma, ipHmac);
+    await this.assertHumanVerified(input.turnstileToken, ip);
 
-    const outcome = await this.turnstile.verify(input.turnstileToken, ip);
+    const expiresAt = new Date(this.clock.now() + REVIEWER_SESSION_TTL_MS);
+    const created = await this.createAccountAndSession(
+      input,
+      ipHmac,
+      userAgent,
+      expiresAt,
+    );
+
+    return {
+      accessToken: this.tokens.signReviewerSessionToken({
+        sub: created.account.documentId,
+        tv: created.account.tokenVersion,
+        pv: created.policyVersion,
+      }),
+      expiresAt: expiresAt.toISOString(),
+    };
+  }
+
+  /** Returns the IP hashing key; refuses when Turnstile or the key is missing. */
+  private requireAvailable(): Buffer {
+    if (!this.turnstile.isConfigured || this.ipKey === undefined) {
+      throw unavailable();
+    }
+    return this.ipKey;
+  }
+
+  private async assertHumanVerified(
+    turnstileToken: string,
+    ip: string | undefined,
+  ): Promise<void> {
+    const outcome = await this.turnstile.verify(turnstileToken, ip);
     if (outcome === 'unavailable') throw unavailable();
     if (outcome === 'failed') {
       throw new BadRequestException({
@@ -221,10 +250,16 @@ export class ReviewerService {
         message: REVIEWER_ERROR_MESSAGES.TURNSTILE_FAILED,
       });
     }
+  }
 
+  private async createAccountAndSession(
+    input: CreateReviewerSessionRequest,
+    ipHmac: string,
+    userAgent: string | undefined,
+    expiresAt: Date,
+  ) {
     const now = this.clock.now();
-    const expiresAt = new Date(now + REVIEWER_SESSION_TTL_MS);
-    const created = await this.prisma.$transaction(async (tx) => {
+    return this.prisma.$transaction(async (tx) => {
       // One creation at a time: the cap and the per-IP rule are then exact.
       await tx.$executeRaw`SELECT pg_advisory_xact_lock(${REVIEWER_SESSION_LOCK})`;
       await this.assertAllowed(tx, ipHmac, true);
@@ -264,15 +299,6 @@ export class ReviewerService {
       });
       return { account, policyVersion: role.policyVersion };
     });
-
-    return {
-      accessToken: this.tokens.signReviewerSessionToken({
-        sub: created.account.documentId,
-        tv: created.account.tokenVersion,
-        pv: created.policyVersion,
-      }),
-      expiresAt: expiresAt.toISOString(),
-    };
   }
 
   /** Owner: newest first. */
