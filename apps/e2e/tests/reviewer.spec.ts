@@ -11,6 +11,7 @@ import {
 import { COPY as ADMIN_COPY } from '../../cms-admin/src/config/copy.constants';
 import { COPY } from '../../web/src/config/copy.constants';
 import {
+  NOTES_MAX_LENGTH,
   SMOKE_DB_CONTAINER,
   SMOKE_DB_NAME,
   SMOKE_DB_USER,
@@ -33,7 +34,6 @@ const RUN_ID = Date.now().toString(36);
 const XSS_NOTES = `<img src=x onerror=alert(1)> ${RUN_ID}`;
 const OTHER_ROLE = `Auditor ${RUN_ID}`;
 const OTHER_PURPOSE = `Audit ${RUN_ID}`;
-const NOTES_MAX = 500;
 const UNKNOWN_UUID = '018f0000-0000-7000-8000-000000000000';
 const CV_SLUG = 'cv-page';
 const HTTP = {
@@ -233,12 +233,12 @@ test.describe('reviewer access', () => {
 
     // Step 3: notes over the limit, then no verification.
     const notes = dialog(page).getByLabel(label(copy.notes.label));
-    await notes.fill('x'.repeat(NOTES_MAX + 1));
+    await notes.fill('x'.repeat(NOTES_MAX_LENGTH + 1));
     await submit(page).click();
     await expect(
-      dialog(page).getByText(copy.validation.notesTooLong(NOTES_MAX)),
+      dialog(page).getByText(copy.validation.notesTooLong(NOTES_MAX_LENGTH)),
     ).toBeVisible();
-    await notes.fill('x'.repeat(NOTES_MAX));
+    await notes.fill('x'.repeat(NOTES_MAX_LENGTH));
     await submit(page).click();
     await expect(dialog(page).getByText(copy.turnstile.required)).toBeVisible();
     expect(posted).toBe(0);

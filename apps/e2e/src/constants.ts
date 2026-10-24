@@ -26,8 +26,14 @@ export const MAILPIT_API = {
 export const MAIL_WAIT_TIMEOUT_MS = 15_000;
 export const MAIL_POLL_INTERVAL_MS = 500;
 
-/** cms-api emails a 6-digit code on a line of its own. */
-export const OTP_IN_MAIL = /^(\d{6})$/m;
+/** Digits of the emailed code; mirrors cms-api (checked by the constants contract spec). */
+export const OTP_DIGITS = 6;
+
+/** cms-api emails the code on a line of its own. */
+export const OTP_IN_MAIL = new RegExp(`^(\\d{${OTP_DIGITS}})$`, 'm');
+
+/** Reviewer notes limit; mirrors cms-api (checked by the constants contract spec). */
+export const NOTES_MAX_LENGTH = 500;
 
 /** Only one worker: the reset spec changes the owner password other specs use. */
 export const WORKERS = 1;
