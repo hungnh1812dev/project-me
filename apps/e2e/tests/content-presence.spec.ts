@@ -12,14 +12,14 @@ import {
   contentNewPath,
 } from '../src/app-contracts';
 import { e2eEnv } from '../src/env';
-import { mailIdsFor, waitForCode } from '../src/mailpit';
+import { signInAs } from '../src/session';
+import { RUN_ID } from '../src/run-id';
+import { CV_PAGE_SLUG } from '../src/content-types';
+import { API_PATHS } from '../src/api-paths';
+import { inviteAccount } from '../src/accounts';
 
 const copy = ADMIN_COPY.content;
-const access = ADMIN_COPY.access;
-const CV_SLUG = 'cv-page';
 const EDIT_URL = /\/content\/cv-page\/[0-9a-f-]{36}$/;
-const RUN_ID = Date.now().toString(36);
-const PRESENCE_PATH = '/presence';
 const BEAT_WAIT_MS = PRESENCE_HEARTBEAT_MS + 10_000;
 /** Server TTL (45 s) plus one beat plus slack. */
 const EXPIRY_WAIT_MS = 45_000 + PRESENCE_HEARTBEAT_MS + 10_000;
@@ -27,11 +27,11 @@ const TEST_TIMEOUT_MS = 180_000;
 const EDITOR_EMAIL = `e2e-presence-${RUN_ID}@domain.localhost`;
 const EDITOR_NAME = `Presence ${RUN_ID}`;
 const EDITOR_PASSWORD = `${e2eEnv.ownerPassword.slice(0, 40)}-presence`;
-const label = (name: string) => new RegExp(`^${name}`);
 const ALSO_ON = /is also on this document\.$/;
 
 const isBeat = (request: Request) =>
-  request.url().includes(PRESENCE_PATH) && request.method() === 'POST';
+  request.url().includes(API_PATHS.PRESENCE_SEGMENT) &&
+  request.method() === 'POST';
 
 function recordBeats(page: Page) {
   const beats: Request[] = [];
@@ -40,18 +40,6 @@ function recordBeats(page: Page) {
   };
   page.on('request', onRequest);
   return { beats, stop: () => page.off('request', onRequest) };
-}
-
-async function signIn(page: Page, email: string, password: string) {
-  await page.goto('/login');
-  await page
-    .getByRole('textbox', { name: ADMIN_COPY.login.emailLabel })
-    .fill(email);
-  await page.getByLabel(ADMIN_COPY.login.passwordLabel).fill(password);
-  await page.getByRole('button', { name: ADMIN_COPY.login.submit }).click();
-  await expect(
-    page.getByRole('button', { name: ADMIN_COPY.session.signOut }),
-  ).toBeVisible();
 }
 
 const banner = (page: Page) => page.getByText(ALSO_ON);
@@ -75,7 +63,7 @@ test.describe.serial('presence banner (cv-page, two accounts)', () => {
     ownerContext = await browser.newContext();
     owner = await ownerContext.newPage();
     owner.on('pageerror', (error) => consoleProblems.push(error.message));
-    await signIn(owner, e2eEnv.ownerEmail, e2eEnv.ownerPassword);
+    await signInAs(owner, e2eEnv.ownerEmail, e2eEnv.ownerPassword);
   });
 
   test.afterAll(async () => {
@@ -86,48 +74,25 @@ test.describe.serial('presence banner (cv-page, two accounts)', () => {
   test('setup: a draft and a second account that can edit it', async ({
     browser,
   }) => {
-    await owner.goto(contentNewPath(CV_SLUG));
+    await owner.goto(contentNewPath(CV_PAGE_SLUG));
     await position(owner).fill(`Presence ${RUN_ID}`);
     await owner.keyboard.press('Enter');
     await expect(owner).toHaveURL(EDIT_URL);
     editUrl = owner.url();
 
-    await owner.goto('/accounts');
-    const seen = await mailIdsFor(ownerContext, EDITOR_EMAIL);
-    await owner.getByRole('button', { name: access.accounts.invite }).click();
-    const dialog = owner.getByRole('dialog', { name: access.invite.title });
-    await dialog.getByLabel(label(access.invite.emailLabel)).fill(EDITOR_EMAIL);
-    await dialog
-      .getByLabel(label(access.invite.displayNameLabel))
-      .fill(EDITOR_NAME);
-    await dialog
-      .getByLabel(label(access.invite.roleLabel))
-      .selectOption('Admin');
-    await dialog.getByRole('button', { name: access.invite.submit }).click();
-    await expect(dialog).toBeHidden();
-    const code = await waitForCode(ownerContext, EDITOR_EMAIL, seen);
-
-    editorContext = await browser.newContext();
-    editor = await editorContext.newPage();
-    editor.on('pageerror', (error) => consoleProblems.push(error.message));
-    await editor.goto('/set-password');
-    await editor
-      .getByLabel(label(ADMIN_COPY.password.emailLabel))
-      .fill(EDITOR_EMAIL);
-    await editor.getByLabel(label(ADMIN_COPY.password.codeLabel)).fill(code);
-    await editor
-      .getByLabel(label(ADMIN_COPY.password.newPasswordLabel))
-      .fill(EDITOR_PASSWORD);
-    await editor
-      .getByLabel(label(ADMIN_COPY.password.confirmPasswordLabel))
-      .fill(EDITOR_PASSWORD);
-    await editor
-      .getByRole('button', { name: ADMIN_COPY.password.set.submit })
-      .click();
-    await expect(editor.getByRole('status')).toHaveText(
-      ADMIN_COPY.login.notices.passwordSet,
+    editor = await inviteAccount(
+      owner,
+      browser,
+      {
+        email: EDITOR_EMAIL,
+        name: EDITOR_NAME,
+        role: 'Admin',
+        password: EDITOR_PASSWORD,
+      },
+      (message) => consoleProblems.push(message),
     );
-    await signIn(editor, EDITOR_EMAIL, EDITOR_PASSWORD);
+    editorContext = editor.context();
+    await signInAs(editor, EDITOR_EMAIL, EDITOR_PASSWORD);
   });
 
   test('a single session sees no banner and sends one empty beat per period', async () => {
@@ -151,7 +116,7 @@ test.describe.serial('presence banner (cv-page, two accounts)', () => {
 
   test('leaving the page stops the beats; the other banner expires', async () => {
     const recorder = recordBeats(editor);
-    await editor.goto(`/content/${CV_SLUG}`);
+    await editor.goto(`/content/${CV_PAGE_SLUG}`);
     await editor.waitForLoadState('networkidle');
     const before = recorder.beats.length;
     await editor.waitForTimeout(BEAT_WAIT_MS);
@@ -162,7 +127,7 @@ test.describe.serial('presence banner (cv-page, two accounts)', () => {
 
   test('a new document sends no presence request', async () => {
     const recorder = recordBeats(owner);
-    await owner.goto(contentNewPath(CV_SLUG));
+    await owner.goto(contentNewPath(CV_PAGE_SLUG));
     await expect(position(owner)).toBeVisible();
     await owner.waitForTimeout(copyWait());
     expect(recorder.beats).toHaveLength(0);

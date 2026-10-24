@@ -1,26 +1,18 @@
 import { type APIRequestContext, expect, test } from '@playwright/test';
 
-import { e2eEnv } from '../src/env';
+import { API_PATHS, apiUrl } from '../src/api-paths';
+import { HTTP } from '../src/constants';
+import { RUN_ID } from '../src/run-id';
+import { bearer, ownerApiToken } from '../src/session';
+import { CV_PAGE_SLUG } from '../src/content-types';
 
-const CV_SLUG = 'cv-page';
-const DOCUMENTS_PATH = `/documents/${CV_SLUG}`;
-const HTTP_OK = 200;
-const HTTP_CREATED = 201;
-const HTTP_BAD_REQUEST = 400;
-const RUN_ID = Date.now().toString(36);
+const DOCUMENTS_PATH = API_PATHS.documents(CV_PAGE_SLUG);
 const POSITION = `E2E values ${RUN_ID}`;
 const SAFE_TEXT = `Summary ${RUN_ID}`;
 const DIRTY_RICHTEXT = `<p>${SAFE_TEXT}</p><img src=x onerror="alert(1)"><script>alert(2)</script>`;
 
-const url = (path: string) => `${e2eEnv.apiBaseUrl}${path}`;
-
 async function ownerHeaders(request: APIRequestContext) {
-  const res = await request.post(url('/auth/login'), {
-    data: { email: e2eEnv.ownerEmail, password: e2eEnv.ownerPassword },
-  });
-  expect(res.status()).toBe(HTTP_OK);
-  const { accessToken } = (await res.json()) as { accessToken: string };
-  return { Authorization: `Bearer ${accessToken}` };
+  return bearer(await ownerApiToken(request));
 }
 
 test.describe.serial('API: document value coercion (R2-02)', () => {
@@ -35,18 +27,18 @@ test.describe.serial('API: document value coercion (R2-02)', () => {
   test('richtext is stored sanitized, without scripts or event attributes', async ({
     request,
   }) => {
-    const created = await request.post(url(DOCUMENTS_PATH), {
+    const created = await request.post(apiUrl(DOCUMENTS_PATH), {
       headers,
       data: { values: { position: POSITION, summary: DIRTY_RICHTEXT } },
     });
-    expect(created.status()).toBe(HTTP_CREATED);
+    expect(created.status()).toBe(HTTP.CREATED);
     const body = (await created.json()) as { documentId: string };
 
     const read = await request.get(
-      url(`${DOCUMENTS_PATH}/${body.documentId}?status=draft`),
+      apiUrl(`${DOCUMENTS_PATH}/${body.documentId}?status=draft`),
       { headers },
     );
-    expect(read.status()).toBe(HTTP_OK);
+    expect(read.status()).toBe(HTTP.OK);
     const text = await read.text();
     expect(text).toContain(SAFE_TEXT);
     expect(text).not.toContain('onerror');
@@ -55,11 +47,11 @@ test.describe.serial('API: document value coercion (R2-02)', () => {
 
   test('richtext that is not a string is a 400', async ({ request }) => {
     for (const summary of [123, { html: '<p>x</p>' }, ['<p>x</p>']]) {
-      const res = await request.post(url(DOCUMENTS_PATH), {
+      const response = await request.post(apiUrl(DOCUMENTS_PATH), {
         headers,
         data: { values: { position: POSITION, summary } },
       });
-      expect(res.status()).toBe(HTTP_BAD_REQUEST);
+      expect(response.status()).toBe(HTTP.BAD_REQUEST);
     }
   });
 
@@ -70,10 +62,13 @@ test.describe.serial('API: document value coercion (R2-02)', () => {
       'filters[position][$gt]=%00',
       'filters[isMain]=maybe',
     ]) {
-      const res = await request.get(url(`${DOCUMENTS_PATH}?${filter}`), {
-        headers,
-      });
-      expect(res.status()).toBeLessThan(500);
+      const response = await request.get(
+        apiUrl(`${DOCUMENTS_PATH}?${filter}`),
+        {
+          headers,
+        },
+      );
+      expect(response.status()).toBeLessThan(500);
     }
   });
 });

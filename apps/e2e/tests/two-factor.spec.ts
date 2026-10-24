@@ -6,6 +6,8 @@ import { e2eEnv } from '../src/env';
 import { TWO_FACTOR_CHANGED_PASSWORD as NEW_PASSWORD } from '../src/two-factor-account';
 import { mailIdsFor, waitForCode } from '../src/mailpit';
 import { freshTotpCode } from '../src/totp';
+import { labelStartingWith } from '../src/locators';
+import { expectSignedIn, submitLogin } from '../src/session';
 
 /**
  * Covers 2FA on the dedicated 2FA account (seeded by scripts/smoke.sh), never the
@@ -18,25 +20,6 @@ import { freshTotpCode } from '../src/totp';
 test.describe.configure({ mode: 'serial', retries: 0 });
 
 const security = ADMIN_COPY.security;
-const label = (name: string) => new RegExp(`^${name}`);
-
-async function signIn(page: Page): Promise<void> {
-  await page.goto('/login');
-  await page
-    .getByRole('textbox', { name: ADMIN_COPY.login.emailLabel })
-    .fill(e2eEnv.twoFactorEmail);
-  await page
-    .getByLabel(ADMIN_COPY.login.passwordLabel)
-    .fill(e2eEnv.twoFactorPassword);
-  await page.getByRole('button', { name: ADMIN_COPY.login.submit }).click();
-}
-
-/** Signed in: the shell shows. After a sign-out the app returns to the last page. */
-async function expectSignedIn(page: Page): Promise<void> {
-  await expect(
-    page.getByRole('button', { name: ADMIN_COPY.session.signOut }),
-  ).toBeVisible();
-}
 
 async function openSecurity(page: Page): Promise<void> {
   await page
@@ -65,9 +48,9 @@ async function confirm(
   code: string,
   submit: string,
 ): Promise<void> {
-  await dialog.getByLabel(label(codeLabel)).fill(code);
+  await dialog.getByLabel(labelStartingWith(codeLabel)).fill(code);
   await dialog
-    .getByLabel(label(security.fields.currentPassword))
+    .getByLabel(labelStartingWith(security.fields.currentPassword))
     .fill(e2eEnv.twoFactorPassword);
   await dialog.getByRole('button', { name: submit }).click();
 }
@@ -79,7 +62,7 @@ test('an account turns on TOTP, signs in with it, switches to email codes and ch
   test.setTimeout(TWO_FACTOR_TEST_TIMEOUT_MS);
 
   // Login 1: password only.
-  await signIn(page);
+  await submitLogin(page, e2eEnv.twoFactorEmail, e2eEnv.twoFactorPassword);
   await expectSignedIn(page);
   await openSecurity(page);
   await expect(page.getByText(security.twoFactor.statusOff)).toBeVisible();
@@ -111,19 +94,21 @@ test('an account turns on TOTP, signs in with it, switches to email codes and ch
   await signOut(page);
 
   // Login 2: password, then the authenticator code in the challenge dialog.
-  await signIn(page);
+  await submitLogin(page, e2eEnv.twoFactorEmail, e2eEnv.twoFactorPassword);
   const challenge = page.getByRole('dialog', {
     name: ADMIN_COPY.login.twoFactor.title,
   });
   await expect(challenge).toBeVisible();
   await expect(
-    challenge.getByLabel(label(ADMIN_COPY.login.twoFactor.totpLabel)),
+    challenge.getByLabel(
+      labelStartingWith(ADMIN_COPY.login.twoFactor.totpLabel),
+    ),
   ).toBeFocused();
   await clickBackdrop(page);
   await expect(challenge).toBeVisible();
   const second = await freshTotpCode(secret, first.step);
   await challenge
-    .getByLabel(label(ADMIN_COPY.login.twoFactor.totpLabel))
+    .getByLabel(labelStartingWith(ADMIN_COPY.login.twoFactor.totpLabel))
     .fill(second.code);
   await challenge
     .getByRole('button', { name: ADMIN_COPY.login.twoFactor.submit })
@@ -176,7 +161,7 @@ test('an account turns on TOTP, signs in with it, switches to email codes and ch
 
   // Login 3: the challenge dialog mails the code by itself.
   const seenBeforeLogin = await mailIdsFor(context, e2eEnv.twoFactorEmail);
-  await signIn(page);
+  await submitLogin(page, e2eEnv.twoFactorEmail, e2eEnv.twoFactorPassword);
   await expect(challenge).toBeVisible();
   await expect(
     challenge.getByText(ADMIN_COPY.login.twoFactor.emailWarning),
@@ -194,7 +179,7 @@ test('an account turns on TOTP, signs in with it, switches to email codes and ch
     seenAfterLogin,
   );
   await challenge
-    .getByLabel(label(ADMIN_COPY.login.twoFactor.emailLabel))
+    .getByLabel(labelStartingWith(ADMIN_COPY.login.twoFactor.emailLabel))
     .fill(loginCode);
   await challenge
     .getByRole('button', { name: ADMIN_COPY.login.twoFactor.submit })
@@ -204,13 +189,13 @@ test('an account turns on TOTP, signs in with it, switches to email codes and ch
   // Change password: every session ends, the client lands on sign-in.
   await openSecurity(page);
   await page
-    .getByLabel(label(security.fields.currentPassword))
+    .getByLabel(labelStartingWith(security.fields.currentPassword))
     .fill(e2eEnv.twoFactorPassword);
   await page
-    .getByLabel(label(ADMIN_COPY.password.newPasswordLabel))
+    .getByLabel(labelStartingWith(ADMIN_COPY.password.newPasswordLabel))
     .fill(NEW_PASSWORD);
   await page
-    .getByLabel(label(ADMIN_COPY.password.confirmPasswordLabel))
+    .getByLabel(labelStartingWith(ADMIN_COPY.password.confirmPasswordLabel))
     .fill(NEW_PASSWORD);
   await page
     .getByRole('button', { name: security.changePassword.submit })

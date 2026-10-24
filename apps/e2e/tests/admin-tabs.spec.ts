@@ -1,7 +1,7 @@
 import { expect, type Page, test } from '@playwright/test';
 
 import { ADMIN_COPY } from '../src/app-contracts';
-import { AUTH_REFRESH_PATH } from '../src/constants';
+import { API_PATHS } from '../src/api-paths';
 import { e2eEnv } from '../src/env';
 
 const homeHeading = (page: Page) =>
@@ -14,7 +14,7 @@ function recordRefreshes(page: Page): number[] {
   const statuses: number[] = [];
   page.on('response', (res) => {
     if (
-      res.url() === `${e2eEnv.apiBaseUrl}${AUTH_REFRESH_PATH}` &&
+      res.url() === `${e2eEnv.apiBaseUrl}${API_PATHS.AUTH.REFRESH}` &&
       res.request().method() === 'POST'
     ) {
       statuses.push(res.status());

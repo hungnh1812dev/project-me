@@ -1,18 +1,16 @@
 import {
   type BrowserContext,
   expect,
-  type Page,
   type Route,
   test,
 } from '@playwright/test';
 
 import { ADMIN_COPY, MEDIA_PAGE_SIZE } from '../src/app-contracts';
-import { e2eEnv } from '../src/env';
+import { signInAsOwner } from '../src/session';
+import { HTTP } from '../src/constants';
 
 const copy = ADMIN_COPY.media;
 
-const HTTP_OK = 200;
-const HTTP_NO_CONTENT = 204;
 const MEDIA_API_PATTERN = /\/api\/v1\/media(\/[0-9a-f-]+)?(\?.*)?$/;
 const FILE_COUNT = MEDIA_PAGE_SIZE + 1;
 const nameOf = (index: number) => `hooks-${index}.png`;
@@ -65,7 +63,7 @@ async function pagedMediaApi(
     const headers = cors(route);
     const method = request.method();
     if (method === 'OPTIONS') {
-      return route.fulfill({ status: HTTP_NO_CONTENT, headers });
+      return route.fulfill({ status: HTTP.NO_CONTENT, headers });
     }
     if (method === 'GET') {
       const url = new URL(request.url());
@@ -73,7 +71,7 @@ async function pagedMediaApi(
       requestedPages.push(pageNumber);
       const start = (pageNumber - 1) * MEDIA_PAGE_SIZE;
       return route.fulfill({
-        status: HTTP_OK,
+        status: HTTP.OK,
         contentType: 'application/json',
         headers,
         body: JSON.stringify({
@@ -89,22 +87,8 @@ async function pagedMediaApi(
     const id = new URL(request.url()).pathname.split('/').at(-1) ?? '';
     const index = files.findIndex((file) => file.id === id);
     if (method === 'DELETE' && index >= 0) files.splice(index, 1);
-    return route.fulfill({ status: HTTP_NO_CONTENT, headers });
+    return route.fulfill({ status: HTTP.NO_CONTENT, headers });
   });
-}
-
-async function signIn(page: Page) {
-  await page.goto('/login');
-  await page
-    .getByRole('textbox', { name: ADMIN_COPY.login.emailLabel })
-    .fill(e2eEnv.ownerEmail);
-  await page
-    .getByLabel(ADMIN_COPY.login.passwordLabel)
-    .fill(e2eEnv.ownerPassword);
-  await page.getByRole('button', { name: ADMIN_COPY.login.submit }).click();
-  await expect(
-    page.getByRole('button', { name: ADMIN_COPY.session.signOut }),
-  ).toBeVisible();
 }
 
 test('deleting the only row of the last page steps back and focus goes to the heading', async ({
@@ -115,7 +99,7 @@ test('deleting the only row of the last page steps back and focus goes to the he
   try {
     await pagedMediaApi(context, requestedPages);
     const page = await context.newPage();
-    await signIn(page);
+    await signInAsOwner(page);
     await page.goto('/media');
 
     await page.getByRole('button', { name: copy.pagination.next }).click();

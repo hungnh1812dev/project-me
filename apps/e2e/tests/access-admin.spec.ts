@@ -3,13 +3,16 @@ import { type BrowserContext, expect, type Page, test } from '@playwright/test';
 import { ADMIN_COPY } from '../src/app-contracts';
 import { e2eEnv } from '../src/env';
 import { mailIdsFor, waitForCode } from '../src/mailpit';
+import { labelStartingWith } from '../src/locators';
+import { RUN_ID } from '../src/run-id';
+import { CV_PAGE_SLUG } from '../src/content-types';
+import { submitLogin } from '../src/session';
 
 const access = ADMIN_COPY.access;
 const accounts = access.accounts;
 const invite = access.invite;
 
 /** Unique per run so a kept stack can be tested again. */
-const RUN_ID = Date.now().toString(36);
 const INVITEE_EMAIL = `e2e-invitee-${RUN_ID}@domain.localhost`;
 const INVITEE_NAME = `Invitee ${RUN_ID}`;
 const INVITEE_PASSWORD = `${e2eEnv.ownerPassword.slice(0, 40)}-invitee`;
@@ -18,18 +21,6 @@ const INVALID_JSON = '{"all": [';
 /** Valid JSON that the server's conditions DSL refuses (unknown operator). */
 const SERVER_REJECTED_CONDITIONS =
   '{"all":[{"field":"createdBy","op":"nope"}]}';
-const CONTENT_TYPE_SLUG = 'cv-page';
-
-const label = (name: string) => new RegExp(`^${name}`);
-
-async function signIn(page: Page, email: string, password: string) {
-  await page.goto('/login');
-  await page
-    .getByRole('textbox', { name: ADMIN_COPY.login.emailLabel })
-    .fill(email);
-  await page.getByLabel(ADMIN_COPY.login.passwordLabel).fill(password);
-  await page.getByRole('button', { name: ADMIN_COPY.login.submit }).click();
-}
 
 const accountRow = (page: Page, email: string) =>
   page.getByRole('row').filter({ hasText: email });
@@ -62,7 +53,7 @@ test.describe.serial('owner: accounts and roles', () => {
     // 15 minutes (smoke + other specs already use 4).
     context = await browser.newContext();
     page = await context.newPage();
-    await signIn(page, e2eEnv.ownerEmail, e2eEnv.ownerPassword);
+    await submitLogin(page, e2eEnv.ownerEmail, e2eEnv.ownerPassword);
     await expect(
       page.getByRole('button', { name: ADMIN_COPY.session.signOut }),
     ).toBeVisible();
@@ -125,7 +116,7 @@ test.describe.serial('owner: accounts and roles', () => {
 
     // The owner may invite below its own rank, never owner / public / reviewer.
     const options = await dialog
-      .getByLabel(label(invite.roleLabel))
+      .getByLabel(labelStartingWith(invite.roleLabel))
       .locator('option')
       .allTextContents();
     expect(options).toEqual(
@@ -144,16 +135,22 @@ test.describe.serial('owner: accounts and roles', () => {
     await page.getByRole('button', { name: accounts.invite }).click();
     const dialog = page.getByRole('dialog', { name: invite.title });
     await dialog
-      .getByLabel(label(invite.emailLabel))
+      .getByLabel(labelStartingWith(invite.emailLabel))
       .fill(e2eEnv.twoFactorEmail);
-    await dialog.getByLabel(label(invite.displayNameLabel)).fill('Duplicate');
-    await dialog.getByLabel(label(invite.roleLabel)).selectOption('Editor');
+    await dialog
+      .getByLabel(labelStartingWith(invite.displayNameLabel))
+      .fill('Duplicate');
+    await dialog
+      .getByLabel(labelStartingWith(invite.roleLabel))
+      .selectOption('Editor');
     await dialog.getByRole('button', { name: invite.submit }).click();
     await expect(dialog).toContainText(invite.errors.emailTaken);
-    await expect(dialog.getByLabel(label(invite.emailLabel))).toHaveValue(
-      e2eEnv.twoFactorEmail,
-    );
-    await expect(dialog.getByLabel(label(invite.emailLabel))).toBeFocused();
+    await expect(
+      dialog.getByLabel(labelStartingWith(invite.emailLabel)),
+    ).toHaveValue(e2eEnv.twoFactorEmail);
+    await expect(
+      dialog.getByLabel(labelStartingWith(invite.emailLabel)),
+    ).toBeFocused();
     await page.keyboard.press('Escape');
   });
 
@@ -164,11 +161,19 @@ test.describe.serial('owner: accounts and roles', () => {
     const seen = await mailIdsFor(context, INVITEE_EMAIL);
     await page.getByRole('button', { name: accounts.invite }).click();
     const dialog = page.getByRole('dialog', { name: invite.title });
-    await dialog.getByLabel(label(invite.emailLabel)).fill(INVITEE_EMAIL);
-    await dialog.getByLabel(label(invite.displayNameLabel)).fill(INVITEE_NAME);
-    await dialog.getByLabel(label(invite.roleLabel)).selectOption('Editor');
+    await dialog
+      .getByLabel(labelStartingWith(invite.emailLabel))
+      .fill(INVITEE_EMAIL);
+    await dialog
+      .getByLabel(labelStartingWith(invite.displayNameLabel))
+      .fill(INVITEE_NAME);
+    await dialog
+      .getByLabel(labelStartingWith(invite.roleLabel))
+      .selectOption('Editor');
     // Enter submits the form.
-    await dialog.getByLabel(label(invite.displayNameLabel)).press('Enter');
+    await dialog
+      .getByLabel(labelStartingWith(invite.displayNameLabel))
+      .press('Enter');
 
     await expect(dialog).toBeHidden();
     await expect(page.getByRole('status')).toHaveText(
@@ -191,16 +196,16 @@ test.describe.serial('owner: accounts and roles', () => {
         }),
       ).toBeVisible();
       await inviteePage
-        .getByLabel(label(ADMIN_COPY.password.emailLabel))
+        .getByLabel(labelStartingWith(ADMIN_COPY.password.emailLabel))
         .fill(INVITEE_EMAIL);
       await inviteePage
-        .getByLabel(label(ADMIN_COPY.password.codeLabel))
+        .getByLabel(labelStartingWith(ADMIN_COPY.password.codeLabel))
         .fill(code);
       await inviteePage
-        .getByLabel(label(ADMIN_COPY.password.newPasswordLabel))
+        .getByLabel(labelStartingWith(ADMIN_COPY.password.newPasswordLabel))
         .fill(INVITEE_PASSWORD);
       await inviteePage
-        .getByLabel(label(ADMIN_COPY.password.confirmPasswordLabel))
+        .getByLabel(labelStartingWith(ADMIN_COPY.password.confirmPasswordLabel))
         .fill(INVITEE_PASSWORD);
       await inviteePage
         .getByRole('button', { name: ADMIN_COPY.password.set.submit })
@@ -234,7 +239,7 @@ test.describe.serial('owner: accounts and roles', () => {
       ).toHaveCount(0);
 
       // The disabled account cannot sign in.
-      await signIn(inviteePage, INVITEE_EMAIL, INVITEE_PASSWORD);
+      await submitLogin(inviteePage, INVITEE_EMAIL, INVITEE_PASSWORD);
       await expect(
         inviteePage.getByText(ADMIN_COPY.login.errors.invalidCredentials),
       ).toBeVisible();
@@ -251,7 +256,7 @@ test.describe.serial('owner: accounts and roles', () => {
       await expect(
         row.getByRole('button', { name: accounts.enable }),
       ).toHaveCount(0);
-      await signIn(inviteePage, INVITEE_EMAIL, INVITEE_PASSWORD);
+      await submitLogin(inviteePage, INVITEE_EMAIL, INVITEE_PASSWORD);
       await expect(
         inviteePage.getByRole('button', { name: ADMIN_COPY.session.signOut }),
       ).toBeVisible();
@@ -270,9 +275,13 @@ test.describe.serial('owner: accounts and roles', () => {
     const seen = await mailIdsFor(context, email);
     await page.getByRole('button', { name: accounts.invite }).click();
     const dialog = page.getByRole('dialog', { name: invite.title });
-    await dialog.getByLabel(label(invite.emailLabel)).fill(email);
-    await dialog.getByLabel(label(invite.displayNameLabel)).fill(name);
-    await dialog.getByLabel(label(invite.roleLabel)).selectOption('Editor');
+    await dialog.getByLabel(labelStartingWith(invite.emailLabel)).fill(email);
+    await dialog
+      .getByLabel(labelStartingWith(invite.displayNameLabel))
+      .fill(name);
+    await dialog
+      .getByLabel(labelStartingWith(invite.roleLabel))
+      .selectOption('Editor');
     await dialog.getByRole('button', { name: invite.submit }).click();
     await expect(dialog).toBeHidden();
     const oldCode = await waitForCode(context, email, seen);
@@ -295,16 +304,16 @@ test.describe.serial('owner: accounts and roles', () => {
     await inviteePage.goto('/set-password');
     const fillForm = async (code: string) => {
       await inviteePage
-        .getByLabel(label(ADMIN_COPY.password.emailLabel))
+        .getByLabel(labelStartingWith(ADMIN_COPY.password.emailLabel))
         .fill(email);
       await inviteePage
-        .getByLabel(label(ADMIN_COPY.password.codeLabel))
+        .getByLabel(labelStartingWith(ADMIN_COPY.password.codeLabel))
         .fill(code);
       await inviteePage
-        .getByLabel(label(ADMIN_COPY.password.newPasswordLabel))
+        .getByLabel(labelStartingWith(ADMIN_COPY.password.newPasswordLabel))
         .fill(INVITEE_PASSWORD);
       await inviteePage
-        .getByLabel(label(ADMIN_COPY.password.confirmPasswordLabel))
+        .getByLabel(labelStartingWith(ADMIN_COPY.password.confirmPasswordLabel))
         .fill(INVITEE_PASSWORD);
       await inviteePage
         .getByRole('button', { name: ADMIN_COPY.password.set.submit })
@@ -372,11 +381,11 @@ test.describe.serial('owner: accounts and roles', () => {
     await expect(saveButton(page)).toBeDisabled();
 
     // Field access of one content type: only selected fields.
-    const read = cell(page, access.matrix.actions.read, CONTENT_TYPE_SLUG);
+    const read = cell(page, access.matrix.actions.read, CV_PAGE_SLUG);
     await read.check();
     await page
       .getByRole('button', {
-        name: access.matrix.detailsLabel(CONTENT_TYPE_SLUG),
+        name: access.matrix.detailsLabel(CV_PAGE_SLUG),
       })
       .click();
     await page.getByRole('radio', { name: access.fields.some }).check();
@@ -395,7 +404,7 @@ test.describe.serial('owner: accounts and roles', () => {
     await expect(read).toBeChecked();
     await page
       .getByRole('button', {
-        name: access.matrix.detailsLabel(CONTENT_TYPE_SLUG),
+        name: access.matrix.detailsLabel(CV_PAGE_SLUG),
       })
       .click();
     await expect(
@@ -471,7 +480,7 @@ test.describe('admin: limited by its own permissions and rank', () => {
   test('an admin sees its own role read-only and cannot invite an admin', async ({
     page,
   }) => {
-    await signIn(page, e2eEnv.twoFactorEmail, e2eEnv.twoFactorPassword);
+    await submitLogin(page, e2eEnv.twoFactorEmail, e2eEnv.twoFactorPassword);
     await expect(
       page.getByRole('button', { name: ADMIN_COPY.session.signOut }),
     ).toBeVisible();
@@ -496,7 +505,7 @@ test.describe('admin: limited by its own permissions and rank', () => {
     await page.getByRole('button', { name: accounts.invite }).click();
     const options = await page
       .getByRole('dialog', { name: invite.title })
-      .getByLabel(label(invite.roleLabel))
+      .getByLabel(labelStartingWith(invite.roleLabel))
       .locator('option')
       .allTextContents();
     expect(options).toContain('Editor');
@@ -516,7 +525,7 @@ test.describe('admin: limited by its own permissions and rank', () => {
     // The field picker of a view-only role ignores changes too.
     await page
       .getByRole('button', {
-        name: access.matrix.detailsLabel(CONTENT_TYPE_SLUG),
+        name: access.matrix.detailsLabel(CV_PAGE_SLUG),
       })
       .click();
     for (const radio of await page.getByRole('radio').all()) {

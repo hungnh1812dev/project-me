@@ -7,13 +7,12 @@ import {
 } from '@playwright/test';
 
 import { ADMIN_COPY, contentListPath } from '../src/app-contracts';
-import { e2eEnv } from '../src/env';
+import { signInAsOwner } from '../src/session';
+import { HTTP } from '../src/constants';
 
 /** R3-11: the collection list reads cell text, sortability and alignment from the field registry. */
 
 const list = ADMIN_COPY.content.collection;
-const HTTP_OK = 200;
-const HTTP_NO_CONTENT = 204;
 const MASKED = '***';
 const cellText = (value: unknown): string =>
   typeof value === 'string' ? value : JSON.stringify(value ?? '');
@@ -113,14 +112,14 @@ async function mockCollections(context: BrowserContext, sorts: string[]) {
     const request = route.request();
     const headers = cors(route);
     if (request.method() === 'OPTIONS') {
-      return route.fulfill({ status: HTTP_NO_CONTENT, headers });
+      return route.fulfill({ status: HTTP.NO_CONTENT, headers });
     }
     const url = new URL(request.url());
     const [, kind, slug] = API_PATTERN.exec(request.url()) as RegExpExecArray;
     const key = slug as keyof typeof TYPES;
     if (kind === 'content-types') {
       return route.fulfill({
-        status: HTTP_OK,
+        status: HTTP.OK,
         contentType: 'application/json',
         headers,
         body: JSON.stringify(TYPES[key]),
@@ -141,7 +140,7 @@ async function mockCollections(context: BrowserContext, sorts: string[]) {
       if (sort.startsWith('-')) rows.reverse();
     }
     return route.fulfill({
-      status: HTTP_OK,
+      status: HTTP.OK,
       contentType: 'application/json',
       headers,
       body: JSON.stringify({
@@ -160,20 +159,6 @@ const whitespaceTolerant = (text: string): RegExp =>
       .map((part) => part.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
       .join('\\s'),
   );
-
-async function signIn(page: Page) {
-  await page.goto('/login');
-  await page
-    .getByRole('textbox', { name: ADMIN_COPY.login.emailLabel })
-    .fill(e2eEnv.ownerEmail);
-  await page
-    .getByLabel(ADMIN_COPY.login.passwordLabel)
-    .fill(e2eEnv.ownerPassword);
-  await page.getByRole('button', { name: ADMIN_COPY.login.submit }).click();
-  await expect(
-    page.getByRole('button', { name: ADMIN_COPY.session.signOut }),
-  ).toBeVisible();
-}
 
 test.describe
   .serial('owner: collection list cells come from the field registry', () => {
@@ -195,7 +180,7 @@ test.describe
       }
     });
     page.on('pageerror', (error) => consoleProblems.push(error.message));
-    await signIn(page);
+    await signInAsOwner(page);
   });
 
   test.afterAll(async () => {

@@ -1,7 +1,8 @@
 import { expect, type Page, test } from '@playwright/test';
 
 import { ADMIN_COPY } from '../src/app-contracts';
-import { AUTH_REFRESH_PATH, REFRESH_COOKIE_NAME } from '../src/constants';
+import { API_PATHS } from '../src/api-paths';
+import { REFRESH_COOKIE_NAME } from '../src/constants';
 import { e2eEnv } from '../src/env';
 
 const homeHeading = (page: Page) =>
@@ -41,7 +42,7 @@ test('the owner signs in, stays signed in across a reload, and signs out', async
   // The refresh cookie is HttpOnly + Secure + Strict on the API host, and
   // nothing token-like is reachable from JS.
   const [refreshCookie] = (
-    await context.cookies(`${e2eEnv.apiBaseUrl}${AUTH_REFRESH_PATH}`)
+    await context.cookies(`${e2eEnv.apiBaseUrl}${API_PATHS.AUTH.REFRESH}`)
   ).filter((cookie) => cookie.name === REFRESH_COOKIE_NAME);
   expect(refreshCookie).toMatchObject({
     httpOnly: true,
@@ -57,7 +58,7 @@ test('the owner signs in, stays signed in across a reload, and signs out', async
   // Reload: the in-memory token is gone; the silent refresh restores it.
   const refreshed = page.waitForResponse(
     (res) =>
-      res.url() === `${e2eEnv.apiBaseUrl}${AUTH_REFRESH_PATH}` &&
+      res.url() === `${e2eEnv.apiBaseUrl}${API_PATHS.AUTH.REFRESH}` &&
       res.request().method() === 'POST',
   );
   await page.reload();
@@ -70,9 +71,9 @@ test('the owner signs in, stays signed in across a reload, and signs out', async
   await page.reload();
   await expect(loginHeading(page)).toBeVisible();
   expect(
-    (await context.cookies(`${e2eEnv.apiBaseUrl}${AUTH_REFRESH_PATH}`)).filter(
-      (cookie) => cookie.name === REFRESH_COOKIE_NAME,
-    ),
+    (
+      await context.cookies(`${e2eEnv.apiBaseUrl}${API_PATHS.AUTH.REFRESH}`)
+    ).filter((cookie) => cookie.name === REFRESH_COOKIE_NAME),
   ).toEqual([]);
 });
 

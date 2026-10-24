@@ -1,20 +1,11 @@
 /** Name of the refresh cookie set by cms-api (SPEC §6). */
 export const REFRESH_COOKIE_NAME = '__Secure-abyss_rt';
 
-/** Path the refresh cookie is scoped to, relative to the API base URL. */
-export const AUTH_REFRESH_PATH = '/auth/refresh';
-
 /** Retries on CI only, where the stack may be slower to warm up. */
 export const CI_RETRIES = 1;
 
 /** Per-assertion timeout; the smoke stack runs production builds locally. */
 export const EXPECT_TIMEOUT_MS = 10_000;
-
-/** Password endpoints, relative to the API base URL (SPEC §9). */
-export const PASSWORD_PATHS = {
-  REQUEST_OTP: '/auth/password/request-otp',
-  RESET: '/auth/password/reset',
-} as const;
 
 /** Mailpit REST API paths (https://mailpit.axllent.org/docs/api-v1/). */
 export const MAILPIT_API = {
@@ -51,6 +42,14 @@ export const TWO_FACTOR_TEST_TIMEOUT_MS = 180_000;
 /** HTTP statuses the specs assert on. */
 export const HTTP = {
   OK: 200,
+  CREATED: 201,
+  ACCEPTED: 202,
+  NO_CONTENT: 204,
+  BAD_REQUEST: 400,
   UNAUTHORIZED: 401,
+  FORBIDDEN: 403,
   NOT_FOUND: 404,
+  CONFLICT: 409,
+  UNSUPPORTED_MEDIA_TYPE: 415,
+  SERVER_ERROR: 500,
 } as const;

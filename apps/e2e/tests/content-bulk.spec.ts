@@ -2,33 +2,23 @@ import { expect, type Page, test } from '@playwright/test';
 
 import { ADMIN_COPY, contentListPath } from '../src/app-contracts';
 import { e2eEnv } from '../src/env';
+import { PROFILE_SLUG } from '../src/content-types';
+import { signInAs } from '../src/session';
+import { RUN_ID } from '../src/run-id';
+import { API_PATHS } from '../src/api-paths';
 
 const copy = ADMIN_COPY.content;
 const bulk = copy.bulk;
 const dialogCopy = bulk.importDialog;
 const collection = copy.collection;
 
-const SLUG = 'profile';
-const RUN_ID = Date.now().toString(36);
-const BULK_PATH = `/documents/${SLUG}/bulk`;
+const BULK_PATH = API_PATHS.documentsBulk(PROFILE_SLUG);
 const SAMPLE_SIZE = 5;
 const MAX_ITEMS = 50;
 const names = (prefix: string, count: number) =>
   Array.from({ length: count }, (_, index) => `${prefix}-${RUN_ID}-${index}`);
 const toJson = (values: string[]) =>
   JSON.stringify(values.map((name) => ({ values: { name } })));
-
-async function signIn(page: Page, email: string, password: string) {
-  await page.goto('/login');
-  await page
-    .getByRole('textbox', { name: ADMIN_COPY.login.emailLabel })
-    .fill(email);
-  await page.getByLabel(ADMIN_COPY.login.passwordLabel).fill(password);
-  await page.getByRole('button', { name: ADMIN_COPY.login.submit }).click();
-  await expect(
-    page.getByRole('button', { name: ADMIN_COPY.session.signOut }),
-  ).toBeVisible();
-}
 
 const importDialog = (page: Page) =>
   page.getByRole('dialog', { name: dialogCopy.title });
@@ -75,10 +65,13 @@ test.describe
       }
     });
     page.on('pageerror', (error) => consoleProblems.push(error.message));
-    await signIn(page, e2eEnv.ownerEmail, e2eEnv.ownerPassword);
-    await page.goto(contentListPath(SLUG));
+    await signInAs(page, e2eEnv.ownerEmail, e2eEnv.ownerPassword);
+    await page.goto(contentListPath(PROFILE_SLUG));
     await expect(
-      page.getByRole('heading', { level: 1, name: collection.title(SLUG) }),
+      page.getByRole('heading', {
+        level: 1,
+        name: collection.title(PROFILE_SLUG),
+      }),
     ).toBeVisible();
   });
 
@@ -138,7 +131,7 @@ test.describe
   test('a stale list: publishing a changed document names the conflict, retry succeeds', async () => {
     const target = set[2] as string;
     const other = await page.context().newPage();
-    await other.goto(contentListPath(SLUG));
+    await other.goto(contentListPath(PROFILE_SLUG));
     await other.getByRole('link', { name: target, exact: true }).click();
     const nameField = other.getByLabel('Name', { exact: true });
     await expect(nameField).toHaveValue(target);
@@ -287,7 +280,7 @@ test.describe
   });
 
   test('closing the delete dialog with Escape returns focus to the Delete button', async () => {
-    await page.goto(contentListPath(SLUG));
+    await page.goto(contentListPath(PROFILE_SLUG));
     const [only] = names('Focus', 1) as [string];
     await importNames(page, [only]);
     await rowBox(page, only).check();
@@ -308,10 +301,13 @@ test.describe
 
 test.describe('role without content permissions', () => {
   test('no import, new-document button or checkboxes', async ({ page }) => {
-    await signIn(page, e2eEnv.readerEmail, e2eEnv.readerPassword);
-    await page.goto(contentListPath(SLUG));
+    await signInAs(page, e2eEnv.readerEmail, e2eEnv.readerPassword);
+    await page.goto(contentListPath(PROFILE_SLUG));
     await expect(
-      page.getByRole('heading', { level: 1, name: collection.title(SLUG) }),
+      page.getByRole('heading', {
+        level: 1,
+        name: collection.title(PROFILE_SLUG),
+      }),
     ).toBeVisible();
     await expect(
       page.getByRole('button', { name: bulk.import, exact: true }),

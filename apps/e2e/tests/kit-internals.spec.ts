@@ -5,38 +5,23 @@ import {
   contentListPath,
   contentNewPath,
 } from '../src/app-contracts';
-import { e2eEnv } from '../src/env';
+import { signInAsOwner } from '../src/session';
+import { CV_PAGE_SLUG, PROFILE_SLUG } from '../src/content-types';
+import { RUN_ID } from '../src/run-id';
 
 const copy = ADMIN_COPY.content;
 const bulk = copy.bulk;
 const importCopy = bulk.importDialog;
 const collection = copy.collection;
 
-const LIST_SLUG = 'profile';
-const RICHTEXT_SLUG = 'cv-page';
-const RUN_ID = Date.now().toString(36);
 const NAMES = [`Kit-${RUN_ID}-a`, `Kit-${RUN_ID}-b`];
-
-async function signIn(page: Page) {
-  await page.goto('/login');
-  await page
-    .getByRole('textbox', { name: ADMIN_COPY.login.emailLabel })
-    .fill(e2eEnv.ownerEmail);
-  await page
-    .getByLabel(ADMIN_COPY.login.passwordLabel)
-    .fill(e2eEnv.ownerPassword);
-  await page.getByRole('button', { name: ADMIN_COPY.login.submit }).click();
-  await expect(
-    page.getByRole('button', { name: ADMIN_COPY.session.signOut }),
-  ).toBeVisible();
-}
 
 test.describe.serial('kit internals keep their rendered behaviour', () => {
   let page: Page;
 
   test.beforeAll(async ({ browser }) => {
     page = await (await browser.newContext()).newPage();
-    await signIn(page);
+    await signInAsOwner(page);
   });
 
   test.afterAll(async () => {
@@ -44,7 +29,7 @@ test.describe.serial('kit internals keep their rendered behaviour', () => {
   });
 
   test('list sheet: select-all is indeterminate, then checked; sort headers toggle aria-sort', async () => {
-    await page.goto(contentListPath(LIST_SLUG));
+    await page.goto(contentListPath(PROFILE_SLUG));
     await page.getByRole('button', { name: bulk.import, exact: true }).click();
     const dialog = page.getByRole('dialog', { name: importCopy.title });
     await dialog
@@ -85,7 +70,7 @@ test.describe.serial('kit internals keep their rendered behaviour', () => {
   });
 
   test('richtext toolbar: Bold shows pressed while the caret is in bold text', async () => {
-    await page.goto(contentNewPath(RICHTEXT_SLUG));
+    await page.goto(contentNewPath(CV_PAGE_SLUG));
     const toolbar = page
       .getByRole('toolbar', { name: copy.richtext.toolbar })
       .first();

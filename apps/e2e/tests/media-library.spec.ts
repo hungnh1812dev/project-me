@@ -12,25 +12,21 @@ import {
   MEDIA_ALT_MAX_LENGTH,
 } from '../src/app-contracts';
 import { e2eEnv } from '../src/env';
+import { signInAs } from '../src/session';
+import { HTTP } from '../src/constants';
+import { RUN_ID } from '../src/run-id';
 
 const copy = ADMIN_COPY.media;
 const access = ADMIN_COPY.access;
 
-const RUN_ID = Date.now().toString(36);
 const FILE_NAME = `e2e-media-${RUN_ID}.png`;
 const TEXT_FILE_NAME = `e2e-media-${RUN_ID}.txt`;
 const ALT_TEXT = `E2E alt ${RUN_ID}`;
 const ALT_PADDING = 'a';
-const HTTP_CONFLICT = 409;
 /** A 1x1 transparent PNG. */
 const PNG_BASE64 =
   'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==';
 
-const HTTP_OK = 200;
-const HTTP_CREATED = 201;
-const HTTP_NO_CONTENT = 204;
-const HTTP_UNSUPPORTED = 415;
-const HTTP_NOT_FOUND = 404;
 const MEDIA_API_PATTERN = /\/api\/v1\/media(\/[0-9a-f-]+)?(\?.*)?$/;
 const ALLOWED_TYPES = ['image/png', 'application/pdf', 'video/mp4'];
 const FAKE_FILE_URL = `data:image/png;base64,${PNG_BASE64}`;
@@ -74,13 +70,13 @@ async function fakeMediaApi(context: BrowserContext, inUse: Set<string>) {
     const method = request.method();
     const headers = cors(route);
     if (method === 'OPTIONS') {
-      return route.fulfill({ status: HTTP_NO_CONTENT, headers });
+      return route.fulfill({ status: HTTP.NO_CONTENT, headers });
     }
     const id = new URL(request.url()).pathname.split('/').at(-1) ?? '';
     const found = files.find((f) => f.id === id);
     if (method === 'GET') {
       return route.fulfill({
-        status: HTTP_OK,
+        status: HTTP.OK,
         contentType: 'application/json',
         headers,
         body: JSON.stringify({
@@ -96,7 +92,7 @@ async function fakeMediaApi(context: BrowserContext, inUse: Set<string>) {
       if (!ALLOWED_TYPES.includes(type)) {
         return fail(
           route,
-          HTTP_UNSUPPORTED,
+          HTTP.UNSUPPORTED_MEDIA_TYPE,
           API_ERROR_CODES.MEDIA_UNSUPPORTED_TYPE,
         );
       }
@@ -115,30 +111,30 @@ async function fakeMediaApi(context: BrowserContext, inUse: Set<string>) {
       };
       files.unshift(created);
       return route.fulfill({
-        status: HTTP_CREATED,
+        status: HTTP.CREATED,
         contentType: 'application/json',
         headers,
         body: JSON.stringify(created),
       });
     }
     if (found === undefined) {
-      return fail(route, HTTP_NOT_FOUND, API_ERROR_CODES.MEDIA_NOT_FOUND);
+      return fail(route, HTTP.NOT_FOUND, API_ERROR_CODES.MEDIA_NOT_FOUND);
     }
     if (method === 'PATCH') {
       const body = request.postDataJSON() as { alt: string | null };
       found.alt = body.alt;
       return route.fulfill({
-        status: HTTP_OK,
+        status: HTTP.OK,
         contentType: 'application/json',
         headers,
         body: JSON.stringify(found),
       });
     }
     if (inUse.has(found.fileName)) {
-      return fail(route, HTTP_CONFLICT, API_ERROR_CODES.MEDIA_IN_USE);
+      return fail(route, HTTP.CONFLICT, API_ERROR_CODES.MEDIA_IN_USE);
     }
     files.splice(files.indexOf(found), 1);
-    return route.fulfill({ status: HTTP_NO_CONTENT, headers });
+    return route.fulfill({ status: HTTP.NO_CONTENT, headers });
   });
 }
 
@@ -151,18 +147,6 @@ function cors(route: Route): Record<string, string> {
     'access-control-allow-headers':
       request.headers()['access-control-request-headers'] ?? '*',
   };
-}
-
-async function signIn(page: Page, email: string, password: string) {
-  await page.goto('/login');
-  await page
-    .getByRole('textbox', { name: ADMIN_COPY.login.emailLabel })
-    .fill(email);
-  await page.getByLabel(ADMIN_COPY.login.passwordLabel).fill(password);
-  await page.getByRole('button', { name: ADMIN_COPY.login.submit }).click();
-  await expect(
-    page.getByRole('button', { name: ADMIN_COPY.session.signOut }),
-  ).toBeVisible();
 }
 
 const row = (page: Page) =>
@@ -184,7 +168,7 @@ test.describe.serial('owner: media library', () => {
     context = await browser.newContext();
     await fakeMediaApi(context, inUse);
     page = await context.newPage();
-    await signIn(page, e2eEnv.ownerEmail, e2eEnv.ownerPassword);
+    await signInAs(page, e2eEnv.ownerEmail, e2eEnv.ownerPassword);
   });
 
   test.afterAll(async () => {

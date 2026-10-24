@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 
 import { ADMIN_COPY, APP_ROUTES } from '../src/app-contracts';
+import { API_PATHS, apiUrl } from '../src/api-paths';
 import { HTTP } from '../src/constants';
 import { e2eEnv } from '../src/env';
 
@@ -13,7 +14,7 @@ import { e2eEnv } from '../src/env';
  * this spec sends at most 2 submits. A rerun against a kept stack inside the
  * window gets 429 instead of 404.
  */
-const SETUP_OWNER_URL = `${e2eEnv.apiBaseUrl}/setup/owner`;
+const SETUP_OWNER_URL = apiUrl(API_PATHS.SETUP.OWNER);
 const UNUSED_TOKEN = 'e2e-token-that-is-not-the-setup-token';
 const OWNER_BODY = {
   email: `setup-closed@${new URL(e2eEnv.webUrl).hostname}`,
@@ -43,7 +44,7 @@ test('/setup redirects to /login and the login page offers no setup', async ({
 test('the setup status is closed and a submit is answered like an unknown route', async ({
   request,
 }) => {
-  const status = await request.get(`${e2eEnv.apiBaseUrl}/setup/status`);
+  const status = await request.get(apiUrl(API_PATHS.SETUP.STATUS));
   expect(status.status()).toBe(HTTP.OK);
   expect(await status.json()).toEqual({ open: false });
 
@@ -51,8 +52,8 @@ test('the setup status is closed and a submit is answered like an unknown route'
     { ...OWNER_BODY, setupToken: UNUSED_TOKEN },
     OWNER_BODY,
   ]) {
-    const res = await request.post(SETUP_OWNER_URL, { data: body });
-    expect(res.status()).toBe(HTTP.NOT_FOUND);
-    expect(JSON.stringify(await res.json())).not.toContain(UNUSED_TOKEN);
+    const response = await request.post(SETUP_OWNER_URL, { data: body });
+    expect(response.status()).toBe(HTTP.NOT_FOUND);
+    expect(JSON.stringify(await response.json())).not.toContain(UNUSED_TOKEN);
   }
 });

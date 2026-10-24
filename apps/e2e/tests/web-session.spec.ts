@@ -1,7 +1,8 @@
 import { expect, type Page, test } from '@playwright/test';
 
 import { ADMIN_COPY, WEB_COPY } from '../src/app-contracts';
-import { AUTH_REFRESH_PATH, REFRESH_COOKIE_NAME } from '../src/constants';
+import { API_PATHS } from '../src/api-paths';
+import { REFRESH_COOKIE_NAME } from '../src/constants';
 import { e2eEnv } from '../src/env';
 import { mailIdsFor, waitForCode } from '../src/mailpit';
 
@@ -51,7 +52,7 @@ test('anonymous visit shows Sign in; the dialog validates, closes with Esc and C
   page,
 }) => {
   const refresh = page.waitForResponse((res) =>
-    res.url().endsWith(AUTH_REFRESH_PATH),
+    res.url().endsWith(API_PATHS.AUTH.REFRESH),
   );
   await page.goto(e2eEnv.webUrl);
   expect((await refresh).status()).toBe(401);
@@ -119,12 +120,14 @@ test('a reader signs in on the web, stays signed in on reload, shares the sessio
   await expect(headerSignIn(page)).toHaveCount(0);
 
   // Auth goes to the API only, never through a Next route.
-  const authPaths = requests.filter((path) => path.includes('/auth/'));
+  const authPaths = requests.filter((path) =>
+    path.includes(API_PATHS.AUTH_PREFIX),
+  );
   expect(authPaths.length).toBeGreaterThan(0);
   for (const path of authPaths) expect(path).toMatch(/^\/api\/v1\/auth\//);
 
   const cookies = (
-    await context.cookies(`${e2eEnv.apiBaseUrl}${AUTH_REFRESH_PATH}`)
+    await context.cookies(`${e2eEnv.apiBaseUrl}${API_PATHS.AUTH.REFRESH}`)
   ).filter((cookie) => cookie.name === REFRESH_COOKIE_NAME);
   expect(cookies).toHaveLength(1);
   expect(cookies[0]).toMatchObject({
@@ -369,7 +372,8 @@ test('a signed-in reader gets no Reviewer access button and no reviewer status c
   await openDialog(page);
   const statusCalls: string[] = [];
   page.on('request', (req) => {
-    if (req.url().endsWith('/reviewer/status')) statusCalls.push(req.url());
+    if (req.url().endsWith(API_PATHS.REVIEWER.STATUS))
+      statusCalls.push(req.url());
   });
   await fillCredentials(page, e2eEnv.readerEmail, e2eEnv.readerPassword);
   await expect(signOutButton(page)).toBeVisible();

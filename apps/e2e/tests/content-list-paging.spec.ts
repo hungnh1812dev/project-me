@@ -1,34 +1,21 @@
-import { expect, type Page, test } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 
 import {
   ADMIN_COPY,
   CONTENT_LIST_PAGE_SIZE,
   contentListPath,
 } from '../src/app-contracts';
-import { e2eEnv } from '../src/env';
+import { signInAsOwner } from '../src/session';
+import { API_PATHS } from '../src/api-paths';
+import { PROFILE_SLUG } from '../src/content-types';
+import { RUN_ID } from '../src/run-id';
 
 const copy = ADMIN_COPY.content;
-const SLUG = 'profile';
-const RUN_ID = Date.now().toString(36);
 const EXTRA_ROWS = 2;
 const names = Array.from(
   { length: CONTENT_LIST_PAGE_SIZE + EXTRA_ROWS },
   (_, index) => `Page-${RUN_ID}-${String(index).padStart(2, '0')}`,
 );
-
-async function signIn(page: Page) {
-  await page.goto('/login');
-  await page
-    .getByRole('textbox', { name: ADMIN_COPY.login.emailLabel })
-    .fill(e2eEnv.ownerEmail);
-  await page
-    .getByLabel(ADMIN_COPY.login.passwordLabel)
-    .fill(e2eEnv.ownerPassword);
-  await page.getByRole('button', { name: ADMIN_COPY.login.submit }).click();
-  await expect(
-    page.getByRole('button', { name: ADMIN_COPY.session.signOut }),
-  ).toBeVisible();
-}
 
 test('sorting on page 2 returns to page 1 and clears the selection; a failed load recovers with Try again', async ({
   page,
@@ -38,13 +25,13 @@ test('sorting on page 2 returns to page 1 and clears the selection; a failed loa
     const url = new URL(request.url());
     if (
       request.method() === 'GET' &&
-      url.pathname.endsWith(`/documents/${SLUG}`)
+      url.pathname.endsWith(API_PATHS.documents(PROFILE_SLUG))
     ) {
       listRequests.push(url);
     }
   });
-  await signIn(page);
-  await page.goto(contentListPath(SLUG));
+  await signInAsOwner(page);
+  await page.goto(contentListPath(PROFILE_SLUG));
 
   const dialog = page.getByRole('dialog', {
     name: copy.bulk.importDialog.title,
@@ -82,7 +69,7 @@ test('sorting on page 2 returns to page 1 and clears the selection; a failed loa
 
   // Load error, then retry.
   let failNext = true;
-  await page.route(`**/documents/${SLUG}?*`, (route) => {
+  await page.route(`**/documents/${PROFILE_SLUG}?*`, (route) => {
     if (failNext) {
       return route.fulfill({ status: 500, body: '{}' });
     }

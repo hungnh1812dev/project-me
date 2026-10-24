@@ -1,11 +1,11 @@
 import { expect, type Locator, type Page, test } from '@playwright/test';
 
 import { ADMIN_COPY, contentNewPath } from '../src/app-contracts';
-import { e2eEnv } from '../src/env';
+import { signInAsOwner } from '../src/session';
+import { CV_PAGE_SLUG } from '../src/content-types';
 
 const richtext = ADMIN_COPY.content.richtext;
 
-const RICHTEXT_SLUG = 'cv-page';
 const FIELD_LABEL = 'Summary';
 const BODY_TEXT = 'Toolbar sample';
 const LINK_HREF = 'https://example.com/toolbar';
@@ -28,20 +28,6 @@ const TOGGLES: readonly Toggle[] = [
   { label: richtext.blockquote, selector: 'blockquote' },
 ];
 
-async function signIn(page: Page) {
-  await page.goto('/login');
-  await page
-    .getByRole('textbox', { name: ADMIN_COPY.login.emailLabel })
-    .fill(e2eEnv.ownerEmail);
-  await page
-    .getByLabel(ADMIN_COPY.login.passwordLabel)
-    .fill(e2eEnv.ownerPassword);
-  await page.getByRole('button', { name: ADMIN_COPY.login.submit }).click();
-  await expect(
-    page.getByRole('button', { name: ADMIN_COPY.session.signOut }),
-  ).toBeVisible();
-}
-
 /** Triple-click selects the typed block only; Select all would also span the trailing empty paragraph. */
 async function selectLine(editor: Locator) {
   await expect(async () => {
@@ -61,8 +47,8 @@ test.describe.serial('richtext toolbar', () => {
 
   test.beforeAll(async ({ browser }) => {
     page = await (await browser.newContext()).newPage();
-    await signIn(page);
-    await page.goto(contentNewPath(RICHTEXT_SLUG));
+    await signInAsOwner(page);
+    await page.goto(contentNewPath(CV_PAGE_SLUG));
     editor = page.getByRole('textbox', { name: FIELD_LABEL, exact: true });
     toolbar = page.getByRole('toolbar', { name: richtext.toolbar }).first();
   });

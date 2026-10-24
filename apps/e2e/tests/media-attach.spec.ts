@@ -9,45 +9,33 @@ import {
 import { ADMIN_COPY, contentNewPath } from '../src/app-contracts';
 import { e2eEnv } from '../src/env';
 import { insertLibraryFiles } from '../src/smoke-database';
+import { PROFILE_SLUG } from '../src/content-types';
+import { signInAs } from '../src/session';
+import { RUN_ID } from '../src/run-id';
+import { API_PATHS } from '../src/api-paths';
+import { contentSaveButton } from '../src/locators';
 
 const copy = ADMIN_COPY.media;
 const content = ADMIN_COPY.content;
 
-const PROFILE_SLUG = 'profile';
 const EDIT_URL = /\/content\/profile\/[0-9a-f-]{36}$/;
 const UUID = /^[0-9a-f-]{36}$/;
-const RUN_ID = Date.now().toString(36);
 const FILE_NAME = `e2e-attach-${RUN_ID}.png`;
 const SECOND_FILE_NAME = `e2e-attach-2-${RUN_ID}.png`;
 const THIRD_FILE_NAME = `e2e-attach-3-${RUN_ID}.png`;
 const TEXT_FILE_NAME = `e2e-attach-${RUN_ID}.txt`;
 const PROFILE_NAME = `E2E profile ${RUN_ID}`;
-const DOCUMENTS_PATH = `/documents/${PROFILE_SLUG}`;
+const DOCUMENTS_PATH = API_PATHS.documents(PROFILE_SLUG);
 /** A 1x1 transparent PNG. */
 const PNG_BASE64 =
   'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==';
 const png = () => Buffer.from(PNG_BASE64, 'base64');
 
-async function signIn(page: Page, email: string, password: string) {
-  await page.goto('/login');
-  await page
-    .getByRole('textbox', { name: ADMIN_COPY.login.emailLabel })
-    .fill(email);
-  await page.getByLabel(ADMIN_COPY.login.passwordLabel).fill(password);
-  await page.getByRole('button', { name: ADMIN_COPY.login.submit }).click();
-  await expect(
-    page.getByRole('button', { name: ADMIN_COPY.session.signOut }),
-  ).toBeVisible();
-}
-
 // The profile form has one fieldset (the photo field); it has no accessible name.
 const photoField = (page: Page) => page.getByRole('group', { name: 'Photo' });
 
-const saveButton = (page: Page) =>
-  page.getByRole('button', { name: content.save, exact: true });
-
 /** The API route; the admin page `/media` has the same tail on another origin. */
-const MEDIA_API_PATH = `${new URL(e2eEnv.apiBaseUrl).pathname}/media`;
+const MEDIA_API_PATH = `${new URL(e2eEnv.apiBaseUrl).pathname}${API_PATHS.MEDIA}`;
 
 const libraryRow = (page: Page, name: string) =>
   page.getByRole('row').filter({ hasText: name });
@@ -69,7 +57,7 @@ test.describe.serial('owner: attach media to a profile', () => {
     page.on('console', (m) => {
       if (m.type() === 'error') consoleProblems.push(m.text());
     });
-    await signIn(page, e2eEnv.ownerEmail, e2eEnv.ownerPassword);
+    await signInAs(page, e2eEnv.ownerEmail, e2eEnv.ownerPassword);
     insertLibraryFiles([FILE_NAME, SECOND_FILE_NAME, THIRD_FILE_NAME]);
   });
 
@@ -117,7 +105,7 @@ test.describe.serial('owner: attach media to a profile', () => {
 
     const [request] = await Promise.all([
       page.waitForRequest(isWrite),
-      saveButton(page).click(),
+      contentSaveButton(page).click(),
     ]);
     expect(request.method()).toBe('POST');
     const body = JSON.parse(request.postData() ?? '{}') as {
@@ -166,7 +154,7 @@ test.describe.serial('owner: attach media to a profile', () => {
     await expect(photoField(page)).toContainText(SECOND_FILE_NAME);
     const [request] = await Promise.all([
       page.waitForRequest(isWrite),
-      saveButton(page).click(),
+      contentSaveButton(page).click(),
     ]);
     expect(request.method()).toBe('PUT');
     await expect(page.getByText(content.saved)).toBeVisible();
@@ -200,7 +188,7 @@ test.describe.serial('owner: attach media to a profile', () => {
     await expect(photoField(page)).toContainText(copy.input.empty);
     const [request] = await Promise.all([
       page.waitForRequest(isWrite),
-      saveButton(page).click(),
+      contentSaveButton(page).click(),
     ]);
     const body = JSON.parse(request.postData() ?? '{}') as {
       values: { photo: unknown };
@@ -268,7 +256,7 @@ test.describe.serial('owner: attach media to a profile', () => {
     await expect(photoField(page).getByRole('img')).toBeVisible();
     const [request] = await Promise.all([
       page.waitForRequest(isWrite),
-      saveButton(page).click(),
+      contentSaveButton(page).click(),
     ]);
     expect(request.method()).toBe('PUT');
     await expect(page.getByText(content.saved)).toBeVisible();

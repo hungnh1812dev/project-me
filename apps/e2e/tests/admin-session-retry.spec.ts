@@ -1,12 +1,12 @@
 import { expect, type Page, test } from '@playwright/test';
 
 import { ADMIN_COPY } from '../src/app-contracts';
-import { AUTH_REFRESH_PATH } from '../src/constants';
-import { e2eEnv } from '../src/env';
+import { API_PATHS, apiUrl } from '../src/api-paths';
+import { signInAsOwner } from '../src/session';
 
 const UNAUTHORIZED = 401;
-const ACCOUNTS_URL = `${e2eEnv.apiBaseUrl}/accounts`;
-const REFRESH_URL = `${e2eEnv.apiBaseUrl}${AUTH_REFRESH_PATH}`;
+const ACCOUNTS_URL = apiUrl(API_PATHS.ACCOUNTS);
+const REFRESH_URL = apiUrl(API_PATHS.AUTH.REFRESH);
 
 const accountsHeading = (page: Page) =>
   page.getByRole('heading', {
@@ -15,20 +15,6 @@ const accountsHeading = (page: Page) =>
   });
 const loginHeading = (page: Page) =>
   page.getByRole('heading', { level: 1, name: ADMIN_COPY.login.title });
-
-async function signIn(page: Page) {
-  await page.goto('/login');
-  await page
-    .getByRole('textbox', { name: ADMIN_COPY.login.emailLabel })
-    .fill(e2eEnv.ownerEmail);
-  await page
-    .getByLabel(ADMIN_COPY.login.passwordLabel)
-    .fill(e2eEnv.ownerPassword);
-  await page.getByRole('button', { name: ADMIN_COPY.login.submit }).click();
-  await expect(
-    page.getByRole('heading', { level: 1, name: ADMIN_COPY.page.title }),
-  ).toBeVisible();
-}
 
 function recordRefreshes(page: Page): number[] {
   const statuses: number[] = [];
@@ -43,7 +29,7 @@ function recordRefreshes(page: Page): number[] {
 test('a 401 on a protected call refreshes once and retries it', async ({
   page,
 }) => {
-  await signIn(page);
+  await signInAsOwner(page);
 
   let refused = 0;
   await page.route(
@@ -71,7 +57,7 @@ test('a 401 on a protected call refreshes once and retries it', async ({
 test('a refresh the server refuses ends the session at /login', async ({
   page,
 }) => {
-  await signIn(page);
+  await signInAsOwner(page);
 
   await page.route(
     (url) => url.href.startsWith(ACCOUNTS_URL),

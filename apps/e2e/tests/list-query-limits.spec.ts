@@ -1,28 +1,23 @@
 import { type APIRequestContext, expect, test } from '@playwright/test';
 
-import { e2eEnv } from '../src/env';
+import { API_PATHS, apiUrl } from '../src/api-paths';
+import { HTTP } from '../src/constants';
+import { CV_PAGE_SLUG } from '../src/content-types';
+import { bearer, ownerApiToken } from '../src/session';
 
-const DOCUMENTS_PATH = '/documents/cv-page';
-const GRAPHQL_PATH = '/graphql';
-const HTTP_OK = 200;
-const HTTP_BAD_REQUEST = 400;
+const DOCUMENTS_PATH = API_PATHS.documents(CV_PAGE_SLUG);
+const GRAPHQL_PATH = API_PATHS.GRAPHQL;
 const INVALID_REQUEST_CODE = 'ACCESS_INVALID_REQUEST';
 const SECRET = 'SECRET-LIST-VALUE';
 const OVER_MAX_IN_VALUES = 21;
 const OVER_MAX_FILTERS = 11;
 const OVER_MAX_VALUE_LENGTH = 256;
 
-const url = (path: string) => `${e2eEnv.apiBaseUrl}${path}`;
 const repeat = (count: number, build: (index: number) => string) =>
   Array.from({ length: count }, (_, index) => build(index));
 
 async function ownerHeaders(request: APIRequestContext) {
-  const res = await request.post(url('/auth/login'), {
-    data: { email: e2eEnv.ownerEmail, password: e2eEnv.ownerPassword },
-  });
-  expect(res.status()).toBe(HTTP_OK);
-  const { accessToken } = (await res.json()) as { accessToken: string };
-  return { Authorization: `Bearer ${accessToken}` };
+  return bearer(await ownerApiToken(request));
 }
 
 const REST_CASES: [string, string][] = [
@@ -61,11 +56,11 @@ test.describe('API: list query limits (R2-06)', () => {
     test(`REST: ${name} is a 400 that echoes no submitted value`, async ({
       request,
     }) => {
-      const res = await request.get(url(`${DOCUMENTS_PATH}?${query}`), {
+      const response = await request.get(apiUrl(`${DOCUMENTS_PATH}?${query}`), {
         headers,
       });
-      expect(res.status()).toBe(HTTP_BAD_REQUEST);
-      const text = await res.text();
+      expect(response.status()).toBe(HTTP.BAD_REQUEST);
+      const text = await response.text();
       expect(text).toContain(INVALID_REQUEST_CODE);
       expect(text).not.toContain(SECRET);
       expect(text).not.toContain('x'.repeat(OVER_MAX_VALUE_LENGTH));
@@ -75,23 +70,26 @@ test.describe('API: list query limits (R2-06)', () => {
   test('REST: a valid list with the default sort is unchanged', async ({
     request,
   }) => {
-    const res = await request.get(url(`${DOCUMENTS_PATH}?status=draft`), {
-      headers,
-    });
-    expect(res.status()).toBe(HTTP_OK);
-    const body = (await res.json()) as { meta: { page: number } };
+    const response = await request.get(
+      apiUrl(`${DOCUMENTS_PATH}?status=draft`),
+      {
+        headers,
+      },
+    );
+    expect(response.status()).toBe(HTTP.OK);
+    const body = (await response.json()) as { meta: { page: number } };
     expect(body.meta.page).toBe(1);
   });
 
   test('REST: a field the role cannot read is still rejected by the guard', async ({
     request,
   }) => {
-    const res = await request.get(
-      url(`${DOCUMENTS_PATH}?sort=noSuchField${SECRET.length}`),
+    const response = await request.get(
+      apiUrl(`${DOCUMENTS_PATH}?sort=noSuchField${SECRET.length}`),
       { headers },
     );
-    expect(res.status()).toBe(HTTP_BAD_REQUEST);
-    expect(await res.text()).not.toContain(`noSuchField${SECRET.length}`);
+    expect(response.status()).toBe(HTTP.BAD_REQUEST);
+    expect(await response.text()).not.toContain(`noSuchField${SECRET.length}`);
   });
 
   const GRAPHQL_LIST = `query List($page: Int, $pageSize: Int, $sort: [CvPageSort!], $filter: CvPageFilter) {
@@ -133,11 +131,11 @@ test.describe('API: list query limits (R2-06)', () => {
     test(`GraphQL: ${name} is an invalid-request error`, async ({
       request,
     }) => {
-      const res = await request.post(url(GRAPHQL_PATH), {
+      const response = await request.post(apiUrl(GRAPHQL_PATH), {
         headers,
         data: { query: GRAPHQL_LIST, variables },
       });
-      const body = (await res.json()) as {
+      const body = (await response.json()) as {
         errors?: { extensions?: { code?: string } }[];
       };
       expect(body.errors?.[0]?.extensions?.code).toBe(INVALID_REQUEST_CODE);
@@ -146,11 +144,11 @@ test.describe('API: list query limits (R2-06)', () => {
   }
 
   test('GraphQL: a valid list works', async ({ request }) => {
-    const res = await request.post(url(GRAPHQL_PATH), {
+    const response = await request.post(apiUrl(GRAPHQL_PATH), {
       headers,
       data: { query: GRAPHQL_LIST, variables: { page: 1, pageSize: 5 } },
     });
-    const body = (await res.json()) as { errors?: unknown[] };
+    const body = (await response.json()) as { errors?: unknown[] };
     expect(body.errors).toBeUndefined();
   });
 });

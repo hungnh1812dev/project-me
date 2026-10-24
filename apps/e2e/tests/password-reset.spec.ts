@@ -1,16 +1,15 @@
 import { expect, type Page, test } from '@playwright/test';
 
 import { ADMIN_COPY } from '../src/app-contracts';
-import { PASSWORD_PATHS } from '../src/constants';
+import { API_PATHS, apiUrl } from '../src/api-paths';
+import { HTTP } from '../src/constants';
 import { e2eEnv } from '../src/env';
 import { mailIdsFor, waitForCode } from '../src/mailpit';
+import { labelStartingWith } from '../src/locators';
+import { submitLogin } from '../src/session';
 
-const HTTP_ACCEPTED = 202;
-const HTTP_NO_CONTENT = 204;
 /** A different password of a valid length (12-128) for this run. */
 const TEMPORARY_PASSWORD = `${e2eEnv.ownerPassword.slice(0, 100)}-reset`;
-
-const label = (name: string) => new RegExp(`^${name}`);
 
 /** POST to cms-api from the admin page, exactly as the admin bundle would (CORS). */
 async function postFromAdmin(
@@ -27,16 +26,8 @@ async function postFromAdmin(
       });
       return response.status;
     },
-    { url: `${e2eEnv.apiBaseUrl}${path}`, payload: body },
+    { url: apiUrl(path), payload: body },
   );
-}
-
-async function signIn(page: Page, password: string) {
-  await page
-    .getByRole('textbox', { name: ADMIN_COPY.login.emailLabel })
-    .fill(e2eEnv.ownerEmail);
-  await page.getByLabel(ADMIN_COPY.login.passwordLabel).fill(password);
-  await page.getByRole('button', { name: ADMIN_COPY.login.submit }).click();
 }
 
 test('the owner resets a forgotten password with an emailed code', async ({
@@ -57,7 +48,7 @@ test('the owner resets a forgotten password with an emailed code', async ({
   // Step 1: ask for a code.
   const seen = await mailIdsFor(context, e2eEnv.ownerEmail);
   await page
-    .getByLabel(label(ADMIN_COPY.password.emailLabel))
+    .getByLabel(labelStartingWith(ADMIN_COPY.password.emailLabel))
     .fill(e2eEnv.ownerEmail);
   await page
     .getByRole('button', { name: ADMIN_COPY.password.reset.sendCode })
@@ -71,12 +62,14 @@ test('the owner resets a forgotten password with an emailed code', async ({
 
   // Step 2: the code from Mailpit plus the new password.
   const code = await waitForCode(context, e2eEnv.ownerEmail, seen);
-  await page.getByLabel(label(ADMIN_COPY.password.codeLabel)).fill(code);
   await page
-    .getByLabel(label(ADMIN_COPY.password.newPasswordLabel))
+    .getByLabel(labelStartingWith(ADMIN_COPY.password.codeLabel))
+    .fill(code);
+  await page
+    .getByLabel(labelStartingWith(ADMIN_COPY.password.newPasswordLabel))
     .fill(TEMPORARY_PASSWORD);
   await page
-    .getByLabel(label(ADMIN_COPY.password.confirmPasswordLabel))
+    .getByLabel(labelStartingWith(ADMIN_COPY.password.confirmPasswordLabel))
     .fill(TEMPORARY_PASSWORD);
   await page
     .getByRole('button', { name: ADMIN_COPY.password.reset.submit })
@@ -90,7 +83,7 @@ test('the owner resets a forgotten password with an emailed code', async ({
   // The new password works. (Old password -> 401 is covered by the cms-api
   // integration tests; skipping it here keeps owner logins under the
   // 5-per-15-min email limit across smoke + e2e.)
-  await signIn(page, TEMPORARY_PASSWORD);
+  await submitLogin(page, e2eEnv.ownerEmail, TEMPORARY_PASSWORD);
   await expect(
     page.getByRole('heading', { level: 1, name: ADMIN_COPY.page.title }),
   ).toBeVisible();
@@ -98,18 +91,18 @@ test('the owner resets a forgotten password with an emailed code', async ({
   // Put the original password back for the other specs and later runs.
   const before = await mailIdsFor(context, e2eEnv.ownerEmail);
   expect(
-    await postFromAdmin(page, PASSWORD_PATHS.REQUEST_OTP, {
+    await postFromAdmin(page, API_PATHS.AUTH.REQUEST_OTP, {
       email: e2eEnv.ownerEmail,
     }),
-  ).toBe(HTTP_ACCEPTED);
+  ).toBe(HTTP.ACCEPTED);
   const restoreCode = await waitForCode(context, e2eEnv.ownerEmail, before);
   expect(
-    await postFromAdmin(page, PASSWORD_PATHS.RESET, {
+    await postFromAdmin(page, API_PATHS.AUTH.PASSWORD_RESET, {
       email: e2eEnv.ownerEmail,
       code: restoreCode,
       newPassword: e2eEnv.ownerPassword,
     }),
-  ).toBe(HTTP_NO_CONTENT);
+  ).toBe(HTTP.NO_CONTENT);
 
   // The reset ended this session too: the next API call sends us to sign in.
   await page.reload();
