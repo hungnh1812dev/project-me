@@ -277,6 +277,16 @@ The readiness ping goes through the `DATABASE_HEALTH` token
 (`src/infrastructure/database/database-health.ts`), bound to
 `PrismaDatabaseHealth` (`SELECT 1` through `PrismaService`).
 
+Multi-write core flows use the `CORE_TRANSACTION_RUNNER` token
+(`src/infrastructure/database/TransactionRunner.port.ts`), bound to
+`PrismaTransactionRunner` (`prisma.$transaction`, default options). `run(work)`
+commits when `work` resolves and rolls back when it throws; `unit.afterCommit(cb)`
+runs `cb` once after the commit, in registration order, never on rollback (a
+failing callback is logged, the commit stands). Locks stay in repository SQL.
+Only adapters call `prismaTxOf(unit)`. `unitOfWorkFromPrismaTx(tx)` is a
+transitional bridge for callers that still hold a Prisma `tx` (removed in
+CR-cl-1). The content (Kysely) runner arrives in CR-ce-2.
+
 ### Rate limits (T10)
 
 Fixed windows, per resolved client IP and, for login, per email. Each module
