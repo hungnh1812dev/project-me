@@ -13,7 +13,7 @@ import { RegistryService } from '../../src/modules/content-engine/registry.servi
 import {
   emptySnapshot,
   planMigration,
-} from '../../src/modules/content-engine/sql-generator';
+} from '../../src/modules/content-engine/domain/SqlGenerator.rules';
 import { hashPassword } from '../../src/modules/identity/password-hasher';
 import { seedSystemRoles } from '../../src/modules/access/roles/system-roles.seed';
 import { createCoreTemplate } from '../fixtures/core-db.fixture';

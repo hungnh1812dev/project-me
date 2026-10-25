@@ -1,17 +1,18 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import type { ContentTypeDefinition } from './definition.schema';
+import type { ContentTypeDefinition } from './DefinitionSchema.rules';
 import {
   componentTableName,
   planTables,
   relationNames,
   rootTableName,
   toSqlIdentifier,
-} from './naming';
+} from './Naming.rules';
 
 const CV_PAGE_PATH = join(
   __dirname,
+  '..',
   '..',
   '..',
   '..',

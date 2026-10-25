@@ -4,7 +4,7 @@ import {
   PERMISSION_ACTIONS,
   SYSTEM_SUBJECT_ACTIONS,
 } from '../modules/access/access.constants';
-import { RICHTEXT_ALLOWED_URL_SCHEMES } from '../modules/content-engine/content-engine.constants';
+import { RICHTEXT_ALLOWED_URL_SCHEMES } from '../modules/content-engine/domain/ContentEngine.constants';
 import {
   AUTH_ERROR_CODES,
   REFRESH_COOKIE,

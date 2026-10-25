@@ -6,18 +6,18 @@ import {
   HASH_ALGORITHM,
   ROOT_SYSTEM_COLUMNS,
   SNAPSHOT_FORMAT_VERSION,
-} from './content-engine.constants';
+} from './ContentEngine.constants';
 import {
   type ContentTypeDefinition,
   isComponentField,
-} from './definition.schema';
+} from './DefinitionSchema.rules';
 import { FIELD_TYPE_SPECS } from './field-types';
 import {
   type ColumnPlan,
   planTables,
   relationNames,
   type TablePlan,
-} from './naming';
+} from './Naming.rules';
 
 /**
  * Pure part of `content:generate`: turns the previous snapshot and the

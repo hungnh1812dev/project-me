@@ -1,4 +1,4 @@
-import type { ContentDocument } from '../content-engine/content.repository';
+import type { ContentDocument } from '../content-engine';
 import { cloneTree } from './tree-cloner';
 
 const document: ContentDocument = {

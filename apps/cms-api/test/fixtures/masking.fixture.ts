@@ -11,8 +11,8 @@ import {
   type RecordReadAccess,
   recordReadAccess,
 } from '../../src/modules/access/record-read-access';
-import type { ContentDocument } from '../../src/modules/content-engine/content.repository';
-import type { FieldDefinition } from '../../src/modules/content-engine/definition.schema';
+import type { ContentDocument } from '../../src/modules/content-engine/domain/ContentDocument.entity';
+import type { FieldDefinition } from '../../src/modules/content-engine/domain/DefinitionSchema.rules';
 import {
   type RegisteredContentType,
   RegistryService,
@@ -21,8 +21,8 @@ import {
 import type {
   ComponentNode,
   ComponentTrees,
-} from '../../src/modules/content-engine/tree-loader';
-import type { FieldValues } from '../../src/modules/content-engine/tree-input';
+} from '../../src/modules/content-engine/domain/ContentTree.entity';
+import type { FieldValues } from '../../src/modules/content-engine/domain/TreeInput.rules';
 import { systemRole } from './access.fixture';
 
 /**

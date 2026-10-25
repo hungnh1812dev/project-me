@@ -1,18 +1,18 @@
 import { type Generated, type Kysely, sql } from 'kysely';
 
+import { MIGRATION_LOCK_KEY } from './adapters/ContentEnginePersistence.constants';
 import {
   CONTENT_DB_SCHEMA,
   META_TABLES,
-  MIGRATION_LOCK_KEY,
-} from './content-engine.constants';
-import type { ContentTypeKind } from './definition.schema';
+} from './domain/ContentEngine.constants';
+import { ContentEngineError } from './domain/ContentEngine.errors';
+import type { ContentTypeKind } from './domain/DefinitionSchema.rules';
 import {
-  ContentEngineError,
   listMigrations,
   type MigrationFile,
   readSnapshot,
 } from './migration-files';
-import { quoteIdentifier } from './sql-generator';
+import { quoteIdentifier } from './domain/SqlGenerator.rules';
 
 /** Kysely view of the engine's bookkeeping tables in schema `content`. */
 export interface ContentMetaDatabase {
@@ -164,7 +164,8 @@ export async function runContentMigrations(
             ),
         )
         .executeTakeFirst();
-      if (Number(upsertOutcome.numInsertedOrUpdatedRows ?? 0) > 0) upserted.push(slug);
+      if (Number(upsertOutcome.numInsertedOrUpdatedRows ?? 0) > 0)
+        upserted.push(slug);
     }
 
     const slugs = Object.keys(snapshot.contentTypes);

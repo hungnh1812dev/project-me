@@ -1,9 +1,9 @@
-import { type SCALAR_FIELD_TYPES } from '../content-engine.constants';
+import { type SCALAR_FIELD_TYPES } from '../ContentEngine.constants';
 
-import { type FieldTypeSpec } from './field-type-spec';
-import { sanitizeRichtext } from './richtext.sanitizer';
-import { parseDate, parseDatetime, parseUuid } from './value-parsers';
-import { INT4_MAX, VALUE_PATTERNS } from './value-patterns';
+import { type FieldTypeSpec } from './FieldType.entity';
+import { sanitizeRichtext } from './RichtextSanitizer.rules';
+import { parseDate, parseDatetime, parseUuid } from './ValueParsers.rules';
+import { INT4_MAX, VALUE_PATTERNS } from './ValuePatterns.constants';
 
 type ScalarFieldType = (typeof SCALAR_FIELD_TYPES)[number];
 

@@ -6,12 +6,12 @@ import {
   rawRecord,
   seededRandom,
 } from '../../../test/fixtures/masking.fixture';
-import type { ContentDocument } from '../content-engine/content.repository';
-import type { TableNode } from '../content-engine';
-import {
-  type ComponentTrees,
-  rowToValues,
-} from '../content-engine/tree-loader';
+import type {
+  ComponentTrees,
+  ContentDocument,
+  TableNode,
+} from '../content-engine';
+import { rowToValues } from '../content-engine/domain/ContentTree.entity';
 import {
   ACCOUNT_REFERENCE_FIELDS,
   ACCOUNT_REFERENCES_HIDDEN_FROM,

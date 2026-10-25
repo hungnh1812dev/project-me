@@ -1,6 +1,6 @@
 import sanitizeHtml from 'sanitize-html';
 
-import { RICHTEXT_ALLOWED_URL_SCHEMES } from '../content-engine.constants';
+import { RICHTEXT_ALLOWED_URL_SCHEMES } from '../ContentEngine.constants';
 
 /**
  * Cleans richtext HTML before it is stored (SPEC D13, storage part).

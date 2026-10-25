@@ -4,13 +4,13 @@ import {
   RELATION_NAME_SUFFIXES,
   ROOT_SYSTEM_COLUMNS,
   TABLE_PATH_SEPARATOR,
-} from './content-engine.constants';
+} from './ContentEngine.constants';
 import {
   type ComponentFieldDefinition,
   type ContentTypeDefinition,
   type FieldDefinition,
   isComponentField,
-} from './definition.schema';
+} from './DefinitionSchema.rules';
 
 /**
  * The single place where SQL names are composed from a definition.

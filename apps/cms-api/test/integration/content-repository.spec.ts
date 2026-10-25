@@ -6,11 +6,13 @@ import { Client, Pool } from 'pg';
 
 import { DEFAULT_CONTENT_PATHS } from '../../src/modules/content-engine/cli/content-paths';
 import { createMigrationDb } from '../../src/modules/content-engine/cli/migrate';
-import { CONTENT_ERROR_CODES } from '../../src/modules/content-engine/content-engine.constants';
+import { CONTENT_ERROR_CODES } from '../../src/modules/content-engine/domain/ContentEngine.constants';
 import {
   type ContentDocument,
-  ContentRepository,
   DocumentNotFoundError,
+} from '../../src/modules/content-engine/domain/ContentDocument.entity';
+import {
+  ContentRepository,
   type InsertTreeInput,
 } from '../../src/modules/content-engine/content.repository';
 import { runContentMigrations } from '../../src/modules/content-engine/migration-runner';
@@ -18,11 +20,9 @@ import {
   RegistryService,
   UnknownContentTypeError,
 } from '../../src/modules/content-engine/registry.service';
-import type { ComponentInput } from '../../src/modules/content-engine/tree-input';
-import type {
-  ComponentNode,
-  ContentDatabase,
-} from '../../src/modules/content-engine/tree-loader';
+import type { ComponentInput } from '../../src/modules/content-engine/domain/TreeInput.rules';
+import type { ComponentNode } from '../../src/modules/content-engine/domain/ContentTree.entity';
+import type { ContentDatabase } from '../../src/modules/content-engine/tree-loader';
 import { startPostgres } from '../fixtures/postgres.fixture';
 
 const SLUG = 'cv-page';

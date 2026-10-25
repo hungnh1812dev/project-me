@@ -5,12 +5,13 @@ import {
   type SerializedComponents,
   type SerializedRecord,
 } from '../access';
-import type { ContentDocument } from '../content-engine/content.repository';
-import type { ComponentInput, TreeInput } from '../content-engine';
 import type {
+  ComponentInput,
   ComponentNode,
   ComponentTrees,
-} from '../content-engine/tree-loader';
+  ContentDocument,
+  TreeInput,
+} from '../content-engine';
 import { NEW_ITEM_UID } from './documents.constants';
 
 export type DiffChange = 'added' | 'removed' | 'changed' | 'moved';

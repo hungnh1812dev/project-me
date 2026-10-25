@@ -238,8 +238,9 @@ error-detail bodies all go through `serialize`.
 **Facades (R1-14).** Every folder under `src/modules/` has an `index.ts`, and
 code outside a module imports it through that file only (ESLint
 `no-restricted-imports`, patterns in `apps/cms-api/eslint.config.mjs`).
-Named exceptions, each kept out of the facade on purpose: `content.repository`
-and `tree-loader` in `content-engine`, `field-projection` and `document-auth`
+Named exceptions, each kept out of the facade on purpose: `content.repository`,
+`tree-loader`, `domain/ContentRowMapping.rules` and `domain/ContentTree.entity`
+in `content-engine`, `field-projection` and `document-auth`
 in `access`. `modules.architecture.spec.ts` also enforces the two SPEC §2
 sub-rules: `security-audit` imports access core with `import type` only, and
 `content-types` and `media` import only `JwtAuthGuard` and

@@ -3,9 +3,9 @@ import { parseArgs } from 'node:util';
 import {
   DEFAULT_MIGRATION_LABEL,
   MIGRATION_LABEL_PATTERN,
-} from '../content-engine.constants';
+} from '../adapters/ContentEnginePersistence.constants';
+import { ContentEngineError } from '../domain/ContentEngine.errors';
 import {
-  ContentEngineError,
   listMigrations,
   loadDefinitions,
   migrationFileName,
@@ -16,7 +16,7 @@ import {
   type MigrationPlan,
   planMigration,
   renderMigrationSql,
-} from '../sql-generator';
+} from '../domain/SqlGenerator.rules';
 import { DEFAULT_CONTENT_PATHS } from './content-paths';
 
 export interface GenerateOptions {

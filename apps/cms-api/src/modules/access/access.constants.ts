@@ -1,6 +1,8 @@
 import { PermissionAction } from '../../generated/prisma/client';
-import { type ROOT_SYSTEM_COLUMNS } from '../content-engine';
-import type { ContentDocument } from '../content-engine/content.repository';
+import {
+  type ContentDocument,
+  type ROOT_SYSTEM_COLUMNS,
+} from '../content-engine';
 import type { ActorKind } from './actor-context';
 
 /** Every permission action (SPEC §6), in enum order. */

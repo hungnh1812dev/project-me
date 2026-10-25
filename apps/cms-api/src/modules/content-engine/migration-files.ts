@@ -5,32 +5,28 @@ import { join } from 'node:path';
 import { z } from 'zod';
 
 import {
-  HASH_ALGORITHM,
   MIGRATION_FILE_PATTERN,
   MIGRATION_SEQUENCE_DIGITS,
   MIGRATION_SNAPSHOT_FILE,
   SCHEMA_FILE_EXTENSION,
+} from './adapters/ContentEnginePersistence.constants';
+import {
+  HASH_ALGORITHM,
   SNAPSHOT_FORMAT_VERSION,
-} from './content-engine.constants';
-import type { ContentTypeDefinition } from './definition.schema';
+} from './domain/ContentEngine.constants';
+import { ContentEngineError } from './domain/ContentEngine.errors';
+import type { ContentTypeDefinition } from './domain/DefinitionSchema.rules';
 import {
   formatDefinitionPath,
   validateDefinitions,
-} from './definition.validator';
+} from './domain/DefinitionValidator.rules';
 import {
   type DefinitionSnapshot,
   emptySnapshot,
   hashDefinition,
-} from './sql-generator';
+} from './domain/SqlGenerator.rules';
 
 /** File-system side of the content engine CLIs (schemas in, migrations out). */
-
-export class ContentEngineError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = 'ContentEngineError';
-  }
-}
 
 export interface MigrationFile {
   name: string;

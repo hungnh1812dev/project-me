@@ -1,26 +1,12 @@
-import { fieldTypeOf } from './field-types';
-import type { TableNode } from './registry.service';
-import type { FieldValues } from './tree-input';
+import type { TableNode } from '../registry.service';
+import type { ContentDocument } from './ContentDocument.entity';
 import {
   type ComponentTrees,
   type ContentRow,
   rowToValues,
-} from './tree-loader';
-
-/** A root row with its component tree. `values` and `components` use API names. */
-export interface ContentDocument {
-  id: number;
-  documentId: string;
-  version: number;
-  publishedAt: Date | null;
-  locale: string | null;
-  createdAt: Date;
-  updatedAt: Date;
-  createdBy: number | null;
-  updatedBy: number | null;
-  values: FieldValues;
-  components: ComponentTrees;
-}
+} from './ContentTree.entity';
+import { fieldTypeOf } from './field-types';
+import type { FieldValues } from './TreeInput.rules';
 
 /** API values -> column values; a type's `encodeForColumn` applies to non-null values. */
 export function toColumnValues(

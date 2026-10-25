@@ -16,6 +16,7 @@ export const CONTENT_ENGINE_DIRECTORY = join(MODULES, 'content-engine') + sep;
 export const FIELD_TYPES_DIRECTORY = join(
   MODULES,
   'content-engine',
+  'domain',
   'field-types',
 );
 export const GRAPHQL_DIRECTORY = join(MODULES, 'graphql');
@@ -30,14 +31,33 @@ export const TREE_LOADER_FILE = join(
   'content-engine',
   'tree-loader.ts',
 );
+export const CONTENT_ROW_MAPPING_FILE = join(
+  MODULES,
+  'content-engine',
+  'domain',
+  'ContentRowMapping.rules.ts',
+);
 export const FIELD_PROJECTION_FILE = join(
   MODULES,
   'access',
   'field-projection.ts',
 );
 export const RECORD_LOADER_FILES = [CONTENT_REPOSITORY_FILE, TREE_LOADER_FILE];
-/** Files that bypass masking: no module facade re-exports them. */
-export const UNMASKED_FILES = [...RECORD_LOADER_FILES, FIELD_PROJECTION_FILE];
+/** A file that reads records through the loaders; proves the scanner sees real edges. */
+export const RECORD_LOADER_CONSUMER_FILE = join(
+  MODULES,
+  'documents',
+  'documents.query.service.ts',
+);
+/**
+ * Files that bypass masking: no module facade re-exports them. Mapping a row
+ * to a `ContentDocument` skips masking too (D3).
+ */
+export const UNMASKED_FILES = [
+  ...RECORD_LOADER_FILES,
+  CONTENT_ROW_MAPPING_FILE,
+  FIELD_PROJECTION_FILE,
+];
 
 export const RECORD_SERIALIZER_FILE = join(
   MODULES,
@@ -94,6 +114,7 @@ export const PINNED_PATHS: readonly string[] = [
   FIELD_TYPES_DIRECTORY,
   GRAPHQL_DIRECTORY,
   ...UNMASKED_FILES,
+  RECORD_LOADER_CONSUMER_FILE,
   RECORD_SERIALIZER_FILE,
   ACCESS_CONSTANTS_FILE,
   ...INTERNAL_COPY_FILES,

@@ -4,7 +4,7 @@ import {
   COMPONENT_FIELD_TYPE,
   CONTENT_TYPE_KINDS,
   SCALAR_FIELD_TYPES,
-} from './content-engine.constants';
+} from './ContentEngine.constants';
 
 /**
  * Shape of a content type definition (`content/schemas/<slug>.json`).

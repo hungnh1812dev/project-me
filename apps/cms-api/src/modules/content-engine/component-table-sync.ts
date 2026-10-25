@@ -5,16 +5,17 @@ import type { Transaction } from 'kysely';
 import {
   CONTENT_DB_SCHEMA,
   CONTENT_ERROR_CODES,
-} from './content-engine.constants';
-import { toColumnValues } from './content-row-mapping';
+} from './domain/ContentEngine.constants';
+import { toColumnValues } from './domain/ContentRowMapping.rules';
 import type { ComponentTableNode, TableNode } from './registry.service';
+import type { ContentRow } from './domain/ContentTree.entity';
 import {
   type ComponentInput,
   type ComponentsInput,
   ContentTreeError,
   type TreePath,
-} from './tree-input';
-import { anyInt, type ContentDatabase, type ContentRow } from './tree-loader';
+} from './domain/TreeInput.rules';
+import { anyInt, type ContentDatabase } from './tree-loader';
 
 export type WriteMode = 'insert' | 'replace';
 

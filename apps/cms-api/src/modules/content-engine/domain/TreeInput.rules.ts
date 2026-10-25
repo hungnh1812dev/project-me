@@ -1,11 +1,11 @@
 import {
   CONTENT_ERROR_CODES,
   SINGLE_COMPONENT_MAX_ITEMS,
-} from './content-engine.constants';
+} from './ContentEngine.constants';
 import { UUID_PATTERN } from './field-types';
-import { formatDefinitionPath } from './definition.validator';
-import { ContentEngineError } from './migration-files';
-import type { TableNode } from './registry.service';
+import { formatDefinitionPath } from './DefinitionValidator.rules';
+import { ContentEngineError } from './ContentEngine.errors';
+import type { TableNode } from '../registry.service';
 
 /**
  * The document tree as the repository reads and writes it. Keys of `values`

@@ -1,5 +1,5 @@
-import { RegistryService } from '../registry.service';
-import { mediaColumnsOf, mediaFieldNamesByTable } from './media-columns';
+import { RegistryService } from '../../registry.service';
+import { mediaColumnsOf, mediaFieldNamesByTable } from './MediaColumns.rules';
 
 const GALLERY = {
   slug: 'gallery',

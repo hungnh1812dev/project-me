@@ -1,6 +1,6 @@
-import { SCALAR_FIELD_TYPES } from '../content-engine.constants';
+import { SCALAR_FIELD_TYPES } from '../ContentEngine.constants';
 
-import { FIELD_TYPE_SPECS, fieldTypeOf } from './field-type.registry';
+import { FIELD_TYPE_SPECS, fieldTypeOf } from './FieldTypeRegistry.rules';
 
 const typesWhere = (
   predicate: (

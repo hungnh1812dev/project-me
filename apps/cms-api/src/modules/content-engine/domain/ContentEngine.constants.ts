@@ -112,17 +112,7 @@ export const META_TABLES = {
   contentTypes: '_content_types',
 } as const;
 
-/** Key for `pg_advisory_xact_lock`: serialises concurrent `content:migrate` runs. */
-export const MIGRATION_LOCK_KEY = 7_163_201_906;
-
-export const MIGRATION_FILE_EXTENSION = '.sql';
-export const MIGRATION_SNAPSHOT_FILE = 'snapshot.json';
-export const SCHEMA_FILE_EXTENSION = '.json';
-/** `0001_<label>.sql`: zero-padded sequence keeps lexical order = apply order. */
-export const MIGRATION_SEQUENCE_DIGITS = 4;
-export const MIGRATION_LABEL_PATTERN = /^[a-z0-9_]+$/;
-export const DEFAULT_MIGRATION_LABEL = 'content';
-export const MIGRATION_FILE_PATTERN = /^(\d+)_([a-z0-9_]+)\.sql$/;
+/** Definition hashing is domain logic (`SqlGenerator.rules`), so these two stay out of the adapters constants. */
 export const SNAPSHOT_FORMAT_VERSION = 1;
 export const HASH_ALGORITHM = 'sha256';
 
@@ -151,15 +141,6 @@ export const CONTENT_ERROR_CODES = {
 
 /** A non-repeatable component holds at most this many items. */
 export const SINGLE_COMPONENT_MAX_ITEMS = 1;
-
-/** Postgres errors meaning `content:migrate` never ran on this database. */
-export const CONTENT_NOT_MIGRATED_PG_CODES: readonly string[] = [
-  '42P01', // undefined_table
-  '3F000', // invalid_schema_name
-];
-
-/** Most connections of the app's content pool (reads of the document API). */
-export const CONTENT_POOL_MAX_CONNECTIONS = 10;
 
 /** URL schemes a stored richtext link may use; the admin editor offers the same list. */
 export const RICHTEXT_ALLOWED_URL_SCHEMES = [

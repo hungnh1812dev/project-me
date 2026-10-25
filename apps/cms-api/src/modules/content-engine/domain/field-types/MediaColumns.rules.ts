@@ -1,5 +1,5 @@
-import type { RegistryService } from '../registry.service';
-import { fieldTypeOf } from './field-type.registry';
+import type { RegistryService } from '../../registry.service';
+import { fieldTypeOf } from './FieldTypeRegistry.rules';
 
 /** A column that stores a media file's internal id. Structure only, never SQL. */
 export interface MediaColumnRef {

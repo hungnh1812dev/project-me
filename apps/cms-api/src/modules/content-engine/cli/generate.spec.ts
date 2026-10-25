@@ -2,7 +2,7 @@ import { copyFile, mkdir, mkdtemp, readdir, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { ContentEngineError } from '../migration-files';
+import { ContentEngineError } from '../domain/ContentEngine.errors';
 import { DEFAULT_CONTENT_PATHS } from './content-paths';
 import {
   checkContentMigrations,

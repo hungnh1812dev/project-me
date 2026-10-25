@@ -1,8 +1,8 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { CONTENT_ERROR_CODES } from './content-engine.constants';
-import { ContentEngineError } from './migration-files';
+import { CONTENT_ERROR_CODES } from './domain/ContentEngine.constants';
+import { ContentEngineError } from './domain/ContentEngine.errors';
 import { RegistryService, UnknownContentTypeError } from './registry.service';
 
 const CV_PAGE_PATH = join(

@@ -1,4 +1,4 @@
-import { sanitizeRichtext } from './richtext.sanitizer';
+import { sanitizeRichtext } from './RichtextSanitizer.rules';
 
 describe('sanitizeRichtext', () => {
   it('keeps editor markup', () => {

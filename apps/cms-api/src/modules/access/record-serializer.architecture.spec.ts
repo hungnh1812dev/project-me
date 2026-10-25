@@ -10,6 +10,7 @@ import {
   CONTENT_ENGINE_DIRECTORY,
   INTERNAL_COPY_FILES,
   PINNED_PATHS,
+  RECORD_LOADER_CONSUMER_FILE,
   RECORD_LOADER_FILES,
   RECORD_SERIALIZER_FILE,
 } from '../../architecture/source-paths.constants';
@@ -67,10 +68,12 @@ describe('RecordSerializer is the only record -> response path', () => {
     ).toBe(true);
   });
 
-  it('still finds real edges: the serializer reaches the record loaders', () => {
-    const serializer = files.find(({ file }) => file === SERIALIZER_FILE);
+  it('still finds real edges: a record reader reaches the record loaders', () => {
+    const consumer = files.find(
+      ({ file }) => file === RECORD_LOADER_CONSUMER_FILE,
+    );
     expect(
-      serializer !== undefined && importsRecordLoader(serializer.reached),
+      consumer !== undefined && importsRecordLoader(consumer.reached),
     ).toBe(true);
   });
 

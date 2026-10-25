@@ -8,7 +8,7 @@ import {
   type DatabaseConnection,
   poolOptionsOf,
 } from '../../infrastructure/database/database-config';
-import { CONTENT_POOL_MAX_CONNECTIONS } from './content-engine.constants';
+import { CONTENT_POOL_MAX_CONNECTIONS } from './adapters/ContentEnginePersistence.constants';
 import type { ContentDatabase } from './tree-loader';
 
 const keepText = (value: string): string => value;

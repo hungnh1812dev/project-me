@@ -3,44 +3,17 @@ import { type Kysely, sql } from 'kysely';
 import {
   COMPONENT_SYSTEM_COLUMNS,
   CONTENT_DB_SCHEMA,
-} from './content-engine.constants';
+} from './domain/ContentEngine.constants';
+import {
+  type ComponentNode,
+  type ComponentTrees,
+  type ContentRow,
+  emptyComponents,
+  rowToValues,
+} from './domain/ContentTree.entity';
 import type { TableNode } from './registry.service';
-import type { FieldValues } from './tree-input';
 
-/**
- * Kysely view of the generated content tables. Their names and columns are
- * only known at runtime (from the registry plans), so rows are loose records.
- */
-export type ContentRow = Record<string, unknown>;
 export type ContentDatabase = Record<string, ContentRow>;
-
-export type ComponentTrees = Record<string, ComponentNode[]>;
-
-export interface ComponentNode {
-  id: number;
-  componentUid: string;
-  orderIndex: number;
-  values: FieldValues;
-  components: ComponentTrees;
-}
-
-/** Plan columns -> API field names. Every planned field is present (null when empty). */
-export function rowToValues(table: TableNode, row: ContentRow): FieldValues {
-  const values: FieldValues = {};
-  for (const column of table.plan.columns) {
-    values[column.field.name] = row[column.name] ?? null;
-  }
-  return values;
-}
-
-/** One empty list per component field, so absent and empty look the same. */
-export function emptyComponents(table: TableNode): ComponentTrees {
-  const components: ComponentTrees = {};
-  for (const component of table.components) {
-    components[component.field.name] = [];
-  }
-  return components;
-}
 
 /** `= ANY($1::int[])`: one bound parameter for any number of parent ids. */
 export function anyInt(ids: readonly number[]) {

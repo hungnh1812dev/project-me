@@ -4,16 +4,17 @@ import { join } from 'node:path';
 import {
   DEFINITION_RULES,
   MAX_IDENTIFIER_BYTES,
-} from './content-engine.constants';
+} from './ContentEngine.constants';
 import {
   type DefinitionValidationError,
   formatDefinitionPath,
   validateDefinition,
   validateDefinitions,
-} from './definition.validator';
+} from './DefinitionValidator.rules';
 
 const CV_PAGE_PATH = join(
   __dirname,
+  '..',
   '..',
   '..',
   '..',

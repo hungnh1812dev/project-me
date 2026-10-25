@@ -4,16 +4,20 @@ import {
   CONTENT_DB_SCHEMA,
   CONTENT_ERROR_CODES,
   META_TABLES,
-} from './content-engine.constants';
+} from './domain/ContentEngine.constants';
 import {
   type ComponentFieldDefinition,
   type ContentTypeDefinition,
   isComponentField,
-} from './definition.schema';
-import { validateDefinitions } from './definition.validator';
-import { ContentEngineError } from './migration-files';
+} from './domain/DefinitionSchema.rules';
+import { validateDefinitions } from './domain/DefinitionValidator.rules';
+import { ContentEngineError } from './domain/ContentEngine.errors';
 import type { ContentMetaDatabase } from './migration-runner';
-import { type ColumnPlan, componentTableName, type TablePlan } from './naming';
+import {
+  type ColumnPlan,
+  componentTableName,
+  type TablePlan,
+} from './domain/Naming.rules';
 
 /**
  * One table of a content type with what the repository needs to walk it:

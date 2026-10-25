@@ -2,7 +2,7 @@ import {
   UUID_PATTERN,
   VALUE_PATTERNS,
   YEAR_ZERO_PREFIX,
-} from './value-patterns';
+} from './ValuePatterns.constants';
 
 /** Length of the `YYYY-MM-DD` start of a date or date-time. */
 const DATE_PART_LENGTH = 10;

@@ -1,33 +1,26 @@
 import { type Kysely, sql, type Transaction } from 'kysely';
 
+import { syncChildren } from './component-table-sync';
 import {
   CONTENT_DB_SCHEMA,
   CONTENT_ERROR_CODES,
-  type CONTENT_STATUSES,
   ROOT_SYSTEM_COLUMNS,
-} from './content-engine.constants';
-import { syncChildren } from './component-table-sync';
-import type { ContentDocument } from './content-row-mapping';
-import { toColumnValues, toDocument } from './content-row-mapping';
-import { ContentEngineError } from './migration-files';
+} from './domain/ContentEngine.constants';
+import {
+  type ContentDocument,
+  type ContentStatus,
+  DocumentNotFoundError,
+  type DocumentRef,
+} from './domain/ContentDocument.entity';
+import { toColumnValues, toDocument } from './domain/ContentRowMapping.rules';
 import type { RegistryService } from './registry.service';
 import {
   assertTreeInput,
   ContentTreeError,
   isUuid,
   type TreeInput,
-} from './tree-input';
+} from './domain/TreeInput.rules';
 import { type ContentDatabase, loadComponentTrees } from './tree-loader';
-
-export type { ContentDocument };
-
-export type ContentStatus = (typeof CONTENT_STATUSES)[number];
-
-/** Which root row an operation targets: one draft and one published row per document. */
-export interface DocumentRef {
-  documentId: string;
-  status: ContentStatus;
-}
 
 export interface InsertTreeInput extends TreeInput {
   documentId: string;
@@ -45,18 +38,6 @@ export interface LoadTreesQuery {
   status: ContentStatus;
   /** Limit to these documents; omit to load every root with this status. */
   documentIds?: readonly string[] | undefined;
-}
-
-export class DocumentNotFoundError extends ContentEngineError {
-  readonly code = CONTENT_ERROR_CODES.DOCUMENT_NOT_FOUND;
-
-  constructor(
-    readonly slug: string,
-    readonly ref: DocumentRef,
-  ) {
-    super(`No ${ref.status} row of ${slug} for document ${ref.documentId}.`);
-    this.name = 'DocumentNotFoundError';
-  }
 }
 
 function assertDocumentId(documentId: unknown, path: string): void {

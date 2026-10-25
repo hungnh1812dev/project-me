@@ -28,11 +28,10 @@ import { RecordSerializer } from '../../src/modules/access/record.serializer';
 import { WriteAllowlist } from '../../src/modules/access/write-allowlist';
 import { DEFAULT_CONTENT_PATHS } from '../../src/modules/content-engine/cli/content-paths';
 import { createMigrationDb } from '../../src/modules/content-engine/cli/migrate';
-import { CONTENT_DB_SCHEMA } from '../../src/modules/content-engine/content-engine.constants';
-import {
-  type ContentDocument,
-  ContentRepository,
-} from '../../src/modules/content-engine/content.repository';
+import { CONTENT_DB_SCHEMA } from '../../src/modules/content-engine/domain/ContentEngine.constants';
+import type { ContentDocument } from '../../src/modules/content-engine/domain/ContentDocument.entity';
+import { rowToValues } from '../../src/modules/content-engine/domain/ContentTree.entity';
+import { ContentRepository } from '../../src/modules/content-engine/content.repository';
 import { runContentMigrations } from '../../src/modules/content-engine/migration-runner';
 import {
   type RegisteredContentType,
@@ -41,7 +40,6 @@ import {
 import {
   type ContentDatabase,
   loadComponentTrees,
-  rowToValues,
 } from '../../src/modules/content-engine/tree-loader';
 import { systemRole } from '../fixtures/access.fixture';
 import { startPostgres } from '../fixtures/postgres.fixture';

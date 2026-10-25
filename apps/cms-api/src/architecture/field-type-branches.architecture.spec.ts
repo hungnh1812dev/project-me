@@ -1,6 +1,6 @@
 import { join } from 'node:path';
 
-import { SCALAR_FIELD_TYPES } from '../modules/content-engine/content-engine.constants';
+import { SCALAR_FIELD_TYPES } from '../modules/content-engine/domain/ContentEngine.constants';
 import { findFieldTypeBranches } from './field-type-literals';
 import { assertPinnedPathsExist, listSourceFiles } from './import-graph';
 import {

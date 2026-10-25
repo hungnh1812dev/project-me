@@ -1,12 +1,13 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { CONTENT_ERROR_CODES } from './content-engine.constants';
-import { RegistryService, type TableNode } from './registry.service';
-import { assertTreeInput, ContentTreeError } from './tree-input';
+import { CONTENT_ERROR_CODES } from './ContentEngine.constants';
+import { RegistryService, type TableNode } from '../registry.service';
+import { assertTreeInput, ContentTreeError } from './TreeInput.rules';
 
 const CV_PAGE_PATH = join(
   __dirname,
+  '..',
   '..',
   '..',
   '..',

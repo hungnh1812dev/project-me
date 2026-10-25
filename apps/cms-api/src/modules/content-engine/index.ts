@@ -7,7 +7,7 @@ export {
   MEDIA_FIELD_TYPE,
   ROOT_SYSTEM_COLUMNS,
   SCALAR_FIELD_TYPES,
-} from './content-engine.constants';
+} from './domain/ContentEngine.constants';
 export { ContentEngineModule } from './content-engine.module';
 export { ContentRegistryProvider } from './content-registry.provider';
 export {
@@ -17,7 +17,7 @@ export {
   type ContentTypeKind,
   type FieldDefinition,
   type ScalarFieldType,
-} from './definition.schema';
+} from './domain/DefinitionSchema.rules';
 export {
   FIELD_TYPE_SPECS,
   fieldTypeOf,
@@ -33,14 +33,23 @@ export {
   type FieldValueKind,
   type GraphqlOutputName,
   type MediaColumnRef,
-} from './field-types';
+} from './domain/field-types';
+export {
+  type ContentDocument,
+  type ContentStatus,
+  type DocumentRef,
+} from './domain/ContentDocument.entity';
+export {
+  type ComponentNode,
+  type ComponentTrees,
+} from './domain/ContentTree.entity';
 export { loadDefinitions } from './migration-files';
 export {
   RegistryService,
   type RegisteredContentType,
   type TableNode,
 } from './registry.service';
-export { quoteIdentifier } from './sql-generator';
+export { quoteIdentifier } from './domain/SqlGenerator.rules';
 export {
   assertTreeInput,
   ContentTreeError,
@@ -49,4 +58,4 @@ export {
   type ComponentsInput,
   type FieldValues,
   type TreeInput,
-} from './tree-input';
+} from './domain/TreeInput.rules';

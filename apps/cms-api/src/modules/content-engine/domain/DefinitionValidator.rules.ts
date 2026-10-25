@@ -6,21 +6,21 @@ import {
   SLUG_PATTERN,
   SQL_IDENTIFIER_PATTERN,
   TABLE_PATH_SEPARATOR,
-} from './content-engine.constants';
-import { SQL_RESERVED_WORDS } from './sql-reserved-words.constants';
+} from './ContentEngine.constants';
+import { SQL_RESERVED_WORDS } from './SqlReservedWords.constants';
 import {
   type ContentTypeDefinition,
   contentTypeDefinitionSchema,
   type FieldDefinition,
   isComponentField,
-} from './definition.schema';
+} from './DefinitionSchema.rules';
 import {
   identifierBytes,
   planTables,
   rootTableName,
   type TablePlan,
   toSqlIdentifier,
-} from './naming';
+} from './Naming.rules';
 
 export type DefinitionRule =
   (typeof DEFINITION_RULES)[keyof typeof DEFINITION_RULES];

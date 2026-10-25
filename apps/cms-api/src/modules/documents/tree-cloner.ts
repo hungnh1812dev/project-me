@@ -1,10 +1,10 @@
-import type { ContentDocument } from '../content-engine/content.repository';
 import type {
   ComponentInput,
   ComponentsInput,
+  ComponentTrees,
+  ContentDocument,
   TreeInput,
 } from '../content-engine';
-import type { ComponentTrees } from '../content-engine/tree-loader';
 
 function cloneComponents(trees: ComponentTrees): ComponentsInput {
   const clonedComponents: ComponentsInput = {};

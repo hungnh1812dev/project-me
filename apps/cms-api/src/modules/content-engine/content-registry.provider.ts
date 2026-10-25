@@ -4,7 +4,7 @@ import { type IAppConfig } from '../../config/app-config';
 import { APP_CONFIG } from '../../config/config.constants';
 import { type DatabaseConnection } from '../../infrastructure/database/database-config';
 import { createMigrationDb } from './cli/migrate';
-import { CONTENT_NOT_MIGRATED_PG_CODES } from './content-engine.constants';
+import { CONTENT_NOT_MIGRATED_PG_CODES } from './adapters/ContentEnginePersistence.constants';
 import { RegistryService } from './registry.service';
 
 const LOGGER_CONTEXT = 'ContentRegistry';

@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import type {
   ContentTypeDefinition,
   FieldDefinition,
-} from './definition.schema';
+} from './DefinitionSchema.rules';
 import {
   buildSnapshot,
   emptySnapshot,
@@ -12,11 +12,20 @@ import {
   planMigration,
   quoteIdentifier,
   renderMigrationSql,
-} from './sql-generator';
+} from './SqlGenerator.rules';
 
 const CV_PAGE: ContentTypeDefinition = JSON.parse(
   readFileSync(
-    join(__dirname, '..', '..', '..', 'content', 'schemas', 'cv-page.json'),
+    join(
+      __dirname,
+      '..',
+      '..',
+      '..',
+      '..',
+      'content',
+      'schemas',
+      'cv-page.json',
+    ),
     'utf8',
   ),
 ) as ContentTypeDefinition;

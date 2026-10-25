@@ -315,6 +315,12 @@ as the content-types pilot (CR-hc-2) used it:
 6. Specs: unit specs sit next to their file; integration specs change import
    paths only. Run `pnpm test:unit`, then the module's integration specs.
 
+`content-engine` is mid-migration (CR-ce-1 done, CR-ce-2 open): its pure code
+is in `domain/` (rules, entities, constants, `field-types/`) and the
+persistence constants in `adapters/ContentEnginePersistence.constants.ts`;
+the repository, tree loader, registry and migration files still sit at the
+module root until CR-ce-2, and the module is not yet in `MIGRATED_MODULES`.
+
 ### Rate limits (T10)
 
 Fixed windows, per resolved client IP and, for login, per email. Each module
@@ -705,9 +711,9 @@ Rules, the default role matrix, the DSL and the revocation flow: [docs/modules/a
 ## Content types
 
 Content types are JSON files in `content/schemas/` (e.g. `cv-page.json`).
-`src/modules/content-engine/definition.validator.ts` checks them (shape,
+`src/modules/content-engine/domain/DefinitionValidator.rules.ts` checks them (shape,
 naming, depth ≤ 3, 63-byte names, collisions) and returns structured errors;
-`naming.ts` is the single source of generated SQL names. Tables are created
+`domain/Naming.rules.ts` is the single source of generated SQL names. Tables are created
 only by migrations in `content/migrations/` (`content:generate`, then
 `content:migrate`). At runtime, `RegistryService` resolves a slug to its
 table plans and `ContentRepository` reads and writes whole documents (root +

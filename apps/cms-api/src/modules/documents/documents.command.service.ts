@@ -24,15 +24,13 @@ import { DocumentMediaService } from '../media';
 import { ContentDbProvider } from '../content-engine';
 import { ContentRegistryProvider } from '../content-engine';
 import { CONTENT_DB_SCHEMA } from '../content-engine';
-import {
-  ContentRepository,
-  type ContentDocument,
-} from '../content-engine/content.repository';
-import { toDocument } from '../content-engine/content-row-mapping';
-import type { RegisteredContentType } from '../content-engine';
+import { ContentRepository } from '../content-engine/content.repository';
+import { toDocument } from '../content-engine/domain/ContentRowMapping.rules';
 import {
   assertTreeInput,
+  type ContentDocument,
   ContentTreeError,
+  type RegisteredContentType,
   type TreeInput,
 } from '../content-engine';
 import {
