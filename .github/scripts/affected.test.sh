@@ -56,7 +56,7 @@ git config commit.gpgsign false
 mkdir -p apps/cms-admin/src apps/cms-api/test apps/web packages/form-commons .github/workflows .github/scripts scripts
 touch README.md apps/cms-admin/src/main.ts apps/cms-api/test/app.e2e-spec.ts apps/web/index.ts \
   packages/form-commons/index.ts .github/workflows/ci.yml .github/workflows/_publish.yml \
-  .github/workflows/web.yml .github/scripts/x.sh scripts/smoke.sh
+  .github/workflows/cms-api.yml .github/workflows/app-checks.yml .github/scripts/x.sh scripts/smoke.sh
 git add -A
 git commit -q -m init
 
@@ -122,10 +122,15 @@ read -r b h <<<"$(commit_change packages/form-commons/index.ts)"
 run_case "non-app package only" "${b}" "${h}" \
   'apps=[]' 'image_apps=[]' any=false "${none_affected[@]}" "${no_images[@]}"
 
-read -r b h <<<"$(commit_change .github/workflows/web.yml)"
-run_case "web.yml" "${b}" "${h}" \
-  'apps=["web"]' 'image_apps=[]' any=true \
-  web_affected=true cms_api_affected=false cms_admin_affected=false "${no_images[@]}"
+read -r b h <<<"$(commit_change .github/workflows/cms-api.yml)"
+run_case "cms-api.yml" "${b}" "${h}" \
+  'apps=["cms-api"]' 'image_apps=[]' any=true \
+  cms_api_affected=true web_affected=false cms_admin_affected=false "${no_images[@]}"
+
+read -r b h <<<"$(commit_change .github/workflows/app-checks.yml)"
+run_case "app-checks.yml" "${b}" "${h}" \
+  'apps=["cms-admin","web"]' 'image_apps=[]' any=true \
+  cms_admin_affected=true web_affected=true cms_api_affected=false "${no_images[@]}"
 
 read -r b h <<<"$(commit_change .github/workflows/_publish.yml)"
 run_case "_publish.yml" "${b}" "${h}" \
@@ -140,10 +145,10 @@ read -r b h <<<"$(commit_change .github/scripts/x.sh)"
 run_case ".github/scripts/**" "${b}" "${h}" \
   "apps=${all}" 'image_apps=[]' any=true "${no_images[@]}"
 
-read -r b h <<<"$(commit_change apps/cms-admin/src/main.ts .github/workflows/web.yml)"
-run_case "cms-admin source + web.yml" "${b}" "${h}" \
-  'apps=["cms-admin","web"]' 'image_apps=["cms-admin"]' any=true \
-  cms_admin_image=true web_affected=true web_image=false cms_api_affected=false
+read -r b h <<<"$(commit_change apps/cms-admin/src/main.ts .github/workflows/cms-api.yml)"
+run_case "cms-admin source + cms-api.yml" "${b}" "${h}" \
+  'apps=["cms-admin","cms-api"]' 'image_apps=["cms-admin"]' any=true \
+  cms_admin_image=true cms_api_affected=true cms_api_image=false web_affected=false
 
 # A script that only local smoke uses affects no app
 read -r b h <<<"$(commit_change scripts/smoke.sh)"

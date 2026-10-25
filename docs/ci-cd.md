@@ -7,10 +7,10 @@ GitHub Actions, built from the template in `.github_template/` (reference only).
 ```
 push to develop / staging / main
   -> changes (turbo query affected, .github/scripts/affected.sh)
-  -> repo          format:check + dependency audit (always runs)
+  -> repo          version pins check + format:check + dependency audit (always runs)
   -> cms-api       Checks -> Build   (when cms-api is affected)
-  -> cms-admin     Checks -> Build   (when cms-admin is affected)
-  -> web           Checks -> Build   (when web is affected)
+  -> cms-admin     Checks -> Build   (when cms-admin is affected; app-checks.yml)
+  -> web           Checks -> Build   (when web is affected; app-checks.yml)
   -> publish-<app> image -> manifest -> deploy bump (push to staging/main, app image changed, app flow green)
 ```
 
@@ -21,16 +21,26 @@ The app flows never depend on each other, so one failing app does not skip anoth
 | Job                | What it runs                                                                                                                                                                                       |
 | ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `changes`          | Lists affected apps (`apps`, `<app>_affected`, `<app>_image`) and resolves the branch target. Routing is tested by `bash .github/scripts/affected.test.sh`.                                        |
-| `repo`             | `pnpm format:check`, `pnpm audit --prod --audit-level high`                                                                                                                                        |
+| `repo`             | `.github/scripts/pins-check.sh` (Turbo and Node pins agree), `pnpm format:check`, `pnpm audit --prod --audit-level high`                                                                           |
 | `cms-api` Checks   | `turbo run typecheck lint`, `test:unit`, `test:integration` (Testcontainers on the runner's Docker), `content:generate -- --check`, `graphql:print-schema -- --check`, `contract:print -- --check` |
 | `cms-admin` Checks | `turbo run typecheck lint`, `pnpm --filter @abyss/cms-admin test`                                                                                                                                  |
 | `web` Checks       | `turbo run typecheck lint`, `pnpm --filter @abyss/web test`                                                                                                                                        |
 | `<app>` Build      | `pnpm turbo run build --filter=@abyss/<app>` (no Docker image here)                                                                                                                                |
 | `publish-<app>`    | `_publish.yml`: per-platform image (build, non-root guard, admin bundle check, push by digest), manifest, deploy bump. See "Publish".                                                              |
 
+## Adding an app
+
+1. Add the package name to `packages` in `.github/scripts/affected.sh` (and to `app_checks_packages` when it uses `app-checks.yml`).
+2. In `ci.yml`: add the `changes` outputs (`<app>_affected`, `<app>_image`, `<app>_matrix`), the `<APP>_IMAGE` env line and `matrix_for` echo line, the app job (calls `app-checks.yml` with `app: <app>`) and a `publish-<app>` job.
+3. Add the Dockerfile with `ARG NODE_IMAGE` and `ARG TURBO_VERSION`; `pins-check.sh` picks it up from `apps/*/Dockerfile`.
+
+## Version pins
+
+Turbo is pinned in `ci.yml` (`TURBO_VERSION`), each `apps/*/Dockerfile` (`ARG TURBO_VERSION`) and the root `package.json`; the Node major in `.nvmrc` and each Dockerfile (`ARG NODE_IMAGE`). The `repo` job runs `.github/scripts/pins-check.sh` and fails on any mismatch, so a bump edits all of them in one commit.
+
 ## Change detection
 
-`turbo.json` `build.inputs` excludes docs and tests, so a docs or test only change runs checks and build but gets no new image (`<app>_image=false`). A change to `.github/workflows/<app>.yml` re-runs that app; `ci.yml`, `_publish.yml` and `.github/scripts/**` re-run all apps. A new branch or force push treats every app as affected.
+`turbo.json` `build.inputs` excludes docs and tests, so a docs or test only change runs checks and build but gets no new image (`<app>_image=false`). A change to `.github/workflows/cms-api.yml` re-runs cms-api, and `app-checks.yml` re-runs cms-admin and web; `ci.yml`, `_publish.yml` and `.github/scripts/**` re-run all apps. A new branch or force push treats every app as affected.
 
 Branches: `develop` runs checks and build only; `staging` and `main` are the publish targets. Nothing assumes they exist yet. `pull_request` is commented out in `ci.yml`.
 
@@ -47,6 +57,8 @@ pnpm turbo run build --filter=@abyss/<app>
 pnpm format:check
 pnpm audit --prod --audit-level high
 bash .github/scripts/affected.test.sh
+bash .github/scripts/pins-check.sh
+bash .github/scripts/pins-check.test.sh
 ```
 
 `content:generate --check` exits non-zero when the content type schemas changed without a committed migration; fix it by running `pnpm --filter @abyss/cms-api content:generate` and committing the result.

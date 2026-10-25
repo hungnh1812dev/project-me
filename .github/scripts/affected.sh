@@ -7,11 +7,13 @@
 # cms_admin_*, web_*) to $GITHUB_OUTPUT, or to stdout when it is unset.
 # Without a usable base commit (new branch, force push) every app is affected
 # and gets an image. Workflow-file changes add apps to `apps` only, never to
-# `image_apps`: .github/workflows/<app>.yml adds that app; ci.yml, _publish.yml
-# and .github/scripts/** add all apps.
+# `image_apps`: .github/workflows/<app>.yml adds that app; app-checks.yml adds
+# the apps that call it; ci.yml, _publish.yml and .github/scripts/** add all apps.
 set -euo pipefail
 
 packages=(cms-admin cms-api web)
+# apps whose checks run through .github/workflows/app-checks.yml
+app_checks_packages=(cms-admin web)
 # turbo knows the packages by their workspace names
 scope="@abyss/"
 turbo_packages=("${packages[@]/#/${scope}}")
@@ -55,6 +57,8 @@ if [ -n "${BASE_SHA}" ] && git cat-file -e "${BASE_SHA}^{commit}" 2>/dev/null; t
     case "${file}" in
       .github/workflows/ci.yml | .github/workflows/_publish.yml | .github/scripts/*)
         routed="${routed} ${packages[*]}" ;;
+      .github/workflows/app-checks.yml)
+        routed="${routed} ${app_checks_packages[*]}" ;;
       .github/workflows/*.yml)
         name="${file#.github/workflows/}"
         name="${name%.yml}"

@@ -1,5 +1,5 @@
 # Docs: docs/ci-cd.md
-# Entrypoint: changes -> one flow per affected app (cms-api.yml, cms-admin.yml, web.yml)
+# Entrypoint: changes -> one flow per affected app (cms-api.yml; app-checks.yml for cms-admin and web)
 #   each flow: checks -> build; a repo-wide job (format, audit) always runs.
 #   e2e does not run in CI (local only: `pnpm smoke`, `pnpm e2e:spec`).
 #   publish-<app> (_publish.yml): image -> manifest -> deploy bump, only on a push to staging/main, only when
@@ -22,7 +22,7 @@ permissions:
   contents: read
 
 env:
-  # Keep in sync with the Dockerfiles and the root package.json
+  # Keep in sync with the Dockerfiles and the root package.json (the repo job checks it: pins-check.sh)
   TURBO_VERSION: 2.11.9
   # ghcr.io/<owner>/<repo>/<app>; GHCR needs lowercase names
   IMAGE_PREFIX: ghcr.io/hungnh1812dev/project-me
@@ -119,6 +119,8 @@ jobs:
           node-version-file: .nvmrc
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - name: Version pins agree
+        run: bash .github/scripts/pins-check.sh
       - name: Format
         run: pnpm format:check
       - name: Dependency audit
@@ -137,16 +139,18 @@ jobs:
     name: cms-admin
     needs: changes
     if: needs.changes.outputs.cms_admin_affected == 'true'
-    uses: ./.github/workflows/cms-admin.yml
+    uses: ./.github/workflows/app-checks.yml
     with:
+      app: cms-admin
       turbo_version: ${{ needs.changes.outputs.turbo_version }}
 
   web:
     name: web
     needs: changes
     if: needs.changes.outputs.web_affected == 'true'
-    uses: ./.github/workflows/web.yml
+    uses: ./.github/workflows/app-checks.yml
     with:
+      app: web
       turbo_version: ${{ needs.changes.outputs.turbo_version }}
 
   publish-cms-api:
