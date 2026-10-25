@@ -73,13 +73,13 @@ export const ACCESS_CONSTANTS_FILE = join(
 );
 export const INTERNAL_COPY_FILES = [
   join(MODULES, 'documents', 'publish.service.ts'),
-  join(MODULES, 'documents', 'tree-cloner.ts'),
+  join(MODULES, 'documents', 'domain', 'TreeCloner.rules.ts'),
   join(MODULES, 'documents', 'bulk.service.ts'),
 ];
 
 export const VALUE_KIND_SWITCH_FILES = [
   join(MODULES, 'access', 'conditions.compiler.ts'),
-  join(MODULES, 'documents', 'document-filter.ts'),
+  join(MODULES, 'documents', 'domain', 'DocumentFilter.rules.ts'),
 ];
 
 export const REVIEWER_SERVICE_FILE = join(

@@ -20,7 +20,7 @@ import {
   PRESENCE_MESSAGES,
   PRESENCE_TTL_MS,
   type PresenceState,
-} from './documents.constants';
+} from './domain/Documents.constants';
 
 /** The only fields a presence response carries (SPEC D16). */
 export interface PresenceEntry {

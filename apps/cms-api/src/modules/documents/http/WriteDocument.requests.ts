@@ -2,11 +2,11 @@ import { BadRequestException } from '@nestjs/common';
 import { z } from 'zod';
 
 import { parseRequest } from '../../../common/http/request-parsing';
+import { DOCUMENT_ERROR_MESSAGES } from '../domain/Documents.constants';
 import {
-  DOCUMENT_ERROR_MESSAGES,
   EXPECTED_VERSION_BODY_KEY,
   VERSION_BODY_KEY,
-} from '../documents.constants';
+} from './DocumentsHttp.constants';
 import { INT4_MAX } from '../../content-engine';
 import { ERROR_CODES } from '../../../common/constants/error.constants';
 

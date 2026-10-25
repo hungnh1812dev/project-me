@@ -1,5 +1,5 @@
-import type { ContentDocument } from '../content-engine';
-import { cloneTree } from './tree-cloner';
+import type { ContentDocument } from '../../content-engine';
+import { cloneTree } from './TreeCloner.rules';
 
 const document: ContentDocument = {
   id: 7,

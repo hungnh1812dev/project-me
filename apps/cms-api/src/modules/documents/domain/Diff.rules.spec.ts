@@ -1,10 +1,10 @@
-import { RecordSerializer, FieldSelection } from '../access';
+import { RecordSerializer, FieldSelection } from '../../access';
 import {
   accountAccess,
   profileType,
   rawRecord,
-} from '../../../test/fixtures/masking.fixture';
-import { diffRecords, overlaySubmitted } from './diff';
+} from '../../../../test/fixtures/masking.fixture';
+import { diffRecords, overlaySubmitted } from './Diff.rules';
 
 const type = profileType();
 const serializer = new RecordSerializer(type);

@@ -9,42 +9,27 @@ import {
 import { CONTENT_STATUSES } from '../../content-engine';
 import {
   DEFAULT_DOCUMENT_STATUS,
-  DOCUMENT_QUERY_KEYS,
   DOCUMENT_QUERY_LIMITS,
-  FILTER_DEFAULT_OPERATOR,
-  FILTER_KEY_PATTERN,
-  FILTER_KEY_PREFIX,
   FILTER_OPERATORS,
   type FilterOperator,
   LIST_QUERY_MESSAGES,
+} from '../domain/Documents.constants';
+import type {
+  FilterClause,
+  ListDocumentsQuery,
+  SortKey,
+} from '../domain/ListQuery.entity';
+import { normalizeListQuery } from '../domain/ListQuery.rules';
+import {
+  DOCUMENT_QUERY_KEYS,
+  FILTER_DEFAULT_OPERATOR,
+  FILTER_KEY_PATTERN,
+  FILTER_KEY_PREFIX,
   SORT_DESCENDING_PREFIX,
   SORT_SEPARATOR,
-} from '../documents.constants';
-import { normalizeListQuery } from '../list-query.normalizer';
+} from './DocumentsHttp.constants';
 
 type ContentStatus = (typeof CONTENT_STATUSES)[number];
-
-export type SortDirection = 'asc' | 'desc';
-
-export interface SortKey {
-  path: string;
-  direction: SortDirection;
-}
-
-/** One `filter[...]` parameter; values are still the raw strings of the URL. */
-export interface FilterClause {
-  path: string;
-  op: FilterOperator;
-  values: string[];
-}
-
-export interface ListDocumentsQuery {
-  status: ContentStatus;
-  page: number;
-  pageSize: number;
-  sort: SortKey[];
-  filters: FilterClause[];
-}
 
 const paramsSchema = z.strictObject({
   [DOCUMENT_QUERY_KEYS.STATUS]: z

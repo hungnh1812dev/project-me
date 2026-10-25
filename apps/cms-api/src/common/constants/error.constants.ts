@@ -19,3 +19,9 @@ export type ErrorCode = (typeof ERROR_CODES)[keyof typeof ERROR_CODES];
 
 /** Message for unexpected errors; internals are never sent to the client. */
 export const INTERNAL_ERROR_MESSAGE = 'Internal server error';
+
+/** Body or params fail the request schema; `details.issues` lists paths. */
+export const INVALID_REQUEST_ERROR = {
+  CODE: 'ACCESS_INVALID_REQUEST',
+  MESSAGE: 'The request is invalid.',
+} as const;

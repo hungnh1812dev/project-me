@@ -4,7 +4,7 @@ import type {
   ComponentTrees,
   ContentDocument,
   TreeInput,
-} from '../content-engine';
+} from '../../content-engine';
 
 function cloneComponents(trees: ComponentTrees): ComponentsInput {
   const clonedComponents: ComponentsInput = {};

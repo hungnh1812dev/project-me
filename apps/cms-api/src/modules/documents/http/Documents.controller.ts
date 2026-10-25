@@ -15,49 +15,49 @@ import {
 } from '@nestjs/common';
 import { z } from 'zod';
 
-import { SLUG_PARAM } from '../../common/constants/api.constants';
-import { DOCUMENTS_ROUTES } from './documents.routes';
-import { Throttle } from '../../common/guards/throttle.guard';
-import { DOCUMENTS_RATE_LIMIT_POLICIES } from './documents.rate-limits.constants';
-import { NO_STORE_HEADER } from '../../common/constants/http.constants';
-import { PermissionAction } from '../../generated/prisma/client';
+import { SLUG_PARAM } from '../../../common/constants/api.constants';
+import { DOCUMENTS_ROUTES } from './Documents.routes';
+import { Throttle } from '../../../common/guards/throttle.guard';
+import { DOCUMENTS_RATE_LIMIT_POLICIES } from './DocumentsRateLimits.constants';
+import { NO_STORE_HEADER } from '../../../common/constants/http.constants';
+import { PermissionAction } from '../../../generated/prisma/client';
 import {
   documentIdSchema,
   parseRequest,
-} from '../../common/http/request-parsing';
+} from '../../../common/http/request-parsing';
 import {
   RequirePermission,
   PermissionGuard,
   type SerializedRecord,
-} from '../access';
+} from '../../access';
+import { DEFAULT_DOCUMENT_STATUS } from '../domain/Documents.constants';
 import {
-  DEFAULT_DOCUMENT_STATUS,
   DOCUMENT_ID_PARAM,
   DOCUMENT_QUERY_KEYS,
-} from './documents.constants';
-import { CONTENT_STATUSES } from '../content-engine';
+} from './DocumentsHttp.constants';
+import { CONTENT_STATUSES } from '../../content-engine';
 import {
   DocumentAuthGuard,
   type DocumentRequest,
-} from '../access/document-auth';
-import { parseListQuery } from './dto/list-documents.query';
+} from '../../access/document-auth';
+import { parseListQuery } from './ListDocuments.requests';
 import {
   parseCreateBody,
   parsePublishBody,
   parseUpdateBody,
-} from './dto/write-document.body';
+} from './WriteDocument.requests';
 import {
   DocumentsCommandService,
   type WriteResult,
   type WrittenRef,
-} from './documents.command.service';
-import { parsePresenceBody } from './dto/presence.body';
-import { type PresenceEntry, PresenceService } from './presence.service';
-import { PublishService } from './publish.service';
+} from '../documents.command.service';
+import { parsePresenceBody } from './Presence.requests';
+import { type PresenceEntry, PresenceService } from '../presence.service';
+import { PublishService } from '../publish.service';
 import {
   type DocumentPage,
   DocumentsQueryService,
-} from './documents.query.service';
+} from '../documents.query.service';
 
 const detailQuerySchema = z.strictObject({
   [DOCUMENT_QUERY_KEYS.STATUS]: z

@@ -33,13 +33,13 @@ import {
   DOCUMENT_ERROR_CODES,
   DOCUMENT_ERROR_MESSAGES,
   type BulkOperation,
-} from './documents.constants';
+} from './domain/Documents.constants';
 import { DocumentsCommandService } from './documents.command.service';
 import {
   type BulkRequest,
   countComponentRows,
   type PublishItem,
-} from './dto/bulk.body';
+} from './http/Bulk.requests';
 import { type ActionScope, PublishService } from './publish.service';
 
 /** Name of the per-item savepoint of a non-atomic bulk request. */

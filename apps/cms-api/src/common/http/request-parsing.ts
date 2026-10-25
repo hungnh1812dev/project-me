@@ -1,6 +1,7 @@
 import { BadRequestException } from '@nestjs/common';
 import { z } from 'zod';
 
+import { INVALID_REQUEST_ERROR } from '../constants/error.constants';
 import {
   documentIdSchema,
   PAGINATION,
@@ -12,6 +13,7 @@ import {
 } from '../validation/SharedSchemas.rules';
 
 export {
+  INVALID_REQUEST_ERROR,
   documentIdSchema,
   PAGINATION,
   pageQuerySchema,
@@ -20,12 +22,6 @@ export {
   type PageQuery,
   type RequestIssue,
 };
-
-/** Body or params fail the request schema; `details.issues` lists paths. */
-export const INVALID_REQUEST_ERROR = {
-  CODE: 'ACCESS_INVALID_REQUEST',
-  MESSAGE: 'The request is invalid.',
-} as const;
 
 export function invalidRequest(
   issues: readonly RequestIssue[],

@@ -212,7 +212,7 @@ type Query {
   10-filter and 20-value limits and `contains` escaping are reused, not
   re-implemented. Entries are AND-ed; there is no `or`/`not` (REST has none).
   The exact operator per type comes from the REST table in
-  `document-filter.ts`; this table must match it.
+  `documents/domain/DocumentFilter.rules.ts`; this table must match it.
 
 ## Authorization (no new rules)
 
@@ -362,7 +362,7 @@ Architecture test (like `record-serializer.architecture.spec.ts`): files in
   REST `FilterClause[]` / `SortKey[]`). `page` / `pageSize` range checks and
   the default sort (`SORT_DEFAULT` when `sort` is empty) are left to GQ2.
 - The filterable/sortable rule is `queryKindOfField`
-  (`documents/queryable-fields.ts`), shared with REST `queryColumnOf`.
+  (`documents/domain/QueryableFields.rules.ts`), shared with REST `queryColumnOf`.
 - `buildGraphqlSchema([])` throws `GraphqlSchemaError` (a `Query` type needs
   a field).
 

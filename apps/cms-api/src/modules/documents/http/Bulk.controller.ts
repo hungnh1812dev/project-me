@@ -10,21 +10,21 @@ import {
   UseGuards,
 } from '@nestjs/common';
 
-import { SLUG_PARAM } from '../../common/constants/api.constants';
-import { DOCUMENTS_ROUTES } from './documents.routes';
-import { NO_STORE_HEADER } from '../../common/constants/http.constants';
-import { PermissionAction } from '../../generated/prisma/client';
-import { RequirePermission, PermissionGuard } from '../access';
-import { type BulkResponse, BulkService } from './bulk.service';
+import { SLUG_PARAM } from '../../../common/constants/api.constants';
+import { DOCUMENTS_ROUTES } from './Documents.routes';
+import { NO_STORE_HEADER } from '../../../common/constants/http.constants';
+import { PermissionAction } from '../../../generated/prisma/client';
+import { RequirePermission, PermissionGuard } from '../../access';
+import { type BulkResponse, BulkService } from '../bulk.service';
 import {
   DocumentAuthGuard,
   type DocumentRequest,
-} from '../access/document-auth';
+} from '../../access/document-auth';
 import {
   parseBulkCreateBody,
   parseBulkDocumentsBody,
   parseBulkPublishBody,
-} from './dto/bulk.body';
+} from './Bulk.requests';
 
 /**
  * SPEC §9 bulk, collections only. Registered before

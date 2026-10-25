@@ -1,9 +1,9 @@
-import { BadRequestException } from '@nestjs/common';
-
-import { FieldSelection } from '../access';
-import { RegistryService } from '../content-engine';
-import { profileType } from '../../../test/fixtures/masking.fixture';
-import { validateTreeValues } from './value-validator';
+import { DomainError } from '../../../common/errors/Domain.errors';
+import { describeError } from '../../../common/http/describe-http-exception';
+import { FieldSelection } from '../../access';
+import { RegistryService } from '../../content-engine';
+import { profileType } from '../../../../test/fixtures/masking.fixture';
+import { validateTreeValues } from './ValueValidator.rules';
 
 const profile = profileType();
 const required = RegistryService.fromDefinitions([
@@ -29,9 +29,15 @@ function codeOf(fn: () => unknown): unknown {
   try {
     fn();
   } catch (error) {
-    return (
-      (error as BadRequestException).getResponse() as { errorCode: string }
-    ).errorCode;
+    return describeError(error).errorCode;
+  }
+  return undefined;
+}
+function statusOf(fn: () => unknown): number | undefined {
+  try {
+    fn();
+  } catch (error) {
+    return describeError(error).statusCode;
   }
   return undefined;
 }
@@ -79,7 +85,10 @@ describe('write value rules (T21)', () => {
     ['avatar', 'not-a-uuid'],
   ])('rejects %s = %p with 400 DOCUMENT_INVALID', (field, value) => {
     expect(() => run({ values: { [field]: value } }, 'update')).toThrow(
-      BadRequestException,
+      DomainError,
+    );
+    expect(statusOf(() => run({ values: { [field]: value } }, 'update'))).toBe(
+      400,
     );
     expect(codeOf(() => run({ values: { [field]: value } }, 'update'))).toBe(
       'DOCUMENT_INVALID',

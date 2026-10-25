@@ -1,6 +1,14 @@
-import { BadRequestException } from '@nestjs/common';
+import { describeError } from '../../../common/http/describe-http-exception';
+import { parseListQuery } from './ListDocuments.requests';
 
-import { parseListQuery } from './list-documents.query';
+function refusalOf(query: unknown) {
+  try {
+    parseListQuery(query);
+  } catch (error) {
+    return describeError(error);
+  }
+  return undefined;
+}
 
 describe('parseListQuery', () => {
   it('defaults to published, page 1, 20 per page, newest update first', () => {
@@ -55,26 +63,25 @@ describe('parseListQuery', () => {
     [{ pageSize: '0' }],
     [{ other: 'x' }],
   ])('rejects %j', (query) => {
-    expect(() => parseListQuery(query)).toThrow(BadRequestException);
+    expect(refusalOf(query)).toMatchObject({
+      statusCode: 400,
+      errorCode: 'ACCESS_INVALID_REQUEST',
+    });
   });
 
   it('rejects more filters than the limit', () => {
     const query = Object.fromEntries(
       Array.from({ length: 11 }, (_, i) => [`filter[f${i}]`, 'x']),
     );
-    expect(() => parseListQuery(query)).toThrow(BadRequestException);
+    expect(refusalOf(query)).toMatchObject({
+      statusCode: 400,
+      errorCode: 'ACCESS_INVALID_REQUEST',
+    });
   });
 
   it('never echoes a submitted value in the error', () => {
     const response = JSON.stringify(
-      (() => {
-        try {
-          parseListQuery({ 'filter[title]': 'x'.repeat(300), sort: 'SECRET;' });
-          return undefined;
-        } catch (error) {
-          return (error as BadRequestException).getResponse();
-        }
-      })(),
+      refusalOf({ 'filter[title]': 'x'.repeat(300), sort: 'SECRET;' }),
     );
     expect(response).toContain('ACCESS_INVALID_REQUEST');
     expect(response).not.toMatch(/SECRET|xxxx/);

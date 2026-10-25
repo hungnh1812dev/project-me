@@ -37,12 +37,19 @@ import {
   type ContentDatabase,
   loadComponentTrees,
 } from '../content-engine/adapters/TreeLoader.adapter';
-import { diffRecords, type DiffEntry, overlaySubmitted } from './diff';
+import {
+  diffRecords,
+  type DiffEntry,
+  overlaySubmitted,
+} from './domain/Diff.rules';
 import {
   DOCUMENT_ERROR_CODES,
   DOCUMENT_ERROR_MESSAGES,
-} from './documents.constants';
-import { validateTreeValues, type WriteMode } from './value-validator';
+} from './domain/Documents.constants';
+import {
+  validateTreeValues,
+  type WriteMode,
+} from './domain/ValueValidator.rules';
 
 /** Body of `409 DOCUMENT_VERSION_CONFLICT` (SPEC §9), under `details`. */
 export interface VersionConflictDetails {

@@ -1,9 +1,8 @@
-import { BadRequestException } from '@nestjs/common';
-
-import { PAGINATION } from '../../common/http/request-parsing';
-import { DOCUMENT_QUERY_LIMITS } from './documents.constants';
-import type { ListDocumentsQuery } from './dto/list-documents.query';
-import { normalizeListQuery } from './list-query.normalizer';
+import { DomainError } from '../../../common/errors/Domain.errors';
+import { PAGINATION } from '../../../common/validation/SharedSchemas.rules';
+import { DOCUMENT_QUERY_LIMITS } from './Documents.constants';
+import type { ListDocumentsQuery } from './ListQuery.entity';
+import { normalizeListQuery } from './ListQuery.rules';
 
 const base: ListDocumentsQuery = {
   status: 'published',
@@ -59,7 +58,7 @@ describe('normalizeListQuery', () => {
   ])('rejects %s', (_name, override) => {
     expect(() =>
       normalizeListQuery({ ...base, ...override } as ListDocumentsQuery),
-    ).toThrow(BadRequestException);
+    ).toThrow(DomainError);
   });
 
   it('accepts the limits exactly', () => {

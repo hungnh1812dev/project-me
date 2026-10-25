@@ -25,9 +25,9 @@ import type { RegisteredContentType } from '../content-engine';
 import {
   DOCUMENT_ERROR_CODES,
   DOCUMENT_ERROR_MESSAGES,
-} from './documents.constants';
+} from './domain/Documents.constants';
 import type { WrittenRef } from './documents.command.service';
-import { cloneTree } from './tree-cloner';
+import { cloneTree } from './domain/TreeCloner.rules';
 
 type RowFilter = ReturnType<
   Awaited<ReturnType<AccessPolicyService['policy']>>['evaluator']['rowFilter']

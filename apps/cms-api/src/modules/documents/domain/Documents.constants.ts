@@ -1,7 +1,4 @@
-import { type ConditionValueKind, type RecordSystemField } from '../access';
-
-/** Route param holding a record's document_id in DOCUMENTS_ROUTES. */
-export const DOCUMENT_ID_PARAM = 'documentId';
+import type { ConditionValueKind, RecordSystemField } from '../../access';
 
 /** Error codes of the documents API. */
 export const DOCUMENT_ERROR_CODES = {
@@ -40,21 +37,6 @@ export const DOCUMENT_ERROR_MESSAGES = {
 /** `status` default when a request names none: what the public sees. */
 export const DEFAULT_DOCUMENT_STATUS = 'published';
 
-/** Query parameters of `GET /documents/:slug` (everything else is a 400). */
-export const DOCUMENT_QUERY_KEYS = {
-  STATUS: 'status',
-  PAGE: 'page',
-  PAGE_SIZE: 'pageSize',
-  SORT: 'sort',
-  FILTER: 'filter',
-} as const;
-
-/** `filter[field]=v` (same as `eq`) and `filter[field][op]=v`. */
-export const FILTER_KEY_PREFIX = 'filter[';
-export const FILTER_KEY_PATTERN =
-  /^filter\[([^[\]]{1,200})\](?:\[([^[\]]{1,16})\])?$/;
-export const FILTER_DEFAULT_OPERATOR = 'eq';
-
 export const FILTER_OPERATORS = [
   'eq',
   'ne',
@@ -89,12 +71,17 @@ export const OPERATORS_BY_KIND: Readonly<
   uuid: EQUALITY,
 };
 
-/** Sort direction prefix: `sort=-updatedAt,title`. */
-export const SORT_DESCENDING_PREFIX = '-';
-export const SORT_SEPARATOR = ',';
 export const SORT_DEFAULT: readonly { path: string; direction: 'desc' }[] = [
   { path: 'updatedAt', direction: 'desc' },
 ];
+
+/** The parts of a list query a refusal can name; REST maps its URL keys to these. */
+export const LIST_QUERY_PARTS = {
+  PAGE: 'page',
+  PAGE_SIZE: 'pageSize',
+  SORT: 'sort',
+  FILTER: 'filter',
+} as const;
 
 /** Why a list query was refused; shared by REST and GraphQL. */
 export const LIST_QUERY_MESSAGES = {
@@ -131,18 +118,6 @@ export const SYSTEM_FIELD_KINDS: Readonly<
   updatedBy: 'integer',
 };
 
-/** Tie-break of every list order, so pages never overlap. */
-export const LIST_TIEBREAK_COLUMN = 'id';
-
-/** Characters `contains` must escape so the value matches literally. */
-export const LIKE_SPECIALS_PATTERN = /[\\%_]/g;
-
-/** Body key of `PUT` carrying the version the client edited. */
-export const VERSION_BODY_KEY = 'version';
-
-/** Body key of `POST .../publish`: the draft version the client reviewed. */
-export const EXPECTED_VERSION_BODY_KEY = 'expectedVersion';
-
 /** Name of the placeholder uid of a submitted component item that has none yet. */
 export const NEW_ITEM_UID = '';
 
@@ -171,13 +146,6 @@ export const BULK_MESSAGES = {
   TOO_MANY_COMPONENT_ROWS: `An item holds at most ${BULK_LIMITS.MAX_COMPONENT_ROWS_PER_ITEM} component rows.`,
   BODY_TOO_LARGE: `The request body is larger than ${BULK_LIMITS.MAX_BODY_BYTES} bytes.`,
   INVALID_JSON: 'The request body is not valid JSON.',
-} as const;
-
-/** Body keys of `POST /documents/:slug/bulk/*`. */
-export const BULK_BODY_KEYS = {
-  ATOMIC: 'atomic',
-  ITEMS: 'items',
-  DOCUMENT_ID: 'documentId',
 } as const;
 
 /** Per-item outcome in a bulk response. */

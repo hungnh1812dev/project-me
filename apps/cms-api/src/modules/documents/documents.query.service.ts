@@ -22,13 +22,17 @@ import { CONTENT_DB_SCHEMA } from '../content-engine';
 import { toDocument } from '../content-engine/domain/ContentRowMapping.rules';
 import type { ContentStatus, RegisteredContentType } from '../content-engine';
 import { loadComponentTrees } from '../content-engine/adapters/TreeLoader.adapter';
-import type { ListDocumentsQuery } from './dto/list-documents.query';
-import { filterExpression, queryColumnOf, sortTarget } from './document-filter';
+import type { ListDocumentsQuery } from './domain/ListQuery.entity';
+import {
+  filterExpression,
+  queryColumnOf,
+  sortTarget,
+} from './adapters/DocumentFilterSql.adapter';
 import {
   DOCUMENT_ERROR_CODES,
   DOCUMENT_ERROR_MESSAGES,
-  LIST_TIEBREAK_COLUMN,
-} from './documents.constants';
+} from './domain/Documents.constants';
+import { LIST_TIEBREAK_COLUMN } from './adapters/DocumentsSql.constants';
 
 export interface DocumentPage {
   data: SerializedRecord[];

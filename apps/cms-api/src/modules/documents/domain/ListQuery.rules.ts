@@ -1,23 +1,31 @@
+import { INVALID_REQUEST_ERROR } from '../../../common/constants/error.constants';
+import { DomainError } from '../../../common/errors/Domain.errors';
 import {
-  invalidRequest,
   PAGINATION,
   type RequestIssue,
-} from '../../common/http/request-parsing';
+} from '../../../common/validation/SharedSchemas.rules';
 import {
-  DOCUMENT_QUERY_KEYS,
   DOCUMENT_QUERY_LIMITS,
   LIST_QUERY_MESSAGES,
+  LIST_QUERY_PARTS,
   SORT_DEFAULT,
-} from './documents.constants';
-import type { ListDocumentsQuery } from './dto/list-documents.query';
+} from './Documents.constants';
+import type { ListDocumentsQuery } from './ListQuery.entity';
 
 const FIELD_PATH_PATTERN =
   /^[A-Za-z][A-Za-z0-9_]*(?:\.[A-Za-z][A-Za-z0-9_]*)*$/;
-const FILTER_PATH = [DOCUMENT_QUERY_KEYS.FILTER];
+const FILTER_PATH = [LIST_QUERY_PARTS.FILTER];
 
 function reject(path: readonly string[], message: string): never {
   const issue: RequestIssue = { path, message };
-  throw invalidRequest([issue]);
+  throw new DomainError({
+    kind: 'invalid_input',
+    errorCode: INVALID_REQUEST_ERROR.CODE,
+    message: INVALID_REQUEST_ERROR.MESSAGE,
+    details: {
+      issues: [{ path: issue.path.map(String), message: issue.message }],
+    },
+  });
 }
 
 function isIntegerInRange(value: number, min: number, max: number): boolean {
@@ -32,11 +40,11 @@ function checkPaging({ page, pageSize }: ListDocumentsQuery): void {
       DOCUMENT_QUERY_LIMITS.MAX_PAGE,
     )
   ) {
-    reject([DOCUMENT_QUERY_KEYS.PAGE], LIST_QUERY_MESSAGES.PAGE_OUT_OF_RANGE);
+    reject([LIST_QUERY_PARTS.PAGE], LIST_QUERY_MESSAGES.PAGE_OUT_OF_RANGE);
   }
   if (!isIntegerInRange(pageSize, 1, PAGINATION.MAX_PAGE_SIZE)) {
     reject(
-      [DOCUMENT_QUERY_KEYS.PAGE_SIZE],
+      [LIST_QUERY_PARTS.PAGE_SIZE],
       LIST_QUERY_MESSAGES.PAGE_SIZE_OUT_OF_RANGE,
     );
   }
@@ -44,14 +52,14 @@ function checkPaging({ page, pageSize }: ListDocumentsQuery): void {
 
 function checkSort({ sort }: ListDocumentsQuery): void {
   if (sort.some((key) => !FIELD_PATH_PATTERN.test(key.path))) {
-    reject([DOCUMENT_QUERY_KEYS.SORT], LIST_QUERY_MESSAGES.SORT_BAD_KEY);
+    reject([LIST_QUERY_PARTS.SORT], LIST_QUERY_MESSAGES.SORT_BAD_KEY);
   }
   if (
     sort.length > DOCUMENT_QUERY_LIMITS.MAX_SORT_KEYS ||
     new Set(sort.map((key) => key.path)).size !== sort.length
   ) {
     reject(
-      [DOCUMENT_QUERY_KEYS.SORT],
+      [LIST_QUERY_PARTS.SORT],
       LIST_QUERY_MESSAGES.SORT_DUPLICATE_OR_TOO_MANY,
     );
   }
@@ -83,7 +91,7 @@ function checkFilters({ filters }: ListDocumentsQuery): void {
  * and the GraphQL argument mapper. An empty sort becomes the default sort.
  * It does not decide which fields may be read: `QueryGuard.assert` does that
  * in `DocumentsQueryService.list`. Messages never contain a submitted value.
- * @throws BadRequestException (ACCESS_INVALID_REQUEST) out of range.
+ * @throws DomainError (invalid_input, ACCESS_INVALID_REQUEST) out of range.
  */
 export function normalizeListQuery(
   candidate: ListDocumentsQuery,

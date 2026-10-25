@@ -1,17 +1,16 @@
-import { BadRequestException } from '@nestjs/common';
-
-import { joinFieldPath, type FieldSelection } from '../access';
+import { DomainError } from '../../../common/errors/Domain.errors';
+import { joinFieldPath, type FieldSelection } from '../../access';
 import {
   type ComponentInput,
   fieldTypeOf,
   type FieldValues,
   type TableNode,
   type TreeInput,
-} from '../content-engine';
+} from '../../content-engine';
 import {
   DOCUMENT_ERROR_CODES,
   DOCUMENT_ERROR_MESSAGES,
-} from './documents.constants';
+} from './Documents.constants';
 
 export type WriteMode = 'create' | 'update';
 
@@ -24,8 +23,9 @@ export interface TreeValidationOptions {
 const at = (base: string, rest: string) =>
   base === '' ? rest : `${base}.${rest}`;
 
-function invalid(path: string, message: string): BadRequestException {
-  return new BadRequestException({
+function invalid(path: string, message: string): DomainError {
+  return new DomainError({
+    kind: 'invalid_input',
     errorCode: DOCUMENT_ERROR_CODES.INVALID,
     message: `${path} ${message}`,
   });

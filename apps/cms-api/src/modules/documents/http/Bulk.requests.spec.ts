@@ -1,12 +1,12 @@
 import { BadRequestException } from '@nestjs/common';
 
-import { BULK_LIMITS } from '../documents.constants';
+import { BULK_LIMITS } from '../domain/Documents.constants';
 import {
   countComponentRows,
   parseBulkCreateBody,
   parseBulkDocumentsBody,
   parseBulkPublishBody,
-} from './bulk.body';
+} from './Bulk.requests';
 
 const ID_A = '8d8f1c4e-0000-4000-8000-00000000000a';
 const ID_B = '8d8f1c4e-0000-4000-8000-00000000000b';

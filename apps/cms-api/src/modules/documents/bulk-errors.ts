@@ -5,7 +5,7 @@ import {
   isDescribableError,
   isServerErrorStatus,
 } from '../../common/http/describe-http-exception';
-import { BULK_ITEM_STATUS } from './documents.constants';
+import { BULK_ITEM_STATUS } from './domain/Documents.constants';
 
 export interface BulkItemError {
   index: number;

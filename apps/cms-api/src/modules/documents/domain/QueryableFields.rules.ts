@@ -1,5 +1,5 @@
-import type { ConditionValueKind } from '../access';
-import { fieldTypeOf, type FieldDefinition } from '../content-engine';
+import type { ConditionValueKind } from '../../access';
+import { fieldTypeOf, type FieldDefinition } from '../../content-engine';
 
 /**
  * What a top-level content field compares and sorts as in a document list

@@ -7,13 +7,15 @@ import {
   parseRequest,
 } from '../../../common/http/request-parsing';
 import {
-  BULK_BODY_KEYS,
   BULK_LIMITS,
   BULK_MESSAGES,
   DOCUMENT_ERROR_CODES,
   DOCUMENT_ERROR_MESSAGES,
+} from '../domain/Documents.constants';
+import {
+  BULK_BODY_KEYS,
   EXPECTED_VERSION_BODY_KEY,
-} from '../documents.constants';
+} from './DocumentsHttp.constants';
 import { INT4_MAX } from '../../content-engine';
 
 export interface BulkRequest<Item> {

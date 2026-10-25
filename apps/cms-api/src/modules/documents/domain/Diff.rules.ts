@@ -1,18 +1,18 @@
 import { isDeepStrictEqual } from 'node:util';
 
-import {
-  type SerializedComponent,
-  type SerializedComponents,
-  type SerializedRecord,
-} from '../access';
+import type {
+  SerializedComponent,
+  SerializedComponents,
+  SerializedRecord,
+} from '../../access';
 import type {
   ComponentInput,
   ComponentNode,
   ComponentTrees,
   ContentDocument,
   TreeInput,
-} from '../content-engine';
-import { NEW_ITEM_UID } from './documents.constants';
+} from '../../content-engine';
+import { NEW_ITEM_UID } from './Documents.constants';
 
 export type DiffChange = 'added' | 'removed' | 'changed' | 'moved';
 

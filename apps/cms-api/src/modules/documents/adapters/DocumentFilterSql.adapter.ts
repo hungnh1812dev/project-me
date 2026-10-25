@@ -1,30 +1,23 @@
 import { type Expression, sql, type SqlBool } from 'kysely';
 
-import { BadRequestException } from '@nestjs/common';
-
-import { ERROR_CODES } from '../../common/constants/error.constants';
 import {
   RECORD_SYSTEM_COLUMNS,
   RECORD_SYSTEM_FIELDS,
-  type RecordSystemField,
   type ConditionValueKind,
-} from '../access';
-import {
-  INT4_MAX,
-  parseDate,
-  parseDatetime,
-  parseUuid,
-  VALUE_PATTERNS,
-  type RegisteredContentType,
-} from '../content-engine';
-import type { FilterClause, SortKey } from './dto/list-documents.query';
+  type RecordSystemField,
+} from '../../access';
+import type { RegisteredContentType } from '../../content-engine';
 import {
   DOCUMENT_ERROR_MESSAGES,
-  LIKE_SPECIALS_PATTERN,
-  OPERATORS_BY_KIND,
   SYSTEM_FIELD_KINDS,
-} from './documents.constants';
-import { queryKindOfField } from './queryable-fields';
+} from '../domain/Documents.constants';
+import {
+  filterRefused,
+  typedFilterValues,
+} from '../domain/DocumentFilter.rules';
+import type { FilterClause, SortKey } from '../domain/ListQuery.entity';
+import { queryKindOfField } from '../domain/QueryableFields.rules';
+import { LIKE_SPECIALS_PATTERN } from './DocumentsSql.constants';
 
 /** A root column a list query may filter or sort on. */
 export interface QueryColumn {
@@ -34,20 +27,13 @@ export interface QueryColumn {
 
 const SYSTEM_FIELDS: ReadonlySet<string> = new Set(RECORD_SYSTEM_FIELDS);
 
-function invalid(message: string): BadRequestException {
-  return new BadRequestException({
-    errorCode: ERROR_CODES.BAD_REQUEST,
-    message,
-  });
-}
-
 /**
  * The column of a root system field or top-level scalar field. Components,
  * nested paths, `json` fields (no equality or order) and `media` fields (the
  * stored internal id is private) are not queryable.
  * Call after `QueryGuard.assert`, which already checked the path exists and
  * is readable.
- * @throws BadRequestException when the path cannot be filtered or sorted.
+ * @throws DomainError (invalid_input) when the path cannot be filtered or sorted.
  */
 export function queryColumnOf(
   type: RegisteredContentType,
@@ -64,44 +50,9 @@ export function queryColumnOf(
   const kind =
     column === undefined ? undefined : queryKindOfField(column.field);
   if (column === undefined || kind === undefined) {
-    throw invalid(DOCUMENT_ERROR_MESSAGES.UNSUPPORTED_FIELD);
+    throw filterRefused(DOCUMENT_ERROR_MESSAGES.UNSUPPORTED_FIELD);
   }
   return { column: column.name, kind };
-}
-
-type FilterValue = string | number | boolean;
-
-/** A URL string as the typed value its column compares with; undefined = invalid. */
-export function coerceFilterValue(
-  kind: ConditionValueKind,
-  raw: string,
-): FilterValue | undefined {
-  switch (kind) {
-    case 'string':
-      return raw;
-    case 'integer': {
-      const value = Number(raw);
-      return VALUE_PATTERNS.INTEGER.test(raw) && Math.abs(value) <= INT4_MAX
-        ? value
-        : undefined;
-    }
-    case 'decimal':
-      return VALUE_PATTERNS.DECIMAL.test(raw) ? raw : undefined;
-    case 'boolean':
-      if (raw === 'true') return true;
-      return raw === 'false' ? false : undefined;
-    case 'date':
-      return parseDate(raw);
-    case 'datetime':
-      return parseDatetime(raw);
-    case 'uuid':
-      return parseUuid(raw);
-    default: {
-      // A kind added without a rule here is refused, never passed through.
-      const unreachable: never = kind;
-      return unreachable;
-    }
-  }
 }
 
 function escapeLike(raw: string): string {
@@ -112,22 +63,13 @@ function escapeLike(raw: string): string {
  * One filter as parameterized SQL: the column comes from the registry plan
  * (`queryColumnOf`), the operator from a fixed switch, and every value is a
  * bind parameter (`contains` has its LIKE wildcards escaped).
- * @throws BadRequestException on an operator or value the field cannot take.
+ * @throws DomainError (invalid_input) on an operator or value the field cannot take.
  */
 export function filterExpression(
   target: QueryColumn,
   clause: FilterClause,
 ): Expression<SqlBool> {
-  if (!OPERATORS_BY_KIND[target.kind].includes(clause.op)) {
-    throw invalid(DOCUMENT_ERROR_MESSAGES.UNSUPPORTED_OPERATOR);
-  }
-  const values = clause.values.map((raw) =>
-    coerceFilterValue(target.kind, raw),
-  );
-  const typed = values.filter((value) => value !== undefined);
-  if (typed.length !== values.length) {
-    throw invalid(DOCUMENT_ERROR_MESSAGES.INVALID_VALUE);
-  }
+  const typed = typedFilterValues(target.kind, clause);
   const column = sql.ref(target.column);
   const [first] = typed;
   switch (clause.op) {

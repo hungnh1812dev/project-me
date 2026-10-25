@@ -1,30 +1,30 @@
-export { parseListQuery } from './dto/list-documents.query';
+export { parseListQuery } from './http/ListDocuments.requests';
 export {
   BULK_BODY_LIMIT_MOUNT_PATH,
   bulkBodyLimit,
-} from './bulk-body-limit.middleware';
+} from './http/BulkBodyLimit.middleware';
 export type {
   FilterClause,
   ListDocumentsQuery,
   SortDirection,
   SortKey,
-} from './dto/list-documents.query';
+} from './domain/ListQuery.entity';
 export {
   DEFAULT_DOCUMENT_STATUS,
   DOCUMENT_ERROR_CODES,
-  DOCUMENT_QUERY_KEYS,
   DOCUMENT_QUERY_LIMITS,
   FILTER_OPERATORS,
   OPERATORS_BY_KIND,
   SORT_DEFAULT,
   SYSTEM_FIELD_KINDS,
   type FilterOperator,
-} from './documents.constants';
-export { DOCUMENTS_RATE_LIMIT_POLICIES } from './documents.rate-limits.constants';
+} from './domain/Documents.constants';
+export { DOCUMENT_QUERY_KEYS } from './http/DocumentsHttp.constants';
+export { DOCUMENTS_RATE_LIMIT_POLICIES } from './http/DocumentsRateLimits.constants';
 export { DocumentsModule } from './documents.module';
 export {
   DocumentsQueryService,
   type DocumentPage,
 } from './documents.query.service';
-export { normalizeListQuery } from './list-query.normalizer';
-export { queryKindOfField } from './queryable-fields';
+export { normalizeListQuery } from './domain/ListQuery.rules';
+export { queryKindOfField } from './domain/QueryableFields.rules';

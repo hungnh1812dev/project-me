@@ -1,6 +1,9 @@
-import { BadRequestException } from '@nestjs/common';
-
-import { PAGINATION } from '../../common/http/request-parsing';
+import { DomainError } from '../../common/errors/Domain.errors';
+import { describeError } from '../../common/http/describe-http-exception';
+import {
+  INVALID_REQUEST_ERROR,
+  PAGINATION,
+} from '../../common/http/request-parsing';
 import { DOCUMENT_QUERY_LIMITS, parseListQuery } from '../documents';
 import { type ListArguments, toListQuery } from './list-arguments';
 
@@ -35,15 +38,13 @@ describe('toListQuery', () => {
   });
 
   it('accepts the range limits and rejects one past them', () => {
-    expect(() => toListQuery({ ...base, page: 1 })).not.toThrow(
-      BadRequestException,
-    );
+    expect(() => toListQuery({ ...base, page: 1 })).not.toThrow(DomainError);
     expect(() =>
       toListQuery({ ...base, page: DOCUMENT_QUERY_LIMITS.MAX_PAGE }),
-    ).not.toThrow(BadRequestException);
+    ).not.toThrow(DomainError);
     expect(() =>
       toListQuery({ ...base, pageSize: PAGINATION.MAX_PAGE_SIZE }),
-    ).not.toThrow(BadRequestException);
+    ).not.toThrow(DomainError);
     for (const bad of [
       { page: 0 },
       { page: DOCUMENT_QUERY_LIMITS.MAX_PAGE + 1 },
@@ -52,9 +53,7 @@ describe('toListQuery', () => {
       { pageSize: PAGINATION.MAX_PAGE_SIZE + 1 },
       { pageSize: -1 },
     ]) {
-      expect(() => toListQuery({ ...base, ...bad })).toThrow(
-        BadRequestException,
-      );
+      expect(() => toListQuery({ ...base, ...bad })).toThrow(DomainError);
     }
   });
 
@@ -62,14 +61,12 @@ describe('toListQuery', () => {
     const keys = (n: number) =>
       ['a', 'b', 'c', 'd'].slice(0, n).map((field) => ({ field }));
     expect(() => toListQuery({ ...base, sort: keys(3) })).not.toThrow(
-      BadRequestException,
+      DomainError,
     );
-    expect(() => toListQuery({ ...base, sort: keys(4) })).toThrow(
-      BadRequestException,
-    );
+    expect(() => toListQuery({ ...base, sort: keys(4) })).toThrow(DomainError);
     expect(() =>
       toListQuery({ ...base, sort: [{ field: 'a' }, { field: 'a' }] }),
-    ).toThrow(BadRequestException);
+    ).toThrow(DomainError);
     const filters = (n: number) =>
       Object.fromEntries(
         Array.from({ length: n }, (_, i) => [`f${i}`, { eq: 'x' }]),
@@ -79,13 +76,13 @@ describe('toListQuery', () => {
         ...base,
         filter: filters(DOCUMENT_QUERY_LIMITS.MAX_FILTERS),
       }),
-    ).not.toThrow(BadRequestException);
+    ).not.toThrow(DomainError);
     expect(() =>
       toListQuery({
         ...base,
         filter: filters(DOCUMENT_QUERY_LIMITS.MAX_FILTERS + 1),
       }),
-    ).toThrow(BadRequestException);
+    ).toThrow(DomainError);
     const many = (n: number) => ({
       title: { in: Array.from({ length: n }, () => 'x') },
     });
@@ -94,15 +91,15 @@ describe('toListQuery', () => {
         ...base,
         filter: many(DOCUMENT_QUERY_LIMITS.MAX_IN_VALUES),
       }),
-    ).not.toThrow(BadRequestException);
+    ).not.toThrow(DomainError);
     expect(() =>
       toListQuery({
         ...base,
         filter: many(DOCUMENT_QUERY_LIMITS.MAX_IN_VALUES + 1),
       }),
-    ).toThrow(BadRequestException);
+    ).toThrow(DomainError);
     expect(() => toListQuery({ ...base, filter: many(0) })).toThrow(
-      BadRequestException,
+      DomainError,
     );
     expect(() =>
       toListQuery({
@@ -111,22 +108,22 @@ describe('toListQuery', () => {
           title: { eq: 'x'.repeat(DOCUMENT_QUERY_LIMITS.MAX_VALUE_LENGTH + 1) },
         },
       }),
-    ).toThrow(BadRequestException);
+    ).toThrow(DomainError);
   });
 
   it('never puts a submitted value in the error', () => {
     const attempt = () =>
       toListQuery({ ...base, filter: { title: { eq: 'x'.repeat(300) } } });
-    expect(attempt).toThrow(BadRequestException);
+    expect(attempt).toThrow(DomainError);
     const error = (() => {
       try {
         attempt();
       } catch (caught) {
-        return caught as BadRequestException;
+        return describeError(caught);
       }
       return undefined;
     })();
-    expect(JSON.stringify(error?.getResponse())).not.toContain('xxx');
+    expect(JSON.stringify(error)).not.toContain('xxx');
   });
 });
 
@@ -192,9 +189,11 @@ describe('REST and GraphQL list limits', () => {
   ];
 
   it.each(cases)('both reject %s', (_name, restQuery, graphqlOverride) => {
-    expect(() => parseListQuery(restQuery)).toThrow(BadRequestException);
+    expect(() => parseListQuery(restQuery)).toThrow(
+      INVALID_REQUEST_ERROR.MESSAGE,
+    );
     expect(() => toListQuery({ ...base, ...graphqlOverride })).toThrow(
-      BadRequestException,
+      DomainError,
     );
   });
 });
