@@ -8,7 +8,8 @@ import {
 
 import { ADMIN_COPY } from '../src/app-contracts';
 import { e2eEnv } from '../src/env';
-import { signInAs } from '../src/session';
+import { HTTP } from '../src/constants';
+import { bearer, ownerApiToken, signInAs } from '../src/session';
 import { RUN_ID } from '../src/run-id';
 import { labelStartingWith } from '../src/locators';
 import { API_PATHS, apiUrl } from '../src/api-paths';
@@ -23,6 +24,9 @@ const matrix = access.matrix;
 const TOKEN_NAME = `E2E build ${RUN_ID}`;
 const RENAMED = `E2E build renamed ${RUN_ID}`;
 const REVOKE_ONLY_NAME = `E2E revoke ${RUN_ID}`;
+const EXPIRING_NAME = `E2E expiring ${RUN_ID}`;
+/** Long enough to open Edit before expiry, short enough to wait out. */
+const EXPIRY_WINDOW_MS = 8000;
 const RAW_TOKEN = /ak_live_[A-Za-z0-9_-]{43}/;
 const PAST_DATE = '2000-01-01';
 const FUTURE_DATE = '2999-12-31';
@@ -423,6 +427,89 @@ test.describe.serial('owner: API tokens', () => {
     await expect(row).toContainText(tokens.status.revoked);
     await expect(row.getByRole('button')).toHaveCount(0);
     await page.unroute(tokensUrl);
+  });
+
+  test('a token that expires while its edit dialog is open: real 409, then the list shows Expired', async ({
+    playwright,
+  }) => {
+    // No route mocking: the API itself answers 409 and the list is refetched.
+    const creating = page.waitForResponse(
+      (response) =>
+        response.request().method() === 'POST' &&
+        new URL(response.url()).pathname.endsWith(API_PATHS.API_TOKENS),
+    );
+    await createButton(page).click();
+    const createForm = createDialog(page);
+    await createForm
+      .getByLabel(labelStartingWith(form.nameLabel))
+      .fill(EXPIRING_NAME);
+    await cell(createForm, matrix.actions.read, matrix.wildcard).check();
+    await createForm.getByRole('button', { name: form.submitCreate }).click();
+    const tokenId = ((await (await creating).json()) as { id: string }).id;
+    await page.getByRole('button', { name: reveal.done }).click();
+
+    // Give it a short real lifetime through the API (the UI takes dates only).
+    const api = await playwright.request.newContext();
+    const headers = bearer(await ownerApiToken(api));
+    const expiresAt = new Date(Date.now() + EXPIRY_WINDOW_MS);
+    const shortened = await api.patch(
+      apiUrl(`${API_PATHS.API_TOKENS}/${tokenId}`),
+      { headers, data: { expiresAt: expiresAt.toISOString() } },
+    );
+    expect(shortened.status()).toBe(HTTP.OK);
+
+    // Reload the list while it is still active, then open Edit.
+    const nav = page.getByRole('navigation', { name: access.nav.label });
+    await nav.getByRole('link', { name: access.nav.accounts }).click();
+    await openTokensPage(page);
+    const row = tokenRow(page, EXPIRING_NAME);
+    await expect(row).toContainText(tokens.status.active);
+    await row
+      .getByRole('button', { name: tokens.editLabel(EXPIRING_NAME) })
+      .click();
+    const edit = page.getByRole('dialog', {
+      name: form.editTitle(EXPIRING_NAME),
+    });
+    await edit
+      .getByLabel(labelStartingWith(form.nameLabel))
+      .fill(`${EXPIRING_NAME} x`);
+
+    // Let it expire, then save.
+    await expect
+      .poll(() => Date.now() > expiresAt.getTime(), {
+        timeout: EXPIRY_WINDOW_MS * 2,
+      })
+      .toBe(true);
+    const patched = page.waitForResponse(
+      (response) =>
+        response.request().method() === 'PATCH' &&
+        response.url().endsWith(`${API_PATHS.API_TOKENS}/${tokenId}`),
+    );
+    const refetched = page.waitForResponse(
+      (response) =>
+        response.request().method() === 'GET' &&
+        new URL(response.url()).pathname.endsWith(API_PATHS.API_TOKENS),
+    );
+    await edit.getByRole('button', { name: form.submitEdit }).click();
+
+    const answer = await patched;
+    expect(answer.status()).toBe(HTTP.CONFLICT);
+    expect(((await answer.json()) as { errorCode: string }).errorCode).toBe(
+      'API_TOKEN_EXPIRED',
+    );
+    await refetched;
+    await expect(edit).toBeHidden();
+    await expect(page.getByRole('status')).toHaveText(tokens.alreadyExpired);
+    await expect(row).toContainText(EXPIRING_NAME);
+    await expect(row).not.toContainText(`${EXPIRING_NAME} x`);
+    await expect(row).toContainText(tokens.status.expired);
+    await expect(
+      row.getByRole('button', { name: tokens.editLabel(EXPIRING_NAME) }),
+    ).toHaveCount(0);
+    await expect(
+      row.getByRole('button', { name: tokens.revokeLabel(EXPIRING_NAME) }),
+    ).toBeVisible();
+    await api.dispose();
   });
 
   test('the raw token authenticates nothing on /api-tokens (sessions only)', async () => {
