@@ -2,18 +2,15 @@ import { Inject, Injectable } from '@nestjs/common';
 
 import type { Prisma } from '../../generated/prisma/client';
 import { APP_LOGGER, type AppLogger } from '../logging/AppLogger.port';
+import {
+  type AfterCommitCallback,
+  AfterCommitCallbacks,
+} from './AfterCommitCallbacks.store';
 import { PrismaService } from './prisma.service';
 import type { TransactionRunner, UnitOfWork } from './TransactionRunner.port';
 
-type AfterCommitCallback = () => void | Promise<void>;
-
-const AFTER_COMMIT_LOG_CONTEXT = 'PrismaTransactionRunner';
-
-type UnitState = 'open' | 'committed' | 'rolledBack';
-
 class PrismaUnitOfWork implements UnitOfWork {
-  private state: UnitState = 'open';
-  private readonly afterCommitCallbacks: AfterCommitCallback[] = [];
+  readonly callbacks = new AfterCommitCallbacks();
 
   constructor(
     readonly tx: Prisma.TransactionClient,
@@ -26,24 +23,7 @@ class PrismaUnitOfWork implements UnitOfWork {
         'afterCommit is not available on a unit built from a borrowed Prisma tx',
       );
     }
-    if (this.state !== 'open') {
-      throw new Error(
-        `afterCommit cannot be registered on a unit that is ${this.state}`,
-      );
-    }
-    this.afterCommitCallbacks.push(callback);
-  }
-
-  get isOpen(): boolean {
-    return this.state === 'open';
-  }
-
-  markSettled(outcome: 'committed' | 'rolledBack'): void {
-    this.state = outcome;
-  }
-
-  takeAfterCommitCallbacks(): readonly AfterCommitCallback[] {
-    return this.afterCommitCallbacks.splice(0);
+    this.callbacks.register(callback);
   }
 }
 
@@ -52,7 +32,7 @@ export function prismaTxOf(unit: UnitOfWork): Prisma.TransactionClient {
   if (!(unit instanceof PrismaUnitOfWork)) {
     throw new TypeError('The unit of work was not opened by the Prisma runner');
   }
-  if (!unit.isOpen) {
+  if (!unit.callbacks.isOpen) {
     throw new Error('The unit of work is closed');
   }
   return unit.tx;
@@ -87,28 +67,11 @@ export class PrismaTransactionRunner implements TransactionRunner {
         return work(unit);
       });
     } catch (error) {
-      unit?.markSettled('rolledBack');
+      unit?.callbacks.markRolledBack();
       throw error;
     }
-    unit?.markSettled('committed');
-    await this.runAfterCommit(unit);
+    unit?.callbacks.markCommitted();
+    unit?.callbacks.runAll(this.logger);
     return result;
   }
-
-  private async runAfterCommit(unit: PrismaUnitOfWork | undefined) {
-    for (const callback of unit?.takeAfterCommitCallbacks() ?? []) {
-      try {
-        await callback();
-      } catch (error) {
-        this.logger.error(
-          `An after-commit callback failed: ${describeFailure(error)}`,
-          AFTER_COMMIT_LOG_CONTEXT,
-        );
-      }
-    }
-  }
-}
-
-function describeFailure(error: unknown): string {
-  return error instanceof Error ? error.message : 'unknown error';
 }

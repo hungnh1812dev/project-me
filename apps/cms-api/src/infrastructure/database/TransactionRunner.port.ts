@@ -10,11 +10,13 @@ export const CONTENT_TRANSACTION_RUNNER = Symbol('CONTENT_TRANSACTION_RUNNER');
  */
 export interface UnitOfWork {
   /**
-   * Runs `callback` once, after the transaction commits, in registration
-   * order. It never runs on rollback. A callback that throws is logged and
-   * does not undo the commit or stop the later callbacks.
+   * Runs `callback` once, after the transaction commits and before `run`
+   * resolves, in registration order. It never runs on rollback. In-memory
+   * work only (e.g. a cache drop): it is not awaited, so do I/O after `run`.
+   * A callback that throws is logged and does not undo the commit or stop
+   * the later callbacks.
    */
-  afterCommit(callback: () => void | Promise<void>): void;
+  afterCommit(callback: () => void): void;
 }
 
 /** Runs `work` in one transaction: it commits when `work` resolves and rolls back when it throws. */

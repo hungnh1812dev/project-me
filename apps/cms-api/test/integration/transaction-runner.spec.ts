@@ -76,19 +76,47 @@ describe('CORE_TRANSACTION_RUNNER (Postgres 16 via Testcontainers)', () => {
     expect(await probeNames()).toEqual([]);
   });
 
-  it('runs afterCommit callbacks after the commit, in registration order', async () => {
+  it('runs afterCommit callbacks after the commit, in order, before run resolves', async () => {
     const seen: string[] = [];
     await runner.run(async (unit) => {
       await insertProbe(prismaTxOf(unit), 'a');
-      unit.afterCommit(async () => {
-        seen.push(`first sees ${(await probeNames()).join(',')}`);
+      unit.afterCommit(() => {
+        seen.push('first');
       });
       unit.afterCommit(() => {
         seen.push('second');
       });
       expect(seen).toEqual([]);
     });
-    expect(seen).toEqual(['first sees a', 'second']);
+    expect(seen).toEqual(['first', 'second']);
+    expect(await probeNames()).toEqual(['a']);
+  });
+
+  it('does not wait for a never-settling callback or hold back later ones', async () => {
+    const later = jest.fn();
+    await runner.run((unit) => {
+      // eslint-disable-next-line @typescript-eslint/no-misused-promises -- the misuse under test
+      unit.afterCommit(() => new Promise(() => undefined));
+      unit.afterCommit(later);
+      return Promise.resolve();
+    });
+    expect(later).toHaveBeenCalledTimes(1);
+  });
+
+  it('logs a rejecting callback without an unhandled rejection', async () => {
+    const unhandled = jest.fn();
+    process.on('unhandledRejection', unhandled);
+    try {
+      await runner.run((unit) => {
+        // eslint-disable-next-line @typescript-eslint/no-misused-promises -- the misuse under test
+        unit.afterCommit(() => Promise.reject(new Error('late failure')));
+        return Promise.resolve();
+      });
+      await new Promise((resolve) => setImmediate(resolve));
+      expect(unhandled).not.toHaveBeenCalled();
+    } finally {
+      process.off('unhandledRejection', unhandled);
+    }
   });
 
   it('never runs afterCommit callbacks on a rollback', async () => {
