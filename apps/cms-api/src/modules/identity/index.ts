@@ -9,3 +9,5 @@ export { JwtAuthGuard, type AuthenticatedRequest } from './jwt.strategy';
 export { buildOtpMail } from './otp-mail';
 export { OtpService } from './otp.service';
 export { revokeAllSessions } from './session-revocation';
+export { OtpPurpose } from './domain/OtpPurpose.entity';
+export { TwoFaMethod } from './domain/TwoFaMethod.entity';

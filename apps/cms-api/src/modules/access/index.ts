@@ -1,4 +1,6 @@
 export { AccessModule } from './access.module';
+export { AccountStatus } from './domain/AccountStatus.entity';
+export { PermissionAction } from './domain/PermissionAction.entity';
 export {
   AccessPolicyService,
   type AccessPolicy,
