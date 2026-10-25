@@ -155,6 +155,71 @@ Design `docs/modules/owner-setup.md`, ADR 0005; SPEC D1, §12-1 amended 2026-10-
 - OS3 Smoke creates the owner via the setup route; deploy/local docs. core-builder; deps OS1.
 - OS4 e2e (closed state) + browser check (open state on a fresh DB). qc; deps OS2, OS3.
 
+### Ad-hoc: Audit
+User request 2026-10-23: read-only whole-repo audit against `code-standards` §4. Criteria: C1 isolated modules, C2 readable names over comments, C3 extensible with minimal impact. Answers Q1-Q5 and the shared run rules and checks are in `todo.md` "Ad-hoc: Audit". AU0 (state-file fixes) done by the manager.
+
+Goal: one findings file per area, then one approved list of behavior-preserving fix tasks.
+Inputs: AU0 done (project.md, handoff.md, current.md, conventions.md current).
+Outputs:
+- `.claude/state/findings/AUDIT-<area>.md` for AU1a-AU5. Check: each listed check has entries or a zero count; `git status --short` shows no other change.
+- AU6 planner report: accept / drop / question per finding, proposed phases R1-R4 with task IDs.
+Exit criteria: the user approves the AU6 fix list. Only then are R1-R4 tasks written and put on the board.
+Tasks (build order):
+- AU1a cms-api identity, access, reviewer, media. qc + security-qc; security gate.
+- AU1b cms-api content-engine, content-types, documents, graphql. qc.
+- AU1c cms-api common, config, infrastructure. qc + security-qc for infrastructure/media and infrastructure/turnstile; security gate.
+- AU2 cms-admin. qc + security-qc for features/auth and features/security; security gate.
+- AU3 web. qc + security-qc for features/auth; security gate.
+- AU4 form-commons. qc.
+- AU5 tooling and test code (base-config, scripts, .github, turbo.json, smoke compose, apps/e2e). qc.
+- AU6 Consolidate findings, decide G6 (SPEC §2 map), propose R1-R4 fix tasks. planner; deps AU1a-AU5. Done 2026-10-23.
+
+### Refactor: Audit fixes (R1-R4) — APPROVED 2026-10-23
+Details, rules, the standard verify (SV) and the user's answers to Q-A1..Q-A10 are in `todo.md` "Refactor: Audit fixes". Every task is behavior-preserving unless marked "planned change". Order: R1-00 (SPEC) first, then the R1 guards. R3 may run alongside R1, R2 follows R1, and R4 follows R1-R3.
+
+## Phase R1: cms-api boundaries and guards
+Goal: every cms-api module has one public interface and an import direction that a test enforces, and the identity <-> access cycle is gone.
+Inputs: user answers Q-A1 (SPEC follows the code), Q-A2 (git mv approved), Q-A3 (keep the UUID helper); AU findings.
+Outputs:
+- `modules.architecture.spec.ts` green with an empty `KNOWN_VIOLATIONS` list. Check: `pnpm --filter @abyss/cms-api test:unit -- architecture`.
+- The permission-metadata spec and the resolved-import serializer / GraphQL specs are green.
+- `ALLOWED_MODULE_EDGES` matches SPEC §2 row for row, with `access` as three nodes (core, management, document auth). Check: read the constants file against the SPEC table.
+- `modules/security-audit/` exists, and every module has an `index.ts`. Check: grep `from '\.\./[a-z-]+/[a-z]'` outside specs returns no cross-module deep import (lint `no-restricted-imports` passes).
+- `seed:account` CLI. Check: `SMOKE_E2E=1 pnpm smoke` green with no `require('./dist` in `scripts/`.
+Exit criteria: cms-api `lint typecheck test:unit test:integration` green; smoke and e2e green; qc REGRESSION and security-qc PHASE review pass.
+Tasks: R1-00, R1-01, R1-02, R1-07, R1-03, R1-04, R1-05, R1-06, R1-08, R1-09, R1-10, R1-11, R1-12, R1-13, R1-14, R1-15, R1-16
+
+## Phase R2: cms-api extensibility
+Goal: a new field type, provider, throttled endpoint, route group or env key is added in its owning module with the fewest edits.
+Inputs: R1 outputs (facades, guards, security-audit module); Q-A9 approved.
+Outputs:
+- Field-type registry. Check: the field-type architecture spec shows no scalar-type switch outside `content-engine/field-types/`; the media filter / sort / GraphQL rejection spec is green; `content:generate -- --check` and `graphql:print-schema -- --check` unchanged.
+- Rate-limit policies per module, the throttle subject resolver bound in `app.module.ts`, and a route snapshot spec. Check: specs green; §12-8 spoof test green.
+- Allowlisted boot summary, `.env.example` parity spec, and provider factory maps. Check: specs green.
+Exit criteria: as R1, plus the drill-a count is down to 1 registry entry plus docs plus the admin adapter. qc REGRESSION and security-qc PHASE review pass.
+Tasks: R2-01, R2-02, R2-03, R2-04, R2-05, R2-06, R2-07, R2-08, R2-09, R2-10, R2-11, R2-12, R2-13, R2-14, R2-15, R2-16, R2-17, R2-18
+
+## Phase R3: frontends and UI kit
+Goal: admin and web features have facades and one import direction, the admin gets a feature registry, and the kit owns shared form wiring.
+Inputs: none from R1/R2 except R3-24 (needs R1-15, R2-10), and R3-04 / R3-12 (need R1-00: the SPEC §2 frontend directions, with the admin feature order auth < security < content-types < access < media < content, reviewer). Q-A4, Q-A5 (option A), Q-A7, Q-A9 and Q-A10 are approved. R3 can start in parallel with R1 (different builder).
+Outputs:
+- Admin and web `src/architecture.spec.ts` green, and lint blocks cross-feature deep imports. Check: `pnpm --filter @abyss/cms-admin test`, `pnpm --filter @abyss/web test`.
+- Admin pages, nav and providers come from `features/registry.ts`. Check: browser walk of the admin nav (same items and order for owner, admin and reader); the public route spec is green.
+- 2FA dialogs on the kit `Dialog`, and tables on `SortableSheet`. Check: browser: an overlay click does not close the 2FA dialog and Esc does; the account, token, role and reviewer lists look and act as before.
+- Contract snapshot tests in admin, web, kit and e2e. Check: change one mirrored value and the matching test fails.
+Exit criteria: all frontend and kit tests, lint and build green; `SMOKE_E2E=1 pnpm smoke` green; qc REGRESSION (browser) and security-qc PHASE review pass.
+Tasks: R3-14, R3-13, R3-15, R3-22, R3-01, R3-02, R3-03, R3-04, R3-05, R3-06, R3-07, R3-08, R3-09, R3-10, R3-11, R3-12, R3-16, R3-17, R3-18, R3-19, R3-20, R3-21, R3-23, R3-24, R3-25, R3-26
+
+## Phase R4: readability sweep and test tooling
+Goal: no task IDs in comments, internal names read as questions or verbs, the largest files are split by responsibility, and test tooling has one owner for each shared value.
+Inputs: R1-R3 outputs (files have settled in their owners); Q-A6 approved.
+Outputs:
+- Comment-guard specs green in cms-api, cms-admin, web and kit. Check: grep for task IDs in source comments returns nothing.
+- Split files, each under 300 lines where a split was planned. Check: `wc -l` on the listed files.
+- e2e helpers and `app-contracts.ts`, the `smoke.sh` section files, and the reusable CI workflow. Check: full smoke green; actionlint clean; `affected.test.sh` passes.
+Exit criteria: all packages green; smoke green; qc REGRESSION pass; security-qc PHASE review for the gated splits.
+Tasks: R4-01, R4-02, R4-03, R4-04, R4-05, R4-06, R4-07, R4-08, R4-09, R4-10, R4-11, R4-12, R4-13, R4-14, R4-15, R4-16, R4-17, R4-18, R4-19, R4-20, R4-21, R4-22, R4-23, R4-24, R4-25, R4-26, R4-27, R4-28, R4-29
+
 ## Risks and Mitigations
 
 | Risk | Impact | Mitigation |

@@ -9,7 +9,8 @@ Scopes:
 High-risk paths: `apps/cms-api/src/modules/identity`, `apps/cms-api/src/modules/access`, `apps/cms-api/src/modules/reviewer`, `apps/cms-api/src/modules/media`, `apps/cms-api/src/infrastructure/media`, `apps/cms-api/src/infrastructure/turnstile`, `apps/cms-admin/src/features/auth`, `apps/cms-admin/src/features/security`, `apps/web/src/features/auth`
 Stack:
 - apps/cms-api: NestJS 11, Prisma 7, Kysely 0.28, PostgreSQL 16, Jest (unit + integration via Testcontainers; Docker must be running)
-- apps/cms-admin, apps/web: React 19, Vite 8, Tailwind v4, Vitest
+- apps/cms-admin: React 19, Vite 8, Tailwind v4, Vitest
+- apps/web: Next.js 16 (App Router), React 19
 - packages/form-commons: React component library (tsup + Tailwind CLI, shadcn/Radix), Vitest
 - Monorepo: pnpm 11 workspaces + turbo, Node >= 24, TypeScript 6
 Commands:

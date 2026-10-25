@@ -653,3 +653,768 @@ User decision 2026-10-22 (handoff.md, "Owner creation on k3s"): a one-time setup
     - Browser check of the open state on a fresh database (cms-api `start` per `docs/local-run.md` with `OWNER_SETUP_TOKEN` set and no owner, cms-admin dev): login notice visible; wrong token shows the token error; valid submit lands on `/login` with the notice and prefilled email; owner signs in; `/setup` then redirects; no console errors or CSP violations; the token is not in the URL or storage (DevTools Application tab).
   - Verify: `pnpm e2e:spec tests/owner-setup.spec.ts` on a kept smoke stack; full `SMOKE_E2E=1 pnpm smoke` green; browser check notes in the unit record.
   - Files: `apps/e2e/tests/owner-setup.spec.ts`.
+
+## Ad-hoc: Audit
+
+User request 2026-10-23: audit the whole repo against `code-standards` §4. Criteria: C1 isolated modules (one owner per responsibility, no feature spread over several modules), C2 readable names over comments, C3 extensible with minimal impact. User answers (2026-10-23):
+- Q1: findings become behavior-preserving refactors only through approved tasks, one module per task.
+- Q2: qc runs the audit; security-qc reviews proposed fixes on high-risk paths.
+- Q3: no new dependency; boundaries are guarded by architecture spec tests plus ESLint `no-restricted-imports`.
+- Q4: comments keep SPEC IDs (`Dxx`, `§n`); task IDs (`Txx`, `OSx`, ...) are findings.
+- Q5: state files fixed first (AU0, done by the manager); the SPEC §2 capability-map update (G6) is decided in AU6.
+
+Build order: AU1a -> AU1b -> AU1c -> AU2 -> AU3 -> AU4 -> AU5 -> AU6. AU1a-AU5 have no deps on each other. The order lets later areas reuse earlier findings.
+
+### Audit run rules (every AU1a-AU5 task)
+- Read-only. No edits to product code, tests, configs, lockfile or dependencies. Probes are grep / `tsc` / node scripts kept in the session scratchpad, never in the repo. No dependency-cruiser, madge or similar (Q3).
+- Output: one file, `.claude/state/findings/AUDIT-<area>.md` (area = `AU1a`, `AU1b`, ...). Each finding:
+  - `ID` (`AUD-<area>-<n>`) · `Check` (C1.x / C2.x / C3.x) · `Evidence` (path:line, several allowed)
+  - `Impact`: which future change it makes expensive, or which rule it breaks
+  - `Proposed fix`: behavior-preserving, owned by one module
+  - `Guard`: the architecture spec or `no-restricted-imports` rule that would stop it coming back (required for C1 findings)
+  - `Size` S/M/L · `Owning module` · `Builder scope` · `High-risk path` y/n
+- Also list counts per check (including zero) so AU6 can tell "checked, nothing found" from "not checked".
+- security-qc (where the task says so): reviews only the proposed fixes on high-risk paths. The question is whether the refactor would move or weaken a guard, the serializer, masking, an audit write, a token or session check. It appends `Security note:` lines under each such finding in the same file. It does not run a new security review.
+- Out of scope: behavior changes, new security findings outside the proposed fixes, visual/UI review, performance.
+- Early signals from the planning probes (starting points to confirm, not findings): identity <-> access cycle in cms-api; auth <-> access cycle in cms-admin features; auth <-> reviewer cycle in web features; no module facades (about 130 cross-module deep imports in cms-api, e.g. media and reviewer import `identity/auth.controller`, media imports `content-engine/sql-generator`); field-kind handling spread over content-engine, access, documents, media and graphql; `apps/cms-admin/src/config/copy.constants.ts` 962 lines; 21 source files over 300 lines.
+
+### Audit checks
+C1 Isolation:
+- C1.1 Import graph between modules or features; list every cycle.
+- C1.2 Deep imports into another module's internal files. For each pair, list the exports the owner would expose as its public interface.
+- C1.3 Dependencies against SPEC §2 capability map direction (e.g. access -> content-engine; `content-types` missing from the map).
+- C1.4 One capability spread over several modules (field types, audit-event writes, session/token handling, auth/access splits).
+- C1.5 The same rule written twice (API vs frontend validation where SPEC §10 says Zod schemas are shared; constants; env parsing).
+- C1.6 Code in the wrong place: one module's code in `common/` / shared folders, or shared code inside one module.
+
+C2 Readability:
+- C2.1 Vague names (`data`, `tmp`, `res`, `result`, `item`, `info`, `handle`, `helper`, `utils`), in identifiers and file names.
+- C2.2 Booleans read as questions (`is/has/can/should`); functions start with a verb; units in names where they matter (`Ms`, `Seconds`, `Bytes`).
+- C2.3 Comments that say *what* the code does (fix: rename or extract); task IDs in comments (Q4). Keep *why* comments and public doc comments.
+- C2.4 Files over 300 lines, functions over about 40 lines, or mixed abstraction levels. Propose an extract only where a clear sub-responsibility exists.
+- C2.5 File naming per SPEC §5 (kebab-case, `.constants.ts`, PascalCase components, framework route names).
+
+C3 Extensibility:
+- C3.1 Change-impact drills. For each drill: files and modules touched today, and the target after the fix.
+  - a: new content field type
+  - b: new content type (target: JSON schema + generated output only)
+  - c: new permission action or role
+  - d: new security-audit event
+  - e: new provider (mail, media, activity, turnstile)
+  - f: new admin feature page (route, nav, endpoints, copy)
+  - g: new env key (config, `.env.example`, smoke, docs)
+  - h: new form-commons input
+- C3.2 `if`/`switch` chains on a kind or type spread across modules, instead of one registry in the owning module.
+- C3.3 Consumers depending on a concrete adapter where a second implementation is realistic, instead of a port / injection token.
+- C3.4 Central files every feature must edit (`copy.constants.ts`, `endpoints.ts`, `API_ROUTES`, `routes.ts`): split per feature or keep, with the reason.
+- C3.5 Contracts consumed by the frontends (DTOs, shared types) can change additively.
+
+- [ ] **AU1a: Audit cms-api identity, access, reviewer, media** · M · Deps: AU0 (manager, done) · qc, then security-qc · **High-risk paths (read-only) · Security gate: yes** (security-qc notes before AU6 plans fixes) · code-standards §4 · SPEC §2, §7, §10
+  - Scope: `apps/cms-api/src/modules/{identity,access,reviewer,media}` (not specs except to understand intent).
+  - Checks: C1.1-C1.6, C2.1-C2.5, C3.1 a/c/d, C3.2, C3.3 (media adapter), C3.5.
+  - Acceptance:
+    - `.claude/state/findings/AUDIT-AU1a.md` follows the audit run rules, including counts per check.
+    - The identity <-> access cycle is confirmed or refuted, with every edge listed (file -> file) and a proposed public interface for each side.
+    - Each C3.1 drill (a, c, d) lists the files touched today.
+    - security-qc has added `Security note:` lines under every finding that touches these paths.
+    - No file outside `.claude/state/findings/` changed.
+  - Verify: `git status --short` shows only the findings file; the findings file has an entry or a zero count for every check listed.
+  - Files: `.claude/state/findings/AUDIT-AU1a.md` (write); the scope above (read-only).
+
+- [ ] **AU1b: Audit cms-api content-engine, content-types, documents, graphql** · M · Deps: AU0 · qc · code-standards §4 · SPEC §2, §8, D10, D18
+  - Scope: `apps/cms-api/src/modules/{content-engine,content-types,documents,graphql}`, `apps/cms-api/content/` layout (read-only).
+  - Checks: C1.1-C1.6, C2.1-C2.5, C3.1 a/b, C3.2, C3.5.
+  - Acceptance:
+    - `.claude/state/findings/AUDIT-AU1b.md` follows the audit run rules.
+    - Drill a (new field type) lists every file in every module that knows about field kinds, and proposes one owner (expected: content-engine) and a registry shape.
+    - Drill b confirms whether a new content type needs any hand-written code.
+    - C1.3 states whether `content-types` is its own module or belongs to another one (input for the G6 SPEC decision).
+    - The existing `graphql.architecture.spec.ts` guard is noted as the pattern for new guards.
+  - Verify: `git status --short` shows only the findings file; every listed check has an entry or a zero count.
+  - Files: `.claude/state/findings/AUDIT-AU1b.md` (write); the scope above (read-only).
+
+- [ ] **AU1c: Audit cms-api common, config, infrastructure** · S · Deps: AU0 · qc, security-qc for `infrastructure/media` and `infrastructure/turnstile` · **High-risk paths (read-only) · Security gate: yes** · code-standards §2, §4 · SPEC §5, §10
+  - Scope: `apps/cms-api/src/{common,config,infrastructure}`, `apps/cms-api/src/app.module.ts` and `main.ts` (read-only). Not `src/generated/`.
+  - Checks: C1.5, C1.6, C2.1-C2.5, C3.1 e/g, C3.3, C3.4 (`API_ROUTES`, `common/constants/*`).
+  - Acceptance:
+    - `.claude/state/findings/AUDIT-AU1c.md` follows the audit run rules.
+    - Each adapter (mail, media, activity, turnstile) shows whether consumers depend on a port/token or the concrete class.
+    - C1.6 lists every `common/` file that only one module uses, and every module constant that `common/` imports.
+    - security-qc notes are added for proposed fixes under `infrastructure/media` and `infrastructure/turnstile`.
+  - Verify: `git status --short` shows only the findings file; every listed check has an entry or a zero count.
+  - Files: `.claude/state/findings/AUDIT-AU1c.md` (write); the scope above (read-only).
+
+- [ ] **AU2: Audit cms-admin** · M · Deps: AU0 · qc, security-qc for `features/auth` and `features/security` · **High-risk paths (read-only) · Security gate: yes** · code-standards §4 · SPEC §5, §10
+  - Scope: `apps/cms-admin/src` (app, components, config, features, lib) (read-only).
+  - Checks: C1.1-C1.6, C2.1-C2.5, C3.1 f, C3.2, C3.4 (`copy.constants.ts`, `endpoints.ts`, `routes.ts`).
+  - Acceptance:
+    - `.claude/state/findings/AUDIT-AU2.md` follows the audit run rules.
+    - The `features/auth` <-> `features/access` cycle is confirmed or refuted with the edges, plus a proposed owner for each shared piece (e.g. session, permission checks).
+    - Drill f lists every file a new feature page touches today.
+    - C3.4 gives a keep-or-split proposal for `copy.constants.ts` and `src/config`, with the reason.
+    - C1.5 compares admin form validation with the API DTO schemas.
+    - `features/content/field-registry.tsx` is checked as the C3.2 reference.
+    - security-qc notes are added for fixes under `features/auth` and `features/security`.
+  - Verify: `git status --short` shows only the findings file; every listed check has an entry or a zero count.
+  - Files: `.claude/state/findings/AUDIT-AU2.md` (write); the scope above (read-only).
+
+- [ ] **AU3: Audit web** · S · Deps: AU0 · qc, security-qc for `features/auth` · **High-risk path (read-only) · Security gate: yes** · code-standards §4 · SPEC §5 (web rules), D14
+  - Scope: `apps/web/src` (app, config, features, lib, `proxy.ts`, `instrumentation.ts`) (read-only).
+  - Checks: C1.1-C1.6, C2.1-C2.5, C3.4 (`endpoints.ts`, copy/constants files).
+  - Acceptance:
+    - `.claude/state/findings/AUDIT-AU3.md` follows the audit run rules.
+    - The `features/auth` <-> `features/reviewer` cycle is confirmed or refuted with the edges and a proposed owner.
+    - C1.5 compares web and admin code for logic written twice (session sharing, API client, endpoint maps). Proposals respect the SPEC §5 web rules: server-only files, no `store/`.
+    - security-qc notes are added for fixes under `features/auth`.
+  - Verify: `git status --short` shows only the findings file; every listed check has an entry or a zero count.
+  - Files: `.claude/state/findings/AUDIT-AU3.md` (write); the scope above (read-only).
+
+- [ ] **AU4: Audit form-commons** · S · Deps: AU0 · qc · code-standards §4 · SPEC §5, §11
+  - Scope: `packages/form-commons/src` (read-only).
+  - Checks: C1.5, C1.6, C2.1-C2.5, C3.1 h, C3.5 (exported props and types used by the apps).
+  - Acceptance:
+    - `.claude/state/findings/AUDIT-AU4.md` follows the audit run rules.
+    - Drill h lists the files a new input touches today (component folder, `index.ts` exports, styles, constants).
+    - C1.6 lists app-specific logic inside the kit and kit-worthy components copied into an app.
+  - Verify: `git status --short` shows only the findings file; every listed check has an entry or a zero count.
+  - Files: `.claude/state/findings/AUDIT-AU4.md` (write); the scope above (read-only).
+
+- [ ] **AU5: Audit tooling and test code** · S · Deps: AU0 · qc · code-standards §2, §4
+  - Scope: `packages/base-config`, `scripts/`, `.github/` (not `.github_template/`), `turbo.json`, `docker-compose.smoke.yml`, `apps/e2e` (read-only).
+  - Checks: C1.1, C1.5, C1.6, C2.1-C2.5, C3.1 g.
+  - Acceptance:
+    - `.claude/state/findings/AUDIT-AU5.md` follows the audit run rules.
+    - Drill g lists every file a new cms-api env key touches today: config, `.env.example`, `scripts/stack/cms-api.env`, compose, docs, CI.
+    - C1.5 covers values copied between `scripts/`, compose and `apps/e2e`, including the hardcoded smoke DB container name from the handoff follow-up.
+  - Verify: `git status --short` shows only the findings file; every listed check has an entry or a zero count.
+  - Files: `.claude/state/findings/AUDIT-AU5.md` (write); the scope above (read-only).
+
+- [ ] **AU6: Consolidate audit findings and propose fix tasks** · M · Deps: AU1a, AU1b, AU1c, AU2, AU3, AU4, AU5 · planner (`PLAN`), then user approval · code-standards §4 · SPEC §2
+  - Acceptance:
+    - Every finding in `.claude/state/findings/AUDIT-*.md` is marked accept / drop (with reason) / question; duplicates across areas are merged under one owning module.
+    - G6 is decided: a proposed SPEC §2 capability-map change (`content-types`, access -> content-engine) is put to the user as a question.
+    - Proposed fix phases R1 (cms-api boundaries + guards), R2 (cms-api extensibility: field-type registry, ports), R3 (frontends: cycles, per-feature copy/config), R4 (readability sweep per module). Each has the phase format of `tasks/plan.md`.
+    - Every proposed fix task: one module and one theme (Q1), about 5 files or fewer, in one builder's scope, behavior-preserving, Verify = package tests + `SMOKE_E2E=1 pnpm smoke` green + the new guard (architecture spec or `no-restricted-imports`, Q3) added in the same task and shown to fail on the old import.
+    - `Security gate: yes` on fix tasks that touch high-risk paths.
+    - Public API, route or DB field renames, and file deletions, are listed as questions, not tasks.
+    - Decided in advance (planner, 2026-10-23): **AUD-AU1a-18** (media `provider` column always `cloudinary`) is marked **drop (deferred to v2)**. It is not a fix task.
+      - Not behavior-preserving: it changes stored data for the fake adapter, and `MediaProvider` in `apps/cms-api/prisma/schema.prisma:57-62` has no `fake` value, so it needs a migration.
+      - Its only benefit is a second real provider. S3 is v2 backlog (SPEC §2, out of scope), and `MEDIA_PROVIDER=fake` is refused in production (`config/env.schema.ts:275-279`), so no real data is wrong today.
+      - Revisit it with the S3 adapter as a planned change with a migration: the port gets `providerName: MediaProvider`, and `media.service.ts:162` stores it.
+      - The AU6 report lists it under "deferred" so the user can see it.
+    - Decided in advance (planner, 2026-10-23): field-type registry (AUD-AU1b-13, with 04, 05, 15), using security notes from `.claude/state/findings/SEC-AU1b.md`. The R2 registry task(s) must state:
+      - **Media split: option 1.** Each registry entry has a separate required `listQueryable: boolean` (`false` for `media` and `json`), next to `conditionKind` (the permission-DSL kind; `media` stays `integer`). No single nullable `valueKind`.
+        - Why: option 2 leaves a type-specific exception in `documents/queryable-fields.ts`, the spread the audit removes (C1.4/C3.2). A future id-holding type would also be queryable unless someone remembered to edit `documents`. With a required attribute, every new type must declare it, and the compiler refuses an entry that leaves it out.
+        - `queryKindOfField` keeps `COMPONENT_FIELD_TYPE` -> `undefined` and otherwise returns `conditionKind` only when `listQueryable` is true.
+        - Required spec: REST `filter[<media field>]`, REST `sort=<media field>`, and the GraphQL filter input all reject a media field.
+      - `referencesMedia: boolean` is required with no default. A spec checks that the set of types where it is `true` is exactly `{ 'media' }`. `media-refs.service.ts` (`mediaSlots`) and `media-references.ts` read only this marker. An integration check stays: a document read never returns a number for a media field. (13-B)
+      - No switch falls through. Every kept switch ends in a `never` exhaustive check, or becomes a `satisfies Record<Kind, ...>` map. Missing kinds fail closed: `literalProblem` reports a problem, and coerce returns `undefined`. Turning on `noImplicitReturns` in `tsconfig.base.json` is a separate question for the user (repo-wide config change), not part of this task. (13-C)
+      - The `richtext` coerce entry calls `sanitizeRichtext`, and no raw path exists. A unit spec covers `<img onerror>`. (13-D)
+      - `fieldTypeOf` uses `Object.hasOwn`. Unknown keys and `COMPONENT_FIELD_TYPE` give `undefined`, and every consumer treats `undefined` as not queryable, no condition, mask `null`. (13-E)
+      - Merged value rules (AUD-AU1b-05) parse only; they never build SQL. The stricter rule wins (filter `DATETIME` pattern). `compileConditions` still calls `validateConditions`. `QueryGuard.assert` stays in `DocumentsQueryService.list`. Before release, a read-only check of `role_permissions.conditions` lists the rows the stricter rule would drop.
+      - `DocumentAuthGuard` move (AUD-AU1b-07): a small `access/document-auth.module.ts` (imports `AccessModule` + `IdentityModule`, exports only the guard; pattern `access-management.module.ts`), not provided in `AccessModule`. Branches, their order and the guard order on each controller stay unchanged. One shared `BEARER_PATTERN`. `documents-read.spec.ts:394-405` and `graphql.spec.ts:778-790` stay green and unchanged.
+      - The shared UUID pattern keeps its anchors and only the `i` flag (AUD-AU1b-06). `MEDIA_REF_ERROR_CODES.INVALID === 'DOCUMENT_INVALID'` with a unit assertion; the three causes keep one status, code and message (AUD-AU1b-01).
+      - All of these tasks: `Security gate: yes`.
+    - Decided in advance (planner, 2026-10-23): AU1c findings, using security notes from `.claude/state/findings/SEC-AU1c.md`.
+      - **AU1c-05: wire the throttle subject resolver with `RateLimitModule.forRoot({ subjectResolver })`, called only from `app.module.ts`.**
+        - `common/rate-limit` owns only the `ThrottleSubjectResolver` interface and its injection token. `access` owns the implementation class (e.g. `ActorThrottleSubjectResolver`). `app.module.ts`, the one place that composes the app, joins the two. This keeps `common` free of any import from `modules/`.
+        - `forRoot` takes `subjectResolver` as a required option (no `?`). It binds the token with `useClass` and stays `@Global()`. The guard injects the token without `@Optional()`, so a missing binding fails at boot. (C-06)
+        - Why not make `AccessModule` (or a resolver module) `@Global()`: that makes the dependency invisible and global. `forRoot` keeps it explicit in one file.
+        - Extension path: a new subject source is a new class passed to `forRoot`. No change to `common`.
+        - Required: the per-kind spec from C-06. The resolver gives exactly today's subject for each `ActorContext` kind and for no actor, so no rule that is counted today is skipped (S-04 wording). There is one `ClientIpResolver` and one shared `Clock`, both `@Global()` (C-07).
+      - **AU1c-08: the owner env keys are read by a CLI-only helper** (`readOwnerEnv` in `modules/identity/cli/`, with its own small Zod schema), not by the server `envSchema`.
+        - Why: only the `owner:bootstrap` CLI uses these keys, so identity owns them (C1). Keeping them out of the server config also keeps `OWNER_EMAIL` (personal data) away from `IAppConfig` and the boot log, and a malformed value cannot stop the API from booting (C-08).
+        - The helper is the only reader of these keys, documented in `apps/cms-api/.env.example`, and is a deliberate exception to "one typed config module" that applies to CLI processes only.
+        - Blank means unset. There is never a password env key; the password stays prompt or stdin.
+      - Rejected options, never to be planned:
+        - S-01: body limits stay mounted with `app.use` in `app.setup.ts`, before Nest's parser. The modules only export `GRAPHQL_BODY_LIMIT_MOUNT` and `BULK_BODY_LIMIT_MOUNT`; never `NestModule.configure(consumer)`. Integration assertions: a 33 KiB GraphQL POST gets 413 in the GraphQL error shape, and a 500 KB bulk POST is accepted.
+        - S-02: `summarizeConfig` is built from an explicit list of loggable fields (secrets as `secretState`), never by redacting key names with a regex. Add the sentinel spec. The output may shrink but never grow.
+        - S-03: `UUID_V7_PATTERN` is not reused for the condition or content UUID patterns.
+      - Ordering constraint (C-04): before any move of `REFRESH_COOKIE`, `JWT_ALGORITHM`, `TOKEN_TYPES`, the token TTLs or `REFRESH_TOKEN_BYTES`, the same task first adds a unit spec that pins their literal values.
+      - Rate-limit policy moves (C-01 to C-03): a spec checks that rule names are unique; a table test pins each policy's values; the IP rule stays first; the override binding map stays exactly today's three keys; `@Throttle` stays on methods; actor-keyed policies sit behind class-level auth guards.
+      - Turnstile and comment renames follow C-09 to C-11 (fail-closed branch, a typed test double, contract comments kept). Adapter renames follow C-12; the provider registry and token-length move follow C-13 to C-15.
+      - Renaming `infrastructure/media` or `infrastructure/turnstile` is a user question first. If the user approves, the manager updates the high-risk path list in `.claude/state/project.md` before the task runs, so the security gate keeps applying.
+      - S-04 and S-05 are corrections to the audit text; AU6 uses the corrected wording. All AU1c fix tasks: `Security gate: yes`.
+    - Decided in advance (planner, 2026-10-23): AU2 findings, using security notes from `.claude/state/findings/SEC-AU2.md`.
+      - **AUD-AU2-02 vs AUD-AU2-03: the narrow option wins (S-02). AUD-AU2-02's "auth-store.ts exports generic typed hooks and selectors" is replaced by:**
+        - `features/auth/index.ts` exports exactly `useCurrentUser()`, `useSession()` and type `Session`, by name and never with `export *` (S-03). It adds `useSessionStatus()` only if a page outside auth needs it.
+        - The generic `useAppSelector` / `useAppDispatch`, `selectAccessToken`, `authSlice`, `accessTokenReceived`, `signedIn` and `signedOut` stay internal to `features/auth`.
+        - The token and store wiring go through a separate entry, `features/auth/app-wiring.ts` (`createSession`, `createAuthApi`, `authReducer`, `accessTokenOf(store)`). Only `src/app/**` may import it.
+        - `app/store.ts` keeps only `createAppStore` and the `RootState` built from the reducers it composes, so features no longer import `app/`.
+        - Why: the only consumer of the access token outside auth is the composition root (`app/app-services.ts`). Every feature reads only the current user. Narrow hooks keep the D14 in-memory token unreachable from feature code, and they still remove the features -> `app` dependency AUD-AU2-02 is about.
+        - Extension path: a future state slice is owned by its feature. That feature's `app-wiring.ts` exports the reducer for `app/store.ts`, and its `index.ts` exports only narrow hooks.
+        - Guards in the same task: `no-restricted-imports` forbids `**/features/auth/app-wiring*` outside `src/app/**`, forbids `**/app/**` in `src/features/**` and `src/lib/**`, and forbids `**/features/**` in `src/lib/**`. An architecture spec (`src/architecture.spec.ts`) asserts the exact export list of `features/auth/index.ts` and has a failing example.
+        - `createAppStore` keeps `devTools: appEnv.isDev` and no persistence (S-02 condition 3).
+      - Other AU2 constraints for the R3 tasks (all `Security gate: yes` where they touch `features/auth` or `features/security`):
+        - S-01: only `api-failure.ts` helpers move to `lib/api-failure.ts`, with identical logic. Login's private `rateLimitedMessage` and its rule that every 4xx shows one generic message (D8) are never merged into the shared helper, including under AUD-AU2-04. The `login-error`, `password-error` and `setup-error` tests stay unchanged.
+        - S-04: the constants contract test checks equality in both directions, reads only `*.constants.ts` exports (never config or secrets), and only test code imports the snapshot.
+        - S-05: the session machinery (interceptor, single-flight, cross-tab refresh) moves as-is, with its tests. `REFRESH_LOCK_NAME` and `SESSION_CHANNEL_NAME` stay the same. The broadcast stays `{ type, accessToken, at }`. A rename of `skipAuthRefresh` happens in the same task as the move, together with all 10 call sites, plus a test that login sends no `Authorization` header and does not refresh on 401.
+        - S-06: one exported `SETUP_STATUS_QUERY_KEY`, also used by `OwnerSetupPage.tsx`. `staleTime: 0` and `retry: false` stay.
+        - S-07: in high-risk files, the task-ID cleanup touches only comment text, and replaces each ID with its SPEC decision (D9, D14, D1, D8) wherever the comment explains a security reason.
+        - S-08: in the route registry, routes are protected unless listed otherwise. The public routes are one allowlist owned by `features/auth`; a spec checks it is exactly `{LOGIN, SETUP, RESET_PASSWORD, SET_PASSWORD}` and that `*` stays last. Nav visibility is only `{ subject, action }` data passed to `useCallerAccess`. `SessionProvider` stays the outermost provider.
+        - S-09: the copy split is a move with identical keys and strings, with a deep-equal test of `COPY` before and after. `password` stays in `common.copy.ts`.
+    - Decided in advance (planner, 2026-10-23): AU3 findings, using security notes from `.claude/state/findings/SEC-AU3.md`. Every R3 task in `apps/web/src/features/auth` (or the new `features/session`) gets `Security gate: yes` and must keep these invariants, each pinned by a test (existing or new):
+      - I1: `isPrivileged` moves unchanged and fails closed. A `permissions` value that is not an array counts as privileged, and so does any action other than `read`.
+      - I2: `start()` moves unchanged. It calls `me()`, then `isPrivileged`, and only then sets `tokenRef`. On error it calls `clear()` and rethrows.
+      - I3: `revokeIfPrivileged` is true only on `signIn` and `completeTwoFactor`, and false on the mount refresh and `startReviewerSession`.
+      - I4: the token lives only in `tokenRef`. It never goes into state, context values (other than the `getAccessToken` getter), storage, axios defaults, or an interceptor on the shared `apiClient`.
+      - I5: `features/session/index.ts` never exports `start`, `tokenRef` or a token setter. Reviewer tokens enter only through `startReviewerSession`.
+      - I6: on the credential step, every 4xx except 429 shows `invalidCredentials`. No branch reads `errorCode` there, and no server text is shown (D8).
+      - I7: the shared failure mapper reads only `status`, `errorCode` (compared, never rendered) and `Retry-After`. Alerts stay React text children.
+      - I8: `retryAfterSecondsOf` keeps strict `^\d+$` parsing and returns `undefined` for anything else. `RETRY_AFTER_HEADER` stays `'retry-after'`.
+      - SEC-AU3-01: `features/session/index.ts` exports the one `PrivilegedAccessError` class (never a copy) and the sign-in types. `isPrivileged` and `createAuthApi` stay internal. Test: a privileged `signIn` shows `COPY.login.errors.privileged`.
+      - SEC-AU3-02: the login alert and the 2FA alert both check `PrivilegedAccessError` first (one auth-side check), before the shared mapper. `INVALID_TEMP_TOKEN` maps to `expired` and `INVALID_2FA_CODE` to `invalidCode`; every other failure shows "unexpected". Add a privileged test for the 2FA step.
+      - SEC-AU3-03: `BEARER_PREFIX = 'Bearer '`, used as `${BEARER_PREFIX}${accessToken}` only in `me()`'s per-call headers. A test asserts the exact header value and that `apiClient.defaults.headers` has no `Authorization`.
+      - SEC-AU3-04: moved `AccountMenu` and session files keep `'use client'` as their first line. `adminUrl` comes only from the validated `appEnv`. The reviewer entry gate (`siteKey !== undefined && status === 'anonymous'`) stays.
+      - SEC-AU3-05: test utilities are never exported from `index.ts`. A `no-restricted-imports` rule bans `**/*test-utils*` from files that are not `*.test.*`.
+      - SEC-AU3-06: if AUD-AU3-04 option B (a shared `@abyss/client-core` package) is accepted, it is a user question first because it is a new workspace package. It holds only transport code with no config: `createApiClient(baseURL, options)` with no credential default, plus `apiFailureOf` / `retryAfterSecondsOf` / `formatRetryAfter` with no feature kinds and no copy. `axios` is a peer dependency at the workspace version. Run `pnpm audit`. No test files are published.
+      - Comment cleanup (AUD-AU3-11) keeps the invariant sentences ("Held in memory only...", "Reader roles only...", "Fails closed").
+    - Decided in advance (planner, 2026-10-23): **resend cooldown timer overflow** (SEC-AU3 observation). `use-email-code.ts` in both `apps/web` and `apps/cms-admin` passes `retryAfterSeconds * MS_PER_SECOND` to `setTimeout` without an upper limit. A `Retry-After` above about 24.8 days overflows the delay, so the resend button unblocks early. The server still enforces the limit, so the impact is UX only.
+      - It becomes **its own small fix task**, not part of R1-R4 (it changes behavior) and not a board follow-up (it is small and the fix is clear).
+      - The fix: clamp the delay to the platform maximum (`MAX_TIMER_DELAY_MS = 2_147_483_647`, a named constant). Add a unit test that a huge `Retry-After` keeps the button blocked.
+      - The task is placed after the R3 task that removes the copied failure-mapper / email-code code (AUD-AU3-04 / AUD-AU2 equivalents), so the fix lands once in the shared owner. If that removal is dropped, the task fixes both copies.
+      - ui-builder, size S, `Security gate: yes` (`features/auth` in both apps). It is listed in the AU6 proposal for the user's approval together with the R tasks.
+    - Decided by the user (2026-10-23): **AUD-AU5-03, smoke seed CLI** (security conditions in `.claude/state/findings/SEC-AU5.md`).
+      - The JS string in `scripts/lib/stack-seed.sh`, which requires cms-api `dist/` internals, is replaced by a cms-api CLI owned by `identity`: `seed:account`, under `modules/identity/cli/` (same pattern as `owner:bootstrap`). It is a fix task for core-builder in R1 or R2 with `Security gate: yes`. It is not behavior-preserving (it adds validation and an audit row), so AU6 lists it as a planned change. The user has already approved its direction.
+      - **Role allowlist (user answer 1):** an explicit allowlist in `identity.constants.ts` of `admin` and `guest`, so the e2e 2FA account stays `admin`. Add `editor` only if a spec needs it. `owner` (D1), `reviewer` (D2) and any custom or unknown slug are always refused.
+      - **SPEC and audit (user answer 2):** the planner amends SPEC §7 Q2 / D1 / D17 to name the smoke-only seed CLI. The amendment says it is not an HTTP route, never creates an owner or reviewer, refuses in production unless `ALLOW_ACCOUNT_SEED=smoke` is passed per invocation, and writes an audit row. A new audit action `account.seeded` is added to the D15 event list and to `access/security-audit.constants.ts` (written by the task). Metadata is the role slug and the channel only, never the password, and the email only as the project's audit rules allow. The SPEC edit is part of AU6's output (planner `SPEC` job) and must land before the fix task is dispatched.
+      - Conditions S1-S7 apply unchanged:
+        - S1: the CLI exits before opening the DB when `NODE_ENV=production`, unless `ALLOW_ACCOUNT_SEED=smoke` is set. The check is on that exact value: `=1` fails. The key is passed only on the `api_exec -e` call. It is never in `scripts/stack/cms-api.env`, compose, k3s manifests or `.env.example`, and the server never accepts it.
+        - S3: the password comes from stdin only (`readPasswordFromStream`, `PASSWORD_STDIN_FLAG`), never from argv or env, and is never printed. The no-password-in-output assertion covers all three seed calls.
+        - S4: the CLI uses `hashPassword` and the shared identity field schemas (email normalization, password min/max, display-name max). Status is always `active`. A taken email is refused and never upserted or promoted. `--email-2fa` sets only `is2faEnabled` and `twoFaMethod='email'`.
+        - S5: the audit row is written in the same transaction, with actor type `system`.
+        - S6: no Nest module imports the CLI; a guard or test asserts this.
+        - S7: the CLI spec covers refusal in production without the opt-in, a wrong opt-in value, `owner` / `reviewer` / unknown roles, a taken email, and never printing the password.
+      - `stack-seed.sh` then calls the CLI. `api_exec`, `pass` and `fail` are passed in explicitly, or those calls move into `smoke.sh`.
+    - Decided in advance (planner, 2026-10-23): AU4 findings, using security notes from `.claude/state/findings/SEC-AU4.md`. These are constraints on the R3 tasks (ui-builder). `Security gate: yes` applies where a task touches `features/auth`, `features/security` or `features/access`.
+      - AUD-AU4-6, moving the 2FA dialogs from the native `Modal` to the kit `Dialog`:
+        - M1 / SEC-AU4-01: `onInteractOutside` calls `preventDefault()`. `onOpenChange(false)` maps to `onClose` only, so Esc still closes. A test per caller checks that a click on the overlay does not close the dialog and that Esc does.
+        - M2 / SEC-AU4-02: dialogs open when mounted and close when unmounted. No `forceMount`, no `open={false}`, and the challenge and setup state stay in the dialog. A test checks the TOTP secret is gone after cancel.
+        - M3: `ConfirmWithCodeForm` still asks for the code and the current password (D8). Esc still drops the login challenge. Focus starts on the code field.
+        - If the option "keep native, move it into the kit as `NativeDialog`" is chosen instead, SEC-AU4-01 does not apply, but M2 and M3 still do.
+      - AUD-AU4-7, moving the hand-written tables to `SortableSheet`:
+        - T1 / SEC-AU4-04: columns are built with the same conditions (`showActions`, `showCreator`). The per-row checks stay inside `renderCell`. Every destructive action still opens its confirm dialog. Only `tokenPrefix` is shown in a cell, and `TokenReveal` stays outside the table. Existing tests for read-only actors and revoked or unmanageable rows stay, and any missing ones are added before the swap.
+        - T2: cells render row text as React text only.
+        - SEC-AU4-03: no `sortable` columns, `onSortChange` or `onSelectedChange` on the access, identity and reviewer lists. Server-side sorting would be a separate core-builder task with an allowlisted key and the `query.guard` check, and needs the user's approval first.
+      - AUD-AU4-8, kit `Radio` and `Textarea`:
+        - R1 / R2 / SEC-AU4-05: `ui/radio.tsx` is a styled native `<input type="radio">`, not a Radix group. `FieldPicker` passes `disabled` on both radios. Tests: when disabled, clicks do not call `onChange`; "All fields" emits exactly `null` and "Some fields" emits exactly `[]`.
+        - `CellDetails` keeps `aria-invalid`, `aria-describedby`, `disabled` and `spellCheck={false}` on the kit `Textarea`.
+      - The CSP needs no change for the Radix scroll-lock style (the nonce path is already in place).
+    - Decided in advance (planner, 2026-10-23): **hand-written UUID v7 helper** (AU5 addendum; file `apps/cms-api/src/common/uuidv7.ts` is in AU1c scope, so AU6 merges it with AUD-AU1c-04). Check C1.5 (an in-repo copy of what a library provides) and C2.
+      - Facts: its only caller is `media.service.ts` (the storage key). It was built in-repo on purpose ("uuidv7() as an in-repo helper (no dep)", `archive/handoff-archive.md:86`). It does not keep ordering within one millisecond, which `uuid` v7 does. Prisma's `uuid(7)` is used only for `document_id`.
+      - **Planner recommendation: option 2, keep the helper**, recorded as "drop by decision". AUD-AU1c-04 still decides where it lives (move it to `media` while media is its only caller).
+      - Why: the storage key needs only uniqueness, not ordering within one millisecond, and the helper is small and tested. Replacing it adds a dependency and touches a high-risk path for no behavior a user can see (code-standards §4.3: do not build for needs the spec does not have). The S-03 rule stays: `UUID_V7_PATTERN` is not reused for the other UUID patterns.
+      - **User question (AU6 report)**: keep the hand-written helper (recommended), or add the `uuid` package and replace it (new dependency per SPEC §13; about 4 files; `Security gate: yes`, media path)? Trade-off: one less hand-written module and ordering within one millisecond, against a new dependency, an audit surface and a refactor on a high-risk path. Option 3 (the key from a DB default) is not offered. The key is created before the row exists and is used for the upload first: `media.service.ts:142-143` calls `uuidv7()`, then `storage.put`, and `fileLibrary.create` runs only after that. A DB default would mean reordering the upload flow, which is a behavior change.
+    - Fix tasks are written into `tasks/todo.md` / `tasks/plan.md` only after the user approves the list.
+  - Verify: planner report lists counts (accepted / dropped / questions) per area and the proposed task IDs; the manager confirms user approval before the tasks reach the board.
+  - Files: `tasks/todo.md`, `tasks/plan.md`, `SPEC.md` §2 (only after approval).
+  - Done 2026-10-23 (planner). The user approved the fix tasks below on 2026-10-23 (Q-A1..Q-A10 answered). Smoke seed CLI SPEC amendment written (D1, D15, D17, Q2), as the user decided.
+
+## Refactor: Audit fixes (R1-R4) — APPROVED 2026-10-23
+
+Order (user): R1-00 (SPEC) first, then the R1 guards (R1-01, R1-02, R1-07, R1-03). R3 may run alongside R1 (ui-builder). R2 starts after R1, and R4 after R1-R3.
+
+Source: AU6 consolidation of `.claude/state/findings/AUDIT-*.md` and their security notes (`AUDIT-AU1a-security.md`, `SEC-AU1b.md` ... `SEC-AU5.md`). Each task names the findings it closes. Security conditions are cited by their IDs in those files (X1-X3, 13-A..13-E, S-xx, C-xx, I1-I8, M1-M3, T1-T2, R1-R2, S1-S7) and the AU6 decision blocks above; the builder reads the cited note before starting. Keep the findings and SEC files until R4 is done (they hold the conditions).
+
+### AU6 triage (2026-10-23)
+118 findings (AU1a 19, AU1b 16, AU1c 15, AU2 19, AU3 16, AU4 16, AU5 17) plus the cross-cutting notes X1-X3. 107 are accepted fully or in part into R tasks. 11 are dropped or deferred (listed below). There are 10 user questions, and they block only the tasks that name them.
+- **Dropped or deferred, with reasons:**
+  - AUD-AU1a-18: deferred to v2, with the S3 adapter (AU6 decision block).
+  - AUD-AU1a-19: no change needed; the contracts are already additive.
+  - AUD-AU1a-15: per-module subject registration is not built. New system subjects are rare, so this would be building for an imagined need. Only its spec part goes into R1-02.
+  - AUD-AU1a-16: per-module audit-event files are not built. After R1-04, a new event touches 2 files in the security-audit module, which is acceptable.
+  - AUD-AU1b-12: no rename sweep; renames happen only inside R1-14.
+  - AUD-AU1b-14: the target state is already reached.
+  - Kept as they are, with reasons recorded in the findings: AUD-AU1c-13 provider descriptors (only the cheap map step is in R2-14), AUD-AU1c-09 `IAppConfig` rename, AUD-AU1c-12 (no folder rename of `infrastructure/media` and no adapter-file suffix renames: low value, and the high-risk paths stay valid), AUD-AU2-19, AUD-AU3-08 (kept as the cv/ extension point), AUD-AU3-14, AUD-AU3-16, AUD-AU5-11.
+  - The size and `id-denylist` lint rules proposed in several findings are not added (review-level). Only `no-restricted-imports`, `no-restricted-syntax` and architecture specs are added.
+- **User answers (2026-10-23):**
+  - Q-A1: update SPEC §2/§5 to match the code (R1-00). Feature constants live next to the feature.
+  - Q-A2: blanket approval for `git mv` and renames inside approved R tasks, with no content change in the same commit. Whole-file deletions still need approval each time.
+  - Q-A3: keep the hand-written UUID v7 helper; it moves unchanged to `media/` in R1-15.
+  - Q-A4: a committed `apps/cms-api/content/public-constants.json` with a CI `--check`. No shared package (R3-24).
+  - Q-A5: option A. FormAlert goes in the kit; the small helpers stay as two copies with a byte-parity test (R3-22, then R3-01).
+  - Q-A6: yes to the CI changes (R3-24a `--check`, R4-29 reusable workflow and pins check).
+  - Q-A7: yes. `DiffViewerBlock` moves to cms-admin `features/content`, `MediaInput` stays in the kit, and the kit exports `CSP_NONCE_META_NAME` (R3-21).
+  - Q-A8: no public renames. Contracts change additively only.
+  - Q-A9: yes, `noImplicitReturns` as separate tasks (R2-18, R3-26).
+  - Q-A10: yes to both behavior changes: the empty-page range text (R3-18) and the cooldown cap (R3-25).
+
+Rules for every R task:
+- Behavior-preserving (Q1) unless the task says **planned change**. One owning module per task; other modules get import-path edits only.
+- File moves and renames use `git mv` with no content change in the same commit (approved, Q-A2). Whole-file deletions are listed for approval each time, never done silently.
+- **SV (standard verify):** `pnpm --filter <package> lint typecheck test` for every touched package (cms-api also `test:integration`); `SMOKE_E2E=1 pnpm smoke` green; Prettier on changed files. The task's **guard** (architecture spec or `no-restricted-imports`, Q3) is added in the same task, and the unit record shows it failing on the old code.
+- Builders: core-builder for `apps/cms-api`, `scripts/`, `.github/`, root config; ui-builder for `apps/cms-admin`, `apps/web`, `packages/form-commons`; qc for `apps/e2e`.
+- `Security gate: yes` means security-qc reviews before the next task builds on it. Exception for tasks that only edit comments: they keep `Security gate: yes` but get a diff check only.
+
+### Phase R1: cms-api boundaries and guards (core-builder)
+
+- [ ] **R1-00: SPEC §2 / §5 update for module directions (G6)** · S · Deps: none (Q-A1 answered: the SPEC follows the code) · planner (`SPEC`) · Findings AUD-AU1a-03, AUD-AU1b-03, AUD-AU2-08, AUD-AU3-09, AUD-AU1a-13 / AUD-AU2-13 (suffixes), AUD-AU1c-12 (tree) · SPEC §2, §5
+  - Acceptance: the §2 map adds `security-audit`, `content-types` and the access core / management split, and states the agreed directions. §5 trees match the code (cms-api `common/`, `infrastructure/activity`; admin `app/`, `components/`, no `store/`; web `features/session`). §5 lists the file suffixes `.requests.ts`, `.api.ts`, `.slice.ts`, `.port.ts`, `.routes.ts`. Constants placement follows the Q-A1 answer.
+  - Verify: the user approves the diff. `ALLOWED_MODULE_EDGES` in R1-03 matches §2 row for row.
+  - Files: `SPEC.md`.
+
+- [ ] **R1-01: Architecture specs check resolved imports, not path strings (X1)** · S · Deps: none · core-builder · **Security gate: yes** · Findings X1, AUD-AU1a-02 note, AUD-AU1b-02 guard · SPEC D3, D18
+  - Acceptance: one shared helper resolves each import of a source file to its target file (relative paths, and `index.ts` facades followed to the real file). `record-serializer.architecture.spec.ts` and `graphql.architecture.spec.ts` use it. A new check fails when any module `index.ts` re-exports `content.repository`, `tree-loader` or `field-projection`. Every scan asserts a non-empty file count.
+  - Verify: SV. Show both specs failing on a scratch import through a facade (`../content-engine` re-exporting the loader), then revert.
+  - Files: `apps/cms-api/src/architecture/import-graph.ts` (new) + spec, `modules/access/record-serializer.architecture.spec.ts`, `modules/graphql/graphql.architecture.spec.ts`.
+
+- [ ] **R1-02: Guard: every handler has permission metadata or is on the public list (X2)** · S · Deps: none · core-builder · **Security gate: yes** · Findings X2, AUD-AU1a-15 (spec part only) · SPEC D3, D5, D6
+  - Acceptance: the spec boots the Nest app's metadata. Every controller handler either has `RequirePermission` metadata or appears in an explicit `PUBLIC_HANDLERS` allowlist (auth, setup, health, GraphQL, document reads guarded by `DocumentAuthGuard`, reviewer status). Every `RequirePermission` subject exists in the subject table. One `PERMISSION_METADATA_KEY` exists in the codebase.
+  - Verify: SV. Removing one `@RequirePermission` fails the spec.
+  - Files: `apps/cms-api/src/architecture/permission-metadata.architecture.spec.ts`, `.../public-handlers.constants.ts`.
+
+- [ ] **R1-03: Module dependency guard with an allowed-edges table** · S · Deps: R1-01, R1-00 · core-builder · Findings AUD-AU1a-01 (guard), AUD-AU1a-03, AUD-AU1b-01 (guard), AUD-AU1b-03 · SPEC §2
+  - Acceptance: `modules.architecture.spec.ts` builds the module graph at file level. It fails on any edge missing from `ALLOWED_MODULE_EDGES` (mirrors SPEC §2) and on any cycle. Today's violations go in a `KNOWN_VIOLATIONS` list. Each later R1 task removes its entries, and R1-14 ends with the list empty. `access` is three nodes (SPEC §2): core (every `access/` file except the two below), management (`access/management/**`, until R1-10 the accounts, roles and API-token files), and document auth (`access/document-auth.*`, from R1-12), which may import access core and identity. `documents` and `graphql` may import access document auth. `common/**`, `config/**` and `infrastructure/**` may not import `modules/**` (a known violation until R1-08).
+  - Verify: SV. Adding a new reverse edge fails the spec.
+  - Files: `apps/cms-api/src/architecture/modules.architecture.spec.ts`, `.../module-edges.constants.ts`.
+
+- [ ] **R1-04: Extract the `security-audit` module** · M · Deps: R1-01, R1-03 · core-builder · **Security gate: yes** · Findings AUD-AU1a-04 (notes 1-4), X3 · SPEC D15
+  - Acceptance: `modules/security-audit/` holds the service, the audit constants and `writeAuditLog` (moved unchanged), plus `security-audit.module.ts` and `index.ts`. It depends only on Prisma, config and the `ActorContext` type. `SecurityAuditService` is provided in exactly one module. The email-HMAC derivation and `AuditMetadataValue` are byte-identical. Callers in identity, access, media and reviewer change import paths only. Its `KNOWN_VIOLATIONS` entries are removed.
+  - Verify: SV, plus the existing audit integration tests unchanged, plus a spec that `SecurityAuditService` appears in exactly one `providers` list.
+  - Files: `modules/security-audit/*` (moved from `modules/access/security-audit.*`), import-only edits in caller files (more than 5, all one-line path changes).
+
+- [ ] **R1-05: System roles owned by access (one roles table)** · M · Deps: R1-04 · core-builder · **Security gate: yes** · Findings AUD-AU1a-06 (notes 1-3), AUD-AU1a-07 (role literal part) · SPEC D6
+  - Acceptance: `modules/access/roles/system-roles.ts` holds slugs, ranks, a required `assignable` flag, default permissions and both seeds. `UNASSIGNABLE_ROLE_SLUGS` is derived from that table, and a spec checks it is exactly `{public, reviewer}`. Slug and rank values are unchanged (DB CHECK and trigger). Access core no longer imports `identity.constants`. The roles table also owns `ROLE_SLUG_PATTERN`, with the same regex as today, and `createRoleSchema` in `access-management.requests.ts` uses it instead of the content-engine `SLUG_PATTERN` (removes the `access-management.requests -> content-engine.constants` known violation). Actor kinds (`'anonymous'`, `'reviewer'` in `ACCOUNT_REFERENCES_HIDDEN_FROM` and `actor-context`) stay as they are.
+  - Verify: SV. Seed integration tests unchanged. A literal scan spec covers role slugs outside the table (actor-kind literals excluded).
+  - Files: `modules/access/roles/*` (new, moved from `identity/identity.constants.ts`, `identity/system-roles.seed.ts`, `access/role-permissions.seed.ts`, `access/access.constants.ts` default permissions), `identity/cli/seed.ts`.
+
+- [ ] **R1-06: Generic request helpers in `common/http`** · S · Deps: R1-03 · core-builder · **Security gate: yes** · Findings AUD-AU1a-08 (items 1-3; notes 1 and 3) · SPEC D7
+  - Acceptance:
+    - `common/http/client-meta.ts` holds `ClientMeta` and `clientMetaOf`, which still resolves the IP through `ClientIpResolver`.
+    - `common/http/request-parsing.ts` holds every generic helper that other modules take from `access-management.requests.ts` / `.constants.ts` today: `parseRequest`, `invalidRequest`, `queryInt`, `RequestIssue`, `documentIdSchema`, `pageQuerySchema` (`strictObject`, `MAX_PAGE_SIZE`), `PageQuery`, `PageMeta` and `PAGINATION`.
+    - Access, documents, graphql, identity, media and reviewer import them from there.
+    - This removes every known violation that points at `access-management.requests` or `PAGINATION` (the 20 entries marked R1-06). `setRefreshCookie` stays in identity with `REFRESH_COOKIE`. Update the SPEC §5 cms-api `common/` tree line (`http/`).
+  - Verify: SV. Rate-limit spoof test (§12-8) unchanged.
+  - Files: `common/http/client-meta.ts`, `common/http/page-query.ts`, `identity/auth.controller.ts`, `identity/refresh-token.service.ts`, `access/access-management.requests.ts` (+ import-only edits), `SPEC.md` §5 (one line).
+
+- [ ] **R1-07: Pin security constants by literal value** · S · Deps: none · core-builder · **Security gate: yes** · Findings C-04, AUD-AU1c-02, AUD-AU1c-06 · SPEC D9, D14
+  - Acceptance: a unit spec pins `REFRESH_COOKIE` (`__Secure-abyss_rt`, path `/api/v1/auth`, HttpOnly, Secure, SameSite strict, no Domain), `JWT_ALGORITHM='HS256'`, `TOKEN_TYPES`, TTLs 900 / 604800 / 10 / 300 s and `REFRESH_TOKEN_BYTES=32` as literals. `NO_STORE_HEADER` is `Cache-Control: no-store`.
+  - Verify: SV.
+  - Files: `apps/cms-api/src/modules/identity/auth-constants.pin.spec.ts` (new).
+
+- [ ] **R1-08: Identity auth constants out of `common`** · S · Deps: R1-07, R1-03 · core-builder · **Security gate: yes** · Findings AUD-AU1c-02, AUD-AU1a-08 (item 4) · SPEC D9, D14
+  - Acceptance: identity-only exports move from `common/constants/auth.constants.ts` to `modules/identity/identity-auth.constants.ts`. `NO_STORE_HEADER` moves to `common/constants/http.constants.ts`. `EMAIL_MAX_LENGTH` and `USER_AGENT_MAX_LENGTH` move to identity and other modules import them from the identity facade. `common` imports nothing from `modules/`, and its known violation is removed. The R1-07 pin spec stays green, unchanged except for import paths.
+  - Verify: SV.
+  - Files: `common/constants/auth.constants.ts` (emptied, deletion listed for approval), `common/constants/http.constants.ts`, `modules/identity/identity-auth.constants.ts` (+ import-only edits).
+
+- [ ] **R1-09: Identity owns session revocation and token issuing** · M · Deps: R1-04 · core-builder · **Security gate: yes** · Findings AUD-AU1a-05 (notes 1-4) · SPEC D9, D2
+  - Acceptance:
+    - `revokeAllRefreshTokens` keeps its name, or becomes `revokeAllSessions` doing both the `tokenVersion` increment and the refresh revoke in the given `tx`. It stays callable without Nest, and `versions.invalidateAccount` still runs after commit.
+    - Reviewer tokens come from an identity method with `REVIEWER_SESSION_TTL_SECONDS` fixed inside identity. There is no free `ttlSeconds` parameter, and `typ`, HS256 and `tv`/`pv` are unchanged.
+    - A spec checks that only `identity/` references the `RefreshToken` model and writes `tokenVersion`, with an allowlist for today's access and reviewer write sites if any remain.
+  - Verify: SV, plus the §12-10 integration tests unchanged.
+  - Files: `identity/refresh-token.service.ts`, `identity/access-token.service.ts`, `access/accounts.service.ts`, `reviewer/reviewer.service.ts`, new spec.
+
+- [ ] **R1-10: Split `access` into core and management folders** · M · Deps: R1-04, R1-05, R1-09 · core-builder · **Security gate: yes** · Findings AUD-AU1a-01 (notes X1-X3) · SPEC §2, D3
+  - Acceptance:
+    - Accounts, roles and API tokens (their controllers, services, requests and constants) move to `access/management/` and keep `AccessManagementModule`. Access core files never import `identity/*`.
+    - The guards keep the same providing modules, and the `@UseGuards(JwtAuthGuard, PermissionGuard)` order is unchanged. `AccessModule` still imports `ContentEngineModule`.
+    - `SERIALIZER_FILE` in the serializer spec is updated, and the identity <-> access known violations are removed.
+    - Constants used by core files stay in core: `API_TOKEN` (token format, used by `api-token.guard.ts` and the document-auth guard) moves from `api-tokens.constants.ts` to an access core constants file, and the management error codes/messages used by `rank-rules.ts` move to core. This removes the `api-token.guard -> api-tokens.constants` and `rank-rules -> access-management.constants` known violations.
+    - `PRE_SPLIT_MANAGEMENT_FILE` (and its use in `module-graph.ts`) is removed; management membership comes from the `access/management/` folder only.
+  - Verify: SV. The R1-02 spec is green.
+  - Files: `git mv` of management files (more than 5, moves only), `access-management.module.ts`, architecture spec constants.
+
+- [ ] **R1-11: Facades for identity and access** · M · Deps: R1-10 · core-builder · **Security gate: yes** · Findings AUD-AU1a-02 (identity, access), AUD-AU1a-01 (public interfaces) · SPEC §2
+  - Acceptance:
+    - `identity/index.ts` and `access/index.ts` export by name the interfaces listed in AUD-AU1a-01/02: guards, `RequirePermission` (re-exported, never copied), `ActorContext` builders, `VersionCache`, `AccessPolicyService`, rank rules, the serializer and `ClientMeta` types.
+    - They never export raw loaders, `writeAuditLog` or `hashRefreshToken`.
+    - `no-restricted-imports` in cms-api forbids `**/identity/*` and `**/access/*` deep imports from outside each module. Other modules switch to the facades.
+  - Verify: SV. R1-01 and R1-02 specs are green.
+  - Files: `identity/index.ts`, `access/index.ts`, `apps/cms-api/eslint.config.mjs` (+ import-only edits).
+
+- [ ] **R1-12: `DocumentAuthGuard` moves to access** · S · Deps: R1-11 · core-builder · **Security gate: yes** · Findings AUD-AU1b-07 item 1 (SEC-AU1b notes 1-5; AU6 decision block) · SPEC D3, D5, D18
+  - Acceptance: `access/document-auth.module.ts` imports `AccessModule` and `IdentityModule` and exports only `DocumentAuthGuard`. The guard is moved unchanged: three branches in the same order, and an empty or malformed header gives 401. Guard order on the documents, bulk and GraphQL controllers is unchanged. There is one shared `BEARER_PATTERN`. The `documents -> identity` edge is removed.
+  - Verify: SV. `documents-read.spec.ts:394-405` and `graphql.spec.ts:778-790` unchanged and green.
+  - Files: `access/document-auth.guard.ts` (moved), `access/document-auth.module.ts`, `access/api-token.guard.ts`, `documents/documents.module.ts`, `graphql/graphql.module.ts`.
+
+- [ ] **R1-13: Media owns its reference error code** · S · Deps: R1-03 · core-builder · **Security gate: yes** · Findings AUD-AU1b-01 (SEC-AU1b notes 1-2) · SPEC D3, D12
+  - Acceptance: `MEDIA_REF_ERROR_CODES.INVALID === 'DOCUMENT_INVALID'` in `media/media.constants.ts`, with a unit assertion. The media module no longer imports documents. All three causes give one status, code and message.
+  - Verify: SV.
+  - Files: `media/media.constants.ts`, `media/media-refs.service.ts`, spec.
+
+- [ ] **R1-14: Facades for content-engine, documents, media, reviewer, graphql, content-types; zero known violations** · M · Deps: R1-11, R1-12, R1-13 · core-builder · **Security gate: yes** · Findings AUD-AU1b-02, AUD-AU1b-07 items 4-5, AUD-AU1a-02 (media, reviewer) · SPEC §2
+  - Acceptance:
+    - Each module has an `index.ts` with the AUD-AU1b-02 export lists. `ContentRegistryProvider` moves to `content-engine/content-registry.provider.ts`. `loadDefinitions` and the content paths are exported for the graphql CLI.
+    - `ContentRepository` and `loadComponentTrees` are reachable only by the modules the R1-01 spec allows.
+    - `no-restricted-imports` is extended to every module, and `KNOWN_VIOLATIONS` is empty.
+    - The module-edge spec also enforces the SPEC §2 sub-rules not checked by R1-03: "types only" (`security-audit -> access core` imports are `import type` only) and "auth guard only" (`content-types` and `media` import from identity only the JWT guard and `AuthenticatedRequest`).
+  - Verify: SV. The R1-03 spec has no known violations.
+  - Files: six `index.ts`, `content-engine/content-registry.provider.ts`, `content-engine/content-engine.module.ts`, `eslint.config.mjs` (+ import-only edits). Split into two builder sessions if needed: content-engine + documents, then the rest.
+
+- [ ] **R1-15: Module error codes and single-module files leave `common`** · S · Deps: R1-08 · core-builder · **Security gate: yes** · Findings AUD-AU1c-03 (S-05), AUD-AU1c-04 (S-03, C-05) · SPEC D1, D18
+  - Acceptance:
+    - The setup error codes move to identity and the GraphQL codes to `graphql.constants.ts`; wire values are unchanged. The controller's 404 mapping and its message are unchanged.
+    - `health.constants.ts` moves to `health/`. `DOCUMENT_ID_PARAM` moves to documents.
+    - `uuidv7.ts` moves unchanged to `media/` (per Q-A3) with its spec. The unused `UUID_V7_PATTERN` export is dropped, and the other two UUID patterns are not touched.
+    - The richtext sanitizer stays put until R2-02.
+    - Update the SPEC §5 cms-api `common/` tree line (`uuidv7.ts` gone).
+  - Verify: SV.
+  - Files: `common/constants/error.constants.ts`, `modules/identity/identity.constants.ts`, `modules/graphql/graphql.constants.ts`, `modules/health/health.constants.ts`, `modules/media/uuidv7.ts`, `SPEC.md` §5 (one line).
+
+- [ ] **R1-16: Smoke seed CLI `seed:account` (planned change)** · M · Deps: R1-04, R1-05 · core-builder · **Security gate: yes** · Findings AUD-AU5-03 (SEC-AU5 S1-S7; user decisions in the AU6 block) · SPEC D1, D15, D17 (amended 2026-10-23)
+  - Acceptance:
+    - `modules/identity/cli/seed-account.ts` takes `--email`, `--role`, optional `--email-2fa` and `--password-stdin`. The role allowlist is `admin` and `guest` (from `identity.constants.ts`).
+    - With `NODE_ENV=production` it exits before opening the DB unless `ALLOW_ACCOUNT_SEED` equals exactly `smoke`.
+    - It reuses `hashPassword` and the shared identity field schemas. Accounts are always `active`, and a taken email is refused without changes.
+    - It writes `account.seeded` (channel `cli_seed`, role slug) in the same transaction. No Nest module imports it.
+    - `scripts/lib/stack-seed.sh` calls it with `api_exec -e ALLOW_ACCOUNT_SEED=smoke`, and the inline JS string is gone. `api_exec`, `pass` and `fail` are passed in explicitly. The no-password-in-output check covers all three calls.
+  - Verify: SV. A CLI integration spec covers each S7 refusal. `grep -rn "require('./dist" scripts/` is empty. `ALLOW_ACCOUNT_SEED` is absent from `scripts/stack/cms-api.env`, compose and `.env.example`.
+  - Files: `modules/identity/cli/seed-account.ts` + spec, `modules/identity/identity.constants.ts`, `modules/security-audit/security-audit.constants.ts`, `apps/cms-api/package.json` (script), `scripts/lib/stack-seed.sh`.
+
+### Phase R2: cms-api extensibility (core-builder)
+
+- [ ] **R2-01: Field-type registry in content-engine** · M · Deps: R1-14 · core-builder · **Security gate: yes** · Findings AUD-AU1b-13, AUD-AU1b-04, AUD-AU1a-14 (13-A, 13-B, 13-E; AU6 decision block) · SPEC D3, D10
+  - Acceptance:
+    - `content-engine/field-types/` declares a `FieldTypeSpec` per scalar type with `satisfies Record<ScalarFieldType, FieldTypeSpec>`. Each spec has `columnType`, `conditionKind`, a required `listQueryable: boolean` (false for `media` and `json`), `maskedValue: 'sentinel' | 'null'`, a required `referencesMedia: boolean` and `graphqlOutput`.
+    - `fieldTypeOf` uses `Object.hasOwn` and returns `undefined` for `component` and unknown keys.
+    - `COLUMN_TYPES` and the `json` encode read from the registry. Specs cover `referencesMedia` true only for `media` and `listQueryable` false for `media`.
+  - Verify: SV. Generated SQL for `cv-page.json` is unchanged (`content:generate -- --check`).
+  - Files: `content-engine/field-types/*` (new), `content-engine/content-engine.constants.ts`, `content-engine/sql-generator.ts`, `content-engine/content.repository.ts`.
+
+- [ ] **R2-02: Value coercion and value kinds move into the registry** · M · Deps: R2-01 · core-builder · **Security gate: yes** · Findings AUD-AU1b-05, AUD-AU1b-06 items 1-2, AUD-AU1b-15 (13-C, 13-D, SEC-AU1b-05, SEC-AU1b-06 item 2) · SPEC D3, D13
+  - Acceptance:
+    - `coerceValue` per type lives in the registry. Richtext calls the sanitizer, which moves unchanged from `common/sanitize/` to `content-engine/field-types/`, and no raw path exists.
+    - The value patterns, `INT4_MAX` and one UUID pattern (anchored, `i` flag only) are exported by the registry, and `value-validator` and `document-filter` use them.
+    - The stricter datetime rule wins. Every remaining switch ends in a `never` check, and missing kinds fail closed.
+    - A read-only script lists the `role_permissions.conditions` rows the stricter rule would drop; it is run on the smoke DB and its output goes in the unit record.
+    - Update the SPEC §5 cms-api `common/` tree line (`sanitize/` gone).
+  - Verify: SV, plus a sanitizer spec for `<img onerror>` through `fieldTypeOf('richtext').coerceValue`.
+  - Files: `content-engine/field-types/*`, `common/sanitize/richtext.sanitizer.ts` (moved), `documents/value-validator.ts`, `documents/document-filter.ts`, `documents/documents.constants.ts`, `SPEC.md` §5 (one line).
+
+- [ ] **R2-03: Access reads condition kinds and mask values from the registry** · M · Deps: R2-02 · core-builder · **Security gate: yes** · Findings AUD-AU1a-14, AUD-AU1a-17 (field-type part), AUD-AU1b-13 rows 10-13 (13-A, 13-C, 13-E, AU1a-14 note) · SPEC D3
+  - Acceptance:
+    - `conditionKindOf` and `literalProblem` use the registry. `literalProblem` is exhaustive and fails closed. `compileConditions` still calls `validateConditions`.
+    - `CONDITION_FIELD_TYPES`, `MASK_SENTINEL_FIELD_TYPES` and `SENTINEL_TYPES` are derived from the registry. The registry gives only the mask shape; the decision to mask stays in access.
+    - `documents/queryable-fields.ts` uses `listQueryable`.
+    - New spec: REST `filter[<media>]`, REST `sort=<media>` and the GraphQL filter input all reject a media field.
+  - Verify: SV, plus the §12-4 / §12-19 tests unchanged.
+  - Files: `access/conditions.compiler.ts`, `access/access.constants.ts`, `access/record.serializer.ts`, `access/subject-catalog.ts`, `documents/queryable-fields.ts`.
+
+- [ ] **R2-04: GraphQL output types from the registry** · S · Deps: R2-01 · core-builder · Findings AUD-AU1b-13 row 14, AUD-AU1b-11 (shared types part) · SPEC D18
+  - Acceptance: `SCALAR_OUTPUT_TYPES` maps `graphqlOutput` names. Shared types (`DocumentStatusEnum`, `PageMetaType`, `MediaType`) move to `graphql/schema/shared-types.ts`. The printed SDL is unchanged (`graphql:print-schema -- --check`).
+  - Verify: SV.
+  - Files: `graphql/schema/schema.builder.ts`, `graphql/schema/shared-types.ts`, `graphql/schema/scalars.ts`.
+
+- [ ] **R2-05: Media reads the media marker from the registry; field-type guard** · S · Deps: R2-03, R2-04 · core-builder · **Security gate: yes** · Findings AUD-AU1a-07, AUD-AU1b-13 row 15, AUD-AU1b-15 (13-B; AU1a-07 note) · SPEC D12, D13
+  - Acceptance:
+    - content-engine exports `mediaColumnsOf(registry)`, which returns structured table and column references only, never SQL.
+    - `media-refs.service.ts` (`toStored`, `embed`) and `media-references.ts` both use it. The SQL stays in `media-references.ts` with `quoteIdentifier` and `$1`.
+    - A test covers a media field at the root and inside a component.
+    - An architecture spec checks there is no `case '<scalar type>'` or `=== '<scalar type>'` outside `content-engine/field-types/`.
+  - Verify: SV, plus the §12-13 delete-referenced test unchanged.
+  - Files: `content-engine/field-types/media-columns.ts`, `media/media-refs.service.ts`, `media/media-references.ts`, architecture spec.
+
+- [ ] **R2-06: One list-query normalizer for REST and GraphQL** · S · Deps: R2-02 · core-builder · **Security gate: yes** · Findings AUD-AU1b-06 item 3, AUD-AU1b-05 (SEC-AU1b-05 note 4) · SPEC D3, D18
+  - Acceptance: `documents` exports `normalizeListQuery`, which checks shape and limits only. `parseListQuery` and `graphql/list-arguments.ts` call it. `QueryGuard.assert` stays in `DocumentsQueryService.list`. A table-driven spec shows REST and GraphQL reject the same out-of-range inputs.
+  - Verify: SV.
+  - Files: `documents/dto/list-documents.query.ts`, `documents/list-query.normalizer.ts`, `graphql/list-arguments.ts`, spec.
+
+- [ ] **R2-07: Shared HTTP error description and byte-limit helper; body-limit mount paths** · S · Deps: R1-15 · core-builder · **Security gate: yes** · Findings AUD-AU1b-06 items 4-5, AUD-AU1c-15 (`app.setup` part; S-01) · SPEC D18
+  - Acceptance:
+    - `common/` exports `describeHttpException`, used by the exception filter and the GraphQL error formatter.
+    - `common/middleware/byte-limit.ts` holds the Content-Length check and the chunk counter, used by both body-limit middlewares.
+    - Each middleware exports its mount path. `app.setup.ts` keeps `app.use` in the same order before `setGlobalPrefix`; never `configure(consumer)`.
+    - New integration assertions: a 33 KiB GraphQL POST gets 413 in the GraphQL shape, and a 500 KB bulk POST is accepted.
+  - Verify: SV.
+  - Files: `common/filters/http-exception.filter.ts`, `common/middleware/byte-limit.ts`, `graphql/error-format.ts`, `graphql/graphql-body-limit.middleware.ts`, `documents/bulk-body-limit.middleware.ts`, `app.setup.ts`.
+
+- [ ] **R2-08: Rate-limit policies live with their modules** · M · Deps: R1-14 · core-builder · **Security gate: yes** · Findings AUD-AU1c-01 (C-01, C-02, C-03) · SPEC D7
+  - Design (REPLAN 2026-10-23, after the build-R2-08 blocker): `config/` is the platform node and may not import `modules/` (SPEC §2, `ALLOWED_MODULE_EDGES.platform = []`, `KNOWN_VIOLATIONS` stays empty). So ownership is split along the existing edge identity -> platform:
+    - config owns the env contract: the override env keys, their parsing and the production opt-in check. It names env keys only, never rule names.
+    - identity owns the bindings: each overridable identity rule declares which env key may override its limit.
+    - The throttle guard (common) joins the two by env key. Neither config nor common imports `modules/`.
+    - `loadAppConfig(rawEnv)` keeps its signature. No caller outside `config/` changes (bootstrap, test-app, the five CLIs, content-engine migrate, other specs).
+    - Next overridable rule, in any module: add the env key to `RATE_LIMIT_OVERRIDE_ENV_KEYS` (plus `.env.example`), then set `limitOverrideEnvKey` on the rule. The compiler links the two.
+  - Acceptance:
+    - Before the move, a table test pins every policy (name, keySource, limit, windowMs, order), and a spec checks rule names are unique.
+    - The policies move to `<module>.rate-limits.constants.ts` (identity, access, documents, media, reviewer). `common/rate-limit` keeps only the mechanism (`RateLimitRule`, `RateLimitKeySource`, store, window helpers). `RATE_LIMIT_RULE_NAMES` moves into `identity.rate-limits.constants.ts`.
+    - `config/config.constants.ts` exports `RATE_LIMIT_OVERRIDE_ENV_KEYS = ['LOGIN_RATE_LIMIT_IP', 'LOGIN_RATE_LIMIT_EMAIL', 'REFRESH_RATE_LIMIT_IP'] as const` and the type `RateLimitOverrideEnvKey`. `env.schema.ts` parses these keys from this list, and the production opt-in check iterates this same list.
+    - `IAppConfig.rateLimit.limitOverrides` is keyed by env key: `Readonly<Partial<Record<RateLimitOverrideEnvKey, number>>>`. `app-config.ts` no longer imports `common/constants/limits.constants`.
+    - `RateLimitRule` gets an optional `limitOverrideEnvKey?: RateLimitOverrideEnvKey`. Only the three identity rules set it (`login:ip`, `login:email`, `refresh:ip`). `ThrottleGuard.limitOf` returns `config.rateLimit.limitOverrides[rule.limitOverrideEnvKey]` when the key is set, and otherwise `rule.limit`.
+    - `rateLimitOverrideBindings` (exported from identity) is the env key -> rule name table derived from identity's rules. A spec pins it to exactly today's three pairs. A second spec walks every module's policies and checks that each key in `RATE_LIMIT_OVERRIDE_ENV_KEYS` is bound exactly once and that no rule outside identity sets the field.
+    - Behaviour stays the same: the existing app-config override specs (rekeyed by env key) and a guard spec show that `LOGIN_RATE_LIMIT_IP=500` raises `login:ip` to 500 and leaves every other rule unchanged. In production the opt-in refusal fires for each of the three keys.
+    - A spec checks every ACTOR / ANONYMOUS_IP handler sits behind a class-level auth guard. `@Throttle` stays method-level.
+    - `modules.architecture.spec.ts` is unchanged and green, and `KNOWN_VIOLATIONS` stays empty.
+  - Verify: SV.
+  - Files: `common/constants/limits.constants.ts`, `common/rate-limit/` (rule types), `common/guards/throttle.guard.ts` (+ spec), five `*.rate-limits.constants.ts`, `config/config.constants.ts`, `config/env.schema.ts`, `config/app-config.ts`, `config/app-config.spec.ts`, plus import-only edits in the nine controllers that use `RATE_LIMIT_POLICIES`. No `loadAppConfig` call-site edits.
+
+- [ ] **R2-09: Clock and client-IP modules; throttle subject resolver port** · M · Deps: R2-08 · core-builder · **Security gate: yes** · Findings AUD-AU1c-05 (S-04, C-06, C-07; AU6 decision block) · SPEC D7
+  - Acceptance:
+    - `common/time/clock.module.ts` and `common/http/client-ip.module.ts` are both `@Global()`, with exactly one provider each.
+    - `RateLimitModule.forRoot({ subjectResolver })` is called only from `app.module.ts`, with the option required and no `@Optional()`. `common/rate-limit` owns the interface and token, and access owns `ActorThrottleSubjectResolver`.
+    - A spec builds one request per actor kind and one with no actor, and shows the same subject as today. `anonymousFlagOf` is renamed `isAnonymousRequest`.
+    - Update the SPEC §5 cms-api `common/` tree line (`time/`, `http/client-ip.module.ts`).
+  - Verify: SV. Boot fails if the binding is missing (spec).
+  - Files: `common/rate-limit/rate-limit.module.ts`, `common/guards/throttle.guard.ts`, `common/time/clock.module.ts`, `common/http/client-ip.module.ts`, `access/actor-throttle-subject.resolver.ts`, `app.module.ts`, `SPEC.md` §5 (one line).
+
+- [ ] **R2-10: Route groups per module; route snapshot** · M · Deps: R2-07, R1-07 · core-builder · **Security gate: yes** · Findings AUD-AU1c-15 (`API_ROUTES` part; C-17) · SPEC §9
+  - Acceptance:
+    - `common` keeps `API_PREFIX`, `ID_PARAM` and `SLUG_PARAM`. Each module owns `<module>.routes.ts`.
+    - A spec boots the app and snapshots every method + path pair; there are no duplicates and the paths are byte-identical.
+    - The bulk route stays before `:documentId`. `PASSWORD` and `TWO_FACTOR` stay under `auth/`, and the cookie path stays as pinned.
+  - Verify: SV. The snapshot matches the pre-move list (generated before the move).
+  - Files: `common/constants/api.constants.ts`, the module `*.routes.ts` files (one line each in controllers; more than 5, import-only).
+
+- [ ] **R2-11: Env schema helpers and named rule functions** · S · Deps: none · core-builder · Findings AUD-AU1c-07, AUD-AU1c-11 (C-15 kept: `emptyToUndefined` on `TURNSTILE_SECRET_KEY`, lowercase hostname) · SPEC D17
+  - Acceptance:
+    - `config/env-validators.ts` holds `optionalText`, `optionalSecret` and `portNumber`. `SECRET_ENV_KEYS` and `OPTIONAL_SECRET_ENV_KEYS` are iterated by one length rule.
+    - The `superRefine` body is split into named rule functions in `config/env-rules.ts`, with the same messages in the same order.
+    - A table test covers both secret lists.
+  - Verify: SV. `app-config.spec.ts` messages unchanged.
+  - Files: `config/env.schema.ts`, `config/env-validators.ts`, `config/env-rules.ts`, spec.
+
+- [ ] **R2-12: Boot config summary from an allowlist; `.env.example` parity spec** · S · Deps: R2-11 · core-builder · **Security gate: yes** · Findings AUD-AU1c-14, AUD-AU5-17 (S-02, C-16) · SPEC D17
+  - Acceptance:
+    - `config/config-summary.ts` builds the summary from explicit fields only, with secrets through `secretState`. The output is today's or smaller.
+    - The sentinel spec sets every key to a unique value and checks no secret appears.
+    - The parity spec compares `.env.example` keys with `envSchema` keys, with an allowlist for CLI-only keys. It reads `.env.example` only and prints key names only.
+    - The docs lists in `docs/local-run.md` point to `.env.example`. The SOPS table stays.
+  - Verify: SV.
+  - Files: `config/app-config.ts`, `config/config-summary.ts`, `config/env-example.parity.spec.ts`, `docs/local-run.md`.
+
+- [ ] **R2-13: Owner env keys read by a CLI-only helper** · S · Deps: R1-15 · core-builder · **Security gate: yes** · Findings AUD-AU1c-08 (C-08; AU6 decision block) · SPEC D1
+  - Acceptance: `identity/cli/read-owner-env.ts` (own small Zod schema, blank means unset) is the only reader of `OWNER_EMAIL` and `OWNER_DISPLAY_NAME`. Those keys are on the parity allowlist. There is no password env key.
+  - Verify: SV. CLI specs unchanged.
+  - Files: `identity/cli/read-owner-env.ts` + spec, `identity/cli/owner-bootstrap.ts`.
+
+- [ ] **R2-14: Provider factory maps; Turnstile token length on the port** · S · Deps: none · core-builder · **Security gate: yes** · Findings AUD-AU1c-13 (cheap step only; C-13, C-14, C-15) · SPEC D12, D17
+  - Acceptance:
+    - The mail and media modules select providers through `Record<Provider, factory>` lookups that throw on a missing entry (`Object.hasOwn`).
+    - The production refusals are kept. The fake media factory also refuses `isProduction` (planned change, defence in depth).
+    - A spec asserts the Cloudinary upload options. `TURNSTILE_TOKEN_MAX_LENGTH` moves to `turnstile.port.ts`, and reviewer keeps `.min(1).max(...)`.
+    - A spec iterates `MAIL_PROVIDERS` and `MEDIA_PROVIDERS`.
+  - Verify: SV.
+  - Files: `infrastructure/mail/mail.module.ts`, `infrastructure/media/media-storage.module.ts`, `infrastructure/media/fake.adapter.ts`, `infrastructure/turnstile/turnstile.port.ts`, `reviewer/reviewer.requests.ts`.
+
+- [ ] **R2-15: One time-constants file** · S · Deps: R1-08 · core-builder · **Security gate: yes** · Findings AUD-AU1c-06 (C-04) · SPEC D9
+  - Acceptance: `common/constants/time.constants.ts` is the only declaration of `MS_PER_SECOND`, `MS_PER_MINUTE`, `MS_PER_HOUR`, `SECONDS_PER_MINUTE`, `SECONDS_PER_HOUR` and `SECONDS_PER_DAY`. Digest names stay per purpose. A lint rule forbids the literal `1_000` / `1000` in `*.constants.ts` elsewhere.
+  - Verify: SV, with the R1-07 pin spec unchanged.
+  - Files: `common/constants/time.constants.ts`, the five declaring files.
+
+- [ ] **R2-16: Kind maps for image re-encoders and actor kinds** · S · Deps: R1-11 · core-builder · **Security gate: yes** · Findings AUD-AU1a-17 (notes 1-2) · SPEC D2, D12
+  - Acceptance:
+    - The image re-encoders are a `Record<ImageMime, encoder>` derived from `ALLOWED_MEDIA_TYPES`, where an allowlisted MIME with no encoder throws `unsupportedType`.
+    - `effectivePolicy` and `auditActorOf` use `Record<ActorKind, ...>` with no default. The reviewer/anonymous read-only clamp is unchanged, and anonymous is still audited as `{type:'account', accountId:null}`.
+  - Verify: SV.
+  - Files: `media/upload.pipeline.ts`, `media/media.constants.ts`, `access/actor-context.ts`, `security-audit/security-audit.service.ts`.
+
+- [ ] **R2-17: Content-types contract snapshot and open-union note** · S · Deps: R2-01 · core-builder · Findings AUD-AU1b-16 · SPEC §9
+  - Acceptance: a spec snapshots the keys of a `GET /content-types` response. `docs/modules/content-schema.md` says `type` and `conditionKind` are open unions that clients must handle with a fallback.
+  - Verify: SV.
+  - Files: `content-types/content-types.contract.spec.ts`, `docs/modules/content-schema.md`.
+
+- [ ] **R2-18: `noImplicitReturns` in cms-api** · S · Deps: R2-03, Q-A9 · core-builder · Findings SEC-AU1b 13-C · SPEC §10
+  - Acceptance: `apps/cms-api/tsconfig.json` sets `noImplicitReturns: true`, and every reported site is fixed so it fails closed (no behavior change otherwise).
+  - Verify: SV.
+  - Files: `apps/cms-api/tsconfig.json` + the fixed sites (listed in the unit record).
+
+### Phase R3: frontends and UI kit (ui-builder; one core-builder and one qc task)
+
+- [ ] **R3-01: Admin failure vocabulary to `lib/`, FormAlert out of auth** · M · Deps: R3-22 · ui-builder · **Security gate: yes** · Findings AUD-AU2-01 (S-01), AUD-AU2-04 (error part) · SPEC D8
+  - Acceptance:
+    - `lib/api-failure.ts` holds `ApiFailure`, `apiFailureOf`, `rateLimitedMessage`, `retryAfterSecondsOf`, `ApiIssue` and `apiIssuesOf`, moved with identical logic.
+    - Login's private `rateLimitedMessage` and its rule of one generic message for every 4xx stay in `login-error.ts`.
+    - Admin uses the kit `FormAlert` from R3-22 (Q-A5 option A). The deletion of the local `features/auth/FormAlert.tsx` is listed for approval.
+    - The `auth -> access` edge is gone. The `login-error`, `password-error` and `setup-error` tests are unchanged.
+  - Verify: SV.
+  - Files: `lib/api-failure.ts`, `features/auth/api-failure.ts`, `features/auth/login-error.ts`, `features/access/access-error.ts` (+ import-only edits to the kit `FormAlert`).
+
+- [ ] **R3-02: Admin auth facade with narrow hooks; app-only wiring entry** · S · Deps: R3-01 · ui-builder · **Security gate: yes** · Findings AUD-AU2-02, AUD-AU2-03 (auth) (S-02, S-03; AU6 decision block) · SPEC D14
+  - Acceptance:
+    - `features/auth/index.ts` exports by name only `useCurrentUser`, `useSession` and `Session`.
+    - `features/auth/app-wiring.ts` exports `createSession`, `createAuthApi`, `authReducer` and `accessTokenOf`, and only `src/app/**` may import it.
+    - The typed hooks stay internal to auth, and features stop importing `app/`. `createAppStore` keeps `devTools: appEnv.isDev` and has no persistence.
+    - `strip-trailing-slashes` moves to `config/`.
+    - `no-restricted-imports`: app-wiring only from `src/app/**`, no `app/**` from features or lib, no features from lib. `src/architecture.spec.ts` asserts the exact auth export list.
+  - Verify: SV.
+  - Files: `features/auth/index.ts`, `features/auth/app-wiring.ts`, `app/store.ts`, `apps/cms-admin/eslint.config.mjs`, `src/architecture.spec.ts` (+ import-only edits in 9 feature files).
+
+- [ ] **R3-03: Admin session machinery moves into `features/auth`** · S · Deps: R3-02 · ui-builder · **Security gate: yes** · Findings AUD-AU2-07 (lib part; S-05), AUD-AU2-10 (interceptor flags) · SPEC D9, D14
+  - Acceptance:
+    - `single-flight.ts`, `cross-tab-refresh.ts` and `auth-interceptor.ts` move with their tests unchanged, keeping the same lock and channel names and the same broadcast message.
+    - If `skipAuthRefresh` / `authRetried` are renamed, it happens in this task across all 10 call sites and the augmentation, with a test that login sends no `Authorization` header and does not refresh on 401.
+  - Verify: SV.
+  - Files: the three `lib/` files and their tests (moved), `app/app-services.ts`, `features/auth/session.ts`.
+
+- [ ] **R3-04: Shared page states to `components/`; content-type model to `features/content-types`** · M · Deps: R3-01, R1-00 · ui-builder · Findings AUD-AU2-04 · SPEC §2 (frontend directions), §5
+  - Acceptance: `components/PageStates.tsx` (`PageHeader`, `TableSkeleton`, `LoadError`; `Pagination` see R3-18). `PageMeta` in `lib/api-types.ts`. `ContentType`, `ContentTypeField` and `getContentTypes` move to a new small feature `features/content-types/` (mirrors the cms-api `content-types` module; replanned 2026-10-23: `features/content` would make an access <-> content cycle, since content already imports access). Its `index.ts` exports only those three names. `access`, `media`, `content` and `reviewer` import them from that `index.ts`; `content-types` imports no other feature. `components/**` and `lib/**` import no feature (spec).
+  - Verify: SV.
+  - Files: `components/PageStates.tsx`, `lib/api-types.ts`, `features/access/access.api.ts`, `features/content-types/content-types.api.ts`, `features/content-types/index.ts` (+ import-only edits in content, media, reviewer).
+
+- [ ] **R3-05: Admin feature facades and import order** · M · Deps: R3-02, R3-04 · ui-builder · **Security gate: yes** · Findings AUD-AU2-03, AUD-AU2-01 (guard) (S-03) · SPEC §5
+  - Acceptance:
+    - `index.ts` for access, media, content, reviewer and security, with named exports only.
+    - Per-feature `no-restricted-imports` encodes the SPEC §2 order auth < security < content-types < access < media < content, reviewer (status imports no feature), with no deep imports.
+    - The architecture spec checks every cross-feature import targets an `index.ts`.
+  - Verify: SV. The spec fails on `content/CollectionListPage.tsx:34-37` before the change.
+  - Files: five `index.ts`, `apps/cms-admin/eslint.config.mjs`, `src/architecture.spec.ts` (+ import-only edits).
+
+- [ ] **R3-06: `createApiContext`; health API through a provider** · S · Deps: R3-05 · ui-builder · Findings AUD-AU2-06 (contexts), AUD-AU2-17 · SPEC §5
+  - Acceptance: `lib/create-api-context.tsx` returns `[Provider, useApi]`. The seven `*-api-context.tsx` files use it, and so does `createHealthApi(client)`. A lint rule forbids `**/lib/api-client` in `src/features/**`.
+  - Verify: SV.
+  - Files: `lib/create-api-context.tsx`, the seven context files, `features/status/health.api.ts`, `app/AppProviders.tsx`.
+
+- [ ] **R3-07: Shared page hooks, formatters, mask constant, query keys** · M · Deps: R3-05 · ui-builder · **Security gate: yes** (setup key) · Findings AUD-AU2-06 (rest), AUD-AU2-09 (S-06) · SPEC §5
+  - Acceptance:
+    - `components/use-restore-focus.ts`, `useClampedPage(meta)` and `lib/date-format.ts` exist.
+    - The mask sentinel becomes a constant in `config/content.constants.ts`. `CONTENT_QUERY_KEYS` holds `{list, type, presence}`.
+    - `SETUP_STATUS_QUERY_KEY` is exported from `use-setup-status.ts` and imported by `OwnerSetupPage`, with `staleTime: 0` and `retry: false` kept.
+    - Lint rules forbid `new Intl.DateTimeFormat` and literal `queryKey` arrays outside their owners.
+  - Verify: SV.
+  - Files: new hooks and `lib/date-format.ts`, `features/content/content-queries.ts`, `features/auth/use-setup-status.ts`, the pages (import edits). Split per hook if over 5 files.
+
+- [ ] **R3-08: Admin copy split into a folder with an aggregate** · M · Deps: R3-01 · ui-builder · **Security gate: yes** · Findings AUD-AU2-18, AUD-AU2-15 (nav labels) (S-09) · SPEC §5
+  - Acceptance:
+    - `config/copy/` has one file per section plus `common.copy.ts` (`password`, `session`, `app`, nav labels). `COPY` is re-exported, so call sites are unchanged.
+    - A deep-equal test of `COPY` before and after covers the `login`, `setup`, `password` and `security` sections.
+    - A lint rule stops one feature importing another feature's copy file.
+  - Verify: SV. e2e imports of `copy.constants` still resolve (`config/copy.constants.ts` re-exports).
+  - Files: `config/copy/*.copy.ts`, `config/copy.constants.ts`.
+
+- [ ] **R3-09: Admin feature registry: routes and nav items** · M · Deps: R3-05, R3-08 · ui-builder · **Security gate: yes** · Findings AUD-AU2-14 (routes, nav), AUD-AU2-15 (S-08) · SPEC D14
+  - Acceptance:
+    - Each feature exports `feature.ts` with `routes` and optional `navItem {labelKey, path, subject, action}`. `features/registry.ts` lists them, and `App.tsx` and `AppShell.tsx` iterate the list.
+    - Routes are protected unless listed otherwise. The public routes are one allowlist owned by `features/auth`; a spec checks it is exactly `{LOGIN, SETUP, RESET_PASSWORD, SET_PASSWORD}` and that `*` is last.
+    - Nav uses `useCallerAccess().can`, and the nav order is unchanged.
+  - Verify: SV, plus a spec that every `features/*` folder is registered.
+  - Files: `features/registry.ts`, `features/*/feature.ts`, `app/App.tsx`, `app/AppShell.tsx`.
+
+- [ ] **R3-10: Admin feature registry: services and providers** · S · Deps: R3-09, R3-06 · ui-builder · **Security gate: yes** · Findings AUD-AU2-14 (wiring) (S-08 condition 4) · SPEC §5
+  - Acceptance: `app-services.ts` and `AppProviders.tsx` iterate the registry, nesting through `reduceRight`. `SessionProvider` and the store provider stay outermost. Adding a feature needs one registry line.
+  - Verify: SV.
+  - Files: `app/app-services.ts`, `app/AppProviders.tsx`, `features/registry.ts`, `features/*/feature.ts`.
+
+- [ ] **R3-11: Admin field registry also covers list display** · S · Deps: R3-05 · ui-builder · Findings AUD-AU2-16 · SPEC §5
+  - Acceptance: `FieldAdapter` gains optional `formatForList`, `isSortable` and `listAlignment`. `formatValue` and `LIST_SORTABLE_TYPES` are derived from the registry. A spec checks every non-component `FIELD_TYPE` has an entry and that `CollectionListPage` does not reference `FIELD_TYPE`.
+  - Verify: SV.
+  - Files: `features/content/field-registry.tsx`, `features/content/CollectionListPage.tsx`, `config/content.constants.ts`.
+
+- [ ] **R3-12: Admin feature constants next to their features** · M · Deps: R1-00 (Q-A1 answer), R3-05 · ui-builder · Findings AUD-AU2-07 (constants) · SPEC §5
+  - Acceptance: `config/` keeps `env`, `endpoints`, `routes`, `http.constants` and `auth.constants`. The access, content, media, security and reviewer constants move to `features/<x>/<x>.constants.ts`. A lint rule forbids importing another feature's constants file.
+  - Verify: SV.
+  - Files: five constants files (moved) + import-only edits.
+
+- [ ] **R3-13: Web `features/session`; auth and reviewer stop depending on each other** · M · Deps: R3-14 · ui-builder · **Security gate: yes** · Findings AUD-AU3-01, AUD-AU3-13 (I1-I5, SEC-AU3-01, -04, -05) · SPEC §5 web rules, D14
+  - Acceptance:
+    - `features/session/` holds `web-session.tsx` (moved from `useWebSession.tsx`) and `auth.api.ts`. Its `index.ts` exports `WebSessionProvider`, `useWebSession`, `WebSession`, `CurrentUser`, the single `PrivilegedAccessError` class and the sign-in types, and never `start`, `tokenRef`, `isPrivileged` or `createAuthApi`.
+    - `AccountMenu` moves to `app/` and keeps `'use client'`.
+    - Lint rules: no deep imports between features, no auth <-> reviewer imports, `**/*test-utils*` only in tests. An architecture spec fails on a directory cycle.
+  - Verify: SV, plus tests pinning I1-I5 and a privileged `signIn` showing `COPY.login.errors.privileged`.
+  - Files: `features/session/*` (moved), `app/AccountMenu.tsx`, `app/layout.tsx`, `app/providers.tsx`, `apps/web/eslint.config.mjs`.
+
+- [ ] **R3-14: Web failure mapping to `lib/api-failure`** · S · Deps: none · ui-builder · **Security gate: yes** · Findings AUD-AU3-03, AUD-AU3-06 (Bearer) (I6-I8, SEC-AU3-02, -03) · SPEC D8
+  - Acceptance:
+    - `lib/api-failure.ts` holds transport kinds only, plus `retryAfterSecondsOf` and `formatRetryAfter`. `Alert` / `AlertTone` replace `LoginAlert`.
+    - The login and 2FA alerts check `PrivilegedAccessError` first, in one auth-side check.
+    - `BEARER_PREFIX = 'Bearer '` is used only inside `me()`'s per-call headers.
+  - Verify: SV, plus a 2FA privileged test, an exact-header test, and a test that `apiClient.defaults.headers` has no `Authorization`.
+  - Files: `lib/api-failure.ts`, `features/auth/api-failure.ts`, `features/auth/TwoFactorStep.tsx`, `features/auth/login-alert.ts`, `features/reviewer/reviewer-error.ts`.
+
+- [ ] **R3-15: Web small owners: reviewer queries, safe link target, config owners** · S · Deps: R3-13 · ui-builder · **Security gate: yes** · Findings AUD-AU3-06, AUD-AU3-07, AUD-AU3-15, AUD-AU3-02 (SEC-AU3-04) · SPEC §5
+  - Acceptance:
+    - `features/reviewer/reviewer.queries.ts` holds `REVIEWER_QUERY_KEYS`, one `reviewerApi` and `useReviewerEnabled()`, keeping the `siteKey && anonymous` gate.
+    - `lib/safe-link-target.ts` exists. Error codes move to the auth and reviewer constants. `TURNSTILE` moves to `security.constants.ts`.
+    - `config/**` may not import `lib/api-client` or features.
+  - Verify: SV.
+  - Files: `features/reviewer/reviewer.queries.ts`, `lib/safe-link-target.ts`, `config/require-env.ts`, `config/http.constants.ts`, `config/security.constants.ts`.
+
+- [ ] **R3-16: Kit field wiring hooks and control style constants** · M · Deps: none · ui-builder · Findings AUD-AU4-1, AUD-AU4-3 · SPEC §5
+  - Acceptance: internal `useFieldIds`, `useRegisteredField` (one FormProvider guard) and `NativeFieldProps` are used by Field, CheckboxInput, SwitchInput, TextInput, TextAreaInput, SelectInput and RichtextInput. `ui/control.constants.ts` holds the shared focus and invalid classes, and the output CSS is unchanged. The spec from AUD-AU4-1 and AUD-AU4-3 is added.
+  - Verify: SV; component tests unchanged.
+  - Files: `components/forms/field-wiring.ts`, `components/ui/control.constants.ts`, the inputs (split into two sessions if over 5 files).
+
+- [ ] **R3-17: Kit `Radio`; swaps in FieldPicker, DiffViewerBlock, CellDetails** · S · Deps: R3-16 · ui-builder · **Security gate: yes** · Findings AUD-AU4-8 (R1, R2, SEC-AU4-05) · SPEC D3
+  - Acceptance: `ui/radio.tsx` is a styled native radio input. `FieldPicker` passes `disabled` explicitly. `CellDetails` uses `Textarea` and keeps its aria, `disabled` and `spellCheck` props. Lint forbids raw radio and textarea JSX in the apps.
+  - Verify: SV, plus tests that a disabled picker ignores clicks and that the emitted values are exactly `null` / `[]`.
+  - Files: `packages/form-commons/src/components/ui/radio.tsx`, kit `index.ts`, `DiffViewerBlock.tsx`, `features/access/FieldPicker.tsx`, `features/access/CellDetails.tsx`.
+
+- [ ] **R3-18: Admin `Pagination` becomes an adapter over the kit `TablePagination` (planned change)** · S · Deps: R3-04, Q-A10 · ui-builder · Findings AUD-AU4-5 · SPEC §5
+  - Acceptance: the copied markup is removed and the adapter maps `meta`. The empty-page range text changes to the kit's `range(0, 0, total)`, as approved in Q-A10. A spec stops a second `Pagination` definition.
+  - Verify: SV.
+  - Files: `components/PageStates.tsx` (or the adapter file), the 5 call sites (import only).
+
+- [ ] **R3-19: Admin 2FA dialogs on the kit `Dialog`** · S · Deps: none · ui-builder · **Security gate: yes** · Findings AUD-AU4-6 (M1-M3, SEC-AU4-01, -02) · SPEC D8
+  - Acceptance: `components/Modal.tsx` renders the kit `Dialog`, with `onInteractOutside` prevented and `onOpenChange(false)` mapped to `onClose`. It opens on mount and closes on unmount (no `forceMount`). Callers are unchanged. A lint rule forbids `<dialog` JSX.
+  - Verify: SV, plus tests per caller: an overlay click does not close and Esc does; the TOTP secret is gone after cancel; focus is on the code field.
+  - Files: `components/Modal.tsx`, `TwoFactorModal.test.tsx`, `SecuritySettingsPage.test.tsx`, `apps/cms-admin/eslint.config.mjs`.
+
+- [ ] **R3-20: Admin list tables on `SortableSheet`** · M (4 sessions: a Reviewer+Roles, b Accounts, c ApiTokens, d MediaLibrary) · Deps: R3-07 · ui-builder · **Security gate: yes** (a-c) · Findings AUD-AU4-7 (T1, T2, SEC-AU4-03, -04) · SPEC D3, D5, D6
+  - Acceptance:
+    - No `sortable` columns, `onSortChange` or `onSelectedChange` on these lists.
+    - Conditional columns and per-row gates stay the same, and confirm dialogs are kept. Only `tokenPrefix` appears in a cell.
+    - A spec allows `<table` only in `PermissionMatrix` and `TokenScopeEditor`.
+  - Verify: SV, plus read-only, revoked and unmanageable row tests (kept or added before the swap).
+  - Files: one page + its test per session; the spec in session d.
+
+- [ ] **R3-21: Kit domain blocks and CSP nonce constant** · S · Deps: Q-A7 · ui-builder · Findings AUD-AU4-4 · SPEC §5
+  - Acceptance: per Q-A7 (approved): `DiffViewerBlock` is moved with `git mv` to cms-admin `features/content`, and the removal of its kit export is listed for approval, `MediaInput` stays, and `CSP_NONCE_META_NAME` is exported by the kit and used in admin `main.tsx`.
+  - Verify: SV.
+  - Files: `DiffViewerBlock/*`, kit `index.ts`, `features/content/ConflictMergeModal.tsx`, admin `config/security.constants.ts`, `main.tsx`.
+
+- [ ] **R3-22: Shared FormAlert in the kit; parity test for copied helpers** · S · Deps: none (Q-A5 option A approved) · ui-builder · Findings AUD-AU3-04 · SPEC §5
+  - Acceptance: `FormAlert` (with the additive `success` tone) is exported by the kit. Admin and web use it, and their local copies are listed for deletion. A root test checks `strip-trailing-slashes.ts` is byte-identical in both apps.
+  - Verify: SV.
+  - Files: kit `components/forms/FormAlert/*`, kit `index.ts`, both apps' FormAlert importers (import-only), the parity test.
+
+- [ ] **R3-23: Kit public API snapshot and README table** · S · Deps: R3-21 · ui-builder · Findings AUD-AU4-15, AUD-AU4-16 · SPEC §5
+  - Acceptance: a spec compares the kit export names with `public-api.snapshot.ts`. The README export table is correct, and a "Public API" rule says changes are additive and renames go through deprecated aliases.
+  - Verify: SV.
+  - Files: `packages/form-commons/src/public-api.spec.ts`, `public-api.snapshot.ts`, `README.md`.
+
+- [ ] **R3-24: Contract snapshot of public cms-api constants** · M (3 sessions) · Deps: Q-A4, R1-15, R2-10 · a core-builder, b ui-builder, c qc · **Security gate: yes** (a) · Findings AUD-AU2-05, AUD-AU3-05, AUD-AU4-2, AUD-AU5-02 (e2e part) (S-04) · SPEC §10
+  - Acceptance:
+    - a: `pnpm --filter @abyss/cms-api contract:print` writes `apps/cms-api/content/public-constants.json` from `*.constants.ts` exports only. It contains password bounds, OTP and TOTP lengths, setup-token max, reviewer input limits, error codes, permission actions, system subjects and richtext schemes, with no env or secrets. `-- --check` is added to the cms-api CI job (Q-A6).
+    - b: admin, web and kit tests compare their mirrored constants with the JSON in both directions. Only tests import it.
+    - c: e2e constants (`REFRESH_COOKIE_NAME`, `NOTES_MAX`, TOTP period) are checked the same way.
+  - Verify: SV. Changing one mirrored value fails the matching test.
+  - Files: a: `apps/cms-api/src/contract/print-public-constants.ts`, `package.json`, `.github/workflows/cms-api.yml`; b: one `*.contract.test.ts` per package; c: `apps/e2e/src/constants.contract.test.ts`.
+
+- [ ] **R3-25: Cap the resend cooldown timer (planned change)** · S · Deps: R3-14 (and R3-22 if the hooks merge) · ui-builder · **Security gate: yes** · Findings SEC-AU3 observation (AU6 decision block) · SPEC D8
+  - Acceptance: `use-email-code.ts` in web and admin clamps the delay to `MAX_TIMER_DELAY_MS = 2_147_483_647`.
+  - Verify: SV, plus a unit test that a huge `Retry-After` keeps the button blocked.
+  - Files: `apps/web/src/features/auth/use-email-code.ts`, `apps/cms-admin/src/features/auth/use-email-code.ts`, their tests, the constants files.
+
+- [ ] **R3-26: `noImplicitReturns` in cms-admin, web and form-commons** · S · Deps: Q-A9 · ui-builder · Findings SEC-AU1b 13-C · SPEC §10
+  - Acceptance: each tsconfig sets the option, and the reported sites are fixed.
+  - Verify: SV.
+  - Files: three tsconfigs + fixed sites.
+
+### Phase R4: readability sweep and test tooling
+
+Comment sweeps (Q4: remove task IDs, keep SPEC IDs and the sentence; security contract comments per C-11, S-07, AUD-AU3-11 keep their meaning; diffs touch comment text only, or check-label strings in `smoke.sh`):
+- [ ] **R4-01: Task IDs out of cms-api identity, access, security-audit comments** · S · core-builder · **Security gate: yes** (diff check) · Findings AUD-AU1a-11 · Verify: SV. Files: the comment lines listed in the finding.
+- [ ] **R4-02: Task IDs out of the other cms-api comments; comment guard spec** · S · Deps: R4-01 · core-builder · Findings AUD-AU1b-10, AUD-AU1c-10 (C-11, stale database-health comments) · Acceptance: `comments.architecture.spec.ts` fails on `\b(T\d{1,3}[a-z]?|OS\d+|Q-?[A-Z]*\d+)\b` in comments of non-spec sources, without matching `D7`, `§9` or `2fa`. Verify: SV.
+- [ ] **R4-03: Task IDs out of cms-admin comments; guard** · S · ui-builder · **Security gate: yes** (diff check) · Findings AUD-AU2-11 (S-07: replace IDs with D9, D14, D1, D8 where a security reason is stated) · Verify: SV.
+- [ ] **R4-04: Task IDs out of web and kit comments; guard** · S · ui-builder · Findings AUD-AU3-11, AUD-AU4-11 (keep "Held in memory only", "Reader roles only", "Fails closed") · Verify: SV.
+- [ ] **R4-05: Task IDs and stale comments in scripts, compose, workflows** · S · core-builder · Findings AUD-AU5-12, AUD-AU5-13 (smoke header; check labels such as `Init container (deploy:migrate)`; stale `T37e` workflow comment) · Verify: `pnpm smoke` output reads without IDs; actionlint clean.
+- [ ] **R4-06: Task IDs and stale owner:bootstrap text in apps/e2e** · S · qc · Findings AUD-AU5-12, AUD-AU5-13 (README, `.env.example`) · Verify: e2e lint; `pnpm e2e:spec` on one spec.
+
+Renames (internal names only; public API and response keys unchanged per Q-A8):
+- [ ] **R4-07: cms-api renames in identity, access, reviewer, media** · S · core-builder · **Security gate: yes** · Findings AUD-AU1a-09, AUD-AU1a-10, AUD-AU1a-13 (owner-bootstrap CLI file, media-refs naming) · Verify: SV.
+- [ ] **R4-08: cms-api renames in content-engine, documents, graphql, common, infrastructure** · S · core-builder · **Security gate: yes** (turnstile) · Findings AUD-AU1b-08, AUD-AU1b-09 (internal), AUD-AU1c-09 (C-09, C-10: an `UnconfiguredTurnstileVerifier` 503 test first, `satisfies TurnstileVerifier` on the test double) · Verify: SV.
+- [ ] **R4-09: Admin and web renames; admin test fixture out of `src`** · S · ui-builder · **Security gate: yes** (web auth files) · Findings AUD-AU2-10, AUD-AU2-13, AUD-AU3-10 · Verify: SV.
+- [ ] **R4-10: Kit internal renames, `MediaInput.onFilePick`, folder names** · S · ui-builder · Findings AUD-AU4-9 (internal), AUD-AU4-10 (additive alias with `@deprecated`), AUD-AU4-14 · Verify: SV; public API snapshot updated additively only.
+
+File and function splits (named sub-responsibilities only; X3 single providers; each split goes through security-qc where gated):
+- [ ] **R4-11: Split the 2FA service into management and login** · M · core-builder · **Security gate: yes** · Findings AUD-AU1a-12 (notes 2, 5) · Verify: SV, plus the 2FA tests unchanged and one `TwoFactorChallengeStore` provider.
+- [ ] **R4-12: Split invitations out of accounts** · S · core-builder · **Security gate: yes** · Findings AUD-AU1a-12 (note 3) · Verify: SV.
+- [ ] **R4-13: Split effective policy and the permission validators; named steps in `validateConditions`** · M · core-builder · **Security gate: yes** · Findings AUD-AU1a-12 (note 4) · Verify: SV.
+- [ ] **R4-14: Named steps in `login` and `bootstrapOwner`** · S · core-builder · **Security gate: yes** · Findings AUD-AU1a-12 (note 1: timing parity, same error for every failure) · Verify: SV, plus the timing-parity test unchanged.
+- [ ] **R4-15: Named steps in reviewer `createSession`** · S · core-builder · **Security gate: yes** · Findings AUD-AU1a-12 · Verify: SV.
+- [ ] **R4-16: content-engine: row mapping, component sync, SQL reserved words** · M · core-builder · Findings AUD-AU1b-11 · Verify: SV.
+- [ ] **R4-17: documents: update steps and bulk errors** · M · core-builder · Findings AUD-AU1b-11 · Verify: SV.
+- [ ] **R4-18: Admin `CollectionListPage` split** · M · ui-builder · Findings AUD-AU2-12 · Verify: SV.
+- [ ] **R4-19: Admin `TokenFormBody` submit hook; row components** · M · ui-builder · Findings AUD-AU2-12 · Verify: SV.
+- [ ] **R4-20: Web reviewer dialog steps** · M · ui-builder · Findings AUD-AU3-12 · Verify: SV.
+- [ ] **R4-21: Kit `RichtextInput` split** · M · ui-builder · Findings AUD-AU4-12 · Verify: SV.
+- [ ] **R4-22: Kit `SortableSheet` split** · M · ui-builder · Findings AUD-AU4-13 · Verify: SV.
+
+Test tooling:
+- [ ] **R4-23: Smoke DB identity exported as E2E vars; one E2E variable list** · S · core-builder · Findings AUD-AU5-01 (scripts part), AUD-AU5-05 · Acceptance: `E2E_DB_CONTAINER`, `E2E_DB_USER` and `E2E_DB_NAME` are resolved from compose. `stack_export_e2e_env` is derived from `E2E_VARS`. Verify: `SMOKE_KEEP=1 SMOKE_E2E=1 pnpm smoke`.
+- [ ] **R4-24: e2e database runner, env contract test, app-contracts entry** · M · Deps: R4-23 · qc · Findings AUD-AU5-01 (e2e), AUD-AU5-10, AUD-AU5-05 (test), AUD-AU5-04 · Acceptance: `src/smoke-database.ts` keeps `SAFE_NAME` and refuses any host not ending in `.localhost`. `src/env-contract.test.ts` exists. `src/app-contracts.ts` is the only importer of app `src`, enforced by lint. Verify: e2e lint; full smoke.
+- [ ] **R4-25: e2e API paths, HTTP codes, shared helpers** · M (2 sessions) · Deps: R4-24 · qc · Findings AUD-AU5-06, AUD-AU5-08, AUD-AU5-09, AUD-AU5-15 · Acceptance: `src/api-paths.ts`, one `HTTP`, `signInAs`, `RUN_ID`, slug constants, locators and `inviteAccount`. Lint stops local copies. Verify: full smoke.
+- [ ] **R4-26: Smoke expected-output file and header comparison** · S · core-builder · Findings AUD-AU5-02 (shell part; do not weaken the HSTS, CSP, cookie or nonce checks) · Verify: smoke.
+- [ ] **R4-27: Split `smoke.sh` into section files** · M · Deps: R4-26 · core-builder · Findings AUD-AU5-14, AUD-AU5-16 · Verify: smoke; same check order.
+- [ ] **R4-28: Split the large e2e specs** · M · Deps: R4-25 · qc · Findings AUD-AU5-14 (reviewer, access-admin, content-conflict setup, `fakeMediaApi`) · Verify: full smoke; same test count.
+- [ ] **R4-29: One reusable app-checks workflow and a pins check** · M · Deps: Q-A6 · core-builder · Findings AUD-AU5-07 (do not touch `_publish.yml` permissions, `secrets: inherit` or environments) · Verify: actionlint; `affected.test.sh`; `pins-check.sh` test.

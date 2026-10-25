@@ -179,3 +179,94 @@ Base: 9f8cf59 · Phase checks: qc pass (regression e2e 106/106) · security pass
 | T37e | Image publish + deploy bump from template | .github, docs | done | 612da2b |
 | T38 | Deployment guide (init + main containers) | docs | done | 1a6998f |
 
+## Phase R2: cms-api extensibility (closed 2026-10-24)
+Base: f0dd9f2 · Phase checks: qc pass (unit 1219, integration 480/481 with password.spec timing flake, lint pass, e2e 133) · security pass (live checks on smoke stack) · Checkpoint: approved by user
+
+| ID | Title | Scope | Status | Commit |
+|---|---|---|---|---|
+| R2-01 | Field-type registry | core-builder | done | ffafc86 |
+| R2-02 | Value coercion and kinds into the registry | core-builder | done | e46f5f8 |
+| R2-03 | Access reads from the registry | core-builder | done | 3d50dd5 |
+| R2-04 | GraphQL output types | core-builder | done | 540b57b |
+| R2-05 | Media marker plus field-type guard | core-builder | done | dfe3e8f |
+| R2-06 | List-query normalizer | core-builder | done | 02999b1 |
+| R2-07 | Error description, byte limit, mount paths | core-builder | done | 9125172 |
+| R2-08 | Rate-limit policies live with their modules | core-builder | done | a107b83 |
+| R2-09 | Clock, client-IP, subject resolver | core-builder | done | 800c0e8 |
+| R2-10 | Route groups and snapshot | core-builder | done | 1e3dd78 |
+| R2-11 | Env helpers and rules | core-builder | done | bb51ac3 |
+| R2-12 | Summary allowlist and .env.example parity | core-builder | done | 22baea1 |
+| R2-13 | readOwnerEnv | core-builder | done | 0af5592 |
+| R2-14 | Provider maps (+ fake-media production refusal) | core-builder | done | 9b93673 |
+| R2-15 | Time constants | core-builder | done | a8db183 |
+| R2-16 | MIME and actor-kind maps | core-builder | done | cd59286 |
+| R2-17 | Content-types contract snapshot | core-builder | done | 1c1abcd |
+| R2-18 | noImplicitReturns in cms-api | core-builder | done | 7784ca0 |
+
+## Phase R3: frontends and UI kit
+Source: `tasks/plan.md` "R3" · Base: 7784ca0 · Can run alongside R1 · Phase checks: qc pass (regression e2e 174, browser walk as admin role) · security pass (live headers, CORS, static review) · Checkpoint: passed by user · Stack teardown: pending (`docker compose -p abyss-smoke down -v`) · Notes: pnpm audit has 6 pre-existing advisories (2 high: body-parser, multer), not from R3; web favicon 404 (low)
+
+| ID | Title | Scope | Status | Commit |
+|---|---|---|---|---|
+| R3-01 | Admin failure vocabulary and FormAlert (needs R3-22 first) | ui-builder | done (3 new login e2e specs not yet in a full run) | 63d20f9 |
+| R3-02 | Auth facade and app-wiring | ui-builder | done | 4be9923 |
+| R3-03 | Session machinery move | ui-builder | done | 5153795 |
+| R3-04 | Page states and content-type model | ui-builder | done (no browser visual check; e2e 139 pass) | 7f6586b |
+| R3-05 | Admin facades and import order | ui-builder | done (content list not walked live; e2e content specs pass) | abcf15d |
+| R3-06 | createApiContext | ui-builder | done | cffea49 |
+| R3-07 | Page hooks and query keys | ui-builder | done (no browser check of date display or Protected text; e2e 142 pass) | 9091334 |
+| R3-08 | Copy split | ui-builder | done (authenticated pages and nav labels not walked live; e2e 142 pass) | fa48c3b |
+| R3-09 | Registry for routes and nav | ui-builder | done (no manual walk or visual review; Security link hidden for reviewer not covered by a spec; e2e 158 pass) | f881760 |
+| R3-10 | Registry for providers | ui-builder | done (Playwright only; full run predates new spec; content and status pages not walked directly) | 0e5cba5 |
+| R3-11 | Field registry list display | ui-builder | done (Playwright only; no visual review) | 6e74e4b |
+| R3-12 | Feature constants | ui-builder | done | 848d2ff |
+| R3-13 | Web session feature | ui-builder | done (signed-in flows Playwright only; DevTools walk limited) | 7fb2e1f |
+| R3-14 | Web failure mapping | ui-builder | done (e2e 166 pass after import fix 936107d) | 32883fd |
+| R3-15 | Web small owners | ui-builder | done (NEXT_PUBLIC_ADMIN_URL build check not run e2e; full run predates new signed-in test) | 0d2f879 |
+| R3-16 | Kit field wiring | ui-builder | done (checkbox and switch not walked live) | 32a8bd5 |
+| R3-17 | Kit Radio | ui-builder | done (visual look not seen live; token scope picker no new assertion) | 649aa4a |
+| R3-18 | Pagination adapter (planned change) | ui-builder | done (empty-page text unit-tested only; four lists not paged live) | 61a0be4 |
+| R3-19 | 2FA dialogs on the kit Dialog | ui-builder | done (Esc in login challenge and TOTP setup unit-tested only; mobile visuals not checked) | fbd2435 |
+| R3-20 | SortableSheet tables | ui-builder | done (read-only role variants, keyboard and console not checked; three lists not read visually) | 87a2a3f |
+| R3-21 | Kit domain blocks | ui-builder | done (CSP nonce not checked live; admin-list-sheets and admin-session-retry flaky once each) | 08704c1 |
+| R3-22 | FormAlert in the kit | ui-builder | done | 3f13e10 |
+| R3-23 | Kit public API snapshot | ui-builder | done (first builder stopped mid-run; re-check verified) | d5e09f7 |
+| R3-24 | Contract snapshot (drift check not run; e2e lint has 2 errors in collection-list-display.spec.ts; admin-session-retry flaky once) | core-builder, ui-builder, qc | done | 6382c78, c09c59e, 3ae439b |
+| R3-25 | Cooldown cap (planned change) | ui-builder | done (admin dialog cooldown unit-tested only) | 191c917 |
+| R3-26 | noImplicitReturns in the frontends | ui-builder | done | 4a2dd4f |
+
+## Phase R4: readability sweep and test tooling
+Source: `tasks/plan.md` "R4" · Base: 4a2dd4f8096187daa652cfc3bfea396b87eefe22 · Order: R4-01 to R4-29 in board order (Deps as in `tasks/todo.md`) · Phase checks: qc pass (regression e2e 189, smoke ok) · security pass (base 4a2dd4f; 6 existing dependency advisories, not from R4) · Checkpoint: passed (user approved)
+
+| ID | Title | Scope | Status | Commit |
+|---|---|---|---|---|
+| R4-01 | Task-ID and stale comment sweep: cms-api identity, access, security-audit | core-builder | done (qc pass, security pass) | b03fc98 |
+| R4-02 | Task-ID and stale comment sweep in other cms-api comments; comment guard spec | core-builder | done (no checks: comment text, Risk normal) | a3e80d5 |
+| R4-03 | Task-ID out of cms-admin comments; guard | ui-builder | done (security pass) | 31c70b2 |
+| R4-04 | Task-ID out of web and kit comments; guard | ui-builder | done (no checks: comment text, Risk normal) | 9762a3a |
+| R4-05 | Task-ID and stale comments in scripts, compose, workflows | core-builder | done (qc pass) | 32df50c |
+| R4-06 | Task-ID and stale owner:bootstrap text in apps/e2e | qc | done (qc pass; lint 2 pre-existing errors) | bd71a21 |
+| R4-07 | cms-api renames in identity, access, reviewer, media | core-builder | done (qc pass, security pass) | e9886ee |
+| R4-08 | cms-api renames in content-engine, documents, graphql, common, infrastructure | core-builder | done (qc pass, security pass) | bb5d8dc |
+| R4-09 | Admin and web renames; admin test fixture out of src | ui-builder | done (qc pass, security pass; /accounts Invite question open) | 8006e90 |
+| R4-10 | Kit internal renames, MediaInput.onFilePick, folder names | ui-builder | done (qc pass) | 60c6f43 |
+| R4-11 | Split the 2FA service into management and login | core-builder | done (qc pass, security pass) | 5b591aa |
+| R4-12 | Split invitations out of accounts | core-builder | done (qc pass, security pass; smoke web / 404 open) | a6966e5 |
+| R4-13 | Split effective policy and permission validators; named steps in validateConditions | core-builder | done (qc pass, security pass) | 17831e3 |
+| R4-14 | Named steps in login and bootstrapOwner | core-builder | done (qc pass, security pass) | 6a0cf5d |
+| R4-15 | Named steps in reviewer createSession | core-builder | done (qc pass, security pass; expiry computed before Turnstile, user accepted) | df75d1c |
+| R4-16 | content-engine: row mapping, component sync, SQL reserved words | core-builder | done (qc pass) | d8a585e |
+| R4-17 | documents: update steps and bulk errors | core-builder | done (qc pass) | 7da2238 |
+| R4-18 | Admin CollectionListPage split | ui-builder | done (qc pass; forbidden, empty and non-collection states not walked) | 9e0e894 |
+| R4-19 | Admin TokenFormBody submit hook; row components | ui-builder | done (qc pass; in-flight lock not covered) | ba1f404 |
+| R4-20 | Web reviewer dialog steps | ui-builder | done (qc pass; remount and visual review not covered) | 4f19ed5 |
+| R4-21 | Kit RichtextInput split | ui-builder | done (qc pass; disabled state not in browser) | 1cb16db |
+| R4-22 | Kit SortableSheet split | ui-builder | done (qc pass; built to AUD-AU4-13, no todo acceptance text) | 2cc230c |
+| R4-23 | Tooling: smoke vars | core-builder | done (qc pass) | 07178f1 |
+| R4-24 | Tooling: e2e DB runner and contracts | qc | done (lint, typecheck, contract test pass; no fully green full run; two specs flaky on a used stack) | f1ceb55 |
+| R4-25 | Tooling: e2e helpers | qc | done (qc pass) | 4a4fd06 |
+| R4-26 | Tooling: smoke expected output | core-builder | done (qc pass; negative header test not run) | 0f1c7f3 |
+| R4-27 | Tooling: smoke.sh split | core-builder | done (qc pass) | 6c5745f |
+| R4-28 | Tooling: large spec split | qc | done (qc pass; run 1 had one unidentified failure) | 04999fe |
+| R4-29 | Tooling: CI reusable workflow and pins check | core-builder | done (qc pass; real CI names unverified until push) | 4aedfa1 |
+

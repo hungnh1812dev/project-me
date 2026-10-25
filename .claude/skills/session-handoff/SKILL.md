@@ -73,9 +73,15 @@ Updated: <YYYY-MM-DD> after <task ID>
 - <ID> <title> - <state, exact next step>
 - <ID> user answers: <one line each>
 
+## Direct requests
+### DR<n> <title>
+<the request-validator's brief, verbatim: goal, acceptance, verify, files>
+
 ## Follow-ups
 - <item> -> <owner task, or unscheduled>
 ```
+
+`Direct requests` holds the task entries for requests the request-validator routed straight to a builder (no planner task file). The manager writes each brief before dispatch and removes it when the task is committed, like the task's other lines.
 
 Only unfinished work: tasks not yet committed or with checks pending, user answers for those tasks, and open follow-ups. No `Done` list (the board and git have it).
 

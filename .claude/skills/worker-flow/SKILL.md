@@ -12,7 +12,7 @@ The manager's message is only `TASK <ID>` (or `BATCH: ...`) plus optional notes.
 
 1. `.claude/state/project.md`: in full. It names the task source, spec, your scope, stack, and commands.
 2. `.claude/state/board.md`: grep the task's row, plus the decision lines at the top.
-3. The task source from `project.md`: that task's entry only (acceptance, verify, files, dependencies, spec refs).
+3. The task source from `project.md`: that task's entry only (acceptance, verify, files, dependencies, spec refs). For a direct request (`DR<n>`), the entry is its `### DR<n>` brief under `## Direct requests` in `handoff.md`; it has no spec refs.
 4. `.claude/state/handoff.md`: in full (it is short). Take the user answers, provisional decisions, and follow-ups that name this task.
 5. The spec: only the sections the task entry cites. Never the whole file.
 6. `.claude/state/conventions.md`: grep only the section for your area, when you need it. For the history of a finished area, grep `.claude/state/archive/` (never read it in full).

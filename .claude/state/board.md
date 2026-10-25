@@ -1,9 +1,9 @@
 # Board — Abyss CMS v1
 
-Source: `tasks/todo.md` (full acceptance criteria) · Spec: `SPEC.md` (approved 2026-10-20) · Finished phases 0-4, Ad-hoc DB1 and the old log: `archive/board-archive.md`
+Source: `tasks/todo.md` (full acceptance criteria) · Spec: `SPEC.md` (approved 2026-10-20) · Finished phases 0-4, Ad-hoc DB1, phases R1, R4 and the old log: `archive/board-archive.md`
 Decisions: Q1 Kysely=yes · Q2 invite-only · Q3 TOTP + email OTP (warn) · Q4 CLIENT_IP_HEADER optional, unset by default · Q5 sensitive = reference.phone, company (root + experience), github, email (confirmed) · Q6 owner reviewer-session log reuses the audit log
 UI decisions: palette A (slate + muted blue), system font stack, no dark mode in v1, button order secondary-left/primary-right (end-aligned)
-Open risks: braces 3.0.3 high DoS advisory (build-only, via tailwind CLI/shadcn; no fix published) · sprintf-js moderate (dev-only)
+Open risks: braces 3.0.3 high DoS advisory (build-only, via tailwind CLI/shadcn; no fix published) · sprintf-js moderate (dev-only) · body-parser, multer and fast-uri advisories (pnpm audit --prod; need a dependency-bump task)
 
 ## Phase 5: Media
 Base: 3aba2ba · Phase checks: qc pass (e2e 73/73, per task) · security pass (per task) · Checkpoint: pending user review
@@ -56,4 +56,18 @@ Source: `tasks/todo.md` "Ad-hoc: Base config" (D2) · Order: core-builder (A) ->
 | OS1 | Owner setup API (/setup/status, /setup/owner) + shared bootstrap audit | core-builder | done | c324e6b |
 | OS2 | Admin /setup page + login notice | ui-builder | done | d4c929e |
 | OS3 | Smoke stack creates owner via setup route; deploy and local docs | core-builder | done | a668623 |
-| OS4 | e2e for closed state + browser check on fresh DB | qc | in-progress | - |
+| OS4 | e2e for closed state + browser check on fresh DB | qc (browser walk open, user) | done | 0d543d8 |
+
+## Ad-hoc: Audit
+Source: `tasks/todo.md` "Ad-hoc: Audit" (AU1a-AU6) · Read-only runs, findings in `.claude/state/findings/AUDIT-<area>.md` · Order: AU1a, AU1b, AU1c, AU2, AU3, AU4, AU5, then AU6
+
+| ID | Title | Scope | Status | Commit |
+|---|---|---|---|---|
+| AU1a | Audit cms-api identity, access, reviewer, media | qc, security-qc | done (findings in AUDIT-AU1a.md, triage at AU6) | - |
+| AU1b | Audit cms-api content-engine, content-types, documents, graphql | qc, security-qc | done (findings in AUDIT-AU1b.md, security merged; triage at AU6) | - |
+| AU1c | Audit cms-api common, config, infrastructure | qc, security-qc | done (findings in AUDIT-AU1c.md, security merged; triage at AU6) | - |
+| AU2 | Audit cms-admin | qc, security-qc | done (findings in AUDIT-AU2.md, security merged; triage at AU6) | - |
+| AU3 | Audit web | qc, security-qc | done (findings in AUDIT-AU3.md, security merged; triage at AU6) | - |
+| AU4 | Audit form-commons | qc, security-qc | done (findings in AUDIT-AU4.md, security merged; triage at AU6) | - |
+| AU5 | Audit tooling and test code | qc, security-qc | done (qc 17 findings; security on -03 running) | - |
+| AU6 | Consolidate findings, decide G6, propose R1-R4 | planner | done (user approved R1-R4) | - |
