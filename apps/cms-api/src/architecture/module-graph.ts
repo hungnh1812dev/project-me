@@ -44,6 +44,14 @@ function withoutLayerFolder(rest: string[]): string[] {
   return rest.length > 1 && isLayerFolder(rest[0]) ? rest.slice(1) : rest;
 }
 
+/** The folder name of the module a file sits in (`modules/<name>/...`), or `null`. */
+export function moduleFolderOf(file: string): string | null {
+  const [top, moduleName] = file.split(sep);
+  return top === MODULES_DIRECTORY && moduleName !== undefined
+    ? moduleName
+    : null;
+}
+
 /**
  * The layer a module file sits in (ADR 0006 §2). Module-root `index.ts` and
  * `*.module.ts` are wiring; anything else outside a layer folder, and every
