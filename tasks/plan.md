@@ -346,7 +346,7 @@ Outputs:
 - Fewer files. Check (CLI): `find apps/cms-api/src/modules/{health,content-types,content-engine} apps/cms-api/src/common -name '*.ts' ! -name '*.spec.ts' | wc -l` per folder gives health 5, content-types 5, content-engine 31, common 22; no non-spec file under 30 lines in them except the G6 list.
 - Same behavior. Check (CLI): `test/integration/{health,content-types,content-repository,content-migrations}.spec.ts` and the architecture suite green with path edits only; `content:generate -- --check` unchanged; `SMOKE_E2E=1 pnpm smoke` green (CR-cs-3 is tier 3).
 Exit criteria: CR-SV green; security-qc reviews CR-cs-3; qc REGRESSION (tier 3).
-Tasks: CR-cs-1, CR-cs-2, CR-cs-3
+Tasks: CR-cs-1, CR-cs-2, CR-cs-3, CR-ce-4
 
 ## Phase CR7: close
 Goal: every module is checked by the layer guard with no exceptions left, and the contract builder reads facades only.

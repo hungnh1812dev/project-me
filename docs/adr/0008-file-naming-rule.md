@@ -36,6 +36,7 @@ User rule: file names follow `<use (for react hook)><Pascal Name>.<function>.<ex
 | `command`                                    | cms-api `cli/`                            | a CLI entry point                                                                                | `OwnerBootstrap.command.ts`                                |
 | `job`, `store`, `strategy`                   | cms-api                                   | scheduled job, in-memory store, passport strategy                                                | `MediaPurge.job.ts`                                        |
 | `resolver`                                   | cms-api `http/`, `common/`                | a Nest resolver (throttle subject, client IP) or GraphQL resolvers (added by Q-CA16, 2026-10-25) | `ActorThrottleSubject.resolver.ts`, `Document.resolver.ts` |
+| `executor`                                   | cms-api `http/`                           | runs one transport's requests through its library (GraphQL parse, validate, execute, format), calling use cases only (added by the CR-gq-2 answers, 2026-10-26) | `Graphql.executor.ts`                                      |
 | `constants`                                  | all                                       | named constants                                                                                  | `Access.constants.ts`                                      |
 | `api`                                        | frontends                                 | one feature's HTTP calls                                                                         | `Access.api.ts`                                            |
 | `query`                                      | frontends (hooks)                         | a hook that reads server data (TanStack Query)                                                   | `useAccounts.query.ts`                                     |
@@ -56,7 +57,7 @@ User rule: file names follow `<use (for react hook)><Pascal Name>.<function>.<ex
 
 ### Guard
 
-One `file-names.architecture.spec.ts` (cms-api) or `file-names.test.ts` (frontends, kit, e2e) per package checks every source file name against the shape and the allowed function words from one constants list per package (`FILE_FUNCTION_WORDS`). Files not yet renamed sit in a `KNOWN_FILE_NAME_EXCEPTIONS` list that only shrinks (stale entries fail). No new dependency.
+One `file-names.architecture.spec.ts` (cms-api) or `file-names.test.ts` (frontends, kit, e2e) per package checks every source file name against the shape and the allowed function words from one constants list per package (`FILE_FUNCTION_WORDS`). Files not yet renamed sit in a `KNOWN_FILE_NAME_EXCEPTIONS` list that only shrinks (stale entries fail). No new dependency. The cms-api `FILE_FUNCTION_WORDS` includes `executor`, allowed in `http/` only (CR-gq-2 answers, 2026-10-26).
 
 ### Renaming on macOS
 
