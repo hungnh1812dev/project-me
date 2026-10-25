@@ -8,7 +8,7 @@ import {
 import {
   IDENTITY_DIRECTORY,
   REVIEWER_SERVICE_FILE,
-  VERSION_CACHE_FILE,
+  ACCOUNT_VERSION_REPOSITORY_FILE,
 } from './source-paths.constants';
 
 /**
@@ -41,7 +41,7 @@ const TOKEN_VERSION_WRITE_ALLOWLIST = new Map<string, number>([
   // UPDATE); reviewers hold no refresh token.
   [REVIEWER_SERVICE_FILE, 1],
   // Copies the column into the in-memory cache entry; not a database write.
-  [VERSION_CACHE_FILE, 1],
+  [ACCOUNT_VERSION_REPOSITORY_FILE, 1],
 ]);
 
 const referencesRefreshToken = (code: string): boolean =>

@@ -10,9 +10,10 @@ import {
   type PermissionAction,
   Prisma,
 } from '../../../generated/prisma/client';
+import { prismaTxOf } from '../../../infrastructure/database/PrismaTransactionRunner.adapter';
 import { PrismaService } from '../../../infrastructure/database/prisma.service';
 import type { ClientMeta } from '../../../common/http/client-meta';
-import { AccessPolicyService } from '../access-policy.service';
+import { AccessPolicyService } from '../application/AccessPolicy.service';
 import {
   MANAGEMENT_ERROR_CODES,
   MANAGEMENT_ERROR_MESSAGES,
@@ -33,14 +34,14 @@ import {
   grantsBeyondActor,
   outranks,
 } from '../domain/Rank.rules';
-import { RolePermissionsService } from '../role-permissions.service';
+import { RolePermissionsService } from '../application/RolePermissions.service';
 import { AUDIT_ACTIONS, type AuditAction } from '../../security-audit';
 import {
   type AuditMetadata,
   auditActorOf,
   SecurityAuditService,
 } from '../../security-audit';
-import { VersionCache } from '../version-cache';
+import { VersionCache } from '../application/VersionCache.service';
 
 type Tx = Prisma.TransactionClient;
 
@@ -308,7 +309,8 @@ export class RolesService {
 
     await this.rolePermissions.replacePermissions(role.id, grants, {
       actorId: actor.accountId,
-      alsoInTransaction: async (tx, policyVersion) => {
+      alsoInTransaction: async (unit, policyVersion) => {
+        const tx = prismaTxOf(unit);
         // Re-checked under the lock: the rank may have changed meanwhile.
         const locked = await this.lockManageable(tx, actor, documentId);
         await this.record(tx, actor, locked.documentId, meta, {

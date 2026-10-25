@@ -2,7 +2,7 @@ export { AccessModule } from './access.module';
 export {
   AccessPolicyService,
   type AccessPolicy,
-} from './access-policy.service';
+} from './application/AccessPolicy.service';
 export {
   AccountStatus,
   CONDITION_SYSTEM_FIELDS,
@@ -24,7 +24,8 @@ export {
   type RolePolicy,
 } from './domain/ActorContext.entity';
 export { ActorThrottleSubjectResolver } from './actor-throttle-subject.resolver';
-export { AnonymousActorService } from './anonymous-actor.service';
+export { AnonymousActorService } from './application/AnonymousActor.service';
+export { ROLE_LOOKUP, type RoleLookup } from './application/Access.port';
 export { API_TOKEN } from './domain/ApiToken.rules';
 export { ApiTokenAuthenticator } from './api-token.guard';
 export {
@@ -53,5 +54,5 @@ export {
 } from './roles/system-roles';
 export { seedSystemRoles } from './roles/system-roles.seed';
 export { SubjectCatalog } from './domain/SubjectCatalog.rules';
-export { VersionCache } from './version-cache';
+export { VersionCache } from './application/VersionCache.service';
 export { WriteAllowlist } from './domain/WriteAllowlist.rules';

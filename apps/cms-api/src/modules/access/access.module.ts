@@ -2,12 +2,22 @@ import { Module } from '@nestjs/common';
 
 import { DatabaseModule } from '../../infrastructure/database/database.module';
 import { ContentEngineModule } from '../content-engine';
-import { AnonymousActorService } from './anonymous-actor.service';
+import { PrismaAccountVersionRepository } from './adapters/PrismaAccountVersion.repository';
+import { PrismaApiTokenLookupRepository } from './adapters/PrismaApiTokenLookup.repository';
+import { PrismaRolePolicyRepository } from './adapters/PrismaRolePolicy.repository';
+import {
+  ACCOUNT_VERSION_SOURCE,
+  API_TOKEN_LOOKUP,
+  PERMISSION_REPOSITORY,
+  ROLE_LOOKUP,
+} from './application/Access.port';
+import { AccessPolicyService } from './application/AccessPolicy.service';
+import { AnonymousActorService } from './application/AnonymousActor.service';
+import { ApiTokenAuthentication } from './application/ApiTokenAuthentication.service';
+import { RolePermissionsService } from './application/RolePermissions.service';
+import { VersionCache } from './application/VersionCache.service';
 import { ApiTokenAuthenticator, ApiTokenGuard } from './api-token.guard';
-import { AccessPolicyService } from './access-policy.service';
 import { PermissionGuard } from './permission.guard';
-import { RolePermissionsService } from './role-permissions.service';
-import { VersionCache } from './version-cache';
 
 /**
  * Authorization: revocation versions, the policy evaluator over
@@ -17,8 +27,17 @@ import { VersionCache } from './version-cache';
 @Module({
   imports: [DatabaseModule, ContentEngineModule],
   providers: [
+    {
+      provide: ACCOUNT_VERSION_SOURCE,
+      useClass: PrismaAccountVersionRepository,
+    },
+    { provide: API_TOKEN_LOOKUP, useClass: PrismaApiTokenLookupRepository },
+    PrismaRolePolicyRepository,
+    { provide: ROLE_LOOKUP, useExisting: PrismaRolePolicyRepository },
+    { provide: PERMISSION_REPOSITORY, useExisting: PrismaRolePolicyRepository },
     AccessPolicyService,
     AnonymousActorService,
+    ApiTokenAuthentication,
     ApiTokenAuthenticator,
     ApiTokenGuard,
     PermissionGuard,
@@ -26,6 +45,7 @@ import { VersionCache } from './version-cache';
     VersionCache,
   ],
   exports: [
+    ROLE_LOOKUP,
     AccessPolicyService,
     AnonymousActorService,
     ApiTokenAuthenticator,

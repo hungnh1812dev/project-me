@@ -22,14 +22,14 @@ import {
   type PageMeta,
   type PageQuery,
 } from '../../../common/http/request-parsing';
-import { AccessPolicyService } from '../access-policy.service';
+import { AccessPolicyService } from '../application/AccessPolicy.service';
 import {
   type RolePolicy,
   type TokenScope,
   isOwnerRole,
   parseTokenScope,
 } from '../domain/ActorContext.entity';
-import { hashApiToken } from '../api-token.guard';
+import { hashApiToken } from '../domain/ApiToken.rules';
 import { API_TOKEN } from '../domain/ApiToken.rules';
 import { isApiTokenExpired } from '../domain/ApiToken.rules';
 import {
@@ -50,7 +50,7 @@ import {
   SecurityAuditService,
 } from '../../security-audit';
 import { scopeEntriesBeyondCreator } from '../domain/TokenScope.rules';
-import { VersionCache } from '../version-cache';
+import { VersionCache } from '../application/VersionCache.service';
 
 type Tx = Prisma.TransactionClient;
 

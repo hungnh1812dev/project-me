@@ -1,12 +1,14 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 
-import { Clock } from '../../common/time/clock';
-import type { AccountStatus } from '../../generated/prisma/client';
-import { PrismaService } from '../../infrastructure/database/prisma.service';
+import { Clock } from '../../../common/time/clock';
+import type { RolePolicy } from '../domain/ActorContext.entity';
 import {
-  type RolePolicy,
-  rolePolicyFromRows,
-} from './domain/ActorContext.entity';
+  ACCOUNT_VERSION_SOURCE,
+  type AccountVersions,
+  type AccountVersionSource,
+  ROLE_LOOKUP,
+  type RoleLookup,
+} from './Access.port';
 
 /**
  * D9: how long a cached account/role version may be served without a DB
@@ -21,18 +23,6 @@ export const VERSION_CACHE_TTL_MS = 5_000;
  * At the cap the oldest entry is dropped (it is re-read on next use).
  */
 export const VERSION_CACHE_MAX_ENTRIES = 1_000;
-
-/** What the guard needs to know about an account on every request. */
-export interface AccountVersions {
-  id: number;
-  documentId: string;
-  tokenVersion: number;
-  status: AccountStatus;
-  isDeleted: boolean;
-  roleId: number;
-  /** The reviewer session of an ephemeral reviewer account (D2); null otherwise. */
-  reviewerSessionId: number | null;
-}
 
 interface Entry<T> {
   value: T;
@@ -116,7 +106,9 @@ export class VersionCache {
   private readonly roles: TtlMap<number, RolePolicy | null>;
 
   constructor(
-    private readonly prisma: PrismaService,
+    @Inject(ACCOUNT_VERSION_SOURCE)
+    private readonly accountSource: AccountVersionSource,
+    @Inject(ROLE_LOOKUP) private readonly roleLookup: RoleLookup,
     clock: Clock,
   ) {
     this.accounts = new TtlMap(clock);
@@ -141,30 +133,7 @@ export class VersionCache {
       return cached;
     }
     const generation = this.accounts.currentGeneration();
-    const row = await this.prisma.account.findUnique({
-      where: { documentId },
-      select: {
-        id: true,
-        documentId: true,
-        tokenVersion: true,
-        status: true,
-        deletedAt: true,
-        roleId: true,
-        reviewerSessions: { select: { id: true }, take: 1 },
-      },
-    });
-    const value =
-      row === null
-        ? null
-        : {
-            id: row.id,
-            documentId: row.documentId,
-            tokenVersion: row.tokenVersion,
-            status: row.status,
-            isDeleted: row.deletedAt !== null,
-            roleId: row.roleId,
-            reviewerSessionId: row.reviewerSessions[0]?.id ?? null,
-          };
+    const value = await this.accountSource.findByDocumentId(documentId);
     this.accounts.setIfUnchanged(documentId, value, generation);
     return value;
   }
@@ -187,39 +156,7 @@ export class VersionCache {
       return cached;
     }
     const generation = this.roles.currentGeneration();
-    const row = await this.prisma.role.findUnique({
-      where: { id: roleId },
-      select: {
-        id: true,
-        slug: true,
-        rank: true,
-        isSystem: true,
-        policyVersion: true,
-        permissions: {
-          select: {
-            subject: true,
-            action: true,
-            readableFields: true,
-            writableFields: true,
-            conditions: true,
-          },
-          orderBy: { id: 'asc' },
-        },
-      },
-    });
-    const value =
-      row === null
-        ? null
-        : rolePolicyFromRows(
-            {
-              id: row.id,
-              slug: row.slug,
-              rank: row.rank,
-              isSystem: row.isSystem,
-              policyVersion: row.policyVersion,
-            },
-            row.permissions,
-          );
+    const value = await this.roleLookup.findPolicy(roleId);
     this.roles.setIfUnchanged(roleId, value, generation);
     return value;
   }

@@ -9,7 +9,7 @@ import {
 import { Reflector } from '@nestjs/core';
 import type { Request } from 'express';
 
-import { AccessPolicyService } from './access-policy.service';
+import { AccessPolicyService } from './application/AccessPolicy.service';
 import type { ActorContext } from './domain/ActorContext.entity';
 import {
   PERMISSION_METADATA_KEY,

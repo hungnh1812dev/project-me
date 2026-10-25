@@ -14,7 +14,7 @@ import { type AccountActor } from '../domain/Rank.rules';
 import { AUDIT_ACTIONS } from '../../security-audit';
 import { auditActorOf, SecurityAuditService } from '../../security-audit';
 import { REVIEWER_ROLE_SLUG } from '../roles/system-roles';
-import { VersionCache } from '../version-cache';
+import { VersionCache } from '../application/VersionCache.service';
 import {
   ACCOUNT_SELECT,
   type AccountView,

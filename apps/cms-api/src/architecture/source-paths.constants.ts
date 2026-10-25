@@ -103,7 +103,12 @@ export const REVIEWER_SERVICE_FILE = join(
   'reviewer',
   'reviewer.service.ts',
 );
-export const VERSION_CACHE_FILE = join(MODULES, 'access', 'version-cache.ts');
+export const ACCOUNT_VERSION_REPOSITORY_FILE = join(
+  MODULES,
+  'access',
+  'adapters',
+  'PrismaAccountVersion.repository.ts',
+);
 
 export const SECURITY_AUDIT_MODULE_FILE = join(
   MODULES,
@@ -139,7 +144,7 @@ export const PINNED_PATHS: readonly string[] = [
   ...INTERNAL_COPY_FILES,
   ...VALUE_KIND_SWITCH_FILES,
   REVIEWER_SERVICE_FILE,
-  VERSION_CACHE_FILE,
+  ACCOUNT_VERSION_REPOSITORY_FILE,
   SECURITY_AUDIT_MODULE_FILE,
   SYSTEM_ROLES_TABLE_FILE,
   ...NON_ROLE_LITERAL_FILES,

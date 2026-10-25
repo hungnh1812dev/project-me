@@ -1,12 +1,12 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 
-import { PrismaService } from '../../infrastructure/database/prisma.service';
-import { PUBLIC_ROLE_SLUG } from './roles/system-roles';
 import {
   type ActorContext,
   anonymousActor,
-} from './domain/ActorContext.entity';
-import { VersionCache } from './version-cache';
+} from '../domain/ActorContext.entity';
+import { PUBLIC_ROLE_SLUG } from '../roles/system-roles';
+import { ROLE_LOOKUP, type RoleLookup } from './Access.port';
+import { VersionCache } from './VersionCache.service';
 
 /**
  * The actor of a request without credentials (SPEC §1): the `public` system
@@ -22,7 +22,7 @@ export class AnonymousActorService {
   private publicRoleId: number | undefined;
 
   constructor(
-    private readonly prisma: PrismaService,
+    @Inject(ROLE_LOOKUP) private readonly roles: RoleLookup,
     private readonly versions: VersionCache,
   ) {}
 
@@ -39,12 +39,9 @@ export class AnonymousActorService {
 
   private async roleId(): Promise<number> {
     if (this.publicRoleId !== undefined) return this.publicRoleId;
-    const row = await this.prisma.role.findUnique({
-      where: { slug: PUBLIC_ROLE_SLUG },
-      select: { id: true },
-    });
-    if (row === null) throw new UnauthorizedException();
-    this.publicRoleId = row.id;
-    return row.id;
+    const id = await this.roles.findIdBySlug(PUBLIC_ROLE_SLUG);
+    if (id === null) throw new UnauthorizedException();
+    this.publicRoleId = id;
+    return id;
   }
 }

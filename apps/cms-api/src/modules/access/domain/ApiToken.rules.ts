@@ -1,3 +1,5 @@
+import { createHash } from 'node:crypto';
+
 /** API tokens (SPEC D5). */
 export const API_TOKEN = {
   /** Every raw token starts with this; anything else is not a token. */
@@ -24,4 +26,9 @@ export function isApiTokenExpired(
   nowMs: number,
 ): boolean {
   return expiresAt !== null && expiresAt.getTime() <= nowMs;
+}
+
+/** SHA-256 (hex) of a raw token: what `api_tokens.token_hash` holds. */
+export function hashApiToken(raw: string): string {
+  return createHash(API_TOKEN.HASH_ALGORITHM).update(raw).digest('hex');
 }
