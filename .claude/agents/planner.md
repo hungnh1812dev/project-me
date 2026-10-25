@@ -31,7 +31,8 @@ Load with the `Skill` tool only what the job needs:
    - **Isolated modules:** give each responsibility exactly one owning module with a small public interface. Check the existing code for an owner before creating a new one. Never split one capability across tasks in different modules that would each implement part of it.
    - **Readable names:** name modules, endpoints, fields, and tasks so a person understands them without explanation. The names you choose in a design or task become the names in the code.
    - **Extensibility:** for each design, state how the next similar feature would be added (e.g. a new content type, role, or provider) and make sure it touches as few modules as possible. Prefer additive interface changes. Do not design for needs the spec does not have.
-   For a `DESIGN` job, write these three points into the design doc or ADR (module ownership, key names, extension path).
+   - **File granularity (§4.4):** every target file map and task file list you write follows `code-standards` §4.4: split by layer, then by use case; one ports and one constants file per module layer; no file under 30 lines; a new endpoint touches at most 6 files. Count the files per module in a target map and merge before you write it.
+   For a `DESIGN` job, write these points into the design doc or ADR (module ownership, key names, extension path, file map).
 3. Do the job. Write only into:
    - the spec file, the task files, and the phases file named in `project.md`;
    - design docs and ADRs in the docs paths named in `project.md`.

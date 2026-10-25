@@ -29,6 +29,7 @@ Before the checklist, check your approach against the design principles in `code
 - **Ownership:** which module owns this responsibility. Does it already exist somewhere? Extend it instead of duplicating it.
 - **Naming:** the main new names (modules, functions, fields). Are they clear without comments?
 - **Extension:** how the next similar feature would be added, and in how few places.
+- **Files:** the files you will add or change, checked against `code-standards` §4.4 (one file per use case, one ports and one constants file per layer, no file under 30 lines, at most 6 files per new endpoint). Do not copy a finer split from older code.
 
 Then make a short subtask checklist (vertical slices, each verifiable on its own).
 
@@ -53,12 +54,12 @@ Exit: all tests pass. Note the count.
 Exit: docs match the code.
 
 ## 6. Finish
-1. Re-read your diff against `code-standards` section 4: no duplicated responsibility, no `what` comments that a better name would replace, no new edits scattered across unrelated modules. Fix what you find.
+1. Re-read your diff against `code-standards` section 4: no duplicated responsibility, no `what` comments that a better name would replace, no new edits scattered across unrelated modules, no file split finer than §4.4 allows. Fix what you find.
 2. Run the format command on the changed files (see `code-standards`).
 3. Re-run the tests if formatting changed anything.
 4. Write the proposed commit message (`commit-convention`).
 5. Complete your task section in `current.md`. Be precise in "Behaviour to verify" and "Security-relevant": the checkers test and review only what you list there plus the diff. Set these two fields by rule, not by feel:
-   - `Checks needed`: `qc-browser (<flows>)` when the task changes something a user sees in a page; `qc-cli (<e2e/API tests>)` when it changes behaviour with no UI output (endpoint, data, CLI); `none (<reason>)` only for docs, comments, or tooling with no runtime effect.
+   - `Checks needed`: `qc-browser (<flows>)` when the task changes something a user sees in a page; `qc-cli (<e2e/API tests>)` when it changes behaviour with no UI output (endpoint, data, CLI); `none (<reason>)` only for docs, comments, or tooling with no runtime effect. Add the test tier from `project.md` "Test tiers" with its reason, e.g. `qc-cli tier 1 (behavior-preserving move; integration suite)` or `qc-browser tier 3 (cookie flags changed)`. Pick the lowest tier the rules allow.
    - `Risk: high (<why>)` when the task touches a high-risk path in `project.md`, has `Security gate: yes` in its task entry, or adds or changes auth, sessions, tokens, crypto, permissions, raw SQL built from input, file upload, or payments. Otherwise `Risk: normal`.
 6. Update `handoff.md` and `conventions.md` (rules under "State files").
 7. Return the report.
@@ -87,7 +88,7 @@ Changed files:
 Behaviour to verify:
 - <user flow or endpoint> - <expected result>
 Security-relevant: <new endpoints, auth/permission paths, input handling, new deps, or none>
-Checks needed: qc-browser (<flows>) | qc-cli (<tests>) | none (reason)
+Checks needed: qc-browser tier <1-3> (<flows>) | qc-cli tier <1-3> (<tests>) | none (reason)
 Risk: high (<why>) | normal
 Verification: format <pass|n/a> · build/type-check <pass|fail> · unit tests <pass (n)|fail> · docs <paths|n/a>
 Proposed commit: |
@@ -107,7 +108,7 @@ Keep the fix log to one line per finding.
 
 - You have no channel to the user. When something is unclear, stop that part of the work and report `blocked` with numbered, concrete questions, with options and your recommendation where you have one.
 - You never commit. Stage nothing; propose the commit message.
-- Never read or edit `.env*` files (except `.env.example`).
+- Never read or edit `.env*` files (except `.env.example`). For values a dev server or script needs locally, use the agent-local `.localEnv.agent` at the repo root (dev-only throwaway values, gitignored; never `git add` it).
 - Never delete files. List them under "Deletions needing approval" in `current.md`.
 - Never touch code outside the task scope or outside your scope in `project.md`. If the task needs the other builder's scope, say so in the report.
 - Never add `Co-Authored-By` or any AI attribution to commit messages.

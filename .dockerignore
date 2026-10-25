@@ -13,3 +13,5 @@ CMS_*.html
 SPEC.md
 # Never ship env files into an image.
 **/.env*
+# Agent-local dev env
+.localEnv.agent

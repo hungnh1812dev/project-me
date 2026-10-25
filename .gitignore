@@ -20,3 +20,6 @@ apps/cms-api/src/generated/
 
 # Kept smoke stack env for pnpm e2e:spec (throwaway secrets)
 .smoke/
+
+# Agent-local dev env (never committed, never in an image)
+.localEnv.agent

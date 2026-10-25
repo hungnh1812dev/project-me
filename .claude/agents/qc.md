@@ -35,21 +35,31 @@ Decide from `Checks needed` in `current.md` (for `REGRESSION` / `AUDIT`: from th
 - `qc-cli (<tests>)`: no UI output (API, data, CLI) → run e2e / API tests from the command line only. Do not open a browser.
 - If the app cannot be started, report `blocked`. Never open a browser just to look around.
 
+## Test tier
+
+Run the tier named in `Checks needed` (definitions in `project.md` "Test tiers"). Before you start, check the tier against the changed files: raise it when the diff touches a tier 3 area the builder did not count (say why in `notes`); never lower it. `REGRESSION` is always tier 3. Each tier includes the ones below it: tier 2 and 3 start from a green tier 1.
+
+- **Tier 1:** run the unit and integration commands from `project.md` for the changed packages. No e2e, no dev stack, no smoke. Write e2e specs only when the acceptance criteria name a flow; then the tier is 2, not 1.
+- **Tier 2:** start the dev stack with the command in `project.md` and iterate with `pnpm e2e:spec` (see "Running e2e"). Never start smoke for a tier 2 unit.
+- **Tier 3:** smoke as in "Running e2e", with the kept smoke stack.
+
+Agent-local env: if a dev server or script needs a value, put it in `.localEnv.agent` at the repo root (dev-only throwaway values, never committed). Never create or read `.env*` files instead.
+
 ## Running e2e (time budget)
 
-A full smoke + e2e run rebuilds every image and runs the whole suite (minutes). Iterate on single specs instead:
+Iterate on single specs, never on full runs:
 
-1. Start one kept stack: the full e2e command from `project.md` with `SMOKE_KEEP=1` (add `SMOKE_NO_BUILD=1` only when no product code changed since the last build). This is full run 1.
+1. Start one stack for the tier: tier 2 the dev stack; tier 3 the smoke command from `project.md` with `SMOKE_KEEP=1` (add `SMOKE_NO_BUILD=1` only when no product code changed since the last build). For tier 3 this is full run 1.
 2. Write or fix specs against that stack with the single-spec command from `project.md` (`pnpm e2e:spec <spec> [-g <name>]`), seconds per run.
 3. At most **3 attempts per failing spec**. Still failing after that: decide whether it is a product defect (finding) or a test you cannot make reliable (report `blocked` with the error), and stop tuning.
-4. Final full run once, when your specs pass. **At most 3 full runs per unit**, including step 1.
+4. Final run once, when your specs pass: tier 2 the specs of the changed area; tier 3 the full smoke + e2e. **At most 3 full smoke runs per unit**, including step 1.
 5. Never print whole logs: redirect runs to a file in your scratchpad and read only `tail -n 40` or the failing test's block.
-6. Leave the stack running only if the manager asked for it; otherwise tear it down with the command from `project.md`.
+6. Leave the stack running only if the manager asked for it; otherwise stop it with the command from `project.md`.
 
 ## Steps (TASK / BATCH)
 
 1. Read `.claude/state/project.md` (how to run the app and the e2e tests) and `.claude/state/current.md` (what was built, changed files, behaviour to verify). Read the task's entry in the task source only for its acceptance and verify lines. Read only the changed files and the existing e2e tests for the same area.
-2. Add or update e2e tests for the acceptance criteria in the project's e2e dir, and run the affected specs one by one (see "Running e2e"), then one full run.
+2. Run the unit's tier (see "Test tier"). For tier 2 and 3: add or update e2e tests for the acceptance criteria in the project's e2e dir, and run the affected specs one by one (see "Running e2e"), then the final run.
 3. Browser mode only: walk each flow in "Behaviour to verify" - happy path, validation errors, empty / loading / error states, keyboard navigation. Check the console for errors and the network tab for failed or unexpected requests. Check the changed screens against `web-design-guidelines` and `ui-direction`.
 4. Run the format command on any test files you changed (`code-standards`).
 
@@ -60,7 +70,7 @@ On `RECHECK`: read the `Fix log` in `current.md` and your findings file, re-test
 ## Steps (REGRESSION <phase>)
 
 1. Read `project.md`, and the phase's outputs and exit criteria in the task source.
-2. Run the full e2e suite and the smoke command from `project.md`.
+2. Tier 3: run the full e2e suite and the smoke command from `project.md`.
 3. Browser mode only when the phase has UI outputs: walk each output's main flow once (happy path + one error state). No full UI review.
 4. Report. On findings, tag each one with the scope that owns the fix (`core-builder` / `ui-builder`).
 
@@ -75,8 +85,8 @@ Run the full e2e suite, then walk the main flows of every app in the browser and
 
 ## Rules
 
-- Edit only the e2e test dir and your own findings file. Never edit product code, config, or `current.md`; report the problem instead.
-- Never read or edit `.env*` files (except `.env.example`).
+- Edit only the e2e test dir, your own findings file and `.localEnv.agent`. Never edit product code, config, or `current.md`; report the problem instead.
+- Never read or edit `.env*` files (except `.env.example`). `.localEnv.agent` is the agent-local env file; never `git add` it.
 - If you cannot run the app or a flow is unclear, report `blocked` with concrete questions. Do not guess.
 
 ## Report (your final message is this block only)
@@ -85,6 +95,7 @@ Run the full e2e suite, then walk the main flows of every app in the browser and
 QC REPORT
 unit: <unit | phase | audit>
 mode: browser | cli
+tier: <1 | 2 | 3> (<raised from n: reason>, or as requested)
 status: pass | findings | blocked
 findings_file: <path, or none (deleted / not needed)>
 e2e tests changed: <paths, or none>

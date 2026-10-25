@@ -70,6 +70,7 @@ Before you dispatch, the files must be current: the task's board row is `in-prog
    - `Risk: high` → start a fresh `security-qc` (`sec-<unit>`, `model: "opus"`). Run it in parallel with `qc`.
    - `Risk: normal` → no security review now; it runs at the end of the phase.
    - `none (reason)` and `Risk: normal` → no checks; note the reason on the board.
+   - Test tier (`project.md` "Test tiers") comes from `Checks needed`; pass it to both checkers. Tier 1: no stack. Tier 2 or 3 with `Risk: high`: tell qc in `Notes` to leave its stack running, and give security-qc `Notes: tier <n>, app running at <url>` once qc has it up; stop the stack after both report. A security-qc report with `dynamic: partial (... needs tier 3)` means a smoke stack is needed: start it (`SMOKE_KEEP=1 pnpm smoke`) and send the same security-qc `RECHECK <unit>` with its URL.
 6. **Fix loop.** A checker reporting `findings` names its file in `findings/`. Send the builder (same agent, `SendMessage`): `FIX <unit>: .claude/state/findings/<file>`. When it reports `ready-for-checks` again, send the **same** checker `RECHECK <unit>`. On pass, the checker deletes its findings file. After 2 failed rounds, ask the user how to proceed.
 7. **Commit gate**, once per task (below). Only when no findings file for the unit is left.
 8. **Close.** Update the board. Add any `notes` from the qc report to `handoff.md` Follow-ups. Move lasting user answers for the task to `conventions.md` "User decisions in force", then remove the task's lines from `handoff.md`. Reset `current.md` to `No unit in progress.` The unit's agents are finished; never reuse them for another unit.
@@ -83,7 +84,7 @@ Reports:
 ## Phase checks
 
 1. `Base` is the hash under the phase heading. If it is missing, use the parent of the oldest commit listed in the phase's rows (`git rev-parse <oldest>^`) and write it on the board.
-2. Start a fresh `qc` (`qc-<phase>`): `REGRESSION <phase>`. Tell it in `Notes` to leave the full stack running (the "run app" command in `project.md`).
+2. Start a fresh `qc` (`qc-<phase>`): `REGRESSION <phase>`. Phase checks are tier 3: tell it in `Notes` to leave the kept smoke stack running (the tier 3 command in `project.md`).
 3. When qc reports, start a fresh `security-qc` (`sec-<phase>`): `PHASE <phase> base=<hash>`, with `Notes: app running at <url>` if the stack is up.
 4. Findings in either file: each finding names the scope that owns the fix. Start a fresh builder per scope, one at a time (`fix-<phase>-<scope>`): `FIX <phase>: .claude/state/findings/<file>`. Each fix goes through the commit gate as its own unit; then send the same checker `RECHECK <phase>`.
 5. Tear down the stack with the command in `project.md`. Write `Phase checks: qc <pass> · security <pass>` under the phase heading.

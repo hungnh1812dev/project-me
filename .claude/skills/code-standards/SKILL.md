@@ -1,6 +1,6 @@
 ---
 name: code-standards
-description: Project code rules - run Prettier after every finished feature and before any commit, no hardcoded values, never guess (ask instead), and the design principles (isolated modules, names over comments, extensible with minimal impact). Use whenever planning, writing or changing code in this project.
+description: Project code rules - run Prettier after every finished feature and before any commit, no hardcoded values, never guess (ask instead), and the design principles (isolated modules, names over comments, extensible with minimal impact, few cohesive files per module). Use whenever planning, writing or changing code in this project.
 ---
 
 # Code Standards
@@ -44,7 +44,7 @@ Give options and a recommendation with the question so the user can answer fast.
 
 ## 4. Design principles: think before you build
 
-Before planning or writing code, check the approach against these three. If one of them cannot be met without a design change outside the task, report `blocked` with options instead of compromising silently.
+Before planning or writing code, check the approach against these four. If one of them cannot be met without a design change outside the task, report `blocked` with options instead of compromising silently.
 
 ### 4.1 Isolated modules, one owner per responsibility
 
@@ -67,6 +67,18 @@ Before planning or writing code, check the approach against these three. If one 
 - Depend on interfaces and config, not on concrete implementations, where a second implementation is realistic.
 - Changes to an existing public interface are additive (new optional fields or parameters) wherever possible, so existing callers keep working.
 - Do not build for imagined future needs. Leave a clean extension point; do not implement the extensions.
+
+### 4.4 File granularity: few, cohesive files a reviewer can read
+
+Code is reviewed by people reading a diff. Split by layer (where the project has layers), then by use case; never by kind of thing (types, constants, ports, helpers each in their own file).
+
+- **One file per use case or entry point.** A use case, controller, job, CLI command or adapter is one file, with the types, constants and small helpers only it uses kept inside it.
+- **Per module layer: at most one ports file and one constants file.** Shared types of a layer live in its main rules or entity file. No file that holds only types, only one constant group, or only a re-export.
+- **A port only when it earns it:** the layer rules forbid the I/O in the caller (for example Prisma in `application/`), or there is a second real implementation (including a fake that a spec uses). A one-call library wrapper stays inside the adapter that uses it. One adapter per aggregate and storage technology, not one per query.
+- **A new file only when** it is a separate use case or entry point, it has its own spec, the file would pass 300 lines, or a layer rule requires the split.
+- **No file under 30 lines** except `index.ts`, the module wiring file, and a file the framework or a layer rule requires. Merge it into its nearest neighbour in the same layer.
+- **Check:** adding one endpoint or use case touches at most 6 files (handler, request schema, use case, rule, repository method, wiring). If the plan needs more, merge before building.
+- Task file lists and target file maps written before this rule are superseded where they conflict; the planner revises them, and a builder that finds a conflict in its task follows this section and records the difference in the unit record.
 
 ## 5. General
 
