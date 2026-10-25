@@ -21,10 +21,10 @@ import {
 } from '../access';
 import { projectTable, selectedColumns } from '../access/field-projection';
 import { DocumentMediaService } from '../media';
-import { ContentDbProvider } from '../content-engine';
+import { ContentDbProvider, unitOfWorkFromContentTrx } from '../content-engine';
 import { ContentRegistryProvider } from '../content-engine';
 import { CONTENT_DB_SCHEMA } from '../content-engine';
-import { ContentRepository } from '../content-engine/content.repository';
+import { KyselyContentRepository } from '../content-engine/adapters/KyselyContent.repository';
 import { toDocument } from '../content-engine/domain/ContentRowMapping.rules';
 import {
   assertTreeInput,
@@ -36,7 +36,7 @@ import {
 import {
   type ContentDatabase,
   loadComponentTrees,
-} from '../content-engine/tree-loader';
+} from '../content-engine/adapters/TreeLoader.adapter';
 import { diffRecords, type DiffEntry, overlaySubmitted } from './diff';
 import {
   DOCUMENT_ERROR_CODES,
@@ -137,12 +137,14 @@ export class DocumentsCommandService {
     );
     const readable = evaluator.fieldsFor(actor, slug).readable;
     const access = recordReadAccess(actor, readable);
-    const repository = new ContentRepository(await this.registry.registry());
+    const repository = new KyselyContentRepository(
+      await this.registry.registry(),
+    );
 
     const documentId = randomUUID();
     const id = await this.content.db.transaction().execute((trx) =>
       this.mapTreeErrors(() =>
-        repository.insertTree(trx, slug, {
+        repository.insertTree(unitOfWorkFromContentTrx(trx), slug, {
           ...stored,
           documentId,
           publishedAt: type.definition.draftAndPublish ? null : new Date(),
@@ -183,7 +185,9 @@ export class DocumentsCommandService {
       isDraftRow: type.definition.draftAndPublish,
       updateScope: rowFilter.where,
     };
-    const repository = new ContentRepository(await this.registry.registry());
+    const repository = new KyselyContentRepository(
+      await this.registry.registry(),
+    );
 
     const outcome = await this.content.db.transaction().execute(async (trx) => {
       const updated = await this.bumpVersion(trx, target, version);
@@ -193,7 +197,7 @@ export class DocumentsCommandService {
       }
       await this.mapTreeErrors(() =>
         repository.replaceTree(
-          trx,
+          unitOfWorkFromContentTrx(trx),
           slug,
           {
             documentId,

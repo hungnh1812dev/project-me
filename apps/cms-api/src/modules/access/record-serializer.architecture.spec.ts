@@ -21,7 +21,7 @@ import {
  * the files imports resolve to (facades are followed), not on path strings:
  *
  * 1. Outside the content engine, a file that imports the record loaders
- *    (`content.repository`, `tree-loader`) must also import
+ *    (`KyselyContent.repository`, `TreeLoader.adapter`) must also import
  *    `access/record.serializer`, so loaded records are serialized where
  *    they are read.
  * 2. HTTP boundary files (controllers, filters, interceptors, gateways)

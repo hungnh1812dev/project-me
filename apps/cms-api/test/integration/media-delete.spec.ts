@@ -10,8 +10,8 @@ import {
 import { FakeMediaStorage } from '../../src/infrastructure/media/fake.adapter';
 import { MEDIA_STORAGE } from '../../src/infrastructure/media/storage.port';
 import { seedRolePermissions } from '../../src/modules/access/roles/role-permissions.seed';
-import { ContentRegistryProvider } from '../../src/modules/content-engine/content-registry.provider';
-import { RegistryService } from '../../src/modules/content-engine/registry.service';
+import { ContentRegistry } from '../../src/modules/content-engine/application/ContentRegistry.service';
+import { ContentTypeRegistry } from '../../src/modules/content-engine/domain/ContentTypeRegistry.entity';
 import {
   emptySnapshot,
   planMigration,
@@ -86,7 +86,7 @@ describe('media delete and purge (T28; Postgres 16 via Testcontainers)', () => {
 
     const client = new Client({ connectionString: databaseUrl });
     await client.connect();
-    const registry = RegistryService.fromDefinitions([GALLERY]);
+    const registry = ContentTypeRegistry.fromDefinitions([GALLERY]);
     await client.query(
       planMigration(emptySnapshot(), [
         registry.resolve('gallery').definition,
@@ -105,7 +105,7 @@ describe('media delete and purge (T28; Postgres 16 via Testcontainers)', () => {
       }),
       [
         {
-          token: ContentRegistryProvider,
+          token: ContentRegistry,
           value: { registry: () => Promise.resolve(registry) },
         },
       ],

@@ -2,7 +2,10 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { CONTENT_ERROR_CODES } from './ContentEngine.constants';
-import { RegistryService, type TableNode } from '../registry.service';
+import {
+  ContentTypeRegistry,
+  type TableNode,
+} from './ContentTypeRegistry.entity';
 import { assertTreeInput, ContentTreeError } from './TreeInput.rules';
 
 const CV_PAGE_PATH = join(
@@ -19,7 +22,8 @@ const UID = '0b9e7c1e-4c4e-4b8a-9f00-5d2a3c1b7e10';
 
 function cvPageRoot(): TableNode {
   const definition: unknown = JSON.parse(readFileSync(CV_PAGE_PATH, 'utf8'));
-  return RegistryService.fromDefinitions([definition]).resolve('cv-page').root;
+  return ContentTypeRegistry.fromDefinitions([definition]).resolve('cv-page')
+    .root;
 }
 
 function treeError(input: unknown): ContentTreeError {
@@ -134,7 +138,7 @@ describe('assertTreeInput', () => {
         },
       ],
     };
-    const root = RegistryService.fromDefinitions([definition]).resolve(
+    const root = ContentTypeRegistry.fromDefinitions([definition]).resolve(
       'profile',
     ).root;
     expect(() =>

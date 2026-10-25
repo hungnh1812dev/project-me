@@ -315,11 +315,22 @@ as the content-types pilot (CR-hc-2) used it:
 6. Specs: unit specs sit next to their file; integration specs change import
    paths only. Run `pnpm test:unit`, then the module's integration specs.
 
-`content-engine` is mid-migration (CR-ce-1 done, CR-ce-2 open): its pure code
-is in `domain/` (rules, entities, constants, `field-types/`) and the
-persistence constants in `adapters/ContentEnginePersistence.constants.ts`;
-the repository, tree loader, registry and migration files still sit at the
-module root until CR-ce-2, and the module is not yet in `MIGRATED_MODULES`.
+`content-engine` is migrated (CR-ce-1, CR-ce-2). `domain/`: rules, entities,
+constants, `field-types/` and the registry (`ContentTypeRegistry.entity.ts`).
+`application/`: the ports `ContentRepository.port.ts` and
+`ContentTypeRepository.port.ts`, and `ContentRegistry.service.ts` (lazy load,
+retry after a failure, empty registry when `content:migrate` never ran).
+`adapters/`: the Kysely repository, tree loader, component sync, migration
+runner and files, the content pool (`ContentDbProvider`), the registry
+reader `PgContentType.repository.ts`, `MigrationDb.adapter.ts` and
+`KyselyContentTransactionRunner.adapter.ts` (`CONTENT_TRANSACTION_RUNNER`,
+with `runInSavepoint`). `MigrationDb.adapter.ts` is imported only by
+`ContentEngine.module.ts` and `cli/ContentEngineCli.setup.ts`. Documents
+keeps its own Kysely transactions until CR-dc-3 and hands them to the
+repository through `unitOfWorkFromContentTrx(trx)` (facade export,
+transitional). The facade keeps `RegistryService` (now `ContentTypeRegistry`)
+and `ContentRegistryProvider` (now `ContentRegistry`) as aliases for modules
+that have not migrated.
 
 ### Rate limits (T10)
 

@@ -25,8 +25,8 @@ import {
   type AuditAction,
   LOGIN_FAILURE_REASONS,
 } from '../../src/modules/security-audit/security-audit.constants';
-import { ContentRegistryProvider } from '../../src/modules/content-engine/content-registry.provider';
-import { RegistryService } from '../../src/modules/content-engine/registry.service';
+import { ContentRegistry } from '../../src/modules/content-engine/application/ContentRegistry.service';
+import { ContentTypeRegistry } from '../../src/modules/content-engine/domain/ContentTypeRegistry.entity';
 import { hashPassword } from '../../src/modules/identity/password-hasher';
 import { seedSystemRoles } from '../../src/modules/access/roles/system-roles.seed';
 import { ARTICLE_DEFINITION } from '../fixtures/access.fixture';
@@ -110,7 +110,7 @@ describe('accounts & roles API + security audit (T17, §12-7, §12-18; Postgres 
     await seedSystemRoles(db.prisma);
     await seedRolePermissions(db.prisma);
     mail = new CapturingMailSender();
-    const registry = RegistryService.fromDefinitions([ARTICLE_DEFINITION]);
+    const registry = ContentTypeRegistry.fromDefinitions([ARTICLE_DEFINITION]);
     app = await createTestApp(
       devEnv({
         ...dbEnvOf(databaseUrl),
@@ -124,7 +124,7 @@ describe('accounts & roles API + security audit (T17, §12-7, §12-18; Postgres 
       [
         { token: MAIL_SENDER, value: mail },
         {
-          token: ContentRegistryProvider,
+          token: ContentRegistry,
           value: { registry: () => Promise.resolve(registry) },
         },
       ],

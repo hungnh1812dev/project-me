@@ -21,8 +21,8 @@ import {
   type GenerateOptions,
 } from '../../src/modules/content-engine/cli/generate';
 import { DEFAULT_CONTENT_PATHS } from '../../src/modules/content-engine/cli/content-paths';
-import { createMigrationDb } from '../../src/modules/content-engine/cli/migrate';
-import { runContentMigrations } from '../../src/modules/content-engine/migration-runner';
+import { createMigrationDb } from '../../src/modules/content-engine/cli/ContentEngineCli.setup';
+import { runContentMigrations } from '../../src/modules/content-engine/adapters/MigrationRunner.adapter';
 import { startPostgres } from '../fixtures/postgres.fixture';
 
 const CV_PAGE_FILE = 'cv-page.json';

@@ -9,22 +9,22 @@ import {
   MIGRATION_SEQUENCE_DIGITS,
   MIGRATION_SNAPSHOT_FILE,
   SCHEMA_FILE_EXTENSION,
-} from './adapters/ContentEnginePersistence.constants';
+} from './ContentEnginePersistence.constants';
 import {
   HASH_ALGORITHM,
   SNAPSHOT_FORMAT_VERSION,
-} from './domain/ContentEngine.constants';
-import { ContentEngineError } from './domain/ContentEngine.errors';
-import type { ContentTypeDefinition } from './domain/DefinitionSchema.rules';
+} from '../domain/ContentEngine.constants';
+import { ContentEngineError } from '../domain/ContentEngine.errors';
+import type { ContentTypeDefinition } from '../domain/DefinitionSchema.rules';
 import {
   formatDefinitionPath,
   validateDefinitions,
-} from './domain/DefinitionValidator.rules';
+} from '../domain/DefinitionValidator.rules';
 import {
   type DefinitionSnapshot,
   emptySnapshot,
   hashDefinition,
-} from './domain/SqlGenerator.rules';
+} from '../domain/SqlGenerator.rules';
 
 /** File-system side of the content engine CLIs (schemas in, migrations out). */
 

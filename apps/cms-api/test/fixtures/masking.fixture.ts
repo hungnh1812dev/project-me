@@ -15,9 +15,9 @@ import type { ContentDocument } from '../../src/modules/content-engine/domain/Co
 import type { FieldDefinition } from '../../src/modules/content-engine/domain/DefinitionSchema.rules';
 import {
   type RegisteredContentType,
-  RegistryService,
+  ContentTypeRegistry,
   type TableNode,
-} from '../../src/modules/content-engine/registry.service';
+} from '../../src/modules/content-engine/domain/ContentTypeRegistry.entity';
 import type {
   ComponentNode,
   ComponentTrees,
@@ -75,7 +75,7 @@ export const PROFILE_DEFINITION = {
 } as const;
 
 export function profileType(): RegisteredContentType {
-  return RegistryService.fromDefinitions([PROFILE_DEFINITION]).resolve(
+  return ContentTypeRegistry.fromDefinitions([PROFILE_DEFINITION]).resolve(
     PROFILE_DEFINITION.slug,
   );
 }

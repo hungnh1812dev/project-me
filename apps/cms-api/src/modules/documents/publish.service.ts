@@ -16,11 +16,11 @@ import {
   type ContentActivityEvent,
 } from '../../infrastructure/activity/activity.port';
 import { AccessPolicyService, type ActorContext } from '../access';
-import { ContentDbProvider } from '../content-engine';
+import { ContentDbProvider, unitOfWorkFromContentTrx } from '../content-engine';
 import { CONTENT_DB_SCHEMA } from '../content-engine';
 import { ContentRegistryProvider } from '../content-engine';
-import { ContentRepository } from '../content-engine/content.repository';
-import type { ContentDatabase } from '../content-engine/tree-loader';
+import { KyselyContentRepository } from '../content-engine/adapters/KyselyContent.repository';
+import type { ContentDatabase } from '../content-engine/adapters/TreeLoader.adapter';
 import type { RegisteredContentType } from '../content-engine';
 import {
   DOCUMENT_ERROR_CODES,
@@ -89,7 +89,9 @@ export class PublishService {
     expectedVersion: number,
   ): Promise<number> {
     const { type, filter, accountId } = scope;
-    const repository = new ContentRepository(await this.registry.registry());
+    const repository = new KyselyContentRepository(
+      await this.registry.registry(),
+    );
     const table = type.root.plan.name;
     let lock = trx
       .withSchema(CONTENT_DB_SCHEMA)
@@ -128,10 +130,14 @@ export class PublishService {
       if (inScope === undefined) throw notFound();
     }
 
-    const [stored] = await repository.loadTrees(trx, slug, {
-      status: 'draft',
-      documentIds: [documentId],
-    });
+    const [stored] = await repository.loadTrees(
+      unitOfWorkFromContentTrx(trx),
+      slug,
+      {
+        status: 'draft',
+        documentIds: [documentId],
+      },
+    );
     if (stored === undefined) throw notFound();
 
     await db
@@ -139,12 +145,16 @@ export class PublishService {
       .where(sql<SqlBool>`${sql.ref('document_id')} = ${documentId}`)
       .where(sql<SqlBool>`${sql.ref('published_at')} is not null`)
       .execute();
-    const publishedId = await repository.insertTree(trx, slug, {
-      ...cloneTree(stored),
-      documentId,
-      publishedAt: new Date(),
-      createdBy: stored.createdBy,
-    });
+    const publishedId = await repository.insertTree(
+      unitOfWorkFromContentTrx(trx),
+      slug,
+      {
+        ...cloneTree(stored),
+        documentId,
+        publishedAt: new Date(),
+        createdBy: stored.createdBy,
+      },
+    );
     await db
       .updateTable(table)
       .set({ version: draftVersion, updated_by: accountId })

@@ -1,4 +1,4 @@
-import type { TableNode } from '../registry.service';
+import type { TableNode } from './ContentTypeRegistry.entity';
 import type { ContentDocument } from './ContentDocument.entity';
 import {
   type ComponentTrees,

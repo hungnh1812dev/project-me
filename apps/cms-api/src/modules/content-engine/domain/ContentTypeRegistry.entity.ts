@@ -1,23 +1,16 @@
-import type { Kysely } from 'kysely';
-
-import {
-  CONTENT_DB_SCHEMA,
-  CONTENT_ERROR_CODES,
-  META_TABLES,
-} from './domain/ContentEngine.constants';
+import { CONTENT_ERROR_CODES } from './ContentEngine.constants';
 import {
   type ComponentFieldDefinition,
   type ContentTypeDefinition,
   isComponentField,
-} from './domain/DefinitionSchema.rules';
-import { validateDefinitions } from './domain/DefinitionValidator.rules';
-import { ContentEngineError } from './domain/ContentEngine.errors';
-import type { ContentMetaDatabase } from './migration-runner';
+} from './DefinitionSchema.rules';
+import { validateDefinitions } from './DefinitionValidator.rules';
+import { ContentEngineError } from './ContentEngine.errors';
 import {
   type ColumnPlan,
   componentTableName,
   type TablePlan,
-} from './domain/Naming.rules';
+} from './Naming.rules';
 
 /**
  * One table of a content type with what the repository needs to walk it:
@@ -79,15 +72,6 @@ function buildTableNode(
   };
 }
 
-function hasSlug(definition: unknown, slug: string): boolean {
-  return (
-    typeof definition === 'object' &&
-    definition !== null &&
-    'slug' in definition &&
-    definition.slug === slug
-  );
-}
-
 function register(
   definition: ContentTypeDefinition,
   tables: TablePlan[],
@@ -110,20 +94,20 @@ function register(
  * repository uses comes from here (via `planTables()`), never from input:
  * a request slug is only ever a lookup key.
  */
-export class RegistryService {
+export class ContentTypeRegistry {
   private constructor(
     private readonly types: ReadonlyMap<string, RegisteredContentType>,
   ) {}
 
   /** Validates the definitions (alone and as a set) and plans their tables. */
-  static fromDefinitions(definitions: readonly unknown[]): RegistryService {
+  static fromDefinitions(definitions: readonly unknown[]): ContentTypeRegistry {
     const validation = validateDefinitions(definitions);
     if (!validation.ok) {
       throw new ContentEngineError(
         'Content type registry contains an invalid definition.',
       );
     }
-    return new RegistryService(
+    return new ContentTypeRegistry(
       new Map(
         validation.definitions.map(({ definition, tables }) => [
           definition.slug,
@@ -131,35 +115,6 @@ export class RegistryService {
         ]),
       ),
     );
-  }
-
-  /**
-   * Loads the types `content:migrate` synced into `content._content_types`
-   * and re-validates them, so a hand-edited row cannot inject a name.
-   */
-  static async fromDatabase(
-    db: Kysely<ContentMetaDatabase>,
-  ): Promise<RegistryService> {
-    const rows = await db
-      .withSchema(CONTENT_DB_SCHEMA)
-      .selectFrom(META_TABLES.contentTypes)
-      .select(['slug', 'definition'])
-      .orderBy('slug')
-      .execute();
-    const definitions = rows.map((row) => {
-      // jsonb arrives parsed; the column type says string because writes send JSON text.
-      const definition: unknown =
-        typeof row.definition === 'string'
-          ? JSON.parse(row.definition)
-          : row.definition;
-      if (!hasSlug(definition, row.slug)) {
-        throw new ContentEngineError(
-          `Registry row "${row.slug}" does not match its definition slug.`,
-        );
-      }
-      return definition;
-    });
-    return RegistryService.fromDefinitions(definitions);
   }
 
   slugs(): string[] {

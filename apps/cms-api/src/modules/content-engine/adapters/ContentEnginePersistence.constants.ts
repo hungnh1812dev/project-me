@@ -18,3 +18,9 @@ export const CONTENT_NOT_MIGRATED_PG_CODES: readonly string[] = [
 
 /** Most connections of the app's content pool (reads of the document API). */
 export const CONTENT_POOL_MAX_CONNECTIONS = 10;
+
+/** Connections of the migration pool: everything runs in a single transaction. */
+export const MIGRATION_POOL_MAX_CONNECTIONS = 1;
+
+/** Name of the savepoint `ContentTransactionRunner.runInSavepoint` opens. */
+export const CONTENT_STEP_SAVEPOINT = 'content_step';

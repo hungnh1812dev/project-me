@@ -13,8 +13,8 @@ generated, the definition must pass the validator.
 | Limits, words, codes | `domain/ContentEngine.constants.ts` (pool, pg codes, migration file names and the lock key: `adapters/ContentEnginePersistence.constants.ts`)                                                                                                                                                                        |
 | Field type behaviour | `domain/field-types/` (`FIELD_TYPE_SPECS`, `fieldTypeOf`: one entry per type, including `coerceValue`; value patterns, `INT4_MAX` and the date/datetime/uuid parsers are exported next to it; `mediaColumnsOf(registry)` lists the media columns by table, column and field name, from the `referencesMedia` marker) |
 | Diff → DDL (pure)    | `domain/SqlGenerator.rules.ts`                                                                                                                                                                                                                                                                                       |
-| Files, snapshot      | `migration-files.ts`                                                                                                                                                                                                                                                                                                 |
-| Apply + bookkeeping  | `migration-runner.ts` (Kysely)                                                                                                                                                                                                                                                                                       |
+| Files, snapshot      | `adapters/MigrationFiles.adapter.ts`                                                                                                                                                                                                                                                                                 |
+| Apply + bookkeeping  | `adapters/MigrationRunner.adapter.ts` (Kysely)                                                                                                                                                                                                                                                                       |
 | CLIs                 | `cli/generate.ts`, `cli/migrate.ts`                                                                                                                                                                                                                                                                                  |
 
 ## Top level
@@ -300,12 +300,14 @@ runs) inside the container. `pnpm smoke` checks this.
 
 ## Runtime: registry and repository
 
-Code: `src/modules/content-engine/{registry.service.ts,content.repository.ts,component-table-sync.ts,tree-loader.ts,domain/ContentRowMapping.rules.ts,domain/ContentTree.entity.ts,domain/ContentDocument.entity.ts,domain/TreeInput.rules.ts}`.
+Code: `src/modules/content-engine/{domain/ContentTypeRegistry.entity.ts,application/ContentRegistry.service.ts,application/ContentRepository.port.ts,adapters/KyselyContent.repository.ts,adapters/ComponentTableSync.adapter.ts,adapters/TreeLoader.adapter.ts,adapters/PgContentType.repository.ts,domain/ContentRowMapping.rules.ts,domain/ContentTree.entity.ts,domain/ContentDocument.entity.ts,domain/TreeInput.rules.ts}`.
 
-**Registry.** `RegistryService.fromDatabase(db)` reads
-`content._content_types`, re-validates every definition and builds its
-`planTables()` plans into a table tree (`fromDefinitions()` does the same
-from JSON). `resolve(slug)` returns the plans or throws
+**Registry.** `PgContentTypeRepository.loadDefinitions()` reads
+`content._content_types` (the `ContentTypeRepository` port); the application
+service `ContentRegistry` passes the rows to
+`ContentTypeRegistry.fromDefinitions()`, which re-validates every definition
+and builds its `planTables()` plans into a table tree. The registry class
+reads no database. `resolve(slug)` returns the plans or throws
 `UnknownContentTypeError` (`content_type.unknown`). A request slug is only a
 map key: every table and column name the repository uses comes from a plan,
 Kysely quotes it, and every value is a bound parameter.
@@ -326,15 +328,15 @@ Loaded documents add the root system columns (`id`, `documentId`,
 `[]` when empty). Values are raw from `pg` (`decimal` is a string, `json` is
 parsed); serialization and masking belong to the API layer (T16/T20).
 
-**Operations** (`ContentRepository`, all per slug):
+**Operations** (`ContentRepository` port, Kysely adapter `KyselyContentRepository`; all per slug, all take the caller's `UnitOfWork`):
 
-| Method                                                  | Behaviour                                                                                                                                           |
-| ------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `insertTree(trx, slug, input)`                          | Inserts the root row (`documentId`, `publishedAt` null = draft) and the whole tree. A sent `componentUid` is kept (publish clones), else a new one. |
-| `loadTrees(db, slug, { status, documentIds? })`         | 1 query for the roots, then 1 per component table whose parents have rows (`parent_id = ANY($1::int[])`), ordered by `order_index`.                 |
-| `replaceTree(trx, slug, { documentId, status }, input)` | Locks the root row, updates it in place, then syncs each component list that is present in the input (see below).                                   |
+| Method                                                   | Behaviour                                                                                                                                           |
+| -------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `insertTree(unit, slug, input)`                          | Inserts the root row (`documentId`, `publishedAt` null = draft) and the whole tree. A sent `componentUid` is kept (publish clones), else a new one. |
+| `loadTrees(unit, slug, { status, documentIds? })`        | 1 query for the roots, then 1 per component table whose parents have rows (`parent_id = ANY($1::int[])`), ordered by `order_index`.                 |
+| `replaceTree(unit, slug, { documentId, status }, input)` | Locks the root row, updates it in place, then syncs each component list that is present in the input (see below).                                   |
 
-`loadComponentTrees(db, root, rootIds)` (tree-loader) is exported for read
+`loadComponentTrees(db, root, rootIds)` (`adapters/TreeLoader.adapter.ts`) is exported for read
 paths that select roots themselves (filters, pagination).
 
 **replaceTree rules** (decisions, T07):

@@ -1,12 +1,16 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { CONTENT_ERROR_CODES } from './domain/ContentEngine.constants';
-import { ContentEngineError } from './domain/ContentEngine.errors';
-import { RegistryService, UnknownContentTypeError } from './registry.service';
+import { CONTENT_ERROR_CODES } from './ContentEngine.constants';
+import { ContentEngineError } from './ContentEngine.errors';
+import {
+  ContentTypeRegistry,
+  UnknownContentTypeError,
+} from './ContentTypeRegistry.entity';
 
 const CV_PAGE_PATH = join(
   __dirname,
+  '..',
   '..',
   '..',
   '..',
@@ -22,9 +26,9 @@ function loadCvPage(): Record<string, unknown> {
   >;
 }
 
-describe('RegistryService', () => {
+describe('ContentTypeRegistry', () => {
   it('builds the table tree of cv-page from planTables()', () => {
-    const type = RegistryService.fromDefinitions([loadCvPage()]).resolve(
+    const type = ContentTypeRegistry.fromDefinitions([loadCvPage()]).resolve(
       'cv-page',
     );
     expect(type.root.plan.name).toBe('cv_page');
@@ -48,7 +52,7 @@ describe('RegistryService', () => {
   });
 
   it('throws a typed error for an unknown slug', () => {
-    const registry = RegistryService.fromDefinitions([loadCvPage()]);
+    const registry = ContentTypeRegistry.fromDefinitions([loadCvPage()]);
     expect(() => registry.resolve('cv_page')).toThrow(UnknownContentTypeError);
     expect(() => registry.resolve('__proto__')).toThrow(
       UnknownContentTypeError,
@@ -60,7 +64,7 @@ describe('RegistryService', () => {
 
   it('refuses an invalid definition', () => {
     const broken = { ...loadCvPage(), slug: 'Bad Slug' };
-    expect(() => RegistryService.fromDefinitions([broken])).toThrow(
+    expect(() => ContentTypeRegistry.fromDefinitions([broken])).toThrow(
       ContentEngineError,
     );
   });

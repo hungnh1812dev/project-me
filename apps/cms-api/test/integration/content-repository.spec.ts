@@ -4,28 +4,33 @@ import type { StartedPostgreSqlContainer } from '@testcontainers/postgresql';
 import { Kysely, PostgresDialect, sql } from 'kysely';
 import { Client, Pool } from 'pg';
 
+import { unitOfWorkFromContentTrx } from '../../src/modules/content-engine/adapters/KyselyContentTransactionRunner.adapter';
 import { DEFAULT_CONTENT_PATHS } from '../../src/modules/content-engine/cli/content-paths';
-import { createMigrationDb } from '../../src/modules/content-engine/cli/migrate';
+import { createMigrationDb } from '../../src/modules/content-engine/cli/ContentEngineCli.setup';
 import { CONTENT_ERROR_CODES } from '../../src/modules/content-engine/domain/ContentEngine.constants';
 import {
   type ContentDocument,
   DocumentNotFoundError,
 } from '../../src/modules/content-engine/domain/ContentDocument.entity';
+import { KyselyContentRepository } from '../../src/modules/content-engine/adapters/KyselyContent.repository';
+import type {
+  InsertTreeInput,
+  LoadTreesQuery,
+} from '../../src/modules/content-engine/application/ContentRepository.port';
+import { runContentMigrations } from '../../src/modules/content-engine/adapters/MigrationRunner.adapter';
 import {
-  ContentRepository,
-  type InsertTreeInput,
-} from '../../src/modules/content-engine/content.repository';
-import { runContentMigrations } from '../../src/modules/content-engine/migration-runner';
-import {
-  RegistryService,
+  ContentTypeRegistry,
   UnknownContentTypeError,
-} from '../../src/modules/content-engine/registry.service';
+} from '../../src/modules/content-engine/domain/ContentTypeRegistry.entity';
 import type { ComponentInput } from '../../src/modules/content-engine/domain/TreeInput.rules';
 import type { ComponentNode } from '../../src/modules/content-engine/domain/ContentTree.entity';
-import type { ContentDatabase } from '../../src/modules/content-engine/tree-loader';
+import type { ContentDatabase } from '../../src/modules/content-engine/adapters/TreeLoader.adapter';
+import { loadRegistryFromDatabase } from '../fixtures/content-registry.fixture';
 import { startPostgres } from '../fixtures/postgres.fixture';
 
 const SLUG = 'cv-page';
+/** Reads run inside a transaction (the repository takes a unit); only data queries are counted. */
+const TRANSACTION_CONTROL = /^(begin|commit|rollback)$/i;
 /** cv-page: 1 root + 7 component tables (role is the only depth-2 table). */
 const CV_PAGE_TABLE_COUNT = 8;
 
@@ -95,11 +100,11 @@ function component(
   return node;
 }
 
-describe('ContentRepository on cv-page (Postgres 16 via Testcontainers)', () => {
+describe('KyselyContentRepository on cv-page (Postgres 16 via Testcontainers)', () => {
   let postgres: StartedPostgreSqlContainer;
   let db: Kysely<ContentDatabase>;
-  let repository: ContentRepository;
-  let registry: RegistryService;
+  let repository: KyselyContentRepository;
+  let registry: ContentTypeRegistry;
   let queries: string[] = [];
 
   beforeAll(async () => {
@@ -118,7 +123,7 @@ describe('ContentRepository on cv-page (Postgres 16 via Testcontainers)', () => 
         migrationDb,
         DEFAULT_CONTENT_PATHS.migrationsDir,
       );
-      registry = await RegistryService.fromDatabase(migrationDb);
+      registry = await loadRegistryFromDatabase(migrationDb);
     } finally {
       await migrationDb.destroy();
     }
@@ -128,10 +133,15 @@ describe('ContentRepository on cv-page (Postgres 16 via Testcontainers)', () => 
         pool: new Pool({ connectionString: url.toString() }),
       }),
       log: (event) => {
-        if (event.level === 'query') queries.push(event.query.sql);
+        if (
+          event.level === 'query' &&
+          !TRANSACTION_CONTROL.test(event.query.sql)
+        ) {
+          queries.push(event.query.sql);
+        }
       },
     });
-    repository = new ContentRepository(registry);
+    repository = new KyselyContentRepository(registry);
   });
 
   afterAll(async () => {
@@ -146,14 +156,27 @@ describe('ContentRepository on cv-page (Postgres 16 via Testcontainers)', () => 
   async function insert(input: InsertTreeInput): Promise<number> {
     return db
       .transaction()
-      .execute((trx) => repository.insertTree(trx, SLUG, input));
+      .execute((trx) =>
+        repository.insertTree(unitOfWorkFromContentTrx(trx), SLUG, input),
+      );
+  }
+
+  function loadTrees(
+    slug: string,
+    query: LoadTreesQuery,
+  ): Promise<ContentDocument[]> {
+    return db
+      .transaction()
+      .execute((trx) =>
+        repository.loadTrees(unitOfWorkFromContentTrx(trx), slug, query),
+      );
   }
 
   async function loadOne(
     documentId: string,
     status: 'draft' | 'published' = 'draft',
   ): Promise<ContentDocument | undefined> {
-    const [document] = await repository.loadTrees(db, SLUG, {
+    const [document] = await loadTrees(SLUG, {
       status,
       documentIds: [documentId],
     });
@@ -180,7 +203,7 @@ describe('ContentRepository on cv-page (Postgres 16 via Testcontainers)', () => 
         UnknownContentTypeError,
       );
       await expect(
-        repository.loadTrees(db, 'nope; DROP TABLE x', { status: 'draft' }),
+        loadTrees('nope; DROP TABLE x', { status: 'draft' }),
       ).rejects.toMatchObject({
         code: CONTENT_ERROR_CODES.CONTENT_TYPE_UNKNOWN,
       });
@@ -240,7 +263,7 @@ describe('ContentRepository on cv-page (Postgres 16 via Testcontainers)', () => 
     await insert({ documentId: bare, publishedAt: null, values: {} });
 
     queries = [];
-    const documents = await repository.loadTrees(db, SLUG, {
+    const documents = await loadTrees(SLUG, {
       status: 'draft',
       documentIds: full,
     });
@@ -255,7 +278,7 @@ describe('ContentRepository on cv-page (Postgres 16 via Testcontainers)', () => 
     ).toBe(true);
 
     queries = [];
-    await repository.loadTrees(db, SLUG, {
+    await loadTrees(SLUG, {
       status: 'draft',
       documentIds: [bare],
     });
@@ -264,7 +287,7 @@ describe('ContentRepository on cv-page (Postgres 16 via Testcontainers)', () => 
 
     queries = [];
     expect(
-      await repository.loadTrees(db, SLUG, {
+      await loadTrees(SLUG, {
         status: 'published',
         documentIds: full,
       }),
@@ -283,7 +306,7 @@ describe('ContentRepository on cv-page (Postgres 16 via Testcontainers)', () => 
 
     await db.transaction().execute((trx) =>
       repository.replaceTree(
-        trx,
+        unitOfWorkFromContentTrx(trx),
         SLUG,
         { documentId, status: 'draft' },
         {
@@ -370,7 +393,7 @@ describe('ContentRepository on cv-page (Postgres 16 via Testcontainers)', () => 
         .transaction()
         .execute((trx) =>
           repository.replaceTree(
-            trx,
+            unitOfWorkFromContentTrx(trx),
             SLUG,
             { documentId: mine, status: 'draft' },
             { components: { experience: [echo(otherAcme)] } },
@@ -385,7 +408,7 @@ describe('ContentRepository on cv-page (Postgres 16 via Testcontainers)', () => 
       .transaction()
       .execute((trx) =>
         repository.replaceTree(
-          trx,
+          unitOfWorkFromContentTrx(trx),
           SLUG,
           { documentId: mine, status: 'draft' },
           { components: { experience: [], skill: [] } },
@@ -410,7 +433,7 @@ describe('ContentRepository on cv-page (Postgres 16 via Testcontainers)', () => 
       .transaction()
       .execute((trx) =>
         repository.replaceTree(
-          trx,
+          unitOfWorkFromContentTrx(trx),
           SLUG,
           { documentId, status: 'draft' },
           { values: { company: 'Draft only' }, components: { experience: [] } },
@@ -429,7 +452,7 @@ describe('ContentRepository on cv-page (Postgres 16 via Testcontainers)', () => 
     await expect(
       db.transaction().execute(async (trx) => {
         await repository.replaceTree(
-          trx,
+          unitOfWorkFromContentTrx(trx),
           SLUG,
           { documentId, status: 'draft' },
           {
@@ -446,7 +469,7 @@ describe('ContentRepository on cv-page (Postgres 16 via Testcontainers)', () => 
     await expect(
       db.transaction().execute((trx) =>
         repository.replaceTree(
-          trx,
+          unitOfWorkFromContentTrx(trx),
           SLUG,
           { documentId, status: 'draft' },
           {
@@ -468,7 +491,11 @@ describe('ContentRepository on cv-page (Postgres 16 via Testcontainers)', () => 
     const lost = randomUUID();
     await expect(
       db.transaction().execute(async (trx) => {
-        await repository.insertTree(trx, SLUG, cvPage(lost, 'L'));
+        await repository.insertTree(
+          unitOfWorkFromContentTrx(trx),
+          SLUG,
+          cvPage(lost, 'L'),
+        );
         throw new RollbackSignal('caller failed after insertTree');
       }),
     ).rejects.toBeInstanceOf(RollbackSignal);
@@ -480,13 +507,15 @@ describe('ContentRepository on cv-page (Postgres 16 via Testcontainers)', () => 
     await expect(
       db
         .transaction()
-        .execute((trx) => repository.replaceTree(trx, SLUG, ref, {})),
+        .execute((trx) =>
+          repository.replaceTree(unitOfWorkFromContentTrx(trx), SLUG, ref, {}),
+        ),
     ).rejects.toBeInstanceOf(DocumentNotFoundError);
 
     queries = [];
     await expect(
       db.transaction().execute((trx) =>
-        repository.insertTree(trx, SLUG, {
+        repository.insertTree(unitOfWorkFromContentTrx(trx), SLUG, {
           documentId: randomUUID(),
           publishedAt: null,
           values: { position: 'x', 'position"; DROP TABLE x; --': 'y' },
@@ -494,7 +523,7 @@ describe('ContentRepository on cv-page (Postgres 16 via Testcontainers)', () => 
       ),
     ).rejects.toMatchObject({ code: CONTENT_ERROR_CODES.TREE_INVALID });
     await expect(
-      repository.loadTrees(db, SLUG, {
+      loadTrees(SLUG, {
         status: 'draft',
         documentIds: ['not-a-uuid'],
       }),

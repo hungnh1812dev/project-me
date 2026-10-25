@@ -21,7 +21,7 @@ import { ContentRegistryProvider } from '../content-engine';
 import { CONTENT_DB_SCHEMA } from '../content-engine';
 import { toDocument } from '../content-engine/domain/ContentRowMapping.rules';
 import type { ContentStatus, RegisteredContentType } from '../content-engine';
-import { loadComponentTrees } from '../content-engine/tree-loader';
+import { loadComponentTrees } from '../content-engine/adapters/TreeLoader.adapter';
 import type { ListDocumentsQuery } from './dto/list-documents.query';
 import { filterExpression, queryColumnOf, sortTarget } from './document-filter';
 import {

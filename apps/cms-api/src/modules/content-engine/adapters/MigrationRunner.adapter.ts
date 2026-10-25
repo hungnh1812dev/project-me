@@ -1,18 +1,18 @@
 import { type Generated, type Kysely, sql } from 'kysely';
 
-import { MIGRATION_LOCK_KEY } from './adapters/ContentEnginePersistence.constants';
+import { MIGRATION_LOCK_KEY } from './ContentEnginePersistence.constants';
 import {
   CONTENT_DB_SCHEMA,
   META_TABLES,
-} from './domain/ContentEngine.constants';
-import { ContentEngineError } from './domain/ContentEngine.errors';
-import type { ContentTypeKind } from './domain/DefinitionSchema.rules';
+} from '../domain/ContentEngine.constants';
+import { ContentEngineError } from '../domain/ContentEngine.errors';
+import type { ContentTypeKind } from '../domain/DefinitionSchema.rules';
 import {
   listMigrations,
   type MigrationFile,
   readSnapshot,
-} from './migration-files';
-import { quoteIdentifier } from './domain/SqlGenerator.rules';
+} from './MigrationFiles.adapter';
+import { quoteIdentifier } from '../domain/SqlGenerator.rules';
 
 /** Kysely view of the engine's bookkeeping tables in schema `content`. */
 export interface ContentMetaDatabase {

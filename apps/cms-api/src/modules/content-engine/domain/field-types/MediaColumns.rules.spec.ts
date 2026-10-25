@@ -1,4 +1,4 @@
-import { RegistryService } from '../../registry.service';
+import { ContentTypeRegistry } from '../ContentTypeRegistry.entity';
 import { mediaColumnsOf, mediaFieldNamesByTable } from './MediaColumns.rules';
 
 const GALLERY = {
@@ -23,7 +23,7 @@ const NOTE = {
 } as const;
 
 describe('mediaColumnsOf', () => {
-  const registry = RegistryService.fromDefinitions([GALLERY, NOTE]);
+  const registry = ContentTypeRegistry.fromDefinitions([GALLERY, NOTE]);
 
   it('lists a media field at the root and inside a component', () => {
     expect(mediaColumnsOf(registry)).toEqual([
@@ -47,7 +47,9 @@ describe('mediaColumnsOf', () => {
   });
 
   it('is empty when no content type has a media field', () => {
-    expect(mediaColumnsOf(RegistryService.fromDefinitions([NOTE]))).toEqual([]);
+    expect(mediaColumnsOf(ContentTypeRegistry.fromDefinitions([NOTE]))).toEqual(
+      [],
+    );
   });
 
   it('groups field names by table', () => {

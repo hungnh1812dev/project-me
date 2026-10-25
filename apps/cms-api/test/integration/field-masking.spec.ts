@@ -4,6 +4,7 @@ import type { StartedPostgreSqlContainer } from '@testcontainers/postgresql';
 import { Kysely, PostgresDialect } from 'kysely';
 import { Client, Pool } from 'pg';
 
+import { unitOfWorkFromContentTrx } from '../../src/modules/content-engine/adapters/KyselyContentTransactionRunner.adapter';
 import {
   accountActor,
   anonymousActor,
@@ -27,21 +28,22 @@ import {
 import { RecordSerializer } from '../../src/modules/access/record.serializer';
 import { WriteAllowlist } from '../../src/modules/access/write-allowlist';
 import { DEFAULT_CONTENT_PATHS } from '../../src/modules/content-engine/cli/content-paths';
-import { createMigrationDb } from '../../src/modules/content-engine/cli/migrate';
+import { createMigrationDb } from '../../src/modules/content-engine/cli/ContentEngineCli.setup';
 import { CONTENT_DB_SCHEMA } from '../../src/modules/content-engine/domain/ContentEngine.constants';
 import type { ContentDocument } from '../../src/modules/content-engine/domain/ContentDocument.entity';
 import { rowToValues } from '../../src/modules/content-engine/domain/ContentTree.entity';
-import { ContentRepository } from '../../src/modules/content-engine/content.repository';
-import { runContentMigrations } from '../../src/modules/content-engine/migration-runner';
+import { KyselyContentRepository } from '../../src/modules/content-engine/adapters/KyselyContent.repository';
+import { runContentMigrations } from '../../src/modules/content-engine/adapters/MigrationRunner.adapter';
 import {
   type RegisteredContentType,
-  RegistryService,
-} from '../../src/modules/content-engine/registry.service';
+  ContentTypeRegistry,
+} from '../../src/modules/content-engine/domain/ContentTypeRegistry.entity';
 import {
   type ContentDatabase,
   loadComponentTrees,
-} from '../../src/modules/content-engine/tree-loader';
+} from '../../src/modules/content-engine/adapters/TreeLoader.adapter';
 import { systemRole } from '../fixtures/access.fixture';
+import { loadRegistryFromDatabase } from '../fixtures/content-registry.fixture';
 import { startPostgres } from '../fixtures/postgres.fixture';
 
 const SLUG = 'cv-page';
@@ -91,7 +93,7 @@ describe('field masking against Postgres (D3/D4, §12-4/§12-5 building blocks)'
   let postgres: StartedPostgreSqlContainer | undefined;
   let db: Kysely<ContentDatabase>;
   let type: RegisteredContentType;
-  let repository: ContentRepository;
+  let repository: KyselyContentRepository;
   const queries: string[] = [];
   const documentId = randomUUID();
 
@@ -106,18 +108,18 @@ describe('field masking against Postgres (D3/D4, §12-4/§12-5 building blocks)'
     url.pathname = `/${database}`;
 
     const migrationDb = createMigrationDb(url.toString());
-    let registry: RegistryService;
+    let registry: ContentTypeRegistry;
     try {
       await runContentMigrations(
         migrationDb,
         DEFAULT_CONTENT_PATHS.migrationsDir,
       );
-      registry = await RegistryService.fromDatabase(migrationDb);
+      registry = await loadRegistryFromDatabase(migrationDb);
     } finally {
       await migrationDb.destroy();
     }
     type = registry.resolve(SLUG);
-    repository = new ContentRepository(registry);
+    repository = new KyselyContentRepository(registry);
     db = new Kysely<ContentDatabase>({
       dialect: new PostgresDialect({
         pool: new Pool({ connectionString: url.toString() }),
@@ -128,7 +130,7 @@ describe('field masking against Postgres (D3/D4, §12-4/§12-5 building blocks)'
     });
 
     await db.transaction().execute((trx) =>
-      repository.insertTree(trx, SLUG, {
+      repository.insertTree(unitOfWorkFromContentTrx(trx), SLUG, {
         documentId,
         publishedAt: null,
         createdBy: CREATED_BY,
@@ -210,7 +212,7 @@ describe('field masking against Postgres (D3/D4, §12-4/§12-5 building blocks)'
       .transaction()
       .execute((trx) =>
         repository.replaceTree(
-          trx,
+          unitOfWorkFromContentTrx(trx),
           SLUG,
           { documentId, status: 'draft' },
           tree,

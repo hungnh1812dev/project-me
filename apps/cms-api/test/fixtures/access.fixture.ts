@@ -4,7 +4,7 @@ import type {
   RolePolicy,
 } from '../../src/modules/access/actor-context';
 import { SubjectCatalog } from '../../src/modules/access/subject-catalog';
-import { RegistryService } from '../../src/modules/content-engine/registry.service';
+import { ContentTypeRegistry } from '../../src/modules/content-engine/domain/ContentTypeRegistry.entity';
 import {
   DEFAULT_ROLE_PERMISSIONS,
   type DefaultPermission,
@@ -46,7 +46,7 @@ export const NOTE_DEFINITION = {
 
 export function testCatalog(): SubjectCatalog {
   return new SubjectCatalog(
-    RegistryService.fromDefinitions([ARTICLE_DEFINITION, NOTE_DEFINITION]),
+    ContentTypeRegistry.fromDefinitions([ARTICLE_DEFINITION, NOTE_DEFINITION]),
   );
 }
 

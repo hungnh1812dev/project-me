@@ -11,7 +11,7 @@ import {
   migrationFileName,
   readSnapshot,
   writeMigration,
-} from '../migration-files';
+} from '../adapters/MigrationFiles.adapter';
 import {
   type MigrationPlan,
   planMigration,

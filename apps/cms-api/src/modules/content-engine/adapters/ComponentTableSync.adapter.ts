@@ -5,17 +5,20 @@ import type { Transaction } from 'kysely';
 import {
   CONTENT_DB_SCHEMA,
   CONTENT_ERROR_CODES,
-} from './domain/ContentEngine.constants';
-import { toColumnValues } from './domain/ContentRowMapping.rules';
-import type { ComponentTableNode, TableNode } from './registry.service';
-import type { ContentRow } from './domain/ContentTree.entity';
+} from '../domain/ContentEngine.constants';
+import { toColumnValues } from '../domain/ContentRowMapping.rules';
+import type {
+  ComponentTableNode,
+  TableNode,
+} from '../domain/ContentTypeRegistry.entity';
+import type { ContentRow } from '../domain/ContentTree.entity';
 import {
   type ComponentInput,
   type ComponentsInput,
   ContentTreeError,
   type TreePath,
-} from './domain/TreeInput.rules';
-import { anyInt, type ContentDatabase } from './tree-loader';
+} from '../domain/TreeInput.rules';
+import { anyInt, type ContentDatabase } from './TreeLoader.adapter';
 
 export type WriteMode = 'insert' | 'replace';
 

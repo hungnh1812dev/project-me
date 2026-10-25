@@ -5,7 +5,7 @@ import {
 import { UUID_PATTERN } from './field-types';
 import { formatDefinitionPath } from './DefinitionValidator.rules';
 import { ContentEngineError } from './ContentEngine.errors';
-import type { TableNode } from '../registry.service';
+import type { TableNode } from './ContentTypeRegistry.entity';
 
 /**
  * The document tree as the repository reads and writes it. Keys of `values`

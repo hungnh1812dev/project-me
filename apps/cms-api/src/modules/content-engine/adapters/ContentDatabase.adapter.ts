@@ -2,14 +2,14 @@ import { Inject, Injectable, type OnModuleDestroy } from '@nestjs/common';
 import { Kysely, PostgresDialect } from 'kysely';
 import { type ClientConfig, Pool, types } from 'pg';
 
-import { type IAppConfig } from '../../config/app-config';
-import { APP_CONFIG } from '../../config/config.constants';
+import { type IAppConfig } from '../../../config/app-config';
+import { APP_CONFIG } from '../../../config/config.constants';
 import {
   type DatabaseConnection,
   poolOptionsOf,
-} from '../../infrastructure/database/database-config';
-import { CONTENT_POOL_MAX_CONNECTIONS } from './adapters/ContentEnginePersistence.constants';
-import type { ContentDatabase } from './tree-loader';
+} from '../../../infrastructure/database/database-config';
+import { CONTENT_POOL_MAX_CONNECTIONS } from './ContentEnginePersistence.constants';
+import type { ContentDatabase } from './TreeLoader.adapter';
 
 const keepText = (value: string): string => value;
 

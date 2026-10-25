@@ -6,6 +6,7 @@ import type { Kysely } from 'kysely';
 import { Client } from 'pg';
 import request from 'supertest';
 
+import { unitOfWorkFromContentTrx } from '../../src/modules/content-engine/adapters/KyselyContentTransactionRunner.adapter';
 import { Clock } from '../../src/common/time/clock';
 import {
   openPrisma,
@@ -18,15 +19,15 @@ import {
 } from '../../src/infrastructure/turnstile/turnstile.port';
 import { seedRolePermissions } from '../../src/modules/access/roles/role-permissions.seed';
 import { AUDIT_ACTIONS } from '../../src/modules/security-audit/security-audit.constants';
-import { createContentDb } from '../../src/modules/content-engine/content-database';
-import { ContentRegistryProvider } from '../../src/modules/content-engine/content-registry.provider';
-import { ContentRepository } from '../../src/modules/content-engine/content.repository';
-import { RegistryService } from '../../src/modules/content-engine/registry.service';
+import { createContentDb } from '../../src/modules/content-engine/adapters/ContentDatabase.adapter';
+import { ContentRegistry } from '../../src/modules/content-engine/application/ContentRegistry.service';
+import { KyselyContentRepository } from '../../src/modules/content-engine/adapters/KyselyContent.repository';
+import { ContentTypeRegistry } from '../../src/modules/content-engine/domain/ContentTypeRegistry.entity';
 import {
   emptySnapshot,
   planMigration,
 } from '../../src/modules/content-engine/domain/SqlGenerator.rules';
-import type { ContentDatabase } from '../../src/modules/content-engine/tree-loader';
+import type { ContentDatabase } from '../../src/modules/content-engine/adapters/TreeLoader.adapter';
 import { hashPassword } from '../../src/modules/identity/password-hasher';
 import { seedSystemRoles } from '../../src/modules/access/roles/system-roles.seed';
 import { ReviewerCleanupJob } from '../../src/modules/reviewer/reviewer-cleanup.job';
@@ -90,7 +91,7 @@ describe('reviewer backend (T31, D2; Postgres 16 via Testcontainers)', () => {
     await seedSystemRoles(db.prisma);
     await seedRolePermissions(db.prisma);
 
-    const registry = RegistryService.fromDefinitions([ARTICLE_DEFINITION]);
+    const registry = ContentTypeRegistry.fromDefinitions([ARTICLE_DEFINITION]);
     const client = new Client({ connectionString: databaseUrl });
     await client.connect();
     await client.query(
@@ -100,13 +101,13 @@ describe('reviewer backend (T31, D2; Postgres 16 via Testcontainers)', () => {
     );
     await client.end();
     content = createContentDb(databaseUrl);
-    const repository = new ContentRepository(registry);
+    const repository = new KyselyContentRepository(registry);
     await content.transaction().execute(async (trx) => {
       for (const [published, title] of [
         [true, 'Live'],
         [false, 'Draft only'],
       ] as const) {
-        await repository.insertTree(trx, 'article', {
+        await repository.insertTree(unitOfWorkFromContentTrx(trx), 'article', {
           documentId: randomUUID(),
           publishedAt: published ? new Date() : null,
           values: { title, body: '<p>x</p>', priority: 1 },
@@ -127,7 +128,7 @@ describe('reviewer backend (T31, D2; Postgres 16 via Testcontainers)', () => {
       }),
       [
         {
-          token: ContentRegistryProvider,
+          token: ContentRegistry,
           value: { registry: () => Promise.resolve(registry) },
         },
         { token: TURNSTILE_VERIFIER, value: verifier },

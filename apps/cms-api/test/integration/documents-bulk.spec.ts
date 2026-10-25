@@ -14,15 +14,15 @@ import { seedRolePermissions } from '../../src/modules/access/roles/role-permiss
 import {
   ContentDbProvider,
   createContentDb,
-} from '../../src/modules/content-engine/content-database';
-import { CONTENT_TYPE_PARSERS } from '../../src/modules/content-engine/content-database';
-import { ContentRegistryProvider } from '../../src/modules/content-engine/content-registry.provider';
-import { RegistryService } from '../../src/modules/content-engine/registry.service';
+} from '../../src/modules/content-engine/adapters/ContentDatabase.adapter';
+import { CONTENT_TYPE_PARSERS } from '../../src/modules/content-engine/adapters/ContentDatabase.adapter';
+import { ContentRegistry } from '../../src/modules/content-engine/application/ContentRegistry.service';
+import { ContentTypeRegistry } from '../../src/modules/content-engine/domain/ContentTypeRegistry.entity';
 import {
   emptySnapshot,
   planMigration,
 } from '../../src/modules/content-engine/domain/SqlGenerator.rules';
-import type { ContentDatabase } from '../../src/modules/content-engine/tree-loader';
+import type { ContentDatabase } from '../../src/modules/content-engine/adapters/TreeLoader.adapter';
 import { hashPassword } from '../../src/modules/identity/password-hasher';
 import { seedSystemRoles } from '../../src/modules/access/roles/system-roles.seed';
 import {
@@ -116,7 +116,7 @@ describe('document bulk (T34; Postgres 16 via Testcontainers)', () => {
     await seedSystemRoles(db.prisma);
     await seedRolePermissions(db.prisma);
 
-    const registry = RegistryService.fromDefinitions([
+    const registry = ContentTypeRegistry.fromDefinitions([
       ARTICLE_DEFINITION,
       NOTE_DEFINITION,
       PROFILE_DEFINITION,
@@ -156,7 +156,7 @@ describe('document bulk (T34; Postgres 16 via Testcontainers)', () => {
       }),
       [
         {
-          token: ContentRegistryProvider,
+          token: ContentRegistry,
           value: { registry: () => Promise.resolve(registry) },
         },
         { token: ContentDbProvider, value: { db: counted } },

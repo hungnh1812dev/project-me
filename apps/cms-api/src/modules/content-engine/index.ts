@@ -1,5 +1,8 @@
 export { DEFAULT_CONTENT_PATHS } from './cli/content-paths';
-export { ContentDbProvider } from './content-database';
+export { ContentDbProvider } from './adapters/ContentDatabase.adapter';
+// Transitional: documents wraps its own Kysely transaction until CR-dc-3.
+export { unitOfWorkFromContentTrx } from './adapters/KyselyContentTransactionRunner.adapter';
+export { type InsertTreeInput } from './application/ContentRepository.port';
 export {
   COMPONENT_FIELD_TYPE,
   CONTENT_DB_SCHEMA,
@@ -8,8 +11,9 @@ export {
   ROOT_SYSTEM_COLUMNS,
   SCALAR_FIELD_TYPES,
 } from './domain/ContentEngine.constants';
-export { ContentEngineModule } from './content-engine.module';
-export { ContentRegistryProvider } from './content-registry.provider';
+export { ContentEngineModule } from './ContentEngine.module';
+// Names kept for the modules that have not migrated yet; each CR task renames its own imports.
+export { ContentRegistry as ContentRegistryProvider } from './application/ContentRegistry.service';
 export {
   isComponentField,
   type ComponentFieldDefinition,
@@ -43,12 +47,12 @@ export {
   type ComponentNode,
   type ComponentTrees,
 } from './domain/ContentTree.entity';
-export { loadDefinitions } from './migration-files';
+export { loadDefinitions } from './adapters/MigrationFiles.adapter';
 export {
-  RegistryService,
+  ContentTypeRegistry as RegistryService,
   type RegisteredContentType,
   type TableNode,
-} from './registry.service';
+} from './domain/ContentTypeRegistry.entity';
 export { quoteIdentifier } from './domain/SqlGenerator.rules';
 export {
   assertTreeInput,

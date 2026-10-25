@@ -224,6 +224,12 @@ describe('import graph statements and pinned paths', () => {
     );
   };
 
+  it('does not read a quoted word list that holds the word from as an import', () => {
+    expect(
+      typeOnlyFlags("export const WORDS = [\n  'from',\n  'select',\n];"),
+    ).toEqual([]);
+  });
+
   it('flags import type and export type, and nothing else, as type-only', () => {
     expect(
       typeOnlyFlags(

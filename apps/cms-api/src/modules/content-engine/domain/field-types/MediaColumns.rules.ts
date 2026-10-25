@@ -1,4 +1,4 @@
-import type { RegistryService } from '../../registry.service';
+import type { ContentTypeRegistry } from '../ContentTypeRegistry.entity';
 import { fieldTypeOf } from './FieldTypeRegistry.rules';
 
 /** A column that stores a media file's internal id. Structure only, never SQL. */
@@ -8,9 +8,9 @@ export interface MediaColumnRef {
   readonly fieldName: string;
 }
 
-const cache = new WeakMap<RegistryService, readonly MediaColumnRef[]>();
+const cache = new WeakMap<ContentTypeRegistry, readonly MediaColumnRef[]>();
 
-function collectMediaColumns(registry: RegistryService): MediaColumnRef[] {
+function collectMediaColumns(registry: ContentTypeRegistry): MediaColumnRef[] {
   return registry.slugs().flatMap((slug) =>
     registry.resolve(slug).tables.flatMap((table) =>
       table.columns
@@ -30,7 +30,7 @@ function collectMediaColumns(registry: RegistryService): MediaColumnRef[] {
  * that decides which columns hold media references.
  */
 export function mediaColumnsOf(
-  registry: RegistryService,
+  registry: ContentTypeRegistry,
 ): readonly MediaColumnRef[] {
   let columns = cache.get(registry);
   if (columns === undefined) {
@@ -42,7 +42,7 @@ export function mediaColumnsOf(
 
 /** Media field names per table name, for walking a document tree. */
 export function mediaFieldNamesByTable(
-  registry: RegistryService,
+  registry: ContentTypeRegistry,
 ): ReadonlyMap<string, readonly string[]> {
   const byTable = new Map<string, string[]>();
   for (const { tableName, fieldName } of mediaColumnsOf(registry)) {

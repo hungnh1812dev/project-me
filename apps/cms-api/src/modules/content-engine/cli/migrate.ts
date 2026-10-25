@@ -1,30 +1,10 @@
-import { Kysely, PostgresDialect } from 'kysely';
-import { Pool } from 'pg';
-
 import { loadAppConfig } from '../../../config/app-config';
 import {
-  type DatabaseConnection,
-  poolOptionsOf,
-} from '../../../infrastructure/database/database-config';
-import {
-  type ContentMetaDatabase,
   type MigrateResult,
   runContentMigrations,
-} from '../migration-runner';
+} from '../adapters/MigrationRunner.adapter';
 import { DEFAULT_CONTENT_PATHS } from './content-paths';
-
-/** One connection is enough: everything runs in a single transaction. */
-const MIGRATE_POOL_SIZE = 1;
-
-export function createMigrationDb(
-  connection: DatabaseConnection,
-): Kysely<ContentMetaDatabase> {
-  return new Kysely<ContentMetaDatabase>({
-    dialect: new PostgresDialect({
-      pool: new Pool({ ...poolOptionsOf(connection), max: MIGRATE_POOL_SIZE }),
-    }),
-  });
-}
+import { createMigrationDb } from './ContentEngineCli.setup';
 
 function report(result: MigrateResult): string {
   const applied =

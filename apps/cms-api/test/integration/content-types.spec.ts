@@ -7,8 +7,8 @@ import {
   type PrismaHandle,
 } from '../../src/infrastructure/database/prisma-client';
 import { seedRolePermissions } from '../../src/modules/access/roles/role-permissions.seed';
-import { ContentRegistryProvider } from '../../src/modules/content-engine/content-registry.provider';
-import { RegistryService } from '../../src/modules/content-engine/registry.service';
+import { ContentRegistry } from '../../src/modules/content-engine/application/ContentRegistry.service';
+import { ContentTypeRegistry } from '../../src/modules/content-engine/domain/ContentTypeRegistry.entity';
 import { CONTENT_TYPES_ERROR_CODES } from '../../src/modules/content-types/domain/ContentTypes.errors';
 import type {
   ContentTypeView,
@@ -84,7 +84,7 @@ describe('content types API (T17b; Postgres 16 via Testcontainers)', () => {
     db = openPrisma(databaseUrl);
     await seedSystemRoles(db.prisma);
     await seedRolePermissions(db.prisma);
-    const registry = RegistryService.fromDefinitions([
+    const registry = ContentTypeRegistry.fromDefinitions([
       ARTICLE_DEFINITION,
       NOTE_DEFINITION,
     ]);
@@ -100,7 +100,7 @@ describe('content types API (T17b; Postgres 16 via Testcontainers)', () => {
       }),
       [
         {
-          token: ContentRegistryProvider,
+          token: ContentRegistry,
           value: { registry: () => Promise.resolve(registry) },
         },
       ],

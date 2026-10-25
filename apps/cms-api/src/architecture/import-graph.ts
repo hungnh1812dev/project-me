@@ -53,9 +53,12 @@ export interface SourceFile {
 
 const STATEMENT_PATTERN =
   /^[ \t]*(import|export)\s+(type\s+)?([^'";]*?)\s*from\s*['"]([^'"]+)['"]|^[ \t]*import\s*['"]([^'"]+)['"]|\bimport\(\s*['"]([^'"]+)['"]\s*\)/gm;
-/** Every specifier on its own, whatever the clause looks like. */
+/**
+ * Every specifier on its own, whatever the clause looks like. A `from`
+ * right after a quote is a string in a word list (`'from',`), not a clause.
+ */
 const ANY_SPECIFIER_PATTERN =
-  /(?:\bfrom\s*|\bimport\s*\(?\s*)['"]([^'"]+)['"]/g;
+  /(?:(?<!['"])\bfrom\s*|\bimport\s*\(?\s*)['"]([^'"]+)['"]/g;
 const BLOCK_COMMENT = /\/\*[\s\S]*?\*\//g;
 const LINE_COMMENT = /(^|[^:'"\\])\/\/.*$/gm;
 

@@ -24,12 +24,14 @@ export const GRAPHQL_DIRECTORY = join(MODULES, 'graphql');
 export const CONTENT_REPOSITORY_FILE = join(
   MODULES,
   'content-engine',
-  'content.repository.ts',
+  'adapters',
+  'KyselyContent.repository.ts',
 );
 export const TREE_LOADER_FILE = join(
   MODULES,
   'content-engine',
-  'tree-loader.ts',
+  'adapters',
+  'TreeLoader.adapter.ts',
 );
 export const CONTENT_ROW_MAPPING_FILE = join(
   MODULES,

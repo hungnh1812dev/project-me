@@ -9,14 +9,14 @@ import {
   type PrismaHandle,
 } from '../../src/infrastructure/database/prisma-client';
 import { seedRolePermissions } from '../../src/modules/access/roles/role-permissions.seed';
-import { createContentDb } from '../../src/modules/content-engine/content-database';
-import { ContentRegistryProvider } from '../../src/modules/content-engine/content-registry.provider';
-import { RegistryService } from '../../src/modules/content-engine/registry.service';
+import { createContentDb } from '../../src/modules/content-engine/adapters/ContentDatabase.adapter';
+import { ContentRegistry } from '../../src/modules/content-engine/application/ContentRegistry.service';
+import { ContentTypeRegistry } from '../../src/modules/content-engine/domain/ContentTypeRegistry.entity';
 import {
   emptySnapshot,
   planMigration,
 } from '../../src/modules/content-engine/domain/SqlGenerator.rules';
-import type { ContentDatabase } from '../../src/modules/content-engine/tree-loader';
+import type { ContentDatabase } from '../../src/modules/content-engine/adapters/TreeLoader.adapter';
 import { hashPassword } from '../../src/modules/identity/password-hasher';
 import { seedSystemRoles } from '../../src/modules/access/roles/system-roles.seed';
 import {
@@ -75,7 +75,7 @@ describe('document presence (T26; Postgres 16 via Testcontainers)', () => {
     await seedSystemRoles(db.prisma);
     await seedRolePermissions(db.prisma);
 
-    const registry = RegistryService.fromDefinitions([
+    const registry = ContentTypeRegistry.fromDefinitions([
       ARTICLE_DEFINITION,
       NOTE_DEFINITION,
     ]);
@@ -102,7 +102,7 @@ describe('document presence (T26; Postgres 16 via Testcontainers)', () => {
       }),
       [
         {
-          token: ContentRegistryProvider,
+          token: ContentRegistry,
           value: { registry: () => Promise.resolve(registry) },
         },
       ],

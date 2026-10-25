@@ -1,44 +1,32 @@
-import { type Kysely, sql, type Transaction } from 'kysely';
+import { type Kysely, sql } from 'kysely';
 
-import { syncChildren } from './component-table-sync';
+import type { UnitOfWork } from '../../../infrastructure/database/TransactionRunner.port';
+import type {
+  ContentRepository,
+  InsertTreeInput,
+  LoadTreesQuery,
+  ReplaceTreeInput,
+} from '../application/ContentRepository.port';
 import {
   CONTENT_DB_SCHEMA,
   CONTENT_ERROR_CODES,
   ROOT_SYSTEM_COLUMNS,
-} from './domain/ContentEngine.constants';
+} from '../domain/ContentEngine.constants';
 import {
   type ContentDocument,
-  type ContentStatus,
   DocumentNotFoundError,
   type DocumentRef,
-} from './domain/ContentDocument.entity';
-import { toColumnValues, toDocument } from './domain/ContentRowMapping.rules';
-import type { RegistryService } from './registry.service';
+} from '../domain/ContentDocument.entity';
+import { toColumnValues, toDocument } from '../domain/ContentRowMapping.rules';
+import type { ContentTypeRegistry } from '../domain/ContentTypeRegistry.entity';
 import {
   assertTreeInput,
   ContentTreeError,
   isUuid,
-  type TreeInput,
-} from './domain/TreeInput.rules';
-import { type ContentDatabase, loadComponentTrees } from './tree-loader';
-
-export interface InsertTreeInput extends TreeInput {
-  documentId: string;
-  /** null = the draft row; a timestamp = the published row (publish clones into it). */
-  publishedAt: Date | null;
-  locale?: string | null | undefined;
-  createdBy?: number | null | undefined;
-}
-
-export interface ReplaceTreeInput extends TreeInput {
-  updatedBy?: number | null | undefined;
-}
-
-export interface LoadTreesQuery {
-  status: ContentStatus;
-  /** Limit to these documents; omit to load every root with this status. */
-  documentIds?: readonly string[] | undefined;
-}
+} from '../domain/TreeInput.rules';
+import { syncChildren } from './ComponentTableSync.adapter';
+import { contentTrxOf } from './KyselyContentTransactionRunner.adapter';
+import { type ContentDatabase, loadComponentTrees } from './TreeLoader.adapter';
 
 function assertDocumentId(documentId: unknown, path: string): void {
   if (!isUuid(documentId)) {
@@ -51,22 +39,20 @@ function assertDocumentId(documentId: unknown, path: string): void {
 }
 
 /**
- * Reads and writes content documents (root row + component tree, depth ≤ 3)
- * of registered content types. Table and column names come only from the
- * registry plans; Kysely quotes them, and every value is a bound parameter.
- * Writes require the caller's transaction so a failure rolls back the whole
- * document, together with whatever else the caller did (OCC, publish).
+ * Kysely implementation of `ContentRepository`. Table and column names come
+ * only from the registry plans; Kysely quotes them, and every value is a
+ * bound parameter.
  */
-export class ContentRepository {
-  constructor(private readonly registry: RegistryService) {}
+export class KyselyContentRepository implements ContentRepository {
+  constructor(private readonly registry: ContentTypeRegistry) {}
 
   /** Inserts a root row and its whole tree. Returns the root id. */
   async insertTree(
-    trx: Transaction<ContentDatabase>,
+    unit: UnitOfWork,
     slug: string,
     input: InsertTreeInput,
   ): Promise<number> {
-    const [id] = await this.insertTrees(trx, slug, [input]);
+    const [id] = await this.insertTrees(unit, slug, [input]);
     return id as number;
   }
 
@@ -76,11 +62,12 @@ export class ContentRepository {
    * `RETURNING id`. Returns the root ids in input order.
    */
   async insertTrees(
-    trx: Transaction<ContentDatabase>,
+    unit: UnitOfWork,
     slug: string,
     inputs: readonly InsertTreeInput[],
   ): Promise<number[]> {
     if (inputs.length === 0) return [];
+    const trx = contentTrxOf(unit);
     const { root } = this.registry.resolve(slug);
     const prepared = inputs.map((input) => {
       const { documentId, publishedAt, locale, createdBy, ...tree } = input;
@@ -135,10 +122,11 @@ export class ContentRepository {
    * per component table that has parents to load. Roots come back by id.
    */
   async loadTrees(
-    db: Kysely<ContentDatabase>,
+    unit: UnitOfWork,
     slug: string,
     query: LoadTreesQuery,
   ): Promise<ContentDocument[]> {
+    const db: Kysely<ContentDatabase> = contentTrxOf(unit);
     const { root } = this.registry.resolve(slug);
     query.documentIds?.forEach((id, index) =>
       assertDocumentId(id, `documentIds[${index}]`),
@@ -186,11 +174,12 @@ export class ContentRepository {
    * Version/OCC is the caller's job. Returns the root id.
    */
   async replaceTree(
-    trx: Transaction<ContentDatabase>,
+    unit: UnitOfWork,
     slug: string,
     ref: DocumentRef,
     input: ReplaceTreeInput,
   ): Promise<number> {
+    const trx = contentTrxOf(unit);
     const { root } = this.registry.resolve(slug);
     assertDocumentId(ref.documentId, 'documentId');
     const { updatedBy, ...tree } = input;

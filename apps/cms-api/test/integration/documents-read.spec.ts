@@ -6,21 +6,22 @@ import type { Kysely } from 'kysely';
 import { Client } from 'pg';
 import request from 'supertest';
 
+import { unitOfWorkFromContentTrx } from '../../src/modules/content-engine/adapters/KyselyContentTransactionRunner.adapter';
 import {
   openPrisma,
   type PrismaHandle,
 } from '../../src/infrastructure/database/prisma-client';
 import { MASKED_FIELDS_KEY } from '../../src/modules/access/access.constants';
 import { seedRolePermissions } from '../../src/modules/access/roles/role-permissions.seed';
-import { createContentDb } from '../../src/modules/content-engine/content-database';
-import { ContentRegistryProvider } from '../../src/modules/content-engine/content-registry.provider';
-import { ContentRepository } from '../../src/modules/content-engine/content.repository';
-import { RegistryService } from '../../src/modules/content-engine/registry.service';
+import { createContentDb } from '../../src/modules/content-engine/adapters/ContentDatabase.adapter';
+import { ContentRegistry } from '../../src/modules/content-engine/application/ContentRegistry.service';
+import { KyselyContentRepository } from '../../src/modules/content-engine/adapters/KyselyContent.repository';
+import { ContentTypeRegistry } from '../../src/modules/content-engine/domain/ContentTypeRegistry.entity';
 import {
   emptySnapshot,
   planMigration,
 } from '../../src/modules/content-engine/domain/SqlGenerator.rules';
-import type { ContentDatabase } from '../../src/modules/content-engine/tree-loader';
+import type { ContentDatabase } from '../../src/modules/content-engine/adapters/TreeLoader.adapter';
 import { hashPassword } from '../../src/modules/identity/password-hasher';
 import { seedSystemRoles } from '../../src/modules/access/roles/system-roles.seed';
 import {
@@ -181,7 +182,7 @@ describe('document read API (T20; Postgres 16 via Testcontainers)', () => {
     await seedSystemRoles(db.prisma);
     await seedRolePermissions(db.prisma);
 
-    const registry = RegistryService.fromDefinitions([
+    const registry = ContentTypeRegistry.fromDefinitions([
       ARTICLE_DEFINITION,
       NOTE_DEFINITION,
     ]);
@@ -196,10 +197,10 @@ describe('document read API (T20; Postgres 16 via Testcontainers)', () => {
     await client.end();
 
     content = createContentDb(databaseUrl);
-    const repository = new ContentRepository(registry);
+    const repository = new KyselyContentRepository(registry);
     await content.transaction().execute(async (trx) => {
       for (const seed of SEEDS) {
-        await repository.insertTree(trx, 'article', {
+        await repository.insertTree(unitOfWorkFromContentTrx(trx), 'article', {
           documentId: seed.documentId,
           publishedAt: seed.published ? new Date() : null,
           createdBy: CREATOR_ID,
@@ -218,7 +219,7 @@ describe('document read API (T20; Postgres 16 via Testcontainers)', () => {
           },
         });
       }
-      await repository.insertTree(trx, 'note', {
+      await repository.insertTree(unitOfWorkFromContentTrx(trx), 'note', {
         documentId: ids.note,
         publishedAt: null,
         values: { text: 'a live note' },
@@ -237,7 +238,7 @@ describe('document read API (T20; Postgres 16 via Testcontainers)', () => {
       }),
       [
         {
-          token: ContentRegistryProvider,
+          token: ContentRegistry,
           value: { registry: () => Promise.resolve(registry) },
         },
       ],

@@ -224,11 +224,11 @@ Decisions (T16):
 when the following holds. Imports are resolved to the real file by
 `src/architecture/import-graph.ts` (an `index.ts` facade is followed to the
 file that defines each symbol), and `facade-reexports.architecture.spec.ts`
-fails when a module `index.ts` re-exports `content.repository`,
-`tree-loader` or `field-projection`:
+fails when a module `index.ts` re-exports `KyselyContent.repository`,
+`TreeLoader.adapter` or `field-projection`:
 
-- a file outside the content engine imports `content.repository` or
-  `tree-loader` without also importing `record.serializer`;
+- a file outside the content engine imports `KyselyContent.repository` or
+  `TreeLoader.adapter` without also importing `record.serializer`;
 - a controller, filter, interceptor or gateway imports them at all;
 - a file other than the serializer casts to `SerializedRecord`.
 
@@ -238,8 +238,8 @@ error-detail bodies all go through `serialize`.
 **Facades (R1-14).** Every folder under `src/modules/` has an `index.ts`, and
 code outside a module imports it through that file only (ESLint
 `no-restricted-imports`, patterns in `apps/cms-api/eslint.config.mjs`).
-Named exceptions, each kept out of the facade on purpose: `content.repository`,
-`tree-loader`, `domain/ContentRowMapping.rules` and `domain/ContentTree.entity`
+Named exceptions, each kept out of the facade on purpose: `adapters/KyselyContent.repository`,
+`adapters/TreeLoader.adapter`, `domain/ContentRowMapping.rules` and `domain/ContentTree.entity`
 in `content-engine`, `field-projection` and `document-auth`
 in `access`. `modules.architecture.spec.ts` also enforces the two SPEC §2
 sub-rules: `security-audit` imports access core with `import type` only, and
@@ -400,7 +400,7 @@ store are in memory. Before scaling out, replace `VersionCache` with a
 shared store or a pub/sub invalidation. Until then, other replicas are
 bounded by the 5 s TTL.
 
-**Content registry.** `ContentRegistryProvider` (content-engine module)
+**Content registry.** `ContentRegistry` (content-engine `application/`, exported as `ContentRegistryProvider`)
 loads `content._content_types` on first use, not at boot, so the API still
 starts while the database is down (readiness 503). A failed load is retried
 on the next call, and a successful load is kept until restart (D10). If

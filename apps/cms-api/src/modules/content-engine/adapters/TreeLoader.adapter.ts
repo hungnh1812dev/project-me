@@ -3,15 +3,15 @@ import { type Kysely, sql } from 'kysely';
 import {
   COMPONENT_SYSTEM_COLUMNS,
   CONTENT_DB_SCHEMA,
-} from './domain/ContentEngine.constants';
+} from '../domain/ContentEngine.constants';
 import {
   type ComponentNode,
   type ComponentTrees,
   type ContentRow,
   emptyComponents,
   rowToValues,
-} from './domain/ContentTree.entity';
-import type { TableNode } from './registry.service';
+} from '../domain/ContentTree.entity';
+import type { TableNode } from '../domain/ContentTypeRegistry.entity';
 
 export type ContentDatabase = Record<string, ContentRow>;
 

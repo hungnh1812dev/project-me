@@ -1,6 +1,6 @@
 import { types } from 'pg';
 
-import { CONTENT_TYPE_PARSERS } from './content-database';
+import { CONTENT_TYPE_PARSERS } from './ContentDatabase.adapter';
 
 const DATE_OID = 1082;
 const TIMESTAMPTZ_OID = 1184;

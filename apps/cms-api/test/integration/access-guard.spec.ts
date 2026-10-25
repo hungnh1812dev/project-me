@@ -26,8 +26,8 @@ import { PermissionGuard } from '../../src/modules/access/permission.guard';
 import { RolePermissionsService } from '../../src/modules/access/role-permissions.service';
 import { seedRolePermissions } from '../../src/modules/access/roles/role-permissions.seed';
 import { VersionCache } from '../../src/modules/access/version-cache';
-import { ContentRegistryProvider } from '../../src/modules/content-engine/content-registry.provider';
-import { RegistryService } from '../../src/modules/content-engine/registry.service';
+import { ContentRegistry } from '../../src/modules/content-engine/application/ContentRegistry.service';
+import { ContentTypeRegistry } from '../../src/modules/content-engine/domain/ContentTypeRegistry.entity';
 import { IdentityModule } from '../../src/modules/identity/identity.module';
 import { JwtAuthGuard } from '../../src/modules/identity/jwt.strategy';
 import { hashPassword } from '../../src/modules/identity/password-hasher';
@@ -95,7 +95,7 @@ describe('revocation versions + permission guard (T15, §12-11; Postgres 16 via 
     db = openPrisma(databaseUrl);
     await seedSystemRoles(db.prisma);
     await seedRolePermissions(db.prisma);
-    const registry = RegistryService.fromDefinitions([ARTICLE_DEFINITION]);
+    const registry = ContentTypeRegistry.fromDefinitions([ARTICLE_DEFINITION]);
     app = await createTestApp(
       devEnv({
         ...dbEnvOf(databaseUrl),
@@ -106,7 +106,7 @@ describe('revocation versions + permission guard (T15, §12-11; Postgres 16 via 
       }),
       [
         {
-          token: ContentRegistryProvider,
+          token: ContentRegistry,
           value: { registry: () => Promise.resolve(registry) },
         },
       ],

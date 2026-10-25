@@ -11,12 +11,13 @@ import { sql } from 'kysely';
 import { ERROR_CODES } from '../../common/constants/error.constants';
 import { PermissionAction } from '../../generated/prisma/client';
 import { AccessPolicyService, type ActorContext } from '../access';
-import { ContentDbProvider } from '../content-engine';
-import { ContentRegistryProvider } from '../content-engine';
 import {
-  ContentRepository,
+  ContentDbProvider,
   type InsertTreeInput,
-} from '../content-engine/content.repository';
+  unitOfWorkFromContentTrx,
+} from '../content-engine';
+import { ContentRegistryProvider } from '../content-engine';
+import { KyselyContentRepository } from '../content-engine/adapters/KyselyContent.repository';
 import { ContentTreeError } from '../content-engine';
 import {
   asItemError,
@@ -131,11 +132,13 @@ export class BulkService {
       }
     }
 
-    const repository = new ContentRepository(await this.registry.registry());
+    const repository = new KyselyContentRepository(
+      await this.registry.registry(),
+    );
     try {
       await this.content.db.transaction().execute((trx) =>
         repository.insertTrees(
-          trx,
+          unitOfWorkFromContentTrx(trx),
           slug,
           prepared.map(({ input }) => input),
         ),
