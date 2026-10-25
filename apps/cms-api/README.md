@@ -274,8 +274,8 @@ AUTH_INVALID_REQUEST` (malformed body).
   get 401 at once (§12-10). Caching and the `pv` check are T15.
 
 The readiness ping goes through the `DATABASE_HEALTH` token
-(`src/infrastructure/database/database-health.ts`), bound to
-`PrismaDatabaseHealth` (`SELECT 1` through `PrismaService`).
+(`src/modules/health/application/DatabaseHealth.port.ts`), bound in
+`HealthModule` to `PrismaDatabaseHealth` (`SELECT 1` through `PrismaService`).
 
 Multi-write core flows use the `CORE_TRANSACTION_RUNNER` token
 (`src/infrastructure/database/TransactionRunner.port.ts`), bound to

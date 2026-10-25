@@ -2,9 +2,8 @@
 export const DATABASE_HEALTH = Symbol('DATABASE_HEALTH');
 
 /**
- * The only thing health needs from the database layer. The implementation is
- * bound to `DATABASE_HEALTH` in `DatabaseModule` (Prisma-backed), so the health
- * module does not depend on it.
+ * The only thing health needs from the database. `HealthModule` binds the
+ * Prisma-backed adapter to `DATABASE_HEALTH`.
  */
 export interface DatabaseHealth {
   /** Resolves when the DB answers a trivial query; rejects otherwise. */
