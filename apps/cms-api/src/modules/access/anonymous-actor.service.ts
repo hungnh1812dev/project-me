@@ -2,7 +2,10 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 
 import { PrismaService } from '../../infrastructure/database/prisma.service';
 import { PUBLIC_ROLE_SLUG } from './roles/system-roles';
-import { type ActorContext, anonymousActor } from './actor-context';
+import {
+  type ActorContext,
+  anonymousActor,
+} from './domain/ActorContext.entity';
 import { VersionCache } from './version-cache';
 
 /**

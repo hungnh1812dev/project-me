@@ -32,7 +32,7 @@ import {
 } from '../../../common/http/request-parsing';
 import { RequirePermission } from '../permission.decorator';
 import { PermissionGuard } from '../permission.guard';
-import { requireAccountActor } from '../rank-rules';
+import { requireAccountActor } from '../domain/Rank.rules';
 import { type RoleView, RolesService } from './roles.service';
 
 const SUBJECT = 'roles';

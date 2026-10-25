@@ -3,10 +3,8 @@ import 'reflect-metadata';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import {
-  PERMISSION_METADATA_KEY,
-  SYSTEM_SUBJECT_ACTIONS,
-} from '../modules/access/access.constants';
+import { SYSTEM_SUBJECT_ACTIONS } from '../modules/access/domain/Access.constants';
+import { PERMISSION_METADATA_KEY } from '../modules/access/permission.decorator';
 import {
   type ControllerClass,
   handlersOf,

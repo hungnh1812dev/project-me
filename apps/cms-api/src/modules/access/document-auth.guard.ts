@@ -7,10 +7,10 @@ import type { Request } from 'express';
 import { firstValueFrom, isObservable } from 'rxjs';
 
 import { JwtAuthGuard } from '../identity';
-import { type ActorContext } from './actor-context';
+import { type ActorContext } from './domain/ActorContext.entity';
 import { AnonymousActorService } from './anonymous-actor.service';
-import { API_TOKEN, BEARER_PATTERN } from './api-token.constants';
-import { ApiTokenAuthenticator } from './api-token.guard';
+import { API_TOKEN } from './domain/ApiToken.rules';
+import { ApiTokenAuthenticator, BEARER_PATTERN } from './api-token.guard';
 
 /** What this guard leaves on `req.user` for `PermissionGuard` and the controller. */
 export interface DocumentRequest extends Request {

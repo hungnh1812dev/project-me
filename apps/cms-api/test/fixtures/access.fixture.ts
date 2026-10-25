@@ -2,8 +2,8 @@ import type { PermissionAction } from '../../src/generated/prisma/client';
 import type {
   PermissionGrant,
   RolePolicy,
-} from '../../src/modules/access/actor-context';
-import { SubjectCatalog } from '../../src/modules/access/subject-catalog';
+} from '../../src/modules/access/domain/ActorContext.entity';
+import { SubjectCatalog } from '../../src/modules/access/domain/SubjectCatalog.rules';
 import { ContentTypeRegistry } from '../../src/modules/content-engine/domain/ContentTypeRegistry.entity';
 import {
   DEFAULT_ROLE_PERMISSIONS,

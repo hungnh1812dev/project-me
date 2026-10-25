@@ -18,14 +18,16 @@ import {
   openPrisma,
   type PrismaHandle,
 } from '../../src/infrastructure/database/prisma-client';
-import { VERSION_CACHE_TTL_MS } from '../../src/modules/access/access.constants';
 import { AccessModule } from '../../src/modules/access/access.module';
-import type { PermissionGrant } from '../../src/modules/access/actor-context';
+import type { PermissionGrant } from '../../src/modules/access/domain/ActorContext.entity';
 import { RequirePermission } from '../../src/modules/access/permission.decorator';
 import { PermissionGuard } from '../../src/modules/access/permission.guard';
 import { RolePermissionsService } from '../../src/modules/access/role-permissions.service';
 import { seedRolePermissions } from '../../src/modules/access/roles/role-permissions.seed';
-import { VersionCache } from '../../src/modules/access/version-cache';
+import {
+  VERSION_CACHE_TTL_MS,
+  VersionCache,
+} from '../../src/modules/access/version-cache';
 import { ContentRegistry } from '../../src/modules/content-engine/application/ContentRegistry.service';
 import { ContentTypeRegistry } from '../../src/modules/content-engine/domain/ContentTypeRegistry.entity';
 import { IdentityModule } from '../../src/modules/identity/identity.module';

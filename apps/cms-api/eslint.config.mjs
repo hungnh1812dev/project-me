@@ -18,9 +18,10 @@ const DEEP_IMPORT_PATTERNS = {
   // `access/management` is the facade of the management sub-folder.
   // `access/document-auth` is the facade of the document-auth part (not in
   // `index.ts`: identity imports that, and document-auth imports identity).
-  // `access/field-projection` is not in the facade (it bypasses masking, see
+  // `access/domain/FieldProjection.rules` is not in the facade (it bypasses masking, see
   // facade-reexports.architecture.spec.ts); module-edge specs say who may use it.
-  access: '(^|/)access/(?!management$|document-auth$|field-projection$).+',
+  access:
+    '(^|/)access/(?!management$|document-auth$|domain/FieldProjection\\.rules$).+',
   // `KyselyContent.repository`, `ContentRowMapping.rules`, `ContentTree.entity`
   // (holds `rowToValues`) and `TreeLoader.adapter` are not in the facade for the same
   // reason: only the files the record-serializer architecture spec names use them.

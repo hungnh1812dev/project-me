@@ -2,8 +2,8 @@ import { Injectable } from '@nestjs/common';
 
 import { ContentRegistryProvider } from '../content-engine';
 import type { RegistryService } from '../content-engine';
-import { PolicyEvaluator } from './policy-evaluator';
-import { SubjectCatalog } from './subject-catalog';
+import { PolicyEvaluator } from './domain/PolicyEvaluator';
+import { SubjectCatalog } from './domain/SubjectCatalog.rules';
 
 export interface AccessPolicy {
   catalog: SubjectCatalog;

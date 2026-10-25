@@ -20,7 +20,7 @@ import {
   assertOutranks,
   outranks,
   rankForbidden,
-} from '../rank-rules';
+} from '../domain/Rank.rules';
 import {
   REVIEWER_ROLE_SLUG,
   UNASSIGNABLE_ROLE_SLUGS,

@@ -4,10 +4,23 @@ import { Clock } from '../../common/time/clock';
 import type { AccountStatus } from '../../generated/prisma/client';
 import { PrismaService } from '../../infrastructure/database/prisma.service';
 import {
-  VERSION_CACHE_MAX_ENTRIES,
-  VERSION_CACHE_TTL_MS,
-} from './access.constants';
-import { type RolePolicy, rolePolicyFromRows } from './actor-context';
+  type RolePolicy,
+  rolePolicyFromRows,
+} from './domain/ActorContext.entity';
+
+/**
+ * D9: how long a cached account/role version may be served without a DB
+ * read. Writes in this process invalidate at once; the TTL bounds staleness
+ * for writes this process cannot see (another replica, a CLI).
+ */
+export const VERSION_CACHE_TTL_MS = 5_000;
+
+/**
+ * Most entries per VersionCache map (accounts, roles). The CMS has a handful
+ * of accounts and roles; the cap only bounds memory if something goes wrong.
+ * At the cap the oldest entry is dropped (it is re-read on next use).
+ */
+export const VERSION_CACHE_MAX_ENTRIES = 1_000;
 
 /** What the guard needs to know about an account on every request. */
 export interface AccountVersions {

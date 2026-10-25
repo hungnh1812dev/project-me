@@ -9,10 +9,12 @@ import {
 import { Reflector } from '@nestjs/core';
 import type { Request } from 'express';
 
-import { PERMISSION_METADATA_KEY } from './access.constants';
 import { AccessPolicyService } from './access-policy.service';
-import type { ActorContext } from './actor-context';
-import type { PermissionRequirement } from './permission.decorator';
+import type { ActorContext } from './domain/ActorContext.entity';
+import {
+  PERMISSION_METADATA_KEY,
+  type PermissionRequirement,
+} from './permission.decorator';
 
 /** What an authentication guard must leave on `req.user` for this guard. */
 interface WithActor {

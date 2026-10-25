@@ -3,7 +3,7 @@ import {
   CONTENT_WILDCARD_SUBJECT,
   PERMISSION_ACTIONS,
   SYSTEM_SUBJECT_ACTIONS,
-} from '../access.constants';
+} from '../domain/Access.constants';
 
 export interface DefaultPermission {
   subject: string;

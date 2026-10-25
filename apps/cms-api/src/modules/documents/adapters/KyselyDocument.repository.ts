@@ -3,7 +3,10 @@ import { type Kysely, sql, type SqlBool } from 'kysely';
 
 import type { UnitOfWork } from '../../../infrastructure/database/TransactionRunner.port';
 import type { RowCondition } from '../../access';
-import { projectTable, selectedColumns } from '../../access/field-projection';
+import {
+  projectTable,
+  selectedColumns,
+} from '../../access/domain/FieldProjection.rules';
 import {
   CONTENT_DB_SCHEMA,
   contentTrxOf,

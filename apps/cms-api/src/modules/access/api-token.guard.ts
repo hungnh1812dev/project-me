@@ -11,15 +11,18 @@ import type { Request } from 'express';
 
 import { Clock } from '../../common/time/clock';
 import { PrismaService } from '../../infrastructure/database/prisma.service';
-import { API_TOKEN, BEARER_PATTERN } from './api-token.constants';
-import { isApiTokenExpired } from './ApiTokenExpiry.rules';
+import { API_TOKEN } from './domain/ApiToken.rules';
+import { isApiTokenExpired } from './domain/ApiToken.rules';
 import {
   type ActorContext,
   apiTokenActor,
   InvalidPolicyDataError,
   parseTokenScope,
-} from './actor-context';
+} from './domain/ActorContext.entity';
 import { VersionCache } from './version-cache';
+
+/** `Authorization: Bearer <credential>`; group 1 is the credential. */
+export const BEARER_PATTERN = /^Bearer (\S+)$/i;
 
 const LOGGER_CONTEXT = 'ApiTokenGuard';
 /** Longest raw token we hash: the prefix plus 43 base64url characters, with room. */

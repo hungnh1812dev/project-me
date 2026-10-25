@@ -42,7 +42,8 @@ export const CONTENT_ROW_MAPPING_FILE = join(
 export const FIELD_PROJECTION_FILE = join(
   MODULES,
   'access',
-  'field-projection.ts',
+  'domain',
+  'FieldProjection.rules.ts',
 );
 export const RECORD_LOADER_FILES = [CONTENT_REPOSITORY_FILE, TREE_LOADER_FILE];
 /** A file that reads records through the loaders; proves the scanner sees real edges. */
@@ -65,12 +66,14 @@ export const UNMASKED_FILES = [
 export const RECORD_SERIALIZER_FILE = join(
   MODULES,
   'access',
-  'record.serializer.ts',
+  'domain',
+  'RecordSerializer.ts',
 );
 export const ACCESS_CONSTANTS_FILE = join(
   MODULES,
   'access',
-  'access.constants.ts',
+  'domain',
+  'Access.constants.ts',
 );
 /** Ports whose methods return loaded records: a file that reaches one must also reach the serializer. */
 export const RECORD_READER_PORT_FILES = [
@@ -91,7 +94,7 @@ export const INTERNAL_COPY_FILES = [
 ];
 
 export const VALUE_KIND_SWITCH_FILES = [
-  join(MODULES, 'access', 'conditions.compiler.ts'),
+  join(MODULES, 'access', 'domain', 'Conditions.rules.ts'),
   join(MODULES, 'documents', 'domain', 'DocumentFilter.rules.ts'),
 ];
 

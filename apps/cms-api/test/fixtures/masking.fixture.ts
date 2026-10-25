@@ -5,12 +5,12 @@ import {
   anonymousActor,
   apiTokenActor,
   reviewerActor,
-} from '../../src/modules/access/actor-context';
-import type { FieldSelection } from '../../src/modules/access/policy-evaluator';
+} from '../../src/modules/access/domain/ActorContext.entity';
+import type { FieldSelection } from '../../src/modules/access/domain/PolicyEvaluator';
 import {
   type RecordReadAccess,
   recordReadAccess,
-} from '../../src/modules/access/record-read-access';
+} from '../../src/modules/access/domain/RecordReadAccess.rules';
 import type { ContentDocument } from '../../src/modules/content-engine/domain/ContentDocument.entity';
 import type { FieldDefinition } from '../../src/modules/content-engine/domain/DefinitionSchema.rules';
 import {

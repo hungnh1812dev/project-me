@@ -10,7 +10,7 @@ import {
 } from './access-management.constants';
 import type { UpdateAccountRequest } from './access-management.requests';
 import type { PageMeta, PageQuery } from '../../../common/http/request-parsing';
-import { type AccountActor } from '../rank-rules';
+import { type AccountActor } from '../domain/Rank.rules';
 import { AUDIT_ACTIONS } from '../../security-audit';
 import { auditActorOf, SecurityAuditService } from '../../security-audit';
 import { REVIEWER_ROLE_SLUG } from '../roles/system-roles';

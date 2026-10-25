@@ -1,7 +1,6 @@
 import { Clock } from '../../common/time/clock';
 import type { PrismaService } from '../../infrastructure/database/prisma.service';
-import { VERSION_CACHE_TTL_MS } from './access.constants';
-import { VersionCache } from './version-cache';
+import { VERSION_CACHE_TTL_MS, VersionCache } from './version-cache';
 
 const DOC_ID = '0190a3c2-7b1e-7c3d-9f00-000000000001';
 

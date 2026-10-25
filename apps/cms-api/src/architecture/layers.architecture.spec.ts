@@ -323,7 +323,7 @@ describe('the layer guard itself', () => {
     write(FIELD_PROJECTION_FILE, 'export const project = 1;');
     write(
       'modules/documents/application/Read.service.ts',
-      "import { project } from '../../access/field-projection';",
+      "import { project } from '../../access/domain/FieldProjection.rules';",
     );
     expect(rulesOf('documents')).toEqual([]);
   });

@@ -10,7 +10,7 @@ import {
 } from '../../src/infrastructure/database/prisma-client';
 import { FakeMediaStorage } from '../../src/infrastructure/media/fake.adapter';
 import { MEDIA_STORAGE } from '../../src/infrastructure/media/storage.port';
-import { reviewerActor } from '../../src/modules/access/actor-context';
+import { reviewerActor } from '../../src/modules/access/domain/ActorContext.entity';
 import { seedRolePermissions } from '../../src/modules/access/roles/role-permissions.seed';
 import { ContentRegistry } from '../../src/modules/content-engine/application/ContentRegistry.service';
 import { ContentTypeRegistry } from '../../src/modules/content-engine/domain/ContentTypeRegistry.entity';

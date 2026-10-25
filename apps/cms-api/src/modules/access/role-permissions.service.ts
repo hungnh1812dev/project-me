@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 
 import { Prisma } from '../../generated/prisma/client';
 import { PrismaService } from '../../infrastructure/database/prisma.service';
-import type { PermissionGrant } from './actor-context';
+import type { PermissionGrant } from './domain/ActorContext.entity';
 import { VersionCache } from './version-cache';
 
 /** null -> SQL NULL (Prisma needs DbNull for nullable Json columns). */

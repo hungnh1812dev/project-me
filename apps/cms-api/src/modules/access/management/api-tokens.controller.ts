@@ -37,7 +37,7 @@ import {
 } from './api-tokens.requests';
 import { RequirePermission } from '../permission.decorator';
 import { PermissionGuard } from '../permission.guard';
-import { requireAccountActor } from '../rank-rules';
+import { requireAccountActor } from '../domain/Rank.rules';
 
 const SUBJECT = 'api_tokens';
 

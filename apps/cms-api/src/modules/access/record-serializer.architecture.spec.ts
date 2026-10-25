@@ -24,11 +24,12 @@ import {
  * 1. Outside the content engine, a file that imports the record loaders
  *    (`KyselyContent.repository`, `TreeLoader.adapter`) or a record reader
  *    port (`Documents.port`) must also import
- *    `access/record.serializer`, so loaded records are serialized where
+ *    `access/domain/RecordSerializer`, so loaded records are serialized where
  *    they are read.
- * 2. HTTP boundary files (controllers, filters, interceptors, gateways)
- *    never import the record loaders: they only see serialized records.
- * 3. Only `record.serializer.ts` may cast to `SerializedRecord` (the brand
+ * 2. HTTP boundary files (everything in an `http/` folder, plus controllers,
+ *    filters, interceptors and gateways by suffix) never import the record
+ *    loaders: they only see serialized records.
+ * 3. Only `RecordSerializer.ts` may cast to `SerializedRecord` (the brand
  *    that response types of document endpoints use).
  */
 
@@ -49,7 +50,8 @@ const SERIALIZER_BUILDING_BLOCKS = [SERIALIZER_FILE, ACCESS_CONSTANTS_FILE];
  * - presence reads a row version and returns presence entries;
  * - the module file only binds the port.
  */
-const BOUNDARY_FILE = /\.(?:controller|filter|interceptor|gateway)\.ts$/;
+const BOUNDARY_FILE =
+  /(?:\.(?:controller|filter|interceptor|gateway)\.ts$|(?:^|[\\/])http[\\/])/;
 const SERIALIZED_CAST = /\bas\s+SerializedRecord\b/;
 
 const files = listSourceFiles(SRC_ROOT, { excludeDirs: [GENERATED_DIR] }).map(
@@ -124,6 +126,12 @@ describe('RecordSerializer is the only record -> response path', () => {
 
   it('the rules match what they are meant to catch', () => {
     expect(BOUNDARY_FILE.test('documents/documents.controller.ts')).toBe(true);
+    expect(
+      BOUNDARY_FILE.test('modules/documents/http/Documents.routes.ts'),
+    ).toBe(true);
+    expect(BOUNDARY_FILE.test('modules/documents/adapters/Kysely.ts')).toBe(
+      false,
+    );
     expect(SERIALIZED_CAST.test('return body as SerializedRecord;')).toBe(true);
   });
 });

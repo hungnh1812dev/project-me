@@ -1,10 +1,10 @@
 import { SetMetadata } from '@nestjs/common';
 
 import type { PermissionAction } from '../../generated/prisma/client';
-import {
-  PERMISSION_METADATA_KEY,
-  type SystemSubject,
-} from './access.constants';
+import type { SystemSubject } from './domain/Access.constants';
+
+/** Metadata key of `@RequirePermission()` (read by `PermissionGuard`). */
+export const PERMISSION_METADATA_KEY = 'abyss:access:permission';
 
 /**
  * What a route needs. A system route names its subject; a content route

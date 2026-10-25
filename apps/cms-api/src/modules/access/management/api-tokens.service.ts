@@ -12,7 +12,7 @@ import { Clock } from '../../../common/time/clock';
 import { Prisma } from '../../../generated/prisma/client';
 import { PrismaService } from '../../../infrastructure/database/prisma.service';
 import type { ClientMeta } from '../../../common/http/client-meta';
-import { ACCESS_ERROR_CODES } from '../access.constants';
+import { ACCESS_ERROR_CODES } from '../domain/Access.constants';
 import {
   MANAGEMENT_ERROR_CODES,
   MANAGEMENT_ERROR_MESSAGES,
@@ -28,10 +28,10 @@ import {
   type TokenScope,
   isOwnerRole,
   parseTokenScope,
-} from '../actor-context';
+} from '../domain/ActorContext.entity';
 import { hashApiToken } from '../api-token.guard';
-import { API_TOKEN } from '../api-token.constants';
-import { isApiTokenExpired } from '../ApiTokenExpiry.rules';
+import { API_TOKEN } from '../domain/ApiToken.rules';
+import { isApiTokenExpired } from '../domain/ApiToken.rules';
 import {
   API_TOKEN_STATUSES,
   API_TOKEN_UPDATABLE_FIELDS,
@@ -41,15 +41,15 @@ import type {
   CreateApiTokenRequest,
   UpdateApiTokenRequest,
 } from './api-tokens.requests';
-import { validateTokenScope } from '../token-scope.validator';
-import type { AccountActor } from '../rank-rules';
+import { validateTokenScope } from '../domain/TokenScope.rules';
+import type { AccountActor } from '../domain/Rank.rules';
 import { AUDIT_ACTIONS, type AuditAction } from '../../security-audit';
 import {
   type AuditMetadata,
   auditActorOf,
   SecurityAuditService,
 } from '../../security-audit';
-import { scopeEntriesBeyondCreator } from '../token-scope-subset';
+import { scopeEntriesBeyondCreator } from '../domain/TokenScope.rules';
 import { VersionCache } from '../version-cache';
 
 type Tx = Prisma.TransactionClient;

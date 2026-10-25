@@ -14,7 +14,7 @@ import {
   MANAGEMENT_ERROR_MESSAGES,
 } from './access-management.constants';
 import type { InviteAccountRequest } from './access-management.requests';
-import { type AccountActor } from '../rank-rules';
+import { type AccountActor } from '../domain/Rank.rules';
 import { AUDIT_ACTIONS } from '../../security-audit';
 import { auditActorOf, SecurityAuditService } from '../../security-audit';
 import {

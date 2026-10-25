@@ -8,25 +8,25 @@ import { unitOfWorkFromContentTrx } from '../../src/modules/content-engine/adapt
 import {
   accountActor,
   anonymousActor,
-} from '../../src/modules/access/actor-context';
+} from '../../src/modules/access/domain/ActorContext.entity';
 import {
   MASK_SENTINEL,
   MASKED_FIELDS_KEY,
-} from '../../src/modules/access/access.constants';
+} from '../../src/modules/access/domain/Access.constants';
 import {
   projectTable,
   selectedColumns,
-} from '../../src/modules/access/field-projection';
+} from '../../src/modules/access/domain/FieldProjection.rules';
 import {
   type FieldAccess,
   FieldSelection,
-} from '../../src/modules/access/policy-evaluator';
+} from '../../src/modules/access/domain/PolicyEvaluator';
 import {
   type RecordReadAccess,
   recordReadAccess,
-} from '../../src/modules/access/record-read-access';
-import { RecordSerializer } from '../../src/modules/access/record.serializer';
-import { WriteAllowlist } from '../../src/modules/access/write-allowlist';
+} from '../../src/modules/access/domain/RecordReadAccess.rules';
+import { RecordSerializer } from '../../src/modules/access/domain/RecordSerializer';
+import { WriteAllowlist } from '../../src/modules/access/domain/WriteAllowlist.rules';
 import { DEFAULT_CONTENT_PATHS } from '../../src/modules/content-engine/cli/content-paths';
 import { createMigrationDb } from '../../src/modules/content-engine/cli/ContentEngineCli.setup';
 import { CONTENT_DB_SCHEMA } from '../../src/modules/content-engine/domain/ContentEngine.constants';

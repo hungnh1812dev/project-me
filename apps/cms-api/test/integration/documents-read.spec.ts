@@ -11,7 +11,7 @@ import {
   openPrisma,
   type PrismaHandle,
 } from '../../src/infrastructure/database/prisma-client';
-import { MASKED_FIELDS_KEY } from '../../src/modules/access/access.constants';
+import { MASKED_FIELDS_KEY } from '../../src/modules/access/domain/Access.constants';
 import { seedRolePermissions } from '../../src/modules/access/roles/role-permissions.seed';
 import { createContentDb } from '../../src/modules/content-engine/adapters/ContentDatabase.adapter';
 import { ContentRegistry } from '../../src/modules/content-engine/application/ContentRegistry.service';

@@ -3,7 +3,7 @@ import {
   ACCESS_ERROR_CODES,
   PERMISSION_ACTIONS,
   SYSTEM_SUBJECT_ACTIONS,
-} from '../modules/access/access.constants';
+} from '../modules/access/domain/Access.constants';
 import { RICHTEXT_ALLOWED_URL_SCHEMES } from '../modules/content-engine/domain/ContentEngine.constants';
 import {
   AUTH_ERROR_CODES,

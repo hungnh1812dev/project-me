@@ -16,7 +16,7 @@ import {
 import {
   ACCESS_ERROR_CODES,
   RANK_FORBIDDEN_ERROR,
-} from '../../src/modules/access/access.constants';
+} from '../../src/modules/access/domain/Access.constants';
 import { INVALID_REQUEST_ERROR } from '../../src/common/http/request-parsing';
 import { MANAGEMENT_ERROR_CODES } from '../../src/modules/access/management/access-management.constants';
 import { seedRolePermissions } from '../../src/modules/access/roles/role-permissions.seed';

@@ -22,14 +22,17 @@ import type {
   CreateRoleRequest,
   UpdateRoleRequest,
 } from './access-management.requests';
-import { type PermissionGrant, rolePolicyFromRows } from '../actor-context';
-import { validatePermissionSet } from '../permission-set.validator';
+import {
+  type PermissionGrant,
+  rolePolicyFromRows,
+} from '../domain/ActorContext.entity';
+import { validatePermissionSet } from '../domain/PermissionSet.rules';
 import {
   type AccountActor,
   assertOutranks,
   grantsBeyondActor,
   outranks,
-} from '../rank-rules';
+} from '../domain/Rank.rules';
 import { RolePermissionsService } from '../role-permissions.service';
 import { AUDIT_ACTIONS, type AuditAction } from '../../security-audit';
 import {

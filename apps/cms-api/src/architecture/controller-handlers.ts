@@ -3,7 +3,7 @@ import 'reflect-metadata';
 import { GUARDS_METADATA } from '@nestjs/common/constants';
 import { Reflector } from '@nestjs/core';
 
-import { PERMISSION_METADATA_KEY } from '../modules/access/access.constants';
+import { PERMISSION_METADATA_KEY } from '../modules/access/permission.decorator';
 import type { PermissionRequirement } from '../modules/access/permission.decorator';
 import { PermissionGuard } from '../modules/access/permission.guard';
 import { DocumentAuthGuard } from '../modules/access/document-auth.guard';
