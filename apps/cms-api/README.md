@@ -6,15 +6,16 @@ REST API for the Abyss headless CMS. NestJS 11 on Express, TypeScript strict.
 
 ```bash
 cp .env.example .env            # then fill in values
-pnpm --filter @abyss/cms-api build
-pnpm --filter @abyss/cms-api start
+pnpm --filter @abyss/cms-api build        # nest build -> dist/
+pnpm --filter @abyss/cms-api start:prod   # node dist/main
 ```
 
 Development: `pnpm --filter @abyss/cms-api start:dev` (or `pnpm start:cms-api:dev` from the root)
 runs the standard NestJS CLI watch (`nest start --watch`, config in
 `nest-cli.json`) with `--env-file-if-exists=.env.local`, and restarts on every
 change. Copy `.env.example` to `.env.local` for it.
-Only `start:dev` loads that file; `db:migrate`, the CLIs, `start` and production
+`start:debug` is the same watch with the Node inspector on. Only `start:dev` and
+`start:debug` load that file; `db:migrate`, the CLIs, `start` and production
 read the shell env only.
 
 Config is validated once at boot (`src/config/env.schema.ts`) into a frozen
@@ -733,7 +734,10 @@ every message. No environment serves a playground; use the committed SDL
 
 | Script                           | What it does                                                                                                                                                                                                 |
 | -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `build`                          | `tsc` to `dist/`                                                                                                                                                                                             |
+| `build`                          | `nest build` to `dist/` (clears `dist/` first)                                                                                                                                                               |
+| `start`                          | `nest start`: build, then run (shell env only)                                                                                                                                                               |
+| `start:dev` / `start:debug`      | `nest start --watch` (`--debug` for the inspector), loading `.env.local`                                                                                                                                     |
+| `start:prod`                     | `node dist/main` (needs a build)                                                                                                                                                                             |
 | `test`                           | Unit (`src/**/*.spec.ts`) and integration (`test/integration`) tests                                                                                                                                         |
 | `test:unit` / `test:integration` | One Jest project only                                                                                                                                                                                        |
 | `lint`                           | Oxlint, then ESLint with typescript-eslint (type-aware)                                                                                                                                                      |

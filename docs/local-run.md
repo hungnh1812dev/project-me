@@ -32,7 +32,7 @@ Remove it with `docker rm -f abyss-dev-db` (data is lost with the container).
 
 cms-api reads `process.env` only. **It does not load a `.env` file itself** (`apps/cms-api/prisma.config.ts` says the same for the Prisma CLI), so export the values into the shell that runs it.
 
-Shortcut for development: `start:dev` is the standard NestJS CLI watch (`nest start --watch`, configured in `apps/cms-api/nest-cli.json`); it loads `apps/cms-api/.env.local` through Node (`--env-file-if-exists`) and restarts on every change. Variables already set in the shell win over the file. Only `start:dev` does this; `db:migrate`, the CLIs (`owner:bootstrap`, ...), `start` and production read the shell env only.
+Shortcut for development: `start:dev` is the standard NestJS CLI watch (`nest start --watch`, configured in `apps/cms-api/nest-cli.json`); it loads `apps/cms-api/.env.local` through Node (`--env-file-if-exists`) and restarts on every change. Variables already set in the shell win over the file. Only `start:dev` and `start:debug` (the same watch with the Node inspector) do this; `db:migrate`, the CLIs (`owner:bootstrap`, ...), `start` and production read the shell env only.
 
 ```
 cp apps/cms-api/.env.example apps/cms-api/.env.local    # edit the values
@@ -51,12 +51,12 @@ openssl rand -base64 48     # run three times: JWT_ACCESS_SECRET, OTP_PEPPER, TO
 pnpm build
 pnpm db:migrate             # Prisma migrations + system role seed
 pnpm content:migrate        # content-type tables from content/migrations
-pnpm start                  # http://localhost:3000/api/v1, health: /api/v1/health/ready
+pnpm start:prod             # node dist/main; http://localhost:3000/api/v1, health: /api/v1/health/ready
 ```
 
-(`pnpm deploy:migrate` runs the two migrate steps in order.) After a code change, `pnpm build` again, then `pnpm start`. Create the one owner account once, in either way:
+(`pnpm deploy:migrate` runs the two migrate steps in order.) After a code change, `pnpm build` again, then `pnpm start:prod`. Create the one owner account once, in either way:
 
-- **Setup page:** export `OWNER_SETUP_TOKEN` (at least 32 bytes in production, any non-empty value in development; `openssl rand -base64 32`) before `pnpm start`, run the admin (`pnpm --filter @abyss/cms-admin dev`), open `http://admin.domain.localhost:5173/setup`, enter the token and the owner details, then sign in on the login page. The page closes itself once an owner exists; unset the token afterwards.
+- **Setup page:** export `OWNER_SETUP_TOKEN` (at least 32 bytes in production, any non-empty value in development; `openssl rand -base64 32`) before `pnpm start:prod`, run the admin (`pnpm --filter @abyss/cms-admin dev`), open `http://admin.domain.localhost:5173/setup`, enter the token and the owner details, then sign in on the login page. The page closes itself once an owner exists; unset the token afterwards.
 - **CLI:**
 
 ```
