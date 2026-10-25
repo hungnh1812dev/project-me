@@ -34,6 +34,7 @@ types and fields. T19 added API tokens: the API, the subset check
 | `record-read-access.ts`                       | `RecordReadAccess` / `recordReadAccess(actor, readable)`: fields + visible system fields                                    |
 | `field-errors.ts`                             | The 400s of the field checks (`FIELD_NOT_READABLE`, `FIELD_NOT_WRITABLE`, `FIELD_UNKNOWN`)                                  |
 | `rank-rules.ts`                               | D6: `outranks` / `assertOutranks`, `requireAccountActor`, `grantsBeyondActor` (T17)                                         |
+| `ApiTokenExpiry.rules.ts`                     | `isApiTokenExpired`: the one expiry rule (`expires_at <= now`) for authentication, list status and the update guard         |
 | `api-token.constants.ts`                      | `API_TOKEN` (token format and limits) and the one `BEARER_PATTERN`, used by both guards                                     |
 | `document-auth.{guard,module}.ts`             | `DocumentAuthGuard` (R1-12), own `DocumentAuthModule`; facade `document-auth.ts` (not in `index.ts`: identity imports that) |
 | `management/accounts.{controller,service}.ts` | `/accounts`: list, invite, resend invite, update, disable, enable, revoke sessions (T17, T17a)                              |

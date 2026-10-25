@@ -12,6 +12,7 @@ import type { Request } from 'express';
 import { Clock } from '../../common/time/clock';
 import { PrismaService } from '../../infrastructure/database/prisma.service';
 import { API_TOKEN, BEARER_PATTERN } from './api-token.constants';
+import { isApiTokenExpired } from './ApiTokenExpiry.rules';
 import {
   type ActorContext,
   apiTokenActor,
@@ -81,7 +82,7 @@ export class ApiTokenAuthenticator {
     if (
       row === null ||
       row.revokedAt !== null ||
-      (row.expiresAt !== null && row.expiresAt.getTime() <= now)
+      isApiTokenExpired(row.expiresAt, now)
     ) {
       throw new UnauthorizedException();
     }

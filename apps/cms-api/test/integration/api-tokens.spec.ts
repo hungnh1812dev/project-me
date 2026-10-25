@@ -551,6 +551,50 @@ describe('API tokens (T19, D5, §12-6; Postgres 16 via Testcontainers)', () => {
       expect(errorCodeOf(res)).toBe(MANAGEMENT_ERROR_CODES.TOKEN_REVOKED);
     });
 
+    it('does not update an expired token (409 API_TOKEN_EXPIRED) whatever the body, and changes nothing', async () => {
+      const admin = await signedIn('admin');
+      const token = await createdToken(admin);
+      await db.prisma.apiToken.update({
+        where: { documentId: token.id },
+        data: { expiresAt: new Date(Date.now() - HOUR_MS) },
+      });
+      const before = await db.prisma.apiToken.findUniqueOrThrow({
+        where: { documentId: token.id },
+      });
+      const bodies = [
+        { name: 'Renamed' },
+        { scope: { permissions: [{ subject: 'article', action: 'create' }] } },
+        { expiresAt: new Date(Date.now() + HOUR_MS).toISOString() },
+        { expiresAt: null },
+      ];
+      for (const body of bodies) {
+        const res = await http()
+          .patch(`${TOKENS}/${token.id}`)
+          .set(bearer(admin.token))
+          .send(body);
+        expect(res.status).toBe(409);
+        expect(errorCodeOf(res)).toBe(MANAGEMENT_ERROR_CODES.TOKEN_EXPIRED);
+        const row = await db.prisma.apiToken.findUniqueOrThrow({
+          where: { documentId: token.id },
+        });
+        expect(row.name).toBe(before.name);
+        expect(row.scope).toEqual(before.scope);
+        expect(row.expiresAt).toEqual(before.expiresAt);
+      }
+      expect(
+        await auditRows(AUDIT_ACTIONS.API_TOKEN_UPDATED, token.id),
+      ).toEqual([]);
+      const listed = await http().get(TOKENS).set(bearer(admin.token));
+      expect(
+        (listed.body as { data: TokenBody[] }).data.find(
+          (t) => t.id === token.id,
+        )?.status,
+      ).toBe('expired');
+      expect((await http().get(PROBE).set(bearer(token.token))).status).toBe(
+        401,
+      );
+    });
+
     it('answers an unknown id with 404 and a malformed id with 400', async () => {
       const admin = await signedIn('admin');
       const unknown = await http()
@@ -587,6 +631,30 @@ describe('API tokens (T19, D5, §12-6; Postgres 16 via Testcontainers)', () => {
         .post(`${TOKENS}/${token.id}/revoke`)
         .set(bearer(admin.token));
       expect(again.status).toBe(409);
+      expect(
+        await auditRows(AUDIT_ACTIONS.API_TOKEN_REVOKED, token.id),
+      ).toHaveLength(1);
+      const listed = await http().get(TOKENS).set(bearer(admin.token));
+      expect(
+        (listed.body as { data: TokenBody[] }).data.find(
+          (t) => t.id === token.id,
+        )?.status,
+      ).toBe('revoked');
+    });
+  });
+
+  describe('revoke of an expired token', () => {
+    it('is 204, audited, and the token then lists as revoked', async () => {
+      const admin = await signedIn('admin');
+      const token = await createdToken(admin);
+      await db.prisma.apiToken.update({
+        where: { documentId: token.id },
+        data: { expiresAt: new Date(Date.now() - HOUR_MS) },
+      });
+      await http()
+        .post(`${TOKENS}/${token.id}/revoke`)
+        .set(bearer(admin.token))
+        .expect(204);
       expect(
         await auditRows(AUDIT_ACTIONS.API_TOKEN_REVOKED, token.id),
       ).toHaveLength(1);

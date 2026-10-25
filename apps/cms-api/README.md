@@ -448,7 +448,9 @@ Routes need `Authorization: Bearer` with an **account session** (JWT). An
 - Visibility: the Owner sees and manages every token; anyone else only the
   tokens they created. Another account's token answers `404
 API_TOKEN_NOT_FOUND`. A revoked token cannot be updated or revoked again
-  (`409 API_TOKEN_REVOKED`). Scope errors: `400 TOKEN_SCOPE_INVALID` or the
+  (`409 API_TOKEN_REVOKED`). An expired token cannot be updated at all, not
+  even to give it a new expiry (`409 API_TOKEN_EXPIRED`); it can still be
+  revoked (`204`). Scope errors: `400 TOKEN_SCOPE_INVALID` or the
   `PERMISSION_INVALID_*` codes of `validateTokenScope`.
 - Audit (same transaction as the write, subject `api_tokens`, target = the
   token's document_id): `api_token.created` (`subjects`, `permissionCount`,

@@ -31,6 +31,7 @@ import {
 } from '../actor-context';
 import { hashApiToken } from '../api-token.guard';
 import { API_TOKEN } from '../api-token.constants';
+import { isApiTokenExpired } from '../ApiTokenExpiry.rules';
 import {
   API_TOKEN_STATUSES,
   API_TOKEN_UPDATABLE_FIELDS,
@@ -111,6 +112,22 @@ function tokenRevoked(): ConflictException {
     message: MANAGEMENT_ERROR_MESSAGES.TOKEN_REVOKED,
   });
 }
+
+function tokenExpired(): ConflictException {
+  return new ConflictException({
+    errorCode: MANAGEMENT_ERROR_CODES.TOKEN_EXPIRED,
+    message: MANAGEMENT_ERROR_MESSAGES.TOKEN_EXPIRED,
+  });
+}
+
+/** Why an update is refused, per status. A new inactive status adds one entry here. */
+const UPDATE_BLOCKED_BY_STATUS: Record<
+  Exclude<ApiTokenStatus, 'active'>,
+  () => ConflictException
+> = {
+  [API_TOKEN_STATUSES.REVOKED]: tokenRevoked,
+  [API_TOKEN_STATUSES.EXPIRED]: tokenExpired,
+};
 
 /** 400 TOKEN_SCOPE_INVALID when the raw scope has too many entries (before parsing). */
 function assertScopeSize(input: unknown): void {
@@ -256,7 +273,10 @@ export class ApiTokensService {
 
     const row = await this.prisma.$transaction(async (tx) => {
       const current = await this.lockManageable(tx, actor, documentId);
-      if (current.revokedAt !== null) throw tokenRevoked();
+      const status = this.statusOf(current);
+      if (status !== API_TOKEN_STATUSES.ACTIVE) {
+        throw UPDATE_BLOCKED_BY_STATUS[status]();
+      }
       if (scope !== undefined) {
         const creatorRole =
           current.createdById === actor.accountId
@@ -349,7 +369,7 @@ export class ApiTokensService {
 
   /** An expiry must lie in the future; null means "never". */
   private checkedExpiry(expiresAt: Date | null): Date | null {
-    if (expiresAt !== null && expiresAt.getTime() <= this.clock.now()) {
+    if (isApiTokenExpired(expiresAt, this.clock.now())) {
       throw invalidRequest([
         { path: ['expiresAt'], message: 'must be in the future' },
       ]);
@@ -407,19 +427,21 @@ export class ApiTokensService {
     });
   }
 
-  private view(row: TokenRow): ApiTokenView {
-    const now = this.clock.now();
-    let status: ApiTokenStatus = API_TOKEN_STATUSES.ACTIVE;
-    if (row.revokedAt !== null) status = API_TOKEN_STATUSES.REVOKED;
-    else if (row.expiresAt !== null && row.expiresAt.getTime() <= now) {
-      status = API_TOKEN_STATUSES.EXPIRED;
+  private statusOf(row: TokenRow): ApiTokenStatus {
+    if (row.revokedAt !== null) return API_TOKEN_STATUSES.REVOKED;
+    if (isApiTokenExpired(row.expiresAt, this.clock.now())) {
+      return API_TOKEN_STATUSES.EXPIRED;
     }
+    return API_TOKEN_STATUSES.ACTIVE;
+  }
+
+  private view(row: TokenRow): ApiTokenView {
     return {
       id: row.documentId,
       name: row.name,
       tokenPrefix: row.tokenPrefix,
       scope: parseTokenScope(row.scope),
-      status,
+      status: this.statusOf(row),
       expiresAt: row.expiresAt?.toISOString() ?? null,
       lastUsedAt: row.lastUsedAt?.toISOString() ?? null,
       revokedAt: row.revokedAt?.toISOString() ?? null,

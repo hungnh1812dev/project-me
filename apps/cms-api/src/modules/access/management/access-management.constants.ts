@@ -20,8 +20,10 @@ export const MANAGEMENT_ERROR_CODES = {
   /** Create of a custom role past MANAGEMENT_LIMITS.MAX_CUSTOM_ROLES. */
   ROLE_LIMIT_REACHED: 'ROLE_LIMIT_REACHED',
   TOKEN_NOT_FOUND: 'API_TOKEN_NOT_FOUND',
-  /** Update or revoke of a token that is already revoked. */
+  /** Update or revoke of a revoked token. */
   TOKEN_REVOKED: 'API_TOKEN_REVOKED',
+  /** Update of an expired token; an expired token can still be revoked. */
+  TOKEN_EXPIRED: 'API_TOKEN_EXPIRED',
   /** A token scope entry the token's creator does not hold (D5). */
   TOKEN_SCOPE_NOT_HELD: 'API_TOKEN_SCOPE_NOT_HELD',
 } as const;
@@ -41,6 +43,7 @@ export const MANAGEMENT_ERROR_MESSAGES = {
   ROLE_LIMIT_REACHED: 'The maximum number of custom roles is reached.',
   TOKEN_NOT_FOUND: 'API token not found.',
   TOKEN_REVOKED: 'The API token is revoked.',
+  TOKEN_EXPIRED: 'The API token is expired.',
   TOKEN_SCOPE_NOT_HELD:
     'A token cannot be granted a permission its creator does not hold.',
 } as const;
