@@ -1,11 +1,14 @@
-import { HttpException, Logger } from '@nestjs/common';
+import { Logger } from '@nestjs/common';
 import { GraphQLError } from 'graphql';
 
 import {
   ERROR_CODES,
   INTERNAL_ERROR_MESSAGE,
 } from '../../common/constants/error.constants';
-import { describeHttpException } from '../../common/http/describe-http-exception';
+import {
+  describeError,
+  isDescribableError,
+} from '../../common/http/describe-http-exception';
 import {
   GRAPHQL_ERROR_CODES,
   GRAPHQL_MESSAGES,
@@ -33,13 +36,13 @@ export interface ErrorFormatOptions {
 
 const logger = new Logger('GraphQL');
 /** Same description as REST; a server error is always `INTERNAL_ERROR` here. */
-function fromHttpException(exception: HttpException): {
+function fromDescribableError(exception: unknown): {
   code: string;
   message: string;
   details?: unknown;
   isServerError: boolean;
 } {
-  const described = describeHttpException(exception);
+  const described = describeError(exception);
   return {
     code: described.isServerError
       ? ERROR_CODES.INTERNAL_ERROR
@@ -68,8 +71,8 @@ function classify(
   phase: GraphqlPhase,
 ): { code: string; message: string; details?: unknown } {
   const original = error.originalError;
-  if (original instanceof HttpException) {
-    const mapped = fromHttpException(original);
+  if (isDescribableError(original)) {
+    const mapped = fromDescribableError(original);
     if (mapped.isServerError) {
       logger.error(`Resolver failed: ${original.message}`, original.stack);
     }

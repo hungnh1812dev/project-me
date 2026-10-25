@@ -65,6 +65,8 @@ export const RATE_LIMIT_CAPACITY_WARN_INTERVAL_MS = ONE_MINUTE_MS;
 
 /** `Retry-After` is whole seconds and at least this. */
 export const RETRY_AFTER_MIN_SECONDS = 1;
+/** Upper bound so the header never prints in exponent form. */
+export const RETRY_AFTER_MAX_SECONDS = Number.MAX_SAFE_INTEGER;
 export const RETRY_AFTER_HEADER = 'Retry-After';
 
 /** Same message for every exhausted rule, so it reveals nothing about the key. */

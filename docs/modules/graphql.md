@@ -308,7 +308,7 @@ apps/cms-api/src/modules/graphql/
 │   ├── limits.rules.ts         # depth, root fields, field nodes
 │   └── visibility.rule.ts      # hidden content type = unknown field
 ├── document.resolvers.ts       # root resolvers -> DocumentsQueryService
-├── error-format.ts             # GraphQLError -> extensions { code, details?, requestId }; HttpException read via common describeHttpException
+├── error-format.ts             # GraphQLError -> extensions { code, details?, requestId }; Nest exceptions and DomainError read via common describeError
 └── cli/print-schema.ts         # SDL from content/schemas (no DB), --check
 ```
 

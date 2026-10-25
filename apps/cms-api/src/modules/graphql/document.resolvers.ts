@@ -1,6 +1,7 @@
-import { NotFoundException } from '@nestjs/common';
+import { HttpStatus } from '@nestjs/common';
 import type { GraphQLFieldResolver, GraphQLSchema } from 'graphql';
 
+import { describeError } from '../../common/http/describe-http-exception';
 import {
   documentIdSchema,
   parseRequest,
@@ -20,17 +21,16 @@ export interface GraphqlContext {
   actor: ActorContext;
 }
 
+const NOT_FOUND_STATUS: number = HttpStatus.NOT_FOUND;
+
 type RootResult = DocumentPage | SerializedRecord | null;
 type RootArgs = ListArguments & { documentId?: string };
 
 function isDocumentNotFound(error: unknown): boolean {
-  if (!(error instanceof NotFoundException)) return false;
-  const response = error.getResponse();
+  const described = describeError(error);
   return (
-    typeof response === 'object' &&
-    response !== null &&
-    'errorCode' in response &&
-    response.errorCode === DOCUMENT_ERROR_CODES.NOT_FOUND
+    described.statusCode === NOT_FOUND_STATUS &&
+    described.errorCode === DOCUMENT_ERROR_CODES.NOT_FOUND
   );
 }
 

@@ -1,9 +1,10 @@
 import { HttpException } from '@nestjs/common';
 
 import {
-  ERROR_CODE_BY_STATUS,
-  ERROR_CODES,
-} from '../../common/constants/error.constants';
+  describeError,
+  isDescribableError,
+  isServerErrorStatus,
+} from '../../common/http/describe-http-exception';
 import { BULK_ITEM_STATUS } from './documents.constants';
 
 export interface BulkItemError {
@@ -22,35 +23,17 @@ export interface ErrorParts {
   details?: unknown;
 }
 
-function errorParts(error: HttpException): ErrorParts {
-  const statusCode = error.getStatus();
-  const response = error.getResponse();
-  const object =
-    typeof response === 'object' && response !== null
-      ? (response as Record<string, unknown>)
-      : {};
-  const message =
-    typeof object.message === 'string'
-      ? object.message
-      : Array.isArray(object.message)
-        ? object.message.filter((m) => typeof m === 'string').join('; ')
-        : error.message;
-  return {
-    statusCode,
-    errorCode:
-      typeof object.errorCode === 'string'
-        ? object.errorCode
-        : (ERROR_CODE_BY_STATUS[statusCode] ?? ERROR_CODES.HTTP_ERROR),
-    message,
-    ...(object.details === undefined ? {} : { details: object.details }),
-  };
-}
-
 /** A client error of one item; a server error is never an item result. */
 export function asItemError(error: unknown): ErrorParts | null {
-  if (!(error instanceof HttpException)) return null;
-  const parts = errorParts(error);
-  return parts.statusCode >= 500 ? null : parts;
+  if (!isDescribableError(error)) return null;
+  const { statusCode, errorCode, message, details } = describeError(error);
+  if (isServerErrorStatus(statusCode)) return null;
+  return {
+    statusCode,
+    errorCode,
+    message,
+    ...(details === undefined ? {} : { details }),
+  };
 }
 
 /** Atomic mode: the request fails with the first item's error, naming the item. */

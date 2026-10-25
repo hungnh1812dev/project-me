@@ -1,4 +1,7 @@
 import { NotFoundException } from '@nestjs/common';
+
+import { DomainError } from '../../common/errors/Domain.errors';
+import { DOMAIN_ERROR_KINDS } from '../../common/errors/DomainErrorKinds.constants';
 import { execute, parse } from 'graphql';
 
 import { type ActorContext } from '../access';
@@ -96,6 +99,19 @@ describe('document resolvers', () => {
     );
     documents.get.mockRejectedValueOnce(
       new NotFoundException({ errorCode: 'DOCUMENT_NOT_FOUND' }),
+    );
+    expect(await run(`{ article(documentId: "${ID}") { title } }`)).toEqual({
+      data: { article: null },
+    });
+  });
+
+  it('a DomainError not_found with the document code is null too', async () => {
+    const { documents, run } = setup();
+    documents.get.mockRejectedValueOnce(
+      new DomainError({
+        kind: DOMAIN_ERROR_KINDS.NOT_FOUND,
+        errorCode: 'DOCUMENT_NOT_FOUND',
+      }),
     );
     expect(await run(`{ article(documentId: "${ID}") { title } }`)).toEqual({
       data: { article: null },

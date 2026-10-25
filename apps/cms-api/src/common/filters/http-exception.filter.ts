@@ -2,18 +2,13 @@ import {
   type ArgumentsHost,
   Catch,
   type ExceptionFilter,
-  HttpException,
-  HttpStatus,
   Logger,
 } from '@nestjs/common';
 import type { Response } from 'express';
 
+import { RETRY_AFTER_HEADER } from '../constants/limits.constants';
 import {
-  ERROR_CODES,
-  INTERNAL_ERROR_MESSAGE,
-} from '../constants/error.constants';
-import {
-  describeHttpException,
+  describeError,
   isServerErrorStatus,
 } from '../http/describe-http-exception';
 import type { RequestWithId } from '../middleware/request-id.middleware';
@@ -41,23 +36,16 @@ export class HttpExceptionFilter implements ExceptionFilter {
     const req = http.getRequest<RequestWithId>();
     const res = http.getResponse<Response>();
 
-    let body: ErrorResponseBody;
-    if (exception instanceof HttpException) {
-      const described = describeHttpException(exception);
-      body = {
-        statusCode: described.statusCode,
-        errorCode: described.errorCode,
-        message: described.message,
-        requestId: req.requestId,
-      };
-      if (described.details !== undefined) body.details = described.details;
-    } else {
-      body = {
-        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
-        errorCode: ERROR_CODES.INTERNAL_ERROR,
-        message: INTERNAL_ERROR_MESSAGE,
-        requestId: req.requestId,
-      };
+    const described = describeError(exception);
+    const body: ErrorResponseBody = {
+      statusCode: described.statusCode,
+      errorCode: described.errorCode,
+      message: described.message,
+      requestId: req.requestId,
+    };
+    if (described.details !== undefined) body.details = described.details;
+    if (described.retryAfterSeconds !== undefined) {
+      res.setHeader(RETRY_AFTER_HEADER, String(described.retryAfterSeconds));
     }
 
     if (isServerErrorStatus(body.statusCode)) {
