@@ -3,7 +3,7 @@ import { describeError } from '../../../common/http/describe-http-exception';
 import { FieldSelection } from '../../access';
 import { RegistryService } from '../../content-engine';
 import { profileType } from '../../../../test/fixtures/masking.fixture';
-import { validateTreeValues } from './ValueValidator.rules';
+import { countComponentRows, validateTreeValues } from './ValueValidator.rules';
 
 const profile = profileType();
 const required = RegistryService.fromDefinitions([
@@ -141,5 +141,25 @@ describe('write value rules (T21)', () => {
     expect(() => run({ values: { age: 'SECRET-VALUE' } }, 'update')).toThrow(
       /^values\.age does not match/,
     );
+  });
+});
+
+describe('countComponentRows', () => {
+  it('counts every nested item', () => {
+    expect(
+      countComponentRows({
+        components: {
+          a: [{ components: { b: [{}, {}] } }, {}],
+          c: [{}],
+        },
+      }),
+    ).toBe(5);
+  });
+
+  it('is 0 for anything that is not a tree', () => {
+    expect(countComponentRows('x')).toBe(0);
+    expect(countComponentRows(null)).toBe(0);
+    expect(countComponentRows({ components: 'x' })).toBe(0);
+    expect(countComponentRows({ components: { a: 'x' } })).toBe(0);
   });
 });

@@ -1,14 +1,9 @@
-import {
-  ForbiddenException,
-  Inject,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 
-import { PermissionAction } from '../../../generated/prisma/client';
 import {
   AccessPolicyService,
   type ActorContext,
+  PermissionAction,
   QueryGuard,
   recordReadAccess,
   RecordSerializer,
@@ -22,9 +17,11 @@ import {
 } from '../../content-engine';
 import { DocumentMediaService } from '../../media';
 import {
-  DOCUMENT_ERROR_CODES,
-  DOCUMENT_ERROR_MESSAGES,
-} from '../domain/Documents.constants';
+  documentNotFound,
+  draftsForbidden,
+  forbidden,
+  unknownContentType,
+} from '../domain/Documents.errors';
 import type { ListDocumentsQuery } from '../domain/ListQuery.rules';
 import {
   DOCUMENT_REPOSITORY,
@@ -119,10 +116,7 @@ export class DocumentsQueryService {
       scope.rowCondition,
     );
     if (document === undefined) {
-      throw new NotFoundException({
-        errorCode: DOCUMENT_ERROR_CODES.NOT_FOUND,
-        message: DOCUMENT_ERROR_MESSAGES.NOT_FOUND,
-      });
+      throw documentNotFound();
     }
     const record = new RecordSerializer(type).serialize(document, access);
     await this.media.embed(type.root, [record]);
@@ -135,14 +129,12 @@ export class DocumentsQueryService {
     status: ContentStatus,
   ): Promise<ReadScope> {
     const { catalog, evaluator } = await this.access.policy();
-    if (!catalog.isContentType(slug)) throw new NotFoundException();
+    if (!catalog.isContentType(slug)) throw unknownContentType();
     if (status === 'draft' && !evaluator.canReadDrafts(actor, slug)) {
-      throw new ForbiddenException({
-        message: DOCUMENT_ERROR_MESSAGES.DRAFTS_FORBIDDEN,
-      });
+      throw draftsForbidden();
     }
     const rowFilter = evaluator.rowFilter(actor, PermissionAction.read, slug);
-    if (!rowFilter.allowed) throw new ForbiddenException();
+    if (!rowFilter.allowed) throw forbidden();
 
     const type = (await this.registry.registry()).resolve(slug);
     const readable = evaluator.fieldsFor(actor, slug).readable;

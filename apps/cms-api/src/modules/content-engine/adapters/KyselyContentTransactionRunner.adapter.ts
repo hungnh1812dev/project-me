@@ -49,9 +49,9 @@ export function contentTrxOf(unit: UnitOfWork): Transaction<ContentDatabase> {
 }
 
 /**
- * Transitional: lets a caller that still opens its own Kysely transaction
- * hand it to the content repository. `afterCommit` throws on it, so a cache
- * drop is never silently skipped. Removed in CR-dc-3.
+ * For tests that seed rows through their own Kysely transaction. `afterCommit`
+ * throws on it, so a cache drop is never silently skipped. No module code
+ * uses it, and it is not part of the facade.
  */
 export function unitOfWorkFromContentTrx(
   trx: Transaction<ContentDatabase>,

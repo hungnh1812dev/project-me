@@ -1,46 +1,45 @@
 import { randomUUID } from 'node:crypto';
 
-import {
-  BadRequestException,
-  ForbiddenException,
-  Inject,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 
-import { ERROR_CODES } from '../../../common/constants/error.constants';
-import { PermissionAction } from '../../../generated/prisma/client';
+import { Clock } from '../../../common/time/clock';
 import {
   CONTENT_TRANSACTION_RUNNER,
   type ContentTransactionRunner,
   type UnitOfWork,
 } from '../../../infrastructure/database/TransactionRunner.port';
-import { AccessPolicyService, type ActorContext } from '../../access';
+import {
+  AccessPolicyService,
+  type ActorContext,
+  PermissionAction,
+} from '../../access';
 import {
   ContentRegistryProvider,
-  ContentTreeError,
   type InsertTreeInput,
 } from '../../content-engine';
+import {
+  BULK_ITEM_STATUS,
+  BULK_LIMITS,
+  type BulkOperation,
+  type BulkRequest,
+  type PublishItem,
+} from '../domain/Documents.constants';
+import {
+  bulkNotCollection,
+  forbidden,
+  invalidBody,
+  mapContentErrors,
+  tooManyComponentRows,
+  unknownContentType,
+} from '../domain/Documents.errors';
+import { countComponentRows } from '../domain/ValueValidator.rules';
 import {
   asItemError,
   atomicFailure,
   type BulkItemError,
   type ErrorParts,
   itemError,
-} from '../bulk-errors';
-import {
-  BULK_ITEM_STATUS,
-  BULK_LIMITS,
-  BULK_MESSAGES,
-  DOCUMENT_ERROR_CODES,
-  DOCUMENT_ERROR_MESSAGES,
-  type BulkOperation,
-} from '../domain/Documents.constants';
-import {
-  type BulkRequest,
-  countComponentRows,
-  type PublishItem,
-} from '../http/Bulk.requests';
+} from './BulkItem.errors';
 import { DOCUMENT_REPOSITORY, type DocumentRepository } from './Documents.port';
 import { DocumentsCommandService } from './DocumentsCommand.service';
 import { type ActionScope, PublishService } from './Publish.service';
@@ -86,6 +85,7 @@ export class BulkService {
     @Inject(DOCUMENT_REPOSITORY) private readonly documents: DocumentRepository,
     private readonly commands: DocumentsCommandService,
     private readonly publishing: PublishService,
+    private readonly clock: Clock,
   ) {}
 
   async create(
@@ -96,7 +96,7 @@ export class BulkService {
     this.assertWriter(actor);
     const { evaluator } = await this.access.policy();
     if (!evaluator.can(actor, PermissionAction.create, slug)) {
-      throw new ForbiddenException();
+      throw forbidden();
     }
     const type = await this.collection(slug);
 
@@ -107,10 +107,7 @@ export class BulkService {
         if (
           countComponentRows(item) > BULK_LIMITS.MAX_COMPONENT_ROWS_PER_ITEM
         ) {
-          throw new BadRequestException({
-            errorCode: DOCUMENT_ERROR_CODES.BULK_LIMIT,
-            message: BULK_MESSAGES.TOO_MANY_COMPONENT_ROWS,
-          });
+          throw tooManyComponentRows();
         }
         const { stored } = await this.commands.prepareCreate(
           actor,
@@ -122,7 +119,9 @@ export class BulkService {
           input: {
             ...stored,
             documentId: randomUUID(),
-            publishedAt: type.definition.draftAndPublish ? null : new Date(),
+            publishedAt: type.definition.draftAndPublish
+              ? null
+              : new Date(this.clock.now()),
             createdBy: actor.accountId,
           },
         });
@@ -134,23 +133,15 @@ export class BulkService {
       }
     }
 
-    try {
-      await this.transactions.run((unit) =>
+    await mapContentErrors(() =>
+      this.transactions.run((unit) =>
         this.documents.insertTrees(
           unit,
           slug,
           prepared.map(({ input }) => input),
         ),
-      );
-    } catch (error) {
-      if (error instanceof ContentTreeError) {
-        throw new BadRequestException({
-          errorCode: error.code,
-          message: error.message,
-        });
-      }
-      throw error;
-    }
+      ),
+    );
 
     const created = new Map(
       prepared.map(({ index, input }) => [index, input.documentId]),
@@ -304,20 +295,17 @@ export class BulkService {
     actor: ActorContext,
   ): asserts actor is Extract<ActorContext, { accountId: number }> {
     if (actor.kind === 'anonymous' || actor.kind === 'reviewer') {
-      throw new ForbiddenException();
+      throw forbidden();
     }
   }
 
   /** The registered type; 404 unknown, 400 unless a collection. */
   private async collection(slug: string) {
     const { catalog } = await this.access.policy();
-    if (!catalog.isContentType(slug)) throw new NotFoundException();
+    if (!catalog.isContentType(slug)) throw unknownContentType();
     const type = (await this.registry.registry()).resolve(slug);
     if (type.definition.kind !== 'collection') {
-      throw new BadRequestException({
-        errorCode: DOCUMENT_ERROR_CODES.BULK_NOT_COLLECTION,
-        message: DOCUMENT_ERROR_MESSAGES.BULK_NOT_COLLECTION,
-      });
+      throw bulkNotCollection();
     }
     return type;
   }
@@ -332,10 +320,7 @@ const ACTIONS = {
 /** A create item must be an object; anything else is that item's 400. */
 function asTree(item: unknown): Record<string, unknown> {
   if (typeof item !== 'object' || item === null || Array.isArray(item)) {
-    throw new BadRequestException({
-      errorCode: ERROR_CODES.BAD_REQUEST,
-      message: DOCUMENT_ERROR_MESSAGES.INVALID_BODY,
-    });
+    throw invalidBody();
   }
   return item as Record<string, unknown>;
 }

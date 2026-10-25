@@ -1,23 +1,23 @@
-import {
-  ForbiddenException,
-  HttpException,
-  HttpStatus,
-  Inject,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 
-import { PermissionAction } from '../../../generated/prisma/client';
-import { AccessPolicyService, type ActorContext } from '../../access';
+import { Clock } from '../../../common/time/clock';
+import {
+  AccessPolicyService,
+  type ActorContext,
+  PermissionAction,
+} from '../../access';
 import { ContentRegistryProvider } from '../../content-engine';
 import {
-  DOCUMENT_ERROR_CODES,
-  DOCUMENT_ERROR_MESSAGES,
   PRESENCE_MAX_ENTRIES,
-  PRESENCE_MESSAGES,
   PRESENCE_TTL_MS,
   type PresenceState,
 } from '../domain/Documents.constants';
+import {
+  documentNotFound,
+  forbidden,
+  presenceStoreFull,
+  unknownContentType,
+} from '../domain/Documents.errors';
 import {
   DOCUMENT_REPOSITORY,
   type DocumentRepository,
@@ -59,6 +59,7 @@ export class PresenceService {
     @Inject(DOCUMENT_REPOSITORY) private readonly documents: DocumentRepository,
     @Inject(PRESENCE_ACCOUNT_LOOKUP)
     private readonly accounts: PresenceAccountLookup,
+    private readonly clock: Clock,
   ) {}
 
   /** Records the caller's heartbeat and returns everyone active on the document. */
@@ -67,13 +68,13 @@ export class PresenceService {
     slug: string,
     documentId: string,
     state: PresenceState,
-    now: number = Date.now(),
   ): Promise<PresenceEntry[]> {
-    if (actor.kind !== 'account') throw new ForbiddenException();
+    const now = this.clock.now();
+    if (actor.kind !== 'account') throw forbidden();
     const { catalog, evaluator } = await this.access.policy();
     const filter = evaluator.rowFilter(actor, PermissionAction.update, slug);
-    if (!filter.allowed) throw new ForbiddenException();
-    if (!catalog.isContentType(slug)) throw new NotFoundException();
+    if (!filter.allowed) throw forbidden();
+    if (!catalog.isContentType(slug)) throw unknownContentType();
     const type = (await this.registry.registry()).resolve(slug);
 
     const editedRowVersion = await this.documents.findVersion(type, {
@@ -82,14 +83,11 @@ export class PresenceService {
       rowCondition: filter.where,
     });
     if (editedRowVersion === undefined) {
-      throw new NotFoundException({
-        errorCode: DOCUMENT_ERROR_CODES.NOT_FOUND,
-        message: DOCUMENT_ERROR_MESSAGES.NOT_FOUND,
-      });
+      throw documentNotFound();
     }
 
     const account = await this.accounts.findByAccountId(actor.accountId);
-    if (account === null) throw new ForbiddenException();
+    if (account === null) throw forbidden();
     return this.record(
       `${slug}/${documentId}`,
       {
@@ -115,10 +113,7 @@ export class PresenceService {
       if (this.size >= PRESENCE_MAX_ENTRIES) this.sweepAll(now);
       if (this.size >= PRESENCE_MAX_ENTRIES) {
         if (group.size === 0) this.entries.delete(key);
-        throw new HttpException(
-          PRESENCE_MESSAGES.STORE_FULL,
-          HttpStatus.TOO_MANY_REQUESTS,
-        );
+        throw presenceStoreFull();
       }
       this.size += 1;
     }

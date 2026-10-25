@@ -18,12 +18,12 @@ import { z } from 'zod';
 import { SLUG_PARAM } from '../../../common/constants/api.constants';
 import { Throttle } from '../../../common/guards/throttle.guard';
 import { NO_STORE_HEADER } from '../../../common/constants/http.constants';
-import { PermissionAction } from '../../../generated/prisma/client';
 import {
   documentIdSchema,
   parseRequest,
 } from '../../../common/http/request-parsing';
 import {
+  PermissionAction,
   RequirePermission,
   PermissionGuard,
   type SerializedRecord,

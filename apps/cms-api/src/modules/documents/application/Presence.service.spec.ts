@@ -1,5 +1,5 @@
-import { ForbiddenException } from '@nestjs/common';
-
+import { DOMAIN_ERROR_KINDS } from '../../../common/errors/DomainErrorKinds.constants';
+import type { Clock } from '../../../common/time/clock';
 import { type ActorContext, type RolePolicy } from '../../access';
 import {
   PRESENCE_MAX_ENTRIES,
@@ -24,6 +24,20 @@ const account = (accountId: number): ActorContext => ({
   accountId,
   role: ROLE,
 });
+
+let nowMs = START;
+const clock: Clock = { now: () => nowMs };
+
+/** Moves the fake clock, then sends the heartbeat. */
+function beat(
+  service: PresenceService,
+  actor: ActorContext,
+  documentId: string,
+  at: number,
+) {
+  nowMs = at;
+  return service.heartbeat(actor, SLUG, documentId, 'editing');
+}
 
 function build(): PresenceService {
   const access = {
@@ -55,6 +69,7 @@ function build(): PresenceService {
     registry as never,
     documents as never,
     accounts,
+    clock,
   );
 }
 
@@ -66,20 +81,18 @@ const ids = (list: { accountId: string }[]) =>
 describe('PresenceService', () => {
   it('lists an editor until the TTL passes without a heartbeat', async () => {
     const service = build();
-    await service.heartbeat(account(1), SLUG, DOC, 'editing', START);
-    const during = await service.heartbeat(
+    await beat(service, account(1), DOC, START);
+    const during = await beat(
+      service,
       account(2),
-      SLUG,
       DOC,
-      'editing',
       START + PRESENCE_TTL_MS - 1,
     );
     expect(ids(during)).toEqual([publicId(1), publicId(2)]);
-    const after = await service.heartbeat(
+    const after = await beat(
+      service,
       account(2),
-      SLUG,
       DOC,
-      'editing',
       START + PRESENCE_TTL_MS + 1,
     );
     expect(ids(after)).toEqual([publicId(2)]);
@@ -87,19 +100,12 @@ describe('PresenceService', () => {
 
   it('a heartbeat extends the entry', async () => {
     const service = build();
-    await service.heartbeat(account(1), SLUG, DOC, 'editing', START);
-    await service.heartbeat(
-      account(1),
-      SLUG,
-      DOC,
-      'editing',
-      START + PRESENCE_TTL_MS - 1,
-    );
-    const list = await service.heartbeat(
+    await beat(service, account(1), DOC, START);
+    await beat(service, account(1), DOC, START + PRESENCE_TTL_MS - 1);
+    const list = await beat(
+      service,
       account(2),
-      SLUG,
       DOC,
-      'editing',
       START + PRESENCE_TTL_MS + 5,
     );
     expect(ids(list)).toEqual([publicId(1), publicId(2)]);
@@ -108,14 +114,8 @@ describe('PresenceService', () => {
 
   it('keeps documents apart', async () => {
     const service = build();
-    await service.heartbeat(account(1), SLUG, 'a', 'editing', START);
-    const other = await service.heartbeat(
-      account(2),
-      SLUG,
-      'b',
-      'editing',
-      START,
-    );
+    await beat(service, account(1), 'a', START);
+    const other = await beat(service, account(2), 'b', START);
     expect(other).toHaveLength(1);
   });
 
@@ -134,23 +134,22 @@ describe('PresenceService', () => {
     ],
   ] as const)('refuses a %s actor', async (_name, actor) => {
     await expect(
-      build().heartbeat(actor as ActorContext, SLUG, DOC, 'editing', START),
-    ).rejects.toBeInstanceOf(ForbiddenException);
+      beat(build(), actor as ActorContext, DOC, START),
+    ).rejects.toMatchObject({ kind: DOMAIN_ERROR_KINDS.FORBIDDEN });
   });
 
   it('refuses new editors at the cap but still accepts expired-slot reuse', async () => {
     const service = build();
     for (let n = 0; n < PRESENCE_MAX_ENTRIES; n += 1) {
-      await service.heartbeat(account(n + 1), SLUG, `d${n}`, 'editing', START);
+      await beat(service, account(n + 1), `d${n}`, START);
     }
     await expect(
-      service.heartbeat(account(1), SLUG, 'overflow', 'editing', START),
-    ).rejects.toMatchObject({ status: 429 });
-    const later = await service.heartbeat(
+      beat(service, account(1), 'overflow', START),
+    ).rejects.toMatchObject({ kind: DOMAIN_ERROR_KINDS.RATE_LIMITED });
+    const later = await beat(
+      service,
       account(1),
-      SLUG,
       'overflow',
-      'editing',
       START + PRESENCE_TTL_MS + 1,
     );
     expect(later).toHaveLength(1);

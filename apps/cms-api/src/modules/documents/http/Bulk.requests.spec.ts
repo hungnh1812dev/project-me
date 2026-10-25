@@ -2,7 +2,6 @@ import { BadRequestException } from '@nestjs/common';
 
 import { BULK_LIMITS } from '../domain/Documents.constants';
 import {
-  countComponentRows,
   parseBulkCreateBody,
   parseBulkDocumentsBody,
   parseBulkPublishBody,
@@ -82,25 +81,5 @@ describe('bulk body parsing (T34)', () => {
     expect(() =>
       parseBulkDocumentsBody({ atomic: true, items: [{ documentId: 'x' }] }),
     ).toThrow(BadRequestException);
-  });
-});
-
-describe('countComponentRows', () => {
-  it('counts every nested item', () => {
-    expect(
-      countComponentRows({
-        components: {
-          a: [{ components: { b: [{}, {}] } }, {}],
-          c: [{}],
-        },
-      }),
-    ).toBe(5);
-  });
-
-  it('is 0 for anything that is not a tree', () => {
-    expect(countComponentRows('x')).toBe(0);
-    expect(countComponentRows(null)).toBe(0);
-    expect(countComponentRows({ components: 'x' })).toBe(0);
-    expect(countComponentRows({ components: { a: 'x' } })).toBe(0);
   });
 });

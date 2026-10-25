@@ -54,7 +54,10 @@ export const ALLOWED_DOMAIN_PACKAGES: readonly string[] = [
 /** Deterministic Node built-ins `domain/` may use, limited to these names. */
 export const ALLOWED_DOMAIN_BUILTIN_IMPORTS: Readonly<
   Record<string, readonly string[]>
-> = { 'node:crypto': ['createHash'] };
+> = {
+  'node:crypto': ['createHash'],
+  'node:util': ['isDeepStrictEqual'],
+};
 
 /**
  * Values `domain/` may import from another module's facade; every other
@@ -62,6 +65,18 @@ export const ALLOWED_DOMAIN_BUILTIN_IMPORTS: Readonly<
  */
 export const DOMAIN_CROSS_MODULE_HELPERS: readonly string[] = [
   'isComponentField',
+  // content-engine: field type and value parsers, tree-error classes
+  'fieldTypeOf',
+  'INT4_MAX',
+  'parseDate',
+  'parseDatetime',
+  'parseUuid',
+  'VALUE_PATTERNS',
+  'ContentTreeError',
+  'DocumentNotFoundError',
+  // access: field-path helpers
+  'joinFieldPath',
+  'RECORD_SYSTEM_FIELDS',
 ];
 
 export interface BannedText {
@@ -184,7 +199,33 @@ export interface LayerException {
   reason: string;
 }
 
+const DOCUMENTS_REPOSITORY_FILE = join(
+  'modules',
+  'documents',
+  'adapters',
+  'KyselyDocument.repository.ts',
+);
+
+/**
+ * Content-engine files the documents repository builds on: same tables,
+ * same Kysely handle. The facade must not re-export the record loaders
+ * among them (SPEC D3), so they are named here by file.
+ */
+const DOCUMENTS_REPOSITORY_CONTENT_ENGINE_FILES = [
+  ['adapters', 'ContentDatabase.adapter.ts'],
+  ['adapters', 'KyselyContent.repository.ts'],
+  ['adapters', 'KyselyContentTransactionRunner.adapter.ts'],
+  ['adapters', 'TreeLoader.adapter.ts'],
+  ['domain', 'ContentRowMapping.rules.ts'],
+].map((parts) => join('modules', 'content-engine', ...parts));
+
 export const LAYER_EXCEPTIONS: readonly LayerException[] = [
+  ...DOCUMENTS_REPOSITORY_CONTENT_ENGINE_FILES.map((importing) => ({
+    from: DOCUMENTS_REPOSITORY_FILE,
+    importing,
+    reason:
+      'documents stores its rows in the content-engine tables: its Kysely repository shares the content database handle, tree loader and transaction (ADR 0006 §7.9)',
+  })),
   {
     from: join('modules', 'access', 'domain', 'PolicyEvaluator.ts'),
     importing: 'kysely',
@@ -218,6 +259,7 @@ export const MIGRATED_MODULES: readonly string[] = [
   'health',
   'content-types',
   'content-engine',
+  'documents',
 ];
 
 export interface KnownLayerViolation {
@@ -230,4 +272,19 @@ export interface KnownLayerViolation {
 }
 
 /** Violations a migrated module still has; a stale entry fails the spec. */
-export const KNOWN_LAYER_VIOLATIONS: readonly KnownLayerViolation[] = [];
+export const KNOWN_LAYER_VIOLATIONS: readonly KnownLayerViolation[] = [
+  ...['describe-http-exception.ts', 'DomainErrorHttpStatus.constants.ts'].map(
+    (file) => ({
+      from: join('modules', 'documents', 'application', 'BulkItem.errors.ts'),
+      rule: 'platform-role',
+      to: join('common', 'http', file),
+      removedBy: 'CR-cl-1',
+    }),
+  ),
+  ...['Bulk.controller.ts', 'Documents.controller.ts'].map((file) => ({
+    from: join('modules', 'documents', 'http', file),
+    rule: 'deep-import',
+    to: join('modules', 'access', 'document-auth.ts'),
+    removedBy: 'CR-ac-4',
+  })),
+];

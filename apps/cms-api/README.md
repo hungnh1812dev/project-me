@@ -326,9 +326,10 @@ reader `PgContentType.repository.ts`, `MigrationDb.adapter.ts` and
 `KyselyContentTransactionRunner.adapter.ts` (`CONTENT_TRANSACTION_RUNNER`,
 with `runInSavepoint`). `MigrationDb.adapter.ts` is imported only by
 `ContentEngine.module.ts` and `cli/ContentEngineCli.setup.ts`. Documents
-keeps its own Kysely transactions until CR-dc-3 and hands them to the
-repository through `unitOfWorkFromContentTrx(trx)` (facade export,
-transitional). The facade keeps `RegistryService` (now `ContentTypeRegistry`)
+runs every write through `CONTENT_TRANSACTION_RUNNER`.
+`unitOfWorkFromContentTrx(trx)` is no longer exported by the facade; only
+tests that seed rows through their own Kysely transaction import it from the
+runner file. The facade keeps `RegistryService` (now `ContentTypeRegistry`)
 and `ContentRegistryProvider` (now `ContentRegistry`) as aliases for modules
 that have not migrated.
 
@@ -603,7 +604,7 @@ updatedAt createdBy updatedBy`); components, nested paths and `json` are
 
 ### Documents, write (T21, `src/modules/documents`)
 
-`POST /documents/:slug` and `PUT /documents/:slug/:documentId`. Auth: JWT account or API token (`DocumentAuthGuard`); anonymous and reviewer sessions get 403. Needs `create` / `update` on the content type, plus the `update` row conditions on PUT (a hidden row is 404 `DOCUMENT_NOT_FOUND`). Body = the document tree `{ values?, components? }`; PUT also needs `version` (the version the client edited; it is read first and never reaches the field allowlist).
+`POST /documents/:slug` and `PUT /documents/:slug/:documentId`. Auth: JWT account or API token (`DocumentAuthGuard`); anonymous and reviewer sessions get 403. Needs `create` / `update` on the content type, plus the `update` row conditions on PUT (a hidden row is 404 `DOCUMENT_NOT_FOUND`, and so is a row deleted by someone else while the update runs). Body = the document tree `{ values?, components? }`; PUT also needs `version` (the version the client edited; it is read first and never reaches the field allowlist).
 
 Order of every write: allowlist (D4: resent `"***"` dropped, `FIELD_UNKNOWN` / `FIELD_NOT_WRITABLE` 400) -> tree shape (`assertTreeInput`) -> value rules (`documents/domain/ValueValidator.rules.ts`: type per field type, `required`, each value through its field type's `coerceValue` in the registry (`content-engine/field-types/`); richtext goes through `sanitizeRichtext` there (`sanitize-html` allowlist: editor tags, `a[href|title|target|rel]`, schemes http/https/mailto/tel; script, `on*`, `javascript:`, style stripped); 400 `DOCUMENT_INVALID`, message has the input path, never the value) -> one transaction.
 

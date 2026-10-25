@@ -148,6 +148,16 @@ export const BULK_MESSAGES = {
   INVALID_JSON: 'The request body is not valid JSON.',
 } as const;
 
+export interface BulkRequest<Item> {
+  atomic: boolean;
+  items: Item[];
+}
+
+export interface PublishItem {
+  documentId: string;
+  expectedVersion: number;
+}
+
 /** Per-item outcome in a bulk response. */
 export const BULK_ITEM_STATUS = { OK: 'ok', ERROR: 'error' } as const;
 

@@ -1,12 +1,13 @@
 import { DomainError } from '../../../common/errors/Domain.errors';
-import { joinFieldPath, type FieldSelection } from '../../access';
-import {
-  type ComponentInput,
-  fieldTypeOf,
-  type FieldValues,
-  type TableNode,
-  type TreeInput,
+import type { FieldSelection } from '../../access';
+import { joinFieldPath } from '../../access';
+import type {
+  ComponentInput,
+  FieldValues,
+  TableNode,
+  TreeInput,
 } from '../../content-engine';
+import { fieldTypeOf } from '../../content-engine';
 import {
   DOCUMENT_ERROR_CODES,
   DOCUMENT_ERROR_MESSAGES,
@@ -168,4 +169,22 @@ export function validateTreeValues(
       ? {}
       : { components: output.components }),
   };
+}
+
+/** Component nesting past this is rejected by the tree check anyway; stop counting here. */
+const COUNT_MAX_DEPTH = 8;
+
+/** Component rows in a raw create item (every item of every component list, nested). */
+export function countComponentRows(item: unknown, depth = 0): number {
+  if (typeof item !== 'object' || item === null || depth > COUNT_MAX_DEPTH) {
+    return 0;
+  }
+  const components = (item as { components?: unknown }).components;
+  if (typeof components !== 'object' || components === null) return 0;
+  let total = 0;
+  for (const list of Object.values(components)) {
+    if (!Array.isArray(list)) continue;
+    for (const child of list) total += 1 + countComponentRows(child, depth + 1);
+  }
+  return total;
 }

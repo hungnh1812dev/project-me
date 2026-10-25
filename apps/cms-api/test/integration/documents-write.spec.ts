@@ -11,6 +11,11 @@ import {
 import { MASKED_FIELDS_KEY } from '../../src/modules/access/access.constants';
 import { seedRolePermissions } from '../../src/modules/access/roles/role-permissions.seed';
 import { createContentDb } from '../../src/modules/content-engine/adapters/ContentDatabase.adapter';
+import { contentTrxOf } from '../../src/modules/content-engine/adapters/KyselyContentTransactionRunner.adapter';
+import {
+  DOCUMENT_REPOSITORY,
+  type DocumentRepository,
+} from '../../src/modules/documents/application/Documents.port';
 import { ContentRegistry } from '../../src/modules/content-engine/application/ContentRegistry.service';
 import { ContentTypeRegistry } from '../../src/modules/content-engine/domain/ContentTypeRegistry.entity';
 import {
@@ -369,6 +374,35 @@ describe('document write API (T21; Postgres 16 via Testcontainers)', () => {
       expect(results.map((r) => r.status).sort()).toEqual([200, 409, 409]);
       const rows = await storedRow(doc.documentId);
       expect(rows[0]?.version).toBe(2);
+    });
+
+    it('answers 404 DOCUMENT_NOT_FOUND when the row vanishes before it is locked (planned change)', async () => {
+      const doc = await createArticle();
+      const repository = app.get<DocumentRepository>(DOCUMENT_REPOSITORY, {
+        strict: false,
+      });
+      const replaceTree = repository.replaceTree.bind(repository);
+      const spy = jest
+        .spyOn(repository, 'replaceTree')
+        .mockImplementationOnce(async (unit, slug, ref, input) => {
+          await contentTrxOf(unit)
+            .withSchema('content')
+            .deleteFrom('article')
+            .where('document_id', '=', ref.documentId)
+            .execute();
+          return replaceTree(unit, slug, ref, input);
+        });
+      const res = await put('article', doc.documentId, editor, {
+        version: 1,
+        values: { title: 'Gone' },
+      });
+      spy.mockRestore();
+      expect(res.status).toBe(404);
+      expect(res.body).toMatchObject({
+        errorCode: 'DOCUMENT_NOT_FOUND',
+        message: 'Document not found.',
+      });
+      expect(await storedRow(doc.documentId)).toHaveLength(1);
     });
 
     it('validates the version and the document', async () => {

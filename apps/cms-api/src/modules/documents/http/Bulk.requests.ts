@@ -8,28 +8,17 @@ import {
 } from '../../../common/http/request-parsing';
 import {
   BULK_LIMITS,
+  type BulkRequest,
   BULK_MESSAGES,
   DOCUMENT_ERROR_CODES,
   DOCUMENT_ERROR_MESSAGES,
+  type PublishItem,
 } from '../domain/Documents.constants';
 import {
   BULK_BODY_KEYS,
   EXPECTED_VERSION_BODY_KEY,
 } from './DocumentsHttp.constants';
 import { INT4_MAX } from '../../content-engine';
-
-export interface BulkRequest<Item> {
-  atomic: boolean;
-  items: Item[];
-}
-
-export interface PublishItem {
-  documentId: string;
-  expectedVersion: number;
-}
-
-/** Component nesting past this is rejected by the tree check anyway; stop counting here. */
-const COUNT_MAX_DEPTH = 8;
 
 const envelopeSchema = z.strictObject({
   [BULK_BODY_KEYS.ATOMIC]: z.boolean(),
@@ -87,19 +76,4 @@ export function parseBulkDocumentsBody(body: unknown): BulkRequest<string> {
   );
   assertDistinct(ids);
   return { atomic, items: ids };
-}
-
-/** Component rows in a raw create item (every item of every component list, nested). */
-export function countComponentRows(item: unknown, depth = 0): number {
-  if (typeof item !== 'object' || item === null || depth > COUNT_MAX_DEPTH) {
-    return 0;
-  }
-  const components = (item as { components?: unknown }).components;
-  if (typeof components !== 'object' || components === null) return 0;
-  let total = 0;
-  for (const list of Object.values(components)) {
-    if (!Array.isArray(list)) continue;
-    for (const child of list) total += 1 + countComponentRows(child, depth + 1);
-  }
-  return total;
 }

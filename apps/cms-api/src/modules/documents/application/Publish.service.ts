@@ -1,32 +1,33 @@
-import {
-  BadRequestException,
-  ConflictException,
-  ForbiddenException,
-  Inject,
-  Injectable,
-  Logger,
-  NotFoundException,
-} from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 
-import { PermissionAction } from '../../../generated/prisma/client';
+import { Clock } from '../../../common/time/clock';
 import {
   CONTENT_TRANSACTION_RUNNER,
   type TransactionRunner,
   type UnitOfWork,
 } from '../../../infrastructure/database/TransactionRunner.port';
 import {
+  APP_LOGGER,
+  type AppLogger,
+} from '../../../infrastructure/logging/AppLogger.port';
+import {
   AccessPolicyService,
   type ActorContext,
+  PermissionAction,
   type RowCondition,
 } from '../../access';
 import {
   ContentRegistryProvider,
   type RegisteredContentType,
 } from '../../content-engine';
+import { DOCUMENT_ERROR_MESSAGES } from '../domain/Documents.constants';
 import {
-  DOCUMENT_ERROR_CODES,
-  DOCUMENT_ERROR_MESSAGES,
-} from '../domain/Documents.constants';
+  documentNotFound,
+  forbidden,
+  notPublishable,
+  unknownContentType,
+  versionConflict,
+} from '../domain/Documents.errors';
 import { cloneTree } from '../domain/TreeCloner.rules';
 import {
   ACTIVITY_RECORDER,
@@ -61,8 +62,6 @@ export interface ActionScope {
  */
 @Injectable()
 export class PublishService {
-  private readonly logger = new Logger(PublishService.name);
-
   constructor(
     private readonly access: AccessPolicyService,
     private readonly registry: ContentRegistryProvider,
@@ -70,6 +69,8 @@ export class PublishService {
     private readonly transactions: TransactionRunner,
     @Inject(DOCUMENT_REPOSITORY) private readonly documents: DocumentRepository,
     @Inject(ACTIVITY_RECORDER) private readonly activity: ActivityRecorder,
+    @Inject(APP_LOGGER) private readonly logger: AppLogger,
+    private readonly clock: Clock,
   ) {}
 
   async publish(
@@ -106,12 +107,10 @@ export class PublishService {
       rowCondition: null,
     };
     const draft = await this.documents.lockRow(unit, type, draftRows);
-    if (draft === undefined) throw notFound();
+    if (draft === undefined) throw documentNotFound();
     if (draft.version !== expectedVersion) {
-      throw new ConflictException({
-        errorCode: DOCUMENT_ERROR_CODES.VERSION_CONFLICT,
-        message: DOCUMENT_ERROR_MESSAGES.PUBLISH_CONFLICT,
-        details: { currentVersion: draft.version },
+      throw versionConflict(DOCUMENT_ERROR_MESSAGES.PUBLISH_CONFLICT, {
+        currentVersion: draft.version,
       });
     }
 
@@ -124,20 +123,20 @@ export class PublishService {
         existing.id,
         rowCondition,
       );
-      if (!isInScope) throw notFound();
+      if (!isInScope) throw documentNotFound();
     }
 
     const [stored] = await this.documents.loadTrees(unit, slug, {
       status: 'draft',
       documentIds: [documentId],
     });
-    if (stored === undefined) throw notFound();
+    if (stored === undefined) throw documentNotFound();
 
     await this.documents.deleteRows(unit, type, publishedRows);
     const publishedId = await this.documents.insertTree(unit, slug, {
       ...cloneTree(stored),
       documentId,
-      publishedAt: new Date(),
+      publishedAt: new Date(this.clock.now()),
       createdBy: stored.createdBy,
     });
     await this.documents.setVersionAndEditor(unit, type, publishedId, {
@@ -175,7 +174,7 @@ export class PublishService {
       status: 'published',
       rowCondition: scope.rowCondition,
     });
-    if (removed === 0) throw notFound();
+    if (removed === 0) throw documentNotFound();
   }
 
   async remove(
@@ -203,14 +202,14 @@ export class PublishService {
       rowCondition: null,
     };
     const rowIds = await this.documents.lockRowIds(unit, type, everyRow);
-    if (rowIds.length === 0) throw notFound();
+    if (rowIds.length === 0) throw documentNotFound();
     if (rowCondition !== null) {
       const reachable = await this.documents.findRowIds(unit, type, {
         ...everyRow,
         rowCondition,
       });
       // Both rows or none: a delete never leaves half a document behind.
-      if (reachable.length !== rowIds.length) throw notFound();
+      if (reachable.length !== rowIds.length) throw documentNotFound();
     }
     await this.documents.deleteRows(unit, type, everyRow);
   }
@@ -223,18 +222,15 @@ export class PublishService {
     needsDraftAndPublish: boolean,
   ): Promise<ActionScope> {
     if (actor.kind === 'anonymous' || actor.kind === 'reviewer') {
-      throw new ForbiddenException();
+      throw forbidden();
     }
     const { catalog, evaluator } = await this.access.policy();
     const filter = evaluator.rowFilter(actor, action, slug);
-    if (!filter.allowed) throw new ForbiddenException();
-    if (!catalog.isContentType(slug)) throw new NotFoundException();
+    if (!filter.allowed) throw forbidden();
+    if (!catalog.isContentType(slug)) throw unknownContentType();
     const type = (await this.registry.registry()).resolve(slug);
     if (needsDraftAndPublish && !type.definition.draftAndPublish) {
-      throw new BadRequestException({
-        errorCode: DOCUMENT_ERROR_CODES.NOT_PUBLISHABLE,
-        message: DOCUMENT_ERROR_MESSAGES.NOT_PUBLISHABLE,
-      });
+      throw notPublishable();
     }
     return { type, rowCondition: filter.where, accountId: actor.accountId };
   }
@@ -258,16 +254,13 @@ export class PublishService {
       });
     } catch (error) {
       this.logger.error(
-        `activity tracking failed for ${action} ${subject}`,
-        error instanceof Error ? error.stack : undefined,
+        `activity tracking failed for ${action} ${subject}: ${
+          error instanceof Error
+            ? (error.stack ?? error.message)
+            : String(error)
+        }`,
+        PublishService.name,
       );
     }
   }
-}
-
-function notFound(): NotFoundException {
-  return new NotFoundException({
-    errorCode: DOCUMENT_ERROR_CODES.NOT_FOUND,
-    message: DOCUMENT_ERROR_MESSAGES.NOT_FOUND,
-  });
 }

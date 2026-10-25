@@ -5,11 +5,8 @@ import {
   type RequestIssue,
 } from '../../../common/validation/SharedSchemas.rules';
 import type { ConditionValueKind } from '../../access';
-import {
-  type ContentStatus,
-  fieldTypeOf,
-  type FieldDefinition,
-} from '../../content-engine';
+import type { ContentStatus, FieldDefinition } from '../../content-engine';
+import { fieldTypeOf } from '../../content-engine';
 import {
   DOCUMENT_QUERY_LIMITS,
   type FilterOperator,

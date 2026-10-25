@@ -1,15 +1,9 @@
 import { randomUUID } from 'node:crypto';
 
-import {
-  BadRequestException,
-  ConflictException,
-  ForbiddenException,
-  Inject,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 
-import { PermissionAction } from '../../../generated/prisma/client';
+import type { DomainError } from '../../../common/errors/Domain.errors';
+import { Clock } from '../../../common/time/clock';
 import {
   CONTENT_TRANSACTION_RUNNER,
   type TransactionRunner,
@@ -19,6 +13,7 @@ import {
   type AccessPolicy,
   AccessPolicyService,
   type ActorContext,
+  PermissionAction,
   recordReadAccess,
   RecordSerializer,
   type RowCondition,
@@ -29,7 +24,6 @@ import {
   assertTreeInput,
   type ContentDocument,
   ContentRegistryProvider,
-  ContentTreeError,
   type RegisteredContentType,
   type TreeInput,
 } from '../../content-engine';
@@ -39,10 +33,14 @@ import {
   type DiffEntry,
   overlaySubmitted,
 } from '../domain/Diff.rules';
+import { DOCUMENT_ERROR_MESSAGES } from '../domain/Documents.constants';
 import {
-  DOCUMENT_ERROR_CODES,
-  DOCUMENT_ERROR_MESSAGES,
-} from '../domain/Documents.constants';
+  documentNotFound,
+  forbidden,
+  mapContentErrors,
+  unknownContentType,
+  versionConflict,
+} from '../domain/Documents.errors';
 import {
   validateTreeValues,
   type WriteMode,
@@ -114,6 +112,7 @@ export class DocumentsCommandService {
     private readonly transactions: TransactionRunner,
     @Inject(DOCUMENT_REPOSITORY) private readonly documents: DocumentRepository,
     private readonly media: DocumentMediaService,
+    private readonly clock: Clock,
   ) {}
 
   async create(
@@ -122,11 +121,11 @@ export class DocumentsCommandService {
     body: unknown,
   ): Promise<WriteResult> {
     if (actor.kind === 'anonymous' || actor.kind === 'reviewer') {
-      throw new ForbiddenException();
+      throw forbidden();
     }
     const { evaluator } = await this.access.policy();
     if (!evaluator.can(actor, PermissionAction.create, slug)) {
-      throw new ForbiddenException();
+      throw forbidden();
     }
     const { type, stored } = await this.prepare(
       actor,
@@ -140,11 +139,13 @@ export class DocumentsCommandService {
 
     const documentId = randomUUID();
     const id = await this.transactions.run((unit) =>
-      this.mapTreeErrors(() =>
+      mapContentErrors(() =>
         this.documents.insertTree(unit, slug, {
           ...stored,
           documentId,
-          publishedAt: type.definition.draftAndPublish ? null : new Date(),
+          publishedAt: type.definition.draftAndPublish
+            ? null
+            : new Date(this.clock.now()),
           createdBy: actor.accountId,
         }),
       ),
@@ -160,11 +161,11 @@ export class DocumentsCommandService {
     body: unknown,
   ): Promise<WriteResult> {
     if (actor.kind === 'anonymous' || actor.kind === 'reviewer') {
-      throw new ForbiddenException();
+      throw forbidden();
     }
     const { evaluator } = await this.access.policy();
     const rowFilter = evaluator.rowFilter(actor, PermissionAction.update, slug);
-    if (!rowFilter.allowed) throw new ForbiddenException();
+    if (!rowFilter.allowed) throw forbidden();
     const { type, tree, stored } = await this.prepare(
       actor,
       slug,
@@ -194,7 +195,7 @@ export class DocumentsCommandService {
         const readScope = this.readScope(actor, slug, type, evaluator);
         return this.describeConflict(unit, type, access, target, readScope);
       }
-      await this.mapTreeErrors(() =>
+      await mapContentErrors(() =>
         this.documents.replaceTree(
           unit,
           slug,
@@ -237,7 +238,7 @@ export class DocumentsCommandService {
       id,
       target.rowCondition,
     );
-    if (!isInScope) throw new ForbiddenException();
+    if (!isInScope) throw forbidden();
   }
 
   /** What the actor may read of the draft or live row, for the 409 body. */
@@ -264,7 +265,7 @@ export class DocumentsCommandService {
     readScope: ReadScope,
   ): Promise<ConflictOutcome> {
     const current = await this.documents.findVersion(type, target, unit);
-    if (current === undefined) throw notFound();
+    if (current === undefined) throw documentNotFound();
 
     const document = readScope.readable
       ? await this.documents.findOne(
@@ -331,11 +332,11 @@ export class DocumentsCommandService {
     mode: WriteMode,
   ): Promise<PreparedWrite> {
     const { catalog, evaluator } = await this.access.policy();
-    if (!catalog.isContentType(slug)) throw new NotFoundException();
+    if (!catalog.isContentType(slug)) throw unknownContentType();
     const type = (await this.registry.registry()).resolve(slug);
     const fields = evaluator.fieldsFor(actor, slug, action);
     const allowed = new WriteAllowlist(type).apply(body, fields);
-    await this.mapTreeErrors(() => {
+    await mapContentErrors(() => {
       assertTreeInput(type.root, allowed);
       return Promise.resolve();
     });
@@ -355,7 +356,7 @@ export class DocumentsCommandService {
     access: RecordReadAccess,
     outcome: ConflictOutcome,
     tree: TreeInput,
-  ): Promise<ConflictException> {
+  ): Promise<DomainError> {
     const details: VersionConflictDetails = {
       currentVersion: outcome.current,
       server: null,
@@ -372,32 +373,6 @@ export class DocumentsCommandService {
       await this.media.embed(type.root, [details.server, details.submitted]);
       details.diff = diffRecords(details.server, details.submitted);
     }
-    return new ConflictException({
-      errorCode: DOCUMENT_ERROR_CODES.VERSION_CONFLICT,
-      message: DOCUMENT_ERROR_MESSAGES.VERSION_CONFLICT,
-      details,
-    });
+    return versionConflict(DOCUMENT_ERROR_MESSAGES.VERSION_CONFLICT, details);
   }
-
-  /** A tree rejected while writing (unknown uid, ...) is the client's fault: 400. */
-  private async mapTreeErrors<T>(run: () => Promise<T>): Promise<T> {
-    try {
-      return await run();
-    } catch (error) {
-      if (error instanceof ContentTreeError) {
-        throw new BadRequestException({
-          errorCode: error.code,
-          message: error.message,
-        });
-      }
-      throw error;
-    }
-  }
-}
-
-function notFound(): NotFoundException {
-  return new NotFoundException({
-    errorCode: DOCUMENT_ERROR_CODES.NOT_FOUND,
-    message: DOCUMENT_ERROR_MESSAGES.NOT_FOUND,
-  });
 }
