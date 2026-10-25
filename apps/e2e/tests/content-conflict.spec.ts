@@ -16,6 +16,10 @@ import { CV_PAGE_SLUG } from '../src/content-types';
 import { API_PATHS } from '../src/api-paths';
 import { contentSaveButton, fieldByLabel, listItem } from '../src/locators';
 import { inviteAccount } from '../src/accounts';
+import {
+  limitEditorToPositionField,
+  restoreEditorRole,
+} from '../src/access-pages';
 
 const copy = ADMIN_COPY.content;
 const merge = copy.conflict;
@@ -347,7 +351,6 @@ test.describe.serial('owner: conflict merge modal (cv-page)', () => {
 
   test.describe
     .serial('role with masked fields (Editor, cv-page reads Position only)', () => {
-    const access = ADMIN_COPY.access;
     const EDITOR_EMAIL = `e2e-masked-${RUN_ID}@domain.localhost`;
     const EDITOR_NAME = `Masked ${RUN_ID}`;
     const EDITOR_PASSWORD = `${e2eEnv.ownerPassword.slice(0, 40)}-masked`;
@@ -357,32 +360,9 @@ test.describe.serial('owner: conflict merge modal (cv-page)', () => {
     let editor: Page;
     let roleChanged = false;
 
-    const roleCell = (page: Page) =>
-      page.getByRole('checkbox', {
-        name: access.matrix.cellLabel(access.matrix.actions.read, CV_PAGE_SLUG),
-        exact: true,
-      });
-    const rolesSave = (page: Page) =>
-      page.getByRole('button', { name: access.role.save });
-
-    async function openEditorRole(page: Page) {
-      await page.goto('/roles');
-      await page
-        .getByRole('link', { name: access.roles.open('Editor') })
-        .click();
-      await expect(
-        page.getByRole('heading', { level: 1, name: 'Editor' }),
-      ).toBeVisible();
-    }
-
     test.afterAll(async () => {
       await editorContext?.close();
-      if (!roleChanged) return;
-      // Put the shared Editor role back for the other specs.
-      await openEditorRole(b);
-      await roleCell(b).uncheck();
-      await rolesSave(b).click();
-      await expect(b.getByRole('status')).toBeVisible();
+      if (roleChanged) await restoreEditorRole(b);
     });
 
     test('setup: an Editor account and an Editor role that reads only Position', async ({
@@ -401,21 +381,8 @@ test.describe.serial('owner: conflict merge modal (cv-page)', () => {
       );
       editorContext = editor.context();
 
-      await openEditorRole(b);
-      await roleCell(b).check();
-      await b
-        .getByRole('button', {
-          name: access.matrix.detailsLabel(CV_PAGE_SLUG),
-        })
-        .click();
-      await b.getByRole('radio', { name: access.fields.some }).check();
-      await b
-        .getByRole('group', { name: access.fields.readable })
-        .getByRole('checkbox', { name: 'position', exact: true })
-        .check();
       roleChanged = true;
-      await rolesSave(b).click();
-      await expect(b.getByRole('status')).toContainText('Permissions saved');
+      await limitEditorToPositionField(b);
 
       await signInAs(editor, EDITOR_EMAIL, EDITOR_PASSWORD);
       await open(editor, editUrl);

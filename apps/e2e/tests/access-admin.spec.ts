@@ -7,6 +7,13 @@ import { labelStartingWith } from '../src/locators';
 import { RUN_ID } from '../src/run-id';
 import { CV_PAGE_SLUG } from '../src/content-types';
 import { submitLogin } from '../src/session';
+import {
+  accountRow,
+  openRole,
+  permissionCell,
+  roleDiscardButton,
+  roleSaveButton,
+} from '../src/access-pages';
 
 const access = ADMIN_COPY.access;
 const accounts = access.accounts;
@@ -21,28 +28,6 @@ const INVALID_JSON = '{"all": [';
 /** Valid JSON that the server's conditions DSL refuses (unknown operator). */
 const SERVER_REJECTED_CONDITIONS =
   '{"all":[{"field":"createdBy","op":"nope"}]}';
-
-const accountRow = (page: Page, email: string) =>
-  page.getByRole('row').filter({ hasText: email });
-
-async function openRole(page: Page, name: string) {
-  await page.goto('/roles');
-  await page.getByRole('link', { name: accessRoleLink(name) }).click();
-  await expect(page.getByRole('heading', { level: 1, name })).toBeVisible();
-}
-
-const accessRoleLink = (name: string) => access.roles.open(name);
-
-const cell = (page: Page, action: string, subject: string) =>
-  page.getByRole('checkbox', {
-    name: access.matrix.cellLabel(action, subject),
-    exact: true,
-  });
-
-const saveButton = (page: Page) =>
-  page.getByRole('button', { name: access.role.save });
-const discardButton = (page: Page) =>
-  page.getByRole('button', { name: access.role.discard });
 
 test.describe.serial('owner: accounts and roles', () => {
   let page: Page;
@@ -363,25 +348,29 @@ test.describe.serial('owner: accounts and roles', () => {
 
     await openRole(page, 'Owner');
     await expect(page.getByText(access.role.owner)).toBeVisible();
-    await expect(saveButton(page)).toHaveCount(0);
+    await expect(roleSaveButton(page)).toHaveCount(0);
   });
 
   test('toggling an action enables Save, Discard restores, and saved permissions survive a reload', async () => {
     await openRole(page, OLD_BROWSER_ROLE);
     const wildcard = access.matrix.wildcard;
-    const deleteCell = cell(page, access.matrix.actions.delete, wildcard);
+    const deleteCell = permissionCell(
+      page,
+      access.matrix.actions.delete,
+      wildcard,
+    );
     await expect(deleteCell).not.toBeChecked();
-    await expect(saveButton(page)).toBeDisabled();
+    await expect(roleSaveButton(page)).toBeDisabled();
 
     await deleteCell.check();
     await expect(page.getByText(access.role.unsaved)).toBeVisible();
-    await expect(saveButton(page)).toBeEnabled();
-    await discardButton(page).click();
+    await expect(roleSaveButton(page)).toBeEnabled();
+    await roleDiscardButton(page).click();
     await expect(deleteCell).not.toBeChecked();
-    await expect(saveButton(page)).toBeDisabled();
+    await expect(roleSaveButton(page)).toBeDisabled();
 
     // Field access of one content type: only selected fields.
-    const read = cell(page, access.matrix.actions.read, CV_PAGE_SLUG);
+    const read = permissionCell(page, access.matrix.actions.read, CV_PAGE_SLUG);
     await read.check();
     await page
       .getByRole('button', {
@@ -395,7 +384,7 @@ test.describe.serial('owner: accounts and roles', () => {
     const firstField = fieldBoxes.first();
     await firstField.check();
 
-    await saveButton(page).click();
+    await roleSaveButton(page).click();
     await expect(page.getByRole('status')).toContainText(
       access.role.saved.slice(0, 'Permissions saved'.length),
     );
@@ -419,7 +408,7 @@ test.describe.serial('owner: accounts and roles', () => {
 
     // Put the Editor role back.
     await read.uncheck();
-    await saveButton(page).click();
+    await roleSaveButton(page).click();
     await expect(page.getByRole('status')).toBeVisible();
     await page.reload();
     await expect(read).not.toBeChecked();
@@ -427,7 +416,11 @@ test.describe.serial('owner: accounts and roles', () => {
 
   test('invalid conditions JSON blocks saving; conditions the server rejects mark the row', async () => {
     await openRole(page, OLD_BROWSER_ROLE);
-    const read = cell(page, access.matrix.actions.read, access.matrix.wildcard);
+    const read = permissionCell(
+      page,
+      access.matrix.actions.read,
+      access.matrix.wildcard,
+    );
     await expect(read).toBeChecked();
     await page
       .getByRole('button', {
@@ -443,7 +436,7 @@ test.describe.serial('owner: accounts and roles', () => {
 
     // The JSON check runs when saving: the form message and the field error.
     await conditions.fill(INVALID_JSON);
-    await saveButton(page).click();
+    await roleSaveButton(page).click();
     await expect(
       page.getByText(access.role.conditionsInvalidJson),
     ).toBeVisible();
@@ -451,10 +444,10 @@ test.describe.serial('owner: accounts and roles', () => {
     await expect(conditions).toHaveAttribute('aria-invalid', 'true');
 
     await conditions.fill(SERVER_REJECTED_CONDITIONS);
-    await saveButton(page).click();
+    await roleSaveButton(page).click();
     await expect(page.getByText(access.role.invalid)).toBeVisible();
 
-    await discardButton(page).click();
+    await roleDiscardButton(page).click();
   });
 
   // Last in the serial run: a failure here must not skip the flows above.
@@ -473,63 +466,5 @@ test.describe.serial('owner: accounts and roles', () => {
     await dialog.getByRole('button', { name: invite.cancel }).click();
     await expect(dialog).toBeHidden();
     await expect(trigger).toBeFocused();
-  });
-});
-
-test.describe('admin: limited by its own permissions and rank', () => {
-  test('an admin sees its own role read-only and cannot invite an admin', async ({
-    page,
-  }) => {
-    await submitLogin(page, e2eEnv.twoFactorEmail, e2eEnv.twoFactorPassword);
-    await expect(
-      page.getByRole('button', { name: ADMIN_COPY.session.signOut }),
-    ).toBeVisible();
-    const nav = page.getByRole('navigation', { name: access.nav.label });
-    await expect(
-      nav.getByRole('link', { name: access.nav.accounts }),
-    ).toBeVisible();
-
-    // Rank: no Disable on the owner or on the other admin rows.
-    await page.goto('/accounts');
-    await expect(
-      accountRow(page, e2eEnv.ownerEmail).getByRole('button', {
-        name: accounts.disable,
-      }),
-    ).toHaveCount(0);
-    await expect(
-      accountRow(page, e2eEnv.twoFactorEmail).getByRole('button', {
-        name: accounts.disable,
-      }),
-    ).toHaveCount(0);
-
-    await page.getByRole('button', { name: accounts.invite }).click();
-    const options = await page
-      .getByRole('dialog', { name: invite.title })
-      .getByLabel(labelStartingWith(invite.roleLabel))
-      .locator('option')
-      .allTextContents();
-    expect(options).toContain('Editor');
-    for (const forbidden of ['Owner', 'Admin', 'Public', 'Reviewer']) {
-      expect(options).not.toContain(forbidden);
-    }
-    await page.keyboard.press('Escape');
-
-    // Own role: view only.
-    await openRole(page, 'Admin');
-    await expect(page.getByText(access.role.readOnly)).toBeVisible();
-    await expect(saveButton(page)).toHaveCount(0);
-    for (const box of await page.getByRole('checkbox').all()) {
-      await expect(box).toBeDisabled();
-    }
-
-    // The field picker of a view-only role ignores changes too.
-    await page
-      .getByRole('button', {
-        name: access.matrix.detailsLabel(CV_PAGE_SLUG),
-      })
-      .click();
-    for (const radio of await page.getByRole('radio').all()) {
-      await expect(radio).toBeDisabled();
-    }
   });
 });

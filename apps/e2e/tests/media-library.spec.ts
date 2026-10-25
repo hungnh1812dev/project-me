@@ -1,19 +1,9 @@
-import {
-  type BrowserContext,
-  expect,
-  type Page,
-  type Route,
-  test,
-} from '@playwright/test';
+import { type BrowserContext, expect, type Page, test } from '@playwright/test';
 
-import {
-  ADMIN_COPY,
-  API_ERROR_CODES,
-  MEDIA_ALT_MAX_LENGTH,
-} from '../src/app-contracts';
+import { ADMIN_COPY, MEDIA_ALT_MAX_LENGTH } from '../src/app-contracts';
 import { e2eEnv } from '../src/env';
+import { fakeMediaApi, PNG_BASE64 } from '../src/fake-media-api';
 import { signInAs } from '../src/session';
-import { HTTP } from '../src/constants';
 import { RUN_ID } from '../src/run-id';
 
 const copy = ADMIN_COPY.media;
@@ -23,131 +13,6 @@ const FILE_NAME = `e2e-media-${RUN_ID}.png`;
 const TEXT_FILE_NAME = `e2e-media-${RUN_ID}.txt`;
 const ALT_TEXT = `E2E alt ${RUN_ID}`;
 const ALT_PADDING = 'a';
-/** A 1x1 transparent PNG. */
-const PNG_BASE64 =
-  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==';
-
-const MEDIA_API_PATTERN = /\/api\/v1\/media(\/[0-9a-f-]+)?(\?.*)?$/;
-const ALLOWED_TYPES = ['image/png', 'application/pdf', 'video/mp4'];
-const FAKE_FILE_URL = `data:image/png;base64,${PNG_BASE64}`;
-const FAKE_BYTES = 68;
-
-interface FakeFile {
-  id: string;
-  fileName: string;
-  mimeType: string;
-  size: number;
-  width: number | null;
-  height: number | null;
-  alt: string | null;
-  url: string;
-  thumbnailUrl: string | null;
-  isReviewerPreset: boolean;
-  createdAt: string;
-}
-
-/**
- * The smoke stack runs production mode with dummy Cloudinary credentials, so
- * real uploads cannot succeed there. The library is driven against an
- * in-memory stand-in for /media; the real API contract is covered by cms-api's
- * integration tests.
- */
-async function fakeMediaApi(context: BrowserContext, inUse: Set<string>) {
-  const files: FakeFile[] = [];
-  const fail = (route: Route, status: number, errorCode: string) =>
-    route.fulfill({
-      status,
-      contentType: 'application/json',
-      headers: cors(route),
-      body: JSON.stringify({
-        statusCode: status,
-        errorCode,
-        message: errorCode,
-      }),
-    });
-  await context.route(MEDIA_API_PATTERN, async (route) => {
-    const request = route.request();
-    const method = request.method();
-    const headers = cors(route);
-    if (method === 'OPTIONS') {
-      return route.fulfill({ status: HTTP.NO_CONTENT, headers });
-    }
-    const id = new URL(request.url()).pathname.split('/').at(-1) ?? '';
-    const found = files.find((f) => f.id === id);
-    if (method === 'GET') {
-      return route.fulfill({
-        status: HTTP.OK,
-        contentType: 'application/json',
-        headers,
-        body: JSON.stringify({
-          data: files,
-          meta: { page: 1, pageSize: 20, total: files.length },
-        }),
-      });
-    }
-    if (method === 'POST') {
-      const raw = request.postData() ?? '';
-      const name = /filename="([^"]+)"/.exec(raw)?.[1] ?? 'file';
-      const type = /Content-Type: ([^\r\n]+)/i.exec(raw)?.[1] ?? '';
-      if (!ALLOWED_TYPES.includes(type)) {
-        return fail(
-          route,
-          HTTP.UNSUPPORTED_MEDIA_TYPE,
-          API_ERROR_CODES.MEDIA_UNSUPPORTED_TYPE,
-        );
-      }
-      const created: FakeFile = {
-        id: crypto.randomUUID(),
-        fileName: name,
-        mimeType: type,
-        size: FAKE_BYTES,
-        width: 1,
-        height: 1,
-        alt: null,
-        url: FAKE_FILE_URL,
-        thumbnailUrl: null,
-        isReviewerPreset: false,
-        createdAt: new Date().toISOString(),
-      };
-      files.unshift(created);
-      return route.fulfill({
-        status: HTTP.CREATED,
-        contentType: 'application/json',
-        headers,
-        body: JSON.stringify(created),
-      });
-    }
-    if (found === undefined) {
-      return fail(route, HTTP.NOT_FOUND, API_ERROR_CODES.MEDIA_NOT_FOUND);
-    }
-    if (method === 'PATCH') {
-      const body = request.postDataJSON() as { alt: string | null };
-      found.alt = body.alt;
-      return route.fulfill({
-        status: HTTP.OK,
-        contentType: 'application/json',
-        headers,
-        body: JSON.stringify(found),
-      });
-    }
-    if (inUse.has(found.fileName)) {
-      return fail(route, HTTP.CONFLICT, API_ERROR_CODES.MEDIA_IN_USE);
-    }
-    files.splice(files.indexOf(found), 1);
-    return route.fulfill({ status: HTTP.NO_CONTENT, headers });
-  });
-}
-
-function cors(route: Route): Record<string, string> {
-  const request = route.request();
-  return {
-    'access-control-allow-origin': request.headers()['origin'] ?? '*',
-    'access-control-allow-credentials': 'true',
-    'access-control-allow-methods': 'GET,POST,PATCH,DELETE,OPTIONS',
-    'access-control-allow-headers':
-      request.headers()['access-control-request-headers'] ?? '*',
-  };
-}
 
 const row = (page: Page) =>
   page.getByRole('row').filter({ hasText: FILE_NAME });
