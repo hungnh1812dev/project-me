@@ -7,6 +7,8 @@
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "start": "node dist/main.js",
+    "dev": "pnpm run start:dev",
+    "start:dev": "tsc -p tsconfig.build.json && (trap 'kill 0' EXIT; tsc -p tsconfig.build.json --watch --preserveWatchOutput & node --env-file-if-exists=.env.local --watch-path=dist dist/main.js)",
     "test": "NODE_OPTIONS='--experimental-vm-modules --disable-warning=ExperimentalWarning' jest",
     "test:unit": "NODE_OPTIONS='--experimental-vm-modules --disable-warning=ExperimentalWarning' jest --selectProjects unit",
     "test:integration": "NODE_OPTIONS='--experimental-vm-modules --disable-warning=ExperimentalWarning' jest --selectProjects integration",

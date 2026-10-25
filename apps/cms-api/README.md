@@ -10,6 +10,12 @@ pnpm --filter @abyss/cms-api build
 pnpm --filter @abyss/cms-api start
 ```
 
+Development: `pnpm --filter @abyss/cms-api start:dev` (or `pnpm start:cms-api:dev` from the root)
+builds, runs `dist/main.js` with `--env-file-if-exists=.env.local` and restarts
+when `tsc --watch` rewrites `dist`. Copy `.env.example` to `.env.local` for it.
+Only `start:dev` loads that file; `db:migrate`, the CLIs, `start` and production
+read the shell env only.
+
 Config is validated once at boot (`src/config/env.schema.ts`) into a frozen
 `IAppConfig`, injected as `APP_CONFIG`. Invalid config stops the process with
 a list of keys and rules (never values). The boot log prints a summary with

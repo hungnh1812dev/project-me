@@ -16,10 +16,11 @@
     "format:check": "turbo run build --filter=@abyss/base-config && prettier --check .",
     "smoke": "bash scripts/smoke.sh",
     "e2e:spec": "bash scripts/e2e-spec.sh",
-    "start:dev": "pnpm --parallel --filter @abyss/cms-admin --filter @abyss/web dev",
+    "start:dev": "pnpm --parallel --filter @abyss/cms-api --filter @abyss/cms-admin --filter @abyss/web dev",
     "start:cms-admin": "pnpm --filter @abyss/cms-admin dev",
     "start:web": "pnpm --filter @abyss/web dev",
-    "start:cms-api": "pnpm --filter @abyss/cms-api start"
+    "start:cms-api": "pnpm --filter @abyss/cms-api start",
+    "start:cms-api:dev": "pnpm --filter @abyss/cms-api start:dev"
   },
   "devDependencies": {
     "@abyss/base-config": "workspace:*",

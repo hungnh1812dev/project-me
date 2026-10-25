@@ -32,6 +32,17 @@ Remove it with `docker rm -f abyss-dev-db` (data is lost with the container).
 
 cms-api reads `process.env` only. **It does not load a `.env` file itself** (`apps/cms-api/prisma.config.ts` says the same for the Prisma CLI), so export the values into the shell that runs it.
 
+Shortcut for development: `start:dev` loads `apps/cms-api/.env.local` through Node (`--env-file-if-exists`), builds, and restarts on every rebuild. Variables already set in the shell win over the file. Only `start:dev` does this; `db:migrate`, the CLIs (`owner:bootstrap`, ...), `start` and production read the shell env only.
+
+```
+cp apps/cms-api/.env.example apps/cms-api/.env.local    # edit the values
+pnpm start:cms-api:dev      # or pnpm start:dev for cms-api + admin + web (needs the local Postgres)
+```
+
+Without `.env.local` it still starts and stops on the config check, listing the failing keys.
+
+The manual way (shell env, no watch):
+
 ```
 cd apps/cms-api
 cp .env.example .env        # edit: DB_PASSWORD and the three secrets below
