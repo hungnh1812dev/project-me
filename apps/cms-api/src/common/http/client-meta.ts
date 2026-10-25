@@ -3,12 +3,9 @@ import type { Request } from 'express';
 import { ClientIpResolver } from './client-ip.resolver';
 import { USER_AGENT_HEADER } from '../constants/http.constants';
 import { UNKNOWN_CLIENT_IP } from '../constants/limits.constants';
+import type { ClientMeta } from '../types/ClientMeta.entity';
 
-/** Where a refresh token was issued from (stored for session listings). */
-export interface ClientMeta {
-  readonly userAgent: string | undefined;
-  readonly ip: string | undefined;
-}
+export type { ClientMeta };
 
 /** User agent and client IP stored with a new refresh token. */
 export function clientMetaOf(

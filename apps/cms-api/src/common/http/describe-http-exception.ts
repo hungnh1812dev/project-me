@@ -1,7 +1,6 @@
 import { HttpException, HttpStatus } from '@nestjs/common';
 
 import {
-  ERROR_CODE_BY_STATUS,
   ERROR_CODES,
   type ErrorCode,
   INTERNAL_ERROR_MESSAGE,
@@ -16,6 +15,7 @@ import {
   DOMAIN_ERROR_DEFAULT_MESSAGE,
   DOMAIN_ERROR_HTTP_STATUS,
 } from './DomainErrorHttpStatus.constants';
+import { ERROR_CODE_BY_STATUS } from './ErrorCodeByStatus.constants';
 
 export interface HttpExceptionDescription {
   statusCode: number;

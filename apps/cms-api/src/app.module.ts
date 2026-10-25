@@ -5,6 +5,7 @@ import { ClientIpModule } from './common/http/client-ip.module';
 import { RateLimitModule } from './common/rate-limit/rate-limit.module';
 import { ClockModule } from './common/time/clock.module';
 import { ConfigModule } from './config/config.module';
+import { LoggingModule } from './infrastructure/logging/Logging.module';
 import { ActorThrottleSubjectResolver } from './modules/access';
 import { AccessManagementModule } from './modules/access/management';
 import { ContentTypesModule } from './modules/content-types';
@@ -23,6 +24,7 @@ export class AppModule {
       imports: [
         ConfigModule.forRoot(config),
         ClockModule,
+        LoggingModule,
         ClientIpModule,
         RateLimitModule.forRoot({
           subjectResolver: ActorThrottleSubjectResolver,
