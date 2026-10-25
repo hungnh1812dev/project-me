@@ -1,8 +1,8 @@
 import { Module } from '@nestjs/common';
 
 import { AccessModule } from '../access';
-import { ContentTypesController } from './content-types.controller';
-import { ContentTypesService } from './content-types.service';
+import { ContentTypesController } from './http/ContentTypes.controller';
+import { ContentTypesService } from './application/ContentTypes.service';
 
 /** Read-only content types API: needs the access policy. */
 @Module({

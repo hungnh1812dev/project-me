@@ -1,12 +1,18 @@
-import { systemRole } from '../../../test/fixtures/access.fixture';
+import { systemRole } from '../../../../test/fixtures/access.fixture';
 import {
   FieldSelection,
   recordReadAccess,
   reviewerActor,
   SubjectCatalog,
-} from '../access';
-import { RegistryService } from '../content-engine';
-import { contentTypeView } from './content-type.view';
+} from '../../access';
+import { RegistryService } from '../../content-engine';
+import { CONDITION_SYSTEM_FIELDS, joinFieldPath } from '../../access';
+import { contentTypeView } from './ContentTypeView.rules';
+
+const VOCABULARY = {
+  systemConditionFields: CONDITION_SYSTEM_FIELDS,
+  joinFieldPath,
+};
 
 /**
  * Contract guard for `GET /content-types` (the controller wraps these views
@@ -48,6 +54,7 @@ const view = contentTypeView(
     reviewerActor(1, 1, systemRole('reviewer')),
     FieldSelection.ALL,
   ),
+  VOCABULARY,
 );
 
 describe('GET /content-types contract', () => {

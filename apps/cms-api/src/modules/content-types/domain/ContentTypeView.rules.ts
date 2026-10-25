@@ -1,19 +1,19 @@
-import {
+import type {
   CONDITION_SYSTEM_FIELDS,
-  type RecordSystemField,
-  type ConditionValueKind,
-  joinFieldPath,
-  type FieldSelection,
-  type SubjectCatalog,
-} from '../access';
-import {
-  type ContentTypeKind,
-  type FieldDefinition,
-  isComponentField,
-} from '../content-engine';
-import type { RegisteredContentType } from '../content-engine';
+  RecordSystemField,
+  ConditionValueKind,
+  FieldSelection,
+  SubjectCatalog,
+} from '../../access';
+import type {
+  ContentTypeKind,
+  FieldDefinition,
+  RegisteredContentType,
+} from '../../content-engine';
+import { isComponentField } from '../../content-engine';
 
-type SystemConditionField = keyof typeof CONDITION_SYSTEM_FIELDS;
+type ConditionSystemFields = typeof CONDITION_SYSTEM_FIELDS;
+type SystemConditionField = keyof ConditionSystemFields;
 
 /** A content field of a type, at any depth. */
 export interface ContentFieldView {
@@ -66,9 +66,15 @@ export interface FieldVisibility {
   readonly systemFields: ReadonlySet<RecordSystemField>;
 }
 
-const SYSTEM_CONDITION_FIELDS = Object.keys(
-  CONDITION_SYSTEM_FIELDS,
-) as SystemConditionField[];
+/**
+ * What the view takes from the access module as values. The application
+ * layer passes them in, because `domain/` may not import another module's
+ * values (ADR 0006 §7.8).
+ */
+export interface ViewVocabulary {
+  readonly systemConditionFields: ConditionSystemFields;
+  readonly joinFieldPath: (prefix: string, name: string) => string;
+}
 
 /**
  * Describes a registered type with the fields `visible` allows. Paths come
@@ -79,7 +85,11 @@ export function contentTypeView(
   type: RegisteredContentType,
   catalog: SubjectCatalog,
   visible: FieldVisibility,
+  { systemConditionFields, joinFieldPath }: ViewVocabulary,
 ): ContentTypeView {
+  const systemFieldNames = Object.keys(
+    systemConditionFields,
+  ) as SystemConditionField[];
   const conditionField = catalog.conditionFields(type.slug, null);
   const fields: FieldView[] = [];
 
@@ -106,9 +116,9 @@ export function contentTypeView(
   };
   visit(type.definition.fields, '');
 
-  for (const name of SYSTEM_CONDITION_FIELDS) {
+  for (const name of systemFieldNames) {
     if (!visible.systemFields.has(name)) continue;
-    const { kind } = CONDITION_SYSTEM_FIELDS[name];
+    const { kind } = systemConditionFields[name];
     fields.push({
       path: name,
       type: kind,

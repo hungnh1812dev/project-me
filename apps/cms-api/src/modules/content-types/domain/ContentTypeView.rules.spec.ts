@@ -1,12 +1,18 @@
-import { systemRole } from '../../../test/fixtures/access.fixture';
+import { systemRole } from '../../../../test/fixtures/access.fixture';
 import {
   reviewerActor,
   FieldSelection,
   recordReadAccess,
   SubjectCatalog,
-} from '../access';
-import { RegistryService } from '../content-engine';
-import { contentTypeView } from './content-type.view';
+} from '../../access';
+import { RegistryService } from '../../content-engine';
+import { CONDITION_SYSTEM_FIELDS, joinFieldPath } from '../../access';
+import { contentTypeView } from './ContentTypeView.rules';
+
+const VOCABULARY = {
+  systemConditionFields: CONDITION_SYSTEM_FIELDS,
+  joinFieldPath,
+};
 
 const PROFILE = {
   slug: 'profile',
@@ -44,6 +50,7 @@ describe('contentTypeView (T17b)', () => {
         reviewerActor(1, 1, systemRole('reviewer')),
         FieldSelection.ALL,
       ),
+      VOCABULARY,
     );
     expect(view).toMatchObject({
       slug: 'profile',
@@ -64,10 +71,15 @@ describe('contentTypeView (T17b)', () => {
   });
 
   it('keeps a component that is only partly visible, without its other fields', () => {
-    const view = contentTypeView(type, catalog, {
-      fields: FieldSelection.of(['experience.role.teamSize']),
-      systemFields: new Set(),
-    });
+    const view = contentTypeView(
+      type,
+      catalog,
+      {
+        fields: FieldSelection.of(['experience.role.teamSize']),
+        systemFields: new Set(),
+      },
+      VOCABULARY,
+    );
     expect(view.fields.map((f) => f.path)).toEqual([
       'experience',
       'experience.role',

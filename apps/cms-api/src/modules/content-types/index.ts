@@ -1,1 +1,1 @@
-export { ContentTypesModule } from './content-types.module';
+export { ContentTypesModule } from './ContentTypes.module';

@@ -214,7 +214,7 @@ export const LAYER_EXEMPT_ROOTS: readonly string[] = [
 ];
 
 /** Module folders (`modules/<name>`) the layer guard checks. Each CR task adds its module. */
-export const MIGRATED_MODULES: readonly string[] = ['health'];
+export const MIGRATED_MODULES: readonly string[] = ['health', 'content-types'];
 
 export interface KnownLayerViolation {
   /** Path relative to `src/`. */

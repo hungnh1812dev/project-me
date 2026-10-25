@@ -1,24 +1,29 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 
-import { PermissionAction } from '../../generated/prisma/client';
 import {
   type AccessPolicy,
   AccessPolicyService,
   RECORD_SYSTEM_FIELDS,
   type ActorContext,
   FieldSelection,
+  joinFieldPath,
+  CONDITION_SYSTEM_FIELDS,
+  PermissionAction,
   recordReadAccess,
-} from '../access';
+} from '../../access';
+import { contentTypeNotFound } from '../domain/ContentTypes.errors';
 import {
   type ContentTypeView,
   contentTypeView,
   type FieldVisibility,
-} from './content-type.view';
-import {
-  CONTENT_TYPES_ERROR_CODES,
-  CONTENT_TYPES_ERROR_MESSAGES,
-  FULL_CATALOG_PERMISSION,
-} from './content-types.constants';
+  type ViewVocabulary,
+} from '../domain/ContentTypeView.rules';
+import { FULL_CATALOG_PERMISSION } from './ContentTypes.constants';
+
+const VIEW_VOCABULARY: ViewVocabulary = {
+  systemConditionFields: CONDITION_SYSTEM_FIELDS,
+  joinFieldPath,
+};
 
 const FULL_VISIBILITY: FieldVisibility = {
   fields: FieldSelection.ALL,
@@ -49,10 +54,7 @@ export class ContentTypesService {
   async get(actor: ActorContext, slug: string): Promise<ContentTypeView> {
     const view = this.view(await this.access.policy(), actor, slug);
     if (view === undefined) {
-      throw new NotFoundException({
-        errorCode: CONTENT_TYPES_ERROR_CODES.NOT_FOUND,
-        message: CONTENT_TYPES_ERROR_MESSAGES.NOT_FOUND,
-      });
+      throw contentTypeNotFound();
     }
     return view;
   }
@@ -72,10 +74,15 @@ export class ContentTypesService {
         FULL_CATALOG_PERMISSION.subject,
       )
     ) {
-      return contentTypeView(type, catalog, FULL_VISIBILITY);
+      return contentTypeView(type, catalog, FULL_VISIBILITY, VIEW_VOCABULARY);
     }
     if (!evaluator.can(actor, PermissionAction.read, slug)) return undefined;
     const readable = evaluator.fieldsFor(actor, slug).readable;
-    return contentTypeView(type, catalog, recordReadAccess(actor, readable));
+    return contentTypeView(
+      type,
+      catalog,
+      recordReadAccess(actor, readable),
+      VIEW_VOCABULARY,
+    );
   }
 }

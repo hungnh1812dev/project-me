@@ -287,6 +287,34 @@ Only adapters call `prismaTxOf(unit)`. `unitOfWorkFromPrismaTx(tx)` is a
 transitional bridge for callers that still hold a Prisma `tx` (removed in
 CR-cl-1). The content (Kysely) runner arrives in CR-ce-2.
 
+### Module layout (ADR 0006)
+
+A migrated module (listed in `MIGRATED_MODULES`,
+`src/architecture/layer-rules.constants.ts`) keeps only `<Module>.module.ts`,
+`index.ts` and the layer folders `domain/`, `application/`, `adapters/`,
+`http/` (plus `cli/`, `jobs/` where it has them). Import rules per layer are
+in `LAYER_RULES`; `layers.architecture.spec.ts` enforces them. Checklist,
+as the content-types pilot (CR-hc-2) used it:
+
+1. Moves first, edits second (a separate commit when the diff is large):
+   `git mv` each file to its layer folder with the ADR 0008 name
+   (`<Name>.<function>.ts`), then fix import paths.
+2. Splits: Prisma enums become domain constants; errors thrown by rules
+   become `DomainError` in `domain/<Module>.errors.ts` (same status, code,
+   message); framework and Prisma/Kysely code leaves `domain/` and
+   `application/` (ports in `application/`, implementations in `adapters/`).
+3. A value from another module's facade is not allowed in `domain/` (only
+   `import type` and the names in `DOMAIN_CROSS_MODULE_HELPERS`): the
+   application layer passes it in. Put `import type` and value imports from
+   one facade in separate statements; the guard reads inline `type` names as
+   values.
+4. Add the module to `MIGRATED_MODULES`; fix every listed consumer's import
+   of it or add a `KNOWN_LAYER_VIOLATIONS` entry naming the removing task.
+5. Update `src/architecture/source-paths.constants.ts` for pinned paths,
+   the module's README section and `docs/modules/*.md`.
+6. Specs: unit specs sit next to their file; integration specs change import
+   paths only. Run `pnpm test:unit`, then the module's integration specs.
+
 ### Rate limits (T10)
 
 Fixed windows, per resolved client IP and, for login, per email. Each module
@@ -665,6 +693,13 @@ the conditions DSL compiler and the save-time validators T17/T19 call.
 Routes opt in with `@UseGuards(JwtAuthGuard, PermissionGuard)` and
 `@RequirePermission(...)`. `tv`/`pv` revocation goes through the in-process
 `VersionCache` (5 s TTL, one replica; swap it before scaling out).
+Layout: `http/` (controller, routes), `application/` (`ContentTypes.service`,
+`FULL_CATALOG_PERMISSION`), `domain/` (`ContentTypeView.rules`, the
+`contentTypeNotFound()` `DomainError`). The view rules take the access
+values they need (`CONDITION_SYSTEM_FIELDS`, `joinFieldPath`) as a
+`ViewVocabulary` from the service, because `domain/` imports only types and
+`isComponentField` from other modules.
+
 Rules, the default role matrix, the DSL and the revocation flow: [docs/modules/access-control.md](../../docs/modules/access-control.md).
 
 ## Content types

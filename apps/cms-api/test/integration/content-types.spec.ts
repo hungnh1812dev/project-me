@@ -9,11 +9,11 @@ import {
 import { seedRolePermissions } from '../../src/modules/access/roles/role-permissions.seed';
 import { ContentRegistryProvider } from '../../src/modules/content-engine/content-registry.provider';
 import { RegistryService } from '../../src/modules/content-engine/registry.service';
-import { CONTENT_TYPES_ERROR_CODES } from '../../src/modules/content-types/content-types.constants';
+import { CONTENT_TYPES_ERROR_CODES } from '../../src/modules/content-types/domain/ContentTypes.errors';
 import type {
   ContentTypeView,
   FieldView,
-} from '../../src/modules/content-types/content-type.view';
+} from '../../src/modules/content-types/domain/ContentTypeView.rules';
 import { hashPassword } from '../../src/modules/identity/password-hasher';
 import { seedSystemRoles } from '../../src/modules/access/roles/system-roles.seed';
 import {
