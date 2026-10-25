@@ -21,7 +21,7 @@ Commands:
 - unit test: `pnpm --filter <name> test` (all: `pnpm test`; cms-api: `test:unit`)
 - integration test: cms-api `pnpm --filter @abyss/cms-api test:integration` (Testcontainers, Docker must run)
 - format: `pnpm exec prettier --write <files>` (check: `pnpm format:check`)
-- dev stack (tier 2): `pnpm dev:stack` - not built yet (task DEV-STACK); until it exists, tier 2 runs on the full stack
+- dev stack (tier 2): `pnpm dev:stack` (stop `pnpm dev:stack:stop`; compose project `abyss-dev`, env from `.localEnv.agent`, vars in `.dev-stack/e2e-vars.sh`); run specs with `E2E_STACK=dev pnpm e2e:spec ...`
 - full stack (tier 3): `SMOKE_E2E=1 pnpm smoke`; kept mode `SMOKE_KEEP=1 SMOKE_E2E=1 pnpm smoke`; `SMOKE_NO_BUILD=1` reuses the last built images (only when no product code changed); stop `docker compose -p abyss-smoke down -v`; serves port 8080
 - e2e single spec: `pnpm e2e:spec <spec relative to apps/e2e> [-g <test name>]` against a running stack (first time: `pnpm --filter @abyss/e2e browsers:install`)
 - run app: dev `pnpm --filter @abyss/cms-admin dev` (5173), `pnpm --filter @abyss/web dev` (5174)

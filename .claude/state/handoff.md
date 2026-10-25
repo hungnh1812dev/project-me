@@ -4,6 +4,7 @@ Updated: 2026-10-25 after trim (phase R4 closed and archived; finished R-phase l
 ## In progress / next
 - CR-hc-2 committed f252559; CR1 checkpoint passed (user, 2026-10-25). Health spec lint fix committed f88242c. CR-ce-1 committed 3e58fe8 (includes cli/generate.spec.ts and registry.service.spec.ts import paths). CR-ce-2 committed 5ed2ff5 (security and qc pass). Next: CR-dc-1. Follow-ups: MigrationDb.adapter pool silences idle-connection errors without logging (builder note) · password.spec.ts timing-ratio test flaky under load (identity, qc run 1) -> user decides on the limit.
 - CR-dc-1 documents domain/ and http/ moves - committed 0228f1e (board: qc pass, security pass). User (2026-10-25): accepted as done; no builder for it. Working tree had no staged or modified product files at the state check.
+- DEV-STACK `pnpm dev:stack` for tier 2 - awaiting qc-cli tier 2 and commit; next: CR-dc-2
 - CR-gq-1 graphql http moves - reset to todo (user, 2026-10-25); no working-tree changes existed.
 - Bookkeeping (user, 2026-10-25): conventions.md and handoff.md changes (trim plus CR lines for committed work) go in one separate bookkeeping commit, after user approval.
 - Planner REVISE job (user, 2026-10-25): see "## Planner job: REVISE CR (2026-10-25)" below.
@@ -65,7 +66,8 @@ User answers to planner questions (2026-10-25), recorded for the revision:
 - Q-R2: files under 30 lines allowed for Nest entry points (guard, resolver, middleware, job) and for a single adapter that its layer forces into its own file.
 - Q-R3: no ports for library calls without I/O (argon2, jsonwebtoken, otplib, node:crypto). Planner aligns ADR 0006 §1 ("crypto and library wrappers" in adapters/) with this.
 - Q-R4: blanket approval for exactly the whole-file deletions listed under "Merged away" in each CR task. Other deletions still need approval.
-Revision approval: pending (user).
+Revision approved (user, 2026-10-25). Commits: 505aff8 (planner revision + ADRs 0006-0008 + admin-navigation), e249f30 (state bookkeeping).
+DEV-STACK scope (user approved with step 3c, 2026-10-25): core-builder may also touch apps/e2e (README, e2e-spec.sh, runner files), the .env.example files of cms-admin and web (key names only), and the state files it names (project.md, conventions.md, handoff.md). Stack choice: compose project `abyss-dev`; `E2E_STACK=dev|smoke` selects the stack in e2e-spec.sh. Env only from `.localEnv.agent`. Never touch abyss-smoke.
 
 ## Direct requests
 ### ET expired API tokens are not editable (planner, 2026-10-25)
@@ -97,3 +99,4 @@ Revision approval: pending (user).
 - Browser walk gaps before a release (R3 coverage: authenticated pages and nav labels, date display, checkbox/switch/radio visuals, mobile dialog, Esc in login challenge and TOTP setup, read-only role variants, console checks on list pages) -> user, before release.
 - conventions.md ~14.9 KB, over the ~10 KB limit. User decision: keep the Tooling and smoke/e2e procedures in conventions for now; revisit when a docs page covers them -> user.
 - e2e flakiness on a shared stack (two-factor and content-presence specs) -> run on a fresh stack; spec isolation unscheduled.
+- DEV-STACK: a stale `.smoke/e2e-vars.sh` (no smoke stack running) makes `pnpm e2e:spec` ask for `E2E_STACK`; `SMOKE_E2E=1 pnpm smoke` start-up time was not measured (needs full image builds) -> qc if wanted.

@@ -16,6 +16,8 @@
     "format:check": "turbo run build --filter=@abyss/base-config && prettier --check .",
     "smoke": "bash scripts/smoke.sh",
     "e2e:spec": "bash scripts/e2e-spec.sh",
+    "dev:stack": "bash scripts/dev-stack.sh start",
+    "dev:stack:stop": "bash scripts/dev-stack.sh stop",
     "start:dev": "pnpm --parallel --filter @abyss/cms-api --filter @abyss/cms-admin --filter @abyss/web dev",
     "start:cms-admin": "pnpm --filter @abyss/cms-admin dev",
     "start:web": "pnpm --filter @abyss/web dev",

@@ -49,6 +49,30 @@ docker compose -p abyss-smoke down -v           # when done
 answers. The kept stack keeps its data and rate-limit counters between runs.
 `SMOKE_NO_BUILD=1` reuses the last built images when only tests changed.
 
+## Run single specs against the dev stack (tier 2)
+
+No image build: `pnpm dev:stack` starts Postgres and Mailpit from ready images
+(`docker-compose.dev.yml`, compose project `abyss-dev`) and runs cms-api,
+cms-admin and web in dev mode on the host. It migrates, seeds the owner and the
+e2e accounts (same helpers as the smoke stack) and writes `.dev-stack/e2e-vars.sh`.
+Start-up is about 25-35 s.
+
+```sh
+pnpm dev:stack                                       # once
+E2E_STACK=dev pnpm e2e:spec tests/admin-auth.spec.ts # seconds
+pnpm dev:stack:stop                                  # apps stopped, containers and volumes removed
+```
+
+- `E2E_STACK=dev|smoke` picks the stack; without it the one whose vars file
+  exists is used, and with both present `e2e:spec` asks for `E2E_STACK`.
+- Env comes only from the git-ignored `.localEnv.agent` (created with generated
+  dev-only values; key names in [`.env.example`](.env.example)). Logs: `.dev-stack/*.log`.
+- Admin `http://admin.domain.localhost:5173`, web `http://domain.localhost:5174`
+  (`/api` proxied to cms-api on 3100), Mailpit `http://mail.domain.localhost:8125`.
+  It never touches `abyss-smoke` and can run next to it.
+- Tier 3 only: CORS/cookie flags, headers and Traefik routing differ from
+  production here; use the smoke stack for those.
+
 ## Run against the CI stack
 
 e2e runs locally only; CI does not run it.
