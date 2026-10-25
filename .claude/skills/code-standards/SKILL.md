@@ -74,7 +74,7 @@ Code is reviewed by people reading a diff. Split by layer (where the project has
 
 - **One file per use case or entry point.** A use case, controller, job, CLI command or adapter is one file, with the types, constants and small helpers only it uses kept inside it.
 - **Per module layer: at most one ports file and one constants file.** Shared types of a layer live in its main rules or entity file. No file that holds only types, only one constant group, or only a re-export.
-- **A port only when it earns it:** the layer rules forbid the I/O in the caller (for example Prisma in `application/`), or there is a second real implementation (including a fake that a spec uses). A one-call library wrapper stays inside the adapter that uses it. One adapter per aggregate and storage technology, not one per query.
+- **A port only when it earns it:** the layer rules forbid the I/O in the caller (for example a database client in the use-case layer), or there is a second real implementation (including a fake that a spec uses). A one-call library wrapper stays inside the adapter that uses it. One adapter per aggregate and storage technology, not one per query.
 - **A new file only when** it is a separate use case or entry point, it has its own spec, the file would pass 300 lines, or a layer rule requires the split.
 - **No file under 30 lines** except `index.ts`, the module wiring file, and a file the framework or a layer rule requires. Merge it into its nearest neighbour in the same layer.
 - **Check:** adding one endpoint or use case touches at most 6 files (handler, request schema, use case, rule, repository method, wiring). If the plan needs more, merge before building.

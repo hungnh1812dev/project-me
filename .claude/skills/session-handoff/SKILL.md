@@ -37,7 +37,11 @@ Scopes:
 High-risk paths: <paths where any change gets a security review before commit>
 Stack: <one line per scope>
 Commands:
-- install / build / type-check / unit test / format / e2e / dependency audit / run app: <command each, or n/a>
+- install / build / type-check / unit test / integration test / format / dependency audit / run app: <command each, or n/a>
+- dev stack (tier 2, `test-tiers`): <start / stop command and the URLs it serves, or n/a>
+- full stack (tier 3): <start, kept-mode start, stop command and URLs, or n/a>
+- e2e single spec: <command against a running stack, or n/a>
+Tier 3 also when: <project paths or areas that need the full stack beyond the defaults in `test-tiers`, or none>
 E2E tests: <dir and runner, or none>
 Docs to keep current: <READMEs, API docs, ADR dir, env example file>
 Security rules: <docs with this project's authz / audit / data rules, or none>
