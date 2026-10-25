@@ -6,8 +6,8 @@ import {
   valueFromASTUntyped,
 } from 'graphql';
 
-import { VALUE_PATTERNS } from '../../content-engine';
-import { SCALAR_NAMES } from '../graphql.constants';
+import { VALUE_PATTERNS } from '../../../content-engine';
+import { SCALAR_NAMES } from '../../application/Graphql.constants';
 
 /** Length of `YYYY-MM-DD`. */
 const DATE_LENGTH = 10;

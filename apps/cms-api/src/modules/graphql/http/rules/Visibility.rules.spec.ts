@@ -6,7 +6,7 @@ import {
   validate,
 } from 'graphql';
 
-import { ContentTypeVisibilityRule } from './visibility.rule';
+import { ContentTypeVisibilityRule } from './Visibility.rules';
 
 const field = (slug: string) => ({
   type: GraphQLString,

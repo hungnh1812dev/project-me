@@ -11,23 +11,26 @@ import {
 
 import { type IAppConfig } from '../../config/app-config';
 import { APP_CONFIG } from '../../config/config.constants';
-import { AccessPolicyService, type ActorContext } from '../access';
-import { PermissionAction } from '../../generated/prisma/client';
-import type { GraphqlContext } from './document.resolvers';
+import {
+  AccessPolicyService,
+  PermissionAction,
+  type ActorContext,
+} from '../access';
+import type { GraphqlContext } from './http/Document.resolver';
 import {
   type FormattedGraphqlError,
   formatGraphqlError,
   type GraphqlPhase,
-} from './error-format';
+} from './http/GraphqlError.filter';
 import {
   GRAPHQL_ERROR_CODES,
   GRAPHQL_LIMIT_MESSAGES,
   GRAPHQL_LIMITS,
   TOKEN_LIMIT_PATTERN,
-} from './graphql.constants';
+} from './application/Graphql.constants';
 import { GraphqlSchemaProvider } from './graphql.schema.provider';
-import { findLimitViolations } from './rules/limits.rules';
-import { ContentTypeVisibilityRule } from './rules/visibility.rule';
+import { findLimitViolations } from './http/rules/Limits.rules';
+import { ContentTypeVisibilityRule } from './http/rules/Visibility.rules';
 
 export interface GraphqlRequest {
   query: string;

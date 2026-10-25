@@ -6,7 +6,7 @@ import { HttpExceptionFilter } from '../common/filters/http-exception.filter';
 import { DomainError } from '../common/errors/Domain.errors';
 import { DOMAIN_ERROR_KINDS } from '../common/errors/DomainErrorKinds.constants';
 import { asItemError } from '../modules/documents/bulk-errors';
-import { formatGraphqlError } from '../modules/graphql/error-format';
+import { formatGraphqlError } from '../modules/graphql/http/GraphqlError.filter';
 
 const DETAILS = { field: 'slug' };
 const error = new DomainError({

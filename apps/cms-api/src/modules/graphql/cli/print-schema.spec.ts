@@ -42,17 +42,17 @@ describe('print-schema', () => {
   });
 
   it('--shouldCheckOnly reports missing and stale files and writes nothing', async () => {
-    expect(await printSchemaFile({ schemasDir, sdlFile, shouldCheckOnly: true })).toEqual(
-      {
-        status: 'missing',
-      },
-    );
+    expect(
+      await printSchemaFile({ schemasDir, sdlFile, shouldCheckOnly: true }),
+    ).toEqual({
+      status: 'missing',
+    });
     await writeFile(sdlFile, 'type Query { stale: Int }\n');
-    expect(await printSchemaFile({ schemasDir, sdlFile, shouldCheckOnly: true })).toEqual(
-      {
-        status: 'stale',
-      },
-    );
+    expect(
+      await printSchemaFile({ schemasDir, sdlFile, shouldCheckOnly: true }),
+    ).toEqual({
+      status: 'stale',
+    });
     expect(await readFile(sdlFile, 'utf8')).toBe('type Query { stale: Int }\n');
   });
 

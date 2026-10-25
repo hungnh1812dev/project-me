@@ -6,8 +6,8 @@ import { printSchema } from 'graphql';
 
 import { DEFAULT_CONTENT_PATHS } from '../../content-engine';
 import { loadDefinitions } from '../../content-engine';
-import { GRAPHQL_SDL_FILE_NAME } from '../graphql.constants';
-import { buildGraphqlSchema } from '../schema/schema.builder';
+import { GRAPHQL_SDL_FILE_NAME } from '../application/Graphql.constants';
+import { buildGraphqlSchema } from '../http/schema/SchemaBuilder.rules';
 
 const UTF8 = 'utf8';
 

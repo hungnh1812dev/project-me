@@ -7,7 +7,7 @@ import { GraphQLError } from 'graphql';
 
 import { Logger } from '@nestjs/common';
 
-import { formatGraphqlError } from './error-format';
+import { formatGraphqlError } from './GraphqlError.filter';
 
 const options = {
   phase: 'execute',

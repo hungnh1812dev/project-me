@@ -1,7 +1,7 @@
-import type { CONTENT_STATUSES } from '../content-engine';
-import { normalizeListQuery } from '../documents';
-import type { ListDocumentsQuery } from '../documents';
-import { filterToClauses, sortToKeys } from './schema/filter-inputs';
+import type { CONTENT_STATUSES } from '../../content-engine';
+import { normalizeListQuery } from '../../documents';
+import type { ListDocumentsQuery } from '../../documents';
+import { filterToClauses, sortToKeys } from './schema/FilterInputs.rules';
 
 /** The arguments of a `<x>List` root field, as graphql-js coerced them. */
 type ContentStatus = (typeof CONTENT_STATUSES)[number];

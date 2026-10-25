@@ -1,5 +1,5 @@
-export { GraphqlModule } from './graphql.module';
+export { GraphqlModule } from './Graphql.module';
 export {
   GRAPHQL_BODY_LIMIT_MOUNT_PATH,
   graphqlBodyLimit,
-} from './graphql-body-limit.middleware';
+} from './http/GraphqlBodyLimit.middleware';

@@ -1,17 +1,20 @@
 import { HttpStatus } from '@nestjs/common';
 import type { NextFunction, Response } from 'express';
 
-import { API_PREFIX } from '../../common/constants/api.constants';
-import { GRAPHQL_ROUTE } from './graphql.routes';
-import { NO_STORE_HEADER } from '../../common/constants/http.constants';
-import { ERROR_CODES } from '../../common/constants/error.constants';
+import { API_PREFIX } from '../../../common/constants/api.constants';
+import { NO_STORE_HEADER } from '../../../common/constants/http.constants';
+import { ERROR_CODES } from '../../../common/constants/error.constants';
 import {
   closeAfterAnswer,
   createByteCounter,
   declaresBodyOver,
-} from '../../common/middleware/byte-limit';
-import type { RequestWithId } from '../../common/middleware/request-id.middleware';
-import { GRAPHQL_LIMIT_MESSAGES, GRAPHQL_LIMITS } from './graphql.constants';
+} from '../../../common/middleware/byte-limit';
+import type { RequestWithId } from '../../../common/middleware/request-id.middleware';
+import {
+  GRAPHQL_LIMIT_MESSAGES,
+  GRAPHQL_LIMITS,
+  GRAPHQL_ROUTE,
+} from '../application/Graphql.constants';
 
 /** Where `app.setup.ts` mounts the limit: before Nest's JSON parser, so never via `configure(consumer)`. */
 export const GRAPHQL_BODY_LIMIT_MOUNT_PATH = `/${API_PREFIX}/${GRAPHQL_ROUTE}`;

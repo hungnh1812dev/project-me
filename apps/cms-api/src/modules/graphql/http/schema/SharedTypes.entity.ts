@@ -7,9 +7,9 @@ import {
   GraphQLString,
 } from 'graphql';
 
-import { CONTENT_STATUSES } from '../../content-engine';
-import { SHARED_TYPE_NAMES } from '../graphql.constants';
-import { DateTimeScalar } from './scalars';
+import { CONTENT_STATUSES } from '../../../content-engine';
+import { SHARED_TYPE_NAMES } from '../../application/Graphql.constants';
+import { DateTimeScalar } from './Scalars.rules';
 
 export const DocumentStatusEnum = new GraphQLEnumType({
   name: SHARED_TYPE_NAMES.DOCUMENT_STATUS,

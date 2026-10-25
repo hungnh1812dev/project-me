@@ -4,13 +4,13 @@ import { GraphQLObjectType, GraphQLSchema, GraphQLString } from 'graphql';
 import { ContentRegistryProvider } from '../content-engine';
 import type { ContentTypeDefinition } from '../content-engine';
 import { DocumentsQueryService } from '../documents';
-import { attachDocumentResolvers } from './document.resolvers';
+import { attachDocumentResolvers } from './http/Document.resolver';
 import {
   GRAPHQL_LIMITS,
   NO_READABLE_TYPES_FIELD,
   QUERY_TYPE_NAME,
-} from './graphql.constants';
-import { buildGraphqlSchema } from './schema/schema.builder';
+} from './application/Graphql.constants';
+import { buildGraphqlSchema } from './http/schema/SchemaBuilder.rules';
 
 const KEY_SEPARATOR = '\u0000';
 

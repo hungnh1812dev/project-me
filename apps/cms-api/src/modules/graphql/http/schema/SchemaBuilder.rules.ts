@@ -20,8 +20,8 @@ import {
   RECORD_SYSTEM_FIELDS,
   type RecordSystemField,
   type SerializedComponent,
-} from '../../access';
-import { PAGINATION } from '../../../common/http/request-parsing';
+} from '../../../access';
+import { PAGINATION } from '../../../../common/http/request-parsing';
 import {
   type ComponentFieldDefinition,
   type ContentTypeDefinition,
@@ -30,9 +30,12 @@ import {
   type GraphqlOutputName,
   isComponentField,
   type ScalarFieldType,
-} from '../../content-engine';
-import { DEFAULT_DOCUMENT_STATUS, SYSTEM_FIELD_KINDS } from '../../documents';
-import { queryKindOfField } from '../../documents';
+} from '../../../content-engine';
+import {
+  DEFAULT_DOCUMENT_STATUS,
+  SYSTEM_FIELD_KINDS,
+} from '../../../documents';
+import { queryKindOfField } from '../../../documents';
 import {
   COMPONENT_UID_FIELD,
   GRAPHQL_SCHEMA_ERROR_MESSAGES,
@@ -40,27 +43,27 @@ import {
   ROOT_FIELD_EXTENSION_KEY,
   ROOT_OPERATIONS,
   type RootFieldExtension,
-} from '../graphql.constants';
-import { FILTER_INPUTS } from './filter-inputs';
+} from '../../application/Graphql.constants';
+import { FILTER_INPUTS } from './FilterInputs.rules';
 import {
   DateScalar,
   DateTimeScalar,
   DecimalScalar,
   JsonScalar,
-} from './scalars';
+} from './Scalars.rules';
 import {
   DocumentStatusEnum,
   MediaType,
   PageMetaType,
   SortDirectionEnum,
-} from './shared-types';
+} from './SharedTypes.entity';
 import {
   componentTypeName,
   GraphqlNameClashError,
   NameClaims,
   newTypeNameClaims,
   rootNamesOf,
-} from './type-names';
+} from './TypeNames.rules';
 
 export { GraphqlNameClashError };
 

@@ -1,13 +1,13 @@
 import { NotFoundException } from '@nestjs/common';
 
-import { DomainError } from '../../common/errors/Domain.errors';
-import { DOMAIN_ERROR_KINDS } from '../../common/errors/DomainErrorKinds.constants';
+import { DomainError } from '../../../common/errors/Domain.errors';
+import { DOMAIN_ERROR_KINDS } from '../../../common/errors/DomainErrorKinds.constants';
 import { execute, parse } from 'graphql';
 
-import { type ActorContext } from '../access';
-import type { DocumentsQueryService } from '../documents';
-import { attachDocumentResolvers } from './document.resolvers';
-import { buildGraphqlSchema } from './schema/schema.builder';
+import { type ActorContext } from '../../access';
+import type { DocumentsQueryService } from '../../documents';
+import { attachDocumentResolvers } from './Document.resolver';
+import { buildGraphqlSchema } from './schema/SchemaBuilder.rules';
 
 const actor = { kind: 'anonymous' } as unknown as ActorContext;
 const ID = '0190a4f0-0000-7000-8000-000000000001';

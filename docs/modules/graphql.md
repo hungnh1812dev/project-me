@@ -31,7 +31,7 @@ operationName? }`, at most `GRAPHQL_LIMITS.MAX_BODY_BYTES`; an array body
    413 for a body over the limit is the exception: it uses the GraphQL
    error shape (`{ errors: [{ message, extensions: { code:
 "PAYLOAD_TOO_LARGE", requestId } }] }`) and is sent by a middleware
-   (`graphql-body-limit.middleware.ts`, mounted at its exported `GRAPHQL_BODY_LIMIT_MOUNT_PATH` in `app.setup.ts`, never via `configure(consumer)`; byte checks shared in `common/middleware/byte-limit.ts`) mounted before Nest's JSON parser,
+   (`http/GraphqlBodyLimit.middleware.ts`, mounted at its exported `GRAPHQL_BODY_LIMIT_MOUNT_PATH` in `app.setup.ts`, never via `configure(consumer)`; byte checks shared in `common/middleware/byte-limit.ts`) mounted before Nest's JSON parser,
    from `Content-Length` or by counting a chunked body.
    There is no `PermissionGuard`: the subject differs per root field.
 2. **Parse** with `maxTokens = GRAPHQL_LIMITS.MAX_TOKENS`; the parser's
@@ -230,7 +230,7 @@ type Query {
 Policy checks stay in `access` (SPEC §10); the GraphQL module never compares
 role slugs.
 
-## Limits (`graphql.constants.ts`, named constants, provisional values Q-G4)
+## Limits (`application/Graphql.constants.ts`, named constants, provisional values Q-G4)
 
 | Constant          | Value  | Why                                                               |
 | ----------------- | ------ | ----------------------------------------------------------------- |
@@ -273,7 +273,7 @@ GraphQL-shaped once the request reaches step 2:
   (`FIELD_NOT_READABLE`, `FIELD_UNKNOWN`, `BAD_REQUEST`,
   `ACCESS_INVALID_REQUEST`, `FORBIDDEN`, `INTERNAL_SERVER_ERROR`) plus
   `GRAPHQL_PARSE_FAILED`, `GRAPHQL_VALIDATION_FAILED`,
-  `GRAPHQL_LIMIT_EXCEEDED` (in `GRAPHQL_ERROR_CODES`, `graphql.constants.ts`).
+  `GRAPHQL_LIMIT_EXCEEDED` (in `GRAPHQL_ERROR_CODES`, `application/Graphql.constants.ts`).
 - `details` only for client errors and never carries a submitted value
   (same rule as the REST filter). 5xx-class errors: generic message, no
   `details`, logged server-side with the request id.
@@ -294,21 +294,27 @@ GraphQL-shaped once the request reaches step 2:
 
 ```
 apps/cms-api/src/modules/graphql/
-├── graphql.module.ts           # imports AccessModule, DocumentsModule (exports DocumentsQueryService), ContentEngineModule
-├── graphql.constants.ts        # GRAPHQL_LIMITS, shared type names
-├── graphql.controller.ts       # POST GRAPHQL_ROUTE, guards + throttle, body checks
-├── graphql.executor.ts         # parse -> validate (rules) -> execute -> format
-├── schema/
-│   ├── schema.builder.ts       # buildGraphqlSchema(definitions): pure, cached by the module; scalar field output types come from the field-type registry (`graphqlOutput`)
-│   ├── shared-types.ts         # DocumentStatus, SortDirection, PageMeta, Media
-│   ├── type-names.ts           # naming + collision checks
-│   ├── scalars.ts              # Date, DateTime, Decimal, JSON
-│   └── filter-inputs.ts        # kind -> filter input, args -> FilterClause/SortKey
-├── rules/
-│   ├── limits.rules.ts         # depth, root fields, field nodes
-│   └── visibility.rule.ts      # hidden content type = unknown field
-├── document.resolvers.ts       # root resolvers -> DocumentsQueryService
-├── error-format.ts             # GraphQLError -> extensions { code, details?, requestId }; Nest exceptions and DomainError read via common describeError
+├── Graphql.module.ts           # imports AccessModule, DocumentsModule (exports DocumentsQueryService), ContentEngineModule
+├── index.ts
+├── graphql.executor.ts         # parse -> validate (rules) -> execute -> format (moves to application/ in CR-gq-2)
+├── graphql.schema.provider.ts  # per-readable-slug-set schema cache (moves in CR-gq-2)
+├── application/
+│   └── Graphql.constants.ts    # GRAPHQL_LIMITS, GRAPHQL_ROUTE, shared type names
+├── http/
+│   ├── Graphql.controller.ts   # POST GRAPHQL_ROUTE, guards + throttle, body checks
+│   ├── GraphqlBodyLimit.middleware.ts
+│   ├── Document.resolver.ts    # root resolvers -> DocumentsQueryService
+│   ├── ListArguments.rules.ts  # list arguments -> ListDocumentsQuery
+│   ├── GraphqlError.filter.ts  # GraphQLError -> extensions { code, details?, requestId }; Nest exceptions and DomainError read via common describeError
+│   ├── rules/
+│   │   ├── Limits.rules.ts     # depth, root fields, field nodes
+│   │   └── Visibility.rules.ts # hidden content type = unknown field
+│   └── schema/
+│       ├── SchemaBuilder.rules.ts  # buildGraphqlSchema(definitions): pure, cached by the module; scalar field output types come from the field-type registry (`graphqlOutput`)
+│       ├── SharedTypes.entity.ts   # DocumentStatus, SortDirection, PageMeta, Media
+│       ├── TypeNames.rules.ts      # naming + collision checks
+│       ├── Scalars.rules.ts        # Date, DateTime, Decimal, JSON
+│       └── FilterInputs.rules.ts   # kind -> filter input, args -> FilterClause/SortKey
 └── cli/print-schema.ts         # SDL from content/schemas (no DB), --check
 ```
 
@@ -358,7 +364,7 @@ Architecture test (like `record-serializer.architecture.spec.ts`): files in
 - Each root field carries `extensions.abyss = { slug, operation }` with
   `operation` one of `item | list | single`, so GQ2 attaches resolvers without
   parsing names.
-- `filter-inputs.ts` also exports `filterToClauses` / `sortToKeys` (args ->
+- `http/schema/FilterInputs.rules.ts` also exports `filterToClauses` / `sortToKeys` (args ->
   REST `FilterClause[]` / `SortKey[]`). `page` / `pageSize` range checks and
   the default sort (`SORT_DEFAULT` when `sort` is empty) are left to GQ2.
 - The filterable/sortable rule is `queryKindOfField`
@@ -381,7 +387,7 @@ Architecture test (like `record-serializer.architecture.spec.ts`): files in
   is the full owner schema, for tooling.
 - Resolvers are attached to the built schema (`attachDocumentResolvers`)
   through `extensions.abyss`; the schema is built once from the registry in
-  `GraphqlSchemaProvider`. `toListQuery` (`list-arguments.ts`) maps the
+  `GraphqlSchemaProvider`. `toListQuery` (`http/ListArguments.rules.ts`) maps the
   arguments to the REST shapes and calls `normalizeListQuery` (documents),
   the same range check `parseListQuery` runs for REST. `QueryGuard` stays in
   the service.
@@ -397,7 +403,7 @@ Architecture test (like `record-serializer.architecture.spec.ts`): files in
 
 ## Implementation notes (GQ3)
 
-- `rules/limits.rules.ts`: `MaxDepthRule`, `MaxRootFieldsRule`,
+- `http/rules/Limits.rules.ts`: `MaxDepthRule`, `MaxRootFieldsRule`,
   `MaxFieldNodesRule`. One memoized walk per operation expands fragments and
   inline fragments (each fragment is measured once, so fragments that spread
   each other many times stay linear; a cycle counts as empty and is reported
@@ -406,6 +412,6 @@ Architecture test (like `record-serializer.architecture.spec.ts`): files in
   introspection roots) are left out of all three counts; production refuses
   them in validation.
 - Every limit error carries `extensions.code = GRAPHQL_LIMIT_EXCEEDED`
-  (`error-format.ts` keeps it); messages never echo the query.
+  (`http/GraphqlError.filter.ts` keeps it); messages never echo the query.
 - The body cap counts bytes on the wire. A gzip-compressed body is counted
   compressed; the global 100 KB parser limit still bounds the inflated size.

@@ -13,22 +13,22 @@ import {
 import type { Response } from 'express';
 import { z } from 'zod';
 
-import { GRAPHQL_ROUTE } from './graphql.routes';
-import { NO_STORE_HEADER } from '../../common/constants/http.constants';
-import { ERROR_CODES } from '../../common/constants/error.constants';
-import { Throttle } from '../../common/guards/throttle.guard';
-import type { RequestWithId } from '../../common/middleware/request-id.middleware';
-import { parseRequest } from '../../common/http/request-parsing';
+import { NO_STORE_HEADER } from '../../../common/constants/http.constants';
+import { ERROR_CODES } from '../../../common/constants/error.constants';
+import { Throttle } from '../../../common/guards/throttle.guard';
+import type { RequestWithId } from '../../../common/middleware/request-id.middleware';
+import { parseRequest } from '../../../common/http/request-parsing';
 import {
   DocumentAuthGuard,
   type DocumentRequest,
-} from '../access/document-auth';
-import { DOCUMENTS_RATE_LIMIT_POLICIES } from '../documents';
+} from '../../access/document-auth';
+import { DOCUMENTS_RATE_LIMIT_POLICIES } from '../../documents';
 import {
   GRAPHQL_MESSAGES,
   GRAPHQL_REQUEST_MEDIA_TYPE,
-} from './graphql.constants';
-import { GraphqlExecutor, type GraphqlResponse } from './graphql.executor';
+  GRAPHQL_ROUTE,
+} from '../application/Graphql.constants';
+import { GraphqlExecutor, type GraphqlResponse } from '../graphql.executor';
 
 /** Unknown keys (e.g. `extensions`) are ignored; an array body is not an object. */
 const requestSchema = z.object({

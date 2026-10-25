@@ -143,3 +143,6 @@ export const ROOT_UNKNOWN_FIELD_PATTERN = new RegExp(
 
 /** Query field of the schema of a caller who can read no content type. */
 export const NO_READABLE_TYPES_FIELD = '_none';
+
+/** SPEC D18 GraphQL read API: one POST endpoint, queries only. */
+export const GRAPHQL_ROUTE = 'graphql';

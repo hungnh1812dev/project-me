@@ -11,15 +11,15 @@ import {
   GraphQLString,
 } from 'graphql';
 
-import { type ConditionValueKind } from '../../access';
-import type { FilterClause, SortDirection, SortKey } from '../../documents';
+import { type ConditionValueKind } from '../../../access';
+import type { FilterClause, SortDirection, SortKey } from '../../../documents';
 import {
   FILTER_OPERATORS,
   type FilterOperator,
   OPERATORS_BY_KIND,
-} from '../../documents';
-import { FILTER_INPUT_NAMES } from '../graphql.constants';
-import { DateScalar, DateTimeScalar, DecimalScalar } from './scalars';
+} from '../../../documents';
+import { FILTER_INPUT_NAMES } from '../../application/Graphql.constants';
+import { DateScalar, DateTimeScalar, DecimalScalar } from './Scalars.rules';
 
 /** GraphQL type of the value each kind compares with. */
 const OPERAND_TYPES: Readonly<

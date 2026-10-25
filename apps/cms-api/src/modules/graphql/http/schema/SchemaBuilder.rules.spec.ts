@@ -12,15 +12,15 @@ import {
   validate,
 } from 'graphql';
 
-import type { ContentTypeDefinition } from '../../content-engine';
-import { DEFAULT_CONTENT_PATHS } from '../../content-engine';
-import { loadDefinitions } from '../../content-engine';
+import type { ContentTypeDefinition } from '../../../content-engine';
+import { DEFAULT_CONTENT_PATHS } from '../../../content-engine';
+import { loadDefinitions } from '../../../content-engine';
 import {
   GRAPHQL_SDL_FILE_NAME,
   ROOT_FIELD_EXTENSION_KEY,
-} from '../graphql.constants';
-import { buildGraphqlSchema, GraphqlSchemaError } from './schema.builder';
-import { GraphqlNameClashError } from './type-names';
+} from '../../application/Graphql.constants';
+import { buildGraphqlSchema, GraphqlSchemaError } from './SchemaBuilder.rules';
+import { GraphqlNameClashError } from './TypeNames.rules';
 
 const ALL_TYPES: ContentTypeDefinition = {
   slug: 'all-types',

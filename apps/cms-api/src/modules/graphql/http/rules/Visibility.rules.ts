@@ -3,8 +3,8 @@ import { GraphQLError, type ASTVisitor, type ValidationContext } from 'graphql';
 import {
   GRAPHQL_MESSAGES,
   ROOT_FIELD_EXTENSION_KEY,
-} from '../graphql.constants';
-import type { RootFieldExtension } from '../graphql.constants';
+} from '../../application/Graphql.constants';
+import type { RootFieldExtension } from '../../application/Graphql.constants';
 
 /**
  * Hidden = unknown (SPEC D18, as in the REST content types API): a root field of a content

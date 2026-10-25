@@ -772,7 +772,7 @@ with the REST `errorCode` values plus `GRAPHQL_PARSE_FAILED`,
 `GRAPHQL_VALIDATION_FAILED` and `GRAPHQL_LIMIT_EXCEEDED`; 400 before
 execution, 200 after.
 
-**Limits** (`GRAPHQL_LIMITS` in `graphql.constants.ts`):
+**Limits** (`GRAPHQL_LIMITS` in `application/Graphql.constants.ts`):
 
 | Limit           | Value  | Over the limit                                                |
 | --------------- | ------ | ------------------------------------------------------------- |
@@ -783,7 +783,7 @@ execution, 200 after.
 | Selected fields | 500    | 400 `GRAPHQL_LIMIT_EXCEEDED` (after fragment expansion)       |
 
 The body cap is a middleware on the GraphQL path, mounted before Nest's JSON
-parser (`graphql-body-limit.middleware.ts`). The token, depth, root-field and
+parser (`http/GraphqlBodyLimit.middleware.ts`). The token, depth, root-field and
 field-node checks run before the access policy or the schema is loaded, so an
 over-limit query costs no database work. Each operation of a document is
 judged on its own. Dev introspection roots (`__schema`, `__type`) are not

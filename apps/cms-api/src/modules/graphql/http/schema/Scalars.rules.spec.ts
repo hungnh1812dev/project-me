@@ -5,7 +5,7 @@ import {
   DateTimeScalar,
   DecimalScalar,
   JsonScalar,
-} from './scalars';
+} from './Scalars.rules';
 
 describe('scalars', () => {
   it('outputs dates as strings, from a string or a driver Date', () => {

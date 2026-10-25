@@ -3,7 +3,7 @@ import {
   componentTypeName,
   pascalCase,
   rootNamesOf,
-} from './type-names';
+} from './TypeNames.rules';
 
 describe('type names', () => {
   it('converts slugs and field names', () => {

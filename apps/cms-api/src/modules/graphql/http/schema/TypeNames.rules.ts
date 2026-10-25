@@ -6,7 +6,7 @@ import {
   SCALAR_NAMES,
   SHARED_TYPE_NAMES,
   TYPE_SUFFIXES,
-} from '../graphql.constants';
+} from '../../application/Graphql.constants';
 
 /** Two sources generate the same GraphQL name; nothing is renamed to hide it. */
 export class GraphqlNameClashError extends Error {

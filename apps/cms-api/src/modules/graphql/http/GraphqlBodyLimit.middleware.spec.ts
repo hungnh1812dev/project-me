@@ -2,9 +2,9 @@ import { EventEmitter } from 'node:events';
 
 import type { NextFunction, Response } from 'express';
 
-import type { RequestWithId } from '../../common/middleware/request-id.middleware';
-import { GRAPHQL_LIMITS } from './graphql.constants';
-import { graphqlBodyLimit } from './graphql-body-limit.middleware';
+import type { RequestWithId } from '../../../common/middleware/request-id.middleware';
+import { GRAPHQL_LIMITS } from '../application/Graphql.constants';
+import { graphqlBodyLimit } from './GraphqlBodyLimit.middleware';
 
 function fake(method: string, contentLength?: number) {
   const req = Object.assign(new EventEmitter(), {

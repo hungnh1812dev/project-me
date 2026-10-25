@@ -2,7 +2,7 @@ import { type AccessPolicyService, type ActorContext } from '../access';
 import type { IAppConfig } from '../../config/app-config';
 import { GraphqlExecutor } from './graphql.executor';
 import type { GraphqlSchemaProvider } from './graphql.schema.provider';
-import { buildGraphqlSchema } from './schema/schema.builder';
+import { buildGraphqlSchema } from './http/schema/SchemaBuilder.rules';
 
 const schema = buildGraphqlSchema([
   {

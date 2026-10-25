@@ -1,12 +1,12 @@
 import { parse } from 'graphql';
 
-import { GRAPHQL_LIMITS } from '../graphql.constants';
+import { GRAPHQL_LIMITS } from '../../application/Graphql.constants';
 import {
   findLimitViolations,
   MaxDepthRule,
   MaxFieldNodesRule,
   MaxRootFieldsRule,
-} from './limits.rules';
+} from './Limits.rules';
 import {
   validate,
   GraphQLObjectType,

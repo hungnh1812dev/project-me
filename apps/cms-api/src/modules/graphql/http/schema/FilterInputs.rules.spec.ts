@@ -1,5 +1,9 @@
-import { OPERATORS_BY_KIND } from '../../documents';
-import { FILTER_INPUTS, filterToClauses, sortToKeys } from './filter-inputs';
+import { OPERATORS_BY_KIND } from '../../../documents';
+import {
+  FILTER_INPUTS,
+  filterToClauses,
+  sortToKeys,
+} from './FilterInputs.rules';
 
 describe('FILTER_INPUTS', () => {
   it('offers exactly the REST operators of each kind', () => {

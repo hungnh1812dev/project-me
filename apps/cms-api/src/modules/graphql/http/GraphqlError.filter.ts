@@ -4,18 +4,18 @@ import { GraphQLError } from 'graphql';
 import {
   ERROR_CODES,
   INTERNAL_ERROR_MESSAGE,
-} from '../../common/constants/error.constants';
+} from '../../../common/constants/error.constants';
 import {
   describeError,
   isDescribableError,
-} from '../../common/http/describe-http-exception';
+} from '../../../common/http/describe-http-exception';
 import {
   GRAPHQL_ERROR_CODES,
   GRAPHQL_MESSAGES,
   ROOT_UNKNOWN_FIELD_PATTERN,
   SUGGESTION_PATTERN,
   VARIABLE_ERROR_PATTERN,
-} from './graphql.constants';
+} from '../application/Graphql.constants';
 
 /** Where in the request pipeline an error came from. */
 export type GraphqlPhase = 'parse' | 'validate' | 'execute';

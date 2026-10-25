@@ -19,7 +19,7 @@ import {
   GRAPHQL_LIMITS,
   INTROSPECTION_ROOT_FIELDS,
   QUERY_TYPE_NAME,
-} from '../graphql.constants';
+} from '../../application/Graphql.constants';
 
 /** Size of a selection set once fragments are expanded. */
 interface Shape {
