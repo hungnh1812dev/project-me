@@ -220,6 +220,147 @@ Outputs:
 Exit criteria: all packages green; smoke green; qc REGRESSION pass; security-qc PHASE review for the gated splits.
 Tasks: R4-01, R4-02, R4-03, R4-04, R4-05, R4-06, R4-07, R4-08, R4-09, R4-10, R4-11, R4-12, R4-13, R4-14, R4-15, R4-16, R4-17, R4-18, R4-19, R4-20, R4-21, R4-22, R4-23, R4-24, R4-25, R4-26, R4-27, R4-28, R4-29
 
+### Architecture and navigation (CA, CR, DV, SM, FN, MF) — PROPOSED 2026-10-25
+Details in `todo.md` "Architecture and navigation". Designs: ADR 0006 (cms-api layers), ADR 0007 (micro-frontend options), ADR 0008 (file naming), `docs/modules/admin-navigation.md`. Phases CA, DV and SM are independent and may run in parallel (qc / core-builder / ui-builder). FN waits for Q-FN answers; MF waits for the user's option pick. The cms-api refactor phases CR0-CR7 were written by CA5 (below Phase MF); CR runs on core-builder, so it does not run in parallel with DV or the cms-api part of FN (FN1a).
+
+## Phase CA: cms-api clean-architecture audit
+Goal: every cms-api file is placed in a target layer (ADR 0006) with its violations listed, so the refactor can be planned module by module.
+Inputs: ADR 0006 (proposed); `src/architecture/import-graph.ts`.
+Outputs:
+- `.claude/state/findings/AUDIT-CA1a.md`, `AUDIT-CA1b.md`, `AUDIT-CA2.md`, `AUDIT-CA3.md`, `AUDIT-CA4.md`, each with an entry or zero count for L1-L8 and a target file map. Check: read each file; `git status --short` shows only findings files.
+- Security notes under every proposed fix in high-risk paths (CA1a, CA1b, CA2). Check: `grep -c "Security note:"` per file is non-zero.
+- CR task list in todo.md and plan.md (CA5). Check: the user approves it.
+Exit criteria: all five findings files complete; Q-CA1..Q-CA4 answered; CA5 approved.
+Tasks: CA1a, CA1b, CA2, CA3, CA4, CA5
+
+## Phase DV: cms-api local start
+Goal: `start:dev` runs cms-api with values from `apps/cms-api/.env.local`.
+Inputs: Q-DV1, Q-DV2 answers (given); Q-NC1..Q-NC3 answers (ADR 0009) for DV1c.
+Outputs:
+- `pnpm --filter @abyss/cms-api start:dev` starts the API with a throwaway `.env.local`. Check (CLI): the log shows `Listening on port <PORT from the file>`; with no file it fails on the config check listing keys only.
+- Docs. Check: `docs/local-run.md` and the cms-api README name `.env.local` for `start:dev`.
+- NestJS CLI defaults (ADR 0009). Check (CLI): `pnpm --filter @abyss/cms-api build` runs `nest build` and writes `dist/main.js` with the same `.js` file list as the old `tsc` build; `start:prod` and `start:debug` exist; the cms-api Docker image builds and starts.
+Exit criteria: cms-api lint, typecheck, unit green; the CLI checks above pass; `content:generate` / `graphql:print-schema` / `contract:print` `--check` pass; the image still runs `node dist/main.js`.
+Tasks: DV1, DV1b (done, 5c50f23), DV1c
+
+## Phase SM: cms-admin side menu
+Goal: signed-in pages use a left side menu with Content (single / collection types), Utilities and System settings.
+Inputs: Q-SM1..Q-SM4 answers (SM1 can start before them).
+Outputs:
+- Side menu on desktop and a menu sheet below `md`. Check (browser, kept smoke stack): owner sees the three sections with the listed items; a limited role sees only its items; 375 / 768 / 1280 px; Esc closes the sheet; focus visible.
+- Content-type links from the catalog. Check (browser): each content type the caller can read is listed under its kind and opens its page.
+- e2e. Check: `SMOKE_E2E=1 pnpm smoke` green with the updated nav specs.
+Exit criteria: cms-admin lint, typecheck, test, build green; smoke and e2e green; qc REGRESSION (browser) pass.
+Tasks: SM1, SM2, SM3, SM4
+
+## Phase FN: file naming rule
+Goal: the `<use><PascalName>.<function>.<ext>` rule is in SPEC §5 and guarded in every package in scope.
+Inputs: Q-FN1..Q-FN6 answers.
+Outputs: SPEC §5 table; one file-name guard per package. Check: SV; a wrongly named scratch file fails the guard.
+Exit criteria: all packages green with the guards.
+Tasks: FN1 (FN1a, FN1b, FN1c when scheduled)
+
+## Phase MF: micro-frontends
+Goal: the chosen micro-frontend option (ADR 0007) is planned.
+Inputs: Q-MF1..Q-MF3 answers.
+Outputs: accepted ADR 0007 and an MF task list. Check: the user approves it.
+Exit criteria: MF tasks approved.
+Tasks: MF0
+
+### Phase CR: cms-api clean-architecture refactor — PROPOSED 2026-10-25 (CA5)
+Details, rules, CR-SV, the user's answers to Q-CA5..Q-CA17 (2026-10-25) and dropped findings in `todo.md` "Phase CR". Awaiting the user's approval of the CR task list (CA5 Verify). Builder: core-builder (CR-00: planner). Order: CR0 → CR1 → checkpoint → CR2 → CR3 → CR4 → CR5 → CR6 → CR6b → CR7. Revised 2026-10-25 (planner REVISE CR): every open task has a §4.4 Target map and a Tier line (`todo.md` "Revision 2026-10-25", rules G1-G10); DEV-STACK (infra, tier 2 runner) is built after CR-dc-1; CR6b consolidates the modules moved before §4.4. Task checks run at the task's tier; every phase check below is tier 3. Platform first because of the `describeError` hazard (AUD-CA3-2, AUD-CA4-9); then the `content-types` pilot with `health` as warm-up; then modules from the bottom of the SPEC §2 graph up, with the high-risk modules last (`Security gate: yes` on every task in CR4-CR6). Every task is behavior-preserving except the line marked planned change in CR-dc-3 (Q-CA14c).
+
+## Phase CR0: platform foundation
+Goal: the error, guard, transaction and logging pieces every module refactor needs exist, and nothing reads `HttpException` outside `common/` any more.
+Inputs: ADR 0006 accepted (§1-7, all questions answered); user approval of the CR list.
+Outputs:
+- `DomainError` and `describeError`. Check (CLI): the parity and contract specs in `common/errors/` pass; one `DomainError` gives the same body over REST, GraphQL and a bulk item.
+- Layer guard. Check (CLI): `pnpm --filter @abyss/cms-api test:unit -- layers.architecture` passes with an empty `MIGRATED_MODULES`, and every fixture case passes or fails as listed in CR-pf-3.
+- Pinned paths in one table. Check (CLI): renaming a pinned file in a scratch commit fails with "missing path".
+- `TransactionRunner` (core) and `AppLogger`. Check (CLI): `test:integration -- transaction-runner` passes (commit, rollback, after-commit only after commit).
+- Domain enums. Check (CLI): the four parity specs pass.
+Exit criteria: CR-SV green; security-qc reviews CR-pf-1, CR-pf-2, CR-pf-5 and CR-pf-6; the user approves the CR-00 SPEC diff.
+Tasks: CR-pf-1, CR-pf-2, CR-pf-3, CR-pf-4, CR-pf-5, CR-pf-6, CR-00
+
+## Phase CR1: pilot (health, content-types)
+Goal: two small modules show the full pattern (layers, `DomainError`, facades, path-pinned tests) before the rest follows.
+Inputs: CR0 outputs.
+Outputs:
+- `health` and `content-types` in layers and listed in `MIGRATED_MODULES`. Check (CLI): `layers.architecture.spec.ts` green; `test/integration/{health,content-types}.spec.ts` unchanged and green.
+- Endpoints unchanged. Check (CLI): `curl -i` on a kept smoke stack for `/health/live`, `/health/ready` and an unknown content type (404 `CONTENT_TYPE_NOT_FOUND`) shows the same bodies as before the phase.
+- README "Module layout (ADR 0006)" checklist. Check: read it.
+Exit criteria: CR-SV green; checkpoint: the user reviews the pilot diffs and the checklist, and ADR 0006 is amended if the pilot shows a gap.
+Tasks: CR-hc-1, CR-hc-2
+
+## Phase CR2: content-engine
+Goal: content-engine owns its persistence behind ports, and its domain types no longer live in adapter files.
+Inputs: CR1 checkpoint; CR-pf-5 (port).
+Outputs:
+- content-engine in layers, with the content-DB `TransactionRunner`; the registry load use case reaches the database only through the `ContentTypeRepository` port, and only wiring (`ContentEngine.module.ts`, `cli/ContentEngineCli.setup.ts`) imports `MigrationDb.adapter.ts`. Check (CLI): `layers.architecture.spec.ts` (no application-to-adapter entry), `facade-reexports` and `field-type-branches` specs green; `content:generate -- --check` unchanged; `test/integration/{content-repository,content-migrations}.spec.ts` green.
+Exit criteria: CR-SV green; security-qc reviews CR-ce-2.
+Tasks: CR-ce-1, CR-ce-2
+
+## Phase CR3: documents and graphql
+Goal: document use cases are free of Kysely and Nest exceptions, and GraphQL reads errors through the shared reader.
+Inputs: CR2 outputs.
+Outputs:
+- documents and graphql in layers. Check (CLI): `layers.architecture.spec.ts` and `graphql.architecture.spec.ts` green; `test/integration/documents-*.spec.ts` and `graphql.spec.ts` green with no assertion change (apart from the Q-CA14c planned-change test); `graphql:print-schema -- --check` unchanged.
+- Behavior on the running stack. Check (CLI): `SMOKE_E2E=1 pnpm smoke` green (document create, publish, bulk, GraphQL reads).
+- Dev stack for tier 2 (DEV-STACK). Check (CLI): `pnpm dev:stack`, then `E2E_STACK=dev pnpm e2e:spec tests/admin-auth.spec.ts` and `tests/media-library.spec.ts` pass; `pnpm dev:stack:stop` leaves no `abyss-dev` container; a running `abyss-smoke` stack is untouched.
+Exit criteria: CR-SV green; security-qc reviews CR-dc-1, CR-dc-2, CR-dc-3; qc REGRESSION (tier 3).
+Tasks: CR-dc-1, DEV-STACK, CR-gq-1, CR-dc-2, CR-dc-3, CR-gq-2
+
+## Phase CR4: access core
+Goal: the access rules (serializer, allowlist, projection, policy) sit in `domain/`, authentication and caching in `application/`, and guards in `http/`, with document auth as its own sub-module.
+Inputs: CR3 outputs.
+Outputs:
+- access core and document auth in layers. Check (CLI): `layers.architecture.spec.ts`, `modules.architecture.spec.ts` (three access nodes), `record-serializer.architecture.spec.ts` and `permission-metadata.architecture.spec.ts` green; `test/integration/{field-masking,access-guard,api-tokens}.spec.ts` unchanged and green.
+- New guard tests. Check (CLI): the `DocumentAuthGuard` header-shape table and the `ApiTokenAuthentication` 401-cause specs pass.
+Exit criteria: CR-SV green; security-qc reviews every task and runs a PHASE review; qc REGRESSION including the e2e access specs.
+Tasks: CR-ac-1, CR-ac-2, CR-ac-3, CR-ac-4
+
+## Phase CR5: security-audit and identity
+Goal: sign-in, tokens, OTP, TOTP and owner setup run as use cases behind ports, with the timing-parity and stored-format paths unchanged.
+Inputs: CR4 outputs (`RoleLookup`, `AccessSession` dependencies through facades); CR-pf-5.
+Outputs:
+- security-audit and identity in layers. Check (CLI): `layers.architecture.spec.ts`, `identity-cli.architecture.spec.ts`, `security-audit-provider.architecture.spec.ts` and `auth-constants.pin.spec.ts` green; `test/integration/{auth,two-factor,password,owner-setup,identity-bootstrap,seed-account,bootstrap}.spec.ts` unchanged and green.
+- Fixture tests for stored formats (refresh-token hash, OTP HMAC, SecretBox, audit email HMAC). Check (CLI): they pass on the old and the new code.
+- Browser: sign-in, refresh cookie clearing, 2FA setup and owner setup on a kept smoke stack. Check: qc walk; network shows the same status codes and bodies as before.
+Exit criteria: CR-SV green; security-qc reviews every task and runs a PHASE review; qc REGRESSION (browser and e2e).
+Tasks: CR-sa-1, CR-id-1, CR-id-2, CR-id-3, CR-id-4
+
+## Phase CR6: access management, media, reviewer
+Goal: the remaining high-risk modules are in layers, the media storage and turnstile platform folders have moved into media and reviewer (Q-CA14a), and both scheduled jobs live in `jobs/` on one shared helper (Q-CA7).
+Inputs: CR5 outputs.
+Outputs:
+- access management, media and reviewer in layers. Check (CLI): `layers.architecture.spec.ts` green; `test/integration/{accounts-roles,api-tokens,role-permissions-seed,media,media-delete,media-update,media-document-refs,reviewer}.spec.ts` unchanged and green.
+- Upload behavior. Check (CLI): `upload.pipeline.spec.ts` (rewired to the receiver adapter) has the same cases; a `curl` upload of an SVG on a kept stack still answers 415 `MEDIA_UNSUPPORTED_TYPE`.
+- Reviewer rate limit. Check (CLI): the reviewer integration spec's 429 has `Retry-After`.
+Exit criteria: CR-SV green; security-qc reviews every task and runs a PHASE review; qc REGRESSION (browser walk of accounts, roles, API tokens, media library, reviewer dialog; e2e green).
+Tasks: CR-ac-5, CR-ac-6, CR-md-1, CR-md-2, CR-md-3, CR-rv-1, CR-rv-2
+
+## Phase CR6b: consolidation (health, content-types, platform, content-engine)
+Goal: the modules and platform files moved before the file-granularity rule (ADR 0006 §7.13) follow `code-standards` §4.4, with no behavior change.
+Inputs: CR6 outputs (every module in layers, so the import-path edits are final).
+Outputs:
+- Fewer files. Check (CLI): `find apps/cms-api/src/modules/{health,content-types,content-engine} apps/cms-api/src/common -name '*.ts' ! -name '*.spec.ts' | wc -l` per folder gives health 5, content-types 5, content-engine 31, common 22; no non-spec file under 30 lines in them except the G6 list.
+- Same behavior. Check (CLI): `test/integration/{health,content-types,content-repository,content-migrations}.spec.ts` and the architecture suite green with path edits only; `content:generate -- --check` unchanged; `SMOKE_E2E=1 pnpm smoke` green (CR-cs-3 is tier 3).
+Exit criteria: CR-SV green; security-qc reviews CR-cs-3; qc REGRESSION (tier 3).
+Tasks: CR-cs-1, CR-cs-2, CR-cs-3
+
+## Phase CR7: close
+Goal: every module is checked by the layer guard with no exceptions left, and the contract builder reads facades only.
+Inputs: CR3-CR6b outputs.
+Outputs:
+- Full layer guard. Check (CLI): `layers.architecture.spec.ts` checks every module and `KNOWN_LAYER_VIOLATIONS` is empty; `grep -rn "unitOfWorkFromPrismaTx\|unitOfWorkFromContentTrx" apps/cms-api/src` prints nothing.
+- Contract unchanged. Check (CLI): `contract:print -- --check` passes.
+- Bulk item errors read in `http/`. Check (CLI): `KNOWN_LAYER_VIOLATIONS` has no `documents` entry; the documents bulk integration spec is unchanged and green.
+Exit criteria: CR-SV green; qc REGRESSION; ADR 0006 marked implemented.
+Tasks: CR-cl-1
+
+### Direct request: expired API tokens are not editable (ET) — PROPOSED 2026-10-25
+Flat list, details in `todo.md` "Direct request: expired API tokens are not editable (ET)". SPEC §7 D5. Order: ET1 (core-builder, security gate) -> ET2 (ui-builder) -> ET3 (qc). ET1 waits for Q-ET1 and Q-ET2; Q-ET3 changes only a test line in ET1 and the Revoke button in ET2. Independent of CA, DV, SM, FN, MF; the CR refactor (after CA5) later moves `ApiTokenExpiry.rules.ts` into `access/domain/` without changes.
+
 ## Risks and Mitigations
 
 | Risk | Impact | Mitigation |
