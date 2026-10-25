@@ -368,7 +368,7 @@ Architecture test (like `record-serializer.architecture.spec.ts`): files in
   REST `FilterClause[]` / `SortKey[]`). `page` / `pageSize` range checks and
   the default sort (`SORT_DEFAULT` when `sort` is empty) are left to GQ2.
 - The filterable/sortable rule is `queryKindOfField`
-  (`documents/domain/QueryableFields.rules.ts`), shared with REST `queryColumnOf`.
+  (`documents/domain/ListQuery.rules.ts`), shared with REST `queryColumnOf`.
 - `buildGraphqlSchema([])` throws `GraphqlSchemaError` (a `Query` type needs
   a field).
 

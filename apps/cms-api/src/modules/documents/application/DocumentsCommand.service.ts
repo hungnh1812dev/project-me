@@ -4,52 +4,55 @@ import {
   BadRequestException,
   ConflictException,
   ForbiddenException,
+  Inject,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { type Expression, type Kysely, sql, type SqlBool } from 'kysely';
 
-import { PermissionAction } from '../../generated/prisma/client';
+import { PermissionAction } from '../../../generated/prisma/client';
+import {
+  CONTENT_TRANSACTION_RUNNER,
+  type TransactionRunner,
+  type UnitOfWork,
+} from '../../../infrastructure/database/TransactionRunner.port';
 import {
   type AccessPolicy,
   AccessPolicyService,
   type ActorContext,
   recordReadAccess,
   RecordSerializer,
+  type RowCondition,
   type SerializedRecord,
   WriteAllowlist,
-} from '../access';
-import { projectTable, selectedColumns } from '../access/field-projection';
-import { DocumentMediaService } from '../media';
-import { ContentDbProvider, unitOfWorkFromContentTrx } from '../content-engine';
-import { ContentRegistryProvider } from '../content-engine';
-import { CONTENT_DB_SCHEMA } from '../content-engine';
-import { KyselyContentRepository } from '../content-engine/adapters/KyselyContent.repository';
-import { toDocument } from '../content-engine/domain/ContentRowMapping.rules';
+} from '../../access';
 import {
   assertTreeInput,
   type ContentDocument,
+  ContentRegistryProvider,
   ContentTreeError,
   type RegisteredContentType,
   type TreeInput,
-} from '../content-engine';
-import {
-  type ContentDatabase,
-  loadComponentTrees,
-} from '../content-engine/adapters/TreeLoader.adapter';
+} from '../../content-engine';
+import { DocumentMediaService } from '../../media';
 import {
   diffRecords,
   type DiffEntry,
   overlaySubmitted,
-} from './domain/Diff.rules';
+} from '../domain/Diff.rules';
 import {
   DOCUMENT_ERROR_CODES,
   DOCUMENT_ERROR_MESSAGES,
-} from './domain/Documents.constants';
+} from '../domain/Documents.constants';
 import {
   validateTreeValues,
   type WriteMode,
-} from './domain/ValueValidator.rules';
+} from '../domain/ValueValidator.rules';
+import {
+  DOCUMENT_REPOSITORY,
+  type DocumentRepository,
+  type DocumentRowSelector,
+  type RecordReadAccess,
+} from './Documents.port';
 
 /** Body of `409 DOCUMENT_VERSION_CONFLICT` (SPEC §9), under `details`. */
 export interface VersionConflictDetails {
@@ -69,21 +72,9 @@ export interface WrittenRef {
 
 export type WriteResult = SerializedRecord | WrittenRef;
 
-type Db = Kysely<ContentDatabase>;
-type Predicate = Expression<SqlBool>;
-
-/** The row an update addresses: its table, document, which copy, and the actor's update conditions. */
-interface UpdateTarget {
-  table: string;
-  documentId: string;
-  /** True: the draft copy (`published_at` null); false: the single live copy. */
-  isDraftRow: boolean;
-  updateScope: Predicate | null;
-}
-
 interface ReadScope {
   readable: boolean;
-  where: Predicate | null;
+  where: RowCondition | null;
 }
 
 interface ConflictOutcome {
@@ -119,7 +110,9 @@ export class DocumentsCommandService {
   constructor(
     private readonly access: AccessPolicyService,
     private readonly registry: ContentRegistryProvider,
-    private readonly content: ContentDbProvider,
+    @Inject(CONTENT_TRANSACTION_RUNNER)
+    private readonly transactions: TransactionRunner,
+    @Inject(DOCUMENT_REPOSITORY) private readonly documents: DocumentRepository,
     private readonly media: DocumentMediaService,
   ) {}
 
@@ -144,14 +137,11 @@ export class DocumentsCommandService {
     );
     const readable = evaluator.fieldsFor(actor, slug).readable;
     const access = recordReadAccess(actor, readable);
-    const repository = new KyselyContentRepository(
-      await this.registry.registry(),
-    );
 
     const documentId = randomUUID();
-    const id = await this.content.db.transaction().execute((trx) =>
+    const id = await this.transactions.run((unit) =>
       this.mapTreeErrors(() =>
-        repository.insertTree(unitOfWorkFromContentTrx(trx), slug, {
+        this.documents.insertTree(unit, slug, {
           ...stored,
           documentId,
           publishedAt: type.definition.draftAndPublish ? null : new Date(),
@@ -186,34 +176,33 @@ export class DocumentsCommandService {
       actor,
       evaluator.fieldsFor(actor, slug).readable,
     );
-    const target: UpdateTarget = {
-      table: type.root.plan.name,
+    // The draft copy for a type with draft and publish, else its single live copy.
+    const target: DocumentRowSelector = {
       documentId,
-      isDraftRow: type.definition.draftAndPublish,
-      updateScope: rowFilter.where,
+      status: type.definition.draftAndPublish ? 'draft' : 'published',
+      rowCondition: rowFilter.where,
     };
-    const repository = new KyselyContentRepository(
-      await this.registry.registry(),
-    );
 
-    const outcome = await this.content.db.transaction().execute(async (trx) => {
-      const updated = await this.bumpVersion(trx, target, version);
+    const outcome = await this.transactions.run(async (unit) => {
+      const updated = await this.documents.bumpVersion(
+        unit,
+        type,
+        target,
+        version,
+      );
       if (updated === undefined) {
         const readScope = this.readScope(actor, slug, type, evaluator);
-        return this.describeConflict(trx, type, access, target, readScope);
+        return this.describeConflict(unit, type, access, target, readScope);
       }
       await this.mapTreeErrors(() =>
-        repository.replaceTree(
-          unitOfWorkFromContentTrx(trx),
+        this.documents.replaceTree(
+          unit,
           slug,
-          {
-            documentId,
-            status: target.isDraftRow ? 'draft' : 'published',
-          },
+          { documentId, status: target.status ?? 'published' },
           { ...stored, updatedBy: actor.accountId },
         ),
       );
-      await this.assertStillInUpdateScope(trx, target, updated.id);
+      await this.assertStillInUpdateScope(unit, type, target, updated.id);
       return { kind: 'updated', id: updated.id } as const;
     });
 
@@ -231,44 +220,24 @@ export class DocumentsCommandService {
     );
   }
 
-  /** `SET version = version + 1 WHERE version = $v`: takes the row lock; undefined when no row matched. */
-  private async bumpVersion(
-    trx: Db,
-    target: UpdateTarget,
-    expectedVersion: number,
-  ): Promise<{ id: number } | undefined> {
-    let update = trx
-      .withSchema(CONTENT_DB_SCHEMA)
-      .updateTable(target.table)
-      .set({ version: sql<number>`${sql.ref('version')} + 1` });
-    for (const predicate of targetPredicates(
-      target,
-      sql<SqlBool>`${sql.ref('version')} = ${expectedVersion}`,
-    )) {
-      update = update.where(predicate);
-    }
-    const updated = await update.returning('id').executeTakeFirst();
-    return updated === undefined ? undefined : { id: updated.id as number };
-  }
-
   /**
    * The new content may take the row out of the actor's update conditions:
    * refuse (rolls back) rather than let them move rows out of their own scope.
    */
   private async assertStillInUpdateScope(
-    trx: Db,
-    target: UpdateTarget,
+    unit: UnitOfWork,
+    type: RegisteredContentType,
+    target: DocumentRowSelector,
     id: number,
   ): Promise<void> {
-    if (target.updateScope === null) return;
-    const stillInScope = await trx
-      .withSchema(CONTENT_DB_SCHEMA)
-      .selectFrom(target.table)
-      .select('id')
-      .where(sql<SqlBool>`${sql.ref('id')} = ${id}`)
-      .where(target.updateScope)
-      .executeTakeFirst();
-    if (stillInScope === undefined) throw new ForbiddenException();
+    if (target.rowCondition === null) return;
+    const isInScope = await this.documents.isRowInScope(
+      unit,
+      type,
+      id,
+      target.rowCondition,
+    );
+    if (!isInScope) throw new ForbiddenException();
   }
 
   /** What the actor may read of the draft or live row, for the 409 body. */
@@ -288,41 +257,25 @@ export class DocumentsCommandService {
 
   /** No row matched the version: 404 if the row is gone, else the 409 outcome. */
   private async describeConflict(
-    trx: Db,
+    unit: UnitOfWork,
     type: RegisteredContentType,
-    access: ReturnType<typeof recordReadAccess>,
-    target: UpdateTarget,
+    access: RecordReadAccess,
+    target: DocumentRowSelector,
     readScope: ReadScope,
   ): Promise<ConflictOutcome> {
-    let currentQuery = trx
-      .withSchema(CONTENT_DB_SCHEMA)
-      .selectFrom(target.table)
-      .select('version');
-    for (const predicate of targetPredicates(target, null)) {
-      currentQuery = currentQuery.where(predicate);
-    }
-    const current = await currentQuery.executeTakeFirst();
+    const current = await this.documents.findVersion(type, target, unit);
     if (current === undefined) throw notFound();
 
     const document = readScope.readable
-      ? await this.loadOne(
-          trx,
+      ? await this.documents.findOne(
           type,
           access,
-          sql<SqlBool>`${sql.ref('document_id')} = ${target.documentId}`,
-          [
-            sql<SqlBool>`${sql.ref('published_at')} ${
-              target.isDraftRow ? sql`is null` : sql`is not null`
-            }`,
-            ...(readScope.where === null ? [] : [readScope.where]),
-          ],
+          { documentId: target.documentId, status: target.status },
+          readScope.where,
+          unit,
         )
       : undefined;
-    return {
-      kind: 'conflict',
-      document: document ?? null,
-      current: current.version as number,
-    };
+    return { kind: 'conflict', document: document ?? null, current };
   }
 
   /**
@@ -335,7 +288,7 @@ export class DocumentsCommandService {
     actor: ActorContext,
     slug: string,
     type: RegisteredContentType,
-    access: ReturnType<typeof recordReadAccess>,
+    access: RecordReadAccess,
     id: number,
     documentId: string,
     version: number,
@@ -347,12 +300,11 @@ export class DocumentsCommandService {
       (!type.definition.draftAndPublish ||
         evaluator.canReadDrafts(actor, slug));
     const document = mayRead
-      ? await this.loadOne(
-          this.content.db,
+      ? await this.documents.findOne(
           type,
           access,
-          sql<SqlBool>`${sql.ref('id')} = ${id}`,
-          readFilter.where === null ? [] : [readFilter.where],
+          { rowId: id },
+          readFilter.where,
         )
       : undefined;
     if (document === undefined) return { documentId, version };
@@ -400,7 +352,7 @@ export class DocumentsCommandService {
 
   private async conflict(
     type: RegisteredContentType,
-    access: ReturnType<typeof recordReadAccess>,
+    access: RecordReadAccess,
     outcome: ConflictOutcome,
     tree: TreeInput,
   ): Promise<ConflictException> {
@@ -427,27 +379,6 @@ export class DocumentsCommandService {
     });
   }
 
-  /** One root row with its tree, selecting only the columns the access may read. */
-  private async loadOne(
-    db: Db,
-    type: RegisteredContentType,
-    access: ReturnType<typeof recordReadAccess>,
-    where: Predicate,
-    more: readonly Predicate[] = [],
-  ): Promise<ContentDocument | undefined> {
-    const projected = projectTable(type.root, access.fields);
-    let query = db
-      .withSchema(CONTENT_DB_SCHEMA)
-      .selectFrom(type.root.plan.name)
-      .select(selectedColumns(projected, access))
-      .where(where);
-    for (const predicate of more) query = query.where(predicate);
-    const row = await query.limit(1).executeTakeFirst();
-    if (row === undefined) return undefined;
-    const trees = await loadComponentTrees(db, projected, [row.id as number]);
-    return toDocument(projected, row, trees.get(row.id as number) ?? {});
-  }
-
   /** A tree rejected while writing (unknown uid, ...) is the client's fault: 400. */
   private async mapTreeErrors<T>(run: () => Promise<T>): Promise<T> {
     try {
@@ -462,20 +393,6 @@ export class DocumentsCommandService {
       throw error;
     }
   }
-}
-
-function targetPredicates(
-  target: UpdateTarget,
-  extra: Predicate | null,
-): Predicate[] {
-  return [
-    sql<SqlBool>`${sql.ref('document_id')} = ${target.documentId}`,
-    sql<SqlBool>`${sql.ref('published_at')} ${
-      target.isDraftRow ? sql`is null` : sql`is not null`
-    }`,
-    ...(target.updateScope === null ? [] : [target.updateScope]),
-    ...(extra === null ? [] : [extra]),
-  ];
 }
 
 function notFound(): NotFoundException {

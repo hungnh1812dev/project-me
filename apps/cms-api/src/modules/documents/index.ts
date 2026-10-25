@@ -1,4 +1,4 @@
-export { parseListQuery } from './http/ListDocuments.requests';
+export { parseListQuery } from './http/Documents.requests';
 export {
   BULK_BODY_LIMIT_MOUNT_PATH,
   bulkBodyLimit,
@@ -8,7 +8,7 @@ export type {
   ListDocumentsQuery,
   SortDirection,
   SortKey,
-} from './domain/ListQuery.entity';
+} from './domain/ListQuery.rules';
 export {
   DEFAULT_DOCUMENT_STATUS,
   DOCUMENT_ERROR_CODES,
@@ -19,12 +19,13 @@ export {
   SYSTEM_FIELD_KINDS,
   type FilterOperator,
 } from './domain/Documents.constants';
-export { DOCUMENT_QUERY_KEYS } from './http/DocumentsHttp.constants';
-export { DOCUMENTS_RATE_LIMIT_POLICIES } from './http/DocumentsRateLimits.constants';
-export { DocumentsModule } from './documents.module';
+export {
+  DOCUMENT_QUERY_KEYS,
+  DOCUMENTS_RATE_LIMIT_POLICIES,
+} from './http/DocumentsHttp.constants';
+export { DocumentsModule } from './Documents.module';
 export {
   DocumentsQueryService,
   type DocumentPage,
-} from './documents.query.service';
-export { normalizeListQuery } from './domain/ListQuery.rules';
-export { queryKindOfField } from './domain/QueryableFields.rules';
+} from './application/DocumentsQuery.service';
+export { normalizeListQuery, queryKindOfField } from './domain/ListQuery.rules';

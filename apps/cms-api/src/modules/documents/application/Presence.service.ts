@@ -2,17 +2,14 @@ import {
   ForbiddenException,
   HttpException,
   HttpStatus,
+  Inject,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { sql, type SqlBool } from 'kysely';
 
-import { PermissionAction } from '../../generated/prisma/client';
-import { PrismaService } from '../../infrastructure/database/prisma.service';
-import { AccessPolicyService, type ActorContext } from '../access';
-import { ContentDbProvider } from '../content-engine';
-import { CONTENT_DB_SCHEMA } from '../content-engine';
-import { ContentRegistryProvider } from '../content-engine';
+import { PermissionAction } from '../../../generated/prisma/client';
+import { AccessPolicyService, type ActorContext } from '../../access';
+import { ContentRegistryProvider } from '../../content-engine';
 import {
   DOCUMENT_ERROR_CODES,
   DOCUMENT_ERROR_MESSAGES,
@@ -20,7 +17,13 @@ import {
   PRESENCE_MESSAGES,
   PRESENCE_TTL_MS,
   type PresenceState,
-} from './domain/Documents.constants';
+} from '../domain/Documents.constants';
+import {
+  DOCUMENT_REPOSITORY,
+  type DocumentRepository,
+  PRESENCE_ACCOUNT_LOOKUP,
+  type PresenceAccountLookup,
+} from './Documents.port';
 
 /** The only fields a presence response carries (SPEC D16). */
 export interface PresenceEntry {
@@ -53,8 +56,9 @@ export class PresenceService {
   constructor(
     private readonly access: AccessPolicyService,
     private readonly registry: ContentRegistryProvider,
-    private readonly content: ContentDbProvider,
-    private readonly prisma: PrismaService,
+    @Inject(DOCUMENT_REPOSITORY) private readonly documents: DocumentRepository,
+    @Inject(PRESENCE_ACCOUNT_LOOKUP)
+    private readonly accounts: PresenceAccountLookup,
   ) {}
 
   /** Records the caller's heartbeat and returns everyone active on the document. */
@@ -72,28 +76,19 @@ export class PresenceService {
     if (!catalog.isContentType(slug)) throw new NotFoundException();
     const type = (await this.registry.registry()).resolve(slug);
 
-    let row = this.content.db
-      .withSchema(CONTENT_DB_SCHEMA)
-      .selectFrom(type.root.plan.name)
-      .select('id')
-      .where(sql<SqlBool>`${sql.ref('document_id')} = ${documentId}`)
-      .where(
-        sql<SqlBool>`${sql.ref('published_at')} is ${
-          type.definition.draftAndPublish ? sql`null` : sql`not null`
-        }`,
-      );
-    if (filter.where !== null) row = row.where(filter.where);
-    if ((await row.executeTakeFirst()) === undefined) {
+    const editedRowVersion = await this.documents.findVersion(type, {
+      documentId,
+      status: type.definition.draftAndPublish ? 'draft' : 'published',
+      rowCondition: filter.where,
+    });
+    if (editedRowVersion === undefined) {
       throw new NotFoundException({
         errorCode: DOCUMENT_ERROR_CODES.NOT_FOUND,
         message: DOCUMENT_ERROR_MESSAGES.NOT_FOUND,
       });
     }
 
-    const account = await this.prisma.account.findUnique({
-      where: { id: actor.accountId },
-      select: { documentId: true, displayName: true },
-    });
+    const account = await this.accounts.findByAccountId(actor.accountId);
     if (account === null) throw new ForbiddenException();
     return this.record(
       `${slug}/${documentId}`,

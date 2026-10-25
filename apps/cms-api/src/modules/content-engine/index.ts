@@ -1,8 +1,16 @@
 export { DEFAULT_CONTENT_PATHS } from './cli/content-paths';
 export { ContentDbProvider } from './adapters/ContentDatabase.adapter';
 // Transitional: documents wraps its own Kysely transaction until CR-dc-3.
-export { unitOfWorkFromContentTrx } from './adapters/KyselyContentTransactionRunner.adapter';
-export { type InsertTreeInput } from './application/ContentRepository.port';
+export {
+  contentTrxOf,
+  unitOfWorkFromContentTrx,
+} from './adapters/KyselyContentTransactionRunner.adapter';
+export type {
+  ContentRepository,
+  InsertTreeInput,
+  LoadTreesQuery,
+  ReplaceTreeInput,
+} from './application/ContentRepository.port';
 export {
   COMPONENT_FIELD_TYPE,
   CONTENT_DB_SCHEMA,

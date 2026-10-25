@@ -2,7 +2,7 @@ import { HttpStatus } from '@nestjs/common';
 import type { NextFunction, Request, Response } from 'express';
 
 import { API_PREFIX } from '../../../common/constants/api.constants';
-import { DOCUMENTS_ROUTES } from './Documents.routes';
+import { DOCUMENTS_ROUTES } from './DocumentsHttp.constants';
 import { ERROR_CODES } from '../../../common/constants/error.constants';
 import {
   closeAfterAnswer,

@@ -12,6 +12,7 @@ import {
   PINNED_PATHS,
   RECORD_LOADER_CONSUMER_FILE,
   RECORD_LOADER_FILES,
+  RECORD_READER_PORT_FILES,
   RECORD_SERIALIZER_FILE,
 } from '../../architecture/source-paths.constants';
 
@@ -21,7 +22,8 @@ import {
  * the files imports resolve to (facades are followed), not on path strings:
  *
  * 1. Outside the content engine, a file that imports the record loaders
- *    (`KyselyContent.repository`, `TreeLoader.adapter`) must also import
+ *    (`KyselyContent.repository`, `TreeLoader.adapter`) or a record reader
+ *    port (`Documents.port`) must also import
  *    `access/record.serializer`, so loaded records are serialized where
  *    they are read.
  * 2. HTTP boundary files (controllers, filters, interceptors, gateways)
@@ -37,10 +39,15 @@ const SERIALIZER_FILE = RECORD_SERIALIZER_FILE;
 const SERIALIZER_BUILDING_BLOCKS = [SERIALIZER_FILE, ACCESS_CONSTANTS_FILE];
 
 /**
- * Publish (T22) copies a draft into the published row inside one transaction.
- * The copied record is never part of a response (it returns `{ documentId,
- * version }`), so these files need no serializer. Bulk (T34) only inserts
- * trees through the repository and answers with ids and versions.
+ * Files exempt from rule 1 (`INTERNAL_COPY_FILES`), each for a reason:
+ * - the documents repository adapter loads records for the application
+ *   services, which serialize them;
+ * - publish (T22) copies a draft into the published row inside one
+ *   transaction and returns `{ documentId, version }`; bulk (T34) only
+ *   inserts trees and answers with ids and versions;
+ * - the presence account adapter reads a public id and display name;
+ * - presence reads a row version and returns presence entries;
+ * - the module file only binds the port.
  */
 const BOUNDARY_FILE = /\.(?:controller|filter|interceptor|gateway)\.ts$/;
 const SERIALIZED_CAST = /\bas\s+SerializedRecord\b/;
@@ -55,6 +62,10 @@ const files = listSourceFiles(SRC_ROOT, { excludeDirs: [GENERATED_DIR] }).map(
 
 const importsRecordLoader = (reached: Set<string>) =>
   RECORD_LOADER_FILES.some((loader) => reached.has(loader));
+
+const readsRecords = (reached: Set<string>) =>
+  importsRecordLoader(reached) ||
+  RECORD_READER_PORT_FILES.some((port) => reached.has(port));
 
 describe('RecordSerializer is the only record -> response path', () => {
   it('scans the source tree', () => {
@@ -84,7 +95,7 @@ describe('RecordSerializer is the only record -> response path', () => {
           !file.startsWith(CONTENT_ENGINE_DIRECTORY) &&
           !SERIALIZER_BUILDING_BLOCKS.includes(file) &&
           !INTERNAL_COPY_FILES.includes(file) &&
-          importsRecordLoader(reached) &&
+          readsRecords(reached) &&
           !reached.has(SERIALIZER_FILE),
       )
       .map(({ file }) => file);

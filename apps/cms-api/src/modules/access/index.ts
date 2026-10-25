@@ -34,7 +34,7 @@ export {
 export { joinFieldPath } from './field-paths';
 export { PermissionGuard } from './permission.guard';
 export { RequirePermission } from './permission.decorator';
-export { FieldSelection } from './policy-evaluator';
+export { FieldSelection, type RowCondition } from './policy-evaluator';
 export { QueryGuard } from './query.guard';
 export { requireAccountActor, type AccountActor } from './rank-rules';
 export { recordReadAccess } from './record-read-access';

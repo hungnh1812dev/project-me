@@ -1,8 +1,7 @@
 import { DomainError } from '../../../common/errors/Domain.errors';
 import { PAGINATION } from '../../../common/validation/SharedSchemas.rules';
 import { DOCUMENT_QUERY_LIMITS } from './Documents.constants';
-import type { ListDocumentsQuery } from './ListQuery.entity';
-import { normalizeListQuery } from './ListQuery.rules';
+import { type ListDocumentsQuery, normalizeListQuery } from './ListQuery.rules';
 
 const base: ListDocumentsQuery = {
   status: 'published',

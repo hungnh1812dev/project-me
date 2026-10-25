@@ -1,5 +1,5 @@
 import { describeError } from '../../../common/http/describe-http-exception';
-import { parseListQuery } from './ListDocuments.requests';
+import { parseListQuery } from './Documents.requests';
 
 function refusalOf(query: unknown) {
   try {

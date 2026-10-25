@@ -15,9 +15,14 @@ import {
   filterRefused,
   typedFilterValues,
 } from '../domain/DocumentFilter.rules';
-import type { FilterClause, SortKey } from '../domain/ListQuery.entity';
-import { queryKindOfField } from '../domain/QueryableFields.rules';
-import { LIKE_SPECIALS_PATTERN } from './DocumentsSql.constants';
+import {
+  type FilterClause,
+  queryKindOfField,
+  type SortKey,
+} from '../domain/ListQuery.rules';
+
+/** Characters `contains` must escape so the value matches literally. */
+const LIKE_SPECIALS_PATTERN = /[\\%_]/g;
 
 /** A root column a list query may filter or sort on. */
 export interface QueryColumn {

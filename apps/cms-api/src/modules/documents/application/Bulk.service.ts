@@ -3,29 +3,31 @@ import { randomUUID } from 'node:crypto';
 import {
   BadRequestException,
   ForbiddenException,
+  Inject,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { sql } from 'kysely';
 
-import { ERROR_CODES } from '../../common/constants/error.constants';
-import { PermissionAction } from '../../generated/prisma/client';
-import { AccessPolicyService, type ActorContext } from '../access';
+import { ERROR_CODES } from '../../../common/constants/error.constants';
+import { PermissionAction } from '../../../generated/prisma/client';
 import {
-  ContentDbProvider,
+  CONTENT_TRANSACTION_RUNNER,
+  type ContentTransactionRunner,
+  type UnitOfWork,
+} from '../../../infrastructure/database/TransactionRunner.port';
+import { AccessPolicyService, type ActorContext } from '../../access';
+import {
+  ContentRegistryProvider,
+  ContentTreeError,
   type InsertTreeInput,
-  unitOfWorkFromContentTrx,
-} from '../content-engine';
-import { ContentRegistryProvider } from '../content-engine';
-import { KyselyContentRepository } from '../content-engine/adapters/KyselyContent.repository';
-import { ContentTreeError } from '../content-engine';
+} from '../../content-engine';
 import {
   asItemError,
   atomicFailure,
   type BulkItemError,
   type ErrorParts,
   itemError,
-} from './bulk-errors';
+} from '../bulk-errors';
 import {
   BULK_ITEM_STATUS,
   BULK_LIMITS,
@@ -33,17 +35,15 @@ import {
   DOCUMENT_ERROR_CODES,
   DOCUMENT_ERROR_MESSAGES,
   type BulkOperation,
-} from './domain/Documents.constants';
-import { DocumentsCommandService } from './documents.command.service';
+} from '../domain/Documents.constants';
 import {
   type BulkRequest,
   countComponentRows,
   type PublishItem,
-} from './http/Bulk.requests';
-import { type ActionScope, PublishService } from './publish.service';
-
-/** Name of the per-item savepoint of a non-atomic bulk request. */
-const ITEM_SAVEPOINT = 'bulk_item';
+} from '../http/Bulk.requests';
+import { DOCUMENT_REPOSITORY, type DocumentRepository } from './Documents.port';
+import { DocumentsCommandService } from './DocumentsCommand.service';
+import { type ActionScope, PublishService } from './Publish.service';
 
 export interface BulkItemOk {
   index: number;
@@ -81,7 +81,9 @@ export class BulkService {
   constructor(
     private readonly access: AccessPolicyService,
     private readonly registry: ContentRegistryProvider,
-    private readonly content: ContentDbProvider,
+    @Inject(CONTENT_TRANSACTION_RUNNER)
+    private readonly transactions: ContentTransactionRunner,
+    @Inject(DOCUMENT_REPOSITORY) private readonly documents: DocumentRepository,
     private readonly commands: DocumentsCommandService,
     private readonly publishing: PublishService,
   ) {}
@@ -132,13 +134,10 @@ export class BulkService {
       }
     }
 
-    const repository = new KyselyContentRepository(
-      await this.registry.registry(),
-    );
     try {
-      await this.content.db.transaction().execute((trx) =>
-        repository.insertTrees(
-          unitOfWorkFromContentTrx(trx),
+      await this.transactions.run((unit) =>
+        this.documents.insertTrees(
+          unit,
           slug,
           prepared.map(({ input }) => input),
         ),
@@ -184,9 +183,9 @@ export class BulkService {
       'publish',
       request,
       (item) => item.documentId,
-      async (trx, scope, item) => ({
+      async (unit, scope, item) => ({
         version: await this.publishing.publishIn(
-          trx,
+          unit,
           scope,
           slug,
           item.documentId,
@@ -207,8 +206,8 @@ export class BulkService {
       'unpublish',
       request,
       (id) => id,
-      async (trx, scope, id) => {
-        await this.publishing.unpublishIn(trx, scope, id);
+      async (unit, scope, id) => {
+        await this.publishing.unpublishIn(unit, scope, id);
         return {};
       },
     );
@@ -225,8 +224,8 @@ export class BulkService {
       'delete',
       request,
       (id) => id,
-      async (trx, scope, id) => {
-        await this.publishing.removeIn(trx, scope, id);
+      async (unit, scope, id) => {
+        await this.publishing.removeIn(unit, scope, id);
         return {};
       },
     );
@@ -240,7 +239,7 @@ export class BulkService {
     request: BulkRequest<Item>,
     idOf: (item: Item) => string,
     apply: (
-      trx: Parameters<PublishService['removeIn']>[0],
+      unit: UnitOfWork,
       scope: ActionScope,
       item: Item,
     ) => Promise<{ version?: number }>,
@@ -255,18 +254,16 @@ export class BulkService {
       operation !== 'delete',
     );
 
-    const results: BulkItemResult[] = [];
-    const trx = await this.content.db.startTransaction().execute();
-    try {
+    const results = await this.transactions.run(async (unit) => {
+      const items: BulkItemResult[] = [];
       for (const [index, item] of request.items.entries()) {
-        if (!request.atomic)
-          await sql`savepoint ${sql.id(ITEM_SAVEPOINT)}`.execute(trx);
         try {
-          const outcome = await apply(trx, scope, item);
-          if (!request.atomic) {
-            await sql`release savepoint ${sql.id(ITEM_SAVEPOINT)}`.execute(trx);
-          }
-          results.push({
+          const outcome = request.atomic
+            ? await apply(unit, scope, item)
+            : await this.transactions.runInSavepoint(unit, (itemUnit) =>
+                apply(itemUnit, scope, item),
+              );
+          items.push({
             index,
             status: BULK_ITEM_STATUS.OK,
             documentId: idOf(item),
@@ -276,17 +273,11 @@ export class BulkService {
           const parts = asItemError(error);
           if (parts === null) throw error;
           if (request.atomic) throw atomicFailure(index, parts);
-          await sql`rollback to savepoint ${sql.id(ITEM_SAVEPOINT)}`.execute(
-            trx,
-          );
-          results.push(itemError(index, parts));
+          items.push(itemError(index, parts));
         }
       }
-      await trx.commit().execute();
-    } catch (error) {
-      await trx.rollback().execute();
-      throw error;
-    }
+      return items;
+    });
 
     for (const result of results) {
       if (result.status === BULK_ITEM_STATUS.OK) {

@@ -12,7 +12,7 @@ import {
   DOCUMENT_ERROR_MESSAGES,
   OPERATORS_BY_KIND,
 } from './Documents.constants';
-import type { FilterClause } from './ListQuery.entity';
+import type { FilterClause } from './ListQuery.rules';
 
 export type FilterValue = string | number | boolean;
 

@@ -43,7 +43,7 @@ import {
 import { startPostgres } from '../fixtures/postgres.fixture';
 import { createTestApp } from '../fixtures/test-app';
 import { AccessPolicyService } from '../../src/modules/access/access-policy.service';
-import { DocumentsQueryService } from '../../src/modules/documents/documents.query.service';
+import { DocumentsQueryService } from '../../src/modules/documents/application/DocumentsQuery.service';
 
 const PASSWORD = 'correct horse battery staple';
 const DOCUMENTS = '/api/v1/documents';

@@ -11,11 +11,11 @@ import {
 } from '@nestjs/common';
 
 import { SLUG_PARAM } from '../../../common/constants/api.constants';
-import { DOCUMENTS_ROUTES } from './Documents.routes';
+import { DOCUMENTS_ROUTES } from './DocumentsHttp.constants';
 import { NO_STORE_HEADER } from '../../../common/constants/http.constants';
 import { PermissionAction } from '../../../generated/prisma/client';
 import { RequirePermission, PermissionGuard } from '../../access';
-import { type BulkResponse, BulkService } from '../bulk.service';
+import { type BulkResponse, BulkService } from '../application/Bulk.service';
 import {
   DocumentAuthGuard,
   type DocumentRequest,

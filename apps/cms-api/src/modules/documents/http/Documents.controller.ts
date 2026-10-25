@@ -16,9 +16,7 @@ import {
 import { z } from 'zod';
 
 import { SLUG_PARAM } from '../../../common/constants/api.constants';
-import { DOCUMENTS_ROUTES } from './Documents.routes';
 import { Throttle } from '../../../common/guards/throttle.guard';
-import { DOCUMENTS_RATE_LIMIT_POLICIES } from './DocumentsRateLimits.constants';
 import { NO_STORE_HEADER } from '../../../common/constants/http.constants';
 import { PermissionAction } from '../../../generated/prisma/client';
 import {
@@ -34,30 +32,35 @@ import { DEFAULT_DOCUMENT_STATUS } from '../domain/Documents.constants';
 import {
   DOCUMENT_ID_PARAM,
   DOCUMENT_QUERY_KEYS,
+  DOCUMENTS_RATE_LIMIT_POLICIES,
+  DOCUMENTS_ROUTES,
 } from './DocumentsHttp.constants';
 import { CONTENT_STATUSES } from '../../content-engine';
 import {
   DocumentAuthGuard,
   type DocumentRequest,
 } from '../../access/document-auth';
-import { parseListQuery } from './ListDocuments.requests';
 import {
   parseCreateBody,
+  parseListQuery,
+  parsePresenceBody,
   parsePublishBody,
   parseUpdateBody,
-} from './WriteDocument.requests';
+} from './Documents.requests';
 import {
   DocumentsCommandService,
   type WriteResult,
   type WrittenRef,
-} from '../documents.command.service';
-import { parsePresenceBody } from './Presence.requests';
-import { type PresenceEntry, PresenceService } from '../presence.service';
-import { PublishService } from '../publish.service';
+} from '../application/DocumentsCommand.service';
+import {
+  type PresenceEntry,
+  PresenceService,
+} from '../application/Presence.service';
+import { PublishService } from '../application/Publish.service';
 import {
   type DocumentPage,
   DocumentsQueryService,
-} from '../documents.query.service';
+} from '../application/DocumentsQuery.service';
 
 const detailQuerySchema = z.strictObject({
   [DOCUMENT_QUERY_KEYS.STATUS]: z

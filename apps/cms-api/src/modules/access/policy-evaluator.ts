@@ -56,11 +56,17 @@ export interface FieldAccess {
 }
 
 /**
+ * The SQL condition of a row filter. Other modules pass it to their
+ * repository without reading it.
+ */
+export type RowCondition = Expression<SqlBool>;
+
+/**
  * Row filter for an action on a subject. `where: null` = every row.
  * `allowed: false` = no permission (403 before any SQL runs).
  */
 export type RowFilter =
-  { allowed: false } | { allowed: true; where: Expression<SqlBool> | null };
+  { allowed: false } | { allowed: true; where: RowCondition | null };
 
 const NO_ACCESS: FieldAccess = {
   readable: FieldSelection.NONE,

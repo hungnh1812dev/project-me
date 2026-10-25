@@ -4,13 +4,56 @@ import {
   PAGINATION,
   type RequestIssue,
 } from '../../../common/validation/SharedSchemas.rules';
+import type { ConditionValueKind } from '../../access';
+import {
+  type ContentStatus,
+  fieldTypeOf,
+  type FieldDefinition,
+} from '../../content-engine';
 import {
   DOCUMENT_QUERY_LIMITS,
+  type FilterOperator,
   LIST_QUERY_MESSAGES,
   LIST_QUERY_PARTS,
   SORT_DEFAULT,
 } from './Documents.constants';
-import type { ListDocumentsQuery } from './ListQuery.entity';
+
+export type SortDirection = 'asc' | 'desc';
+
+export interface SortKey {
+  path: string;
+  direction: SortDirection;
+}
+
+/** One `filter[...]` parameter; values are still the raw strings of the URL. */
+export interface FilterClause {
+  path: string;
+  op: FilterOperator;
+  values: string[];
+}
+
+export interface ListDocumentsQuery {
+  status: ContentStatus;
+  page: number;
+  pageSize: number;
+  sort: SortKey[];
+  filters: FilterClause[];
+}
+
+/**
+ * What a top-level content field compares and sorts as in a document list
+ * query; `undefined` = the field cannot be filtered or sorted. The registry's
+ * `listQueryable` decides: components, `json` and `media` (its column holds
+ * the internal file id, which never crosses the API) are not queryable.
+ * One rule for REST (`queryColumnOf`) and the GraphQL schema builder.
+ */
+export function queryKindOfField(
+  field: FieldDefinition,
+): ConditionValueKind | undefined {
+  const spec = fieldTypeOf(field.type);
+  if (spec === undefined || !spec.listQueryable) return undefined;
+  return spec.conditionKind ?? undefined;
+}
 
 const FIELD_PATH_PATTERN =
   /^[A-Za-z][A-Za-z0-9_]*(?:\.[A-Za-z][A-Za-z0-9_]*)*$/;

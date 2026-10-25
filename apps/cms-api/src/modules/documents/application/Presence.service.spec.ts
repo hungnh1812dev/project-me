@@ -1,11 +1,11 @@
 import { ForbiddenException } from '@nestjs/common';
 
-import { type ActorContext, type RolePolicy } from '../access';
+import { type ActorContext, type RolePolicy } from '../../access';
 import {
   PRESENCE_MAX_ENTRIES,
   PRESENCE_TTL_MS,
-} from './domain/Documents.constants';
-import { PresenceService } from './presence.service';
+} from '../domain/Documents.constants';
+import { PresenceService } from './Presence.service';
 
 const ROLE: RolePolicy = {
   id: 1,
@@ -42,26 +42,19 @@ function build(): PresenceService {
         }),
       }),
   };
-  const query = { executeTakeFirst: () => Promise.resolve({ id: 1 }) };
-  const chain: Record<string, unknown> = {};
-  for (const name of ['withSchema', 'selectFrom', 'select', 'where']) {
-    chain[name] = () => chain;
-  }
-  chain.executeTakeFirst = query.executeTakeFirst;
-  const prisma = {
-    account: {
-      findUnique: ({ where }: { where: { id: number } }) =>
-        Promise.resolve({
-          documentId: `00000000-0000-7000-8000-${String(where.id).padStart(12, '0')}`,
-          displayName: `User ${where.id}`,
-        }),
-    },
+  const documents = { findVersion: () => Promise.resolve(1) };
+  const accounts = {
+    findByAccountId: (accountId: number) =>
+      Promise.resolve({
+        documentId: `00000000-0000-7000-8000-${String(accountId).padStart(12, '0')}`,
+        displayName: `User ${accountId}`,
+      }),
   };
   return new PresenceService(
     access as never,
     registry as never,
-    { db: chain } as never,
-    prisma as never,
+    documents as never,
+    accounts,
   );
 }
 

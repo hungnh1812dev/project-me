@@ -49,7 +49,8 @@ export const RECORD_LOADER_FILES = [CONTENT_REPOSITORY_FILE, TREE_LOADER_FILE];
 export const RECORD_LOADER_CONSUMER_FILE = join(
   MODULES,
   'documents',
-  'documents.query.service.ts',
+  'adapters',
+  'KyselyDocument.repository.ts',
 );
 /**
  * Files that bypass masking: no module facade re-exports them. Mapping a row
@@ -71,10 +72,22 @@ export const ACCESS_CONSTANTS_FILE = join(
   'access',
   'access.constants.ts',
 );
+/** Ports whose methods return loaded records: a file that reaches one must also reach the serializer. */
+export const RECORD_READER_PORT_FILES = [
+  join(MODULES, 'documents', 'application', 'Documents.port.ts'),
+];
 export const INTERNAL_COPY_FILES = [
-  join(MODULES, 'documents', 'publish.service.ts'),
+  // Loads documents for the application services, which serialize them.
+  join(MODULES, 'documents', 'adapters', 'KyselyDocument.repository.ts'),
+  // Reads an account's public id and display name; no record.
+  join(MODULES, 'documents', 'adapters', 'PrismaPresenceAccount.adapter.ts'),
+  // Reads only a row version and returns presence entries.
+  join(MODULES, 'documents', 'application', 'Presence.service.ts'),
+  // Module wiring: binds the port, reads no record.
+  join(MODULES, 'documents', 'Documents.module.ts'),
+  join(MODULES, 'documents', 'application', 'Publish.service.ts'),
   join(MODULES, 'documents', 'domain', 'TreeCloner.rules.ts'),
-  join(MODULES, 'documents', 'bulk.service.ts'),
+  join(MODULES, 'documents', 'application', 'Bulk.service.ts'),
 ];
 
 export const VALUE_KIND_SWITCH_FILES = [
@@ -119,6 +132,7 @@ export const PINNED_PATHS: readonly string[] = [
   RECORD_LOADER_CONSUMER_FILE,
   RECORD_SERIALIZER_FILE,
   ACCESS_CONSTANTS_FILE,
+  ...RECORD_READER_PORT_FILES,
   ...INTERNAL_COPY_FILES,
   ...VALUE_KIND_SWITCH_FILES,
   REVIEWER_SERVICE_FILE,
