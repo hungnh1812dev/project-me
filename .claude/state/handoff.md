@@ -1,140 +1,99 @@
 # Handoff
-Updated: 2026-10-24 after R3 checkpoint (phase R3 closed; completed rows and answers in archive/board-archive.md and archive/handoff-archive.md)
+Updated: 2026-10-25 after trim (phase R4 closed and archived; finished R-phase lines and older unscheduled follow-ups moved to `archive/handoff-trim-2026-10-25.md`)
 
 ## In progress / next
-- R4-25 qc: the progress-report rule could not be followed mid-run (no tool to send interim messages without ending the run); the agent sent one final report -> planner or user to decide whether qc should be split into shorter runs.
-- R4-25 qc: reviewer.spec.ts:327 no-underscore-dangle warning for `__turnstile` -> unscheduled.
-- R4-25 qc: the lint guard does not catch bare `/graphql` or `/accounts` strings (admin pages share the names) -> unscheduled.
-- Rule (user): every qc agent reports progress to the manager every 25 minutes; two consecutive progress reports must differ; if no report for 50 minutes, the manager stops that qc agent.
-- R4-24 user decision: approved deleting apps/e2e/src/seed-media.ts (replaced by smoke-database.ts) and committing R4-24 with the flaky specs logged as follow-ups.
-- R4-24 user decision (earlier): baseline the two failing specs (two-factor.spec.ts:75, content-presence.spec.ts:152) in a separate git worktree of clean HEAD; do not stash the working tree.
-- R4-16 user decision: committed the content-row-mapping entry in apps/cms-api/eslint.config.mjs (deep-import allowlist, same class as content.repository); user did not ask for a planner review.
-- R4-15 user decision: accepted that the reviewer session expiry is computed before the Turnstile call (shifts by Turnstile latency).
-- R4-13 user decision: approved renaming permission.validator.ts to permission-set.validator.ts (and its spec).
-- R4-13 format: `pnpm format:check` warns on turnstile.client.ts (R4-08 touched it), definition.validator.ts, migration-runner.ts, print-schema.spec.ts -> to confirm and fix before the phase checkpoint.
-- R4-11 user decision: approved moving two-factor.service.ts to two-factor-management.service.ts (builder moved it without asking first; recorded as approved now).
-- R4-10 user decision: approved the kit folder moves (Sheet -> SortableSheet, Pagination -> TablePagination, Blocks/BulkActionBar -> BulkActionBar) and test-form.tsx -> packages/form-commons/test/.
-- R4-09 user decision: approved deleting the 16 stray "-E" backup files under apps/cms-admin/src (list in the scratchpad stray.txt) and the move of merge.test-data.ts to apps/cms-admin/test/merge.fixture.ts.
-- R4-07 user decision: approved the three file renames (owner-bootstrap.ts -> owner-bootstrap.command.ts, media-refs.service.ts -> document-media.service.ts, media-references.ts (+spec) -> media-usage.ts (+spec)).
-- Phase R3 closed (checkpoint passed). Next: phase R4 (R4-01..R4-29 todo; no Base set yet).
-- R4-01 Task IDs out of cms-api identity, access, security-audit comments - awaiting checks/commit; next: R4-02
-- R4-02 Task IDs out of the other cms-api comments; comment guard spec - awaiting checks/commit; next: R4-03
-- R4-03 Task IDs out of cms-admin comments; guard - awaiting checks/commit; next: R4-04
-- R4-04 Task IDs out of web and kit comments; guard - awaiting checks/commit; next: R4-05
-- R4-05 Task IDs and stale comments in scripts, compose, workflows - awaiting checks/commit; next: R4-06
-- R4-07 cms-api renames in identity, access, reviewer, media - awaiting checks/commit; next: R4-08
-- R4-08 cms-api renames in content-engine, documents, graphql, common, infrastructure - awaiting checks/commit; next: R4-09
-- R4-09 Admin and web renames; admin test fixture out of src - awaiting checks/commit; next: R4-10
-- R4-10 Kit internal renames, MediaInput.onFilePick, folder names - awaiting checks/commit; next: R4-11
-- R4-11 Split the 2FA service into management and login - awaiting checks/commit; next: R4-12
-- R4-12 Split invitations out of accounts - awaiting checks/commit; next: R4-13
-- R4-13 Split effective policy and permission validators; named steps in validateConditions - awaiting checks/commit; next: R4-14
-- R4-14 Named steps in login and bootstrapOwner - awaiting checks/commit; next: R4-15
-- R4-15 Named steps in reviewer createSession - awaiting checks/commit; next: R4-16
-- R4-16 content-engine row mapping, component sync, reserved words split - awaiting checks/commit; next: R4-17
-- R4-17 documents: update steps and bulk errors - awaiting checks/commit; next: R4-18
-- R4-18 Admin CollectionListPage split - awaiting checks/commit; next: R4-19
-- R4-19 Admin TokenFormBody submit hook; row components - awaiting checks/commit; next: R4-20
-- R4-20 Web reviewer dialog steps - awaiting checks/commit; next: R4-21
-- R4-22 Kit SortableSheet split - awaiting checks/commit; next: R4-23
-- R4-26 Smoke expected-output file and header comparison - awaiting checks/commit; next: R4-27
-- R4-27 Split smoke.sh into section files - awaiting checks/commit; next: R4-28 (qc)
-- R4-23 Smoke DB identity as E2E vars - awaiting checks/commit; next: R4-24 (e2e must read E2E_DB_* instead of SMOKE_DB_* constants; update apps/e2e/README)
-- R4-29 One reusable app-checks workflow and a pins check - awaiting checks/commit (delete cms-admin.yml and web.yml with the commit after user approval); next: phase checks
-- OS4 browser walk: the user walks the open-state steps (wrong token, validation, valid submit, owner sign-in, /setup redirect after setup, storage/URL check) on a fresh smoke stack. Do not work around the qc browser typing block.
-- Phase 5 (Media): checkpoint still pending user review.
+- CR-hc-2 committed f252559; CR1 checkpoint passed (user, 2026-10-25). Health spec lint fix committed f88242c. CR-ce-1 committed 3e58fe8 (includes cli/generate.spec.ts and registry.service.spec.ts import paths). CR-ce-2 committed 5ed2ff5 (security and qc pass). Next: CR-dc-1. Follow-ups: MigrationDb.adapter pool silences idle-connection errors without logging (builder note) · password.spec.ts timing-ratio test flaky under load (identity, qc run 1) -> user decides on the limit.
+- CR-dc-1 documents domain/ and http/ moves - committed 0228f1e (board: qc pass, security pass). User (2026-10-25): accepted as done; no builder for it. Working tree had no staged or modified product files at the state check.
+- CR-gq-1 graphql http moves - reset to todo (user, 2026-10-25); no working-tree changes existed.
+- Bookkeeping (user, 2026-10-25): conventions.md and handoff.md changes (trim plus CR lines for committed work) go in one separate bookkeeping commit, after user approval.
+- Planner REVISE job (user, 2026-10-25): see "## Planner job: REVISE CR (2026-10-25)" below.
+- CR-ce-2 content-engine ports, adapters, content transaction runner - awaiting security-qc and commit; next: CR-dc-1
+- CR-pf-6 domain constants for the Prisma enums - awaiting security-qc and commit; next: CR-00 or the next CR task
+- CR-pf-5 TransactionRunner port and Prisma runner - awaiting security-qc and commit; next: CR-pf-6 or next CR task
+- CR-pf-4 platform splits and AppLogger port - awaiting checks/commit; next: CR-pf-5 or the next CR task
+- CR-pf-3 LAYER_RULES and the layer guard - awaiting checks/commit; next: CR-pf-4
+- CR-pf-2 layer-aware import graph and pinned-path table - awaiting security-qc and commit; next: CR-pf-3
+- CR-pf-1 DomainError, describeError, kind-to-status table - awaiting security-qc and commit; next: CR-pf-2
+- ET1 expired API token PATCH 409 - awaiting security-qc and commit; next: ET2 (ui-builder)
+- ET2 cms-admin hides Edit on expired tokens - awaiting checks/commit; next: ET3 (qc)
+- Planner job `DESIGN nest-cli-defaults` (user decisions, 2026-10-25): NestJS scope = all CLI defaults (nest build, start:prod/start:debug scripts, scaffold tsconfig, nest-cli.json, dev watch). Building with `nest build` is allowed if the plan shows dist/main.js, Dockerfile, smoke stack and CI keep working. Next.js (apps/web): no change now; standalone output, security headers, API rewrite, custom ports and agentRules false stay. The planner reconciles DV1b (in progress).
+- Phase DV closed 2026-10-25 (checkpoint approved): DV1 b3fbc13, DV1b 5c50f23, DV1c 38647bb. Smoke stack torn down. Section in archive/board-archive-DV-2026-10-25.md.
+- Planner request: cms architecture and side-menu. Planner DONE: ADR 0006/0007/0008, docs/modules/admin-navigation.md, phases CA, DV, SM, FN, MF in tasks/todo.md and board.md.
+  - User decision (2026-10-25): micro-frontend option A (packages per feature, built together); purpose = boundaries and per-feature build.
+  - User decision: cms-api `application/` may use only `@Injectable` and `@Inject`.
+  - User decision: naming rule covers every TS package.
+  - User decision: all remaining planner defaults accepted: CA2 domain/application/adapters/http; CA3 no Prisma types in domain or application; CA4 blanket rename approval for CR tasks (whole-file deletions still asked); FN2 new files now, existing files move once with their CR/MF task; FN3 components keep PascalName.tsx; FN4 hooks query / mutation / state; FN5 ADR 0008 table as written; FN6 web .query.ts -> .graphql.ts; SM1 single-type link to /content/:slug; SM2 "Roles and permissions" (/roles), "Accounts" label -> "Users" (route stays); SM3 Security settings and Sign out in bottom user block; SM4 no collapsible menu in v1; DV1 tsc --watch + node --watch-path; DV2 add start:cms-api:dev, root start:dev includes cms-api (needs local Postgres); MF3 admin first, web after the CV page.
+  - User decision: cms-api is audit first, then refactor.
+  - User decision: micro-frontend, planner proposes options, user picks.
+  - User decision: cms-api `start:dev` loads `.env.local` (never read `.env*`).
+  - User decision: side-menu groups as written: content-types (single-types, collection-types), utils (file libraries), system settings (API tokens, permissions, users, roles, reviewer, ...).
+  - User rule (file naming): `<use (for react hook)><Pascal Name>.<function>.<ext>`, `<function>` from setup | module | query | client | service | ... (user's list; more may follow). Planner to confirm.
+- Phase 5 (Media): checkpoint pending user review. No phase-level REGRESSION / PHASE run yet; ask at checkpoint.
 - Phase 6: phase checks not run yet (T38 done).
-- D1 open: SOPS flow untested on a cluster; try once on a scratch namespace. cms-api does not load .env itself (guide uses set -a; . ./.env).
+- D1 open: SOPS flow untested on a cluster; try once on a scratch namespace.
+- OS4 browser walk: the user walks the open-state steps on a fresh smoke stack (wrong token, validation, valid submit, owner sign-in, /setup redirect after setup, storage/URL check). Do not work around the qc browser typing block.
+
+- CA1a (user, 2026-10-25): run security-qc on the existing qc audit `.claude/state/findings/audit-2026-10-25-qc.md`; no restart. Security review is opus per task (high-risk).
+
+- User decision (2026-10-25, from CA1b security): an expired API token is treated like a revoked one; PATCH /api-tokens/:id on an expired token returns 409 (no new expiresAt). Routed as a direct request.
+- CA1b follow-up for CR (core-builder): record-serializer.architecture.spec.ts hard-codes paths and filename suffixes for http/ files; match on the http/ folder instead (F2 from CA1b-security.md).
+
+## Planner job: REVISE CR (2026-10-25)
+User decisions in force: file granularity (code-standards §4.4; cms-api ADR 0006 §7.13), test tiers (skill test-tiers; commands in project.md). No product code in this job.
+a. Revise the target file map and file list of every CR task still todo (after CR-dc-1 through CR-rv-2) to follow §4.4. Report file count per module before and after. The L8 maps in `.claude/state/findings/AUDIT-CA*.md` are superseded where they conflict. Keep every security note, behavior rule and verify step. Set each task's expected test tier.
+b. Add behavior-preserving consolidation tasks, one commit each, after CR-rv-2 and before CR-cl-1:
+   - CR-cs-1: health + content-types
+   - CR-cs-2: platform files of CR-pf-1..6 (common/, infrastructure/, architecture/)
+   - CR-cs-3: content-engine; Security gate: yes
+   Each updates pinned paths (source-paths.constants.ts, layer-rules.constants.ts lists, eslint.config.mjs exceptions), docs/modules/*.md and test imports; integration and architecture suites unchanged. Tier 1 unless a tier 3 path is touched.
+c. Add infra task DEV-STACK (core-builder), right after CR-dc-1 (so after the current done row, before CR-dc-2): `pnpm dev:stack` (scripts/dev-stack.sh) per test-tiers tier 2:
+   - Postgres and Mailpit from ready images only, no image build; own compose project name; never touch abyss-smoke or any other stack;
+   - db:migrate + content:migrate + e2e account seeding (reuse smoke seeding code, do not copy it);
+   - cms-api, cms-admin and web in dev mode, wait until each answers;
+   - write the e2e vars file so `pnpm e2e:spec` runs against it; a stop command;
+   - env only from `.localEnv.agent` (create with generated dev-only values if missing; key names only in the matching .env.example files);
+   - update project.md (`dev stack` line, remove "not built yet"), conventions.md and apps/e2e/README.md;
+   - verify: `pnpm dev:stack`, then one auth spec and one media spec pass with `pnpm e2e:spec`; report start-up time against `SMOKE_E2E=1 pnpm smoke`.
+   Checks: qc-cli tier 2. Risk: normal.
+d. List any other app or package (apps/web, apps/cms-admin, packages/*) whose files break §4.4. Report only; no tasks added.
+e. Fix duplicate item number "11." in ADR 0006 §7 without changing numbers other files cite (§7.12, §7.13), so Prettier passes. ADR 0006 is uncommitted: include it in this job's commit.
+f. Fix double bullet "- - cms-admin:" in conventions.md.
+Rules for the builders after this job: behavior-preserving unless the task says otherwise; checks at the tier in Checks needed; one commit per task with user approval; a builder whose file list conflicts with §4.4 follows §4.4 and records the difference in current.md.
+Result to the user before any further dispatch.
+User answers to planner questions (2026-10-25), recorded for the revision:
+- Q-R1: ports file is `<Module>.port.ts` (one per module), not `.ports.ts`. Planner aligns ADR 0006 §7.13 wording (and the maps) to this.
+- Q-R2: files under 30 lines allowed for Nest entry points (guard, resolver, middleware, job) and for a single adapter that its layer forces into its own file.
+- Q-R3: no ports for library calls without I/O (argon2, jsonwebtoken, otplib, node:crypto). Planner aligns ADR 0006 §1 ("crypto and library wrappers" in adapters/) with this.
+- Q-R4: blanket approval for exactly the whole-file deletions listed under "Merged away" in each CR task. Other deletions still need approval.
+Revision approval: pending (user).
 
 ## Direct requests
+### ET expired API tokens are not editable (planner, 2026-10-25)
+- User answers: Q-ET1 new `API_TOKEN_EXPIRED` (409, "The API token is expired.") · Q-ET2 block the whole PATCH on an expired token · Q-ET3 revoking an expired token stays 204 · Q-ET4 the guard uses the shared expiry rule in ET1.
+- Shared rule: `apps/cms-api/src/modules/access/ApiTokenExpiry.rules.ts` `isApiTokenExpired(expiresAt, nowMs)`, `expires_at <= now`.
+- Tasks: ET1 (core-builder) -> ET2 (ui-builder) -> ET3 (qc). Spec: SPEC §7 D5.
 
-## Follow-ups
-- R4-29: cms-admin.yml and web.yml removed (commit a6e50ff); stray scripts/smoke.sh.bak deleted.
-- R4-29: check names (cms-admin / Checks, web / Checks) on a real CI run are unverified until the user pushes.
-- R4-28 qc: full e2e run 1 had one failure, not identified; run 2 passed (189) -> check in the phase checks.
-- R4-28 qc: no max-lines lint guard added (would warn on the two specs still over 400 lines) -> user decision.
-- R4-28 qc: `no-underscore-dangle` warning on `__turnstile` now at reviewer-dialog.spec.ts:288 -> unscheduled.
-- R4-27: conventions.md has a local line about where new smoke assertions go; it is not in the R4-27 commit -> commit with the next smoke change or with the phase close.
-- R4-24 qc: no fully green full e2e run; two-factor "an account turns on TOTP..." and content-presence "leaving the page stops the beats" fail intermittently on a stack already used by other specs; both pass on a fresh stack (branch and baseline) -> run them first or on a fresh stack; spec isolation, unscheduled.
-- R4-24 qc: reviewer.spec.ts:336 no-underscore-dangle warning for `__turnstile` -> unscheduled.
-- R4-22: tasks/todo.md has no acceptance text for R4-22 (only "Findings AUD-AU4-13 · Verify: SV"); built to the audit's proposed fix -> planner to add acceptance text.
-- Smoke stack `abyss-smoke` still running (R4-22 qc denied teardown); the user must run `docker compose -p abyss-smoke down -v`.
-- R4-21 qc (pre-existing): when the admin reviewer fieldset is disabled, the richtext toolbar buttons are disabled but the editor body stays contenteditable (the component never gets `disabled`) -> unscheduled.
-- R4-21 qc: with Select-all the Heading button reads aria-pressed false (selection spans the trailing empty paragraph); Tiptap behaviour, same as before -> no action.
-- R4-20 qc: no test asserts the widget remount after a failed submit with a reset-challenge error -> unscheduled.
-- R4-20 qc: reviewer.spec.ts "a role without reviewer settings sees no Reviewers nav" (~line 606) failed once when run alone after the full run (sign-in per-email limit suspected) -> check during the phase checks.
-- R4-20 qc: smoke stack `abyss-smoke` still running; the user must run `docker compose -p abyss-smoke down -v`.
-- R4-19 qc: no e2e for the token dialog lock while a request is in flight (Esc and outside click) -> unscheduled.
-- R4-19 qc: api-tokens.spec.ts (~line 399) fails at sign-in when run alone after two-factor.spec.ts changed the owner's credentials; passes on a fresh stack -> spec isolation, unscheduled.
-- R4-19: MediaLibraryPage (241-line function) row render not split; finding only names TokenRow/AccountRow, and token columns were already separate -> unscheduled.
-- R4-18 qc: not walked in the browser: forbidden state, empty state with and without create permission, non-collection notice, Updated column holding the link when there are no value columns -> unscheduled; check before the phase checkpoint.
-- R4-18: CollectionListPage.tsx is 256 lines (target about 150); layout, permissions and the four render states remain -> unscheduled.
-- R4-18: CollectionListPage is 256 lines (finding target about 150); the remainder is the four render states and layout, no named sub-responsibility left to extract -> unscheduled.
-- R4-17: `documents.command.service.ts` is now 477 lines (was 421), over the 300-line warning level the size guard uses -> size split needed in the phase checks or a later task.
-- R4-12 qc: `pnpm smoke` exits 1 on the routing check "web /: expected 200, got 404" via the proxy, although all 176 e2e tests pass; apps/web unchanged in R4-12. Probably pre-existing or a seed/content issue -> to confirm (qc or the user) before the phase checkpoint.
-- R4-10 qc: in the richtext editor, `keyboard.type` typed fast right after Bold makes Bold's aria-pressed read false; typing key by key keeps it true. Possibly the value-sync effect in RichtextInput.tsx -> to builder/planner to decide; pre-existing.
-- R4-10: left as is: `DiffViewerBlock` does not exist in the kit (finding stale); `DatePicker.tsx` still holds DatePicker and DateTimePicker (finding gave no split); public props `busy`, `count`, column `sortable` unchanged; `onChange` alias removal is a later question -> unscheduled.
-- R4-09 qc: /accounts "Invite account" stays visible when roles fail to load (`isReady` is `isOwner || !roles.isPending`); the task says action buttons are hidden until roles load. Possibly pre-existing -> planner or builder to decide.
-- R4-09 security: admin `features/auth/use-email-code.ts` still uses `coolingDown` (web uses `isCoolingDown`); naming gap only -> unscheduled.
-- R4-09 qc: smoke stack `abyss-smoke` left running with throwaway accounts qc-admin@example.test and qc-reader@example.test -> user to run `docker compose -p abyss-smoke down -v`.
-- R4-09: left as is: API-mirrored booleans, `open`/`disabled`, `badJson`/`reviewing` (state words); web `useWebSession.tsx`/`test-utils` file renames (AUD-AU3-13) not part of this task -> unscheduled.
-- R4-08: left as is: `IAppConfig` (about 30 importers), `SmtpConfig.secure` (mirrors nodemailer), `xOf` lookups, response/request keys (`atomic`, `component`, ...), CLI flags `allowDestructive`/`dryRun`; `infrastructure/media` file names belong to AUD-AU1c-12 -> unscheduled.
-- R4-07: left as is: `accountActor`/`anonymousActor` (constructor-style, exported by access, many callers; the finding allows them), `readonly data` page envelopes (contract), response keys; reviewer module needed no rename -> unscheduled.
-- R4-07: the stale `dist/` still has old owner-bootstrap.js; rebuild is clean -> none.
-- R4-06: `pnpm --filter @abyss/e2e lint` has the 2 `no-base-to-string` errors in collection-list-display.spec.ts (lines ~138-139), already listed under R3-24c -> unscheduled.
-- R4-06: `tasks/todo.md` says `pnpm e2e:spec` runs from apps/e2e, but it only works from the repo root (apps/e2e has no such script) -> planner to align todo wording.
-- R3 coverage gaps (browser walks not done, logged in the archived R3 section) -> unscheduled; do before a release: authenticated pages and nav labels, date display and "Protected (***)" text, checkbox/switch/radio visuals, mobile dialog look, Esc in login challenge and TOTP setup, read-only role variants of the list pages, console checks on the list pages.
-- R3-24a: the drift check (change one mirrored constant, confirm contract tests fail, revert) has not been run for cms-api, admin, web, kit or e2e -> unscheduled.
-- R3-24c: e2e lint has 2 `no-base-to-string` errors in apps/e2e/tests/collection-list-display.spec.ts (lines ~138-139, from R3-11) -> unscheduled.
-- R3-24c: admin-list-sheets.spec.ts now accepts an empty-state message on /reviewer and /api-tokens; this weakens the empty-list assertion -> unscheduled.
-- admin-session-retry.spec.ts ("a 401 on a protected call refreshes once and retries it") failed once in a full run (refresh calls [200] instead of [200, 200]); also admin-list-sheets once -> unscheduled, investigate timing.
-- pnpm audit: 6 pre-existing advisories (2 high: body-parser DoS, multer DoS; 2 moderate and 2 low: fast-uri), not from R3 -> separate dependency-bump task (user to decide).
-- Web app has no favicon; GET /favicon.ico returns 404 (low) -> unscheduled.
-- R3-24a: the JSON keys are camelCase groups (password, otp, totp, reviewerInputLimits, errorCodes.{common,auth,ownerSetup,reviewer,access}, permissionActions, systemSubjects, richtextUrlSchemes, refreshCookieName, setupTokenMaxLength, ownerDisplayNameMaxLength); add a key in `src/contract/public-constants.ts` if a mirror test needs another constant.
-- R3-16: the shared `h-9 ... px-3` base of input.tsx and native-select.tsx (AUD-AU4-3) was left as is; extract only if a third control needs it -> unscheduled.
-- R3-16: the string "ring" in a comment inside kit source adds a `.ring` utility to dist/styles.css (Tailwind scans the sources); avoid bare class words in comments there.
-- R3-13: apps/web `config` <-> `lib` import each other (env files use `lib/strip-trailing-slashes`, `lib/api-client` uses `config/env.client`); the architecture spec covers features and app only -> unscheduled.
-- R3-13: `AccountMenu.login.test.tsx` (was WebLoginDialog.test) moved to app/ because it drives the dialog through AccountMenu.
-- R3-12: `REVIEWER_ROLE_SLUG` sits in `config/auth.constants` (not reviewer.constants) because content, same tier as reviewer, may not import reviewer; `ACCOUNT_LIMITS`/`API_TOKEN_LIMITS` moved to `config/http.constants` and `PermissionAction` to `lib/permission-action.ts` so copy and lib do not depend on features -> planner may align todo wording.
-- R3-09: nav item uses `label` (resolved COPY text) and `navItems` (array, access has three), not `labelKey`/`navItem` as the task text says -> planner may align todo wording.
-- R3-07: `useClampedPage(page, setPage, meta)` takes the page state (the query needs `page` before `meta` exists), not `(meta)` alone as the task text says -> planner may align todo wording.
-- R3-05: the architecture spec was renamed from `.spec` to `.test` so vitest runs it; the earlier R3-04 finding (never run) is resolved by that rename.
-- R3-23: vitest include widened to `*.spec.*` so the kit's architecture spec runs; the kit's R3-23 snapshot spec is part of that run.
-- Phase R2 security (outside R2 scope): API responses send only the CSP header; no `X-Content-Type-Options` (middleware unchanged since 490773d) -> unscheduled, decide with the user.
-- R2-17: lint for the new contract spec was not confirmed (eslint printed nothing) -> run `pnpm lint` in apps/cms-api at the phase checks.
-- R2-12 qc: the sentinel spec's failure on a leaked otpPepper was not confirmed (mutation output cut off) -> re-check before the phase checkpoint. The secret-key list in config-summary.spec.ts is hand-maintained; a new secret key needs adding on purpose (sec note).
-- R2-12 boot log of a running smoke stack not checked (qc-cli scope) -> check at the phase checks.
-- R2-11 (phase R2 security at phase end): production secret-length checks restructured (JWT_ACCESS_SECRET, OTP_PEPPER, TOTP_ENC_KEY, OWNER_SETUP_TOKEN, TOTP_ENC_PREVIOUS_KEY). PORT='' now falls back to default (user confirmed intended). No test for the PORT='' fallback (qc note).
-- Integration suite on the overloaded machine: Testcontainers hook timeouts (120 s) hit content-types, accounts-roles, role-permissions-seed and media specs; they pass on re-run. Stop other load before running the full suite; watch this on slow CI hosts (R2-10 qc).
-- SPEC.md code sample (~lines 394-398) still names API_ROUTES.DOCUMENTS -> planner.
-- R2-10: full integration suite not run by the builder (machine overload, Testcontainers timeouts); only route-snapshot and auth passed -> qc.
-- password.spec.ts timing-ratio assertion (line ~254) still flakes intermittently (R2-07 qc, pre-existing) -> unscheduled; stabilise before the phase checkpoint.
-- R2-06 qc: full e2e suite not green in two runs; UI timeouts in access-admin ("invited account gets an email code"), content-presence ("leaving the page stops the beats") and content-form ("unknown document and unknown type show a notice") that pass when re-run alone -> unscheduled, check machine load / timeouts before the phase checkpoint.
-- R2-03: `ConditionValueKind` is kept as an alias of `FieldValueKind` (used by graphql, documents, content-types); drop it in a later cleanup -> unscheduled.
-- R2-02 qc gap: no e2e for date `2026-13-45`, year-0 values, datetime condition literals or media UUID/int limits over HTTP; covered by unit and integration specs only.
-- Integration runs print MaxListenersExceededWarning (11 SIGTERM/SIGUSR2 listeners) -> unscheduled, test noise seen in R2-01 qc.
-- R2-01 security (sec-R2-01 pass): when R2-03 / R2-04 switch graphql list arguments and filter inputs to the registry, media's internal file id must not be filterable or sortable (`listQueryable: false` is declared but not yet enforced).
-- R1-15: `uuidv7.ts` was git mv'd and then edited (pattern export dropped, per acceptance), so the commit mixes move and edit; smoke e2e not run by the builder -> manager/qc.
-- R1-14: `content-types` and `media` modules no longer import `IdentityModule` (SPEC §2 auth-guard-only); `JwtAuthGuard` has no deps, the strategy comes from the app-level IdentityModule. A qc smoke run confirms authenticated media and content-types calls -> qc.
-- R1-14: `SPEC.md` §2 line 75 still lists the known violations as pending; update when the planner edits SPEC (list is now empty) -> planner.
-- R1-13 qc gap: no test for a media file the actor cannot read, none asserting an identical message across causes -> unscheduled.
-- R1-09: the reviewer switch-off raw SQL (`UPDATE accounts SET token_version ...`) stays in reviewer, allowlisted in session-ownership spec; move into identity if reviewer should hold no session writes -> unscheduled.
-- Production config (T37a/T38 security): give `content:migrate` / `deploy:migrate` a DB-only config loader so the init container gets only DB secrets (today it needs the same Secret as main); consider a DDL-capable migration role separate from the API runtime role (both use DB_USERNAME today). Owner decision pending.
-- CI first real run (T37e/T37f): unverified until the user pushes. Spot-check that each pinned action SHA matches its version comment; confirm GitHub Environments (staging, production), branch restrictions and secrets are set up first -> user.
-- Untested deploy pieces (T38 guide "not run" list): k8s manifests, real Traefik/Cloudflare client IP, rclone off-site upload, readOnlyRootFilesystem on admin -> user, with D1 SOPS check.
-- Nav entry / content-type index page to reach `/content/:slug` (and a link from DocumentEditPage back to the list) -> unscheduled.
-- T36: CSP must allow challenges.cloudflare.com (script-src, frame-src) and nonce the Turnstile script; nonce CSP via proxy.ts + style-src-attr 'unsafe-inline' (Q-W4); remove `X-Powered-By: Express`; non-bulk body over Nest's 100 KB parser answers 500 instead of 413; consider throttling writes.
-- T36 / design: how a reviewer reaches the admin console (token is web-memory only; the admin reviewer banner/read-only mode is unit-tested only).
-- Flaky tests: cms-api password.spec.ts timing test under parallel load; one cms-api integration flake (not investigated); e2e two-factor.spec.ts:68 TOTP sign-in failed once (check freshTotpCode timing) -> unscheduled.
-- e2e gaps: apps/e2e/README lacks the content specs; owner login budget with the full suite; real-upload e2e once real Cloudinary credentials exist (library spec stubs POST /media); richtext paste of script/img-onerror not covered; media picker empty/error states not covered -> unscheduled.
-- Cloudinary: user must supply real CLOUDINARY_* values (sharp binary loads in the image, checked in T38; memory limits are in the guide as starting points).
-- Content-types API has no `required` / per-field `writable` (required errors come from the server) -> unscheduled.
-- DocumentEditPage is minimal (draft only, no publish, no nav) -> unscheduled (T35 covers bulk only).
-- Activity `database` adapter (SPEC D15) + create/update activity events -> unscheduled.
-- created_by/updated_by FKs -> public.accounts and media FKs -> file_library (generator support + content migration) -> unscheduled.
-- Public web render of richtext must sanitize again -> when the CV page (T30, skipped) returns.
-- Low: form-commons Button `loading` drops keyboard focus; TwoFactorModal still on native Modal.tsx (migrate when touched); RichtextInput may lose keys right after a toolbar click; common auth.constants imports identity password constants (layering).
-- R1-16: smoke e2e (stack-seed.sh change) not run by the builder -> qc.
-- R4-02: the guard covers non-spec sources only; 24 spec-file comments/titles in cms-api still carry T/Q IDs (config/app-config.spec.ts, access specs, etc.) -> unscheduled.
-- R4-03: the admin guard covers non-test sources only; spec-file comments in cms-admin were not scanned for IDs -> unscheduled.
-- R4-04: the web and kit guards cover non-test sources only; test/spec comments in web (apps/web) were cleaned where found but are not guarded -> unscheduled.
+## Follow-ups (open, user action or risk only)
+- CR-dc-1: documents `domain/` still imports values from other modules (`fieldTypeOf`, `joinFieldPath`, `RECORD_SYSTEM_*`, content-engine value parsers); the layer guard allows only `isComponentField` -> decide at CR-dc-3 when documents joins `MIGRATED_MODULES` (extend `DOMAIN_CROSS_MODULE_HELPERS` or move through ports). `record-serializer.architecture.spec` `BOUNDARY_FILE` suffix rule untouched -> CR-ac-1. SPEC.md:410 still names `documents/documents.controller.ts` (SPEC outside core scope) -> planner.
+- CR-ce-2: `documents/bulk.service.ts` still holds its own savepoint statements (`bulk_item`); the runner's `runInSavepoint` copy is unused until CR-dc-3 moves bulk onto it, and `unitOfWorkFromContentTrx` goes then -> CR-dc-3. The task text asked for a `KNOWN_LAYER_VIOLATIONS` entry for it; the guard rejects entries of unmigrated modules, so none was added.
+- CR-ce-2: `ContentRegistryProvider` / `RegistryService` stay as facade aliases of `ContentRegistry` / `ContentTypeRegistry` for unmigrated modules; drop each alias with the last consumer's CR task -> CR-cl-1
+- CA5 user answers (2026-10-25): Q-CA5/Q-CA13 allow pure packages (zod, sanitize-html) in domain/, I/O banned · Q-CA6 allow import type and pure helpers along existing module edges · Q-CA7 add jobs/ layer · Q-CA14a move the four single-consumer infrastructure folders into owner modules · Q-CA9b SQL behind ports in the consumer module · Q-CA10 graphql rules and schema in http/ · Q-CA14b keep loadDefinitions and DEFAULT_CONTENT_PATHS on the content-engine facade · Q-CA14c concurrent delete returns 404 DOCUMENT_NOT_FOUND (marked planned change) · Q-CA15c access/<layer>/, access/management/<layer>/, access/document-auth/<layer>/ with its own index.ts · Q-CA16 add only resolver to ADR 0008 · Q-CA17 named LAYER_RULES exception with opaque RowFilter · Q-CA1..Q-CA4 and Q-FN1..Q-FN6 confirmed as recorded here. Q-CA8 moot (Q-CA14a yes). Q-CA12 and Q-CA15a/b/d per planner's recommendation in ADR 0006 §7.
+- CA4 open decisions for CA5 / user (from AUDIT-CA4.md): Q-CA13 allow pure third-party libs (zod, sanitize-html, graphql) in domain/ (qc recommends yes with an allowlist) · Q-CA14 (a) move the four single-user infrastructure ports into their owner modules (recommended yes); (b) keep loadDefinitions and DEFAULT_CONTENT_PATHS on the content-engine facade (recommended no); (c) DocumentNotFoundError becomes DomainError(not_found) in the calling use case · Q-CA15 (a) classify platform roles by folder (recommended); (b) start the layer spec with MIGRATED_MODULES (recommended yes); (c) layout of access/management and document-auth; (d) keep ClientMeta as a type in common/http/client-meta.ts. Also AUD-CA4-9: a describeError(unknown) reader is needed so DomainError is not a 500 over GraphQL or in bulk items (security gate yes).
+- CA3 open decisions for CA5 / user (from AUDIT-CA3.md): Q-CA10 graphql rules/ and schema/ depend on graphql-js, which domain forbids (qc recommends http/) · Q-CA11 keep the 19 bare 403/404 bodies as they are · Q-CA12 TransactionRunner shape and where DATABASE_HEALTH lives. CA3 pilot recommendation: content-types, with health as warm-up.
+- CA2 open decisions for CA5 / user (from AUDIT-CA2.md): Q-CA7 jobs/ layer for scheduled entry points (qc recommends yes) · Q-CA8 allow domain/ to import platform port vocabulary such as MediaKind · Q-CA9 keep infrastructure/media and infrastructure/turnstile in place and reword ADR section 6, route reviewer account lifecycle through an access/identity facade · new error kind for HTTP 415 (unsupported_media_type proposed; ADR kind list has none).
+- CHECK LATER (manager, 2026-10-25):
+  - Commit decision on the audit reports `.claude/state/findings/AUDIT-CA1a.md` and `AUDIT-CA1b.md` (uncommitted; CA1a also has an unresolved Prettier flag).
+  - ET2 manual walk (console, network, design guidelines) not done: owner password is random in the kept stack; re-run with credentials.
+  - api-tokens e2e: "admin: only its own tokens" fails on a standalone rerun on the kept stack (likely two-factor spec changing the password); passes on a fresh full run.
+  - CR follow-up: record-serializer architecture spec path/suffix rule (AUD-CA1b-7).
+  - Audit gap noted by qc (CA1b): guards, the four management services and AnonymousActorService have no unit spec; e2e coverage not checked.
+- CI first real run (T37e/T37f, R4-29 check names) unverified until the user pushes. Before that: confirm GitHub Environments (staging, production), branch restrictions and secrets -> user.
+- Untested deploy pieces (T38): k8s manifests, real Traefik/Cloudflare client IP, rclone off-site upload, readOnlyRootFilesystem on admin, SOPS check -> user.
+- Cloudinary: user must supply real CLOUDINARY_* values -> user.
+- Production config: a DB-only config loader for `content:migrate` / `deploy:migrate`, and a DDL-capable migration role separate from the API runtime role -> owner decision.
+- pnpm audit: 6 pre-existing advisories (2 high: body-parser DoS, multer DoS; 2 moderate and 2 low: fast-uri) -> separate dependency-bump task, user decides.
+- Phase R2 security: API responses send only the CSP header; no `X-Content-Type-Options` -> decide with the user.
+- CA1b F2: D3 architecture test (`record-serializer.architecture.spec.ts`) keys on fixed paths and the `.controller/.filter/.interceptor/.gateway` suffix; update paths with the move and make rule 2 also key on the `http/` folder -> CR-ac-1
+- Browser walk gaps before a release (R3 coverage: authenticated pages and nav labels, date display, checkbox/switch/radio visuals, mobile dialog, Esc in login challenge and TOTP setup, read-only role variants, console checks on list pages) -> user, before release.
+- conventions.md ~14.9 KB, over the ~10 KB limit. User decision: keep the Tooling and smoke/e2e procedures in conventions for now; revisit when a docs page covers them -> user.
+- e2e flakiness on a shared stack (two-factor and content-presence specs) -> run on a fresh stack; spec isolation unscheduled.

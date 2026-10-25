@@ -36,7 +36,6 @@ Module structure and API details: the module's README / `docs/modules/*.md`. Per
 - Local `next build` of apps/web needs `NEXT_PUBLIC_API_BASE_URL` in the shell (agents never read .env.local).
 
 - form-commons: a new input reuses `forms/field-wiring.ts` and `ui/control.constants.ts` (internal, `architecture.spec.ts` guards it); do not write bare class words (e.g. "ring") in kit comments, Tailwind scans sources (R3-16).
-- form-commons table parts (`SortableSheet`, `TablePagination`, `BulkActionBar`) take all copy via `labels`; column renderers are named `renderCell` (oxlint no-unstable-nested-components flags `cell:`). Admin list copy is `COPY.content.collection` / `COPY.content.bulk`.
 - cms-admin: features reach auth only through `features/auth` (`useCurrentUser`, `useSession`, `Session`); `auth/app-wiring.ts` is `src/app/**` only; no `app/` from features/lib (ESLint boundaries in `eslint.config.mjs`). Auth tests build their store with `auth-test-store.ts`.
 - cms-admin: features import each other only via the other's `index.ts`, downward in the SPEC §2 order (`FEATURE_TIERS` in `eslint.config.mjs`); tests may deep-import for `vi.mock`. Architecture test is `src/architecture.test.ts` (vitest runs only `*.test.*`).
 - cms-admin: shared page helpers live in `components/` (`useRestoreFocus`, `useClampedPage`) and `lib/date-format.ts` (no `new Intl.DateTimeFormat` elsewhere); query keys come from `*-queries.ts` / `use-setup-status.ts`, never literal `queryKey` arrays (ESLint `no-restricted-syntax`); the masked-value sentinel is `MASKED_VALUE`.
@@ -48,24 +47,26 @@ Module structure and API details: the module's README / `docs/modules/*.md`. Per
 - Contract tests read `apps/cms-api/content/public-constants.json` with `readFileSync` from `process.cwd()` (never import it in app code); add a mirror check there when a client copies a new cms-api constant.
 
 ## Backend (cms-api)
+- Transactions: new multi-write flows use `CORE_TRANSACTION_RUNNER` (`infrastructure/database/TransactionRunner.port.ts`); cache drops go in `unit.afterCommit`. `prismaTxOf(unit)` is for repositories only; `unitOfWorkFromPrismaTx` is transitional (removed in CR-cl-1).
+- Errors: read a thrown value only through `describeError` (`common/http/describe-http-exception.ts`); never `instanceof HttpException` outside `common/`. `DomainError` (`common/errors/`) maps via `DOMAIN_ERROR_HTTP_STATUS`; no module throws it until its CR task.
 - Errors: throw HttpException with `{ errorCode, message }`; the filter passes `details` for 4xx. Constants in `src/common/constants/*.constants.ts`; config via `APP_CONFIG` (src/config).
 - Config log: `config/config-summary.ts` lists every logged field by hand; a new config field or env key needs a line there, a sentinel entry if secret (`config-summary.spec.ts`), and a `.env.example` entry (parity spec; CLI-only keys go on its allowlist).
-- Express Request typing: use `RequestWithId` from request-id.middleware (module augmentation fails under pnpm strict).
-- Content SQL names come only from `naming.ts` `planTables()`. Content reads go through `ContentDbProvider.db` (Kysely); controllers and DTOs must not import content.repository/tree-loader (architecture tests).
+- Content SQL names come only from `naming.ts` `planTables()`. Content reads go through `ContentDbProvider.db` (Kysely); controllers and DTOs must not import KyselyContent.repository/TreeLoader.adapter (architecture tests).
 - Architecture specs use `src/architecture/import-graph.ts` (resolved files, facades followed), never path-string regexes.
+- Architecture specs read module file paths only from `src/architecture/source-paths.constants.ts` and call `assertPinnedPathsExist` ("missing path" on a stale entry); a moved file is one edit there (static `import`s of module symbols still change in the spec). `layerOfFile` (module-graph.ts) gives the ADR 0006 layer; `ResolvedImport.isTypeOnly` and `textMatches` live in import-graph.ts.
+- Layer rules (ADR 0006 §2) live in `src/architecture/layer-rules.constants.ts` (`LAYER_RULES`, `MIGRATED_MODULES`, `KNOWN_LAYER_VIOLATIONS`, `LAYER_EXCEPTIONS`); `layer-check.ts` runs them. A CR task adds its module to `MIGRATED_MODULES`; moving the access field projection means editing `source-paths.constants.ts` only.
 - Every record body goes through `RecordSerializer` with `recordReadAccess(actor, fieldsFor().readable)`; writes: strip `version`, then `WriteAllowlist.apply`, then `assertTreeInput`. Rules: docs/modules/access-control.md.
 - Token-accepting content routes: `@UseGuards(ApiTokenGuard, PermissionGuard)` (module imports AccessModule).
-- Throttle key source `actor` works only on routes whose class guards include JwtAuthGuard.
-- List pagination: `page` default 1, `pageSize` default 20 max 100, `meta {page,pageSize,total}`, strict query (README "List pagination convention").
 - Scale-out: VersionCache, rate-limit store, TwoFactorChallengeStore and presence are in-memory (one replica only).
 - After any `content/schemas` change, rerun `graphql:print-schema` (SDL `content/schema.graphql` is generated).
 
-- Module graph guard: nodes and edges in `src/architecture/module-edges.constants.ts`; adding a module = one row in SPEC §2 plus one in `ALLOWED_MODULE_EDGES`; a removed violation must also leave `KNOWN_VIOLATIONS` (stale entries fail).
-
-- cms-api: every module under `src/modules/` is imported only through its `index.ts` (lint-enforced in `apps/cms-api/eslint.config.mjs`; `access/management` has its own). Exceptions kept out of facades: `access/field-projection`, `access/document-auth`, `content-engine/content.repository`, `content-engine/tree-loader`. Never export loaders or raw audit writers from a facade. Run cms-api jest through `pnpm test:unit` (needs `--experimental-vm-modules`).
+- Documents constants: `documents/domain/Documents.constants.ts` (rules, limits, messages), `http/DocumentsHttp.constants.ts` (URL and body keys, derived from domain `LIST_QUERY_PARTS`), `adapters/DocumentsSql.constants.ts`. A domain refusal is `DomainError`; read it with `describeError`, never `instanceof BadRequestException`.
+- cms-api: every module under `src/modules/` is imported only through its `index.ts` (lint-enforced in `apps/cms-api/eslint.config.mjs`; `access/management` has its own). Exceptions kept out of facades: `access/field-projection`, `access/document-auth`, `content-engine/adapters/KyselyContent.repository`, `content-engine/adapters/TreeLoader.adapter`. Never export loaders or raw audit writers from a facade. Run cms-api jest through `pnpm test:unit` (needs `--experimental-vm-modules`).
 - A mirrored cms-api constant changes in `*.constants.ts`; then run `pnpm --filter @abyss/cms-api contract:print` and commit `content/public-constants.json` (CI runs `-- --check`). Client tests import the JSON; production code never does.
+- content-engine is layered: `domain/` pure code, `application/` ports + `ContentRegistry`, `adapters/` Kysely/pg/fs. Content repository methods take a `UnitOfWork` (`unitOfWorkFromContentTrx(trx)` wraps a Kysely trx; for reads in tests wrap in a transaction and filter begin/commit from query logs). `domain/` holds the pure code; tests that read `content/schemas/cv-page.json` use four `..` from `domain/`. Run jest through `pnpm test:unit` (needs `--experimental-vm-modules`), not bare `jest`.
 
 ## User decisions in force
+- qc agents report progress to the manager every 25 minutes; two consecutive reports must differ; no report for 50 minutes -> the manager stops that qc agent.
 - Prettier defaults + singleQuote. Palette A, system font stack, no dark mode in v1, Button default variant secondary, dialog/form buttons secondary left, primary right, end-aligned.
 - Env names are approved per task; names only in `.env.example`, values always from the user. Production secrets/keys (Cloudinary, Turnstile, SMTP) come from the user.
 - Smoke-only overrides (rate limits, Turnstile test keys, Cloudinary dummies) live only in docker-compose.smoke.yml / the smoke build, never in production config.
@@ -86,9 +87,6 @@ Module structure and API details: the module's README / `docs/modules/*.md`. Per
 - In zsh, `$VAR` holding several docker args is NOT word-split: pass args explicitly.
 - Traefik routes a container only after it is healthy; until then /api falls through to the web (200 HTML). Smoke waits for the JSON body.
 - cors sends `Access-Control-Allow-Credentials: true` even for disallowed origins (harmless: no ACAO).
-- /auth/me re-reads the account itself: use a guard-only route to test VersionCache staleness.
-- Express 5 query parser is `simple`: `filter[a][gte]=1` is one flat key (parse by key, no qs nesting).
-- busboy `*Limit` events fire when the count reaches the limit: set limits one above what is allowed.
 - `pnpm audit` known dev-only findings: sprintf-js (moderate), braces 3.0.3 (high, no patched release).
 - CI: `.github/scripts/affected.test.sh` must pass after any change to `affected.sh` or workflow routing; no CI file may reference docker compose (`grep -rn compose .github`).
 - Publish: Environment build args (VITE_API_BASE_URL, NEXT_PUBLIC_*) are read in `_publish.yml` image job via `vars`, never secrets; admin bundle check takes the full API base URL (`.github/scripts/bundle-check.sh <image> <url>`).
