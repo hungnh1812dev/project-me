@@ -11,8 +11,9 @@ pnpm --filter @abyss/cms-api start
 ```
 
 Development: `pnpm --filter @abyss/cms-api start:dev` (or `pnpm start:cms-api:dev` from the root)
-builds, runs `dist/main.js` with `--env-file-if-exists=.env.local` and restarts
-when `tsc --watch` rewrites `dist`. Copy `.env.example` to `.env.local` for it.
+runs the standard NestJS CLI watch (`nest start --watch`, config in
+`nest-cli.json`) with `--env-file-if-exists=.env.local`, and restarts on every
+change. Copy `.env.example` to `.env.local` for it.
 Only `start:dev` loads that file; `db:migrate`, the CLIs, `start` and production
 read the shell env only.
 

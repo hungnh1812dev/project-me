@@ -32,7 +32,7 @@ Remove it with `docker rm -f abyss-dev-db` (data is lost with the container).
 
 cms-api reads `process.env` only. **It does not load a `.env` file itself** (`apps/cms-api/prisma.config.ts` says the same for the Prisma CLI), so export the values into the shell that runs it.
 
-Shortcut for development: `start:dev` loads `apps/cms-api/.env.local` through Node (`--env-file-if-exists`), builds, and restarts on every rebuild. Variables already set in the shell win over the file. Only `start:dev` does this; `db:migrate`, the CLIs (`owner:bootstrap`, ...), `start` and production read the shell env only.
+Shortcut for development: `start:dev` is the standard NestJS CLI watch (`nest start --watch`, configured in `apps/cms-api/nest-cli.json`); it loads `apps/cms-api/.env.local` through Node (`--env-file-if-exists`) and restarts on every change. Variables already set in the shell win over the file. Only `start:dev` does this; `db:migrate`, the CLIs (`owner:bootstrap`, ...), `start` and production read the shell env only.
 
 ```
 cp apps/cms-api/.env.example apps/cms-api/.env.local    # edit the values
