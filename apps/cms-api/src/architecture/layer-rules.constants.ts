@@ -219,7 +219,28 @@ const DOCUMENTS_REPOSITORY_CONTENT_ENGINE_FILES = [
   ['domain', 'ContentRowMapping.rules.ts'],
 ].map((parts) => join('modules', 'content-engine', ...parts));
 
+const GRAPHQL_PRINT_SCHEMA_FILE = join(
+  'modules',
+  'graphql',
+  'cli',
+  'print-schema.ts',
+);
+
 export const LAYER_EXCEPTIONS: readonly LayerException[] = [
+  ...[
+    join('modules', 'graphql', 'http', 'schema', 'SchemaBuilder.rules.ts'),
+    // reached through SchemaBuilder.rules.ts
+    join('modules', 'graphql', 'http', 'schema', 'FilterInputs.rules.ts'),
+    join('modules', 'graphql', 'http', 'schema', 'Scalars.rules.ts'),
+    join('modules', 'graphql', 'http', 'schema', 'SharedTypes.entity.ts'),
+    join('modules', 'graphql', 'http', 'schema', 'TypeNames.rules.ts'),
+    join('common', 'http', 'request-parsing.ts'),
+  ].map((importing) => ({
+    from: GRAPHQL_PRINT_SCHEMA_FILE,
+    importing,
+    reason:
+      'graphql-js is banned in domain/, so the schema builder lives in http/; the schema printer builds on it',
+  })),
   ...DOCUMENTS_REPOSITORY_CONTENT_ENGINE_FILES.map((importing) => ({
     from: DOCUMENTS_REPOSITORY_FILE,
     importing,
@@ -260,6 +281,7 @@ export const MIGRATED_MODULES: readonly string[] = [
   'content-types',
   'content-engine',
   'documents',
+  'graphql',
 ];
 
 export interface KnownLayerViolation {
@@ -281,10 +303,20 @@ export const KNOWN_LAYER_VIOLATIONS: readonly KnownLayerViolation[] = [
       removedBy: 'CR-cl-1',
     }),
   ),
-  ...['Bulk.controller.ts', 'Documents.controller.ts'].map((file) => ({
-    from: join('modules', 'documents', 'http', file),
+  ...[
+    join('documents', 'http', 'Bulk.controller.ts'),
+    join('documents', 'http', 'Documents.controller.ts'),
+    join('graphql', 'http', 'Graphql.controller.ts'),
+  ].map((file) => ({
+    from: join('modules', file),
     rule: 'deep-import',
     to: join('modules', 'access', 'document-auth.ts'),
     removedBy: 'CR-ac-4',
   })),
+  {
+    from: GRAPHQL_PRINT_SCHEMA_FILE,
+    rule: 'other-module-layer',
+    to: join('modules', 'content-engine', 'cli', 'content-paths.ts'),
+    removedBy: 'CR-ce-4',
+  },
 ];

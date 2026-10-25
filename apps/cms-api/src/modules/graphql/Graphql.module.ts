@@ -5,8 +5,10 @@ import { DocumentAuthModule } from '../access/document-auth';
 import { ContentEngineModule } from '../content-engine';
 import { DocumentsModule } from '../documents';
 import { GraphqlController } from './http/Graphql.controller';
-import { GraphqlExecutor } from './graphql.executor';
-import { GraphqlSchemaProvider } from './graphql.schema.provider';
+import {
+  GraphqlExecutor,
+  GraphqlSchemaProvider,
+} from './http/Graphql.executor';
 
 /**
  * GraphQL read API (SPEC D18, GQ2). Reads go through `DocumentsQueryService`

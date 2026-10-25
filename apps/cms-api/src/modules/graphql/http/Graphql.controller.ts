@@ -28,7 +28,7 @@ import {
   GRAPHQL_REQUEST_MEDIA_TYPE,
   GRAPHQL_ROUTE,
 } from '../application/Graphql.constants';
-import { GraphqlExecutor, type GraphqlResponse } from '../graphql.executor';
+import { GraphqlExecutor, type GraphqlResponse } from './Graphql.executor';
 
 /** Unknown keys (e.g. `extensions`) are ignored; an array body is not an object. */
 const requestSchema = z.object({

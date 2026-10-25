@@ -296,12 +296,11 @@ GraphQL-shaped once the request reaches step 2:
 apps/cms-api/src/modules/graphql/
 ├── Graphql.module.ts           # imports AccessModule, DocumentsModule (exports DocumentsQueryService), ContentEngineModule
 ├── index.ts
-├── graphql.executor.ts         # parse -> validate (rules) -> execute -> format (moves to application/ in CR-gq-2)
-├── graphql.schema.provider.ts  # per-readable-slug-set schema cache (moves in CR-gq-2)
 ├── application/
 │   └── Graphql.constants.ts    # GRAPHQL_LIMITS, GRAPHQL_ROUTE, shared type names
 ├── http/
 │   ├── Graphql.controller.ts   # POST GRAPHQL_ROUTE, guards + throttle, body checks
+│   ├── Graphql.executor.ts     # parse -> validate (rules) -> execute -> format; also the per-readable-slug-set schema cache (GraphqlSchemaProvider)
 │   ├── GraphqlBodyLimit.middleware.ts
 │   ├── Document.resolver.ts    # root resolvers -> DocumentsQueryService
 │   ├── ListArguments.rules.ts  # list arguments -> ListDocumentsQuery

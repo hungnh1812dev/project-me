@@ -1,8 +1,10 @@
-import { type AccessPolicyService, type ActorContext } from '../access';
-import type { IAppConfig } from '../../config/app-config';
-import { GraphqlExecutor } from './graphql.executor';
-import type { GraphqlSchemaProvider } from './graphql.schema.provider';
-import { buildGraphqlSchema } from './http/schema/SchemaBuilder.rules';
+import { type AccessPolicyService, type ActorContext } from '../../access';
+import type { IAppConfig } from '../../../config/app-config';
+import {
+  GraphqlExecutor,
+  type GraphqlSchemaProvider,
+} from './Graphql.executor';
+import { buildGraphqlSchema } from './schema/SchemaBuilder.rules';
 
 const schema = buildGraphqlSchema([
   {
