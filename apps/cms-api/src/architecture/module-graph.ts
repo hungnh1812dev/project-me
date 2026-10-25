@@ -4,7 +4,6 @@ import {
   listSourceFiles,
   reachedFilesOf,
   resolveImports,
-  withoutComments,
 } from './import-graph';
 import {
   ACCESS_MANAGEMENT_DIRECTORY,
@@ -24,6 +23,47 @@ export interface FileEdge {
   toNode: ModuleNode;
 }
 
+export const FILE_LAYERS = [
+  'domain',
+  'application',
+  'adapters',
+  'http',
+  'cli',
+  'jobs',
+] as const;
+
+export type FileLayer = (typeof FILE_LAYERS)[number] | 'wiring' | 'unlayered';
+
+const WIRING_FILE = /^(?:index\.ts|[^/\\]+\.module\.ts)$/;
+
+const isLayerFolder = (segment: string | undefined): boolean =>
+  (FILE_LAYERS as readonly (string | undefined)[]).includes(segment);
+
+/** Drops a layer folder that sits right after the module name (`access/http/...`). */
+function withoutLayerFolder(rest: string[]): string[] {
+  return rest.length > 1 && isLayerFolder(rest[0]) ? rest.slice(1) : rest;
+}
+
+/**
+ * The layer a module file sits in (ADR 0006 §2). Module-root `index.ts` and
+ * `*.module.ts` are wiring; anything else outside a layer folder, and every
+ * file outside `modules/`, is unlayered. The management sub-module of
+ * `access` has its own layer folders.
+ */
+export function layerOfFile(file: string): FileLayer {
+  const [top, moduleName, ...rest] = file.split(sep);
+  if (top !== MODULES_DIRECTORY || moduleName === undefined) return 'unlayered';
+  const inner =
+    moduleName === ACCESS_MODULE_DIRECTORY &&
+    rest[0] === ACCESS_MANAGEMENT_DIRECTORY
+      ? rest.slice(1)
+      : rest;
+  const [first = '', ...below] = inner;
+  if (below.length === 0)
+    return WIRING_FILE.test(first) ? 'wiring' : 'unlayered';
+  return isLayerFolder(first) ? (first as FileLayer) : 'unlayered';
+}
+
 /**
  * The node a file belongs to, or `null` for files outside the module graph
  * (composition root, architecture specs' helpers).
@@ -39,7 +79,7 @@ export function nodeOfFile(file: string): ModuleNode | null {
       ? (moduleName as ModuleNode)
       : null;
   }
-  const [first = ''] = rest;
+  const [first = ''] = withoutLayerFolder(rest);
   if (first === ACCESS_MANAGEMENT_DIRECTORY) return 'access-management';
   if (DOCUMENT_AUTH_FILE.test(first)) return 'access-document-auth';
   return 'access-core';
@@ -76,19 +116,6 @@ export interface NodeImport {
   isTypeOnly: boolean;
 }
 
-const TYPE_ONLY_STATEMENT =
-  /^[ \t]*(?:import|export)\s+type\b[^;]*?\bfrom\s*['"]([^'"]+)['"]/gm;
-
-function typeOnlyCountsBySpecifier(text: string): Map<string, number> {
-  const counts = new Map<string, number>();
-  for (const [, specifier = ''] of withoutComments(text).matchAll(
-    TYPE_ONLY_STATEMENT,
-  )) {
-    counts.set(specifier, (counts.get(specifier) ?? 0) + 1);
-  }
-  return counts;
-}
-
 /**
  * Every import statement of a module file that reaches another node, with
  * the names it brings in and whether it is written `import type`.
@@ -97,7 +124,6 @@ export function collectNodeImports(srcRoot: string): NodeImport[] {
   return listSourceFiles(srcRoot).flatMap((source) => {
     const fromNode = nodeOfFile(source.file);
     if (fromNode === null) return [];
-    const typeOnlyLeft = typeOnlyCountsBySpecifier(source.text);
     return resolveImports(source.absolutePath).flatMap((statement) => {
       const toNodes = [
         ...new Set(
@@ -108,15 +134,13 @@ export function collectNodeImports(srcRoot: string): NodeImport[] {
         ),
       ];
       if (toNodes.length === 0) return [];
-      const typeOnlyRemaining = typeOnlyLeft.get(statement.specifier) ?? 0;
-      typeOnlyLeft.set(statement.specifier, typeOnlyRemaining - 1);
       return [
         {
           file: source.file,
           fromNode,
           toNodes,
           importedNames: statement.importedNames,
-          isTypeOnly: typeOnlyRemaining > 0,
+          isTypeOnly: statement.isTypeOnly,
         },
       ];
     });

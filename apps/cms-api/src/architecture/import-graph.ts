@@ -30,12 +30,16 @@ interface ModuleStatement {
   bindings: NameBinding[] | 'all';
   /** Local name of a namespace or default form (`* as ns`, `Default`). */
   wholeModuleName?: string;
+  /** Written `import type` / `export type`; an inline `{ type A }` does not count. */
+  isTypeOnly: boolean;
 }
 
 export interface ResolvedImport {
   specifier: string;
   /** Names the statement brings in; `'all'` for namespace, default, star, bare and dynamic forms. */
   importedNames: string[] | 'all';
+  /** The statement is `import type` / `export type` (erased at build time). */
+  isTypeOnly: boolean;
   /** Real files the import reaches. Empty for packages and non-ts files. */
   targets: string[];
 }
@@ -48,7 +52,7 @@ export interface SourceFile {
 }
 
 const STATEMENT_PATTERN =
-  /^[ \t]*(import|export)\s+(?:type\s+)?([^'";]*?)\s*from\s*['"]([^'"]+)['"]|^[ \t]*import\s*['"]([^'"]+)['"]|\bimport\(\s*['"]([^'"]+)['"]\s*\)/gm;
+  /^[ \t]*(import|export)\s+(type\s+)?([^'";]*?)\s*from\s*['"]([^'"]+)['"]|^[ \t]*import\s*['"]([^'"]+)['"]|\bimport\(\s*['"]([^'"]+)['"]\s*\)/gm;
 /** Every specifier on its own, whatever the clause looks like. */
 const ANY_SPECIFIER_PATTERN =
   /(?:\bfrom\s*|\bimport\s*\(?\s*)['"]([^'"]+)['"]/g;
@@ -115,13 +119,30 @@ export function withoutComments(text: string): string {
 function parseStatements(rawText: string): ModuleStatement[] {
   const text = withoutComments(rawText);
   const parsed = [...text.matchAll(STATEMENT_PATTERN)].map((match) => {
-    const [, keyword, clause, fromSpecifier, bareSpecifier, dynamicSpecifier] =
-      match;
+    const [
+      ,
+      keyword,
+      typeKeyword,
+      clause,
+      fromSpecifier,
+      bareSpecifier,
+      dynamicSpecifier,
+    ] = match;
     if (dynamicSpecifier !== undefined) {
-      return { kind: 'dynamic', specifier: dynamicSpecifier, bindings: 'all' };
+      return {
+        kind: 'dynamic',
+        specifier: dynamicSpecifier,
+        bindings: 'all',
+        isTypeOnly: false,
+      };
     }
     if (bareSpecifier !== undefined) {
-      return { kind: 'import', specifier: bareSpecifier, bindings: 'all' };
+      return {
+        kind: 'import',
+        specifier: bareSpecifier,
+        bindings: 'all',
+        isTypeOnly: false,
+      };
     }
     const kind = keyword as StatementKind;
     const specifier = fromSpecifier ?? '';
@@ -132,7 +153,13 @@ function parseStatements(rawText: string): ModuleStatement[] {
     const wholeModuleName = /^(?:\*\s*as\s+)?([\w$]+)\s*$/.exec(
       (clause ?? '').trim(),
     )?.[1];
-    return { kind, specifier, bindings, wholeModuleName };
+    return {
+      kind,
+      specifier,
+      bindings,
+      wholeModuleName,
+      isTypeOnly: typeKeyword !== undefined,
+    };
   }) as ModuleStatement[];
 
   const unpaired = new Map<string, number>();
@@ -150,6 +177,8 @@ function parseStatements(rawText: string): ModuleStatement[] {
           kind: 'import' as const,
           specifier,
           bindings: 'all' as const,
+          // Fail closed: a statement the parser could not read is never type-only.
+          isTypeOnly: false,
         }))
       : [],
   );
@@ -178,23 +207,33 @@ function escapeRegExp(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
+/** Does the comment-stripped text of the file (absolute path) match the pattern? */
+export function textMatches(file: string, pattern: RegExp): boolean {
+  const stateless = new RegExp(
+    pattern.source,
+    pattern.flags.replace(/[gy]/g, ''),
+  );
+  return stateless.test(withoutComments(readFileSync(file, 'utf8')));
+}
+
 function mentionsName(file: string, name: string): boolean {
-  return new RegExp(`(?<![\\w$])${escapeRegExp(name)}(?![\\w$])`).test(
-    withoutComments(readFileSync(file, 'utf8')),
+  return textMatches(
+    file,
+    new RegExp(`(?<![\\w$])${escapeRegExp(name)}(?![\\w$])`),
   );
 }
 
 function isListedInExport(file: string, name: string): boolean {
-  const listed = new RegExp(
-    `export\\s*(?:type\\s*)?\\{[^}]*(?<![\\w$])${escapeRegExp(name)}(?![\\w$])`,
+  return textMatches(
+    file,
+    new RegExp(
+      `export\\s*(?:type\\s*)?\\{[^}]*(?<![\\w$])${escapeRegExp(name)}(?![\\w$])`,
+    ),
   );
-  return listed.test(withoutComments(readFileSync(file, 'utf8')));
 }
 
 function hasDefaultExport(file: string): boolean {
-  return /\bexport\s+(?:default\b|=)/.test(
-    withoutComments(readFileSync(file, 'utf8')),
-  );
+  return textMatches(file, /\bexport\s+(?:default\b|=)/);
 }
 
 const LOCAL_EXPORT_LIST = /\bexport\s*(?:type\s*)?\{[^}]*\}(?!\s*from\b)/;
@@ -205,10 +244,7 @@ const LOCAL_EXPORT_LIST = /\bexport\s*(?:type\s*)?\{[^}]*\}(?!\s*from\b)/;
  * expose any of its imports.
  */
 function mayExposeItsImports(file: string): boolean {
-  return (
-    LOCAL_EXPORT_LIST.test(withoutComments(readFileSync(file, 'utf8'))) ||
-    hasDefaultExport(file)
-  );
+  return textMatches(file, LOCAL_EXPORT_LIST) || hasDefaultExport(file);
 }
 
 /**
@@ -302,12 +338,18 @@ export function resolveImports(absolutePath: string): ResolvedImport[] {
         ? 'all'
         : statement.bindings.map((binding) => binding.imported);
     if (target === null) {
-      return { specifier: statement.specifier, importedNames, targets: [] };
+      return {
+        specifier: statement.specifier,
+        importedNames,
+        isTypeOnly: statement.isTypeOnly,
+        targets: [],
+      };
     }
     const targets = followReexports(target, importedNames, new Set());
     return {
       specifier: statement.specifier,
       importedNames,
+      isTypeOnly: statement.isTypeOnly,
       targets: [...new Set(targets)],
     };
   });
@@ -327,4 +369,22 @@ export function packageSpecifiersOf(source: SourceFile): string[] {
   return resolveImports(source.absolutePath)
     .map(({ specifier }) => specifier)
     .filter((specifier) => !specifier.startsWith('.'));
+}
+
+/**
+ * Fail loudly when a path an architecture spec pins no longer exists: a
+ * renamed file must not turn the rule into an empty scan.
+ */
+export function assertPinnedPathsExist(
+  srcRoot: string,
+  pinnedPaths: readonly string[],
+): void {
+  const missing = pinnedPaths.filter(
+    (path) => !existsSync(join(srcRoot, path)),
+  );
+  if (missing.length > 0) {
+    throw new Error(
+      `missing path: ${missing.join(', ')} (update architecture/source-paths.constants.ts)`,
+    );
+  }
 }

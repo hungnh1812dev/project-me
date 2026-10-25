@@ -1,9 +1,18 @@
-import { join, sep } from 'node:path';
+import { join } from 'node:path';
 
 import {
+  assertPinnedPathsExist,
   listSourceFiles,
   reachedFilesOf,
 } from '../../architecture/import-graph';
+import {
+  ACCESS_CONSTANTS_FILE,
+  CONTENT_ENGINE_DIRECTORY,
+  INTERNAL_COPY_FILES,
+  PINNED_PATHS,
+  RECORD_LOADER_FILES,
+  RECORD_SERIALIZER_FILE,
+} from '../../architecture/source-paths.constants';
 
 /**
  * Architecture test for SPEC D3: `RecordSerializer` is the only path from a
@@ -21,14 +30,10 @@ import {
  */
 
 const SRC_ROOT = join(__dirname, '..', '..');
-const CONTENT_ENGINE_DIR = join('modules', 'content-engine') + sep;
 const GENERATED_DIR = 'generated';
-const SERIALIZER_FILE = join('modules', 'access', 'record.serializer.ts');
+const SERIALIZER_FILE = RECORD_SERIALIZER_FILE;
 /** Files that only use the record types to build the serializer itself. */
-const SERIALIZER_BUILDING_BLOCKS = [
-  SERIALIZER_FILE,
-  join('modules', 'access', 'access.constants.ts'),
-];
+const SERIALIZER_BUILDING_BLOCKS = [SERIALIZER_FILE, ACCESS_CONSTANTS_FILE];
 
 /**
  * Publish (T22) copies a draft into the published row inside one transaction.
@@ -36,16 +41,6 @@ const SERIALIZER_BUILDING_BLOCKS = [
  * version }`), so these files need no serializer. Bulk (T34) only inserts
  * trees through the repository and answers with ids and versions.
  */
-const INTERNAL_COPY_FILES = [
-  join('modules', 'documents', 'publish.service.ts'),
-  join('modules', 'documents', 'tree-cloner.ts'),
-  join('modules', 'documents', 'bulk.service.ts'),
-];
-
-const RECORD_LOADER_FILES = [
-  join('modules', 'content-engine', 'content.repository.ts'),
-  join('modules', 'content-engine', 'tree-loader.ts'),
-];
 const BOUNDARY_FILE = /\.(?:controller|filter|interceptor|gateway)\.ts$/;
 const SERIALIZED_CAST = /\bas\s+SerializedRecord\b/;
 
@@ -62,6 +57,7 @@ const importsRecordLoader = (reached: Set<string>) =>
 
 describe('RecordSerializer is the only record -> response path', () => {
   it('scans the source tree', () => {
+    assertPinnedPathsExist(SRC_ROOT, PINNED_PATHS);
     expect(files.length).toBeGreaterThan(0);
     expect(files.some(({ file }) => file === SERIALIZER_FILE)).toBe(true);
     expect(
@@ -82,7 +78,7 @@ describe('RecordSerializer is the only record -> response path', () => {
     const offenders = files
       .filter(
         ({ file, reached }) =>
-          !file.startsWith(CONTENT_ENGINE_DIR) &&
+          !file.startsWith(CONTENT_ENGINE_DIRECTORY) &&
           !SERIALIZER_BUILDING_BLOCKS.includes(file) &&
           !INTERNAL_COPY_FILES.includes(file) &&
           importsRecordLoader(reached) &&

@@ -1,6 +1,15 @@
 import { join } from 'node:path';
 
-import { listSourceFiles, withoutComments } from './import-graph';
+import {
+  assertPinnedPathsExist,
+  listSourceFiles,
+  withoutComments,
+} from './import-graph';
+import {
+  IDENTITY_DIRECTORY,
+  REVIEWER_SERVICE_FILE,
+  VERSION_CACHE_FILE,
+} from './source-paths.constants';
 
 /**
  * SPEC D9 (R1-09): identity owns session state. Only `modules/identity/`
@@ -9,7 +18,6 @@ import { listSourceFiles, withoutComments } from './import-graph';
  * with the reason; a listed file that no longer writes fails the spec.
  */
 const SRC_ROOT = join(__dirname, '..');
-const IDENTITY_DIRECTORY = join('modules', 'identity') + '/';
 const GENERATED_DIRECTORY = 'generated';
 
 const REFRESH_TOKEN_REFERENCE =
@@ -31,9 +39,9 @@ const TOKEN_VERSION_WRITE = new RegExp(
 const TOKEN_VERSION_WRITE_ALLOWLIST = new Map<string, number>([
   // Switching reviewer access off bumps every reviewer account (one raw
   // UPDATE); reviewers hold no refresh token.
-  [join('modules', 'reviewer', 'reviewer.service.ts'), 1],
+  [REVIEWER_SERVICE_FILE, 1],
   // Copies the column into the in-memory cache entry; not a database write.
-  [join('modules', 'access', 'version-cache.ts'), 1],
+  [VERSION_CACHE_FILE, 1],
 ]);
 
 const referencesRefreshToken = (code: string): boolean =>
@@ -51,6 +59,10 @@ describe('session ownership (D9)', () => {
   );
 
   it('scans the source tree and identity', () => {
+    assertPinnedPathsExist(SRC_ROOT, [
+      IDENTITY_DIRECTORY,
+      ...TOKEN_VERSION_WRITE_ALLOWLIST.keys(),
+    ]);
     expect(outsideIdentity.length).toBeGreaterThan(0);
     expect(sources.length).toBeGreaterThan(outsideIdentity.length);
   });

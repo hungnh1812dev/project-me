@@ -3,7 +3,8 @@ import 'reflect-metadata';
 import { join } from 'node:path';
 
 import { SecurityAuditService } from '../modules/security-audit';
-import { listSourceFiles } from './import-graph';
+import { assertPinnedPathsExist, listSourceFiles } from './import-graph';
+import { SECURITY_AUDIT_MODULE_FILE } from './source-paths.constants';
 
 /**
  * SPEC D15 (audit AUD-AU1a-04): `SecurityAuditService` is provided in exactly
@@ -13,11 +14,6 @@ import { listSourceFiles } from './import-graph';
 const SRC_ROOT = join(__dirname, '..');
 const MODULE_FILE = /\.module\.ts$/;
 const PROVIDERS_METADATA_KEY = 'providers';
-const OWNER_MODULE_FILE = join(
-  'modules',
-  'security-audit',
-  'security-audit.module.ts',
-);
 
 type ModuleClass = abstract new (...args: never[]) => unknown;
 
@@ -45,10 +41,11 @@ const providingFiles = moduleFiles.filter((file) =>
 
 describe('SecurityAuditService provider (D15)', () => {
   it('scans the module files', () => {
+    assertPinnedPathsExist(SRC_ROOT, [SECURITY_AUDIT_MODULE_FILE]);
     expect(moduleFiles.length).toBeGreaterThan(0);
   });
 
   it('appears in exactly one providers list, in SecurityAuditModule', () => {
-    expect(providingFiles).toEqual([OWNER_MODULE_FILE]);
+    expect(providingFiles).toEqual([SECURITY_AUDIT_MODULE_FILE]);
   });
 });

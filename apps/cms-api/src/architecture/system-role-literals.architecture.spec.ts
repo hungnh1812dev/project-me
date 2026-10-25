@@ -1,8 +1,12 @@
 import { join } from 'node:path';
 
 import { SYSTEM_ROLES } from '../modules/access/roles/system-roles';
-import { listSourceFiles } from './import-graph';
+import { assertPinnedPathsExist, listSourceFiles } from './import-graph';
 import { findRoleSlugLiterals } from './role-slug-literals';
+import {
+  NON_ROLE_LITERAL_FILES,
+  SYSTEM_ROLES_TABLE_FILE,
+} from './source-paths.constants';
 
 /**
  * SPEC D6 (R1-05): the system role slugs live in one table,
@@ -12,23 +16,16 @@ import { findRoleSlugLiterals } from './role-slug-literals';
  * module name or handler label in the files listed below.
  */
 const SRC_ROOT = join(__dirname, '..');
-const TABLE_FILE = join('modules', 'access', 'roles', 'system-roles.ts');
 const GENERATED_DIRECTORY = 'generated';
 
-/** Files whose quoted slugs name routes, modules or handler labels. */
-const NON_ROLE_LITERAL_FILES = [
-  join('modules', 'identity', 'identity.routes.ts'),
-  join('modules', 'reviewer', 'reviewer.routes.ts'),
-  join('architecture', 'module-edges.constants.ts'),
-  join('architecture', 'public-handlers.constants.ts'),
-];
+// NON_ROLE_LITERAL_FILES: files whose quoted slugs name routes, modules or handler labels.
 
 const ROLE_SLUGS = SYSTEM_ROLES.map((role) => role.slug);
 
 describe('system role slugs (D6)', () => {
   const sources = listSourceFiles(SRC_ROOT).filter(
     ({ file }) =>
-      file !== TABLE_FILE &&
+      file !== SYSTEM_ROLES_TABLE_FILE &&
       !file.startsWith(GENERATED_DIRECTORY) &&
       !NON_ROLE_LITERAL_FILES.includes(file),
   );
@@ -47,10 +44,12 @@ describe('system role slugs (D6)', () => {
   });
 
   it('the files exempted as non-role literals exist', () => {
-    const all = listSourceFiles(SRC_ROOT).map(({ file }) => file);
-    expect(
-      NON_ROLE_LITERAL_FILES.filter((file) => !all.includes(file)),
-    ).toEqual([]);
+    expect(() =>
+      assertPinnedPathsExist(SRC_ROOT, [
+        SYSTEM_ROLES_TABLE_FILE,
+        ...NON_ROLE_LITERAL_FILES,
+      ]),
+    ).not.toThrow();
   });
 });
 

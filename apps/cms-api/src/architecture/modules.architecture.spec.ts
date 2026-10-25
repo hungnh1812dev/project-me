@@ -4,6 +4,8 @@ import { join } from 'node:path';
 import {
   collectCrossNodeEdges,
   collectNodeImports,
+  layerOfFile,
+  nodeOfFile,
   SRC_ROOT,
   type NodeImport,
 } from './module-graph';
@@ -187,5 +189,63 @@ describe('module sub-rules (SPEC §2)', () => {
         importOf({ importedNames: ['JwtAuthGuard', 'AuthenticatedRequest'] }),
       ]),
     ).toEqual([]);
+  });
+});
+
+describe('layers and nodes of module files (ADR 0006 §2)', () => {
+  const at = (...parts: string[]) => join(...parts);
+
+  it('reads the layer from the folder right after the module name', () => {
+    expect(layerOfFile(at('modules', 'media', 'domain', 'x.ts'))).toBe(
+      'domain',
+    );
+    expect(layerOfFile(at('modules', 'media', 'application', 'x.ts'))).toBe(
+      'application',
+    );
+    expect(layerOfFile(at('modules', 'media', 'adapters', 'a', 'x.ts'))).toBe(
+      'adapters',
+    );
+    expect(layerOfFile(at('modules', 'media', 'http', 'x.ts'))).toBe('http');
+    expect(layerOfFile(at('modules', 'identity', 'cli', 'x.ts'))).toBe('cli');
+    expect(layerOfFile(at('modules', 'documents', 'jobs', 'x.ts'))).toBe(
+      'jobs',
+    );
+  });
+
+  it('treats module-root index.ts and *.module.ts as wiring, other files as unlayered', () => {
+    expect(layerOfFile(at('modules', 'media', 'index.ts'))).toBe('wiring');
+    expect(layerOfFile(at('modules', 'media', 'Media.module.ts'))).toBe(
+      'wiring',
+    );
+    expect(layerOfFile(at('modules', 'media', 'media.service.ts'))).toBe(
+      'unlayered',
+    );
+    expect(layerOfFile(at('modules', 'media', 'roles', 'x.ts'))).toBe(
+      'unlayered',
+    );
+    expect(layerOfFile(at('common', 'http', 'x.ts'))).toBe('unlayered');
+  });
+
+  it('gives access management its own layer folders', () => {
+    expect(
+      layerOfFile(at('modules', 'access', 'management', 'application', 'x.ts')),
+    ).toBe('application');
+    expect(
+      layerOfFile(at('modules', 'access', 'management', 'x.module.ts')),
+    ).toBe('wiring');
+  });
+
+  it('puts a file in the access node the folder says, with or without a layer folder', () => {
+    expect(nodeOfFile(at('modules', 'access', 'application', 'x.ts'))).toBe(
+      'access-core',
+    );
+    expect(nodeOfFile(at('modules', 'access', 'x.ts'))).toBe('access-core');
+    expect(
+      nodeOfFile(at('modules', 'access', 'management', 'application', 'x.ts')),
+    ).toBe('access-management');
+    expect(
+      nodeOfFile(at('modules', 'access', 'http', 'document-auth.guard.ts')),
+    ).toBe('access-document-auth');
+    expect(nodeOfFile(at('modules', 'media', 'http', 'x.ts'))).toBe('media');
   });
 });

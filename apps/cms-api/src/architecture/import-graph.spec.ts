@@ -3,9 +3,12 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 
 import {
+  assertPinnedPathsExist,
   listSourceFiles,
   packageSpecifiersOf,
   reachedFilesOf,
+  resolveImports,
+  textMatches,
 } from './import-graph';
 
 describe('import graph resolver', () => {
@@ -201,5 +204,76 @@ describe('import graph resolver', () => {
     );
     write('a.ts', "import { Plain } from './engine/plain';");
     expect(reached('a.ts')).not.toContain('engine/loader.ts');
+  });
+});
+
+describe('import graph statements and pinned paths', () => {
+  let root: string;
+
+  beforeEach(() => {
+    root = mkdtempSync(join(tmpdir(), 'import-graph-'));
+    writeFileSync(join(root, 'target.ts'), 'export class Target {}');
+  });
+
+  afterEach(() => rmSync(root, { recursive: true, force: true }));
+
+  const typeOnlyFlags = (text: string) => {
+    writeFileSync(join(root, 'a.ts'), text);
+    return resolveImports(join(root, 'a.ts')).map(
+      ({ specifier, isTypeOnly }) => `${specifier}:${isTypeOnly}`,
+    );
+  };
+
+  it('flags import type and export type, and nothing else, as type-only', () => {
+    expect(
+      typeOnlyFlags(
+        [
+          "import type { A } from './target';",
+          "import { B } from './target';",
+          "import { type C } from './target';",
+          "export type { D } from './target';",
+          "import type {\n  E,\n} from './target';",
+          "import './target';",
+          "const x = () => import('./target');",
+          "import { sql } from 'kysely';",
+        ].join('\n'),
+      ),
+    ).toEqual([
+      './target:true',
+      './target:false',
+      './target:false',
+      './target:true',
+      './target:true',
+      './target:false',
+      './target:false',
+      'kysely:false',
+    ]);
+  });
+
+  it('keeps two statements on one specifier apart', () => {
+    expect(
+      typeOnlyFlags(
+        "import { B } from './target';\nimport type { A } from './target';",
+      ),
+    ).toEqual(['./target:false', './target:true']);
+  });
+
+  it('textMatches ignores comments and a global flag', () => {
+    writeFileSync(
+      join(root, 'a.ts'),
+      '// process.env\n/* Date.now( */\nconst a = 1;',
+    );
+    const file = join(root, 'a.ts');
+    expect(textMatches(file, /process\.env/g)).toBe(false);
+    expect(textMatches(file, /Date\.now\(/)).toBe(false);
+    expect(textMatches(file, /const a/g)).toBe(true);
+    expect(textMatches(file, /const a/g)).toBe(true);
+  });
+
+  it('assertPinnedPathsExist names a path that is gone', () => {
+    expect(() => assertPinnedPathsExist(root, ['target.ts'])).not.toThrow();
+    expect(() =>
+      assertPinnedPathsExist(root, ['target.ts', 'moved/gone.ts']),
+    ).toThrow(/missing path: moved\/gone\.ts/);
   });
 });
