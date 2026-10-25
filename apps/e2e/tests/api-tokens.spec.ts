@@ -343,9 +343,10 @@ test.describe.serial('owner: API tokens', () => {
     await page.keyboard.press('Escape');
     await expect(dialog).toBeHidden();
 
-    // Edit: revoked or deleted meanwhile closes with an info notice.
+    // Edit: revoked, expired or deleted meanwhile closes with an info notice.
     for (const [errorCode, status, message] of [
       ['API_TOKEN_REVOKED', 409, tokens.alreadyRevoked],
+      ['API_TOKEN_EXPIRED', 409, tokens.alreadyExpired],
       ['API_TOKEN_NOT_FOUND', 404, tokens.gone],
     ] as const) {
       await page.route(tokensUrl, (route) =>
@@ -368,6 +369,60 @@ test.describe.serial('owner: API tokens', () => {
       await expect(page.getByRole('status')).toHaveText(message);
       await page.unroute(tokensUrl);
     }
+  });
+
+  test('an expired row keeps only Revoke, and revoking it works', async () => {
+    const tokensUrl = /\/api-tokens(\/[^/?]+)?(\?.*)?$/;
+    // The UI cannot create an expired token, so the list answer is rewritten.
+    let showExpired = false;
+    await page.route(tokensUrl, async (route) => {
+      if (route.request().method() !== 'GET' || !showExpired) {
+        return route.fallback();
+      }
+      const response = await route.fetch();
+      const body = (await response.json()) as unknown;
+      const markExpired = (node: unknown) => {
+        if (Array.isArray(node)) return node.forEach(markExpired);
+        if (node === null || typeof node !== 'object') return;
+        const record = node as Record<string, unknown>;
+        if (record.name === RENAMED) record.status = 'expired';
+        Object.values(record).forEach(markExpired);
+      };
+      markExpired(body);
+      return route.fulfill({ response, json: body });
+    });
+
+    const nav = page.getByRole('navigation', { name: access.nav.label });
+    await nav.getByRole('link', { name: access.nav.accounts }).click();
+    showExpired = true;
+    await openTokensPage(page);
+
+    const row = tokenRow(page, RENAMED);
+    await expect(row).toContainText(tokens.status.expired);
+    await expect(
+      row.getByRole('button', { name: tokens.editLabel(RENAMED) }),
+    ).toHaveCount(0);
+    await expect(
+      row.getByRole('button', { name: tokens.revokeLabel(RENAMED) }),
+    ).toBeVisible();
+    // Revoked row: neither action.
+    await expect(
+      tokenRow(page, REVOKE_ONLY_NAME).getByRole('button'),
+    ).toHaveCount(0);
+
+    // Expired row can be revoked.
+    await row
+      .getByRole('button', { name: tokens.revokeLabel(RENAMED) })
+      .click();
+    await page
+      .getByRole('dialog', { name: access.revokeToken.title(RENAMED) })
+      .getByRole('button', { name: access.revokeToken.submit(RENAMED) })
+      .click();
+    showExpired = false;
+    await expect(page.getByRole('status')).toHaveText(tokens.revoked(RENAMED));
+    await expect(row).toContainText(tokens.status.revoked);
+    await expect(row.getByRole('button')).toHaveCount(0);
+    await page.unroute(tokensUrl);
   });
 
   test('the raw token authenticates nothing on /api-tokens (sessions only)', async () => {

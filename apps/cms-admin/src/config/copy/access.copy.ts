@@ -150,6 +150,8 @@ export const ACCESS_COPY = {
       `Token ${name} is created. Anything using it can call the API now.`,
     updated: (name: string) => `Token ${name} is updated.`,
     revoked: (name: string) => `Token ${name} is revoked and no longer works.`,
+    alreadyExpired:
+      'That token has expired. Create a new token to restore access. The list is updated.',
     alreadyRevoked: 'That token was already revoked. The list is updated.',
     gone: 'That token no longer exists or you cannot manage it. The list is updated.',
     pagination: {

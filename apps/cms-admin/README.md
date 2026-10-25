@@ -95,7 +95,9 @@ So far: sign-in (T11) and, behind it, a status page that calls
   cache. Edit sends only the changed fields (`name`, `scope`, `expiresAt`);
   no change, no request. Revoke asks for a named confirmation. Create needs
   `api_tokens:create`; Edit and Revoke need `api_tokens:update` and are
-  hidden on revoked tokens; the nav link needs `api_tokens:read`. Grid cells
+  hidden on revoked tokens, and Edit is also hidden on expired ones (a 409
+  `API_TOKEN_EXPIRED` on save closes the dialog with a notice and refreshes
+  the list); the nav link needs `api_tokens:read`. Grid cells
   the caller's role does not hold are disabled (hint only); a 403
   `API_TOKEN_SCOPE_NOT_HELD` marks the refused cells by `details.indexes`.
 - **Dynamic document form (T23)** (`src/features/content`):

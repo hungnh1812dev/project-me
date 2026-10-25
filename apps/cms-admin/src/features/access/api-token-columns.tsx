@@ -34,7 +34,8 @@ interface ApiTokenColumnsOptions {
 /**
  * The creator column shows only when someone else made a listed token; the
  * actions column only for actors who may change tokens, and per row only while
- * the token is not revoked. Only the token prefix is ever shown.
+ * a token can still be changed: only active
+ * tokens are editable, an expired one can only be revoked. Only the token prefix is ever shown.
  */
 export function apiTokenColumns({
   currentUserId,
@@ -62,15 +63,17 @@ export function apiTokenColumns({
     renderCell: (token) =>
       token.status === 'revoked' ? null : (
         <>
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            aria-label={copy.editLabel(token.name)}
-            onClick={(event) => onEdit(token, event.currentTarget)}
-          >
-            {copy.edit}
-          </Button>
+          {token.status === 'active' ? (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              aria-label={copy.editLabel(token.name)}
+              onClick={(event) => onEdit(token, event.currentTarget)}
+            >
+              {copy.edit}
+            </Button>
+          ) : null}
           <Button
             type="button"
             variant="ghost"

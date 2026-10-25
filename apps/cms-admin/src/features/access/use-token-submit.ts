@@ -27,6 +27,7 @@ export type TokenDialogOutcome =
   | { kind: 'created'; name: string }
   | { kind: 'updated'; name: string }
   | { kind: 'revoked-meanwhile' }
+  | { kind: 'expired-meanwhile' }
   | { kind: 'gone' };
 
 export interface TokenFormValues {
@@ -96,6 +97,10 @@ export function useTokenSubmit({
       case API_ERROR_CODES.API_TOKEN_REVOKED:
         void refresh();
         onDone({ kind: 'revoked-meanwhile' });
+        return;
+      case API_ERROR_CODES.API_TOKEN_EXPIRED:
+        void refresh();
+        onDone({ kind: 'expired-meanwhile' });
         return;
       case API_ERROR_CODES.API_TOKEN_SCOPE_NOT_HELD:
         setMarked(cellsAt(error.indexes, cells));

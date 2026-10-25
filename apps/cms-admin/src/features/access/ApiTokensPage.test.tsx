@@ -197,6 +197,61 @@ describe('ApiTokensPage', () => {
     ).not.toBeInTheDocument();
   });
 
+  it('offers revoke but no edit on an expired token', async () => {
+    await open(TEST_USER, {
+      [`GET ${API_TOKENS.LIST}`]: () => ({
+        status: 200,
+        data: listBody([token({ status: 'expired' })]),
+      }),
+    });
+    expect(
+      await screen.findByText(copy.apiTokens.status.expired),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: /^Edit / }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole('button', {
+        name: copy.apiTokens.revokeLabel('Website build'),
+      }),
+    ).toBeInTheDocument();
+  });
+
+  it('shows the expired notice and refetches when the token expired during an edit', async () => {
+    const { api } = await open(TEST_USER, {
+      [`GET ${API_TOKENS.LIST}`]: listHandler,
+      [`PATCH ${API_TOKENS.ONE('tok_build')}`]: () => ({
+        status: 409,
+        data: { errorCode: 'API_TOKEN_EXPIRED', message: 'x' },
+      }),
+    });
+    const user = userEvent.setup();
+    await user.click(
+      await screen.findByRole('button', {
+        name: copy.apiTokens.editLabel('Website build'),
+      }),
+    );
+    const dialog = await screen.findByRole('dialog');
+    const name = within(dialog).getByLabelText(
+      new RegExp(copy.tokenForm.nameLabel),
+    );
+    await user.clear(name);
+    await user.type(name, 'Site build');
+    const listCalls = api.callsTo(`GET ${API_TOKENS.LIST}`).length;
+    await user.click(
+      within(dialog).getByRole('button', { name: copy.tokenForm.submitEdit }),
+    );
+    expect(
+      await screen.findByText(copy.apiTokens.alreadyExpired),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    await waitFor(() =>
+      expect(api.callsTo(`GET ${API_TOKENS.LIST}`).length).toBeGreaterThan(
+        listCalls,
+      ),
+    );
+  });
+
   it('shows an empty state pointing to the first action', async () => {
     await open(TEST_USER, {
       [`GET ${API_TOKENS.LIST}`]: () => ({ status: 200, data: listBody([]) }),

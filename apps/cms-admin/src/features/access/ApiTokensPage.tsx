@@ -72,6 +72,9 @@ export function ApiTokensPage() {
       case 'revoked-meanwhile':
         setNotice({ tone: 'info', message: copy.alreadyRevoked });
         break;
+      case 'expired-meanwhile':
+        setNotice({ tone: 'info', message: copy.alreadyExpired });
+        break;
       case 'gone':
         setNotice({ tone: 'info', message: copy.gone });
         break;
