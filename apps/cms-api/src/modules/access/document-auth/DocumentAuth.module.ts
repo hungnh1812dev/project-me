@@ -1,8 +1,8 @@
 import { Module } from '@nestjs/common';
 
-import { IdentityModule } from '../identity';
-import { AccessModule } from './access.module';
-import { DocumentAuthGuard } from './document-auth.guard';
+import { IdentityModule } from '../../identity';
+import { AccessModule } from '../Access.module';
+import { DocumentAuthGuard } from './http/DocumentAuth.guard';
 
 /**
  * Who is reading content (SPEC D5). Kept apart from `AccessModule` because

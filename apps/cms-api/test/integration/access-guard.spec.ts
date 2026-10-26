@@ -18,10 +18,12 @@ import {
   openPrisma,
   type PrismaHandle,
 } from '../../src/infrastructure/database/prisma-client';
-import { AccessModule } from '../../src/modules/access/access.module';
+import { AccessModule } from '../../src/modules/access/Access.module';
 import type { PermissionGrant } from '../../src/modules/access/domain/ActorContext.entity';
-import { RequirePermission } from '../../src/modules/access/permission.decorator';
-import { PermissionGuard } from '../../src/modules/access/permission.guard';
+import {
+  PermissionGuard,
+  RequirePermission,
+} from '../../src/modules/access/http/Permission.guard';
 import { RolePermissionsService } from '../../src/modules/access/application/RolePermissions.service';
 import { seedRolePermissions } from '../../src/modules/access/roles/role-permissions.seed';
 import {

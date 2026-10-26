@@ -1,6 +1,6 @@
 import { Controller, Get, UseGuards } from '@nestjs/common';
 
-import { RequirePermission } from '../modules/access/permission.decorator';
+import { RequirePermission } from '../modules/access/http/Permission.guard';
 import { PermissionAction } from '../generated/prisma/client';
 import {
   type ControllerClass,
@@ -9,7 +9,7 @@ import {
   isPermissionEnforced,
   PermissionGuard,
 } from './controller-handlers';
-import { DocumentAuthGuard } from '../modules/access/document-auth.guard';
+import { DocumentAuthGuard } from '../modules/access/document-auth/http/DocumentAuth.guard';
 import { JwtAuthGuard } from '../modules/identity/jwt.strategy';
 
 const READ_ROLES = {

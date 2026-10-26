@@ -8,7 +8,7 @@ import {
 import {
   ACCESS_MANAGEMENT_DIRECTORY,
   ACCESS_MODULE_DIRECTORY,
-  DOCUMENT_AUTH_FILE,
+  ACCESS_DOCUMENT_AUTH_DIRECTORY,
   MODULE_NODES,
   MODULES_DIRECTORY,
   PLATFORM_DIRECTORIES,
@@ -34,15 +34,15 @@ export const FILE_LAYERS = [
 
 export type FileLayer = (typeof FILE_LAYERS)[number] | 'wiring' | 'unlayered';
 
+const ACCESS_SUBMODULE_DIRECTORIES: readonly string[] = [
+  ACCESS_MANAGEMENT_DIRECTORY,
+  ACCESS_DOCUMENT_AUTH_DIRECTORY,
+];
+
 const WIRING_FILE = /^(?:index\.ts|[^/\\]+\.module\.ts)$/;
 
 const isLayerFolder = (segment: string | undefined): boolean =>
   (FILE_LAYERS as readonly (string | undefined)[]).includes(segment);
-
-/** Drops a layer folder that sits right after the module name (`access/http/...`). */
-function withoutLayerFolder(rest: string[]): string[] {
-  return rest.length > 1 && isLayerFolder(rest[0]) ? rest.slice(1) : rest;
-}
 
 /** The folder name of the module a file sits in (`modules/<name>/...`), or `null`. */
 export function moduleFolderOf(file: string): string | null {
@@ -55,15 +55,15 @@ export function moduleFolderOf(file: string): string | null {
 /**
  * The layer a module file sits in (ADR 0006 §2). Module-root `index.ts` and
  * `*.module.ts` are wiring; anything else outside a layer folder, and every
- * file outside `modules/`, is unlayered. The management sub-module of
- * `access` has its own layer folders.
+ * file outside `modules/`, is unlayered. The management and document-auth
+ * sub-modules of `access` have their own layer folders.
  */
 export function layerOfFile(file: string): FileLayer {
   const [top, moduleName, ...rest] = file.split(sep);
   if (top !== MODULES_DIRECTORY || moduleName === undefined) return 'unlayered';
   const inner =
     moduleName === ACCESS_MODULE_DIRECTORY &&
-    rest[0] === ACCESS_MANAGEMENT_DIRECTORY
+    ACCESS_SUBMODULE_DIRECTORIES.includes(rest[0] ?? '')
       ? rest.slice(1)
       : rest;
   const [first = '', ...below] = inner;
@@ -87,9 +87,9 @@ export function nodeOfFile(file: string): ModuleNode | null {
       ? (moduleName as ModuleNode)
       : null;
   }
-  const [first = ''] = withoutLayerFolder(rest);
+  const [first = ''] = rest;
   if (first === ACCESS_MANAGEMENT_DIRECTORY) return 'access-management';
-  if (DOCUMENT_AUTH_FILE.test(first)) return 'access-document-auth';
+  if (first === ACCESS_DOCUMENT_AUTH_DIRECTORY) return 'access-document-auth';
   return 'access-core';
 }
 

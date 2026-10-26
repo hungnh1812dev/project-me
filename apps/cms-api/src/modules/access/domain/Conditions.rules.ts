@@ -6,8 +6,8 @@ import {
   parseDatetime,
   fieldTypeOf,
   parseUuid,
-  type FieldValueKind,
 } from '../../content-engine';
+import type { FieldValueKind } from '../../content-engine';
 import {
   ACCESS_ERROR_CODES,
   CONDITION_LIMITS,

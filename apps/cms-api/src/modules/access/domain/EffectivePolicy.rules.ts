@@ -1,4 +1,4 @@
-import type { PermissionAction } from '../../../generated/prisma/client';
+import type { PermissionAction } from './Access.constants';
 import {
   CONTENT_WILDCARD_SUBJECT,
   READ_ONLY_ACTIONS,

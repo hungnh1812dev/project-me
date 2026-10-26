@@ -3,10 +3,12 @@ import 'reflect-metadata';
 import { GUARDS_METADATA } from '@nestjs/common/constants';
 import { Reflector } from '@nestjs/core';
 
-import { PERMISSION_METADATA_KEY } from '../modules/access/permission.decorator';
-import type { PermissionRequirement } from '../modules/access/permission.decorator';
-import { PermissionGuard } from '../modules/access/permission.guard';
-import { DocumentAuthGuard } from '../modules/access/document-auth.guard';
+import {
+  PERMISSION_METADATA_KEY,
+  PermissionGuard,
+  type PermissionRequirement,
+} from '../modules/access/http/Permission.guard';
+import { DocumentAuthGuard } from '../modules/access/document-auth/http/DocumentAuth.guard';
 import { RATE_LIMIT_POLICY_METADATA } from '../common/guards/throttle.guard';
 import type { RateLimitPolicy } from '../common/constants/limits.constants';
 import { JwtAuthGuard } from '../modules/identity/jwt.strategy';

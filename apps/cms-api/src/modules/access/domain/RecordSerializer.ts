@@ -6,7 +6,8 @@ import type {
   RegisteredContentType,
   TableNode,
 } from '../../content-engine';
-import { fieldTypeOf, type FieldValues } from '../../content-engine';
+import { fieldTypeOf } from '../../content-engine';
+import type { FieldValues } from '../../content-engine';
 import {
   MASK_SENTINEL,
   MASKED_FIELDS_KEY,

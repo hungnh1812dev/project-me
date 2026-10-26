@@ -15,7 +15,7 @@ import {
   ThrottleGuard,
 } from '../common/guards/throttle.guard';
 import { RATE_LIMIT_OVERRIDE_ENV_KEYS } from '../config/config.constants';
-import { ACCESS_RATE_LIMIT_POLICIES } from '../modules/access/access.rate-limits.constants';
+import { ACCESS_RATE_LIMIT_POLICIES } from '../modules/access/http/AccessHttp.constants';
 import { DOCUMENTS_RATE_LIMIT_POLICIES } from '../modules/documents/http/DocumentsHttp.constants';
 import {
   IDENTITY_RATE_LIMIT_POLICIES,

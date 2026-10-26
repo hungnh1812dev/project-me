@@ -226,7 +226,18 @@ describe('layers and nodes of module files (ADR 0006 §2)', () => {
     expect(layerOfFile(at('common', 'http', 'x.ts'))).toBe('unlayered');
   });
 
-  it('gives access management its own layer folders', () => {
+  it('gives access management and document auth their own layer folders', () => {
+    expect(
+      layerOfFile(
+        at(
+          'modules',
+          'access',
+          'document-auth',
+          'http',
+          'DocumentAuth.guard.ts',
+        ),
+      ),
+    ).toBe('http');
     expect(
       layerOfFile(at('modules', 'access', 'management', 'application', 'x.ts')),
     ).toBe('application');
@@ -235,7 +246,7 @@ describe('layers and nodes of module files (ADR 0006 §2)', () => {
     ).toBe('wiring');
   });
 
-  it('puts a file in the access node the folder says, with or without a layer folder', () => {
+  it('puts a file in the access node the folder says', () => {
     expect(nodeOfFile(at('modules', 'access', 'application', 'x.ts'))).toBe(
       'access-core',
     );
@@ -244,8 +255,22 @@ describe('layers and nodes of module files (ADR 0006 §2)', () => {
       nodeOfFile(at('modules', 'access', 'management', 'application', 'x.ts')),
     ).toBe('access-management');
     expect(
-      nodeOfFile(at('modules', 'access', 'http', 'document-auth.guard.ts')),
+      nodeOfFile(
+        at(
+          'modules',
+          'access',
+          'document-auth',
+          'http',
+          'DocumentAuth.guard.ts',
+        ),
+      ),
     ).toBe('access-document-auth');
+    expect(
+      nodeOfFile(at('modules', 'access', 'document-auth', 'index.ts')),
+    ).toBe('access-document-auth');
+    expect(
+      nodeOfFile(at('modules', 'access', 'http', 'Permission.guard.ts')),
+    ).toBe('access-core');
     expect(nodeOfFile(at('modules', 'media', 'http', 'x.ts'))).toBe('media');
   });
 });

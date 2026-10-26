@@ -4,17 +4,37 @@ import {
   ForbiddenException,
   Injectable,
   NotFoundException,
+  SetMetadata,
   UnauthorizedException,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import type { Request } from 'express';
 
-import { AccessPolicyService } from './application/AccessPolicy.service';
-import type { ActorContext } from './domain/ActorContext.entity';
-import {
-  PERMISSION_METADATA_KEY,
-  type PermissionRequirement,
-} from './permission.decorator';
+import { AccessPolicyService } from '../application/AccessPolicy.service';
+import type {
+  PermissionAction,
+  SystemSubject,
+} from '../domain/Access.constants';
+import type { ActorContext } from '../domain/ActorContext.entity';
+
+/** Metadata key of `@RequirePermission()` (read by `PermissionGuard`). */
+export const PERMISSION_METADATA_KEY = 'abyss:access:permission';
+
+/**
+ * What a route needs. A system route names its subject; a content route
+ * names the route param holding the content type slug (`:slug`), which the
+ * guard resolves through the registry, never as SQL.
+ */
+export type PermissionRequirement =
+  | { action: PermissionAction; subject: SystemSubject }
+  | { action: PermissionAction; subjectParam: string };
+
+/**
+ * Declares the permission a handler needs. Only metadata: the guard below
+ * reads it and calls `PolicyEvaluator.can()`.
+ */
+export const RequirePermission = (requirement: PermissionRequirement) =>
+  SetMetadata(PERMISSION_METADATA_KEY, requirement);
 
 /** What an authentication guard must leave on `req.user` for this guard. */
 interface WithActor {

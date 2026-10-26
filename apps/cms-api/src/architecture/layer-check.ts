@@ -15,6 +15,7 @@ import {
   LAYER_RULES,
   PLATFORM_PORT_SUFFIX,
   PLATFORM_ROLE_FOLDERS,
+  UNMIGRATED_FOLDERS,
   type KnownLayerViolation,
   type LayerRule,
   type PlatformRole,
@@ -229,7 +230,8 @@ export function listCheckedFiles(
     return (
       moduleName !== null &&
       migratedModules.includes(moduleName) &&
-      !LAYER_EXEMPT_ROOTS.includes(top)
+      !LAYER_EXEMPT_ROOTS.includes(top) &&
+      !UNMIGRATED_FOLDERS.some(({ folder }) => startsWithFolder(file, folder))
     );
   });
 }

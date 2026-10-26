@@ -1,11 +1,11 @@
 import { type Expression, sql, type SqlBool } from 'kysely';
 
-import { PermissionAction } from '../../../generated/prisma/client';
 import {
   CONTENT_WILDCARD_SUBJECT,
   type FieldWriteAction,
   MEDIA_SUBJECT,
   PERMISSION_STRING_SEPARATOR,
+  PermissionAction,
   SYSTEM_SUBJECT_ACTIONS,
 } from './Access.constants';
 import { type ActorContext, type PermissionGrant } from './ActorContext.entity';

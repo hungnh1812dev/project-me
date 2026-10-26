@@ -1,9 +1,9 @@
 import { z } from 'zod';
 
-import { PermissionAction } from '../../../generated/prisma/client';
 import {
   ACCESS_ERROR_CODES,
   CONTENT_WILDCARD_SUBJECT,
+  PermissionAction,
 } from './Access.constants';
 import type { PermissionGrant } from './ActorContext.entity';
 import { validateConditions } from './Conditions.rules';

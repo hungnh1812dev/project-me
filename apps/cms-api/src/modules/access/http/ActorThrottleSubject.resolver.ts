@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import type { Request } from 'express';
 
-import type { ThrottleSubjectResolver } from '../../common/rate-limit/throttle-subject-resolver';
+import type { ThrottleSubjectResolver } from '../../../common/rate-limit/throttle-subject-resolver';
 
 type RequestWithActor = Request & {
   user?: { actor?: { kind?: unknown; accountId?: unknown } };

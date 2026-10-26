@@ -92,8 +92,8 @@ export const MODULES_DIRECTORY = 'modules';
 export const ACCESS_MODULE_DIRECTORY = 'access';
 export const ACCESS_MANAGEMENT_DIRECTORY = 'management';
 
-/** Files of `modules/access/` that are the document-auth node (R1-12). */
-export const DOCUMENT_AUTH_FILE = /^document-auth\./;
+/** The folder of `modules/access/` that is the document-auth node (R1-12). */
+export const ACCESS_DOCUMENT_AUTH_DIRECTORY = 'document-auth';
 
 /**
  * Edges the code still has but the table does not allow. Each later R1 task

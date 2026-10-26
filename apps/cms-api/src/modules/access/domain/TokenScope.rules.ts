@@ -1,7 +1,7 @@
-import { PermissionAction } from '../../../generated/prisma/client';
 import {
   ACCESS_ERROR_CODES,
   CONTENT_WILDCARD_SUBJECT,
+  PermissionAction,
 } from './Access.constants';
 import {
   isOwnerRole,

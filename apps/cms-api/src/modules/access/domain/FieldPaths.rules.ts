@@ -1,10 +1,10 @@
 import { ERROR_CODES } from '../../../common/constants/error.constants';
 import { DomainError } from '../../../common/errors/Domain.errors';
 import { DOMAIN_ERROR_KINDS } from '../../../common/errors/DomainErrorKinds.constants';
-import {
-  type ContentTypeDefinition,
-  type FieldDefinition,
-  isComponentField,
+import { isComponentField } from '../../content-engine';
+import type {
+  ContentTypeDefinition,
+  FieldDefinition,
 } from '../../content-engine';
 import {
   ACCESS_ERROR_CODES,

@@ -275,6 +275,18 @@ export const LAYER_EXEMPT_ROOTS: readonly string[] = [
   'contract',
 ];
 
+/**
+ * Folders inside a migrated module that keep their old layout until their
+ * own task moves them; the layer guard skips them (`removedBy` is the task).
+ */
+export const UNMIGRATED_FOLDERS: readonly {
+  folder: string;
+  removedBy: string;
+}[] = [
+  { folder: join('modules', 'access', 'management'), removedBy: 'CR-ac-5' },
+  { folder: join('modules', 'access', 'roles'), removedBy: 'CR-ac-6' },
+];
+
 /** Module folders (`modules/<name>`) the layer guard checks. Each CR task adds its module. */
 export const MIGRATED_MODULES: readonly string[] = [
   'health',
@@ -282,6 +294,7 @@ export const MIGRATED_MODULES: readonly string[] = [
   'content-engine',
   'documents',
   'graphql',
+  'access',
 ];
 
 export interface KnownLayerViolation {
@@ -304,14 +317,13 @@ export const KNOWN_LAYER_VIOLATIONS: readonly KnownLayerViolation[] = [
     }),
   ),
   ...[
-    join('documents', 'http', 'Bulk.controller.ts'),
-    join('documents', 'http', 'Documents.controller.ts'),
-    join('graphql', 'http', 'Graphql.controller.ts'),
+    join('application', 'AnonymousActor.service.ts'),
+    join('domain', 'ActorContext.entity.ts'),
   ].map((file) => ({
-    from: join('modules', file),
-    rule: 'deep-import',
-    to: join('modules', 'access', 'document-auth.ts'),
-    removedBy: 'CR-ac-4',
+    from: join('modules', 'access', file),
+    rule: 'own-layer',
+    to: join('modules', 'access', 'roles', 'system-roles.ts'),
+    removedBy: 'CR-ac-6',
   })),
   {
     from: GRAPHQL_PRINT_SCHEMA_FILE,

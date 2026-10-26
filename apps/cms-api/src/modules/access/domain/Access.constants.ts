@@ -1,6 +1,6 @@
-import {
-  type ContentDocument,
-  type ROOT_SYSTEM_COLUMNS,
+import type {
+  ContentDocument,
+  ROOT_SYSTEM_COLUMNS,
 } from '../../content-engine';
 import type { ActorKind } from './ActorContext.entity';
 

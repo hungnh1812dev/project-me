@@ -1,8 +1,10 @@
-import type { PermissionAction } from '../../../generated/prisma/client';
-import type { RegisteredContentType } from '../../content-engine';
-import { RegistryService } from '../../content-engine';
+import type {
+  RegisteredContentType,
+  RegistryService,
+} from '../../content-engine';
 import {
   CONTENT_WILDCARD_SUBJECT,
+  type PermissionAction,
   PERMISSION_ACTIONS,
   SYSTEM_SUBJECT_ACTIONS,
   type SystemSubject,

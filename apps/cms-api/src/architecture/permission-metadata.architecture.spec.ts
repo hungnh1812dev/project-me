@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { SYSTEM_SUBJECT_ACTIONS } from '../modules/access/domain/Access.constants';
-import { PERMISSION_METADATA_KEY } from '../modules/access/permission.decorator';
+import { PERMISSION_METADATA_KEY } from '../modules/access/http/Permission.guard';
 import {
   type ControllerClass,
   handlersOf,
@@ -24,6 +24,11 @@ import { PUBLIC_HANDLERS } from './public-handlers.constants';
 const SRC_ROOT = join(__dirname, '..');
 const CONTROLLER_MARKER = '@Controller(';
 const CONTROLLER_FILE = /\.controller\.ts$/;
+const MANAGEMENT_CONTROLLERS = [
+  'AccountsController',
+  'RolesController',
+  'ApiTokensController',
+];
 const KEY_DECLARATION = /export const PERMISSION_METADATA_KEY\b/;
 const KEY_USE_IN_DECORATOR = /SetMetadata\(\s*PERMISSION_METADATA_KEY\b/;
 
@@ -80,6 +85,22 @@ describe('permission metadata (D5, D6, X2)', () => {
       )
       .map(({ id }) => id);
     expect(unprotected).toEqual([]);
+  });
+
+  it('every access management handler has RequirePermission metadata and is not public', () => {
+    const publicIds = new Set(PUBLIC_HANDLERS.map(({ handler }) => handler));
+    const management = handlers.filter(({ id }) =>
+      MANAGEMENT_CONTROLLERS.some((name) => id.startsWith(`${name}.`)),
+    );
+    expect(management.length).toBeGreaterThan(0);
+    expect(
+      management
+        .filter(
+          ({ requirement, id }) =>
+            requirement === undefined || publicIds.has(id),
+        )
+        .map(({ id }) => id),
+    ).toEqual([]);
   });
 
   it('the public list names only handlers that exist and carry no permission metadata', () => {

@@ -4,7 +4,7 @@ import { DatabaseModule } from '../../../infrastructure/database/database.module
 import { MailModule } from '../../../infrastructure/mail/mail.module';
 import { IdentityModule } from '../../identity';
 import { SecurityAuditModule } from '../../security-audit';
-import { AccessModule } from '../access.module';
+import { AccessModule } from '../Access.module';
 import { AccountsController } from './accounts.controller';
 import { AccountsService } from './accounts.service';
 import { ApiTokensController } from './api-tokens.controller';

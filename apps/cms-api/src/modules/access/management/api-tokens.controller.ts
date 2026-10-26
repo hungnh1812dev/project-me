@@ -15,7 +15,7 @@ import {
 
 import { ClientIpResolver } from '../../../common/http/client-ip.resolver';
 import { ID_PARAM } from '../../../common/constants/api.constants';
-import { API_TOKENS_ROUTES } from '../access.routes';
+import { API_TOKENS_ROUTES } from '../http/AccessHttp.constants';
 import { NO_STORE_HEADER } from '../../../common/constants/http.constants';
 import { PermissionAction } from '../../../generated/prisma/client';
 import { clientMetaOf } from '../../../common/http/client-meta';
@@ -35,8 +35,7 @@ import {
   createApiTokenSchema,
   updateApiTokenSchema,
 } from './api-tokens.requests';
-import { RequirePermission } from '../permission.decorator';
-import { PermissionGuard } from '../permission.guard';
+import { PermissionGuard, RequirePermission } from '../http/Permission.guard';
 import { requireAccountActor } from '../domain/Rank.rules';
 
 const SUBJECT = 'api_tokens';

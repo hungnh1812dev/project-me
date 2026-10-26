@@ -16,7 +16,7 @@ import {
 
 import { ClientIpResolver } from '../../../common/http/client-ip.resolver';
 import { ID_PARAM } from '../../../common/constants/api.constants';
-import { ROLES_ROUTES } from '../access.routes';
+import { ROLES_ROUTES } from '../http/AccessHttp.constants';
 import { NO_STORE_HEADER } from '../../../common/constants/http.constants';
 import { PermissionAction } from '../../../generated/prisma/client';
 import { clientMetaOf } from '../../../common/http/client-meta';
@@ -30,8 +30,7 @@ import {
   documentIdSchema,
   parseRequest,
 } from '../../../common/http/request-parsing';
-import { RequirePermission } from '../permission.decorator';
-import { PermissionGuard } from '../permission.guard';
+import { PermissionGuard, RequirePermission } from '../http/Permission.guard';
 import { requireAccountActor } from '../domain/Rank.rules';
 import { type RoleView, RolesService } from './roles.service';
 

@@ -15,9 +15,11 @@ import {
 
 import { ClientIpResolver } from '../../../common/http/client-ip.resolver';
 import { ID_PARAM } from '../../../common/constants/api.constants';
-import { ACCOUNTS_ROUTES } from '../access.routes';
+import {
+  ACCESS_RATE_LIMIT_POLICIES,
+  ACCOUNTS_ROUTES,
+} from '../http/AccessHttp.constants';
 import { NO_STORE_HEADER } from '../../../common/constants/http.constants';
-import { ACCESS_RATE_LIMIT_POLICIES } from '../access.rate-limits.constants';
 import { Throttle } from '../../../common/guards/throttle.guard';
 import { PermissionAction } from '../../../generated/prisma/client';
 import { clientMetaOf } from '../../../common/http/client-meta';
@@ -37,8 +39,7 @@ import {
   InvitationsService,
   type InvitedAccountView,
 } from './invitations.service';
-import { RequirePermission } from '../permission.decorator';
-import { PermissionGuard } from '../permission.guard';
+import { PermissionGuard, RequirePermission } from '../http/Permission.guard';
 import { requireAccountActor } from '../domain/Rank.rules';
 
 const SUBJECT = 'accounts';

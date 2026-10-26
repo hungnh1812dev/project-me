@@ -16,8 +16,8 @@ import { AnonymousActorService } from './application/AnonymousActor.service';
 import { ApiTokenAuthentication } from './application/ApiTokenAuthentication.service';
 import { RolePermissionsService } from './application/RolePermissions.service';
 import { VersionCache } from './application/VersionCache.service';
-import { ApiTokenAuthenticator, ApiTokenGuard } from './api-token.guard';
-import { PermissionGuard } from './permission.guard';
+import { ApiTokenAuthenticator, ApiTokenGuard } from './http/ApiToken.guard';
+import { PermissionGuard } from './http/Permission.guard';
 
 /**
  * Authorization: revocation versions, the policy evaluator over

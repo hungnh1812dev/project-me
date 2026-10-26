@@ -9,7 +9,7 @@ import type { Request } from 'express';
 import {
   ApiTokenAuthentication,
   type AuthenticatedApiToken,
-} from './application/ApiTokenAuthentication.service';
+} from '../application/ApiTokenAuthentication.service';
 
 /** `Authorization: Bearer <credential>`; group 1 is the credential. */
 export const BEARER_PATTERN = /^Bearer (\S+)$/i;

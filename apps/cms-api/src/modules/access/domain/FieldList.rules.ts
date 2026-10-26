@@ -1,10 +1,10 @@
 import { z } from 'zod';
 
-import { PermissionAction } from '../../../generated/prisma/client';
 import {
   ACCESS_ERROR_CODES,
   type AccessErrorCode,
   FIELD_WRITE_ACTIONS,
+  PermissionAction,
 } from './Access.constants';
 import type { FieldList } from './FieldPaths.rules';
 import type { SubjectCatalog } from './SubjectCatalog.rules';

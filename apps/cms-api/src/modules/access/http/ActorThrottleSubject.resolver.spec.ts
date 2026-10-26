@@ -1,6 +1,6 @@
 import type { Request } from 'express';
 
-import { ActorThrottleSubjectResolver } from './actor-throttle-subject.resolver';
+import { ActorThrottleSubjectResolver } from './ActorThrottleSubject.resolver';
 
 const ACCOUNT_ID = 42;
 
