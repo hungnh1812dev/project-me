@@ -54,9 +54,9 @@ Base: 0ae3c07
 | FN-lint-1 | abyss/file-names ESLint rule in base-config (replaces the base-config guard; deletion approved) | core-builder | done (qc-cli tier 1 pass; user approved) | 25ba053 |
 | ARCH-1 | Move cms-api architecture guards and analyzers from src/architecture to test/architecture; one SRC_ROOT (2 commits; user approved entry) | core-builder | done (qc-cli tier 1 pass, 138/1532; security pass static; user approved) | 6897e38, 65f6ed0 |
 | FN-lint-api | cms-api opts into the rule; delete guard and FileNames.constants.ts (approved); ErrorContract.contract.spec.ts -> ErrorBody.contract.spec.ts | core-builder | done (qc-cli tier 1 pass, 1532; user approved) | b4604fb |
-| FN-lint-ui | cms-admin, web, form-commons opt in; delete their three guards (approved) | ui-builder | todo | - |
-| FN-lint-e2e | e2e opts in; delete guard (approved); AppContracts.contract.ts -> Apps.contract.ts | qc | todo | - |
-| FN-hook-rename | Drop the hook word from 16 hook files (+6 tests), Security gate yes | ui-builder | todo | - |
+| FN-lint-ui | cms-admin, web, form-commons opt in; delete their three guards (approved) | ui-builder | done (qc-cli tier 1 pass; user approved) | e7787f9 |
+| FN-lint-e2e | e2e opts in; delete guard (approved); AppContracts.contract.ts -> Apps.contract.ts | qc | done (qc-cli tier 1 pass; spec/test both accepted in both folders, user accepted; user approved) | ea0d157 |
+| FN-hook-rename | Drop the hook word from 16 hook files (+6 tests), Security gate yes | ui-builder | done (qc-browser tier 2 + tier 3 smoke pass 205; security pass static; user approved) | 99f31f0 |
 
 ## Phase MF: micro-frontends
 | ID | Title | Scope | Status | Commit |
