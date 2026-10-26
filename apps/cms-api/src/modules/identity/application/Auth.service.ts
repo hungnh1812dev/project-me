@@ -1,29 +1,37 @@
 import { randomBytes } from 'node:crypto';
 
-import {
-  Injectable,
-  type OnModuleInit,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 
+import type { ClientMeta } from '../../../common/types/ClientMeta.entity';
 import {
-  AUTH_ERROR_CODES,
-  AUTH_ERROR_MESSAGES,
+  CORE_TRANSACTION_RUNNER,
+  type TransactionRunner,
+} from '../../../infrastructure/database/TransactionRunner.port';
+import { AccountStatus } from '../../access';
+import {
+  AUDIT_ACTIONS,
+  type LoginFailureReason,
+  SecurityAuditService,
+  selfActor,
+} from '../../security-audit';
+import { loginFailureReason } from '../domain/Authentication.rules';
+import {
   DUMMY_PASSWORD_BYTES,
-} from './domain/Identity.constants';
-import {
-  type AccountStatus,
   type TwoFaMethod,
-} from '../../generated/prisma/client';
-import { unitOfWorkFromPrismaTx } from '../../infrastructure/database/PrismaTransactionRunner.adapter';
-import { PrismaService } from '../../infrastructure/database/prisma.service';
-import { AUDIT_ACTIONS, type LoginFailureReason } from '../security-audit';
-import { SecurityAuditService, selfActor } from '../security-audit';
-import { loginFailureReason } from './domain/Authentication.rules';
-import { AccessTokenService } from './application/AccessToken.service';
-import { hashPassword, verifyPassword } from './password-hasher';
-import { RefreshTokenService } from './application/RefreshToken.service';
-import { type ClientMeta } from '../../common/http/client-meta';
+} from '../domain/Identity.constants';
+import {
+  invalidCredentials,
+  invalidRefreshToken,
+  notSignedIn,
+} from '../domain/Identity.errors';
+import { AccessTokenService } from './AccessToken.service';
+import {
+  ACCOUNT_REPOSITORY,
+  type AccountRepository,
+  type LoginAccountRecord,
+} from './Identity.port';
+import { hashPassword, verifyPassword } from './Password.service';
+import { RefreshTokenService } from './RefreshToken.service';
 
 export interface LoginCredentials {
   readonly email: string;
@@ -74,58 +82,46 @@ export interface SessionAccount {
   readonly policyVersion: number;
 }
 
-export function invalidCredentials(): UnauthorizedException {
-  return new UnauthorizedException({
-    errorCode: AUTH_ERROR_CODES.INVALID_CREDENTIALS,
-    message: AUTH_ERROR_MESSAGES.INVALID_CREDENTIALS,
-  });
-}
-
-export function invalidRefreshToken(): UnauthorizedException {
-  return new UnauthorizedException({
-    errorCode: AUTH_ERROR_CODES.INVALID_REFRESH_TOKEN,
-    message: AUTH_ERROR_MESSAGES.INVALID_REFRESH_TOKEN,
-  });
-}
-
-/** The account columns a sign-in reads. */
-interface LoginAccount {
-  readonly id: number;
-  readonly documentId: string;
-  readonly passwordHash: string | null;
-  readonly status: AccountStatus;
-  readonly deletedAt: Date | null;
-  readonly tokenVersion: number;
-  readonly is2faEnabled: boolean;
-  readonly twoFaMethod: TwoFaMethod | null;
-  readonly role: { readonly policyVersion: number };
-}
-
 @Injectable()
-export class AuthService implements OnModuleInit {
+export class AuthService {
   /**
-   * Argon2id hash of a random password with the real parameters. Unknown
-   * emails and accounts without a password are verified against it, so they
-   * cost the same time as a wrong password.
+   * Argon2id hash of a random password with the real parameters, made at boot
+   * (`ready`) and again whenever it failed. Unknown emails and accounts without a
+   * password are verified against it, so they cost the same time as a wrong
+   * password.
    */
-  private dummyHash: string | undefined;
+  private dummyHash: Promise<string> | undefined;
 
   constructor(
-    private readonly prisma: PrismaService,
+    @Inject(ACCOUNT_REPOSITORY) private readonly accounts: AccountRepository,
+    @Inject(CORE_TRANSACTION_RUNNER)
+    private readonly runner: TransactionRunner,
     private readonly accessTokens: AccessTokenService,
     private readonly refreshTokens: RefreshTokenService,
     private readonly audit: SecurityAuditService,
   ) {}
 
-  async onModuleInit(): Promise<void> {
-    this.dummyHash = await this.createDummyHash();
+  /** Makes the dummy hash now; the module awaits it at boot so a failure stops the start. */
+  async ready(): Promise<void> {
+    await this.dummyHashPromise();
+  }
+
+  /** A failed hash is dropped, so the next sign-in makes a new one instead of failing for good. */
+  private dummyHashPromise(): Promise<string> {
+    this.dummyHash ??= hashPassword(
+      randomBytes(DUMMY_PASSWORD_BYTES).toString('hex'),
+    ).catch((error: unknown) => {
+      this.dummyHash = undefined;
+      throw error;
+    });
+    return this.dummyHash;
   }
 
   async login(
     credentials: LoginCredentials,
     meta: ClientMeta,
   ): Promise<LoginResult> {
-    const account = await this.findLoginAccount(credentials.email);
+    const account = await this.accounts.findLoginAccount(credentials.email);
     const isPasswordCorrect = await this.verifyPasswordAgainstAnyHash(
       account,
       credentials.password,
@@ -140,48 +136,22 @@ export class AuthService implements OnModuleInit {
 
     if (account.is2faEnabled) return this.startTwoFactorStep(account);
 
-    const session = await this.startSession(
-      {
-        id: account.id,
-        documentId: account.documentId,
-        tokenVersion: account.tokenVersion,
-        policyVersion: account.role.policyVersion,
-      },
-      meta,
-    );
+    const session = await this.startSession(account, meta);
     return { kind: 'session', ...session };
-  }
-
-  private findLoginAccount(email: string): Promise<LoginAccount | null> {
-    return this.prisma.account.findUnique({
-      where: { email },
-      select: {
-        id: true,
-        documentId: true,
-        passwordHash: true,
-        status: true,
-        deletedAt: true,
-        tokenVersion: true,
-        is2faEnabled: true,
-        twoFaMethod: true,
-        role: { select: { policyVersion: true } },
-      },
-    });
   }
 
   /** Always runs exactly one Argon2id verify, whatever the account state. */
   private async verifyPasswordAgainstAnyHash(
-    account: LoginAccount | null,
+    account: LoginAccountRecord | null,
     password: string,
   ): Promise<boolean> {
     const passwordHash =
-      account?.passwordHash ??
-      (this.dummyHash ??= await this.createDummyHash());
+      account?.passwordHash ?? (await this.dummyHashPromise());
     return verifyPassword(passwordHash, password);
   }
 
   private async recordLoginFailure(
-    account: LoginAccount | null,
+    account: LoginAccountRecord | null,
     reason: LoginFailureReason,
     email: string,
     meta: ClientMeta,
@@ -200,7 +170,7 @@ export class AuthService implements OnModuleInit {
   }
 
   /** Second step: POST /auth/2fa/verify with the returned token. */
-  private startTwoFactorStep(account: LoginAccount): LoginResult {
+  private startTwoFactorStep(account: LoginAccountRecord): LoginResult {
     return {
       kind: 'two-factor',
       tempToken: this.accessTokens.signTwoFactorTempToken({
@@ -222,13 +192,9 @@ export class AuthService implements OnModuleInit {
     meta: ClientMeta,
     twoFactorMethod: TwoFaMethod | null = null,
   ): Promise<SessionTokens> {
-    const refreshToken = await this.prisma.$transaction(async (tx) => {
-      const token = await this.refreshTokens.issue(
-        account.id,
-        meta,
-        unitOfWorkFromPrismaTx(tx),
-      );
-      await this.audit.record(tx, {
+    const refreshToken = await this.runner.run(async (unit) => {
+      const token = await this.refreshTokens.issue(account.id, meta, unit);
+      await this.audit.record(unit, {
         actor: selfActor(account.id),
         action: AUDIT_ACTIONS.AUTH_LOGIN_SUCCEEDED,
         targetId: account.documentId,
@@ -254,11 +220,10 @@ export class AuthService implements OnModuleInit {
    */
   async refresh(rawToken: string, meta: ClientMeta): Promise<RefreshedTokens> {
     const rotation = await this.refreshTokens.rotate(rawToken, meta);
-    if (rotation.kind === 'reuse') {
-      // Audited inside the rotation transaction (RefreshTokenService).
+    // 'reuse' is audited inside the rotation transaction (RefreshTokenService).
+    if (rotation.kind === 'reuse' || rotation.kind === 'invalid') {
       throw invalidRefreshToken();
     }
-    if (rotation.kind === 'invalid') throw invalidRefreshToken();
     return {
       refreshToken: rotation.kind === 'rotated' ? rotation.token : undefined,
       accessToken: this.accessTokens.signAccessToken({
@@ -275,25 +240,13 @@ export class AuthService implements OnModuleInit {
   }
 
   async me(accountDocumentId: string): Promise<AccountProfile> {
-    const account = await this.prisma.account.findUnique({
-      where: { documentId: accountDocumentId },
-      select: {
-        documentId: true,
-        email: true,
-        displayName: true,
-        roleSlug: true,
-        status: true,
-        deletedAt: true,
-        is2faEnabled: true,
-        twoFaMethod: true,
-      },
-    });
+    const account = await this.accounts.findProfile(accountDocumentId);
     if (
       account === null ||
-      account.status !== 'active' ||
+      account.status !== AccountStatus.active ||
       account.deletedAt !== null
     ) {
-      throw new UnauthorizedException();
+      throw notSignedIn();
     }
     return {
       id: account.documentId,
@@ -303,9 +256,5 @@ export class AuthService implements OnModuleInit {
       twoFactorEnabled: account.is2faEnabled,
       twoFactorMethod: account.is2faEnabled ? account.twoFaMethod : null,
     };
-  }
-
-  private createDummyHash(): Promise<string> {
-    return hashPassword(randomBytes(DUMMY_PASSWORD_BYTES).toString('hex'));
   }
 }

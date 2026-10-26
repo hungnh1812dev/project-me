@@ -24,6 +24,12 @@ const body = (errorCode: string, message: string) => ({ errorCode, message });
 /** What the client sees must equal the Nest exception each constructor will replace. */
 describe('identity error bodies', () => {
   it.each([
+    ['notSignedIn', errors.notSignedIn(), new UnauthorizedException()],
+    [
+      'mailNotDelivered',
+      errors.mailNotDelivered(),
+      new ServiceUnavailableException(),
+    ],
     [
       'invalidCredentials',
       errors.invalidCredentials(),

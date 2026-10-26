@@ -15,7 +15,7 @@ import {
   PASSWORD_MIN_LENGTH,
 } from './domain/Identity.constants';
 import { OWNER_ROLE_SLUG } from '../access';
-import { hashPassword } from './password-hasher';
+import { hashPassword } from './application/Password.service';
 
 type Tx = Prisma.TransactionClient;
 

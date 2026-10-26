@@ -11,7 +11,7 @@ import {
   bootstrapOwner,
   OwnerBootstrapError,
 } from '../../src/modules/identity/owner-bootstrap';
-import { verifyPassword } from '../../src/modules/identity/password-hasher';
+import { verifyPassword } from '../../src/modules/identity/application/Password.service';
 import { seedSystemRoles } from '../../src/modules/access/roles/system-roles.seed';
 import { createCoreTemplate } from '../fixtures/core-db.fixture';
 import { startPostgres } from '../fixtures/postgres.fixture';

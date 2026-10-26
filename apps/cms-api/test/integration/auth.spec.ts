@@ -19,7 +19,7 @@ import {
   openPrisma,
   type PrismaHandle,
 } from '../../src/infrastructure/database/prisma-client';
-import { hashPassword } from '../../src/modules/identity/password-hasher';
+import { hashPassword } from '../../src/modules/identity/application/Password.service';
 import { hashRefreshToken } from '../../src/modules/identity/application/RefreshToken.service';
 import { seedSystemRoles } from '../../src/modules/access/roles/system-roles.seed';
 import { createCoreTemplate } from '../fixtures/core-db.fixture';

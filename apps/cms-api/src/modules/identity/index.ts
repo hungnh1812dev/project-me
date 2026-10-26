@@ -8,6 +8,5 @@ export {
 export { AccessTokenService } from './application/AccessToken.service';
 export { IdentityModule } from './identity.module';
 export { JwtAuthGuard, type AuthenticatedRequest } from './jwt.strategy';
-export { buildOtpMail } from './otp-mail';
-export { OtpService } from './application/Otp.service';
-export { revokeAllSessions } from './adapters/PrismaSessionRevocation.repository';
+export { buildOtpMail, OtpService } from './application/Otp.service';
+export { SessionRevocationService } from './application/SessionRevocation.service';

@@ -8,7 +8,7 @@ import { OWNER_ROLE_SLUG } from '../../src/modules/access';
 import { seedSystemRoles } from '../../src/modules/access/roles/system-roles.seed';
 import { seedAccount } from '../../src/modules/identity/cli/seed-account';
 import { SEED_ACCOUNT_ERRORS } from '../../src/modules/identity/domain/Identity.constants';
-import { verifyPassword } from '../../src/modules/identity/password-hasher';
+import { verifyPassword } from '../../src/modules/identity/application/Password.service';
 import {
   ACCOUNT_SEEDED_CHANNEL,
   AUDIT_ACTIONS,

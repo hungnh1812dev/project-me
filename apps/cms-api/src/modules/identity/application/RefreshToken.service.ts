@@ -2,7 +2,7 @@ import { createHash, randomBytes, randomUUID } from 'node:crypto';
 
 import { Inject, Injectable } from '@nestjs/common';
 
-import type { ClientMeta } from '../../../common/http/client-meta';
+import type { ClientMeta } from '../../../common/types/ClientMeta.entity';
 import { Clock } from '../../../common/time/clock';
 import {
   CORE_TRANSACTION_RUNNER,

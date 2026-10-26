@@ -15,7 +15,7 @@ import {
   SEED_ACCOUNT_ROLES,
 } from '../domain/Identity.constants';
 import { ownerInputSchema } from '../owner-bootstrap';
-import { hashPassword } from '../password-hasher';
+import { hashPassword } from '../application/Password.service';
 import { CliInputError, readPasswordFromStream } from './password-input';
 
 /**

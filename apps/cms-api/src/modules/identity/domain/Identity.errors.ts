@@ -20,6 +20,14 @@ function refusal(
   return new DomainError({ kind, errorCode, message });
 }
 
+/** No signed-in account behind the request: the bare 401 of a guard. */
+export const notSignedIn = (): DomainError =>
+  new DomainError({ kind: DOMAIN_ERROR_KINDS.UNAUTHENTICATED });
+
+/** The emailed code could not be sent: a bare 503, nothing about the mail system. */
+export const mailNotDelivered = (): DomainError =>
+  new DomainError({ kind: DOMAIN_ERROR_KINDS.UNAVAILABLE });
+
 export const invalidCredentials = (): DomainError =>
   refusal(
     DOMAIN_ERROR_KINDS.UNAUTHENTICATED,

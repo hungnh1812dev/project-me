@@ -32,11 +32,11 @@ import {
   enableTwoFactorSchema,
   verifyTwoFactorSchema,
 } from './two-factor.requests';
-import { TwoFactorLoginService } from './two-factor-login.service';
+import { TwoFactorLoginService } from './application/TwoFactorLogin.service';
 import {
   type TotpSetupResponse,
   TwoFactorManagementService,
-} from './two-factor-management.service';
+} from './application/TwoFactorManagement.service';
 
 function parseBody<T>(schema: z.ZodType<T>, body: unknown): T {
   const parsed = schema.safeParse(body);

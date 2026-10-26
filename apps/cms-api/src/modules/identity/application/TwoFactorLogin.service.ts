@@ -1,49 +1,37 @@
-import {
-  HttpStatus,
-  Injectable,
-  UnauthorizedException,
-  HttpException,
-} from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 
+import { MS_PER_SECOND } from '../../../common/constants/time.constants';
+import type { ClientMeta } from '../../../common/types/ClientMeta.entity';
 import {
-  AUTH_ERROR_CODES,
-  AUTH_ERROR_MESSAGES,
-  EMAIL_CODE_PURPOSE,
-} from './domain/Identity.constants';
-import { ERROR_CODES } from '../../common/constants/error.constants';
-import { RATE_LIMIT_MESSAGE } from '../../common/constants/limits.constants';
-import { MS_PER_SECOND } from '../../common/constants/time.constants';
-import { type ClientMeta } from '../../common/http/client-meta';
-import { unitOfWorkFromPrismaTx } from '../../infrastructure/database/PrismaTransactionRunner.adapter';
-import { PrismaService } from '../../infrastructure/database/prisma.service';
-import { AUDIT_ACTIONS } from '../security-audit';
-import { SecurityAuditService, selfActor } from '../security-audit';
+  CORE_TRANSACTION_RUNNER,
+  type TransactionRunner,
+} from '../../../infrastructure/database/TransactionRunner.port';
+import { AccountStatus } from '../../access';
+import {
+  AUDIT_ACTIONS,
+  SecurityAuditService,
+  selfActor,
+} from '../../security-audit';
+import { EMAIL_CODE_PURPOSE } from '../domain/Identity.constants';
+import {
+  invalidTempToken,
+  invalidTwoFactorCodeAtLogin,
+  tooManyRequests,
+} from '../domain/Identity.errors';
 import {
   AccessTokenService,
   type TwoFactorTempTokenClaims,
-} from './application/AccessToken.service';
-import { AuthService, type SessionTokens } from './auth.service';
-import { isOtpCodeFormat, OtpService } from './application/Otp.service';
-import { TotpService } from './application/Totp.service';
-import { TwoFactorChallengeStore } from './application/TwoFactorChallenge.store';
-import { TwoFactorEmailCodeSender } from './two-factor-email-code.sender';
-import { TWO_FACTOR_ACCOUNT_SELECT } from './adapters/PrismaAccount.repository';
-import { invalidTwoFactorCode } from './two-factor.shared';
-import { type VerifyTwoFactorRequest } from './two-factor.requests';
+} from './AccessToken.service';
+import { AuthService, type SessionTokens } from './Auth.service';
+import { ACCOUNT_REPOSITORY, type AccountRepository } from './Identity.port';
+import { isOtpCodeFormat, OtpService } from './Otp.service';
+import { TotpService } from './Totp.service';
+import { TwoFactorChallengeStore } from './TwoFactorChallenge.store';
+import { TwoFactorEmailCodeService } from './TwoFactorEmailCode.service';
 
-function invalidTempToken(): UnauthorizedException {
-  return new UnauthorizedException({
-    errorCode: AUTH_ERROR_CODES.INVALID_TEMP_TOKEN,
-    message: AUTH_ERROR_MESSAGES.INVALID_TEMP_TOKEN,
-  });
-}
-
-/** Challenge store full (fail closed): same body as the throttle guard. */
-function challengeStoreFull(): HttpException {
-  return new HttpException(
-    { errorCode: ERROR_CODES.TOO_MANY_REQUESTS, message: RATE_LIMIT_MESSAGE },
-    HttpStatus.TOO_MANY_REQUESTS,
-  );
+export interface VerifyTwoFactorInput {
+  readonly tempToken: string;
+  readonly code: string;
 }
 
 /**
@@ -53,14 +41,16 @@ function challengeStoreFull(): HttpException {
 @Injectable()
 export class TwoFactorLoginService {
   constructor(
-    private readonly prisma: PrismaService,
+    @Inject(ACCOUNT_REPOSITORY) private readonly accounts: AccountRepository,
+    @Inject(CORE_TRANSACTION_RUNNER)
+    private readonly runner: TransactionRunner,
     private readonly totp: TotpService,
     private readonly otp: OtpService,
     private readonly challenges: TwoFactorChallengeStore,
     private readonly accessTokens: AccessTokenService,
     private readonly auth: AuthService,
     private readonly audit: SecurityAuditService,
-    private readonly emailCodes: TwoFactorEmailCodeSender,
+    private readonly emailCodes: TwoFactorEmailCodeService,
   ) {}
 
   /**
@@ -68,13 +58,14 @@ export class TwoFactorLoginService {
    * token up and starts the session.
    */
   async verifyLogin(
-    input: VerifyTwoFactorRequest,
+    input: VerifyTwoFactorInput,
     meta: ClientMeta,
   ): Promise<SessionTokens> {
     const claims = this.tempTokenClaims(input.tempToken);
     const expiresAtMs = claims.exp * MS_PER_SECOND;
     const attempt = this.challenges.attempt(claims.jti, expiresAtMs);
-    if (attempt === 'refused') throw challengeStoreFull();
+    // Challenge store full (fail closed): same body as the throttle guard.
+    if (attempt === 'refused') throw tooManyRequests();
     if (attempt === 'exhausted') throw invalidTempToken();
 
     const account = await this.challengeAccount(claims);
@@ -91,21 +82,12 @@ export class TwoFactorLoginService {
         metadata: { method: account.twoFaMethod },
         ip: meta.ip,
       });
-      throw invalidTwoFactorCode(HttpStatus.UNAUTHORIZED);
+      throw invalidTwoFactorCodeAtLogin();
     }
     if (!this.challenges.tryMarkUsed(claims.jti, expiresAtMs)) {
       throw invalidTempToken();
     }
-    return this.auth.startSession(
-      {
-        id: account.id,
-        documentId: account.documentId,
-        tokenVersion: account.tokenVersion,
-        policyVersion: account.role.policyVersion,
-      },
-      meta,
-      account.twoFaMethod,
-    );
+    return this.auth.startSession(account, meta, account.twoFaMethod);
   }
 
   /** Emails the login code of an email-2FA account; no-op for TOTP. */
@@ -125,13 +107,10 @@ export class TwoFactorLoginService {
 
   /** The temp token's account, still active, same token_version, 2FA on. */
   private async challengeAccount(claims: TwoFactorTempTokenClaims) {
-    const account = await this.prisma.account.findUnique({
-      where: { documentId: claims.sub },
-      select: TWO_FACTOR_ACCOUNT_SELECT,
-    });
+    const account = await this.accounts.findTwoFactorAccount(claims.sub);
     if (
       account === null ||
-      account.status !== 'active' ||
+      account.status !== AccountStatus.active ||
       account.deletedAt !== null ||
       account.tokenVersion !== claims.tv ||
       !account.is2faEnabled ||
@@ -150,8 +129,6 @@ export class TwoFactorLoginService {
     if (!isOtpCodeFormat(code)) return false;
     const otpId = await this.otp.verify(accountId, EMAIL_CODE_PURPOSE, code);
     if (otpId === undefined) return false;
-    return this.prisma.$transaction((tx) =>
-      this.otp.tryConsume(unitOfWorkFromPrismaTx(tx), otpId),
-    );
+    return this.runner.run((unit) => this.otp.tryConsume(unit, otpId));
   }
 }

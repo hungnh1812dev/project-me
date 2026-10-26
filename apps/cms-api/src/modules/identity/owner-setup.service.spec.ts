@@ -8,10 +8,10 @@ import { type IAppConfig } from '../../config/app-config';
 import type { PrismaService } from '../../infrastructure/database/prisma.service';
 import type { SecurityAuditService } from '../security-audit';
 import { SETUP_TOKEN_MAX_LENGTH } from './domain/Identity.constants';
-import { hashPassword } from './password-hasher';
+import { hashPassword } from './application/Password.service';
 import { OwnerSetupService, SetupClosedError } from './owner-setup.service';
 
-jest.mock('./password-hasher', () => ({
+jest.mock('./application/Password.service', () => ({
   hashPassword: jest.fn(() => Promise.resolve('hash')),
 }));
 

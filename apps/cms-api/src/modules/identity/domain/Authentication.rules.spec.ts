@@ -1,10 +1,31 @@
 import { LOGIN_FAILURE_REASONS } from '../../security-audit';
 import {
+  isAcceptablePassword,
   isRefreshInGrace,
   loginFailureReason,
   type RotatedTokenFacts,
 } from './Authentication.rules';
-import { REFRESH_TOKEN_REUSE_GRACE_MS } from './Identity.constants';
+import {
+  PASSWORD_MAX_LENGTH,
+  PASSWORD_MIN_LENGTH,
+  REFRESH_TOKEN_REUSE_GRACE_MS,
+} from './Identity.constants';
+
+describe('isAcceptablePassword (D8)', () => {
+  it.each([PASSWORD_MIN_LENGTH, PASSWORD_MAX_LENGTH])(
+    'accepts %i characters',
+    (length) => {
+      expect(isAcceptablePassword('x'.repeat(length))).toBe(true);
+    },
+  );
+
+  it.each([0, PASSWORD_MIN_LENGTH - 1, PASSWORD_MAX_LENGTH + 1])(
+    'rejects %i characters',
+    (length) => {
+      expect(isAcceptablePassword('x'.repeat(length))).toBe(false);
+    },
+  );
+});
 
 describe('loginFailureReason', () => {
   const active = { passwordHash: 'hash', status: 'active', deletedAt: null };

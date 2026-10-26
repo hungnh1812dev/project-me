@@ -3,7 +3,7 @@ import { ConflictException, Injectable } from '@nestjs/common';
 import { type AccountStatus } from '../../../generated/prisma/client';
 import { unitOfWorkFromPrismaTx } from '../../../infrastructure/database/PrismaTransactionRunner.adapter';
 import { PrismaService } from '../../../infrastructure/database/prisma.service';
-import { revokeAllSessions } from '../../identity';
+import { SessionRevocationService } from '../../identity';
 import { type ClientMeta } from '../../../common/http/client-meta';
 import {
   MANAGEMENT_ERROR_CODES,
@@ -45,6 +45,7 @@ export class AccountsService {
     private readonly prisma: PrismaService,
     private readonly versions: VersionCache,
     private readonly audit: SecurityAuditService,
+    private readonly sessions: SessionRevocationService,
   ) {}
 
   /** One page of the accounts that are not deleted, oldest first. */
@@ -148,7 +149,7 @@ export class AccountsService {
           updatedBy: { connect: { id: actor.accountId } },
         },
       });
-      await revokeAllSessions(unitOfWorkFromPrismaTx(tx), target.id);
+      await this.sessions.revokeAll(unitOfWorkFromPrismaTx(tx), target.id);
       await recordAccountEvent(
         this.audit,
         tx,
@@ -216,7 +217,7 @@ export class AccountsService {
   ): Promise<void> {
     const accountId = await this.prisma.$transaction(async (tx) => {
       const target = await lockManageableAccount(tx, actor, documentId);
-      await revokeAllSessions(unitOfWorkFromPrismaTx(tx), target.id);
+      await this.sessions.revokeAll(unitOfWorkFromPrismaTx(tx), target.id);
       await recordAccountEvent(
         this.audit,
         tx,

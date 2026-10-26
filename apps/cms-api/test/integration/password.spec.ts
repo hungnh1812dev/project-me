@@ -13,6 +13,7 @@ import {
   PASSWORD_MIN_LENGTH,
 } from '../../src/modules/identity/domain/Identity.constants';
 import { ERROR_CODES } from '../../src/common/constants/error.constants';
+import { DOMAIN_ERROR_KINDS } from '../../src/common/errors/DomainErrorKinds.constants';
 import { MS_PER_SECOND } from '../../src/common/constants/time.constants';
 import { IDENTITY_RATE_LIMIT_POLICIES } from '../../src/modules/identity/identity.rate-limits.constants';
 import {
@@ -25,8 +26,10 @@ import {
   type MailSender,
 } from '../../src/infrastructure/mail/mail.port';
 import { OtpService } from '../../src/modules/identity/application/Otp.service';
-import { hashPassword } from '../../src/modules/identity/password-hasher';
-import { PasswordService } from '../../src/modules/identity/password.service';
+import {
+  hashPassword,
+  PasswordService,
+} from '../../src/modules/identity/application/Password.service';
 import { seedSystemRoles } from '../../src/modules/access/roles/system-roles.seed';
 import { createCoreTemplate } from '../fixtures/core-db.fixture';
 import {
@@ -331,7 +334,10 @@ describe('OTP + password lifecycle (D8, SPEC §12-9/10; Postgres 16 via Testcont
       }
       await expect(
         otp.issue(account.id, 'INVITE_SET_PASSWORD'),
-      ).rejects.toMatchObject({ status: HttpStatus.TOO_MANY_REQUESTS });
+      ).rejects.toMatchObject({
+        kind: DOMAIN_ERROR_KINDS.RATE_LIMITED,
+        errorCode: ERROR_CODES.TOO_MANY_REQUESTS,
+      });
     });
 
     it('allows codes again once the hour has passed', async () => {

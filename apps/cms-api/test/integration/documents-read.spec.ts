@@ -22,7 +22,7 @@ import {
   planMigration,
 } from '../../src/modules/content-engine/domain/SqlGenerator.rules';
 import type { ContentDatabase } from '../../src/modules/content-engine/adapters/TreeLoader.adapter';
-import { hashPassword } from '../../src/modules/identity/password-hasher';
+import { hashPassword } from '../../src/modules/identity/application/Password.service';
 import { seedSystemRoles } from '../../src/modules/access/roles/system-roles.seed';
 import {
   ARTICLE_DEFINITION,

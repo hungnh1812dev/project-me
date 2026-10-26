@@ -1,7 +1,6 @@
 import { TEST_ADMIN_ORIGIN } from '../../../../test/fixtures/env.fixture';
 import { OTP } from '../domain/Identity.constants';
-import { buildOtpMail } from '../otp-mail';
-import { isOtpCodeFormat, otpHmac } from './Otp.service';
+import { buildOtpMail, isOtpCodeFormat, otpHmac } from './Otp.service';
 
 const PEPPER = 'unit-test-pepper-0123456789abcdef';
 const CODE = '042137';

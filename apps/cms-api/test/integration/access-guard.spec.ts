@@ -34,7 +34,7 @@ import { ContentRegistry } from '../../src/modules/content-engine/application/Co
 import { ContentTypeRegistry } from '../../src/modules/content-engine/domain/ContentTypeRegistry.entity';
 import { IdentityModule } from '../../src/modules/identity/identity.module';
 import { JwtAuthGuard } from '../../src/modules/identity/jwt.strategy';
-import { hashPassword } from '../../src/modules/identity/password-hasher';
+import { hashPassword } from '../../src/modules/identity/application/Password.service';
 import { seedSystemRoles } from '../../src/modules/access/roles/system-roles.seed';
 import { ARTICLE_DEFINITION, grant } from '../fixtures/access.fixture';
 import { createCoreTemplate } from '../fixtures/core-db.fixture';

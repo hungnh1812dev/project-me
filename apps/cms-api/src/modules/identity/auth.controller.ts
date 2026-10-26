@@ -14,6 +14,8 @@ import {
 } from '@nestjs/common';
 import type { Request, Response } from 'express';
 
+import { DomainError } from '../../common/errors/Domain.errors';
+import { DOMAIN_ERROR_KINDS } from '../../common/errors/DomainErrorKinds.constants';
 import { ClientIpResolver } from '../../common/http/client-ip.resolver';
 import { AUTH_ROUTES } from './identity.routes';
 import { NO_STORE_HEADER } from '../../common/constants/http.constants';
@@ -34,8 +36,8 @@ import { AllowedOriginGuard } from './allowed-origin.guard';
 import {
   AuthService,
   type CurrentAccountProfile,
-  invalidRefreshToken,
-} from './auth.service';
+} from './application/Auth.service';
+import { invalidRefreshToken } from './domain/Identity.errors';
 import { type AuthenticatedRequest, JwtAuthGuard } from './jwt.strategy';
 import { loginRequestSchema } from './login.request';
 
@@ -65,6 +67,15 @@ export function setRefreshCookie(res: Response, token: string): void {
 
 function clearRefreshCookie(res: Response): void {
   res.clearCookie(REFRESH_COOKIE.NAME, REFRESH_COOKIE_OPTIONS);
+}
+
+/** A 401 from the use case, or from a guard in front of it. */
+function isRefusedRefresh(error: unknown): boolean {
+  return (
+    error instanceof UnauthorizedException ||
+    (error instanceof DomainError &&
+      error.kind === DOMAIN_ERROR_KINDS.UNAUTHENTICATED)
+  );
 }
 
 /**
@@ -132,7 +143,7 @@ export class AuthController {
       return { accessToken: tokens.accessToken };
     } catch (error) {
       // A refused token is dead for good: drop it from the browser too.
-      if (error instanceof UnauthorizedException) clearRefreshCookie(res);
+      if (isRefusedRefresh(error)) clearRefreshCookie(res);
       throw error;
     }
   }

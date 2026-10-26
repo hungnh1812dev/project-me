@@ -14,7 +14,7 @@ import { reviewerActor } from '../../src/modules/access/domain/ActorContext.enti
 import { seedRolePermissions } from '../../src/modules/access/roles/role-permissions.seed';
 import { ContentRegistry } from '../../src/modules/content-engine/application/ContentRegistry.service';
 import { ContentTypeRegistry } from '../../src/modules/content-engine/domain/ContentTypeRegistry.entity';
-import { hashPassword } from '../../src/modules/identity/password-hasher';
+import { hashPassword } from '../../src/modules/identity/application/Password.service';
 import { seedSystemRoles } from '../../src/modules/access/roles/system-roles.seed';
 import { MEDIA_MAX_BYTES } from '../../src/modules/media/media.constants';
 import { MediaService } from '../../src/modules/media/media.service';

@@ -1,6 +1,7 @@
 import type { UnitOfWork } from '../../../infrastructure/database/TransactionRunner.port';
+import type { AccountStatus } from '../../access';
 import type { RotationSuccessorFacts } from '../domain/Authentication.rules';
-import type { OtpPurpose } from '../domain/Identity.constants';
+import type { OtpPurpose, TwoFaMethod } from '../domain/Identity.constants';
 import type { SealedSecret } from './SecretBox.service';
 
 /** The TOTP fields of an account row needed to check a code. */
@@ -19,10 +20,115 @@ export interface TotpStepClaim {
   readonly resealed?: SealedSecret | undefined;
 }
 
+/** What a sign-in reads of an account. */
+export interface LoginAccountRecord {
+  readonly id: number;
+  readonly documentId: string;
+  readonly passwordHash: string | null;
+  readonly status: AccountStatus;
+  readonly deletedAt: Date | null;
+  readonly tokenVersion: number;
+  readonly is2faEnabled: boolean;
+  readonly twoFaMethod: TwoFaMethod | null;
+  readonly policyVersion: number;
+}
+
+/** `GET /auth/me`: the profile columns, no secrets. */
+export interface AccountProfileRecord {
+  readonly documentId: string;
+  readonly email: string;
+  readonly displayName: string;
+  readonly roleSlug: string;
+  readonly status: AccountStatus;
+  readonly deletedAt: Date | null;
+  readonly is2faEnabled: boolean;
+  readonly twoFaMethod: TwoFaMethod | null;
+}
+
+/** What a password change re-checks of the signed-in account. */
+export interface PasswordAccountRecord {
+  readonly id: number;
+  readonly documentId: string;
+  readonly passwordHash: string | null;
+  readonly status: AccountStatus;
+  readonly deletedAt: Date | null;
+}
+
+/** What an emailed code (reset, invite, 2FA) needs of the account it is for. */
+export interface CodeAccountRecord {
+  readonly id: number;
+  readonly documentId: string;
+  readonly email: string;
+  readonly status: AccountStatus;
+  readonly deletedAt: Date | null;
+  readonly is2faEnabled: boolean;
+  readonly twoFaMethod: TwoFaMethod | null;
+}
+
+/** Everything the two-factor operations read of an account. */
+export interface TwoFactorAccountRecord extends TotpAccount {
+  readonly email: string;
+  readonly passwordHash: string | null;
+  readonly status: AccountStatus;
+  readonly deletedAt: Date | null;
+  readonly tokenVersion: number;
+  readonly is2faEnabled: boolean;
+  readonly twoFaMethod: TwoFaMethod | null;
+  readonly policyVersion: number;
+}
+
+/** The state a two-factor change writes; the TOTP columns are cleared unless TOTP stays on. */
+export type TwoFactorNextState =
+  | { readonly isEnabled: false }
+  | { readonly isEnabled: true; readonly method: 'email' }
+  | {
+      readonly isEnabled: true;
+      readonly method: 'totp';
+      readonly lastStep: number;
+    };
+
+/**
+ * A guarded two-factor write: it applies only while the account still looks
+ * like `expect`, so a concurrent change makes it a no-op (false).
+ */
+export interface TwoFactorChange {
+  readonly accountId: number;
+  readonly expect: {
+    readonly isEnabled: boolean;
+    readonly method?: TwoFaMethod;
+    /** The pending TOTP secret the change was checked against. */
+    readonly sealedSecret?: string;
+  };
+  readonly next: TwoFactorNextState;
+}
+
 export const ACCOUNT_REPOSITORY = Symbol('ACCOUNT_REPOSITORY');
 
-/** The account columns identity services read and write besides sign-in itself. */
+/** The account columns identity services read and write. */
 export interface AccountRepository {
+  findLoginAccount(email: string): Promise<LoginAccountRecord | null>;
+  findProfile(documentId: string): Promise<AccountProfileRecord | null>;
+  findPasswordAccount(
+    documentId: string,
+  ): Promise<PasswordAccountRecord | null>;
+  findCodeAccount(email: string): Promise<CodeAccountRecord | null>;
+  findTwoFactorAccount(
+    documentId: string,
+  ): Promise<TwoFactorAccountRecord | null>;
+  /** Stores the hash (and `status` when given) inside `unit`. */
+  storePassword(
+    unit: UnitOfWork,
+    accountId: number,
+    passwordHash: string,
+    status?: AccountStatus,
+  ): Promise<void>;
+  /**
+   * Replaces the pending TOTP secret while 2FA is off. False when 2FA was
+   * turned on in between.
+   */
+  storePendingTotp(accountId: number, sealed: SealedSecret): Promise<boolean>;
+  /** Applies `change` inside `unit`. True when the account still matched `change.expect`. */
+  changeTwoFactor(unit: UnitOfWork, change: TwoFactorChange): Promise<boolean>;
   findTotpAccount(accountId: number): Promise<TotpAccount | null>;
   /**
    * Stores the step only while 2FA by TOTP is on and the stored step is
@@ -161,4 +267,14 @@ export const RESET_SECOND_FACTOR = Symbol('RESET_SECOND_FACTOR');
  */
 export interface ResetSecondFactor {
   verify(accountId: number, totpCode: string | undefined): Promise<boolean>;
+}
+
+export const SESSION_REVOCATION_REPOSITORY = Symbol(
+  'SESSION_REVOCATION_REPOSITORY',
+);
+
+/** Ends sessions inside the caller's unit (no connection of its own, so the CLI can build it). */
+export interface SessionRevocationRepository {
+  /** Bumps `token_version` (live access tokens die) and revokes every live refresh token at `at`. */
+  revokeAll(unit: UnitOfWork, accountId: number, at: Date): Promise<void>;
 }

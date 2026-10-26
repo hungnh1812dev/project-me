@@ -5,7 +5,15 @@ import { AUDIT_ACTIONS } from '../security-audit';
 import { writeAuditLog } from '../security-audit';
 import { TWO_FACTOR_RESET_ERRORS } from './domain/Identity.constants';
 import { unitOfWorkFromPrismaTx } from '../../infrastructure/database/PrismaTransactionRunner.adapter';
-import { revokeAllSessions } from './adapters/PrismaSessionRevocation.repository';
+import { Clock } from '../../common/time/clock';
+import { PrismaSessionRevocationRepository } from './adapters/PrismaSessionRevocation.repository';
+import { SessionRevocationService } from './application/SessionRevocation.service';
+
+/** No Nest here: the CLI builds the service itself (identity CLIs move to a setup file in CR-id-4). */
+const sessions = new SessionRevocationService(
+  new PrismaSessionRevocationRepository(),
+  new Clock(),
+);
 
 type TwoFactorResetErrorCode =
   (typeof TWO_FACTOR_RESET_ERRORS)[keyof typeof TWO_FACTOR_RESET_ERRORS];
@@ -89,7 +97,7 @@ export async function resetTwoFactor(
         'Two-factor authentication is not on for this account. Nothing changed.',
       );
     }
-    await revokeAllSessions(unitOfWorkFromPrismaTx(tx), account.id);
+    await sessions.revokeAll(unitOfWorkFromPrismaTx(tx), account.id);
     // D15: an operator at the CLI, so actor_type system and no IP.
     await writeAuditLog(tx, {
       actor: { type: 'system' },

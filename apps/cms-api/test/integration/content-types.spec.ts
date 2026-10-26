@@ -14,7 +14,7 @@ import type {
   ContentTypeView,
   FieldView,
 } from '../../src/modules/content-types/domain/ContentTypeView.rules';
-import { hashPassword } from '../../src/modules/identity/password-hasher';
+import { hashPassword } from '../../src/modules/identity/application/Password.service';
 import { seedSystemRoles } from '../../src/modules/access/roles/system-roles.seed';
 import {
   ARTICLE_DEFINITION,

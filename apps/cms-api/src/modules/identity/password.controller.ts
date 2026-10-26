@@ -23,6 +23,7 @@ import { IDENTITY_RATE_LIMIT_POLICIES } from './identity.rate-limits.constants';
 import { Throttle } from '../../common/guards/throttle.guard';
 import { clientMetaOf } from '../../common/http/client-meta';
 import { requireAccountActor } from '../access';
+import { PasswordService } from './application/Password.service';
 import { type AuthenticatedRequest, JwtAuthGuard } from './jwt.strategy';
 import {
   changePasswordSchema,
@@ -30,7 +31,6 @@ import {
   resetPasswordSchema,
   setPasswordSchema,
 } from './password.requests';
-import { PasswordService } from './password.service';
 
 function parseBody<T>(schema: z.ZodType<T>, body: unknown): T {
   const parsed = schema.safeParse(body);
