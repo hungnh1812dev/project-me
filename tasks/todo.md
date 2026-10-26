@@ -1042,7 +1042,7 @@ Rules for every R task:
   - Verify: SV. The R1-03 spec has no known violations.
   - Files: six `index.ts`, `content-engine/content-registry.provider.ts`, `content-engine/content-engine.module.ts`, `eslint.config.mjs` (+ import-only edits). Split into two builder sessions if needed: content-engine + documents, then the rest.
 
-- [ ] **R1-15: Module error codes and single-module files leave `common`** · S · Deps: R1-08 · core-builder · **Security gate: yes** · Findings AUD-AU1c-03 (S-05), AUD-AU1c-04 (S-03, C-05) · SPEC D1, D18
+- [x] **R1-15: Module error codes and single-module files leave `common`** · S · Deps: R1-08 · core-builder · **Security gate: yes** · Findings AUD-AU1c-03 (S-05), AUD-AU1c-04 (S-03, C-05) · SPEC D1, D18
   - Acceptance:
     - The setup error codes move to identity and the GraphQL codes to `graphql.constants.ts`; wire values are unchanged. The controller's 404 mapping and its message are unchanged.
     - `health.constants.ts` moves to `health/`. `DOCUMENT_ID_PARAM` moves to documents.
@@ -1052,7 +1052,7 @@ Rules for every R task:
   - Verify: SV.
   - Files: `common/constants/error.constants.ts`, `modules/identity/identity.constants.ts`, `modules/graphql/graphql.constants.ts`, `modules/health/health.constants.ts`, `modules/media/uuidv7.ts`, `SPEC.md` §5 (one line).
 
-- [ ] **R1-16: Smoke seed CLI `seed:account` (planned change)** · M · Deps: R1-04, R1-05 · core-builder · **Security gate: yes** · Findings AUD-AU5-03 (SEC-AU5 S1-S7; user decisions in the AU6 block) · SPEC D1, D15, D17 (amended 2026-10-23)
+- [x] **R1-16: Smoke seed CLI `seed:account` (planned change)** · M · Deps: R1-04, R1-05 · core-builder · **Security gate: yes** · Findings AUD-AU5-03 (SEC-AU5 S1-S7; user decisions in the AU6 block) · SPEC D1, D15, D17 (amended 2026-10-23)
   - Acceptance:
     - `modules/identity/cli/seed-account.ts` takes `--email`, `--role`, optional `--email-2fa` and `--password-stdin`. The role allowlist is `admin` and `guest` (from `identity.constants.ts`).
     - With `NODE_ENV=production` it exits before opening the DB unless `ALLOW_ACCOUNT_SEED` equals exactly `smoke`.
