@@ -948,7 +948,7 @@ Rules for every R task:
 
 ### Phase R1: cms-api boundaries and guards (core-builder)
 
-- [ ] **R1-00: SPEC §2 / §5 update for module directions (G6)** · S · Deps: none (Q-A1 answered: the SPEC follows the code) · planner (`SPEC`) · Findings AUD-AU1a-03, AUD-AU1b-03, AUD-AU2-08, AUD-AU3-09, AUD-AU1a-13 / AUD-AU2-13 (suffixes), AUD-AU1c-12 (tree) · SPEC §2, §5
+- [x] **R1-00: SPEC §2 / §5 update for module directions (G6)** · S · Deps: none (Q-A1 answered: the SPEC follows the code) · planner (`SPEC`) · Findings AUD-AU1a-03, AUD-AU1b-03, AUD-AU2-08, AUD-AU3-09, AUD-AU1a-13 / AUD-AU2-13 (suffixes), AUD-AU1c-12 (tree) · SPEC §2, §5
   - Acceptance: the §2 map adds `security-audit`, `content-types` and the access core / management split, and states the agreed directions. §5 trees match the code (cms-api `common/`, `infrastructure/activity`; admin `app/`, `components/`, no `store/`; web `features/session`). §5 lists the file suffixes `.requests.ts`, `.api.ts`, `.slice.ts`, `.port.ts`, `.routes.ts`. Constants placement follows the Q-A1 answer.
   - Verify: the user approves the diff. `ALLOWED_MODULE_EDGES` in R1-03 matches §2 row for row.
   - Files: `SPEC.md`.
