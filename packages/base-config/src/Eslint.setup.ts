@@ -1,6 +1,14 @@
 import js from '@eslint/js';
 import type { Linter } from 'eslint';
 import tseslint from 'typescript-eslint';
+import {
+  CHECKED_EXTENSIONS,
+  DEFAULT_SCANNED_FOLDERS,
+  fileNamesRule,
+  type FileNameRuleOptions,
+} from './FileNames.eslint.ts';
+
+export type { FileNameRuleOptions };
 
 /**
  * Files no project lints with type information: build output, coverage,
@@ -29,7 +37,11 @@ export interface BaseEslintOptions {
   tsconfigRootDir: string;
   /** Project-specific ignores, added to the shared ones. */
   ignores?: string[];
+  /** Turns on `abyss/file-names`; `{}` means all defaults. Off when omitted. */
+  fileNames?: FileNameRuleOptions;
 }
+
+const abyssPlugin = { rules: { 'file-names': fileNamesRule } };
 
 /**
  * Flat config holding the rules every project shares. A project spreads it
@@ -44,6 +56,7 @@ export interface BaseEslintOptions {
 export default function baseEslint(
   options: BaseEslintOptions,
 ): Linter.Config[] {
+  const fileNames = options.fileNames;
   return [
     { ignores: [...sharedIgnores, ...(options.ignores ?? [])] },
     js.configs.recommended,
@@ -66,5 +79,15 @@ export default function baseEslint(
       files: javascriptFiles,
       rules: { 'no-unused-vars': ['error', unusedVarsOptions] },
     },
+    ...(fileNames ? [fileNamesConfig(fileNames)] : []),
   ];
+}
+
+function fileNamesConfig(fileNames: FileNameRuleOptions): Linter.Config {
+  const folders = fileNames.scannedFolders ?? DEFAULT_SCANNED_FOLDERS;
+  return {
+    files: folders.map((f) => `${f}/**/*.{${CHECKED_EXTENSIONS.join(',')}}`),
+    plugins: { abyss: abyssPlugin },
+    rules: { 'abyss/file-names': ['error', fileNames] },
+  };
 }

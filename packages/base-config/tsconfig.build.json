@@ -6,9 +6,7 @@
     "noEmit": false,
     "declaration": true,
     "declarationMap": true,
-    "sourceMap": false,
-    "allowImportingTsExtensions": false,
-    "rewriteRelativeImportExtensions": false
+    "sourceMap": false
   },
   "include": ["src/**/*.ts"]
 }

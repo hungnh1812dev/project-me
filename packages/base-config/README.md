@@ -6,7 +6,7 @@ Each project imports them and adds its own plugins, globals and rules.
 
 The sources are TypeScript files in `src/` (erasable syntax only, no enums or
 namespaces). File names follow ADR 0008 (`Eslint.setup.ts`, `Oxlint.setup.ts`,
-`Prettier.setup.ts`); `test/FileNames.architecture.test.ts` guards it. The
+`Prettier.setup.ts`); the `abyss/file-names` rule below checks it. The
 sources are built with `tsc` to `dist/` (ESM, with `.d.ts` files),
 and every export points at `dist/`. Turbo builds the package before any
 consumer's `lint`, `typecheck`, `test` or `build`, and the root `pnpm format`
@@ -18,11 +18,11 @@ find `dist/`.
 
 ## Exports
 
-| Export                        | Holds                                                                                                                                                                                                      |
-| ----------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `@abyss/base-config/prettier` | A Prettier `Config`: 80 columns, single quotes, semicolons, trailing commas, LF. No plugins.                                                                                                               |
-| `@abyss/base-config/eslint`   | `baseEslint({ tsconfigRootDir, ignores? })`, a flat config array: `@eslint/js` recommended, `typescript-eslint` `recommendedTypeChecked` with the project service, shared ignores, `_`-prefix unused vars. |
-| `@abyss/base-config/oxlint`   | An Oxlint config: `typescript` plugin, `correctness` as error, `suspicious` as warn, `_`-prefix unused vars, shared ignores.                                                                               |
+| Export                        | Holds                                                                                                                                                                                                                                                          |
+| ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `@abyss/base-config/prettier` | A Prettier `Config`: 80 columns, single quotes, semicolons, trailing commas, LF. No plugins.                                                                                                                                                                   |
+| `@abyss/base-config/eslint`   | `baseEslint({ tsconfigRootDir, ignores?, fileNames? })`, a flat config array: `@eslint/js` recommended, `typescript-eslint` `recommendedTypeChecked` with the project service, shared ignores, `_`-prefix unused vars, and the opt-in `abyss/file-names` rule. |
+| `@abyss/base-config/oxlint`   | An Oxlint config: `typescript` plugin, `correctness` as error, `suspicious` as warn, `_`-prefix unused vars, shared ignores.                                                                                                                                   |
 
 There is no React, Next, Jest or Prettier-as-lint rule in the base.
 
@@ -78,6 +78,29 @@ Examples per project type:
 | Next (web)       | as React / Vite, plus `@next/eslint-plugin-next` `core-web-vitals`, ignore `.next/**` | as React / Vite, ignore `.next`                    |
 
 Run `pnpm format` from the repository root before every commit.
+
+## The `abyss/file-names` rule
+
+ADR 0008 as a lint rule, defined in `src/FileNames.eslint.ts` and exposed as
+the local plugin `abyss`. It is off until a project passes `fileNames` to
+`baseEslint` (`fileNames: {}` means all defaults). It then runs as `error` on
+`.ts`, `.tsx`, `.js`, `.jsx` and `.mjs` files under the scanned folders; other
+file types and files outside those folders are not checked.
+
+It reports: a folder that is not kebab-case; a file name that is not
+`<use?><PascalName>[.<word>].<ext>` (tests:
+`<use?><PascalName>[.<word>][.<variant>].<test suffix>.<ext>`, lower-case
+words); a word that repeats the end of the name (`AccessError.errors.ts`); a
+missing word when required; a `use<Name>` file without a value export named
+`use<Name>`; a file whose only value export is one `use...` function.
+
+| Option                      | Default                    | Meaning                                                                                      |
+| --------------------------- | -------------------------- | -------------------------------------------------------------------------------------------- |
+| `frameworkFileNames`        | `['index.ts']`             | Exact names accepted as they are, also with a test suffix (`page.test.tsx`). `*.d.ts` always |
+| `allowsRouteSegmentFolders` | `false`                    | Accept `[slug]`, `[...slug]`, `(group)`, `_private`, `@slot` folders                         |
+| `isWordRequired`            | `false`                    | Every file needs a word: `<PascalName>.<word>.ts`                                            |
+| `testSuffixes`              | `['test', 'spec']`         | Suffixes that mark a test file                                                               |
+| `scannedFolders`            | `['src', 'test', 'tests']` | Top-level folders checked, relative to the lint working directory                            |
 
 ## Scripts
 
