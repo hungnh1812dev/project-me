@@ -1,4 +1,4 @@
-import { MASKED_FIELDS_KEY } from './content.constants';
+import { MASKED_FIELDS_KEY } from './Content.constants';
 import {
   conflictDetails,
   UID_A,
@@ -11,8 +11,8 @@ import {
   mergeReducer,
   type MergeState,
   visibleEntries,
-} from './merge.reducer';
-import { buildResolvedTree, isEmptyTree } from './merge.tree';
+} from './Merge.reducer';
+import { buildResolvedTree, isEmptyTree } from './MergeTree.rules';
 
 function build(state: MergeState = INITIAL_MERGE_STATE) {
   const details = conflictDetails();

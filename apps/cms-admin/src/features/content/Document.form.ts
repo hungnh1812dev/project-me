@@ -1,12 +1,12 @@
-import { ITEM_UID_KEY } from './content.constants';
+import { ITEM_UID_KEY } from './Content.constants';
 import type {
   ComponentItem,
   DocumentRecord,
   DocumentTree,
   FieldValueMap,
-} from './content.api';
-import { adapterFor } from './field-registry';
-import type { FieldNode } from './field-tree';
+} from './Content.api';
+import { adapterFor } from './Field.registry';
+import type { FieldNode } from './FieldTree.rules';
 
 export type FormValues = Record<string, unknown>;
 

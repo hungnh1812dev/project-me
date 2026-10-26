@@ -25,12 +25,12 @@ import {
 import { BulkBanner } from './BulkBanner';
 import { BulkCreateDialog } from './BulkCreateDialog';
 import { BulkDeleteDialog } from './BulkDeleteDialog';
-import { collectionColumnsOf, documentNameOf } from './collection-columns';
-import { isMissing } from './content-error';
-import { BULK_ACTION } from './content.constants';
+import { collectionColumnsOf, documentNameOf } from './Collection.columns';
+import { isMissing } from './Content.errors';
+import { BULK_ACTION } from './Content.constants';
 import { SingleTypeRedirect } from './SingleTypeRedirect';
-import { useBulkRun } from './use-bulk-run';
-import { useCollectionList } from './use-collection-list';
+import { useBulkRun } from './useBulkRun.mutation';
+import { useCollectionList } from './useCollectionList.query';
 
 const copy = COPY.content;
 const list = copy.collection;

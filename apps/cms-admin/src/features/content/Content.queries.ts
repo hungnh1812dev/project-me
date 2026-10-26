@@ -1,7 +1,7 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 
-import { CONTENT_LIST_PAGE_SIZE } from './content.constants';
-import { useContentApi } from './content-api-context';
+import { CONTENT_LIST_PAGE_SIZE } from './Content.constants';
+import { useContentApi } from './ContentApi.context';
 
 /** Every content query key; pages invalidate through these, never with literals. */
 export const CONTENT_QUERY_KEYS = {

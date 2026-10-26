@@ -12,19 +12,19 @@ import {
 import { useMemo, useReducer } from 'react';
 
 import { COPY } from '../../config/Copy.constants';
-import type { ConflictDetails } from './conflict';
+import type { ConflictDetails } from './Conflict.rules';
 import { DiffViewerBlock } from './DiffViewerBlock';
-import type { DocumentTree } from './content.api';
-import type { FieldNode } from './field-tree';
-import { changeLabel, entryTitle, sideContent } from './merge.describe';
+import type { DocumentTree } from './Content.api';
+import type { FieldNode } from './FieldTree.rules';
+import { changeLabel, entryTitle, sideContent } from './MergeDescribe.rules';
 import {
   INITIAL_MERGE_STATE,
   maskedPathsOf,
   mergeReducer,
   sideOf,
   visibleEntries,
-} from './merge.reducer';
-import { buildResolvedTree } from './merge.tree';
+} from './Merge.reducer';
+import { buildResolvedTree } from './MergeTree.rules';
 
 const copy = COPY.content.conflict;
 

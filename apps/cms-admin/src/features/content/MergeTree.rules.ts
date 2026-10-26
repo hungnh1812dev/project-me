@@ -1,6 +1,10 @@
-import type { ConflictDetails, ConflictItem, DiffEntry } from './conflict';
-import type { ComponentItem, DocumentTree, FieldValueMap } from './content.api';
-import { isMaskedPath, type MergeState, sideOf } from './merge.reducer';
+import type {
+  ConflictDetails,
+  ConflictItem,
+  DiffEntry,
+} from './Conflict.rules';
+import type { ComponentItem, DocumentTree, FieldValueMap } from './Content.api';
+import { isMaskedPath, type MergeState, sideOf } from './Merge.reducer';
 
 /** Marks a diff item that has no uid yet (`[new#<index>]`). */
 const NEW_ITEM_PREFIX = 'new#';

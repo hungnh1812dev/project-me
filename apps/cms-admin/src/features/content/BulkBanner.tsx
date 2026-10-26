@@ -1,7 +1,7 @@
 import { Button, FormAlert } from '@abyss/form-commons';
 
 import { COPY } from '../../config/Copy.constants';
-import { type Banner, bannerTone } from './bulk-banner';
+import { type Banner, bannerTone } from './BulkBanner.rules';
 
 const bulkCopy = COPY.content.bulk;
 

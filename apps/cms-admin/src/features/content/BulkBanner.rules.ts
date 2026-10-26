@@ -1,6 +1,6 @@
 import type { FormAlertTone } from '@abyss/form-commons';
 
-import type { BulkAction } from './content.constants';
+import type { BulkAction } from './Content.constants';
 
 /** What the list page says after a bulk action or an import. */
 export type Banner =

@@ -1,5 +1,5 @@
 import { CV_PAGE_TYPE } from '../../../test/CvPage.fixture';
-import { buildFieldTree, labelOf } from './field-tree';
+import { buildFieldTree, labelOf } from './FieldTree.rules';
 
 describe('labelOf', () => {
   it.each([

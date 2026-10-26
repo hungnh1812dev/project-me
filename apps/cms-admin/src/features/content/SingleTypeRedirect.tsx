@@ -9,7 +9,7 @@ import {
 import { COPY } from '../../config/Copy.constants';
 import { contentEditPath, contentNewPath } from '../../config/App.routes';
 import { isForbidden } from '../access';
-import { useDocumentListQuery } from './content-queries';
+import { useDocumentListQuery } from './Content.queries';
 
 const list = COPY.content.collection;
 

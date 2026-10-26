@@ -12,7 +12,7 @@ import {
   createSession,
   installAuthInterceptor,
 } from '../features/auth/AuthWiring.setup';
-import { FEATURE_LIST } from '../features/registry';
+import { FEATURE_LIST } from '../features/Features.registry';
 import { createAppStore } from './App.store';
 
 /** Wires store, session, every feature API and the client's auth interceptor. */

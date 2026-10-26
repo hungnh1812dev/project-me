@@ -7,7 +7,7 @@ import {
   numberToForm,
   textToApi,
   textToForm,
-} from './field-values';
+} from './FieldValues.rules';
 
 describe('field values', () => {
   it('maps text and null both ways', () => {

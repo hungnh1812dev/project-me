@@ -49,7 +49,7 @@ export function defineApiService<Api>(
   };
 }
 
-/** What a feature contributes to the app; `features/registry.ts` lists them. */
+/** What a feature contributes to the app; `features/Features.registry.ts` lists them. */
 export interface Feature {
   routes: readonly FeatureRoute[];
   navItems?: readonly FeatureNavItem[];

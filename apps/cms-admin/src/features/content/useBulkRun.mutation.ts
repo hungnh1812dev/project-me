@@ -4,13 +4,13 @@ import { useState } from 'react';
 
 import { COPY } from '../../config/Copy.constants';
 import { API_ERROR_CODES } from '../../config/Http.constants';
-import { failedItems, itemReason, toBulkFailure } from './bulk';
-import type { Banner } from './bulk-banner';
-import { documentNameOf } from './collection-columns';
-import { useContentApi } from './content-api-context';
-import { CONTENT_QUERY_KEYS } from './content-queries';
-import type { BulkItem, DocumentListItem } from './content.api';
-import { BULK_ACTION, type BulkAction } from './content.constants';
+import { failedItems, itemReason, toBulkFailure } from './Bulk.rules';
+import type { Banner } from './BulkBanner.rules';
+import { documentNameOf } from './Collection.columns';
+import { useContentApi } from './ContentApi.context';
+import { CONTENT_QUERY_KEYS } from './Content.queries';
+import type { BulkItem, DocumentListItem } from './Content.api';
+import { BULK_ACTION, type BulkAction } from './Content.constants';
 import type { ContentTypeField } from '../content-types';
 
 const bulkCopy = COPY.content.bulk;

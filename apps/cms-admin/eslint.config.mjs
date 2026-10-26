@@ -124,7 +124,6 @@ const NO_LITERAL_QUERY_KEY = {
 };
 const QUERY_KEY_OWNERS = [
   'src/**/*.queries.ts',
-  'src/features/content/content-queries.ts',
   'src/**/useSetupStatus.query.ts',
 ];
 

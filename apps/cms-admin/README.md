@@ -103,10 +103,10 @@ So far: sign-in (T11) and, behind it, a status page that calls
 - **Dynamic document form (T23)** (`src/features/content`):
   `/content/:slug/new` and `/content/:slug/:documentId` (`DocumentEditPage`;
   no list or nav link until T34). The form is built from
-  `GET /content-types/:slug` (`field-tree.ts` rebuilds the tree from the flat
+  `GET /content-types/:slug` (`FieldTree.rules.ts` rebuilds the tree from the flat
   path list) and the draft from `GET /documents/:slug/:id?status=draft`.
   `DynamicFormRenderer` maps each field type to a form-commons input through
-  `field-registry.tsx` (string, text, integer, decimal, boolean, date,
+  `Field.registry.tsx` (string, text, integer, decimal, boolean, date,
   datetime, json). `ComponentList` handles component fields (add, remove,
   reorder; a non-repeatable component holds one item) and nests to the API's
   depth limit; each item keeps its `componentUid` in form state
@@ -123,11 +123,11 @@ So far: sign-in (T11) and, behind it, a status page that calls
   `media` create/update/delete permissions.
   Create sends every filled field; save on an existing draft sends only the
   top-level fields and component lists that changed, plus `version`
-  (`document-form.ts`). A 409 opens the conflict merge modal (T25, below);
+  (`Document.form.ts`). A 409 opens the conflict merge modal (T25, below);
   a 400 `DOCUMENT_INVALID` shows the server's message. `required` is not in
   the content-types API, so required marks and errors come from the server.
-- **Conflict merge (T25)** (`ConflictMergeModal`, `merge.reducer.ts`,
-  `merge.tree.ts`, `merge.describe.ts`): a 409 `DOCUMENT_VERSION_CONFLICT` on
+- **Conflict merge (T25)** (`ConflictMergeModal`, `Merge.reducer.ts`,
+  `MergeTree.rules.ts`, `MergeDescribe.rules.ts`): a 409 `DOCUMENT_VERSION_CONFLICT` on
   a draft save opens a modal listing the server's `diff` as `DiffViewerBlock` cards (local to
   `features/content`; saved vs your version; default = keep yours; "Keep
   all of mine" / "Take all saved"). Entries of masked fields (the 409's and
@@ -178,7 +178,7 @@ So far: sign-in (T11) and, behind it, a status page that calls
   Menu button and a sheet below; sections from `lib/NavSections.constants.ts`, empty
   sections hidden; user block with "Security" and "Sign out" at the bottom;
   `app/SideMenu.tsx`, `app/MobileMenu.tsx`).
-- **Feature registry** (`src/features/registry.ts`): each feature folder has a
+- **Feature registry** (`src/features/Features.registry.ts`): each feature folder has a
   `<Name>.feature.ts` with its `routes`, optional `navItems` (label, path, permission
   subject and action) and optional `apiServices` (`defineApiService(createXApi,
 XApiProvider)`). `app/AppRoutes.setup.tsx` and `AppShell` iterate the registry;

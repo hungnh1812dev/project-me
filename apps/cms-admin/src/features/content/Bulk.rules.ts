@@ -1,11 +1,11 @@
 import { isAxiosError } from 'axios';
 
-import { BULK_ITEM_STATUS } from './content.constants';
+import { BULK_ITEM_STATUS } from './Content.constants';
 import { COPY } from '../../config/Copy.constants';
 import { API_ERROR_CODES, HTTP_STATUS } from '../../config/Http.constants';
 import { apiFailureOf, rateLimitedMessage } from '../../lib/ApiFailure.errors';
-import { serverMessage } from './content-error';
-import type { BulkItemError, BulkResponse } from './content.api';
+import { serverMessage } from './Content.errors';
+import type { BulkItemError, BulkResponse } from './Content.api';
 
 const copy = COPY.content.bulk;
 

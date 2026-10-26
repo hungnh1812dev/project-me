@@ -1,6 +1,6 @@
 import { accessFeature } from './access/Access.feature';
 import { authFeature } from './auth/Auth.feature';
-import { contentFeature } from './content/feature';
+import { contentFeature } from './content/Content.feature';
 import { contentTypesFeature } from './content-types/ContentTypes.feature';
 import type { Feature } from '../lib/FeatureDefinition';
 import { mediaFeature } from './media/Media.feature';

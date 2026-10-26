@@ -1,10 +1,10 @@
 import { APP_ROUTES } from '../../config/App.routes';
 import { defineApiService, type Feature } from '../../lib/FeatureDefinition';
-import { ContentApiProvider } from './content-api-context';
-import { createContentApi } from './content.api';
+import { ContentApiProvider } from './ContentApi.context';
+import { createContentApi } from './Content.api';
 import { CollectionListPage } from './CollectionListPage';
 import { DocumentEditPage } from './DocumentEditPage';
-import { useContentNavItems } from './use-content-nav-items';
+import { useContentNavItems } from './useContentNavItems.query';
 
 export const contentFeature: Feature = {
   apiServices: [defineApiService(createContentApi, ContentApiProvider)],

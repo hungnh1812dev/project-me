@@ -1,12 +1,12 @@
 import { CV_PAGE_TYPE } from '../../../test/CvPage.fixture';
-import { ITEM_UID_KEY } from './content.constants';
+import { ITEM_UID_KEY } from './Content.constants';
 import {
   emptyItem,
   type FormValues,
   toDocumentTree,
   toFormValues,
-} from './document-form';
-import { buildFieldTree } from './field-tree';
+} from './Document.form';
+import { buildFieldTree } from './FieldTree.rules';
 
 const tree = buildFieldTree(CV_PAGE_TYPE.fields);
 const node = (name: string) => tree.find((item) => item.name === name)!;

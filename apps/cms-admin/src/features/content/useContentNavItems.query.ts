@@ -9,8 +9,8 @@ import {
   useCallerAccess,
 } from '../access';
 import type { ContentType } from '../content-types';
-import { useContentTypesQuery } from './content-queries';
-import { NAV_SECTION_BY_KIND } from './content.constants';
+import { useContentTypesQuery } from './Content.queries';
+import { NAV_SECTION_BY_KIND } from './Content.constants';
 
 /**
  * One item per content type the caller may read, under the section of its

@@ -1,7 +1,7 @@
 import { isAxiosError } from 'axios';
 
-import { MASKED_FIELDS_KEY } from './content.constants';
-import type { ComponentItem, FieldValueMap } from './content.api';
+import { MASKED_FIELDS_KEY } from './Content.constants';
+import type { ComponentItem, FieldValueMap } from './Content.api';
 
 /** One component item of a serialized record in a 409 body. */
 export interface ConflictItem {

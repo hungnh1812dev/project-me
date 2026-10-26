@@ -11,7 +11,7 @@ import {
 import type { ReactNode } from 'react';
 
 import { COPY } from '../../config/Copy.constants';
-import { FIELD_TYPE, MASKED_VALUE } from './content.constants';
+import { FIELD_TYPE, MASKED_VALUE } from './Content.constants';
 import { formatDateTime } from '../../lib/DateFormat.rules';
 import { MediaField, mediaToApi, mediaToForm } from '../media';
 import {
@@ -24,7 +24,7 @@ import {
   numberToForm,
   textToApi,
   textToForm,
-} from './field-values';
+} from './FieldValues.rules';
 
 const copy = COPY.content;
 const listCopy = copy.collection;

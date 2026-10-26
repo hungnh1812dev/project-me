@@ -13,17 +13,17 @@ import {
   TableSkeleton,
 } from '../../components/PageStates';
 import { useCurrentUser } from '../auth';
-import { useContentApi } from './content-api-context';
-import { CONTENT_QUERY_KEYS } from './content-queries';
+import { useContentApi } from './ContentApi.context';
+import { CONTENT_QUERY_KEYS } from './Content.queries';
 import { ConflictMergeModal } from './ConflictMergeModal';
-import { type ConflictDetails, conflictDetailsOf } from './conflict';
-import { isMissing, toSaveError, type SaveError } from './content-error';
-import type { DocumentRecord, DocumentTree } from './content.api';
-import { type FormValues, toDocumentTree, toFormValues } from './document-form';
+import { type ConflictDetails, conflictDetailsOf } from './Conflict.rules';
+import { isMissing, toSaveError, type SaveError } from './Content.errors';
+import type { DocumentRecord, DocumentTree } from './Content.api';
+import { type FormValues, toDocumentTree, toFormValues } from './Document.form';
 import { DynamicFormRenderer } from './DynamicFormRenderer';
-import { buildFieldTree, type FieldNode } from './field-tree';
+import { buildFieldTree, type FieldNode } from './FieldTree.rules';
 import { PresenceBanner } from './PresenceBanner';
-import { maskedPathsOf, visibleEntries } from './merge.reducer';
+import { maskedPathsOf, visibleEntries } from './Merge.reducer';
 
 const copy = COPY.content;
 

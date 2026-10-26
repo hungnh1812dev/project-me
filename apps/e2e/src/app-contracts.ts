@@ -14,7 +14,7 @@ export {
 export {
   CONTENT_LIST_PAGE_SIZE,
   PRESENCE_HEARTBEAT_MS,
-} from '../../cms-admin/src/features/content/content.constants';
+} from '../../cms-admin/src/features/content/Content.constants';
 export {
   MEDIA_ALT_MAX_LENGTH,
   MEDIA_PAGE_SIZE,

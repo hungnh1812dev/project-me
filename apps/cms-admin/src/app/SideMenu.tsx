@@ -7,7 +7,7 @@ import { COPY } from '../config/Copy.constants';
 import { APP_ROUTES } from '../config/App.routes';
 import { useCallerAccess } from '../features/access/useCallerAccess.query';
 import { useCurrentUser, useSession } from '../features/auth';
-import { FEATURE_LIST } from '../features/registry';
+import { FEATURE_LIST } from '../features/Features.registry';
 import type { FeatureNavItem, NavItemsState } from '../lib/FeatureDefinition';
 import {
   collectLeafIds,

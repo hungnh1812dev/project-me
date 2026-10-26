@@ -1,4 +1,4 @@
-import { MASKED_FIELDS_KEY } from './content.constants';
+import { MASKED_FIELDS_KEY } from './Content.constants';
 import { conflictDetails, UID_A, UID_B } from '../../../test/Merge.fixture';
 import {
   INITIAL_MERGE_STATE,
@@ -8,7 +8,7 @@ import {
   parseEntryPath,
   sideOf,
   visibleEntries,
-} from './merge.reducer';
+} from './Merge.reducer';
 
 describe('parseEntryPath', () => {
   it('splits value, item and list paths', () => {

@@ -1,5 +1,5 @@
-import { MASKED_FIELDS_KEY } from './content.constants';
-import type { ConflictDetails, DiffEntry } from './conflict';
+import { MASKED_FIELDS_KEY } from './Content.constants';
+import type { ConflictDetails, DiffEntry } from './Conflict.rules';
 
 export type MergeSide = 'server' | 'client';
 

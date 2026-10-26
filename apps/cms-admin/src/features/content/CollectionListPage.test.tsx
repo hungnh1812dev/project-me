@@ -11,7 +11,7 @@ import { COPY } from '../../config/Copy.constants';
 import { API_ENDPOINTS } from '../../config/Api.endpoints';
 import { contentListPath } from '../../config/App.routes';
 import type { ContentType } from '../content-types';
-import type { DocumentListItem } from './content.api';
+import type { DocumentListItem } from './Content.api';
 
 const { REFRESH, ME } = API_ENDPOINTS.AUTH;
 const { CONTENT_TYPES, DOCUMENTS, ROLES } = API_ENDPOINTS;

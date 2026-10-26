@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { NAV_SECTION_IDS } from '../lib/NavSections.constants';
-import { FEATURE_LIST } from './registry';
+import { FEATURE_LIST } from './Features.registry';
 
 describe('feature nav items', () => {
   it('only name sections that exist in NAV_SECTIONS', () => {

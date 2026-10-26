@@ -3,10 +3,10 @@ import { useQuery } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
 
 import { useClampedPage } from '../../components/useClampedPage.state';
-import { listValueFieldsOf } from './collection-columns';
-import { useContentApi } from './content-api-context';
-import { CONTENT_QUERY_KEYS, useDocumentListQuery } from './content-queries';
-import { COLLECTION_KIND, LIST_UPDATED_KEY } from './content.constants';
+import { listValueFieldsOf } from './Collection.columns';
+import { useContentApi } from './ContentApi.context';
+import { CONTENT_QUERY_KEYS, useDocumentListQuery } from './Content.queries';
+import { COLLECTION_KIND, LIST_UPDATED_KEY } from './Content.constants';
 
 const DEFAULT_SORT: SheetSort = { key: LIST_UPDATED_KEY, direction: 'desc' };
 

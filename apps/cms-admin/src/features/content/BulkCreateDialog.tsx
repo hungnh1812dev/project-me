@@ -15,12 +15,12 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { FormProvider, useForm, useWatch } from 'react-hook-form';
 
-import { BULK_ACTION, BULK_MAX_ITEMS } from './content.constants';
+import { BULK_ACTION, BULK_MAX_ITEMS } from './Content.constants';
 import { COPY } from '../../config/Copy.constants';
-import { failedItems, itemReason, toBulkFailure } from './bulk';
-import { useContentApi } from './content-api-context';
-import type { DocumentTree } from './content.api';
-import { CONTENT_QUERY_KEYS } from './content-queries';
+import { failedItems, itemReason, toBulkFailure } from './Bulk.rules';
+import { useContentApi } from './ContentApi.context';
+import type { DocumentTree } from './Content.api';
+import { CONTENT_QUERY_KEYS } from './Content.queries';
 
 const copy = COPY.content.bulk.importDialog;
 

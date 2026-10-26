@@ -1,8 +1,12 @@
 import { COPY } from '../../config/Copy.constants';
-import { FIELD_TYPE } from './content.constants';
-import type { ConflictDetails, ConflictItem, DiffEntry } from './conflict';
-import { type FieldNode } from './field-tree';
-import { fieldPathOf, isMaskedPath, parseEntryPath } from './merge.reducer';
+import { FIELD_TYPE } from './Content.constants';
+import type {
+  ConflictDetails,
+  ConflictItem,
+  DiffEntry,
+} from './Conflict.rules';
+import { type FieldNode } from './FieldTree.rules';
+import { fieldPathOf, isMaskedPath, parseEntryPath } from './Merge.reducer';
 
 const copy = COPY.content.conflict;
 

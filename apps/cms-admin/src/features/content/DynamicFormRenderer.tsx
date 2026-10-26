@@ -3,8 +3,8 @@ import { useFormContext, useWatch } from 'react-hook-form';
 
 import { COPY } from '../../config/Copy.constants';
 import { ComponentList } from './ComponentList';
-import { adapterFor } from './field-registry';
-import type { FieldNode } from './field-tree';
+import { adapterFor } from './Field.registry';
+import type { FieldNode } from './FieldTree.rules';
 
 const copy = COPY.content;
 
@@ -20,7 +20,7 @@ export interface DynamicFormRendererProps {
 
 /**
  * Renders a content type's fields inside a react-hook-form `FormProvider`.
- * Each field type maps to an input through `field-registry`; masked fields
+ * Each field type maps to an input through `Field.registry`; masked fields
  * are read-only "Protected (***)" and are left out of the payload.
  */
 export function DynamicFormRenderer({

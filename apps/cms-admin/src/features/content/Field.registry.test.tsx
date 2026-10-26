@@ -2,14 +2,14 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { COPY } from '../../config/Copy.constants';
-import { FIELD_TYPE, MASKED_VALUE } from './content.constants';
+import { FIELD_TYPE, MASKED_VALUE } from './Content.constants';
 import {
   adapterFor,
   FIELD_REGISTRY,
   formatListValue,
   isSortableListType,
   listAlignmentOf,
-} from './field-registry';
+} from './Field.registry';
 
 describe('adapterFor richtext', () => {
   const adapter = adapterFor('richtext');

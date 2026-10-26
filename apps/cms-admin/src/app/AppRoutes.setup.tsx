@@ -4,7 +4,7 @@ import { APP_ROUTES } from '../config/App.routes';
 import { PUBLIC_ROUTE_PATHS } from '../features/auth/Auth.feature';
 import { ProtectedRoute } from '../features/auth/ProtectedRoute';
 import type { FeatureRoute } from '../lib/FeatureDefinition';
-import { FEATURE_LIST } from '../features/registry';
+import { FEATURE_LIST } from '../features/Features.registry';
 import { AppShell } from './AppShell';
 
 const isPublic = ({ path }: FeatureRoute) =>

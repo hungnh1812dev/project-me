@@ -4,11 +4,11 @@ import { useFieldArray, useFormContext } from 'react-hook-form';
 import {
   MAX_COMPONENT_DEPTH,
   SINGLE_COMPONENT_MAX_ITEMS,
-} from './content.constants';
+} from './Content.constants';
 import { COPY } from '../../config/Copy.constants';
-import { emptyItem } from './document-form';
+import { emptyItem } from './Document.form';
 import { DynamicFormRenderer } from './DynamicFormRenderer';
-import type { FieldNode } from './field-tree';
+import type { FieldNode } from './FieldTree.rules';
 
 const copy = COPY.content.list;
 
