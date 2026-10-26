@@ -1,4 +1,4 @@
-import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 
 import { Clock } from '../../../common/time/clock';
 import {
@@ -15,6 +15,7 @@ import {
   apiTokenActor,
   InvalidPolicyDataError,
   parseTokenScope,
+  unauthenticated,
 } from '../domain/ActorContext.entity';
 import { API_TOKEN_LOOKUP, type ApiTokenLookup } from './Access.port';
 import { VersionCache } from './VersionCache.service';
@@ -49,13 +50,13 @@ export class ApiTokenAuthentication {
     @Inject(APP_LOGGER) private readonly logger: AppLogger,
   ) {}
 
-  /** @throws UnauthorizedException */
+  /** @throws DomainError (unauthenticated) */
   async authenticate(raw: string): Promise<AuthenticatedApiToken> {
     if (
       !raw.startsWith(API_TOKEN.PREFIX) ||
       raw.length > MAX_RAW_TOKEN_LENGTH
     ) {
-      throw new UnauthorizedException();
+      throw unauthenticated();
     }
     const token = await this.tokens.findByHash(hashApiToken(raw));
     const now = this.clock.now();
@@ -64,17 +65,17 @@ export class ApiTokenAuthentication {
       token.revokedAt !== null ||
       isApiTokenExpired(token.expiresAt, now)
     ) {
-      throw new UnauthorizedException();
+      throw unauthenticated();
     }
 
     const creator = await this.versions.getAccountVersions(
       token.creatorDocumentId,
     );
     if (creator === null || creator.status !== 'active' || creator.isDeleted) {
-      throw new UnauthorizedException();
+      throw unauthenticated();
     }
     const role = await this.versions.getRolePolicy(creator.roleId);
-    if (role === null) throw new UnauthorizedException();
+    if (role === null) throw unauthenticated();
 
     let actor: ActorContext;
     try {
@@ -90,7 +91,7 @@ export class ApiTokenAuthentication {
         `Token ${token.documentId} has a malformed scope.`,
         LOGGER_CONTEXT,
       );
-      throw new UnauthorizedException();
+      throw unauthenticated();
     }
 
     await this.touch(token.id, token.lastUsedAt, now);

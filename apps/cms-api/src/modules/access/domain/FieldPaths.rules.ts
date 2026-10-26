@@ -1,6 +1,6 @@
-import { BadRequestException } from '@nestjs/common';
-
 import { ERROR_CODES } from '../../../common/constants/error.constants';
+import { DomainError } from '../../../common/errors/Domain.errors';
+import { DOMAIN_ERROR_KINDS } from '../../../common/errors/DomainErrorKinds.constants';
 import {
   type ContentTypeDefinition,
   type FieldDefinition,
@@ -81,25 +81,32 @@ export function intersectFieldLists(a: FieldList, b: FieldList): FieldList {
   return [...intersectedPaths];
 }
 
+function invalidInput(init: {
+  errorCode: string;
+  message: string;
+}): DomainError {
+  return new DomainError({ kind: DOMAIN_ERROR_KINDS.INVALID_INPUT, ...init });
+}
+
 /** 400s of the field checks (SPEC D3/D4), in the shared error body shape. */
 export const fieldErrors = {
   notReadable: (path: string) =>
-    new BadRequestException({
+    invalidInput({
       errorCode: ACCESS_ERROR_CODES.FIELD_NOT_READABLE,
       message: FIELD_ERROR_MESSAGES.notReadable(path),
     }),
   notWritable: (path: string) =>
-    new BadRequestException({
+    invalidInput({
       errorCode: ACCESS_ERROR_CODES.FIELD_NOT_WRITABLE,
       message: FIELD_ERROR_MESSAGES.notWritable(path),
     }),
   unknown: () =>
-    new BadRequestException({
+    invalidInput({
       errorCode: ACCESS_ERROR_CODES.FIELD_UNKNOWN,
       message: FIELD_ERROR_MESSAGES.unknown,
     }),
   invalidPayload: () =>
-    new BadRequestException({
+    invalidInput({
       errorCode: ERROR_CODES.BAD_REQUEST,
       message: FIELD_ERROR_MESSAGES.invalidPayload,
     }),

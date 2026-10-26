@@ -1,4 +1,4 @@
-import { BadRequestException } from '@nestjs/common';
+import { DomainError } from '../../../common/errors/Domain.errors';
 
 import {
   accountAccess,
@@ -29,8 +29,8 @@ function errorCodeOf(
   try {
     guard.assert(use, access);
   } catch (error) {
-    if (!(error instanceof BadRequestException)) throw error;
-    return (error.getResponse() as { errorCode: string }).errorCode;
+    if (!(error instanceof DomainError)) throw error;
+    return error.errorCode;
   }
   return undefined;
 }
@@ -61,7 +61,7 @@ describe('QueryGuard', () => {
   it('rejects everything but system fields when nothing is readable', () => {
     expect(() =>
       guard.assert({ sort: ['name'] }, accountAccess(FieldSelection.NONE)),
-    ).toThrow(BadRequestException);
+    ).toThrow(DomainError);
     expect(() =>
       guard.assert({ sort: ['createdAt'] }, accountAccess(FieldSelection.NONE)),
     ).not.toThrow();

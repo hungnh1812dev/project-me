@@ -1,4 +1,4 @@
-import { BadRequestException } from '@nestjs/common';
+import { DomainError } from '../../../common/errors/Domain.errors';
 
 import {
   accountAccess,
@@ -32,11 +32,8 @@ function errorCodeOf(run: () => unknown): string | undefined {
   try {
     run();
   } catch (error) {
-    if (!(error instanceof BadRequestException)) throw error;
-    const body = error.getResponse() as {
-      errorCode: string;
-    };
-    return body.errorCode;
+    if (!(error instanceof DomainError)) throw error;
+    return error.errorCode;
   }
   throw new Error('expected a 400');
 }

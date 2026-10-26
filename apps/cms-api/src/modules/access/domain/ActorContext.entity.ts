@@ -1,9 +1,16 @@
 import { z } from 'zod';
 
+import { DomainError } from '../../../common/errors/Domain.errors';
+import { DOMAIN_ERROR_KINDS } from '../../../common/errors/DomainErrorKinds.constants';
 import type { PermissionAction } from '../../../generated/prisma/client';
 import { OWNER_ROLE_SLUG } from '../roles/system-roles';
 import { PERMISSION_ACTIONS } from './Access.constants';
 import type { FieldList } from './FieldPaths.rules';
+
+/** The one bare 401 every failed authentication answers with, whatever the cause (N2c). */
+export function unauthenticated(): DomainError {
+  return new DomainError({ kind: DOMAIN_ERROR_KINDS.UNAUTHENTICATED });
+}
 
 /** One permission row in memory (SPEC §8.1 `permissions`). */
 export interface PermissionGrant {

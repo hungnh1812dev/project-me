@@ -1,4 +1,4 @@
-import { UnauthorizedException } from '@nestjs/common';
+import { DomainError } from '../../../common/errors/Domain.errors';
 
 import type { RolePolicy } from '../domain/ActorContext.entity';
 import type { RoleLookup } from './Access.port';
@@ -44,20 +44,14 @@ describe('AnonymousActorService', () => {
 
   it('fails closed with 401 when the public role does not exist', async () => {
     const t = setup(null, null);
-    await expect(t.service.actor()).rejects.toBeInstanceOf(
-      UnauthorizedException,
-    );
+    await expect(t.service.actor()).rejects.toBeInstanceOf(DomainError);
     expect(t.getRolePolicy).not.toHaveBeenCalled();
   });
 
   it('fails closed and forgets the id when the role rows are gone', async () => {
     const t = setup(null, PUBLIC_ROLE.id);
-    await expect(t.service.actor()).rejects.toBeInstanceOf(
-      UnauthorizedException,
-    );
-    await expect(t.service.actor()).rejects.toBeInstanceOf(
-      UnauthorizedException,
-    );
+    await expect(t.service.actor()).rejects.toBeInstanceOf(DomainError);
+    await expect(t.service.actor()).rejects.toBeInstanceOf(DomainError);
     expect(t.findIdBySlug).toHaveBeenCalledTimes(2);
   });
 });

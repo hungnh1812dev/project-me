@@ -1,5 +1,5 @@
-import { ForbiddenException } from '@nestjs/common';
-
+import { DomainError } from '../../../common/errors/Domain.errors';
+import { DOMAIN_ERROR_KINDS } from '../../../common/errors/DomainErrorKinds.constants';
 import type { PermissionGrant } from './ActorContext.entity';
 import { type ActorContext, isOwnerRole } from './ActorContext.entity';
 import { RANK_FORBIDDEN_ERROR } from './Access.constants';
@@ -12,9 +12,10 @@ import type { SubjectCatalog } from './SubjectCatalog.rules';
  */
 export type AccountActor = Extract<ActorContext, { kind: 'account' }>;
 
-/** @throws ForbiddenException for every actor that is not a signed-in account. */
+/** @throws DomainError (forbidden) for every actor that is not a signed-in account. */
 export function requireAccountActor(actor: ActorContext): AccountActor {
-  if (actor.kind !== 'account') throw new ForbiddenException();
+  if (actor.kind !== 'account')
+    throw new DomainError({ kind: DOMAIN_ERROR_KINDS.FORBIDDEN });
   return actor;
 }
 
@@ -27,14 +28,15 @@ export function outranks(actor: ActorContext, targetRank: number): boolean {
   return targetRank < actor.role.rank;
 }
 
-export function rankForbidden(): ForbiddenException {
-  return new ForbiddenException({
+export function rankForbidden(): DomainError {
+  return new DomainError({
+    kind: DOMAIN_ERROR_KINDS.FORBIDDEN,
     errorCode: RANK_FORBIDDEN_ERROR.CODE,
     message: RANK_FORBIDDEN_ERROR.MESSAGE,
   });
 }
 
-/** @throws ForbiddenException (ACCESS_RANK_FORBIDDEN) unless `actor` outranks every rank. */
+/** @throws DomainError (forbidden, ACCESS_RANK_FORBIDDEN) unless `actor` outranks every rank. */
 export function assertOutranks(
   actor: ActorContext,
   ...targetRanks: readonly number[]

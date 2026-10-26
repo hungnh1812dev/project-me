@@ -1,4 +1,6 @@
-import { UnauthorizedException } from '@nestjs/common';
+import { DomainError } from '../../../common/errors/Domain.errors';
+import { DOMAIN_ERROR_KINDS } from '../../../common/errors/DomainErrorKinds.constants';
+import { describeError } from '../../../common/http/describe-http-exception';
 
 import { Clock } from '../../../common/time/clock';
 import type { AppLogger } from '../../../infrastructure/logging/AppLogger.port';
@@ -80,18 +82,20 @@ function setup(
   };
 }
 
-async function expectBare401(
-  promise: Promise<unknown>,
-): Promise<UnauthorizedException> {
+const BARE_401_BODY = {
+  statusCode: 401,
+  errorCode: 'UNAUTHORIZED',
+  message: 'Unauthorized',
+};
+
+async function expectBare401(promise: Promise<unknown>): Promise<DomainError> {
   const error: unknown = await promise.then(
     () => undefined,
     (caught: unknown) => caught,
   );
-  expect(error).toBeInstanceOf(UnauthorizedException);
-  expect((error as UnauthorizedException).getResponse()).toEqual(
-    new UnauthorizedException().getResponse(),
-  );
-  return error as UnauthorizedException;
+  expect(error).toBeInstanceOf(DomainError);
+  expect(describeError(error)).toMatchObject(BARE_401_BODY);
+  return error as DomainError;
 }
 
 describe('ApiTokenAuthentication', () => {
@@ -133,7 +137,7 @@ describe('ApiTokenAuthentication', () => {
   ])('answers one bare 401 when the %s', async (_cause, overrides) => {
     const t = setup(overrides);
     const error = await expectBare401(t.service.authenticate(RAW));
-    expect(error.getStatus()).toBe(401);
+    expect(error.kind).toBe(DOMAIN_ERROR_KINDS.UNAUTHENTICATED);
   });
 
   it('logs the token document id, never the raw value, for a malformed scope', async () => {

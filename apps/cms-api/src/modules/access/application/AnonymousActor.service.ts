@@ -1,8 +1,9 @@
-import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 
 import {
   type ActorContext,
   anonymousActor,
+  unauthenticated,
 } from '../domain/ActorContext.entity';
 import { PUBLIC_ROLE_SLUG } from '../roles/system-roles';
 import { ROLE_LOOKUP, type RoleLookup } from './Access.port';
@@ -26,13 +27,13 @@ export class AnonymousActorService {
     private readonly versions: VersionCache,
   ) {}
 
-  /** @throws UnauthorizedException when the `public` role does not exist. */
+  /** @throws DomainError (unauthenticated) when the `public` role does not exist. */
   async actor(): Promise<ActorContext> {
     const roleId = await this.roleId();
     const role = await this.versions.getRolePolicy(roleId);
     if (role === null) {
       this.publicRoleId = undefined;
-      throw new UnauthorizedException();
+      throw unauthenticated();
     }
     return anonymousActor(role);
   }
@@ -40,7 +41,7 @@ export class AnonymousActorService {
   private async roleId(): Promise<number> {
     if (this.publicRoleId !== undefined) return this.publicRoleId;
     const id = await this.roles.findIdBySlug(PUBLIC_ROLE_SLUG);
-    if (id === null) throw new UnauthorizedException();
+    if (id === null) throw unauthenticated();
     this.publicRoleId = id;
     return id;
   }

@@ -1,4 +1,4 @@
-import { ForbiddenException } from '@nestjs/common';
+import { DomainError } from '../../../common/errors/Domain.errors';
 
 import {
   customRole,
@@ -38,16 +38,16 @@ describe('D6 rank rule (§12-7)', () => {
 
   it('assertOutranks checks every rank and throws 403', () => {
     expect(() => assertOutranks(admin, 30, 11)).not.toThrow();
-    expect(() => assertOutranks(admin, 30, 40)).toThrow(ForbiddenException);
+    expect(() => assertOutranks(admin, 30, 40)).toThrow(DomainError);
   });
 
   it('only signed-in accounts manage accounts and roles', () => {
     expect(requireAccountActor(admin)).toBe(admin);
     const token = apiTokenActor(9, 1, systemRole('owner'), { permissions: [] });
-    expect(() => requireAccountActor(token)).toThrow(ForbiddenException);
+    expect(() => requireAccountActor(token)).toThrow(DomainError);
     expect(() =>
       requireAccountActor(anonymousActor(systemRole('public'))),
-    ).toThrow(ForbiddenException);
+    ).toThrow(DomainError);
   });
 });
 
