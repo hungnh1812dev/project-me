@@ -4,7 +4,7 @@ import { ContentRegistry } from './ContentRegistry.service';
 import type {
   ContentTypeRepository,
   StoredContentTypes,
-} from './ContentTypeRepository.port';
+} from './ContentEngine.port';
 
 const NOTE = {
   slug: 'note',

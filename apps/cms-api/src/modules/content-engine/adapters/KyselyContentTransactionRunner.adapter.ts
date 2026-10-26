@@ -13,8 +13,10 @@ import {
   APP_LOGGER,
   type AppLogger,
 } from '../../../infrastructure/logging/AppLogger.port';
-import { ContentDbProvider } from './ContentDatabase.adapter';
-import { CONTENT_STEP_SAVEPOINT } from './ContentEnginePersistence.constants';
+import {
+  CONTENT_STEP_SAVEPOINT,
+  ContentDbProvider,
+} from './ContentDatabase.adapter';
 import type { ContentDatabase } from './TreeLoader.adapter';
 
 class ContentUnitOfWork implements UnitOfWork {

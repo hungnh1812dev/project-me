@@ -9,12 +9,12 @@ import {
   MIGRATION_SEQUENCE_DIGITS,
   MIGRATION_SNAPSHOT_FILE,
   SCHEMA_FILE_EXTENSION,
-} from './ContentEnginePersistence.constants';
+} from './ContentDatabase.adapter';
 import {
   HASH_ALGORITHM,
   SNAPSHOT_FORMAT_VERSION,
 } from '../domain/ContentEngine.constants';
-import { ContentEngineError } from '../domain/ContentEngine.errors';
+import { ContentEngineError } from '../domain/ContentDocument.entity';
 import type { ContentTypeDefinition } from '../domain/DefinitionSchema.rules';
 import {
   formatDefinitionPath,

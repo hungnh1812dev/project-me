@@ -4,7 +4,7 @@ import {
 } from './ContentEngine.constants';
 import { UUID_PATTERN } from './field-types';
 import { formatDefinitionPath } from './DefinitionValidator.rules';
-import { ContentEngineError } from './ContentEngine.errors';
+import { ContentEngineError } from './ContentDocument.entity';
 import type { TableNode } from './ContentTypeRegistry.entity';
 
 /**

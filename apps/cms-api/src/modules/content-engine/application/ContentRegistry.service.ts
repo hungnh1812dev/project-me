@@ -8,7 +8,7 @@ import { ContentTypeRegistry } from '../domain/ContentTypeRegistry.entity';
 import {
   CONTENT_TYPE_REPOSITORY,
   type ContentTypeRepository,
-} from './ContentTypeRepository.port';
+} from './ContentEngine.port';
 
 const LOGGER_CONTEXT = 'ContentRegistry';
 

@@ -3,8 +3,8 @@ import { parseArgs } from 'node:util';
 import {
   DEFAULT_MIGRATION_LABEL,
   MIGRATION_LABEL_PATTERN,
-} from '../adapters/ContentEnginePersistence.constants';
-import { ContentEngineError } from '../domain/ContentEngine.errors';
+} from '../adapters/ContentDatabase.adapter';
+import { ContentEngineError } from '../domain/ContentDocument.entity';
 import {
   listMigrations,
   loadDefinitions,

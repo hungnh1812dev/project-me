@@ -6,7 +6,7 @@ export type {
   InsertTreeInput,
   LoadTreesQuery,
   ReplaceTreeInput,
-} from './application/ContentRepository.port';
+} from './application/ContentEngine.port';
 export {
   COMPONENT_FIELD_TYPE,
   CONTENT_DB_SCHEMA,

@@ -5,9 +5,9 @@ import {
   MAX_IDENTIFIER_BYTES,
   SLUG_PATTERN,
   SQL_IDENTIFIER_PATTERN,
+  SQL_RESERVED_WORDS,
   TABLE_PATH_SEPARATOR,
 } from './ContentEngine.constants';
-import { SQL_RESERVED_WORDS } from './SqlReservedWords.constants';
 import {
   type ContentTypeDefinition,
   contentTypeDefinitionSchema,

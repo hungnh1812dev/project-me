@@ -1,11 +1,11 @@
 import { type Generated, type Kysely, sql } from 'kysely';
 
-import { MIGRATION_LOCK_KEY } from './ContentEnginePersistence.constants';
+import { MIGRATION_LOCK_KEY } from './ContentDatabase.adapter';
 import {
   CONTENT_DB_SCHEMA,
   META_TABLES,
 } from '../domain/ContentEngine.constants';
-import { ContentEngineError } from '../domain/ContentEngine.errors';
+import { ContentEngineError } from '../domain/ContentDocument.entity';
 import type { ContentTypeKind } from '../domain/DefinitionSchema.rules';
 import {
   listMigrations,

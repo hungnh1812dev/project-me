@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { CONTENT_ERROR_CODES } from './ContentEngine.constants';
-import { ContentEngineError } from './ContentEngine.errors';
+import { ContentEngineError } from './ContentDocument.entity';
 import {
   ContentTypeRegistry,
   UnknownContentTypeError,

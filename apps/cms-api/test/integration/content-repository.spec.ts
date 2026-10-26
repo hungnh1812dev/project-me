@@ -16,7 +16,7 @@ import { KyselyContentRepository } from '../../src/modules/content-engine/adapte
 import type {
   InsertTreeInput,
   LoadTreesQuery,
-} from '../../src/modules/content-engine/application/ContentRepository.port';
+} from '../../src/modules/content-engine/application/ContentEngine.port';
 import { runContentMigrations } from '../../src/modules/content-engine/adapters/MigrationRunner.adapter';
 import {
   ContentTypeRegistry,

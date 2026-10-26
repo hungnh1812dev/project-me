@@ -324,14 +324,13 @@ in that file.
 
 `content-engine` is migrated (CR-ce-1, CR-ce-2). `domain/`: rules, entities,
 constants, `field-types/` and the registry (`ContentTypeRegistry.entity.ts`).
-`application/`: the ports `ContentRepository.port.ts` and
-`ContentTypeRepository.port.ts`, and `ContentRegistry.service.ts` (lazy load,
+`application/`: the ports file `ContentEngine.port.ts`, and `ContentRegistry.service.ts` (lazy load,
 retry after a failure, empty registry when `content:migrate` never ran).
 `adapters/`: the Kysely repository, tree loader, component sync, migration
 runner and files, the content pool (`ContentDbProvider`), the registry
-reader `PgContentType.repository.ts`, `MigrationDb.adapter.ts` and
+reader `PgContentType.repository.ts` and
 `KyselyContentTransactionRunner.adapter.ts` (`CONTENT_TRANSACTION_RUNNER`,
-with `runInSavepoint`). `MigrationDb.adapter.ts` is imported only by
+with `runInSavepoint`). `createMigrationDb` (in `ContentDatabase.adapter.ts`) is imported only by
 `ContentEngine.module.ts` and `cli/ContentEngineCli.setup.ts`. Documents
 runs every write through `CONTENT_TRANSACTION_RUNNER`.
 `unitOfWorkFromContentTrx(trx)` is no longer exported by the facade; only

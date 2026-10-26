@@ -1,6 +1,10 @@
 import { types } from 'pg';
 
-import { CONTENT_TYPE_PARSERS } from './ContentDatabase.adapter';
+import {
+  CONTENT_TYPE_PARSERS,
+  createMigrationDb,
+  MIGRATION_POOL_MAX_CONNECTIONS,
+} from './ContentDatabase.adapter';
 
 const DATE_OID = 1082;
 const TIMESTAMPTZ_OID = 1184;
@@ -27,5 +31,16 @@ describe('content pool type parsers', () => {
 
   it('does not change the global date parser', () => {
     expect(defaultParser(DATE_OID)('2026-03-01')).toBeInstanceOf(Date);
+  });
+});
+
+describe('createMigrationDb', () => {
+  it('builds a handle that connects lazily and can be destroyed with the database down', async () => {
+    const db = createMigrationDb('postgres://user:pw@127.0.0.1:1/none');
+    await expect(db.destroy()).resolves.toBeUndefined();
+  });
+
+  it('keeps the pool to the single migration connection', () => {
+    expect(MIGRATION_POOL_MAX_CONNECTIONS).toBe(1);
   });
 });

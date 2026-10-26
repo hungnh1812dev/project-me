@@ -4,13 +4,13 @@ import type { Kysely } from 'kysely';
 import type {
   ContentTypeRepository,
   StoredContentTypes,
-} from '../application/ContentTypeRepository.port';
+} from '../application/ContentEngine.port';
 import {
   CONTENT_DB_SCHEMA,
   META_TABLES,
 } from '../domain/ContentEngine.constants';
-import { ContentEngineError } from '../domain/ContentEngine.errors';
-import { CONTENT_NOT_MIGRATED_PG_CODES } from './ContentEnginePersistence.constants';
+import { ContentEngineError } from '../domain/ContentDocument.entity';
+import { CONTENT_NOT_MIGRATED_PG_CODES } from './ContentDatabase.adapter';
 import type { ContentMetaDatabase } from './MigrationRunner.adapter';
 
 function isNotMigrated(error: unknown): boolean {

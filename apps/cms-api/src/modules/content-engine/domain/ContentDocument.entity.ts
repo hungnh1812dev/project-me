@@ -2,9 +2,15 @@ import {
   CONTENT_ERROR_CODES,
   type CONTENT_STATUSES,
 } from './ContentEngine.constants';
-import { ContentEngineError } from './ContentEngine.errors';
 import type { ComponentTrees } from './ContentTree.entity';
 import type { FieldValues } from './TreeInput.rules';
+
+export class ContentEngineError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'ContentEngineError';
+  }
+}
 
 export type ContentStatus = (typeof CONTENT_STATUSES)[number];
 

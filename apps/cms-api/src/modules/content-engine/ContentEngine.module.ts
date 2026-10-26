@@ -4,10 +4,12 @@ import { type IAppConfig } from '../../config/app-config';
 import { APP_CONFIG } from '../../config/config.constants';
 import { CONTENT_TRANSACTION_RUNNER } from '../../infrastructure/database/TransactionRunner.port';
 import { ContentRegistry } from './application/ContentRegistry.service';
-import { CONTENT_TYPE_REPOSITORY } from './application/ContentTypeRepository.port';
-import { ContentDbProvider } from './adapters/ContentDatabase.adapter';
+import { CONTENT_TYPE_REPOSITORY } from './application/ContentEngine.port';
+import {
+  ContentDbProvider,
+  createMigrationDb,
+} from './adapters/ContentDatabase.adapter';
 import { KyselyContentTransactionRunner } from './adapters/KyselyContentTransactionRunner.adapter';
-import { createMigrationDb } from './adapters/MigrationDb.adapter';
 import { PgContentTypeRepository } from './adapters/PgContentType.repository';
 
 @Module({

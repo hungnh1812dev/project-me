@@ -6,7 +6,7 @@ import type {
   InsertTreeInput,
   LoadTreesQuery,
   ReplaceTreeInput,
-} from '../application/ContentRepository.port';
+} from '../application/ContentEngine.port';
 import {
   CONTENT_DB_SCHEMA,
   CONTENT_ERROR_CODES,

@@ -1,1 +1,1 @@
-export { createMigrationDb } from '../adapters/MigrationDb.adapter';
+export { createMigrationDb } from '../adapters/ContentDatabase.adapter';
