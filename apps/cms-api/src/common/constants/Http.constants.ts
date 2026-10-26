@@ -44,10 +44,18 @@ export const CORS_PREFLIGHT_MAX_AGE_SECONDS = 600;
 /**
  * API response hardening (SPEC D17): the API serves JSON only, so no
  * resource may load from it and it may not be framed. Traefik adds none.
+ * HSTS, nosniff and Referrer-Policy use the same values as apps/web.
  */
 export const CONTENT_SECURITY_POLICY_HEADER = 'content-security-policy';
 export const API_CONTENT_SECURITY_POLICY =
   "default-src 'none'; frame-ancestors 'none'";
+export const HSTS_MAX_AGE_SECONDS = 63_072_000;
+export const API_SECURITY_RESPONSE_HEADERS = {
+  [CONTENT_SECURITY_POLICY_HEADER]: API_CONTENT_SECURITY_POLICY,
+  'strict-transport-security': `max-age=${HSTS_MAX_AGE_SECONDS}; includeSubDomains`,
+  'x-content-type-options': 'nosniff',
+  'referrer-policy': 'strict-origin-when-cross-origin',
+} as const;
 
 /** Token responses must never be cached. */
 export const NO_STORE_HEADER = { NAME: 'Cache-Control', VALUE: 'no-store' };

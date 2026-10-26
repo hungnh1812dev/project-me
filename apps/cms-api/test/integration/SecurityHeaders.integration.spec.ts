@@ -6,6 +6,12 @@ import { dbEnvOf, devEnv } from '../fixtures/Env.fixture';
 import { unreachableDatabaseUrl } from '../fixtures/Postgres.fixture';
 import { createTestApp } from '../fixtures/TestApp.fixture';
 
+const EXPECTED_HEADERS = {
+  'strict-transport-security': 'max-age=63072000; includeSubDomains',
+  'x-content-type-options': 'nosniff',
+  'referrer-policy': 'strict-origin-when-cross-origin',
+};
+
 /** SPEC D17: `default-src 'none'` and no `X-Powered-By` on every route. */
 describe('security headers', () => {
   let app: NestExpressApplication;
@@ -25,6 +31,7 @@ describe('security headers', () => {
       API_CONTENT_SECURITY_POLICY,
     );
     expect(res.headers['x-powered-by']).toBeUndefined();
+    expect(res.headers).toMatchObject(EXPECTED_HEADERS);
   });
 
   it('hardens POST /graphql', async () => {
@@ -35,6 +42,7 @@ describe('security headers', () => {
       API_CONTENT_SECURITY_POLICY,
     );
     expect(res.headers['x-powered-by']).toBeUndefined();
+    expect(res.headers).toMatchObject(EXPECTED_HEADERS);
   });
 
   it('hardens a 404', async () => {
@@ -44,6 +52,7 @@ describe('security headers', () => {
       API_CONTENT_SECURITY_POLICY,
     );
     expect(res.headers['x-powered-by']).toBeUndefined();
+    expect(res.headers).toMatchObject(EXPECTED_HEADERS);
   });
 
   it('hardens an oversized GraphQL body (413)', async () => {
@@ -56,5 +65,6 @@ describe('security headers', () => {
       API_CONTENT_SECURITY_POLICY,
     );
     expect(res.headers['x-powered-by']).toBeUndefined();
+    expect(res.headers).toMatchObject(EXPECTED_HEADERS);
   });
 });

@@ -1,16 +1,15 @@
 import type { NextFunction, Request, Response } from 'express';
 
-import {
-  API_CONTENT_SECURITY_POLICY,
-  CONTENT_SECURITY_POLICY_HEADER,
-} from '../constants/Http.constants';
+import { API_SECURITY_RESPONSE_HEADERS } from '../constants/Http.constants';
 
-/** Sets the API CSP (`default-src 'none'`) on every response, errors included. */
+/** Sets the API security headers (D17) on every response, errors included. */
 export function securityHeadersMiddleware(
   _req: Request,
   res: Response,
   next: NextFunction,
 ): void {
-  res.setHeader(CONTENT_SECURITY_POLICY_HEADER, API_CONTENT_SECURITY_POLICY);
+  for (const [name, value] of Object.entries(API_SECURITY_RESPONSE_HEADERS)) {
+    res.setHeader(name, value);
+  }
   next();
 }

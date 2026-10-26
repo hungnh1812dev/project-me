@@ -56,8 +56,12 @@ at least 32 bytes too.
   wildcard, no path); unset means CORS is off, and production refuses to
   start without it. `X-Request-Id` is exposed to the browser.
 - Security headers (SPEC D17): every response, errors and `POST /graphql`
-  included, carries `Content-Security-Policy: default-src 'none'; frame-ancestors 'none'`
-  and no `X-Powered-By`. The reverse proxy must not add its own CSP.
+  included, carries `Content-Security-Policy: default-src 'none'; frame-ancestors 'none'`,
+  `Strict-Transport-Security: max-age=63072000; includeSubDomains`,
+  `X-Content-Type-Options: nosniff` and
+  `Referrer-Policy: strict-origin-when-cross-origin` (same values as apps/web),
+  and no `X-Powered-By`. The reverse proxy must not add its own CSP. The set
+  is pinned in `SecurityHeaders.middleware.spec.ts`.
 - Each request gets an `X-Request-Id` (an inbound id is kept if it matches
   `[A-Za-z0-9._-]{1,128}`, otherwise a UUID is generated).
 - Every error returns `{ statusCode, errorCode, message, details?, requestId }`.
