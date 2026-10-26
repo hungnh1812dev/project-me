@@ -1,10 +1,13 @@
 import { DomainError } from '../../../common/errors/Domain.errors';
-import { DOMAIN_ERROR_KINDS } from '../../../common/errors/DomainErrorKinds.constants';
+import {
+  DOMAIN_ERROR_KINDS,
+  type DomainErrorKind,
+} from '../../../common/errors/DomainErrorKinds.constants';
 import {
   MS_PER_MINUTE,
   MS_PER_SECOND,
 } from '../../../common/constants/time.constants';
-import type { PageMeta } from '../../../common/http/request-parsing';
+import type { PageMeta } from '../../../common/validation/SharedSchemas.rules';
 import {
   REVIEWER_ACCOUNT,
   REVIEWER_ERROR_CODES,
@@ -79,3 +82,30 @@ export function reviewerIpLimited(retryAfterSeconds: number): DomainError {
     retryAfterSeconds,
   });
 }
+
+function refusal(
+  kind: DomainErrorKind,
+  code: keyof typeof REVIEWER_ERROR_CODES,
+) {
+  return new DomainError({
+    kind,
+    errorCode: REVIEWER_ERROR_CODES[code],
+    message: REVIEWER_ERROR_MESSAGES[code],
+  });
+}
+
+/** 403: the owner has switched reviewer access off. */
+export const reviewerDisabled = (): DomainError =>
+  refusal(DOMAIN_ERROR_KINDS.FORBIDDEN, 'DISABLED');
+
+/** 503: Turnstile or the IP key is not configured, or Turnstile could not be reached. */
+export const reviewerUnavailable = (): DomainError =>
+  refusal(DOMAIN_ERROR_KINDS.UNAVAILABLE, 'UNAVAILABLE');
+
+/** 400: Cloudflare refused the visitor's token. */
+export const reviewerTurnstileFailed = (): DomainError =>
+  refusal(DOMAIN_ERROR_KINDS.INVALID_INPUT, 'TURNSTILE_FAILED');
+
+/** 503: the global cap of active sessions is reached. */
+export const reviewerCapacityReached = (): DomainError =>
+  refusal(DOMAIN_ERROR_KINDS.UNAVAILABLE, 'CAPACITY_REACHED');

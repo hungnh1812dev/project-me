@@ -98,10 +98,11 @@ export const VALUE_KIND_SWITCH_FILES = [
   join(MODULES, 'documents', 'domain', 'DocumentFilter.rules.ts'),
 ];
 
-export const REVIEWER_SERVICE_FILE = join(
+export const REVIEWER_ACCOUNT_ADAPTER_FILE = join(
   MODULES,
   'reviewer',
-  'reviewer.service.ts',
+  'adapters',
+  'PrismaReviewerAccount.adapter.ts',
 );
 export const ACCOUNT_VERSION_REPOSITORY_FILE = join(
   MODULES,
@@ -125,6 +126,7 @@ export const SYSTEM_ROLES_TABLE_FILE = join(
 export const NON_ROLE_LITERAL_FILES = [
   join(MODULES, 'identity', 'http', 'IdentityHttp.constants.ts'),
   join(MODULES, 'reviewer', 'http', 'Reviewer.controller.ts'),
+  join('architecture', 'layer-rules.constants.ts'),
   join('architecture', 'module-edges.constants.ts'),
   join('architecture', 'public-handlers.constants.ts'),
   join('architecture', 'source-paths.constants.ts'),
@@ -143,7 +145,7 @@ export const PINNED_PATHS: readonly string[] = [
   ...RECORD_READER_PORT_FILES,
   ...INTERNAL_COPY_FILES,
   ...VALUE_KIND_SWITCH_FILES,
-  REVIEWER_SERVICE_FILE,
+  REVIEWER_ACCOUNT_ADAPTER_FILE,
   ACCOUNT_VERSION_REPOSITORY_FILE,
   SECURITY_AUDIT_MODULE_FILE,
   SYSTEM_ROLES_TABLE_FILE,

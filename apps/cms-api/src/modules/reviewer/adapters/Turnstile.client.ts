@@ -1,13 +1,28 @@
 import { Logger } from '@nestjs/common';
 import { z } from 'zod';
 
-import {
-  TURNSTILE_FIELDS,
-  TURNSTILE_INTERNAL_ERROR,
-  TURNSTILE_SITEVERIFY_URL,
-  TURNSTILE_TIMEOUT_MS,
-} from './turnstile.constants';
-import type { TurnstileOutcome, TurnstileVerifier } from './turnstile.port';
+import { MS_PER_SECOND } from '../../../common/constants/time.constants';
+import type {
+  TurnstileOutcome,
+  TurnstileVerifier,
+} from '../application/Reviewer.port';
+
+/** Cloudflare's server-side verification endpoint (provider contract, not config). */
+export const TURNSTILE_SITEVERIFY_URL =
+  'https://challenges.cloudflare.com/turnstile/v0/siteverify';
+
+/** Verification must not hold a request open longer than this. */
+const TURNSTILE_TIMEOUT_MS = 5 * MS_PER_SECOND;
+
+/** Form fields of the siteverify request. */
+const TURNSTILE_FIELDS = {
+  SECRET: 'secret',
+  RESPONSE: 'response',
+  REMOTE_IP: 'remoteip',
+} as const;
+
+/** Error code Cloudflare uses when its own side failed (retryable, not the visitor's fault). */
+const TURNSTILE_INTERNAL_ERROR = 'internal-error';
 
 const siteverifyResponseSchema = z.object({
   success: z.boolean(),
@@ -43,7 +58,10 @@ export class TurnstileClient implements TurnstileVerifier {
    */
   constructor(
     private readonly secretKey: string,
-    options: { fetchFn?: HttpFetch; expectedHostname?: string | undefined } = {},
+    options: {
+      fetchFn?: HttpFetch;
+      expectedHostname?: string | undefined;
+    } = {},
   ) {
     this.fetchFn = options.fetchFn ?? fetch;
     this.expectedHostname = options.expectedHostname;
@@ -77,8 +95,9 @@ export class TurnstileClient implements TurnstileVerifier {
           parsedReply.data.hostname?.toLowerCase() !== this.expectedHostname;
         return wrongHost ? 'failed' : 'passed';
       }
-      return parsedReply.data['error-codes']?.includes(TURNSTILE_INTERNAL_ERROR) ===
-        true
+      return parsedReply.data['error-codes']?.includes(
+        TURNSTILE_INTERNAL_ERROR,
+      ) === true
         ? 'unavailable'
         : 'failed';
     } catch {

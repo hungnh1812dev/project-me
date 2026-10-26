@@ -22,12 +22,12 @@ import {
   type RateLimitRule,
 } from '../../../common/constants/limits.constants';
 import { Throttle } from '../../../common/guards/throttle.guard';
-import { PermissionAction } from '../../../generated/prisma/client';
 import {
   pageQuerySchema,
   parseRequest,
 } from '../../../common/http/request-parsing';
 import {
+  PermissionAction,
   REVIEWER_SETTINGS_SUBJECT,
   RequirePermission,
   PermissionGuard,
@@ -44,7 +44,7 @@ import type {
   ReviewerSessionPage,
   ReviewerStatusView,
 } from '../domain/ReviewerAdmission.rules';
-import { ReviewerService } from '../reviewer.service';
+import { ReviewerAccessService } from '../application/ReviewerAccess.service';
 
 /** SPEC §9 reviewer. */
 const REVIEWER_ROUTES = {
@@ -86,7 +86,7 @@ export const REVIEWER_RATE_LIMIT_POLICIES = {
 @Controller(REVIEWER_ROUTES.ROOT)
 export class ReviewerController {
   constructor(
-    private readonly reviewer: ReviewerService,
+    private readonly reviewer: ReviewerAccessService,
     private readonly clientIp: ClientIpResolver,
   ) {}
 

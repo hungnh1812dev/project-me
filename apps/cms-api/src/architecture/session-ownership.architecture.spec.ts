@@ -7,7 +7,7 @@ import {
 } from './import-graph';
 import {
   IDENTITY_DIRECTORY,
-  REVIEWER_SERVICE_FILE,
+  REVIEWER_ACCOUNT_ADAPTER_FILE,
   ACCOUNT_VERSION_REPOSITORY_FILE,
 } from './source-paths.constants';
 
@@ -39,7 +39,7 @@ const TOKEN_VERSION_WRITE = new RegExp(
 const TOKEN_VERSION_WRITE_ALLOWLIST = new Map<string, number>([
   // Switching reviewer access off bumps every reviewer account (one raw
   // UPDATE); reviewers hold no refresh token.
-  [REVIEWER_SERVICE_FILE, 1],
+  [REVIEWER_ACCOUNT_ADAPTER_FILE, 1],
   // Copies the column into the in-memory cache entry; not a database write.
   [ACCOUNT_VERSION_REPOSITORY_FILE, 1],
 ]);

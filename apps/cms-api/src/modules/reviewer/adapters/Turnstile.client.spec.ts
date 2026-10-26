@@ -1,5 +1,8 @@
-import { TurnstileClient, type HttpFetch } from './turnstile.client';
-import { TURNSTILE_SITEVERIFY_URL } from './turnstile.constants';
+import {
+  TURNSTILE_SITEVERIFY_URL,
+  TurnstileClient,
+  type HttpFetch,
+} from './Turnstile.client';
 
 function replying(json: unknown, ok = true): HttpFetch {
   return () => Promise.resolve({ ok, json: () => Promise.resolve(json) });

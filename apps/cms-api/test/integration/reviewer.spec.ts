@@ -16,7 +16,7 @@ import {
   TURNSTILE_VERIFIER,
   type TurnstileOutcome,
   type TurnstileVerifier,
-} from '../../src/infrastructure/turnstile/turnstile.port';
+} from '../../src/modules/reviewer/application/Reviewer.port';
 import { AUDIT_ACTIONS } from '../../src/modules/security-audit';
 import { createContentDb } from '../../src/modules/content-engine/adapters/ContentDatabase.adapter';
 import { ContentRegistry } from '../../src/modules/content-engine/application/ContentRegistry.service';
@@ -28,7 +28,7 @@ import {
 } from '../../src/modules/content-engine/domain/SqlGenerator.rules';
 import type { ContentDatabase } from '../../src/modules/content-engine/adapters/TreeLoader.adapter';
 import { hashPassword } from '../../src/modules/identity/application/Password.service';
-import { ReviewerCleanupJob } from '../../src/modules/reviewer/reviewer-cleanup.job';
+import { ReviewerCleanupJob } from '../../src/modules/reviewer/jobs/ReviewerCleanup.job';
 import { REVIEWER_SESSION_TTL_MS } from '../../src/modules/reviewer/domain/Reviewer.constants';
 import {
   REVIEWER_IP_WINDOW_MS,

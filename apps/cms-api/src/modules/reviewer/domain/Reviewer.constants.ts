@@ -14,6 +14,9 @@ export const REVIEWER_INPUT_LIMITS = {
   NOTES_MAX_LENGTH: 500,
 } as const;
 
+/** Cloudflare documents Turnstile response tokens of at most 2048 characters. */
+export const TURNSTILE_TOKEN_MAX_LENGTH = 2_048;
+
 /** Ephemeral reviewer accounts get an address nobody can receive mail on (RFC 6761). */
 export const REVIEWER_ACCOUNT = {
   EMAIL_PREFIX: 'reviewer-',

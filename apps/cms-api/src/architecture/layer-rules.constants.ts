@@ -81,6 +81,8 @@ export const DOMAIN_CROSS_MODULE_HELPERS: readonly string[] = [
   'ADMIN_ROLE_SLUG',
   'GUEST_ROLE_SLUG',
   'LOGIN_FAILURE_REASONS',
+  // identity: the session lifetime the reviewer session row ends with
+  'REVIEWER_SESSION_TTL_SECONDS',
 ];
 
 export interface BannedText {
@@ -310,6 +312,7 @@ export const MIGRATED_MODULES: readonly string[] = [
   'security-audit',
   'identity',
   'media',
+  'reviewer',
 ];
 
 export interface KnownLayerViolation {
