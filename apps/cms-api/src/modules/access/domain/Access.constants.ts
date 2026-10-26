@@ -89,6 +89,10 @@ export const SYSTEM_SUBJECT_ACTIONS = {
 export const MEDIA_SUBJECT =
   'media' satisfies keyof typeof SYSTEM_SUBJECT_ACTIONS;
 
+/** The owner-only reviewer toggle and session log subject. */
+export const REVIEWER_SETTINGS_SUBJECT =
+  'reviewer_settings' satisfies keyof typeof SYSTEM_SUBJECT_ACTIONS;
+
 export type SystemSubject = keyof typeof SYSTEM_SUBJECT_ACTIONS;
 
 export const SYSTEM_SUBJECTS = Object.keys(

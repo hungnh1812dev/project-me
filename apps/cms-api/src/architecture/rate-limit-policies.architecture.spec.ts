@@ -22,7 +22,7 @@ import {
   rateLimitOverrideBindings,
 } from '../modules/identity/http/IdentityHttp.constants';
 import { MEDIA_RATE_LIMIT_POLICIES } from '../modules/media/http/Media.controller';
-import { REVIEWER_RATE_LIMIT_POLICIES } from '../modules/reviewer/reviewer.rate-limits.constants';
+import { REVIEWER_RATE_LIMIT_POLICIES } from '../modules/reviewer/http/Reviewer.controller';
 import {
   AUTHENTICATION_GUARDS,
   handlersOf,

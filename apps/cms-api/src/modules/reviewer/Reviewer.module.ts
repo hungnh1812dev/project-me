@@ -6,7 +6,7 @@ import { AccessModule } from '../access';
 import { IdentityModule } from '../identity';
 import { SecurityAuditModule } from '../security-audit';
 import { ReviewerCleanupJob } from './reviewer-cleanup.job';
-import { ReviewerController } from './reviewer.controller';
+import { ReviewerController } from './http/Reviewer.controller';
 import { ReviewerService } from './reviewer.service';
 
 /** Reviewer toggle, sessions and cleanup (D2). */

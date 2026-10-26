@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
-import { TURNSTILE_TOKEN_MAX_LENGTH } from '../../infrastructure/turnstile/turnstile.port';
-import { REVIEWER_INPUT_LIMITS } from './reviewer.constants';
+import { TURNSTILE_TOKEN_MAX_LENGTH } from '../../../infrastructure/turnstile/turnstile.port';
+import { REVIEWER_INPUT_LIMITS } from '../domain/Reviewer.constants';
 
 const TAB = 9;
 const NEWLINE = 10;

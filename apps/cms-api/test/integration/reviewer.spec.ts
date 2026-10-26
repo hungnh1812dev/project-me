@@ -29,11 +29,11 @@ import {
 import type { ContentDatabase } from '../../src/modules/content-engine/adapters/TreeLoader.adapter';
 import { hashPassword } from '../../src/modules/identity/application/Password.service';
 import { ReviewerCleanupJob } from '../../src/modules/reviewer/reviewer-cleanup.job';
+import { REVIEWER_SESSION_TTL_MS } from '../../src/modules/reviewer/domain/Reviewer.constants';
 import {
   REVIEWER_IP_WINDOW_MS,
   REVIEWER_MAX_ACTIVE_SESSIONS,
-  REVIEWER_SESSION_TTL_MS,
-} from '../../src/modules/reviewer/reviewer.constants';
+} from '../../src/modules/reviewer/domain/ReviewerAdmission.rules';
 import { ARTICLE_DEFINITION } from '../fixtures/access.fixture';
 import { createCoreTemplate } from '../fixtures/core-db.fixture';
 import {

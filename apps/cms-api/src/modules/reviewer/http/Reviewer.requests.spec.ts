@@ -1,4 +1,4 @@
-import { createReviewerSessionSchema } from './reviewer.requests';
+import { createReviewerSessionSchema } from './Reviewer.requests';
 
 const VALID = { visitorRole: 'Recruiter', turnstileToken: 't' };
 

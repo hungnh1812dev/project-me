@@ -19,7 +19,7 @@ import { REFRESH_COOKIE } from '../modules/identity/http/IdentityHttp.constants'
 import {
   REVIEWER_ERROR_CODES,
   REVIEWER_INPUT_LIMITS,
-} from '../modules/reviewer/reviewer.constants';
+} from '../modules/reviewer/domain/Reviewer.constants';
 
 /**
  * The cms-api constants that the admin, the web, the kit and the e2e suite

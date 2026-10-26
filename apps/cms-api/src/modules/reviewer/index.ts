@@ -1,1 +1,1 @@
-export { ReviewerModule } from './reviewer.module';
+export { ReviewerModule } from './Reviewer.module';

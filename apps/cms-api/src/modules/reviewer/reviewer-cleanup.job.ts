@@ -8,10 +8,11 @@ import {
 import { Clock } from '../../common/time/clock';
 import { PrismaService } from '../../infrastructure/database/prisma.service';
 import { VersionCache, REVIEWER_ROLE_SLUG } from '../access';
-import {
-  REVIEWER_CLEANUP_BATCH_SIZE,
-  REVIEWER_CLEANUP_INTERVAL_MS,
-} from './reviewer.constants';
+import { MS_PER_MINUTE } from '../../common/constants/time.constants';
+
+/** Sweep of expired reviewer accounts (in-process, like the media purge). */
+const REVIEWER_CLEANUP_INTERVAL_MS = 10 * MS_PER_MINUTE;
+const REVIEWER_CLEANUP_BATCH_SIZE = 100;
 
 /**
  * Deletes reviewer accounts whose session has expired. The session row

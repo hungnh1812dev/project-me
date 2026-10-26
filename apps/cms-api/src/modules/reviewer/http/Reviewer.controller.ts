@@ -9,42 +9,74 @@ import {
   Put,
   Query,
   Req,
-  Res,
   UseGuards,
 } from '@nestjs/common';
-import type { Request, Response } from 'express';
+import type { Request } from 'express';
 
-import { ClientIpResolver } from '../../common/http/client-ip.resolver';
-import { REVIEWER_ROUTES } from './reviewer.routes';
-import { NO_STORE_HEADER } from '../../common/constants/http.constants';
-import { RETRY_AFTER_HEADER } from '../../common/constants/limits.constants';
-import { Throttle } from '../../common/guards/throttle.guard';
-import { REVIEWER_RATE_LIMIT_POLICIES } from './reviewer.rate-limits.constants';
-import { PermissionAction } from '../../generated/prisma/client';
+import { ClientIpResolver } from '../../../common/http/client-ip.resolver';
+import { NO_STORE_HEADER } from '../../../common/constants/http.constants';
+import {
+  ONE_MINUTE_MS,
+  RATE_LIMIT_KEY_SOURCES,
+  TEN_MINUTES_MS,
+  type RateLimitRule,
+} from '../../../common/constants/limits.constants';
+import { Throttle } from '../../../common/guards/throttle.guard';
+import { PermissionAction } from '../../../generated/prisma/client';
 import {
   pageQuerySchema,
   parseRequest,
-} from '../../common/http/request-parsing';
+} from '../../../common/http/request-parsing';
 import {
+  REVIEWER_SETTINGS_SUBJECT,
   RequirePermission,
   PermissionGuard,
   requireAccountActor,
-} from '../access';
-import { clientMetaOf } from '../../common/http/client-meta';
-import { type AuthenticatedRequest, JwtAuthGuard } from '../identity';
+} from '../../access';
+import { clientMetaOf } from '../../../common/http/client-meta';
+import { type AuthenticatedRequest, JwtAuthGuard } from '../../identity';
 import {
   createReviewerSessionSchema,
   reviewerSettingsSchema,
-} from './reviewer.requests';
-import {
-  type CreatedReviewerSessionView,
-  ReviewerIpLimitedException,
-  type ReviewerSessionPage,
-  ReviewerService,
-  type ReviewerStatusView,
-} from './reviewer.service';
+} from './Reviewer.requests';
+import type {
+  CreatedReviewerSessionView,
+  ReviewerSessionPage,
+  ReviewerStatusView,
+} from '../domain/ReviewerAdmission.rules';
+import { ReviewerService } from '../reviewer.service';
 
-const SETTINGS_SUBJECT = 'reviewer_settings';
+/** SPEC §9 reviewer. */
+const REVIEWER_ROUTES = {
+  ROOT: 'reviewer',
+  STATUS: 'status',
+  SESSIONS: 'sessions',
+  SETTINGS: 'settings',
+} as const;
+
+export const REVIEWER_RATE_LIMIT_POLICIES = {
+  /** `GET /reviewer/status`: public, one small read. In memory. */
+  REVIEWER_STATUS: [
+    {
+      name: 'reviewer-status:ip',
+      keySource: RATE_LIMIT_KEY_SOURCES.IP,
+      maxHits: 120,
+      windowMs: ONE_MINUTE_MS,
+    },
+  ],
+  /**
+   * `POST /reviewer/sessions`: bounds Turnstile calls and body parsing
+   * per IP. The binding rule (1 session per IP per 10 min) lives in the DB.
+   */
+  REVIEWER_SESSION_ATTEMPTS: [
+    {
+      name: 'reviewer-session:ip',
+      keySource: RATE_LIMIT_KEY_SOURCES.IP,
+      maxHits: 20,
+      windowMs: TEN_MINUTES_MS,
+    },
+  ],
+} as const satisfies Record<string, readonly RateLimitRule[]>;
 
 /**
  * SPEC §9 reviewer. `status` and `sessions` (POST) are public: the
@@ -71,19 +103,11 @@ export class ReviewerController {
   @Throttle(REVIEWER_RATE_LIMIT_POLICIES.REVIEWER_SESSION_ATTEMPTS)
   async createSession(
     @Req() req: Request,
-    @Res({ passthrough: true }) res: Response,
     @Body() body: unknown,
   ): Promise<CreatedReviewerSessionView> {
     const input = parseRequest(createReviewerSessionSchema, body);
     const meta = clientMetaOf(this.clientIp, req);
-    try {
-      return await this.reviewer.createSession(input, meta.ip, meta.userAgent);
-    } catch (error) {
-      if (error instanceof ReviewerIpLimitedException) {
-        res.setHeader(RETRY_AFTER_HEADER, String(error.retryAfterSeconds));
-      }
-      throw error;
-    }
+    return this.reviewer.createSession(input, meta.ip, meta.userAgent);
   }
 
   @Get(REVIEWER_ROUTES.SESSIONS)
@@ -91,7 +115,7 @@ export class ReviewerController {
   @UseGuards(JwtAuthGuard, PermissionGuard)
   @RequirePermission({
     action: PermissionAction.read,
-    subject: SETTINGS_SUBJECT,
+    subject: REVIEWER_SETTINGS_SUBJECT,
   })
   listSessions(
     @Req() req: AuthenticatedRequest,
@@ -107,7 +131,7 @@ export class ReviewerController {
   @UseGuards(JwtAuthGuard, PermissionGuard)
   @RequirePermission({
     action: PermissionAction.update,
-    subject: SETTINGS_SUBJECT,
+    subject: REVIEWER_SETTINGS_SUBJECT,
   })
   updateSettings(
     @Req() req: AuthenticatedRequest,

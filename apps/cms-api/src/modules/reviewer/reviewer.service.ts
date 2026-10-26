@@ -3,15 +3,12 @@ import { createHmac, hkdfSync, randomUUID } from 'node:crypto';
 import {
   BadRequestException,
   ForbiddenException,
-  HttpException,
-  HttpStatus,
   Inject,
   Injectable,
   ServiceUnavailableException,
 } from '@nestjs/common';
 
 import { Clock } from '../../common/time/clock';
-import { MS_PER_SECOND } from '../../common/constants/time.constants';
 import { UNKNOWN_CLIENT_IP } from '../../common/constants/limits.constants';
 import { USER_AGENT_MAX_LENGTH } from '../identity';
 import { type IAppConfig } from '../../config/app-config';
@@ -22,77 +19,57 @@ import {
   TURNSTILE_VERIFIER,
   type TurnstileVerifier,
 } from '../../infrastructure/turnstile/turnstile.port';
-import type { PageMeta, PageQuery } from '../../common/http/request-parsing';
+import type { PageQuery } from '../../common/http/request-parsing';
 import { AUDIT_ACTIONS } from '../security-audit';
 import {
   auditActorOf,
   SecurityAuditService,
   selfActor,
 } from '../security-audit';
-import { VersionCache, type AccountActor, REVIEWER_ROLE_SLUG } from '../access';
+import {
+  VersionCache,
+  type AccountActor,
+  REVIEWER_ROLE_SLUG,
+  REVIEWER_SETTINGS_SUBJECT,
+} from '../access';
 import { AccessTokenService } from '../identity';
 import type { ClientMeta } from '../../common/http/client-meta';
 import {
   REVIEWER_ACCOUNT,
-  REVIEWER_ENABLED_SETTING_KEY,
   REVIEWER_ERROR_CODES,
   REVIEWER_ERROR_MESSAGES,
-  REVIEWER_IP_HMAC,
-  REVIEWER_IP_WINDOW_MS,
-  REVIEWER_MAX_ACTIVE_SESSIONS,
-  REVIEWER_SESSION_LOCK,
   REVIEWER_SESSION_TTL_MS,
-} from './reviewer.constants';
+} from './domain/Reviewer.constants';
+import {
+  REVIEWER_IP_WINDOW_MS,
+  type CreatedReviewerSessionView,
+  isReviewerAtCapacity,
+  isReviewerSessionActive,
+  retryAfterSecondsOf,
+  reviewerIpLimited,
+  type ReviewerSessionPage,
+  type ReviewerStatusView,
+} from './domain/ReviewerAdmission.rules';
 import type {
   CreateReviewerSessionRequest,
   ReviewerSettingsRequest,
-} from './reviewer.requests';
+} from './http/Reviewer.requests';
 
 type Tx = Prisma.TransactionClient;
 
-const REVIEWER_SETTINGS_SUBJECT = 'reviewer_settings';
+/** `app_settings.key` holding the owner's reviewer toggle (value: boolean). */
+const REVIEWER_ENABLED_SETTING_KEY = 'reviewer.enabled';
 
-export interface ReviewerStatusView {
-  readonly enabled: boolean;
-}
+/** Postgres advisory lock serialising session creation (cap and per-IP rule). */
+const REVIEWER_SESSION_LOCK = 1_700_031_001;
 
-/** 201 body: the 24 h access token (no refresh token, no cookie). */
-export interface CreatedReviewerSessionView {
-  readonly accessToken: string;
-  readonly expiresAt: string;
-}
-
-/** `GET /reviewer/sessions` item. The IP (even hashed) is never returned. */
-export interface ReviewerSessionView {
-  /** The ephemeral reviewer account's `document_id`. */
-  readonly id: string;
-  readonly visitorRole: string;
-  readonly purposeTags: readonly string[];
-  /** Plain text: render as text, never as HTML. */
-  readonly notes: string | null;
-  readonly userAgent: string | null;
-  readonly createdAt: string;
-  readonly expiresAt: string;
-  readonly active: boolean;
-}
-
-export interface ReviewerSessionPage {
-  readonly data: ReviewerSessionView[];
-  readonly meta: PageMeta;
-}
-
-/** 429 with the seconds until the visitor's address may start another session. */
-export class ReviewerIpLimitedException extends HttpException {
-  constructor(readonly retryAfterSeconds: number) {
-    super(
-      {
-        errorCode: REVIEWER_ERROR_CODES.IP_LIMITED,
-        message: REVIEWER_ERROR_MESSAGES.IP_LIMITED,
-      },
-      HttpStatus.TOO_MANY_REQUESTS,
-    );
-  }
-}
+/** Keyed HMAC of the visitor IP (`reviewer_sessions.ip_hmac`), derived from OTP_PEPPER. */
+const REVIEWER_IP_HMAC = {
+  HKDF_DIGEST: 'sha256',
+  HKDF_INFO: 'abyss/reviewer-ip/v1',
+  KEY_BYTES: 32,
+  HMAC_ALGORITHM: 'sha256',
+} as const;
 
 function disabled(): ForbiddenException {
   return new ForbiddenException({
@@ -334,10 +311,13 @@ export class ReviewerService {
         userAgent: row.userAgent,
         createdAt: row.createdAt.toISOString(),
         expiresAt: row.expiresAt.toISOString(),
-        // Expired, or revoked by a switch-off (token_version bumped).
-        active:
-          row.expiresAt.getTime() > now &&
-          row.account.tokenVersion === REVIEWER_ACCOUNT.INITIAL_TOKEN_VERSION,
+        active: isReviewerSessionActive(
+          {
+            expiresAt: row.expiresAt,
+            accountTokenVersion: row.account.tokenVersion,
+          },
+          now,
+        ),
       })),
       meta: { page: query.page, pageSize: query.pageSize, total },
     };
@@ -374,7 +354,7 @@ export class ReviewerService {
     const active = await db.reviewerSession.count({
       where: { expiresAt: { gt: new Date(now) } },
     });
-    if (active >= REVIEWER_MAX_ACTIVE_SESSIONS) {
+    if (isReviewerAtCapacity(active)) {
       throw new ServiceUnavailableException({
         errorCode: REVIEWER_ERROR_CODES.CAPACITY_REACHED,
         message: REVIEWER_ERROR_MESSAGES.CAPACITY_REACHED,
@@ -389,11 +369,9 @@ export class ReviewerService {
       select: { createdAt: true },
     });
     if (recent !== null) {
-      const seconds = Math.ceil(
-        (recent.createdAt.getTime() + REVIEWER_IP_WINDOW_MS - now) /
-          MS_PER_SECOND,
+      throw reviewerIpLimited(
+        retryAfterSecondsOf(recent.createdAt.getTime(), now),
       );
-      throw new ReviewerIpLimitedException(Math.max(1, seconds));
     }
   }
 }
