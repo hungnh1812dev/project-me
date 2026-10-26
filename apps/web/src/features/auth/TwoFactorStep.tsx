@@ -15,7 +15,7 @@ import { API_ERROR_CODES } from '../../config/Auth.constants';
 import type { Alert, ApiFailure } from '../../lib/ApiFailure.errors';
 import type { TwoFactorChallenge } from '../session';
 import { loginErrorAlertOf, rateLimitedMessage } from './LoginAlerts.rules';
-import { useEmailCode } from './useEmailCode.mutation';
+import { useEmailCode } from './useEmailCode';
 import { useWebSession } from '../session';
 
 const copy = COPY.login.twoFactor;

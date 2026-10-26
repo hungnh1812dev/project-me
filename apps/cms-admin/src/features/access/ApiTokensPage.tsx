@@ -6,8 +6,8 @@ import {
 } from '@abyss/form-commons';
 import { useRef, useState } from 'react';
 
-import { useClampedPage } from '../../components/useClampedPage.state';
-import { useRestoreFocus } from '../../components/useRestoreFocus.state';
+import { useClampedPage } from '../../components/useClampedPage';
+import { useRestoreFocus } from '../../components/useRestoreFocus';
 
 import { COPY } from '../../config/Copy.constants';
 import { useCurrentUser } from '../auth';
@@ -15,7 +15,7 @@ import type { ApiToken } from './Access.api';
 import { apiTokenColumns } from './ApiToken.columns';
 import { isForbidden } from './Access.errors';
 import { useApiTokensQuery } from './Access.queries';
-import { useCallerAccess } from './useCallerAccess.query';
+import { useCallerAccess } from './useCallerAccess';
 import {
   LoadError,
   PageHeader,

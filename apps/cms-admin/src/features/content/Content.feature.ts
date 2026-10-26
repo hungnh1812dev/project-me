@@ -4,7 +4,7 @@ import { ContentApiProvider } from './ContentApi.context';
 import { createContentApi } from './Content.api';
 import { CollectionListPage } from './CollectionListPage';
 import { DocumentEditPage } from './DocumentEditPage';
-import { useContentNavItems } from './useContentNavItems.query';
+import { useContentNavItems } from './useContentNavItems';
 
 export const contentFeature: Feature = {
   apiServices: [defineApiService(createContentApi, ContentApiProvider)],

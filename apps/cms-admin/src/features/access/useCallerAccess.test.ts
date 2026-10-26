@@ -1,5 +1,5 @@
 import type { Role } from './Access.api';
-import { callerAccessOf } from './useCallerAccess.query';
+import { callerAccessOf } from './useCallerAccess';
 
 const admin: Role = {
   id: 'r1',

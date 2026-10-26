@@ -29,7 +29,7 @@ import {
   type ReviewerFormValues,
 } from './Reviewer.form';
 import { RoleStep } from './RoleStep';
-import { useHumanCheck } from './useHumanCheck.state';
+import { useHumanCheck } from './useHumanCheck';
 
 const copy = COPY.reviewer;
 const STEP_TITLES = [copy.steps.role, copy.steps.purposes, copy.steps.notes];

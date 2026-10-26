@@ -106,7 +106,7 @@ tokens only (`bg-card`, `text-muted-foreground`).
   reload ends the review; "End review" drops the token locally. The dialog
   only handles step navigation and submit; each step is its own component
   (`RoleStep`, `PurposesStep`, `NotesStep`), form values and `toSessionInput`
-  live in `Reviewer.form.ts`, and `useHumanCheck.state.tsx` owns the Turnstile token.
+  live in `Reviewer.form.ts`, and `useHumanCheck.tsx` owns the Turnstile token.
 - Turnstile loads through `next/script` only while the dialog's last step is
   open (`challenges.cloudflare.com`, constant `TURNSTILE` in
   `src/config/Security.constants.ts`). The CSP allows that origin in

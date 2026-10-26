@@ -5,7 +5,7 @@ import { Checkbox } from '@/components/ui/Checkbox';
 
 import { SheetHeaderCell } from './SheetHeaderCell';
 import { SheetRow } from './SheetRow';
-import { useRowSelection } from './useRowSelection.state';
+import { useRowSelection } from './useRowSelection';
 
 export type SheetSortDirection = 'asc' | 'desc';
 

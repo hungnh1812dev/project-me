@@ -15,7 +15,7 @@ import { COPY } from '../../config/Copy.constants';
 import { APP_ROUTES } from '../../config/App.routes';
 import type { TwoFactorChallenge } from './Auth.api';
 import { selectEndNotice, selectSessionStatus } from './Auth.slice';
-import { useAuthSelector } from './useAuthSelector.state';
+import { useAuthSelector } from './useAuthSelector';
 import { AuthPageLayout } from './AuthPageLayout';
 import { type LoginError, toLoginError } from './Login.errors';
 import {
@@ -27,7 +27,7 @@ import type { LoginLocationState } from './ProtectedRoute';
 import { useSession } from './Session.context';
 import { SessionLoading } from './SessionLoading';
 import { TwoFactorModal } from './TwoFactorModal';
-import { useSetupStatus } from './useSetupStatus.query';
+import { useSetupStatus } from './useSetupStatus';
 
 const loginSchema = z.object({
   email: z

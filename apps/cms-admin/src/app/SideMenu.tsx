@@ -5,7 +5,7 @@ import { Link, NavLink } from 'react-router';
 import { REVIEWER_ROLE_SLUG } from '../config/Auth.constants';
 import { COPY } from '../config/Copy.constants';
 import { APP_ROUTES } from '../config/App.routes';
-import { useCallerAccess } from '../features/access/useCallerAccess.query';
+import { useCallerAccess } from '../features/access/useCallerAccess';
 import { useCurrentUser, useSession } from '../features/auth';
 import { FEATURE_LIST } from '../features/Features.registry';
 import type { FeatureNavItem, NavItemsState } from '../lib/FeatureDefinition';

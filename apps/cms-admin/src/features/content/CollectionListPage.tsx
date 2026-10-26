@@ -13,7 +13,7 @@ import {
   PageHeader,
   TableSkeleton,
 } from '../../components/PageStates';
-import { useRestoreFocus } from '../../components/useRestoreFocus.state';
+import { useRestoreFocus } from '../../components/useRestoreFocus';
 import { COPY } from '../../config/Copy.constants';
 import { contentNewPath } from '../../config/App.routes';
 import {
@@ -29,8 +29,8 @@ import { collectionColumnsOf, documentNameOf } from './Collection.columns';
 import { isMissing } from './Content.errors';
 import { BULK_ACTION } from './Content.constants';
 import { SingleTypeRedirect } from './SingleTypeRedirect';
-import { useBulkRun } from './useBulkRun.mutation';
-import { useCollectionList } from './useCollectionList.query';
+import { useBulkRun } from './useBulkRun';
+import { useCollectionList } from './useCollectionList';
 
 const copy = COPY.content;
 const list = copy.collection;

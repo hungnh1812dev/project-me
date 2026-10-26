@@ -15,7 +15,7 @@ import {
   useContentTypesQuery,
   useRolesQuery,
 } from './Access.queries';
-import { useCallerAccess } from './useCallerAccess.query';
+import { useCallerAccess } from './useCallerAccess';
 import {
   LoadError,
   PageHeader,

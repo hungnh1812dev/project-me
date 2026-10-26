@@ -19,7 +19,7 @@ import type { LoginNoticeState } from './LoginNotice.rules';
 import { emailField } from './Password.form';
 import { useSetupApi } from './SetupApi.context';
 import { toSetupError } from './Setup.errors';
-import { SETUP_STATUS_QUERY_KEY, useSetupStatus } from './useSetupStatus.query';
+import { SETUP_STATUS_QUERY_KEY, useSetupStatus } from './useSetupStatus';
 
 const { validation } = COPY.setup;
 

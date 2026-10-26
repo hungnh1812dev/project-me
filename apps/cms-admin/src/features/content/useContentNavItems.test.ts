@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import type { ContentType } from '../content-types';
-import { contentNavItemsOf } from './useContentNavItems.query';
+import { contentNavItemsOf } from './useContentNavItems';
 
 const typeOf = (slug: string, kind: string): ContentType => ({
   slug,

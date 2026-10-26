@@ -1,5 +1,5 @@
-export { useCurrentUser } from './useCurrentUser.state';
-export { useEmailCode } from './useEmailCode.mutation';
+export { useCurrentUser } from './useCurrentUser';
+export { useEmailCode } from './useEmailCode';
 export { useSession } from './Session.context';
 export {
   newPasswordShape,

@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { describe, expect, it } from 'vitest';
 
 import type { PageMeta } from '../lib/Api.client';
-import { useClampedPage } from './useClampedPage.state';
+import { useClampedPage } from './useClampedPage';
 
 function setup(initialPage: number, meta: PageMeta | undefined) {
   return renderHook(

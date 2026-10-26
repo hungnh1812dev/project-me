@@ -1,5 +1,5 @@
 import { authSlice, selectAccessToken } from './Auth.slice';
-import type { AuthRootState } from './useAuthSelector.state';
+import type { AuthRootState } from './useAuthSelector';
 
 /**
  * Entry for `src/app/**` only (lint-enforced): what composing the store,

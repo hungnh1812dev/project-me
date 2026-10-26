@@ -7,8 +7,8 @@ import {
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRef, useState } from 'react';
 
-import { useClampedPage } from '../../components/useClampedPage.state';
-import { useRestoreFocus } from '../../components/useRestoreFocus.state';
+import { useClampedPage } from '../../components/useClampedPage';
+import { useRestoreFocus } from '../../components/useRestoreFocus';
 
 import { COPY } from '../../config/Copy.constants';
 import { MEDIA_ACCEPT, MEDIA_SUBJECT } from './Media.constants';

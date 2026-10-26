@@ -4,7 +4,7 @@ import { COPY } from '../../config/Copy.constants';
 import { API_ENDPOINTS } from '../../config/Api.endpoints';
 import { appEnv } from '../../config/App.env';
 import { formatTime } from '../../lib/DateFormat.rules';
-import { type LiveHealthState, useLiveHealth } from './useLiveHealth.query';
+import { type LiveHealthState, useLiveHealth } from './useLiveHealth';
 
 const BADGE_TONE: Record<LiveHealthState, string> = {
   checking: 'bg-muted text-muted-foreground',

@@ -57,7 +57,7 @@ So far: sign-in (T11) and, behind it, a status page that calls
   `Dialog` via `src/components/Modal.tsx`: focus trap, Esc closes, an outside
   click does not). The temp
   token stays in component state only. TOTP accounts type the app code;
-  email accounts get the code sent once on open (`useEmailCode.mutation.ts`, resend
+  email accounts get the code sent once on open (`useEmailCode.ts`, resend
   blocked for the 429 `Retry-After`) and a warning that TOTP is safer. A dead
   temp token (5 wrong codes or 300 s) closes the dialog with a notice.
 - **Security settings** (`src/features/security`, `/settings/security`,
@@ -78,7 +78,7 @@ So far: sign-in (T11) and, behind it, a status page that calls
   server validates). Saving sends the whole permission set (`PUT
 /roles/:id/permissions`); 400 issues and `PERMISSION_NOT_HELD` indexes are
   mapped back to matrix rows. Actions are hidden from the caller's own role
-  rows in `GET /roles` (`useCallerAccess.query.ts`; owner = all; Users / Roles and permissions nav
+  rows in `GET /roles` (`useCallerAccess.ts`; owner = all; Users / Roles and permissions nav
   links hidden when not readable). This is only a hint: cms-api enforces
   every rule and its answers (403, 404, 409) are handled in the UI. Dialogs
   use the form-commons Radix `Dialog`; `components/Modal.tsx` (2FA) wraps it

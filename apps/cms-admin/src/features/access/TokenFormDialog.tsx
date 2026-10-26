@@ -20,7 +20,7 @@ import { COPY } from '../../config/Copy.constants';
 import { API_TOKEN_LIMITS } from '../../config/Http.constants';
 import type { ApiToken } from './Access.api';
 import { useContentTypesQuery } from './Access.queries';
-import { useCallerAccess } from './useCallerAccess.query';
+import { useCallerAccess } from './useCallerAccess';
 import { LoadError } from '../../components/PageStates';
 import { endOfDay, localDateOf } from './TokenExpiry.rules';
 import {
@@ -30,12 +30,9 @@ import {
 } from './TokenScope.rules';
 import { TokenReveal } from './TokenReveal';
 import { TokenScopeEditor } from './TokenScopeEditor';
-import {
-  type TokenDialogOutcome,
-  useTokenSubmit,
-} from './useTokenSubmit.mutation';
+import { type TokenDialogOutcome, useTokenSubmit } from './useTokenSubmit';
 
-export type { TokenDialogOutcome } from './useTokenSubmit.mutation';
+export type { TokenDialogOutcome } from './useTokenSubmit';
 
 const copy = COPY.access.tokenForm;
 

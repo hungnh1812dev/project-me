@@ -25,7 +25,7 @@ import {
   TableSkeleton,
 } from '../../components/PageStates';
 import { Pagination } from '../../components/Pagination';
-import { useClampedPage } from '../../components/useClampedPage.state';
+import { useClampedPage } from '../../components/useClampedPage';
 import { formatDateTime } from '../../lib/DateFormat.rules';
 import { useReviewerApi } from './ReviewerApi.context';
 import {

@@ -25,7 +25,7 @@ import {
 } from '../../lib/ApiFailure.errors';
 import type { TwoFactorChallenge } from './Auth.api';
 import { useSession } from './Session.context';
-import { useEmailCode } from './useEmailCode.mutation';
+import { useEmailCode } from './useEmailCode';
 
 const copy = COPY.login.twoFactor;
 const CODE_PATTERN = new RegExp(`^\\d{${TOTP_CODE_LENGTH}}$`);

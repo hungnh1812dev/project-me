@@ -1,7 +1,7 @@
 import { renderHook } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { useRestoreFocus } from './useRestoreFocus.state';
+import { useRestoreFocus } from './useRestoreFocus';
 
 afterEach(() => {
   document.body.replaceChildren();
