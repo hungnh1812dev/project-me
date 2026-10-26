@@ -1,5 +1,8 @@
 import { contentListPath } from '../../config/routes';
-import type { FeatureNavItem } from '../../lib/feature-definition';
+import type {
+  FeatureNavItem,
+  NavItemsState,
+} from '../../lib/feature-definition';
 import {
   CONTENT_WILDCARD_SUBJECT,
   type PermissionAction,
@@ -36,10 +39,15 @@ export function contentNavItemsOf(
   });
 }
 
-/** `contentFeature.useNavItems`: empty until permissions and the catalog are in. */
-export function useContentNavItems(): readonly FeatureNavItem[] {
+/** `contentFeature.useNavItems`: no items until permissions and the catalog are in. */
+export function useContentNavItems(): NavItemsState {
   const caller = useCallerAccess();
   const types = useContentTypesQuery();
-  if (!caller.isReady || types.data === undefined) return [];
-  return contentNavItemsOf(types.data, caller.can);
+  const isReady = caller.isReady && types.data !== undefined;
+  return {
+    items: isReady ? contentNavItemsOf(types.data, caller.can) : [],
+    isLoading: !caller.isReady || types.isPending,
+    hasFailed: types.isError,
+    retry: () => void types.refetch(),
+  };
 }

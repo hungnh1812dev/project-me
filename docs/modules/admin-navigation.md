@@ -1,16 +1,16 @@
 # cms-admin navigation: side menu
 
-Status: proposed (2026-10-25). Groups are the user's decision; Q-SM1..Q-SM4 below are open. Tasks SM1-SM4 in `tasks/todo.md`.
+Status: implemented SM1-SM3 (2026-10-26); Q-SM1..Q-SM4 decided as recommended (user, 2026-10-25). Tasks SM1-SM4 in `tasks/todo.md`.
 
 ## What changes
 
 The header bar with inline nav links (`apps/cms-admin/src/app/AppShell.tsx`) is replaced by a left side menu. The user's groups:
 
-| Section (heading)  | Items                                                                                          | Source of items                              |
-| ------------------ | ---------------------------------------------------------------------------------------------- | -------------------------------------------- |
-| Content            | sub-heading "Single types": one link per single content type; sub-heading "Collection types": one link per collection type | the content-types catalog (`getContentTypes`, already filtered by the caller's permissions), split by `kind` (`single` / `collection`) |
-| Utilities          | Media library                                                                                  | static nav item of the `media` feature        |
-| System settings    | Users (route `/accounts`), Roles (and permissions, see Q-SM2), API tokens, Reviewers           | static nav items of `access` and `reviewer`  |
+| Section (heading) | Items                                                                                                                      | Source of items                                                                                                                        |
+| ----------------- | -------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| Content           | sub-heading "Single types": one link per single content type; sub-heading "Collection types": one link per collection type | the content-types catalog (`getContentTypes`, already filtered by the caller's permissions), split by `kind` (`single` / `collection`) |
+| Utilities         | Media library                                                                                                              | static nav item of the `media` feature                                                                                                 |
+| System settings   | Users (route `/accounts`), Roles (and permissions, see Q-SM2), API tokens, Reviewers                                       | static nav items of `access` and `reviewer`                                                                                            |
 
 The signed-in user block sits at the bottom of the menu: display name, the personal Security settings link (hidden for reviewers, as today) and Sign out (Q-SM3).
 
@@ -29,7 +29,7 @@ A section or sub-heading with no visible item is not rendered (today both conten
 
 - `lib/feature-definition.tsx` (shared, feature-free) owns the nav contract. Additive changes:
   - `FeatureNavItem` gains `section: NavSectionId`.
-  - `Feature` gains optional `useNavItems?: () => readonly FeatureNavItem[]` for items that depend on data. Static items stay in `navItems`.
+  - `Feature` gains optional `useNavItems?: () => NavItemsState` (`{ items, isLoading, hasFailed, retry }`) for items that depend on data; the menu shows its loading and error rows under `DATA_BACKED_SECTION_ID`. Static items stay in `navItems`.
 - `lib/nav-sections.ts` (new, feature-free) owns the section list `NAV_SECTIONS` (id, label from `COPY`, order, optional sub-sections). Ids: `singleTypes`, `collectionTypes`, `utilities`, `systemSettings`; `singleTypes` and `collectionTypes` are sub-sections of `content`.
 - `features/content` owns the content-type links (`useContentNavItems`, exposed through `contentFeature.useNavItems`), because it owns the `/content/:slug` routes; it reads the catalog through the `content-types` facade (allowed by the tier order).
 - `features/access`, `features/media`, `features/reviewer` only add `section` to their existing nav items.

@@ -78,8 +78,8 @@ export const PASSWORD_COPY = {
 
 export const NAV_COPY = {
   label: 'Main',
-  accounts: 'Accounts',
-  roles: 'Roles',
+  accounts: 'Users',
+  roles: 'Roles and permissions',
   apiTokens: 'API tokens',
   media: 'Media',
   reviewer: 'Reviewers',
@@ -88,4 +88,9 @@ export const NAV_COPY = {
   collectionTypes: 'Collection types',
   utilities: 'Utilities',
   systemSettings: 'System settings',
+  menu: 'Menu',
+  closeMenu: 'Close menu',
+  loading: 'Loading the menu',
+  catalogError: 'Could not load the content types.',
+  retryCatalog: 'Reload content types',
 } as const;

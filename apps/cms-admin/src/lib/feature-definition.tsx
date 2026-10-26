@@ -20,6 +20,14 @@ export interface FeatureNavItem {
   action: PermissionAction;
 }
 
+/** What a data-backed nav hook returns: its items and the load state the menu shows. */
+export interface NavItemsState {
+  items: readonly FeatureNavItem[];
+  isLoading: boolean;
+  hasFailed: boolean;
+  retry: () => void;
+}
+
 /** Wraps `children` in one feature API's provider, with the API already built. */
 export type ApiProviderWrapper = (children: ReactNode) => ReactNode;
 
@@ -46,6 +54,6 @@ export interface Feature {
   routes: readonly FeatureRoute[];
   navItems?: readonly FeatureNavItem[];
   /** Items that depend on loaded data; a hook, so it may call queries. */
-  useNavItems?: () => readonly FeatureNavItem[];
+  useNavItems?: () => NavItemsState;
   apiServices?: readonly ApiService[];
 }

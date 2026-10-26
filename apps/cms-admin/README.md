@@ -61,7 +61,7 @@ So far: sign-in (T11) and, behind it, a status page that calls
   blocked for the 429 `Retry-After`) and a warning that TOTP is safer. A dead
   temp token (5 wrong codes or 300 s) closes the dialog with a notice.
 - **Security settings** (`src/features/security`, `/settings/security`,
-  linked as "Security" in the header): 2FA status, TOTP setup (QR drawn
+  linked as "Security" in the side menu's user block): 2FA status, TOTP setup (QR drawn
   client-side with `qrcode.react` from the `otpauth://` URI, plus the
   grouped manual key), email codes, turn off, all confirmed with code +
   current password in dialogs; change password, which ends every session:
@@ -78,7 +78,7 @@ So far: sign-in (T11) and, behind it, a status page that calls
   server validates). Saving sends the whole permission set (`PUT
 /roles/:id/permissions`); 400 issues and `PERMISSION_NOT_HELD` indexes are
   mapped back to matrix rows. Actions are hidden from the caller's own role
-  rows in `GET /roles` (`caller-access.ts`; owner = all; Accounts / Roles nav
+  rows in `GET /roles` (`caller-access.ts`; owner = all; Users / Roles and permissions nav
   links hidden when not readable). This is only a hint: cms-api enforces
   every rule and its answers (403, 404, 409) are handled in the UI. Dialogs
   use the form-commons Radix `Dialog`; `components/Modal.tsx` (2FA) wraps it
@@ -174,14 +174,16 @@ So far: sign-in (T11) and, behind it, a status page that calls
 - **Routes** (`src/config/routes.ts`): `/login`, `/setup`, `/reset-password`,
   `/set-password`, and `/`, `/settings/security`, `/accounts`, `/roles`,
   `/roles/:roleId`, `/api-tokens`, `/content/:slug`, `/content/:slug/new`,
-  `/content/:slug/:documentId` behind `ProtectedRoute` + `AppShell` (header with the
-  user, Accounts / Roles links, "Security" and "Sign out").
+  `/content/:slug/:documentId` behind `ProtectedRoute` + `AppShell` (side menu from `md` up, top bar with a
+  Menu button and a sheet below; sections from `lib/nav-sections.ts`, empty
+  sections hidden; user block with "Security" and "Sign out" at the bottom;
+  `app/SideMenu.tsx`, `app/MobileMenu.tsx`).
 - **Feature registry** (`src/features/registry.ts`): each feature folder has a
   `feature.ts` with its `routes`, optional `navItems` (label, path, permission
   subject and action) and optional `apiServices` (`defineApiService(createXApi,
 XApiProvider)`). `app/app-routes.tsx` and `AppShell` iterate the registry;
   nav order is registry order. A feature whose links depend on loaded data
-  adds `useNavItems` (`contentFeature.useNavItems` lists one link per content
+  adds `useNavItems`, which returns `{ items, isLoading, hasFailed, retry }` so the menu can show skeleton rows or a retry line (`contentFeature.useNavItems` lists one link per content
   type the caller may read, under `singleTypes` or `collectionTypes` by kind;
   `/content/:slug` of a single type redirects to its one document, or to the
   create form when none exists). `app/app-services.ts` builds each feature API
