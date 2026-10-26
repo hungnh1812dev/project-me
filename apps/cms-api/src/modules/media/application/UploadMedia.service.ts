@@ -3,21 +3,19 @@ import { randomBytes } from 'node:crypto';
 import { Inject, Injectable } from '@nestjs/common';
 
 import { Clock } from '../../../common/time/clock';
-import { MediaProvider } from '../../../generated/prisma/client';
-import { PrismaService } from '../../../infrastructure/database/prisma.service';
 import {
   APP_LOGGER,
   type AppLogger,
 } from '../../../infrastructure/logging/AppLogger.port';
-import {
-  MEDIA_STORAGE,
-  type MediaStorage,
-} from '../../../infrastructure/media/storage.port';
 import type { AccountActor } from '../../access';
 import type { MediaRecord } from '../domain/Media.entity';
 import { UUID_BYTES, uuidv7 } from '../domain/Uuidv7.rules';
 import {
+  MEDIA_REPOSITORY,
+  MEDIA_STORAGE,
   UPLOAD_PROCESSOR,
+  type MediaRepository,
+  type MediaStorage,
   type UploadProcessor,
   type UploadStream,
 } from './Media.port';
@@ -27,8 +25,7 @@ import {
 export class UploadMediaService {
   constructor(
     @Inject(UPLOAD_PROCESSOR) private readonly processor: UploadProcessor,
-    // Transitional: the row write moves behind a repository port in CR-md-3.
-    private readonly prisma: PrismaService,
+    @Inject(MEDIA_REPOSITORY) private readonly repository: MediaRepository,
     private readonly clock: Clock,
     @Inject(MEDIA_STORAGE) private readonly storage: MediaStorage,
     @Inject(APP_LOGGER) private readonly logger: AppLogger,
@@ -53,22 +50,18 @@ export class UploadMediaService {
         body: prepared.open(),
       });
       try {
-        return await this.prisma.fileLibrary.create({
-          data: {
-            fileName: received.fileName,
-            mimeType: prepared.mimeType,
-            size: prepared.size,
-            width: prepared.width,
-            height: prepared.height,
-            alt: received.alt,
-            storageKey: key,
-            sha256: prepared.sha256,
-            url: stored.url,
-            thumbnailUrl: stored.thumbnailUrl,
-            provider: MediaProvider.cloudinary,
-            createdById: actor.accountId,
-            updatedById: actor.accountId,
-          },
+        return await this.repository.create({
+          fileName: received.fileName,
+          mimeType: prepared.mimeType,
+          size: prepared.size,
+          width: prepared.width,
+          height: prepared.height,
+          alt: received.alt,
+          storageKey: key,
+          sha256: prepared.sha256,
+          url: stored.url,
+          thumbnailUrl: stored.thumbnailUrl,
+          createdById: actor.accountId,
         });
       } catch (error) {
         await this.storage.delete(key, prepared.kind).catch(() => {

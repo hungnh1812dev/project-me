@@ -8,14 +8,14 @@ import {
   openPrisma,
   type PrismaHandle,
 } from '../../src/infrastructure/database/prisma-client';
-import { FakeMediaStorage } from '../../src/infrastructure/media/fake.adapter';
-import { MEDIA_STORAGE } from '../../src/infrastructure/media/storage.port';
 import { reviewerActor } from '../../src/modules/access/domain/ActorContext.entity';
 import { ContentRegistry } from '../../src/modules/content-engine/application/ContentRegistry.service';
 import { ContentTypeRegistry } from '../../src/modules/content-engine/domain/ContentTypeRegistry.entity';
 import { hashPassword } from '../../src/modules/identity/application/Password.service';
 import { MEDIA_MAX_BYTES } from '../../src/modules/media/domain/MediaUpload.rules';
-import { MediaService } from '../../src/modules/media/media.service';
+import { FakeMediaStorage } from '../../src/modules/media/adapters/Fake.adapter';
+import { MEDIA_STORAGE } from '../../src/modules/media/application/Media.port';
+import { MediaLibraryService } from '../../src/modules/media/application/MediaLibrary.service';
 import {
   ARTICLE_DEFINITION,
   grant,
@@ -382,7 +382,7 @@ describe('media upload and list (T27; Postgres 16 via Testcontainers)', () => {
       });
       expect(plain.status).toBe(201);
 
-      const media = app.get(MediaService);
+      const media = app.get(MediaLibraryService);
       const role = systemRole('reviewer', [
         grant('media', PermissionAction.read),
       ]);

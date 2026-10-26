@@ -252,6 +252,17 @@ export const LAYER_EXCEPTIONS: readonly LayerException[] = [
       'documents stores its rows in the content-engine tables: its Kysely repository shares the content database handle, tree loader and transaction (ADR 0006 §7.9)',
   })),
   {
+    from: join('modules', 'media', 'adapters', 'PrismaMedia.repository.ts'),
+    importing: join(
+      'modules',
+      'content-engine',
+      'adapters',
+      'ContentDatabase.adapter.ts',
+    ),
+    reason:
+      'the media row filter is a Kysely expression, so the repository reads and updates file_library on the content database handle, like the documents repository',
+  },
+  {
     from: join('modules', 'access', 'domain', 'PolicyEvaluator.ts'),
     importing: 'kysely',
     reason:
@@ -298,6 +309,7 @@ export const MIGRATED_MODULES: readonly string[] = [
   'access',
   'security-audit',
   'identity',
+  'media',
 ];
 
 export interface KnownLayerViolation {

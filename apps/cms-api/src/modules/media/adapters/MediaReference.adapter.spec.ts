@@ -1,5 +1,5 @@
-import { RegistryService } from '../content-engine';
-import { mediaReferenceQuery } from './media-usage';
+import { RegistryService } from '../../content-engine';
+import { mediaReferenceQuery } from './MediaReference.adapter';
 
 const WITH_MEDIA = {
   slug: 'gallery',

@@ -109,18 +109,4 @@ export interface KnownViolation {
   removedBy: string;
 }
 
-/** `MediaKind` moved into the media domain; the storage code follows it in CR-md-3 (Q-CA14a). */
-const MEDIA_STORAGE_FILES = [
-  'storage.port',
-  'fake.adapter',
-  'cloudinary.adapter',
-];
-
-export const KNOWN_VIOLATIONS: readonly KnownViolation[] =
-  MEDIA_STORAGE_FILES.flatMap((file) =>
-    ['index.ts', 'domain/Media.constants.ts'].map((target) => ({
-      from: `infrastructure/media/${file}.ts`,
-      to: `modules/media/${target}`,
-      removedBy: 'CR-md-3',
-    })),
-  );
+export const KNOWN_VIOLATIONS: readonly KnownViolation[] = [];

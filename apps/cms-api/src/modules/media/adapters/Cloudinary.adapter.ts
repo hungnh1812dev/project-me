@@ -2,13 +2,13 @@ import type { Readable } from 'node:stream';
 
 import { v2 as cloudinary } from 'cloudinary';
 
-import type { CloudinaryConfig } from '../../config/app-config';
-import type { MediaKind } from '../../modules/media';
+import type { CloudinaryConfig } from '../../../config/app-config';
+import type { MediaKind } from '../domain/Media.constants';
 import type {
   MediaStorage,
   PutObjectInput,
   StoredObject,
-} from './storage.port';
+} from '../application/Media.port';
 
 /** Longest side of the generated image thumbnail, in pixels. */
 const THUMBNAIL_MAX_SIZE_PX = 320;

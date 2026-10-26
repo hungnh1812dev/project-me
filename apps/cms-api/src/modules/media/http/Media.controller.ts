@@ -31,9 +31,9 @@ import {
   parseRequest,
 } from '../../../common/http/request-parsing';
 import type { PageMeta } from '../../../common/validation/SharedSchemas.rules';
-import { PermissionAction } from '../../../generated/prisma/client';
 import {
   MEDIA_SUBJECT,
+  PermissionAction,
   RequirePermission,
   PermissionGuard,
   requireAccountActor,
@@ -41,11 +41,9 @@ import {
 import { type AuthenticatedRequest, JwtAuthGuard } from '../../identity';
 import type { MediaRecord, MediaView } from '../domain/Media.entity';
 import { isAltWithinLimit, normalizeAlt } from '../domain/MediaUpload.rules';
-import { MediaDeleteService } from '../media-delete.service';
-import { MediaUpdateService } from '../media-update.service';
-import { MediaService } from '../media.service';
-import { UploadMediaService } from '../application/UploadMedia.service';
 import type { UploadStream } from '../application/Media.port';
+import { MediaLibraryService } from '../application/MediaLibrary.service';
+import { UploadMediaService } from '../application/UploadMedia.service';
 
 /** SPEC §9 media (upload, list, delete). */
 const MEDIA_ROUTES = {
@@ -123,10 +121,8 @@ function uploadStreamOf(req: AuthenticatedRequest): UploadStream {
 @UseGuards(JwtAuthGuard, PermissionGuard)
 export class MediaController {
   constructor(
-    private readonly media: MediaService,
+    private readonly library: MediaLibraryService,
     private readonly uploads: UploadMediaService,
-    private readonly mediaDelete: MediaDeleteService,
-    private readonly mediaUpdate: MediaUpdateService,
     private readonly clientIp: ClientIpResolver,
   ) {}
 
@@ -153,7 +149,7 @@ export class MediaController {
     @Req() req: AuthenticatedRequest,
     @Query() query: unknown,
   ): Promise<{ data: MediaView[]; meta: PageMeta }> {
-    const page = await this.media.list(
+    const page = await this.library.list(
       req.user.actor,
       parseRequest(pageQuerySchema, query),
     );
@@ -172,7 +168,7 @@ export class MediaController {
     @Param(ID_PARAM) id: string,
     @Body() body: unknown,
   ): Promise<MediaView> {
-    const record = await this.mediaUpdate.update(
+    const record = await this.library.updateAlt(
       requireAccountActor(req.user.actor),
       parseRequest(documentIdSchema, id),
       parseRequest(updateMediaSchema, body).alt,
@@ -191,7 +187,7 @@ export class MediaController {
     @Req() req: AuthenticatedRequest,
     @Param(ID_PARAM) id: string,
   ): Promise<void> {
-    return this.mediaDelete.remove(
+    return this.library.remove(
       requireAccountActor(req.user.actor),
       parseRequest(documentIdSchema, id),
       clientMetaOf(this.clientIp, req),

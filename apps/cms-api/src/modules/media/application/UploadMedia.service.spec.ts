@@ -1,11 +1,11 @@
 import { Readable } from 'node:stream';
 
 import { Clock } from '../../../common/time/clock';
-import type { PrismaService } from '../../../infrastructure/database/prisma.service';
-import { FakeMediaStorage } from '../../../infrastructure/media/fake.adapter';
 import { systemRole } from '../../../../test/fixtures/access.fixture';
 import type { AccountActor } from '../../access';
+import { FakeMediaStorage } from '../adapters/Fake.adapter';
 import type {
+  MediaRepository,
   PreparedUpload,
   ReceivedUpload,
   UploadProcessor,
@@ -56,12 +56,12 @@ function stubs(createError?: Error) {
         })
       : Promise.reject(createError),
   );
-  const prisma = { fileLibrary: { create } } as unknown as PrismaService;
+  const repository = { create } as unknown as MediaRepository;
   const storage = new FakeMediaStorage();
   const logger = { warn: jest.fn(), error: jest.fn() };
   const service = new UploadMediaService(
     processor,
-    prisma,
+    repository,
     new Clock(),
     storage,
     logger,
@@ -77,14 +77,10 @@ describe('UploadMediaService.upload', () => {
     const view = await service.upload(actor, upload);
     expect(view.documentId).toBe('doc');
     expect(storage.keys()).toHaveLength(1);
-    const [call] = create.mock.calls as unknown as [
-      [{ data: Record<string, unknown> }],
-    ];
-    expect(call[0].data).toMatchObject({
+    const [call] = create.mock.calls as unknown as [[Record<string, unknown>]];
+    expect(call[0]).toMatchObject({
       storageKey: storage.keys()[0],
-      provider: 'cloudinary',
       createdById: 5,
-      updatedById: 5,
     });
     expect(dispose).toHaveBeenCalledTimes(1);
   });

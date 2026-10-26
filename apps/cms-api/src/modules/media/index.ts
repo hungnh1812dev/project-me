@@ -1,3 +1,2 @@
-export { MediaModule } from './media.module';
-export { DocumentMediaService } from './document-media.service';
-export type { MediaKind } from './domain/Media.constants';
+export { MediaModule } from './Media.module';
+export { DocumentMediaService } from './application/DocumentMedia.service';

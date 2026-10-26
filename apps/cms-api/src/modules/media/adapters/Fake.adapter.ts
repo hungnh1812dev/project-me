@@ -1,11 +1,11 @@
 import type { Readable } from 'node:stream';
 
-import type { MediaKind } from '../../modules/media';
+import type { MediaKind } from '../domain/Media.constants';
 import type {
   MediaStorage,
   PutObjectInput,
   StoredObject,
-} from './storage.port';
+} from '../application/Media.port';
 
 /** Origin of URLs handed out by the in-memory fake storage (never reachable). */
 export const FAKE_STORAGE_ORIGIN = 'https://fake-media.invalid';

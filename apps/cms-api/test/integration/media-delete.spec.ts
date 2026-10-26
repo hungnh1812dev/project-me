@@ -7,8 +7,6 @@ import {
   openPrisma,
   type PrismaHandle,
 } from '../../src/infrastructure/database/prisma-client';
-import { FakeMediaStorage } from '../../src/infrastructure/media/fake.adapter';
-import { MEDIA_STORAGE } from '../../src/infrastructure/media/storage.port';
 import { ContentRegistry } from '../../src/modules/content-engine/application/ContentRegistry.service';
 import { ContentTypeRegistry } from '../../src/modules/content-engine/domain/ContentTypeRegistry.entity';
 import {
@@ -16,11 +14,13 @@ import {
   planMigration,
 } from '../../src/modules/content-engine/domain/SqlGenerator.rules';
 import { hashPassword } from '../../src/modules/identity/application/Password.service';
+import { FakeMediaStorage } from '../../src/modules/media/adapters/Fake.adapter';
+import { MEDIA_STORAGE } from '../../src/modules/media/application/Media.port';
 import {
   MEDIA_PURGE_BATCH_SIZE,
   MEDIA_PURGE_GRACE_MS,
-  MediaPurgeJob,
-} from '../../src/modules/media/media-purge.job';
+} from '../../src/modules/media/domain/Media.constants';
+import { MediaPurgeJob } from '../../src/modules/media/jobs/MediaPurge.job';
 import { createCoreTemplate } from '../fixtures/core-db.fixture';
 import {
   dbEnvOf,

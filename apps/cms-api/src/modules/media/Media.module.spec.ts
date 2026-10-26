@@ -1,11 +1,8 @@
 import { devEnv } from '../../../test/fixtures/env.fixture';
 import { loadAppConfig } from '../../config/app-config';
 import { MEDIA_PROVIDERS } from '../../config/config.constants';
-import { FakeMediaStorage } from './fake.adapter';
-import {
-  createMediaStorage,
-  MEDIA_STORAGE_FACTORIES,
-} from './media-storage.module';
+import { FakeMediaStorage } from './adapters/Fake.adapter';
+import { createMediaStorage, MEDIA_STORAGE_FACTORIES } from './Media.module';
 
 describe('createMediaStorage', () => {
   it('uses the fake storage for MEDIA_PROVIDER=fake', () => {

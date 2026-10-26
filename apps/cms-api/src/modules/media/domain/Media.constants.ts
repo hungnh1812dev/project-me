@@ -1,3 +1,5 @@
+import { MS_PER_HOUR } from '../../../common/constants/time.constants';
+
 /** Kinds of file the library accepts (SPEC D12); decides storage resource type and size limit. */
 export const MEDIA_KINDS = ['image', 'pdf', 'video'] as const;
 export type MediaKind = (typeof MEDIA_KINDS)[number];
@@ -45,11 +47,7 @@ export function mediaRefInvalidMessage(inputPath: string): string {
   return `${inputPath} refers to a file that does not exist`;
 }
 
-/**
- * Table and column names the services query until CR-md-3 moves the queries
- * into the media repository adapter.
- */
-export const MEDIA_TABLE = 'public.file_library';
-export const DELETED_AT_COLUMN = 'deleted_at';
-/** `GET /media` accepts the shared page query only. */
-export const MEDIA_ORDER = { CREATED_AT: 'created_at', ID: 'id' } as const;
+/** Soft-deleted files are purged from storage once older than this (SPEC §9). */
+export const MEDIA_PURGE_GRACE_MS = 24 * MS_PER_HOUR;
+/** Rows read per query during a purge run (a run walks all eligible rows). */
+export const MEDIA_PURGE_BATCH_SIZE = 100;
