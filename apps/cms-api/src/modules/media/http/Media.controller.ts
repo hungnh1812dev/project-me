@@ -15,19 +15,19 @@ import {
 } from '@nestjs/common';
 import { z } from 'zod';
 
-import { ID_PARAM } from '../../../common/constants/api.constants';
-import { NO_STORE_HEADER } from '../../../common/constants/http.constants';
+import { ID_PARAM } from '../../../common/constants/Api.constants';
+import { NO_STORE_HEADER } from '../../../common/constants/Http.constants';
 import {
   ONE_HOUR_MS,
   RATE_LIMIT_KEY_SOURCES,
   type RateLimitRule,
-} from '../../../common/constants/limits.constants';
-import { Throttle } from '../../../common/guards/throttle.guard';
+} from '../../../common/constants/Limits.constants';
+import { Throttle } from '../../../common/guards/Throttle.guard';
 import {
   ClientIpResolver,
   clientMetaOf,
-} from '../../../common/http/client-ip.resolver';
-import { parseRequest } from '../../../common/http/request-parsing';
+} from '../../../common/http/ClientIp.resolver';
+import { parseRequest } from '../../../common/http/RequestParsing.rules';
 import type { PageMeta } from '../../../common/validation/SharedSchemas.rules';
 import {
   MEDIA_SUBJECT,

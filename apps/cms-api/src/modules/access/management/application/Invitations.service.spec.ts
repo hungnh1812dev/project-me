@@ -3,7 +3,7 @@ import {
   actorWithRole,
   fakeRunner,
 } from '../../../../../test/fixtures/management.fixture';
-import type { IAppConfig } from '../../../../config/app-config';
+import type { IAppConfig } from '../../../../config/AppConfig.setup';
 import type { OtpService } from '../../../identity';
 import type { SecurityAuditService } from '../../../security-audit';
 import { MANAGEMENT_ERROR_CODES } from '../domain/AccessManagement.constants';

@@ -3,7 +3,7 @@ import type { NestExpressApplication } from '@nestjs/platform-express';
 import { generate } from 'otplib';
 import request from 'supertest';
 
-import { Clock } from '../../src/common/time/clock';
+import { Clock } from '../../src/common/time/Clock.service';
 import {
   AUTH_ERROR_CODES,
   OTP,
@@ -12,19 +12,19 @@ import {
   TWO_FACTOR_TEMP_TOKEN_MAX_ATTEMPTS,
   TWO_FACTOR_TEMP_TOKEN_TTL_SECONDS,
 } from '../../src/modules/identity/domain/Identity.constants';
-import { ERROR_CODES } from '../../src/common/constants/error.constants';
-import { MS_PER_SECOND } from '../../src/common/constants/time.constants';
+import { ERROR_CODES } from '../../src/common/constants/Error.constants';
+import { MS_PER_SECOND } from '../../src/common/constants/Time.constants';
 import { IDENTITY_RATE_LIMIT_POLICIES } from '../../src/modules/identity/http/IdentityHttp.constants';
-import { loadAppConfig } from '../../src/config/app-config';
+import { loadAppConfig } from '../../src/config/AppConfig.setup';
 import {
   openPrisma,
   type PrismaHandle,
-} from '../../src/infrastructure/database/prisma-client';
+} from '../../src/infrastructure/database/PrismaClient.adapter';
 import {
   MAIL_SENDER,
   type MailMessage,
   type MailSender,
-} from '../../src/infrastructure/mail/mail.port';
+} from '../../src/infrastructure/mail/Mail.port';
 import {
   AUDIT_ACTIONS,
   type AuditAction,

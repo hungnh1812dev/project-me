@@ -4,7 +4,7 @@ import {
   openPrisma,
   type PrismaClient,
   type PrismaHandle,
-} from '../../src/infrastructure/database/prisma-client';
+} from '../../src/infrastructure/database/PrismaClient.adapter';
 import { SYSTEM_ROLES } from '../../src/modules/access/domain/SystemRoles.entity';
 import { OWNER_BOOTSTRAP_ERRORS } from '../../src/modules/identity/domain/Identity.constants';
 import {

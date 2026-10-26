@@ -1,5 +1,5 @@
-import { ERROR_CODES } from '../../../common/constants/error.constants';
-import { RATE_LIMIT_MESSAGE } from '../../../common/constants/limits.constants';
+import { ERROR_CODES } from '../../../common/constants/Error.constants';
+import { RATE_LIMIT_MESSAGE } from '../../../common/constants/Limits.constants';
 import {
   DomainError,
   DOMAIN_ERROR_KINDS,

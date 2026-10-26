@@ -17,10 +17,10 @@ import {
 import {
   ClientIpResolver,
   clientMetaOf,
-} from '../../../../common/http/client-ip.resolver';
-import { ID_PARAM } from '../../../../common/constants/api.constants';
+} from '../../../../common/http/ClientIp.resolver';
+import { ID_PARAM } from '../../../../common/constants/Api.constants';
 import { ROLES_ROUTES } from '../../http/AccessHttp.constants';
-import { NO_STORE_HEADER } from '../../../../common/constants/http.constants';
+import { NO_STORE_HEADER } from '../../../../common/constants/Http.constants';
 import { PermissionAction } from '../../domain/Access.constants';
 import { type AuthenticatedRequest, JwtAuthGuard } from '../../../identity';
 import {
@@ -28,7 +28,7 @@ import {
   replacePermissionsSchema,
   updateRoleSchema,
 } from './AccessManagement.requests';
-import { parseRequest } from '../../../../common/http/request-parsing';
+import { parseRequest } from '../../../../common/http/RequestParsing.rules';
 import {
   PermissionGuard,
   RequirePermission,

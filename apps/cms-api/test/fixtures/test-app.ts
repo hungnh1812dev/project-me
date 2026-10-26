@@ -3,9 +3,9 @@ import { NestFactory } from '@nestjs/core';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import { Test } from '@nestjs/testing';
 
-import { AppModule } from '../../src/app.module';
-import { configureApp } from '../../src/app.setup';
-import { loadAppConfig } from '../../src/config/app-config';
+import { AppModule } from '../../src/App.module';
+import { configureApp } from '../../src/App.setup';
+import { loadAppConfig } from '../../src/config/AppConfig.setup';
 
 /** A provider value to replace, e.g. a small store cap. */
 export interface ProviderOverride {

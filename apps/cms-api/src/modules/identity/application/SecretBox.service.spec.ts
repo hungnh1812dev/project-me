@@ -4,7 +4,7 @@ import {
   TEST_TOTP_ENC_KID,
   TEST_TOTP_ENC_PREVIOUS_KID,
 } from '../../../../test/fixtures/env.fixture';
-import { loadAppConfig } from '../../../config/app-config';
+import { loadAppConfig } from '../../../config/AppConfig.setup';
 import { SECRET_BOX } from '../domain/Identity.constants';
 import {
   deriveSecretBoxKey,

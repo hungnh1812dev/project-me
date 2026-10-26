@@ -1,10 +1,10 @@
-import { Clock } from '../../../common/time/clock';
+import { Clock } from '../../../common/time/Clock.service';
 import {
   TWO_FACTOR_CHALLENGE_MAX_KEYS,
   TWO_FACTOR_TEMP_TOKEN_MAX_ATTEMPTS,
   TWO_FACTOR_TEMP_TOKEN_TTL_SECONDS,
 } from '../domain/Identity.constants';
-import { MS_PER_SECOND } from '../../../common/constants/time.constants';
+import { MS_PER_SECOND } from '../../../common/constants/Time.constants';
 import { TwoFactorChallengeStore } from './TwoFactorChallenge.store';
 
 const START = 1_700_000_000_000;

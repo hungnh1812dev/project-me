@@ -1,6 +1,6 @@
 import { parseArgs } from 'node:util';
 
-import { loadAppConfig } from '../../../config/app-config';
+import { loadAppConfig } from '../../../config/AppConfig.setup';
 import {
   assertRoleAllowed,
   assertSeedAllowed,

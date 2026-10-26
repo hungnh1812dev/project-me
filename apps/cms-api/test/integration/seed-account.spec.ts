@@ -2,7 +2,7 @@ import {
   openPrisma,
   type PrismaClient,
   type PrismaHandle,
-} from '../../src/infrastructure/database/prisma-client';
+} from '../../src/infrastructure/database/PrismaClient.adapter';
 import { OWNER_ROLE_SLUG } from '../../src/modules/access';
 import { identityUseCasesOf } from '../../src/modules/identity/cli/IdentityCli.setup';
 import { type SeedAccountInput } from '../../src/modules/identity/application/SeedAccount.service';

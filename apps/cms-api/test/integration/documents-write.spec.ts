@@ -6,7 +6,7 @@ import request from 'supertest';
 import {
   openPrisma,
   type PrismaHandle,
-} from '../../src/infrastructure/database/prisma-client';
+} from '../../src/infrastructure/database/PrismaClient.adapter';
 import { MASKED_FIELDS_KEY } from '../../src/modules/access/domain/Access.constants';
 import { createContentDb } from '../../src/modules/content-engine/adapters/ContentDatabase.adapter';
 import { contentTrxOf } from '../../src/modules/content-engine/adapters/KyselyContentTransactionRunner.adapter';

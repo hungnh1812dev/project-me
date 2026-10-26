@@ -2,7 +2,7 @@ import { randomBytes } from 'node:crypto';
 
 import { Inject, Injectable } from '@nestjs/common';
 
-import { Clock } from '../../../common/time/clock';
+import { Clock } from '../../../common/time/Clock.service';
 import {
   APP_LOGGER,
   type AppLogger,

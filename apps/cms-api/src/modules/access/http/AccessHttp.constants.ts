@@ -2,7 +2,7 @@ import {
   ONE_HOUR_MS,
   RATE_LIMIT_KEY_SOURCES,
   type RateLimitRule,
-} from '../../../common/constants/limits.constants';
+} from '../../../common/constants/Limits.constants';
 
 export const ACCESS_RATE_LIMIT_POLICIES = {
   /**

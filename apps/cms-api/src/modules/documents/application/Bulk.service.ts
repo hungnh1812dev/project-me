@@ -3,7 +3,7 @@ import { randomUUID } from 'node:crypto';
 import { Inject, Injectable } from '@nestjs/common';
 
 import { type DomainError } from '../../../common/errors/Domain.errors';
-import { Clock } from '../../../common/time/clock';
+import { Clock } from '../../../common/time/Clock.service';
 import {
   CONTENT_TRANSACTION_RUNNER,
   type ContentTransactionRunner,

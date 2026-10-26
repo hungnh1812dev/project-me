@@ -5,7 +5,7 @@ import {
   DomainError,
   DOMAIN_ERROR_KINDS,
 } from '../../../common/errors/Domain.errors';
-import type { ClientIpResolver } from '../../../common/http/client-ip.resolver';
+import type { ClientIpResolver } from '../../../common/http/ClientIp.resolver';
 import {
   type OwnerSetupService,
   SetupClosedError,

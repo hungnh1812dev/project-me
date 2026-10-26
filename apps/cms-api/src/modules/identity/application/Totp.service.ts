@@ -1,10 +1,10 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { generateSecret, generateURI, verify } from 'otplib';
 
-import { Clock } from '../../../common/time/clock';
-import { MS_PER_SECOND } from '../../../common/constants/time.constants';
-import { type IAppConfig } from '../../../config/app-config';
-import { APP_CONFIG } from '../../../config/config.constants';
+import { Clock } from '../../../common/time/Clock.service';
+import { MS_PER_SECOND } from '../../../common/constants/Time.constants';
+import { type IAppConfig } from '../../../config/AppConfig.setup';
+import { APP_CONFIG } from '../../../config/Config.constants';
 import {
   APP_LOGGER,
   type AppLogger,

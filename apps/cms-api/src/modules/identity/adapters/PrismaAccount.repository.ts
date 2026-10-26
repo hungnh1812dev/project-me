@@ -2,8 +2,8 @@ import { Inject, Injectable } from '@nestjs/common';
 
 import type { Prisma } from '../../../generated/prisma/client';
 import { prismaTxOf } from '../../../infrastructure/database/PrismaTransactionRunner.adapter';
-import { PrismaClient } from '../../../infrastructure/database/prisma-client';
-import { PrismaService } from '../../../infrastructure/database/prisma.service';
+import { PrismaClient } from '../../../infrastructure/database/PrismaClient.adapter';
+import { PrismaService } from '../../../infrastructure/database/Prisma.service';
 import type { UnitOfWork } from '../../../infrastructure/database/TransactionRunner.port';
 import { type AccountStatus, OWNER_ROLE_SLUG } from '../../access';
 import type {

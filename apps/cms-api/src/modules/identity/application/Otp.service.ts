@@ -2,14 +2,14 @@ import { createHmac, randomInt, timingSafeEqual } from 'node:crypto';
 
 import { Inject, Injectable } from '@nestjs/common';
 
-import { Clock } from '../../../common/time/clock';
+import { Clock } from '../../../common/time/Clock.service';
 import {
   MS_PER_SECOND,
   SECONDS_PER_MINUTE,
-} from '../../../common/constants/time.constants';
-import { type IAppConfig } from '../../../config/app-config';
-import { APP_CONFIG } from '../../../config/config.constants';
-import { type MailMessage } from '../../../infrastructure/mail/mail.port';
+} from '../../../common/constants/Time.constants';
+import { type IAppConfig } from '../../../config/AppConfig.setup';
+import { APP_CONFIG } from '../../../config/Config.constants';
+import { type MailMessage } from '../../../infrastructure/mail/Mail.port';
 import {
   CORE_TRANSACTION_RUNNER,
   type TransactionRunner,

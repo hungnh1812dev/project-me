@@ -1,4 +1,4 @@
-import type { Clock } from '../../../common/time/clock';
+import type { Clock } from '../../../common/time/Clock.service';
 import { type ActorContext, type RolePolicy } from '../../access';
 import {
   PRESENCE_MAX_ENTRIES,

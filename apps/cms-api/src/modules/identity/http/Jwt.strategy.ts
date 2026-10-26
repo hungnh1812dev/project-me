@@ -2,7 +2,7 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { AuthGuard, PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 
-import type { RequestWithId } from '../../../common/middleware/request-id.middleware';
+import type { RequestWithId } from '../../../common/middleware/RequestId.middleware';
 import {
   type AuthenticatedAccount,
   AccessSessionService,

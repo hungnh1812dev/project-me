@@ -2,8 +2,8 @@ import { createHmac, hkdfSync, randomUUID } from 'node:crypto';
 
 import { Inject, Injectable } from '@nestjs/common';
 
-import { UNKNOWN_CLIENT_IP } from '../../../common/constants/limits.constants';
-import { Clock } from '../../../common/time/clock';
+import { UNKNOWN_CLIENT_IP } from '../../../common/constants/Limits.constants';
+import { Clock } from '../../../common/time/Clock.service';
 import type { ClientMeta } from '../../../common/types/ClientMeta.entity';
 import type { PageQuery } from '../../../common/validation/SharedSchemas.rules';
 import {

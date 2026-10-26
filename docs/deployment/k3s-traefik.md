@@ -275,7 +275,7 @@ If you set `readOnlyRootFilesystem: true`, mount `emptyDir` volumes on `/tmp`, `
 
 ## 6. Environment contract (cms-api)
 
-Validated at boot by `apps/cms-api/src/config/env.schema.ts`; the process refuses to start on any error. The authoritative, commented list is `apps/cms-api/.env.example`. Put the Secret column in a Secret, the rest in a ConfigMap.
+Validated at boot by `apps/cms-api/src/config/Env.schema.ts`; the process refuses to start on any error. The authoritative, commented list is `apps/cms-api/.env.example`. Put the Secret column in a Secret, the rest in a ConfigMap.
 
 | Variable                                                                         |  Secret  |      Required in production      | Production value                                                    |
 | -------------------------------------------------------------------------------- | :------: | :------------------------------: | ------------------------------------------------------------------- |

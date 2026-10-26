@@ -5,7 +5,7 @@ import {
   type OnModuleDestroy,
 } from '@nestjs/common';
 
-import { MS_PER_MINUTE } from '../../../common/constants/time.constants';
+import { MS_PER_MINUTE } from '../../../common/constants/Time.constants';
 import { startIntervalJob } from '../../../infrastructure/scheduling/IntervalJob.adapter';
 import { ReviewerCleanupService } from '../application/ReviewerCleanup.service';
 

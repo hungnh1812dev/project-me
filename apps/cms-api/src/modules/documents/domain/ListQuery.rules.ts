@@ -1,4 +1,4 @@
-import { INVALID_REQUEST_ERROR } from '../../../common/constants/error.constants';
+import { INVALID_REQUEST_ERROR } from '../../../common/constants/Error.constants';
 import { DomainError } from '../../../common/errors/Domain.errors';
 import {
   PAGINATION,

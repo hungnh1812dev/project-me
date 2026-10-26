@@ -6,8 +6,8 @@ import {
   type AfterCommitCallback,
   AfterCommitCallbacks,
 } from './AfterCommitCallbacks.store';
-import { PrismaClient } from './prisma-client';
-import { PrismaService } from './prisma.service';
+import { PrismaClient } from './PrismaClient.adapter';
+import { PrismaService } from './Prisma.service';
 import type { TransactionRunner, UnitOfWork } from './TransactionRunner.port';
 
 class PrismaUnitOfWork implements UnitOfWork {

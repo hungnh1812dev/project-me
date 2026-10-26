@@ -16,16 +16,16 @@ import type { Request } from 'express';
 import {
   ClientIpResolver,
   clientMetaOf,
-} from '../../../common/http/client-ip.resolver';
-import { NO_STORE_HEADER } from '../../../common/constants/http.constants';
+} from '../../../common/http/ClientIp.resolver';
+import { NO_STORE_HEADER } from '../../../common/constants/Http.constants';
 import {
   ONE_MINUTE_MS,
   RATE_LIMIT_KEY_SOURCES,
   TEN_MINUTES_MS,
   type RateLimitRule,
-} from '../../../common/constants/limits.constants';
-import { Throttle } from '../../../common/guards/throttle.guard';
-import { parseRequest } from '../../../common/http/request-parsing';
+} from '../../../common/constants/Limits.constants';
+import { Throttle } from '../../../common/guards/Throttle.guard';
+import { parseRequest } from '../../../common/http/RequestParsing.rules';
 import {
   PermissionAction,
   REVIEWER_SETTINGS_SUBJECT,

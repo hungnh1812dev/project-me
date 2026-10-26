@@ -1,5 +1,5 @@
 import { type AccessPolicyService, type ActorContext } from '../../access';
-import type { IAppConfig } from '../../../config/app-config';
+import type { IAppConfig } from '../../../config/AppConfig.setup';
 import {
   GraphqlExecutor,
   type GraphqlSchemaProvider,

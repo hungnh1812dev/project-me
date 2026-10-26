@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 
 import { type DatabaseHealth } from '../application/CheckReadiness.service';
-import { PrismaService } from '../../../infrastructure/database/prisma.service';
+import { PrismaService } from '../../../infrastructure/database/Prisma.service';
 
 /** Readiness ping through the app's Prisma client (the `DATABASE_HEALTH` implementation). */
 @Injectable()

@@ -1,10 +1,10 @@
 import { z } from 'zod';
 
-import { type IAppConfig } from '../../../config/app-config';
-import { Clock } from '../../../common/time/clock';
+import { type IAppConfig } from '../../../config/AppConfig.setup';
+import { Clock } from '../../../common/time/Clock.service';
 import type { PrismaClient } from '../../../generated/prisma/client';
 import { PrismaTransactionRunner } from '../../../infrastructure/database/PrismaTransactionRunner.adapter';
-import { openPrisma } from '../../../infrastructure/database/prisma-client';
+import { openPrisma } from '../../../infrastructure/database/PrismaClient.adapter';
 import { NestAppLogger } from '../../../infrastructure/logging/NestAppLogger.adapter';
 import { type RoleSeedService, roleSeedServiceOf } from '../../access';
 import { PrismaAuditLogRepository } from '../../security-audit';

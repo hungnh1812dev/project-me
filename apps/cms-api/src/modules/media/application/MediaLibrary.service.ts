@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 
-import { Clock } from '../../../common/time/clock';
+import { Clock } from '../../../common/time/Clock.service';
 import type { ClientMeta } from '../../../common/types/ClientMeta.entity';
 import type { PageQuery } from '../../../common/validation/SharedSchemas.rules';
 import {

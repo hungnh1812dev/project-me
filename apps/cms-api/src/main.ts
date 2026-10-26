@@ -1,6 +1,6 @@
 import { Logger } from '@nestjs/common';
 
-import { bootstrap } from './bootstrap';
+import { bootstrap } from './Bootstrap.setup';
 
 bootstrap(process.env).catch((error: unknown) => {
   // Config errors list keys and rules only, never values.

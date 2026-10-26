@@ -12,8 +12,8 @@ import {
   validate,
 } from 'graphql';
 
-import { type IAppConfig } from '../../../config/app-config';
-import { APP_CONFIG } from '../../../config/config.constants';
+import { type IAppConfig } from '../../../config/AppConfig.setup';
+import { APP_CONFIG } from '../../../config/Config.constants';
 import {
   AccessPolicyService,
   PermissionAction,

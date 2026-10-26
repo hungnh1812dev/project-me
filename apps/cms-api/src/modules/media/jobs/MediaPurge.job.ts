@@ -5,7 +5,7 @@ import {
   type OnModuleDestroy,
 } from '@nestjs/common';
 
-import { MS_PER_HOUR } from '../../../common/constants/time.constants';
+import { MS_PER_HOUR } from '../../../common/constants/Time.constants';
 import { startIntervalJob } from '../../../infrastructure/scheduling/IntervalJob.adapter';
 import {
   PurgeDeletedMediaService,

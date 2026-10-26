@@ -1,5 +1,5 @@
 import { TEST_SECRET_32_BYTES } from '../../../../test/fixtures/env.fixture';
-import { type IAppConfig } from '../../../config/app-config';
+import { type IAppConfig } from '../../../config/AppConfig.setup';
 import {
   type AuditLogWriter,
   SecurityAuditService,

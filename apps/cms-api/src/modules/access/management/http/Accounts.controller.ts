@@ -16,21 +16,21 @@ import {
 import {
   ClientIpResolver,
   clientMetaOf,
-} from '../../../../common/http/client-ip.resolver';
-import { ID_PARAM } from '../../../../common/constants/api.constants';
+} from '../../../../common/http/ClientIp.resolver';
+import { ID_PARAM } from '../../../../common/constants/Api.constants';
 import {
   ACCESS_RATE_LIMIT_POLICIES,
   ACCOUNTS_ROUTES,
 } from '../../http/AccessHttp.constants';
-import { NO_STORE_HEADER } from '../../../../common/constants/http.constants';
-import { Throttle } from '../../../../common/guards/throttle.guard';
+import { NO_STORE_HEADER } from '../../../../common/constants/Http.constants';
+import { Throttle } from '../../../../common/guards/Throttle.guard';
 import { PermissionAction } from '../../domain/Access.constants';
 import { type AuthenticatedRequest, JwtAuthGuard } from '../../../identity';
 import {
   inviteAccountSchema,
   updateAccountSchema,
 } from './AccessManagement.requests';
-import { parseRequest } from '../../../../common/http/request-parsing';
+import { parseRequest } from '../../../../common/http/RequestParsing.rules';
 import { type AccountView } from '../domain/Account.entity';
 import {
   type AccountPage,

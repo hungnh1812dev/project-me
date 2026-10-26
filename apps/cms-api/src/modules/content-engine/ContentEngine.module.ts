@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 
-import { type IAppConfig } from '../../config/app-config';
-import { APP_CONFIG } from '../../config/config.constants';
+import { type IAppConfig } from '../../config/AppConfig.setup';
+import { APP_CONFIG } from '../../config/Config.constants';
 import { CONTENT_TRANSACTION_RUNNER } from '../../infrastructure/database/TransactionRunner.port';
 import { ContentRegistry } from './application/ContentRegistry.service';
 import { CONTENT_TYPE_REPOSITORY } from './application/ContentEngine.port';

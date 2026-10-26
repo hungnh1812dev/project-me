@@ -10,10 +10,10 @@ import {
   UseGuards,
 } from '@nestjs/common';
 
-import { SLUG_PARAM } from '../../../common/constants/api.constants';
-import { describeError } from '../../../common/http/describe-http-exception';
+import { SLUG_PARAM } from '../../../common/constants/Api.constants';
+import { describeError } from '../../../common/http/DescribeHttpException.rules';
 import { DOCUMENTS_ROUTES } from './DocumentsHttp.constants';
-import { NO_STORE_HEADER } from '../../../common/constants/http.constants';
+import { NO_STORE_HEADER } from '../../../common/constants/Http.constants';
 import {
   PermissionAction,
   PermissionGuard,

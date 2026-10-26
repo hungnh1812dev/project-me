@@ -12,8 +12,8 @@ import {
   AUTH_ERROR_MESSAGES,
 } from '../domain/Identity.constants';
 import { ORIGIN_HEADER } from './IdentityHttp.constants';
-import { type IAppConfig } from '../../../config/app-config';
-import { APP_CONFIG } from '../../../config/config.constants';
+import { type IAppConfig } from '../../../config/AppConfig.setup';
+import { APP_CONFIG } from '../../../config/Config.constants';
 
 /**
  * D14 CSRF defence for the cookie endpoints (`/auth/refresh`, `/auth/logout`):

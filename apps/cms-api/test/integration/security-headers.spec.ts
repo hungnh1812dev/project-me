@@ -1,7 +1,7 @@
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import request from 'supertest';
 
-import { API_CONTENT_SECURITY_POLICY } from '../../src/common/constants/http.constants';
+import { API_CONTENT_SECURITY_POLICY } from '../../src/common/constants/Http.constants';
 import { dbEnvOf, devEnv } from '../fixtures/env.fixture';
 import { unreachableDatabaseUrl } from '../fixtures/postgres.fixture';
 import { createTestApp } from '../fixtures/test-app';

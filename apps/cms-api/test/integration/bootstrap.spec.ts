@@ -1,5 +1,5 @@
-import { bootstrap } from '../../src/bootstrap';
-import { ConfigValidationError } from '../../src/config/app-config';
+import { bootstrap } from '../../src/Bootstrap.setup';
+import { ConfigValidationError } from '../../src/config/AppConfig.setup';
 import {
   productionEnv,
   TEST_SECRET_32_BYTES,

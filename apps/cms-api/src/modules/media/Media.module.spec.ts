@@ -1,6 +1,6 @@
 import { devEnv } from '../../../test/fixtures/env.fixture';
-import { loadAppConfig } from '../../config/app-config';
-import { MEDIA_PROVIDERS } from '../../config/config.constants';
+import { loadAppConfig } from '../../config/AppConfig.setup';
+import { MEDIA_PROVIDERS } from '../../config/Config.constants';
 import { FakeMediaStorage } from './adapters/Fake.adapter';
 import { createMediaStorage, MEDIA_STORAGE_FACTORIES } from './Media.module';
 

@@ -13,12 +13,12 @@ import {
 import type { Request, Response } from 'express';
 import { type z } from 'zod';
 
-import { NO_STORE_HEADER } from '../../../common/constants/http.constants';
-import { Throttle } from '../../../common/guards/throttle.guard';
+import { NO_STORE_HEADER } from '../../../common/constants/Http.constants';
+import { Throttle } from '../../../common/guards/Throttle.guard';
 import {
   ClientIpResolver,
   clientMetaOf,
-} from '../../../common/http/client-ip.resolver';
+} from '../../../common/http/ClientIp.resolver';
 import { requireAccountActor } from '../../access';
 import { TwoFactorLoginService } from '../application/TwoFactorLogin.service';
 import {

@@ -6,7 +6,7 @@ import {
   updateAccountSchema,
   updateRoleSchema,
 } from './AccessManagement.requests';
-import { parseRequest } from '../../../../common/http/request-parsing';
+import { parseRequest } from '../../../../common/http/RequestParsing.rules';
 import { pageQuerySchema } from '../../../../common/validation/SharedSchemas.rules';
 
 const ROLE_ID = '0195f3a0-0000-7000-8000-000000000001';

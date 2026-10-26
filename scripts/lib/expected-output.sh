@@ -7,7 +7,7 @@
 # values themselves are owned by the apps:
 #   header values  apps/web/src/config/security-headers.constants.ts,
 #                  apps/cms-admin/nginx/security-headers.inc.template,
-#                  apps/cms-api/src/common/constants/http.constants.ts
+#                  apps/cms-api/src/common/constants/Http.constants.ts
 #   cookie name    apps/cms-api/src/common/constants/auth.constants.ts
 #   CLI messages   apps/cms-api/src/modules/identity/cli, content-engine/cli
 

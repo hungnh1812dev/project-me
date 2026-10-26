@@ -2,7 +2,7 @@ import { EventEmitter } from 'node:events';
 
 import type { NextFunction, Response } from 'express';
 
-import type { RequestWithId } from '../../../common/middleware/request-id.middleware';
+import type { RequestWithId } from '../../../common/middleware/RequestId.middleware';
 import { GRAPHQL_LIMITS } from '../application/Graphql.constants';
 import { graphqlBodyLimit } from './GraphqlBodyLimit.middleware';
 

@@ -4,11 +4,11 @@ import { GraphQLError } from 'graphql';
 import {
   ERROR_CODES,
   INTERNAL_ERROR_MESSAGE,
-} from '../../../common/constants/error.constants';
+} from '../../../common/constants/Error.constants';
 import {
   describeError,
   isDescribableError,
-} from '../../../common/http/describe-http-exception';
+} from '../../../common/http/DescribeHttpException.rules';
 import {
   GRAPHQL_ERROR_CODES,
   GRAPHQL_MESSAGES,

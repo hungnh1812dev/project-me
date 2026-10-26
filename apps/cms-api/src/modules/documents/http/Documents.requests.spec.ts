@@ -1,4 +1,4 @@
-import { describeError } from '../../../common/http/describe-http-exception';
+import { describeError } from '../../../common/http/DescribeHttpException.rules';
 import { parseListQuery } from './Documents.requests';
 
 function refusalOf(query: unknown) {

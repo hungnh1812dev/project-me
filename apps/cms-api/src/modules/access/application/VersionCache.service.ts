@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 
-import { Clock } from '../../../common/time/clock';
+import { Clock } from '../../../common/time/Clock.service';
 import type { RolePolicy } from '../domain/ActorContext.entity';
 import {
   ACCOUNT_VERSION_SOURCE,

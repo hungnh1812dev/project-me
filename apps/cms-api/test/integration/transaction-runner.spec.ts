@@ -1,7 +1,7 @@
 import type { NestExpressApplication } from '@nestjs/platform-express';
 
 import { prismaTxOf } from '../../src/infrastructure/database/PrismaTransactionRunner.adapter';
-import { PrismaService } from '../../src/infrastructure/database/prisma.service';
+import { PrismaService } from '../../src/infrastructure/database/Prisma.service';
 import {
   CORE_TRANSACTION_RUNNER,
   type TransactionRunner,

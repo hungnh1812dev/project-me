@@ -1,14 +1,14 @@
 import type { CookieOptions } from 'express';
 
-import { API_PREFIX } from '../../../common/constants/api.constants';
+import { API_PREFIX } from '../../../common/constants/Api.constants';
 import {
   FIFTEEN_MINUTES_MS,
   ONE_HOUR_MS,
   ONE_MINUTE_MS,
   RATE_LIMIT_KEY_SOURCES,
   type RateLimitRule,
-} from '../../../common/constants/limits.constants';
-import type { RateLimitOverrideEnvKey } from '../../../config/config.constants';
+} from '../../../common/constants/Limits.constants';
+import type { RateLimitOverrideEnvKey } from '../../../config/Config.constants';
 
 export const AUTH_ROUTES = {
   ROOT: 'auth',

@@ -5,16 +5,16 @@ import { REFRESH_COOKIE } from '../../src/modules/identity/http/IdentityHttp.con
 import {
   ERROR_CODES,
   INVALID_REQUEST_ERROR,
-} from '../../src/common/constants/error.constants';
+} from '../../src/common/constants/Error.constants';
 import {
   openPrisma,
   type PrismaHandle,
-} from '../../src/infrastructure/database/prisma-client';
+} from '../../src/infrastructure/database/PrismaClient.adapter';
 import {
   MAIL_SENDER,
   type MailMessage,
   type MailSender,
-} from '../../src/infrastructure/mail/mail.port';
+} from '../../src/infrastructure/mail/Mail.port';
 import {
   ACCESS_ERROR_CODES,
   RANK_FORBIDDEN_ERROR,

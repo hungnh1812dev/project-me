@@ -1,8 +1,8 @@
 import { Module } from '@nestjs/common';
 
-import { type IAppConfig } from '../../config/app-config';
-import { APP_CONFIG } from '../../config/config.constants';
-import { DatabaseModule } from '../../infrastructure/database/database.module';
+import { type IAppConfig } from '../../config/AppConfig.setup';
+import { APP_CONFIG } from '../../config/Config.constants';
+import { DatabaseModule } from '../../infrastructure/database/Database.module';
 import { AccessModule } from '../access';
 import { ContentEngineModule } from '../content-engine';
 import { SecurityAuditModule } from '../security-audit';
@@ -32,7 +32,7 @@ type MediaProvider = IAppConfig['media']['provider'];
 type MediaStorageFactory = (config: IAppConfig) => MediaStorage;
 
 function createFakeMediaStorage(config: IAppConfig): MediaStorage {
-  // Defence in depth: env.schema.ts already rejects this provider in production.
+  // Defence in depth: Env.schema.ts already rejects this provider in production.
   if (config.isProduction) {
     throw new Error('The fake media storage is not allowed in production');
   }
@@ -41,7 +41,7 @@ function createFakeMediaStorage(config: IAppConfig): MediaStorage {
 
 function createCloudinaryMediaStorage(config: IAppConfig): MediaStorage {
   const { cloudinary } = config.media;
-  // env.schema.ts requires the Cloudinary keys for this provider.
+  // Env.schema.ts requires the Cloudinary keys for this provider.
   if (cloudinary === undefined) {
     throw new Error('Cloudinary media storage is not configured');
   }

@@ -1,7 +1,7 @@
 import {
   openPrisma,
   type PrismaHandle,
-} from '../../src/infrastructure/database/prisma-client';
+} from '../../src/infrastructure/database/PrismaClient.adapter';
 import {
   DEFAULT_ROLE_PERMISSIONS,
   SYSTEM_ROLES,

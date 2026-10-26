@@ -2,8 +2,8 @@ import { createHmac, hkdfSync } from 'node:crypto';
 
 import { Inject, Injectable } from '@nestjs/common';
 
-import { type IAppConfig } from '../../../config/app-config';
-import { APP_CONFIG } from '../../../config/config.constants';
+import { type IAppConfig } from '../../../config/AppConfig.setup';
+import { APP_CONFIG } from '../../../config/Config.constants';
 import type { UnitOfWork } from '../../../infrastructure/database/TransactionRunner.port';
 import type { AuditEntry } from '../domain/AuditActor.rules';
 import { AUDIT_EMAIL_HMAC } from '../domain/SecurityAudit.constants';

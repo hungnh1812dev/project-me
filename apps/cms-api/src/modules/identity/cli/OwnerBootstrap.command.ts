@@ -1,4 +1,4 @@
-import { loadAppConfig } from '../../../config/app-config';
+import { loadAppConfig } from '../../../config/AppConfig.setup';
 import { OWNER_CREATED_CHANNELS } from '../../security-audit';
 import { PASSWORD_STDIN_FLAG } from '../domain/Identity.constants';
 import { openIdentityCli, readOwnerEnv } from './IdentityCli.setup';

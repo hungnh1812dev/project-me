@@ -7,8 +7,8 @@ import {
 
 import { Inject, Injectable } from '@nestjs/common';
 
-import { type IAppConfig } from '../../../config/app-config';
-import { APP_CONFIG } from '../../../config/config.constants';
+import { type IAppConfig } from '../../../config/AppConfig.setup';
+import { APP_CONFIG } from '../../../config/Config.constants';
 import { SECRET_BOX } from '../domain/Identity.constants';
 
 /** An encrypted secret and the id of the key that encrypted it. */

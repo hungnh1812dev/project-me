@@ -1,7 +1,7 @@
 import { createInterface } from 'node:readline/promises';
 import { parseArgs } from 'node:util';
 
-import { loadAppConfig } from '../../../config/app-config';
+import { loadAppConfig } from '../../../config/AppConfig.setup';
 import { parseResetEmail } from '../application/TwoFactorReset.service';
 import {
   CONFIRM_ANSWERS,

@@ -4,7 +4,7 @@ import type { NestExpressApplication } from '@nestjs/platform-express';
 import { decode, sign } from 'jsonwebtoken';
 import request from 'supertest';
 
-import { Clock } from '../../src/common/time/clock';
+import { Clock } from '../../src/common/time/Clock.service';
 import {
   ACCESS_TOKEN_TTL_SECONDS,
   AUTH_ERROR_CODES,
@@ -13,11 +13,11 @@ import {
   TOKEN_TYPES,
 } from '../../src/modules/identity/domain/Identity.constants';
 import { REFRESH_COOKIE } from '../../src/modules/identity/http/IdentityHttp.constants';
-import { RATE_LIMIT_SWEEP_INTERVAL_MS } from '../../src/common/constants/limits.constants';
+import { RATE_LIMIT_SWEEP_INTERVAL_MS } from '../../src/common/constants/Limits.constants';
 import {
   openPrisma,
   type PrismaHandle,
-} from '../../src/infrastructure/database/prisma-client';
+} from '../../src/infrastructure/database/PrismaClient.adapter';
 import { hashPassword } from '../../src/modules/identity/application/Password.service';
 import { hashRefreshToken } from '../../src/modules/identity/application/RefreshToken.service';
 import { createCoreTemplate } from '../fixtures/core-db.fixture';

@@ -6,11 +6,11 @@ import { Client } from 'pg';
 import request from 'supertest';
 
 import { inContentUnit } from '../fixtures/content-unit.fixture';
-import { Clock } from '../../src/common/time/clock';
+import { Clock } from '../../src/common/time/Clock.service';
 import {
   openPrisma,
   type PrismaHandle,
-} from '../../src/infrastructure/database/prisma-client';
+} from '../../src/infrastructure/database/PrismaClient.adapter';
 import {
   TURNSTILE_VERIFIER,
   type TurnstileOutcome,

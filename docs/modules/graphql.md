@@ -31,7 +31,7 @@ operationName? }`, at most `GRAPHQL_LIMITS.MAX_BODY_BYTES`; an array body
    413 for a body over the limit is the exception: it uses the GraphQL
    error shape (`{ errors: [{ message, extensions: { code:
 "PAYLOAD_TOO_LARGE", requestId } }] }`) and is sent by a middleware
-   (`http/GraphqlBodyLimit.middleware.ts`, mounted at its exported `GRAPHQL_BODY_LIMIT_MOUNT_PATH` in `app.setup.ts`, never via `configure(consumer)`; byte checks shared in `common/middleware/byte-limit.ts`) mounted before Nest's JSON parser,
+   (`http/GraphqlBodyLimit.middleware.ts`, mounted at its exported `GRAPHQL_BODY_LIMIT_MOUNT_PATH` in `App.setup.ts`, never via `configure(consumer)`; byte checks shared in `common/middleware/ByteLimit.rules.ts`) mounted before Nest's JSON parser,
    from `Content-Length` or by counting a chunked body.
    There is no `PermissionGuard`: the subject differs per root field.
 2. **Parse** with `maxTokens = GRAPHQL_LIMITS.MAX_TOKENS`; the parser's

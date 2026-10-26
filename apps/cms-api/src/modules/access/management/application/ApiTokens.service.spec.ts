@@ -4,7 +4,7 @@ import {
   actorWithRole,
   fakeRunner,
 } from '../../../../../test/fixtures/management.fixture';
-import { Clock } from '../../../../common/time/clock';
+import { Clock } from '../../../../common/time/Clock.service';
 import type { SecurityAuditService } from '../../../security-audit';
 import type { AccessPolicyService } from '../../application/AccessPolicy.service';
 import type { VersionCache } from '../../application/VersionCache.service';

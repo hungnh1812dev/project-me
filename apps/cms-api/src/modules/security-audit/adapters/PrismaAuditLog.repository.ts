@@ -4,8 +4,8 @@ import {
   type AuditActorType,
   type Prisma,
 } from '../../../generated/prisma/client';
-import { PrismaClient } from '../../../infrastructure/database/prisma-client';
-import { PrismaService } from '../../../infrastructure/database/prisma.service';
+import { PrismaClient } from '../../../infrastructure/database/PrismaClient.adapter';
+import { PrismaService } from '../../../infrastructure/database/Prisma.service';
 import { prismaTxOf } from '../../../infrastructure/database/PrismaTransactionRunner.adapter';
 import type { AuditLogWriter } from '../application/SecurityAudit.service';
 import type { UnitOfWork } from '../../../infrastructure/database/TransactionRunner.port';

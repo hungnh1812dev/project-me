@@ -4,8 +4,8 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 
-import { describeError } from '../../../common/http/describe-http-exception';
-import { ERROR_CODES } from '../../../common/constants/error.constants';
+import { describeError } from '../../../common/http/DescribeHttpException.rules';
+import { ERROR_CODES } from '../../../common/constants/Error.constants';
 import { systemRole } from '../../../../test/fixtures/access.fixture';
 import {
   ACCESS_ERROR_CODES,

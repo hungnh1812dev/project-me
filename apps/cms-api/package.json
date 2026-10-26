@@ -18,7 +18,7 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "content:generate": "nest build && node dist/modules/content-engine/cli/generate.js",
     "graphql:print-schema": "nest build && node dist/modules/graphql/cli/print-schema.js",
-    "contract:print": "nest build && node dist/contract/print-public-constants.js",
+    "contract:print": "nest build && node dist/contract/PrintPublicConstants.command.js",
     "content:migrate": "node dist/modules/content-engine/cli/migrate.js",
     "deploy:migrate": "npm run --silent db:migrate && npm run --silent content:migrate",
     "db:generate": "prisma generate",

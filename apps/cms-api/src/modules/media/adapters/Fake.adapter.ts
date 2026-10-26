@@ -25,7 +25,7 @@ async function readAll(stream: Readable): Promise<Buffer> {
 
 /**
  * In-memory storage for development and tests (MEDIA_PROVIDER=fake). Lost
- * on restart; never allowed in production (env.schema.ts).
+ * on restart; never allowed in production (Env.schema.ts).
  */
 export class FakeMediaStorage implements MediaStorage {
   private readonly objects = new Map<string, FakeStoredObject>();

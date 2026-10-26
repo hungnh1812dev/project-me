@@ -92,7 +92,7 @@ No row ever holds the token, the password or (for rejected attempts) the email.
 ## Code changes (for OS1 / OS2)
 
 - `OwnerBootstrapService.bootstrap(input, options?)` (`application/OwnerBootstrap.service.ts`; the CLI builds it in `cli/IdentityCli.setup.ts`): optional `options` `{ channel, ip }` so the `owner.created` row is written inside its transaction. The CLI passes `channel: 'cli'`. Existing behaviour and error codes stay.
-- New in `apps/cms-api/src/modules/identity`: `http/OwnerSetup.controller.ts` (checks the setup token through `OwnerSetupService.admit` before it parses the body, maps the closed answer to the unknown-route 404), `application/OwnerSetup.service.ts` (latch, token compare, audit, error mapping to `DomainError`), `domain/SetupToken.rules.ts` (hash + timing-safe compare, pure, unit-tested). Constants in `domain/Identity.constants.ts` (`SETUP_TOKEN_MAX_LENGTH`, setup channels), route constants and policies in `http/IdentityHttp.constants.ts`, env in `env.schema.ts` / `app-config.ts` / `.env.example`.
+- New in `apps/cms-api/src/modules/identity`: `http/OwnerSetup.controller.ts` (checks the setup token through `OwnerSetupService.admit` before it parses the body, maps the closed answer to the unknown-route 404), `application/OwnerSetup.service.ts` (latch, token compare, audit, error mapping to `DomainError`), `domain/SetupToken.rules.ts` (hash + timing-safe compare, pure, unit-tested). Constants in `domain/Identity.constants.ts` (`SETUP_TOKEN_MAX_LENGTH`, setup channels), route constants and policies in `http/IdentityHttp.constants.ts`, env in `Env.schema.ts` / `AppConfig.setup.ts` / `.env.example`.
 - No DB schema change: there is no "setup completed" table; the owner row is the state.
 
 ## Not in scope

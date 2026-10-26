@@ -8,9 +8,9 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 
-import { describeError } from '../../../common/http/describe-http-exception';
-import { ERROR_CODES } from '../../../common/constants/error.constants';
-import { RATE_LIMIT_MESSAGE } from '../../../common/constants/limits.constants';
+import { describeError } from '../../../common/http/DescribeHttpException.rules';
+import { ERROR_CODES } from '../../../common/constants/Error.constants';
+import { RATE_LIMIT_MESSAGE } from '../../../common/constants/Limits.constants';
 import {
   AUTH_ERROR_CODES,
   AUTH_ERROR_MESSAGES,

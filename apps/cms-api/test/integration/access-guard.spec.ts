@@ -10,13 +10,13 @@ import {
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import request from 'supertest';
 
-import { Clock } from '../../src/common/time/clock';
-import { ERROR_CODES } from '../../src/common/constants/error.constants';
+import { Clock } from '../../src/common/time/Clock.service';
+import { ERROR_CODES } from '../../src/common/constants/Error.constants';
 import { PermissionAction } from '../../src/generated/prisma/client';
 import {
   openPrisma,
   type PrismaHandle,
-} from '../../src/infrastructure/database/prisma-client';
+} from '../../src/infrastructure/database/PrismaClient.adapter';
 import { AccessModule } from '../../src/modules/access/Access.module';
 import type { PermissionGrant } from '../../src/modules/access/domain/ActorContext.entity';
 import {

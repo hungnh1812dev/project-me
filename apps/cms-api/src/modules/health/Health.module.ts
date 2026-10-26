@@ -3,7 +3,7 @@ import { Module } from '@nestjs/common';
 import { PrismaDatabaseHealth } from './adapters/PrismaDatabaseHealth.adapter';
 import { CheckReadinessService } from './application/CheckReadiness.service';
 import { DATABASE_HEALTH } from './application/CheckReadiness.service';
-import { DatabaseModule } from '../../infrastructure/database/database.module';
+import { DatabaseModule } from '../../infrastructure/database/Database.module';
 import { HealthController } from './http/Health.controller';
 
 @Module({

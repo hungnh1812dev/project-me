@@ -2,7 +2,7 @@ import {
   DomainError,
   DOMAIN_ERROR_KINDS,
 } from '../../../common/errors/Domain.errors';
-import { describeError } from '../../../common/http/describe-http-exception';
+import { describeError } from '../../../common/http/DescribeHttpException.rules';
 import { asItemError, atomicFailure } from './BulkItem.errors';
 
 describe('asItemError', () => {

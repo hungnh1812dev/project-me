@@ -18,7 +18,7 @@ change. Copy `.env.example` to `.env.local` for it.
 `start:debug` load that file; `db:migrate`, the CLIs, `start` and production
 read the shell env only.
 
-Config is validated once at boot (`src/config/env.schema.ts`) into a frozen
+Config is validated once at boot (`src/config/Env.schema.ts`) into a frozen
 `IAppConfig`, injected as `APP_CONFIG`. Invalid config stops the process with
 a list of keys and rules (never values). The boot log prints a summary with
 secrets and DB credentials redacted. Every key is documented in
@@ -350,10 +350,10 @@ Specs that seed rows open a unit with `inContentUnit(db, work)`
 Fixed windows, per resolved client IP and, for login, per email. Each module
 owns its policies in a constants file of its own (identity:
 `src/modules/identity/http/IdentityHttp.constants.ts`; access, documents, media,
-reviewer: `<module>.rate-limits.constants.ts`); `src/common/constants/limits.constants.ts`
+reviewer: `<module>.rate-limits.constants.ts`); `src/common/constants/Limits.constants.ts`
 holds only the mechanism (rule type, key sources, window lengths, store caps).
 Unit conversions (`MS_PER_SECOND`, `SECONDS_PER_DAY`, ...) are declared only in
-`src/common/constants/time.constants.ts`; a lint rule rejects a literal `1000` in
+`src/common/constants/Time.constants.ts`; a lint rule rejects a literal `1000` in
 any other `*.constants.ts`:
 
 | Policy                       | Limit                                                         |
@@ -381,22 +381,22 @@ any other `*.constants.ts`:
   opt-in flag (`ALLOW_LOGIN_RATE_LIMIT_OVERRIDE=smoke`) as the login overrides;
   only `docker-compose.smoke.yml` sets it.
 - Limit overrides: a rule opts in with `limitOverrideEnvKey`; the key must be in
-  `RATE_LIMIT_OVERRIDE_ENV_KEYS` (`src/config/config.constants.ts`), which also
+  `RATE_LIMIT_OVERRIDE_ENV_KEYS` (`src/config/Config.constants.ts`), which also
   drives the env parsing and the production opt-in check. Identity's
   `rateLimitOverrideBindings` lists the pairs. A rule name must be unique across
   all modules (one shared counter store; an architecture spec checks it).
 - Key sources: `ip`, `email` (body.email, hashed) and `actor` (the signed-in
   account id; needs `JwtAuthGuard` before it, which a method-level
   `@Throttle` is; skipped when there is no signed-in account).
-- Apply with `@Throttle(<MODULE>_RATE_LIMIT_POLICIES.X)` (`src/common/guards/throttle.guard.ts`),
+- Apply with `@Throttle(<MODULE>_RATE_LIMIT_POLICIES.X)` (`src/common/guards/Throttle.guard.ts`),
   placed last so it runs before the route's other guards. Over the limit:
   `429 TOO_MANY_REQUESTS` in the unified error shape plus `Retry-After`
   (seconds). The body is the same whichever rule fired.
 - Who the caller is: `RateLimitModule.forRoot({ subjectResolver })` is called only
-  from `app.module.ts`; access binds `ActorThrottleSubjectResolver`
+  from `App.module.ts`; access binds `ActorThrottleSubjectResolver`
   (`common/rate-limit` owns the `ThrottleSubjectResolver` port). `Clock` and
   `ClientIpResolver` come from the global `ClockModule` and `ClientIpModule`.
-- Client IP: `ClientIpResolver` (`src/common/http/client-ip.resolver.ts`) is the
+- Client IP: `ClientIpResolver` (`src/common/http/ClientIp.resolver.ts`) is the
   only source. It reads `CLIENT_IP_HEADER` when configured, otherwise
   `req.ip`, which trusts exactly `TRUST_PROXY_HOPS` entries of
   `X-Forwarded-For`; anything a client prepends is ignored (SPEC §12-8).
@@ -418,7 +418,7 @@ any other `*.constants.ts`:
   counting and live counters are never evicted. A `Rate-limit store full`
   warning (refused count only, no IPs or emails) is logged at most once per
   `RATE_LIMIT_CAPACITY_WARN_INTERVAL_MS` (1 min). Change the cap in
-  `src/common/constants/limits.constants.ts`.
+  `src/common/constants/Limits.constants.ts`.
 
 ### Accounts and roles (T17, `src/modules/access`)
 
@@ -765,7 +765,7 @@ Design: [docs/modules/graphql.md](../../docs/modules/graphql.md).
 web, kit and e2e suite mirror (password bounds, OTP and TOTP lengths, setup
 token max, reviewer input limits, refresh cookie name, error codes,
 permission actions, system subjects, richtext URL schemes). It is built by
-`src/contract/public-constants.ts` from `*.constants.ts` exports only, so no
+`src/contract/PublicConstants.contract.ts` from `*.constants.ts` exports only, so no
 env value or secret can reach it. Run `pnpm --filter @abyss/cms-api
 contract:print` after changing a mirrored constant; `-- --check` (CI) exits 1
 when the file is stale. Only client tests import the JSON.

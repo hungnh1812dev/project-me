@@ -1,5 +1,5 @@
 import { DomainError } from '../../../common/errors/Domain.errors';
-import { describeError } from '../../../common/http/describe-http-exception';
+import { describeError } from '../../../common/http/DescribeHttpException.rules';
 import { FieldSelection } from '../../access';
 import { ContentTypeRegistry } from '../../content-engine';
 import { profileType } from '../../../../test/fixtures/masking.fixture';

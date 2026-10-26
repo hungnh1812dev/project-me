@@ -1,7 +1,7 @@
 import { Logger } from '@nestjs/common';
 import { z } from 'zod';
 
-import { MS_PER_SECOND } from '../../../common/constants/time.constants';
+import { MS_PER_SECOND } from '../../../common/constants/Time.constants';
 import type {
   TurnstileOutcome,
   TurnstileVerifier,

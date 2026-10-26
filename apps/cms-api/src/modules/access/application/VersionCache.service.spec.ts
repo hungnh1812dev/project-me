@@ -1,4 +1,4 @@
-import { Clock } from '../../../common/time/clock';
+import { Clock } from '../../../common/time/Clock.service';
 import type { RolePolicy } from '../domain/ActorContext.entity';
 import type { AccountVersions } from './Access.port';
 import { VERSION_CACHE_TTL_MS, VersionCache } from './VersionCache.service';

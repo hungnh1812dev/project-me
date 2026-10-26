@@ -1,4 +1,4 @@
-import { type IAppConfig } from '../../../config/app-config';
+import { type IAppConfig } from '../../../config/AppConfig.setup';
 import type { AppLogger } from '../../../infrastructure/logging/AppLogger.port';
 import type {
   TransactionRunner,

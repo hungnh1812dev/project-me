@@ -1,8 +1,8 @@
 import { Module } from '@nestjs/common';
 
-import { type IAppConfig } from '../../config/app-config';
-import { APP_CONFIG } from '../../config/config.constants';
-import { DatabaseModule } from '../../infrastructure/database/database.module';
+import { type IAppConfig } from '../../config/AppConfig.setup';
+import { APP_CONFIG } from '../../config/Config.constants';
+import { DatabaseModule } from '../../infrastructure/database/Database.module';
 import { AccessModule } from '../access';
 import { IdentityModule } from '../identity';
 import { SecurityAuditModule } from '../security-audit';

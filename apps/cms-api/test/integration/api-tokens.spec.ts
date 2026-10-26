@@ -16,7 +16,7 @@ import { PermissionAction } from '../../src/generated/prisma/client';
 import {
   openPrisma,
   type PrismaHandle,
-} from '../../src/infrastructure/database/prisma-client';
+} from '../../src/infrastructure/database/PrismaClient.adapter';
 import { ACCESS_ERROR_CODES } from '../../src/modules/access/domain/Access.constants';
 import { AccessModule } from '../../src/modules/access/Access.module';
 import { MANAGEMENT_ERROR_CODES } from '../../src/modules/access/management/domain/AccessManagement.constants';

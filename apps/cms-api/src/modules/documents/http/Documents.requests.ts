@@ -1,11 +1,11 @@
 import { BadRequestException } from '@nestjs/common';
 import { z } from 'zod';
 
-import { ERROR_CODES } from '../../../common/constants/error.constants';
+import { ERROR_CODES } from '../../../common/constants/Error.constants';
 import {
   invalidRequest,
   parseRequest,
-} from '../../../common/http/request-parsing';
+} from '../../../common/http/RequestParsing.rules';
 import { CONTENT_STATUSES, INT4_MAX } from '../../content-engine';
 import {
   DEFAULT_DOCUMENT_STATUS,

@@ -2,7 +2,7 @@ import {
   ONE_MINUTE_MS,
   RATE_LIMIT_KEY_SOURCES,
   type RateLimitRule,
-} from '../../../common/constants/limits.constants';
+} from '../../../common/constants/Limits.constants';
 import { LIST_QUERY_PARTS } from '../domain/Documents.constants';
 
 /** Route param holding a record's document_id in DOCUMENTS_ROUTES. */

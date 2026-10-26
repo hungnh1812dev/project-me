@@ -1,4 +1,4 @@
-import { Clock } from '../../../common/time/clock';
+import { Clock } from '../../../common/time/Clock.service';
 import type {
   TransactionRunner,
   UnitOfWork,

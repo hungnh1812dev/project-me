@@ -2,8 +2,8 @@ import { argon2id, hash, verify } from 'argon2';
 import { Inject, Injectable } from '@nestjs/common';
 
 import type { ClientMeta } from '../../../common/types/ClientMeta.entity';
-import { type IAppConfig } from '../../../config/app-config';
-import { APP_CONFIG } from '../../../config/config.constants';
+import { type IAppConfig } from '../../../config/AppConfig.setup';
+import { APP_CONFIG } from '../../../config/Config.constants';
 import {
   APP_LOGGER,
   type AppLogger,
@@ -11,7 +11,7 @@ import {
 import {
   MAIL_SENDER,
   type MailSender,
-} from '../../../infrastructure/mail/mail.port';
+} from '../../../infrastructure/mail/Mail.port';
 import {
   CORE_TRANSACTION_RUNNER,
   type TransactionRunner,

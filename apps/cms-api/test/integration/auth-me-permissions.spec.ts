@@ -1,11 +1,11 @@
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import request from 'supertest';
 
-import { Clock } from '../../src/common/time/clock';
+import { Clock } from '../../src/common/time/Clock.service';
 import {
   openPrisma,
   type PrismaHandle,
-} from '../../src/infrastructure/database/prisma-client';
+} from '../../src/infrastructure/database/PrismaClient.adapter';
 import { ContentRegistry } from '../../src/modules/content-engine/application/ContentRegistry.service';
 import { ContentTypeRegistry } from '../../src/modules/content-engine/domain/ContentTypeRegistry.entity';
 import { hashPassword } from '../../src/modules/identity/application/Password.service';

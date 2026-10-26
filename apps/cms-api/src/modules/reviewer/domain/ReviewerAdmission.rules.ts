@@ -6,7 +6,7 @@ import {
 import {
   MS_PER_MINUTE,
   MS_PER_SECOND,
-} from '../../../common/constants/time.constants';
+} from '../../../common/constants/Time.constants';
 import type { PageMeta } from '../../../common/validation/SharedSchemas.rules';
 import {
   REVIEWER_ACCOUNT,

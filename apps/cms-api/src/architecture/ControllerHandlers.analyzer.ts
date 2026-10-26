@@ -9,8 +9,8 @@ import {
   type PermissionRequirement,
 } from '../modules/access/http/Permission.guard';
 import { DocumentAuthGuard } from '../modules/access/document-auth/http/DocumentAuth.guard';
-import { RATE_LIMIT_POLICY_METADATA } from '../common/guards/throttle.guard';
-import type { RateLimitPolicy } from '../common/constants/limits.constants';
+import { RATE_LIMIT_POLICY_METADATA } from '../common/guards/Throttle.guard';
+import type { RateLimitPolicy } from '../common/constants/Limits.constants';
 import { JwtAuthGuard } from '../modules/identity/http/Jwt.strategy';
 import type { PublicHandlerReason } from './PublicHandlers.constants';
 

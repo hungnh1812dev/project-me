@@ -1,7 +1,7 @@
 import { Controller, Get, Header, Param, Req, UseGuards } from '@nestjs/common';
 
-import { SLUG_PARAM } from '../../../common/constants/api.constants';
-import { NO_STORE_HEADER } from '../../../common/constants/http.constants';
+import { SLUG_PARAM } from '../../../common/constants/Api.constants';
+import { NO_STORE_HEADER } from '../../../common/constants/Http.constants';
 import { type AuthenticatedRequest, JwtAuthGuard } from '../../identity';
 import type { ContentTypeView } from '../domain/ContentTypeView.rules';
 import { ContentTypesService } from '../application/ContentTypes.service';

@@ -1,4 +1,4 @@
-import { loadAppConfig } from '../../../config/app-config';
+import { loadAppConfig } from '../../../config/AppConfig.setup';
 import { openIdentityCli } from './IdentityCli.setup';
 
 /**

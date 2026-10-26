@@ -1,8 +1,8 @@
 import { BadRequestException } from '@nestjs/common';
 import { z } from 'zod';
 
-import { ERROR_CODES } from '../../../common/constants/error.constants';
-import { parseRequest } from '../../../common/http/request-parsing';
+import { ERROR_CODES } from '../../../common/constants/Error.constants';
+import { parseRequest } from '../../../common/http/RequestParsing.rules';
 import {
   BULK_LIMITS,
   type BulkRequest,

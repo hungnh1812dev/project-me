@@ -1,6 +1,6 @@
 import { Readable } from 'node:stream';
 
-import { Clock } from '../../../common/time/clock';
+import { Clock } from '../../../common/time/Clock.service';
 import { systemRole } from '../../../../test/fixtures/access.fixture';
 import type { AccountActor } from '../../access';
 import { FakeMediaStorage } from '../adapters/Fake.adapter';

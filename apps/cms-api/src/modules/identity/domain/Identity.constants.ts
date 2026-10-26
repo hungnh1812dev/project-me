@@ -4,7 +4,7 @@ import {
   SECONDS_PER_DAY,
   SECONDS_PER_HOUR,
   SECONDS_PER_MINUTE,
-} from '../../../common/constants/time.constants';
+} from '../../../common/constants/Time.constants';
 import { ADMIN_ROLE_SLUG, GUEST_ROLE_SLUG } from '../../access';
 
 /** What a one-time code may be used for. Values are stored in the database, so they stay byte-identical to the database enum. */

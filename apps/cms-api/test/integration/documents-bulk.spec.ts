@@ -8,7 +8,7 @@ import request from 'supertest';
 import {
   openPrisma,
   type PrismaHandle,
-} from '../../src/infrastructure/database/prisma-client';
+} from '../../src/infrastructure/database/PrismaClient.adapter';
 import {
   ContentDbProvider,
   createContentDb,

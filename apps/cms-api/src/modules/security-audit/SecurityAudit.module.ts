@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 
-import { DatabaseModule } from '../../infrastructure/database/database.module';
+import { DatabaseModule } from '../../infrastructure/database/Database.module';
 import { PrismaAuditLogRepository } from './adapters/PrismaAuditLog.repository';
 import {
   AUDIT_LOG_WRITER,

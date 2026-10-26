@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 
-import { MS_PER_SECOND } from '../../../common/constants/time.constants';
+import { MS_PER_SECOND } from '../../../common/constants/Time.constants';
 import type { ClientMeta } from '../../../common/types/ClientMeta.entity';
 import {
   CORE_TRANSACTION_RUNNER,

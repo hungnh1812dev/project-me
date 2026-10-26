@@ -2,9 +2,9 @@ import {
   DomainError,
   DOMAIN_ERROR_KINDS,
 } from '../../../common/errors/Domain.errors';
-import { describeError } from '../../../common/http/describe-http-exception';
+import { describeError } from '../../../common/http/DescribeHttpException.rules';
 
-import { Clock } from '../../../common/time/clock';
+import { Clock } from '../../../common/time/Clock.service';
 import type { AppLogger } from '../../../infrastructure/logging/AppLogger.port';
 import type { RolePolicy } from '../domain/ActorContext.entity';
 import { API_TOKEN, hashApiToken } from '../domain/ApiToken.rules';

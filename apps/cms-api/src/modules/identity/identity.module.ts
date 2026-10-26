@@ -6,8 +6,8 @@ import {
 } from '@nestjs/common';
 import { PassportModule } from '@nestjs/passport';
 
-import { DatabaseModule } from '../../infrastructure/database/database.module';
-import { MailModule } from '../../infrastructure/mail/mail.module';
+import { DatabaseModule } from '../../infrastructure/database/Database.module';
+import { MailModule } from '../../infrastructure/mail/Mail.module';
 import { AccessModule } from '../access';
 import { SecurityAuditModule, SecurityAuditService } from '../security-audit';
 import { PrismaAccountRepository } from './adapters/PrismaAccount.repository';

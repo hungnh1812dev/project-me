@@ -2,7 +2,7 @@ import { Logger } from '@nestjs/common';
 import type { ArgumentsHost } from '@nestjs/common';
 import { GraphQLError } from 'graphql';
 
-import { HttpExceptionFilter } from '../common/filters/http-exception.filter';
+import { HttpExceptionFilter } from '../common/filters/HttpException.filter';
 import {
   DomainError,
   DOMAIN_ERROR_KINDS,

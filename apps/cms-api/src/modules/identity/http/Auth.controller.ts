@@ -15,16 +15,16 @@ import {
 import type { Request, Response } from 'express';
 import { z } from 'zod';
 
-import { NO_STORE_HEADER } from '../../../common/constants/http.constants';
+import { NO_STORE_HEADER } from '../../../common/constants/Http.constants';
 import {
   DomainError,
   DOMAIN_ERROR_KINDS,
 } from '../../../common/errors/Domain.errors';
-import { Throttle } from '../../../common/guards/throttle.guard';
+import { Throttle } from '../../../common/guards/Throttle.guard';
 import {
   ClientIpResolver,
   clientMetaOf,
-} from '../../../common/http/client-ip.resolver';
+} from '../../../common/http/ClientIp.resolver';
 import { AccessPolicyService } from '../../access';
 import {
   AuthService,

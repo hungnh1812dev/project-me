@@ -2,7 +2,7 @@ import type { Readable } from 'node:stream';
 
 import { v2 as cloudinary } from 'cloudinary';
 
-import type { CloudinaryConfig } from '../../../config/app-config';
+import type { CloudinaryConfig } from '../../../config/AppConfig.setup';
 import type { MediaKind } from '../domain/Media.constants';
 import type {
   MediaStorage,

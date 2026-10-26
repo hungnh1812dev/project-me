@@ -1,4 +1,4 @@
-import { ERROR_CODES } from '../../../common/constants/error.constants';
+import { ERROR_CODES } from '../../../common/constants/Error.constants';
 import {
   DomainError,
   DOMAIN_ERROR_KINDS,

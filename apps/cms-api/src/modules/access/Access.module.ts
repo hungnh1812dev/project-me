@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 
-import { DatabaseModule } from '../../infrastructure/database/database.module';
+import { DatabaseModule } from '../../infrastructure/database/Database.module';
 import { ContentEngineModule } from '../content-engine';
 import { PrismaAccountVersionRepository } from './adapters/PrismaAccountVersion.repository';
 import { PrismaApiTokenLookupRepository } from './adapters/PrismaApiTokenLookup.repository';

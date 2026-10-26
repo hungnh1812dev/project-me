@@ -2,12 +2,12 @@ import { Inject, Injectable, type OnModuleDestroy } from '@nestjs/common';
 import { Kysely, PostgresDialect } from 'kysely';
 import { type ClientConfig, Pool, types } from 'pg';
 
-import { type IAppConfig } from '../../../config/app-config';
-import { APP_CONFIG } from '../../../config/config.constants';
+import { type IAppConfig } from '../../../config/AppConfig.setup';
+import { APP_CONFIG } from '../../../config/Config.constants';
 import {
   type DatabaseConnection,
   poolOptionsOf,
-} from '../../../infrastructure/database/database-config';
+} from '../../../infrastructure/database/DatabaseConfig.rules';
 import type { ContentMetaDatabase } from './MigrationRunner.adapter';
 import type { ContentDatabase } from './TreeLoader.adapter';
 

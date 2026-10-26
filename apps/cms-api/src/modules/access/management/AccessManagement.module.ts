@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 
-import { DatabaseModule } from '../../../infrastructure/database/database.module';
-import { MailModule } from '../../../infrastructure/mail/mail.module';
+import { DatabaseModule } from '../../../infrastructure/database/Database.module';
+import { MailModule } from '../../../infrastructure/mail/Mail.module';
 import { IdentityModule } from '../../identity';
 import { SecurityAuditModule } from '../../security-audit';
 import { AccessModule } from '../Access.module';

@@ -1,19 +1,19 @@
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import request from 'supertest';
 
-import { Clock } from '../../src/common/time/clock';
-import { MS_PER_SECOND } from '../../src/common/constants/time.constants';
-import { RATE_LIMIT_STORE_MAX_KEYS } from '../../src/common/rate-limit/rate-limit.store';
-import { ERROR_CODES } from '../../src/common/constants/error.constants';
+import { Clock } from '../../src/common/time/Clock.service';
+import { MS_PER_SECOND } from '../../src/common/constants/Time.constants';
+import { RATE_LIMIT_STORE_MAX_KEYS } from '../../src/common/rate-limit/RateLimit.store';
+import { ERROR_CODES } from '../../src/common/constants/Error.constants';
 import {
   RATE_LIMIT_MESSAGE,
   RATE_LIMIT_SWEEP_INTERVAL_MS,
-} from '../../src/common/constants/limits.constants';
+} from '../../src/common/constants/Limits.constants';
 import { IDENTITY_RATE_LIMIT_POLICIES } from '../../src/modules/identity/http/IdentityHttp.constants';
 import {
   openPrisma,
   type PrismaHandle,
-} from '../../src/infrastructure/database/prisma-client';
+} from '../../src/infrastructure/database/PrismaClient.adapter';
 import { hashPassword } from '../../src/modules/identity/application/Password.service';
 import { createCoreTemplate } from '../fixtures/core-db.fixture';
 import {

@@ -1,18 +1,18 @@
 import { HttpStatus } from '@nestjs/common';
 import type { NextFunction, Request, Response } from 'express';
 
-import { API_PREFIX } from '../../../common/constants/api.constants';
+import { API_PREFIX } from '../../../common/constants/Api.constants';
 import { DOCUMENTS_ROUTES } from './DocumentsHttp.constants';
-import { ERROR_CODES } from '../../../common/constants/error.constants';
+import { ERROR_CODES } from '../../../common/constants/Error.constants';
 import {
   closeAfterAnswer,
   createByteCounter,
   declaresBodyOver,
-} from '../../../common/middleware/byte-limit';
-import type { RequestWithId } from '../../../common/middleware/request-id.middleware';
+} from '../../../common/middleware/ByteLimit.rules';
+import type { RequestWithId } from '../../../common/middleware/RequestId.middleware';
 import { BULK_LIMITS, BULK_MESSAGES } from '../domain/Documents.constants';
 
-/** Where `app.setup.ts` mounts the limit: before Nest's JSON parser, so never via `configure(consumer)`. */
+/** Where `App.setup.ts` mounts the limit: before Nest's JSON parser, so never via `configure(consumer)`. */
 export const BULK_BODY_LIMIT_MOUNT_PATH = `/${API_PREFIX}/${DOCUMENTS_ROUTES.ROOT}/${DOCUMENTS_ROUTES.BULK_PREFIX}`;
 
 function reject(

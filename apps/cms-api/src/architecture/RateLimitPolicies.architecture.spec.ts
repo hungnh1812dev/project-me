@@ -9,12 +9,12 @@ import {
   RATE_LIMIT_KEY_SOURCES,
   TEN_MINUTES_MS,
   type RateLimitRule,
-} from '../common/constants/limits.constants';
+} from '../common/constants/Limits.constants';
 import {
   RATE_LIMIT_POLICY_METADATA,
   ThrottleGuard,
-} from '../common/guards/throttle.guard';
-import { RATE_LIMIT_OVERRIDE_ENV_KEYS } from '../config/config.constants';
+} from '../common/guards/Throttle.guard';
+import { RATE_LIMIT_OVERRIDE_ENV_KEYS } from '../config/Config.constants';
 import { ACCESS_RATE_LIMIT_POLICIES } from '../modules/access/http/AccessHttp.constants';
 import { DOCUMENTS_RATE_LIMIT_POLICIES } from '../modules/documents/http/DocumentsHttp.constants';
 import {

@@ -1,4 +1,4 @@
-import { MS_PER_HOUR } from '../../../common/constants/time.constants';
+import { MS_PER_HOUR } from '../../../common/constants/Time.constants';
 
 /** Kinds of file the library accepts (SPEC D12); decides storage resource type and size limit. */
 export const MEDIA_KINDS = ['image', 'pdf', 'video'] as const;

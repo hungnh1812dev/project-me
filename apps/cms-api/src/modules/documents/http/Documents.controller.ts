@@ -15,10 +15,10 @@ import {
 } from '@nestjs/common';
 import { z } from 'zod';
 
-import { SLUG_PARAM } from '../../../common/constants/api.constants';
-import { Throttle } from '../../../common/guards/throttle.guard';
-import { NO_STORE_HEADER } from '../../../common/constants/http.constants';
-import { parseRequest } from '../../../common/http/request-parsing';
+import { SLUG_PARAM } from '../../../common/constants/Api.constants';
+import { Throttle } from '../../../common/guards/Throttle.guard';
+import { NO_STORE_HEADER } from '../../../common/constants/Http.constants';
+import { parseRequest } from '../../../common/http/RequestParsing.rules';
 import {
   PermissionAction,
   RequirePermission,

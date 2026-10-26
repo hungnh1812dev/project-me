@@ -11,13 +11,13 @@ import {
 } from '@nestjs/common';
 import type { Request } from 'express';
 
-import { NO_STORE_HEADER } from '../../../common/constants/http.constants';
-import { Throttle } from '../../../common/guards/throttle.guard';
+import { NO_STORE_HEADER } from '../../../common/constants/Http.constants';
+import { Throttle } from '../../../common/guards/Throttle.guard';
 import {
   ClientIpResolver,
   clientMetaOf,
-} from '../../../common/http/client-ip.resolver';
-import { parseRequest } from '../../../common/http/request-parsing';
+} from '../../../common/http/ClientIp.resolver';
+import { parseRequest } from '../../../common/http/RequestParsing.rules';
 import {
   ownerInputSchema,
   type OwnerBootstrapInput,

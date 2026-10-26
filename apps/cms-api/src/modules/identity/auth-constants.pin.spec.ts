@@ -1,4 +1,4 @@
-import { NO_STORE_HEADER } from '../../common/constants/http.constants';
+import { NO_STORE_HEADER } from '../../common/constants/Http.constants';
 import {
   ACCESS_TOKEN_TTL_SECONDS,
   JWT_ALGORITHM,

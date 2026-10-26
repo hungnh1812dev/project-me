@@ -1,8 +1,8 @@
 import { HttpStatus } from '@nestjs/common';
 import type { GraphQLFieldResolver, GraphQLSchema } from 'graphql';
 
-import { describeError } from '../../../common/http/describe-http-exception';
-import { parseRequest } from '../../../common/http/request-parsing';
+import { describeError } from '../../../common/http/DescribeHttpException.rules';
+import { parseRequest } from '../../../common/http/RequestParsing.rules';
 import { type ActorContext, type SerializedRecord } from '../../access';
 import { DOCUMENT_ERROR_CODES } from '../../documents';
 import type { DocumentPage, DocumentsQueryService } from '../../documents';
