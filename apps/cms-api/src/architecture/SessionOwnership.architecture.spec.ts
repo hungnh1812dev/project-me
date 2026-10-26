@@ -4,12 +4,12 @@ import {
   assertPinnedPathsExist,
   listSourceFiles,
   withoutComments,
-} from './import-graph';
+} from './ImportGraph.analyzer';
 import {
   IDENTITY_DIRECTORY,
   REVIEWER_ACCOUNT_ADAPTER_FILE,
   ACCOUNT_VERSION_REPOSITORY_FILE,
-} from './source-paths.constants';
+} from './SourcePaths.constants';
 
 /**
  * SPEC D9 (R1-09): identity owns session state. Only `modules/identity/`

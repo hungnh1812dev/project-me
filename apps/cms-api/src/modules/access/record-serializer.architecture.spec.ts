@@ -4,7 +4,7 @@ import {
   assertPinnedPathsExist,
   listSourceFiles,
   reachedFilesOf,
-} from '../../architecture/import-graph';
+} from '../../architecture/ImportGraph.analyzer';
 import {
   ACCESS_CONSTANTS_FILE,
   CONTENT_ENGINE_DIRECTORY,
@@ -14,7 +14,7 @@ import {
   RECORD_LOADER_FILES,
   RECORD_READER_PORT_FILES,
   RECORD_SERIALIZER_FILE,
-} from '../../architecture/source-paths.constants';
+} from '../../architecture/SourcePaths.constants';
 
 /**
  * Architecture test for SPEC D3: `RecordSerializer` is the only path from a

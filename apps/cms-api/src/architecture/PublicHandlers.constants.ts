@@ -2,7 +2,7 @@
  * Controller handlers that carry no `@RequirePermission` on purpose. The
  * permission guard lets a handler without metadata through (SPEC D5), so
  * every such handler must be listed here with the reason it is safe. A new
- * unlisted handler fails `permission-metadata.architecture.spec.ts`.
+ * unlisted handler fails `PermissionMetadata.architecture.spec.ts`.
  */
 export type PublicHandlerReason =
   'public' | 'authenticated-only' | 'document-auth-guard';

@@ -6,7 +6,7 @@ import {
   textMatches,
   type ResolvedImport,
   type SourceFile,
-} from './import-graph';
+} from './ImportGraph.analyzer';
 import {
   INFRASTRUCTURE_FOLDER,
   KNOWN_LAYER_VIOLATIONS,
@@ -19,8 +19,12 @@ import {
   type KnownLayerViolation,
   type LayerRule,
   type PlatformRole,
-} from './layer-rules.constants';
-import { layerOfFile, moduleFolderOf, nodeOfFile } from './module-graph';
+} from './LayerRules.constants';
+import {
+  layerOfFile,
+  moduleFolderOf,
+  nodeOfFile,
+} from './ModuleGraph.analyzer';
 
 const FACADE_FILE = 'index.ts';
 

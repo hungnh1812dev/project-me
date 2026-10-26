@@ -4,8 +4,8 @@ import {
   assertPinnedPathsExist,
   listSourceFiles,
   reachedFilesOf,
-} from './import-graph';
-import { MODULES_PREFIX, UNMASKED_FILES } from './source-paths.constants';
+} from './ImportGraph.analyzer';
+import { MODULES_PREFIX, UNMASKED_FILES } from './SourcePaths.constants';
 
 /**
  * SPEC D3 / D18: a module facade (`index.ts`) never re-exports the record

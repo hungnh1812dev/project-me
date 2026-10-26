@@ -11,9 +11,9 @@ import {
   hasPromisedGuard,
   isControllerClass,
   isPermissionEnforced,
-} from './controller-handlers';
-import { listSourceFiles } from './import-graph';
-import { PUBLIC_HANDLERS } from './public-handlers.constants';
+} from './ControllerHandlers.analyzer';
+import { listSourceFiles } from './ImportGraph.analyzer';
+import { PUBLIC_HANDLERS } from './PublicHandlers.constants';
 
 /**
  * SPEC D5 / D6 (audit X2): `PermissionGuard` allows a handler that has no

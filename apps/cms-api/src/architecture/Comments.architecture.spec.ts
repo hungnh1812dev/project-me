@@ -1,6 +1,6 @@
 import { join } from 'node:path';
 
-import { commentsOf, listSourceFiles } from './import-graph';
+import { commentsOf, listSourceFiles } from './ImportGraph.analyzer';
 
 /**
  * Comments describe the code, not the backlog: task and question IDs rot once

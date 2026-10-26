@@ -1,12 +1,15 @@
 import { join } from 'node:path';
 
 import { SYSTEM_ROLES } from '../modules/access/domain/SystemRoles.entity';
-import { assertPinnedPathsExist, listSourceFiles } from './import-graph';
-import { findRoleSlugLiterals } from './role-slug-literals';
+import {
+  assertPinnedPathsExist,
+  listSourceFiles,
+} from './ImportGraph.analyzer';
+import { findRoleSlugLiterals } from './RoleSlugLiterals.analyzer';
 import {
   NON_ROLE_LITERAL_FILES,
   SYSTEM_ROLES_TABLE_FILE,
-} from './source-paths.constants';
+} from './SourcePaths.constants';
 
 /**
  * SPEC D6 (R1-05): the system role slugs live in one table,

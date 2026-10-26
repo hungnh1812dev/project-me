@@ -387,7 +387,7 @@ export function assertPinnedPathsExist(
   );
   if (missing.length > 0) {
     throw new Error(
-      `missing path: ${missing.join(', ')} (update architecture/source-paths.constants.ts)`,
+      `missing path: ${missing.join(', ')} (update architecture/SourcePaths.constants.ts)`,
     );
   }
 }

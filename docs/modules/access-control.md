@@ -228,8 +228,8 @@ Decisions (T16):
 **Only path.** The architecture test
 `record-serializer.architecture.spec.ts` (a static scan of `src/`) fails
 when the following holds. Imports are resolved to the real file by
-`src/architecture/import-graph.ts` (an `index.ts` facade is followed to the
-file that defines each symbol), and `facade-reexports.architecture.spec.ts`
+`src/architecture/ImportGraph.analyzer.ts` (an `index.ts` facade is followed to the
+file that defines each symbol), and `FacadeReexports.architecture.spec.ts`
 fails when a module `index.ts` re-exports `KyselyContent.repository`,
 `TreeLoader.adapter` or `FieldProjection.rules`:
 
@@ -247,7 +247,7 @@ code outside a module imports it through that file only (ESLint
 Named exceptions, each kept out of the facade on purpose: `adapters/KyselyContent.repository`,
 `adapters/TreeLoader.adapter`, `domain/ContentRowMapping.rules` and `domain/ContentTree.entity`
 in `content-engine`, `domain/FieldProjection.rules` and `document-auth/index.ts`
-in `access`. `modules.architecture.spec.ts` also enforces the two SPEC §2
+in `access`. `Modules.architecture.spec.ts` also enforces the two SPEC §2
 sub-rules: `security-audit` imports access core with `import type` only, and
 `content-types` and `media` import only `JwtAuthGuard` and
 `AuthenticatedRequest` from `identity` (their Nest modules do not import

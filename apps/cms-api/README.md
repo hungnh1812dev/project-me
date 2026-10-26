@@ -289,11 +289,11 @@ content (Kysely) runner is `CONTENT_TRANSACTION_RUNNER`.
 
 ### Module layout (ADR 0006)
 
-Every module under `src/modules/` (`layers.architecture.spec.ts` checks each
+Every module under `src/modules/` (`Layers.architecture.spec.ts` checks each
 folder, so a new module is covered without a list to edit) keeps only `<Module>.module.ts`,
 `index.ts` and the layer folders `domain/`, `application/`, `adapters/`,
 `http/` (plus `cli/`, `jobs/` where it has them). Import rules per layer are
-in `LAYER_RULES`; `layers.architecture.spec.ts` enforces them. Checklist,
+in `LAYER_RULES`; `Layers.architecture.spec.ts` enforces them. Checklist,
 as the content-types pilot (CR-hc-2) used it:
 
 File names follow ADR 0008 (`<PascalName>.<function>.ts`, tests add
@@ -324,9 +324,9 @@ in that file.
    one facade in separate statements; the guard reads inline `type` names as
    values.
 4. Fix every consumer's import of it; `KNOWN_LAYER_VIOLATIONS`
-   (`src/architecture/layer-rules.constants.ts`) is empty and an entry needs
+   (`src/architecture/LayerRules.constants.ts`) is empty and an entry needs
    a removing task.
-5. Update `src/architecture/source-paths.constants.ts` for pinned paths,
+5. Update `src/architecture/SourcePaths.constants.ts` for pinned paths,
    the module's README section and `docs/modules/*.md`.
 6. Specs: unit specs sit next to their file; integration specs change import
    paths only. Run `pnpm test:unit`, then the module's integration specs.

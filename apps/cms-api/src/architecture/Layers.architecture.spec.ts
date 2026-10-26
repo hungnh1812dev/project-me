@@ -14,11 +14,11 @@ import {
   platformRoleOfFile,
   staleKnownViolations,
   unlistedViolations,
-} from './layer-check';
-import { KNOWN_LAYER_VIOLATIONS } from './layer-rules.constants';
-import { MODULES_DIRECTORY } from './module-edges.constants';
-import { SRC_ROOT } from './module-graph';
-import { FIELD_PROJECTION_FILE } from './source-paths.constants';
+} from './LayerCheck.analyzer';
+import { KNOWN_LAYER_VIOLATIONS } from './LayerRules.constants';
+import { MODULES_DIRECTORY } from './ModuleEdges.constants';
+import { SRC_ROOT } from './ModuleGraph.analyzer';
+import { FIELD_PROJECTION_FILE } from './SourcePaths.constants';
 
 /** Every folder under `modules/`: a new module is checked without a list to edit. */
 const ALL_MODULES = readdirSync(join(SRC_ROOT, MODULES_DIRECTORY), {

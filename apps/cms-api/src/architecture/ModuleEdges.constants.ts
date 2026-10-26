@@ -1,7 +1,7 @@
 /**
  * Allowed import directions between cms-api modules. Mirrors the cms-api
  * rows of the SPEC §2 capability map row for row: a change to one is a
- * change to the other. `modules.architecture.spec.ts` enforces it.
+ * change to the other. `Modules.architecture.spec.ts` enforces it.
  */
 export const MODULE_NODES = [
   'platform',

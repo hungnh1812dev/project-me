@@ -12,7 +12,7 @@ import { DocumentAuthGuard } from '../modules/access/document-auth/http/Document
 import { RATE_LIMIT_POLICY_METADATA } from '../common/guards/throttle.guard';
 import type { RateLimitPolicy } from '../common/constants/limits.constants';
 import { JwtAuthGuard } from '../modules/identity/http/Jwt.strategy';
-import type { PublicHandlerReason } from './public-handlers.constants';
+import type { PublicHandlerReason } from './PublicHandlers.constants';
 
 /**
  * Reads the route handlers of Nest controller classes from their decorator

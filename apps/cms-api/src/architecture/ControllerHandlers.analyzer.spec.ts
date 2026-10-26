@@ -8,7 +8,7 @@ import {
   hasPromisedGuard,
   isPermissionEnforced,
   PermissionGuard,
-} from './controller-handlers';
+} from './ControllerHandlers.analyzer';
 import { DocumentAuthGuard } from '../modules/access/document-auth/http/DocumentAuth.guard';
 import { JwtAuthGuard } from '../modules/identity/http/Jwt.strategy';
 

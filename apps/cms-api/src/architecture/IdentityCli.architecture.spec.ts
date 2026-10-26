@@ -2,7 +2,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 
-import { listSourceFiles, reachedFilesOf } from './import-graph';
+import { listSourceFiles, reachedFilesOf } from './ImportGraph.analyzer';
 
 /**
  * SPEC D1 / D17 (SEC-AU5 S6): the smoke seed use case

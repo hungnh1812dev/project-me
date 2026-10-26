@@ -8,18 +8,18 @@ import {
   nodeOfFile,
   SRC_ROOT,
   type NodeImport,
-} from './module-graph';
+} from './ModuleGraph.analyzer';
 import {
   authGuardOnlyViolations,
   typesOnlyViolations,
-} from './module-sub-rules';
+} from './ModuleSubRules.analyzer';
 import {
   ALLOWED_MODULE_EDGES,
   KNOWN_VIOLATIONS,
   MODULES_DIRECTORY,
   MODULE_NODES,
   type ModuleNode,
-} from './module-edges.constants';
+} from './ModuleEdges.constants';
 
 /**
  * SPEC §2 module directions: a file may import another module only when the

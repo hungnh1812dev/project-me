@@ -4,7 +4,7 @@ import {
   listSourceFiles,
   reachedFilesOf,
   resolveImports,
-} from './import-graph';
+} from './ImportGraph.analyzer';
 import {
   ACCESS_MANAGEMENT_DIRECTORY,
   ACCESS_MODULE_DIRECTORY,
@@ -13,7 +13,7 @@ import {
   MODULES_DIRECTORY,
   PLATFORM_DIRECTORIES,
   type ModuleNode,
-} from './module-edges.constants';
+} from './ModuleEdges.constants';
 
 export interface FileEdge {
   /** Path relative to `src/`. */

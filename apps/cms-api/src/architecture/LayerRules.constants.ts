@@ -1,12 +1,12 @@
 import { join, sep } from 'node:path';
 
-import type { FileLayer } from './module-graph';
-import { FIELD_PROJECTION_FILE } from './source-paths.constants';
+import type { FileLayer } from './ModuleGraph.analyzer';
+import { FIELD_PROJECTION_FILE } from './SourcePaths.constants';
 
 /**
  * Import rules per layer (ADR 0006 §2, §7). Mirrors the layer bullet of
  * SPEC §2: a change to one is a change to the other.
- * `layers.architecture.spec.ts` enforces it on every module under `modules/`.
+ * `Layers.architecture.spec.ts` enforces it on every module under `modules/`.
  */
 export type LayerName = Exclude<FileLayer, 'wiring' | 'unlayered'>;
 

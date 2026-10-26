@@ -28,8 +28,8 @@ import {
   handlersOf,
   isControllerClass,
   type ControllerClass,
-} from './controller-handlers';
-import { listSourceFiles } from './import-graph';
+} from './ControllerHandlers.analyzer';
+import { listSourceFiles } from './ImportGraph.analyzer';
 
 const { IP, EMAIL, ACTOR, ANONYMOUS_IP } = RATE_LIMIT_KEY_SOURCES;
 

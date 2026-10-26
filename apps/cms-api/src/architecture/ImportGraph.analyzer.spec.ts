@@ -9,7 +9,7 @@ import {
   reachedFilesOf,
   resolveImports,
   textMatches,
-} from './import-graph';
+} from './ImportGraph.analyzer';
 
 describe('import graph resolver', () => {
   let root: string;

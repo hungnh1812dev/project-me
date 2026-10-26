@@ -1,12 +1,15 @@
 import { join } from 'node:path';
 
 import { SCALAR_FIELD_TYPES } from '../modules/content-engine/domain/ContentEngine.constants';
-import { findFieldTypeBranches } from './field-type-literals';
-import { assertPinnedPathsExist, listSourceFiles } from './import-graph';
+import { findFieldTypeBranches } from './FieldTypeLiterals.analyzer';
+import {
+  assertPinnedPathsExist,
+  listSourceFiles,
+} from './ImportGraph.analyzer';
 import {
   FIELD_TYPES_DIRECTORY,
   VALUE_KIND_SWITCH_FILES,
-} from './source-paths.constants';
+} from './SourcePaths.constants';
 
 /**
  * SPEC D12 (R2-05): what a scalar field type means is decided in

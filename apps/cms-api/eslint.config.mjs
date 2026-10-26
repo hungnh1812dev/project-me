@@ -19,7 +19,7 @@ const DEEP_IMPORT_PATTERNS = {
   // `access/document-auth` is the facade of the document-auth part (not in
   // `index.ts`: identity imports that, and document-auth imports identity).
   // `access/domain/FieldProjection.rules` is not in the facade (it bypasses masking, see
-  // facade-reexports.architecture.spec.ts); module-edge specs say who may use it.
+  // FacadeReexports.architecture.spec.ts); module-edge specs say who may use it.
   access:
     '(^|/)access/(?!management$|document-auth$|domain/FieldProjection\\.rules$).+',
   // `KyselyContent.repository`, `ContentRowMapping.rules`, `ContentTree.entity`

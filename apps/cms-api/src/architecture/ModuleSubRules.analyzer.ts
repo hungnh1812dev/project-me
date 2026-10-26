@@ -2,8 +2,8 @@ import {
   AUTH_GUARD_ONLY_NAMES,
   AUTH_GUARD_ONLY_NODES,
   TYPES_ONLY_EDGES,
-} from './module-edges.constants';
-import type { NodeImport } from './module-graph';
+} from './ModuleEdges.constants';
+import type { NodeImport } from './ModuleGraph.analyzer';
 
 /** SPEC §2 "types only": imports on a types-only edge that are not `import type`. */
 export function typesOnlyViolations(imports: readonly NodeImport[]): string[] {
