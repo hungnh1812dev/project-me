@@ -1,7 +1,7 @@
 import { expect, type Page, test } from '@playwright/test';
 
 import { ADMIN_COPY } from '../src/AppContracts.contract';
-import { API_PATHS, apiUrl } from '../src/ApiPaths.constants';
+import { API_PATHS, apiUrl } from '../src/Api.endpoints';
 import { HTTP } from '../src/E2e.constants';
 import { e2eEnv } from '../src/E2e.env';
 import { mailIdsFor, waitForCode } from '../src/Mailpit.client';

@@ -53,3 +53,18 @@ export const HTTP = {
   UNSUPPORTED_MEDIA_TYPE: 415,
   SERVER_ERROR: 500,
 } as const;
+
+/** Distinguishes this run's data from earlier runs against the same stack. */
+export const RUN_ID = Date.now().toString(36);
+
+/** Content type of the smoke stack with lists, rich text and relations. */
+export const CV_PAGE_SLUG = 'cv-page';
+
+/** Content type of the smoke stack with a media field and a list view. */
+export const PROFILE_SLUG = 'profile';
+
+const UUID_SEGMENT = '[0-9a-f-]{36}';
+
+/** URL of an admin edit page for a document of `slug`. */
+export const editUrlPattern = (slug: string): RegExp =>
+  new RegExp(`/content/${slug}/${UUID_SEGMENT}$`);

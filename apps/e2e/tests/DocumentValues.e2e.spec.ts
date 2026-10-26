@@ -1,10 +1,8 @@
 import { type APIRequestContext, expect, test } from '@playwright/test';
 
-import { API_PATHS, apiUrl } from '../src/ApiPaths.constants';
-import { HTTP } from '../src/E2e.constants';
-import { RUN_ID } from '../src/RunId.constants';
+import { API_PATHS, apiUrl } from '../src/Api.endpoints';
+import { HTTP, RUN_ID, CV_PAGE_SLUG } from '../src/E2e.constants';
 import { bearer, ownerApiToken } from '../src/Session.fixture';
-import { CV_PAGE_SLUG } from '../src/ContentTypes.constants';
 
 const DOCUMENTS_PATH = API_PATHS.documents(CV_PAGE_SLUG);
 const POSITION = `E2E values ${RUN_ID}`;

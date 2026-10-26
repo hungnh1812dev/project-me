@@ -4,8 +4,7 @@ import { ADMIN_COPY } from '../src/AppContracts.contract';
 import { e2eEnv } from '../src/E2e.env';
 import { mailIdsFor, waitForCode } from '../src/Mailpit.client';
 import { labelStartingWith } from '../src/Locators.fixture';
-import { RUN_ID } from '../src/RunId.constants';
-import { CV_PAGE_SLUG } from '../src/ContentTypes.constants';
+import { RUN_ID, CV_PAGE_SLUG } from '../src/E2e.constants';
 import { submitLogin } from '../src/Session.fixture';
 import {
   accountRow,

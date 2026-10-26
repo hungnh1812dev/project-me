@@ -1,7 +1,7 @@
 import { type APIRequestContext, expect, type Page } from '@playwright/test';
 
 import { ADMIN_COPY, WEB_COPY } from './AppContracts.contract';
-import { API_PATHS, apiUrl } from './ApiPaths.constants';
+import { API_PATHS, apiUrl } from './Api.endpoints';
 import { HTTP } from './E2e.constants';
 import { labelStartingWith } from './Locators.fixture';
 import { bearer } from './Session.fixture';

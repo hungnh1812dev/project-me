@@ -1,11 +1,10 @@
 import { type BrowserContext, expect, test } from '@playwright/test';
 
 import { ADMIN_COPY, WEB_COPY } from '../src/AppContracts.contract';
-import { API_PATHS } from '../src/ApiPaths.constants';
-import { NOTES_MAX_LENGTH } from '../src/E2e.constants';
+import { API_PATHS } from '../src/Api.endpoints';
+import { NOTES_MAX_LENGTH, RUN_ID } from '../src/E2e.constants';
 import { e2eEnv } from '../src/E2e.env';
 import { labelStartingWith } from '../src/Locators.fixture';
-import { RUN_ID } from '../src/RunId.constants';
 import {
   dialog,
   next,

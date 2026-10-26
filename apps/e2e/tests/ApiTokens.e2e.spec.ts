@@ -8,11 +8,10 @@ import {
 
 import { ADMIN_COPY } from '../src/AppContracts.contract';
 import { e2eEnv } from '../src/E2e.env';
-import { HTTP } from '../src/E2e.constants';
+import { HTTP, RUN_ID } from '../src/E2e.constants';
 import { bearer, ownerApiToken, signInAs } from '../src/Session.fixture';
-import { RUN_ID } from '../src/RunId.constants';
 import { labelStartingWith } from '../src/Locators.fixture';
-import { API_PATHS, apiUrl } from '../src/ApiPaths.constants';
+import { API_PATHS, apiUrl } from '../src/Api.endpoints';
 
 const access = ADMIN_COPY.access;
 const tokens = access.apiTokens;

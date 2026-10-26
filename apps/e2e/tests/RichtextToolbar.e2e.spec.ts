@@ -2,7 +2,7 @@ import { expect, type Locator, type Page, test } from '@playwright/test';
 
 import { ADMIN_COPY, contentNewPath } from '../src/AppContracts.contract';
 import { signInAsOwner } from '../src/Session.fixture';
-import { CV_PAGE_SLUG } from '../src/ContentTypes.constants';
+import { CV_PAGE_SLUG } from '../src/E2e.constants';
 
 const richtext = ADMIN_COPY.content.richtext;
 

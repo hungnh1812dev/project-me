@@ -5,9 +5,8 @@ import {
   contentListPath,
   contentNewPath,
 } from '../src/AppContracts.contract';
-import { API_PATHS, apiUrl } from '../src/ApiPaths.constants';
-import { HTTP } from '../src/E2e.constants';
-import { CV_PAGE_SLUG } from '../src/ContentTypes.constants';
+import { API_PATHS, apiUrl } from '../src/Api.endpoints';
+import { HTTP, CV_PAGE_SLUG } from '../src/E2e.constants';
 import { bearer, ownerApiToken, signInAsOwner } from '../src/Session.fixture';
 
 const copy = ADMIN_COPY.content;

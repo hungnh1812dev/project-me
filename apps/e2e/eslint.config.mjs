@@ -42,7 +42,7 @@ export default [
           selector:
             'Program > VariableDeclaration > VariableDeclarator[id.name=/^(RUN_ID|HTTP|HTTP_.*|CV_SLUG|PROFILE_SLUG|CONTENT_TYPE_SLUG)$/]',
           message:
-            'Import RUN_ID, HTTP and the content type slugs from src/RunId.constants.ts, src/E2e.constants.ts and src/ContentTypes.constants.ts.',
+            'Import RUN_ID, HTTP and the content type slugs from src/E2e.constants.ts.',
         },
         {
           selector:
@@ -51,16 +51,15 @@ export default [
         },
         {
           selector: `Literal[value=/^\\/(auth|setup|documents|reviewer|api-tokens|media|accounts|graphql|presence)\\//]`,
-          message: 'Spell cms-api paths in src/ApiPaths.constants.ts only.',
+          message: 'Spell cms-api paths in src/Api.endpoints.ts only.',
         },
         {
           selector: `TemplateElement[value.raw=/^\\/(auth|setup|documents|reviewer|api-tokens|media|accounts|graphql|presence)\\//]`,
-          message: 'Spell cms-api paths in src/ApiPaths.constants.ts only.',
+          message: 'Spell cms-api paths in src/Api.endpoints.ts only.',
         },
         {
           selector: 'Literal[value=/^(cv-page|profile)$/]',
-          message:
-            'Use CV_PAGE_SLUG / PROFILE_SLUG from src/ContentTypes.constants.ts.',
+          message: 'Use CV_PAGE_SLUG / PROFILE_SLUG from src/E2e.constants.ts.',
         },
       ],
     },

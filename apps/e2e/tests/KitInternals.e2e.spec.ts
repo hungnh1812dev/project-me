@@ -6,8 +6,7 @@ import {
   contentNewPath,
 } from '../src/AppContracts.contract';
 import { signInAsOwner } from '../src/Session.fixture';
-import { CV_PAGE_SLUG, PROFILE_SLUG } from '../src/ContentTypes.constants';
-import { RUN_ID } from '../src/RunId.constants';
+import { CV_PAGE_SLUG, PROFILE_SLUG, RUN_ID } from '../src/E2e.constants';
 
 const copy = ADMIN_COPY.content;
 const bulk = copy.bulk;

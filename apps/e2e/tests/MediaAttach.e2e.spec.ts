@@ -9,10 +9,9 @@ import {
 import { ADMIN_COPY, contentNewPath } from '../src/AppContracts.contract';
 import { e2eEnv } from '../src/E2e.env';
 import { insertLibraryFiles } from '../src/SmokeDatabase.client';
-import { PROFILE_SLUG } from '../src/ContentTypes.constants';
+import { PROFILE_SLUG, RUN_ID } from '../src/E2e.constants';
 import { signInAs } from '../src/Session.fixture';
-import { RUN_ID } from '../src/RunId.constants';
-import { API_PATHS } from '../src/ApiPaths.constants';
+import { API_PATHS } from '../src/Api.endpoints';
 import { contentSaveButton } from '../src/Locators.fixture';
 
 const copy = ADMIN_COPY.media;

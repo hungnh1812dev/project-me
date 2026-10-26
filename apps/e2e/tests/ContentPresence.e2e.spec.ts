@@ -13,9 +13,8 @@ import {
 } from '../src/AppContracts.contract';
 import { e2eEnv } from '../src/E2e.env';
 import { signInAs } from '../src/Session.fixture';
-import { RUN_ID } from '../src/RunId.constants';
-import { CV_PAGE_SLUG } from '../src/ContentTypes.constants';
-import { API_PATHS } from '../src/ApiPaths.constants';
+import { RUN_ID, CV_PAGE_SLUG } from '../src/E2e.constants';
+import { API_PATHS } from '../src/Api.endpoints';
 import { inviteAccount } from '../src/Accounts.fixture';
 
 const copy = ADMIN_COPY.content;

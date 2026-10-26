@@ -4,7 +4,7 @@ import { ADMIN_COPY, MEDIA_ALT_MAX_LENGTH } from '../src/AppContracts.contract';
 import { e2eEnv } from '../src/E2e.env';
 import { fakeMediaApi, PNG_BASE64 } from '../src/FakeMediaApi.fixture';
 import { signInAs } from '../src/Session.fixture';
-import { RUN_ID } from '../src/RunId.constants';
+import { RUN_ID } from '../src/E2e.constants';
 
 const copy = ADMIN_COPY.media;
 const access = ADMIN_COPY.access;

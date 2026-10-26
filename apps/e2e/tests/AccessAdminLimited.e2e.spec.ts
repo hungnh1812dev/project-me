@@ -6,7 +6,7 @@ import {
   roleSaveButton,
 } from '../src/AccessPages.fixture';
 import { ADMIN_COPY } from '../src/AppContracts.contract';
-import { CV_PAGE_SLUG } from '../src/ContentTypes.constants';
+import { CV_PAGE_SLUG } from '../src/E2e.constants';
 import { e2eEnv } from '../src/E2e.env';
 import { labelStartingWith } from '../src/Locators.fixture';
 import { submitLogin } from '../src/Session.fixture';

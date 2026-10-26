@@ -3,7 +3,6 @@ import { expect, type Locator, type Page, test } from '@playwright/test';
 import { ADMIN_COPY } from '../src/AppContracts.contract';
 import { TWO_FACTOR_TEST_TIMEOUT_MS } from '../src/E2e.constants';
 import { e2eEnv } from '../src/E2e.env';
-import { TWO_FACTOR_CHANGED_PASSWORD as NEW_PASSWORD } from '../src/TwoFactorAccount.constants';
 import { mailIdsFor, waitForCode } from '../src/Mailpit.client';
 import { freshTotpCode } from '../src/Totp.fixture';
 import { labelStartingWith } from '../src/Locators.fixture';
@@ -20,6 +19,12 @@ import { expectSignedIn, submitLogin } from '../src/Session.fixture';
 test.describe.configure({ mode: 'serial', retries: 0 });
 
 const security = ADMIN_COPY.security;
+
+/**
+ * Password of the 2FA account after this spec ran (it ends with email codes on
+ * and this password).
+ */
+const TWO_FACTOR_CHANGED_PASSWORD = `${e2eEnv.twoFactorPassword.slice(0, 100)}-changed`;
 
 async function openSecurity(page: Page): Promise<void> {
   await page
@@ -193,10 +198,10 @@ test('an account turns on TOTP, signs in with it, switches to email codes and ch
     .fill(e2eEnv.twoFactorPassword);
   await page
     .getByLabel(labelStartingWith(ADMIN_COPY.password.newPasswordLabel))
-    .fill(NEW_PASSWORD);
+    .fill(TWO_FACTOR_CHANGED_PASSWORD);
   await page
     .getByLabel(labelStartingWith(ADMIN_COPY.password.confirmPasswordLabel))
-    .fill(NEW_PASSWORD);
+    .fill(TWO_FACTOR_CHANGED_PASSWORD);
   await page
     .getByRole('button', { name: security.changePassword.submit })
     .click();

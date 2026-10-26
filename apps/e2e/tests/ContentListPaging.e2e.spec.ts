@@ -6,9 +6,8 @@ import {
   contentListPath,
 } from '../src/AppContracts.contract';
 import { signInAsOwner } from '../src/Session.fixture';
-import { API_PATHS } from '../src/ApiPaths.constants';
-import { PROFILE_SLUG } from '../src/ContentTypes.constants';
-import { RUN_ID } from '../src/RunId.constants';
+import { API_PATHS } from '../src/Api.endpoints';
+import { PROFILE_SLUG, RUN_ID } from '../src/E2e.constants';
 
 const copy = ADMIN_COPY.content;
 const EXTRA_ROWS = 2;

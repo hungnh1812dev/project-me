@@ -1,7 +1,7 @@
 import { expect, type Page, test } from '@playwright/test';
 
 import { ADMIN_COPY } from '../src/AppContracts.contract';
-import { API_PATHS, apiUrl } from '../src/ApiPaths.constants';
+import { API_PATHS, apiUrl } from '../src/Api.endpoints';
 import { signInAsOwner } from '../src/Session.fixture';
 
 const UNAUTHORIZED = 401;

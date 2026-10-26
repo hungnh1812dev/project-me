@@ -2,10 +2,9 @@ import { expect, type Page, test } from '@playwright/test';
 
 import { ADMIN_COPY, contentListPath } from '../src/AppContracts.contract';
 import { e2eEnv } from '../src/E2e.env';
-import { PROFILE_SLUG } from '../src/ContentTypes.constants';
+import { PROFILE_SLUG, RUN_ID } from '../src/E2e.constants';
 import { signInAs } from '../src/Session.fixture';
-import { RUN_ID } from '../src/RunId.constants';
-import { API_PATHS } from '../src/ApiPaths.constants';
+import { API_PATHS } from '../src/Api.endpoints';
 
 const copy = ADMIN_COPY.content;
 const bulk = copy.bulk;
