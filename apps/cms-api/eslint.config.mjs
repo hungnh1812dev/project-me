@@ -76,6 +76,11 @@ export default [
   ...baseEslint({
     tsconfigRootDir: import.meta.dirname,
     ignores: ['src/generated/**'],
+    fileNames: {
+      frameworkFileNames: ['index.ts', 'main.ts'],
+      isWordRequired: true,
+      testSuffixes: ['spec'],
+    },
   }),
   { languageOptions: { globals: globals.node } },
   timeConversionLiteralBan,
