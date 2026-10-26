@@ -82,8 +82,9 @@ e2e runs locally only; CI does not run it.
 Set the keys from [`.env.example`](.env.example) in the shell, then
 `pnpm --filter @abyss/e2e test` (or `pnpm e2e` at the root).
 `src/E2e.env.ts` is the only reader of `process.env`. `pnpm --filter @abyss/e2e
-test:contract` checks (no stack needed) that `.env.example`, `E2E_VARS` in
-`scripts/lib/stack-seed.sh` and `E2e.env.ts` list the same `E2E_*` names.
+test:unit` checks (no stack needed) that `.env.example`, `E2E_VARS` in
+`scripts/lib/stack-seed.sh` and `E2e.env.ts` list the same `E2E_*` names, and
+that every file name under `src/` and `tests/` follows the naming rule.
 
 ## Module rules
 
