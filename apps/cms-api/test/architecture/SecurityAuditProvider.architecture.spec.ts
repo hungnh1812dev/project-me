@@ -2,19 +2,18 @@ import 'reflect-metadata';
 
 import { join } from 'node:path';
 
-import { SecurityAuditService } from '../modules/security-audit';
+import { SecurityAuditService } from '../../src/modules/security-audit';
 import {
   assertPinnedPathsExist,
   listSourceFiles,
 } from './ImportGraph.analyzer';
-import { SECURITY_AUDIT_MODULE_FILE } from './SourcePaths.constants';
+import { SECURITY_AUDIT_MODULE_FILE, SRC_ROOT } from './SourcePaths.constants';
 
 /**
  * SPEC D15 (audit AUD-AU1a-04): `SecurityAuditService` is provided in exactly
  * one Nest module, `SecurityAuditModule`; every other module imports that
  * module instead of listing a second provider.
  */
-const SRC_ROOT = join(__dirname, '..');
 const MODULE_FILE = /\.module\.ts$/;
 const PROVIDERS_METADATA_KEY = 'providers';
 

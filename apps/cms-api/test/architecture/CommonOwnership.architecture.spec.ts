@@ -1,7 +1,8 @@
 import { sep } from 'node:path';
 
 import { listSourceFiles, reachedFilesOf } from './ImportGraph.analyzer';
-import { nodeOfFile, SRC_ROOT } from './ModuleGraph.analyzer';
+import { nodeOfFile } from './ModuleGraph.analyzer';
+import { SRC_ROOT } from './SourcePaths.constants';
 
 /**
  * SPEC D1 (R1-15): `common/` and `infrastructure/` hold what several modules

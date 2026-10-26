@@ -2,14 +2,14 @@ import { Logger } from '@nestjs/common';
 import type { ArgumentsHost } from '@nestjs/common';
 import { GraphQLError } from 'graphql';
 
-import { HttpExceptionFilter } from '../common/filters/HttpException.filter';
+import { HttpExceptionFilter } from '../../src/common/filters/HttpException.filter';
 import {
   DomainError,
   DOMAIN_ERROR_KINDS,
-} from '../common/errors/Domain.errors';
-import { itemError } from '../modules/documents/application/BulkItem.errors';
-import { toBulkBody } from '../modules/documents/http/Bulk.controller';
-import { formatGraphqlError } from '../modules/graphql/http/GraphqlError.filter';
+} from '../../src/common/errors/Domain.errors';
+import { itemError } from '../../src/modules/documents/application/BulkItem.errors';
+import { toBulkBody } from '../../src/modules/documents/http/Bulk.controller';
+import { formatGraphqlError } from '../../src/modules/graphql/http/GraphqlError.filter';
 
 const DETAILS = { field: 'slug' };
 const error = new DomainError({

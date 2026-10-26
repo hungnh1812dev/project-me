@@ -6,7 +6,6 @@ import {
   collectNodeImports,
   layerOfFile,
   nodeOfFile,
-  SRC_ROOT,
   type NodeImport,
 } from './ModuleGraph.analyzer';
 import {
@@ -20,6 +19,7 @@ import {
   MODULE_NODES,
   type ModuleNode,
 } from './ModuleEdges.constants';
+import { SRC_ROOT } from './SourcePaths.constants';
 
 /**
  * SPEC §2 module directions: a file may import another module only when the

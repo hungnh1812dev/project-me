@@ -9,20 +9,20 @@ import {
   RATE_LIMIT_KEY_SOURCES,
   TEN_MINUTES_MS,
   type RateLimitRule,
-} from '../common/constants/Limits.constants';
+} from '../../src/common/constants/Limits.constants';
 import {
   RATE_LIMIT_POLICY_METADATA,
   ThrottleGuard,
-} from '../common/guards/Throttle.guard';
-import { RATE_LIMIT_OVERRIDE_ENV_KEYS } from '../config/Config.constants';
-import { ACCESS_RATE_LIMIT_POLICIES } from '../modules/access/http/AccessHttp.constants';
-import { DOCUMENTS_RATE_LIMIT_POLICIES } from '../modules/documents/http/DocumentsHttp.constants';
+} from '../../src/common/guards/Throttle.guard';
+import { RATE_LIMIT_OVERRIDE_ENV_KEYS } from '../../src/config/Config.constants';
+import { ACCESS_RATE_LIMIT_POLICIES } from '../../src/modules/access/http/AccessHttp.constants';
+import { DOCUMENTS_RATE_LIMIT_POLICIES } from '../../src/modules/documents/http/DocumentsHttp.constants';
 import {
   IDENTITY_RATE_LIMIT_POLICIES,
   rateLimitOverrideBindings,
-} from '../modules/identity/http/IdentityHttp.constants';
-import { MEDIA_RATE_LIMIT_POLICIES } from '../modules/media/http/Media.controller';
-import { REVIEWER_RATE_LIMIT_POLICIES } from '../modules/reviewer/http/Reviewer.controller';
+} from '../../src/modules/identity/http/IdentityHttp.constants';
+import { MEDIA_RATE_LIMIT_POLICIES } from '../../src/modules/media/http/Media.controller';
+import { REVIEWER_RATE_LIMIT_POLICIES } from '../../src/modules/reviewer/http/Reviewer.controller';
 import {
   AUTHENTICATION_GUARDS,
   handlersOf,
@@ -30,6 +30,7 @@ import {
   type ControllerClass,
 } from './ControllerHandlers.analyzer';
 import { listSourceFiles } from './ImportGraph.analyzer';
+import { SRC_ROOT } from './SourcePaths.constants';
 
 const { IP, EMAIL, ACTOR, ANONYMOUS_IP } = RATE_LIMIT_KEY_SOURCES;
 
@@ -161,7 +162,6 @@ describe('rate-limit override bindings', () => {
 });
 
 describe('throttled handlers', () => {
-  const SRC_ROOT = join(__dirname, '..');
   const controllers = listSourceFiles(SRC_ROOT)
     .filter(({ text }) => text.includes('@Controller('))
     .flatMap(({ file }) => {

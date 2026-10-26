@@ -285,10 +285,7 @@ export const LAYER_EXCEPTIONS: readonly LayerException[] = [
  * Folders under `src/` that read module constants by file and are not
  * module code, so the layer rules never apply to them.
  */
-export const LAYER_EXEMPT_ROOTS: readonly string[] = [
-  'architecture',
-  'contract',
-];
+export const LAYER_EXEMPT_ROOTS: readonly string[] = ['contract'];
 
 /**
  * Folders inside a module that keep their old layout until their

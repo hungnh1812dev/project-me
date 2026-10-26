@@ -1,6 +1,4 @@
-import { join } from 'node:path';
-
-import { SCALAR_FIELD_TYPES } from '../modules/content-engine/domain/ContentEngine.constants';
+import { SCALAR_FIELD_TYPES } from '../../src/modules/content-engine/domain/ContentEngine.constants';
 import { findFieldTypeBranches } from './FieldTypeLiterals.analyzer';
 import {
   assertPinnedPathsExist,
@@ -9,6 +7,7 @@ import {
 import {
   FIELD_TYPES_DIRECTORY,
   VALUE_KIND_SWITCH_FILES,
+  SRC_ROOT,
 } from './SourcePaths.constants';
 
 /**
@@ -16,7 +15,6 @@ import {
  * `content-engine/field-types/`. Code elsewhere reads the registry
  * (`fieldTypeOf`) and never branches on a quoted field type name.
  */
-const SRC_ROOT = join(__dirname, '..');
 const GENERATED_DIRECTORY = 'generated';
 
 // VALUE_KIND_SWITCH_FILES: exhaustive switches over a value kind

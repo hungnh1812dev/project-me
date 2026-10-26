@@ -323,9 +323,9 @@ in that file.
    one facade in separate statements; the guard reads inline `type` names as
    values.
 4. Fix every consumer's import of it; `KNOWN_LAYER_VIOLATIONS`
-   (`src/architecture/LayerRules.constants.ts`) is empty and an entry needs
+   (`test/architecture/LayerRules.constants.ts`) is empty and an entry needs
    a removing task.
-5. Update `src/architecture/SourcePaths.constants.ts` for pinned paths,
+5. Update `test/architecture/SourcePaths.constants.ts` for pinned paths,
    the module's README section and `docs/modules/*.md`.
 6. Specs: unit specs sit next to their file; integration specs change import
    paths only. Run `pnpm test:unit`, then the module's integration specs.

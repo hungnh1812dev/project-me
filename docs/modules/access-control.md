@@ -228,7 +228,7 @@ Decisions (T16):
 **Only path.** The architecture test
 `RecordSerializer.architecture.spec.ts` (a static scan of `src/`) fails
 when the following holds. Imports are resolved to the real file by
-`src/architecture/ImportGraph.analyzer.ts` (an `index.ts` facade is followed to the
+`test/architecture/ImportGraph.analyzer.ts` (an `index.ts` facade is followed to the
 file that defines each symbol), and `FacadeReexports.architecture.spec.ts`
 fails when a module `index.ts` re-exports `KyselyContent.repository`,
 `TreeLoader.adapter` or `FieldProjection.rules`:

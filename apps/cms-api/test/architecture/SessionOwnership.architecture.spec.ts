@@ -1,5 +1,3 @@
-import { join } from 'node:path';
-
 import {
   assertPinnedPathsExist,
   listSourceFiles,
@@ -9,6 +7,7 @@ import {
   IDENTITY_DIRECTORY,
   REVIEWER_ACCOUNT_ADAPTER_FILE,
   ACCOUNT_VERSION_REPOSITORY_FILE,
+  SRC_ROOT,
 } from './SourcePaths.constants';
 
 /**
@@ -17,7 +16,6 @@ import {
  * Writes that remain elsewhere are listed in `TOKEN_VERSION_WRITE_ALLOWLIST`
  * with the reason; a listed file that no longer writes fails the spec.
  */
-const SRC_ROOT = join(__dirname, '..');
 const GENERATED_DIRECTORY = 'generated';
 
 const REFRESH_TOKEN_REFERENCE =

@@ -10,7 +10,7 @@ module.exports = {
       displayName: 'unit',
       testEnvironment: 'node',
       rootDir: __dirname,
-      roots: ['<rootDir>/src'],
+      roots: ['<rootDir>/src', '<rootDir>/test/architecture'],
       testMatch: ['**/*.spec.ts'],
       transform,
     },

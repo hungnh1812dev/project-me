@@ -87,7 +87,7 @@ export default [
   {
     files: ['src/**/*.ts'],
     // reason: src/contract reads `*.constants.ts` files directly, by design (Q-A4).
-    ignores: ['src/modules/**', 'src/architecture/**', 'src/contract/**'],
+    ignores: ['src/modules/**', 'src/contract/**'],
     ...deepImportBan(moduleNames),
   },
   ...moduleNames.map((ownName) => ({

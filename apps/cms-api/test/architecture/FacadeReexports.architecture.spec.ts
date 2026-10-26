@@ -1,18 +1,21 @@
-import { basename, join } from 'node:path';
+import { basename } from 'node:path';
 
 import {
   assertPinnedPathsExist,
   listSourceFiles,
   reachedFilesOf,
 } from './ImportGraph.analyzer';
-import { MODULES_PREFIX, UNMASKED_FILES } from './SourcePaths.constants';
+import {
+  MODULES_PREFIX,
+  UNMASKED_FILES,
+  SRC_ROOT,
+} from './SourcePaths.constants';
 
 /**
  * SPEC D3 / D18: a module facade (`index.ts`) never re-exports the record
  * loaders or the field projection. Those files bypass masking, so only the
  * modules the other architecture specs name may import them by file.
  */
-const SRC_ROOT = join(__dirname, '..');
 const FACADE_FILE = 'index.ts';
 
 describe('module facades (D3, D18)', () => {

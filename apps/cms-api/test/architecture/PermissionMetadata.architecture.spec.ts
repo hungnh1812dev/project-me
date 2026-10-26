@@ -3,8 +3,8 @@ import 'reflect-metadata';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { SYSTEM_SUBJECT_ACTIONS } from '../modules/access/domain/Access.constants';
-import { PERMISSION_METADATA_KEY } from '../modules/access/http/Permission.guard';
+import { SYSTEM_SUBJECT_ACTIONS } from '../../src/modules/access/domain/Access.constants';
+import { PERMISSION_METADATA_KEY } from '../../src/modules/access/http/Permission.guard';
 import {
   type ControllerClass,
   handlersOf,
@@ -14,6 +14,7 @@ import {
 } from './ControllerHandlers.analyzer';
 import { listSourceFiles } from './ImportGraph.analyzer';
 import { PUBLIC_HANDLERS } from './PublicHandlers.constants';
+import { SRC_ROOT } from './SourcePaths.constants';
 
 /**
  * SPEC D5 / D6 (audit X2): `PermissionGuard` allows a handler that has no
@@ -21,7 +22,6 @@ import { PUBLIC_HANDLERS } from './PublicHandlers.constants';
  * `@RequirePermission` or be on the explicit public list, and the metadata
  * key the decorator writes must be the one key the guard reads.
  */
-const SRC_ROOT = join(__dirname, '..');
 const CONTROLLER_MARKER = '@Controller(';
 const CONTROLLER_FILE = /\.controller\.ts$/;
 const MANAGEMENT_CONTROLLERS = [

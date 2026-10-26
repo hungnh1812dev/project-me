@@ -7,11 +7,11 @@ import {
   PERMISSION_METADATA_KEY,
   PermissionGuard,
   type PermissionRequirement,
-} from '../modules/access/http/Permission.guard';
-import { DocumentAuthGuard } from '../modules/access/document-auth/http/DocumentAuth.guard';
-import { RATE_LIMIT_POLICY_METADATA } from '../common/guards/Throttle.guard';
-import type { RateLimitPolicy } from '../common/constants/Limits.constants';
-import { JwtAuthGuard } from '../modules/identity/http/Jwt.strategy';
+} from '../../src/modules/access/http/Permission.guard';
+import { DocumentAuthGuard } from '../../src/modules/access/document-auth/http/DocumentAuth.guard';
+import { RATE_LIMIT_POLICY_METADATA } from '../../src/common/guards/Throttle.guard';
+import type { RateLimitPolicy } from '../../src/common/constants/Limits.constants';
+import { JwtAuthGuard } from '../../src/modules/identity/http/Jwt.strategy';
 import type { PublicHandlerReason } from './PublicHandlers.constants';
 
 /**

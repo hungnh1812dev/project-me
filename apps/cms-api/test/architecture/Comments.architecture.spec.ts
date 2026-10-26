@@ -1,12 +1,10 @@
-import { join } from 'node:path';
-
 import { commentsOf, listSourceFiles } from './ImportGraph.analyzer';
+import { SRC_ROOT } from './SourcePaths.constants';
 
 /**
  * Comments describe the code, not the backlog: task and question IDs rot once
  * the backlog is archived. SPEC IDs (`D7`, `§9`) stay and are not matched.
  */
-const SRC_ROOT = join(__dirname, '..');
 const GENERATED_DIRECTORY = 'generated';
 const BACKLOG_ID = /\b(T\d{1,3}[a-z]?|OS\d+|Q-?[A-Z]*\d+)\b/;
 

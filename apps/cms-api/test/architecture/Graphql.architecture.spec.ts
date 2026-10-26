@@ -5,11 +5,12 @@ import {
   listSourceFiles,
   packageSpecifiersOf,
   reachedFilesOf,
-} from '../../architecture/ImportGraph.analyzer';
+} from './ImportGraph.analyzer';
 import {
   GRAPHQL_DIRECTORY,
   UNMASKED_FILES,
-} from '../../architecture/SourcePaths.constants';
+  SRC_ROOT,
+} from './SourcePaths.constants';
 
 /**
  * SPEC D18 / D3: GraphQL reads go through `DocumentsQueryService` only, so
@@ -17,7 +18,6 @@ import {
  * field projection (checked on resolved files, facades followed), and none
  * imports Kysely.
  */
-const SRC_ROOT = join(__dirname, '..', '..');
 const FORBIDDEN_FILES = UNMASKED_FILES;
 const FORBIDDEN_PACKAGE = 'kysely';
 

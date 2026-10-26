@@ -299,7 +299,7 @@ def file_table(table_id, rows, root_abs, base, notes, show_layer=True):
 
 def module_edges(root):
     """MODULE_NODES and ALLOWED_MODULE_EDGES parsed from the architecture constants."""
-    path = os.path.join(root, 'apps/cms-api/src/architecture')
+    path = os.path.join(root, 'apps/cms-api/test/architecture')
     fname = next(f for f in os.listdir(path) if norm(f) == 'moduleedges.constants.ts')
     src = open(os.path.join(path, fname), encoding='utf-8').read()
     block = src.split('ALLOWED_MODULE_EDGES', 1)[1].split('};', 1)[0]

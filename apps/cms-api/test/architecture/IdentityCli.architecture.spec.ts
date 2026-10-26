@@ -3,6 +3,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 
 import { listSourceFiles, reachedFilesOf } from './ImportGraph.analyzer';
+import { SRC_ROOT } from './SourcePaths.constants';
 
 /**
  * SPEC D1 / D17 (SEC-AU5 S6): the smoke seed use case
@@ -10,7 +11,6 @@ import { listSourceFiles, reachedFilesOf } from './ImportGraph.analyzer';
  * file outside `modules/identity/cli/` imports or re-exports it or anything
  * else under `cli/` (its wiring builds the service), the identity facade included.
  */
-const SRC_ROOT = join(__dirname, '..');
 const CLI_DIRECTORY = join('modules', 'identity', 'cli') + '/';
 const PROTECTED_FILE = join(
   'modules',

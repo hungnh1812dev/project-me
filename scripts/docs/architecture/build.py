@@ -16,6 +16,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.abspath(sys.argv[1] if len(sys.argv) > 1 else os.path.join(HERE, '..', '..', '..'))
 OUT = os.path.abspath(sys.argv[2] if len(sys.argv) > 2 else os.path.join(ROOT, 'docs', 'architecture'))
 API_SRC = 'apps/cms-api/src'
+API_TEST = 'apps/cms-api/test'
 
 
 def write(name, title, body, lead=''):
@@ -376,7 +377,7 @@ sequenceDiagram
 {diagram(tx)}
 
 <h2 id="guards">How the rules are enforced</h2>
-<p>The architecture specs in <code>src/architecture/</code> parse the import graph and fail the build on any edge or layer violation, unknown file name, unguarded handler or hard-coded role slug:</p>
+<p>The architecture specs in <code>test/architecture/</code> parse the import graph and fail the build on any edge or layer violation, unknown file name, unguarded handler or hard-coded role slug:</p>
 <ul class="toc">{specs}</ul>
 """
     write('02-cms-api-architecture.html', 'cms-api architecture', body,
@@ -456,7 +457,7 @@ def build_platform():
         ('config', 'config/', ['config'], 'Env validation with Zod; the app refuses to start on any error and logs a redacted summary.'),
         ('infrastructure', 'infrastructure/', ['infrastructure'], 'Shared ports and adapters: database (Prisma client, transaction runners, afterCommit), logging, mail, scheduling.'),
         ('contract', 'contract/', ['contract'], 'Public constants contract for the frontends, checked in CI.'),
-        ('architecture', 'architecture/', ['architecture'], 'Analyzers and constants used by the architecture specs. Not product code and not checked by the layer rules.'),
+        ('architecture', 'test/architecture/', ['architecture'], 'Analyzers and constants used by the architecture specs. Test code outside src/, so it is not product code and not built into dist.'),
     ]
     parts = []
     for gid, title, inc, desc in groups:
@@ -465,8 +466,8 @@ def build_platform():
             base = API_SRC
             rel = rows
         else:
-            rows = files_under(API_SRC, inc)
-            base = API_SRC
+            base = API_TEST if gid == 'architecture' else API_SRC
+            rows = files_under(base, inc)
             rel = rows
         parts.append(f"""
 <details class="mod" open id="{gid}"><summary>{esc(title)} <span class="muted" style="font-weight:400">· {len(rows)} files</span></summary>

@@ -1,6 +1,4 @@
-import { join } from 'node:path';
-
-import { SYSTEM_ROLES } from '../modules/access/domain/SystemRoles.entity';
+import { SYSTEM_ROLES } from '../../src/modules/access/domain/SystemRoles.entity';
 import {
   assertPinnedPathsExist,
   listSourceFiles,
@@ -9,6 +7,7 @@ import { findRoleSlugLiterals } from './RoleSlugLiterals.analyzer';
 import {
   NON_ROLE_LITERAL_FILES,
   SYSTEM_ROLES_TABLE_FILE,
+  SRC_ROOT,
 } from './SourcePaths.constants';
 
 /**
@@ -18,7 +17,6 @@ import {
  * not a role: an actor kind (`'anonymous'`, `'reviewer'`) or a route segment,
  * module name or handler label in the files listed below.
  */
-const SRC_ROOT = join(__dirname, '..');
 const GENERATED_DIRECTORY = 'generated';
 
 // NON_ROLE_LITERAL_FILES: files whose quoted slugs name routes, modules or handler labels.

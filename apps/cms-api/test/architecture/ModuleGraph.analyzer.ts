@@ -1,4 +1,4 @@
-import { join, relative, sep } from 'node:path';
+import { relative, sep } from 'node:path';
 
 import {
   listSourceFiles,
@@ -74,7 +74,7 @@ export function layerOfFile(file: string): FileLayer {
 
 /**
  * The node a file belongs to, or `null` for files outside the module graph
- * (composition root, architecture specs' helpers).
+ * (composition root; the guards in `test/architecture/SourcePaths.constants.ts` own the rest).
  */
 export function nodeOfFile(file: string): ModuleNode | null {
   const [top, moduleName, ...rest] = file.split(sep);
@@ -111,8 +111,6 @@ export function collectCrossNodeEdges(srcRoot: string): {
   });
   return { scannedFiles: sources.length, edges };
 }
-
-export const SRC_ROOT = join(__dirname, '..');
 
 export interface NodeImport {
   /** Path relative to `src/`. */

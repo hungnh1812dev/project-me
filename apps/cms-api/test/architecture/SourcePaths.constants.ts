@@ -8,6 +8,8 @@ import { join, sep } from 'node:path';
  * Static `import`s of module symbols in the specs are not paths and stay
  * where they are: the compiler reports those.
  */
+export const SRC_ROOT = join(__dirname, '..', '..', 'src');
+
 const MODULES = 'modules';
 
 export const MODULES_PREFIX = `${MODULES}${sep}`;
@@ -126,10 +128,6 @@ export const SYSTEM_ROLES_TABLE_FILE = join(
 export const NON_ROLE_LITERAL_FILES = [
   join(MODULES, 'identity', 'http', 'IdentityHttp.constants.ts'),
   join(MODULES, 'reviewer', 'http', 'Reviewer.controller.ts'),
-  join('architecture', 'LayerRules.constants.ts'),
-  join('architecture', 'ModuleEdges.constants.ts'),
-  join('architecture', 'PublicHandlers.constants.ts'),
-  join('architecture', 'SourcePaths.constants.ts'),
 ];
 
 /** Files and folders the specs above need to exist, checked on every run. */

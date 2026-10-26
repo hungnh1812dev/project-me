@@ -1,10 +1,8 @@
-import { join } from 'node:path';
-
 import {
   assertPinnedPathsExist,
   listSourceFiles,
   reachedFilesOf,
-} from '../../architecture/ImportGraph.analyzer';
+} from './ImportGraph.analyzer';
 import {
   ACCESS_CONSTANTS_FILE,
   CONTENT_ENGINE_DIRECTORY,
@@ -14,7 +12,8 @@ import {
   RECORD_LOADER_FILES,
   RECORD_READER_PORT_FILES,
   RECORD_SERIALIZER_FILE,
-} from '../../architecture/SourcePaths.constants';
+  SRC_ROOT,
+} from './SourcePaths.constants';
 
 /**
  * Architecture test for SPEC D3: `RecordSerializer` is the only path from a
@@ -33,7 +32,6 @@ import {
  *    that response types of document endpoints use).
  */
 
-const SRC_ROOT = join(__dirname, '..', '..');
 const GENERATED_DIR = 'generated';
 const SERIALIZER_FILE = RECORD_SERIALIZER_FILE;
 /** Files that only use the record types to build the serializer itself. */
