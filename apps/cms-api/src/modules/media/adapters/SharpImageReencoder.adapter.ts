@@ -2,8 +2,10 @@ import { readFile } from 'node:fs/promises';
 
 import sharp from 'sharp';
 
-import { DomainError } from '../../../common/errors/Domain.errors';
-import { DOMAIN_ERROR_KINDS } from '../../../common/errors/DomainErrorKinds.constants';
+import {
+  DomainError,
+  DOMAIN_ERROR_KINDS,
+} from '../../../common/errors/Domain.errors';
 import {
   MEDIA_ERROR_CODES,
   MEDIA_ERROR_MESSAGES,

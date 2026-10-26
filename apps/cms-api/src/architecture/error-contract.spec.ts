@@ -3,8 +3,10 @@ import type { ArgumentsHost } from '@nestjs/common';
 import { GraphQLError } from 'graphql';
 
 import { HttpExceptionFilter } from '../common/filters/http-exception.filter';
-import { DomainError } from '../common/errors/Domain.errors';
-import { DOMAIN_ERROR_KINDS } from '../common/errors/DomainErrorKinds.constants';
+import {
+  DomainError,
+  DOMAIN_ERROR_KINDS,
+} from '../common/errors/Domain.errors';
 import { asItemError } from '../modules/documents/application/BulkItem.errors';
 import { formatGraphqlError } from '../modules/graphql/http/GraphqlError.filter';
 

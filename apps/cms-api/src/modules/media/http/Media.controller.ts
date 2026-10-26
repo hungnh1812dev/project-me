@@ -23,13 +23,11 @@ import {
   type RateLimitRule,
 } from '../../../common/constants/limits.constants';
 import { Throttle } from '../../../common/guards/throttle.guard';
-import { ClientIpResolver } from '../../../common/http/client-ip.resolver';
-import { clientMetaOf } from '../../../common/http/client-meta';
 import {
-  documentIdSchema,
-  pageQuerySchema,
-  parseRequest,
-} from '../../../common/http/request-parsing';
+  ClientIpResolver,
+  clientMetaOf,
+} from '../../../common/http/client-ip.resolver';
+import { parseRequest } from '../../../common/http/request-parsing';
 import type { PageMeta } from '../../../common/validation/SharedSchemas.rules';
 import {
   MEDIA_SUBJECT,
@@ -44,6 +42,10 @@ import { isAltWithinLimit, normalizeAlt } from '../domain/MediaUpload.rules';
 import type { UploadStream } from '../application/Media.port';
 import { MediaLibraryService } from '../application/MediaLibrary.service';
 import { UploadMediaService } from '../application/UploadMedia.service';
+import {
+  documentIdSchema,
+  pageQuerySchema,
+} from '../../../common/validation/SharedSchemas.rules';
 
 /** SPEC §9 media (upload, list, delete). */
 const MEDIA_ROUTES = {

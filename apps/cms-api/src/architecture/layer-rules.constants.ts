@@ -240,7 +240,6 @@ export const LAYER_EXCEPTIONS: readonly LayerException[] = [
     join('modules', 'graphql', 'http', 'schema', 'Scalars.rules.ts'),
     join('modules', 'graphql', 'http', 'schema', 'SharedTypes.entity.ts'),
     join('modules', 'graphql', 'http', 'schema', 'TypeNames.rules.ts'),
-    join('common', 'http', 'request-parsing.ts'),
   ].map((importing) => ({
     from: GRAPHQL_PRINT_SCHEMA_FILE,
     importing,
@@ -326,14 +325,12 @@ export interface KnownLayerViolation {
 
 /** Violations a migrated module still has; a stale entry fails the spec. */
 export const KNOWN_LAYER_VIOLATIONS: readonly KnownLayerViolation[] = [
-  ...['describe-http-exception.ts', 'DomainErrorHttpStatus.constants.ts'].map(
-    (file) => ({
-      from: join('modules', 'documents', 'application', 'BulkItem.errors.ts'),
-      rule: 'platform-role',
-      to: join('common', 'http', file),
-      removedBy: 'CR-cl-1',
-    }),
-  ),
+  {
+    from: join('modules', 'documents', 'application', 'BulkItem.errors.ts'),
+    rule: 'platform-role',
+    to: join('common', 'http', 'describe-http-exception.ts'),
+    removedBy: 'CR-cl-1',
+  },
   {
     from: GRAPHQL_PRINT_SCHEMA_FILE,
     rule: 'other-module-layer',

@@ -1,4 +1,3 @@
-import { DOMAIN_ERROR_KINDS } from '../../../common/errors/DomainErrorKinds.constants';
 import type { Clock } from '../../../common/time/clock';
 import { type ActorContext, type RolePolicy } from '../../access';
 import {
@@ -6,6 +5,7 @@ import {
   PRESENCE_TTL_MS,
 } from '../domain/Documents.constants';
 import { PresenceService } from './Presence.service';
+import { DOMAIN_ERROR_KINDS } from '../../../common/errors/Domain.errors';
 
 const ROLE: RolePolicy = {
   id: 1,

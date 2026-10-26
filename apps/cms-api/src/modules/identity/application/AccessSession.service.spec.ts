@@ -1,6 +1,8 @@
 import type { VersionCache } from '../../access';
-import { DOMAIN_ERROR_KINDS } from '../../../common/errors/DomainErrorKinds.constants';
-import { DomainError } from '../../../common/errors/Domain.errors';
+import {
+  DomainError,
+  DOMAIN_ERROR_KINDS,
+} from '../../../common/errors/Domain.errors';
 import { AccessSessionService } from './AccessSession.service';
 
 const CLAIMS = { sub: 'doc-1', tv: 3, pv: 7 } as never;

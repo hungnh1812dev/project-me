@@ -1,7 +1,9 @@
 import { NotFoundException } from '@nestjs/common';
 
-import { DomainError } from '../../../common/errors/Domain.errors';
-import { DOMAIN_ERROR_KINDS } from '../../../common/errors/DomainErrorKinds.constants';
+import {
+  DomainError,
+  DOMAIN_ERROR_KINDS,
+} from '../../../common/errors/Domain.errors';
 import { execute, parse } from 'graphql';
 
 import { type ActorContext } from '../../access';

@@ -16,14 +16,15 @@ import type { Request, Response } from 'express';
 import { z } from 'zod';
 
 import { NO_STORE_HEADER } from '../../../common/constants/http.constants';
-import { DomainError } from '../../../common/errors/Domain.errors';
-import { DOMAIN_ERROR_KINDS } from '../../../common/errors/DomainErrorKinds.constants';
-import { Throttle } from '../../../common/guards/throttle.guard';
-import { ClientIpResolver } from '../../../common/http/client-ip.resolver';
 import {
-  type ClientMeta,
+  DomainError,
+  DOMAIN_ERROR_KINDS,
+} from '../../../common/errors/Domain.errors';
+import { Throttle } from '../../../common/guards/throttle.guard';
+import {
+  ClientIpResolver,
   clientMetaOf,
-} from '../../../common/http/client-meta';
+} from '../../../common/http/client-ip.resolver';
 import { AccessPolicyService } from '../../access';
 import {
   AuthService,
@@ -45,6 +46,7 @@ import {
   REFRESH_COOKIE_OPTIONS,
 } from './IdentityHttp.constants';
 import { type AuthenticatedRequest, JwtAuthGuard } from './Jwt.strategy';
+import { type ClientMeta } from '../../../common/types/ClientMeta.entity';
 
 /**
  * `POST /auth/login` body. Shape checks only: the email format is not

@@ -1,7 +1,7 @@
-import { DOMAIN_ERROR_KINDS } from '../../../common/errors/DomainErrorKinds.constants';
 import type { ActorContext, RolePolicy } from '../../access';
 import { DOCUMENT_ERROR_MESSAGES } from '../domain/Documents.constants';
 import { DocumentsQueryService } from './DocumentsQuery.service';
+import { DOMAIN_ERROR_KINDS } from '../../../common/errors/Domain.errors';
 
 const ROLE: RolePolicy = {
   id: 1,

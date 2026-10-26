@@ -1,8 +1,10 @@
 import { type BadRequestException, NotFoundException } from '@nestjs/common';
 import type { Request } from 'express';
 
-import { DomainError } from '../../../common/errors/Domain.errors';
-import { DOMAIN_ERROR_KINDS } from '../../../common/errors/DomainErrorKinds.constants';
+import {
+  DomainError,
+  DOMAIN_ERROR_KINDS,
+} from '../../../common/errors/Domain.errors';
 import type { ClientIpResolver } from '../../../common/http/client-ip.resolver';
 import {
   type OwnerSetupService,

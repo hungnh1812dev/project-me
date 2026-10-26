@@ -1,5 +1,7 @@
-import { DomainError } from '../../../common/errors/Domain.errors';
-import { DOMAIN_ERROR_KINDS } from '../../../common/errors/DomainErrorKinds.constants';
+import {
+  DomainError,
+  DOMAIN_ERROR_KINDS,
+} from '../../../common/errors/Domain.errors';
 import type { PermissionGrant } from './ActorContext.entity';
 import { type ActorContext, isOwnerRole } from './ActorContext.entity';
 import { RANK_FORBIDDEN_ERROR } from './Access.constants';

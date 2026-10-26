@@ -1,11 +1,13 @@
-import { DomainError } from '../../../common/errors/Domain.errors';
-import type { DomainErrorKind } from '../../../common/errors/DomainErrorKinds.constants';
+import {
+  DomainError,
+  type DomainErrorKind,
+} from '../../../common/errors/Domain.errors';
 import {
   describeError,
   isDescribableError,
   isServerErrorStatus,
+  DOMAIN_ERROR_HTTP_STATUS,
 } from '../../../common/http/describe-http-exception';
-import { DOMAIN_ERROR_HTTP_STATUS } from '../../../common/http/DomainErrorHttpStatus.constants';
 import { BULK_ITEM_STATUS } from '../domain/Documents.constants';
 
 export interface BulkItemError {

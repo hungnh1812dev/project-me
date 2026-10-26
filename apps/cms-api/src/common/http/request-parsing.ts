@@ -2,26 +2,7 @@ import { BadRequestException } from '@nestjs/common';
 import { z } from 'zod';
 
 import { INVALID_REQUEST_ERROR } from '../constants/error.constants';
-import {
-  documentIdSchema,
-  PAGINATION,
-  pageQuerySchema,
-  queryInt,
-  type PageMeta,
-  type PageQuery,
-  type RequestIssue,
-} from '../validation/SharedSchemas.rules';
-
-export {
-  INVALID_REQUEST_ERROR,
-  documentIdSchema,
-  PAGINATION,
-  pageQuerySchema,
-  queryInt,
-  type PageMeta,
-  type PageQuery,
-  type RequestIssue,
-};
+import type { RequestIssue } from '../validation/SharedSchemas.rules';
 
 export function invalidRequest(
   issues: readonly RequestIssue[],

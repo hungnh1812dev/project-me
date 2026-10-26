@@ -12,11 +12,11 @@ import {
 } from '@nestjs/common';
 
 import { INTERNAL_ERROR_MESSAGE } from '../constants/error.constants';
-import { DomainError } from '../errors/Domain.errors';
 import {
+  DomainError,
   DOMAIN_ERROR_KINDS,
   type DomainErrorKind,
-} from '../errors/DomainErrorKinds.constants';
+} from '../errors/Domain.errors';
 import {
   describeError,
   describeHttpException,

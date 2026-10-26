@@ -1,9 +1,9 @@
 import { INVALID_REQUEST_ERROR } from '../../../../common/constants/error.constants';
-import { DomainError } from '../../../../common/errors/Domain.errors';
 import {
+  DomainError,
   DOMAIN_ERROR_KINDS,
   type DomainErrorKind,
-} from '../../../../common/errors/DomainErrorKinds.constants';
+} from '../../../../common/errors/Domain.errors';
 import { ACCESS_ERROR_CODES } from '../../domain/Access.constants';
 import { API_TOKEN } from '../../domain/ApiToken.rules';
 import {

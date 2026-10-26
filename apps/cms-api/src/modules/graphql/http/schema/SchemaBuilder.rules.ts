@@ -21,7 +21,6 @@ import {
   type RecordSystemField,
   type SerializedComponent,
 } from '../../../access';
-import { PAGINATION } from '../../../../common/http/request-parsing';
 import {
   type ComponentFieldDefinition,
   type ContentTypeDefinition,
@@ -64,6 +63,7 @@ import {
   newTypeNameClaims,
   rootNamesOf,
 } from './TypeNames.rules';
+import { PAGINATION } from '../../../../common/validation/SharedSchemas.rules';
 
 export { GraphqlNameClashError };
 

@@ -9,13 +9,59 @@ import {
   RETRY_AFTER_MAX_SECONDS,
   RETRY_AFTER_MIN_SECONDS,
 } from '../constants/limits.constants';
-import { DomainError } from '../errors/Domain.errors';
-import { DOMAIN_ERROR_KINDS } from '../errors/DomainErrorKinds.constants';
 import {
-  DOMAIN_ERROR_DEFAULT_MESSAGE,
-  DOMAIN_ERROR_HTTP_STATUS,
-} from './DomainErrorHttpStatus.constants';
-import { ERROR_CODE_BY_STATUS } from './ErrorCodeByStatus.constants';
+  DOMAIN_ERROR_KINDS,
+  DomainError,
+  type DomainErrorKind,
+} from '../errors/Domain.errors';
+
+/** The one table from a domain error kind to its HTTP status. */
+export const DOMAIN_ERROR_HTTP_STATUS: Readonly<
+  Record<DomainErrorKind, number>
+> = {
+  [DOMAIN_ERROR_KINDS.INVALID_INPUT]: HttpStatus.BAD_REQUEST,
+  [DOMAIN_ERROR_KINDS.UNAUTHENTICATED]: HttpStatus.UNAUTHORIZED,
+  [DOMAIN_ERROR_KINDS.FORBIDDEN]: HttpStatus.FORBIDDEN,
+  [DOMAIN_ERROR_KINDS.NOT_FOUND]: HttpStatus.NOT_FOUND,
+  [DOMAIN_ERROR_KINDS.CONFLICT]: HttpStatus.CONFLICT,
+  [DOMAIN_ERROR_KINDS.TOO_LARGE]: HttpStatus.PAYLOAD_TOO_LARGE,
+  [DOMAIN_ERROR_KINDS.UNSUPPORTED_MEDIA_TYPE]:
+    HttpStatus.UNSUPPORTED_MEDIA_TYPE,
+  [DOMAIN_ERROR_KINDS.RATE_LIMITED]: HttpStatus.TOO_MANY_REQUESTS,
+  [DOMAIN_ERROR_KINDS.UNAVAILABLE]: HttpStatus.SERVICE_UNAVAILABLE,
+};
+
+/** What Nest's own exception for the status says when no message is given. */
+export const DOMAIN_ERROR_DEFAULT_MESSAGE: Readonly<
+  Record<DomainErrorKind, string>
+> = {
+  [DOMAIN_ERROR_KINDS.INVALID_INPUT]: 'Bad Request',
+  [DOMAIN_ERROR_KINDS.UNAUTHENTICATED]: 'Unauthorized',
+  [DOMAIN_ERROR_KINDS.FORBIDDEN]: 'Forbidden',
+  [DOMAIN_ERROR_KINDS.NOT_FOUND]: 'Not Found',
+  [DOMAIN_ERROR_KINDS.CONFLICT]: 'Conflict',
+  [DOMAIN_ERROR_KINDS.TOO_LARGE]: 'Payload Too Large',
+  [DOMAIN_ERROR_KINDS.UNSUPPORTED_MEDIA_TYPE]: 'Unsupported Media Type',
+  [DOMAIN_ERROR_KINDS.RATE_LIMITED]: 'Too Many Requests',
+  [DOMAIN_ERROR_KINDS.UNAVAILABLE]: 'Service Unavailable',
+};
+
+/** Default `errorCode` for an HTTP status when the exception names none. */
+export const ERROR_CODE_BY_STATUS: Readonly<
+  Partial<Record<number, ErrorCode>>
+> = {
+  [HttpStatus.BAD_REQUEST]: ERROR_CODES.BAD_REQUEST,
+  [HttpStatus.UNAUTHORIZED]: ERROR_CODES.UNAUTHORIZED,
+  [HttpStatus.FORBIDDEN]: ERROR_CODES.FORBIDDEN,
+  [HttpStatus.NOT_FOUND]: ERROR_CODES.NOT_FOUND,
+  [HttpStatus.METHOD_NOT_ALLOWED]: ERROR_CODES.METHOD_NOT_ALLOWED,
+  [HttpStatus.CONFLICT]: ERROR_CODES.CONFLICT,
+  [HttpStatus.PAYLOAD_TOO_LARGE]: ERROR_CODES.PAYLOAD_TOO_LARGE,
+  [HttpStatus.UNSUPPORTED_MEDIA_TYPE]: ERROR_CODES.UNSUPPORTED_MEDIA_TYPE,
+  [HttpStatus.UNPROCESSABLE_ENTITY]: ERROR_CODES.UNPROCESSABLE_ENTITY,
+  [HttpStatus.TOO_MANY_REQUESTS]: ERROR_CODES.TOO_MANY_REQUESTS,
+  [HttpStatus.SERVICE_UNAVAILABLE]: ERROR_CODES.SERVICE_UNAVAILABLE,
+};
 
 export interface HttpExceptionDescription {
   statusCode: number;

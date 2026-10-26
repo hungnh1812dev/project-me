@@ -1,7 +1,9 @@
 import { z } from 'zod';
 
-import { DomainError } from '../../../common/errors/Domain.errors';
-import { DOMAIN_ERROR_KINDS } from '../../../common/errors/DomainErrorKinds.constants';
+import {
+  DomainError,
+  DOMAIN_ERROR_KINDS,
+} from '../../../common/errors/Domain.errors';
 import type { PermissionAction } from './Access.constants';
 import { OWNER_ROLE_SLUG } from './SystemRoles.entity';
 import { PERMISSION_ACTIONS } from './Access.constants';

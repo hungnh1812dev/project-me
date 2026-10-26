@@ -13,7 +13,10 @@ import {
   UseGuards,
 } from '@nestjs/common';
 
-import { ClientIpResolver } from '../../../../common/http/client-ip.resolver';
+import {
+  ClientIpResolver,
+  clientMetaOf,
+} from '../../../../common/http/client-ip.resolver';
 import { ID_PARAM } from '../../../../common/constants/api.constants';
 import {
   ACCESS_RATE_LIMIT_POLICIES,
@@ -22,17 +25,12 @@ import {
 import { NO_STORE_HEADER } from '../../../../common/constants/http.constants';
 import { Throttle } from '../../../../common/guards/throttle.guard';
 import { PermissionAction } from '../../domain/Access.constants';
-import { clientMetaOf } from '../../../../common/http/client-meta';
 import { type AuthenticatedRequest, JwtAuthGuard } from '../../../identity';
 import {
   inviteAccountSchema,
   updateAccountSchema,
 } from './AccessManagement.requests';
-import {
-  documentIdSchema,
-  pageQuerySchema,
-  parseRequest,
-} from '../../../../common/http/request-parsing';
+import { parseRequest } from '../../../../common/http/request-parsing';
 import { type AccountView } from '../domain/Account.entity';
 import {
   type AccountPage,
@@ -47,6 +45,10 @@ import {
   RequirePermission,
 } from '../../http/Permission.guard';
 import { requireAccountActor } from '../../domain/Rank.rules';
+import {
+  documentIdSchema,
+  pageQuerySchema,
+} from '../../../../common/validation/SharedSchemas.rules';
 
 const SUBJECT = 'accounts';
 

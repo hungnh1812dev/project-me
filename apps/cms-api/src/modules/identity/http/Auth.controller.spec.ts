@@ -1,8 +1,10 @@
 import { UnauthorizedException } from '@nestjs/common';
 import type { Request, Response } from 'express';
 
-import { DomainError } from '../../../common/errors/Domain.errors';
-import { DOMAIN_ERROR_KINDS } from '../../../common/errors/DomainErrorKinds.constants';
+import {
+  DomainError,
+  DOMAIN_ERROR_KINDS,
+} from '../../../common/errors/Domain.errors';
 import type { ClientIpResolver } from '../../../common/http/client-ip.resolver';
 import type { AccessPolicyService } from '../../access';
 import { AuthController } from './Auth.controller';

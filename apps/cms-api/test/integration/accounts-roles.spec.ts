@@ -3,7 +3,10 @@ import type { StartedPostgreSqlContainer } from '@testcontainers/postgresql';
 import request from 'supertest';
 
 import { REFRESH_COOKIE } from '../../src/modules/identity/http/IdentityHttp.constants';
-import { ERROR_CODES } from '../../src/common/constants/error.constants';
+import {
+  ERROR_CODES,
+  INVALID_REQUEST_ERROR,
+} from '../../src/common/constants/error.constants';
 import {
   openPrisma,
   type PrismaHandle,
@@ -17,7 +20,6 @@ import {
   ACCESS_ERROR_CODES,
   RANK_FORBIDDEN_ERROR,
 } from '../../src/modules/access/domain/Access.constants';
-import { INVALID_REQUEST_ERROR } from '../../src/common/http/request-parsing';
 import { MANAGEMENT_ERROR_CODES } from '../../src/modules/access/management/domain/AccessManagement.constants';
 import {
   AUDIT_ACTIONS,

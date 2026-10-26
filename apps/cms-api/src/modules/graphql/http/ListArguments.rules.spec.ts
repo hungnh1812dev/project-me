@@ -1,11 +1,9 @@
 import { DomainError } from '../../../common/errors/Domain.errors';
 import { describeError } from '../../../common/http/describe-http-exception';
-import {
-  INVALID_REQUEST_ERROR,
-  PAGINATION,
-} from '../../../common/http/request-parsing';
 import { DOCUMENT_QUERY_LIMITS, parseListQuery } from '../../documents';
 import { type ListArguments, toListQuery } from './ListArguments.rules';
+import { PAGINATION } from '../../../common/validation/SharedSchemas.rules';
+import { INVALID_REQUEST_ERROR } from '../../../common/constants/error.constants';
 
 const base: ListArguments = {
   status: 'published',

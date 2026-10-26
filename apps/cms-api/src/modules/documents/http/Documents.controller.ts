@@ -18,10 +18,7 @@ import { z } from 'zod';
 import { SLUG_PARAM } from '../../../common/constants/api.constants';
 import { Throttle } from '../../../common/guards/throttle.guard';
 import { NO_STORE_HEADER } from '../../../common/constants/http.constants';
-import {
-  documentIdSchema,
-  parseRequest,
-} from '../../../common/http/request-parsing';
+import { parseRequest } from '../../../common/http/request-parsing';
 import {
   PermissionAction,
   RequirePermission,
@@ -61,6 +58,7 @@ import {
   type DocumentPage,
   DocumentsQueryService,
 } from '../application/DocumentsQuery.service';
+import { documentIdSchema } from '../../../common/validation/SharedSchemas.rules';
 
 const detailQuerySchema = z.strictObject({
   [DOCUMENT_QUERY_KEYS.STATUS]: z

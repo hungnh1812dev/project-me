@@ -2,10 +2,7 @@ import { BadRequestException } from '@nestjs/common';
 import { z } from 'zod';
 
 import { ERROR_CODES } from '../../../common/constants/error.constants';
-import {
-  documentIdSchema,
-  parseRequest,
-} from '../../../common/http/request-parsing';
+import { parseRequest } from '../../../common/http/request-parsing';
 import {
   BULK_LIMITS,
   type BulkRequest,
@@ -19,6 +16,7 @@ import {
   EXPECTED_VERSION_BODY_KEY,
 } from './DocumentsHttp.constants';
 import { INT4_MAX } from '../../content-engine';
+import { documentIdSchema } from '../../../common/validation/SharedSchemas.rules';
 
 const envelopeSchema = z.strictObject({
   [BULK_BODY_KEYS.ATOMIC]: z.boolean(),

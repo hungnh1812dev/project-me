@@ -1,7 +1,6 @@
 import { type ArgumentsHost, ConflictException, Logger } from '@nestjs/common';
 
-import { DomainError } from '../errors/Domain.errors';
-import { DOMAIN_ERROR_KINDS } from '../errors/DomainErrorKinds.constants';
+import { DomainError, DOMAIN_ERROR_KINDS } from '../errors/Domain.errors';
 import { HttpExceptionFilter } from './http-exception.filter';
 
 function run(exception: unknown) {

@@ -3,7 +3,9 @@ import { isIP } from 'node:net';
 import { Inject, Injectable } from '@nestjs/common';
 import type { Request } from 'express';
 
+import { USER_AGENT_HEADER } from '../constants/http.constants';
 import { UNKNOWN_CLIENT_IP } from '../constants/limits.constants';
+import type { ClientMeta } from '../types/ClientMeta.entity';
 import { type IAppConfig } from '../../config/app-config';
 import { APP_CONFIG } from '../../config/config.constants';
 
@@ -47,4 +49,16 @@ export class ClientIpResolver {
     const ip = req.ip;
     return ip === undefined || ip === '' ? UNKNOWN_CLIENT_IP : normalize(ip);
   }
+}
+
+/** User agent and client IP stored with a new refresh token. */
+export function clientMetaOf(
+  clientIp: ClientIpResolver,
+  req: Request,
+): ClientMeta {
+  const ip = clientIp.resolve(req);
+  return {
+    userAgent: req.get(USER_AGENT_HEADER),
+    ip: ip === UNKNOWN_CLIENT_IP ? undefined : ip,
+  };
 }

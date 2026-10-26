@@ -1,8 +1,8 @@
-import { DomainError } from '../../../common/errors/Domain.errors';
 import {
+  DomainError,
   DOMAIN_ERROR_KINDS,
   type DomainErrorKind,
-} from '../../../common/errors/DomainErrorKinds.constants';
+} from '../../../common/errors/Domain.errors';
 import {
   MS_PER_MINUTE,
   MS_PER_SECOND,

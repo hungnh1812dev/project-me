@@ -1,4 +1,3 @@
-import { DOMAIN_ERROR_KINDS } from '../../../common/errors/DomainErrorKinds.constants';
 import { REVIEWER_ACCOUNT } from './Reviewer.constants';
 import {
   REVIEWER_IP_WINDOW_MS,
@@ -8,6 +7,7 @@ import {
   retryAfterSecondsOf,
   reviewerIpLimited,
 } from './ReviewerAdmission.rules';
+import { DOMAIN_ERROR_KINDS } from '../../../common/errors/Domain.errors';
 
 const NOW = 1_000_000_000;
 

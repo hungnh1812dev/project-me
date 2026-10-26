@@ -2,10 +2,7 @@ import { HttpStatus } from '@nestjs/common';
 import type { GraphQLFieldResolver, GraphQLSchema } from 'graphql';
 
 import { describeError } from '../../../common/http/describe-http-exception';
-import {
-  documentIdSchema,
-  parseRequest,
-} from '../../../common/http/request-parsing';
+import { parseRequest } from '../../../common/http/request-parsing';
 import { type ActorContext, type SerializedRecord } from '../../access';
 import { DOCUMENT_ERROR_CODES } from '../../documents';
 import type { DocumentPage, DocumentsQueryService } from '../../documents';
@@ -15,6 +12,7 @@ import {
   ROOT_OPERATIONS,
 } from '../application/Graphql.constants';
 import { type ListArguments, toListQuery } from './ListArguments.rules';
+import { documentIdSchema } from '../../../common/validation/SharedSchemas.rules';
 
 /** What every resolver reads from the request: who is asking. */
 export interface GraphqlContext {

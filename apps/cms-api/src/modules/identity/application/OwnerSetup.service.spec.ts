@@ -5,8 +5,10 @@ import type {
   UnitOfWork,
 } from '../../../infrastructure/database/TransactionRunner.port';
 import type { SecurityAuditService } from '../../security-audit';
-import { DOMAIN_ERROR_KINDS } from '../../../common/errors/DomainErrorKinds.constants';
-import { DomainError } from '../../../common/errors/Domain.errors';
+import {
+  DomainError,
+  DOMAIN_ERROR_KINDS,
+} from '../../../common/errors/Domain.errors';
 import { SETUP_TOKEN_MAX_LENGTH } from '../domain/Identity.constants';
 import type { AccountRepository, AuditRecorder } from './Identity.port';
 import { OwnerBootstrapService } from './OwnerBootstrap.service';

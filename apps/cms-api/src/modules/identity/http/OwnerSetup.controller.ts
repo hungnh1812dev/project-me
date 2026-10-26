@@ -13,8 +13,10 @@ import type { Request } from 'express';
 
 import { NO_STORE_HEADER } from '../../../common/constants/http.constants';
 import { Throttle } from '../../../common/guards/throttle.guard';
-import { ClientIpResolver } from '../../../common/http/client-ip.resolver';
-import { clientMetaOf } from '../../../common/http/client-meta';
+import {
+  ClientIpResolver,
+  clientMetaOf,
+} from '../../../common/http/client-ip.resolver';
 import { parseRequest } from '../../../common/http/request-parsing';
 import {
   ownerInputSchema,

@@ -13,7 +13,6 @@ import {
   PASSWORD_MIN_LENGTH,
 } from '../../src/modules/identity/domain/Identity.constants';
 import { ERROR_CODES } from '../../src/common/constants/error.constants';
-import { DOMAIN_ERROR_KINDS } from '../../src/common/errors/DomainErrorKinds.constants';
 import { MS_PER_SECOND } from '../../src/common/constants/time.constants';
 import { IDENTITY_RATE_LIMIT_POLICIES } from '../../src/modules/identity/http/IdentityHttp.constants';
 import {
@@ -42,6 +41,7 @@ import {
 import { startPostgres } from '../fixtures/postgres.fixture';
 import { createTestApp } from '../fixtures/test-app';
 import { seedSystemRoles } from '../fixtures/access.fixture';
+import { DOMAIN_ERROR_KINDS } from '../../src/common/errors/Domain.errors';
 
 const AUTH = '/api/v1/auth';
 const LOGIN = `${AUTH}/login`;

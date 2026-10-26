@@ -1,11 +1,13 @@
-import { DOMAIN_ERROR_KINDS } from '../../../common/errors/DomainErrorKinds.constants';
 import type { ActorContext, RolePolicy } from '../../access';
 import {
   BULK_ITEM_STATUS,
   BULK_LIMITS,
   DOCUMENT_ERROR_CODES,
 } from '../domain/Documents.constants';
-import { DomainError } from '../../../common/errors/Domain.errors';
+import {
+  DomainError,
+  DOMAIN_ERROR_KINDS,
+} from '../../../common/errors/Domain.errors';
 import { BulkService } from './Bulk.service';
 
 const ROLE: RolePolicy = {

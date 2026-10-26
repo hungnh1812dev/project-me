@@ -13,8 +13,10 @@ import {
   SVG_DOCUMENT,
 } from '../../../../test/fixtures/media.fixture';
 import { multipart } from '../../../../test/fixtures/multipart';
-import { DomainError } from '../../../common/errors/Domain.errors';
-import { DOMAIN_ERROR_KINDS } from '../../../common/errors/DomainErrorKinds.constants';
+import {
+  DomainError,
+  DOMAIN_ERROR_KINDS,
+} from '../../../common/errors/Domain.errors';
 import type { PreparedUpload, UploadStream } from '../application/Media.port';
 import { MEDIA_ERROR_CODES } from '../domain/Media.constants';
 import { MEDIA_MAX_BYTES } from '../domain/MediaUpload.rules';

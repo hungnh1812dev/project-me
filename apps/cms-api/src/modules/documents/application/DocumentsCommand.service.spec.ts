@@ -1,8 +1,8 @@
-import { DOMAIN_ERROR_KINDS } from '../../../common/errors/DomainErrorKinds.constants';
 import type { ActorContext, RolePolicy } from '../../access';
 import { DocumentNotFoundError } from '../../content-engine';
 import { DOCUMENT_ERROR_CODES } from '../domain/Documents.constants';
 import { DocumentsCommandService } from './DocumentsCommand.service';
+import { DOMAIN_ERROR_KINDS } from '../../../common/errors/Domain.errors';
 
 const ROLE: RolePolicy = {
   id: 1,

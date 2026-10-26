@@ -1,5 +1,7 @@
-import { DomainError } from '../../../common/errors/Domain.errors';
-import { DOMAIN_ERROR_KINDS } from '../../../common/errors/DomainErrorKinds.constants';
+import {
+  DomainError,
+  DOMAIN_ERROR_KINDS,
+} from '../../../common/errors/Domain.errors';
 import type { PageMeta } from '../../../common/validation/SharedSchemas.rules';
 import {
   MEDIA_ERROR_CODES,

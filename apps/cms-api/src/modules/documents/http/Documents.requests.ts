@@ -4,9 +4,7 @@ import { z } from 'zod';
 import { ERROR_CODES } from '../../../common/constants/error.constants';
 import {
   invalidRequest,
-  PAGINATION,
   parseRequest,
-  queryInt,
 } from '../../../common/http/request-parsing';
 import { CONTENT_STATUSES, INT4_MAX } from '../../content-engine';
 import {
@@ -35,6 +33,10 @@ import {
   SORT_SEPARATOR,
   VERSION_BODY_KEY,
 } from './DocumentsHttp.constants';
+import {
+  PAGINATION,
+  queryInt,
+} from '../../../common/validation/SharedSchemas.rules';
 
 type ContentStatus = (typeof CONTENT_STATUSES)[number];
 

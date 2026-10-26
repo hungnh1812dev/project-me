@@ -1,10 +1,10 @@
 import { ERROR_CODES } from '../../../common/constants/error.constants';
 import { RATE_LIMIT_MESSAGE } from '../../../common/constants/limits.constants';
-import { DomainError } from '../../../common/errors/Domain.errors';
 import {
+  DomainError,
   DOMAIN_ERROR_KINDS,
   type DomainErrorKind,
-} from '../../../common/errors/DomainErrorKinds.constants';
+} from '../../../common/errors/Domain.errors';
 import {
   AUTH_ERROR_CODES,
   AUTH_ERROR_MESSAGES,
