@@ -2,6 +2,7 @@
 Updated: 2026-10-25 after trim (phase R4 closed and archived; finished R-phase lines and older unscheduled follow-ups moved to `archive/handoff-trim-2026-10-25.md`)
 
 ## In progress / next
+- API-HEADERS cms-api HSTS/nosniff/Referrer-Policy - awaiting qc tier 3 and commit; next: none. Closes the open SPEC §7 header decision.
 - ARCH-1 Move cms-api guards to test/architecture - awaiting qc tier 1 + security-qc path review and commit (2 commits: staged renames, then edits); next: none. Regenerated docs/architecture pages also refresh 08-frontends paths.
 - FN-lint-api cms-api lint rule - blocked: deleting the two guard files (FileNames.architecture.spec.ts, FileNames.constants.ts) was denied; next: delete them, rerun test:unit.
 - FN-lint-ui cms-admin/web/form-commons lint rule - awaiting qc tier 1 and commit; next: FN-hook-rename.
