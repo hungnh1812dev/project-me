@@ -296,11 +296,14 @@ folder, so a new module is covered without a list to edit) keeps only `<Module>.
 in `LAYER_RULES`; `layers.architecture.spec.ts` enforces them. Checklist,
 as the content-types pilot (CR-hc-2) used it:
 
-File names follow ADR 0008 (`<PascalName>.<function>.ts`).
-`src/architecture/file-names.architecture.spec.ts` checks every file in `src/`
-and `test/` against `FILE_FUNCTION_WORDS` in `file-names.constants.ts`; files
-that predate the rule sit in `KNOWN_FILE_NAME_EXCEPTIONS`, which only shrinks
-(rename a file when its CR task moves it, then delete its entry).
+File names follow ADR 0008 (`<PascalName>.<function>.ts`, tests add
+`.spec.ts` and an optional lower-case scenario variant such as
+`Auth.service.refresh.spec.ts`); folders are kebab-case.
+`src/architecture/FileNames.architecture.spec.ts` checks every file and folder
+in `src/` and `test/` against `FILE_FUNCTION_WORDS` in `FileNames.constants.ts`
+(kebab-case file names and `*.config.ts` are not accepted); files that predate
+the rule sit in `KNOWN_FILE_NAME_EXCEPTIONS`, which only shrinks (rename a
+file in its FN-api task, then delete its entry).
 
 File granularity follows `code-standards` §4.4 and ADR 0006 §7.13 (rules
 G1-G10 in `tasks/todo.md`): one ports file and one constants file per layer,

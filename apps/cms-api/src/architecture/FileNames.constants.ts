@@ -30,16 +30,15 @@ export const FILE_FUNCTION_WORDS: readonly string[] = [
   'executor',
   'constants',
   'fixture',
+  'architecture',
+  'analyzer',
+  'integration',
+  'contract',
+  'schema',
 ];
 
 /** Names fixed by a framework or tool, kept as they are. */
 export const FRAMEWORK_FILE_NAMES: readonly string[] = ['index.ts', 'main.ts'];
-
-export const TOOL_CONFIG_SUFFIX = '.config.ts';
-
-/** Structure guards keep a kebab-case topic name: `import-graph.architecture.spec.ts`. */
-export const ARCHITECTURE_SPEC_NAME =
-  /^[a-z][a-z0-9-]*\.architecture\.spec\.ts$/;
 
 /** Directories under the package root that the guard scans. */
 export const SCANNED_DIRECTORIES: readonly string[] = ['src', 'test'];
@@ -47,25 +46,38 @@ export const SCANNED_DIRECTORIES: readonly string[] = ['src', 'test'];
 /** Generated code is not named by hand. */
 export const SKIPPED_DIRECTORIES: readonly string[] = ['src/generated'];
 
+export const FOLDER_NAME_SHAPE = /^[a-z][a-z0-9]*(-[a-z0-9]+)*$/;
+
 /** Paths relative to `apps/cms-api`. Only shrinks: a conforming or missing entry fails the guard. */
 export const KNOWN_FILE_NAME_EXCEPTIONS: readonly string[] = [
   'src/app.module.ts',
   'src/app.setup.ts',
+  'src/architecture/comments.architecture.spec.ts',
+  'src/architecture/common-ownership.architecture.spec.ts',
   'src/architecture/controller-handlers.spec.ts',
   'src/architecture/controller-handlers.ts',
   'src/architecture/error-contract.spec.ts',
+  'src/architecture/facade-reexports.architecture.spec.ts',
+  'src/architecture/field-type-branches.architecture.spec.ts',
   'src/architecture/field-type-literals.ts',
-  'src/architecture/file-names.constants.ts',
+  'src/architecture/identity-cli.architecture.spec.ts',
   'src/architecture/import-graph.spec.ts',
   'src/architecture/import-graph.ts',
   'src/architecture/layer-check.ts',
   'src/architecture/layer-rules.constants.ts',
+  'src/architecture/layers.architecture.spec.ts',
   'src/architecture/module-edges.constants.ts',
   'src/architecture/module-graph.ts',
   'src/architecture/module-sub-rules.ts',
+  'src/architecture/modules.architecture.spec.ts',
+  'src/architecture/permission-metadata.architecture.spec.ts',
   'src/architecture/public-handlers.constants.ts',
+  'src/architecture/rate-limit-policies.architecture.spec.ts',
   'src/architecture/role-slug-literals.ts',
+  'src/architecture/security-audit-provider.architecture.spec.ts',
+  'src/architecture/session-ownership.architecture.spec.ts',
   'src/architecture/source-paths.constants.ts',
+  'src/architecture/system-role-literals.architecture.spec.ts',
   'src/bootstrap.ts',
   'src/common/constants/api.constants.ts',
   'src/common/constants/error.constants.ts',
@@ -122,12 +134,13 @@ export const KNOWN_FILE_NAME_EXCEPTIONS: readonly string[] = [
   'src/modules/access/domain/PolicyEvaluator.ts',
   'src/modules/access/domain/RecordSerializer.spec.ts',
   'src/modules/access/domain/RecordSerializer.ts',
+  'src/modules/access/record-serializer.architecture.spec.ts',
   'src/modules/content-engine/cli/generate.spec.ts',
   'src/modules/content-engine/cli/generate.ts',
   'src/modules/content-engine/cli/migrate.ts',
-  'src/modules/content-types/domain/ContentTypeView.contract.spec.ts',
   'src/modules/graphql/cli/print-schema.spec.ts',
   'src/modules/graphql/cli/print-schema.ts',
+  'src/modules/graphql/graphql.architecture.spec.ts',
   'src/modules/identity/auth-constants.pin.spec.ts',
   'src/modules/media/adapters/Storage.adapters.spec.ts',
   'test/fixtures/access.fixture.ts',
