@@ -20,11 +20,14 @@ const PROTECTED_PATHS = [
   '/content/x/some-doc',
 ];
 const PUBLIC_PATHS = ['/login', '/set-password', '/reset-password'];
+// Side menu order: content types, then Utilities, then System settings.
 const EXPECTED_OWNER_NAV = [
+  'cv-page',
+  'profile',
+  nav.media,
   nav.accounts,
   nav.roles,
   nav.apiTokens,
-  nav.media,
   nav.reviewer,
 ];
 
@@ -78,7 +81,7 @@ test('reader without permissions sees no feature nav', async ({ page }) => {
   await expect(
     page.getByRole('button', { name: ADMIN_COPY.session.signOut }),
   ).toBeVisible();
-  await expect(page.getByRole('navigation', { name: nav.label })).toHaveCount(
-    0,
-  );
+  await expect(
+    page.getByRole('navigation', { name: nav.label }).getByRole('link'),
+  ).toHaveCount(0);
 });
