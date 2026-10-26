@@ -1,8 +1,8 @@
-import { contentListPath } from '../../config/routes';
+import { contentListPath } from '../../config/App.routes';
 import type {
   FeatureNavItem,
   NavItemsState,
-} from '../../lib/feature-definition';
+} from '../../lib/FeatureDefinition';
 import {
   CONTENT_WILDCARD_SUBJECT,
   type PermissionAction,

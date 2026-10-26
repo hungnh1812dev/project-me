@@ -5,8 +5,8 @@ import {
   type SheetColumn,
   SortableSheet,
 } from '@abyss/form-commons';
-import { COPY } from '../../config/copy.constants';
-import { rolePermissionsPath } from '../../config/routes';
+import { COPY } from '../../config/Copy.constants';
+import { rolePermissionsPath } from '../../config/App.routes';
 import type { Role } from './access.api';
 import { isForbidden } from './access-error';
 import { useRolesQuery } from './access-queries';

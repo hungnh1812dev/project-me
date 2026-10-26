@@ -1,6 +1,6 @@
 import { AxiosError, type AxiosResponse } from 'axios';
 
-import { COPY } from '../../config/copy.constants';
+import { COPY } from '../../config/Copy.constants';
 import { toLoginError } from './login-error';
 
 function httpError(status: number, headers: Record<string, string> = {}) {

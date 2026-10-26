@@ -1,4 +1,4 @@
-import type { PageMeta } from '../lib/api-types';
+import type { PageMeta } from '../lib/Api.client';
 
 /**
  * The last row of a page can go away (removed elsewhere); step back so the

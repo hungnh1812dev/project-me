@@ -1,8 +1,15 @@
 import axios, { type AxiosInstance, type CreateAxiosDefaults } from 'axios';
 
-import { appEnv } from '../config/env';
-import { API_TIMEOUT_MS } from '../config/http.constants';
-import { stripTrailingSlashes } from '../config/strip-trailing-slashes';
+import { appEnv } from '../config/App.env';
+import { API_TIMEOUT_MS } from '../config/Http.constants';
+import { stripTrailingSlashes } from '../config/StripTrailingSlashes.rules';
+
+/** Offset paging of the list endpoints. `total` counts every row. */
+export interface PageMeta {
+  page: number;
+  pageSize: number;
+  total: number;
+}
 
 /** Axios instance for cms-api. Every request path loses its trailing slash. */
 export function createApiClient(

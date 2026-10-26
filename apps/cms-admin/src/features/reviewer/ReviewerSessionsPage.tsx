@@ -16,7 +16,7 @@ import {
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useId, useState } from 'react';
 
-import { COPY } from '../../config/copy.constants';
+import { COPY } from '../../config/Copy.constants';
 import { REVIEWER_SETTINGS_SUBJECT } from './reviewer.constants';
 import { isForbidden, toAccessError, useCallerAccess } from '../access';
 import {
@@ -25,8 +25,8 @@ import {
   TableSkeleton,
 } from '../../components/PageStates';
 import { Pagination } from '../../components/Pagination';
-import { useClampedPage } from '../../components/use-clamped-page';
-import { formatDateTime } from '../../lib/date-format';
+import { useClampedPage } from '../../components/useClampedPage.state';
+import { formatDateTime } from '../../lib/DateFormat.rules';
 import { useReviewerApi } from './reviewer-api-context';
 import {
   REVIEWER_QUERY_KEYS,

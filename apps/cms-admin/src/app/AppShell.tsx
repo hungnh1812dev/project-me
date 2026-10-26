@@ -1,6 +1,6 @@
 import { Outlet } from 'react-router';
 
-import { REVIEWER_ROLE_SLUG } from '../config/auth.constants';
+import { REVIEWER_ROLE_SLUG } from '../config/Auth.constants';
 import { useCurrentUser } from '../features/auth';
 import { ReviewerBanner } from '../features/reviewer/ReviewerBanner';
 import { MobileMenu } from './MobileMenu';

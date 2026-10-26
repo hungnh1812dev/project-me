@@ -14,7 +14,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { FormProvider, useForm } from 'react-hook-form';
 
-import { COPY } from '../../config/copy.constants';
+import { COPY } from '../../config/Copy.constants';
 import { MEDIA_ALT_MAX_LENGTH } from './media.constants';
 import { useMediaApi } from './media-api-context';
 import { toMediaError } from './media-error';

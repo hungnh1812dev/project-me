@@ -1,4 +1,4 @@
-import { defineApiService, type Feature } from '../../lib/feature-definition';
+import { defineApiService, type Feature } from '../../lib/FeatureDefinition';
 import { HealthApiProvider } from './health-api-context';
 import { createHealthApi } from './health.api';
 import { StatusPage } from './StatusPage';

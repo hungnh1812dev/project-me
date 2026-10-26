@@ -1,6 +1,6 @@
 import { AxiosError, type InternalAxiosRequestConfig } from 'axios';
 
-import { COPY } from '../../config/copy.constants';
+import { COPY } from '../../config/Copy.constants';
 import { failedItems, itemReason, toBulkFailure } from './bulk';
 import { parseImportText } from './BulkCreateDialog';
 

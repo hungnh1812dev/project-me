@@ -2,7 +2,7 @@ import {
   OTP_CODE_LENGTH,
   OTP_TTL_MINUTES,
   TOTP_CODE_LENGTH,
-} from '../auth.constants';
+} from '../Auth.constants';
 
 export const SECURITY_COPY = {
   title: 'Security',

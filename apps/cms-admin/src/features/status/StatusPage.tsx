@@ -1,4 +1,4 @@
-import { COPY } from '../../config/copy.constants';
+import { COPY } from '../../config/Copy.constants';
 import { StatusCard } from './StatusCard';
 
 /** Placeholder home until the content screens exist. */

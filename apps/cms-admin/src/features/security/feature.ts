@@ -1,5 +1,5 @@
-import { APP_ROUTES } from '../../config/routes';
-import { defineApiService, type Feature } from '../../lib/feature-definition';
+import { APP_ROUTES } from '../../config/App.routes';
+import { defineApiService, type Feature } from '../../lib/FeatureDefinition';
 import { SecurityApiProvider } from './security-api-context';
 import { createSecurityApi } from './security.api';
 import { SecuritySettingsPage } from './SecuritySettingsPage';

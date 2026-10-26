@@ -1,6 +1,6 @@
 import { TablePagination } from '@abyss/form-commons';
 
-import type { PageMeta } from '../lib/api-types';
+import type { PageMeta } from '../lib/Api.client';
 
 export interface PaginationCopy {
   label: string;

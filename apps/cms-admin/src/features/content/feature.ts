@@ -1,5 +1,5 @@
-import { APP_ROUTES } from '../../config/routes';
-import { defineApiService, type Feature } from '../../lib/feature-definition';
+import { APP_ROUTES } from '../../config/App.routes';
+import { defineApiService, type Feature } from '../../lib/FeatureDefinition';
 import { ContentApiProvider } from './content-api-context';
 import { createContentApi } from './content.api';
 import { CollectionListPage } from './CollectionListPage';

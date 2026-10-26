@@ -1,4 +1,4 @@
-import { COPY } from '../../config/copy.constants';
+import { COPY } from '../../config/Copy.constants';
 
 /** Shown while the silent refresh on app start settles. */
 export function SessionLoading() {

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { NAV_SECTION_IDS, NAV_SECTIONS } from './nav-sections';
+import { NAV_SECTION_IDS, NAV_SECTIONS } from './NavSections.constants';
 
 describe('NAV_SECTIONS', () => {
   it('lists the leaf sections items can join', () => {

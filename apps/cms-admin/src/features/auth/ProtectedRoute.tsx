@@ -1,6 +1,6 @@
 import { Navigate, Outlet, useLocation } from 'react-router';
 
-import { APP_ROUTES } from '../../config/routes';
+import { APP_ROUTES } from '../../config/App.routes';
 import { selectSessionStatus } from './auth.slice';
 import { useAuthSelector } from './auth-hooks';
 import { SessionLoading } from './SessionLoading';

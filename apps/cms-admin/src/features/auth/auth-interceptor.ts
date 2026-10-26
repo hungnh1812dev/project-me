@@ -4,7 +4,7 @@ import {
   isAxiosError,
 } from 'axios';
 
-import { BEARER_PREFIX, HTTP_STATUS } from '../../config/http.constants';
+import { BEARER_PREFIX, HTTP_STATUS } from '../../config/Http.constants';
 
 declare module 'axios' {
   interface AxiosRequestConfig {

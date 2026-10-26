@@ -1,6 +1,6 @@
 import type { AxiosAdapter, InternalAxiosRequestConfig } from 'axios';
 
-import { apiClient, createApiClient } from './api-client';
+import { apiClient, createApiClient } from './Api.client';
 
 const BASE_URL = 'http://domain.localhost/api/v1';
 

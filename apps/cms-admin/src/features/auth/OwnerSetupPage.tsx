@@ -10,9 +10,9 @@ import {
   OWNER_DISPLAY_NAME_MAX_LENGTH,
   PASSWORD_LENGTH,
   SETUP_TOKEN_MAX_LENGTH,
-} from '../../config/auth.constants';
-import { COPY } from '../../config/copy.constants';
-import { APP_ROUTES } from '../../config/routes';
+} from '../../config/Auth.constants';
+import { COPY } from '../../config/Copy.constants';
+import { APP_ROUTES } from '../../config/App.routes';
 import { AuthPageLayout } from './AuthPageLayout';
 import { BackToSignIn } from './BackToSignIn';
 import type { LoginNoticeState } from './login-notice';

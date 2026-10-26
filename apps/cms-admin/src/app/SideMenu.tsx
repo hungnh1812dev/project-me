@@ -2,18 +2,18 @@ import { Button } from '@abyss/form-commons';
 import { useState } from 'react';
 import { Link, NavLink } from 'react-router';
 
-import { REVIEWER_ROLE_SLUG } from '../config/auth.constants';
-import { COPY } from '../config/copy.constants';
-import { APP_ROUTES } from '../config/routes';
+import { REVIEWER_ROLE_SLUG } from '../config/Auth.constants';
+import { COPY } from '../config/Copy.constants';
+import { APP_ROUTES } from '../config/App.routes';
 import { useCallerAccess } from '../features/access/caller-access';
 import { useCurrentUser, useSession } from '../features/auth';
 import { FEATURE_LIST } from '../features/registry';
-import type { FeatureNavItem, NavItemsState } from '../lib/feature-definition';
+import type { FeatureNavItem, NavItemsState } from '../lib/FeatureDefinition';
 import {
   collectLeafIds,
   DATA_BACKED_SECTION_ID,
   NAV_SECTIONS,
-} from '../lib/nav-sections';
+} from '../lib/NavSections.constants';
 
 const SKELETON_ROW_COUNT = 3;
 

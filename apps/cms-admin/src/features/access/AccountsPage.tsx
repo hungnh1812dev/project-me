@@ -6,10 +6,10 @@ import {
 } from '@abyss/form-commons';
 import { useRef, useState } from 'react';
 
-import { useClampedPage } from '../../components/use-clamped-page';
-import { useRestoreFocus } from '../../components/use-restore-focus';
+import { useClampedPage } from '../../components/useClampedPage.state';
+import { useRestoreFocus } from '../../components/useRestoreFocus.state';
 
-import { COPY } from '../../config/copy.constants';
+import { COPY } from '../../config/Copy.constants';
 import { useCurrentUser } from '../auth';
 import type { Account, InvitedAccount } from './access.api';
 import { isForbidden } from './access-error';

@@ -1,18 +1,18 @@
-import { ACCESS_COPY } from './access.copy';
+import { ACCESS_COPY } from './Access.copy';
 import {
   APP_COPY,
   COMMON_COPY,
   NAV_COPY,
   PASSWORD_COPY,
   SESSION_COPY,
-} from './common.copy';
-import { CONTENT_COPY } from './content.copy';
-import { LOGIN_COPY } from './login.copy';
-import { MEDIA_COPY } from './media.copy';
-import { REVIEWER_COPY } from './reviewer.copy';
-import { SECURITY_COPY } from './security.copy';
-import { SETUP_COPY } from './setup.copy';
-import { PAGE_COPY, STATUS_COPY } from './status.copy';
+} from './Common.copy';
+import { CONTENT_COPY } from './Content.copy';
+import { LOGIN_COPY } from './Login.copy';
+import { MEDIA_COPY } from './Media.copy';
+import { REVIEWER_COPY } from './Reviewer.copy';
+import { SECURITY_COPY } from './Security.copy';
+import { SETUP_COPY } from './Setup.copy';
+import { PAGE_COPY, STATUS_COPY } from './Status.copy';
 
 /** User-facing text. One place until an i18n module exists; each section lives in its own `*.copy.ts`. */
 export const COPY = {

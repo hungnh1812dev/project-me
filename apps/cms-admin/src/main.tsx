@@ -8,9 +8,9 @@ import { BrowserRouter } from 'react-router';
 
 import { App } from './app/App';
 import { AppProviders } from './app/AppProviders';
-import { createAppServices } from './app/app-services';
-import { createQueryClient } from './app/query-client';
-import { apiClient } from './lib/api-client';
+import { createAppServices } from './app/AppServices.setup';
+import { createQueryClient } from './app/QueryClient.setup';
+import { apiClient } from './lib/Api.client';
 
 const rootElement = document.getElementById('root');
 if (rootElement === null) {

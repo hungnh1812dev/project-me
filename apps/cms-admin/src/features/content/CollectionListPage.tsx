@@ -13,9 +13,9 @@ import {
   PageHeader,
   TableSkeleton,
 } from '../../components/PageStates';
-import { useRestoreFocus } from '../../components/use-restore-focus';
-import { COPY } from '../../config/copy.constants';
-import { contentNewPath } from '../../config/routes';
+import { useRestoreFocus } from '../../components/useRestoreFocus.state';
+import { COPY } from '../../config/Copy.constants';
+import { contentNewPath } from '../../config/App.routes';
 import {
   CONTENT_WILDCARD_SUBJECT,
   isForbidden,

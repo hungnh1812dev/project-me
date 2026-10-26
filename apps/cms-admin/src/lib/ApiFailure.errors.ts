@@ -1,7 +1,7 @@
 import { isAxiosError } from 'axios';
 
-import { COPY } from '../config/copy.constants';
-import { HTTP_STATUS, RETRY_AFTER_HEADER } from '../config/http.constants';
+import { COPY } from '../config/Copy.constants';
+import { HTTP_STATUS, RETRY_AFTER_HEADER } from '../config/Http.constants';
 
 const SECONDS_PER_MINUTE = 60;
 

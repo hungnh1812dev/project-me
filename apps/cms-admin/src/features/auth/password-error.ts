@@ -1,12 +1,12 @@
 import { isAxiosError } from 'axios';
 
-import { COPY } from '../../config/copy.constants';
+import { COPY } from '../../config/Copy.constants';
 import {
   API_ERROR_CODES,
   HTTP_STATUS,
   RETRY_AFTER_HEADER,
-} from '../../config/http.constants';
-import { retryAfterSecondsOf } from '../../lib/api-failure';
+} from '../../config/Http.constants';
+import { retryAfterSecondsOf } from '../../lib/ApiFailure.errors';
 
 const SECONDS_PER_MINUTE = 60;
 

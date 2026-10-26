@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { formatDate, formatDateTime, formatTime } from './date-format';
+import { formatDate, formatDateTime, formatTime } from './DateFormat.rules';
 
 const INSTANT = '2026-10-24T08:30:15Z';
 

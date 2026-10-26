@@ -10,8 +10,8 @@ import { useState } from 'react';
 import { FormProvider, useForm } from 'react-hook-form';
 import { z } from 'zod';
 
-import { PASSWORD_LENGTH } from '../../config/auth.constants';
-import { COPY } from '../../config/copy.constants';
+import { PASSWORD_LENGTH } from '../../config/Auth.constants';
+import { COPY } from '../../config/Copy.constants';
 import {
   newPasswordShape,
   passwordsMatch,

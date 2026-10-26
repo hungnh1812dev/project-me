@@ -3,7 +3,7 @@ import type { ReactNode } from 'react';
 import { Provider } from 'react-redux';
 
 import { SessionProvider } from '../features/auth/session-context';
-import type { AppServices } from './app-services';
+import type { AppServices } from './AppServices.setup';
 
 export function AppProviders({
   services,

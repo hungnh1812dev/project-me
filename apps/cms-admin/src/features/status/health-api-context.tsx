@@ -1,4 +1,4 @@
-import { createApiContext } from '../../lib/create-api-context';
+import { createApiContext } from '../../lib/ApiContext.setup';
 import type { HealthApi } from './health.api';
 
 export const [HealthApiProvider, useHealthApi] =

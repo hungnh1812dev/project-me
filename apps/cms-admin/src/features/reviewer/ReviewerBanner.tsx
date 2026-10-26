@@ -1,4 +1,4 @@
-import { COPY } from '../../config/copy.constants';
+import { COPY } from '../../config/Copy.constants';
 
 /**
  * Shown to a reviewer session in the admin console. Informational: the API

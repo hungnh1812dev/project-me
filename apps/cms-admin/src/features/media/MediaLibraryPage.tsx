@@ -7,10 +7,10 @@ import {
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRef, useState } from 'react';
 
-import { useClampedPage } from '../../components/use-clamped-page';
-import { useRestoreFocus } from '../../components/use-restore-focus';
+import { useClampedPage } from '../../components/useClampedPage.state';
+import { useRestoreFocus } from '../../components/useRestoreFocus.state';
 
-import { COPY } from '../../config/copy.constants';
+import { COPY } from '../../config/Copy.constants';
 import { MEDIA_ACCEPT, MEDIA_SUBJECT } from './media.constants';
 import { isForbidden, useCallerAccess } from '../access';
 import {

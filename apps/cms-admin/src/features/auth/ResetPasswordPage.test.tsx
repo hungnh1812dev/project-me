@@ -1,12 +1,12 @@
 import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
-import type { FakeHandler } from '../../../test/fake-api';
-import { createTestServices, renderApp } from '../../../test/render-app';
-import { COPY } from '../../config/copy.constants';
-import { API_ENDPOINTS } from '../../config/endpoints';
-import { API_ERROR_CODES } from '../../config/http.constants';
-import { APP_ROUTES } from '../../config/routes';
+import type { FakeHandler } from '../../../test/FakeApi.fixture';
+import { createTestServices, renderApp } from '../../../test/RenderApp.fixture';
+import { COPY } from '../../config/Copy.constants';
+import { API_ENDPOINTS } from '../../config/Api.endpoints';
+import { API_ERROR_CODES } from '../../config/Http.constants';
+import { APP_ROUTES } from '../../config/App.routes';
 
 const { REFRESH } = API_ENDPOINTS.AUTH;
 const { REQUEST_OTP, RESET } = API_ENDPOINTS.PASSWORD;

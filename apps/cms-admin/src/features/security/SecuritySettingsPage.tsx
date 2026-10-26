@@ -1,4 +1,4 @@
-import { COPY } from '../../config/copy.constants';
+import { COPY } from '../../config/Copy.constants';
 import { ChangePasswordSection } from './ChangePasswordSection';
 import { TwoFactorSection } from './TwoFactorSection';
 

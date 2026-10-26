@@ -6,7 +6,7 @@ import {
   PERMISSION_ACTIONS,
   type PermissionAction,
 } from './access.constants';
-import { COPY } from '../../config/copy.constants';
+import { COPY } from '../../config/Copy.constants';
 import type { ContentType } from '../content-types';
 import { FieldPicker } from './FieldPicker';
 import { cellKey, type CellRef } from './permission-matrix';

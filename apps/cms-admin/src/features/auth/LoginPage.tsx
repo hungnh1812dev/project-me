@@ -11,8 +11,8 @@ import { FormProvider, useForm } from 'react-hook-form';
 import { Link, Navigate, useLocation } from 'react-router';
 import { z } from 'zod';
 
-import { COPY } from '../../config/copy.constants';
-import { APP_ROUTES } from '../../config/routes';
+import { COPY } from '../../config/Copy.constants';
+import { APP_ROUTES } from '../../config/App.routes';
 import type { TwoFactorChallenge } from './auth.api';
 import { selectEndNotice, selectSessionStatus } from './auth.slice';
 import { useAuthSelector } from './auth-hooks';

@@ -6,8 +6,8 @@ import {
   PageHeader,
   TableSkeleton,
 } from '../../components/PageStates';
-import { COPY } from '../../config/copy.constants';
-import { contentEditPath, contentNewPath } from '../../config/routes';
+import { COPY } from '../../config/Copy.constants';
+import { contentEditPath, contentNewPath } from '../../config/App.routes';
 import { isForbidden } from '../access';
 import { useDocumentListQuery } from './content-queries';
 

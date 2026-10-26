@@ -9,7 +9,7 @@ import {
   DialogTitle,
 } from '@abyss/form-commons';
 
-import { COPY } from '../../config/copy.constants';
+import { COPY } from '../../config/Copy.constants';
 
 const copy = COPY.content.bulk.deleteDialog;
 

@@ -1,7 +1,7 @@
 import { cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
-import { COPY } from '../../config/copy.constants';
+import { COPY } from '../../config/Copy.constants';
 import type { ContentTypeField } from '../content-types';
 import type { FieldList } from './access.api';
 import { FieldPicker } from './FieldPicker';

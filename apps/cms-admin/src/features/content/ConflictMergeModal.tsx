@@ -11,7 +11,7 @@ import {
 } from '@abyss/form-commons';
 import { useMemo, useReducer } from 'react';
 
-import { COPY } from '../../config/copy.constants';
+import { COPY } from '../../config/Copy.constants';
 import type { ConflictDetails } from './conflict';
 import { DiffViewerBlock } from './DiffViewerBlock';
 import type { DocumentTree } from './content.api';

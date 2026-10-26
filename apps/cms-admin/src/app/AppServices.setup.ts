@@ -4,7 +4,7 @@ import type { AxiosInstance } from 'axios';
 import {
   REFRESH_LOCK_NAME,
   SESSION_CHANNEL_NAME,
-} from '../config/auth.constants';
+} from '../config/Auth.constants';
 import {
   accessTokenOf,
   createAuthApi,
@@ -13,7 +13,7 @@ import {
   installAuthInterceptor,
 } from '../features/auth/app-wiring';
 import { FEATURE_LIST } from '../features/registry';
-import { createAppStore } from './store';
+import { createAppStore } from './App.store';
 
 /** Wires store, session, every feature API and the client's auth interceptor. */
 export function createAppServices(

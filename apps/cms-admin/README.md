@@ -20,7 +20,7 @@ So far: sign-in (T11) and, behind it, a status page that calls
   auth < security < content-types < access < media < content, reviewer
   (`content-types` and `status` import no feature). ESLint
   (`eslint.config.mjs`, `FEATURE_TIERS`) enforces both; test files may go deep
-  for `vi.mock`. `src/architecture.test.ts` pins each facade's export list and
+  for `vi.mock`. `src/FeatureTiers.architecture.test.ts` pins each facade's export list and
   checks every cross-feature import targets an `index.ts`.
 - **Auth facade**: besides `useCurrentUser`, `useSession` and the `Session`
   type, it shares `useEmailCode` and the password form pieces
@@ -30,7 +30,7 @@ So far: sign-in (T11) and, behind it, a status page that calls
   helpers) is for `src/app/**` only; ESLint blocks `app/**` imports from
   features and lib, and features imports from lib.
 - **Session lifecycle**: `src/features/auth/session.ts` (`restore`, `signIn`,
-  `signOut`, `expire`), wired in `src/app/app-services.ts`. Every refresh goes
+  `signOut`, `expire`), wired in `src/app/AppServices.setup.ts`. Every refresh goes
   through one single-flight call. The cookie rotates on use, so two parallel
   refreshes would look like token reuse and revoke the session.
 - **Across tabs** (T11a): `src/features/auth/cross-tab-refresh.ts`. Tabs take turns
@@ -171,22 +171,22 @@ So far: sign-in (T11) and, behind it, a status page that calls
   time. Success clears the form and goes to `/login` with a notice and the email
   prefilled. The login page shows a "no owner yet" notice with a link to `/setup`
   while the status is open (nothing when closed or when the call fails).
-- **Routes** (`src/config/routes.ts`): `/login`, `/setup`, `/reset-password`,
+- **Routes** (`src/config/App.routes.ts`): `/login`, `/setup`, `/reset-password`,
   `/set-password`, and `/`, `/settings/security`, `/accounts`, `/roles`,
   `/roles/:roleId`, `/api-tokens`, `/content/:slug`, `/content/:slug/new`,
   `/content/:slug/:documentId` behind `ProtectedRoute` + `AppShell` (side menu from `md` up, top bar with a
-  Menu button and a sheet below; sections from `lib/nav-sections.ts`, empty
+  Menu button and a sheet below; sections from `lib/NavSections.constants.ts`, empty
   sections hidden; user block with "Security" and "Sign out" at the bottom;
   `app/SideMenu.tsx`, `app/MobileMenu.tsx`).
 - **Feature registry** (`src/features/registry.ts`): each feature folder has a
   `feature.ts` with its `routes`, optional `navItems` (label, path, permission
   subject and action) and optional `apiServices` (`defineApiService(createXApi,
-XApiProvider)`). `app/app-routes.tsx` and `AppShell` iterate the registry;
+XApiProvider)`). `app/AppRoutes.setup.tsx` and `AppShell` iterate the registry;
   nav order is registry order. A feature whose links depend on loaded data
   adds `useNavItems`, which returns `{ items, isLoading, hasFailed, retry }` so the menu can show skeleton rows or a retry line (`contentFeature.useNavItems` lists one link per content
   type the caller may read, under `singleTypes` or `collectionTypes` by kind;
   `/content/:slug` of a single type redirects to its one document, or to the
-  create form when none exists). `app/app-services.ts` builds each feature API
+  create form when none exists). `app/AppServices.setup.ts` builds each feature API
   from the registry and `AppProviders` nests the providers inside the session
   provider. Routes are protected unless listed in
   `PUBLIC_ROUTE_PATHS` (`features/auth/feature.ts`, the four auth pages). A new
@@ -222,21 +222,21 @@ pnpm --filter @abyss/cms-admin dev       # http://localhost:5173 (DEV_SERVER_POR
 
 ## Config
 
-- `src/config/env.ts` is the only module that reads `import.meta.env`. Every
+- `src/config/App.env.ts` is the only module that reads `import.meta.env`. Every
   key is documented in [`.env.example`](.env.example). `VITE_*` values are
   baked in at build time, so they are public: never put secrets there.
-- `src/config/endpoints.ts` is the single map of API paths.
-- `src/config/copy.constants.ts` re-exports `COPY`, the user-facing text
+- `src/config/Api.endpoints.ts` is the single map of API paths.
+- `src/config/Copy.constants.ts` re-exports `COPY`, the user-facing text
   until an i18n module exists. Sections live in `src/config/copy/*.copy.ts`
   (shared text and nav labels in `common.copy.ts`) and are joined in
   `copy/index.ts`; only that folder imports a section file (ESLint).
-- `src/config/` keeps only cross-feature constants (`http.constants`,
-  `auth.constants`, `routes`). A feature's own constants live in
+- `src/config/` keeps only cross-feature constants (`Http.constants`,
+  `Auth.constants`, `App.routes`). A feature's own constants live in
   `src/features/<name>/<name>.constants.ts`; other code reads them through
   that feature's `index.ts` (ESLint forbids importing another feature's
   constants file).
-- `src/lib/api-client.ts` is the Axios instance. It strips trailing slashes
-  from every request path (`src/config/strip-trailing-slashes.ts`, SPEC §6), so no proxy can answer with a redirect.
+- `src/lib/Api.client.ts` is the Axios instance. It strips trailing slashes
+  from every request path (`src/config/StripTrailingSlashes.rules.ts`, SPEC §6), so no proxy can answer with a redirect.
 
 Styling: Tailwind v4 with the form-commons theme (`src/styles/app.css`).
 Components use semantic tokens only (`bg-card`, `text-muted-foreground`).

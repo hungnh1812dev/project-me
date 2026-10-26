@@ -6,7 +6,7 @@ import {
   apiIssuesOf,
   rateLimitedMessage,
   retryAfterSecondsOf,
-} from './api-failure';
+} from './ApiFailure.errors';
 
 function failedWith(
   status: number,

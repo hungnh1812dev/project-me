@@ -15,9 +15,12 @@ import {
   PASSWORD_LENGTH,
   TOTP_CODE_LENGTH,
   type TwoFactorMethod,
-} from '../../config/auth.constants';
-import { COPY } from '../../config/copy.constants';
-import { type ApiFailure, rateLimitedMessage } from '../../lib/api-failure';
+} from '../../config/Auth.constants';
+import { COPY } from '../../config/Copy.constants';
+import {
+  type ApiFailure,
+  rateLimitedMessage,
+} from '../../lib/ApiFailure.errors';
 import type { useEmailCode } from '../auth';
 import { toSecurityError } from './security-error';
 

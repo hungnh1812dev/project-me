@@ -10,7 +10,7 @@ import {
 } from '@abyss/form-commons';
 import { useId, useRef, useState } from 'react';
 
-import { COPY } from '../../config/copy.constants';
+import { COPY } from '../../config/Copy.constants';
 
 const copy = COPY.access.tokenReveal;
 

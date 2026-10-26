@@ -1,8 +1,8 @@
 import { Button } from '@abyss/form-commons';
 import { Link } from 'react-router';
 
-import { COPY } from '../../config/copy.constants';
-import { APP_ROUTES } from '../../config/routes';
+import { COPY } from '../../config/Copy.constants';
+import { APP_ROUTES } from '../../config/App.routes';
 
 /** Tertiary way out of the password pages. */
 export function BackToSignIn() {

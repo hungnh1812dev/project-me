@@ -5,7 +5,7 @@ import {
   MAX_COMPONENT_DEPTH,
   SINGLE_COMPONENT_MAX_ITEMS,
 } from './content.constants';
-import { COPY } from '../../config/copy.constants';
+import { COPY } from '../../config/Copy.constants';
 import { emptyItem } from './document-form';
 import { DynamicFormRenderer } from './DynamicFormRenderer';
 import type { FieldNode } from './field-tree';

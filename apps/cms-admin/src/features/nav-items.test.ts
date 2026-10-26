@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { NAV_SECTION_IDS } from '../lib/nav-sections';
+import { NAV_SECTION_IDS } from '../lib/NavSections.constants';
 import { FEATURE_LIST } from './registry';
 
 describe('feature nav items', () => {

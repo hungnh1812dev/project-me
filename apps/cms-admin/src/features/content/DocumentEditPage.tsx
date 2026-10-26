@@ -4,9 +4,9 @@ import { useMemo, useState } from 'react';
 import { FormProvider, useForm } from 'react-hook-form';
 import { useNavigate, useParams } from 'react-router';
 
-import { COPY } from '../../config/copy.constants';
-import { REVIEWER_ROLE_SLUG } from '../../config/auth.constants';
-import { contentEditPath } from '../../config/routes';
+import { COPY } from '../../config/Copy.constants';
+import { REVIEWER_ROLE_SLUG } from '../../config/Auth.constants';
+import { contentEditPath } from '../../config/App.routes';
 import {
   LoadError,
   PageHeader,

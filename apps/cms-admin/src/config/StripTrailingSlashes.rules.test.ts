@@ -1,4 +1,4 @@
-import { stripTrailingSlashes } from './strip-trailing-slashes';
+import { stripTrailingSlashes } from './StripTrailingSlashes.rules';
 
 describe('stripTrailingSlashes', () => {
   it.each([

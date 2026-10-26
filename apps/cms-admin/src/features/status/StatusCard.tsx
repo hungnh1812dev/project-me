@@ -1,9 +1,9 @@
 import { Button } from '@abyss/form-commons';
 
-import { COPY } from '../../config/copy.constants';
-import { API_ENDPOINTS } from '../../config/endpoints';
-import { appEnv } from '../../config/env';
-import { formatTime } from '../../lib/date-format';
+import { COPY } from '../../config/Copy.constants';
+import { API_ENDPOINTS } from '../../config/Api.endpoints';
+import { appEnv } from '../../config/App.env';
+import { formatTime } from '../../lib/DateFormat.rules';
 import { type LiveHealthState, useLiveHealth } from './use-live-health';
 
 const BADGE_TONE: Record<LiveHealthState, string> = {

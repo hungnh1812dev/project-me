@@ -4,7 +4,7 @@ import {
   UID_A,
   UID_B,
   UID_C,
-} from '../../../test/merge.fixture';
+} from '../../../test/Merge.fixture';
 import {
   INITIAL_MERGE_STATE,
   maskedPathsOf,

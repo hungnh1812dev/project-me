@@ -8,7 +8,7 @@ import {
 } from '@abyss/form-commons';
 import { useState } from 'react';
 
-import { COPY } from '../config/copy.constants';
+import { COPY } from '../config/Copy.constants';
 import { AppNameLink, SideMenu } from './SideMenu';
 
 const SHEET_CLASS =

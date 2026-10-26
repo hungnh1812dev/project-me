@@ -1,4 +1,4 @@
-import { COPY } from '../../config/copy.constants';
+import { COPY } from '../../config/Copy.constants';
 import { FIELD_TYPE } from './content.constants';
 import type { ConflictDetails, ConflictItem, DiffEntry } from './conflict';
 import { type FieldNode } from './field-tree';

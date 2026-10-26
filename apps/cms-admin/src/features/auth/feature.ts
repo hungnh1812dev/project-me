@@ -1,5 +1,5 @@
-import { APP_ROUTES } from '../../config/routes';
-import { defineApiService, type Feature } from '../../lib/feature-definition';
+import { APP_ROUTES } from '../../config/App.routes';
+import { defineApiService, type Feature } from '../../lib/FeatureDefinition';
 import { PasswordApiProvider } from './password-api-context';
 import { createPasswordApi } from './password.api';
 import { SetupApiProvider } from './setup-api-context';

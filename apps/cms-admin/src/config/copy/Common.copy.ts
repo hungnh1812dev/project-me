@@ -2,7 +2,7 @@ import {
   OTP_CODE_LENGTH,
   OTP_TTL_MINUTES,
   PASSWORD_LENGTH,
-} from '../auth.constants';
+} from '../Auth.constants';
 
 /** Text shared by several features: app shell, session, password rules, navigation labels. */
 export const COMMON_COPY = {

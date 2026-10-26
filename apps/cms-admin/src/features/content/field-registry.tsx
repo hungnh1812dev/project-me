@@ -10,9 +10,9 @@ import {
 } from '@abyss/form-commons';
 import type { ReactNode } from 'react';
 
-import { COPY } from '../../config/copy.constants';
+import { COPY } from '../../config/Copy.constants';
 import { FIELD_TYPE, MASKED_VALUE } from './content.constants';
-import { formatDateTime } from '../../lib/date-format';
+import { formatDateTime } from '../../lib/DateFormat.rules';
 import { MediaField, mediaToApi, mediaToForm } from '../media';
 import {
   booleanToForm,

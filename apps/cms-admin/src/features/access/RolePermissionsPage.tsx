@@ -3,9 +3,9 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { Link, useParams } from 'react-router';
 
-import { COPY } from '../../config/copy.constants';
-import { API_ERROR_CODES, HTTP_STATUS } from '../../config/http.constants';
-import { APP_ROUTES } from '../../config/routes';
+import { COPY } from '../../config/Copy.constants';
+import { API_ERROR_CODES, HTTP_STATUS } from '../../config/Http.constants';
+import { APP_ROUTES } from '../../config/App.routes';
 import type { ContentType } from '../content-types';
 import type { Role } from './access.api';
 import { useAccessApi } from './access-api-context';

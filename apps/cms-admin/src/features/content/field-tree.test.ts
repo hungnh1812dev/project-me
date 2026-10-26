@@ -1,4 +1,4 @@
-import { CV_PAGE_TYPE } from '../../../test/cv-page.fixture';
+import { CV_PAGE_TYPE } from '../../../test/CvPage.fixture';
 import { buildFieldTree, labelOf } from './field-tree';
 
 describe('labelOf', () => {

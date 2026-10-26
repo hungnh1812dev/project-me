@@ -3,7 +3,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useController } from 'react-hook-form';
 
-import { COPY } from '../../config/copy.constants';
+import { COPY } from '../../config/Copy.constants';
 import { MEDIA_SUBJECT } from './media.constants';
 import { useCallerAccess } from '../access';
 import { useMediaApi } from './media-api-context';

@@ -1,4 +1,4 @@
-import { stripTrailingSlashes } from './strip-trailing-slashes';
+import { stripTrailingSlashes } from './StripTrailingSlashes.rules';
 
 function requireEnv(name: string, value: string | undefined): string {
   if (value === undefined || value.trim() === '') {

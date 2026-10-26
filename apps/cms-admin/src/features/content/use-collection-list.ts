@@ -2,7 +2,7 @@ import type { SheetSort } from '@abyss/form-commons';
 import { useQuery } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
 
-import { useClampedPage } from '../../components/use-clamped-page';
+import { useClampedPage } from '../../components/useClampedPage.state';
 import { listValueFieldsOf } from './collection-columns';
 import { useContentApi } from './content-api-context';
 import { CONTENT_QUERY_KEYS, useDocumentListQuery } from './content-queries';

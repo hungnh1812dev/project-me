@@ -1,6 +1,6 @@
 import type { AxiosInstance } from 'axios';
 
-import { API_ENDPOINTS } from '../../config/endpoints';
+import { API_ENDPOINTS } from '../../config/Api.endpoints';
 
 /** A field of a content type. */
 export interface ContentTypeField {

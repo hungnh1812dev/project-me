@@ -1,6 +1,6 @@
 import type { AxiosInstance } from 'axios';
 
-import { API_ENDPOINTS } from '../../config/endpoints';
+import { API_ENDPOINTS } from '../../config/Api.endpoints';
 import type { CurrentUser } from './auth.slice';
 
 export interface LoginCredentials {

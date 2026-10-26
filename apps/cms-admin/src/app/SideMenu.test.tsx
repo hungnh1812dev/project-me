@@ -1,14 +1,14 @@
 import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
-import type { FakeHandler } from '../../test/fake-api';
+import type { FakeHandler } from '../../test/FakeApi.fixture';
 import {
   createTestServices,
   renderApp,
   TEST_USER,
-} from '../../test/render-app';
-import { COPY } from '../config/copy.constants';
-import { API_ENDPOINTS } from '../config/endpoints';
+} from '../../test/RenderApp.fixture';
+import { COPY } from '../config/Copy.constants';
+import { API_ENDPOINTS } from '../config/Api.endpoints';
 import type { Role } from '../features/access/access.api';
 import type { CurrentUser } from '../features/auth/auth.slice';
 

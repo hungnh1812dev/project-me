@@ -1,4 +1,4 @@
-import { createApiContext } from '../../lib/create-api-context';
+import { createApiContext } from '../../lib/ApiContext.setup';
 import type { MediaApi } from './media.api';
 
 export const [MediaApiProvider, useMediaApi] =

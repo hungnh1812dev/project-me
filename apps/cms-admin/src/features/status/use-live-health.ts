@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 
-import { HEALTH_STATUS_OK } from '../../config/http.constants';
+import { HEALTH_STATUS_OK } from '../../config/Http.constants';
 import { useHealthApi } from './health-api-context';
 import { HEALTH_QUERY_KEYS } from './health.api';
 

@@ -7,7 +7,7 @@ import {
   signedIn,
   signedOut,
 } from './auth.slice';
-import { TEST_USER } from '../../../test/render-app';
+import { TEST_USER } from '../../../test/RenderApp.fixture';
 
 describe('authSlice', () => {
   it('starts unknown, so nothing renders as signed out before the silent refresh', () => {

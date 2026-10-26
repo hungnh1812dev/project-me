@@ -2,12 +2,12 @@ import {
   createFakeApi,
   deferred,
   TEST_API_BASE_URL,
-} from '../../../test/fake-api';
-import { fakeBus, fakeLocks } from '../../../test/fake-tabs';
-import { createTestServices, TEST_USER } from '../../../test/render-app';
+} from '../../../test/FakeApi.fixture';
+import { fakeBus, fakeLocks } from '../../../test/FakeTabs.fixture';
+import { createTestServices, TEST_USER } from '../../../test/RenderApp.fixture';
 import { createAuthTestStore } from './auth-test-store';
-import { API_ENDPOINTS } from '../../config/endpoints';
-import { createApiClient } from '../../lib/api-client';
+import { API_ENDPOINTS } from '../../config/Api.endpoints';
+import { createApiClient } from '../../lib/Api.client';
 import { createAuthApi } from './auth.api';
 import { createSession } from './session';
 

@@ -15,14 +15,14 @@ import {
   TOTP_CODE_LENGTH,
   TWO_FACTOR_METHODS,
   type TwoFactorMethod,
-} from '../../config/auth.constants';
-import { COPY } from '../../config/copy.constants';
-import { API_ERROR_CODES } from '../../config/http.constants';
+} from '../../config/Auth.constants';
+import { COPY } from '../../config/Copy.constants';
+import { API_ERROR_CODES } from '../../config/Http.constants';
 import {
   type ApiFailure,
   apiFailureOf,
   rateLimitedMessage,
-} from '../../lib/api-failure';
+} from '../../lib/ApiFailure.errors';
 import type { TwoFactorChallenge } from './auth.api';
 import { useSession } from './session-context';
 import { useEmailCode } from './use-email-code';

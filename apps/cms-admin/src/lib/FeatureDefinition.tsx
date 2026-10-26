@@ -1,9 +1,9 @@
 import type { AxiosInstance } from 'axios';
 import type { ComponentType, ReactNode } from 'react';
 
-import type { NavSectionId } from './nav-sections';
-import type { PermissionAction } from './permission-action';
-import type { ApiProviderProps } from './create-api-context';
+import type { NavSectionId } from './NavSections.constants';
+import type { PermissionAction } from './PermissionAction.constants';
+import type { ApiProviderProps } from './ApiContext.setup';
 
 export interface FeatureRoute {
   /** Omit for the index route of the app shell. */

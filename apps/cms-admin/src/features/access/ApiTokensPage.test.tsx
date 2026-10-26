@@ -1,15 +1,15 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
-import type { FakeHandler } from '../../../test/fake-api';
+import type { FakeHandler } from '../../../test/FakeApi.fixture';
 import {
   createTestServices,
   renderApp,
   TEST_USER,
-} from '../../../test/render-app';
-import { COPY } from '../../config/copy.constants';
-import { API_ENDPOINTS } from '../../config/endpoints';
-import { APP_ROUTES } from '../../config/routes';
+} from '../../../test/RenderApp.fixture';
+import { COPY } from '../../config/Copy.constants';
+import { API_ENDPOINTS } from '../../config/Api.endpoints';
+import { APP_ROUTES } from '../../config/App.routes';
 import type { CurrentUser } from '../auth/auth.slice';
 import type { ContentType } from '../content-types';
 import type { ApiToken, PermissionRow, Role } from './access.api';

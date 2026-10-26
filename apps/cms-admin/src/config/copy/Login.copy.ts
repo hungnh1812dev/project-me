@@ -3,7 +3,7 @@ import {
   OTP_TTL_MINUTES,
   TOTP_CODE_LENGTH,
   TOTP_PERIOD_SECONDS,
-} from '../auth.constants';
+} from '../Auth.constants';
 
 export const LOGIN_COPY = {
   title: 'Sign in',

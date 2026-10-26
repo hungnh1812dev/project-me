@@ -1,15 +1,15 @@
 import { act, screen } from '@testing-library/react';
 
-import type { FakeHandler } from '../../../test/fake-api';
+import type { FakeHandler } from '../../../test/FakeApi.fixture';
 import {
   createTestServices,
   renderApp,
   TEST_USER,
-} from '../../../test/render-app';
-import { CV_PAGE_TYPE } from '../../../test/cv-page.fixture';
-import { API_ENDPOINTS } from '../../config/endpoints';
+} from '../../../test/RenderApp.fixture';
+import { CV_PAGE_TYPE } from '../../../test/CvPage.fixture';
+import { API_ENDPOINTS } from '../../config/Api.endpoints';
 import { PRESENCE_HEARTBEAT_MS } from './content.constants';
-import { contentEditPath } from '../../config/routes';
+import { contentEditPath } from '../../config/App.routes';
 
 const { REFRESH, ME } = API_ENDPOINTS.AUTH;
 const { CONTENT_TYPES, DOCUMENTS, ROLES } = API_ENDPOINTS;

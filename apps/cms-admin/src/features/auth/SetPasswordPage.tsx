@@ -6,9 +6,9 @@ import { FormProvider, useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router';
 import { z } from 'zod';
 
-import { OTP_CODE_LENGTH } from '../../config/auth.constants';
-import { COPY } from '../../config/copy.constants';
-import { APP_ROUTES } from '../../config/routes';
+import { OTP_CODE_LENGTH } from '../../config/Auth.constants';
+import { COPY } from '../../config/Copy.constants';
+import { APP_ROUTES } from '../../config/App.routes';
 import { AuthPageLayout } from './AuthPageLayout';
 import { BackToSignIn } from './BackToSignIn';
 import type { LoginNoticeState } from './login-notice';

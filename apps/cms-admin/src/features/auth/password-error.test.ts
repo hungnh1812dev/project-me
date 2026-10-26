@@ -1,7 +1,7 @@
 import { AxiosError, type AxiosResponse } from 'axios';
 
-import { COPY } from '../../config/copy.constants';
-import { API_ERROR_CODES } from '../../config/http.constants';
+import { COPY } from '../../config/Copy.constants';
+import { API_ERROR_CODES } from '../../config/Http.constants';
 import { toPasswordError } from './password-error';
 
 function httpError(

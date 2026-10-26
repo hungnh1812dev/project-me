@@ -1,6 +1,9 @@
-import { createFakeApi, TEST_API_BASE_URL } from '../../../test/fake-api';
-import { API_ENDPOINTS } from '../../config/endpoints';
-import { createApiClient } from '../../lib/api-client';
+import {
+  createFakeApi,
+  TEST_API_BASE_URL,
+} from '../../../test/FakeApi.fixture';
+import { API_ENDPOINTS } from '../../config/Api.endpoints';
+import { createApiClient } from '../../lib/Api.client';
 import { createAuthApi } from './auth.api';
 import { installAuthInterceptor } from './auth-interceptor';
 

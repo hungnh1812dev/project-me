@@ -1,7 +1,7 @@
 import type { AxiosInstance } from 'axios';
 
-import { API_ENDPOINTS } from '../../config/endpoints';
-import type { PageMeta } from '../../lib/api-types';
+import { API_ENDPOINTS } from '../../config/Api.endpoints';
+import type { PageMeta } from '../../lib/Api.client';
 
 /** A library file as `GET /media` returns it. */
 export interface MediaFile {

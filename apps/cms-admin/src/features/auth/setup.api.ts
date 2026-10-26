@@ -1,6 +1,6 @@
 import type { AxiosInstance } from 'axios';
 
-import { API_ENDPOINTS } from '../../config/endpoints';
+import { API_ENDPOINTS } from '../../config/Api.endpoints';
 
 export interface SetupStatus {
   open: boolean;

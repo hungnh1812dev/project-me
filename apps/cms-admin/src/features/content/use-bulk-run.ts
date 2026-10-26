@@ -2,8 +2,8 @@ import type { BulkAction as BarAction } from '@abyss/form-commons';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 
-import { COPY } from '../../config/copy.constants';
-import { API_ERROR_CODES } from '../../config/http.constants';
+import { COPY } from '../../config/Copy.constants';
+import { API_ERROR_CODES } from '../../config/Http.constants';
 import { failedItems, itemReason, toBulkFailure } from './bulk';
 import type { Banner } from './bulk-banner';
 import { documentNameOf } from './collection-columns';

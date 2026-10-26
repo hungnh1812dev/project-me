@@ -16,8 +16,8 @@ import { FormProvider, useForm } from 'react-hook-form';
 import { z } from 'zod';
 
 import { type PermissionAction } from './access.constants';
-import { COPY } from '../../config/copy.constants';
-import { API_TOKEN_LIMITS } from '../../config/http.constants';
+import { COPY } from '../../config/Copy.constants';
+import { API_TOKEN_LIMITS } from '../../config/Http.constants';
 import type { ApiToken } from './access.api';
 import { useContentTypesQuery } from './access-queries';
 import { useCallerAccess } from './caller-access';

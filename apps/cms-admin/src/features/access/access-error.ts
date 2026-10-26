@@ -1,13 +1,13 @@
 import { type FormAlertTone } from '@abyss/form-commons';
-import { COPY } from '../../config/copy.constants';
-import { API_ERROR_CODES, HTTP_STATUS } from '../../config/http.constants';
+import { COPY } from '../../config/Copy.constants';
+import { API_ERROR_CODES, HTTP_STATUS } from '../../config/Http.constants';
 import {
   type ApiIssue,
   apiDetailsOf,
   apiFailureOf,
   apiIssuesOf,
   rateLimitedMessage,
-} from '../../lib/api-failure';
+} from '../../lib/ApiFailure.errors';
 
 const copy = COPY.access;
 

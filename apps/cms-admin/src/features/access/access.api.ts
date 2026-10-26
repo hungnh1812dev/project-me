@@ -5,9 +5,9 @@ import type {
   ApiTokenStatus,
   PermissionAction,
 } from './access.constants';
-import type { TwoFactorMethod } from '../../config/auth.constants';
-import { API_ENDPOINTS } from '../../config/endpoints';
-import type { PageMeta } from '../../lib/api-types';
+import type { TwoFactorMethod } from '../../config/Auth.constants';
+import { API_ENDPOINTS } from '../../config/Api.endpoints';
+import type { PageMeta } from '../../lib/Api.client';
 import { getContentTypes } from '../content-types';
 
 /** `null` = every field; otherwise API field paths (`reference.phone`). */

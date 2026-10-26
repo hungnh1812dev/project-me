@@ -1,4 +1,4 @@
-import type { NavSectionId } from '../../lib/nav-sections';
+import type { NavSectionId } from '../../lib/NavSections.constants';
 
 /** Form-state key holding a component item's `componentUid` ('' = new item). */
 export const ITEM_UID_KEY = '__uid';

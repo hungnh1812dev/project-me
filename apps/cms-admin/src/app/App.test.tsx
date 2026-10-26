@@ -5,14 +5,14 @@ import {
   deferred,
   type FakeHandler,
   type FakeReply,
-} from '../../test/fake-api';
+} from '../../test/FakeApi.fixture';
 import {
   createTestServices,
   renderApp,
   TEST_USER,
-} from '../../test/render-app';
-import { COPY } from '../config/copy.constants';
-import { API_ENDPOINTS } from '../config/endpoints';
+} from '../../test/RenderApp.fixture';
+import { COPY } from '../config/Copy.constants';
+import { API_ENDPOINTS } from '../config/Api.endpoints';
 const { REFRESH, LOGOUT, ME } = API_ENDPOINTS.AUTH;
 const HEALTH_LIVE = `GET ${API_ENDPOINTS.HEALTH.LIVE}`;
 

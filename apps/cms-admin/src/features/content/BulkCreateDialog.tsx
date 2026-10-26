@@ -16,7 +16,7 @@ import { useState } from 'react';
 import { FormProvider, useForm, useWatch } from 'react-hook-form';
 
 import { BULK_ACTION, BULK_MAX_ITEMS } from './content.constants';
-import { COPY } from '../../config/copy.constants';
+import { COPY } from '../../config/Copy.constants';
 import { failedItems, itemReason, toBulkFailure } from './bulk';
 import { useContentApi } from './content-api-context';
 import type { DocumentTree } from './content.api';

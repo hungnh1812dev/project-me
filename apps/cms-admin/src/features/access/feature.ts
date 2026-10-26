@@ -1,6 +1,6 @@
-import { COPY } from '../../config/copy.constants';
-import { APP_ROUTES } from '../../config/routes';
-import { defineApiService, type Feature } from '../../lib/feature-definition';
+import { COPY } from '../../config/Copy.constants';
+import { APP_ROUTES } from '../../config/App.routes';
+import { defineApiService, type Feature } from '../../lib/FeatureDefinition';
 import { AccessApiProvider } from './access-api-context';
 import { createAccessApi } from './access.api';
 import { AccountsPage } from './AccountsPage';

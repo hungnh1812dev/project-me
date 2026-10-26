@@ -11,9 +11,10 @@ const APP_BAN = {
   message: 'Features and lib never import from app/; app wires them.',
 };
 const API_CLIENT_BAN = {
-  group: ['**/lib/api-client'],
+  group: ['**/lib/Api.client'],
+  allowTypeImports: true,
   message:
-    'Features receive an axios client from app/ and never import lib/api-client.',
+    'Features receive an axios client from app/ and never import lib/Api.client (type imports such as PageMeta are fine).',
 };
 const FEATURES_BAN = {
   group: ['**/features', '**/features/**'],
@@ -23,11 +24,11 @@ const FEATURES_BAN = {
 const COPY_FILE_BAN = {
   group: ['**/config/copy/*.copy'],
   message:
-    'Read text through COPY (config/copy.constants); a section file belongs to config/copy/ only.',
+    'Read text through COPY (config/Copy.constants); a section file belongs to config/copy/ only.',
 };
 const COPY_SIBLING_BAN = {
-  regex: '^\\./(?!common\\.copy$)[^/]+\\.copy$',
-  message: 'A copy section file imports no other section; only common.copy.',
+  regex: '^\\./(?!Common\\.copy$)[^/]+\\.copy$',
+  message: 'A copy section file imports no other section; only Common.copy.',
 };
 
 const FEATURE_CONSTANTS_BAN = {
@@ -36,7 +37,7 @@ const FEATURE_CONSTANTS_BAN = {
     'A feature constants file belongs to its feature; export what others need through its index.ts.',
 };
 const SIBLING_FEATURE_CONSTANTS_BAN = {
-  regex: '^\\.\\./[^./][^/]*/[^/]+\\.constants$',
+  regex: '^\\.\\./(?!lib/|config/)[^./][^/]*/[^/]+\\.constants$',
   message:
     'A feature constants file belongs to its feature; export what others need through its index.ts.',
 };
@@ -101,7 +102,7 @@ const featureOrderBoundary = (feature) => {
 const NO_DATE_FORMATTER = {
   selector:
     "NewExpression[callee.object.name='Intl'][callee.property.name='DateTimeFormat']",
-  message: 'Format dates through lib/date-format.ts.',
+  message: 'Format dates through lib/DateFormat.rules.ts.',
 };
 const NO_RAW_RADIO = {
   selector:
@@ -130,20 +131,24 @@ export default [
   importBoundary(
     ['src/**'],
     [WIRING_BAN, FEATURE_CONSTANTS_BAN],
-    ['src/app/**', 'src/architecture.test.ts'],
+    ['src/app/**', 'src/FeatureTiers.architecture.test.ts'],
   ),
   importBoundary(['src/features/**'], [WIRING_BAN, APP_BAN, API_CLIENT_BAN]),
   importBoundary(['src/app/**'], [FEATURE_CONSTANTS_BAN]),
   importBoundary(['src/lib/**'], [WIRING_BAN, APP_BAN, FEATURES_BAN]),
   ...ALL_FEATURES.map(featureOrderBoundary),
-  // Tests build a real client with createApiClient, so only they may reach lib/api-client.
+  // Tests build a real client with createApiClient, so only they may reach lib/Api.client.
   importBoundary(
     TEST_FILES.map((pattern) => `src/features/${pattern}`),
     [WIRING_BAN, APP_BAN, SIBLING_FEATURE_CONSTANTS_BAN],
   ),
   {
     files: ['src/**'],
-    ignores: [...TEST_FILES, ...QUERY_KEY_OWNERS, 'src/lib/date-format.ts'],
+    ignores: [
+      ...TEST_FILES,
+      ...QUERY_KEY_OWNERS,
+      'src/lib/DateFormat.rules.ts',
+    ],
     rules: {
       'no-restricted-syntax': [
         'error',

@@ -1,9 +1,9 @@
 import { isAxiosError } from 'axios';
 
 import { BULK_ITEM_STATUS } from './content.constants';
-import { COPY } from '../../config/copy.constants';
-import { API_ERROR_CODES, HTTP_STATUS } from '../../config/http.constants';
-import { apiFailureOf, rateLimitedMessage } from '../../lib/api-failure';
+import { COPY } from '../../config/Copy.constants';
+import { API_ERROR_CODES, HTTP_STATUS } from '../../config/Http.constants';
+import { apiFailureOf, rateLimitedMessage } from '../../lib/ApiFailure.errors';
 import { serverMessage } from './content-error';
 import type { BulkItemError, BulkResponse } from './content.api';
 

@@ -21,7 +21,7 @@ export default defineConfig(({ mode }) => {
       globals: true,
       // Replaces .env files in tests.
       env: { VITE_API_BASE_URL: 'http://domain.localhost/api/v1' },
-      setupFiles: ['./test/setup.ts'],
+      setupFiles: ['./test/Vitest.setup.ts'],
       include: ['src/**/*.test.{ts,tsx}'],
     },
   };

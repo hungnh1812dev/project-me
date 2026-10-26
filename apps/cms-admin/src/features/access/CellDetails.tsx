@@ -1,7 +1,7 @@
 import { Textarea } from '@abyss/form-commons';
 import { useId } from 'react';
 
-import { COPY } from '../../config/copy.constants';
+import { COPY } from '../../config/Copy.constants';
 import type { ContentType } from '../content-types';
 import { FieldPicker } from './FieldPicker';
 import type { PermissionMatrixProps } from './PermissionMatrix';

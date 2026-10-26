@@ -1,7 +1,7 @@
 import { Button, type SheetColumn } from '@abyss/form-commons';
 
-import { COPY } from '../../config/copy.constants';
-import { formatDate } from '../../lib/date-format';
+import { COPY } from '../../config/Copy.constants';
+import { formatDate } from '../../lib/DateFormat.rules';
 import type { ApiToken } from './access.api';
 import { scopeSummary } from './token-scope';
 

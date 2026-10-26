@@ -10,7 +10,7 @@ import {
 } from '@abyss/form-commons';
 import { useState } from 'react';
 
-import { COPY } from '../../config/copy.constants';
+import { COPY } from '../../config/Copy.constants';
 import { isForbidden } from '../access';
 import { LoadError, TableSkeleton } from '../../components/PageStates';
 import { Pagination } from '../../components/Pagination';

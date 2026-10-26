@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
-import { API_ERROR_CODES, ACCOUNT_LIMITS } from './http.constants';
+import { API_ERROR_CODES, ACCOUNT_LIMITS } from './Http.constants';
 import {
   OTP_CODE_LENGTH,
   OTP_TTL_MINUTES,
@@ -10,8 +10,8 @@ import {
   SETUP_TOKEN_MAX_LENGTH,
   TOTP_CODE_LENGTH,
   TOTP_PERIOD_SECONDS,
-} from './auth.constants';
-import { PERMISSION_ACTIONS } from '../lib/permission-action';
+} from './Auth.constants';
+import { PERMISSION_ACTIONS } from '../lib/PermissionAction.constants';
 
 interface PublicConstants {
   password: { minLength: number; maxLength: number };
