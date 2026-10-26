@@ -1,6 +1,6 @@
 import { type BrowserContext, expect, type Page, test } from '@playwright/test';
 
-import { ADMIN_COPY } from '../src/AppContracts.contract';
+import { ADMIN_COPY } from '../src/Apps.contract';
 import { e2eEnv } from '../src/E2e.env';
 import { mailIdsFor, waitForCode } from '../src/Mailpit.client';
 import { labelStartingWith } from '../src/Locators.fixture';

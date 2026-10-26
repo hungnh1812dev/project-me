@@ -1,6 +1,6 @@
 import { expect, type Page, test } from '@playwright/test';
 
-import { ADMIN_COPY, contentListPath } from '../src/AppContracts.contract';
+import { ADMIN_COPY, contentListPath } from '../src/Apps.contract';
 import { e2eEnv } from '../src/E2e.env';
 import { PROFILE_SLUG, RUN_ID } from '../src/E2e.constants';
 import { signInAs } from '../src/Session.fixture';

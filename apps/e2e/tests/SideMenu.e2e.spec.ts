@@ -4,7 +4,7 @@ import {
   ADMIN_COPY,
   API_ENDPOINTS,
   APP_ROUTES,
-} from '../src/AppContracts.contract';
+} from '../src/Apps.contract';
 import { e2eEnv } from '../src/E2e.env';
 import {
   signInAs,

@@ -1,6 +1,6 @@
 import { type Page, expect, test } from '@playwright/test';
 
-import { ADMIN_COPY, MEDIA_PAGE_SIZE } from '../src/AppContracts.contract';
+import { ADMIN_COPY, MEDIA_PAGE_SIZE } from '../src/Apps.contract';
 import { signInAsOwner } from '../src/Session.fixture';
 import { HTTP } from '../src/E2e.constants';
 

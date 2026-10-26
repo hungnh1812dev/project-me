@@ -1,6 +1,6 @@
 import type { BrowserContext, Route } from '@playwright/test';
 
-import { API_ERROR_CODES } from './AppContracts.contract';
+import { API_ERROR_CODES } from './Apps.contract';
 import { HTTP } from './E2e.constants';
 
 /** A 1x1 transparent PNG. */

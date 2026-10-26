@@ -5,6 +5,7 @@ export default [
   ...baseEslint({
     tsconfigRootDir: import.meta.dirname,
     ignores: ['playwright-report/**', 'test-results/**', 'blob-report/**'],
+    fileNames: { isWordRequired: true, testSuffixes: ['spec', 'test'] },
   }),
   { languageOptions: { globals: globals.node } },
   {
@@ -16,7 +17,7 @@ export default [
           patterns: [
             {
               group: ['**/cms-admin/src/**', '**/web/src/**'],
-              message: 'Import app code through src/AppContracts.contract.ts.',
+              message: 'Import app code through src/Apps.contract.ts.',
             },
             {
               group: ['node:child_process', 'child_process'],
@@ -65,7 +66,7 @@ export default [
     },
   },
   {
-    files: ['src/AppContracts.contract.ts'],
+    files: ['src/Apps.contract.ts'],
     rules: { 'no-restricted-imports': 'off' },
   },
   {

@@ -88,7 +88,7 @@ that every file name under `src/` and `tests/` follows the naming rule.
 
 ## Module rules
 
-- `src/AppContracts.contract.ts` is the only file that imports from an app's `src`
+- `src/Apps.contract.ts` is the only file that imports from an app's `src`
   (copy, routes, constants); specs import those names from it. Lint enforces it.
 - `src/SmokeDatabase.client.ts` is the only file that runs `docker exec` / SQL (smoke
   database from `E2E_DB_*`); it refuses an API host that does not end in

@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-import { ADMIN_COPY } from '../src/AppContracts.contract';
+import { ADMIN_COPY } from '../src/Apps.contract';
 import { CV_PAGE_SLUG, PROFILE_SLUG } from '../src/E2e.constants';
 import { e2eEnv } from '../src/E2e.env';
 import { submitLogin } from '../src/Session.fixture';

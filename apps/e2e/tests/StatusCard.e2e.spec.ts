@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-import { ADMIN_COPY, API_ENDPOINTS } from '../src/AppContracts.contract';
+import { ADMIN_COPY, API_ENDPOINTS } from '../src/Apps.contract';
 import { e2eEnv } from '../src/E2e.env';
 import { signInAsOwner } from '../src/Session.fixture';
 

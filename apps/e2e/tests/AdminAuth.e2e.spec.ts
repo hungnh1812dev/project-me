@@ -1,6 +1,6 @@
 import { expect, type Page, test } from '@playwright/test';
 
-import { ADMIN_COPY } from '../src/AppContracts.contract';
+import { ADMIN_COPY } from '../src/Apps.contract';
 import { API_PATHS } from '../src/Api.endpoints';
 import { REFRESH_COOKIE_NAME } from '../src/E2e.constants';
 import { e2eEnv } from '../src/E2e.env';

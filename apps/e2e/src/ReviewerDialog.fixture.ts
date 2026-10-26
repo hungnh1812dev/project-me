@@ -1,6 +1,6 @@
 import { type APIRequestContext, expect, type Page } from '@playwright/test';
 
-import { ADMIN_COPY, WEB_COPY } from './AppContracts.contract';
+import { ADMIN_COPY, WEB_COPY } from './Apps.contract';
 import { API_PATHS, apiUrl } from './Api.endpoints';
 import { HTTP } from './E2e.constants';
 import { labelStartingWith } from './Locators.fixture';

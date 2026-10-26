@@ -1,6 +1,6 @@
 import { expect, type APIRequestContext, type Page } from '@playwright/test';
 
-import { ADMIN_COPY, API_ENDPOINTS } from './AppContracts.contract';
+import { ADMIN_COPY, API_ENDPOINTS } from './Apps.contract';
 import { API_PATHS, apiUrl } from './Api.endpoints';
 import { HTTP } from './E2e.constants';
 import { e2eEnv } from './E2e.env';

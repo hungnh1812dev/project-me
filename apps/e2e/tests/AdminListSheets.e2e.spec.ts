@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 
 import { e2eEnv } from '../src/E2e.env';
-import { ADMIN_COPY } from '../src/AppContracts.contract';
+import { ADMIN_COPY } from '../src/Apps.contract';
 
 /** A list shows its empty state, not a table, until the first row exists. */
 const LIST_ROUTES = [

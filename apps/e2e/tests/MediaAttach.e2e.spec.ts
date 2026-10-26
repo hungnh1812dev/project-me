@@ -6,7 +6,7 @@ import {
   test,
 } from '@playwright/test';
 
-import { ADMIN_COPY, contentNewPath } from '../src/AppContracts.contract';
+import { ADMIN_COPY, contentNewPath } from '../src/Apps.contract';
 import { e2eEnv } from '../src/E2e.env';
 import { insertLibraryFiles } from '../src/SmokeDatabase.client';
 import { PROFILE_SLUG, RUN_ID } from '../src/E2e.constants';

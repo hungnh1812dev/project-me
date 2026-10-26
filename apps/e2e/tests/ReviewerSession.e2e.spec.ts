@@ -1,6 +1,6 @@
 import { type BrowserContext, expect, test } from '@playwright/test';
 
-import { WEB_COPY } from '../src/AppContracts.contract';
+import { WEB_COPY } from '../src/Apps.contract';
 import { API_PATHS, apiUrl } from '../src/Api.endpoints';
 import { HTTP, CV_PAGE_SLUG, RUN_ID } from '../src/E2e.constants';
 import { e2eEnv } from '../src/E2e.env';

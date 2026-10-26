@@ -4,7 +4,7 @@ import {
   ADMIN_COPY,
   contentListPath,
   contentNewPath,
-} from '../src/AppContracts.contract';
+} from '../src/Apps.contract';
 import { signInAsOwner } from '../src/Session.fixture';
 import { CV_PAGE_SLUG, PROFILE_SLUG, RUN_ID } from '../src/E2e.constants';
 

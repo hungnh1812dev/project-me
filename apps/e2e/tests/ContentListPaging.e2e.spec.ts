@@ -4,7 +4,7 @@ import {
   ADMIN_COPY,
   CONTENT_LIST_PAGE_SIZE,
   contentListPath,
-} from '../src/AppContracts.contract';
+} from '../src/Apps.contract';
 import { signInAsOwner } from '../src/Session.fixture';
 import { API_PATHS } from '../src/Api.endpoints';
 import { PROFILE_SLUG, RUN_ID } from '../src/E2e.constants';

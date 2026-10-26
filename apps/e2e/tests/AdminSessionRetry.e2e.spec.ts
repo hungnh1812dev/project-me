@@ -1,6 +1,6 @@
 import { expect, type Page, test } from '@playwright/test';
 
-import { ADMIN_COPY } from '../src/AppContracts.contract';
+import { ADMIN_COPY } from '../src/Apps.contract';
 import { API_PATHS, apiUrl } from '../src/Api.endpoints';
 import { signInAsOwner } from '../src/Session.fixture';
 

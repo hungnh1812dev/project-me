@@ -7,7 +7,7 @@ import {
   test,
 } from '@playwright/test';
 
-import { ADMIN_COPY, contentNewPath } from '../src/AppContracts.contract';
+import { ADMIN_COPY, contentNewPath } from '../src/Apps.contract';
 import { e2eEnv } from '../src/E2e.env';
 import { signInAs } from '../src/Session.fixture';
 import { HTTP, RUN_ID, CV_PAGE_SLUG } from '../src/E2e.constants';

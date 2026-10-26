@@ -10,7 +10,7 @@ import {
   ADMIN_COPY,
   PRESENCE_HEARTBEAT_MS,
   contentNewPath,
-} from '../src/AppContracts.contract';
+} from '../src/Apps.contract';
 import { e2eEnv } from '../src/E2e.env';
 import { signInAs } from '../src/Session.fixture';
 import { RUN_ID, CV_PAGE_SLUG } from '../src/E2e.constants';

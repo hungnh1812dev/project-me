@@ -1,6 +1,6 @@
 import { expect, type Locator, type Page } from '@playwright/test';
 
-import { ADMIN_COPY } from './AppContracts.contract';
+import { ADMIN_COPY } from './Apps.contract';
 import { CV_PAGE_SLUG } from './E2e.constants';
 
 const access = ADMIN_COPY.access;

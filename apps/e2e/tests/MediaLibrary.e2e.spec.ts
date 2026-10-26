@@ -1,6 +1,6 @@
 import { type BrowserContext, expect, type Page, test } from '@playwright/test';
 
-import { ADMIN_COPY, MEDIA_ALT_MAX_LENGTH } from '../src/AppContracts.contract';
+import { ADMIN_COPY, MEDIA_ALT_MAX_LENGTH } from '../src/Apps.contract';
 import { e2eEnv } from '../src/E2e.env';
 import { fakeMediaApi, PNG_BASE64 } from '../src/FakeMediaApi.fixture';
 import { signInAs } from '../src/Session.fixture';

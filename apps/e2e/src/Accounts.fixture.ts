@@ -1,6 +1,6 @@
 import { expect, type Browser, type Page } from '@playwright/test';
 
-import { ADMIN_COPY } from './AppContracts.contract';
+import { ADMIN_COPY } from './Apps.contract';
 import { labelStartingWith } from './Locators.fixture';
 import { mailIdsFor, waitForCode } from './Mailpit.client';
 

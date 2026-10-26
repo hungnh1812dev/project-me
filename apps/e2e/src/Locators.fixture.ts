@@ -1,6 +1,6 @@
 import type { Locator, Page } from '@playwright/test';
 
-import { ADMIN_COPY } from './AppContracts.contract';
+import { ADMIN_COPY } from './Apps.contract';
 
 const content = ADMIN_COPY.content;
 

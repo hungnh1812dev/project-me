@@ -6,7 +6,7 @@ import {
   test,
 } from '@playwright/test';
 
-import { ADMIN_COPY } from '../src/AppContracts.contract';
+import { ADMIN_COPY } from '../src/Apps.contract';
 import { e2eEnv } from '../src/E2e.env';
 import { HTTP, RUN_ID } from '../src/E2e.constants';
 import { bearer, ownerApiToken, signInAs } from '../src/Session.fixture';

@@ -4,7 +4,7 @@ import {
   ADMIN_COPY,
   contentListPath,
   contentNewPath,
-} from '../src/AppContracts.contract';
+} from '../src/Apps.contract';
 import { API_PATHS, apiUrl } from '../src/Api.endpoints';
 import { HTTP, CV_PAGE_SLUG } from '../src/E2e.constants';
 import { bearer, ownerApiToken, signInAsOwner } from '../src/Session.fixture';

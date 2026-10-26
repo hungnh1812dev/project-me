@@ -1,6 +1,6 @@
 import { expect, type Locator, type Page, test } from '@playwright/test';
 
-import { ADMIN_COPY } from '../src/AppContracts.contract';
+import { ADMIN_COPY } from '../src/Apps.contract';
 import { TWO_FACTOR_TEST_TIMEOUT_MS } from '../src/E2e.constants';
 import { e2eEnv } from '../src/E2e.env';
 import { mailIdsFor, waitForCode } from '../src/Mailpit.client';
