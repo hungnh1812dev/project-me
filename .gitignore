@@ -26,3 +26,6 @@ apps/cms-api/src/generated/
 
 # Agent-local dev env (never committed, never in an image)
 .localEnv.agent
+
+# Python bytecode caches
+__pycache__/
