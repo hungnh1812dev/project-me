@@ -20,7 +20,7 @@ import { NotesStep } from './NotesStep';
 import { PurposesStep } from './PurposesStep';
 import { type ReviewerApi } from './Reviewer.api';
 import { reviewerApi } from './Reviewer.queries';
-import { reviewerAlertOf, type ReviewerAlert } from './ReviewerError.errors';
+import { reviewerAlertOf, type ReviewerAlert } from './Reviewer.errors';
 import {
   DEFAULT_VALUES,
   LAST_STEP,

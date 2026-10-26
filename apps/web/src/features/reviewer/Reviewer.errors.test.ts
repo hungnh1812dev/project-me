@@ -1,5 +1,5 @@
 import { COPY } from '../../config/Copy.constants';
-import { reviewerAlertOf } from './ReviewerError.errors';
+import { reviewerAlertOf } from './Reviewer.errors';
 
 const errors = COPY.reviewer.errors;
 
