@@ -3,15 +3,16 @@ import { generate } from 'otplib';
 import {
   devEnv,
   TEST_SECRET_32_BYTES,
-} from '../../../test/fixtures/env.fixture';
-import { Clock } from '../../common/time/clock';
-import { MS_PER_SECOND } from '../../common/constants/time.constants';
-import { loadAppConfig } from '../../config/app-config';
-import { CONFIG_DEFAULTS } from '../../config/config.constants';
-import { type PrismaService } from '../../infrastructure/database/prisma.service';
-import { SecretBox } from './crypto/secret-box';
-import { TOTP } from './domain/Identity.constants';
-import { isTotpCodeFormat, TotpService } from './totp.service';
+} from '../../../../test/fixtures/env.fixture';
+import { Clock } from '../../../common/time/clock';
+import { MS_PER_SECOND } from '../../../common/constants/time.constants';
+import { loadAppConfig } from '../../../config/app-config';
+import { CONFIG_DEFAULTS } from '../../../config/config.constants';
+import { type AppLogger } from '../../../infrastructure/logging/AppLogger.port';
+import { TOTP } from '../domain/Identity.constants';
+import { type AccountRepository } from './Identity.port';
+import { SecretBox } from './SecretBox.service';
+import { isTotpCodeFormat, TotpService } from './Totp.service';
 
 /** Start of a time step, so ±1 step stays inside the test's own math. */
 const START_SECONDS = 1_700_000_010;
@@ -38,10 +39,11 @@ describe('TotpService (D8, T13 Q3)', () => {
     clock = new FakeClock();
     // matchStep and otpauthUri never touch the database.
     totp = new TotpService(
-      {} as PrismaService,
+      {} as AccountRepository,
       new SecretBox(config),
       clock,
       config,
+      {} as AppLogger,
     );
     secret = totp.createSecret();
   });

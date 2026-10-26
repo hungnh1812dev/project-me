@@ -1,6 +1,7 @@
 import { ConflictException, Injectable } from '@nestjs/common';
 
 import { type AccountStatus } from '../../../generated/prisma/client';
+import { unitOfWorkFromPrismaTx } from '../../../infrastructure/database/PrismaTransactionRunner.adapter';
 import { PrismaService } from '../../../infrastructure/database/prisma.service';
 import { revokeAllSessions } from '../../identity';
 import { type ClientMeta } from '../../../common/http/client-meta';
@@ -147,7 +148,7 @@ export class AccountsService {
           updatedBy: { connect: { id: actor.accountId } },
         },
       });
-      await revokeAllSessions(tx, target.id);
+      await revokeAllSessions(unitOfWorkFromPrismaTx(tx), target.id);
       await recordAccountEvent(
         this.audit,
         tx,
@@ -215,7 +216,7 @@ export class AccountsService {
   ): Promise<void> {
     const accountId = await this.prisma.$transaction(async (tx) => {
       const target = await lockManageableAccount(tx, actor, documentId);
-      await revokeAllSessions(tx, target.id);
+      await revokeAllSessions(unitOfWorkFromPrismaTx(tx), target.id);
       await recordAccountEvent(
         this.audit,
         tx,

@@ -1,10 +1,10 @@
 import { Injectable } from '@nestjs/common';
 
-import { Clock } from '../../common/time/clock';
+import { Clock } from '../../../common/time/clock';
 import {
   TWO_FACTOR_CHALLENGE_MAX_KEYS,
   TWO_FACTOR_TEMP_TOKEN_MAX_ATTEMPTS,
-} from './domain/Identity.constants';
+} from '../domain/Identity.constants';
 
 interface ChallengeEntry {
   attempts: number;

@@ -20,7 +20,7 @@ import {
   type PrismaHandle,
 } from '../../src/infrastructure/database/prisma-client';
 import { hashPassword } from '../../src/modules/identity/password-hasher';
-import { hashRefreshToken } from '../../src/modules/identity/refresh-token.service';
+import { hashRefreshToken } from '../../src/modules/identity/application/RefreshToken.service';
 import { seedSystemRoles } from '../../src/modules/access/roles/system-roles.seed';
 import { createCoreTemplate } from '../fixtures/core-db.fixture';
 import {
@@ -100,6 +100,8 @@ describe('auth: login, JWT, refresh rotation, logout (Postgres 16 via Testcontai
   let app: NestExpressApplication;
   let db: PrismaHandle;
   let accountCount = 0;
+  let clockSpy: jest.SpyInstance<number, []>;
+  let jumpingNow: () => number;
 
   beforeAll(async () => {
     postgres = await startPostgres();
@@ -119,9 +121,12 @@ describe('auth: login, JWT, refresh rotation, logout (Postgres 16 via Testcontai
     // This suite tests auth, not throttling (rate-limit.spec.ts): every
     // rate-limit lookup lands in a fresh window.
     let fakeNow = Date.now();
-    jest
-      .spyOn(app.get(Clock), 'now')
-      .mockImplementation(() => (fakeNow += RATE_LIMIT_SWEEP_INTERVAL_MS));
+    jumpingNow = () => (fakeNow += RATE_LIMIT_SWEEP_INTERVAL_MS);
+    clockSpy = jest.spyOn(app.get(Clock), 'now').mockImplementation(jumpingNow);
+  });
+
+  afterEach(() => {
+    clockSpy.mockImplementation(jumpingNow);
   });
 
   afterAll(async () => {
@@ -179,6 +184,15 @@ describe('auth: login, JWT, refresh rotation, logout (Postgres 16 via Testcontai
       where: { tokenHash: hashRefreshToken(token) },
       data: { revokedAt: new Date(Date.now() - ms) },
     });
+  }
+
+  /**
+   * Refresh-token times (grace window, reuse) come from `Clock`. These tests
+   * set `revokedAt` relative to real time, so they read real time too until
+   * the next test.
+   */
+  function useRealClock(): void {
+    clockSpy.mockImplementation(() => Date.now());
   }
 
   function refresh(
@@ -537,6 +551,7 @@ describe('auth: login, JWT, refresh rotation, logout (Postgres 16 via Testcontai
     });
 
     it('treats reuse of a rotated token after the grace window as theft: revokes the family and bumps token_version', async () => {
+      useRealClock();
       const account = await createAccount();
       const otherSession = await signIn(account);
       const stolen = await signIn(account);
@@ -564,6 +579,7 @@ describe('auth: login, JWT, refresh rotation, logout (Postgres 16 via Testcontai
     });
 
     it('serves two concurrent refreshes with one token without revoking the family (T11a)', async () => {
+      useRealClock();
       const account = await createAccount();
       const { refreshToken } = await signIn(account);
       const versionBefore = await tokenVersion(account);
@@ -594,6 +610,7 @@ describe('auth: login, JWT, refresh rotation, logout (Postgres 16 via Testcontai
     });
 
     it('answers a late refresh inside the grace window with an access token only', async () => {
+      useRealClock();
       const account = await createAccount();
       const { refreshToken } = await signIn(account);
       const successor = refreshTokenOf(await refresh(refreshToken));
@@ -617,6 +634,7 @@ describe('auth: login, JWT, refresh rotation, logout (Postgres 16 via Testcontai
     });
 
     it('treats a rotated token as reuse once its successor was used, even inside the window', async () => {
+      useRealClock();
       const account = await createAccount();
       const { refreshToken } = await signIn(account);
       const successor = refreshTokenOf(await refresh(refreshToken));
@@ -629,6 +647,7 @@ describe('auth: login, JWT, refresh rotation, logout (Postgres 16 via Testcontai
     });
 
     it('treats a rotated token as reuse after logout, even inside the window', async () => {
+      useRealClock();
       const account = await createAccount();
       const { refreshToken } = await signIn(account);
       const successor = refreshTokenOf(await refresh(refreshToken));

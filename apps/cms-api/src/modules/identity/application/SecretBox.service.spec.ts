@@ -6,7 +6,11 @@ import {
 } from '../../../../test/fixtures/env.fixture';
 import { loadAppConfig } from '../../../config/app-config';
 import { SECRET_BOX } from '../domain/Identity.constants';
-import { deriveSecretBoxKey, SecretBox, SecretBoxError } from './secret-box';
+import {
+  deriveSecretBoxKey,
+  SecretBox,
+  SecretBoxError,
+} from './SecretBox.service';
 
 const PLAINTEXT = 'JBSWY3DPEHPK3PXPJBSWY3DPEHPK3PXP';
 const ACCOUNT = '0190f1d2-7c3a-7b4e-8a5f-1234567890ab';

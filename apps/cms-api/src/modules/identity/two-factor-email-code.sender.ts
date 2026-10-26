@@ -13,7 +13,7 @@ import {
 } from '../../infrastructure/mail/mail.port';
 import { type ClientMeta } from '../../common/http/client-meta';
 import { buildOtpMail } from './otp-mail';
-import { OtpService } from './otp.service';
+import { OtpService } from './application/Otp.service';
 import { EMAIL_CODE_PURPOSE } from './domain/Identity.constants';
 
 /** Issues a LOGIN_2FA_EMAIL code and mails it; shared by login and management. */

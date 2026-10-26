@@ -1,14 +1,22 @@
-import { Inject, Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { generateSecret, generateURI, verify } from 'otplib';
 
-import { Clock } from '../../common/time/clock';
-import { MS_PER_SECOND } from '../../common/constants/time.constants';
-import { type IAppConfig } from '../../config/app-config';
-import { APP_CONFIG } from '../../config/config.constants';
-import { PrismaService } from '../../infrastructure/database/prisma.service';
-import { SecretBox, SecretBoxError } from './crypto/secret-box';
-import { TOTP } from './domain/Identity.constants';
-import { type ResetSecondFactor } from './reset-second-factor';
+import { Clock } from '../../../common/time/clock';
+import { MS_PER_SECOND } from '../../../common/constants/time.constants';
+import { type IAppConfig } from '../../../config/app-config';
+import { APP_CONFIG } from '../../../config/config.constants';
+import {
+  APP_LOGGER,
+  type AppLogger,
+} from '../../../infrastructure/logging/AppLogger.port';
+import { TOTP } from '../domain/Identity.constants';
+import {
+  ACCOUNT_REPOSITORY,
+  type AccountRepository,
+  type ResetSecondFactor,
+  type TotpAccount,
+} from './Identity.port';
+import { SecretBox, SecretBoxError } from './SecretBox.service';
 
 const LOGGER_CONTEXT = 'TotpService';
 const TOTP_CODE_PATTERN = new RegExp(`^\\d{${TOTP.DIGITS}}$`);
@@ -16,15 +24,6 @@ const TOTP_CODE_PATTERN = new RegExp(`^\\d{${TOTP.DIGITS}}$`);
 /** True when `code` has the shape of a TOTP code (exactly 6 digits). */
 export function isTotpCodeFormat(code: string): boolean {
   return TOTP_CODE_PATTERN.test(code);
-}
-
-/** The TOTP fields of an account row needed to check a code. */
-export interface TotpAccount {
-  readonly id: number;
-  readonly documentId: string;
-  readonly totpSecretEnc: string | null;
-  readonly totpSecretKid: string | null;
-  readonly totpLastStep: number | null;
 }
 
 /**
@@ -36,13 +35,12 @@ export interface TotpAccount {
  */
 @Injectable()
 export class TotpService implements ResetSecondFactor {
-  private readonly logger = new Logger(LOGGER_CONTEXT);
-
   constructor(
-    private readonly prisma: PrismaService,
+    @Inject(ACCOUNT_REPOSITORY) private readonly accounts: AccountRepository,
     private readonly secretBox: SecretBox,
     private readonly clock: Clock,
     @Inject(APP_CONFIG) private readonly config: IAppConfig,
+    @Inject(APP_LOGGER) private readonly logger: AppLogger,
   ) {}
 
   /** A fresh base32 secret (160 bits). */
@@ -101,7 +99,10 @@ export class TotpService implements ResetSecondFactor {
     } catch (error) {
       if (!(error instanceof SecretBoxError)) throw error;
       // Fail closed. The message names the kid at most, never key or secret.
-      this.logger.error(`TOTP secret unreadable: ${error.message}`);
+      this.logger.error(
+        `TOTP secret unreadable: ${error.message}`,
+        LOGGER_CONTEXT,
+      );
       return undefined;
     }
   }
@@ -125,24 +126,11 @@ export class TotpService implements ResetSecondFactor {
       !this.secretBox.isCurrent(account.totpSecretKid)
         ? this.secretBox.seal(secret, account.documentId)
         : undefined;
-    const claimed = await this.prisma.account.updateMany({
-      where: {
-        id: account.id,
-        is2faEnabled: true,
-        twoFaMethod: 'totp',
-        OR: [{ totpLastStep: null }, { totpLastStep: { lt: step } }],
-      },
-      data: {
-        totpLastStep: step,
-        ...(resealed === undefined
-          ? {}
-          : {
-              totpSecretEnc: resealed.ciphertext,
-              totpSecretKid: resealed.kid,
-            }),
-      },
+    return this.accounts.claimTotpStep({
+      accountId: account.id,
+      step,
+      resealed,
     });
-    return claimed.count === 1;
   }
 
   /** RESET_SECOND_FACTOR (D8): an account with TOTP on needs a valid code. */
@@ -151,20 +139,8 @@ export class TotpService implements ResetSecondFactor {
     totpCode: string | undefined,
   ): Promise<boolean> {
     if (totpCode === undefined) return false;
-    const account = await this.prisma.account.findUnique({
-      where: { id: accountId },
-      select: TOTP_ACCOUNT_SELECT,
-    });
+    const account = await this.accounts.findTotpAccount(accountId);
     if (account === null) return false;
     return this.verifyAccountCode(account, totpCode);
   }
 }
-
-/** Prisma `select` for `TotpAccount`. */
-export const TOTP_ACCOUNT_SELECT = {
-  id: true,
-  documentId: true,
-  totpSecretEnc: true,
-  totpSecretKid: true,
-  totpLastStep: true,
-} as const;

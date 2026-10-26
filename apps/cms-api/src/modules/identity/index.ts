@@ -5,9 +5,9 @@ export {
   TwoFaMethod,
   USER_AGENT_MAX_LENGTH,
 } from './domain/Identity.constants';
-export { AccessTokenService } from './access-token.service';
+export { AccessTokenService } from './application/AccessToken.service';
 export { IdentityModule } from './identity.module';
 export { JwtAuthGuard, type AuthenticatedRequest } from './jwt.strategy';
 export { buildOtpMail } from './otp-mail';
-export { OtpService } from './otp.service';
-export { revokeAllSessions } from './session-revocation';
+export { OtpService } from './application/Otp.service';
+export { revokeAllSessions } from './adapters/PrismaSessionRevocation.repository';

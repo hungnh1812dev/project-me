@@ -14,22 +14,21 @@ import { ERROR_CODES } from '../../common/constants/error.constants';
 import { RATE_LIMIT_MESSAGE } from '../../common/constants/limits.constants';
 import { MS_PER_SECOND } from '../../common/constants/time.constants';
 import { type ClientMeta } from '../../common/http/client-meta';
+import { unitOfWorkFromPrismaTx } from '../../infrastructure/database/PrismaTransactionRunner.adapter';
 import { PrismaService } from '../../infrastructure/database/prisma.service';
 import { AUDIT_ACTIONS } from '../security-audit';
 import { SecurityAuditService, selfActor } from '../security-audit';
 import {
   AccessTokenService,
   type TwoFactorTempTokenClaims,
-} from './access-token.service';
+} from './application/AccessToken.service';
 import { AuthService, type SessionTokens } from './auth.service';
-import { isOtpCodeFormat, OtpService } from './otp.service';
-import { TotpService } from './totp.service';
-import { TwoFactorChallengeStore } from './two-factor-challenge.store';
+import { isOtpCodeFormat, OtpService } from './application/Otp.service';
+import { TotpService } from './application/Totp.service';
+import { TwoFactorChallengeStore } from './application/TwoFactorChallenge.store';
 import { TwoFactorEmailCodeSender } from './two-factor-email-code.sender';
-import {
-  invalidTwoFactorCode,
-  TWO_FACTOR_ACCOUNT_SELECT,
-} from './two-factor.shared';
+import { TWO_FACTOR_ACCOUNT_SELECT } from './adapters/PrismaAccount.repository';
+import { invalidTwoFactorCode } from './two-factor.shared';
 import { type VerifyTwoFactorRequest } from './two-factor.requests';
 
 function invalidTempToken(): UnauthorizedException {
@@ -151,6 +150,8 @@ export class TwoFactorLoginService {
     if (!isOtpCodeFormat(code)) return false;
     const otpId = await this.otp.verify(accountId, EMAIL_CODE_PURPOSE, code);
     if (otpId === undefined) return false;
-    return this.prisma.$transaction((tx) => this.otp.tryConsume(tx, otpId));
+    return this.prisma.$transaction((tx) =>
+      this.otp.tryConsume(unitOfWorkFromPrismaTx(tx), otpId),
+    );
   }
 }

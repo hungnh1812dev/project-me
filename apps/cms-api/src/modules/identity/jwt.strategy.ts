@@ -16,7 +16,7 @@ import {
   type AccessTokenClaims,
   accessTokenClaimsSchema,
   AccessTokenService,
-} from './access-token.service';
+} from './application/AccessToken.service';
 
 /** What `JwtAuthGuard` puts on `req.user`. */
 export interface AuthenticatedAccount {

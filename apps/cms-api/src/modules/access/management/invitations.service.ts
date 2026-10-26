@@ -2,6 +2,7 @@ import { ConflictException, Inject, Injectable, Logger } from '@nestjs/common';
 
 import { type IAppConfig } from '../../../config/app-config';
 import { APP_CONFIG } from '../../../config/config.constants';
+import { unitOfWorkFromPrismaTx } from '../../../infrastructure/database/PrismaTransactionRunner.adapter';
 import { PrismaService } from '../../../infrastructure/database/prisma.service';
 import {
   MAIL_SENDER,
@@ -93,7 +94,7 @@ export class InvitationsService {
         const code = await this.otp.issue(row.id, INVITE_PURPOSE, {
           actor: auditActor,
           ip: meta.ip,
-          tx,
+          unit: unitOfWorkFromPrismaTx(tx),
         });
         return { row, code };
       });
@@ -133,7 +134,7 @@ export class InvitationsService {
       const code = await this.otp.issue(target.id, INVITE_PURPOSE, {
         actor: auditActor,
         ip: meta.ip,
-        tx,
+        unit: unitOfWorkFromPrismaTx(tx),
       });
       return { row: target, code };
     });

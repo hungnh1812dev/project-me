@@ -386,7 +386,7 @@ its commit:
 | Write                                                      | Where                                                                | Invalidates |
 | ---------------------------------------------------------- | -------------------------------------------------------------------- | ----------- |
 | Password change, reset or set                              | `password.service.ts`                                                | the account |
-| Refresh-token reuse                                        | `refresh-token.service.ts`                                           | the account |
+| Refresh-token reuse                                        | `application/RefreshToken.service.ts`                                | the account |
 | Role permission changes                                    | `RolePermissionsService.replacePermissions` (bumps `policy_version`) | the role    |
 | Account role/name change, disable, enable, revoke sessions | `accounts.service.ts` (disable/revoke bump `tv`)                     | the account |
 | Role rename/re-rank (bumps `policy_version`), delete       | `roles.service.ts`                                                   | the role    |

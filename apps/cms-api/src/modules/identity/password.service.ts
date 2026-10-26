@@ -24,6 +24,7 @@ import {
   MAIL_SENDER,
   type MailSender,
 } from '../../infrastructure/mail/mail.port';
+import { unitOfWorkFromPrismaTx } from '../../infrastructure/database/PrismaTransactionRunner.adapter';
 import { PrismaService } from '../../infrastructure/database/prisma.service';
 import {
   AUDIT_ACTIONS,
@@ -33,7 +34,7 @@ import {
 import { SecurityAuditService, selfActor } from '../security-audit';
 import { VersionCache } from '../access';
 import { buildOtpMail } from './otp-mail';
-import { isOtpCodeFormat, OtpService } from './otp.service';
+import { isOtpCodeFormat, OtpService } from './application/Otp.service';
 import { hashPassword, verifyPassword } from './password-hasher';
 import {
   type ChangePasswordRequest,
@@ -41,12 +42,12 @@ import {
   type ResetPasswordRequest,
   type SetPasswordRequest,
 } from './password.requests';
-import { revokeAllSessions } from './session-revocation';
+import { revokeAllSessions } from './adapters/PrismaSessionRevocation.repository';
 import { type ClientMeta } from '../../common/http/client-meta';
 import {
   RESET_SECOND_FACTOR,
   type ResetSecondFactor,
-} from './reset-second-factor';
+} from './application/Identity.port';
 
 const LOGGER_CONTEXT = 'PasswordService';
 /** Hashed for unknown emails so they cost the same HMAC as a real check. */
@@ -294,9 +295,10 @@ export class PasswordService implements OnApplicationShutdown {
   ): Promise<void> {
     const passwordHash = await hashPassword(newPassword);
     await this.prisma.$transaction(async (tx) => {
+      const unit = unitOfWorkFromPrismaTx(tx);
       if (
         write.otpId !== undefined &&
-        !(await this.otp.tryConsume(tx, write.otpId))
+        !(await this.otp.tryConsume(unit, write.otpId))
       ) {
         throw invalidOtp();
       }
@@ -307,7 +309,7 @@ export class PasswordService implements OnApplicationShutdown {
           passwordHash,
         },
       });
-      await revokeAllSessions(tx, account.id);
+      await revokeAllSessions(unit, account.id);
       await this.audit.record(tx, {
         actor: selfActor(account.id),
         action: write.action,

@@ -15,13 +15,14 @@ import {
   type AccountStatus,
   type TwoFaMethod,
 } from '../../generated/prisma/client';
+import { unitOfWorkFromPrismaTx } from '../../infrastructure/database/PrismaTransactionRunner.adapter';
 import { PrismaService } from '../../infrastructure/database/prisma.service';
 import { AUDIT_ACTIONS, type LoginFailureReason } from '../security-audit';
 import { SecurityAuditService, selfActor } from '../security-audit';
 import { loginFailureReason } from './domain/Authentication.rules';
-import { AccessTokenService } from './access-token.service';
+import { AccessTokenService } from './application/AccessToken.service';
 import { hashPassword, verifyPassword } from './password-hasher';
-import { RefreshTokenService } from './refresh-token.service';
+import { RefreshTokenService } from './application/RefreshToken.service';
 import { type ClientMeta } from '../../common/http/client-meta';
 
 export interface LoginCredentials {
@@ -222,7 +223,11 @@ export class AuthService implements OnModuleInit {
     twoFactorMethod: TwoFaMethod | null = null,
   ): Promise<SessionTokens> {
     const refreshToken = await this.prisma.$transaction(async (tx) => {
-      const token = await this.refreshTokens.issue(account.id, meta, tx);
+      const token = await this.refreshTokens.issue(
+        account.id,
+        meta,
+        unitOfWorkFromPrismaTx(tx),
+      );
       await this.audit.record(tx, {
         actor: selfActor(account.id),
         action: AUDIT_ACTIONS.AUTH_LOGIN_SUCCEEDED,

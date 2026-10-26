@@ -30,7 +30,7 @@ import {
   AUDIT_ACTIONS,
   type AuditAction,
 } from '../../src/modules/security-audit';
-import { SecretBox } from '../../src/modules/identity/crypto/secret-box';
+import { SecretBox } from '../../src/modules/identity/application/SecretBox.service';
 import { hashPassword } from '../../src/modules/identity/password-hasher';
 import { PasswordService } from '../../src/modules/identity/password.service';
 import { seedSystemRoles } from '../../src/modules/access/roles/system-roles.seed';

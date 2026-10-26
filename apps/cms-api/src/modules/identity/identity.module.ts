@@ -5,21 +5,29 @@ import { DatabaseModule } from '../../infrastructure/database/database.module';
 import { MailModule } from '../../infrastructure/mail/mail.module';
 import { AccessModule } from '../access';
 import { SecurityAuditModule } from '../security-audit';
-import { AccessTokenService } from './access-token.service';
+import { PrismaAccountRepository } from './adapters/PrismaAccount.repository';
+import { PrismaOtpCodeRepository } from './adapters/PrismaOtpCode.repository';
+import { PrismaRefreshTokenRepository } from './adapters/PrismaRefreshToken.repository';
+import { AccessTokenService } from './application/AccessToken.service';
+import {
+  ACCOUNT_REPOSITORY,
+  OTP_CODE_REPOSITORY,
+  REFRESH_TOKEN_REPOSITORY,
+  RESET_SECOND_FACTOR,
+} from './application/Identity.port';
+import { OtpService } from './application/Otp.service';
+import { RefreshTokenService } from './application/RefreshToken.service';
+import { SecretBox } from './application/SecretBox.service';
+import { TotpService } from './application/Totp.service';
+import { TwoFactorChallengeStore } from './application/TwoFactorChallenge.store';
 import { AllowedOriginGuard } from './allowed-origin.guard';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { JwtAuthGuard, JwtStrategy } from './jwt.strategy';
-import { OtpService } from './otp.service';
 import { OwnerSetupController } from './owner-setup.controller';
 import { OwnerSetupService } from './owner-setup.service';
 import { PasswordController } from './password.controller';
 import { PasswordService } from './password.service';
-import { RefreshTokenService } from './refresh-token.service';
-import { SecretBox } from './crypto/secret-box';
-import { RESET_SECOND_FACTOR } from './reset-second-factor';
-import { TotpService } from './totp.service';
-import { TwoFactorChallengeStore } from './two-factor-challenge.store';
 import { TwoFactorController } from './two-factor.controller';
 import { TwoFactorEmailCodeSender } from './two-factor-email-code.sender';
 import { TwoFactorLoginService } from './two-factor-login.service';
@@ -41,6 +49,12 @@ import { TwoFactorManagementService } from './two-factor-management.service';
     TwoFactorController,
   ],
   providers: [
+    { provide: ACCOUNT_REPOSITORY, useClass: PrismaAccountRepository },
+    { provide: OTP_CODE_REPOSITORY, useClass: PrismaOtpCodeRepository },
+    {
+      provide: REFRESH_TOKEN_REPOSITORY,
+      useClass: PrismaRefreshTokenRepository,
+    },
     AccessTokenService,
     AllowedOriginGuard,
     AuthService,

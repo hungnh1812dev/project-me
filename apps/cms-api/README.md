@@ -255,7 +255,7 @@ email.`), 2FA already off, invalid email, missing `--email`, unknown
   dummy HMAC keeps the work similar). Emails are plain text: the code, its
   lifetime and the admin page URL (`ADMIN_ORIGIN` + `/reset-password` or
   `/set-password`), no links.
-- `OtpService` (`otp.service.ts`): 6 digits, 300 s, stored as
+- `OtpService` (`application/Otp.service.ts`): 6 digits, 300 s, stored as
   HMAC-SHA256(`OTP_PEPPER`, `accountId:purpose:code`). 5 checks per code
   (the 6th fails even when right), 5 codes per account per hour across all
   purposes (6th -> 429), a new code invalidates older unused ones of the same

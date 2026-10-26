@@ -2,23 +2,30 @@ import { createHmac, randomInt, timingSafeEqual } from 'node:crypto';
 
 import { HttpException, HttpStatus, Inject, Injectable } from '@nestjs/common';
 
-import { Clock } from '../../common/time/clock';
-import { ERROR_CODES } from '../../common/constants/error.constants';
-import { RATE_LIMIT_MESSAGE } from '../../common/constants/limits.constants';
-import { MS_PER_SECOND } from '../../common/constants/time.constants';
-import { type IAppConfig } from '../../config/app-config';
-import { APP_CONFIG } from '../../config/config.constants';
-import { type OtpPurpose, type Prisma } from '../../generated/prisma/client';
-import { PrismaService } from '../../infrastructure/database/prisma.service';
-import { AUDIT_ACTIONS } from '../security-audit';
+import { Clock } from '../../../common/time/clock';
+import { ERROR_CODES } from '../../../common/constants/error.constants';
+import { RATE_LIMIT_MESSAGE } from '../../../common/constants/limits.constants';
+import { MS_PER_SECOND } from '../../../common/constants/time.constants';
+import { type IAppConfig } from '../../../config/app-config';
+import { APP_CONFIG } from '../../../config/config.constants';
 import {
+  CORE_TRANSACTION_RUNNER,
+  type TransactionRunner,
+  type UnitOfWork,
+} from '../../../infrastructure/database/TransactionRunner.port';
+import {
+  AUDIT_ACTIONS,
   type AuditActor,
   SecurityAuditService,
   selfActor,
-} from '../security-audit';
-import { OTP } from './domain/Identity.constants';
-
-type Tx = Prisma.TransactionClient;
+} from '../../security-audit';
+import { OTP, type OtpPurpose } from '../domain/Identity.constants';
+import {
+  ACCOUNT_REPOSITORY,
+  type AccountRepository,
+  OTP_CODE_REPOSITORY,
+  type OtpCodeRepository,
+} from './Identity.port';
 
 const OTP_CODE_PATTERN = new RegExp(`^\\d{${OTP.DIGITS}}$`);
 const OTP_CODE_SPACE = 10 ** OTP.DIGITS;
@@ -31,7 +38,7 @@ export interface OtpIssueOptions {
   readonly actor?: AuditActor | undefined;
   readonly ip?: string | undefined;
   /** Issue inside the caller's transaction (e.g. with the invited account). */
-  readonly tx?: Tx | undefined;
+  readonly unit?: UnitOfWork | undefined;
 }
 
 /** True when `code` has the shape of an OTP (exactly 6 digits). */
@@ -71,7 +78,10 @@ export function otpIssueLimitExceeded(): HttpException {
 @Injectable()
 export class OtpService {
   constructor(
-    private readonly prisma: PrismaService,
+    @Inject(OTP_CODE_REPOSITORY) private readonly codes: OtpCodeRepository,
+    @Inject(ACCOUNT_REPOSITORY) private readonly accounts: AccountRepository,
+    @Inject(CORE_TRANSACTION_RUNNER)
+    private readonly runner: TransactionRunner,
     private readonly clock: Clock,
     private readonly audit: SecurityAuditService,
     @Inject(APP_CONFIG) private readonly config: IAppConfig,
@@ -95,50 +105,38 @@ export class OtpService {
       .toString()
       .padStart(OTP.DIGITS, '0');
 
-    const run = async (tx: Tx): Promise<string> => {
+    const run = async (unit: UnitOfWork): Promise<string> => {
       // Row lock on the account: concurrent issues for it run one at a time,
       // so the count below can't be raced past the cap.
-      const locked = await tx.$queryRaw<{ document_id: string }[]>`
-        SELECT document_id FROM accounts WHERE id = ${accountId} FOR UPDATE`;
-      const recent = await tx.otpCode.count({
-        where: {
-          accountId,
-          createdAt: { gt: new Date(now - OTP.ISSUE_WINDOW_MS) },
-        },
-      });
+      const documentId = await this.accounts.lockDocumentId(unit, accountId);
+      const recent = await this.codes.countIssuedSince(
+        unit,
+        accountId,
+        new Date(now - OTP.ISSUE_WINDOW_MS),
+      );
       if (recent >= OTP.MAX_ISSUED_PER_WINDOW) throw otpIssueLimitExceeded();
 
       const issuedAt = new Date(now);
-      await tx.otpCode.updateMany({
-        where: {
-          accountId,
-          purpose,
-          usedAt: null,
-          expiresAt: { gt: issuedAt },
-        },
-        data: { expiresAt: issuedAt },
+      await this.codes.expireLive(unit, accountId, purpose, issuedAt);
+      await this.codes.insert(unit, {
+        accountId,
+        purpose,
+        codeHmac: otpHmac(pepper, accountId, purpose, code),
+        createdAt: issuedAt,
+        expiresAt: new Date(now + OTP.TTL_SECONDS * MS_PER_SECOND),
       });
-      await tx.otpCode.create({
-        data: {
-          accountId,
-          purpose,
-          codeHmac: otpHmac(pepper, accountId, purpose, code),
-          createdAt: issuedAt,
-          expiresAt: new Date(now + OTP.TTL_SECONDS * MS_PER_SECOND),
-        },
-      });
-      await this.audit.record(tx, {
+      await this.audit.record(unit, {
         actor: options.actor ?? selfActor(accountId),
         action: AUDIT_ACTIONS.AUTH_OTP_ISSUED,
-        targetId: locked[0]?.document_id ?? null,
+        targetId: documentId,
         metadata: { purpose },
         ip: options.ip,
       });
       return code;
     };
-    return options.tx === undefined
-      ? this.prisma.$transaction(run)
-      : run(options.tx);
+    return options.unit === undefined
+      ? this.runner.run(run)
+      : run(options.unit);
   }
 
   /**
@@ -153,23 +151,15 @@ export class OtpService {
     code: string,
   ): Promise<number | undefined> {
     const candidate = otpHmac(this.pepper(), accountId, purpose, code);
-    const live = await this.prisma.otpCode.findFirst({
-      where: {
-        accountId,
-        purpose,
-        usedAt: null,
-        expiresAt: { gt: new Date(this.clock.now()) },
-      },
-      orderBy: { createdAt: 'desc' },
-      select: { id: true, codeHmac: true },
-    });
+    const live = await this.codes.findLive(
+      accountId,
+      purpose,
+      new Date(this.clock.now()),
+    );
     if (live === null) return undefined;
 
-    const counted = await this.prisma.otpCode.updateMany({
-      where: { id: live.id, usedAt: null, attempts: { lt: OTP.MAX_ATTEMPTS } },
-      data: { attempts: { increment: 1 } },
-    });
-    if (counted.count === 0) return undefined;
+    const isCounted = await this.codes.countAttempt(live.id, OTP.MAX_ATTEMPTS);
+    if (!isCounted) return undefined;
 
     const expected = Buffer.from(live.codeHmac, 'hex');
     const actual = Buffer.from(candidate, 'hex');
@@ -183,13 +173,8 @@ export class OtpService {
    * Marks a verified code used, inside the caller's transaction. Atomic:
    * of two concurrent requests holding the same code only one gets true.
    */
-  async tryConsume(tx: Tx, otpId: number): Promise<boolean> {
-    const now = new Date(this.clock.now());
-    const claimed = await tx.otpCode.updateMany({
-      where: { id: otpId, usedAt: null, expiresAt: { gt: now } },
-      data: { usedAt: now },
-    });
-    return claimed.count === 1;
+  tryConsume(unit: UnitOfWork, otpId: number): Promise<boolean> {
+    return this.codes.markUsed(unit, otpId, new Date(this.clock.now()));
   }
 
   /** Same HMAC work as a real check, for requests about unknown emails. */

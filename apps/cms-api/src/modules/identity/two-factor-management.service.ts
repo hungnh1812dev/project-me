@@ -13,6 +13,7 @@ import {
   EMAIL_CODE_PURPOSE,
 } from './domain/Identity.constants';
 import { type Prisma, type TwoFaMethod } from '../../generated/prisma/client';
+import { unitOfWorkFromPrismaTx } from '../../infrastructure/database/PrismaTransactionRunner.adapter';
 import { PrismaService } from '../../infrastructure/database/prisma.service';
 import {
   AUDIT_ACTIONS,
@@ -20,16 +21,14 @@ import {
   TWO_FACTOR_OPERATIONS,
 } from '../security-audit';
 import { SecurityAuditService, selfActor } from '../security-audit';
-import { SecretBox } from './crypto/secret-box';
-import { isOtpCodeFormat, OtpService } from './otp.service';
+import { SecretBox } from './application/SecretBox.service';
+import { isOtpCodeFormat, OtpService } from './application/Otp.service';
 import { verifyPassword } from './password-hasher';
 import { type ClientMeta } from '../../common/http/client-meta';
-import { TotpService } from './totp.service';
+import { TotpService } from './application/Totp.service';
 import { TwoFactorEmailCodeSender } from './two-factor-email-code.sender';
-import {
-  invalidTwoFactorCode,
-  TWO_FACTOR_ACCOUNT_SELECT,
-} from './two-factor.shared';
+import { TWO_FACTOR_ACCOUNT_SELECT } from './adapters/PrismaAccount.repository';
+import { invalidTwoFactorCode } from './two-factor.shared';
 import {
   type DisableTwoFactorRequest,
   type EnableTwoFactorRequest,
@@ -348,7 +347,9 @@ export class TwoFactorManagementService {
     const otpId = await this.otp.verify(accountId, EMAIL_CODE_PURPOSE, code);
     if (otpId === undefined) throw await change.onBadCode();
     const consumed = await this.prisma.$transaction(async (tx) => {
-      if (!(await this.otp.tryConsume(tx, otpId))) return false;
+      if (!(await this.otp.tryConsume(unitOfWorkFromPrismaTx(tx), otpId))) {
+        return false;
+      }
       const written = await tx.account.updateMany({
         where: { id: accountId, ...change.where },
         data: change.accountPatch,

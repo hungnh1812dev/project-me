@@ -24,7 +24,7 @@ import {
   type MailMessage,
   type MailSender,
 } from '../../src/infrastructure/mail/mail.port';
-import { OtpService } from '../../src/modules/identity/otp.service';
+import { OtpService } from '../../src/modules/identity/application/Otp.service';
 import { hashPassword } from '../../src/modules/identity/password-hasher';
 import { PasswordService } from '../../src/modules/identity/password.service';
 import { seedSystemRoles } from '../../src/modules/access/roles/system-roles.seed';
