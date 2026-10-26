@@ -263,7 +263,7 @@ routes. The build fails without `VITE_API_BASE_URL`.
 | `lint`      | Oxlint (base-config + react, jsx-a11y, vitest) then ESLint (base-config, react-hooks) |
 | `typecheck` | `tsc --noEmit`                                                                        |
 
-`src/FileNames.architecture.test.ts` (ADR 0008) fails on a file or folder under `src/` and `test/` that breaks the naming rule; a new function word is one entry in its `FILE_FUNCTION_WORDS`.
+The `abyss/file-names` ESLint rule (ADR 0008, run by `pnpm lint`) fails on a file or folder under `src/` and `test/` that breaks the naming rule.
 
 ## Security headers (SPEC D17, T36)
 

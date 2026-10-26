@@ -139,7 +139,7 @@ Runtime env: `API_INTERNAL_URL`, `WEB_REVALIDATE_SECONDS`, `WEB_PORT` (default
 | `lint`      | Oxlint (base-config + react, jsx-a11y, vitest) then ESLint (base-config, react-hooks, Next) |
 | `typecheck` | `next typegen`, then `tsc --noEmit`                                                         |
 
-`src/FileNames.architecture.test.ts` (ADR 0008) fails on a file or folder under `src/` and `test/` that breaks the naming rule. Next.js framework files (`page.tsx`, `layout.tsx`, `proxy.ts`, ...) and route-segment folders (`[slug]`, `(group)`, `@slot`) are allowed; a new function word is one entry in its `FILE_FUNCTION_WORDS`.
+The `abyss/file-names` ESLint rule (ADR 0008, run by `pnpm lint`) fails on a file or folder under `src/` and `test/` that breaks the naming rule. Next.js framework files (`page.tsx`, `layout.tsx`, `proxy.ts`, ...) and route-segment folders (`[slug]`, `(group)`, `@slot`) are allowed; the Next.js names are `frameworkFileNames` in `eslint.config.mjs`.
 
 ## Security headers (SPEC D17)
 

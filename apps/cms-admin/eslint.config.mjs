@@ -128,7 +128,13 @@ const QUERY_KEY_OWNERS = [
 ];
 
 export default [
-  ...baseEslint({ tsconfigRootDir: import.meta.dirname }),
+  ...baseEslint({
+    tsconfigRootDir: import.meta.dirname,
+    fileNames: {
+      frameworkFileNames: ['index.ts', 'main.tsx'],
+      testSuffixes: ['test'],
+    },
+  }),
   reactHooks.configs.flat['recommended-latest'],
   { languageOptions: { globals: globals.browser } },
   importBoundary(
