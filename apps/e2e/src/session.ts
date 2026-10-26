@@ -1,6 +1,6 @@
 import { expect, type APIRequestContext, type Page } from '@playwright/test';
 
-import { ADMIN_COPY } from './app-contracts';
+import { ADMIN_COPY, API_ENDPOINTS } from './app-contracts';
 import { API_PATHS, apiUrl } from './api-paths';
 import { HTTP } from './constants';
 import { e2eEnv } from './env';
@@ -53,3 +53,20 @@ export async function ownerApiToken(
 export const bearer = (token: string): { Authorization: string } => ({
   Authorization: `Bearer ${token}`,
 });
+
+/**
+ * Signs in as the owner, but answers `GET /auth/me` with the owner's profile
+ * under another seeded role, so the shell is drawn for that role's real rows
+ * from `GET /roles`. A reviewer account cannot sign in through the form.
+ */
+export async function signInAsOwnerWithRole(
+  page: Page,
+  role: string,
+): Promise<void> {
+  await page.route(`**${API_ENDPOINTS.AUTH.ME}`, async (route) => {
+    const response = await route.fetch();
+    const user = (await response.json()) as Record<string, unknown>;
+    await route.fulfill({ response, json: { ...user, role } });
+  });
+  await signInAsOwner(page);
+}
