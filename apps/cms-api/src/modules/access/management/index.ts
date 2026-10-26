@@ -1,1 +1,1 @@
-export { AccessManagementModule } from './access-management.module';
+export { AccessManagementModule } from './AccessManagement.module';

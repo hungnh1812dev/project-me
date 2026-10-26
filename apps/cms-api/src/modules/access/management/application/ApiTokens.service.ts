@@ -1,78 +1,77 @@
 import { randomBytes } from 'node:crypto';
 
-import {
-  BadRequestException,
-  ConflictException,
-  ForbiddenException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 
-import { Clock } from '../../../common/time/clock';
-import { Prisma } from '../../../generated/prisma/client';
-import { PrismaService } from '../../../infrastructure/database/prisma.service';
-import type { ClientMeta } from '../../../common/http/client-meta';
-import { ACCESS_ERROR_CODES } from '../domain/Access.constants';
+import { Clock } from '../../../../common/time/clock';
+import type { ClientMeta } from '../../../../common/types/ClientMeta.entity';
+import type {
+  PageMeta,
+  PageQuery,
+} from '../../../../common/validation/SharedSchemas.rules';
 import {
-  MANAGEMENT_ERROR_CODES,
-  MANAGEMENT_ERROR_MESSAGES,
-} from './access-management.constants';
+  CORE_TRANSACTION_RUNNER,
+  type TransactionRunner,
+  type UnitOfWork,
+} from '../../../../infrastructure/database/TransactionRunner.port';
 import {
-  invalidRequest,
-  type PageMeta,
-  type PageQuery,
-} from '../../../common/http/request-parsing';
-import { AccessPolicyService } from '../application/AccessPolicy.service';
+  AUDIT_ACTIONS,
+  type AuditAction,
+  type AuditMetadata,
+  auditActorOf,
+  SecurityAuditService,
+} from '../../../security-audit';
+import { AccessPolicyService } from '../../application/AccessPolicy.service';
+import { VersionCache } from '../../application/VersionCache.service';
 import {
   type RolePolicy,
   type TokenScope,
   isOwnerRole,
   parseTokenScope,
-} from '../domain/ActorContext.entity';
-import { hashApiToken } from '../domain/ApiToken.rules';
-import { API_TOKEN } from '../domain/ApiToken.rules';
-import { isApiTokenExpired } from '../domain/ApiToken.rules';
+} from '../../domain/ActorContext.entity';
+import {
+  API_TOKEN,
+  hashApiToken,
+  isApiTokenExpired,
+} from '../../domain/ApiToken.rules';
+import type { AccountActor } from '../../domain/Rank.rules';
+import {
+  scopeEntriesBeyondCreator,
+  validateTokenScope,
+} from '../../domain/TokenScope.rules';
 import {
   API_TOKEN_STATUSES,
   API_TOKEN_UPDATABLE_FIELDS,
   type ApiTokenStatus,
-} from './api-tokens.constants';
-import type {
-  CreateApiTokenRequest,
-  UpdateApiTokenRequest,
-} from './api-tokens.requests';
-import { validateTokenScope } from '../domain/TokenScope.rules';
-import type { AccountActor } from '../domain/Rank.rules';
-import { AUDIT_ACTIONS, type AuditAction } from '../../security-audit';
+  MANAGEMENT_AUDIT_SUBJECTS,
+} from '../domain/AccessManagement.constants';
 import {
-  type AuditMetadata,
-  auditActorOf,
-  SecurityAuditService,
-} from '../../security-audit';
-import { scopeEntriesBeyondCreator } from '../domain/TokenScope.rules';
-import { VersionCache } from '../application/VersionCache.service';
+  expiryNotInFuture,
+  invalidIssues,
+  tokenExpired,
+  tokenNotFound,
+  tokenRevoked,
+  tokenScopeNotHeld,
+  tokenScopeTooLarge,
+} from '../domain/AccessManagement.errors';
+import {
+  API_TOKEN_ADMIN_REPOSITORY,
+  type ApiTokenAdminRepository,
+  type ManagedApiToken,
+} from './AccessManagement.port';
 
-type Tx = Prisma.TransactionClient;
+/** `POST /api-tokens` body, already validated. `scope` is checked here. */
+export interface ApiTokenCreation {
+  readonly name: string;
+  readonly scope: unknown;
+  readonly expiresAt?: Date | null | undefined;
+}
 
-const TOKENS_SUBJECT = 'api_tokens';
-
-const TOKEN_SELECT = {
-  id: true,
-  documentId: true,
-  name: true,
-  tokenPrefix: true,
-  scope: true,
-  expiresAt: true,
-  revokedAt: true,
-  lastUsedAt: true,
-  createdAt: true,
-  createdById: true,
-  createdBy: {
-    select: { documentId: true, displayName: true, roleId: true },
-  },
-} as const;
-
-type TokenRow = Prisma.ApiTokenGetPayload<{ select: typeof TOKEN_SELECT }>;
+/** `PATCH /api-tokens/:id` body, already validated. */
+export interface ApiTokenUpdate {
+  readonly name?: string | undefined;
+  readonly scope?: unknown;
+  readonly expiresAt?: Date | null | undefined;
+}
 
 /** `GET /api-tokens` item. Never the raw token or its hash. */
 export interface ApiTokenView {
@@ -99,35 +98,11 @@ export interface ApiTokenPage {
   readonly meta: PageMeta;
 }
 
-function tokenNotFound(): NotFoundException {
-  return new NotFoundException({
-    errorCode: MANAGEMENT_ERROR_CODES.TOKEN_NOT_FOUND,
-    message: MANAGEMENT_ERROR_MESSAGES.TOKEN_NOT_FOUND,
-  });
-}
-
-function tokenRevoked(): ConflictException {
-  return new ConflictException({
-    errorCode: MANAGEMENT_ERROR_CODES.TOKEN_REVOKED,
-    message: MANAGEMENT_ERROR_MESSAGES.TOKEN_REVOKED,
-  });
-}
-
-function tokenExpired(): ConflictException {
-  return new ConflictException({
-    errorCode: MANAGEMENT_ERROR_CODES.TOKEN_EXPIRED,
-    message: MANAGEMENT_ERROR_MESSAGES.TOKEN_EXPIRED,
-  });
-}
-
 /** Why an update is refused, per status. A new inactive status adds one entry here. */
-const UPDATE_BLOCKED_BY_STATUS: Record<
-  Exclude<ApiTokenStatus, 'active'>,
-  () => ConflictException
-> = {
+const UPDATE_BLOCKED_BY_STATUS = {
   [API_TOKEN_STATUSES.REVOKED]: tokenRevoked,
   [API_TOKEN_STATUSES.EXPIRED]: tokenExpired,
-};
+} as const;
 
 /** 400 TOKEN_SCOPE_INVALID when the raw scope has too many entries (before parsing). */
 function assertScopeSize(input: unknown): void {
@@ -139,41 +114,8 @@ function assertScopeSize(input: unknown): void {
     Array.isArray(permissions) &&
     permissions.length > API_TOKEN.MAX_SCOPE_ENTRIES
   ) {
-    throw new BadRequestException({
-      errorCode: ACCESS_ERROR_CODES.TOKEN_SCOPE_INVALID,
-      message: `A token scope holds at most ${API_TOKEN.MAX_SCOPE_ENTRIES} entries.`,
-    });
+    throw tokenScopeTooLarge();
   }
-}
-
-function scopeNotHeld(indexes: readonly number[]): ForbiddenException {
-  return new ForbiddenException({
-    errorCode: MANAGEMENT_ERROR_CODES.TOKEN_SCOPE_NOT_HELD,
-    message: MANAGEMENT_ERROR_MESSAGES.TOKEN_SCOPE_NOT_HELD,
-    details: { indexes },
-  });
-}
-
-/** A scope as `Json` input (field lists copied out of their readonly arrays). */
-function scopeJson(scope: TokenScope): Prisma.InputJsonObject {
-  return {
-    permissions: scope.permissions.map((entry) => ({
-      subject: entry.subject,
-      action: entry.action,
-      ...(entry.readableFields === undefined
-        ? {}
-        : {
-            readableFields:
-              entry.readableFields === null ? null : [...entry.readableFields],
-          }),
-      ...(entry.writableFields === undefined
-        ? {}
-        : {
-            writableFields:
-              entry.writableFields === null ? null : [...entry.writableFields],
-          }),
-    })),
-  };
 }
 
 function subjectsOf(scope: TokenScope): string[] {
@@ -188,7 +130,9 @@ function subjectsOf(scope: TokenScope): string[] {
 @Injectable()
 export class ApiTokensService {
   constructor(
-    private readonly prisma: PrismaService,
+    @Inject(CORE_TRANSACTION_RUNNER) private readonly runner: TransactionRunner,
+    @Inject(API_TOKEN_ADMIN_REPOSITORY)
+    private readonly tokens: ApiTokenAdminRepository,
     private readonly access: AccessPolicyService,
     private readonly versions: VersionCache,
     private readonly audit: SecurityAuditService,
@@ -197,20 +141,12 @@ export class ApiTokensService {
 
   /** The Owner sees every token; anyone else only the tokens they created. */
   async list(actor: AccountActor, query: PageQuery): Promise<ApiTokenPage> {
-    const where: Prisma.ApiTokenWhereInput = isOwnerRole(actor.role)
-      ? {}
-      : { createdById: actor.accountId };
     const { page, pageSize } = query;
-    const [rows, total] = await Promise.all([
-      this.prisma.apiToken.findMany({
-        where,
-        select: TOKEN_SELECT,
-        orderBy: { id: 'desc' },
-        skip: (page - 1) * pageSize,
-        take: pageSize,
-      }),
-      this.prisma.apiToken.count({ where }),
-    ]);
+    const { rows, total } = await this.tokens.listPage(
+      isOwnerRole(actor.role) ? undefined : actor.accountId,
+      page,
+      pageSize,
+    );
     return {
       data: rows.map((row) => this.view(row)),
       meta: { page, pageSize, total },
@@ -219,26 +155,23 @@ export class ApiTokensService {
 
   async create(
     actor: AccountActor,
-    input: CreateApiTokenRequest,
+    input: ApiTokenCreation,
     meta: ClientMeta,
   ): Promise<CreatedApiTokenView> {
     const scope = await this.checkedScope(input.scope, actor.role);
     const expiresAt = this.checkedExpiry(input.expiresAt ?? null);
 
     const raw = `${API_TOKEN.PREFIX}${randomBytes(API_TOKEN.RANDOM_BYTES).toString('base64url')}`;
-    const row = await this.prisma.$transaction(async (tx) => {
-      const created = await tx.apiToken.create({
-        data: {
-          name: input.name,
-          tokenPrefix: raw.slice(0, API_TOKEN.DISPLAY_PREFIX_LENGTH),
-          tokenHash: hashApiToken(raw),
-          scope: scopeJson(scope),
-          expiresAt,
-          createdBy: { connect: { id: actor.accountId } },
-        },
-        select: TOKEN_SELECT,
+    const row = await this.runner.run(async (unit) => {
+      const created = await this.tokens.create(unit, {
+        name: input.name,
+        tokenPrefix: raw.slice(0, API_TOKEN.DISPLAY_PREFIX_LENGTH),
+        tokenHash: hashApiToken(raw),
+        scope,
+        expiresAt,
+        creatorId: actor.accountId,
       });
-      await this.record(tx, actor, created.documentId, meta, {
+      await this.record(unit, actor, created.documentId, meta, {
         action: AUDIT_ACTIONS.API_TOKEN_CREATED,
         metadata: {
           subjects: subjectsOf(scope),
@@ -254,7 +187,7 @@ export class ApiTokensService {
   async update(
     actor: AccountActor,
     documentId: string,
-    input: UpdateApiTokenRequest,
+    input: ApiTokenUpdate,
     meta: ClientMeta,
   ): Promise<ApiTokenView> {
     // Validated before the transaction; the subset check needs the row's creator.
@@ -263,7 +196,7 @@ export class ApiTokensService {
     if (input.scope !== undefined) {
       assertScopeSize(input.scope);
       const validated = validateTokenScope(input.scope, catalog);
-      if (!validated.ok) throw this.invalidScope(validated.issues);
+      if (!validated.ok) throw invalidIssues(validated.issues);
       scope = validated.value;
     }
     const expiresAt =
@@ -271,8 +204,8 @@ export class ApiTokensService {
         ? undefined
         : this.checkedExpiry(input.expiresAt);
 
-    const row = await this.prisma.$transaction(async (tx) => {
-      const current = await this.lockManageable(tx, actor, documentId);
+    const row = await this.runner.run(async (unit) => {
+      const current = await this.lockManageable(unit, actor, documentId);
       const status = this.statusOf(current);
       if (status !== API_TOKEN_STATUSES.ACTIVE) {
         throw UPDATE_BLOCKED_BY_STATUS[status]();
@@ -283,21 +216,17 @@ export class ApiTokensService {
             ? actor.role
             : await this.creatorRole(current);
         const beyond = scopeEntriesBeyondCreator(scope, creatorRole);
-        if (beyond.length > 0) throw scopeNotHeld(beyond);
+        if (beyond.length > 0) throw tokenScopeNotHeld(beyond);
       }
-      const updated = await tx.apiToken.update({
-        where: { id: current.id },
-        data: {
-          ...(input.name === undefined ? {} : { name: input.name }),
-          ...(scope === undefined ? {} : { scope: scopeJson(scope) }),
-          ...(expiresAt === undefined ? {} : { expiresAt }),
-        },
-        select: TOKEN_SELECT,
+      const updated = await this.tokens.update(unit, current.id, {
+        ...(input.name === undefined ? {} : { name: input.name }),
+        ...(scope === undefined ? {} : { scope }),
+        ...(expiresAt === undefined ? {} : { expiresAt }),
       });
       const fields = API_TOKEN_UPDATABLE_FIELDS.filter(
         (field) => input[field] !== undefined,
       );
-      await this.record(tx, actor, updated.documentId, meta, {
+      await this.record(unit, actor, updated.documentId, meta, {
         action: AUDIT_ACTIONS.API_TOKEN_UPDATED,
         metadata: {
           fields,
@@ -320,15 +249,15 @@ export class ApiTokensService {
     documentId: string,
     meta: ClientMeta,
   ): Promise<void> {
-    await this.prisma.$transaction(async (tx) => {
-      const current = await this.lockManageable(tx, actor, documentId);
+    await this.runner.run(async (unit) => {
+      const current = await this.lockManageable(unit, actor, documentId);
       if (current.revokedAt !== null) throw tokenRevoked();
-      await tx.apiToken.update({
-        where: { id: current.id },
-        data: { revokedAt: new Date(this.clock.now()) },
-        select: { id: true },
-      });
-      await this.record(tx, actor, current.documentId, meta, {
+      await this.tokens.markRevoked(
+        unit,
+        current.id,
+        new Date(this.clock.now()),
+      );
+      await this.record(unit, actor, current.documentId, meta, {
         action: AUDIT_ACTIONS.API_TOKEN_REVOKED,
         metadata: {},
       });
@@ -347,60 +276,38 @@ export class ApiTokensService {
     assertScopeSize(input);
     const { catalog } = await this.access.policy();
     const validated = validateTokenScope(input, catalog);
-    if (!validated.ok) throw this.invalidScope(validated.issues);
+    if (!validated.ok) throw invalidIssues(validated.issues);
     const beyond = scopeEntriesBeyondCreator(validated.value, creatorRole);
-    if (beyond.length > 0) throw scopeNotHeld(beyond);
+    if (beyond.length > 0) throw tokenScopeNotHeld(beyond);
     return validated.value;
-  }
-
-  private invalidScope(
-    issues: readonly {
-      code: string;
-      message: string;
-      path: (string | number)[];
-    }[],
-  ): BadRequestException {
-    return new BadRequestException({
-      errorCode: issues[0]?.code,
-      message: issues[0]?.message,
-      details: { issues },
-    });
   }
 
   /** An expiry must lie in the future; null means "never". */
   private checkedExpiry(expiresAt: Date | null): Date | null {
     if (isApiTokenExpired(expiresAt, this.clock.now())) {
-      throw invalidRequest([
-        { path: ['expiresAt'], message: 'must be in the future' },
-      ]);
+      throw expiryNotInFuture();
     }
     return expiresAt;
   }
 
   /** The token creator's current role (the owner updating a token of an admin). */
-  private async creatorRole(row: TokenRow): Promise<RolePolicy> {
+  private async creatorRole(row: ManagedApiToken): Promise<RolePolicy> {
     const role = await this.versions.getRolePolicy(row.createdBy.roleId);
     if (role === null) throw tokenNotFound();
     return role;
   }
 
   /**
-   * The token, row-locked for this transaction. The Owner reaches any token;
+   * The token, row-locked for this unit. The Owner reaches any token;
    * everyone else only their own, and another account's token is a 404, not
    * a 403: it is not theirs to see (D5).
    */
   private async lockManageable(
-    tx: Tx,
+    unit: UnitOfWork,
     actor: AccountActor,
     documentId: string,
-  ): Promise<TokenRow> {
-    const locked = await tx.$queryRaw<{ id: number }[]>`
-      SELECT id FROM api_tokens WHERE document_id = ${documentId}::uuid FOR UPDATE`;
-    if (locked[0] === undefined) throw tokenNotFound();
-    const row = await tx.apiToken.findUnique({
-      where: { id: locked[0].id },
-      select: TOKEN_SELECT,
-    });
+  ): Promise<ManagedApiToken> {
+    const row = await this.tokens.lockByDocumentId(unit, documentId);
     if (
       row === null ||
       (!isOwnerRole(actor.role) && row.createdById !== actor.accountId)
@@ -411,23 +318,23 @@ export class ApiTokensService {
   }
 
   private record(
-    tx: Tx,
+    unit: UnitOfWork,
     actor: AccountActor,
     targetId: string,
     meta: ClientMeta,
     event: { readonly action: AuditAction; readonly metadata: AuditMetadata },
   ): Promise<void> {
-    return this.audit.record(tx, {
+    return this.audit.record(unit, {
       actor: auditActorOf(actor),
       action: event.action,
-      subject: TOKENS_SUBJECT,
+      subject: MANAGEMENT_AUDIT_SUBJECTS.API_TOKENS,
       targetId,
       metadata: event.metadata,
       ip: meta.ip,
     });
   }
 
-  private statusOf(row: TokenRow): ApiTokenStatus {
+  private statusOf(row: ManagedApiToken): ApiTokenStatus {
     if (row.revokedAt !== null) return API_TOKEN_STATUSES.REVOKED;
     if (isApiTokenExpired(row.expiresAt, this.clock.now())) {
       return API_TOKEN_STATUSES.EXPIRED;
@@ -435,7 +342,7 @@ export class ApiTokensService {
     return API_TOKEN_STATUSES.ACTIVE;
   }
 
-  private view(row: TokenRow): ApiTokenView {
+  private view(row: ManagedApiToken): ApiTokenView {
     return {
       id: row.documentId,
       name: row.name,

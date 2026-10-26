@@ -14,25 +14,28 @@ import {
   UseGuards,
 } from '@nestjs/common';
 
-import { ClientIpResolver } from '../../../common/http/client-ip.resolver';
-import { ID_PARAM } from '../../../common/constants/api.constants';
-import { ROLES_ROUTES } from '../http/AccessHttp.constants';
-import { NO_STORE_HEADER } from '../../../common/constants/http.constants';
-import { PermissionAction } from '../../../generated/prisma/client';
-import { clientMetaOf } from '../../../common/http/client-meta';
-import { type AuthenticatedRequest, JwtAuthGuard } from '../../identity';
+import { ClientIpResolver } from '../../../../common/http/client-ip.resolver';
+import { ID_PARAM } from '../../../../common/constants/api.constants';
+import { ROLES_ROUTES } from '../../http/AccessHttp.constants';
+import { NO_STORE_HEADER } from '../../../../common/constants/http.constants';
+import { PermissionAction } from '../../domain/Access.constants';
+import { clientMetaOf } from '../../../../common/http/client-meta';
+import { type AuthenticatedRequest, JwtAuthGuard } from '../../../identity';
 import {
   createRoleSchema,
   replacePermissionsSchema,
   updateRoleSchema,
-} from './access-management.requests';
+} from './AccessManagement.requests';
 import {
   documentIdSchema,
   parseRequest,
-} from '../../../common/http/request-parsing';
-import { PermissionGuard, RequirePermission } from '../http/Permission.guard';
-import { requireAccountActor } from '../domain/Rank.rules';
-import { type RoleView, RolesService } from './roles.service';
+} from '../../../../common/http/request-parsing';
+import {
+  PermissionGuard,
+  RequirePermission,
+} from '../../http/Permission.guard';
+import { requireAccountActor } from '../../domain/Rank.rules';
+import { type RoleView, RolesService } from '../application/Roles.service';
 
 const SUBJECT = 'roles';
 

@@ -286,10 +286,7 @@ export const LAYER_EXEMPT_ROOTS: readonly string[] = [
 export const UNMIGRATED_FOLDERS: readonly {
   folder: string;
   removedBy: string;
-}[] = [
-  { folder: join('modules', 'access', 'management'), removedBy: 'CR-ac-5' },
-  { folder: join('modules', 'access', 'roles'), removedBy: 'CR-ac-6' },
-];
+}[] = [{ folder: join('modules', 'access', 'roles'), removedBy: 'CR-ac-6' }];
 
 /** Module folders (`modules/<name>`) the layer guard checks. Each CR task adds its module. */
 export const MIGRATED_MODULES: readonly string[] = [
@@ -325,6 +322,9 @@ export const KNOWN_LAYER_VIOLATIONS: readonly KnownLayerViolation[] = [
   ...[
     join('application', 'AnonymousActor.service.ts'),
     join('domain', 'ActorContext.entity.ts'),
+    join('management', 'adapters', 'PrismaAccount.repository.ts'),
+    join('management', 'domain', 'Account.entity.ts'),
+    join('management', 'http', 'AccessManagement.requests.ts'),
   ].map((file) => ({
     from: join('modules', 'access', file),
     rule: 'own-layer',

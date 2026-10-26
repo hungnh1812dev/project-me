@@ -5,11 +5,11 @@ import {
   inviteAccountSchema,
   updateAccountSchema,
   updateRoleSchema,
-} from './access-management.requests';
+} from './AccessManagement.requests';
 import {
   pageQuerySchema,
   parseRequest,
-} from '../../../common/http/request-parsing';
+} from '../../../../common/http/request-parsing';
 
 const ROLE_ID = '0195f3a0-0000-7000-8000-000000000001';
 

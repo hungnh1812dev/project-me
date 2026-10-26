@@ -15,7 +15,7 @@ export const MANAGEMENT_ERROR_CODES = {
   ROLE_IN_USE: 'ROLE_IN_USE',
   /** Delete of a system role, or a rank change on one (SPEC §6, D6). */
   ROLE_SYSTEM_IMMUTABLE: 'ROLE_SYSTEM_IMMUTABLE',
-  /** The role is not meant for invited accounts (see UNASSIGNABLE_ROLE_SLUGS in roles/system-roles.ts). */
+  /** The role is not meant for invited accounts (see UNASSIGNABLE_ROLE_SLUGS). */
   ROLE_NOT_ASSIGNABLE: 'ROLE_NOT_ASSIGNABLE',
   /** Create of a custom role past MANAGEMENT_LIMITS.MAX_CUSTOM_ROLES. */
   ROLE_LIMIT_REACHED: 'ROLE_LIMIT_REACHED',
@@ -48,6 +48,9 @@ export const MANAGEMENT_ERROR_MESSAGES = {
     'A token cannot be granted a permission its creator does not hold.',
 } as const;
 
+/** The issue text of an API token expiry that is not in the future. */
+export const EXPIRY_NOT_IN_FUTURE_ISSUE = 'must be in the future';
+
 /** Input bounds of the accounts and roles API. */
 export const MANAGEMENT_LIMITS = {
   DISPLAY_NAME_MAX_LENGTH: 100,
@@ -62,3 +65,27 @@ export const MANAGEMENT_LIMITS = {
 /** Fields `account.updated` / `role.updated` may name in `metadata.fields`. */
 export const ACCOUNT_UPDATABLE_FIELDS = ['displayName'] as const;
 export const ROLE_UPDATABLE_FIELDS = ['name', 'rank'] as const;
+
+/** API token states (SPEC D5), derived from the stored row; never stored. */
+export const API_TOKEN_STATUSES = {
+  ACTIVE: 'active',
+  REVOKED: 'revoked',
+  EXPIRED: 'expired',
+} as const;
+
+export type ApiTokenStatus =
+  (typeof API_TOKEN_STATUSES)[keyof typeof API_TOKEN_STATUSES];
+
+/** Fields `api_token.updated` may name in `metadata.fields`. */
+export const API_TOKEN_UPDATABLE_FIELDS = [
+  'name',
+  'scope',
+  'expiresAt',
+] as const;
+
+/** Subjects the management audit rows name. */
+export const MANAGEMENT_AUDIT_SUBJECTS = {
+  ACCOUNTS: 'accounts',
+  ROLES: 'roles',
+  API_TOKENS: 'api_tokens',
+} as const;

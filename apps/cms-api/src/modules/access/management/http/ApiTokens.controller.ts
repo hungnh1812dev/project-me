@@ -13,30 +13,33 @@ import {
   UseGuards,
 } from '@nestjs/common';
 
-import { ClientIpResolver } from '../../../common/http/client-ip.resolver';
-import { ID_PARAM } from '../../../common/constants/api.constants';
-import { API_TOKENS_ROUTES } from '../http/AccessHttp.constants';
-import { NO_STORE_HEADER } from '../../../common/constants/http.constants';
-import { PermissionAction } from '../../../generated/prisma/client';
-import { clientMetaOf } from '../../../common/http/client-meta';
-import { type AuthenticatedRequest, JwtAuthGuard } from '../../identity';
+import { ClientIpResolver } from '../../../../common/http/client-ip.resolver';
+import { ID_PARAM } from '../../../../common/constants/api.constants';
+import { API_TOKENS_ROUTES } from '../../http/AccessHttp.constants';
+import { NO_STORE_HEADER } from '../../../../common/constants/http.constants';
+import { PermissionAction } from '../../domain/Access.constants';
+import { clientMetaOf } from '../../../../common/http/client-meta';
+import { type AuthenticatedRequest, JwtAuthGuard } from '../../../identity';
 import {
   documentIdSchema,
   pageQuerySchema,
   parseRequest,
-} from '../../../common/http/request-parsing';
+} from '../../../../common/http/request-parsing';
 import {
   type ApiTokenPage,
   type ApiTokenView,
   ApiTokensService,
   type CreatedApiTokenView,
-} from './api-tokens.service';
+} from '../application/ApiTokens.service';
 import {
   createApiTokenSchema,
   updateApiTokenSchema,
-} from './api-tokens.requests';
-import { PermissionGuard, RequirePermission } from '../http/Permission.guard';
-import { requireAccountActor } from '../domain/Rank.rules';
+} from './ApiTokens.requests';
+import {
+  PermissionGuard,
+  RequirePermission,
+} from '../../http/Permission.guard';
+import { requireAccountActor } from '../../domain/Rank.rules';
 
 const SUBJECT = 'api_tokens';
 
