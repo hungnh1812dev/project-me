@@ -50,7 +50,7 @@ So far: sign-in (T11) and, behind it, a status page that calls
   or a retried call gets 401 again, the session ends and the router shows
   `/login`. Requests flagged `skipAuthRefresh` (login, refresh, logout) are
   never retried.
-- **Login errors** are generic (`LoginError.errors.ts`): incorrect credentials (any
+- **Login errors** are generic (`Login.errors.ts`): incorrect credentials (any
   4xx), rate limited (429; uses `Retry-After` when cms-api exposes it via CORS,
   otherwise a generic wait message), network, unexpected.
 - **2FA (T13)**: a `requires2FA` login answer opens `TwoFactorModal` (kit

@@ -22,7 +22,7 @@ import {
   rateLimitedMessage,
 } from '../../lib/ApiFailure.errors';
 import type { useEmailCode } from '../auth';
-import { toSecurityError } from './SecurityError.errors';
+import { toSecurityError } from './Security.errors';
 
 const copy = COPY.security;
 const CODE_PATTERN = new RegExp(`^\\d{${TOTP_CODE_LENGTH}}$`);

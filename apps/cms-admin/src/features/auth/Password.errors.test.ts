@@ -2,7 +2,7 @@ import { AxiosError, type AxiosResponse } from 'axios';
 
 import { COPY } from '../../config/Copy.constants';
 import { API_ERROR_CODES } from '../../config/Http.constants';
-import { toPasswordError } from './PasswordError.errors';
+import { toPasswordError } from './Password.errors';
 
 function httpError(
   status: number,

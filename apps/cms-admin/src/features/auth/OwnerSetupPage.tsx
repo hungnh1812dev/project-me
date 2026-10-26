@@ -18,7 +18,7 @@ import { BackToSignIn } from './BackToSignIn';
 import type { LoginNoticeState } from './LoginNotice.rules';
 import { emailField } from './Password.form';
 import { useSetupApi } from './SetupApi.context';
-import { toSetupError } from './SetupError.errors';
+import { toSetupError } from './Setup.errors';
 import { SETUP_STATUS_QUERY_KEY, useSetupStatus } from './useSetupStatus.query';
 
 const { validation } = COPY.setup;

@@ -20,7 +20,7 @@ import {
   useSession,
 } from '../auth';
 import { useSecurityApi } from './SecurityApi.context';
-import { toSecurityError } from './SecurityError.errors';
+import { toSecurityError } from './Security.errors';
 
 const copy = COPY.security;
 

@@ -13,7 +13,7 @@ import { AuthPageLayout } from './AuthPageLayout';
 import { BackToSignIn } from './BackToSignIn';
 import type { LoginNoticeState } from './LoginNotice.rules';
 import { usePasswordApi } from './PasswordApi.context';
-import { type PasswordError, toPasswordError } from './PasswordError.errors';
+import { type PasswordError, toPasswordError } from './Password.errors';
 import {
   ALERT_TONE_BY_ERROR,
   codeField,

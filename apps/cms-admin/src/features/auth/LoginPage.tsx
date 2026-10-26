@@ -17,7 +17,7 @@ import type { TwoFactorChallenge } from './Auth.api';
 import { selectEndNotice, selectSessionStatus } from './Auth.slice';
 import { useAuthSelector } from './useAuthSelector.state';
 import { AuthPageLayout } from './AuthPageLayout';
-import { type LoginError, toLoginError } from './LoginError.errors';
+import { type LoginError, toLoginError } from './Login.errors';
 import {
   type LoginNotice,
   loginEmailOf,
