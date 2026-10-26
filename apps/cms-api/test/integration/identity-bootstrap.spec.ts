@@ -1,4 +1,3 @@
-import type { StartedPostgreSqlContainer } from '@testcontainers/postgresql';
 import { Client } from 'pg';
 
 import {
@@ -16,7 +15,7 @@ import {
 import { identityUseCasesOf } from '../../src/modules/identity/cli/IdentityCli.setup';
 import { verifyPassword } from '../../src/modules/identity/application/Password.service';
 import { createCoreTemplate } from '../fixtures/core-db.fixture';
-import { startPostgres } from '../fixtures/postgres.fixture';
+import { startPostgres, type TestPostgres } from '../fixtures/postgres.fixture';
 import { seedSystemRoles } from '../fixtures/access.fixture';
 
 function bootstrapOwner(
@@ -38,7 +37,7 @@ function owner(email: string) {
 }
 
 describe('core schema, system roles and owner:bootstrap (Postgres 16 via Testcontainers)', () => {
-  let postgres: StartedPostgreSqlContainer;
+  let postgres: TestPostgres;
   let template: Awaited<ReturnType<typeof createCoreTemplate>>;
   const handles: PrismaHandle[] = [];
 

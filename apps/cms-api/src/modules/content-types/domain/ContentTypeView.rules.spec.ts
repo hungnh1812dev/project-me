@@ -5,7 +5,7 @@ import {
   recordReadAccess,
   SubjectCatalog,
 } from '../../access';
-import { RegistryService } from '../../content-engine';
+import { ContentTypeRegistry } from '../../content-engine';
 import { CONDITION_SYSTEM_FIELDS, joinFieldPath } from '../../access';
 import { contentTypeView } from './ContentTypeView.rules';
 
@@ -37,7 +37,7 @@ const PROFILE = {
   ],
 } as const;
 
-const registry = RegistryService.fromDefinitions([PROFILE]);
+const registry = ContentTypeRegistry.fromDefinitions([PROFILE]);
 const catalog = new SubjectCatalog(registry);
 const type = registry.resolve(PROFILE.slug);
 

@@ -1,5 +1,4 @@
 import type { NestExpressApplication } from '@nestjs/platform-express';
-import type { StartedPostgreSqlContainer } from '@testcontainers/postgresql';
 import request from 'supertest';
 
 import { Clock } from '../../src/common/time/clock';
@@ -25,7 +24,7 @@ import {
   TEST_SECRET_32_BYTES,
   TEST_WEB_ORIGIN,
 } from '../fixtures/env.fixture';
-import { startPostgres } from '../fixtures/postgres.fixture';
+import { startPostgres, type TestPostgres } from '../fixtures/postgres.fixture';
 import { createTestApp, type ProviderOverride } from '../fixtures/test-app';
 import { seedSystemRoles } from '../fixtures/access.fixture';
 
@@ -78,7 +77,7 @@ const TOO_MANY = {
 };
 
 describe('rate limiting + client IP (D7, SPEC §12-8; Postgres 16 via Testcontainers)', () => {
-  let postgres: StartedPostgreSqlContainer;
+  let postgres: TestPostgres;
   let databaseUrl: string;
   let db: PrismaHandle;
   let knownEmail: string;

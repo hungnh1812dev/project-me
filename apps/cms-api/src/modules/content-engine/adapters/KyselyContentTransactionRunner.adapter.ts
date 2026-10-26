@@ -22,17 +22,9 @@ import type { ContentDatabase } from './TreeLoader.adapter';
 class ContentUnitOfWork implements UnitOfWork {
   readonly callbacks = new AfterCommitCallbacks();
 
-  constructor(
-    readonly trx: Transaction<ContentDatabase>,
-    private readonly isOwnedByRunner: boolean,
-  ) {}
+  constructor(readonly trx: Transaction<ContentDatabase>) {}
 
   afterCommit(callback: AfterCommitCallback): void {
-    if (!this.isOwnedByRunner) {
-      throw new Error(
-        'afterCommit is not available on a unit built from a borrowed Kysely transaction',
-      );
-    }
     this.callbacks.register(callback);
   }
 }
@@ -50,17 +42,6 @@ export function contentTrxOf(unit: UnitOfWork): Transaction<ContentDatabase> {
   return unit.trx;
 }
 
-/**
- * For tests that seed rows through their own Kysely transaction. `afterCommit`
- * throws on it, so a cache drop is never silently skipped. No module code
- * uses it, and it is not part of the facade.
- */
-export function unitOfWorkFromContentTrx(
-  trx: Transaction<ContentDatabase>,
-): UnitOfWork {
-  return new ContentUnitOfWork(trx, false);
-}
-
 /** `CONTENT_TRANSACTION_RUNNER`: one Kysely transaction on the content pool. */
 @Injectable()
 export class KyselyContentTransactionRunner implements ContentTransactionRunner {
@@ -74,7 +55,7 @@ export class KyselyContentTransactionRunner implements ContentTransactionRunner 
     let result: T;
     try {
       result = await this.content.db.transaction().execute((trx) => {
-        unit = new ContentUnitOfWork(trx, true);
+        unit = new ContentUnitOfWork(trx);
         return work(unit);
       });
     } catch (error) {

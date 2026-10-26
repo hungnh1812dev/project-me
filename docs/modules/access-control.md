@@ -49,7 +49,7 @@ types and fields. T19 added API tokens: the API, the subset check
 | `management/application/{Roles,ApiTokens}.service.ts`                     | `/roles` (T17) and `/api-tokens` (T19) use cases; cache drops are `afterCommit` callbacks                                                                                                                                               |
 | `management/adapters/Prisma{Account,Role,ApiToken}.repository.ts`         | the Prisma implementations of the three ports                                                                                                                                                                                           |
 | `management/http/`                                                        | `Accounts`, `Roles`, `ApiTokens` controllers and their request schemas; `AccessManagement.module.ts` (imports identity) and `index.ts` at the folder root                                                                               |
-| `../security-audit/`                                                      | D15 module (R1-04): `SecurityAuditService`, `writeAuditLog` (also used by the CLI), action names                                                                                                                                        |
+| `../security-audit/`                                                      | D15 module (R1-04): `SecurityAuditService`, `PrismaAuditLogRepository` (built by hand by the CLIs), action names                                                                                                                        |
 
 ## Subjects and actions
 
@@ -406,7 +406,7 @@ store are in memory. Before scaling out, replace `VersionCache` with a
 shared store or a pub/sub invalidation. Until then, other replicas are
 bounded by the 5 s TTL.
 
-**Content registry.** `ContentRegistry` (content-engine `application/`, exported as `ContentRegistryProvider`)
+**Content registry.** `ContentRegistry` (content-engine `application/`, exported as `ContentRegistry`)
 loads `content._content_types` on first use, not at boot, so the API still
 starts while the database is down (readiness 503). A failed load is retried
 on the next call, and a successful load is kept until restart (D10). If

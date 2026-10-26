@@ -1,6 +1,6 @@
 import type {
   RegisteredContentType,
-  RegistryService,
+  ContentTypeRegistry,
 } from '../../content-engine';
 import {
   CONTENT_WILDCARD_SUBJECT,
@@ -29,7 +29,7 @@ export class SubjectCatalog {
   private readonly content: ReadonlyMap<string, RegisteredContentType>;
   private readonly paths: ReadonlyMap<string, ReadonlySet<string>>;
 
-  constructor(registry: RegistryService) {
+  constructor(registry: ContentTypeRegistry) {
     this.content = new Map(
       registry.slugs().map((slug) => [slug, registry.resolve(slug)]),
     );

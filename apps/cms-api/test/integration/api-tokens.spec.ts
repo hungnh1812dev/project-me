@@ -10,7 +10,6 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import type { NestExpressApplication } from '@nestjs/platform-express';
-import type { StartedPostgreSqlContainer } from '@testcontainers/postgresql';
 import request from 'supertest';
 
 import { PermissionAction } from '../../src/generated/prisma/client';
@@ -44,7 +43,7 @@ import {
   TEST_SECRET_32_BYTES,
   TEST_WEB_ORIGIN,
 } from '../fixtures/env.fixture';
-import { startPostgres } from '../fixtures/postgres.fixture';
+import { startPostgres, type TestPostgres } from '../fixtures/postgres.fixture';
 import { createTestApp } from '../fixtures/test-app';
 import {
   seedRolePermissions,
@@ -113,7 +112,7 @@ const READ_ARTICLE = {
 };
 
 describe('API tokens (T19, D5, §12-6; Postgres 16 via Testcontainers)', () => {
-  let postgres: StartedPostgreSqlContainer;
+  let postgres: TestPostgres;
   let app: NestExpressApplication;
   let db: PrismaHandle;
   let roleIds: Record<string, string>;

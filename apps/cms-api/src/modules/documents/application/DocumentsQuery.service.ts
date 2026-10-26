@@ -11,7 +11,7 @@ import {
   type SerializedRecord,
 } from '../../access';
 import {
-  ContentRegistryProvider,
+  ContentRegistry,
   type ContentStatus,
   type RegisteredContentType,
 } from '../../content-engine';
@@ -59,7 +59,7 @@ interface ReadScope {
 export class DocumentsQueryService {
   constructor(
     private readonly access: AccessPolicyService,
-    private readonly registry: ContentRegistryProvider,
+    private readonly registry: ContentRegistry,
     @Inject(DOCUMENT_REPOSITORY) private readonly documents: DocumentRepository,
     private readonly media: DocumentMediaService,
   ) {}

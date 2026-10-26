@@ -1,16 +1,16 @@
 import type { NestExpressApplication } from '@nestjs/platform-express';
-import type { StartedPostgreSqlContainer } from '@testcontainers/postgresql';
 import request from 'supertest';
 
 import { dbEnvOf, devEnv } from '../fixtures/env.fixture';
 import {
   startPostgres,
+  type TestPostgres,
   unreachableDatabaseUrl,
 } from '../fixtures/postgres.fixture';
 import { createTestApp } from '../fixtures/test-app';
 
 describe('health (Postgres 16 via Testcontainers)', () => {
-  let postgres: StartedPostgreSqlContainer;
+  let postgres: TestPostgres;
   let app: NestExpressApplication;
 
   beforeAll(async () => {

@@ -12,7 +12,6 @@ import {
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import type { StartedPostgreSqlContainer } from '@testcontainers/postgresql';
 import { Client } from 'pg';
 
 import {
@@ -23,7 +22,7 @@ import {
 import { DEFAULT_CONTENT_PATHS } from '../../src/modules/content-engine/adapters/MigrationFiles.adapter';
 import { createMigrationDb } from '../../src/modules/content-engine/cli/ContentEngineCli.setup';
 import { runContentMigrations } from '../../src/modules/content-engine/adapters/MigrationRunner.adapter';
-import { startPostgres } from '../fixtures/postgres.fixture';
+import { startPostgres, type TestPostgres } from '../fixtures/postgres.fixture';
 
 const CV_PAGE_FILE = 'cv-page.json';
 
@@ -34,7 +33,7 @@ interface Workspace {
 }
 
 describe('content:generate + content:migrate (Postgres 16 via Testcontainers)', () => {
-  let postgres: StartedPostgreSqlContainer;
+  let postgres: TestPostgres;
   const cleanup: string[] = [];
 
   beforeAll(async () => {

@@ -1,4 +1,10 @@
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import {
+  mkdirSync,
+  mkdtempSync,
+  readdirSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 
@@ -9,23 +15,28 @@ import {
   staleKnownViolations,
   unlistedViolations,
 } from './layer-check';
-import {
-  KNOWN_LAYER_VIOLATIONS,
-  MIGRATED_MODULES,
-} from './layer-rules.constants';
+import { KNOWN_LAYER_VIOLATIONS } from './layer-rules.constants';
+import { MODULES_DIRECTORY } from './module-edges.constants';
 import { SRC_ROOT } from './module-graph';
 import { FIELD_PROJECTION_FILE } from './source-paths.constants';
 
+/** Every folder under `modules/`: a new module is checked without a list to edit. */
+const ALL_MODULES = readdirSync(join(SRC_ROOT, MODULES_DIRECTORY), {
+  withFileTypes: true,
+})
+  .filter((entry) => entry.isDirectory())
+  .map((entry) => entry.name);
+
 /**
- * SPEC §2 layer rules (ADR 0006 §2): the imports of every file in a migrated
- * module follow `LAYER_RULES`. Modules that have not moved are not checked.
+ * SPEC §2 layer rules (ADR 0006 §2): the imports of every file in every
+ * module follow `LAYER_RULES`.
  */
 describe('layer guard on the source tree (SPEC §2)', () => {
-  const violations = findLayerViolations(SRC_ROOT, MIGRATED_MODULES);
+  const violations = findLayerViolations(SRC_ROOT, ALL_MODULES);
 
-  it('scans files once a module is migrated', () => {
-    const checkedCount = listCheckedFiles(SRC_ROOT, MIGRATED_MODULES).length;
-    expect(MIGRATED_MODULES.length === 0 || checkedCount > 0).toBe(true);
+  it('scans every module folder', () => {
+    expect(ALL_MODULES.length).toBeGreaterThan(0);
+    expect(listCheckedFiles(SRC_ROOT, ALL_MODULES).length).toBeGreaterThan(0);
   });
 
   it('has no layer violation beyond KNOWN_LAYER_VIOLATIONS', () => {
@@ -36,13 +47,8 @@ describe('layer guard on the source tree (SPEC §2)', () => {
     expect(staleKnownViolations(violations)).toEqual([]);
   });
 
-  it('keeps known violations to migrated modules', () => {
-    const modules = KNOWN_LAYER_VIOLATIONS.map(
-      ({ from }) => from.split('/')[1],
-    );
-    expect(
-      modules.filter((name) => !MIGRATED_MODULES.includes(name ?? '')),
-    ).toEqual([]);
+  it('has no known violation left', () => {
+    expect(KNOWN_LAYER_VIOLATIONS).toEqual([]);
   });
 });
 

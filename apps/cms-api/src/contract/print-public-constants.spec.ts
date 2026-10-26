@@ -94,11 +94,13 @@ describe('public constants snapshot', () => {
     expect(keys.filter((key) => SECRET_KEY_PATTERN.test(key))).toEqual([]);
   });
 
-  it('builds from *.constants.ts modules only', async () => {
+  it('imports shared constants files and module facades only', async () => {
     const source = await readFile(SOURCE_FILE, 'utf8');
     const imports = [...source.matchAll(/from '([^']+)'/g)].map(
       (match) => match[1] ?? '',
     );
-    expect(imports.filter((path) => !/\.constants$/.test(path))).toEqual([]);
+    const isAllowed = (path: string) =>
+      /\.constants$/.test(path) || /^\.\.\/modules\/[a-z-]+$/.test(path);
+    expect(imports.filter((path) => !isAllowed(path))).toEqual([]);
   });
 });

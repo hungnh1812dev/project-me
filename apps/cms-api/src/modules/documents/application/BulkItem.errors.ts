@@ -1,66 +1,35 @@
 import {
   DomainError,
-  type DomainErrorKind,
+  DOMAIN_ERROR_KINDS,
 } from '../../../common/errors/Domain.errors';
-import {
-  describeError,
-  isDescribableError,
-  isServerErrorStatus,
-  DOMAIN_ERROR_HTTP_STATUS,
-} from '../../../common/http/describe-http-exception';
 import { BULK_ITEM_STATUS } from '../domain/Documents.constants';
 
 export interface BulkItemError {
   index: number;
   status: typeof BULK_ITEM_STATUS.ERROR;
-  statusCode: number;
-  errorCode: string;
-  message: string;
-  details?: unknown;
+  error: DomainError;
 }
-
-export interface ErrorParts {
-  statusCode: number;
-  errorCode: string;
-  message: string;
-  details?: unknown;
-}
-
-const KIND_BY_STATUS: ReadonlyMap<number, DomainErrorKind> = new Map(
-  Object.entries(DOMAIN_ERROR_HTTP_STATUS).map(([kind, status]) => [
-    status,
-    kind as DomainErrorKind,
-  ]),
-);
 
 /**
- * A client error of one item; a server error is never an item result, and a
- * status no `DomainError` kind stands for fails the request as it is.
+ * A client error of one item. A server error (`unavailable`) is never an item
+ * result, and anything that is not a `DomainError` is a bug: both fail the
+ * request.
  */
-export function asItemError(error: unknown): ErrorParts | null {
-  if (!isDescribableError(error)) return null;
-  const { statusCode, errorCode, message, details } = describeError(error);
-  if (isServerErrorStatus(statusCode) || !KIND_BY_STATUS.has(statusCode)) {
-    return null;
-  }
-  return {
-    statusCode,
-    errorCode,
-    message,
-    ...(details === undefined ? {} : { details }),
-  };
+export function asItemError(error: unknown): DomainError | null {
+  if (!(error instanceof DomainError)) return null;
+  return error.kind === DOMAIN_ERROR_KINDS.UNAVAILABLE ? null : error;
 }
 
 /** Atomic mode: the request fails with the first item's error, naming the item. */
-export function atomicFailure(index: number, parts: ErrorParts): DomainError {
+export function atomicFailure(index: number, error: DomainError): DomainError {
   return new DomainError({
-    kind: KIND_BY_STATUS.get(parts.statusCode) as DomainErrorKind,
-    errorCode: parts.errorCode,
-    message: parts.message,
-    details: { index, details: parts.details },
+    kind: error.kind,
+    ...(error.errorCode === undefined ? {} : { errorCode: error.errorCode }),
+    ...(error.hasMessage ? { message: error.message } : {}),
+    details: { index, details: error.details },
   });
 }
 
-export function itemError(index: number, parts: ErrorParts): BulkItemError {
-  return { index, status: BULK_ITEM_STATUS.ERROR, ...parts };
+export function itemError(index: number, error: DomainError): BulkItemError {
+  return { index, status: BULK_ITEM_STATUS.ERROR, error };
 }

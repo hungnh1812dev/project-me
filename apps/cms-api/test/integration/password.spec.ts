@@ -2,7 +2,6 @@ import { performance } from 'node:perf_hooks';
 
 import { HttpStatus } from '@nestjs/common';
 import type { NestExpressApplication } from '@nestjs/platform-express';
-import type { StartedPostgreSqlContainer } from '@testcontainers/postgresql';
 import request from 'supertest';
 
 import { Clock } from '../../src/common/time/clock';
@@ -38,7 +37,7 @@ import {
   TEST_SECRET_32_BYTES,
   TEST_WEB_ORIGIN,
 } from '../fixtures/env.fixture';
-import { startPostgres } from '../fixtures/postgres.fixture';
+import { startPostgres, type TestPostgres } from '../fixtures/postgres.fixture';
 import { createTestApp } from '../fixtures/test-app';
 import { seedSystemRoles } from '../fixtures/access.fixture';
 import { DOMAIN_ERROR_KINDS } from '../../src/common/errors/Domain.errors';
@@ -102,7 +101,7 @@ function errorCodeOf(res: request.Response): unknown {
 }
 
 describe('OTP + password lifecycle (D8, SPEC §12-9/10; Postgres 16 via Testcontainers)', () => {
-  let postgres: StartedPostgreSqlContainer;
+  let postgres: TestPostgres;
   let app: NestExpressApplication;
   let db: PrismaHandle;
   let mail: CapturingMailSender;

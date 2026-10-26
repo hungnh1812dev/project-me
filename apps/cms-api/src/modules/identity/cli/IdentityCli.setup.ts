@@ -3,14 +3,11 @@ import { z } from 'zod';
 import { type IAppConfig } from '../../../config/app-config';
 import { Clock } from '../../../common/time/clock';
 import type { PrismaClient } from '../../../generated/prisma/client';
-import {
-  prismaTxOf,
-  PrismaTransactionRunner,
-} from '../../../infrastructure/database/PrismaTransactionRunner.adapter';
+import { PrismaTransactionRunner } from '../../../infrastructure/database/PrismaTransactionRunner.adapter';
 import { openPrisma } from '../../../infrastructure/database/prisma-client';
 import { NestAppLogger } from '../../../infrastructure/logging/NestAppLogger.adapter';
 import { type RoleSeedService, roleSeedServiceOf } from '../../access';
-import { writeAuditLog } from '../../security-audit';
+import { PrismaAuditLogRepository } from '../../security-audit';
 import { PrismaAccountRepository } from '../adapters/PrismaAccount.repository';
 import { PrismaSessionRevocationRepository } from '../adapters/PrismaSessionRevocation.repository';
 import type { AuditRecorder } from '../application/Identity.port';
@@ -60,15 +57,13 @@ export interface IdentityCliUseCases {
   readonly roleSeed: RoleSeedService;
 }
 
-/**
- * Wires the use cases on `prisma`. Audit rows go through `writeAuditLog`
- * (transitional, removed in CR-cl-1), so no config is needed here.
- */
+/** Wires the use cases on `prisma`; the audit repository needs no config. */
 export function identityUseCasesOf(prisma: PrismaClient): IdentityCliUseCases {
   const accounts = new PrismaAccountRepository(prisma);
   const runner = new PrismaTransactionRunner(prisma, new NestAppLogger());
+  const auditLog = new PrismaAuditLogRepository(prisma);
   const audit: AuditRecorder = {
-    record: (unit, entry) => writeAuditLog(prismaTxOf(unit), entry),
+    record: (unit, entry) => auditLog.write(unit, entry),
   };
   const sessions = new SessionRevocationService(
     new PrismaSessionRevocationRepository(),

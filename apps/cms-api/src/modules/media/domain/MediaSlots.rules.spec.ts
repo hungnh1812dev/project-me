@@ -1,4 +1,7 @@
-import { mediaFieldNamesByTable, RegistryService } from '../../content-engine';
+import {
+  mediaFieldNamesByTable,
+  ContentTypeRegistry,
+} from '../../content-engine';
 import { cloneTree, mediaSlots, type TreeNodeLike } from './MediaSlots.rules';
 
 const GALLERY = {
@@ -24,7 +27,7 @@ function tree(): TreeNodeLike {
 }
 
 describe('mediaSlots', () => {
-  const registry = RegistryService.fromDefinitions([GALLERY]);
+  const registry = ContentTypeRegistry.fromDefinitions([GALLERY]);
 
   it('lists every media value with its input path', () => {
     const paths = mediaSlots(

@@ -7,7 +7,8 @@ import {
   DomainError,
   DOMAIN_ERROR_KINDS,
 } from '../common/errors/Domain.errors';
-import { asItemError } from '../modules/documents/application/BulkItem.errors';
+import { itemError } from '../modules/documents/application/BulkItem.errors';
+import { toBulkBody } from '../modules/documents/http/Bulk.controller';
 import { formatGraphqlError } from '../modules/graphql/http/GraphqlError.filter';
 
 const DETAILS = { field: 'slug' };
@@ -43,7 +44,12 @@ describe('one DomainError through every error reader', () => {
       new GraphQLError('wrapped', { path: ['x'], originalError: error }),
       { phase: 'execute', requestId: 'r', shouldStripSuggestions: false },
     );
-    const bulk = asItemError(error);
+    const [bulk] = toBulkBody({
+      atomic: false,
+      succeeded: 0,
+      failed: 1,
+      results: [itemError(0, error)],
+    }).results;
 
     const expected = {
       errorCode: 'SLUG_TAKEN',
@@ -51,7 +57,12 @@ describe('one DomainError through every error reader', () => {
       details: DETAILS,
     };
     expect(rest).toMatchObject({ statusCode: 409, ...expected });
-    expect(bulk).toEqual({ statusCode: 409, ...expected });
+    expect(bulk).toEqual({
+      index: 0,
+      status: 'error',
+      statusCode: 409,
+      ...expected,
+    });
     expect(graphql.message).toBe(expected.message);
     expect(graphql.extensions).toMatchObject({
       code: expected.errorCode,

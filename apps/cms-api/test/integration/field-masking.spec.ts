@@ -1,10 +1,9 @@
 import { randomUUID } from 'node:crypto';
 
-import type { StartedPostgreSqlContainer } from '@testcontainers/postgresql';
 import { Kysely, PostgresDialect } from 'kysely';
 import { Client, Pool } from 'pg';
 
-import { unitOfWorkFromContentTrx } from '../../src/modules/content-engine/adapters/KyselyContentTransactionRunner.adapter';
+import { inContentUnit } from '../fixtures/content-unit.fixture';
 import {
   accountActor,
   anonymousActor,
@@ -44,7 +43,7 @@ import {
 } from '../../src/modules/content-engine/adapters/TreeLoader.adapter';
 import { systemRole } from '../fixtures/access.fixture';
 import { loadRegistryFromDatabase } from '../fixtures/content-registry.fixture';
-import { startPostgres } from '../fixtures/postgres.fixture';
+import { startPostgres, type TestPostgres } from '../fixtures/postgres.fixture';
 
 const SLUG = 'cv-page';
 const ACCOUNT = accountActor(1, systemRole('editor'));
@@ -90,7 +89,7 @@ async function loadProjected(
 }
 
 describe('field masking against Postgres (D3/D4, §12-4/§12-5 building blocks)', () => {
-  let postgres: StartedPostgreSqlContainer | undefined;
+  let postgres: TestPostgres | undefined;
   let db: Kysely<ContentDatabase>;
   let type: RegisteredContentType;
   let repository: KyselyContentRepository;
@@ -129,8 +128,8 @@ describe('field masking against Postgres (D3/D4, §12-4/§12-5 building blocks)'
       },
     });
 
-    await db.transaction().execute((trx) =>
-      repository.insertTree(unitOfWorkFromContentTrx(trx), SLUG, {
+    await inContentUnit(db, (unit) =>
+      repository.insertTree(unit, SLUG, {
         documentId,
         publishedAt: null,
         createdBy: CREATED_BY,
@@ -208,16 +207,9 @@ describe('field masking against Postgres (D3/D4, §12-4/§12-5 building blocks)'
       },
       fields,
     );
-    await db
-      .transaction()
-      .execute((trx) =>
-        repository.replaceTree(
-          unitOfWorkFromContentTrx(trx),
-          SLUG,
-          { documentId, status: 'draft' },
-          tree,
-        ),
-      );
+    await inContentUnit(db, (unit) =>
+      repository.replaceTree(unit, SLUG, { documentId, status: 'draft' }, tree),
+    );
 
     const stored = await loadProjected(
       db,

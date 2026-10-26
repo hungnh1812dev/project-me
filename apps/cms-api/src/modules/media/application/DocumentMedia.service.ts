@@ -6,10 +6,7 @@ import {
   PermissionAction,
   type ActorContext,
 } from '../../access';
-import {
-  ContentRegistryProvider,
-  mediaFieldNamesByTable,
-} from '../../content-engine';
+import { ContentRegistry, mediaFieldNamesByTable } from '../../content-engine';
 import type { TableNode, TreeInput } from '../../content-engine';
 import { mediaRefInvalid, type EmbeddedMedia } from '../domain/Media.entity';
 import {
@@ -31,7 +28,7 @@ export class DocumentMediaService {
   constructor(
     @Inject(MEDIA_REPOSITORY) private readonly repository: MediaRepository,
     private readonly access: AccessPolicyService,
-    private readonly registry: ContentRegistryProvider,
+    private readonly registry: ContentRegistry,
   ) {}
 
   private async slotsOf(

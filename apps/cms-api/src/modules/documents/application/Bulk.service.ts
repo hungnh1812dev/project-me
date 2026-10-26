@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 
 import { Inject, Injectable } from '@nestjs/common';
 
+import { type DomainError } from '../../../common/errors/Domain.errors';
 import { Clock } from '../../../common/time/clock';
 import {
   CONTENT_TRANSACTION_RUNNER,
@@ -13,10 +14,7 @@ import {
   type ActorContext,
   PermissionAction,
 } from '../../access';
-import {
-  ContentRegistryProvider,
-  type InsertTreeInput,
-} from '../../content-engine';
+import { ContentRegistry, type InsertTreeInput } from '../../content-engine';
 import {
   BULK_ITEM_STATUS,
   BULK_LIMITS,
@@ -37,7 +35,6 @@ import {
   asItemError,
   atomicFailure,
   type BulkItemError,
-  type ErrorParts,
   itemError,
 } from './BulkItem.errors';
 import { DOCUMENT_REPOSITORY, type DocumentRepository } from './Documents.port';
@@ -79,7 +76,7 @@ export interface BulkResponse {
 export class BulkService {
   constructor(
     private readonly access: AccessPolicyService,
-    private readonly registry: ContentRegistryProvider,
+    private readonly registry: ContentRegistry,
     @Inject(CONTENT_TRANSACTION_RUNNER)
     private readonly transactions: ContentTransactionRunner,
     @Inject(DOCUMENT_REPOSITORY) private readonly documents: DocumentRepository,
@@ -100,7 +97,7 @@ export class BulkService {
     }
     const type = await this.collection(slug);
 
-    const errors = new Map<number, ErrorParts>();
+    const errors = new Map<number, DomainError>();
     const prepared: { index: number; input: InsertTreeInput }[] = [];
     for (const [index, item] of request.items.entries()) {
       try {
@@ -126,10 +123,10 @@ export class BulkService {
           },
         });
       } catch (error) {
-        const parts = asItemError(error);
-        if (parts === null) throw error;
-        if (request.atomic) throw atomicFailure(index, parts);
-        errors.set(index, parts);
+        const itemFailure = asItemError(error);
+        if (itemFailure === null) throw error;
+        if (request.atomic) throw atomicFailure(index, itemFailure);
+        errors.set(index, itemFailure);
       }
     }
 
@@ -158,7 +155,7 @@ export class BulkService {
             version: 1,
           };
         }
-        return itemError(index, errors.get(index) as ErrorParts);
+        return itemError(index, errors.get(index) as DomainError);
       }),
     );
   }
@@ -261,10 +258,10 @@ export class BulkService {
             ...outcome,
           });
         } catch (error) {
-          const parts = asItemError(error);
-          if (parts === null) throw error;
-          if (request.atomic) throw atomicFailure(index, parts);
-          items.push(itemError(index, parts));
+          const itemFailure = asItemError(error);
+          if (itemFailure === null) throw error;
+          if (request.atomic) throw atomicFailure(index, itemFailure);
+          items.push(itemError(index, itemFailure));
         }
       }
       return items;

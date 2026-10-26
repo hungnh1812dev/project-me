@@ -5,11 +5,11 @@ import { PrismaService } from '../../../infrastructure/database/prisma.service';
 import type { UnitOfWork } from '../../../infrastructure/database/TransactionRunner.port';
 import {
   CONTENT_DB_SCHEMA,
-  ContentRegistryProvider,
+  ContentRegistry,
   mediaColumnsOf,
   quoteIdentifier,
 } from '../../content-engine';
-import type { RegistryService } from '../../content-engine';
+import type { ContentTypeRegistry } from '../../content-engine';
 import type { MediaReferenceChecker } from '../application/Media.port';
 
 /**
@@ -19,7 +19,9 @@ import type { MediaReferenceChecker } from '../application/Media.port';
  * registry and are quoted; the file id is the bound parameter `$1`. Null when
  * no content type has a media field.
  */
-export function mediaReferenceQuery(registry: RegistryService): string | null {
+export function mediaReferenceQuery(
+  registry: ContentTypeRegistry,
+): string | null {
   const probes = mediaColumnsOf(registry).map(
     ({ tableName, columnName }) =>
       `exists (select 1 from ${quoteIdentifier(CONTENT_DB_SCHEMA)}.${quoteIdentifier(tableName)} where ${quoteIdentifier(columnName)} = $1)`,
@@ -31,7 +33,7 @@ export function mediaReferenceQuery(registry: RegistryService): string | null {
 export class MediaReferenceAdapter implements MediaReferenceChecker {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly registry: ContentRegistryProvider,
+    private readonly registry: ContentRegistry,
   ) {}
 
   async isReferenced(mediaId: number, unit?: UnitOfWork): Promise<boolean> {

@@ -3,8 +3,8 @@ import {
   ACCESS_ERROR_CODES,
   PERMISSION_ACTIONS,
   SYSTEM_SUBJECT_ACTIONS,
-} from '../modules/access/domain/Access.constants';
-import { RICHTEXT_ALLOWED_URL_SCHEMES } from '../modules/content-engine/domain/ContentEngine.constants';
+} from '../modules/access';
+import { RICHTEXT_ALLOWED_URL_SCHEMES } from '../modules/content-engine';
 import {
   AUTH_ERROR_CODES,
   OTP,
@@ -12,14 +12,14 @@ import {
   OWNER_SETUP_ERROR_CODES,
   PASSWORD_MAX_LENGTH,
   PASSWORD_MIN_LENGTH,
+  REFRESH_COOKIE,
   SETUP_TOKEN_MAX_LENGTH,
   TOTP,
-} from '../modules/identity/domain/Identity.constants';
-import { REFRESH_COOKIE } from '../modules/identity/http/IdentityHttp.constants';
+} from '../modules/identity';
 import {
   REVIEWER_ERROR_CODES,
   REVIEWER_INPUT_LIMITS,
-} from '../modules/reviewer/domain/Reviewer.constants';
+} from '../modules/reviewer';
 
 /**
  * The cms-api constants that the admin, the web, the kit and the e2e suite

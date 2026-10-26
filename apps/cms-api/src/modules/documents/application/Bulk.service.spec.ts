@@ -93,8 +93,7 @@ describe('BulkService', () => {
     expect(response.results[0]).toMatchObject({
       index: 0,
       status: BULK_ITEM_STATUS.ERROR,
-      statusCode: 404,
-      errorCode: DOCUMENT_ERROR_CODES.NOT_FOUND,
+      error: { kind: 'not_found', errorCode: DOCUMENT_ERROR_CODES.NOT_FOUND },
     });
     expect(publishing.track).toHaveBeenCalledTimes(1);
   });

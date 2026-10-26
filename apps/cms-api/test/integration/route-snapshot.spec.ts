@@ -1,8 +1,7 @@
 import type { NestExpressApplication } from '@nestjs/platform-express';
-import type { StartedPostgreSqlContainer } from '@testcontainers/postgresql';
 
 import { dbEnvOf, devEnv } from '../fixtures/env.fixture';
-import { startPostgres } from '../fixtures/postgres.fixture';
+import { startPostgres, type TestPostgres } from '../fixtures/postgres.fixture';
 import { createTestApp } from '../fixtures/test-app';
 
 interface RouteLayer {
@@ -83,7 +82,7 @@ const EXPECTED_ROUTES: string[] = [
 ];
 
 describe('route snapshot (R2-10)', () => {
-  let postgres: StartedPostgreSqlContainer;
+  let postgres: TestPostgres;
   let app: NestExpressApplication;
 
   beforeAll(async () => {

@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 
-import { ContentRegistryProvider } from '../../content-engine';
-import type { RegistryService } from '../../content-engine';
+import { ContentRegistry } from '../../content-engine';
+import type { ContentTypeRegistry } from '../../content-engine';
 import { PolicyEvaluator } from '../domain/PolicyEvaluator';
 import { SubjectCatalog } from '../domain/SubjectCatalog.rules';
 
@@ -12,14 +12,14 @@ export interface AccessPolicy {
 
 /**
  * The app's `SubjectCatalog` and `PolicyEvaluator`, built from the content
- * registry once it is loaded (lazily, see ContentRegistryProvider).
+ * registry once it is loaded (lazily, see ContentRegistry).
  */
 @Injectable()
 export class AccessPolicyService {
   private built:
-    { registry: RegistryService; policy: AccessPolicy } | undefined;
+    { registry: ContentTypeRegistry; policy: AccessPolicy } | undefined;
 
-  constructor(private readonly registry: ContentRegistryProvider) {}
+  constructor(private readonly registry: ContentRegistry) {}
 
   async policy(): Promise<AccessPolicy> {
     const registry = await this.registry.registry();

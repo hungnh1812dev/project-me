@@ -1,5 +1,4 @@
 import type { NestExpressApplication } from '@nestjs/platform-express';
-import type { StartedPostgreSqlContainer } from '@testcontainers/postgresql';
 import request from 'supertest';
 
 import { IDENTITY_RATE_LIMIT_POLICIES } from '../../src/modules/identity/http/IdentityHttp.constants';
@@ -27,7 +26,7 @@ import {
   TEST_SECRET_32_BYTES,
   TEST_WEB_ORIGIN,
 } from '../fixtures/env.fixture';
-import { startPostgres } from '../fixtures/postgres.fixture';
+import { startPostgres, type TestPostgres } from '../fixtures/postgres.fixture';
 import { createTestApp } from '../fixtures/test-app';
 import { seedSystemRoles } from '../fixtures/access.fixture';
 
@@ -74,7 +73,7 @@ function errorBody(res: request.Response): Record<string, unknown> {
 }
 
 describe('owner setup (ADR 0005; Postgres 16 via Testcontainers)', () => {
-  let postgres: StartedPostgreSqlContainer;
+  let postgres: TestPostgres;
   let template: Awaited<ReturnType<typeof createCoreTemplate>>;
   const apps: NestExpressApplication[] = [];
   const handles: PrismaHandle[] = [];

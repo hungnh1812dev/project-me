@@ -23,7 +23,7 @@ import {
 import {
   assertTreeInput,
   type ContentDocument,
-  ContentRegistryProvider,
+  ContentRegistry,
   type RegisteredContentType,
   type TreeInput,
 } from '../../content-engine';
@@ -107,7 +107,7 @@ export interface PreparedWrite {
 export class DocumentsCommandService {
   constructor(
     private readonly access: AccessPolicyService,
-    private readonly registry: ContentRegistryProvider,
+    private readonly registry: ContentRegistry,
     @Inject(CONTENT_TRANSACTION_RUNNER)
     private readonly transactions: TransactionRunner,
     @Inject(DOCUMENT_REPOSITORY) private readonly documents: DocumentRepository,

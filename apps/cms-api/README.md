@@ -284,14 +284,13 @@ Multi-write core flows use the `CORE_TRANSACTION_RUNNER` token
 commits when `work` resolves and rolls back when it throws; `unit.afterCommit(cb)`
 runs `cb` once after the commit, in registration order, never on rollback (a
 failing callback is logged, the commit stands). Locks stay in repository SQL.
-Only adapters call `prismaTxOf(unit)`. `unitOfWorkFromPrismaTx(tx)` is a
-transitional bridge for callers that still hold a Prisma `tx` (removed in
-CR-cl-1). The content (Kysely) runner arrives in CR-ce-2.
+Only adapters call `prismaTxOf(unit)`; a unit exists only inside `run`. The
+content (Kysely) runner is `CONTENT_TRANSACTION_RUNNER`.
 
 ### Module layout (ADR 0006)
 
-A migrated module (listed in `MIGRATED_MODULES`,
-`src/architecture/layer-rules.constants.ts`) keeps only `<Module>.module.ts`,
+Every module under `src/modules/` (`layers.architecture.spec.ts` checks each
+folder, so a new module is covered without a list to edit) keeps only `<Module>.module.ts`,
 `index.ts` and the layer folders `domain/`, `application/`, `adapters/`,
 `http/` (plus `cli/`, `jobs/` where it has them). Import rules per layer are
 in `LAYER_RULES`; `layers.architecture.spec.ts` enforces them. Checklist,
@@ -315,8 +314,9 @@ in that file.
    application layer passes it in. Put `import type` and value imports from
    one facade in separate statements; the guard reads inline `type` names as
    values.
-4. Add the module to `MIGRATED_MODULES`; fix every listed consumer's import
-   of it or add a `KNOWN_LAYER_VIOLATIONS` entry naming the removing task.
+4. Fix every consumer's import of it; `KNOWN_LAYER_VIOLATIONS`
+   (`src/architecture/layer-rules.constants.ts`) is empty and an entry needs
+   a removing task.
 5. Update `src/architecture/source-paths.constants.ts` for pinned paths,
    the module's README section and `docs/modules/*.md`.
 6. Specs: unit specs sit next to their file; integration specs change import
@@ -333,11 +333,8 @@ reader `PgContentType.repository.ts` and
 with `runInSavepoint`). `createMigrationDb` (in `ContentDatabase.adapter.ts`) is imported only by
 `ContentEngine.module.ts` and `cli/ContentEngineCli.setup.ts`. Documents
 runs every write through `CONTENT_TRANSACTION_RUNNER`.
-`unitOfWorkFromContentTrx(trx)` is no longer exported by the facade; only
-tests that seed rows through their own Kysely transaction import it from the
-runner file. The facade keeps `RegistryService` (now `ContentTypeRegistry`)
-and `ContentRegistryProvider` (now `ContentRegistry`) as aliases for modules
-that have not migrated.
+Specs that seed rows open a unit with `inContentUnit(db, work)`
+(`test/fixtures/content-unit.fixture.ts`), which runs the real runner.
 
 ### Rate limits (T10)
 
@@ -736,7 +733,7 @@ Content types are JSON files in `content/schemas/` (e.g. `cv-page.json`).
 naming, depth ≤ 3, 63-byte names, collisions) and returns structured errors;
 `domain/Naming.rules.ts` is the single source of generated SQL names. Tables are created
 only by migrations in `content/migrations/` (`content:generate`, then
-`content:migrate`). At runtime, `RegistryService` resolves a slug to its
+`content:migrate`). At runtime, `ContentTypeRegistry` resolves a slug to its
 table plans and `ContentRepository` reads and writes whole documents (root +
 component tree) with batched, parameterized Kysely queries. Format, rules
 and repository behaviour:

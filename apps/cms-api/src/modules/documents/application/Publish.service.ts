@@ -17,7 +17,7 @@ import {
   type RowCondition,
 } from '../../access';
 import {
-  ContentRegistryProvider,
+  ContentRegistry,
   type RegisteredContentType,
 } from '../../content-engine';
 import { DOCUMENT_ERROR_MESSAGES } from '../domain/Documents.constants';
@@ -64,7 +64,7 @@ export interface ActionScope {
 export class PublishService {
   constructor(
     private readonly access: AccessPolicyService,
-    private readonly registry: ContentRegistryProvider,
+    private readonly registry: ContentRegistry,
     @Inject(CONTENT_TRANSACTION_RUNNER)
     private readonly transactions: TransactionRunner,
     @Inject(DOCUMENT_REPOSITORY) private readonly documents: DocumentRepository,

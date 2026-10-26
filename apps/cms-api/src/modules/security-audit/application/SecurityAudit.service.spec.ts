@@ -43,16 +43,16 @@ describe('SecurityAuditService writing', () => {
     action: 'account.seeded',
   } as const;
 
-  it('record passes the caller transaction to the writer; recordStandalone does not take one', async () => {
+  it('record passes the caller unit to the writer; recordStandalone does not take one', async () => {
     const writer = {
       write: jest.fn().mockResolvedValue(undefined),
       writeStandalone: jest.fn().mockResolvedValue(undefined),
     };
     const service = serviceWith(undefined, writer);
-    const tx = { auditLog: {} };
-    await service.record(tx, entry);
+    const unit = { afterCommit: jest.fn() };
+    await service.record(unit, entry);
     await service.recordStandalone(entry);
-    expect(writer.write).toHaveBeenCalledWith(tx, entry);
+    expect(writer.write).toHaveBeenCalledWith(unit, entry);
     expect(writer.writeStandalone).toHaveBeenCalledWith(entry);
   });
 });

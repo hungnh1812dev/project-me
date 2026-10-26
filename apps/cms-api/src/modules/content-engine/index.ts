@@ -11,12 +11,12 @@ export {
   CONTENT_DB_SCHEMA,
   CONTENT_STATUSES,
   MEDIA_FIELD_TYPE,
+  RICHTEXT_ALLOWED_URL_SCHEMES,
   ROOT_SYSTEM_COLUMNS,
   SCALAR_FIELD_TYPES,
 } from './domain/ContentEngine.constants';
 export { ContentEngineModule } from './ContentEngine.module';
-// Names kept for the modules that have not migrated yet; each CR task renames its own imports.
-export { ContentRegistry as ContentRegistryProvider } from './application/ContentRegistry.service';
+export { ContentRegistry } from './application/ContentRegistry.service';
 export {
   isComponentField,
   type ComponentFieldDefinition,
@@ -56,7 +56,7 @@ export {
   loadDefinitions,
 } from './adapters/MigrationFiles.adapter';
 export {
-  ContentTypeRegistry as RegistryService,
+  ContentTypeRegistry,
   type RegisteredContentType,
   type TableNode,
 } from './domain/ContentTypeRegistry.entity';

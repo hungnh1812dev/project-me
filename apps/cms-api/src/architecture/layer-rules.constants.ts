@@ -6,8 +6,7 @@ import { FIELD_PROJECTION_FILE } from './source-paths.constants';
 /**
  * Import rules per layer (ADR 0006 §2, §7). Mirrors the layer bullet of
  * SPEC §2: a change to one is a change to the other.
- * `layers.architecture.spec.ts` enforces it on the modules in
- * `MIGRATED_MODULES`.
+ * `layers.architecture.spec.ts` enforces it on every module under `modules/`.
  */
 export type LayerName = Exclude<FileLayer, 'wiring' | 'unlayered'>;
 
@@ -292,27 +291,13 @@ export const LAYER_EXEMPT_ROOTS: readonly string[] = [
 ];
 
 /**
- * Folders inside a migrated module that keep their old layout until their
+ * Folders inside a module that keep their old layout until their
  * own task moves them; the layer guard skips them (`removedBy` is the task).
  */
 export const UNMIGRATED_FOLDERS: readonly {
   folder: string;
   removedBy: string;
 }[] = [];
-
-/** Module folders (`modules/<name>`) the layer guard checks. Each CR task adds its module. */
-export const MIGRATED_MODULES: readonly string[] = [
-  'health',
-  'content-types',
-  'content-engine',
-  'documents',
-  'graphql',
-  'access',
-  'security-audit',
-  'identity',
-  'media',
-  'reviewer',
-];
 
 export interface KnownLayerViolation {
   /** Path relative to `src/`. */
@@ -323,12 +308,5 @@ export interface KnownLayerViolation {
   removedBy: string;
 }
 
-/** Violations a migrated module still has; a stale entry fails the spec. */
-export const KNOWN_LAYER_VIOLATIONS: readonly KnownLayerViolation[] = [
-  {
-    from: join('modules', 'documents', 'application', 'BulkItem.errors.ts'),
-    rule: 'platform-role',
-    to: join('common', 'http', 'describe-http-exception.ts'),
-    removedBy: 'CR-cl-1',
-  },
-];
+/** Violations a module still has; a stale entry fails the spec. Empty since CR-cl-1. */
+export const KNOWN_LAYER_VIOLATIONS: readonly KnownLayerViolation[] = [];

@@ -1,10 +1,6 @@
 import type { NestExpressApplication } from '@nestjs/platform-express';
-import type { StartedPostgreSqlContainer } from '@testcontainers/postgresql';
 
-import {
-  prismaTxOf,
-  unitOfWorkFromPrismaTx,
-} from '../../src/infrastructure/database/PrismaTransactionRunner.adapter';
+import { prismaTxOf } from '../../src/infrastructure/database/PrismaTransactionRunner.adapter';
 import { PrismaService } from '../../src/infrastructure/database/prisma.service';
 import {
   CORE_TRANSACTION_RUNNER,
@@ -12,11 +8,11 @@ import {
   type UnitOfWork,
 } from '../../src/infrastructure/database/TransactionRunner.port';
 import { dbEnvOf, devEnv } from '../fixtures/env.fixture';
-import { startPostgres } from '../fixtures/postgres.fixture';
+import { startPostgres, type TestPostgres } from '../fixtures/postgres.fixture';
 import { createTestApp } from '../fixtures/test-app';
 
 describe('CORE_TRANSACTION_RUNNER (Postgres 16 via Testcontainers)', () => {
-  let postgres: StartedPostgreSqlContainer;
+  let postgres: TestPostgres;
   let app: NestExpressApplication;
   let prisma: PrismaService;
   let runner: TransactionRunner;
@@ -179,15 +175,6 @@ describe('CORE_TRANSACTION_RUNNER (Postgres 16 via Testcontainers)', () => {
       }),
     ).rejects.toThrow('boom');
     expect(() => escaped?.afterCommit(() => undefined)).toThrow(/rolledBack/);
-  });
-
-  it('hands a borrowed tx to a migrated module and refuses afterCommit on it', async () => {
-    await prisma.$transaction(async (tx) => {
-      const unit = unitOfWorkFromPrismaTx(tx);
-      await insertProbe(prismaTxOf(unit), 'a');
-      expect(() => unit.afterCommit(() => undefined)).toThrow(/borrowed/);
-    });
-    expect(await probeNames()).toEqual(['a']);
   });
 
   it('prismaTxOf rejects a unit the Prisma runner did not open', () => {

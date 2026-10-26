@@ -8,18 +8,12 @@ import type { UnitOfWork } from '../../../infrastructure/database/TransactionRun
 import type { AuditEntry } from '../domain/AuditActor.rules';
 import { AUDIT_EMAIL_HMAC } from '../domain/SecurityAudit.constants';
 
-/**
- * The caller's open transaction. Transitional (removedBy CR-cl-1): callers
- * that have not migrated still hand over their Prisma transaction.
- */
-export type AuditTransaction = UnitOfWork | { readonly auditLog: unknown };
-
 export const AUDIT_LOG_WRITER = Symbol('AUDIT_LOG_WRITER');
 
 /** The only way an audit row is stored. Neither method opens a transaction. */
 export interface AuditLogWriter {
   /** Inserts the row in the caller's transaction, so it commits with the change it records (D15). */
-  write(transaction: AuditTransaction, entry: AuditEntry): Promise<void>;
+  write(unit: UnitOfWork, entry: AuditEntry): Promise<void>;
   /** Inserts the row on its own, for events with no write of their own. */
   writeStandalone(entry: AuditEntry): Promise<void>;
 }
@@ -52,8 +46,8 @@ export class SecurityAuditService {
           );
   }
 
-  record(transaction: AuditTransaction, entry: AuditEntry): Promise<void> {
-    return this.writer.write(transaction, entry);
+  record(unit: UnitOfWork, entry: AuditEntry): Promise<void> {
+    return this.writer.write(unit, entry);
   }
 
   recordStandalone(entry: AuditEntry): Promise<void> {

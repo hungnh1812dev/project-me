@@ -6,7 +6,7 @@ import {
   type ActorContext,
   PermissionAction,
 } from '../../access';
-import { ContentRegistryProvider } from '../../content-engine';
+import { ContentRegistry } from '../../content-engine';
 import {
   PRESENCE_MAX_ENTRIES,
   PRESENCE_TTL_MS,
@@ -55,7 +55,7 @@ export class PresenceService {
 
   constructor(
     private readonly access: AccessPolicyService,
-    private readonly registry: ContentRegistryProvider,
+    private readonly registry: ContentRegistry,
     @Inject(DOCUMENT_REPOSITORY) private readonly documents: DocumentRepository,
     @Inject(PRESENCE_ACCOUNT_LOOKUP)
     private readonly accounts: PresenceAccountLookup,

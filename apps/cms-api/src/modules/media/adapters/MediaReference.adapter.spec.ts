@@ -1,4 +1,4 @@
-import { RegistryService } from '../../content-engine';
+import { ContentTypeRegistry } from '../../content-engine';
 import { mediaReferenceQuery } from './MediaReference.adapter';
 
 const WITH_MEDIA = {
@@ -23,7 +23,7 @@ const WITHOUT_MEDIA = {
 
 describe('mediaReferenceQuery', () => {
   it('probes every media column of roots and components with quoted names', () => {
-    const registry = RegistryService.fromDefinitions([
+    const registry = ContentTypeRegistry.fromDefinitions([
       WITH_MEDIA,
       WITHOUT_MEDIA,
     ]);
@@ -36,7 +36,7 @@ describe('mediaReferenceQuery', () => {
   });
 
   it('is null when no content type has a media field', () => {
-    const registry = RegistryService.fromDefinitions([WITHOUT_MEDIA]);
+    const registry = ContentTypeRegistry.fromDefinitions([WITHOUT_MEDIA]);
     expect(mediaReferenceQuery(registry)).toBeNull();
   });
 });

@@ -1,6 +1,5 @@
 import { HttpStatus } from '@nestjs/common';
 import type { NestExpressApplication } from '@nestjs/platform-express';
-import type { StartedPostgreSqlContainer } from '@testcontainers/postgresql';
 import { generate } from 'otplib';
 import request from 'supertest';
 
@@ -47,7 +46,7 @@ import {
   TEST_TOTP_ENC_PREVIOUS_KID,
   TEST_WEB_ORIGIN,
 } from '../fixtures/env.fixture';
-import { startPostgres } from '../fixtures/postgres.fixture';
+import { startPostgres, type TestPostgres } from '../fixtures/postgres.fixture';
 import { createTestApp } from '../fixtures/test-app';
 import { seedSystemRoles } from '../fixtures/access.fixture';
 
@@ -99,7 +98,7 @@ function setCookies(res: request.Response): string[] {
 }
 
 describe('Two-factor authentication (D8, SPEC §9, T13; Postgres 16 via Testcontainers)', () => {
-  let postgres: StartedPostgreSqlContainer;
+  let postgres: TestPostgres;
   let app: NestExpressApplication;
   let db: PrismaHandle;
   let mail: CapturingMailSender;

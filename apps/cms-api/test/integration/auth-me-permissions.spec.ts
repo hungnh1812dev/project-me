@@ -1,5 +1,4 @@
 import type { NestExpressApplication } from '@nestjs/platform-express';
-import type { StartedPostgreSqlContainer } from '@testcontainers/postgresql';
 import request from 'supertest';
 
 import { Clock } from '../../src/common/time/clock';
@@ -20,7 +19,7 @@ import {
   TEST_SECRET_32_BYTES,
   TEST_WEB_ORIGIN,
 } from '../fixtures/env.fixture';
-import { startPostgres } from '../fixtures/postgres.fixture';
+import { startPostgres, type TestPostgres } from '../fixtures/postgres.fixture';
 import { createTestApp } from '../fixtures/test-app';
 import {
   seedRolePermissions,
@@ -32,7 +31,7 @@ const ME = '/api/v1/auth/me';
 const LOGIN = '/api/v1/auth/login';
 
 describe('GET /auth/me permissions (T33a; Postgres 16 via Testcontainers)', () => {
-  let postgres: StartedPostgreSqlContainer;
+  let postgres: TestPostgres;
   let app: NestExpressApplication;
   let db: PrismaHandle;
   let count = 0;

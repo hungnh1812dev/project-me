@@ -1,12 +1,11 @@
 import { randomUUID } from 'node:crypto';
 
 import type { NestExpressApplication } from '@nestjs/platform-express';
-import type { StartedPostgreSqlContainer } from '@testcontainers/postgresql';
 import type { Kysely } from 'kysely';
 import { Client } from 'pg';
 import request from 'supertest';
 
-import { unitOfWorkFromContentTrx } from '../../src/modules/content-engine/adapters/KyselyContentTransactionRunner.adapter';
+import { inContentUnit } from '../fixtures/content-unit.fixture';
 import { Clock } from '../../src/common/time/clock';
 import {
   openPrisma,
@@ -44,7 +43,7 @@ import {
   TEST_SECRET_32_BYTES,
   TEST_WEB_ORIGIN,
 } from '../fixtures/env.fixture';
-import { startPostgres } from '../fixtures/postgres.fixture';
+import { startPostgres, type TestPostgres } from '../fixtures/postgres.fixture';
 import { createTestApp } from '../fixtures/test-app';
 import {
   seedRolePermissions,
@@ -77,7 +76,7 @@ const SESSION_BODY = {
 };
 
 describe('reviewer backend (T31, D2; Postgres 16 via Testcontainers)', () => {
-  let postgres: StartedPostgreSqlContainer;
+  let postgres: TestPostgres;
   let app: NestExpressApplication;
   let db: PrismaHandle;
   let content: Kysely<ContentDatabase>;
@@ -104,12 +103,12 @@ describe('reviewer backend (T31, D2; Postgres 16 via Testcontainers)', () => {
     await client.end();
     content = createContentDb(databaseUrl);
     const repository = new KyselyContentRepository(registry);
-    await content.transaction().execute(async (trx) => {
+    await inContentUnit(content, async (unit) => {
       for (const [published, title] of [
         [true, 'Live'],
         [false, 'Draft only'],
       ] as const) {
-        await repository.insertTree(unitOfWorkFromContentTrx(trx), 'article', {
+        await repository.insertTree(unit, 'article', {
           documentId: randomUUID(),
           publishedAt: published ? new Date() : null,
           values: { title, body: '<p>x</p>', priority: 1 },

@@ -7,14 +7,14 @@ import {
 import { DummyDriver, Kysely } from 'kysely';
 
 import { ARTICLE_DEFINITION } from '../../../../test/fixtures/access.fixture';
-import { RegistryService } from '../../content-engine';
+import { ContentTypeRegistry } from '../../content-engine';
 import {
   filterExpression,
   queryColumnOf,
   sortTarget,
 } from './DocumentFilterSql.adapter';
 
-const type = RegistryService.fromDefinitions([ARTICLE_DEFINITION]).resolve(
+const type = ContentTypeRegistry.fromDefinitions([ARTICLE_DEFINITION]).resolve(
   'article',
 );
 
@@ -71,7 +71,7 @@ describe('queryColumnOf', () => {
 });
 
 describe('media fields', () => {
-  const mediaType = RegistryService.fromDefinitions([
+  const mediaType = ContentTypeRegistry.fromDefinitions([
     {
       slug: 'gallery',
       kind: 'collection',

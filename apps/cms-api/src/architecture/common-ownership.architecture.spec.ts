@@ -1,21 +1,28 @@
+import { sep } from 'node:path';
+
 import { listSourceFiles, reachedFilesOf } from './import-graph';
 import { nodeOfFile, SRC_ROOT } from './module-graph';
 
 /**
- * SPEC D1 (R1-15): `common/` holds what several modules share. A file there
- * that only one module imports belongs in that module. Files that still wait
- * for their move are in `SINGLE_MODULE_ALLOWLIST` with the task that moves
- * them; a listed file that no longer qualifies fails the spec.
+ * SPEC D1 (R1-15): `common/` and `infrastructure/` hold what several modules
+ * share. A file there (a port or an adapter too) that only one module imports
+ * belongs in that module. Files that still wait for their move are in
+ * `SINGLE_MODULE_ALLOWLIST` with the task that moves them; a listed file that
+ * no longer qualifies fails the spec.
  */
-const COMMON_DIRECTORY = 'common';
+const SHARED_DIRECTORIES = ['common', 'infrastructure'];
 
 const SINGLE_MODULE_ALLOWLIST = new Map<string, string>();
 
-describe('common/ ownership (D1)', () => {
+describe('common/ and infrastructure/ ownership (D1)', () => {
   const sources = listSourceFiles(SRC_ROOT);
   const commonFiles = sources
     .map(({ file }) => file)
-    .filter((file) => file.startsWith(COMMON_DIRECTORY));
+    .filter((file) =>
+      SHARED_DIRECTORIES.some((directory) =>
+        file.startsWith(`${directory}${sep}`),
+      ),
+    );
 
   /** Who imports each common file: a module node, or 'shared' for any other importer. */
   const importersOf = new Map<string, Set<string>>();
@@ -37,7 +44,7 @@ describe('common/ ownership (D1)', () => {
     return importers?.size === 1 && !importers.has('shared');
   });
 
-  it('scans common/', () => {
+  it('scans common/ and infrastructure/', () => {
     expect(commonFiles.length).toBeGreaterThan(0);
     expect(importersOf.size).toBeGreaterThan(0);
   });

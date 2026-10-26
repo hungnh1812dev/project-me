@@ -1,7 +1,6 @@
 import { performance } from 'node:perf_hooks';
 
 import type { NestExpressApplication } from '@nestjs/platform-express';
-import type { StartedPostgreSqlContainer } from '@testcontainers/postgresql';
 import { decode, sign } from 'jsonwebtoken';
 import request from 'supertest';
 
@@ -30,7 +29,7 @@ import {
   TEST_SECRET_32_BYTES,
   TEST_WEB_ORIGIN,
 } from '../fixtures/env.fixture';
-import { startPostgres } from '../fixtures/postgres.fixture';
+import { startPostgres, type TestPostgres } from '../fixtures/postgres.fixture';
 import { createTestApp } from '../fixtures/test-app';
 import { seedSystemRoles } from '../fixtures/access.fixture';
 
@@ -96,7 +95,7 @@ function errorBody(res: request.Response): unknown {
 }
 
 describe('auth: login, JWT, refresh rotation, logout (Postgres 16 via Testcontainers)', () => {
-  let postgres: StartedPostgreSqlContainer;
+  let postgres: TestPostgres;
   let app: NestExpressApplication;
   let db: PrismaHandle;
   let accountCount = 0;

@@ -3,12 +3,11 @@ import { request as httpRequest } from 'node:http';
 import type { AddressInfo } from 'node:net';
 
 import type { NestExpressApplication } from '@nestjs/platform-express';
-import type { StartedPostgreSqlContainer } from '@testcontainers/postgresql';
 import type { Kysely } from 'kysely';
 import { Client } from 'pg';
 import request from 'supertest';
 
-import { unitOfWorkFromContentTrx } from '../../src/modules/content-engine/adapters/KyselyContentTransactionRunner.adapter';
+import { inContentUnit } from '../fixtures/content-unit.fixture';
 import {
   openPrisma,
   type PrismaHandle,
@@ -38,7 +37,7 @@ import {
   TEST_SECRET_32_BYTES,
   TEST_WEB_ORIGIN,
 } from '../fixtures/env.fixture';
-import { startPostgres } from '../fixtures/postgres.fixture';
+import { startPostgres, type TestPostgres } from '../fixtures/postgres.fixture';
 import { createTestApp } from '../fixtures/test-app';
 import { AccessPolicyService } from '../../src/modules/access/application/AccessPolicy.service';
 import { DocumentsQueryService } from '../../src/modules/documents/application/DocumentsQuery.service';
@@ -170,7 +169,7 @@ const SEEDS: Seed[] = [
 ];
 
 describe('GraphQL read API (GQ2; Postgres 16 via Testcontainers)', () => {
-  let postgres: StartedPostgreSqlContainer;
+  let postgres: TestPostgres;
   let app: NestExpressApplication;
   let db: PrismaHandle;
   let content: Kysely<ContentDatabase>;
@@ -207,9 +206,9 @@ describe('GraphQL read API (GQ2; Postgres 16 via Testcontainers)', () => {
 
     content = createContentDb(databaseUrl);
     const repository = new KyselyContentRepository(registry);
-    await content.transaction().execute(async (trx) => {
+    await inContentUnit(content, async (unit) => {
       for (const seed of SEEDS) {
-        await repository.insertTree(unitOfWorkFromContentTrx(trx), 'article', {
+        await repository.insertTree(unit, 'article', {
           documentId: seed.documentId,
           publishedAt: seed.published ? new Date() : null,
           createdBy: CREATOR_ID,
@@ -228,7 +227,7 @@ describe('GraphQL read API (GQ2; Postgres 16 via Testcontainers)', () => {
           },
         });
       }
-      await repository.insertTree(unitOfWorkFromContentTrx(trx), 'note', {
+      await repository.insertTree(unit, 'note', {
         documentId: ids.note,
         publishedAt: null,
         values: { text: 'a live note' },

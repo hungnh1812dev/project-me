@@ -13,17 +13,9 @@ import type { TransactionRunner, UnitOfWork } from './TransactionRunner.port';
 class PrismaUnitOfWork implements UnitOfWork {
   readonly callbacks = new AfterCommitCallbacks();
 
-  constructor(
-    readonly tx: Prisma.TransactionClient,
-    private readonly isOwnedByRunner: boolean,
-  ) {}
+  constructor(readonly tx: Prisma.TransactionClient) {}
 
   afterCommit(callback: AfterCommitCallback): void {
-    if (!this.isOwnedByRunner) {
-      throw new Error(
-        'afterCommit is not available on a unit built from a borrowed Prisma tx',
-      );
-    }
     this.callbacks.register(callback);
   }
 }
@@ -39,18 +31,6 @@ export function prismaTxOf(unit: UnitOfWork): Prisma.TransactionClient {
   return unit.tx;
 }
 
-/**
- * Transitional: lets a caller that still holds a Prisma `tx` hand it to a
- * migrated module. `afterCommit` throws on it, so a cache drop is never
- * silently skipped: the caller registers it on its own transaction.
- * Removed in CR-cl-1.
- */
-export function unitOfWorkFromPrismaTx(
-  tx: Prisma.TransactionClient,
-): UnitOfWork {
-  return new PrismaUnitOfWork(tx, false);
-}
-
 /** `CORE_TRANSACTION_RUNNER`: `prisma.$transaction` with Prisma's default options. */
 @Injectable()
 export class PrismaTransactionRunner implements TransactionRunner {
@@ -64,7 +44,7 @@ export class PrismaTransactionRunner implements TransactionRunner {
     let result: T;
     try {
       result = await this.prisma.$transaction(async (tx) => {
-        unit = new PrismaUnitOfWork(tx, true);
+        unit = new PrismaUnitOfWork(tx);
         return work(unit);
       });
     } catch (error) {

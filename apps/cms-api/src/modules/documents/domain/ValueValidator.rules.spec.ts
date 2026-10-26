@@ -1,12 +1,12 @@
 import { DomainError } from '../../../common/errors/Domain.errors';
 import { describeError } from '../../../common/http/describe-http-exception';
 import { FieldSelection } from '../../access';
-import { RegistryService } from '../../content-engine';
+import { ContentTypeRegistry } from '../../content-engine';
 import { profileType } from '../../../../test/fixtures/masking.fixture';
 import { countComponentRows, validateTreeValues } from './ValueValidator.rules';
 
 const profile = profileType();
-const required = RegistryService.fromDefinitions([
+const required = ContentTypeRegistry.fromDefinitions([
   {
     slug: 'req',
     kind: 'collection',

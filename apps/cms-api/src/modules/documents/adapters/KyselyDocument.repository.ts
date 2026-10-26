@@ -11,7 +11,7 @@ import {
   CONTENT_DB_SCHEMA,
   contentTrxOf,
   ContentDbProvider,
-  ContentRegistryProvider,
+  ContentRegistry,
   type ContentDocument,
   type InsertTreeInput,
   type LoadTreesQuery,
@@ -55,7 +55,7 @@ type Predicate = RowCondition;
 export class KyselyDocumentRepository implements DocumentRepository {
   constructor(
     private readonly content: ContentDbProvider,
-    private readonly registry: ContentRegistryProvider,
+    private readonly registry: ContentRegistry,
   ) {}
 
   async insertTree(

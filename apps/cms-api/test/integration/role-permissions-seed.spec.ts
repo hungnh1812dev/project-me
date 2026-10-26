@@ -1,5 +1,3 @@
-import type { StartedPostgreSqlContainer } from '@testcontainers/postgresql';
-
 import {
   openPrisma,
   type PrismaHandle,
@@ -9,7 +7,7 @@ import {
   SYSTEM_ROLES,
 } from '../../src/modules/access/domain/SystemRoles.entity';
 import { createCoreTemplate } from '../fixtures/core-db.fixture';
-import { startPostgres } from '../fixtures/postgres.fixture';
+import { startPostgres, type TestPostgres } from '../fixtures/postgres.fixture';
 import {
   seedRolePermissions,
   seedSystemRoles,
@@ -18,7 +16,7 @@ import {
 const CONCURRENT_RUNS = 4;
 
 describe('default role permissions seed (Postgres 16 via Testcontainers)', () => {
-  let postgres: StartedPostgreSqlContainer;
+  let postgres: TestPostgres;
   let template: Awaited<ReturnType<typeof createCoreTemplate>>;
   const handles: PrismaHandle[] = [];
 

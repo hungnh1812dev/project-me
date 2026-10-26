@@ -19,7 +19,7 @@ import {
   PermissionAction,
   type ActorContext,
 } from '../../access';
-import { ContentRegistryProvider } from '../../content-engine';
+import { ContentRegistry } from '../../content-engine';
 import type { ContentTypeDefinition } from '../../content-engine';
 import { DocumentsQueryService } from '../../documents';
 import {
@@ -76,7 +76,7 @@ export class GraphqlSchemaProvider {
   private readonly cache = new Map<string, GraphQLSchema>();
 
   constructor(
-    private readonly registry: ContentRegistryProvider,
+    private readonly registry: ContentRegistry,
     private readonly documents: DocumentsQueryService,
   ) {}
 

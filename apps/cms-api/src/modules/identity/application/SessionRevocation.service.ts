@@ -11,8 +11,7 @@ import {
  * Ends every session of an account in the caller's unit (D9): the
  * `token_version` bump kills live access tokens, the revoke kills every
  * refresh token. The service registers no `afterCommit` callback: the
- * caller owns the `VersionCache` drop, because it may hold a borrowed unit
- * on which `afterCommit` is unavailable.
+ * caller owns the `VersionCache` drop and registers it on its own unit.
  */
 @Injectable()
 export class SessionRevocationService {

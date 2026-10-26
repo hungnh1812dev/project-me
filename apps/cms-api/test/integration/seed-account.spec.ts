@@ -1,5 +1,3 @@
-import type { StartedPostgreSqlContainer } from '@testcontainers/postgresql';
-
 import {
   openPrisma,
   type PrismaClient,
@@ -15,7 +13,7 @@ import {
   AUDIT_ACTIONS,
 } from '../../src/modules/security-audit';
 import { createCoreTemplate } from '../fixtures/core-db.fixture';
-import { startPostgres } from '../fixtures/postgres.fixture';
+import { startPostgres, type TestPostgres } from '../fixtures/postgres.fixture';
 import { seedSystemRoles } from '../fixtures/access.fixture';
 
 const PASSWORD = 'correct horse battery staple';
@@ -29,7 +27,7 @@ function seedAccount(
 }
 
 describe('seed:account (Postgres 16 via Testcontainers)', () => {
-  let postgres: StartedPostgreSqlContainer;
+  let postgres: TestPostgres;
   let handle: PrismaHandle;
 
   beforeAll(async () => {

@@ -20,6 +20,8 @@ module.exports = {
       rootDir: __dirname,
       roots: ['<rootDir>/test/integration'],
       testMatch: ['**/*.spec.ts'],
+      globalSetup: '<rootDir>/test/integration/global-setup.ts',
+      globalTeardown: '<rootDir>/test/integration/global-teardown.ts',
       setupFilesAfterEnv: ['<rootDir>/test/integration/jest.setup.ts'],
       transform,
     },

@@ -1,10 +1,9 @@
 import { randomUUID } from 'node:crypto';
 
-import type { StartedPostgreSqlContainer } from '@testcontainers/postgresql';
 import { Kysely, PostgresDialect, sql } from 'kysely';
 import { Client, Pool } from 'pg';
 
-import { unitOfWorkFromContentTrx } from '../../src/modules/content-engine/adapters/KyselyContentTransactionRunner.adapter';
+import { inContentUnit } from '../fixtures/content-unit.fixture';
 import { DEFAULT_CONTENT_PATHS } from '../../src/modules/content-engine/adapters/MigrationFiles.adapter';
 import { createMigrationDb } from '../../src/modules/content-engine/cli/ContentEngineCli.setup';
 import { CONTENT_ERROR_CODES } from '../../src/modules/content-engine/domain/ContentEngine.constants';
@@ -26,7 +25,7 @@ import type { ComponentInput } from '../../src/modules/content-engine/domain/Tre
 import type { ComponentNode } from '../../src/modules/content-engine/domain/ContentTree.entity';
 import type { ContentDatabase } from '../../src/modules/content-engine/adapters/TreeLoader.adapter';
 import { loadRegistryFromDatabase } from '../fixtures/content-registry.fixture';
-import { startPostgres } from '../fixtures/postgres.fixture';
+import { startPostgres, type TestPostgres } from '../fixtures/postgres.fixture';
 
 const SLUG = 'cv-page';
 /** Reads run inside a transaction (the repository takes a unit); only data queries are counted. */
@@ -101,7 +100,7 @@ function component(
 }
 
 describe('KyselyContentRepository on cv-page (Postgres 16 via Testcontainers)', () => {
-  let postgres: StartedPostgreSqlContainer;
+  let postgres: TestPostgres;
   let db: Kysely<ContentDatabase>;
   let repository: KyselyContentRepository;
   let registry: ContentTypeRegistry;
@@ -154,22 +153,16 @@ describe('KyselyContentRepository on cv-page (Postgres 16 via Testcontainers)', 
   });
 
   async function insert(input: InsertTreeInput): Promise<number> {
-    return db
-      .transaction()
-      .execute((trx) =>
-        repository.insertTree(unitOfWorkFromContentTrx(trx), SLUG, input),
-      );
+    return inContentUnit(db, (unit) =>
+      repository.insertTree(unit, SLUG, input),
+    );
   }
 
   function loadTrees(
     slug: string,
     query: LoadTreesQuery,
   ): Promise<ContentDocument[]> {
-    return db
-      .transaction()
-      .execute((trx) =>
-        repository.loadTrees(unitOfWorkFromContentTrx(trx), slug, query),
-      );
+    return inContentUnit(db, (unit) => repository.loadTrees(unit, slug, query));
   }
 
   async function loadOne(
@@ -304,9 +297,9 @@ describe('KyselyContentRepository on cv-page (Postgres 16 via Testcontainers)', 
     const lead = component(acme, 'role', 0);
     const typescript = component(before, 'skill', 0);
 
-    await db.transaction().execute((trx) =>
+    await inContentUnit(db, (unit) =>
       repository.replaceTree(
-        unitOfWorkFromContentTrx(trx),
+        unit,
         SLUG,
         { documentId, status: 'draft' },
         {
@@ -389,31 +382,27 @@ describe('KyselyContentRepository on cv-page (Postgres 16 via Testcontainers)', 
     const otherAcme = component(otherBefore, 'experience', 0);
 
     await expect(
-      db
-        .transaction()
-        .execute((trx) =>
-          repository.replaceTree(
-            unitOfWorkFromContentTrx(trx),
-            SLUG,
-            { documentId: mine, status: 'draft' },
-            { components: { experience: [echo(otherAcme)] } },
-          ),
+      inContentUnit(db, (unit) =>
+        repository.replaceTree(
+          unit,
+          SLUG,
+          { documentId: mine, status: 'draft' },
+          { components: { experience: [echo(otherAcme)] } },
         ),
+      ),
     ).rejects.toMatchObject({
       code: CONTENT_ERROR_CODES.TREE_UNKNOWN_UID,
       path: ['components', 'experience', 0, 'componentUid'],
     });
 
-    await db
-      .transaction()
-      .execute((trx) =>
-        repository.replaceTree(
-          unitOfWorkFromContentTrx(trx),
-          SLUG,
-          { documentId: mine, status: 'draft' },
-          { components: { experience: [], skill: [] } },
-        ),
-      );
+    await inContentUnit(db, (unit) =>
+      repository.replaceTree(
+        unit,
+        SLUG,
+        { documentId: mine, status: 'draft' },
+        { components: { experience: [], skill: [] } },
+      ),
+    );
     const mineAfter = await loadOne(mine);
     expect(mineAfter?.components.experience).toEqual([]);
     expect(mineAfter?.components.skill).toEqual([]);
@@ -429,16 +418,14 @@ describe('KyselyContentRepository on cv-page (Postgres 16 via Testcontainers)', 
     });
     const published = await loadOne(documentId, 'published');
 
-    await db
-      .transaction()
-      .execute((trx) =>
-        repository.replaceTree(
-          unitOfWorkFromContentTrx(trx),
-          SLUG,
-          { documentId, status: 'draft' },
-          { values: { company: 'Draft only' }, components: { experience: [] } },
-        ),
-      );
+    await inContentUnit(db, (unit) =>
+      repository.replaceTree(
+        unit,
+        SLUG,
+        { documentId, status: 'draft' },
+        { values: { company: 'Draft only' }, components: { experience: [] } },
+      ),
+    );
     expect((await loadOne(documentId))?.values.company).toBe('Draft only');
     expect(await loadOne(documentId, 'published')).toEqual(published);
   });
@@ -450,9 +437,9 @@ describe('KyselyContentRepository on cv-page (Postgres 16 via Testcontainers)', 
     const acme = component(before, 'experience', 0);
 
     await expect(
-      db.transaction().execute(async (trx) => {
+      inContentUnit(db, async (unit) => {
         await repository.replaceTree(
-          unitOfWorkFromContentTrx(trx),
+          unit,
           SLUG,
           { documentId, status: 'draft' },
           {
@@ -467,9 +454,9 @@ describe('KyselyContentRepository on cv-page (Postgres 16 via Testcontainers)', 
 
     // A failure deep in the tree (after earlier tables were written) also rolls back.
     await expect(
-      db.transaction().execute((trx) =>
+      inContentUnit(db, (unit) =>
         repository.replaceTree(
-          unitOfWorkFromContentTrx(trx),
+          unit,
           SLUG,
           { documentId, status: 'draft' },
           {
@@ -490,12 +477,8 @@ describe('KyselyContentRepository on cv-page (Postgres 16 via Testcontainers)', 
 
     const lost = randomUUID();
     await expect(
-      db.transaction().execute(async (trx) => {
-        await repository.insertTree(
-          unitOfWorkFromContentTrx(trx),
-          SLUG,
-          cvPage(lost, 'L'),
-        );
+      inContentUnit(db, async (unit) => {
+        await repository.insertTree(unit, SLUG, cvPage(lost, 'L'));
         throw new RollbackSignal('caller failed after insertTree');
       }),
     ).rejects.toBeInstanceOf(RollbackSignal);
@@ -505,17 +488,13 @@ describe('KyselyContentRepository on cv-page (Postgres 16 via Testcontainers)', 
   it('reports a missing document and rejects malformed input before SQL', async () => {
     const ref = { documentId: randomUUID(), status: 'draft' as const };
     await expect(
-      db
-        .transaction()
-        .execute((trx) =>
-          repository.replaceTree(unitOfWorkFromContentTrx(trx), SLUG, ref, {}),
-        ),
+      inContentUnit(db, (unit) => repository.replaceTree(unit, SLUG, ref, {})),
     ).rejects.toBeInstanceOf(DocumentNotFoundError);
 
     queries = [];
     await expect(
-      db.transaction().execute((trx) =>
-        repository.insertTree(unitOfWorkFromContentTrx(trx), SLUG, {
+      inContentUnit(db, (unit) =>
+        repository.insertTree(unit, SLUG, {
           documentId: randomUUID(),
           publishedAt: null,
           values: { position: 'x', 'position"; DROP TABLE x; --': 'y' },

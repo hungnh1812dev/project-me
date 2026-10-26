@@ -1,23 +1,19 @@
 import type { NestExpressApplication } from '@nestjs/platform-express';
-import type { StartedPostgreSqlContainer } from '@testcontainers/postgresql';
 import { sql } from 'kysely';
 
 import { ContentDbProvider } from '../../src/modules/content-engine/adapters/ContentDatabase.adapter';
-import {
-  contentTrxOf,
-  unitOfWorkFromContentTrx,
-} from '../../src/modules/content-engine/adapters/KyselyContentTransactionRunner.adapter';
+import { contentTrxOf } from '../../src/modules/content-engine/adapters/KyselyContentTransactionRunner.adapter';
 import {
   CONTENT_TRANSACTION_RUNNER,
   type ContentTransactionRunner,
   type UnitOfWork,
 } from '../../src/infrastructure/database/TransactionRunner.port';
 import { dbEnvOf, devEnv } from '../fixtures/env.fixture';
-import { startPostgres } from '../fixtures/postgres.fixture';
+import { startPostgres, type TestPostgres } from '../fixtures/postgres.fixture';
 import { createTestApp } from '../fixtures/test-app';
 
 describe('CONTENT_TRANSACTION_RUNNER (Postgres 16 via Testcontainers)', () => {
-  let postgres: StartedPostgreSqlContainer;
+  let postgres: TestPostgres;
   let app: NestExpressApplication;
   let content: ContentDbProvider;
   let runner: ContentTransactionRunner;
@@ -239,15 +235,6 @@ describe('CONTENT_TRANSACTION_RUNNER (Postgres 16 via Testcontainers)', () => {
       ).rejects.toThrow('outer failed');
       expect(callback).not.toHaveBeenCalled();
     });
-  });
-
-  it('hands a borrowed transaction to the repository and refuses afterCommit on it', async () => {
-    await content.db.transaction().execute(async (trx) => {
-      const unit = unitOfWorkFromContentTrx(trx);
-      await insertProbe(unit, 'a');
-      expect(() => unit.afterCommit(() => undefined)).toThrow(/borrowed/);
-    });
-    expect(await probeNames()).toEqual(['a']);
   });
 
   it('contentTrxOf rejects a unit the content runner did not open', () => {

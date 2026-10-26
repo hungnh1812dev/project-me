@@ -1,5 +1,4 @@
 import type { NestExpressApplication } from '@nestjs/platform-express';
-import type { StartedPostgreSqlContainer } from '@testcontainers/postgresql';
 import { createHash } from 'node:crypto';
 import request from 'supertest';
 
@@ -40,7 +39,7 @@ import {
   SVG_DOCUMENT,
 } from '../fixtures/media.fixture';
 import { multipart } from '../fixtures/multipart';
-import { startPostgres } from '../fixtures/postgres.fixture';
+import { startPostgres, type TestPostgres } from '../fixtures/postgres.fixture';
 import { createTestApp } from '../fixtures/test-app';
 import {
   seedRolePermissions,
@@ -84,7 +83,7 @@ interface ErrorBody {
 }
 
 describe('media upload and list (T27; Postgres 16 via Testcontainers)', () => {
-  let postgres: StartedPostgreSqlContainer;
+  let postgres: TestPostgres;
   let app: NestExpressApplication;
   let db: PrismaHandle;
   let storage: FakeMediaStorage;

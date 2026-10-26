@@ -11,6 +11,7 @@ import {
 } from '@nestjs/common';
 
 import { SLUG_PARAM } from '../../../common/constants/api.constants';
+import { describeError } from '../../../common/http/describe-http-exception';
 import { DOCUMENTS_ROUTES } from './DocumentsHttp.constants';
 import { NO_STORE_HEADER } from '../../../common/constants/http.constants';
 import {
@@ -18,7 +19,12 @@ import {
   PermissionGuard,
   RequirePermission,
 } from '../../access';
-import { type BulkResponse, BulkService } from '../application/Bulk.service';
+import {
+  type BulkItemResult,
+  type BulkResponse,
+  BulkService,
+} from '../application/Bulk.service';
+import { BULK_ITEM_STATUS } from '../domain/Documents.constants';
 import {
   DocumentAuthGuard,
   type DocumentRequest,
@@ -28,6 +34,43 @@ import {
   parseBulkDocumentsBody,
   parseBulkPublishBody,
 } from './Bulk.requests';
+
+/** One item of the response body; an error item carries what a single request would answer. */
+export type BulkItemBody =
+  | Exclude<BulkItemResult, { status: typeof BULK_ITEM_STATUS.ERROR }>
+  | {
+      index: number;
+      status: typeof BULK_ITEM_STATUS.ERROR;
+      statusCode: number;
+      errorCode: string;
+      message: string;
+      details?: unknown;
+    };
+
+export interface BulkResponseBody extends Omit<BulkResponse, 'results'> {
+  results: BulkItemBody[];
+}
+
+/** A server error is never an item result, so `describeError` here only reads client errors. */
+export function toBulkBody(response: BulkResponse): BulkResponseBody {
+  return {
+    ...response,
+    results: response.results.map((result): BulkItemBody => {
+      if (result.status !== BULK_ITEM_STATUS.ERROR) return result;
+      const { statusCode, errorCode, message, details } = describeError(
+        result.error,
+      );
+      return {
+        index: result.index,
+        status: result.status,
+        statusCode,
+        errorCode,
+        message,
+        ...(details === undefined ? {} : { details }),
+      };
+    }),
+  };
+}
 
 /**
  * SPEC §9 bulk, collections only. Registered before
@@ -51,8 +94,10 @@ export class BulkController {
     @Req() req: DocumentRequest,
     @Param(SLUG_PARAM) slug: string,
     @Body() body: unknown,
-  ): Promise<BulkResponse> {
-    return this.bulk.create(req.user.actor, slug, parseBulkCreateBody(body));
+  ): Promise<BulkResponseBody> {
+    return this.bulk
+      .create(req.user.actor, slug, parseBulkCreateBody(body))
+      .then(toBulkBody);
   }
 
   @Post(DOCUMENTS_ROUTES.BULK_PUBLISH)
@@ -66,8 +111,10 @@ export class BulkController {
     @Req() req: DocumentRequest,
     @Param(SLUG_PARAM) slug: string,
     @Body() body: unknown,
-  ): Promise<BulkResponse> {
-    return this.bulk.publish(req.user.actor, slug, parseBulkPublishBody(body));
+  ): Promise<BulkResponseBody> {
+    return this.bulk
+      .publish(req.user.actor, slug, parseBulkPublishBody(body))
+      .then(toBulkBody);
   }
 
   @Post(DOCUMENTS_ROUTES.BULK_UNPUBLISH)
@@ -81,12 +128,10 @@ export class BulkController {
     @Req() req: DocumentRequest,
     @Param(SLUG_PARAM) slug: string,
     @Body() body: unknown,
-  ): Promise<BulkResponse> {
-    return this.bulk.unpublish(
-      req.user.actor,
-      slug,
-      parseBulkDocumentsBody(body),
-    );
+  ): Promise<BulkResponseBody> {
+    return this.bulk
+      .unpublish(req.user.actor, slug, parseBulkDocumentsBody(body))
+      .then(toBulkBody);
   }
 
   @Post(DOCUMENTS_ROUTES.BULK_DELETE)
@@ -100,7 +145,9 @@ export class BulkController {
     @Req() req: DocumentRequest,
     @Param(SLUG_PARAM) slug: string,
     @Body() body: unknown,
-  ): Promise<BulkResponse> {
-    return this.bulk.remove(req.user.actor, slug, parseBulkDocumentsBody(body));
+  ): Promise<BulkResponseBody> {
+    return this.bulk
+      .remove(req.user.actor, slug, parseBulkDocumentsBody(body))
+      .then(toBulkBody);
   }
 }
