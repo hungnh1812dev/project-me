@@ -21,7 +21,7 @@ STACK_SECRET_BYTES="32"
 # Keeps the owner's 5-logins-per-15-min budget for the owner specs.
 SEED_ACCOUNT_OPT_IN_ENV="ALLOW_ACCOUNT_SEED=smoke"
 
-# The variables the Playwright suite reads (apps/e2e/src/env.ts).
+# The variables the Playwright suite reads (apps/e2e/src/E2e.env.ts).
 E2E_VARS=(E2E_ADMIN_URL E2E_API_BASE_URL E2E_OWNER_EMAIL E2E_OWNER_PASSWORD E2E_MAILPIT_URL
   E2E_READER_EMAIL E2E_READER_PASSWORD E2E_READER_2FA_EMAIL E2E_READER_2FA_PASSWORD
   E2E_2FA_EMAIL E2E_2FA_PASSWORD E2E_DB_CONTAINER E2E_DB_USER E2E_DB_NAME)

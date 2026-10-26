@@ -4,7 +4,7 @@
 # web in dev mode on the host. No image build. Never touches abyss-smoke.
 #   pnpm dev:stack        start (any earlier dev stack is replaced), write the e2e vars
 #   pnpm dev:stack:stop   stop the apps and remove the containers and volumes
-#   pnpm e2e:spec tests/admin-auth.spec.ts      (E2E_STACK=dev if a smoke stack is kept too)
+#   pnpm e2e:spec tests/AdminAuth.e2e.spec.ts      (E2E_STACK=dev if a smoke stack is kept too)
 # Env comes only from .localEnv.agent (created with generated dev-only values when
 # missing; key names in apps/e2e/.env.example). Logs and pids: .dev-stack/.
 set -euo pipefail

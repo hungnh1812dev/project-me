@@ -320,7 +320,7 @@ FRONT = {
     'use-setup-status.ts': 'Polls GET /setup/status.',
     'DynamicFormRenderer.tsx': 'Renders a document form from the content-type definition.',
     'ConflictMergeModal.tsx': '409 conflict: diff and merge server vs submitted.',
-    'merge.reducer.ts': 'Merge state of the conflict modal.',
+    'Merge.reducer.ts': 'Merge state of the conflict modal.',
     'PermissionMatrix.tsx': 'Role permission matrix (subjects x actions, field picker, conditions).',
     'PresenceBanner.tsx': 'Shows other editors of the document (presence heartbeat).',
     'web/src/proxy.ts': 'Per-request CSP nonce on the forwarded request and the response (D17).',

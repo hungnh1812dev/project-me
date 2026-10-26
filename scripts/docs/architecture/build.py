@@ -52,7 +52,7 @@ COUNTS = {
     'e2e': len(scan(ROOT, 'apps/e2e/src')),
     'form-commons': len(scan(ROOT, 'packages/form-commons/src')),
 }
-ARCH_SPECS = sorted(f for f in os.listdir(os.path.join(ROOT, API_SRC, 'architecture')) if f.endswith('.spec.ts'))
+ARCH_SPECS = sorted(f for f in os.listdir(os.path.join(ROOT, 'apps/cms-api/test/architecture')) if f.endswith('.spec.ts'))
 
 # ---------------------------------------------------------------- shared diagrams
 SYSTEM_CONTEXT = """

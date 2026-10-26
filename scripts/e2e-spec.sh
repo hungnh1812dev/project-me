@@ -6,8 +6,8 @@
 # E2E_STACK=dev|smoke picks one; without it the one whose vars file exists is
 # used, and with both present the script stops and asks for E2E_STACK.
 # Arguments go to `playwright test`; spec paths are relative to apps/e2e:
-#   pnpm e2e:spec tests/reviewer.spec.ts
-#   E2E_STACK=dev pnpm e2e:spec tests/reviewer.spec.ts -g "starts a review"
+#   pnpm e2e:spec tests/ReviewerSession.e2e.spec.ts
+#   E2E_STACK=dev pnpm e2e:spec tests/ReviewerSession.e2e.spec.ts -g "starts a review"
 # A kept stack keeps its data between runs, and rate limits keep counting.
 set -euo pipefail
 
