@@ -20,7 +20,6 @@ export const CONTENT_COPY = {
     loading: 'Loading documents',
     loadFailed: 'The documents could not be loaded.',
     forbidden: 'Your role cannot view these documents.',
-    notCollection: 'This content type is a single document, not a collection.',
     empty: 'No documents yet',
     emptyHint: 'Create the first document, or import several at once.',
     emptyHintReadOnly: 'Nothing has been created yet.',

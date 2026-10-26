@@ -7,7 +7,7 @@ import {
 } from './content.constants';
 import { API_ENDPOINTS } from '../../config/endpoints';
 import type { PageMeta } from '../../lib/api-types';
-import type { ContentType } from '../content-types';
+import { getContentTypes, type ContentType } from '../content-types';
 
 export type FieldValueMap = Record<string, unknown>;
 
@@ -105,6 +105,8 @@ export interface BulkResponse {
 export function createContentApi(client: AxiosInstance) {
   const { CONTENT_TYPES, DOCUMENTS } = API_ENDPOINTS;
   return {
+    listContentTypes: () => getContentTypes(client),
+
     getContentType: async (slug: string): Promise<ContentType> => {
       const { data } = await client.get<ContentType>(CONTENT_TYPES.ONE(slug));
       return data;

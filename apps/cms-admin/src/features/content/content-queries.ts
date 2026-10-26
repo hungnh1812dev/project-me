@@ -5,6 +5,7 @@ import { useContentApi } from './content-api-context';
 
 /** Every content query key; pages invalidate through these, never with literals. */
 export const CONTENT_QUERY_KEYS = {
+  types: ['content', 'types'] as const,
   list: (slug: string) => ['content', 'list', slug] as const,
   type: (slug: string) => ['content', 'type', slug] as const,
   draft: (slug: string, documentId: string) =>
@@ -28,5 +29,14 @@ export function useDocumentListQuery(
       api.list(slug, { page, pageSize: CONTENT_LIST_PAGE_SIZE, sort, draft }),
     placeholderData: keepPreviousData,
     enabled,
+  });
+}
+
+/** The content-types catalog the side menu lists. */
+export function useContentTypesQuery() {
+  const api = useContentApi();
+  return useQuery({
+    queryKey: CONTENT_QUERY_KEYS.types,
+    queryFn: () => api.listContentTypes(),
   });
 }

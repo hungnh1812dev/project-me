@@ -28,6 +28,7 @@ import { BulkDeleteDialog } from './BulkDeleteDialog';
 import { collectionColumnsOf, documentNameOf } from './collection-columns';
 import { isMissing } from './content-error';
 import { BULK_ACTION } from './content.constants';
+import { SingleTypeRedirect } from './SingleTypeRedirect';
 import { useBulkRun } from './use-bulk-run';
 import { useCollectionList } from './use-collection-list';
 
@@ -144,12 +145,7 @@ export function CollectionListPage() {
     );
   }
   if (!isCollection) {
-    return (
-      <div className="grid gap-6">
-        {heading}
-        <FormAlert tone="info">{list.notCollection}</FormAlert>
-      </div>
-    );
+    return <SingleTypeRedirect slug={slug} draftAndPublish={draftAndPublish} />;
   }
 
   return (

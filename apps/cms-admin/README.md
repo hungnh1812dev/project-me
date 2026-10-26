@@ -180,7 +180,11 @@ So far: sign-in (T11) and, behind it, a status page that calls
   `feature.ts` with its `routes`, optional `navItems` (label, path, permission
   subject and action) and optional `apiServices` (`defineApiService(createXApi,
 XApiProvider)`). `app/app-routes.tsx` and `AppShell` iterate the registry;
-  nav order is registry order. `app/app-services.ts` builds each feature API
+  nav order is registry order. A feature whose links depend on loaded data
+  adds `useNavItems` (`contentFeature.useNavItems` lists one link per content
+  type the caller may read, under `singleTypes` or `collectionTypes` by kind;
+  `/content/:slug` of a single type redirects to its one document, or to the
+  create form when none exists). `app/app-services.ts` builds each feature API
   from the registry and `AppProviders` nests the providers inside the session
   provider. Routes are protected unless listed in
   `PUBLIC_ROUTE_PATHS` (`features/auth/feature.ts`, the four auth pages). A new

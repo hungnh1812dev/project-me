@@ -1,3 +1,5 @@
+import type { NavSectionId } from '../../lib/nav-sections';
+
 /** Form-state key holding a component item's `componentUid` ('' = new item). */
 export const ITEM_UID_KEY = '__uid';
 
@@ -73,3 +75,12 @@ export const LIST_UPDATED_KEY = 'updatedAt';
 
 /** `kind` of a content type that holds many documents (bulk works on these). */
 export const COLLECTION_KIND = 'collection';
+
+/** `kind` of a content type that holds exactly one document. */
+export const SINGLE_KIND = 'single';
+
+/** Side-menu section of each content-type `kind`; a new kind is one entry here. */
+export const NAV_SECTION_BY_KIND: Readonly<Record<string, NavSectionId>> = {
+  [SINGLE_KIND]: 'singleTypes',
+  [COLLECTION_KIND]: 'collectionTypes',
+};

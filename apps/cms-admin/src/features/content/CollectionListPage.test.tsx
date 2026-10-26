@@ -167,14 +167,39 @@ describe('CollectionListPage: list', () => {
     ).toBeInTheDocument();
   });
 
-  it('explains that a single type has no list', async () => {
-    await open({
+  it('opens the one document of a single type', async () => {
+    const { api } = await open({
       [`GET ${CONTENT_TYPES.ONE(SLUG)}`]: typeHandler({
         ...POST_TYPE,
         kind: 'single',
       }),
+      [LIST_KEY]: () => ({ status: 200, data: page([row(1)]) }),
+      [`GET ${DOCUMENTS.BY_ID(SLUG, 'doc_1')}`]: () => ({
+        status: 200,
+        data: { ...row(1), components: {}, _maskedFields: [] },
+      }),
     });
-    expect(await screen.findByText(copy.notCollection)).toBeInTheDocument();
+    await waitFor(() => {
+      expect(api.callsTo(`GET ${DOCUMENTS.BY_ID(SLUG, 'doc_1')}`)).toHaveLength(
+        1,
+      );
+    });
+  });
+
+  it('opens the create form of a single type without a document', async () => {
+    const { api } = await open({
+      [`GET ${CONTENT_TYPES.ONE(SLUG)}`]: typeHandler({
+        ...POST_TYPE,
+        kind: 'single',
+      }),
+      [LIST_KEY]: () => ({ status: 200, data: page([]) }),
+    });
+    expect(
+      await screen.findByRole('heading', { name: COPY.content.newTitle(SLUG) }),
+    ).toBeInTheDocument();
+    expect(
+      api.callsTo(`GET ${CONTENT_TYPES.ONE(SLUG)}`).length,
+    ).toBeGreaterThan(0);
   });
 
   it('hides selection and bulk actions from a read-only role', async () => {
