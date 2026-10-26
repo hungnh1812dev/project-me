@@ -37,6 +37,7 @@ Exit: no responsibility is duplicated across modules, and the next variant can b
 
 ## 3. Implement
 - Follow `code-standards` (no hardcoding, config and tokens only, design principles in section 4).
+- Name new files and folders by `code-standards` §4.5 and the project's naming document (`Naming:` in `project.md`, if present); list each word that document does not yet have, and each file you left without a word where neighbours carry one, in the unit record.
 - One slice at a time: build, run, then the next slice.
 
 Exit: all subtasks implemented; the build and type-check commands from `project.md` pass.

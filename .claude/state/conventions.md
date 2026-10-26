@@ -91,6 +91,7 @@ Module structure and API details: the module's README / `docs/modules/*.md`. Per
 - CI (T37): triggers keep the template's branches (develop/staging/main), but never assume staging/develop exist. Actions are pinned to commit SHAs. Publish waits only for the app checks (not e2e, not the repo job). Agents never push.
 
 ## Gotchas
+- base-config `abyss/file-names` is opt-in: `baseEslint({ fileNames: {...} })` (options in packages/base-config/README.md); lint paths are relative to the lint cwd, so it only checks `src`, `test`, `tests` by default. Rebuild base-config (`build`) before a consumer lints.
 - Never delete anything (incl. gitignored dist/) without listing it for approval; rebuild over it instead.
 - Never run any tool (incl. prettier) on a `.env*` path: check the path first.
 - In zsh, `$VAR` holding several docker args is NOT word-split: pass args explicitly.

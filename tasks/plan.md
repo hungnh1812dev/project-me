@@ -265,6 +265,17 @@ Exit criteria: `pnpm lint typecheck test build` green; cms-api full integration 
 Tasks (three chains, may run in parallel): core-builder FN1r -> FN-api-1 -> FN-api-2 -> FN-api-3 -> FN-api-4, and FN-bc-1 · ui-builder FN-kit-1 -> FN1b-kit -> FN-web-1 -> FN-web-2 -> FN1b-web -> FN-ad-1 -> FN-ad-2 -> FN-ad-3 -> FN-ad-4 -> FN-ad-5 -> FN1b-admin · qc FN-e2e-1 -> FN-e2e-2 -> FN1c
 Scheduling with other work: CR is closed (no CR task carries renames any more). The MF feature-package tasks are planned after FN-ad-4 (user answer Q-FN9) and move already-named files. T30 (CV page) runs after FN-web-1 or names its files by the rule. Not in parallel with the same files: the API security-headers task (FN-api-2), the dev-stack port-readiness follow-up (FN-api-3, `scripts/dev-stack.sh`), the side-menu a11y follow-up (FN-ad-1). FN-e2e-1 changes spec paths that `project.md` and `conventions.md` cite; the manager updates them.
 
+Revision 3 (DESIGN naming-rule-general and naming-rule-decisions, 2026-10-26; ADR 0008 "Revision 3"; user answers Q-FN12..Q-FN16 applied):
+Goal: the word set is open and hook words are dropped; one ESLint rule `abyss/file-names` from `@abyss/base-config` replaces the six per-package guards and every word list.
+Inputs: phase FN tasks above (all packages renamed, guards in place); user approval of each guard-file deletion; `code-standards` §4.5 in this project's agent layer (manager).
+Outputs:
+- The rule. Check (CLI): `pnpm --filter @abyss/base-config test` runs the rule's `Linter` cases (`.ts`, `.tsx`, `.js`, `.jsx`, `.mjs` checked; other types ignored); `pnpm lint` green at the root.
+- Every package opted in, no guard left. Check (CLI): `git ls-files | grep FileNames` lists nothing; `git grep -n "FILE_FUNCTION_WORDS\|HOOK_FUNCTION_WORDS"` finds nothing outside `docs/adr/` and `tasks/`; in each package a scratch `bad-name.ts` and a scratch `BadFolder/` fail `pnpm --filter <pkg> lint`.
+- Renamed files. Check (CLI): `git grep -nE "use[A-Z][A-Za-z]+\.(query|mutation|state)\b" apps packages` finds nothing; `git ls-files | grep -E "AppContracts.contract|ErrorContract.contract"` lists nothing.
+- Same behaviour. Check: unit counts drop only by the deleted guard tests; `pnpm exec playwright test --list` still 205; qc tier 2 ui pass after FN-hook-rename.
+Exit criteria: `pnpm lint typecheck test build` green; SPEC §5 and ADR 0008 match (done in this DESIGN); planner updates the SPEC §5 tree names when phase FN closes.
+Tasks (build order): FN-lint-1 (core-builder) -> in parallel FN-lint-api (core-builder) · FN-lint-e2e (qc) · FN-lint-ui (ui-builder) -> FN-hook-rename (ui-builder, after FN-lint-ui; Security gate)
+
 ## Phase MF: micro-frontends
 Goal: the chosen micro-frontend option (ADR 0007) is planned.
 Inputs: Q-MF1..Q-MF3 answers.
@@ -365,6 +376,9 @@ Tasks: CR-cl-1
 
 ### Direct request: expired API tokens are not editable (ET) — PROPOSED 2026-10-25
 Flat list, details in `todo.md` "Direct request: expired API tokens are not editable (ET)". SPEC §7 D5. Order: ET1 (core-builder, security gate) -> ET2 (ui-builder) -> ET3 (qc). ET1 waits for Q-ET1 and Q-ET2; Q-ET3 changes only a test line in ET1 and the Revoke button in ET2. Independent of CA, DV, SM, FN, MF; the CR refactor (after CA5) later moves `ApiTokenExpiry.rules.ts` into `access/domain/` without changes.
+
+### Direct request: architecture guards move to `test/architecture/` (ARCH) — APPROVED 2026-10-27
+Flat list, details in `todo.md` "Direct request: architecture guards move to `test/architecture/` (ARCH)". SPEC §2 "Module directions (cms-api)", §5; ADR 0006 "Addendum ARCH-1". One task: ARCH-1 (core-builder, Security gate, tier 1 + security-qc), after FN-lint-api (so the FileNames guard files are deleted, not moved). Check (CLI): `git ls-files apps/cms-api/src | grep -c architecture` prints `0`; `pnpm --filter @abyss/cms-api test:unit` has the same suite and test counts as before; after `pnpm --filter @abyss/cms-api build`, `apps/cms-api/dist/architecture` does not exist. Not in parallel with another cms-api task that edits `SourcePaths.constants.ts` or `LayerRules.constants.ts`.
 
 ## Risks and Mitigations
 

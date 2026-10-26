@@ -80,6 +80,30 @@ Code is reviewed by people reading a diff. Split by layer (where the project has
 - **Check:** adding one endpoint or use case touches at most 6 files (handler, request schema, use case, rule, repository method, wiring). If the plan needs more, merge before building.
 - Task file lists and target file maps written before this rule are superseded where they conflict; the planner revises them, and a builder that finds a conflict in its task follows this section and records the difference in the unit record.
 
+### 4.5 File and folder names
+
+Applies to TypeScript and JavaScript source files (`.ts`, `.tsx`, `.js`, `.jsx`, `.mjs`) and the folders that hold them. Other file types (CSS, JSON, Markdown, shell scripts, images) keep their own conventions.
+
+- **Folders:** `kebab-case` (`order-history/`, `payment-methods/`). Framework folder syntax stays as the framework requires (`[id]`, `[...slug]`, `(group)`, `_private`, `@slot`).
+- **Files:** `<use><PascalName>[.<word>].<ext>`.
+  - `<PascalName>` names the thing the file holds, not its layer or folder: `Invoice`, `CheckoutPage`, `PaymentGateway`. When the file's main export is one component or one hook, the file name equals that export's name.
+  - `<use>` only when the file's main export is one React hook: `useCart.ts`, `useSessionTimer.tsx`. The file exports a hook with exactly that name. A file that holds several hooks takes no `use` prefix.
+  - `<word>` is one optional lower-case word that says what kind of file it is (`service`, `controller`, `client`, `constants`, `errors`): `Invoice.service.ts`, `Payment.errors.ts`. At most one word per file.
+  - `<ext>` is the file's extension.
+- **A word only when needed.** Ask in order; the first match decides:
+  1. One React hook: `use<PascalName>.<ext>`. Never add a word that says what kind of hook it is (no `.query`, `.mutation`, `.state`).
+  2. One React component, pages included: `<ComponentName>.tsx`, no word.
+  3. A tool, framework, config or layer rule selects the file by its word (a module or role suffix, a lint or test glob), or the project's naming document requires a word in that package: the word is needed.
+  4. The word keeps same-named files in one folder apart (`Cart.api.ts` next to `Cart.constants.ts`): the word is needed.
+  5. Otherwise: `<PascalName>.<ext>`, no word. Never add a word by habit or to copy the files around it.
+- **One meaning, one word.** When the project's naming document already has a word for this kind of file, use that word. When it has none, pick one plain lower-case word that says what the file holds. Never pick a vague word (`helper`, `util`, `utils`, `misc`, `common`, `types`, `component`). List a new word in your unit record or report so the planner can add it to the naming document.
+- **No repeated word.** The base name does not end with its own word, singular or plural: `Payment.errors.ts`, not `PaymentError.errors.ts`; `Shipping.contract.ts`, not `ShippingContracts.contract.ts`. Exported identifiers keep their own names (`PaymentError` lives in `Payment.errors.ts`).
+- **Tests:** append the project's test suffix to the full name of the file under test: `Invoice.service.spec.ts`, `useCart.test.ts`, `CheckoutPage.test.tsx`. Tests of one file split by scenario add one lower-case variant right before the suffix (`Invoice.service.refund.spec.ts`). A variant never stands in for a word and appears only on test files.
+- **Kept as the tool requires:** framework-fixed names (`index.ts`, entry files such as `main.ts`, `*.d.ts`, framework route files such as `page.tsx` or `layout.tsx`), tool configs at a package root (`vite.config.ts`, `eslint.config.mjs`), and generated code.
+- Types-only and re-export-only files get no name: merge them into a neighbour (§4.4).
+- **Project detail:** when the project profile has a `Naming:` line, that document adds the project's words, framework names and stricter rules (for example "word required" in a package). It never loosens this section. Without one, this section applies alone.
+- **Existing files:** name new files and folders by this section. Rename an existing file only when your task says so. A rename changes paths and imports, not exported identifiers or public package entry points.
+
 ## 5. General
 
 - Match the surrounding code's style and naming; where it conflicts with section 4, follow section 4 in new code and do not rewrite the old code.

@@ -51,6 +51,12 @@ Base: 0ae3c07
 | FN-e2e-1 | Rename apps/e2e files (205 tests stay), tier 2 | qc | done (qc-cli tier 2 dev 198/205 with 3 dev-only failures; tier 3 smoke pass 205; lint clean; user approved) | 5981747 |
 | FN-e2e-2 | Merge small e2e constants (RunId, ContentTypes, TwoFactorAccount), ApiPaths.constants.ts -> Api.endpoints.ts, tier 1 | qc | done (qc-cli tier 1 pass: lint, typecheck, contract 3, 205 listed; user approved) | e48eaf5 |
 | FN1c | e2e guard (word list in ADR 0008; test:contract renamed test:unit, approved) | qc | done (qc-cli tier 1 pass, 6 node tests; user approved) | e77d0b2 |
+| FN-lint-1 | abyss/file-names ESLint rule in base-config (replaces the base-config guard; deletion approved) | core-builder | done (qc-cli tier 1 pass; user approved) | 25ba053 |
+| ARCH-1 | Move cms-api architecture guards and analyzers from src/architecture to test/architecture; one SRC_ROOT (2 commits; user approved entry) | core-builder | done (qc-cli tier 1 pass, 138/1532; security pass static; user approved) | 6897e38, 65f6ed0 |
+| FN-lint-api | cms-api opts into the rule; delete guard and FileNames.constants.ts (approved); ErrorContract.contract.spec.ts -> ErrorBody.contract.spec.ts | core-builder | done (qc-cli tier 1 pass, 1532; user approved) | b4604fb |
+| FN-lint-ui | cms-admin, web, form-commons opt in; delete their three guards (approved) | ui-builder | todo | - |
+| FN-lint-e2e | e2e opts in; delete guard (approved); AppContracts.contract.ts -> Apps.contract.ts | qc | todo | - |
+| FN-hook-rename | Drop the hook word from 16 hook files (+6 tests), Security gate yes | ui-builder | todo | - |
 
 ## Phase MF: micro-frontends
 | ID | Title | Scope | Status | Commit |

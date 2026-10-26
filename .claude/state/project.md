@@ -30,3 +30,4 @@ Tier 3 also when: `docker-compose.smoke.yml`, `scripts/stack/`, `scripts/smoke*`
 E2E tests: `apps/e2e` (Playwright, Chromium)
 Docs to keep current: each app/package `README.md`, `docs/modules/*.md`, ADRs in `docs/adr/`, each app's `.env.example`
 Security rules: `SPEC.md` §7 (Security Decisions), `docs/modules/access-control.md`
+Naming: `SPEC.md` §5 "Naming rules" (word vocabulary, word required in cms-api and apps/e2e, framework names, test suffixes) and `docs/adr/0008-file-naming-rule.md`; checked by `pnpm lint` (`abyss/file-names`; the per-package `FileNames.architecture.*` guards stay until the FN-lint tasks land)

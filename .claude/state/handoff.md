@@ -2,6 +2,9 @@
 Updated: 2026-10-25 after trim (phase R4 closed and archived; finished R-phase lines and older unscheduled follow-ups moved to `archive/handoff-trim-2026-10-25.md`)
 
 ## In progress / next
+- ARCH-1 Move cms-api guards to test/architecture - awaiting qc tier 1 + security-qc path review and commit (2 commits: staged renames, then edits); next: none. Regenerated docs/architecture pages also refresh 08-frontends paths.
+- FN-lint-api cms-api lint rule - blocked: deleting the two guard files (FileNames.architecture.spec.ts, FileNames.constants.ts) was denied; next: delete them, rerun test:unit.
+- FN-lint-1 abyss/file-names ESLint rule - awaiting qc tier 1 and commit (old guard deleted); next: FN-lint-api / -ui / -e2e.
 - FN-e2e-2 committed e48eaf5 (small constants merged, ApiPaths.constants.ts -> Api.endpoints.ts, three constants files deleted; user approved; qc-cli tier 1 pass). FN1c committed e77d0b2 (e2e file-name guard; test:contract renamed test:unit; qc-cli tier 1 pass, 6 node tests; user approved). Naming rollout (FN) done for all packages except the open follow-ups below. FN-e2e-1 committed 5981747 (qc tier 3 smoke pass 205). FN1b-web committed e78f417.
 - FN1b-admin cms-admin file-name guard - awaiting qc tier 1 and commit; next: FN1b-web.
 - FN-ad-5 Drop repeated Error from cms-admin auth and security error files - awaiting qc tier 1 + security-qc and commit; next: FN1b-admin.
