@@ -5,17 +5,17 @@ import {
   CONTENT_WILDCARD_SUBJECT,
   PERMISSION_ACTIONS,
   type PermissionAction,
-} from './access.constants';
+} from './Access.constants';
 import { COPY } from '../../config/Copy.constants';
 import type { ContentType } from '../content-types';
 import { FieldPicker } from './FieldPicker';
-import { cellKey, type CellRef } from './permission-matrix';
+import { cellKey, type CellRef } from './PermissionMatrix.rules';
 import {
   scopeFieldListKind,
   type ScopeState,
   setScopeFieldList,
   toggleScopeCell,
-} from './token-scope';
+} from './TokenScope.rules';
 
 const copy = COPY.access.tokenScope;
 const matrixCopy = COPY.access.matrix;

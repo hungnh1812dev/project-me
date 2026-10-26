@@ -1,4 +1,4 @@
-import { endOfDay, expiryIso, localDateOf } from './token-expiry';
+import { endOfDay, expiryIso, localDateOf } from './TokenExpiry.rules';
 
 describe('token expiry', () => {
   it('ends the chosen day at 23:59:59 local time', () => {

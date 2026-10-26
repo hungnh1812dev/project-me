@@ -7,15 +7,15 @@ import { COPY } from '../../config/Copy.constants';
 import { API_ERROR_CODES, HTTP_STATUS } from '../../config/Http.constants';
 import { APP_ROUTES } from '../../config/App.routes';
 import type { ContentType } from '../content-types';
-import type { Role } from './access.api';
-import { useAccessApi } from './access-api-context';
-import { toAccessError } from './access-error';
+import type { Role } from './Access.api';
+import { useAccessApi } from './AccessApi.context';
+import { toAccessError } from './Access.errors';
 import {
   ACCESS_QUERY_KEYS,
   useContentTypesQuery,
   useRolesQuery,
-} from './access-queries';
-import { useCallerAccess } from './caller-access';
+} from './Access.queries';
+import { useCallerAccess } from './useCallerAccess.query';
 import {
   LoadError,
   PageHeader,
@@ -31,8 +31,8 @@ import {
   sameMatrix,
   serializeMatrix,
   subjectOrder,
-} from './permission-matrix';
-import { OWNER_ROLE_SLUG } from './access.constants';
+} from './PermissionMatrix.rules';
+import { OWNER_ROLE_SLUG } from './Access.constants';
 
 const copy = COPY.access;
 

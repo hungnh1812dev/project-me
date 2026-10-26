@@ -15,24 +15,27 @@ import { useState } from 'react';
 import { FormProvider, useForm } from 'react-hook-form';
 import { z } from 'zod';
 
-import { type PermissionAction } from './access.constants';
+import { type PermissionAction } from './Access.constants';
 import { COPY } from '../../config/Copy.constants';
 import { API_TOKEN_LIMITS } from '../../config/Http.constants';
-import type { ApiToken } from './access.api';
-import { useContentTypesQuery } from './access-queries';
-import { useCallerAccess } from './caller-access';
+import type { ApiToken } from './Access.api';
+import { useContentTypesQuery } from './Access.queries';
+import { useCallerAccess } from './useCallerAccess.query';
 import { LoadError } from '../../components/PageStates';
-import { endOfDay, localDateOf } from './token-expiry';
+import { endOfDay, localDateOf } from './TokenExpiry.rules';
 import {
   scopeFromEntries,
   scopeSubjectOrder,
   type ScopeState,
-} from './token-scope';
+} from './TokenScope.rules';
 import { TokenReveal } from './TokenReveal';
 import { TokenScopeEditor } from './TokenScopeEditor';
-import { type TokenDialogOutcome, useTokenSubmit } from './use-token-submit';
+import {
+  type TokenDialogOutcome,
+  useTokenSubmit,
+} from './useTokenSubmit.mutation';
 
-export type { TokenDialogOutcome } from './use-token-submit';
+export type { TokenDialogOutcome } from './useTokenSubmit.mutation';
 
 const copy = COPY.access.tokenForm;
 

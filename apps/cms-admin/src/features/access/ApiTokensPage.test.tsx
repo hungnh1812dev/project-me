@@ -12,7 +12,7 @@ import { API_ENDPOINTS } from '../../config/Api.endpoints';
 import { APP_ROUTES } from '../../config/App.routes';
 import type { CurrentUser } from '../auth/Auth.slice';
 import type { ContentType } from '../content-types';
-import type { ApiToken, PermissionRow, Role } from './access.api';
+import type { ApiToken, PermissionRow, Role } from './Access.api';
 
 const { REFRESH, ME } = API_ENDPOINTS.AUTH;
 const { API_TOKENS, ROLES, CONTENT_TYPES } = API_ENDPOINTS;

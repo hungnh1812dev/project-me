@@ -1,8 +1,8 @@
 import { COPY } from '../../config/Copy.constants';
 import { APP_ROUTES } from '../../config/App.routes';
 import { defineApiService, type Feature } from '../../lib/FeatureDefinition';
-import { MediaApiProvider } from './media-api-context';
-import { createMediaApi } from './media.api';
+import { MediaApiProvider } from './MediaApi.context';
+import { createMediaApi } from './Media.api';
 import { MediaLibraryPage } from './MediaLibraryPage';
 
 export const mediaFeature: Feature = {

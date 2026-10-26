@@ -1,2 +1,2 @@
-export { getContentTypes } from './content-types.api';
-export type { ContentType, ContentTypeField } from './content-types.api';
+export { getContentTypes } from './ContentTypes.api';
+export type { ContentType, ContentTypeField } from './ContentTypes.api';

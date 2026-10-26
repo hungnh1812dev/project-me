@@ -1,11 +1,11 @@
 import { Checkbox, Radio } from '@abyss/form-commons';
 import { useId } from 'react';
 
-import { FIELD_PICKER_INDENT_REM } from './access.constants';
+import { FIELD_PICKER_INDENT_REM } from './Access.constants';
 import { COPY } from '../../config/Copy.constants';
 import type { ContentTypeField } from '../content-types';
-import type { FieldList } from './access.api';
-import { isCoveredBy, toggleField } from './permission-matrix';
+import type { FieldList } from './Access.api';
+import { isCoveredBy, toggleField } from './PermissionMatrix.rules';
 
 const copy = COPY.access.fields;
 

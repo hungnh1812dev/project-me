@@ -17,13 +17,13 @@ import { useState } from 'react';
 import { FormProvider, useForm } from 'react-hook-form';
 import { z } from 'zod';
 
-import { OWNER_ROLE_SLUG, UNASSIGNABLE_ROLE_SLUGS } from './access.constants';
+import { OWNER_ROLE_SLUG, UNASSIGNABLE_ROLE_SLUGS } from './Access.constants';
 import { COPY } from '../../config/Copy.constants';
 import { ACCOUNT_LIMITS, API_ERROR_CODES } from '../../config/Http.constants';
-import type { InvitedAccount, Role } from './access.api';
-import { useAccessApi } from './access-api-context';
-import { toAccessError } from './access-error';
-import { ACCESS_QUERY_KEYS } from './access-queries';
+import type { InvitedAccount, Role } from './Access.api';
+import { useAccessApi } from './AccessApi.context';
+import { toAccessError } from './Access.errors';
+import { ACCESS_QUERY_KEYS } from './Access.queries';
 
 const copy = COPY.access.invite;
 

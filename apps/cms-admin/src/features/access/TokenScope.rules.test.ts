@@ -1,4 +1,4 @@
-import type { TokenScopeEntry } from './access.api';
+import type { TokenScopeEntry } from './Access.api';
 import {
   sameScopeEntries,
   scopeFromEntries,
@@ -7,7 +7,7 @@ import {
   serializeScope,
   setScopeFieldList,
   toggleScopeCell,
-} from './token-scope';
+} from './TokenScope.rules';
 
 const entries: TokenScopeEntry[] = [
   { subject: 'article', action: 'read', readableFields: ['title'] },

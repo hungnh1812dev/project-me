@@ -1,9 +1,9 @@
-import { REVIEWER_SETTINGS_SUBJECT } from './reviewer.constants';
+import { REVIEWER_SETTINGS_SUBJECT } from './Reviewer.constants';
 import { COPY } from '../../config/Copy.constants';
 import { APP_ROUTES } from '../../config/App.routes';
 import { defineApiService, type Feature } from '../../lib/FeatureDefinition';
-import { ReviewerApiProvider } from './reviewer-api-context';
-import { createReviewerApi } from './reviewer.api';
+import { ReviewerApiProvider } from './ReviewerApi.context';
+import { createReviewerApi } from './Reviewer.api';
 import { ReviewerSessionsPage } from './ReviewerSessionsPage';
 
 export const reviewerFeature: Feature = {

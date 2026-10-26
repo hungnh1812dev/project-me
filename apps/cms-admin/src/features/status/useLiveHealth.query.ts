@@ -1,8 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
 
 import { HEALTH_STATUS_OK } from '../../config/Http.constants';
-import { useHealthApi } from './health-api-context';
-import { HEALTH_QUERY_KEYS } from './health.api';
+import { useHealthApi } from './HealthApi.context';
+import { HEALTH_QUERY_KEYS } from './Health.api';
 
 export type LiveHealthState = 'checking' | 'ok' | 'error';
 

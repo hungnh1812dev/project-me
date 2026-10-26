@@ -13,10 +13,10 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 
 import { COPY } from '../../config/Copy.constants';
-import { useMediaApi } from './media-api-context';
-import { toMediaError } from './media-error';
-import { MEDIA_QUERY_KEY } from './media-queries';
-import type { MediaFile } from './media.api';
+import { useMediaApi } from './MediaApi.context';
+import { toMediaError } from './Media.errors';
+import { MEDIA_QUERY_KEY } from './Media.queries';
+import type { MediaFile } from './Media.api';
 
 const copy = COPY.media.deleteDialog;
 

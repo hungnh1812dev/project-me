@@ -2,7 +2,7 @@ import { Button, type SheetColumn } from '@abyss/form-commons';
 
 import { COPY } from '../../config/Copy.constants';
 import { formatDate } from '../../lib/DateFormat.rules';
-import type { Account } from './access.api';
+import type { Account } from './Access.api';
 import { AccountRowActions, type RowNotice } from './AccountRowActions';
 
 const copy = COPY.access.accounts;

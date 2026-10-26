@@ -7,8 +7,8 @@ import {
   SYSTEM_SUBJECT_ACTIONS,
   SYSTEM_SUBJECTS,
   WRITABLE_FIELD_ACTIONS,
-} from './access.constants';
-import type { FieldList, PermissionRow } from './access.api';
+} from './Access.constants';
+import type { FieldList, PermissionRow } from './Access.api';
 
 /**
  * Editing model of a role's permission set. One cell per subject and

@@ -11,7 +11,7 @@ import { COPY } from '../../config/Copy.constants';
 import { API_ENDPOINTS } from '../../config/Api.endpoints';
 import { contentEditPath } from '../../config/App.routes';
 import type { ContentType } from '../content-types';
-import type { MediaFile } from './media.api';
+import type { MediaFile } from './Media.api';
 
 const { REFRESH, ME } = API_ENDPOINTS.AUTH;
 const { CONTENT_TYPES, DOCUMENTS, ROLES, MEDIA } = API_ENDPOINTS;

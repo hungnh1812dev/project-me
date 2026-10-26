@@ -11,11 +11,11 @@ import { useRestoreFocus } from '../../components/useRestoreFocus.state';
 
 import { COPY } from '../../config/Copy.constants';
 import { useCurrentUser } from '../auth';
-import type { ApiToken } from './access.api';
-import { apiTokenColumns } from './api-token-columns';
-import { isForbidden } from './access-error';
-import { useApiTokensQuery } from './access-queries';
-import { useCallerAccess } from './caller-access';
+import type { ApiToken } from './Access.api';
+import { apiTokenColumns } from './ApiToken.columns';
+import { isForbidden } from './Access.errors';
+import { useApiTokensQuery } from './Access.queries';
+import { useCallerAccess } from './useCallerAccess.query';
 import {
   LoadError,
   PageHeader,

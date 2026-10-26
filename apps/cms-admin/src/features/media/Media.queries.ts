@@ -1,7 +1,7 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 
-import { MEDIA_PAGE_SIZE } from './media.constants';
-import { useMediaApi } from './media-api-context';
+import { MEDIA_PAGE_SIZE } from './Media.constants';
+import { useMediaApi } from './MediaApi.context';
 
 export const MEDIA_QUERY_KEY = ['media', 'list'] as const;
 

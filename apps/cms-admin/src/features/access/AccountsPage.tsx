@@ -11,11 +11,11 @@ import { useRestoreFocus } from '../../components/useRestoreFocus.state';
 
 import { COPY } from '../../config/Copy.constants';
 import { useCurrentUser } from '../auth';
-import type { Account, InvitedAccount } from './access.api';
-import { isForbidden } from './access-error';
-import { accountColumns } from './account-columns';
-import { useAccountsQuery, useRolesQuery } from './access-queries';
-import { useCallerAccess } from './caller-access';
+import type { Account, InvitedAccount } from './Access.api';
+import { isForbidden } from './Access.errors';
+import { accountColumns } from './Account.columns';
+import { useAccountsQuery, useRolesQuery } from './Access.queries';
+import { useCallerAccess } from './useCallerAccess.query';
 import {
   DisableAccountDialog,
   type DisableOutcome,

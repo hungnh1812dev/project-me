@@ -1,8 +1,8 @@
 import { COPY } from '../../config/Copy.constants';
 import { APP_ROUTES } from '../../config/App.routes';
 import { defineApiService, type Feature } from '../../lib/FeatureDefinition';
-import { AccessApiProvider } from './access-api-context';
-import { createAccessApi } from './access.api';
+import { AccessApiProvider } from './AccessApi.context';
+import { createAccessApi } from './Access.api';
 import { AccountsPage } from './AccountsPage';
 import { ApiTokensPage } from './ApiTokensPage';
 import { RolePermissionsPage } from './RolePermissionsPage';

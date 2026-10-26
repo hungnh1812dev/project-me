@@ -1,4 +1,4 @@
-import type { PermissionRow } from './access.api';
+import type { PermissionRow } from './Access.api';
 import {
   cellIssues,
   cellsAt,
@@ -12,7 +12,7 @@ import {
   subjectOrder,
   toggleCell,
   toggleField,
-} from './permission-matrix';
+} from './PermissionMatrix.rules';
 
 function row(
   subject: string,

@@ -1,12 +1,12 @@
-import { accessFeature } from './access/feature';
+import { accessFeature } from './access/Access.feature';
 import { authFeature } from './auth/Auth.feature';
 import { contentFeature } from './content/feature';
-import { contentTypesFeature } from './content-types/feature';
+import { contentTypesFeature } from './content-types/ContentTypes.feature';
 import type { Feature } from '../lib/FeatureDefinition';
-import { mediaFeature } from './media/feature';
-import { reviewerFeature } from './reviewer/feature';
+import { mediaFeature } from './media/Media.feature';
+import { reviewerFeature } from './reviewer/Reviewer.feature';
 import { securityFeature } from './security/Security.feature';
-import { statusFeature } from './status/feature';
+import { statusFeature } from './status/Status.feature';
 
 /**
  * Every feature folder, keyed by folder name. Adding a feature is one line

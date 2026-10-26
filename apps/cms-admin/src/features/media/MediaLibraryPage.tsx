@@ -11,7 +11,7 @@ import { useClampedPage } from '../../components/useClampedPage.state';
 import { useRestoreFocus } from '../../components/useRestoreFocus.state';
 
 import { COPY } from '../../config/Copy.constants';
-import { MEDIA_ACCEPT, MEDIA_SUBJECT } from './media.constants';
+import { MEDIA_ACCEPT, MEDIA_SUBJECT } from './Media.constants';
 import { isForbidden, useCallerAccess } from '../access';
 import {
   LoadError,
@@ -21,11 +21,11 @@ import {
 import { Pagination } from '../../components/Pagination';
 import { DeleteMediaDialog } from './DeleteMediaDialog';
 import { EditAltDialog } from './EditAltDialog';
-import { mediaColumns } from './media-columns';
-import { useMediaApi } from './media-api-context';
-import { toMediaError } from './media-error';
-import { MEDIA_QUERY_KEY, useMediaQuery } from './media-queries';
-import type { MediaFile } from './media.api';
+import { mediaColumns } from './Media.columns';
+import { useMediaApi } from './MediaApi.context';
+import { toMediaError } from './Media.errors';
+import { MEDIA_QUERY_KEY, useMediaQuery } from './Media.queries';
+import type { MediaFile } from './Media.api';
 
 const copy = COPY.media;
 

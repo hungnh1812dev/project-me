@@ -8,18 +8,18 @@ import {
   API_TOKEN_LIMITS,
   HTTP_STATUS,
 } from '../../config/Http.constants';
-import type { ApiToken, UpdateApiTokenInput } from './access.api';
-import { useAccessApi } from './access-api-context';
-import { toAccessError } from './access-error';
-import { ACCESS_QUERY_KEYS } from './access-queries';
-import { cellIssues, cellsAt, type CellRef } from './permission-matrix';
-import { expiryIso, localDateOf } from './token-expiry';
+import type { ApiToken, UpdateApiTokenInput } from './Access.api';
+import { useAccessApi } from './AccessApi.context';
+import { toAccessError } from './Access.errors';
+import { ACCESS_QUERY_KEYS } from './Access.queries';
+import { cellIssues, cellsAt, type CellRef } from './PermissionMatrix.rules';
+import { expiryIso, localDateOf } from './TokenExpiry.rules';
 import {
   sameScopeEntries,
   serializeScope,
   type ScopeState,
   type SerializedScope,
-} from './token-scope';
+} from './TokenScope.rules';
 
 const copy = COPY.access.tokenForm;
 

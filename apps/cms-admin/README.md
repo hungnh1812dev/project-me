@@ -78,7 +78,7 @@ So far: sign-in (T11) and, behind it, a status page that calls
   server validates). Saving sends the whole permission set (`PUT
 /roles/:id/permissions`); 400 issues and `PERMISSION_NOT_HELD` indexes are
   mapped back to matrix rows. Actions are hidden from the caller's own role
-  rows in `GET /roles` (`caller-access.ts`; owner = all; Users / Roles and permissions nav
+  rows in `GET /roles` (`useCallerAccess.query.ts`; owner = all; Users / Roles and permissions nav
   links hidden when not readable). This is only a hint: cms-api enforces
   every rule and its answers (403, 404, 409) are handled in the UI. Dialogs
   use the form-commons Radix `Dialog`; `components/Modal.tsx` (2FA) wraps it
@@ -179,7 +179,7 @@ So far: sign-in (T11) and, behind it, a status page that calls
   sections hidden; user block with "Security" and "Sign out" at the bottom;
   `app/SideMenu.tsx`, `app/MobileMenu.tsx`).
 - **Feature registry** (`src/features/registry.ts`): each feature folder has a
-  `feature.ts` with its `routes`, optional `navItems` (label, path, permission
+  `<Name>.feature.ts` with its `routes`, optional `navItems` (label, path, permission
   subject and action) and optional `apiServices` (`defineApiService(createXApi,
 XApiProvider)`). `app/AppRoutes.setup.tsx` and `AppShell` iterate the registry;
   nav order is registry order. A feature whose links depend on loaded data
@@ -190,7 +190,7 @@ XApiProvider)`). `app/AppRoutes.setup.tsx` and `AppShell` iterate the registry;
   from the registry and `AppProviders` nests the providers inside the session
   provider. Routes are protected unless listed in
   `PUBLIC_ROUTE_PATHS` (`features/auth/Auth.feature.ts`, the four auth pages). A new
-  feature is one folder with `feature.ts` plus one line in the registry.
+  feature is one folder with `<Name>.feature.ts` plus one line in the registry.
 
 End-to-end coverage lives in [`apps/e2e`](../e2e/README.md).
 
@@ -232,7 +232,7 @@ pnpm --filter @abyss/cms-admin dev       # http://localhost:5173 (DEV_SERVER_POR
   `copy/index.ts`; only that folder imports a section file (ESLint).
 - `src/config/` keeps only cross-feature constants (`Http.constants`,
   `Auth.constants`, `App.routes`). A feature's own constants live in
-  `src/features/<name>/<name>.constants.ts`; other code reads them through
+  `src/features/<name>/<Name>.constants.ts`; other code reads them through
   that feature's `index.ts` (ESLint forbids importing another feature's
   constants file).
 - `src/lib/Api.client.ts` is the Axios instance. It strips trailing slashes

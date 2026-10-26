@@ -15,11 +15,11 @@ import { useState } from 'react';
 import { FormProvider, useForm } from 'react-hook-form';
 
 import { COPY } from '../../config/Copy.constants';
-import { MEDIA_ALT_MAX_LENGTH } from './media.constants';
-import { useMediaApi } from './media-api-context';
-import { toMediaError } from './media-error';
-import { MEDIA_QUERY_KEY } from './media-queries';
-import type { MediaFile } from './media.api';
+import { MEDIA_ALT_MAX_LENGTH } from './Media.constants';
+import { useMediaApi } from './MediaApi.context';
+import { toMediaError } from './Media.errors';
+import { MEDIA_QUERY_KEY } from './Media.queries';
+import type { MediaFile } from './Media.api';
 
 const copy = COPY.media.altDialog;
 

@@ -14,10 +14,10 @@ import { useState } from 'react';
 
 import { COPY } from '../../config/Copy.constants';
 import { API_ERROR_CODES } from '../../config/Http.constants';
-import type { ApiToken } from './access.api';
-import { useAccessApi } from './access-api-context';
-import { toAccessError } from './access-error';
-import { ACCESS_QUERY_KEYS } from './access-queries';
+import type { ApiToken } from './Access.api';
+import { useAccessApi } from './AccessApi.context';
+import { toAccessError } from './Access.errors';
+import { ACCESS_QUERY_KEYS } from './Access.queries';
 
 const copy = COPY.access.revokeToken;
 

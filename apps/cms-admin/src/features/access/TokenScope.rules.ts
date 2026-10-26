@@ -4,9 +4,9 @@ import {
   type PermissionAction,
   READABLE_FIELD_ACTIONS,
   WRITABLE_FIELD_ACTIONS,
-} from './access.constants';
-import type { FieldList, TokenScopeEntry } from './access.api';
-import type { CellRef, FieldListKind } from './permission-matrix';
+} from './Access.constants';
+import type { FieldList, TokenScopeEntry } from './Access.api';
+import type { CellRef, FieldListKind } from './PermissionMatrix.rules';
 
 /**
  * Editing model of an API token scope: one cell per content subject

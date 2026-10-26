@@ -14,8 +14,8 @@ import { COPY } from '../../config/Copy.constants';
 import { isForbidden } from '../access';
 import { LoadError, TableSkeleton } from '../../components/PageStates';
 import { Pagination } from '../../components/Pagination';
-import { useMediaQuery } from './media-queries';
-import type { MediaFile } from './media.api';
+import { useMediaQuery } from './Media.queries';
+import type { MediaFile } from './Media.api';
 
 const copy = COPY.media.picker;
 const IMAGE_PREFIX = 'image/';

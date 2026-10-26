@@ -11,7 +11,7 @@ import {
   fieldListKindOf,
   setConditionsText,
   setFieldList,
-} from './permission-matrix';
+} from './PermissionMatrix.rules';
 
 const copy = COPY.access;
 

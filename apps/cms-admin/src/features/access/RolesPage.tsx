@@ -7,9 +7,9 @@ import {
 } from '@abyss/form-commons';
 import { COPY } from '../../config/Copy.constants';
 import { rolePermissionsPath } from '../../config/App.routes';
-import type { Role } from './access.api';
-import { isForbidden } from './access-error';
-import { useRolesQuery } from './access-queries';
+import type { Role } from './Access.api';
+import { isForbidden } from './Access.errors';
+import { useRolesQuery } from './Access.queries';
 import {
   LoadError,
   PageHeader,

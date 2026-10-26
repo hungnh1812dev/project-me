@@ -5,7 +5,7 @@ import {
   CONTENT_WILDCARD_SUBJECT,
   PERMISSION_ACTIONS,
   type PermissionAction,
-} from './access.constants';
+} from './Access.constants';
 import { COPY } from '../../config/Copy.constants';
 import type { ContentType } from '../content-types';
 import { CellDetails } from './CellDetails';
@@ -16,7 +16,7 @@ import {
   isSystemSubject,
   type MatrixState,
   toggleCell,
-} from './permission-matrix';
+} from './PermissionMatrix.rules';
 
 const copy = COPY.access.matrix;
 

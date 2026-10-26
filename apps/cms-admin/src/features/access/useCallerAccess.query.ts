@@ -1,7 +1,7 @@
-import { OWNER_ROLE_SLUG, type PermissionAction } from './access.constants';
+import { OWNER_ROLE_SLUG, type PermissionAction } from './Access.constants';
 import { useCurrentUser } from '../auth';
-import type { Role } from './access.api';
-import { useRolesQuery } from './access-queries';
+import type { Role } from './Access.api';
+import { useRolesQuery } from './Access.queries';
 
 /**
  * What the signed-in account may do on system subjects, for hiding actions.

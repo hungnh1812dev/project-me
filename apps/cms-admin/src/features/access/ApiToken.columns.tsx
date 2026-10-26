@@ -2,8 +2,8 @@ import { Button, type SheetColumn } from '@abyss/form-commons';
 
 import { COPY } from '../../config/Copy.constants';
 import { formatDate } from '../../lib/DateFormat.rules';
-import type { ApiToken } from './access.api';
-import { scopeSummary } from './token-scope';
+import type { ApiToken } from './Access.api';
+import { scopeSummary } from './TokenScope.rules';
 
 const copy = COPY.access.apiTokens;
 const matrixCopy = COPY.access.matrix;

@@ -120,10 +120,11 @@ const NO_NATIVE_DIALOG = {
 const NO_LITERAL_QUERY_KEY = {
   selector: "Property[key.name='queryKey'] > ArrayExpression",
   message:
-    'Query keys come from the feature owner (*-queries.ts, useSetupStatus.query.ts), not literals.',
+    'Query keys come from the feature owner (*.queries.ts, useSetupStatus.query.ts), not literals.',
 };
 const QUERY_KEY_OWNERS = [
-  'src/**/*-queries.ts',
+  'src/**/*.queries.ts',
+  'src/features/content/content-queries.ts',
   'src/**/useSetupStatus.query.ts',
 ];
 

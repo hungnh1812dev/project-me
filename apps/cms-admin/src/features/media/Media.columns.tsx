@@ -2,7 +2,7 @@ import { Button, formatFileSize, type SheetColumn } from '@abyss/form-commons';
 
 import { COPY } from '../../config/Copy.constants';
 import { formatDate } from '../../lib/DateFormat.rules';
-import type { MediaFile } from './media.api';
+import type { MediaFile } from './Media.api';
 
 const copy = COPY.media;
 const IMAGE_PREFIX = 'image/';

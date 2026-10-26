@@ -4,12 +4,12 @@ import { useState } from 'react';
 import { useController } from 'react-hook-form';
 
 import { COPY } from '../../config/Copy.constants';
-import { MEDIA_SUBJECT } from './media.constants';
+import { MEDIA_SUBJECT } from './Media.constants';
 import { useCallerAccess } from '../access';
-import { useMediaApi } from './media-api-context';
-import { toMediaError } from './media-error';
-import { libraryFileToInput, mediaToForm } from './media-field-value';
-import { MEDIA_QUERY_KEY } from './media-queries';
+import { useMediaApi } from './MediaApi.context';
+import { toMediaError } from './Media.errors';
+import { libraryFileToInput, mediaToForm } from './MediaFieldValue.rules';
+import { MEDIA_QUERY_KEY } from './Media.queries';
 import { MediaPickerDialog } from './MediaPickerDialog';
 
 const copy = COPY.media;

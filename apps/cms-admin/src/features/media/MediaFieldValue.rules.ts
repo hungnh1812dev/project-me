@@ -1,6 +1,6 @@
 import type { MediaInputFile } from '@abyss/form-commons';
 
-import type { MediaFile } from './media.api';
+import type { MediaFile } from './Media.api';
 
 /** A document's embedded file (or a stored value) as the field holds it; anything else is empty. */
 export function mediaToForm(value: unknown): MediaInputFile | null {

@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 
 import { COPY } from '../../config/Copy.constants';
 import type { ContentTypeField } from '../content-types';
-import type { FieldList } from './access.api';
+import type { FieldList } from './Access.api';
 import { FieldPicker } from './FieldPicker';
 
 const copy = COPY.access.fields;

@@ -17,7 +17,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useId, useState } from 'react';
 
 import { COPY } from '../../config/Copy.constants';
-import { REVIEWER_SETTINGS_SUBJECT } from './reviewer.constants';
+import { REVIEWER_SETTINGS_SUBJECT } from './Reviewer.constants';
 import { isForbidden, toAccessError, useCallerAccess } from '../access';
 import {
   LoadError,
@@ -27,13 +27,13 @@ import {
 import { Pagination } from '../../components/Pagination';
 import { useClampedPage } from '../../components/useClampedPage.state';
 import { formatDateTime } from '../../lib/DateFormat.rules';
-import { useReviewerApi } from './reviewer-api-context';
+import { useReviewerApi } from './ReviewerApi.context';
 import {
   REVIEWER_QUERY_KEYS,
   useReviewerEnabledQuery,
   useReviewerSessionsQuery,
-} from './reviewer-queries';
-import type { ReviewerSession } from './reviewer.api';
+} from './Reviewer.queries';
+import type { ReviewerSession } from './Reviewer.api';
 
 const copy = COPY.reviewer;
 
