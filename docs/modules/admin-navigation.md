@@ -30,7 +30,7 @@ A section or sub-heading with no visible item is not rendered (today both conten
 - `lib/feature-definition.tsx` (shared, feature-free) owns the nav contract. Additive changes:
   - `FeatureNavItem` gains `section: NavSectionId`.
   - `Feature` gains optional `useNavItems?: () => NavItemsState` (`{ items, isLoading, hasFailed, retry }`) for items that depend on data; the menu shows its loading and error rows under `DATA_BACKED_SECTION_ID`. Static items stay in `navItems`.
-- `lib/nav-sections.ts` (new, feature-free) owns the section list `NAV_SECTIONS` (id, label from `COPY`, order, optional sub-sections). Ids: `singleTypes`, `collectionTypes`, `utilities`, `systemSettings`; `singleTypes` and `collectionTypes` are sub-sections of `content`.
+- `lib/NavSections.constants.ts` (new, feature-free) owns the section list `NAV_SECTIONS` (id, label from `COPY`, order, optional sub-sections). Ids: `singleTypes`, `collectionTypes`, `utilities`, `systemSettings`; `singleTypes` and `collectionTypes` are sub-sections of `content`.
 - `features/content` owns the content-type links (`useContentNavItems`, exposed through `contentFeature.useNavItems`), because it owns the `/content/:slug` routes; it reads the catalog through the `content-types` facade (allowed by the tier order).
 - `features/access`, `features/media`, `features/reviewer` only add `section` to their existing nav items.
 - `app/` owns the layout: `AppShell.tsx` (frame), `SideMenu.tsx` (renders sections from `NAV_SECTIONS` plus every feature's items, filtered by `caller.can`), `MobileMenu.tsx` (sheet). `app/` is the composition root, so it may import features.

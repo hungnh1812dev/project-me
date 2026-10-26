@@ -71,7 +71,7 @@ No row ever holds the token, the password or (for rejected attempts) the email.
 ## Admin console (cms-admin `features/auth`)
 
 - New public route `APP_ROUTES.SETUP = '/setup'`, outside `ProtectedRoute`, with `AuthPageLayout` like the login and reset pages.
-- `setup.api.ts`: `getSetupStatus()` and `createOwner(body)`; TanStack Query key `['setup', 'status']`, `staleTime: 0`.
+- `Setup.api.ts`: `getSetupStatus()` and `createOwner(body)`; TanStack Query key `['setup', 'status']`, `staleTime: 0`.
 - **Login page:** reads the status. When `open`, it shows an info notice above the form: "This console has no owner yet." with a primary link-button "Set up the owner account" to `/setup`. The login form stays usable. When the status call fails, the login page shows nothing extra (setup is never the default).
 - **Setup page** (`OwnerSetupPage.tsx`):
   - On load: status `open: false` -> `Navigate` to `/login` (replace). Loading -> the existing `SessionLoading`.

@@ -79,6 +79,60 @@ Checkpoint 3: ✅ passed (user approved Phase 4 on 2026-10-21).
 | T29 | MediaInput + media library UI | apps/cms-admin, packages/form-commons | done | 9a33089 |
 
 
+## Phase SM: cms-admin side menu (closed 2026-10-26)
+Base: 1250e6c · Phase checks: qc pass (tier 3, e2e 205) · security pass (dynamic on the full stack) · Checkpoint: approved by user (2026-10-26) · feature-registry e2e fix committed fa79e94
+
+| ID | Title | Scope | Status | Commit |
+|---|---|---|---|---|
+| SM1 | Nav sections in the feature contract | ui-builder | done (qc tier 1 pass, browser walk limited to the diff) | f591bdd |
+| SM2 | Content-type nav items from the catalog | ui-builder | done (qc-browser tier 2 pass, 6 e2e with a faked single type) | b1e1bce |
+| SM3 | Side-menu layout | ui-builder | done (qc-browser tier 2 pass, 5 e2e; reviewer view, no-system-rights role, skeleton, scroll and contrast not checked live) | 2fc0c44 |
+| SM4 | e2e for the side menu | qc | done (qc-cli tier 2 pass, 9 e2e) | 5497ea2 |
+
+## Phase CR: cms-api clean-architecture refactor (closed 2026-10-26)
+Source: `tasks/todo.md` "Phase CR" (approved 2026-10-25) · Plan: `tasks/plan.md` CR0-CR7 · Decisions: ADR 0006 §7 · Base: 1988376 · Phase checks: qc pass (tier 3, e2e 191) · security pass (dynamic on the full stack) · Checkpoint: approved by user (2026-10-26) · Open after the phase: multer advisory (user decision), API security headers (SPEC §7)
+
+| ID | Title | Scope | Status | Commit |
+|---|---|---|---|---|
+| CR-pf-1 | DomainError, describeError and kind-to-status table | core-builder (gate) | done | ba1df5a |
+| CR-pf-2 | Layer-aware import graph and pinned-path table | core-builder (gate) | done | e2c5e05 |
+| CR-pf-3 | LAYER_RULES and the layer guard | core-builder | done | 78cc452 |
+| CR-pf-4 | Platform splits and AppLogger port | core-builder | done | cdad48d |
+| CR-pf-5 | TransactionRunner port and Prisma runner (rework: synchronous-only callbacks, ADR 0006 §7.12) | core-builder (gate) | done | 86df4cb, 44339a7 (rework) |
+| CR-pf-6 | Domain constants for Prisma enums | core-builder (gate) | done | 230f6c0 |
+| CR-00 | SPEC §2/§5 for the layer layout | planner | done | 419bac3 |
+| CR-hc-1 | health in layers (warm-up) | core-builder | done | bcc96d0 |
+| CR-hc-2 | content-types pilot in layers, then user checkpoint | core-builder | done | f252559 |
+| CR-ce-1 | content-engine domain moves | core-builder | done | 3e58fe8 |
+| CR-ce-2 | content-engine ports, adapters and content transaction runner | core-builder (gate) | done | 5ed2ff5 |
+| CR-dc-1 | documents domain and http moves | core-builder (gate) | done | 0228f1e |
+| DEV-STACK | `pnpm dev:stack` for tier 2 e2e | core-builder | done | c2265d5 |
+| CR-gq-1 | graphql http moves | core-builder | done | 9b00750 |
+| CR-dc-2 | documents repository, presence and activity ports | core-builder (gate) | done | f5d51ab |
+| CR-dc-3 | documents use cases with DomainError, Clock, TransactionRunner | core-builder (gate) | done | 90a1e6e |
+| CR-gq-2 | graphql executor into `http/` | core-builder | done | c6edef3 |
+| CR-ac-1 | access core domain | core-builder (gate) | done | 0d1c51f |
+| CR-ac-2 | access core application and adapters | core-builder (gate) | done | e9149fc |
+| CR-ac-3 | access core DomainError swap | core-builder (gate) | done | 22fc2bd |
+| CR-ac-4 | access core http and document-auth sub-module | core-builder (gate) | done | 006a6c0 |
+| CR-sa-1 | security-audit with AuditLogWriter port | core-builder (gate) | done | a04513d |
+| CR-id-1 | identity domain and constants split | core-builder (gate) | done | 9d5c022 |
+| CR-id-2 | token, OTP and TOTP behind ports | core-builder (gate) | done | 5db37ad |
+| CR-id-3 | sign-in, password and 2FA use cases with DomainError | core-builder (gate) | done | a942c94 |
+| CR-id-4 | identity http, JWT strategy split, owner setup and CLIs | core-builder (gate) | done | b830c4f |
+| CR-ac-5 | access management domain, application and adapters | core-builder (gate) | done | 95f5a08 |
+| CR-ac-6 | access roles/ and role seeds | core-builder (gate) | done | d441349 |
+| CR-md-1 | media domain and http | core-builder (gate) | done | a1a07d2 |
+| CR-md-2 | media upload pipeline split | core-builder (gate) | done | 0181edc |
+| CR-md-3 | media library use cases, storage port, purge job | core-builder (gate) | done | f447037 |
+| CR-rv-1 | reviewer domain and http | core-builder (gate) | done | 93867ac |
+| CR-rv-2 | reviewer application, adapters and cleanup job | core-builder (gate) | done | 3161867 |
+| CR-cs-1 | consolidate health + content-types | core-builder | done | a7543ba |
+| CR-cs-2 | consolidate platform files of CR-pf-1..6 | core-builder | done | 5a1101d |
+| CR-cs-3 | consolidate content-engine | core-builder (Security gate: yes) | done | d0cb7ca |
+| CR-ce-4 | DEFAULT_CONTENT_PATHS into content-engine adapters; removes cli/content-paths.ts | core-builder | done | 87bbd8b |
+| CR-cl-1 | close: contract imports, ownership guard, transitional helpers removed | core-builder | done | 1250e6c |
+
 ## Log
 - docs: SPEC.md + tasks/ committed @ 29a91de
 - T01 done @ 0b07779 (TS pinned 6.0.3, ADR 0001); worker ~62k tokens, continuing

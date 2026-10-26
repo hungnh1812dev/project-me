@@ -221,7 +221,7 @@ Exit criteria: all packages green; smoke green; qc REGRESSION pass; security-qc 
 Tasks: R4-01, R4-02, R4-03, R4-04, R4-05, R4-06, R4-07, R4-08, R4-09, R4-10, R4-11, R4-12, R4-13, R4-14, R4-15, R4-16, R4-17, R4-18, R4-19, R4-20, R4-21, R4-22, R4-23, R4-24, R4-25, R4-26, R4-27, R4-28, R4-29
 
 ### Architecture and navigation (CA, CR, DV, SM, FN, MF) — PROPOSED 2026-10-25
-Details in `todo.md` "Architecture and navigation". Designs: ADR 0006 (cms-api layers), ADR 0007 (micro-frontend options), ADR 0008 (file naming), `docs/modules/admin-navigation.md`. Phases CA, DV and SM are independent and may run in parallel (qc / core-builder / ui-builder). FN waits for Q-FN answers; MF waits for the user's option pick. The cms-api refactor phases CR0-CR7 were written by CA5 (below Phase MF); CR runs on core-builder, so it does not run in parallel with DV or the cms-api part of FN (FN1a).
+Details in `todo.md` "Architecture and navigation". Designs: ADR 0006 (cms-api layers), ADR 0007 (micro-frontend options), ADR 0008 (file naming), `docs/modules/admin-navigation.md`. Phases CA, DV and SM are independent and may run in parallel (qc / core-builder / ui-builder). FN waits for Q-FN answers; MF waits for the user's option pick. The cms-api refactor phases CR0-CR7 were written by CA5 (below Phase MF); CR runs on core-builder, so it did not run in parallel with DV or the cms-api part of FN (FN1). Phase FN was revised 2026-10-26 (REPLAN FN1): see Phase FN.
 
 ## Phase CA: cms-api clean-architecture audit
 Goal: every cms-api file is placed in a target layer (ADR 0006) with its violations listed, so the refactor can be planned module by module.
@@ -253,12 +253,17 @@ Outputs:
 Exit criteria: cms-admin lint, typecheck, test, build green; smoke and e2e green; qc REGRESSION (browser) pass.
 Tasks: SM1, SM2, SM3, SM4
 
-## Phase FN: file naming rule
-Goal: the `<use><PascalName>.<function>.<ext>` rule is in SPEC §5 and guarded in every package in scope.
-Inputs: Q-FN1..Q-FN6 answers.
-Outputs: SPEC §5 table; one file-name guard per package. Check: SV; a wrongly named scratch file fails the guard.
-Exit criteria: all packages green with the guards.
-Tasks: FN1 (FN1a, FN1b, FN1c when scheduled)
+## Phase FN: file naming rule (revised 2026-10-26, REPLAN FN1)
+Goal: every TypeScript file and folder in every package follows the rule (kebab-case folders, `<use><PascalName>[.<function>].<ext>` files with a word only when needed, SPEC §5, ADR 0008), checked by one guard per package with no exception list.
+Inputs: FN1 core guards (0b03efe); SPEC §5 table and ADR 0008 revision (planner, 2026-10-26); user answers Q-FN7..Q-FN11 (2026-10-26, ADR 0008 "User answers"). No task waits on a question.
+Outputs:
+- Revised cms-api and base-config guards. Check (CLI): `pnpm --filter @abyss/cms-api test:unit -- FileNames` and `pnpm --filter @abyss/base-config test`; a scratch `bad-name.ts` and a scratch `BadFolder/` fail.
+- Renamed packages, one commit per task. Check (CLI): each package's guard passes with no `KNOWN_FILE_NAME_EXCEPTIONS`; `find apps packages -path '*/node_modules' -prune -o \( -name '*.ts' -o -name '*.tsx' \) -print` under `src/`, `test/`, `tests/` lists no lower-case file outside the framework names; the reviewed old -> new maps apply the ADR 0008 "needed" test (components without a word).
+- Guards in form-commons, web, cms-admin, e2e. Check (CLI): each package's test run includes `FileNames.architecture.test.ts`; a scratch bad file fails.
+- Same behaviour. Check: unit and integration counts unchanged; `pnpm exec playwright test --list` count unchanged (205); tier 3 smoke with e2e green at the phase checkpoint.
+Exit criteria: `pnpm lint typecheck test build` green; cms-api full integration green; `SMOKE_E2E=1 pnpm smoke` green; security-qc pass on FN-api-3, FN-web-1, FN-ad-2, FN-ad-5; planner updates the SPEC §5 tree to the new names.
+Tasks (three chains, may run in parallel): core-builder FN1r -> FN-api-1 -> FN-api-2 -> FN-api-3 -> FN-api-4, and FN-bc-1 · ui-builder FN-kit-1 -> FN1b-kit -> FN-web-1 -> FN-web-2 -> FN1b-web -> FN-ad-1 -> FN-ad-2 -> FN-ad-3 -> FN-ad-4 -> FN-ad-5 -> FN1b-admin · qc FN-e2e-1 -> FN-e2e-2 -> FN1c
+Scheduling with other work: CR is closed (no CR task carries renames any more). The MF feature-package tasks are planned after FN-ad-4 (user answer Q-FN9) and move already-named files. T30 (CV page) runs after FN-web-1 or names its files by the rule. Not in parallel with the same files: the API security-headers task (FN-api-2), the dev-stack port-readiness follow-up (FN-api-3, `scripts/dev-stack.sh`), the side-menu a11y follow-up (FN-ad-1). FN-e2e-1 changes spec paths that `project.md` and `conventions.md` cite; the manager updates them.
 
 ## Phase MF: micro-frontends
 Goal: the chosen micro-frontend option (ADR 0007) is planned.

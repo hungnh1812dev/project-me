@@ -157,11 +157,11 @@ abyss/
 │   │   ├── prisma/               # core schema + migrations (public)
 │   │   ├── content/              # schemas/*.json + generated migrations/ + schema.graphql (printed SDL, D18)
 │   │   ├── src/
-│   │   │   ├── main.ts · bootstrap.ts · app.module.ts · app.setup.ts   # composition root
-│   │   │   ├── architecture/     # import-graph helper + architecture specs, module-edges.constants.ts (R1-01, R1-03), layer-rules.constants.ts (LAYER_RULES, §2)
-│   │   │   ├── config/           # env.schema.ts (Zod), app-config.ts (frozen IAppConfig), config.constants.ts, config.module.ts
-│   │   │   ├── common/           # pure: constants/, errors/ (DomainError), time/ (clock.module.ts), types/, validation/
-│   │   │   │                     # HTTP pipeline: filters/, guards/, http/ (incl. client-ip.module.ts), middleware/, rate-limit/
+│   │   │   ├── main.ts · Bootstrap.setup.ts · App.module.ts · App.setup.ts   # composition root
+│   │   │   ├── architecture/     # *.analyzer.ts source readers + *.architecture.spec.ts guards, ModuleEdges.constants.ts (R1-01, R1-03), LayerRules.constants.ts (LAYER_RULES, §2)
+│   │   │   ├── config/           # Env.schema.ts (Zod), AppConfig.setup.ts (frozen IAppConfig), Config.constants.ts, Config.module.ts
+│   │   │   ├── common/           # pure: constants/, errors/ (DomainError), time/ (Clock.service.ts, Clock.module.ts), types/, validation/
+│   │   │   │                     # HTTP pipeline: filters/, guards/, http/ (incl. ClientIp.module.ts), middleware/, rate-limit/ (incl. ThrottleSubject.port.ts)
 │   │   │   ├── generated/        # Prisma client (generated; never edited)
 │   │   │   ├── infrastructure/   # adapters and *.port.ts used by several modules: database/ (TransactionRunner.port.ts), mail/, logging/ (AppLogger.port.ts),
 │   │   │   │                     # scheduling/ (CR-md-3); activity/, media/, turnstile/ and the database-health port move into documents, media, reviewer
@@ -195,24 +195,58 @@ abyss/
 
 Items marked with a task ID (R1-xx, R3-xx, T30, CR-xx) are approved but not built yet; that task creates or moves them.
 
-cms-api file names follow ADR 0008 (`<PascalName>.<function>.ts`, for example `Health.controller.ts`, `TransactionRunner.port.ts`, `ApiTokenExpiry.rules.ts`): new files now, and an existing file when its CR task moves it (Q-FN2). A `*.port.ts` file sits in a module's `application/` or in `src/infrastructure/`. FN1 replaces the rules and the suffix table below with the full ADR 0008 table.
+File names in the tree are the names on disk today; the phase FN tasks rename them to the rule below, and the planner updates the tree when phase FN closes.
 
-Naming rules: files are `kebab-case.ts`. React component files keep `PascalCase.tsx`; Next.js route files keep their framework names (`page.tsx`, `layout.tsx`). There is one endpoint map per frontend at `src/config/endpoints.ts`. A dotted suffix names the file's role:
+Naming rules (ADR 0008, user decisions 2026-10-25 and 2026-10-26): one format in every TypeScript package (cms-api, cms-admin, web, form-commons, e2e, base-config).
 
-| Suffix                                                     | Where                     | Holds                                                                                  |
-| ---------------------------------------------------------- | ------------------------- | -------------------------------------------------------------------------------------- |
-| `.constants.ts`                                            | all                       | named constants (placement below)                                                      |
-| `.module.ts`, `.controller.ts`, `.service.ts`, `.guard.ts` | cms-api                   | Nest roles                                                                             |
-| `.requests.ts`                                             | cms-api                   | the Zod request schemas and parsers of one controller                                  |
-| `.port.ts`                                                 | cms-api `infrastructure/` | the interface and injection token an adapter implements                                |
-| `.routes.ts`                                               | cms-api                   | one module's route group (R2-10); `common` keeps only the API prefix and shared params |
-| `.architecture.spec.ts`                                    | cms-api                   | structure guards (import graph, metadata)                                              |
-| `.api.ts`                                                  | cms-admin, web            | one feature's HTTP calls                                                               |
-| `.slice.ts`                                                | cms-admin                 | a Redux Toolkit slice (only `auth.slice.ts` today)                                     |
-| `.query.ts`, `.server.ts`                                  | web                       | a GraphQL document; server-only code                                                   |
-| `.spec.ts` / `.test.ts(x)`                                 | cms-api / frontends       | tests                                                                                  |
+- Folders are `kebab-case` (`content-engine/`, `bulk-action-bar/`); framework folder syntax is kept (Next.js `[param]`, `(group)`, `_private`).
+- Files are `<PascalName>.<function>.<ext>` when the file needs a function word (`Health.controller.ts`, `TransactionRunner.port.ts`, `ApiTokenExpiry.rules.ts`), otherwise `<PascalName>.<ext>`. The `<PascalName>` never repeats its word (`Security.errors.ts`, not `SecurityError.errors.ts`; error files are `<Feature>.errors.ts`, or `<Flow>.errors.ts` when a feature has several: `Login.errors.ts`). React hook files add `use` and always take a hook word: `use<PascalName>.<query | mutation | state>.<ext>` (`useSetupStatus.query.ts`, `useCurrentUser.state.ts`).
+- When a word is needed (ADR 0008, first match decides): one hook -> hook word with `use`; several TanStack hooks of one feature -> `<Feature>.queries.ts`, no `use`; one React component (pages included) -> no word, file name = component name (`LoginPage.tsx`, `Button.tsx`); a row below describes what the file holds -> that word; no row fits -> no word, and the builder reports the file to the planner. cms-api files always carry a word.
+- Tests append the package's test suffix to the full name: `.spec.ts` in cms-api and e2e (e2e `tests/`), `.test.ts(x)` elsewhere and for the e2e `node:test` checks in `apps/e2e/src/` (`AccessPolicy.service.spec.ts`, `useSetupStatus.query.test.ts`, `LoginPage.test.tsx`). Tests split by scenario add one lower-case variant before the suffix (`AccountMenu.login.test.tsx`).
+- Kept: framework-fixed names (`index.ts`, `main.ts(x)`, `.d.ts`, Next.js route files `page.tsx` / `layout.tsx` / `not-found.tsx`, `proxy.ts`, `instrumentation.ts`), tool configs at a package root (`vite.config.ts`, `eslint.config.mjs`, ...), generated code.
+- Types-only and re-export-only files are not named: they are merged into their nearest neighbour (`code-standards` §4.4).
+- Each package has a guard (`FileNames.architecture.spec.ts` / `.test.ts`) that reads its `FILE_FUNCTION_WORDS`; files not renamed yet are in `KNOWN_FILE_NAME_EXCEPTIONS`, which only shrinks. The renames are the phase FN tasks.
+- A `.port.ts` file sits in a cms-api module's `application/`, in `src/infrastructure/` (role `port`: `application/` may import it), or in a `src/common/` pipeline folder as a seam the app binds (role of its folder, e.g. `pipeline`: only `http/` may import it; `ThrottleSubject.port.ts`). There is one endpoint map per frontend in `src/config/` (`Api.endpoints.ts`), and one for the e2e suite in `apps/e2e/src/Api.endpoints.ts` (FN-e2e-2).
 
-Constants placement (Q-A1): a constant lives next to the one module or feature that owns it, in `<module>.constants.ts` (cms-api) or `features/<feature>/<feature>.constants.ts` (frontends). Other modules or features read it through the owner's `index.ts`. cms-api `common/constants/` and frontend `config/` hold only values shared by several modules or by the app shell (env, endpoints, routes, HTTP, auth, copy).
+Function words (at most one per file; a new word is one row here and one entry in the package's `FILE_FUNCTION_WORDS`; React components have no row on purpose):
+
+| Word                                         | Where                                   | Holds                                                                            | Example                                                    |
+| -------------------------------------------- | --------------------------------------- | -------------------------------------------------------------------------------- | ---------------------------------------------------------- |
+| `setup`                                      | all                                     | app wiring and bootstrap; app config loading; a test-runner hook (global setup or teardown, setup file) | `App.setup.ts`, `AppConfig.setup.ts`, `Jest.setup.ts` |
+| `module`                                     | cms-api                                 | a Nest module (wiring only)                                                      | `Identity.module.ts`                                       |
+| `controller`, `requests`                     | cms-api `http/`                         | a Nest controller; the Zod request schemas and parsers of one controller         | `Accounts.controller.ts`, `Accounts.requests.ts`           |
+| `routes`                                     | cms-api; frontends                     | one module's route group (`common` keeps only the API prefix); frontend UI routes | `Identity.routes.ts`, `App.routes.ts`                    |
+| `guard`, `decorator`, `middleware`, `filter` | cms-api `http/`, `common/`              | Nest pipeline roles                                                              | `ApiToken.guard.ts`                                        |
+| `resolver`, `executor`                       | cms-api `http/`, `common/`              | a Nest or GraphQL resolver; a transport executor (GraphQL)                       | `Document.resolver.ts`, `Graphql.executor.ts`              |
+| `service`                                    | cms-api `application/`; `common/`, `infrastructure/` | use cases of one aggregate; outside `modules/`, one shared injectable provider | `Invitations.service.ts`, `Clock.service.ts`, `Prisma.service.ts` |
+| `port`                                       | cms-api `application/`, `infrastructure/`, `common/` | an interface plus its injection token                               | `Account.port.ts`, `ThrottleSubject.port.ts`               |
+| `entity`                                     | cms-api `domain/`                       | domain types                                                                     | `Account.entity.ts`                                        |
+| `rules`, `errors`                            | cms-api `domain/`; frontends           | pure rules; errors and error mapping                                             | `RankRules.rules.ts`, `Access.errors.ts`                   |
+| `repository`, `adapter`                      | cms-api `adapters/`                     | a repository port implementation; any other port implementation                  | `PrismaAccount.repository.ts`, `Cloudinary.adapter.ts`     |
+| `client`                                     | all                                     | a client of an outside system (HTTP, SDK)                                        | `Turnstile.client.ts`                                      |
+| `command`, `job`, `store`, `strategy`        | cms-api (`store` also cms-admin)       | CLI entry point, scheduled job, in-memory or Redux store, passport strategy      | `OwnerBootstrap.command.ts`, `MediaPurge.job.ts`           |
+| `constants`                                  | all                                     | named constants (placement below)                                                | `Access.constants.ts`                                      |
+| `schema`                                    | cms-api `config/`                       | a Zod schema that is not a request schema                                        | `Env.schema.ts`                                            |
+| `architecture`                              | all                                     | a structure guard                                                                | `ImportGraph.architecture.spec.ts`                         |
+| `analyzer`                                  | cms-api `architecture/`                 | a source-tree reader used by the guards                                          | `ImportGraph.analyzer.ts`                                  |
+| `integration`                               | cms-api `test/integration/`             | an integration suite                                                             | `Auth.integration.spec.ts`                                 |
+| `e2e`                                       | e2e `tests/`                            | a Playwright suite                                                               | `SideMenu.e2e.spec.ts`                                     |
+| `contract`                                  | all                                     | values pinned across packages, or the test that pins them                        | `PublicConstants.contract.ts`                              |
+| `snapshot`                                  | cms-admin, form-commons                 | a checked-in snapshot a test compares against                                    | `PublicApi.snapshot.ts`                                    |
+| `fixture`                                    | tests                                   | test data and test helpers                                                   | `Merge.fixture.ts`, `RenderApp.fixture.tsx`                |
+| `api`                                        | frontends                               | one feature's HTTP calls                                                         | `Access.api.ts`                                            |
+| `query`, `mutation`, `state`                 | frontends, hooks (`use` prefix)         | a hook whose data is TanStack Query server data (its own `useQuery` or a feature query hook) with its pending state; writes server data; holds local UI state or logic, or reads client state (Redux store) | `useAccounts.query.ts`, `useClampedPage.state.ts`, `useCurrentUser.state.ts` |
+| `queries`                                   | frontends                               | one feature's TanStack Query keys and hooks, reads and writes (Q-FN11)           | `Access.queries.ts`                                        |
+| `context`                                    | frontends                               | a React context and its provider                                                 | `AccessApi.context.tsx`                                    |
+| `env`, `endpoints`                         | frontends `config/`; e2e `src/`         | reads and checks env values; the API endpoint map                                | `Server.env.ts`, `E2e.env.ts`, `Api.endpoints.ts`          |
+| `registry`, `feature`                      | cms-admin                               | a lookup table of variants; a feature's `Feature` contract                       | `Features.registry.ts`, `Media.feature.ts`                 |
+| `form`, `columns`, `interceptor`, `reducer` | frontends                            | form schema and defaults; table columns; Axios interceptor; pure reducer         | `Password.form.ts`, `Account.columns.tsx`                  |
+| `styles`                                    | form-commons                            | class-name maps for one component                                                | `Richtext.styles.ts`                                       |
+| `slice`                                      | cms-admin                               | a Redux Toolkit slice                                                            | `Auth.slice.ts`                                            |
+| `copy`                                       | frontends                               | one copy section                                                                 | `Access.copy.ts`                                           |
+| `graphql`, `server`                          | web                                     | a GraphQL document; server-only code                                             | `CvPage.graphql.ts`, `Content.server.ts`                   |
+
+Constants placement (Q-A1): a constant lives next to the one module or feature that owns it, in `<Module>.constants.ts` (cms-api) or `features/<feature>/<Feature>.constants.ts` (frontends; lower-case names until phase FN renames them). Other modules or features read it through the owner's `index.ts`. cms-api `common/constants/` and frontend `config/` hold only values shared by several modules or by the app shell (env, endpoints, routes, HTTP, auth, copy).
 
 Web rules: Server Components by default; `'use client'` only for state, effects, handlers, browser APIs, TanStack Query, react-hook-form or any `@abyss/form-commons` import. Files that read server env or call `API_INTERNAL_URL` import `server-only`. The Next server never sends, receives or stores a user token (no Server Actions, Route Handlers or `cookies()` for auth, D14); authenticated calls go from the browser with the in-memory Bearer token. There is no `store/` on web.
 
