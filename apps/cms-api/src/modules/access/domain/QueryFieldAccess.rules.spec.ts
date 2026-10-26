@@ -10,7 +10,7 @@ import {
   ACCOUNT_REFERENCE_FIELDS,
   RECORD_SYSTEM_FIELDS,
 } from './Access.constants';
-import { FieldSelection } from './PolicyEvaluator';
+import { FieldSelection } from './PolicyEvaluator.rules';
 import { QueryGuard, type QueryFieldUse } from './QueryFieldAccess.rules';
 import {
   type RecordReadAccess,

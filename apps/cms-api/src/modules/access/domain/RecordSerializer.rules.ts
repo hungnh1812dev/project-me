@@ -15,7 +15,7 @@ import {
   type RecordSystemField,
 } from './Access.constants';
 import { joinFieldPath } from './FieldPaths.rules';
-import type { FieldSelection } from './PolicyEvaluator';
+import type { FieldSelection } from './PolicyEvaluator.rules';
 import type { RecordReadAccess } from './RecordReadAccess.rules';
 
 declare const serializedBrand: unique symbol;
@@ -83,7 +83,7 @@ export function maskedFieldPaths(
  * The one path from a loaded record to a response body (SPEC D3): list,
  * detail, 409 conflict, bulk conflicts, audit metadata views and error
  * details all go through `serialize`. An architecture test
- * (`record-serializer.architecture.spec.ts`) enforces it.
+ * (`RecordSerializer.architecture.spec.ts`) enforces it.
  *
  * Output is built from the definition, never by copying the record: a
  * masked field gets its mask value even if the record carries a raw value

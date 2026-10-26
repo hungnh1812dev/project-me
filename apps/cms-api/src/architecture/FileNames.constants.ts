@@ -50,20 +50,6 @@ export const FOLDER_NAME_SHAPE = /^[a-z][a-z0-9]*(-[a-z0-9]+)*$/;
 
 /** Paths relative to `apps/cms-api`. Only shrinks: a conforming or missing entry fails the guard. */
 export const KNOWN_FILE_NAME_EXCEPTIONS: readonly string[] = [
-  'src/modules/access/domain/AccessErrorBodies.spec.ts',
-  'src/modules/access/domain/PolicyEvaluator.spec.ts',
-  'src/modules/access/domain/PolicyEvaluator.ts',
-  'src/modules/access/domain/RecordSerializer.spec.ts',
-  'src/modules/access/domain/RecordSerializer.ts',
-  'src/modules/access/record-serializer.architecture.spec.ts',
-  'src/modules/content-engine/cli/generate.spec.ts',
-  'src/modules/content-engine/cli/generate.ts',
-  'src/modules/content-engine/cli/migrate.ts',
-  'src/modules/graphql/cli/print-schema.spec.ts',
-  'src/modules/graphql/cli/print-schema.ts',
-  'src/modules/graphql/graphql.architecture.spec.ts',
-  'src/modules/identity/auth-constants.pin.spec.ts',
-  'src/modules/media/adapters/Storage.adapters.spec.ts',
   'test/fixtures/access.fixture.ts',
   'test/fixtures/content-registry.fixture.ts',
   'test/fixtures/content-unit.fixture.ts',

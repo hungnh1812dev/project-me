@@ -8,7 +8,7 @@ import {
   checkContentMigrations,
   type GenerateOptions,
   generateContentMigration,
-} from './generate';
+} from './ContentGenerate.command';
 
 const CV_PAGE_FILE = 'cv-page.json';
 

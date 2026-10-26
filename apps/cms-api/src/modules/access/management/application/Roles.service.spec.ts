@@ -13,7 +13,7 @@ import type {
   RolePermissionsService,
 } from '../../application/RolePermissions.service';
 import type { VersionCache } from '../../application/VersionCache.service';
-import { PolicyEvaluator } from '../../domain/PolicyEvaluator';
+import { PolicyEvaluator } from '../../domain/PolicyEvaluator.rules';
 import {
   MANAGEMENT_ERROR_CODES,
   MANAGEMENT_LIMITS,

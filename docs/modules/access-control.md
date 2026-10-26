@@ -15,7 +15,7 @@ types and fields. T19 added API tokens: the API, the subset check
 | `domain/ActorContext.entity.ts`                                           | `ActorContext`, `RolePolicy`, token scope, `rolePolicyFromRows`, actor builders                                                                                                                                                         |
 | `domain/EffectivePolicy.rules.ts`                                         | `effectivePolicy`: one resolver per actor kind (owner, read-only clamp, token scope ∩ creator)                                                                                                                                          |
 | `domain/SubjectCatalog.rules.ts`                                          | Known subjects (`*`, registry slugs, system subjects), field paths, DSL field catalog                                                                                                                                                   |
-| `domain/PolicyEvaluator.ts`                                               | `PolicyEvaluator.can / canReadDrafts / fieldsFor / rowFilter`                                                                                                                                                                           |
+| `domain/PolicyEvaluator.rules.ts`                                         | `PolicyEvaluator.can / canReadDrafts / fieldsFor / rowFilter`                                                                                                                                                                           |
 | `domain/Conditions.rules.ts`                                              | DSL validation and compilation to parameterized Kysely SQL                                                                                                                                                                              |
 | `domain/PermissionSet.rules.ts`                                           | Save-time check of a role's permission set: `validatePermissionSet`                                                                                                                                                                     |
 | `domain/TokenScope.rules.ts`                                              | Save-time check of an API token scope (`validateTokenScope`) and the D5 subset check (`scopeEntriesBeyondCreator`)                                                                                                                      |
@@ -34,7 +34,7 @@ types and fields. T19 added API tokens: the API, the subset check
 | `http/AccessHttp.constants.ts`                                            | Account, role and API token routes; `ACCESS_RATE_LIMIT_POLICIES`                                                                                                                                                                        |
 | `application/RoleSeed.service.ts`                                         | Seeds the system roles and the default rows for system roles that have none (`db:seed`); the table is `domain/SystemRoles.entity.ts`                                                                                                    |
 | `domain/FieldProjection.rules.ts`                                         | `projectTable` / `selectedColumns`: never select unreadable columns (T16, D3)                                                                                                                                                           |
-| `domain/RecordSerializer.ts`                                              | `RecordSerializer`: the one record -> response path, masks + `_maskedFields` (T16)                                                                                                                                                      |
+| `domain/RecordSerializer.rules.ts`                                        | `RecordSerializer`: the one record -> response path, masks + `_maskedFields` (T16)                                                                                                                                                      |
 | `domain/WriteAllowlist.rules.ts`                                          | `WriteAllowlist`: client tree -> writable tree, drops masks, 400 otherwise (T16, D4)                                                                                                                                                    |
 | `domain/QueryFieldAccess.rules.ts`                                        | `QueryGuard`: filter/sort/search only on readable fields (T16, D3)                                                                                                                                                                      |
 | `domain/RecordReadAccess.rules.ts`                                        | `RecordReadAccess` / `recordReadAccess(actor, readable)`: fields + visible system fields                                                                                                                                                |
@@ -226,7 +226,7 @@ Decisions (T16):
   endpoints must use it.
 
 **Only path.** The architecture test
-`record-serializer.architecture.spec.ts` (a static scan of `src/`) fails
+`RecordSerializer.architecture.spec.ts` (a static scan of `src/`) fails
 when the following holds. Imports are resolved to the real file by
 `src/architecture/ImportGraph.analyzer.ts` (an `index.ts` facade is followed to the
 file that defines each symbol), and `FacadeReexports.architecture.spec.ts`
@@ -234,7 +234,7 @@ fails when a module `index.ts` re-exports `KyselyContent.repository`,
 `TreeLoader.adapter` or `FieldProjection.rules`:
 
 - a file outside the content engine imports `KyselyContent.repository` or
-  `TreeLoader.adapter` without also importing `domain/RecordSerializer`;
+  `TreeLoader.adapter` without also importing `domain/RecordSerializer.rules`;
 - a file in an `http/` folder, or a controller, filter, interceptor or gateway by suffix, imports them at all;
 - a file other than the serializer casts to `SerializedRecord`.
 

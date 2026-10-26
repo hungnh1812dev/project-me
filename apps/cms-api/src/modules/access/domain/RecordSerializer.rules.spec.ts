@@ -22,14 +22,14 @@ import {
 import type { ActorKind } from './ActorContext.entity';
 import { projectTable } from './FieldProjection.rules';
 import { fieldPathsOf } from './FieldPaths.rules';
-import { FieldSelection } from './PolicyEvaluator';
+import { FieldSelection } from './PolicyEvaluator.rules';
 import { recordReadAccess } from './RecordReadAccess.rules';
 import {
   maskedFieldPaths,
   RecordSerializer,
   type SerializedComponent,
   type SerializedRecord,
-} from './RecordSerializer';
+} from './RecordSerializer.rules';
 
 const type = profileType();
 const serializer = new RecordSerializer(type);

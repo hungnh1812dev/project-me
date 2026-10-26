@@ -6,7 +6,7 @@ import {
   apiTokenActor,
   reviewerActor,
 } from '../../src/modules/access/domain/ActorContext.entity';
-import type { FieldSelection } from '../../src/modules/access/domain/PolicyEvaluator';
+import type { FieldSelection } from '../../src/modules/access/domain/PolicyEvaluator.rules';
 import {
   type RecordReadAccess,
   recordReadAccess,

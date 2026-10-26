@@ -177,7 +177,7 @@ build_prerequisites() {
 prepare_data() {
   echo "Migrating and seeding..."
   api_exec -- npm run --silent db:migrate >>"$STATE_DIR/migrate.log" 2>&1
-  api_exec -- node dist/modules/content-engine/cli/migrate.js >>"$STATE_DIR/migrate.log" 2>&1
+  api_exec -- node dist/modules/content-engine/cli/ContentMigrate.command.js >>"$STATE_DIR/migrate.log" 2>&1
   printf '%s\n' "$STACK_OWNER_PASSWORD" | api_exec -e OWNER_EMAIL="$STACK_OWNER_EMAIL" -- "${OWNER_BOOTSTRAP_CMD[@]}" >>"$STATE_DIR/migrate.log" 2>&1
   stack_seed_extra_accounts
   ((FAILURES == 0)) || { echo "Seeding failed." >&2; exit 1; }

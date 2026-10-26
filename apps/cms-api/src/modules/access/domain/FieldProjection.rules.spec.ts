@@ -5,7 +5,7 @@ import {
 } from '../../../../test/fixtures/masking.fixture';
 import type { TableNode } from '../../content-engine';
 import { projectTable, selectedColumns } from './FieldProjection.rules';
-import { FieldSelection } from './PolicyEvaluator';
+import { FieldSelection } from './PolicyEvaluator.rules';
 import { recordReadAccess } from './RecordReadAccess.rules';
 
 const type = profileType();

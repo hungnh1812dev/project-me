@@ -9,7 +9,7 @@ import type { SecurityAuditService } from '../../../security-audit';
 import type { AccessPolicyService } from '../../application/AccessPolicy.service';
 import type { VersionCache } from '../../application/VersionCache.service';
 import { API_TOKEN, hashApiToken } from '../../domain/ApiToken.rules';
-import { PolicyEvaluator } from '../../domain/PolicyEvaluator';
+import { PolicyEvaluator } from '../../domain/PolicyEvaluator.rules';
 import { MANAGEMENT_ERROR_CODES } from '../domain/AccessManagement.constants';
 import type {
   ApiTokenChange,

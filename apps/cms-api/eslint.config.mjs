@@ -24,7 +24,7 @@ const DEEP_IMPORT_PATTERNS = {
     '(^|/)access/(?!management$|document-auth$|domain/FieldProjection\\.rules$).+',
   // `KyselyContent.repository`, `ContentRowMapping.rules`, `ContentTree.entity`
   // (holds `rowToValues`) and `TreeLoader.adapter` are not in the facade for the same
-  // reason: only the files the record-serializer architecture spec names use them.
+  // reason: only the files the RecordSerializer architecture spec names use them.
   'content-engine': modulePath('content-engine', [
     'adapters/KyselyContent\\.repository',
     'domain/ContentRowMapping\\.rules',

@@ -67,7 +67,7 @@ export const RECORD_SERIALIZER_FILE = join(
   MODULES,
   'access',
   'domain',
-  'RecordSerializer.ts',
+  'RecordSerializer.rules.ts',
 );
 export const ACCESS_CONSTANTS_FILE = join(
   MODULES,

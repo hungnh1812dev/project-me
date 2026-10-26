@@ -6,7 +6,7 @@ import {
   type RecordSystemField,
 } from './Access.constants';
 import type { ActorContext, ActorKind } from './ActorContext.entity';
-import type { FieldSelection } from './PolicyEvaluator';
+import type { FieldSelection } from './PolicyEvaluator.rules';
 
 /**
  * What of a record an actor may read: its readable content fields (from

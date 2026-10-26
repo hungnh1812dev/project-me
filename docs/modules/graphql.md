@@ -314,10 +314,10 @@ apps/cms-api/src/modules/graphql/
 │       ├── TypeNames.rules.ts      # naming + collision checks
 │       ├── Scalars.rules.ts        # Date, DateTime, Decimal, JSON
 │       └── FilterInputs.rules.ts   # kind -> filter input, args -> FilterClause/SortKey
-└── cli/print-schema.ts         # SDL from content/schemas (no DB), --check
+└── cli/PrintSchema.command.ts  # SDL from content/schemas (no DB), --check
 ```
 
-Architecture test (like `record-serializer.architecture.spec.ts`): files in
+Architecture test (like `RecordSerializer.architecture.spec.ts`): files in
 `modules/graphql` must not reach `KyselyContent.repository`, `TreeLoader.adapter` or
 `FieldProjection.rules` (resolved files, facades followed) or import Kysely; reads go through `DocumentsQueryService` only.
 

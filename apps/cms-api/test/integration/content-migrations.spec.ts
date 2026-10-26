@@ -18,7 +18,7 @@ import {
   DestructiveChangeError,
   generateContentMigration,
   type GenerateOptions,
-} from '../../src/modules/content-engine/cli/generate';
+} from '../../src/modules/content-engine/cli/ContentGenerate.command';
 import { DEFAULT_CONTENT_PATHS } from '../../src/modules/content-engine/adapters/MigrationFiles.adapter';
 import { createMigrationDb } from '../../src/modules/content-engine/cli/ContentEngineCli.setup';
 import { runContentMigrations } from '../../src/modules/content-engine/adapters/MigrationRunner.adapter';

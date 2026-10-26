@@ -40,7 +40,10 @@ export {
 } from './domain/Conditions.rules';
 export { joinFieldPath } from './domain/FieldPaths.rules';
 export { PermissionGuard, RequirePermission } from './http/Permission.guard';
-export { FieldSelection, type RowCondition } from './domain/PolicyEvaluator';
+export {
+  FieldSelection,
+  type RowCondition,
+} from './domain/PolicyEvaluator.rules';
 export { QueryGuard } from './domain/QueryFieldAccess.rules';
 export { requireAccountActor, type AccountActor } from './domain/Rank.rules';
 export { recordReadAccess } from './domain/RecordReadAccess.rules';
@@ -49,7 +52,7 @@ export {
   type SerializedComponent,
   type SerializedComponents,
   type SerializedRecord,
-} from './domain/RecordSerializer';
+} from './domain/RecordSerializer.rules';
 export {
   ADMIN_ROLE_SLUG,
   GUEST_ROLE_SLUG,

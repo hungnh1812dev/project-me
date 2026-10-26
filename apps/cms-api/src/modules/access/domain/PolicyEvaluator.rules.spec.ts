@@ -28,7 +28,7 @@ import {
   reviewerActor,
   type TokenScope,
 } from './ActorContext.entity';
-import { PolicyEvaluator, type RowFilter } from './PolicyEvaluator';
+import { PolicyEvaluator, type RowFilter } from './PolicyEvaluator.rules';
 
 const { read, create, update, publish, unpublish } = PermissionAction;
 const del = PermissionAction.delete;

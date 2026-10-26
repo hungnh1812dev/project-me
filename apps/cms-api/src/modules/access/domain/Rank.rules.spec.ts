@@ -12,7 +12,7 @@ import {
   anonymousActor,
   apiTokenActor,
 } from './ActorContext.entity';
-import { PolicyEvaluator } from './PolicyEvaluator';
+import { PolicyEvaluator } from './PolicyEvaluator.rules';
 import {
   assertOutranks,
   grantsBeyondActor,

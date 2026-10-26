@@ -15,7 +15,7 @@ generated, the definition must pass the validator.
 | Diff → DDL (pure)    | `domain/SqlGenerator.rules.ts`                                                                                                                                                                                                                                                                                       |
 | Files, snapshot      | `adapters/MigrationFiles.adapter.ts`                                                                                                                                                                                                                                                                                 |
 | Apply + bookkeeping  | `adapters/MigrationRunner.adapter.ts` (Kysely)                                                                                                                                                                                                                                                                       |
-| CLIs                 | `cli/generate.ts`, `cli/migrate.ts`                                                                                                                                                                                                                                                                                  |
+| CLIs                 | `cli/ContentGenerate.command.ts`, `cli/ContentMigrate.command.ts`                                                                                                                                                                                                                                                    |
 
 ## Top level
 
@@ -295,7 +295,7 @@ definitions; every identifier is quoted, and no request input ever reaches
 DDL.
 
 In production, the cms-api image ships `content/` next to `dist/`, so run
-`node dist/modules/content-engine/cli/migrate.js` (what `content:migrate`
+`node dist/modules/content-engine/cli/ContentMigrate.command.js` (what `content:migrate`
 runs) inside the container. `pnpm smoke` checks this.
 
 ## Runtime: registry and repository

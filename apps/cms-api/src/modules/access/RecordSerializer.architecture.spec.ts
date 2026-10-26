@@ -29,7 +29,7 @@ import {
  * 2. HTTP boundary files (everything in an `http/` folder, plus controllers,
  *    filters, interceptors and gateways by suffix) never import the record
  *    loaders: they only see serialized records.
- * 3. Only `RecordSerializer.ts` may cast to `SerializedRecord` (the brand
+ * 3. Only `RecordSerializer.rules.ts` may cast to `SerializedRecord` (the brand
  *    that response types of document endpoints use).
  */
 

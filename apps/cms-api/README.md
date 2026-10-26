@@ -883,7 +883,7 @@ The individual steps can also be run by hand, in this order:
 docker run --rm --env-file api.env abyss-cms-api npm run deploy:migrate   # init container command
 # or the two steps separately:
 docker run --rm --env-file api.env abyss-cms-api npm run db:migrate
-docker run --rm --env-file api.env abyss-cms-api node dist/modules/content-engine/cli/migrate.js
+docker run --rm --env-file api.env abyss-cms-api node dist/modules/content-engine/cli/ContentMigrate.command.js
 # once, on first deploy:
 docker run --rm -it --env-file api.env -e OWNER_EMAIL=me@example.com abyss-cms-api npm run owner:bootstrap
 # break-glass only, lost authenticator (see "Break-glass 2FA reset"):

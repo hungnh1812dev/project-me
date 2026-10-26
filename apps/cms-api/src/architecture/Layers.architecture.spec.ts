@@ -158,7 +158,7 @@ describe('the layer guard itself', () => {
 
   it('allows the named kysely exception in the two access domain files only', () => {
     write(
-      'modules/access/domain/PolicyEvaluator.ts',
+      'modules/access/domain/PolicyEvaluator.rules.ts',
       "import { sql } from 'kysely';",
     );
     write(

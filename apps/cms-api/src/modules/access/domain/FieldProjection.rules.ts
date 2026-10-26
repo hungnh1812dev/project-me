@@ -1,6 +1,6 @@
 import type { TableNode } from '../../content-engine';
 import { joinFieldPath } from './FieldPaths.rules';
-import type { FieldSelection } from './PolicyEvaluator';
+import type { FieldSelection } from './PolicyEvaluator.rules';
 import {
   hiddenSystemColumns,
   type RecordReadAccess,

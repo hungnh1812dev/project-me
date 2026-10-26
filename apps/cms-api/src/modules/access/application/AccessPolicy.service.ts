@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 
 import { ContentRegistry } from '../../content-engine';
 import type { ContentTypeRegistry } from '../../content-engine';
-import { PolicyEvaluator } from '../domain/PolicyEvaluator';
+import { PolicyEvaluator } from '../domain/PolicyEvaluator.rules';
 import { SubjectCatalog } from '../domain/SubjectCatalog.rules';
 
 export interface AccessPolicy {

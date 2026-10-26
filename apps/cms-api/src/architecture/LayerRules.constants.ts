@@ -228,7 +228,7 @@ const GRAPHQL_PRINT_SCHEMA_FILE = join(
   'modules',
   'graphql',
   'cli',
-  'print-schema.ts',
+  'PrintSchema.command.ts',
 );
 
 export const LAYER_EXCEPTIONS: readonly LayerException[] = [
@@ -263,7 +263,7 @@ export const LAYER_EXCEPTIONS: readonly LayerException[] = [
       'the media row filter is a Kysely expression, so the repository reads and updates file_library on the content database handle, like the documents repository',
   },
   {
-    from: join('modules', 'access', 'domain', 'PolicyEvaluator.ts'),
+    from: join('modules', 'access', 'domain', 'PolicyEvaluator.rules.ts'),
     importing: 'kysely',
     reason:
       'Q-CA17: row filters are Kysely expressions; other modules see the opaque RowFilter type',
@@ -271,7 +271,7 @@ export const LAYER_EXCEPTIONS: readonly LayerException[] = [
   {
     from: join('modules', 'access', 'domain', 'Conditions.rules.ts'),
     importing: 'kysely',
-    reason: 'Q-CA17: same exception as PolicyEvaluator.ts',
+    reason: 'Q-CA17: same exception as PolicyEvaluator.rules.ts',
   },
   {
     from: join('modules', 'documents') + sep,

@@ -4,7 +4,7 @@
 
 DB_MIGRATE_CMD=(npm run --silent db:migrate)
 RESET_2FA_CMD=(npm run --silent owner:reset-2fa --)
-CONTENT_MIGRATE_CMD=(node dist/modules/content-engine/cli/migrate.js)
+CONTENT_MIGRATE_CMD=(node dist/modules/content-engine/cli/ContentMigrate.command.js)
 # The test setup token lives only in scripts/stack/cms-api.env (compose reads it
 # from there); it is read from that file here and never printed.
 CMS_API_ENV_FILE="$ROOT_DIR/scripts/stack/cms-api.env"

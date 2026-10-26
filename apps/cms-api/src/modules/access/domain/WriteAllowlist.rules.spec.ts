@@ -11,8 +11,8 @@ import {
   MASK_SENTINEL,
   MASKED_FIELDS_KEY,
 } from './Access.constants';
-import { type FieldAccess, FieldSelection } from './PolicyEvaluator';
-import { RecordSerializer } from './RecordSerializer';
+import { type FieldAccess, FieldSelection } from './PolicyEvaluator.rules';
+import { RecordSerializer } from './RecordSerializer.rules';
 import { WriteAllowlist } from './WriteAllowlist.rules';
 
 const type = profileType();

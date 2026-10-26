@@ -8,8 +8,8 @@ import type {
 import { MASKED_FIELDS_KEY, WRITE_TREE_KEYS } from './Access.constants';
 import { fieldErrors } from './FieldPaths.rules';
 import { joinFieldPath } from './FieldPaths.rules';
-import type { FieldAccess } from './PolicyEvaluator';
-import { maskValueFor } from './RecordSerializer';
+import type { FieldAccess } from './PolicyEvaluator.rules';
+import { maskValueFor } from './RecordSerializer.rules';
 
 type PlainObject = Record<string, unknown>;
 

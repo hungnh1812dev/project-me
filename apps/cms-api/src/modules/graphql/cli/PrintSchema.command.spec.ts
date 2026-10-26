@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 import { DEFAULT_CONTENT_PATHS } from '../../content-engine';
-import { DEFAULT_SDL_FILE, printSchemaFile } from './print-schema';
+import { DEFAULT_SDL_FILE, printSchemaFile } from './PrintSchema.command';
 
 const DEFINITION = JSON.stringify({
   slug: 'note',
