@@ -167,6 +167,7 @@ Not exported. A new input reuses `src/components/forms/FieldWiring.setup.ts`
 and the focus / invalid classes in `src/components/ui/Control.constants.ts`.
 `src/KitBoundaries.architecture.test.ts` (run by `pnpm test`) fails when those rules are copied back into a
 component.
+`src/FileNames.architecture.test.ts` (ADR 0008) fails on a file or folder under `src/` and `test/` that breaks the naming rule; a new function word is one entry in its `FILE_FUNCTION_WORDS`.
 
 ## Adding shadcn components
 
