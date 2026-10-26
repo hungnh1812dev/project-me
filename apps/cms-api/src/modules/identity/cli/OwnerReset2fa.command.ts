@@ -2,13 +2,13 @@ import { createInterface } from 'node:readline/promises';
 import { parseArgs } from 'node:util';
 
 import { loadAppConfig } from '../../../config/app-config';
-import { openPrisma } from '../../../infrastructure/database/prisma-client';
+import { parseResetEmail } from '../application/TwoFactorReset.service';
 import {
   CONFIRM_ANSWERS,
   RESET_2FA_OPTIONS,
 } from '../domain/Identity.constants';
-import { parseResetEmail, resetTwoFactor } from '../two-factor-reset';
-import { CliInputError } from './password-input';
+import { openIdentityCli } from './IdentityCli.setup';
+import { CliInputError } from './PasswordInput.client';
 
 const YES_FLAG = `--${RESET_2FA_OPTIONS.YES}`;
 const EMAIL_FLAG = `--${RESET_2FA_OPTIONS.EMAIL}`;
@@ -89,14 +89,14 @@ async function main(): Promise<void> {
     throw new CliInputError('Cancelled. Nothing changed.');
   }
 
-  const { prisma, close } = openPrisma(config.database);
+  const cli = openIdentityCli(config);
   try {
-    const twoFactorReset = await resetTwoFactor(prisma, email);
+    const twoFactorReset = await cli.twoFactorReset.reset(email);
     process.stdout.write(
       `Two-factor authentication turned off for ${twoFactorReset.email} (was ${twoFactorReset.previousMethod ?? 'unknown'}). All sessions ended.\n`,
     );
   } finally {
-    await close();
+    await cli.close();
   }
 }
 

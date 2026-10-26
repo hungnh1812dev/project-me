@@ -1,14 +1,12 @@
 import { loadAppConfig } from '../../../config/app-config';
-import { openPrisma } from '../../../infrastructure/database/prisma-client';
 import { OWNER_CREATED_CHANNELS } from '../../security-audit';
 import { PASSWORD_STDIN_FLAG } from '../domain/Identity.constants';
-import { bootstrapOwner } from '../owner-bootstrap';
+import { openIdentityCli, readOwnerEnv } from './IdentityCli.setup';
 import {
   CliInputError,
   promptHidden,
   readPasswordFromStream,
-} from './password-input';
-import { readOwnerEnv } from './read-owner-env';
+} from './PasswordInput.client';
 
 /**
  * `owner:bootstrap` (D1): creates the single owner. Email from OWNER_EMAIL
@@ -44,20 +42,15 @@ async function main(): Promise<void> {
   const { email, displayName } = readOwnerEnv(process.env);
   const password = await readPassword(process.argv.slice(2));
 
-  const { prisma, close } = openPrisma(config.database);
+  const cli = openIdentityCli(config);
   try {
-    const owner = await bootstrapOwner(
-      prisma,
-      {
-        email,
-        displayName,
-        password,
-      },
+    const owner = await cli.ownerBootstrap.bootstrap(
+      { email, displayName, password },
       { channel: OWNER_CREATED_CHANNELS.CLI },
     );
     process.stdout.write(`Owner account created: ${owner.email}\n`);
   } finally {
-    await close();
+    await cli.close();
   }
 }
 

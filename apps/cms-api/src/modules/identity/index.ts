@@ -6,7 +6,7 @@ export {
   USER_AGENT_MAX_LENGTH,
 } from './domain/Identity.constants';
 export { AccessTokenService } from './application/AccessToken.service';
-export { IdentityModule } from './identity.module';
-export { JwtAuthGuard, type AuthenticatedRequest } from './jwt.strategy';
+export { IdentityModule } from './Identity.module';
+export { JwtAuthGuard, type AuthenticatedRequest } from './http/Jwt.strategy';
 export { buildOtpMail, OtpService } from './application/Otp.service';
 export { SessionRevocationService } from './application/SessionRevocation.service';

@@ -1,7 +1,5 @@
-import {
-  LOGIN_FAILURE_REASONS,
-  type LoginFailureReason,
-} from '../../security-audit';
+import { LOGIN_FAILURE_REASONS } from '../../security-audit';
+import type { LoginFailureReason } from '../../security-audit';
 import {
   PASSWORD_MAX_LENGTH,
   PASSWORD_MIN_LENGTH,

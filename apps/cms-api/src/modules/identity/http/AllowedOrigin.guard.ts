@@ -10,10 +10,10 @@ import type { Request } from 'express';
 import {
   AUTH_ERROR_CODES,
   AUTH_ERROR_MESSAGES,
-} from './domain/Identity.constants';
-import { ORIGIN_HEADER } from './http/IdentityHttp.constants';
-import { type IAppConfig } from '../../config/app-config';
-import { APP_CONFIG } from '../../config/config.constants';
+} from '../domain/Identity.constants';
+import { ORIGIN_HEADER } from './IdentityHttp.constants';
+import { type IAppConfig } from '../../../config/app-config';
+import { APP_CONFIG } from '../../../config/config.constants';
 
 /**
  * D14 CSRF defence for the cookie endpoints (`/auth/refresh`, `/auth/logout`):

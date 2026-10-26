@@ -122,6 +122,6 @@ npm run owner:reset-2fa -- --email someone@example.com --yes
 - One transaction on `accounts`: `is_2fa_enabled = false`, `two_fa_method`,
   `totp_secret_enc`, `totp_secret_kid` and `totp_last_step` set to null,
   `token_version + 1`; every live `refresh_tokens` row of the account gets
-  `revoked_at`. Code: `src/modules/identity/two-factor-reset.ts`.
+  `revoked_at`. Code: `src/modules/identity/application/TwoFactorReset.service.ts`.
 - Exit 1 with nothing changed for an unknown or deleted email, or when 2FA
   is already off. Details: cms-api README, "Break-glass 2FA reset".

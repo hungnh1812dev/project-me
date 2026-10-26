@@ -5,18 +5,30 @@ import { dirname, join } from 'node:path';
 import { listSourceFiles, reachedFilesOf } from './import-graph';
 
 /**
- * SPEC D1 / D17 (SEC-AU5 S6): the smoke seed CLI is not part of the app
- * graph. No file outside `modules/identity/cli/` imports or re-exports it,
- * the identity facade included.
+ * SPEC D1 / D17 (SEC-AU5 S6): the smoke seed use case
+ * (`application/SeedAccount.service.ts`) is not part of the app graph. No
+ * file outside `modules/identity/cli/` imports or re-exports it or anything
+ * else under `cli/` (its wiring builds the service), the identity facade included.
  */
 const SRC_ROOT = join(__dirname, '..');
 const CLI_DIRECTORY = join('modules', 'identity', 'cli') + '/';
-const PROTECTED_FILE = join('modules', 'identity', 'cli', 'seed-account.ts');
+const PROTECTED_FILE = join(
+  'modules',
+  'identity',
+  'application',
+  'SeedAccount.service.ts',
+);
 
 function findOutsideReachers(root: string, protectedFile: string): string[] {
   return listSourceFiles(root)
     .filter(({ file }) => !file.startsWith(CLI_DIRECTORY))
-    .filter((source) => reachedFilesOf(root, source).has(protectedFile))
+    .filter((source) => {
+      const reached = [...reachedFilesOf(root, source)];
+      return (
+        reached.includes(protectedFile) ||
+        reached.some((file) => file.startsWith(CLI_DIRECTORY))
+      );
+    })
     .map(({ file }) => file);
 }
 
@@ -26,7 +38,7 @@ describe('smoke seed CLI stays out of the app graph (S6)', () => {
     expect(all).toContain(PROTECTED_FILE);
   });
 
-  it('no source file outside identity/cli reaches seed-account.ts', () => {
+  it('no source file outside identity/cli reaches SeedAccount.service.ts', () => {
     expect(findOutsideReachers(SRC_ROOT, PROTECTED_FILE)).toEqual([]);
   });
 
@@ -39,18 +51,18 @@ describe('smoke seed CLI stays out of the app graph (S6)', () => {
 
     beforeEach(() => {
       root = mkdtempSync(join(tmpdir(), 'identity-cli-'));
-      write(PROTECTED_FILE, 'export const seedAccount = 1;');
+      write(PROTECTED_FILE, 'export const SeedAccountService = 1;');
     });
     afterEach(() => rmSync(root, { recursive: true, force: true }));
 
     it('fails on a direct import and on a facade re-export', () => {
       write(
         'modules/identity/index.ts',
-        "export { seedAccount } from './cli/seed-account';",
+        "export { SeedAccountService } from './application/SeedAccount.service';",
       );
       write(
         'modules/graphql/resolver.ts',
-        "import { seedAccount } from '../identity/cli/seed-account';",
+        "import { SeedAccountService } from '../identity/application/SeedAccount.service';",
       );
       expect(findOutsideReachers(root, PROTECTED_FILE).sort()).toEqual([
         'modules/graphql/resolver.ts',
@@ -58,10 +70,21 @@ describe('smoke seed CLI stays out of the app graph (S6)', () => {
       ]);
     });
 
+    it('fails on an indirect path through the cli wiring', () => {
+      write('modules/identity/cli/IdentityCli.setup.ts', 'export const x = 1;');
+      write(
+        'modules/identity/index.ts',
+        "export { x } from './cli/IdentityCli.setup';",
+      );
+      expect(findOutsideReachers(root, PROTECTED_FILE)).toEqual([
+        'modules/identity/index.ts',
+      ]);
+    });
+
     it('passes when only cli files use it', () => {
       write(
         'modules/identity/cli/other.ts',
-        "import { seedAccount } from './seed-account';",
+        "import { SeedAccountService } from '../application/SeedAccount.service';",
       );
       expect(findOutsideReachers(root, PROTECTED_FILE)).toEqual([]);
     });

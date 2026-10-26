@@ -11,7 +11,7 @@ import {
 import { DocumentAuthGuard } from '../modules/access/document-auth/http/DocumentAuth.guard';
 import { RATE_LIMIT_POLICY_METADATA } from '../common/guards/throttle.guard';
 import type { RateLimitPolicy } from '../common/constants/limits.constants';
-import { JwtAuthGuard } from '../modules/identity/jwt.strategy';
+import { JwtAuthGuard } from '../modules/identity/http/Jwt.strategy';
 import type { PublicHandlerReason } from './public-handlers.constants';
 
 /**

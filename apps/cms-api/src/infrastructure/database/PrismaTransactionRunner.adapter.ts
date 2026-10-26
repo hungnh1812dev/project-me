@@ -6,6 +6,7 @@ import {
   type AfterCommitCallback,
   AfterCommitCallbacks,
 } from './AfterCommitCallbacks.store';
+import { PrismaClient } from './prisma-client';
 import { PrismaService } from './prisma.service';
 import type { TransactionRunner, UnitOfWork } from './TransactionRunner.port';
 
@@ -54,7 +55,7 @@ export function unitOfWorkFromPrismaTx(
 @Injectable()
 export class PrismaTransactionRunner implements TransactionRunner {
   constructor(
-    private readonly prisma: PrismaService,
+    @Inject(PrismaService) private readonly prisma: PrismaClient,
     @Inject(APP_LOGGER) private readonly logger: AppLogger,
   ) {}
 

@@ -1,17 +1,17 @@
 import { UnauthorizedException } from '@nestjs/common';
 import type { Request, Response } from 'express';
 
-import { DomainError } from '../../common/errors/Domain.errors';
-import { DOMAIN_ERROR_KINDS } from '../../common/errors/DomainErrorKinds.constants';
-import type { ClientIpResolver } from '../../common/http/client-ip.resolver';
-import type { AccessPolicyService } from '../access';
-import { AuthController } from './auth.controller';
-import type { AuthService } from './application/Auth.service';
-import { invalidRefreshToken } from './domain/Identity.errors';
+import { DomainError } from '../../../common/errors/Domain.errors';
+import { DOMAIN_ERROR_KINDS } from '../../../common/errors/DomainErrorKinds.constants';
+import type { ClientIpResolver } from '../../../common/http/client-ip.resolver';
+import type { AccessPolicyService } from '../../access';
+import { AuthController } from './Auth.controller';
+import type { AuthService } from '../application/Auth.service';
+import { invalidRefreshToken } from '../domain/Identity.errors';
 import {
   REFRESH_COOKIE,
   REFRESH_COOKIE_OPTIONS,
-} from './http/IdentityHttp.constants';
+} from './IdentityHttp.constants';
 
 const RAW_TOKEN = 'raw-refresh-token';
 

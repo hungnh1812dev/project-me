@@ -2,18 +2,21 @@ import type { NestExpressApplication } from '@nestjs/platform-express';
 import type { StartedPostgreSqlContainer } from '@testcontainers/postgresql';
 import request from 'supertest';
 
-import { IDENTITY_RATE_LIMIT_POLICIES } from '../../src/modules/identity/identity.rate-limits.constants';
+import { IDENTITY_RATE_LIMIT_POLICIES } from '../../src/modules/identity/http/IdentityHttp.constants';
 import {
   openPrisma,
+  type PrismaClient,
   type PrismaHandle,
 } from '../../src/infrastructure/database/prisma-client';
 import { AUDIT_ACTIONS } from '../../src/modules/security-audit';
 import { OWNER_ROLE_SLUG } from '../../src/modules/access/roles/system-roles';
 import { OWNER_BOOTSTRAP_ERRORS } from '../../src/modules/identity/domain/Identity.constants';
 import {
-  bootstrapOwner,
   OwnerBootstrapError,
-} from '../../src/modules/identity/owner-bootstrap';
+  type OwnerBootstrapInput,
+  type OwnerBootstrapOptions,
+} from '../../src/modules/identity/application/OwnerBootstrap.service';
+import { identityUseCasesOf } from '../../src/modules/identity/cli/IdentityCli.setup';
 import { hashPassword } from '../../src/modules/identity/application/Password.service';
 import { seedSystemRoles } from '../../src/modules/access/roles/system-roles.seed';
 import { createCoreTemplate } from '../fixtures/core-db.fixture';
@@ -27,6 +30,14 @@ import {
 } from '../fixtures/env.fixture';
 import { startPostgres } from '../fixtures/postgres.fixture';
 import { createTestApp } from '../fixtures/test-app';
+
+function bootstrapOwner(
+  prisma: PrismaClient,
+  input: OwnerBootstrapInput,
+  options?: OwnerBootstrapOptions,
+) {
+  return identityUseCasesOf(prisma).ownerBootstrap.bootstrap(input, options);
+}
 
 const STATUS = '/api/v1/setup/status';
 const OWNER = '/api/v1/setup/owner';

@@ -10,7 +10,7 @@ import {
   RATE_LIMIT_MESSAGE,
   RATE_LIMIT_SWEEP_INTERVAL_MS,
 } from '../../src/common/constants/limits.constants';
-import { IDENTITY_RATE_LIMIT_POLICIES } from '../../src/modules/identity/identity.rate-limits.constants';
+import { IDENTITY_RATE_LIMIT_POLICIES } from '../../src/modules/identity/http/IdentityHttp.constants';
 import {
   openPrisma,
   type PrismaHandle,

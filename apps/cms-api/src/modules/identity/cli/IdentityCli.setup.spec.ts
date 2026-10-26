@@ -1,5 +1,5 @@
-import { CliInputError } from './password-input';
-import { readOwnerEnv } from './read-owner-env';
+import { CliInputError } from './PasswordInput.client';
+import { readOwnerEnv } from './IdentityCli.setup';
 
 describe('readOwnerEnv', () => {
   it('reads the email and display name', () => {

@@ -13,33 +13,48 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import type { Request, Response } from 'express';
+import { z } from 'zod';
 
-import { DomainError } from '../../common/errors/Domain.errors';
-import { DOMAIN_ERROR_KINDS } from '../../common/errors/DomainErrorKinds.constants';
-import { ClientIpResolver } from '../../common/http/client-ip.resolver';
-import { AUTH_ROUTES } from './identity.routes';
-import { NO_STORE_HEADER } from '../../common/constants/http.constants';
+import { NO_STORE_HEADER } from '../../../common/constants/http.constants';
+import { DomainError } from '../../../common/errors/Domain.errors';
+import { DOMAIN_ERROR_KINDS } from '../../../common/errors/DomainErrorKinds.constants';
+import { Throttle } from '../../../common/guards/throttle.guard';
+import { ClientIpResolver } from '../../../common/http/client-ip.resolver';
 import {
-  AUTH_ERROR_CODES,
-  AUTH_ERROR_MESSAGES,
-  REFRESH_TOKEN_TTL_MS,
-} from './domain/Identity.constants';
-import {
-  REFRESH_COOKIE,
-  REFRESH_COOKIE_OPTIONS,
-} from './http/IdentityHttp.constants';
-import { IDENTITY_RATE_LIMIT_POLICIES } from './identity.rate-limits.constants';
-import { type ClientMeta, clientMetaOf } from '../../common/http/client-meta';
-import { Throttle } from '../../common/guards/throttle.guard';
-import { AccessPolicyService } from '../access';
-import { AllowedOriginGuard } from './allowed-origin.guard';
+  type ClientMeta,
+  clientMetaOf,
+} from '../../../common/http/client-meta';
+import { AccessPolicyService } from '../../access';
 import {
   AuthService,
   type CurrentAccountProfile,
-} from './application/Auth.service';
-import { invalidRefreshToken } from './domain/Identity.errors';
-import { type AuthenticatedRequest, JwtAuthGuard } from './jwt.strategy';
-import { loginRequestSchema } from './login.request';
+} from '../application/Auth.service';
+import {
+  AUTH_ERROR_CODES,
+  AUTH_ERROR_MESSAGES,
+  EMAIL_MAX_LENGTH,
+  PASSWORD_MAX_LENGTH,
+  REFRESH_TOKEN_TTL_MS,
+} from '../domain/Identity.constants';
+import { invalidRefreshToken } from '../domain/Identity.errors';
+import { AllowedOriginGuard } from './AllowedOrigin.guard';
+import {
+  AUTH_ROUTES,
+  IDENTITY_RATE_LIMIT_POLICIES,
+  REFRESH_COOKIE,
+  REFRESH_COOKIE_OPTIONS,
+} from './IdentityHttp.constants';
+import { type AuthenticatedRequest, JwtAuthGuard } from './Jwt.strategy';
+
+/**
+ * `POST /auth/login` body. Shape checks only: the email format is not
+ * validated (an unknown email simply fails like a wrong password), and the
+ * password cap keeps Argon2id cost bounded.
+ */
+const loginRequestSchema = z.object({
+  email: z.string().trim().min(1).max(EMAIL_MAX_LENGTH),
+  password: z.string().min(1).max(PASSWORD_MAX_LENGTH),
+});
 
 export interface AccessTokenResponse {
   accessToken: string;

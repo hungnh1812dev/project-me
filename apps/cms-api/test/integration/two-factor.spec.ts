@@ -15,7 +15,7 @@ import {
 } from '../../src/modules/identity/domain/Identity.constants';
 import { ERROR_CODES } from '../../src/common/constants/error.constants';
 import { MS_PER_SECOND } from '../../src/common/constants/time.constants';
-import { IDENTITY_RATE_LIMIT_POLICIES } from '../../src/modules/identity/identity.rate-limits.constants';
+import { IDENTITY_RATE_LIMIT_POLICIES } from '../../src/modules/identity/http/IdentityHttp.constants';
 import { loadAppConfig } from '../../src/config/app-config';
 import {
   openPrisma,
@@ -36,7 +36,7 @@ import {
   PasswordService,
 } from '../../src/modules/identity/application/Password.service';
 import { seedSystemRoles } from '../../src/modules/access/roles/system-roles.seed';
-import { resetTwoFactor } from '../../src/modules/identity/two-factor-reset';
+import { identityUseCasesOf } from '../../src/modules/identity/cli/IdentityCli.setup';
 import { createCoreTemplate } from '../fixtures/core-db.fixture';
 import {
   dbEnvOf,
@@ -728,8 +728,7 @@ describe('Two-factor authentication (D8, SPEC §9, T13; Postgres 16 via Testcont
       });
       expect(await liveRefreshTokens(account.id)).toBeGreaterThan(0);
 
-      const result = await resetTwoFactor(
-        db.prisma,
+      const result = await identityUseCasesOf(db.prisma).twoFactorReset.reset(
         ` ${account.email.toUpperCase()} `,
       );
       expect(result).toEqual({ email: account.email, previousMethod: 'totp' });
@@ -786,7 +785,9 @@ describe('Two-factor authentication (D8, SPEC §9, T13; Postgres 16 via Testcont
       });
       await withEmail2fa(owner);
 
-      await expect(resetTwoFactor(db.prisma, owner.email)).resolves.toEqual({
+      await expect(
+        identityUseCasesOf(db.prisma).twoFactorReset.reset(owner.email),
+      ).resolves.toEqual({
         email: owner.email,
         previousMethod: 'email',
       });
@@ -795,7 +796,9 @@ describe('Two-factor authentication (D8, SPEC §9, T13; Postgres 16 via Testcont
 
     it('refuses an unknown or deleted account', async () => {
       await expect(
-        resetTwoFactor(db.prisma, 'nobody@example.test'),
+        identityUseCasesOf(db.prisma).twoFactorReset.reset(
+          'nobody@example.test',
+        ),
       ).rejects.toMatchObject({
         code: TWO_FACTOR_RESET_ERRORS.ACCOUNT_NOT_FOUND,
       });
@@ -807,7 +810,7 @@ describe('Two-factor authentication (D8, SPEC §9, T13; Postgres 16 via Testcont
         data: { deletedAt: new Date() },
       });
       await expect(
-        resetTwoFactor(db.prisma, account.email),
+        identityUseCasesOf(db.prisma).twoFactorReset.reset(account.email),
       ).rejects.toMatchObject({
         code: TWO_FACTOR_RESET_ERRORS.ACCOUNT_NOT_FOUND,
       });
@@ -821,7 +824,7 @@ describe('Two-factor authentication (D8, SPEC §9, T13; Postgres 16 via Testcont
       });
 
       await expect(
-        resetTwoFactor(db.prisma, account.email),
+        identityUseCasesOf(db.prisma).twoFactorReset.reset(account.email),
       ).rejects.toMatchObject({ code: TWO_FACTOR_RESET_ERRORS.NOT_ENABLED });
 
       const after = await db.prisma.account.findUniqueOrThrow({

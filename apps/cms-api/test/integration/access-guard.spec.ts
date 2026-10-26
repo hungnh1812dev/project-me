@@ -32,8 +32,8 @@ import {
 } from '../../src/modules/access/application/VersionCache.service';
 import { ContentRegistry } from '../../src/modules/content-engine/application/ContentRegistry.service';
 import { ContentTypeRegistry } from '../../src/modules/content-engine/domain/ContentTypeRegistry.entity';
-import { IdentityModule } from '../../src/modules/identity/identity.module';
-import { JwtAuthGuard } from '../../src/modules/identity/jwt.strategy';
+import { IdentityModule } from '../../src/modules/identity/Identity.module';
+import { JwtAuthGuard } from '../../src/modules/identity/http/Jwt.strategy';
 import { hashPassword } from '../../src/modules/identity/application/Password.service';
 import { seedSystemRoles } from '../../src/modules/access/roles/system-roles.seed';
 import { ARTICLE_DEFINITION, grant } from '../fixtures/access.fixture';

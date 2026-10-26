@@ -1,22 +1,28 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 
 import type { Prisma } from '../../../generated/prisma/client';
 import { prismaTxOf } from '../../../infrastructure/database/PrismaTransactionRunner.adapter';
+import { PrismaClient } from '../../../infrastructure/database/prisma-client';
 import { PrismaService } from '../../../infrastructure/database/prisma.service';
 import type { UnitOfWork } from '../../../infrastructure/database/TransactionRunner.port';
+import { type AccountStatus, OWNER_ROLE_SLUG } from '../../access';
 import type {
   AccountProfileRecord,
   AccountRepository,
   CodeAccountRecord,
+  CreatedAccount,
   LoginAccountRecord,
+  NewAccount,
   PasswordAccountRecord,
+  ResettableAccount,
+  RoleFacts,
   TotpAccount,
   TotpStepClaim,
   TwoFactorAccountRecord,
   TwoFactorChange,
 } from '../application/Identity.port';
 import type { SealedSecret } from '../application/SecretBox.service';
-import type { AccountStatus } from '../../access';
+import { OWNER_BOOTSTRAP_LOCK_KEY } from '../domain/Identity.constants';
 
 const TOTP_ACCOUNT_SELECT = {
   id: true,
@@ -83,7 +89,8 @@ function nextTwoFactorData(
 
 @Injectable()
 export class PrismaAccountRepository implements AccountRepository {
-  constructor(private readonly prisma: PrismaService) {}
+  /** Typed as the client so the CLIs can build the adapter on a plain `PrismaClient`. */
+  constructor(@Inject(PrismaService) private readonly prisma: PrismaClient) {}
 
   async findLoginAccount(email: string): Promise<LoginAccountRecord | null> {
     return flattenPolicyVersion(
@@ -232,5 +239,73 @@ export class PrismaAccountRepository implements AccountRepository {
     const locked = await prismaTxOf(unit).$queryRaw<{ document_id: string }[]>`
         SELECT document_id FROM accounts WHERE id = ${accountId} FOR UPDATE`;
     return locked[0]?.document_id ?? null;
+  }
+
+  async hasLiveOwner(unit?: UnitOfWork): Promise<boolean> {
+    const client = unit === undefined ? this.prisma : prismaTxOf(unit);
+    const owner = await client.account.findFirst({
+      where: { roleSlug: OWNER_ROLE_SLUG, deletedAt: null },
+      select: { id: true },
+    });
+    return owner !== null;
+  }
+
+  async lockOwnerCreation(unit: UnitOfWork): Promise<void> {
+    await prismaTxOf(unit)
+      .$executeRaw`SELECT pg_advisory_xact_lock(${OWNER_BOOTSTRAP_LOCK_KEY})`;
+  }
+
+  findRole(unit: UnitOfWork, slug: string): Promise<RoleFacts | null> {
+    return prismaTxOf(unit).role.findUnique({
+      where: { slug },
+      select: { id: true, isSystem: true },
+    });
+  }
+
+  async isEmailTaken(unit: UnitOfWork, email: string): Promise<boolean> {
+    const taken = await prismaTxOf(unit).account.findUnique({
+      where: { email },
+      select: { id: true },
+    });
+    return taken !== null;
+  }
+
+  createAccount(
+    unit: UnitOfWork,
+    account: NewAccount,
+  ): Promise<CreatedAccount> {
+    return prismaTxOf(unit).account.create({
+      data: {
+        email: account.email,
+        displayName: account.displayName,
+        passwordHash: account.passwordHash,
+        status: 'active',
+        role: {
+          connect: { id_slug: { id: account.roleId, slug: account.roleSlug } },
+        },
+        ...(account.isEmail2faEnabled === true
+          ? { is2faEnabled: true, twoFaMethod: 'email' as const }
+          : {}),
+      },
+      select: { id: true, documentId: true, email: true },
+    });
+  }
+
+  findResettableAccount(
+    unit: UnitOfWork,
+    email: string,
+  ): Promise<ResettableAccount | null> {
+    return prismaTxOf(unit).account.findFirst({
+      where: { email, deletedAt: null },
+      select: { id: true, documentId: true, email: true, twoFaMethod: true },
+    });
+  }
+
+  async clearTwoFactor(unit: UnitOfWork, accountId: number): Promise<boolean> {
+    const cleared = await prismaTxOf(unit).account.updateMany({
+      where: { id: accountId, is2faEnabled: true },
+      data: { is2faEnabled: false, twoFaMethod: null, ...CLEARED_TOTP },
+    });
+    return cleared.count > 0;
   }
 }

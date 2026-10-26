@@ -1,5 +1,6 @@
 import type { UnitOfWork } from '../../../infrastructure/database/TransactionRunner.port';
 import type { AccountStatus } from '../../access';
+import type { AuditEntry } from '../../security-audit';
 import type { RotationSuccessorFacts } from '../domain/Authentication.rules';
 import type { OtpPurpose, TwoFaMethod } from '../domain/Identity.constants';
 import type { SealedSecret } from './SecretBox.service';
@@ -102,6 +103,36 @@ export interface TwoFactorChange {
   readonly next: TwoFactorNextState;
 }
 
+/** A role as the owner setup and the seed read it. */
+export interface RoleFacts {
+  readonly id: number;
+  readonly isSystem: boolean;
+}
+
+/** An active account to insert; the optional flag turns email 2FA on. */
+export interface NewAccount {
+  readonly email: string;
+  readonly displayName: string;
+  readonly passwordHash: string;
+  readonly roleId: number;
+  readonly roleSlug: string;
+  readonly isEmail2faEnabled?: boolean;
+}
+
+export interface CreatedAccount {
+  readonly id: number;
+  readonly documentId: string;
+  readonly email: string;
+}
+
+/** What `owner:reset-2fa` reads of the account it resets. */
+export interface ResettableAccount {
+  readonly id: number;
+  readonly documentId: string;
+  readonly email: string;
+  readonly twoFaMethod: TwoFaMethod | null;
+}
+
 export const ACCOUNT_REPOSITORY = Symbol('ACCOUNT_REPOSITORY');
 
 /** The account columns identity services read and write. */
@@ -137,6 +168,33 @@ export interface AccountRepository {
   claimTotpStep(claim: TotpStepClaim): Promise<boolean>;
   /** Row lock inside `unit`; the account's document id, or null when it does not exist. */
   lockDocumentId(unit: UnitOfWork, accountId: number): Promise<string | null>;
+  /** True when a live (not deleted) owner exists; inside `unit` when given. */
+  hasLiveOwner(unit?: UnitOfWork): Promise<boolean>;
+  /** Queues concurrent owner creations on one transaction-scoped advisory lock. */
+  lockOwnerCreation(unit: UnitOfWork): Promise<void>;
+  findRole(unit: UnitOfWork, slug: string): Promise<RoleFacts | null>;
+  isEmailTaken(unit: UnitOfWork, email: string): Promise<boolean>;
+  createAccount(unit: UnitOfWork, account: NewAccount): Promise<CreatedAccount>;
+  /** The not-deleted account with this email. */
+  findResettableAccount(
+    unit: UnitOfWork,
+    email: string,
+  ): Promise<ResettableAccount | null>;
+  /**
+   * Turns 2FA off and clears the sealed TOTP columns, only while 2FA is
+   * still on. False when a concurrent change got there first.
+   */
+  clearTwoFactor(unit: UnitOfWork, accountId: number): Promise<boolean>;
+}
+
+export const AUDIT_RECORDER = Symbol('AUDIT_RECORDER');
+
+/**
+ * The audit write the owner, reset and seed use cases need: one row in the
+ * caller's unit (D15). `SecurityAuditService` is one; the CLIs bring their own.
+ */
+export interface AuditRecorder {
+  record(unit: UnitOfWork, entry: AuditEntry): Promise<void>;
 }
 
 /** What a refresh needs of the account behind a token. */

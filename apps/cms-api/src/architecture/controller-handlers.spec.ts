@@ -10,7 +10,7 @@ import {
   PermissionGuard,
 } from './controller-handlers';
 import { DocumentAuthGuard } from '../modules/access/document-auth/http/DocumentAuth.guard';
-import { JwtAuthGuard } from '../modules/identity/jwt.strategy';
+import { JwtAuthGuard } from '../modules/identity/http/Jwt.strategy';
 
 const READ_ROLES = {
   action: PermissionAction.read,

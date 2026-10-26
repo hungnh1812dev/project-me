@@ -10,7 +10,7 @@ The user does not want to create the owner with `kubectl exec` or a one-shot Job
 
 1. **Open only while all hold:** `OWNER_SETUP_TOKEN` is set, and no live owner exists (`accounts.role_slug = 'owner' AND deleted_at IS NULL`). Otherwise the setup is **closed**.
 2. **Closed means gone:** `POST /setup/owner` answers `404 NOT_FOUND` (the same body as an unknown route), with or without a token. `GET /setup/status` answers `{ "open": false }`.
-3. **One owner, one code path:** the route and the `owner:bootstrap` CLI both call `bootstrapOwner()` (advisory lock, owner-exists check, email-taken check, system role check, Argon2id). The partial unique index `accounts_single_owner_uq` stays the last line of defence. A request that loses a race to another request or to the CLI gets the closed answer (404).
+3. **One owner, one code path:** the route and the `owner:bootstrap` CLI both call `OwnerBootstrapService.bootstrap()` (advisory lock, owner-exists check, email-taken check, system role check, Argon2id). The partial unique index `accounts_single_owner_uq` stays the last line of defence. A request that loses a race to another request or to the CLI gets the closed answer (404).
 4. **The token gates everything else:** the route checks the token before it parses the body or hashes a password, so a wrong token costs no Argon2 time and reveals no validation rules.
 5. **No session from setup:** a successful setup returns `201 { email }` and no tokens or cookies. The owner then signs in on the normal login page (normal throttles, `auth.login_succeeded` audit, then 2FA setup).
 6. **Every attempt is audited** (D15), with no token, password or email value in metadata beyond what existing rows already allow.
@@ -27,13 +27,13 @@ Order of checks in `POST /setup/owner`:
 1. Throttle (`SETUP_SUBMIT` policy, below).
 2. Closed check: token unset, or the in-process `closed` latch is set, or an owner exists (cheap `SELECT` of the owner row) -> 404.
 3. `setupToken` is a string of at most `SETUP_TOKEN_MAX_LENGTH` (256) characters; anything else (missing, wrong type, too long) is treated as a wrong token -> 401. Compare: SHA-256 of the submitted value and of the configured value, then `crypto.timingSafeEqual` on the two digests (equal length, no early exit).
-4. Body schema (Zod, the same email and password rules as `parseOwnerInput`: email normalised to lower case, password 12-128 characters, display name optional, defaults to the local part) -> 400 with field names only.
-5. `bootstrapOwner(prisma, input, { channel: 'setup_page', meta })` in one transaction with the audit row. `OWNER_EXISTS` -> set the latch, answer 404. `EMAIL_TAKEN` -> 409 `OWNER_EMAIL_TAKEN` (only reachable with a valid token; existing accounts are never promoted). `ROLE_MISSING` -> 503 (`SERVICE_UNAVAILABLE`, migrations not run).
+4. Body schema (Zod, the same email and password rules as `parseOwnerInput` in `OwnerBootstrap.service.ts`: email normalised to lower case, password 12-128 characters, display name optional, defaults to the local part) -> 400 with field names only.
+5. `OwnerBootstrapService.bootstrap(input, { channel: 'setup_page', ip })` in one transaction with the audit row. `OWNER_EXISTS` -> set the latch, answer 404. `EMAIL_TAKEN` -> 409 `OWNER_EMAIL_TAKEN` (only reachable with a valid token; existing accounts are never promoted). `ROLE_MISSING` -> 503 (`SERVICE_UNAVAILABLE`, migrations not run).
 6. On success, set the latch and answer 201.
 
 `GET /setup/status` returns `open = tokenConfigured && !latch && !ownerExists`. It needs no token: the admin console must know whether to show the setup page. It reveals only "this instance has no owner yet and expects a setup", which the operator causes on purpose and which lasts minutes.
 
-New error codes in `OWNER_SETUP_ERROR_CODES` (`domain/Identity.constants.ts`): `SETUP_TOKEN_INVALID`, `OWNER_EMAIL_TAKEN`. Route constants: `SETUP_ROUTES = { ROOT: 'setup', STATUS: 'status', OWNER: 'owner' }` (`identity.routes.ts`).
+New error codes in `OWNER_SETUP_ERROR_CODES` (`domain/Identity.constants.ts`): `SETUP_TOKEN_INVALID`, `OWNER_EMAIL_TAKEN`. Route constants: `SETUP_ROUTES = { ROOT: 'setup', STATUS: 'status', OWNER: 'owner' }` (`http/IdentityHttp.constants.ts`).
 
 ### In-process latch
 
@@ -86,13 +86,13 @@ No row ever holds the token, the password or (for rejected attempts) the email.
 ## Interaction with `owner:bootstrap`
 
 - The CLI stays as the fallback (no token needed; shell access is its own proof). It works whether or not `OWNER_SETUP_TOKEN` is set, and closes the setup page (an owner exists).
-- Both paths share `bootstrapOwner()`, the advisory lock and the single-owner index, so a page submit and a CLI run at the same moment produce exactly one owner; the loser gets 404 (page) or `owner.exists` (CLI).
+- Both paths share `OwnerBootstrapService.bootstrap()`, the advisory lock and the single-owner index, so a page submit and a CLI run at the same moment produce exactly one owner; the loser gets 404 (page) or `owner.exists` (CLI).
 - `owner:reset-2fa` is unchanged and remains CLI-only (break-glass; no HTTP route).
 
 ## Code changes (for OS1 / OS2)
 
-- `bootstrapOwner(prisma, input, options?)`: new optional `options` `{ channel, audit }` so the `owner.created` row is written inside its transaction. The CLI passes `channel: 'cli'`. Existing behaviour and error codes stay.
-- New in `apps/cms-api/src/modules/identity`: `owner-setup.controller.ts`, `owner-setup.service.ts` (latch, token compare, error mapping), `owner-setup.requests.ts` (Zod DTO), `domain/SetupToken.rules.ts` (hash + timing-safe compare, pure, unit-tested). Constants in `domain/Identity.constants.ts` (`SETUP_TOKEN_MAX_LENGTH`, setup channels), route constants in `api.constants.ts`, policies in `identity.rate-limits.constants.ts`, env in `env.schema.ts` / `app-config.ts` / `.env.example`.
+- `OwnerBootstrapService.bootstrap(input, options?)` (`application/OwnerBootstrap.service.ts`; the CLI builds it in `cli/IdentityCli.setup.ts`): optional `options` `{ channel, ip }` so the `owner.created` row is written inside its transaction. The CLI passes `channel: 'cli'`. Existing behaviour and error codes stay.
+- New in `apps/cms-api/src/modules/identity`: `http/OwnerSetup.controller.ts` (checks the setup token through `OwnerSetupService.admit` before it parses the body, maps the closed answer to the unknown-route 404), `application/OwnerSetup.service.ts` (latch, token compare, audit, error mapping to `DomainError`), `domain/SetupToken.rules.ts` (hash + timing-safe compare, pure, unit-tested). Constants in `domain/Identity.constants.ts` (`SETUP_TOKEN_MAX_LENGTH`, setup channels), route constants and policies in `http/IdentityHttp.constants.ts`, env in `env.schema.ts` / `app-config.ts` / `.env.example`.
 - No DB schema change: there is no "setup completed" table; the owner row is the state.
 
 ## Not in scope

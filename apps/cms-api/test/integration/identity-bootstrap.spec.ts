@@ -3,18 +3,29 @@ import { Client } from 'pg';
 
 import {
   openPrisma,
+  type PrismaClient,
   type PrismaHandle,
 } from '../../src/infrastructure/database/prisma-client';
 import { SYSTEM_ROLES } from '../../src/modules/access/roles/system-roles';
 import { OWNER_BOOTSTRAP_ERRORS } from '../../src/modules/identity/domain/Identity.constants';
 import {
-  bootstrapOwner,
   OwnerBootstrapError,
-} from '../../src/modules/identity/owner-bootstrap';
+  type OwnerBootstrapInput,
+  type OwnerBootstrapOptions,
+} from '../../src/modules/identity/application/OwnerBootstrap.service';
+import { identityUseCasesOf } from '../../src/modules/identity/cli/IdentityCli.setup';
 import { verifyPassword } from '../../src/modules/identity/application/Password.service';
 import { seedSystemRoles } from '../../src/modules/access/roles/system-roles.seed';
 import { createCoreTemplate } from '../fixtures/core-db.fixture';
 import { startPostgres } from '../fixtures/postgres.fixture';
+
+function bootstrapOwner(
+  prisma: PrismaClient,
+  input: OwnerBootstrapInput,
+  options?: OwnerBootstrapOptions,
+) {
+  return identityUseCasesOf(prisma).ownerBootstrap.bootstrap(input, options);
+}
 
 const PASSWORD = 'correct horse battery staple';
 const CONCURRENT_RUNS = 5;

@@ -60,7 +60,7 @@ export interface AccessTokenSubject {
 /**
  * Signs HS256 JWTs with the key named by `kid` and resolves the verification
  * key for an incoming token from its `kid`. Verification itself (alg pinning,
- * expiry) runs in passport-jwt, see `jwt.strategy.ts`.
+ * expiry) runs in passport-jwt, see `http/Jwt.strategy.ts`.
  */
 @Injectable()
 export class AccessTokenService {

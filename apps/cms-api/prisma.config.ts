@@ -29,7 +29,7 @@ export default defineConfig({
   schema: 'prisma/schema.prisma',
   migrations: {
     path: 'prisma/migrations',
-    seed: 'node dist/modules/identity/cli/seed.js',
+    seed: 'node dist/modules/identity/cli/Seed.command.js',
   },
   ...(databaseUrl === undefined ? {} : { datasource: { url: databaseUrl } }),
 });

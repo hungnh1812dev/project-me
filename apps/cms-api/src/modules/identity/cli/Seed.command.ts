@@ -1,6 +1,6 @@
 import { loadAppConfig } from '../../../config/app-config';
-import { openPrisma } from '../../../infrastructure/database/prisma-client';
 import { seedRolePermissions, seedSystemRoles } from '../../access';
+import { openIdentityCli } from './IdentityCli.setup';
 
 /**
  * `db:seed` (also the last step of `db:migrate`): idempotent system roles
@@ -8,7 +8,8 @@ import { seedRolePermissions, seedSystemRoles } from '../../access';
  */
 async function main(): Promise<void> {
   const config = loadAppConfig(process.env);
-  const { prisma, close } = openPrisma(config.database);
+  const cli = openIdentityCli(config);
+  const { prisma } = cli;
   try {
     const inserted = await seedSystemRoles(prisma);
     process.stdout.write(
@@ -23,7 +24,7 @@ async function main(): Promise<void> {
         : 'Default permissions already seeded.\n',
     );
   } finally {
-    await close();
+    await cli.close();
   }
 }
 

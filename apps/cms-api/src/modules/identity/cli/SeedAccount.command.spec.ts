@@ -1,10 +1,10 @@
 import { OWNER_ROLE_SLUG, REVIEWER_ROLE_SLUG } from '../../access';
-import { CliInputError } from './password-input';
+import { CliInputError } from './PasswordInput.client';
 import {
   assertSeedAllowed,
-  parseSeedArgs,
   SeedAccountError,
-} from './seed-account';
+} from '../application/SeedAccount.service';
+import { parseSeedArgs } from './SeedAccount.command';
 
 const BASE_ARGS = ['--email', 'a@example.com', '--password-stdin'];
 

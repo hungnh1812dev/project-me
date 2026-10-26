@@ -22,12 +22,12 @@
     "content:migrate": "node dist/modules/content-engine/cli/migrate.js",
     "deploy:migrate": "npm run --silent db:migrate && npm run --silent content:migrate",
     "db:generate": "prisma generate",
-    "db:migrate": "prisma migrate deploy && node dist/modules/identity/cli/seed.js",
+    "db:migrate": "prisma migrate deploy && node dist/modules/identity/cli/Seed.command.js",
     "db:migrate:dev": "prisma migrate dev",
-    "db:seed": "node dist/modules/identity/cli/seed.js",
-    "owner:bootstrap": "node dist/modules/identity/cli/owner-bootstrap.command.js",
-    "owner:reset-2fa": "node dist/modules/identity/cli/owner-reset-2fa.js",
-    "seed:account": "node dist/modules/identity/cli/seed-account.js"
+    "db:seed": "node dist/modules/identity/cli/Seed.command.js",
+    "owner:bootstrap": "node dist/modules/identity/cli/OwnerBootstrap.command.js",
+    "owner:reset-2fa": "node dist/modules/identity/cli/OwnerReset2fa.command.js",
+    "seed:account": "node dist/modules/identity/cli/SeedAccount.command.js"
   },
   "dependencies": {
     "@nestjs/common": "11.2.7",

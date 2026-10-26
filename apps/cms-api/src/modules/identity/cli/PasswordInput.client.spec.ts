@@ -6,7 +6,7 @@ import {
   type HiddenInput,
   promptHidden,
   readPasswordFromStream,
-} from './password-input';
+} from './PasswordInput.client';
 
 class FakeTty extends EventEmitter implements HiddenInput {
   isTTY = true;

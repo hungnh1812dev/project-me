@@ -13,30 +13,32 @@ import {
 import type { Request, Response } from 'express';
 import { type z } from 'zod';
 
-import { ClientIpResolver } from '../../common/http/client-ip.resolver';
-import { TWO_FACTOR_ROUTES } from './identity.routes';
-import { NO_STORE_HEADER } from '../../common/constants/http.constants';
+import { NO_STORE_HEADER } from '../../../common/constants/http.constants';
+import { Throttle } from '../../../common/guards/throttle.guard';
+import { ClientIpResolver } from '../../../common/http/client-ip.resolver';
+import { clientMetaOf } from '../../../common/http/client-meta';
+import { requireAccountActor } from '../../access';
+import { TwoFactorLoginService } from '../application/TwoFactorLogin.service';
+import {
+  type TotpSetupResponse,
+  TwoFactorManagementService,
+} from '../application/TwoFactorManagement.service';
 import {
   AUTH_ERROR_CODES,
   AUTH_ERROR_MESSAGES,
-} from './domain/Identity.constants';
-import { IDENTITY_RATE_LIMIT_POLICIES } from './identity.rate-limits.constants';
-import { Throttle } from '../../common/guards/throttle.guard';
-import { type AccessTokenResponse, setRefreshCookie } from './auth.controller';
-import { clientMetaOf } from '../../common/http/client-meta';
-import { requireAccountActor } from '../access';
-import { type AuthenticatedRequest, JwtAuthGuard } from './jwt.strategy';
+} from '../domain/Identity.constants';
+import { type AccessTokenResponse, setRefreshCookie } from './Auth.controller';
+import {
+  IDENTITY_RATE_LIMIT_POLICIES,
+  TWO_FACTOR_ROUTES,
+} from './IdentityHttp.constants';
+import { type AuthenticatedRequest, JwtAuthGuard } from './Jwt.strategy';
 import {
   disableTwoFactorSchema,
   emailChallengeSchema,
   enableTwoFactorSchema,
   verifyTwoFactorSchema,
-} from './two-factor.requests';
-import { TwoFactorLoginService } from './application/TwoFactorLogin.service';
-import {
-  type TotpSetupResponse,
-  TwoFactorManagementService,
-} from './application/TwoFactorManagement.service';
+} from './TwoFactor.requests';
 
 function parseBody<T>(schema: z.ZodType<T>, body: unknown): T {
   const parsed = schema.safeParse(body);

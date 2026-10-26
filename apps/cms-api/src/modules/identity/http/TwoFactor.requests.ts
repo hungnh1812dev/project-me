@@ -4,7 +4,7 @@ import {
   PASSWORD_MAX_LENGTH,
   TOTP,
   TWO_FACTOR_TEMP_TOKEN_MAX_LENGTH,
-} from './domain/Identity.constants';
+} from '../domain/Identity.constants';
 
 /**
  * Bodies of the 2FA endpoints (SPEC §9). Shape checks only; codes

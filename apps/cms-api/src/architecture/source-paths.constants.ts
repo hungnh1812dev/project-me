@@ -123,7 +123,7 @@ export const SYSTEM_ROLES_TABLE_FILE = join(
   'system-roles.ts',
 );
 export const NON_ROLE_LITERAL_FILES = [
-  join(MODULES, 'identity', 'identity.routes.ts'),
+  join(MODULES, 'identity', 'http', 'IdentityHttp.constants.ts'),
   join(MODULES, 'reviewer', 'reviewer.routes.ts'),
   join('architecture', 'module-edges.constants.ts'),
   join('architecture', 'public-handlers.constants.ts'),

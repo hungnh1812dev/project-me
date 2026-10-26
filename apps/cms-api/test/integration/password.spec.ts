@@ -15,7 +15,7 @@ import {
 import { ERROR_CODES } from '../../src/common/constants/error.constants';
 import { DOMAIN_ERROR_KINDS } from '../../src/common/errors/DomainErrorKinds.constants';
 import { MS_PER_SECOND } from '../../src/common/constants/time.constants';
-import { IDENTITY_RATE_LIMIT_POLICIES } from '../../src/modules/identity/identity.rate-limits.constants';
+import { IDENTITY_RATE_LIMIT_POLICIES } from '../../src/modules/identity/http/IdentityHttp.constants';
 import {
   openPrisma,
   type PrismaHandle,

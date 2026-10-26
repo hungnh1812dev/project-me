@@ -2,11 +2,13 @@ import type { StartedPostgreSqlContainer } from '@testcontainers/postgresql';
 
 import {
   openPrisma,
+  type PrismaClient,
   type PrismaHandle,
 } from '../../src/infrastructure/database/prisma-client';
 import { OWNER_ROLE_SLUG } from '../../src/modules/access';
 import { seedSystemRoles } from '../../src/modules/access/roles/system-roles.seed';
-import { seedAccount } from '../../src/modules/identity/cli/seed-account';
+import { identityUseCasesOf } from '../../src/modules/identity/cli/IdentityCli.setup';
+import { type SeedAccountInput } from '../../src/modules/identity/application/SeedAccount.service';
 import { SEED_ACCOUNT_ERRORS } from '../../src/modules/identity/domain/Identity.constants';
 import { verifyPassword } from '../../src/modules/identity/application/Password.service';
 import {
@@ -17,6 +19,14 @@ import { createCoreTemplate } from '../fixtures/core-db.fixture';
 import { startPostgres } from '../fixtures/postgres.fixture';
 
 const PASSWORD = 'correct horse battery staple';
+
+function seedAccount(
+  prisma: PrismaClient,
+  input: SeedAccountInput,
+  env: NodeJS.ProcessEnv = process.env,
+) {
+  return identityUseCasesOf(prisma).seedAccount.seed(input, env);
+}
 
 describe('seed:account (Postgres 16 via Testcontainers)', () => {
   let postgres: StartedPostgreSqlContainer;

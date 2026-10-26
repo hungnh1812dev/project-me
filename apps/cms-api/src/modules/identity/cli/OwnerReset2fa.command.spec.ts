@@ -1,5 +1,5 @@
-import { isConfirmed, parseResetArgs } from './owner-reset-2fa';
-import { CliInputError } from './password-input';
+import { isConfirmed, parseResetArgs } from './OwnerReset2fa.command';
+import { CliInputError } from './PasswordInput.client';
 
 describe('parseResetArgs', () => {
   it('reads --email and --yes', () => {

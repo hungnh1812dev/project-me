@@ -1,37 +1,34 @@
-import {
-  ConflictException,
-  Inject,
-  Injectable,
-  Logger,
-  type OnApplicationBootstrap,
-  ServiceUnavailableException,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 
-import { ERROR_CODES } from '../../common/constants/error.constants';
-import { type IAppConfig } from '../../config/app-config';
-import { APP_CONFIG } from '../../config/config.constants';
-import { PrismaService } from '../../infrastructure/database/prisma.service';
+import { type IAppConfig } from '../../../config/app-config';
+import { APP_CONFIG } from '../../../config/config.constants';
+import {
+  APP_LOGGER,
+  type AppLogger,
+} from '../../../infrastructure/logging/AppLogger.port';
 import {
   AUDIT_ACTIONS,
   OWNER_CREATED_CHANNELS,
+  SecurityAuditService,
   SETUP_REJECTION_REASONS,
   type SetupRejectionReason,
-} from '../security-audit';
-import { SecurityAuditService } from '../security-audit';
+} from '../../security-audit';
 import {
   OWNER_BOOTSTRAP_ERRORS,
-  OWNER_SETUP_ERROR_CODES,
   OWNER_SETUP_MESSAGES,
-} from './domain/Identity.constants';
-import { OWNER_ROLE_SLUG } from '../access';
-import { bootstrapOwner, OwnerBootstrapError } from './owner-bootstrap';
+} from '../domain/Identity.constants';
 import {
-  carriesSetupToken,
-  parseOwnerSetupBody,
-  submittedSetupToken,
-} from './owner-setup.requests';
-import { isSetupTokenValid } from './domain/SetupToken.rules';
+  ownerEmailTaken,
+  setupTokenInvalid,
+  setupUnavailable,
+} from '../domain/Identity.errors';
+import { isSetupTokenValid } from '../domain/SetupToken.rules';
+import { ACCOUNT_REPOSITORY, type AccountRepository } from './Identity.port';
+import {
+  OwnerBootstrapError,
+  type OwnerBootstrapInput,
+  OwnerBootstrapService,
+} from './OwnerBootstrap.service';
 
 /** Thrown when the setup is closed; the controller answers the unknown-route 404. */
 export class SetupClosedError extends Error {
@@ -50,23 +47,27 @@ export interface SetupClientMeta {
  * configured and no live owner exists. Once an owner is seen the `closed`
  * latch stops all further owner queries; the DB advisory lock and the
  * single-owner index still decide when several requests race.
+ *
+ * The HTTP layer calls `admit` with the submitted token before it reads any
+ * other part of the body, then `createOwner` with the parsed values.
  */
 @Injectable()
-export class OwnerSetupService implements OnApplicationBootstrap {
-  private readonly logger = new Logger(OwnerSetupService.name);
+export class OwnerSetupService {
   private readonly token: string | undefined;
   private closed = false;
 
   constructor(
-    private readonly prisma: PrismaService,
+    @Inject(ACCOUNT_REPOSITORY) private readonly accounts: AccountRepository,
     private readonly audit: SecurityAuditService,
+    private readonly bootstrap: OwnerBootstrapService,
+    @Inject(APP_LOGGER) private readonly logger: AppLogger,
     @Inject(APP_CONFIG) config: IAppConfig,
   ) {
     this.token = config.secrets.ownerSetupToken;
   }
 
   /** Warns once at boot when the token is still set after the owner exists. */
-  async onApplicationBootstrap(): Promise<void> {
+  async warnWhenTokenOutlivesSetup(): Promise<void> {
     if (this.token === undefined) return;
     try {
       await this.hasOwnerAccount();
@@ -80,75 +81,75 @@ export class OwnerSetupService implements OnApplicationBootstrap {
     return !(await this.hasOwnerAccount());
   }
 
-  /** `body` is the raw JSON body; the token is checked before anything else is read. */
-  async createOwner(
-    body: unknown,
-    meta: SetupClientMeta,
-  ): Promise<{ email: string }> {
+  /**
+   * Lets a submit through only while the setup is open and `submittedToken`
+   * matches. Closed answers `SetupClosedError`; a wrong token is audited and
+   * answers 401.
+   */
+  async admit(submittedToken: unknown, meta: SetupClientMeta): Promise<void> {
     const configured = this.token;
     if (configured === undefined || !(await this.isOpen())) {
-      return this.refuseClosed(body, meta);
+      return this.refuseClosed(isNonEmptyText(submittedToken), meta);
     }
-
-    if (!isSetupTokenValid(submittedSetupToken(body), configured)) {
+    if (!isSetupTokenValid(submittedToken, configured)) {
       await this.reject(SETUP_REJECTION_REASONS.BAD_TOKEN, meta);
-      throw new UnauthorizedException({
-        errorCode: OWNER_SETUP_ERROR_CODES.TOKEN_INVALID,
-        message: OWNER_SETUP_MESSAGES.TOKEN_INVALID,
-      });
+      throw setupTokenInvalid();
     }
+  }
 
-    const input = parseOwnerSetupBody(body);
+  /** Creates the owner from values that passed `admit` and the body check. */
+  async createOwner(
+    input: OwnerBootstrapInput,
+    meta: SetupClientMeta,
+  ): Promise<{ email: string }> {
     try {
-      const owner = await bootstrapOwner(this.prisma, input, {
+      const owner = await this.bootstrap.bootstrap(input, {
         channel: OWNER_CREATED_CHANNELS.SETUP_PAGE,
         ip: meta.ip,
       });
       this.closed = true;
-      this.logger.warn(OWNER_SETUP_MESSAGES.TOKEN_STILL_SET);
+      this.warnTokenStillSet();
       return { email: owner.email };
     } catch (error) {
       if (!(error instanceof OwnerBootstrapError)) throw error;
       switch (error.code) {
         case OWNER_BOOTSTRAP_ERRORS.OWNER_EXISTS:
           this.closed = true;
-          return this.refuseClosed(body, meta);
+          return this.refuseClosed(true, meta);
         case OWNER_BOOTSTRAP_ERRORS.EMAIL_TAKEN:
-          throw new ConflictException({
-            errorCode: OWNER_SETUP_ERROR_CODES.EMAIL_TAKEN,
-            message: OWNER_SETUP_MESSAGES.EMAIL_TAKEN,
-          });
+          throw ownerEmailTaken();
         case OWNER_BOOTSTRAP_ERRORS.ROLE_MISSING:
-          throw new ServiceUnavailableException({
-            errorCode: ERROR_CODES.SERVICE_UNAVAILABLE,
-            message: OWNER_SETUP_MESSAGES.UNAVAILABLE,
-          });
+          throw setupUnavailable();
         default:
           throw error;
       }
     }
   }
 
+  private warnTokenStillSet(): void {
+    this.logger.warn(
+      OWNER_SETUP_MESSAGES.TOKEN_STILL_SET,
+      OwnerSetupService.name,
+    );
+  }
+
   /** True once a live owner exists; sets the latch and warns on the first sight. */
   private async hasOwnerAccount(): Promise<boolean> {
     if (this.closed) return true;
-    const owner = await this.prisma.account.findFirst({
-      where: { roleSlug: OWNER_ROLE_SLUG, deletedAt: null },
-      select: { id: true },
-    });
-    if (owner === null) return false;
+    if (!(await this.accounts.hasLiveOwner())) return false;
     this.closed = true;
     if (this.token !== undefined) {
-      this.logger.warn(OWNER_SETUP_MESSAGES.TOKEN_STILL_SET);
+      this.warnTokenStillSet();
     }
     return true;
   }
 
+  /** A closed submit is audited only when it names a token (so port scans leave no rows). */
   private async refuseClosed(
-    body: unknown,
+    carriesToken: boolean,
     meta: SetupClientMeta,
   ): Promise<never> {
-    if (carriesSetupToken(body)) {
+    if (carriesToken) {
       await this.reject(SETUP_REJECTION_REASONS.CLOSED, meta);
     }
     throw new SetupClosedError();
@@ -165,4 +166,8 @@ export class OwnerSetupService implements OnApplicationBootstrap {
       ip: meta.ip,
     });
   }
+}
+
+function isNonEmptyText(value: unknown): boolean {
+  return typeof value === 'string' && value !== '';
 }

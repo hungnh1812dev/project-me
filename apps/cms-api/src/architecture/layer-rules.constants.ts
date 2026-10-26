@@ -55,7 +55,7 @@ export const ALLOWED_DOMAIN_PACKAGES: readonly string[] = [
 export const ALLOWED_DOMAIN_BUILTIN_IMPORTS: Readonly<
   Record<string, readonly string[]>
 > = {
-  'node:crypto': ['createHash'],
+  'node:crypto': ['createHash', 'timingSafeEqual'],
   'node:util': ['isDeepStrictEqual'],
 };
 
@@ -77,6 +77,10 @@ export const DOMAIN_CROSS_MODULE_HELPERS: readonly string[] = [
   // access: field-path helpers
   'joinFieldPath',
   'RECORD_SYSTEM_FIELDS',
+  // identity: role slugs and the audit vocabulary its rules name
+  'ADMIN_ROLE_SLUG',
+  'GUEST_ROLE_SLUG',
+  'LOGIN_FAILURE_REASONS',
 ];
 
 export interface BannedText {
@@ -296,6 +300,7 @@ export const MIGRATED_MODULES: readonly string[] = [
   'graphql',
   'access',
   'security-audit',
+  'identity',
 ];
 
 export interface KnownLayerViolation {
@@ -332,4 +337,22 @@ export const KNOWN_LAYER_VIOLATIONS: readonly KnownLayerViolation[] = [
     to: join('modules', 'content-engine', 'cli', 'content-paths.ts'),
     removedBy: 'CR-ce-4',
   },
+  // The access facade still re-exports role files from the unmigrated roles/ folder.
+  ...[
+    join('adapters', 'PrismaAccount.repository.ts'),
+    join('application', 'AccessSession.service.ts'),
+    join('application', 'OwnerBootstrap.service.ts'),
+    join('domain', 'Identity.constants.ts'),
+  ].map((file) => ({
+    from: join('modules', 'identity', file),
+    rule: 'other-module-layer',
+    to: join('modules', 'access', 'roles', 'system-roles.ts'),
+    removedBy: 'CR-ac-6',
+  })),
+  ...['role-permissions.seed.ts', 'system-roles.seed.ts'].map((file) => ({
+    from: join('modules', 'identity', 'cli', 'Seed.command.ts'),
+    rule: 'other-module-layer',
+    to: join('modules', 'access', 'roles', file),
+    removedBy: 'CR-ac-6',
+  })),
 ];

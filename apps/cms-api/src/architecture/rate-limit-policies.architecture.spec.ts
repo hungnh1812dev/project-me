@@ -20,7 +20,7 @@ import { DOCUMENTS_RATE_LIMIT_POLICIES } from '../modules/documents/http/Documen
 import {
   IDENTITY_RATE_LIMIT_POLICIES,
   rateLimitOverrideBindings,
-} from '../modules/identity/identity.rate-limits.constants';
+} from '../modules/identity/http/IdentityHttp.constants';
 import { MEDIA_RATE_LIMIT_POLICIES } from '../modules/media/media.rate-limits.constants';
 import { REVIEWER_RATE_LIMIT_POLICIES } from '../modules/reviewer/reviewer.rate-limits.constants';
 import {

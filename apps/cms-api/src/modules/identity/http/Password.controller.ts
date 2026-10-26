@@ -12,25 +12,27 @@ import {
 import type { Request } from 'express';
 import { type z } from 'zod';
 
-import { ClientIpResolver } from '../../common/http/client-ip.resolver';
-import { PASSWORD_ROUTES } from './identity.routes';
-import { NO_STORE_HEADER } from '../../common/constants/http.constants';
+import { NO_STORE_HEADER } from '../../../common/constants/http.constants';
+import { Throttle } from '../../../common/guards/throttle.guard';
+import { ClientIpResolver } from '../../../common/http/client-ip.resolver';
+import { clientMetaOf } from '../../../common/http/client-meta';
+import { requireAccountActor } from '../../access';
+import { PasswordService } from '../application/Password.service';
 import {
   AUTH_ERROR_CODES,
   AUTH_ERROR_MESSAGES,
-} from './domain/Identity.constants';
-import { IDENTITY_RATE_LIMIT_POLICIES } from './identity.rate-limits.constants';
-import { Throttle } from '../../common/guards/throttle.guard';
-import { clientMetaOf } from '../../common/http/client-meta';
-import { requireAccountActor } from '../access';
-import { PasswordService } from './application/Password.service';
-import { type AuthenticatedRequest, JwtAuthGuard } from './jwt.strategy';
+} from '../domain/Identity.constants';
+import {
+  IDENTITY_RATE_LIMIT_POLICIES,
+  PASSWORD_ROUTES,
+} from './IdentityHttp.constants';
+import { type AuthenticatedRequest, JwtAuthGuard } from './Jwt.strategy';
 import {
   changePasswordSchema,
   requestOtpSchema,
   resetPasswordSchema,
   setPasswordSchema,
-} from './password.requests';
+} from './Password.requests';
 
 function parseBody<T>(schema: z.ZodType<T>, body: unknown): T {
   const parsed = schema.safeParse(body);
