@@ -27,7 +27,7 @@ owner specs). It reads the setup key from the dialog and computes codes with
 `otplib`; since cms-api rejects a reused time step, it waits for the next
 30 s step between codes, so it runs for up to about a minute.
 
-Specs run in one worker: `password-reset.spec.ts` changes the owner password
+Specs run in one worker: `PasswordReset.e2e.spec.ts` changes the owner password
 (and puts it back at the end), so it must not overlap other specs. Codes are
 read from Mailpit's API through a browser tab (Chromium resolves
 `*.localhost` itself).
@@ -39,8 +39,8 @@ stack once and run specs against it:
 
 ```sh
 SMOKE_KEEP=1 SMOKE_E2E=1 pnpm smoke             # once: build, seed, full suite
-pnpm e2e:spec tests/reviewer.spec.ts            # seconds, no rebuild
-pnpm e2e:spec tests/reviewer.spec.ts -g "starts" # one test
+pnpm e2e:spec tests/ReviewerSession.e2e.spec.ts            # seconds, no rebuild
+pnpm e2e:spec tests/ReviewerSession.e2e.spec.ts -g "starts" # one test
 docker compose -p abyss-smoke down -v           # when done
 ```
 
@@ -59,7 +59,7 @@ Start-up is about 25-35 s.
 
 ```sh
 pnpm dev:stack                                       # once
-E2E_STACK=dev pnpm e2e:spec tests/admin-auth.spec.ts # seconds
+E2E_STACK=dev pnpm e2e:spec tests/AdminAuth.e2e.spec.ts # seconds
 pnpm dev:stack:stop                                  # apps stopped, containers and volumes removed
 ```
 
@@ -81,15 +81,15 @@ e2e runs locally only; CI does not run it.
 
 Set the keys from [`.env.example`](.env.example) in the shell, then
 `pnpm --filter @abyss/e2e test` (or `pnpm e2e` at the root).
-`src/env.ts` is the only reader of `process.env`. `pnpm --filter @abyss/e2e
+`src/E2e.env.ts` is the only reader of `process.env`. `pnpm --filter @abyss/e2e
 test:contract` checks (no stack needed) that `.env.example`, `E2E_VARS` in
-`scripts/lib/stack-seed.sh` and `env.ts` list the same `E2E_*` names.
+`scripts/lib/stack-seed.sh` and `E2e.env.ts` list the same `E2E_*` names.
 
 ## Module rules
 
-- `src/app-contracts.ts` is the only file that imports from an app's `src`
+- `src/AppContracts.contract.ts` is the only file that imports from an app's `src`
   (copy, routes, constants); specs import those names from it. Lint enforces it.
-- `src/smoke-database.ts` is the only file that runs `docker exec` / SQL (smoke
+- `src/SmokeDatabase.client.ts` is the only file that runs `docker exec` / SQL (smoke
   database from `E2E_DB_*`); it refuses an API host that does not end in
   `.localhost`.
 
@@ -112,23 +112,23 @@ XHR to the API. On any other plain-http host, the browser drops the cookie.
 
 ## Tests
 
-| Spec                             | Flow                                                                                                                                                                                                                                                                                                                                |
-| -------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `tests/access-admin.spec.ts`     | Accounts and roles admin: invite dialog validation and role list, duplicate email, invitation email (Mailpit) to set-password, disable then sign-in refused, role matrix toggle / discard / save / reload, field picker, conditions errors, admin read-only own role and rank-limited actions. One owner login for the owner block. |
-| `tests/admin-auth.spec.ts`       | Owner signs in; cookie attributes; no token in JS storage; reload keeps the session (silent refresh); sign out; reload shows login                                                                                                                                                                                                  |
-| `tests/admin-tabs.spec.ts`       | Two tabs in one context reload at once (racing silent refreshes): both stay signed in, every refresh is 200, later refreshes still work                                                                                                                                                                                             |
-| `tests/password-reset.spec.ts`   | Owner resets the password with an emailed code (Mailpit), signs in with it, then puts the old password back                                                                                                                                                                                                                         |
-| `tests/two-factor.spec.ts`       | 2FA account: TOTP setup from the manual key, login through the challenge dialog, TOTP off, email codes on (warning shown), login with the emailed code, change password ends the session                                                                                                                                            |
-| `tests/api-tokens.spec.ts`       | API tokens page: list columns, create form validation, raw token shown once then only its prefix, edit sends only changes, revoke, raw token refused on `/api-tokens`, list never returns it, admin sees own tokens only                                                                                                            |
-| `tests/content-form.spec.ts`     | Dynamic document form on `cv-page`: every field type, validation, create and edit draft, richtext toolbar and keyboard, component reorder keeps uids, masked fields read-only, server 400 / 409 / load failure, console clean                                                                                                       |
-| `tests/content-conflict.spec.ts` | Conflict merge modal: keep mine, per-item cases, concurrent save refreshes the diff, keyboard and closing, masked fields never shown or sent                                                                                                                                                                                        |
-| `tests/content-presence.spec.ts` | Presence banner (D16): one empty beat per period, two sessions see each other, leaving stops the beats, new document sends none                                                                                                                                                                                                     |
-| `tests/content-bulk.spec.ts`     | Collection list and bulk actions on `profile`: import (invalid, partial, all-or-nothing), select 5 then publish, unpublish failures, stale list conflict, delete asks first, focus return, role without content permissions                                                                                                         |
-| `tests/media-library.spec.ts`    | Media library: upload, unsupported type, alt text limit and save, in-use delete message, delete                                                                                                                                                                                                                                     |
-| `tests/media-attach.spec.ts`     | Media field in a document: pick, replace, remove, attached file cannot be deleted, upload in the field attaches (POST stubbed)                                                                                                                                                                                                      |
-| `tests/reviewer.spec.ts`         | Reviewer access: web dialog, Turnstile states, memory-only token, published-only reads and refused writes, one session per connection, owner log and switch-off                                                                                                                                                                     |
-| `tests/web-session.spec.ts`      | Web sign-in: dialog validation, generic wrong-password message, reader session shared with the admin, owner refused, email-code step. Self-contained: own seeded accounts, no state from other specs                                                                                                                                |
-| `tests/edge-routing.spec.ts`     | SPEC §12-2 and §12-17 through Traefik: login with a trailing slash is never redirected, `/auth/register` is 404                                                                                                                                                                                                                     |
+| Spec                                | Flow                                                                                                                                                                                                                                                                                                                                |
+| ----------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `tests/AccessAdmin.e2e.spec.ts`     | Accounts and roles admin: invite dialog validation and role list, duplicate email, invitation email (Mailpit) to set-password, disable then sign-in refused, role matrix toggle / discard / save / reload, field picker, conditions errors, admin read-only own role and rank-limited actions. One owner login for the owner block. |
+| `tests/AdminAuth.e2e.spec.ts`       | Owner signs in; cookie attributes; no token in JS storage; reload keeps the session (silent refresh); sign out; reload shows login                                                                                                                                                                                                  |
+| `tests/AdminTabs.e2e.spec.ts`       | Two tabs in one context reload at once (racing silent refreshes): both stay signed in, every refresh is 200, later refreshes still work                                                                                                                                                                                             |
+| `tests/PasswordReset.e2e.spec.ts`   | Owner resets the password with an emailed code (Mailpit), signs in with it, then puts the old password back                                                                                                                                                                                                                         |
+| `tests/TwoFactor.e2e.spec.ts`       | 2FA account: TOTP setup from the manual key, login through the challenge dialog, TOTP off, email codes on (warning shown), login with the emailed code, change password ends the session                                                                                                                                            |
+| `tests/ApiTokens.e2e.spec.ts`       | API tokens page: list columns, create form validation, raw token shown once then only its prefix, edit sends only changes, revoke, raw token refused on `/api-tokens`, list never returns it, admin sees own tokens only                                                                                                            |
+| `tests/ContentForm.e2e.spec.ts`     | Dynamic document form on `cv-page`: every field type, validation, create and edit draft, richtext toolbar and keyboard, component reorder keeps uids, masked fields read-only, server 400 / 409 / load failure, console clean                                                                                                       |
+| `tests/ContentConflict.e2e.spec.ts` | Conflict merge modal: keep mine, per-item cases, concurrent save refreshes the diff, keyboard and closing, masked fields never shown or sent                                                                                                                                                                                        |
+| `tests/ContentPresence.e2e.spec.ts` | Presence banner (D16): one empty beat per period, two sessions see each other, leaving stops the beats, new document sends none                                                                                                                                                                                                     |
+| `tests/ContentBulk.e2e.spec.ts`     | Collection list and bulk actions on `profile`: import (invalid, partial, all-or-nothing), select 5 then publish, unpublish failures, stale list conflict, delete asks first, focus return, role without content permissions                                                                                                         |
+| `tests/MediaLibrary.e2e.spec.ts`    | Media library: upload, unsupported type, alt text limit and save, in-use delete message, delete                                                                                                                                                                                                                                     |
+| `tests/MediaAttach.e2e.spec.ts`     | Media field in a document: pick, replace, remove, attached file cannot be deleted, upload in the field attaches (POST stubbed)                                                                                                                                                                                                      |
+| `tests/ReviewerSession.e2e.spec.ts` | Reviewer access: web dialog, Turnstile states, memory-only token, published-only reads and refused writes, one session per connection, owner log and switch-off                                                                                                                                                                     |
+| `tests/WebSession.e2e.spec.ts`      | Web sign-in: dialog validation, generic wrong-password message, reader session shared with the admin, owner refused, email-code step. Self-contained: own seeded accounts, no state from other specs                                                                                                                                |
+| `tests/EdgeRouting.e2e.spec.ts`     | SPEC §12-2 and §12-17 through Traefik: login with a trailing slash is never redirected, `/auth/register` is 404                                                                                                                                                                                                                     |
 
 Every SPEC §12 criterion and the test that proves it:
 [`docs/modules/success-criteria.md`](../../docs/modules/success-criteria.md).

@@ -1,7 +1,7 @@
 import { defineConfig, devices } from '@playwright/test';
 
-import { CI_RETRIES, EXPECT_TIMEOUT_MS, WORKERS } from './src/constants';
-import { e2eEnv } from './src/env';
+import { CI_RETRIES, EXPECT_TIMEOUT_MS, WORKERS } from './src/E2e.constants';
+import { e2eEnv } from './src/E2e.env';
 
 export default defineConfig({
   testDir: './tests',
