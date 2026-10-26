@@ -5,8 +5,7 @@ import {
   cloudinaryUploadOptions,
   type CloudinaryClient,
 } from './cloudinary.adapter';
-import { FakeMediaStorage } from './fake.adapter';
-import { FAKE_STORAGE_ORIGIN } from './media.constants';
+import { FAKE_STORAGE_ORIGIN, FakeMediaStorage } from './fake.adapter';
 
 const KEY = '01900000-0000-7000-8000-000000000001';
 

@@ -22,7 +22,7 @@ import {
   MEDIA_ERROR_CODES,
   MEDIA_ERROR_MESSAGES,
   MEDIA_TABLE,
-} from './media.constants';
+} from './domain/Media.constants';
 import { isMediaReferenced } from './media-usage';
 
 /**

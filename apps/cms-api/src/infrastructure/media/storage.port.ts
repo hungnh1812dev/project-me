@@ -1,6 +1,6 @@
 import type { Readable } from 'node:stream';
 
-import type { MediaKind } from './media.constants';
+import type { MediaKind } from '../../modules/media';
 
 /** DI token for the configured `MediaStorage` (MEDIA_PROVIDER). */
 export const MEDIA_STORAGE = Symbol('MEDIA_STORAGE');

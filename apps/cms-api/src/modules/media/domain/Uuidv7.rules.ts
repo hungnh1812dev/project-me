@@ -1,6 +1,4 @@
-import { randomBytes } from 'node:crypto';
-
-const UUID_BYTES = 16;
+export const UUID_BYTES = 16;
 const TIMESTAMP_BYTES = 6;
 const BYTE_BITS = 8;
 const VERSION_BYTE = 6;
@@ -12,10 +10,11 @@ const VARIANT_MASK = 0x3f;
 
 /**
  * RFC 9562 UUID v7: a 48-bit millisecond timestamp followed by random bits,
- * so keys sort by creation time and are not guessable. `nowMs` is for tests.
+ * so keys sort by creation time and are not guessable. The caller supplies
+ * the time (`Clock`) and `UUID_BYTES` random bytes, which keeps this rule pure.
  */
-export function uuidv7(nowMs: number = Date.now()): string {
-  const bytes = randomBytes(UUID_BYTES);
+export function uuidv7(nowMs: number, randomBytes: Uint8Array): string {
+  const bytes = Buffer.from(randomBytes);
   let remaining = nowMs;
   for (let index = TIMESTAMP_BYTES - 1; index >= 0; index -= 1) {
     bytes[index] = remaining % (1 << BYTE_BITS);

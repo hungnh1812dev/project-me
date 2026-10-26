@@ -14,7 +14,7 @@ import { reviewerActor } from '../../src/modules/access/domain/ActorContext.enti
 import { ContentRegistry } from '../../src/modules/content-engine/application/ContentRegistry.service';
 import { ContentTypeRegistry } from '../../src/modules/content-engine/domain/ContentTypeRegistry.entity';
 import { hashPassword } from '../../src/modules/identity/application/Password.service';
-import { MEDIA_MAX_BYTES } from '../../src/modules/media/media.constants';
+import { MEDIA_MAX_BYTES } from '../../src/modules/media/domain/MediaUpload.rules';
 import { MediaService } from '../../src/modules/media/media.service';
 import {
   ARTICLE_DEFINITION,

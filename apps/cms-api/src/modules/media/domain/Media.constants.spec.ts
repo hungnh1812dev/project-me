@@ -1,7 +1,7 @@
 import {
   mediaRefInvalidMessage,
   MEDIA_REF_ERROR_CODES,
-} from './media.constants';
+} from './Media.constants';
 
 describe('media reference errors', () => {
   it('keeps the wire code byte for byte', () => {

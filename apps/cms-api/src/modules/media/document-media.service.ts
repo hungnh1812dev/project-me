@@ -19,7 +19,7 @@ import {
   MEDIA_REF_ERROR_CODES,
   MEDIA_TABLE,
   mediaRefInvalidMessage,
-} from './media.constants';
+} from './domain/Media.constants';
 
 /** A file as a document read embeds it. The internal integer id is never part of it. */
 export interface EmbeddedMedia {

@@ -1,8 +1,8 @@
-import type { IncomingMessage } from 'node:http';
+import { randomBytes } from 'node:crypto';
 
 import { ForbiddenException, Inject, Injectable, Logger } from '@nestjs/common';
 
-import { uuidv7 } from './uuidv7';
+import { Clock } from '../../common/time/clock';
 import { MediaProvider, PermissionAction } from '../../generated/prisma/client';
 import { PrismaService } from '../../infrastructure/database/prisma.service';
 import {
@@ -15,31 +15,16 @@ import {
   type ActorContext,
   type AccountActor,
 } from '../access';
-import type { PageMeta, PageQuery } from '../../common/http/request-parsing';
+import type { PageQuery } from '../../common/http/request-parsing';
 import { ContentDbProvider } from '../content-engine';
-import { DELETED_AT_COLUMN, MEDIA_ORDER, MEDIA_TABLE } from './media.constants';
-import { UploadPipeline } from './upload.pipeline';
-
-/** A library file as the API returns it: no storage key, no internal id. */
-export interface MediaView {
-  readonly id: string;
-  readonly fileName: string;
-  readonly mimeType: string;
-  readonly size: number;
-  readonly width: number | null;
-  readonly height: number | null;
-  readonly alt: string | null;
-  readonly url: string;
-  readonly thumbnailUrl: string | null;
-  readonly provider: string;
-  readonly isReviewerPreset: boolean;
-  readonly createdAt: string;
-}
-
-export interface MediaPage {
-  readonly data: MediaView[];
-  readonly meta: PageMeta;
-}
+import {
+  DELETED_AT_COLUMN,
+  MEDIA_ORDER,
+  MEDIA_TABLE,
+} from './domain/Media.constants';
+import type { MediaPage, MediaRecord } from './domain/Media.entity';
+import { UUID_BYTES, uuidv7 } from './domain/Uuidv7.rules';
+import { type UploadStream, UploadPipeline } from './upload.pipeline';
 
 interface MediaRow {
   document_id: string;
@@ -71,9 +56,9 @@ const MEDIA_COLUMNS = [
   'created_at',
 ] as const;
 
-function viewOf(row: MediaRow): MediaView {
+function recordOfRow(row: MediaRow): MediaRecord {
   return {
-    id: row.document_id,
+    documentId: row.document_id,
     fileName: row.file_name,
     mimeType: row.mime_type,
     size: row.size,
@@ -84,38 +69,7 @@ function viewOf(row: MediaRow): MediaView {
     thumbnailUrl: row.thumbnail_url,
     provider: row.provider,
     isReviewerPreset: row.is_reviewer_preset,
-    createdAt: row.created_at.toISOString(),
-  };
-}
-
-/** The API view of a Prisma `file_library` row. */
-export function mediaViewOfRecord(row: {
-  documentId: string;
-  fileName: string;
-  mimeType: string;
-  size: number;
-  width: number | null;
-  height: number | null;
-  alt: string | null;
-  url: string;
-  thumbnailUrl: string | null;
-  provider: string;
-  isReviewerPreset: boolean;
-  createdAt: Date;
-}): MediaView {
-  return {
-    id: row.documentId,
-    fileName: row.fileName,
-    mimeType: row.mimeType,
-    size: row.size,
-    width: row.width,
-    height: row.height,
-    alt: row.alt,
-    url: row.url,
-    thumbnailUrl: row.thumbnailUrl,
-    provider: row.provider,
-    isReviewerPreset: row.isReviewerPreset,
-    createdAt: row.createdAt.toISOString(),
+    createdAt: row.created_at,
   };
 }
 
@@ -129,6 +83,7 @@ export class MediaService {
     private readonly prisma: PrismaService,
     private readonly content: ContentDbProvider,
     private readonly access: AccessPolicyService,
+    private readonly clock: Clock,
     @Inject(MEDIA_STORAGE) private readonly storage: MediaStorage,
   ) {}
 
@@ -137,11 +92,14 @@ export class MediaService {
    * key, then records it. If the row cannot be written the stored object is
    * removed again, so no orphan is left behind.
    */
-  async upload(actor: AccountActor, req: IncomingMessage): Promise<MediaView> {
-    const received = await this.pipeline.receive(req);
+  async upload(
+    actor: AccountActor,
+    upload: UploadStream,
+  ): Promise<MediaRecord> {
+    const received = await this.pipeline.receive(upload);
     try {
       const prepared = await this.pipeline.prepare(received);
-      const key = uuidv7();
+      const key = uuidv7(this.clock.now(), randomBytes(UUID_BYTES));
       const stored = await this.storage.put({
         key,
         kind: prepared.kind,
@@ -166,7 +124,7 @@ export class MediaService {
             updatedById: actor.accountId,
           },
         });
-        return mediaViewOfRecord(row);
+        return row;
       } catch (error) {
         await this.storage.delete(key, prepared.kind).catch(() => {
           this.logger.error(`Could not remove orphaned media object ${key}`);
@@ -210,7 +168,7 @@ export class MediaService {
       base.select((eb) => eb.fn.countAll().as('total')).executeTakeFirst(),
     ]);
     return {
-      data: (rows as unknown as MediaRow[]).map(viewOf),
+      data: (rows as unknown as MediaRow[]).map(recordOfRow),
       meta: { page, pageSize, total: Number(counted?.['total'] ?? 0) },
     };
   }

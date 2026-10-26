@@ -5,7 +5,7 @@ import { MediaStorageModule } from '../../infrastructure/media/media-storage.mod
 import { AccessModule } from '../access';
 import { ContentEngineModule } from '../content-engine';
 import { SecurityAuditModule } from '../security-audit';
-import { MediaController } from './media.controller';
+import { MediaController } from './http/Media.controller';
 import { MediaDeleteService } from './media-delete.service';
 import { DocumentMediaService } from './document-media.service';
 import { MediaUpdateService } from './media-update.service';

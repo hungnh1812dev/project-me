@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 import { createReadStream } from 'node:fs';
 import { mkdtemp, open, readFile, rm } from 'node:fs/promises';
-import type { IncomingMessage } from 'node:http';
+import type { IncomingHttpHeaders } from 'node:http';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { Readable } from 'node:stream';
@@ -16,27 +16,48 @@ import busboy from 'busboy';
 import { fileTypeFromBuffer } from 'file-type';
 import sharp from 'sharp';
 
-import type { MediaKind } from '../../infrastructure/media/media.constants';
 import {
   ALT_MAX_BYTES,
-  ALT_MAX_LENGTH,
-  type AllowedMime,
-  allowedMediaTypeOf,
   FALLBACK_FILE_NAME,
-  FILE_NAME_MAX_LENGTH,
-  type ImageMime,
-  IMAGE_QUALITY,
-  MAX_IMAGE_PIXELS,
   MEDIA_ERROR_CODES,
   MEDIA_ERROR_MESSAGES,
+  type MediaKind,
+} from './domain/Media.constants';
+import {
+  type AllowedMime,
+  allowedMediaTypeOf,
+  type ImageMime,
+  isAltWithinLimit,
   MEDIA_MAX_BYTES,
   MEDIA_MAX_FILE_BYTES,
   MEDIA_MAX_REQUEST_BYTES,
-  SNIFF_BYTES,
-  UPLOAD_FIELDS,
-  UPLOAD_MAX_PARTS,
-  UPLOAD_TEMP_PREFIX,
-} from './media.constants';
+  normalizeAlt,
+  sanitizeFileName,
+} from './domain/MediaUpload.rules';
+
+/** Bytes read before detecting the type (`file-type` needs at most this many). */
+const SNIFF_BYTES = 4_100;
+
+/** Decompression-bomb guard for sharp: most input pixels re-encoded. */
+const MAX_IMAGE_PIXELS = 50_000_000;
+const IMAGE_QUALITY = 90;
+
+/** Multipart form: one `file` part and an optional `alt` text field. */
+const UPLOAD_FIELDS = {
+  FILE: 'file',
+  ALT: 'alt',
+} as const;
+const UPLOAD_TEMP_PREFIX = 'abyss-upload-';
+/** Parts allowed in the form: the file and the alt field. */
+const UPLOAD_MAX_PARTS = 2;
+
+/** The request body as the controller hands it over: no Express request type. */
+export interface UploadStream {
+  readonly headers: IncomingHttpHeaders;
+  /** The `Content-Length` header, `null` when absent or not a number. */
+  readonly declaredLength: number | null;
+  readonly body: Readable;
+}
 
 /** A file received and written to a temp file; nothing trusted yet except the detected type. */
 export interface ReceivedUpload {
@@ -108,20 +129,6 @@ function invalidUpload(message: string): BadRequestException {
   });
 }
 
-/**
- * Client file name reduced to a safe display name: no path, no control
- * characters, bounded length. It is never used as a storage key.
- */
-export function sanitizeFileName(raw: string): string {
-  const base = raw.split(/[\\/]/).pop() ?? '';
-  // eslint-disable-next-line no-control-regex
-  const cleaned = base.replace(/[\u0000-\u001f\u007f]/g, '').trim();
-  const bounded = Array.from(cleaned).slice(0, FILE_NAME_MAX_LENGTH).join('');
-  return bounded === '' || bounded === '.' || bounded === '..'
-    ? FALLBACK_FILE_NAME
-    : bounded;
-}
-
 interface Spooled {
   readonly mimeType: AllowedMime;
   readonly kind: MediaKind;
@@ -139,11 +146,11 @@ interface Spooled {
  */
 @Injectable()
 export class UploadPipeline {
-  async receive(req: IncomingMessage): Promise<ReceivedUpload> {
-    const declaredLength = Number(req.headers['content-length']);
+  async receive(upload: UploadStream): Promise<ReceivedUpload> {
+    const { body } = upload;
     if (
-      Number.isFinite(declaredLength) &&
-      declaredLength > MEDIA_MAX_REQUEST_BYTES
+      upload.declaredLength !== null &&
+      upload.declaredLength > MEDIA_MAX_REQUEST_BYTES
     ) {
       throw tooLarge();
     }
@@ -151,7 +158,7 @@ export class UploadPipeline {
     let parser: busboy.Busboy;
     try {
       parser = busboy({
-        headers: req.headers,
+        headers: upload.headers,
         // busboy emits `*Limit` when the count reaches the limit, so each is
         // one above what is allowed: reaching it means there is an extra part.
         limits: {
@@ -186,7 +193,7 @@ export class UploadPipeline {
       const fail = (error: unknown): void => {
         if (settled) return;
         settled = true;
-        req.unpipe(parser);
+        body.unpipe(parser);
         parser.destroy();
         void dispose().finally(() =>
           reject(error instanceof Error ? error : new Error('Upload failed')),
@@ -198,12 +205,11 @@ export class UploadPipeline {
           fail(invalidUpload(MEDIA_ERROR_MESSAGES.UNEXPECTED_PART));
           return;
         }
-        if (info.valueTruncated || Array.from(value).length > ALT_MAX_LENGTH) {
+        if (info.valueTruncated || !isAltWithinLimit(value)) {
           fail(invalidUpload(MEDIA_ERROR_MESSAGES.ALT_TOO_LONG));
           return;
         }
-        const trimmed = value.trim();
-        alt = trimmed === '' ? null : trimmed;
+        alt = normalizeAlt(value);
       });
 
       parser.on('file', (name, stream, info) => {
@@ -223,8 +229,8 @@ export class UploadPipeline {
         );
       }
       parser.on('error', fail);
-      req.on('error', fail);
-      req.on('aborted', () =>
+      body.on('error', fail);
+      body.on('aborted', () =>
         fail(invalidUpload(MEDIA_ERROR_MESSAGES.NO_FILE)),
       );
 
@@ -243,7 +249,7 @@ export class UploadPipeline {
           .catch(fail);
       });
 
-      req.pipe(parser);
+      body.pipe(parser);
     });
   }
 

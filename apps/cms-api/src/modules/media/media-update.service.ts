@@ -17,9 +17,8 @@ import {
   MEDIA_ERROR_CODES,
   MEDIA_ERROR_MESSAGES,
   MEDIA_TABLE,
-} from './media.constants';
-import type { UpdateMediaRequest } from './media.requests';
-import { type MediaView, mediaViewOfRecord } from './media.service';
+} from './domain/Media.constants';
+import type { MediaRecord } from './domain/Media.entity';
 
 /**
  * `PATCH /media/:id`: edits the alt text. Not audited: SPEC §7 lists
@@ -36,8 +35,8 @@ export class MediaUpdateService {
   async update(
     actor: AccountActor,
     documentId: string,
-    body: UpdateMediaRequest,
-  ): Promise<MediaView> {
+    alt: string | null,
+  ): Promise<MediaRecord> {
     const { evaluator } = await this.access.policy();
     const filter = evaluator.rowFilter(
       actor,
@@ -57,14 +56,14 @@ export class MediaUpdateService {
     if (reachable === undefined) throw notFound();
     const { count } = await this.prisma.fileLibrary.updateMany({
       where: { documentId, deletedAt: null },
-      data: { alt: body.alt, updatedById: actor.accountId },
+      data: { alt, updatedById: actor.accountId },
     });
     if (count === 0) throw notFound();
     const row = await this.prisma.fileLibrary.findFirst({
       where: { documentId, deletedAt: null },
     });
     if (row === null) throw notFound();
-    return mediaViewOfRecord(row);
+    return row;
   }
 }
 

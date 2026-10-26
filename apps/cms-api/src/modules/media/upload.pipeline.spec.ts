@@ -1,5 +1,4 @@
 import { Readable } from 'node:stream';
-import type { IncomingMessage } from 'node:http';
 import { stat } from 'node:fs/promises';
 
 import { HttpException } from '@nestjs/common';
@@ -15,15 +14,11 @@ import {
   SVG_DOCUMENT,
 } from '../../../test/fixtures/media.fixture';
 import { multipart } from '../../../test/fixtures/multipart';
-import {
-  FALLBACK_FILE_NAME,
-  FILE_NAME_MAX_LENGTH,
-  MEDIA_ERROR_CODES,
-  MEDIA_MAX_BYTES,
-} from './media.constants';
+import { MEDIA_ERROR_CODES } from './domain/Media.constants';
+import { MEDIA_MAX_BYTES } from './domain/MediaUpload.rules';
 import {
   type PreparedUpload,
-  sanitizeFileName,
+  type UploadStream,
   UploadPipeline,
 } from './upload.pipeline';
 
@@ -32,11 +27,18 @@ type Part = Parameters<typeof multipart>[0][number];
 function requestOf(
   parts: readonly Part[],
   headers: Record<string, string> = {},
-): IncomingMessage {
+): UploadStream {
   const { body, contentType } = multipart(parts);
-  const req = Readable.from([body]) as unknown as IncomingMessage;
-  req.headers = { 'content-type': contentType, ...headers };
-  return req;
+  const allHeaders: Record<string, string> = {
+    'content-type': contentType,
+    ...headers,
+  };
+  const declared = Number(allHeaders['content-length']);
+  return {
+    headers: allHeaders,
+    declaredLength: Number.isFinite(declared) ? declared : null,
+    body: Readable.from([body]),
+  };
 }
 
 const fileOf = (
@@ -71,26 +73,6 @@ async function bytesOf(prepared: PreparedUpload): Promise<Buffer> {
   for await (const chunk of prepared.open()) chunks.push(chunk as Buffer);
   return Buffer.concat(chunks);
 }
-
-describe('sanitizeFileName', () => {
-  it.each([
-    ['photo.jpg', 'photo.jpg'],
-    ['../../etc/passwd', 'passwd'],
-    ['C:\\Users\\me\\cv.pdf', 'cv.pdf'],
-    ['a\u0000b\nc.png', 'abc.png'],
-    ['', FALLBACK_FILE_NAME],
-    ['..', FALLBACK_FILE_NAME],
-    ['dir/', FALLBACK_FILE_NAME],
-  ])('%j -> %j', (input, expected) => {
-    expect(sanitizeFileName(input)).toBe(expected);
-  });
-
-  it('bounds the length', () => {
-    expect(Array.from(sanitizeFileName('x'.repeat(1_000))).length).toBe(
-      FILE_NAME_MAX_LENGTH,
-    );
-  });
-});
 
 describe('UploadPipeline (SPEC D12, §12-13)', () => {
   const pipeline = new UploadPipeline();
@@ -233,10 +215,10 @@ describe('UploadPipeline (SPEC D12, §12-13)', () => {
   });
 
   it('refuses a request whose declared length is far over the cap with 413', async () => {
-    const req = requestOf([fileOf(fixtures.png)], {
+    const upload = requestOf([fileOf(fixtures.png)], {
       'content-length': String(10 ** 10),
     });
-    expect((await statusOf(pipeline.receive(req))).status).toBe(413);
+    expect((await statusOf(pipeline.receive(upload))).status).toBe(413);
   });
 
   it.each([
@@ -259,10 +241,11 @@ describe('UploadPipeline (SPEC D12, §12-13)', () => {
   });
 
   it('refuses a body that is not multipart with 415', async () => {
-    const req = Readable.from([
-      Buffer.from('{}'),
-    ]) as unknown as IncomingMessage;
-    req.headers = { 'content-type': 'application/json' };
-    expect((await statusOf(pipeline.receive(req))).status).toBe(415);
+    const upload: UploadStream = {
+      headers: { 'content-type': 'application/json' },
+      declaredLength: null,
+      body: Readable.from([Buffer.from('{}')]),
+    };
+    expect((await statusOf(pipeline.receive(upload))).status).toBe(415);
   });
 });

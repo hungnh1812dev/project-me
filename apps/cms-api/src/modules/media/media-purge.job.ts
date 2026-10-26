@@ -6,6 +6,7 @@ import {
   type OnModuleDestroy,
 } from '@nestjs/common';
 
+import { MS_PER_HOUR } from '../../common/constants/time.constants';
 import { Clock } from '../../common/time/clock';
 import { PrismaService } from '../../infrastructure/database/prisma.service';
 import {
@@ -13,12 +14,14 @@ import {
   type MediaStorage,
 } from '../../infrastructure/media/storage.port';
 import { ContentRegistryProvider } from '../content-engine';
-import {
-  allowedMediaTypeOf,
-  MEDIA_PURGE_BATCH_SIZE,
-  MEDIA_PURGE_GRACE_MS,
-  MEDIA_PURGE_INTERVAL_MS,
-} from './media.constants';
+import { allowedMediaTypeOf } from './domain/MediaUpload.rules';
+
+/** Soft-deleted files are purged from storage once older than this (SPEC §9). */
+export const MEDIA_PURGE_GRACE_MS = 24 * MS_PER_HOUR;
+/** The purge job runs this often, in-process (one replica; see README). */
+const MEDIA_PURGE_INTERVAL_MS = MS_PER_HOUR;
+/** Rows read per query during a purge run (a run walks all eligible rows). */
+export const MEDIA_PURGE_BATCH_SIZE = 100;
 import { isMediaReferenced } from './media-usage';
 
 /** What one purge run did. */

@@ -3,17 +3,25 @@ import type { Readable } from 'node:stream';
 import { v2 as cloudinary } from 'cloudinary';
 
 import type { CloudinaryConfig } from '../../config/app-config';
-import {
-  CLOUDINARY_RAW_EXTENSION,
-  CLOUDINARY_RESOURCE_TYPES,
-  type MediaKind,
-  THUMBNAIL_MAX_SIZE_PX,
-} from './media.constants';
+import type { MediaKind } from '../../modules/media';
 import type {
   MediaStorage,
   PutObjectInput,
   StoredObject,
 } from './storage.port';
+
+/** Longest side of the generated image thumbnail, in pixels. */
+const THUMBNAIL_MAX_SIZE_PX = 320;
+
+/** Cloudinary resource types per media kind. */
+const CLOUDINARY_RESOURCE_TYPES = {
+  image: 'image',
+  pdf: 'raw',
+  video: 'video',
+} as const satisfies Record<MediaKind, string>;
+
+/** Raw resources keep their extension in the public id. */
+const CLOUDINARY_RAW_EXTENSION = '.pdf';
 
 type ResourceType = (typeof CLOUDINARY_RESOURCE_TYPES)[MediaKind];
 

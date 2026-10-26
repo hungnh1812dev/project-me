@@ -1,15 +1,15 @@
 import type { Readable } from 'node:stream';
 
-import {
-  FAKE_STORAGE_ORIGIN,
-  FAKE_THUMBNAIL_PATH,
-  type MediaKind,
-} from './media.constants';
+import type { MediaKind } from '../../modules/media';
 import type {
   MediaStorage,
   PutObjectInput,
   StoredObject,
 } from './storage.port';
+
+/** Origin of URLs handed out by the in-memory fake storage (never reachable). */
+export const FAKE_STORAGE_ORIGIN = 'https://fake-media.invalid';
+const FAKE_THUMBNAIL_PATH = 'thumb';
 
 export interface FakeStoredObject {
   readonly kind: MediaKind;

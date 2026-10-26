@@ -1,5 +1,6 @@
 import { Readable } from 'node:stream';
 
+import { Clock } from '../../common/time/clock';
 import { FakeMediaStorage } from '../../infrastructure/media/fake.adapter';
 import { type AccountActor, type AccessPolicyService } from '../access';
 import { systemRole } from '../../../test/fixtures/access.fixture';
@@ -9,9 +10,9 @@ import type {
   PreparedUpload,
   ReceivedUpload,
   UploadPipeline,
+  UploadStream,
 } from './upload.pipeline';
 import type { PrismaService } from '../../infrastructure/database/prisma.service';
-import type { IncomingMessage } from 'node:http';
 
 const actor: AccountActor = {
   kind: 'account',
@@ -63,18 +64,19 @@ function stubs(createError?: Error) {
     prisma,
     {} as ContentDbProvider,
     {} as AccessPolicyService,
+    new Clock(),
     storage,
   );
   return { service, storage, create, dispose };
 }
 
 describe('MediaService.upload', () => {
-  const req = {} as IncomingMessage;
+  const upload = {} as UploadStream;
 
   it('stores under a UUIDv7 key, records the row and removes the temp file', async () => {
     const { service, storage, create, dispose } = stubs();
-    const view = await service.upload(actor, req);
-    expect(view.id).toBe('doc');
+    const view = await service.upload(actor, upload);
+    expect(view.documentId).toBe('doc');
     expect(storage.keys()).toHaveLength(1);
     const [call] = create.mock.calls as unknown as [
       [{ data: Record<string, unknown> }],
@@ -90,7 +92,7 @@ describe('MediaService.upload', () => {
 
   it('removes the stored object when the row cannot be written', async () => {
     const { service, storage, dispose } = stubs(new Error('db down'));
-    await expect(service.upload(actor, req)).rejects.toThrow('db down');
+    await expect(service.upload(actor, upload)).rejects.toThrow('db down');
     expect(storage.keys()).toEqual([]);
     expect(dispose).toHaveBeenCalledTimes(1);
   });

@@ -19,8 +19,8 @@ import { hashPassword } from '../../src/modules/identity/application/Password.se
 import {
   MEDIA_PURGE_BATCH_SIZE,
   MEDIA_PURGE_GRACE_MS,
-} from '../../src/modules/media/media.constants';
-import { MediaPurgeJob } from '../../src/modules/media/media-purge.job';
+  MediaPurgeJob,
+} from '../../src/modules/media/media-purge.job';
 import { createCoreTemplate } from '../fixtures/core-db.fixture';
 import {
   dbEnvOf,
