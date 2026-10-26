@@ -104,10 +104,12 @@ Rate limits (login, refresh, reviewer sessions) are keyed by client IP. cms-api 
 
 One Deployment, one pod template, **the same image for both containers**:
 
-| Container | Kind | Command                       | Does                                                                                                                                                                     |
-| --------- | ---- | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `migrate` | init | `npm run deploy:migrate`      | `db:migrate` (Prisma `migrate deploy`, then the idempotent role/permission seed), then `content:migrate` (parse and merge `content/schemas`, apply `content/migrations`) |
-| `cms-api` | main | `node dist/main.js` (default) | serves the API                                                                                                                                                           |
+| Container | Kind | Command                       | Does                                                                                                                                                                                                                    |
+| --------- | ---- | ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `migrate` | init | `npm run deploy:migrate`      | `db:migrate` (Prisma `migrate deploy`, then the idempotent role/permission seed), then `content:migrate` (apply pending `content/migrations` and sync `content._content_types` from `content/migrations/snapshot.json`) |
+| `cms-api` | main | `node dist/main.js` (default) | serves the API                                                                                                                                                                                                          |
+
+A new or changed `content/schemas/*.json` takes effect only after `pnpm content:generate` and a commit of the generated migration (SPEC D10); the init container never reads the schemas.
 
 Behaviour to rely on:
 

@@ -27,9 +27,10 @@ RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
     pnpm --filter @abyss/cms-api deploy --prod --legacy /prod/cms-api
 
 # 3. Runtime: production deps, dist (with the generated Prisma client),
-#    prisma/ + prisma.config.ts (read by `db:migrate`) and content/ (schemas +
-#    migrations, read by `content:migrate`), files owned by root, run as the numeric `node` user (1000:1000; Kubernetes
-#    runAsNonRoot can only verify a UID).
+#    prisma/ + prisma.config.ts (read by `db:migrate`) and content/ (migrations +
+#    snapshot, read by `content:migrate`; schemas, read by `graphql:print-schema`
+#    and `content:generate` checks), files owned by root, run as the numeric
+#    `node` user (1000:1000; Kubernetes runAsNonRoot can only verify a UID).
 FROM ${NODE_IMAGE} AS runtime
 ENV NODE_ENV=production
 WORKDIR /app
