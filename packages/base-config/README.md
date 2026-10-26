@@ -5,7 +5,9 @@ Abyss monorepo. The shared configs hold only the rules all projects agree on.
 Each project imports them and adds its own plugins, globals and rules.
 
 The sources are TypeScript files in `src/` (erasable syntax only, no enums or
-namespaces). They are built with `tsc` to `dist/` (ESM, with `.d.ts` files),
+namespaces). File names follow ADR 0008 (`Eslint.setup.ts`, `Oxlint.setup.ts`,
+`Prettier.setup.ts`); `test/FileNames.architecture.test.ts` guards it. The
+sources are built with `tsc` to `dist/` (ESM, with `.d.ts` files),
 and every export points at `dist/`. Turbo builds the package before any
 consumer's `lint`, `typecheck`, `test` or `build`, and the root `pnpm format`
 and `pnpm format:check` build it first, so nothing needs a manual build.

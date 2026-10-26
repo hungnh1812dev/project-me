@@ -6,19 +6,19 @@
   "type": "module",
   "exports": {
     "./prettier": {
-      "types": "./dist/prettier.d.ts",
-      "import": "./dist/prettier.js",
-      "default": "./dist/prettier.js"
+      "types": "./dist/Prettier.setup.d.ts",
+      "import": "./dist/Prettier.setup.js",
+      "default": "./dist/Prettier.setup.js"
     },
     "./eslint": {
-      "types": "./dist/eslint.d.ts",
-      "import": "./dist/eslint.js",
-      "default": "./dist/eslint.js"
+      "types": "./dist/Eslint.setup.d.ts",
+      "import": "./dist/Eslint.setup.js",
+      "default": "./dist/Eslint.setup.js"
     },
     "./oxlint": {
-      "types": "./dist/oxlint.d.ts",
-      "import": "./dist/oxlint.js",
-      "default": "./dist/oxlint.js"
+      "types": "./dist/Oxlint.setup.d.ts",
+      "import": "./dist/Oxlint.setup.js",
+      "default": "./dist/Oxlint.setup.js"
     }
   },
   "files": [

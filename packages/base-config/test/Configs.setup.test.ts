@@ -58,7 +58,7 @@ await test('eslint export is a valid flat config with type-checked rules', async
     overrideConfig: config,
   });
   const resolved = (await eslint.calculateConfigForFile(
-    path.join(packageRoot, 'src', 'eslint.ts'),
+    path.join(packageRoot, 'src', 'Eslint.setup.ts'),
   )) as { rules?: Record<string, unknown[]> } | undefined;
   assert.ok(resolved);
   const rules = resolved.rules ?? {};
