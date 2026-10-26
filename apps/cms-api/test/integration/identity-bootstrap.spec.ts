@@ -6,7 +6,7 @@ import {
   type PrismaClient,
   type PrismaHandle,
 } from '../../src/infrastructure/database/prisma-client';
-import { SYSTEM_ROLES } from '../../src/modules/access/roles/system-roles';
+import { SYSTEM_ROLES } from '../../src/modules/access/domain/SystemRoles.entity';
 import { OWNER_BOOTSTRAP_ERRORS } from '../../src/modules/identity/domain/Identity.constants';
 import {
   OwnerBootstrapError,
@@ -15,9 +15,9 @@ import {
 } from '../../src/modules/identity/application/OwnerBootstrap.service';
 import { identityUseCasesOf } from '../../src/modules/identity/cli/IdentityCli.setup';
 import { verifyPassword } from '../../src/modules/identity/application/Password.service';
-import { seedSystemRoles } from '../../src/modules/access/roles/system-roles.seed';
 import { createCoreTemplate } from '../fixtures/core-db.fixture';
 import { startPostgres } from '../fixtures/postgres.fixture';
+import { seedSystemRoles } from '../fixtures/access.fixture';
 
 function bootstrapOwner(
   prisma: PrismaClient,

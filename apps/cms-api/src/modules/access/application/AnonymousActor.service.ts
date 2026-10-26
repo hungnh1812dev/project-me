@@ -5,7 +5,7 @@ import {
   anonymousActor,
   unauthenticated,
 } from '../domain/ActorContext.entity';
-import { PUBLIC_ROLE_SLUG } from '../roles/system-roles';
+import { PUBLIC_ROLE_SLUG } from '../domain/SystemRoles.entity';
 import { ROLE_LOOKUP, type RoleLookup } from './Access.port';
 import { VersionCache } from './VersionCache.service';
 

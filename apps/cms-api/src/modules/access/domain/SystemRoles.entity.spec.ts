@@ -5,7 +5,7 @@ import {
   ROLE_SLUG_PATTERN,
   SYSTEM_ROLES,
   UNASSIGNABLE_ROLE_SLUGS,
-} from './system-roles';
+} from './SystemRoles.entity';
 
 describe('system roles table (SPEC §6)', () => {
   it('keeps the slug and rank pairs the migration pins', () => {

@@ -9,6 +9,7 @@ import {
 } from '../../../infrastructure/database/PrismaTransactionRunner.adapter';
 import { openPrisma } from '../../../infrastructure/database/prisma-client';
 import { NestAppLogger } from '../../../infrastructure/logging/NestAppLogger.adapter';
+import { type RoleSeedService, roleSeedServiceOf } from '../../access';
 import { writeAuditLog } from '../../security-audit';
 import { PrismaAccountRepository } from '../adapters/PrismaAccount.repository';
 import { PrismaSessionRevocationRepository } from '../adapters/PrismaSessionRevocation.repository';
@@ -56,6 +57,7 @@ export interface IdentityCliUseCases {
   readonly ownerBootstrap: OwnerBootstrapService;
   readonly twoFactorReset: TwoFactorResetService;
   readonly seedAccount: SeedAccountService;
+  readonly roleSeed: RoleSeedService;
 }
 
 /**
@@ -81,11 +83,12 @@ export function identityUseCasesOf(prisma: PrismaClient): IdentityCliUseCases {
       audit,
     ),
     seedAccount: new SeedAccountService(accounts, runner, audit),
+    roleSeed: roleSeedServiceOf(prisma),
   };
 }
 
 export interface IdentityCli extends IdentityCliUseCases {
-  /** For `db:seed`, which runs the access role seeds on it. */
+  /** The connection the use cases run on, for callers that seed or inspect rows. */
   readonly prisma: PrismaClient;
   /** Closes the database connection the use cases run on. */
   close(): Promise<void>;

@@ -1,9 +1,9 @@
-import { PermissionAction } from '../../../generated/prisma/client';
 import {
   CONTENT_WILDCARD_SUBJECT,
   PERMISSION_ACTIONS,
+  PermissionAction,
   SYSTEM_SUBJECT_ACTIONS,
-} from '../domain/Access.constants';
+} from './Access.constants';
 
 export interface DefaultPermission {
   subject: string;

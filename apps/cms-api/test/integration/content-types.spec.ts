@@ -6,7 +6,6 @@ import {
   openPrisma,
   type PrismaHandle,
 } from '../../src/infrastructure/database/prisma-client';
-import { seedRolePermissions } from '../../src/modules/access/roles/role-permissions.seed';
 import { ContentRegistry } from '../../src/modules/content-engine/application/ContentRegistry.service';
 import { ContentTypeRegistry } from '../../src/modules/content-engine/domain/ContentTypeRegistry.entity';
 import { CONTENT_TYPES_ERROR_CODES } from '../../src/modules/content-types/domain/ContentTypes.errors';
@@ -15,7 +14,6 @@ import type {
   FieldView,
 } from '../../src/modules/content-types/domain/ContentTypeView.rules';
 import { hashPassword } from '../../src/modules/identity/application/Password.service';
-import { seedSystemRoles } from '../../src/modules/access/roles/system-roles.seed';
 import {
   ARTICLE_DEFINITION,
   NOTE_DEFINITION,
@@ -31,6 +29,10 @@ import {
 } from '../fixtures/env.fixture';
 import { startPostgres } from '../fixtures/postgres.fixture';
 import { createTestApp } from '../fixtures/test-app';
+import {
+  seedRolePermissions,
+  seedSystemRoles,
+} from '../fixtures/access.fixture';
 
 const PASSWORD = 'correct horse battery staple';
 const CONTENT_TYPES = '/api/v1/content-types';

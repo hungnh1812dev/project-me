@@ -6,7 +6,7 @@ import {
   outranks,
   rankForbidden,
 } from '../../domain/Rank.rules';
-import { UNASSIGNABLE_ROLE_SLUGS } from '../../roles/system-roles';
+import { UNASSIGNABLE_ROLE_SLUGS } from '../../domain/SystemRoles.entity';
 import {
   accountNotFound,
   roleNotAssignable,

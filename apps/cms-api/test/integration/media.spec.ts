@@ -11,11 +11,9 @@ import {
 import { FakeMediaStorage } from '../../src/infrastructure/media/fake.adapter';
 import { MEDIA_STORAGE } from '../../src/infrastructure/media/storage.port';
 import { reviewerActor } from '../../src/modules/access/domain/ActorContext.entity';
-import { seedRolePermissions } from '../../src/modules/access/roles/role-permissions.seed';
 import { ContentRegistry } from '../../src/modules/content-engine/application/ContentRegistry.service';
 import { ContentTypeRegistry } from '../../src/modules/content-engine/domain/ContentTypeRegistry.entity';
 import { hashPassword } from '../../src/modules/identity/application/Password.service';
-import { seedSystemRoles } from '../../src/modules/access/roles/system-roles.seed';
 import { MEDIA_MAX_BYTES } from '../../src/modules/media/media.constants';
 import { MediaService } from '../../src/modules/media/media.service';
 import {
@@ -44,6 +42,10 @@ import {
 import { multipart } from '../fixtures/multipart';
 import { startPostgres } from '../fixtures/postgres.fixture';
 import { createTestApp } from '../fixtures/test-app';
+import {
+  seedRolePermissions,
+  seedSystemRoles,
+} from '../fixtures/access.fixture';
 
 const PASSWORD = 'correct horse battery staple';
 const MEDIA = '/api/v1/media';

@@ -13,7 +13,7 @@ import {
   testCatalog,
 } from '../../../../test/fixtures/access.fixture';
 import { PermissionAction } from '../../../generated/prisma/client';
-import type { SystemRoleSlug } from '../roles/system-roles';
+import type { SystemRoleSlug } from './SystemRoles.entity';
 import {
   PERMISSION_ACTIONS,
   SYSTEM_SUBJECT_ACTIONS,

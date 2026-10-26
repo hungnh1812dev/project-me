@@ -25,7 +25,6 @@ import {
   RequirePermission,
 } from '../../src/modules/access/http/Permission.guard';
 import { RolePermissionsService } from '../../src/modules/access/application/RolePermissions.service';
-import { seedRolePermissions } from '../../src/modules/access/roles/role-permissions.seed';
 import {
   VERSION_CACHE_TTL_MS,
   VersionCache,
@@ -35,7 +34,6 @@ import { ContentTypeRegistry } from '../../src/modules/content-engine/domain/Con
 import { IdentityModule } from '../../src/modules/identity/Identity.module';
 import { JwtAuthGuard } from '../../src/modules/identity/http/Jwt.strategy';
 import { hashPassword } from '../../src/modules/identity/application/Password.service';
-import { seedSystemRoles } from '../../src/modules/access/roles/system-roles.seed';
 import { ARTICLE_DEFINITION, grant } from '../fixtures/access.fixture';
 import { createCoreTemplate } from '../fixtures/core-db.fixture';
 import {
@@ -48,6 +46,10 @@ import {
 } from '../fixtures/env.fixture';
 import { startPostgres } from '../fixtures/postgres.fixture';
 import { createTestApp } from '../fixtures/test-app';
+import {
+  seedRolePermissions,
+  seedSystemRoles,
+} from '../fixtures/access.fixture';
 
 const PASSWORD = 'correct horse battery staple';
 const NEW_PASSWORD = 'a different horse battery staple';

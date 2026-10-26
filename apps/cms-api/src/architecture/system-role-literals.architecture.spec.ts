@@ -1,6 +1,6 @@
 import { join } from 'node:path';
 
-import { SYSTEM_ROLES } from '../modules/access/roles/system-roles';
+import { SYSTEM_ROLES } from '../modules/access/domain/SystemRoles.entity';
 import { assertPinnedPathsExist, listSourceFiles } from './import-graph';
 import { findRoleSlugLiterals } from './role-slug-literals';
 import {
@@ -10,7 +10,7 @@ import {
 
 /**
  * SPEC D6 (R1-05): the system role slugs live in one table,
- * `modules/access/roles/system-roles.ts`. Code elsewhere uses the exported
+ * `modules/access/domain/SystemRoles.entity.ts`. Code elsewhere uses the exported
  * constants, never a quoted slug. A slug in quotes is allowed only when it is
  * not a role: an actor kind (`'anonymous'`, `'reviewer'`) or a route segment,
  * module name or handler label in the files listed below.

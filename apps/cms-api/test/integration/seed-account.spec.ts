@@ -6,7 +6,6 @@ import {
   type PrismaHandle,
 } from '../../src/infrastructure/database/prisma-client';
 import { OWNER_ROLE_SLUG } from '../../src/modules/access';
-import { seedSystemRoles } from '../../src/modules/access/roles/system-roles.seed';
 import { identityUseCasesOf } from '../../src/modules/identity/cli/IdentityCli.setup';
 import { type SeedAccountInput } from '../../src/modules/identity/application/SeedAccount.service';
 import { SEED_ACCOUNT_ERRORS } from '../../src/modules/identity/domain/Identity.constants';
@@ -17,6 +16,7 @@ import {
 } from '../../src/modules/security-audit';
 import { createCoreTemplate } from '../fixtures/core-db.fixture';
 import { startPostgres } from '../fixtures/postgres.fixture';
+import { seedSystemRoles } from '../fixtures/access.fixture';
 
 const PASSWORD = 'correct horse battery staple';
 

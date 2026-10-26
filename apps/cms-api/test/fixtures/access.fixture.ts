@@ -1,4 +1,8 @@
-import type { PermissionAction } from '../../src/generated/prisma/client';
+import type {
+  PermissionAction,
+  PrismaClient,
+} from '../../src/generated/prisma/client';
+import { roleSeedServiceOf } from '../../src/modules/access';
 import type {
   PermissionGrant,
   RolePolicy,
@@ -10,7 +14,7 @@ import {
   type DefaultPermission,
   SYSTEM_ROLES,
   type SystemRoleSlug,
-} from '../../src/modules/access/roles/system-roles';
+} from '../../src/modules/access/domain/SystemRoles.entity';
 
 /** Two small content types: one with a nested component, one flat. */
 export const ARTICLE_DEFINITION = {
@@ -102,3 +106,10 @@ export function customRole(
     permissions,
   };
 }
+
+/** The `db:seed` steps on a test database; each returns the slugs it wrote. */
+export const seedSystemRoles = (prisma: PrismaClient): Promise<string[]> =>
+  roleSeedServiceOf(prisma).seedSystemRoles();
+
+export const seedRolePermissions = (prisma: PrismaClient): Promise<string[]> =>
+  roleSeedServiceOf(prisma).seedRolePermissions();

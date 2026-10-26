@@ -1,4 +1,5 @@
 export { AccessModule } from './Access.module';
+export { roleSeedServiceOf } from './adapters/PrismaRolePolicy.repository';
 export {
   AccessPolicyService,
   type AccessPolicy,
@@ -26,6 +27,7 @@ export {
 export { ActorThrottleSubjectResolver } from './http/ActorThrottleSubject.resolver';
 export { AnonymousActorService } from './application/AnonymousActor.service';
 export { ROLE_LOOKUP, type RoleLookup } from './application/Access.port';
+export { RoleSeedService } from './application/RoleSeed.service';
 export { API_TOKEN } from './domain/ApiToken.rules';
 export { ApiTokenAuthenticator } from './http/ApiToken.guard';
 export {
@@ -44,14 +46,12 @@ export {
   type SerializedComponents,
   type SerializedRecord,
 } from './domain/RecordSerializer';
-export { seedRolePermissions } from './roles/role-permissions.seed';
 export {
   ADMIN_ROLE_SLUG,
   GUEST_ROLE_SLUG,
   OWNER_ROLE_SLUG,
   REVIEWER_ROLE_SLUG,
-} from './roles/system-roles';
-export { seedSystemRoles } from './roles/system-roles.seed';
+} from './domain/SystemRoles.entity';
 export { SubjectCatalog } from './domain/SubjectCatalog.rules';
 export { VersionCache } from './application/VersionCache.service';
 export { WriteAllowlist } from './domain/WriteAllowlist.rules';

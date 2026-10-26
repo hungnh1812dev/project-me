@@ -75,13 +75,13 @@ Where SPEC §8.1 leaves a shape open, the conservative choice:
 
 ## System roles seed
 
-`src/modules/identity/system-roles.seed.ts`: inserts `public 0, guest 10,
+`RoleSeedService.seedSystemRoles` (`src/modules/access/application/RoleSeed.service.ts`, table in `access/domain/SystemRoles.entity.ts`): inserts `public 0, guest 10,
 reviewer 20, editor 30, admin 40, owner 100` with `is_system = true`
 (`INSERT ... ON CONFLICT DO NOTHING`), never updates existing rows (names
 edited later survive), and fails if a role with a system slug is not that
 system role. Safe to run on every deploy.
 
-Then `src/modules/access/role-permissions.seed.ts` inserts the default
+Then `RoleSeedService.seedRolePermissions` (writes in `access/adapters/PrismaRolePolicy.repository.ts`) inserts the default
 permission rows (T14 matrix in [access-control.md](access-control.md)) into
 each system role that has **no** rows yet, under an advisory lock. A role the
 Owner already configured is never touched.

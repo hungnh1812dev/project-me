@@ -7,11 +7,9 @@ import {
   openPrisma,
   type PrismaHandle,
 } from '../../src/infrastructure/database/prisma-client';
-import { seedRolePermissions } from '../../src/modules/access/roles/role-permissions.seed';
 import { ContentRegistry } from '../../src/modules/content-engine/application/ContentRegistry.service';
 import { ContentTypeRegistry } from '../../src/modules/content-engine/domain/ContentTypeRegistry.entity';
 import { hashPassword } from '../../src/modules/identity/application/Password.service';
-import { seedSystemRoles } from '../../src/modules/access/roles/system-roles.seed';
 import { ARTICLE_DEFINITION } from '../fixtures/access.fixture';
 import { createCoreTemplate } from '../fixtures/core-db.fixture';
 import {
@@ -24,6 +22,10 @@ import {
 } from '../fixtures/env.fixture';
 import { startPostgres } from '../fixtures/postgres.fixture';
 import { createTestApp } from '../fixtures/test-app';
+import {
+  seedRolePermissions,
+  seedSystemRoles,
+} from '../fixtures/access.fixture';
 
 const PASSWORD = 'correct horse battery staple';
 const ME = '/api/v1/auth/me';

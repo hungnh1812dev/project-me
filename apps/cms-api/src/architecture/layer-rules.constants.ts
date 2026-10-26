@@ -286,7 +286,7 @@ export const LAYER_EXEMPT_ROOTS: readonly string[] = [
 export const UNMIGRATED_FOLDERS: readonly {
   folder: string;
   removedBy: string;
-}[] = [{ folder: join('modules', 'access', 'roles'), removedBy: 'CR-ac-6' }];
+}[] = [];
 
 /** Module folders (`modules/<name>`) the layer guard checks. Each CR task adds its module. */
 export const MIGRATED_MODULES: readonly string[] = [
@@ -319,40 +319,10 @@ export const KNOWN_LAYER_VIOLATIONS: readonly KnownLayerViolation[] = [
       removedBy: 'CR-cl-1',
     }),
   ),
-  ...[
-    join('application', 'AnonymousActor.service.ts'),
-    join('domain', 'ActorContext.entity.ts'),
-    join('management', 'adapters', 'PrismaAccount.repository.ts'),
-    join('management', 'domain', 'Account.entity.ts'),
-    join('management', 'http', 'AccessManagement.requests.ts'),
-  ].map((file) => ({
-    from: join('modules', 'access', file),
-    rule: 'own-layer',
-    to: join('modules', 'access', 'roles', 'system-roles.ts'),
-    removedBy: 'CR-ac-6',
-  })),
   {
     from: GRAPHQL_PRINT_SCHEMA_FILE,
     rule: 'other-module-layer',
     to: join('modules', 'content-engine', 'cli', 'content-paths.ts'),
     removedBy: 'CR-ce-4',
   },
-  // The access facade still re-exports role files from the unmigrated roles/ folder.
-  ...[
-    join('adapters', 'PrismaAccount.repository.ts'),
-    join('application', 'AccessSession.service.ts'),
-    join('application', 'OwnerBootstrap.service.ts'),
-    join('domain', 'Identity.constants.ts'),
-  ].map((file) => ({
-    from: join('modules', 'identity', file),
-    rule: 'other-module-layer',
-    to: join('modules', 'access', 'roles', 'system-roles.ts'),
-    removedBy: 'CR-ac-6',
-  })),
-  ...['role-permissions.seed.ts', 'system-roles.seed.ts'].map((file) => ({
-    from: join('modules', 'identity', 'cli', 'Seed.command.ts'),
-    rule: 'other-module-layer',
-    to: join('modules', 'access', 'roles', file),
-    removedBy: 'CR-ac-6',
-  })),
 ];

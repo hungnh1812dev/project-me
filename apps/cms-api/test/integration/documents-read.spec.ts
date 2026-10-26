@@ -12,7 +12,6 @@ import {
   type PrismaHandle,
 } from '../../src/infrastructure/database/prisma-client';
 import { MASKED_FIELDS_KEY } from '../../src/modules/access/domain/Access.constants';
-import { seedRolePermissions } from '../../src/modules/access/roles/role-permissions.seed';
 import { createContentDb } from '../../src/modules/content-engine/adapters/ContentDatabase.adapter';
 import { ContentRegistry } from '../../src/modules/content-engine/application/ContentRegistry.service';
 import { KyselyContentRepository } from '../../src/modules/content-engine/adapters/KyselyContent.repository';
@@ -23,7 +22,6 @@ import {
 } from '../../src/modules/content-engine/domain/SqlGenerator.rules';
 import type { ContentDatabase } from '../../src/modules/content-engine/adapters/TreeLoader.adapter';
 import { hashPassword } from '../../src/modules/identity/application/Password.service';
-import { seedSystemRoles } from '../../src/modules/access/roles/system-roles.seed';
 import {
   ARTICLE_DEFINITION,
   NOTE_DEFINITION,
@@ -39,6 +37,10 @@ import {
 } from '../fixtures/env.fixture';
 import { startPostgres } from '../fixtures/postgres.fixture';
 import { createTestApp } from '../fixtures/test-app';
+import {
+  seedRolePermissions,
+  seedSystemRoles,
+} from '../fixtures/access.fixture';
 
 const PASSWORD = 'correct horse battery staple';
 const DOCUMENTS = '/api/v1/documents';

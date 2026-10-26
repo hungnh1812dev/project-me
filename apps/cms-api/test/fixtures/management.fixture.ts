@@ -5,7 +5,7 @@ import type {
 import { accountActor } from '../../src/modules/access/domain/ActorContext.entity';
 import type { AccountActor } from '../../src/modules/access/domain/Rank.rules';
 import type { AccountRecord } from '../../src/modules/access/management/domain/Account.entity';
-import type { SystemRoleSlug } from '../../src/modules/access/roles/system-roles';
+import type { SystemRoleSlug } from '../../src/modules/access/domain/SystemRoles.entity';
 import { systemRole } from './access.fixture';
 
 export const ACTOR_ID = 1;

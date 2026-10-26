@@ -2,7 +2,10 @@ import { z } from 'zod';
 
 import { EMAIL_MAX_LENGTH } from '../../../identity';
 import { documentIdSchema } from '../../../../common/http/request-parsing';
-import { CUSTOM_ROLE_RANK, ROLE_SLUG_PATTERN } from '../../roles/system-roles';
+import {
+  CUSTOM_ROLE_RANK,
+  ROLE_SLUG_PATTERN,
+} from '../../domain/SystemRoles.entity';
 import { MANAGEMENT_LIMITS } from '../domain/AccessManagement.constants';
 
 const displayName = z

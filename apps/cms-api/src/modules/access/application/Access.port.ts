@@ -1,5 +1,8 @@
 import type { UnitOfWork } from '../../../infrastructure/database/TransactionRunner.port';
-import type { AccountStatus } from '../domain/Access.constants';
+import type {
+  AccountStatus,
+  PermissionAction,
+} from '../domain/Access.constants';
 import type {
   PermissionGrant,
   RolePolicy,
@@ -63,3 +66,38 @@ export interface PermissionRepository {
   ): Promise<number>;
 }
 export const PERMISSION_REPOSITORY = Symbol('PERMISSION_REPOSITORY');
+
+/** A system role as the seed writes it. */
+export interface SystemRoleSeed {
+  slug: string;
+  name: string;
+  rank: number;
+}
+
+/** What the seed reads back to check a system slug is really the system role. */
+export interface SeededRoleRow {
+  slug: string;
+  rank: number;
+  isSystem: boolean;
+}
+
+/** One default permission row set: the actions on one subject. */
+export interface DefaultPermissionSeed {
+  subject: string;
+  actions: readonly PermissionAction[];
+}
+
+/** Storage behind the role seeds (`db:seed`, the last step of `db:migrate`). */
+export interface RoleSeedStore {
+  findRolesBySlugs(slugs: readonly string[]): Promise<SeededRoleRow[]>;
+  /** Inserts the missing roles as system roles and updates none. */
+  insertMissingSystemRoles(roles: readonly SystemRoleSeed[]): Promise<void>;
+  /**
+   * Gives each listed system role its default rows when it has none, under
+   * one lock that serialises concurrent seeds. Returns the slugs it seeded.
+   */
+  seedPermissionsWhereMissing(
+    defaults: Readonly<Record<string, readonly DefaultPermissionSeed[]>>,
+  ): Promise<string[]>;
+}
+export const ROLE_SEED_STORE = Symbol('ROLE_SEED_STORE');

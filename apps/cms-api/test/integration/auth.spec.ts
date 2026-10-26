@@ -21,7 +21,6 @@ import {
 } from '../../src/infrastructure/database/prisma-client';
 import { hashPassword } from '../../src/modules/identity/application/Password.service';
 import { hashRefreshToken } from '../../src/modules/identity/application/RefreshToken.service';
-import { seedSystemRoles } from '../../src/modules/access/roles/system-roles.seed';
 import { createCoreTemplate } from '../fixtures/core-db.fixture';
 import {
   dbEnvOf,
@@ -33,6 +32,7 @@ import {
 } from '../fixtures/env.fixture';
 import { startPostgres } from '../fixtures/postgres.fixture';
 import { createTestApp } from '../fixtures/test-app';
+import { seedSystemRoles } from '../fixtures/access.fixture';
 
 const AUTH = '/api/v1/auth';
 const LOGIN = `${AUTH}/login`;

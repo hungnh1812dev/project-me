@@ -9,7 +9,6 @@ import {
 } from '../../src/infrastructure/database/prisma-client';
 import { FakeMediaStorage } from '../../src/infrastructure/media/fake.adapter';
 import { MEDIA_STORAGE } from '../../src/infrastructure/media/storage.port';
-import { seedRolePermissions } from '../../src/modules/access/roles/role-permissions.seed';
 import { ContentRegistry } from '../../src/modules/content-engine/application/ContentRegistry.service';
 import { ContentTypeRegistry } from '../../src/modules/content-engine/domain/ContentTypeRegistry.entity';
 import {
@@ -17,7 +16,6 @@ import {
   planMigration,
 } from '../../src/modules/content-engine/domain/SqlGenerator.rules';
 import { hashPassword } from '../../src/modules/identity/application/Password.service';
-import { seedSystemRoles } from '../../src/modules/access/roles/system-roles.seed';
 import {
   MEDIA_PURGE_BATCH_SIZE,
   MEDIA_PURGE_GRACE_MS,
@@ -36,6 +34,10 @@ import { buildMediaFixtures } from '../fixtures/media.fixture';
 import { multipart } from '../fixtures/multipart';
 import { startPostgres } from '../fixtures/postgres.fixture';
 import { createTestApp } from '../fixtures/test-app';
+import {
+  seedRolePermissions,
+  seedSystemRoles,
+} from '../fixtures/access.fixture';
 
 const PASSWORD = 'correct horse battery staple';
 const MEDIA = '/api/v1/media';

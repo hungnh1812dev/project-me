@@ -1,5 +1,4 @@
 import { loadAppConfig } from '../../../config/app-config';
-import { seedRolePermissions, seedSystemRoles } from '../../access';
 import { openIdentityCli } from './IdentityCli.setup';
 
 /**
@@ -9,15 +8,14 @@ import { openIdentityCli } from './IdentityCli.setup';
 async function main(): Promise<void> {
   const config = loadAppConfig(process.env);
   const cli = openIdentityCli(config);
-  const { prisma } = cli;
   try {
-    const inserted = await seedSystemRoles(prisma);
+    const inserted = await cli.roleSeed.seedSystemRoles();
     process.stdout.write(
       inserted.length > 0
         ? `Seeded system roles: ${inserted.join(', ')}.\n`
         : 'System roles already seeded.\n',
     );
-    const permissions = await seedRolePermissions(prisma);
+    const permissions = await cli.roleSeed.seedRolePermissions();
     process.stdout.write(
       permissions.length > 0
         ? `Seeded default permissions: ${permissions.join(', ')}.\n`

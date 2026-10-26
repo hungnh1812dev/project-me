@@ -9,7 +9,7 @@ import {
   type PrismaHandle,
 } from '../../src/infrastructure/database/prisma-client';
 import { AUDIT_ACTIONS } from '../../src/modules/security-audit';
-import { OWNER_ROLE_SLUG } from '../../src/modules/access/roles/system-roles';
+import { OWNER_ROLE_SLUG } from '../../src/modules/access/domain/SystemRoles.entity';
 import { OWNER_BOOTSTRAP_ERRORS } from '../../src/modules/identity/domain/Identity.constants';
 import {
   OwnerBootstrapError,
@@ -18,7 +18,6 @@ import {
 } from '../../src/modules/identity/application/OwnerBootstrap.service';
 import { identityUseCasesOf } from '../../src/modules/identity/cli/IdentityCli.setup';
 import { hashPassword } from '../../src/modules/identity/application/Password.service';
-import { seedSystemRoles } from '../../src/modules/access/roles/system-roles.seed';
 import { createCoreTemplate } from '../fixtures/core-db.fixture';
 import {
   dbEnvOf,
@@ -30,6 +29,7 @@ import {
 } from '../fixtures/env.fixture';
 import { startPostgres } from '../fixtures/postgres.fixture';
 import { createTestApp } from '../fixtures/test-app';
+import { seedSystemRoles } from '../fixtures/access.fixture';
 
 function bootstrapOwner(
   prisma: PrismaClient,

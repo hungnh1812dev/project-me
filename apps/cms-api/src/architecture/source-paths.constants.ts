@@ -119,8 +119,8 @@ export const SECURITY_AUDIT_MODULE_FILE = join(
 export const SYSTEM_ROLES_TABLE_FILE = join(
   MODULES,
   'access',
-  'roles',
-  'system-roles.ts',
+  'domain',
+  'SystemRoles.entity.ts',
 );
 export const NON_ROLE_LITERAL_FILES = [
   join(MODULES, 'identity', 'http', 'IdentityHttp.constants.ts'),

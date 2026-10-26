@@ -4,7 +4,7 @@ import { Prisma } from '../../../../generated/prisma/client';
 import { prismaTxOf } from '../../../../infrastructure/database/PrismaTransactionRunner.adapter';
 import { PrismaService } from '../../../../infrastructure/database/prisma.service';
 import type { UnitOfWork } from '../../../../infrastructure/database/TransactionRunner.port';
-import { REVIEWER_ROLE_SLUG } from '../../roles/system-roles';
+import { REVIEWER_ROLE_SLUG } from '../../domain/SystemRoles.entity';
 import type {
   AccountAdminRepository,
   AccountChange,
