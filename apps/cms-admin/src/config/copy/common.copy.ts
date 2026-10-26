@@ -83,4 +83,9 @@ export const NAV_COPY = {
   apiTokens: 'API tokens',
   media: 'Media',
   reviewer: 'Reviewers',
+  content: 'Content',
+  singleTypes: 'Single types',
+  collectionTypes: 'Collection types',
+  utilities: 'Utilities',
+  systemSettings: 'System settings',
 } as const;

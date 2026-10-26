@@ -15,6 +15,7 @@ export const reviewerFeature: Feature = {
     {
       label: COPY.access.nav.reviewer,
       path: APP_ROUTES.REVIEWER_SESSIONS,
+      section: 'systemSettings',
       subject: REVIEWER_SETTINGS_SUBJECT,
       action: 'read',
     },

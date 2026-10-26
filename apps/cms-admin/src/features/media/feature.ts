@@ -12,6 +12,7 @@ export const mediaFeature: Feature = {
     {
       label: COPY.access.nav.media,
       path: APP_ROUTES.MEDIA,
+      section: 'utilities',
       subject: 'media',
       action: 'read',
     },

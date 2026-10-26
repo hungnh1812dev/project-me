@@ -1,6 +1,7 @@
 import type { AxiosInstance } from 'axios';
 import type { ComponentType, ReactNode } from 'react';
 
+import type { NavSectionId } from './nav-sections';
 import type { PermissionAction } from './permission-action';
 import type { ApiProviderProps } from './create-api-context';
 
@@ -10,10 +11,11 @@ export interface FeatureRoute {
   Component: ComponentType;
 }
 
-/** A top-nav link shown only to callers holding `action` on `subject`. */
+/** A nav link, listed under `section`, shown only to callers holding `action` on `subject`. */
 export interface FeatureNavItem {
   label: string;
   path: string;
+  section: NavSectionId;
   subject: string;
   action: PermissionAction;
 }
@@ -43,5 +45,7 @@ export function defineApiService<Api>(
 export interface Feature {
   routes: readonly FeatureRoute[];
   navItems?: readonly FeatureNavItem[];
+  /** Items that depend on loaded data; a hook, so it may call queries. */
+  useNavItems?: () => readonly FeatureNavItem[];
   apiServices?: readonly ApiService[];
 }

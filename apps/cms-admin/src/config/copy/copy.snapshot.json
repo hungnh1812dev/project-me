@@ -217,7 +217,12 @@
       "roles": "Roles",
       "apiTokens": "API tokens",
       "media": "Media",
-      "reviewer": "Reviewers"
+      "reviewer": "Reviewers",
+      "content": "Content",
+      "singleTypes": "Single types",
+      "collectionTypes": "Collection types",
+      "utilities": "Utilities",
+      "systemSettings": "System settings"
     },
     "errors": {
       "network": "Could not reach the server. Check your connection and try again.",

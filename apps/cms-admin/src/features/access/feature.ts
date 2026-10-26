@@ -20,18 +20,21 @@ export const accessFeature: Feature = {
     {
       label: COPY.access.nav.accounts,
       path: APP_ROUTES.ACCOUNTS,
+      section: 'systemSettings',
       subject: 'accounts',
       action: 'read',
     },
     {
       label: COPY.access.nav.roles,
       path: APP_ROUTES.ROLES,
+      section: 'systemSettings',
       subject: 'roles',
       action: 'read',
     },
     {
       label: COPY.access.nav.apiTokens,
       path: APP_ROUTES.API_TOKENS,
+      section: 'systemSettings',
       subject: 'api_tokens',
       action: 'read',
     },
