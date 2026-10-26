@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 import { ContentEngineError } from '../domain/ContentDocument.entity';
-import { DEFAULT_CONTENT_PATHS } from './content-paths';
+import { DEFAULT_CONTENT_PATHS } from '../adapters/MigrationFiles.adapter';
 import {
   checkContentMigrations,
   type GenerateOptions,

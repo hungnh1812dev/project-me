@@ -5,7 +5,7 @@ import { Kysely, PostgresDialect, sql } from 'kysely';
 import { Client, Pool } from 'pg';
 
 import { unitOfWorkFromContentTrx } from '../../src/modules/content-engine/adapters/KyselyContentTransactionRunner.adapter';
-import { DEFAULT_CONTENT_PATHS } from '../../src/modules/content-engine/cli/content-paths';
+import { DEFAULT_CONTENT_PATHS } from '../../src/modules/content-engine/adapters/MigrationFiles.adapter';
 import { createMigrationDb } from '../../src/modules/content-engine/cli/ContentEngineCli.setup';
 import { CONTENT_ERROR_CODES } from '../../src/modules/content-engine/domain/ContentEngine.constants';
 import {

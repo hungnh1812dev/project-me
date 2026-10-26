@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 import { mkdir, readdir, readFile, writeFile } from 'node:fs/promises';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 
 import { z } from 'zod';
 
@@ -36,6 +36,17 @@ export interface MigrationFile {
 }
 
 const UTF8 = 'utf8';
+
+/**
+ * `apps/cms-api/content`, resolved from this file. `src/` and `dist/` sit at
+ * the same depth, so the path works for ts-jest and for the built CLI.
+ */
+const CONTENT_ROOT = resolve(__dirname, '..', '..', '..', '..', 'content');
+
+export const DEFAULT_CONTENT_PATHS = {
+  schemasDir: join(CONTENT_ROOT, 'schemas'),
+  migrationsDir: join(CONTENT_ROOT, 'migrations'),
+} as const;
 
 /** No `instanceof Error`: fs errors can come from another realm (e.g. Jest). */
 function isMissing(error: unknown): boolean {

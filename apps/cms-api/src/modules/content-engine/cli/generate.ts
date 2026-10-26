@@ -6,6 +6,7 @@ import {
 } from '../adapters/ContentDatabase.adapter';
 import { ContentEngineError } from '../domain/ContentDocument.entity';
 import {
+  DEFAULT_CONTENT_PATHS,
   listMigrations,
   loadDefinitions,
   migrationFileName,
@@ -17,7 +18,6 @@ import {
   planMigration,
   renderMigrationSql,
 } from '../domain/SqlGenerator.rules';
-import { DEFAULT_CONTENT_PATHS } from './content-paths';
 
 export interface GenerateOptions {
   schemasDir: string;

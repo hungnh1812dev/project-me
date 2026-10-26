@@ -27,7 +27,7 @@ import {
 } from '../../src/modules/access/domain/RecordReadAccess.rules';
 import { RecordSerializer } from '../../src/modules/access/domain/RecordSerializer';
 import { WriteAllowlist } from '../../src/modules/access/domain/WriteAllowlist.rules';
-import { DEFAULT_CONTENT_PATHS } from '../../src/modules/content-engine/cli/content-paths';
+import { DEFAULT_CONTENT_PATHS } from '../../src/modules/content-engine/adapters/MigrationFiles.adapter';
 import { createMigrationDb } from '../../src/modules/content-engine/cli/ContentEngineCli.setup';
 import { CONTENT_DB_SCHEMA } from '../../src/modules/content-engine/domain/ContentEngine.constants';
 import type { ContentDocument } from '../../src/modules/content-engine/domain/ContentDocument.entity';

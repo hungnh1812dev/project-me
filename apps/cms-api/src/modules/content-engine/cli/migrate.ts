@@ -3,7 +3,7 @@ import {
   type MigrateResult,
   runContentMigrations,
 } from '../adapters/MigrationRunner.adapter';
-import { DEFAULT_CONTENT_PATHS } from './content-paths';
+import { DEFAULT_CONTENT_PATHS } from '../adapters/MigrationFiles.adapter';
 import { createMigrationDb } from './ContentEngineCli.setup';
 
 function report(result: MigrateResult): string {

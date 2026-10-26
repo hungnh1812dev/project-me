@@ -331,10 +331,4 @@ export const KNOWN_LAYER_VIOLATIONS: readonly KnownLayerViolation[] = [
     to: join('common', 'http', 'describe-http-exception.ts'),
     removedBy: 'CR-cl-1',
   },
-  {
-    from: GRAPHQL_PRINT_SCHEMA_FILE,
-    rule: 'other-module-layer',
-    to: join('modules', 'content-engine', 'cli', 'content-paths.ts'),
-    removedBy: 'CR-ce-4',
-  },
 ];

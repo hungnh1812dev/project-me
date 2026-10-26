@@ -1,4 +1,3 @@
-export { DEFAULT_CONTENT_PATHS } from './cli/content-paths';
 export { ContentDbProvider } from './adapters/ContentDatabase.adapter';
 export { contentTrxOf } from './adapters/KyselyContentTransactionRunner.adapter';
 export type {
@@ -52,7 +51,10 @@ export {
   type ComponentNode,
   type ComponentTrees,
 } from './domain/ContentTree.entity';
-export { loadDefinitions } from './adapters/MigrationFiles.adapter';
+export {
+  DEFAULT_CONTENT_PATHS,
+  loadDefinitions,
+} from './adapters/MigrationFiles.adapter';
 export {
   ContentTypeRegistry as RegistryService,
   type RegisteredContentType,
