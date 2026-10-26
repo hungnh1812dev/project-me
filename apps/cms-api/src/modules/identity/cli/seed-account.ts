@@ -10,10 +10,10 @@ import {
 } from '../../security-audit';
 import {
   SEED_ACCOUNT_ERRORS,
-  SEED_ACCOUNT_OPT_IN,
   SEED_ACCOUNT_OPTIONS,
+  SEED_ACCOUNT_OPT_IN,
   SEED_ACCOUNT_ROLES,
-} from '../identity.constants';
+} from '../domain/Identity.constants';
 import { ownerInputSchema } from '../owner-bootstrap';
 import { hashPassword } from '../password-hasher';
 import { CliInputError, readPasswordFromStream } from './password-input';

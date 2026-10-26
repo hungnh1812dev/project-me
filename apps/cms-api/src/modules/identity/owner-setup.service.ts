@@ -23,7 +23,7 @@ import {
   OWNER_BOOTSTRAP_ERRORS,
   OWNER_SETUP_ERROR_CODES,
   OWNER_SETUP_MESSAGES,
-} from './identity.constants';
+} from './domain/Identity.constants';
 import { OWNER_ROLE_SLUG } from '../access';
 import { bootstrapOwner, OwnerBootstrapError } from './owner-bootstrap';
 import {
@@ -31,7 +31,7 @@ import {
   parseOwnerSetupBody,
   submittedSetupToken,
 } from './owner-setup.requests';
-import { isSetupTokenValid } from './setup-token';
+import { isSetupTokenValid } from './domain/SetupToken.rules';
 
 /** Thrown when the setup is closed; the controller answers the unknown-route 404. */
 export class SetupClosedError extends Error {

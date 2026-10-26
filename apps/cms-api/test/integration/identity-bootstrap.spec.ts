@@ -6,7 +6,7 @@ import {
   type PrismaHandle,
 } from '../../src/infrastructure/database/prisma-client';
 import { SYSTEM_ROLES } from '../../src/modules/access/roles/system-roles';
-import { OWNER_BOOTSTRAP_ERRORS } from '../../src/modules/identity/identity.constants';
+import { OWNER_BOOTSTRAP_ERRORS } from '../../src/modules/identity/domain/Identity.constants';
 import {
   bootstrapOwner,
   OwnerBootstrapError,

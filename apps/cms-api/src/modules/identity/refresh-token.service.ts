@@ -5,10 +5,10 @@ import { Injectable } from '@nestjs/common';
 import {
   REFRESH_TOKEN_BYTES,
   REFRESH_TOKEN_HASH_ALGORITHM,
-  REFRESH_TOKEN_REUSE_GRACE_MS,
   REFRESH_TOKEN_TTL_MS,
   USER_AGENT_MAX_LENGTH,
-} from './identity-auth.constants';
+} from './domain/Identity.constants';
+import { isRefreshInGrace } from './domain/Authentication.rules';
 import { type Prisma } from '../../generated/prisma/client';
 import { PrismaService } from '../../infrastructure/database/prisma.service';
 import { AUDIT_ACTIONS } from '../security-audit';
@@ -215,17 +215,15 @@ export class RefreshTokenService {
       },
     });
     const { replacedBy: successor, account } = token;
-    const rotatedAt = token.revokedAt?.getTime();
-    const inGrace =
-      rotatedAt !== undefined &&
-      now.getTime() - rotatedAt <= REFRESH_TOKEN_REUSE_GRACE_MS &&
-      successor !== null &&
-      successor.familyId === token.familyId &&
-      successor.replacedById === null &&
-      successor.revokedAt === null &&
-      successor.expiresAt > now &&
-      account.status === 'active' &&
-      account.deletedAt === null;
+    const inGrace = isRefreshInGrace(
+      {
+        familyId: token.familyId,
+        revokedAt: token.revokedAt,
+        successor,
+        account,
+      },
+      now,
+    );
     if (!inGrace) {
       return this.handleReuse(
         tx,

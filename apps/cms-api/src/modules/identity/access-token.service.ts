@@ -11,7 +11,7 @@ import {
   REVIEWER_SESSION_TTL_SECONDS,
   TOKEN_TYPES,
   TWO_FACTOR_TEMP_TOKEN_TTL_SECONDS,
-} from './identity-auth.constants';
+} from './domain/Identity.constants';
 import { Clock } from '../../common/time/clock';
 import { MS_PER_SECOND } from '../../common/constants/time.constants';
 import { type IAppConfig } from '../../config/app-config';

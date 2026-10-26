@@ -3,7 +3,7 @@ import {
   TWO_FACTOR_CHALLENGE_MAX_KEYS,
   TWO_FACTOR_TEMP_TOKEN_MAX_ATTEMPTS,
   TWO_FACTOR_TEMP_TOKEN_TTL_SECONDS,
-} from './identity-auth.constants';
+} from './domain/Identity.constants';
 import { MS_PER_SECOND } from '../../common/constants/time.constants';
 import { TwoFactorChallengeStore } from './two-factor-challenge.store';
 

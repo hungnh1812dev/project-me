@@ -2,7 +2,8 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { AuthGuard, PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 
-import { JWT_ALGORITHM, JWT_STRATEGY_NAME } from './identity-auth.constants';
+import { JWT_ALGORITHM } from './domain/Identity.constants';
+import { JWT_STRATEGY_NAME } from './http/IdentityHttp.constants';
 import type { RequestWithId } from '../../common/middleware/request-id.middleware';
 import {
   type ActorContext,

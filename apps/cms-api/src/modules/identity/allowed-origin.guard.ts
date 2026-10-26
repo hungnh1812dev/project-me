@@ -10,8 +10,8 @@ import type { Request } from 'express';
 import {
   AUTH_ERROR_CODES,
   AUTH_ERROR_MESSAGES,
-  ORIGIN_HEADER,
-} from './identity-auth.constants';
+} from './domain/Identity.constants';
+import { ORIGIN_HEADER } from './http/IdentityHttp.constants';
 import { type IAppConfig } from '../../config/app-config';
 import { APP_CONFIG } from '../../config/config.constants';
 

@@ -4,7 +4,7 @@ import { Clock } from '../../common/time/clock';
 import {
   TWO_FACTOR_CHALLENGE_MAX_KEYS,
   TWO_FACTOR_TEMP_TOKEN_MAX_ATTEMPTS,
-} from './identity-auth.constants';
+} from './domain/Identity.constants';
 
 interface ChallengeEntry {
   attempts: number;

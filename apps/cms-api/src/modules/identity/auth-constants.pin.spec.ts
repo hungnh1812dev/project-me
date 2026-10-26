@@ -2,8 +2,6 @@ import { NO_STORE_HEADER } from '../../common/constants/http.constants';
 import {
   ACCESS_TOKEN_TTL_SECONDS,
   JWT_ALGORITHM,
-  REFRESH_COOKIE,
-  REFRESH_COOKIE_OPTIONS,
   REFRESH_TOKEN_BYTES,
   REFRESH_TOKEN_REUSE_GRACE_MS,
   REFRESH_TOKEN_REUSE_GRACE_SECONDS,
@@ -12,7 +10,11 @@ import {
   REVIEWER_SESSION_TTL_SECONDS,
   TOKEN_TYPES,
   TWO_FACTOR_TEMP_TOKEN_TTL_SECONDS,
-} from './identity-auth.constants';
+} from './domain/Identity.constants';
+import {
+  REFRESH_COOKIE,
+  REFRESH_COOKIE_OPTIONS,
+} from './http/IdentityHttp.constants';
 
 /**
  * Security constants pinned as literals (SPEC D9, D14). If a refactor changes

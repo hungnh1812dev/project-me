@@ -8,7 +8,8 @@ import {
 import {
   AUTH_ERROR_CODES,
   AUTH_ERROR_MESSAGES,
-} from './identity-auth.constants';
+  EMAIL_CODE_PURPOSE,
+} from './domain/Identity.constants';
 import { ERROR_CODES } from '../../common/constants/error.constants';
 import { RATE_LIMIT_MESSAGE } from '../../common/constants/limits.constants';
 import { MS_PER_SECOND } from '../../common/constants/time.constants';
@@ -26,7 +27,6 @@ import { TotpService } from './totp.service';
 import { TwoFactorChallengeStore } from './two-factor-challenge.store';
 import { TwoFactorEmailCodeSender } from './two-factor-email-code.sender';
 import {
-  EMAIL_CODE_PURPOSE,
   invalidTwoFactorCode,
   TWO_FACTOR_ACCOUNT_SELECT,
 } from './two-factor.shared';

@@ -1,7 +1,7 @@
 import { loadAppConfig } from '../../../config/app-config';
 import { openPrisma } from '../../../infrastructure/database/prisma-client';
 import { OWNER_CREATED_CHANNELS } from '../../security-audit';
-import { PASSWORD_STDIN_FLAG } from '../identity.constants';
+import { PASSWORD_STDIN_FLAG } from '../domain/Identity.constants';
 import { bootstrapOwner } from '../owner-bootstrap';
 import {
   CliInputError,

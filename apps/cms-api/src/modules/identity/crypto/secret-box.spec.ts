@@ -5,7 +5,7 @@ import {
   TEST_TOTP_ENC_PREVIOUS_KID,
 } from '../../../../test/fixtures/env.fixture';
 import { loadAppConfig } from '../../../config/app-config';
-import { SECRET_BOX } from '../identity.constants';
+import { SECRET_BOX } from '../domain/Identity.constants';
 import { deriveSecretBoxKey, SecretBox, SecretBoxError } from './secret-box';
 
 const PLAINTEXT = 'JBSWY3DPEHPK3PXPJBSWY3DPEHPK3PXP';

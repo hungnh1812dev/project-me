@@ -7,9 +7,6 @@ import {
 import { RICHTEXT_ALLOWED_URL_SCHEMES } from '../modules/content-engine/domain/ContentEngine.constants';
 import {
   AUTH_ERROR_CODES,
-  REFRESH_COOKIE,
-} from '../modules/identity/identity-auth.constants';
-import {
   OTP,
   OWNER_DISPLAY_NAME_MAX_LENGTH,
   OWNER_SETUP_ERROR_CODES,
@@ -17,7 +14,8 @@ import {
   PASSWORD_MIN_LENGTH,
   SETUP_TOKEN_MAX_LENGTH,
   TOTP,
-} from '../modules/identity/identity.constants';
+} from '../modules/identity/domain/Identity.constants';
+import { REFRESH_COOKIE } from '../modules/identity/http/IdentityHttp.constants';
 import {
   REVIEWER_ERROR_CODES,
   REVIEWER_INPUT_LIMITS,

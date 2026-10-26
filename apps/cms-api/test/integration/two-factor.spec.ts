@@ -7,9 +7,12 @@ import request from 'supertest';
 import { Clock } from '../../src/common/time/clock';
 import {
   AUTH_ERROR_CODES,
+  OTP,
+  TOTP,
+  TWO_FACTOR_RESET_ERRORS,
   TWO_FACTOR_TEMP_TOKEN_MAX_ATTEMPTS,
   TWO_FACTOR_TEMP_TOKEN_TTL_SECONDS,
-} from '../../src/modules/identity/identity-auth.constants';
+} from '../../src/modules/identity/domain/Identity.constants';
 import { ERROR_CODES } from '../../src/common/constants/error.constants';
 import { MS_PER_SECOND } from '../../src/common/constants/time.constants';
 import { IDENTITY_RATE_LIMIT_POLICIES } from '../../src/modules/identity/identity.rate-limits.constants';
@@ -28,11 +31,6 @@ import {
   type AuditAction,
 } from '../../src/modules/security-audit';
 import { SecretBox } from '../../src/modules/identity/crypto/secret-box';
-import {
-  OTP,
-  TOTP,
-  TWO_FACTOR_RESET_ERRORS,
-} from '../../src/modules/identity/identity.constants';
 import { hashPassword } from '../../src/modules/identity/password-hasher';
 import { PasswordService } from '../../src/modules/identity/password.service';
 import { seedSystemRoles } from '../../src/modules/access/roles/system-roles.seed';

@@ -16,7 +16,7 @@ import {
   SecurityAuditService,
   selfActor,
 } from '../security-audit';
-import { OTP } from './identity.constants';
+import { OTP } from './domain/Identity.constants';
 
 type Tx = Prisma.TransactionClient;
 

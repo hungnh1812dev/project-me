@@ -3,7 +3,10 @@ import { parseArgs } from 'node:util';
 
 import { loadAppConfig } from '../../../config/app-config';
 import { openPrisma } from '../../../infrastructure/database/prisma-client';
-import { CONFIRM_ANSWERS, RESET_2FA_OPTIONS } from '../identity.constants';
+import {
+  CONFIRM_ANSWERS,
+  RESET_2FA_OPTIONS,
+} from '../domain/Identity.constants';
 import { parseResetEmail, resetTwoFactor } from '../two-factor-reset';
 import { CliInputError } from './password-input';
 

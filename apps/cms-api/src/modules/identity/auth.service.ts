@@ -10,18 +10,15 @@ import {
   AUTH_ERROR_CODES,
   AUTH_ERROR_MESSAGES,
   DUMMY_PASSWORD_BYTES,
-} from './identity-auth.constants';
+} from './domain/Identity.constants';
 import {
   type AccountStatus,
   type TwoFaMethod,
 } from '../../generated/prisma/client';
 import { PrismaService } from '../../infrastructure/database/prisma.service';
-import {
-  AUDIT_ACTIONS,
-  LOGIN_FAILURE_REASONS,
-  type LoginFailureReason,
-} from '../security-audit';
+import { AUDIT_ACTIONS, type LoginFailureReason } from '../security-audit';
 import { SecurityAuditService, selfActor } from '../security-audit';
+import { loginFailureReason } from './domain/Authentication.rules';
 import { AccessTokenService } from './access-token.service';
 import { hashPassword, verifyPassword } from './password-hasher';
 import { RefreshTokenService } from './refresh-token.service';
@@ -101,20 +98,6 @@ interface LoginAccount {
   readonly is2faEnabled: boolean;
   readonly twoFaMethod: TwoFaMethod | null;
   readonly role: { readonly policyVersion: number };
-}
-
-/** Why a sign-in fails, or undefined when it may go on. */
-function loginFailureReason(
-  account: LoginAccount | null,
-  isPasswordCorrect: boolean,
-): LoginFailureReason | undefined {
-  if (account === null) return LOGIN_FAILURE_REASONS.UNKNOWN_ACCOUNT;
-  if (account.passwordHash === null) return LOGIN_FAILURE_REASONS.NO_PASSWORD;
-  if (!isPasswordCorrect) return LOGIN_FAILURE_REASONS.BAD_PASSWORD;
-  if (account.status !== 'active' || account.deletedAt !== null) {
-    return LOGIN_FAILURE_REASONS.NOT_ACTIVE;
-  }
-  return undefined;
 }
 
 @Injectable()

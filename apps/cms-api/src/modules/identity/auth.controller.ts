@@ -20,10 +20,12 @@ import { NO_STORE_HEADER } from '../../common/constants/http.constants';
 import {
   AUTH_ERROR_CODES,
   AUTH_ERROR_MESSAGES,
+  REFRESH_TOKEN_TTL_MS,
+} from './domain/Identity.constants';
+import {
   REFRESH_COOKIE,
   REFRESH_COOKIE_OPTIONS,
-  REFRESH_TOKEN_TTL_MS,
-} from './identity-auth.constants';
+} from './http/IdentityHttp.constants';
 import { IDENTITY_RATE_LIMIT_POLICIES } from './identity.rate-limits.constants';
 import { type ClientMeta, clientMetaOf } from '../../common/http/client-meta';
 import { Throttle } from '../../common/guards/throttle.guard';

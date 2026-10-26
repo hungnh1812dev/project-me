@@ -1,7 +1,7 @@
 import { type OtpPurpose } from '../../generated/prisma/client';
 import { type MailMessage } from '../../infrastructure/mail/mail.port';
 import { SECONDS_PER_MINUTE } from '../../common/constants/time.constants';
-import { ADMIN_PAGE_PATHS, OTP } from './identity.constants';
+import { ADMIN_PAGE_PATHS, OTP } from './domain/Identity.constants';
 
 const PRODUCT_NAME = 'Abyss CMS';
 

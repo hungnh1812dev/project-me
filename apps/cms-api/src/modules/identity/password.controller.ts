@@ -18,7 +18,7 @@ import { NO_STORE_HEADER } from '../../common/constants/http.constants';
 import {
   AUTH_ERROR_CODES,
   AUTH_ERROR_MESSAGES,
-} from './identity-auth.constants';
+} from './domain/Identity.constants';
 import { IDENTITY_RATE_LIMIT_POLICIES } from './identity.rate-limits.constants';
 import { Throttle } from '../../common/guards/throttle.guard';
 import { clientMetaOf } from '../../common/http/client-meta';

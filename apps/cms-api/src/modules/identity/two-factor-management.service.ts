@@ -10,7 +10,8 @@ import {
 import {
   AUTH_ERROR_CODES,
   AUTH_ERROR_MESSAGES,
-} from './identity-auth.constants';
+  EMAIL_CODE_PURPOSE,
+} from './domain/Identity.constants';
 import { type Prisma, type TwoFaMethod } from '../../generated/prisma/client';
 import { PrismaService } from '../../infrastructure/database/prisma.service';
 import {
@@ -26,7 +27,6 @@ import { type ClientMeta } from '../../common/http/client-meta';
 import { TotpService } from './totp.service';
 import { TwoFactorEmailCodeSender } from './two-factor-email-code.sender';
 import {
-  EMAIL_CODE_PURPOSE,
   invalidTwoFactorCode,
   TWO_FACTOR_ACCOUNT_SELECT,
 } from './two-factor.shared';

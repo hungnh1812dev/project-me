@@ -1,7 +1,9 @@
 import { z } from 'zod';
 
-import { EMAIL_MAX_LENGTH } from './identity-auth.constants';
-import { PASSWORD_MAX_LENGTH } from './identity.constants';
+import {
+  EMAIL_MAX_LENGTH,
+  PASSWORD_MAX_LENGTH,
+} from './domain/Identity.constants';
 
 /**
  * `POST /auth/login` body. Shape checks only: the email format is not

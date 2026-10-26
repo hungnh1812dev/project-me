@@ -2,7 +2,7 @@ import {
   OWNER_BOOTSTRAP_ERRORS,
   PASSWORD_MAX_LENGTH,
   PASSWORD_MIN_LENGTH,
-} from './identity.constants';
+} from './domain/Identity.constants';
 import { OwnerBootstrapError, parseOwnerInput } from './owner-bootstrap';
 
 const VALID_PASSWORD = 'p'.repeat(PASSWORD_MIN_LENGTH);

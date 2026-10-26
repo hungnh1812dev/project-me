@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import { OWNER_ENV_KEYS } from '../identity.constants';
+import { OWNER_ENV_KEYS } from '../domain/Identity.constants';
 import { CliInputError } from './password-input';
 
 /** A blank value counts as not set. */

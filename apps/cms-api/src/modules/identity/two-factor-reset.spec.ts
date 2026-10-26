@@ -1,4 +1,4 @@
-import { TWO_FACTOR_RESET_ERRORS } from './identity.constants';
+import { TWO_FACTOR_RESET_ERRORS } from './domain/Identity.constants';
 import { parseResetEmail, TwoFactorResetError } from './two-factor-reset';
 
 function errorOf(email: string): TwoFactorResetError {

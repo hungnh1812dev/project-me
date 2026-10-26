@@ -13,7 +13,7 @@ import {
   OWNER_DISPLAY_NAME_MAX_LENGTH,
   PASSWORD_MAX_LENGTH,
   PASSWORD_MIN_LENGTH,
-} from './identity.constants';
+} from './domain/Identity.constants';
 import { OWNER_ROLE_SLUG } from '../access';
 import { hashPassword } from './password-hasher';
 

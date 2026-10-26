@@ -7,7 +7,7 @@ import { type IAppConfig } from '../../config/app-config';
 import { APP_CONFIG } from '../../config/config.constants';
 import { PrismaService } from '../../infrastructure/database/prisma.service';
 import { SecretBox, SecretBoxError } from './crypto/secret-box';
-import { TOTP } from './identity.constants';
+import { TOTP } from './domain/Identity.constants';
 import { type ResetSecondFactor } from './reset-second-factor';
 
 const LOGGER_CONTEXT = 'TotpService';

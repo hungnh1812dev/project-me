@@ -10,7 +10,7 @@ import { loadAppConfig } from '../../config/app-config';
 import { CONFIG_DEFAULTS } from '../../config/config.constants';
 import { type PrismaService } from '../../infrastructure/database/prisma.service';
 import { SecretBox } from './crypto/secret-box';
-import { TOTP } from './identity.constants';
+import { TOTP } from './domain/Identity.constants';
 import { isTotpCodeFormat, TotpService } from './totp.service';
 
 /** Start of a time step, so ±1 step stays inside the test's own math. */

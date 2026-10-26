@@ -3,7 +3,7 @@ import { createHash, timingSafeEqual } from 'node:crypto';
 import {
   SETUP_TOKEN_DIGEST_ALGORITHM,
   SETUP_TOKEN_MAX_LENGTH,
-} from './identity.constants';
+} from './Identity.constants';
 
 function digestOf(value: string): Buffer {
   return createHash(SETUP_TOKEN_DIGEST_ALGORITHM)

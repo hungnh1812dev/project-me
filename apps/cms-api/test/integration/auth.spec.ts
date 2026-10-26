@@ -9,11 +9,11 @@ import { Clock } from '../../src/common/time/clock';
 import {
   ACCESS_TOKEN_TTL_SECONDS,
   AUTH_ERROR_CODES,
-  REFRESH_COOKIE,
   REFRESH_TOKEN_REUSE_GRACE_MS,
   REFRESH_TOKEN_TTL_SECONDS,
   TOKEN_TYPES,
-} from '../../src/modules/identity/identity-auth.constants';
+} from '../../src/modules/identity/domain/Identity.constants';
+import { REFRESH_COOKIE } from '../../src/modules/identity/http/IdentityHttp.constants';
 import { RATE_LIMIT_SWEEP_INTERVAL_MS } from '../../src/common/constants/limits.constants';
 import {
   openPrisma,

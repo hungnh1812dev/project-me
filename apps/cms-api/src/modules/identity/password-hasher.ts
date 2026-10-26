@@ -1,6 +1,6 @@
 import { argon2id, hash, verify } from 'argon2';
 
-import { ARGON2_OPTIONS } from './identity.constants';
+import { ARGON2_OPTIONS } from './domain/Identity.constants';
 
 /** Argon2id hash in PHC string form (salt and parameters included). */
 export function hashPassword(password: string): Promise<string> {

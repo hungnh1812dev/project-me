@@ -1,5 +1,5 @@
-import { SETUP_TOKEN_MAX_LENGTH } from './identity.constants';
-import { isSetupTokenValid } from './setup-token';
+import { SETUP_TOKEN_MAX_LENGTH } from './Identity.constants';
+import { isSetupTokenValid } from './SetupToken.rules';
 
 const CONFIGURED = 'a-configured-setup-token-0123456789';
 

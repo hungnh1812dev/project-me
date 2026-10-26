@@ -3,7 +3,7 @@ import { HttpException, type HttpStatus } from '@nestjs/common';
 import {
   AUTH_ERROR_CODES,
   AUTH_ERROR_MESSAGES,
-} from './identity-auth.constants';
+} from './domain/Identity.constants';
 import { TOTP_ACCOUNT_SELECT } from './totp.service';
 
 /** The OTP purpose of a mailed second-factor code (login, enable, disable). */

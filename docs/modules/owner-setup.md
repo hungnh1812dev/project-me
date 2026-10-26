@@ -33,7 +33,7 @@ Order of checks in `POST /setup/owner`:
 
 `GET /setup/status` returns `open = tokenConfigured && !latch && !ownerExists`. It needs no token: the admin console must know whether to show the setup page. It reveals only "this instance has no owner yet and expects a setup", which the operator causes on purpose and which lasts minutes.
 
-New error codes in `OWNER_SETUP_ERROR_CODES` (`identity.constants.ts`): `SETUP_TOKEN_INVALID`, `OWNER_EMAIL_TAKEN`. Route constants: `SETUP_ROUTES = { ROOT: 'setup', STATUS: 'status', OWNER: 'owner' }` (`identity.routes.ts`).
+New error codes in `OWNER_SETUP_ERROR_CODES` (`domain/Identity.constants.ts`): `SETUP_TOKEN_INVALID`, `OWNER_EMAIL_TAKEN`. Route constants: `SETUP_ROUTES = { ROOT: 'setup', STATUS: 'status', OWNER: 'owner' }` (`identity.routes.ts`).
 
 ### In-process latch
 
@@ -92,7 +92,7 @@ No row ever holds the token, the password or (for rejected attempts) the email.
 ## Code changes (for OS1 / OS2)
 
 - `bootstrapOwner(prisma, input, options?)`: new optional `options` `{ channel, audit }` so the `owner.created` row is written inside its transaction. The CLI passes `channel: 'cli'`. Existing behaviour and error codes stay.
-- New in `apps/cms-api/src/modules/identity`: `owner-setup.controller.ts`, `owner-setup.service.ts` (latch, token compare, error mapping), `owner-setup.requests.ts` (Zod DTO), `setup-token.ts` (hash + timing-safe compare, pure, unit-tested). Constants in `identity.constants.ts` (`SETUP_TOKEN_MAX_LENGTH`, setup channels), route constants in `api.constants.ts`, policies in `identity.rate-limits.constants.ts`, env in `env.schema.ts` / `app-config.ts` / `.env.example`.
+- New in `apps/cms-api/src/modules/identity`: `owner-setup.controller.ts`, `owner-setup.service.ts` (latch, token compare, error mapping), `owner-setup.requests.ts` (Zod DTO), `domain/SetupToken.rules.ts` (hash + timing-safe compare, pure, unit-tested). Constants in `domain/Identity.constants.ts` (`SETUP_TOKEN_MAX_LENGTH`, setup channels), route constants in `api.constants.ts`, policies in `identity.rate-limits.constants.ts`, env in `env.schema.ts` / `app-config.ts` / `.env.example`.
 - No DB schema change: there is no "setup completed" table; the owner row is the state.
 
 ## Not in scope

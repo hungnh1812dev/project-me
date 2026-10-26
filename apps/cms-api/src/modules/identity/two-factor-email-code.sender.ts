@@ -14,7 +14,7 @@ import {
 import { type ClientMeta } from '../../common/http/client-meta';
 import { buildOtpMail } from './otp-mail';
 import { OtpService } from './otp.service';
-import { EMAIL_CODE_PURPOSE } from './two-factor.shared';
+import { EMAIL_CODE_PURPOSE } from './domain/Identity.constants';
 
 /** Issues a LOGIN_2FA_EMAIL code and mails it; shared by login and management. */
 @Injectable()

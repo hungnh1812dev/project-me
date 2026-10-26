@@ -11,7 +11,8 @@ import {
 import {
   AUTH_ERROR_CODES,
   AUTH_ERROR_MESSAGES,
-} from './identity-auth.constants';
+  OTP,
+} from './domain/Identity.constants';
 import { type IAppConfig } from '../../config/app-config';
 import { APP_CONFIG } from '../../config/config.constants';
 import {
@@ -31,7 +32,6 @@ import {
 } from '../security-audit';
 import { SecurityAuditService, selfActor } from '../security-audit';
 import { VersionCache } from '../access';
-import { OTP } from './identity.constants';
 import { buildOtpMail } from './otp-mail';
 import { isOtpCodeFormat, OtpService } from './otp.service';
 import { hashPassword, verifyPassword } from './password-hasher';

@@ -6,7 +6,12 @@ import type { StartedPostgreSqlContainer } from '@testcontainers/postgresql';
 import request from 'supertest';
 
 import { Clock } from '../../src/common/time/clock';
-import { AUTH_ERROR_CODES } from '../../src/modules/identity/identity-auth.constants';
+import {
+  AUTH_ERROR_CODES,
+  OTP,
+  PASSWORD_MAX_LENGTH,
+  PASSWORD_MIN_LENGTH,
+} from '../../src/modules/identity/domain/Identity.constants';
 import { ERROR_CODES } from '../../src/common/constants/error.constants';
 import { MS_PER_SECOND } from '../../src/common/constants/time.constants';
 import { IDENTITY_RATE_LIMIT_POLICIES } from '../../src/modules/identity/identity.rate-limits.constants';
@@ -19,11 +24,6 @@ import {
   type MailMessage,
   type MailSender,
 } from '../../src/infrastructure/mail/mail.port';
-import {
-  OTP,
-  PASSWORD_MAX_LENGTH,
-  PASSWORD_MIN_LENGTH,
-} from '../../src/modules/identity/identity.constants';
 import { OtpService } from '../../src/modules/identity/otp.service';
 import { hashPassword } from '../../src/modules/identity/password-hasher';
 import { PasswordService } from '../../src/modules/identity/password.service';
