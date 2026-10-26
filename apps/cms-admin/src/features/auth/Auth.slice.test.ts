@@ -1,4 +1,4 @@
-import { createAuthTestStore } from './auth-test-store';
+import { createAuthTestStore } from './AuthStore.fixture';
 import {
   accessTokenReceived,
   selectAccessToken,
@@ -6,7 +6,7 @@ import {
   selectSessionStatus,
   signedIn,
   signedOut,
-} from './auth.slice';
+} from './Auth.slice';
 import { TEST_USER } from '../../../test/RenderApp.fixture';
 
 describe('authSlice', () => {

@@ -1,7 +1,7 @@
 import { Navigate, type RouteObject } from 'react-router';
 
 import { APP_ROUTES } from '../config/App.routes';
-import { PUBLIC_ROUTE_PATHS } from '../features/auth/feature';
+import { PUBLIC_ROUTE_PATHS } from '../features/auth/Auth.feature';
 import { ProtectedRoute } from '../features/auth/ProtectedRoute';
 import type { FeatureRoute } from '../lib/FeatureDefinition';
 import { FEATURE_LIST } from '../features/registry';

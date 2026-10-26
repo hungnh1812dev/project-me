@@ -5,11 +5,11 @@ import {
 } from '../../../test/FakeApi.fixture';
 import { fakeBus, fakeLocks } from '../../../test/FakeTabs.fixture';
 import { createTestServices, TEST_USER } from '../../../test/RenderApp.fixture';
-import { createAuthTestStore } from './auth-test-store';
+import { createAuthTestStore } from './AuthStore.fixture';
 import { API_ENDPOINTS } from '../../config/Api.endpoints';
 import { createApiClient } from '../../lib/Api.client';
-import { createAuthApi } from './auth.api';
-import { createSession } from './session';
+import { createAuthApi } from './Auth.api';
+import { createSession } from './Session';
 
 const { LOGIN, REFRESH, LOGOUT, ME } = API_ENDPOINTS.AUTH;
 const { VERIFY } = API_ENDPOINTS.TWO_FACTOR;

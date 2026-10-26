@@ -3,8 +3,8 @@ import reactHooks from 'eslint-plugin-react-hooks';
 import globals from 'globals';
 
 const WIRING_BAN = {
-  group: ['**/app-wiring'],
-  message: 'features/auth/app-wiring is for src/app/** only.',
+  group: ['**/AuthWiring.setup'],
+  message: 'features/auth/AuthWiring.setup is for src/app/** only.',
 };
 const APP_BAN = {
   group: ['**/app', '**/app/**'],
@@ -120,9 +120,12 @@ const NO_NATIVE_DIALOG = {
 const NO_LITERAL_QUERY_KEY = {
   selector: "Property[key.name='queryKey'] > ArrayExpression",
   message:
-    'Query keys come from the feature owner (*-queries.ts, use-setup-status.ts), not literals.',
+    'Query keys come from the feature owner (*-queries.ts, useSetupStatus.query.ts), not literals.',
 };
-const QUERY_KEY_OWNERS = ['src/**/*-queries.ts', 'src/**/use-setup-status.ts'];
+const QUERY_KEY_OWNERS = [
+  'src/**/*-queries.ts',
+  'src/**/useSetupStatus.query.ts',
+];
 
 export default [
   ...baseEslint({ tsconfigRootDir: import.meta.dirname }),

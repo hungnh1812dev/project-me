@@ -50,8 +50,9 @@ test('a 401 on a protected call refreshes once and retries it', async ({
     page.getByRole('button', { name: ADMIN_COPY.access.accounts.invite }),
   ).toBeVisible();
   expect(refused).toBe(1);
-  // One refresh for the page start, one for the 401 - never a loop.
-  expect(refreshes).toEqual([200, 200]);
+  // One refresh for the page start, one for the 401 - never a loop. The
+  // heading and button render before the retry's refresh answers, so wait.
+  await expect.poll(() => refreshes).toEqual([200, 200]);
 });
 
 test('a refresh the server refuses ends the session at /login', async ({

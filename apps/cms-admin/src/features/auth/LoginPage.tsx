@@ -13,17 +13,21 @@ import { z } from 'zod';
 
 import { COPY } from '../../config/Copy.constants';
 import { APP_ROUTES } from '../../config/App.routes';
-import type { TwoFactorChallenge } from './auth.api';
-import { selectEndNotice, selectSessionStatus } from './auth.slice';
-import { useAuthSelector } from './auth-hooks';
+import type { TwoFactorChallenge } from './Auth.api';
+import { selectEndNotice, selectSessionStatus } from './Auth.slice';
+import { useAuthSelector } from './useAuthSelector.state';
 import { AuthPageLayout } from './AuthPageLayout';
-import { type LoginError, toLoginError } from './login-error';
-import { type LoginNotice, loginEmailOf, loginNoticeOf } from './login-notice';
+import { type LoginError, toLoginError } from './LoginError.errors';
+import {
+  type LoginNotice,
+  loginEmailOf,
+  loginNoticeOf,
+} from './LoginNotice.rules';
 import type { LoginLocationState } from './ProtectedRoute';
-import { useSession } from './session-context';
+import { useSession } from './Session.context';
 import { SessionLoading } from './SessionLoading';
 import { TwoFactorModal } from './TwoFactorModal';
-import { useSetupStatus } from './use-setup-status';
+import { useSetupStatus } from './useSetupStatus.query';
 
 const loginSchema = z.object({
   email: z

@@ -11,9 +11,9 @@ import { COPY } from '../../config/Copy.constants';
 import { APP_ROUTES } from '../../config/App.routes';
 import { AuthPageLayout } from './AuthPageLayout';
 import { BackToSignIn } from './BackToSignIn';
-import type { LoginNoticeState } from './login-notice';
-import { usePasswordApi } from './password-api-context';
-import { type PasswordError, toPasswordError } from './password-error';
+import type { LoginNoticeState } from './LoginNotice.rules';
+import { usePasswordApi } from './PasswordApi.context';
+import { type PasswordError, toPasswordError } from './PasswordError.errors';
 import {
   ALERT_TONE_BY_ERROR,
   codeField,
@@ -22,7 +22,7 @@ import {
   newPasswordShape,
   passwordsMatch,
   PASSWORDS_MATCH_ISSUE,
-} from './password-form';
+} from './Password.form';
 
 const requestSchema = z.object({ email: emailField });
 type RequestValues = z.input<typeof requestSchema>;

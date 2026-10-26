@@ -1,5 +1,5 @@
 import { deferred } from '../../../test/FakeApi.fixture';
-import { singleFlight } from './single-flight';
+import { singleFlight } from './SingleFlight.rules';
 
 describe('singleFlight', () => {
   it('shares one run between concurrent callers, then starts fresh', async () => {

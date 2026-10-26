@@ -5,8 +5,8 @@ import {
 } from '../../../test/FakeApi.fixture';
 import { API_ENDPOINTS } from '../../config/Api.endpoints';
 import { createApiClient } from '../../lib/Api.client';
-import { installAuthInterceptor } from './auth-interceptor';
-import { singleFlight } from './single-flight';
+import { installAuthInterceptor } from './Auth.interceptor';
+import { singleFlight } from './SingleFlight.rules';
 
 const PROTECTED = '/content/posts';
 const OLD = 'old-token';

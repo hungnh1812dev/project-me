@@ -2,7 +2,7 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
 import { Provider } from 'react-redux';
 
-import { SessionProvider } from '../features/auth/session-context';
+import { SessionProvider } from '../features/auth/Session.context';
 import type { AppServices } from './AppServices.setup';
 
 export function AppProviders({

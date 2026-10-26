@@ -1,7 +1,7 @@
 import { configureStore } from '@reduxjs/toolkit';
 
 import { appEnv } from '../config/App.env';
-import { authReducer } from '../features/auth/app-wiring';
+import { authReducer } from '../features/auth/AuthWiring.setup';
 
 /** Session and UI state (SPEC §3). Server data lives in TanStack Query. */
 export function createAppStore() {

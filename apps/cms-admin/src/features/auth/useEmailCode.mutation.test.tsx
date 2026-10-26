@@ -5,7 +5,7 @@ import type { ReactNode } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { MAX_TIMER_DELAY_MS, MS_PER_SECOND } from '../../config/Http.constants';
-import { useEmailCode } from './use-email-code';
+import { useEmailCode } from './useEmailCode.mutation';
 
 const HUGE_RETRY_AFTER_SECONDS = 10_000_000;
 

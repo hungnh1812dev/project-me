@@ -1,7 +1,7 @@
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { basename, join, resolve } from 'node:path';
 
-import * as appWiring from './features/auth/app-wiring';
+import * as appWiring from './features/auth/AuthWiring.setup';
 import * as authFacade from './features/auth';
 
 const FEATURES_DIR = resolve(import.meta.dirname, 'features');

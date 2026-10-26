@@ -5,7 +5,7 @@ import { MemoryRouter } from 'react-router';
 import { App } from '../src/app/App';
 import { createAppServices } from '../src/app/AppServices.setup';
 import { AppProviders } from '../src/app/AppProviders';
-import type { CurrentUser } from '../src/features/auth/auth.slice';
+import type { CurrentUser } from '../src/features/auth/Auth.slice';
 import { API_ENDPOINTS } from '../src/config/Api.endpoints';
 import { createApiClient } from '../src/lib/Api.client';
 import {

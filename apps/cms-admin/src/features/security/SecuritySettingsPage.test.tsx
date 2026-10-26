@@ -10,7 +10,7 @@ import {
 import { COPY } from '../../config/Copy.constants';
 import { API_ENDPOINTS } from '../../config/Api.endpoints';
 import { APP_ROUTES } from '../../config/App.routes';
-import type { CurrentUser } from '../auth/auth.slice';
+import type { CurrentUser } from '../auth/Auth.slice';
 
 const { REFRESH, ME } = API_ENDPOINTS.AUTH;
 const { TOTP_SETUP, ENABLE, DISABLE, EMAIL_SEND_CODE } =

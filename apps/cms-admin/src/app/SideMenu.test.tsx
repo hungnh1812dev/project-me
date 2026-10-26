@@ -10,7 +10,7 @@ import {
 import { COPY } from '../config/Copy.constants';
 import { API_ENDPOINTS } from '../config/Api.endpoints';
 import type { Role } from '../features/access/access.api';
-import type { CurrentUser } from '../features/auth/auth.slice';
+import type { CurrentUser } from '../features/auth/Auth.slice';
 
 const { REFRESH, ME } = API_ENDPOINTS.AUTH;
 const nav = COPY.access.nav;

@@ -15,11 +15,11 @@ import { COPY } from '../../config/Copy.constants';
 import { APP_ROUTES } from '../../config/App.routes';
 import { AuthPageLayout } from './AuthPageLayout';
 import { BackToSignIn } from './BackToSignIn';
-import type { LoginNoticeState } from './login-notice';
-import { emailField } from './password-form';
-import { useSetupApi } from './setup-api-context';
-import { toSetupError } from './setup-error';
-import { SETUP_STATUS_QUERY_KEY, useSetupStatus } from './use-setup-status';
+import type { LoginNoticeState } from './LoginNotice.rules';
+import { emailField } from './Password.form';
+import { useSetupApi } from './SetupApi.context';
+import { toSetupError } from './SetupError.errors';
+import { SETUP_STATUS_QUERY_KEY, useSetupStatus } from './useSetupStatus.query';
 
 const { validation } = COPY.setup;
 

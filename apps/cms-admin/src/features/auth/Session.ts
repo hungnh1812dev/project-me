@@ -3,16 +3,16 @@ import type { Dispatch } from '@reduxjs/toolkit';
 import {
   createCrossTabRefresh,
   type CrossTabRefreshOptions,
-} from './cross-tab-refresh';
-import { singleFlight } from './single-flight';
+} from './CrossTabRefresh';
+import { singleFlight } from './SingleFlight.rules';
 import type {
   AuthApi,
   LoginCredentials,
   LoginOutcome,
   TwoFactorVerification,
-} from './auth.api';
-import { accessTokenReceived, signedIn, signedOut } from './auth.slice';
-import type { LoginNotice } from './login-notice';
+} from './Auth.api';
+import { accessTokenReceived, signedIn, signedOut } from './Auth.slice';
+import type { LoginNotice } from './LoginNotice.rules';
 
 export interface SessionOptions {
   dispatch: Dispatch;

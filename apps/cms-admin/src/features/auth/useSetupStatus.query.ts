@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 
-import { useSetupApi } from './setup-api-context';
+import { useSetupApi } from './SetupApi.context';
 
 /** Query key of the public setup status. */
 export const SETUP_STATUS_QUERY_KEY = ['setup', 'status'] as const;

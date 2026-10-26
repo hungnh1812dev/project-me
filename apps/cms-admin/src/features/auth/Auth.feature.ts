@@ -1,9 +1,9 @@
 import { APP_ROUTES } from '../../config/App.routes';
 import { defineApiService, type Feature } from '../../lib/FeatureDefinition';
-import { PasswordApiProvider } from './password-api-context';
-import { createPasswordApi } from './password.api';
-import { SetupApiProvider } from './setup-api-context';
-import { createSetupApi } from './setup.api';
+import { PasswordApiProvider } from './PasswordApi.context';
+import { createPasswordApi } from './Password.api';
+import { SetupApiProvider } from './SetupApi.context';
+import { createSetupApi } from './Setup.api';
 import { LoginPage } from './LoginPage';
 import { OwnerSetupPage } from './OwnerSetupPage';
 import { ResetPasswordPage } from './ResetPasswordPage';

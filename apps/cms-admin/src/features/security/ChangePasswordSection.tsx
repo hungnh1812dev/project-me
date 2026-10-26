@@ -19,8 +19,8 @@ import {
   useCurrentUser,
   useSession,
 } from '../auth';
-import { useSecurityApi } from './security-api-context';
-import { toSecurityError } from './security-error';
+import { useSecurityApi } from './SecurityApi.context';
+import { toSecurityError } from './SecurityError.errors';
 
 const copy = COPY.security;
 

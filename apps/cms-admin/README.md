@@ -7,7 +7,7 @@ So far: sign-in (T11) and, behind it, a status page that calls
 
 ## Auth (T11, D14)
 
-- **Session state**: Redux Toolkit `authSlice` (`src/features/auth/auth.slice.ts`):
+- **Session state**: Redux Toolkit `authSlice` (`src/features/auth/Auth.slice.ts`):
   `status` (`unknown` until the start-up refresh settles, then
   `authenticated` / `anonymous`), the access token and the `/me` user. The
   access token lives **in memory only**: never in localStorage,
@@ -25,15 +25,15 @@ So far: sign-in (T11) and, behind it, a status page that calls
 - **Auth facade**: besides `useCurrentUser`, `useSession` and the `Session`
   type, it shares `useEmailCode` and the password form pieces
   (`newPasswordShape`, `passwordsMatch`, `PASSWORDS_MATCH_ISSUE`) with
-  `security`. `src/features/auth/app-wiring.ts` (`createSession`,
+  `security`. `src/features/auth/AuthWiring.setup.ts` (`createSession`,
   `createAuthApi`, `authReducer`, `accessTokenOf`, interceptor and cross-tab
   helpers) is for `src/app/**` only; ESLint blocks `app/**` imports from
   features and lib, and features imports from lib.
-- **Session lifecycle**: `src/features/auth/session.ts` (`restore`, `signIn`,
+- **Session lifecycle**: `src/features/auth/Session.ts` (`restore`, `signIn`,
   `signOut`, `expire`), wired in `src/app/AppServices.setup.ts`. Every refresh goes
   through one single-flight call. The cookie rotates on use, so two parallel
   refreshes would look like token reuse and revoke the session.
-- **Across tabs** (T11a): `src/features/auth/cross-tab-refresh.ts`. Tabs take turns
+- **Across tabs** (T11a): `src/features/auth/CrossTabRefresh.ts`. Tabs take turns
   under the Web Lock `abyss-admin:refresh`; the tab that refreshes posts the
   new access token on the BroadcastChannel `abyss-admin:session`, and a tab
   that waited uses it instead of sending its own refresh. If the message is
@@ -44,20 +44,20 @@ So far: sign-in (T11) and, behind it, a status page that calls
 - **Start-up**: `main.tsx` calls `session.restore()` once, outside React. Until
   it settles, protected routes show "Restoring your session" instead of the
   login page.
-- **Interceptor**: `src/features/auth/auth-interceptor.ts` adds `Authorization: Bearer`.
+- **Interceptor**: `src/features/auth/Auth.interceptor.ts` adds `Authorization: Bearer`.
   On a 401 from a protected call it refreshes once, and concurrent 401s wait
   for that same refresh. It then retries each call once. If the refresh fails,
   or a retried call gets 401 again, the session ends and the router shows
   `/login`. Requests flagged `skipAuthRefresh` (login, refresh, logout) are
   never retried.
-- **Login errors** are generic (`login-error.ts`): incorrect credentials (any
+- **Login errors** are generic (`LoginError.errors.ts`): incorrect credentials (any
   4xx), rate limited (429; uses `Retry-After` when cms-api exposes it via CORS,
   otherwise a generic wait message), network, unexpected.
 - **2FA (T13)**: a `requires2FA` login answer opens `TwoFactorModal` (kit
   `Dialog` via `src/components/Modal.tsx`: focus trap, Esc closes, an outside
   click does not). The temp
   token stays in component state only. TOTP accounts type the app code;
-  email accounts get the code sent once on open (`use-email-code.ts`, resend
+  email accounts get the code sent once on open (`useEmailCode.mutation.ts`, resend
   blocked for the 429 `Retry-After`) and a warning that TOTP is safer. A dead
   temp token (5 wrong codes or 300 s) closes the dialog with a notice.
 - **Security settings** (`src/features/security`, `/settings/security`,
@@ -189,7 +189,7 @@ XApiProvider)`). `app/AppRoutes.setup.tsx` and `AppShell` iterate the registry;
   create form when none exists). `app/AppServices.setup.ts` builds each feature API
   from the registry and `AppProviders` nests the providers inside the session
   provider. Routes are protected unless listed in
-  `PUBLIC_ROUTE_PATHS` (`features/auth/feature.ts`, the four auth pages). A new
+  `PUBLIC_ROUTE_PATHS` (`features/auth/Auth.feature.ts`, the four auth pages). A new
   feature is one folder with `feature.ts` plus one line in the registry.
 
 End-to-end coverage lives in [`apps/e2e`](../e2e/README.md).

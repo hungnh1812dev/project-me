@@ -4,8 +4,8 @@ import {
 } from '../../../test/FakeApi.fixture';
 import { API_ENDPOINTS } from '../../config/Api.endpoints';
 import { createApiClient } from '../../lib/Api.client';
-import { createAuthApi } from './auth.api';
-import { installAuthInterceptor } from './auth-interceptor';
+import { createAuthApi } from './Auth.api';
+import { installAuthInterceptor } from './Auth.interceptor';
 
 function setup() {
   const api = createFakeApi({

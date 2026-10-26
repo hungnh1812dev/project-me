@@ -1,11 +1,11 @@
 import { accessFeature } from './access/feature';
-import { authFeature } from './auth/feature';
+import { authFeature } from './auth/Auth.feature';
 import { contentFeature } from './content/feature';
 import { contentTypesFeature } from './content-types/feature';
 import type { Feature } from '../lib/FeatureDefinition';
 import { mediaFeature } from './media/feature';
 import { reviewerFeature } from './reviewer/feature';
-import { securityFeature } from './security/feature';
+import { securityFeature } from './security/Security.feature';
 import { statusFeature } from './status/feature';
 
 /**

@@ -1,6 +1,6 @@
 import { configureStore } from '@reduxjs/toolkit';
 
-import { authSlice } from './auth.slice';
+import { authSlice } from './Auth.slice';
 
 /** A store holding only auth state, for tests that must not depend on `app/`. */
 export function createAuthTestStore() {

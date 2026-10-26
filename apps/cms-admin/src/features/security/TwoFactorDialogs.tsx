@@ -12,8 +12,8 @@ import {
 import { COPY } from '../../config/Copy.constants';
 import { useEmailCode } from '../auth';
 import { ConfirmWithCodeForm } from './ConfirmWithCodeForm';
-import { useSecurityApi } from './security-api-context';
-import { toSecurityError } from './security-error';
+import { useSecurityApi } from './SecurityApi.context';
+import { toSecurityError } from './SecurityError.errors';
 
 const copy = COPY.security;
 const SECRET_GROUPS = new RegExp(`.{1,${TOTP_SECRET_GROUP_SIZE}}`, 'g');

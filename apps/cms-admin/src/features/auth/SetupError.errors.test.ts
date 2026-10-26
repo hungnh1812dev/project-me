@@ -1,7 +1,7 @@
 import { AxiosError, type AxiosResponse } from 'axios';
 
 import { API_ERROR_CODES } from '../../config/Http.constants';
-import { toSetupError } from './setup-error';
+import { toSetupError } from './SetupError.errors';
 
 function failure(status: number, data?: unknown, headers = {}): AxiosError {
   const response = { status, data, headers } as AxiosResponse;

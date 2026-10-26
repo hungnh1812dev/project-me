@@ -1,6 +1,6 @@
 import { createContext, type ReactNode, use } from 'react';
 
-import type { Session } from './session';
+import type { Session } from './Session';
 
 const SessionContext = createContext<Session | null>(null);
 

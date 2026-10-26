@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { type FormAlertTone } from '@abyss/form-commons';
 import { OTP_CODE_LENGTH, PASSWORD_LENGTH } from '../../config/Auth.constants';
 import { COPY } from '../../config/Copy.constants';
-import type { PasswordError, PasswordErrorKind } from './password-error';
+import type { PasswordError, PasswordErrorKind } from './PasswordError.errors';
 
 const OTP_CODE_PATTERN = new RegExp(`^\\d{${OTP_CODE_LENGTH}}$`);
 const { validation } = COPY.password;

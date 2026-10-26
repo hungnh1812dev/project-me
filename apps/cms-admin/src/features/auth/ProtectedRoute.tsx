@@ -1,8 +1,8 @@
 import { Navigate, Outlet, useLocation } from 'react-router';
 
 import { APP_ROUTES } from '../../config/App.routes';
-import { selectSessionStatus } from './auth.slice';
-import { useAuthSelector } from './auth-hooks';
+import { selectSessionStatus } from './Auth.slice';
+import { useAuthSelector } from './useAuthSelector.state';
 import { SessionLoading } from './SessionLoading';
 
 /** Where to return after signing in; kept in router state, not the URL. */

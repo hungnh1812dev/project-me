@@ -11,7 +11,7 @@ import {
   browserCrossTabOptions,
   createSession,
   installAuthInterceptor,
-} from '../features/auth/app-wiring';
+} from '../features/auth/AuthWiring.setup';
 import { FEATURE_LIST } from '../features/registry';
 import { createAppStore } from './App.store';
 

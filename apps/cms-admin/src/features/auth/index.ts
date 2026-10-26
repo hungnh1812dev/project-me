@@ -1,9 +1,9 @@
-export { useCurrentUser } from './use-current-user';
-export { useEmailCode } from './use-email-code';
-export { useSession } from './session-context';
+export { useCurrentUser } from './useCurrentUser.state';
+export { useEmailCode } from './useEmailCode.mutation';
+export { useSession } from './Session.context';
 export {
   newPasswordShape,
   passwordsMatch,
   PASSWORDS_MATCH_ISSUE,
-} from './password-form';
-export type { Session } from './session';
+} from './Password.form';
+export type { Session } from './Session';
