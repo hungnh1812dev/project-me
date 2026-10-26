@@ -26,7 +26,7 @@ import {
 import {
   AUDIT_ACTIONS,
   type AuditAction,
-} from '../../src/modules/security-audit/security-audit.constants';
+} from '../../src/modules/security-audit';
 import { SecretBox } from '../../src/modules/identity/crypto/secret-box';
 import {
   OTP,

@@ -7,7 +7,7 @@ import {
   openPrisma,
   type PrismaHandle,
 } from '../../src/infrastructure/database/prisma-client';
-import { AUDIT_ACTIONS } from '../../src/modules/security-audit/security-audit.constants';
+import { AUDIT_ACTIONS } from '../../src/modules/security-audit';
 import { OWNER_ROLE_SLUG } from '../../src/modules/access/roles/system-roles';
 import { OWNER_BOOTSTRAP_ERRORS } from '../../src/modules/identity/identity.constants';
 import {

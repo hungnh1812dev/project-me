@@ -295,6 +295,7 @@ export const MIGRATED_MODULES: readonly string[] = [
   'documents',
   'graphql',
   'access',
+  'security-audit',
 ];
 
 export interface KnownLayerViolation {

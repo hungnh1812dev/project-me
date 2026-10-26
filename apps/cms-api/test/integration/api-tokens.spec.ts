@@ -31,7 +31,7 @@ import { seedRolePermissions } from '../../src/modules/access/roles/role-permiss
 import {
   AUDIT_ACTIONS,
   type AuditAction,
-} from '../../src/modules/security-audit/security-audit.constants';
+} from '../../src/modules/security-audit';
 import { ContentRegistry } from '../../src/modules/content-engine/application/ContentRegistry.service';
 import { ContentTypeRegistry } from '../../src/modules/content-engine/domain/ContentTypeRegistry.entity';
 import { hashPassword } from '../../src/modules/identity/password-hasher';

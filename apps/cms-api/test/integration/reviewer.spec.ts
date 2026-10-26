@@ -18,7 +18,7 @@ import {
   type TurnstileVerifier,
 } from '../../src/infrastructure/turnstile/turnstile.port';
 import { seedRolePermissions } from '../../src/modules/access/roles/role-permissions.seed';
-import { AUDIT_ACTIONS } from '../../src/modules/security-audit/security-audit.constants';
+import { AUDIT_ACTIONS } from '../../src/modules/security-audit';
 import { createContentDb } from '../../src/modules/content-engine/adapters/ContentDatabase.adapter';
 import { ContentRegistry } from '../../src/modules/content-engine/application/ContentRegistry.service';
 import { KyselyContentRepository } from '../../src/modules/content-engine/adapters/KyselyContent.repository';

@@ -113,7 +113,7 @@ export const ACCOUNT_VERSION_REPOSITORY_FILE = join(
 export const SECURITY_AUDIT_MODULE_FILE = join(
   MODULES,
   'security-audit',
-  'security-audit.module.ts',
+  'SecurityAudit.module.ts',
 );
 
 export const SYSTEM_ROLES_TABLE_FILE = join(

@@ -24,7 +24,7 @@ import {
   AUDIT_ACTIONS,
   type AuditAction,
   LOGIN_FAILURE_REASONS,
-} from '../../src/modules/security-audit/security-audit.constants';
+} from '../../src/modules/security-audit';
 import { ContentRegistry } from '../../src/modules/content-engine/application/ContentRegistry.service';
 import { ContentTypeRegistry } from '../../src/modules/content-engine/domain/ContentTypeRegistry.entity';
 import { hashPassword } from '../../src/modules/identity/password-hasher';
