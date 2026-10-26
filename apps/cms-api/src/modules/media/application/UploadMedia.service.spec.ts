@@ -1,18 +1,17 @@
 import { Readable } from 'node:stream';
 
-import { Clock } from '../../common/time/clock';
-import { FakeMediaStorage } from '../../infrastructure/media/fake.adapter';
-import { type AccountActor, type AccessPolicyService } from '../access';
-import { systemRole } from '../../../test/fixtures/access.fixture';
-import type { ContentDbProvider } from '../content-engine';
-import { MediaService } from './media.service';
+import { Clock } from '../../../common/time/clock';
+import type { PrismaService } from '../../../infrastructure/database/prisma.service';
+import { FakeMediaStorage } from '../../../infrastructure/media/fake.adapter';
+import { systemRole } from '../../../../test/fixtures/access.fixture';
+import type { AccountActor } from '../../access';
 import type {
   PreparedUpload,
   ReceivedUpload,
-  UploadPipeline,
+  UploadProcessor,
   UploadStream,
-} from './upload.pipeline';
-import type { PrismaService } from '../../infrastructure/database/prisma.service';
+} from './Media.port';
+import { UploadMediaService } from './UploadMedia.service';
 
 const actor: AccountActor = {
   kind: 'account',
@@ -36,10 +35,10 @@ function stubs(createError?: Error) {
     height: 1,
     open: () => Readable.from([Buffer.from('abc')]),
   };
-  const pipeline = {
+  const processor = {
     receive: jest.fn(() => Promise.resolve(received)),
     prepare: jest.fn(() => Promise.resolve(prepared)),
-  } as unknown as UploadPipeline;
+  } as unknown as UploadProcessor;
   const create = jest.fn(() =>
     createError === undefined
       ? Promise.resolve({
@@ -59,18 +58,18 @@ function stubs(createError?: Error) {
   );
   const prisma = { fileLibrary: { create } } as unknown as PrismaService;
   const storage = new FakeMediaStorage();
-  const service = new MediaService(
-    pipeline,
+  const logger = { warn: jest.fn(), error: jest.fn() };
+  const service = new UploadMediaService(
+    processor,
     prisma,
-    {} as ContentDbProvider,
-    {} as AccessPolicyService,
     new Clock(),
     storage,
+    logger,
   );
   return { service, storage, create, dispose };
 }
 
-describe('MediaService.upload', () => {
+describe('UploadMediaService.upload', () => {
   const upload = {} as UploadStream;
 
   it('stores under a UUIDv7 key, records the row and removes the temp file', async () => {

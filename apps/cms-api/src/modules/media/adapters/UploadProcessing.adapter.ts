@@ -1,46 +1,44 @@
 import { createHash } from 'node:crypto';
 import { createReadStream } from 'node:fs';
-import { mkdtemp, open, readFile, rm } from 'node:fs/promises';
-import type { IncomingHttpHeaders } from 'node:http';
+import { mkdtemp, open, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { Readable } from 'node:stream';
 
-import {
-  BadRequestException,
-  HttpException,
-  HttpStatus,
-  Injectable,
-} from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import busboy from 'busboy';
 import { fileTypeFromBuffer } from 'file-type';
-import sharp from 'sharp';
 
+import { DomainError } from '../../../common/errors/Domain.errors';
+import { DOMAIN_ERROR_KINDS } from '../../../common/errors/DomainErrorKinds.constants';
+import type {
+  PreparedUpload,
+  ReceivedUpload,
+  UploadProcessor,
+  UploadStream,
+} from '../application/Media.port';
 import {
   ALT_MAX_BYTES,
   FALLBACK_FILE_NAME,
   MEDIA_ERROR_CODES,
   MEDIA_ERROR_MESSAGES,
   type MediaKind,
-} from './domain/Media.constants';
+} from '../domain/Media.constants';
 import {
   type AllowedMime,
   allowedMediaTypeOf,
-  type ImageMime,
   isAltWithinLimit,
   MEDIA_MAX_BYTES,
   MEDIA_MAX_FILE_BYTES,
   MEDIA_MAX_REQUEST_BYTES,
   normalizeAlt,
   sanitizeFileName,
-} from './domain/MediaUpload.rules';
+  sha256Hex,
+} from '../domain/MediaUpload.rules';
+import { reencodeImage } from './SharpImageReencoder.adapter';
 
 /** Bytes read before detecting the type (`file-type` needs at most this many). */
 const SNIFF_BYTES = 4_100;
-
-/** Decompression-bomb guard for sharp: most input pixels re-encoded. */
-const MAX_IMAGE_PIXELS = 50_000_000;
-const IMAGE_QUALITY = 90;
 
 /** Multipart form: one `file` part and an optional `alt` text field. */
 const UPLOAD_FIELDS = {
@@ -51,79 +49,25 @@ const UPLOAD_TEMP_PREFIX = 'abyss-upload-';
 /** Parts allowed in the form: the file and the alt field. */
 const UPLOAD_MAX_PARTS = 2;
 
-/** The request body as the controller hands it over: no Express request type. */
-export interface UploadStream {
-  readonly headers: IncomingHttpHeaders;
-  /** The `Content-Length` header, `null` when absent or not a number. */
-  readonly declaredLength: number | null;
-  readonly body: Readable;
+function unsupportedType(message: string): DomainError {
+  return new DomainError({
+    kind: DOMAIN_ERROR_KINDS.UNSUPPORTED_MEDIA_TYPE,
+    errorCode: MEDIA_ERROR_CODES.UNSUPPORTED_TYPE,
+    message,
+  });
 }
 
-/** A file received and written to a temp file; nothing trusted yet except the detected type. */
-export interface ReceivedUpload {
-  readonly fileName: string;
-  readonly alt: string | null;
-  readonly mimeType: AllowedMime;
-  readonly kind: MediaKind;
-  readonly path: string;
-  readonly size: number;
-  /** SHA-256 of the received bytes (used as-is for pdf and video). */
-  readonly sha256: string;
-  /** Deletes the temp file; always call it. */
-  dispose(): Promise<void>;
+function tooLarge(): DomainError {
+  return new DomainError({
+    kind: DOMAIN_ERROR_KINDS.TOO_LARGE,
+    errorCode: MEDIA_ERROR_CODES.FILE_TOO_LARGE,
+    message: MEDIA_ERROR_MESSAGES.FILE_TOO_LARGE,
+  });
 }
 
-/** Bytes ready to store: images re-encoded, others as received. */
-export interface PreparedUpload {
-  readonly mimeType: AllowedMime;
-  readonly kind: MediaKind;
-  readonly size: number;
-  readonly sha256: string;
-  readonly width: number | null;
-  readonly height: number | null;
-  /** A fresh stream of the bytes to store. */
-  open(): Readable;
-}
-
-type ImageEncoder = (image: sharp.Sharp) => Promise<Buffer>;
-
-/** One re-encoder per allowlisted image type; adding an image MIME fails to compile until it has one. */
-const IMAGE_ENCODERS: Record<ImageMime, ImageEncoder> = {
-  'image/jpeg': (image) => image.jpeg({ quality: IMAGE_QUALITY }).toBuffer(),
-  'image/png': (image) => image.png().toBuffer(),
-  'image/webp': (image) => image.webp({ quality: IMAGE_QUALITY }).toBuffer(),
-  'image/gif': (image) => image.gif().toBuffer(),
-  'image/avif': (image) => image.avif({ quality: IMAGE_QUALITY }).toBuffer(),
-};
-
-function imageEncoderOf(mimeType: string): ImageEncoder | undefined {
-  return Object.hasOwn(IMAGE_ENCODERS, mimeType)
-    ? IMAGE_ENCODERS[mimeType as ImageMime]
-    : undefined;
-}
-
-function unsupportedType(message: string): HttpException {
-  return new HttpException(
-    {
-      errorCode: MEDIA_ERROR_CODES.UNSUPPORTED_TYPE,
-      message,
-    },
-    HttpStatus.UNSUPPORTED_MEDIA_TYPE,
-  );
-}
-
-function tooLarge(): HttpException {
-  return new HttpException(
-    {
-      errorCode: MEDIA_ERROR_CODES.FILE_TOO_LARGE,
-      message: MEDIA_ERROR_MESSAGES.FILE_TOO_LARGE,
-    },
-    HttpStatus.PAYLOAD_TOO_LARGE,
-  );
-}
-
-function invalidUpload(message: string): BadRequestException {
-  return new BadRequestException({
+function invalidUpload(message: string): DomainError {
+  return new DomainError({
+    kind: DOMAIN_ERROR_KINDS.INVALID_INPUT,
     errorCode: MEDIA_ERROR_CODES.INVALID_UPLOAD,
     message,
   });
@@ -138,14 +82,14 @@ interface Spooled {
 }
 
 /**
- * The upload pipeline (SPEC D12, §12-13). `receive()` streams the multipart
+ * The upload pipeline's stream, filesystem and image I/O (SPEC D12, §12-13). `receive()` streams the multipart
  * body to a temp file, detects the type from the magic bytes (the declared
  * type and the file name are ignored) and stops as soon as the file passes
  * the limit of its type. `prepare()` re-encodes images with sharp, which
  * drops EXIF/GPS, and hashes the bytes that will be stored.
  */
 @Injectable()
-export class UploadPipeline {
+export class UploadProcessingAdapter implements UploadProcessor {
   async receive(upload: UploadStream): Promise<ReceivedUpload> {
     const { body } = upload;
     if (
@@ -171,13 +115,11 @@ export class UploadPipeline {
         defParamCharset: 'utf8',
       });
     } catch {
-      throw new HttpException(
-        {
-          errorCode: MEDIA_ERROR_CODES.INVALID_UPLOAD,
-          message: MEDIA_ERROR_MESSAGES.NOT_MULTIPART,
-        },
-        HttpStatus.UNSUPPORTED_MEDIA_TYPE,
-      );
+      throw new DomainError({
+        kind: DOMAIN_ERROR_KINDS.UNSUPPORTED_MEDIA_TYPE,
+        errorCode: MEDIA_ERROR_CODES.INVALID_UPLOAD,
+        message: MEDIA_ERROR_MESSAGES.NOT_MULTIPART,
+      });
     }
 
     const directory = await mkdtemp(join(tmpdir(), UPLOAD_TEMP_PREFIX));
@@ -324,42 +266,15 @@ export class UploadPipeline {
         open: () => createReadStream(received.path),
       };
     }
-    const bytes = await this.reencode(received);
-    const meta = await sharp(bytes).metadata();
+    const image = await reencodeImage(received.path, received.mimeType);
     return {
       mimeType: received.mimeType,
       kind: 'image',
-      size: bytes.length,
-      sha256: createHash('sha256').update(bytes).digest('hex'),
-      width: meta.width ?? null,
-      height: meta.pageHeight ?? meta.height ?? null,
-      open: () => Readable.from([bytes]),
+      size: image.bytes.length,
+      sha256: sha256Hex(image.bytes),
+      width: image.width,
+      height: image.height,
+      open: () => Readable.from([image.bytes]),
     };
-  }
-
-  /**
-   * Decodes and re-encodes in the same format. sharp writes no EXIF/XMP/IPTC
-   * unless asked to, so GPS and camera data are gone; orientation is applied
-   * first (`rotate`) and the ICC profile kept so colours stay right. Bytes
-   * that pass the magic-byte check but do not decode are refused.
-   */
-  private async reencode(received: ReceivedUpload): Promise<Buffer> {
-    const encode = imageEncoderOf(received.mimeType);
-    if (encode === undefined) {
-      throw unsupportedType(MEDIA_ERROR_MESSAGES.UNSUPPORTED_TYPE);
-    }
-    try {
-      const input = await readFile(received.path);
-      const image = sharp(input, {
-        limitInputPixels: MAX_IMAGE_PIXELS,
-        animated: true,
-      })
-        .rotate()
-        .keepIccProfile();
-      return await encode(image);
-    } catch (error) {
-      if (error instanceof HttpException) throw error;
-      throw unsupportedType(MEDIA_ERROR_MESSAGES.UNREADABLE_IMAGE);
-    }
   }
 }

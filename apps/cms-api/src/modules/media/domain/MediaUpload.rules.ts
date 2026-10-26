@@ -1,3 +1,5 @@
+import { createHash } from 'node:crypto';
+
 import {
   ALT_MAX_LENGTH,
   FALLBACK_FILE_NAME,
@@ -73,4 +75,8 @@ export function isAltWithinLimit(text: string): boolean {
 export function normalizeAlt(text: string): string | null {
   const trimmed = text.trim();
   return trimmed === '' ? null : trimmed;
+}
+
+export function sha256Hex(bytes: Buffer): string {
+  return createHash('sha256').update(bytes).digest('hex');
 }

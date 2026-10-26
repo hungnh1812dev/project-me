@@ -44,7 +44,8 @@ import { isAltWithinLimit, normalizeAlt } from '../domain/MediaUpload.rules';
 import { MediaDeleteService } from '../media-delete.service';
 import { MediaUpdateService } from '../media-update.service';
 import { MediaService } from '../media.service';
-import type { UploadStream } from '../upload.pipeline';
+import { UploadMediaService } from '../application/UploadMedia.service';
+import type { UploadStream } from '../application/Media.port';
 
 /** SPEC §9 media (upload, list, delete). */
 const MEDIA_ROUTES = {
@@ -116,13 +117,14 @@ function uploadStreamOf(req: AuthenticatedRequest): UploadStream {
 /**
  * SPEC §9 media. JWT sessions only.
  * `PermissionGuard` needs `media` create / read. The multipart body is read
- * by `UploadPipeline` straight from the request, never buffered whole.
+ * by `UploadProcessor` straight from the request, never buffered whole.
  */
 @Controller(MEDIA_ROUTES.ROOT)
 @UseGuards(JwtAuthGuard, PermissionGuard)
 export class MediaController {
   constructor(
     private readonly media: MediaService,
+    private readonly uploads: UploadMediaService,
     private readonly mediaDelete: MediaDeleteService,
     private readonly mediaUpdate: MediaUpdateService,
     private readonly clientIp: ClientIpResolver,
@@ -137,7 +139,7 @@ export class MediaController {
     subject: MEDIA_SUBJECT,
   })
   async upload(@Req() req: AuthenticatedRequest): Promise<MediaView> {
-    const record = await this.media.upload(
+    const record = await this.uploads.upload(
       requireAccountActor(req.user.actor),
       uploadStreamOf(req),
     );

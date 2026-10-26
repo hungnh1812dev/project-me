@@ -11,7 +11,9 @@ import { DocumentMediaService } from './document-media.service';
 import { MediaUpdateService } from './media-update.service';
 import { MediaPurgeJob } from './media-purge.job';
 import { MediaService } from './media.service';
-import { UploadPipeline } from './upload.pipeline';
+import { UPLOAD_PROCESSOR } from './application/Media.port';
+import { UploadMediaService } from './application/UploadMedia.service';
+import { UploadProcessingAdapter } from './adapters/UploadProcessing.adapter';
 
 /** File library: streaming upload pipeline, storage port and list. */
 @Module({
@@ -29,7 +31,8 @@ import { UploadPipeline } from './upload.pipeline';
     MediaUpdateService,
     DocumentMediaService,
     MediaPurgeJob,
-    UploadPipeline,
+    UploadMediaService,
+    { provide: UPLOAD_PROCESSOR, useClass: UploadProcessingAdapter },
   ],
   exports: [MediaService, DocumentMediaService],
 })

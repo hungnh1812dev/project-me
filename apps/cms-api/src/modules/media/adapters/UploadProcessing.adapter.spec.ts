@@ -1,7 +1,6 @@
 import { Readable } from 'node:stream';
 import { stat } from 'node:fs/promises';
 
-import { HttpException } from '@nestjs/common';
 import sharp from 'sharp';
 
 import {
@@ -12,15 +11,14 @@ import {
   MINIMAL_MP4,
   MINIMAL_PDF,
   SVG_DOCUMENT,
-} from '../../../test/fixtures/media.fixture';
-import { multipart } from '../../../test/fixtures/multipart';
-import { MEDIA_ERROR_CODES } from './domain/Media.constants';
-import { MEDIA_MAX_BYTES } from './domain/MediaUpload.rules';
-import {
-  type PreparedUpload,
-  type UploadStream,
-  UploadPipeline,
-} from './upload.pipeline';
+} from '../../../../test/fixtures/media.fixture';
+import { multipart } from '../../../../test/fixtures/multipart';
+import { DomainError } from '../../../common/errors/Domain.errors';
+import { DOMAIN_ERROR_KINDS } from '../../../common/errors/DomainErrorKinds.constants';
+import type { PreparedUpload, UploadStream } from '../application/Media.port';
+import { MEDIA_ERROR_CODES } from '../domain/Media.constants';
+import { MEDIA_MAX_BYTES } from '../domain/MediaUpload.rules';
+import { UploadProcessingAdapter } from './UploadProcessing.adapter';
 
 type Part = Parameters<typeof multipart>[0][number];
 
@@ -52,16 +50,21 @@ const fileOf = (
   contentType: 'image/jpeg',
 });
 
+const STATUS_OF_KIND: Partial<Record<DomainError['kind'], number>> = {
+  [DOMAIN_ERROR_KINDS.UNSUPPORTED_MEDIA_TYPE]: 415,
+  [DOMAIN_ERROR_KINDS.TOO_LARGE]: 413,
+  [DOMAIN_ERROR_KINDS.INVALID_INPUT]: 400,
+};
+
 async function statusOf(promise: Promise<unknown>): Promise<{
-  status: number;
+  status: number | undefined;
   code: unknown;
 }> {
   try {
     await promise;
   } catch (error) {
-    if (error instanceof HttpException) {
-      const body = error.getResponse() as { errorCode?: unknown };
-      return { status: error.getStatus(), code: body.errorCode };
+    if (error instanceof DomainError) {
+      return { status: STATUS_OF_KIND[error.kind], code: error.errorCode };
     }
     throw error;
   }
@@ -74,8 +77,8 @@ async function bytesOf(prepared: PreparedUpload): Promise<Buffer> {
   return Buffer.concat(chunks);
 }
 
-describe('UploadPipeline (SPEC D12, §12-13)', () => {
-  const pipeline = new UploadPipeline();
+describe('UploadProcessingAdapter (SPEC D12, §12-13)', () => {
+  const pipeline = new UploadProcessingAdapter();
   let fixtures: MediaFixtures;
 
   beforeAll(async () => {

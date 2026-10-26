@@ -4,6 +4,7 @@ import {
   isAltWithinLimit,
   normalizeAlt,
   sanitizeFileName,
+  sha256Hex,
 } from './MediaUpload.rules';
 
 describe('sanitizeFileName', () => {
@@ -51,4 +52,12 @@ describe('allowedMediaTypeOf', () => {
       expect(allowedMediaTypeOf(mime)).toBeUndefined();
     },
   );
+});
+
+describe('sha256Hex', () => {
+  it('hashes bytes to lowercase hex', () => {
+    expect(sha256Hex(Buffer.from('abc'))).toBe(
+      'ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad',
+    );
+  });
 });
