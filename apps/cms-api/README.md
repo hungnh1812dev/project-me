@@ -275,7 +275,7 @@ AUTH_INVALID_REQUEST` (malformed body).
   get 401 at once (§12-10). Caching and the `pv` check are T15.
 
 The readiness ping goes through the `DATABASE_HEALTH` token
-(`src/modules/health/application/DatabaseHealth.port.ts`), bound in
+(`src/modules/health/application/CheckReadiness.service.ts`), bound in
 `HealthModule` to `PrismaDatabaseHealth` (`SELECT 1` through `PrismaService`).
 
 Multi-write core flows use the `CORE_TRANSACTION_RUNNER` token
@@ -297,11 +297,17 @@ A migrated module (listed in `MIGRATED_MODULES`,
 in `LAYER_RULES`; `layers.architecture.spec.ts` enforces them. Checklist,
 as the content-types pilot (CR-hc-2) used it:
 
+File granularity follows `code-standards` §4.4 and ADR 0006 §7.13 (rules
+G1-G10 in `tasks/todo.md`): one ports file and one constants file per layer,
+no file under 30 lines except entry points, a constant used by one file lives
+in that file.
+
 1. Moves first, edits second (a separate commit when the diff is large):
    `git mv` each file to its layer folder with the ADR 0008 name
    (`<Name>.<function>.ts`), then fix import paths.
 2. Splits: Prisma enums become domain constants; errors thrown by rules
-   become `DomainError` in `domain/<Module>.errors.ts` (same status, code,
+   become `DomainError` in the module's main `domain/` rules or entity file, or in
+   `domain/<Module>.errors.ts` once it reaches 30 lines (same status, code,
    message); framework and Prisma/Kysely code leaves `domain/` and
    `application/` (ports in `application/`, implementations in `adapters/`).
 3. A value from another module's facade is not allowed in `domain/` (only

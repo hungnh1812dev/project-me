@@ -1,11 +1,16 @@
 import { Controller, Get, Header, Param, Req, UseGuards } from '@nestjs/common';
 
 import { SLUG_PARAM } from '../../../common/constants/api.constants';
-import { CONTENT_TYPES_ROUTES } from './ContentTypes.routes';
 import { NO_STORE_HEADER } from '../../../common/constants/http.constants';
 import { type AuthenticatedRequest, JwtAuthGuard } from '../../identity';
 import type { ContentTypeView } from '../domain/ContentTypeView.rules';
 import { ContentTypesService } from '../application/ContentTypes.service';
+
+/** SPEC §9 content types, read-only. `:slug` is a registry slug. */
+export const CONTENT_TYPES_ROUTES = {
+  ROOT: 'content-types',
+  BY_SLUG: ':slug',
+} as const;
 
 /**
  * SPEC §9 content types, read-only. No `@RequirePermission`: the

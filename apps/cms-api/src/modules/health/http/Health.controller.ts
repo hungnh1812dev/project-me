@@ -1,12 +1,17 @@
 import { Controller, Get, HttpStatus, Logger, Res } from '@nestjs/common';
 import type { Response } from 'express';
 
-import { CheckReadinessService } from '../application/CheckReadiness.service';
 import {
+  CheckReadinessService,
   HEALTH_STATUS,
   type HealthStatus,
-} from '../application/Health.constants';
-import { HEALTH_ROUTES } from './Health.routes';
+} from '../application/CheckReadiness.service';
+
+export const HEALTH_ROUTES = {
+  ROOT: 'health',
+  LIVE: 'live',
+  READY: 'ready',
+} as const;
 
 export interface HealthResponse {
   status: HealthStatus;

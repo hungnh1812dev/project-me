@@ -5,20 +5,31 @@ import {
   AccessPolicyService,
   RECORD_SYSTEM_FIELDS,
   type ActorContext,
+  type SystemSubject,
   FieldSelection,
   joinFieldPath,
   CONDITION_SYSTEM_FIELDS,
   PermissionAction,
   recordReadAccess,
 } from '../../access';
-import { contentTypeNotFound } from '../domain/ContentTypes.errors';
 import {
   type ContentTypeView,
+  contentTypeNotFound,
   contentTypeView,
   type FieldVisibility,
   type ViewVocabulary,
 } from '../domain/ContentTypeView.rules';
-import { FULL_CATALOG_PERMISSION } from './ContentTypes.constants';
+
+/**
+ * Callers allowed this permission see every content type and every field,
+ * whatever they can read themselves: building a role's permission matrix
+ * needs the whole catalog (decided for the permission matrix). The rank rule still bounds the
+ * roles they can edit.
+ */
+const FULL_CATALOG_PERMISSION = {
+  action: PermissionAction.update,
+  subject: 'roles',
+} as const satisfies { action: PermissionAction; subject: SystemSubject };
 
 const VIEW_VOCABULARY: ViewVocabulary = {
   systemConditionFields: CONDITION_SYSTEM_FIELDS,

@@ -1,5 +1,8 @@
-import { CheckReadinessService } from './CheckReadiness.service';
-import { HEALTH_STATUS, READINESS_DB_TIMEOUT_MS } from './Health.constants';
+import {
+  CheckReadinessService,
+  HEALTH_STATUS,
+  READINESS_DB_TIMEOUT_MS,
+} from './CheckReadiness.service';
 
 describe('CheckReadinessService', () => {
   it('reports ok when the ping resolves, with the readiness timeout', async () => {

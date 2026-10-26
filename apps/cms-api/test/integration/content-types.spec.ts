@@ -8,10 +8,10 @@ import {
 } from '../../src/infrastructure/database/prisma-client';
 import { ContentRegistry } from '../../src/modules/content-engine/application/ContentRegistry.service';
 import { ContentTypeRegistry } from '../../src/modules/content-engine/domain/ContentTypeRegistry.entity';
-import { CONTENT_TYPES_ERROR_CODES } from '../../src/modules/content-types/domain/ContentTypes.errors';
-import type {
-  ContentTypeView,
-  FieldView,
+import {
+  CONTENT_TYPES_ERROR_CODES,
+  type ContentTypeView,
+  type FieldView,
 } from '../../src/modules/content-types/domain/ContentTypeView.rules';
 import { hashPassword } from '../../src/modules/identity/application/Password.service';
 import {
