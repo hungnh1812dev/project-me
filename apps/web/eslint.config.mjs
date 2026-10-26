@@ -10,8 +10,8 @@ const DEEP_FEATURE_IMPORT_BAN = {
   message: 'Import another feature through its index.ts, not a deep path.',
 };
 const TEST_UTILS_BAN = {
-  group: ['**/*test-utils*'],
-  message: 'Test utilities are for *.test.* files only.',
+  group: ['**/*.fixture', '**/*.fixture.*'],
+  message: 'Test fixtures are for *.test.* files only.',
 };
 const siblingFeatureBan = (feature) => ({
   regex: `^\\.\\./${feature}$`,
@@ -57,7 +57,7 @@ export default [
     [
       TEST_UTILS_BAN,
       {
-        group: ['**/lib/api-client'],
+        group: ['**/lib/Api.client'],
         message: 'config may not depend on the API client.',
       },
       {
@@ -68,12 +68,12 @@ export default [
     TEST_FILES,
   ),
   restrictImports(
-    ['src/config/security.constants.ts'],
+    ['src/config/Security.constants.ts'],
     [
       TEST_UTILS_BAN,
       {
-        group: ['./reviewer.constants'],
-        message: 'Third-party origins live in security.constants itself.',
+        group: ['./Reviewer.constants'],
+        message: 'Third-party origins live in Security.constants itself.',
       },
     ],
     TEST_FILES,

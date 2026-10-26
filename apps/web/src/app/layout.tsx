@@ -5,11 +5,11 @@ import { headers } from 'next/headers';
 import { connection } from 'next/server';
 import type { ReactNode } from 'react';
 
-import { NONCE_HEADER } from '../config/security.constants';
-import { COPY } from '../config/copy.constants';
+import { NONCE_HEADER } from '../config/Security.constants';
+import { COPY } from '../config/Copy.constants';
 import { AccountMenu } from './AccountMenu';
 import { CspNonce } from './CspNonce';
-import { Providers } from './providers';
+import { Providers } from './AppProviders';
 
 export const metadata: Metadata = { title: COPY.app.name };
 

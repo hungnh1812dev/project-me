@@ -1,4 +1,4 @@
-import { COPY } from '../config/copy.constants';
+import { COPY } from '../config/Copy.constants';
 
 export default function NotFound() {
   return (

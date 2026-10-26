@@ -1,11 +1,11 @@
 import { render, screen } from '@testing-library/react';
 
-import { COPY } from '../config/copy.constants';
+import { COPY } from '../config/Copy.constants';
 import { AccountMenu } from './AccountMenu';
-import type { AuthApi } from '../features/session/auth.api';
-import { fakeApi, Wrapper } from '../features/session/session-test-utils';
+import type { AuthApi } from '../features/session/Auth.api';
+import { fakeApi, Wrapper } from '../features/session/Session.fixture';
 
-vi.mock('../config/env.client', () => ({
+vi.mock('../config/Browser.env', () => ({
   appEnv: { apiBaseUrl: '/api/v1', adminUrl: 'https://admin.example.com' },
 }));
 

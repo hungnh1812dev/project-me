@@ -13,23 +13,23 @@ import { useMutation } from '@tanstack/react-query';
 import { type FormEvent, useState } from 'react';
 import { FormProvider, useForm } from 'react-hook-form';
 
-import { COPY } from '../../config/copy.constants';
-import { apiFailureOf } from '../../lib/api-failure';
+import { COPY } from '../../config/Copy.constants';
+import { apiFailureOf } from '../../lib/ApiFailure.errors';
 import { useWebSession } from '../session';
 import { NotesStep } from './NotesStep';
 import { PurposesStep } from './PurposesStep';
-import { type ReviewerApi } from './reviewer.api';
-import { reviewerApi } from './reviewer.queries';
-import { reviewerAlertOf, type ReviewerAlert } from './reviewer-error';
+import { type ReviewerApi } from './Reviewer.api';
+import { reviewerApi } from './Reviewer.queries';
+import { reviewerAlertOf, type ReviewerAlert } from './ReviewerError.errors';
 import {
   DEFAULT_VALUES,
   LAST_STEP,
   STEP_FIELDS,
   toSessionInput,
   type ReviewerFormValues,
-} from './reviewer-form';
+} from './Reviewer.form';
 import { RoleStep } from './RoleStep';
-import { useHumanCheck } from './use-human-check';
+import { useHumanCheck } from './useHumanCheck.state';
 
 const copy = COPY.reviewer;
 const STEP_TITLES = [copy.steps.role, copy.steps.purposes, copy.steps.notes];

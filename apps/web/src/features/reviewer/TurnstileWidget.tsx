@@ -3,9 +3,9 @@
 import Script from 'next/script';
 import { useEffect, useRef, useState } from 'react';
 
-import { COPY } from '../../config/copy.constants';
-import { TURNSTILE } from '../../config/security.constants';
-import './turnstile';
+import { COPY } from '../../config/Copy.constants';
+import { TURNSTILE } from '../../config/Security.constants';
+import './Turnstile.client';
 
 const copy = COPY.reviewer.turnstile;
 

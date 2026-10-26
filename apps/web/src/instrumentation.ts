@@ -5,7 +5,7 @@ export async function register(): Promise<void> {
     process.env.NEXT_RUNTIME === 'nodejs' &&
     process.env.NEXT_PHASE !== 'phase-production-build'
   ) {
-    const { assertServerEnv } = await import('./instrumentation-node');
+    const { assertServerEnv } = await import('./InstrumentationNode.setup');
     assertServerEnv();
   }
 }

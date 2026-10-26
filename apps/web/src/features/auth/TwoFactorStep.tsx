@@ -9,14 +9,13 @@ import {
   LOGIN_CODE_LENGTH,
   TWO_FACTOR_METHODS,
   type TwoFactorMethod,
-} from '../../config/auth.constants';
-import { COPY } from '../../config/copy.constants';
-import { API_ERROR_CODES } from '../../config/auth.constants';
-import type { Alert } from '../../lib/alert';
-import type { ApiFailure } from '../../lib/api-failure';
+} from '../../config/Auth.constants';
+import { COPY } from '../../config/Copy.constants';
+import { API_ERROR_CODES } from '../../config/Auth.constants';
+import type { Alert, ApiFailure } from '../../lib/ApiFailure.errors';
 import type { TwoFactorChallenge } from '../session';
-import { loginErrorAlertOf, rateLimitedMessage } from './login-alerts';
-import { useEmailCode } from './use-email-code';
+import { loginErrorAlertOf, rateLimitedMessage } from './LoginAlerts.rules';
+import { useEmailCode } from './useEmailCode.mutation';
 import { useWebSession } from '../session';
 
 const copy = COPY.login.twoFactor;

@@ -1,12 +1,12 @@
 import { CheckboxInput, TextInput } from '@abyss/form-commons';
 import { useFormContext, useWatch } from 'react-hook-form';
 
-import { COPY } from '../../config/copy.constants';
+import { COPY } from '../../config/Copy.constants';
 import {
   REVIEWER_INPUT_LIMITS,
   REVIEWER_PURPOSE_TAGS,
-} from '../../config/reviewer.constants';
-import type { ReviewerFormValues } from './reviewer-form';
+} from '../../config/Reviewer.constants';
+import type { ReviewerFormValues } from './Reviewer.form';
 
 const copy = COPY.reviewer;
 

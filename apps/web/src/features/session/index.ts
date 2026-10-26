@@ -1,10 +1,10 @@
-export { PrivilegedAccessError } from './auth.api';
+export { PrivilegedAccessError } from './Auth.api';
 export type {
   CurrentUser,
   LoginCredentials,
   LoginOutcome,
   TwoFactorChallenge,
   TwoFactorVerification,
-} from './auth.api';
-export { useWebSession, WebSessionProvider } from './web-session';
-export type { WebSession } from './web-session';
+} from './Auth.api';
+export { useWebSession, WebSessionProvider } from './WebSession.context';
+export type { WebSession } from './WebSession.context';

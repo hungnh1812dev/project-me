@@ -2,9 +2,9 @@ import { TextAreaInput } from '@abyss/form-commons';
 import type { ReactNode } from 'react';
 import { useFormContext, useWatch } from 'react-hook-form';
 
-import { COPY } from '../../config/copy.constants';
-import { REVIEWER_INPUT_LIMITS } from '../../config/reviewer.constants';
-import type { ReviewerFormValues } from './reviewer-form';
+import { COPY } from '../../config/Copy.constants';
+import { REVIEWER_INPUT_LIMITS } from '../../config/Reviewer.constants';
+import type { ReviewerFormValues } from './Reviewer.form';
 
 const copy = COPY.reviewer;
 const limits = REVIEWER_INPUT_LIMITS;

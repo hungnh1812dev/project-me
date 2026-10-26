@@ -14,10 +14,10 @@ import { useMutation } from '@tanstack/react-query';
 import { useCallback, useState } from 'react';
 import { FormProvider, useForm } from 'react-hook-form';
 
-import { COPY } from '../../config/copy.constants';
-import type { Alert } from '../../lib/alert';
+import { COPY } from '../../config/Copy.constants';
+import type { Alert } from '../../lib/ApiFailure.errors';
 import type { TwoFactorChallenge } from '../session';
-import { credentialAlertOf, loginErrorAlertOf } from './login-alerts';
+import { credentialAlertOf, loginErrorAlertOf } from './LoginAlerts.rules';
 import { TwoFactorStep } from './TwoFactorStep';
 import { useWebSession } from '../session';
 

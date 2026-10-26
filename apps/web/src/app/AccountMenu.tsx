@@ -3,8 +3,8 @@
 import { Button } from '@abyss/form-commons';
 import { useState } from 'react';
 
-import { COPY } from '../config/copy.constants';
-import { appEnv } from '../config/env.client';
+import { COPY } from '../config/Copy.constants';
+import { appEnv } from '../config/Browser.env';
 import { WebLoginDialog } from '../features/auth';
 import { ReviewerAccessDialog, useReviewerEnabled } from '../features/reviewer';
 import { useWebSession } from '../features/session';

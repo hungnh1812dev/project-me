@@ -3,7 +3,7 @@ import path from 'node:path';
 import type { NextConfig } from 'next';
 import { PHASE_DEVELOPMENT_SERVER } from 'next/constants.js';
 
-import { SECURITY_RESPONSE_HEADERS } from './src/config/security-headers.constants';
+import { SECURITY_RESPONSE_HEADERS } from './src/config/SecurityHeaders.constants';
 
 /** The standalone trace must include workspace packages (form-commons). */
 const MONOREPO_ROOT = path.join(import.meta.dirname, '../..');

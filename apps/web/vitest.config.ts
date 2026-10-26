@@ -8,7 +8,10 @@ export default defineConfig({
   resolve: {
     alias: {
       // The real package throws outside the Next server bundle.
-      'server-only': path.join(import.meta.dirname, 'test/server-only.stub.ts'),
+      'server-only': path.join(
+        import.meta.dirname,
+        'test/ServerOnly.fixture.ts',
+      ),
     },
   },
   test: {
@@ -16,7 +19,7 @@ export default defineConfig({
     globals: true,
     // Replaces .env files in tests.
     env: { NEXT_PUBLIC_API_BASE_URL: '/api/v1' },
-    setupFiles: ['./test/setup.ts'],
+    setupFiles: ['./test/Vitest.setup.ts'],
     include: ['src/**/*.test.{ts,tsx}'],
   },
 });

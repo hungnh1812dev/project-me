@@ -1,2 +1,2 @@
 export { ReviewerAccessDialog } from './ReviewerAccessDialog';
-export { useReviewerEnabled } from './reviewer.queries';
+export { useReviewerEnabled } from './Reviewer.queries';

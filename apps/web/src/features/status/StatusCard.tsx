@@ -2,10 +2,10 @@
 
 import { Button } from '@abyss/form-commons';
 
-import { COPY } from '../../config/copy.constants';
-import { API_ENDPOINTS } from '../../config/endpoints';
-import { appEnv } from '../../config/env.client';
-import { type LiveHealthState, useLiveHealth } from './use-live-health';
+import { COPY } from '../../config/Copy.constants';
+import { API_ENDPOINTS } from '../../config/Api.endpoints';
+import { appEnv } from '../../config/Browser.env';
+import { type LiveHealthState, useLiveHealth } from './useLiveHealth.query';
 
 const BADGE_TONE: Record<LiveHealthState, string> = {
   checking: 'bg-muted text-muted-foreground',
