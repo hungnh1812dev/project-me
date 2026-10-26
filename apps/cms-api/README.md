@@ -343,7 +343,7 @@ with `runInSavepoint`). `createMigrationDb` (in `ContentDatabase.adapter.ts`) is
 `ContentEngine.module.ts` and `cli/ContentEngineCli.setup.ts`. Documents
 runs every write through `CONTENT_TRANSACTION_RUNNER`.
 Specs that seed rows open a unit with `inContentUnit(db, work)`
-(`test/fixtures/content-unit.fixture.ts`), which runs the real runner.
+(`test/fixtures/ContentUnit.fixture.ts`), which runs the real runner.
 
 ### Rate limits (T10)
 
@@ -838,7 +838,7 @@ every message. No environment serves a playground; use the committed SDL
 Integration tests start Postgres 16 with Testcontainers, so Docker must be
 running. The Jest global setup starts one container for the whole run, and
 each test file gets its own database on it (`startPostgres()` in
-`test/fixtures/postgres.fixture.ts`). Jest runs with `--experimental-vm-modules` because the Prisma 7
+`test/fixtures/Postgres.fixture.ts`). Jest runs with `--experimental-vm-modules` because the Prisma 7
 client loads its query compiler with a dynamic `import()`.
 
 ## Docker

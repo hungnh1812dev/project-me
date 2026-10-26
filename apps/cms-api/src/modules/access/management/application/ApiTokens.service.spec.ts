@@ -1,9 +1,9 @@
-import { testCatalog } from '../../../../../test/fixtures/access.fixture';
+import { testCatalog } from '../../../../../test/fixtures/Access.fixture';
 import {
   ACTOR_ID,
   actorWithRole,
   fakeRunner,
-} from '../../../../../test/fixtures/management.fixture';
+} from '../../../../../test/fixtures/Management.fixture';
 import { Clock } from '../../../../common/time/Clock.service';
 import type { SecurityAuditService } from '../../../security-audit';
 import type { AccessPolicyService } from '../../application/AccessPolicy.service';

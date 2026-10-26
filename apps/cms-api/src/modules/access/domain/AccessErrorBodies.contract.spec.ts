@@ -6,7 +6,7 @@ import {
 
 import { describeError } from '../../../common/http/DescribeHttpException.rules';
 import { ERROR_CODES } from '../../../common/constants/Error.constants';
-import { systemRole } from '../../../../test/fixtures/access.fixture';
+import { systemRole } from '../../../../test/fixtures/Access.fixture';
 import {
   ACCESS_ERROR_CODES,
   FIELD_ERROR_MESSAGES,

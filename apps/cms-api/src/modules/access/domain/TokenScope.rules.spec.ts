@@ -4,7 +4,7 @@ import {
   grant,
   systemRole,
   testCatalog,
-} from '../../../../test/fixtures/access.fixture';
+} from '../../../../test/fixtures/Access.fixture';
 import type { TokenScope } from './ActorContext.entity';
 import {
   scopeEntriesBeyondCreator,

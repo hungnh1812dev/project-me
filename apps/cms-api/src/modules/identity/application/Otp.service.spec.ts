@@ -1,4 +1,4 @@
-import { TEST_ADMIN_ORIGIN } from '../../../../test/fixtures/env.fixture';
+import { TEST_ADMIN_ORIGIN } from '../../../../test/fixtures/Env.fixture';
 import { OTP } from '../domain/Identity.constants';
 import { buildOtpMail, isOtpCodeFormat, otpHmac } from './Otp.service';
 

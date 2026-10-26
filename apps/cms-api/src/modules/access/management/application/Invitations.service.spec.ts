@@ -2,7 +2,7 @@ import {
   accountRecord,
   actorWithRole,
   fakeRunner,
-} from '../../../../../test/fixtures/management.fixture';
+} from '../../../../../test/fixtures/Management.fixture';
 import type { IAppConfig } from '../../../../config/AppConfig.setup';
 import type { OtpService } from '../../../identity';
 import type { SecurityAuditService } from '../../../security-audit';

@@ -2,7 +2,7 @@ import {
   accountAccess,
   ACTORS_BY_KIND,
   profileType,
-} from '../../../../test/fixtures/masking.fixture';
+} from '../../../../test/fixtures/Masking.fixture';
 import type { TableNode } from '../../content-engine';
 import { projectTable, selectedColumns } from './FieldProjection.rules';
 import { FieldSelection } from './PolicyEvaluator.rules';

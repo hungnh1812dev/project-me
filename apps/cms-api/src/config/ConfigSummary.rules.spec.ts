@@ -10,7 +10,7 @@ import {
   TEST_SMTP_HOST,
   TEST_SMTP_PASSWORD,
   TEST_SMTP_USER,
-} from '../../test/fixtures/env.fixture';
+} from '../../test/fixtures/Env.fixture';
 import { loadAppConfig } from './AppConfig.setup';
 import { summarizeConfig } from './ConfigSummary.rules';
 import {

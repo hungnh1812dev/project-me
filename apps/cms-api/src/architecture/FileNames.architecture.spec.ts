@@ -5,7 +5,6 @@ import {
   FILE_FUNCTION_WORDS,
   FOLDER_NAME_SHAPE,
   FRAMEWORK_FILE_NAMES,
-  KNOWN_FILE_NAME_EXCEPTIONS,
   SCANNED_DIRECTORIES,
   SKIPPED_DIRECTORIES,
 } from './FileNames.constants';
@@ -14,8 +13,6 @@ import {
  * ADR 0008: every TypeScript file is `<PascalName>.<function>.ts`, with
  * `.spec.ts` appended for its test and an optional lower-case scenario
  * variant before it (`Auth.service.refresh.spec.ts`). Folders are kebab-case.
- * Files that predate the rule sit in `KNOWN_FILE_NAME_EXCEPTIONS`, which only
- * shrinks.
  */
 const PACKAGE_ROOT = join(__dirname, '..', '..');
 const SPEC_SUFFIX = '.spec.ts';
@@ -119,19 +116,10 @@ describe('file names (ADR 0008)', () => {
     expect(offenders).toEqual([]);
   });
 
-  it('every file follows the rule or is a known exception', () => {
+  it('every file follows the rule', () => {
     const offenders = files.filter(
-      (file) =>
-        !followsNamingRule(basename(file)) &&
-        !KNOWN_FILE_NAME_EXCEPTIONS.includes(file),
+      (file) => !followsNamingRule(basename(file)),
     );
     expect(offenders).toEqual([]);
-  });
-
-  it('no known exception is stale', () => {
-    const stale = KNOWN_FILE_NAME_EXCEPTIONS.filter(
-      (file) => !files.includes(file) || followsNamingRule(basename(file)),
-    );
-    expect(stale).toEqual([]);
   });
 });

@@ -4,7 +4,7 @@ import {
   accountAccess,
   profileType,
   rawRecord,
-} from '../../../../test/fixtures/masking.fixture';
+} from '../../../../test/fixtures/Masking.fixture';
 import { assertTreeInput } from '../../content-engine';
 import {
   ACCESS_ERROR_CODES,

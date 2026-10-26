@@ -7,7 +7,7 @@ import { ClockModule } from '../time/Clock.module';
 import { RateLimitModule } from './RateLimit.module';
 import type { ThrottleSubjectResolver } from './ThrottleSubject.port';
 import { ConfigModule } from '../../config/Config.module';
-import { devEnv } from '../../../test/fixtures/env.fixture';
+import { devEnv } from '../../../test/fixtures/Env.fixture';
 import { loadAppConfig } from '../../config/AppConfig.setup';
 
 class FakeSubjectResolver implements ThrottleSubjectResolver {

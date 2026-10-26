@@ -5,7 +5,7 @@ import {
   RAW_ACCOUNT_IDS,
   rawRecord,
   seededRandom,
-} from '../../../../test/fixtures/masking.fixture';
+} from '../../../../test/fixtures/Masking.fixture';
 import type {
   ComponentTrees,
   ContentDocument,

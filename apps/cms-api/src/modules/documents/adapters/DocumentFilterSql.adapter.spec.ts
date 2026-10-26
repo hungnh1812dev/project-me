@@ -6,7 +6,7 @@ import {
 } from 'kysely';
 import { DummyDriver, Kysely } from 'kysely';
 
-import { ARTICLE_DEFINITION } from '../../../../test/fixtures/access.fixture';
+import { ARTICLE_DEFINITION } from '../../../../test/fixtures/Access.fixture';
 import { ContentTypeRegistry } from '../../content-engine';
 import {
   filterExpression,

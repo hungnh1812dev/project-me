@@ -4,7 +4,7 @@ import {
   accountAccess,
   ACTORS_BY_KIND,
   profileType,
-} from '../../../../test/fixtures/masking.fixture';
+} from '../../../../test/fixtures/Masking.fixture';
 import {
   ACCESS_ERROR_CODES,
   ACCOUNT_REFERENCE_FIELDS,

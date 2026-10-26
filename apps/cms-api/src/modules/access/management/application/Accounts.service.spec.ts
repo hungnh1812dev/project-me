@@ -3,7 +3,7 @@ import {
   actorWithRole,
   ACTOR_ID,
   fakeRunner,
-} from '../../../../../test/fixtures/management.fixture';
+} from '../../../../../test/fixtures/Management.fixture';
 import type { SessionRevocationService } from '../../../identity';
 import type { SecurityAuditService } from '../../../security-audit';
 import type { VersionCache } from '../../application/VersionCache.service';

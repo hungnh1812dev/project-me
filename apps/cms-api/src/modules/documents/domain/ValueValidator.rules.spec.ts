@@ -2,7 +2,7 @@ import { DomainError } from '../../../common/errors/Domain.errors';
 import { describeError } from '../../../common/http/DescribeHttpException.rules';
 import { FieldSelection } from '../../access';
 import { ContentTypeRegistry } from '../../content-engine';
-import { profileType } from '../../../../test/fixtures/masking.fixture';
+import { profileType } from '../../../../test/fixtures/Masking.fixture';
 import { countComponentRows, validateTreeValues } from './ValueValidator.rules';
 
 const profile = profileType();

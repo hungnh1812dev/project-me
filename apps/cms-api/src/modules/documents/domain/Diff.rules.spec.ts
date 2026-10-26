@@ -3,7 +3,7 @@ import {
   accountAccess,
   profileType,
   rawRecord,
-} from '../../../../test/fixtures/masking.fixture';
+} from '../../../../test/fixtures/Masking.fixture';
 import { diffRecords, overlaySubmitted } from './Diff.rules';
 
 const type = profileType();

@@ -1,4 +1,4 @@
-import { systemRole } from '../../../../test/fixtures/access.fixture';
+import { systemRole } from '../../../../test/fixtures/Access.fixture';
 import { accountActor, anonymousActor, apiTokenActor } from '../../access';
 import { auditActorOf } from './AuditActor.rules';
 

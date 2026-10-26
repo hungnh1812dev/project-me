@@ -1,11 +1,11 @@
 import {
   systemRole,
   testCatalog,
-} from '../../../../../test/fixtures/access.fixture';
+} from '../../../../../test/fixtures/Access.fixture';
 import {
   actorWithRole,
   fakeRunner,
-} from '../../../../../test/fixtures/management.fixture';
+} from '../../../../../test/fixtures/Management.fixture';
 import type { SecurityAuditService } from '../../../security-audit';
 import type { AccessPolicyService } from '../../application/AccessPolicy.service';
 import type {

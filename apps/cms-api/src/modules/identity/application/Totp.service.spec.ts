@@ -3,7 +3,7 @@ import { generate } from 'otplib';
 import {
   devEnv,
   TEST_SECRET_32_BYTES,
-} from '../../../../test/fixtures/env.fixture';
+} from '../../../../test/fixtures/Env.fixture';
 import { Clock } from '../../../common/time/Clock.service';
 import { MS_PER_SECOND } from '../../../common/constants/Time.constants';
 import { loadAppConfig } from '../../../config/AppConfig.setup';

@@ -1,4 +1,4 @@
-import { devEnv, productionEnv } from '../../../test/fixtures/env.fixture';
+import { devEnv, productionEnv } from '../../../test/fixtures/Env.fixture';
 import { loadAppConfig } from '../../config/AppConfig.setup';
 import { ConsoleMailSender } from './ConsoleMail.adapter';
 import { MAIL_PROVIDERS } from '../../config/Config.constants';

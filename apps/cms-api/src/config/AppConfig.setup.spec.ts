@@ -18,7 +18,7 @@ import {
   TEST_SMTP_USER,
   TEST_TOTP_ENC_KID,
   TEST_TOTP_ENC_PREVIOUS_KID,
-} from '../../test/fixtures/env.fixture';
+} from '../../test/fixtures/Env.fixture';
 import { ConfigValidationError, loadAppConfig } from './AppConfig.setup';
 import { summarizeConfig } from './ConfigSummary.rules';
 import {

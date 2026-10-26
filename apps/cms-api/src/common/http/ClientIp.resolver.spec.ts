@@ -1,6 +1,6 @@
 import type { Request } from 'express';
 
-import { devEnv } from '../../../test/fixtures/env.fixture';
+import { devEnv } from '../../../test/fixtures/Env.fixture';
 import { loadAppConfig } from '../../config/AppConfig.setup';
 import { ClientIpResolver } from './ClientIp.resolver';
 import { UNKNOWN_CLIENT_IP } from '../constants/Limits.constants';

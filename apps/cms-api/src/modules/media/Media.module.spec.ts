@@ -1,4 +1,4 @@
-import { devEnv } from '../../../test/fixtures/env.fixture';
+import { devEnv } from '../../../test/fixtures/Env.fixture';
 import { loadAppConfig } from '../../config/AppConfig.setup';
 import { MEDIA_PROVIDERS } from '../../config/Config.constants';
 import { FakeMediaStorage } from './adapters/Fake.adapter';

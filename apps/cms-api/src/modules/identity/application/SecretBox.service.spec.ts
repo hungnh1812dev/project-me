@@ -3,7 +3,7 @@ import {
   TEST_SECRET_32_BYTES,
   TEST_TOTP_ENC_KID,
   TEST_TOTP_ENC_PREVIOUS_KID,
-} from '../../../../test/fixtures/env.fixture';
+} from '../../../../test/fixtures/Env.fixture';
 import { loadAppConfig } from '../../../config/AppConfig.setup';
 import { SECRET_BOX } from '../domain/Identity.constants';
 import {

@@ -1,4 +1,4 @@
-import { testCatalog } from '../../../../test/fixtures/access.fixture';
+import { testCatalog } from '../../../../test/fixtures/Access.fixture';
 import { ACCESS_ERROR_CODES } from './Access.constants';
 import { validatePermissionSet } from './PermissionSet.rules';
 

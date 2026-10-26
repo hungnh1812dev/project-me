@@ -1,4 +1,4 @@
-import { TEST_SECRET_32_BYTES } from '../../../../test/fixtures/env.fixture';
+import { TEST_SECRET_32_BYTES } from '../../../../test/fixtures/Env.fixture';
 import { type IAppConfig } from '../../../config/AppConfig.setup';
 import {
   type AuditLogWriter,

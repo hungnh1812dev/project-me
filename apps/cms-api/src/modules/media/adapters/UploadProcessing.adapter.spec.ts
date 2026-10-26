@@ -11,8 +11,8 @@ import {
   MINIMAL_MP4,
   MINIMAL_PDF,
   SVG_DOCUMENT,
-} from '../../../../test/fixtures/media.fixture';
-import { multipart } from '../../../../test/fixtures/multipart';
+} from '../../../../test/fixtures/Media.fixture';
+import { multipart } from '../../../../test/fixtures/Multipart.fixture';
 import {
   DomainError,
   DOMAIN_ERROR_KINDS,

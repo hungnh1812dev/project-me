@@ -11,7 +11,7 @@ import {
   grant,
   systemRole,
   testCatalog,
-} from '../../../../test/fixtures/access.fixture';
+} from '../../../../test/fixtures/Access.fixture';
 import { PermissionAction } from '../../../generated/prisma/client';
 import type { SystemRoleSlug } from './SystemRoles.entity';
 import {
