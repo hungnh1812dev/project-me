@@ -20,7 +20,7 @@ are tree-shaken.
 ### Public API
 
 The names exported from `src/index.ts` are the kit's contract, recorded in
-`src/public-api.snapshot.ts`; `src/public-api.spec.ts` fails when the exports,
+`src/PublicApi.snapshot.ts`; `src/PublicApi.snapshot.test.ts` fails when the exports,
 the snapshot or this table disagree. Changes are additive. A rename keeps the
 old name as a deprecated alias for one release; removing a name is a
 deliberate edit of the snapshot and every consumer in the same change.
@@ -161,11 +161,11 @@ returns to the trigger. Compose `DialogContent`, `DialogHeader`,
 
 ## Internals for a new input
 
-Not exported. A new input reuses `src/components/forms/field-wiring.ts`
+Not exported. A new input reuses `src/components/forms/FieldWiring.setup.ts`
 (`useRegisteredField` for native controls, `useRequiredFormContext` plus
 `useFieldIds` for controller-based ones, `NativeFieldProps` for the props type)
-and the focus / invalid classes in `src/components/ui/control.constants.ts`.
-`src/architecture.spec.ts` (run by `pnpm test`) fails when those rules are copied back into a
+and the focus / invalid classes in `src/components/ui/Control.constants.ts`.
+`src/KitBoundaries.architecture.test.ts` (run by `pnpm test`) fails when those rules are copied back into a
 component.
 
 ## Adding shadcn components
@@ -174,7 +174,7 @@ component.
 pnpm --filter @abyss/form-commons exec shadcn add <name>
 ```
 
-Then restyle to semantic tokens and export it from `src/index.ts`.
+`shadcn add` writes kebab-case files (`native-select.tsx`). Rename them to the file-name rule (ADR 0008: `NativeSelect.tsx`), restyle to semantic tokens and export them from `src/index.ts`.
 
 ## Scripts
 
