@@ -74,7 +74,7 @@ interface Conflict {
   };
 }
 
-describe('document publish, unpublish and delete (T22; Postgres 16 via Testcontainers)', () => {
+describe('document publish, unpublish and delete (T22; Postgres 17 via Testcontainers)', () => {
   let postgres: TestPostgres;
   let app: NestExpressApplication;
   let db: PrismaHandle;

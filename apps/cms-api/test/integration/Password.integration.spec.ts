@@ -100,7 +100,7 @@ function errorCodeOf(res: request.Response): unknown {
   return (res.body as { errorCode?: unknown }).errorCode;
 }
 
-describe('OTP + password lifecycle (D8, SPEC §12-9/10; Postgres 16 via Testcontainers)', () => {
+describe('OTP + password lifecycle (D8, SPEC §12-9/10; Postgres 17 via Testcontainers)', () => {
   let postgres: TestPostgres;
   let app: NestExpressApplication;
   let db: PrismaHandle;

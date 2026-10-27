@@ -42,3 +42,41 @@ export function poolOptionsOf(connection: DatabaseConnection): PoolConfig {
   }
   return options;
 }
+
+/** Schemas the app's tables live in; the DDL check looks only at these. */
+export const APP_SCHEMAS = ['public', 'content'] as const;
+
+/** What the boot check reads about the connected role (ADR 0012 section 7). */
+export interface DatabaseRoleFacts {
+  isSuperuser: boolean;
+  canCreateInDatabase: boolean;
+  schemasWithCreate: readonly string[];
+  schemasWithOwnedObjects: readonly string[];
+  /** Roles the connected role is a direct member of (they can carry DDL or server rights). */
+  memberOfRoles: readonly string[];
+}
+
+/** The problems found, by name; never a role name, host or other value. */
+export function ddlRiskNamesOf(facts: DatabaseRoleFacts): string[] {
+  const names: string[] = [];
+  if (facts.isSuperuser) names.push('superuser');
+  if (facts.canCreateInDatabase) names.push('CREATE on the database');
+  for (const schema of facts.schemasWithCreate) {
+    names.push(`CREATE on schema ${schema}`);
+  }
+  for (const schema of facts.schemasWithOwnedObjects) {
+    names.push(`owns objects in schema ${schema}`);
+  }
+  for (const role of facts.memberOfRoles) {
+    names.push(`member of role ${role}`);
+  }
+  return names;
+}
+
+const ADR_POINTER = 'See docs/adr/0012-database-role-separation.md.';
+
+export function ddlRiskWarningOf(riskNames: readonly string[]): string {
+  return `The database role can change the schema (${riskNames.join('; ')}); production should run as a DML-only role. ${ADR_POINTER}`;
+}
+
+export const DDL_CHECK_FAILED_WARNING = `Could not check whether the database role can change the schema. ${ADR_POINTER}`;

@@ -95,7 +95,7 @@ interface RoleBody {
   permissions: { subject: string; action: string }[];
 }
 
-describe('accounts & roles API + security audit (T17, §12-7, §12-18; Postgres 16 via Testcontainers)', () => {
+describe('accounts & roles API + security audit (T17, §12-7, §12-18; Postgres 17 via Testcontainers)', () => {
   let postgres: TestPostgres;
   let app: NestExpressApplication;
   let db: PrismaHandle;

@@ -12,7 +12,7 @@ import { dbEnvOf, devEnv } from '../fixtures/Env.fixture';
 import { startPostgres, type TestPostgres } from '../fixtures/Postgres.fixture';
 import { createTestApp } from '../fixtures/TestApp.fixture';
 
-describe('CONTENT_TRANSACTION_RUNNER (Postgres 16 via Testcontainers)', () => {
+describe('CONTENT_TRANSACTION_RUNNER (Postgres 17 via Testcontainers)', () => {
   let postgres: TestPostgres;
   let app: NestExpressApplication;
   let content: ContentDbProvider;

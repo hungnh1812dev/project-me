@@ -94,7 +94,7 @@ function errorBody(res: request.Response): unknown {
   return rest;
 }
 
-describe('auth: login, JWT, refresh rotation, logout (Postgres 16 via Testcontainers)', () => {
+describe('auth: login, JWT, refresh rotation, logout (Postgres 17 via Testcontainers)', () => {
   let postgres: TestPostgres;
   let app: NestExpressApplication;
   let db: PrismaHandle;

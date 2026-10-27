@@ -64,7 +64,7 @@ function nextIp(): string {
   return `10.8.${Math.floor(ipCounter / OCTET_RANGE)}.${(ipCounter % OCTET_RANGE) + 1}`;
 }
 
-describe('media delete and purge (T28; Postgres 16 via Testcontainers)', () => {
+describe('media delete and purge (T28; Postgres 17 via Testcontainers)', () => {
   let postgres: TestPostgres;
   let app: NestExpressApplication;
   let db: PrismaHandle;

@@ -99,7 +99,7 @@ function component(
   return node;
 }
 
-describe('KyselyContentRepository on cv-page (Postgres 16 via Testcontainers)', () => {
+describe('KyselyContentRepository on cv-page (Postgres 17 via Testcontainers)', () => {
   let postgres: TestPostgres;
   let db: Kysely<ContentDatabase>;
   let repository: KyselyContentRepository;

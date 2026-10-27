@@ -9,7 +9,7 @@ import {
 } from '../fixtures/Postgres.fixture';
 import { createTestApp } from '../fixtures/TestApp.fixture';
 
-describe('health (Postgres 16 via Testcontainers)', () => {
+describe('health (Postgres 17 via Testcontainers)', () => {
   let postgres: TestPostgres;
   let app: NestExpressApplication;
 

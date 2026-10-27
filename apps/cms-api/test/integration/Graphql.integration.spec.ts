@@ -168,7 +168,7 @@ const SEEDS: Seed[] = [
   },
 ];
 
-describe('GraphQL read API (GQ2; Postgres 16 via Testcontainers)', () => {
+describe('GraphQL read API (GQ2; Postgres 17 via Testcontainers)', () => {
   let postgres: TestPostgres;
   let app: NestExpressApplication;
   let db: PrismaHandle;

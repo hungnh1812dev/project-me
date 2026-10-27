@@ -55,7 +55,7 @@ interface Presence {
   lastSeenAt: string;
 }
 
-describe('document presence (T26; Postgres 16 via Testcontainers)', () => {
+describe('document presence (T26; Postgres 17 via Testcontainers)', () => {
   let postgres: TestPostgres;
   let app: NestExpressApplication;
   let db: PrismaHandle;

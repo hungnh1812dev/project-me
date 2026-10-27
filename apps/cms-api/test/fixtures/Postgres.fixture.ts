@@ -4,8 +4,8 @@ import { createServer } from 'node:net';
 import { PostgreSqlContainer } from '@testcontainers/postgresql';
 import { Client } from 'pg';
 
-/** SPEC §3: integration tests run against Postgres 16. */
-export const POSTGRES_TEST_IMAGE = 'postgres:16-alpine';
+/** SPEC §3: integration tests run against Postgres 17. */
+export const POSTGRES_TEST_IMAGE = 'postgres:17-alpine';
 
 /**
  * Every Jest worker shares one server; each suite opens an app (Prisma and

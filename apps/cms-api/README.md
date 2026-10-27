@@ -33,6 +33,15 @@ a password with `@ : / ? # %` needs no encoding. Only the Prisma CLI
 with the URL API, which encodes them. The boot summary shows host, port,
 database and user, and the password as redacted.
 
+Database roles in production (ADR 0012): the API runs as `abyss_api`, which
+has no DDL right, and `deploy:migrate` runs as the migration role
+(`abyss_migrator`; on Supabase `postgres`), each with its own Secret. The
+migration commands load only the `DB_*` keys and `NODE_ENV`, so the init
+container needs no app secret. `scripts/db/database-roles.sql` creates the
+roles and grants; with `NODE_ENV=production` the API logs one warning at boot
+when its own role can run DDL. First-install steps and the Supabase runbook:
+`docs/deployment/k3s-traefik.md` and `docs/deployment/supabase-database.md`.
+
 Database TLS: `DB_SSL_MODE` is `disable` (default), `require` (encrypted, the
 server is not checked) or `verify-full` (certificate chain and host name
 checked against the CA in `DB_SSL_ROOT_CERT_PATH`, an absolute path that is
@@ -847,7 +856,7 @@ every message. No environment serves a playground; use the committed SDL
 | `owner:reset-2fa`                | Break-glass: turn 2FA off for one account and end its sessions (`--email`, `--yes`)                                                                                                                          |
 | `seed:account`                   | Smoke stacks only: create one active test account (`--email`, `--role admin\|guest`, `--email-2fa`, `--password-stdin`); in production needs `ALLOW_ACCOUNT_SEED=smoke` on that one command, never in config |
 
-Integration tests start Postgres 16 with Testcontainers, so Docker must be
+Integration tests start Postgres 17 with Testcontainers, so Docker must be
 running. The Jest global setup starts one container for the whole run, and
 each test file gets its own database on it (`startPostgres()` in
 `test/fixtures/Postgres.fixture.ts`). Jest runs with `--experimental-vm-modules` because the Prisma 7
@@ -869,7 +878,9 @@ off (`loadAppConfig(...).backups` is `undefined`). The key pair is a read-only
 token (list + get), never the backup job's write credential, and both parts are
 redacted in the boot summary. `modules/backups/adapters/S3BackupStorage.adapter.ts`
 implements the `BackupStorage` port (`list`, `find`, `createDownloadUrl`) with
-the official S3 SDK; the endpoints that use it arrive with BK-3.
+the official S3 SDK. Design: `docs/adr/0013-backup-download.md`. The bucket, the
+nightly job and the key placement (ConfigMap or Secret) are in
+`docs/deployment/k3s-traefik.md` section 7.
 
 ## Docker
 

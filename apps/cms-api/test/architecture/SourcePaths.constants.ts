@@ -128,6 +128,8 @@ export const SYSTEM_ROLES_TABLE_FILE = join(
 export const NON_ROLE_LITERAL_FILES = [
   join(MODULES, 'identity', 'http', 'IdentityHttp.constants.ts'),
   join(MODULES, 'reviewer', 'http', 'Reviewer.controller.ts'),
+  // 'public' is the Postgres schema name here
+  join('infrastructure', 'database', 'DatabaseConfig.rules.ts'),
 ];
 
 /** Files and folders the specs above need to exist, checked on every run. */

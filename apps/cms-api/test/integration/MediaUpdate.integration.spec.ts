@@ -57,7 +57,7 @@ function nextIp(): string {
   return `10.8.${Math.floor(ipCounter / OCTET_RANGE)}.${(ipCounter % OCTET_RANGE) + 1}`;
 }
 
-describe('media alt update (T29; Postgres 16 via Testcontainers)', () => {
+describe('media alt update (T29; Postgres 17 via Testcontainers)', () => {
   let postgres: TestPostgres;
   let app: NestExpressApplication;
   let db: PrismaHandle;

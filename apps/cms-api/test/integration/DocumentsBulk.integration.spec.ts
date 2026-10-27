@@ -96,7 +96,7 @@ interface BulkBody {
   results: BulkResult[];
 }
 
-describe('document bulk (T34; Postgres 16 via Testcontainers)', () => {
+describe('document bulk (T34; Postgres 17 via Testcontainers)', () => {
   let postgres: TestPostgres;
   let app: NestExpressApplication;
   let db: PrismaHandle;

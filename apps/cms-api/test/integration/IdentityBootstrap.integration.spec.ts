@@ -36,7 +36,7 @@ function owner(email: string) {
   return { email, password: PASSWORD };
 }
 
-describe('core schema, system roles and owner:bootstrap (Postgres 16 via Testcontainers)', () => {
+describe('core schema, system roles and owner:bootstrap (Postgres 17 via Testcontainers)', () => {
   let postgres: TestPostgres;
   let template: Awaited<ReturnType<typeof createCoreTemplate>>;
   const handles: PrismaHandle[] = [];

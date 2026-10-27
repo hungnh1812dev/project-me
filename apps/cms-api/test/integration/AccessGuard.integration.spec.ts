@@ -84,7 +84,7 @@ class ProbeController {
 })
 class ProbeModule {}
 
-describe('revocation versions + permission guard (T15, §12-11; Postgres 16 via Testcontainers)', () => {
+describe('revocation versions + permission guard (T15, §12-11; Postgres 17 via Testcontainers)', () => {
   let postgres: TestPostgres;
   let app: NestExpressApplication;
   let db: PrismaHandle;

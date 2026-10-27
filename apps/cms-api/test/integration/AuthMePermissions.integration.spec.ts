@@ -30,7 +30,7 @@ const PASSWORD = 'correct horse battery staple';
 const ME = '/api/v1/auth/me';
 const LOGIN = '/api/v1/auth/login';
 
-describe('GET /auth/me permissions (T33a; Postgres 16 via Testcontainers)', () => {
+describe('GET /auth/me permissions (T33a; Postgres 17 via Testcontainers)', () => {
   let postgres: TestPostgres;
   let app: NestExpressApplication;
   let db: PrismaHandle;

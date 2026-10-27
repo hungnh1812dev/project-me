@@ -1,4 +1,10 @@
-import { type DatabaseConfig, poolOptionsOf } from './DatabaseConfig.rules';
+import {
+  type DatabaseConfig,
+  type DatabaseRoleFacts,
+  ddlRiskNamesOf,
+  ddlRiskWarningOf,
+  poolOptionsOf,
+} from './DatabaseConfig.rules';
 
 describe('poolOptionsOf', () => {
   it('passes the fields as they are, with no URL encoding', () => {
@@ -42,5 +48,64 @@ describe('poolOptionsOf', () => {
       ca: 'PEM',
       rejectUnauthorized: true,
     });
+  });
+});
+
+describe('ddlRiskNamesOf', () => {
+  const dmlOnly: DatabaseRoleFacts = {
+    isSuperuser: false,
+    canCreateInDatabase: false,
+    schemasWithCreate: [],
+    schemasWithOwnedObjects: [],
+    memberOfRoles: [],
+  };
+
+  it('finds nothing for a DML-only role', () => {
+    expect(ddlRiskNamesOf(dmlOnly)).toEqual([]);
+  });
+
+  it.each([
+    [{ isSuperuser: true }, ['superuser']],
+    [{ canCreateInDatabase: true }, ['CREATE on the database']],
+    [{ schemasWithCreate: ['public'] }, ['CREATE on schema public']],
+    [
+      { schemasWithCreate: ['public', 'content'] },
+      ['CREATE on schema public', 'CREATE on schema content'],
+    ],
+    [
+      { schemasWithOwnedObjects: ['content'] },
+      ['owns objects in schema content'],
+    ],
+    [
+      { memberOfRoles: ['pg_execute_server_program', 'abyss_migrator'] },
+      [
+        'member of role pg_execute_server_program',
+        'member of role abyss_migrator',
+      ],
+    ],
+  ] as [Partial<DatabaseRoleFacts>, string[]][])(
+    'names the problem for %j',
+    (change, expected) => {
+      expect(ddlRiskNamesOf({ ...dmlOnly, ...change })).toEqual(expected);
+    },
+  );
+
+  it('keeps every problem when several apply', () => {
+    const names = ddlRiskNamesOf({
+      isSuperuser: true,
+      canCreateInDatabase: true,
+      schemasWithCreate: ['public'],
+      schemasWithOwnedObjects: ['public'],
+      memberOfRoles: ['pg_signal_backend'],
+    });
+    expect(names).toHaveLength(5);
+  });
+});
+
+describe('ddlRiskWarningOf', () => {
+  it('lists the problems and points to the ADR', () => {
+    const message = ddlRiskWarningOf(['superuser', 'CREATE on schema public']);
+    expect(message).toContain('superuser; CREATE on schema public');
+    expect(message).toContain('docs/adr/0012-database-role-separation.md');
   });
 });

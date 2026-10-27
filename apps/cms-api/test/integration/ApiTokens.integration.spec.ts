@@ -111,7 +111,7 @@ const READ_ARTICLE = {
   permissions: [{ subject: 'article', action: 'read' }],
 };
 
-describe('API tokens (T19, D5, §12-6; Postgres 16 via Testcontainers)', () => {
+describe('API tokens (T19, D5, §12-6; Postgres 17 via Testcontainers)', () => {
   let postgres: TestPostgres;
   let app: NestExpressApplication;
   let db: PrismaHandle;

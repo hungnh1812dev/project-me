@@ -32,7 +32,7 @@ interface Workspace {
   databaseUrl: string;
 }
 
-describe('content:generate + content:migrate (Postgres 16 via Testcontainers)', () => {
+describe('content:generate + content:migrate (Postgres 17 via Testcontainers)', () => {
   let postgres: TestPostgres;
   const cleanup: string[] = [];
 

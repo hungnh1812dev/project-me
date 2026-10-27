@@ -15,7 +15,7 @@ import {
 
 const CONCURRENT_RUNS = 4;
 
-describe('default role permissions seed (Postgres 16 via Testcontainers)', () => {
+describe('default role permissions seed (Postgres 17 via Testcontainers)', () => {
   let postgres: TestPostgres;
   let template: Awaited<ReturnType<typeof createCoreTemplate>>;
   const handles: PrismaHandle[] = [];

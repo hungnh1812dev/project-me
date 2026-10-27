@@ -26,7 +26,7 @@ function seedAccount(
   return identityUseCasesOf(prisma).seedAccount.seed(input, env);
 }
 
-describe('seed:account (Postgres 16 via Testcontainers)', () => {
+describe('seed:account (Postgres 17 via Testcontainers)', () => {
   let postgres: TestPostgres;
   let handle: PrismaHandle;
 

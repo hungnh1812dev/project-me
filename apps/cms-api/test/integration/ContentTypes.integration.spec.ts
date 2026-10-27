@@ -65,7 +65,7 @@ const pathsOf = (view: ContentTypeView) => view.fields.map((f) => f.path);
 const field = (view: ContentTypeView, path: string): FieldView | undefined =>
   view.fields.find((f) => f.path === path);
 
-describe('content types API (T17b; Postgres 16 via Testcontainers)', () => {
+describe('content types API (T17b; Postgres 17 via Testcontainers)', () => {
   let postgres: TestPostgres;
   let app: NestExpressApplication;
   let db: PrismaHandle;

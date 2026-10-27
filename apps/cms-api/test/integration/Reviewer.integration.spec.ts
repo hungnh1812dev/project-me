@@ -75,7 +75,7 @@ const SESSION_BODY = {
   turnstileToken: 'token',
 };
 
-describe('reviewer backend (T31, D2; Postgres 16 via Testcontainers)', () => {
+describe('reviewer backend (T31, D2; Postgres 17 via Testcontainers)', () => {
   let postgres: TestPostgres;
   let app: NestExpressApplication;
   let db: PrismaHandle;

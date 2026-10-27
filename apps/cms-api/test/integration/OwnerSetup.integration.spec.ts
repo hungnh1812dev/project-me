@@ -72,7 +72,7 @@ function errorBody(res: request.Response): Record<string, unknown> {
   return rest;
 }
 
-describe('owner setup (ADR 0005; Postgres 16 via Testcontainers)', () => {
+describe('owner setup (ADR 0005; Postgres 17 via Testcontainers)', () => {
   let postgres: TestPostgres;
   let template: Awaited<ReturnType<typeof createCoreTemplate>>;
   const apps: NestExpressApplication[] = [];

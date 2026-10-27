@@ -79,7 +79,7 @@ const TOO_MANY = {
   message: RATE_LIMIT_MESSAGE,
 };
 
-describe('rate limiting + client IP (D7, SPEC §12-8; Postgres 16 via Testcontainers)', () => {
+describe('rate limiting + client IP (D7, SPEC §12-8; Postgres 17 via Testcontainers)', () => {
   let postgres: TestPostgres;
   let databaseUrl: string;
   let db: PrismaHandle;

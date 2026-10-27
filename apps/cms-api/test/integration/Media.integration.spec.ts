@@ -82,7 +82,7 @@ interface ErrorBody {
   errorCode: string;
 }
 
-describe('media upload and list (T27; Postgres 16 via Testcontainers)', () => {
+describe('media upload and list (T27; Postgres 17 via Testcontainers)', () => {
   let postgres: TestPostgres;
   let app: NestExpressApplication;
   let db: PrismaHandle;

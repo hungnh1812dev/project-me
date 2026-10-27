@@ -82,7 +82,7 @@ function nextIp(): string {
   return `10.41.${Math.floor(ipCounter / OCTET_RANGE)}.${(ipCounter % OCTET_RANGE) + 1}`;
 }
 
-describe('backups endpoints (D20, ADR 0013; Postgres 16 via Testcontainers)', () => {
+describe('backups endpoints (D20, ADR 0013; Postgres 17 via Testcontainers)', () => {
   let postgres: TestPostgres;
   let app: NestExpressApplication;
   let unconfiguredApp: NestExpressApplication;

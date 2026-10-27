@@ -97,7 +97,7 @@ function setCookies(res: request.Response): string[] {
   );
 }
 
-describe('Two-factor authentication (D8, SPEC §9, T13; Postgres 16 via Testcontainers)', () => {
+describe('Two-factor authentication (D8, SPEC §9, T13; Postgres 17 via Testcontainers)', () => {
   let postgres: TestPostgres;
   let app: NestExpressApplication;
   let db: PrismaHandle;
