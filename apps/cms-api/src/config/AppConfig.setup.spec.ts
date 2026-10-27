@@ -24,7 +24,11 @@ import {
   TEST_TOTP_ENC_KID,
   TEST_TOTP_ENC_PREVIOUS_KID,
 } from '../../test/fixtures/Env.fixture';
-import { ConfigValidationError, loadAppConfig } from './AppConfig.setup';
+import {
+  ConfigValidationError,
+  loadAppConfig,
+  loadDatabaseConfig,
+} from './AppConfig.setup';
 import { summarizeConfig } from './ConfigSummary.rules';
 import {
   BACKUP_STORAGE_REQUIRED_KEYS,
@@ -801,5 +805,69 @@ describe('backup storage (ADR 0013)', () => {
     expect(summary).not.toContain(TEST_BACKUP_SECRET_ACCESS_KEY);
     expect(summary).toContain(TEST_BACKUP_BUCKET);
     expect(summary).toContain(REDACTED);
+  });
+});
+
+describe('loadDatabaseConfig (ADR 0012 §4)', () => {
+  const DB_ENV_KEYS = [
+    'DB_HOST',
+    'DB_PORT',
+    'DB_NAME',
+    'DB_USERNAME',
+    'DB_PASSWORD',
+  ] as const;
+  const dbOnlyEnv = (overrides: Record<string, string | undefined> = {}) => ({
+    DB_HOST: TEST_DB_HOST,
+    DB_PORT: '5432',
+    DB_NAME: TEST_DB_NAME,
+    DB_USERNAME: TEST_DB_USERNAME,
+    DB_PASSWORD: TEST_DB_PASSWORD,
+    ...overrides,
+  });
+
+  it('accepts an environment with only the DB_* keys', () => {
+    expect(loadDatabaseConfig(dbOnlyEnv())).toEqual({
+      host: TEST_DB_HOST,
+      port: 5432,
+      database: TEST_DB_NAME,
+      user: TEST_DB_USERNAME,
+      password: TEST_DB_PASSWORD,
+    });
+  });
+
+  it('accepts NODE_ENV=production without any app secret or mail key', () => {
+    expect(() =>
+      loadDatabaseConfig(dbOnlyEnv({ NODE_ENV: 'production' })),
+    ).not.toThrow();
+  });
+
+  it('equals the database section of loadAppConfig', () => {
+    expect(loadDatabaseConfig(devEnv())).toEqual(
+      loadAppConfig(devEnv()).database,
+    );
+  });
+
+  it('is frozen', () => {
+    expect(Object.isFrozen(loadDatabaseConfig(dbOnlyEnv()))).toBe(true);
+  });
+
+  it.each(DB_ENV_KEYS.filter((key) => key !== 'DB_PORT'))(
+    'rejects a missing %s by name',
+    (key) => {
+      const call = () => loadDatabaseConfig(dbOnlyEnv({ [key]: undefined }));
+      expect(call).toThrow(ConfigValidationError);
+      expect(call).toThrow(key);
+    },
+  );
+
+  it('never echoes a value in the error', () => {
+    const secret = 'super-secret-db-password-value';
+    const call = () =>
+      loadDatabaseConfig(
+        dbOnlyEnv({ DB_PASSWORD: secret, DB_HOST: undefined, DB_PORT: 'abc' }),
+      );
+    expect(call).toThrow(ConfigValidationError);
+    expect(call).not.toThrow(secret);
+    expect(call).not.toThrow('abc');
   });
 });

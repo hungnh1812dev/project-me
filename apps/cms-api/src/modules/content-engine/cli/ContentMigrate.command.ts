@@ -1,4 +1,4 @@
-import { loadAppConfig } from '../../../config/AppConfig.setup';
+import { loadDatabaseConfig } from '../../../config/AppConfig.setup';
 import {
   type MigrateResult,
   runContentMigrations,
@@ -23,8 +23,8 @@ function report(result: MigrateResult): string {
 }
 
 async function main(): Promise<void> {
-  const config = loadAppConfig(process.env);
-  const db = createMigrationDb(config.database);
+  const database = loadDatabaseConfig(process.env);
+  const db = createMigrationDb(database);
   try {
     const result = await runContentMigrations(
       db,

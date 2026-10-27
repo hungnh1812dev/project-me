@@ -6,7 +6,12 @@ import {
   RATE_LIMIT_OVERRIDE_ENV_KEYS,
   type RateLimitOverrideEnvKey,
 } from './Config.constants';
-import { envSchema, type Env } from './Env.schema';
+import {
+  databaseEnvSchema,
+  envSchema,
+  type DatabaseEnv,
+  type Env,
+} from './Env.schema';
 
 export interface IAppConfig {
   readonly env: Env['NODE_ENV'];
@@ -141,6 +146,28 @@ function formatIssues(error: z.ZodError): string[] {
   });
 }
 
+/**
+ * Parses only the DB_* keys. For the migration commands, which run without
+ * the app secrets (ADR 0012 §4).
+ */
+export function loadDatabaseConfig(rawEnv: RawEnv): Readonly<DatabaseConfig> {
+  const parsed = databaseEnvSchema.safeParse(rawEnv);
+  if (!parsed.success) {
+    throw new ConfigValidationError(formatIssues(parsed.error));
+  }
+  return deepFreeze(databaseConfigOf(parsed.data));
+}
+
+function databaseConfigOf(env: DatabaseEnv): DatabaseConfig {
+  return {
+    host: env.DB_HOST,
+    port: env.DB_PORT,
+    database: env.DB_NAME,
+    user: env.DB_USERNAME,
+    password: env.DB_PASSWORD,
+  };
+}
+
 /** Parses the raw environment into the frozen application config. */
 export function loadAppConfig(rawEnv: RawEnv): IAppConfig {
   const parsed = envSchema.safeParse(rawEnv);
@@ -173,13 +200,7 @@ export function loadAppConfig(rawEnv: RawEnv): IAppConfig {
         issuer: env.TOTP_ISSUER ?? CONFIG_DEFAULTS.TOTP_ISSUER,
       },
     },
-    database: {
-      host: env.DB_HOST,
-      port: env.DB_PORT,
-      database: env.DB_NAME,
-      user: env.DB_USERNAME,
-      password: env.DB_PASSWORD,
-    },
+    database: databaseConfigOf(env),
     rateLimit: { limitOverrides: rateLimitOverridesOf(env) },
     mail: {
       provider: env.MAIL_PROVIDER,

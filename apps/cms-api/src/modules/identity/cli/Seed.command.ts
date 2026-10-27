@@ -1,4 +1,4 @@
-import { loadAppConfig } from '../../../config/AppConfig.setup';
+import { loadDatabaseConfig } from '../../../config/AppConfig.setup';
 import { openIdentityCli } from './IdentityCli.setup';
 
 /**
@@ -6,8 +6,8 @@ import { openIdentityCli } from './IdentityCli.setup';
  * seed, then default permissions for roles that have none.
  */
 async function main(): Promise<void> {
-  const config = loadAppConfig(process.env);
-  const cli = openIdentityCli(config);
+  const database = loadDatabaseConfig(process.env);
+  const cli = openIdentityCli({ database });
   try {
     const inserted = await cli.roleSeed.seedSystemRoles();
     process.stdout.write(

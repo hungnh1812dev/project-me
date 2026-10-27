@@ -69,6 +69,22 @@ const optionalKid = z.preprocess(
 );
 
 /**
+ * The database keys alone, so the migration commands (init container) load
+ * them without any app secret (ADR 0012 §4). `envSchema` spreads this shape.
+ */
+export const databaseEnvShape = {
+  DB_HOST: z.string().min(1),
+  DB_PORT: portNumber(CONFIG_DEFAULTS.DB_PORT),
+  DB_NAME: z.string().min(1),
+  DB_USERNAME: z.string().min(1),
+  DB_PASSWORD: z.string().min(1),
+};
+
+export const databaseEnvSchema = z.object(databaseEnvShape);
+
+export type DatabaseEnv = z.infer<typeof databaseEnvSchema>;
+
+/**
  * Raw environment contract. Every key is listed in `.env.example`.
  * Production-only rules (D17) live in the `superRefine` below.
  */
@@ -76,11 +92,7 @@ export const envSchema = z
   .object({
     NODE_ENV: z.enum(NODE_ENVS).default(CONFIG_DEFAULTS.NODE_ENV),
     PORT: portNumber(CONFIG_DEFAULTS.PORT),
-    DB_HOST: z.string().min(1),
-    DB_PORT: portNumber(CONFIG_DEFAULTS.DB_PORT),
-    DB_NAME: z.string().min(1),
-    DB_USERNAME: z.string().min(1),
-    DB_PASSWORD: z.string().min(1),
+    ...databaseEnvShape,
     TRUST_PROXY_HOPS: z.coerce
       .number()
       .int()

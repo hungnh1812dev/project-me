@@ -90,7 +90,9 @@ export interface IdentityCli extends IdentityCliUseCases {
 }
 
 /** Opens its own connection for one CLI run. Call `close()` when done. */
-export function openIdentityCli(config: IAppConfig): IdentityCli {
+export function openIdentityCli(
+  config: Pick<IAppConfig, 'database'>,
+): IdentityCli {
   const { prisma, close } = openPrisma(config.database);
   return { ...identityUseCasesOf(prisma), prisma, close };
 }
