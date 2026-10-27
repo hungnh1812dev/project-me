@@ -180,13 +180,25 @@ api_ready() {
   request GET "$WEB_ORIGIN$API_PREFIX/health/ready"
   [[ "$STATUS" == "200" ]] && grep -q "$HEALTH_OK_BODY" "$BODY"
 }
-until api_ready; do
-  if ((SECONDS >= deadline)); then
-    echo "Timed out waiting for $WEB_ORIGIN$API_PREFIX/health/ready (last status $STATUS)" >&2
-    exit 1
-  fi
-  sleep "$POLL_INTERVAL_SECONDS"
-done
+web_home_ready() {
+  request GET "$WEB_ORIGIN/"
+  [[ "$STATUS" == "200" ]]
+}
+wait_until_ready() {
+  local probe="$1" url="$2"
+  until "$probe"; do
+    if ((SECONDS >= deadline)); then
+      echo "Timed out waiting for $url (last status $STATUS)" >&2
+      exit 1
+    fi
+    sleep "$POLL_INTERVAL_SECONDS"
+  done
+}
+wait_until_ready api_ready "$WEB_ORIGIN$API_PREFIX/health/ready"
+# The web route can lag the API: Traefik may not route it yet, and the first
+# render of / is GraphQL-backed. Assert routing only once / answers 200.
+echo "Waiting for the web home page behind the proxy..."
+wait_until_ready web_home_ready "$WEB_ORIGIN/"
 
 check_routing
 check_security_headers
