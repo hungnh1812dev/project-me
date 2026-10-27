@@ -1339,7 +1339,7 @@ flowchart LR
     ['repo', 'pins-check (Turbo / Node pins), <code>pnpm format:check</code>, <code>pnpm audit --prod --audit-level high</code>'],
     ['cms-api Checks', 'typecheck, lint, test:unit, test:integration (Testcontainers), <code>content:generate --check</code>, <code>graphql:print-schema --check</code>, <code>contract:print --check</code>'],
     ['cms-admin / web Checks', 'typecheck, lint, Vitest'],
-    ['publish-&lt;app&gt;', 'per-platform image (staging arm64, main amd64), non-root guard, push by digest, manifest, deploy bump'],
+    ['publish-&lt;app&gt;', 'per-platform image (staging and main amd64), non-root guard, push by digest, manifest, deploy bump'],
 ])}
 <h2 id="startup">Release order for cms-api</h2>
 <ol>

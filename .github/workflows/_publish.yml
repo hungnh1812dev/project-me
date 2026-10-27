@@ -92,8 +92,8 @@ jobs:
             org.opencontainers.image.revision=${{ github.sha }}
           load: true
           tags: ${{ inputs.app }}:ci
-          cache-from: type=gha,scope=${{ inputs.app }}-${{ matrix.arch }}
-          cache-to: type=gha,scope=${{ inputs.app }}-${{ matrix.arch }},mode=max
+          cache-from: type=gha,scope=${{ inputs.app }}-${{ inputs.environment }}-${{ matrix.arch }}
+          cache-to: type=gha,scope=${{ inputs.app }}-${{ inputs.environment }}-${{ matrix.arch }},mode=max
       - name: Non-root guard
         env:
           IMAGE: ${{ inputs.app }}:ci
@@ -118,7 +118,7 @@ jobs:
             org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
             org.opencontainers.image.revision=${{ github.sha }}
           outputs: type=image,name=${{ inputs.image_prefix }}/${{ inputs.app }},push-by-digest=true,name-canonical=true,push=true
-          cache-from: type=gha,scope=${{ inputs.app }}-${{ matrix.arch }}
+          cache-from: type=gha,scope=${{ inputs.app }}-${{ inputs.environment }}-${{ matrix.arch }}
       - name: Export digest
         id: digest
         env:

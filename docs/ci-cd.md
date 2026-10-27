@@ -59,6 +59,7 @@ pnpm audit --prod --audit-level high
 bash .github/scripts/affected.test.sh
 bash .github/scripts/pins-check.sh
 bash .github/scripts/pins-check.test.sh
+bash .github/scripts/build-args.test.sh
 ```
 
 `content:generate --check` exits non-zero when the content type schemas changed without a committed migration; fix it by running `pnpm --filter @abyss/cms-api content:generate` and committing the result.
@@ -81,7 +82,7 @@ Images, one per service, built straight from `apps/<app>/Dockerfile` by `docker/
 | `ghcr.io/hungnh1812dev/project-me/cms-admin` | admin console (nginx, uid 101)                                                                            |
 | `ghcr.io/hungnh1812dev/project-me/web`       | public site (Next.js standalone, uid 1000)                                                                |
 
-Tags: `<branch>-<sha7>` and the moving `<branch>`. Platforms: `staging` linux/arm64, `main` linux/amd64 (one native runner per platform). Per platform: build and load, non-root guard (`.github/scripts/image-user.sh`: numeric non-zero `USER`, checked with `id -u`), for cms-admin `.github/scripts/bundle-check.sh` (the bundle contains `VITE_API_BASE_URL`), then push by digest; the manifest job merges the digests and applies both tags; the deploy job bumps `APP_IMAGE_TAG` in `<DEPLOYMENT_CLUSTER_PATH>/<app>-sync-overlay.yaml` of the deploy repo (commit and push with retry on a race). For cms-api the one tag in `cms-api-sync-overlay.yaml` is what both containers use.
+Tags: `<branch>-<sha7>` and the moving `<branch>`. Platforms: `staging` and `main` both linux/amd64 on `ubuntu-24.04` (one native runner per platform; the build cache scope is per app, environment and arch). Per platform: build and load, non-root guard (`.github/scripts/image-user.sh`: numeric non-zero `USER`, checked with `id -u`), for cms-admin `.github/scripts/bundle-check.sh` (the bundle contains `VITE_API_BASE_URL`), then push by digest; the manifest job merges the digests and applies both tags; the deploy job bumps `APP_IMAGE_TAG` in `<DEPLOYMENT_CLUSTER_PATH>/<app>-sync-overlay.yaml` of the deploy repo (commit and push with retry on a race). For cms-api the one tag in `cms-api-sync-overlay.yaml` is what both containers use.
 
 Least privilege: workflow default `contents: read`; `packages: write` only on the image and manifest jobs (the call job grants the ceiling); the deploy job has no `packages` access and uses only `DEPLOYMENT_REPO_TOKEN`: the checkout does not persist it (`persist-credentials: false`) and only the push step receives it, as a per-command header.
 

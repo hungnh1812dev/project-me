@@ -77,31 +77,43 @@ jobs:
           # (consumed by the publish-<app> jobs; nothing here assumes these branches exist)
           case "$BRANCH" in
             develop) platforms='[]';              environment='';           deploy_ref='' ;;     # checks + build only
-            staging) platforms='["linux/arm64"]'; environment=staging;    deploy_ref=staging ;; # Ubuntu VM on Apple M1
-            main)    platforms='["linux/amd64"]'; environment=production; deploy_ref=main ;;    # Ubuntu on Intel
+            staging) platforms='["linux/amd64"]'; environment=staging;    deploy_ref=staging ;; # x86_64 Ubuntu, like production
+            main)    platforms='["linux/amd64"]'; environment=production; deploy_ref=main ;;    # x86_64 Ubuntu
             *) echo "::error::No deploy target for branch '$BRANCH'"; exit 1 ;;
           esac
           publish=false
           if [ "$EVENT_NAME" = push ] && [ -n "$environment" ]; then publish=true; fi
-          # One image job per platform, each on a native runner; empty for apps without a new image
+          # One image job per platform, each on a native runner; empty for apps without a new image.
+          # A new platform needs one line here.
+          runner_for() {
+            case "$1" in
+              amd64) echo ubuntu-24.04 ;;
+              *) echo "::error::No runner for platform '$1'" >&2; return 1 ;;
+            esac
+          }
           matrix_for() {
             local p='[]'
             if [ "$1" = true ]; then p=$platforms; fi
-            jq -cn --argjson platforms "$p" '{include: [
-              $platforms[] as $platform | ($platform | split("/")[1]) as $arch
-              | {platform: $platform, arch: $arch,
-                 runner: (if $arch == "arm64" then "ubuntu-24.04-arm" else "ubuntu-latest" end)}
-            ]}'
+            local platform arch runner entries=()
+            for platform in $(jq -r '.[]' <<<"$p"); do
+              arch=${platform#*/}
+              runner=$(runner_for "$arch") || return 1
+              entries+=("$(jq -cn --arg platform "$platform" --arg arch "$arch" --arg runner "$runner" '{platform: $platform, arch: $arch, runner: $runner}')")
+            done
+            printf '%s\n' "${entries[@]}" | jq -cs '{include: .}'
           }
+          cms_api_matrix=$(matrix_for "$CMS_API_IMAGE") || exit 1
+          cms_admin_matrix=$(matrix_for "$CMS_ADMIN_IMAGE") || exit 1
+          web_matrix=$(matrix_for "$WEB_IMAGE") || exit 1
           {
             echo "publish=$publish"
             echo "branch=$BRANCH"
             echo "tag=${BRANCH}-${SHA::7}"
             echo "environment=$environment"
             echo "deploy_ref=$deploy_ref"
-            echo "cms_api_matrix=$(matrix_for "$CMS_API_IMAGE")"
-            echo "cms_admin_matrix=$(matrix_for "$CMS_ADMIN_IMAGE")"
-            echo "web_matrix=$(matrix_for "$WEB_IMAGE")"
+            echo "cms_api_matrix=$cms_api_matrix"
+            echo "cms_admin_matrix=$cms_admin_matrix"
+            echo "web_matrix=$web_matrix"
             echo "turbo_version=$TURBO_VERSION"
             echo "image_prefix=$IMAGE_PREFIX"
           } >> "$GITHUB_OUTPUT"
