@@ -9,15 +9,18 @@
     },
     {
       "name": "address",
-      "type": "string"
+      "type": "string",
+      "sensitive": true
     },
     {
       "name": "phone",
-      "type": "string"
+      "type": "string",
+      "sensitive": true
     },
     {
       "name": "email",
-      "type": "string"
+      "type": "string",
+      "sensitive": true
     },
     {
       "name": "linkedin",
@@ -25,7 +28,8 @@
     },
     {
       "name": "github",
-      "type": "string"
+      "type": "string",
+      "sensitive": true
     },
     {
       "name": "avatar",

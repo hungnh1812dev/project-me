@@ -41,7 +41,8 @@
       "fields": [
         {
           "name": "company",
-          "type": "string"
+          "type": "string",
+          "sensitive": true
         },
         {
           "name": "location",
@@ -168,7 +169,8 @@
         },
         {
           "name": "phone",
-          "type": "string"
+          "type": "string",
+          "sensitive": true
         },
         {
           "name": "role",

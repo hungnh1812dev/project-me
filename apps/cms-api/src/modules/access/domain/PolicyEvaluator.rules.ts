@@ -22,6 +22,7 @@ import {
   unionFieldLists,
 } from './FieldPaths.rules';
 import type { SubjectCatalog } from './SubjectCatalog.rules';
+import { SENSITIVE_MASKED_ROLE_SLUGS } from './SystemRoles.entity';
 
 /** Fields of one subject an actor may read and write (SPEC D3/D4). */
 export class FieldSelection {
@@ -139,11 +140,15 @@ export class PolicyEvaluator {
     writeAction: FieldWriteAction = PermissionAction.update,
   ): FieldAccess {
     const policy = this.policyOf(actor);
-    const read = this.fieldListFor(
-      policy,
-      PermissionAction.read,
+    const read = this.withSensitiveMasked(
+      actor,
       subject,
-      (grant) => grant.readableFields,
+      this.fieldListFor(
+        policy,
+        PermissionAction.read,
+        subject,
+        (grant) => grant.readableFields,
+      ),
     );
     const write = this.fieldListFor(
       policy,
@@ -274,6 +279,30 @@ export class PolicyEvaluator {
     return forAction.filter(
       (grant) => grant.subject === CONTENT_WILDCARD_SUBJECT,
     );
+  }
+
+  /**
+   * SPEC D2: for `public` and `reviewer`, readable "all fields" that comes
+   * from the `*` row leaves out the `sensitive` fields. A type-specific row
+   * keeps its own list.
+   */
+  private withSensitiveMasked(
+    actor: ActorContext,
+    subject: string,
+    readable: FieldList | undefined,
+  ): FieldList | undefined {
+    if (readable !== null) return readable;
+    const isMaskedRole =
+      actor.role.isSystem &&
+      (SENSITIVE_MASKED_ROLE_SLUGS as readonly string[]).includes(
+        actor.role.slug,
+      );
+    if (!isMaskedRole) return readable;
+    const hasOwnRow = actor.role.permissions.some(
+      (grant) =>
+        grant.subject === subject && grant.action === PermissionAction.read,
+    );
+    return hasOwnRow ? readable : this.subjects.nonSensitiveFields(subject);
   }
 
   /** `undefined` = no permission; otherwise the union of the rows' lists. */

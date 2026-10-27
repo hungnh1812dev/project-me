@@ -17,6 +17,7 @@ import {
 } from './Conditions.rules';
 import {
   fieldPathsOf,
+  nonSensitiveFieldList,
   type FieldList,
   fieldListAllows,
 } from './FieldPaths.rules';
@@ -29,6 +30,8 @@ export class SubjectCatalog {
   private readonly content: ReadonlyMap<string, RegisteredContentType>;
   private readonly paths: ReadonlyMap<string, ReadonlySet<string>>;
 
+  private readonly nonSensitiveLists: ReadonlyMap<string, FieldList>;
+
   constructor(registry: ContentTypeRegistry) {
     this.content = new Map(
       registry.slugs().map((slug) => [slug, registry.resolve(slug)]),
@@ -37,6 +40,12 @@ export class SubjectCatalog {
       [...this.content].map(([slug, type]) => [
         slug,
         fieldPathsOf(type.definition),
+      ]),
+    );
+    this.nonSensitiveLists = new Map(
+      [...this.content].map(([slug, type]) => [
+        slug,
+        nonSensitiveFieldList(type.definition),
       ]),
     );
   }
@@ -77,6 +86,11 @@ export class SubjectCatalog {
   /** Every field path of a content type (see field-paths.ts). */
   fieldPaths(slug: string): ReadonlySet<string> | undefined {
     return this.paths.get(slug);
+  }
+
+  /** Every field except the `sensitive` ones; null when the type has none. */
+  nonSensitiveFields(slug: string): FieldList {
+    return this.nonSensitiveLists.get(slug) ?? null;
   }
 
   /**

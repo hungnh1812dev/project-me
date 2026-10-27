@@ -136,6 +136,23 @@ a specific content type: `readable_fields` on `read` rows, and
 `writable_fields` on `create`/`update` rows. Every path must exist in the
 definition, with no duplicates.
 
+### Sensitive fields (SPEC D2, task RV-mask)
+
+A field marked `sensitive: true` in its definition is not covered by the
+wildcard `*` content grant of the `public` and `reviewer` system roles
+(`SENSITIVE_MASKED_ROLE_SLUGS` in `SystemRoles.entity.ts`). For those two
+roles, `PolicyEvaluator.fieldsFor` turns "all fields from the `*` row" into
+"all fields except the sensitive ones" (`nonSensitiveFieldList` in
+`FieldPaths.rules.ts`; a component that holds a sensitive child is split into
+its allowed children). The field is then masked (`***`/`null` plus
+`_maskedFields`), and a filter or sort on it is `FIELD_NOT_READABLE` (D3), over
+REST and GraphQL alike.
+
+Override: a type-specific `read` row for the role (an Owner edit in the role
+editor) decides on its own, so adding the field to that row, or leaving
+`readable_fields` null on it, unmasks it. Other roles and API tokens are
+unchanged; the rule is code, so existing role rows need no migration.
+
 ### Content types API (T17b)
 
 `GET /content-types` and `/content-types/:slug` describe each type's field

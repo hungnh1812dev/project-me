@@ -16,7 +16,7 @@
       }
     },
     "cv-contact": {
-      "hash": "7ad206f8fd7662934e9e931910a688ea1ab4632ce8d43fcbea3697d9d92454ae",
+      "hash": "88630754d8c0d586d952c138b65e30a1aa9c80a1c83c8c09feb25dc58344935e",
       "definition": {
         "slug": "cv-contact",
         "kind": "single",
@@ -28,14 +28,17 @@
           },
           {
             "name": "address",
+            "sensitive": true,
             "type": "string"
           },
           {
             "name": "phone",
+            "sensitive": true,
             "type": "string"
           },
           {
             "name": "email",
+            "sensitive": true,
             "type": "string"
           },
           {
@@ -44,6 +47,7 @@
           },
           {
             "name": "github",
+            "sensitive": true,
             "type": "string"
           },
           {
@@ -321,7 +325,7 @@
       }
     },
     "resume": {
-      "hash": "2b7afd97e4de8201e5ff84a8c8e380a86e9de5ef45af543b4fe03a5b4ed2b6f9",
+      "hash": "be8cebf6c834401e5183200704779441aaac393e3cc66fb38666eecff75f78ad",
       "definition": {
         "slug": "resume",
         "kind": "collection",
@@ -365,6 +369,7 @@
             "fields": [
               {
                 "name": "company",
+                "sensitive": true,
                 "type": "string"
               },
               {
@@ -492,6 +497,7 @@
               },
               {
                 "name": "phone",
+                "sensitive": true,
                 "type": "string"
               },
               {

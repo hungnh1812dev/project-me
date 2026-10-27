@@ -38,6 +38,36 @@ export function fieldPathsOf(definition: ContentTypeDefinition): Set<string> {
   return paths;
 }
 
+/**
+ * The field list that allows every field except those marked `sensitive`
+ * (and anything inside a sensitive component). A component with no
+ * sensitive field below it stays one entry; otherwise its allowed children
+ * are listed, since a component path covers its whole subtree.
+ * `null` when the definition has no sensitive field (nothing to hide).
+ */
+export function nonSensitiveFieldList(
+  definition: ContentTypeDefinition,
+): FieldList {
+  const hasSensitive = (field: FieldDefinition): boolean =>
+    field.sensitive === true ||
+    (isComponentField(field) && field.fields.some(hasSensitive));
+  if (!definition.fields.some(hasSensitive)) return null;
+  const allowed: string[] = [];
+  const visit = (fields: FieldDefinition[], prefix: string) => {
+    for (const field of fields) {
+      if (field.sensitive === true) continue;
+      const path = joinFieldPath(prefix, field.name);
+      if (isComponentField(field) && field.fields.some(hasSensitive)) {
+        visit(field.fields, path);
+      } else {
+        allowed.push(path);
+      }
+    }
+  };
+  visit(definition.fields, '');
+  return allowed;
+}
+
 /** `reference` + `phone` -> `reference.phone`; an empty prefix is the root. */
 export function joinFieldPath(prefix: string, name: string): string {
   return prefix === '' ? name : `${prefix}${FIELD_PATH_SEPARATOR}${name}`;

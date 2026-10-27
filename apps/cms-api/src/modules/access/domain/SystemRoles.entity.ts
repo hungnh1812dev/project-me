@@ -122,6 +122,16 @@ export const REVIEWER_ROLE_SLUG = 'reviewer' satisfies SystemRoleSlug;
 /** The role of requests without credentials (SPEC §1). */
 export const PUBLIC_ROLE_SLUG = 'public' satisfies SystemRoleSlug;
 
+/**
+ * System roles whose wildcard `*` content grant does not cover fields marked
+ * `sensitive` (SPEC D2). A type-specific grant for the role decides alone,
+ * so the Owner can unmask a field in the role editor.
+ */
+export const SENSITIVE_MASKED_ROLE_SLUGS: readonly SystemRoleSlug[] = [
+  PUBLIC_ROLE_SLUG,
+  REVIEWER_ROLE_SLUG,
+];
+
 /** System roles an invited account may never hold. */
 export const UNASSIGNABLE_ROLE_SLUGS: readonly SystemRoleSlug[] =
   SYSTEM_ROLES.filter((role) => !role.assignable).map((role) => role.slug);

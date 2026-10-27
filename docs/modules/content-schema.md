@@ -42,10 +42,10 @@ passes silently.
 
 Every field has a `name` and a `type`. Optional on every field:
 
-| Key         | Type    | Meaning                                                                                                                                                                   |
-| ----------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `required`  | boolean | A value must be present on save. Default `false`.                                                                                                                         |
-| `sensitive` | boolean | Hint: the field starts masked for low-privilege roles (`public`, `reviewer`). It only seeds field profiles; permissions decide at runtime (SPEC D2, §6). Default `false`. |
+| Key         | Type    | Meaning                                                                                                                                                                                                                                         |
+| ----------- | ------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `required`  | boolean | A value must be present on save. Default `false`.                                                                                                                                                                                               |
+| `sensitive` | boolean | The field is masked for `public` and `reviewer` unless their type-specific `read` row lists it; the wildcard `*` grant does not cover it (SPEC D2, [access control](access-control.md#sensitive-fields-spec-d2-task-rv-mask)). Default `false`. |
 
 ### Field types
 
@@ -208,8 +208,9 @@ cv_page__language           language, level
 cv_page__reference          name, phone, role
 ```
 
-No field in `cv-page.json` is marked `sensitive` yet: which ones should be is
-open question Q5 (SPEC §14).
+Sensitive fields: `cv-contact` `address`, `phone`, `email`, `github`, and
+`resume` `experiences.company`, `referees.phone` (migration
+`0004_sensitive_site_fields.sql`, no DDL).
 
 ## Migrations
 
