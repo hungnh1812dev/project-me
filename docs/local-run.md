@@ -2,6 +2,20 @@
 
 How to run the stack on your machine: install, the three apps in dev mode, a local database, and the smoke stack. Production deployment is in `docs/deployment/k3s-traefik.md`; secrets there are in `docs/deployment/k3s-secrets-sops.md`.
 
+## Quick start
+
+Needs Docker (running), Node >= 24 and pnpm 11. Use a Chromium-based browser: it resolves `*.localhost` names to your machine.
+
+```
+pnpm install
+pnpm demo
+pnpm dev:stack:stop     # when you are done
+```
+
+`pnpm demo` starts Postgres and Mailpit in containers and cms-api, cms-admin and web in dev mode on your machine, applies the migrations, and turns reviewer access on. It ends by printing the web, admin and Mailpit addresses. Open the web and choose Reviewer access (needs internet for the Turnstile widget).
+
+The generated values (ports, secrets) live in the git-ignored `.localEnv.agent`, created on the first run; change a port there if the run reports it taken. Signing in to the admin locally needs a separate owner setup (section 3, "Create the one owner account").
+
 Requirements: Node >= 24, pnpm 11, Docker (database, smoke stack, cms-api integration tests).
 
 ```
@@ -10,11 +24,13 @@ pnpm install
 
 ## 1. Choose how to run
 
-| Goal                                          | Use                                             |
-| --------------------------------------------- | ----------------------------------------------- |
-| Work on one app with hot reload               | Section 2 to 5 (dev servers + a local Postgres) |
-| See the whole thing behind Traefik, like prod | Section 6 (smoke stack, needs only Docker)      |
-| Run the browser tests                         | `SMOKE_E2E=1 pnpm smoke` (section 6)            |
+| Goal                                          | Use                                                   |
+| --------------------------------------------- | ----------------------------------------------------- |
+| See the web and the reviewer flow at once     | Quick start (`pnpm demo`)                             |
+| Run the apps in dev mode on a throwaway stack | `pnpm dev:stack` (the demo without the reviewer step) |
+| Work on one app with hot reload               | Section 2 to 5 (dev servers + a local Postgres)       |
+| See the whole thing behind Traefik, like prod | Section 6 (smoke stack, needs only Docker)            |
+| Run the browser tests                         | `SMOKE_E2E=1 pnpm smoke` (section 6)                  |
 
 ## 2. Local database
 

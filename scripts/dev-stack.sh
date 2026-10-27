@@ -3,6 +3,7 @@
 # images (docker-compose.dev.yml, project abyss-dev), and cms-api, cms-admin and
 # web in dev mode on the host. No image build. Never touches abyss-smoke.
 #   pnpm dev:stack        start (any earlier dev stack is replaced), write the e2e vars
+#   pnpm demo             start, then turn reviewer access on and print where to look
 #   pnpm dev:stack:stop   stop the apps and remove the containers and volumes
 #   pnpm e2e:spec tests/AdminAuth.e2e.spec.ts      (E2E_STACK=dev if a smoke stack is kept too)
 # Env comes only from .localEnv.agent (created with generated dev-only values when
@@ -14,6 +15,8 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 source "$ROOT_DIR/scripts/lib/stack-seed.sh"
 # shellcheck source=lib/expected-output.sh
 source "$ROOT_DIR/scripts/lib/expected-output.sh"
+# shellcheck source=lib/demo-seed.sh
+source "$ROOT_DIR/scripts/lib/demo-seed.sh"
 
 COMPOSE_FILE="$ROOT_DIR/docker-compose.dev.yml"
 LOCAL_ENV_FILE="$ROOT_DIR/.localEnv.agent"
@@ -40,6 +43,17 @@ DEFAULT_ADMIN_PORT=5173
 DEFAULT_WEB_PORT=5174
 DEFAULT_MAILPIT_HTTP_PORT=8125
 DEFAULT_MAILPIT_SMTP_PORT=1125
+
+# Host ports to check before start, as "<label>|<.localEnv.agent key>|<port variable>".
+port_checks() {
+  printf '%s\n' \
+    "database|DB_PORT|$DB_PORT" \
+    "API|PORT|$API_PORT" \
+    "admin|DEV_STACK_ADMIN_PORT|$ADMIN_PORT" \
+    "web|DEV_STACK_WEB_PORT|$WEB_PORT_DEV" \
+    "Mailpit HTTP|DEV_STACK_MAILPIT_HTTP_PORT|$DEV_STACK_MAILPIT_HTTP_PORT" \
+    "Mailpit SMTP|DEV_STACK_MAILPIT_SMTP_PORT|$DEV_STACK_MAILPIT_SMTP_PORT"
+}
 
 compose() { docker compose -f "$COMPOSE_FILE" "$@"; }
 pass() { echo "  ok   $1"; }
@@ -135,6 +149,24 @@ stop_apps() {
   done
 }
 
+# Checks the tools the stack needs before anything starts.
+preflight_environment() {
+  docker info >/dev/null 2>&1 || { echo "Docker is not running." >&2; exit 1; }
+  [[ -d "$ROOT_DIR/node_modules" ]] || pnpm --dir "$ROOT_DIR" install --frozen-lockfile
+}
+
+port_is_free() {
+  node -e 'const s = require("net").createServer(); s.on("error", () => process.exit(1)); s.listen(Number(process.argv[1]), () => s.close())' "$1"
+}
+
+# Runs after the old dev stack of this project is stopped, so its own ports are free.
+preflight_ports() {
+  local label key port
+  while IFS='|' read -r label key port; do
+    port_is_free "$port" || { echo "Port $port ($label) is already in use. Free it or set $key in .localEnv.agent." >&2; exit 1; }
+  done < <(port_checks)
+}
+
 stop_stack() {
   stop_apps
   compose down -v --remove-orphans >/dev/null 2>&1 || true
@@ -208,8 +240,10 @@ write_e2e_vars() {
 
 start_stack() {
   local started_at=$SECONDS
+  preflight_environment
   load_local_env
   stop_stack
+  preflight_ports
   mkdir -p "$STATE_DIR"
   trap 'code=$?; if ((code != 0)); then stop_stack; fi; exit $code' EXIT
   export_api_env
@@ -225,8 +259,26 @@ start_stack() {
   echo "Run specs with: pnpm e2e:spec tests/<spec>   Stop with: pnpm dev:stack:stop"
 }
 
+print_demo_summary() {
+  echo
+  echo "Demo ready."
+  echo "  Web:     $WEB_ORIGIN"
+  echo "  Admin:   $ADMIN_ORIGIN"
+  echo "  Mailpit: $MAILPIT_URL"
+  echo "Reviewer access is on: open the web and choose Reviewer access (needs internet for the Turnstile widget)."
+  echo "Stop with: pnpm dev:stack:stop"
+}
+
+demo() {
+  start_stack
+  demo_sign_in_owner
+  demo_enable_reviewer
+  print_demo_summary
+}
+
 case "${1:-start}" in
   start) start_stack ;;
+  demo) demo ;;
   stop) load_local_env; stop_stack; echo "Dev stack stopped." ;;
-  *) echo "Usage: dev-stack.sh [start|stop]" >&2; exit 2 ;;
+  *) echo "Usage: dev-stack.sh [start|demo|stop]" >&2; exit 2 ;;
 esac
