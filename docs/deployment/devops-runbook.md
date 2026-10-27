@@ -48,6 +48,14 @@ Read this first. The first three are hard blockers for Supabase; the others must
 | B6  | ~~The backup job spec in `k3s-traefik.md` §7 wrote to `/tmp` and had no encryption.~~ **Solved by BK-doc:** §7 is the final text (stream, `age`, R2, lifecycle, restore drill).                                                                                                                                                                                                                                                    | It broke ADR 0013.                                                                                                                           | BK-doc.                                                                                                                           |
 | B7  | R2 tokens: the ADR 0013 rule "the job key can write but cannot delete" is not proven. Cloudflare's token levels are Admin Read & Write, Admin Read only, Object Read & Write and Object Read only; "Object Read & Write" most likely includes delete. The bucket lock rules that fix this are written in `k3s-traefik.md` §7, "Off-site bucket" step 4; the owner's decision (Q-OPS6) and the delete-attempt proof are still open. | A stolen job key could then wipe every dump.                                                                                                 | Q-OPS6 (recommended: the R2 bucket lock rules).                                                                                   |
 
+## Owner steps before deploy
+
+Only these three are the owner's own checks before the first deploy:
+
+1. **R2 bucket lock check (B7, Q-OPS6).** Set the bucket lock rules (`k3s-traefik.md` §7, "Off-site bucket" step 4), then prove that a delete attempt with the job key fails.
+2. **Supabase `verify-full` psql check (S2, section 5).** The `psql ... sslmode=verify-full sslrootcert=ca.crt ... -c 'select version()'` command succeeds and shows PostgreSQL 17.
+3. **Cloudflare Access decision (Q-OPS4).** Decide whether Cloudflare Access keeps `<domain>` and `admin.<domain>` private until the launch approval.
+
 ## 3. CI: GitHub Actions (this repo)
 
 ### 3.1 What runs, and when
@@ -284,6 +292,25 @@ volumes:
   - name: database-ca
     configMap: { name: database-ca }
 ```
+
+### 4.7 Routing and CORS
+
+**Rule:** Traefik must not redirect (308 or any other 3xx) any request to `/api/v1/*`, including the CORS preflight `OPTIONS`, from the admin and web origins. A browser does not follow a redirect on a preflight, so a trailing-slash redirect on the API breaks browser calls. The only allowed redirect is `web` to `websecure` (HTTP to HTTPS), which browsers never reach because the apps call `https://` URLs. Do not add a redirect or trailing-slash middleware to the `/api` router, and pass the path through unchanged (no StripPrefix).
+
+Origins the API must allow (set in the cms-api ConfigMap, scheme + host, no path, no trailing slash):
+
+- `ADMIN_ORIGIN` = `https://admin.<domain>` (the only CORS origin).
+- `WEB_ORIGIN` = `https://<domain>` (not a CORS origin; it is in the Origin allowlist of the refresh-cookie endpoints). Use the exact key name from `apps/cms-api/.env.example`.
+
+Check, for each origin (expect a 2xx status and no `Location` header):
+
+```bash
+curl -i -X OPTIONS "https://<domain>/api/v1/<path>" \
+  -H "Origin: https://admin.<domain>" \
+  -H "Access-Control-Request-Method: POST"
+```
+
+Repeat with `Origin: https://<domain>` and with a path that ends in `/`. A `3xx` status or a `Location` header means a router or middleware redirects the API: fix it in the Traefik config (`k3s-traefik.md` §1).
 
 ## 5. Supabase setup (once per project)
 

@@ -26,6 +26,7 @@ Rules that matter:
 - **`/api` must win over the web catch-all.** Set explicit `priority` values (below) instead of relying on rule length.
 - Web and API share the origin `https://domain.com` (refresh cookie `__Secure-abyss_rt` is host-only, `Path=/api/v1/auth`). The admin is a different origin and is the only CORS origin.
 - TLS terminates at Traefik (`websecure`); nothing in the apps speaks TLS.
+- **No redirect on `/api/v1/*`**, not even a trailing-slash 308, and never on a CORS preflight `OPTIONS`. See `devops-runbook.md` section 4.7 for the check.
 
 ```yaml
 apiVersion: traefik.io/v1alpha1
