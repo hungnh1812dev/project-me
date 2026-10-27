@@ -23,7 +23,7 @@
     adm[&quot;cms-admin: pnpm dev (Vite) :5173&lt;br/&gt;admin.domain.localhost&quot;]
     web[&quot;web: pnpm dev (Next.js) :5174&lt;br/&gt;domain.localhost&quot;]
     api[&quot;cms-api: pnpm start:dev :3000&lt;br/&gt;nest --watch, loads .env.local&quot;]
-    pg[(&quot;Postgres 16 container :5432&quot;)]
+    pg[(&quot;Postgres 17 container :5432&quot;)]
   end
   dev --&gt; adm
   dev --&gt; web
@@ -37,7 +37,7 @@
 
 <h2 id="first">First run (empty database)</h2>
 <div class="diagram"><p class="cap">start:dev never creates tables; migrations are a separate step.</p><pre class="mermaid">flowchart TB
-  a[&quot;1. Start Postgres 16&quot;] --&gt; b[&quot;2. Write apps/cms-api/.env.local&lt;br/&gt;DB_*, three secrets, ADMIN_ORIGIN, WEB_ORIGIN,&lt;br/&gt;MAIL_PROVIDER=console, MEDIA_PROVIDER=fake, OWNER_SETUP_TOKEN&quot;]
+  a[&quot;1. Start Postgres 17&quot;] --&gt; b[&quot;2. Write apps/cms-api/.env.local&lt;br/&gt;DB_*, three secrets, ADMIN_ORIGIN, WEB_ORIGIN,&lt;br/&gt;MAIL_PROVIDER=console, MEDIA_PROVIDER=fake, OWNER_SETUP_TOKEN&quot;]
   b --&gt; c[&quot;3. Export .env.local into the shell&lt;br/&gt;(migrations do not read it)&quot;]
   c --&gt; d[&quot;4. pnpm build (in apps/cms-api)&quot;]
   d --&gt; e[&quot;5. pnpm deploy:migrate&lt;br/&gt;check DB_NAME is the database you look at&quot;]
@@ -62,7 +62,7 @@ OWNER_EMAIL=you@example.com pnpm owner:bootstrap</pre>
   build --&gt; up[&quot;docker compose -p abyss-smoke&quot;]
   subgraph stack[&quot;docker-compose.smoke.yml&quot;]
     tr[&quot;Traefik :8080&quot;]
-    db[(&quot;postgres:16&quot;)]
+    db[(&quot;postgres:17&quot;)]
     mp[&quot;Mailpit&quot;]
     init[&quot;cms-api-init&lt;br/&gt;deploy:migrate&quot;]
     api[&quot;cms-api&quot;]

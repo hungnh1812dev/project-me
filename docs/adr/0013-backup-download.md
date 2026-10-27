@@ -84,6 +84,7 @@ Config:
   - `BACKUP_STORAGE_BUCKET`.
   - `BACKUP_STORAGE_PREFIX`: default `postgres/`.
   - `BACKUP_STORAGE_ACCESS_KEY_ID` and `BACKUP_STORAGE_SECRET_ACCESS_KEY`: Secret.
+- Opt-in rule (user, 2026-10-27): the feature runs only when the keys are set. With none set it is off by default: both endpoints answer `404 BACKUPS_NOT_CONFIGURED` and the admin hides the menu item. There is no separate enable flag. A partial set fails at boot.
 - The key pair is a **read-only** token scoped to that bucket (list + get), separate from the job's write credential (Q-BK2).
 - `loadAppConfig` exposes `backups: BackupStorageConfig | undefined`.
 

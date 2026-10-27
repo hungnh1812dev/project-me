@@ -1,11 +1,13 @@
 # DevOps runbook: GitHub Actions, k3s, FluxCD, Supabase
 
+Owner's step-by-step Supabase setup (Vietnamese): `docs/deployment/supabase-owner-setup.md`.
+
 The source of truth for deploying Abyss. It gives the order of work and the contract between this repo and the deploy repo; the per-topic guides hold the details and are linked, not repeated:
 
 - `docs/ci-cd.md`: the CI workflows and the GitHub setup.
 - `docs/deployment/k3s-traefik.md`: images, routing, the cms-api init container, the env contract, backups and the restore drill.
 - `docs/deployment/k3s-secrets-sops.md`: SOPS + age, secret layout and rotation.
-- `docs/deployment/supabase-database.md`: the Supabase guide. It is not written yet; task LG-db-4 writes it.
+- `docs/deployment/supabase-database.md`: the Supabase guide (roles, runbook S1 to S8, TLS, secret map, backups on Supabase).
 - ADR 0012 (database roles, Supabase), ADR 0013 (backup download, R2), SPEC §7 D7, D19, D20, SPEC §13 "Launch gate".
 
 Written 2026-10-27. The owner reports (2026-10-27) that an earlier deployment with the same CI and deploy-repo contract (sections 3.4, 3.5, 4.1) ran successfully on a VPS with k3s and FluxCD. This repo's current workflows, its images and the whole Supabase path have not run here. Status marks used below:
@@ -22,14 +24,14 @@ Written 2026-10-27. The owner reports (2026-10-27) that an earlier deployment wi
 
 ## 1. Who owns what
 
-| Concern                                                                     | Owner                       | Where                                                 |
-| --------------------------------------------------------------------------- | --------------------------- | ----------------------------------------------------- |
-| Source code, Dockerfiles, tests                                             | this repo                   | `apps/*`                                              |
-| CI: checks, image build, push to GHCR, image tag bump in the deploy repo    | this repo                   | `.github/workflows/`, `.github/scripts/`              |
-| Database roles script                                                       | this repo                   | `scripts/db/database-roles.sql` (**pending LG-db-2**) |
-| Flux objects, k8s manifests, SOPS-encrypted Secrets, Traefik config         | deploy repo `<deploy-repo>` | its own layout (**deploy repo**, not verified here)   |
-| Nightly backup job and its image                                            | deploy repo                 | contract in section 6 and ADR 0013 §3                 |
-| Supabase project, R2 bucket, Cloudflare DNS and Turnstile, Cloudinary, SMTP | the owner (dashboards)      | sections 5, 6                                         |
+| Concern                                                                     | Owner                       | Where                                               |
+| --------------------------------------------------------------------------- | --------------------------- | --------------------------------------------------- |
+| Source code, Dockerfiles, tests                                             | this repo                   | `apps/*`                                            |
+| CI: checks, image build, push to GHCR, image tag bump in the deploy repo    | this repo                   | `.github/workflows/`, `.github/scripts/`            |
+| Database roles script                                                       | this repo                   | `scripts/db/database-roles.sql` (built, LG-db-2)    |
+| Flux objects, k8s manifests, SOPS-encrypted Secrets, Traefik config         | deploy repo `<deploy-repo>` | its own layout (**deploy repo**, not verified here) |
+| Nightly backup job and its image                                            | deploy repo                 | contract in `k3s-traefik.md` §7 and ADR 0013 §3     |
+| Supabase project, R2 bucket, Cloudflare DNS and Turnstile, Cloudinary, SMTP | the owner (dashboards)      | sections 5, 6                                       |
 
 `<deploy-repo>` is the same deploy repo as the owner's earlier deployment (owner, 2026-10-27). It stays a placeholder here until its `owner/name` is written down (Q-OPS1). The same value goes into the GitHub Environment variable `DEPLOYMENT_REPO`.
 
@@ -37,15 +39,14 @@ Written 2026-10-27. The owner reports (2026-10-27) that an earlier deployment wi
 
 Read this first. The first three are hard blockers for Supabase; the others must be decided or done before LG-3.
 
-| #   | Blocker                                                                                                                                                                                                                                                             | Why it blocks                                                                                                                                | Resolved by                                                                                              |
-| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
-| B1  | ~~cms-api had no TLS setting for the database.~~ **Solved by LG-db-6** (built, awaiting commit): `DB_SSL_MODE` / `DB_SSL_ROOT_CERT_PATH` exist in the API, the init container and `prisma migrate deploy`. The image that carries LG-db-6 must be the one deployed. | With "Enforce SSL" on (Q-DB3) Supabase refuses a plain connection; with it off, the DB password and all data cross the internet unencrypted. | LG-db-6. Q-OPS2.                                                                                         |
-| B2  | The roles script `scripts/db/database-roles.sql` does not exist. `abyss_api` exists in Supabase (created by the owner) but has **no grants**; `abyss_backup` does not exist.                                                                                        | The API cannot run as `abyss_api`; the backup job has no role.                                                                               | LG-db-2, or the shared `postgres` account for both containers as an accepted risk (ADR 0012 §8). Q-OPS2. |
-| B3  | The migration commands load the full app config.                                                                                                                                                                                                                    | The init container must receive every app secret (JWT, OTP, TOTP, Cloudinary, SMTP), not only the DB pair.                                   | LG-db-1. Until then use mode A in section 4.6.                                                           |
-| B4  | This repo's CI publish path has not run against GitHub yet (LG-0 item 3). The same contract is **verified earlier** on the owner's earlier deployment.                                                                                                              | No image exists in GHCR yet; the bump job has never pushed to the deploy repo.                                                               | Section 3.5.                                                                                             |
-| B5  | Test, smoke and dev stacks run Postgres 16; Supabase runs 17.                                                                                                                                                                                                       | Migrations are not proven on 17; `pg_dump` must be at least the server's major version.                                                      | LG-pg17.                                                                                                 |
-| B6  | The backup job spec in `k3s-traefik.md` §7 still writes to `/tmp` and has no encryption.                                                                                                                                                                            | It breaks ADR 0013 (nothing on the VPS, `age` encryption).                                                                                   | BK-doc. Use section 6 of this file until then.                                                           |
-| B7  | R2 tokens: the ADR 0013 rule "the job key can write but cannot delete" is not proven. Cloudflare's token levels are Admin Read & Write, Admin Read only, Object Read & Write and Object Read only; "Object Read & Write" most likely includes delete.               | A stolen job key could then wipe every dump.                                                                                                 | Q-OPS6 (recommended: an R2 bucket lock rule).                                                            |
+| #   | Blocker                                                                                                                                                                                                                                                                                                                                                                                                                            | Why it blocks                                                                                                                                | Resolved by                                                                                                                       |
+| --- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| B1  | ~~cms-api had no TLS setting for the database.~~ **Solved by LG-db-6** (built, awaiting commit): `DB_SSL_MODE` / `DB_SSL_ROOT_CERT_PATH` exist in the API, the init container and `prisma migrate deploy`. The image that carries LG-db-6 must be the one deployed.                                                                                                                                                                | With "Enforce SSL" on (Q-DB3) Supabase refuses a plain connection; with it off, the DB password and all data cross the internet unencrypted. | LG-db-6. Q-OPS2.                                                                                                                  |
+| B2  | ~~The roles script did not exist.~~ **Built (LG-db-2, awaiting commit).** The runbook is `supabase-database.md` section 3 (S3 to S6). Not yet run on Supabase: `abyss_api` exists there (created by the owner) but has **no grants** until S3 runs, and `abyss_backup` is created by S3.                                                                                                                                           | The API cannot run as `abyss_api` before S3; the backup job has no role.                                                                     | S3 on the real project (LG-db-7), or the shared `postgres` account for both containers as an accepted risk (ADR 0012 §8). Q-OPS2. |
+| B3  | ~~The migration commands loaded the full app config.~~ **Built (LG-db-1, awaiting commit).** The init container needs only `DB_*` and `NODE_ENV` (`cms-api-migrate-db`). The image that carries LG-db-1 must be the one deployed.                                                                                                                                                                                                  | Before that image, the init container must receive every app secret.                                                                         | LG-db-1 in the deployed image. Until then use mode A in section 4.6.                                                              |
+| B4  | This repo's CI publish path has not run against GitHub yet (LG-0 item 3). The same contract is **verified earlier** on the owner's earlier deployment.                                                                                                                                                                                                                                                                             | No image exists in GHCR yet; the bump job has never pushed to the deploy repo.                                                               | Section 3.5.                                                                                                                      |
+| B6  | ~~The backup job spec in `k3s-traefik.md` §7 wrote to `/tmp` and had no encryption.~~ **Solved by BK-doc:** §7 is the final text (stream, `age`, R2, lifecycle, restore drill).                                                                                                                                                                                                                                                    | It broke ADR 0013.                                                                                                                           | BK-doc.                                                                                                                           |
+| B7  | R2 tokens: the ADR 0013 rule "the job key can write but cannot delete" is not proven. Cloudflare's token levels are Admin Read & Write, Admin Read only, Object Read & Write and Object Read only; "Object Read & Write" most likely includes delete. The bucket lock rules that fix this are written in `k3s-traefik.md` §7, "Off-site bucket" step 4; the owner's decision (Q-OPS6) and the delete-attempt proof are still open. | A stolen job key could then wipe every dump.                                                                                                 | Q-OPS6 (recommended: the R2 bucket lock rules).                                                                                   |
 
 ## 3. CI: GitHub Actions (this repo)
 
@@ -156,7 +157,7 @@ Status: the source, the bump file and the reconcile flow are **verified earlier*
 
 - A Flux source that tracks `<deploy-repo>`, branch `main` on the production cluster and `staging` on the staging cluster. The bump commit (section 3.4) is the only thing that changes an image tag.
 - `<DEPLOYMENT_CLUSTER_PATH>/<app>-sync-overlay.yaml` for `cms-api`, `web` and `cms-admin`. Each file has exactly one line `APP_IMAGE_TAG: "<tag>"`, and that value ends up as the image tag of that app. The owner's earlier deployment used the same file pattern and line (section 3.4). For `cms-api` it is the tag of both containers. How the deploy repo maps the value to the manifests is its own choice: for example a Flux Kustomization with `spec.postBuild.substitute.APP_IMAGE_TAG`.
-- If the deploy repo uses Flux `postBuild` variable substitution: Flux substitutes `${...}` in every manifest of that Kustomization. Shell scripts inside manifests (the backup job in section 6) must then either be in a Kustomization without substitution, carry the annotation `kustomize.toolkit.fluxcd.io/substitute: disabled`, or escape `$` as `$$`. **Not run**: check it with `flux build kustomization <name> --path <path>` before the first apply.
+- If the deploy repo uses Flux `postBuild` variable substitution: Flux substitutes `${...}` in every manifest of that Kustomization. Shell scripts inside manifests (the backup job in `k3s-traefik.md` §7, written with `$$`) must then either be in a Kustomization without substitution, carry the annotation `kustomize.toolkit.fluxcd.io/substitute: disabled`, or escape `$` as `$$`. **Not run**: check it with `flux build kustomization <name> --path <path>` before the first apply.
 - SOPS decryption on the Kustomization that applies Secrets: `spec.decryption: { provider: sops, secretRef: { name: sops-age } }`. The `sops-age` Secret is created once by hand (`k3s-secrets-sops.md` §3).
 - No Flux image automation (ImageRepository, ImagePolicy, ImageUpdateAutomation) on these images. CI already writes the tag, and two writers would fight over the same field.
 - Recommended order of application (deploy repo decision): config and Secrets, then cms-api, then web and cms-admin. With Flux this is `dependsOn` plus `wait: true` on the cms-api Kustomization, so a new web never waits on an API that is still migrating. **Not run**.
@@ -286,7 +287,7 @@ volumes:
 
 ## 5. Supabase setup (once per project)
 
-Run from a workstation with `psql` 17 and the Supabase CA. Never from a pod. The detailed guide is `supabase-database.md` (pending LG-db-4); the step names S1-S8 are those of ADR 0012 §9.6.
+Run from a workstation with `psql` 17 and the Supabase CA. Never from a pod. The detailed guide is `supabase-database.md` section 3; the owner's dashboard steps (S1, S2) with their checks are in `supabase-owner-setup.md`. The step names S1-S8 are those of ADR 0012 §9.6.
 
 Values to copy from the dashboard: `<project-ref>`, and `<pooler-host>` (Connect > Session pooler, port 5432). Connection user names always carry the suffix: `<role>.<project-ref>`. Inside the database, and in the script variables, the plain role name is used.
 
@@ -294,10 +295,10 @@ Values to copy from the dashboard: `<project-ref>`, and `<pooler-host>` (Connect
 | ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
 | S1   | In the dashboard: Data API off; "Automatically expose new tables" off where it is still shown; Database > SSL: "Enforce SSL on incoming connections" on; download the CA certificate (it goes into `database-ca`); network restrictions to the VPS egress IP if the plan offers them. | owner, doable now. Turn "Enforce SSL" on once the image with LG-db-6 is deployed and `DB_SSL_MODE=verify-full` is set, or the app cannot connect. |
 | S2   | `psql "host=<pooler-host> port=5432 dbname=postgres user=postgres.<project-ref> sslmode=verify-full sslrootcert=ca.crt" -c 'select version()'` succeeds and shows PostgreSQL 17.                                                                                                      | **not run**; this step is its own proof                                                                                                           |
-| S3   | Roles script, first run: `psql "<S2 connection string>" -v ON_ERROR_STOP=1 -v hosting=supabase -v migrator_role=postgres -v api_role=abyss_api -v backup_role=abyss_backup -v data_api_roles=anon,authenticated,service_role -f scripts/db/database-roles.sql`                        | **pending LG-db-2**                                                                                                                               |
-| S4   | `\password abyss_backup` at the psql prompt (value from `openssl rand -base64 32`). `abyss_api` already has the password the owner set.                                                                                                                                               | pending S3                                                                                                                                        |
+| S3   | Roles script, first run: `psql "<S2 connection string>" -v ON_ERROR_STOP=1 -v hosting=supabase -v migrator_role=postgres -v api_role=abyss_api -v backup_role=abyss_backup -v data_api_roles=anon,authenticated,service_role -f scripts/db/database-roles.sql`                        | script built (LG-db-2); **not run** on Supabase                                                                                                   |
+| S4   | `\password abyss_backup` at the psql prompt (value from `openssl rand -base64 32`). `abyss_api` already has the password the owner set.                                                                                                                                               | after S3; `supabase-database.md` S4                                                                                                               |
 | S5   | Write `cms-api-config`, `database-ca`, `cms-api-secrets`, `cms-api-migrate-db`, `postgres-backup` (section 4) with SOPS, commit to the deploy repo, let Flux apply them, roll out. The init container migrates as `postgres`.                                                         | **deploy repo**, **not run**                                                                                                                      |
-| S6   | Run S3 again. It must end without error (the self-check; the meta tables are now restricted).                                                                                                                                                                                         | pending LG-db-2                                                                                                                                   |
+| S6   | Run S3 again. It must end without error (the self-check; the meta tables are now restricted).                                                                                                                                                                                         | after S5; **not run**                                                                                                                             |
 | S7   | `curl -fsS https://<domain>/api/v1/health/ready` returns `{"status":"ok"}`; no database role warning in `kubectl -n <ns> logs deploy/cms-api -c cms-api`; a request to `https://<project-ref>.supabase.co/rest/v1/` with the anon key returns no app table.                           | **not run** (LG-db-7)                                                                                                                             |
 | S8   | Rotation: `\password abyss_api` or `\password abyss_backup`; rotate the `postgres` password in the dashboard; then update the matching Secret and restart the workload that uses it.                                                                                                  | runbook                                                                                                                                           |
 
@@ -310,52 +311,16 @@ Supabase limits to watch:
 
 ## 6. Backups: R2 bucket and nightly job
 
-Design: ADR 0013. The final guide text comes from BK-doc (`k3s-traefik.md` §7). Until then this section is the reference. All of it is **not run**.
+Design: ADR 0013. The final text (bucket rules, the CronJob, the size checks, the restore drill with `age -d`, the cms-admin download) is `k3s-traefik.md` §7; Supabase specifics are in `supabase-database.md` section 7. All of it is **not run** (LG-0 item 4).
 
-R2 setup (owner, in the Cloudflare dashboard):
+Setup order (owner, then deploy repo):
 
-1. Create the bucket `<bucket>` with no public access and no custom domain. The endpoint is `https://<account-id>.r2.cloudflarestorage.com`.
-2. Lifecycle rules: prefix `postgres/daily/` deletes objects after 14 days; prefix `postgres/monthly/` deletes them after 92 days.
-3. Create two tokens, each scoped to this bucket only:
-   - the job token: Object Read & Write. It goes in `postgres-backup`. See B7 and Q-OPS6: add a bucket lock rule if this token can delete.
-   - the cms-api token: Object Read only (list and get). It goes in `cms-api-secrets` as `BACKUP_STORAGE_*`.
-4. Generate an age key pair on the owner's machine with `age-keygen -o abyss-backup.agekey`. Only the public key (`age1...`) goes into `BACKUP_AGE_RECIPIENT` in the `postgres-backup` Secret. Keep the private key offline in two copies, never on the VPS.
-
-Job contract. The deploy repo builds the image: it needs `pg_dump` and `psql` 17, `age`, `rclone` and a POSIX shell (Q-OPS8). The schedule is `15 2 * * *` (UTC). `envFrom` is `postgres-backup-config` and `postgres-backup`, and `database-ca` is mounted. There are no other volumes: nothing is written to disk. Script sketch (**not run**; see section 4.1 about `$` and Flux substitution):
-
-```sh
-set -eu -o pipefail
-export PGPASSWORD="$DB_PASSWORD"
-conn="-h $DB_HOST -p $DB_PORT -U $DB_USERNAME -d $DB_NAME"
-stamp="$(date -u +%Y%m%dT%H%M%SZ)"
-name="abyss-${stamp}.dump.age"
-daily="offsite:${BACKUP_BUCKET}/${BACKUP_PREFIX}daily/${name}"
-status=0
-
-size="$(psql $conn -Atc 'select pg_database_size(current_database())')"
-echo "database size: ${size} bytes"
-if [ "$size" -gt "$BACKUP_MAX_DATABASE_BYTES" ]; then echo "WARN database over limit"; status=1; fi
-
-pg_dump $conn -Fc -n public -n content \
-  | age -r "$BACKUP_AGE_RECIPIENT" \
-  | rclone rcat \
-      --header-upload "Content-Type: application/octet-stream" \
-      --header-upload "Content-Disposition: attachment; filename=\"${name}\"" \
-      "$daily"
-
-dump="$(rclone size --json "$daily" | sed -n 's/.*"bytes":\([0-9]*\).*/\1/p')"
-echo "dump size: ${dump} bytes"
-if [ "$dump" -gt "$BACKUP_MAX_DUMP_BYTES" ]; then echo "WARN dump over limit"; status=1; fi
-
-if [ "$(date -u +%d)" = 01 ]; then
-  rclone copyto "$daily" "offsite:${BACKUP_BUCKET}/${BACKUP_PREFIX}monthly/${name}"
-fi
-exit "$status"
-```
-
-Alerts (deploy repo): the job failed, or no new `daily/` object in 26 hours. The cms-admin Backups page also shows a stale warning after 26 hours.
-
-Restore drill (quarterly; it never touches the live project): `age -d -i abyss-backup.agekey abyss-<stamp>.dump.age > abyss-<stamp>.dump`, then restore into a local `postgres:17-alpine` container (roles script in `self_managed` mode first) and run `deploy:migrate` against it. It must report nothing pending. The full steps are in `k3s-traefik.md` §7 and ADR 0012 §9.6. The first backup run and the first drill are the proof (LG-0 item 4).
+1. R2 bucket with no public access and no custom domain, lifecycle rules (`postgres/daily/` 14 days, `postgres/monthly/` 92 days), the two bucket-scoped tokens, and the bucket lock rules (B7, Q-OPS6): `k3s-traefik.md` §7, "Off-site bucket".
+2. Generate the age key pair on the owner's machine. The public key becomes `BACKUP_AGE_RECIPIENT`; the private key stays offline in two copies, never on the VPS.
+3. The deploy repo builds the job image (Q-OPS8: `pg_dump` and `psql` 17, `age`, `rclone`, a shell with `pipefail`) and adds the CronJob, the ConfigMap `postgres-backup-config` and the Secret `postgres-backup` (section 4). Check `$` and Flux substitution (section 4.1).
+4. Give cms-api the read-only token as `BACKUP_STORAGE_*` (section 4.4, 4.5).
+5. Alerts (deploy repo): the job failed, or no new `daily/` object in 26 hours.
+6. Run the job once by hand (section 7 step 10), then the restore drill. Those two runs are the proof.
 
 ## 7. First install, in order
 
@@ -393,7 +358,7 @@ Rules for every release:
 | Need to stop Flux from changing anything                      | `flux suspend kustomization <name>`; resume with `flux resume kustomization <name>`. The next CI bump waits in git and is not applied while suspended.                                                                                                                                                                                                                                   | **not run**                                  |
 | Init container fails (`Init:Error` / `Init:CrashLoopBackOff`) | The old pod keeps serving. Read the cause with `kubectl -n <ns> logs <pod> -c migrate`. A config error lists the key names. A wrong DB password: fix the Secret. A failed migration: fix forward with a new commit, or revert the bump.                                                                                                                                                  | ready (behaviour checked on the smoke stack) |
 | A Prisma migration failed halfway                             | Prisma records it as failed and refuses every later `migrate deploy`. Repair the database by hand as the migrator, then run `npx prisma migrate resolve --rolled-back <migration>` (or `--applied`) with the migrator credentials in a one-off pod from the same image. Run the next rollout. Take the Prisma command from the Prisma 7 docs at the time; this step was never rehearsed. | **not run**                                  |
-| Release changed the schema and must be undone                 | There is no down migration. Either fix forward, or restore the latest dump into a new database (restore drill, section 6), point `DB_NAME` / `DB_HOST` at it and roll out the old tag. Data written since the dump is lost.                                                                                                                                                              | **not run**                                  |
+| Release changed the schema and must be undone                 | There is no down migration. Either fix forward, or restore the latest dump into a new database (restore drill, `k3s-traefik.md` §7), point `DB_NAME` / `DB_HOST` at it and roll out the old tag. Data written since the dump is lost.                                                                                                                                                    | **not run**                                  |
 | Supabase project paused                                       | Restore it in the dashboard, then `kubectl -n <ns> rollout restart deploy/cms-api` if readiness does not recover by itself.                                                                                                                                                                                                                                                              | **not run**                                  |
 | Secret leaked                                                 | Rotate per `k3s-secrets-sops.md` §7, then the age key if it was the cause.                                                                                                                                                                                                                                                                                                               | runbook                                      |
 
@@ -410,7 +375,7 @@ Rules for every release:
 | Pooler connection budget                                                | section 5 check                                                             | LG-0 item 4       |
 | Real client IP through Cloudflare and Traefik                           | `k3s-traefik.md` §9 step 5, SPEC §12-8                                      | LG-0 item 4, LG-3 |
 | Backup job, R2 tokens, lifecycle, lock                                  | manual job run (section 7 step 10); a delete attempt with the job key fails | LG-0 item 4       |
-| Restore drill                                                           | section 6                                                                   | LG-0 item 4       |
+| Restore drill                                                           | `k3s-traefik.md` §7                                                         | LG-0 item 4       |
 | Rollback by revert                                                      | one revert on staging after the first release                               | LG-0 item 4       |
 | `readOnlyRootFilesystem` on cms-admin                                   | `k3s-traefik.md` §5                                                         | LG-0 item 4       |
 

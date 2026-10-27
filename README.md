@@ -43,7 +43,7 @@ Each point links to the document that describes it.
 
 Full table: [SPEC.md](SPEC.md) section 3.
 
-- `apps/cms-api`: NestJS 11, Prisma, Kysely, PostgreSQL 16
+- `apps/cms-api`: NestJS 11, Prisma, Kysely, PostgreSQL 17
 - `apps/cms-admin`: React 19, Vite, Tailwind CSS, Redux Toolkit, TanStack Query
 - `apps/web`: Next.js 16 (App Router), React 19
 - `apps/e2e`: Playwright (Chromium)

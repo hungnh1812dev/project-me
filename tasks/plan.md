@@ -404,6 +404,9 @@ Checks:
 
 This is not a launch blocker. If BK-3 is committed before LG-1, the LG-1 review covers D20.
 
+### Direct request: CI from the earlier deployment config (CI-old) — PROPOSED 2026-10-27
+Flat list, details and the old-vs-current comparison table in `todo.md` "Direct request: CI from the earlier deployment config (CI-old)". SPEC §11, §13, D17; runbook `docs/deployment/devops-runbook.md` §3. Finding: `.github/` already carries the old config (built from it in T37b/T37e) with this project's newer checks; no restructure. User answers 2026-10-27: Q-CIO1 both environments x86_64 Ubuntu on Xeon (staging moves to `linux/amd64`), Q-CIO4 the three adaptations accepted. Order: CI-old-1 (core-builder, Security gate: build-args validated before the step output, extracted to a tested script) -> CI-old-4 (core-builder, Security gate: staging `linux/amd64` on `ubuntu-24.04` like production, cache scope per environment, runbook and architecture doc follow) -> CI-old-2 (core-builder, docs parity table, `.prettierignore`). Second round 2026-10-27: Q-CIO2 = no (CI-old-3 removed, self-tests stay local), Q-CIO3 = actionlint local only. Open owner decision: Q-CIO5 (only CI-old-2's `.prettierignore` line waits for it). Check (CLI): `bash .github/scripts/build-args.test.sh`, `affected.test.sh`, `pins-check.test.sh` pass; `pnpm format:check` passes; actionlint only through the command approved under Q-CIO3. No push, publish or deploy (B4 stays with the owner's first push). Blockers B1-B3 and B7 untouched.
+
 ### Recruiter reviewability (RV) — PROPOSED 2026-10-27
 Details in `todo.md` "Recruiter reviewability (RV)"; design `docs/adr/0011-recruiter-reviewability.md`; user answers Q-RV2..Q-RV9 recorded there (2026-10-27); Q-RV1 (LICENSE holder name) still open. T30 (CV page) is unarchived and replaced by the RV2 tasks. User decisions: MIT license; no seeded or published demo account (reviewer flow); order demo -> CV page -> README.
 

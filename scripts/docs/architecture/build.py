@@ -65,7 +65,7 @@ flowchart LR
     admin["cms-admin<br/>React 19 SPA on nginx :8080"]
     api["cms-api<br/>NestJS 11 :3000 /api/v1<br/>REST + read-only GraphQL"]
     init["cms-api init container<br/>deploy:migrate"]
-    pg[("PostgreSQL 16<br/>public: Prisma<br/>content: Kysely")]
+    pg[("PostgreSQL 17<br/>public: Prisma<br/>content: Kysely")]
   end
   cloud["Cloudinary<br/>media storage"]
   smtp["SMTP<br/>OTP / invite mail"]
@@ -1282,7 +1282,7 @@ flowchart TB
     end
     webpod["web Pod<br/>Next.js standalone :8080 uid 1000"]
     admpod["cms-admin Pod<br/>nginx-unprivileged :8080 uid 101"]
-    pg[("PostgreSQL 16 on a PVC")]
+    pg[("PostgreSQL 17 on a PVC")]
     sec["Secret (SOPS / sealed-secrets)"]
     bk["nightly dump + restore drill<br/>(deploy repo)"]
   end
@@ -1365,7 +1365,7 @@ flowchart LR
     adm["cms-admin: pnpm dev (Vite) :5173<br/>admin.domain.localhost"]
     web["web: pnpm dev (Next.js) :5174<br/>domain.localhost"]
     api["cms-api: pnpm start:dev :3000<br/>nest --watch, loads .env.local"]
-    pg[("Postgres 16 container :5432")]
+    pg[("Postgres 17 container :5432")]
   end
   dev --> adm
   dev --> web
@@ -1377,7 +1377,7 @@ flowchart LR
 """
     first = """
 flowchart TB
-  a["1. Start Postgres 16"] --> b["2. Write apps/cms-api/.env.local<br/>DB_*, three secrets, ADMIN_ORIGIN, WEB_ORIGIN,<br/>MAIL_PROVIDER=console, MEDIA_PROVIDER=fake, OWNER_SETUP_TOKEN"]
+  a["1. Start Postgres 17"] --> b["2. Write apps/cms-api/.env.local<br/>DB_*, three secrets, ADMIN_ORIGIN, WEB_ORIGIN,<br/>MAIL_PROVIDER=console, MEDIA_PROVIDER=fake, OWNER_SETUP_TOKEN"]
   b --> c["3. Export .env.local into the shell<br/>(migrations do not read it)"]
   c --> d["4. pnpm build (in apps/cms-api)"]
   d --> e["5. pnpm deploy:migrate<br/>check DB_NAME is the database you look at"]
@@ -1392,7 +1392,7 @@ flowchart LR
   build --> up["docker compose -p abyss-smoke"]
   subgraph stack["docker-compose.smoke.yml"]
     tr["Traefik :8080"]
-    db[("postgres:16")]
+    db[("postgres:17")]
     mp["Mailpit"]
     init["cms-api-init<br/>deploy:migrate"]
     api["cms-api"]
