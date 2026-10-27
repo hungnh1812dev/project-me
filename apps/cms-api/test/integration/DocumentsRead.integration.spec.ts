@@ -170,7 +170,7 @@ describe('document read API (T20; Postgres 16 via Testcontainers)', () => {
   let accountCount = 0;
   let owner: string;
   let editor: string;
-  let guest: string;
+  let noAccess: string;
   let narrowReader: string;
   let priorityThree: string;
   let publicRoleId: string;
@@ -250,7 +250,8 @@ describe('document read API (T20; Postgres 16 via Testcontainers)', () => {
     publicRoleId = roles.find((r) => r.slug === 'public')?.documentId ?? '';
     owner = await signedIn('owner');
     editor = await signedIn('editor');
-    guest = await signedIn('guest');
+    await customRole('no-access', 15, []);
+    noAccess = await signedIn('no-access');
     await customRole('narrow-readers', 20, [
       {
         subject: 'article',
@@ -591,7 +592,7 @@ describe('document read API (T20; Postgres 16 via Testcontainers)', () => {
     });
 
     it('a role without read on the type gets 403', async () => {
-      expect((await list('', bearer(guest))).status).toBe(403);
+      expect((await list('', bearer(noAccess))).status).toBe(403);
     });
 
     it('masks unreadable fields and never sends their raw values', async () => {

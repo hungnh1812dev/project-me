@@ -29,8 +29,8 @@ describe('system roles table (SPEC §6)', () => {
     );
   });
 
-  it('keeps public and reviewer read-only by default', () => {
-    for (const slug of ['public', 'reviewer'] as const) {
+  it('keeps public, guest and reviewer read-only by default', () => {
+    for (const slug of ['public', 'guest', 'reviewer'] as const) {
       const actions = DEFAULT_ROLE_PERMISSIONS[slug].flatMap(
         (row) => row.actions,
       );

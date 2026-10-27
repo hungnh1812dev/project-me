@@ -48,7 +48,9 @@ export const SYSTEM_ROLES = [
     name: 'Guest',
     rank: 10,
     assignable: true,
-    defaultPermissions: [],
+    defaultPermissions: [
+      { subject: CONTENT_WILDCARD_SUBJECT, actions: [PermissionAction.read] },
+    ],
   },
   {
     slug: 'reviewer',
@@ -129,7 +131,16 @@ export const PUBLIC_ROLE_SLUG = 'public' satisfies SystemRoleSlug;
  */
 export const SENSITIVE_MASKED_ROLE_SLUGS: readonly SystemRoleSlug[] = [
   PUBLIC_ROLE_SLUG,
+  GUEST_ROLE_SLUG,
   REVIEWER_ROLE_SLUG,
+];
+
+/**
+ * Signed-in system roles that, like anonymous visitors and reviewers, never
+ * see `createdBy` / `updatedBy` (read-only readers, user decision 2026-10-27).
+ */
+export const ACCOUNT_REFERENCES_HIDDEN_ROLE_SLUGS: readonly SystemRoleSlug[] = [
+  GUEST_ROLE_SLUG,
 ];
 
 /** System roles an invited account may never hold. */

@@ -7,6 +7,7 @@ import {
 } from './Access.constants';
 import type { ActorContext, ActorKind } from './ActorContext.entity';
 import type { FieldSelection } from './PolicyEvaluator.rules';
+import { ACCOUNT_REFERENCES_HIDDEN_ROLE_SLUGS } from './SystemRoles.entity';
 
 /**
  * What of a record an actor may read: its readable content fields (from
@@ -31,14 +32,24 @@ const PUBLIC_SYSTEM_FIELDS: ReadonlySet<RecordSystemField> = new Set(
   RECORD_SYSTEM_FIELDS.filter((field) => !ACCOUNT_REFERENCES.has(field)),
 );
 
-/** Anonymous visitors and reviewers never see `createdBy` / `updatedBy`. */
+function hidesAccountReferences(actor: ActorContext): boolean {
+  return (
+    HIDDEN_FROM.has(actor.kind) ||
+    (actor.role.isSystem &&
+      (ACCOUNT_REFERENCES_HIDDEN_ROLE_SLUGS as readonly string[]).includes(
+        actor.role.slug,
+      ))
+  );
+}
+
+/** Anonymous visitors, reviewers and guests never see `createdBy` / `updatedBy`. */
 export function recordReadAccess(
   actor: ActorContext,
   fields: FieldSelection,
 ): RecordReadAccess {
   return {
     fields,
-    systemFields: HIDDEN_FROM.has(actor.kind)
+    systemFields: hidesAccountReferences(actor)
       ? PUBLIC_SYSTEM_FIELDS
       : ALL_SYSTEM_FIELDS,
   };

@@ -1,18 +1,22 @@
-import { COPY } from '../config/Copy.constants';
-import { StatusCard } from '../features/status/StatusCard';
+import type { Metadata } from 'next';
 
-export default function HomePage() {
-  return (
-    <>
-      <h1 className="text-2xl font-semibold tracking-tight">
-        {COPY.page.title}
-      </h1>
-      <p className="mt-2 max-w-prose text-sm text-muted-foreground">
-        {COPY.page.description}
-      </p>
-      <div className="mt-8">
-        <StatusCard />
-      </div>
-    </>
-  );
+import { CvView, loadCvPage, mainResumeOf } from '../features/cv';
+
+export async function generateMetadata(): Promise<Metadata> {
+  try {
+    const resume = mainResumeOf(await loadCvPage());
+    if (!resume?.name) return {};
+    return {
+      title: resume.position
+        ? `${resume.name} - ${resume.position}`
+        : resume.name,
+    };
+  } catch {
+    // The page itself reports the failure; the title keeps the app default.
+    return {};
+  }
+}
+
+export default async function HomePage() {
+  return <CvView initialData={await loadCvPage()} />;
 }

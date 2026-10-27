@@ -72,7 +72,7 @@ describe('content types API (T17b; Postgres 16 via Testcontainers)', () => {
   let accountCount = 0;
   let owner: string;
   let editor: string;
-  let guest: string;
+  let noAccess: string;
   /** Custom role: `roles:read/update`, no content rights at all. */
   let roleManager: string;
   /** Custom role: reads `article` title + reference.phone only. */
@@ -108,7 +108,8 @@ describe('content types API (T17b; Postgres 16 via Testcontainers)', () => {
     );
     owner = await signedIn('owner');
     editor = await signedIn('editor');
-    guest = await signedIn('guest');
+    await customRole('no-access', 15, []);
+    noAccess = await signedIn('no-access');
     await customRole('role-managers', 30, [
       { subject: 'roles', action: 'read' },
       { subject: 'roles', action: 'update' },
@@ -284,7 +285,7 @@ describe('content types API (T17b; Postgres 16 via Testcontainers)', () => {
   });
 
   it('gives a role with no content read an empty list', async () => {
-    expect(await list(guest)).toEqual([]);
+    expect(await list(noAccess)).toEqual([]);
   });
 
   it('answers the same 404 for an unknown type and an unreadable one', async () => {
@@ -293,7 +294,7 @@ describe('content types API (T17b; Postgres 16 via Testcontainers)', () => {
       await getOne(owner, '__proto__'),
       await getOne(owner, "article'; drop table x"),
       await getOne(narrowReader, 'note'),
-      await getOne(guest, 'article'),
+      await getOne(noAccess, 'article'),
     ];
     for (const res of responses) {
       expect(res.status).toBe(404);

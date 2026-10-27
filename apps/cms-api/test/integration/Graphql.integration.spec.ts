@@ -176,7 +176,7 @@ describe('GraphQL read API (GQ2; Postgres 16 via Testcontainers)', () => {
   let accountCount = 0;
   let owner: string;
   let editor: string;
-  let guest: string;
+  let noAccess: string;
   let narrowReader: string;
   let priorityThree: string;
   let publicRoleId: string;
@@ -269,7 +269,8 @@ describe('GraphQL read API (GQ2; Postgres 16 via Testcontainers)', () => {
     publicRoleId = roles.find((r) => r.slug === 'public')?.documentId ?? '';
     owner = await signedIn('owner');
     editor = await signedIn('editor');
-    guest = await signedIn('guest');
+    await customRole('no-access', 15, []);
+    noAccess = await signedIn('no-access');
     await customRole('narrow-readers', 20, [
       {
         subject: 'article',
@@ -631,10 +632,10 @@ describe('GraphQL read API (GQ2; Postgres 16 via Testcontainers)', () => {
 
     it('a type the role cannot read fails exactly like an unknown field', async () => {
       const hidden = await gql('{ articleList { meta { total } } }', {
-        headers: bearer(guest),
+        headers: bearer(noAccess),
       });
       const unknown = await gql('{ nopeList { meta { total } } }', {
-        headers: bearer(guest),
+        headers: bearer(noAccess),
       });
       expect(hidden.status).toBe(400);
       expect(bodyOf(hidden).errors?.[0]?.message).toBe(MESSAGE('articleList'));
@@ -665,7 +666,7 @@ describe('GraphQL read API (GQ2; Postgres 16 via Testcontainers)', () => {
       });
       await setPermissions(publicRoleId, [{ subject: 'note', action: 'read' }]);
       try {
-        for (const headers of [() => asAnonymous(), () => bearer(guest)]) {
+        for (const headers of [() => asAnonymous(), () => bearer(noAccess)]) {
           for (const [i, hiddenQuery] of queries(HIDDEN).entries()) {
             const hidden = await gql(hiddenQuery, { headers: headers() });
             const unknown = await gql(queries(UNKNOWN)[i] ?? '', {
@@ -706,7 +707,7 @@ describe('GraphQL read API (GQ2; Postgres 16 via Testcontainers)', () => {
         });
       await setPermissions(publicRoleId, [{ subject: 'note', action: 'read' }]);
       try {
-        for (const headers of [() => asAnonymous(), () => bearer(guest)]) {
+        for (const headers of [() => asAnonymous(), () => bearer(noAccess)]) {
           const hidden = queries('Article', 'Article_Reference');
           const unknown = queries('Zzzzzzz', 'Zzzzzzz_Zzzzzzzzz');
           for (const [i, query] of hidden.entries()) {
@@ -726,12 +727,12 @@ describe('GraphQL read API (GQ2; Postgres 16 via Testcontainers)', () => {
 
     it('arguments of a hidden field do not reveal it, and no hint names it', async () => {
       const probe = await gql('{ articleList(bogus: 1) { nope } }', {
-        headers: bearer(guest),
+        headers: bearer(noAccess),
       });
       expect(bodyOf(probe).errors).toHaveLength(1);
       expect(bodyOf(probe).errors?.[0]?.message).toBe(MESSAGE('articleList'));
       const typo = await gql('{ articleLis { meta { total } } }', {
-        headers: bearer(guest),
+        headers: bearer(noAccess),
       });
       expect(bodyOf(typo).errors?.[0]?.message).toBe(MESSAGE('articleLis'));
     });

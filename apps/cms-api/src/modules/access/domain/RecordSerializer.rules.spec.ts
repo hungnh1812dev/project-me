@@ -1,3 +1,5 @@
+import { accountActor } from './ActorContext.entity';
+import { systemRole } from '../../../../test/fixtures/Access.fixture';
 import {
   accountAccess,
   ACTORS_BY_KIND,
@@ -252,6 +254,20 @@ describe('RecordSerializer account references by actor kind (decision T16)', () 
       }
     },
   );
+});
+
+describe('RecordSerializer account references for the guest role', () => {
+  it('omits createdBy/updatedBy for a guest account, like public', () => {
+    const { record } = rawRecord(type);
+    const guest = accountActor(1, systemRole('guest'));
+    const out = serializer.serialize(
+      record,
+      recordReadAccess(guest, FieldSelection.ALL),
+    );
+    for (const field of ACCOUNT_REFERENCE_FIELDS) {
+      expect(Object.hasOwn(out, field)).toBe(false);
+    }
+  });
 });
 
 describe('RecordSerializer property: no unreadable raw value leaks', () => {

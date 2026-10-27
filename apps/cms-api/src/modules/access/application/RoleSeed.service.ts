@@ -48,8 +48,8 @@ export class RoleSeedService {
   }
 
   /**
-   * Seeds the default permission rows into each system role that has none
-   * yet, so the Owner's later edits are never overwritten. Run after
+   * Seeds the default permission rows into each system role once (marker on
+   * the role), so the Owner's later edits are never overwritten. Run after
    * `seedSystemRoles`. Returns the slugs it seeded.
    */
   seedRolePermissions(): Promise<string[]> {

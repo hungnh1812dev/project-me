@@ -81,7 +81,7 @@ const MATRIX: Record<
     content: [read, create, update, publish, unpublish],
     system: { media: [read, create, update] },
   },
-  guest: { content: [], system: {} },
+  guest: { content: [read], system: {} },
   reviewer: { content: [read], system: { media: [read] } },
   public: { content: [read], system: {} },
 };
@@ -253,7 +253,7 @@ describe('fieldsFor', () => {
   });
 
   it('no permission: nothing readable or writable', () => {
-    const fields = evaluator.fieldsFor(account(systemRole('guest')), CONTENT);
+    const fields = evaluator.fieldsFor(account(customRole(20, [])), CONTENT);
     expect(fields.readable.paths).toEqual([]);
     expect(fields.writable.paths).toEqual([]);
   });
@@ -391,7 +391,7 @@ describe('rowFilter', () => {
 
   it('denies without permission and is unrestricted without conditions', () => {
     expect(
-      evaluator.rowFilter(account(systemRole('guest')), read, CONTENT),
+      evaluator.rowFilter(account(customRole(20, [])), read, CONTENT),
     ).toEqual({ allowed: false });
     expect(
       evaluator.rowFilter(account(systemRole('editor')), read, CONTENT),
@@ -551,10 +551,10 @@ describe('PolicyEvaluator.effectivePermissions (T33a)', () => {
     ).toEqual(['article:read', 'note:read']);
   });
 
-  it('is empty for guest and sorted', () => {
-    expect(
-      evaluator.effectivePermissions(account(systemRole('guest'))),
-    ).toEqual([]);
+  it('is empty without grants and sorted', () => {
+    expect(evaluator.effectivePermissions(account(customRole(20, [])))).toEqual(
+      [],
+    );
     const list = evaluator.effectivePermissions(account(systemRole('owner')));
     expect(list).toEqual([...list].sort());
   });

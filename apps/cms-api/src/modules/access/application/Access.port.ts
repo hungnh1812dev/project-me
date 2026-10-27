@@ -93,8 +93,10 @@ export interface RoleSeedStore {
   /** Inserts the missing roles as system roles and updates none. */
   insertMissingSystemRoles(roles: readonly SystemRoleSeed[]): Promise<void>;
   /**
-   * Gives each listed system role its default rows when it has none, under
-   * one lock that serialises concurrent seeds. Returns the slugs it seeded.
+   * Gives each listed system role its default rows once: only a role not yet
+   * marked as seeded, which is then marked, so the Owner's later edits (even
+   * an empty list) stay. Runs under one lock that serialises concurrent
+   * seeds. Returns the slugs that received rows.
    */
   seedPermissionsWhereMissing(
     defaults: Readonly<Record<string, readonly DefaultPermissionSeed[]>>,

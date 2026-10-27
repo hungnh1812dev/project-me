@@ -139,8 +139,8 @@ definition, with no duplicates.
 ### Sensitive fields (SPEC D2, task RV-mask)
 
 A field marked `sensitive: true` in its definition is not covered by the
-wildcard `*` content grant of the `public` and `reviewer` system roles
-(`SENSITIVE_MASKED_ROLE_SLUGS` in `SystemRoles.entity.ts`). For those two
+wildcard `*` content grant of the `public`, `guest` and `reviewer` system roles
+(`SENSITIVE_MASKED_ROLE_SLUGS` in `SystemRoles.entity.ts`). For those
 roles, `PolicyEvaluator.fieldsFor` turns "all fields from the `*` row" into
 "all fields except the sensitive ones" (`nonSensitiveFieldList` in
 `FieldPaths.rules.ts`; a component that holds a sensitive child is split into
@@ -161,7 +161,7 @@ paths with the same `FieldSelection` the serializer uses:
 - a type is visible when `can(actor, read, slug)`; its paths are those
   `fieldsFor(actor, slug).readable.reaches(path)` keeps, and its system
   fields follow `recordReadAccess` (no `createdBy` / `updatedBy` for
-  reviewers or anonymous actors);
+  reviewers, guests or anonymous actors);
 - an actor allowed `roles:update` (`FULL_CATALOG_PERMISSION`) sees every type
   and field, since a role manager has to name fields it may not read itself
   (decision T17b). Field names are schema, not record data, and the rank
@@ -227,7 +227,8 @@ Decisions (T16):
   and may be filtered and sorted on. Field lists cannot name them.
 - **Account references** (user decision T16): `createdBy` and `updatedBy`
   are shown to signed-in accounts and API tokens only. For anonymous and
-  reviewer actors (`ACCOUNT_REFERENCES_HIDDEN_FROM`) they are **omitted**
+  reviewer actors (`ACCOUNT_REFERENCES_HIDDEN_FROM`) and for the `guest`
+  role (`ACCOUNT_REFERENCES_HIDDEN_ROLE_SLUGS`, user decision 2026-10-27) they are **omitted**
   (the keys are absent, not masked, and not in `_maskedFields`, which lists
   content fields only). `selectedColumns` does not select `created_by` /
   `updated_by` for them, and `QueryGuard` rejects filter, sort and search on
@@ -294,7 +295,7 @@ matched item (`componentUid`) keeps them.
 **Query path.** `QueryGuard.assert({ filter, sort, search }, access)`
 takes the field paths a list query uses. System fields the access includes
 pass. An unknown path is 400 `FIELD_UNKNOWN`. An unreadable field, or
-`createdBy` / `updatedBy` for an anonymous or reviewer actor, is 400
+`createdBy` / `updatedBy` for an anonymous, reviewer or guest actor, is 400
 `FIELD_NOT_READABLE`.
 T20 (`DocumentsQueryService.list`) calls it with the `filter` and `sort`
 paths before any SQL is built; a free-text search (not built yet) must only
@@ -363,7 +364,11 @@ exclude the row, never gets raw or unreadable values back; the 200/201 bodies us
 
 ## Default role matrix (seed, decision T14)
 
-These rows are seeded only into a system role that has no rows yet. All
+These rows are seeded once per system role: `roles.default_permissions_seeded_at`
+marks the role as seeded (the migration marks roles that already have rows),
+so an Owner's later edits, including emptying the role, survive every deploy.
+A role without the marker (for example `guest` on a database from before it
+had defaults) is seeded on the next `db:migrate`. All
 fields are allowed and there are no conditions.
 
 | Role       | Content (`*`)                            | System subjects                                               |
@@ -371,7 +376,7 @@ fields are allowed and there are no conditions.
 | `owner`    | everything (evaluator, no rows)          | everything valid (no rows)                                    |
 | `admin`    | all 6 actions                            | accounts, roles, api_tokens, media: read/create/update/delete |
 | `editor`   | read, create, update, publish, unpublish | media: read, create, update                                   |
-| `guest`    | none                                     | none                                                          |
+| `guest`    | read (published only)                    | none                                                          |
 | `reviewer` | read (published only)                    | media: read                                                   |
 | `public`   | read (published only)                    | none                                                          |
 

@@ -1,73 +1,83 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
 
 import { COPY } from '../config/Copy.constants';
-import { fetchLiveHealth } from '../features/status/Health.api';
-import HomePage from './page';
+import { fakeApi, Wrapper } from '../features/session/Session.fixture';
+import type { CvPageData } from '../features/cv/Cv.graphql';
+import { fetchGraphql } from '../lib/Graphql.server';
+import HomePage, { generateMetadata } from './page';
 
-vi.mock('../features/status/Health.api', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('../features/status/Health.api')>()),
-  fetchLiveHealth: vi.fn<typeof fetchLiveHealth>(),
+vi.mock('../lib/Graphql.server', () => ({
+  fetchGraphql: vi.fn<typeof fetchGraphql>(),
 }));
+const fetchGraphqlMock = vi.mocked(fetchGraphql);
 
-const fetchLiveHealthMock = vi.mocked(fetchLiveHealth);
+const EMPTY: CvPageData = { resumeList: { data: [] }, cvContact: null };
+const WITH_RESUME = {
+  resumeList: {
+    data: [{ documentId: 'r1', name: 'Mai Server', position: 'Engineer' }],
+  },
+  cvContact: null,
+} as unknown as CvPageData;
 
-function renderPage() {
-  const client = new QueryClient({
-    defaultOptions: { queries: { retry: false } },
-  });
-  return render(
-    <QueryClientProvider client={client}>
-      <HomePage />
-    </QueryClientProvider>,
-  );
+async function renderPage() {
+  const page = await HomePage();
+  return render(<Wrapper api={fakeApi()}>{page}</Wrapper>);
 }
 
 describe('HomePage', () => {
   beforeEach(() => {
-    fetchLiveHealthMock.mockReset();
+    fetchGraphqlMock.mockReset();
   });
 
-  it('renders the status page and reports a healthy API', async () => {
-    fetchLiveHealthMock.mockResolvedValue({ status: 'ok' });
-    renderPage();
-
+  it('renders the name and position of the main resume', async () => {
+    fetchGraphqlMock.mockResolvedValue(WITH_RESUME);
+    await renderPage();
     expect(
-      screen.getByRole('heading', { level: 1, name: COPY.page.title }),
+      screen.getByRole('heading', { level: 1, name: 'Mai Server' }),
     ).toBeInTheDocument();
-    expect(await screen.findByText(COPY.status.state.ok)).toBeInTheDocument();
-    expect(screen.getByText(/\/api\/v1\/health\/live$/)).toBeInTheDocument();
-    // The button comes from @abyss/form-commons.
+    expect(screen.getByText('Engineer')).toBeInTheDocument();
+  });
+
+  it('renders the empty state when the list is empty', async () => {
+    fetchGraphqlMock.mockResolvedValue(EMPTY);
+    await renderPage();
     expect(
-      screen.getByRole('button', { name: COPY.status.checkAgain }),
-    ).toHaveAttribute('data-slot', 'button');
+      screen.getByRole('heading', { level: 1, name: COPY.cv.emptyTitle }),
+    ).toBeInTheDocument();
   });
 
-  it('shows the error state and recovers on "check again"', async () => {
-    fetchLiveHealthMock
-      .mockRejectedValueOnce(new Error('Network Error'))
-      .mockResolvedValue({ status: 'ok' });
-    renderPage();
-
-    expect(await screen.findByRole('alert')).toHaveTextContent(
-      COPY.status.errorHint,
+  it('lets a failed load reach the error boundary', async () => {
+    fetchGraphqlMock.mockImplementation(() =>
+      Promise.reject(new Error('down')),
     );
-    expect(screen.getByRole('status')).toHaveTextContent(
-      COPY.status.state.error,
-    );
+    let caught: unknown;
+    try {
+      await HomePage();
+    } catch (error) {
+      caught = error;
+    }
+    expect((caught as Error).message).toBe('down');
+  });
+});
 
-    await userEvent.click(
-      screen.getByRole('button', { name: COPY.status.checkAgain }),
-    );
-
-    expect(await screen.findByText(COPY.status.state.ok)).toBeInTheDocument();
-    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+describe('generateMetadata', () => {
+  beforeEach(() => {
+    fetchGraphqlMock.mockReset();
   });
 
-  it('treats an unexpected health body as unreachable', async () => {
-    fetchLiveHealthMock.mockResolvedValue({ status: 'error' });
-    renderPage();
-    expect(await screen.findByRole('alert')).toBeInTheDocument();
+  it('titles the page with name and position', async () => {
+    fetchGraphqlMock.mockResolvedValue(WITH_RESUME);
+    await expect(generateMetadata()).resolves.toEqual({
+      title: 'Mai Server - Engineer',
+    });
+  });
+
+  it('keeps the default title when there is no resume or the load fails', async () => {
+    fetchGraphqlMock.mockResolvedValueOnce(EMPTY);
+    await expect(generateMetadata()).resolves.toEqual({});
+    fetchGraphqlMock.mockImplementationOnce(() =>
+      Promise.reject(new Error('down')),
+    );
+    await expect(generateMetadata()).resolves.toEqual({});
   });
 });

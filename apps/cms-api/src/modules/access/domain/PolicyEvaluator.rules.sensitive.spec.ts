@@ -76,6 +76,7 @@ describe('nonSensitiveFieldList', () => {
 describe('sensitive fields and the wildcard grant (SPEC D2)', () => {
   it.each([
     ['anonymous (public role)', anonymousActor(systemRole('public'))],
+    ['guest', accountActor(1, systemRole('guest'))],
     ['reviewer', reviewerActor(1, 2, systemRole('reviewer'))],
   ])('masks them for %s', (_label, actor) => {
     const readable = readableOf(actor);

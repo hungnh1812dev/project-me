@@ -4,9 +4,17 @@ Public site. Next.js 16 (App Router) with React 19, run by Node in its own
 container behind Traefik at `<domain>`; the API lives on the same origin under
 `/api`. Decisions: [ADR 0004](../../docs/adr/0004-web-nextjs-app-router.md).
 
-For now the app is a skeleton: one status page that calls
-`GET /api/v1/health/live` from the browser and renders a status card built with
-`@abyss/form-commons`.
+Routes:
+
+- `/` is the CV page. `app/page.tsx` (Server Component) loads the `CvPage`
+  GraphQL document through `features/cv` (`loadCvPage`, public role) and hands
+  it to the client `CvView`. Anonymous visitors see the server data; a signed-in
+  account or a reviewer session refetches the same document from the browser
+  with its own Bearer token (`useCvContent`, keyed by actor), and sign-out
+  returns to the server data. No main resume gives an empty state. Resume
+  sections and masked placeholders are filled in by the sections task.
+- `/status` is the API status card (`GET /api/v1/health/live` from the browser,
+  built with `@abyss/form-commons`). It is not linked from the header.
 
 ## Run
 

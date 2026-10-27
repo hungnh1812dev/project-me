@@ -140,6 +140,16 @@ export const COPY = {
     description:
       'There is nothing at this address. Check the link and try again.',
   },
+  cv: {
+    loading: 'Loading the CV',
+    refetchFailed:
+      'The CV could not be loaded for your session. Reload the page to try again.',
+    fallbackName: 'Curriculum vitae',
+    emptyTitle: 'No CV published yet',
+    emptyDescription:
+      'The owner has not published a main resume. Check back later.',
+    maskedValue: 'Sign in to view',
+  },
   status: {
     cardTitle: 'Content API',
     cardDescription: 'Liveness check on the API this site loads content from.',

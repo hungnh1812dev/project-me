@@ -59,7 +59,7 @@ describe('default role permissions seed (Postgres 16 via Testcontainers)', () =>
   it('seeds the decided matrix with all fields and no conditions', async () => {
     const prisma = await database();
     expect((await seedRolePermissions(prisma)).sort()).toEqual(
-      ['admin', 'editor', 'public', 'reviewer'].sort(),
+      ['admin', 'editor', 'guest', 'public', 'reviewer'].sort(),
     );
     const bySlug = await rowsBySlug(prisma);
     for (const { slug } of SYSTEM_ROLES) {
@@ -81,19 +81,41 @@ describe('default role permissions seed (Postgres 16 via Testcontainers)', () =>
     }
   });
 
-  it('is idempotent and never touches a role that already has rows', async () => {
+  it('seeds once: a role the Owner emptied or edited is never refilled', async () => {
     const prisma = await database();
+    await seedRolePermissions(prisma);
     const editor = await prisma.role.findUniqueOrThrow({
       where: { slug: 'editor' },
     });
-    await prisma.permission.create({
-      data: { roleId: editor.id, subject: 'media', action: 'read' },
+    await prisma.permission.deleteMany({ where: { roleId: editor.id } });
+    const admin = await prisma.role.findUniqueOrThrow({
+      where: { slug: 'admin' },
     });
-    await seedRolePermissions(prisma);
+    await prisma.permission.deleteMany({
+      where: { roleId: admin.id, subject: { not: 'media' } },
+    });
     expect(await seedRolePermissions(prisma)).toEqual([]);
     const bySlug = await rowsBySlug(prisma);
-    expect(bySlug.get('editor')).toEqual(['media:read']);
-    expect(bySlug.get('admin')?.sort()).toEqual(expected('admin'));
+    expect(bySlug.get('editor')).toBeUndefined();
+    expect(bySlug.get('admin')?.every((row) => row.startsWith('media:'))).toBe(
+      true,
+    );
+  });
+
+  it('never touches a role that already has rows and is not marked yet', async () => {
+    const prisma = await database();
+    const guest = await prisma.role.findUniqueOrThrow({
+      where: { slug: 'guest' },
+    });
+    await prisma.permission.create({
+      data: { roleId: guest.id, subject: 'media', action: 'read' },
+    });
+    await prisma.role.update({
+      where: { id: guest.id },
+      data: { defaultPermissionsSeededAt: new Date() },
+    });
+    await seedRolePermissions(prisma);
+    expect((await rowsBySlug(prisma)).get('guest')).toEqual(['media:read']);
   });
 
   it('concurrent runs seed each role once', async () => {

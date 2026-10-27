@@ -142,23 +142,22 @@ export class PrismaRolePolicyRepository
       await tx.$executeRaw`SELECT pg_advisory_xact_lock(${ROLE_PERMISSIONS_SEED_LOCK_KEY})`;
       const roles = await tx.role.findMany({
         where: { slug: { in: Object.keys(defaults) }, isSystem: true },
-        select: {
-          id: true,
-          slug: true,
-          // One row is enough to know the role was already configured.
-          permissions: { select: { id: true }, take: 1 },
-        },
+        select: { id: true, slug: true, defaultPermissionsSeededAt: true },
       });
       const seeded: string[] = [];
       for (const role of roles) {
         const rows = defaults[role.slug] ?? [];
-        if (role.permissions.length > 0 || rows.length === 0) continue;
+        if (role.defaultPermissionsSeededAt !== null) continue;
         await tx.permission.createMany({
           data: rows.flatMap(({ subject, actions }) =>
             actions.map((action) => ({ roleId: role.id, subject, action })),
           ),
         });
-        seeded.push(role.slug);
+        await tx.role.update({
+          where: { id: role.id },
+          data: { defaultPermissionsSeededAt: new Date() },
+        });
+        if (rows.length > 0) seeded.push(role.slug);
       }
       return seeded;
     });
