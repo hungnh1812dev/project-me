@@ -16,3 +16,8 @@ allowBuilds:
   protobufjs: false
   ssh2: false
   unrs-resolver: false
+
+# GHSA-q7qp-rjg7-q26m (multer DoS, fixed in 2.5.0): @nestjs/platform-express
+# pins multer 2.4.0 exactly. Drop this when a Nest release pins >= 2.5.0.
+overrides:
+  multer: 2.5.0
