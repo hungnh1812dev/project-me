@@ -44,6 +44,19 @@ export const TEST_CLOUDINARY_CLOUD_NAME = 'test-cloud';
 export const TEST_CLOUDINARY_API_KEY = 'test-cloudinary-key';
 export const TEST_CLOUDINARY_API_SECRET = 'test-cloudinary-secret';
 
+export const TEST_BACKUP_ENDPOINT = 'https://account.r2.example.test';
+export const TEST_BACKUP_BUCKET = 'abyss-backups';
+export const TEST_BACKUP_ACCESS_KEY_ID = 'test-backup-access-key-id';
+export const TEST_BACKUP_SECRET_ACCESS_KEY = 'test-backup-secret-access-key';
+
+/** The four backup bucket keys that are set together (ADR 0013). */
+export const TEST_BACKUP_ENV: Record<string, string> = {
+  BACKUP_STORAGE_ENDPOINT: TEST_BACKUP_ENDPOINT,
+  BACKUP_STORAGE_BUCKET: TEST_BACKUP_BUCKET,
+  BACKUP_STORAGE_ACCESS_KEY_ID: TEST_BACKUP_ACCESS_KEY_ID,
+  BACKUP_STORAGE_SECRET_ACCESS_KEY: TEST_BACKUP_SECRET_ACCESS_KEY,
+};
+
 export function devEnv(
   overrides: Record<string, string | undefined> = {},
 ): Record<string, string | undefined> {

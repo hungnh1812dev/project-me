@@ -15,6 +15,7 @@ function secretState(value: string | undefined): string {
 export function summarizeConfig(config: IAppConfig): Record<string, unknown> {
   const { smtp } = config.mail;
   const { cloudinary } = config.media;
+  const { backups } = config;
 
   return {
     env: config.env,
@@ -67,6 +68,17 @@ export function summarizeConfig(config: IAppConfig): Record<string, unknown> {
               folder: cloudinary.folder,
             },
     },
+    backups:
+      backups === undefined
+        ? undefined
+        : {
+            endpoint: backups.endpoint,
+            region: backups.region,
+            bucket: backups.bucket,
+            prefix: backups.prefix,
+            accessKeyId: secretState(backups.accessKeyId),
+            secretAccessKey: secretState(backups.secretAccessKey),
+          },
     reviewer: {
       turnstileExpectedHostname: config.reviewer.turnstileExpectedHostname,
     },

@@ -2,6 +2,7 @@ import { z } from 'zod';
 
 import {
   ALLOWED_ORIGIN_PROTOCOLS,
+  BACKUP_STORAGE_PREFIX_PATTERN,
   CONFIG_DEFAULTS,
   JWT_KID_PATTERN,
   LOGIN_RATE_LIMIT_OVERRIDE_OPT_IN,
@@ -149,6 +150,23 @@ export const envSchema = z
         })
         .optional(),
     ),
+    BACKUP_STORAGE_ENDPOINT: optionalOrigin,
+    BACKUP_STORAGE_REGION: z.preprocess(
+      emptyToUndefined,
+      z.string().min(1).default(CONFIG_DEFAULTS.BACKUP_STORAGE_REGION),
+    ),
+    BACKUP_STORAGE_BUCKET: optionalText,
+    BACKUP_STORAGE_PREFIX: z.preprocess(
+      emptyToUndefined,
+      z
+        .string()
+        .regex(BACKUP_STORAGE_PREFIX_PATTERN, {
+          message: 'must end with / and not start with /, e.g. postgres/',
+        })
+        .default(CONFIG_DEFAULTS.BACKUP_STORAGE_PREFIX),
+    ),
+    BACKUP_STORAGE_ACCESS_KEY_ID: optionalSecret,
+    BACKUP_STORAGE_SECRET_ACCESS_KEY: optionalSecret,
   })
   .superRefine((env, ctx) => {
     for (const rule of ENV_RULES) rule(env, ctx);

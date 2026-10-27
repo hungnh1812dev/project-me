@@ -2,6 +2,11 @@ import {
   devEnv,
   productionEnv,
   TEST_ADMIN_ORIGIN,
+  TEST_BACKUP_ACCESS_KEY_ID,
+  TEST_BACKUP_BUCKET,
+  TEST_BACKUP_ENDPOINT,
+  TEST_BACKUP_ENV,
+  TEST_BACKUP_SECRET_ACCESS_KEY,
   TEST_CLOUDINARY_API_KEY,
   TEST_CLOUDINARY_API_SECRET,
   TEST_CLOUDINARY_CLOUD_NAME,
@@ -22,6 +27,7 @@ import {
 import { ConfigValidationError, loadAppConfig } from './AppConfig.setup';
 import { summarizeConfig } from './ConfigSummary.rules';
 import {
+  BACKUP_STORAGE_REQUIRED_KEYS,
   CONFIG_DEFAULTS,
   OPTIONAL_SECRET_ENV_KEYS,
   REDACTED,
@@ -693,5 +699,107 @@ describe('TOTP key config (T13)', () => {
   it.each(['Acme:Admin', 'x'.repeat(65)])('rejects the issuer %s', (issuer) => {
     const error = configErrorOf(devEnv({ TOTP_ISSUER: issuer }));
     expect(error.issues[0]).toMatch(/^TOTP_ISSUER:/);
+  });
+});
+
+describe('backup storage (ADR 0013)', () => {
+  it('is off when none of the keys is set, or they are empty', () => {
+    expect(loadAppConfig(devEnv()).backups).toBeUndefined();
+    const emptied = Object.fromEntries(
+      BACKUP_STORAGE_REQUIRED_KEYS.map((key) => [key, '']),
+    );
+    expect(loadAppConfig(devEnv(emptied)).backups).toBeUndefined();
+  });
+
+  it('reads the four keys and applies the region and prefix defaults', () => {
+    expect(loadAppConfig(devEnv(TEST_BACKUP_ENV)).backups).toEqual({
+      endpoint: TEST_BACKUP_ENDPOINT,
+      region: CONFIG_DEFAULTS.BACKUP_STORAGE_REGION,
+      bucket: TEST_BACKUP_BUCKET,
+      prefix: CONFIG_DEFAULTS.BACKUP_STORAGE_PREFIX,
+      accessKeyId: TEST_BACKUP_ACCESS_KEY_ID,
+      secretAccessKey: TEST_BACKUP_SECRET_ACCESS_KEY,
+    });
+  });
+
+  it('reads a custom region and prefix', () => {
+    const { backups } = loadAppConfig(
+      devEnv({
+        ...TEST_BACKUP_ENV,
+        BACKUP_STORAGE_REGION: 'eu-west-1',
+        BACKUP_STORAGE_PREFIX: 'staging/postgres/',
+      }),
+    );
+    expect(backups?.region).toBe('eu-west-1');
+    expect(backups?.prefix).toBe('staging/postgres/');
+  });
+
+  it.each(BACKUP_STORAGE_REQUIRED_KEYS)(
+    'fails with the key name only when %s is missing',
+    (missingKey) => {
+      const error = configErrorOf(
+        devEnv({ ...TEST_BACKUP_ENV, [missingKey]: undefined }),
+      );
+      expect(error.issues).toHaveLength(1);
+      expect(error.issues[0]).toMatch(new RegExp(`^${missingKey}:`));
+      expect(error.message).not.toContain(TEST_BACKUP_SECRET_ACCESS_KEY);
+      expect(error.message).not.toContain(TEST_BACKUP_ACCESS_KEY_ID);
+    },
+  );
+
+  it('lists every missing key when only one is set', () => {
+    const error = configErrorOf(
+      devEnv({ BACKUP_STORAGE_BUCKET: TEST_BACKUP_BUCKET }),
+    );
+    expect(error.issues.map((issue) => issue.split(':')[0]).sort()).toEqual(
+      BACKUP_STORAGE_REQUIRED_KEYS.filter(
+        (key) => key !== 'BACKUP_STORAGE_BUCKET',
+      ).sort(),
+    );
+  });
+
+  it.each(['postgres', '/postgres/', 'a b'])(
+    'refuses the prefix %j',
+    (prefix) => {
+      const error = configErrorOf(
+        devEnv({ ...TEST_BACKUP_ENV, BACKUP_STORAGE_PREFIX: prefix }),
+      );
+      expect(error.issues[0]).toMatch(/^BACKUP_STORAGE_PREFIX:/);
+    },
+  );
+
+  it('refuses an endpoint with a path', () => {
+    const error = configErrorOf(
+      devEnv({
+        ...TEST_BACKUP_ENV,
+        BACKUP_STORAGE_ENDPOINT: `${TEST_BACKUP_ENDPOINT}/bucket`,
+      }),
+    );
+    expect(error.issues[0]).toMatch(/^BACKUP_STORAGE_ENDPOINT:/);
+  });
+
+  it('accepts an http endpoint in development and refuses it in production', () => {
+    const endpoint = 'http://127.0.0.1:8333';
+    const keys = { ...TEST_BACKUP_ENV, BACKUP_STORAGE_ENDPOINT: endpoint };
+    expect(loadAppConfig(devEnv(keys)).backups?.endpoint).toBe(endpoint);
+    expect(configErrorOf(productionEnv(keys)).issues).toEqual([
+      'BACKUP_STORAGE_ENDPOINT: BACKUP_STORAGE_ENDPOINT must be an https: origin in production',
+    ]);
+  });
+
+  it('accepts a complete https setup in production', () => {
+    expect(
+      loadAppConfig(productionEnv(TEST_BACKUP_ENV)).backups?.endpoint,
+    ).toBe(TEST_BACKUP_ENDPOINT);
+  });
+
+  it('redacts the access key id and secret in the summary', () => {
+    const summary = JSON.stringify(
+      summarizeConfig(loadAppConfig(devEnv(TEST_BACKUP_ENV))),
+    );
+    expect(summary).not.toContain(TEST_BACKUP_ACCESS_KEY_ID);
+    expect(summary).not.toContain(TEST_BACKUP_SECRET_ACCESS_KEY);
+    expect(summary).toContain(TEST_BACKUP_BUCKET);
+    expect(summary).toContain(REDACTED);
   });
 });

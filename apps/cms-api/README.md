@@ -844,6 +844,24 @@ each test file gets its own database on it (`startPostgres()` in
 `test/fixtures/Postgres.fixture.ts`). Jest runs with `--experimental-vm-modules` because the Prisma 7
 client loads its query compiler with a dynamic `import()`.
 
+`S3BackupStorage.integration.spec.ts` also starts an S3 stand-in container
+(`chrislusf/seaweedfs:4.51`) to check listing, lookup and presigned downloads
+of the backup adapter.
+
+### Backup storage config (ADR 0013)
+
+Six optional keys describe the off-site bucket that holds the nightly database
+dumps: `BACKUP_STORAGE_ENDPOINT` (S3 API origin, `https:` in production),
+`BACKUP_STORAGE_REGION` (default `auto`), `BACKUP_STORAGE_BUCKET`,
+`BACKUP_STORAGE_PREFIX` (default `postgres/`, ends with `/`),
+`BACKUP_STORAGE_ACCESS_KEY_ID` and `BACKUP_STORAGE_SECRET_ACCESS_KEY`. Endpoint,
+bucket and both key parts are set together or not at all; unset, the feature is
+off (`loadAppConfig(...).backups` is `undefined`). The key pair is a read-only
+token (list + get), never the backup job's write credential, and both parts are
+redacted in the boot summary. `modules/backups/adapters/S3BackupStorage.adapter.ts`
+implements the `BackupStorage` port (`list`, `find`, `createDownloadUrl`) with
+the official S3 SDK; the endpoints that use it arrive with BK-3.
+
 ## Docker
 
 ```bash

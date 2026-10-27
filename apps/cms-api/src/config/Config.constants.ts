@@ -40,7 +40,25 @@ export const CONFIG_DEFAULTS = {
   SMTP_PORT: 587,
   /** false = plain connect + STARTTLS upgrade; true = TLS from the start (465). */
   SMTP_SECURE: false,
+  /** R2 accepts `auto`; other S3 providers need their own region. */
+  BACKUP_STORAGE_REGION: 'auto',
+  /** Key prefix of the nightly dumps in the bucket (ADR 0013 section 2). */
+  BACKUP_STORAGE_PREFIX: 'postgres/',
 } as const;
+
+/**
+ * The backup bucket is set up with all of these or none of them (ADR 0013
+ * section 4). Region and prefix have defaults and are not part of the group.
+ */
+export const BACKUP_STORAGE_REQUIRED_KEYS = [
+  'BACKUP_STORAGE_ENDPOINT',
+  'BACKUP_STORAGE_BUCKET',
+  'BACKUP_STORAGE_ACCESS_KEY_ID',
+  'BACKUP_STORAGE_SECRET_ACCESS_KEY',
+] as const;
+
+/** Ends with a slash (so `postgres/` never matches `postgres-old/`) and does not start with one. */
+export const BACKUP_STORAGE_PREFIX_PATTERN = /^[^/].*\/$/;
 
 /** JWT `kid` values: short, header- and log-safe. */
 export const JWT_KID_PATTERN = /^[A-Za-z0-9._-]{1,64}$/;

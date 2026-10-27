@@ -61,6 +61,8 @@ export interface IAppConfig {
     /** Set only when MEDIA_PROVIDER=cloudinary. */
     readonly cloudinary: CloudinaryConfig | undefined;
   };
+  /** Set only when the backup bucket keys are set (ADR 0013); undefined = feature off. */
+  readonly backups: BackupStorageConfig | undefined;
   readonly reviewer: {
     /** Hostname Turnstile replies must name; undefined = not checked. */
     readonly turnstileExpectedHostname: string | undefined;
@@ -100,6 +102,18 @@ export interface CloudinaryConfig {
   readonly apiSecret: string;
   /** Folder every object is stored under; undefined = the account root. */
   readonly folder: string | undefined;
+}
+
+export interface BackupStorageConfig {
+  /** S3 API origin; for R2 the `<account-id>.r2.cloudflarestorage.com` host. */
+  readonly endpoint: string;
+  readonly region: string;
+  readonly bucket: string;
+  /** Always ends with `/`. */
+  readonly prefix: string;
+  /** Read-only token (list + get), separate from the backup job's credential. */
+  readonly accessKeyId: string;
+  readonly secretAccessKey: string;
 }
 
 /** Thrown when the environment does not satisfy `envSchema`. Never includes values. */
@@ -176,6 +190,7 @@ export function loadAppConfig(rawEnv: RawEnv): IAppConfig {
       provider: env.MEDIA_PROVIDER,
       cloudinary: cloudinaryConfigOf(env),
     },
+    backups: backupStorageConfigOf(env),
     reviewer: { turnstileExpectedHostname: env.TURNSTILE_EXPECTED_HOSTNAME },
     secrets: {
       jwtAccessSecret: env.JWT_ACCESS_SECRET,
@@ -214,6 +229,26 @@ function cloudinaryConfigOf(env: Env): CloudinaryConfig | undefined {
     apiKey: env.CLOUDINARY_API_KEY,
     apiSecret: env.CLOUDINARY_API_SECRET,
     folder: env.CLOUDINARY_FOLDER,
+  };
+}
+
+function backupStorageConfigOf(env: Env): BackupStorageConfig | undefined {
+  // Env.rules.ts guarantees the four keys together.
+  if (
+    env.BACKUP_STORAGE_ENDPOINT === undefined ||
+    env.BACKUP_STORAGE_BUCKET === undefined ||
+    env.BACKUP_STORAGE_ACCESS_KEY_ID === undefined ||
+    env.BACKUP_STORAGE_SECRET_ACCESS_KEY === undefined
+  ) {
+    return undefined;
+  }
+  return {
+    endpoint: env.BACKUP_STORAGE_ENDPOINT,
+    region: env.BACKUP_STORAGE_REGION,
+    bucket: env.BACKUP_STORAGE_BUCKET,
+    prefix: env.BACKUP_STORAGE_PREFIX,
+    accessKeyId: env.BACKUP_STORAGE_ACCESS_KEY_ID,
+    secretAccessKey: env.BACKUP_STORAGE_SECRET_ACCESS_KEY,
   };
 }
 

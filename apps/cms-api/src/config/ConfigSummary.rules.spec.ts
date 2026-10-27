@@ -28,6 +28,8 @@ const OTHER_SECRET_ENV_KEYS = [
   'CLOUDINARY_API_KEY',
   'CLOUDINARY_API_SECRET',
   'TURNSTILE_SECRET_KEY',
+  'BACKUP_STORAGE_ACCESS_KEY_ID',
+  'BACKUP_STORAGE_SECRET_ACCESS_KEY',
 ] as const;
 
 const SECRET_KEYS_IN_SUMMARY: readonly string[] = [
@@ -48,6 +50,8 @@ const FORMATTED_SENTINELS: Readonly<Record<string, string>> = {
   MEDIA_PROVIDER: 'cloudinary',
   ADMIN_ORIGIN: 'https://sentinel-admin.example.test',
   WEB_ORIGIN: 'https://sentinel-web.example.test',
+  BACKUP_STORAGE_ENDPOINT: 'https://sentinel-backup.example.test',
+  BACKUP_STORAGE_PREFIX: 'sentinel-backup-prefix/',
   ALLOW_LOGIN_RATE_LIMIT_OVERRIDE: 'smoke',
   LOGIN_RATE_LIMIT_IP: '3104',
   LOGIN_RATE_LIMIT_EMAIL: '3105',

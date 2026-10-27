@@ -1,6 +1,7 @@
 import type { z } from 'zod';
 
 import {
+  BACKUP_STORAGE_REQUIRED_KEYS,
   CONFIG_DEFAULTS,
   LOGIN_RATE_LIMIT_OVERRIDE_OPT_IN,
   MIN_SECRET_BYTES,
@@ -90,6 +91,20 @@ const requireSmtpCredentialsTogether: EnvRule = (env, ctx) => {
   }
 };
 
+const requireBackupStorageKeysTogether: EnvRule = (env, ctx) => {
+  const isAnySet = BACKUP_STORAGE_REQUIRED_KEYS.some(
+    (key) => env[key] !== undefined,
+  );
+  if (!isAnySet) return;
+  addMissingIssues(
+    env,
+    ctx,
+    BACKUP_STORAGE_REQUIRED_KEYS,
+    (key) =>
+      `${key} is required when any other BACKUP_STORAGE_* key is set (all four or none)`,
+  );
+};
+
 const requirePreviousTotpKeyPair: EnvRule = (env, ctx) => {
   if (
     (env.TOTP_ENC_PREVIOUS_KEY === undefined) !==
@@ -148,6 +163,17 @@ const rejectConsoleMailProvider: EnvRule = (env, ctx) => {
   }
 };
 
+const requireHttpsBackupEndpoint: EnvRule = (env, ctx) => {
+  const endpoint = env.BACKUP_STORAGE_ENDPOINT;
+  if (endpoint !== undefined && !endpoint.startsWith('https:')) {
+    addIssue(
+      ctx,
+      'BACKUP_STORAGE_ENDPOINT',
+      'BACKUP_STORAGE_ENDPOINT must be an https: origin in production',
+    );
+  }
+};
+
 const requireProductionKeys: EnvRule = (env, ctx) => {
   addMissingIssues(
     env,
@@ -176,6 +202,7 @@ const PRODUCTION_RULES: readonly EnvRule[] = [
   rejectRateLimitOverrideWithoutOptIn,
   rejectFakeMediaProvider,
   rejectConsoleMailProvider,
+  requireHttpsBackupEndpoint,
   requireProductionKeys,
   requireStrongSecrets,
 ];
@@ -184,6 +211,7 @@ const ALWAYS_RULES: readonly EnvRule[] = [
   requireSmtpSettings,
   requireCloudinarySettings,
   requireSmtpCredentialsTogether,
+  requireBackupStorageKeysTogether,
   requirePreviousTotpKeyPair,
   requireDistinctPreviousTotpKid,
 ];
