@@ -9,7 +9,7 @@ import {
   RATE_LIMIT_OVERRIDE_ENV_KEYS,
   SECRET_ENV_KEYS,
 } from './Config.constants';
-import type { Env } from './Env.schema';
+import type { DatabaseEnv, Env } from './Env.schema';
 
 type EnvIssueContext = z.RefinementCtx;
 type EnvRule = (env: Env, ctx: EnvIssueContext) => void;
@@ -207,7 +207,22 @@ const PRODUCTION_RULES: readonly EnvRule[] = [
   requireStrongSecrets,
 ];
 
+/** Shared by `databaseEnvSchema` (migration commands) and `envSchema`. */
+export function requireRootCertificateForVerifyFull(
+  env: DatabaseEnv,
+  ctx: EnvIssueContext,
+): void {
+  if (env.DB_SSL_MODE === 'verify-full' && !env.DB_SSL_ROOT_CERT_PATH) {
+    addIssue(
+      ctx,
+      'DB_SSL_ROOT_CERT_PATH',
+      'DB_SSL_ROOT_CERT_PATH is required when DB_SSL_MODE=verify-full',
+    );
+  }
+}
+
 const ALWAYS_RULES: readonly EnvRule[] = [
+  requireRootCertificateForVerifyFull,
   requireSmtpSettings,
   requireCloudinarySettings,
   requireSmtpCredentialsTogether,

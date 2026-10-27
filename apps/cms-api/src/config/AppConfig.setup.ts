@@ -1,6 +1,11 @@
+import { readFileSync } from 'node:fs';
+
 import { z } from 'zod';
 
-import type { DatabaseConfig } from '../infrastructure/database/DatabaseConfig.rules';
+import type {
+  DatabaseConfig,
+  DatabaseTls,
+} from '../infrastructure/database/DatabaseConfig.rules';
 import {
   CONFIG_DEFAULTS,
   RATE_LIMIT_OVERRIDE_ENV_KEYS,
@@ -159,13 +164,45 @@ export function loadDatabaseConfig(rawEnv: RawEnv): Readonly<DatabaseConfig> {
 }
 
 function databaseConfigOf(env: DatabaseEnv): DatabaseConfig {
+  const tls = databaseTlsOf(env);
   return {
     host: env.DB_HOST,
     port: env.DB_PORT,
     database: env.DB_NAME,
     user: env.DB_USERNAME,
     password: env.DB_PASSWORD,
+    ...(tls === undefined ? {} : { tls }),
   };
+}
+
+const PEM_CERTIFICATE_MARKER = '-----BEGIN CERTIFICATE-----';
+
+function databaseTlsOf(env: DatabaseEnv): DatabaseTls | undefined {
+  if (env.DB_SSL_MODE === 'disable') return undefined;
+  if (env.DB_SSL_MODE === 'require') return { mode: 'require' };
+  return {
+    mode: 'verify-full',
+    // The schema guarantees the path for verify-full.
+    rootCertificatePem: readRootCertificate(env.DB_SSL_ROOT_CERT_PATH ?? ''),
+  };
+}
+
+/** Errors name the key only: never the path's content or the file's. */
+function readRootCertificate(path: string): string {
+  let pem: string;
+  try {
+    pem = readFileSync(path, 'utf8');
+  } catch {
+    throw new ConfigValidationError([
+      'DB_SSL_ROOT_CERT_PATH: the file cannot be read',
+    ]);
+  }
+  if (!pem.includes(PEM_CERTIFICATE_MARKER)) {
+    throw new ConfigValidationError([
+      'DB_SSL_ROOT_CERT_PATH: the file holds no PEM certificate',
+    ]);
+  }
+  return pem;
 }
 
 /** Parses the raw environment into the frozen application config. */

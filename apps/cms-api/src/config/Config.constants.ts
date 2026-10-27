@@ -4,6 +4,8 @@ export const APP_CONFIG = Symbol('APP_CONFIG');
 export const NODE_ENVS = ['development', 'test', 'production'] as const;
 export const MAIL_PROVIDERS = ['console', 'smtp'] as const;
 export const MEDIA_PROVIDERS = ['fake', 'cloudinary'] as const;
+/** DB_SSL_MODE values (libpq names). `verify-full` checks the CA and the host name. */
+export const DB_SSL_MODES = ['disable', 'require', 'verify-full'] as const;
 
 /** D17: production secrets must be at least this many bytes. */
 export const MIN_SECRET_BYTES = 32;
@@ -26,6 +28,8 @@ export const CONFIG_DEFAULTS = {
   PORT: 3000,
   /** PostgreSQL default port, used when DB_PORT is unset. */
   DB_PORT: 5432,
+  /** Local stacks and the in-cluster Postgres have no TLS. */
+  DB_SSL_MODE: 'disable',
   TRUST_PROXY_HOPS: 1,
   MAIL_PROVIDER: 'console',
   /** In-memory storage for development and tests; production needs cloudinary. */

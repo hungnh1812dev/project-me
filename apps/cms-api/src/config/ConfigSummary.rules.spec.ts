@@ -43,6 +43,8 @@ const FORMATTED_SENTINELS: Readonly<Record<string, string>> = {
   NODE_ENV: 'test',
   PORT: '3101',
   DB_PORT: '3102',
+  DB_SSL_MODE: 'require',
+  DB_SSL_ROOT_CERT_PATH: '/sentinel/db-ca.crt',
   TRUST_PROXY_HOPS: '3',
   SMTP_PORT: '3103',
   SMTP_SECURE: 'true',

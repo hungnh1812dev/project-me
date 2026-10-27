@@ -1,9 +1,12 @@
+import { isAbsolute } from 'node:path';
+
 import { z } from 'zod';
 
 import {
   ALLOWED_ORIGIN_PROTOCOLS,
   BACKUP_STORAGE_PREFIX_PATTERN,
   CONFIG_DEFAULTS,
+  DB_SSL_MODES,
   JWT_KID_PATTERN,
   LOGIN_RATE_LIMIT_OVERRIDE_OPT_IN,
   MAIL_PROVIDERS,
@@ -21,7 +24,7 @@ import {
   optionalText,
   portNumber,
 } from './EnvValidators.rules';
-import { ENV_RULES } from './Env.rules';
+import { ENV_RULES, requireRootCertificateForVerifyFull } from './Env.rules';
 
 /** True for a bare http(s) origin: no path, query, fragment or trailing slash. */
 function isHttpOrigin(value: string): boolean {
@@ -78,11 +81,25 @@ export const databaseEnvShape = {
   DB_NAME: z.string().min(1),
   DB_USERNAME: z.string().min(1),
   DB_PASSWORD: z.string().min(1),
+  DB_SSL_MODE: z.preprocess(
+    emptyToUndefined,
+    z.enum(DB_SSL_MODES).default(CONFIG_DEFAULTS.DB_SSL_MODE),
+  ),
+  DB_SSL_ROOT_CERT_PATH: z.preprocess(
+    emptyToUndefined,
+    z
+      .string()
+      .refine(isAbsolute, { message: 'must be an absolute path' })
+      .optional(),
+  ),
 };
 
-export const databaseEnvSchema = z.object(databaseEnvShape);
+export const databaseEnvSchema = z
+  .object(databaseEnvShape)
+  .superRefine(requireRootCertificateForVerifyFull);
 
-export type DatabaseEnv = z.infer<typeof databaseEnvSchema>;
+/** Inferred from the plain object: the refinement above takes this type. */
+export type DatabaseEnv = z.infer<z.ZodObject<typeof databaseEnvShape>>;
 
 /**
  * Raw environment contract. Every key is listed in `.env.example`.

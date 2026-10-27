@@ -33,6 +33,15 @@ a password with `@ : / ? # %` needs no encoding. Only the Prisma CLI
 with the URL API, which encodes them. The boot summary shows host, port,
 database and user, and the password as redacted.
 
+Database TLS: `DB_SSL_MODE` is `disable` (default), `require` (encrypted, the
+server is not checked) or `verify-full` (certificate chain and host name
+checked against the CA in `DB_SSL_ROOT_CERT_PATH`, an absolute path that is
+required for `verify-full`). The CA file is read once at startup; a missing,
+unreadable or non-PEM file stops the process with an error naming the key.
+`prisma.config.ts` maps the same keys to URL parameters for
+`prisma migrate deploy`: the schema engine ignores `sslmode=verify-full`, so
+`verify-full` becomes `sslmode=require&sslcert=<CA>&sslaccept=strict`.
+
 Mail (`src/infrastructure/mail`): `MAIL_SENDER` port with a console adapter
 (development only: it logs whole messages, OTP codes included) and a generic
 SMTP adapter (nodemailer; e.g. Gmail via smtp.gmail.com:587 + App Password).

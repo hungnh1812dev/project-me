@@ -1,3 +1,7 @@
+import { mkdtempSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+
 import {
   devEnv,
   productionEnv,
@@ -869,5 +873,113 @@ describe('loadDatabaseConfig (ADR 0012 §4)', () => {
     expect(call).toThrow(ConfigValidationError);
     expect(call).not.toThrow(secret);
     expect(call).not.toThrow('abc');
+  });
+});
+
+describe('database TLS (DB_SSL_MODE, DB_SSL_ROOT_CERT_PATH)', () => {
+  const PEM = '-----BEGIN CERTIFICATE-----\nMIIB\n-----END CERTIFICATE-----\n';
+  const dir = mkdtempSync(join(tmpdir(), 'db-ca-'));
+  const writeFile = (name: string, content: string): string => {
+    const path = join(dir, name);
+    writeFileSync(path, content);
+    return path;
+  };
+  const caPath = writeFile('ca.crt', PEM);
+  const tlsEnv = (overrides: Record<string, string | undefined>) => ({
+    ...devEnv(),
+    ...overrides,
+  });
+
+  it('defaults to disable: no tls field', () => {
+    expect(loadAppConfig(devEnv()).database).not.toHaveProperty('tls');
+    expect(loadDatabaseConfig(devEnv())).not.toHaveProperty('tls');
+  });
+
+  it('treats an empty DB_SSL_MODE as the default', () => {
+    expect(loadDatabaseConfig(tlsEnv({ DB_SSL_MODE: '' }))).not.toHaveProperty(
+      'tls',
+    );
+  });
+
+  it('maps require without reading any file', () => {
+    const env = tlsEnv({
+      DB_SSL_MODE: 'require',
+      DB_SSL_ROOT_CERT_PATH: '/does/not/exist.crt',
+    });
+    expect(loadDatabaseConfig(env).tls).toEqual({ mode: 'require' });
+  });
+
+  it('maps verify-full with the PEM read from the file', () => {
+    const env = tlsEnv({
+      DB_SSL_MODE: 'verify-full',
+      DB_SSL_ROOT_CERT_PATH: caPath,
+    });
+    const expected = { mode: 'verify-full', rootCertificatePem: PEM };
+    expect(loadDatabaseConfig(env).tls).toEqual(expected);
+    expect(loadAppConfig(env).database.tls).toEqual(expected);
+  });
+
+  it('loadDatabaseConfig and loadAppConfig agree', () => {
+    const env = tlsEnv({
+      DB_SSL_MODE: 'verify-full',
+      DB_SSL_ROOT_CERT_PATH: caPath,
+    });
+    expect(loadDatabaseConfig(env)).toEqual(loadAppConfig(env).database);
+  });
+
+  it.each([loadDatabaseConfig, loadAppConfig])(
+    'rejects verify-full without the path, naming the key',
+    (load) => {
+      const call = () => load(tlsEnv({ DB_SSL_MODE: 'verify-full' }));
+      expect(call).toThrow(ConfigValidationError);
+      expect(call).toThrow('DB_SSL_ROOT_CERT_PATH');
+    },
+  );
+
+  it('rejects an unknown mode and a relative path', () => {
+    expect(() => loadDatabaseConfig(tlsEnv({ DB_SSL_MODE: 'prefer' }))).toThrow(
+      'DB_SSL_MODE',
+    );
+    expect(() =>
+      loadDatabaseConfig(
+        tlsEnv({ DB_SSL_MODE: 'verify-full', DB_SSL_ROOT_CERT_PATH: 'ca.crt' }),
+      ),
+    ).toThrow('DB_SSL_ROOT_CERT_PATH: must be an absolute path');
+  });
+
+  it('rejects an unreadable file without the path in the message', () => {
+    const missing = join(dir, 'missing-secret-name.crt');
+    const call = () =>
+      loadDatabaseConfig(
+        tlsEnv({ DB_SSL_MODE: 'verify-full', DB_SSL_ROOT_CERT_PATH: missing }),
+      );
+    expect(call).toThrow(ConfigValidationError);
+    expect(call).toThrow('DB_SSL_ROOT_CERT_PATH');
+    expect(call).not.toThrow('missing-secret-name');
+  });
+
+  it('rejects an empty CA file', () => {
+    const call = () =>
+      loadDatabaseConfig(
+        tlsEnv({
+          DB_SSL_MODE: 'verify-full',
+          DB_SSL_ROOT_CERT_PATH: writeFile('empty.crt', ''),
+        }),
+      );
+    expect(call).toThrow(ConfigValidationError);
+    expect(call).toThrow('DB_SSL_ROOT_CERT_PATH');
+  });
+
+  it('rejects a file that is not a certificate without echoing it', () => {
+    const body = 'private file content';
+    const call = () =>
+      loadDatabaseConfig(
+        tlsEnv({
+          DB_SSL_MODE: 'verify-full',
+          DB_SSL_ROOT_CERT_PATH: writeFile('bad.crt', body),
+        }),
+      );
+    expect(call).toThrow('DB_SSL_ROOT_CERT_PATH');
+    expect(call).not.toThrow(body);
   });
 });
