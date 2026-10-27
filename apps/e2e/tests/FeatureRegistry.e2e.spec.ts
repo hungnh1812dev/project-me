@@ -22,9 +22,14 @@ const PROTECTED_PATHS = [
 ];
 const PUBLIC_PATHS = ['/login', '/set-password', '/reset-password'];
 // Side menu order: content types, then Utilities, then System settings.
+// Content types are listed alphabetically by slug.
 const EXPECTED_OWNER_NAV = [
+  'common-text',
+  'cv-contact',
+  'header',
   CV_PAGE_SLUG,
   PROFILE_SLUG,
+  'resume',
   nav.media,
   nav.accounts,
   nav.roles,

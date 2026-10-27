@@ -188,7 +188,14 @@ describe('KyselyContentRepository on cv-page (Postgres 16 via Testcontainers)', 
       const type = registry.resolve(SLUG);
       expect(type.tables).toHaveLength(CV_PAGE_TABLE_COUNT);
       expect(type.root.plan.name).toBe('cv_page');
-      expect(registry.slugs()).toEqual([SLUG, 'profile']);
+      expect(registry.slugs()).toEqual([
+        'common-text',
+        'cv-contact',
+        SLUG,
+        'header',
+        'profile',
+        'resume',
+      ]);
     });
 
     it('rejects an unknown slug with a typed error before any SQL', async () => {

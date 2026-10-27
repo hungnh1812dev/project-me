@@ -98,10 +98,55 @@ input IdFilter {
 }
 
 type Query {
+  commonText(status: DocumentStatus = PUBLISHED): CommonText
+  cvContact(status: DocumentStatus = PUBLISHED): CvContact
   cvPage(documentId: ID!, status: DocumentStatus = PUBLISHED): CvPage
   cvPageList(status: DocumentStatus = PUBLISHED, page: Int = 1, pageSize: Int = 20, sort: [CvPageSort!], filter: CvPageFilter): CvPagePage
+  header(status: DocumentStatus = PUBLISHED): Header
   profile(documentId: ID!, status: DocumentStatus = PUBLISHED): Profile
   profileList(status: DocumentStatus = PUBLISHED, page: Int = 1, pageSize: Int = 20, sort: [ProfileSort!], filter: ProfileFilter): ProfilePage
+  resume(documentId: ID!, status: DocumentStatus = PUBLISHED): Resume
+  resumeList(status: DocumentStatus = PUBLISHED, page: Int = 1, pageSize: Int = 20, sort: [ResumeSort!], filter: ResumeFilter): ResumePage
+}
+
+type CommonText {
+  documentId: ID!
+  version: Int!
+  publishedAt: DateTime
+  locale: String
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  createdBy: Int
+  updatedBy: Int
+  text: JSON
+
+  """
+  Paths of the fields the caller may not read; their values are masked or null.
+  """
+  _maskedFields: [String!]!
+}
+
+type CvContact {
+  documentId: ID!
+  version: Int!
+  publishedAt: DateTime
+  locale: String
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  createdBy: Int
+  updatedBy: Int
+  name: String
+  address: String
+  phone: String
+  email: String
+  linkedin: String
+  github: String
+  avatar: Media
+
+  """
+  Paths of the fields the caller may not read; their values are masked or null.
+  """
+  _maskedFields: [String!]!
 }
 
 type CvPage {
@@ -227,6 +272,46 @@ input CvPageFilter {
   summary: TextFilter
 }
 
+type Header {
+  documentId: ID!
+  version: Int!
+  publishedAt: DateTime
+  locale: String
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  createdBy: Int
+  updatedBy: Int
+  name: String
+  nav: [Header_Nav!]
+  author: Header_Author
+
+  """
+  Paths of the fields the caller may not read; their values are masked or null.
+  """
+  _maskedFields: [String!]!
+}
+
+type Header_Nav {
+  componentUid: ID!
+  title: String
+  requiresRole: String
+  link: String
+  subNavigations: [Header_Nav_SubNavigations!]
+}
+
+type Header_Nav_SubNavigations {
+  componentUid: ID!
+  title: String
+  requiresRole: String
+  link: String
+}
+
+type Header_Author {
+  componentUid: ID!
+  btnLoginText: String
+  btnLogoutText: String
+}
+
 type Profile {
   documentId: ID!
   version: Int!
@@ -278,4 +363,127 @@ input ProfileFilter {
   createdBy: IntFilter
   updatedBy: IntFilter
   name: TextFilter
+}
+
+type Resume {
+  documentId: ID!
+  version: Int!
+  publishedAt: DateTime
+  locale: String
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  createdBy: Int
+  updatedBy: Int
+  position: String
+  isMain: Boolean
+  name: String
+  summary: String
+  skills: [Resume_Skills!]
+  experiences: [Resume_Experiences!]
+  educations: [Resume_Educations!]
+  languages: [Resume_Languages!]
+  referees: [Resume_Referees!]
+
+  """
+  Paths of the fields the caller may not read; their values are masked or null.
+  """
+  _maskedFields: [String!]!
+}
+
+type Resume_Skills {
+  componentUid: ID!
+  level: String
+  skill: String
+}
+
+type Resume_Experiences {
+  componentUid: ID!
+  company: String
+  location: String
+  period: String
+  roles: [Resume_Experiences_Roles!]
+}
+
+type Resume_Experiences_Roles {
+  componentUid: ID!
+  position: String
+  period: String
+  teamSize: Int
+  projects: [Resume_Experiences_Roles_Projects!]
+  techStack: JSON
+  responsibilities: String
+}
+
+type Resume_Experiences_Roles_Projects {
+  componentUid: ID!
+  name: String
+  teamSize: Int
+  role: String
+  liveLink: String
+  repositoryLink: String
+  techStack: JSON
+  responsibilities: String
+}
+
+type Resume_Educations {
+  componentUid: ID!
+  degree: String
+  institution: String
+  period: String
+  location: String
+  description: String
+}
+
+type Resume_Languages {
+  componentUid: ID!
+  language: String
+  level: String
+}
+
+type Resume_Referees {
+  componentUid: ID!
+  name: String
+  phone: String
+  role: String
+}
+
+type ResumePage {
+  data: [Resume!]!
+  meta: PageMeta!
+}
+
+input ResumeSort {
+  field: ResumeSortField!
+  direction: SortDirection = ASC
+}
+
+enum ResumeSortField {
+  documentId
+  version
+  publishedAt
+  locale
+  createdAt
+  updatedAt
+  createdBy
+  updatedBy
+  position
+  isMain
+  name
+  summary
+}
+
+"""One optional entry per filterable field; entries are AND-ed."""
+input ResumeFilter {
+  documentId: IdFilter
+  version: IntFilter
+  publishedAt: DateTimeFilter
+  locale: TextFilter
+  createdAt: DateTimeFilter
+  updatedAt: DateTimeFilter
+  createdBy: IntFilter
+  updatedBy: IntFilter
+  position: TextFilter
+  isMain: BooleanFilter
+  name: TextFilter
+  summary: TextFilter
 }
