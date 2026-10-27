@@ -2,6 +2,7 @@ import { expect, type Page, test } from '@playwright/test';
 
 import { API_PATHS, apiUrl } from '../src/Api.endpoints';
 import { WEB_COPY } from '../src/Apps.contract';
+import { HTTP } from '../src/E2e.constants';
 import { e2eEnv } from '../src/E2e.env';
 
 /**
@@ -14,7 +15,9 @@ test.describe.configure({ mode: 'serial', retries: 0 });
 
 const RESUME_NAME = `E2E CV ${Date.now()}`;
 const RESUME_POSITION = 'E2E Position';
-const HTTP_NO_CONTENT = 204;
+const SECRET_COMPANY = `E2E Secret Co ${Date.now()}`;
+const SECRET_PHONE = '+1 555 0142';
+const MIN_MASKED_PLACEHOLDERS = 2;
 
 const isGraphqlRequest = (url: string): boolean =>
   new URL(url).pathname.endsWith(API_PATHS.GRAPHQL);
@@ -32,7 +35,17 @@ test.beforeAll(async ({ request }) => {
   const created = await request.post(apiUrl(API_PATHS.documents('resume')), {
     headers: ownerHeaders(),
     data: {
-      values: { name: RESUME_NAME, position: RESUME_POSITION, isMain: true },
+      values: {
+        name: RESUME_NAME,
+        position: RESUME_POSITION,
+        isMain: true,
+        summary:
+          '<p>Safe <b>text</b></p><img src=x onerror="window.e2ePwned=1">',
+      },
+      components: {
+        experiences: [{ values: { company: SECRET_COMPANY, period: '2020' } }],
+        referees: [{ values: { name: 'E2E Referee', phone: SECRET_PHONE } }],
+      },
     },
   });
   const draft = (await created.json()) as {
@@ -54,7 +67,7 @@ test.afterAll(async ({ request }) => {
     apiUrl(API_PATHS.document('resume', resumeId)),
     { headers: ownerHeaders() },
   );
-  expect(removed.status()).toBe(HTTP_NO_CONTENT);
+  expect(removed.status()).toBe(HTTP.NO_CONTENT);
 });
 
 const headerSignIn = (page: Page) =>
@@ -80,6 +93,28 @@ test('anonymous visit renders the name and position on the server and sends no G
   await expect(page).toHaveTitle(`${RESUME_NAME} - ${RESUME_POSITION}`);
   await expect(headerSignIn(page)).toBeVisible();
   expect(graphqlCalls).toEqual([]);
+});
+
+test('anonymous visit shows placeholders for masked fields and never the raw values or richtext handlers', async ({
+  page,
+  request,
+}) => {
+  const html = await (await request.get(e2eEnv.webUrl)).text();
+  expect(html).not.toContain(SECRET_COMPANY);
+  expect(html).not.toContain(SECRET_PHONE);
+  expect(html).not.toContain('onerror');
+
+  await page.goto(e2eEnv.webUrl);
+  await expect
+    .poll(() =>
+      page.getByText(WEB_COPY.cv.maskedValue, { exact: true }).count(),
+    )
+    .toBeGreaterThanOrEqual(MIN_MASKED_PLACEHOLDERS);
+  await expect(page.getByText('***', { exact: false })).toHaveCount(0);
+  await expect(page.getByText('E2E Referee')).toBeVisible();
+  expect(
+    await page.evaluate(() => (window as { e2ePwned?: number }).e2ePwned),
+  ).toBeUndefined();
 });
 
 test('a reader session refetches once with its Bearer token and sign-out returns to the server data without a request', async ({

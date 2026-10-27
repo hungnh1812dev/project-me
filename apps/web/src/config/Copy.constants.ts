@@ -149,6 +149,41 @@ export const COPY = {
     emptyDescription:
       'The owner has not published a main resume. Check back later.',
     maskedValue: 'Sign in to view',
+    contact: {
+      title: 'Contact',
+      email: 'Email',
+      phone: 'Phone',
+      address: 'Address',
+      linkedin: 'LinkedIn',
+      github: 'GitHub',
+    },
+    sections: {
+      summary: 'Summary',
+      skills: 'Skills',
+      experiences: 'Experience',
+      educations: 'Education',
+      languages: 'Languages',
+      referees: 'Referees',
+    },
+    experience: {
+      teamSize: (size: number) => `Team of ${size}`,
+      projects: 'Projects',
+      techStack: 'Tech stack',
+      liveLink: 'Live site',
+      repositoryLink: 'Repository',
+      liveLinkName: (project: string) => `Live site of ${project}`,
+      repositoryLinkName: (project: string) => `Repository of ${project}`,
+      unnamedProject: 'Project',
+    },
+    referee: {
+      phone: 'Phone',
+    },
+  },
+  error: {
+    title: 'The CV could not be loaded',
+    description:
+      'Something went wrong while loading this page. Nothing was changed. Try again, or come back in a few minutes.',
+    retry: 'Try again',
   },
   status: {
     cardTitle: 'Content API',

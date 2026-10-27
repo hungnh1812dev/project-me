@@ -6,7 +6,12 @@ import {
   GraphqlRequestError,
 } from '../../lib/GraphqlResponse.rules';
 import { useWebSession, type WebSession } from '../session';
-import { CV_PAGE_DOCUMENT, type CvPageData } from './Cv.graphql';
+import { sanitizeRichtext } from '../../lib/SafeRichtext.rules';
+import {
+  CV_PAGE_DOCUMENT,
+  type CvPageData,
+  sanitizeCvRichtext,
+} from './Cv.graphql';
 
 const ANONYMOUS_ACTOR = 'anonymous';
 
@@ -21,7 +26,8 @@ function actorKeyOf({ status, kind, user }: WebSession): string {
  * The CV data for the current visitor. Anonymous visitors (and the first paint
  * of everyone) get the server-rendered data without a request; a signed-in or
  * reviewer session refetches with its own token, and signing out falls back to
- * the server data.
+ * the server data. The server data arrives sanitized; refetched data is
+ * sanitized here.
  */
 export function useCvContent(serverData: CvPageData) {
   const session = useWebSession();
@@ -39,7 +45,7 @@ export function useCvContent(serverData: CvPageData) {
         CV_PAGE_DOCUMENT,
         undefined,
         accessToken,
-      );
+      ).then((data) => sanitizeCvRichtext(data, sanitizeRichtext));
     },
     retry: false,
     ...(isAnonymous

@@ -11,8 +11,20 @@ Routes:
   it to the client `CvView`. Anonymous visitors see the server data; a signed-in
   account or a reviewer session refetches the same document from the browser
   with its own Bearer token (`useCvContent`, keyed by actor), and sign-out
-  returns to the server data. No main resume gives an empty state. Resume
-  sections and masked placeholders are filled in by the sections task.
+  returns to the server data. No main resume gives an empty state. `CvView`
+  renders `ContactCard` (cv-contact) and `ResumeSections` (summary, skills,
+  experience, education, languages, referees; an empty section is not drawn).
+  A field named in `_maskedFields` shows `MaskedPlaceholder` ("Sign in to
+  view"), never the value. Richtext is sanitized where data enters the page:
+  `loadCvPage` (server, `SafeRichtext.server`) and `useCvContent` (browser
+  refetch, `SafeRichtext.rules`) both call `sanitizeCvRichtext`, so the
+  components only see clean HTML.
+- `app/error.tsx` is the error state for any page (client component, "Try
+  again" calls Next's `retry`). It never reads the thrown error, so no server
+  message and no other visitor's data is shown. A failure while the page
+  streams cannot change the HTTP status: the response is already `200 OK` and
+  the error UI arrives inside the stream (Next 16 streaming guide, "Status
+  codes"); a failure before the first byte is a `500`.
 - `/status` is the API status card (`GET /api/v1/health/live` from the browser,
   built with `@abyss/form-commons`). It is not linked from the header.
 
@@ -112,8 +124,8 @@ tokens only (`bg-card`, `text-muted-foreground`).
 - "Open CMS" links to `NEXT_PUBLIC_ADMIN_URL` (build-time, optional, http(s)
   URL or path); the admin signs in silently from the same cookie. Unset hides
   the link.
-- No page refetches data per actor yet: the CV page was skipped, so the
-  GraphQL refetch with the Bearer token has nothing to attach to.
+- The CV page (`useCvContent`) refetches its GraphQL document with the
+  account's Bearer token after sign-in; a reviewer session does the same.
 
 ## Reviewer access
 
@@ -134,9 +146,8 @@ tokens only (`bg-card`, `text-muted-foreground`).
   open (`challenges.cloudflare.com`, constant `TURNSTILE` in
   `src/config/Security.constants.ts`). The CSP allows that origin in
   `script-src` and `frame-src`; `next/script` stamps the request nonce on it.
-- There is no page to refetch per actor yet (the CV page was skipped), so the reviewer
-  view today is the session itself; pages added later read the token with
-  `useWebSession().getAccessToken()`.
+- The CV page refetches with the reviewer token (`useCvContent`), so the
+  reviewer sees the reviewer profile's masking.
 
 ## Docker
 

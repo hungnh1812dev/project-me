@@ -1,19 +1,17 @@
 'use client';
 
-import type { ReactNode } from 'react';
-
 import { COPY } from '../../config/Copy.constants';
+import { ContactCard } from './ContactCard';
 import { type CvPageData, mainResumeOf } from './Cv.graphql';
+import { ResumeSections } from './ResumeSections';
 import { useCvContent } from './useCvContent';
 
 interface CvViewProps {
   /** What the server rendered for the public role. */
   initialData: CvPageData;
-  /** The resume sections; the page shows the heading and states without it. */
-  renderSections?: (data: CvPageData) => ReactNode;
 }
 
-export function CvView({ initialData, renderSections }: CvViewProps) {
+export function CvView({ initialData }: CvViewProps) {
   const { data, isPending, isError } = useCvContent(initialData);
 
   if (isPending) {
@@ -58,7 +56,11 @@ export function CvView({ initialData, renderSections }: CvViewProps) {
           {resume.position}
         </p>
       ) : null}
-      {renderSections?.(data)}
+      <ContactCard
+        contact={data.cvContact}
+        fallbackName={resume.name ?? COPY.cv.fallbackName}
+      />
+      <ResumeSections resume={resume} />
     </>
   );
 }

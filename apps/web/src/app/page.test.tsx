@@ -14,7 +14,14 @@ const fetchGraphqlMock = vi.mocked(fetchGraphql);
 const EMPTY: CvPageData = { resumeList: { data: [] }, cvContact: null };
 const WITH_RESUME = {
   resumeList: {
-    data: [{ documentId: 'r1', name: 'Mai Server', position: 'Engineer' }],
+    data: [
+      {
+        documentId: 'r1',
+        name: 'Mai Server',
+        position: 'Engineer',
+        _maskedFields: [],
+      },
+    ],
   },
   cvContact: null,
 } as unknown as CvPageData;

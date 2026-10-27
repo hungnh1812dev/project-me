@@ -158,3 +158,66 @@ export const CV_PAGE_DOCUMENT = {
 export function mainResumeOf(data: CvPageData): Resume | undefined {
   return data.resumeList.data[0];
 }
+
+/** True when the API masked this field path (`referees.phone`) for the viewer. */
+export function isMaskedField(
+  { _maskedFields: maskedFields }: Pick<Resume | CvContact, '_maskedFields'>,
+  path: string,
+): boolean {
+  return maskedFields.includes(path);
+}
+
+type RichtextSanitizer = (html: string) => string;
+
+function sanitizedOrNull(
+  value: string | null | undefined,
+  sanitize: RichtextSanitizer,
+): string | null {
+  return typeof value === 'string' ? sanitize(value) : null;
+}
+
+/**
+ * Returns the data with every richtext value sanitized. The components render
+ * richtext with `dangerouslySetInnerHTML`, so each way data enters the page
+ * (server load, browser refetch) must pass through here first; the sanitizer
+ * is passed in because the server and the browser need different DOMs.
+ */
+export function sanitizeCvRichtext(
+  data: CvPageData,
+  sanitize: RichtextSanitizer,
+): CvPageData {
+  return {
+    ...data,
+    resumeList: {
+      data: data.resumeList.data.map((resume) => ({
+        ...resume,
+        summary: sanitizedOrNull(resume.summary, sanitize),
+        experiences:
+          resume.experiences?.map((experience) => ({
+            ...experience,
+            roles:
+              experience.roles?.map((role) => ({
+                ...role,
+                responsibilities: sanitizedOrNull(
+                  role.responsibilities,
+                  sanitize,
+                ),
+                projects:
+                  role.projects?.map((project) => ({
+                    ...project,
+                    responsibilities: sanitizedOrNull(
+                      project.responsibilities,
+                      sanitize,
+                    ),
+                  })) ?? null,
+              })) ?? null,
+          })) ?? null,
+        educations:
+          resume.educations?.map((education) => ({
+            ...education,
+            description: sanitizedOrNull(education.description, sanitize),
+          })) ?? null,
+      })),
+    },
+  };
+}
