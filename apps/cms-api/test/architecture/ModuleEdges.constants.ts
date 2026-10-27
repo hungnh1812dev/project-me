@@ -17,6 +17,7 @@ export const MODULE_NODES = [
   'documents',
   'graphql',
   'reviewer',
+  'backups',
 ] as const;
 
 export type ModuleNode = (typeof MODULE_NODES)[number];
@@ -58,6 +59,7 @@ export const ALLOWED_MODULE_EDGES: Record<ModuleNode, readonly ModuleNode[]> = {
     'documents',
   ],
   reviewer: ['platform', 'access-core', 'identity', 'security-audit'],
+  backups: ['platform', 'access-core', 'identity', 'security-audit'],
 };
 
 /**

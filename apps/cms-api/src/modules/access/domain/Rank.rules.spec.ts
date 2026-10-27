@@ -74,12 +74,9 @@ describe('requireOwnerActor (D20)', () => {
     ],
     ['anonymous actor', anonymousActor(systemRole('public'))],
   ])('refuses a %s with 403', (_name, actor) => {
-    expect(() => requireOwnerActor(actor)).toThrow(DomainError);
-    try {
-      requireOwnerActor(actor);
-    } catch (error) {
-      expect((error as DomainError).kind).toBe('forbidden');
-    }
+    expect(() => requireOwnerActor(actor)).toThrow(
+      expect.objectContaining({ kind: 'forbidden' }) as DomainError,
+    );
   });
 });
 

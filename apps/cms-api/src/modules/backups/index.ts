@@ -1,3 +1,5 @@
+export { BackupsModule } from './Backups.module';
+export { BACKUPS_ERROR_CODES } from './domain/Backups.constants';
 export {
   BACKUP_STORAGE,
   BackupStorageError,

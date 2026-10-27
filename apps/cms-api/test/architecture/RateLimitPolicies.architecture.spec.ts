@@ -22,6 +22,7 @@ import {
   rateLimitOverrideBindings,
 } from '../../src/modules/identity/http/IdentityHttp.constants';
 import { MEDIA_RATE_LIMIT_POLICIES } from '../../src/modules/media/http/Media.controller';
+import { BACKUPS_RATE_LIMIT_POLICIES } from '../../src/modules/backups/http/Backups.controller';
 import { REVIEWER_RATE_LIMIT_POLICIES } from '../../src/modules/reviewer/http/Reviewer.controller';
 import {
   AUTHENTICATION_GUARDS,
@@ -76,6 +77,11 @@ const PINNED_POLICIES: Record<string, readonly PinnedRule[]> = {
   REVIEWER_STATUS: [['reviewer-status:ip', IP, 120, 60_000]],
   REVIEWER_SESSION_ATTEMPTS: [['reviewer-session:ip', IP, 20, 600_000]],
   REFRESH: [['refresh:ip', IP, 30, 60_000]],
+  BACKUPS_LIST: [['backups-list:actor', ACTOR, 30, 60_000]],
+  BACKUP_LINK: [
+    ['backup-link:ip', IP, 10, 600_000],
+    ['backup-link:actor', ACTOR, 5, 600_000],
+  ],
 };
 
 const POLICIES_BY_MODULE: Record<
@@ -87,6 +93,7 @@ const POLICIES_BY_MODULE: Record<
   documents: DOCUMENTS_RATE_LIMIT_POLICIES,
   media: MEDIA_RATE_LIMIT_POLICIES,
   reviewer: REVIEWER_RATE_LIMIT_POLICIES,
+  backups: BACKUPS_RATE_LIMIT_POLICIES,
 };
 
 const allPolicies = Object.values(POLICIES_BY_MODULE).flatMap((policies) =>

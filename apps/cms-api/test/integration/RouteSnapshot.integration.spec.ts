@@ -79,6 +79,8 @@ const EXPECTED_ROUTES: string[] = [
   'POST /api/v1/reviewer/sessions',
   'GET /api/v1/reviewer/sessions',
   'PUT /api/v1/reviewer/settings',
+  'GET /api/v1/backups',
+  'POST /api/v1/backups/download-links',
 ];
 
 describe('route snapshot (R2-10)', () => {

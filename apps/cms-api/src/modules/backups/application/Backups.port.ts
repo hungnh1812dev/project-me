@@ -1,6 +1,12 @@
 /** DI token of the `BackupStorage` adapter. */
 export const BACKUP_STORAGE = Symbol('BACKUP_STORAGE');
 
+/**
+ * DI token of the key prefix (ends with `/`). `null` while the feature is off,
+ * together with a `null` `BACKUP_STORAGE`.
+ */
+export const BACKUP_PREFIX = Symbol('BACKUP_PREFIX');
+
 /** One object in the backup bucket, as the bucket reports it. */
 export interface StoredBackupObject {
   /** Full key, including the configured prefix. */

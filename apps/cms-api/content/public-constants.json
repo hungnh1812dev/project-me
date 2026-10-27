@@ -70,6 +70,10 @@
       "FIELD_NOT_READABLE": "FIELD_NOT_READABLE",
       "FIELD_NOT_WRITABLE": "FIELD_NOT_WRITABLE",
       "FIELD_UNKNOWN": "FIELD_UNKNOWN"
+    },
+    "backups": {
+      "NOT_CONFIGURED": "BACKUPS_NOT_CONFIGURED",
+      "NOT_FOUND": "BACKUP_NOT_FOUND"
     }
   },
   "permissionActions": [

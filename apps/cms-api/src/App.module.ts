@@ -8,6 +8,7 @@ import { ConfigModule } from './config/Config.module';
 import { LoggingModule } from './infrastructure/logging/Logging.module';
 import { ActorThrottleSubjectResolver } from './modules/access';
 import { AccessManagementModule } from './modules/access/management';
+import { BackupsModule } from './modules/backups';
 import { ContentTypesModule } from './modules/content-types';
 import { DocumentsModule } from './modules/documents';
 import { GraphqlModule } from './modules/graphql';
@@ -37,6 +38,7 @@ export class AppModule {
         GraphqlModule,
         MediaModule,
         ReviewerModule,
+        BackupsModule,
       ],
     };
   }

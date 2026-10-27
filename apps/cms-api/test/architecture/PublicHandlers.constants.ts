@@ -48,6 +48,10 @@ export const PUBLIC_HANDLERS: readonly PublicHandler[] = [
     'status',
     'createSession',
   ]),
+  ...publicHandlers('BackupsController', 'authenticated-only', [
+    'list',
+    'createDownloadLink',
+  ]),
   ...publicHandlers('ContentTypesController', 'authenticated-only', [
     'list',
     'get',

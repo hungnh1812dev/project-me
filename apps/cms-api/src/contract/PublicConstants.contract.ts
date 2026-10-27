@@ -4,6 +4,7 @@ import {
   PERMISSION_ACTIONS,
   SYSTEM_SUBJECT_ACTIONS,
 } from '../modules/access';
+import { BACKUPS_ERROR_CODES } from '../modules/backups';
 import { RICHTEXT_ALLOWED_URL_SCHEMES } from '../modules/content-engine';
 import {
   AUTH_ERROR_CODES,
@@ -45,6 +46,7 @@ export function buildPublicConstants() {
       ownerSetup: { ...OWNER_SETUP_ERROR_CODES },
       reviewer: { ...REVIEWER_ERROR_CODES },
       access: { ...ACCESS_ERROR_CODES },
+      backups: { ...BACKUPS_ERROR_CODES },
     },
     permissionActions: [...PERMISSION_ACTIONS],
     systemSubjects: Object.fromEntries(
