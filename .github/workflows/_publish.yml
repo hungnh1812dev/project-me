@@ -78,38 +78,7 @@ jobs:
           NEXT_PUBLIC_API_BASE_URL: ${{ vars.NEXT_PUBLIC_API_BASE_URL }}
           NEXT_PUBLIC_ADMIN_URL: ${{ vars.NEXT_PUBLIC_ADMIN_URL }}
           NEXT_PUBLIC_TURNSTILE_SITE_KEY: ${{ vars.NEXT_PUBLIC_TURNSTILE_SITE_KEY }}
-        run: |
-          single_line() { # name value
-            case "$2" in
-              *$'\n'* | *$'\r'*) echo "::error::$1 for ${ENVIRONMENT} must be a single line"; exit 1 ;;
-            esac
-          }
-          require() { # name value
-            single_line "$1" "$2"
-            if [ -z "$2" ]; then echo "::error::$1 is not set for ${ENVIRONMENT}"; exit 1; fi
-          }
-          if [ "$APP" = cms-admin ]; then
-            require VITE_API_BASE_URL "$VITE_API_BASE_URL"
-            echo "api_url=${VITE_API_BASE_URL}" >> "$GITHUB_OUTPUT"
-          fi
-          {
-            echo 'build_args<<ARGS_EOF'
-            echo "TURBO_VERSION=${TURBO_VERSION}"
-            case "$APP" in
-              cms-api) ;;
-              cms-admin)
-                echo "VITE_API_BASE_URL=${VITE_API_BASE_URL}" ;;
-              web)
-                require NEXT_PUBLIC_API_BASE_URL "$NEXT_PUBLIC_API_BASE_URL"
-                single_line NEXT_PUBLIC_ADMIN_URL "$NEXT_PUBLIC_ADMIN_URL"
-                single_line NEXT_PUBLIC_TURNSTILE_SITE_KEY "$NEXT_PUBLIC_TURNSTILE_SITE_KEY"
-                echo "NEXT_PUBLIC_API_BASE_URL=${NEXT_PUBLIC_API_BASE_URL}"
-                echo "NEXT_PUBLIC_ADMIN_URL=${NEXT_PUBLIC_ADMIN_URL}"
-                echo "NEXT_PUBLIC_TURNSTILE_SITE_KEY=${NEXT_PUBLIC_TURNSTILE_SITE_KEY}" ;;
-              *) echo "::error::unknown app '$APP'"; exit 1 ;;
-            esac
-            echo 'ARGS_EOF'
-          } >> "$GITHUB_OUTPUT"
+        run: bash .github/scripts/build-args.sh "$APP"
       # Load the image locally first so the guards can inspect and run it before anything is pushed
       - name: Build and load
         uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0

@@ -1,10 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 
-import {
-  ADMIN_COPY,
-  API_ENDPOINTS,
-  APP_ROUTES,
-} from '../src/Apps.contract';
+import { ADMIN_COPY, API_ENDPOINTS, APP_ROUTES } from '../src/Apps.contract';
 import { e2eEnv } from '../src/E2e.env';
 import {
   signInAs,
