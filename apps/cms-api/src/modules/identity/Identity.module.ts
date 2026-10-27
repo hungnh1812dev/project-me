@@ -29,6 +29,7 @@ import { OtpService } from './application/Otp.service';
 import { OwnerBootstrapService } from './application/OwnerBootstrap.service';
 import { OwnerSetupService } from './application/OwnerSetup.service';
 import { PasswordService } from './application/Password.service';
+import { ReauthenticationService } from './application/Reauthentication.service';
 import { RefreshTokenService } from './application/RefreshToken.service';
 import { SecretBox } from './application/SecretBox.service';
 import { SessionRevocationService } from './application/SessionRevocation.service';
@@ -81,6 +82,7 @@ import { TwoFactorController } from './http/TwoFactor.controller';
     OwnerBootstrapService,
     OwnerSetupService,
     PasswordService,
+    ReauthenticationService,
     RefreshTokenService,
     SecretBox,
     SessionRevocationService,
@@ -96,6 +98,7 @@ import { TwoFactorController } from './http/TwoFactor.controller';
     AccessTokenService,
     JwtAuthGuard,
     OtpService,
+    ReauthenticationService,
     SessionRevocationService,
   ],
 })

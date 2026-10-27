@@ -11,6 +11,7 @@ import {
   accountActor,
   anonymousActor,
   apiTokenActor,
+  reviewerActor,
 } from './ActorContext.entity';
 import { PolicyEvaluator } from './PolicyEvaluator.rules';
 import {
@@ -18,6 +19,7 @@ import {
   grantsBeyondActor,
   outranks,
   requireAccountActor,
+  requireOwnerActor,
 } from './Rank.rules';
 
 const { read, update } = PermissionAction;
@@ -48,6 +50,36 @@ describe('D6 rank rule (§12-7)', () => {
     expect(() =>
       requireAccountActor(anonymousActor(systemRole('public'))),
     ).toThrow(DomainError);
+  });
+});
+
+describe('requireOwnerActor (D20)', () => {
+  it('returns the owner account', () => {
+    expect(requireOwnerActor(owner)).toBe(owner);
+  });
+
+  it('refuses an admin and a custom role holding every grant', () => {
+    const everyGrant = [grant('backups', read), grant('audit_logs', read)];
+    expect(() => requireOwnerActor(admin)).toThrow(DomainError);
+    expect(() =>
+      requireOwnerActor(accountActor(3, customRole(90, everyGrant))),
+    ).toThrow(DomainError);
+  });
+
+  it.each([
+    ['reviewer', reviewerActor(5, 6, systemRole('reviewer'))],
+    [
+      'API token created by an owner',
+      apiTokenActor(9, 1, systemRole('owner'), { permissions: [] }),
+    ],
+    ['anonymous actor', anonymousActor(systemRole('public'))],
+  ])('refuses a %s with 403', (_name, actor) => {
+    expect(() => requireOwnerActor(actor)).toThrow(DomainError);
+    try {
+      requireOwnerActor(actor);
+    } catch (error) {
+      expect((error as DomainError).kind).toBe('forbidden');
+    }
   });
 });
 

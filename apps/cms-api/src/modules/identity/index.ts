@@ -19,3 +19,4 @@ export { IdentityModule } from './Identity.module';
 export { JwtAuthGuard, type AuthenticatedRequest } from './http/Jwt.strategy';
 export { buildOtpMail, OtpService } from './application/Otp.service';
 export { SessionRevocationService } from './application/SessionRevocation.service';
+export { ReauthenticationService } from './application/Reauthentication.service';

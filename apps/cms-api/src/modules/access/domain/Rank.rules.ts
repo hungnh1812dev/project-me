@@ -22,6 +22,18 @@ export function requireAccountActor(actor: ActorContext): AccountActor {
 }
 
 /**
+ * Owner-only actions (D20): a hard check on the role, so no grant of any
+ * other role can open it.
+ * @throws DomainError (forbidden) unless `actor` is a signed-in owner account.
+ */
+export function requireOwnerActor(actor: ActorContext): AccountActor {
+  const account = requireAccountActor(actor);
+  if (!isOwnerRole(account.role))
+    throw new DomainError({ kind: DOMAIN_ERROR_KINDS.FORBIDDEN });
+  return account;
+}
+
+/**
  * D6 role hierarchy (C7, §12-7): an actor may manage an account, assign a
  * role or edit a role only when the target's rank is strictly below its own.
  * No exception for "created by me", none for the owner acting on itself.

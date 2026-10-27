@@ -47,6 +47,10 @@ export const AUDIT_ACTIONS = {
   REVIEWER_SETTINGS_CHANGED: 'reviewer.settings_changed',
   /** A visitor started a reviewer session; actor = the new reviewer account. */
   REVIEWER_SESSION_CREATED: 'reviewer.session_created',
+  /** Wrong password or code at a re-authentication (`purpose`, `reason`; ADR 0013). */
+  AUTH_REAUTH_FAILED: 'auth.reauth_failed',
+  /** The owner got a backup download link (`targetId` = file name; the URL is never stored). */
+  BACKUP_DOWNLOAD_LINK_CREATED: 'backup.download_link_created',
 } as const;
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[keyof typeof AUDIT_ACTIONS];
@@ -90,6 +94,11 @@ export type SetupRejectionReason =
 export const REAUTH_FAILURE_REASONS = {
   BAD_PASSWORD: 'bad_password',
   BAD_CODE: 'bad_code',
+} as const;
+
+/** `purpose` of `auth.reauth_failed`: the sensitive action a re-authentication guards. */
+export const REAUTH_PURPOSES = {
+  BACKUP_DOWNLOAD: 'backup_download',
 } as const;
 
 /** `operation` of `two_factor.manage_failed`. */

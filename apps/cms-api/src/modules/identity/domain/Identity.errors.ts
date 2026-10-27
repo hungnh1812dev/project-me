@@ -108,6 +108,14 @@ export const twoFactorNotEnabled = (): DomainError =>
     AUTH_ERROR_MESSAGES.TWO_FACTOR_NOT_ENABLED,
   );
 
+/** A re-authentication needs 2FA on: 403 (not the 409 of the 2FA settings endpoints). */
+export const reauthNeedsTwoFactor = (): DomainError =>
+  refusal(
+    DOMAIN_ERROR_KINDS.FORBIDDEN,
+    AUTH_ERROR_CODES.TWO_FACTOR_NOT_ENABLED,
+    AUTH_ERROR_MESSAGES.TWO_FACTOR_NOT_ENABLED,
+  );
+
 export const twoFactorSetupRequired = (): DomainError =>
   refusal(
     DOMAIN_ERROR_KINDS.CONFLICT,

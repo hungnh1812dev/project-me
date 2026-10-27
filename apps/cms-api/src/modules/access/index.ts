@@ -45,7 +45,11 @@ export {
   type RowCondition,
 } from './domain/PolicyEvaluator.rules';
 export { QueryGuard } from './domain/QueryFieldAccess.rules';
-export { requireAccountActor, type AccountActor } from './domain/Rank.rules';
+export {
+  requireAccountActor,
+  requireOwnerActor,
+  type AccountActor,
+} from './domain/Rank.rules';
 export { recordReadAccess } from './domain/RecordReadAccess.rules';
 export {
   RecordSerializer,
