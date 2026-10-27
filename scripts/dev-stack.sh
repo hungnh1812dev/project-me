@@ -273,6 +273,7 @@ demo() {
   start_stack
   demo_sign_in_owner
   demo_enable_reviewer
+  demo_seed_content
   print_demo_summary
 }
 

@@ -12,7 +12,7 @@ pnpm demo
 pnpm dev:stack:stop     # when you are done
 ```
 
-`pnpm demo` starts Postgres and Mailpit in containers and cms-api, cms-admin and web in dev mode on your machine, applies the migrations, and turns reviewer access on. It ends by printing the web, admin and Mailpit addresses. Open the web and choose Reviewer access (needs internet for the Turnstile widget).
+`pnpm demo` starts Postgres and Mailpit in containers and cms-api, cms-admin and web in dev mode on your machine, applies the migrations, turns reviewer access on, and publishes sample CV content (a made-up person with `example.com` addresses and `555` phone numbers, from `scripts/demo/content/`; one file per content type, so a new type is a new file). It ends by printing the web, admin and Mailpit addresses. Open the web and choose Reviewer access (needs internet for the Turnstile widget).
 
 The generated values (ports, secrets) live in the git-ignored `.localEnv.agent`, created on the first run; change a port there if the run reports it taken. Signing in to the admin locally needs a separate owner setup (section 3, "Create the one owner account").
 
