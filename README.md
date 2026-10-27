@@ -6,13 +6,25 @@ This repository is not deployed anywhere public yet, so there is no live site to
 
 ## Screenshots
 
-Screenshots are added to `docs/screenshots/` (PNG files only) once the CV page and the demo content are in place. Planned shots:
+![Web CV page for an anonymous visitor: contact details and company names show "Sign in to view"](docs/screenshots/web-cv-anonymous.png)
 
-1. Web CV page, anonymous, with masked placeholders
-2. The same page in a reviewer session
-3. Admin content editor on the resume document
-4. Admin role editor with field permissions
-5. Admin security audit or reviewer sessions page
+Web CV page as an anonymous visitor: sensitive fields show "Sign in to view" placeholders.
+
+![Web CV page in a reviewer session: the same fields show "Hidden for reviewers"](docs/screenshots/web-cv-reviewer.png)
+
+The same page in a reviewer session: the header reads "Reviewing as a guest" and sensitive fields show "Hidden for reviewers".
+
+![Admin content editor on the resume document](docs/screenshots/admin-content-editor.png)
+
+Admin content editor on the resume document: position, name, rich-text summary and repeatable skills groups.
+
+![Admin role editor with per-field read permissions](docs/screenshots/admin-role-permissions.png)
+
+Admin role editor: per-field read permissions on the resume type, with sensitive fields flagged.
+
+![Admin reviewer access page with the sessions table](docs/screenshots/admin-reviewer-sessions.png)
+
+Admin reviewer access page: the switch for reviewer sessions and a table of who requested access.
 
 ## What it does
 
