@@ -422,11 +422,12 @@ Goal: security holds for any public visitor: a whole-project security review and
 Inputs: RV3 outputs (all RV work committed); the site deployed by the user with the production config and not public yet (staging with the production config allowed; Q-LG1, Q-LG2); a throwaway admin with 2FA (Q-LG2); launch blockers decided (LG-0).
 Outputs:
 - Launch blockers. Check: handoff.md has a user decision for each of the nine LG-0 items (multer and audit advisories, CI first run, untested deploy pieces, Cloudinary, DB roles, setup token, reviewer state, browser walk gaps).
+- Database roles (ADR 0012, SPEC D19). Check (CLI): `pnpm --filter @abyss/cms-api test:integration -- DatabaseRoles` green; `SMOKE_E2E=1 pnpm smoke` green with `cms-api-init` as `abyss_migrator` holding only `DB_*` keys, `cms-api` as `abyss_api`, and the `database-roles` section all `ok`; the deploy guides carry the per-pod Secret map and the owner runbook.
 - Live check script. Check (CLI): `scripts/launch-check.sh --web <origin> --admin <origin>` prints only `ok` lines against a kept smoke stack and is part of `SMOKE_E2E=1 pnpm smoke`.
-- Whole-project review. Check: `.claude/state/findings/audit-<date>-security-launch.md` with a complete D1-D18 verdict table; every critical and high finding has a committed LG-fix task re-reviewed by security-qc.
+- Whole-project review. Check: `.claude/state/findings/audit-<date>-security-launch.md` with a complete D1-D19 verdict table; every critical and high finding has a committed LG-fix task re-reviewed by security-qc.
 - Live check. Check (CLI and browser): `launch-check.sh` against the deployed origins all `ok`; `.claude/state/findings/audit-<date>-live-launch.md` covers headers, transport, auth and cookie flags, masking (API and web HTML/RSC, anonymous and reviewer), injection and, if approved, the write probes and the ZAP scan.
 Exit criteria: no open critical or high finding; each medium fixed or accepted by the user in writing; the throwaway admin account disabled; the user approves the launch in writing. Until then the SPEC §13 "Never" rule applies (no public DNS, ingress or announced URL).
-Tasks: LG-0 and LG-dep (may start during RV), LG-2, LG-1, LG-fix-* (from LG-1), LG-3, LG-fix-* (from LG-3)
+Tasks: LG-0 and LG-dep (may start during RV), LG-db-1 and LG-db-2 (parallel), LG-db-3, LG-db-4, LG-db-5 (production boot warning, Q-DB2 warn only), LG-2, LG-1, LG-fix-* (from LG-1), LG-3, LG-fix-* (from LG-3)
 
 ## Risks and Mitigations
 
