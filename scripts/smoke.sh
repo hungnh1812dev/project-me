@@ -27,7 +27,7 @@ source "$ROOT_DIR/scripts/lib/stack-seed.sh"
 # shellcheck source=lib/expected-output.sh
 source "$ROOT_DIR/scripts/lib/expected-output.sh"
 # Check sections: each defines check_<section>() functions, run in order below.
-for section_file in routing security-headers cors init-container owner-setup auth mail; do
+for section_file in routing security-headers cors init-container database-roles owner-setup auth mail; do
   # shellcheck source=/dev/null
   source "$ROOT_DIR/scripts/smoke/$section_file.sh"
 done
@@ -72,6 +72,8 @@ export SMOKE_API_BASE_URL="$WEB_ORIGIN$API_PREFIX"
 
 # Throwaway values for this run only (production mode needs them).
 export SMOKE_DB_PASSWORD="$(stack_random_secret)"
+export SMOKE_DB_MIGRATOR_PASSWORD="$(stack_random_secret)"
+export SMOKE_DB_API_PASSWORD="$(stack_random_secret)"
 export SMOKE_JWT_ACCESS_SECRET="$(stack_random_secret)"
 export SMOKE_OTP_PEPPER="$(stack_random_secret)"
 export SMOKE_TOTP_ENC_KEY="$(stack_random_secret)"
@@ -145,6 +147,25 @@ expect_header() {
   if [[ "$actual" == "$expected" ]]; then pass "$label"; else fail "$label: $name expected '$expected', got '$actual'"; fi
 }
 
+# in_init <label> <expected fragments...> -- <command...>
+# Runs a one-off command in the init service (migrator role, database settings
+# only); output must contain every fragment.
+in_init() {
+  local label="$1" output fragment
+  shift
+  local fragments=()
+  while [[ "$1" != "--" ]]; do fragments+=("$1"); shift; done
+  shift
+  if ! output="$(compose run --rm --no-deps -T "$INIT_SERVICE" "$@" 2>&1)"; then
+    fail "$label: command failed: $output"
+    return
+  fi
+  for fragment in "${fragments[@]}"; do
+    if [[ "$output" != *"$fragment"* ]]; then fail "$label: missing '$fragment' in: $output"; return; fi
+  done
+  pass "$label"
+}
+
 # in_api <label> <stdin text> <expect success: 1|0> <expected fragments...> -- <command...>
 # Runs a command in the cms-api container; output must contain every fragment.
 in_api() {
@@ -207,6 +228,7 @@ check_trailing_slashes
 check_cors
 
 check_init_container
+check_database_roles
 check_owner_setup
 check_migrations_again
 check_auth

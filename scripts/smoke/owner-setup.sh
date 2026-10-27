@@ -1,6 +1,6 @@
 # Smoke section: owner setup route, owner:bootstrap refusal and the CLI commands
-# run again inside the cms-api image. Sourced by scripts/smoke.sh, which
-# provides in_api.
+# run again inside the cms-api image (migrations in the init service). Sourced by
+# scripts/smoke.sh, which provides in_api and in_init.
 
 DB_MIGRATE_CMD=(npm run --silent db:migrate)
 RESET_2FA_CMD=(npm run --silent owner:reset-2fa --)
@@ -47,7 +47,8 @@ check_owner_setup() {
 
 check_migrations_again() {
   echo "Migrations again inside the cms-api image"
-  in_api "db:migrate again has nothing pending" "" 1 \
+  # Migrations need DDL: they run in the init service (migrator role).
+  in_init "db:migrate again has nothing pending" \
     "$DB_MIGRATE_NOTHING" "$DB_SEED_NOTHING" -- "${DB_MIGRATE_CMD[@]}"
   stack_seed_extra_accounts
   # Break-glass 2FA reset: refusals only, so no account state changes
@@ -59,6 +60,6 @@ check_migrations_again() {
   in_api "owner:reset-2fa needs --yes without a terminal" "" 0 \
     "$RESET_2FA_NO_TTY" -- "${RESET_2FA_CMD[@]}" --email "$STACK_OWNER_EMAIL"
 
-  in_api "content:migrate again has nothing pending" "" 1 \
+  in_init "content:migrate again has nothing pending" \
     "$CONTENT_MIGRATE_NOTHING" -- "${CONTENT_MIGRATE_CMD[@]}"
 }

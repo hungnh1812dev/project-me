@@ -25,13 +25,21 @@ services:
       retries: 15
 
   db:
-    image: postgres:16-alpine
+    image: postgres:17-alpine
     environment:
       POSTGRES_USER: abyss
       POSTGRES_DB: abyss
       POSTGRES_PASSWORD: ${SMOKE_DB_PASSWORD:?set by scripts/smoke.sh}
+      # Read by scripts/stack/database-roles.sh (first start and the smoke re-run).
+      SMOKE_DB_MIGRATOR_PASSWORD: ${SMOKE_DB_MIGRATOR_PASSWORD:?set by scripts/smoke.sh}
+      SMOKE_DB_API_PASSWORD: ${SMOKE_DB_API_PASSWORD:?set by scripts/smoke.sh}
+    volumes:
+      - ./scripts/stack/database-roles.sh:/docker-entrypoint-initdb.d/database-roles.sh:ro
+      - ./scripts/db:/opt/abyss/db:ro
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U abyss -d abyss']
+      # Over TCP: the temporary server of the first start (which runs the roles
+      # hook) listens on the socket only, so the stack waits for the real one.
+      test: ['CMD-SHELL', 'pg_isready -h 127.0.0.1 -U abyss -d abyss']
       interval: 2s
       timeout: 3s
       retries: 15
@@ -57,10 +65,12 @@ services:
       context: .
       dockerfile: apps/cms-api/Dockerfile
     # Static settings: scripts/stack/cms-api.env (local only).
-    env_file: &cms-api-env-file
+    env_file:
       - scripts/stack/cms-api.env
-    environment: &cms-api-env
-      DB_PASSWORD: ${SMOKE_DB_PASSWORD}
+    environment:
+      # The API role: DML only, no DDL (ADR 0012).
+      DB_USERNAME: abyss_api
+      DB_PASSWORD: ${SMOKE_DB_API_PASSWORD:?set by scripts/smoke.sh}
       ADMIN_ORIGIN: ${SMOKE_ADMIN_ORIGIN:?set by scripts/smoke.sh}
       WEB_ORIGIN: ${SMOKE_WEB_ORIGIN:?set by scripts/smoke.sh}
       MAIL_FROM: Abyss Smoke <no-reply@${SMOKE_DOMAIN}>
@@ -87,17 +97,23 @@ services:
       traefik.http.routers.api.rule: Host(`${SMOKE_DOMAIN:?set by scripts/smoke.sh}`) && PathPrefix(`/api`)
       traefik.http.services.api.loadbalancer.server.port: '3000'
 
-  # Init container. Same image and env as cms-api, different command:
-  # applies committed core + content migrations, then exits. cms-api starts only
-  # after it exits 0. Never runs content:generate or owner:bootstrap.
+  # Init container. Same image as cms-api, different command: applies committed
+  # core + content migrations as the migrator role, then exits. cms-api starts
+  # only after it exits 0. Never runs content:generate or owner:bootstrap.
+  # It gets the database settings only, no app secret (the same as production).
   cms-api-init:
     image: abyss-smoke-cms-api
     build:
       context: .
       dockerfile: apps/cms-api/Dockerfile
     command: ['npm', 'run', '--silent', 'deploy:migrate']
-    env_file: *cms-api-env-file
-    environment: *cms-api-env
+    environment:
+      NODE_ENV: production
+      DB_HOST: db
+      DB_PORT: '5432'
+      DB_NAME: abyss
+      DB_USERNAME: abyss_migrator
+      DB_PASSWORD: ${SMOKE_DB_MIGRATOR_PASSWORD:?set by scripts/smoke.sh}
     depends_on:
       db:
         condition: service_healthy
