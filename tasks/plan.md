@@ -380,6 +380,9 @@ Flat list, details in `todo.md` "Direct request: expired API tokens are not edit
 ### Direct request: architecture guards move to `test/architecture/` (ARCH) — APPROVED 2026-10-27
 Flat list, details in `todo.md` "Direct request: architecture guards move to `test/architecture/` (ARCH)". SPEC §2 "Module directions (cms-api)", §5; ADR 0006 "Addendum ARCH-1". One task: ARCH-1 (core-builder, Security gate, tier 1 + security-qc), after FN-lint-api (so the FileNames guard files are deleted, not moved). Check (CLI): `git ls-files apps/cms-api/src | grep -c architecture` prints `0`; `pnpm --filter @abyss/cms-api test:unit` has the same suite and test counts as before; after `pnpm --filter @abyss/cms-api build`, `apps/cms-api/dist/architecture` does not exist. Not in parallel with another cms-api task that edits `SourcePaths.constants.ts` or `LayerRules.constants.ts`.
 
+### Direct request: content types from the parked JSON files (CT) — APPROVED 2026-10-27
+Flat list, details in `todo.md` "Direct request: content types from the parked JSON files (CT)". SPEC §7 D10, §8.2; ADR 0010. Two core-builder tasks: CT-doc (no deps, docs and a Dockerfile comment) and CT3 (four converted definitions, the CV type as slug `resume` per Q-CT8, + generated `0003_site_content_types.sql`, snapshot and `schema.graphql` with `Resume` / `ResumePage`). No open questions. Check (CLI): `content:generate -- --check` and `graphql:print-schema -- --check` pass; tier 3 smoke: the `cms-api-init` log shows `Applied 1 migration(s): 0003_site_content_types.sql.` and `GET /api/v1/content-types` as the owner lists the four new slugs (`common-text`, `cv-contact`, `header`, `resume`). Independent of the other open work; not in parallel with another task that generates a content migration.
+
 ## Risks and Mitigations
 
 | Risk | Impact | Mitigation |
