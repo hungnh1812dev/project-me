@@ -2,8 +2,16 @@
 
 Admin console. React 19 + Vite, served by nginx at `admin.<domain>`; it calls the API cross-origin (CORS with credentials, `ADMIN_ORIGIN` in cms-api).
 
-So far: sign-in (T11) and, behind it, a status page that calls
-`GET /api/v1/health/live`.
+Features (`src/features/`):
+
+- `auth`: sign-in, 2FA step, password reset and invitation pages, owner setup, session handling.
+- `security`: the signed-in account's 2FA and password settings.
+- `content-types`: reads the content-type definitions that the other features build on (no pages of its own).
+- `access`: accounts, roles with the permission matrix, and API tokens.
+- `media`: media library and the media picker for document fields.
+- `content`: dynamic document form, collection list with bulk actions, conflict merge, presence.
+- `reviewer`: reviewer switch, sessions log and the read-only reviewer mode.
+- `status`: status page that calls `GET /api/v1/health/live`.
 
 ## Auth (T11, D14)
 
