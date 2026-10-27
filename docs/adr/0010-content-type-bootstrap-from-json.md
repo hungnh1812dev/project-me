@@ -93,7 +93,7 @@ Every list stays within §4.4 (no new files except the definitions and the gener
 ## Consequences
 
 - No change to the init container, the Dockerfile, the compose files or the k8s manifests.
-- New types are not readable by `public` or `reviewer` until a role grants them (current access rules), so `apps/web` sees nothing until then.
+- Corrected 2026-10-27 (ADR 0011): new types are readable by `public` and `reviewer` at once, with every field, because both roles hold the wildcard row `*: read` (`access/domain/SystemRoles.entity.ts`). Default masking of sensitive fields is task RV-mask (ADR 0011, Q-RV6, Q-RV7).
 - Doc fix found while checking: `docs/deployment/k3s-traefik.md` line 109 says `content:migrate` "parse[s] and merge[s] `content/schemas`"; it reads only `content/migrations` (SQL + snapshot). Same in the Dockerfile comment (line 30-31). Core-builder docs fix.
 
 ## Tasks (in `tasks/todo.md`, "Direct request: content types from the parked JSON files (CT)")

@@ -117,7 +117,7 @@ Phases 1 and 2 can run in parallel if more than one worker is available. This pr
 - GQ3 GraphQL limits + production hardening (needs Q-G4, Q-G5)
 - T30a Migrate apps/web to Next.js (skeleton parity)
 - T30b Smoke stack + script for the Next.js web
-- T30 Web CV showcase, Server Components fetching through GraphQL (needs Q-G6, Q-G7)
+- T30 Web CV showcase, Server Components fetching through GraphQL (Q-G6, Q-G7 answered) — replanned 2026-10-27 as phase RV2 (RV-mask, RV-cv-1..RV-cv-3, RV-cv-e2e)
 - T31 Reviewer backend: settings, Turnstile session, ephemeral account, cleanup job (needs Q4)
 - T32 Reviewer UX in web + read-only admin + owner sessions log (needs Q6)
 - T33 Web login + session sharing with admin
@@ -382,6 +382,51 @@ Flat list, details in `todo.md` "Direct request: architecture guards move to `te
 
 ### Direct request: content types from the parked JSON files (CT) — APPROVED 2026-10-27
 Flat list, details in `todo.md` "Direct request: content types from the parked JSON files (CT)". SPEC §7 D10, §8.2; ADR 0010. Two core-builder tasks: CT-doc (no deps, docs and a Dockerfile comment) and CT3 (four converted definitions, the CV type as slug `resume` per Q-CT8, + generated `0003_site_content_types.sql`, snapshot and `schema.graphql` with `Resume` / `ResumePage`). No open questions. Check (CLI): `content:generate -- --check` and `graphql:print-schema -- --check` pass; tier 3 smoke: the `cms-api-init` log shows `Applied 1 migration(s): 0003_site_content_types.sql.` and `GET /api/v1/content-types` as the owner lists the four new slugs (`common-text`, `cv-contact`, `header`, `resume`). Independent of the other open work; not in parallel with another task that generates a content migration.
+
+### Recruiter reviewability (RV) — PROPOSED 2026-10-27
+Details in `todo.md` "Recruiter reviewability (RV)"; design `docs/adr/0011-recruiter-reviewability.md`; user answers Q-RV2..Q-RV9 recorded there (2026-10-27); Q-RV1 (LICENSE holder name) still open. T30 (CV page) is unarchived and replaced by the RV2 tasks. User decisions: MIT license; no seeded or published demo account (reviewer flow); order demo -> CV page -> README.
+
+## Phase RV1: one-command demo
+Goal: a fresh clone runs the whole product with `pnpm install` + `pnpm demo`, with reviewer access on and sample CV content.
+Inputs: none (dev stack from DEV-STACK, site content types from CT3).
+Outputs:
+- `pnpm demo` from a fresh worktree. Check (CLI): in `git worktree add <scratchpad>/abyss-fresh HEAD`, `pnpm install && pnpm demo` exits 0 and prints the web, admin and Mailpit URLs; `GET /api/v1/reviewer/status` returns `enabled: true`; `pnpm dev:stack:stop` leaves no `abyss-dev` container.
+- Pre-flight. Check (CLI): with port 5174 held, `pnpm dev:stack` exits 1 naming 5174 and `DEV_STACK_WEB_PORT`; with Docker stopped it exits 1 with "Docker is not running."
+- Sample content. Check (CLI): anonymous GraphQL `resumeList(filter: { isMain: { eq: true } }, pageSize: 1) { items { name } }` and `cvContact { name }` return the sample values.
+- Docs. Check: `docs/local-run.md` starts with "Quick start".
+Exit criteria: qc-cli tier 2 on both tasks; the tier 2 e2e run (`pnpm dev:stack` + one auth spec) unchanged; user approves.
+Tasks: RV-demo-1, RV-demo-2
+
+## Phase RV2: CV page
+Goal: the web home page is the CV, fed by GraphQL, with sensitive fields masked for anonymous visitors and reviewers.
+Inputs: RV1 outputs (sample content to look at).
+Outputs:
+- Default masking. Check (CLI): anonymous `GET /api/v1/documents/cv-contact` and GraphQL `cvContact { phone _maskedFields }` mask every Q-RV6 field; `FieldMasking` and `Reviewer` integration specs green.
+- CV page. Check (browser, `pnpm demo`): `http://domain.localhost:5174/` shows the sample CV with "Sign in to view" on the masked fields; Reviewer access shows the reviewer profile; signed-in owner sees the raw values; `/status` shows the status card; no console or CSP error.
+- e2e. Check (CLI): `WebCv.e2e.spec.ts` green on tier 3 `SMOKE_E2E=1 pnpm smoke` with the full suite.
+Exit criteria: security-qc on RV-mask, RV-cv-1 and RV-cv-3 and a PHASE review; qc REGRESSION tier 3; user approves.
+Tasks: RV-mask, RV-cv-1, RV-cv-2, RV-cv-3, RV-cv-e2e (RV-mask and RV-cv-1 have no deps and may run in either order)
+
+## Phase RV3: README, LICENSE, screenshots
+Goal: the GitHub landing page explains the project, shows it, and says how to run it in one command.
+Inputs: RV1 outputs (Quick start), RV2 outputs (CV page for the screenshots).
+Outputs:
+- `LICENSE` (MIT) and root `README.md`. Check (CLI): files exist; every relative README link resolves; `pnpm format:check` green.
+- Screenshots. Check: five PNGs in `docs/screenshots/` linked from the README, no real personal data or secret visible (manager and user review).
+- cms-admin README. Check: its summary names every folder in `apps/cms-admin/src/features/`.
+Exit criteria: qc tier 1 on the docs; user approves the README and the images.
+Tasks: RV-doc-1, RV-doc-2, RV-doc-3 (RV-doc-1 and RV-doc-2 can start after RV1, the LICENSE file waits for Q-RV1; RV-doc-3 after RV2)
+
+## Phase LG: launch gate (no public launch without it)
+Goal: security holds for any public visitor: a whole-project security review and a live check of the deployed site pass before the site is public (SPEC §13 "Launch gate", user decision 2026-10-27).
+Inputs: RV3 outputs (all RV work committed); the site deployed by the user with the production config and not public yet (staging with the production config allowed; Q-LG1, Q-LG2); a throwaway admin with 2FA (Q-LG2); launch blockers decided (LG-0).
+Outputs:
+- Launch blockers. Check: handoff.md has a user decision for each of the nine LG-0 items (multer and audit advisories, CI first run, untested deploy pieces, Cloudinary, DB roles, setup token, reviewer state, browser walk gaps).
+- Live check script. Check (CLI): `scripts/launch-check.sh --web <origin> --admin <origin>` prints only `ok` lines against a kept smoke stack and is part of `SMOKE_E2E=1 pnpm smoke`.
+- Whole-project review. Check: `.claude/state/findings/audit-<date>-security-launch.md` with a complete D1-D18 verdict table; every critical and high finding has a committed LG-fix task re-reviewed by security-qc.
+- Live check. Check (CLI and browser): `launch-check.sh` against the deployed origins all `ok`; `.claude/state/findings/audit-<date>-live-launch.md` covers headers, transport, auth and cookie flags, masking (API and web HTML/RSC, anonymous and reviewer), injection and, if approved, the write probes and the ZAP scan.
+Exit criteria: no open critical or high finding; each medium fixed or accepted by the user in writing; the throwaway admin account disabled; the user approves the launch in writing. Until then the SPEC §13 "Never" rule applies (no public DNS, ingress or announced URL).
+Tasks: LG-0 and LG-dep (may start during RV), LG-2, LG-1, LG-fix-* (from LG-1), LG-3, LG-fix-* (from LG-3)
 
 ## Risks and Mitigations
 
