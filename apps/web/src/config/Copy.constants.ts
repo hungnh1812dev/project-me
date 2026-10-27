@@ -149,6 +149,7 @@ export const COPY = {
     emptyDescription:
       'The owner has not published a main resume. Check back later.',
     maskedValue: 'Sign in to view',
+    maskedValueForReviewer: 'Hidden for reviewers',
     contact: {
       title: 'Contact',
       email: 'Email',

@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { createContext, type ReactNode, useContext } from 'react';
 
 import { COPY } from '../../config/Copy.constants';
 import { isSafeLinkTarget } from '../../lib/SafeLinkTarget.rules';
@@ -17,11 +17,15 @@ const MUTED_CLASS = 'text-sm text-muted-foreground';
 const RICHTEXT_CLASS =
   'text-sm leading-6 [&_a]:text-primary [&_a]:underline [&_blockquote]:border-l-2 [&_blockquote]:border-border [&_blockquote]:pl-3 [&_li]:mt-1 [&_ol]:list-decimal [&_ol]:pl-5 [&_p+p]:mt-2 [&_pre]:overflow-x-auto [&_ul]:list-disc [&_ul]:pl-5';
 
+/** The text a masked value shows; CvView swaps it for a reviewer session. */
+export const MaskedTextContext = createContext<string>(COPY.cv.maskedValue);
+
 /** Stands in for a value the visitor's role may not read. */
 export function MaskedPlaceholder() {
+  const text = useContext(MaskedTextContext);
   return (
     <span className="rounded-sm bg-muted px-1.5 py-0.5 text-sm text-muted-foreground italic">
-      {COPY.cv.maskedValue}
+      {text}
     </span>
   );
 }

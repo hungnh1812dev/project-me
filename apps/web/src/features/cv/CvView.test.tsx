@@ -32,6 +32,24 @@ const OWNER_DATA: CvPageData = {
   cvContact: null,
 };
 
+function StartReviewerButton() {
+  const { startReviewerSession } = useWebSession();
+  return (
+    <button onClick={() => void startReviewerSession('rev-tok')}>
+      start review
+    </button>
+  );
+}
+
+const MASKED_DATA: CvPageData = {
+  resumeList: {
+    data: [
+      { ...resume('Mai Server'), summary: '***', _maskedFields: ['summary'] },
+    ],
+  },
+  cvContact: null,
+};
+
 function SignOutButton() {
   const { signOut } = useWebSession();
   return <button onClick={() => void signOut()}>sign out</button>;
@@ -135,5 +153,36 @@ describe('CvView', () => {
     expect(
       await screen.findByRole('heading', { name: 'Mai Server' }),
     ).toBeInTheDocument();
+  });
+
+  it('tells an anonymous visitor to sign in for a masked value', () => {
+    render(
+      <Wrapper api={fakeApi()}>
+        <CvView initialData={MASKED_DATA} />
+      </Wrapper>,
+    );
+    expect(screen.getByText(COPY.cv.maskedValue)).toBeInTheDocument();
+    expect(
+      screen.queryByText(COPY.cv.maskedValueForReviewer),
+    ).not.toBeInTheDocument();
+  });
+
+  it('says hidden for reviewers once a reviewer session starts', async () => {
+    vi.spyOn(apiClient, 'post').mockResolvedValue({
+      status: 200,
+      data: { data: MASKED_DATA },
+    });
+    render(
+      <Wrapper api={fakeApi()}>
+        <StartReviewerButton />
+        <CvView initialData={MASKED_DATA} />
+      </Wrapper>,
+    );
+    await userEvent.click(screen.getByRole('button', { name: 'start review' }));
+
+    expect(
+      await screen.findByText(COPY.cv.maskedValueForReviewer),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(COPY.cv.maskedValue)).not.toBeInTheDocument();
   });
 });
