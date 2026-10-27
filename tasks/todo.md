@@ -2402,6 +2402,8 @@ User decision (2026-10-27): the project goes live for real, so security must hol
 
 User decision (2026-10-27, handoff "LG-0 answers" and the planner job `DESIGN DB role separation`): a DDL migration role used only by the init container, an API runtime role with only SELECT, INSERT, UPDATE, DELETE and no DDL. Design, grants, secret map and runbook: ADR 0012; SPEC §7 D19. Build order: LG-db-1 ‖ LG-db-2, then LG-db-3, then LG-db-4. Then LG-db-5. User answers (2026-10-27): Q-DB1 no existing data, every environment is created fresh with the runbook (no ownership-transfer task); Q-DB2 warn only (changed from refuse: the deployment uses one shared DB account today), so LG-db-5 logs a warning and never blocks the start. Until the split is applied, the shared account is an accepted risk (ADR 0012 §8).
 
+Replanned 2026-10-27 (user decision: the production database is a Supabase free project; ADR 0012 §9). Migrator and operator = `postgres` (`postgres.<project-ref>`), API = `abyss_api` (`abyss_api.<project-ref>`, created by the user, password never shared), backup = `abyss_backup` with explicit `SELECT` (Q-DB7, user answer). Session pooler on 5432 only, never 6543. Data API off. LG-db-2 gains a `supabase` mode (no ownership change, no `PUBLIC` revoke), LG-db-4 gains the Supabase runbook, new LG-db-6 (DB TLS keys) and LG-db-7 (Supabase lockdown, owner). Build order: LG-db-1 ‖ LG-db-2, then LG-db-3 and LG-db-6 (LG-db-6 after LG-db-1: same config files), then LG-db-5 (after LG-db-6: both edit `DatabaseConfig.rules.ts`), then LG-db-4, then LG-db-7 and LG-pg17 (Postgres 17 images, Q-DB4). User answers (2026-10-27, ADR 0012 "Open questions"): Q-DB3 TLS `verify-full`, "Enforce SSL" on, the CA as ConfigMap `database-ca`; Q-DB4 Postgres 17 everywhere, separate task LG-pg17, LG-db-2 checks on 17; Q-DB5 IPv6 of the VPS unknown, so the session pooler on 5432 for everything (API, init container, backup, roles script), no direct connection; Q-DB6 the free-plan pause is accepted for launch, the owner watches the warning e-mail; Q-DB7 backup role `abyss_backup` with explicit `SELECT`. No LG-db question is open.
+
 - [ ] **LG-db-1: DB-only config loader for the migration commands** · S · Deps: none · core-builder · **Security gate: yes** (touches `src/modules/identity/cli`) · SPEC §7 D19, D17; ADR 0012 §4
   - Acceptance:
     - `src/config/Env.schema.ts` defines the five `DB_*` keys once as `databaseEnvShape`, exports `databaseEnvSchema = z.object(databaseEnvShape)`, and `envSchema` spreads that shape (no second copy of the DB rules). `Env` keeps its type.
@@ -2411,21 +2413,32 @@ User decision (2026-10-27, handoff "LG-0 answers" and the planner job `DESIGN DB
   - Verify: `pnpm --filter @abyss/cms-api test:unit` (new cases in `AppConfig.setup.spec.ts`: only-DB env accepted; each missing DB key rejected with its name and without its value; result equals `loadAppConfig(fullEnv).database`; JWT or mail keys absent does not fail it); `test:integration` (the content-migrations and seed suites still green); `pnpm typecheck` and `pnpm lint`. Tier 3 per project.md (env schema and `deploy:migrate` CLIs): `SMOKE_E2E=1 pnpm smoke` green.
   - Files: `apps/cms-api/src/config/Env.schema.ts`, `apps/cms-api/src/config/AppConfig.setup.ts`, `apps/cms-api/src/config/AppConfig.setup.spec.ts`, `apps/cms-api/src/modules/content-engine/cli/ContentMigrate.command.ts`, `apps/cms-api/src/modules/identity/cli/Seed.command.ts`, `apps/cms-api/src/modules/identity/cli/IdentityCli.setup.ts`.
   - Checks: qc tier 3 + security-qc (config errors leak no value; the init path cannot fall back to the full config). Risk: normal.
+  - Supabase note (2026-10-27): unchanged. On Supabase the init container gets `DB_USERNAME=postgres.<project-ref>` and only the `DB_*` keys (plus the LG-db-6 TLS keys, which LG-db-6 adds to the same DB-only schema).
 
-- [ ] **LG-db-2: Database roles script and its integration suite** · M · Deps: none (parallel with LG-db-1) · core-builder · **Security gate: yes** · SPEC §7 D19; ADR 0012 §1, §2, §5
-  - Acceptance:
-    - `scripts/db/database-roles.sql` (new), run by psql as the superuser on the app database with `-v ON_ERROR_STOP=1 -v migrator_role=... -v api_role=... -v backup_role=...`, does exactly ADR 0012 §2 steps 1-5: create missing roles without a password and reset their attributes; database owner = migrator; `PUBLIC` loses `CONNECT`/`TEMPORARY` on the database and `CREATE` on `public`; `CONNECT` for the API and backup roles; `pg_read_all_data` for the backup role; default privileges `FOR ROLE <migrator>` (tables: SELECT, INSERT, UPDATE, DELETE; sequences: USAGE, SELECT; schemas: USAGE) for the API role; the same grants on existing objects in `public` and, when it exists, `content`; `SELECT` only on `_prisma_migrations`, `content._migrations`, `content._content_types` where they exist; a final self-check that raises an error (names only, no values) on any ADR 0012 §2 step 5 violation.
+- [ ] **LG-db-2: Database roles script and its integration suite** · M · Deps: none (parallel with LG-db-1) · core-builder · **Security gate: yes** · SPEC §7 D19; ADR 0012 §1, §2, §5, §9.3
+  - Mode (replanned 2026-10-27): the script takes a required psql variable `hosting` = `self_managed` | `supabase` (any other value or a missing one stops it with an error naming the variable). The mode is chosen once (`SELECT :'hosting' = 'supabase' AS is_supabase \gset`, `\if :is_supabase`); grant and self-check blocks are shared, only the ADR 0012 §9.3 steps differ.
+  - Acceptance (`self_managed`, as before):
+    - `scripts/db/database-roles.sql` (new), run by psql as the superuser on the app database with `-v ON_ERROR_STOP=1 -v hosting=self_managed -v migrator_role=... -v api_role=... -v backup_role=...`, does exactly ADR 0012 §2 steps 1-5: create missing roles without a password and reset their attributes; database owner = migrator; `PUBLIC` loses `CONNECT`/`TEMPORARY` on the database and `CREATE` on `public`; `CONNECT` for the API and backup roles; `pg_read_all_data` for the backup role; default privileges `FOR ROLE <migrator>` (tables: SELECT, INSERT, UPDATE, DELETE; sequences: USAGE, SELECT; schemas: USAGE) for the API role; the same grants on existing objects in `public` and, when it exists, `content`; `SELECT` only on `_prisma_migrations`, `content._migrations`, `content._content_types` where they exist; a final self-check that raises an error (names only, no values) on any ADR 0012 §2 step 5 violation.
     - Variables reach `DO` blocks through `set_config('abyss.<name>', :'<name>', false)`; identifiers through `format('%I', ...)`; no password, no database name, no role name literal in the SQL body; a header comment gives the run command and says to run it before and after the first rollout.
     - Running it twice in a row is a no-op the second time (no error, same grants).
     - `test/fixtures/CoreDb.fixture.ts` gains `applyDatabaseRoles(serverUrl, database, roles)`: reads the script file, substitutes the three psql variables (`:'name'` as a literal, `:"name"` as an identifier) and runs it as the superuser; random role names per suite, dropped in `afterAll` (`DROP OWNED`, `DROP ROLE`), because roles are server-wide on the shared container.
     - `test/integration/DatabaseRoles.integration.spec.ts` (new) covers every row of ADR 0012 §5 "integration": roles script, core and content migrations as the migrator, second run; as the API role DML works in `public` (for example `app_settings`) and in a generated `content` table, every listed DDL statement and every meta-table write is refused (SQLSTATE `42501`, or the `must be owner` error for ALTER/DROP), `SELECT` on `_content_types` works; the backup role reads every table and writes none; granting `CREATE ON SCHEMA public` to the API role makes the next script run fail its self-check.
-  - Verify: `pnpm --filter @abyss/cms-api test:integration -- DatabaseRoles` green twice in a row (role cleanup works); full `test:integration` green; `pnpm lint` and `pnpm typecheck`. The builder pastes the script's run output from a manual run on `postgres:16-alpine` into the unit record.
-  - Files: `scripts/db/database-roles.sql` (new), `apps/cms-api/test/integration/DatabaseRoles.integration.spec.ts` (new), `apps/cms-api/test/fixtures/CoreDb.fixture.ts`.
+  - Acceptance (`supabase`, ADR 0012 §9.3), run by the migrator itself (`migrator_role=postgres` on Supabase) with the extra variable `-v data_api_roles=anon,authenticated,service_role` (required in this mode, comma list, each name through `format('%I', ...)`):
+    - never creates, alters or re-owns the migrator role, never changes the database owner, never grants or revokes anything to or from `PUBLIC`, never grants `pg_read_all_data`;
+    - creates the API and backup roles if missing (`LOGIN`, no password) and resets their attributes; an existing role (the user's `abyss_api`) keeps its password;
+    - creates schema `content` if missing; default privileges `FOR ROLE <migrator> IN SCHEMA public` and `IN SCHEMA content` only (no database-wide defaults): API tables `SELECT, INSERT, UPDATE, DELETE`, sequences `USAGE, SELECT`; backup tables and sequences `SELECT`; the same on existing objects; `USAGE` on both schemas for both roles;
+    - `REVOKE ALL` on every table, sequence and function in `public` and `content` from each `data_api_roles` role, and the matching `ALTER DEFAULT PRIVILEGES FOR ROLE <migrator> IN SCHEMA ... REVOKE ALL` for tables, sequences and functions;
+    - meta tables `SELECT` only for the API role;
+    - self-check: the `self_managed` checks except `TEMPORARY` (kept by `PUBLIC`, accepted, ADR 0012 §9.7), plus no `data_api_roles` role holds any privilege on a table or sequence in `public` or `content`, plus the backup role can `SELECT` every table there; it never revokes a `PUBLIC` right to make itself pass.
+    - `test/integration/DatabaseRoles.supabase.integration.spec.ts` (new): a Supabase stand-in on the shared Testcontainers server (random names): a non-superuser migrator with `CREATEROLE`, `CREATE` on the database and on `public`; stand-in `anon`, `authenticated`, `service_role` roles that get `ALTER DEFAULT PRIVILEGES FOR ROLE <migrator> IN SCHEMA public GRANT ALL ON TABLES / SEQUENCES / FUNCTIONS` before the run (Supabase's old default). Run the script as the migrator, migrate core and content as the migrator, run it again. Assert: the database owner and the `PUBLIC` privileges on the database and on `public` are the same before and after; the API role's DML works and the `self_managed` list of DDL and meta-table writes is refused (temporary tables excluded); the three stand-in roles hold no privilege on any table or sequence in `public` or `content`, also on a table created after the second run; the backup role reads every app table and writes none; a missing or wrong `hosting` value and a missing `data_api_roles` stop the script.
+    - `applyDatabaseRoles` in `CoreDb.fixture.ts` takes the connecting role (superuser or the stand-in migrator) and the extra variables (additive).
+  - Verify: `pnpm --filter @abyss/cms-api test:integration -- DatabaseRoles` green twice in a row (role cleanup works; both suites); full `test:integration` green; `pnpm lint` and `pnpm typecheck`. The builder pastes the script's run output from manual runs on `postgres:16-alpine` (`self_managed`) and `postgres:17-alpine` (both modes, Supabase runs Postgres 17; ADR 0012 Q-DB4) into the unit record.
+  - Files: `scripts/db/database-roles.sql` (new), `apps/cms-api/test/integration/DatabaseRoles.integration.spec.ts` (new), `apps/cms-api/test/integration/DatabaseRoles.supabase.integration.spec.ts` (new), `apps/cms-api/test/fixtures/CoreDb.fixture.ts`.
   - Checks: qc tier 1 (integration) + security-qc (grant list against ADR 0012 §1; the self-check covers each forbidden right). Risk: normal.
 
 - [ ] **LG-db-3: Smoke stack runs with the split roles** · M · Deps: LG-db-1, LG-db-2 · core-builder · **Security gate: yes** · SPEC §7 D19; ADR 0012 §3, §5
   - Acceptance:
-    - `docker-compose.smoke.yml`: the `db` service keeps its superuser (`POSTGRES_USER` stays, used by the e2e fixtures and the roles script) and mounts `scripts/stack/database-roles.sh` (new) into `/docker-entrypoint-initdb.d/` plus `scripts/db/` read-only; the hook runs `scripts/db/database-roles.sql` with the default role names, then sets the migrator and API passwords from `SMOKE_DB_MIGRATOR_PASSWORD` and `SMOKE_DB_API_PASSWORD` (psql variables, never echoed). `cms-api-init` gets no `env_file` and only `NODE_ENV`, `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USERNAME=abyss_migrator`, `DB_PASSWORD` (so the run proves LG-db-1: no app secret in the init container). `cms-api` gets `DB_USERNAME=abyss_api` and its password; `DB_USERNAME` leaves `scripts/stack/cms-api.env`.
+    - `docker-compose.smoke.yml`: the `db` service keeps its superuser (`POSTGRES_USER` stays, used by the e2e fixtures and the roles script) and mounts `scripts/stack/database-roles.sh` (new) into `/docker-entrypoint-initdb.d/` plus `scripts/db/` read-only; the hook runs `scripts/db/database-roles.sql` with `-v hosting=self_managed` and the default role names, then sets the migrator and API passwords from `SMOKE_DB_MIGRATOR_PASSWORD` and `SMOKE_DB_API_PASSWORD` (psql variables, never echoed). `cms-api-init` gets no `env_file` and only `NODE_ENV`, `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USERNAME=abyss_migrator`, `DB_PASSWORD` (so the run proves LG-db-1: no app secret in the init container). `cms-api` gets `DB_USERNAME=abyss_api` and its password; `DB_USERNAME` leaves `scripts/stack/cms-api.env`.
     - `scripts/smoke.sh` generates the two new passwords like `SMOKE_DB_PASSWORD`, and runs the roles script a second time inside `db` after `cms-api-init` exits 0 and before the checks (the meta tables now exist).
     - `scripts/smoke/database-roles.sh` (new, one `check_database_roles()`, same layout as the other sections): as `abyss_api` over TCP inside `db`, `CREATE TABLE` in `public` and `content`, `CREATE SCHEMA`, `ALTER TABLE`, `DROP TABLE`, `TRUNCATE`, `CREATE TEMP TABLE`, and an `INSERT` into `content._content_types` are each refused (one `ok`/`FAIL` line each); a `SELECT` on an app table succeeds; the second roles-script run exited 0.
     - `scripts/smoke/owner-setup.sh` `check_migrations_again`: `db:migrate` and `content:migrate` re-runs run in the init service (`compose run --rm --no-deps cms-api-init ...`, a small `in_init` helper next to `in_api`), not in `cms-api`; expected outputs unchanged. `owner:reset-2fa` and `seed:account` stay in `cms-api` (API role).
@@ -2434,23 +2447,55 @@ User decision (2026-10-27, handoff "LG-0 answers" and the planner job `DESIGN DB
   - Files: `docker-compose.smoke.yml`, `scripts/stack/cms-api.env`, `scripts/stack/database-roles.sh` (new), `scripts/smoke.sh`, `scripts/smoke/database-roles.sh` (new), `scripts/smoke/owner-setup.sh`.
   - Checks: qc tier 3 + security-qc. Risk: normal.
 
-- [ ] **LG-db-4: Deploy guides for the database roles** · S · Deps: LG-db-3 · core-builder (`docs/deployment/` approved at dispatch, as for LG-2) · SPEC §7 D19; ADR 0012 §3, §6
-  - Acceptance:
+- [ ] **LG-db-4: Deploy guides for the database roles** · M · Deps: LG-db-3, LG-db-6 · core-builder (`docs/deployment/` approved at dispatch, as for LG-2) · SPEC §7 D19; ADR 0012 §3, §6, §9
+  - Acceptance (Supabase, replanned 2026-10-27; production runs on Supabase, the self-managed parts below stay as the alternative):
+    - `docs/deployment/supabase-database.md` (new): ADR 0012 §9 for an operator: why the session pooler on 5432 and never 6543; the user-name rule (`<role>.<project-ref>` in `DB_USERNAME`, plain role name inside the database and in the script variables); the role table of §9.2; the runbook S1-S8 of §9.6 with every command matching the script's variables (`hosting=supabase`, `migrator_role=postgres`, `data_api_roles=anon,authenticated,service_role`) and `\password` at the prompt only; Data API off and "Automatically expose new tables" off as step S1, with the reason (the anon key would reach the app tables past cms-api's rules and masking); TLS: `DB_SSL_MODE` / `DB_SSL_ROOT_CERT_PATH` (LG-db-6), the CA from the dashboard as ConfigMap `database-ca` mounted read-only, "Enforce SSL" on, and the S2 `psql ... sslmode=verify-full` check; the secret map of §9.5; the backup job (`pg_dump -Fc -n public -n content` as `abyss_backup.<project-ref>` over the pooler, `pg_dump` major version at least the server's) and the restore drill into a local container of the same major version; the free-plan pause (accepted for launch, Q-DB6: watch the warning e-mail, restore in the dashboard) and the custom-role `VALID UNTIL` / `EAUTHQUERY` note; the accepted risks of §9.7.
+    - `docs/deployment/k3s-traefik.md`: scope line and §7 say the database is either the in-cluster StatefulSet or Supabase, and link the new guide; §6 table gains `DB_SSL_MODE` and `DB_SSL_ROOT_CERT_PATH`.
+    - `docs/deployment/k3s-secrets-sops.md` §1/§2: the Supabase variant of the Secret map (no `postgres-superuser`, `DB_USERNAME` values with `.<project-ref>`, ConfigMap `database-ca`).
+  - Acceptance (self-managed, as before):
     - `docs/deployment/k3s-traefik.md`: §3 Deployment manifest: init container `envFrom` = `cms-api-config` + `cms-api-migrate-db` (no `cms-api-secrets`), main container = `cms-api-config` + `cms-api-secrets`; the "loads the same configuration as the API" bullet replaced by the DB-only rule; new subsection "Database roles (first install)" with the ADR 0012 §6 runbook steps 1-7 (the script run twice, `\password` at the prompt, never in a file); §6 table: `DB_USERNAME` moves to the Secret column (per-container Secret), and the "open follow-up" sentence replaced by a link to the subsection; §7 backup CronJob reads `postgres-backup` (role `abyss_backup`) and the restore drill uses the superuser for `createdb -O abyss_migrator` / `dropdb` and the migrator for `pg_restore --no-owner` and `deploy:migrate`; a disaster restore runs the roles script first.
     - `docs/deployment/k3s-secrets-sops.md`: §1 table lists the four Secrets of ADR 0012 §3 and which pod mounts each; §2 layout adds `cms-api-migrate-db.sops.yaml` and `postgres-backup.sops.yaml` with templates; §6 "both containers read the same Secret" replaced by the per-container mapping and why (no shared process env; init exits first); §7 rotation: one row per role (`\password <role>`, update its Secret, restart its user).
     - `apps/cms-api/README.md` database paragraph and the `DB_USERNAME` comment in `apps/cms-api/.env.example`: production uses `abyss_api` for the API and `abyss_migrator` for `deploy:migrate` (link ADR 0012); keys unchanged, `EnvExample.contract.spec.ts` still green.
     - No guide still says the init container needs every app secret or that the migration role is an open follow-up.
-  - Verify: `grep -n "open follow-up\|same Secret\|same \`envFrom\`" docs/deployment/*.md` finds nothing about DB roles; every command in the runbook matches the script's variables and the smoke hook (LG-db-3); `pnpm format:check`; `pnpm --filter @abyss/cms-api test:unit` (env-example contract). Cluster proof (owner, at deploy time, recorded by the manager under LG-0 item 6): the second roles-script run ends without error and `GET /api/v1/health/ready` is ok.
-  - Files: `docs/deployment/k3s-traefik.md`, `docs/deployment/k3s-secrets-sops.md`, `apps/cms-api/README.md`, `apps/cms-api/.env.example`.
+  - Verify: `grep -n "open follow-up\|same Secret\|same \`envFrom\`" docs/deployment/*.md` finds nothing about DB roles; `grep -n "6543" docs/deployment/supabase-database.md` finds only the "never use" sentence; every command in both runbooks matches the script's variables (`hosting` included) and the smoke hook (LG-db-3); every env key named exists in `apps/cms-api/.env.example`; `pnpm format:check`; `pnpm --filter @abyss/cms-api test:unit` (env-example contract). Production proof (owner, at deploy time, recorded by the manager under LG-0 item 6 and LG-db-7): the second Supabase roles-script run (S6) ends without error and `GET /api/v1/health/ready` is ok.
+  - Files: `docs/deployment/supabase-database.md` (new), `docs/deployment/k3s-traefik.md`, `docs/deployment/k3s-secrets-sops.md`, `apps/cms-api/README.md`, `apps/cms-api/.env.example`.
   - Checks: qc tier 1 + security-qc (docs review: no pod gets a credential it does not need). Risk: low.
 
-- [ ] **LG-db-5: Production boot warns about a DDL-capable database role** · S · Deps: LG-db-3 · Q-DB2 answered (warn only) · core-builder · **Security gate: yes** · SPEC §7 D17, D19
+- [ ] **LG-db-5: Production boot warns about a DDL-capable database role** · S · Deps: LG-db-3, LG-db-6 (ordering only: same file) · Q-DB2 answered (warn only) · core-builder · **Security gate: yes** · SPEC §7 D17, D19
   - Acceptance: with `NODE_ENV=production`, cms-api checks its own role once at boot (`rolsuper`, `has_database_privilege(current_user, current_database(), 'CREATE')`, `has_schema_privilege` `CREATE` on `public` and on `content` when that schema exists, any object in those schemas owned by `current_user`); on any finding it logs exactly one warning with the problem names, a pointer to ADR 0012 and no values, and still starts (Q-DB2: warn only; never a refusal, no env switch to make it refuse). A failing check query is logged as one warning too and does not stop the boot. ADR 0012 §7. The decision is a pure rule in `src/infrastructure/database/DatabaseConfig.rules.ts`; the query runs where the shared Prisma provider starts (`Prisma.service.ts`). Non-production boots skip it. Existing suites that boot with `NODE_ENV=production` on the superuser stay green unchanged.
   - Verify: unit cases in `DatabaseConfig.rules.spec.ts` (each problem, and none); one case in `DatabaseRoles.integration.spec.ts` (as the migrator: the app starts and the warning lists the problems; as the API role: it starts with no warning); tier 3 `SMOKE_E2E=1 pnpm smoke` green, and the `cms-api` log has no role warning (the smoke API runs as `abyss_api` since LG-db-3).
   - Files: `apps/cms-api/src/infrastructure/database/DatabaseConfig.rules.ts`, `apps/cms-api/src/infrastructure/database/DatabaseConfig.rules.spec.ts`, `apps/cms-api/src/infrastructure/database/Prisma.service.ts`, `apps/cms-api/test/integration/DatabaseRoles.integration.spec.ts`.
   - Checks: qc tier 3 + security-qc. Risk: normal.
+  - Supabase note (2026-10-27): unchanged and still warn only. On Supabase the check runs as `abyss_api` and should find nothing; it warns when the API is wired to `postgres.<project-ref>` (the shared-account case of ADR 0012 §8). It does not check `TEMPORARY` (kept by `PUBLIC` on Supabase, ADR 0012 §9.7). Deps add LG-db-6 only for ordering (both edit `DatabaseConfig.rules.ts`).
 
-- [ ] **LG-1: Whole-project security review** · L (review only) · Deps: RV-doc-3 (all RV work committed), LG-2, LG-db-4, LG-db-5 (D19 verdict covers the warn-only guard and the ADR 0012 §8 accepted risk) · security-qc (opus) · **Security gate: yes** · SPEC §7 (D1-D19), §12, §13 "Launch gate", `docs/modules/access-control.md`
+- [ ] **LG-db-6: TLS settings for the database connection** · S · Deps: LG-db-1 (same config files) · core-builder · **Security gate: yes** (transport security of every DB connection; env schema) · SPEC §7 D19, D17; ADR 0012 §9.4
+  - Acceptance:
+    - Two new optional keys in `src/config/Env.schema.ts`, inside the DB-only shape from LG-db-1 so `loadDatabaseConfig` and `loadAppConfig` both get them: `DB_SSL_MODE` = `disable` | `require` | `verify-full` (values in `Config.constants.ts`, default `disable`), `DB_SSL_ROOT_CERT_PATH` (absolute path; required when the mode is `verify-full`, ignored for `disable` and `require`). One shared refinement applies the "required with verify-full" rule to both schemas.
+    - `AppConfig.setup.ts`: the DB config mapping reads the CA file once and sets `database.tls` (`{ mode: 'require' }` or `{ mode: 'verify-full', rootCertificatePem }`; absent for `disable`). An unreadable or empty file throws `ConfigValidationError` naming `DB_SSL_ROOT_CERT_PATH`, never the file content.
+    - `DatabaseConfig.rules.ts`: `DatabaseConfig` gains the optional `tls` field (additive; every existing caller and the string form keep working); `poolOptionsOf` maps `require` to `ssl: { rejectUnauthorized: false }` and `verify-full` to `ssl: { ca, rejectUnauthorized: true }`, nothing for `disable`. No other pool factory changes (they all use `poolOptionsOf`).
+    - `prisma.config.ts` adds the TLS URL parameters for `prisma migrate deploy` from the same two keys; the builder takes the Prisma 7 parameter names from the Prisma docs and records the source link in the unit record.
+    - `apps/cms-api/.env.example` lists both keys with a comment (default, when to set, CA is public); `EnvExample.contract.spec.ts` green.
+    - No production guard (an in-cluster Postgres has no TLS); no change to the dev stack, demo or smoke stack (they keep `disable`). Production on Supabase sets `verify-full` (Q-DB3), documented by LG-db-4.
+  - Verify: `pnpm --filter @abyss/cms-api test:unit` (cases: default `disable` gives no `ssl`; `require` mapping; `verify-full` mapping with the PEM from a temp file; `verify-full` without the path rejected naming the key; unreadable path rejected without content; `loadDatabaseConfig` and `loadAppConfig` agree); `pnpm typecheck`, `pnpm lint`; tier 3 `SMOKE_E2E=1 pnpm smoke` green (env schema changed, `disable`). Manual proof in the unit record: a local `postgres:17-alpine` started with `ssl=on` and a self-signed CA: `deploy:migrate` and the API boot succeed with `verify-full` and the right CA, and both fail with a wrong CA and with a `DB_HOST` that does not match the certificate.
+  - Files: `apps/cms-api/src/config/Env.schema.ts`, `apps/cms-api/src/config/Config.constants.ts`, `apps/cms-api/src/config/AppConfig.setup.ts`, `apps/cms-api/src/config/AppConfig.setup.spec.ts`, `apps/cms-api/src/infrastructure/database/DatabaseConfig.rules.ts`, `apps/cms-api/src/infrastructure/database/DatabaseConfig.rules.spec.ts`, `apps/cms-api/prisma.config.ts`, `apps/cms-api/.env.example`.
+  - Checks: qc tier 3 + security-qc (no `rejectUnauthorized: false` reachable from `verify-full`; no cert content or path in error output beyond the key name). Risk: normal.
+
+- [ ] **LG-db-7: Supabase project lockdown and role proof (owner)** · XS · Deps: LG-db-4 · Q-DB3, Q-DB5 answered · manager with the user (no builder) · **Security gate: yes** · SPEC §7 D19; ADR 0012 §9.1, §9.6
+  - Acceptance: the user reports, and the manager records under LG-0 item (6): S1 done (Data API off; "Automatically expose new tables" off where shown; "Enforce SSL on incoming connections" on; CA downloaded; network restrictions set or not offered); S2 `psql ... sslmode=verify-full` succeeded (Q-DB3) and the Postgres major version (Q-DB4); S6 second roles-script run ended without error; S7 `GET /api/v1/health/ready` ok, no LG-db-5 warning in the cms-api log, and a request to the project's Data API URL with the anon key returns no app table.
+  - Verify: the manager lists the four results with date in handoff.md; any failure becomes a new task for the planner.
+  - Files: none (state files only, by the manager).
+  - Checks: user review. Risk: high (production data exposure).
+
+- [ ] **LG-pg17: Postgres 17 for the test, smoke, dev and backup images** · S · Deps: LG-db-3, LG-db-4 (same compose and guide files) · Q-DB4 answered (Postgres 17 everywhere) · core-builder (`docker-compose.dev.yml`, root `README.md` and `docs/` approved at dispatch) · SPEC §1 item 3, §3 Tests row, D19; ADR 0012 Q-DB4
+  - Acceptance:
+    - One image tag `postgres:17-alpine` replaces `postgres:16-alpine` in: `apps/cms-api/test/fixtures/Postgres.fixture.ts` (`POSTGRES_TEST_IMAGE`), `docker-compose.smoke.yml`, `docker-compose.dev.yml`. No other image or version change.
+    - Docs say 17: `docs/local-run.md` (with the note that an existing dev-stack volume from 16 does not start on 17 and must be removed with the documented stop-and-remove command, data is demo data), `docs/deployment/k3s-traefik.md` (scope line, §7 StatefulSet image, the backup CronJob image "with `pg_dump` 17 and rclone", and in the Supabase guide the rule that `pg_dump` must be at least the server's major version), `README.md` and `apps/cms-api/README.md` stack lines, the diagram source `scripts/docs/architecture/build.py` and its generated `docs/architecture/10-local-setup.html` (regenerated with the script, not hand-edited).
+    - SPEC §1 item 3 and the §3 Tests row drop "16 until LG-pg17" (the builder reports the exact lines; the planner edits SPEC), and the manager updates the `Stack:` line in `project.md`.
+  - Verify: `grep -rn "postgres:16\|Postgres 16\|PostgreSQL 16\|pg_dump 16" --exclude-dir=node_modules --exclude-dir=.git .` finds only history (ADR context, archive, done tasks); `pnpm --filter @abyss/cms-api test:integration` green on 17 (both `DatabaseRoles` suites included); `pnpm dev:stack` starts from an empty volume and `pnpm dev:stack:stop`; tier 3 `SMOKE_E2E=1 pnpm smoke` green; `pnpm format:check`.
+  - Files: `apps/cms-api/test/fixtures/Postgres.fixture.ts`, `docker-compose.smoke.yml`, `docker-compose.dev.yml`, `docs/local-run.md`, `docs/deployment/k3s-traefik.md`, `docs/deployment/supabase-database.md`, `README.md`, `apps/cms-api/README.md`, `scripts/docs/architecture/build.py`, `docs/architecture/10-local-setup.html` (generated).
+  - Checks: qc tier 3. Risk: normal.
+
+- [ ] **LG-1: Whole-project security review** · L (review only) · Deps: RV-doc-3 (all RV work committed), LG-2, LG-db-4, LG-db-5, LG-db-6 (D19 verdict covers the warn-only guard and the ADR 0012 §8 accepted risk) · security-qc (opus) · **Security gate: yes** · SPEC §7 (D1-D19), §12, §13 "Launch gate", `docs/modules/access-control.md`
   - Acceptance:
     - Static review of the whole repository at one commit (named in the findings file), not a diff: every app and package, `scripts/`, `.github/workflows/`, Dockerfiles, `docker-compose.smoke.yml`, `docs/deployment/*`, each `.env.example`. Each SPEC §7 decision D1-D19 is checked against the code with a file reference and a verdict (holds / gap / not applicable). Also: dependency advisories (`pnpm audit`), secrets in git history (`git log -p` grep for key patterns and private keys), CSP and header config, cookie flags, CORS origins, rate limits, error bodies (no stack traces), logging (no OTP, token, password), file upload pipeline, richtext sanitizers (cms-api and web), GraphQL limits and introspection, masking on REST, GraphQL and web SSR/RSC (including RV-mask), reviewer isolation, owner setup route, CLI opt-ins (`seed:account`, rate-limit override) refused in production config.
     - Dynamic review on a fresh tier 3 stack (`SMOKE_KEEP=1 SMOKE_E2E=1 pnpm smoke`) with `scripts/launch-check.sh` (LG-2) plus manual probes: auth flows and token reuse, privilege boundaries per role, masking per role over REST, GraphQL and the web HTML, injection in filters, paths, richtext and upload, CORS and CSRF on the refresh cookie.
@@ -2475,7 +2520,7 @@ User decision (2026-10-27, handoff "LG-0 answers" and the planner job `DESIGN DB
 
 - [ ] **LG-fix-*: fixes from LG-1 and LG-3** · planned by the planner from the findings files (one task per finding or per owner module), each with its own Security gate and tier. Placeholder; not dispatched as such.
 
-- [ ] **LG-3: Live check of the deployed site** · M · Deps: LG-0, LG-1 and its critical/high LG-fix tasks, LG-2, LG-db-4, LG-db-5 (deployed with the ADR 0012 roles, or on the shared DB account accepted under LG-0 item 6; the report notes which and whether the cms-api log shows the LG-db-5 warning); the site deployed per Q-LG1 (production config, not public yet) and the throwaway admin from Q-LG2 · Q-LG1..Q-LG5 answered · qc (browser and CLI) + security-qc (opus, dynamic) · **Security gate: yes** · SPEC §13 "Launch gate"
+- [ ] **LG-3: Live check of the deployed site** · M · Deps: LG-0, LG-1 and its critical/high LG-fix tasks, LG-2, LG-db-4, LG-db-5, LG-db-7 (deployed with the ADR 0012 roles, or on the shared DB account accepted under LG-0 item 6; the report notes which and whether the cms-api log shows the LG-db-5 warning); the site deployed per Q-LG1 (production config, not public yet) and the throwaway admin from Q-LG2 · Q-LG1..Q-LG5 answered · qc (browser and CLI) + security-qc (opus, dynamic) · **Security gate: yes** · SPEC §13 "Launch gate"
   - Acceptance:
     - `scripts/launch-check.sh --web <web origin> --admin <admin origin>` against the deployed site: all `ok`.
     - Browser walk (qc, Chromium, devtools open) on the deployed origins: response headers as above on web and admin; no console error and no CSP violation on the CV page, the login dialog, the reviewer dialog (real Turnstile) and the admin pages; sign-in with the account from Q-LG2 including TOTP; the refresh cookie is `Secure`, `HttpOnly`, `SameSite` as SPEC §6/D14 and `Path=/api/v1/auth`, host-only; sign-out ends the session (the refresh is refused afterwards); the reviewer flow gives a read-only session that sees the masked CV and gets 403 on a write; the web HTML and the RSC payload as anonymous and as reviewer contain no raw Q-RV6 value.
@@ -2485,3 +2530,172 @@ User decision (2026-10-27, handoff "LG-0 answers" and the planner job `DESIGN DB
   - Verify: the findings file lists every check above with its result and evidence (header dumps, cookie attributes, screenshots of the console); the Q-LG2 throwaway admin is disabled after the run (the user confirms); the write-probe data is deleted (listed in the report).
   - Files: `.claude/state/findings/audit-<date>-live-launch.md` (new). No product code.
   - Checks: manager and user review; the user approves the launch in writing (SPEC §13 "Never" rule). Risk: high.
+
+## Direct request: backup download in cms-admin (BK) — PROPOSED 2026-10-27
+
+User request (2026-10-27, routed by the request validator as `DESIGN backup-download`): a backup download UI in cms-admin, and backups must not use much space on the VPS or on Supabase. Design: `docs/adr/0013-backup-download.md`; SPEC §7 D20, §9 "Backups". User answers (2026-10-27):
+- Q-BK1: owner only, as a hard check.
+- Q-BK3: list and download the existing dumps only. There is no on-demand backup button.
+- Q-BK4: 14 daily + 3 monthly through bucket lifecycle rules. The job key cannot delete.
+- Q-BK5: Cloudflare R2. R2 presigned URLs work only on the S3 API host, not on a custom domain.
+
+- Q-BK2: two separate keys. The job uploads with a write-only key that cannot delete; cms-api uses its own read-only R2 token (list and get).
+- Q-BK6: `age` encryption before upload. The owner keeps the private key offline in two copies.
+
+- Q-BK7: the official S3 SDK (`@aws-sdk/client-s3`, `@aws-sdk/s3-request-presigner`) in cms-api, plus `testcontainers` as a dev dependency and an S3 stand-in image for the adapter suite. The builder picks a maintained image and records it. (First deferred, answered the same day.)
+
+No BK question is open. Flat list. Build order: BK-1 ‖ BK-2, then BK-3, then BK-4, then BK-e2e; BK-doc after LG-db-4 and LG-pg17 (same guide files), any time after the answers. Not a launch blocker; if BK-3 is committed before LG-1 runs, LG-1 covers D20.
+
+- [ ] **BK-1: Re-authentication service and owner-only rule** · S · Deps: none (Q-BK1 answered 2026-10-27) · core-builder · **Security gate: yes** (`modules/identity`, `modules/access`) · SPEC §7 D20, D8, D15; ADR 0013 §4
+  - Acceptance:
+    - `identity/application/Reauthentication.service.ts` (new), exported from `identity/index.ts` and provided and exported by `Identity.module.ts`. It has one method: `ReauthenticationService.confirm(accountDocumentId, { password, code }, purpose, meta)`.
+      - The account must be active and not deleted. Otherwise it throws the same "not signed in" error as `TwoFactorManagement`.
+      - 2FA off → `403 AUTH_2FA_NOT_ENABLED`, and no audit row is written.
+      - Wrong or missing password → the same 403 `wrongCurrentPassword()` error as 2FA off.
+      - Wrong code of the active method → `invalidTwoFactorCodeWhenSignedIn()`. TOTP codes go through `TotpService.verifyAccountCode`, which already rejects replays. Email codes of purpose `LOGIN_2FA_EMAIL` are verified and consumed in their own transaction, and a code already used is rejected.
+      - Each password or code failure writes one standalone `auth.reauth_failed` row with metadata `{ purpose, reason }`, where `reason` is a value of `REAUTH_FAILURE_REASONS`.
+      - It never writes on success. The caller audits its own action.
+    - `security-audit/domain/SecurityAudit.constants.ts` gets `AUTH_REAUTH_FAILED: 'auth.reauth_failed'`, `BACKUP_DOWNLOAD_LINK_CREATED: 'backup.download_link_created'` and `REAUTH_PURPOSES = { BACKUP_DOWNLOAD: 'backup_download' }`, with doc comments in the file's style. Nothing else in the file changes.
+    - `access/domain/Rank.rules.ts` gets `requireOwnerActor(actor)`. It returns the `AccountActor` when the actor is an account with the owner role (`isOwnerRole`), and throws the existing 403 forbidden error otherwise: API token, reviewer, anonymous, and any other role, even one holding every grant. It is exported from `access/index.ts`.
+    - `TwoFactorManagement.service.ts` and the 2FA endpoints are unchanged (`git diff` shows no change there).
+  - Verify:
+    - `Reauthentication.service.spec.ts` covers: TOTP success; email-code success with the code consumed (a second use fails); wrong password; wrong code; replayed TOTP; 2FA off; disabled account; and one audit row per failure with the right `purpose` and `reason`.
+    - `Rank.rules.spec.ts` covers owner, admin, a custom role with all grants, a reviewer, an API token and anonymous.
+    - `pnpm --filter @abyss/cms-api test:unit`, `lint`, `typecheck`.
+  - Files: `apps/cms-api/src/modules/identity/application/Reauthentication.service.ts` (new), `.../Reauthentication.service.spec.ts` (new), `identity/Identity.module.ts`, `identity/index.ts`, `access/domain/Rank.rules.ts`, `access/domain/Rank.rules.spec.ts`, `access/index.ts`, `security-audit/domain/SecurityAudit.constants.ts`.
+  - Checks: qc tier 1 + security-qc. Risk: high (auth path).
+
+- [ ] **BK-2: Backup storage config and the S3 adapter** · M · Deps: none (parallel with BK-1). Q-BK2, Q-BK5 and Q-BK7 are answered. · core-builder. The changes to `apps/cms-api/package.json` and `pnpm-lock.yaml` are approved by Q-BK7, limited to the dependency list below. · **Security gate: yes** (env schema, a new secret, a new outside client) · SPEC §7 D20, D17; ADR 0013 §2, §4
+  - Acceptance:
+    - Dependency list (Q-BK7; nothing else may be added):
+      - in `apps/cms-api` `dependencies`: `@aws-sdk/client-s3` and `@aws-sdk/s3-request-presigner`, pinned to the same exact current version, matching the repo's exact pins;
+      - in `apps/cms-api` `devDependencies`: `testcontainers`, pinned to the exact version that the existing `@testcontainers/postgresql` (12.2.1) depends on, so the lockfile holds a single copy;
+      - the builder reads each version from the npm registry, not from memory, and records the versions and the `pnpm audit` result in the unit record;
+      - the S3 stand-in is a container image only (a maintained one, e.g. MinIO if it is still published, otherwise SeaweedFS), never an npm package; the builder records the image and its tag.
+    - `src/config/Env.schema.ts` gets six optional keys: `BACKUP_STORAGE_ENDPOINT`, `BACKUP_STORAGE_REGION` (default `auto` in `Config.constants.ts`), `BACKUP_STORAGE_BUCKET`, `BACKUP_STORAGE_PREFIX` (default `postgres/`, must end with `/`), `BACKUP_STORAGE_ACCESS_KEY_ID` and `BACKUP_STORAGE_SECRET_ACCESS_KEY`.
+      - One refinement: endpoint, bucket and both key parts are set together or not at all. A partial set fails config loading and names only the missing keys, never a value.
+      - In production the endpoint must be `https:`.
+      - The keys are in the app schema only, not in the DB-only schema of LG-db-1.
+    - `AppConfig.setup.ts` exposes `backups: BackupStorageConfig | undefined`, set only when the keys are set. The secret access key never appears in the config summary log.
+    - `apps/cms-api/.env.example` lists the six keys, commented out. The comment says the key pair is a read-only token (list + get) for the backup bucket, separate from the backup job's write credential (ADR 0013 §4).
+    - `modules/backups/application/Backups.port.ts` (new): the `BackupStorage` interface and its `BACKUP_STORAGE` token.
+      - `list(prefix)` → `{ key, sizeBytes }[]`, following continuation tokens.
+      - `find(key)` → `{ key, sizeBytes } | null`.
+      - `createDownloadUrl(key, expiresInSeconds)` → `string`.
+      - The shared type `StoredBackupObject` lives in this file.
+    - `modules/backups/adapters/S3BackupStorage.adapter.ts` (new) implements the port with `@aws-sdk/client-s3` and `@aws-sdk/s3-request-presigner` (Q-BK7).
+      - Path-style addressing is controlled by the adapter's options, not by a new env key, unless the stand-in needs one. If it does, the builder reports it and the planner decides.
+      - `find` returns `null` on 404 or `NoSuchKey`. Any other failure is thrown as an error that holds no credential.
+  - Verify:
+    - `AppConfig.setup.spec.ts` cases: none set → `undefined`; all set → the config with its defaults; each partial set fails with the key names only; `http:` endpoint refused in production and accepted in development.
+    - `test/integration/S3BackupStorage.integration.spec.ts` (new) runs against an S3 stand-in container (the builder picks a maintained image and records the image and its tag in the unit record, Q-BK7). It uploads three objects under `postgres/daily/` plus one non-matching key, then checks:
+      - `list` returns all four with sizes;
+      - `find` on a missing key → `null`;
+      - a URL from `createDownloadUrl(key, 60)` fetched with `fetch` returns the exact bytes and the `Content-Disposition` header set at upload;
+      - after the expiry, the URL returns 403.
+    - `EnvExample.contract.spec.ts` green; `pnpm --filter @abyss/cms-api test:unit`, `test:integration`, `lint`, `typecheck`; `pnpm audit` shows no new high or critical advisory.
+  - Files: `apps/cms-api/src/config/Env.schema.ts`, `src/config/Config.constants.ts`, `src/config/AppConfig.setup.ts`, `src/config/AppConfig.setup.spec.ts`, `apps/cms-api/.env.example`, `src/modules/backups/application/Backups.port.ts` (new), `src/modules/backups/adapters/S3BackupStorage.adapter.ts` (new), `test/integration/S3BackupStorage.integration.spec.ts` (new), `apps/cms-api/package.json`, `pnpm-lock.yaml`.
+  - Checks: qc tier 3 (the env schema is a tier-3 trigger path; smoke runs with the feature off) + security-qc. Risk: normal.
+
+- [ ] **BK-3: Backups endpoints: list and download link (owner only)** · M · Deps: BK-1, BK-2 · core-builder · **Security gate: yes** · SPEC §7 D20, §9 "Backups"; ADR 0013 §2, §4
+  - Acceptance:
+    - `modules/backups/` is completed with these files:
+      - `domain/Backups.constants.ts`: `BACKUP_KINDS` (`daily`, `monthly`), `DOWNLOAD_LINK_TTL_SECONDS = 60`, `STALE_AFTER_HOURS = 26`, the file-name pattern `abyss-<YYYYMMDDTHHMMSSZ>.dump.age`, and the error codes `BACKUPS_NOT_CONFIGURED` and `BACKUP_NOT_FOUND` with their messages;
+      - `domain/BackupCatalog.rules.ts`: parse a key into `{ key, kind, fileName, createdAt }` or `null`; summarize a list into `{ count, totalBytes, latestAt, isStale }` for a given `now`;
+      - `application/Backups.service.ts`: `list()` and `createDownloadLink(actor, input, meta)`;
+      - `http/Backups.controller.ts`: the request schema and the throttle policies stay inside this file;
+      - `Backups.module.ts` and `index.ts`.
+    - The module is imported in `App.module.ts`. When `config.backups` is undefined, the module binds no adapter and both routes answer `404 BACKUPS_NOT_CONFIGURED`.
+    - `GET /api/v1/backups`:
+      - `JwtAuthGuard`, then `requireOwnerActor`, `Cache-Control: no-store`, throttle `backups-list:actor` 30 per minute.
+      - Lists `<prefix>daily/` and `<prefix>monthly/` and skips keys that do not match the pattern.
+      - Returns `{ data: [{ key, kind, fileName, createdAt, sizeBytes }], meta: { count, totalBytes, latestAt, isStale } }`, newest first. `isStale` is true when no `daily` object is newer than 26 hours, or when there is none.
+    - `POST /api/v1/backups/download-links` with `{ key, password, code }`:
+      - The same guards and `no-store`. Throttles `backup-link:actor` 5 per 10 minutes and `backup-link:ip` 10 per 10 minutes.
+      - Order of checks:
+        1. body schema and key pattern under the configured prefix → `400`;
+        2. `ReauthenticationService.confirm(..., REAUTH_PURPOSES.BACKUP_DOWNLOAD, meta)`;
+        3. `find(key)` → `404 BACKUP_NOT_FOUND` when missing;
+        4. `createDownloadUrl(key, 60)`;
+        5. a standalone `backup.download_link_created` audit row (`targetId` = file name, metadata `{ kind, sizeBytes }`).
+      - Returns `201 { url, fileName, expiresAt }`. The URL is never logged, audited or kept on the server.
+    - `src/contract/PublicConstants.contract.ts` gets `errorCodes.backups`, and the generated `apps/cms-api/content/public-constants.json` is updated by its print command (no hand edit).
+    - `docs/modules/backups.md` (new): purpose, both endpoints with examples, the owner-only rule, re-auth, the audit rows, the config keys, the stale rule, and a link to ADR 0013 and the deploy guide.
+  - Verify:
+    - `BackupCatalog.rules.spec.ts`: parse of valid, wrong prefix, wrong kind, bad timestamp and `..` keys; summary for empty, fresh and stale lists.
+    - `Backups.service.spec.ts` (fake storage, fake re-auth, fixed clock): the order of checks above, with no `find` or URL call when re-auth fails.
+    - `test/integration/Backups.integration.spec.ts` (Nest app, fake `BACKUP_STORAGE`):
+      - owner list `200` with `no-store`;
+      - admin, a custom role with all grants, an API token and a reviewer each get `403` on both routes;
+      - download link with a wrong password, a wrong code, and with 2FA off → the matching `403`, plus one `auth.reauth_failed` row for each password or code failure;
+      - success → `201` and one `backup.download_link_created` row with no URL in it;
+      - unknown key → `404 BACKUP_NOT_FOUND`;
+      - a key outside the prefix → `400`;
+      - the 6th link request in the window → `429`;
+      - with the config unset both routes → `404 BACKUPS_NOT_CONFIGURED`.
+    - The architecture guards (`test/architecture/`) pass with the new module. If a guard lists modules, the builder adds `backups` there and records it.
+    - `pnpm --filter @abyss/cms-api test:unit`, `test:integration`, `lint`, `typecheck`; `print-public-constants -- --check` (or the repo's equivalent) green.
+  - Files: `apps/cms-api/src/modules/backups/domain/Backups.constants.ts` (new), `domain/BackupCatalog.rules.ts` + `.spec.ts` (new), `application/Backups.service.ts` + `.spec.ts` (new), `http/Backups.controller.ts` (new), `Backups.module.ts` (new), `index.ts` (new), `src/App.module.ts`, `src/contract/PublicConstants.contract.ts`, `apps/cms-api/content/public-constants.json` (generated), `test/integration/Backups.integration.spec.ts` (new), `docs/modules/backups.md` (new).
+  - Checks: qc tier 3 (new module in the app; smoke runs with the feature off and stays green) + security-qc. Risk: high (gives out the whole database).
+
+- [ ] **BK-4: cms-admin backups page and download dialog** · M · Deps: BK-3 · ui-builder · **Security gate: yes** (`features/security` facade export; the page hands out a download URL) · SPEC §7 D20, §9 "Backups"; ADR 0013 §5
+  - Acceptance:
+    - New feature folder `apps/cms-admin/src/features/backups/` with `Backups.feature.ts`, `Backups.api.ts`, `BackupsApi.context.tsx`, `Backups.queries.ts`, `BackupsPage.tsx`, `DownloadBackupDialog.tsx` and `index.ts`, following the reviewer feature's layout. It is registered in `Features.registry.ts`.
+    - Route `APP_ROUTES.BACKUPS = '/backups'`. A nav item "Backups" sits under `systemSettings` and comes from `useNavItems`, shown only when `useCallerAccess().isOwner`. A non-owner who opens `/backups` sees the existing forbidden state, never the list.
+    - `BackupsPage`:
+      - a summary line with count, total size and the time of the latest backup;
+      - a warning banner when `meta.isStale`;
+      - a table, newest first, with date (local time, UTC in a tooltip), type, size (human-readable, binary units) and a Download button;
+      - states: loading, empty, not configured (`BACKUPS_NOT_CONFIGURED`, with the guide name), and error with retry;
+      - a note about the age key while file names end in `.age`.
+      - Buttons and tones follow the `ui-direction` skill.
+    - `DownloadBackupDialog` wraps `ConfirmWithCodeForm`, now exported from `features/security/index.ts` (the `FACADE_EXPORTS` entry in `FeatureTiers.architecture.test.ts` is updated). It uses the account's 2FA method and offers `useEmailCode` for the email method.
+      - On `201` it calls `window.location.assign(url)` and closes. The URL is not stored in Redux, the query cache or any log.
+      - `AUTH_2FA_NOT_ENABLED` → a message with a link to `/settings/security`. Wrong password or code → the form's existing field errors. `429` → the existing rate-limited message.
+    - All text lives in `config/copy/Backups.copy.ts` (new, wired into `Copy.constants.ts`, with `copy.snapshot.json` updated by its test). Endpoints are in `config/Api.endpoints.ts`. No literal colors or sizes.
+  - Verify:
+    - `BackupsPage.test.tsx` covers: the owner sees rows newest first; the stale banner; the empty, not-configured and error-with-retry states; the nav item hidden for an admin.
+    - `DownloadBackupDialog.test.tsx` covers: on submit it posts `{ key, password, code }` and calls `window.location.assign` with the returned URL; wrong code marks the field; 2FA off shows the security link; 429 shows the rate-limit text.
+    - `pnpm --filter @abyss/cms-admin test`, `lint`, `typecheck`, `build`.
+    - Tier 2 browser check by qc: as the owner on the dev stack (feature off) the page shows the not-configured state with no console error. As an admin the nav item is absent.
+  - Files: `apps/cms-admin/src/features/backups/{Backups.feature.ts,Backups.api.ts,BackupsApi.context.tsx,Backups.queries.ts,BackupsPage.tsx,DownloadBackupDialog.tsx,index.ts,BackupsPage.test.tsx,DownloadBackupDialog.test.tsx}` (new), `features/Features.registry.ts`, `features/security/index.ts`, `src/FeatureTiers.architecture.test.ts`, `config/App.routes.ts`, `config/Api.endpoints.ts`, `config/copy/Backups.copy.ts` (new), `config/Copy.constants.ts`, `config/copy/copy.snapshot.json`.
+  - Checks: qc tier 2 (browser) + security-qc. Risk: normal.
+
+- [ ] **BK-e2e: Backups page e2e** · S · Deps: BK-4 · qc · SPEC §9 "Backups"; ADR 0013 §5
+  - Acceptance: `apps/e2e/tests/Backups.e2e.spec.ts` (new) on the dev stack, which has no backup storage:
+    - as the owner, the "Backups" nav item opens `/backups` and the page shows the not-configured state;
+    - as an admin, the nav item is absent and `GET /api/v1/backups` with the admin's token returns `403`;
+    - with `page.route` answering `GET /api/v1/backups` with two fixture rows (one stale case) and `POST /api/v1/backups/download-links` with a fixture URL, the table, the stale banner and the dialog flow work, and the page navigates to the fixture URL (intercepted, nothing leaves the stack).
+  - Verify: `E2E_STACK=dev pnpm e2e:spec tests/Backups.e2e.spec.ts` green twice in a row.
+  - Files: `apps/e2e/tests/Backups.e2e.spec.ts` (new).
+  - Checks: qc tier 2. Risk: low.
+
+- [ ] **BK-doc: Backup job, bucket and restore in the deploy guides** · S · Deps: LG-db-4, LG-pg17 (same guide files); Q-BK2, Q-BK4, Q-BK5 and Q-BK6 are answered. · core-builder (`docs/deployment/` approved at dispatch, as for LG-db-4) · SPEC §1 item 3, §7 D20, D19; ADR 0013 §1-§3
+  - Acceptance:
+    - `docs/deployment/k3s-traefik.md` §7: the bucket is Cloudflare R2. The R2 S3 API host (`https://<account-id>.r2.cloudflarestorage.com`) is the endpoint for rclone and `BACKUP_STORAGE_ENDPOINT`. Presigned URLs do not work on a custom domain, so no custom domain or public access is set up. The lifecycle rules are written as R2 rules, checked against the official R2 docs.
+    - `docs/deployment/k3s-traefik.md` §7, CronJob replaced:
+      - one stream `pg_dump -Fc -n public -n content | age -r "$BACKUP_AGE_RECIPIENT" | rclone rcat` with `set -euo pipefail`;
+      - no `/tmp` file, no volume;
+      - upload headers `Content-Type` and `Content-Disposition`;
+      - keys `<prefix>daily/abyss-<stamp>.dump.age`, and the day-1 server-side copy to `monthly/`;
+      - the pre-dump `pg_database_size` check against `BACKUP_MAX_DATABASE_BYTES` and the post-upload `rclone size` check against `BACKUP_MAX_DUMP_BYTES`, both "warn, keep the dump, exit 1";
+      - the job credential can write and list but not delete;
+      - lifecycle rules: `daily/` 14 days, `monthly/` 92 days;
+      - the space bound of ADR 0013 §3 step 6;
+      - the 26-hour stale alert;
+      - a resource limit for the job pod.
+    - The restore drill adds `age -d -i <key file>` as its first step. A note says the age private key is kept offline in two copies and never on the VPS.
+    - A "Backup download (cms-admin)" subsection: the read-only token (list + get, this bucket only), the six `BACKUP_STORAGE_*` keys (ConfigMap or Secret column), and the owner-only page with password + 2FA.
+    - `docs/deployment/supabase-database.md`, backup part: the same pipeline as `abyss_backup.<project-ref>` over the session pooler, and the rule that nothing is stored in Supabase Storage.
+    - `docs/deployment/k3s-secrets-sops.md` §1, §2:
+      - the Secret `postgres-backup` holds the DB password, the rclone remote config with the write-only key, and `BACKUP_AGE_RECIPIENT` (a public key, but kept with the job's config);
+      - cms-api's `cms-api-secrets` gains the two `BACKUP_STORAGE_*` key parts;
+      - there is a template for each.
+    - `apps/cms-api/README.md`: the env table lists the six keys with a link to ADR 0013.
+  - Verify:
+    - `grep -n "/tmp/" docs/deployment/k3s-traefik.md` finds no dump path.
+    - Every env key named exists in `apps/cms-api/.env.example` or is marked as a job-only key.
+    - The commands match the key layout in `Backups.constants.ts` (BK-3).
+    - `pnpm format:check`.
+  - Files: `docs/deployment/k3s-traefik.md`, `docs/deployment/supabase-database.md`, `docs/deployment/k3s-secrets-sops.md`, `apps/cms-api/README.md`.
+  - Checks: qc tier 1 (doc review) + manager review. The job itself is tried once by the owner under LG-0 item (4): one off-site upload, one download from the page, one restore drill with `age -d`. Risk: normal.

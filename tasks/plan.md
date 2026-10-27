@@ -383,6 +383,27 @@ Flat list, details in `todo.md` "Direct request: architecture guards move to `te
 ### Direct request: content types from the parked JSON files (CT) — APPROVED 2026-10-27
 Flat list, details in `todo.md` "Direct request: content types from the parked JSON files (CT)". SPEC §7 D10, §8.2; ADR 0010. Two core-builder tasks: CT-doc (no deps, docs and a Dockerfile comment) and CT3 (four converted definitions, the CV type as slug `resume` per Q-CT8, + generated `0003_site_content_types.sql`, snapshot and `schema.graphql` with `Resume` / `ResumePage`). No open questions. Check (CLI): `content:generate -- --check` and `graphql:print-schema -- --check` pass; tier 3 smoke: the `cms-api-init` log shows `Applied 1 migration(s): 0003_site_content_types.sql.` and `GET /api/v1/content-types` as the owner lists the four new slugs (`common-text`, `cv-contact`, `header`, `resume`). Independent of the other open work; not in parallel with another task that generates a content migration.
 
+### Direct request: backup download in cms-admin (BK) — PROPOSED 2026-10-27
+
+Details are in `todo.md` under "Direct request: backup download in cms-admin (BK)". Design: `docs/adr/0013-backup-download.md`. SPEC references: §7 D20, §9 "Backups".
+
+The user answered Q-BK1 to Q-BK6 on 2026-10-27: owner only, existing dumps only, lifecycle retention, Cloudflare R2, two separate keys, and `age` encryption. Q-BK7 is answered too: the official S3 SDK plus `testcontainers` and an S3 stand-in image. No BK question is open. BK-1 and BK-2 can be dispatched now, and BK-doc after LG-db-4 and LG-pg17.
+
+Build order is a flat list:
+1. BK-1 (core-builder, Security gate) and BK-2 (core-builder, Security gate) in parallel.
+2. BK-3 (core-builder, Security gate).
+3. BK-4 (ui-builder, Security gate).
+4. BK-e2e (qc).
+
+BK-doc (core-builder) runs after LG-db-4 and LG-pg17, because it edits the same guides.
+
+Checks:
+- CLI: `pnpm --filter @abyss/cms-api test:integration -- Backups S3BackupStorage` passes. It covers the owner-only rule, re-auth, audit rows, no-store and the rate limit. A presigned URL fetched from the S3 stand-in returns the uploaded bytes.
+- Tier 3: `SMOKE_E2E=1 pnpm smoke` passes with the feature off.
+- Browser: `E2E_STACK=dev pnpm e2e:spec tests/Backups.e2e.spec.ts` passes. The owner sees the page, an admin does not, and the download dialog navigates to the returned URL.
+
+This is not a launch blocker. If BK-3 is committed before LG-1, the LG-1 review covers D20.
+
 ### Recruiter reviewability (RV) — PROPOSED 2026-10-27
 Details in `todo.md` "Recruiter reviewability (RV)"; design `docs/adr/0011-recruiter-reviewability.md`; user answers Q-RV2..Q-RV9 recorded there (2026-10-27); Q-RV1 (LICENSE holder name) still open. T30 (CV page) is unarchived and replaced by the RV2 tasks. User decisions: MIT license; no seeded or published demo account (reviewer flow); order demo -> CV page -> README.
 
@@ -422,12 +443,12 @@ Goal: security holds for any public visitor: a whole-project security review and
 Inputs: RV3 outputs (all RV work committed); the site deployed by the user with the production config and not public yet (staging with the production config allowed; Q-LG1, Q-LG2); a throwaway admin with 2FA (Q-LG2); launch blockers decided (LG-0).
 Outputs:
 - Launch blockers. Check: handoff.md has a user decision for each of the nine LG-0 items (multer and audit advisories, CI first run, untested deploy pieces, Cloudinary, DB roles, setup token, reviewer state, browser walk gaps).
-- Database roles (ADR 0012, SPEC D19). Check (CLI): `pnpm --filter @abyss/cms-api test:integration -- DatabaseRoles` green; `SMOKE_E2E=1 pnpm smoke` green with `cms-api-init` as `abyss_migrator` holding only `DB_*` keys, `cms-api` as `abyss_api`, and the `database-roles` section all `ok`; the deploy guides carry the per-pod Secret map and the owner runbook.
+- Database roles (ADR 0012, SPEC D19). Check (CLI): `pnpm --filter @abyss/cms-api test:integration -- DatabaseRoles` green; `SMOKE_E2E=1 pnpm smoke` green with `cms-api-init` as `abyss_migrator` holding only `DB_*` keys, `cms-api` as `abyss_api`, and the `database-roles` section all `ok`; the deploy guides carry the per-pod Secret map and the owner runbook. Supabase (ADR 0012 §9): both `DatabaseRoles` suites green (`self_managed` and the Supabase stand-in); unit cases for `DB_SSL_MODE` / `DB_SSL_ROOT_CERT_PATH`; `docs/deployment/supabase-database.md` has runbook S1-S8; LG-db-7 records Data API off, TLS check, second script run and a clean boot on the Supabase project.
 - Live check script. Check (CLI): `scripts/launch-check.sh --web <origin> --admin <origin>` prints only `ok` lines against a kept smoke stack and is part of `SMOKE_E2E=1 pnpm smoke`.
 - Whole-project review. Check: `.claude/state/findings/audit-<date>-security-launch.md` with a complete D1-D19 verdict table; every critical and high finding has a committed LG-fix task re-reviewed by security-qc.
 - Live check. Check (CLI and browser): `launch-check.sh` against the deployed origins all `ok`; `.claude/state/findings/audit-<date>-live-launch.md` covers headers, transport, auth and cookie flags, masking (API and web HTML/RSC, anonymous and reviewer), injection and, if approved, the write probes and the ZAP scan.
 Exit criteria: no open critical or high finding; each medium fixed or accepted by the user in writing; the throwaway admin account disabled; the user approves the launch in writing. Until then the SPEC §13 "Never" rule applies (no public DNS, ingress or announced URL).
-Tasks: LG-0 and LG-dep (may start during RV), LG-db-1 and LG-db-2 (parallel), LG-db-3, LG-db-4, LG-db-5 (production boot warning, Q-DB2 warn only), LG-2, LG-1, LG-fix-* (from LG-1), LG-3, LG-fix-* (from LG-3)
+Tasks: LG-0 and LG-dep (may start during RV), LG-db-1 and LG-db-2 (parallel; LG-db-2 has the `self_managed` and `supabase` modes), LG-db-3 and LG-db-6 (DB TLS keys, after LG-db-1), LG-db-5 (production boot warning, Q-DB2 warn only), LG-db-4 (deploy guides incl. the Supabase runbook), LG-db-7 (Supabase lockdown, owner; Q-DB3..Q-DB7 answered), LG-pg17 (Postgres 17 images, after LG-db-3 and LG-db-4), LG-2, LG-1, LG-fix-* (from LG-1), LG-3, LG-fix-* (from LG-3)
 
 ## Risks and Mitigations
 
