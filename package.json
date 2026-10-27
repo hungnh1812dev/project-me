@@ -1,6 +1,7 @@
 {
   "name": "abyss",
   "private": true,
+  "license": "UNLICENSED",
   "packageManager": "pnpm@11.5.2",
   "engines": {
     "node": ">=24.0.0",

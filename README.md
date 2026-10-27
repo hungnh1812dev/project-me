@@ -84,4 +84,4 @@ pnpm dev:stack:stop     # when you are done
 
 ## License
 
-MIT. The license file is added separately.
+Copyright (c) 2026 AbyssOfTime Dev. All rights reserved. See [LICENSE](LICENSE): no use, copying, modification or sale without the owner's prior written permission.
