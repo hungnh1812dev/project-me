@@ -1,5 +1,6 @@
 import { accessFeature } from './access/Access.feature';
 import { authFeature } from './auth/Auth.feature';
+import { backupsFeature } from './backups/Backups.feature';
 import { contentFeature } from './content/Content.feature';
 import { contentTypesFeature } from './content-types/ContentTypes.feature';
 import type { Feature } from '../lib/FeatureDefinition';
@@ -18,6 +19,7 @@ export const FEATURES: Readonly<Record<string, Feature>> = {
   access: accessFeature,
   media: mediaFeature,
   reviewer: reviewerFeature,
+  backups: backupsFeature,
   content: contentFeature,
   'content-types': contentTypesFeature,
   security: securityFeature,

@@ -72,10 +72,11 @@ const FACADE_EXPORTS: Record<string, string[]> = {
     'useEmailCode',
     'useSession',
   ],
+  backups: ['BackupsPage'],
   content: ['CollectionListPage', 'DocumentEditPage'],
   media: ['MediaField', 'MediaLibraryPage', 'mediaToApi', 'mediaToForm'],
   reviewer: ['ReviewerSessionsPage'],
-  security: ['SecuritySettingsPage'],
+  security: ['ConfirmWithCodeForm', 'SecuritySettingsPage', 'useSecurityApi'],
 };
 
 describe('feature facades', () => {

@@ -63,6 +63,11 @@ export const API_ENDPOINTS = {
     SESSIONS: '/reviewer/sessions',
     SETTINGS: '/reviewer/settings',
   },
+  /** Owner-only list of backups and one-minute download links. */
+  BACKUPS: {
+    LIST: '/backups',
+    DOWNLOAD_LINKS: '/backups/download-links',
+  },
   /** Media library. `id` = the file's uuid. */
   MEDIA: {
     LIST: '/media',

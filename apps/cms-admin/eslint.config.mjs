@@ -61,7 +61,7 @@ const FEATURE_TIERS = [
   ['content-types'],
   ['access'],
   ['media'],
-  ['content', 'reviewer'],
+  ['content', 'reviewer', 'backups'],
 ];
 const FEATURES_IMPORTING_NO_FEATURE = ['auth', 'content-types', 'status'];
 const ALL_FEATURES = [...FEATURE_TIERS.flat(), 'status'];

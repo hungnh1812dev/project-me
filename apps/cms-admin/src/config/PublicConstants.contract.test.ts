@@ -23,6 +23,7 @@ interface PublicConstants {
     auth: Record<string, string>;
     ownerSetup: Record<string, string>;
     access: Record<string, string>;
+    backups: Record<string, string>;
   };
   permissionActions: string[];
 }
@@ -98,6 +99,10 @@ describe('admin constants against the cms-api public constants', () => {
       expect(publishedAccess).toContain(code);
       expect(adminCodes).not.toContain(code);
     }
+  });
+
+  it('mirrors the published backups not-configured code', () => {
+    expect(adminCodes).toContain(published.errorCodes.backups.NOT_CONFIGURED);
   });
 
   it('lists the permission actions in the published order', () => {

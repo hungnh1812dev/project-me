@@ -11,6 +11,7 @@ Features (`src/features/`):
 - `media`: media library and the media picker for document fields.
 - `content`: dynamic document form, collection list with bulk actions, conflict merge, presence.
 - `reviewer`: reviewer switch, sessions log and the read-only reviewer mode.
+- `backups`: owner-only list of the nightly database backups and a download behind password + 2FA code (ADR 0013). The nav item shows only while the server reports the backup storage as configured.
 - `status`: status page that calls `GET /api/v1/health/live`.
 
 ## Auth (T11, D14)
@@ -25,7 +26,7 @@ Features (`src/features/`):
 - **Feature facades**: every feature that another feature or `app/` uses has an
   `index.ts` with named exports only. Features import each other only through
   that `index.ts`, never a deep path, and only downward in the SPEC §2 order
-  auth < security < content-types < access < media < content, reviewer
+  auth < security < content-types < access < media < content, reviewer, backups
   (`content-types` and `status` import no feature). ESLint
   (`eslint.config.mjs`, `FEATURE_TIERS`) enforces both; test files may go deep
   for `vi.mock`. `src/FeatureTiers.architecture.test.ts` pins each facade's export list and

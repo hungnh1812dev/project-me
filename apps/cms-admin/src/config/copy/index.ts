@@ -6,6 +6,7 @@ import {
   PASSWORD_COPY,
   SESSION_COPY,
 } from './Common.copy';
+import { BACKUPS_COPY } from './Backups.copy';
 import { CONTENT_COPY } from './Content.copy';
 import { LOGIN_COPY } from './Login.copy';
 import { MEDIA_COPY } from './Media.copy';
@@ -29,4 +30,5 @@ export const COPY = {
   status: STATUS_COPY,
   media: MEDIA_COPY,
   content: CONTENT_COPY,
+  backups: BACKUPS_COPY,
 } as const;
