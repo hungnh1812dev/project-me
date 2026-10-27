@@ -56,6 +56,21 @@ in a production build.
 - `features/reviewer/Reviewer.queries.ts` owns the reviewer API instance, the
   query key and `useReviewerEnabled()` (anonymous visitor plus Turnstile site
   key only).
+- `src/lib/Graphql.server.ts` (`server-only`) is the one way a Server Component
+  reads content: `fetchGraphql(document, variables)` posts to
+  `${API_INTERNAL_URL}/graphql` with JSON headers only (no `Authorization`, no
+  cookie, no client IP), so the page holds what the `public` role may read.
+  Caching uses the fetch data cache, `next: { revalidate: WEB_REVALIDATE_SECONDS }`
+  (Next 16 without Cache Components; 0 turns it off). Any failure throws one
+  `GraphqlRequestError` (`GraphqlResponse.rules.ts`) with the first error code,
+  never the server message or the variables.
+- `src/lib/Graphql.client.ts`: `requestGraphql(document, variables, accessToken)`
+  for the browser, over the Axios instance, with the Bearer token from
+  `useWebSession`. Same error type.
+- `src/lib/SafeRichtext.rules.ts`: `sanitizeRichtext(html)` (DOMPurify; browser
+  and tests). Its allowlist mirrors the cms-api storage sanitizer. On the
+  server use `SafeRichtext.server.ts` (`sanitizeRichtextOnServer`, DOMPurify over
+  jsdom), a separate file so jsdom never reaches a client chunk.
 - `src/lib/Api.client.ts` is the browser Axios instance. It strips trailing
   slashes from every request path (SPEC §6), so no proxy can answer with a
   redirect.

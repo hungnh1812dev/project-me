@@ -13,6 +13,8 @@ export const API_ENDPOINTS = {
     LOGOUT: '/auth/logout',
     ME: '/auth/me',
   },
+  /** Read-only content queries (POST only). */
+  GRAPHQL: '/graphql',
   /** Reviewer sessions: status is public, sessions is public for POST. */
   REVIEWER: {
     STATUS: '/reviewer/status',

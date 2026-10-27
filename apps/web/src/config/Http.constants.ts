@@ -8,11 +8,15 @@ export const HEALTH_QUERY_RETRY = 1;
 export const HEALTH_STATUS_OK = 'ok';
 
 export const HTTP_STATUS = {
+  OK: 200,
   BAD_REQUEST: 400,
   TOO_MANY_REQUESTS: 429,
   CLIENT_ERROR_MIN: 400,
   SERVER_ERROR_MIN: 500,
 } as const;
+
+/** Body type of every GraphQL request. */
+export const JSON_MEDIA_TYPE = 'application/json';
 
 export const RETRY_AFTER_HEADER = 'retry-after';
 
