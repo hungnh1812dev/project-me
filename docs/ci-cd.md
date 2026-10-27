@@ -1,6 +1,6 @@
 # CI/CD
 
-GitHub Actions, built from the template in `.github_template/` (reference only). Workflows live in `.github/workflows/`, helper scripts in `.github/scripts/`.
+GitHub Actions. The workflows follow the configuration of the owner's earlier k3s + FluxCD deployment, adapted for this repo (see "Carried over from the earlier deployment"). Workflows live in `.github/workflows/`, helper scripts in `.github/scripts/`.
 
 ## Flow
 
@@ -27,6 +27,25 @@ The app flows never depend on each other, so one failing app does not skip anoth
 | `web` Checks       | `turbo run typecheck lint`, `pnpm --filter @abyss/web test`                                                                                                                                        |
 | `<app>` Build      | `pnpm turbo run build --filter=@abyss/<app>` (no Docker image here)                                                                                                                                |
 | `publish-<app>`    | `_publish.yml`: per-platform image (build, non-root guard, admin bundle check, push by digest), manifest, deploy bump. See "Publish".                                                              |
+
+## Carried over from the earlier deployment
+
+The old `frontend` app is `web` here, and the deploy repo overlay is `web-sync-overlay.yaml`.
+
+| Part                                                                  | Verdict | Where it lives now                                                                                                     |
+| --------------------------------------------------------------------- | ------- | ---------------------------------------------------------------------------------------------------------------------- |
+| `changes` job, `affected.sh` routing, zero or unknown base = all apps | carried | `ci.yml`, `affected.sh` (`@abyss/` scope, `app-checks.yml` routing; `apps/e2e` and `scripts/` affect no app)           |
+| Branch targets: develop checks only, staging and main publish         | adapted | `ci.yml` "Resolve deploy target"; staging builds `linux/amd64` on `ubuntu-24.04`, same as production (both run x86_64) |
+| Image prefix and tags `<branch>-<sha7>`, `<branch>`                   | carried | `ci.yml`, `_publish.yml`                                                                                               |
+| Image, manifest, deploy flow of `_publish.yml`                        | carried | `_publish.yml` (adds `TURBO_VERSION`, the web `NEXT_PUBLIC_*` build args, required `VITE_API_BASE_URL`)                |
+| Deploy contract (repo and path variables, token secret, overlay tag)  | carried | `_publish.yml` deploy job (adds `persist-credentials: false`, token only as a per-command header)                      |
+| Per-app flow files with a nested `publish` job                        | adapted | shared `app-checks.yml` plus `publish-<app>` jobs in `ci.yml`, gated on the app flow result                            |
+| `build` job inside the GitHub Environment                             | changed | read-only jobs run without an Environment; only the publish jobs read Environment values                               |
+| Optional `VITE_API_URL` with a relative fallback                      | changed | cms-admin requires the full `VITE_API_BASE_URL`; the Dockerfile refuses to build without it                            |
+| Actions referenced by tag                                             | changed | every action pinned to a full commit SHA                                                                               |
+| Tooling self-test of the old repo                                     | dropped | belongs to another repo                                                                                                |
+
+Stays in this project (never removed by a CI change): SHA-pinned actions; the `repo` job (pins check, `format:check`, audit); unit tests in every app flow; cms-api integration tests and the three `--check` generators; publish gated on the app flow, not on e2e; `persist-credentials: false` with the header-only token on the deploy push; `packages: write` only on the image and manifest jobs; the `pull_request` trigger stays commented out.
 
 ## Adding an app
 
@@ -68,8 +87,6 @@ bash .github/scripts/build-args.test.sh
 
 GitHub CI never runs Playwright. Before pushing to `staging` or `main`, run the suite against the local compose stack with `SMOKE_E2E=1 pnpm smoke` (Docker running, `pnpm --filter @abyss/e2e browsers:install` once). For a single spec, keep a stack with `SMOKE_KEEP=1 SMOKE_E2E=1 pnpm smoke` and run `pnpm e2e:spec <spec>`. Details: [apps/e2e/README.md](../apps/e2e/README.md).
 
-Lint the workflows with `docker run --rm -v "$PWD":/repo -w /repo rhysd/actionlint:latest`.
-
 ## Publish
 
 `publish-cms-api`, `publish-cms-admin` and `publish-web` in `ci.yml` call `.github/workflows/_publish.yml`. Each runs only when all of these hold: the event is a push to `staging` or `main`, the app's build inputs changed (`<app>_image`), and the app flow (`Checks` and `Build`) succeeded (`needs: [changes, <app>]` with `always()` and a result check). It does not wait for the `repo` job (format, audit) and e2e is not a gate. A failing sibling app does not block another app's publish.
@@ -86,7 +103,7 @@ Tags: `<branch>-<sha7>` and the moving `<branch>`. Platforms: `staging` and `mai
 
 Least privilege: workflow default `contents: read`; `packages: write` only on the image and manifest jobs (the call job grants the ceiling); the deploy job has no `packages` access and uses only `DEPLOYMENT_REPO_TOKEN`: the checkout does not persist it (`persist-credentials: false`) and only the push step receives it, as a per-command header.
 
-Every action in every workflow is pinned to a full commit SHA with the tag as a comment (resolved from the latest tag of the major version the template used). Bump them deliberately; adding Dependabot (`github-actions` ecosystem) is recommended. The registry login uses the run's `GITHUB_TOKEN`.
+Every action in every workflow is pinned to a full commit SHA with the tag as a comment (the latest tag of the major version in use). Bump them deliberately; adding Dependabot (`github-actions` ecosystem) is recommended. The registry login uses the run's `GITHUB_TOKEN`.
 
 ### What you must create in GitHub
 

@@ -27,7 +27,6 @@ apps/cms-api/content/public-constants.json
 docs/architecture/
 
 # Template reference only
-.github_template/
 
 # Playwright output (apps/e2e), gitignored
 apps/e2e/playwright-report/
