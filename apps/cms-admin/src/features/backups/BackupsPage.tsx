@@ -13,9 +13,13 @@ import {
 } from '../../components/PageStates';
 import { COPY } from '../../config/Copy.constants';
 import { formatDateTime } from '../../lib/DateFormat.rules';
-import { isForbidden } from '../access';
+import { isForbidden, useCallerAccess } from '../access';
 import type { BackupFile, BackupsList } from './Backups.api';
-import { isBackupsNotConfigured, useBackupsQuery } from './Backups.queries';
+import {
+  isBackupsNotConfigured,
+  isBackupsRateLimited,
+  useBackupsQuery,
+} from './Backups.queries';
 import { DownloadBackupDialog } from './DownloadBackupDialog';
 
 const copy = COPY.backups;
@@ -111,12 +115,24 @@ function SummaryLine({ meta }: { meta: BackupsList['meta'] }) {
 /** `/backups` (owner): the nightly dumps and a download behind password + code. */
 export function BackupsPage() {
   const backups = useBackupsQuery();
+  const caller = useCallerAccess();
   const [chosen, setChosen] = useState<BackupFile | null>(null);
 
   return (
     <div className="grid grid-cols-[minmax(0,1fr)] gap-6">
       <PageHeader title={copy.title} description={copy.description} />
-      {backups.isPending ? (
+      {!caller.isOwner ? (
+        <FormAlert tone="info">{copy.forbidden}</FormAlert>
+      ) : backups.isPending && backups.fetchStatus === 'idle' ? (
+        <div className="grid justify-items-start gap-3">
+          <p className="m-0 max-w-prose text-sm text-muted-foreground">
+            {copy.check.hint}
+          </p>
+          <Button type="button" onClick={() => void backups.refetch()}>
+            {copy.check.button}
+          </Button>
+        </div>
+      ) : backups.isPending ? (
         <TableSkeleton label={copy.loading} />
       ) : backups.isError ? (
         isBackupsNotConfigured(backups.error) ? (
@@ -130,7 +146,11 @@ export function BackupsPage() {
           <FormAlert tone="info">{copy.forbidden}</FormAlert>
         ) : (
           <LoadError
-            message={copy.loadFailed}
+            message={
+              isBackupsRateLimited(backups.error)
+                ? copy.rateLimited
+                : copy.loadFailed
+            }
             isRetrying={backups.isFetching}
             onRetry={() => void backups.refetch()}
           />
@@ -142,7 +162,18 @@ export function BackupsPage() {
         </div>
       ) : (
         <>
-          <SummaryLine meta={backups.data.meta} />
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <SummaryLine meta={backups.data.meta} />
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              loading={backups.isFetching}
+              onClick={() => void backups.refetch()}
+            >
+              {copy.check.refresh}
+            </Button>
+          </div>
           {backups.data.meta.isStale ? (
             <FormAlert tone="warning">{copy.stale}</FormAlert>
           ) : null}

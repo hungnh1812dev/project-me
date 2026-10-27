@@ -38,9 +38,14 @@ export function isBackupsNotConfigured(error: unknown): boolean {
   );
 }
 
-/** A 4xx answer is final (not configured, not the owner); only network and 5xx retry. */
+export function isBackupsRateLimited(error: unknown): boolean {
+  return apiFailureOf(error).kind === 'rate-limited';
+}
+
+/** A 4xx answer is final (not configured, not the owner, rate limited); only network and 5xx retry. */
 function shouldRetry(failureCount: number, error: unknown): boolean {
   const failure = apiFailureOf(error);
+  if (failure.kind === 'rate-limited') return false;
   if (
     failure.kind === 'http' &&
     failure.status < HTTP_STATUS.SERVER_ERROR_MIN
@@ -50,31 +55,27 @@ function shouldRetry(failureCount: number, error: unknown): boolean {
   return failureCount < HEALTH_QUERY_RETRY;
 }
 
-export function useBackupsQuery(options: { enabled?: boolean } = {}) {
+/** Never fetches on its own: the page's button calls `refetch` (the server throttles the list per actor). */
+export function useBackupsQuery() {
   const api = useBackupsApi();
   return useQuery({
     queryKey: BACKUPS_QUERY_KEYS.list,
     queryFn: api.list,
     retry: shouldRetry,
-    enabled: options.enabled ?? true,
+    enabled: false,
   });
 }
 
 /**
- * `backupsFeature.useNavItems`: the item shows for the owner only, and only
- * once the server did not report the backups as not configured (D20).
- * A non-owner never sends the request.
+ * `backupsFeature.useNavItems`: the item shows for the owner only and needs
+ * no request; the page reports a missing backup storage after its refresh (D20).
  */
 export function useBackupsNavItems(): NavItemsState {
   const caller = useCallerAccess();
-  const list = useBackupsQuery({ enabled: caller.isOwner });
-  const isAvailable =
-    caller.isOwner &&
-    (list.isSuccess || (list.isError && !isBackupsNotConfigured(list.error)));
   return {
-    items: isAvailable ? [BACKUPS_NAV_ITEM] : [],
+    items: caller.isOwner ? [BACKUPS_NAV_ITEM] : [],
     isLoading: false,
     hasFailed: false,
-    retry: () => void list.refetch(),
+    retry: () => undefined,
   };
 }

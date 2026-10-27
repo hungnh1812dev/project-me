@@ -4,7 +4,7 @@ Owner-only list of the nightly database dumps and short download links (SPEC §7
 
 ## Switching it on
 
-The feature is opt-in. It runs only when the `BACKUP_STORAGE_*` keys are set (all or none; see `apps/cms-api/.env.example`). With none set, both routes answer `404 BACKUPS_NOT_CONFIGURED` and the admin hides the menu item. There is no other enable flag.
+The feature is opt-in. It runs only when the `BACKUP_STORAGE_*` keys are set (all or none; see `apps/cms-api/.env.example`). With none set, both routes answer `404 BACKUPS_NOT_CONFIGURED` and the admin page shows a not-configured state after the owner presses "Check backups" (the menu item is always shown to the owner). There is no other enable flag.
 
 ## Endpoints
 

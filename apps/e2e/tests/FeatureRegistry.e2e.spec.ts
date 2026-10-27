@@ -35,6 +35,7 @@ const EXPECTED_OWNER_NAV = [
   nav.roles,
   nav.apiTokens,
   nav.reviewer,
+  ADMIN_COPY.backups.nav,
 ];
 
 test.describe('anonymous', () => {

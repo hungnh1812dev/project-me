@@ -84,6 +84,8 @@ const mainMenu = (page: Page) =>
   page.getByRole('navigation', { name: nav.label });
 const backupsLink = (page: Page) =>
   mainMenu(page).getByRole('link', { name: copy.nav, exact: true });
+const checkBackups = (page: Page) =>
+  page.getByRole('button', { name: copy.check.button }).click();
 
 function collectConsoleErrors(page: Page): string[] {
   const errors: string[] = [];
@@ -92,15 +94,16 @@ function collectConsoleErrors(page: Page): string[] {
 }
 
 test.describe('backups page', () => {
-  test('feature off: no menu item, page shows the not-configured state', async ({
+  test('feature off: page shows the not-configured state after Check backups', async ({
     page,
   }) => {
     const errors = collectConsoleErrors(page);
     await signInAsOwner(page);
     await expect(mainMenu(page)).toBeVisible();
-    await expect(backupsLink(page)).toHaveCount(0);
+    await expect(backupsLink(page)).toHaveCount(1);
 
     await page.goto(APP_ROUTES.BACKUPS);
+    await checkBackups(page);
     await expect(page.getByText(copy.notConfigured.title)).toBeVisible();
     await expect(page.getByRole('table')).toHaveCount(0);
     expect(errors).toEqual([]);
@@ -115,6 +118,10 @@ test.describe('backups page', () => {
     await backupsLink(page).click();
 
     await expect(page.getByRole('heading', { name: copy.title })).toBeVisible();
+    await checkBackups(page);
+    await expect(
+      page.getByRole('button', { name: copy.check.refresh }),
+    ).toBeVisible();
     await expect(page.getByText(copy.summary.count(2))).toBeVisible();
     await expect(page.getByText(copy.stale)).toBeVisible();
     await expect(page.getByText(copy.encryptedNote)).toBeVisible();
@@ -135,12 +142,14 @@ test.describe('backups page', () => {
     await stubList(page, HTTP.OK, fixtureList(false, []));
     await signInAsOwner(page);
     await page.goto(APP_ROUTES.BACKUPS);
+    await checkBackups(page);
     await expect(page.getByText(copy.empty, { exact: true })).toBeVisible();
     await expect(page.getByText(copy.emptyHint)).toBeVisible();
 
     await page.unroute(LIST_URL);
     await stubList(page, SERVER_ERROR, { errorCode: 'INTERNAL' });
     await page.goto(APP_ROUTES.BACKUPS);
+    await checkBackups(page);
     await expect(page.getByText(copy.loadFailed)).toBeVisible({
       timeout: 20_000,
     });
@@ -152,12 +161,15 @@ test.describe('backups page', () => {
     ).toBeVisible();
   });
 
-  test('non-owner: no menu item, no list request from the menu, page says forbidden', async ({
+  test('non-owner: no menu item, page says forbidden at once with no list request', async ({
     page,
   }) => {
     const listRequests: string[] = [];
     page.on('request', (request) => {
-      if (LIST_URL_EXACT.test(new URL(request.url()).pathname)) {
+      if (
+        LIST_URL_EXACT.test(new URL(request.url()).pathname) &&
+        ['fetch', 'xhr'].includes(request.resourceType())
+      ) {
         listRequests.push(request.url());
       }
     });
@@ -166,16 +178,17 @@ test.describe('backups page', () => {
     await expect(backupsLink(page)).toHaveCount(0);
     expect(listRequests).toEqual([]);
 
-    await stubList(page, FORBIDDEN, { errorCode: 'AUTH_FORBIDDEN' });
     await page.goto(APP_ROUTES.BACKUPS);
     await expect(page.getByText(copy.forbidden)).toBeVisible();
     await expect(page.getByRole('table')).toHaveCount(0);
+    expect(listRequests).toEqual([]);
   });
 });
 
 test.describe('backup download dialog', () => {
   const openDialog = async (page: Page) => {
     await page.goto(APP_ROUTES.BACKUPS);
+    await checkBackups(page);
     await page
       .getByRole('button', { name: copy.download.buttonLabel(FILE_SOON) })
       .click();

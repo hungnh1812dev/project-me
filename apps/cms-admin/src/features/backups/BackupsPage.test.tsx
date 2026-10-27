@@ -1,3 +1,4 @@
+import userEvent from '@testing-library/user-event';
 import { screen, within } from '@testing-library/react';
 
 import type { FakeHandler } from '../../../test/FakeApi.fixture';
@@ -17,6 +18,7 @@ const { REFRESH, ME } = API_ENDPOINTS.AUTH;
 const { BACKUPS, ROLES } = API_ENDPOINTS;
 const copy = COPY.backups;
 const RETRY_WAIT_MS = 4_000;
+const RETRY_BACKOFF_MS = 1_500;
 
 const adminRole: Role = {
   id: 'role_admin',
@@ -60,6 +62,17 @@ function listOf(
   };
 }
 
+async function openAndCheck(
+  user: CurrentUser,
+  handlers: Record<string, FakeHandler> = {},
+) {
+  const opened = await open(user, handlers);
+  await userEvent.click(
+    await screen.findByRole('button', { name: copy.check.button }),
+  );
+  return opened;
+}
+
 async function open(
   user: CurrentUser,
   handlers: Record<string, FakeHandler> = {},
@@ -85,8 +98,27 @@ const notConfigured: FakeHandler = () => ({
 });
 
 describe('BackupsPage', () => {
+  it('does not load on open; the button fetches once', async () => {
+    const { api } = await open(TEST_USER, {
+      [`GET ${BACKUPS.LIST}`]: () => listOf([backup()]),
+    });
+    await screen.findByRole('button', { name: copy.check.button });
+    expect(api.callsTo(`GET ${BACKUPS.LIST}`)).toHaveLength(0);
+    await userEvent.click(
+      screen.getByRole('button', { name: copy.check.button }),
+    );
+    await screen.findByRole('table', { name: copy.tableLabel });
+    expect(api.callsTo(`GET ${BACKUPS.LIST}`)).toHaveLength(1);
+    await userEvent.click(
+      screen.getByRole('button', { name: copy.check.refresh }),
+    );
+    await vi.waitFor(() =>
+      expect(api.callsTo(`GET ${BACKUPS.LIST}`)).toHaveLength(2),
+    );
+  });
+
   it('lists backups newest first with size and the stale banner', async () => {
-    await open(TEST_USER, {
+    await openAndCheck(TEST_USER, {
       [`GET ${BACKUPS.LIST}`]: () =>
         listOf(
           [
@@ -118,7 +150,7 @@ describe('BackupsPage', () => {
   });
 
   it('shows no stale banner when the newest daily backup is fresh', async () => {
-    await open(TEST_USER, {
+    await openAndCheck(TEST_USER, {
       [`GET ${BACKUPS.LIST}`]: () => listOf([backup()]),
     });
     await screen.findByRole('table', { name: copy.tableLabel });
@@ -126,18 +158,20 @@ describe('BackupsPage', () => {
   });
 
   it('shows an empty state', async () => {
-    await open(TEST_USER, { [`GET ${BACKUPS.LIST}`]: () => listOf([]) });
+    await openAndCheck(TEST_USER, {
+      [`GET ${BACKUPS.LIST}`]: () => listOf([]),
+    });
     expect(await screen.findByText(copy.empty)).toBeVisible();
   });
 
   it('shows the not-configured state without an error alert', async () => {
-    await open(TEST_USER, { [`GET ${BACKUPS.LIST}`]: notConfigured });
+    await openAndCheck(TEST_USER, { [`GET ${BACKUPS.LIST}`]: notConfigured });
     expect(await screen.findByText(copy.notConfigured.title)).toBeVisible();
     expect(screen.queryByText(copy.loadFailed)).toBeNull();
   });
 
   it('shows a retryable error when the list fails', async () => {
-    await open(TEST_USER, {
+    await openAndCheck(TEST_USER, {
       [`GET ${BACKUPS.LIST}`]: () => ({ status: 500, data: {} }),
     });
     // A 5xx is retried once (one second back-off) before the error shows.
@@ -149,49 +183,46 @@ describe('BackupsPage', () => {
     ).toBeVisible();
   });
 
-  it('shows the forbidden state to a non-owner who opens the page', async () => {
-    await open(admin, {
-      [`GET ${BACKUPS.LIST}`]: () => ({ status: 403, data: {} }),
+  it('shows a rate-limit message with retry on a 429, without a second request', async () => {
+    const { api } = await openAndCheck(TEST_USER, {
+      [`GET ${BACKUPS.LIST}`]: () => ({
+        status: 429,
+        data: { errorCode: 'TOO_MANY_REQUESTS' },
+        headers: { 'retry-after': '16' },
+      }),
+    });
+    expect(await screen.findByText(copy.rateLimited)).toBeVisible();
+    expect(screen.queryByText(copy.loadFailed)).toBeNull();
+    expect(
+      screen.getByRole('button', { name: COPY.common.retry }),
+    ).toBeVisible();
+    await new Promise((resolve) => setTimeout(resolve, RETRY_BACKOFF_MS));
+    expect(api.callsTo(`GET ${BACKUPS.LIST}`)).toHaveLength(1);
+  });
+
+  it('shows the forbidden state to a non-owner without a request', async () => {
+    const { api } = await open(admin, {
+      [`GET ${BACKUPS.LIST}`]: () => listOf([backup()]),
     });
     expect(await screen.findByText(copy.forbidden)).toBeVisible();
     expect(screen.queryByRole('table')).toBeNull();
+    expect(api.callsTo(`GET ${BACKUPS.LIST}`)).toHaveLength(0);
   });
 });
 
 describe('Backups nav item', () => {
-  it('shows for the owner once the backups are configured', async () => {
-    await open(
-      TEST_USER,
-      { [`GET ${BACKUPS.LIST}`]: () => listOf([backup()]) },
-      APP_ROUTES.HOME,
-    );
+  it('shows for the owner without any request', async () => {
+    const { api } = await open(TEST_USER, {}, APP_ROUTES.HOME);
     expect(await screen.findByRole('link', { name: copy.nav })).toHaveAttribute(
       'href',
       APP_ROUTES.BACKUPS,
     );
+    expect(api.callsTo(`GET ${BACKUPS.LIST}`)).toHaveLength(0);
   });
 
-  it('is hidden for the owner while the backups are not configured', async () => {
-    const { api } = await open(
-      TEST_USER,
-      { [`GET ${BACKUPS.LIST}`]: notConfigured },
-      APP_ROUTES.HOME,
-    );
-    await screen.findByRole('link', { name: COPY.access.nav.accounts });
-    await vi.waitFor(() =>
-      expect(api.callsTo(`GET ${BACKUPS.LIST}`)).toHaveLength(1),
-    );
-    expect(screen.queryByRole('link', { name: copy.nav })).toBeNull();
-  });
-
-  it('is hidden for an admin, who never sends the request', async () => {
-    const { api } = await open(
-      admin,
-      { [`GET ${BACKUPS.LIST}`]: () => listOf([backup()]) },
-      APP_ROUTES.HOME,
-    );
+  it('is hidden for an admin', async () => {
+    await open(admin, {}, APP_ROUTES.HOME);
     await screen.findByRole('navigation', { name: COPY.access.nav.label });
     expect(screen.queryByRole('link', { name: copy.nav })).toBeNull();
-    expect(api.callsTo(`GET ${BACKUPS.LIST}`)).toHaveLength(0);
   });
 });

@@ -11,7 +11,7 @@ Features (`src/features/`):
 - `media`: media library and the media picker for document fields.
 - `content`: dynamic document form, collection list with bulk actions, conflict merge, presence.
 - `reviewer`: reviewer switch, sessions log and the read-only reviewer mode.
-- `backups`: owner-only list of the nightly database backups and a download behind password + 2FA code (ADR 0013). The nav item shows only while the server reports the backup storage as configured.
+- `backups`: owner-only list of the nightly database backups and a download behind password + 2FA code (ADR 0013). The nav item always shows for the owner; the page reads the list only when the owner presses "Check backups" (the server throttles it per actor), and then shows the not-configured state when the storage keys are unset.
 - `status`: status page that calls `GET /api/v1/health/live`.
 
 ## Auth (T11, D14)

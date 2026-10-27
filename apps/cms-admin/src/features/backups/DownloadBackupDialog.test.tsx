@@ -64,6 +64,9 @@ async function openDialog(
   await services.session.restore();
   renderApp(services, APP_ROUTES.BACKUPS);
   await userEvent.click(
+    await screen.findByRole('button', { name: copy.check.button }),
+  );
+  await userEvent.click(
     await screen.findByRole('button', {
       name: copy.download.buttonLabel(file.fileName),
     }),

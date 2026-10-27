@@ -827,8 +827,14 @@
     "nav": "Backups",
     "title": "Backups",
     "description": "Nightly database backups, stored off the server. Only the owner can download them.",
+    "check": {
+      "hint": "The backup status is read on request. Check it to see the latest backups.",
+      "button": "Check backups",
+      "refresh": "Refresh"
+    },
     "loading": "Loading backups",
     "loadFailed": "Could not load the backups.",
+    "rateLimited": "Too many requests. Wait a moment, then try again.",
     "forbidden": "Only the owner can view backups.",
     "notConfigured": {
       "title": "Backup storage is not set up on this server",
