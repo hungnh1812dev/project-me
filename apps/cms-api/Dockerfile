@@ -1,45 +1,45 @@
 # syntax=docker/dockerfile:1
-# Build from the repo root: docker build -f apps/cms-api/Dockerfile -t cms-api .
+# Build from the repo root: docker build -f apps/cms-api/Dockerfile .
+ARG NODE_IMAGE=node:24.18-alpine
 
-FROM node:24-alpine AS base
-RUN apk add --no-cache libc6-compat
-RUN npm install -g pnpm@11.5.2 turbo@2.11.5
-ENV CI=true
-WORKDIR /app
+FROM ${NODE_IMAGE} AS base
+ENV PNPM_HOME=/pnpm
+ENV PATH=$PNPM_HOME:$PATH
+ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0
+RUN corepack enable
+WORKDIR /repo
 
-# Prune the monorepo down to cms-api and its workspace dependencies
-FROM base AS prepare
+# 1. Keep only cms-api and its workspace dependencies.
+FROM base AS prune
+ARG TURBO_VERSION=2.11.9
 COPY . .
-RUN turbo prune cms-api --docker
+RUN pnpm dlx turbo@${TURBO_VERSION} prune @abyss/cms-api --docker
 
-# Manifests + pruned lockfile only, so the stages below re-run only when dependencies change
-FROM base AS manifests
-COPY --from=prepare /app/out/json/ .
-COPY --from=prepare /app/out/pnpm-lock.yaml /app/out/pnpm-workspace.yaml ./
-
-# Production-only dependencies
-FROM manifests AS prod-deps
+# 2. Install from the pruned lockfile (cached layer), then build.
+FROM base AS build
+COPY --from=prune /repo/out/json/ .
+RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile
+COPY --from=prune /repo/out/full/ .
+# turbo prune keeps workspace packages only; root config files come separately.
+COPY --from=prune /repo/tsconfig.base.json ./
+RUN pnpm turbo run build --filter=@abyss/cms-api
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
-    pnpm deploy --legacy --filter=cms-api --prod --store-dir /pnpm/store /prod/cms-api
+    pnpm --filter @abyss/cms-api deploy --prod --legacy /prod/cms-api
 
-# All dependencies + source, then build
-FROM manifests AS builder
-RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
-    pnpm install --frozen-lockfile --store-dir /pnpm/store
-COPY --from=prepare /app/out/full/ .
-RUN --mount=type=cache,id=turbo-cms-api,target=/app/.turbo/cache \
-    pnpm turbo run build --filter=cms-api
-
-FROM node:24-alpine AS runner
+# 3. Runtime: production deps, dist (with the generated Prisma client),
+#    prisma/ + prisma.config.ts (read by `db:migrate`) and content/ (migrations +
+#    snapshot, read by `content:migrate`; schemas, read by `graphql:print-schema`
+#    and `content:generate` checks), files owned by root, run as the numeric
+#    `node` user (1000:1000; Kubernetes runAsNonRoot can only verify a UID).
+FROM ${NODE_IMAGE} AS runtime
 ENV NODE_ENV=production
 WORKDIR /app
-# Non-root runtime user abyss (UID/GID 1001), same as cms-admin; the base image's node (1000) is unused
-RUN addgroup -S -g 1001 abyss \
-    && adduser -S -D -H -u 1001 -G abyss -s /sbin/nologin abyss
-COPY --from=prod-deps --chown=1001:1001 /prod/cms-api/package.json ./package.json
-COPY --from=prod-deps --chown=1001:1001 /prod/cms-api/node_modules ./node_modules
-COPY --from=builder --chown=1001:1001 /app/apps/cms-api/dist ./dist
+COPY --from=build /prod/cms-api/package.json ./package.json
+COPY --from=build /prod/cms-api/node_modules ./node_modules
+COPY --from=build /prod/cms-api/dist ./dist
+COPY --from=build /repo/apps/cms-api/prisma ./prisma
+COPY --from=build /repo/apps/cms-api/prisma.config.ts ./prisma.config.ts
+COPY --from=build /repo/apps/cms-api/content ./content
+USER 1000:1000
 EXPOSE 3000
-# Numeric, so Kubernetes runAsNonRoot can verify it
-USER 1001
 CMD ["node", "dist/main.js"]

@@ -4,14 +4,19 @@
 # Usage: EVENT_NAME=push BASE_SHA=<sha> HEAD_SHA=<sha> TURBO_VERSION=<x.y.z> affected.sh
 #   TURBO_BIN  optional turbo executable (tests); default `npx -y turbo@$TURBO_VERSION`
 # Writes apps, image_apps, any and <app>_affected / <app>_image (cms_api_*,
-# cms_admin_*, frontend_*) to $GITHUB_OUTPUT, or to stdout when it is unset.
+# cms_admin_*, web_*) to $GITHUB_OUTPUT, or to stdout when it is unset.
 # Without a usable base commit (new branch, force push) every app is affected
 # and gets an image. Workflow-file changes add apps to `apps` only, never to
-# `image_apps`: .github/workflows/<app>.yml adds that app; ci.yml, _publish.yml
-# and .github/scripts/** add all apps.
+# `image_apps`: .github/workflows/<app>.yml adds that app; app-checks.yml adds
+# the apps that call it; ci.yml, _publish.yml and .github/scripts/** add all apps.
 set -euo pipefail
 
-packages=(cms-admin cms-api frontend)
+packages=(cms-admin cms-api web)
+# apps whose checks run through .github/workflows/app-checks.yml
+app_checks_packages=(cms-admin web)
+# turbo knows the packages by their workspace names
+scope="@abyss/"
+turbo_packages=("${packages[@]/#/${scope}}")
 
 EVENT_NAME="${EVENT_NAME:-}"
 BASE_SHA="${BASE_SHA:-}"
@@ -38,13 +43,13 @@ all="$(jq -cn '$ARGS.positional' --args "${packages[@]}")"
 
 if [ -n "${BASE_SHA}" ] && git cat-file -e "${BASE_SHA}^{commit}" 2>/dev/null; then
   apps="$(turbo query affected \
-      --packages "${packages[@]}" --base "${BASE_SHA}" --head "${HEAD_SHA}" \
-    | jq -c '[.data.affectedPackages.items[] | select(.path | startswith("apps/")) | .name]')"
+      --packages "${turbo_packages[@]}" --base "${BASE_SHA}" --head "${HEAD_SHA}" \
+    | jq -c --arg scope "${scope}" '[.data.affectedPackages.items[] | select(.path | startswith("apps/")) | .name | ltrimstr($scope)]')"
   # Apps whose build inputs changed (source, package.json, lockfile, Dockerfile; not
   # docs or tests, see build.inputs in turbo.json): only these get a new image and deploy
   image_apps="$(turbo query affected \
-      --tasks build --packages "${packages[@]}" --base "${BASE_SHA}" --head "${HEAD_SHA}" \
-    | jq -c --argjson all "${all}" '[.data.affectedTasks.items[].package.name | select(IN($all[]))] | unique')"
+      --tasks build --packages "${turbo_packages[@]}" --base "${BASE_SHA}" --head "${HEAD_SHA}" \
+    | jq -c --argjson all "${all}" --arg scope "${scope}" '[.data.affectedTasks.items[].package.name | ltrimstr($scope) | select(IN($all[]))] | unique')"
 
   # Workflow-file routing: checks and build only, so these never reach image_apps
   routed=''
@@ -52,6 +57,8 @@ if [ -n "${BASE_SHA}" ] && git cat-file -e "${BASE_SHA}^{commit}" 2>/dev/null; t
     case "${file}" in
       .github/workflows/ci.yml | .github/workflows/_publish.yml | .github/scripts/*)
         routed="${routed} ${packages[*]}" ;;
+      .github/workflows/app-checks.yml)
+        routed="${routed} ${app_checks_packages[*]}" ;;
       .github/workflows/*.yml)
         name="${file#.github/workflows/}"
         name="${name%.yml}"

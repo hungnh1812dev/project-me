@@ -1,0 +1,89 @@
+/*
+ * Abyss design tokens.
+ * Layer 1 (primitive): raw palette, never used by components directly.
+ * Layer 2 (semantic): what components use (shadcn naming + status tokens).
+ *
+ * PROVISIONAL: palette option A (slate neutrals + muted blue primary) and the
+ * system font stack are placeholders until the user picks a palette and font.
+ * Changing them means editing this file only.
+ */
+:root {
+  /* ---- primitive: neutrals (slate) ---- */
+  --abyss-slate-0: oklch(1 0 0);
+  --abyss-slate-50: oklch(0.984 0.003 247.858);
+  --abyss-slate-100: oklch(0.968 0.007 247.896);
+  --abyss-slate-200: oklch(0.929 0.013 255.508);
+  --abyss-slate-300: oklch(0.869 0.022 252.894);
+  --abyss-slate-450: oklch(0.64 0.04 257);
+  --abyss-slate-500: oklch(0.554 0.046 257.417);
+  --abyss-slate-600: oklch(0.446 0.043 257.281);
+  --abyss-slate-700: oklch(0.372 0.044 257.287);
+  --abyss-slate-900: oklch(0.208 0.042 265.755);
+
+  /* ---- primitive: brand (muted blue) ---- */
+  --abyss-brand-50: oklch(0.965 0.015 255);
+  --abyss-brand-500: oklch(0.55 0.09 255);
+  --abyss-brand-600: oklch(0.48 0.09 255);
+  --abyss-brand-700: oklch(0.42 0.085 255);
+
+  /* ---- primitive: status (muted) ---- */
+  --abyss-green-50: oklch(0.965 0.025 155);
+  --abyss-green-600: oklch(0.5 0.09 155);
+  --abyss-green-700: oklch(0.43 0.08 155);
+  --abyss-amber-50: oklch(0.97 0.035 85);
+  --abyss-amber-500: oklch(0.6 0.12 70);
+  --abyss-amber-700: oklch(0.47 0.09 65);
+  --abyss-red-50: oklch(0.965 0.02 25);
+  --abyss-red-600: oklch(0.52 0.15 25);
+  --abyss-red-700: oklch(0.45 0.14 25);
+
+  /* ---- semantic: surfaces and text ---- */
+  --background: var(--abyss-slate-50);
+  --foreground: var(--abyss-slate-900);
+  --card: var(--abyss-slate-0);
+  --card-foreground: var(--abyss-slate-900);
+  --popover: var(--abyss-slate-0);
+  --popover-foreground: var(--abyss-slate-900);
+  --muted: var(--abyss-slate-100);
+  --muted-foreground: var(--abyss-slate-600);
+  --accent: var(--abyss-slate-100);
+  --accent-foreground: var(--abyss-slate-900);
+
+  /* ---- semantic: lines and focus ---- */
+  --border: var(--abyss-slate-200);
+  /* Input borders need 3:1 against the surface (WCAG 1.4.11). */
+  --input: var(--abyss-slate-450);
+  --ring: var(--abyss-brand-500);
+
+  /* ---- semantic: actions ---- */
+  --primary: var(--abyss-brand-600);
+  --primary-hover: var(--abyss-brand-700);
+  --primary-foreground: var(--abyss-slate-0);
+  --secondary: var(--abyss-slate-0);
+  --secondary-hover: var(--abyss-slate-100);
+  --secondary-foreground: var(--abyss-slate-900);
+
+  /* ---- semantic: status (solid, soft background, strong text) ---- */
+  --success: var(--abyss-green-600);
+  --success-hover: var(--abyss-green-700);
+  --success-foreground: var(--abyss-slate-0);
+  --success-soft: var(--abyss-green-50);
+  --success-strong: var(--abyss-green-700);
+  --warning: var(--abyss-amber-500);
+  --warning-soft: var(--abyss-amber-50);
+  --warning-strong: var(--abyss-amber-700);
+  --destructive: var(--abyss-red-600);
+  --destructive-hover: var(--abyss-red-700);
+  --destructive-foreground: var(--abyss-slate-0);
+  --destructive-soft: var(--abyss-red-50);
+  --destructive-strong: var(--abyss-red-700);
+  --info: var(--abyss-brand-600);
+  --info-soft: var(--abyss-brand-50);
+  --info-strong: var(--abyss-brand-700);
+
+  /* ---- semantic: shape and type ---- */
+  --radius: 0.375rem;
+  --font-family-sans:
+    ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto,
+    'Helvetica Neue', Arial, sans-serif;
+}

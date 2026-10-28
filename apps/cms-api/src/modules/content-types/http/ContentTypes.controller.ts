@@ -1,0 +1,41 @@
+import { Controller, Get, Header, Param, Req, UseGuards } from '@nestjs/common';
+
+import { SLUG_PARAM } from '../../../common/constants/Api.constants';
+import { NO_STORE_HEADER } from '../../../common/constants/Http.constants';
+import { type AuthenticatedRequest, JwtAuthGuard } from '../../identity';
+import type { ContentTypeView } from '../domain/ContentTypeView.rules';
+import { ContentTypesService } from '../application/ContentTypes.service';
+
+/** SPEC §9 content types, read-only. `:slug` is a registry slug. */
+export const CONTENT_TYPES_ROUTES = {
+  ROOT: 'content-types',
+  BY_SLUG: ':slug',
+} as const;
+
+/**
+ * SPEC §9 content types, read-only. No `@RequirePermission`: the
+ * subject is per type, so the service filters by `read` on each slug and
+ * answers 404 for a type the caller cannot read.
+ */
+@Controller(CONTENT_TYPES_ROUTES.ROOT)
+@UseGuards(JwtAuthGuard)
+export class ContentTypesController {
+  constructor(private readonly contentTypes: ContentTypesService) {}
+
+  @Get()
+  @Header(NO_STORE_HEADER.NAME, NO_STORE_HEADER.VALUE)
+  async list(
+    @Req() req: AuthenticatedRequest,
+  ): Promise<{ data: ContentTypeView[] }> {
+    return { data: await this.contentTypes.list(req.user.actor) };
+  }
+
+  @Get(CONTENT_TYPES_ROUTES.BY_SLUG)
+  @Header(NO_STORE_HEADER.NAME, NO_STORE_HEADER.VALUE)
+  get(
+    @Req() req: AuthenticatedRequest,
+    @Param(SLUG_PARAM) slug: string,
+  ): Promise<ContentTypeView> {
+    return this.contentTypes.get(req.user.actor, slug);
+  }
+}

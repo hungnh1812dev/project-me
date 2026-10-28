@@ -1,39 +1,32 @@
 {
   "$schema": "https://turborepo.com/schema.json",
-  "futureFlags": {
-    "affectedUsingTaskInputs": true
-  },
   "tasks": {
     "build": {
-      "dependsOn": ["^build"],
+      "dependsOn": ["^build", "db:generate"],
       "inputs": [
         "$TURBO_DEFAULT$",
         "!**/*.md",
         "!docs/**",
-        "!docs-*/**",
-        "!e2e/**",
-        "!test/**",
-        "!**/__tests__/**",
-        "!**/*.test.*",
         "!**/*.spec.*",
-        "!**/*.e2e-spec.*",
-        "!vitest.config*",
-        "!playwright.config.*"
+        "!**/*.test.*",
+        "!test/**"
       ],
-      "outputs": ["dist/**", ".next/**", "!.next/cache/**"]
-    },
-    "dev": {
-      "cache": false,
-      "persistent": true
-    },
-    "lint": {
-      "dependsOn": ["^lint"]
-    },
-    "typecheck": {
-      "dependsOn": ["^typecheck"]
+      "outputs": ["dist/**"]
     },
     "test": {
-      "dependsOn": ["^build"]
+      "dependsOn": ["^build", "db:generate"],
+      "outputs": ["coverage/**"]
+    },
+    "lint": {
+      "dependsOn": ["^build", "db:generate"],
+      "outputs": []
+    },
+    "typecheck": {
+      "dependsOn": ["^build", "db:generate"],
+      "outputs": []
+    },
+    "db:generate": {
+      "outputs": ["src/generated/**"]
     }
   }
 }

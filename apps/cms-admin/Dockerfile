@@ -1,44 +1,46 @@
 # syntax=docker/dockerfile:1
-# Build from the repo root: docker build -f apps/cms-admin/Dockerfile -t cms-admin .
+# Build from the repo root:
+#   docker build -f apps/cms-admin/Dockerfile --build-arg VITE_API_BASE_URL=... .
+ARG NODE_IMAGE=node:24.18-alpine
+ARG NGINX_IMAGE=nginxinc/nginx-unprivileged:1.29-alpine
 
-FROM node:24-alpine AS base
-RUN apk add --no-cache libc6-compat
-RUN npm install -g pnpm@11.5.2 turbo@2.11.5
-ENV CI=true
-WORKDIR /app
+FROM ${NODE_IMAGE} AS base
+ENV PNPM_HOME=/pnpm
+ENV PATH=$PNPM_HOME:$PATH
+ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0
+RUN corepack enable
+WORKDIR /repo
 
-# Prune the monorepo down to cms-admin and its workspace dependencies
-FROM base AS prepare
+# 1. Keep only @abyss/cms-admin and its workspace dependencies (form-commons).
+FROM base AS prune
+ARG TURBO_VERSION=2.11.9
 COPY . .
-RUN turbo prune cms-admin --docker
+RUN pnpm dlx turbo@${TURBO_VERSION} prune @abyss/cms-admin --docker
 
-# Install and build static files
-FROM base AS builder
-COPY --from=prepare /app/out/json/ .
-COPY --from=prepare /app/out/pnpm-lock.yaml /app/out/pnpm-workspace.yaml ./
-RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
-    pnpm install --frozen-lockfile --store-dir /pnpm/store
-COPY --from=prepare /app/out/full/ .
-# Backend origin baked into the bundle by Vite at build time (no /api/v1, no trailing slash).
-# Empty keeps the relative /api/v1. Declared after install so it never invalidates the deps layer.
-ARG VITE_API_URL=""
-ENV VITE_API_URL=${VITE_API_URL}
-RUN --mount=type=cache,id=turbo-cms-admin,target=/app/.turbo/cache \
-    pnpm turbo run build --filter=cms-admin
+# 2. Install from the pruned lockfile (cached layer), then build.
+#    Turbo builds @abyss/form-commons first (^build).
+FROM base AS build
+COPY --from=prune /repo/out/json/ .
+RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile
+COPY --from=prune /repo/out/full/ .
+# turbo prune keeps workspace packages only; root config files come separately.
+COPY --from=prune /repo/tsconfig.base.json ./
+# Baked into the bundle at build time; see apps/cms-admin/.env.example.
+ARG VITE_API_BASE_URL
+RUN test -n "$VITE_API_BASE_URL" || (echo "VITE_API_BASE_URL build arg is required" >&2; exit 1)
+ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
+RUN pnpm turbo run build --filter=@abyss/cms-admin
 
-# Serve static files with nginx as the non-root user abyss (UID 1001), listening on 8080
-FROM nginxinc/nginx-unprivileged:alpine AS runner
-# The base image runs as nginx (101); swap in abyss and hand it the paths nginx writes at
-# start-up (rendered config in /etc/nginx/conf.d, cache in /var/cache/nginx; the pid is in /tmp)
-USER root
-RUN addgroup -S -g 1001 abyss \
-    && adduser -S -D -H -u 1001 -G abyss -s /sbin/nologin abyss \
-    && chown -R abyss:abyss /etc/nginx /var/cache/nginx
-# nginx.conf is an envsubst template: the image renders it to /etc/nginx/conf.d/default.conf
-# at start-up. Empty defaults give a valid self-only CSP instead of a literal ${...}.
-ENV CSP_API_ORIGIN="" CSP_IMG_ORIGINS=""
-COPY apps/cms-admin/nginx.conf /etc/nginx/templates/default.conf.template
-COPY --from=builder /app/apps/cms-admin/dist /usr/share/nginx/html
+# 3. Runtime: static files on unprivileged nginx (runs as uid 101, port 8080).
+FROM ${NGINX_IMAGE} AS runtime
+COPY apps/cms-admin/nginx.conf /etc/nginx/conf.d/default.conf
+# Rendered at container start by the entrypoint script below (envsubst).
+COPY apps/cms-admin/nginx/security-headers.inc.template /etc/nginx/security/security-headers.inc.template
+# CSP connect-src: 15-security-headers.sh derives the API *origin* from the API
+# URL the bundle was built with. Set CSP_CONNECT_SRC at run time (space
+# separated origins) to override.
+COPY --chmod=755 apps/cms-admin/nginx/15-security-headers.sh /docker-entrypoint.d/15-security-headers.sh
+ARG VITE_API_BASE_URL
+ENV CSP_API_URL=$VITE_API_BASE_URL
+COPY --from=build /repo/apps/cms-admin/dist /usr/share/nginx/html
 EXPOSE 8080
-# Numeric, so Kubernetes runAsNonRoot can verify it
-USER 1001

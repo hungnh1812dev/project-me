@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Local setup</title>
+<link rel="stylesheet" href="assets/architecture.css">
+</head>
+<body>
+<div class="layout">
+<nav class="side" aria-label="Architecture pages">
+<div class="brand">Abyss architecture<small>Headless CMS + portfolio monorepo</small></div>
+<a href="project-architecture.html">Overview<small>Master page: system map and reading order</small></a><a href="01-system-overview.html">System &amp; monorepo<small>Actors, apps, packages, tech stack</small></a><a href="02-cms-api-architecture.html">cms-api architecture<small>Clean-architecture layers, module graph, pipeline, errors</small></a><a href="03-cms-api-platform.html">cms-api platform<small>common, config, infrastructure, architecture guards</small></a><a href="04-modules-access-identity.html">Access &amp; identity modules<small>access core, security-audit, identity, management, document-auth</small></a><a href="05-modules-content.html">Content modules<small>content-engine, content-types, documents, graphql, media, reviewer, health</small></a><a href="06-data-model.html">Data model &amp; classes<small>ER diagrams, ports and adapters class diagrams</small></a><a href="07-flows.html">Sequences &amp; flows<small>Login, refresh, setup, publish, GraphQL, media, reviewer</small></a><a href="08-frontends.html">Frontends &amp; packages<small>cms-admin, web, form-commons, base-config, e2e</small></a><a href="09-deployment-production.html">Production<small>K3s + Traefik, images, CI/CD, secrets, backups</small></a><a href="10-local-setup.html" class="active">Local setup<small>Dev servers, env files, migrations, owner, smoke stack, tests</small></a>
+</nav>
+<main>
+<h1>Local setup</h1>
+<p class="lead">How to run everything on your machine: dev servers, env files, first-run migrations and owner, the dev and smoke stacks, and test tiers.</p>
+
+<h2 id="dev">Dev servers</h2>
+<div class="diagram"><pre class="mermaid">flowchart LR
+  dev([&quot;Your browser&quot;])
+  subgraph host[&quot;Your machine&quot;]
+    adm[&quot;cms-admin: pnpm dev (Vite) :5173&lt;br/&gt;admin.domain.localhost&quot;]
+    web[&quot;web: pnpm dev (Next.js) :5174&lt;br/&gt;domain.localhost&quot;]
+    api[&quot;cms-api: pnpm start:dev :3000&lt;br/&gt;nest --watch, loads .env.local&quot;]
+    pg[(&quot;Postgres 17 container :5432&quot;)]
+  end
+  dev --&gt; adm
+  dev --&gt; web
+  adm --&gt;|&quot;REST + Bearer, CORS&quot;| api
+  web --&gt;|&quot;/api proxy (DEV_API_PROXY_TARGET)&quot;| api
+  web --&gt;|&quot;server GraphQL (API_INTERNAL_URL)&quot;| api
+  api --&gt; pg
+  api -.-&gt;|&quot;MAIL_PROVIDER=console&quot;| log[&quot;cms-api log shows OTP codes&quot;]</pre></div>
+<div class="tbl"><table><thead><tr><th>App</th><th>Command</th><th>Env file</th><th>URL</th></tr></thead><tbody><tr><td>cms-api</td><td><code>pnpm start:dev</code> in <code>apps/cms-api</code> (or <code>pnpm start:cms-api:dev</code>)</td><td><code>apps/cms-api/.env.local</code> (only start:dev / start:debug load it; shell values win)</td><td><code>http://localhost:3000/api/v1</code></td></tr><tr><td>cms-admin</td><td><code>pnpm dev</code> in <code>apps/cms-admin</code></td><td><code>apps/cms-admin/.env.local</code> (Vite)</td><td><code>http://admin.domain.localhost:5173</code></td></tr><tr><td>web</td><td><code>pnpm dev</code> in <code>apps/web</code></td><td><code>apps/web/.env.local</code></td><td><code>http://domain.localhost:5174</code></td></tr><tr><td>all three</td><td><code>pnpm start:dev</code> at the root</td><td>as above</td><td></td></tr></tbody></table></div>
+<div class="callout">Open the admin at <code>admin.domain.localhost:5173</code>, not <code>localhost:5173</code>: the origin must equal cms-api <code>ADMIN_ORIGIN</code> or CORS blocks every call.</div>
+
+<h2 id="first">First run (empty database)</h2>
+<div class="diagram"><p class="cap">start:dev never creates tables; migrations are a separate step.</p><pre class="mermaid">flowchart TB
+  a[&quot;1. Start Postgres 17&quot;] --&gt; b[&quot;2. Write apps/cms-api/.env.local&lt;br/&gt;DB_*, three secrets, ADMIN_ORIGIN, WEB_ORIGIN,&lt;br/&gt;MAIL_PROVIDER=console, MEDIA_PROVIDER=fake, OWNER_SETUP_TOKEN&quot;]
+  b --&gt; c[&quot;3. Export .env.local into the shell&lt;br/&gt;(migrations do not read it)&quot;]
+  c --&gt; d[&quot;4. pnpm build (in apps/cms-api)&quot;]
+  d --&gt; e[&quot;5. pnpm deploy:migrate&lt;br/&gt;check DB_NAME is the database you look at&quot;]
+  e --&gt; f[&quot;6. pnpm start:dev (cms-api)&quot;]
+  f --&gt; g[&quot;7. pnpm dev (cms-admin)&quot;]
+  g --&gt; h[&quot;8. open admin.domain.localhost:5173/setup&quot;]
+  h --&gt; i[&quot;9. remove OWNER_SETUP_TOKEN, restart cms-api&quot;]</pre></div>
+<pre class="code">cd apps/cms-api
+set -a; source .env.local; set +a     # db:migrate and the CLIs read the shell only
+pnpm build                            # the role seed and content:migrate run from dist/
+pnpm deploy:migrate                   # db:migrate (Prisma + role seed) then content:migrate
+pnpm start:dev
+# owner without the web page:
+OWNER_EMAIL=you@example.com pnpm owner:bootstrap</pre>
+<div class="tbl"><table><thead><tr><th>Key (cms-api)</th><th>Local value</th></tr></thead><tbody><tr><td><code>DB_HOST</code>, <code>DB_PORT</code>, <code>DB_NAME</code>, <code>DB_USERNAME</code>, <code>DB_PASSWORD</code></td><td>your Postgres container</td></tr><tr><td><code>JWT_ACCESS_SECRET</code>, <code>OTP_PEPPER</code>, <code>TOTP_ENC_KEY</code></td><td><code>openssl rand -base64 48</code> each</td></tr><tr><td><code>ADMIN_ORIGIN</code></td><td><code>http://admin.domain.localhost:5173</code></td></tr><tr><td><code>WEB_ORIGIN</code></td><td><code>http://domain.localhost:5174</code></td></tr><tr><td><code>MAIL_PROVIDER</code></td><td><code>console</code> (OTP codes in the log)</td></tr><tr><td><code>MEDIA_PROVIDER</code></td><td><code>fake</code> (in memory, lost on restart)</td></tr><tr><td><code>OWNER_SETUP_TOKEN</code></td><td>only until the owner exists</td></tr></tbody></table></div>
+<div class="tbl"><table><thead><tr><th>Key (cms-admin / web)</th><th>Local value</th></tr></thead><tbody><tr><td><code>VITE_API_BASE_URL</code></td><td><code>http://localhost:3000/api/v1</code></td></tr><tr><td><code>NEXT_PUBLIC_API_BASE_URL</code></td><td><code>/api/v1</code></td></tr><tr><td><code>API_INTERNAL_URL</code></td><td><code>http://localhost:3000/api/v1</code></td></tr><tr><td><code>DEV_API_PROXY_TARGET</code></td><td><code>http://localhost:3000</code></td></tr><tr><td><code>WEB_REVALIDATE_SECONDS</code></td><td><code>0</code> while editing content</td></tr></tbody></table></div>
+<h2 id="devstack">Dev stack (agents / tier-2 e2e)</h2>
+<p><code>pnpm dev:stack</code> starts Postgres and Mailpit (compose project <code>abyss-dev</code>, <code>docker-compose.dev.yml</code>) and the three dev servers with env from <code>.localEnv.agent</code>; stop with <code>pnpm dev:stack:stop</code>.</p>
+<h2 id="smoke">Smoke stack (prod-like, Docker only)</h2>
+<div class="diagram"><pre class="mermaid">flowchart LR
+  sh[&quot;pnpm smoke&lt;br/&gt;scripts/smoke.sh&quot;] --&gt; build[&quot;build images&quot;]
+  build --&gt; up[&quot;docker compose -p abyss-smoke&quot;]
+  subgraph stack[&quot;docker-compose.smoke.yml&quot;]
+    tr[&quot;Traefik :8080&quot;]
+    db[(&quot;postgres:17&quot;)]
+    mp[&quot;Mailpit&quot;]
+    init[&quot;cms-api-init&lt;br/&gt;deploy:migrate&quot;]
+    api[&quot;cms-api&quot;]
+    web[&quot;web&quot;]
+    adm[&quot;cms-admin&quot;]
+  end
+  up --&gt; stack
+  tr --&gt; api
+  tr --&gt; web
+  tr --&gt; adm
+  init --&gt; db
+  api --&gt; db
+  api --&gt; mp
+  sh --&gt; checks[&quot;scripts/smoke/*.sh&lt;br/&gt;routing, auth, mail, headers, cors, owner setup&quot;]
+  sh -.-&gt;|&quot;SMOKE_E2E=1&quot;| e2e[&quot;Playwright apps/e2e&quot;]</pre></div>
+<pre class="code">pnpm smoke                      # build, start, check, tear down
+SMOKE_KEEP=1 SMOKE_E2E=1 pnpm smoke   # keep it and run Playwright
+docker compose -p abyss-smoke down -v # stop a kept stack</pre>
+<p>Kept stack URLs: <code>http://domain.localhost:8080</code> and <code>http://admin.domain.localhost:8080</code>. Per-run secrets are generated by <code>scripts/smoke.sh</code>.</p>
+<h2 id="tests">Test tiers</h2>
+<div class="diagram"><pre class="mermaid">flowchart TB
+  t1[&quot;Tier 1: unit + integration&lt;br/&gt;pnpm test, cms-api test:integration&quot;] --&gt; t2[&quot;Tier 2: e2e on dev servers&lt;br/&gt;pnpm dev:stack, E2E_STACK=dev pnpm e2e:spec&quot;]
+  t2 --&gt; t3[&quot;Tier 3: full prod-like stack&lt;br/&gt;SMOKE_E2E=1 pnpm smoke&quot;]
+  t1 -.-&gt; tc[&quot;one shared Testcontainers Postgres per run,&lt;br/&gt;one database per test file&quot;]</pre></div>
+
+<footer>Generated 2026-10-26 from the working tree of <code>abyss</code> (file lists and the module graph are read from the code; descriptions come from SPEC.md, the ADRs, docs/ and the source). File names follow ADR 0008 and were being renamed on the day this was generated, so re-generate after big renames: <code>pnpm docs:architecture</code>.</footer>
+</main>
+</div>
+<script type="module">
+import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11.4.1/dist/mermaid.esm.min.mjs';
+const theme = document.documentElement.dataset.theme
+  || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+mermaid.initialize({
+  startOnLoad: false,
+  theme: theme === 'dark' ? 'dark' : 'neutral',
+  securityLevel: 'strict',
+  flowchart: { curve: 'basis', useMaxWidth: true },
+  sequence: { showSequenceNumbers: true, useMaxWidth: true, wrap: true },
+  er: { useMaxWidth: true },
+  class: { useMaxWidth: true },
+});
+await mermaid.run({ querySelector: 'pre.mermaid' });
+for (const input of document.querySelectorAll('input.filter')) {
+  const target = document.getElementById(input.dataset.target);
+  input.addEventListener('input', () => {
+    const q = input.value.trim().toLowerCase();
+    for (const row of target.querySelectorAll('tbody tr')) {
+      row.hidden = q !== '' && !row.textContent.toLowerCase().includes(q);
+    }
+  });
+}
+</script>
+</body>
+</html>

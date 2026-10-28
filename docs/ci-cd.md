@@ -1,261 +1,189 @@
 # CI/CD
 
-CI checks every push to `develop`, `staging` and `main`, and deploys `staging` and `main`. It is split into one entrypoint, one flow per app and one shared publish workflow, so each app is checked, built, published and deployed on its own. A run works only on the apps a commit actually affects, publishes their images to GHCR and updates their image tag in the GitOps deployment repo. Argo CD / Flux takes it from there.
+GitHub Actions. The workflows follow the configuration of the owner's earlier k3s + FluxCD deployment, adapted for this repo (see "Carried over from the earlier deployment"). Workflows live in `.github/workflows/`, helper scripts in `.github/scripts/`.
 
-| File                                                                      | Kind            | What it does                                                                                                   |
-| ------------------------------------------------------------------------- | --------------- | -------------------------------------------------------------------------------------------------------------- |
-| [`.github/workflows/ci.yml`](../.github/workflows/ci.yml)                 | entrypoint      | triggers, run-level concurrency, the `changes` job, one call per affected app                                  |
-| [`.github/workflows/cms-api.yml`](../.github/workflows/cms-api.yml)       | `workflow_call` | cms-api: checks → build → publish                                                                              |
-| [`.github/workflows/cms-admin.yml`](../.github/workflows/cms-admin.yml)   | `workflow_call` | cms-admin: checks (also reads `VITE_API_URL`) → build → publish (with `VITE_API_URL` and a bundle smoke check) |
-| [`.github/workflows/frontend.yml`](../.github/workflows/frontend.yml)     | `workflow_call` | frontend: checks → build → publish                                                                             |
-| [`.github/workflows/_publish.yml`](../.github/workflows/_publish.yml)     | `workflow_call` | one app: image (non-root guard, optional smoke check, push) → manifest → deploy                                |
-| [`.github/scripts/affected.sh`](../.github/scripts/affected.sh)           | script          | affected apps, image apps and workflow-file routing, written to `$GITHUB_OUTPUT`                               |
-| [`.github/scripts/affected.test.sh`](../.github/scripts/affected.test.sh) | script          | local assertions for `affected.sh` (stub turbo, throwaway git repo)                                            |
-| [`.github/scripts/image-user.sh`](../.github/scripts/image-user.sh)       | script          | non-root guard for a locally loaded image                                                                      |
-| [`.github/scripts/bundle-check.sh`](../.github/scripts/bundle-check.sh)   | script          | cms-admin bundle smoke check for the baked API base                                                            |
+## Flow
 
-```text
-ci.yml (entrypoint)
-  changes ──┬─ if cms-api affected   ──> cms-api.yml   : checks ─> build ─> [publish: _publish.yml(app=cms-api)]
-            ├─ if cms-admin affected ──> cms-admin.yml : checks ─> build ─> [publish: _publish.yml(app=cms-admin,
-            │                                                                 build_args VITE_API_URL, smoke check)]
-            └─ if frontend affected  ──> frontend.yml  : checks ─> build ─> [publish: _publish.yml(app=frontend)]
-
-  [publish] = image (per platform: build + load ─> non-root guard ─> bundle smoke check (cms-admin) ─> push by digest)
-              ─> manifest (tag <branch>-<sha7> and <branch>) ─> deploy (bump <app>-sync-overlay.yaml)
-              only on a push to staging / main, and only when the app's build inputs changed
+```
+push to develop / staging / main
+  -> changes (turbo query affected, .github/scripts/affected.sh)
+  -> repo          version pins check + format:check + dependency audit (always runs)
+  -> cms-api       Checks -> Build   (when cms-api is affected)
+  -> cms-admin     Checks -> Build   (when cms-admin is affected; app-checks.yml)
+  -> web           Checks -> Build   (when web is affected; app-checks.yml)
+  -> publish-<app> image -> manifest -> deploy bump (push to staging/main, app image changed, app flow green)
 ```
 
-The app flows never depend on each other. A failing `checks` or `build` in one app doesn't cancel or skip another app's flow, and an app whose flow is green still publishes and deploys.
-
-## What runs where
-
-| Event                         | Per affected app                                                                          |
-| ----------------------------- | ----------------------------------------------------------------------------------------- |
-| Push to `develop`             | checks → build                                                                            |
-| Push to `staging` or `main`   | checks → build → publish (image → manifest → deploy), when the app's build inputs changed |
-| Any push with no affected app | only `changes` runs; the run is green                                                     |
-
-`pull_request` is commented out in `ci.yml`. The entrypoint still keeps its PR-aware expressions (base/head SHAs, concurrency cancellation), so re-enabling it is a trigger change only.
-
-| Branch    | Image platform                        | Build runner       | GitHub Environment | Deployment repo branch |
-| --------- | ------------------------------------- | ------------------ | ------------------ | ---------------------- |
-| `develop` | — (no image)                          | —                  | —                  | —                      |
-| `staging` | `linux/arm64` (Ubuntu VM on Apple M1) | `ubuntu-24.04-arm` | `staging`          | `staging`              |
-| `main`    | `linux/amd64` (Ubuntu on Intel)       | `ubuntu-latest`    | `production`       | `main`                 |
-
-This mapping lives in one place: the `case` block in the `Resolve deploy target` step of the `changes` job. A push to any other branch doesn't trigger the workflow.
-
-`build`, cms-admin's `checks`, `image`, `manifest` and `deploy` all run in the branch's GitHub Environment, so they can read its variables and secrets. On `develop` the environment is empty and they run without one.
-
-If apps are affected but none of their build inputs changed (for example only docs or tests, or only a workflow file), `checks` and `build` still run, and `publish` is skipped. No image is built and no tag is bumped.
-
-### Status check names
-
-Each per-app call in `ci.yml` is named after the app, so its checks show as `<app> / <job>`:
-
-- `cms-api / Checks`, `cms-api / Build`
-- `cms-admin / Checks`, `cms-admin / Build`
-- `frontend / Checks`, `frontend / Build`
-- publish jobs: `<app> / Publish / Image (<arch>)`, `<app> / Publish / Tag`, `<app> / Publish / Deploy to <environment>`
-
-The single-workflow names (`checks`, `build`, …) no longer exist. **If branch protection lists required status checks, rename them** to the `<app> / <job>` names, or a protected branch waits forever on a check that never reports. Keep in mind that a skipped app reports no check, so require only checks that run on every change, or none.
+The app flows never depend on each other, so one failing app does not skip another. Docker compose is local-test only (`docker-compose.smoke.yml`); no CI workflow or script runs or references it.
 
 ## Jobs
 
-**`changes`** (in `ci.yml`, named "Detect affected apps") runs [`affected.sh`](../.github/scripts/affected.sh):
+| Job                | What it runs                                                                                                                                                                                       |
+| ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `changes`          | Lists affected apps (`apps`, `<app>_affected`, `<app>_image`) and resolves the branch target. Routing is tested by `bash .github/scripts/affected.test.sh`.                                        |
+| `repo`             | `.github/scripts/pins-check.sh` (Turbo and Node pins agree), `pnpm format:check`, `pnpm audit --prod --audit-level high`                                                                           |
+| `cms-api` Checks   | `turbo run typecheck lint`, `test:unit`, `test:integration` (Testcontainers on the runner's Docker), `content:generate -- --check`, `graphql:print-schema -- --check`, `contract:print -- --check` |
+| `cms-admin` Checks | `turbo run typecheck lint`, `pnpm --filter @abyss/cms-admin test`                                                                                                                                  |
+| `web` Checks       | `turbo run typecheck lint`, `pnpm --filter @abyss/web test`                                                                                                                                        |
+| `<app>` Build      | `pnpm turbo run build --filter=@abyss/<app>` (no Docker image here)                                                                                                                                |
+| `publish-<app>`    | `_publish.yml`: per-platform image (build, non-root guard, admin bundle check, push by digest), manifest, deploy bump. See "Publish".                                                              |
 
-- **Affected apps:** runs `turbo query affected` between the push's `before` commit and the head. turbo runs through `npx` at the pinned `TURBO_VERSION`, with no `pnpm install`.
-- **Image apps:** runs `turbo query affected --tasks build` over the same range. With `futureFlags.affectedUsingTaskInputs` in `turbo.json`, an app is listed only when a file matching its `build.inputs` changed, either in the app or in a workspace package it builds on. Those inputs are every tracked file except Markdown, `docs/`, `docs-*/`, `e2e/`, `test/`, `__tests__/`, `*.test.*`, `*.spec.*`, and the Vitest and Playwright configs. Root `package.json`, `turbo.json` and real lockfile changes count for every app. Only these apps get an image and a tag bump.
-- **Workflow-file routing:** see [Which changes trigger which apps](#which-changes-trigger-which-apps).
-- **Fallback:** a new branch or a force push has no usable base commit, so every app is affected and gets an image.
-- **Outputs:** per app `<app>_affected`, `<app>_image` and `<app>_matrix` (keys use underscores: `cms_api_*`, `cms_admin_*`, `frontend_*`), plus `publish`, `tag`, `branch`, `environment`, `deploy_ref`, `turbo_version` and `image_prefix`. An app without a new image gets the matrix `{"include":[]}`.
+## Carried over from the earlier deployment
 
-`TURBO_VERSION` and `IMAGE_PREFIX` are defined once, as workflow `env` in `ci.yml`, and re-exported as `changes` outputs, because `env` is not available in a reusable-workflow call's `with:`.
+The old `frontend` app is `web` here, and the deploy repo overlay is `web-sync-overlay.yaml`.
 
-**Per-app calls** (in `ci.yml`): one job per app, gated by `if: needs.changes.outputs.<app>_affected == 'true'`, with `secrets: inherit` and the inputs above.
+| Part                                                                  | Verdict | Where it lives now                                                                                                     |
+| --------------------------------------------------------------------- | ------- | ---------------------------------------------------------------------------------------------------------------------- |
+| `changes` job, `affected.sh` routing, zero or unknown base = all apps | carried | `ci.yml`, `affected.sh` (`@abyss/` scope, `app-checks.yml` routing; `apps/e2e` and `scripts/` affect no app)           |
+| Branch targets: develop checks only, staging and main publish         | adapted | `ci.yml` "Resolve deploy target"; staging builds `linux/amd64` on `ubuntu-24.04`, same as production (both run x86_64) |
+| Image prefix and tags `<branch>-<sha7>`, `<branch>`                   | carried | `ci.yml`, `_publish.yml`                                                                                               |
+| Image, manifest, deploy flow of `_publish.yml`                        | carried | `_publish.yml` (adds `TURBO_VERSION`, the web `NEXT_PUBLIC_*` build args, required `VITE_API_BASE_URL`)                |
+| Deploy contract (repo and path variables, token secret, overlay tag)  | carried | `_publish.yml` deploy job (adds `persist-credentials: false`, token only as a per-command header)                      |
+| Per-app flow files with a nested `publish` job                        | adapted | shared `app-checks.yml` plus `publish-<app>` jobs in `ci.yml`, gated on the app flow result                            |
+| `build` job inside the GitHub Environment                             | changed | read-only jobs run without an Environment; only the publish jobs read Environment values                               |
+| Optional `VITE_API_URL` with a relative fallback                      | changed | cms-admin requires the full `VITE_API_BASE_URL`; the Dockerfile refuses to build without it                            |
+| Actions referenced by tag                                             | changed | every action pinned to a full commit SHA                                                                               |
+| Tooling self-test of the old repo                                     | dropped | belongs to another repo                                                                                                |
 
-**`Checks`** (per app): `pnpm turbo run typecheck lint --filter=<app>`.
+Stays in this project (never removed by a CI change): SHA-pinned actions; the `repo` job (pins check, `format:check`, audit); unit tests in every app flow; cms-api integration tests and the three `--check` generators; publish gated on the app flow, not on e2e; `persist-credentials: false` with the header-only token on the deploy push; `packages: write` only on the image and manifest jobs; the `pull_request` trigger stays commented out.
 
-**`Build`** (per app, in the Environment): `pnpm turbo run build --filter=<app>`. This is the normal Node/Vite/Next build, and it catches breakage before Docker.
+## Adding an app
 
-**cms-admin `Checks`** also runs in the Environment. When the run publishes, its first step reads the Environment variable `VITE_API_URL` and hands it to `publish`, so a bad value fails before anything is built. See [VITE_API_URL](#vite_api_url-cms-admin).
+1. Add the package name to `packages` in `.github/scripts/affected.sh` (and to `app_checks_packages` when it uses `app-checks.yml`).
+2. In `ci.yml`: add the `changes` outputs (`<app>_affected`, `<app>_image`, `<app>_matrix`), the `<APP>_IMAGE` env line and `matrix_for` echo line, the app job (calls `app-checks.yml` with `app: <app>`) and a `publish-<app>` job.
+3. Add the Dockerfile with `ARG NODE_IMAGE` and `ARG TURBO_VERSION`; `pins-check.sh` picks it up from `apps/*/Dockerfile`.
 
-**`Publish`** (per app): calls `_publish.yml` when `publish` is true (a push to `staging` or `main`) and the app has a new image.
+## Version pins
 
-**`image`** (in `_publish.yml`)
+Turbo is pinned in `ci.yml` (`TURBO_VERSION`), each `apps/*/Dockerfile` (`ARG TURBO_VERSION`) and the root `package.json`; the Node major in `.nvmrc` and each Dockerfile (`ARG NODE_IMAGE`). The `repo` job runs `.github/scripts/pins-check.sh` and fails on any mismatch, so a bump edits all of them in one commit.
 
-- Runs once per platform, on a native runner, so there's no QEMU emulation.
-- Builds `apps/<app>/Dockerfile` with `load: true`, so the image can be checked before anything is pushed.
-- Runs the [non-root guard](#non-root-guard) on the loaded image.
-- cms-admin only: runs the [bundle smoke check](#vite_api_url-cms-admin).
-- Pushes to GHCR **untagged, by digest**, with a GitHub Actions layer cache per app and arch (scope `<app>-<arch>`). The push rebuilds from the same cache, so it's effectively a no-op build.
-- Hands the digest to `manifest` as a small artifact.
+## Change detection
 
-**`manifest`** (job name `Tag`): combines the app's digests into one image and tags it `<branch>-<sha7>` and `<branch>`.
+`turbo.json` `build.inputs` excludes docs and tests, so a docs or test only change runs checks and build but gets no new image (`<app>_image=false`). A change to `.github/workflows/cms-api.yml` re-runs cms-api, and `app-checks.yml` re-runs cms-admin and web; `ci.yml`, `_publish.yml` and `.github/scripts/**` re-run all apps. A new branch or force push treats every app as affected.
 
-**`deploy`**
+Branches: `develop` runs checks and build only; `staging` and `main` are the publish targets. Nothing assumes they exist yet. `pull_request` is commented out in `ci.yml`.
 
-- Checks out the deployment repo at the mapped branch.
-- Checks that `<DEPLOYMENT_CLUSTER_PATH>/<app>-sync-overlay.yaml` exists and has an `APP_IMAGE_TAG` key before editing it, so a bad file never leaves a half-applied bump.
-- Rewrites that key, makes **one commit for this app** (`chore(<branch>): bump <app> to <tag>`) and pushes it.
-- If another push landed first, it rebases and retries, up to 3 times.
-- Runs in the concurrency group `deploy-<environment>` with `cancel-in-progress: false`: one deploy at a time per Environment, across apps, never cancelled mid-way. Two apps deploying in the same run produce two serialized commits, and neither fails.
+## Run the checks locally
 
-### Permissions
-
-The run defaults to `contents: read`. Only `_publish.yml`'s `image` and `manifest` jobs use `packages: write`. A reusable workflow can't get more than its caller grants, so `packages: write` is also granted as a ceiling on the calling jobs along the way: the three per-app jobs in `ci.yml` and the `publish` job in each `<app>.yml`. Every other job, including `deploy`, has `contents: read` only. Deploy pushes with `DEPLOYMENT_REPO_TOKEN`, not `GITHUB_TOKEN`.
-
-No called workflow declares a workflow-level `concurrency`: it would collide with the entrypoint's run-level group (`ci-<ref>`, which never cancels a push run).
-
-## Non-root guard
-
-Every image runs as the non-root user `abyss`, UID/GID **1001**, with a numeric `USER 1001` in the final stage, so Kubernetes `runAsNonRoot` can verify it. [`image-user.sh`](../.github/scripts/image-user.sh) enforces this before every push, for every app and platform:
-
-- `Config.User` must be a numeric, non-zero UID (optionally `uid:gid`); empty, `0`, `root` or a name fails.
-- `id -u` inside the image must print that same UID, and not `0`.
-
-On failure it prints `::error::<image> runs as '<user>'; the final stage must set a numeric non-root USER`, the `image` job fails, and nothing is pushed, tagged or deployed.
-
-**Overlay impact:** cms-api and frontend used to run as `node` (UID 1000). A deployment-repo overlay that pins `securityContext.runAsUser: 1000` or `fsGroup: 1000` for either must change to `1001`, or drop the pin, **before the first staging push that carries the new images**. `runAsNonRoot: true` with `runAsUser: 1001` now works for all three images. Neither app mounts a writable volume, so no PVC ownership changes are needed.
-
-## VITE_API_URL (cms-admin)
-
-cms-admin calls the backend at `VITE_API_URL` + `/api/v1`. Vite bakes the value into the bundle at build time, so it is a Docker build arg (`ARG VITE_API_URL=""` in the builder stage only, after the dependency install, so changing it reruns only the build layer). It is never injected at runtime and never in the runner stage.
-
-- **Source:** the GitHub Environment variable `VITE_API_URL` on `staging` and `production`. It's a variable, not a secret, because the value ends up in the public bundle.
-- **Value:** the backend origin, without `/api/v1` (trailing slashes are stripped), e.g. `https://cms-api.example.com`.
-- **Empty or unset is allowed.** The build doesn't fail. cms-admin's `Checks` job logs `::notice::VITE_API_URL is empty for <environment>; the admin will call the relative /api/v1`, and the bundle calls `/api/v1` on the admin's own origin.
-- **Single line only.** A value containing a newline or carriage return fails cms-admin's `Checks` job with `::error::VITE_API_URL for <environment> must be a single line`, because it would inject extra build args.
-- **Flow:** cms-admin's `Checks` job (in the Environment) reads it through `env:` and outputs it; `publish` passes it to `_publish.yml` as `build_args: VITE_API_URL=<value>` and as `smoke_api_url`.
-- `.env*` files never reach the image: `.dockerignore` excludes them (only `.env.example` passes, and Vite doesn't load it).
-
-**Bundle smoke check.** After the build and before the push, [`bundle-check.sh <image> [api_url]`](../.github/scripts/bundle-check.sh) greps `/usr/share/nginx/html/assets` inside the loaded image. `buildApiBaseUrl()` joins the origin and the `/api/v1` constant at runtime, so the minified bundle never holds the joined `<origin>/api/v1` literal. The check therefore looks for the two parts separately (quote-agnostic, since the minifier emits backticks):
-
-- **`VITE_API_URL` set:** the `/api/v1` constant is present, and the origin (all trailing slashes stripped) is present.
-- **`VITE_API_URL` empty:** the `/api/v1` constant is present, there is no absolute `http(s)://…/api/v1`, and no bare call receives an absolute `http(s)://` literal (how a baked origin shows up in the minified bundle).
-
-A failed assertion prints `::error::` and fails the `image` job, so nothing is pushed, tagged or deployed.
-
-## Images and tags
-
-```text
-ghcr.io/hungnh1812dev/project-me/<app>:<branch>-<sha7>   # e.g. cms-api:staging-a1b2c3d  <- deployed
-ghcr.io/hungnh1812dev/project-me/<app>:<branch>          # moving tag, convenience only
 ```
-
-- **What deploys use:** they always pin the immutable `<branch>-<sha7>` tag.
-- **Labels:** images carry `org.opencontainers.image.source` and `.revision` labels.
-- **Attestation entries:** `docker buildx imagetools inspect` also lists `unknown/unknown` entries. Those are the provenance attestations `build-push-action` adds by default.
-- **Deployment repo edit:** the bump changes exactly one line in the app's file, and the value is always double-quoted:
-
-```text
-APP_IMAGE_TAG: "staging-a1b2c3d"
-```
-
-If the file already has that tag, nothing is committed and the job still succeeds. A trailing `# comment` on the `APP_IMAGE_TAG` line is dropped.
-
-## Which changes trigger which apps
-
-This is turbo's own change detection plus the workflow-file routing in `affected.sh`:
-
-| Changed                                                          | Apps checked and built                        | Image and deploy                    |
-| ---------------------------------------------------------------- | --------------------------------------------- | ----------------------------------- |
-| `apps/<app>/**` source, config or Dockerfile                     | that app                                      | that app                            |
-| `apps/<app>/**` docs or tests only                               | that app                                      | none                                |
-| `turbo.json`, root `package.json`                                | all                                           | all                                 |
-| `packages/*`                                                     | apps that depend on the package               | the same, when build inputs changed |
-| `pnpm-lock.yaml`                                                 | only apps whose resolved dependencies changed | the same                            |
-| `.github/workflows/<app>.yml`                                    | that app                                      | none                                |
-| `.github/workflows/ci.yml`, `_publish.yml`, `.github/scripts/**` | all                                           | none                                |
-| `README.md`, `docs/**`, `.nvmrc`, other `.github/**` files       | none                                          | none                                |
-
-A workflow-file change only runs checks and build; it never builds an image or bumps a tag. To publish after a workflow change, include a change to an app's build inputs.
-
-## One-time setup
-
-In the GitHub repo, go to **Settings → Secrets and variables → Actions** and **Settings → Environments**:
-
-| Name                      | Kind     | Scope                        | Value                                                                                                                                          |
-| ------------------------- | -------- | ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| `DEPLOYMENT_REPO`         | variable | repository                   | `owner/repo` of the GitOps repo                                                                                                                |
-| `DEPLOYMENT_REPO_TOKEN`   | secret   | repository                   | fine-grained PAT: **only** the deployment repo, **Contents: read and write**                                                                   |
-| `DEPLOYMENT_CLUSTER_PATH` | variable | `staging`, `production` envs | folder of the overlays in the deployment repo, e.g. `cluster/me/staging` and `cluster/me/prod`                                                 |
-| `VITE_API_URL`            | variable | `staging`, `production` envs | **optional.** cms-admin's backend origin, without `/api/v1`. Empty or unset means the relative `/api/v1` on the admin's origin. Never a secret |
-
-**In the deployment repo:**
-
-- **Branches:** `staging` and `main` must exist.
-- **Files:** `cms-api-sync-overlay.yaml`, `cms-admin-sync-overlay.yaml` and `frontend-sync-overlay.yaml` each need an `APP_IMAGE_TAG:` line, under the Environment's `DEPLOYMENT_CLUSTER_PATH` on the mapped branch.
-- **Security context:** every image runs as UID 1001. Overlays should use `runAsNonRoot: true` with `runAsUser: 1001`; move any cms-api or frontend `runAsUser`/`fsGroup` of 1000 to 1001 (see [Non-root guard](#non-root-guard)).
-- **Branch protection:** if a branch is protected, the token must be allowed to push to it.
-
-**In this repo:** if branch protection requires status checks, use the [`<app> / <job>` names](#status-check-names).
-
-**GHCR:**
-
-- **Access:** packages are created on the first push and are **private** by default. Give the cluster an image pull secret, or make each package public.
-- **Repository link:** pushes made with `GITHUB_TOKEN` link the package to this repo automatically.
-
-## Running the checks locally
-
-```bash
 pnpm install --frozen-lockfile
-docker run --rm -v "$PWD":/repo -w /repo rhysd/actionlint:latest   # lint the workflows (includes shellcheck)
-bash .github/scripts/affected.test.sh                               # routing tests
-BASE_SHA=$(git rev-parse origin/staging) HEAD_SHA=$(git rev-parse HEAD) TURBO_VERSION=2.11.5 \
-  bash .github/scripts/affected.sh                                  # what CI would run and publish
-pnpm turbo run typecheck lint build --filter=cms-api
-docker build -f apps/cms-api/Dockerfile -t cms-api:local .
-bash .github/scripts/image-user.sh cms-api:local                    # non-root guard
-docker build -f apps/cms-admin/Dockerfile --build-arg VITE_API_URL=https://api.example.test -t cms-admin:abs .
-bash .github/scripts/bundle-check.sh cms-admin:abs https://api.example.test
-docker build -f apps/cms-admin/Dockerfile -t cms-admin:rel .
-bash .github/scripts/bundle-check.sh cms-admin:rel ''
+pnpm turbo run typecheck lint test --filter=@abyss/<cms-api|cms-admin|web>
+pnpm --filter @abyss/cms-api test:integration         # Docker must be running
+pnpm --filter @abyss/cms-api content:generate -- --check
+pnpm --filter @abyss/cms-api graphql:print-schema -- --check
+pnpm --filter @abyss/cms-api contract:print -- --check
+pnpm turbo run build --filter=@abyss/<app>
+pnpm format:check
+pnpm audit --prod --audit-level high
+bash .github/scripts/affected.test.sh
+bash .github/scripts/pins-check.sh
+bash .github/scripts/pins-check.test.sh
+bash .github/scripts/build-args.test.sh
 ```
 
-When editing the workflows or scripts, keep shell compatible with bash 3.2 as well as 5, e.g. `read -r -a`, not `mapfile`, so it runs locally on macOS. Pass every `${{ }}` value into scripts through `env:`, never inline in `run:`. Keep `TURBO_VERSION` in sync with the Dockerfiles and the root `package.json`.
+`content:generate --check` exits non-zero when the content type schemas changed without a committed migration; fix it by running `pnpm --filter @abyss/cms-api content:generate` and committing the result.
 
-## Troubleshooting
+## e2e (local only)
 
-| Symptom                                                                                               | Cause / fix                                                                                                                                                                                                                                                                                                                                                                               |
-| ----------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `changes` fails with `No deploy target for branch`                                                    | The workflow was triggered for a branch missing from the mapping `case`. Add it there.                                                                                                                                                                                                                                                                                                    |
-| `deploy` fails with `DEPLOYMENT_CLUSTER_PATH is not set for this environment`                         | Set the variable on the Environment. See One-time setup.                                                                                                                                                                                                                                                                                                                                  |
-| `deploy` fails with `<path>/<app>-sync-overlay.yaml not found` or `APP_IMAGE_TAG not found`           | The file is missing under `DEPLOYMENT_CLUSTER_PATH` on that branch, or lacks the key. Nothing was committed.                                                                                                                                                                                                                                                                              |
-| `deploy` fails on push (403)                                                                          | The token lacks Contents write on the deployment repo, or branch protection blocks it.                                                                                                                                                                                                                                                                                                    |
-| `deploy` fails after 3 retries, or on a rebase conflict                                               | Someone edited the same line in the deployment repo concurrently. Re-run the job.                                                                                                                                                                                                                                                                                                         |
-| Image-user guard failed: `<image> runs as '<user>'; the final stage must set a numeric non-root USER` | The app's runner stage has no `USER`, `USER root`/`0`, or a named user (`USER node`). End it with `USER 1001` after creating `abyss` (see the other Dockerfiles). Nothing was pushed.                                                                                                                                                                                                     |
-| Pod fails with `container has runAsNonRoot and image will run as root`, or can't read its files       | The overlay pins `runAsUser`/`fsGroup` 1000, or the image predates the change. Use `runAsUser: 1001` (or drop the pin) and deploy an image built after the change.                                                                                                                                                                                                                        |
-| Admin calls the wrong origin (CORS errors, or requests go to the admin's own host)                    | `VITE_API_URL` on that Environment is wrong, or empty when the API is on another origin. Fix the variable and rebuild: it's baked at build time, so redeploying the old image or restarting the pod doesn't help. The cms-admin `Checks` job log shows the value used. Also add the admin origin to the backend's `CORS_ORIGINS`, and the API origin to the container's `CSP_API_ORIGIN`. |
-| `cms-admin / Checks` fails with `VITE_API_URL for <environment> must be a single line`                | The variable contains a newline. Re-enter it as one line.                                                                                                                                                                                                                                                                                                                                 |
-| Bundle smoke check fails                                                                              | The bundle doesn't match `VITE_API_URL` (for example the build arg didn't reach the builder stage, or an absolute origin is baked while the variable is empty). Nothing was pushed. Reproduce with `bundle-check.sh` locally.                                                                                                                                                             |
-| A required status check never reports                                                                 | Branch protection still lists the old single-workflow names, or an app that was skipped. See Status check names.                                                                                                                                                                                                                                                                          |
-| Cluster can't pull the image                                                                          | The GHCR package is private. See One-time setup.                                                                                                                                                                                                                                                                                                                                          |
-| A workflow-only change didn't publish                                                                 | Expected: workflow files route to checks and build only. See "Which changes trigger which apps".                                                                                                                                                                                                                                                                                          |
+GitHub CI never runs Playwright. Before pushing to `staging` or `main`, run the suite against the local compose stack with `SMOKE_E2E=1 pnpm smoke` (Docker running, `pnpm --filter @abyss/e2e browsers:install` once). For a single spec, keep a stack with `SMOKE_KEEP=1 SMOKE_E2E=1 pnpm smoke` and run `pnpm e2e:spec <spec>`. Details: [apps/e2e/README.md](../apps/e2e/README.md).
 
-## Design decisions
+## Publish
 
-- **One flow per app,** called from one entrypoint, so apps are isolated: one app's failure never skips another's publish, status checks name the app, and each app's pipeline reads on its own.
-- **One shared `_publish.yml`,** so image, manifest and deploy logic exist once. It publishes one app per call.
-- **One deployment-repo commit per app,** serialized per Environment by the `deploy-<environment>` concurrency group, plus the rebase retry.
-- **Change detection with `turbo query affected`,** not path filters. It follows the workspace dependency graph and parses the lockfile per package. If the base commit is unusable, turbo itself treats everything as changed. Workflow-file routing is the one path-based addition, and it never publishes.
-- **Native runners per architecture,** not QEMU. arm64 runners are free for public repos, and emulated `pnpm install` + builds are 5–10× slower.
-- **Build, check, then push by digest; tag in `manifest`:** the guards need a loaded image, and pushing by digest is Docker's pattern for building one image across several runners. With one platform per branch it merges a single digest, but it still supports multi-arch without changes. Docker's reusable `docker/github-builder` workflow was considered and not used. It needs `id-token: write` and hand-built GHCR credentials.
-- **`VITE_API_URL` as a build arg from an Environment variable,** since Vite bakes it at build time. The staging and production images are built separately anyway (arm64 vs amd64).
-- **Direct commit to the deployment repo,** not a PR, so a push to `staging` or `main` deploys without a manual step. It uses a fine-grained PAT scoped to that one repo.
-- **Setup steps duplicated** in `checks` and `build` of each flow, rather than a composite action. They're short blocks.
+`publish-cms-api`, `publish-cms-admin` and `publish-web` in `ci.yml` call `.github/workflows/_publish.yml`. Each runs only when all of these hold: the event is a push to `staging` or `main`, the app's build inputs changed (`<app>_image`), and the app flow (`Checks` and `Build`) succeeded (`needs: [changes, <app>]` with `always()` and a result check). It does not wait for the `repo` job (format, audit) and e2e is not a gate. A failing sibling app does not block another app's publish.
 
-## Open items
+Images, one per service, built straight from `apps/<app>/Dockerfile` by `docker/build-push-action` (docker compose is never used):
 
-- **Tests in CI:** the unit and e2e suites are not in CI yet.
-- **Production approval:** the `production` Environment has no required reviewer, so `main` deploys fully automatically. Add one in the Environment settings if you want an approval gate.
-- **Manual full run:** there's no `workflow_dispatch` button to run everything on demand.
-- **First live run, not done yet.** Before it, update any cms-api or frontend overlay `runAsUser`/`fsGroup` from 1000 to 1001. Checklist:
-  1. A push to `develop` touching only `apps/cms-admin`: only `cms-admin / Checks` and `cms-admin / Build` run; the cms-api and frontend flows show as skipped, and nothing is published. (A README-only push is green with every per-app flow skipped.)
-  2. A push to `staging` with `VITE_API_URL` set on the `staging` Environment: the bundle smoke check passes, arm64 images appear with tag `staging-<sha7>`, and the admin calls that origin.
-  3. A push to `staging` with `VITE_API_URL` empty: the run is green, cms-admin's `Checks` job logs the notice, and the admin calls `/api/v1` on its own origin.
-  4. All three pods run with `runAsNonRoot: true` / `runAsUser: 1001` and become Ready. cms-api answers its health route, and `kubectl exec … id` shows uid 1001.
-  5. One app's build fails while another still deploys, with one deployment-repo commit per deployed app (`chore(<branch>): bump <app> to <tag>`).
+| Image                                        | Used by                                                                                                   |
+| -------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| `ghcr.io/hungnh1812dev/project-me/cms-api`   | both cms-api containers: init (`npm run deploy:migrate`) and main (`node dist/main.js`); one tag for both |
+| `ghcr.io/hungnh1812dev/project-me/cms-admin` | admin console (nginx, uid 101)                                                                            |
+| `ghcr.io/hungnh1812dev/project-me/web`       | public site (Next.js standalone, uid 1000)                                                                |
 
-  After that, a push to `main` (first real release) gives amd64 images and one commit per app on the deployment repo's `main` branch through the `production` Environment.
+Tags: `<branch>-<sha7>` and the moving `<branch>`. Platforms: `staging` and `main` both linux/amd64 on `ubuntu-24.04` (one native runner per platform; the build cache scope is per app, environment and arch). Per platform: build and load, non-root guard (`.github/scripts/image-user.sh`: numeric non-zero `USER`, checked with `id -u`), for cms-admin `.github/scripts/bundle-check.sh` (the bundle contains `VITE_API_BASE_URL`), then push by digest; the manifest job merges the digests and applies both tags; the deploy job bumps `APP_IMAGE_TAG` in `<DEPLOYMENT_CLUSTER_PATH>/<app>-sync-overlay.yaml` of the deploy repo (commit and push with retry on a race). For cms-api the one tag in `cms-api-sync-overlay.yaml` is what both containers use.
+
+Least privilege: workflow default `contents: read`; `packages: write` only on the image and manifest jobs (the call job grants the ceiling); the deploy job has no `packages` access and uses only `DEPLOYMENT_REPO_TOKEN`: the checkout does not persist it (`persist-credentials: false`) and only the push step receives it, as a per-command header.
+
+Every action in every workflow is pinned to a full commit SHA with the tag as a comment (the latest tag of the major version in use). Bump them deliberately; adding Dependabot (`github-actions` ecosystem) is recommended. The registry login uses the run's `GITHUB_TOKEN`.
+
+### GitHub setup, step by step
+
+Do the steps in order. Paths are GitHub web UI paths in this repo (`Settings > ...`) unless a step says the deploy repo. `<owner>/<deploy-repo>` is the repo that holds the cluster manifests. Never put a real token, domain or secret value in a file in this repo. The status and per-item checklist for the owner is in [devops-runbook.md](deployment/devops-runbook.md) section 3.5; this section is the how-to.
+
+**1. Repository prerequisites**
+
+1. `Settings > Actions > General > Actions permissions`: allow Actions for this repo (all actions, or allow the SHA-pinned actions the workflows use).
+2. Same page, `Workflow permissions`: choose `Read repository contents and packages permissions` (read-only default). Do not tick `Allow GitHub Actions to create and approve pull requests`. The workflows ask for more only where needed: `ci.yml` grants `packages: write` to the `publish-<app>` call jobs, and `_publish.yml` uses it only in the image and manifest jobs.
+
+**2. Environments**
+
+1. `Settings > Environments > New environment`: create `staging`, then `production`. The names must match exactly; `ci.yml` resolves `staging` for the `staging` branch and `production` for `main`.
+2. In each Environment set `Deployment branches and tags` to `Selected branches and tags`, then `Add deployment branch or tag rule`: pattern `staging` on `staging`, pattern `main` on `production`. This rule, not the workflow, stops any other branch from reading the Environment's variables and `DEPLOYMENT_REPO_TOKEN`. Without it a pushed `feature/x` workflow could declare `environment: production`.
+3. Required reviewers are optional. v1 uses none on `production`: the gate is the protected `main` branch plus the `main`-only deployment rule. Add reviewers on `production` only if you want a manual approval before each deploy.
+
+**3. Environment variables**
+
+`Settings > Environments > <environment> > Environment variables > Add environment variable`. Add these in both `staging` and `production` (values differ per environment). Use Environment variables, not repository variables, so each environment keeps its own values.
+
+| Variable                         | Required | Value to enter                                                                           | Read by                                    |
+| -------------------------------- | -------- | ---------------------------------------------------------------------------------------- | ------------------------------------------ |
+| `DEPLOYMENT_REPO`                | yes      | `<owner>/<deploy-repo>`                                                                  | deploy job, checkout of the deploy repo    |
+| `DEPLOYMENT_CLUSTER_PATH`        | yes      | directory in the deploy repo that holds the `<app>-sync-overlay.yaml` files (see step 6) | deploy job; fails with an error when unset |
+| `VITE_API_BASE_URL`              | yes      | full API base URL for cms-admin, for example `https://<domain>/api/v1`                   | cms-admin image build arg                  |
+| `NEXT_PUBLIC_API_BASE_URL`       | yes      | API base for web; `/api/v1` when the API is served on the web host                       | web image build arg                        |
+| `NEXT_PUBLIC_ADMIN_URL`          | no       | admin console URL                                                                        | web image build arg                        |
+| `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | no       | real Cloudflare Turnstile site key (public); empty hides the reviewer entry              | web image build arg                        |
+
+These are build args baked into the public bundles, so they are variables, never secrets. A missing required variable fails the image job before the build starts. All names are read in `.github/workflows/_publish.yml`.
+
+**4. Environment secret `DEPLOYMENT_REPO_TOKEN`**
+
+1. Create the credential. Either a fine-grained personal access token (`GitHub profile > Settings > Developer settings > Personal access tokens > Fine-grained tokens`) or a GitHub App installation token. Resource owner: the owner of the deploy repo. Repository access: `Only select repositories`, the deploy repo only. Permission: `Contents: Read and write`, nothing else. Set an expiry (for example 90 days) and note the date in your calendar.
+2. `Settings > Environments > <environment> > Environment secrets > Add environment secret`: name `DEPLOYMENT_REPO_TOKEN`, value the token. Add it to `staging` and `production`; use one token per environment if you want separate rotation. Never a repository secret: only a job running in the Environment, on its allowed branch, may read it.
+3. Rotation: create the new token, replace the secret value in each Environment, run one publish to confirm the deploy job still pushes, then revoke the old token. An expired token shows up as a failed push in the deploy job.
+4. `GITHUB_TOKEN` is created by GitHub for every run; do not create it. The registry login uses it.
+
+**5. Branch protection for `staging` and `main`**
+
+`Settings > Branches > Add branch ruleset` (or `Add classic branch protection rule`), one rule for `staging` and one for `main`:
+
+1. Require a pull request before merging, with at least 1 approval.
+2. Require status checks to pass. For now add only `Repo checks` (the `repo` job in `ci.yml`).
+3. After the first green run, add the per-app check names exactly as that run shows them (the `<app> / Checks` and `<app> / Build` jobs from `app-checks.yml`, for example `cms-api / Checks`). A check that has never run cannot be selected, so this step waits for the first run.
+4. Block force pushes and deletion.
+
+Create the `staging` and `main` branches in this repo first if they do not exist yet; the rules apply to existing branches only.
+
+**6. Deploy repo prerequisites**
+
+In `<owner>/<deploy-repo>`:
+
+1. The branches `staging` and `main` exist. The deploy job checks out the one that matches the environment and pushes the bump to it.
+2. The directory named by `DEPLOYMENT_CLUSTER_PATH` holds three files: `cms-api-sync-overlay.yaml`, `cms-admin-sync-overlay.yaml` and `web-sync-overlay.yaml`. Each has a line `APP_IMAGE_TAG: <value>`; the deploy job rewrites that value to `<branch>-<sha7>`. A missing file or line fails the bump.
+3. Flux or the cluster layout is the deploy repo's own business: [deployment/k3s-traefik.md](deployment/k3s-traefik.md) and the devops runbook section 4 describe the contract.
+
+**7. GHCR packages**
+
+Packages appear under the owner's profile or organization (`Packages`) after the first successful push, as `project-me/cms-api`, `project-me/cms-admin` and `project-me/web`. Keep them private (owner decision). For each package: `Package settings > Manage Actions access`: add this repo with `Write` role so later runs can push; the cluster pulls with its own image pull secret (see the k3s guide). Do this after the first push in step 9, because the packages do not exist before it.
+
+**8. Optional: Dependabot for actions**
+
+Recommended, not required. Add a `.github/dependabot.yml` with the `github-actions` ecosystem on a weekly schedule so the SHA-pinned actions get update pull requests. This guide does not add the file; if you add it, merge its updates deliberately, one at a time.
+
+**9. First-run check**
+
+1. Push (or merge) to `staging`. In the `Actions` tab, the `CI` run is green: `Repo checks`, each affected app's `Checks` and `Build`, then `publish <app>`.
+2. In the run, each `publish` job shows the environment `staging`; if a job waits or is denied, recheck step 2.
+3. Image tags: `docker buildx imagetools inspect ghcr.io/<owner>/<repo>/<app>:staging-<sha7>` shows `linux/amd64`. The moving tag `staging` points to the same image.
+4. In the deploy repo, branch `staging` has one new bump commit per published app, changing only `APP_IMAGE_TAG` in the matching overlay file.
+5. Now return to step 5.3 (add the per-app checks) and step 7 (package access).
+6. Repeat on `main` for `production`.
+
+Remaining notes: build args are variables, never secrets; the deploy job gets no `packages` access and uses only `DEPLOYMENT_REPO_TOKEN`, which it passes as a per-command header. Nothing was run against GitHub yet: the first real publish is the check. How the published images are deployed (K3s, Traefik, init and main container, env contract, backups): [deployment/k3s-traefik.md](deployment/k3s-traefik.md).
+
+Run the guards locally against an image you built:
+
+```
+docker build -f apps/cms-admin/Dockerfile --build-arg VITE_API_BASE_URL=https://domain.com/api/v1 -t cms-admin:ci .
+bash .github/scripts/image-user.sh cms-admin:ci
+bash .github/scripts/bundle-check.sh cms-admin:ci https://domain.com/api/v1
+```

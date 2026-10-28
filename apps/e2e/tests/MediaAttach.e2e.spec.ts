@@ -1,0 +1,268 @@
+import {
+  type BrowserContext,
+  expect,
+  type Page,
+  type Request,
+  test,
+} from '@playwright/test';
+
+import { ADMIN_COPY, contentNewPath } from '../src/Apps.contract';
+import { e2eEnv } from '../src/E2e.env';
+import { insertLibraryFiles } from '../src/SmokeDatabase.client';
+import { PROFILE_SLUG, RUN_ID } from '../src/E2e.constants';
+import { signInAs } from '../src/Session.fixture';
+import { API_PATHS } from '../src/Api.endpoints';
+import { contentSaveButton } from '../src/Locators.fixture';
+
+const copy = ADMIN_COPY.media;
+const content = ADMIN_COPY.content;
+
+const EDIT_URL = /\/content\/profile\/[0-9a-f-]{36}$/;
+const UUID = /^[0-9a-f-]{36}$/;
+const FILE_NAME = `e2e-attach-${RUN_ID}.png`;
+const SECOND_FILE_NAME = `e2e-attach-2-${RUN_ID}.png`;
+const THIRD_FILE_NAME = `e2e-attach-3-${RUN_ID}.png`;
+const TEXT_FILE_NAME = `e2e-attach-${RUN_ID}.txt`;
+const PROFILE_NAME = `E2E profile ${RUN_ID}`;
+const DOCUMENTS_PATH = API_PATHS.documents(PROFILE_SLUG);
+/** A 1x1 transparent PNG. */
+const PNG_BASE64 =
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==';
+const png = () => Buffer.from(PNG_BASE64, 'base64');
+
+// The profile form has one fieldset (the photo field); it has no accessible name.
+const photoField = (page: Page) => page.getByRole('group', { name: 'Photo' });
+
+/** The API route; the admin page `/media` has the same tail on another origin. */
+const MEDIA_API_PATH = `${new URL(e2eEnv.apiBaseUrl).pathname}${API_PATHS.MEDIA}`;
+
+const libraryRow = (page: Page, name: string) =>
+  page.getByRole('row').filter({ hasText: name });
+
+const isWrite = (request: Request) =>
+  request.url().includes(DOCUMENTS_PATH) &&
+  !request.url().endsWith('/presence') &&
+  ['POST', 'PUT'].includes(request.method());
+
+test.describe.serial('owner: attach media to a profile', () => {
+  let context: BrowserContext;
+  let page: Page;
+  let editUrl = '';
+  const consoleProblems: string[] = [];
+
+  test.beforeAll(async ({ browser }) => {
+    context = await browser.newContext();
+    page = await context.newPage();
+    page.on('console', (m) => {
+      if (m.type() === 'error') consoleProblems.push(m.text());
+    });
+    await signInAs(page, e2eEnv.ownerEmail, e2eEnv.ownerPassword);
+    insertLibraryFiles([FILE_NAME, SECOND_FILE_NAME, THIRD_FILE_NAME]);
+  });
+
+  test.afterAll(async () => {
+    await context.close();
+  });
+
+  test('a new profile shows the empty photo field', async () => {
+    await page.goto(contentNewPath(PROFILE_SLUG));
+    await expect(photoField(page)).toContainText(copy.input.empty);
+    await expect(
+      photoField(page).getByRole('button', { name: copy.input.choose }),
+    ).toBeVisible();
+    await expect(
+      photoField(page).getByRole('button', { name: copy.input.upload }),
+    ).toBeVisible();
+  });
+
+  test('the picker lists library files; cancel closes it', async () => {
+    await photoField(page)
+      .getByRole('button', { name: copy.input.choose })
+      .click();
+    const dialog = page.getByRole('dialog');
+    await expect(dialog).toContainText(copy.picker.title);
+    await expect(
+      dialog.getByRole('button', { name: copy.picker.select(FILE_NAME) }),
+    ).toBeVisible();
+    await dialog.getByRole('button', { name: copy.picker.cancel }).click();
+    await expect(dialog).toBeHidden();
+    await expect(photoField(page)).toContainText(copy.input.empty);
+  });
+
+  test('selecting a file shows its preview; saving sends only the uuid', async () => {
+    await page.getByLabel('Name', { exact: true }).fill(PROFILE_NAME);
+    await photoField(page)
+      .getByRole('button', { name: copy.input.choose })
+      .click();
+    await page
+      .getByRole('dialog')
+      .getByRole('button', { name: copy.picker.select(FILE_NAME) })
+      .click();
+    await expect(page.getByRole('dialog')).toBeHidden();
+    await expect(photoField(page)).toContainText(FILE_NAME);
+    await expect(photoField(page).getByRole('img')).toBeVisible();
+
+    const [request] = await Promise.all([
+      page.waitForRequest(isWrite),
+      contentSaveButton(page).click(),
+    ]);
+    expect(request.method()).toBe('POST');
+    const body = JSON.parse(request.postData() ?? '{}') as {
+      values: { photo: unknown };
+    };
+    expect(typeof body.values.photo).toBe('string');
+    expect(body.values.photo).toMatch(UUID);
+    await expect(page).toHaveURL(EDIT_URL);
+    editUrl = page.url();
+  });
+
+  test('after a reload the saved photo shows with a loaded preview', async () => {
+    await page.goto(editUrl);
+    await expect(photoField(page)).toContainText(FILE_NAME);
+    const img = photoField(page).getByRole('img');
+    await expect(img).toBeVisible();
+    await expect
+      .poll(() => img.evaluate((el: HTMLImageElement) => el.naturalWidth))
+      .toBeGreaterThan(0);
+    await expect(
+      photoField(page).getByRole('button', { name: copy.input.replace }),
+    ).toBeVisible();
+  });
+
+  test('an unsupported file uploaded in the field shows the reason', async () => {
+    await photoField(page)
+      .getByTestId('media-file-input')
+      .setInputFiles({
+        name: TEXT_FILE_NAME,
+        mimeType: 'text/plain',
+        buffer: Buffer.from('hello'),
+      });
+    // The field error renders next to the fieldset, not inside it.
+    await expect(page.getByText(copy.errors.unsupportedType)).toBeVisible();
+    await expect(photoField(page)).toContainText(FILE_NAME);
+  });
+
+  test('replacing the file swaps it; saving sends the new uuid', async () => {
+    await photoField(page)
+      .getByRole('button', { name: copy.input.replace })
+      .click();
+    await page
+      .getByRole('dialog')
+      .getByRole('button', { name: copy.picker.select(SECOND_FILE_NAME) })
+      .click();
+    await expect(photoField(page)).toContainText(SECOND_FILE_NAME);
+    const [request] = await Promise.all([
+      page.waitForRequest(isWrite),
+      contentSaveButton(page).click(),
+    ]);
+    expect(request.method()).toBe('PUT');
+    await expect(page.getByText(content.saved)).toBeVisible();
+    await page.reload();
+    await expect(photoField(page)).toContainText(SECOND_FILE_NAME);
+  });
+
+  test('an attached file cannot be deleted from the library (in use)', async () => {
+    await page.goto('/media');
+    await page
+      .getByRole('button', { name: copy.deleteLabel(SECOND_FILE_NAME) })
+      .click();
+    const dialog = page.getByRole('dialog');
+    await dialog
+      .getByRole('button', { name: copy.deleteDialog.submit(SECOND_FILE_NAME) })
+      .click();
+    await expect(dialog).toContainText(copy.errors.inUse);
+    await dialog
+      .getByRole('button', { name: copy.deleteDialog.cancel })
+      .click();
+    await expect(dialog).toBeHidden();
+    // The page behind an open dialog is aria-hidden, so check the row after.
+    await expect(libraryRow(page, SECOND_FILE_NAME)).toBeVisible();
+  });
+
+  test('removing the photo and saving clears it; the file stays, then deletes', async () => {
+    await page.goto(editUrl);
+    await photoField(page)
+      .getByRole('button', { name: copy.input.remove })
+      .click();
+    await expect(photoField(page)).toContainText(copy.input.empty);
+    const [request] = await Promise.all([
+      page.waitForRequest(isWrite),
+      contentSaveButton(page).click(),
+    ]);
+    const body = JSON.parse(request.postData() ?? '{}') as {
+      values: { photo: unknown };
+    };
+    expect(body.values.photo).toBeNull();
+    await expect(page.getByText(content.saved)).toBeVisible();
+    await page.reload();
+    await expect(photoField(page)).toContainText(copy.input.empty);
+
+    await page.goto('/media');
+    await expect(libraryRow(page, SECOND_FILE_NAME)).toBeVisible();
+    await page
+      .getByRole('button', { name: copy.deleteLabel(SECOND_FILE_NAME) })
+      .click();
+    await page
+      .getByRole('dialog')
+      .getByRole('button', { name: copy.deleteDialog.submit(SECOND_FILE_NAME) })
+      .click();
+    await expect(libraryRow(page, SECOND_FILE_NAME)).toHaveCount(0);
+  });
+
+  test('uploading in the field attaches the new file; the console stayed clean', async () => {
+    // Real uploads cannot succeed on the smoke stack (dummy Cloudinary), so the
+    // POST answers with the seeded third file; the attach and save are real.
+    // The list body is read inside the route handler: reading it from a
+    // response promise fails when the page navigates away first.
+    type Listed = { data: Array<{ fileName: string }> };
+    let third: { fileName: string } | undefined;
+    await page.route(
+      (url) => url.pathname === MEDIA_API_PATH,
+      async (route) => {
+        const method = route.request().method();
+        if (method === 'GET') {
+          const response = await route.fetch();
+          if (response.ok()) {
+            const body = (await response.json()) as Listed;
+            third =
+              body.data.find((f) => f.fileName === THIRD_FILE_NAME) ?? third;
+          }
+          return route.fulfill({ response });
+        }
+        if (method !== 'POST') return route.fallback();
+        return route.fulfill({
+          status: 201,
+          contentType: 'application/json',
+          headers: {
+            'access-control-allow-origin':
+              route.request().headers()['origin'] ?? '*',
+            'access-control-allow-credentials': 'true',
+          },
+          body: JSON.stringify(third),
+        });
+      },
+    );
+    await page.goto('/media');
+    await expect(libraryRow(page, THIRD_FILE_NAME)).toBeVisible();
+    expect(third).toBeDefined();
+    await page.goto(editUrl);
+    await photoField(page).getByTestId('media-file-input').setInputFiles({
+      name: THIRD_FILE_NAME,
+      mimeType: 'image/png',
+      buffer: png(),
+    });
+    await expect(photoField(page)).toContainText(THIRD_FILE_NAME);
+    await expect(photoField(page).getByRole('img')).toBeVisible();
+    const [request] = await Promise.all([
+      page.waitForRequest(isWrite),
+      contentSaveButton(page).click(),
+    ]);
+    expect(request.method()).toBe('PUT');
+    await expect(page.getByText(content.saved)).toBeVisible();
+    await page.unroute(() => true);
+    // Deliberate 4xx responses (unsupported type, in-use) log console errors.
+    expect(consoleProblems.filter((m) => !m.includes('status of 4'))).toEqual(
+      [],
+    );
+  });
+});

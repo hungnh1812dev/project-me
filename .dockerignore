@@ -1,11 +1,18 @@
+# Build context for apps/*/Dockerfile (context = repo root).
 **/node_modules
 **/dist
-**/.next
-**/.turbo
 **/coverage
-out
+**/.turbo
+**/*.tsbuildinfo
 .git
-**/*.log
+.claude
+.vscode
+docs
+tasks
+CMS_*.html
+SPEC.md
+# Never ship env files into an image.
 **/.env*
-!**/.env.example
-**/.DS_Store
+# Agent-local dev env
+.localEnv.agent
+.dev-stack
