@@ -126,6 +126,7 @@ describe('reviewer backend (T31, D2; Postgres 17 via Testcontainers)', () => {
         ADMIN_ORIGIN: TEST_ADMIN_ORIGIN,
         WEB_ORIGIN: TEST_WEB_ORIGIN,
         TRUST_PROXY_HOPS: '1',
+        REVIEWER_FEATURE_ENABLED: 'true',
       }),
       [
         {

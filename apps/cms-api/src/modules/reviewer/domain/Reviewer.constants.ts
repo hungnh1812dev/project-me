@@ -37,6 +37,8 @@ export const REVIEWER_ERROR_CODES = {
   TURNSTILE_FAILED: 'REVIEWER_TURNSTILE_FAILED',
   IP_LIMITED: 'REVIEWER_IP_LIMITED',
   CAPACITY_REACHED: 'REVIEWER_CAPACITY_REACHED',
+  /** The deploy switch REVIEWER_FEATURE_ENABLED is off (ADR 0014); no owner toggle can change it. */
+  FEATURE_OFF: 'REVIEWER_FEATURE_OFF',
 } as const;
 
 export const REVIEWER_ERROR_MESSAGES = {
@@ -45,4 +47,5 @@ export const REVIEWER_ERROR_MESSAGES = {
   TURNSTILE_FAILED: 'The verification check failed. Try again.',
   IP_LIMITED: 'A reviewer session was already started from this address.',
   CAPACITY_REACHED: 'Too many reviewer sessions are active. Try again later.',
+  FEATURE_OFF: 'Reviewer access is turned off on this server.',
 } as const;

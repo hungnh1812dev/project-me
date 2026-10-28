@@ -1,4 +1,5 @@
 import {
+  Inject,
   Injectable,
   Logger,
   type OnApplicationBootstrap,
@@ -7,6 +8,7 @@ import {
 
 import { MS_PER_MINUTE } from '../../../common/constants/Time.constants';
 import { startIntervalJob } from '../../../infrastructure/scheduling/IntervalJob.adapter';
+import { IS_REVIEWER_FEATURE_ENABLED } from '../application/Reviewer.port';
 import { ReviewerCleanupService } from '../application/ReviewerCleanup.service';
 
 /** Sweep of expired reviewer accounts (in-process, like the media purge). */
@@ -23,9 +25,19 @@ export class ReviewerCleanupJob
   private readonly logger = new Logger(ReviewerCleanupJob.name);
   private stop: (() => void) | undefined;
 
-  constructor(private readonly cleanup: ReviewerCleanupService) {}
+  constructor(
+    private readonly cleanup: ReviewerCleanupService,
+    @Inject(IS_REVIEWER_FEATURE_ENABLED)
+    private readonly isFeatureEnabled: boolean,
+  ) {}
 
   onApplicationBootstrap(): void {
+    if (!this.isFeatureEnabled) {
+      this.logger.log(
+        'Reviewer cleanup not started: REVIEWER_FEATURE_ENABLED is off',
+      );
+      return;
+    }
     this.stop = startIntervalJob({
       intervalMs: REVIEWER_CLEANUP_INTERVAL_MS,
       run: () => this.run(),
