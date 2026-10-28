@@ -404,8 +404,48 @@ Checks:
 
 This is not a launch blocker. If BK-3 is committed before LG-1, the LG-1 review covers D20.
 
+Checkpoints (user rule 2026-10-28: qc runs only here). BK-1 to BK-4 are done with their task checks and security passes; they are inputs here, not re-built.
+
+#### Checkpoint BK-A: backups feature in cms-admin and cms-api
+Tasks: BK-1, BK-2, BK-3, BK-4 (done), BK-e2e (after BK-e2e).
+Inputs: BK-1 to BK-4 committed; dev stack (`pnpm dev:stack`, no backup storage); Docker running for the integration suites.
+Outputs: the rows below.
+Test tier: 2 (dev stack e2e), plus tier 3 smoke with the feature off.
+Doubts for QC: the open BK-4 note (the owner sees the menu item when the list call fails with 500 or 403); the fixture download URL leaving the stack (it must be intercepted by `page.route`); the e2e spec flaky on the second run; a non-owner reaching the list through a direct `/backups` visit; the download URL ending up in the query cache, Redux or a log.
+
+| num | input | output | checked | result | issues |
+|---|---|---|---|---|---|
+| CBK-1 | BK-4, BK-e2e, dev stack | Backups page e2e. Check (CLI): `E2E_STACK=dev pnpm e2e:spec tests/Backups.e2e.spec.ts` green twice in a row: owner sees the not-configured state; admin has no nav item and gets 403 on `GET /api/v1/backups`; with fixture routes the table, the stale banner and the dialog work and the page navigates to the fixture URL | qc | | |
+| CBK-2 | BK-2, BK-3 | API rules hold. Check (CLI): `pnpm --filter @abyss/cms-api test:integration -- Backups S3BackupStorage` green (owner only, re-auth, audit rows, `no-store`, rate limit, presigned URL returns the bytes and 403 after expiry) | qc | | |
+| CBK-3 | CBK-1, CBK-2 | Feature off does not break the stack. Check (CLI): `SMOKE_E2E=1 pnpm smoke` green with the full e2e count, `Backups.e2e.spec.ts` included in the list | qc | | |
+
+#### Checkpoint BK-B: backup job and restore documented
+Tasks: BK-doc.
+Inputs: checkpoint BK-A passed; LG-db-4 and LG-pg17 committed (checkpoint LG-B). May run in the same qc run as checkpoint LG-B or CRVOFF-8.
+Outputs: the rows below.
+Test tier: 1 (docs).
+Doubts for QC: a `/tmp` dump path or a volume left in the CronJob; the job credential described with delete rights; R2 lifecycle rules not matching the R2 docs; a custom domain or public bucket access suggested for presigned URLs; the age private key placed on the VPS; key layout in the commands not matching `Backups.constants.ts`.
+
+| num | input | output | checked | result | issues |
+|---|---|---|---|---|---|
+| CBK-4 | BK-doc | Guides match the design. Check (CLI): `grep -n "/tmp/" docs/deployment/k3s-traefik.md` finds no dump path; every env key named exists in `apps/cms-api/.env.example` or is marked job-only; the object keys in the commands match `apps/cms-api/src/modules/backups/domain/Backups.constants.ts`; `pnpm format:check` green | qc | | |
+| CBK-5 | BK-doc | Runbook points to the final text. Check: `docs/deployment/devops-runbook.md` section 6 is a link plus the setup order; blocker B6 is cleared there; the Supabase guide says nothing is stored in Supabase Storage | qc | | |
+
 ### Direct request: CI from the earlier deployment config (CI-old) — PROPOSED 2026-10-27
 Flat list, details and the old-vs-current comparison table in `todo.md` "Direct request: CI from the earlier deployment config (CI-old)". SPEC §11, §13, D17; runbook `docs/deployment/devops-runbook.md` §3. Finding: `.github/` already carries the old config (built from it in T37b/T37e) with this project's newer checks; no restructure. User answers 2026-10-27: Q-CIO1 both environments x86_64 Ubuntu on Xeon (staging moves to `linux/amd64`), Q-CIO4 the three adaptations accepted. Order: CI-old-1 (core-builder, Security gate: build-args validated before the step output, extracted to a tested script) -> CI-old-4 (core-builder, Security gate: staging `linux/amd64` on `ubuntu-24.04` like production, cache scope per environment, runbook and architecture doc follow) -> CI-old-2 (core-builder, docs parity table, `.prettierignore`). Second round 2026-10-27: Q-CIO2 = no (CI-old-3 removed, self-tests stay local), Q-CIO3 = actionlint local only. Open owner decision: Q-CIO5 (only CI-old-2's `.prettierignore` line waits for it). Check (CLI): `bash .github/scripts/build-args.test.sh`, `affected.test.sh`, `pins-check.test.sh` pass; `pnpm format:check` passes; actionlint only through the command approved under Q-CIO3. No push, publish or deploy (B4 stays with the owner's first push). Blockers B1-B3 and B7 untouched.
+
+#### Checkpoint CI-A: CI follows the earlier deployment config
+Tasks: CI-old-1, CI-old-4, CI-old-2 (after CI-old-2).
+Inputs: the three tasks built and through their commit gates (CI-old-1 and CI-old-4 through their security gates); Q-CIO5 answered for the `.prettierignore` line.
+Outputs: the rows below.
+Test tier: 1 (local scripts and dry review; never a push, publish or deploy).
+Doubts for QC: a build-arg value echoed in the log or written to `$GITHUB_OUTPUT` before a check fails; a "must stay" check removed from `ci.yml` or `_publish.yml`; a permission or action pin changed; staging and production sharing one build cache scope; an `arm64` or "Apple M1" leftover; actionlint run with a command the manager did not approve.
+
+| num | input | output | checked | result | issues |
+|---|---|---|---|---|---|
+| CCI-1 | CI-old-1 | Build args checked before output. Check (CLI): `bash .github/scripts/build-args.test.sh`, `affected.test.sh`, `pins-check.sh` and `pins-check.test.sh` pass; `git diff develop -- .github/workflows/_publish.yml` shows only the step body and the cache scope changed | qc | | |
+| CCI-2 | CI-old-4 | Staging builds amd64. Check (CLI): the "Resolve deploy target" script with `BRANCH=staging` and `BRANCH=main` (`EVENT_NAME=push`, scratch `GITHUB_OUTPUT`) writes the same `linux/amd64` / `ubuntu-24.04` matrix and environments `staging` / `production`; `BRANCH=develop` gives empty matrices; `grep -rnI "arm64\|ubuntu-24.04-arm\|Apple M1" .github docs/ci-cd.md docs/deployment/devops-runbook.md scripts/docs docs/architecture` prints nothing | qc | | |
+| CCI-3 | CI-old-2 | CI docs carry the parity table. Check (CLI): `grep -rn "github_template" docs/ci-cd.md .prettierignore` prints nothing; `docs/ci-cd.md` has "Carried over from the earlier deployment" with the table and the "must stay" list, and names no secret, `DEPLOYMENT_REPO` value or cluster path; `pnpm format:check` green | qc | | |
 
 ### Recruiter reviewability (RV) — PROPOSED 2026-10-27
 Details in `todo.md` "Recruiter reviewability (RV)"; design `docs/adr/0011-recruiter-reviewability.md`; user answers Q-RV2..Q-RV9 recorded there (2026-10-27); Q-RV1 (LICENSE holder name) still open. T30 (CV page) is unarchived and replaced by the RV2 tasks. User decisions: MIT license; no seeded or published demo account (reviewer flow); order demo -> CV page -> README.
@@ -452,6 +492,111 @@ Outputs:
 - Live check. Check (CLI and browser): `launch-check.sh` against the deployed origins all `ok`; `.claude/state/findings/audit-<date>-live-launch.md` covers headers, transport, auth and cookie flags, masking (API and web HTML/RSC, anonymous and reviewer), injection and, if approved, the write probes and the ZAP scan.
 Exit criteria: no open critical or high finding; each medium fixed or accepted by the user in writing; the throwaway admin account disabled; the user approves the launch in writing. Until then the SPEC §13 "Never" rule applies (no public DNS, ingress or announced URL).
 Tasks: LG-0 and LG-dep (may start during RV), LG-db-1 and LG-db-2 (parallel; LG-db-2 has the `self_managed` and `supabase` modes), LG-db-3 and LG-db-6 (DB TLS keys, after LG-db-1), LG-db-5 (production boot warning, Q-DB2 warn only), LG-db-4 (deploy guides incl. the Supabase runbook), LG-db-7 (Supabase lockdown, owner; Q-DB3..Q-DB7 answered), LG-pg17 (Postgres 17 images, after LG-db-3 and LG-db-4), LG-2, LG-1, LG-fix-* (from LG-1), LG-3, LG-fix-* (from LG-3)
+
+Checkpoints (user rule 2026-10-28: qc runs only here, not per task; each task keeps its builder, its commit gate and its security gate). LG-dep is done (qc tier 3 pass, a3029e2) and is not re-checked. LG-0 and LG-db-7 are user and owner decisions recorded by the manager; they are inputs of checkpoint LG-E, not table rows (see the planner question on 2026-10-28).
+
+#### Checkpoint LG-A: database roles
+Tasks: LG-db-1, LG-db-2, LG-db-6, LG-db-3, LG-db-5 (after the last of them).
+Inputs: the five tasks built and through their security gates; Docker running; no other `abyss-smoke` stack.
+Outputs: the rows below.
+Test tier: 3 (env schema, smoke compose, `deploy:migrate` CLI) plus cms-api integration.
+Doubts for QC: the init path falling back to the full config (`loadAppConfig`) anywhere; the roles script making its own self-check pass (revoking a `PUBLIC` right, or skipping `content` when the schema is created later); role cleanup between integration suites on the shared Testcontainers server (second run in a row); Postgres 16 vs 17 grant behaviour; suites that boot with `NODE_ENV=production` on the superuser now logging the LG-db-5 warning; the Prisma TLS URL parameters for `migrate deploy` (names taken from the docs, not memory); a CA file path or PEM content in any error output.
+
+| num | input | output | checked | result | issues |
+|---|---|---|---|---|---|
+| CLG-1 | LG-db-1 | Init container runs on DB keys only. Check (CLI): `docker compose -p abyss-smoke config cms-api-init` shows only `NODE_ENV` and `DB_*` keys (no JWT, SMTP, Cloudinary, Turnstile key); the `cms-api-init` log shows the migrations applied; `AppConfig.setup.spec.ts` only-DB cases green | qc | | |
+| CLG-2 | LG-db-2 | Roles script in both modes. Check (CLI): `pnpm --filter @abyss/cms-api test:integration -- DatabaseRoles` green twice in a row (`self_managed` and Supabase stand-in suites), then the full `test:integration` green | qc | | |
+| CLG-3 | LG-db-3, CLG-1, CLG-2 | Smoke stack on split roles. Check (CLI): `SMOKE_E2E=1 pnpm smoke` green with the full e2e count; the `database-roles` section prints only `ok`; `cms-api` runs as `abyss_api`, `cms-api-init` as `abyss_migrator` (`docker compose ... exec` env shows the user, never the password) | qc | | |
+| CLG-4 | CLG-3 on a kept stack (`SMOKE_KEEP=1`) | API role cannot change the schema. Check (CLI, psql as `abyss_api` inside `db`): DDL beyond the scripted list is refused too (`CREATE FUNCTION`, `GRANT`, `SET ROLE abyss_migrator`, `ALTER DEFAULT PRIVILEGES`, writes to `_prisma_migrations` and `content._migrations`); the backup role writes nothing | security-qc | | |
+| CLG-5 | LG-db-5 | Boot warning, warn only. Check (CLI): the `DatabaseRoles` case as the migrator logs exactly one warning with problem names and no values and the app still starts; as `abyss_api` no warning; the smoke `cms-api` log has no role warning | qc | | |
+| CLG-6 | LG-db-6 | TLS keys mapped. Check (CLI): unit cases (`disable` no `ssl`, `require`, `verify-full` with PEM, missing path rejected naming the key, unreadable path rejected without content) green; smoke stays on `disable` and green (CLG-3) | qc | | |
+| CLG-7 | LG-db-6, local `postgres:17-alpine` with `ssl=on` and a self-signed CA | `verify-full` really verifies. Check (CLI): `deploy:migrate` and the API boot succeed with the right CA and fail with a wrong CA and with a `DB_HOST` that does not match the certificate; no path to `rejectUnauthorized: false` from `verify-full` | security-qc | | |
+
+#### Checkpoint LG-B: deploy guides and Postgres 17
+Tasks: LG-db-4, LG-pg17 (after LG-pg17). BK-doc and RVOFF-doc edit the same guides after LG-db-4; when they are ready at the same time, the manager may run their checkpoints (CBK-4, CRVOFF-8) in the same qc run.
+Inputs: checkpoint LG-A passed.
+Outputs: the rows below.
+Test tier: 3 (LG-pg17 changes `docker-compose.smoke.yml` and the test image); LG-db-4 alone is tier 1 (docs).
+Doubts for QC: a runbook command whose psql variables do not match the script (`hosting`, `migrator_role`, `data_api_roles`); `6543` mentioned outside the "never use" sentence; a pod in the Secret map that gets a credential it does not need; an old dev-stack volume from 16 that does not start on 17 (the documented stop-and-remove command must work); `docs/architecture/10-local-setup.html` hand-edited instead of regenerated.
+
+| num | input | output | checked | result | issues |
+|---|---|---|---|---|---|
+| CLG-8 | LG-db-4 | Guides match the roles design. Check (CLI): `grep -n "open follow-up\|same Secret\|same \`envFrom\`" docs/deployment/*.md` finds nothing about DB roles; `grep -n "6543" docs/deployment/supabase-database.md` finds only the "never use" sentence; every runbook command matches `scripts/db/database-roles.sql` variables and the smoke hook; every env key named exists in `apps/cms-api/.env.example`; `pnpm format:check` and `EnvExample.contract.spec.ts` green; `devops-runbook.md` has no "pending LG-db-2/LG-db-4" mark left | qc | | |
+| CLG-9 | LG-pg17, CLG-8 | Postgres 17 everywhere. Check (CLI): `grep -rn "postgres:16\|Postgres 16\|PostgreSQL 16\|pg_dump 16" --exclude-dir=node_modules --exclude-dir=.git .` finds only history; `pnpm --filter @abyss/cms-api test:integration` green on 17; `pnpm dev:stack` starts from an empty volume, then `pnpm dev:stack:stop`; `SMOKE_E2E=1 pnpm smoke` green; `pnpm docs:architecture` leaves no diff | qc | | |
+
+#### Checkpoint LG-C: read-only live check script
+Tasks: LG-2.
+Inputs: RV-mask and RV-cv-3 (done); checkpoint LG-A passed (the smoke stack runs on the split roles).
+Outputs: the rows below.
+Test tier: 3.
+Doubts for QC: a check that changes state (more than 3 failed logins, a lockout, an audit row other than the failed logins); the masking check comparing against known values instead of the masked paths; `transport` checks not skipped on `http://`; a check group with no shown FAIL path; helpers copied between `scripts/smoke/` and `scripts/launch-check/` instead of shared in `scripts/lib/`.
+
+| num | input | output | checked | result | issues |
+|---|---|---|---|---|---|
+| CLG-10 | LG-2, kept smoke stack | Script passes on the smoke origins. Check (CLI): `scripts/launch-check.sh --web <smoke web> --admin <smoke admin>` prints only `ok` lines and exits 0; `SMOKE_E2E=1 pnpm smoke` runs it as a step and stays green; `transport` skipped on `http://` | qc | | |
+| CLG-11 | CLG-10 | Each group can fail and the script changes nothing. Check (CLI): for each of `headers`, `transport`, `auth`, `masking`, `injection` one FAIL line and exit 1 when an expectation is broken on the kept stack (for example a removed header); after a run, the security audit has at most 3 `auth.login_failed` rows from the run and no account or IP is locked | qc | | |
+
+#### Checkpoint LG-D: whole-project security review and its fixes
+Tasks: LG-1, LG-fix-* from LG-1 (after the last critical or high fix).
+Inputs: checkpoints LG-A, LG-B and LG-C passed; all RV, BK-3 and RVOFF code committed.
+Outputs: the rows below.
+Test tier: 3 (fresh `SMOKE_KEEP=1 SMOKE_E2E=1 pnpm smoke`, dynamic review).
+Doubts for QC: the verdict table predates D2a and D20 (BK-3 is committed, so LG-1 covers D20; ADR 0014 adds D2a); a fix that changes behaviour covered by e2e without a test update; a fix that touches a high-risk path without its own security gate.
+
+| num | input | output | checked | result | issues |
+|---|---|---|---|---|---|
+| CLG-12 | LG-1 | Review complete. Check: `.claude/state/findings/audit-<date>-security-launch.md` names the commit, has a verdict (holds / gap / not applicable) with a file reference for every SPEC §7 decision D1-D20 including D2a, and lists every finding with severity, scope, evidence and fix proposal; every critical and high finding is closed by a committed LG-fix task and re-reviewed; the stack is torn down | security-qc | | |
+| CLG-13 | the LG-fix-* tasks from LG-1 | No regression from the fixes. Check (CLI): `SMOKE_E2E=1 pnpm smoke` green with an e2e count not lower than before the fixes; `pnpm test` and `pnpm --filter @abyss/cms-api test:integration` green | qc | | |
+
+#### Checkpoint LG-E: live check of the deployed site (phase exit)
+Tasks: LG-3, LG-fix-* from LG-3.
+Inputs: checkpoint LG-D passed; LG-0 nine decisions and LG-db-7 owner results recorded in handoff.md by the manager; the site deployed by the user with the production config and not public (Q-LG1); the throwaway admin with 2FA (Q-LG2); reviewer features off in production (RVOFF, LG-0 item 8).
+Outputs: the rows below.
+Test tier: live (deployed production config), above tier 3.
+Doubts for QC: LG-3's reviewer-flow walk cannot run while the RVOFF switch is off; it is replaced by the "off" checks (CLG-16) and the reviewer masking live check runs again before the switch goes on (ADR 0014 "Consequences"); a write probe left behind on the deployed site; cookie `Domain` set (must be host-only); real Turnstile and CSP together on the login dialog; the ZAP scan run without the user's second yes.
+
+| num | input | output | checked | result | issues |
+|---|---|---|---|---|---|
+| CLG-14 | deployed origins, LG-2 | Live script passes. Check (CLI): `scripts/launch-check.sh --web <web origin> --admin <admin origin>` all `ok`, `transport` included | qc | | |
+| CLG-15 | CLG-14, the Q-LG2 account | Browser walk. Check (browser, Chromium, devtools): headers on web and admin; no console error and no CSP violation on the CV page, the login dialog and the admin pages; sign-in with TOTP; refresh cookie `Secure`, `HttpOnly`, `SameSite` per D14, `Path=/api/v1/auth`, host-only; after sign-out the refresh is refused | qc | | |
+| CLG-16 | CLG-14, RVOFF in production | Reviewer features off on the deployed site. Check (CLI and browser): the four reviewer routes answer `404 REVIEWER_FEATURE_OFF`; `GET /status` on the web origin is 404; the web header has no "Reviewer access" button; the cms-api start log shows "Reviewer cleanup not started" | qc | | |
+| CLG-17 | CLG-14 | Masking holds live. Check (CLI and browser): anonymous REST, GraphQL, the web HTML and the RSC payload contain no raw Q-RV6 value; masked fields are `***` or `null` and listed in `_maskedFields` | security-qc | | |
+| CLG-18 | CLG-15, Q-LG3 | Write probes, before public only. Check: richtext with `<img src=x onerror=...>` and `<script>` is stored stripped and does not run on web or admin; an SVG and a renamed non-image upload get 415; all test documents and files are deleted and the deletion is listed in the findings file | security-qc | | |
+| CLG-19 | CLG-14, the user's second yes right before (Q-LG5) | Outside scan. Check: OWASP ZAP passive baseline (official Docker image) against both origins; every alert triaged in `.claude/state/findings/audit-<date>-live-launch.md` | security-qc | | |
+| CLG-20 | CLG-14..CLG-19, LG-fix-* from LG-3 | Gate verdict. Check: `audit-<date>-live-launch.md` lists every check above with result and evidence; no open critical or high finding; each medium fixed or accepted by the user in writing | security-qc | | |
+
+Phase exit also needs, outside the table (user and manager): the throwaway admin disabled (user confirms) and the user's written launch approval.
+
+### Direct request: reviewer features off by a deploy switch (RVOFF) — APPROVED 2026-10-28
+Flat list, details in `todo.md` "Direct request: reviewer features off by a deploy switch (RVOFF)". Design: `docs/adr/0014-reviewer-feature-switch.md`. SPEC §7 D2a, §9 "Reviewer", §12-20. User answers 2026-10-28: Q-RVOFF1 test stacks keep both switches on; Q-RVOFF2 the cms-admin menu item stays with a notice. Build order: RVOFF-cfg -> RVOFF-api -> RVOFF-token ‖ RVOFF-web ‖ RVOFF-admin -> RVOFF-doc (after LG-db-4). RVOFF-cfg and RVOFF-api are done (qc tier 3 pass each, under the old per-task flow) and are not re-checked on their own; the checkpoint re-runs their switch-off behaviour together with the rest.
+
+#### Checkpoint RVOFF-A: the switch works end to end
+Tasks: RVOFF-api (done), RVOFF-token, RVOFF-web, RVOFF-admin (after the last of the three).
+Inputs: RVOFF-cfg and RVOFF-api committed; RVOFF-token, RVOFF-web and RVOFF-admin built and through their commit gates (RVOFF-token through its security gate); Docker running; no other `abyss-smoke` stack.
+Outputs: the rows below.
+Test tier: 3 (smoke with both switches on, then a kept smoke stack with `cms-api` and `web` recreated with `REVIEWER_FEATURE_ENABLED=false` and `WEB_STATUS_PAGE_ENABLED=false`; browser rows on that kept stack). Stop the stack afterwards (`docker compose -p abyss-smoke down -v`).
+Doubts for QC: `/status` baked at build time (Next.js static rendering) instead of read per request; a cached "off" 404 hiding the Reviewer button after switch-on (error responses outside the handler carry no `no-store`; open user question in handoff); a reviewer token issued while on still working after the restart on one path (REST, GraphQL or cms-admin); owner and admin tokens wrongly refused by the identity change; the web `isEnabled()` treating other 404s as "off"; cms-admin retrying the 4xx in a loop; the reviewer CV view not falling back to the public CV on 401.
+
+| num | input | output | checked | result | issues |
+|---|---|---|---|---|---|
+| CRVOFF-1 | all four tasks | On path unchanged. Check (CLI): `SMOKE_E2E=1 pnpm smoke` green with the full e2e count (all reviewer and `/status` specs pass) | qc | | |
+| CRVOFF-2 | CRVOFF-1, kept stack recreated with both keys `false` | Reviewer routes off. Check (CLI): `GET /api/v1/reviewer/status` and `POST /api/v1/reviewer/sessions` (valid body) → 404 `REVIEWER_FEATURE_OFF`; `GET /reviewer/sessions` and `PUT /reviewer/settings` → 401 without a token, 404 `REVIEWER_FEATURE_OFF` with the owner's token; `app_settings` and `reviewer_sessions` row counts unchanged | qc | | |
+| CRVOFF-3 | a reviewer token created on the stack before the restart | Old reviewer tokens refused. Check (CLI): that token gets 401 on a REST published-content read and on a GraphQL read; owner and admin tokens still get 200 on the same reads | qc | | |
+| CRVOFF-4 | CRVOFF-2 | Cleanup job off. Check (CLI): the `cms-api` start log has "Reviewer cleanup not started: REVIEWER_FEATURE_ENABLED is off" and the config summary shows `reviewer.isFeatureEnabled: false` | qc | | |
+| CRVOFF-5 | CRVOFF-2, same `web` image | `/status` off without a rebuild. Check (CLI): `GET /status` on the web origin → 404 with `WEB_STATUS_PAGE_ENABLED=false`; after recreating `web` with `true` (same image) → 200 with the card | qc | | |
+| CRVOFF-6 | CRVOFF-2 | Web home with the switch off. Check (browser): `/` shows the public CV, no "Reviewer access" button, no error state, no console or CSP error | qc | | |
+| CRVOFF-7 | CRVOFF-2 | cms-admin notice. Check (browser, as the owner): the Reviewer menu item is visible; the page shows "Reviewer access is turned off on this server" with the `REVIEWER_FEATURE_ENABLED` line, no toggle, no session table; the network panel shows no repeated status request; no console error | qc | | |
+
+#### Checkpoint RVOFF-B: off and on steps documented
+Tasks: RVOFF-doc.
+Inputs: checkpoint RVOFF-A passed; LG-db-4 committed (same guide files). May run in the same qc run as checkpoint LG-B or CBK-4.
+Outputs: the row below.
+Test tier: 1 (docs).
+Doubts for QC: the runbook order (owner toggle off first, then the keys, then restart) reversed; a `TURNSTILE_*` row that does not say it applies only when the switch is on; a key spelled differently from the `.env.example` files.
+
+| num | input | output | checked | result | issues |
+|---|---|---|---|---|---|
+| CRVOFF-8 | RVOFF-doc | Guides carry the switch. Check (CLI): `docs/deployment/k3s-traefik.md` env tables list `REVIEWER_FEATURE_ENABLED` and `WEB_STATUS_PAGE_ENABLED` with production `false`; `docs/deployment/devops-runbook.md` has "Turn reviewer features off or on" in the ADR 0014 §5 order; `docs/local-run.md` says the dev stack and `pnpm demo` run with both switches on; every key matches `apps/cms-api/.env.example` and `apps/web/.env.example`; `pnpm format:check` green | qc | | |
 
 ## Risks and Mitigations
 

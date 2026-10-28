@@ -2780,3 +2780,101 @@ Flat list. Build order: CI-old-1, then CI-old-4 (same `_publish.yml`), then CI-o
   - Verify: the three self-tests pass locally; `pnpm exec prettier --check .github docs/ci-cd.md`; actionlint per Q-CIO3 or the dry review (the step uses only `bash`, `git` and `jq`, all present on `ubuntu-latest`; `affected.test.sh` builds its own throwaway repo and needs no network). No push.
   - Files: `.github/workflows/ci.yml`, `docs/ci-cd.md`.
   - Checks: qc-cli tier 1 + security-qc (static). Risk: low.
+
+## Direct request: reviewer features off by a deploy switch (RVOFF) — PROPOSED 2026-10-28
+
+User request (2026-10-28, Vietnamese): "Tôi muốn tạm thời tắt chức năng reviewer chừng nào trang chạy ổn định mới bật lại" (turn the reviewer feature off until the site runs stably, then turn it back on). Scope widened by the user the same day ("tắt tất cả"): reviewer login, reviewer session, reviewer CV view, the `/status` page and the reviewer cleanup job, all off until the user turns them back on; reversible. Design: `docs/adr/0014-reviewer-feature-switch.md`; SPEC §7 D2a, §9 "Reviewer", §12-20. Open: Q-RVOFF1 (test stacks keep the features on; the tasks below assume the recommended yes), Q-RVOFF2 (cms-admin menu item stays with a notice; RVOFF-admin assumes yes).
+
+Flat list. Build order: RVOFF-cfg, then RVOFF-api, then RVOFF-token ‖ RVOFF-web ‖ RVOFF-admin, then RVOFF-doc. Nothing is deleted. Effect on LG: LG-0 item (8) is "off" by this request; LG-3 checks that the reviewer routes answer `404 REVIEWER_FEATURE_OFF` and `/status` is 404 on the deployed site, and its reviewer-masking live check runs again before the switch goes on in production (ADR 0014 "Consequences").
+
+Checkpoints (revised 2026-10-28, planner): the tables are in `tasks/plan.md` "Direct request: reviewer features off by a deploy switch (RVOFF)": checkpoint RVOFF-A (CRVOFF-1..7, after RVOFF-token, RVOFF-web and RVOFF-admin) and checkpoint RVOFF-B (CRVOFF-8, RVOFF-doc, tier 1 docs). The text below is the original summary of RVOFF-A. Original checkpoint (qc): `SMOKE_E2E=1 pnpm smoke` green with both switches on (all reviewer and `/status` e2e specs pass); then on a kept smoke stack (`SMOKE_KEEP=1`) recreate `cms-api` and `web` with `REVIEWER_FEATURE_ENABLED=false` and `WEB_STATUS_PAGE_ENABLED=false` and check by CLI: the four reviewer routes → 404 `REVIEWER_FEATURE_OFF`, a reviewer token created before the restart → 401 on a published-content read (REST and GraphQL), `GET /status` on the web origin → 404, the cms-api log has "Reviewer cleanup not started". Stop the stack afterwards.
+
+- [ ] **RVOFF-cfg: `REVIEWER_FEATURE_ENABLED` config key and test-stack values** · S · Deps: none · core-builder · **Security gate: yes** (env schema; tier 3 trigger path) · SPEC §7 D2a, D17; ADR 0014 §1, §6
+  - Acceptance:
+    - `src/config/Env.schema.ts`: `REVIEWER_FEATURE_ENABLED`, `z.stringbool()` with the default `false` from `CONFIG_DEFAULTS` in `src/config/Config.constants.ts`. Any value other than the accepted true/false spellings fails config loading. App schema only, not the DB-only schema of LG-db-1.
+    - `src/config/AppConfig.setup.ts`: `reviewer.isFeatureEnabled: boolean`, with a doc comment in the file's style ("false = every reviewer route answers 404 REVIEWER_FEATURE_OFF, reviewer tokens are refused, the cleanup job does not start; ADR 0014").
+    - `src/config/ConfigSummary.rules.ts`: the start-up summary shows `reviewer.isFeatureEnabled`.
+    - `apps/cms-api/.env.example`: the key with `false` and a two-line comment (what off does; the owner toggle in cms-admin still applies when on).
+    - Test stacks keep the feature on (Q-RVOFF1): `scripts/stack/cms-api.env` gets `REVIEWER_FEATURE_ENABLED=true` (used by the smoke compose and the dev stack; if the dev stack's cms-api does not read this file, `scripts/dev-stack.sh` exports it too); the `web` service in `docker-compose.smoke.yml` and the web start in `scripts/dev-stack.sh` get `WEB_STATUS_PAGE_ENABLED=true` (unused until RVOFF-web lands; harmless).
+    - No module reads the new field yet.
+  - Verify:
+    - `AppConfig.setup.spec.ts`: unset → `false`; `true` → `true`; `false` → `false`; `yes-please` → config error naming the key only.
+    - `ConfigSummary.rules.spec.ts` shows the field. `EnvExample.contract.spec.ts` green.
+    - `pnpm --filter @abyss/cms-api test:unit`, `lint`, `typecheck`; `SMOKE_E2E=1 pnpm smoke` green (nothing changes yet).
+  - Files: `apps/cms-api/src/config/Env.schema.ts`, `src/config/Config.constants.ts`, `src/config/AppConfig.setup.ts`, `src/config/AppConfig.setup.spec.ts`, `src/config/ConfigSummary.rules.ts`, `src/config/ConfigSummary.rules.spec.ts`, `apps/cms-api/.env.example`, `scripts/stack/cms-api.env`, `docker-compose.smoke.yml`, `scripts/dev-stack.sh`.
+  - Checks: qc tier 3 + security-qc. Risk: normal.
+  - Fix round 1 (2026-10-28, planner decision after security-qc pass; ADR 0014 §1 "Accepted values"). Same unit, same commit; the unit is not committed yet and every file but one is already in it. Supersedes "the accepted true/false spellings" above: only `true` and `false` are accepted.
+    - Acceptance:
+      - `src/config/EnvValidators.rules.ts`: new export `envBoolean(defaultValue: boolean)` = `z.preprocess(emptyToUndefined, z.stringbool({ truthy: ['true'], falsy: ['false'], case: 'sensitive', error: 'must be true or false' }).default(defaultValue))`, with a one-line doc comment (exactly `true` or `false`; empty or missing = the default).
+      - `src/config/Env.schema.ts`: `REVIEWER_FEATURE_ENABLED` and `SMTP_SECURE` use `envBoolean(CONFIG_DEFAULTS.<KEY>)`; no plain `z.stringbool()` is left in `src/config/`.
+      - `ConfigSummary.rules.spec.ts`: sentinel `REVIEWER_FEATURE_ENABLED: 'true'` (not `'enabled'`). The "unique value" check skips the two boolean keys (they have only two valid values; a local list of boolean keys in the spec) and keeps checking every other key.
+      - `apps/cms-api/.env.example`: the `REVIEWER_FEATURE_ENABLED` and `SMTP_SECURE` comments say "true or false only".
+      - The proposed commit body adds one line: `SMTP_SECURE` now accepts only true/false (one boolean rule for every env key).
+    - Verify:
+      - `AppConfig.setup.spec.ts`, per key (`REVIEWER_FEATURE_ENABLED`, `SMTP_SECURE`; `it.each` is fine): unset and empty → default; `true` → true; `false` → false; each of `TRUE`, `1`, `yes`, `on`, `enabled`, `0`, `off`, `disabled` → config error naming the key and "must be true or false", without echoing the value.
+      - `pnpm --filter @abyss/cms-api test:unit`, `lint`, `typecheck`; `EnvExample.contract.spec.ts` green; then the pending `SMOKE_E2E=1 pnpm smoke` (stacks already use `true`/`false`, so no stack file changes).
+    - Files: `apps/cms-api/src/config/EnvValidators.rules.ts` (added to the unit), `src/config/Env.schema.ts`, `src/config/AppConfig.setup.spec.ts`, `src/config/ConfigSummary.rules.spec.ts`, `apps/cms-api/.env.example`.
+    - Checks: security-qc re-check of the fix diff only (fail-closed parsing of the switch), then qc tier 3 as planned.
+
+- [ ] **RVOFF-api: Reviewer routes answer 404 and the cleanup job stays off while the switch is off** · M · Deps: RVOFF-cfg · core-builder (the one-line `apps/web/src/config/Reviewer.constants.ts` edit is approved at dispatch: the web contract test compares the reviewer error codes in both directions) · **Security gate: yes** (`modules/reviewer`) · SPEC §7 D2, D2a, §9 "Reviewer", §12-20; ADR 0014 §2
+  - Acceptance:
+    - `reviewer/domain/Reviewer.constants.ts`: `REVIEWER_ERROR_CODES.FEATURE_OFF = 'REVIEWER_FEATURE_OFF'` and `REVIEWER_ERROR_MESSAGES.FEATURE_OFF = 'Reviewer access is turned off on this server.'`, with a doc comment.
+    - `reviewer/domain/ReviewerAdmission.rules.ts`: `reviewerFeatureOff()` → `DomainError` of kind `NOT_FOUND` (404) with that code, next to `reviewerDisabled()`.
+    - `reviewer/application/Reviewer.port.ts`: DI token `IS_REVIEWER_FEATURE_ENABLED` (boolean), bound in `Reviewer.module.ts` from `APP_CONFIG` `reviewer.isFeatureEnabled` (same style as `REVIEWER_IP_KEY`).
+    - `ReviewerAccessService`: `status`, `createSession`, `listSessions` and `updateSettings` each throw `reviewerFeatureOff()` first when the switch is off: before `requireAvailable`, any repository call, any Turnstile call and any audit write. With the switch on nothing changes.
+    - `ReviewerCleanupJob`: with the switch off, `onApplicationBootstrap` does not start the interval and logs one info line "Reviewer cleanup not started: REVIEWER_FEATURE_ENABLED is off". `onModuleDestroy` stays safe.
+    - The controller, its guards, throttles and route list are unchanged (route snapshot test unchanged).
+    - `content/public-constants.json` regenerated by its print command (no hand edit); `apps/web/src/config/Reviewer.constants.ts` gets `FEATURE_OFF: 'REVIEWER_FEATURE_OFF'` in `REVIEWER_ERROR_CODES` (one line) so the web contract test stays green.
+  - Verify:
+    - `ReviewerAccess.service.spec.ts`: switch off → each of the four methods rejects with `REVIEWER_FEATURE_OFF`, and the fakes record no repository, Turnstile or audit call; switch on → existing cases unchanged.
+    - `ReviewerCleanup.job.spec.ts` (new): off → no interval started (fake scheduler or spy on `startIntervalJob`), one log line; on → started.
+    - Integration (`test/integration/Reviewer.integration.spec.ts`, or `Reviewer.off.integration.spec.ts` if the app must boot with the other config): with the switch off, `GET /reviewer/status` and `POST /reviewer/sessions` → 404 `REVIEWER_FEATURE_OFF`; the owner routes → 401 without a token and 404 `REVIEWER_FEATURE_OFF` with the owner's token; no `app_settings` or `reviewer_sessions` row written.
+    - `pnpm --filter @abyss/cms-api test:unit`, `test:integration`, `lint`, `typecheck`; `pnpm --filter @abyss/web test` (contract test).
+  - Files: `apps/cms-api/src/modules/reviewer/domain/Reviewer.constants.ts`, `domain/ReviewerAdmission.rules.ts`, `domain/ReviewerAdmission.rules.spec.ts`, `application/Reviewer.port.ts`, `application/ReviewerAccess.service.ts`, `application/ReviewerAccess.service.spec.ts`, `jobs/ReviewerCleanup.job.ts`, `jobs/ReviewerCleanup.job.spec.ts` (new), `Reviewer.module.ts`, `apps/cms-api/test/integration/Reviewer.integration.spec.ts` (or the `.off` scenario file, new), `apps/cms-api/content/public-constants.json` (generated), `apps/web/src/config/Reviewer.constants.ts`.
+  - Checks: qc tier 3 (smoke with the switch on must stay green) + security-qc. Risk: high (public route behaviour).
+
+- [ ] **RVOFF-token: identity refuses reviewer tokens while the switch is off** · S · Deps: RVOFF-api (same integration spec file) · core-builder · **Security gate: yes** (`modules/identity`) · SPEC §7 D2a, D9, §12-20; ADR 0014 §2
+  - Acceptance:
+    - `identity/application/Identity.port.ts`: DI token `ACCEPTS_REVIEWER_TOKENS` (boolean), bound in `Identity.module.ts` from `APP_CONFIG` `reviewer.isFeatureEnabled`. Identity does not import `reviewer`.
+    - `AccessSessionService.authenticate()`: a reviewer-role account → `notSignedIn()` (401) when the token is not accepted, checked in the existing reviewer branch before `reviewerActor(...)`. Owner, admin and other accounts are unchanged. No DB write.
+  - Verify:
+    - `AccessSession.service.spec.ts`: off → reviewer account 401, owner and admin accounts still pass; on → reviewer actor as today.
+    - Integration: a reviewer token created with the switch on gets 401 on a REST read and on a GraphQL read after the app restarts with the switch off (same spec file as RVOFF-api).
+    - `pnpm --filter @abyss/cms-api test:unit`, `test:integration`, `lint`, `typecheck`.
+  - Files: `apps/cms-api/src/modules/identity/application/Identity.port.ts`, `application/AccessSession.service.ts`, `application/AccessSession.service.spec.ts`, `Identity.module.ts`, the reviewer integration spec from RVOFF-api.
+  - Checks: qc tier 3 + security-qc (high). Risk: high (auth path).
+
+- [ ] **RVOFF-web: `/status` behind `WEB_STATUS_PAGE_ENABLED`; reviewer entry handles REVIEWER_FEATURE_OFF** · S · Deps: RVOFF-api · ui-builder · SPEC §7 D2a, §12-20; ADR 0014 §3
+  - Acceptance:
+    - `config/Server.env.ts`: `isStatusPageEnabled` from `WEB_STATUS_PAGE_ENABLED`; unset → false, `true`/`false` accepted, any other value fails start with the key name.
+    - `app/status/page.tsx`: `notFound()` when off. The value is read per request (not baked at build): one production build serves 404 with the key `false` and the card with `true`, without a rebuild.
+    - `features/reviewer/Reviewer.api.ts` `isEnabled()`: a `404` with `REVIEWER_FEATURE_OFF` returns `false` (the button stays hidden, no error state); other failures behave as today.
+    - `features/reviewer/Reviewer.errors.ts`: `REVIEWER_FEATURE_OFF` from `POST /reviewer/sessions` shows the same alert as `REVIEWER_DISABLED`.
+    - Reviewer CV view: no code change expected. A reviewer session whose CV refetch gets 401 ends and the page shows the public CV. If today's code does not do that, report `blocked` (do not add a new flow).
+    - `apps/web/.env.example`: `WEB_STATUS_PAGE_ENABLED=false` in the server (runtime) block with a one-line comment.
+  - Verify:
+    - `Server.env.test.ts` (the four value cases); `app/status/page.test.tsx` (off → `notFound`, on → the card); `Reviewer.api.test.ts` (404 `REVIEWER_FEATURE_OFF` → false); `Reviewer.errors.test.ts` (the new code); a test for the reviewer 401 fallback in the existing session or CV tests.
+    - `pnpm --filter @abyss/web test`, `lint`, `typecheck`, `build`; prod build started twice (`false` → `/status` 404, `true` → 200).
+  - Files: `apps/web/src/config/Server.env.ts`, `src/config/Server.env.test.ts`, `src/app/status/page.tsx`, `src/app/status/page.test.tsx`, `src/features/reviewer/Reviewer.api.ts`, `src/features/reviewer/Reviewer.api.test.ts`, `src/features/reviewer/Reviewer.errors.ts`, `src/features/reviewer/Reviewer.errors.test.ts`, `apps/web/.env.example` (plus the existing session or CV test file that gets the 401 case).
+  - Checks: qc-browser tier 2 + prod build. Risk: normal.
+
+- [ ] **RVOFF-admin: Reviewer page shows "turned off on this server"** · S · Deps: RVOFF-api · ui-builder · SPEC §7 D2a; ADR 0014 §4 (Q-RVOFF2: recommended answer assumed)
+  - Acceptance:
+    - `config/Http.constants.ts` `API_ERROR_CODES.REVIEWER_FEATURE_OFF`.
+    - `features/reviewer/Reviewer.queries.ts`: `isReviewerFeatureOff(error)` (404 + that code), like `isBackupsNotConfigured`; the status and session queries do not retry a 4xx.
+    - `ReviewerSessionsPage.tsx`: when the status query fails with that code, the page shows one notice (title "Reviewer access is turned off on this server", one line saying the server's `REVIEWER_FEATURE_ENABLED` setting controls it) and hides the toggle and the session log. Copy in `config/Copy.constants.ts`; tokens and styles as the backups "not set up" state (ui-direction).
+    - The menu item stays for the owner. `ReviewerBanner` unchanged.
+  - Verify:
+    - `ReviewerSessionsPage.test.tsx`: 404 `REVIEWER_FEATURE_OFF` → the notice, no switch, no table, no retry; other cases unchanged.
+    - `pnpm --filter @abyss/cms-admin test`, `lint`, `typecheck`, `build`.
+  - Files: `apps/cms-admin/src/config/Http.constants.ts`, `src/config/Copy.constants.ts`, `src/features/reviewer/Reviewer.queries.ts`, `src/features/reviewer/ReviewerSessionsPage.tsx`, `src/features/reviewer/ReviewerSessionsPage.test.tsx`.
+  - Checks: qc-browser tier 2. Risk: normal.
+
+- [ ] **RVOFF-doc: Off and on steps in the deploy guides** · XS · Deps: RVOFF-cfg; after LG-db-4 is committed (same guide files) · core-builder (`docs/deployment/` approved at dispatch, as for LG-db-4) · SPEC §7 D2a; ADR 0014 §1, §5
+  - Acceptance:
+    - `docs/deployment/k3s-traefik.md`: the cms-api env table gets `REVIEWER_FEATURE_ENABLED` (not required; production value `false` until the user turns reviewer features back on); the web runtime env table gets `WEB_STATUS_PAGE_ENABLED` (production `false`). The `TURNSTILE_*` rows say they apply only when the switch is on.
+    - `docs/deployment/devops-runbook.md`: a short section "Turn reviewer features off or on" with the off and on steps and checks from ADR 0014 §5, in that order (owner toggle off first).
+    - `docs/local-run.md`: one line saying the dev stack and `pnpm demo` run with both switches on.
+  - Verify: `pnpm format:check`; every key named matches `apps/cms-api/.env.example` and `apps/web/.env.example`.
+  - Files: `docs/deployment/k3s-traefik.md`, `docs/deployment/devops-runbook.md`, `docs/local-run.md`.
+  - Checks: qc tier 1 (docs). Risk: low.
