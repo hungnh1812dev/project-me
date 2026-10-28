@@ -74,6 +74,11 @@ export interface IAppConfig {
   /** Set only when the backup bucket keys are set (ADR 0013); undefined = feature off. */
   readonly backups: BackupStorageConfig | undefined;
   readonly reviewer: {
+    /**
+     * false = every reviewer route answers 404 REVIEWER_FEATURE_OFF, reviewer
+     * tokens are refused, the cleanup job does not start (ADR 0014).
+     */
+    readonly isFeatureEnabled: boolean;
     /** Hostname Turnstile replies must name; undefined = not checked. */
     readonly turnstileExpectedHostname: string | undefined;
   };
@@ -249,7 +254,10 @@ export function loadAppConfig(rawEnv: RawEnv): IAppConfig {
       cloudinary: cloudinaryConfigOf(env),
     },
     backups: backupStorageConfigOf(env),
-    reviewer: { turnstileExpectedHostname: env.TURNSTILE_EXPECTED_HOSTNAME },
+    reviewer: {
+      isFeatureEnabled: env.REVIEWER_FEATURE_ENABLED,
+      turnstileExpectedHostname: env.TURNSTILE_EXPECTED_HOSTNAME,
+    },
     secrets: {
       jwtAccessSecret: env.JWT_ACCESS_SECRET,
       otpPepper: env.OTP_PEPPER,

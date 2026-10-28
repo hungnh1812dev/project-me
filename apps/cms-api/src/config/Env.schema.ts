@@ -20,6 +20,7 @@ import {
 } from './Config.constants';
 import {
   emptyToUndefined,
+  envBoolean,
   optionalSecret,
   optionalText,
   portNumber,
@@ -152,10 +153,7 @@ export const envSchema = z
     ),
     SMTP_HOST: optionalText,
     SMTP_PORT: portNumber(CONFIG_DEFAULTS.SMTP_PORT),
-    SMTP_SECURE: z.preprocess(
-      emptyToUndefined,
-      z.stringbool().default(CONFIG_DEFAULTS.SMTP_SECURE),
-    ),
+    SMTP_SECURE: envBoolean(CONFIG_DEFAULTS.SMTP_SECURE),
     SMTP_USER: optionalText,
     SMTP_PASSWORD: optionalText,
     MAIL_FROM: optionalText,
@@ -167,6 +165,9 @@ export const envSchema = z
     CLOUDINARY_API_SECRET: optionalText,
     CLOUDINARY_FOLDER: optionalText,
     OWNER_SETUP_TOKEN: optionalSecret,
+    REVIEWER_FEATURE_ENABLED: envBoolean(
+      CONFIG_DEFAULTS.REVIEWER_FEATURE_ENABLED,
+    ),
     TURNSTILE_SECRET_KEY: optionalSecret,
     TURNSTILE_EXPECTED_HOSTNAME: z.preprocess(
       emptyToUndefined,

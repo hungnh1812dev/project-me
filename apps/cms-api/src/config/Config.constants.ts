@@ -44,6 +44,8 @@ export const CONFIG_DEFAULTS = {
   SMTP_PORT: 587,
   /** false = plain connect + STARTTLS upgrade; true = TLS from the start (465). */
   SMTP_SECURE: false,
+  /** Fail closed: reviewer features stay off until a deploy sets this to true (ADR 0014). */
+  REVIEWER_FEATURE_ENABLED: false,
   /** R2 accepts `auto`; other S3 providers need their own region. */
   BACKUP_STORAGE_REGION: 'auto',
   /** Key prefix of the nightly dumps in the bucket (ADR 0013 section 2). */
