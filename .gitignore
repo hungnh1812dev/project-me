@@ -29,3 +29,6 @@ apps/cms-api/src/generated/
 
 # Python bytecode caches
 __pycache__/
+
+# Agent state (local to this machine, never committed)
+.claude/state/
