@@ -105,23 +105,80 @@ Least privilege: workflow default `contents: read`; `packages: write` only on th
 
 Every action in every workflow is pinned to a full commit SHA with the tag as a comment (the latest tag of the major version in use). Bump them deliberately; adding Dependabot (`github-actions` ecosystem) is recommended. The registry login uses the run's `GITHUB_TOKEN`.
 
-### What you must create in GitHub
+### GitHub setup, step by step
 
-Two Environments, `staging` and `production` (Settings > Environments). Required on each: **Deployment branches and tags = Selected branches**, `staging` only on the `staging` Environment and `main` only on `production`. This rule, not the workflow, is what stops any other branch from reading the Environment's variables and `DEPLOYMENT_REPO_TOKEN` or deploying; without it a pushed `feature/x` workflow could declare `environment: production`. Also protect the `staging` and `main` branches (pull request review required) so a push there implies review, and add required reviewers on `production` if you want a manual gate. In each Environment:
+Do the steps in order. Paths are GitHub web UI paths in this repo (`Settings > ...`) unless a step says the deploy repo. `<owner>/<deploy-repo>` is the repo that holds the cluster manifests. Never put a real token, domain or secret value in a file in this repo. The status and per-item checklist for the owner is in [devops-runbook.md](deployment/devops-runbook.md) section 3.5; this section is the how-to.
 
-| Kind     | Name                             | Meaning                                                                                                                                                                      |
-| -------- | -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| variable | `DEPLOYMENT_REPO`                | `owner/repo` of the deploy repo                                                                                                                                              |
-| variable | `DEPLOYMENT_CLUSTER_PATH`        | directory in the deploy repo holding `<app>-sync-overlay.yaml` (each with an `APP_IMAGE_TAG:` line)                                                                          |
-| variable | `VITE_API_BASE_URL`              | cms-admin build arg, full API base, required (for example `https://domain.com/api/v1`)                                                                                       |
-| variable | `NEXT_PUBLIC_API_BASE_URL`       | web build arg, required (`/api/v1` when the API is on the web host)                                                                                                          |
-| variable | `NEXT_PUBLIC_ADMIN_URL`          | web build arg, optional (admin console URL)                                                                                                                                  |
-| variable | `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | web build arg, optional (real Cloudflare Turnstile site key; empty hides the reviewer entry)                                                                                 |
-| secret   | `DEPLOYMENT_REPO_TOKEN`          | Environment secret only, never a repository secret. Fine-grained personal access token (or GitHub App token) limited to the deploy repo with `contents: write` and an expiry |
+**1. Repository prerequisites**
 
-Build args are variables, never secrets: they are baked into the public bundles. A missing required variable fails the image job before the build. The deploy repo branches `staging` and `main` must exist. Registry packages are created on the first push under the repo; after that, set the package visibility or access you need. Nothing was run against GitHub yet: the first real publish is checked after the first push.
+1. `Settings > Actions > General > Actions permissions`: allow Actions for this repo (all actions, or allow the SHA-pinned actions the workflows use).
+2. Same page, `Workflow permissions`: choose `Read repository contents and packages permissions` (read-only default). Do not tick `Allow GitHub Actions to create and approve pull requests`. The workflows ask for more only where needed: `ci.yml` grants `packages: write` to the `publish-<app>` call jobs, and `_publish.yml` uses it only in the image and manifest jobs.
 
-How the published images are deployed (K3s, Traefik, init and main container, env contract, backups): `docs/deployment/k3s-traefik.md`.
+**2. Environments**
+
+1. `Settings > Environments > New environment`: create `staging`, then `production`. The names must match exactly; `ci.yml` resolves `staging` for the `staging` branch and `production` for `main`.
+2. In each Environment set `Deployment branches and tags` to `Selected branches and tags`, then `Add deployment branch or tag rule`: pattern `staging` on `staging`, pattern `main` on `production`. This rule, not the workflow, stops any other branch from reading the Environment's variables and `DEPLOYMENT_REPO_TOKEN`. Without it a pushed `feature/x` workflow could declare `environment: production`.
+3. Required reviewers are optional. v1 uses none on `production`: the gate is the protected `main` branch plus the `main`-only deployment rule. Add reviewers on `production` only if you want a manual approval before each deploy.
+
+**3. Environment variables**
+
+`Settings > Environments > <environment> > Environment variables > Add environment variable`. Add these in both `staging` and `production` (values differ per environment). Use Environment variables, not repository variables, so each environment keeps its own values.
+
+| Variable                         | Required | Value to enter                                                                           | Read by                                    |
+| -------------------------------- | -------- | ---------------------------------------------------------------------------------------- | ------------------------------------------ |
+| `DEPLOYMENT_REPO`                | yes      | `<owner>/<deploy-repo>`                                                                  | deploy job, checkout of the deploy repo    |
+| `DEPLOYMENT_CLUSTER_PATH`        | yes      | directory in the deploy repo that holds the `<app>-sync-overlay.yaml` files (see step 6) | deploy job; fails with an error when unset |
+| `VITE_API_BASE_URL`              | yes      | full API base URL for cms-admin, for example `https://<domain>/api/v1`                   | cms-admin image build arg                  |
+| `NEXT_PUBLIC_API_BASE_URL`       | yes      | API base for web; `/api/v1` when the API is served on the web host                       | web image build arg                        |
+| `NEXT_PUBLIC_ADMIN_URL`          | no       | admin console URL                                                                        | web image build arg                        |
+| `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | no       | real Cloudflare Turnstile site key (public); empty hides the reviewer entry              | web image build arg                        |
+
+These are build args baked into the public bundles, so they are variables, never secrets. A missing required variable fails the image job before the build starts. All names are read in `.github/workflows/_publish.yml`.
+
+**4. Environment secret `DEPLOYMENT_REPO_TOKEN`**
+
+1. Create the credential. Either a fine-grained personal access token (`GitHub profile > Settings > Developer settings > Personal access tokens > Fine-grained tokens`) or a GitHub App installation token. Resource owner: the owner of the deploy repo. Repository access: `Only select repositories`, the deploy repo only. Permission: `Contents: Read and write`, nothing else. Set an expiry (for example 90 days) and note the date in your calendar.
+2. `Settings > Environments > <environment> > Environment secrets > Add environment secret`: name `DEPLOYMENT_REPO_TOKEN`, value the token. Add it to `staging` and `production`; use one token per environment if you want separate rotation. Never a repository secret: only a job running in the Environment, on its allowed branch, may read it.
+3. Rotation: create the new token, replace the secret value in each Environment, run one publish to confirm the deploy job still pushes, then revoke the old token. An expired token shows up as a failed push in the deploy job.
+4. `GITHUB_TOKEN` is created by GitHub for every run; do not create it. The registry login uses it.
+
+**5. Branch protection for `staging` and `main`**
+
+`Settings > Branches > Add branch ruleset` (or `Add classic branch protection rule`), one rule for `staging` and one for `main`:
+
+1. Require a pull request before merging, with at least 1 approval.
+2. Require status checks to pass. For now add only `Repo checks` (the `repo` job in `ci.yml`).
+3. After the first green run, add the per-app check names exactly as that run shows them (the `<app> / Checks` and `<app> / Build` jobs from `app-checks.yml`, for example `cms-api / Checks`). A check that has never run cannot be selected, so this step waits for the first run.
+4. Block force pushes and deletion.
+
+Create the `staging` and `main` branches in this repo first if they do not exist yet; the rules apply to existing branches only.
+
+**6. Deploy repo prerequisites**
+
+In `<owner>/<deploy-repo>`:
+
+1. The branches `staging` and `main` exist. The deploy job checks out the one that matches the environment and pushes the bump to it.
+2. The directory named by `DEPLOYMENT_CLUSTER_PATH` holds three files: `cms-api-sync-overlay.yaml`, `cms-admin-sync-overlay.yaml` and `web-sync-overlay.yaml`. Each has a line `APP_IMAGE_TAG: <value>`; the deploy job rewrites that value to `<branch>-<sha7>`. A missing file or line fails the bump.
+3. Flux or the cluster layout is the deploy repo's own business: [deployment/k3s-traefik.md](deployment/k3s-traefik.md) and the devops runbook section 4 describe the contract.
+
+**7. GHCR packages**
+
+Packages appear under the owner's profile or organization (`Packages`) after the first successful push, as `project-me/cms-api`, `project-me/cms-admin` and `project-me/web`. Keep them private (owner decision). For each package: `Package settings > Manage Actions access`: add this repo with `Write` role so later runs can push; the cluster pulls with its own image pull secret (see the k3s guide). Do this after the first push in step 9, because the packages do not exist before it.
+
+**8. Optional: Dependabot for actions**
+
+Recommended, not required. Add a `.github/dependabot.yml` with the `github-actions` ecosystem on a weekly schedule so the SHA-pinned actions get update pull requests. This guide does not add the file; if you add it, merge its updates deliberately, one at a time.
+
+**9. First-run check**
+
+1. Push (or merge) to `staging`. In the `Actions` tab, the `CI` run is green: `Repo checks`, each affected app's `Checks` and `Build`, then `publish <app>`.
+2. In the run, each `publish` job shows the environment `staging`; if a job waits or is denied, recheck step 2.
+3. Image tags: `docker buildx imagetools inspect ghcr.io/<owner>/<repo>/<app>:staging-<sha7>` shows `linux/amd64`. The moving tag `staging` points to the same image.
+4. In the deploy repo, branch `staging` has one new bump commit per published app, changing only `APP_IMAGE_TAG` in the matching overlay file.
+5. Now return to step 5.3 (add the per-app checks) and step 7 (package access).
+6. Repeat on `main` for `production`.
+
+Remaining notes: build args are variables, never secrets; the deploy job gets no `packages` access and uses only `DEPLOYMENT_REPO_TOKEN`, which it passes as a per-command header. Nothing was run against GitHub yet: the first real publish is the check. How the published images are deployed (K3s, Traefik, init and main container, env contract, backups): [deployment/k3s-traefik.md](deployment/k3s-traefik.md).
 
 Run the guards locally against an image you built:
 
