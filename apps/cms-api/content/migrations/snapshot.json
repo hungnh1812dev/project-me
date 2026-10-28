@@ -1,0 +1,513 @@
+{
+  "formatVersion": 1,
+  "contentTypes": {
+    "common-text": {
+      "hash": "f7edc44d231a98bd371b158ffdd24b821457d62b5f5948c1134097b97b869ea1",
+      "definition": {
+        "slug": "common-text",
+        "kind": "single",
+        "draftAndPublish": true,
+        "fields": [
+          {
+            "name": "text",
+            "type": "json"
+          }
+        ]
+      }
+    },
+    "cv-contact": {
+      "hash": "88630754d8c0d586d952c138b65e30a1aa9c80a1c83c8c09feb25dc58344935e",
+      "definition": {
+        "slug": "cv-contact",
+        "kind": "single",
+        "draftAndPublish": true,
+        "fields": [
+          {
+            "name": "name",
+            "type": "string"
+          },
+          {
+            "name": "address",
+            "sensitive": true,
+            "type": "string"
+          },
+          {
+            "name": "phone",
+            "sensitive": true,
+            "type": "string"
+          },
+          {
+            "name": "email",
+            "sensitive": true,
+            "type": "string"
+          },
+          {
+            "name": "linkedin",
+            "type": "string"
+          },
+          {
+            "name": "github",
+            "sensitive": true,
+            "type": "string"
+          },
+          {
+            "name": "avatar",
+            "type": "media"
+          }
+        ]
+      }
+    },
+    "cv-page": {
+      "hash": "9dc4ebf0c483ab1b299adbf2ecf0c8adb0d9b6b20b81626326bb2bcadeadb2c5",
+      "definition": {
+        "slug": "cv-page",
+        "kind": "collection",
+        "draftAndPublish": true,
+        "fields": [
+          {
+            "name": "position",
+            "type": "string"
+          },
+          {
+            "name": "isMain",
+            "type": "boolean"
+          },
+          {
+            "name": "company",
+            "type": "string"
+          },
+          {
+            "name": "summary",
+            "type": "richtext"
+          },
+          {
+            "name": "skill",
+            "type": "component",
+            "repeatable": true,
+            "fields": [
+              {
+                "name": "level",
+                "type": "string"
+              },
+              {
+                "name": "skill",
+                "type": "string"
+              }
+            ]
+          },
+          {
+            "name": "experience",
+            "type": "component",
+            "repeatable": true,
+            "fields": [
+              {
+                "name": "company",
+                "type": "string"
+              },
+              {
+                "name": "location",
+                "type": "string"
+              },
+              {
+                "name": "role",
+                "type": "component",
+                "repeatable": true,
+                "fields": [
+                  {
+                    "name": "position",
+                    "type": "string"
+                  },
+                  {
+                    "name": "period",
+                    "type": "string"
+                  },
+                  {
+                    "name": "teamSize",
+                    "type": "integer"
+                  },
+                  {
+                    "name": "projects",
+                    "type": "string"
+                  },
+                  {
+                    "name": "techStack",
+                    "type": "json"
+                  },
+                  {
+                    "name": "responsibilities",
+                    "type": "richtext"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "project",
+            "type": "component",
+            "repeatable": true,
+            "fields": [
+              {
+                "name": "name",
+                "type": "string"
+              },
+              {
+                "name": "teamSize",
+                "type": "integer"
+              },
+              {
+                "name": "role",
+                "type": "string"
+              },
+              {
+                "name": "liveLink",
+                "type": "string"
+              },
+              {
+                "name": "repositoryLink",
+                "type": "string"
+              },
+              {
+                "name": "techStack",
+                "type": "json"
+              },
+              {
+                "name": "responsibilities",
+                "type": "richtext"
+              }
+            ]
+          },
+          {
+            "name": "education",
+            "type": "component",
+            "repeatable": true,
+            "fields": [
+              {
+                "name": "degree",
+                "type": "string"
+              },
+              {
+                "name": "institution",
+                "type": "string"
+              },
+              {
+                "name": "period",
+                "type": "string"
+              },
+              {
+                "name": "location",
+                "type": "string"
+              },
+              {
+                "name": "description",
+                "type": "richtext"
+              }
+            ]
+          },
+          {
+            "name": "language",
+            "type": "component",
+            "repeatable": true,
+            "fields": [
+              {
+                "name": "language",
+                "type": "string"
+              },
+              {
+                "name": "level",
+                "type": "string"
+              }
+            ]
+          },
+          {
+            "name": "reference",
+            "type": "component",
+            "repeatable": true,
+            "fields": [
+              {
+                "name": "name",
+                "type": "string"
+              },
+              {
+                "name": "phone",
+                "type": "string"
+              },
+              {
+                "name": "role",
+                "type": "string"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "header": {
+      "hash": "a92fcc41c5a01697870875cd7a1ee3eee238dde067cfd252240d5eb97d3f552a",
+      "definition": {
+        "slug": "header",
+        "kind": "single",
+        "draftAndPublish": true,
+        "fields": [
+          {
+            "name": "name",
+            "type": "string"
+          },
+          {
+            "name": "nav",
+            "type": "component",
+            "repeatable": true,
+            "fields": [
+              {
+                "name": "title",
+                "type": "string"
+              },
+              {
+                "name": "requiresRole",
+                "type": "string"
+              },
+              {
+                "name": "link",
+                "type": "string"
+              },
+              {
+                "name": "subNavigations",
+                "type": "component",
+                "repeatable": true,
+                "fields": [
+                  {
+                    "name": "title",
+                    "type": "string"
+                  },
+                  {
+                    "name": "requiresRole",
+                    "type": "string"
+                  },
+                  {
+                    "name": "link",
+                    "type": "string"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "author",
+            "type": "component",
+            "fields": [
+              {
+                "name": "btnLoginText",
+                "type": "string"
+              },
+              {
+                "name": "btnLogoutText",
+                "type": "string"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "profile": {
+      "hash": "f7fc95c35a52a671afb52fbc47854367d1e52844c370b53b8420c56405fcab0b",
+      "definition": {
+        "slug": "profile",
+        "kind": "collection",
+        "draftAndPublish": true,
+        "fields": [
+          {
+            "name": "name",
+            "type": "string"
+          },
+          {
+            "name": "photo",
+            "type": "media"
+          }
+        ]
+      }
+    },
+    "resume": {
+      "hash": "be8cebf6c834401e5183200704779441aaac393e3cc66fb38666eecff75f78ad",
+      "definition": {
+        "slug": "resume",
+        "kind": "collection",
+        "draftAndPublish": true,
+        "fields": [
+          {
+            "name": "position",
+            "type": "string"
+          },
+          {
+            "name": "isMain",
+            "type": "boolean"
+          },
+          {
+            "name": "name",
+            "type": "string"
+          },
+          {
+            "name": "summary",
+            "type": "richtext"
+          },
+          {
+            "name": "skills",
+            "type": "component",
+            "repeatable": true,
+            "fields": [
+              {
+                "name": "level",
+                "type": "string"
+              },
+              {
+                "name": "skill",
+                "type": "string"
+              }
+            ]
+          },
+          {
+            "name": "experiences",
+            "type": "component",
+            "repeatable": true,
+            "fields": [
+              {
+                "name": "company",
+                "sensitive": true,
+                "type": "string"
+              },
+              {
+                "name": "location",
+                "type": "string"
+              },
+              {
+                "name": "period",
+                "type": "string"
+              },
+              {
+                "name": "roles",
+                "type": "component",
+                "repeatable": true,
+                "fields": [
+                  {
+                    "name": "position",
+                    "type": "string"
+                  },
+                  {
+                    "name": "period",
+                    "type": "string"
+                  },
+                  {
+                    "name": "teamSize",
+                    "type": "integer"
+                  },
+                  {
+                    "name": "projects",
+                    "type": "component",
+                    "repeatable": true,
+                    "fields": [
+                      {
+                        "name": "name",
+                        "type": "string"
+                      },
+                      {
+                        "name": "teamSize",
+                        "type": "integer"
+                      },
+                      {
+                        "name": "role",
+                        "type": "string"
+                      },
+                      {
+                        "name": "liveLink",
+                        "type": "string"
+                      },
+                      {
+                        "name": "repositoryLink",
+                        "type": "string"
+                      },
+                      {
+                        "name": "techStack",
+                        "type": "json"
+                      },
+                      {
+                        "name": "responsibilities",
+                        "type": "richtext"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "techStack",
+                    "type": "json"
+                  },
+                  {
+                    "name": "responsibilities",
+                    "type": "richtext"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "educations",
+            "type": "component",
+            "repeatable": true,
+            "fields": [
+              {
+                "name": "degree",
+                "type": "string"
+              },
+              {
+                "name": "institution",
+                "type": "string"
+              },
+              {
+                "name": "period",
+                "type": "string"
+              },
+              {
+                "name": "location",
+                "type": "string"
+              },
+              {
+                "name": "description",
+                "type": "richtext"
+              }
+            ]
+          },
+          {
+            "name": "languages",
+            "type": "component",
+            "repeatable": true,
+            "fields": [
+              {
+                "name": "language",
+                "type": "string"
+              },
+              {
+                "name": "level",
+                "type": "string"
+              }
+            ]
+          },
+          {
+            "name": "referees",
+            "type": "component",
+            "repeatable": true,
+            "fields": [
+              {
+                "name": "name",
+                "type": "string"
+              },
+              {
+                "name": "phone",
+                "sensitive": true,
+                "type": "string"
+              },
+              {
+                "name": "role",
+                "type": "string"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

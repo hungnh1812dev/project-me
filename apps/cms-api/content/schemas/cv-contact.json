@@ -1,0 +1,39 @@
+{
+  "slug": "cv-contact",
+  "kind": "single",
+  "draftAndPublish": true,
+  "fields": [
+    {
+      "name": "name",
+      "type": "string"
+    },
+    {
+      "name": "address",
+      "type": "string",
+      "sensitive": true
+    },
+    {
+      "name": "phone",
+      "type": "string",
+      "sensitive": true
+    },
+    {
+      "name": "email",
+      "type": "string",
+      "sensitive": true
+    },
+    {
+      "name": "linkedin",
+      "type": "string"
+    },
+    {
+      "name": "github",
+      "type": "string",
+      "sensitive": true
+    },
+    {
+      "name": "avatar",
+      "type": "media"
+    }
+  ]
+}

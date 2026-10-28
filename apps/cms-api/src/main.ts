@@ -1,9 +1,11 @@
-import { NestFactory } from '@nestjs/core';
+import { Logger } from '@nestjs/common';
 
-import { AppModule } from './app.module.js';
+import { bootstrap } from './Bootstrap.setup';
 
-async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
-  await app.listen(process.env.PORT ?? 3000);
-}
-await bootstrap();
+bootstrap(process.env).catch((error: unknown) => {
+  // Config errors list keys and rules only, never values.
+  new Logger('Bootstrap').fatal(
+    error instanceof Error ? error.message : String(error),
+  );
+  process.exit(1);
+});

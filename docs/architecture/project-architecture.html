@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Abyss project architecture</title>
+<link rel="stylesheet" href="assets/architecture.css">
+</head>
+<body>
+<div class="layout">
+<nav class="side" aria-label="Architecture pages">
+<div class="brand">Abyss architecture<small>Headless CMS + portfolio monorepo</small></div>
+<a href="project-architecture.html" class="active">Overview<small>Master page: system map and reading order</small></a><a href="01-system-overview.html">System &amp; monorepo<small>Actors, apps, packages, tech stack</small></a><a href="02-cms-api-architecture.html">cms-api architecture<small>Clean-architecture layers, module graph, pipeline, errors</small></a><a href="03-cms-api-platform.html">cms-api platform<small>common, config, infrastructure, architecture guards</small></a><a href="04-modules-access-identity.html">Access &amp; identity modules<small>access core, security-audit, identity, management, document-auth</small></a><a href="05-modules-content.html">Content modules<small>content-engine, content-types, documents, graphql, media, reviewer, health</small></a><a href="06-data-model.html">Data model &amp; classes<small>ER diagrams, ports and adapters class diagrams</small></a><a href="07-flows.html">Sequences &amp; flows<small>Login, refresh, setup, publish, GraphQL, media, reviewer</small></a><a href="08-frontends.html">Frontends &amp; packages<small>cms-admin, web, form-commons, base-config, e2e</small></a><a href="09-deployment-production.html">Production<small>K3s + Traefik, images, CI/CD, secrets, backups</small></a><a href="10-local-setup.html">Local setup<small>Dev servers, env files, migrations, owner, smoke stack, tests</small></a>
+</nav>
+<main>
+<h1>Abyss project architecture</h1>
+<p class="lead">Master page. Start here for the big picture, then open the topic pages on the left.</p>
+
+<div class="grid">
+  <div class="card"><h3>What it is</h3><p style="margin:0">A headless CMS (cms-api + cms-admin) that serves CV / portfolio content defined by JSON schemas, plus the public site (web). It showcases RBAC + field-level masking, draft / publish with optimistic concurrency, an always-on security audit and a read-only reviewer mode.</p></div>
+  <div class="card"><h3>Code size today</h3><dl class="kv">
+    <dt>cms-api</dt><dd>280 source files, 13 modules</dd>
+    <dt>cms-admin</dt><dd>183 source files</dd>
+    <dt>web</dt><dd>63 source files</dd>
+    <dt>form-commons</dt><dd>52 source files</dd>
+    <dt>e2e</dt><dd>13 helper files + specs</dd></dl>
+    <p class="muted" style="margin:8px 0 0;font-size:13px">Tests are not counted.</p></div>
+  <div class="card"><h3>Architectures in use</h3><ul style="margin:0;padding-left:18px">
+    <li>Monorepo: pnpm workspaces + Turborepo</li>
+    <li>cms-api: modular monolith, clean architecture (ports &amp; adapters) per module, guarded by architecture tests</li>
+    <li>CQRS-style split in documents (command / query services)</li>
+    <li>cms-admin: feature-sliced SPA with a feature registry</li>
+    <li>web: Next.js App Router, Server Components, GraphQL reads</li>
+    <li>Deploy: containers on K3s + Traefik, GitOps image bump</li></ul></div>
+</div>
+
+<h2 id="map">System map</h2>
+<div class="diagram"><p class="cap">Who talks to whom in production. Dashed: the admin SPA calls the API from the browser, cross-origin.</p><pre class="mermaid">flowchart LR
+  visitor([&quot;Visitor / Reviewer&lt;br/&gt;browser&quot;])
+  staff([&quot;Owner / Admin / Editor&lt;br/&gt;browser&quot;])
+  subgraph k3s[&quot;K3s on one VPS - one replica per app&quot;]
+    traefik[&quot;Traefik&lt;br/&gt;TLS + host/path routing&quot;]
+    web[&quot;web&lt;br/&gt;Next.js 16 standalone :8080&quot;]
+    admin[&quot;cms-admin&lt;br/&gt;React 19 SPA on nginx :8080&quot;]
+    api[&quot;cms-api&lt;br/&gt;NestJS 11 :3000 /api/v1&lt;br/&gt;REST + read-only GraphQL&quot;]
+    init[&quot;cms-api init container&lt;br/&gt;deploy:migrate&quot;]
+    pg[(&quot;PostgreSQL 17&lt;br/&gt;public: Prisma&lt;br/&gt;content: Kysely&quot;)]
+  end
+  cloud[&quot;Cloudinary&lt;br/&gt;media storage&quot;]
+  smtp[&quot;SMTP&lt;br/&gt;OTP / invite mail&quot;]
+  turn[&quot;Cloudflare Turnstile&lt;br/&gt;bot check&quot;]
+  visitor --&gt;|&quot;domain.com&quot;| traefik
+  staff --&gt;|&quot;admin.domain.com&quot;| traefik
+  traefik --&gt;|&quot;/api/*&quot;| api
+  traefik --&gt;|&quot;everything else&quot;| web
+  traefik --&gt;|&quot;admin host&quot;| admin
+  web --&gt;|&quot;server-side GraphQL&lt;br/&gt;API_INTERNAL_URL&quot;| api
+  admin -.-&gt;|&quot;browser REST + Bearer&lt;br/&gt;CORS admin origin&quot;| api
+  api --&gt; pg
+  init --&gt; pg
+  api --&gt; cloud
+  api --&gt; smtp
+  api --&gt; turn</pre></div>
+
+<h2 id="pages">Pages</h2>
+<p class="lead">Read them in this order the first time. Every page has a filterable file table where it lists files.</p>
+<div class="grid"><a class="card" href="01-system-overview.html" style="display:block;color:inherit"><h3 style="color:var(--accent)">System &amp; monorepo</h3><p class="muted" style="margin:0">Actors, apps, packages, tech stack</p></a><a class="card" href="02-cms-api-architecture.html" style="display:block;color:inherit"><h3 style="color:var(--accent)">cms-api architecture</h3><p class="muted" style="margin:0">Clean-architecture layers, module graph, pipeline, errors</p></a><a class="card" href="03-cms-api-platform.html" style="display:block;color:inherit"><h3 style="color:var(--accent)">cms-api platform</h3><p class="muted" style="margin:0">common, config, infrastructure, architecture guards</p></a><a class="card" href="04-modules-access-identity.html" style="display:block;color:inherit"><h3 style="color:var(--accent)">Access &amp; identity modules</h3><p class="muted" style="margin:0">access core, security-audit, identity, management, document-auth</p></a><a class="card" href="05-modules-content.html" style="display:block;color:inherit"><h3 style="color:var(--accent)">Content modules</h3><p class="muted" style="margin:0">content-engine, content-types, documents, graphql, media, reviewer, health</p></a><a class="card" href="06-data-model.html" style="display:block;color:inherit"><h3 style="color:var(--accent)">Data model &amp; classes</h3><p class="muted" style="margin:0">ER diagrams, ports and adapters class diagrams</p></a><a class="card" href="07-flows.html" style="display:block;color:inherit"><h3 style="color:var(--accent)">Sequences &amp; flows</h3><p class="muted" style="margin:0">Login, refresh, setup, publish, GraphQL, media, reviewer</p></a><a class="card" href="08-frontends.html" style="display:block;color:inherit"><h3 style="color:var(--accent)">Frontends &amp; packages</h3><p class="muted" style="margin:0">cms-admin, web, form-commons, base-config, e2e</p></a><a class="card" href="09-deployment-production.html" style="display:block;color:inherit"><h3 style="color:var(--accent)">Production</h3><p class="muted" style="margin:0">K3s + Traefik, images, CI/CD, secrets, backups</p></a><a class="card" href="10-local-setup.html" style="display:block;color:inherit"><h3 style="color:var(--accent)">Local setup</h3><p class="muted" style="margin:0">Dev servers, env files, migrations, owner, smoke stack, tests</p></a></div>
+
+<h2 id="adr">Architecture decisions (docs/adr)</h2>
+<div class="tbl"><table><thead><tr><th>ADR</th><th>Decision</th><th>Status</th></tr></thead><tbody><tr><td><code>0001</code></td><td>Pin TypeScript 6.0.3 in every package; tsconfig valid for 6.x and 7.x</td><td>accepted</td></tr><tr><td><code>0002</code></td><td>accounts (role_id, role_slug) composite FK to roles (id, slug)</td><td>accepted</td></tr><tr><td><code>0003</code></td><td>Read-only GraphQL gateway over the REST document read path</td><td>proposed (GraphQL itself decided)</td></tr><tr><td><code>0004</code></td><td>web on Next.js App Router, standalone output, GraphQL server reads</td><td>accepted</td></tr><tr><td><code>0005</code></td><td>One-time owner setup route guarded by OWNER_SETUP_TOKEN</td><td>accepted</td></tr><tr><td><code>0006</code></td><td>Clean-architecture layers inside each cms-api module</td><td>implemented 2026-10-26</td></tr><tr><td><code>0007</code></td><td>Frontend micro-frontend approach (options)</td><td>proposed</td></tr><tr><td><code>0008</code></td><td>File naming: kebab-case folders, &lt;PascalName&gt;.&lt;function&gt;.&lt;ext&gt; files</td><td>accepted (renames in progress)</td></tr><tr><td><code>0009</code></td><td>cms-api uses NestJS CLI defaults (nest build / start)</td><td>proposed</td></tr></tbody></table></div>
+<p class="muted">Sources: <code>SPEC.md</code> (the authority), <code>docs/adr/*</code>, <code>docs/modules/*</code>, <code>docs/ci-cd.md</code>, <code>docs/local-run.md</code>, <code>docs/deployment/*</code>.</p>
+
+<footer>Generated 2026-10-26 from the working tree of <code>abyss</code> (file lists and the module graph are read from the code; descriptions come from SPEC.md, the ADRs, docs/ and the source). File names follow ADR 0008 and were being renamed on the day this was generated, so re-generate after big renames: <code>pnpm docs:architecture</code>.</footer>
+</main>
+</div>
+<script type="module">
+import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11.4.1/dist/mermaid.esm.min.mjs';
+const theme = document.documentElement.dataset.theme
+  || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+mermaid.initialize({
+  startOnLoad: false,
+  theme: theme === 'dark' ? 'dark' : 'neutral',
+  securityLevel: 'strict',
+  flowchart: { curve: 'basis', useMaxWidth: true },
+  sequence: { showSequenceNumbers: true, useMaxWidth: true, wrap: true },
+  er: { useMaxWidth: true },
+  class: { useMaxWidth: true },
+});
+await mermaid.run({ querySelector: 'pre.mermaid' });
+for (const input of document.querySelectorAll('input.filter')) {
+  const target = document.getElementById(input.dataset.target);
+  input.addEventListener('input', () => {
+    const q = input.value.trim().toLowerCase();
+    for (const row of target.querySelectorAll('tbody tr')) {
+      row.hidden = q !== '' && !row.textContent.toLowerCase().includes(q);
+    }
+  });
+}
+</script>
+</body>
+</html>

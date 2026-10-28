@@ -1,0 +1,9 @@
+@import 'tailwindcss';
+@import '@abyss/form-commons/theme.css';
+@source '../../node_modules/@abyss/form-commons/dist';
+
+@layer base {
+  body {
+    @apply bg-background font-sans text-foreground antialiased;
+  }
+}

@@ -1,13 +1,10 @@
 /// <reference types="vite/client" />
 
 interface ImportMetaEnv {
-  /** Backend origin, for example `https://cms-api.example.com`. Empty in dev (uses the proxy). */
-  readonly VITE_API_URL?: string;
+  /** cms-api base URL, e.g. `https://domain.com/api/v1`. See .env.example. */
+  readonly VITE_API_BASE_URL?: string;
 }
 
 interface ImportMeta {
   readonly env: ImportMetaEnv;
 }
-
-/** The `package.json` version, injected by Vite `define`. */
-declare const __APP_VERSION__: string;

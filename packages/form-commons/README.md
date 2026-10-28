@@ -1,0 +1,187 @@
+# @abyss/form-commons
+
+Shared UI kit for `cms-admin` and `web`: shadcn/ui primitives, form building
+blocks for react-hook-form, and the design tokens. Consumers import from
+`dist/` only (run `pnpm --filter @abyss/form-commons build`, or let Turborepo
+build it first through `^build`).
+
+## Exports
+
+| Import                           | What                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| -------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `@abyss/form-commons`            | `Button`, `buttonVariants`, `Input`, `Label`, `Field`, `FormAlert`, `TextInput`, `SelectInput`, `CheckboxInput`, `Checkbox`, `TextAreaInput`, `NumberInput`, `SwitchInput`, `DatePicker`, `DateTimePicker`, `JsonInput`, `isValidJsonText`, `RichtextInput`, `richtextExtensions`, `normalizeRichtextHtml`, `MediaInput`, `formatFileSize`, `SortableSheet`, `TablePagination`, `BulkActionBar`, `Textarea`, `Radio`, `Switch`, `NativeSelect`, `Dialog`, `DialogClose`, `DialogContent`, `DialogDescription`, `DialogFooter`, `DialogHeader`, `DialogOverlay`, `DialogTitle`, `DialogTrigger`, `FIELD_ID_SUFFIX`, `CSP_NONCE_META_NAME`, and the prop and label types (ESM + CJS + d.ts) |
+| `@abyss/form-commons/styles.css` | Compiled CSS: tokens + the utilities the components use, no reset                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| `@abyss/form-commons/theme.css`  | Tailwind v4 `@theme` mapping + tokens, for apps that run Tailwind                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| `@abyss/form-commons/tokens.css` | CSS variables only                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+
+JS has no side effects (`sideEffects` lists only CSS), so unused components
+are tree-shaken.
+
+### Public API
+
+The names exported from `src/index.ts` are the kit's contract, recorded in
+`src/PublicApi.snapshot.ts`; `src/PublicApi.snapshot.test.ts` fails when the exports,
+the snapshot or this table disagree. Changes are additive. A rename keeps the
+old name as a deprecated alias for one release; removing a name is a
+deliberate edit of the snapshot and every consumer in the same change.
+
+### Using it in an app with Tailwind v4
+
+```css
+@import 'tailwindcss';
+@import '@abyss/form-commons/theme.css';
+@source '../node_modules/@abyss/form-commons/dist';
+```
+
+### Using it without Tailwind
+
+```ts
+import '@abyss/form-commons/styles.css';
+```
+
+## Tokens
+
+`src/styles/tokens.css` has two layers: primitives (`--abyss-*`, never used
+in components) and semantic tokens (`--primary`, `--destructive-soft`, ...).
+Components use semantic Tailwind classes only (`bg-primary`,
+`text-destructive-strong`). Status colors come as solid, `-soft` (tinted
+background) and `-strong` (text on soft) variants.
+
+## Components
+
+### Button
+
+Variants follow what the action does: `primary` (the one main action of a
+view), `secondary` (default), `success`, `warning`, `destructive` (confirm
+first), `ghost`, `link`. Sizes `sm | md | lg | icon`. `loading` keeps the
+width, shows a spinner, sets `aria-busy` and disables the button.
+Icon-only buttons need an `aria-label`.
+
+### Field
+
+Layout and a11y wiring for any control:
+
+```tsx
+<Field
+  label="Email"
+  description="We send the invite here."
+  error={error}
+  required
+>
+  {(control) => <Input {...control} type="email" />}
+</Field>
+```
+
+`control` carries `id`, `aria-invalid`, `aria-describedby` (description id,
+then error id) and `aria-required`.
+
+### TextInput
+
+`Field` + `Input` registered with the surrounding `FormProvider`. Works with
+RHF native rules and with a Zod resolver:
+
+```tsx
+const form = useForm({ resolver: zodResolver(schema), mode: 'onTouched' });
+
+<FormProvider {...form}>
+  <form noValidate onSubmit={form.handleSubmit(save)}>
+    <TextInput name="email" label="Email" type="email" required />
+    <TextInput name="name" label="Name" rules={{ required: 'Enter a name.' }} />
+  </form>
+</FormProvider>;
+```
+
+`required` (or `rules.required`) shows the marker and sets `aria-required`;
+the native `required` attribute is never set, so the browser bubble does not
+compete with the inline error. Use `mode: 'onTouched'` for validation after
+blur.
+
+### SelectInput and CheckboxInput
+
+`SelectInput` is a native `<select>` inside `Field` (`options`, optional
+`placeholder` as the empty first option), registered with the surrounding
+`FormProvider` like `TextInput`. `CheckboxInput` binds a Radix `Checkbox` to a
+boolean field; the box sits left of its label, description and error below.
+
+### TextAreaInput, NumberInput, SwitchInput, DatePicker, DateTimePicker, JsonInput
+
+All bind to the surrounding `FormProvider` like `TextInput`.
+
+- `TextAreaInput`: multi-line text in `Field`.
+- `NumberInput` (`mode="integer" | "decimal"`, required `invalidMessage`): the
+  form value stays the typed **string**, so values beyond 2^53 are never
+  rounded; convert at the edge (`BigInt(value)`). Empty is valid unless
+  `rules.required`.
+- `SwitchInput`: Radix `Switch` (`role="switch"`) for a boolean, laid out like
+  `CheckboxInput`.
+- `DatePicker` / `DateTimePicker`: native `date` / `datetime-local` inputs. The
+  value is the native string (`YYYY-MM-DD`, `YYYY-MM-DDTHH:mm`, no zone);
+  converting a datetime to an instant is the caller's job.
+- `JsonInput` (required `invalidMessage`): monospace textarea; value is the raw
+  text, blank means no value, invalid JSON is an error on blur / submit.
+  `isValidJsonText` is exported.
+- `RichtextInput` (Tiptap; required `label: string` and `labels` for the toolbar
+  and link prompt): value is an HTML string, an empty document is `''`. The
+  extension set (`richtextExtensions`) is limited to what cms-api
+  `sanitizeRichtext` keeps (p, br, hr, strong, em, u, s, code, pre, blockquote,
+  h1-h6, ul, ol, li, a with http/https/mailto/tel). Add a tag to the server
+  allowlist before adding an extension. The server sanitizes again on write.
+
+### MediaInput
+
+Presentational field for one library file (cms-admin binds it to the form in `MediaField`).
+`value` is a `MediaInputFile | null` (preview, name, size, optional `mimeType` (absent on files embedded in documents), optional `provider`
+badge, date). Callbacks: `onOpenLibrary` (choose or replace), `onFilePick(file)`
+(a file picked from disk; the parent uploads it; `onChange` is a deprecated alias),
+`onRemove` (detach from the field, the file stays in the library), `onDelete`
+(delete from the library). A button shows only when its
+callback is given. All copy comes through the `labels` prop.
+
+### SortableSheet, TablePagination, BulkActionBar
+
+Generic table parts (all copy through `labels`; `SortableSheet` needs `labels`
+only when it is selectable). `SortableSheet<TRow>`: `columns`
+(`key`, `header`, `renderCell`, `sortable`, `align`, `rowHeader`), `rows`,
+`getRowId`, `getRowLabel`; sorting is reported through `onSortChange(sort)`
+(new key ascending, same key flips) and applied by the parent (the header shows
+`aria-sort`). Passing `onSelectedChange` adds the checkbox column (header box is
+indeterminate when partly selected); selection is by row id. `TablePagination`
+shows "from-to of total" with previous / next (parent owns `page`).
+`BulkActionBar` shows "n selected" with one button per action (variant by
+meaning) and a clear button; it renders nothing at zero selected, and `busy`
+disables it.
+
+### Dialog
+
+shadcn `Dialog` (Radix): focus trap, inert page behind, Esc closes, focus
+returns to the trigger. Compose `DialogContent`, `DialogHeader`,
+`DialogTitle` (required for accessibility), `DialogDescription` and
+`DialogFooter` (secondary left, primary right, end-aligned). Put a
+`DialogClose` Cancel button in the footer; there is no corner close button.
+
+## Internals for a new input
+
+Not exported. A new input reuses `src/components/forms/FieldWiring.setup.ts`
+(`useRegisteredField` for native controls, `useRequiredFormContext` plus
+`useFieldIds` for controller-based ones, `NativeFieldProps` for the props type)
+and the focus / invalid classes in `src/components/ui/Control.constants.ts`.
+`src/KitBoundaries.architecture.test.ts` (run by `pnpm test`) fails when those rules are copied back into a
+component.
+The `abyss/file-names` ESLint rule (ADR 0008, run by `pnpm lint`) fails on a file or folder under `src/` and `test/` that breaks the naming rule.
+
+## Adding shadcn components
+
+```bash
+pnpm --filter @abyss/form-commons exec shadcn add <name>
+```
+
+`shadcn add` writes kebab-case files (`native-select.tsx`). Rename them to the file-name rule (ADR 0008: `NativeSelect.tsx`), restyle to semantic tokens and export them from `src/index.ts`.
+
+## Scripts
+
+| Script      | What it does                                                                          |
+| ----------- | ------------------------------------------------------------------------------------- |
+| `build`     | tsup (ESM, CJS, d.ts) + Tailwind CLI for `dist/styles.css`                            |
+| `test`      | Vitest + Testing Library (jsdom)                                                      |
+| `lint`      | Oxlint (base-config + react, jsx-a11y, vitest) then ESLint (base-config, react-hooks) |
+| `typecheck` | `tsc --noEmit`                                                                        |

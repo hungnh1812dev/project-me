@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Production</title>
+<link rel="stylesheet" href="assets/architecture.css">
+</head>
+<body>
+<div class="layout">
+<nav class="side" aria-label="Architecture pages">
+<div class="brand">Abyss architecture<small>Headless CMS + portfolio monorepo</small></div>
+<a href="project-architecture.html">Overview<small>Master page: system map and reading order</small></a><a href="01-system-overview.html">System &amp; monorepo<small>Actors, apps, packages, tech stack</small></a><a href="02-cms-api-architecture.html">cms-api architecture<small>Clean-architecture layers, module graph, pipeline, errors</small></a><a href="03-cms-api-platform.html">cms-api platform<small>common, config, infrastructure, architecture guards</small></a><a href="04-modules-access-identity.html">Access &amp; identity modules<small>access core, security-audit, identity, management, document-auth</small></a><a href="05-modules-content.html">Content modules<small>content-engine, content-types, documents, graphql, media, reviewer, health</small></a><a href="06-data-model.html">Data model &amp; classes<small>ER diagrams, ports and adapters class diagrams</small></a><a href="07-flows.html">Sequences &amp; flows<small>Login, refresh, setup, publish, GraphQL, media, reviewer</small></a><a href="08-frontends.html">Frontends &amp; packages<small>cms-admin, web, form-commons, base-config, e2e</small></a><a href="09-deployment-production.html" class="active">Production<small>K3s + Traefik, images, CI/CD, secrets, backups</small></a><a href="10-local-setup.html">Local setup<small>Dev servers, env files, migrations, owner, smoke stack, tests</small></a>
+</nav>
+<main>
+<h1>Production</h1>
+<p class="lead">How the system runs in production: K3s + Traefik routing, images, the CI/CD pipeline, release order, secrets and backups.</p>
+
+<h2 id="topology">Topology</h2>
+<div class="diagram"><pre class="mermaid">flowchart TB
+  internet([&quot;Internet&quot;]) --&gt; cf[&quot;Cloudflare (optional)&lt;br/&gt;CF-Connecting-IP&quot;]
+  cf --&gt; tr
+  subgraph vps[&quot;VPS: K3s, one replica per app&quot;]
+    tr[&quot;Traefik&lt;br/&gt;externalTrafficPolicy: Local&lt;br/&gt;TLS on websecure&quot;]
+    subgraph apipod[&quot;cms-api Pod (one image tag)&quot;]
+      initc[&quot;init: npm run deploy:migrate&quot;]
+      main[&quot;main: node dist/main.js :3000 uid 1000&quot;]
+    end
+    webpod[&quot;web Pod&lt;br/&gt;Next.js standalone :8080 uid 1000&quot;]
+    admpod[&quot;cms-admin Pod&lt;br/&gt;nginx-unprivileged :8080 uid 101&quot;]
+    pg[(&quot;PostgreSQL 17 on a PVC&quot;)]
+    sec[&quot;Secret (SOPS / sealed-secrets)&quot;]
+    bk[&quot;nightly dump + restore drill&lt;br/&gt;(deploy repo)&quot;]
+  end
+  tr --&gt;|&quot;domain.com /api priority 20&quot;| main
+  tr --&gt;|&quot;domain.com priority 10&quot;| webpod
+  tr --&gt;|&quot;admin.domain.com&quot;| admpod
+  webpod --&gt;|&quot;API_INTERNAL_URL GraphQL&quot;| main
+  initc --&gt; pg
+  main --&gt; pg
+  sec -.-&gt; initc
+  sec -.-&gt; main
+  bk --&gt; pg</pre></div>
+<div class="tbl"><table><thead><tr><th>Host</th><th>Path</th><th>Goes to</th></tr></thead><tbody><tr><td><code>domain.com</code></td><td><code>/api/*</code> (priority 20)</td><td>cms-api :3000</td></tr><tr><td><code>domain.com</code></td><td>everything else (priority 10)</td><td>web :8080</td></tr><tr><td><code>admin.domain.com</code></td><td>all</td><td>cms-admin :8080</td></tr></tbody></table></div>
+<ul>
+<li><b>Never StripPrefix</b>: cms-api serves under <code>/api/v1</code>.</li>
+<li>Web and API share the origin <code>https://domain.com</code>: refresh cookie <code>__Secure-abyss_rt</code> is host-only with <code>Path=/api/v1/auth</code>. The admin origin is the only CORS origin.</li>
+<li>Real client IP: <code>externalTrafficPolicy: Local</code> + <code>TRUST_PROXY_HOPS</code>, or <code>CLIENT_IP_HEADER=cf-connecting-ip</code> behind Cloudflare (D7).</li>
+<li>v1 runs one replica per app: rate limits, presence and the version cache are in memory.</li>
+</ul>
+<h2 id="images">Images</h2>
+<div class="tbl"><table><thead><tr><th>Image</th><th>Runs as</th><th>Port</th><th>Role</th></tr></thead><tbody><tr><td><code>ghcr.io/hungnh1812dev/project-me/cms-api</code></td><td>uid 1000</td><td>3000</td><td>API (main) and migrations (init container), one tag for both</td></tr><tr><td><code>ghcr.io/hungnh1812dev/project-me/web</code></td><td>uid 1000</td><td>8080</td><td>Next.js standalone on Node</td></tr><tr><td><code>ghcr.io/hungnh1812dev/project-me/cms-admin</code></td><td>uid 101</td><td>8080</td><td>nginx-unprivileged, static files</td></tr></tbody></table></div>
+<h2 id="cicd">CI/CD (GitHub Actions)</h2>
+<div class="diagram"><p class="cap">App flows never depend on each other. Publish runs only on staging / main when the app image inputs changed and its checks passed. e2e is not a CI gate.</p><pre class="mermaid">flowchart LR
+  push[&quot;push to develop / staging / main&quot;] --&gt; ch[&quot;changes&lt;br/&gt;turbo affected&quot;]
+  ch --&gt; repo[&quot;repo&lt;br/&gt;pins-check, format:check, pnpm audit&quot;]
+  ch --&gt; a[&quot;cms-api&lt;br/&gt;Checks then Build&quot;]
+  ch --&gt; b[&quot;cms-admin&lt;br/&gt;Checks then Build&quot;]
+  ch --&gt; w[&quot;web&lt;br/&gt;Checks then Build&quot;]
+  a --&gt; pa[&quot;publish-cms-api&quot;]
+  b --&gt; pb[&quot;publish-cms-admin&lt;br/&gt;+ bundle check&quot;]
+  w --&gt; pw[&quot;publish-web&quot;]
+  pa --&gt; man[&quot;manifest&lt;br/&gt;tags branch-sha7 + branch&quot;]
+  pb --&gt; man
+  pw --&gt; man
+  man --&gt; dep[&quot;deploy bump&lt;br/&gt;APP_IMAGE_TAG in deploy repo overlay&quot;]
+  dep --&gt; sync[&quot;deploy repo synced to the cluster&quot;]</pre></div>
+<div class="tbl"><table><thead><tr><th>Job</th><th>What it runs</th></tr></thead><tbody><tr><td>changes</td><td>affected apps via turbo, branch target</td></tr><tr><td>repo</td><td>pins-check (Turbo / Node pins), <code>pnpm format:check</code>, <code>pnpm audit --prod --audit-level high</code></td></tr><tr><td>cms-api Checks</td><td>typecheck, lint, test:unit, test:integration (Testcontainers), <code>content:generate --check</code>, <code>graphql:print-schema --check</code>, <code>contract:print --check</code></td></tr><tr><td>cms-admin / web Checks</td><td>typecheck, lint, Vitest</td></tr><tr><td>publish-&lt;app&gt;</td><td>per-platform image (staging and main amd64), non-root guard, push by digest, manifest, deploy bump</td></tr></tbody></table></div>
+<h2 id="startup">Release order for cms-api</h2>
+<ol>
+<li>Init container runs <code>npm run deploy:migrate</code>: <code>db:migrate</code> (Prisma <code>migrate deploy</code> + role seed), then <code>content:migrate</code>. Stops at the first failure; idempotent; safe concurrently (Prisma lock, advisory lock).</li>
+<li>Main container starts <code>node dist/main.js</code> and runs no migrations.</li>
+<li>First install only: set <code>OWNER_SETUP_TOKEN</code> in the Secret, create the owner on <code>https://admin.domain.com/setup</code>, then remove the token and restart.</li>
+</ol>
+<h2 id="secrets">Secrets and config</h2>
+<p>Secret keys (at least 32 bytes in production): <code>DB_PASSWORD</code>, <code>JWT_ACCESS_SECRET</code>, <code>OTP_PEPPER</code>, <code>TOTP_ENC_KEY</code> (+ previous key during rotation), SMTP / Cloudinary / Turnstile secrets, <code>OWNER_SETUP_TOKEN</code> (only during setup). Kept encrypted with SOPS in the deploy repo (<code>docs/deployment/k3s-secrets-sops.md</code>). With <code>NODE_ENV=production</code> the API refuses <code>MAIL_PROVIDER=console</code>, <code>MEDIA_PROVIDER=fake</code>, missing or short secrets (D17). Web and admin hold no secrets; <code>VITE_*</code> and <code>NEXT_PUBLIC_*</code> are baked at build time.</p>
+<h2 id="backup">Backups</h2>
+<p>The deploy repo owns a nightly PostgreSQL dump of both schemas and a restore drill: restore into a scratch database, run the migration commands (nothing pending), spot-check, drop. See <code>docs/deployment/k3s-traefik.md</code> §7.</p>
+
+<footer>Generated 2026-10-26 from the working tree of <code>abyss</code> (file lists and the module graph are read from the code; descriptions come from SPEC.md, the ADRs, docs/ and the source). File names follow ADR 0008 and were being renamed on the day this was generated, so re-generate after big renames: <code>pnpm docs:architecture</code>.</footer>
+</main>
+</div>
+<script type="module">
+import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11.4.1/dist/mermaid.esm.min.mjs';
+const theme = document.documentElement.dataset.theme
+  || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+mermaid.initialize({
+  startOnLoad: false,
+  theme: theme === 'dark' ? 'dark' : 'neutral',
+  securityLevel: 'strict',
+  flowchart: { curve: 'basis', useMaxWidth: true },
+  sequence: { showSequenceNumbers: true, useMaxWidth: true, wrap: true },
+  er: { useMaxWidth: true },
+  class: { useMaxWidth: true },
+});
+await mermaid.run({ querySelector: 'pre.mermaid' });
+for (const input of document.querySelectorAll('input.filter')) {
+  const target = document.getElementById(input.dataset.target);
+  input.addEventListener('input', () => {
+    const q = input.value.trim().toLowerCase();
+    for (const row of target.querySelectorAll('tbody tr')) {
+      row.hidden = q !== '' && !row.textContent.toLowerCase().includes(q);
+    }
+  });
+}
+</script>
+</body>
+</html>

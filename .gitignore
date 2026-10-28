@@ -1,8 +1,37 @@
-node_modules
-dist
-.next
-.turbo
-out
-coverage
+# Dependencies
+node_modules/
+
+# Build and tool output
+dist/
+coverage/
+.turbo/
 *.tsbuildinfo
+
+# Generated code (Prisma client: `pnpm --filter @abyss/cms-api db:generate`)
+apps/cms-api/src/generated/
+
+# Environment files (only the example is committed)
+.env*
+!.env.example
+
+# OS / editor
 .DS_Store
+*.log
+
+# Kept smoke stack env for pnpm e2e:spec (throwaway secrets)
+.smoke/
+
+# Dev stack logs, pids and e2e vars (pnpm dev:stack)
+.dev-stack/
+
+# Agent-local dev env (never committed, never in an image)
+.localEnv.agent
+
+# Python bytecode caches
+__pycache__/
+
+# Agent state (local to this machine, never committed)
+.claude/state/
+
+# Task files (local planning, never committed)
+tasks/

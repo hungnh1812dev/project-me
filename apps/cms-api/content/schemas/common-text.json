@@ -1,0 +1,11 @@
+{
+  "slug": "common-text",
+  "kind": "single",
+  "draftAndPublish": true,
+  "fields": [
+    {
+      "name": "text",
+      "type": "json"
+    }
+  ]
+}

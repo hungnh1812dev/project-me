@@ -1,0 +1,25 @@
+{
+  "folders": [
+    { "name": "root", "path": "." },
+    { "name": "@apps/cms-admin", "path": "apps/cms-admin" },
+    { "name": "@apps/cms-api", "path": "apps/cms-api" },
+    { "name": "@apps/web", "path": "apps/web" },
+    { "name": "@abyss/form-commons", "path": "packages/form-commons" },
+    { "name": "@abyss/base-config", "path": "packages/base-config" },
+  ],
+  "settings": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true,
+    "files.exclude": {
+      "**/node_modules": true,
+      "**/.turbo": true,
+    },
+  },
+  "extensions": {
+    "recommendations": [
+      "esbenp.prettier-vscode",
+      "dbaeumer.vscode-eslint",
+      "oxc.oxc-vscode",
+    ],
+  },
+}

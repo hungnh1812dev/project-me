@@ -1,0 +1,10 @@
+{
+  "values": {
+    "name": "Alex Sample",
+    "address": "100 Example Street, Sampleville",
+    "phone": "+1 555 0100",
+    "email": "alex.sample@example.com",
+    "linkedin": "https://www.linkedin.com/in/alex-sample-example",
+    "github": "https://github.com/alex-sample-example"
+  }
+}

@@ -1,0 +1,9 @@
+/*
+ * Build entry for dist/styles.css: tokens + the utilities the components use,
+ * for apps that do not run Tailwind themselves. No preflight/reset.
+ */
+@import 'tailwindcss/theme.css' layer(theme);
+@import './theme.css';
+@import 'tailwindcss/utilities.css' layer(utilities);
+
+@source '../components';
