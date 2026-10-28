@@ -211,6 +211,10 @@ End-to-end coverage lives in [`apps/e2e`](../e2e/README.md).
   the log of sessions (`GET /reviewer/sessions`: visitor role, purposes,
   notes, browser, start, active/ended). Notes and browser strings come from
   visitors and are rendered as text only; the IP is never shown.
+- While the server's `REVIEWER_FEATURE_ENABLED` switch is off, cms-api answers
+  `404 REVIEWER_FEATURE_OFF` to the status and sessions calls. The page then
+  shows one notice ("Reviewer access is turned off on this server") and hides
+  the switch and the log; the menu item stays for the owner. A 4xx is not retried.
 - Reviewer mode: an account whose role is `reviewer` sees a read-only banner,
   no Security link and no write controls (the document form is disabled and
   has no Save). This is a hint only; cms-api answers 403 to every write.
