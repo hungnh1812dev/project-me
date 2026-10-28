@@ -6,6 +6,7 @@ const errors = COPY.reviewer.errors;
 describe('reviewerAlertOf', () => {
   it.each([
     ['REVIEWER_DISABLED', errors.disabled, false],
+    ['REVIEWER_FEATURE_OFF', errors.disabled, false],
     ['REVIEWER_UNAVAILABLE', errors.unavailable, true],
     ['REVIEWER_TURNSTILE_FAILED', errors.turnstileFailed, true],
     ['REVIEWER_IP_LIMITED', errors.ipLimited, true],

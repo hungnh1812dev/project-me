@@ -26,7 +26,8 @@ Routes:
   the error UI arrives inside the stream (Next 16 streaming guide, "Status
   codes"); a failure before the first byte is a `500`.
 - `/status` is the API status card (`GET /api/v1/health/live` from the browser,
-  built with `@abyss/form-commons`). It is not linked from the header.
+  built with `@abyss/form-commons`). It is not linked from the header. It answers 404 unless
+  `WEB_STATUS_PAGE_ENABLED=true` (read per request, ADR 0014).
 
 ## Run
 
@@ -60,8 +61,8 @@ in a production build.
 - `src/config/Browser.env.ts` reads `NEXT_PUBLIC_*` keys. They are inlined into
   the browser bundle at build time (so they are public, never secrets) and a
   missing `NEXT_PUBLIC_API_BASE_URL` fails the build.
-- `src/config/Server.env.ts` (`server-only`) reads `API_INTERNAL_URL` and
-  `WEB_REVALIDATE_SECONDS` at runtime. An invalid value stops the server at
+- `src/config/Server.env.ts` (`server-only`) reads `API_INTERNAL_URL`,
+  `WEB_REVALIDATE_SECONDS` and `WEB_STATUS_PAGE_ENABLED` at runtime. An invalid value stops the server at
   start (`src/instrumentation.ts`). It is not run during `next build`.
 - Every key is documented in [`.env.example`](.env.example).
 - `src/config/endpoints.ts` is the single map of API paths.
@@ -131,7 +132,9 @@ tokens only (`bg-card`, `text-muted-foreground`).
 
 - The header shows "Reviewer access" to anonymous visitors when cms-api's
   public `GET /reviewer/status` says the owner switched it on **and**
-  `NEXT_PUBLIC_TURNSTILE_SITE_KEY` is set (build-time, public, optional).
+  `NEXT_PUBLIC_TURNSTILE_SITE_KEY` is set (build-time, public, optional). While
+  cms-api's `REVIEWER_FEATURE_ENABLED` is off, that call answers
+  `404 REVIEWER_FEATURE_OFF`, which reads as "not enabled" (button hidden).
 - `ReviewerAccessDialog` (client component, form-commons + react-hook-form) has
   three steps: role (Recruiter, Peer / colleague, Other), purposes (Hiring,
   Project scoping, Networking, Other) and notes + Turnstile. No personal data
@@ -159,8 +162,8 @@ docker run -e API_INTERNAL_URL=http://cms-api:3000/api/v1 -p 8080:8080 abyss-web
 Multi-stage: `turbo prune`, a frozen install, `turbo run build`, then the
 standalone server (`.next/standalone`, `.next/static`, `public/`) on Node as
 the non-root `node` user. The build fails without `NEXT_PUBLIC_API_BASE_URL`; `NEXT_PUBLIC_ADMIN_URL` and `NEXT_PUBLIC_TURNSTILE_SITE_KEY` are optional build args.
-Runtime env: `API_INTERNAL_URL`, `WEB_REVALIDATE_SECONDS`, `WEB_PORT` (default
-8080). `HEALTHCHECK` requests `/`. Telemetry is off (`NEXT_TELEMETRY_DISABLED=1`).
+Runtime env: `API_INTERNAL_URL`, `WEB_REVALIDATE_SECONDS`, `WEB_STATUS_PAGE_ENABLED`
+(`/status` is served only when `true`), `WEB_PORT` (default 8080). `HEALTHCHECK` requests `/`. Telemetry is off (`NEXT_TELEMETRY_DISABLED=1`).
 
 ## Scripts
 

@@ -47,6 +47,7 @@ export function reviewerAlertOf(failure: ApiFailure): ReviewerAlert {
     case 'http':
       switch (failure.errorCode) {
         case REVIEWER_ERROR_CODES.DISABLED:
+        case REVIEWER_ERROR_CODES.FEATURE_OFF:
           return warn(copy.disabled, false);
         case REVIEWER_ERROR_CODES.UNAVAILABLE:
           return warn(copy.unavailable);
