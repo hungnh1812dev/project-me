@@ -5,6 +5,7 @@ import { TWO_FACTOR_TEST_TIMEOUT_MS } from '../src/E2e.constants';
 import { e2eEnv } from '../src/E2e.env';
 import { mailIdsFor, waitForCode } from '../src/Mailpit.client';
 import { freshTotpCode } from '../src/Totp.fixture';
+import { expectNoViolation, watchCsp } from '../src/CspWatch.fixture';
 import { labelStartingWith } from '../src/Locators.fixture';
 import { expectSignedIn, submitLogin } from '../src/Session.fixture';
 
@@ -65,6 +66,7 @@ test('an account turns on TOTP, signs in with it, switches to email codes and ch
   context,
 }) => {
   test.setTimeout(TWO_FACTOR_TEST_TIMEOUT_MS);
+  const readViolations = await watchCsp(page);
 
   // Login 1: password only.
   await submitLogin(page, e2eEnv.twoFactorEmail, e2eEnv.twoFactorPassword);
@@ -80,6 +82,7 @@ test('an account turns on TOTP, signs in with it, switches to email codes and ch
   await expect(
     setup.getByRole('img', { name: security.totpSetup.qrLabel }),
   ).toBeVisible();
+  await expectNoViolation(readViolations, 'the 2FA set-up dialog');
   const shownSecret =
     (await setup.getByTestId('totp-secret').textContent()) ?? '';
   const secret = shownSecret.replaceAll(' ', '');
