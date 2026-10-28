@@ -1,3 +1,4 @@
+import './app/Zod.setup';
 import './styles/app.css';
 
 import { CSP_NONCE_META_NAME } from '@abyss/form-commons';

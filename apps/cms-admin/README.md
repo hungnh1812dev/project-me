@@ -296,3 +296,8 @@ content depends on the measured scrollbar width, so a fixed sha256 hash would
 differ per OS/browser. nginx uses `$request_id` (128 random bits) as the nonce
 and adds `<meta name="csp-nonce">` to the HTML shell (`sub_filter`);
 `src/main.tsx` hands it to react-remove-scroll-bar through `get-nonce`.
+
+The CSP has no `'unsafe-eval'`, so the bundle must not use `eval` or
+`new Function`. Zod runs with `jitless` for that reason: its eval probe would
+log a CSP violation on every page (`src/app/Zod.setup.ts`, imported first in
+`src/main.tsx`, ADR 0015).
