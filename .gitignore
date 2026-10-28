@@ -32,3 +32,6 @@ __pycache__/
 
 # Agent state (local to this machine, never committed)
 .claude/state/
+
+# Task files (local planning, never committed)
+tasks/
