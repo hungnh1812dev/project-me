@@ -1,0 +1,7 @@
+{
+  "slug": "common-text",
+  "name": "Common Text",
+  "kind": "single",
+  "draftToPublish": true,
+  "fields": [{ "name": "text", "type": "json" }]
+}

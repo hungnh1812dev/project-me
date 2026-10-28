@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>cms-api architecture</title>
+<link rel="stylesheet" href="assets/architecture.css">
+</head>
+<body>
+<div class="layout">
+<nav class="side" aria-label="Architecture pages">
+<div class="brand">Abyss architecture<small>Headless CMS + portfolio monorepo</small></div>
+<a href="project-architecture.html">Overview<small>Master page: system map and reading order</small></a><a href="01-system-overview.html">System &amp; monorepo<small>Actors, apps, packages, tech stack</small></a><a href="02-cms-api-architecture.html" class="active">cms-api architecture<small>Clean-architecture layers, module graph, pipeline, errors</small></a><a href="03-cms-api-platform.html">cms-api platform<small>common, config, infrastructure, architecture guards</small></a><a href="04-modules-access-identity.html">Access &amp; identity modules<small>access core, security-audit, identity, management, document-auth</small></a><a href="05-modules-content.html">Content modules<small>content-engine, content-types, documents, graphql, media, reviewer, health</small></a><a href="06-data-model.html">Data model &amp; classes<small>ER diagrams, ports and adapters class diagrams</small></a><a href="07-flows.html">Sequences &amp; flows<small>Login, refresh, setup, publish, GraphQL, media, reviewer</small></a><a href="08-frontends.html">Frontends &amp; packages<small>cms-admin, web, form-commons, base-config, e2e</small></a><a href="09-deployment-production.html">Production<small>K3s + Traefik, images, CI/CD, secrets, backups</small></a><a href="10-local-setup.html">Local setup<small>Dev servers, env files, migrations, owner, smoke stack, tests</small></a>
+</nav>
+<main>
+<h1>cms-api architecture</h1>
+<p class="lead">How the API is organised: layers inside modules, the module graph, the request pipeline, errors and transactions.</p>
+
+<h2 id="style">Style: modular monolith + clean architecture</h2>
+<p>One NestJS process. Business features are <b>modules</b> under <code>src/modules/</code>; each module is split into <b>layers</b> (ADR 0006). Dependencies point inward: HTTP, CLI and jobs call use cases; use cases depend on domain rules and on <b>ports</b> (interfaces + DI tokens); adapters implement those ports with Prisma, Kysely or SDKs; the module file binds ports to adapters. Modules talk to each other only through their <code>index.ts</code> facade and only along the allowed edges.</p>
+<div class="diagram"><p class="cap">Layers inside one module. Dashed: adapters implement the ports declared in application/.</p><pre class="mermaid">flowchart TB
+  subgraph mod[&quot;src/modules/‹module›&quot;]
+    http[&quot;http/&lt;br/&gt;controllers, guards, Zod *.requests.ts,&lt;br/&gt;response mapping&quot;]
+    cli[&quot;cli/&lt;br/&gt;CLI entry points&quot;]
+    jobs[&quot;jobs/&lt;br/&gt;interval jobs&quot;]
+    app[&quot;application/&lt;br/&gt;use cases + ports (interfaces, DI tokens)&quot;]
+    dom[&quot;domain/&lt;br/&gt;entities, rules, domain errors&lt;br/&gt;plain TypeScript&quot;]
+    adp[&quot;adapters/&lt;br/&gt;Prisma / Kysely repositories,&lt;br/&gt;Cloudinary, sharp, Turnstile ...&quot;]
+    wire[&quot;‹Module›.module.ts + index.ts&lt;br/&gt;Nest wiring + public facade&quot;]
+  end
+  plat[&quot;platform: common/ config/ infrastructure/&quot;]
+  other[&quot;other modules (via index.ts only)&quot;]
+  http --&gt; app
+  http --&gt; dom
+  cli --&gt; app
+  cli --&gt; adp
+  jobs --&gt; app
+  app --&gt; dom
+  adp -. &quot;implements ports&quot; .-&gt; app
+  adp --&gt; dom
+  wire --&gt; http
+  wire --&gt; adp
+  wire --&gt; app
+  app --&gt; other
+  http --&gt; other
+  app --&gt; plat
+  adp --&gt; plat</pre></div>
+<h3>Layer rules (SPEC §2, <code>LayerRules.constants.ts</code>)</h3>
+<div class="tbl"><table><thead><tr><th>Layer</th><th>May import</th><th>Must not import</th></tr></thead><tbody><tr><td><code>domain/</code></td><td>own <code>domain/</code>; other facades with <code>import type</code> only (except named pure helpers); pure platform; packages <code>zod</code>, <code>sanitize-html</code>, <code>createHash</code></td><td><code>process.env</code>, <code>new Date()</code>, <code>Date.now(</code>, any other package</td></tr><tr><td><code>application/</code></td><td>own domain + application, other facades (not their http exports), pure platform, platform ports, <code>config/</code>; from Nest only <code>Injectable</code>, <code>Inject</code></td><td><code>express</code>, <code>@prisma/*</code>, <code>src/generated</code>, <code>kysely</code>, <code>pg</code>, <code>passport*</code>, <code>process.env</code>, time calls</td></tr><tr><td><code>adapters/</code></td><td>own domain / application / adapters, facades, platform ports and adapters, <code>config/</code>, <code>src/generated</code>, any package</td><td>own <code>http/</code></td></tr><tr><td><code>http/</code></td><td>own domain / application / http, facades incl. exported guards, HTTP pipeline, <code>config/</code></td><td><code>@prisma/*</code>, <code>kysely</code>, <code>pg</code></td></tr><tr><td><code>cli/</code></td><td>own domain / application / adapters / cli, facades, platform adapters, any package (builds adapters and hands them to use cases)</td><td>own <code>http/</code></td></tr><tr><td><code>jobs/</code></td><td>own domain / application / jobs, facades, <code>infrastructure/scheduling</code>; Nest <code>Injectable</code>, <code>Inject</code>, <code>Logger</code>, lifecycle hooks</td><td><code>express</code>, <code>@prisma/*</code>, <code>kysely</code>, <code>pg</code>, <code>passport*</code></td></tr><tr><td>wiring</td><td>anything in the module</td><td>a facade never exports <code>adapters/</code> (except <code>loadDefinitions</code>)</td></tr></tbody></table></div>
+<h3>Platform folders by role</h3>
+<div class="tbl"><table><thead><tr><th>Role</th><th>Folders</th></tr></thead><tbody><tr><td>pure</td><td><code>common/{constants,errors,time,types,validation}</code></td></tr><tr><td>HTTP pipeline</td><td><code>common/{http,middleware,filters,guards,rate-limit}</code></td></tr><tr><td>ports</td><td><code>infrastructure/**/*.port.ts</code></td></tr><tr><td>job runner</td><td><code>infrastructure/scheduling/</code></td></tr><tr><td>adapters</td><td>every other <code>infrastructure/</code> file</td></tr></tbody></table></div>
+
+<h2 id="modules">Module dependency graph</h2>
+<p>Read live from <code>ALLOWED_MODULE_EDGES</code>. Every module also depends on <code>platform</code> (not drawn). Dashed = <code>import type</code> only. <code>content-types</code> and <code>media</code> may use only <code>JwtAuthGuard</code> and <code>AuthenticatedRequest</code> from identity.</p>
+<div class="diagram"><p class="cap">Arrow = may import (through index.ts). Edges implied by a longer path are left out of the picture; the table below lists every allowed edge. No cycles.</p><pre class="mermaid">flowchart BT
+  content_engine[&quot;content-engine&quot;]
+  health[&quot;health&quot;]
+  access_core[&quot;access core&quot;]
+  security_audit[&quot;security-audit&quot;]
+  identity[&quot;identity&quot;]
+  access_management[&quot;access management&quot;]
+  access_document_auth[&quot;access document-auth&quot;]
+  content_types[&quot;content-types&quot;]
+  media[&quot;media&quot;]
+  documents[&quot;documents&quot;]
+  graphql[&quot;graphql&quot;]
+  reviewer[&quot;reviewer&quot;]
+  access_core --&gt; content_engine
+  security_audit -.-&gt; access_core
+  identity --&gt; security_audit
+  access_management --&gt; identity
+  access_document_auth --&gt; identity
+  content_types --&gt; identity
+  media --&gt; identity
+  documents --&gt; access_document_auth
+  documents --&gt; media
+  graphql --&gt; documents
+  reviewer --&gt; identity
+  backups --&gt; identity</pre></div>
+<div class="tbl"><table><thead><tr><th>Module</th><th>Responsibility</th><th>Depends on</th></tr></thead><tbody><tr><td>platform</td><td><code>common/ config/ infrastructure/ generated/</code></td><td>Pipeline, config, shared ports and adapters</td></tr><tr><td>content-engine</td><td>JSON schema → definition → SQL migrations, tree repository</td><td>platform</td></tr><tr><td>health</td><td>Liveness / readiness</td><td>platform</td></tr><tr><td>access core</td><td>Policy evaluation, actor context, roles, masking, serializer, guards</td><td>platform, content-engine</td></tr><tr><td>security-audit</td><td>Always-on audit log (D15)</td><td>platform, access core (types only)</td></tr><tr><td>identity</td><td>Owner setup, login, refresh, OTP, TOTP, password, CLIs</td><td>platform, access core, security-audit</td></tr><tr><td>access management</td><td>Accounts, roles, API tokens admin</td><td>platform, access core, identity, security-audit</td></tr><tr><td>access document-auth</td><td>DocumentAuthGuard: JWT, API token or anonymous</td><td>platform, access core, identity</td></tr><tr><td>content-types</td><td>Read-only catalog filtered by permissions</td><td>platform, content-engine, access core, identity (auth guard only)</td></tr><tr><td>media</td><td>Upload pipeline, library, references, safe delete</td><td>platform, content-engine, access core, identity (auth guard only), security-audit</td></tr><tr><td>documents</td><td>CRUD, OCC 409, publish, presence, bulk</td><td>platform, content-engine, access core, document-auth, media</td></tr><tr><td>graphql</td><td>Read-only GraphQL over document reads</td><td>platform, content-engine, access core, document-auth, documents</td></tr><tr><td>reviewer</td><td>Reviewer toggle, sessions, cleanup</td><td>platform, access core, identity, security-audit</td></tr></tbody></table></div>
+<p>Composition root: <code>App.module.ts</code> imports Config, Clock, Logging, ClientIp, RateLimit and the feature modules Health, Identity, AccessManagement, ContentTypes, Documents, Graphql, Media, Reviewer (each imports what it needs below it).</p>
+
+<h2 id="pipeline">Request pipeline</h2>
+<div class="diagram"><p class="cap">configureApp() in App.setup.ts is shared by main.ts and the integration tests, so tests run the production pipeline.</p><pre class="mermaid">flowchart LR
+  req([&quot;HTTP request&quot;]) --&gt; sh[&quot;securityHeaders&lt;br/&gt;CSP, HSTS, nosniff&quot;] --&gt; rid[&quot;requestId&quot;] --&gt; ck[&quot;cookieParser&quot;]
+  ck --&gt; bl[&quot;body limits&lt;br/&gt;/graphql 32 KiB, bulk 1 MB&quot;] --&gt; cors[&quot;CORS&lt;br/&gt;admin origin only&quot;] --&gt; nest[&quot;Nest router&lt;br/&gt;prefix /api/v1&quot;]
+  nest --&gt; guards[&quot;Guards&lt;br/&gt;Throttle, Jwt / DocumentAuth / ApiToken,&lt;br/&gt;Permission, AllowedOrigin&quot;]
+  guards --&gt; ctl[&quot;Controller&lt;br/&gt;Zod request parsing&quot;] --&gt; uc[&quot;Use case&lt;br/&gt;application/&quot;]
+  uc --&gt; dom[&quot;domain rules&quot;]
+  uc --&gt; ports[&quot;ports&quot;]
+  ports -.-&gt; adapters[&quot;adapters&lt;br/&gt;Prisma / Kysely / SDKs&quot;]
+  ctl --&gt; ok([&quot;response body&quot;])
+  uc --&gt;|&quot;DomainError&quot;| filter[&quot;HttpExceptionFilter&quot;]
+  guards --&gt;|&quot;401 / 403 / 404 / 429&quot;| filter
+  filter --&gt; err([&quot;statusCode, errorCode,&lt;br/&gt;message, details, requestId&quot;])</pre></div>
+
+<h2 id="errors">Error model</h2>
+<p>Domain and application code throw <code>DomainError</code> (<code>common/errors/Domain.errors.ts</code>) with a kind and an <code>errorCode</code>; they never throw Nest HTTP exceptions. <code>HttpExceptionFilter</code> maps every error to one body: <code>{ statusCode, errorCode, message, details?, requestId }</code>. GraphQL keeps its own envelope but reuses the same codes.</p>
+
+<h2 id="tx">Transactions, audit and afterCommit</h2>
+<p>Two runners behind one port: <code>CORE_TRANSACTION_RUNNER</code> (Prisma, schema <code>public</code>) and <code>CONTENT_TRANSACTION_RUNNER</code> (Kysely, schema <code>content</code>). Security audit rows are written with the same unit of work, so an action and its audit row commit together (D15). Side effects that must not run on rollback (cache invalidation, activity tracking) are registered with <code>afterCommit</code>.</p>
+<div class="diagram"><pre class="mermaid">sequenceDiagram
+  participant UC as Use case
+  participant TR as TransactionRunner port
+  participant AD as Prisma or Kysely runner
+  participant DB as PostgreSQL
+  participant AC as afterCommit callbacks
+  UC-&gt;&gt;TR: run(work)
+  TR-&gt;&gt;AD: begin transaction
+  AD-&gt;&gt;DB: BEGIN
+  AD-&gt;&gt;UC: work(unit of work)
+  UC-&gt;&gt;AD: repository calls with the same unit
+  UC-&gt;&gt;AD: audit.record(unit, row) in the same transaction
+  UC-&gt;&gt;AC: unit.afterCommit(cache invalidation, activity)
+  AD-&gt;&gt;DB: COMMIT
+  AD-&gt;&gt;AC: run callbacks only after commit
+  AD--&gt;&gt;UC: result</pre></div>
+
+<h2 id="guards">How the rules are enforced</h2>
+<p>The architecture specs in <code>test/architecture/</code> parse the import graph and fail the build on any edge or layer violation, unknown file name, unguarded handler or hard-coded role slug:</p>
+<ul class="toc"><li><code>Comments.architecture.spec.ts</code></li><li><code>CommonOwnership.architecture.spec.ts</code></li><li><code>ControllerHandlers.analyzer.spec.ts</code></li><li><code>ErrorBody.contract.spec.ts</code></li><li><code>FacadeReexports.architecture.spec.ts</code></li><li><code>FieldTypeBranches.architecture.spec.ts</code></li><li><code>Graphql.architecture.spec.ts</code></li><li><code>IdentityCli.architecture.spec.ts</code></li><li><code>ImportGraph.analyzer.spec.ts</code></li><li><code>Layers.architecture.spec.ts</code></li><li><code>Modules.architecture.spec.ts</code></li><li><code>PermissionMetadata.architecture.spec.ts</code></li><li><code>RateLimitPolicies.architecture.spec.ts</code></li><li><code>RecordSerializer.architecture.spec.ts</code></li><li><code>SecurityAuditProvider.architecture.spec.ts</code></li><li><code>SessionOwnership.architecture.spec.ts</code></li><li><code>SystemRoleLiterals.architecture.spec.ts</code></li></ul>
+
+<footer>Generated 2026-10-26 from the working tree of <code>abyss</code> (file lists and the module graph are read from the code; descriptions come from SPEC.md, the ADRs, docs/ and the source). File names follow ADR 0008 and were being renamed on the day this was generated, so re-generate after big renames: <code>pnpm docs:architecture</code>.</footer>
+</main>
+</div>
+<script type="module">
+import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11.4.1/dist/mermaid.esm.min.mjs';
+const theme = document.documentElement.dataset.theme
+  || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+mermaid.initialize({
+  startOnLoad: false,
+  theme: theme === 'dark' ? 'dark' : 'neutral',
+  securityLevel: 'strict',
+  flowchart: { curve: 'basis', useMaxWidth: true },
+  sequence: { showSequenceNumbers: true, useMaxWidth: true, wrap: true },
+  er: { useMaxWidth: true },
+  class: { useMaxWidth: true },
+});
+await mermaid.run({ querySelector: 'pre.mermaid' });
+for (const input of document.querySelectorAll('input.filter')) {
+  const target = document.getElementById(input.dataset.target);
+  input.addEventListener('input', () => {
+    const q = input.value.trim().toLowerCase();
+    for (const row of target.querySelectorAll('tbody tr')) {
+      row.hidden = q !== '' && !row.textContent.toLowerCase().includes(q);
+    }
+  });
+}
+</script>
+</body>
+</html>

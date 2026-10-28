@@ -1,0 +1,144 @@
+import {
+  type BrowserContext,
+  expect,
+  type Page,
+  type Request,
+  test,
+} from '@playwright/test';
+
+import {
+  ADMIN_COPY,
+  PRESENCE_HEARTBEAT_MS,
+  contentNewPath,
+} from '../src/Apps.contract';
+import { e2eEnv } from '../src/E2e.env';
+import { signInAs } from '../src/Session.fixture';
+import { RUN_ID, CV_PAGE_SLUG } from '../src/E2e.constants';
+import { API_PATHS } from '../src/Api.endpoints';
+import { inviteAccount } from '../src/Accounts.fixture';
+
+const copy = ADMIN_COPY.content;
+const EDIT_URL = /\/content\/cv-page\/[0-9a-f-]{36}$/;
+const BEAT_WAIT_MS = PRESENCE_HEARTBEAT_MS + 10_000;
+/** Server TTL (45 s) plus one beat plus slack. */
+const EXPIRY_WAIT_MS = 45_000 + PRESENCE_HEARTBEAT_MS + 10_000;
+const TEST_TIMEOUT_MS = 180_000;
+const EDITOR_EMAIL = `e2e-presence-${RUN_ID}@domain.localhost`;
+const EDITOR_NAME = `Presence ${RUN_ID}`;
+const EDITOR_PASSWORD = `${e2eEnv.ownerPassword.slice(0, 40)}-presence`;
+const ALSO_ON = /is also on this document\.$/;
+
+const isBeat = (request: Request) =>
+  request.url().includes(API_PATHS.PRESENCE_SEGMENT) &&
+  request.method() === 'POST';
+
+function recordBeats(page: Page) {
+  const beats: Request[] = [];
+  const onRequest = (request: Request) => {
+    if (isBeat(request)) beats.push(request);
+  };
+  page.on('request', onRequest);
+  return { beats, stop: () => page.off('request', onRequest) };
+}
+
+const banner = (page: Page) => page.getByText(ALSO_ON);
+const position = (page: Page) => page.getByLabel('Position', { exact: true });
+
+async function open(page: Page, url: string) {
+  await page.goto(url);
+  await expect(position(page)).toBeVisible();
+}
+
+test.describe.serial('presence banner (cv-page, two accounts)', () => {
+  test.setTimeout(TEST_TIMEOUT_MS);
+  let ownerContext: BrowserContext;
+  let editorContext: BrowserContext;
+  let owner: Page;
+  let editor: Page;
+  let editUrl = '';
+  const consoleProblems: string[] = [];
+
+  test.beforeAll(async ({ browser }) => {
+    ownerContext = await browser.newContext();
+    owner = await ownerContext.newPage();
+    owner.on('pageerror', (error) => consoleProblems.push(error.message));
+    await signInAs(owner, e2eEnv.ownerEmail, e2eEnv.ownerPassword);
+  });
+
+  test.afterAll(async () => {
+    await editorContext?.close();
+    await ownerContext.close();
+  });
+
+  test('setup: a draft and a second account that can edit it', async ({
+    browser,
+  }) => {
+    await owner.goto(contentNewPath(CV_PAGE_SLUG));
+    await position(owner).fill(`Presence ${RUN_ID}`);
+    await owner.keyboard.press('Enter');
+    await expect(owner).toHaveURL(EDIT_URL);
+    editUrl = owner.url();
+
+    editor = await inviteAccount(
+      owner,
+      browser,
+      {
+        email: EDITOR_EMAIL,
+        name: EDITOR_NAME,
+        role: 'Admin',
+        password: EDITOR_PASSWORD,
+      },
+      (message) => consoleProblems.push(message),
+    );
+    editorContext = editor.context();
+    await signInAs(editor, EDITOR_EMAIL, EDITOR_PASSWORD);
+  });
+
+  test('a single session sees no banner and sends one empty beat per period', async () => {
+    const recorder = recordBeats(owner);
+    await open(owner, editUrl);
+    await expect.poll(() => recorder.beats.length).toBeGreaterThanOrEqual(1);
+    expect(recorder.beats[0]?.postData() ?? '{}').toBe('{}');
+    await expect(banner(owner)).toHaveCount(0);
+    await expect(owner.getByRole('alert')).toHaveCount(0);
+    recorder.stop();
+  });
+
+  test('two sessions see each other, never themselves', async () => {
+    await open(editor, editUrl);
+    await expect(banner(owner)).toContainText(EDITOR_NAME, {
+      timeout: BEAT_WAIT_MS,
+    });
+    await expect(banner(editor)).toBeVisible();
+    await expect(banner(editor)).not.toContainText(EDITOR_NAME);
+  });
+
+  test('leaving the page stops the beats; the other banner expires', async () => {
+    const recorder = recordBeats(editor);
+    await editor.goto(`/content/${CV_PAGE_SLUG}`);
+    await editor.waitForLoadState('networkidle');
+    const before = recorder.beats.length;
+    await editor.waitForTimeout(BEAT_WAIT_MS);
+    expect(recorder.beats.length).toBe(before);
+    recorder.stop();
+    await expect(banner(owner)).toHaveCount(0, { timeout: EXPIRY_WAIT_MS });
+  });
+
+  test('a new document sends no presence request', async () => {
+    const recorder = recordBeats(owner);
+    await owner.goto(contentNewPath(CV_PAGE_SLUG));
+    await expect(position(owner)).toBeVisible();
+    await owner.waitForTimeout(copyWait());
+    expect(recorder.beats).toHaveLength(0);
+    recorder.stop();
+    expect(copy.presence.one('x')).toContain('x');
+  });
+
+  test('the console stayed free of page errors', () => {
+    expect(consoleProblems).toEqual([]);
+  });
+});
+
+function copyWait(): number {
+  return PRESENCE_HEARTBEAT_MS + 2_000;
+}

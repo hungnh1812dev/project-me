@@ -1,0 +1,380 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Data model &amp; classes</title>
+<link rel="stylesheet" href="assets/architecture.css">
+</head>
+<body>
+<div class="layout">
+<nav class="side" aria-label="Architecture pages">
+<div class="brand">Abyss architecture<small>Headless CMS + portfolio monorepo</small></div>
+<a href="project-architecture.html">Overview<small>Master page: system map and reading order</small></a><a href="01-system-overview.html">System &amp; monorepo<small>Actors, apps, packages, tech stack</small></a><a href="02-cms-api-architecture.html">cms-api architecture<small>Clean-architecture layers, module graph, pipeline, errors</small></a><a href="03-cms-api-platform.html">cms-api platform<small>common, config, infrastructure, architecture guards</small></a><a href="04-modules-access-identity.html">Access &amp; identity modules<small>access core, security-audit, identity, management, document-auth</small></a><a href="05-modules-content.html">Content modules<small>content-engine, content-types, documents, graphql, media, reviewer, health</small></a><a href="06-data-model.html" class="active">Data model &amp; classes<small>ER diagrams, ports and adapters class diagrams</small></a><a href="07-flows.html">Sequences &amp; flows<small>Login, refresh, setup, publish, GraphQL, media, reviewer</small></a><a href="08-frontends.html">Frontends &amp; packages<small>cms-admin, web, form-commons, base-config, e2e</small></a><a href="09-deployment-production.html">Production<small>K3s + Traefik, images, CI/CD, secrets, backups</small></a><a href="10-local-setup.html">Local setup<small>Dev servers, env files, migrations, owner, smoke stack, tests</small></a>
+</nav>
+<main>
+<h1>Data model &amp; classes</h1>
+<p class="lead">Entity-relationship diagrams for both database schemas, and class diagrams showing how use cases, ports and adapters fit together.</p>
+
+<h2 id="core">Core schema <code>public</code> (Prisma)</h2>
+<p>Every table has <code>id</code>, <code>created_at</code>, <code>updated_at</code>; user-facing tables also have a UUIDv7 <code>document_id</code>. <code>created_by</code> / <code>updated_by</code> reference accounts with <code>ON DELETE SET NULL</code>. A partial unique index allows exactly one live owner (D1). Source: <code>apps/cms-api/prisma/schema.prisma</code>.</p>
+<div class="diagram"><p class="cap">Main columns only.</p><pre class="mermaid">erDiagram
+  ROLES ||--o{ ACCOUNTS : &quot;role_id + role_slug (composite FK)&quot;
+  ROLES ||--o{ PERMISSIONS : grants
+  ACCOUNTS ||--o{ REFRESH_TOKENS : owns
+  REFRESH_TOKENS |o--o{ REFRESH_TOKENS : replaced_by
+  ACCOUNTS ||--o{ OTP_CODES : has
+  ACCOUNTS ||--o{ API_TOKENS : creates
+  ACCOUNTS ||--o{ REVIEWER_SESSIONS : &quot;ephemeral reviewer&quot;
+  ACCOUNTS |o--o{ FILE_LIBRARY : created_by
+  ACCOUNTS |o--o{ AUDIT_LOGS : actor
+  ACCOUNTS |o--o{ APP_SETTINGS : updated_by
+  ROLES {
+    int id PK
+    string slug UK
+    string name
+    int rank
+    bool is_system
+    int policy_version
+  }
+  ACCOUNTS {
+    int id PK
+    uuid document_id UK
+    citext email UK
+    string password_hash
+    string display_name
+    int role_id FK
+    string role_slug FK
+    enum status
+    int token_version
+    bool is_2fa_enabled
+    enum two_fa_method
+    string totp_secret_enc
+    timestamptz deleted_at
+  }
+  PERMISSIONS {
+    int id PK
+    int role_id FK
+    string subject
+    enum action
+    jsonb readable_fields
+    jsonb writable_fields
+    jsonb conditions
+  }
+  REFRESH_TOKENS {
+    int id PK
+    int account_id FK
+    uuid family_id
+    string token_hash UK
+    int replaced_by_id FK
+    timestamptz expires_at
+    timestamptz revoked_at
+  }
+  OTP_CODES {
+    int id PK
+    int account_id FK
+    enum purpose
+    string code_hmac
+    int attempts
+    timestamptz expires_at
+    timestamptz used_at
+  }
+  API_TOKENS {
+    int id PK
+    string token_prefix
+    string token_hash UK
+    int created_by_id FK
+    jsonb scope
+    timestamptz expires_at
+    timestamptz revoked_at
+  }
+  REVIEWER_SESSIONS {
+    int id PK
+    int account_id FK
+    string visitor_role
+    jsonb purpose_tags
+    string ip_hmac
+    timestamptz expires_at
+  }
+  FILE_LIBRARY {
+    int id PK
+    uuid document_id UK
+    string storage_key UK
+    string sha256
+    string mime_type
+    enum provider
+    timestamptz deleted_at
+  }
+  AUDIT_LOGS {
+    bigint id PK
+    int actor_id FK
+    enum actor_type
+    string action
+    string subject
+    jsonb metadata
+  }
+  APP_SETTINGS {
+    int id PK
+    string key UK
+    jsonb value
+  }</pre></div>
+<h2 id="content">Content schema <code>content</code> (generated, Kysely)</h2>
+<p>Generated from <code>content/schemas/*.json</code>. A root table per type with <code>version</code> and <code>published_at</code>: at most one draft (<code>published_at IS NULL</code>) and one published row per <code>document_id</code> (partial unique indexes, D11). Components are tables <code>&lt;slug&gt;__&lt;path&gt;</code> (max depth 3) owned by their parent with <code>ON DELETE CASCADE</code>; no link tables. The registry lives in <code>content._content_types</code>, applied migrations in <code>content._migrations</code>.</p>
+<div class="diagram"><p class="cap">cv-page produces 8 tables (root + 7 component tables); profile is a collection with a media field.</p><pre class="mermaid">erDiagram
+  CONTENT_TYPES_REGISTRY ||--o{ CV_PAGE : defines
+  CONTENT_TYPES_REGISTRY ||--o{ PROFILE : defines
+  CV_PAGE ||--o{ CV_PAGE__SKILL : parent_id
+  CV_PAGE ||--o{ CV_PAGE__EXPERIENCE : parent_id
+  CV_PAGE__EXPERIENCE ||--o{ CV_PAGE__EXPERIENCE__ROLE : parent_id
+  CV_PAGE ||--o{ CV_PAGE__PROJECT : parent_id
+  CV_PAGE ||--o{ CV_PAGE__EDUCATION : parent_id
+  CV_PAGE ||--o{ CV_PAGE__LANGUAGE : parent_id
+  CV_PAGE ||--o{ CV_PAGE__REFERENCE : parent_id
+  CONTENT_TYPES_REGISTRY {
+    string slug UK
+    enum kind
+    bool draft_and_publish
+    jsonb definition
+    string definition_hash
+  }
+  CONTENT_MIGRATIONS {
+    string name PK
+    string checksum
+    timestamptz applied_at
+  }
+  CV_PAGE {
+    int id PK
+    uuid document_id
+    int version
+    timestamptz published_at
+    string locale
+    string fields &quot;from cv-page.json&quot;
+  }
+  CV_PAGE__EXPERIENCE {
+    int id PK
+    uuid component_uid
+    int parent_id FK
+    int order_index
+    string fields
+  }
+  CV_PAGE__EXPERIENCE__ROLE {
+    int id PK
+    uuid component_uid
+    int parent_id FK
+    int order_index
+  }
+  PROFILE {
+    int id PK
+    uuid document_id
+    int version
+    timestamptz published_at
+    string name
+    uuid photo &quot;media&quot;
+  }</pre></div>
+<h2 id="classes">Class diagrams: ports and adapters</h2>
+<h3>documents</h3>
+<div class="diagram"><p class="cap">Use cases depend on interfaces (ports); Kysely adapters implement them. Bound in Documents.module.ts.</p><pre class="mermaid">classDiagram
+  direction LR
+  class DocumentsController
+  class DocumentsCommandService {
+    create()
+    update()
+  }
+  class DocumentsQueryService {
+    list()
+    get()
+  }
+  class PublishService {
+    publish()
+    unpublish()
+    remove()
+  }
+  class AccessPolicyService {
+    policy()
+  }
+  class ContentRegistry {
+    registry()
+  }
+  class DocumentRepository {
+    &lt;&lt;interface&gt;&gt;
+    lockRow()
+    loadTrees()
+    insertTree()
+    deleteRows()
+  }
+  class TransactionRunner {
+    &lt;&lt;interface&gt;&gt;
+    run(work)
+  }
+  class ActivityRecorder {
+    &lt;&lt;interface&gt;&gt;
+  }
+  class KyselyDocumentRepository
+  class KyselyContentTransactionRunner
+  class Clock
+  DocumentsController --&gt; DocumentsCommandService
+  DocumentsController --&gt; DocumentsQueryService
+  DocumentsController --&gt; PublishService
+  PublishService --&gt; AccessPolicyService
+  PublishService --&gt; ContentRegistry
+  PublishService --&gt; DocumentRepository
+  PublishService --&gt; TransactionRunner
+  PublishService --&gt; ActivityRecorder
+  PublishService --&gt; Clock
+  KyselyDocumentRepository ..|&gt; DocumentRepository
+  KyselyContentTransactionRunner ..|&gt; TransactionRunner</pre></div>
+<h3>identity</h3>
+<div class="diagram"><p class="cap">AuditRecorder is bound to SecurityAuditService with useExisting in Identity.module.ts.</p><pre class="mermaid">classDiagram
+  direction LR
+  class AuthController
+  class AuthService {
+    login()
+    startSession()
+    refresh()
+    logout()
+    me()
+  }
+  class RefreshTokenService {
+    issue()
+    rotate()
+    revokeFamilyOf()
+  }
+  class AccessTokenService {
+    signAccessToken()
+    signTwoFactorTempToken()
+    signReviewerSessionToken()
+  }
+  class SecurityAuditService {
+    record()
+    recordStandalone()
+    emailHmac()
+  }
+  class AccountRepository {
+    &lt;&lt;interface&gt;&gt;
+  }
+  class RefreshTokenRepository {
+    &lt;&lt;interface&gt;&gt;
+  }
+  class AuditRecorder {
+    &lt;&lt;interface&gt;&gt;
+  }
+  class TransactionRunner {
+    &lt;&lt;interface&gt;&gt;
+  }
+  AuthController --&gt; AuthService
+  AuthService --&gt; AccountRepository
+  AuthService --&gt; TransactionRunner
+  AuthService --&gt; AccessTokenService
+  AuthService --&gt; RefreshTokenService
+  AuthService --&gt; SecurityAuditService
+  RefreshTokenService --&gt; RefreshTokenRepository
+  PrismaAccountRepository ..|&gt; AccountRepository
+  PrismaRefreshTokenRepository ..|&gt; RefreshTokenRepository
+  SecurityAuditService ..|&gt; AuditRecorder
+  PrismaTransactionRunner ..|&gt; TransactionRunner</pre></div>
+<h3>media</h3>
+<div class="diagram"><p class="cap">MediaStorage is Cloudinary in production and the in-memory fake in development and tests (MEDIA_PROVIDER).</p><pre class="mermaid">classDiagram
+  direction LR
+  class MediaController
+  class UploadMediaService {
+    upload()
+  }
+  class MediaLibraryService {
+    list()
+    updateAlt()
+    remove()
+  }
+  class PurgeDeletedMediaService {
+    run()
+  }
+  class MediaPurgeJob
+  class UploadProcessor {
+    &lt;&lt;interface&gt;&gt;
+    receive()
+    prepare()
+  }
+  class MediaStorage {
+    &lt;&lt;interface&gt;&gt;
+    put()
+    delete()
+  }
+  class MediaRepository {
+    &lt;&lt;interface&gt;&gt;
+  }
+  class MediaReferenceChecker {
+    &lt;&lt;interface&gt;&gt;
+  }
+  MediaController --&gt; UploadMediaService
+  MediaController --&gt; MediaLibraryService
+  MediaPurgeJob --&gt; PurgeDeletedMediaService
+  UploadMediaService --&gt; UploadProcessor
+  UploadMediaService --&gt; MediaStorage
+  UploadMediaService --&gt; MediaRepository
+  MediaLibraryService --&gt; MediaReferenceChecker
+  MediaLibraryService --&gt; MediaRepository
+  PurgeDeletedMediaService --&gt; MediaStorage
+  UploadProcessingAdapter ..|&gt; UploadProcessor
+  CloudinaryAdapter ..|&gt; MediaStorage
+  FakeAdapter ..|&gt; MediaStorage
+  PrismaMediaRepository ..|&gt; MediaRepository
+  MediaReferenceAdapter ..|&gt; MediaReferenceChecker</pre></div>
+<h3>access: the policy core (domain)</h3>
+<div class="diagram"><p class="cap">Pure domain rules: one decision point (PolicyEvaluator), one serializer for every payload that carries record data (D3).</p><pre class="mermaid">classDiagram
+  class ActorContext {
+    kind
+    roleSlug
+    roleRank
+  }
+  class PolicyEvaluator {
+    can(actor, action, subject)
+    rowFilter(actor, action, subject)
+  }
+  class FieldProjection
+  class RecordSerializer {
+    serialize(record)
+    maskedFields
+  }
+  class WriteAllowlist
+  class Conditions {
+    validate(dsl)
+    compile(dsl)
+  }
+  PolicyEvaluator --&gt; ActorContext
+  PolicyEvaluator --&gt; Conditions
+  FieldProjection --&gt; PolicyEvaluator
+  RecordSerializer --&gt; FieldProjection
+  WriteAllowlist --&gt; PolicyEvaluator</pre></div>
+<h2 id="dsl">Conditions DSL (ABAC)</h2>
+<pre class="code">{ "all": [ { "field": "createdBy", "op": "eq", "value": "$actor.id" },
+           { "field": "&lt;readable field&gt;", "op": "in", "value": [..] } ] }</pre>
+<p>Operators <code>eq</code>, <code>ne</code>, <code>in</code>; variables <code>$actor.id</code>, <code>$actor.roleRank</code>. Anything else is rejected when the permission is saved; conditions compile to parameterized SQL only.</p>
+
+<footer>Generated 2026-10-26 from the working tree of <code>abyss</code> (file lists and the module graph are read from the code; descriptions come from SPEC.md, the ADRs, docs/ and the source). File names follow ADR 0008 and were being renamed on the day this was generated, so re-generate after big renames: <code>pnpm docs:architecture</code>.</footer>
+</main>
+</div>
+<script type="module">
+import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11.4.1/dist/mermaid.esm.min.mjs';
+const theme = document.documentElement.dataset.theme
+  || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+mermaid.initialize({
+  startOnLoad: false,
+  theme: theme === 'dark' ? 'dark' : 'neutral',
+  securityLevel: 'strict',
+  flowchart: { curve: 'basis', useMaxWidth: true },
+  sequence: { showSequenceNumbers: true, useMaxWidth: true, wrap: true },
+  er: { useMaxWidth: true },
+  class: { useMaxWidth: true },
+});
+await mermaid.run({ querySelector: 'pre.mermaid' });
+for (const input of document.querySelectorAll('input.filter')) {
+  const target = document.getElementById(input.dataset.target);
+  input.addEventListener('input', () => {
+    const q = input.value.trim().toLowerCase();
+    for (const row of target.querySelectorAll('tbody tr')) {
+      row.hidden = q !== '' && !row.textContent.toLowerCase().includes(q);
+    }
+  });
+}
+</script>
+</body>
+</html>

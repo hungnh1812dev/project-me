@@ -1,0 +1,63 @@
+{
+  "slug": "header",
+  "kind": "single",
+  "draftAndPublish": true,
+  "fields": [
+    {
+      "name": "name",
+      "type": "string"
+    },
+    {
+      "name": "nav",
+      "type": "component",
+      "repeatable": true,
+      "fields": [
+        {
+          "name": "title",
+          "type": "string"
+        },
+        {
+          "name": "requiresRole",
+          "type": "string"
+        },
+        {
+          "name": "link",
+          "type": "string"
+        },
+        {
+          "name": "subNavigations",
+          "type": "component",
+          "repeatable": true,
+          "fields": [
+            {
+              "name": "title",
+              "type": "string"
+            },
+            {
+              "name": "requiresRole",
+              "type": "string"
+            },
+            {
+              "name": "link",
+              "type": "string"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "author",
+      "type": "component",
+      "fields": [
+        {
+          "name": "btnLoginText",
+          "type": "string"
+        },
+        {
+          "name": "btnLogoutText",
+          "type": "string"
+        }
+      ]
+    }
+  ]
+}

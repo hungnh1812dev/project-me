@@ -1,0 +1,879 @@
+{
+  "common": {
+    "retry": "Try again"
+  },
+  "app": {
+    "name": "Abyss CMS"
+  },
+  "session": {
+    "restoring": "Restoring your session",
+    "signedInAs": "Signed in as",
+    "signOut": "Sign out",
+    "securityLink": "Security",
+    "mainNav": "Account"
+  },
+  "login": {
+    "title": "Sign in",
+    "description": "Use the email and password of your Abyss CMS account.",
+    "emailLabel": "Email",
+    "passwordLabel": "Password",
+    "submit": "Sign in",
+    "forgotPassword": "Forgot your password?",
+    "notices": {
+      "passwordReset": "Your password was reset. Sign in with the new password.",
+      "passwordSet": "Your password is set. Sign in to start using Abyss CMS.",
+      "passwordChanged": "Your password was changed and every session was signed out. Sign in with the new password.",
+      "ownerCreated": "Owner account created. Sign in, then turn on two-factor in Security settings.",
+      "setupComplete": "Setup is already complete. Sign in."
+    },
+    "setupPrompt": {
+      "message": "This console has no owner yet.",
+      "action": "Set up the owner account"
+    },
+    "validation": {
+      "emailRequired": "Enter your email address.",
+      "emailInvalid": "Enter an email like name@example.com.",
+      "passwordRequired": "Enter your password."
+    },
+    "errors": {
+      "invalidCredentials": "The email or password is incorrect. Check both and try again.",
+      "rateLimitedSeconds": "Too many sign-in attempts. Try again in SAMPLE seconds.",
+      "rateLimitedMinutes": "Too many sign-in attempts. Try again in SAMPLE minutes.",
+      "rateLimited": "Too many sign-in attempts. Wait a few minutes, then try again.",
+      "network": "Could not reach the server. Check your connection and try again.",
+      "unexpected": "Something went wrong on our side. Try again in a moment."
+    },
+    "twoFactor": {
+      "title": "Enter your verification code",
+      "totpDescription": "Open your authenticator app and enter the current code for Abyss CMS.",
+      "emailDescription": "We sent a code to the email address of this account.",
+      "emailWarning": "Anyone who can read your email can use this code. An authenticator app is safer: switch in Security settings after you sign in.",
+      "totpLabel": "Authenticator code",
+      "emailLabel": "Email code",
+      "totpHint": "6 digits. A new code appears every 30 seconds.",
+      "emailHint": "6 digits. The code works for 5 minutes.",
+      "codeInvalid": "Enter the 6-digit code.",
+      "submit": "Verify",
+      "cancel": "Cancel",
+      "resend": "Send a new code",
+      "resent": "A new code is on its way.",
+      "expired": "Your sign-in timed out or had too many wrong codes. Sign in again.",
+      "errors": {
+        "invalidCode": "That code is wrong or has expired. Check it and try again.",
+        "unsupportedMethod": "This account uses a verification method the admin console does not support. Contact the owner."
+      }
+    }
+  },
+  "setup": {
+    "title": "Set up the owner account",
+    "description": "Create the one owner account. You need the setup token from the cms-api secret (OWNER_SETUP_TOKEN).",
+    "checking": "Checking the setup status",
+    "statusFailed": "Could not check whether setup is open. Check your connection and try again.",
+    "retry": "Try again",
+    "tokenLabel": "Setup token",
+    "emailLabel": "Email",
+    "displayNameLabel": "Display name (optional)",
+    "displayNameHint": "Defaults to the part of your email before the @.",
+    "passwordLabel": "Password",
+    "passwordHint": "12 to 128 characters. A few unrelated words work well.",
+    "confirmPasswordLabel": "Repeat password",
+    "submit": "Create owner account",
+    "validation": {
+      "tokenRequired": "Enter the setup token.",
+      "emailRequired": "Enter your email address.",
+      "emailInvalid": "Enter an email like name@example.com.",
+      "displayNameTooLong": "Use at most 100 characters.",
+      "passwordTooShort": "Use at least 12 characters.",
+      "passwordTooLong": "Use at most 128 characters.",
+      "passwordsDiffer": "The two passwords do not match."
+    },
+    "errors": {
+      "tokenInvalid": "This setup token is not valid.",
+      "emailTaken": "An account with this email already exists.",
+      "rateLimited": "Too many attempts. Wait a few minutes and try again.",
+      "network": "Could not reach the server. Check your connection and try again.",
+      "unexpected": "Something went wrong on our side. Try again in a moment."
+    }
+  },
+  "password": {
+    "emailLabel": "Email",
+    "codeLabel": "Verification code",
+    "codeHint": "The 6-digit code from the email. It works for 5 minutes.",
+    "newPasswordLabel": "New password",
+    "newPasswordHint": "12 to 128 characters. A few unrelated words work well.",
+    "confirmPasswordLabel": "Confirm new password",
+    "totpLabel": "Authenticator code",
+    "totpHint": "The current code from your authenticator app.",
+    "resendCode": "Send a new code",
+    "codeResent": "If SAMPLE belongs to an account, a new code is on its way.",
+    "backToSignIn": "Back to sign in",
+    "validation": {
+      "emailRequired": "Enter your email address.",
+      "emailInvalid": "Enter an email like name@example.com.",
+      "codeInvalid": "Enter the 6-digit code from the email.",
+      "passwordTooShort": "Use at least 12 characters.",
+      "passwordTooLong": "Use at most 128 characters.",
+      "passwordsDiffer": "The two passwords do not match.",
+      "totpInvalid": "Enter the 6-digit code from your authenticator app."
+    },
+    "errors": {
+      "invalidCode": "That code is wrong or has expired. Check the latest email, or send a new code.",
+      "weakPassword": "Choose a password of 12 to 128 characters.",
+      "totpRequired": "This account also uses an authenticator app. Enter its current code to finish.",
+      "rateLimitedSeconds": "Too many attempts. Try again in SAMPLE seconds.",
+      "rateLimitedMinutes": "Too many attempts. Try again in SAMPLE minutes.",
+      "rateLimited": "Too many attempts. Wait a few minutes, then try again.",
+      "network": "Could not reach the server. Check your connection and try again.",
+      "unexpected": "Something went wrong on our side. Try again in a moment."
+    },
+    "reset": {
+      "requestTitle": "Reset your password",
+      "requestDescription": "Enter the email of your account and we will send you a code to choose a new password.",
+      "sendCode": "Send code",
+      "title": "Choose a new password",
+      "codeSent": "If SAMPLE belongs to an account, we sent a code to it. Resetting signs you out on every device.",
+      "submit": "Reset password",
+      "otherEmail": "Use a different email"
+    },
+    "set": {
+      "title": "Set your password",
+      "description": "Enter the code from your invitation email and choose a password for your account.",
+      "submit": "Set password"
+    }
+  },
+  "security": {
+    "title": "Security",
+    "description": "Protect your account with a second sign-in step and keep your password current.",
+    "twoFactor": {
+      "title": "Two-factor authentication",
+      "description": "After your password, sign-in also asks for a code. This stops someone who only knows your password.",
+      "statusLabel": "Status",
+      "statusOff": "Off",
+      "statusTotp": "On, authenticator app",
+      "statusEmail": "On, email codes",
+      "offHint": "We recommend an authenticator app such as 1Password, Google Authenticator or Microsoft Authenticator.",
+      "emailWarning": "Email codes are weaker: anyone who can read your email can sign in. To switch to an authenticator app, turn two-factor off, then set up the app.",
+      "setUpTotp": "Set up authenticator app",
+      "emailInstead": "Use email codes instead",
+      "turnOff": "Turn off two-factor",
+      "enabledTotp": "Two-factor authentication is on. Sign-in now asks for a code from your authenticator app.",
+      "enabledEmail": "Two-factor authentication is on. Sign-in now asks for a code sent to your email.",
+      "disabled": "Two-factor authentication is off. Sign-in asks only for your password."
+    },
+    "totpSetup": {
+      "title": "Set up an authenticator app",
+      "loading": "Preparing your setup key",
+      "scanStep": "1. Scan this QR code with your authenticator app.",
+      "manualKeyLabel": "Can't scan it? Enter this key instead:",
+      "qrLabel": "QR code for your authenticator app",
+      "codeStep": "2. Enter the code the app shows and your password to confirm.",
+      "submit": "Turn on",
+      "cancel": "Cancel",
+      "retry": "Try again",
+      "loadFailed": "Could not start the setup."
+    },
+    "emailSetup": {
+      "title": "Use email codes",
+      "description": "Sign-in will ask for a code we send to SAMPLE. We just sent the first one to confirm the address.",
+      "submit": "Turn on email codes",
+      "cancel": "Cancel"
+    },
+    "disable": {
+      "title": "Turn off two-factor authentication",
+      "description": "Sign-in will ask only for your password. Confirm with your password and a current code.",
+      "emailCodeSent": "We sent a code to your email.",
+      "submit": "Turn off two-factor",
+      "cancel": "Keep it on"
+    },
+    "fields": {
+      "currentPassword": "Current password",
+      "totpCode": "Authenticator code",
+      "emailCode": "Email code",
+      "totpHint": "The 6-digit code your app shows right now.",
+      "emailHint": "The 6-digit code from the email. It works for 5 minutes."
+    },
+    "resendCode": "Send a new code",
+    "codeResent": "A new code is on its way.",
+    "changePassword": {
+      "title": "Password",
+      "description": "Changing your password signs you out on every device, this one included.",
+      "submit": "Change password"
+    },
+    "validation": {
+      "passwordRequired": "Enter your current password.",
+      "codeInvalid": "Enter the 6-digit code."
+    },
+    "errors": {
+      "wrongPassword": "That password is incorrect.",
+      "invalidCode": "That code is wrong or has expired. Check it and try again.",
+      "stateChanged": "Your two-factor settings changed in another window. The page now shows the current state.",
+      "setupExpired": "The setup key was replaced. Scan the new QR code."
+    }
+  },
+  "access": {
+    "nav": {
+      "label": "Main",
+      "accounts": "Users",
+      "roles": "Roles and permissions",
+      "apiTokens": "API tokens",
+      "media": "Media",
+      "reviewer": "Reviewers",
+      "content": "Content",
+      "singleTypes": "Single types",
+      "collectionTypes": "Collection types",
+      "utilities": "Utilities",
+      "systemSettings": "System settings",
+      "menu": "Menu",
+      "closeMenu": "Close menu",
+      "loading": "Loading the menu",
+      "catalogError": "Could not load the content types.",
+      "retryCatalog": "Reload content types"
+    },
+    "errors": {
+      "network": "Could not reach the server. Check your connection and try again.",
+      "unexpected": "Something went wrong on our side. Try again in a moment.",
+      "rankForbidden": "You can only manage accounts and roles ranked below your own role.",
+      "permissionNotHeld": "You cannot grant a permission you do not hold yourself. Remove the marked permissions and save again.",
+      "scopeNotHeld": "A token can only get permissions you hold yourself. Remove the marked permissions and save again.",
+      "retry": "Try again"
+    },
+    "accounts": {
+      "title": "Accounts",
+      "description": "People who can sign in to the admin console, and the role that decides what each of them can do.",
+      "invite": "Invite account",
+      "tableLabel": "Accounts",
+      "columns": {
+        "name": "Name",
+        "role": "Role",
+        "status": "Status",
+        "twoFactor": "Two-factor",
+        "created": "Added",
+        "actions": "Actions"
+      },
+      "you": "You",
+      "status": {
+        "invited": "Invited",
+        "active": "Active",
+        "disabled": "Disabled"
+      },
+      "twoFactorOn": "On",
+      "twoFactorOff": "Off",
+      "loading": "Loading accounts",
+      "loadFailed": "Could not load the accounts.",
+      "forbidden": "Your role cannot see accounts. Ask the owner if you need access.",
+      "empty": "No accounts yet.",
+      "emptyHint": "Invite the first person who should work in Abyss CMS.",
+      "enable": "Enable",
+      "enableLabel": "Enable SAMPLE",
+      "resend": "Resend invite",
+      "resendLabel": "Resend invite to SAMPLE",
+      "enabled": "SAMPLE is enabled and can sign in again.",
+      "enabledInvited": "SAMPLE is enabled. They have not set a password yet, so resend the invite if they need a new code.",
+      "alreadyEnabled": "That account is no longer disabled. The list is updated.",
+      "resent": "New invitation sent to SAMPLE. Earlier codes no longer work.",
+      "resentNoEmail": "A new code was created for SAMPLE, but the email could not be sent. They can ask for a code on the Set password page.",
+      "notInvited": "That account already set a password, so there is nothing to resend. The list is updated.",
+      "pagination": {
+        "label": "Accounts pages",
+        "range": "SAMPLE–undefined of undefined",
+        "previous": "Previous",
+        "next": "Next"
+      },
+      "disable": "Disable",
+      "disableLabel": "Disable SAMPLE",
+      "invited": "Invitation sent to SAMPLE. They choose a password with the code from the email.",
+      "invitedNoEmail": "The account for SAMPLE was created, but the invitation email could not be sent. They can ask for a code on the Set password page.",
+      "disabled": "SAMPLE is disabled and was signed out everywhere.",
+      "alreadyDisabled": "That account was already disabled. The list is updated.",
+      "gone": "That account no longer exists. The list is updated."
+    },
+    "invite": {
+      "title": "Invite an account",
+      "description": "We email them a code to set their password. You can change their role later.",
+      "emailLabel": "Email",
+      "displayNameLabel": "Display name",
+      "displayNameHint": "Shown in the admin console, for example \"Linh Pham\".",
+      "roleLabel": "Role",
+      "rolePlaceholder": "Choose a role",
+      "roleHint": "Only roles ranked below yours are listed.",
+      "submit": "Send invitation",
+      "cancel": "Cancel",
+      "validation": {
+        "emailRequired": "Enter their email address.",
+        "emailInvalid": "Enter an email like name@example.com.",
+        "emailTooLong": "Use at most 254 characters.",
+        "displayNameRequired": "Enter the name to show for them.",
+        "displayNameTooLong": "Use at most 100 characters.",
+        "roleRequired": "Choose the role they get."
+      },
+      "errors": {
+        "emailTaken": "An account with this email already exists. Use a different email.",
+        "roleNotAssignable": "This role cannot be given to an account. Choose another role.",
+        "invalid": "Some details were not accepted. Check the fields and try again."
+      }
+    },
+    "disable": {
+      "title": "Disable SAMPLE?",
+      "description": "SAMPLE is signed out everywhere and can no longer sign in. You can enable the account again later.",
+      "submit": "Disable SAMPLE",
+      "cancel": "Cancel"
+    },
+    "apiTokens": {
+      "title": "API tokens",
+      "description": "Tokens let scripts and other systems call the content API. A token never has more than the account that created it.",
+      "create": "Create token",
+      "tableLabel": "API tokens",
+      "columns": {
+        "name": "Token",
+        "access": "Access",
+        "status": "Status",
+        "expires": "Expires",
+        "lastUsed": "Last used",
+        "createdBy": "Created by",
+        "actions": "Actions"
+      },
+      "status": {
+        "active": "Active",
+        "revoked": "Revoked",
+        "expired": "Expired"
+      },
+      "noExpiry": "Never",
+      "neverUsed": "Never",
+      "you": "You",
+      "access": "SAMPLE permissions on undefined",
+      "noAccess": "No permissions",
+      "loading": "Loading API tokens",
+      "loadFailed": "Could not load the API tokens.",
+      "forbidden": "Your role cannot see API tokens. Ask the owner if you need access.",
+      "empty": "No API tokens yet.",
+      "emptyHint": "Create a token when a script or another system needs to read or write content.",
+      "emptyHintReadOnly": "Tokens created by your team appear here.",
+      "edit": "Edit",
+      "editLabel": "Edit SAMPLE",
+      "revoke": "Revoke",
+      "revokeLabel": "Revoke SAMPLE",
+      "created": "Token SAMPLE is created. Anything using it can call the API now.",
+      "updated": "Token SAMPLE is updated.",
+      "revoked": "Token SAMPLE is revoked and no longer works.",
+      "alreadyExpired": "That token has expired. Create a new token to restore access. The list is updated.",
+      "alreadyRevoked": "That token was already revoked. The list is updated.",
+      "gone": "That token no longer exists or you cannot manage it. The list is updated.",
+      "pagination": {
+        "label": "API tokens pages",
+        "range": "SAMPLE–undefined of undefined",
+        "previous": "Previous",
+        "next": "Next"
+      }
+    },
+    "tokenForm": {
+      "createTitle": "Create an API token",
+      "editTitle": "Edit SAMPLE",
+      "createDescription": "Choose what the token may do. You see the token once, right after you create it.",
+      "editDescription": "Changes apply to the next request made with this token. The token itself does not change.",
+      "nameLabel": "Name",
+      "nameHint": "Say what uses it, for example \"Website build\".",
+      "expiresLabel": "Expires on",
+      "expiresHint": "Optional. The token stops working at the end of this day, in your time zone. Leave empty for no expiry.",
+      "scopeTitle": "Permissions",
+      "scopeDescription": "Content only. The token can never do more than your own role allows, even if you change roles later.",
+      "submitCreate": "Create token",
+      "submitEdit": "Save changes",
+      "cancel": "Cancel",
+      "validation": {
+        "nameRequired": "Enter a name for the token.",
+        "nameTooLong": "Use at most 100 characters.",
+        "expiryPast": "Choose today or a later date.",
+        "expiryInvalid": "Enter a valid date.",
+        "scopeRequired": "Choose at least one permission.",
+        "scopeTooLong": "Use at most 200 permissions. Use \"All content types\" to cover more."
+      },
+      "errors": {
+        "invalid": "Some details were not accepted. Check the marked fields and try again.",
+        "revoked": "This token was revoked in the meantime and cannot be changed."
+      }
+    },
+    "tokenScope": {
+      "cellLabel": "SAMPLE undefined",
+      "fields": "Fields",
+      "fieldsLabel": "Fields for SAMPLE",
+      "fieldsEmpty": "Choose an action in this row to limit its fields.",
+      "notHeld": "Not allowed by your role",
+      "notHeldHint": "Greyed-out boxes are permissions you do not hold yourself, so you cannot give them to a token."
+    },
+    "tokenReveal": {
+      "title": "Copy the token for SAMPLE",
+      "description": "This is the only time the token is shown. Store it in a password manager or your secret store now.",
+      "warning": "If you close this without copying it, the token cannot be shown again. You would have to create a new one.",
+      "label": "API token",
+      "copy": "Copy token",
+      "copied": "Copied to the clipboard.",
+      "copyFailed": "Could not copy automatically. Select the token and copy it.",
+      "done": "I have copied it"
+    },
+    "revokeToken": {
+      "title": "Revoke SAMPLE?",
+      "description": "Anything using this token stops working immediately. This cannot be undone; create a new token if you need access again.",
+      "submit": "Revoke SAMPLE",
+      "cancel": "Cancel"
+    },
+    "roles": {
+      "title": "Roles",
+      "description": "A role is a set of permissions. Accounts get exactly what their role allows.",
+      "tableLabel": "Roles",
+      "columns": {
+        "name": "Role",
+        "rank": "Rank",
+        "accounts": "Accounts",
+        "type": "Type"
+      },
+      "system": "System",
+      "custom": "Custom",
+      "loading": "Loading roles",
+      "loadFailed": "Could not load the roles.",
+      "forbidden": "Your role cannot see roles. Ask the owner if you need access.",
+      "empty": "No roles found.",
+      "open": "Permissions of SAMPLE"
+    },
+    "role": {
+      "back": "All roles",
+      "meta": "SAMPLE · rank undefined · undefined accounts",
+      "notFound": "This role does not exist or you cannot see it.",
+      "owner": "The owner holds every permission. There is nothing to configure for this role.",
+      "readOnly": "You can view this role but not change it: it ranks at or above your own role.",
+      "readOnlyNoUpdate": "Your role can view roles but not change them.",
+      "save": "Save permissions",
+      "discard": "Discard changes",
+      "unsaved": "You have unsaved changes.",
+      "saved": "Permissions saved. Accounts with this role get them on their next request.",
+      "invalid": "Some permissions were not accepted. Fix the marked rows and save again.",
+      "conditionsInvalidJson": "Fix the conditions that are not valid JSON before saving.",
+      "contentTypesFailed": "Could not load the content types, so field access cannot be shown."
+    },
+    "matrix": {
+      "contentTitle": "Content",
+      "contentDescription": "\"All content types\" applies to every type without its own row. A type with any checked action uses only its own row for that action.",
+      "systemTitle": "System",
+      "systemDescription": "Administration areas of the console.",
+      "subjectColumn": "Area",
+      "notAvailable": "Not available",
+      "notHeldHint": "Greyed-out boxes are permissions you do not hold yourself, so you cannot grant them.",
+      "wildcard": "All content types",
+      "unknownType": "SAMPLE (no longer registered)",
+      "subjects": {
+        "accounts": "Accounts",
+        "roles": "Roles",
+        "api_tokens": "API tokens",
+        "media": "Media",
+        "audit_logs": "Audit logs",
+        "reviewer_settings": "Reviewer settings"
+      },
+      "actions": {
+        "read": "Read",
+        "create": "Create",
+        "update": "Update",
+        "delete": "Delete",
+        "publish": "Publish",
+        "unpublish": "Unpublish"
+      },
+      "cellLabel": "SAMPLE undefined",
+      "details": "Fields and conditions",
+      "conditionsOnly": "Conditions",
+      "detailsLabel": "Fields and conditions for SAMPLE",
+      "detailsEmpty": "Check an action in this row to set its field access and conditions.",
+      "extraRows": "SAMPLE more rows for this action came from the API and are kept unchanged."
+    },
+    "fields": {
+      "readable": "Readable fields",
+      "writable": "Writable fields (SAMPLE)",
+      "all": "All fields",
+      "some": "Only selected fields",
+      "sensitive": "Sensitive",
+      "component": "Group",
+      "covered": "Included with its group",
+      "noneSelected": "No fields selected: only system fields such as the id and dates are visible.",
+      "noneSelectedWrite": "No fields selected: nothing can be written."
+    },
+    "conditions": {
+      "summary": "Advanced: row conditions (SAMPLE)",
+      "label": "Conditions for SAMPLE",
+      "hint": "JSON in the conditions format, for example {\"all\":[{\"field\":\"createdBy\",\"op\":\"eq\",\"value\":\"$actor.id\"}]}. Leave empty for no condition. The server checks it when you save.",
+      "invalidJson": "This is not valid JSON. Check brackets, quotes and commas."
+    }
+  },
+  "reviewer": {
+    "banner": {
+      "title": "Reviewer mode",
+      "message": "You are looking around as a guest. Everything here is read-only and shows published content only."
+    },
+    "title": "Reviewer access",
+    "description": "Let visitors look around read-only for 24 hours. See who asked for access and why.",
+    "loading": "Loading reviewer sessions",
+    "loadFailed": "Could not load the reviewer sessions.",
+    "forbidden": "Your role cannot view reviewer sessions.",
+    "switch": {
+      "label": "Allow reviewer sessions",
+      "onHint": "Visitors can request a read-only session on the public site.",
+      "offHint": "The public site does not offer reviewer access.",
+      "loading": "Checking the current setting",
+      "loadFailed": "Could not read the current setting.",
+      "saveFailed": "Could not change the setting. Try again.",
+      "enabled": "Reviewer access is on.",
+      "disabled": "Reviewer access is off. Active reviewer sessions have ended."
+    },
+    "confirmOff": {
+      "title": "Switch off reviewer access?",
+      "description": "Every active reviewer session ends immediately and stays ended if you switch access on again.",
+      "cancel": "Keep it on",
+      "submit": "Switch off and end sessions"
+    },
+    "tableLabel": "Reviewer sessions",
+    "columns": {
+      "visitor": "Visitor",
+      "purposes": "Purposes",
+      "notes": "Notes",
+      "browser": "Browser",
+      "started": "Started",
+      "status": "Status"
+    },
+    "status": {
+      "active": "Active",
+      "ended": "Ended"
+    },
+    "noPurposes": "None given",
+    "noNotes": "No notes",
+    "noBrowser": "Unknown",
+    "until": "until SAMPLE",
+    "empty": "No reviewer sessions yet",
+    "emptyHint": "Sessions appear here when a visitor starts one from the public site.",
+    "pagination": {
+      "label": "Reviewer session pages",
+      "range": "SAMPLE–undefined of undefined",
+      "previous": "Previous",
+      "next": "Next"
+    }
+  },
+  "page": {
+    "title": "System status",
+    "description": "The admin console is not ready yet. This page confirms it can reach the content API from the admin domain."
+  },
+  "status": {
+    "cardTitle": "Content API",
+    "cardDescription": "Liveness check on the API the admin console manages content through.",
+    "endpointLabel": "Endpoint",
+    "lastCheckedLabel": "Last checked",
+    "notCheckedYet": "Not checked yet",
+    "state": {
+      "checking": "Checking",
+      "ok": "Operational",
+      "error": "Unreachable"
+    },
+    "errorHint": "The API did not respond. Check that cms-api is running and reachable through the proxy, then check again.",
+    "checkAgain": "Check again"
+  },
+  "media": {
+    "title": "Media library",
+    "description": "Images, PDFs and videos you can attach to documents. Uploaded images are re-encoded and lose their location data.",
+    "upload": "Upload file",
+    "uploading": "Uploading SAMPLE...",
+    "uploaded": "SAMPLE uploaded.",
+    "tableLabel": "Media files",
+    "loading": "Loading media files",
+    "loadFailed": "Could not load the media library.",
+    "forbidden": "Your role cannot view the media library.",
+    "empty": "No files yet",
+    "emptyHint": "Upload a file to start the library.",
+    "emptyHintReadOnly": "Nothing has been uploaded yet.",
+    "columns": {
+      "file": "File",
+      "alt": "Alt text",
+      "size": "Size",
+      "added": "Added",
+      "actions": "Actions"
+    },
+    "noAlt": "No alt text",
+    "previewFallback": "Preview of SAMPLE",
+    "editAlt": "Edit alt",
+    "deleteAction": "Delete",
+    "editAltLabel": "Edit alt text of SAMPLE",
+    "deleteLabel": "Delete SAMPLE",
+    "pagination": {
+      "label": "Media pages",
+      "range": "SAMPLE-undefined of undefined",
+      "previous": "Previous",
+      "next": "Next"
+    },
+    "altDialog": {
+      "title": "Alt text for SAMPLE",
+      "description": "Describe the file for people who cannot see it. Leave it empty to clear the text.",
+      "label": "Alt text",
+      "tooLong": "Use at most SAMPLE characters.",
+      "save": "Save alt text",
+      "cancel": "Cancel",
+      "saved": "Alt text of SAMPLE saved."
+    },
+    "deleteDialog": {
+      "title": "Delete SAMPLE?",
+      "description": "The file leaves the library and can no longer be attached. This cannot be undone.",
+      "submit": "Delete SAMPLE",
+      "cancel": "Cancel",
+      "deleted": "SAMPLE deleted."
+    },
+    "errors": {
+      "inUse": "This file is still attached to a document. Remove it from the document first, then delete it.",
+      "gone": "This file no longer exists. The list was refreshed.",
+      "unsupportedType": "This file type is not allowed. Use JPEG, PNG, WebP, GIF, AVIF, PDF or MP4.",
+      "tooLarge": "This file is too large. Images may be up to 10 MB, PDFs 20 MB and videos 100 MB.",
+      "invalidUpload": "The server could not read this file. Try another one.",
+      "forbidden": "Your role is not allowed to do this.",
+      "retry": "Try again"
+    },
+    "input": {
+      "empty": "No file attached",
+      "choose": "Choose from library",
+      "upload": "Upload new file",
+      "replace": "Replace file",
+      "remove": "Remove from field",
+      "delete": "Delete from library"
+    },
+    "picker": {
+      "title": "Choose a file",
+      "description": "Pick a file from the library to attach to this field.",
+      "loading": "Loading media files",
+      "empty": "The library is empty. Close this and upload a new file.",
+      "select": "Select SAMPLE",
+      "cancel": "Cancel"
+    }
+  },
+  "content": {
+    "newTitle": "New SAMPLE",
+    "editTitle": "Edit SAMPLE",
+    "description": "Changes are saved to the draft. Publishing is a separate step.",
+    "loading": "Loading the document",
+    "loadFailed": "The document could not be loaded.",
+    "typeNotFound": "This content type does not exist, or your role cannot read it.",
+    "documentNotFound": "This document does not exist, or your role cannot read it.",
+    "retry": "Try again",
+    "collection": {
+      "title": "SAMPLE",
+      "description": "Drafts of this collection. Select rows to publish, unpublish or delete them together.",
+      "newDocument": "New document",
+      "tableLabel": "SAMPLE documents",
+      "loading": "Loading documents",
+      "loadFailed": "The documents could not be loaded.",
+      "forbidden": "Your role cannot view these documents.",
+      "empty": "No documents yet",
+      "emptyHint": "Create the first document, or import several at once.",
+      "emptyHintReadOnly": "Nothing has been created yet.",
+      "untitled": "Untitled",
+      "protectedValue": "Protected",
+      "emptyValue": "—",
+      "yes": "Yes",
+      "no": "No",
+      "columns": {
+        "updated": "Updated"
+      },
+      "selectAll": "Select all documents on this page",
+      "selectRow": "Select SAMPLE",
+      "pagination": {
+        "label": "Document pages",
+        "range": "SAMPLE–undefined of undefined",
+        "previous": "Previous",
+        "next": "Next"
+      }
+    },
+    "bulk": {
+      "region": "Actions for the selected documents",
+      "selected": "SAMPLE selected",
+      "clear": "Clear selection",
+      "documents": "SAMPLE documents",
+      "publish": "Publish SAMPLE",
+      "unpublish": "Unpublish SAMPLE",
+      "delete": "Delete SAMPLE",
+      "import": "Import documents",
+      "summary": {
+        "publish": "Published SAMPLE of undefined documents.",
+        "unpublish": "Unpublished SAMPLE of undefined documents.",
+        "delete": "Deleted SAMPLE of undefined documents.",
+        "failedHeading": "SAMPLE documents could not be changed",
+        "failedItem": "SAMPLE: undefined",
+        "stillSelected": "The documents that failed stay selected.",
+        "dismiss": "Dismiss"
+      },
+      "itemErrors": {
+        "conflict": "Changed by someone else since this list loaded. Review it, then try again.",
+        "notFound": "Does not exist any more, or your role cannot reach it.",
+        "notPublished": "Is not published, or your role cannot reach it.",
+        "fallback": "The server refused this change."
+      },
+      "errors": {
+        "forbidden": "Your role is not allowed to do this.",
+        "notPublishable": "This collection has no draft and publish.",
+        "limit": "Too many documents in one request. Select fewer and try again.",
+        "notCollection": "Bulk actions only work on collections.",
+        "network": "The server could not be reached. Nothing was changed.",
+        "unexpected": "Something went wrong. Nothing was changed."
+      },
+      "deleteDialog": {
+        "title": "Delete SAMPLE documents?",
+        "description": "Drafts and published versions are removed for good. This cannot be undone.",
+        "confirm": "Delete SAMPLE documents",
+        "cancel": "Cancel"
+      },
+      "importDialog": {
+        "title": "Import documents",
+        "description": "Paste a JSON array of up to SAMPLE documents. Each one has the same shape as a single create: { \"values\": { ... }, \"components\": { ... } }.",
+        "label": "Documents (JSON)",
+        "placeholder": "[\n  { \"values\": { \"title\": \"First\" } }\n]",
+        "invalidJson": "This is not valid JSON.",
+        "notArray": "Use a JSON array: [ { ... }, { ... } ].",
+        "empty": "Add at least one document.",
+        "tooMany": "At most SAMPLE documents per import.",
+        "badItem": "Item SAMPLE must be an object with \"values\" and/or \"components\".",
+        "atomic": "All or nothing",
+        "atomicHint": "Create nothing if any item is invalid. Otherwise valid items are created and invalid ones reported.",
+        "submit": "Import SAMPLE documents",
+        "submitEmpty": "Import documents",
+        "cancel": "Cancel",
+        "close": "Close",
+        "created": "Imported SAMPLE documents.",
+        "partial": "SAMPLE created, undefined need fixing. The text now holds only the items that failed, in the same order.",
+        "itemError": "Item SAMPLE: undefined",
+        "atomicFailed": "Nothing was created. Item SAMPLE: undefined",
+        "invalidFallback": "is not valid"
+      }
+    },
+    "presence": {
+      "one": "SAMPLE is also on this document.",
+      "two": "SAMPLE and undefined are also on this document.",
+      "many": "SAMPLE, undefined and undefined more are also on this document."
+    },
+    "save": "Save draft",
+    "saved": "Draft saved.",
+    "created": "Draft created.",
+    "noFields": "Your role cannot see any fields of this content type.",
+    "protectedValue": "Protected (***)",
+    "protectedHint": "Your role cannot read or change this field.",
+    "notEditableYet": "Editing this field type is not available yet.",
+    "emptyValue": "No value",
+    "richtext": {
+      "toolbar": "Text formatting",
+      "bold": "Bold",
+      "italic": "Italic",
+      "underline": "Underline",
+      "strike": "Strikethrough",
+      "code": "Code",
+      "heading": "Heading",
+      "bulletList": "Bullet list",
+      "orderedList": "Numbered list",
+      "blockquote": "Quote",
+      "link": "Link",
+      "unlink": "Remove link",
+      "linkPrompt": "Link address (https://, mailto: or tel:). Leave empty to remove the link."
+    },
+    "invalidInteger": "Enter a whole number, for example 12.",
+    "invalidDecimal": "Enter a number, for example 12.5.",
+    "invalidJson": "Enter valid JSON, for example [\"React\", \"Node\"].",
+    "protectedGroup": "SAMPLE is protected for your role and is left unchanged.",
+    "list": {
+      "itemTitle": "SAMPLE NaN",
+      "empty": "No sample yet.",
+      "add": "Add sample",
+      "remove": "Remove sample NaN",
+      "moveUp": "Move sample NaN up",
+      "moveDown": "Move sample NaN down",
+      "removeText": "Remove",
+      "upText": "Up",
+      "downText": "Down"
+    },
+    "errors": {
+      "network": "Could not reach the server. Your changes are still here; try saving again.",
+      "unexpected": "Something went wrong on our side. Try again in a moment.",
+      "forbidden": "Your role is not allowed to save this document.",
+      "invalid": "The server rejected the draft: SAMPLE",
+      "invalidFallback": "The server rejected the draft. Check the fields.",
+      "conflict": "Someone else saved this document first. Reload to see their version, then apply your changes again.",
+      "reload": "Reload latest version",
+      "reviewConflict": "Review differences"
+    },
+    "conflict": {
+      "title": "Resolve conflicting changes",
+      "description": "Someone saved this document after you opened it. For each difference, choose the version to keep, then save the merged draft.",
+      "summary": "SAMPLE differences",
+      "keepAllMine": "Keep all of mine",
+      "takeAllSaved": "Use all saved",
+      "saved": "Saved version",
+      "mine": "Your version",
+      "noValue": "No value",
+      "save": "Save merged draft",
+      "cancel": "Cancel",
+      "saving": "Saving",
+      "saveFailed": "The merged draft could not be saved. Your choices are kept; try again.",
+      "change": {
+        "added": "Added",
+        "removed": "Removed",
+        "changed": "Changed",
+        "moved": "Reordered"
+      },
+      "titleSeparator": " > ",
+      "itemTitle": "SAMPLE undefined",
+      "itemCount": "SAMPLE items",
+      "itemWithoutFields": "Empty item",
+      "order": "Order: 1, 2",
+      "yes": "Yes",
+      "no": "No"
+    }
+  },
+  "backups": {
+    "nav": "Backups",
+    "title": "Backups",
+    "description": "Nightly database backups, stored off the server. Only the owner can download them.",
+    "check": {
+      "hint": "The backup status is read on request. Check it to see the latest backups.",
+      "button": "Check backups",
+      "refresh": "Refresh"
+    },
+    "loading": "Loading backups",
+    "loadFailed": "Could not load the backups.",
+    "rateLimited": "Too many requests. Wait a moment, then try again.",
+    "forbidden": "Only the owner can view backups.",
+    "notConfigured": {
+      "title": "Backup storage is not set up on this server",
+      "hint": "The backup bucket is connected in the deployment. See “Backup download (cms-admin)” in docs/deployment/k3s-traefik.md."
+    },
+    "empty": "No backups yet",
+    "emptyHint": "The first backup appears here after the nightly job has run.",
+    "summary": {
+      "count": "SAMPLE backups",
+      "total": "SAMPLE in total",
+      "latest": "Latest SAMPLE"
+    },
+    "stale": "The newest daily backup is more than a day old. Check that the nightly backup job is running.",
+    "encryptedNote": "These files are encrypted with age. You need the private key you keep offline to open them.",
+    "tableLabel": "Backups",
+    "columns": {
+      "created": "Created",
+      "type": "Type",
+      "size": "Size",
+      "actions": "Actions"
+    },
+    "kind": {
+      "daily": "Daily",
+      "monthly": "Monthly"
+    },
+    "utc": "SAMPLE UTC",
+    "download": {
+      "button": "Download",
+      "buttonLabel": "Download SAMPLE"
+    },
+    "dialog": {
+      "title": "Download SAMPLE",
+      "description": "Confirm with your password and a code. The download link works for one minute.",
+      "emailCodeSent": "We sent a code to your email.",
+      "submit": "Download",
+      "cancel": "Cancel",
+      "twoFactorOff": "Downloading a backup needs two-factor sign-in. Turn it on in your security settings first.",
+      "openSecurity": "Open security settings",
+      "close": "Close"
+    }
+  }
+}

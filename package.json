@@ -1,0 +1,35 @@
+{
+  "name": "abyss",
+  "private": true,
+  "license": "UNLICENSED",
+  "packageManager": "pnpm@11.5.2",
+  "engines": {
+    "node": ">=24.0.0",
+    "pnpm": ">=11.0.0"
+  },
+  "scripts": {
+    "build": "turbo run build",
+    "test": "turbo run test --filter=!@abyss/e2e",
+    "e2e": "pnpm --filter @abyss/e2e test",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "format": "turbo run build --filter=@abyss/base-config && prettier --write .",
+    "format:check": "turbo run build --filter=@abyss/base-config && prettier --check .",
+    "smoke": "bash scripts/smoke.sh",
+    "e2e:spec": "bash scripts/e2e-spec.sh",
+    "docs:architecture": "python3 scripts/docs/architecture/build.py",
+    "dev:stack": "bash scripts/dev-stack.sh start",
+    "demo": "bash scripts/dev-stack.sh demo",
+    "dev:stack:stop": "bash scripts/dev-stack.sh stop",
+    "start:dev": "pnpm --parallel --filter @abyss/cms-api --filter @abyss/cms-admin --filter @abyss/web dev",
+    "start:cms-admin": "pnpm --filter @abyss/cms-admin dev",
+    "start:web": "pnpm --filter @abyss/web dev",
+    "start:cms-api": "pnpm --filter @abyss/cms-api start",
+    "start:cms-api:dev": "pnpm --filter @abyss/cms-api start:dev"
+  },
+  "devDependencies": {
+    "@abyss/base-config": "workspace:*",
+    "prettier": "3.9.10",
+    "turbo": "2.11.9"
+  }
+}

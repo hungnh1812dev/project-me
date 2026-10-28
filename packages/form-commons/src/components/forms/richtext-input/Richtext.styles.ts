@@ -1,0 +1,2 @@
+export const RICHTEXT_CONTENT_CLASS =
+  '[&_.tiptap]:min-h-32 [&_.tiptap]:px-3 [&_.tiptap]:py-2 [&_.tiptap]:text-sm [&_.tiptap]:outline-none [&_.tiptap_a]:text-primary [&_.tiptap_a]:underline [&_.tiptap_blockquote]:border-l-2 [&_.tiptap_blockquote]:pl-3 [&_.tiptap_h1]:text-xl [&_.tiptap_h2]:text-lg [&_.tiptap_ol]:list-decimal [&_.tiptap_ol]:pl-5 [&_.tiptap_pre]:font-mono [&_.tiptap_ul]:list-disc [&_.tiptap_ul]:pl-5';

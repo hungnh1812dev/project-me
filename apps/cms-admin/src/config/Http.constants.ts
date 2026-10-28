@@ -1,0 +1,96 @@
+/** Abort API requests that take longer than this. */
+export const API_TIMEOUT_MS = 10_000;
+
+/** Retries for the health query before it shows the error state. */
+export const HEALTH_QUERY_RETRY = 1;
+
+/** Expected `status` value of a healthy health endpoint (SPEC §6). */
+export const HEALTH_STATUS_OK = 'ok';
+
+/** HTTP statuses the client reacts to. */
+export const HTTP_STATUS = {
+  /** First 4xx status. */
+  CLIENT_ERROR_MIN: 400,
+  /** First 5xx status. */
+  SERVER_ERROR_MIN: 500,
+  BAD_REQUEST: 400,
+  UNAUTHORIZED: 401,
+  FORBIDDEN: 403,
+  NOT_FOUND: 404,
+  CONFLICT: 409,
+  TOO_MANY_REQUESTS: 429,
+} as const;
+
+/** Seconds to wait after a 429. Readable cross-origin only when cms-api exposes it. */
+export const RETRY_AFTER_HEADER = 'retry-after';
+
+/** `Authorization` header scheme for the in-memory access token (D14). */
+export const BEARER_PREFIX = 'Bearer ';
+
+/** `errorCode` values of cms-api the admin reacts to (SPEC §9). */
+export const API_ERROR_CODES = {
+  INVALID_OTP: 'AUTH_INVALID_OTP',
+  WEAK_PASSWORD: 'AUTH_WEAK_PASSWORD',
+  TOTP_REQUIRED: 'AUTH_TOTP_REQUIRED',
+  INVALID_CREDENTIALS: 'AUTH_INVALID_CREDENTIALS',
+  INVALID_2FA_CODE: 'AUTH_INVALID_2FA_CODE',
+  INVALID_TEMP_TOKEN: 'AUTH_INVALID_TEMP_TOKEN',
+  TWO_FACTOR_ALREADY_ENABLED: 'AUTH_2FA_ALREADY_ENABLED',
+  TWO_FACTOR_NOT_ENABLED: 'AUTH_2FA_NOT_ENABLED',
+  TWO_FACTOR_SETUP_REQUIRED: 'AUTH_2FA_SETUP_REQUIRED',
+  /** Owner setup. */
+  OWNER_EMAIL_TAKEN: 'OWNER_EMAIL_TAKEN',
+  /** Accounts and roles API. */
+  ACCESS_INVALID_REQUEST: 'ACCESS_INVALID_REQUEST',
+  ACCESS_RANK_FORBIDDEN: 'ACCESS_RANK_FORBIDDEN',
+  PERMISSION_NOT_HELD: 'PERMISSION_NOT_HELD',
+  ACCOUNT_EMAIL_TAKEN: 'ACCOUNT_EMAIL_TAKEN',
+  ACCOUNT_ALREADY_DISABLED: 'ACCOUNT_ALREADY_DISABLED',
+  ACCOUNT_NOT_FOUND: 'ACCOUNT_NOT_FOUND',
+  /** Enable and resend invite. */
+  ACCOUNT_NOT_DISABLED: 'ACCOUNT_NOT_DISABLED',
+  ACCOUNT_NOT_INVITED: 'ACCOUNT_NOT_INVITED',
+  ROLE_NOT_FOUND: 'ROLE_NOT_FOUND',
+  ROLE_NOT_ASSIGNABLE: 'ROLE_NOT_ASSIGNABLE',
+  /** API tokens. */
+  API_TOKEN_NOT_FOUND: 'API_TOKEN_NOT_FOUND',
+  API_TOKEN_REVOKED: 'API_TOKEN_REVOKED',
+  API_TOKEN_EXPIRED: 'API_TOKEN_EXPIRED',
+  API_TOKEN_SCOPE_NOT_HELD: 'API_TOKEN_SCOPE_NOT_HELD',
+  TOKEN_SCOPE_INVALID: 'TOKEN_SCOPE_INVALID',
+  /** Documents. */
+  DOCUMENT_VERSION_CONFLICT: 'DOCUMENT_VERSION_CONFLICT',
+  DOCUMENT_INVALID: 'DOCUMENT_INVALID',
+  DOCUMENT_NOT_FOUND: 'DOCUMENT_NOT_FOUND',
+  CONTENT_TYPE_NOT_FOUND: 'CONTENT_TYPE_NOT_FOUND',
+  /** Bulk. */
+  DOCUMENT_NOT_PUBLISHABLE: 'DOCUMENT_NOT_PUBLISHABLE',
+  DOCUMENT_BULK_LIMIT: 'DOCUMENT_BULK_LIMIT',
+  DOCUMENT_BULK_NOT_COLLECTION: 'DOCUMENT_BULK_NOT_COLLECTION',
+  /** Backups (404 while the bucket keys are unset). */
+  BACKUPS_NOT_CONFIGURED: 'BACKUPS_NOT_CONFIGURED',
+  /** Media. */
+  MEDIA_UNSUPPORTED_TYPE: 'MEDIA_UNSUPPORTED_TYPE',
+  MEDIA_FILE_TOO_LARGE: 'MEDIA_FILE_TOO_LARGE',
+  MEDIA_INVALID_UPLOAD: 'MEDIA_INVALID_UPLOAD',
+  MEDIA_NOT_FOUND: 'MEDIA_NOT_FOUND',
+  MEDIA_IN_USE: 'MEDIA_IN_USE',
+} as const;
+
+/** Milliseconds per second (Retry-After is in seconds). */
+export const MS_PER_SECOND = 1_000;
+
+/** Largest delay setTimeout accepts; a longer one fires at once (32-bit overflow). */
+export const MAX_TIMER_DELAY_MS = 2_147_483_647;
+
+/** Input bounds of the accounts API (cms-api MANAGEMENT_LIMITS / auth constants). */
+export const ACCOUNT_LIMITS = {
+  DISPLAY_NAME_MAX_LENGTH: 100,
+  EMAIL_MAX_LENGTH: 254,
+} as const;
+
+/** Input bounds of the API tokens API (cms-api API_TOKEN). */
+export const API_TOKEN_LIMITS = {
+  NAME_MAX_LENGTH: 100,
+  MAX_SCOPE_ENTRIES: 200,
+} as const;

@@ -1,0 +1,118 @@
+import {
+  Body,
+  Controller,
+  Get,
+  Header,
+  HttpCode,
+  HttpStatus,
+  Param,
+  Patch,
+  Post,
+  Query,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
+
+import {
+  ClientIpResolver,
+  clientMetaOf,
+} from '../../../../common/http/ClientIp.resolver';
+import { ID_PARAM } from '../../../../common/constants/Api.constants';
+import { API_TOKENS_ROUTES } from '../../http/AccessHttp.constants';
+import { NO_STORE_HEADER } from '../../../../common/constants/Http.constants';
+import { PermissionAction } from '../../domain/Access.constants';
+import { type AuthenticatedRequest, JwtAuthGuard } from '../../../identity';
+import { parseRequest } from '../../../../common/http/RequestParsing.rules';
+import {
+  type ApiTokenPage,
+  type ApiTokenView,
+  ApiTokensService,
+  type CreatedApiTokenView,
+} from '../application/ApiTokens.service';
+import {
+  createApiTokenSchema,
+  updateApiTokenSchema,
+} from './ApiTokens.requests';
+import {
+  PermissionGuard,
+  RequirePermission,
+} from '../../http/Permission.guard';
+import { requireAccountActor } from '../../domain/Rank.rules';
+import {
+  documentIdSchema,
+  pageQuerySchema,
+} from '../../../../common/validation/SharedSchemas.rules';
+
+const SUBJECT = 'api_tokens';
+
+/**
+ * SPEC §9 API tokens. JWT sessions only: `JwtAuthGuard` rejects an
+ * `ak_live_` token with 401 and `requireAccountActor` rejects every other
+ * actor kind with 403 (D5). The service scopes each call to the caller's
+ * own tokens unless they are the Owner.
+ */
+@Controller(API_TOKENS_ROUTES.ROOT)
+@UseGuards(JwtAuthGuard, PermissionGuard)
+export class ApiTokensController {
+  constructor(
+    private readonly tokens: ApiTokensService,
+    private readonly clientIp: ClientIpResolver,
+  ) {}
+
+  @Get()
+  @Header(NO_STORE_HEADER.NAME, NO_STORE_HEADER.VALUE)
+  @RequirePermission({ action: PermissionAction.read, subject: SUBJECT })
+  list(
+    @Req() req: AuthenticatedRequest,
+    @Query() query: unknown,
+  ): Promise<ApiTokenPage> {
+    return this.tokens.list(
+      requireAccountActor(req.user.actor),
+      parseRequest(pageQuerySchema, query),
+    );
+  }
+
+  /** 201 with the raw token, shown this once and never stored. */
+  @Post()
+  @Header(NO_STORE_HEADER.NAME, NO_STORE_HEADER.VALUE)
+  @RequirePermission({ action: PermissionAction.create, subject: SUBJECT })
+  create(
+    @Req() req: AuthenticatedRequest,
+    @Body() body: unknown,
+  ): Promise<CreatedApiTokenView> {
+    return this.tokens.create(
+      requireAccountActor(req.user.actor),
+      parseRequest(createApiTokenSchema, body),
+      clientMetaOf(this.clientIp, req),
+    );
+  }
+
+  @Patch(API_TOKENS_ROUTES.BY_ID)
+  @RequirePermission({ action: PermissionAction.update, subject: SUBJECT })
+  update(
+    @Req() req: AuthenticatedRequest,
+    @Param(ID_PARAM) id: string,
+    @Body() body: unknown,
+  ): Promise<ApiTokenView> {
+    return this.tokens.update(
+      requireAccountActor(req.user.actor),
+      parseRequest(documentIdSchema, id),
+      parseRequest(updateApiTokenSchema, body),
+      clientMetaOf(this.clientIp, req),
+    );
+  }
+
+  @Post(API_TOKENS_ROUTES.REVOKE)
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @RequirePermission({ action: PermissionAction.update, subject: SUBJECT })
+  revoke(
+    @Req() req: AuthenticatedRequest,
+    @Param(ID_PARAM) id: string,
+  ): Promise<void> {
+    return this.tokens.revoke(
+      requireAccountActor(req.user.actor),
+      parseRequest(documentIdSchema, id),
+      clientMetaOf(this.clientIp, req),
+    );
+  }
+}

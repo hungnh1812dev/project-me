@@ -1,0 +1,25 @@
+{
+  "name": "@abyss/e2e",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Playwright end-to-end tests against a running Abyss stack (smoke stack by default)",
+  "type": "module",
+  "scripts": {
+    "browsers:install": "PLAYWRIGHT_BROWSERS_PATH=0 playwright install chromium",
+    "test": "PLAYWRIGHT_BROWSERS_PATH=0 playwright test",
+    "test:unit": "node --test src/*.test.ts",
+    "lint": "oxlint && eslint .",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "devDependencies": {
+    "@abyss/base-config": "workspace:*",
+    "@playwright/test": "1.64.0",
+    "@types/node": "24.19.2",
+    "eslint": "10.13.0",
+    "globals": "17.13.0",
+    "otplib": "13.5.0",
+    "oxlint": "1.88.0",
+    "prettier": "3.9.10",
+    "typescript": "6.0.3"
+  }
+}

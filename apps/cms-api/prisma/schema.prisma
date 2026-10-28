@@ -1,0 +1,324 @@
+// Core system tables (SPEC §8.1), PG schema `public` only. Content tables live
+// in schema `content` and are owned by the content engine, never by Prisma
+// (D10). Column decisions are documented in docs/modules/core-schema.md.
+//
+// Conventions: models are PascalCase, tables and columns snake_case via
+// @@map/@map; every table has `id`, `created_at`, `updated_at`; timestamps are
+// timestamptz; created_by/updated_by reference accounts(id) ON DELETE SET NULL.
+
+generator client {
+  provider            = "prisma-client"
+  output              = "../src/generated/prisma"
+  moduleFormat        = "cjs"
+  // Extensionless relative imports: resolvable by tsc (CommonJS) and ts-jest.
+  importFileExtension = ""
+}
+
+// `citext` (accounts.email) is created in the first migration by hand, so the
+// postgresqlExtensions preview feature is not needed.
+datasource db {
+  provider = "postgresql"
+}
+
+enum AccountStatus {
+  invited
+  active
+  disabled
+
+  @@map("account_status")
+}
+
+enum TwoFaMethod {
+  totp
+  email
+
+  @@map("two_fa_method")
+}
+
+enum PermissionAction {
+  read
+  create
+  update
+  delete
+  publish
+  unpublish
+
+  @@map("permission_action")
+}
+
+enum OtpPurpose {
+  INVITE_SET_PASSWORD
+  RESET_PASSWORD
+  LOGIN_2FA_EMAIL
+
+  @@map("otp_purpose")
+}
+
+enum MediaProvider {
+  cloudinary
+  preset
+
+  @@map("media_provider")
+}
+
+enum AuditActorType {
+  account
+  api_token
+  system
+
+  @@map("audit_actor_type")
+}
+
+model Account {
+  id            Int           @id @default(autoincrement())
+  documentId    String        @unique @default(uuid(7)) @map("document_id") @db.Uuid
+  email         String        @unique @db.Citext
+  /// Null until an invited account sets its password.
+  passwordHash  String?       @map("password_hash")
+  displayName   String        @map("display_name")
+  roleId        Int           @map("role_id")
+  /// Kept equal to roles.slug by the composite FK; lets the single-owner index (D1) work.
+  roleSlug      String        @map("role_slug")
+  status        AccountStatus @default(invited)
+  tokenVersion  Int           @default(1) @map("token_version")
+  is2faEnabled  Boolean       @default(false) @map("is_2fa_enabled")
+  twoFaMethod   TwoFaMethod?  @map("two_fa_method")
+  /// AES-256-GCM ciphertext of the TOTP secret (D8); format in crypto/secret-box.ts.
+  totpSecretEnc String?       @map("totp_secret_enc")
+  /// Id of the TOTP_ENC_KEY that encrypted totp_secret_enc (key rotation).
+  totpSecretKid String?       @map("totp_secret_kid")
+  /// Last accepted TOTP time step; codes at or below it are replays (D8).
+  totpLastStep  Int?          @map("totp_last_step")
+  deletedAt     DateTime?     @map("deleted_at") @db.Timestamptz(6)
+  createdAt     DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt     DateTime      @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  createdById   Int?          @map("created_by")
+  updatedById   Int?          @map("updated_by")
+
+  role      Role     @relation(fields: [roleId, roleSlug], references: [id, slug], onDelete: Restrict, onUpdate: Cascade)
+  createdBy Account? @relation("AccountCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  updatedBy Account? @relation("AccountUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
+
+  accountsCreated    Account[]         @relation("AccountCreatedBy")
+  accountsUpdated    Account[]         @relation("AccountUpdatedBy")
+  rolesCreated       Role[]            @relation("RoleCreatedBy")
+  rolesUpdated       Role[]            @relation("RoleUpdatedBy")
+  permissionsCreated Permission[]      @relation("PermissionCreatedBy")
+  permissionsUpdated Permission[]      @relation("PermissionUpdatedBy")
+  filesCreated       FileLibrary[]     @relation("FileCreatedBy")
+  filesUpdated       FileLibrary[]     @relation("FileUpdatedBy")
+  settingsCreated    AppSetting[]      @relation("SettingCreatedBy")
+  settingsUpdated    AppSetting[]      @relation("SettingUpdatedBy")
+  refreshTokens      RefreshToken[]
+  otpCodes           OtpCode[]
+  apiTokens          ApiToken[]
+  reviewerSessions   ReviewerSession[]
+  auditLogs          AuditLog[]
+
+  @@index([roleId, roleSlug])
+  @@map("accounts")
+}
+
+model Role {
+  id            Int      @id @default(autoincrement())
+  documentId    String   @unique @default(uuid(7)) @map("document_id") @db.Uuid
+  slug          String   @unique
+  name          String
+  /// System ranks are fixed (SPEC §6); custom roles use 11–39 (CHECK in SQL).
+  rank          Int
+  isSystem      Boolean  @default(false) @map("is_system")
+  policyVersion Int      @default(1) @map("policy_version")
+  /// Set once the default rows of a system role were seeded; later Owner edits (even an empty list) are never refilled.
+  defaultPermissionsSeededAt DateTime? @map("default_permissions_seeded_at") @db.Timestamptz(6)
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt     DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  createdById   Int?     @map("created_by")
+  updatedById   Int?     @map("updated_by")
+
+  createdBy   Account?     @relation("RoleCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  updatedBy   Account?     @relation("RoleUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
+  accounts    Account[]
+  permissions Permission[]
+
+  /// Target of the accounts (role_id, role_slug) composite FK.
+  @@unique([id, slug])
+  @@map("roles")
+}
+
+model Permission {
+  id             Int              @id @default(autoincrement())
+  roleId         Int              @map("role_id")
+  /// Content type slug or a system subject (validated by T14).
+  subject        String
+  action         PermissionAction
+  /// API field names; null = all fields.
+  readableFields Json?            @map("readable_fields")
+  /// API field names; null = all fields.
+  writableFields Json?            @map("writable_fields")
+  /// Conditions DSL (SPEC §8.3); null = no condition.
+  conditions     Json?
+  createdAt      DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime         @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  createdById    Int?             @map("created_by")
+  updatedById    Int?             @map("updated_by")
+
+  role      Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  createdBy Account? @relation("PermissionCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  updatedBy Account? @relation("PermissionUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
+
+  @@index([roleId, subject])
+  @@map("permissions")
+}
+
+model RefreshToken {
+  id           Int       @id @default(autoincrement())
+  accountId    Int       @map("account_id")
+  familyId     String    @map("family_id") @db.Uuid
+  tokenHash    String    @unique @map("token_hash")
+  replacedById Int?      @map("replaced_by_id")
+  userAgent    String?   @map("user_agent")
+  ip           String?
+  expiresAt    DateTime  @map("expires_at") @db.Timestamptz(6)
+  revokedAt    DateTime? @map("revoked_at") @db.Timestamptz(6)
+  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  account    Account        @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  replacedBy RefreshToken?  @relation("RefreshTokenRotation", fields: [replacedById], references: [id], onDelete: SetNull)
+  replaces   RefreshToken[] @relation("RefreshTokenRotation")
+
+  @@index([accountId])
+  @@index([familyId])
+  @@map("refresh_tokens")
+}
+
+model OtpCode {
+  id        Int        @id @default(autoincrement())
+  accountId Int        @map("account_id")
+  purpose   OtpPurpose
+  /// HMAC-SHA256 with OTP_PEPPER, bound to (account, purpose) (D8).
+  codeHmac  String     @map("code_hmac")
+  attempts  Int        @default(0)
+  expiresAt DateTime   @map("expires_at") @db.Timestamptz(6)
+  usedAt    DateTime?  @map("used_at") @db.Timestamptz(6)
+  createdAt DateTime   @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime   @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  account Account @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@index([accountId, purpose, createdAt])
+  @@map("otp_codes")
+}
+
+model ApiToken {
+  id          Int       @id @default(autoincrement())
+  documentId  String    @unique @default(uuid(7)) @map("document_id") @db.Uuid
+  name        String
+  /// Leading characters of the raw token, shown in lists (D5).
+  tokenPrefix String    @map("token_prefix")
+  /// SHA-256 of the raw token; the raw value is never stored (D5).
+  tokenHash   String    @unique @map("token_hash")
+  createdById Int       @map("created_by_id")
+  scope       Json
+  expiresAt   DateTime? @map("expires_at") @db.Timestamptz(6)
+  revokedAt   DateTime? @map("revoked_at") @db.Timestamptz(6)
+  lastUsedAt  DateTime? @map("last_used_at") @db.Timestamptz(6)
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  /// D5: the token dies with its creator.
+  createdBy Account @relation(fields: [createdById], references: [id], onDelete: Cascade)
+
+  @@index([createdById])
+  @@map("api_tokens")
+}
+
+model ReviewerSession {
+  id           Int      @id @default(autoincrement())
+  /// The ephemeral `reviewer` account of this session (D2).
+  accountId    Int      @map("account_id")
+  visitorRole  String   @map("visitor_role")
+  purposeTags  Json     @default("[]") @map("purpose_tags")
+  /// Plain text, at most 500 characters.
+  notes        String?  @db.VarChar(500)
+  ipHmac       String   @map("ip_hmac")
+  userAgent    String?  @map("user_agent")
+  expiresAt    DateTime @map("expires_at") @db.Timestamptz(6)
+  lastActiveAt DateTime @default(now()) @map("last_active_at") @db.Timestamptz(6)
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  account Account @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@index([accountId])
+  @@index([ipHmac, createdAt])
+  @@index([expiresAt])
+  @@map("reviewer_sessions")
+}
+
+model FileLibrary {
+  id               Int           @id @default(autoincrement())
+  documentId       String        @unique @default(uuid(7)) @map("document_id") @db.Uuid
+  fileName         String        @map("file_name")
+  mimeType         String        @map("mime_type")
+  /// Bytes (max upload is 100 MB, SPEC §6).
+  size             Int
+  width            Int?
+  height           Int?
+  alt              String?
+  /// UUIDv7 key in the storage provider (D12).
+  storageKey       String        @unique @map("storage_key")
+  /// Hex SHA-256 of the stored bytes, for dedupe (D12).
+  sha256           String
+  url              String
+  thumbnailUrl     String?       @map("thumbnail_url")
+  provider         MediaProvider
+  isReviewerPreset Boolean       @default(false) @map("is_reviewer_preset")
+  deletedAt        DateTime?     @map("deleted_at") @db.Timestamptz(6)
+  createdAt        DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime      @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  createdById      Int?          @map("created_by")
+  updatedById      Int?          @map("updated_by")
+
+  createdBy Account? @relation("FileCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  updatedBy Account? @relation("FileUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
+
+  @@index([sha256])
+  @@map("file_library")
+}
+
+/// Append-only security audit (D15): no updated_at, metadata never holds field values.
+model AuditLog {
+  id        BigInt         @id @default(autoincrement())
+  actorId   Int?           @map("actor_id")
+  actorType AuditActorType @map("actor_type")
+  action    String
+  subject   String?
+  /// Text so it can hold an int id or a document UUID.
+  targetId  String?        @map("target_id")
+  metadata  Json?
+  ip        String?
+  createdAt DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  actor Account? @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([createdAt])
+  @@index([actorId, createdAt])
+  @@map("audit_logs")
+}
+
+model AppSetting {
+  id          Int      @id @default(autoincrement())
+  /// e.g. `reviewer.enabled`.
+  key         String   @unique
+  value       Json
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  createdById Int?     @map("created_by")
+  updatedById Int?     @map("updated_by")
+
+  createdBy Account? @relation("SettingCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  updatedBy Account? @relation("SettingUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
+
+  @@map("app_settings")
+}

@@ -1,0 +1,31 @@
+# Dev stack for tier 2 e2e (see scripts/dev-stack.sh): only the backing
+# services, from ready images. cms-api, cms-admin and web run on the host in
+# dev mode. Own project name, so it never touches abyss-smoke.
+name: abyss-dev
+
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: abyss
+      POSTGRES_DB: abyss
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?set by scripts/dev-stack.sh}
+    ports:
+      - '127.0.0.1:${DB_PORT:?set by scripts/dev-stack.sh}:5432'
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U abyss -d abyss']
+      interval: 2s
+      timeout: 3s
+      retries: 15
+
+  # SMTP sink for OTP emails; the e2e suite reads codes from its API.
+  mailpit:
+    image: axllent/mailpit:v1.31.6
+    ports:
+      - '127.0.0.1:${DEV_STACK_MAILPIT_SMTP_PORT:?set by scripts/dev-stack.sh}:1025'
+      - '127.0.0.1:${DEV_STACK_MAILPIT_HTTP_PORT:?set by scripts/dev-stack.sh}:8025'
+    healthcheck:
+      test: ['CMD', '/mailpit', 'readyz']
+      interval: 2s
+      timeout: 3s
+      retries: 15

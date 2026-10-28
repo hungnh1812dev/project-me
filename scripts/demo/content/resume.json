@@ -1,0 +1,117 @@
+{
+  "values": {
+    "name": "Alex Sample",
+    "position": "Senior Full-Stack Engineer",
+    "isMain": true,
+    "summary": "<p>Made-up sample profile for the Abyss demo. Builds <strong>web products</strong> from database to browser, with a focus on <em>clear boundaries</em> and tests.</p>"
+  },
+  "components": {
+    "skills": [
+      { "values": { "skill": "TypeScript", "level": "Expert" } },
+      { "values": { "skill": "NestJS", "level": "Advanced" } },
+      { "values": { "skill": "React", "level": "Advanced" } },
+      { "values": { "skill": "PostgreSQL", "level": "Advanced" } },
+      { "values": { "skill": "Docker", "level": "Intermediate" } },
+      { "values": { "skill": "Playwright", "level": "Intermediate" } }
+    ],
+    "experiences": [
+      {
+        "values": {
+          "company": "Example Corp",
+          "location": "Sampleville",
+          "period": "2021 - Present"
+        },
+        "components": {
+          "roles": [
+            {
+              "values": {
+                "position": "Tech Lead",
+                "period": "2023 - Present",
+                "teamSize": 6,
+                "techStack": ["TypeScript", "NestJS", "PostgreSQL"],
+                "responsibilities": "<ul><li>Led the design of a content platform.</li><li>Reviewed code and mentored four engineers.</li></ul>"
+              },
+              "components": {
+                "projects": [
+                  {
+                    "values": {
+                      "name": "Sample Content Platform",
+                      "teamSize": 5,
+                      "role": "Lead engineer",
+                      "liveLink": "https://example.com/platform",
+                      "repositoryLink": "https://example.com/platform/source",
+                      "techStack": ["NestJS", "Kysely", "React"],
+                      "responsibilities": "<p>Owned the API design and the release pipeline.</p>"
+                    }
+                  },
+                  {
+                    "values": {
+                      "name": "Sample Reporting Tool",
+                      "teamSize": 3,
+                      "role": "Backend engineer",
+                      "techStack": ["TypeScript", "PostgreSQL"],
+                      "responsibilities": "<p>Built the export jobs and the audit trail.</p>"
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "values": {
+                "position": "Software Engineer",
+                "period": "2021 - 2023",
+                "teamSize": 8,
+                "techStack": ["TypeScript", "React"],
+                "responsibilities": "<p>Shipped features across the web client and the API.</p>"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "values": {
+          "company": "Sample Studio",
+          "location": "Remote",
+          "period": "2018 - 2021"
+        },
+        "components": {
+          "roles": [
+            {
+              "values": {
+                "position": "Web Developer",
+                "period": "2018 - 2021",
+                "teamSize": 4,
+                "techStack": ["JavaScript", "Node.js"],
+                "responsibilities": "<p>Built marketing sites and small internal tools.</p>"
+              }
+            }
+          ]
+        }
+      }
+    ],
+    "educations": [
+      {
+        "values": {
+          "degree": "BSc Computer Science",
+          "institution": "Example University",
+          "period": "2014 - 2018",
+          "location": "Sampleville",
+          "description": "<p>Focus on software engineering and databases.</p>"
+        }
+      }
+    ],
+    "languages": [
+      { "values": { "language": "English", "level": "Fluent" } },
+      { "values": { "language": "Spanish", "level": "Intermediate" } }
+    ],
+    "referees": [
+      {
+        "values": {
+          "name": "Jamie Reference",
+          "phone": "+1 555 0101",
+          "role": "Engineering Manager at Example Corp"
+        }
+      }
+    ]
+  }
+}

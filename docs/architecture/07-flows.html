@@ -1,0 +1,277 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sequences &amp; flows</title>
+<link rel="stylesheet" href="assets/architecture.css">
+</head>
+<body>
+<div class="layout">
+<nav class="side" aria-label="Architecture pages">
+<div class="brand">Abyss architecture<small>Headless CMS + portfolio monorepo</small></div>
+<a href="project-architecture.html">Overview<small>Master page: system map and reading order</small></a><a href="01-system-overview.html">System &amp; monorepo<small>Actors, apps, packages, tech stack</small></a><a href="02-cms-api-architecture.html">cms-api architecture<small>Clean-architecture layers, module graph, pipeline, errors</small></a><a href="03-cms-api-platform.html">cms-api platform<small>common, config, infrastructure, architecture guards</small></a><a href="04-modules-access-identity.html">Access &amp; identity modules<small>access core, security-audit, identity, management, document-auth</small></a><a href="05-modules-content.html">Content modules<small>content-engine, content-types, documents, graphql, media, reviewer, health</small></a><a href="06-data-model.html">Data model &amp; classes<small>ER diagrams, ports and adapters class diagrams</small></a><a href="07-flows.html" class="active">Sequences &amp; flows<small>Login, refresh, setup, publish, GraphQL, media, reviewer</small></a><a href="08-frontends.html">Frontends &amp; packages<small>cms-admin, web, form-commons, base-config, e2e</small></a><a href="09-deployment-production.html">Production<small>K3s + Traefik, images, CI/CD, secrets, backups</small></a><a href="10-local-setup.html">Local setup<small>Dev servers, env files, migrations, owner, smoke stack, tests</small></a>
+</nav>
+<main>
+<h1>Sequences &amp; flows</h1>
+<p class="lead">Step-by-step interactions between the apps, the cms-api modules and the database for the main use cases.</p>
+
+<ul class="toc">
+<li><a href="#perm">Authorization decision</a></li><li><a href="#login">Login (+2FA)</a></li><li><a href="#refresh">Refresh rotation</a></li>
+<li><a href="#tabs">Admin refresh across tabs</a></li><li><a href="#setup">Owner setup</a></li><li><a href="#publish">Edit and publish</a></li>
+<li><a href="#gql">GraphQL read</a></li><li><a href="#upload">Media upload</a></li><li><a href="#delete">Media delete and purge</a></li>
+<li><a href="#reviewer">Reviewer session</a></li><li><a href="#content">Content type lifecycle</a></li></ul>
+<h2 id="perm">Authorization decision (every content request)</h2><div class="diagram"><pre class="mermaid">flowchart TB
+  r([&quot;request&quot;]) --&gt; auth{&quot;credentials?&quot;}
+  auth --&gt;|&quot;none&quot;| anon[&quot;public actor&quot;]
+  auth --&gt;|&quot;Bearer ak_live_&quot;| tok[&quot;API token: scope ∩ creator&#x27;s current permissions&quot;]
+  auth --&gt;|&quot;Bearer JWT&quot;| jwt[&quot;JWT: HS256, kid, tv and pv vs DB (cache)&quot;]
+  auth --&gt;|&quot;invalid&quot;| e401[&quot;401&quot;]
+  anon --&gt; pg{&quot;PermissionGuard: can(action, subject)?&quot;}
+  tok --&gt; pg
+  jwt --&gt; pg
+  pg --&gt;|&quot;unknown content type&quot;| e404[&quot;404&quot;]
+  pg --&gt;|&quot;no&quot;| e403[&quot;403&quot;]
+  pg --&gt;|&quot;yes&quot;| uc[&quot;use case&quot;]
+  uc --&gt; rf[&quot;row filter from conditions&quot;]
+  uc --&gt; fp[&quot;field projection: unreadable columns never selected&quot;]
+  uc --&gt; qa{&quot;filter / sort on unreadable field?&quot;}
+  qa --&gt;|&quot;yes&quot;| e400[&quot;400 FIELD_NOT_READABLE&quot;]
+  qa --&gt;|&quot;no&quot;| ser[&quot;RecordSerializer: *** / null + _maskedFields&quot;]</pre></div>
+<h2 id="login">Login, with and without 2FA</h2><div class="diagram"><pre class="mermaid">sequenceDiagram
+  actor U as User
+  participant A as cms-admin / web
+  participant C as AuthController
+  participant S as AuthService
+  participant R as AccountRepository
+  participant T as RefreshTokenService
+  participant DB as PostgreSQL
+  U-&gt;&gt;A: email + password
+  A-&gt;&gt;C: POST /api/v1/auth/login
+  C-&gt;&gt;S: login(credentials, clientMeta)
+  S-&gt;&gt;R: findLoginAccount(email)
+  S-&gt;&gt;S: exactly one Argon2id verify (dummy hash when unknown)
+  alt unknown, wrong password or not active
+    S-&gt;&gt;DB: audit auth.login_failed (standalone row)
+    S--&gt;&gt;C: DomainError invalid credentials
+    C--&gt;&gt;A: 401 (same answer for unknown emails)
+  else 2FA enabled
+    S--&gt;&gt;C: tempToken + methods
+    C--&gt;&gt;A: 200 requires2FA
+    A-&gt;&gt;C: POST /auth/2fa/verify (tempToken, code)
+    Note over C,S: TwoFactorLogin checks the code, max 5 attempts, then startSession
+  else password only
+    S-&gt;&gt;T: issue refresh token (CORE transaction)
+    S-&gt;&gt;DB: audit auth.login_succeeded (same transaction)
+    S--&gt;&gt;C: accessToken + refreshToken
+    C--&gt;&gt;A: 200 accessToken + Set-Cookie __Secure-abyss_rt
+  end
+  Note over A: access token kept in memory only, sent as Bearer</pre></div>
+<h2 id="refresh">Refresh token rotation and reuse detection (D9, D14)</h2><div class="diagram"><pre class="mermaid">sequenceDiagram
+  participant B as Browser
+  participant G as AllowedOriginGuard
+  participant C as AuthController
+  participant T as RefreshTokenService
+  participant DB as refresh_tokens
+  B-&gt;&gt;G: POST /auth/refresh (cookie + Origin)
+  G-&gt;&gt;C: Origin is in the allowlist
+  C-&gt;&gt;T: rotate(rawToken)
+  T-&gt;&gt;DB: findByHash(SHA-256) in a transaction
+  alt unknown, revoked or expired
+    T--&gt;&gt;C: invalid
+    C--&gt;&gt;B: 401
+  else token was already rotated
+    alt inside the grace window
+      T--&gt;&gt;C: grace: new access token, cookie left alone
+    else reuse
+      T-&gt;&gt;DB: revoke the whole family, bump token_version, audit
+      T--&gt;&gt;C: reuse
+      C--&gt;&gt;B: 401
+    end
+  else current token
+    T-&gt;&gt;DB: insert successor, claimRotation(current to next)
+    T--&gt;&gt;C: rotated
+    C--&gt;&gt;B: new access token + rotated cookie
+  end</pre></div>
+<h2 id="tabs">cms-admin: refresh across tabs</h2><div class="diagram"><p class="cap">auth-interceptor.ts + cross-tab-refresh.ts + single-flight.ts. Without Web Locks each tab refreshes and the grace window covers the overlap.</p><pre class="mermaid">sequenceDiagram
+  participant T1 as Admin tab 1
+  participant T2 as Admin tab 2
+  participant L as Web Lock + BroadcastChannel
+  participant API as cms-api
+  T1-&gt;&gt;API: GET /accounts (expired access token)
+  API--&gt;&gt;T1: 401
+  T2-&gt;&gt;API: GET /media (expired access token)
+  API--&gt;&gt;T2: 401
+  T1-&gt;&gt;L: take refresh lock
+  T2-&gt;&gt;L: wait for lock
+  T1-&gt;&gt;API: POST /auth/refresh (cookie)
+  API--&gt;&gt;T1: new access token, rotated cookie
+  T1-&gt;&gt;L: broadcast token, release lock
+  L--&gt;&gt;T2: token from tab 1, no own refresh
+  T1-&gt;&gt;API: retry GET /accounts once
+  T2-&gt;&gt;API: retry GET /media once</pre></div>
+<h2 id="setup">One-time owner setup (ADR 0005)</h2><div class="diagram"><pre class="mermaid">sequenceDiagram
+  actor O as Operator
+  participant UI as cms-admin /setup
+  participant C as OwnerSetupController
+  participant S as OwnerSetupService
+  participant B as bootstrapOwner()
+  participant DB as PostgreSQL
+  UI-&gt;&gt;C: GET /setup/status
+  C-&gt;&gt;S: isOpen = token configured and no live owner
+  C--&gt;&gt;UI: open true or false
+  O-&gt;&gt;UI: setup token, email, password
+  UI-&gt;&gt;C: POST /setup/owner
+  C-&gt;&gt;S: admit(token): SHA-256 + timingSafeEqual, before body parsing
+  alt setup closed
+    C--&gt;&gt;UI: 404, same as an unknown route
+  else wrong token
+    S-&gt;&gt;DB: audit owner.setup_rejected
+    C--&gt;&gt;UI: 401 SETUP_TOKEN_INVALID
+  else token ok
+    C-&gt;&gt;B: create owner
+    B-&gt;&gt;DB: transaction + pg_advisory_xact_lock, owner exists? email taken?
+    B-&gt;&gt;DB: insert owner + audit owner.created (channel setup_page)
+    C--&gt;&gt;UI: 201 email
+  end
+  Note over UI,C: no session is issued, the owner signs in on /auth/login</pre></div>
+<h2 id="publish">Edit with optimistic concurrency, then publish (D11)</h2><div class="diagram"><pre class="mermaid">sequenceDiagram
+  actor E as Editor
+  participant UI as cms-admin editor
+  participant G as DocumentAuthGuard + PermissionGuard
+  participant DC as DocumentsCommandService
+  participant P as PublishService
+  participant AP as AccessPolicyService
+  participant R as KyselyDocumentRepository
+  E-&gt;&gt;UI: edit the draft
+  UI-&gt;&gt;G: PUT /documents/cv-page/:documentId (version)
+  G-&gt;&gt;DC: update allowed on cv-page
+  DC-&gt;&gt;AP: row filter + writable fields
+  DC-&gt;&gt;R: lock draft row
+  alt version differs
+    DC--&gt;&gt;UI: 409 DOCUMENT_VERSION_CONFLICT (masked server, submitted, diff)
+    UI-&gt;&gt;UI: ConflictMergeModal: merge and resubmit
+  else same version
+    DC-&gt;&gt;R: replace tree, bump version
+    DC--&gt;&gt;UI: 200 new version
+  end
+  E-&gt;&gt;UI: Publish
+  UI-&gt;&gt;G: POST .../:documentId/publish (expectedVersion)
+  G-&gt;&gt;P: publish(actor, slug, documentId, expectedVersion)
+  P-&gt;&gt;AP: rowFilter(actor, publish, slug)
+  P-&gt;&gt;R: CONTENT transaction: lock draft and published rows
+  P-&gt;&gt;R: load draft tree, delete old published rows
+  P-&gt;&gt;R: insert deep clone with published_at, copy version
+  P--&gt;&gt;UI: 200 documentId + version
+  Note over P: activity recorder is told after commit, its failure never fails the request</pre></div>
+<h2 id="gql">GraphQL read from the web server (D18)</h2><div class="diagram"><pre class="mermaid">sequenceDiagram
+  participant W as web server (Next.js)
+  participant M as body limit 32 KiB
+  participant DA as DocumentAuthGuard
+  participant X as Graphql.executor
+  participant RS as Document.resolver
+  participant Q as DocumentsQueryService
+  W-&gt;&gt;M: POST /api/v1/graphql (anonymous, API_INTERNAL_URL)
+  M-&gt;&gt;DA: no Authorization header: public actor
+  DA-&gt;&gt;X: execute(query, variables, actor)
+  X-&gt;&gt;X: parse + limits (2000 tokens, depth 8, 5 roots, 500 nodes)
+  X-&gt;&gt;X: schema for the actor&#x27;s readable types (hidden = unknown), validate
+  X-&gt;&gt;RS: root field per content type
+  RS-&gt;&gt;Q: get / list, exactly the REST read path
+  Q--&gt;&gt;RS: serialized, masked record
+  RS--&gt;&gt;X: data
+  X--&gt;&gt;W: data + errors (REST error codes), no-store
+  Note over W: cached by Next.js for WEB_REVALIDATE_SECONDS</pre></div>
+<h2 id="upload">Media upload (D12)</h2><div class="diagram"><pre class="mermaid">sequenceDiagram
+  actor E as Editor
+  participant C as MediaController
+  participant U as UploadMediaService
+  participant P as UploadProcessingAdapter
+  participant S as MediaStorage
+  participant R as PrismaMediaRepository
+  E-&gt;&gt;C: POST /media (multipart)
+  C-&gt;&gt;U: upload(actor, stream)
+  U-&gt;&gt;P: receive: size limit per kind
+  U-&gt;&gt;P: prepare: magic-byte allowlist, sharp re-encode strips EXIF, SHA-256
+  U-&gt;&gt;S: put(key = UUIDv7)
+  U-&gt;&gt;R: create file_library row
+  alt row insert fails
+    U-&gt;&gt;S: delete(key), no orphan left
+  end
+  C--&gt;&gt;E: 201 media record</pre></div>
+<h2 id="delete">Media delete and purge</h2><div class="diagram"><pre class="mermaid">sequenceDiagram
+  participant C as MediaController
+  participant L as MediaLibraryService
+  participant RF as MediaReferenceAdapter
+  participant R as PrismaMediaRepository
+  participant J as MediaPurge job
+  participant S as MediaStorage
+  C-&gt;&gt;L: DELETE /media/:id
+  L-&gt;&gt;RF: does any document reference it?
+  alt referenced
+    L--&gt;&gt;C: 409 MEDIA_IN_USE
+  else free
+    L-&gt;&gt;R: soft delete + audit (one transaction)
+    L--&gt;&gt;C: 204
+  end
+  loop every interval
+    J-&gt;&gt;R: soft-deleted files
+    J-&gt;&gt;S: delete cloud object
+  end</pre></div>
+<h2 id="reviewer">Reviewer session (D2)</h2><div class="diagram"><pre class="mermaid">sequenceDiagram
+  actor V as Visitor
+  participant W as web ReviewerAccessDialog
+  participant C as ReviewerController
+  participant S as ReviewerAccessService
+  participant T as Cloudflare Turnstile
+  participant DB as PostgreSQL
+  participant D as documents / graphql
+  W-&gt;&gt;C: GET /reviewer/status
+  V-&gt;&gt;W: role, purposes, notes, human check
+  W-&gt;&gt;C: POST /reviewer/sessions
+  C-&gt;&gt;S: createSession(input, ip, userAgent)
+  S-&gt;&gt;S: enabled? IP HMAC, 1 per IP per 10 min, cap 200 active
+  S-&gt;&gt;T: verify token server-side
+  S-&gt;&gt;DB: ephemeral reviewer account + reviewer_sessions row
+  S--&gt;&gt;W: access token (24 h, no cookie, gone on reload)
+  W-&gt;&gt;D: read published content through the reviewer field profile</pre></div>
+<h2 id="content">Content type lifecycle (D10)</h2><div class="diagram"><p class="cap">Schema changes never apply at request time; destructive changes need --allow-destructive and a data-migration note.</p><pre class="mermaid">flowchart LR
+  s[&quot;content/schemas/*.json&lt;br/&gt;cv-page, profile&quot;] --&gt; g[&quot;content:generate&lt;br/&gt;validate, diff vs snapshot.json&quot;]
+  g --&gt; m[&quot;content/migrations/000N_*.sql&lt;br/&gt;+ snapshot.json&quot;]
+  g --&gt; sdl[&quot;graphql:print-schema&lt;br/&gt;content/schema.graphql&quot;]
+  m --&gt; rev[&quot;review + commit&quot;] --&gt; ci[&quot;CI checks&lt;br/&gt;generate --check, print-schema --check&quot;]
+  ci --&gt; img[&quot;cms-api image&quot;] --&gt; init[&quot;init container&lt;br/&gt;npm run deploy:migrate&quot;]
+  init --&gt; core[&quot;db:migrate&lt;br/&gt;prisma migrate deploy + role seed&quot;]
+  init --&gt; cm[&quot;content:migrate&lt;br/&gt;advisory lock, content._migrations&quot;]
+  cm --&gt; reg[(&quot;content._content_types&quot;)]
+  reg --&gt; rt[&quot;ContentRegistry at runtime&lt;br/&gt;resolve(slug) before any SQL&quot;]</pre></div>
+
+<footer>Generated 2026-10-26 from the working tree of <code>abyss</code> (file lists and the module graph are read from the code; descriptions come from SPEC.md, the ADRs, docs/ and the source). File names follow ADR 0008 and were being renamed on the day this was generated, so re-generate after big renames: <code>pnpm docs:architecture</code>.</footer>
+</main>
+</div>
+<script type="module">
+import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11.4.1/dist/mermaid.esm.min.mjs';
+const theme = document.documentElement.dataset.theme
+  || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+mermaid.initialize({
+  startOnLoad: false,
+  theme: theme === 'dark' ? 'dark' : 'neutral',
+  securityLevel: 'strict',
+  flowchart: { curve: 'basis', useMaxWidth: true },
+  sequence: { showSequenceNumbers: true, useMaxWidth: true, wrap: true },
+  er: { useMaxWidth: true },
+  class: { useMaxWidth: true },
+});
+await mermaid.run({ querySelector: 'pre.mermaid' });
+for (const input of document.querySelectorAll('input.filter')) {
+  const target = document.getElementById(input.dataset.target);
+  input.addEventListener('input', () => {
+    const q = input.value.trim().toLowerCase();
+    for (const row of target.querySelectorAll('tbody tr')) {
+      row.hidden = q !== '' && !row.textContent.toLowerCase().includes(q);
+    }
+  });
+}
+</script>
+</body>
+</html>

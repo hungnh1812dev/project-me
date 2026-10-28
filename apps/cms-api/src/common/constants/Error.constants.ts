@@ -1,0 +1,27 @@
+/** Machine-readable error codes returned in `errorCode`. */
+export const ERROR_CODES = {
+  BAD_REQUEST: 'BAD_REQUEST',
+  UNAUTHORIZED: 'UNAUTHORIZED',
+  FORBIDDEN: 'FORBIDDEN',
+  NOT_FOUND: 'NOT_FOUND',
+  METHOD_NOT_ALLOWED: 'METHOD_NOT_ALLOWED',
+  CONFLICT: 'CONFLICT',
+  PAYLOAD_TOO_LARGE: 'PAYLOAD_TOO_LARGE',
+  UNSUPPORTED_MEDIA_TYPE: 'UNSUPPORTED_MEDIA_TYPE',
+  UNPROCESSABLE_ENTITY: 'UNPROCESSABLE_ENTITY',
+  TOO_MANY_REQUESTS: 'TOO_MANY_REQUESTS',
+  SERVICE_UNAVAILABLE: 'SERVICE_UNAVAILABLE',
+  HTTP_ERROR: 'HTTP_ERROR',
+  INTERNAL_ERROR: 'INTERNAL_ERROR',
+} as const;
+
+export type ErrorCode = (typeof ERROR_CODES)[keyof typeof ERROR_CODES];
+
+/** Message for unexpected errors; internals are never sent to the client. */
+export const INTERNAL_ERROR_MESSAGE = 'Internal server error';
+
+/** Body or params fail the request schema; `details.issues` lists paths. */
+export const INVALID_REQUEST_ERROR = {
+  CODE: 'ACCESS_INVALID_REQUEST',
+  MESSAGE: 'The request is invalid.',
+} as const;
