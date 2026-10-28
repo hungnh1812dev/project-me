@@ -1,5 +1,6 @@
 import {
   GraphqlRequestError,
+  isUnauthenticatedGraphqlError,
   unwrapGraphqlResponse,
 } from './GraphqlResponse.rules';
 
@@ -52,5 +53,28 @@ describe('unwrapGraphqlResponse', () => {
     expect(
       thrownBy(() => unwrapGraphqlResponse(200, { data: null })).code,
     ).toBe('NO_DATA');
+  });
+});
+
+describe('isUnauthenticatedGraphqlError', () => {
+  it('is true for an HTTP 401 and for the UNAUTHENTICATED code', () => {
+    expect(
+      isUnauthenticatedGraphqlError(new GraphqlRequestError('HTTP_ERROR', 401)),
+    ).toBe(true);
+    expect(
+      isUnauthenticatedGraphqlError(
+        new GraphqlRequestError('UNAUTHENTICATED', 200),
+      ),
+    ).toBe(true);
+  });
+
+  it.each([
+    ['a network error', new GraphqlRequestError('NETWORK_ERROR')],
+    ['a 403', new GraphqlRequestError('HTTP_ERROR', 403)],
+    ['a 500', new GraphqlRequestError('HTTP_ERROR', 500)],
+    ['another code', new GraphqlRequestError('FORBIDDEN', 200)],
+    ['a plain Error', new Error('boom')],
+  ])('is false for %s', (_name, error) => {
+    expect(isUnauthenticatedGraphqlError(error)).toBe(false);
   });
 });

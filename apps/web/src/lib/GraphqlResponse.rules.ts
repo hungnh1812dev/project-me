@@ -11,6 +11,7 @@ export const GRAPHQL_FAILURE_CODES = {
   NETWORK: 'NETWORK_ERROR',
   NO_DATA: 'NO_DATA',
   UNKNOWN: 'UNKNOWN_ERROR',
+  UNAUTHENTICATED: 'UNAUTHENTICATED',
 } as const;
 
 /**
@@ -25,6 +26,15 @@ export class GraphqlRequestError extends Error {
     super(`GraphQL request failed: ${code}`);
     this.name = 'GraphqlRequestError';
   }
+}
+
+/** True when the API refused the call because the token is missing or no longer accepted. */
+export function isUnauthenticatedGraphqlError(error: unknown): boolean {
+  return (
+    error instanceof GraphqlRequestError &&
+    (error.status === HTTP_STATUS.UNAUTHORIZED ||
+      error.code === GRAPHQL_FAILURE_CODES.UNAUTHENTICATED)
+  );
 }
 
 interface GraphqlResponseBody {

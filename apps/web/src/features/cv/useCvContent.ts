@@ -1,9 +1,11 @@
+import { useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 
 import { requestGraphql } from '../../lib/Graphql.client';
 import {
   GRAPHQL_FAILURE_CODES,
   GraphqlRequestError,
+  isUnauthenticatedGraphqlError,
 } from '../../lib/GraphqlResponse.rules';
 import { useWebSession, type WebSession } from '../session';
 import { sanitizeRichtext } from '../../lib/SafeRichtext.rules';
@@ -26,7 +28,8 @@ function actorKeyOf({ status, kind, user }: WebSession): string {
  * The CV data for the current visitor. Anonymous visitors (and the first paint
  * of everyone) get the server-rendered data without a request; a signed-in or
  * reviewer session refetches with its own token, and signing out falls back to
- * the server data. The server data arrives sanitized; refetched data is
+ * the server data. A reviewer token the API no longer accepts (switch off,
+ * 24 h expiry) ends the session the same way. The server data arrives sanitized; refetched data is
  * sanitized here.
  */
 export function useCvContent(serverData: CvPageData) {
@@ -34,7 +37,7 @@ export function useCvContent(serverData: CvPageData) {
   const actor = actorKeyOf(session);
   const isAnonymous = actor === ANONYMOUS_ACTOR;
 
-  return useQuery({
+  const query = useQuery({
     queryKey: ['cv', actor],
     queryFn: () => {
       const accessToken = session.getAccessToken();
@@ -53,4 +56,13 @@ export function useCvContent(serverData: CvPageData) {
       : // Data read with a token is dropped as soon as nothing shows it.
         { gcTime: 0 }),
   });
+
+  const isReviewerTokenRefused =
+    session.kind === 'reviewer' && isUnauthenticatedGraphqlError(query.error);
+  const { signOut } = session;
+  useEffect(() => {
+    if (isReviewerTokenRefused) void signOut();
+  }, [isReviewerTokenRefused, signOut]);
+
+  return query;
 }
