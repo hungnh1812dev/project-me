@@ -129,6 +129,8 @@ export_api_env() {
   # Cloudflare's public always-pass test secret (same value as the smoke stack).
   TURNSTILE_SECRET_KEY="$(sed -n 's/^TURNSTILE_SECRET_KEY=//p' "$ROOT_DIR/scripts/stack/cms-api.env")"
   export TURNSTILE_SECRET_KEY
+  # Reviewer features stay on in the dev stack (ADR 0014).
+  export REVIEWER_FEATURE_ENABLED=true
   # Unset: dev defaults for the key ids; the setup route stays closed.
   unset JWT_ACCESS_KID TOTP_ENC_KID OWNER_SETUP_TOKEN
 }
@@ -223,6 +225,7 @@ start_apps() {
   DEV_SERVER_PORT="$WEB_PORT_DEV" DEV_API_PROXY_TARGET="http://$LOOPBACK:$API_PORT" \
     API_INTERNAL_URL="http://$LOOPBACK:$API_PORT$API_PREFIX" WEB_REVALIDATE_SECONDS=0 \
     NEXT_PUBLIC_API_BASE_URL="$API_PREFIX" NEXT_PUBLIC_TURNSTILE_SITE_KEY="$TURNSTILE_TEST_SITE_KEY" \
+    WEB_STATUS_PAGE_ENABLED=true \
     start_app web pnpm --dir "$ROOT_DIR" --filter @abyss/web dev
   wait_until "cms-api ($API_PREFIX/health/ready)" cms-api api_is_ready
   wait_until "cms-admin ($ADMIN_ORIGIN)" cms-admin admin_is_up

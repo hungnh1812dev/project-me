@@ -131,6 +131,59 @@ describe('loadAppConfig', () => {
     expect(JSON.stringify(summarizeConfig(config))).not.toContain('ts-secret');
   });
 
+  describe('REVIEWER_FEATURE_ENABLED (ADR 0014)', () => {
+    it('is off when unset or empty', () => {
+      expect(loadAppConfig(devEnv()).reviewer.isFeatureEnabled).toBe(false);
+    });
+
+    it('shows the switch in the start-up summary', () => {
+      const config = loadAppConfig(
+        devEnv({ REVIEWER_FEATURE_ENABLED: 'true' }),
+      );
+      expect(summarizeConfig(config)).toMatchObject({
+        reviewer: { isFeatureEnabled: true },
+      });
+    });
+  });
+
+  describe.each([
+    ['REVIEWER_FEATURE_ENABLED', false],
+    ['SMTP_SECURE', false],
+  ])('boolean key %s', (key, defaultValue) => {
+    const valueOf = (raw: string | undefined) => {
+      const config = loadAppConfig(
+        devEnv({
+          MAIL_PROVIDER: 'smtp',
+          SMTP_HOST: 'smtp.example.test',
+          MAIL_FROM: 'Abyss <no-reply@example.test>',
+          ...(raw === undefined ? {} : { [key]: raw }),
+        }),
+      );
+      return key === 'SMTP_SECURE'
+        ? config.mail.smtp?.secure
+        : config.reviewer.isFeatureEnabled;
+    };
+
+    it('uses the default when unset or empty', () => {
+      expect(valueOf(undefined)).toBe(defaultValue);
+      expect(valueOf('')).toBe(defaultValue);
+    });
+
+    it('reads true and false', () => {
+      expect(valueOf('true')).toBe(true);
+      expect(valueOf('false')).toBe(false);
+    });
+
+    it.each(['TRUE', '1', 'yes', 'on', 'enabled', '0', 'off', 'disabled'])(
+      'rejects %s, naming the key and not the value',
+      (raw) => {
+        const call = () => valueOf(raw);
+        expect(call).toThrow(ConfigValidationError);
+        expect(call).toThrow(`- ${key}: must be true or false`);
+      },
+    );
+  });
+
   describe('OWNER_SETUP_TOKEN (ADR 0005)', () => {
     it('is unset by default and when empty', () => {
       expect(loadAppConfig(devEnv()).secrets.ownerSetupToken).toBeUndefined();

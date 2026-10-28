@@ -10,6 +10,10 @@ export const REVIEWER_COPY = {
   loading: 'Loading reviewer sessions',
   loadFailed: 'Could not load the reviewer sessions.',
   forbidden: 'Your role cannot view reviewer sessions.',
+  featureOff: {
+    title: 'Reviewer access is turned off on this server',
+    hint: 'The server setting REVIEWER_FEATURE_ENABLED controls it. Visitors cannot request reviewer sessions until it is set to true.',
+  },
   switch: {
     label: 'Allow reviewer sessions',
     onHint: 'Visitors can request a read-only session on the public site.',

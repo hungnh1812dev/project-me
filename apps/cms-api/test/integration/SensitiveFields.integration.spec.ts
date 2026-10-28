@@ -144,6 +144,7 @@ describe('sensitive fields start masked for public and reviewer (SPEC D2, RV-mas
         ADMIN_ORIGIN: TEST_ADMIN_ORIGIN,
         WEB_ORIGIN: TEST_WEB_ORIGIN,
         TRUST_PROXY_HOPS: '1',
+        REVIEWER_FEATURE_ENABLED: 'true',
       }),
       [
         {

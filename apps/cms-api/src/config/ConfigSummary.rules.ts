@@ -80,6 +80,7 @@ export function summarizeConfig(config: IAppConfig): Record<string, unknown> {
             secretAccessKey: secretState(backups.secretAccessKey),
           },
     reviewer: {
+      isFeatureEnabled: config.reviewer.isFeatureEnabled,
       turnstileExpectedHostname: config.reviewer.turnstileExpectedHostname,
     },
     secrets: {

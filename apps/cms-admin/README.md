@@ -211,6 +211,10 @@ End-to-end coverage lives in [`apps/e2e`](../e2e/README.md).
   the log of sessions (`GET /reviewer/sessions`: visitor role, purposes,
   notes, browser, start, active/ended). Notes and browser strings come from
   visitors and are rendered as text only; the IP is never shown.
+- While the server's `REVIEWER_FEATURE_ENABLED` switch is off, cms-api answers
+  `404 REVIEWER_FEATURE_OFF` to the status and sessions calls. The page then
+  shows one notice ("Reviewer access is turned off on this server") and hides
+  the switch and the log; the menu item stays for the owner. A 4xx is not retried.
 - Reviewer mode: an account whose role is `reviewer` sees a read-only banner,
   no Security link and no write controls (the document form is disabled and
   has no Save). This is a hint only; cms-api answers 403 to every write.
@@ -292,3 +296,8 @@ content depends on the measured scrollbar width, so a fixed sha256 hash would
 differ per OS/browser. nginx uses `$request_id` (128 random bits) as the nonce
 and adds `<meta name="csp-nonce">` to the HTML shell (`sub_filter`);
 `src/main.tsx` hands it to react-remove-scroll-bar through `get-nonce`.
+
+The CSP has no `'unsafe-eval'`, so the bundle must not use `eval` or
+`new Function`. Zod runs with `jitless` for that reason: its eval probe would
+log a CSP violation on every page (`src/app/Zod.setup.ts`, imported first in
+`src/main.tsx`, ADR 0015).

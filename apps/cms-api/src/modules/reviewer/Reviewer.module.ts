@@ -13,6 +13,7 @@ import {
   UnconfiguredTurnstileVerifier,
 } from './adapters/Turnstile.client';
 import {
+  IS_REVIEWER_FEATURE_ENABLED,
   REVIEWER_ACCOUNT_GATEWAY,
   REVIEWER_IP_KEY,
   REVIEWER_REPOSITORY,
@@ -53,6 +54,11 @@ export function createTurnstileVerifier(config: IAppConfig): TurnstileVerifier {
       provide: TURNSTILE_VERIFIER,
       inject: [APP_CONFIG],
       useFactory: createTurnstileVerifier,
+    },
+    {
+      provide: IS_REVIEWER_FEATURE_ENABLED,
+      inject: [APP_CONFIG],
+      useFactory: (config: IAppConfig) => config.reviewer.isFeatureEnabled,
     },
     {
       provide: REVIEWER_IP_KEY,

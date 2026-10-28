@@ -336,3 +336,6 @@ export interface SessionRevocationRepository {
   /** Bumps `token_version` (live access tokens die) and revokes every live refresh token at `at`. */
   revokeAll(unit: UnitOfWork, accountId: number, at: Date): Promise<void>;
 }
+
+/** DI token: false = reviewer-role accounts are refused as not signed in (ADR 0014). */
+export const ACCEPTS_REVIEWER_TOKENS = Symbol('ACCEPTS_REVIEWER_TOKENS');

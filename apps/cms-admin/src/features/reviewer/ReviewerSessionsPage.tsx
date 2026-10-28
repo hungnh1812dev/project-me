@@ -29,6 +29,7 @@ import { useClampedPage } from '../../components/useClampedPage';
 import { formatDateTime } from '../../lib/DateFormat.rules';
 import { useReviewerApi } from './ReviewerApi.context';
 import {
+  isReviewerFeatureOff,
   REVIEWER_QUERY_KEYS,
   useReviewerEnabledQuery,
   useReviewerSessionsQuery,
@@ -46,10 +47,28 @@ const STATUS_CLASS = {
 export function ReviewerSessionsPage() {
   const [page, setPage] = useState(1);
   const sessions = useReviewerSessionsQuery(page);
+  const enabled = useReviewerEnabledQuery();
 
   useClampedPage(page, setPage, sessions.data?.meta);
 
   const rows = sessions.data?.data ?? [];
+
+  if (
+    isReviewerFeatureOff(enabled.error) ||
+    isReviewerFeatureOff(sessions.error)
+  ) {
+    return (
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-6">
+        <PageHeader title={copy.title} description={copy.description} />
+        <div className="grid justify-items-start gap-1">
+          <p className="m-0 font-medium">{copy.featureOff.title}</p>
+          <p className="m-0 max-w-prose text-sm text-muted-foreground">
+            {copy.featureOff.hint}
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="grid grid-cols-[minmax(0,1fr)] gap-6">

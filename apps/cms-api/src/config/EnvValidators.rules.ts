@@ -14,6 +14,20 @@ export const optionalText = z.preprocess(
 /** Optional secret; length rules for production live in `Env.rules.ts`. */
 export const optionalSecret = optionalText;
 
+/** Exactly `true` or `false` (lower case); empty or missing falls back to `defaultValue`. */
+export const envBoolean = (defaultValue: boolean) =>
+  z.preprocess(
+    emptyToUndefined,
+    z
+      .stringbool({
+        truthy: ['true'],
+        falsy: ['false'],
+        case: 'sensitive',
+        error: 'must be true or false',
+      })
+      .default(defaultValue),
+  );
+
 /** TCP port; empty or missing falls back to `defaultPort`. */
 export const portNumber = (defaultPort: number) =>
   z.preprocess(

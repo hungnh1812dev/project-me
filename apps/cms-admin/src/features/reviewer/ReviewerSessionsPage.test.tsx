@@ -115,7 +115,10 @@ describe('ReviewerSessionsPage', () => {
     await open(TEST_USER, {
       [`GET ${REVIEWER.SESSIONS}`]: () => ({ status: 500, data: {} }),
     });
-    expect(await screen.findByText(copy.loadFailed)).toBeInTheDocument();
+    // A 5xx retries once (HEALTH_QUERY_RETRY) before the error shows.
+    expect(
+      await screen.findByText(copy.loadFailed, {}, { timeout: 4000 }),
+    ).toBeInTheDocument();
     expect(
       screen.getByRole('button', { name: COPY.access.errors.retry }),
     ).toBeInTheDocument();
@@ -126,6 +129,23 @@ describe('ReviewerSessionsPage', () => {
       [`GET ${REVIEWER.SESSIONS}`]: () => ({ status: 403, data: {} }),
     });
     expect(await screen.findByText(copy.forbidden)).toBeInTheDocument();
+  });
+
+  it('shows one notice and no switch or table while the server has the feature off', async () => {
+    const off: FakeHandler = () => ({
+      status: 404,
+      data: { errorCode: 'REVIEWER_FEATURE_OFF' },
+    });
+    const { api } = await open(TEST_USER, {
+      [`GET ${REVIEWER.STATUS}`]: off,
+      [`GET ${REVIEWER.SESSIONS}`]: off,
+    });
+    expect(await screen.findByText(copy.featureOff.title)).toBeInTheDocument();
+    expect(screen.getByText(copy.featureOff.hint)).toBeInTheDocument();
+    expect(screen.queryByRole('switch')).toBeNull();
+    expect(screen.queryByRole('table')).toBeNull();
+    expect(api.callsTo(`GET ${REVIEWER.STATUS}`)).toHaveLength(1);
+    expect(api.callsTo(`GET ${REVIEWER.SESSIONS}`)).toHaveLength(1);
   });
 
   it('asks before switching off, then ends sessions', async () => {

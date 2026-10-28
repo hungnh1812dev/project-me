@@ -6,6 +6,10 @@ export const REVIEWER_REPOSITORY = Symbol('REVIEWER_REPOSITORY');
 export const REVIEWER_ACCOUNT_GATEWAY = Symbol('REVIEWER_ACCOUNT_GATEWAY');
 /** DI token for the Turnstile verifier. */
 export const TURNSTILE_VERIFIER = Symbol('TURNSTILE_VERIFIER');
+/** DI token of the deploy switch REVIEWER_FEATURE_ENABLED (`boolean`, ADR 0014). */
+export const IS_REVIEWER_FEATURE_ENABLED = Symbol(
+  'IS_REVIEWER_FEATURE_ENABLED',
+);
 /** DI token of the key behind the visitor-IP HMAC (`Buffer | undefined`). */
 export const REVIEWER_IP_KEY = Symbol('REVIEWER_IP_KEY');
 

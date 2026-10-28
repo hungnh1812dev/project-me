@@ -6,6 +6,7 @@ import {
   isReviewerSessionActive,
   retryAfterSecondsOf,
   reviewerIpLimited,
+  reviewerFeatureOff,
 } from './ReviewerAdmission.rules';
 import { DOMAIN_ERROR_KINDS } from '../../../common/errors/Domain.errors';
 
@@ -49,5 +50,13 @@ describe('ReviewerAdmission.rules', () => {
     const error = reviewerIpLimited(42);
     expect(error.kind).toBe(DOMAIN_ERROR_KINDS.RATE_LIMITED);
     expect(error.retryAfterSeconds).toBe(42);
+  });
+
+  it('answers a not-found refusal with the feature-off code', () => {
+    expect(reviewerFeatureOff()).toMatchObject({
+      kind: 'not_found',
+      errorCode: 'REVIEWER_FEATURE_OFF',
+      message: 'Reviewer access is turned off on this server.',
+    });
   });
 });

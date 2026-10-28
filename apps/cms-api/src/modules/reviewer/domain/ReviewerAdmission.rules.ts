@@ -98,6 +98,10 @@ function refusal(
 export const reviewerDisabled = (): DomainError =>
   refusal(DOMAIN_ERROR_KINDS.FORBIDDEN, 'DISABLED');
 
+/** 404: the deploy switch REVIEWER_FEATURE_ENABLED is off (ADR 0014). */
+export const reviewerFeatureOff = (): DomainError =>
+  refusal(DOMAIN_ERROR_KINDS.NOT_FOUND, 'FEATURE_OFF');
+
 /** 503: Turnstile or the IP key is not configured, or Turnstile could not be reached. */
 export const reviewerUnavailable = (): DomainError =>
   refusal(DOMAIN_ERROR_KINDS.UNAVAILABLE, 'UNAVAILABLE');

@@ -35,6 +35,7 @@ import {
   REVIEWER_IP_WINDOW_MS,
   reviewerCapacityReached,
   reviewerDisabled,
+  reviewerFeatureOff,
   reviewerIpLimited,
   reviewerTurnstileFailed,
   reviewerUnavailable,
@@ -42,6 +43,7 @@ import {
   type ReviewerStatusView,
 } from '../domain/ReviewerAdmission.rules';
 import {
+  IS_REVIEWER_FEATURE_ENABLED,
   REVIEWER_ACCOUNT_GATEWAY,
   REVIEWER_IP_KEY,
   REVIEWER_REPOSITORY,
@@ -109,10 +111,13 @@ export class ReviewerAccessService {
     private readonly versions: VersionCache,
     private readonly audit: SecurityAuditService,
     private readonly tokens: AccessTokenService,
+    @Inject(IS_REVIEWER_FEATURE_ENABLED)
+    private readonly isFeatureEnabled: boolean,
   ) {}
 
   /** Public: is reviewer access switched on. */
   async status(): Promise<ReviewerStatusView> {
+    this.requireFeatureOn();
     return { enabled: await this.reviewers.isEnabled() };
   }
 
@@ -121,6 +126,7 @@ export class ReviewerAccessService {
     input: ReviewerSettingsInput,
     meta: ClientMeta,
   ): Promise<ReviewerStatusView> {
+    this.requireFeatureOn();
     return this.transactions.run(async (unit) => {
       await this.reviewers.saveEnabled(unit, input.enabled, actor.accountId);
       const roleId = await this.accounts.bumpRolePolicyVersion(unit);
@@ -151,6 +157,7 @@ export class ReviewerAccessService {
     ip: string | undefined,
     userAgent: string | undefined,
   ): Promise<CreatedReviewerSessionView> {
+    this.requireFeatureOn();
     const ipKey = this.requireAvailable();
     const ipHmac = this.hmacOf(ip ?? UNKNOWN_CLIENT_IP, ipKey);
 
@@ -178,6 +185,7 @@ export class ReviewerAccessService {
 
   /** Owner: newest first. */
   async listSessions(query: PageQuery): Promise<ReviewerSessionPage> {
+    this.requireFeatureOn();
     const { total, rows } = await this.reviewers.listSessions(
       query.page,
       query.pageSize,
@@ -196,6 +204,10 @@ export class ReviewerAccessService {
       })),
       meta: { page: query.page, pageSize: query.pageSize, total },
     };
+  }
+
+  private requireFeatureOn(): void {
+    if (!this.isFeatureEnabled) throw reviewerFeatureOff();
   }
 
   /** Returns the IP hashing key; refuses when Turnstile or the key is missing. */

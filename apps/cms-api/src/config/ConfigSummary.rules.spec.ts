@@ -48,6 +48,7 @@ const FORMATTED_SENTINELS: Readonly<Record<string, string>> = {
   TRUST_PROXY_HOPS: '3',
   SMTP_PORT: '3103',
   SMTP_SECURE: 'true',
+  REVIEWER_FEATURE_ENABLED: 'true',
   MAIL_PROVIDER: 'smtp',
   MEDIA_PROVIDER: 'cloudinary',
   ADMIN_ORIGIN: 'https://sentinel-admin.example.test',
@@ -59,6 +60,9 @@ const FORMATTED_SENTINELS: Readonly<Record<string, string>> = {
   LOGIN_RATE_LIMIT_EMAIL: '3105',
   REFRESH_RATE_LIMIT_IP: '3106',
 };
+
+/** Boolean keys have only two valid values, so they cannot be unique. */
+const BOOLEAN_KEYS = ['SMTP_SECURE', 'REVIEWER_FEATURE_ENABLED'];
 
 /** One unique, format-valid value per schema key. */
 function sentinelEnv(): Record<string, string> {
@@ -125,7 +129,9 @@ describe('summarizeConfig', () => {
     const summary = JSON.stringify(summarizeConfig(loadAppConfig(env)));
 
     it('gives every schema key a unique value', () => {
-      const values = Object.values(env);
+      const values = Object.entries(env)
+        .filter(([key]) => !BOOLEAN_KEYS.includes(key))
+        .map(([, value]) => value);
       expect(new Set(values).size).toBe(values.length);
     });
 

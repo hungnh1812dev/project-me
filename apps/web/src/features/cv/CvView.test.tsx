@@ -1,4 +1,5 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { focusManager } from '@tanstack/react-query';
+import { act, render, screen, waitFor } from '@testing-library/react';
 
 import { COPY } from '../../config/Copy.constants';
 import { apiClient } from '../../lib/Api.client';
@@ -184,5 +185,97 @@ describe('CvView', () => {
       await screen.findByText(COPY.cv.maskedValueForReviewer),
     ).toBeInTheDocument();
     expect(screen.queryByText(COPY.cv.maskedValue)).not.toBeInTheDocument();
+  });
+
+  describe('when the API no longer accepts the token', () => {
+    const REFUSED = { status: 401, data: { errors: [{ extensions: {} }] } };
+    const REFUSED_BY_CODE = {
+      status: 200,
+      data: { errors: [{ extensions: { code: 'UNAUTHENTICATED' } }] },
+    };
+
+    function SessionKind() {
+      const { kind } = useWebSession();
+      return <p data-testid="kind">{kind ?? 'anonymous'}</p>;
+    }
+
+    async function renderAndStartReviewer() {
+      render(
+        <Wrapper api={fakeApi()}>
+          <StartReviewerButton />
+          <SessionKind />
+          <CvView initialData={MASKED_DATA} />
+        </Wrapper>,
+      );
+      await userEvent.click(
+        screen.getByRole('button', { name: 'start review' }),
+      );
+    }
+
+    it('ends a reviewer session on the first refetch and shows the public CV', async () => {
+      vi.spyOn(apiClient, 'post').mockResolvedValue(REFUSED);
+      await renderAndStartReviewer();
+
+      await waitFor(() =>
+        expect(screen.getByTestId('kind')).toHaveTextContent('anonymous'),
+      );
+      expect(screen.getByText(COPY.cv.maskedValue)).toBeInTheDocument();
+      expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    });
+
+    it('ends a reviewer session that is refused on a later refetch', async () => {
+      vi.spyOn(apiClient, 'post')
+        .mockResolvedValueOnce({ status: 200, data: { data: MASKED_DATA } })
+        .mockResolvedValue(REFUSED_BY_CODE);
+      await renderAndStartReviewer();
+      await screen.findByText(COPY.cv.maskedValueForReviewer);
+
+      act(() => {
+        focusManager.setFocused(false);
+        focusManager.setFocused(true);
+      });
+
+      await waitFor(() =>
+        expect(screen.getByTestId('kind')).toHaveTextContent('anonymous'),
+      );
+      expect(screen.getByText(COPY.cv.maskedValue)).toBeInTheDocument();
+      expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    });
+
+    it('keeps the error state when a reviewer refetch fails with a 500', async () => {
+      vi.spyOn(apiClient, 'post').mockResolvedValue({
+        status: 500,
+        data: {},
+      });
+      await renderAndStartReviewer();
+
+      await waitFor(() =>
+        expect(screen.getByRole('alert')).toHaveTextContent(
+          COPY.cv.refetchFailed,
+        ),
+      );
+      expect(screen.getByTestId('kind')).toHaveTextContent('reviewer');
+    });
+
+    it('keeps the error state when an account session gets a 401', async () => {
+      vi.spyOn(apiClient, 'post').mockResolvedValue(REFUSED);
+      render(
+        <Wrapper
+          api={fakeApi({
+            refresh: vi.fn<AuthApi['refresh']>().mockResolvedValue('t'),
+          })}
+        >
+          <SessionKind />
+          <CvView initialData={SERVER_DATA} />
+        </Wrapper>,
+      );
+
+      await waitFor(() =>
+        expect(screen.getByRole('alert')).toHaveTextContent(
+          COPY.cv.refetchFailed,
+        ),
+      );
+      expect(screen.getByTestId('kind')).toHaveTextContent('account');
+    });
   });
 });

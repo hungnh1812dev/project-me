@@ -47,6 +47,7 @@ function serviceWith(
     turnstile?: TurnstileVerifier;
     versions?: Partial<VersionCache>;
     audit?: Partial<SecurityAuditService>;
+    isFeatureEnabled?: boolean;
   } = {},
 ): ReviewerAccessService {
   return new ReviewerAccessService(
@@ -62,6 +63,7 @@ function serviceWith(
     { ...overrides.versions } as VersionCache,
     { ...overrides.audit } as SecurityAuditService,
     {} as AccessTokenService,
+    overrides.isFeatureEnabled ?? true,
   );
 }
 
@@ -164,6 +166,65 @@ describe('ReviewerAccessService.updateSettings', () => {
     await service.updateSettings(actor, { enabled: true }, meta);
     expect(revokeAllSessions).not.toHaveBeenCalled();
   });
+});
+
+describe('ReviewerAccessService with the deploy switch off (ADR 0014)', () => {
+  const actor = { kind: 'account', accountId: 7 } as unknown as AccountActor;
+  const meta = { ip: '203.0.113.9' } as never;
+
+  /** Any method call on a collaborator means the service went past the switch. */
+  function untouchable<T extends object>(name: string): T {
+    return new Proxy({} as T, {
+      get: (_target, property) => () => {
+        throw new Error(`${name}.${String(property)} was called`);
+      },
+    });
+  }
+
+  function offService(): ReviewerAccessService {
+    return new ReviewerAccessService(
+      untouchable('reviewers'),
+      untouchable('accounts'),
+      untouchable('transactions'),
+      untouchable('turnstile'),
+      IP_KEY,
+      untouchable('clock'),
+      untouchable('versions'),
+      untouchable('audit'),
+      untouchable('tokens'),
+      false,
+    );
+  }
+
+  it.each([
+    ['status', (s: ReviewerAccessService) => s.status()],
+    [
+      'createSession',
+      (s: ReviewerAccessService) =>
+        s.createSession(SESSION_REQUEST, '203.0.113.9', 'agent'),
+    ],
+    [
+      'listSessions',
+      (s: ReviewerAccessService) => s.listSessions({ page: 1, pageSize: 20 }),
+    ],
+    [
+      'updateSettings',
+      (s: ReviewerAccessService) =>
+        s.updateSettings(actor, { enabled: true }, meta),
+    ],
+  ])(
+    '%s answers 404 REVIEWER_FEATURE_OFF and touches no collaborator',
+    async (_name, call) => {
+      const error: unknown = await call(offService()).catch(
+        (caught: unknown) => caught,
+      );
+      expect(error).toBeInstanceOf(DomainError);
+      expect(error).toMatchObject({
+        kind: DOMAIN_ERROR_KINDS.NOT_FOUND,
+        errorCode: 'REVIEWER_FEATURE_OFF',
+      });
+    },
+  );
 });
 
 describe('deriveReviewerIpKey', () => {
