@@ -5,6 +5,7 @@ import {
   openPrisma,
   type PrismaHandle,
 } from '../../src/infrastructure/database/PrismaClient.adapter';
+import { AccessTokenService } from '../../src/modules/identity/application/AccessToken.service';
 import { hashPassword } from '../../src/modules/identity/application/Password.service';
 import {
   seedRolePermissions,
@@ -25,6 +26,7 @@ import { createTestApp } from '../fixtures/TestApp.fixture';
 const PASSWORD = 'correct horse battery staple';
 const REVIEWER = '/api/v1/reviewer';
 const OWNER_EMAIL = 'rvoff-owner@example.test';
+const GRAPHQL = '/api/v1/graphql';
 const FEATURE_OFF_CODE = 'REVIEWER_FEATURE_OFF';
 const SESSION_BODY = {
   visitorRole: 'Recruiter',
@@ -122,5 +124,49 @@ describe('reviewer routes with REVIEWER_FEATURE_ENABLED=false (ADR 0014; Postgre
         where: { key: { startsWith: 'reviewer' } },
       }),
     ).toBe(0);
+  });
+
+  describe('a reviewer token created before the switch went off', () => {
+    let reviewerHeader: { Authorization: string };
+
+    beforeAll(async () => {
+      const account = await db.prisma.account.create({
+        data: {
+          email: 'rvoff-reviewer@example.test',
+          displayName: 'Reviewer',
+          status: 'active',
+          role: { connect: { slug: 'reviewer' } },
+          reviewerSessions: {
+            create: {
+              visitorRole: 'Recruiter',
+              ipHmac: 'ip-hmac',
+              expiresAt: new Date(Date.now() + 60 * 60 * 1000),
+            },
+          },
+        },
+        include: { role: true },
+      });
+      const token = app.get(AccessTokenService).signReviewerSessionToken({
+        sub: account.documentId,
+        tv: account.tokenVersion,
+        pv: account.role.policyVersion,
+      });
+      reviewerHeader = { Authorization: `Bearer ${token}` };
+    });
+
+    it('gets 401 on a REST read', async () => {
+      const res = await http()
+        .get('/api/v1/documents/article')
+        .set(reviewerHeader);
+      expect(res.status).toBe(401);
+    });
+
+    it('gets 401 on a GraphQL read', async () => {
+      const res = await http()
+        .post(GRAPHQL)
+        .set(reviewerHeader)
+        .send({ query: '{ __typename }' });
+      expect(res.status).toBe(401);
+    });
   });
 });

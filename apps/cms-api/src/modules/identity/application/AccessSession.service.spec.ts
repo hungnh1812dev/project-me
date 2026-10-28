@@ -16,6 +16,7 @@ const ROLE = {
 function build(overrides: {
   account?: Record<string, unknown> | null;
   role?: unknown;
+  acceptsReviewerTokens?: boolean;
 }) {
   const account =
     overrides.account === undefined
@@ -35,7 +36,13 @@ function build(overrides: {
     getAccountVersions: jest.fn(() => Promise.resolve(account)),
     getRolePolicy,
   } as unknown as VersionCache;
-  return { service: new AccessSessionService(versions), getRolePolicy };
+  return {
+    service: new AccessSessionService(
+      versions,
+      overrides.acceptsReviewerTokens ?? true,
+    ),
+    getRolePolicy,
+  };
 }
 
 async function kindOf(promise: Promise<unknown>): Promise<unknown> {
@@ -90,6 +97,45 @@ describe('AccessSessionService.authenticate', () => {
     await expect(kindOf(service.authenticate(CLAIMS))).resolves.toBe(
       DOMAIN_ERROR_KINDS.UNAUTHENTICATED,
     );
+  });
+
+  describe('reviewer tokens and the deploy switch (ADR 0014)', () => {
+    const REVIEWER_ROLE = { ...(ROLE as object), slug: 'reviewer' };
+    const reviewerAccount = {
+      id: 1,
+      tokenVersion: 3,
+      status: 'active',
+      isDeleted: false,
+      roleId: 2,
+      reviewerSessionId: 5,
+    };
+
+    it('resolves a reviewer account to the reviewer actor while the switch is on', async () => {
+      const { service } = build({
+        account: reviewerAccount,
+        role: REVIEWER_ROLE,
+      });
+      const { actor } = await service.authenticate(CLAIMS);
+      expect(actor).toMatchObject({ kind: 'reviewer' });
+    });
+
+    it('refuses a reviewer account with 401 while the switch is off', async () => {
+      const { service } = build({
+        account: reviewerAccount,
+        role: REVIEWER_ROLE,
+        acceptsReviewerTokens: false,
+      });
+      await expect(kindOf(service.authenticate(CLAIMS))).resolves.toBe(
+        DOMAIN_ERROR_KINDS.UNAUTHENTICATED,
+      );
+    });
+
+    it('still resolves an account of another role while the switch is off', async () => {
+      const { service } = build({ acceptsReviewerTokens: false });
+      await expect(service.authenticate(CLAIMS)).resolves.toMatchObject({
+        accountId: 'doc-1',
+      });
+    });
   });
 
   it('reads the role with the token pv so a newer pv forces a re-read', async () => {

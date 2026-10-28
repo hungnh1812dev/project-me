@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 
 import {
   type ActorContext,
@@ -9,6 +9,7 @@ import {
 } from '../../access';
 import { notSignedIn } from '../domain/Identity.errors';
 import type { AccessTokenClaims } from './AccessToken.service';
+import { ACCEPTS_REVIEWER_TOKENS } from './Identity.port';
 
 /** What a verified access token resolves to on every request. */
 export interface AuthenticatedAccount {
@@ -33,7 +34,11 @@ export interface AuthenticatedAccount {
  */
 @Injectable()
 export class AccessSessionService {
-  constructor(private readonly versions: VersionCache) {}
+  constructor(
+    private readonly versions: VersionCache,
+    @Inject(ACCEPTS_REVIEWER_TOKENS)
+    private readonly acceptsReviewerTokens: boolean,
+  ) {}
 
   async authenticate(claims: AccessTokenClaims): Promise<AuthenticatedAccount> {
     const account = await this.versions.getAccountVersions(
@@ -54,6 +59,8 @@ export class AccessSessionService {
     // whatever the role rows say. No session row = no access.
     let actor = accountActor(account.id, role);
     if (role.slug === REVIEWER_ROLE_SLUG) {
+      // ADR 0014: while the deploy switch is off a reviewer token is a 401.
+      if (!this.acceptsReviewerTokens) throw notSignedIn();
       if (account.reviewerSessionId === null) throw notSignedIn();
       actor = reviewerActor(account.id, account.reviewerSessionId, role);
     }

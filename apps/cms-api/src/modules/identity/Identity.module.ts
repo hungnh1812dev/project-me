@@ -6,6 +6,8 @@ import {
 } from '@nestjs/common';
 import { PassportModule } from '@nestjs/passport';
 
+import { type IAppConfig } from '../../config/AppConfig.setup';
+import { APP_CONFIG } from '../../config/Config.constants';
 import { DatabaseModule } from '../../infrastructure/database/Database.module';
 import { MailModule } from '../../infrastructure/mail/Mail.module';
 import { AccessModule } from '../access';
@@ -18,6 +20,7 @@ import { AccessSessionService } from './application/AccessSession.service';
 import { AccessTokenService } from './application/AccessToken.service';
 import { AuthService } from './application/Auth.service';
 import {
+  ACCEPTS_REVIEWER_TOKENS,
   ACCOUNT_REPOSITORY,
   AUDIT_RECORDER,
   OTP_CODE_REPOSITORY,
@@ -72,6 +75,11 @@ import { TwoFactorController } from './http/TwoFactor.controller';
       useClass: PrismaSessionRevocationRepository,
     },
     { provide: AUDIT_RECORDER, useExisting: SecurityAuditService },
+    {
+      provide: ACCEPTS_REVIEWER_TOKENS,
+      inject: [APP_CONFIG],
+      useFactory: (config: IAppConfig) => config.reviewer.isFeatureEnabled,
+    },
     AccessSessionService,
     AccessTokenService,
     AllowedOriginGuard,
