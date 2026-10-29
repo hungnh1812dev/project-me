@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
+import { MAX_TIMER_DELAY_MS, MS_PER_SECOND } from '@configs/Http.constants';
 import { useMutation } from '@tanstack/react-query';
 
-import { MAX_TIMER_DELAY_MS, MS_PER_SECOND } from '../../config/Http.constants';
 import { apiFailureOf, type ApiFailure } from '../../lib/ApiFailure.errors';
 
 /**

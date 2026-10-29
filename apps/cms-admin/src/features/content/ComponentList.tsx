@@ -1,7 +1,7 @@
 import { Button } from '@abyss/form-commons';
+import { COPY } from '@configs/Copy.constants';
 import { useFieldArray, useFormContext } from 'react-hook-form';
 
-import { COPY } from '../../config/Copy.constants';
 import { MAX_COMPONENT_DEPTH, SINGLE_COMPONENT_MAX_ITEMS } from './Content.constants';
 import { emptyItem } from './Document.form';
 import { DynamicFormRenderer } from './DynamicFormRenderer';

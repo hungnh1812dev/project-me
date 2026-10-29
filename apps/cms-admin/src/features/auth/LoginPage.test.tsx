@@ -1,11 +1,11 @@
+import { API_ENDPOINTS } from '@configs/Api.endpoints';
+import { APP_ROUTES } from '@configs/App.routes';
+import { COPY } from '@configs/Copy.constants';
 import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import { deferred, type FakeReply } from '../../../test/FakeApi.fixture';
 import { createTestServices, renderApp, TEST_USER } from '../../../test/RenderApp.fixture';
-import { API_ENDPOINTS } from '../../config/Api.endpoints';
-import { APP_ROUTES } from '../../config/App.routes';
-import { COPY } from '../../config/Copy.constants';
 
 const { LOGIN, REFRESH, ME } = API_ENDPOINTS.AUTH;
 const PASSWORD = 'correct horse battery staple';

@@ -1,7 +1,7 @@
+import { REFRESH_LOCK_NAME, SESSION_CHANNEL_NAME } from '@configs/Auth.constants';
 import type { QueryClient } from '@tanstack/react-query';
 import type { AxiosInstance } from 'axios';
 
-import { REFRESH_LOCK_NAME, SESSION_CHANNEL_NAME } from '../config/Auth.constants';
 import {
   accessTokenOf,
   browserCrossTabOptions,

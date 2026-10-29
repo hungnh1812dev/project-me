@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { Button, FormAlert, SortableSheet, type SheetColumn } from '@abyss/form-commons';
+import { COPY } from '@configs/Copy.constants';
 
 import { LoadError, PageHeader, TableSkeleton } from '../../components/PageStates';
-import { COPY } from '../../config/Copy.constants';
 import { formatDateTime } from '../../lib/DateFormat.rules';
 import { isForbidden, useCallerAccess } from '../access';
 import type { BackupFile, BackupsList } from './Backups.api';

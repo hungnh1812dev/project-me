@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import type { BulkAction as BarAction } from '@abyss/form-commons';
+import { COPY } from '@configs/Copy.constants';
+import { API_ERROR_CODES } from '@configs/Http.constants';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
-import { COPY } from '../../config/Copy.constants';
-import { API_ERROR_CODES } from '../../config/Http.constants';
 import type { ContentTypeField } from '../content-types';
 import { failedItems, itemReason, toBulkFailure } from './Bulk.rules';
 import type { Banner } from './BulkBanner.rules';

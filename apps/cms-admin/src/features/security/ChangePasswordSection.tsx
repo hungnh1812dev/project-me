@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import { Button, FormAlert, TextInput, type FormAlertTone } from '@abyss/form-commons';
+import { PASSWORD_LENGTH } from '@configs/Auth.constants';
+import { COPY } from '@configs/Copy.constants';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation } from '@tanstack/react-query';
 import { FormProvider, useForm } from 'react-hook-form';
 import { z } from 'zod';
 
-import { PASSWORD_LENGTH } from '../../config/Auth.constants';
-import { COPY } from '../../config/Copy.constants';
 import {
   newPasswordShape,
   PASSWORDS_MATCH_ISSUE,

@@ -12,13 +12,13 @@ import {
   SelectInput,
   TextInput,
 } from '@abyss/form-commons';
+import { COPY } from '@configs/Copy.constants';
+import { ACCOUNT_LIMITS, API_ERROR_CODES } from '@configs/Http.constants';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { FormProvider, useForm } from 'react-hook-form';
 import { z } from 'zod';
 
-import { COPY } from '../../config/Copy.constants';
-import { ACCOUNT_LIMITS, API_ERROR_CODES } from '../../config/Http.constants';
 import type { InvitedAccount, Role } from './Access.api';
 import { OWNER_ROLE_SLUG, UNASSIGNABLE_ROLE_SLUGS } from './Access.constants';
 import { toAccessError } from './Access.errors';

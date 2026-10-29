@@ -1,10 +1,10 @@
 import type { ReactNode } from 'react';
+import { MAX_TIMER_DELAY_MS, MS_PER_SECOND } from '@configs/Http.constants';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { AxiosError, type AxiosResponse } from 'axios';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { MAX_TIMER_DELAY_MS, MS_PER_SECOND } from '../../config/Http.constants';
 import { useEmailCode } from './useEmailCode';
 
 const HUGE_RETRY_AFTER_SECONDS = 10_000_000;

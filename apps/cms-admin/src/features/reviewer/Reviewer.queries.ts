@@ -1,6 +1,6 @@
+import { API_ERROR_CODES, HEALTH_QUERY_RETRY, HTTP_STATUS } from '@configs/Http.constants';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 
-import { API_ERROR_CODES, HEALTH_QUERY_RETRY, HTTP_STATUS } from '../../config/Http.constants';
 import { apiFailureOf } from '../../lib/ApiFailure.errors';
 import { REVIEWER_SESSIONS_PAGE_SIZE } from './Reviewer.constants';
 import { useReviewerApi } from './ReviewerApi.context';

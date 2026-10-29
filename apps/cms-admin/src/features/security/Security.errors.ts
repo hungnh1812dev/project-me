@@ -1,7 +1,7 @@
 import { type FormAlertTone } from '@abyss/form-commons';
+import { COPY } from '@configs/Copy.constants';
+import { API_ERROR_CODES, HTTP_STATUS } from '@configs/Http.constants';
 
-import { COPY } from '../../config/Copy.constants';
-import { API_ERROR_CODES, HTTP_STATUS } from '../../config/Http.constants';
 import { apiFailureOf, rateLimitedMessage } from '../../lib/ApiFailure.errors';
 
 /**

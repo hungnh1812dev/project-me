@@ -1,12 +1,12 @@
+import { API_ENDPOINTS } from '@configs/Api.endpoints';
+import { APP_ROUTES } from '@configs/App.routes';
+import { COPY } from '@configs/Copy.constants';
+import { API_ERROR_CODES } from '@configs/Http.constants';
 import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import type { FakeHandler } from '../../../test/FakeApi.fixture';
 import { createTestServices, renderApp } from '../../../test/RenderApp.fixture';
-import { API_ENDPOINTS } from '../../config/Api.endpoints';
-import { APP_ROUTES } from '../../config/App.routes';
-import { COPY } from '../../config/Copy.constants';
-import { API_ERROR_CODES } from '../../config/Http.constants';
 
 const { REFRESH } = API_ENDPOINTS.AUTH;
 const { STATUS, OWNER } = API_ENDPOINTS.SETUP;

@@ -1,7 +1,7 @@
+import { COPY } from '@configs/Copy.constants';
+import { API_ERROR_CODES } from '@configs/Http.constants';
 import { AxiosError, type AxiosResponse } from 'axios';
 
-import { COPY } from '../../config/Copy.constants';
-import { API_ERROR_CODES } from '../../config/Http.constants';
 import { toPasswordError } from './Password.errors';
 
 function httpError(status: number, data: unknown = null, headers: Record<string, string> = {}) {

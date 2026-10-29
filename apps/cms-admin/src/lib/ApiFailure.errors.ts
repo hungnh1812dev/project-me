@@ -1,7 +1,6 @@
+import { COPY } from '@configs/Copy.constants';
+import { HTTP_STATUS, RETRY_AFTER_HEADER } from '@configs/Http.constants';
 import { isAxiosError } from 'axios';
-
-import { COPY } from '../config/Copy.constants';
-import { HTTP_STATUS, RETRY_AFTER_HEADER } from '../config/Http.constants';
 
 const SECONDS_PER_MINUTE = 60;
 

@@ -1,6 +1,5 @@
 import type { ReactNode } from 'react';
-
-import { COPY } from '../../config/Copy.constants';
+import { COPY } from '@configs/Copy.constants';
 
 /** Narrow single-column frame of the signed-out pages (sign in, reset, set). */
 export function AuthPageLayout({ children }: { children: ReactNode }) {

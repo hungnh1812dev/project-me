@@ -1,11 +1,11 @@
+import { API_ENDPOINTS } from '@configs/Api.endpoints';
+import { contentEditPath } from '@configs/App.routes';
+import { COPY } from '@configs/Copy.constants';
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import type { FakeHandler } from '../../../test/FakeApi.fixture';
 import { createTestServices, renderApp, TEST_USER } from '../../../test/RenderApp.fixture';
-import { API_ENDPOINTS } from '../../config/Api.endpoints';
-import { contentEditPath } from '../../config/App.routes';
-import { COPY } from '../../config/Copy.constants';
 import type { ContentType } from '../content-types';
 import type { MediaFile } from './Media.api';
 

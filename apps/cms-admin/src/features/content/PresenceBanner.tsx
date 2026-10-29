@@ -1,7 +1,7 @@
 import { FormAlert } from '@abyss/form-commons';
+import { COPY } from '@configs/Copy.constants';
 import { useQuery } from '@tanstack/react-query';
 
-import { COPY } from '../../config/Copy.constants';
 import { useCurrentUser } from '../auth';
 import type { PresenceEntry } from './Content.api';
 import { PRESENCE_HEARTBEAT_MS } from './Content.constants';

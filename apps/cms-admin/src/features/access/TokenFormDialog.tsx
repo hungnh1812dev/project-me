@@ -11,13 +11,13 @@ import {
   FormAlert,
   TextInput,
 } from '@abyss/form-commons';
+import { COPY } from '@configs/Copy.constants';
+import { API_TOKEN_LIMITS } from '@configs/Http.constants';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { FormProvider, useForm } from 'react-hook-form';
 import { z } from 'zod';
 
 import { LoadError } from '../../components/PageStates';
-import { COPY } from '../../config/Copy.constants';
-import { API_TOKEN_LIMITS } from '../../config/Http.constants';
 import type { ApiToken } from './Access.api';
 import { type PermissionAction } from './Access.constants';
 import { useContentTypesQuery } from './Access.queries';

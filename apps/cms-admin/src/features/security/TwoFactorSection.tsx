@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react';
 import { Button, FormAlert, type FormAlertTone } from '@abyss/form-commons';
+import { COPY } from '@configs/Copy.constants';
 
-import { COPY } from '../../config/Copy.constants';
 import { useCurrentUser, useSession } from '../auth';
 import { DisableTwoFactorDialog, EmailTwoFactorDialog, TotpSetupDialog } from './TwoFactorDialogs';
 

@@ -1,8 +1,7 @@
+import { appEnv } from '@configs/App.env';
+import { API_TIMEOUT_MS } from '@configs/Http.constants';
+import { stripTrailingSlashes } from '@configs/StripTrailingSlashes.rules';
 import axios, { type AxiosInstance, type CreateAxiosDefaults } from 'axios';
-
-import { appEnv } from '../config/App.env';
-import { API_TIMEOUT_MS } from '../config/Http.constants';
-import { stripTrailingSlashes } from '../config/StripTrailingSlashes.rules';
 
 /** Offset paging of the list endpoints. `total` counts every row. */
 export interface PageMeta {

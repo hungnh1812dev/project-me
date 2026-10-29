@@ -1,6 +1,6 @@
+import { API_ERROR_CODES } from '@configs/Http.constants';
 import { AxiosError, type AxiosResponse } from 'axios';
 
-import { API_ERROR_CODES } from '../../config/Http.constants';
 import { toSetupError } from './Setup.errors';
 
 function failure(status: number, data?: unknown, headers = {}): AxiosError {

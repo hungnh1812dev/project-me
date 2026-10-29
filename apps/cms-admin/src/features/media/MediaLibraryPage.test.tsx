@@ -1,11 +1,11 @@
+import { API_ENDPOINTS } from '@configs/Api.endpoints';
+import { APP_ROUTES } from '@configs/App.routes';
+import { COPY } from '@configs/Copy.constants';
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import type { FakeHandler } from '../../../test/FakeApi.fixture';
 import { createTestServices, renderApp } from '../../../test/RenderApp.fixture';
-import { API_ENDPOINTS } from '../../config/Api.endpoints';
-import { APP_ROUTES } from '../../config/App.routes';
-import { COPY } from '../../config/Copy.constants';
 import type { MediaFile } from './Media.api';
 
 const { REFRESH, ME } = API_ENDPOINTS.AUTH;

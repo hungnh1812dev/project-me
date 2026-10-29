@@ -11,10 +11,10 @@ import {
   FormAlert,
   TextAreaInput,
 } from '@abyss/form-commons';
+import { COPY } from '@configs/Copy.constants';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { FormProvider, useForm } from 'react-hook-form';
 
-import { COPY } from '../../config/Copy.constants';
 import type { MediaFile } from './Media.api';
 import { MEDIA_ALT_MAX_LENGTH } from './Media.constants';
 import { toMediaError } from './Media.errors';

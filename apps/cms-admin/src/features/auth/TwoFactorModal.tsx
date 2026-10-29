@@ -1,18 +1,18 @@
 import { useEffect, useState } from 'react';
 import { Button, FormAlert, TextInput, type FormAlertTone } from '@abyss/form-commons';
+import {
+  TOTP_CODE_LENGTH,
+  TWO_FACTOR_METHODS,
+  type TwoFactorMethod,
+} from '@configs/Auth.constants';
+import { COPY } from '@configs/Copy.constants';
+import { API_ERROR_CODES } from '@configs/Http.constants';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation } from '@tanstack/react-query';
 import { FormProvider, useForm } from 'react-hook-form';
 import { z } from 'zod';
 
 import { Modal, ModalActions } from '../../components/Modal';
-import {
-  TOTP_CODE_LENGTH,
-  TWO_FACTOR_METHODS,
-  type TwoFactorMethod,
-} from '../../config/Auth.constants';
-import { COPY } from '../../config/Copy.constants';
-import { API_ERROR_CODES } from '../../config/Http.constants';
 import { apiFailureOf, rateLimitedMessage, type ApiFailure } from '../../lib/ApiFailure.errors';
 import type { TwoFactorChallenge } from './Auth.api';
 import { useSession } from './Session.context';

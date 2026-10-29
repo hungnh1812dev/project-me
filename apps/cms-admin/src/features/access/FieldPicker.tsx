@@ -1,7 +1,7 @@
 import { useId } from 'react';
 import { Checkbox, Radio } from '@abyss/form-commons';
+import { COPY } from '@configs/Copy.constants';
 
-import { COPY } from '../../config/Copy.constants';
 import type { ContentTypeField } from '../content-types';
 import type { FieldList } from './Access.api';
 import { FIELD_PICKER_INDENT_REM } from './Access.constants';

@@ -1,7 +1,8 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { COPY } from '../../config/Copy.constants';
+import { COPY } from '@configs/Copy.constants';
+
 import { FIELD_TYPE, MASKED_VALUE } from './Content.constants';
 import {
   adapterFor,

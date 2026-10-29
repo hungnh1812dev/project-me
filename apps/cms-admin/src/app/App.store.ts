@@ -1,4 +1,4 @@
-import { appEnv } from '@config/App.env';
+import { appEnv } from '@configs/App.env';
 import { authReducer } from '@features/auth/AuthWiring.setup';
 import { configureStore } from '@reduxjs/toolkit';
 

@@ -10,7 +10,7 @@
     "declaration": false,
     "types": ["node", "vite/client", "vitest/globals", "@testing-library/jest-dom"],
     "paths": {
-      "@config/*": ["./src/configs/*", "./src/config/*"],
+      "@configs/*": ["./src/configs/*", "./src/config/*"],
       "@features/*": ["./src/features/*"],
       "@api/*": ["./src/api/*"],
       "@components/*": ["./src/components/*"],
@@ -20,6 +20,7 @@
       "@images/*": ["./src/assets/images/*"],
       "@utils/*": ["./src/utils/*"],
       "@views/*": ["./src/views/*"],
+      "@test/*": ["./test/*"],
       "@/*": ["./src/*"]
     }
   },

@@ -1,7 +1,7 @@
+import { COPY } from '@configs/Copy.constants';
+import { API_ERROR_CODES, HTTP_STATUS } from '@configs/Http.constants';
 import { isAxiosError } from 'axios';
 
-import { COPY } from '../../config/Copy.constants';
-import { API_ERROR_CODES, HTTP_STATUS } from '../../config/Http.constants';
 import { apiFailureOf, rateLimitedMessage } from '../../lib/ApiFailure.errors';
 import type { BulkItemError, BulkResponse } from './Content.api';
 import { BULK_ITEM_STATUS } from './Content.constants';

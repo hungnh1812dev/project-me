@@ -1,6 +1,5 @@
+import { API_ENDPOINTS } from '@configs/Api.endpoints';
 import type { AxiosInstance } from 'axios';
-
-import { API_ENDPOINTS } from '../../config/Api.endpoints';
 
 const { BACKUPS } = API_ENDPOINTS;
 

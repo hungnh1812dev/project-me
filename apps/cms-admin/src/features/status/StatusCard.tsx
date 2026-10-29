@@ -1,8 +1,8 @@
 import { Button } from '@abyss/form-commons';
+import { API_ENDPOINTS } from '@configs/Api.endpoints';
+import { appEnv } from '@configs/App.env';
+import { COPY } from '@configs/Copy.constants';
 
-import { API_ENDPOINTS } from '../../config/Api.endpoints';
-import { appEnv } from '../../config/App.env';
-import { COPY } from '../../config/Copy.constants';
 import { formatTime } from '../../lib/DateFormat.rules';
 import { useLiveHealth, type LiveHealthState } from './useLiveHealth';
 

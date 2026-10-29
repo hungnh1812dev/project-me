@@ -1,7 +1,8 @@
+import { API_ENDPOINTS } from '@configs/Api.endpoints';
+
 import { createFakeApi, deferred, TEST_API_BASE_URL } from '../../../test/FakeApi.fixture';
 import { fakeBus, fakeLocks } from '../../../test/FakeTabs.fixture';
 import { createTestServices, TEST_USER } from '../../../test/RenderApp.fixture';
-import { API_ENDPOINTS } from '../../config/Api.endpoints';
 import { createApiClient } from '../../lib/Api.client';
 import { createAuthApi } from './Auth.api';
 import { createAuthTestStore } from './AuthStore.fixture';

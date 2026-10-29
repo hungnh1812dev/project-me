@@ -1,13 +1,13 @@
 import { useCallback, useState } from 'react';
 import { Button, FormAlert, TextInput, type FormAlertTone } from '@abyss/form-commons';
+import { APP_ROUTES } from '@configs/App.routes';
+import { COPY } from '@configs/Copy.constants';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation } from '@tanstack/react-query';
 import { FormProvider, useForm } from 'react-hook-form';
 import { Link, Navigate, useLocation } from 'react-router';
 import { z } from 'zod';
 
-import { APP_ROUTES } from '../../config/App.routes';
-import { COPY } from '../../config/Copy.constants';
 import type { TwoFactorChallenge } from './Auth.api';
 import { selectEndNotice, selectSessionStatus } from './Auth.slice';
 import { AuthPageLayout } from './AuthPageLayout';

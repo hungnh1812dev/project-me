@@ -6,12 +6,12 @@ import {
   SortableSheet,
   TablePagination,
 } from '@abyss/form-commons';
+import { contentNewPath } from '@configs/App.routes';
+import { COPY } from '@configs/Copy.constants';
 import { Link, useParams } from 'react-router';
 
 import { LoadError, PageHeader, TableSkeleton } from '../../components/PageStates';
 import { useRestoreFocus } from '../../components/useRestoreFocus';
-import { contentNewPath } from '../../config/App.routes';
-import { COPY } from '../../config/Copy.constants';
 import {
   CONTENT_WILDCARD_SUBJECT,
   isForbidden,

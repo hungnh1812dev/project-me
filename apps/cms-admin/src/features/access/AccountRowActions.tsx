@@ -1,8 +1,8 @@
 import { Button, type FormAlertTone } from '@abyss/form-commons';
+import { COPY } from '@configs/Copy.constants';
+import { API_ERROR_CODES } from '@configs/Http.constants';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
-import { COPY } from '../../config/Copy.constants';
-import { API_ERROR_CODES } from '../../config/Http.constants';
 import type { Account } from './Access.api';
 import { toAccessError } from './Access.errors';
 import { ACCESS_QUERY_KEYS } from './Access.queries';

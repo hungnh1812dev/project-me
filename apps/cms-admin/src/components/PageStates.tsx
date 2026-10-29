@@ -1,7 +1,6 @@
 import type { ReactNode } from 'react';
 import { Button, FormAlert } from '@abyss/form-commons';
-
-import { COPY } from '../config/Copy.constants';
+import { COPY } from '@configs/Copy.constants';
 
 /** Skeleton rows shown while a table loads. */
 const TABLE_SKELETON_ROWS = 3;

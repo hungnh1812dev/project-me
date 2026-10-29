@@ -1,14 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
 import { Button, FormAlert, TextInput } from '@abyss/form-commons';
+import { APP_ROUTES } from '@configs/App.routes';
+import { OTP_CODE_LENGTH } from '@configs/Auth.constants';
+import { COPY } from '@configs/Copy.constants';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation } from '@tanstack/react-query';
 import { FormProvider, useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router';
 import { z } from 'zod';
 
-import { APP_ROUTES } from '../../config/App.routes';
-import { OTP_CODE_LENGTH } from '../../config/Auth.constants';
-import { COPY } from '../../config/Copy.constants';
 import { AuthPageLayout } from './AuthPageLayout';
 import { BackToSignIn } from './BackToSignIn';
 import type { LoginNoticeState } from './LoginNotice.rules';

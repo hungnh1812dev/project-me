@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { MediaInput } from '@abyss/form-commons';
+import { COPY } from '@configs/Copy.constants';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useController } from 'react-hook-form';
 
-import { COPY } from '../../config/Copy.constants';
 import { useCallerAccess } from '../access';
 import { MEDIA_SUBJECT } from './Media.constants';
 import { toMediaError } from './Media.errors';

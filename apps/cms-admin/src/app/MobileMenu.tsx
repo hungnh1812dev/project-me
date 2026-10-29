@@ -7,8 +7,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@abyss/form-commons';
+import { COPY } from '@configs/Copy.constants';
 
-import { COPY } from '../config/Copy.constants';
 import { AppNameLink, SideMenu } from './SideMenu';
 
 const SHEET_CLASS =

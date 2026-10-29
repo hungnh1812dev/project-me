@@ -1,6 +1,5 @@
+import { BEARER_PREFIX, HTTP_STATUS } from '@configs/Http.constants';
 import { isAxiosError, type AxiosInstance, type InternalAxiosRequestConfig } from 'axios';
-
-import { BEARER_PREFIX, HTTP_STATUS } from '../../config/Http.constants';
 
 declare module 'axios' {
   interface AxiosRequestConfig {

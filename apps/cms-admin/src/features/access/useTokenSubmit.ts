@@ -1,9 +1,9 @@
 import { useState } from 'react';
+import { COPY } from '@configs/Copy.constants';
+import { API_ERROR_CODES, API_TOKEN_LIMITS, HTTP_STATUS } from '@configs/Http.constants';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { UseFormReturn } from 'react-hook-form';
 
-import { COPY } from '../../config/Copy.constants';
-import { API_ERROR_CODES, API_TOKEN_LIMITS, HTTP_STATUS } from '../../config/Http.constants';
 import type { ApiToken, UpdateApiTokenInput } from './Access.api';
 import { toAccessError } from './Access.errors';
 import { ACCESS_QUERY_KEYS } from './Access.queries';

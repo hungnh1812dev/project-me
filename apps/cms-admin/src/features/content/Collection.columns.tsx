@@ -1,8 +1,8 @@
 import { Button, type SheetColumn } from '@abyss/form-commons';
+import { contentEditPath } from '@configs/App.routes';
+import { COPY } from '@configs/Copy.constants';
 import { Link } from 'react-router';
 
-import { contentEditPath } from '../../config/App.routes';
-import { COPY } from '../../config/Copy.constants';
 import { formatDateTime } from '../../lib/DateFormat.rules';
 import type { ContentTypeField } from '../content-types';
 import type { DocumentListItem } from './Content.api';

@@ -1,7 +1,6 @@
+import { API_ENDPOINTS } from '@configs/Api.endpoints';
+import type { TwoFactorMethod } from '@configs/Auth.constants';
 import type { AxiosInstance } from 'axios';
-
-import { API_ENDPOINTS } from '../../config/Api.endpoints';
-import type { TwoFactorMethod } from '../../config/Auth.constants';
 
 /** `POST /auth/2fa/totp/setup`: the QR is drawn here from the URI. */
 export interface TotpSetup {

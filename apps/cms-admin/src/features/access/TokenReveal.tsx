@@ -9,8 +9,7 @@ import {
   Input,
   Label,
 } from '@abyss/form-commons';
-
-import { COPY } from '../../config/Copy.constants';
+import { COPY } from '@configs/Copy.constants';
 
 const copy = COPY.access.tokenReveal;
 

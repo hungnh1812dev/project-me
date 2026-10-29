@@ -10,8 +10,8 @@ import {
   DialogTitle,
   FormAlert,
 } from '@abyss/form-commons';
+import { COPY } from '@configs/Copy.constants';
 
-import { COPY } from '../../config/Copy.constants';
 import type { ConflictDetails } from './Conflict.rules';
 import type { DocumentTree } from './Content.api';
 import { DiffViewerBlock } from './DiffViewerBlock';

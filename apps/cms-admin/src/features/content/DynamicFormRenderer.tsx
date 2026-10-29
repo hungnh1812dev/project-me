@@ -1,7 +1,7 @@
 import { Field, Input } from '@abyss/form-commons';
+import { COPY } from '@configs/Copy.constants';
 import { useFormContext, useWatch } from 'react-hook-form';
 
-import { COPY } from '../../config/Copy.constants';
 import { ComponentList } from './ComponentList';
 import { adapterFor } from './Field.registry';
 import type { FieldNode } from './FieldTree.rules';

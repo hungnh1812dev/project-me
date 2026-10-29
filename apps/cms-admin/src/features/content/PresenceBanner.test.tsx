@@ -1,10 +1,10 @@
+import { API_ENDPOINTS } from '@configs/Api.endpoints';
+import { contentEditPath } from '@configs/App.routes';
 import { act, screen } from '@testing-library/react';
 
 import { CV_PAGE_TYPE } from '../../../test/CvPage.fixture';
 import type { FakeHandler } from '../../../test/FakeApi.fixture';
 import { createTestServices, renderApp, TEST_USER } from '../../../test/RenderApp.fixture';
-import { API_ENDPOINTS } from '../../config/Api.endpoints';
-import { contentEditPath } from '../../config/App.routes';
 import { PRESENCE_HEARTBEAT_MS } from './Content.constants';
 
 const { REFRESH, ME } = API_ENDPOINTS.AUTH;

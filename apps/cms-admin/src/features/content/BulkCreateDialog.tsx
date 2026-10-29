@@ -12,10 +12,10 @@ import {
   FormAlert,
   JsonInput,
 } from '@abyss/form-commons';
+import { COPY } from '@configs/Copy.constants';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { FormProvider, useForm, useWatch } from 'react-hook-form';
 
-import { COPY } from '../../config/Copy.constants';
 import { failedItems, itemReason, toBulkFailure } from './Bulk.rules';
 import type { DocumentTree } from './Content.api';
 import { BULK_ACTION, BULK_MAX_ITEMS } from './Content.constants';

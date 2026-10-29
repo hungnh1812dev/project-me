@@ -1,7 +1,7 @@
 import { Fragment, useState } from 'react';
 import { Button, Checkbox } from '@abyss/form-commons';
+import { COPY } from '@configs/Copy.constants';
 
-import { COPY } from '../../config/Copy.constants';
 import type { ContentType } from '../content-types';
 import {
   CONTENT_WILDCARD_SUBJECT,

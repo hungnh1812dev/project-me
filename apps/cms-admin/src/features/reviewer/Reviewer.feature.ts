@@ -1,5 +1,6 @@
-import { APP_ROUTES } from '../../config/App.routes';
-import { COPY } from '../../config/Copy.constants';
+import { APP_ROUTES } from '@configs/App.routes';
+import { COPY } from '@configs/Copy.constants';
+
 import { defineApiService, type Feature } from '../../lib/FeatureDefinition';
 import { createReviewerApi } from './Reviewer.api';
 import { REVIEWER_SETTINGS_SUBJECT } from './Reviewer.constants';

@@ -1,4 +1,4 @@
-import { COPY } from '../config/Copy.constants';
+import { COPY } from '@configs/Copy.constants';
 
 /** A heading of the side menu; `subSections` nest under it, items attach to leaves. */
 interface NavSectionDefinition {

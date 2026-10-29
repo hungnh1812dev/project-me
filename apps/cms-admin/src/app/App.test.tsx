@@ -1,10 +1,10 @@
+import { API_ENDPOINTS } from '@configs/Api.endpoints';
+import { COPY } from '@configs/Copy.constants';
 import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import { deferred, type FakeHandler, type FakeReply } from '../../test/FakeApi.fixture';
 import { createTestServices, renderApp, TEST_USER } from '../../test/RenderApp.fixture';
-import { API_ENDPOINTS } from '../config/Api.endpoints';
-import { COPY } from '../config/Copy.constants';
 
 const { REFRESH, LOGOUT, ME } = API_ENDPOINTS.AUTH;
 const HEALTH_LIVE = `GET ${API_ENDPOINTS.HEALTH.LIVE}`;

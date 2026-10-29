@@ -14,12 +14,12 @@ import {
   Switch,
   type SheetColumn,
 } from '@abyss/form-commons';
+import { COPY } from '@configs/Copy.constants';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { LoadError, PageHeader, TableSkeleton } from '../../components/PageStates';
 import { Pagination } from '../../components/Pagination';
 import { useClampedPage } from '../../components/useClampedPage';
-import { COPY } from '../../config/Copy.constants';
 import { formatDateTime } from '../../lib/DateFormat.rules';
 import { isForbidden, toAccessError, useCallerAccess } from '../access';
 import type { ReviewerSession } from './Reviewer.api';

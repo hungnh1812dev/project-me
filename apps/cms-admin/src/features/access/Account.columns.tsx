@@ -1,6 +1,6 @@
 import { Button, type SheetColumn } from '@abyss/form-commons';
+import { COPY } from '@configs/Copy.constants';
 
-import { COPY } from '../../config/Copy.constants';
 import { formatDate } from '../../lib/DateFormat.rules';
 import type { Account } from './Access.api';
 import { AccountRowActions, type RowNotice } from './AccountRowActions';

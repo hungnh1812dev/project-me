@@ -1,8 +1,8 @@
 import { type FormAlertTone } from '@abyss/form-commons';
+import { OTP_CODE_LENGTH, PASSWORD_LENGTH } from '@configs/Auth.constants';
+import { COPY } from '@configs/Copy.constants';
 import { z } from 'zod';
 
-import { OTP_CODE_LENGTH, PASSWORD_LENGTH } from '../../config/Auth.constants';
-import { COPY } from '../../config/Copy.constants';
 import type { PasswordError, PasswordErrorKind } from './Password.errors';
 
 const OTP_CODE_PATTERN = new RegExp(`^\\d{${OTP_CODE_LENGTH}}$`);

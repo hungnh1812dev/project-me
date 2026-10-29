@@ -1,6 +1,6 @@
+import type { TwoFactorMethod } from '@configs/Auth.constants';
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
 
-import type { TwoFactorMethod } from '../../config/Auth.constants';
 import type { LoginNotice } from './LoginNotice.rules';
 
 /** `GET /auth/me` (SPEC §9). */

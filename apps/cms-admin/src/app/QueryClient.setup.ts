@@ -1,6 +1,5 @@
+import { HEALTH_QUERY_RETRY } from '@configs/Http.constants';
 import { QueryClient } from '@tanstack/react-query';
-
-import { HEALTH_QUERY_RETRY } from '../config/Http.constants';
 
 export function createQueryClient(): QueryClient {
   return new QueryClient({
