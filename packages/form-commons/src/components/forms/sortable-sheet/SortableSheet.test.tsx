@@ -1,13 +1,9 @@
+import { useState } from 'react';
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { useState } from 'react';
 import { vi } from 'vitest';
 
-import {
-  SortableSheet,
-  type SheetColumn,
-  type SheetSort,
-} from './SortableSheet';
+import { SortableSheet, type SheetColumn, type SheetSort } from './SortableSheet';
 
 interface Row {
   id: string;
@@ -141,9 +137,7 @@ describe('SortableSheet', () => {
     await user.click(screen.getByRole('checkbox', { name: 'Select Ada' }));
     expect(all).toHaveAttribute('aria-checked', 'mixed');
     await user.click(all);
-    expect(
-      screen.getByRole('checkbox', { name: 'Select Grace' }),
-    ).toBeChecked();
+    expect(screen.getByRole('checkbox', { name: 'Select Grace' })).toBeChecked();
     expect(all).toBeChecked();
     await user.click(all);
     const rows = screen.getAllByRole('row').slice(1);

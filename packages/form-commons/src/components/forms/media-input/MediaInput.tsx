@@ -1,8 +1,8 @@
 import * as React from 'react';
 import { cn } from 'cn';
 
-import { Button } from '@/components/ui/Button';
 import { Field } from '@/components/forms/field';
+import { Button } from '@/components/ui/Button';
 
 /** A library file as the field shows it. */
 export interface MediaInputFile {
@@ -76,9 +76,7 @@ function fileKind(file: MediaInputFile): string {
   const fromType = file.mimeType?.split('/')[1];
   if (fromType !== undefined && fromType !== '') return fromType;
   const extensionDotIndex = file.fileName.lastIndexOf('.');
-  return extensionDotIndex === -1
-    ? ''
-    : file.fileName.slice(extensionDotIndex + 1);
+  return extensionDotIndex === -1 ? '' : file.fileName.slice(extensionDotIndex + 1);
 }
 
 const dateFormat = new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' });
@@ -124,16 +122,16 @@ function MediaInput({
         <fieldset
           id={control.id}
           aria-describedby={control['aria-describedby']}
-          className="m-0 grid min-w-0 gap-3 rounded-md border border-input bg-card p-3"
+          className="border-input bg-card m-0 grid min-w-0 gap-3 rounded-md border p-3"
         >
           <legend className="sr-only">{label}</legend>
           {value === null ? (
-            <p className="m-0 text-sm text-muted-foreground">{labels.empty}</p>
+            <p className="text-muted-foreground m-0 text-sm">{labels.empty}</p>
           ) : (
             <div className="flex items-start gap-3">
-              <div className="flex size-16 shrink-0 items-center justify-center overflow-hidden rounded-sm border border-border bg-muted">
+              <div className="border-border bg-muted flex size-16 shrink-0 items-center justify-center overflow-hidden rounded-sm border">
                 {preview === null ? (
-                  <span className="text-xs font-medium uppercase text-muted-foreground">
+                  <span className="text-muted-foreground text-xs font-medium uppercase">
                     {fileKind(value)}
                   </span>
                 ) : (
@@ -145,17 +143,13 @@ function MediaInput({
                 )}
               </div>
               <div className="grid min-w-0 gap-1">
-                <p className="m-0 truncate text-sm font-medium">
-                  {value.fileName}
-                </p>
-                <p className="m-0 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
-                  <span className="tabular-nums">
-                    {formatFileSize(value.size)}
-                  </span>
+                <p className="m-0 truncate text-sm font-medium">{value.fileName}</p>
+                <p className="text-muted-foreground m-0 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
+                  <span className="tabular-nums">{formatFileSize(value.size)}</span>
                   {value.provider === undefined ? null : (
                     <span
                       data-slot="media-provider"
-                      className="rounded-sm bg-muted px-1.5 py-0.5 font-medium"
+                      className="bg-muted rounded-sm px-1.5 py-0.5 font-medium"
                     >
                       {value.provider}
                     </span>
@@ -169,12 +163,7 @@ function MediaInput({
           )}
           <div className={cn('flex flex-wrap gap-2')}>
             {onOpenLibrary === undefined ? null : (
-              <Button
-                type="button"
-                size="sm"
-                disabled={disabled}
-                onClick={onOpenLibrary}
-              >
+              <Button type="button" size="sm" disabled={disabled} onClick={onOpenLibrary}>
                 {value === null ? labels.choose : labels.replace}
               </Button>
             )}

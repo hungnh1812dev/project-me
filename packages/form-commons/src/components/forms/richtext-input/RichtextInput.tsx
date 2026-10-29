@@ -1,34 +1,28 @@
 import * as React from 'react';
 import { EditorContent, useEditor } from '@tiptap/react';
+import { cn } from 'cn';
 import {
+  useController,
   type FieldPath,
   type FieldValues,
   type RegisterOptions,
-  useController,
 } from 'react-hook-form';
-import { cn } from 'cn';
 
 import { Field } from '@/components/forms/field';
 import { useRequiredFormContext } from '@/components/forms/FieldWiring.setup';
+import { Button } from '@/components/ui/Button';
 import {
   CONTROL_FOCUS_WITHIN_CLASSES,
   CONTROL_INVALID_CLASSES,
 } from '@/components/ui/Control.constants';
-import { Button } from '@/components/ui/Button';
 
-import {
-  normalizeRichtextHtml,
-  readCspNonce,
-  richtextExtensions,
-} from './Richtext.setup';
+import { normalizeRichtextHtml, readCspNonce, richtextExtensions } from './Richtext.setup';
 import { RICHTEXT_CONTENT_CLASS } from './Richtext.styles';
 import { buildRichtextToolbar, type RichtextLabels } from './RichtextToolbar';
 
 export type { RichtextLabels };
 
-export interface RichtextInputProps<
-  TFieldValues extends FieldValues = FieldValues,
-> {
+export interface RichtextInputProps<TFieldValues extends FieldValues = FieldValues> {
   name: FieldPath<TFieldValues>;
   label: string;
   labels: RichtextLabels;
@@ -80,8 +74,7 @@ function RichtextInput<TFieldValues extends FieldValues = FieldValues>({
       },
     },
     shouldRerenderOnTransaction: true,
-    onUpdate: ({ editor: current }) =>
-      onChange(normalizeRichtextHtml(current.getHTML())),
+    onUpdate: ({ editor: current }) => onChange(normalizeRichtextHtml(current.getHTML())),
     onBlur: () => onBlur(),
   });
 
@@ -111,7 +104,7 @@ function RichtextInput<TFieldValues extends FieldValues = FieldValues>({
           data-slot="richtext"
           aria-invalid={control['aria-invalid']}
           className={cn(
-            'rounded-md border border-input bg-card',
+            'border-input bg-card rounded-md border',
             CONTROL_FOCUS_WITHIN_CLASSES,
             CONTROL_INVALID_CLASSES,
             disabled && 'opacity-50',
@@ -121,7 +114,7 @@ function RichtextInput<TFieldValues extends FieldValues = FieldValues>({
             <div
               role="toolbar"
               aria-label={labels.toolbar}
-              className="flex flex-wrap gap-1 border-b border-input p-1"
+              className="border-input flex flex-wrap gap-1 border-b p-1"
             >
               {buildRichtextToolbar(editor, labels).map((action) => (
                 <Button
@@ -139,11 +132,7 @@ function RichtextInput<TFieldValues extends FieldValues = FieldValues>({
               ))}
             </div>
           )}
-          <EditorContent
-            editor={editor}
-            id={control.id}
-            className={RICHTEXT_CONTENT_CLASS}
-          />
+          <EditorContent editor={editor} id={control.id} className={RICHTEXT_CONTENT_CLASS} />
         </div>
       )}
     </Field>

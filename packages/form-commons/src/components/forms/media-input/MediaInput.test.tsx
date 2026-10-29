@@ -39,18 +39,17 @@ describe('MediaInput', () => {
       />,
     );
     expect(screen.getByText('No file attached')).toBeInTheDocument();
-    expect(
-      screen.getByRole('button', { name: 'Choose from library' }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Choose from library' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Remove' })).toBeNull();
     expect(screen.queryByRole('button', { name: /Delete/ })).toBeNull();
   });
 
   it('shows preview, name, size, provider and date', () => {
     render(<MediaInput label="Photo" labels={labels} value={file} />);
-    expect(
-      screen.getByRole('img', { name: 'Preview of portrait.jpg' }),
-    ).toHaveAttribute('src', file.thumbnailUrl);
+    expect(screen.getByRole('img', { name: 'Preview of portrait.jpg' })).toHaveAttribute(
+      'src',
+      file.thumbnailUrl,
+    );
     expect(screen.getByText('portrait.jpg')).toBeInTheDocument();
     expect(screen.getByText('1.5 KB')).toBeInTheDocument();
     expect(screen.getByText('cloudinary')).toBeInTheDocument();
@@ -86,9 +85,7 @@ describe('MediaInput', () => {
     );
     await userEvent.click(screen.getByRole('button', { name: 'Replace' }));
     await userEvent.click(screen.getByRole('button', { name: 'Remove' }));
-    await userEvent.click(
-      screen.getByRole('button', { name: 'Delete from library' }),
-    );
+    await userEvent.click(screen.getByRole('button', { name: 'Delete from library' }));
     const picked = new File(['x'], 'new.png', { type: 'image/png' });
     await userEvent.upload(screen.getByTestId('media-file-input'), picked);
     expect(onOpenLibrary).toHaveBeenCalledOnce();
@@ -102,12 +99,7 @@ describe('MediaInput', () => {
     const onFilePick = vi.fn<(file: File) => void>();
     const picked = new File(['x'], 'new.png', { type: 'image/png' });
     const { rerender } = render(
-      <MediaInput
-        label="Photo"
-        labels={labels}
-        value={null}
-        onChange={onChange}
-      />,
+      <MediaInput label="Photo" labels={labels} value={null} onChange={onChange} />,
     );
     await userEvent.upload(screen.getByTestId('media-file-input'), picked);
     expect(onChange).toHaveBeenCalledWith(picked);

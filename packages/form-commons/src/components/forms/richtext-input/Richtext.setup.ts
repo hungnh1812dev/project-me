@@ -11,9 +11,7 @@ const CSP_NONCE_META_SELECTOR = `meta[name="${CSP_NONCE_META_NAME}"]`;
 
 export function readCspNonce(): string | undefined {
   if (typeof document === 'undefined') return undefined;
-  const content = document
-    .querySelector(CSP_NONCE_META_SELECTOR)
-    ?.getAttribute('content');
+  const content = document.querySelector(CSP_NONCE_META_SELECTOR)?.getAttribute('content');
   return content || undefined;
 }
 

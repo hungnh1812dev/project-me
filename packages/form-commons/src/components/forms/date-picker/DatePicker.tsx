@@ -2,8 +2,10 @@ import type { FieldValues } from 'react-hook-form';
 
 import { TextInput, type TextInputProps } from '@/components/forms/text-input';
 
-export type DatePickerProps<TFieldValues extends FieldValues = FieldValues> =
-  Omit<TextInputProps<TFieldValues>, 'type'>;
+export type DatePickerProps<TFieldValues extends FieldValues = FieldValues> = Omit<
+  TextInputProps<TFieldValues>,
+  'type'
+>;
 
 /** Form value is the native `YYYY-MM-DD` string; empty string when cleared. */
 function DatePicker<TFieldValues extends FieldValues = FieldValues>(

@@ -8,18 +8,13 @@ import { SwitchInput } from './SwitchInput';
 describe('SwitchInput', () => {
   it('throws a clear error outside a FormProvider', () => {
     vi.spyOn(console, 'error').mockImplementation(() => undefined);
-    expect(() => render(<SwitchInput name="on" label="On" />)).toThrow(
-      /FormProvider/,
-    );
+    expect(() => render(<SwitchInput name="on" label="On" />)).toThrow(/FormProvider/);
   });
 
   it('submits the boolean toggled through its label', async () => {
     const onValid = vi.fn<(values: { on: boolean }) => void>();
     render(
-      <TestForm<{ on: boolean }>
-        options={{ defaultValues: { on: false } }}
-        onValid={onValid}
-      >
+      <TestForm<{ on: boolean }> options={{ defaultValues: { on: false } }} onValid={onValid}>
         <SwitchInput name="on" label="Main CV" />
       </TestForm>,
     );

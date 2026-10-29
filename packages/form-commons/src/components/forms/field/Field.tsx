@@ -1,8 +1,8 @@
 import * as React from 'react';
 import { cn } from 'cn';
 
-import { Label } from '@/components/ui/Label';
 import { useFieldIds } from '@/components/forms/FieldWiring.setup';
+import { Label } from '@/components/ui/Label';
 
 /** Props a control must spread to be linked to its label and helper text. */
 export interface FieldControlProps {
@@ -71,17 +71,13 @@ function Field({
         <p
           id={descriptionId}
           data-slot="field-description"
-          className="m-0 text-sm text-muted-foreground"
+          className="text-muted-foreground m-0 text-sm"
         >
           {description}
         </p>
       )}
       {hasError && (
-        <p
-          id={errorId}
-          data-slot="field-error"
-          className="m-0 text-sm text-destructive-strong"
-        >
+        <p id={errorId} data-slot="field-error" className="text-destructive-strong m-0 text-sm">
           {error}
         </p>
       )}

@@ -6,12 +6,9 @@ import { TestForm } from '../../../../test/TestForm.fixture';
 import { isValidJsonText, JsonInput } from './JsonInput';
 
 describe('isValidJsonText', () => {
-  it.each(['', '  ', '{"a":1}', '[1,2]', 'null', '"x"'])(
-    'accepts %j',
-    (text) => {
-      expect(isValidJsonText(text)).toBe(true);
-    },
-  );
+  it.each(['', '  ', '{"a":1}', '[1,2]', 'null', '"x"'])('accepts %j', (text) => {
+    expect(isValidJsonText(text)).toBe(true);
+  });
   it.each(['{', "{'a':1}", 'undefined', '[1,]'])('rejects %j', (text) => {
     expect(isValidJsonText(text)).toBe(false);
   });
@@ -21,15 +18,8 @@ describe('JsonInput', () => {
   it('reports invalid JSON and blocks submit', async () => {
     const onValid = vi.fn<(values: { j: string }) => void>();
     render(
-      <TestForm<{ j: string }>
-        options={{ defaultValues: { j: '' } }}
-        onValid={onValid}
-      >
-        <JsonInput
-          name="j"
-          label="Tech stack"
-          invalidMessage="Enter valid JSON."
-        />
+      <TestForm<{ j: string }> options={{ defaultValues: { j: '' } }} onValid={onValid}>
+        <JsonInput name="j" label="Tech stack" invalidMessage="Enter valid JSON." />
       </TestForm>,
     );
     await userEvent.type(screen.getByLabelText('Tech stack'), 'not json');
@@ -41,15 +31,8 @@ describe('JsonInput', () => {
   it('submits valid JSON text unchanged, and allows blank', async () => {
     const onValid = vi.fn<(values: { j: string }) => void>();
     render(
-      <TestForm<{ j: string }>
-        options={{ defaultValues: { j: '' } }}
-        onValid={onValid}
-      >
-        <JsonInput
-          name="j"
-          label="Tech stack"
-          invalidMessage="Enter valid JSON."
-        />
+      <TestForm<{ j: string }> options={{ defaultValues: { j: '' } }} onValid={onValid}>
+        <JsonInput name="j" label="Tech stack" invalidMessage="Enter valid JSON." />
       </TestForm>,
     );
     await userEvent.click(screen.getByRole('button', { name: 'Save' }));

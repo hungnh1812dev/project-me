@@ -1,15 +1,10 @@
 import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { vi } from 'vitest';
 import type { Editor } from '@tiptap/react';
+import { vi } from 'vitest';
 
+import { normalizeRichtextHtml, richtextExtensions, RichtextInput, type RichtextLabels } from '.';
 import { TestForm } from '../../../../test/TestForm.fixture';
-import {
-  normalizeRichtextHtml,
-  RichtextInput,
-  richtextExtensions,
-  type RichtextLabels,
-} from '.';
 
 const LABELS: RichtextLabels = {
   toolbar: 'Formatting',
@@ -54,8 +49,7 @@ const SERVER_TAGS = new Set([
 ]);
 
 /** jsdom cannot type into ProseMirror; Tiptap exposes the editor on its DOM node. */
-const editorOf = (element: HTMLElement) =>
-  (element as HTMLElement & { editor: Editor }).editor;
+const editorOf = (element: HTMLElement) => (element as HTMLElement & { editor: Editor }).editor;
 
 describe('normalizeRichtextHtml', () => {
   it('maps the empty document to blank', () => {
@@ -93,28 +87,23 @@ describe('RichtextInput', () => {
     meta.name = 'csp-nonce';
     meta.content = 'test-nonce';
     document.head.appendChild(meta);
-    document
-      .querySelectorAll('style[data-tiptap-style]')
-      .forEach((node) => node.remove());
+    document.querySelectorAll('style[data-tiptap-style]').forEach((node) => node.remove());
     render(
       <TestForm<{ body: string }> options={{ defaultValues: { body: '' } }}>
         <RichtextInput name="body" label="Summary" labels={LABELS} />
       </TestForm>,
     );
     await screen.findByRole('textbox', { name: 'Summary' });
-    expect(
-      document.querySelector('style[data-tiptap-style]')?.getAttribute('nonce'),
-    ).toBe('test-nonce');
+    expect(document.querySelector('style[data-tiptap-style]')?.getAttribute('nonce')).toBe(
+      'test-nonce',
+    );
     meta.remove();
   });
 
   it('toggles bold from the toolbar', async () => {
     const onValid = vi.fn<(values: { body: string }) => void>();
     render(
-      <TestForm<{ body: string }>
-        options={{ defaultValues: { body: '' } }}
-        onValid={onValid}
-      >
+      <TestForm<{ body: string }> options={{ defaultValues: { body: '' } }} onValid={onValid}>
         <RichtextInput name="body" label="Summary" labels={LABELS} />
       </TestForm>,
     );
@@ -128,18 +117,13 @@ describe('RichtextInput', () => {
     });
     await userEvent.click(screen.getByRole('button', { name: 'Save' }));
     await waitFor(() => expect(onValid).toHaveBeenCalled());
-    expect(onValid.mock.calls[0]?.[0].body).toBe(
-      '<p><strong>Strong</strong></p>',
-    );
+    expect(onValid.mock.calls[0]?.[0].body).toBe('<p><strong>Strong</strong></p>');
   });
 
   it('keeps an untouched empty value blank', async () => {
     const onValid = vi.fn<(values: { body: string }) => void>();
     render(
-      <TestForm<{ body: string }>
-        options={{ defaultValues: { body: '' } }}
-        onValid={onValid}
-      >
+      <TestForm<{ body: string }> options={{ defaultValues: { body: '' } }} onValid={onValid}>
         <RichtextInput name="body" label="Summary" labels={LABELS} />
       </TestForm>,
     );
@@ -167,16 +151,12 @@ describe('RichtextInput', () => {
 
   it('is not editable when disabled', async () => {
     render(
-      <TestForm<{ body: string }>
-        options={{ defaultValues: { body: '<p>Locked</p>' } }}
-      >
+      <TestForm<{ body: string }> options={{ defaultValues: { body: '<p>Locked</p>' } }}>
         <RichtextInput name="body" label="Summary" labels={LABELS} disabled />
       </TestForm>,
     );
     const editor = await screen.findByRole('textbox', { name: 'Summary' });
-    await waitFor(() =>
-      expect(editor).toHaveAttribute('contenteditable', 'false'),
-    );
+    await waitFor(() => expect(editor).toHaveAttribute('contenteditable', 'false'));
     expect(screen.getByRole('button', { name: 'Bold' })).toBeDisabled();
   });
 
@@ -187,9 +167,7 @@ describe('RichtextInput', () => {
       content:
         '<h2>T</h2><p><strong>b</strong><em>i</em><u>u</u><s>s</s><code>c</code><a href="https://x.test">l</a></p><ul><li>a</li></ul><ol><li>b</li></ol><blockquote><p>q</p></blockquote><pre><code>p</code></pre><hr><p>a<br>b</p>',
     });
-    const tags = [...editor.getHTML().matchAll(/<([a-z0-9]+)[\s>/]/g)].map(
-      (m) => m[1],
-    );
+    const tags = [...editor.getHTML().matchAll(/<([a-z0-9]+)[\s>/]/g)].map((m) => m[1]);
     expect(tags.filter((t) => !SERVER_TAGS.has(t ?? ''))).toEqual([]);
     expect(editor.getHTML()).not.toMatch(/class=|style=/);
     editor.destroy();

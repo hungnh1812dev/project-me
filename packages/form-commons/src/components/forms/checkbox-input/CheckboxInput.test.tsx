@@ -1,12 +1,7 @@
+import type { ReactNode } from 'react';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import type { ReactNode } from 'react';
-import {
-  FormProvider,
-  type FieldValues,
-  type UseFormProps,
-  useForm,
-} from 'react-hook-form';
+import { FormProvider, useForm, type FieldValues, type UseFormProps } from 'react-hook-form';
 import { vi } from 'vitest';
 
 import { Button } from '@/components/ui/Button';
@@ -25,10 +20,7 @@ function TestForm<T extends FieldValues>({
   const form = useForm<T>(options);
   return (
     <FormProvider {...form}>
-      <form
-        noValidate
-        onSubmit={(event) => void form.handleSubmit(onValid)(event)}
-      >
+      <form noValidate onSubmit={(event) => void form.handleSubmit(onValid)(event)}>
         {children}
         <Button type="submit" variant="primary">
           Save
@@ -41,9 +33,7 @@ function TestForm<T extends FieldValues>({
 describe('CheckboxInput', () => {
   it('throws a clear error outside a FormProvider', () => {
     vi.spyOn(console, 'error').mockImplementation(() => undefined);
-    expect(() =>
-      render(<CheckboxInput name="notify" label="Notify" />),
-    ).toThrow(/FormProvider/);
+    expect(() => render(<CheckboxInput name="notify" label="Notify" />)).toThrow(/FormProvider/);
   });
 
   it('submits the boolean value toggled through its label', async () => {
@@ -57,9 +47,7 @@ describe('CheckboxInput', () => {
       </TestForm>,
     );
     await userEvent.click(screen.getByText('Email the invitee'));
-    expect(
-      screen.getByRole('checkbox', { name: 'Email the invitee' }),
-    ).toBeChecked();
+    expect(screen.getByRole('checkbox', { name: 'Email the invitee' })).toBeChecked();
 
     await userEvent.click(screen.getByRole('button', { name: 'Save' }));
     expect(onValid).toHaveBeenCalledWith({ notify: true }, expect.anything());
@@ -67,16 +55,13 @@ describe('CheckboxInput', () => {
 
   it('shows rule errors linked through aria-describedby', async () => {
     render(
-      <TestForm<{ accept: boolean }>
-        options={{ defaultValues: { accept: false } }}
-      >
+      <TestForm<{ accept: boolean }> options={{ defaultValues: { accept: false } }}>
         <CheckboxInput
           name="accept"
           label="I understand"
           description="Required before you continue."
           rules={{
-            validate: (value: unknown) =>
-              value === true || 'Tick the box to continue.',
+            validate: (value: unknown) => value === true || 'Tick the box to continue.',
           }}
         />
       </TestForm>,

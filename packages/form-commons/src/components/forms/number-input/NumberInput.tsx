@@ -7,9 +7,10 @@ const DECIMAL_PATTERN = /^-?\d+(?:\.\d+)?$/;
 
 export type NumberMode = 'integer' | 'decimal';
 
-export interface NumberInputProps<
-  TFieldValues extends FieldValues = FieldValues,
-> extends Omit<TextInputProps<TFieldValues>, 'type' | 'inputMode'> {
+export interface NumberInputProps<TFieldValues extends FieldValues = FieldValues> extends Omit<
+  TextInputProps<TFieldValues>,
+  'type' | 'inputMode'
+> {
   /** `integer` accepts digits only; `decimal` also one fractional part. */
   mode: NumberMode;
   /** Error shown when the text is not a number of the chosen mode. */

@@ -1,5 +1,1 @@
-export {
-  SelectInput,
-  type SelectInputProps,
-  type SelectOption,
-} from './SelectInput';
+export { SelectInput, type SelectInputProps, type SelectOption } from './SelectInput';

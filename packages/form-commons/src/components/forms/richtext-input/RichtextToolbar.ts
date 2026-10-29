@@ -24,10 +24,7 @@ export interface RichtextToolbarAction {
   run: () => void;
 }
 
-type ToggleLabelKey = Exclude<
-  keyof RichtextLabels,
-  'toolbar' | 'link' | 'unlink' | 'linkPrompt'
->;
+type ToggleLabelKey = Exclude<keyof RichtextLabels, 'toolbar' | 'link' | 'unlink' | 'linkPrompt'>;
 
 interface ToggleDefinition {
   key: ToggleLabelKey;
@@ -118,8 +115,7 @@ export function buildRichtextToolbar(
       key: 'unlink',
       label: labels.unlink,
       isActive: false,
-      run: () =>
-        void editor.chain().focus().extendMarkRange('link').unsetLink().run(),
+      run: () => void editor.chain().focus().extendMarkRange('link').unsetLink().run(),
     },
   ];
 }

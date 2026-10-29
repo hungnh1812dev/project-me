@@ -62,12 +62,7 @@ Icon-only buttons need an `aria-label`.
 Layout and a11y wiring for any control:
 
 ```tsx
-<Field
-  label="Email"
-  description="We send the invite here."
-  error={error}
-  required
->
+<Field label="Email" description="We send the invite here." error={error} required>
   {(control) => <Input {...control} type="email" />}
 </Field>
 ```
