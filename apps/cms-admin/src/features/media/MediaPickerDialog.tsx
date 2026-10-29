@@ -9,10 +9,10 @@ import {
   FormAlert,
   formatFileSize,
 } from '@abyss/form-commons';
+import { LoadError, TableSkeleton } from '@components/PageStates';
+import { Pagination } from '@components/Pagination';
 import { COPY } from '@configs/Copy.constants';
 
-import { LoadError, TableSkeleton } from '../../components/PageStates';
-import { Pagination } from '../../components/Pagination';
 import { isForbidden } from '../access';
 import type { MediaFile } from './Media.api';
 import { useMediaQuery } from './Media.queries';

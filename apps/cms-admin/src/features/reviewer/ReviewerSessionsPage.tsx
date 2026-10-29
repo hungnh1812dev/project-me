@@ -14,13 +14,13 @@ import {
   Switch,
   type SheetColumn,
 } from '@abyss/form-commons';
+import { LoadError, PageHeader, TableSkeleton } from '@components/PageStates';
+import { Pagination } from '@components/Pagination';
+import { useClampedPage } from '@components/useClampedPage';
 import { COPY } from '@configs/Copy.constants';
 import { formatDateTime } from '@libs/DateFormat.rules';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
-import { LoadError, PageHeader, TableSkeleton } from '../../components/PageStates';
-import { Pagination } from '../../components/Pagination';
-import { useClampedPage } from '../../components/useClampedPage';
 import { isForbidden, toAccessError, useCallerAccess } from '../access';
 import type { ReviewerSession } from './Reviewer.api';
 import { REVIEWER_SETTINGS_SUBJECT } from './Reviewer.constants';

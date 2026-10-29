@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { Button, FormAlert } from '@abyss/form-commons';
+import { Modal, ModalActions } from '@components/Modal';
 import { APP_ROUTES } from '@configs/App.routes';
 import { COPY } from '@configs/Copy.constants';
 import { Link } from 'react-router';
 
-import { Modal, ModalActions } from '../../components/Modal';
 import { useCurrentUser, useEmailCode } from '../auth';
 import { ConfirmWithCodeForm, useSecurityApi } from '../security';
 import type { BackupFile } from './Backups.api';

@@ -1,5 +1,6 @@
 import { useState, type ReactNode } from 'react';
 import { Button, FormAlert, TextInput, type FormAlertTone } from '@abyss/form-commons';
+import { ModalActions } from '@components/Modal';
 import { PASSWORD_LENGTH, TOTP_CODE_LENGTH, type TwoFactorMethod } from '@configs/Auth.constants';
 import { COPY } from '@configs/Copy.constants';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -8,7 +9,6 @@ import { useMutation } from '@tanstack/react-query';
 import { FormProvider, useForm } from 'react-hook-form';
 import { z } from 'zod';
 
-import { ModalActions } from '../../components/Modal';
 import type { useEmailCode } from '../auth';
 import { toSecurityError } from './Security.errors';
 

@@ -1,11 +1,11 @@
 import { useRef, useState } from 'react';
 import { Button, FormAlert, SortableSheet, type FormAlertTone } from '@abyss/form-commons';
+import { LoadError, PageHeader, TableSkeleton } from '@components/PageStates';
+import { Pagination } from '@components/Pagination';
+import { useClampedPage } from '@components/useClampedPage';
+import { useRestoreFocus } from '@components/useRestoreFocus';
 import { COPY } from '@configs/Copy.constants';
 
-import { LoadError, PageHeader, TableSkeleton } from '../../components/PageStates';
-import { Pagination } from '../../components/Pagination';
-import { useClampedPage } from '../../components/useClampedPage';
-import { useRestoreFocus } from '../../components/useRestoreFocus';
 import { useCurrentUser } from '../auth';
 import type { Account, InvitedAccount } from './Access.api';
 import { isForbidden } from './Access.errors';

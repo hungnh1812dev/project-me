@@ -1,9 +1,9 @@
 import { FormAlert } from '@abyss/form-commons';
+import { LoadError, PageHeader, TableSkeleton } from '@components/PageStates';
 import { contentEditPath, contentNewPath } from '@configs/App.routes';
 import { COPY } from '@configs/Copy.constants';
 import { Navigate } from 'react-router';
 
-import { LoadError, PageHeader, TableSkeleton } from '../../components/PageStates';
 import { isForbidden } from '../access';
 import { useDocumentListQuery } from './Content.queries';
 

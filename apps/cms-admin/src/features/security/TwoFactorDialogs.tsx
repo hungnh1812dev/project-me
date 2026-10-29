@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { Button, FormAlert } from '@abyss/form-commons';
+import { Modal, ModalActions } from '@components/Modal';
 import {
   TOTP_QR_SIZE_PX,
   TOTP_SECRET_GROUP_SIZE,
@@ -9,7 +10,6 @@ import { COPY } from '@configs/Copy.constants';
 import { useMutation } from '@tanstack/react-query';
 import { QRCodeSVG } from 'qrcode.react';
 
-import { Modal, ModalActions } from '../../components/Modal';
 import { useEmailCode } from '../auth';
 import { ConfirmWithCodeForm } from './ConfirmWithCodeForm';
 import { toSecurityError } from './Security.errors';

@@ -1,8 +1,8 @@
 import { useMemo, useState } from 'react';
 import type { SheetSort } from '@abyss/form-commons';
+import { useClampedPage } from '@components/useClampedPage';
 import { useQuery } from '@tanstack/react-query';
 
-import { useClampedPage } from '../../components/useClampedPage';
 import { listValueFieldsOf } from './Collection.columns';
 import { COLLECTION_KIND, LIST_UPDATED_KEY } from './Content.constants';
 import { CONTENT_QUERY_KEYS, useDocumentListQuery } from './Content.queries';

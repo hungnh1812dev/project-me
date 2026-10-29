@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Button, FormAlert, TextInput, type FormAlertTone } from '@abyss/form-commons';
+import { Modal, ModalActions } from '@components/Modal';
 import {
   TOTP_CODE_LENGTH,
   TWO_FACTOR_METHODS,
@@ -13,7 +14,6 @@ import { useMutation } from '@tanstack/react-query';
 import { FormProvider, useForm } from 'react-hook-form';
 import { z } from 'zod';
 
-import { Modal, ModalActions } from '../../components/Modal';
 import type { TwoFactorChallenge } from './Auth.api';
 import { useSession } from './Session.context';
 import { useEmailCode } from './useEmailCode';

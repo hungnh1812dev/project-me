@@ -1,12 +1,12 @@
 import { useRef, useState } from 'react';
 import { Button, FormAlert, SortableSheet, type FormAlertTone } from '@abyss/form-commons';
+import { LoadError, PageHeader, TableSkeleton } from '@components/PageStates';
+import { Pagination } from '@components/Pagination';
+import { useClampedPage } from '@components/useClampedPage';
+import { useRestoreFocus } from '@components/useRestoreFocus';
 import { COPY } from '@configs/Copy.constants';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
-import { LoadError, PageHeader, TableSkeleton } from '../../components/PageStates';
-import { Pagination } from '../../components/Pagination';
-import { useClampedPage } from '../../components/useClampedPage';
-import { useRestoreFocus } from '../../components/useRestoreFocus';
 import { isForbidden, useCallerAccess } from '../access';
 import { DeleteMediaDialog } from './DeleteMediaDialog';
 import { EditAltDialog } from './EditAltDialog';

@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import { Button, FormAlert, type FormAlertTone } from '@abyss/form-commons';
+import { LoadError, PageHeader, TableSkeleton } from '@components/PageStates';
 import { APP_ROUTES } from '@configs/App.routes';
 import { COPY } from '@configs/Copy.constants';
 import { API_ERROR_CODES, HTTP_STATUS } from '@configs/Http.constants';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link, useParams } from 'react-router';
 
-import { LoadError, PageHeader, TableSkeleton } from '../../components/PageStates';
 import type { ContentType } from '../content-types';
 import type { Role } from './Access.api';
 import { OWNER_ROLE_SLUG } from './Access.constants';

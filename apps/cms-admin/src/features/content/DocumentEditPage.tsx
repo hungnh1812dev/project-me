@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Button, FormAlert } from '@abyss/form-commons';
+import { LoadError, PageHeader, TableSkeleton } from '@components/PageStates';
 import { contentEditPath } from '@configs/App.routes';
 import { REVIEWER_ROLE_SLUG } from '@configs/Auth.constants';
 import { COPY } from '@configs/Copy.constants';
@@ -7,7 +8,6 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { FormProvider, useForm } from 'react-hook-form';
 import { useNavigate, useParams } from 'react-router';
 
-import { LoadError, PageHeader, TableSkeleton } from '../../components/PageStates';
 import { useCurrentUser } from '../auth';
 import { conflictDetailsOf, type ConflictDetails } from './Conflict.rules';
 import { ConflictMergeModal } from './ConflictMergeModal';

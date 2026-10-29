@@ -1,9 +1,9 @@
 import { FormAlert, SortableSheet, type SheetColumn } from '@abyss/form-commons';
+import { LoadError, PageHeader, TableSkeleton } from '@components/PageStates';
 import { rolePermissionsPath } from '@configs/App.routes';
 import { COPY } from '@configs/Copy.constants';
 import { Link } from 'react-router';
 
-import { LoadError, PageHeader, TableSkeleton } from '../../components/PageStates';
 import type { Role } from './Access.api';
 import { isForbidden } from './Access.errors';
 import { useRolesQuery } from './Access.queries';
