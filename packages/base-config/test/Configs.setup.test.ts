@@ -2,16 +2,14 @@ import assert from 'node:assert/strict';
 import path from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
-import { ESLint } from 'eslint';
-import prettier from 'prettier';
+
 import baseEslint, { sharedIgnores } from '@abyss/base-config/eslint';
 import baseOxlint from '@abyss/base-config/oxlint';
 import basePrettier from '@abyss/base-config/prettier';
+import { ESLint } from 'eslint';
+import prettier from 'prettier';
 
-const packageRoot = path.join(
-  path.dirname(fileURLToPath(import.meta.url)),
-  '..',
-);
+const packageRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const repoRoot = path.join(packageRoot, '..', '..');
 
 await test('prettier export is a plain options object', () => {

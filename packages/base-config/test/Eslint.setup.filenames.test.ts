@@ -1,21 +1,16 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
+
+import baseEslint, { type FileNameRuleOptions } from '@abyss/base-config/eslint';
 import { Linter } from 'eslint';
 import tseslint from 'typescript-eslint';
-import baseEslint, {
-  type FileNameRuleOptions,
-} from '@abyss/base-config/eslint';
 
 const linter = new Linter({ configType: 'flat' });
 /** Linter's answer for a file no config block matches; ESLint itself skips it. */
 const NOT_LINTED_MESSAGE = 'No matching configuration found';
 const noExports = 'const value = 1;\n';
 
-function lint(
-  fileName: string,
-  code: string,
-  options: FileNameRuleOptions = {},
-): string[] {
+function lint(fileName: string, code: string, options: FileNameRuleOptions = {}): string[] {
   const ruleBlock = baseEslint({
     tsconfigRootDir: '/',
     fileNames: options,
@@ -39,11 +34,7 @@ function lint(
     .filter((message) => !message.startsWith(NOT_LINTED_MESSAGE));
 }
 
-function assertAccepted(
-  fileName: string,
-  code = noExports,
-  options?: FileNameRuleOptions,
-) {
+function assertAccepted(fileName: string, code = noExports, options?: FileNameRuleOptions) {
   assert.deepEqual(lint(fileName, code, options), [], fileName);
 }
 
@@ -123,14 +114,9 @@ await test('honours the configured test suffixes', () => {
   assertAccepted('tests/Login.e2e.spec.ts', noExports, {
     testSuffixes: ['spec'],
   });
-  assertRejected(
-    'tests/Login.e2e.test.ts',
-    /Too many dot parts|lower/,
-    noExports,
-    {
-      testSuffixes: ['spec'],
-    },
-  );
+  assertRejected('tests/Login.e2e.test.ts', /Too many dot parts|lower/, noExports, {
+    testSuffixes: ['spec'],
+  });
 });
 
 await test('requires a hook file to export its hook', () => {
@@ -141,22 +127,12 @@ await test('requires a hook file to export its hook', () => {
     'export type useThing = string;\n',
   );
   assertAccepted('src/useThing.ts', 'export const useThing = () => 1;\n');
-  assertAccepted(
-    'src/useThing.ts',
-    'function a() {}\nexport { a as useThing };\n',
-  );
+  assertAccepted('src/useThing.ts', 'function a() {}\nexport { a as useThing };\n');
 });
 
 await test('rejects a non-hook file that only exports one hook', () => {
-  assertRejected(
-    'src/Thing.ts',
-    /name the file "useThing"/,
-    'export function useThing() {}\n',
-  );
-  assertAccepted(
-    'src/Thing.ts',
-    'export function useThing() {}\nexport const other = 1;\n',
-  );
+  assertRejected('src/Thing.ts', /name the file "useThing"/, 'export function useThing() {}\n');
+  assertAccepted('src/Thing.ts', 'export function useThing() {}\nexport const other = 1;\n');
   assertAccepted('src/Thing.ts', 'export const useThing = 1;\n');
 });
 

@@ -51,13 +51,13 @@ const config: PrettierBaseConfig = {
   importOrderParserPlugins: ['typescript', 'jsx', 'decorators-legacy'],
 
   overrides: [
-    {
-      files: ['./src/**'],
-      options: {
-        tailwindStylesheet: './src/assets/styles/globals.css',
-        tailwindFunctions: ['clsx', 'cn', 'cva'],
-      },
-    },
+    // {
+    //   files: ['./src/**'],
+    //   options: {
+    //     tailwindStylesheet: './src/assets/styles/globals.css',
+    //     tailwindFunctions: ['clsx', 'cn', 'cva'],
+    //   },
+    // },
     {
       files: ['*.json', '*.jsonc'],
       options: { trailingComma: 'none' },

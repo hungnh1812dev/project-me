@@ -1,6 +1,7 @@
 import js from '@eslint/js';
 import type { Linter } from 'eslint';
 import tseslint from 'typescript-eslint';
+
 import {
   CHECKED_EXTENSIONS,
   DEFAULT_SCANNED_FOLDERS,
@@ -14,13 +15,7 @@ export type { FileNameRuleOptions };
  * Files no project lints with type information: build output, coverage,
  * CommonJS/ESM scripts and the Oxlint config (outside every tsconfig).
  */
-export const sharedIgnores = [
-  'dist/**',
-  'coverage/**',
-  '*.cjs',
-  '*.mjs',
-  'oxlint.config.ts',
-];
+export const sharedIgnores = ['dist/**', 'coverage/**', '*.cjs', '*.mjs', 'oxlint.config.ts'];
 
 /** Unused names that start with an underscore are intentional. */
 const unusedVarsOptions = {
@@ -53,9 +48,7 @@ const abyssPlugin = { rules: { 'file-names': fileNamesRule } };
  *     { languageOptions: { globals: globals.node } },
  *   ];
  */
-export default function baseEslint(
-  options: BaseEslintOptions,
-): Linter.Config[] {
+export default function baseEslint(options: BaseEslintOptions): Linter.Config[] {
   const fileNames = options.fileNames;
   return [
     { ignores: [...sharedIgnores, ...(options.ignores ?? [])] },

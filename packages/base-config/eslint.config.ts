@@ -1,4 +1,5 @@
 import globals from 'globals';
+
 import baseEslint from './src/Eslint.setup.ts';
 
 export default [
