@@ -2,9 +2,9 @@ import { readdirSync, statSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 import { APP_ROUTES } from '@configs/App.routes';
+import { PUBLIC_ROUTE_PATHS } from '@features/auth/Auth.feature';
+import { FEATURES } from '@features/Features.registry';
 
-import { PUBLIC_ROUTE_PATHS } from '../features/auth/Auth.feature';
-import { FEATURES } from '../features/Features.registry';
 import { appRoutes } from './AppRoutes.setup';
 
 const FEATURES_DIR = resolve(import.meta.dirname, '../features');

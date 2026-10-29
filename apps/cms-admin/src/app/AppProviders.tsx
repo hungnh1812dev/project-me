@@ -1,8 +1,8 @@
 import type { ReactNode } from 'react';
+import { SessionProvider } from '@features/auth/Session.context';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { Provider } from 'react-redux';
 
-import { SessionProvider } from '../features/auth/Session.context';
 import type { AppServices } from './AppServices.setup';
 
 export function AppProviders({

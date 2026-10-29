@@ -3,11 +3,11 @@ import { Button } from '@abyss/form-commons';
 import { APP_ROUTES } from '@configs/App.routes';
 import { REVIEWER_ROLE_SLUG } from '@configs/Auth.constants';
 import { COPY } from '@configs/Copy.constants';
+import { useCallerAccess } from '@features/access/useCallerAccess';
+import { useCurrentUser, useSession } from '@features/auth';
+import { FEATURE_LIST } from '@features/Features.registry';
 import { Link, NavLink } from 'react-router';
 
-import { useCallerAccess } from '../features/access/useCallerAccess';
-import { useCurrentUser, useSession } from '../features/auth';
-import { FEATURE_LIST } from '../features/Features.registry';
 import type { FeatureNavItem, NavItemsState } from '../lib/FeatureDefinition';
 import { collectLeafIds, DATA_BACKED_SECTION_ID, NAV_SECTIONS } from '../lib/NavSections.constants';
 

@@ -1,15 +1,15 @@
 import { REFRESH_LOCK_NAME, SESSION_CHANNEL_NAME } from '@configs/Auth.constants';
-import type { QueryClient } from '@tanstack/react-query';
-import type { AxiosInstance } from 'axios';
-
 import {
   accessTokenOf,
   browserCrossTabOptions,
   createAuthApi,
   createSession,
   installAuthInterceptor,
-} from '../features/auth/AuthWiring.setup';
-import { FEATURE_LIST } from '../features/Features.registry';
+} from '@features/auth/AuthWiring.setup';
+import { FEATURE_LIST } from '@features/Features.registry';
+import type { QueryClient } from '@tanstack/react-query';
+import type { AxiosInstance } from 'axios';
+
 import { createAppStore } from './App.store';
 
 /** Wires store, session, every feature API and the client's auth interceptor. */

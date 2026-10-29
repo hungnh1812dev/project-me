@@ -1,12 +1,12 @@
 import { API_ENDPOINTS } from '@configs/Api.endpoints';
 import { COPY } from '@configs/Copy.constants';
+import type { Role } from '@features/access/Access.api';
+import type { CurrentUser } from '@features/auth/Auth.slice';
 import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import type { FakeHandler } from '../../test/FakeApi.fixture';
 import { createTestServices, renderApp, TEST_USER } from '../../test/RenderApp.fixture';
-import type { Role } from '../features/access/Access.api';
-import type { CurrentUser } from '../features/auth/Auth.slice';
 
 const { REFRESH, ME } = API_ENDPOINTS.AUTH;
 const nav = COPY.access.nav;

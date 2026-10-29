@@ -1,8 +1,8 @@
 import { REVIEWER_ROLE_SLUG } from '@configs/Auth.constants';
+import { useCurrentUser } from '@features/auth';
+import { ReviewerBanner } from '@features/reviewer/ReviewerBanner';
 import { Outlet } from 'react-router';
 
-import { useCurrentUser } from '../features/auth';
-import { ReviewerBanner } from '../features/reviewer/ReviewerBanner';
 import { MobileMenu } from './MobileMenu';
 import { AppNameLink, SideMenu } from './SideMenu';
 
