@@ -2,25 +2,23 @@ import { BadRequestException } from '@nestjs/common';
 import { z } from 'zod';
 
 import { ERROR_CODES } from '../../../common/constants/Error.constants';
-import {
-  invalidRequest,
-  parseRequest,
-} from '../../../common/http/RequestParsing.rules';
+import { invalidRequest, parseRequest } from '../../../common/http/RequestParsing.rules';
+import { PAGINATION, queryInt } from '../../../common/validation/SharedSchemas.rules';
 import { CONTENT_STATUSES, INT4_MAX } from '../../content-engine';
 import {
   DEFAULT_DOCUMENT_STATUS,
   DOCUMENT_ERROR_MESSAGES,
   DOCUMENT_QUERY_LIMITS,
   FILTER_OPERATORS,
-  type FilterOperator,
   LIST_QUERY_MESSAGES,
   PRESENCE_STATES,
+  type FilterOperator,
   type PresenceState,
 } from '../domain/Documents.constants';
 import {
+  normalizeListQuery,
   type FilterClause,
   type ListDocumentsQuery,
-  normalizeListQuery,
   type SortKey,
 } from '../domain/ListQuery.rules';
 import {
@@ -33,10 +31,6 @@ import {
   SORT_SEPARATOR,
   VERSION_BODY_KEY,
 } from './DocumentsHttp.constants';
-import {
-  PAGINATION,
-  queryInt,
-} from '../../../common/validation/SharedSchemas.rules';
 
 type ContentStatus = (typeof CONTENT_STATUSES)[number];
 
@@ -55,10 +49,7 @@ const paramsSchema = z.strictObject({
     Number.MAX_SAFE_INTEGER,
     PAGINATION.DEFAULT_PAGE_SIZE,
   ),
-  [DOCUMENT_QUERY_KEYS.SORT]: z
-    .string()
-    .max(DOCUMENT_QUERY_LIMITS.MAX_SORT_LENGTH)
-    .optional(),
+  [DOCUMENT_QUERY_KEYS.SORT]: z.string().max(DOCUMENT_QUERY_LIMITS.MAX_SORT_LENGTH).optional(),
 });
 
 const isOperator = (op: string): op is FilterOperator =>
@@ -97,14 +88,9 @@ function parseFilter(key: string, raw: unknown): FilterClause {
  * never the submitted value.
  */
 export function parseListQuery(query: unknown): ListDocumentsQuery {
-  const entries =
-    typeof query === 'object' && query !== null ? Object.entries(query) : [];
-  const filterEntries = entries.filter(([key]) =>
-    key.startsWith(FILTER_KEY_PREFIX),
-  );
-  const rest = Object.fromEntries(
-    entries.filter(([key]) => !key.startsWith(FILTER_KEY_PREFIX)),
-  );
+  const entries = typeof query === 'object' && query !== null ? Object.entries(query) : [];
+  const filterEntries = entries.filter(([key]) => key.startsWith(FILTER_KEY_PREFIX));
+  const rest = Object.fromEntries(entries.filter(([key]) => !key.startsWith(FILTER_KEY_PREFIX)));
   const params = parseRequest(paramsSchema, rest);
   return normalizeListQuery({
     status: params.status,

@@ -38,18 +38,12 @@ describe('mediaColumnsOf', () => {
 
   it('returns names only, nothing that is SQL', () => {
     for (const ref of mediaColumnsOf(registry)) {
-      expect(Object.keys(ref).sort()).toEqual([
-        'columnName',
-        'fieldName',
-        'tableName',
-      ]);
+      expect(Object.keys(ref).sort()).toEqual(['columnName', 'fieldName', 'tableName']);
     }
   });
 
   it('is empty when no content type has a media field', () => {
-    expect(mediaColumnsOf(ContentTypeRegistry.fromDefinitions([NOTE]))).toEqual(
-      [],
-    );
+    expect(mediaColumnsOf(ContentTypeRegistry.fromDefinitions([NOTE]))).toEqual([]);
   });
 
   it('groups field names by table', () => {

@@ -28,29 +28,21 @@ describe('print-schema', () => {
   afterEach(() => rm(dir, { recursive: true, force: true }));
 
   it('writes the SDL, then reports it up to date', async () => {
-    expect(
-      await printSchemaFile({ schemasDir, sdlFile, shouldCheckOnly: false }),
-    ).toEqual({
+    expect(await printSchemaFile({ schemasDir, sdlFile, shouldCheckOnly: false })).toEqual({
       status: 'written',
     });
     expect(await readFile(sdlFile, 'utf8')).toContain('noteList(');
-    expect(
-      await printSchemaFile({ schemasDir, sdlFile, shouldCheckOnly: false }),
-    ).toEqual({
+    expect(await printSchemaFile({ schemasDir, sdlFile, shouldCheckOnly: false })).toEqual({
       status: 'up-to-date',
     });
   });
 
   it('--shouldCheckOnly reports missing and stale files and writes nothing', async () => {
-    expect(
-      await printSchemaFile({ schemasDir, sdlFile, shouldCheckOnly: true }),
-    ).toEqual({
+    expect(await printSchemaFile({ schemasDir, sdlFile, shouldCheckOnly: true })).toEqual({
       status: 'missing',
     });
     await writeFile(sdlFile, 'type Query { stale: Int }\n');
-    expect(
-      await printSchemaFile({ schemasDir, sdlFile, shouldCheckOnly: true }),
-    ).toEqual({
+    expect(await printSchemaFile({ schemasDir, sdlFile, shouldCheckOnly: true })).toEqual({
       status: 'stale',
     });
     expect(await readFile(sdlFile, 'utf8')).toBe('type Query { stale: Int }\n');

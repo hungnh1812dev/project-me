@@ -11,11 +11,7 @@ import type { VersionCache } from '../../application/VersionCache.service';
 import { API_TOKEN, hashApiToken } from '../../domain/ApiToken.rules';
 import { PolicyEvaluator } from '../../domain/PolicyEvaluator.rules';
 import { MANAGEMENT_ERROR_CODES } from '../domain/AccessManagement.constants';
-import type {
-  ApiTokenChange,
-  ManagedApiToken,
-  NewApiToken,
-} from './AccessManagement.port';
+import type { ApiTokenChange, ManagedApiToken, NewApiToken } from './AccessManagement.port';
 import { ApiTokensService } from './ApiTokens.service';
 
 const META = { ip: '203.0.113.7', userAgent: 'jest' };
@@ -53,8 +49,7 @@ function build(locked: ManagedApiToken | null = TOKEN) {
   };
   const catalog = testCatalog();
   const access = {
-    policy: () =>
-      Promise.resolve({ catalog, evaluator: new PolicyEvaluator(catalog) }),
+    policy: () => Promise.resolve({ catalog, evaluator: new PolicyEvaluator(catalog) }),
   };
   const versions = { getRolePolicy: jest.fn(() => Promise.resolve(null)) };
   const audit = {
@@ -142,13 +137,10 @@ describe('ApiTokensService', () => {
     it('answers 400 for a scope past the entry cap', async () => {
       const { service } = build();
       const scope = {
-        permissions: Array.from(
-          { length: API_TOKEN.MAX_SCOPE_ENTRIES + 1 },
-          () => ({
-            subject: 'article',
-            action: 'read',
-          }),
-        ),
+        permissions: Array.from({ length: API_TOKEN.MAX_SCOPE_ENTRIES + 1 }, () => ({
+          subject: 'article',
+          action: 'read',
+        })),
       };
       await expect(
         service.create(actorWithRole('admin'), { name: 'CI', scope }, META),
@@ -177,12 +169,7 @@ describe('ApiTokensService', () => {
   describe('update', () => {
     it('updates a token and audits the changed fields', async () => {
       const { service, audit } = build();
-      await service.update(
-        actorWithRole('admin'),
-        TOKEN.documentId,
-        { name: 'New' },
-        META,
-      );
+      await service.update(actorWithRole('admin'), TOKEN.documentId, { name: 'New' }, META);
       expect(audit.record).toHaveBeenCalledWith(
         expect.anything(),
         expect.objectContaining({
@@ -195,12 +182,7 @@ describe('ApiTokensService', () => {
     it('answers 409 API_TOKEN_EXPIRED for an expired token (ET1) and writes nothing', async () => {
       const { service, tokens } = build({ ...TOKEN, expiresAt: new Date(NOW) });
       await expect(
-        service.update(
-          actorWithRole('admin'),
-          TOKEN.documentId,
-          { name: 'New' },
-          META,
-        ),
+        service.update(actorWithRole('admin'), TOKEN.documentId, { name: 'New' }, META),
       ).rejects.toMatchObject({
         kind: 'conflict',
         errorCode: MANAGEMENT_ERROR_CODES.TOKEN_EXPIRED,
@@ -211,12 +193,7 @@ describe('ApiTokensService', () => {
     it('answers 409 API_TOKEN_REVOKED for a revoked token', async () => {
       const { service } = build({ ...TOKEN, revokedAt: new Date(NOW) });
       await expect(
-        service.update(
-          actorWithRole('admin'),
-          TOKEN.documentId,
-          { name: 'New' },
-          META,
-        ),
+        service.update(actorWithRole('admin'), TOKEN.documentId, { name: 'New' }, META),
       ).rejects.toMatchObject({
         errorCode: MANAGEMENT_ERROR_CODES.TOKEN_REVOKED,
       });
@@ -228,12 +205,7 @@ describe('ApiTokensService', () => {
         createdById: ACTOR_ID + 1,
       });
       await expect(
-        service.update(
-          actorWithRole('admin'),
-          TOKEN.documentId,
-          { name: 'New' },
-          META,
-        ),
+        service.update(actorWithRole('admin'), TOKEN.documentId, { name: 'New' }, META),
       ).rejects.toMatchObject({
         kind: 'not_found',
         errorCode: MANAGEMENT_ERROR_CODES.TOKEN_NOT_FOUND,
@@ -247,12 +219,7 @@ describe('ApiTokensService', () => {
         createdById: ACTOR_ID + 1,
       });
       await expect(
-        service.update(
-          actorWithRole('owner'),
-          TOKEN.documentId,
-          { scope: SCOPE },
-          META,
-        ),
+        service.update(actorWithRole('owner'), TOKEN.documentId, { scope: SCOPE }, META),
       ).rejects.toMatchObject({
         errorCode: MANAGEMENT_ERROR_CODES.TOKEN_NOT_FOUND,
       });
@@ -264,11 +231,7 @@ describe('ApiTokensService', () => {
     it('stamps the revocation time from the clock and audits', async () => {
       const { service, tokens, audit, unit } = build();
       await service.revoke(actorWithRole('admin'), TOKEN.documentId, META);
-      expect(tokens.markRevoked).toHaveBeenCalledWith(
-        unit,
-        TOKEN.id,
-        new Date(NOW),
-      );
+      expect(tokens.markRevoked).toHaveBeenCalledWith(unit, TOKEN.id, new Date(NOW));
       expect(audit.record).toHaveBeenCalledWith(
         unit,
         expect.objectContaining({ action: 'api_token.revoked' }),

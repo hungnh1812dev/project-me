@@ -4,10 +4,7 @@ import { Inject, Injectable } from '@nestjs/common';
 
 import { Clock } from '../../../../common/time/Clock.service';
 import type { ClientMeta } from '../../../../common/types/ClientMeta.entity';
-import type {
-  PageMeta,
-  PageQuery,
-} from '../../../../common/validation/SharedSchemas.rules';
+import type { PageMeta, PageQuery } from '../../../../common/validation/SharedSchemas.rules';
 import {
   CORE_TRANSACTION_RUNNER,
   type TransactionRunner,
@@ -15,34 +12,27 @@ import {
 } from '../../../../infrastructure/database/TransactionRunner.port';
 import {
   AUDIT_ACTIONS,
-  type AuditAction,
-  type AuditMetadata,
   auditActorOf,
   SecurityAuditService,
+  type AuditAction,
+  type AuditMetadata,
 } from '../../../security-audit';
 import { AccessPolicyService } from '../../application/AccessPolicy.service';
 import { VersionCache } from '../../application/VersionCache.service';
 import {
-  type RolePolicy,
-  type TokenScope,
   isOwnerRole,
   parseTokenScope,
+  type RolePolicy,
+  type TokenScope,
 } from '../../domain/ActorContext.entity';
-import {
-  API_TOKEN,
-  hashApiToken,
-  isApiTokenExpired,
-} from '../../domain/ApiToken.rules';
+import { API_TOKEN, hashApiToken, isApiTokenExpired } from '../../domain/ApiToken.rules';
 import type { AccountActor } from '../../domain/Rank.rules';
-import {
-  scopeEntriesBeyondCreator,
-  validateTokenScope,
-} from '../../domain/TokenScope.rules';
+import { scopeEntriesBeyondCreator, validateTokenScope } from '../../domain/TokenScope.rules';
 import {
   API_TOKEN_STATUSES,
   API_TOKEN_UPDATABLE_FIELDS,
-  type ApiTokenStatus,
   MANAGEMENT_AUDIT_SUBJECTS,
+  type ApiTokenStatus,
 } from '../domain/AccessManagement.constants';
 import {
   expiryNotInFuture,
@@ -110,10 +100,7 @@ function assertScopeSize(input: unknown): void {
     typeof input === 'object' && input !== null
       ? (input as { permissions?: unknown }).permissions
       : undefined;
-  if (
-    Array.isArray(permissions) &&
-    permissions.length > API_TOKEN.MAX_SCOPE_ENTRIES
-  ) {
+  if (Array.isArray(permissions) && permissions.length > API_TOKEN.MAX_SCOPE_ENTRIES) {
     throw tokenScopeTooLarge();
   }
 }
@@ -200,9 +187,7 @@ export class ApiTokensService {
       scope = validated.value;
     }
     const expiresAt =
-      input.expiresAt === undefined
-        ? undefined
-        : this.checkedExpiry(input.expiresAt);
+      input.expiresAt === undefined ? undefined : this.checkedExpiry(input.expiresAt);
 
     const row = await this.runner.run(async (unit) => {
       const current = await this.lockManageable(unit, actor, documentId);
@@ -212,9 +197,7 @@ export class ApiTokensService {
       }
       if (scope !== undefined) {
         const creatorRole =
-          current.createdById === actor.accountId
-            ? actor.role
-            : await this.creatorRole(current);
+          current.createdById === actor.accountId ? actor.role : await this.creatorRole(current);
         const beyond = scopeEntriesBeyondCreator(scope, creatorRole);
         if (beyond.length > 0) throw tokenScopeNotHeld(beyond);
       }
@@ -223,9 +206,7 @@ export class ApiTokensService {
         ...(scope === undefined ? {} : { scope }),
         ...(expiresAt === undefined ? {} : { expiresAt }),
       });
-      const fields = API_TOKEN_UPDATABLE_FIELDS.filter(
-        (field) => input[field] !== undefined,
-      );
+      const fields = API_TOKEN_UPDATABLE_FIELDS.filter((field) => input[field] !== undefined);
       await this.record(unit, actor, updated.documentId, meta, {
         action: AUDIT_ACTIONS.API_TOKEN_UPDATED,
         metadata: {
@@ -244,19 +225,11 @@ export class ApiTokensService {
   }
 
   /** Revoking twice is a 409: the first revoke is the one in the audit log. */
-  async revoke(
-    actor: AccountActor,
-    documentId: string,
-    meta: ClientMeta,
-  ): Promise<void> {
+  async revoke(actor: AccountActor, documentId: string, meta: ClientMeta): Promise<void> {
     await this.runner.run(async (unit) => {
       const current = await this.lockManageable(unit, actor, documentId);
       if (current.revokedAt !== null) throw tokenRevoked();
-      await this.tokens.markRevoked(
-        unit,
-        current.id,
-        new Date(this.clock.now()),
-      );
+      await this.tokens.markRevoked(unit, current.id, new Date(this.clock.now()));
       await this.record(unit, actor, current.documentId, meta, {
         action: AUDIT_ACTIONS.API_TOKEN_REVOKED,
         metadata: {},
@@ -269,10 +242,7 @@ export class ApiTokensService {
    * against the creator's current role: 400 TOKEN_SCOPE_INVALID or
    * 403 API_TOKEN_SCOPE_NOT_HELD with the offending entry indexes.
    */
-  private async checkedScope(
-    input: unknown,
-    creatorRole: RolePolicy,
-  ): Promise<TokenScope> {
+  private async checkedScope(input: unknown, creatorRole: RolePolicy): Promise<TokenScope> {
     assertScopeSize(input);
     const { catalog } = await this.access.policy();
     const validated = validateTokenScope(input, catalog);
@@ -308,10 +278,7 @@ export class ApiTokensService {
     documentId: string,
   ): Promise<ManagedApiToken> {
     const row = await this.tokens.lockByDocumentId(unit, documentId);
-    if (
-      row === null ||
-      (!isOwnerRole(actor.role) && row.createdById !== actor.accountId)
-    ) {
+    if (row === null || (!isOwnerRole(actor.role) && row.createdById !== actor.accountId)) {
       throw tokenNotFound();
     }
     return row;

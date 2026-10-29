@@ -1,11 +1,8 @@
-import {
-  CONTENT_ERROR_CODES,
-  SINGLE_COMPONENT_MAX_ITEMS,
-} from './ContentEngine.constants';
-import { UUID_PATTERN } from './field-types';
-import { formatDefinitionPath } from './DefinitionValidator.rules';
 import { ContentEngineError } from './ContentDocument.entity';
+import { CONTENT_ERROR_CODES, SINGLE_COMPONENT_MAX_ITEMS } from './ContentEngine.constants';
 import type { TableNode } from './ContentTypeRegistry.entity';
+import { formatDefinitionPath } from './DefinitionValidator.rules';
+import { UUID_PATTERN } from './field-types';
 
 /**
  * The document tree as the repository reads and writes it. Keys of `values`
@@ -44,18 +41,12 @@ export class ContentTreeError extends ContentEngineError {
     readonly path: TreePath,
     message: string,
   ) {
-    super(
-      path.length > 0 ? `${formatDefinitionPath(path)}: ${message}` : message,
-    );
+    super(path.length > 0 ? `${formatDefinitionPath(path)}: ${message}` : message);
     this.name = 'ContentTreeError';
   }
 }
 
-const ITEM_KEYS = new Set<keyof ComponentInput>([
-  'componentUid',
-  'values',
-  'components',
-]);
+const ITEM_KEYS = new Set<keyof ComponentInput>(['componentUid', 'values', 'components']);
 const TREE_KEYS = new Set<keyof TreeInput>(['values', 'components']);
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
@@ -94,16 +85,10 @@ function checkValues(table: TableNode, values: unknown, path: TreePath): void {
   }
 }
 
-function checkComponents(
-  table: TableNode,
-  components: unknown,
-  path: TreePath,
-): void {
+function checkComponents(table: TableNode, components: unknown, path: TreePath): void {
   if (components === undefined) return;
   if (!isPlainObject(components)) throw invalid(path, 'must be an object');
-  const byName = new Map(
-    table.components.map((component) => [component.field.name, component]),
-  );
+  const byName = new Map(table.components.map((component) => [component.field.name, component]));
   for (const [key, items] of Object.entries(components)) {
     const component = byName.get(key);
     if (component === undefined) {
@@ -111,10 +96,7 @@ function checkComponents(
     }
     const itemsPath = [...path, key];
     if (!Array.isArray(items)) throw invalid(itemsPath, 'must be an array');
-    if (
-      component.field.repeatable !== true &&
-      items.length > SINGLE_COMPONENT_MAX_ITEMS
-    ) {
+    if (component.field.repeatable !== true && items.length > SINGLE_COMPONENT_MAX_ITEMS) {
       throw invalid(
         itemsPath,
         `non-repeatable component holds at most ${SINGLE_COMPONENT_MAX_ITEMS} item`,
@@ -146,10 +128,7 @@ function checkComponents(
         seen.add(normalized);
       }
       checkValues(component.table, item.values, [...itemPath, 'values']);
-      checkComponents(component.table, item.components, [
-        ...itemPath,
-        'components',
-      ]);
+      checkComponents(component.table, item.components, [...itemPath, 'components']);
     });
   }
 }
@@ -160,10 +139,7 @@ function checkComponents(
  * Value types are left to the API layer and Postgres.
  * @throws ContentTreeError
  */
-export function assertTreeInput(
-  root: TableNode,
-  input: unknown,
-): asserts input is TreeInput {
+export function assertTreeInput(root: TableNode, input: unknown): asserts input is TreeInput {
   if (!isPlainObject(input)) throw invalid([], 'tree must be an object');
   checkKeys(input, TREE_KEYS, []);
   checkValues(root, input.values, ['values']);

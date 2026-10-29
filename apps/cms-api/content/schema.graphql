@@ -1,16 +1,26 @@
-"""Calendar date, "YYYY-MM-DD"."""
+"""
+Calendar date, "YYYY-MM-DD".
+"""
 scalar Date
 
-"""ISO 8601 date and time."""
+"""
+ISO 8601 date and time.
+"""
 scalar DateTime
 
-"""Exact decimal number as a string."""
+"""
+Exact decimal number as a string.
+"""
 scalar Decimal
 
-"""Any JSON value."""
+"""
+Any JSON value.
+"""
 scalar JSON
 
-"""Which version of a document to read."""
+"""
+Which version of a document to read.
+"""
 enum DocumentStatus {
   DRAFT
   PUBLISHED
@@ -101,12 +111,30 @@ type Query {
   commonText(status: DocumentStatus = PUBLISHED): CommonText
   cvContact(status: DocumentStatus = PUBLISHED): CvContact
   cvPage(documentId: ID!, status: DocumentStatus = PUBLISHED): CvPage
-  cvPageList(status: DocumentStatus = PUBLISHED, page: Int = 1, pageSize: Int = 20, sort: [CvPageSort!], filter: CvPageFilter): CvPagePage
+  cvPageList(
+    status: DocumentStatus = PUBLISHED
+    page: Int = 1
+    pageSize: Int = 20
+    sort: [CvPageSort!]
+    filter: CvPageFilter
+  ): CvPagePage
   header(status: DocumentStatus = PUBLISHED): Header
   profile(documentId: ID!, status: DocumentStatus = PUBLISHED): Profile
-  profileList(status: DocumentStatus = PUBLISHED, page: Int = 1, pageSize: Int = 20, sort: [ProfileSort!], filter: ProfileFilter): ProfilePage
+  profileList(
+    status: DocumentStatus = PUBLISHED
+    page: Int = 1
+    pageSize: Int = 20
+    sort: [ProfileSort!]
+    filter: ProfileFilter
+  ): ProfilePage
   resume(documentId: ID!, status: DocumentStatus = PUBLISHED): Resume
-  resumeList(status: DocumentStatus = PUBLISHED, page: Int = 1, pageSize: Int = 20, sort: [ResumeSort!], filter: ResumeFilter): ResumePage
+  resumeList(
+    status: DocumentStatus = PUBLISHED
+    page: Int = 1
+    pageSize: Int = 20
+    sort: [ResumeSort!]
+    filter: ResumeFilter
+  ): ResumePage
 }
 
 type CommonText {
@@ -256,7 +284,9 @@ enum CvPageSortField {
   summary
 }
 
-"""One optional entry per filterable field; entries are AND-ed."""
+"""
+One optional entry per filterable field; entries are AND-ed.
+"""
 input CvPageFilter {
   documentId: IdFilter
   version: IntFilter
@@ -352,7 +382,9 @@ enum ProfileSortField {
   name
 }
 
-"""One optional entry per filterable field; entries are AND-ed."""
+"""
+One optional entry per filterable field; entries are AND-ed.
+"""
 input ProfileFilter {
   documentId: IdFilter
   version: IntFilter
@@ -472,7 +504,9 @@ enum ResumeSortField {
   summary
 }
 
-"""One optional entry per filterable field; entries are AND-ed."""
+"""
+One optional entry per filterable field; entries are AND-ed.
+"""
 input ResumeFilter {
   documentId: IdFilter
   version: IntFilter

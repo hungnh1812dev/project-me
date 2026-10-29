@@ -37,10 +37,7 @@ describe('projectTable (D3)', () => {
   });
 
   it('a granted component keeps its whole subtree', () => {
-    const projected = projectTable(
-      type.root,
-      FieldSelection.of(['experience']),
-    );
+    const projected = projectTable(type.root, FieldSelection.of(['experience']));
     expect(shape(projected)).toEqual({
       profile: [],
       profile__experience: ['company', 'years'],
@@ -51,9 +48,9 @@ describe('projectTable (D3)', () => {
   it('selects only system columns when nothing is readable', () => {
     const projected = projectTable(type.root, FieldSelection.NONE);
     expect(projected.components).toEqual([]);
-    expect(
-      selectedColumns(projected, accountAccess(FieldSelection.NONE)),
-    ).toEqual([...type.root.plan.systemColumns]);
+    expect(selectedColumns(projected, accountAccess(FieldSelection.NONE))).toEqual([
+      ...type.root.plan.systemColumns,
+    ]);
   });
 
   it('does not change the registry plan', () => {
@@ -64,9 +61,10 @@ describe('projectTable (D3)', () => {
 
   it('selectedColumns lists system then field columns', () => {
     const projected = projectTable(type.root, FieldSelection.of(['age']));
-    expect(
-      selectedColumns(projected, accountAccess(FieldSelection.NONE)),
-    ).toEqual([...type.root.plan.systemColumns, 'age']);
+    expect(selectedColumns(projected, accountAccess(FieldSelection.NONE))).toEqual([
+      ...type.root.plan.systemColumns,
+      'age',
+    ]);
   });
 
   it.each(['reviewer', 'anonymous'] as const)(
@@ -88,10 +86,7 @@ describe('projectTable (D3)', () => {
     'selects created_by/updated_by for %s actors',
     (kind) => {
       expect(
-        selectedColumns(
-          type.root,
-          recordReadAccess(ACTORS_BY_KIND[kind], FieldSelection.ALL),
-        ),
+        selectedColumns(type.root, recordReadAccess(ACTORS_BY_KIND[kind], FieldSelection.ALL)),
       ).toEqual(expect.arrayContaining(['created_by', 'updated_by']));
     },
   );
@@ -103,8 +98,6 @@ describe('projectTable (D3)', () => {
         experience!.table,
         recordReadAccess(ACTORS_BY_KIND.anonymous, FieldSelection.ALL),
       ),
-    ).toEqual(
-      expect.arrayContaining([...experience!.table.plan.systemColumns]),
-    );
+    ).toEqual(expect.arrayContaining([...experience!.table.plan.systemColumns]));
   });
 });

@@ -13,8 +13,4 @@ export {
   VALUE_PATTERNS,
   YEAR_ZERO_PREFIX,
 } from './ValueParsers.rules';
-export {
-  mediaColumnsOf,
-  mediaFieldNamesByTable,
-  type MediaColumnRef,
-} from './MediaColumns.rules';
+export { mediaColumnsOf, mediaFieldNamesByTable, type MediaColumnRef } from './MediaColumns.rules';

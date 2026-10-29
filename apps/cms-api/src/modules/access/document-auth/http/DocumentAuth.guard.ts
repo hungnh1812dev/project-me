@@ -1,19 +1,12 @@
-import {
-  type CanActivate,
-  type ExecutionContext,
-  Injectable,
-} from '@nestjs/common';
+import { Injectable, type CanActivate, type ExecutionContext } from '@nestjs/common';
 import type { Request } from 'express';
 import { firstValueFrom, isObservable } from 'rxjs';
 
 import { JwtAuthGuard } from '../../../identity';
-import { type ActorContext } from '../../domain/ActorContext.entity';
 import { AnonymousActorService } from '../../application/AnonymousActor.service';
+import { type ActorContext } from '../../domain/ActorContext.entity';
 import { API_TOKEN } from '../../domain/ApiToken.rules';
-import {
-  ApiTokenAuthenticator,
-  BEARER_PATTERN,
-} from '../../http/ApiToken.guard';
+import { ApiTokenAuthenticator, BEARER_PATTERN } from '../../http/ApiToken.guard';
 
 /** What this guard leaves on `req.user` for `PermissionGuard` and the controller. */
 export interface DocumentRequest extends Request {

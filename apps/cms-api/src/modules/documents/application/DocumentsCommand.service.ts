@@ -10,29 +10,25 @@ import {
   type UnitOfWork,
 } from '../../../infrastructure/database/TransactionRunner.port';
 import {
-  type AccessPolicy,
   AccessPolicyService,
-  type ActorContext,
   PermissionAction,
   recordReadAccess,
   RecordSerializer,
+  WriteAllowlist,
+  type AccessPolicy,
+  type ActorContext,
   type RowCondition,
   type SerializedRecord,
-  WriteAllowlist,
 } from '../../access';
 import {
   assertTreeInput,
-  type ContentDocument,
   ContentRegistry,
+  type ContentDocument,
   type RegisteredContentType,
   type TreeInput,
 } from '../../content-engine';
 import { DocumentMediaService } from '../../media';
-import {
-  diffRecords,
-  type DiffEntry,
-  overlaySubmitted,
-} from '../domain/Diff.rules';
+import { diffRecords, overlaySubmitted, type DiffEntry } from '../domain/Diff.rules';
 import { DOCUMENT_ERROR_MESSAGES } from '../domain/Documents.constants';
 import {
   documentNotFound,
@@ -41,10 +37,7 @@ import {
   unknownContentType,
   versionConflict,
 } from '../domain/Documents.errors';
-import {
-  validateTreeValues,
-  type WriteMode,
-} from '../domain/ValueValidator.rules';
+import { validateTreeValues, type WriteMode } from '../domain/ValueValidator.rules';
 import {
   DOCUMENT_REPOSITORY,
   type DocumentRepository,
@@ -115,11 +108,7 @@ export class DocumentsCommandService {
     private readonly clock: Clock,
   ) {}
 
-  async create(
-    actor: ActorContext,
-    slug: string,
-    body: unknown,
-  ): Promise<WriteResult> {
+  async create(actor: ActorContext, slug: string, body: unknown): Promise<WriteResult> {
     if (actor.kind === 'anonymous' || actor.kind === 'reviewer') {
       throw forbidden();
     }
@@ -143,9 +132,7 @@ export class DocumentsCommandService {
         this.documents.insertTree(unit, slug, {
           ...stored,
           documentId,
-          publishedAt: type.definition.draftAndPublish
-            ? null
-            : new Date(this.clock.now()),
+          publishedAt: type.definition.draftAndPublish ? null : new Date(this.clock.now()),
           createdBy: actor.accountId,
         }),
       ),
@@ -173,10 +160,7 @@ export class DocumentsCommandService {
       PermissionAction.update,
       'update',
     );
-    const access = recordReadAccess(
-      actor,
-      evaluator.fieldsFor(actor, slug).readable,
-    );
+    const access = recordReadAccess(actor, evaluator.fieldsFor(actor, slug).readable);
     // The draft copy for a type with draft and publish, else its single live copy.
     const target: DocumentRowSelector = {
       documentId,
@@ -185,12 +169,7 @@ export class DocumentsCommandService {
     };
 
     const outcome = await this.transactions.run(async (unit) => {
-      const updated = await this.documents.bumpVersion(
-        unit,
-        type,
-        target,
-        version,
-      );
+      const updated = await this.documents.bumpVersion(unit, type, target, version);
       if (updated === undefined) {
         const readScope = this.readScope(actor, slug, type, evaluator);
         return this.describeConflict(unit, type, access, target, readScope);
@@ -210,15 +189,7 @@ export class DocumentsCommandService {
     if (outcome.kind === 'conflict') {
       throw await this.conflict(type, access, outcome, tree);
     }
-    return this.writeResult(
-      actor,
-      slug,
-      type,
-      access,
-      outcome.id,
-      documentId,
-      version + 1,
-    );
+    return this.writeResult(actor, slug, type, access, outcome.id, documentId, version + 1);
   }
 
   /**
@@ -232,12 +203,7 @@ export class DocumentsCommandService {
     id: number,
   ): Promise<void> {
     if (target.rowCondition === null) return;
-    const isInScope = await this.documents.isRowInScope(
-      unit,
-      type,
-      id,
-      target.rowCondition,
-    );
+    const isInScope = await this.documents.isRowInScope(unit, type, id, target.rowCondition);
     if (!isInScope) throw forbidden();
   }
 
@@ -250,9 +216,7 @@ export class DocumentsCommandService {
   ): ReadScope {
     const readFilter = evaluator.rowFilter(actor, PermissionAction.read, slug);
     if (!readFilter.allowed) return { readable: false, where: null };
-    const readable = type.definition.draftAndPublish
-      ? evaluator.canReadDrafts(actor, slug)
-      : true;
+    const readable = type.definition.draftAndPublish ? evaluator.canReadDrafts(actor, slug) : true;
     return { readable, where: readFilter.where };
   }
 
@@ -298,15 +262,9 @@ export class DocumentsCommandService {
     const readFilter = evaluator.rowFilter(actor, PermissionAction.read, slug);
     const mayRead =
       readFilter.allowed &&
-      (!type.definition.draftAndPublish ||
-        evaluator.canReadDrafts(actor, slug));
+      (!type.definition.draftAndPublish || evaluator.canReadDrafts(actor, slug));
     const document = mayRead
-      ? await this.documents.findOne(
-          type,
-          access,
-          { rowId: id },
-          readFilter.where,
-        )
+      ? await this.documents.findOne(type, access, { rowId: id }, readFilter.where)
       : undefined;
     if (document === undefined) return { documentId, version };
     const record = new RecordSerializer(type).serialize(document, access);
@@ -315,11 +273,7 @@ export class DocumentsCommandService {
   }
 
   /** One bulk-create item: the same checks as `create`, no SQL write. */
-  prepareCreate(
-    actor: ActorContext,
-    slug: string,
-    body: unknown,
-  ): Promise<PreparedWrite> {
+  prepareCreate(actor: ActorContext, slug: string, body: unknown): Promise<PreparedWrite> {
     return this.prepare(actor, slug, body, PermissionAction.create, 'create');
   }
 
@@ -366,10 +320,7 @@ export class DocumentsCommandService {
     if (outcome.document !== null) {
       const serializer = new RecordSerializer(type);
       details.server = serializer.serialize(outcome.document, access);
-      details.submitted = serializer.serialize(
-        overlaySubmitted(outcome.document, tree),
-        access,
-      );
+      details.submitted = serializer.serialize(overlaySubmitted(outcome.document, tree), access);
       await this.media.embed(type.root, [details.server, details.submitted]);
       details.diff = diffRecords(details.server, details.submitted);
     }

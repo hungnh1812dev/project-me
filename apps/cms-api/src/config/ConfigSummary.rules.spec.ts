@@ -12,13 +12,13 @@ import {
   TEST_SMTP_USER,
 } from '../../test/fixtures/Env.fixture';
 import { loadAppConfig } from './AppConfig.setup';
-import { summarizeConfig } from './ConfigSummary.rules';
 import {
   CONFIG_DEFAULTS,
   OPTIONAL_SECRET_ENV_KEYS,
   REDACTED,
   SECRET_ENV_KEYS,
 } from './Config.constants';
+import { summarizeConfig } from './ConfigSummary.rules';
 import { envSchema } from './Env.schema';
 
 /** Env keys whose values must never reach the log, beyond the secret lists. */
@@ -69,8 +69,7 @@ function sentinelEnv(): Record<string, string> {
   return Object.fromEntries(
     Object.keys(envSchema.shape).map((key) => [
       key,
-      FORMATTED_SENTINELS[key] ??
-        `sentinel-${key.toLowerCase().replaceAll('_', '-')}-value`,
+      FORMATTED_SENTINELS[key] ?? `sentinel-${key.toLowerCase().replaceAll('_', '-')}-value`,
     ]),
   );
 }

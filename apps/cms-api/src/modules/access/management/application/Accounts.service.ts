@@ -1,10 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 
 import type { ClientMeta } from '../../../../common/types/ClientMeta.entity';
-import type {
-  PageMeta,
-  PageQuery,
-} from '../../../../common/validation/SharedSchemas.rules';
+import type { PageMeta, PageQuery } from '../../../../common/validation/SharedSchemas.rules';
 import {
   CORE_TRANSACTION_RUNNER,
   type TransactionRunner,
@@ -13,32 +10,26 @@ import {
 import { SessionRevocationService } from '../../../identity';
 import {
   AUDIT_ACTIONS,
-  type AuditAction,
   auditActorOf,
   SecurityAuditService,
+  type AuditAction,
 } from '../../../security-audit';
+import { VersionCache } from '../../application/VersionCache.service';
 import { AccountStatus } from '../../domain/Access.constants';
 import { type AccountActor } from '../../domain/Rank.rules';
-import { VersionCache } from '../../application/VersionCache.service';
 import {
   ACCOUNT_UPDATABLE_FIELDS,
   MANAGEMENT_AUDIT_SUBJECTS,
 } from '../domain/AccessManagement.constants';
+import { accountAlreadyDisabled, accountNotDisabled } from '../domain/AccessManagement.errors';
 import {
-  accountAlreadyDisabled,
-  accountNotDisabled,
-} from '../domain/AccessManagement.errors';
-import {
-  type AccountRecord,
-  type AccountView,
   assertAssignable,
   assertManageable,
   toAccountView,
+  type AccountRecord,
+  type AccountView,
 } from '../domain/Account.entity';
-import {
-  ACCOUNT_ADMIN_REPOSITORY,
-  type AccountAdminRepository,
-} from './AccessManagement.port';
+import { ACCOUNT_ADMIN_REPOSITORY, type AccountAdminRepository } from './AccessManagement.port';
 
 export interface AccountAuditEvent {
   readonly action: AuditAction;
@@ -97,10 +88,7 @@ export class AccountsService {
   ) {}
 
   /** One page of the accounts that are not deleted, oldest first. */
-  async list(
-    actor: AccountActor,
-    { page, pageSize }: PageQuery,
-  ): Promise<AccountPage> {
+  async list(actor: AccountActor, { page, pageSize }: PageQuery): Promise<AccountPage> {
     const { rows, total } = await this.accounts.listPage(page, pageSize);
     return {
       data: rows.map((row) => toAccountView(actor, row)),
@@ -120,14 +108,10 @@ export class AccountsService {
       const role =
         input.roleId === undefined
           ? undefined
-          : assertAssignable(
-              actor,
-              await this.accounts.lockRoleForAssignment(unit, input.roleId),
-            );
+          : assertAssignable(actor, await this.accounts.lockRoleForAssignment(unit, input.roleId));
       const roleChanged = role !== undefined && role.id !== target.role.id;
       const nameChanged =
-        input.displayName !== undefined &&
-        input.displayName !== target.displayName;
+        input.displayName !== undefined && input.displayName !== target.displayName;
 
       const updated = await this.accounts.update(unit, target.id, {
         ...(nameChanged && input.displayName !== undefined
@@ -158,22 +142,13 @@ export class AccountsService {
    * Disables the account and ends every session at once: status, a
    * token_version bump and every refresh token revoked, in one transaction.
    */
-  async disable(
-    actor: AccountActor,
-    documentId: string,
-    meta: ClientMeta,
-  ): Promise<void> {
+  async disable(actor: AccountActor, documentId: string, meta: ClientMeta): Promise<void> {
     await this.runner.run(async (unit) => {
       const target = await this.lockManageable(unit, actor, documentId);
       if (target.status === AccountStatus.disabled) {
         throw accountAlreadyDisabled();
       }
-      await this.accounts.setStatus(
-        unit,
-        target.id,
-        AccountStatus.disabled,
-        actor.accountId,
-      );
+      await this.accounts.setStatus(unit, target.id, AccountStatus.disabled, actor.accountId);
       await this.sessions.revokeAll(unit, target.id);
       await recordAccountEvent(this.audit, unit, actor, target, meta, {
         action: AUDIT_ACTIONS.ACCOUNT_DISABLED,
@@ -187,11 +162,7 @@ export class AccountsService {
    * password, else to `invited` (it never finished its invite). No
    * token_version change: disable already bumped it, so old tokens stay dead.
    */
-  async enable(
-    actor: AccountActor,
-    documentId: string,
-    meta: ClientMeta,
-  ): Promise<void> {
+  async enable(actor: AccountActor, documentId: string, meta: ClientMeta): Promise<void> {
     await this.runner.run(async (unit) => {
       const target = await this.lockManageable(unit, actor, documentId);
       if (target.status !== AccountStatus.disabled) {
@@ -210,11 +181,7 @@ export class AccountsService {
   }
 
   /** Signs the account out everywhere: token_version bump + refresh tokens revoked. */
-  async revokeSessions(
-    actor: AccountActor,
-    documentId: string,
-    meta: ClientMeta,
-  ): Promise<void> {
+  async revokeSessions(actor: AccountActor, documentId: string, meta: ClientMeta): Promise<void> {
     await this.runner.run(async (unit) => {
       const target = await this.lockManageable(unit, actor, documentId);
       await this.sessions.revokeAll(unit, target.id);
@@ -230,10 +197,7 @@ export class AccountsService {
     actor: AccountActor,
     documentId: string,
   ): Promise<AccountRecord> {
-    return assertManageable(
-      actor,
-      await this.accounts.lockManageable(unit, documentId),
-    );
+    return assertManageable(actor, await this.accounts.lockManageable(unit, documentId));
   }
 
   private dropAfterCommit(unit: UnitOfWork, accountId: number): void {

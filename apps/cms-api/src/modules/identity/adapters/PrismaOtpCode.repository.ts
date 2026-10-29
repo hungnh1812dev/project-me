@@ -1,24 +1,16 @@
 import { Injectable } from '@nestjs/common';
 
-import { prismaTxOf } from '../../../infrastructure/database/PrismaTransactionRunner.adapter';
 import { PrismaService } from '../../../infrastructure/database/Prisma.service';
+import { prismaTxOf } from '../../../infrastructure/database/PrismaTransactionRunner.adapter';
 import type { UnitOfWork } from '../../../infrastructure/database/TransactionRunner.port';
-import type {
-  LiveOtpCode,
-  NewOtpCode,
-  OtpCodeRepository,
-} from '../application/Identity.port';
+import type { LiveOtpCode, NewOtpCode, OtpCodeRepository } from '../application/Identity.port';
 import type { OtpPurpose } from '../domain/Identity.constants';
 
 @Injectable()
 export class PrismaOtpCodeRepository implements OtpCodeRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  countIssuedSince(
-    unit: UnitOfWork,
-    accountId: number,
-    since: Date,
-  ): Promise<number> {
+  countIssuedSince(unit: UnitOfWork, accountId: number, since: Date): Promise<number> {
     return prismaTxOf(unit).otpCode.count({
       where: { accountId, createdAt: { gt: since } },
     });
@@ -40,11 +32,7 @@ export class PrismaOtpCodeRepository implements OtpCodeRepository {
     await prismaTxOf(unit).otpCode.create({ data: code });
   }
 
-  findLive(
-    accountId: number,
-    purpose: OtpPurpose,
-    now: Date,
-  ): Promise<LiveOtpCode | null> {
+  findLive(accountId: number, purpose: OtpPurpose, now: Date): Promise<LiveOtpCode | null> {
     return this.prisma.otpCode.findFirst({
       where: { accountId, purpose, usedAt: null, expiresAt: { gt: now } },
       orderBy: { createdAt: 'desc' },

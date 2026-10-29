@@ -3,10 +3,7 @@ import 'reflect-metadata';
 import { join } from 'node:path';
 
 import { SecurityAuditService } from '../../src/modules/security-audit';
-import {
-  assertPinnedPathsExist,
-  listSourceFiles,
-} from './ImportGraph.analyzer';
+import { assertPinnedPathsExist, listSourceFiles } from './ImportGraph.analyzer';
 import { SECURITY_AUDIT_MODULE_FILE, SRC_ROOT } from './SourcePaths.constants';
 
 /**
@@ -35,9 +32,9 @@ const moduleFiles = listSourceFiles(SRC_ROOT)
 
 const providingFiles = moduleFiles.filter((file) =>
   moduleClassesOf(file).some((moduleClass) =>
-    (
-      Reflect.getMetadata(PROVIDERS_METADATA_KEY, moduleClass) as unknown[]
-    ).includes(SecurityAuditService),
+    (Reflect.getMetadata(PROVIDERS_METADATA_KEY, moduleClass) as unknown[]).includes(
+      SecurityAuditService,
+    ),
   ),
 );
 

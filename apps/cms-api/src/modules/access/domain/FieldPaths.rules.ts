@@ -1,18 +1,11 @@
 import { ERROR_CODES } from '../../../common/constants/Error.constants';
+import { DOMAIN_ERROR_KINDS, DomainError } from '../../../common/errors/Domain.errors';
 import {
-  DomainError,
-  DOMAIN_ERROR_KINDS,
-} from '../../../common/errors/Domain.errors';
-import { isComponentField } from '../../content-engine';
-import type {
-  ContentTypeDefinition,
-  FieldDefinition,
+  isComponentField,
+  type ContentTypeDefinition,
+  type FieldDefinition,
 } from '../../content-engine';
-import {
-  ACCESS_ERROR_CODES,
-  FIELD_ERROR_MESSAGES,
-  FIELD_PATH_SEPARATOR,
-} from './Access.constants';
+import { ACCESS_ERROR_CODES, FIELD_ERROR_MESSAGES, FIELD_PATH_SEPARATOR } from './Access.constants';
 
 /**
  * Field lists in permissions (`readable_fields`, `writable_fields`, token
@@ -45,12 +38,9 @@ export function fieldPathsOf(definition: ContentTypeDefinition): Set<string> {
  * are listed, since a component path covers its whole subtree.
  * `null` when the definition has no sensitive field (nothing to hide).
  */
-export function nonSensitiveFieldList(
-  definition: ContentTypeDefinition,
-): FieldList {
+export function nonSensitiveFieldList(definition: ContentTypeDefinition): FieldList {
   const hasSensitive = (field: FieldDefinition): boolean =>
-    field.sensitive === true ||
-    (isComponentField(field) && field.fields.some(hasSensitive));
+    field.sensitive === true || (isComponentField(field) && field.fields.some(hasSensitive));
   if (!definition.fields.some(hasSensitive)) return null;
   const allowed: string[] = [];
   const visit = (fields: FieldDefinition[], prefix: string) => {
@@ -89,10 +79,7 @@ export function fieldListAllows(list: FieldList, path: string): boolean {
  * readable (its allowed sub-fields are still selected and shown).
  */
 export function fieldListReaches(list: FieldList, path: string): boolean {
-  return (
-    list === null ||
-    list.some((entry) => covers(entry, path) || covers(path, entry))
-  );
+  return list === null || list.some((entry) => covers(entry, path) || covers(path, entry));
 }
 
 /** Fields allowed by any of the lists (null wins). */
@@ -106,17 +93,12 @@ export function intersectFieldLists(a: FieldList, b: FieldList): FieldList {
   if (a === null) return b;
   if (b === null) return a;
   const intersectedPaths = new Set<string>();
-  for (const path of a)
-    if (fieldListAllows(b, path)) intersectedPaths.add(path);
-  for (const path of b)
-    if (fieldListAllows(a, path)) intersectedPaths.add(path);
+  for (const path of a) if (fieldListAllows(b, path)) intersectedPaths.add(path);
+  for (const path of b) if (fieldListAllows(a, path)) intersectedPaths.add(path);
   return [...intersectedPaths];
 }
 
-function invalidInput(init: {
-  errorCode: string;
-  message: string;
-}): DomainError {
+function invalidInput(init: { errorCode: string; message: string }): DomainError {
   return new DomainError({ kind: DOMAIN_ERROR_KINDS.INVALID_INPUT, ...init });
 }
 

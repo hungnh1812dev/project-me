@@ -4,8 +4,8 @@ import type {
 } from '../../src/infrastructure/database/TransactionRunner.port';
 import { accountActor } from '../../src/modules/access/domain/ActorContext.entity';
 import type { AccountActor } from '../../src/modules/access/domain/Rank.rules';
-import type { AccountRecord } from '../../src/modules/access/management/domain/Account.entity';
 import type { SystemRoleSlug } from '../../src/modules/access/domain/SystemRoles.entity';
+import type { AccountRecord } from '../../src/modules/access/management/domain/Account.entity';
 import { systemRole } from './Access.fixture';
 
 export const ACTOR_ID = 1;
@@ -37,9 +37,7 @@ export function fakeRunner(): {
   return { runner, unit, events };
 }
 
-export function accountRecord(
-  overrides: Partial<AccountRecord> = {},
-): AccountRecord {
+export function accountRecord(overrides: Partial<AccountRecord> = {}): AccountRecord {
   return {
     id: 20,
     documentId: '0195f3a0-0000-7000-8000-000000000020',

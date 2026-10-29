@@ -26,9 +26,7 @@ describe('public constants snapshot', () => {
     expect(await printPublicConstants({ file, check: false })).toEqual({
       status: 'written',
     });
-    expect(JSON.parse(await readFile(file, 'utf8'))).toEqual(
-      buildPublicConstants(),
-    );
+    expect(JSON.parse(await readFile(file, 'utf8'))).toEqual(buildPublicConstants());
     expect(await printPublicConstants({ file, check: false })).toEqual({
       status: 'up-to-date',
     });
@@ -65,18 +63,9 @@ describe('public constants snapshot', () => {
     expect(constants.permissionActions).toEqual(
       expect.arrayContaining(['read', 'create', 'update', 'delete']),
     );
-    expect(Object.keys(constants.systemSubjects)).toContain(
-      'reviewer_settings',
-    );
-    expect(constants.richtextUrlSchemes).toEqual([
-      'http',
-      'https',
-      'mailto',
-      'tel',
-    ]);
-    expect(constants.errorCodes.auth.INVALID_CREDENTIALS).toBe(
-      'AUTH_INVALID_CREDENTIALS',
-    );
+    expect(Object.keys(constants.systemSubjects)).toContain('reviewer_settings');
+    expect(constants.richtextUrlSchemes).toEqual(['http', 'https', 'mailto', 'tel']);
+    expect(constants.errorCodes.auth.INVALID_CREDENTIALS).toBe('AUTH_INVALID_CREDENTIALS');
   });
 
   it('carries no env or secret value', () => {
@@ -96,9 +85,7 @@ describe('public constants snapshot', () => {
 
   it('imports shared constants files and module facades only', async () => {
     const source = await readFile(SOURCE_FILE, 'utf8');
-    const imports = [...source.matchAll(/from '([^']+)'/g)].map(
-      (match) => match[1] ?? '',
-    );
+    const imports = [...source.matchAll(/from '([^']+)'/g)].map((match) => match[1] ?? '');
     const isAllowed = (path: string) =>
       /\.constants$/.test(path) || /^\.\.\/modules\/[a-z-]+$/.test(path);
     expect(imports.filter((path) => !isAllowed(path))).toEqual([]);

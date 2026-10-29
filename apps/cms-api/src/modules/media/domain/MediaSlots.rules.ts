@@ -3,8 +3,7 @@ import type { FieldValues, TableNode } from '../../content-engine';
 /** Any node of a tree: root, component item, input or serialized. */
 export interface TreeNodeLike {
   values?: FieldValues | undefined;
-  components?:
-    Record<string, readonly TreeNodeLike[] | null | undefined> | undefined;
+  components?: Record<string, readonly TreeNodeLike[] | null | undefined> | undefined;
 }
 
 export type MediaSlot = { values: FieldValues; name: string; path: string };
@@ -30,13 +29,7 @@ export function mediaSlots(
   }
   for (const { field, table: child } of table.components) {
     (node.components?.[field.name] ?? []).forEach((item, index) =>
-      mediaSlots(
-        mediaFields,
-        child,
-        item,
-        `${path}components.${field.name}[${index}].`,
-        out,
-      ),
+      mediaSlots(mediaFields, child, item, `${path}components.${field.name}[${index}].`, out),
     );
   }
   return out;

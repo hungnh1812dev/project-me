@@ -2,16 +2,11 @@ import { EventEmitter } from 'node:events';
 
 import type { Request, Response } from 'express';
 
-import {
-  closeAfterAnswer,
-  createByteCounter,
-  declaresBodyOver,
-} from './ByteLimit.rules';
+import { closeAfterAnswer, createByteCounter, declaresBodyOver } from './ByteLimit.rules';
 
 const requestWith = (contentLength?: string): Request =>
   ({
-    headers:
-      contentLength === undefined ? {} : { 'content-length': contentLength },
+    headers: contentLength === undefined ? {} : { 'content-length': contentLength },
   }) as unknown as Request;
 
 describe('byte-limit', () => {

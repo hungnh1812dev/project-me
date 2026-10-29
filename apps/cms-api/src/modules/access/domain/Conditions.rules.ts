@@ -1,13 +1,13 @@
-import { type Expression, type RawBuilder, sql, type SqlBool } from 'kysely';
+import { sql, type Expression, type RawBuilder, type SqlBool } from 'kysely';
 import { z } from 'zod';
 
 import {
+  fieldTypeOf,
   parseDate,
   parseDatetime,
-  fieldTypeOf,
   parseUuid,
+  type FieldValueKind,
 } from '../../content-engine';
-import type { FieldValueKind } from '../../content-engine';
 import {
   ACCESS_ERROR_CODES,
   CONDITION_LIMITS,
@@ -49,9 +49,7 @@ export interface ConditionField {
 }
 
 /** DSL field name -> column; `undefined` = not allowed in a condition. */
-export type ConditionFieldCatalog = (
-  field: string,
-) => ConditionField | undefined;
+export type ConditionFieldCatalog = (field: string) => ConditionField | undefined;
 
 /** Values the actor variables resolve to (SPEC §8.3). */
 export interface ConditionActor {
@@ -68,8 +66,7 @@ export interface ConditionIssue {
 }
 
 export type ConditionValidation =
-  | { ok: true; conditions: ConditionSet }
-  | { ok: false; issues: ConditionIssue[] };
+  { ok: true; conditions: ConditionSet } | { ok: false; issues: ConditionIssue[] };
 
 export class InvalidConditionError extends Error {
   readonly code = ACCESS_ERROR_CODES.PERMISSION_INVALID_CONDITION;
@@ -105,9 +102,7 @@ export function conditionKindOf(type: string): ConditionValueKind | undefined {
 }
 
 /** The root system columns every subject's conditions may use. */
-export function systemConditionField(
-  field: string,
-): ConditionField | undefined {
+export function systemConditionField(field: string): ConditionField | undefined {
   if (!Object.hasOwn(CONDITION_SYSTEM_FIELDS, field)) return undefined;
   return CONDITION_SYSTEM_FIELDS[field as keyof typeof CONDITION_SYSTEM_FIELDS];
 }
@@ -115,14 +110,8 @@ export function systemConditionField(
 const NUMERIC_KINDS: readonly ConditionValueKind[] = ['integer', 'decimal'];
 const VARIABLE_NAMES: readonly string[] = Object.values(CONDITION_VARIABLES);
 
-function literalProblem(
-  value: ConditionLiteral,
-  kind: ConditionValueKind,
-): string | undefined {
-  if (
-    typeof value === 'string' &&
-    value.startsWith(CONDITION_VARIABLE_PREFIX)
-  ) {
+function literalProblem(value: ConditionLiteral, kind: ConditionValueKind): string | undefined {
+  if (typeof value === 'string' && value.startsWith(CONDITION_VARIABLE_PREFIX)) {
     if (!VARIABLE_NAMES.includes(value)) {
       return `unknown variable "${value}" (allowed: ${VARIABLE_NAMES.join(', ')})`;
     }
@@ -134,16 +123,13 @@ function literalProblem(
   if (value === null) return undefined;
   switch (kind) {
     case 'string':
-      return typeof value === 'string' &&
-        value.length <= CONDITION_LIMITS.MAX_STRING_LENGTH
+      return typeof value === 'string' && value.length <= CONDITION_LIMITS.MAX_STRING_LENGTH
         ? undefined
         : `expected a string of at most ${CONDITION_LIMITS.MAX_STRING_LENGTH} characters`;
     case 'integer':
       return Number.isSafeInteger(value) ? undefined : 'expected an integer';
     case 'decimal':
-      return typeof value === 'number' && Number.isFinite(value)
-        ? undefined
-        : 'expected a number';
+      return typeof value === 'number' && Number.isFinite(value) ? undefined : 'expected a number';
     case 'boolean':
       return typeof value === 'boolean' ? undefined : 'expected a boolean';
     case 'date':
@@ -166,10 +152,7 @@ function literalProblem(
   }
 }
 
-function conditionIssue(
-  path: (string | number)[],
-  message: string,
-): ConditionIssue {
+function conditionIssue(path: (string | number)[], message: string): ConditionIssue {
   return {
     code: ACCESS_ERROR_CODES.PERMISSION_INVALID_CONDITION,
     path,
@@ -182,9 +165,7 @@ type ParsedClause = z.infer<typeof conditionSetSchema>['all'][number];
 function shapeIssuesOf(error: z.ZodError): ConditionIssue[] {
   return error.issues.map((zodIssue) =>
     conditionIssue(
-      zodIssue.path.filter(
-        (segment): segment is string | number => typeof segment !== 'symbol',
-      ),
+      zodIssue.path.filter((segment): segment is string | number => typeof segment !== 'symbol'),
       zodIssue.message,
     ),
   );
@@ -201,16 +182,12 @@ function inClauseIssues(
   }
   if (value.length === 0 || value.length > CONDITION_LIMITS.MAX_IN_VALUES) {
     return [
-      conditionIssue(
-        valuePath,
-        `"in" expects 1 to ${CONDITION_LIMITS.MAX_IN_VALUES} values`,
-      ),
+      conditionIssue(valuePath, `"in" expects 1 to ${CONDITION_LIMITS.MAX_IN_VALUES} values`),
     ];
   }
   const issues: ConditionIssue[] = [];
   value.forEach((item, itemIndex) => {
-    const problem =
-      item === null ? '"in" values cannot be null' : literalProblem(item, kind);
+    const problem = item === null ? '"in" values cannot be null' : literalProblem(item, kind);
     if (problem !== undefined) {
       issues.push(conditionIssue([...valuePath, itemIndex], problem));
     }
@@ -263,12 +240,8 @@ export function validateConditions(
   if (!parsed.success) {
     return { ok: false, issues: shapeIssuesOf(parsed.error) };
   }
-  const issues = parsed.data.all.flatMap((clause, index) =>
-    clauseIssues(clause, index, catalog),
-  );
-  return issues.length > 0
-    ? { ok: false, issues }
-    : { ok: true, conditions: parsed.data };
+  const issues = parsed.data.all.flatMap((clause, index) => clauseIssues(clause, index, catalog));
+  return issues.length > 0 ? { ok: false, issues } : { ok: true, conditions: parsed.data };
 }
 
 function resolve(value: ConditionLiteral, actor: ConditionActor) {
@@ -283,9 +256,7 @@ function compileClause(
   actor: ConditionActor,
   table: string | undefined,
 ): RawBuilder<SqlBool> {
-  const column = sql.ref(
-    table === undefined ? field.column : `${table}.${field.column}`,
-  );
+  const column = sql.ref(table === undefined ? field.column : `${table}.${field.column}`);
   if (Array.isArray(clause.value)) {
     const values = clause.value.map((value) => sql.val(resolve(value, actor)));
     return sql<SqlBool>`${column} in (${sql.join(values)})`;
@@ -296,9 +267,7 @@ function compileClause(
   const literalNull = clause.value === null;
   const value = resolve(clause.value, actor);
   if (clause.op === 'eq') {
-    return literalNull
-      ? sql<SqlBool>`${column} is null`
-      : sql<SqlBool>`${column} = ${value}`;
+    return literalNull ? sql<SqlBool>`${column} is null` : sql<SqlBool>`${column} = ${value}`;
   }
   // `ne` keeps rows whose column is NULL (they are not equal to the value).
   return literalNull
@@ -318,8 +287,7 @@ export function compileConditions(
   table?: string,
 ): Expression<SqlBool> {
   const conditionsCheck = validateConditions(raw, catalog);
-  if (!conditionsCheck.ok)
-    throw new InvalidConditionError(conditionsCheck.issues);
+  if (!conditionsCheck.ok) throw new InvalidConditionError(conditionsCheck.issues);
   const clauses = conditionsCheck.conditions.all.map((clause) => {
     const field = catalog(clause.field);
     if (field === undefined) throw new InvalidConditionError([]);

@@ -4,16 +4,10 @@ import { HttpStatus } from '@nestjs/common';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import request from 'supertest';
 
-import { Clock } from '../../src/common/time/Clock.service';
-import {
-  AUTH_ERROR_CODES,
-  OTP,
-  PASSWORD_MAX_LENGTH,
-  PASSWORD_MIN_LENGTH,
-} from '../../src/modules/identity/domain/Identity.constants';
 import { ERROR_CODES } from '../../src/common/constants/Error.constants';
 import { MS_PER_SECOND } from '../../src/common/constants/Time.constants';
-import { IDENTITY_RATE_LIMIT_POLICIES } from '../../src/modules/identity/http/IdentityHttp.constants';
+import { DOMAIN_ERROR_KINDS } from '../../src/common/errors/Domain.errors';
+import { Clock } from '../../src/common/time/Clock.service';
 import {
   openPrisma,
   type PrismaHandle,
@@ -28,6 +22,14 @@ import {
   hashPassword,
   PasswordService,
 } from '../../src/modules/identity/application/Password.service';
+import {
+  AUTH_ERROR_CODES,
+  OTP,
+  PASSWORD_MAX_LENGTH,
+  PASSWORD_MIN_LENGTH,
+} from '../../src/modules/identity/domain/Identity.constants';
+import { IDENTITY_RATE_LIMIT_POLICIES } from '../../src/modules/identity/http/IdentityHttp.constants';
+import { seedSystemRoles } from '../fixtures/Access.fixture';
 import { createCoreTemplate } from '../fixtures/CoreDb.fixture';
 import {
   dbEnvOf,
@@ -39,8 +41,6 @@ import {
 } from '../fixtures/Env.fixture';
 import { startPostgres, type TestPostgres } from '../fixtures/Postgres.fixture';
 import { createTestApp } from '../fixtures/TestApp.fixture';
-import { seedSystemRoles } from '../fixtures/Access.fixture';
-import { DOMAIN_ERROR_KINDS } from '../../src/common/errors/Domain.errors';
 
 const AUTH = '/api/v1/auth';
 const LOGIN = `${AUTH}/login`;
@@ -208,9 +208,7 @@ describe('OTP + password lifecycle (D8, SPEC §12-9/10; Postgres 17 via Testcont
   }
 
   function me(accessToken: string) {
-    return request(app.getHttpServer())
-      .get(ME)
-      .set('Authorization', `Bearer ${accessToken}`);
+    return request(app.getHttpServer()).get(ME).set('Authorization', `Bearer ${accessToken}`);
   }
 
   describe('POST /auth/password/request-otp', () => {
@@ -226,8 +224,7 @@ describe('OTP + password lifecycle (D8, SPEC §12-9/10; Postgres 17 via Testcont
         expect(res.status).toBe(HttpStatus.ACCEPTED);
         expect(res.text).toBe('');
       }
-      const headerNames = (res: request.Response) =>
-        Object.keys(res.headers).sort();
+      const headerNames = (res: request.Response) => Object.keys(res.headers).sort();
       expect(headerNames(unknown)).toEqual(headerNames(known));
       expect(mailsTo(account.email)).toHaveLength(1);
       expect(mailsTo('nobody-here@example.test')).toHaveLength(0);
@@ -269,18 +266,15 @@ describe('OTP + password lifecycle (D8, SPEC §12-9/10; Postgres 17 via Testcont
       expect(rows).toHaveLength(1);
       expect(rows[0]?.purpose).toBe('RESET_PASSWORD');
       expect(rows[0]?.codeHmac).not.toContain(code);
-      expect(
-        (rows[0]?.expiresAt.getTime() ?? 0) -
-          (rows[0]?.createdAt.getTime() ?? 0),
-      ).toBe(OTP.TTL_SECONDS * MS_PER_SECOND);
+      expect((rows[0]?.expiresAt.getTime() ?? 0) - (rows[0]?.createdAt.getTime() ?? 0)).toBe(
+        OTP.TTL_SECONDS * MS_PER_SECOND,
+      );
     });
 
     it('mails an INVITE_SET_PASSWORD code to invited accounts', async () => {
       const account = await createAccount({ status: 'invited' });
       await requestCode(account.email);
-      expect(mailsTo(account.email)[0]?.text).toContain(
-        `${TEST_ADMIN_ORIGIN}/set-password`,
-      );
+      expect(mailsTo(account.email)[0]?.text).toContain(`${TEST_ADMIN_ORIGIN}/set-password`);
       const row = await db.prisma.otpCode.findFirst({
         where: { accountId: account.id },
       });
@@ -303,9 +297,7 @@ describe('OTP + password lifecycle (D8, SPEC §12-9/10; Postgres 17 via Testcont
       const [, emailRule] = IDENTITY_RATE_LIMIT_POLICIES.OTP_REQUEST;
       for (const email of [account.email, 'ghost-limit@example.test']) {
         for (let i = 0; i < emailRule.maxHits; i += 1) {
-          expect((await post(REQUEST_OTP).send({ email })).status).toBe(
-            HttpStatus.ACCEPTED,
-          );
+          expect((await post(REQUEST_OTP).send({ email })).status).toBe(HttpStatus.ACCEPTED);
         }
         const sixth = await post(REQUEST_OTP).send({ email });
         expect(sixth.status).toBe(HttpStatus.TOO_MANY_REQUESTS);
@@ -326,14 +318,9 @@ describe('OTP + password lifecycle (D8, SPEC §12-9/10; Postgres 17 via Testcont
       const account = await createAccount();
       const otp = app.get(OtpService);
       for (let i = 0; i < OTP.MAX_ISSUED_PER_WINDOW; i += 1) {
-        await otp.issue(
-          account.id,
-          i % 2 === 0 ? 'RESET_PASSWORD' : 'LOGIN_2FA_EMAIL',
-        );
+        await otp.issue(account.id, i % 2 === 0 ? 'RESET_PASSWORD' : 'LOGIN_2FA_EMAIL');
       }
-      await expect(
-        otp.issue(account.id, 'INVITE_SET_PASSWORD'),
-      ).rejects.toMatchObject({
+      await expect(otp.issue(account.id, 'INVITE_SET_PASSWORD')).rejects.toMatchObject({
         kind: DOMAIN_ERROR_KINDS.RATE_LIMITED,
         errorCode: ERROR_CODES.TOO_MANY_REQUESTS,
       });
@@ -347,9 +334,7 @@ describe('OTP + password lifecycle (D8, SPEC §12-9/10; Postgres 17 via Testcont
       }
       const later = Date.now() + OTP.ISSUE_WINDOW_MS + MS_PER_SECOND;
       jest.spyOn(app.get(Clock), 'now').mockReturnValue(later);
-      await expect(otp.issue(account.id, 'RESET_PASSWORD')).resolves.toMatch(
-        /^\d+$/,
-      );
+      await expect(otp.issue(account.id, 'RESET_PASSWORD')).resolves.toMatch(/^\d+$/);
     });
   });
 
@@ -364,9 +349,7 @@ describe('OTP + password lifecycle (D8, SPEC §12-9/10; Postgres 17 via Testcont
       expect(res.status).toBe(HttpStatus.NO_CONTENT);
       expect(res.headers['set-cookie']).toBeUndefined();
 
-      expect((await me(session.accessToken)).status).toBe(
-        HttpStatus.UNAUTHORIZED,
-      );
+      expect((await me(session.accessToken)).status).toBe(HttpStatus.UNAUTHORIZED);
       const refreshed = await post(REFRESH)
         .set('Origin', TEST_ADMIN_ORIGIN)
         .set('Cookie', session.cookie);
@@ -383,9 +366,7 @@ describe('OTP + password lifecycle (D8, SPEC §12-9/10; Postgres 17 via Testcont
     it('accepts a code only once (single use)', async () => {
       const account = await createAccount();
       const code = await requestCode(account.email);
-      expect((await reset(account.email, code)).status).toBe(
-        HttpStatus.NO_CONTENT,
-      );
+      expect((await reset(account.email, code)).status).toBe(HttpStatus.NO_CONTENT);
       const again = await reset(account.email, code);
       expect(again.status).toBe(HttpStatus.BAD_REQUEST);
       expect(errorCodeOf(again)).toBe(AUTH_ERROR_CODES.INVALID_OTP);
@@ -394,10 +375,7 @@ describe('OTP + password lifecycle (D8, SPEC §12-9/10; Postgres 17 via Testcont
     it('lets only one of two concurrent requests use the same code', async () => {
       const account = await createAccount();
       const code = await requestCode(account.email);
-      const results = await Promise.all([
-        reset(account.email, code),
-        reset(account.email, code),
-      ]);
+      const results = await Promise.all([reset(account.email, code), reset(account.email, code)]);
       const statuses = results.map((res) => res.status).sort();
       expect(statuses).toEqual([HttpStatus.NO_CONTENT, HttpStatus.BAD_REQUEST]);
     });
@@ -410,9 +388,7 @@ describe('OTP + password lifecycle (D8, SPEC §12-9/10; Postgres 17 via Testcont
           HttpStatus.BAD_REQUEST,
         );
       }
-      expect((await reset(account.email, code)).status).toBe(
-        HttpStatus.NO_CONTENT,
-      );
+      expect((await reset(account.email, code)).status).toBe(HttpStatus.NO_CONTENT);
     });
 
     it('fails the 6th attempt even with the right code (§12-9)', async () => {
@@ -442,12 +418,8 @@ describe('OTP + password lifecycle (D8, SPEC §12-9/10; Postgres 17 via Testcont
       const second = await requestCode(account.email);
       // Equal codes (1 in a million) would make this check meaningless.
       expect(second).not.toBe(first);
-      expect(errorCodeOf(await reset(account.email, first))).toBe(
-        AUTH_ERROR_CODES.INVALID_OTP,
-      );
-      expect((await reset(account.email, second)).status).toBe(
-        HttpStatus.NO_CONTENT,
-      );
+      expect(errorCodeOf(await reset(account.email, first))).toBe(AUTH_ERROR_CODES.INVALID_OTP);
+      expect((await reset(account.email, second)).status).toBe(HttpStatus.NO_CONTENT);
     });
 
     it('answers unknown emails exactly like a wrong code', async () => {
@@ -470,20 +442,18 @@ describe('OTP + password lifecycle (D8, SPEC §12-9/10; Postgres 17 via Testcont
       expect(errorCodeOf(res)).toBe(AUTH_ERROR_CODES.INVALID_OTP);
     });
 
-    it.each([
-      'x'.repeat(PASSWORD_MIN_LENGTH - 1),
-      'x'.repeat(PASSWORD_MAX_LENGTH + 1),
-    ])('rejects a new password of length %#', async (newPassword) => {
-      const account = await createAccount();
-      const code = await requestCode(account.email);
-      const res = await reset(account.email, code, { newPassword });
-      expect(res.status).toBe(HttpStatus.BAD_REQUEST);
-      expect(errorCodeOf(res)).toBe(AUTH_ERROR_CODES.WEAK_PASSWORD);
-      // The code was not touched: it still works.
-      expect((await reset(account.email, code)).status).toBe(
-        HttpStatus.NO_CONTENT,
-      );
-    });
+    it.each(['x'.repeat(PASSWORD_MIN_LENGTH - 1), 'x'.repeat(PASSWORD_MAX_LENGTH + 1)])(
+      'rejects a new password of length %#',
+      async (newPassword) => {
+        const account = await createAccount();
+        const code = await requestCode(account.email);
+        const res = await reset(account.email, code, { newPassword });
+        expect(res.status).toBe(HttpStatus.BAD_REQUEST);
+        expect(errorCodeOf(res)).toBe(AUTH_ERROR_CODES.WEAK_PASSWORD);
+        // The code was not touched: it still works.
+        expect((await reset(account.email, code)).status).toBe(HttpStatus.NO_CONTENT);
+      },
+    );
 
     it('requires a TOTP code when TOTP is enabled, and keeps the email code', async () => {
       const account = await createAccount({ twoFa: 'totp' });
@@ -500,17 +470,13 @@ describe('OTP + password lifecycle (D8, SPEC §12-9/10; Postgres 17 via Testcont
     it('needs no TOTP for email-2FA accounts', async () => {
       const account = await createAccount({ twoFa: 'email' });
       const code = await requestCode(account.email);
-      expect((await reset(account.email, code)).status).toBe(
-        HttpStatus.NO_CONTENT,
-      );
+      expect((await reset(account.email, code)).status).toBe(HttpStatus.NO_CONTENT);
     });
 
     it('does not reset invited accounts', async () => {
       const account = await createAccount({ status: 'invited' });
       const code = await requestCode(account.email);
-      expect(errorCodeOf(await reset(account.email, code))).toBe(
-        AUTH_ERROR_CODES.INVALID_OTP,
-      );
+      expect(errorCodeOf(await reset(account.email, code))).toBe(AUTH_ERROR_CODES.INVALID_OTP);
     });
   });
 
@@ -573,9 +539,7 @@ describe('OTP + password lifecycle (D8, SPEC §12-9/10; Postgres 17 via Testcont
         .send({ currentPassword: PASSWORD, newPassword: NEW_PASSWORD });
       expect(res.status).toBe(HttpStatus.NO_CONTENT);
 
-      expect((await me(session.accessToken)).status).toBe(
-        HttpStatus.UNAUTHORIZED,
-      );
+      expect((await me(session.accessToken)).status).toBe(HttpStatus.UNAUTHORIZED);
       const refreshed = await post(REFRESH)
         .set('Origin', TEST_ADMIN_ORIGIN)
         .set('Cookie', session.cookie);

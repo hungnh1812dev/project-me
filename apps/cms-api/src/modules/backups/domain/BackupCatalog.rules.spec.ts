@@ -27,9 +27,7 @@ function entry(
 
 describe('parseBackupKey', () => {
   it('parses a daily key and reads the UTC time from the file name', () => {
-    expect(
-      parseBackupKey(`${PREFIX}daily/abyss-20261027T020304Z.dump.age`, PREFIX),
-    ).toEqual({
+    expect(parseBackupKey(`${PREFIX}daily/abyss-20261027T020304Z.dump.age`, PREFIX)).toEqual({
       key: `${PREFIX}daily/abyss-20261027T020304Z.dump.age`,
       kind: 'daily',
       fileName: 'abyss-20261027T020304Z.dump.age',
@@ -38,10 +36,9 @@ describe('parseBackupKey', () => {
   });
 
   it('parses a monthly key', () => {
-    expect(
-      parseBackupKey(`${PREFIX}monthly/abyss-20261001T020304Z.dump.age`, PREFIX)
-        ?.kind,
-    ).toBe('monthly');
+    expect(parseBackupKey(`${PREFIX}monthly/abyss-20261001T020304Z.dump.age`, PREFIX)?.kind).toBe(
+      'monthly',
+    );
   });
 
   it.each([
@@ -53,10 +50,7 @@ describe('parseBackupKey', () => {
     ['a bad extension', `${PREFIX}daily/abyss-20261027T020304Z.dump`],
     ['a short stamp', `${PREFIX}daily/abyss-2026102T020304Z.dump.age`],
     ['month 13', `${PREFIX}daily/abyss-20261327T020304Z.dump.age`],
-    [
-      'day 31 of a 30-day month',
-      `${PREFIX}daily/abyss-20261131T020304Z.dump.age`,
-    ],
+    ['day 31 of a 30-day month', `${PREFIX}daily/abyss-20261131T020304Z.dump.age`],
     ['hour 25', `${PREFIX}daily/abyss-20261027T250304Z.dump.age`],
     ['an empty key', ''],
   ])('returns null for %s', (_name, key) => {
@@ -88,10 +82,7 @@ describe('summarizeBackups', () => {
   });
 
   it('is fresh with a daily dump inside the limit, and sums the sizes', () => {
-    const summary = summarizeBackups(
-      [entry('daily', 3, 10), entry('monthly', 100, 5)],
-      NOW,
-    );
+    const summary = summarizeBackups([entry('daily', 3, 10), entry('monthly', 100, 5)], NOW);
     expect(summary.isStale).toBe(false);
     expect(summary.count).toBe(2);
     expect(summary.totalBytes).toBe(15);
@@ -99,15 +90,11 @@ describe('summarizeBackups', () => {
   });
 
   it('is stale when the newest daily dump is older than the limit', () => {
-    expect(
-      summarizeBackups([entry('daily', STALE_AFTER_HOURS + 1)], NOW).isStale,
-    ).toBe(true);
+    expect(summarizeBackups([entry('daily', STALE_AFTER_HOURS + 1)], NOW).isStale).toBe(true);
   });
 
   it('is fresh exactly at the limit', () => {
-    expect(
-      summarizeBackups([entry('daily', STALE_AFTER_HOURS)], NOW).isStale,
-    ).toBe(false);
+    expect(summarizeBackups([entry('daily', STALE_AFTER_HOURS)], NOW).isStale).toBe(false);
   });
 
   it('does not count a fresh monthly dump as a nightly one', () => {

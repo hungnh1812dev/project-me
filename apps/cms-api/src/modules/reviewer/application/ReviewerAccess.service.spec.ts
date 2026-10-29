@@ -1,24 +1,18 @@
-import {
-  DomainError,
-  DOMAIN_ERROR_KINDS,
-} from '../../../common/errors/Domain.errors';
+import { DOMAIN_ERROR_KINDS, DomainError } from '../../../common/errors/Domain.errors';
 import type {
   TransactionRunner,
   UnitOfWork,
 } from '../../../infrastructure/database/TransactionRunner.port';
-import { UnconfiguredTurnstileVerifier } from '../adapters/Turnstile.client';
+import type { AccountActor, VersionCache } from '../../access';
 import type { AccessTokenService } from '../../identity';
 import type { SecurityAuditService } from '../../security-audit';
-import type { AccountActor, VersionCache } from '../../access';
+import { UnconfiguredTurnstileVerifier } from '../adapters/Turnstile.client';
 import type {
   ReviewerAccountGateway,
   ReviewerRepository,
   TurnstileVerifier,
 } from './Reviewer.port';
-import {
-  deriveReviewerIpKey,
-  ReviewerAccessService,
-} from './ReviewerAccess.service';
+import { deriveReviewerIpKey, ReviewerAccessService } from './ReviewerAccess.service';
 
 const SESSION_REQUEST = {
   visitorRole: 'Recruiter',
@@ -145,9 +139,9 @@ describe('ReviewerAccessService.updateSettings', () => {
       },
     });
 
-    await expect(
-      service.updateSettings(actor, { enabled: false }, meta),
-    ).resolves.toEqual({ enabled: false });
+    await expect(service.updateSettings(actor, { enabled: false }, meta)).resolves.toEqual({
+      enabled: false,
+    });
     expect(order).toEqual(['audit', 'role:3', 'account:11', 'account:12']);
   });
 
@@ -200,39 +194,27 @@ describe('ReviewerAccessService with the deploy switch off (ADR 0014)', () => {
     ['status', (s: ReviewerAccessService) => s.status()],
     [
       'createSession',
-      (s: ReviewerAccessService) =>
-        s.createSession(SESSION_REQUEST, '203.0.113.9', 'agent'),
+      (s: ReviewerAccessService) => s.createSession(SESSION_REQUEST, '203.0.113.9', 'agent'),
     ],
-    [
-      'listSessions',
-      (s: ReviewerAccessService) => s.listSessions({ page: 1, pageSize: 20 }),
-    ],
+    ['listSessions', (s: ReviewerAccessService) => s.listSessions({ page: 1, pageSize: 20 })],
     [
       'updateSettings',
-      (s: ReviewerAccessService) =>
-        s.updateSettings(actor, { enabled: true }, meta),
+      (s: ReviewerAccessService) => s.updateSettings(actor, { enabled: true }, meta),
     ],
-  ])(
-    '%s answers 404 REVIEWER_FEATURE_OFF and touches no collaborator',
-    async (_name, call) => {
-      const error: unknown = await call(offService()).catch(
-        (caught: unknown) => caught,
-      );
-      expect(error).toBeInstanceOf(DomainError);
-      expect(error).toMatchObject({
-        kind: DOMAIN_ERROR_KINDS.NOT_FOUND,
-        errorCode: 'REVIEWER_FEATURE_OFF',
-      });
-    },
-  );
+  ])('%s answers 404 REVIEWER_FEATURE_OFF and touches no collaborator', async (_name, call) => {
+    const error: unknown = await call(offService()).catch((caught: unknown) => caught);
+    expect(error).toBeInstanceOf(DomainError);
+    expect(error).toMatchObject({
+      kind: DOMAIN_ERROR_KINDS.NOT_FOUND,
+      errorCode: 'REVIEWER_FEATURE_OFF',
+    });
+  });
 });
 
 describe('deriveReviewerIpKey', () => {
   it('is 32 bytes, stable, and absent without a pepper', () => {
     expect(IP_KEY?.length).toBe(32);
-    expect(
-      deriveReviewerIpKey('p'.repeat(32))?.equals(IP_KEY ?? Buffer.alloc(0)),
-    ).toBe(true);
+    expect(deriveReviewerIpKey('p'.repeat(32))?.equals(IP_KEY ?? Buffer.alloc(0))).toBe(true);
     expect(deriveReviewerIpKey(undefined)).toBeUndefined();
   });
 });

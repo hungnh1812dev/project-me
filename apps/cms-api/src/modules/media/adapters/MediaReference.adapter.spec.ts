@@ -23,15 +23,10 @@ const WITHOUT_MEDIA = {
 
 describe('mediaReferenceQuery', () => {
   it('probes every media column of roots and components with quoted names', () => {
-    const registry = ContentTypeRegistry.fromDefinitions([
-      WITH_MEDIA,
-      WITHOUT_MEDIA,
-    ]);
+    const registry = ContentTypeRegistry.fromDefinitions([WITH_MEDIA, WITHOUT_MEDIA]);
     const query = mediaReferenceQuery(registry);
     expect(query).toContain('"content"."gallery" where "cover" = $1');
-    expect(query).toContain(
-      '"content"."gallery__block" where "hero_image" = $1',
-    );
+    expect(query).toContain('"content"."gallery__block" where "hero_image" = $1');
     expect(query).not.toContain('"note"');
   });
 

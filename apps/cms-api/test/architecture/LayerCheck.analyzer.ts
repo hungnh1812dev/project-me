@@ -20,11 +20,7 @@ import {
   type LayerRule,
   type PlatformRole,
 } from './LayerRules.constants';
-import {
-  layerOfFile,
-  moduleFolderOf,
-  nodeOfFile,
-} from './ModuleGraph.analyzer';
+import { layerOfFile, moduleFolderOf, nodeOfFile } from './ModuleGraph.analyzer';
 
 const FACADE_FILE = 'index.ts';
 
@@ -45,15 +41,11 @@ interface CheckedFile {
 }
 
 const startsWithFolder = (file: string, folder: string) =>
-  file === folder ||
-  file.startsWith(folder.endsWith(sep) ? folder : folder + sep);
+  file === folder || file.startsWith(folder.endsWith(sep) ? folder : folder + sep);
 
 /** The role of a platform file, or `null` when no folder in the table covers it. */
 export function platformRoleOfFile(file: string): PlatformRole | null {
-  if (
-    startsWithFolder(file, INFRASTRUCTURE_FOLDER) &&
-    file.endsWith(PLATFORM_PORT_SUFFIX)
-  ) {
+  if (startsWithFolder(file, INFRASTRUCTURE_FOLDER) && file.endsWith(PLATFORM_PORT_SUFFIX)) {
     return 'port';
   }
   const longestMatch = PLATFORM_ROLE_FOLDERS.filter(({ prefix }) =>
@@ -91,10 +83,7 @@ function packageViolations(
   return isAllowed ? [] : violation('package-not-allowed');
 }
 
-function targetViolation(
-  checked: CheckedFile,
-  target: string,
-): LayerViolation | null {
+function targetViolation(checked: CheckedFile, target: string): LayerViolation | null {
   const { rule, source, moduleName, migratedModules } = checked;
   const violation = (name: string) => ({
     file: source.file,
@@ -103,25 +92,20 @@ function targetViolation(
   });
   const targetModule = moduleFolderOf(target);
   if (targetModule === moduleName) {
-    return rule.mayImportOwnLayers.some(
-      (layer) => layer === layerOfFile(target),
-    )
+    return rule.mayImportOwnLayers.some((layer) => layer === layerOfFile(target))
       ? null
       : violation('own-layer');
   }
   if (targetModule !== null) {
     // A module that has not moved yet has no layers to judge.
     const isJudged = migratedModules.includes(targetModule);
-    return !isJudged ||
-      rule.mayImportOtherModuleLayers.includes(layerOfFile(target))
+    return !isJudged || rule.mayImportOtherModuleLayers.includes(layerOfFile(target))
       ? null
       : violation('other-module-layer');
   }
   if (nodeOfFile(target) !== 'platform') return violation('unknown-target');
   const role = platformRoleOfFile(target);
-  return role !== null && rule.mayImportPlatform.includes(role)
-    ? null
-    : violation('platform-role');
+  return role !== null && rule.mayImportPlatform.includes(role) ? null : violation('platform-role');
 }
 
 function moduleImportViolations(
@@ -136,21 +120,17 @@ function moduleImportViolations(
   });
   const [specifierTarget = ''] = targets;
   const isDeepImport =
-    otherModuleTargets.includes(specifierTarget) &&
-    basename(specifierTarget) !== FACADE_FILE;
+    otherModuleTargets.includes(specifierTarget) && basename(specifierTarget) !== FACADE_FILE;
   const isValueOutsideAllowance =
     otherModuleTargets.length > 0 &&
     rule.otherModuleValueImports !== 'any' &&
     !statement.isTypeOnly &&
     (statement.importedNames === 'all' ||
       statement.importedNames.some(
-        (name) =>
-          !(rule.otherModuleValueImports as readonly string[]).includes(name),
+        (name) => !(rule.otherModuleValueImports as readonly string[]).includes(name),
       ));
   return [
-    ...(isDeepImport
-      ? [{ file: source.file, rule: 'deep-import', to: specifierTarget }]
-      : []),
+    ...(isDeepImport ? [{ file: source.file, rule: 'deep-import', to: specifierTarget }] : []),
     ...(isValueOutsideAllowance
       ? [
           {
@@ -174,12 +154,7 @@ function importViolations(checked: CheckedFile): LayerViolation[] {
     const targets =
       statement.targets.length > 0
         ? statement.targets.map((target) => relative(srcRoot, target))
-        : [
-            relative(
-              srcRoot,
-              resolve(dirname(source.absolutePath), statement.specifier),
-            ),
-          ];
+        : [relative(srcRoot, resolve(dirname(source.absolutePath), statement.specifier))];
     return moduleImportViolations(checked, statement, targets);
   });
 }
@@ -196,8 +171,7 @@ function textViolations({ rule, source }: CheckedFile): LayerViolation[] {
 
 const isNamedException = ({ file, to }: LayerViolation) =>
   LAYER_EXCEPTIONS.some(
-    (exception) =>
-      startsWithFolder(file, exception.from) && exception.importing === to,
+    (exception) => startsWithFolder(file, exception.from) && exception.importing === to,
   );
 
 function violationsOfFile(
@@ -245,19 +219,11 @@ export function findLayerViolations(
   migratedModules: readonly string[],
 ): LayerViolation[] {
   return listCheckedFiles(srcRoot, migratedModules).flatMap((source) =>
-    violationsOfFile(
-      srcRoot,
-      source,
-      moduleFolderOf(source.file) ?? '',
-      migratedModules,
-    ),
+    violationsOfFile(srcRoot, source, moduleFolderOf(source.file) ?? '', migratedModules),
   );
 }
 
-const isSameViolation = (
-  known: KnownLayerViolation,
-  violation: LayerViolation,
-) =>
+const isSameViolation = (known: KnownLayerViolation, violation: LayerViolation) =>
   known.from === violation.file &&
   known.rule === violation.rule &&
   (known.to === undefined || known.to === violation.to);
@@ -276,7 +242,6 @@ export function staleKnownViolations(
   known: readonly KnownLayerViolation[] = KNOWN_LAYER_VIOLATIONS,
 ): KnownLayerViolation[] {
   return known.filter(
-    (entry) =>
-      !violations.some((violation) => isSameViolation(entry, violation)),
+    (entry) => !violations.some((violation) => isSameViolation(entry, violation)),
   );
 }

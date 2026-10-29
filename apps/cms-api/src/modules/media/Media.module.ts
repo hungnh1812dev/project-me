@@ -6,10 +6,7 @@ import { DatabaseModule } from '../../infrastructure/database/Database.module';
 import { AccessModule } from '../access';
 import { ContentEngineModule } from '../content-engine';
 import { SecurityAuditModule } from '../security-audit';
-import {
-  CloudinaryMediaStorage,
-  createCloudinaryClient,
-} from './adapters/Cloudinary.adapter';
+import { CloudinaryMediaStorage, createCloudinaryClient } from './adapters/Cloudinary.adapter';
 import { FakeMediaStorage } from './adapters/Fake.adapter';
 import { MediaReferenceAdapter } from './adapters/MediaReference.adapter';
 import { PrismaMediaRepository } from './adapters/PrismaMedia.repository';
@@ -45,17 +42,11 @@ function createCloudinaryMediaStorage(config: IAppConfig): MediaStorage {
   if (cloudinary === undefined) {
     throw new Error('Cloudinary media storage is not configured');
   }
-  return new CloudinaryMediaStorage(
-    createCloudinaryClient(cloudinary),
-    cloudinary.folder,
-  );
+  return new CloudinaryMediaStorage(createCloudinaryClient(cloudinary), cloudinary.folder);
 }
 
 /** One factory per MEDIA_PROVIDERS entry; the type forces a new provider to add one. */
-export const MEDIA_STORAGE_FACTORIES: Record<
-  MediaProvider,
-  MediaStorageFactory
-> = {
+export const MEDIA_STORAGE_FACTORIES: Record<MediaProvider, MediaStorageFactory> = {
   fake: createFakeMediaStorage,
   cloudinary: createCloudinaryMediaStorage,
 };
@@ -70,12 +61,7 @@ export function createMediaStorage(config: IAppConfig): MediaStorage {
 
 /** File library: upload pipeline, storage for the configured MEDIA_PROVIDER, library use cases and purge job. */
 @Module({
-  imports: [
-    AccessModule,
-    ContentEngineModule,
-    DatabaseModule,
-    SecurityAuditModule,
-  ],
+  imports: [AccessModule, ContentEngineModule, DatabaseModule, SecurityAuditModule],
   controllers: [MediaController],
   providers: [
     MediaLibraryService,

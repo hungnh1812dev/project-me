@@ -1,18 +1,11 @@
 import { z } from 'zod';
 
-import { EMAIL_MAX_LENGTH } from '../../../identity';
-import {
-  CUSTOM_ROLE_RANK,
-  ROLE_SLUG_PATTERN,
-} from '../../domain/SystemRoles.entity';
-import { MANAGEMENT_LIMITS } from '../domain/AccessManagement.constants';
 import { documentIdSchema } from '../../../../common/validation/SharedSchemas.rules';
+import { EMAIL_MAX_LENGTH } from '../../../identity';
+import { CUSTOM_ROLE_RANK, ROLE_SLUG_PATTERN } from '../../domain/SystemRoles.entity';
+import { MANAGEMENT_LIMITS } from '../domain/AccessManagement.constants';
 
-const displayName = z
-  .string()
-  .trim()
-  .min(1)
-  .max(MANAGEMENT_LIMITS.DISPLAY_NAME_MAX_LENGTH);
+const displayName = z.string().trim().min(1).max(MANAGEMENT_LIMITS.DISPLAY_NAME_MAX_LENGTH);
 
 /** `POST /accounts`: invite-only, the invitee sets the password. */
 export const inviteAccountSchema = z.strictObject({
@@ -28,28 +21,15 @@ export const updateAccountSchema = z
     displayName: displayName.optional(),
     roleId: documentIdSchema.optional(),
   })
-  .refine(
-    (body) => body.displayName !== undefined || body.roleId !== undefined,
-  );
+  .refine((body) => body.displayName !== undefined || body.roleId !== undefined);
 
-const customRank = z
-  .number()
-  .int()
-  .min(CUSTOM_ROLE_RANK.min)
-  .max(CUSTOM_ROLE_RANK.max);
+const customRank = z.number().int().min(CUSTOM_ROLE_RANK.min).max(CUSTOM_ROLE_RANK.max);
 
-const roleName = z
-  .string()
-  .trim()
-  .min(1)
-  .max(MANAGEMENT_LIMITS.ROLE_NAME_MAX_LENGTH);
+const roleName = z.string().trim().min(1).max(MANAGEMENT_LIMITS.ROLE_NAME_MAX_LENGTH);
 
 /** `POST /roles`: custom roles only (rank 11–39, SPEC §6). */
 export const createRoleSchema = z.strictObject({
-  slug: z
-    .string()
-    .max(MANAGEMENT_LIMITS.ROLE_SLUG_MAX_LENGTH)
-    .regex(ROLE_SLUG_PATTERN),
+  slug: z.string().max(MANAGEMENT_LIMITS.ROLE_SLUG_MAX_LENGTH).regex(ROLE_SLUG_PATTERN),
   name: roleName,
   rank: customRank,
 });
@@ -61,9 +41,7 @@ export const updateRoleSchema = z
 
 /** `PUT /roles/:id/permissions`: rows are checked by validatePermissionSet. */
 export const replacePermissionsSchema = z.strictObject({
-  permissions: z
-    .array(z.unknown())
-    .max(MANAGEMENT_LIMITS.MAX_PERMISSIONS_PER_ROLE),
+  permissions: z.array(z.unknown()).max(MANAGEMENT_LIMITS.MAX_PERMISSIONS_PER_ROLE),
 });
 
 export type InviteAccountRequest = z.infer<typeof inviteAccountSchema>;

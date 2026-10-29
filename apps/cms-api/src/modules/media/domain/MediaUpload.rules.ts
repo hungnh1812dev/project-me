@@ -42,9 +42,7 @@ export type AllowedMime = keyof typeof ALLOWED_MEDIA_TYPES;
 
 /** The allowlisted MIME types of kind `image`; each needs a re-encoder. */
 export type ImageMime = {
-  [M in AllowedMime]: (typeof ALLOWED_MEDIA_TYPES)[M]['kind'] extends 'image'
-    ? M
-    : never;
+  [M in AllowedMime]: (typeof ALLOWED_MEDIA_TYPES)[M]['kind'] extends 'image' ? M : never;
 }[AllowedMime];
 
 export function allowedMediaTypeOf(mime: string): AllowedMediaType | undefined {
@@ -62,9 +60,7 @@ export function sanitizeFileName(raw: string): string {
   // eslint-disable-next-line no-control-regex
   const cleaned = base.replace(/[\u0000-\u001f\u007f]/g, '').trim();
   const bounded = Array.from(cleaned).slice(0, FILE_NAME_MAX_LENGTH).join('');
-  return bounded === '' || bounded === '.' || bounded === '..'
-    ? FALLBACK_FILE_NAME
-    : bounded;
+  return bounded === '' || bounded === '.' || bounded === '..' ? FALLBACK_FILE_NAME : bounded;
 }
 
 export function isAltWithinLimit(text: string): boolean {

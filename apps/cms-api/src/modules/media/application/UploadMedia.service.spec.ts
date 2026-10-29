@@ -1,7 +1,7 @@
 import { Readable } from 'node:stream';
 
-import { Clock } from '../../../common/time/Clock.service';
 import { systemRole } from '../../../../test/fixtures/Access.fixture';
+import { Clock } from '../../../common/time/Clock.service';
 import type { AccountActor } from '../../access';
 import { FakeMediaStorage } from '../adapters/Fake.adapter';
 import type {
@@ -59,13 +59,7 @@ function stubs(createError?: Error) {
   const repository = { create } as unknown as MediaRepository;
   const storage = new FakeMediaStorage();
   const logger = { warn: jest.fn(), error: jest.fn() };
-  const service = new UploadMediaService(
-    processor,
-    repository,
-    new Clock(),
-    storage,
-    logger,
-  );
+  const service = new UploadMediaService(processor, repository, new Clock(), storage, logger);
   return { service, storage, create, dispose };
 }
 

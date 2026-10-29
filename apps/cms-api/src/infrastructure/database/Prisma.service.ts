@@ -1,9 +1,4 @@
-import {
-  Inject,
-  Injectable,
-  type OnModuleDestroy,
-  type OnModuleInit,
-} from '@nestjs/common';
+import { Inject, Injectable, type OnModuleDestroy, type OnModuleInit } from '@nestjs/common';
 import type { Pool } from 'pg';
 
 import { type IAppConfig } from '../../config/AppConfig.setup';
@@ -12,9 +7,9 @@ import { APP_LOGGER, type AppLogger } from '../logging/AppLogger.port';
 import {
   APP_SCHEMAS,
   DDL_CHECK_FAILED_WARNING,
-  type DatabaseRoleFacts,
   ddlRiskNamesOf,
   ddlRiskWarningOf,
+  type DatabaseRoleFacts,
 } from './DatabaseConfig.rules';
 import { createPgAdapter, PrismaClient } from './PrismaClient.adapter';
 
@@ -37,10 +32,7 @@ const ROLE_FACTS_QUERY = `
  * cannot run DDL, and only warns (ADR 0012 section 7).
  */
 @Injectable()
-export class PrismaService
-  extends PrismaClient
-  implements OnModuleInit, OnModuleDestroy
-{
+export class PrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {
   private readonly pool: Pool;
   private readonly isProduction: boolean;
   private readonly logger: AppLogger;
@@ -48,10 +40,7 @@ export class PrismaService
   /** Settles when the boot role check has finished; it never rejects. */
   roleCheck: Promise<void> = Promise.resolve();
 
-  constructor(
-    @Inject(APP_CONFIG) config: IAppConfig,
-    @Inject(APP_LOGGER) logger: AppLogger,
-  ) {
+  constructor(@Inject(APP_CONFIG) config: IAppConfig, @Inject(APP_LOGGER) logger: AppLogger) {
     const { adapter, pool } = createPgAdapter(config.database);
     super({ adapter });
     this.pool = pool;
@@ -70,10 +59,7 @@ export class PrismaService
 
   private async warnIfRoleCanRunDdl(): Promise<void> {
     try {
-      const { rows } = await this.pool.query<DatabaseRoleFacts>(
-        ROLE_FACTS_QUERY,
-        [APP_SCHEMAS],
-      );
+      const { rows } = await this.pool.query<DatabaseRoleFacts>(ROLE_FACTS_QUERY, [APP_SCHEMAS]);
       const riskNames = ddlRiskNamesOf(rows[0] as DatabaseRoleFacts);
       if (riskNames.length > 0) {
         this.logger.warn(ddlRiskWarningOf(riskNames), PrismaService.name);

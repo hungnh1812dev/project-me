@@ -50,11 +50,8 @@ describe('ActorThrottleSubjectResolver', () => {
     },
   ];
 
-  it.each(cases)(
-    'resolves the subject for $label',
-    ({ req, accountSubject, isAnonymous }) => {
-      expect(resolver.accountSubjectOf(req)).toBe(accountSubject);
-      expect(resolver.isAnonymousRequest(req)).toBe(isAnonymous);
-    },
-  );
+  it.each(cases)('resolves the subject for $label', ({ req, accountSubject, isAnonymous }) => {
+    expect(resolver.accountSubjectOf(req)).toBe(accountSubject);
+    expect(resolver.isAnonymousRequest(req)).toBe(isAnonymous);
+  });
 });

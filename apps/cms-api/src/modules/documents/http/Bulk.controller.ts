@@ -11,29 +11,14 @@ import {
 } from '@nestjs/common';
 
 import { SLUG_PARAM } from '../../../common/constants/Api.constants';
-import { describeError } from '../../../common/http/DescribeHttpException.rules';
-import { DOCUMENTS_ROUTES } from './DocumentsHttp.constants';
 import { NO_STORE_HEADER } from '../../../common/constants/Http.constants';
-import {
-  PermissionAction,
-  PermissionGuard,
-  RequirePermission,
-} from '../../access';
-import {
-  type BulkItemResult,
-  type BulkResponse,
-  BulkService,
-} from '../application/Bulk.service';
+import { describeError } from '../../../common/http/DescribeHttpException.rules';
+import { PermissionAction, PermissionGuard, RequirePermission } from '../../access';
+import { DocumentAuthGuard, type DocumentRequest } from '../../access/document-auth';
+import { BulkService, type BulkItemResult, type BulkResponse } from '../application/Bulk.service';
 import { BULK_ITEM_STATUS } from '../domain/Documents.constants';
-import {
-  DocumentAuthGuard,
-  type DocumentRequest,
-} from '../../access/document-auth';
-import {
-  parseBulkCreateBody,
-  parseBulkDocumentsBody,
-  parseBulkPublishBody,
-} from './Bulk.requests';
+import { parseBulkCreateBody, parseBulkDocumentsBody, parseBulkPublishBody } from './Bulk.requests';
+import { DOCUMENTS_ROUTES } from './DocumentsHttp.constants';
 
 /** One item of the response body; an error item carries what a single request would answer. */
 export type BulkItemBody =
@@ -57,9 +42,7 @@ export function toBulkBody(response: BulkResponse): BulkResponseBody {
     ...response,
     results: response.results.map((result): BulkItemBody => {
       if (result.status !== BULK_ITEM_STATUS.ERROR) return result;
-      const { statusCode, errorCode, message, details } = describeError(
-        result.error,
-      );
+      const { statusCode, errorCode, message, details } = describeError(result.error);
       return {
         index: result.index,
         status: result.status,
@@ -95,9 +78,7 @@ export class BulkController {
     @Param(SLUG_PARAM) slug: string,
     @Body() body: unknown,
   ): Promise<BulkResponseBody> {
-    return this.bulk
-      .create(req.user.actor, slug, parseBulkCreateBody(body))
-      .then(toBulkBody);
+    return this.bulk.create(req.user.actor, slug, parseBulkCreateBody(body)).then(toBulkBody);
   }
 
   @Post(DOCUMENTS_ROUTES.BULK_PUBLISH)
@@ -112,9 +93,7 @@ export class BulkController {
     @Param(SLUG_PARAM) slug: string,
     @Body() body: unknown,
   ): Promise<BulkResponseBody> {
-    return this.bulk
-      .publish(req.user.actor, slug, parseBulkPublishBody(body))
-      .then(toBulkBody);
+    return this.bulk.publish(req.user.actor, slug, parseBulkPublishBody(body)).then(toBulkBody);
   }
 
   @Post(DOCUMENTS_ROUTES.BULK_UNPUBLISH)
@@ -129,9 +108,7 @@ export class BulkController {
     @Param(SLUG_PARAM) slug: string,
     @Body() body: unknown,
   ): Promise<BulkResponseBody> {
-    return this.bulk
-      .unpublish(req.user.actor, slug, parseBulkDocumentsBody(body))
-      .then(toBulkBody);
+    return this.bulk.unpublish(req.user.actor, slug, parseBulkDocumentsBody(body)).then(toBulkBody);
   }
 
   @Post(DOCUMENTS_ROUTES.BULK_DELETE)
@@ -146,8 +123,6 @@ export class BulkController {
     @Param(SLUG_PARAM) slug: string,
     @Body() body: unknown,
   ): Promise<BulkResponseBody> {
-    return this.bulk
-      .remove(req.user.actor, slug, parseBulkDocumentsBody(body))
-      .then(toBulkBody);
+    return this.bulk.remove(req.user.actor, slug, parseBulkDocumentsBody(body)).then(toBulkBody);
   }
 }

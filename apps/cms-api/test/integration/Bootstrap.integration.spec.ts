@@ -1,10 +1,6 @@
 import { bootstrap } from '../../src/Bootstrap.setup';
 import { ConfigValidationError } from '../../src/config/AppConfig.setup';
-import {
-  productionEnv,
-  TEST_SECRET_32_BYTES,
-  TEST_SHORT_SECRET,
-} from '../fixtures/Env.fixture';
+import { productionEnv, TEST_SECRET_32_BYTES, TEST_SHORT_SECRET } from '../fixtures/Env.fixture';
 
 /** SPEC §12-15: startup fails before Nest is created or a port is bound. */
 describe('bootstrap fails fast on invalid production config', () => {
@@ -13,9 +9,7 @@ describe('bootstrap fails fast on invalid production config', () => {
     ['a missing secret', { JWT_ACCESS_SECRET: undefined }],
     ['a short secret', { TOTP_ENC_KEY: TEST_SHORT_SECRET }],
   ])('rejects %s', async (_label, overrides) => {
-    await expect(bootstrap(productionEnv(overrides))).rejects.toBeInstanceOf(
-      ConfigValidationError,
-    );
+    await expect(bootstrap(productionEnv(overrides))).rejects.toBeInstanceOf(ConfigValidationError);
   });
 
   it('never puts secret values in the error', async () => {

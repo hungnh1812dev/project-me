@@ -1,18 +1,12 @@
-import { DomainError } from '../../../common/errors/Domain.errors';
-
 import {
   customRole,
   grant,
   systemRole,
   testCatalog,
 } from '../../../../test/fixtures/Access.fixture';
+import { DomainError } from '../../../common/errors/Domain.errors';
 import { PermissionAction } from '../../../generated/prisma/client';
-import {
-  accountActor,
-  anonymousActor,
-  apiTokenActor,
-  reviewerActor,
-} from './ActorContext.entity';
+import { accountActor, anonymousActor, apiTokenActor, reviewerActor } from './ActorContext.entity';
 import { PolicyEvaluator } from './PolicyEvaluator.rules';
 import {
   assertOutranks,
@@ -47,9 +41,7 @@ describe('D6 rank rule (§12-7)', () => {
     expect(requireAccountActor(admin)).toBe(admin);
     const token = apiTokenActor(9, 1, systemRole('owner'), { permissions: [] });
     expect(() => requireAccountActor(token)).toThrow(DomainError);
-    expect(() =>
-      requireAccountActor(anonymousActor(systemRole('public'))),
-    ).toThrow(DomainError);
+    expect(() => requireAccountActor(anonymousActor(systemRole('public')))).toThrow(DomainError);
   });
 });
 
@@ -61,9 +53,9 @@ describe('requireOwnerActor (D20)', () => {
   it('refuses an admin and a custom role holding every grant', () => {
     const everyGrant = [grant('backups', read), grant('audit_logs', read)];
     expect(() => requireOwnerActor(admin)).toThrow(DomainError);
-    expect(() =>
-      requireOwnerActor(accountActor(3, customRole(90, everyGrant))),
-    ).toThrow(DomainError);
+    expect(() => requireOwnerActor(accountActor(3, customRole(90, everyGrant)))).toThrow(
+      DomainError,
+    );
   });
 
   it.each([
@@ -89,9 +81,7 @@ describe('grantsBeyondActor', () => {
   ];
 
   it('flags system subject actions the admin lacks (audit_logs, reviewer_settings)', () => {
-    expect(grantsBeyondActor(admin, grants, catalog, evaluator)).toEqual([
-      1, 3,
-    ]);
+    expect(grantsBeyondActor(admin, grants, catalog, evaluator)).toEqual([1, 3]);
   });
 
   it('lets the owner grant anything', () => {
@@ -99,10 +89,7 @@ describe('grantsBeyondActor', () => {
   });
 
   it('bounds a custom manager by its own system rows', () => {
-    const manager = accountActor(
-      3,
-      customRole(39, [grant('roles', read), grant('roles', update)]),
-    );
+    const manager = accountActor(3, customRole(39, [grant('roles', read), grant('roles', update)]));
     expect(
       grantsBeyondActor(
         manager,

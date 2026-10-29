@@ -1,27 +1,19 @@
-import {
-  ACCESS_ERROR_CODES,
-  CONTENT_WILDCARD_SUBJECT,
-  PermissionAction,
-} from './Access.constants';
+import { ACCESS_ERROR_CODES, CONTENT_WILDCARD_SUBJECT, PermissionAction } from './Access.constants';
 import {
   isOwnerRole,
+  tokenScopeSchema,
   type PermissionGrant,
   type RolePolicy,
   type TokenScope,
   type TokenScopeEntry,
-  tokenScopeSchema,
 } from './ActorContext.entity';
 import {
-  type AccessIssue,
   checkRowFieldLists,
   issue,
+  type AccessIssue,
   type ValidationResult,
 } from './FieldList.rules';
-import {
-  fieldListAllows,
-  type FieldList,
-  unionFieldLists,
-} from './FieldPaths.rules';
+import { fieldListAllows, unionFieldLists, type FieldList } from './FieldPaths.rules';
 import type { SubjectCatalog } from './SubjectCatalog.rules';
 
 /**
@@ -59,18 +51,9 @@ export function validateTokenScope(
       );
       return;
     }
-    checkRowFieldLists(
-      catalog,
-      entry.subject,
-      entry.action,
-      entry,
-      entryPath,
-      issues,
-    );
+    checkRowFieldLists(catalog, entry.subject, entry.action, entry, entryPath, issues);
   });
-  return issues.length > 0
-    ? { ok: false, issues }
-    : { ok: true, value: parsed.data };
+  return issues.length > 0 ? { ok: false, issues } : { ok: true, value: parsed.data };
 }
 
 /** The field list an entry of this action is checked on, or null (no list). */
@@ -82,10 +65,7 @@ function fieldListOf(
   },
 ): FieldList {
   if (action === PermissionAction.read) return entry.readableFields ?? null;
-  if (
-    action === PermissionAction.create ||
-    action === PermissionAction.update
-  ) {
+  if (action === PermissionAction.create || action === PermissionAction.update) {
     return entry.writableFields ?? null;
   }
   return null;
@@ -105,16 +85,10 @@ function coveringGrants(
   entry: TokenScopeEntry,
   creatorGrants: readonly PermissionGrant[],
 ): PermissionGrant[] {
-  const sameAction = creatorGrants.filter(
-    (grant) => grant.action === entry.action,
-  );
-  const wildcard = sameAction.filter(
-    (grant) => grant.subject === CONTENT_WILDCARD_SUBJECT,
-  );
+  const sameAction = creatorGrants.filter((grant) => grant.action === entry.action);
+  const wildcard = sameAction.filter((grant) => grant.subject === CONTENT_WILDCARD_SUBJECT);
   if (entry.subject === CONTENT_WILDCARD_SUBJECT) return wildcard;
-  const specific = sameAction.filter(
-    (grant) => grant.subject === entry.subject,
-  );
+  const specific = sameAction.filter((grant) => grant.subject === entry.subject);
   return specific.length > 0 ? specific : wildcard;
 }
 
@@ -126,10 +100,7 @@ function coveringGrants(
  * conditions (`intersectTokenScope` keeps them), so they only narrow it.
  * The owner holds every content permission.
  */
-export function scopeEntriesBeyondCreator(
-  scope: TokenScope,
-  creatorRole: RolePolicy,
-): number[] {
+export function scopeEntriesBeyondCreator(scope: TokenScope, creatorRole: RolePolicy): number[] {
   if (isOwnerRole(creatorRole)) return [];
   const beyond: number[] = [];
   scope.permissions.forEach((entry, index) => {
@@ -141,8 +112,7 @@ export function scopeEntriesBeyondCreator(
     const held = unionFieldLists(covering.map(grantFieldList));
     const wanted = fieldListOf(entry.action, entry);
     const inside =
-      held === null ||
-      (wanted !== null && wanted.every((path) => fieldListAllows(held, path)));
+      held === null || (wanted !== null && wanted.every((path) => fieldListAllows(held, path)));
     if (!inside) beyond.push(index);
   });
   return beyond;

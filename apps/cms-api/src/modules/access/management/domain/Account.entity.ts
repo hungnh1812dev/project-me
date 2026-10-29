@@ -1,17 +1,13 @@
 import type { TwoFaMethod } from '../../../identity';
 import { type AccountStatus } from '../../domain/Access.constants';
 import {
-  type AccountActor,
   assertOutranks,
   outranks,
   rankForbidden,
+  type AccountActor,
 } from '../../domain/Rank.rules';
 import { UNASSIGNABLE_ROLE_SLUGS } from '../../domain/SystemRoles.entity';
-import {
-  accountNotFound,
-  roleNotAssignable,
-  roleNotFound,
-} from './AccessManagement.errors';
+import { accountNotFound, roleNotAssignable, roleNotFound } from './AccessManagement.errors';
 
 /** A role as an account row carries it. */
 export interface AccountRoleRecord {
@@ -58,10 +54,7 @@ export interface AccountView {
   readonly manageable: boolean;
 }
 
-export function toAccountView(
-  actor: AccountActor,
-  row: AccountRecord,
-): AccountView {
+export function toAccountView(actor: AccountActor, row: AccountRecord): AccountView {
   return {
     id: row.documentId,
     email: row.email,
@@ -85,10 +78,7 @@ export function toAccountView(
  * a reviewer account), 403 for the actor itself or an account of equal or
  * higher rank.
  */
-export function assertManageable(
-  actor: AccountActor,
-  target: AccountRecord | null,
-): AccountRecord {
+export function assertManageable(actor: AccountActor, target: AccountRecord | null): AccountRecord {
   if (target === null) throw accountNotFound();
   if (target.id === actor.accountId) throw rankForbidden();
   assertOutranks(actor, target.role.rank);
@@ -96,10 +86,7 @@ export function assertManageable(
 }
 
 function isAssignable(role: AccountRoleRecord): boolean {
-  return !(
-    role.isSystem &&
-    (UNASSIGNABLE_ROLE_SLUGS as readonly string[]).includes(role.slug)
-  );
+  return !(role.isSystem && (UNASSIGNABLE_ROLE_SLUGS as readonly string[]).includes(role.slug));
 }
 
 /**

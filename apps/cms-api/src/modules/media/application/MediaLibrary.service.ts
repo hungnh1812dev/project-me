@@ -15,11 +15,7 @@ import {
   type ActorContext,
   type RowCondition,
 } from '../../access';
-import {
-  AUDIT_ACTIONS,
-  auditActorOf,
-  SecurityAuditService,
-} from '../../security-audit';
+import { AUDIT_ACTIONS, auditActorOf, SecurityAuditService } from '../../security-audit';
 import {
   mediaForbidden,
   mediaInUse,
@@ -56,10 +52,7 @@ export class MediaLibraryService {
    * their role is called. Soft-deleted rows are never listed.
    */
   async list(actor: ActorContext, query: PageQuery): Promise<MediaPage> {
-    const rowCondition = await this.rowConditionOf(
-      actor,
-      PermissionAction.read,
-    );
+    const rowCondition = await this.rowConditionOf(actor, PermissionAction.read);
     return this.repository.list({ rowCondition, ...query });
   }
 
@@ -69,10 +62,7 @@ export class MediaLibraryService {
     documentId: string,
     alt: string | null,
   ): Promise<MediaRecord> {
-    const rowCondition = await this.rowConditionOf(
-      actor,
-      PermissionAction.update,
-    );
+    const rowCondition = await this.rowConditionOf(actor, PermissionAction.update);
     const updated = await this.repository.updateAlt({
       documentId,
       alt,
@@ -87,15 +77,8 @@ export class MediaLibraryService {
    * Soft delete, refused while a draft or published document still uses the
    * file. The stored object stays until the purge job removes it.
    */
-  async remove(
-    actor: AccountActor,
-    documentId: string,
-    meta: ClientMeta,
-  ): Promise<void> {
-    const rowCondition = await this.rowConditionOf(
-      actor,
-      PermissionAction.delete,
-    );
+  async remove(actor: AccountActor, documentId: string, meta: ClientMeta): Promise<void> {
+    const rowCondition = await this.rowConditionOf(actor, PermissionAction.delete);
     const mediaId = await this.repository.findLiveId(documentId, rowCondition);
     if (mediaId === undefined) throw mediaNotFound();
     await this.runner.run(async (unit) => {

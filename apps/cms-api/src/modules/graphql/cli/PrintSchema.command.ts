@@ -4,19 +4,14 @@ import { parseArgs } from 'node:util';
 
 import { printSchema } from 'graphql';
 
-import { DEFAULT_CONTENT_PATHS } from '../../content-engine';
-import { loadDefinitions } from '../../content-engine';
+import { DEFAULT_CONTENT_PATHS, loadDefinitions } from '../../content-engine';
 import { GRAPHQL_SDL_FILE_NAME } from '../application/Graphql.constants';
 import { buildGraphqlSchema } from '../http/schema/SchemaBuilder.rules';
 
 const UTF8 = 'utf8';
 
 /** The committed SDL, generated and never hand-edited. */
-export const DEFAULT_SDL_FILE = join(
-  DEFAULT_CONTENT_PATHS.schemasDir,
-  '..',
-  GRAPHQL_SDL_FILE_NAME,
-);
+export const DEFAULT_SDL_FILE = join(DEFAULT_CONTENT_PATHS.schemasDir, '..', GRAPHQL_SDL_FILE_NAME);
 
 export interface PrintSchemaOptions {
   schemasDir: string;
@@ -45,9 +40,7 @@ export async function renderSdl(schemasDir: string): Promise<string> {
 }
 
 /** Writes the SDL, or with `shouldCheckOnly` compares it with the committed file. */
-export async function printSchemaFile(
-  options: PrintSchemaOptions,
-): Promise<PrintSchemaResult> {
+export async function printSchemaFile(options: PrintSchemaOptions): Promise<PrintSchemaResult> {
   const sdl = await renderSdl(options.schemasDir);
   const current = await readIfPresent(options.sdlFile);
   if (!options.shouldCheckOnly) {
@@ -89,9 +82,7 @@ async function main(): Promise<void> {
 
 if (require.main === module) {
   main().catch((error: unknown) => {
-    process.stderr.write(
-      `${error instanceof Error ? error.message : String(error)}\n`,
-    );
+    process.stderr.write(`${error instanceof Error ? error.message : String(error)}\n`);
     process.exitCode = 1;
   });
 }

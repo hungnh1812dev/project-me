@@ -29,35 +29,12 @@ export const ALLOWED_MODULE_EDGES: Record<ModuleNode, readonly ModuleNode[]> = {
   'access-core': ['platform', 'content-engine'],
   'security-audit': ['platform', 'access-core'],
   identity: ['platform', 'access-core', 'security-audit'],
-  'access-management': [
-    'platform',
-    'access-core',
-    'identity',
-    'security-audit',
-  ],
+  'access-management': ['platform', 'access-core', 'identity', 'security-audit'],
   'access-document-auth': ['platform', 'access-core', 'identity'],
   'content-types': ['platform', 'content-engine', 'access-core', 'identity'],
-  media: [
-    'platform',
-    'content-engine',
-    'access-core',
-    'identity',
-    'security-audit',
-  ],
-  documents: [
-    'platform',
-    'content-engine',
-    'access-core',
-    'access-document-auth',
-    'media',
-  ],
-  graphql: [
-    'platform',
-    'content-engine',
-    'access-core',
-    'access-document-auth',
-    'documents',
-  ],
+  media: ['platform', 'content-engine', 'access-core', 'identity', 'security-audit'],
+  documents: ['platform', 'content-engine', 'access-core', 'access-document-auth', 'media'],
+  graphql: ['platform', 'content-engine', 'access-core', 'access-document-auth', 'documents'],
   reviewer: ['platform', 'access-core', 'identity', 'security-audit'],
   backups: ['platform', 'access-core', 'identity', 'security-audit'],
 };
@@ -66,29 +43,19 @@ export const ALLOWED_MODULE_EDGES: Record<ModuleNode, readonly ModuleNode[]> = {
  * SPEC §2 "types only": every import these nodes take from the target node
  * is an `import type`, so it is erased at build time and adds no runtime edge.
  */
-export const TYPES_ONLY_EDGES: readonly { from: ModuleNode; to: ModuleNode }[] =
-  [{ from: 'security-audit', to: 'access-core' }];
+export const TYPES_ONLY_EDGES: readonly { from: ModuleNode; to: ModuleNode }[] = [
+  { from: 'security-audit', to: 'access-core' },
+];
 
 /**
  * SPEC §2 "auth guard only": these nodes import from `identity` the JWT guard
  * and the request type it fills in, and nothing else.
  */
-export const AUTH_GUARD_ONLY_NODES: readonly ModuleNode[] = [
-  'content-types',
-  'media',
-];
-export const AUTH_GUARD_ONLY_NAMES: readonly string[] = [
-  'JwtAuthGuard',
-  'AuthenticatedRequest',
-];
+export const AUTH_GUARD_ONLY_NODES: readonly ModuleNode[] = ['content-types', 'media'];
+export const AUTH_GUARD_ONLY_NAMES: readonly string[] = ['JwtAuthGuard', 'AuthenticatedRequest'];
 
 /** Folders under `src/` that make up the `platform` node. */
-export const PLATFORM_DIRECTORIES = [
-  'common',
-  'config',
-  'infrastructure',
-  'generated',
-] as const;
+export const PLATFORM_DIRECTORIES = ['common', 'config', 'infrastructure', 'generated'] as const;
 
 export const MODULES_DIRECTORY = 'modules';
 export const ACCESS_MODULE_DIRECTORY = 'access';

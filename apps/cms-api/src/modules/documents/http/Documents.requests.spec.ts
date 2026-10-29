@@ -70,9 +70,7 @@ describe('parseListQuery', () => {
   });
 
   it('rejects more filters than the limit', () => {
-    const query = Object.fromEntries(
-      Array.from({ length: 11 }, (_, i) => [`filter[f${i}]`, 'x']),
-    );
+    const query = Object.fromEntries(Array.from({ length: 11 }, (_, i) => [`filter[f${i}]`, 'x']));
     expect(refusalOf(query)).toMatchObject({
       statusCode: 400,
       errorCode: 'ACCESS_INVALID_REQUEST',

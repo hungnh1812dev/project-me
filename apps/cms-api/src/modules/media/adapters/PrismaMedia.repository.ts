@@ -2,8 +2,8 @@ import { Injectable } from '@nestjs/common';
 import { sql } from 'kysely';
 
 import { MediaProvider } from '../../../generated/prisma/client';
-import { prismaTxOf } from '../../../infrastructure/database/PrismaTransactionRunner.adapter';
 import { PrismaService } from '../../../infrastructure/database/Prisma.service';
+import { prismaTxOf } from '../../../infrastructure/database/PrismaTransactionRunner.adapter';
 import type { UnitOfWork } from '../../../infrastructure/database/TransactionRunner.port';
 import type { RowCondition } from '../../access';
 import { ContentDbProvider } from '../../content-engine';
@@ -163,9 +163,7 @@ export class PrismaMediaRepository implements MediaRepository {
       )
       .returning([...MEDIA_COLUMNS])
       .executeTakeFirst();
-    return row === undefined
-      ? undefined
-      : recordOfRow(row as unknown as MediaRow);
+    return row === undefined ? undefined : recordOfRow(row as unknown as MediaRow);
   }
 
   async lockLive(unit: UnitOfWork, mediaId: number): Promise<boolean> {
@@ -199,9 +197,7 @@ export class PrismaMediaRepository implements MediaRepository {
         qb.where(rowCondition as NonNullable<typeof rowCondition>),
       )
       .execute();
-    return new Map(
-      rows.map((row) => [row.document_id as string, row.id as number]),
-    );
+    return new Map(rows.map((row) => [row.document_id as string, row.id as number]));
   }
 
   async findEmbeddable(ids: {
@@ -221,11 +217,7 @@ export class PrismaMediaRepository implements MediaRepository {
         : []),
       ...(ids.documentIds.length > 0
         ? await base()
-            .where(
-              'document_id',
-              '=',
-              sql<string>`any(${[...ids.documentIds]}::uuid[])`,
-            )
+            .where('document_id', '=', sql<string>`any(${[...ids.documentIds]}::uuid[])`)
             .execute()
         : []),
     ];
@@ -244,11 +236,7 @@ export class PrismaMediaRepository implements MediaRepository {
     }));
   }
 
-  findPurgeBatch(
-    cutoff: Date,
-    afterId: number,
-    limit: number,
-  ): Promise<PurgeCandidate[]> {
+  findPurgeBatch(cutoff: Date, afterId: number, limit: number): Promise<PurgeCandidate[]> {
     return this.prisma.fileLibrary.findMany({
       where: { deletedAt: { lt: cutoff }, id: { gt: afterId } },
       orderBy: { id: 'asc' },

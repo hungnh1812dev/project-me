@@ -1,9 +1,6 @@
 import type { StartedPostgreSqlContainer } from '@testcontainers/postgresql';
 
-import {
-  SHARED_POSTGRES_URL_ENV,
-  startSharedPostgres,
-} from '../fixtures/Postgres.fixture';
+import { SHARED_POSTGRES_URL_ENV, startSharedPostgres } from '../fixtures/Postgres.fixture';
 
 declare global {
   var sharedPostgres: StartedPostgreSqlContainer | undefined;
@@ -12,6 +9,5 @@ declare global {
 /** One Postgres for the whole run; workers inherit its URL through the env. */
 export default async function globalSetup(): Promise<void> {
   globalThis.sharedPostgres = await startSharedPostgres();
-  process.env[SHARED_POSTGRES_URL_ENV] =
-    globalThis.sharedPostgres.getConnectionUri();
+  process.env[SHARED_POSTGRES_URL_ENV] = globalThis.sharedPostgres.getConnectionUri();
 }

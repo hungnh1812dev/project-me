@@ -1,9 +1,4 @@
-import {
-  createCipheriv,
-  createDecipheriv,
-  hkdfSync,
-  randomBytes,
-} from 'node:crypto';
+import { createCipheriv, createDecipheriv, hkdfSync, randomBytes } from 'node:crypto';
 
 import { Inject, Injectable } from '@nestjs/common';
 
@@ -86,10 +81,7 @@ export class SecretBox {
       authTagLength: SECRET_BOX.TAG_BYTES,
     });
     cipher.setAAD(aadOf(context, this.currentKid));
-    const body = Buffer.concat([
-      cipher.update(plaintext, 'utf8'),
-      cipher.final(),
-    ]);
+    const body = Buffer.concat([cipher.update(plaintext, 'utf8'), cipher.final()]);
     const ciphertext = [
       SECRET_BOX.VERSION,
       iv.toString('base64url'),
@@ -118,10 +110,7 @@ export class SecretBox {
     }
     const iv = Buffer.from(ivPart, 'base64url');
     const tag = Buffer.from(tagPart, 'base64url');
-    if (
-      iv.length !== SECRET_BOX.IV_BYTES ||
-      tag.length !== SECRET_BOX.TAG_BYTES
-    ) {
+    if (iv.length !== SECRET_BOX.IV_BYTES || tag.length !== SECRET_BOX.TAG_BYTES) {
       throw new SecretBoxError('Unknown TOTP secret format');
     }
     try {

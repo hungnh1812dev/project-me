@@ -34,13 +34,7 @@ const ALLOWED_TAGS = [
 ];
 
 /** Tags whose inner text is dropped together with the tag. */
-const DISCARD_CONTENT_TAGS = [
-  'script',
-  'style',
-  'textarea',
-  'option',
-  'noscript',
-];
+const DISCARD_CONTENT_TAGS = ['script', 'style', 'textarea', 'option', 'noscript'];
 
 const OPTIONS: sanitizeHtml.IOptions = {
   allowedTags: ALLOWED_TAGS,
@@ -54,9 +48,7 @@ const OPTIONS: sanitizeHtml.IOptions = {
     // Links that open a new tab must not leak window.opener.
     a: (tagName, attribs) => ({
       tagName,
-      attribs: attribs.target
-        ? { ...attribs, rel: 'noopener noreferrer' }
-        : attribs,
+      attribs: attribs.target ? { ...attribs, rel: 'noopener noreferrer' } : attribs,
     }),
   },
 };

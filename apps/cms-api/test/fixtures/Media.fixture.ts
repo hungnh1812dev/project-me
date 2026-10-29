@@ -73,9 +73,6 @@ export async function buildMediaFixtures(): Promise<MediaFixtures> {
     webp: await plain('webp'),
     gif: await plain('gif'),
     avif: await plain('avif'),
-    brokenJpeg: Buffer.concat([
-      Buffer.from([0xff, 0xd8, 0xff, 0xe0]),
-      Buffer.alloc(64, 0x41),
-    ]),
+    brokenJpeg: Buffer.concat([Buffer.from([0xff, 0xd8, 0xff, 0xe0]), Buffer.alloc(64, 0x41)]),
   };
 }

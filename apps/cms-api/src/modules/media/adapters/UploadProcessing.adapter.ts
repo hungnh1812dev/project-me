@@ -9,10 +9,7 @@ import { Injectable } from '@nestjs/common';
 import busboy from 'busboy';
 import { fileTypeFromBuffer } from 'file-type';
 
-import {
-  DomainError,
-  DOMAIN_ERROR_KINDS,
-} from '../../../common/errors/Domain.errors';
+import { DOMAIN_ERROR_KINDS, DomainError } from '../../../common/errors/Domain.errors';
 import type {
   PreparedUpload,
   ReceivedUpload,
@@ -27,7 +24,6 @@ import {
   type MediaKind,
 } from '../domain/Media.constants';
 import {
-  type AllowedMime,
   allowedMediaTypeOf,
   isAltWithinLimit,
   MEDIA_MAX_BYTES,
@@ -36,6 +32,7 @@ import {
   normalizeAlt,
   sanitizeFileName,
   sha256Hex,
+  type AllowedMime,
 } from '../domain/MediaUpload.rules';
 import { reencodeImage } from './SharpImageReencoder.adapter';
 
@@ -94,10 +91,7 @@ interface Spooled {
 export class UploadProcessingAdapter implements UploadProcessor {
   async receive(upload: UploadStream): Promise<ReceivedUpload> {
     const { body } = upload;
-    if (
-      upload.declaredLength !== null &&
-      upload.declaredLength > MEDIA_MAX_REQUEST_BYTES
-    ) {
+    if (upload.declaredLength !== null && upload.declaredLength > MEDIA_MAX_REQUEST_BYTES) {
       throw tooLarge();
     }
 
@@ -125,8 +119,7 @@ export class UploadProcessingAdapter implements UploadProcessor {
     }
 
     const directory = await mkdtemp(join(tmpdir(), UPLOAD_TEMP_PREFIX));
-    const dispose = (): Promise<void> =>
-      rm(directory, { recursive: true, force: true });
+    const dispose = (): Promise<void> => rm(directory, { recursive: true, force: true });
 
     return new Promise<ReceivedUpload>((resolve, reject) => {
       let settled = false;
@@ -168,15 +161,11 @@ export class UploadProcessingAdapter implements UploadProcessor {
       });
 
       for (const event of ['filesLimit', 'fieldsLimit', 'partsLimit']) {
-        parser.on(event, () =>
-          fail(invalidUpload(MEDIA_ERROR_MESSAGES.UNEXPECTED_PART)),
-        );
+        parser.on(event, () => fail(invalidUpload(MEDIA_ERROR_MESSAGES.UNEXPECTED_PART)));
       }
       parser.on('error', fail);
       body.on('error', fail);
-      body.on('aborted', () =>
-        fail(invalidUpload(MEDIA_ERROR_MESSAGES.NO_FILE)),
-      );
+      body.on('aborted', () => fail(invalidUpload(MEDIA_ERROR_MESSAGES.NO_FILE)));
 
       parser.on('close', () => {
         if (settled) return;
@@ -212,8 +201,7 @@ export class UploadProcessingAdapter implements UploadProcessor {
 
     const accept = async (): Promise<void> => {
       const sniffed = await fileTypeFromBuffer(Buffer.concat(head));
-      const allowed =
-        sniffed === undefined ? undefined : allowedMediaTypeOf(sniffed.mime);
+      const allowed = sniffed === undefined ? undefined : allowedMediaTypeOf(sniffed.mime);
       if (sniffed === undefined || allowed === undefined) {
         throw unsupportedType(MEDIA_ERROR_MESSAGES.UNSUPPORTED_TYPE);
       }

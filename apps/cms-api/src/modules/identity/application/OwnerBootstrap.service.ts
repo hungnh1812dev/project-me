@@ -10,8 +10,8 @@ import { OWNER_ROLE_SLUG } from '../../access';
 import {
   AUDIT_ACTIONS,
   OWNER_CREATED_CHANNELS,
-  type OwnerCreatedChannel,
   selfActor,
+  type OwnerCreatedChannel,
 } from '../../security-audit';
 import {
   OWNER_BOOTSTRAP_ERRORS,
@@ -21,15 +21,14 @@ import {
 } from '../domain/Identity.constants';
 import {
   ACCOUNT_REPOSITORY,
-  type AccountRepository,
   AUDIT_RECORDER,
+  type AccountRepository,
   type AuditRecorder,
   type CreatedAccount,
 } from './Identity.port';
 import { hashPassword } from './Password.service';
 
-type OwnerBootstrapErrorCode =
-  (typeof OWNER_BOOTSTRAP_ERRORS)[keyof typeof OWNER_BOOTSTRAP_ERRORS];
+type OwnerBootstrapErrorCode = (typeof OWNER_BOOTSTRAP_ERRORS)[keyof typeof OWNER_BOOTSTRAP_ERRORS];
 
 /** Messages never contain the password. */
 export class OwnerBootstrapError extends Error {
@@ -63,12 +62,7 @@ export const ownerInputSchema = z.object({
     .trim()
     .toLowerCase()
     .pipe(z.email({ message: 'must be a valid email address' })),
-  displayName: z
-    .string()
-    .trim()
-    .min(1)
-    .max(OWNER_DISPLAY_NAME_MAX_LENGTH)
-    .optional(),
+  displayName: z.string().trim().min(1).max(OWNER_DISPLAY_NAME_MAX_LENGTH).optional(),
   password: z
     .string()
     .min(PASSWORD_MIN_LENGTH, {
@@ -165,10 +159,7 @@ export class OwnerBootstrapService {
     return role.id;
   }
 
-  private async assertEmailFree(
-    unit: UnitOfWork,
-    email: string,
-  ): Promise<void> {
+  private async assertEmailFree(unit: UnitOfWork, email: string): Promise<void> {
     if (await this.accounts.isEmailTaken(unit, email)) {
       throw new OwnerBootstrapError(
         OWNER_BOOTSTRAP_ERRORS.EMAIL_TAKEN,
@@ -184,9 +175,7 @@ export class OwnerBootstrapService {
   ): Promise<void> {
     return this.audit.record(unit, {
       actor:
-        options.channel === OWNER_CREATED_CHANNELS.CLI
-          ? { type: 'system' }
-          : selfActor(created.id),
+        options.channel === OWNER_CREATED_CHANNELS.CLI ? { type: 'system' } : selfActor(created.id),
       action: AUDIT_ACTIONS.OWNER_CREATED,
       subject: 'accounts',
       targetId: created.documentId,

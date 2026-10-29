@@ -1,15 +1,15 @@
 import { Injectable } from '@nestjs/common';
 
-import { prismaTxOf } from '../../../infrastructure/database/PrismaTransactionRunner.adapter';
 import { PrismaService } from '../../../infrastructure/database/Prisma.service';
+import { prismaTxOf } from '../../../infrastructure/database/PrismaTransactionRunner.adapter';
 import type { UnitOfWork } from '../../../infrastructure/database/TransactionRunner.port';
 import {
   CONTENT_DB_SCHEMA,
   ContentRegistry,
   mediaColumnsOf,
   quoteIdentifier,
+  type ContentTypeRegistry,
 } from '../../content-engine';
-import type { ContentTypeRegistry } from '../../content-engine';
 import type { MediaReferenceChecker } from '../application/Media.port';
 
 /**
@@ -19,9 +19,7 @@ import type { MediaReferenceChecker } from '../application/Media.port';
  * registry and are quoted; the file id is the bound parameter `$1`. Null when
  * no content type has a media field.
  */
-export function mediaReferenceQuery(
-  registry: ContentTypeRegistry,
-): string | null {
+export function mediaReferenceQuery(registry: ContentTypeRegistry): string | null {
   const probes = mediaColumnsOf(registry).map(
     ({ tableName, columnName }) =>
       `exists (select 1 from ${quoteIdentifier(CONTENT_DB_SCHEMA)}.${quoteIdentifier(tableName)} where ${quoteIdentifier(columnName)} = $1)`,
@@ -40,10 +38,7 @@ export class MediaReferenceAdapter implements MediaReferenceChecker {
     const query = mediaReferenceQuery(await this.registry.registry());
     if (query === null) return false;
     const runner = unit === undefined ? this.prisma : prismaTxOf(unit);
-    const rows = await runner.$queryRawUnsafe<{ used: boolean }[]>(
-      query,
-      mediaId,
-    );
+    const rows = await runner.$queryRawUnsafe<{ used: boolean }[]>(query, mediaId);
     return rows[0]?.used === true;
   }
 }

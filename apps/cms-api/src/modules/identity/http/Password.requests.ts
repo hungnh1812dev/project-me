@@ -1,10 +1,6 @@
 import { z } from 'zod';
 
-import {
-  EMAIL_MAX_LENGTH,
-  OTP,
-  PASSWORD_MAX_LENGTH,
-} from '../domain/Identity.constants';
+import { EMAIL_MAX_LENGTH, OTP, PASSWORD_MAX_LENGTH } from '../domain/Identity.constants';
 
 /**
  * Bodies of the password endpoints (SPEC §9). Shape checks only. The

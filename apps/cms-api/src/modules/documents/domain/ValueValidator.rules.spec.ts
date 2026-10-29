@@ -1,8 +1,8 @@
+import { profileType } from '../../../../test/fixtures/Masking.fixture';
 import { DomainError } from '../../../common/errors/Domain.errors';
 import { describeError } from '../../../common/http/DescribeHttpException.rules';
 import { FieldSelection } from '../../access';
 import { ContentTypeRegistry } from '../../content-engine';
-import { profileType } from '../../../../test/fixtures/Masking.fixture';
 import { countComponentRows, validateTreeValues } from './ValueValidator.rules';
 
 const profile = profileType();
@@ -84,15 +84,9 @@ describe('write value rules (T21)', () => {
     ['avatar', 5],
     ['avatar', 'not-a-uuid'],
   ])('rejects %s = %p with 400 DOCUMENT_INVALID', (field, value) => {
-    expect(() => run({ values: { [field]: value } }, 'update')).toThrow(
-      DomainError,
-    );
-    expect(statusOf(() => run({ values: { [field]: value } }, 'update'))).toBe(
-      400,
-    );
-    expect(codeOf(() => run({ values: { [field]: value } }, 'update'))).toBe(
-      'DOCUMENT_INVALID',
-    );
+    expect(() => run({ values: { [field]: value } }, 'update')).toThrow(DomainError);
+    expect(statusOf(() => run({ values: { [field]: value } }, 'update'))).toBe(400);
+    expect(codeOf(() => run({ values: { [field]: value } }, 'update'))).toBe('DOCUMENT_INVALID');
   });
 
   it('allows null for optional and rejects it for required fields', () => {
@@ -106,22 +100,12 @@ describe('write value rules (T21)', () => {
 
   it('requires required fields on create, but not on update', () => {
     expect(() => run({}, 'create', required)).toThrow(/values\.title/);
-    expect(() => run({ values: { title: 't' } }, 'create', required)).toThrow(
-      /components\.items/,
-    );
+    expect(() => run({ values: { title: 't' } }, 'create', required)).toThrow(/components\.items/);
     expect(() =>
-      run(
-        { values: { title: 't' }, components: { items: [] } },
-        'create',
-        required,
-      ),
+      run({ values: { title: 't' }, components: { items: [] } }, 'create', required),
     ).toThrow(/components\.items is required/);
     expect(() =>
-      run(
-        { values: { title: 't' }, components: { items: [{ values: {} }] } },
-        'create',
-        required,
-      ),
+      run({ values: { title: 't' }, components: { items: [{ values: {} }] } }, 'create', required),
     ).toThrow(/items\[0\]\.values\.label/);
     expect(run({ values: { notes: 'n' } }, 'update', required)).toEqual({
       values: { notes: 'n' },

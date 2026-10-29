@@ -4,11 +4,7 @@ import type { Readable } from 'node:stream';
 import type { UnitOfWork } from '../../../infrastructure/database/TransactionRunner.port';
 import type { RowCondition } from '../../access';
 import type { MediaKind } from '../domain/Media.constants';
-import type {
-  EmbeddedMedia,
-  MediaPage,
-  MediaRecord,
-} from '../domain/Media.entity';
+import type { EmbeddedMedia, MediaPage, MediaRecord } from '../domain/Media.entity';
 import type { AllowedMime } from '../domain/MediaUpload.rules';
 
 /** DI token of the `UploadProcessor` adapter. */
@@ -134,10 +130,7 @@ export interface MediaRepository {
     pageSize: number;
   }): Promise<MediaPage>;
   /** Internal id of a live file the condition reaches. */
-  findLiveId(
-    documentId: string,
-    rowCondition: RowCondition | null,
-  ): Promise<number | undefined>;
+  findLiveId(documentId: string, rowCondition: RowCondition | null): Promise<number | undefined>;
   /** Sets the alt text in one statement that also applies the condition. */
   updateAlt(change: {
     documentId: string;
@@ -161,11 +154,7 @@ export interface MediaRepository {
     documentIds: readonly string[];
   }): Promise<EmbeddableFile[]>;
   /** Soft-deleted rows older than `cutoff` with an id above `afterId`, in id order. */
-  findPurgeBatch(
-    cutoff: Date,
-    afterId: number,
-    limit: number,
-  ): Promise<PurgeCandidate[]>;
+  findPurgeBatch(cutoff: Date, afterId: number, limit: number): Promise<PurgeCandidate[]>;
   deleteRow(mediaId: number): Promise<void>;
 }
 

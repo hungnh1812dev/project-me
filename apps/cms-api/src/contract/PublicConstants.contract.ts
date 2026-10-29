@@ -1,9 +1,5 @@
 import { ERROR_CODES } from '../common/constants/Error.constants';
-import {
-  ACCESS_ERROR_CODES,
-  PERMISSION_ACTIONS,
-  SYSTEM_SUBJECT_ACTIONS,
-} from '../modules/access';
+import { ACCESS_ERROR_CODES, PERMISSION_ACTIONS, SYSTEM_SUBJECT_ACTIONS } from '../modules/access';
 import { BACKUPS_ERROR_CODES } from '../modules/backups';
 import { RICHTEXT_ALLOWED_URL_SCHEMES } from '../modules/content-engine';
 import {
@@ -17,10 +13,7 @@ import {
   SETUP_TOKEN_MAX_LENGTH,
   TOTP,
 } from '../modules/identity';
-import {
-  REVIEWER_ERROR_CODES,
-  REVIEWER_INPUT_LIMITS,
-} from '../modules/reviewer';
+import { REVIEWER_ERROR_CODES, REVIEWER_INPUT_LIMITS } from '../modules/reviewer';
 
 /**
  * The cms-api constants that the admin, the web, the kit and the e2e suite
@@ -50,10 +43,7 @@ export function buildPublicConstants() {
     },
     permissionActions: [...PERMISSION_ACTIONS],
     systemSubjects: Object.fromEntries(
-      Object.entries(SYSTEM_SUBJECT_ACTIONS).map(([subject, actions]) => [
-        subject,
-        [...actions],
-      ]),
+      Object.entries(SYSTEM_SUBJECT_ACTIONS).map(([subject, actions]) => [subject, [...actions]]),
     ),
     richtextUrlSchemes: [...RICHTEXT_ALLOWED_URL_SCHEMES],
   };

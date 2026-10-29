@@ -25,13 +25,7 @@ function setup(rows: PurgeCandidate[], referencedIds: number[] = []) {
   const storage = { delete: deleteObject } as unknown as MediaStorage;
   const clock = { now: () => NOW_MS };
   const logger = { warn: jest.fn(), error: jest.fn() };
-  const service = new PurgeDeletedMediaService(
-    repository,
-    references,
-    storage,
-    clock,
-    logger,
-  );
+  const service = new PurgeDeletedMediaService(repository, references, storage, clock, logger);
   return { service, findPurgeBatch, deleteRow, deleteObject, logger };
 }
 

@@ -46,10 +46,7 @@ export type DocumentLookup =
  * caller's transaction.
  */
 export interface DocumentRepository extends ContentRepository {
-  list(
-    type: RegisteredContentType,
-    selection: ListSelection,
-  ): Promise<ListedDocuments>;
+  list(type: RegisteredContentType, selection: ListSelection): Promise<ListedDocuments>;
 
   /** One root row with its tree, selecting only the columns `access` may read. */
   findOne(
@@ -133,11 +130,7 @@ export interface PresenceAccountLookup {
 export const PRESENCE_ACCOUNT_LOOKUP = Symbol('PRESENCE_ACCOUNT_LOOKUP');
 
 /** What happened to a document (SPEC D15: content edits are tracked through a pluggable adapter). */
-export const CONTENT_ACTIVITY_ACTIONS = [
-  'publish',
-  'unpublish',
-  'delete',
-] as const;
+export const CONTENT_ACTIVITY_ACTIONS = ['publish', 'unpublish', 'delete'] as const;
 export type ContentActivityAction = (typeof CONTENT_ACTIVITY_ACTIONS)[number];
 
 /** Ids and names only: never a field value (D15). */

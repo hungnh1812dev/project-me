@@ -1,9 +1,5 @@
 import type { UnitOfWork } from '../../../infrastructure/database/TransactionRunner.port';
-import type {
-  ContentDocument,
-  ContentStatus,
-  DocumentRef,
-} from '../domain/ContentDocument.entity';
+import type { ContentDocument, ContentStatus, DocumentRef } from '../domain/ContentDocument.entity';
 import type { TreeInput } from '../domain/TreeInput.rules';
 
 export interface InsertTreeInput extends TreeInput {
@@ -32,11 +28,7 @@ export interface LoadTreesQuery {
  */
 export interface ContentRepository {
   /** Inserts a root row and its whole tree. Returns the root id. */
-  insertTree(
-    unit: UnitOfWork,
-    slug: string,
-    input: InsertTreeInput,
-  ): Promise<number>;
+  insertTree(unit: UnitOfWork, slug: string, input: InsertTreeInput): Promise<number>;
 
   /** Inserts many documents at once. Returns the root ids in input order. */
   insertTrees(
@@ -46,11 +38,7 @@ export interface ContentRepository {
   ): Promise<number[]>;
 
   /** Loads roots with their trees, ordered by id. */
-  loadTrees(
-    unit: UnitOfWork,
-    slug: string,
-    query: LoadTreesQuery,
-  ): Promise<ContentDocument[]>;
+  loadTrees(unit: UnitOfWork, slug: string, query: LoadTreesQuery): Promise<ContentDocument[]>;
 
   /**
    * Replaces the content of one root row in place and locks it for the rest
@@ -70,8 +58,7 @@ export const CONTENT_TYPE_REPOSITORY = Symbol('CONTENT_TYPE_REPOSITORY');
 
 /** What `content:migrate` left in storage: the definitions, or nothing because it never ran. */
 export type StoredContentTypes =
-  | { status: 'loaded'; definitions: readonly unknown[] }
-  | { status: 'not-migrated' };
+  { status: 'loaded'; definitions: readonly unknown[] } | { status: 'not-migrated' };
 
 /**
  * Reads the content type definitions `content:migrate` stored. Definitions

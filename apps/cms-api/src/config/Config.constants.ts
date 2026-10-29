@@ -11,17 +11,10 @@ export const DB_SSL_MODES = ['disable', 'require', 'verify-full'] as const;
 export const MIN_SECRET_BYTES = 32;
 
 /** Env keys holding secrets. Required and length-checked in production. */
-export const SECRET_ENV_KEYS = [
-  'JWT_ACCESS_SECRET',
-  'OTP_PEPPER',
-  'TOTP_ENC_KEY',
-] as const;
+export const SECRET_ENV_KEYS = ['JWT_ACCESS_SECRET', 'OTP_PEPPER', 'TOTP_ENC_KEY'] as const;
 
 /** Secrets that may be unset, but are length-checked in production when set. */
-export const OPTIONAL_SECRET_ENV_KEYS = [
-  'OWNER_SETUP_TOKEN',
-  'TOTP_ENC_PREVIOUS_KEY',
-] as const;
+export const OPTIONAL_SECRET_ENV_KEYS = ['OWNER_SETUP_TOKEN', 'TOTP_ENC_PREVIOUS_KEY'] as const;
 
 export const CONFIG_DEFAULTS = {
   NODE_ENV: 'development',
@@ -74,9 +67,7 @@ export const JWT_KID_PATTERN = /^[A-Za-z0-9._-]{1,64}$/;
  * to fit an authenticator app's row.
  */
 export const TOTP_ISSUER_MAX_LENGTH = 64;
-export const TOTP_ISSUER_PATTERN = new RegExp(
-  `^[^:]{1,${TOTP_ISSUER_MAX_LENGTH}}$`,
-);
+export const TOTP_ISSUER_PATTERN = new RegExp(`^[^:]{1,${TOTP_ISSUER_MAX_LENGTH}}$`);
 
 export const MAX_PORT = 65_535;
 
@@ -95,8 +86,7 @@ export const RATE_LIMIT_OVERRIDE_ENV_KEYS = [
   'REFRESH_RATE_LIMIT_IP',
 ] as const;
 
-export type RateLimitOverrideEnvKey =
-  (typeof RATE_LIMIT_OVERRIDE_ENV_KEYS)[number];
+export type RateLimitOverrideEnvKey = (typeof RATE_LIMIT_OVERRIDE_ENV_KEYS)[number];
 
 /** Upper bound of the optional login rate-limit overrides. */
 export const MAX_RATE_LIMIT_OVERRIDE = 1_000_000;

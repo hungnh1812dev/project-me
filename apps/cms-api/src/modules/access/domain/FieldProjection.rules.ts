@@ -1,10 +1,7 @@
 import type { TableNode } from '../../content-engine';
 import { joinFieldPath } from './FieldPaths.rules';
 import type { FieldSelection } from './PolicyEvaluator.rules';
-import {
-  hiddenSystemColumns,
-  type RecordReadAccess,
-} from './RecordReadAccess.rules';
+import { hiddenSystemColumns, type RecordReadAccess } from './RecordReadAccess.rules';
 
 /**
  * SPEC D3: unreadable columns are never selected. Returns a copy of the
@@ -17,11 +14,7 @@ import {
  * then never touch a masked column or table, and `selectedColumns()` gives
  * the root select list. Names still come only from the plan.
  */
-export function projectTable(
-  table: TableNode,
-  readable: FieldSelection,
-  prefix = '',
-): TableNode {
+export function projectTable(table: TableNode, readable: FieldSelection, prefix = ''): TableNode {
   if (readable.isUnrestricted) return table;
   const columns = table.plan.columns.filter((column) =>
     readable.allows(joinFieldPath(prefix, column.field.name)),
@@ -29,15 +22,11 @@ export function projectTable(
   const components = table.components.flatMap((component) => {
     const path = joinFieldPath(prefix, component.field.name);
     if (!readable.reaches(path)) return [];
-    return [
-      { ...component, table: projectTable(component.table, readable, path) },
-    ];
+    return [{ ...component, table: projectTable(component.table, readable, path) }];
   });
   return {
     plan: { ...table.plan, columns },
-    columnsByField: new Map(
-      columns.map((column) => [column.field.name, column]),
-    ),
+    columnsByField: new Map(columns.map((column) => [column.field.name, column])),
     components,
   };
 }
@@ -48,10 +37,7 @@ export function projectTable(
  * `updated_by` for anonymous and reviewer actors) are not selected either;
  * a row condition may still compare them in the WHERE clause.
  */
-export function selectedColumns(
-  table: TableNode,
-  access: RecordReadAccess,
-): string[] {
+export function selectedColumns(table: TableNode, access: RecordReadAccess): string[] {
   const hidden = hiddenSystemColumns(access);
   return [
     ...table.plan.systemColumns.filter((column) => !hidden.has(column)),

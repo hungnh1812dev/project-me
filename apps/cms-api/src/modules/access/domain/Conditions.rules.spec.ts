@@ -1,10 +1,10 @@
 import {
   DummyDriver,
-  type Expression,
   Kysely,
   PostgresAdapter,
   PostgresIntrospector,
   PostgresQueryCompiler,
+  type Expression,
   type SqlBool,
 } from 'kysely';
 
@@ -13,9 +13,9 @@ import { ACCESS_ERROR_CODES, CONDITION_LIMITS } from './Access.constants';
 import {
   compileConditions,
   conditionKindOf,
-  type ConditionActor,
   InvalidConditionError,
   validateConditions,
+  type ConditionActor,
 } from './Conditions.rules';
 
 const db = new Kysely<Record<string, Record<string, unknown>>>({
@@ -93,36 +93,17 @@ describe('validateConditions', () => {
       ['a non-object', 'createdBy = 1'],
       ['null', null],
       ['an empty list', { all: [] }],
-      [
-        'another combinator',
-        { any: [{ field: 'title', op: 'eq', value: 'x' }] },
-      ],
-      [
-        'extra top-level keys',
-        { all: [{ field: 'title', op: 'eq', value: 'x' }], sql: '1=1' },
-      ],
-      [
-        'extra clause keys',
-        { all: [{ field: 'title', op: 'eq', value: 'x', raw: 'or 1=1' }] },
-      ],
-      [
-        'nested sets',
-        { all: [{ all: [{ field: 'title', op: 'eq', value: 'x' }] }] },
-      ],
+      ['another combinator', { any: [{ field: 'title', op: 'eq', value: 'x' }] }],
+      ['extra top-level keys', { all: [{ field: 'title', op: 'eq', value: 'x' }], sql: '1=1' }],
+      ['extra clause keys', { all: [{ field: 'title', op: 'eq', value: 'x', raw: 'or 1=1' }] }],
+      ['nested sets', { all: [{ all: [{ field: 'title', op: 'eq', value: 'x' }] }] }],
     ])('%s', (_label, raw) => {
       expect(issuesOf(raw).length).toBeGreaterThan(0);
     });
 
-    it.each(['gt', 'like', 'EQ', 'raw', 'or', '= 1 or 1=1 --'])(
-      'operator %j',
-      (op) => {
-        expect(issuesOf(clause('title', op, 'x'))[0]?.path).toEqual([
-          'all',
-          0,
-          'op',
-        ]);
-      },
-    );
+    it.each(['gt', 'like', 'EQ', 'raw', 'or', '= 1 or 1=1 --'])('operator %j', (op) => {
+      expect(issuesOf(clause('title', op, 'x'))[0]?.path).toEqual(['all', 0, 'op']);
+    });
 
     it.each([
       '$actor.email',
@@ -131,11 +112,7 @@ describe('validateConditions', () => {
       '$env.JWT_ACCESS_SECRET',
       '$',
     ])('variable %j', (value) => {
-      expect(issuesOf(clause('priority', 'eq', value))[0]?.path).toEqual([
-        'all',
-        0,
-        'value',
-      ]);
+      expect(issuesOf(clause('priority', 'eq', value))[0]?.path).toEqual(['all', 0, 'value']);
     });
 
     it.each([
@@ -148,11 +125,7 @@ describe('validateConditions', () => {
       ['a prototype key', '__proto__'],
       ['a prototype key', 'toString'],
     ])('%s (%s)', (_label, field) => {
-      expect(issuesOf(clause(field, 'eq', 'x'))[0]?.path).toEqual([
-        'all',
-        0,
-        'field',
-      ]);
+      expect(issuesOf(clause(field, 'eq', 'x'))[0]?.path).toEqual(['all', 0, 'field']);
     });
 
     it.each([
@@ -168,11 +141,7 @@ describe('validateConditions', () => {
       ['year zero as a datetime', 'releasedAt', '0000-01-01T00:00:00Z'],
       ['a non-uuid', 'documentId', "x' or 1=1 --"],
       ['a variable on a string field', 'title', '$actor.id'],
-      [
-        'a too long string',
-        'title',
-        'x'.repeat(CONDITION_LIMITS.MAX_STRING_LENGTH + 1),
-      ],
+      ['a too long string', 'title', 'x'.repeat(CONDITION_LIMITS.MAX_STRING_LENGTH + 1)],
       ['an object value', 'title', { $raw: '1=1' }],
       ['an array for eq', 'title', ['a']],
     ])('%s', (_label, field, value) => {
@@ -185,39 +154,27 @@ describe('validateConditions', () => {
       ['null inside', ['a', null]],
       [
         'too many values',
-        Array.from(
-          { length: CONDITION_LIMITS.MAX_IN_VALUES + 1 },
-          (_, i) => `v${i}`,
-        ),
+        Array.from({ length: CONDITION_LIMITS.MAX_IN_VALUES + 1 }, (_, i) => `v${i}`),
       ],
     ])('"in" with %s', (_label, value) => {
       expect(issuesOf(clause('title', 'in', value)).length).toBeGreaterThan(0);
     });
 
     it('more clauses than the limit', () => {
-      const all = Array.from(
-        { length: CONDITION_LIMITS.MAX_CLAUSES + 1 },
-        () => ({
-          field: 'title',
-          op: 'eq',
-          value: 'x',
-        }),
-      );
+      const all = Array.from({ length: CONDITION_LIMITS.MAX_CLAUSES + 1 }, () => ({
+        field: 'title',
+        op: 'eq',
+        value: 'x',
+      }));
       expect(issuesOf({ all }).length).toBeGreaterThan(0);
     });
   });
 
   it('only allows readable fields when given a readable list', () => {
     const restricted = testCatalog().conditionFields('article', ['title']);
-    expect(validateConditions(clause('title', 'eq', 'x'), restricted).ok).toBe(
-      true,
-    );
-    expect(validateConditions(clause('priority', 'eq', 1), restricted).ok).toBe(
-      false,
-    );
-    expect(
-      validateConditions(clause('createdBy', 'eq', '$actor.id'), restricted).ok,
-    ).toBe(true);
+    expect(validateConditions(clause('title', 'eq', 'x'), restricted).ok).toBe(true);
+    expect(validateConditions(clause('priority', 'eq', 1), restricted).ok).toBe(false);
+    expect(validateConditions(clause('createdBy', 'eq', '$actor.id'), restricted).ok).toBe(true);
   });
 });
 
@@ -243,42 +200,29 @@ describe('compileConditions', () => {
 
   it('maps camelCase fields to columns through the content engine names', () => {
     const { sql } = toSql(
-      compileConditions(
-        clause('releaseDate', 'eq', '2026-01-01'),
-        catalog,
-        ACTOR,
-      ),
+      compileConditions(clause('releaseDate', 'eq', '2026-01-01'), catalog, ACTOR),
     );
     expect(sql).toContain('"release_date" = $1');
   });
 
   it('uses IS NULL / IS NOT NULL for null literals', () => {
-    expect(
-      toSql(compileConditions(clause('title', 'eq', null), catalog, ACTOR)).sql,
-    ).toContain('"title" is null');
-    expect(
-      toSql(compileConditions(clause('title', 'ne', null), catalog, ACTOR)).sql,
-    ).toContain('"title" is not null');
+    expect(toSql(compileConditions(clause('title', 'eq', null), catalog, ACTOR)).sql).toContain(
+      '"title" is null',
+    );
+    expect(toSql(compileConditions(clause('title', 'ne', null), catalog, ACTOR)).sql).toContain(
+      '"title" is not null',
+    );
   });
 
   it('qualifies columns with the table when asked', () => {
     const { sql } = toSql(
-      compileConditions(
-        clause('createdBy', 'eq', 1),
-        catalog,
-        ACTOR,
-        'article',
-      ),
+      compileConditions(clause('createdBy', 'eq', 1), catalog, ACTOR, 'article'),
     );
     expect(sql).toContain('"article"."created_by" = $1');
   });
 
   it('keeps hostile strings as bind parameters, never as SQL text', () => {
-    const hostile = [
-      "x' or '1'='1",
-      'x"; drop table accounts; --',
-      'x $$ or true $$',
-    ];
+    const hostile = ["x' or '1'='1", 'x"; drop table accounts; --', 'x $$ or true $$'];
     const { sql, parameters } = toSql(
       compileConditions(clause('title', 'in', hostile), catalog, ACTOR),
     );
@@ -287,22 +231,21 @@ describe('compileConditions', () => {
   });
 
   it('refuses to compile an invalid condition (a hand-edited row fails closed)', () => {
-    expect(() =>
-      compileConditions(clause('title" or 1=1 --', 'eq', 'x'), catalog, ACTOR),
-    ).toThrow(InvalidConditionError);
-    expect(() =>
-      compileConditions(clause('title', 'like', '%'), catalog, ACTOR),
-    ).toThrow(InvalidConditionError);
+    expect(() => compileConditions(clause('title" or 1=1 --', 'eq', 'x'), catalog, ACTOR)).toThrow(
+      InvalidConditionError,
+    );
+    expect(() => compileConditions(clause('title', 'like', '%'), catalog, ACTOR)).toThrow(
+      InvalidConditionError,
+    );
   });
 });
 
 describe('compileConditions with an actor without id', () => {
   it('keeps a null variable as a parameter (= NULL matches nothing)', () => {
-    const where = compileConditions(
-      clause('createdBy', 'eq', '$actor.id'),
-      catalog,
-      { id: null, roleRank: 0 },
-    );
+    const where = compileConditions(clause('createdBy', 'eq', '$actor.id'), catalog, {
+      id: null,
+      roleRank: 0,
+    });
     expect(toSql(where)).toMatchObject({
       sql: 'select * from "article" where ("created_by" = $1)',
       parameters: [null],
@@ -321,10 +264,7 @@ describe('conditionKindOf', () => {
     expect(conditionKindOf(type)).toBe(kind);
   });
 
-  it.each(['json', 'component', 'constructor', 'nope'])(
-    'refuses %s',
-    (type) => {
-      expect(conditionKindOf(type)).toBeUndefined();
-    },
-  );
+  it.each(['json', 'component', 'constructor', 'nope'])('refuses %s', (type) => {
+    expect(conditionKindOf(type)).toBeUndefined();
+  });
 });

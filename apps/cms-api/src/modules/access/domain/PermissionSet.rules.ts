@@ -1,20 +1,16 @@
 import { z } from 'zod';
 
-import {
-  ACCESS_ERROR_CODES,
-  CONTENT_WILDCARD_SUBJECT,
-  PermissionAction,
-} from './Access.constants';
+import { ACCESS_ERROR_CODES, CONTENT_WILDCARD_SUBJECT, PermissionAction } from './Access.constants';
 import type { PermissionGrant } from './ActorContext.entity';
 import { validateConditions } from './Conditions.rules';
-import { checkRowFieldLists } from './FieldList.rules';
-import { type FieldList, unionFieldLists } from './FieldPaths.rules';
-import type { SubjectCatalog } from './SubjectCatalog.rules';
 import {
-  type AccessIssue,
+  checkRowFieldLists,
   issue,
+  type AccessIssue,
   type ValidationResult,
 } from './FieldList.rules';
+import { unionFieldLists, type FieldList } from './FieldPaths.rules';
+import type { SubjectCatalog } from './SubjectCatalog.rules';
 
 /**
  * Save-time checks for a role's permission set (called before rows
@@ -77,8 +73,7 @@ function checkRow(
     return undefined;
   }
   const { subject, action } = parsed.data;
-  const isKnownSubject =
-    catalog.isContentSubject(subject) || catalog.isSystemSubject(subject);
+  const isKnownSubject = catalog.isContentSubject(subject) || catalog.isSystemSubject(subject);
   if (!isKnownSubject) {
     issues.push(
       issue(
@@ -108,17 +103,10 @@ function checkRow(
     issues,
   );
   const conditions = parsed.data.conditions ?? null;
-  const problem =
-    conditions === null
-      ? undefined
-      : conditionsProblem(catalog, subject, action);
+  const problem = conditions === null ? undefined : conditionsProblem(catalog, subject, action);
   if (problem !== undefined) {
     issues.push(
-      issue(
-        ACCESS_ERROR_CODES.PERMISSION_INVALID_CONDITION,
-        [index, 'conditions'],
-        problem,
-      ),
+      issue(ACCESS_ERROR_CODES.PERMISSION_INVALID_CONDITION, [index, 'conditions'], problem),
     );
     return undefined;
   }
@@ -130,22 +118,13 @@ function checkRow(
  * as the evaluator: the slug's `read` rows, else the `*` rows). `*` rows'
  * conditions can only use system fields, so `*` reads nothing here.
  */
-function readableIn(
-  grants: readonly PermissionGrant[],
-  subject: string,
-): FieldList {
+function readableIn(grants: readonly PermissionGrant[], subject: string): FieldList {
   if (subject === CONTENT_WILDCARD_SUBJECT) return [];
-  const reads = grants.filter(
-    (grant) => grant.action === PermissionAction.read,
-  );
+  const reads = grants.filter((grant) => grant.action === PermissionAction.read);
   const own = reads.filter((grant) => grant.subject === subject);
   const used =
-    own.length > 0
-      ? own
-      : reads.filter((grant) => grant.subject === CONTENT_WILDCARD_SUBJECT);
-  return used.length === 0
-    ? []
-    : unionFieldLists(used.map((grant) => grant.readableFields));
+    own.length > 0 ? own : reads.filter((grant) => grant.subject === CONTENT_WILDCARD_SUBJECT);
+  return used.length === 0 ? [] : unionFieldLists(used.map((grant) => grant.readableFields));
 }
 
 /**

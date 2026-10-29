@@ -6,12 +6,9 @@ import {
   DEFAULT_ROLE_PERMISSIONS,
   SYSTEM_ROLES,
 } from '../../src/modules/access/domain/SystemRoles.entity';
+import { seedRolePermissions, seedSystemRoles } from '../fixtures/Access.fixture';
 import { createCoreTemplate } from '../fixtures/CoreDb.fixture';
 import { startPostgres, type TestPostgres } from '../fixtures/Postgres.fixture';
-import {
-  seedRolePermissions,
-  seedSystemRoles,
-} from '../fixtures/Access.fixture';
 
 const CONCURRENT_RUNS = 4;
 
@@ -63,10 +60,7 @@ describe('default role permissions seed (Postgres 17 via Testcontainers)', () =>
     );
     const bySlug = await rowsBySlug(prisma);
     for (const { slug } of SYSTEM_ROLES) {
-      expect([slug, (bySlug.get(slug) ?? []).sort()]).toEqual([
-        slug,
-        expected(slug),
-      ]);
+      expect([slug, (bySlug.get(slug) ?? []).sort()]).toEqual([slug, expected(slug)]);
     }
     const lists = await prisma.permission.findMany({
       select: { readableFields: true, writableFields: true, conditions: true },
@@ -97,9 +91,7 @@ describe('default role permissions seed (Postgres 17 via Testcontainers)', () =>
     expect(await seedRolePermissions(prisma)).toEqual([]);
     const bySlug = await rowsBySlug(prisma);
     expect(bySlug.get('editor')).toBeUndefined();
-    expect(bySlug.get('admin')?.every((row) => row.startsWith('media:'))).toBe(
-      true,
-    );
+    expect(bySlug.get('admin')?.every((row) => row.startsWith('media:'))).toBe(true);
   });
 
   it('never touches a role that already has rows and is not marked yet', async () => {
@@ -120,11 +112,7 @@ describe('default role permissions seed (Postgres 17 via Testcontainers)', () =>
 
   it('concurrent runs seed each role once', async () => {
     const prisma = await database();
-    await Promise.all(
-      Array.from({ length: CONCURRENT_RUNS }, () =>
-        seedRolePermissions(prisma),
-      ),
-    );
+    await Promise.all(Array.from({ length: CONCURRENT_RUNS }, () => seedRolePermissions(prisma)));
     const bySlug = await rowsBySlug(prisma);
     expect(bySlug.get('admin')?.sort()).toEqual(expected('admin'));
   });

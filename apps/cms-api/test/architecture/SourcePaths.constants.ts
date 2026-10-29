@@ -15,12 +15,7 @@ const MODULES = 'modules';
 export const MODULES_PREFIX = `${MODULES}${sep}`;
 export const IDENTITY_DIRECTORY = join(MODULES, 'identity') + sep;
 export const CONTENT_ENGINE_DIRECTORY = join(MODULES, 'content-engine') + sep;
-export const FIELD_TYPES_DIRECTORY = join(
-  MODULES,
-  'content-engine',
-  'domain',
-  'field-types',
-);
+export const FIELD_TYPES_DIRECTORY = join(MODULES, 'content-engine', 'domain', 'field-types');
 export const GRAPHQL_DIRECTORY = join(MODULES, 'graphql');
 
 export const CONTENT_REPOSITORY_FILE = join(
@@ -41,12 +36,7 @@ export const CONTENT_ROW_MAPPING_FILE = join(
   'domain',
   'ContentRowMapping.rules.ts',
 );
-export const FIELD_PROJECTION_FILE = join(
-  MODULES,
-  'access',
-  'domain',
-  'FieldProjection.rules.ts',
-);
+export const FIELD_PROJECTION_FILE = join(MODULES, 'access', 'domain', 'FieldProjection.rules.ts');
 export const RECORD_LOADER_FILES = [CONTENT_REPOSITORY_FILE, TREE_LOADER_FILE];
 /** A file that reads records through the loaders; proves the scanner sees real edges. */
 export const RECORD_LOADER_CONSUMER_FILE = join(
@@ -71,12 +61,7 @@ export const RECORD_SERIALIZER_FILE = join(
   'domain',
   'RecordSerializer.rules.ts',
 );
-export const ACCESS_CONSTANTS_FILE = join(
-  MODULES,
-  'access',
-  'domain',
-  'Access.constants.ts',
-);
+export const ACCESS_CONSTANTS_FILE = join(MODULES, 'access', 'domain', 'Access.constants.ts');
 /** Ports whose methods return loaded records: a file that reaches one must also reach the serializer. */
 export const RECORD_READER_PORT_FILES = [
   join(MODULES, 'documents', 'application', 'Documents.port.ts'),
@@ -119,12 +104,7 @@ export const SECURITY_AUDIT_MODULE_FILE = join(
   'SecurityAudit.module.ts',
 );
 
-export const SYSTEM_ROLES_TABLE_FILE = join(
-  MODULES,
-  'access',
-  'domain',
-  'SystemRoles.entity.ts',
-);
+export const SYSTEM_ROLES_TABLE_FILE = join(MODULES, 'access', 'domain', 'SystemRoles.entity.ts');
 export const NON_ROLE_LITERAL_FILES = [
   join(MODULES, 'identity', 'http', 'IdentityHttp.constants.ts'),
   join(MODULES, 'reviewer', 'http', 'Reviewer.controller.ts'),

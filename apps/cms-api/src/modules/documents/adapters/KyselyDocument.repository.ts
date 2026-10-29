@@ -1,28 +1,25 @@
 import { Injectable } from '@nestjs/common';
-import { type Kysely, sql, type SqlBool } from 'kysely';
+import { sql, type Kysely, type SqlBool } from 'kysely';
 
 import type { UnitOfWork } from '../../../infrastructure/database/TransactionRunner.port';
 import type { RowCondition } from '../../access';
-import {
-  projectTable,
-  selectedColumns,
-} from '../../access/domain/FieldProjection.rules';
+import { projectTable, selectedColumns } from '../../access/domain/FieldProjection.rules';
 import {
   CONTENT_DB_SCHEMA,
-  contentTrxOf,
   ContentDbProvider,
   ContentRegistry,
+  contentTrxOf,
   type ContentDocument,
+  type DocumentRef,
   type InsertTreeInput,
   type LoadTreesQuery,
-  type DocumentRef,
   type RegisteredContentType,
   type ReplaceTreeInput,
 } from '../../content-engine';
 import { KyselyContentRepository } from '../../content-engine/adapters/KyselyContent.repository';
 import {
-  type ContentDatabase,
   loadComponentTrees,
+  type ContentDatabase,
 } from '../../content-engine/adapters/TreeLoader.adapter';
 import { toDocument } from '../../content-engine/domain/ContentRowMapping.rules';
 import type {
@@ -34,11 +31,7 @@ import type {
   RecordReadAccess,
 } from '../application/Documents.port';
 import type { FilterClause } from '../domain/ListQuery.rules';
-import {
-  filterExpression,
-  queryColumnOf,
-  sortTarget,
-} from './DocumentFilterSql.adapter';
+import { filterExpression, queryColumnOf, sortTarget } from './DocumentFilterSql.adapter';
 
 /** Tie-break of every list order, so pages never overlap. */
 const LIST_TIEBREAK_COLUMN = 'id';
@@ -58,11 +51,7 @@ export class KyselyDocumentRepository implements DocumentRepository {
     private readonly registry: ContentRegistry,
   ) {}
 
-  async insertTree(
-    unit: UnitOfWork,
-    slug: string,
-    input: InsertTreeInput,
-  ): Promise<number> {
+  async insertTree(unit: UnitOfWork, slug: string, input: InsertTreeInput): Promise<number> {
     return (await this.trees()).insertTree(unit, slug, input);
   }
 
@@ -91,10 +80,7 @@ export class KyselyDocumentRepository implements DocumentRepository {
     return (await this.trees()).replaceTree(unit, slug, ref, input);
   }
 
-  async list(
-    type: RegisteredContentType,
-    selection: ListSelection,
-  ): Promise<ListedDocuments> {
+  async list(type: RegisteredContentType, selection: ListSelection): Promise<ListedDocuments> {
     const { access, filters, sort, page, pageSize } = selection;
     const predicates = [
       statusPredicate(selection.status),
@@ -109,12 +95,8 @@ export class KyselyDocumentRepository implements DocumentRepository {
     const db = this.content.db.withSchema(CONTENT_DB_SCHEMA);
     const table = type.root.plan.name;
 
-    let rowsQuery = db
-      .selectFrom(table)
-      .select(selectedColumns(projected, access));
-    let countQuery = db
-      .selectFrom(table)
-      .select(sql<string>`count(*)`.as('total'));
+    let rowsQuery = db.selectFrom(table).select(selectedColumns(projected, access));
+    let countQuery = db.selectFrom(table).select(sql<string>`count(*)`.as('total'));
     for (const predicate of predicates) {
       rowsQuery = rowsQuery.where(predicate);
       countQuery = countQuery.where(predicate);
@@ -137,9 +119,7 @@ export class KyselyDocumentRepository implements DocumentRepository {
       rows.map((row) => row.id as number),
     );
     return {
-      documents: rows.map((row) =>
-        toDocument(projected, row, trees.get(row.id as number) ?? {}),
-      ),
+      documents: rows.map((row) => toDocument(projected, row, trees.get(row.id as number) ?? {})),
       total: Number(counted.total),
     };
   }
@@ -213,9 +193,7 @@ export class KyselyDocumentRepository implements DocumentRepository {
       .select(['id', 'version'])
       .forUpdate()
       .executeTakeFirst();
-    return row === undefined
-      ? undefined
-      : { id: row.id as number, version: row.version as number };
+    return row === undefined ? undefined : { id: row.id as number, version: row.version as number };
   }
 
   async findRowIds(
@@ -223,9 +201,7 @@ export class KyselyDocumentRepository implements DocumentRepository {
     type: RegisteredContentType,
     selector: DocumentRowSelector,
   ): Promise<number[]> {
-    const rows = await this.selectRows(this.handle(unit), type, selector)
-      .select('id')
-      .execute();
+    const rows = await this.selectRows(this.handle(unit), type, selector).select('id').execute();
     return rows.map((row) => row.id as number);
   }
 
@@ -262,9 +238,7 @@ export class KyselyDocumentRepository implements DocumentRepository {
     type: RegisteredContentType,
     selector: DocumentRowSelector,
   ): Promise<number> {
-    let remove = this.handle(unit)
-      .withSchema(CONTENT_DB_SCHEMA)
-      .deleteFrom(type.root.plan.name);
+    let remove = this.handle(unit).withSchema(CONTENT_DB_SCHEMA).deleteFrom(type.root.plan.name);
     for (const predicate of selectorPredicates(selector)) {
       remove = remove.where(predicate);
     }
@@ -295,14 +269,8 @@ export class KyselyDocumentRepository implements DocumentRepository {
     return unit === undefined ? this.content.db : contentTrxOf(unit);
   }
 
-  private selectRows(
-    db: Db,
-    type: RegisteredContentType,
-    selector: DocumentRowSelector,
-  ) {
-    let query = db
-      .withSchema(CONTENT_DB_SCHEMA)
-      .selectFrom(type.root.plan.name);
+  private selectRows(db: Db, type: RegisteredContentType, selector: DocumentRowSelector) {
+    let query = db.withSchema(CONTENT_DB_SCHEMA).selectFrom(type.root.plan.name);
     for (const predicate of selectorPredicates(selector)) {
       query = query.where(predicate);
     }
@@ -310,9 +278,7 @@ export class KyselyDocumentRepository implements DocumentRepository {
   }
 }
 
-function statusPredicate(
-  status: 'draft' | 'published' | null,
-): Predicate | null {
+function statusPredicate(status: 'draft' | 'published' | null): Predicate | null {
   if (status === null) return null;
   return sql<SqlBool>`${sql.ref('published_at')} ${
     status === 'draft' ? sql`is null` : sql`is not null`

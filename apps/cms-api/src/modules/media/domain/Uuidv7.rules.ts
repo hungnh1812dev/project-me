@@ -21,8 +21,7 @@ export function uuidv7(nowMs: number, randomBytes: Uint8Array): string {
     remaining = Math.floor(remaining / (1 << BYTE_BITS));
   }
   bytes[VERSION_BYTE] = ((bytes[VERSION_BYTE] ?? 0) & VERSION_MASK) | VERSION_7;
-  bytes[VARIANT_BYTE] =
-    ((bytes[VARIANT_BYTE] ?? 0) & VARIANT_MASK) | VARIANT_RFC;
+  bytes[VARIANT_BYTE] = ((bytes[VARIANT_BYTE] ?? 0) & VARIANT_MASK) | VARIANT_RFC;
   const hex = bytes.toString('hex');
   return [
     hex.slice(0, 8),

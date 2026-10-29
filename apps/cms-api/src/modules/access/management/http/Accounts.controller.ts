@@ -13,42 +13,24 @@ import {
   UseGuards,
 } from '@nestjs/common';
 
-import {
-  ClientIpResolver,
-  clientMetaOf,
-} from '../../../../common/http/ClientIp.resolver';
 import { ID_PARAM } from '../../../../common/constants/Api.constants';
-import {
-  ACCESS_RATE_LIMIT_POLICIES,
-  ACCOUNTS_ROUTES,
-} from '../../http/AccessHttp.constants';
 import { NO_STORE_HEADER } from '../../../../common/constants/Http.constants';
 import { Throttle } from '../../../../common/guards/Throttle.guard';
-import { PermissionAction } from '../../domain/Access.constants';
-import { type AuthenticatedRequest, JwtAuthGuard } from '../../../identity';
-import {
-  inviteAccountSchema,
-  updateAccountSchema,
-} from './AccessManagement.requests';
+import { ClientIpResolver, clientMetaOf } from '../../../../common/http/ClientIp.resolver';
 import { parseRequest } from '../../../../common/http/RequestParsing.rules';
-import { type AccountView } from '../domain/Account.entity';
-import {
-  type AccountPage,
-  AccountsService,
-} from '../application/Accounts.service';
-import {
-  InvitationsService,
-  type InvitedAccountView,
-} from '../application/Invitations.service';
-import {
-  PermissionGuard,
-  RequirePermission,
-} from '../../http/Permission.guard';
-import { requireAccountActor } from '../../domain/Rank.rules';
 import {
   documentIdSchema,
   pageQuerySchema,
 } from '../../../../common/validation/SharedSchemas.rules';
+import { JwtAuthGuard, type AuthenticatedRequest } from '../../../identity';
+import { PermissionAction } from '../../domain/Access.constants';
+import { requireAccountActor } from '../../domain/Rank.rules';
+import { ACCESS_RATE_LIMIT_POLICIES, ACCOUNTS_ROUTES } from '../../http/AccessHttp.constants';
+import { PermissionGuard, RequirePermission } from '../../http/Permission.guard';
+import { AccountsService, type AccountPage } from '../application/Accounts.service';
+import { InvitationsService, type InvitedAccountView } from '../application/Invitations.service';
+import { type AccountView } from '../domain/Account.entity';
+import { inviteAccountSchema, updateAccountSchema } from './AccessManagement.requests';
 
 const SUBJECT = 'accounts';
 
@@ -68,10 +50,7 @@ export class AccountsController {
   @Get()
   @Header(NO_STORE_HEADER.NAME, NO_STORE_HEADER.VALUE)
   @RequirePermission({ action: PermissionAction.read, subject: SUBJECT })
-  async list(
-    @Req() req: AuthenticatedRequest,
-    @Query() query: unknown,
-  ): Promise<AccountPage> {
+  async list(@Req() req: AuthenticatedRequest, @Query() query: unknown): Promise<AccountPage> {
     const actor = requireAccountActor(req.user.actor);
     return this.accounts.list(actor, parseRequest(pageQuerySchema, query));
   }
@@ -80,10 +59,7 @@ export class AccountsController {
   @Post()
   @RequirePermission({ action: PermissionAction.create, subject: SUBJECT })
   @Throttle(ACCESS_RATE_LIMIT_POLICIES.ACCOUNT_INVITE)
-  invite(
-    @Req() req: AuthenticatedRequest,
-    @Body() body: unknown,
-  ): Promise<InvitedAccountView> {
+  invite(@Req() req: AuthenticatedRequest, @Body() body: unknown): Promise<InvitedAccountView> {
     return this.invitations.invite(
       requireAccountActor(req.user.actor),
       parseRequest(inviteAccountSchema, body),
@@ -109,10 +85,7 @@ export class AccountsController {
   @Post(ACCOUNTS_ROUTES.DISABLE)
   @HttpCode(HttpStatus.NO_CONTENT)
   @RequirePermission({ action: PermissionAction.update, subject: SUBJECT })
-  disable(
-    @Req() req: AuthenticatedRequest,
-    @Param(ID_PARAM) id: string,
-  ): Promise<void> {
+  disable(@Req() req: AuthenticatedRequest, @Param(ID_PARAM) id: string): Promise<void> {
     return this.accounts.disable(
       requireAccountActor(req.user.actor),
       parseRequest(documentIdSchema, id),
@@ -123,10 +96,7 @@ export class AccountsController {
   @Post(ACCOUNTS_ROUTES.ENABLE)
   @HttpCode(HttpStatus.NO_CONTENT)
   @RequirePermission({ action: PermissionAction.update, subject: SUBJECT })
-  enable(
-    @Req() req: AuthenticatedRequest,
-    @Param(ID_PARAM) id: string,
-  ): Promise<void> {
+  enable(@Req() req: AuthenticatedRequest, @Param(ID_PARAM) id: string): Promise<void> {
     return this.accounts.enable(
       requireAccountActor(req.user.actor),
       parseRequest(documentIdSchema, id),
@@ -153,10 +123,7 @@ export class AccountsController {
   @Post(ACCOUNTS_ROUTES.REVOKE_SESSIONS)
   @HttpCode(HttpStatus.NO_CONTENT)
   @RequirePermission({ action: PermissionAction.update, subject: SUBJECT })
-  revokeSessions(
-    @Req() req: AuthenticatedRequest,
-    @Param(ID_PARAM) id: string,
-  ): Promise<void> {
+  revokeSessions(@Req() req: AuthenticatedRequest, @Param(ID_PARAM) id: string): Promise<void> {
     return this.accounts.revokeSessions(
       requireAccountActor(req.user.actor),
       parseRequest(documentIdSchema, id),

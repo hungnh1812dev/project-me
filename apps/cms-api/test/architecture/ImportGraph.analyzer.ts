@@ -57,8 +57,7 @@ const STATEMENT_PATTERN =
  * Every specifier on its own, whatever the clause looks like. A `from`
  * right after a quote is a string in a word list (`'from',`), not a clause.
  */
-const ANY_SPECIFIER_PATTERN =
-  /(?:(?<!['"])\bfrom\s*|\bimport\s*\(?\s*)['"]([^'"]+)['"]/g;
+const ANY_SPECIFIER_PATTERN = /(?:(?<!['"])\bfrom\s*|\bimport\s*\(?\s*)['"]([^'"]+)['"]/g;
 const BLOCK_COMMENT = /\/\*[\s\S]*?\*\//g;
 const LINE_COMMENT = /(^|[^:'"\\])\/\/.*$/gm;
 
@@ -67,10 +66,7 @@ export interface ListSourceOptions {
   excludeDirs?: string[];
 }
 
-export function listSourceFiles(
-  root: string,
-  options: ListSourceOptions = {},
-): SourceFile[] {
+export function listSourceFiles(root: string, options: ListSourceOptions = {}): SourceFile[] {
   const { includeSpecs = false, excludeDirs = [] } = options;
   const walk = (dir: string): string[] =>
     readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
@@ -105,9 +101,7 @@ function parseBindings(clause: string): NameBinding[] | 'all' {
 
 export function commentsOf(text: string): string[] {
   const blocks = [...text.matchAll(BLOCK_COMMENT)].map(([block]) => block);
-  const lines = [...text.replace(BLOCK_COMMENT, '').matchAll(LINE_COMMENT)].map(
-    ([line]) => line,
-  );
+  const lines = [...text.replace(BLOCK_COMMENT, '').matchAll(LINE_COMMENT)].map(([line]) => line);
   return [...blocks, ...lines];
 }
 
@@ -122,15 +116,7 @@ export function withoutComments(text: string): string {
 function parseStatements(rawText: string): ModuleStatement[] {
   const text = withoutComments(rawText);
   const parsed = [...text.matchAll(STATEMENT_PATTERN)].map((match) => {
-    const [
-      ,
-      keyword,
-      typeKeyword,
-      clause,
-      fromSpecifier,
-      bareSpecifier,
-      dynamicSpecifier,
-    ] = match;
+    const [, keyword, typeKeyword, clause, fromSpecifier, bareSpecifier, dynamicSpecifier] = match;
     if (dynamicSpecifier !== undefined) {
       return {
         kind: 'dynamic',
@@ -149,13 +135,8 @@ function parseStatements(rawText: string): ModuleStatement[] {
     }
     const kind = keyword as StatementKind;
     const specifier = fromSpecifier ?? '';
-    const bindings =
-      (clause ?? '').trim() === STAR_CLAUSE
-        ? 'all'
-        : parseBindings(clause ?? '');
-    const wholeModuleName = /^(?:\*\s*as\s+)?([\w$]+)\s*$/.exec(
-      (clause ?? '').trim(),
-    )?.[1];
+    const bindings = (clause ?? '').trim() === STAR_CLAUSE ? 'all' : parseBindings(clause ?? '');
+    const wholeModuleName = /^(?:\*\s*as\s+)?([\w$]+)\s*$/.exec((clause ?? '').trim())?.[1];
     return {
       kind,
       specifier,
@@ -191,17 +172,10 @@ function parseStatements(rawText: string): ModuleStatement[] {
 function resolveSpecifier(fromFile: string, specifier: string): string | null {
   if (!specifier.startsWith('.')) return null;
   const base = resolve(dirname(fromFile), specifier);
-  const candidates = [
-    `${base}${SOURCE_EXTENSION}`,
-    join(base, FACADE_FILE),
-    base,
-  ];
+  const candidates = [`${base}${SOURCE_EXTENSION}`, join(base, FACADE_FILE), base];
   return (
     candidates.find(
-      (path) =>
-        path.endsWith(SOURCE_EXTENSION) &&
-        existsSync(path) &&
-        statSync(path).isFile(),
+      (path) => path.endsWith(SOURCE_EXTENSION) && existsSync(path) && statSync(path).isFile(),
     ) ?? null
   );
 }
@@ -212,26 +186,18 @@ function escapeRegExp(value: string): string {
 
 /** Does the comment-stripped text of the file (absolute path) match the pattern? */
 export function textMatches(file: string, pattern: RegExp): boolean {
-  const stateless = new RegExp(
-    pattern.source,
-    pattern.flags.replace(/[gy]/g, ''),
-  );
+  const stateless = new RegExp(pattern.source, pattern.flags.replace(/[gy]/g, ''));
   return stateless.test(withoutComments(readFileSync(file, 'utf8')));
 }
 
 function mentionsName(file: string, name: string): boolean {
-  return textMatches(
-    file,
-    new RegExp(`(?<![\\w$])${escapeRegExp(name)}(?![\\w$])`),
-  );
+  return textMatches(file, new RegExp(`(?<![\\w$])${escapeRegExp(name)}(?![\\w$])`));
 }
 
 function isListedInExport(file: string, name: string): boolean {
   return textMatches(
     file,
-    new RegExp(
-      `export\\s*(?:type\\s*)?\\{[^}]*(?<![\\w$])${escapeRegExp(name)}(?![\\w$])`,
-    ),
+    new RegExp(`export\\s*(?:type\\s*)?\\{[^}]*(?<![\\w$])${escapeRegExp(name)}(?![\\w$])`),
   );
 }
 
@@ -255,21 +221,15 @@ function mayExposeItsImports(file: string): boolean {
  * in any file (barrels need not be called `index.ts`). `'all'` follows every
  * re-export.
  */
-function followReexports(
-  file: string,
-  requested: string[] | 'all',
-  seen: Set<string>,
-): string[] {
+function followReexports(file: string, requested: string[] | 'all', seen: Set<string>): string[] {
   const visitKey = `${file}|${requested === 'all' ? '*' : requested.join(',')}`;
   if (seen.has(visitKey)) return [];
   seen.add(visitKey);
 
-  const statements = parseStatements(readFileSync(file, 'utf8')).flatMap(
-    (statement) => {
-      const target = resolveSpecifier(file, statement.specifier);
-      return target === null ? [] : [{ statement, target }];
-    },
-  );
+  const statements = parseStatements(readFileSync(file, 'utf8')).flatMap((statement) => {
+    const target = resolveSpecifier(file, statement.specifier);
+    return target === null ? [] : [{ statement, target }];
+  });
   const isStarExport = (statement: ModuleStatement) =>
     statement.kind === 'export' && statement.bindings === 'all';
 
@@ -307,15 +267,10 @@ function followReexports(
         const isWholeModuleReexport =
           statement.wholeModuleName === name &&
           (statement.kind === 'export' || isListedInExport(file, name));
-        return isWholeModuleReexport
-          ? followReexports(target, 'all', seen)
-          : [];
+        return isWholeModuleReexport ? followReexports(target, 'all', seen) : [];
       }
-      const binding = statement.bindings.find(
-        (candidate) => candidate.local === name,
-      );
-      const isReexport =
-        statement.kind === 'export' || isListedInExport(file, name);
+      const binding = statement.bindings.find((candidate) => candidate.local === name);
+      const isReexport = statement.kind === 'export' || isListedInExport(file, name);
       return binding !== undefined && isReexport
         ? followReexports(target, [binding.imported], seen)
         : [];
@@ -337,9 +292,7 @@ export function resolveImports(absolutePath: string): ResolvedImport[] {
   return parseStatements(text).map((statement) => {
     const target = resolveSpecifier(absolutePath, statement.specifier);
     const importedNames =
-      statement.bindings === 'all'
-        ? 'all'
-        : statement.bindings.map((binding) => binding.imported);
+      statement.bindings === 'all' ? 'all' : statement.bindings.map((binding) => binding.imported);
     if (target === null) {
       return {
         specifier: statement.specifier,
@@ -378,13 +331,8 @@ export function packageSpecifiersOf(source: SourceFile): string[] {
  * Fail loudly when a path an architecture spec pins no longer exists: a
  * renamed file must not turn the rule into an empty scan.
  */
-export function assertPinnedPathsExist(
-  srcRoot: string,
-  pinnedPaths: readonly string[],
-): void {
-  const missing = pinnedPaths.filter(
-    (path) => !existsSync(join(srcRoot, path)),
-  );
+export function assertPinnedPathsExist(srcRoot: string, pinnedPaths: readonly string[]): void {
+  const missing = pinnedPaths.filter((path) => !existsSync(join(srcRoot, path)));
   if (missing.length > 0) {
     throw new Error(
       `missing path: ${missing.join(', ')} (update test/architecture/SourcePaths.constants.ts)`,

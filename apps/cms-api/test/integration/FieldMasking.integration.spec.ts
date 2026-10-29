@@ -3,46 +3,40 @@ import { randomUUID } from 'node:crypto';
 import { Kysely, PostgresDialect } from 'kysely';
 import { Client, Pool } from 'pg';
 
-import { inContentUnit } from '../fixtures/ContentUnit.fixture';
-import {
-  accountActor,
-  anonymousActor,
-} from '../../src/modules/access/domain/ActorContext.entity';
-import {
-  MASK_SENTINEL,
-  MASKED_FIELDS_KEY,
-} from '../../src/modules/access/domain/Access.constants';
+import { MASK_SENTINEL, MASKED_FIELDS_KEY } from '../../src/modules/access/domain/Access.constants';
+import { accountActor, anonymousActor } from '../../src/modules/access/domain/ActorContext.entity';
 import {
   projectTable,
   selectedColumns,
 } from '../../src/modules/access/domain/FieldProjection.rules';
 import {
-  type FieldAccess,
   FieldSelection,
+  type FieldAccess,
 } from '../../src/modules/access/domain/PolicyEvaluator.rules';
 import {
-  type RecordReadAccess,
   recordReadAccess,
+  type RecordReadAccess,
 } from '../../src/modules/access/domain/RecordReadAccess.rules';
 import { RecordSerializer } from '../../src/modules/access/domain/RecordSerializer.rules';
 import { WriteAllowlist } from '../../src/modules/access/domain/WriteAllowlist.rules';
-import { DEFAULT_CONTENT_PATHS } from '../../src/modules/content-engine/adapters/MigrationFiles.adapter';
-import { createMigrationDb } from '../../src/modules/content-engine/cli/ContentEngineCli.setup';
-import { CONTENT_DB_SCHEMA } from '../../src/modules/content-engine/domain/ContentEngine.constants';
-import type { ContentDocument } from '../../src/modules/content-engine/domain/ContentDocument.entity';
-import { rowToValues } from '../../src/modules/content-engine/domain/ContentTree.entity';
 import { KyselyContentRepository } from '../../src/modules/content-engine/adapters/KyselyContent.repository';
+import { DEFAULT_CONTENT_PATHS } from '../../src/modules/content-engine/adapters/MigrationFiles.adapter';
 import { runContentMigrations } from '../../src/modules/content-engine/adapters/MigrationRunner.adapter';
 import {
-  type RegisteredContentType,
-  ContentTypeRegistry,
-} from '../../src/modules/content-engine/domain/ContentTypeRegistry.entity';
-import {
-  type ContentDatabase,
   loadComponentTrees,
+  type ContentDatabase,
 } from '../../src/modules/content-engine/adapters/TreeLoader.adapter';
+import { createMigrationDb } from '../../src/modules/content-engine/cli/ContentEngineCli.setup';
+import type { ContentDocument } from '../../src/modules/content-engine/domain/ContentDocument.entity';
+import { CONTENT_DB_SCHEMA } from '../../src/modules/content-engine/domain/ContentEngine.constants';
+import { rowToValues } from '../../src/modules/content-engine/domain/ContentTree.entity';
+import {
+  ContentTypeRegistry,
+  type RegisteredContentType,
+} from '../../src/modules/content-engine/domain/ContentTypeRegistry.entity';
 import { systemRole } from '../fixtures/Access.fixture';
 import { loadRegistryFromDatabase } from '../fixtures/ContentRegistry.fixture';
+import { inContentUnit } from '../fixtures/ContentUnit.fixture';
 import { startPostgres, type TestPostgres } from '../fixtures/Postgres.fixture';
 
 const SLUG = 'cv-page';
@@ -109,10 +103,7 @@ describe('field masking against Postgres (D3/D4, §12-4/§12-5 building blocks)'
     const migrationDb = createMigrationDb(url.toString());
     let registry: ContentTypeRegistry;
     try {
-      await runContentMigrations(
-        migrationDb,
-        DEFAULT_CONTENT_PATHS.migrationsDir,
-      );
+      await runContentMigrations(migrationDb, DEFAULT_CONTENT_PATHS.migrationsDir);
       registry = await loadRegistryFromDatabase(migrationDb);
     } finally {
       await migrationDb.destroy();
@@ -139,9 +130,7 @@ describe('field masking against Postgres (D3/D4, §12-4/§12-5 building blocks)'
           summary: SECRET.summary,
         },
         components: {
-          experience: [
-            { values: { company: SECRET.experienceCompany, location: 'HN' } },
-          ],
+          experience: [{ values: { company: SECRET.experienceCompany, location: 'HN' } }],
           reference: [{ values: { name: 'Ref', phone: SECRET.phone } }],
           skill: [{ values: { skill: 'SQL', level: 'expert' } }],
         },
@@ -155,11 +144,7 @@ describe('field masking against Postgres (D3/D4, §12-4/§12-5 building blocks)'
   });
 
   const fields: FieldAccess = {
-    readable: FieldSelection.of([
-      'position',
-      'experience.location',
-      'reference.name',
-    ]),
+    readable: FieldSelection.of(['position', 'experience.location', 'reference.name']),
     writable: FieldSelection.of(['position', 'experience', 'reference']),
   };
 
@@ -222,9 +207,7 @@ describe('field masking against Postgres (D3/D4, §12-4/§12-5 building blocks)'
       company: SECRET.company,
       summary: SECRET.summary,
     });
-    expect(stored.components.experience?.[0]?.values.company).toBe(
-      SECRET.experienceCompany,
-    );
+    expect(stored.components.experience?.[0]?.values.company).toBe(SECRET.experienceCompany);
     expect(stored.components.reference?.[0]?.values.phone).toBe(SECRET.phone);
     expect(stored.components.skill).toHaveLength(1);
   });
@@ -243,12 +226,7 @@ describe('field masking against Postgres (D3/D4, §12-4/§12-5 building blocks)'
     expect(out.documentId).toBe(documentId);
 
     const forAccount = new RecordSerializer(type).serialize(
-      await loadProjected(
-        db,
-        type,
-        documentId,
-        recordReadAccess(ACCOUNT, FieldSelection.ALL),
-      ),
+      await loadProjected(db, type, documentId, recordReadAccess(ACCOUNT, FieldSelection.ALL)),
       recordReadAccess(ACCOUNT, FieldSelection.ALL),
     );
     expect(forAccount.createdBy).toBe(CREATED_BY);

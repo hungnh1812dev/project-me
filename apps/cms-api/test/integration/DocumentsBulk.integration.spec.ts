@@ -10,21 +10,23 @@ import {
   type PrismaHandle,
 } from '../../src/infrastructure/database/PrismaClient.adapter';
 import {
+  CONTENT_TYPE_PARSERS,
   ContentDbProvider,
   createContentDb,
 } from '../../src/modules/content-engine/adapters/ContentDatabase.adapter';
-import { CONTENT_TYPE_PARSERS } from '../../src/modules/content-engine/adapters/ContentDatabase.adapter';
+import type { ContentDatabase } from '../../src/modules/content-engine/adapters/TreeLoader.adapter';
 import { ContentRegistry } from '../../src/modules/content-engine/application/ContentRegistry.service';
 import { ContentTypeRegistry } from '../../src/modules/content-engine/domain/ContentTypeRegistry.entity';
 import {
   emptySnapshot,
   planMigration,
 } from '../../src/modules/content-engine/domain/SqlGenerator.rules';
-import type { ContentDatabase } from '../../src/modules/content-engine/adapters/TreeLoader.adapter';
 import { hashPassword } from '../../src/modules/identity/application/Password.service';
 import {
   ARTICLE_DEFINITION,
   NOTE_DEFINITION,
+  seedRolePermissions,
+  seedSystemRoles,
 } from '../fixtures/Access.fixture';
 import { createCoreTemplate } from '../fixtures/CoreDb.fixture';
 import {
@@ -37,10 +39,6 @@ import {
 } from '../fixtures/Env.fixture';
 import { startPostgres, type TestPostgres } from '../fixtures/Postgres.fixture';
 import { createTestApp } from '../fixtures/TestApp.fixture';
-import {
-  seedRolePermissions,
-  seedSystemRoles,
-} from '../fixtures/Access.fixture';
 
 const PASSWORD = 'correct horse battery staple';
 const DOCUMENTS = '/api/v1/documents';
@@ -123,14 +121,10 @@ describe('document bulk (T34; Postgres 17 via Testcontainers)', () => {
       PROFILE_DEFINITION,
       POST_DEFINITION,
     ]);
-    const definitions = registry
-      .slugs()
-      .map((slug) => registry.resolve(slug).definition);
+    const definitions = registry.slugs().map((slug) => registry.resolve(slug).definition);
     const client = new Client({ connectionString: databaseUrl });
     await client.connect();
-    await client.query(
-      planMigration(emptySnapshot(), definitions).statements.join('\n'),
-    );
+    await client.query(planMigration(emptySnapshot(), definitions).statements.join('\n'));
     await client.end();
     content = createContentDb(databaseUrl);
     counted = new Kysely<ContentDatabase>({
@@ -220,10 +214,7 @@ describe('document bulk (T34; Postgres 17 via Testcontainers)', () => {
   }
 
   async function customRole(slug: string, rank: number, permissions: Json[]) {
-    const created = await http()
-      .post(ROLES)
-      .set(bearer(owner))
-      .send({ slug, name: slug, rank });
+    const created = await http().post(ROLES).set(bearer(owner)).send({ slug, name: slug, rank });
     expect(created.status).toBe(201);
     const id = (created.body as { id: string }).id;
     const put = await http()
@@ -233,18 +224,11 @@ describe('document bulk (T34; Postgres 17 via Testcontainers)', () => {
     expect(put.status).toBe(200);
   }
 
-  const bulk = (
-    slug: string,
-    op: string,
-    token: string | null,
-    body: unknown,
-  ) => {
+  const bulk = (slug: string, op: string, token: string | null, body: unknown) => {
     const req = http().post(`${DOCUMENTS}/${slug}/bulk/${op}`);
-    return (
-      token === null
-        ? req.set('X-Forwarded-For', nextIp())
-        : req.set(bearer(token))
-    ).send(body as Json);
+    return (token === null ? req.set('X-Forwarded-For', nextIp()) : req.set(bearer(token))).send(
+      body as Json,
+    );
   };
 
   const article = (title: string, priority = 3, extra: Json = {}): Json => ({
@@ -284,23 +268,17 @@ describe('document bulk (T34; Postgres 17 via Testcontainers)', () => {
               : [{ documentId }];
         const res = await bulk('profile', op, owner, { atomic: false, items });
         expect(res.status).toBe(400);
-        expect((res.body as { errorCode: string }).errorCode).toBe(
-          'DOCUMENT_BULK_NOT_COLLECTION',
-        );
+        expect((res.body as { errorCode: string }).errorCode).toBe('DOCUMENT_BULK_NOT_COLLECTION');
       }
     });
 
     it('rejects more than 50 items and an empty list', async () => {
       const many = await bulk('article', 'create', owner, {
         atomic: false,
-        items: Array.from({ length: BULK_MAX_ITEMS + 1 }, (_, i) =>
-          article(`n${i}`),
-        ),
+        items: Array.from({ length: BULK_MAX_ITEMS + 1 }, (_, i) => article(`n${i}`)),
       });
       expect(many.status).toBe(400);
-      expect((many.body as { errorCode: string }).errorCode).toBe(
-        'DOCUMENT_BULK_LIMIT',
-      );
+      expect((many.body as { errorCode: string }).errorCode).toBe('DOCUMENT_BULK_LIMIT');
       const none = await bulk('article', 'create', owner, {
         atomic: false,
         items: [],
@@ -311,9 +289,7 @@ describe('document bulk (T34; Postgres 17 via Testcontainers)', () => {
     it('accepts exactly 50 items', async () => {
       const res = await bulk('article', 'create', owner, {
         atomic: true,
-        items: Array.from({ length: BULK_MAX_ITEMS }, (_, i) =>
-          article(`fifty${i}`),
-        ),
+        items: Array.from({ length: BULK_MAX_ITEMS }, (_, i) => article(`fifty${i}`)),
       });
       expect(res.status).toBe(200);
       expect((res.body as BulkBody).succeeded).toBe(BULK_MAX_ITEMS);
@@ -330,10 +306,7 @@ describe('document bulk (T34; Postgres 17 via Testcontainers)', () => {
       });
       const res = await bulk('post', 'create', owner, {
         atomic: false,
-        items: [
-          post(BULK_MAX_COMPONENT_ROWS + 1),
-          post(BULK_MAX_COMPONENT_ROWS),
-        ],
+        items: [post(BULK_MAX_COMPONENT_ROWS + 1), post(BULK_MAX_COMPONENT_ROWS)],
       });
       expect(res.status).toBe(200);
       const body = res.body as BulkBody;
@@ -351,33 +324,31 @@ describe('document bulk (T34; Postgres 17 via Testcontainers)', () => {
       const { port } = app.getHttpServer().listen(0).address() as {
         port: number;
       };
-      const answer = await new Promise<{ status: number; text: string }>(
-        (resolve, reject) => {
-          const req = httpRequest(
-            {
-              port,
-              method: 'POST',
-              path: `${DOCUMENTS}/article/bulk/create`,
-              headers: {
-                ...bearer(owner),
-                'Content-Type': 'application/json',
-                'Content-Length': declared,
-              },
+      const answer = await new Promise<{ status: number; text: string }>((resolve, reject) => {
+        const req = httpRequest(
+          {
+            port,
+            method: 'POST',
+            path: `${DOCUMENTS}/article/bulk/create`,
+            headers: {
+              ...bearer(owner),
+              'Content-Type': 'application/json',
+              'Content-Length': declared,
             },
-            (res) => {
-              let text = '';
-              res.on('data', (chunk: Buffer) => (text += chunk.toString()));
-              res.on('end', () => {
-                req.destroy();
-                resolve({ status: res.statusCode ?? 0, text });
-              });
-            },
-          );
-          req.on('error', () => undefined);
-          req.write('{"atomic":false,');
-          setTimeout(() => reject(new Error('no answer')), 10_000).unref();
-        },
-      );
+          },
+          (res) => {
+            let text = '';
+            res.on('data', (chunk: Buffer) => (text += chunk.toString()));
+            res.on('end', () => {
+              req.destroy();
+              resolve({ status: res.statusCode ?? 0, text });
+            });
+          },
+        );
+        req.on('error', () => undefined);
+        req.write('{"atomic":false,');
+        setTimeout(() => reject(new Error('no answer')), 10_000).unref();
+      });
       expect(answer.status).toBe(413);
       expect(answer.text).toContain('PAYLOAD_TOO_LARGE');
       const big = await bulk('article', 'create', owner, {
@@ -494,16 +465,10 @@ describe('document bulk (T34; Postgres 17 via Testcontainers)', () => {
         .executeTakeFirstOrThrow();
       const res = await bulk('article', 'create', owner, {
         atomic: true,
-        items: [
-          article('atomic-good'),
-          { values: { title: 12 } },
-          article('atomic-good'),
-        ],
+        items: [article('atomic-good'), { values: { title: 12 } }, article('atomic-good')],
       });
       expect(res.status).toBe(400);
-      expect((res.body as { details: { index: number } }).details.index).toBe(
-        1,
-      );
+      expect((res.body as { details: { index: number } }).details.index).toBe(1);
       const after = await content
         .withSchema('content')
         .selectFrom('article')
@@ -528,13 +493,7 @@ describe('document bulk (T34; Postgres 17 via Testcontainers)', () => {
       const body = res.body as BulkBody;
       expect(body.succeeded).toBe(2);
       expect(body.failed).toBe(3);
-      expect(body.results.map((r) => r.status)).toEqual([
-        'ok',
-        'error',
-        'error',
-        'error',
-        'ok',
-      ]);
+      expect(body.results.map((r) => r.status)).toEqual(['ok', 'error', 'error', 'error', 'ok']);
       expect(body.results.map((r) => r.index)).toEqual([0, 1, 2, 3, 4]);
     });
 
@@ -616,9 +575,7 @@ describe('document bulk (T34; Postgres 17 via Testcontainers)', () => {
         ],
       });
       expect(res.status).toBe(409);
-      expect((res.body as { details: { index: number } }).details.index).toBe(
-        1,
-      );
+      expect((res.body as { details: { index: number } }).details.index).toBe(1);
       expect(await published(a as string)).toHaveLength(0);
     });
 
@@ -669,9 +626,7 @@ describe('document bulk (T34; Postgres 17 via Testcontainers)', () => {
         ],
       });
       expect(res.status).toBe(400);
-      expect((res.body as { errorCode: string }).errorCode).toBe(
-        'DOCUMENT_NOT_PUBLISHABLE',
-      );
+      expect((res.body as { errorCode: string }).errorCode).toBe('DOCUMENT_NOT_PUBLISHABLE');
     });
   });
 
@@ -684,9 +639,9 @@ describe('document bulk (T34; Postgres 17 via Testcontainers)', () => {
       });
       const res = await bulk('article', 'unpublish', owner, {
         atomic: false,
-        items: [...ids, '8d8f1c4e-0000-4000-8000-000000000000'].map(
-          (documentId) => ({ documentId }),
-        ),
+        items: [...ids, '8d8f1c4e-0000-4000-8000-000000000000'].map((documentId) => ({
+          documentId,
+        })),
       });
       const body = res.body as BulkBody;
       expect(body.succeeded).toBe(2);

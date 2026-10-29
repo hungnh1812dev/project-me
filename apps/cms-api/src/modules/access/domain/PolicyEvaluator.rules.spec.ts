@@ -13,22 +13,18 @@ import {
   testCatalog,
 } from '../../../../test/fixtures/Access.fixture';
 import { PermissionAction } from '../../../generated/prisma/client';
-import type { SystemRoleSlug } from './SystemRoles.entity';
+import { PERMISSION_ACTIONS, SYSTEM_SUBJECT_ACTIONS, SYSTEM_SUBJECTS } from './Access.constants';
 import {
-  PERMISSION_ACTIONS,
-  SYSTEM_SUBJECT_ACTIONS,
-  SYSTEM_SUBJECTS,
-} from './Access.constants';
-import {
-  type ActorContext,
   accountActor,
   anonymousActor,
   apiTokenActor,
-  type RolePolicy,
   reviewerActor,
+  type ActorContext,
+  type RolePolicy,
   type TokenScope,
 } from './ActorContext.entity';
 import { PolicyEvaluator, type RowFilter } from './PolicyEvaluator.rules';
+import type { SystemRoleSlug } from './SystemRoles.entity';
 
 const { read, create, update, publish, unpublish } = PermissionAction;
 const del = PermissionAction.delete;
@@ -50,14 +46,7 @@ function whereSql(filter: RowFilter) {
 
 const account = (role: RolePolicy) => accountActor(1, role);
 const CONTENT = 'article';
-const UNKNOWN_SUBJECTS = [
-  'unknown',
-  '*',
-  '',
-  'Article',
-  'article ',
-  '__proto__',
-];
+const UNKNOWN_SUBJECTS = ['unknown', '*', '', 'Article', 'article ', '__proto__'];
 
 /** Expected access per seeded role (decision T14). */
 const MATRIX: Record<
@@ -95,21 +84,13 @@ describe('PolicyEvaluator role matrix (seeded defaults)', () => {
       const actor = account(systemRole(slug));
 
       it.each(PERMISSION_ACTIONS)('content: %s', (action) => {
-        expect(evaluator.can(actor, action, CONTENT)).toBe(
-          expected.content.includes(action),
-        );
-        expect(evaluator.can(actor, action, 'note')).toBe(
-          expected.content.includes(action),
-        );
+        expect(evaluator.can(actor, action, CONTENT)).toBe(expected.content.includes(action));
+        expect(evaluator.can(actor, action, 'note')).toBe(expected.content.includes(action));
       });
 
       it.each(SYSTEM_SUBJECTS)('system subject %s', (subject) => {
         for (const action of PERMISSION_ACTIONS) {
-          expect([
-            subject,
-            action,
-            evaluator.can(actor, action, subject),
-          ]).toEqual([
+          expect([subject, action, evaluator.can(actor, action, subject)]).toEqual([
             subject,
             action,
             (expected.system[subject] ?? []).includes(action),
@@ -122,9 +103,7 @@ describe('PolicyEvaluator role matrix (seeded defaults)', () => {
           for (const action of PERMISSION_ACTIONS) {
             expect(evaluator.can(actor, action, subject)).toBe(false);
           }
-          expect(evaluator.fieldsFor(actor, subject).readable.paths).toEqual(
-            [],
-          );
+          expect(evaluator.fieldsFor(actor, subject).readable.paths).toEqual([]);
         }
       });
     });
@@ -158,24 +137,17 @@ describe('create rows with stored conditions (T21, fail closed)', () => {
   };
 
   it('grant nothing, whatever the rest of the row says', () => {
-    const actor = account(
-      customRole(20, [grant(CONTENT, create, { conditions })]),
-    );
+    const actor = account(customRole(20, [grant(CONTENT, create, { conditions })]));
     expect(evaluator.can(actor, create, CONTENT)).toBe(false);
     expect(evaluator.rowFilter(actor, create, CONTENT)).toEqual({
       allowed: false,
     });
-    expect(evaluator.fieldsFor(actor, CONTENT, create).writable.paths).toEqual(
-      [],
-    );
+    expect(evaluator.fieldsFor(actor, CONTENT, create).writable.paths).toEqual([]);
   });
 
   it('an unconditioned create row still grants', () => {
     const actor = account(
-      customRole(20, [
-        grant(CONTENT, create, { conditions }),
-        grant(CONTENT, create),
-      ]),
+      customRole(20, [grant(CONTENT, create, { conditions }), grant(CONTENT, create)]),
     );
     expect(evaluator.can(actor, create, CONTENT)).toBe(true);
   });
@@ -201,9 +173,7 @@ describe('canReadDrafts (read + update)', () => {
     ['reviewer', false],
     ['public', false],
   ])('%s -> %s', (slug, expected) => {
-    expect(evaluator.canReadDrafts(account(systemRole(slug)), CONTENT)).toBe(
-      expected,
-    );
+    expect(evaluator.canReadDrafts(account(systemRole(slug)), CONTENT)).toBe(expected);
   });
 
   it('read alone is not enough', () => {
@@ -212,9 +182,7 @@ describe('canReadDrafts (read + update)', () => {
   });
 
   it('never for system subjects', () => {
-    expect(evaluator.canReadDrafts(account(systemRole('owner')), 'media')).toBe(
-      false,
-    );
+    expect(evaluator.canReadDrafts(account(systemRole('owner')), 'media')).toBe(false);
   });
 });
 
@@ -271,9 +239,7 @@ describe('fieldsFor', () => {
     expect(fields.readable.allows('body')).toBe(false);
     expect(fields.writable.isUnrestricted).toBe(true);
     // Other content types still get the * row.
-    expect(
-      evaluator.fieldsFor(account(role), 'note').readable.isUnrestricted,
-    ).toBe(true);
+    expect(evaluator.fieldsFor(account(role), 'note').readable.isUnrestricted).toBe(true);
   });
 
   it('rows at the same level add up; a component path covers its subtree', () => {
@@ -286,9 +252,7 @@ describe('fieldsFor', () => {
     expect(fields.readable.allows('reference.phone')).toBe(true);
     expect(fields.readable.allows('body')).toBe(false);
     expect(fields.writable.paths).toEqual(['title']);
-    expect(evaluator.fieldsFor(account(role), CONTENT).writable.paths).toEqual(
-      [],
-    );
+    expect(evaluator.fieldsFor(account(role), CONTENT).writable.paths).toEqual([]);
   });
 });
 
@@ -318,9 +282,7 @@ describe('API tokens (scope ∩ creator current permissions, D5)', () => {
 
   it('follows the creator’s current permissions (§12-6)', () => {
     const tokenScope = scope([{ subject: CONTENT, action: del }]);
-    expect(
-      evaluator.can(token(systemRole('admin'), tokenScope), del, CONTENT),
-    ).toBe(true);
+    expect(evaluator.can(token(systemRole('admin'), tokenScope), del, CONTENT)).toBe(true);
     const demoted = systemRole(
       'admin',
       systemRole('admin').permissions.filter((g) => g.action !== del),
@@ -362,9 +324,7 @@ describe('API tokens (scope ∩ creator current permissions, D5)', () => {
     expect(fields.readable.allows('reference.phone')).toBe(true);
     expect(fields.readable.allows('body')).toBe(false);
     expect(fields.writable.paths).toEqual(['body']);
-    expect(evaluator.fieldsFor(actor, 'note').readable.isUnrestricted).toBe(
-      true,
-    );
+    expect(evaluator.fieldsFor(actor, 'note').readable.isUnrestricted).toBe(true);
   });
 
   it('keeps the creator’s conditions', () => {
@@ -375,12 +335,7 @@ describe('API tokens (scope ∩ creator current permissions, D5)', () => {
         },
       }),
     ]);
-    const actor = apiTokenActor(
-      3,
-      42,
-      creator,
-      scope([{ subject: CONTENT, action: update }]),
-    );
+    const actor = apiTokenActor(3, 42, creator, scope([{ subject: CONTENT, action: update }]));
     const compiled = whereSql(evaluator.rowFilter(actor, update, CONTENT));
     expect(compiled).toMatchObject({ parameters: [42] });
   });
@@ -390,18 +345,14 @@ describe('rowFilter', () => {
   const own = { all: [{ field: 'createdBy', op: 'eq', value: '$actor.id' }] };
 
   it('denies without permission and is unrestricted without conditions', () => {
-    expect(
-      evaluator.rowFilter(account(customRole(20, [])), read, CONTENT),
-    ).toEqual({ allowed: false });
-    expect(
-      evaluator.rowFilter(account(systemRole('editor')), read, CONTENT),
-    ).toEqual({
+    expect(evaluator.rowFilter(account(customRole(20, [])), read, CONTENT)).toEqual({
+      allowed: false,
+    });
+    expect(evaluator.rowFilter(account(systemRole('editor')), read, CONTENT)).toEqual({
       allowed: true,
       where: null,
     });
-    expect(
-      evaluator.rowFilter(account(systemRole('owner')), del, CONTENT),
-    ).toEqual({
+    expect(evaluator.rowFilter(account(systemRole('owner')), del, CONTENT)).toEqual({
       allowed: true,
       where: null,
     });
@@ -414,9 +365,7 @@ describe('rowFilter', () => {
         conditions: { all: [{ field: 'priority', op: 'in', value: [1, 2] }] },
       }),
     ]);
-    const compiled = whereSql(
-      evaluator.rowFilter(accountActor(9, role), update, CONTENT),
-    );
+    const compiled = whereSql(evaluator.rowFilter(accountActor(9, role), update, CONTENT));
     expect(compiled).toMatchObject({
       sql: 'select * from "article" where (("created_by" = $1) or ("priority" in ($2, $3)))',
       parameters: [9, 1, 2],
@@ -446,12 +395,8 @@ describe('rowFilter', () => {
   });
 
   it('anonymous actors have no id, so $actor.id matches nothing', () => {
-    const role = systemRole('public', [
-      grant(CONTENT, read, { conditions: own }),
-    ]);
-    const compiled = whereSql(
-      evaluator.rowFilter(anonymousActor(role), read, CONTENT),
-    );
+    const role = systemRole('public', [grant(CONTENT, read, { conditions: own })]);
+    const compiled = whereSql(evaluator.rowFilter(anonymousActor(role), read, CONTENT));
     // `= NULL` (never true), not `IS NULL` (rows nobody created).
     expect(compiled).toMatchObject({
       sql: 'select * from "article" where (("created_by" = $1))',
@@ -463,18 +408,12 @@ describe('rowFilter', () => {
     const MEDIA = 'media';
     const presetSql = (filter: RowFilter) => {
       if (!filter.allowed || filter.where === null) return filter;
-      return db
-        .selectFrom('file_library')
-        .selectAll()
-        .where(filter.where)
-        .compile();
+      return db.selectFrom('file_library').selectAll().where(filter.where).compile();
     };
 
     it('restricts the reviewer to preset rows through the policy, not the role name', () => {
       const renamed = { ...systemRole('reviewer'), slug: 'renamed-reviewer' };
-      const compiled = presetSql(
-        evaluator.rowFilter(reviewerActor(7, 3, renamed), read, MEDIA),
-      );
+      const compiled = presetSql(evaluator.rowFilter(reviewerActor(7, 3, renamed), read, MEDIA));
       expect(compiled).toMatchObject({
         sql: 'select * from "file_library" where "is_reviewer_preset" = true',
       });
@@ -482,29 +421,25 @@ describe('rowFilter', () => {
 
     it('also restricts anonymous actors holding a media read row', () => {
       const role = systemRole('public', [grant(MEDIA, read)]);
-      expect(
-        presetSql(evaluator.rowFilter(anonymousActor(role), read, MEDIA)),
-      ).toMatchObject({
+      expect(presetSql(evaluator.rowFilter(anonymousActor(role), read, MEDIA))).toMatchObject({
         sql: 'select * from "file_library" where "is_reviewer_preset" = true',
       });
     });
 
     it('leaves accounts unrestricted', () => {
-      expect(
-        evaluator.rowFilter(account(systemRole('editor')), read, MEDIA),
-      ).toEqual({ allowed: true, where: null });
-      expect(
-        evaluator.rowFilter(account(systemRole('owner')), read, MEDIA),
-      ).toEqual({ allowed: true, where: null });
+      expect(evaluator.rowFilter(account(systemRole('editor')), read, MEDIA)).toEqual({
+        allowed: true,
+        where: null,
+      });
+      expect(evaluator.rowFilter(account(systemRole('owner')), read, MEDIA)).toEqual({
+        allowed: true,
+        where: null,
+      });
     });
 
     it('does not touch content subjects for the reviewer', () => {
       expect(
-        evaluator.rowFilter(
-          reviewerActor(7, 3, systemRole('reviewer')),
-          read,
-          CONTENT,
-        ),
+        evaluator.rowFilter(reviewerActor(7, 3, systemRole('reviewer')), read, CONTENT),
       ).toEqual({ allowed: true, where: null });
     });
   });
@@ -513,10 +448,7 @@ describe('rowFilter', () => {
 describe('PolicyEvaluator.effectivePermissions (T33a)', () => {
   const OWNER_COUNT =
     2 * PERMISSION_ACTIONS.length +
-    Object.values(SYSTEM_SUBJECT_ACTIONS).reduce(
-      (sum, actions) => sum + actions.length,
-      0,
-    );
+    Object.values(SYSTEM_SUBJECT_ACTIONS).reduce((sum, actions) => sum + actions.length, 0);
 
   it('lists every action on every known subject for the owner', () => {
     const list = evaluator.effectivePermissions(account(systemRole('owner')));
@@ -546,15 +478,14 @@ describe('PolicyEvaluator.effectivePermissions (T33a)', () => {
       expect(list.length).toBeGreaterThan(0);
       expect(list.every((entry) => entry.endsWith(':read'))).toBe(true);
     }
-    expect(
-      evaluator.effectivePermissions(anonymousActor(systemRole('public'))),
-    ).toEqual(['article:read', 'note:read']);
+    expect(evaluator.effectivePermissions(anonymousActor(systemRole('public')))).toEqual([
+      'article:read',
+      'note:read',
+    ]);
   });
 
   it('is empty without grants and sorted', () => {
-    expect(evaluator.effectivePermissions(account(customRole(20, [])))).toEqual(
-      [],
-    );
+    expect(evaluator.effectivePermissions(account(customRole(20, [])))).toEqual([]);
     const list = evaluator.effectivePermissions(account(systemRole('owner')));
     expect(list).toEqual([...list].sort());
   });

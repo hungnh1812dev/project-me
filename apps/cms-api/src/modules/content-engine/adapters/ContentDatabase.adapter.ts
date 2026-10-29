@@ -1,12 +1,12 @@
 import { Inject, Injectable, type OnModuleDestroy } from '@nestjs/common';
 import { Kysely, PostgresDialect } from 'kysely';
-import { type ClientConfig, Pool, types } from 'pg';
+import { Pool, types, type ClientConfig } from 'pg';
 
 import { type IAppConfig } from '../../../config/AppConfig.setup';
 import { APP_CONFIG } from '../../../config/Config.constants';
 import {
-  type DatabaseConnection,
   poolOptionsOf,
+  type DatabaseConnection,
 } from '../../../infrastructure/database/DatabaseConfig.rules';
 import type { ContentMetaDatabase } from './MigrationRunner.adapter';
 import type { ContentDatabase } from './TreeLoader.adapter';
@@ -55,10 +55,7 @@ type PgTypes = NonNullable<ClientConfig['types']>;
  * (`pg` passes `(oid, format)` through; only `date` is replaced.)
  */
 export const CONTENT_TYPE_PARSERS: PgTypes = {
-  getTypeParser: ((
-    oid: number,
-    format?: 'text' | 'binary',
-  ): ((value: string) => unknown) =>
+  getTypeParser: ((oid: number, format?: 'text' | 'binary'): ((value: string) => unknown) =>
     oid === DATE_OID
       ? keepText
       : (types.getTypeParser(oid, format) as (
@@ -66,9 +63,7 @@ export const CONTENT_TYPE_PARSERS: PgTypes = {
         ) => unknown)) as PgTypes['getTypeParser'],
 };
 
-export function createContentDb(
-  connection: DatabaseConnection,
-): Kysely<ContentDatabase> {
+export function createContentDb(connection: DatabaseConnection): Kysely<ContentDatabase> {
   const pool = new Pool({
     ...poolOptionsOf(connection),
     max: CONTENT_POOL_MAX_CONNECTIONS,
@@ -82,9 +77,7 @@ export function createContentDb(
 }
 
 /** A Kysely handle on the engine's bookkeeping tables; the caller destroys it. */
-export function createMigrationDb(
-  connection: DatabaseConnection,
-): Kysely<ContentMetaDatabase> {
+export function createMigrationDb(connection: DatabaseConnection): Kysely<ContentMetaDatabase> {
   const pool = new Pool({
     ...poolOptionsOf(connection),
     max: MIGRATION_POOL_MAX_CONNECTIONS,

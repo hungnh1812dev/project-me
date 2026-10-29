@@ -1,4 +1,4 @@
-import { type DynamicModule, Global, Module, type Type } from '@nestjs/common';
+import { Global, Module, type DynamicModule, type Type } from '@nestjs/common';
 
 import { RATE_LIMIT_MAX_KEYS } from '../constants/Limits.constants';
 import { ThrottleGuard } from '../guards/Throttle.guard';
@@ -7,10 +7,7 @@ import {
   RATE_LIMIT_STORE,
   RATE_LIMIT_STORE_MAX_KEYS,
 } from './RateLimit.store';
-import {
-  THROTTLE_SUBJECT_RESOLVER,
-  type ThrottleSubjectResolver,
-} from './ThrottleSubject.port';
+import { THROTTLE_SUBJECT_RESOLVER, type ThrottleSubjectResolver } from './ThrottleSubject.port';
 
 export interface RateLimitModuleOptions {
   readonly subjectResolver: Type<ThrottleSubjectResolver>;

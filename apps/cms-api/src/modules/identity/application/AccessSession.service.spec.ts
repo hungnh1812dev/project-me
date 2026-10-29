@@ -1,8 +1,5 @@
+import { DOMAIN_ERROR_KINDS, DomainError } from '../../../common/errors/Domain.errors';
 import type { VersionCache } from '../../access';
-import {
-  DomainError,
-  DOMAIN_ERROR_KINDS,
-} from '../../../common/errors/Domain.errors';
 import { AccessSessionService } from './AccessSession.service';
 
 const CLAIMS = { sub: 'doc-1', tv: 3, pv: 7 } as never;
@@ -37,10 +34,7 @@ function build(overrides: {
     getRolePolicy,
   } as unknown as VersionCache;
   return {
-    service: new AccessSessionService(
-      versions,
-      overrides.acceptsReviewerTokens ?? true,
-    ),
+    service: new AccessSessionService(versions, overrides.acceptsReviewerTokens ?? true),
     getRolePolicy,
   };
 }
@@ -75,8 +69,7 @@ describe('AccessSessionService.authenticate', () => {
       roleId: 2,
       reviewerSessionId: null,
     };
-    const account =
-      overrides.account === null ? null : { ...base, ...overrides.account };
+    const account = overrides.account === null ? null : { ...base, ...overrides.account };
     const { service } = build({ account });
     await expect(kindOf(service.authenticate(CLAIMS))).resolves.toBe(
       DOMAIN_ERROR_KINDS.UNAUTHENTICATED,

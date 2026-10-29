@@ -2,19 +2,15 @@ import { createHash, randomBytes, randomUUID } from 'node:crypto';
 
 import { Inject, Injectable } from '@nestjs/common';
 
-import type { ClientMeta } from '../../../common/types/ClientMeta.entity';
 import { Clock } from '../../../common/time/Clock.service';
+import type { ClientMeta } from '../../../common/types/ClientMeta.entity';
 import {
   CORE_TRANSACTION_RUNNER,
   type TransactionRunner,
   type UnitOfWork,
 } from '../../../infrastructure/database/TransactionRunner.port';
 import { VersionCache } from '../../access';
-import {
-  AUDIT_ACTIONS,
-  SecurityAuditService,
-  selfActor,
-} from '../../security-audit';
+import { AUDIT_ACTIONS, SecurityAuditService, selfActor } from '../../security-audit';
 import { isRefreshInGrace } from '../domain/Authentication.rules';
 import {
   REFRESH_TOKEN_BYTES,
@@ -54,9 +50,7 @@ export type RotationResult =
     };
 
 export function hashRefreshToken(rawToken: string): string {
-  return createHash(REFRESH_TOKEN_HASH_ALGORITHM)
-    .update(rawToken)
-    .digest('hex');
+  return createHash(REFRESH_TOKEN_HASH_ALGORITHM).update(rawToken).digest('hex');
 }
 
 function rotatedAccountOf(account: RefreshTokenAccountFacts): RotatedAccount {
@@ -90,11 +84,7 @@ export class RefreshTokenService {
    * Starts a new family for a fresh login. Returns the raw token. Pass `unit`
    * to issue it inside the caller's transaction (with its audit row).
    */
-  async issue(
-    accountId: number,
-    meta: ClientMeta,
-    unit?: UnitOfWork,
-  ): Promise<string> {
+  async issue(accountId: number, meta: ClientMeta, unit?: UnitOfWork): Promise<string> {
     const { token } = await this.create(accountId, randomUUID(), meta, unit);
     return token;
   }
@@ -124,18 +114,8 @@ export class RefreshTokenService {
         return { kind: 'invalid' };
       }
 
-      const next = await this.create(
-        current.accountId,
-        current.familyId,
-        meta,
-        unit,
-      );
-      const claimed = await this.tokens.claimRotation(
-        unit,
-        current.id,
-        next.id,
-        now,
-      );
+      const next = await this.create(current.accountId, current.familyId, meta, unit);
+      const claimed = await this.tokens.claimRotation(unit, current.id, next.id, now);
       if (!claimed) {
         // A concurrent rotation won: drop the unused new token, then judge
         // this request like any late one.
@@ -156,16 +136,10 @@ export class RefreshTokenService {
    * audits it (D15 token revoke) in the same transaction.
    */
   async revokeFamilyOf(rawToken: string, meta: ClientMeta): Promise<void> {
-    const owner = await this.tokens.findFamilyOwnerByHash(
-      hashRefreshToken(rawToken),
-    );
+    const owner = await this.tokens.findFamilyOwnerByHash(hashRefreshToken(rawToken));
     if (owner === null) return;
     await this.runner.run(async (unit) => {
-      await this.tokens.revokeFamily(
-        unit,
-        owner.familyId,
-        new Date(this.clock.now()),
-      );
+      await this.tokens.revokeFamily(unit, owner.familyId, new Date(this.clock.now()));
       await this.audit.record(unit, {
         actor: selfActor(owner.accountId),
         action: AUDIT_ACTIONS.AUTH_LOGOUT,
@@ -189,13 +163,7 @@ export class RefreshTokenService {
     // Re-read: a rotation that won the row lock is committed by now.
     const token = await this.tokens.findRotated(unit, tokenId);
     if (!isRefreshInGrace(token, now)) {
-      return this.handleReuse(
-        unit,
-        token.accountId,
-        token.account,
-        token.familyId,
-        meta,
-      );
+      return this.handleReuse(unit, token.accountId, token.account, token.familyId, meta);
     }
     return { kind: 'grace', account: rotatedAccountOf(token.account) };
   }

@@ -19,9 +19,7 @@ export class ConsoleMailSender implements MailSender {
   }
 
   send(message: MailMessage): Promise<void> {
-    this.logger.log(
-      `To: ${message.to}\nSubject: ${message.subject}\n\n${message.text}`,
-    );
+    this.logger.log(`To: ${message.to}\nSubject: ${message.subject}\n\n${message.text}`);
     return Promise.resolve();
   }
 }

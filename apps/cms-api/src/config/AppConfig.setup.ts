@@ -2,21 +2,13 @@ import { readFileSync } from 'node:fs';
 
 import { z } from 'zod';
 
-import type {
-  DatabaseConfig,
-  DatabaseTls,
-} from '../infrastructure/database/DatabaseConfig.rules';
+import type { DatabaseConfig, DatabaseTls } from '../infrastructure/database/DatabaseConfig.rules';
 import {
   CONFIG_DEFAULTS,
   RATE_LIMIT_OVERRIDE_ENV_KEYS,
   type RateLimitOverrideEnvKey,
 } from './Config.constants';
-import {
-  databaseEnvSchema,
-  envSchema,
-  type DatabaseEnv,
-  type Env,
-} from './Env.schema';
+import { databaseEnvSchema, envSchema, type DatabaseEnv, type Env } from './Env.schema';
 
 export interface IAppConfig {
   readonly env: Env['NODE_ENV'];
@@ -55,9 +47,7 @@ export interface IAppConfig {
      * (`RateLimitRule.limitOverrideEnvKey`). Empty = all defaults (used by the smoke
      * stack only).
      */
-    readonly limitOverrides: Readonly<
-      Partial<Record<RateLimitOverrideEnvKey, number>>
-    >;
+    readonly limitOverrides: Readonly<Partial<Record<RateLimitOverrideEnvKey, number>>>;
   };
   readonly mail: {
     readonly provider: Env['MAIL_PROVIDER'];
@@ -107,8 +97,7 @@ export interface SmtpConfig {
   /** true = TLS from the start (465); false = STARTTLS when offered. */
   readonly secure: boolean;
   /** Unset = no SMTP auth (e.g. Mailpit). */
-  readonly auth:
-    { readonly user: string; readonly password: string } | undefined;
+  readonly auth: { readonly user: string; readonly password: string } | undefined;
 }
 
 export interface CloudinaryConfig {
@@ -198,14 +187,10 @@ function readRootCertificate(path: string): string {
   try {
     pem = readFileSync(path, 'utf8');
   } catch {
-    throw new ConfigValidationError([
-      'DB_SSL_ROOT_CERT_PATH: the file cannot be read',
-    ]);
+    throw new ConfigValidationError(['DB_SSL_ROOT_CERT_PATH: the file cannot be read']);
   }
   if (!pem.includes(PEM_CERTIFICATE_MARKER)) {
-    throw new ConfigValidationError([
-      'DB_SSL_ROOT_CERT_PATH: the file holds no PEM certificate',
-    ]);
+    throw new ConfigValidationError(['DB_SSL_ROOT_CERT_PATH: the file holds no PEM certificate']);
   }
   return pem;
 }
@@ -269,9 +254,7 @@ export function loadAppConfig(rawEnv: RawEnv): IAppConfig {
   });
 }
 
-function rateLimitOverridesOf(
-  env: Env,
-): Partial<Record<RateLimitOverrideEnvKey, number>> {
+function rateLimitOverridesOf(env: Env): Partial<Record<RateLimitOverrideEnvKey, number>> {
   return Object.fromEntries(
     RATE_LIMIT_OVERRIDE_ENV_KEYS.flatMap((key) => {
       const limit = env[key];

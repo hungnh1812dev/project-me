@@ -1,15 +1,9 @@
 import type { OnModuleDestroy } from '@nestjs/common';
 import type { Kysely } from 'kysely';
 
-import type {
-  ContentTypeRepository,
-  StoredContentTypes,
-} from '../application/ContentEngine.port';
-import {
-  CONTENT_DB_SCHEMA,
-  META_TABLES,
-} from '../domain/ContentEngine.constants';
+import type { ContentTypeRepository, StoredContentTypes } from '../application/ContentEngine.port';
 import { ContentEngineError } from '../domain/ContentDocument.entity';
+import { CONTENT_DB_SCHEMA, META_TABLES } from '../domain/ContentEngine.constants';
 import { CONTENT_NOT_MIGRATED_PG_CODES } from './ContentDatabase.adapter';
 import type { ContentMetaDatabase } from './MigrationRunner.adapter';
 
@@ -33,9 +27,7 @@ function hasSlug(definition: unknown, slug: string): boolean {
 }
 
 /** Reads the types `content:migrate` synced into `content._content_types`. */
-export class PgContentTypeRepository
-  implements ContentTypeRepository, OnModuleDestroy
-{
+export class PgContentTypeRepository implements ContentTypeRepository, OnModuleDestroy {
   constructor(private readonly db: Kysely<ContentMetaDatabase>) {}
 
   async loadDefinitions(): Promise<StoredContentTypes> {
@@ -51,9 +43,7 @@ export class PgContentTypeRepository
         definitions: rows.map((row) => {
           // jsonb arrives parsed; the column type says string because writes send JSON text.
           const definition: unknown =
-            typeof row.definition === 'string'
-              ? JSON.parse(row.definition)
-              : row.definition;
+            typeof row.definition === 'string' ? JSON.parse(row.definition) : row.definition;
           if (!hasSlug(definition, row.slug)) {
             throw new ContentEngineError(
               `Registry row "${row.slug}" does not match its definition slug.`,

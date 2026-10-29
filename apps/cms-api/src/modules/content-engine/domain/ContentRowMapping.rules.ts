@@ -1,25 +1,17 @@
-import type { TableNode } from './ContentTypeRegistry.entity';
 import type { ContentDocument } from './ContentDocument.entity';
-import {
-  type ComponentTrees,
-  type ContentRow,
-  rowToValues,
-} from './ContentTree.entity';
+import { rowToValues, type ComponentTrees, type ContentRow } from './ContentTree.entity';
+import type { TableNode } from './ContentTypeRegistry.entity';
 import { fieldTypeOf } from './field-types';
 import type { FieldValues } from './TreeInput.rules';
 
 /** API values -> column values; a type's `encodeForColumn` applies to non-null values. */
-export function toColumnValues(
-  table: TableNode,
-  values: FieldValues | undefined,
-): ContentRow {
+export function toColumnValues(table: TableNode, values: FieldValues | undefined): ContentRow {
   const row: ContentRow = {};
   for (const [name, value] of Object.entries(values ?? {})) {
     const column = table.columnsByField.get(name);
     if (column === undefined || value === undefined) continue;
     const encode = fieldTypeOf(column.field.type)?.encodeForColumn;
-    row[column.name] =
-      encode !== undefined && value !== null ? encode(value) : value;
+    row[column.name] = encode !== undefined && value !== null ? encode(value) : value;
   }
   return row;
 }

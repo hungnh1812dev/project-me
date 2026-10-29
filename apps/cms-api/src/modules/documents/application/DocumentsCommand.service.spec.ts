@@ -1,8 +1,8 @@
+import { DOMAIN_ERROR_KINDS } from '../../../common/errors/Domain.errors';
 import type { ActorContext, RolePolicy } from '../../access';
 import { DocumentNotFoundError } from '../../content-engine';
 import { DOCUMENT_ERROR_CODES } from '../domain/Documents.constants';
 import { DocumentsCommandService } from './DocumentsCommand.service';
-import { DOMAIN_ERROR_KINDS } from '../../../common/errors/Domain.errors';
 
 const ROLE: RolePolicy = {
   id: 1,
@@ -64,8 +64,7 @@ function build(fakes: Fakes = {}) {
     { run: (work: (unit: unknown) => Promise<unknown>) => work(UNIT) } as never,
     documents as never,
     {
-      toStored: (_actor: unknown, _root: unknown, tree: unknown) =>
-        Promise.resolve(tree),
+      toStored: (_actor: unknown, _root: unknown, tree: unknown) => Promise.resolve(tree),
       embed: () => Promise.resolve(),
     } as never,
     { now: () => NOW_MS },
@@ -82,9 +81,9 @@ describe('DocumentsCommandService', () => {
         {},
       ),
     ).rejects.toMatchObject({ kind: DOMAIN_ERROR_KINDS.FORBIDDEN });
-    await expect(
-      build({ canCreate: false }).service.create(ACTOR, SLUG, {}),
-    ).rejects.toMatchObject({ kind: DOMAIN_ERROR_KINDS.FORBIDDEN });
+    await expect(build({ canCreate: false }).service.create(ACTOR, SLUG, {})).rejects.toMatchObject(
+      { kind: DOMAIN_ERROR_KINDS.FORBIDDEN },
+    );
   });
 
   it('stamps a live row of a type without draft and publish with the clock', async () => {
@@ -107,12 +106,10 @@ describe('DocumentsCommandService', () => {
           }),
         ),
     });
-    await expect(service.update(ACTOR, SLUG, DOC, 1, {})).rejects.toMatchObject(
-      {
-        kind: DOMAIN_ERROR_KINDS.NOT_FOUND,
-        errorCode: DOCUMENT_ERROR_CODES.NOT_FOUND,
-      },
-    );
+    await expect(service.update(ACTOR, SLUG, DOC, 1, {})).rejects.toMatchObject({
+      kind: DOMAIN_ERROR_KINDS.NOT_FOUND,
+      errorCode: DOCUMENT_ERROR_CODES.NOT_FOUND,
+    });
   });
 
   it('answers 404 when no row matches the version and the row is gone', async () => {

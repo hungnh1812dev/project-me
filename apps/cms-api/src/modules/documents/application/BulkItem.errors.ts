@@ -1,7 +1,4 @@
-import {
-  DomainError,
-  DOMAIN_ERROR_KINDS,
-} from '../../../common/errors/Domain.errors';
+import { DOMAIN_ERROR_KINDS, DomainError } from '../../../common/errors/Domain.errors';
 import { BULK_ITEM_STATUS } from '../domain/Documents.constants';
 
 export interface BulkItemError {

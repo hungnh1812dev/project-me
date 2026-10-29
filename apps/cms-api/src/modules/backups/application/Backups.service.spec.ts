@@ -4,18 +4,11 @@ import type { ReauthenticationService } from '../../identity';
 import {
   AUDIT_ACTIONS,
   REAUTH_PURPOSES,
-  type SecurityAuditService,
   selfActor,
+  type SecurityAuditService,
 } from '../../security-audit';
-import {
-  BACKUPS_ERROR_CODES,
-  DOWNLOAD_LINK_TTL_SECONDS,
-} from '../domain/Backups.constants';
-import {
-  BackupStorageError,
-  type BackupStorage,
-  type StoredBackupObject,
-} from './Backups.port';
+import { BACKUPS_ERROR_CODES, DOWNLOAD_LINK_TTL_SECONDS } from '../domain/Backups.constants';
+import { BackupStorageError, type BackupStorage, type StoredBackupObject } from './Backups.port';
 import { BackupsService, type BackupsCaller } from './Backups.service';
 
 const PREFIX = 'postgres/';
@@ -30,9 +23,7 @@ const CALLER: BackupsCaller = {
 };
 const URL = 'https://bucket.example.test/signed';
 
-function setup(
-  options: { objects?: StoredBackupObject[]; isOn?: boolean } = {},
-) {
+function setup(options: { objects?: StoredBackupObject[]; isOn?: boolean } = {}) {
   const calls: string[] = [];
   const objects = options.objects ?? [];
   const find = jest.fn((key: string) => {
@@ -79,8 +70,7 @@ async function refusalOf(call: Promise<unknown>): Promise<DomainError> {
     () => undefined,
     (e: unknown) => e,
   );
-  if (!(error instanceof DomainError))
-    throw new Error('expected a DomainError');
+  if (!(error instanceof DomainError)) throw new Error('expected a DomainError');
   return error;
 }
 
@@ -155,10 +145,7 @@ describe('BackupsService.createDownloadLink', () => {
   it('signs for the fixed ttl and returns the url, file name and expiry', async () => {
     const { service, createDownloadUrl } = setup({ objects });
     const view = await service.createDownloadLink(CALLER, INPUT, META);
-    expect(createDownloadUrl).toHaveBeenCalledWith(
-      KEY,
-      DOWNLOAD_LINK_TTL_SECONDS,
-    );
+    expect(createDownloadUrl).toHaveBeenCalledWith(KEY, DOWNLOAD_LINK_TTL_SECONDS);
     expect(view).toEqual({
       url: URL,
       fileName: FILE_NAME,
@@ -183,23 +170,17 @@ describe('BackupsService.createDownloadLink', () => {
     ['outside the prefix', 'other/daily/abyss-20261027T020000Z.dump.age'],
     ['with a parent segment', `${PREFIX}daily/../x`],
     ['not a dump name', `${PREFIX}daily/readme.txt`],
-  ])(
-    'refuses a key %s with 400 before any re-auth or bucket call',
-    async (_n, key) => {
-      const { service, confirm, find, recordStandalone } = setup({ objects });
-      const error = await refusalOf(
-        service.createDownloadLink(CALLER, { ...INPUT, key }, META),
-      );
-      expect(error.kind).toBe('invalid_input');
-      expect(confirm).not.toHaveBeenCalled();
-      expect(find).not.toHaveBeenCalled();
-      expect(recordStandalone).not.toHaveBeenCalled();
-    },
-  );
+  ])('refuses a key %s with 400 before any re-auth or bucket call', async (_n, key) => {
+    const { service, confirm, find, recordStandalone } = setup({ objects });
+    const error = await refusalOf(service.createDownloadLink(CALLER, { ...INPUT, key }, META));
+    expect(error.kind).toBe('invalid_input');
+    expect(confirm).not.toHaveBeenCalled();
+    expect(find).not.toHaveBeenCalled();
+    expect(recordStandalone).not.toHaveBeenCalled();
+  });
 
   it('makes no bucket call and writes no audit row when re-auth fails', async () => {
-    const { service, confirm, find, createDownloadUrl, recordStandalone } =
-      setup({ objects });
+    const { service, confirm, find, createDownloadUrl, recordStandalone } = setup({ objects });
     confirm.mockRejectedValue(new DomainError({ kind: 'forbidden' }));
     await refusalOf(service.createDownloadLink(CALLER, INPUT, META));
     expect(find).not.toHaveBeenCalled();
@@ -211,9 +192,7 @@ describe('BackupsService.createDownloadLink', () => {
     const { service, createDownloadUrl, recordStandalone } = setup({
       objects: [],
     });
-    const error = await refusalOf(
-      service.createDownloadLink(CALLER, INPUT, META),
-    );
+    const error = await refusalOf(service.createDownloadLink(CALLER, INPUT, META));
     expect(error.errorCode).toBe(BACKUPS_ERROR_CODES.NOT_FOUND);
     expect(createDownloadUrl).not.toHaveBeenCalled();
     expect(recordStandalone).not.toHaveBeenCalled();
@@ -222,16 +201,12 @@ describe('BackupsService.createDownloadLink', () => {
   it('gives no link when the audit row cannot be written', async () => {
     const { service, recordStandalone } = setup({ objects });
     recordStandalone.mockRejectedValue(new Error('db down'));
-    await expect(
-      service.createDownloadLink(CALLER, INPUT, META),
-    ).rejects.toThrow('db down');
+    await expect(service.createDownloadLink(CALLER, INPUT, META)).rejects.toThrow('db down');
   });
 
   it('answers BACKUPS_NOT_CONFIGURED when the feature is off', async () => {
     const { service, confirm } = setup({ isOn: false });
-    const error = await refusalOf(
-      service.createDownloadLink(CALLER, INPUT, META),
-    );
+    const error = await refusalOf(service.createDownloadLink(CALLER, INPUT, META));
     expect(error.errorCode).toBe(BACKUPS_ERROR_CODES.NOT_CONFIGURED);
     expect(confirm).not.toHaveBeenCalled();
   });

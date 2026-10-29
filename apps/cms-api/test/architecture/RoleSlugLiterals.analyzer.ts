@@ -9,10 +9,7 @@ export interface SlugLiteral {
 }
 
 function isKindAccess(node: ts.Node): boolean {
-  return (
-    ts.isPropertyAccessExpression(node) &&
-    node.name.text === ACTOR_KIND_PROPERTY
-  );
+  return ts.isPropertyAccessExpression(node) && node.name.text === ACTOR_KIND_PROPERTY;
 }
 
 function isKindProperty(name: ts.PropertyName | undefined): boolean {
@@ -25,9 +22,7 @@ function isKindProperty(name: ts.PropertyName | undefined): boolean {
 
 /** `kind: 'x'` in an object or a type literal. */
 function isKindPropertyValue(literal: ts.Node): boolean {
-  const holder = ts.isLiteralTypeNode(literal.parent)
-    ? literal.parent.parent
-    : literal.parent;
+  const holder = ts.isLiteralTypeNode(literal.parent) ? literal.parent.parent : literal.parent;
   return (
     (ts.isPropertyAssignment(holder) || ts.isPropertySignature(holder)) &&
     isKindProperty(holder.name)
@@ -79,16 +74,8 @@ function isActorKindUse(literal: ts.Node): boolean {
  * `.kind`, a `case` of `switch (x.kind)`, a list typed `ActorKind[]`).
  * Comments are never string literals, so they are not scanned.
  */
-export function findRoleSlugLiterals(
-  text: string,
-  slugs: readonly string[],
-): SlugLiteral[] {
-  const source = ts.createSourceFile(
-    'scanned.ts',
-    text,
-    ts.ScriptTarget.Latest,
-    true,
-  );
+export function findRoleSlugLiterals(text: string, slugs: readonly string[]): SlugLiteral[] {
+  const source = ts.createSourceFile('scanned.ts', text, ts.ScriptTarget.Latest, true);
   const found: SlugLiteral[] = [];
   const visit = (node: ts.Node): void => {
     if (

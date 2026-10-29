@@ -7,37 +7,21 @@ import {
   CORE_TRANSACTION_RUNNER,
   type TransactionRunner,
 } from '../../../../infrastructure/database/TransactionRunner.port';
-import {
-  APP_LOGGER,
-  type AppLogger,
-} from '../../../../infrastructure/logging/AppLogger.port';
-import {
-  MAIL_SENDER,
-  type MailSender,
-} from '../../../../infrastructure/mail/Mail.port';
+import { APP_LOGGER, type AppLogger } from '../../../../infrastructure/logging/AppLogger.port';
+import { MAIL_SENDER, type MailSender } from '../../../../infrastructure/mail/Mail.port';
 import { buildOtpMail, OtpService } from '../../../identity';
-import {
-  AUDIT_ACTIONS,
-  auditActorOf,
-  SecurityAuditService,
-} from '../../../security-audit';
+import { AUDIT_ACTIONS, auditActorOf, SecurityAuditService } from '../../../security-audit';
 import { AccountStatus } from '../../domain/Access.constants';
 import { type AccountActor } from '../../domain/Rank.rules';
+import { accountNotInvited, emailTaken } from '../domain/AccessManagement.errors';
 import {
-  accountNotInvited,
-  emailTaken,
-} from '../domain/AccessManagement.errors';
-import {
-  type AccountRecord,
-  type AccountView,
   assertAssignable,
   assertManageable,
   toAccountView,
+  type AccountRecord,
+  type AccountView,
 } from '../domain/Account.entity';
-import {
-  ACCOUNT_ADMIN_REPOSITORY,
-  type AccountAdminRepository,
-} from './AccessManagement.port';
+import { ACCOUNT_ADMIN_REPOSITORY, type AccountAdminRepository } from './AccessManagement.port';
 import { recordAccountEvent } from './Accounts.service';
 
 const LOGGER_CONTEXT = 'InvitationsService';
@@ -129,10 +113,7 @@ export class InvitationsService {
   ): Promise<{ invitationSent: boolean }> {
     const auditActor = auditActorOf(actor);
     const issued = await this.runner.run(async (unit) => {
-      const target = assertManageable(
-        actor,
-        await this.accounts.lockManageable(unit, documentId),
-      );
+      const target = assertManageable(actor, await this.accounts.lockManageable(unit, documentId));
       if (target.status !== AccountStatus.invited) throw accountNotInvited();
       await recordAccountEvent(this.audit, unit, actor, target, meta, {
         action: AUDIT_ACTIONS.ACCOUNT_INVITE_RESENT,
@@ -151,12 +132,7 @@ export class InvitationsService {
   private async sendInvite(row: AccountRecord, code: string): Promise<boolean> {
     try {
       await this.mail.send(
-        buildOtpMail(
-          row.email,
-          INVITE_PURPOSE,
-          code,
-          this.config.cors.allowedOrigins[0],
-        ),
+        buildOtpMail(row.email, INVITE_PURPOSE, code, this.config.cors.allowedOrigins[0]),
       );
       return true;
     } catch (error) {

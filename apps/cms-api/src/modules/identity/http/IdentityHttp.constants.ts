@@ -204,14 +204,11 @@ export const IDENTITY_RATE_LIMIT_POLICIES = {
  * Env key -> rule name of every identity rule an env key can override. Pinned
  * by a spec; the production opt-in check iterates `RATE_LIMIT_OVERRIDE_ENV_KEYS`.
  */
-export const rateLimitOverrideBindings: Readonly<
-  Partial<Record<RateLimitOverrideEnvKey, string>>
-> = Object.fromEntries(
-  Object.values(IDENTITY_RATE_LIMIT_POLICIES)
-    .flat()
-    .flatMap((rule: RateLimitRule) =>
-      rule.limitOverrideEnvKey === undefined
-        ? []
-        : [[rule.limitOverrideEnvKey, rule.name]],
-    ),
-);
+export const rateLimitOverrideBindings: Readonly<Partial<Record<RateLimitOverrideEnvKey, string>>> =
+  Object.fromEntries(
+    Object.values(IDENTITY_RATE_LIMIT_POLICIES)
+      .flat()
+      .flatMap((rule: RateLimitRule) =>
+        rule.limitOverrideEnvKey === undefined ? [] : [[rule.limitOverrideEnvKey, rule.name]],
+      ),
+  );

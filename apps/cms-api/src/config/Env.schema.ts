@@ -10,14 +10,15 @@ import {
   JWT_KID_PATTERN,
   LOGIN_RATE_LIMIT_OVERRIDE_OPT_IN,
   MAIL_PROVIDERS,
-  MEDIA_PROVIDERS,
   MAX_RATE_LIMIT_OVERRIDE,
+  MEDIA_PROVIDERS,
   NODE_ENVS,
   RATE_LIMIT_OVERRIDE_ENV_KEYS,
-  type RateLimitOverrideEnvKey,
   TOTP_ISSUER_MAX_LENGTH,
   TOTP_ISSUER_PATTERN,
+  type RateLimitOverrideEnvKey,
 } from './Config.constants';
+import { ENV_RULES, requireRootCertificateForVerifyFull } from './Env.rules';
 import {
   emptyToUndefined,
   envBoolean,
@@ -25,15 +26,12 @@ import {
   optionalText,
   portNumber,
 } from './EnvValidators.rules';
-import { ENV_RULES, requireRootCertificateForVerifyFull } from './Env.rules';
 
 /** True for a bare http(s) origin: no path, query, fragment or trailing slash. */
 function isHttpOrigin(value: string): boolean {
   try {
     const url = new URL(value);
-    return (
-      ALLOWED_ORIGIN_PROTOCOLS.includes(url.protocol) && url.origin === value
-    );
+    return ALLOWED_ORIGIN_PROTOCOLS.includes(url.protocol) && url.origin === value;
   } catch {
     return false;
   }
@@ -88,10 +86,7 @@ export const databaseEnvShape = {
   ),
   DB_SSL_ROOT_CERT_PATH: z.preprocess(
     emptyToUndefined,
-    z
-      .string()
-      .refine(isAbsolute, { message: 'must be an absolute path' })
-      .optional(),
+    z.string().refine(isAbsolute, { message: 'must be an absolute path' }).optional(),
   ),
 };
 
@@ -111,11 +106,7 @@ export const envSchema = z
     NODE_ENV: z.enum(NODE_ENVS).default(CONFIG_DEFAULTS.NODE_ENV),
     PORT: portNumber(CONFIG_DEFAULTS.PORT),
     ...databaseEnvShape,
-    TRUST_PROXY_HOPS: z.coerce
-      .number()
-      .int()
-      .min(0)
-      .default(CONFIG_DEFAULTS.TRUST_PROXY_HOPS),
+    TRUST_PROXY_HOPS: z.coerce.number().int().min(0).default(CONFIG_DEFAULTS.TRUST_PROXY_HOPS),
     CLIENT_IP_HEADER: z.preprocess(
       emptyToUndefined,
       z
@@ -131,9 +122,7 @@ export const envSchema = z
     ...rateLimitOverrideShape,
     ADMIN_ORIGIN: optionalOrigin,
     WEB_ORIGIN: optionalOrigin,
-    MAIL_PROVIDER: z
-      .enum(MAIL_PROVIDERS)
-      .default(CONFIG_DEFAULTS.MAIL_PROVIDER),
+    MAIL_PROVIDER: z.enum(MAIL_PROVIDERS).default(CONFIG_DEFAULTS.MAIL_PROVIDER),
     JWT_ACCESS_SECRET: optionalSecret,
     JWT_ACCESS_KID: optionalKid,
     OTP_PEPPER: optionalSecret,
@@ -157,17 +146,13 @@ export const envSchema = z
     SMTP_USER: optionalText,
     SMTP_PASSWORD: optionalText,
     MAIL_FROM: optionalText,
-    MEDIA_PROVIDER: z
-      .enum(MEDIA_PROVIDERS)
-      .default(CONFIG_DEFAULTS.MEDIA_PROVIDER),
+    MEDIA_PROVIDER: z.enum(MEDIA_PROVIDERS).default(CONFIG_DEFAULTS.MEDIA_PROVIDER),
     CLOUDINARY_CLOUD_NAME: optionalText,
     CLOUDINARY_API_KEY: optionalText,
     CLOUDINARY_API_SECRET: optionalText,
     CLOUDINARY_FOLDER: optionalText,
     OWNER_SETUP_TOKEN: optionalSecret,
-    REVIEWER_FEATURE_ENABLED: envBoolean(
-      CONFIG_DEFAULTS.REVIEWER_FEATURE_ENABLED,
-    ),
+    REVIEWER_FEATURE_ENABLED: envBoolean(CONFIG_DEFAULTS.REVIEWER_FEATURE_ENABLED),
     TURNSTILE_SECRET_KEY: optionalSecret,
     TURNSTILE_EXPECTED_HOSTNAME: z.preprocess(
       emptyToUndefined,

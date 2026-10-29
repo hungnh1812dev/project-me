@@ -20,8 +20,7 @@ export interface DatabaseConfig {
  * transport); `verify-full` also checks the certificate chain against the
  * given CA and that the certificate matches `host`.
  */
-export type DatabaseTls =
-  { mode: 'require' } | { mode: 'verify-full'; rootCertificatePem: string };
+export type DatabaseTls = { mode: 'require' } | { mode: 'verify-full'; rootCertificatePem: string };
 
 /**
  * What the pool factories accept. The URL form exists for tests and tooling

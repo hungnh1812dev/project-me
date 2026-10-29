@@ -11,11 +11,7 @@ describe('coerceFilterValue', () => {
     ['date', '2026-02-28', '2026-02-28'],
     ['datetime', '2026-03-01T10:00:00+07:00', '2026-03-01T03:00:00.000Z'],
     ['datetime', '2026-03-01', '2026-03-01T00:00:00.000Z'],
-    [
-      'uuid',
-      '0A0A0A0A-0A0A-4A0A-8A0A-0A0A0A0A0A0A',
-      '0a0a0a0a-0a0a-4a0a-8a0a-0a0a0a0a0a0a',
-    ],
+    ['uuid', '0A0A0A0A-0A0A-4A0A-8A0A-0A0A0A0A0A0A', '0a0a0a0a-0a0a-4a0a-8a0a-0a0a0a0a0a0a'],
     ['string', 'anything', 'anything'],
   ] as const)('%s %s', (kind, raw, expected) => {
     expect(coerceFilterValue(kind, raw)).toBe(expected);
@@ -49,23 +45,15 @@ describe('typedFilterValues', () => {
   });
 
   it('returns the typed values of an allowed operator', () => {
-    expect(typedFilterValues('integer', clause('in', ['1', '2']))).toEqual([
-      1, 2,
-    ]);
+    expect(typedFilterValues('integer', clause('in', ['1', '2']))).toEqual([1, 2]);
   });
 
   it('refuses an operator the kind does not support', () => {
-    expect(() =>
-      typedFilterValues('integer', clause('contains', ['1'])),
-    ).toThrow(DomainError);
-    expect(() => typedFilterValues('boolean', clause('gt', ['true']))).toThrow(
-      DomainError,
-    );
+    expect(() => typedFilterValues('integer', clause('contains', ['1']))).toThrow(DomainError);
+    expect(() => typedFilterValues('boolean', clause('gt', ['true']))).toThrow(DomainError);
   });
 
   it('refuses a value of the wrong type', () => {
-    expect(() => typedFilterValues('integer', clause('eq', ['abc']))).toThrow(
-      DomainError,
-    );
+    expect(() => typedFilterValues('integer', clause('eq', ['abc']))).toThrow(DomainError);
   });
 });

@@ -1,7 +1,4 @@
-import {
-  DomainError,
-  DOMAIN_ERROR_KINDS,
-} from '../../../common/errors/Domain.errors';
+import { DOMAIN_ERROR_KINDS, DomainError } from '../../../common/errors/Domain.errors';
 import type { PageMeta } from '../../../common/validation/SharedSchemas.rules';
 import {
   MEDIA_ERROR_CODES,
@@ -60,8 +57,7 @@ export interface EmbeddedMedia {
 }
 
 /** 403 with the default body: the actor may not use the library this way at all. */
-export const mediaForbidden = () =>
-  new DomainError({ kind: DOMAIN_ERROR_KINDS.FORBIDDEN });
+export const mediaForbidden = () => new DomainError({ kind: DOMAIN_ERROR_KINDS.FORBIDDEN });
 
 /** Unknown, deleted and out-of-scope files all answer the same. */
 export const mediaNotFound = () =>

@@ -34,13 +34,9 @@ export const SCALAR_FIELD_TYPES = [
 export const COMPONENT_FIELD_TYPE = 'component';
 
 /** Stored as an int referencing `public.file_library(id)`. */
-export const MEDIA_FIELD_TYPE =
-  'media' satisfies (typeof SCALAR_FIELD_TYPES)[number];
+export const MEDIA_FIELD_TYPE = 'media' satisfies (typeof SCALAR_FIELD_TYPES)[number];
 
-export const FIELD_TYPES = [
-  ...SCALAR_FIELD_TYPES,
-  COMPONENT_FIELD_TYPE,
-] as const;
+export const FIELD_TYPES = [...SCALAR_FIELD_TYPES, COMPONENT_FIELD_TYPE] as const;
 
 /** Engine-owned columns of every root table (SPEC §8.1 / §8.2). */
 export const ROOT_SYSTEM_COLUMNS = [
@@ -68,11 +64,7 @@ export const COMPONENT_SYSTEM_COLUMNS = [
  * draft/published filter). Fields may not use them anywhere.
  */
 export const ENGINE_RESERVED_NAMES = [
-  ...new Set<string>([
-    ...ROOT_SYSTEM_COLUMNS,
-    ...COMPONENT_SYSTEM_COLUMNS,
-    'status',
-  ]),
+  ...new Set<string>([...ROOT_SYSTEM_COLUMNS, ...COMPONENT_SYSTEM_COLUMNS, 'status']),
 ];
 
 /** Suffixes appended to a table name for the objects the SQL generator names explicitly. */
@@ -143,12 +135,7 @@ export const CONTENT_ERROR_CODES = {
 export const SINGLE_COMPONENT_MAX_ITEMS = 1;
 
 /** URL schemes a stored richtext link may use; the admin editor offers the same list. */
-export const RICHTEXT_ALLOWED_URL_SCHEMES = [
-  'http',
-  'https',
-  'mailto',
-  'tel',
-] as const;
+export const RICHTEXT_ALLOWED_URL_SCHEMES = ['http', 'https', 'mailto', 'tel'] as const;
 
 /**
  * Postgres reserved key words (both "reserved" and "reserved (can be function

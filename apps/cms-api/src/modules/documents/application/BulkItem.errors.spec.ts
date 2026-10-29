@@ -1,7 +1,4 @@
-import {
-  DomainError,
-  DOMAIN_ERROR_KINDS,
-} from '../../../common/errors/Domain.errors';
+import { DOMAIN_ERROR_KINDS, DomainError } from '../../../common/errors/Domain.errors';
 import { describeError } from '../../../common/http/DescribeHttpException.rules';
 import { asItemError, atomicFailure } from './BulkItem.errors';
 
@@ -17,9 +14,7 @@ describe('asItemError', () => {
   });
 
   it('is null for unavailable, a Nest exception and a bug', () => {
-    expect(
-      asItemError(new DomainError({ kind: DOMAIN_ERROR_KINDS.UNAVAILABLE })),
-    ).toBeNull();
+    expect(asItemError(new DomainError({ kind: DOMAIN_ERROR_KINDS.UNAVAILABLE }))).toBeNull();
     expect(asItemError({ getStatus: () => 409 })).toBeNull();
     expect(asItemError(new Error('x'))).toBeNull();
   });
@@ -46,10 +41,7 @@ describe('atomicFailure', () => {
   });
 
   it('answers the default message of the kind when the item had none', () => {
-    const failure = atomicFailure(
-      0,
-      new DomainError({ kind: DOMAIN_ERROR_KINDS.NOT_FOUND }),
-    );
+    const failure = atomicFailure(0, new DomainError({ kind: DOMAIN_ERROR_KINDS.NOT_FOUND }));
     expect(describeError(failure)).toMatchObject({
       statusCode: 404,
       message: 'Not Found',

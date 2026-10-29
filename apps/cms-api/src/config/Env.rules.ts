@@ -47,17 +47,9 @@ function addMissingIssues(
   }
 }
 
-function addShortSecretIssue(
-  ctx: EnvIssueContext,
-  key: string,
-  value: string,
-): void {
+function addShortSecretIssue(ctx: EnvIssueContext, key: string, value: string): void {
   if (Buffer.byteLength(value, 'utf8') < MIN_SECRET_BYTES) {
-    addIssue(
-      ctx,
-      key,
-      `${key} must be at least ${MIN_SECRET_BYTES} bytes in production`,
-    );
+    addIssue(ctx, key, `${key} must be at least ${MIN_SECRET_BYTES} bytes in production`);
   }
 }
 
@@ -92,24 +84,18 @@ const requireSmtpCredentialsTogether: EnvRule = (env, ctx) => {
 };
 
 const requireBackupStorageKeysTogether: EnvRule = (env, ctx) => {
-  const isAnySet = BACKUP_STORAGE_REQUIRED_KEYS.some(
-    (key) => env[key] !== undefined,
-  );
+  const isAnySet = BACKUP_STORAGE_REQUIRED_KEYS.some((key) => env[key] !== undefined);
   if (!isAnySet) return;
   addMissingIssues(
     env,
     ctx,
     BACKUP_STORAGE_REQUIRED_KEYS,
-    (key) =>
-      `${key} is required when any other BACKUP_STORAGE_* key is set (all four or none)`,
+    (key) => `${key} is required when any other BACKUP_STORAGE_* key is set (all four or none)`,
   );
 };
 
 const requirePreviousTotpKeyPair: EnvRule = (env, ctx) => {
-  if (
-    (env.TOTP_ENC_PREVIOUS_KEY === undefined) !==
-    (env.TOTP_ENC_PREVIOUS_KID === undefined)
-  ) {
+  if ((env.TOTP_ENC_PREVIOUS_KEY === undefined) !== (env.TOTP_ENC_PREVIOUS_KID === undefined)) {
     addIssue(
       ctx,
       'TOTP_ENC_PREVIOUS_KID',
@@ -121,17 +107,12 @@ const requirePreviousTotpKeyPair: EnvRule = (env, ctx) => {
 const requireDistinctPreviousTotpKid: EnvRule = (env, ctx) => {
   const totpEncKid = env.TOTP_ENC_KID ?? CONFIG_DEFAULTS.TOTP_ENC_KID;
   if (env.TOTP_ENC_PREVIOUS_KID === totpEncKid) {
-    addIssue(
-      ctx,
-      'TOTP_ENC_PREVIOUS_KID',
-      'TOTP_ENC_PREVIOUS_KID must differ from TOTP_ENC_KID',
-    );
+    addIssue(ctx, 'TOTP_ENC_PREVIOUS_KID', 'TOTP_ENC_PREVIOUS_KID must differ from TOTP_ENC_KID');
   }
 };
 
 const rejectRateLimitOverrideWithoutOptIn: EnvRule = (env, ctx) => {
-  if (env.ALLOW_LOGIN_RATE_LIMIT_OVERRIDE === LOGIN_RATE_LIMIT_OVERRIDE_OPT_IN)
-    return;
+  if (env.ALLOW_LOGIN_RATE_LIMIT_OVERRIDE === LOGIN_RATE_LIMIT_OVERRIDE_OPT_IN) return;
   for (const key of RATE_LIMIT_OVERRIDE_ENV_KEYS) {
     if (env[key] !== undefined) {
       addIssue(
@@ -145,21 +126,13 @@ const rejectRateLimitOverrideWithoutOptIn: EnvRule = (env, ctx) => {
 
 const rejectFakeMediaProvider: EnvRule = (env, ctx) => {
   if (env.MEDIA_PROVIDER === 'fake') {
-    addIssue(
-      ctx,
-      'MEDIA_PROVIDER',
-      'MEDIA_PROVIDER=fake is not allowed in production',
-    );
+    addIssue(ctx, 'MEDIA_PROVIDER', 'MEDIA_PROVIDER=fake is not allowed in production');
   }
 };
 
 const rejectConsoleMailProvider: EnvRule = (env, ctx) => {
   if (env.MAIL_PROVIDER === 'console') {
-    addIssue(
-      ctx,
-      'MAIL_PROVIDER',
-      'MAIL_PROVIDER=console is not allowed in production',
-    );
+    addIssue(ctx, 'MAIL_PROVIDER', 'MAIL_PROVIDER=console is not allowed in production');
   }
 };
 
@@ -175,12 +148,7 @@ const requireHttpsBackupEndpoint: EnvRule = (env, ctx) => {
 };
 
 const requireProductionKeys: EnvRule = (env, ctx) => {
-  addMissingIssues(
-    env,
-    ctx,
-    PRODUCTION_REQUIRED_KEYS,
-    (key) => `${key} is required in production`,
-  );
+  addMissingIssues(env, ctx, PRODUCTION_REQUIRED_KEYS, (key) => `${key} is required in production`);
 };
 
 const requireStrongSecrets: EnvRule = (env, ctx) => {
@@ -208,10 +176,7 @@ const PRODUCTION_RULES: readonly EnvRule[] = [
 ];
 
 /** Shared by `databaseEnvSchema` (migration commands) and `envSchema`. */
-export function requireRootCertificateForVerifyFull(
-  env: DatabaseEnv,
-  ctx: EnvIssueContext,
-): void {
+export function requireRootCertificateForVerifyFull(env: DatabaseEnv, ctx: EnvIssueContext): void {
   if (env.DB_SSL_MODE === 'verify-full' && !env.DB_SSL_ROOT_CERT_PATH) {
     addIssue(
       ctx,
@@ -237,7 +202,4 @@ const runProductionRules: EnvRule = (env, ctx) => {
 };
 
 /** Cross-field rules in the order their messages are reported. */
-export const ENV_RULES: readonly EnvRule[] = [
-  ...ALWAYS_RULES,
-  runProductionRules,
-];
+export const ENV_RULES: readonly EnvRule[] = [...ALWAYS_RULES, runProductionRules];

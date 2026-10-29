@@ -2,14 +2,10 @@ import { Logger } from '@nestjs/common';
 import { z } from 'zod';
 
 import { MS_PER_SECOND } from '../../../common/constants/Time.constants';
-import type {
-  TurnstileOutcome,
-  TurnstileVerifier,
-} from '../application/Reviewer.port';
+import type { TurnstileOutcome, TurnstileVerifier } from '../application/Reviewer.port';
 
 /** Cloudflare's server-side verification endpoint (provider contract, not config). */
-export const TURNSTILE_SITEVERIFY_URL =
-  'https://challenges.cloudflare.com/turnstile/v0/siteverify';
+export const TURNSTILE_SITEVERIFY_URL = 'https://challenges.cloudflare.com/turnstile/v0/siteverify';
 
 /** Verification must not hold a request open longer than this. */
 const TURNSTILE_TIMEOUT_MS = 5 * MS_PER_SECOND;
@@ -67,10 +63,7 @@ export class TurnstileClient implements TurnstileVerifier {
     this.expectedHostname = options.expectedHostname;
   }
 
-  async verify(
-    responseToken: string,
-    remoteIp?: string,
-  ): Promise<TurnstileOutcome> {
+  async verify(responseToken: string, remoteIp?: string): Promise<TurnstileOutcome> {
     const formFields = new URLSearchParams({
       [TURNSTILE_FIELDS.SECRET]: this.secretKey,
       [TURNSTILE_FIELDS.RESPONSE]: responseToken,
@@ -85,9 +78,7 @@ export class TurnstileClient implements TurnstileVerifier {
         signal: AbortSignal.timeout(TURNSTILE_TIMEOUT_MS),
       });
       if (!reply.ok) return 'unavailable';
-      const parsedReply = siteverifyResponseSchema.safeParse(
-        await reply.json(),
-      );
+      const parsedReply = siteverifyResponseSchema.safeParse(await reply.json());
       if (!parsedReply.success) return 'unavailable';
       if (parsedReply.data.success) {
         const wrongHost =
@@ -95,9 +86,7 @@ export class TurnstileClient implements TurnstileVerifier {
           parsedReply.data.hostname?.toLowerCase() !== this.expectedHostname;
         return wrongHost ? 'failed' : 'passed';
       }
-      return parsedReply.data['error-codes']?.includes(
-        TURNSTILE_INTERNAL_ERROR,
-      ) === true
+      return parsedReply.data['error-codes']?.includes(TURNSTILE_INTERNAL_ERROR) === true
         ? 'unavailable'
         : 'failed';
     } catch {

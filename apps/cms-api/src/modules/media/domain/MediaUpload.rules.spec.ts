@@ -21,9 +21,7 @@ describe('sanitizeFileName', () => {
   });
 
   it('bounds the length', () => {
-    expect(Array.from(sanitizeFileName('x'.repeat(1_000))).length).toBe(
-      FILE_NAME_MAX_LENGTH,
-    );
+    expect(Array.from(sanitizeFileName('x'.repeat(1_000))).length).toBe(FILE_NAME_MAX_LENGTH);
   });
 });
 
@@ -46,12 +44,9 @@ describe('allowedMediaTypeOf', () => {
     expect(allowedMediaTypeOf('video/mp4')).toEqual({ kind: 'video' });
   });
 
-  it.each(['image/svg+xml', 'text/html', '__proto__', 'constructor'])(
-    'refuses %s',
-    (mime) => {
-      expect(allowedMediaTypeOf(mime)).toBeUndefined();
-    },
-  );
+  it.each(['image/svg+xml', 'text/html', '__proto__', 'constructor'])('refuses %s', (mime) => {
+    expect(allowedMediaTypeOf(mime)).toBeUndefined();
+  });
 });
 
 describe('sha256Hex', () => {

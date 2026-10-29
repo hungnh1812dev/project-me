@@ -1,7 +1,4 @@
-import {
-  mediaFieldNamesByTable,
-  ContentTypeRegistry,
-} from '../../content-engine';
+import { ContentTypeRegistry, mediaFieldNamesByTable } from '../../content-engine';
 import { cloneTree, mediaSlots, type TreeNodeLike } from './MediaSlots.rules';
 
 const GALLERY = {
@@ -46,8 +43,6 @@ describe('cloneTree', () => {
     const copy = cloneTree(original);
     if (copy.values) copy.values['cover'] = 'changed';
     expect(original.values?.['cover']).toBe('a');
-    expect(copy.components?.['block']?.[0]).not.toBe(
-      original.components?.['block']?.[0],
-    );
+    expect(copy.components?.['block']?.[0]).not.toBe(original.components?.['block']?.[0]);
   });
 });

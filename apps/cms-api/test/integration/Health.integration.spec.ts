@@ -4,8 +4,8 @@ import request from 'supertest';
 import { dbEnvOf, devEnv } from '../fixtures/Env.fixture';
 import {
   startPostgres,
-  type TestPostgres,
   unreachableDatabaseUrl,
+  type TestPostgres,
 } from '../fixtures/Postgres.fixture';
 import { createTestApp } from '../fixtures/TestApp.fixture';
 
@@ -15,9 +15,7 @@ describe('health (Postgres 17 via Testcontainers)', () => {
 
   beforeAll(async () => {
     postgres = await startPostgres();
-    app = await createTestApp(
-      devEnv({ ...dbEnvOf(postgres.getConnectionUri()) }),
-    );
+    app = await createTestApp(devEnv({ ...dbEnvOf(postgres.getConnectionUri()) }));
   });
 
   afterAll(async () => {
@@ -56,9 +54,7 @@ describe('health with the database down', () => {
   let app: NestExpressApplication;
 
   beforeAll(async () => {
-    app = await createTestApp(
-      devEnv({ ...dbEnvOf(await unreachableDatabaseUrl()) }),
-    );
+    app = await createTestApp(devEnv({ ...dbEnvOf(await unreachableDatabaseUrl()) }));
   });
 
   afterAll(async () => {

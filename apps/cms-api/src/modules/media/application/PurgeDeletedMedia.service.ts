@@ -1,14 +1,8 @@
 import { Inject, Injectable } from '@nestjs/common';
 
 import { Clock } from '../../../common/time/Clock.service';
-import {
-  APP_LOGGER,
-  type AppLogger,
-} from '../../../infrastructure/logging/AppLogger.port';
-import {
-  MEDIA_PURGE_BATCH_SIZE,
-  MEDIA_PURGE_GRACE_MS,
-} from '../domain/Media.constants';
+import { APP_LOGGER, type AppLogger } from '../../../infrastructure/logging/AppLogger.port';
+import { MEDIA_PURGE_BATCH_SIZE, MEDIA_PURGE_GRACE_MS } from '../domain/Media.constants';
 import { allowedMediaTypeOf } from '../domain/MediaUpload.rules';
 import {
   MEDIA_REFERENCE_CHECKER,
@@ -66,11 +60,7 @@ export class PurgeDeletedMediaService {
     let skipped = 0;
     let cursor = 0;
     for (;;) {
-      const rows = await this.repository.findPurgeBatch(
-        cutoff,
-        cursor,
-        MEDIA_PURGE_BATCH_SIZE,
-      );
+      const rows = await this.repository.findPurgeBatch(cutoff, cursor, MEDIA_PURGE_BATCH_SIZE);
       for (const row of rows) {
         cursor = row.id;
         try {

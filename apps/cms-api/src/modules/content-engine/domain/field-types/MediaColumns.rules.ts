@@ -29,9 +29,7 @@ function collectMediaColumns(registry: ContentTypeRegistry): MediaColumnRef[] {
  * type is marked `referencesMedia` in the field-type registry. The one place
  * that decides which columns hold media references.
  */
-export function mediaColumnsOf(
-  registry: ContentTypeRegistry,
-): readonly MediaColumnRef[] {
+export function mediaColumnsOf(registry: ContentTypeRegistry): readonly MediaColumnRef[] {
   let columns = cache.get(registry);
   if (columns === undefined) {
     columns = collectMediaColumns(registry);

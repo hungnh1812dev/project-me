@@ -13,6 +13,7 @@ import {
   planMigration,
 } from '../../src/modules/content-engine/domain/SqlGenerator.rules';
 import { hashPassword } from '../../src/modules/identity/application/Password.service';
+import { seedRolePermissions, seedSystemRoles } from '../fixtures/Access.fixture';
 import { createCoreTemplate } from '../fixtures/CoreDb.fixture';
 import {
   dbEnvOf,
@@ -26,10 +27,6 @@ import { buildMediaFixtures } from '../fixtures/Media.fixture';
 import { multipart } from '../fixtures/Multipart.fixture';
 import { startPostgres, type TestPostgres } from '../fixtures/Postgres.fixture';
 import { createTestApp } from '../fixtures/TestApp.fixture';
-import {
-  seedRolePermissions,
-  seedSystemRoles,
-} from '../fixtures/Access.fixture';
 
 const PASSWORD = 'correct horse battery staple';
 const MEDIA = '/api/v1/media';
@@ -80,9 +77,9 @@ describe('document media references (T29; Postgres 17 via Testcontainers)', () =
     await client.connect();
     const registry = ContentTypeRegistry.fromDefinitions([GALLERY]);
     await client.query(
-      planMigration(emptySnapshot(), [
-        registry.resolve('gallery').definition,
-      ]).statements.join('\n'),
+      planMigration(emptySnapshot(), [registry.resolve('gallery').definition]).statements.join(
+        '\n',
+      ),
     );
     await client.end();
     app = await createTestApp(
@@ -192,9 +189,7 @@ describe('document media references (T29; Postgres 17 via Testcontainers)', () =
       });
     expect(created.status).toBe(201);
     const doc = created.body as Doc;
-    expect(Object.keys(doc.values.cover ?? {}).sort()).toEqual(
-      [...FILE_KEYS].sort(),
-    );
+    expect(Object.keys(doc.values.cover ?? {}).sort()).toEqual([...FILE_KEYS].sort());
     expect(doc.values.cover).toMatchObject({ id, provider: 'cloudinary' });
     expect(doc.components.block[0]?.values.image).toMatchObject({ id });
     const stored = await db.prisma.$queryRawUnsafe<{ cover: number }[]>(
@@ -202,9 +197,7 @@ describe('document media references (T29; Postgres 17 via Testcontainers)', () =
       doc.documentId,
     );
     expect(stored[0]?.cover).toBe(internalId);
-    const detail = await http()
-      .get(`${DOCS}/${doc.documentId}?status=draft`)
-      .set(bearer(editor));
+    const detail = await http().get(`${DOCS}/${doc.documentId}?status=draft`).set(bearer(editor));
     expect((detail.body as Doc).values.cover).toMatchObject({ id });
     const list = await http().get(`${DOCS}?status=draft`).set(bearer(editor));
     expect(JSON.stringify(list.body)).not.toContain(`"cover":${internalId}`);
@@ -227,14 +220,9 @@ describe('document media references (T29; Postgres 17 via Testcontainers)', () =
     const gone = await uploaded();
     await http().delete(`${MEDIA}/${gone.id}`).set(bearer(admin)).expect(204);
     for (const cover of [internalId, MISSING_ID, gone.id, 'nope']) {
-      const res = await http()
-        .post(DOCS)
-        .set(bearer(editor))
-        .send({ values: { cover } });
+      const res = await http().post(DOCS).set(bearer(editor)).send({ values: { cover } });
       expect(res.status).toBe(400);
-      expect((res.body as { errorCode: string }).errorCode).toBe(
-        'DOCUMENT_INVALID',
-      );
+      expect((res.body as { errorCode: string }).errorCode).toBe('DOCUMENT_INVALID');
     }
     expect(id).toBeDefined();
   });
@@ -298,9 +286,7 @@ describe('document media references (T29; Postgres 17 via Testcontainers)', () =
       '?sort=cover',
       '?sort=-cover',
     ]) {
-      const res = await http()
-        .get(`${DOCS}${query}&status=draft`)
-        .set(bearer(editor));
+      const res = await http().get(`${DOCS}${query}&status=draft`).set(bearer(editor));
       expect(res.status).toBe(400);
     }
   });

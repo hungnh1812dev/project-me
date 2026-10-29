@@ -10,11 +10,7 @@ import type { SessionRevocationRepository } from '../application/Identity.port';
  */
 @Injectable()
 export class PrismaSessionRevocationRepository implements SessionRevocationRepository {
-  async revokeAll(
-    unit: UnitOfWork,
-    accountId: number,
-    at: Date,
-  ): Promise<void> {
+  async revokeAll(unit: UnitOfWork, accountId: number, at: Date): Promise<void> {
     const tx = prismaTxOf(unit);
     await tx.account.update({
       where: { id: accountId },

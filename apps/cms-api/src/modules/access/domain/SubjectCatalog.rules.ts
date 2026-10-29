@@ -1,25 +1,22 @@
-import type {
-  RegisteredContentType,
-  ContentTypeRegistry,
-} from '../../content-engine';
+import type { ContentTypeRegistry, RegisteredContentType } from '../../content-engine';
 import {
   CONTENT_WILDCARD_SUBJECT,
-  type PermissionAction,
   PERMISSION_ACTIONS,
   SYSTEM_SUBJECT_ACTIONS,
+  type PermissionAction,
   type SystemSubject,
 } from './Access.constants';
 import {
-  type ConditionField,
-  type ConditionFieldCatalog,
   conditionKindOf,
   systemConditionField,
+  type ConditionField,
+  type ConditionFieldCatalog,
 } from './Conditions.rules';
 import {
+  fieldListAllows,
   fieldPathsOf,
   nonSensitiveFieldList,
   type FieldList,
-  fieldListAllows,
 } from './FieldPaths.rules';
 
 /**
@@ -33,20 +30,12 @@ export class SubjectCatalog {
   private readonly nonSensitiveLists: ReadonlyMap<string, FieldList>;
 
   constructor(registry: ContentTypeRegistry) {
-    this.content = new Map(
-      registry.slugs().map((slug) => [slug, registry.resolve(slug)]),
-    );
+    this.content = new Map(registry.slugs().map((slug) => [slug, registry.resolve(slug)]));
     this.paths = new Map(
-      [...this.content].map(([slug, type]) => [
-        slug,
-        fieldPathsOf(type.definition),
-      ]),
+      [...this.content].map(([slug, type]) => [slug, fieldPathsOf(type.definition)]),
     );
     this.nonSensitiveLists = new Map(
-      [...this.content].map(([slug, type]) => [
-        slug,
-        nonSensitiveFieldList(type.definition),
-      ]),
+      [...this.content].map(([slug, type]) => [slug, nonSensitiveFieldList(type.definition)]),
     );
   }
 

@@ -176,15 +176,13 @@ describe('validatePermissionSet', () => {
       [0, 'conditions', 'all', 0, 'field'],
     ],
   ])('rejects %s', (_label, input, code, path) => {
-    expect(
-      issuesOf(input).map((found) => ({ code: found.code, path: found.path })),
-    ).toContainEqual({ code, path });
+    expect(issuesOf(input).map((found) => ({ code: found.code, path: found.path }))).toContainEqual(
+      { code, path },
+    );
   });
 
   it('rejects conditions on create rows (T21)', () => {
-    expect(
-      issuesOf([{ subject: 'article', action: 'create', conditions: own }]),
-    ).toEqual([
+    expect(issuesOf([{ subject: 'article', action: 'create', conditions: own }])).toEqual([
       expect.objectContaining({
         code: ACCESS_ERROR_CODES.PERMISSION_INVALID_CONDITION,
         path: [0, 'conditions'],
@@ -199,13 +197,9 @@ describe('validatePermissionSet', () => {
         { subject: 'article', action: 'read', readableFields: ['title'] },
         { subject: 'article', action: 'update', conditions },
       ]),
-    ).toContainEqual(
-      expect.objectContaining({ path: [1, 'conditions', 'all', 0, 'field'] }),
-    );
+    ).toContainEqual(expect.objectContaining({ path: [1, 'conditions', 'all', 0, 'field'] }));
     // No read row at all: nothing readable either.
-    expect(
-      issuesOf([{ subject: 'article', action: 'update', conditions }]).length,
-    ).toBe(1);
+    expect(issuesOf([{ subject: 'article', action: 'update', conditions }]).length).toBe(1);
     // A * read row with all fields makes them readable.
     expect(
       validatePermissionSet(

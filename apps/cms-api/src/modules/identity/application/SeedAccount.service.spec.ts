@@ -21,9 +21,7 @@ function build(state: { roleFound: boolean; emailTaken: boolean }) {
   const findRole = jest.fn(() =>
     Promise.resolve(state.roleFound ? { id: 3, isSystem: true } : null),
   );
-  const createAccount = jest.fn(() =>
-    Promise.resolve({ id: 8, documentId: 'doc-8', email: 'x' }),
-  );
+  const createAccount = jest.fn(() => Promise.resolve({ id: 8, documentId: 'doc-8', email: 'x' }));
   const accounts = {
     findRole,
     isEmailTaken: jest.fn(() => Promise.resolve(state.emailTaken)),
@@ -71,13 +69,13 @@ describe('SeedAccountService.seed', () => {
 
   it('refuses a missing role and a taken email, writing nothing', async () => {
     const missing = build({ roleFound: false, emailTaken: false });
-    await expect(
-      missing.service.seed(INPUT, { NODE_ENV: 'test' }),
-    ).rejects.toMatchObject({ code: SEED_ACCOUNT_ERRORS.ROLE_REFUSED });
+    await expect(missing.service.seed(INPUT, { NODE_ENV: 'test' })).rejects.toMatchObject({
+      code: SEED_ACCOUNT_ERRORS.ROLE_REFUSED,
+    });
     const taken = build({ roleFound: true, emailTaken: true });
-    await expect(
-      taken.service.seed(INPUT, { NODE_ENV: 'test' }),
-    ).rejects.toMatchObject({ code: SEED_ACCOUNT_ERRORS.EMAIL_TAKEN });
+    await expect(taken.service.seed(INPUT, { NODE_ENV: 'test' })).rejects.toMatchObject({
+      code: SEED_ACCOUNT_ERRORS.EMAIL_TAKEN,
+    });
     expect(taken.createAccount).not.toHaveBeenCalled();
     expect(taken.record).not.toHaveBeenCalled();
   });
@@ -87,9 +85,9 @@ describe('SeedAccountService.seed', () => {
       roleFound: true,
       emailTaken: false,
     });
-    await expect(
-      service.seed(INPUT, { NODE_ENV: 'production' }),
-    ).rejects.toMatchObject({ code: SEED_ACCOUNT_ERRORS.NOT_ALLOWED });
+    await expect(service.seed(INPUT, { NODE_ENV: 'production' })).rejects.toMatchObject({
+      code: SEED_ACCOUNT_ERRORS.NOT_ALLOWED,
+    });
     expect(findRole).not.toHaveBeenCalled();
   });
 });

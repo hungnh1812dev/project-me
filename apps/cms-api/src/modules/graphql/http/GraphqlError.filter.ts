@@ -1,10 +1,7 @@
 import { Logger } from '@nestjs/common';
 import { GraphQLError } from 'graphql';
 
-import {
-  ERROR_CODES,
-  INTERNAL_ERROR_MESSAGE,
-} from '../../../common/constants/Error.constants';
+import { ERROR_CODES, INTERNAL_ERROR_MESSAGE } from '../../../common/constants/Error.constants';
 import {
   describeError,
   isDescribableError,
@@ -44,9 +41,7 @@ function fromDescribableError(exception: unknown): {
 } {
   const described = describeError(exception);
   return {
-    code: described.isServerError
-      ? ERROR_CODES.INTERNAL_ERROR
-      : described.errorCode,
+    code: described.isServerError ? ERROR_CODES.INTERNAL_ERROR : described.errorCode,
     message: described.message,
     details: described.details,
     isServerError: described.isServerError,

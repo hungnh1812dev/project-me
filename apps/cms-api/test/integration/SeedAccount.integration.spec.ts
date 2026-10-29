@@ -4,17 +4,14 @@ import {
   type PrismaHandle,
 } from '../../src/infrastructure/database/PrismaClient.adapter';
 import { OWNER_ROLE_SLUG } from '../../src/modules/access';
-import { identityUseCasesOf } from '../../src/modules/identity/cli/IdentityCli.setup';
-import { type SeedAccountInput } from '../../src/modules/identity/application/SeedAccount.service';
-import { SEED_ACCOUNT_ERRORS } from '../../src/modules/identity/domain/Identity.constants';
 import { verifyPassword } from '../../src/modules/identity/application/Password.service';
-import {
-  ACCOUNT_SEEDED_CHANNEL,
-  AUDIT_ACTIONS,
-} from '../../src/modules/security-audit';
+import { type SeedAccountInput } from '../../src/modules/identity/application/SeedAccount.service';
+import { identityUseCasesOf } from '../../src/modules/identity/cli/IdentityCli.setup';
+import { SEED_ACCOUNT_ERRORS } from '../../src/modules/identity/domain/Identity.constants';
+import { ACCOUNT_SEEDED_CHANNEL, AUDIT_ACTIONS } from '../../src/modules/security-audit';
+import { seedSystemRoles } from '../fixtures/Access.fixture';
 import { createCoreTemplate } from '../fixtures/CoreDb.fixture';
 import { startPostgres, type TestPostgres } from '../fixtures/Postgres.fixture';
-import { seedSystemRoles } from '../fixtures/Access.fixture';
 
 const PASSWORD = 'correct horse battery staple';
 
@@ -65,9 +62,7 @@ describe('seed:account (Postgres 17 via Testcontainers)', () => {
       is2faEnabled: true,
       twoFaMethod: 'email',
     });
-    expect(await verifyPassword(account.passwordHash ?? '', PASSWORD)).toBe(
-      true,
-    );
+    expect(await verifyPassword(account.passwordHash ?? '', PASSWORD)).toBe(true);
 
     const audit = await handle.prisma.auditLog.findFirstOrThrow({
       where: {
@@ -104,9 +99,7 @@ describe('seed:account (Postgres 17 via Testcontainers)', () => {
     await expect(
       seedAccount(handle.prisma, input('o@example.com', OWNER_ROLE_SLUG)),
     ).rejects.toMatchObject({ code: SEED_ACCOUNT_ERRORS.ROLE_REFUSED });
-    expect(
-      await handle.prisma.account.count({ where: { email: 'o@example.com' } }),
-    ).toBe(0);
+    expect(await handle.prisma.account.count({ where: { email: 'o@example.com' } })).toBe(0);
   });
 
   it('refuses a short password and never echoes it', async () => {

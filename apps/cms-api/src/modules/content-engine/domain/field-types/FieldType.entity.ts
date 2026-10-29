@@ -4,14 +4,7 @@ export type FieldValueKind =
 
 /** Name of the GraphQL output type of a field; the graphql module maps it to the type object. */
 export type GraphqlOutputName =
-  | 'String'
-  | 'Int'
-  | 'Decimal'
-  | 'Boolean'
-  | 'Date'
-  | 'DateTime'
-  | 'Json'
-  | 'Media';
+  'String' | 'Int' | 'Decimal' | 'Boolean' | 'Date' | 'DateTime' | 'Json' | 'Media';
 
 /**
  * Everything the content modules decide per scalar field type. Adding a type

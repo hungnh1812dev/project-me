@@ -66,8 +66,7 @@ export const LOGIN_FAILURE_REASONS = {
   NOT_ACTIVE: 'not_active',
 } as const;
 
-export type LoginFailureReason =
-  (typeof LOGIN_FAILURE_REASONS)[keyof typeof LOGIN_FAILURE_REASONS];
+export type LoginFailureReason = (typeof LOGIN_FAILURE_REASONS)[keyof typeof LOGIN_FAILURE_REASONS];
 
 /** `owner.created` metadata `channel`. */
 export const OWNER_CREATED_CHANNELS = {

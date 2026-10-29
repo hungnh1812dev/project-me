@@ -8,30 +8,24 @@ import {
 } from '../../../../infrastructure/database/TransactionRunner.port';
 import {
   AUDIT_ACTIONS,
-  type AuditAction,
-  type AuditMetadata,
   auditActorOf,
   SecurityAuditService,
+  type AuditAction,
+  type AuditMetadata,
 } from '../../../security-audit';
 import { AccessPolicyService } from '../../application/AccessPolicy.service';
 import { RolePermissionsService } from '../../application/RolePermissions.service';
 import { VersionCache } from '../../application/VersionCache.service';
 import type { PermissionAction } from '../../domain/Access.constants';
-import {
-  type PermissionGrant,
-  rolePolicyFromRows,
-} from '../../domain/ActorContext.entity';
+import { rolePolicyFromRows, type PermissionGrant } from '../../domain/ActorContext.entity';
 import { validatePermissionSet } from '../../domain/PermissionSet.rules';
 import {
-  type AccountActor,
   assertOutranks,
   grantsBeyondActor,
   outranks,
+  type AccountActor,
 } from '../../domain/Rank.rules';
-import {
-  MANAGEMENT_AUDIT_SUBJECTS,
-  MANAGEMENT_LIMITS,
-} from '../domain/AccessManagement.constants';
+import { MANAGEMENT_AUDIT_SUBJECTS, MANAGEMENT_LIMITS } from '../domain/AccessManagement.constants';
 import {
   invalidIssues,
   permissionNotHeld,
@@ -40,11 +34,7 @@ import {
   roleNotFound,
   roleSystemImmutable,
 } from '../domain/AccessManagement.errors';
-import {
-  type RoleRecord,
-  ROLE_REPOSITORY,
-  type RoleRepository,
-} from './AccessManagement.port';
+import { ROLE_REPOSITORY, type RoleRecord, type RoleRepository } from './AccessManagement.port';
 
 /** `POST /roles` body, already validated. */
 export interface RoleCreation {
@@ -104,17 +94,11 @@ export class RolesService {
   /** Every role, highest rank first, with its permission rows. */
   async list(actor: AccountActor): Promise<RoleView[]> {
     const { roles, accountCounts } = await this.roles.listWithAccountCounts();
-    return roles.map((row) =>
-      this.view(actor, row, accountCounts.get(row.id) ?? 0),
-    );
+    return roles.map((row) => this.view(actor, row, accountCounts.get(row.id) ?? 0));
   }
 
   /** A custom role (rank 11–39) below the actor's rank, with no permissions. */
-  async create(
-    actor: AccountActor,
-    input: RoleCreation,
-    meta: ClientMeta,
-  ): Promise<RoleView> {
+  async create(actor: AccountActor, input: RoleCreation, meta: ClientMeta): Promise<RoleView> {
     assertOutranks(actor, input.rank);
     const row = await this.runner.run(async (unit) => {
       // Serialised so two creates cannot both pass the cap.
@@ -179,11 +163,7 @@ export class RolesService {
    * the count otherwise, deleted and disabled accounts included; 409
    * ROLE_SYSTEM_IMMUTABLE for a system role.
    */
-  async remove(
-    actor: AccountActor,
-    documentId: string,
-    meta: ClientMeta,
-  ): Promise<void> {
+  async remove(actor: AccountActor, documentId: string, meta: ClientMeta): Promise<void> {
     await this.runner.run(async (unit) => {
       const role = await this.lockManageable(unit, actor, documentId);
       if (role.isSystem) throw roleSystemImmutable();
@@ -237,11 +217,7 @@ export class RolesService {
       },
     });
     const updated = await this.findRole(documentId);
-    return this.view(
-      actor,
-      updated,
-      await this.roles.countAccounts(updated.id),
-    );
+    return this.view(actor, updated, await this.roles.countAccounts(updated.id));
   }
 
   private async findRole(documentId: string): Promise<RoleRecord> {
@@ -279,11 +255,7 @@ export class RolesService {
     });
   }
 
-  private view(
-    actor: AccountActor,
-    row: RoleRecord,
-    accountCount: number,
-  ): RoleView {
+  private view(actor: AccountActor, row: RoleRecord, accountCount: number): RoleView {
     const policy = rolePolicyFromRows(row, row.permissions);
     return {
       id: row.documentId,

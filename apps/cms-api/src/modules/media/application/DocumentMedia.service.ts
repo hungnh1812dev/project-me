@@ -6,8 +6,12 @@ import {
   PermissionAction,
   type ActorContext,
 } from '../../access';
-import { ContentRegistry, mediaFieldNamesByTable } from '../../content-engine';
-import type { TableNode, TreeInput } from '../../content-engine';
+import {
+  ContentRegistry,
+  mediaFieldNamesByTable,
+  type TableNode,
+  type TreeInput,
+} from '../../content-engine';
 import { mediaRefInvalid, type EmbeddedMedia } from '../domain/Media.entity';
 import {
   cloneTree,
@@ -31,10 +35,7 @@ export class DocumentMediaService {
     private readonly registry: ContentRegistry,
   ) {}
 
-  private async slotsOf(
-    root: TableNode,
-    nodes: readonly TreeNodeLike[],
-  ): Promise<MediaSlot[]> {
+  private async slotsOf(root: TableNode, nodes: readonly TreeNodeLike[]): Promise<MediaSlot[]> {
     const mediaFields = mediaFieldNamesByTable(await this.registry.registry());
     return nodes.flatMap((node) => mediaSlots(mediaFields, root, node, ''));
   }
@@ -45,25 +46,15 @@ export class DocumentMediaService {
    * actor (`media` read row filter), else 400. Needs no `media` permission
    * beyond that.
    */
-  async toStored(
-    actor: ActorContext,
-    root: TableNode,
-    tree: TreeInput,
-  ): Promise<TreeInput> {
+  async toStored(actor: ActorContext, root: TableNode, tree: TreeInput): Promise<TreeInput> {
     const copy = cloneTree(tree);
     const slots = (await this.slotsOf(root, [copy])).filter(
       ({ values, name }) => values[name] !== null,
     );
     if (slots.length === 0) return copy;
     const { evaluator } = await this.access.policy();
-    const filter = evaluator.rowFilter(
-      actor,
-      PermissionAction.read,
-      MEDIA_SUBJECT,
-    );
-    const documentIds = [
-      ...new Set(slots.map(({ values, name }) => values[name] as string)),
-    ];
+    const filter = evaluator.rowFilter(actor, PermissionAction.read, MEDIA_SUBJECT);
+    const documentIds = [...new Set(slots.map(({ values, name }) => values[name] as string))];
     const ids = filter.allowed
       ? await this.repository.findReadableIds(documentIds, filter.where)
       : new Map<string, number>();
@@ -80,10 +71,7 @@ export class DocumentMediaService {
    * (null when the file is gone). Accepts a stored id or an uuid (the
    * submitted side of a 409). Masked values (`null`) stay as they are.
    */
-  async embed<T extends TreeNodeLike>(
-    root: TableNode,
-    records: readonly T[],
-  ): Promise<void> {
+  async embed<T extends TreeNodeLike>(root: TableNode, records: readonly T[]): Promise<void> {
     const slots = await this.slotsOf(root, records);
     const present = slots.filter(({ values, name }) => values[name] != null);
     if (present.length === 0) return;

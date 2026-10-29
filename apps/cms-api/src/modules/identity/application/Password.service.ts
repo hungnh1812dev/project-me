@@ -1,28 +1,22 @@
-import { argon2id, hash, verify } from 'argon2';
 import { Inject, Injectable } from '@nestjs/common';
+import { argon2id, hash, verify } from 'argon2';
 
 import type { ClientMeta } from '../../../common/types/ClientMeta.entity';
 import { type IAppConfig } from '../../../config/AppConfig.setup';
 import { APP_CONFIG } from '../../../config/Config.constants';
 import {
-  APP_LOGGER,
-  type AppLogger,
-} from '../../../infrastructure/logging/AppLogger.port';
-import {
-  MAIL_SENDER,
-  type MailSender,
-} from '../../../infrastructure/mail/Mail.port';
-import {
   CORE_TRANSACTION_RUNNER,
   type TransactionRunner,
 } from '../../../infrastructure/database/TransactionRunner.port';
+import { APP_LOGGER, type AppLogger } from '../../../infrastructure/logging/AppLogger.port';
+import { MAIL_SENDER, type MailSender } from '../../../infrastructure/mail/Mail.port';
 import { AccountStatus, VersionCache } from '../../access';
 import {
   AUDIT_ACTIONS,
-  type AuditAction,
   REAUTH_FAILURE_REASONS,
   SecurityAuditService,
   selfActor,
+  type AuditAction,
 } from '../../security-audit';
 import { isAcceptablePassword } from '../domain/Authentication.rules';
 import { ARGON2_OPTIONS, OTP, OtpPurpose } from '../domain/Identity.constants';
@@ -35,8 +29,8 @@ import {
 } from '../domain/Identity.errors';
 import {
   ACCOUNT_REPOSITORY,
-  type AccountRepository,
   RESET_SECOND_FACTOR,
+  type AccountRepository,
   type ResetSecondFactor,
 } from './Identity.port';
 import { buildOtpMail, isOtpCodeFormat, OtpService } from './Otp.service';
@@ -47,9 +41,7 @@ const LOGGER_CONTEXT = 'PasswordService';
 const PLACEHOLDER_CODE = '0'.repeat(OTP.DIGITS);
 
 /** Account status -> the code `request-otp` sends. */
-const OTP_PURPOSE_BY_STATUS: Readonly<
-  Partial<Record<AccountStatus, OtpPurpose>>
-> = {
+const OTP_PURPOSE_BY_STATUS: Readonly<Partial<Record<AccountStatus, OtpPurpose>>> = {
   [AccountStatus.invited]: OtpPurpose.INVITE_SET_PASSWORD,
   [AccountStatus.active]: OtpPurpose.RESET_PASSWORD,
 };
@@ -59,10 +51,7 @@ export function hashPassword(password: string): Promise<string> {
   return hash(password, { type: argon2id, ...ARGON2_OPTIONS });
 }
 
-export function verifyPassword(
-  passwordHash: string,
-  password: string,
-): Promise<boolean> {
+export function verifyPassword(passwordHash: string, password: string): Promise<boolean> {
   return verify(passwordHash, password);
 }
 
@@ -139,11 +128,7 @@ export class PasswordService {
   async reset(input: ResetPasswordInput, meta: ClientMeta): Promise<void> {
     if (!isAcceptablePassword(input.newPassword)) throw weakPassword();
     const account = await this.findForCode(input.email, AccountStatus.active);
-    const otpId = await this.checkCode(
-      account,
-      OtpPurpose.RESET_PASSWORD,
-      input.code,
-    );
+    const otpId = await this.checkCode(account, OtpPurpose.RESET_PASSWORD, input.code);
 
     if (account.is2faEnabled && account.twoFaMethod === 'totp') {
       const ok = await this.secondFactor.verify(account.id, input.totpCode);
@@ -161,11 +146,7 @@ export class PasswordService {
   async set(input: SetPasswordInput, meta: ClientMeta): Promise<void> {
     if (!isAcceptablePassword(input.newPassword)) throw weakPassword();
     const account = await this.findForCode(input.email, AccountStatus.invited);
-    const otpId = await this.checkCode(
-      account,
-      OtpPurpose.INVITE_SET_PASSWORD,
-      input.code,
-    );
+    const otpId = await this.checkCode(account, OtpPurpose.INVITE_SET_PASSWORD, input.code);
     await this.writePassword(account, input.newPassword, {
       otpId,
       action: AUDIT_ACTIONS.PASSWORD_SET,
@@ -214,35 +195,20 @@ export class PasswordService {
         : OTP_PURPOSE_BY_STATUS[account.status];
     if (account === null || purpose === undefined) {
       // Unknown, deleted or disabled: no code, same HMAC work.
-      this.otp.hashForUnknownAccount(
-        OtpPurpose.RESET_PASSWORD,
-        PLACEHOLDER_CODE,
-      );
+      this.otp.hashForUnknownAccount(OtpPurpose.RESET_PASSWORD, PLACEHOLDER_CODE);
       return;
     }
 
     const code = await this.otp.issue(account.id, purpose, { ip: meta.ip });
     await this.mail.send(
-      buildOtpMail(
-        account.email,
-        purpose,
-        code,
-        this.config.cors.allowedOrigins[0],
-      ),
+      buildOtpMail(account.email, purpose, code, this.config.cors.allowedOrigins[0]),
     );
   }
 
   private async findForCode(email: string, status: AccountStatus) {
     const account = await this.accounts.findCodeAccount(email);
-    if (
-      account === null ||
-      account.status !== status ||
-      account.deletedAt !== null
-    ) {
-      this.otp.hashForUnknownAccount(
-        OtpPurpose.RESET_PASSWORD,
-        PLACEHOLDER_CODE,
-      );
+    if (account === null || account.status !== status || account.deletedAt !== null) {
+      this.otp.hashForUnknownAccount(OtpPurpose.RESET_PASSWORD, PLACEHOLDER_CODE);
       throw invalidOtp();
     }
     return account;
@@ -277,18 +243,10 @@ export class PasswordService {
   ): Promise<void> {
     const passwordHash = await hashPassword(newPassword);
     await this.runner.run(async (unit) => {
-      if (
-        write.otpId !== undefined &&
-        !(await this.otp.tryConsume(unit, write.otpId))
-      ) {
+      if (write.otpId !== undefined && !(await this.otp.tryConsume(unit, write.otpId))) {
         throw invalidOtp();
       }
-      await this.accounts.storePassword(
-        unit,
-        account.id,
-        passwordHash,
-        write.status,
-      );
+      await this.accounts.storePassword(unit, account.id, passwordHash, write.status);
       await this.sessions.revokeAll(unit, account.id);
       await this.audit.record(unit, {
         actor: selfActor(account.id),

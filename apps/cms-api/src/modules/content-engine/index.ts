@@ -47,14 +47,8 @@ export {
   DocumentNotFoundError,
   type DocumentRef,
 } from './domain/ContentDocument.entity';
-export {
-  type ComponentNode,
-  type ComponentTrees,
-} from './domain/ContentTree.entity';
-export {
-  DEFAULT_CONTENT_PATHS,
-  loadDefinitions,
-} from './adapters/MigrationFiles.adapter';
+export { type ComponentNode, type ComponentTrees } from './domain/ContentTree.entity';
+export { DEFAULT_CONTENT_PATHS, loadDefinitions } from './adapters/MigrationFiles.adapter';
 export {
   ContentTypeRegistry,
   type RegisteredContentType,

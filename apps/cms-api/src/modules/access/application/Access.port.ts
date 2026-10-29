@@ -1,12 +1,6 @@
 import type { UnitOfWork } from '../../../infrastructure/database/TransactionRunner.port';
-import type {
-  AccountStatus,
-  PermissionAction,
-} from '../domain/Access.constants';
-import type {
-  PermissionGrant,
-  RolePolicy,
-} from '../domain/ActorContext.entity';
+import type { AccountStatus, PermissionAction } from '../domain/Access.constants';
+import type { PermissionGrant, RolePolicy } from '../domain/ActorContext.entity';
 
 /** What the guard needs to know about an account on every request. */
 export interface AccountVersions {

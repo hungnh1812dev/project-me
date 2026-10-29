@@ -1,15 +1,12 @@
-import { type Kysely, sql } from 'kysely';
+import { sql, type Kysely } from 'kysely';
 
+import { COMPONENT_SYSTEM_COLUMNS, CONTENT_DB_SCHEMA } from '../domain/ContentEngine.constants';
 import {
-  COMPONENT_SYSTEM_COLUMNS,
-  CONTENT_DB_SCHEMA,
-} from '../domain/ContentEngine.constants';
-import {
+  emptyComponents,
+  rowToValues,
   type ComponentNode,
   type ComponentTrees,
   type ContentRow,
-  emptyComponents,
-  rowToValues,
 } from '../domain/ContentTree.entity';
 import type { TableNode } from '../domain/ContentTypeRegistry.entity';
 
@@ -51,10 +48,7 @@ export async function loadComponentTrees(
       const rows = await db
         .withSchema(CONTENT_DB_SCHEMA)
         .selectFrom(table.plan.name)
-        .select([
-          ...COMPONENT_SYSTEM_COLUMNS,
-          ...table.plan.columns.map((column) => column.name),
-        ])
+        .select([...COMPONENT_SYSTEM_COLUMNS, ...table.plan.columns.map((column) => column.name)])
         .where('parent_id', '=', anyInt(parentIds))
         .orderBy('parent_id')
         .orderBy('order_index')

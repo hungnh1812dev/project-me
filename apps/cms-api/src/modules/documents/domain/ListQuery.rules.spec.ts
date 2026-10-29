@@ -1,7 +1,7 @@
 import { DomainError } from '../../../common/errors/Domain.errors';
 import { PAGINATION } from '../../../common/validation/SharedSchemas.rules';
 import { DOCUMENT_QUERY_LIMITS } from './Documents.constants';
-import { type ListDocumentsQuery, normalizeListQuery } from './ListQuery.rules';
+import { normalizeListQuery, type ListDocumentsQuery } from './ListQuery.rules';
 
 const base: ListDocumentsQuery = {
   status: 'published',
@@ -19,9 +19,7 @@ const eq = (path: string, value = 'x') => ({
 
 describe('normalizeListQuery', () => {
   it('fills the default sort when none is given', () => {
-    expect(normalizeListQuery(base).sort).toEqual([
-      { path: 'updatedAt', direction: 'desc' },
-    ]);
+    expect(normalizeListQuery(base).sort).toEqual([{ path: 'updatedAt', direction: 'desc' }]);
   });
 
   it('keeps a requested sort and the filters', () => {
@@ -44,20 +42,15 @@ describe('normalizeListQuery', () => {
     [
       'an overlong filter value',
       {
-        filters: [
-          eq('title', 'x'.repeat(DOCUMENT_QUERY_LIMITS.MAX_VALUE_LENGTH + 1)),
-        ],
+        filters: [eq('title', 'x'.repeat(DOCUMENT_QUERY_LIMITS.MAX_VALUE_LENGTH + 1))],
       },
     ],
-    [
-      'an eq filter with two values',
-      { filters: [{ ...eq('t'), values: ['a', 'b'] }] },
-    ],
+    ['an eq filter with two values', { filters: [{ ...eq('t'), values: ['a', 'b'] }] }],
     ['a filter without values', { filters: [{ ...eq('t'), values: [] }] }],
   ])('rejects %s', (_name, override) => {
-    expect(() =>
-      normalizeListQuery({ ...base, ...override } as ListDocumentsQuery),
-    ).toThrow(DomainError);
+    expect(() => normalizeListQuery({ ...base, ...override } as ListDocumentsQuery)).toThrow(
+      DomainError,
+    );
   });
 
   it('accepts the limits exactly', () => {
@@ -66,10 +59,7 @@ describe('normalizeListQuery', () => {
         ...base,
         page: DOCUMENT_QUERY_LIMITS.MAX_PAGE,
         pageSize: PAGINATION.MAX_PAGE_SIZE,
-        filters: Array.from(
-          { length: DOCUMENT_QUERY_LIMITS.MAX_FILTERS },
-          (_, i) => eq(`f${i}`),
-        ),
+        filters: Array.from({ length: DOCUMENT_QUERY_LIMITS.MAX_FILTERS }, (_, i) => eq(`f${i}`)),
       }),
     ).not.toThrow();
   });
