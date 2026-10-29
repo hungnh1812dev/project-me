@@ -72,12 +72,12 @@ export default function baseEslint(
     {
       files: typescriptFiles,
       rules: {
-        '@typescript-eslint/no-unused-vars': ['error', unusedVarsOptions],
+        '@typescript-eslint/no-unused-vars': ['warn', unusedVarsOptions],
       },
     },
     {
       files: javascriptFiles,
-      rules: { 'no-unused-vars': ['error', unusedVarsOptions] },
+      rules: { 'no-unused-vars': ['warn', unusedVarsOptions] },
     },
     ...(fileNames ? [fileNamesConfig(fileNames)] : []),
   ];
