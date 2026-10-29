@@ -1,16 +1,14 @@
-import { REVIEWER_SETTINGS_SUBJECT } from './Reviewer.constants';
-import { COPY } from '../../config/Copy.constants';
 import { APP_ROUTES } from '../../config/App.routes';
+import { COPY } from '../../config/Copy.constants';
 import { defineApiService, type Feature } from '../../lib/FeatureDefinition';
-import { ReviewerApiProvider } from './ReviewerApi.context';
 import { createReviewerApi } from './Reviewer.api';
+import { REVIEWER_SETTINGS_SUBJECT } from './Reviewer.constants';
+import { ReviewerApiProvider } from './ReviewerApi.context';
 import { ReviewerSessionsPage } from './ReviewerSessionsPage';
 
 export const reviewerFeature: Feature = {
   apiServices: [defineApiService(createReviewerApi, ReviewerApiProvider)],
-  routes: [
-    { path: APP_ROUTES.REVIEWER_SESSIONS, Component: ReviewerSessionsPage },
-  ],
+  routes: [{ path: APP_ROUTES.REVIEWER_SESSIONS, Component: ReviewerSessionsPage }],
   navItems: [
     {
       label: COPY.access.nav.reviewer,

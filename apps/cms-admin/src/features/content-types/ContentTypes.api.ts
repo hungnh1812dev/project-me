@@ -22,11 +22,7 @@ export interface ContentType {
 }
 
 /** Content-type discovery, sorted by slug. */
-export async function getContentTypes(
-  client: AxiosInstance,
-): Promise<ContentType[]> {
-  const { data } = await client.get<{ data: ContentType[] }>(
-    API_ENDPOINTS.CONTENT_TYPES.LIST,
-  );
+export async function getContentTypes(client: AxiosInstance): Promise<ContentType[]> {
+  const { data } = await client.get<{ data: ContentType[] }>(API_ENDPOINTS.CONTENT_TYPES.LIST);
   return data.data;
 }

@@ -1,11 +1,11 @@
+import type { FieldList, TokenScopeEntry } from './Access.api';
 import {
   CONTENT_WILDCARD_SUBJECT,
   PERMISSION_ACTIONS,
-  type PermissionAction,
   READABLE_FIELD_ACTIONS,
   WRITABLE_FIELD_ACTIONS,
+  type PermissionAction,
 } from './Access.constants';
-import type { FieldList, TokenScopeEntry } from './Access.api';
 import type { CellRef, FieldListKind } from './PermissionMatrix.rules';
 
 /**
@@ -19,17 +19,10 @@ export interface ScopeCell {
 }
 
 /** subject -> action -> cell. A missing cell = the action is not granted. */
-export type ScopeState = Readonly<
-  Record<string, Partial<Record<PermissionAction, ScopeCell>>>
->;
+export type ScopeState = Readonly<Record<string, Partial<Record<PermissionAction, ScopeCell>>>>;
 
-export function scopeFromEntries(
-  entries: readonly TokenScopeEntry[],
-): ScopeState {
-  const state: Record<
-    string,
-    Partial<Record<PermissionAction, ScopeCell>>
-  > = {};
+export function scopeFromEntries(entries: readonly TokenScopeEntry[]): ScopeState {
+  const state: Record<string, Partial<Record<PermissionAction, ScopeCell>>> = {};
   for (const entry of entries) {
     const bySubject = (state[entry.subject] ??= {});
     bySubject[entry.action] = {
@@ -45,10 +38,7 @@ export function scopeSubjectOrder(
   state: ScopeState,
   contentTypeSlugs: readonly string[],
 ): string[] {
-  const known = new Set<string>([
-    CONTENT_WILDCARD_SUBJECT,
-    ...contentTypeSlugs,
-  ]);
+  const known = new Set<string>([CONTENT_WILDCARD_SUBJECT, ...contentTypeSlugs]);
   const unknown = Object.keys(state)
     .filter((subject) => !known.has(subject))
     .sort();
@@ -101,10 +91,7 @@ export interface SerializedScope {
 }
 
 /** Entries in subject order, then action order; `null` lists are left out. */
-export function serializeScope(
-  state: ScopeState,
-  subjects: readonly string[],
-): SerializedScope {
+export function serializeScope(state: ScopeState, subjects: readonly string[]): SerializedScope {
   const entries: TokenScopeEntry[] = [];
   const cells: CellRef[] = [];
   for (const subject of subjects) {
@@ -122,9 +109,7 @@ export function serializeScope(
 }
 
 function fieldsKey(list: FieldList | undefined): string {
-  return list === null || list === undefined
-    ? '*'
-    : [...list].toSorted().join(',');
+  return list === null || list === undefined ? '*' : [...list].toSorted().join(',');
 }
 
 function signature(entry: TokenScopeEntry): string {

@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import {
   Button,
   Dialog,
@@ -10,14 +11,13 @@ import {
   FormAlert,
 } from '@abyss/form-commons';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
 
 import { COPY } from '../../config/Copy.constants';
 import { API_ERROR_CODES } from '../../config/Http.constants';
 import type { ApiToken } from './Access.api';
-import { useAccessApi } from './AccessApi.context';
 import { toAccessError } from './Access.errors';
 import { ACCESS_QUERY_KEYS } from './Access.queries';
+import { useAccessApi } from './AccessApi.context';
 
 const copy = COPY.access.revokeToken;
 
@@ -39,8 +39,7 @@ export function RevokeTokenDialog({
   const queryClient = useQueryClient();
   const [alert, setAlert] = useState<string | null>(null);
 
-  const refresh = () =>
-    queryClient.invalidateQueries({ queryKey: ACCESS_QUERY_KEYS.apiTokens });
+  const refresh = () => queryClient.invalidateQueries({ queryKey: ACCESS_QUERY_KEYS.apiTokens });
 
   const revoke = useMutation({
     mutationFn: (target: ApiToken) => api.revokeApiToken(target.id),
@@ -78,9 +77,7 @@ export function RevokeTokenDialog({
               <DialogTitle>{copy.title(token.name)}</DialogTitle>
               <DialogDescription>{copy.description}</DialogDescription>
             </DialogHeader>
-            {alert === null ? null : (
-              <FormAlert tone="error">{alert}</FormAlert>
-            )}
+            {alert === null ? null : <FormAlert tone="error">{alert}</FormAlert>}
             <DialogFooter>
               <DialogClose asChild>
                 <Button type="button" disabled={revoke.isPending}>

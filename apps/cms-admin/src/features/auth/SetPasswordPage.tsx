@@ -1,27 +1,27 @@
-import { Button, TextInput, FormAlert } from '@abyss/form-commons';
+import { useState } from 'react';
+import { Button, FormAlert, TextInput } from '@abyss/form-commons';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation } from '@tanstack/react-query';
-import { useState } from 'react';
 import { FormProvider, useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router';
 import { z } from 'zod';
 
+import { APP_ROUTES } from '../../config/App.routes';
 import { OTP_CODE_LENGTH } from '../../config/Auth.constants';
 import { COPY } from '../../config/Copy.constants';
-import { APP_ROUTES } from '../../config/App.routes';
 import { AuthPageLayout } from './AuthPageLayout';
 import { BackToSignIn } from './BackToSignIn';
 import type { LoginNoticeState } from './LoginNotice.rules';
-import { usePasswordApi } from './PasswordApi.context';
-import { type PasswordError, toPasswordError } from './Password.errors';
+import { toPasswordError, type PasswordError } from './Password.errors';
 import {
   ALERT_TONE_BY_ERROR,
   codeField,
   emailField,
   newPasswordShape,
-  passwordsMatch,
   PASSWORDS_MATCH_ISSUE,
+  passwordsMatch,
 } from './Password.form';
+import { usePasswordApi } from './PasswordApi.context';
 
 const setSchema = z
   .object({ email: emailField, code: codeField, ...newPasswordShape })
@@ -96,12 +96,8 @@ export function SetPasswordPage() {
 
   return (
     <AuthPageLayout>
-      <h1 className="mt-6 text-2xl font-semibold tracking-tight">
-        {COPY.password.set.title}
-      </h1>
-      <p className="mt-2 text-sm text-muted-foreground">
-        {COPY.password.set.description}
-      </p>
+      <h1 className="mt-6 text-2xl font-semibold tracking-tight">{COPY.password.set.title}</h1>
+      <p className="mt-2 text-sm text-muted-foreground">{COPY.password.set.description}</p>
       <FormProvider {...form}>
         <form
           noValidate
@@ -109,14 +105,10 @@ export function SetPasswordPage() {
           className="mt-6 grid gap-4 rounded-md border border-border bg-card p-5"
         >
           {error !== null ? (
-            <FormAlert tone={ALERT_TONE_BY_ERROR[error.kind]}>
-              {error.message}
-            </FormAlert>
+            <FormAlert tone={ALERT_TONE_BY_ERROR[error.kind]}>{error.message}</FormAlert>
           ) : null}
           {resentTo !== null ? (
-            <FormAlert tone="info">
-              {COPY.password.codeResent(resentTo)}
-            </FormAlert>
+            <FormAlert tone="info">{COPY.password.codeResent(resentTo)}</FormAlert>
           ) : null}
           <TextInput<SetValues>
             name="email"
@@ -135,7 +127,7 @@ export function SetPasswordPage() {
             autoComplete="one-time-code"
             maxLength={OTP_CODE_LENGTH}
             spellCheck={false}
-            className="tabular-nums tracking-widest"
+            className="tracking-widest tabular-nums"
             required
           />
           <TextInput<SetValues>

@@ -1,20 +1,20 @@
-import { Button, Checkbox } from '@abyss/form-commons';
 import { Fragment, useState } from 'react';
+import { Button, Checkbox } from '@abyss/form-commons';
 
+import { COPY } from '../../config/Copy.constants';
+import type { ContentType } from '../content-types';
 import {
   CONTENT_WILDCARD_SUBJECT,
   PERMISSION_ACTIONS,
   type PermissionAction,
 } from './Access.constants';
-import { COPY } from '../../config/Copy.constants';
-import type { ContentType } from '../content-types';
 import { FieldPicker } from './FieldPicker';
 import { cellKey, type CellRef } from './PermissionMatrix.rules';
 import {
   scopeFieldListKind,
-  type ScopeState,
   setScopeFieldList,
   toggleScopeCell,
+  type ScopeState,
 } from './TokenScope.rules';
 
 const copy = COPY.access.tokenScope;
@@ -72,11 +72,7 @@ export function TokenScopeEditor({
                 {matrixCopy.subjectColumn}
               </th>
               {PERMISSION_ACTIONS.map((action) => (
-                <th
-                  key={action}
-                  scope="col"
-                  className="px-3 py-2 text-center font-medium"
-                >
+                <th key={action} scope="col" className="px-3 py-2 text-center font-medium">
                   {matrixCopy.actions[action]}
                 </th>
               ))}
@@ -89,9 +85,7 @@ export function TokenScopeEditor({
             {subjects.map((subject) => {
               const label = labelOf(subject, known);
               const isWildcard = subject === CONTENT_WILDCARD_SUBJECT;
-              const contentType = contentTypes.find(
-                (type) => type.slug === subject,
-              );
+              const contentType = contentTypes.find((type) => type.slug === subject);
               const anyGranted = PERMISSION_ACTIONS.some(
                 (action) => state[subject]?.[action] !== undefined,
               );
@@ -112,20 +106,13 @@ export function TokenScopeEditor({
                       return (
                         <td key={action} className="px-3 py-2 text-center">
                           <Checkbox
-                            aria-label={copy.cellLabel(
-                              matrixCopy.actions[action],
-                              label,
-                            )}
+                            aria-label={copy.cellLabel(matrixCopy.actions[action], label)}
                             checked={granted}
                             // A grant the caller does not hold can still be removed.
                             disabled={!granted && !canGrant(subject, action)}
-                            aria-invalid={
-                              marked.has(cellKey(ref)) ? true : undefined
-                            }
+                            aria-invalid={marked.has(cellKey(ref)) ? true : undefined}
                             onCheckedChange={(checked) =>
-                              onChange((current) =>
-                                toggleScopeCell(current, ref, checked === true),
-                              )
+                              onChange((current) => toggleScopeCell(current, ref, checked === true))
                             }
                           />
                         </td>
@@ -161,9 +148,7 @@ export function TokenScopeEditor({
                             onChange={onChange}
                           />
                         ) : (
-                          <p className="m-0 text-sm text-muted-foreground">
-                            {copy.fieldsEmpty}
-                          </p>
+                          <p className="m-0 text-sm text-muted-foreground">{copy.fieldsEmpty}</p>
                         )}
                       </td>
                     </tr>
@@ -217,9 +202,7 @@ function FieldGroups({
                 : COPY.access.fields.noneSelectedWrite
             }
             onChange={(value) =>
-              onChange((current) =>
-                setScopeFieldList(current, { subject, action }, kind, value),
-              )
+              onChange((current) => setScopeFieldList(current, { subject, action }, kind, value))
             }
           />
         );

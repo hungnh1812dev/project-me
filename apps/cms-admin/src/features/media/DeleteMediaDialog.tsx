@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import {
   Button,
   Dialog,
@@ -10,13 +11,12 @@ import {
   FormAlert,
 } from '@abyss/form-commons';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
 
 import { COPY } from '../../config/Copy.constants';
-import { useMediaApi } from './MediaApi.context';
+import type { MediaFile } from './Media.api';
 import { toMediaError } from './Media.errors';
 import { MEDIA_QUERY_KEY } from './Media.queries';
-import type { MediaFile } from './Media.api';
+import { useMediaApi } from './MediaApi.context';
 
 const copy = COPY.media.deleteDialog;
 
@@ -69,9 +69,7 @@ export function DeleteMediaDialog({
               <DialogTitle>{copy.title(file.fileName)}</DialogTitle>
               <DialogDescription>{copy.description}</DialogDescription>
             </DialogHeader>
-            {alert === null ? null : (
-              <FormAlert tone="error">{alert}</FormAlert>
-            )}
+            {alert === null ? null : <FormAlert tone="error">{alert}</FormAlert>}
             <DialogFooter>
               <DialogClose asChild>
                 <Button type="button" disabled={remove.isPending}>

@@ -1,8 +1,4 @@
-import {
-  createFakeApi,
-  deferred,
-  TEST_API_BASE_URL,
-} from '../../../test/FakeApi.fixture';
+import { createFakeApi, deferred, TEST_API_BASE_URL } from '../../../test/FakeApi.fixture';
 import { API_ENDPOINTS } from '../../config/Api.endpoints';
 import { createApiClient } from '../../lib/Api.client';
 import { installAuthInterceptor } from './Auth.interceptor';
@@ -114,11 +110,7 @@ describe('installAuthInterceptor', () => {
     expect(onSessionExpired).toHaveBeenCalledTimes(1);
   });
 
-  it.each([
-    API_ENDPOINTS.AUTH.LOGIN,
-    API_ENDPOINTS.AUTH.REFRESH,
-    API_ENDPOINTS.AUTH.LOGOUT,
-  ])(
+  it.each([API_ENDPOINTS.AUTH.LOGIN, API_ENDPOINTS.AUTH.REFRESH, API_ENDPOINTS.AUTH.LOGOUT])(
     'never refreshes or retries %s, and sends it no Bearer header',
     async (path) => {
       const { api, client, refreshRuns, onSessionExpired } = setup();

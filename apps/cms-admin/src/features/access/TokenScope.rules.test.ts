@@ -31,37 +31,22 @@ describe('token scope model', () => {
 
   it('keeps slugs the token still names but the registry dropped', () => {
     const state = scopeFromEntries([{ subject: 'old', action: 'read' }]);
-    expect(scopeSubjectOrder(state, ['article'])).toEqual([
-      '*',
-      'article',
-      'old',
-    ]);
+    expect(scopeSubjectOrder(state, ['article'])).toEqual(['*', 'article', 'old']);
   });
 
   it('grants with all fields and removes a cell again', () => {
-    let state = toggleScopeCell(
-      {},
-      { subject: 'article', action: 'read' },
-      true,
-    );
+    let state = toggleScopeCell({}, { subject: 'article', action: 'read' }, true);
     expect(state.article?.read).toEqual({
       readableFields: null,
       writableFields: null,
     });
-    state = setScopeFieldList(
-      state,
-      { subject: 'article', action: 'read' },
-      'readableFields',
-      ['title'],
-    );
+    state = setScopeFieldList(state, { subject: 'article', action: 'read' }, 'readableFields', [
+      'title',
+    ]);
     expect(serializeScope(state, ['article']).entries).toEqual([
       { subject: 'article', action: 'read', readableFields: ['title'] },
     ]);
-    state = toggleScopeCell(
-      state,
-      { subject: 'article', action: 'read' },
-      false,
-    );
+    state = toggleScopeCell(state, { subject: 'article', action: 'read' }, false);
     expect(serializeScope(state, ['article']).entries).toEqual([]);
   });
 
@@ -85,10 +70,7 @@ describe('token scope model', () => {
       ]),
     ).toBe(true);
     expect(
-      sameScopeEntries(entries, [
-        ...entries.slice(0, 2),
-        { subject: '*', action: 'create' },
-      ]),
+      sameScopeEntries(entries, [...entries.slice(0, 2), { subject: '*', action: 'create' }]),
     ).toBe(false);
     expect(sameScopeEntries(entries, entries.slice(0, 2))).toBe(false);
   });

@@ -6,8 +6,7 @@ import { retryAfterSecondsOf } from '../../lib/ApiFailure.errors';
 
 const SECONDS_PER_MINUTE = 60;
 
-export type LoginErrorKind =
-  'invalid-credentials' | 'rate-limited' | 'network' | 'unexpected';
+export type LoginErrorKind = 'invalid-credentials' | 'rate-limited' | 'network' | 'unexpected';
 
 export interface LoginError {
   kind: LoginErrorKind;
@@ -20,9 +19,7 @@ function rateLimitedMessage(retryAfter: unknown): string {
   if (seconds < SECONDS_PER_MINUTE) {
     return COPY.login.errors.rateLimitedSeconds(seconds);
   }
-  return COPY.login.errors.rateLimitedMinutes(
-    Math.ceil(seconds / SECONDS_PER_MINUTE),
-  );
+  return COPY.login.errors.rateLimitedMinutes(Math.ceil(seconds / SECONDS_PER_MINUTE));
 }
 
 /**

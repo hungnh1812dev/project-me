@@ -1,5 +1,5 @@
-import { MASKED_FIELDS_KEY } from './Content.constants';
 import { conflictDetails, UID_A, UID_B } from '../../../test/Merge.fixture';
+import { MASKED_FIELDS_KEY } from './Content.constants';
 import {
   INITIAL_MERGE_STATE,
   isMaskedPath,
@@ -27,9 +27,7 @@ describe('parseEntryPath', () => {
       kind: 'item',
     });
     expect(parseEntryPath('components.skill')?.kind).toBe('list');
-    expect(
-      parseEntryPath(`components.a[${UID_A}].components.b[${UID_B}].values.x`),
-    ).toEqual({
+    expect(parseEntryPath(`components.a[${UID_A}].components.b[${UID_B}].values.x`)).toEqual({
       steps: [
         { name: 'a', uid: UID_A },
         { name: 'b', uid: UID_B },

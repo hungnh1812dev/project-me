@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
+
 import { COPY } from '.';
-import { toComparableCopy } from './CopySnapshot.fixture';
 import snapshot from './copy.snapshot.json';
+import { toComparableCopy } from './CopySnapshot.fixture';
 
 type CopySnapshot = Record<string, unknown>;
 const comparableCopy = toComparableCopy(COPY) as CopySnapshot;

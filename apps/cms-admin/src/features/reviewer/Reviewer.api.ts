@@ -33,21 +33,14 @@ export function createReviewerApi(client: AxiosInstance) {
 
     /** Switching off also ends every live reviewer session. */
     setEnabled: async (enabled: boolean): Promise<boolean> => {
-      const { data } = await client.put<{ enabled: boolean }>(
-        REVIEWER.SETTINGS,
-        { enabled },
-      );
+      const { data } = await client.put<{ enabled: boolean }>(REVIEWER.SETTINGS, { enabled });
       return data.enabled === true;
     },
 
-    listSessions: async (
-      page: number,
-      pageSize: number,
-    ): Promise<ReviewerSessionsPage> => {
-      const { data } = await client.get<ReviewerSessionsPage>(
-        REVIEWER.SESSIONS,
-        { params: { page, pageSize } },
-      );
+    listSessions: async (page: number, pageSize: number): Promise<ReviewerSessionsPage> => {
+      const { data } = await client.get<ReviewerSessionsPage>(REVIEWER.SESSIONS, {
+        params: { page, pageSize },
+      });
       return data;
     },
   };

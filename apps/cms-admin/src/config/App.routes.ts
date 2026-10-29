@@ -44,16 +44,13 @@ export function contentNewPath(slug: string): string {
 
 /** `/content/<slug>/<documentId>` */
 export function contentEditPath(slug: string, documentId: string): string {
-  return APP_ROUTES.CONTENT_EDIT.replace(
-    ':slug',
-    encodeURIComponent(slug),
-  ).replace(':documentId', encodeURIComponent(documentId));
+  return APP_ROUTES.CONTENT_EDIT.replace(':slug', encodeURIComponent(slug)).replace(
+    ':documentId',
+    encodeURIComponent(documentId),
+  );
 }
 
 /** `/roles/<id>`: the matrix page of one role. */
 export function rolePermissionsPath(roleId: string): string {
-  return APP_ROUTES.ROLE_PERMISSIONS.replace(
-    ':roleId',
-    encodeURIComponent(roleId),
-  );
+  return APP_ROUTES.ROLE_PERMISSIONS.replace(':roleId', encodeURIComponent(roleId));
 }

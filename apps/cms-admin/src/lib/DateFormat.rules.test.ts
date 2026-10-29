@@ -18,8 +18,6 @@ describe('date-format', () => {
 
   it('shows both the date and the time for date-times', () => {
     expect(formatDateTime(INSTANT)).toContain('2026');
-    expect(formatDateTime(INSTANT).length).toBeGreaterThan(
-      formatDate(INSTANT).length,
-    );
+    expect(formatDateTime(INSTANT).length).toBeGreaterThan(formatDate(INSTANT).length);
   });
 });

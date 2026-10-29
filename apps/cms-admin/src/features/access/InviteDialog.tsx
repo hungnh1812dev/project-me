@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import {
   Button,
   Dialog,
@@ -7,23 +8,22 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  FormAlert,
   SelectInput,
   TextInput,
-  FormAlert,
 } from '@abyss/form-commons';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
 import { FormProvider, useForm } from 'react-hook-form';
 import { z } from 'zod';
 
-import { OWNER_ROLE_SLUG, UNASSIGNABLE_ROLE_SLUGS } from './Access.constants';
 import { COPY } from '../../config/Copy.constants';
 import { ACCOUNT_LIMITS, API_ERROR_CODES } from '../../config/Http.constants';
 import type { InvitedAccount, Role } from './Access.api';
-import { useAccessApi } from './AccessApi.context';
+import { OWNER_ROLE_SLUG, UNASSIGNABLE_ROLE_SLUGS } from './Access.constants';
 import { toAccessError } from './Access.errors';
 import { ACCESS_QUERY_KEYS } from './Access.queries';
+import { useAccessApi } from './AccessApi.context';
 
 const copy = COPY.access.invite;
 
@@ -38,10 +38,7 @@ const inviteSchema = z.object({
     .string()
     .trim()
     .min(1, copy.validation.displayNameRequired)
-    .max(
-      ACCOUNT_LIMITS.DISPLAY_NAME_MAX_LENGTH,
-      copy.validation.displayNameTooLong,
-    ),
+    .max(ACCOUNT_LIMITS.DISPLAY_NAME_MAX_LENGTH, copy.validation.displayNameTooLong),
   roleId: z.string().min(1, copy.validation.roleRequired),
 });
 type InviteValues = z.input<typeof inviteSchema>;
@@ -148,9 +145,7 @@ export function InviteDialog({
               })(event);
             }}
           >
-            {alert === null ? null : (
-              <FormAlert tone="error">{alert}</FormAlert>
-            )}
+            {alert === null ? null : <FormAlert tone="error">{alert}</FormAlert>}
             <TextInput<InviteValues>
               name="email"
               label={copy.emailLabel}
@@ -179,11 +174,7 @@ export function InviteDialog({
                   {copy.cancel}
                 </Button>
               </DialogClose>
-              <Button
-                type="submit"
-                variant="primary"
-                loading={invite.isPending}
-              >
+              <Button type="submit" variant="primary" loading={invite.isPending}>
                 {copy.submit}
               </Button>
             </DialogFooter>

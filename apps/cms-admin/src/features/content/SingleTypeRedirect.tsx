@@ -1,13 +1,9 @@
 import { FormAlert } from '@abyss/form-commons';
 import { Navigate } from 'react-router';
 
-import {
-  LoadError,
-  PageHeader,
-  TableSkeleton,
-} from '../../components/PageStates';
-import { COPY } from '../../config/Copy.constants';
+import { LoadError, PageHeader, TableSkeleton } from '../../components/PageStates';
 import { contentEditPath, contentNewPath } from '../../config/App.routes';
+import { COPY } from '../../config/Copy.constants';
 import { isForbidden } from '../access';
 import { useDocumentListQuery } from './Content.queries';
 
@@ -24,24 +20,14 @@ export function SingleTypeRedirect({
   slug: string;
   draftAndPublish: boolean;
 }) {
-  const documents = useDocumentListQuery(
-    slug,
-    1,
-    undefined,
-    draftAndPublish,
-    true,
-  );
+  const documents = useDocumentListQuery(slug, 1, undefined, draftAndPublish, true);
 
   if (documents.isSuccess) {
     const [only] = documents.data.data;
     return (
       <Navigate
         replace
-        to={
-          only === undefined
-            ? contentNewPath(slug)
-            : contentEditPath(slug, only.documentId)
-        }
+        to={only === undefined ? contentNewPath(slug) : contentEditPath(slug, only.documentId)}
       />
     );
   }

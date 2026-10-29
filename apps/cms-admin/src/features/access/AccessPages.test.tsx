@@ -2,14 +2,10 @@ import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import type { FakeHandler } from '../../../test/FakeApi.fixture';
-import {
-  createTestServices,
-  renderApp,
-  TEST_USER,
-} from '../../../test/RenderApp.fixture';
-import { COPY } from '../../config/Copy.constants';
+import { createTestServices, renderApp, TEST_USER } from '../../../test/RenderApp.fixture';
 import { API_ENDPOINTS } from '../../config/Api.endpoints';
 import { APP_ROUTES, rolePermissionsPath } from '../../config/App.routes';
+import { COPY } from '../../config/Copy.constants';
 import type { CurrentUser } from '../auth/Auth.slice';
 import type { ContentType } from '../content-types';
 import type { Account, PermissionRow, Role } from './Access.api';
@@ -46,11 +42,7 @@ const adminRole: Role = {
   isSystem: true,
   accountCount: 1,
   manageable: true,
-  permissions: rows(
-    ['accounts', 'read'],
-    ['roles', 'read'],
-    ['article', 'read'],
-  ),
+  permissions: rows(['accounts', 'read'], ['roles', 'read'], ['article', 'read']),
 };
 const editorRole: Role = {
   id: 'role_editor',
@@ -122,11 +114,7 @@ const linh = account({
   displayName: 'Linh Pham',
 });
 
-async function open(
-  route: string,
-  user: CurrentUser,
-  handlers: Record<string, FakeHandler> = {},
-) {
+async function open(route: string, user: CurrentUser, handlers: Record<string, FakeHandler> = {}) {
   const { api, services } = createTestServices({
     [`POST ${REFRESH}`]: () => ({ status: 200, data: { accessToken: 't1' } }),
     [`GET ${ME}`]: () => ({ status: 200, data: user }),
@@ -162,9 +150,7 @@ describe('AccountsPage', () => {
       [`GET ${ACCOUNTS.LIST}`]: listHandler,
     });
     expect(await screen.findByText('Linh Pham')).toBeInTheDocument();
-    expect(
-      screen.getByRole('button', { name: copy.accounts.invite }),
-    ).toBeVisible();
+    expect(screen.getByRole('button', { name: copy.accounts.invite })).toBeVisible();
     expect(
       screen.getByRole('button', {
         name: copy.accounts.disableLabel('Linh Pham'),
@@ -185,15 +171,11 @@ describe('AccountsPage', () => {
     await open(APP_ROUTES.ACCOUNTS, TEST_USER, {
       [`GET ${ACCOUNTS.LIST}`]: () => {
         calls += 1;
-        return calls === 1
-          ? { status: 500 }
-          : { status: 200, data: accountsBody([linh]) };
+        return calls === 1 ? { status: 500 } : { status: 200, data: accountsBody([linh]) };
       },
     });
     const user = userEvent.setup();
-    expect(
-      await screen.findByText(copy.accounts.loadFailed),
-    ).toBeInTheDocument();
+    expect(await screen.findByText(copy.accounts.loadFailed)).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: copy.errors.retry }));
     expect(await screen.findByText('Linh Pham')).toBeInTheDocument();
   });
@@ -203,9 +185,7 @@ describe('AccountsPage', () => {
       [`GET ${ACCOUNTS.LIST}`]: listHandler,
     });
     expect(await screen.findByText('Linh Pham')).toBeInTheDocument();
-    expect(
-      screen.queryByRole('button', { name: copy.accounts.invite }),
-    ).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: copy.accounts.invite })).not.toBeInTheDocument();
     expect(
       screen.queryByRole('button', {
         name: copy.accounts.disableLabel('Linh Pham'),
@@ -232,9 +212,7 @@ describe('AccountsPage', () => {
     await open(APP_ROUTES.ACCOUNTS, adminUser, {
       [`GET ${ACCOUNTS.LIST}`]: () => ({ status: 403 }),
     });
-    expect(
-      await screen.findByText(copy.accounts.forbidden),
-    ).toBeInTheDocument();
+    expect(await screen.findByText(copy.accounts.forbidden)).toBeInTheDocument();
   });
 
   it('invites an account: validates, offers only assignable roles, then confirms', async () => {
@@ -246,32 +224,22 @@ describe('AccountsPage', () => {
       }),
     });
     const user = userEvent.setup();
-    await user.click(
-      await screen.findByRole('button', { name: copy.accounts.invite }),
-    );
+    await user.click(await screen.findByRole('button', { name: copy.accounts.invite }));
     const dialog = await screen.findByRole('dialog', {
       name: copy.invite.title,
     });
 
-    await user.click(
-      within(dialog).getByRole('button', { name: copy.invite.submit }),
-    );
+    await user.click(within(dialog).getByRole('button', { name: copy.invite.submit }));
     expect(
       await within(dialog).findByText(copy.invite.validation.emailRequired),
     ).toBeInTheDocument();
     expect(api.callsTo(`POST ${ACCOUNTS.LIST}`)).toHaveLength(0);
 
-    const roleSelect = within(dialog).getByLabelText(
-      new RegExp(copy.invite.roleLabel),
-    );
+    const roleSelect = within(dialog).getByLabelText(new RegExp(copy.invite.roleLabel));
     const optionNames = within(roleSelect)
       .getAllByRole('option')
       .map((option) => option.textContent);
-    expect(optionNames).toEqual([
-      copy.invite.rolePlaceholder,
-      'Admin',
-      'Editor',
-    ]);
+    expect(optionNames).toEqual([copy.invite.rolePlaceholder, 'Admin', 'Editor']);
 
     await user.type(
       within(dialog).getByLabelText(new RegExp(copy.invite.emailLabel)),
@@ -282,9 +250,7 @@ describe('AccountsPage', () => {
       'New Person',
     );
     await user.selectOptions(roleSelect, 'Editor');
-    await user.click(
-      within(dialog).getByRole('button', { name: copy.invite.submit }),
-    );
+    await user.click(within(dialog).getByRole('button', { name: copy.invite.submit }));
 
     expect(
       await screen.findByText(copy.accounts.invited('linh@domain.localhost')),
@@ -328,9 +294,7 @@ describe('AccountsPage', () => {
       }),
     });
     const user = userEvent.setup();
-    await user.click(
-      await screen.findByRole('button', { name: copy.accounts.invite }),
-    );
+    await user.click(await screen.findByRole('button', { name: copy.accounts.invite }));
     const dialog = await screen.findByRole('dialog');
     await user.type(
       within(dialog).getByLabelText(new RegExp(copy.invite.emailLabel)),
@@ -344,13 +308,9 @@ describe('AccountsPage', () => {
       within(dialog).getByLabelText(new RegExp(copy.invite.roleLabel)),
       'Editor',
     );
-    await user.click(
-      within(dialog).getByRole('button', { name: copy.invite.submit }),
-    );
+    await user.click(within(dialog).getByRole('button', { name: copy.invite.submit }));
     expect(
-      await screen.findByText(
-        copy.accounts.invitedNoEmail('linh@domain.localhost'),
-      ),
+      await screen.findByText(copy.accounts.invitedNoEmail('linh@domain.localhost')),
     ).toBeInTheDocument();
   });
 
@@ -363,9 +323,7 @@ describe('AccountsPage', () => {
       }),
     });
     const user = userEvent.setup();
-    await user.click(
-      await screen.findByRole('button', { name: copy.accounts.invite }),
-    );
+    await user.click(await screen.findByRole('button', { name: copy.accounts.invite }));
     const dialog = await screen.findByRole('dialog');
     await user.type(
       within(dialog).getByLabelText(new RegExp(copy.invite.emailLabel)),
@@ -379,15 +337,11 @@ describe('AccountsPage', () => {
       within(dialog).getByLabelText(new RegExp(copy.invite.roleLabel)),
       'Editor',
     );
-    await user.click(
-      within(dialog).getByRole('button', { name: copy.invite.submit }),
+    await user.click(within(dialog).getByRole('button', { name: copy.invite.submit }));
+    expect(await within(dialog).findByText(copy.invite.errors.emailTaken)).toBeInTheDocument();
+    expect(within(dialog).getByLabelText(new RegExp(copy.invite.emailLabel))).toHaveValue(
+      'linh@domain.localhost',
     );
-    expect(
-      await within(dialog).findByText(copy.invite.errors.emailTaken),
-    ).toBeInTheDocument();
-    expect(
-      within(dialog).getByLabelText(new RegExp(copy.invite.emailLabel)),
-    ).toHaveValue('linh@domain.localhost');
   });
 
   it('disables an account after a confirmation that names it', async () => {
@@ -408,9 +362,7 @@ describe('AccountsPage', () => {
         name: copy.disable.submit('Linh Pham'),
       }),
     );
-    expect(
-      await screen.findByText(copy.accounts.disabled('Linh Pham')),
-    ).toBeInTheDocument();
+    expect(await screen.findByText(copy.accounts.disabled('Linh Pham'))).toBeInTheDocument();
     expect(api.callsTo(`POST ${ACCOUNTS.DISABLE('acc_linh')}`)).toHaveLength(1);
   });
 
@@ -429,9 +381,7 @@ describe('AccountsPage', () => {
         name: copy.disable.cancel,
       }),
     );
-    await waitFor(() =>
-      expect(screen.queryByRole('dialog')).not.toBeInTheDocument(),
-    );
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
     expect(api.callsTo(`POST ${ACCOUNTS.DISABLE('acc_linh')}`)).toHaveLength(0);
   });
 
@@ -455,9 +405,7 @@ describe('AccountsPage', () => {
         name: copy.disable.submit('Linh Pham'),
       }),
     );
-    expect(
-      await within(dialog).findByText(copy.errors.rankForbidden),
-    ).toBeInTheDocument();
+    expect(await within(dialog).findByText(copy.errors.rankForbidden)).toBeInTheDocument();
   });
 });
 
@@ -482,12 +430,8 @@ describe('AccountsPage enable, resend and paging', () => {
     await open(APP_ROUTES.ACCOUNTS, TEST_USER, {
       [`GET ${ACCOUNTS.LIST}`]: list([disabledLinh, invitedMai]),
     });
-    expect(
-      await screen.findByRole('button', { name: enableName }),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole('button', { name: resendName }),
-    ).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: enableName })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: resendName })).toBeInTheDocument();
     expect(
       screen.queryByRole('button', {
         name: copy.accounts.enableLabel('Mai Tran'),
@@ -513,12 +457,8 @@ describe('AccountsPage enable, resend and paging', () => {
       ]),
     });
     expect(await screen.findByText('Linh Pham')).toBeInTheDocument();
-    expect(
-      screen.queryByRole('button', { name: enableName }),
-    ).not.toBeInTheDocument();
-    expect(
-      screen.queryByRole('button', { name: resendName }),
-    ).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: enableName })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: resendName })).not.toBeInTheDocument();
   });
 
   it('hides both actions when the role holds neither permission', async () => {
@@ -526,12 +466,8 @@ describe('AccountsPage enable, resend and paging', () => {
       [`GET ${ACCOUNTS.LIST}`]: list([disabledLinh, invitedMai]),
     });
     expect(await screen.findByText('Linh Pham')).toBeInTheDocument();
-    expect(
-      screen.queryByRole('button', { name: enableName }),
-    ).not.toBeInTheDocument();
-    expect(
-      screen.queryByRole('button', { name: resendName }),
-    ).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: enableName })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: resendName })).not.toBeInTheDocument();
   });
 
   it('enables an account without a confirmation and refreshes the list', async () => {
@@ -548,15 +484,11 @@ describe('AccountsPage enable, resend and paging', () => {
     });
     const user = userEvent.setup();
     await user.click(await screen.findByRole('button', { name: enableName }));
-    expect(
-      await screen.findByText(copy.accounts.enabled('Linh Pham')),
-    ).toBeInTheDocument();
+    expect(await screen.findByText(copy.accounts.enabled('Linh Pham'))).toBeInTheDocument();
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     expect(api.callsTo(`POST ${ACCOUNTS.ENABLE('acc_linh')}`)).toHaveLength(1);
     await waitFor(() =>
-      expect(
-        screen.queryByRole('button', { name: enableName }),
-      ).not.toBeInTheDocument(),
+      expect(screen.queryByRole('button', { name: enableName })).not.toBeInTheDocument(),
     );
   });
 
@@ -570,9 +502,7 @@ describe('AccountsPage enable, resend and paging', () => {
     });
     const user = userEvent.setup();
     await user.click(await screen.findByRole('button', { name: enableName }));
-    expect(
-      await screen.findByText(copy.accounts.alreadyEnabled),
-    ).toBeInTheDocument();
+    expect(await screen.findByText(copy.accounts.alreadyEnabled)).toBeInTheDocument();
   });
 
   it('shows a rank error from the server when enabling', async () => {
@@ -585,9 +515,7 @@ describe('AccountsPage enable, resend and paging', () => {
     });
     const user = userEvent.setup();
     await user.click(await screen.findByRole('button', { name: enableName }));
-    expect(
-      await screen.findByText(copy.errors.rankForbidden),
-    ).toBeInTheDocument();
+    expect(await screen.findByText(copy.errors.rankForbidden)).toBeInTheDocument();
   });
 
   it('resends an invite and says it was sent', async () => {
@@ -604,9 +532,7 @@ describe('AccountsPage enable, resend and paging', () => {
       await screen.findByText(copy.accounts.resent('mai@domain.localhost')),
     ).toBeInTheDocument();
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
-    expect(
-      api.callsTo(`POST ${ACCOUNTS.RESEND_INVITE('acc_mai')}`),
-    ).toHaveLength(1);
+    expect(api.callsTo(`POST ${ACCOUNTS.RESEND_INVITE('acc_mai')}`)).toHaveLength(1);
   });
 
   it('says the mail failed when invitationSent is false', async () => {
@@ -620,9 +546,7 @@ describe('AccountsPage enable, resend and paging', () => {
     const user = userEvent.setup();
     await user.click(await screen.findByRole('button', { name: resendName }));
     expect(
-      await screen.findByText(
-        copy.accounts.resentNoEmail('mai@domain.localhost'),
-      ),
+      await screen.findByText(copy.accounts.resentNoEmail('mai@domain.localhost')),
     ).toBeInTheDocument();
   });
 
@@ -636,9 +560,7 @@ describe('AccountsPage enable, resend and paging', () => {
     });
     const user = userEvent.setup();
     await user.click(await screen.findByRole('button', { name: resendName }));
-    expect(
-      await screen.findByText(COPY.password.errors.rateLimitedMinutes(2)),
-    ).toBeInTheDocument();
+    expect(await screen.findByText(COPY.password.errors.rateLimitedMinutes(2))).toBeInTheDocument();
   });
 
   it('pages through accounts and shows the range', async () => {
@@ -658,28 +580,16 @@ describe('AccountsPage enable, resend and paging', () => {
     });
     const user = userEvent.setup();
     expect(await screen.findByText('Linh Pham')).toBeInTheDocument();
-    expect(
-      screen.getByText(copy.accounts.pagination.range(1, 1, 21)),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole('button', { name: copy.accounts.pagination.previous }),
-    ).toBeDisabled();
-    await user.click(
-      screen.getByRole('button', { name: copy.accounts.pagination.next }),
-    );
+    expect(screen.getByText(copy.accounts.pagination.range(1, 1, 21))).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: copy.accounts.pagination.previous })).toBeDisabled();
+    await user.click(screen.getByRole('button', { name: copy.accounts.pagination.next }));
     expect(await screen.findByText('Second Person')).toBeInTheDocument();
-    expect(
-      screen.getByText(copy.accounts.pagination.range(21, 21, 21)),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole('button', { name: copy.accounts.pagination.next }),
-    ).toBeDisabled();
+    expect(screen.getByText(copy.accounts.pagination.range(21, 21, 21))).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: copy.accounts.pagination.next })).toBeDisabled();
     expect(api.callsTo(`GET ${ACCOUNTS.LIST}`).at(-1)?.params).toMatchObject({
       page: 2,
     });
-    await user.click(
-      screen.getByRole('button', { name: copy.accounts.pagination.previous }),
-    );
+    await user.click(screen.getByRole('button', { name: copy.accounts.pagination.previous }));
     expect(await screen.findByText('Linh Pham')).toBeInTheDocument();
   });
 
@@ -693,8 +603,7 @@ describe('AccountsPage enable, resend and paging', () => {
     await open(APP_ROUTES.ACCOUNTS, TEST_USER, {
       [`GET ${ACCOUNTS.LIST}`]: (config) => {
         const page = Number((config.params as { page: number }).page);
-        if (page === 1)
-          return { status: 200, data: accountsBody([linh], 1, gone ? 1 : 21) };
+        if (page === 1) return { status: 200, data: accountsBody([linh], 1, gone ? 1 : 21) };
         return {
           status: 200,
           data: accountsBody(gone ? [] : [second], page, gone ? 1 : 21),
@@ -730,9 +639,7 @@ describe('AccountsPage enable, resend and paging', () => {
 describe('navigation', () => {
   it('shows Accounts and Roles to the owner', async () => {
     await open(APP_ROUTES.ROLES, TEST_USER);
-    expect(
-      await screen.findByRole('link', { name: copy.nav.accounts }),
-    ).toBeVisible();
+    expect(await screen.findByRole('link', { name: copy.nav.accounts })).toBeVisible();
     expect(screen.getByRole('link', { name: copy.nav.roles })).toBeVisible();
   });
 
@@ -745,12 +652,8 @@ describe('navigation', () => {
       },
     );
     await screen.findByText(copy.accounts.forbidden);
-    expect(
-      screen.queryByRole('link', { name: copy.nav.roles }),
-    ).not.toBeInTheDocument();
-    expect(
-      screen.queryByRole('link', { name: copy.nav.accounts }),
-    ).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: copy.nav.roles })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: copy.nav.accounts })).not.toBeInTheDocument();
   });
 });
 
@@ -758,29 +661,21 @@ describe('RolesPage and RolePermissionsPage', () => {
   it('lists roles and opens one', async () => {
     await open(APP_ROUTES.ROLES, TEST_USER);
     const user = userEvent.setup();
-    await user.click(
-      await screen.findByRole('link', { name: copy.roles.open('Editor') }),
-    );
-    expect(
-      await screen.findByRole('heading', { level: 1, name: 'Editor' }),
-    ).toBeInTheDocument();
+    await user.click(await screen.findByRole('link', { name: copy.roles.open('Editor') }));
+    expect(await screen.findByRole('heading', { level: 1, name: 'Editor' })).toBeInTheDocument();
   });
 
   it('explains the owner role has nothing to configure', async () => {
     await open(rolePermissionsPath(ownerRole.id), TEST_USER);
     expect(await screen.findByText(copy.role.owner)).toBeInTheDocument();
-    expect(
-      screen.queryByRole('button', { name: copy.role.save }),
-    ).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: copy.role.save })).not.toBeInTheDocument();
   });
 
   it('edits the matrix and saves the whole permission set', async () => {
     let saved: PermissionRow[] = [];
     const { api } = await open(rolePermissionsPath(editorRole.id), TEST_USER, {
       [`PUT ${ROLES.PERMISSIONS(editorRole.id)}`]: (config) => {
-        saved = (
-          JSON.parse(config.data as string) as { permissions: PermissionRow[] }
-        ).permissions;
+        saved = (JSON.parse(config.data as string) as { permissions: PermissionRow[] }).permissions;
         return { status: 200, data: { ...editorRole, permissions: saved } };
       },
     });
@@ -795,25 +690,17 @@ describe('RolesPage and RolePermissionsPage', () => {
     );
     expect(screen.getByText(copy.role.unsaved)).toBeInTheDocument();
 
-    await user.click(
-      screen.getByRole('button', { name: copy.matrix.detailsLabel('article') }),
-    );
+    await user.click(screen.getByRole('button', { name: copy.matrix.detailsLabel('article') }));
     const details = await screen.findByRole('group', {
       name: copy.matrix.detailsLabel('article'),
     });
-    await user.click(
-      within(details).getAllByRole('radio', { name: copy.fields.some }).at(-1)!,
-    );
-    expect(
-      within(details).getByText(copy.fields.sensitive),
-    ).toBeInTheDocument();
+    await user.click(within(details).getAllByRole('radio', { name: copy.fields.some }).at(-1)!);
+    expect(within(details).getByText(copy.fields.sensitive)).toBeInTheDocument();
     await user.click(within(details).getByLabelText('title'));
 
     await user.click(screen.getByRole('button', { name: copy.role.save }));
     expect(await screen.findByText(copy.role.saved)).toBeInTheDocument();
-    expect(api.callsTo(`PUT ${ROLES.PERMISSIONS(editorRole.id)}`)).toHaveLength(
-      1,
-    );
+    expect(api.callsTo(`PUT ${ROLES.PERMISSIONS(editorRole.id)}`)).toHaveLength(1);
     expect(saved).toEqual([
       {
         subject: 'article',
@@ -836,26 +723,15 @@ describe('RolesPage and RolePermissionsPage', () => {
     const { api } = await open(rolePermissionsPath(editorRole.id), TEST_USER);
     const user = userEvent.setup();
     await screen.findByRole('button', { name: copy.role.save });
-    await user.click(
-      screen.getByRole('button', { name: copy.matrix.detailsLabel('article') }),
-    );
+    await user.click(screen.getByRole('button', { name: copy.matrix.detailsLabel('article') }));
     const details = await screen.findByRole('group', {
       name: copy.matrix.detailsLabel('article'),
     });
-    await user.click(
-      within(details).getByText(copy.conditions.summary('Read')),
-    );
-    await user.type(
-      within(details).getByLabelText(copy.conditions.label('Read')),
-      '{{oops',
-    );
+    await user.click(within(details).getByText(copy.conditions.summary('Read')));
+    await user.type(within(details).getByLabelText(copy.conditions.label('Read')), '{{oops');
     await user.click(screen.getByRole('button', { name: copy.role.save }));
-    expect(
-      await screen.findByText(copy.role.conditionsInvalidJson),
-    ).toBeInTheDocument();
-    expect(api.callsTo(`PUT ${ROLES.PERMISSIONS(editorRole.id)}`)).toHaveLength(
-      0,
-    );
+    expect(await screen.findByText(copy.role.conditionsInvalidJson)).toBeInTheDocument();
+    expect(api.callsTo(`PUT ${ROLES.PERMISSIONS(editorRole.id)}`)).toHaveLength(0);
   });
 
   it('marks the rows the server refuses as not held', async () => {
@@ -876,19 +752,13 @@ describe('RolesPage and RolePermissionsPage', () => {
       }),
     );
     await user.click(screen.getByRole('button', { name: copy.role.save }));
-    expect(
-      await screen.findByText(copy.errors.permissionNotHeld),
-    ).toBeInTheDocument();
+    expect(await screen.findByText(copy.errors.permissionNotHeld)).toBeInTheDocument();
   });
 
   it('is read-only for a role the caller cannot manage, and for callers without roles:update', async () => {
     await open(rolePermissionsPath(adminRole.id), adminUser);
-    expect(
-      await screen.findByText(copy.role.readOnlyNoUpdate),
-    ).toBeInTheDocument();
-    expect(
-      screen.queryByRole('button', { name: copy.role.save }),
-    ).not.toBeInTheDocument();
+    expect(await screen.findByText(copy.role.readOnlyNoUpdate)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: copy.role.save })).not.toBeInTheDocument();
     expect(
       screen.getByRole('checkbox', {
         name: copy.matrix.cellLabel('Read', 'article'),
@@ -910,11 +780,7 @@ describe('RolesPage and RolePermissionsPage', () => {
             data: [
               {
                 ...adminRole,
-                permissions: rows(
-                  ['roles', 'read'],
-                  ['roles', 'update'],
-                  ['accounts', 'read'],
-                ),
+                permissions: rows(['roles', 'read'], ['roles', 'update'], ['accounts', 'read']),
               },
               editorRole,
             ],

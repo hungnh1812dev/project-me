@@ -1,38 +1,30 @@
+import { useState } from 'react';
 import { Button, FormAlert, type FormAlertTone } from '@abyss/form-commons';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
 import { Link, useParams } from 'react-router';
 
+import { LoadError, PageHeader, TableSkeleton } from '../../components/PageStates';
+import { APP_ROUTES } from '../../config/App.routes';
 import { COPY } from '../../config/Copy.constants';
 import { API_ERROR_CODES, HTTP_STATUS } from '../../config/Http.constants';
-import { APP_ROUTES } from '../../config/App.routes';
 import type { ContentType } from '../content-types';
 import type { Role } from './Access.api';
-import { useAccessApi } from './AccessApi.context';
+import { OWNER_ROLE_SLUG } from './Access.constants';
 import { toAccessError } from './Access.errors';
-import {
-  ACCESS_QUERY_KEYS,
-  useContentTypesQuery,
-  useRolesQuery,
-} from './Access.queries';
-import { useCallerAccess } from './useCallerAccess';
-import {
-  LoadError,
-  PageHeader,
-  TableSkeleton,
-} from '../../components/PageStates';
+import { ACCESS_QUERY_KEYS, useContentTypesQuery, useRolesQuery } from './Access.queries';
+import { useAccessApi } from './AccessApi.context';
 import { PermissionMatrix } from './PermissionMatrix';
 import {
   cellIssues,
   cellKey,
   cellsAt,
   matrixFromRows,
-  type MatrixState,
   sameMatrix,
   serializeMatrix,
   subjectOrder,
+  type MatrixState,
 } from './PermissionMatrix.rules';
-import { OWNER_ROLE_SLUG } from './Access.constants';
+import { useCallerAccess } from './useCallerAccess';
 
 const copy = COPY.access;
 
@@ -99,11 +91,7 @@ export function RolePermissionsPage() {
       {role.slug === OWNER_ROLE_SLUG ? (
         <FormAlert tone="info">{copy.role.owner}</FormAlert>
       ) : (
-        <RoleEditor
-          key={role.id}
-          role={role}
-          contentTypes={contentTypes.data}
-        />
+        <RoleEditor key={role.id} role={role} contentTypes={contentTypes.data} />
       )}
     </div>
   );
@@ -114,24 +102,14 @@ interface SaveFeedback {
   message: string;
 }
 
-function RoleEditor({
-  role,
-  contentTypes,
-}: {
-  role: Role;
-  contentTypes: readonly ContentType[];
-}) {
+function RoleEditor({ role, contentTypes }: { role: Role; contentTypes: readonly ContentType[] }) {
   const api = useAccessApi();
   const queryClient = useQueryClient();
   const caller = useCallerAccess();
-  const [baseline, setBaseline] = useState(() =>
-    matrixFromRows(role.permissions),
-  );
+  const [baseline, setBaseline] = useState(() => matrixFromRows(role.permissions));
   const [matrix, setMatrix] = useState<MatrixState>(baseline);
   const [feedback, setFeedback] = useState<SaveFeedback | null>(null);
-  const [errors, setErrors] = useState<ReadonlyMap<string, string[]>>(
-    new Map(),
-  );
+  const [errors, setErrors] = useState<ReadonlyMap<string, string[]>>(new Map());
   const [notHeld, setNotHeld] = useState<ReadonlySet<string>>(new Set());
   const [checkJson, setCheckJson] = useState(false);
 
@@ -143,13 +121,10 @@ function RoleEditor({
   const flatOrder = [...order.content, ...order.system];
   const serialized = serializeMatrix(matrix, flatOrder);
   const dirty = !sameMatrix(matrix, baseline, flatOrder);
-  const invalidConditions = new Set(
-    checkJson ? serialized.invalidConditions.map(cellKey) : [],
-  );
+  const invalidConditions = new Set(checkJson ? serialized.invalidConditions.map(cellKey) : []);
 
   const save = useMutation({
-    mutationFn: (sent: typeof serialized) =>
-      api.replacePermissions(role.id, sent.rows),
+    mutationFn: (sent: typeof serialized) => api.replacePermissions(role.id, sent.rows),
     onSuccess: (saved) => {
       queryClient.setQueryData<Role[]>(ACCESS_QUERY_KEYS.roles, (current) =>
         current?.map((item) => (item.id === saved.id ? saved : item)),
@@ -166,9 +141,7 @@ function RoleEditor({
       const error = toAccessError(cause);
       setErrors(cellIssues(error.issues, sent.cells));
       setNotHeld(cellsAt(error.indexes, sent.cells));
-      const invalid =
-        error.status === HTTP_STATUS.BAD_REQUEST &&
-        error.errorCode !== undefined;
+      const invalid = error.status === HTTP_STATUS.BAD_REQUEST && error.errorCode !== undefined;
       setFeedback({
         tone: error.tone,
         message: invalid ? copy.role.invalid : error.message,
@@ -201,9 +174,7 @@ function RoleEditor({
           {role.manageable ? copy.role.readOnlyNoUpdate : copy.role.readOnly}
         </FormAlert>
       )}
-      {feedback === null ? null : (
-        <FormAlert tone={feedback.tone}>{feedback.message}</FormAlert>
-      )}
+      {feedback === null ? null : <FormAlert tone={feedback.tone}>{feedback.message}</FormAlert>}
       <PermissionMatrix
         state={matrix}
         onChange={(update) => {
@@ -213,9 +184,7 @@ function RoleEditor({
         contentTypes={contentTypes}
         order={order}
         editable={editable && !save.isPending}
-        canGrant={(subject, action) =>
-          caller.isOwner || caller.can(subject, action)
-        }
+        canGrant={(subject, action) => caller.isOwner || caller.can(subject, action)}
         errors={errors}
         notHeld={notHeld}
         invalidConditions={invalidConditions}
@@ -223,9 +192,7 @@ function RoleEditor({
       {editable ? (
         <div className="sticky bottom-0 -mx-4 flex flex-col gap-3 border-t border-border bg-card px-4 py-3 sm:-mx-6 sm:flex-row sm:items-center sm:justify-end sm:px-6">
           {dirty ? (
-            <p className="m-0 text-sm text-muted-foreground sm:mr-auto">
-              {copy.role.unsaved}
-            </p>
+            <p className="m-0 text-sm text-muted-foreground sm:mr-auto">{copy.role.unsaved}</p>
           ) : null}
           <div className="flex flex-col-reverse gap-2 sm:flex-row">
             <Button

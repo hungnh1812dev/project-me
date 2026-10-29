@@ -36,9 +36,7 @@ describe('buildFieldTree (cv-page)', () => {
     const role = experience?.children.find((node) => node.name === 'role');
     expect(role?.path).toBe('experience.role');
     expect(role?.children.map((node) => node.name)).toContain('techStack');
-    expect(role?.children.find((node) => node.name === 'teamSize')?.type).toBe(
-      'integer',
-    );
+    expect(role?.children.find((node) => node.name === 'teamSize')?.type).toBe('integer');
   });
 
   it('skips system fields and drops fields whose parent is not reachable', () => {

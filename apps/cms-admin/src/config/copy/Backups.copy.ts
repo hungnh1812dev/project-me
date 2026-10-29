@@ -1,8 +1,7 @@
 export const BACKUPS_COPY = {
   nav: 'Backups',
   title: 'Backups',
-  description:
-    'Nightly database backups, stored off the server. Only the owner can download them.',
+  description: 'Nightly database backups, stored off the server. Only the owner can download them.',
   check: {
     hint: 'The backup status is read on request. Check it to see the latest backups.',
     button: 'Check backups',
@@ -42,8 +41,7 @@ export const BACKUPS_COPY = {
   },
   dialog: {
     title: (fileName: string) => `Download ${fileName}`,
-    description:
-      'Confirm with your password and a code. The download link works for one minute.',
+    description: 'Confirm with your password and a code. The download link works for one minute.',
     emailCodeSent: 'We sent a code to your email.',
     submit: 'Download',
     cancel: 'Cancel',

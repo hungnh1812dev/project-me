@@ -1,28 +1,28 @@
-import { Button, TextInput, FormAlert } from '@abyss/form-commons';
+import { useEffect, useRef, useState } from 'react';
+import { Button, FormAlert, TextInput } from '@abyss/form-commons';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation } from '@tanstack/react-query';
-import { useEffect, useRef, useState } from 'react';
 import { FormProvider, useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router';
 import { z } from 'zod';
 
+import { APP_ROUTES } from '../../config/App.routes';
 import { OTP_CODE_LENGTH } from '../../config/Auth.constants';
 import { COPY } from '../../config/Copy.constants';
-import { APP_ROUTES } from '../../config/App.routes';
 import { AuthPageLayout } from './AuthPageLayout';
 import { BackToSignIn } from './BackToSignIn';
 import type { LoginNoticeState } from './LoginNotice.rules';
-import { usePasswordApi } from './PasswordApi.context';
-import { type PasswordError, toPasswordError } from './Password.errors';
+import { toPasswordError, type PasswordError } from './Password.errors';
 import {
   ALERT_TONE_BY_ERROR,
   codeField,
   emailField,
-  optionalTotpField,
   newPasswordShape,
-  passwordsMatch,
+  optionalTotpField,
   PASSWORDS_MATCH_ISSUE,
+  passwordsMatch,
 } from './Password.form';
+import { usePasswordApi } from './PasswordApi.context';
 
 const requestSchema = z.object({ email: emailField });
 type RequestValues = z.input<typeof requestSchema>;
@@ -44,10 +44,7 @@ export function ResetPasswordPage() {
       {email === null ? (
         <RequestCodeStep onSent={setEmail} />
       ) : (
-        <ChoosePasswordStep
-          email={email}
-          onChangeEmail={() => setEmail(null)}
-        />
+        <ChoosePasswordStep email={email} onChangeEmail={() => setEmail(null)} />
       )}
     </AuthPageLayout>
   );
@@ -77,9 +74,7 @@ function RequestCodeStep({ onSent }: { onSent: (email: string) => void }) {
       <h1 className="mt-6 text-2xl font-semibold tracking-tight">
         {COPY.password.reset.requestTitle}
       </h1>
-      <p className="mt-2 text-sm text-muted-foreground">
-        {COPY.password.reset.requestDescription}
-      </p>
+      <p className="mt-2 text-sm text-muted-foreground">{COPY.password.reset.requestDescription}</p>
       <FormProvider {...form}>
         <form
           noValidate
@@ -87,9 +82,7 @@ function RequestCodeStep({ onSent }: { onSent: (email: string) => void }) {
           className="mt-6 grid gap-4 rounded-md border border-border bg-card p-5"
         >
           {error !== null ? (
-            <FormAlert tone={ALERT_TONE_BY_ERROR[error.kind]}>
-              {error.message}
-            </FormAlert>
+            <FormAlert tone={ALERT_TONE_BY_ERROR[error.kind]}>{error.message}</FormAlert>
           ) : null}
           <TextInput<RequestValues>
             name="email"
@@ -207,9 +200,7 @@ function ChoosePasswordStep({
         {COPY.password.reset.title}
       </h1>
       <p className="mt-2 text-sm text-muted-foreground">
-        {resent
-          ? COPY.password.codeResent(email)
-          : COPY.password.reset.codeSent(email)}
+        {resent ? COPY.password.codeResent(email) : COPY.password.reset.codeSent(email)}
       </p>
       <FormProvider {...form}>
         <form
@@ -218,9 +209,7 @@ function ChoosePasswordStep({
           className="mt-6 grid gap-4 rounded-md border border-border bg-card p-5"
         >
           {error !== null ? (
-            <FormAlert tone={ALERT_TONE_BY_ERROR[error.kind]}>
-              {error.message}
-            </FormAlert>
+            <FormAlert tone={ALERT_TONE_BY_ERROR[error.kind]}>{error.message}</FormAlert>
           ) : null}
           {/* Hidden username field so password managers file the new password. */}
           <input
@@ -239,7 +228,7 @@ function ChoosePasswordStep({
             autoComplete="one-time-code"
             maxLength={OTP_CODE_LENGTH}
             spellCheck={false}
-            className="tabular-nums tracking-widest"
+            className="tracking-widest tabular-nums"
             required
           />
           <TextInput<ResetValues>
@@ -266,16 +255,11 @@ function ChoosePasswordStep({
               autoComplete="one-time-code"
               maxLength={OTP_CODE_LENGTH}
               spellCheck={false}
-              className="tabular-nums tracking-widest"
+              className="tracking-widest tabular-nums"
               required
             />
           ) : null}
-          <Button
-            type="submit"
-            variant="primary"
-            className="mt-2 w-full"
-            loading={reset.isPending}
-          >
+          <Button type="submit" variant="primary" className="mt-2 w-full" loading={reset.isPending}>
             {COPY.password.reset.submit}
           </Button>
         </form>

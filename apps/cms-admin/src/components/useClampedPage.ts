@@ -11,9 +11,7 @@ export function useClampedPage(
   setPage: (page: number) => void,
   meta: PageMeta | undefined,
 ): number {
-  const lastPage = meta
-    ? Math.max(1, Math.ceil(meta.total / meta.pageSize))
-    : 1;
+  const lastPage = meta ? Math.max(1, Math.ceil(meta.total / meta.pageSize)) : 1;
   if (page > lastPage) setPage(lastPage); // adjust during render, not in an effect
   return lastPage;
 }

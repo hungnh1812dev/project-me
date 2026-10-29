@@ -14,14 +14,7 @@ function renderPicker(props: {
   disabled: boolean;
   onChange: (value: FieldList) => void;
 }) {
-  render(
-    <FieldPicker
-      legend="Readable fields"
-      fields={FIELDS}
-      emptyHint="none"
-      {...props}
-    />,
-  );
+  render(<FieldPicker legend="Readable fields" fields={FIELDS} emptyHint="none" {...props} />);
 }
 
 describe('FieldPicker', () => {

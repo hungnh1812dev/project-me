@@ -84,9 +84,7 @@ describe('createCrossTabRefresh', () => {
   });
 
   it('falls back to a plain refresh without Web Locks', async () => {
-    const refresh = vi.fn<() => Promise<string>>(() =>
-      Promise.resolve('access'),
-    );
+    const refresh = vi.fn<() => Promise<string>>(() => Promise.resolve('access'));
     const run = createCrossTabRefresh(refresh, { lockName: LOCK });
     expect(run).toBe(refresh);
     expect(await run()).toBe('access');

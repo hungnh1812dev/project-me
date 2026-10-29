@@ -38,8 +38,7 @@ export function apiFailureOf(error: unknown): ApiFailure {
       retryAfterSeconds: retryAfterSecondsOf(headers[RETRY_AFTER_HEADER]),
     };
   }
-  const errorCode = (response.data as { errorCode?: unknown } | null)
-    ?.errorCode;
+  const errorCode = (response.data as { errorCode?: unknown } | null)?.errorCode;
   return {
     kind: 'http',
     status: response.status,
@@ -58,8 +57,7 @@ export function rateLimitedMessage(seconds: number | undefined): string {
 /** The `details` object of an error answer; empty when absent. */
 export function apiDetailsOf(error: unknown): Record<string, unknown> {
   if (!isAxiosError(error)) return {};
-  const details = (error.response?.data as { details?: unknown } | null)
-    ?.details;
+  const details = (error.response?.data as { details?: unknown } | null)?.details;
   return typeof details === 'object' && details !== null
     ? (details as Record<string, unknown>)
     : {};
@@ -74,8 +72,7 @@ export function apiIssuesOf(error: unknown): ApiIssue[] {
     const { path, message } = item as { path?: unknown; message?: unknown };
     if (!Array.isArray(path) || typeof message !== 'string') return [];
     const parts = path.filter(
-      (part): part is string | number =>
-        typeof part === 'string' || typeof part === 'number',
+      (part): part is string | number => typeof part === 'string' || typeof part === 'number',
     );
     return [{ path: parts, message }];
   });

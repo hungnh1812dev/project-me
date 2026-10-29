@@ -8,13 +8,11 @@ const copy = COPY.media;
 const IMAGE_PREFIX = 'image/';
 
 function Thumbnail({ file }: { file: MediaFile }) {
-  const src =
-    file.thumbnailUrl ??
-    (file.mimeType.startsWith(IMAGE_PREFIX) ? file.url : null);
+  const src = file.thumbnailUrl ?? (file.mimeType.startsWith(IMAGE_PREFIX) ? file.url : null);
   return (
     <span className="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-sm border border-border bg-muted">
       {src === null ? (
-        <span className="text-xs font-medium uppercase text-muted-foreground">
+        <span className="text-xs font-medium text-muted-foreground uppercase">
           {file.mimeType.split('/')[1] ?? ''}
         </span>
       ) : (
@@ -104,9 +102,7 @@ export function mediaColumns({
     {
       key: 'added',
       header: copy.columns.added,
-      renderCell: (file) => (
-        <span className="tabular-nums">{formatDate(file.createdAt)}</span>
-      ),
+      renderCell: (file) => <span className="tabular-nums">{formatDate(file.createdAt)}</span>,
     },
     ...(canUpdate || canDelete ? [actionsColumn] : []),
   ];

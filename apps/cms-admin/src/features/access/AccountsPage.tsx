@@ -1,32 +1,19 @@
-import {
-  Button,
-  FormAlert,
-  type FormAlertTone,
-  SortableSheet,
-} from '@abyss/form-commons';
 import { useRef, useState } from 'react';
+import { Button, FormAlert, SortableSheet, type FormAlertTone } from '@abyss/form-commons';
 
+import { LoadError, PageHeader, TableSkeleton } from '../../components/PageStates';
+import { Pagination } from '../../components/Pagination';
 import { useClampedPage } from '../../components/useClampedPage';
 import { useRestoreFocus } from '../../components/useRestoreFocus';
-
 import { COPY } from '../../config/Copy.constants';
 import { useCurrentUser } from '../auth';
 import type { Account, InvitedAccount } from './Access.api';
 import { isForbidden } from './Access.errors';
-import { accountColumns } from './Account.columns';
 import { useAccountsQuery, useRolesQuery } from './Access.queries';
-import { useCallerAccess } from './useCallerAccess';
-import {
-  DisableAccountDialog,
-  type DisableOutcome,
-} from './DisableAccountDialog';
+import { accountColumns } from './Account.columns';
+import { DisableAccountDialog, type DisableOutcome } from './DisableAccountDialog';
 import { InviteDialog } from './InviteDialog';
-import {
-  LoadError,
-  PageHeader,
-  TableSkeleton,
-} from '../../components/PageStates';
-import { Pagination } from '../../components/Pagination';
+import { useCallerAccess } from './useCallerAccess';
 
 const copy = COPY.access.accounts;
 
@@ -111,9 +98,7 @@ export function AccountsPage() {
           ) : null
         }
       />
-      {notice === null ? null : (
-        <FormAlert tone={notice.tone}>{notice.message}</FormAlert>
-      )}
+      {notice === null ? null : <FormAlert tone={notice.tone}>{notice.message}</FormAlert>}
       {accounts.isPending ? (
         <TableSkeleton label={copy.loading} />
       ) : accounts.isError ? (

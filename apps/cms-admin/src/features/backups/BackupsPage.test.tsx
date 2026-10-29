@@ -1,12 +1,8 @@
-import userEvent from '@testing-library/user-event';
 import { screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 
 import type { FakeHandler } from '../../../test/FakeApi.fixture';
-import {
-  createTestServices,
-  renderApp,
-  TEST_USER,
-} from '../../../test/RenderApp.fixture';
+import { createTestServices, renderApp, TEST_USER } from '../../../test/RenderApp.fixture';
 import { API_ENDPOINTS } from '../../config/Api.endpoints';
 import { APP_ROUTES } from '../../config/App.routes';
 import { COPY } from '../../config/Copy.constants';
@@ -62,14 +58,9 @@ function listOf(
   };
 }
 
-async function openAndCheck(
-  user: CurrentUser,
-  handlers: Record<string, FakeHandler> = {},
-) {
+async function openAndCheck(user: CurrentUser, handlers: Record<string, FakeHandler> = {}) {
   const opened = await open(user, handlers);
-  await userEvent.click(
-    await screen.findByRole('button', { name: copy.check.button }),
-  );
+  await userEvent.click(await screen.findByRole('button', { name: copy.check.button }));
   return opened;
 }
 
@@ -104,17 +95,11 @@ describe('BackupsPage', () => {
     });
     await screen.findByRole('button', { name: copy.check.button });
     expect(api.callsTo(`GET ${BACKUPS.LIST}`)).toHaveLength(0);
-    await userEvent.click(
-      screen.getByRole('button', { name: copy.check.button }),
-    );
+    await userEvent.click(screen.getByRole('button', { name: copy.check.button }));
     await screen.findByRole('table', { name: copy.tableLabel });
     expect(api.callsTo(`GET ${BACKUPS.LIST}`)).toHaveLength(1);
-    await userEvent.click(
-      screen.getByRole('button', { name: copy.check.refresh }),
-    );
-    await vi.waitFor(() =>
-      expect(api.callsTo(`GET ${BACKUPS.LIST}`)).toHaveLength(2),
-    );
+    await userEvent.click(screen.getByRole('button', { name: copy.check.refresh }));
+    await vi.waitFor(() => expect(api.callsTo(`GET ${BACKUPS.LIST}`)).toHaveLength(2));
   });
 
   it('lists backups newest first with size and the stale banner', async () => {
@@ -175,12 +160,8 @@ describe('BackupsPage', () => {
       [`GET ${BACKUPS.LIST}`]: () => ({ status: 500, data: {} }),
     });
     // A 5xx is retried once (one second back-off) before the error shows.
-    expect(
-      await screen.findByText(copy.loadFailed, {}, { timeout: RETRY_WAIT_MS }),
-    ).toBeVisible();
-    expect(
-      screen.getByRole('button', { name: COPY.common.retry }),
-    ).toBeVisible();
+    expect(await screen.findByText(copy.loadFailed, {}, { timeout: RETRY_WAIT_MS })).toBeVisible();
+    expect(screen.getByRole('button', { name: COPY.common.retry })).toBeVisible();
   });
 
   it('shows a rate-limit message with retry on a 429, without a second request', async () => {
@@ -193,9 +174,7 @@ describe('BackupsPage', () => {
     });
     expect(await screen.findByText(copy.rateLimited)).toBeVisible();
     expect(screen.queryByText(copy.loadFailed)).toBeNull();
-    expect(
-      screen.getByRole('button', { name: COPY.common.retry }),
-    ).toBeVisible();
+    expect(screen.getByRole('button', { name: COPY.common.retry })).toBeVisible();
     await new Promise((resolve) => setTimeout(resolve, RETRY_BACKOFF_MS));
     expect(api.callsTo(`GET ${BACKUPS.LIST}`)).toHaveLength(1);
   });

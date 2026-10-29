@@ -1,18 +1,10 @@
 import type { Dispatch } from '@reduxjs/toolkit';
 
-import {
-  createCrossTabRefresh,
-  type CrossTabRefreshOptions,
-} from './CrossTabRefresh';
-import { singleFlight } from './SingleFlight.rules';
-import type {
-  AuthApi,
-  LoginCredentials,
-  LoginOutcome,
-  TwoFactorVerification,
-} from './Auth.api';
+import type { AuthApi, LoginCredentials, LoginOutcome, TwoFactorVerification } from './Auth.api';
 import { accessTokenReceived, signedIn, signedOut } from './Auth.slice';
+import { createCrossTabRefresh, type CrossTabRefreshOptions } from './CrossTabRefresh';
 import type { LoginNotice } from './LoginNotice.rules';
+import { singleFlight } from './SingleFlight.rules';
 
 export interface SessionOptions {
   dispatch: Dispatch;
@@ -30,12 +22,7 @@ export interface SessionOptions {
  * (D9). The refresh cookie rotates on use, so parallel refreshes would
  * look like token reuse and revoke the session.
  */
-export function createSession({
-  dispatch,
-  authApi,
-  onSessionEnded,
-  crossTab,
-}: SessionOptions) {
+export function createSession({ dispatch, authApi, onSessionEnded, crossTab }: SessionOptions) {
   const end = (notice?: LoginNotice) => {
     dispatch(signedOut(notice));
     onSessionEnded?.();
@@ -95,8 +82,7 @@ export function createSession({
       await startWith(await authApi.verifyTwoFactor(input));
     },
 
-    sendLoginEmailCode: (tempToken: string): Promise<void> =>
-      authApi.sendLoginEmailCode(tempToken),
+    sendLoginEmailCode: (tempToken: string): Promise<void> => authApi.sendLoginEmailCode(tempToken),
 
     /** Re-reads /me after a settings change (e.g. 2FA turned on). */
     reloadUser: loadUser,

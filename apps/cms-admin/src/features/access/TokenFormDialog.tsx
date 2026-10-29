@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import {
   Button,
   Dialog,
@@ -7,37 +8,31 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  TextInput,
   FormAlert,
+  TextInput,
 } from '@abyss/form-commons';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useState } from 'react';
 import { FormProvider, useForm } from 'react-hook-form';
 import { z } from 'zod';
 
-import { type PermissionAction } from './Access.constants';
+import { LoadError } from '../../components/PageStates';
 import { COPY } from '../../config/Copy.constants';
 import { API_TOKEN_LIMITS } from '../../config/Http.constants';
 import type { ApiToken } from './Access.api';
+import { type PermissionAction } from './Access.constants';
 import { useContentTypesQuery } from './Access.queries';
-import { useCallerAccess } from './useCallerAccess';
-import { LoadError } from '../../components/PageStates';
 import { endOfDay, localDateOf } from './TokenExpiry.rules';
-import {
-  scopeFromEntries,
-  scopeSubjectOrder,
-  type ScopeState,
-} from './TokenScope.rules';
 import { TokenReveal } from './TokenReveal';
+import { scopeFromEntries, scopeSubjectOrder, type ScopeState } from './TokenScope.rules';
 import { TokenScopeEditor } from './TokenScopeEditor';
-import { type TokenDialogOutcome, useTokenSubmit } from './useTokenSubmit';
+import { useCallerAccess } from './useCallerAccess';
+import { useTokenSubmit, type TokenDialogOutcome } from './useTokenSubmit';
 
 export type { TokenDialogOutcome } from './useTokenSubmit';
 
 const copy = COPY.access.tokenForm;
 
-export type TokenDialogTarget =
-  { mode: 'create' } | { mode: 'edit'; token: ApiToken };
+export type TokenDialogTarget = { mode: 'create' } | { mode: 'edit'; token: ApiToken };
 
 const formSchema = z.object({
   name: z
@@ -124,19 +119,9 @@ function TokenFormBody({
   const subjects = scopeSubjectOrder(scope, slugs);
 
   const canGrant = (subject: string, action: PermissionAction) =>
-    caller.isOwner ||
-    caller.can(subject, action) ||
-    (subject !== '*' && caller.can('*', action));
+    caller.isOwner || caller.can(subject, action) || (subject !== '*' && caller.can('*', action));
 
-  const {
-    submit,
-    pending,
-    alert,
-    scopeError,
-    marked,
-    created,
-    clearScopeMarks,
-  } = useTokenSubmit({
+  const { submit, pending, alert, scopeError, marked, created, clearScopeMarks } = useTokenSubmit({
     editing,
     form,
     scope,
@@ -170,11 +155,7 @@ function TokenFormBody({
         </DialogDescription>
       </DialogHeader>
       <FormProvider {...form}>
-        <form
-          noValidate
-          className="grid gap-4"
-          onSubmit={(e) => void submit(e)}
-        >
+        <form noValidate className="grid gap-4" onSubmit={(e) => void submit(e)}>
           {alert === null ? null : <FormAlert tone="error">{alert}</FormAlert>}
           <div className="grid gap-4 sm:grid-cols-2">
             <TextInput<FormValues>
@@ -196,9 +177,7 @@ function TokenFormBody({
               <h3 id="token-scope-title" className="m-0 text-sm font-semibold">
                 {copy.scopeTitle}
               </h3>
-              <p className="m-0 text-sm text-muted-foreground">
-                {copy.scopeDescription}
-              </p>
+              <p className="m-0 text-sm text-muted-foreground">{copy.scopeDescription}</p>
             </div>
             {contentTypes.isError ? (
               <LoadError
@@ -219,9 +198,7 @@ function TokenFormBody({
                 marked={marked}
               />
             )}
-            {scopeError === null ? null : (
-              <FormAlert tone="error">{scopeError}</FormAlert>
-            )}
+            {scopeError === null ? null : <FormAlert tone="error">{scopeError}</FormAlert>}
           </section>
           <DialogFooter>
             <DialogClose asChild>

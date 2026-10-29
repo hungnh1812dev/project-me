@@ -5,8 +5,7 @@ export const REVIEWER_COPY = {
       'You are looking around as a guest. Everything here is read-only and shows published content only.',
   },
   title: 'Reviewer access',
-  description:
-    'Let visitors look around read-only for 24 hours. See who asked for access and why.',
+  description: 'Let visitors look around read-only for 24 hours. See who asked for access and why.',
   loading: 'Loading reviewer sessions',
   loadFailed: 'Could not load the reviewer sessions.',
   forbidden: 'Your role cannot view reviewer sessions.',
@@ -46,12 +45,10 @@ export const REVIEWER_COPY = {
   noBrowser: 'Unknown',
   until: (date: string) => `until ${date}`,
   empty: 'No reviewer sessions yet',
-  emptyHint:
-    'Sessions appear here when a visitor starts one from the public site.',
+  emptyHint: 'Sessions appear here when a visitor starts one from the public site.',
   pagination: {
     label: 'Reviewer session pages',
-    range: (from: number, to: number, total: number) =>
-      `${from}\u2013${to} of ${total}`,
+    range: (from: number, to: number, total: number) => `${from}\u2013${to} of ${total}`,
     previous: 'Previous',
     next: 'Next',
   },

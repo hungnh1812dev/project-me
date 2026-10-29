@@ -1,3 +1,4 @@
+import { useMemo, useReducer } from 'react';
 import {
   Button,
   Dialog,
@@ -9,14 +10,12 @@ import {
   DialogTitle,
   FormAlert,
 } from '@abyss/form-commons';
-import { useMemo, useReducer } from 'react';
 
 import { COPY } from '../../config/Copy.constants';
 import type { ConflictDetails } from './Conflict.rules';
-import { DiffViewerBlock } from './DiffViewerBlock';
 import type { DocumentTree } from './Content.api';
+import { DiffViewerBlock } from './DiffViewerBlock';
 import type { FieldNode } from './FieldTree.rules';
-import { changeLabel, entryTitle, sideContent } from './MergeDescribe.rules';
 import {
   INITIAL_MERGE_STATE,
   maskedPathsOf,
@@ -24,6 +23,7 @@ import {
   sideOf,
   visibleEntries,
 } from './Merge.reducer';
+import { changeLabel, entryTitle, sideContent } from './MergeDescribe.rules';
 import { buildResolvedTree } from './MergeTree.rules';
 
 const copy = COPY.content.conflict;
@@ -64,14 +64,8 @@ function MergeDialog({
   onClose,
 }: ConflictMergeModalProps) {
   const [state, dispatch] = useReducer(mergeReducer, INITIAL_MERGE_STATE);
-  const masked = useMemo(
-    () => maskedPathsOf(details, formMasked),
-    [details, formMasked],
-  );
-  const entries = useMemo(
-    () => visibleEntries(details, masked),
-    [details, masked],
-  );
+  const masked = useMemo(() => maskedPathsOf(details, formMasked), [details, formMasked]);
+  const entries = useMemo(() => visibleEntries(details, masked), [details, masked]);
   const paths = entries.map((entry) => entry.path);
 
   return (
@@ -83,25 +77,19 @@ function MergeDialog({
         </DialogHeader>
         {error === null ? null : <FormAlert tone="error">{error}</FormAlert>}
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <p className="m-0 text-sm text-muted-foreground">
-            {copy.summary(entries.length)}
-          </p>
+          <p className="m-0 text-sm text-muted-foreground">{copy.summary(entries.length)}</p>
           <div className="flex gap-2">
             <Button
               type="button"
               variant="ghost"
-              onClick={() =>
-                dispatch({ type: 'choose-all', paths, side: 'client' })
-              }
+              onClick={() => dispatch({ type: 'choose-all', paths, side: 'client' })}
             >
               {copy.keepAllMine}
             </Button>
             <Button
               type="button"
               variant="ghost"
-              onClick={() =>
-                dispatch({ type: 'choose-all', paths, side: 'server' })
-              }
+              onClick={() => dispatch({ type: 'choose-all', paths, side: 'server' })}
             >
               {copy.takeAllSaved}
             </Button>
@@ -124,9 +112,7 @@ function MergeDialog({
                 content: sideContent(entry, 'submitted', fields, masked),
               }}
               choice={sideOf(state, entry.path)}
-              onChoiceChange={(side) =>
-                dispatch({ type: 'choose', path: entry.path, side })
-              }
+              onChoiceChange={(side) => dispatch({ type: 'choose', path: entry.path, side })}
             />
           ))}
         </div>

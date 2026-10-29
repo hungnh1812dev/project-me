@@ -6,8 +6,7 @@ export const PAGE_COPY = {
 
 export const STATUS_COPY = {
   cardTitle: 'Content API',
-  cardDescription:
-    'Liveness check on the API the admin console manages content through.',
+  cardDescription: 'Liveness check on the API the admin console manages content through.',
   endpointLabel: 'Endpoint',
   lastCheckedLabel: 'Last checked',
   notCheckedYet: 'Not checked yet',

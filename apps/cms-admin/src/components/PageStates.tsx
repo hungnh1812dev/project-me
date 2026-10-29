@@ -1,5 +1,5 @@
-import { Button, FormAlert } from '@abyss/form-commons';
 import type { ReactNode } from 'react';
+import { Button, FormAlert } from '@abyss/form-commons';
 
 import { COPY } from '../config/Copy.constants';
 
@@ -19,15 +19,10 @@ export function PageHeader({
   return (
     <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
       <div className="grid gap-2">
-        <h1
-          tabIndex={-1}
-          className="m-0 text-2xl font-semibold tracking-tight outline-none"
-        >
+        <h1 tabIndex={-1} className="m-0 text-2xl font-semibold tracking-tight outline-none">
           {title}
         </h1>
-        <p className="m-0 max-w-prose text-sm text-muted-foreground">
-          {description}
-        </p>
+        <p className="m-0 max-w-prose text-sm text-muted-foreground">{description}</p>
       </div>
       {action === undefined ? null : <div className="shrink-0">{action}</div>}
     </div>

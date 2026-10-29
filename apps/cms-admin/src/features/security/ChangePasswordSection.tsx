@@ -1,12 +1,7 @@
-import {
-  Button,
-  TextInput,
-  FormAlert,
-  type FormAlertTone,
-} from '@abyss/form-commons';
+import { useState } from 'react';
+import { Button, FormAlert, TextInput, type FormAlertTone } from '@abyss/form-commons';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation } from '@tanstack/react-query';
-import { useState } from 'react';
 import { FormProvider, useForm } from 'react-hook-form';
 import { z } from 'zod';
 
@@ -14,13 +9,13 @@ import { PASSWORD_LENGTH } from '../../config/Auth.constants';
 import { COPY } from '../../config/Copy.constants';
 import {
   newPasswordShape,
-  passwordsMatch,
   PASSWORDS_MATCH_ISSUE,
+  passwordsMatch,
   useCurrentUser,
   useSession,
 } from '../auth';
-import { useSecurityApi } from './SecurityApi.context';
 import { toSecurityError } from './Security.errors';
+import { useSecurityApi } from './SecurityApi.context';
 
 const copy = COPY.security;
 
@@ -103,19 +98,11 @@ export function ChangePasswordSection() {
         <h2 id="password-heading" className="text-base font-semibold">
           {copy.changePassword.title}
         </h2>
-        <p className="text-sm text-muted-foreground">
-          {copy.changePassword.description}
-        </p>
+        <p className="text-sm text-muted-foreground">{copy.changePassword.description}</p>
       </div>
       <FormProvider {...form}>
-        <form
-          noValidate
-          onSubmit={(event) => void onSubmit(event)}
-          className="grid max-w-sm gap-4"
-        >
-          {alert !== null ? (
-            <FormAlert tone={alert.tone}>{alert.message}</FormAlert>
-          ) : null}
+        <form noValidate onSubmit={(event) => void onSubmit(event)} className="grid max-w-sm gap-4">
+          {alert !== null ? <FormAlert tone={alert.tone}>{alert.message}</FormAlert> : null}
           {/* Hidden username so password managers update the right entry. */}
           <input
             type="email"

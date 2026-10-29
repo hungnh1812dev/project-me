@@ -1,14 +1,14 @@
+import { useId, useRef, useState } from 'react';
 import {
   Button,
   DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  FormAlert,
   Input,
   Label,
-  FormAlert,
 } from '@abyss/form-commons';
-import { useId, useRef, useState } from 'react';
 
 import { COPY } from '../../config/Copy.constants';
 
@@ -71,11 +71,7 @@ export function TokenReveal({
         <output
           className={`m-0 block min-h-5 text-sm ${copyState === 'failed' ? 'text-destructive-strong' : 'text-muted-foreground'}`}
         >
-          {copyState === 'copied'
-            ? copy.copied
-            : copyState === 'failed'
-              ? copy.copyFailed
-              : ''}
+          {copyState === 'copied' ? copy.copied : copyState === 'failed' ? copy.copyFailed : ''}
         </output>
       </div>
       <DialogFooter>

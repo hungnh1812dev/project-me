@@ -1,11 +1,6 @@
 import { CV_PAGE_TYPE } from '../../../test/CvPage.fixture';
 import { ITEM_UID_KEY } from './Content.constants';
-import {
-  emptyItem,
-  type FormValues,
-  toDocumentTree,
-  toFormValues,
-} from './Document.form';
+import { emptyItem, toDocumentTree, toFormValues, type FormValues } from './Document.form';
 import { buildFieldTree } from './FieldTree.rules';
 
 const tree = buildFieldTree(CV_PAGE_TYPE.fields);
@@ -71,9 +66,7 @@ describe('toFormValues', () => {
       level: 'Mid',
       skill: 'Node',
     });
-    const role = (
-      (form.experience as FormValues[])[0]!.role as FormValues[]
-    )[0]!;
+    const role = ((form.experience as FormValues[])[0]!.role as FormValues[])[0]!;
     expect(role.teamSize).toBe('5');
     expect(role.techStack).toBe('[\n  "ts"\n]');
   });
@@ -102,9 +95,7 @@ describe('toDocumentTree on create', () => {
       summary: '<p>x</p>',
     });
     form.summary = '';
-    expect(toDocumentTree(tree, form, null, NONE).values).not.toHaveProperty(
-      'summary',
-    );
+    expect(toDocumentTree(tree, form, null, NONE).values).not.toHaveProperty('summary');
   });
 });
 
@@ -112,9 +103,7 @@ describe('toDocumentTree on update', () => {
   const initial = toFormValues(tree, record);
 
   it('sends nothing when nothing changed', () => {
-    expect(
-      toDocumentTree(tree, structuredClone(initial), initial, NONE),
-    ).toEqual({});
+    expect(toDocumentTree(tree, structuredClone(initial), initial, NONE)).toEqual({});
   });
 
   it('sends only the changed top-level fields, null for a cleared one', () => {
@@ -149,8 +138,7 @@ describe('toDocumentTree on update', () => {
 
   it('sends nested components with their uids', () => {
     const form = structuredClone(initial);
-    ((form.experience as FormValues[])[0]!.role as FormValues[])[0]!.position =
-      'Lead';
+    ((form.experience as FormValues[])[0]!.role as FormValues[])[0]!.position = 'Lead';
     const body = toDocumentTree(tree, form, initial, NONE);
     const experience = body.components?.experience?.[0];
     expect(experience?.componentUid).toBe(UID_ROLE);
@@ -168,9 +156,7 @@ describe('toDocumentTree on update', () => {
     (form.experience as FormValues[])[0]!.location = 'Hanoi';
     const body = toDocumentTree(tree, form, initial, masked);
     expect(body.values).toEqual({ position: 'Lead' });
-    expect(body.components?.experience?.[0]?.values).not.toHaveProperty(
-      'location',
-    );
+    expect(body.components?.experience?.[0]?.values).not.toHaveProperty('location');
     expect(body.components).not.toHaveProperty('reference');
   });
 });

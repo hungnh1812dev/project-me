@@ -1,8 +1,4 @@
-import {
-  OTP_CODE_LENGTH,
-  OTP_TTL_MINUTES,
-  PASSWORD_LENGTH,
-} from '../Auth.constants';
+import { OTP_CODE_LENGTH, OTP_TTL_MINUTES, PASSWORD_LENGTH } from '../Auth.constants';
 
 /** Text shared by several features: app shell, session, password rules, navigation labels. */
 export const COMMON_COPY = {
@@ -31,8 +27,7 @@ export const PASSWORD_COPY = {
   totpLabel: 'Authenticator code',
   totpHint: 'The current code from your authenticator app.',
   resendCode: 'Send a new code',
-  codeResent: (email: string) =>
-    `If ${email} belongs to an account, a new code is on its way.`,
+  codeResent: (email: string) => `If ${email} belongs to an account, a new code is on its way.`,
   backToSignIn: 'Back to sign in',
   validation: {
     emailRequired: 'Enter your email address.',
@@ -44,11 +39,9 @@ export const PASSWORD_COPY = {
     totpInvalid: `Enter the ${OTP_CODE_LENGTH}-digit code from your authenticator app.`,
   },
   errors: {
-    invalidCode:
-      'That code is wrong or has expired. Check the latest email, or send a new code.',
+    invalidCode: 'That code is wrong or has expired. Check the latest email, or send a new code.',
     weakPassword: `Choose a password of ${PASSWORD_LENGTH.MIN} to ${PASSWORD_LENGTH.MAX} characters.`,
-    totpRequired:
-      'This account also uses an authenticator app. Enter its current code to finish.',
+    totpRequired: 'This account also uses an authenticator app. Enter its current code to finish.',
     rateLimitedSeconds: (seconds: number) =>
       `Too many attempts. Try again in ${seconds} ${seconds === 1 ? 'second' : 'seconds'}.`,
     rateLimitedMinutes: (minutes: number) =>

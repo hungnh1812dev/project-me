@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import {
   DatePicker,
   DateTimePicker,
@@ -8,12 +9,11 @@ import {
   TextAreaInput,
   TextInput,
 } from '@abyss/form-commons';
-import type { ReactNode } from 'react';
 
 import { COPY } from '../../config/Copy.constants';
-import { FIELD_TYPE, MASKED_VALUE } from './Content.constants';
 import { formatDateTime } from '../../lib/DateFormat.rules';
 import { MediaField, mediaToApi, mediaToForm } from '../media';
+import { FIELD_TYPE, MASKED_VALUE } from './Content.constants';
 import {
   booleanToForm,
   datetimeToApi,
@@ -63,9 +63,7 @@ const text: FieldAdapter = {
 
 const longText: FieldAdapter = {
   ...text,
-  render: ({ name, label }) => (
-    <TextAreaInput name={name} label={label} rows={4} />
-  ),
+  render: ({ name, label }) => <TextAreaInput name={name} label={label} rows={4} />,
 };
 
 /** Types without an editor yet: shown read-only and never sent. */
@@ -83,9 +81,7 @@ function datetimeForList(value: unknown): string | null {
 }
 
 function plainForList(value: unknown): string | null {
-  return typeof value === 'string' || typeof value === 'number'
-    ? String(value)
-    : null;
+  return typeof value === 'string' || typeof value === 'number' ? String(value) : null;
 }
 
 /** The single map from field type to its input (SPEC: registry, not a switch). */
@@ -99,12 +95,7 @@ export const FIELD_REGISTRY: Readonly<Record<string, FieldAdapter>> = {
     toForm: numberToForm,
     toApi: integerToApi,
     render: ({ name, label }) => (
-      <NumberInput
-        name={name}
-        label={label}
-        mode="integer"
-        invalidMessage={copy.invalidInteger}
-      />
+      <NumberInput name={name} label={label} mode="integer" invalidMessage={copy.invalidInteger} />
     ),
   },
   [FIELD_TYPE.DECIMAL]: {
@@ -114,12 +105,7 @@ export const FIELD_REGISTRY: Readonly<Record<string, FieldAdapter>> = {
     toForm: numberToForm,
     toApi: textToApi,
     render: ({ name, label }) => (
-      <NumberInput
-        name={name}
-        label={label}
-        mode="decimal"
-        invalidMessage={copy.invalidDecimal}
-      />
+      <NumberInput name={name} label={label} mode="decimal" invalidMessage={copy.invalidDecimal} />
     ),
   },
   [FIELD_TYPE.BOOLEAN]: {
@@ -150,21 +136,14 @@ export const FIELD_REGISTRY: Readonly<Record<string, FieldAdapter>> = {
     toForm: jsonToForm,
     toApi: jsonToApi,
     render: ({ name, label }) => (
-      <JsonInput
-        name={name}
-        label={label}
-        rows={4}
-        invalidMessage={copy.invalidJson}
-      />
+      <JsonInput name={name} label={label} rows={4} invalidMessage={copy.invalidJson} />
     ),
   },
   [FIELD_TYPE.RICHTEXT]: {
     editable: true,
     toForm: textToForm,
     toApi: textToApi,
-    render: ({ name, label }) => (
-      <RichtextInput name={name} label={label} labels={copy.richtext} />
-    ),
+    render: ({ name, label }) => <RichtextInput name={name} label={label} labels={copy.richtext} />,
   },
   [FIELD_TYPE.MEDIA]: {
     editable: true,

@@ -27,8 +27,7 @@ export const MEDIA_COPY = {
   deleteLabel: (name: string) => `Delete ${name}`,
   pagination: {
     label: 'Media pages',
-    range: (from: number, to: number, total: number) =>
-      `${from}-${to} of ${total}`,
+    range: (from: number, to: number, total: number) => `${from}-${to} of ${total}`,
     previous: 'Previous',
     next: 'Next',
   },
@@ -54,10 +53,8 @@ export const MEDIA_COPY = {
     inUse:
       'This file is still attached to a document. Remove it from the document first, then delete it.',
     gone: 'This file no longer exists. The list was refreshed.',
-    unsupportedType:
-      'This file type is not allowed. Use JPEG, PNG, WebP, GIF, AVIF, PDF or MP4.',
-    tooLarge:
-      'This file is too large. Images may be up to 10 MB, PDFs 20 MB and videos 100 MB.',
+    unsupportedType: 'This file type is not allowed. Use JPEG, PNG, WebP, GIF, AVIF, PDF or MP4.',
+    tooLarge: 'This file is too large. Images may be up to 10 MB, PDFs 20 MB and videos 100 MB.',
     invalidUpload: 'The server could not read this file. Try another one.',
     forbidden: 'Your role is not allowed to do this.',
     retry: 'Try again',

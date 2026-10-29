@@ -1,8 +1,8 @@
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { basename, join, resolve } from 'node:path';
 
-import * as appWiring from './features/auth/AuthWiring.setup';
 import * as authFacade from './features/auth';
+import * as appWiring from './features/auth/AuthWiring.setup';
 
 const FEATURES_DIR = resolve(import.meta.dirname, 'features');
 const EXPORT_LIST = /export\s+(?:type\s+)?\{([^}]+)\}/g;
@@ -45,9 +45,7 @@ function deepCrossFeatureImports(): string[] {
     .flatMap((file) =>
       [...readFileSync(file, 'utf8').matchAll(SIBLING_FEATURE_IMPORT)]
         .filter(([, , subpath]) => subpath !== undefined)
-        .map(
-          ([statement]) => `${file.replace(FEATURES_DIR, '')}: ${statement}`,
-        ),
+        .map(([statement]) => `${file.replace(FEATURES_DIR, '')}: ${statement}`),
     );
 }
 
@@ -87,14 +85,9 @@ describe('feature facades', () => {
     },
   );
 
-  it.each(Object.keys(FACADE_EXPORTS))(
-    '%s keeps no wildcard export in its facade',
-    (feature) => {
-      expect(readFileSync(indexFileOf(feature), 'utf8')).not.toMatch(
-        /export\s+\*/,
-      );
-    },
-  );
+  it.each(Object.keys(FACADE_EXPORTS))('%s keeps no wildcard export in its facade', (feature) => {
+    expect(readFileSync(indexFileOf(feature), 'utf8')).not.toMatch(/export\s+\*/);
+  });
 
   it('has every cross-feature import target an index.ts', () => {
     expect(deepCrossFeatureImports()).toEqual([]);
@@ -144,10 +137,7 @@ const BLOCK_COMMENT = /\/\*[\s\S]*?\*\//g;
 const LINE_COMMENT = /(?:^|\s)\/\/.*$/gm;
 
 function backlogIdsInComments(text: string): string[] {
-  const comments = [
-    ...(text.match(BLOCK_COMMENT) ?? []),
-    ...(text.match(LINE_COMMENT) ?? []),
-  ];
+  const comments = [...(text.match(BLOCK_COMMENT) ?? []), ...(text.match(LINE_COMMENT) ?? [])];
   return comments.flatMap((comment) =>
     comment
       .split('\n')
@@ -170,22 +160,13 @@ describe('comments carry no backlog IDs', () => {
   describe('the guard itself', () => {
     it('flags task, question and OS IDs in block, doc and line comments', () => {
       expect(backlogIdsInComments('/** Throttle (T10a). */')).toEqual(['T10a']);
-      expect(backlogIdsInComments('const a = 1; // see Q-G4')).toEqual([
-        'Q-G4',
-      ]);
-      expect(backlogIdsInComments('/*\n * OS4 walk\n * and Q5\n */')).toEqual([
-        'OS4',
-        'Q5',
-      ]);
+      expect(backlogIdsInComments('const a = 1; // see Q-G4')).toEqual(['Q-G4']);
+      expect(backlogIdsInComments('/*\n * OS4 walk\n * and Q5\n */')).toEqual(['OS4', 'Q5']);
     });
 
     it('ignores SPEC IDs, section marks, 2fa and code outside comments', () => {
-      expect(
-        backlogIdsInComments('/** SPEC D9, D14 and §9 for 2fa. */'),
-      ).toEqual([]);
-      expect(backlogIdsInComments('Date.parse(`${raw}T00:00:00Z`);')).toEqual(
-        [],
-      );
+      expect(backlogIdsInComments('/** SPEC D9, D14 and §9 for 2fa. */')).toEqual([]);
+      expect(backlogIdsInComments('Date.parse(`${raw}T00:00:00Z`);')).toEqual([]);
       expect(backlogIdsInComments("const kind = 'T10';")).toEqual([]);
       expect(backlogIdsInComments("fetch('https://x.test/T10')")).toEqual([]);
     });

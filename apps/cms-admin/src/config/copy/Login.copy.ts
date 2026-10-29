@@ -17,8 +17,7 @@ export const LOGIN_COPY = {
     passwordSet: 'Your password is set. Sign in to start using Abyss CMS.',
     passwordChanged:
       'Your password was changed and every session was signed out. Sign in with the new password.',
-    ownerCreated:
-      'Owner account created. Sign in, then turn on two-factor in Security settings.',
+    ownerCreated: 'Owner account created. Sign in, then turn on two-factor in Security settings.',
     setupComplete: 'Setup is already complete. Sign in.',
   },
   setupPrompt: {
@@ -31,21 +30,18 @@ export const LOGIN_COPY = {
     passwordRequired: 'Enter your password.',
   },
   errors: {
-    invalidCredentials:
-      'The email or password is incorrect. Check both and try again.',
+    invalidCredentials: 'The email or password is incorrect. Check both and try again.',
     rateLimitedSeconds: (seconds: number) =>
       `Too many sign-in attempts. Try again in ${seconds} ${seconds === 1 ? 'second' : 'seconds'}.`,
     rateLimitedMinutes: (minutes: number) =>
       `Too many sign-in attempts. Try again in ${minutes} ${minutes === 1 ? 'minute' : 'minutes'}.`,
-    rateLimited:
-      'Too many sign-in attempts. Wait a few minutes, then try again.',
+    rateLimited: 'Too many sign-in attempts. Wait a few minutes, then try again.',
     network: 'Could not reach the server. Check your connection and try again.',
     unexpected: 'Something went wrong on our side. Try again in a moment.',
   },
   twoFactor: {
     title: 'Enter your verification code',
-    totpDescription:
-      'Open your authenticator app and enter the current code for Abyss CMS.',
+    totpDescription: 'Open your authenticator app and enter the current code for Abyss CMS.',
     emailDescription: 'We sent a code to the email address of this account.',
     emailWarning:
       'Anyone who can read your email can use this code. An authenticator app is safer: switch in Security settings after you sign in.',
@@ -58,8 +54,7 @@ export const LOGIN_COPY = {
     cancel: 'Cancel',
     resend: 'Send a new code',
     resent: 'A new code is on its way.',
-    expired:
-      'Your sign-in timed out or had too many wrong codes. Sign in again.',
+    expired: 'Your sign-in timed out or had too many wrong codes. Sign in again.',
     errors: {
       invalidCode: 'That code is wrong or has expired. Check it and try again.',
       unsupportedMethod:

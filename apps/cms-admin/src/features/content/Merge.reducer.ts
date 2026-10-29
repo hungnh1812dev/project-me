@@ -1,5 +1,5 @@
-import { MASKED_FIELDS_KEY } from './Content.constants';
 import type { ConflictDetails, DiffEntry } from './Conflict.rules';
+import { MASKED_FIELDS_KEY } from './Content.constants';
 
 export type MergeSide = 'server' | 'client';
 
@@ -32,8 +32,7 @@ export function parseEntryPath(path: string): ParsedEntryPath | null {
     const [whole, name = '', uid] = match;
     steps.push(uid === undefined ? { name } : { name, uid });
     rest = rest.slice(COMPONENTS_PREFIX.length + whole.length);
-    if (rest === '')
-      return { steps, kind: uid === undefined ? 'list' : 'item' };
+    if (rest === '') return { steps, kind: uid === undefined ? 'list' : 'item' };
     if (!rest.startsWith('.')) return null;
     rest = rest.slice(1);
   }
@@ -47,10 +46,7 @@ export function fieldPathOf(parsed: ParsedEntryPath): string {
 }
 
 /** True when `path` or one of its parents is listed as masked. */
-export function isMaskedPath(
-  path: string,
-  masked: ReadonlySet<string>,
-): boolean {
+export function isMaskedPath(path: string, masked: ReadonlySet<string>): boolean {
   const parts = path.split('.');
   for (let end = 1; end <= parts.length; end += 1) {
     if (masked.has(parts.slice(0, end).join('.'))) return true;
@@ -74,10 +70,7 @@ export function maskedPathsOf(
  * The differences the user may decide: masked fields are dropped, so the
  * modal never shows or offers them (SPEC §6).
  */
-export function visibleEntries(
-  details: ConflictDetails,
-  masked: ReadonlySet<string>,
-): DiffEntry[] {
+export function visibleEntries(details: ConflictDetails, masked: ReadonlySet<string>): DiffEntry[] {
   return details.diff.filter((entry) => {
     const parsed = parseEntryPath(entry.path);
     return parsed !== null && !isMaskedPath(fieldPathOf(parsed), masked);
@@ -101,18 +94,13 @@ export const DEFAULT_SIDE: MergeSide = 'client';
 export const sideOf = (state: MergeState, path: string): MergeSide =>
   state.choices[path] ?? DEFAULT_SIDE;
 
-export function mergeReducer(
-  state: MergeState,
-  action: MergeAction,
-): MergeState {
+export function mergeReducer(state: MergeState, action: MergeAction): MergeState {
   switch (action.type) {
     case 'choose':
       return { choices: { ...state.choices, [action.path]: action.side } };
     case 'choose-all':
       return {
-        choices: Object.fromEntries(
-          action.paths.map((path) => [path, action.side]),
-        ),
+        choices: Object.fromEntries(action.paths.map((path) => [path, action.side])),
       };
     case 'reset':
       return INITIAL_MERGE_STATE;

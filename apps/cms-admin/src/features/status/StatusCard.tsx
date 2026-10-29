@@ -1,10 +1,10 @@
 import { Button } from '@abyss/form-commons';
 
-import { COPY } from '../../config/Copy.constants';
 import { API_ENDPOINTS } from '../../config/Api.endpoints';
 import { appEnv } from '../../config/App.env';
+import { COPY } from '../../config/Copy.constants';
 import { formatTime } from '../../lib/DateFormat.rules';
-import { type LiveHealthState, useLiveHealth } from './useLiveHealth';
+import { useLiveHealth, type LiveHealthState } from './useLiveHealth';
 
 const BADGE_TONE: Record<LiveHealthState, string> = {
   checking: 'bg-muted text-muted-foreground',
@@ -32,34 +32,23 @@ export function StatusCard() {
           <h2 id="api-status-title" className="text-base font-semibold">
             {COPY.status.cardTitle}
           </h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {COPY.status.cardDescription}
-          </p>
+          <p className="mt-1 text-sm text-muted-foreground">{COPY.status.cardDescription}</p>
         </div>
         <output
           className={`inline-flex items-center gap-2 rounded-sm px-2 py-1 text-xs font-medium ${BADGE_TONE[state]}`}
         >
-          <span
-            aria-hidden="true"
-            className={`size-1.5 rounded-full ${DOT_TONE[state]}`}
-          />
+          <span aria-hidden="true" className={`size-1.5 rounded-full ${DOT_TONE[state]}`} />
           {COPY.status.state[state]}
         </output>
       </div>
 
       <dl className="grid grid-cols-1 gap-x-6 gap-y-1 border-t border-border px-5 py-4 text-sm sm:grid-cols-[max-content_1fr] sm:gap-y-3">
         <dt className="text-muted-foreground">{COPY.status.endpointLabel}</dt>
-        <dd className="mb-2 font-mono text-xs break-all sm:mb-0 sm:text-sm">
-          GET {endpoint}
-        </dd>
-        <dt className="text-muted-foreground">
-          {COPY.status.lastCheckedLabel}
-        </dt>
+        <dd className="mb-2 font-mono text-xs break-all sm:mb-0 sm:text-sm">GET {endpoint}</dd>
+        <dt className="text-muted-foreground">{COPY.status.lastCheckedLabel}</dt>
         <dd className="tabular-nums">
           {lastCheckedAt ? (
-            <time dateTime={lastCheckedAt.toISOString()}>
-              {formatTime(lastCheckedAt)}
-            </time>
+            <time dateTime={lastCheckedAt.toISOString()}>{formatTime(lastCheckedAt)}</time>
           ) : (
             COPY.status.notCheckedYet
           )}
@@ -76,12 +65,7 @@ export function StatusCard() {
       ) : null}
 
       <div className="flex justify-end border-t border-border px-5 py-3">
-        <Button
-          variant="secondary"
-          size="sm"
-          loading={isFetching}
-          onClick={() => void refetch()}
-        >
+        <Button variant="secondary" size="sm" loading={isFetching} onClick={() => void refetch()}>
           {COPY.status.checkAgain}
         </Button>
       </div>

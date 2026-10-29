@@ -2,14 +2,10 @@ import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import { deferred, type FakeReply } from '../../../test/FakeApi.fixture';
-import {
-  createTestServices,
-  renderApp,
-  TEST_USER,
-} from '../../../test/RenderApp.fixture';
-import { COPY } from '../../config/Copy.constants';
+import { createTestServices, renderApp, TEST_USER } from '../../../test/RenderApp.fixture';
 import { API_ENDPOINTS } from '../../config/Api.endpoints';
 import { APP_ROUTES } from '../../config/App.routes';
+import { COPY } from '../../config/Copy.constants';
 
 const { LOGIN, REFRESH, ME } = API_ENDPOINTS.AUTH;
 const PASSWORD = 'correct horse battery staple';
@@ -38,18 +34,12 @@ async function fillAndSubmit(pw = PASSWORD) {
 describe('LoginPage', () => {
   it('labels its fields and focuses the first invalid one on submit', async () => {
     const { api } = await openLogin(() => ({ status: 500 }));
-    expect(
-      screen.getByRole('heading', { level: 1, name: COPY.login.title }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 1, name: COPY.login.title })).toBeInTheDocument();
     await userEvent.click(submit());
 
     expect(email()).toHaveFocus();
-    expect(email()).toHaveAccessibleDescription(
-      COPY.login.validation.emailRequired,
-    );
-    expect(password()).toHaveAccessibleDescription(
-      COPY.login.validation.passwordRequired,
-    );
+    expect(email()).toHaveAccessibleDescription(COPY.login.validation.emailRequired);
+    expect(password()).toHaveAccessibleDescription(COPY.login.validation.passwordRequired);
     expect(api.callsTo(`POST ${LOGIN}`)).toHaveLength(0);
   });
 
@@ -58,9 +48,7 @@ describe('LoginPage', () => {
     await userEvent.type(email(), 'not-an-email');
     await userEvent.tab();
     expect(email()).toHaveAttribute('aria-invalid', 'true');
-    expect(email()).toHaveAccessibleDescription(
-      COPY.login.validation.emailInvalid,
-    );
+    expect(email()).toHaveAccessibleDescription(COPY.login.validation.emailInvalid);
   });
 
   it('shows loading on the submit button, then signs in and leaves the page', async () => {
@@ -111,9 +99,7 @@ describe('LoginPage', () => {
   it('reports a network error', async () => {
     await openLogin(() => 'network-error');
     await fillAndSubmit();
-    expect(await screen.findByRole('alert')).toHaveTextContent(
-      COPY.login.errors.network,
-    );
+    expect(await screen.findByRole('alert')).toHaveTextContent(COPY.login.errors.network);
   });
 
   it('sends an already signed-in user home', async () => {
@@ -124,17 +110,13 @@ describe('LoginPage', () => {
     await services.session.restore();
     renderApp(services, APP_ROUTES.LOGIN);
     await waitFor(() => {
-      expect(
-        screen.getByRole('heading', { level: 1, name: COPY.page.title }),
-      ).toBeInTheDocument();
+      expect(screen.getByRole('heading', { level: 1, name: COPY.page.title })).toBeInTheDocument();
     });
   });
 
   it('links to the password reset page', async () => {
     await openLogin(() => ({ status: 500 }));
-    await userEvent.click(
-      screen.getByRole('link', { name: COPY.login.forgotPassword }),
-    );
+    await userEvent.click(screen.getByRole('link', { name: COPY.login.forgotPassword }));
     expect(
       screen.getByRole('heading', {
         level: 1,
@@ -157,33 +139,26 @@ describe('LoginPage', () => {
 
     it('offers the owner setup while it is open', async () => {
       await openLoginWithStatus(() => ({ status: 200, data: { open: true } }));
-      expect(
-        await screen.findByText(COPY.login.setupPrompt.message),
-      ).toBeInTheDocument();
-      expect(
-        screen.getByRole('link', { name: COPY.login.setupPrompt.action }),
-      ).toHaveAttribute('href', APP_ROUTES.SETUP);
+      expect(await screen.findByText(COPY.login.setupPrompt.message)).toBeInTheDocument();
+      expect(screen.getByRole('link', { name: COPY.login.setupPrompt.action })).toHaveAttribute(
+        'href',
+        APP_ROUTES.SETUP,
+      );
     });
 
     it('shows nothing extra when the setup is closed', async () => {
       await openLoginWithStatus(() => ({ status: 200, data: { open: false } }));
       await waitFor(() => {
-        expect(
-          screen.queryByText(COPY.login.setupPrompt.message),
-        ).not.toBeInTheDocument();
+        expect(screen.queryByText(COPY.login.setupPrompt.message)).not.toBeInTheDocument();
       });
     });
 
     it('shows nothing extra when the status call fails', async () => {
       await openLoginWithStatus(() => ({ status: 500 }));
       await waitFor(() => {
-        expect(
-          screen.queryByText(COPY.login.setupPrompt.message),
-        ).not.toBeInTheDocument();
+        expect(screen.queryByText(COPY.login.setupPrompt.message)).not.toBeInTheDocument();
       });
-      expect(
-        screen.getByRole('heading', { level: 1, name: COPY.login.title }),
-      ).toBeInTheDocument();
+      expect(screen.getByRole('heading', { level: 1, name: COPY.login.title })).toBeInTheDocument();
     });
   });
 });

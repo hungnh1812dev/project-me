@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import {
   Button,
   Dialog,
@@ -7,19 +8,18 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  TextAreaInput,
   FormAlert,
+  TextAreaInput,
 } from '@abyss/form-commons';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
 import { FormProvider, useForm } from 'react-hook-form';
 
 import { COPY } from '../../config/Copy.constants';
+import type { MediaFile } from './Media.api';
 import { MEDIA_ALT_MAX_LENGTH } from './Media.constants';
-import { useMediaApi } from './MediaApi.context';
 import { toMediaError } from './Media.errors';
 import { MEDIA_QUERY_KEY } from './Media.queries';
-import type { MediaFile } from './Media.api';
+import { useMediaApi } from './MediaApi.context';
 
 const copy = COPY.media.altDialog;
 
@@ -89,9 +89,7 @@ export function EditAltDialog({
                 <DialogTitle>{copy.title(file.fileName)}</DialogTitle>
                 <DialogDescription>{copy.description}</DialogDescription>
               </DialogHeader>
-              {alert === null ? null : (
-                <FormAlert tone="error">{alert}</FormAlert>
-              )}
+              {alert === null ? null : <FormAlert tone="error">{alert}</FormAlert>}
               <TextAreaInput<FormValues>
                 name="alt"
                 label={copy.label}
@@ -108,11 +106,7 @@ export function EditAltDialog({
                     {copy.cancel}
                   </Button>
                 </DialogClose>
-                <Button
-                  type="submit"
-                  variant="primary"
-                  loading={save.isPending}
-                >
+                <Button type="submit" variant="primary" loading={save.isPending}>
                   {copy.save}
                 </Button>
               </DialogFooter>

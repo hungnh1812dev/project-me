@@ -1,17 +1,17 @@
+import { useState } from 'react';
 import type { BulkAction as BarAction } from '@abyss/form-commons';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
 
 import { COPY } from '../../config/Copy.constants';
 import { API_ERROR_CODES } from '../../config/Http.constants';
+import type { ContentTypeField } from '../content-types';
 import { failedItems, itemReason, toBulkFailure } from './Bulk.rules';
 import type { Banner } from './BulkBanner.rules';
 import { documentNameOf } from './Collection.columns';
-import { useContentApi } from './ContentApi.context';
-import { CONTENT_QUERY_KEYS } from './Content.queries';
 import type { BulkItem, DocumentListItem } from './Content.api';
 import { BULK_ACTION, type BulkAction } from './Content.constants';
-import type { ContentTypeField } from '../content-types';
+import { CONTENT_QUERY_KEYS } from './Content.queries';
+import { useContentApi } from './ContentApi.context';
 
 const bulkCopy = COPY.content.bulk;
 
@@ -64,10 +64,7 @@ export function useBulkRun({
           item.errorCode === API_ERROR_CODES.DOCUMENT_NOT_FOUND;
         return {
           id: row?.documentId,
-          name:
-            row === undefined
-              ? String(item.index + 1)
-              : documentNameOf(valueFields, row),
+          name: row === undefined ? String(item.index + 1) : documentNameOf(valueFields, row),
           reason: notPublished
             ? bulkCopy.itemErrors.notPublished
             : itemReason(item.errorCode, item.message),
@@ -81,15 +78,10 @@ export function useBulkRun({
         failures,
       });
       onSelectFailed(
-        new Set(
-          failures.flatMap((failure) =>
-            failure.id === undefined ? [] : [failure.id],
-          ),
-        ),
+        new Set(failures.flatMap((failure) => (failure.id === undefined ? [] : [failure.id]))),
       );
     },
-    onError: (cause) =>
-      setBanner({ kind: 'error', message: toBulkFailure(cause).message }),
+    onError: (cause) => setBanner({ kind: 'error', message: toBulkFailure(cause).message }),
   });
 
   const start = (action: BulkAction) => {

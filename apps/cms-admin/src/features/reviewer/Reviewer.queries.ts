@@ -1,10 +1,6 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 
-import {
-  API_ERROR_CODES,
-  HEALTH_QUERY_RETRY,
-  HTTP_STATUS,
-} from '../../config/Http.constants';
+import { API_ERROR_CODES, HEALTH_QUERY_RETRY, HTTP_STATUS } from '../../config/Http.constants';
 import { apiFailureOf } from '../../lib/ApiFailure.errors';
 import { REVIEWER_SESSIONS_PAGE_SIZE } from './Reviewer.constants';
 import { useReviewerApi } from './ReviewerApi.context';
@@ -27,10 +23,7 @@ export function isReviewerFeatureOff(error: unknown): boolean {
 /** A 4xx answer is final (switch off, not allowed); only network and 5xx retry. */
 function shouldRetry(failureCount: number, error: unknown): boolean {
   const failure = apiFailureOf(error);
-  if (
-    failure.kind === 'http' &&
-    failure.status < HTTP_STATUS.SERVER_ERROR_MIN
-  ) {
+  if (failure.kind === 'http' && failure.status < HTTP_STATUS.SERVER_ERROR_MIN) {
     return false;
   }
   return failureCount < HEALTH_QUERY_RETRY;

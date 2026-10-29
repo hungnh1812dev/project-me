@@ -1,11 +1,8 @@
 import { Button } from '@abyss/form-commons';
 import { useFieldArray, useFormContext } from 'react-hook-form';
 
-import {
-  MAX_COMPONENT_DEPTH,
-  SINGLE_COMPONENT_MAX_ITEMS,
-} from './Content.constants';
 import { COPY } from '../../config/Copy.constants';
+import { MAX_COMPONENT_DEPTH, SINGLE_COMPONENT_MAX_ITEMS } from './Content.constants';
 import { emptyItem } from './Document.form';
 import { DynamicFormRenderer } from './DynamicFormRenderer';
 import type { FieldNode } from './FieldTree.rules';
@@ -26,59 +23,38 @@ export interface ComponentListProps {
  * `componentUid` in form state so a save updates the same rows. A
  * non-repeatable component holds one item at most.
  */
-export function ComponentList({
-  node,
-  name,
-  masked,
-  depth,
-}: ComponentListProps) {
+export function ComponentList({ node, name, masked, depth }: ComponentListProps) {
   const { control } = useFormContext();
   const { fields, append, remove, move } = useFieldArray({ control, name });
   const canAdd =
-    depth <= MAX_COMPONENT_DEPTH &&
-    (node.repeatable || fields.length < SINGLE_COMPONENT_MAX_ITEMS);
+    depth <= MAX_COMPONENT_DEPTH && (node.repeatable || fields.length < SINGLE_COMPONENT_MAX_ITEMS);
   const reorderable = node.repeatable && fields.length > 1;
   const headingId = `${name}-heading`;
 
   return (
     <section
       aria-labelledby={headingId}
-      className={
-        depth > 1 ? 'grid gap-3 border-l-2 border-border pl-4' : 'grid gap-3'
-      }
+      className={depth > 1 ? 'grid gap-3 border-l-2 border-border pl-4' : 'grid gap-3'}
     >
       <div className="flex items-center justify-between gap-3">
         <h2
           id={headingId}
-          className={
-            depth > 1
-              ? 'm-0 text-sm font-semibold'
-              : 'm-0 text-base font-semibold'
-          }
+          className={depth > 1 ? 'm-0 text-sm font-semibold' : 'm-0 text-base font-semibold'}
         >
           {node.label}
         </h2>
         {canAdd ? (
-          <Button
-            type="button"
-            size="sm"
-            onClick={() => append(emptyItem(node))}
-          >
+          <Button type="button" size="sm" onClick={() => append(emptyItem(node))}>
             {copy.add(node.label)}
           </Button>
         ) : null}
       </div>
       {fields.length === 0 ? (
-        <p className="m-0 text-sm text-muted-foreground">
-          {copy.empty(node.label)}
-        </p>
+        <p className="m-0 text-sm text-muted-foreground">{copy.empty(node.label)}</p>
       ) : (
         <ol className="m-0 grid list-none gap-3 p-0">
           {fields.map((item, index) => (
-            <li
-              key={item.id}
-              className="grid gap-4 rounded-md border border-border bg-card p-4"
-            >
+            <li key={item.id} className="grid gap-4 rounded-md border border-border bg-card p-4">
               <div className="flex items-center justify-between gap-3">
                 <h3 className="m-0 text-sm font-medium text-muted-foreground">
                   {copy.itemTitle(node.label, index)}

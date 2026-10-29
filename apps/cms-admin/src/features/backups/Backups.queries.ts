@@ -2,16 +2,9 @@ import { useQuery } from '@tanstack/react-query';
 
 import { APP_ROUTES } from '../../config/App.routes';
 import { COPY } from '../../config/Copy.constants';
-import {
-  API_ERROR_CODES,
-  HEALTH_QUERY_RETRY,
-  HTTP_STATUS,
-} from '../../config/Http.constants';
+import { API_ERROR_CODES, HEALTH_QUERY_RETRY, HTTP_STATUS } from '../../config/Http.constants';
 import { apiFailureOf } from '../../lib/ApiFailure.errors';
-import type {
-  FeatureNavItem,
-  NavItemsState,
-} from '../../lib/FeatureDefinition';
+import type { FeatureNavItem, NavItemsState } from '../../lib/FeatureDefinition';
 import { useCallerAccess } from '../access';
 import { useBackupsApi } from './BackupsApi.context';
 
@@ -46,10 +39,7 @@ export function isBackupsRateLimited(error: unknown): boolean {
 function shouldRetry(failureCount: number, error: unknown): boolean {
   const failure = apiFailureOf(error);
   if (failure.kind === 'rate-limited') return false;
-  if (
-    failure.kind === 'http' &&
-    failure.status < HTTP_STATUS.SERVER_ERROR_MIN
-  ) {
+  if (failure.kind === 'http' && failure.status < HTTP_STATUS.SERVER_ERROR_MIN) {
     return false;
   }
   return failureCount < HEALTH_QUERY_RETRY;

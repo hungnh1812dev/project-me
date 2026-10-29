@@ -1,16 +1,9 @@
 import { contentListPath } from '../../config/App.routes';
-import type {
-  FeatureNavItem,
-  NavItemsState,
-} from '../../lib/FeatureDefinition';
-import {
-  CONTENT_WILDCARD_SUBJECT,
-  type PermissionAction,
-  useCallerAccess,
-} from '../access';
+import type { FeatureNavItem, NavItemsState } from '../../lib/FeatureDefinition';
+import { CONTENT_WILDCARD_SUBJECT, useCallerAccess, type PermissionAction } from '../access';
 import type { ContentType } from '../content-types';
-import { useContentTypesQuery } from './Content.queries';
 import { NAV_SECTION_BY_KIND } from './Content.constants';
+import { useContentTypesQuery } from './Content.queries';
 
 /**
  * One item per content type the caller may read, under the section of its

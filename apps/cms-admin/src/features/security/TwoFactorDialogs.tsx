@@ -1,7 +1,7 @@
+import { useEffect, useRef } from 'react';
 import { Button, FormAlert } from '@abyss/form-commons';
 import { useMutation } from '@tanstack/react-query';
 import { QRCodeSVG } from 'qrcode.react';
-import { useEffect, useRef } from 'react';
 
 import { Modal, ModalActions } from '../../components/Modal';
 import {
@@ -12,8 +12,8 @@ import {
 import { COPY } from '../../config/Copy.constants';
 import { useEmailCode } from '../auth';
 import { ConfirmWithCodeForm } from './ConfirmWithCodeForm';
-import { useSecurityApi } from './SecurityApi.context';
 import { toSecurityError } from './Security.errors';
+import { useSecurityApi } from './SecurityApi.context';
 
 const copy = COPY.security;
 const SECRET_GROUPS = new RegExp(`.{1,${TOTP_SECRET_GROUP_SIZE}}`, 'g');
@@ -34,11 +34,7 @@ function groupSecret(secret: string): string {
  * TOTP setup: a fresh secret on open, shown as QR and key; turning on
  * needs the app's current code and the password.
  */
-export function TotpSetupDialog({
-  onClose,
-  onDone,
-  onStateChanged,
-}: DialogProps) {
+export function TotpSetupDialog({ onClose, onDone, onStateChanged }: DialogProps) {
   const security = useSecurityApi();
   const setup = useMutation({ mutationFn: security.setupTotp });
   const { mutate: startSetup } = setup;
@@ -60,12 +56,8 @@ export function TotpSetupDialog({
       {setup.data === undefined ? (
         setup.isError ? (
           <>
-            <FormAlert
-              tone={setupError?.kind === 'alert' ? setupError.tone : 'error'}
-            >
-              {setupError?.kind === 'alert'
-                ? setupError.message
-                : copy.totpSetup.loadFailed}
+            <FormAlert tone={setupError?.kind === 'alert' ? setupError.tone : 'error'}>
+              {setupError?.kind === 'alert' ? setupError.message : copy.totpSetup.loadFailed}
             </FormAlert>
             <ModalActions>
               <Button type="button" onClick={onClose}>
@@ -77,11 +69,7 @@ export function TotpSetupDialog({
             </ModalActions>
           </>
         ) : (
-          <div
-            aria-live="polite"
-            aria-busy="true"
-            className="grid justify-items-start gap-3"
-          >
+          <div aria-live="polite" aria-busy="true" className="grid justify-items-start gap-3">
             <span className="sr-only">{copy.totpSetup.loading}</span>
             <div className="size-44 animate-pulse rounded-md bg-muted" />
             <div className="h-4 w-3/4 animate-pulse rounded bg-muted" />
@@ -90,9 +78,7 @@ export function TotpSetupDialog({
       ) : (
         <ConfirmWithCodeForm
           method="totp"
-          submit={(values) =>
-            security.enableTwoFactor({ method: 'totp', ...values })
-          }
+          submit={(values) => security.enableTwoFactor({ method: 'totp', ...values })}
           submitLabel={copy.totpSetup.submit}
           submitVariant="primary"
           cancelLabel={copy.totpSetup.cancel}
@@ -113,9 +99,7 @@ export function TotpSetupDialog({
               />
             </div>
             <div className="grid gap-1">
-              <p className="text-muted-foreground">
-                {copy.totpSetup.manualKeyLabel}
-              </p>
+              <p className="text-muted-foreground">{copy.totpSetup.manualKeyLabel}</p>
               <code
                 data-testid="totp-secret"
                 className="w-fit rounded bg-muted px-2 py-1 font-mono text-sm break-all select-all"
@@ -148,9 +132,7 @@ export function EmailTwoFactorDialog({
     >
       <ConfirmWithCodeForm
         method="email"
-        submit={(values) =>
-          security.enableTwoFactor({ method: 'email', ...values })
-        }
+        submit={(values) => security.enableTwoFactor({ method: 'email', ...values })}
         submitLabel={copy.emailSetup.submit}
         submitVariant="primary"
         cancelLabel={copy.emailSetup.cancel}
@@ -175,11 +157,7 @@ export function DisableTwoFactorDialog({
   const security = useSecurityApi();
   const emailCode = useEmailCode(security.sendEmailCode, method === 'email');
   return (
-    <Modal
-      title={copy.disable.title}
-      description={copy.disable.description}
-      onClose={onClose}
-    >
+    <Modal title={copy.disable.title} description={copy.disable.description} onClose={onClose}>
       <ConfirmWithCodeForm
         method={method}
         submit={security.disableTwoFactor}
@@ -192,9 +170,7 @@ export function DisableTwoFactorDialog({
         {...(method === 'email' ? { emailCode } : {})}
       >
         {method === 'email' && emailCode.sentCount > 0 ? (
-          <p className="text-sm text-muted-foreground">
-            {copy.disable.emailCodeSent}
-          </p>
+          <p className="text-sm text-muted-foreground">{copy.disable.emailCodeSent}</p>
         ) : null}
       </ConfirmWithCodeForm>
     </Modal>

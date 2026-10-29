@@ -1,30 +1,21 @@
 import { Button, type SheetColumn } from '@abyss/form-commons';
 import { Link } from 'react-router';
 
-import { COPY } from '../../config/Copy.constants';
 import { contentEditPath } from '../../config/App.routes';
-import type { ContentTypeField } from '../content-types';
+import { COPY } from '../../config/Copy.constants';
 import { formatDateTime } from '../../lib/DateFormat.rules';
+import type { ContentTypeField } from '../content-types';
 import type { DocumentListItem } from './Content.api';
 import { LIST_MAX_VALUE_COLUMNS, LIST_UPDATED_KEY } from './Content.constants';
-import {
-  formatListValue,
-  isSortableListType,
-  listAlignmentOf,
-} from './Field.registry';
+import { formatListValue, isSortableListType, listAlignmentOf } from './Field.registry';
 
 const list = COPY.content.collection;
 
-export function listValueFieldsOf(
-  fields: readonly ContentTypeField[],
-): ContentTypeField[] {
+export function listValueFieldsOf(fields: readonly ContentTypeField[]): ContentTypeField[] {
   return fields
     .filter(
       (field) =>
-        field.rootScalar &&
-        !field.system &&
-        !field.component &&
-        isSortableListType(field.type),
+        field.rootScalar && !field.system && !field.component && isSortableListType(field.type),
     )
     .slice(0, LIST_MAX_VALUE_COLUMNS);
 }
@@ -35,10 +26,7 @@ export function documentNameOf(
   row: DocumentListItem,
 ): string {
   const first = valueFields[0];
-  const text =
-    first === undefined
-      ? ''
-      : formatListValue(first.type, row.values[first.path]);
+  const text = first === undefined ? '' : formatListValue(first.type, row.values[first.path]);
   return text === '' || text === list.emptyValue || text === list.protectedValue
     ? `${list.untitled} (${row.documentId.slice(0, 8)})`
     : text;

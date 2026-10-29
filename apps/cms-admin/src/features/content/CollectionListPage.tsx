@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import {
   BulkActionBar,
   Button,
@@ -5,29 +6,24 @@ import {
   SortableSheet,
   TablePagination,
 } from '@abyss/form-commons';
-import { useState } from 'react';
 import { Link, useParams } from 'react-router';
 
-import {
-  LoadError,
-  PageHeader,
-  TableSkeleton,
-} from '../../components/PageStates';
+import { LoadError, PageHeader, TableSkeleton } from '../../components/PageStates';
 import { useRestoreFocus } from '../../components/useRestoreFocus';
-import { COPY } from '../../config/Copy.constants';
 import { contentNewPath } from '../../config/App.routes';
+import { COPY } from '../../config/Copy.constants';
 import {
   CONTENT_WILDCARD_SUBJECT,
   isForbidden,
-  type PermissionAction,
   useCallerAccess,
+  type PermissionAction,
 } from '../access';
 import { BulkBanner } from './BulkBanner';
 import { BulkCreateDialog } from './BulkCreateDialog';
 import { BulkDeleteDialog } from './BulkDeleteDialog';
 import { collectionColumnsOf, documentNameOf } from './Collection.columns';
-import { isMissing } from './Content.errors';
 import { BULK_ACTION } from './Content.constants';
+import { isMissing } from './Content.errors';
 import { SingleTypeRedirect } from './SingleTypeRedirect';
 import { useBulkRun } from './useBulkRun';
 import { useCollectionList } from './useCollectionList';
@@ -68,8 +64,7 @@ export function CollectionListPage() {
   } = useCollectionList(slug);
 
   const can = (action: PermissionAction) =>
-    caller.isReady &&
-    (caller.can(slug, action) || caller.can(CONTENT_WILDCARD_SUBJECT, action));
+    caller.isReady && (caller.can(slug, action) || caller.can(CONTENT_WILDCARD_SUBJECT, action));
   const canCreate = can('create');
   const allowed = {
     publish: draftAndPublish && can('publish'),
@@ -91,8 +86,7 @@ export function CollectionListPage() {
   });
 
   const columns = collectionColumnsOf(slug, valueFields);
-  const nameOf = (row: (typeof rows)[number]) =>
-    documentNameOf(valueFields, row);
+  const nameOf = (row: (typeof rows)[number]) => documentNameOf(valueFields, row);
 
   const heading = (
     <PageHeader
@@ -198,9 +192,7 @@ export function CollectionListPage() {
               getRowLabel={nameOf}
               sort={sort}
               onSortChange={changeSort}
-              {...(selectable
-                ? { selectedIds: selected, onSelectedChange: setSelected }
-                : {})}
+              {...(selectable ? { selectedIds: selected, onSelectedChange: setSelected } : {})}
               labels={{
                 selectAll: list.selectAll,
                 selectRow: list.selectRow,

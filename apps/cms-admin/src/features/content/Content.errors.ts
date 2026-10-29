@@ -1,6 +1,6 @@
+import { type FormAlertTone } from '@abyss/form-commons';
 import { isAxiosError } from 'axios';
 
-import { type FormAlertTone } from '@abyss/form-commons';
 import { COPY } from '../../config/Copy.constants';
 import { API_ERROR_CODES, HTTP_STATUS } from '../../config/Http.constants';
 import { apiFailureOf, rateLimitedMessage } from '../../lib/ApiFailure.errors';
@@ -16,8 +16,7 @@ export interface SaveError {
 
 export function serverMessage(error: unknown): string | undefined {
   if (!isAxiosError(error)) return undefined;
-  const message = (error.response?.data as { message?: unknown } | null)
-    ?.message;
+  const message = (error.response?.data as { message?: unknown } | null)?.message;
   return typeof message === 'string' && message !== '' ? message : undefined;
 }
 
@@ -47,8 +46,7 @@ export function toSaveError(error: unknown): SaveError {
         return {
           tone: 'error',
           conflict: false,
-          message:
-            detail === undefined ? copy.invalidFallback : copy.invalid(detail),
+          message: detail === undefined ? copy.invalidFallback : copy.invalid(detail),
         };
       }
       return { tone: 'error', conflict: false, message: copy.unexpected };
@@ -61,7 +59,6 @@ export function isMissing(error: unknown): boolean {
   const failure = apiFailureOf(error);
   return (
     failure.kind === 'http' &&
-    (failure.status === HTTP_STATUS.NOT_FOUND ||
-      failure.status === HTTP_STATUS.FORBIDDEN)
+    (failure.status === HTTP_STATUS.NOT_FOUND || failure.status === HTTP_STATUS.FORBIDDEN)
   );
 }

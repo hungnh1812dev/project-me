@@ -1,25 +1,12 @@
-import {
-  Button,
-  FormAlert,
-  type SheetColumn,
-  SortableSheet,
-} from '@abyss/form-commons';
 import { useState } from 'react';
+import { Button, FormAlert, SortableSheet, type SheetColumn } from '@abyss/form-commons';
 
-import {
-  LoadError,
-  PageHeader,
-  TableSkeleton,
-} from '../../components/PageStates';
+import { LoadError, PageHeader, TableSkeleton } from '../../components/PageStates';
 import { COPY } from '../../config/Copy.constants';
 import { formatDateTime } from '../../lib/DateFormat.rules';
 import { isForbidden, useCallerAccess } from '../access';
 import type { BackupFile, BackupsList } from './Backups.api';
-import {
-  isBackupsNotConfigured,
-  isBackupsRateLimited,
-  useBackupsQuery,
-} from './Backups.queries';
+import { isBackupsNotConfigured, isBackupsRateLimited, useBackupsQuery } from './Backups.queries';
 import { DownloadBackupDialog } from './DownloadBackupDialog';
 
 const copy = COPY.backups;
@@ -48,9 +35,7 @@ function utcTextOf(iso: string): string {
   return copy.utc(minutes.replace(/:\d{2}\.\d+Z$/, ''));
 }
 
-function columnsOf(
-  onDownload: (backup: BackupFile) => void,
-): readonly SheetColumn<BackupFile>[] {
+function columnsOf(onDownload: (backup: BackupFile) => void): readonly SheetColumn<BackupFile>[] {
   return [
     {
       key: 'created',
@@ -75,9 +60,7 @@ function columnsOf(
       key: 'size',
       header: copy.columns.size,
       align: 'right',
-      renderCell: (backup) => (
-        <span className="tabular-nums">{formatBytes(backup.sizeBytes)}</span>
-      ),
+      renderCell: (backup) => <span className="tabular-nums">{formatBytes(backup.sizeBytes)}</span>,
     },
     {
       key: 'actions',
@@ -101,15 +84,9 @@ function SummaryLine({ meta }: { meta: BackupsList['meta'] }) {
   const parts = [
     copy.summary.count(meta.count),
     copy.summary.total(formatBytes(meta.totalBytes)),
-    ...(meta.latestAt === null
-      ? []
-      : [copy.summary.latest(formatDateTime(meta.latestAt))]),
+    ...(meta.latestAt === null ? [] : [copy.summary.latest(formatDateTime(meta.latestAt))]),
   ];
-  return (
-    <p className="m-0 text-sm tabular-nums text-muted-foreground">
-      {parts.join(' · ')}
-    </p>
-  );
+  return <p className="m-0 text-sm text-muted-foreground tabular-nums">{parts.join(' · ')}</p>;
 }
 
 /** `/backups` (owner): the nightly dumps and a download behind password + code. */
@@ -125,9 +102,7 @@ export function BackupsPage() {
         <FormAlert tone="info">{copy.forbidden}</FormAlert>
       ) : backups.isPending && backups.fetchStatus === 'idle' ? (
         <div className="grid justify-items-start gap-3">
-          <p className="m-0 max-w-prose text-sm text-muted-foreground">
-            {copy.check.hint}
-          </p>
+          <p className="m-0 max-w-prose text-sm text-muted-foreground">{copy.check.hint}</p>
           <Button type="button" onClick={() => void backups.refetch()}>
             {copy.check.button}
           </Button>
@@ -146,11 +121,7 @@ export function BackupsPage() {
           <FormAlert tone="info">{copy.forbidden}</FormAlert>
         ) : (
           <LoadError
-            message={
-              isBackupsRateLimited(backups.error)
-                ? copy.rateLimited
-                : copy.loadFailed
-            }
+            message={isBackupsRateLimited(backups.error) ? copy.rateLimited : copy.loadFailed}
             isRetrying={backups.isFetching}
             onRetry={() => void backups.refetch()}
           />
@@ -174,12 +145,8 @@ export function BackupsPage() {
               {copy.check.refresh}
             </Button>
           </div>
-          {backups.data.meta.isStale ? (
-            <FormAlert tone="warning">{copy.stale}</FormAlert>
-          ) : null}
-          {backups.data.data.some((backup) =>
-            backup.fileName.endsWith(ENCRYPTED_EXTENSION),
-          ) ? (
+          {backups.data.meta.isStale ? <FormAlert tone="warning">{copy.stale}</FormAlert> : null}
+          {backups.data.data.some((backup) => backup.fileName.endsWith(ENCRYPTED_EXTENSION)) ? (
             <FormAlert tone="info">{copy.encryptedNote}</FormAlert>
           ) : null}
           <div className="relative overflow-x-auto rounded-md border border-border bg-card">

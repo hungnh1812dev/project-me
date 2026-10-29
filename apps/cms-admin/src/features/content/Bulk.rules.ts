@@ -1,11 +1,11 @@
 import { isAxiosError } from 'axios';
 
-import { BULK_ITEM_STATUS } from './Content.constants';
 import { COPY } from '../../config/Copy.constants';
 import { API_ERROR_CODES, HTTP_STATUS } from '../../config/Http.constants';
 import { apiFailureOf, rateLimitedMessage } from '../../lib/ApiFailure.errors';
-import { serverMessage } from './Content.errors';
 import type { BulkItemError, BulkResponse } from './Content.api';
+import { BULK_ITEM_STATUS } from './Content.constants';
+import { serverMessage } from './Content.errors';
 
 const copy = COPY.content.bulk;
 
@@ -36,12 +36,9 @@ export interface BulkFailure {
 
 function atomicIndexOf(error: unknown): number | undefined {
   if (!isAxiosError(error)) return undefined;
-  const responseBody = error.response?.data as
-    { details?: { index?: unknown } } | undefined;
+  const responseBody = error.response?.data as { details?: { index?: unknown } } | undefined;
   const index = responseBody?.details?.index;
-  return typeof index === 'number' && Number.isInteger(index) && index >= 0
-    ? index
-    : undefined;
+  return typeof index === 'number' && Number.isInteger(index) && index >= 0 ? index : undefined;
 }
 
 /** A bulk request that failed as a whole, reduced to what the UI shows. */
@@ -85,7 +82,6 @@ export function toBulkFailure(error: unknown): BulkFailure {
 /** The failed entries of a response, in request order. */
 export function failedItems(response: BulkResponse): BulkItemError[] {
   return response.results.filter(
-    (result): result is BulkItemError =>
-      result.status === BULK_ITEM_STATUS.ERROR,
+    (result): result is BulkItemError => result.status === BULK_ITEM_STATUS.ERROR,
   );
 }

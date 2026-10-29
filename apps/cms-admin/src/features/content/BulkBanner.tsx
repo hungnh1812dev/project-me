@@ -1,7 +1,7 @@
 import { Button, FormAlert } from '@abyss/form-commons';
 
 import { COPY } from '../../config/Copy.constants';
-import { type Banner, bannerTone } from './BulkBanner.rules';
+import { bannerTone, type Banner } from './BulkBanner.rules';
 
 const bulkCopy = COPY.content.bulk;
 
@@ -12,20 +12,11 @@ function bannerMessage(banner: Banner): string {
     case 'error':
       return banner.message;
     case 'result':
-      return bulkCopy.summary[banner.action as 'publish'](
-        banner.done,
-        banner.total,
-      );
+      return bulkCopy.summary[banner.action as 'publish'](banner.done, banner.total);
   }
 }
 
-export function BulkBanner({
-  banner,
-  onDismiss,
-}: {
-  banner: Banner;
-  onDismiss: () => void;
-}) {
+export function BulkBanner({ banner, onDismiss }: { banner: Banner; onDismiss: () => void }) {
   return (
     <div className="grid gap-2">
       <FormAlert tone={bannerTone(banner)}>{bannerMessage(banner)}</FormAlert>
@@ -41,9 +32,7 @@ export function BulkBanner({
               </li>
             ))}
           </ul>
-          <p className="m-0 text-muted-foreground">
-            {bulkCopy.summary.stillSelected}
-          </p>
+          <p className="m-0 text-muted-foreground">{bulkCopy.summary.stillSelected}</p>
         </div>
       ) : null}
       <div>

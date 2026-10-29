@@ -1,29 +1,25 @@
+import { useMemo, useState } from 'react';
 import { Button, FormAlert } from '@abyss/form-commons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useMemo, useState } from 'react';
 import { FormProvider, useForm } from 'react-hook-form';
 import { useNavigate, useParams } from 'react-router';
 
-import { COPY } from '../../config/Copy.constants';
-import { REVIEWER_ROLE_SLUG } from '../../config/Auth.constants';
+import { LoadError, PageHeader, TableSkeleton } from '../../components/PageStates';
 import { contentEditPath } from '../../config/App.routes';
-import {
-  LoadError,
-  PageHeader,
-  TableSkeleton,
-} from '../../components/PageStates';
+import { REVIEWER_ROLE_SLUG } from '../../config/Auth.constants';
+import { COPY } from '../../config/Copy.constants';
 import { useCurrentUser } from '../auth';
-import { useContentApi } from './ContentApi.context';
-import { CONTENT_QUERY_KEYS } from './Content.queries';
+import { conflictDetailsOf, type ConflictDetails } from './Conflict.rules';
 import { ConflictMergeModal } from './ConflictMergeModal';
-import { type ConflictDetails, conflictDetailsOf } from './Conflict.rules';
-import { isMissing, toSaveError, type SaveError } from './Content.errors';
 import type { DocumentRecord, DocumentTree } from './Content.api';
-import { type FormValues, toDocumentTree, toFormValues } from './Document.form';
+import { isMissing, toSaveError, type SaveError } from './Content.errors';
+import { CONTENT_QUERY_KEYS } from './Content.queries';
+import { useContentApi } from './ContentApi.context';
+import { toDocumentTree, toFormValues, type FormValues } from './Document.form';
 import { DynamicFormRenderer } from './DynamicFormRenderer';
 import { buildFieldTree, type FieldNode } from './FieldTree.rules';
-import { PresenceBanner } from './PresenceBanner';
 import { maskedPathsOf, visibleEntries } from './Merge.reducer';
+import { PresenceBanner } from './PresenceBanner';
 
 const copy = COPY.content;
 
@@ -51,13 +47,9 @@ export function DocumentEditPage() {
     () => (type.data === undefined ? [] : buildFieldTree(type.data.fields)),
     [type.data],
   );
-  const title =
-    documentId === undefined ? copy.newTitle(slug) : copy.editTitle(slug);
+  const title = documentId === undefined ? copy.newTitle(slug) : copy.editTitle(slug);
 
-  if (
-    type.isPending ||
-    (documentId !== undefined && draft.isPending && !draft.isError)
-  ) {
+  if (type.isPending || (documentId !== undefined && draft.isPending && !draft.isError)) {
     return (
       <div className="grid gap-6">
         <PageHeader title={title} description={copy.description} />
@@ -88,9 +80,7 @@ export function DocumentEditPage() {
   return (
     <div className="grid gap-6">
       <PageHeader title={title} description={copy.description} />
-      {documentId === undefined ? null : (
-        <PresenceBanner slug={slug} documentId={documentId} />
-      )}
+      {documentId === undefined ? null : <PresenceBanner slug={slug} documentId={documentId} />}
       {fields.length === 0 ? (
         <FormAlert tone="info">{copy.noFields}</FormAlert>
       ) : (
@@ -128,10 +118,7 @@ function DocumentForm({
   const readOnly = useCurrentUser()?.role === REVIEWER_ROLE_SLUG;
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const masked = useMemo<ReadonlySet<string>>(
-    () => new Set(record?.maskedFields ?? []),
-    [record],
-  );
+  const masked = useMemo<ReadonlySet<string>>(() => new Set(record?.maskedFields ?? []), [record]);
   const initial = useMemo(() => toFormValues(fields, record), [fields, record]);
   const form = useForm<FormValues>({ defaultValues: initial });
   const [error, setError] = useState<SaveError | null>(null);
@@ -142,10 +129,7 @@ function DocumentForm({
   const save = useMutation({
     mutationFn: (values: FormValues) => {
       if (record === null) {
-        return api.createDocument(
-          slug,
-          toDocumentTree(fields, values, null, masked),
-        );
+        return api.createDocument(slug, toDocumentTree(fields, values, null, masked));
       }
       return api.updateDocument(
         slug,
@@ -173,8 +157,7 @@ function DocumentForm({
       const details = conflictDetailsOf(failure);
       // Only worth a merge when there is a difference the role may see.
       const decidable =
-        details !== null &&
-        visibleEntries(details, maskedPathsOf(details, masked)).length > 0;
+        details !== null && visibleEntries(details, maskedPathsOf(details, masked)).length > 0;
       setConflict(decidable ? details : null);
       setMergeOpen(decidable);
       setMergeError(null);
@@ -183,12 +166,7 @@ function DocumentForm({
 
   const resolve = useMutation({
     mutationFn: (input: { tree: DocumentTree; version: number }) =>
-      api.updateDocument(
-        slug,
-        record?.documentId ?? '',
-        input.version,
-        input.tree,
-      ),
+      api.updateDocument(slug, record?.documentId ?? '', input.version, input.tree),
     onSuccess: async () => {
       setError(null);
       setConflict(null);
@@ -226,11 +204,7 @@ function DocumentForm({
             {error.conflict ? (
               <div className="flex flex-wrap gap-2">
                 {conflict === null ? null : (
-                  <Button
-                    type="button"
-                    variant="primary"
-                    onClick={() => setMergeOpen(true)}
-                  >
+                  <Button type="button" variant="primary" onClick={() => setMergeOpen(true)}>
                     {copy.errors.reviewConflict}
                   </Button>
                 )}
@@ -241,9 +215,7 @@ function DocumentForm({
             ) : null}
           </div>
         )}
-        {notice === null ? null : (
-          <FormAlert tone="success">{notice}</FormAlert>
-        )}
+        {notice === null ? null : <FormAlert tone="success">{notice}</FormAlert>}
         {/* A reviewer reads only: inputs are disabled and there is no Save. */}
         <fieldset disabled={readOnly} className="m-0 min-w-0 border-0 p-0">
           <DynamicFormRenderer fields={fields} masked={masked} />

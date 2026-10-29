@@ -71,9 +71,5 @@ export const authSlice = createSlice({
 });
 
 export const { accessTokenReceived, signedIn, signedOut } = authSlice.actions;
-export const {
-  selectSessionStatus,
-  selectAccessToken,
-  selectCurrentUser,
-  selectEndNotice,
-} = authSlice.selectors;
+export const { selectSessionStatus, selectAccessToken, selectCurrentUser, selectEndNotice } =
+  authSlice.selectors;

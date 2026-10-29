@@ -1,17 +1,13 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { UseFormReturn } from 'react-hook-form';
 
 import { COPY } from '../../config/Copy.constants';
-import {
-  API_ERROR_CODES,
-  API_TOKEN_LIMITS,
-  HTTP_STATUS,
-} from '../../config/Http.constants';
+import { API_ERROR_CODES, API_TOKEN_LIMITS, HTTP_STATUS } from '../../config/Http.constants';
 import type { ApiToken, UpdateApiTokenInput } from './Access.api';
-import { useAccessApi } from './AccessApi.context';
 import { toAccessError } from './Access.errors';
 import { ACCESS_QUERY_KEYS } from './Access.queries';
+import { useAccessApi } from './AccessApi.context';
 import { cellIssues, cellsAt, type CellRef } from './PermissionMatrix.rules';
 import { expiryIso, localDateOf } from './TokenExpiry.rules';
 import {
@@ -83,8 +79,7 @@ export function useTokenSubmit({
   const [marked, setMarked] = useState<ReadonlySet<string>>(new Set());
   const [created, setCreated] = useState<CreatedToken | null>(null);
 
-  const refresh = () =>
-    queryClient.invalidateQueries({ queryKey: ACCESS_QUERY_KEYS.apiTokens });
+  const refresh = () => queryClient.invalidateQueries({ queryKey: ACCESS_QUERY_KEYS.apiTokens });
 
   const fail = (cause: unknown, cells: readonly CellRef[]) => {
     const error = toAccessError(cause);
@@ -137,8 +132,7 @@ export function useTokenSubmit({
   });
 
   const update = useMutation({
-    mutationFn: (input: UpdateApiTokenInput) =>
-      api.updateApiToken(editing?.id ?? '', input),
+    mutationFn: (input: UpdateApiTokenInput) => api.updateApiToken(editing?.id ?? '', input),
     onSuccess: (token) => {
       void refresh();
       onLockChange(false);
@@ -147,8 +141,7 @@ export function useTokenSubmit({
   });
 
   const submitCreate = (values: TokenFormValues, entries: SerializedScope) => {
-    const expiresIso =
-      values.expiresOn === '' ? null : expiryIso(values.expiresOn);
+    const expiresIso = values.expiresOn === '' ? null : expiryIso(values.expiresOn);
     onLockChange(true);
     create.mutate(
       {
@@ -172,8 +165,7 @@ export function useTokenSubmit({
       input.scope = { permissions: serialized.entries };
     }
     if (values.expiresOn !== initialExpiry) {
-      input.expiresAt =
-        values.expiresOn === '' ? null : expiryIso(values.expiresOn);
+      input.expiresAt = values.expiresOn === '' ? null : expiryIso(values.expiresOn);
     }
     if (Object.keys(input).length === 0) {
       onClose();
@@ -195,8 +187,7 @@ export function useTokenSubmit({
       else submitUpdate(editing, values, serialized);
     },
     // Show the scope problem together with the field errors.
-    () =>
-      setScopeError(scopeProblemOf(serializeScope(scope, subjects).entries)),
+    () => setScopeError(scopeProblemOf(serializeScope(scope, subjects).entries)),
   );
 
   const clearScopeMarks = () => {

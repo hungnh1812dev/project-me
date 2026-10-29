@@ -1,4 +1,4 @@
-import { createContext, type ReactNode, use } from 'react';
+import { createContext, use, type ReactNode } from 'react';
 
 export interface ApiProviderProps<Api> {
   api: Api;
@@ -19,9 +19,7 @@ export function createApiContext<Api>(name: string) {
   function useApi(): Api {
     const api = use(ApiContext);
     if (api === null) {
-      throw new Error(
-        `use${name}Api must be used inside <${name}ApiProvider>.`,
-      );
+      throw new Error(`use${name}Api must be used inside <${name}ApiProvider>.`);
     }
     return api;
   }

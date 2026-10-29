@@ -55,26 +55,20 @@ describe('toBulkFailure', () => {
   });
 
   it('maps request-level codes', () => {
-    expect(
-      toBulkFailure(httpError(400, { errorCode: 'DOCUMENT_NOT_PUBLISHABLE' }))
-        .message,
-    ).toBe(bulk.errors.notPublishable);
-    expect(
-      toBulkFailure(httpError(400, { errorCode: 'DOCUMENT_BULK_LIMIT' }))
-        .message,
-    ).toBe(bulk.errors.limit);
-    expect(toBulkFailure(httpError(403, {})).message).toBe(
-      bulk.errors.forbidden,
+    expect(toBulkFailure(httpError(400, { errorCode: 'DOCUMENT_NOT_PUBLISHABLE' })).message).toBe(
+      bulk.errors.notPublishable,
     );
+    expect(toBulkFailure(httpError(400, { errorCode: 'DOCUMENT_BULK_LIMIT' })).message).toBe(
+      bulk.errors.limit,
+    );
+    expect(toBulkFailure(httpError(403, {})).message).toBe(bulk.errors.forbidden);
     expect(toBulkFailure(new Error('x')).message).toBe(bulk.errors.unexpected);
   });
 });
 
 describe('itemReason / failedItems', () => {
   it('prefers a friendly text for known codes and falls back otherwise', () => {
-    expect(itemReason('DOCUMENT_VERSION_CONFLICT', 'raw')).toBe(
-      bulk.itemErrors.conflict,
-    );
+    expect(itemReason('DOCUMENT_VERSION_CONFLICT', 'raw')).toBe(bulk.itemErrors.conflict);
     expect(itemReason('OTHER', 'raw')).toBe('raw');
     expect(itemReason('OTHER', '')).toBe(bulk.itemErrors.fallback);
   });

@@ -1,14 +1,10 @@
-import {
-  createFakeApi,
-  deferred,
-  TEST_API_BASE_URL,
-} from '../../../test/FakeApi.fixture';
+import { createFakeApi, deferred, TEST_API_BASE_URL } from '../../../test/FakeApi.fixture';
 import { fakeBus, fakeLocks } from '../../../test/FakeTabs.fixture';
 import { createTestServices, TEST_USER } from '../../../test/RenderApp.fixture';
-import { createAuthTestStore } from './AuthStore.fixture';
 import { API_ENDPOINTS } from '../../config/Api.endpoints';
 import { createApiClient } from '../../lib/Api.client';
 import { createAuthApi } from './Auth.api';
+import { createAuthTestStore } from './AuthStore.fixture';
 import { createSession } from './Session';
 
 const { LOGIN, REFRESH, LOGOUT, ME } = API_ENDPOINTS.AUTH;
@@ -29,9 +25,7 @@ describe('session', () => {
       user: TEST_USER,
       endNotice: null,
     });
-    expect(api.callsTo(`GET ${ME}`)[0]?.headers.get('Authorization')).toBe(
-      'Bearer t1',
-    );
+    expect(api.callsTo(`GET ${ME}`)[0]?.headers.get('Authorization')).toBe('Bearer t1');
   });
 
   it('becomes anonymous when there is no valid refresh cookie', async () => {
@@ -176,9 +170,7 @@ describe('session across tabs', () => {
       return { store, session };
     });
 
-    const refreshed = Promise.all(
-      tabs.map(({ session }) => session.refreshAccessToken()),
-    );
+    const refreshed = Promise.all(tabs.map(({ session }) => session.refreshAccessToken()));
     gate.resolve();
     expect(await refreshed).toEqual(['t1', 't1', 't1']);
     expect(api.callsTo(`POST ${REFRESH}`)).toHaveLength(1);

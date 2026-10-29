@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import {
   Button,
   Dialog,
@@ -5,29 +6,26 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  formatFileSize,
   FormAlert,
+  formatFileSize,
 } from '@abyss/form-commons';
-import { useState } from 'react';
 
-import { COPY } from '../../config/Copy.constants';
-import { isForbidden } from '../access';
 import { LoadError, TableSkeleton } from '../../components/PageStates';
 import { Pagination } from '../../components/Pagination';
-import { useMediaQuery } from './Media.queries';
+import { COPY } from '../../config/Copy.constants';
+import { isForbidden } from '../access';
 import type { MediaFile } from './Media.api';
+import { useMediaQuery } from './Media.queries';
 
 const copy = COPY.media.picker;
 const IMAGE_PREFIX = 'image/';
 
 function Thumb({ file }: { file: MediaFile }) {
-  const src =
-    file.thumbnailUrl ??
-    (file.mimeType.startsWith(IMAGE_PREFIX) ? file.url : null);
+  const src = file.thumbnailUrl ?? (file.mimeType.startsWith(IMAGE_PREFIX) ? file.url : null);
   return (
     <span className="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-sm border border-border bg-muted">
       {src === null ? (
-        <span className="text-xs font-medium uppercase text-muted-foreground">
+        <span className="text-xs font-medium text-muted-foreground uppercase">
           {file.mimeType.split('/')[1] ?? ''}
         </span>
       ) : (
@@ -76,10 +74,7 @@ export function MediaPickerDialog({
           <div className="rounded-md border border-border bg-card">
             <ul className="m-0 grid max-h-96 list-none gap-0 overflow-y-auto p-0">
               {rows.map((file) => (
-                <li
-                  key={file.id}
-                  className="border-b border-border last:border-0"
-                >
+                <li key={file.id} className="border-b border-border last:border-0">
                   <button
                     type="button"
                     aria-label={copy.select(file.fileName)}
@@ -88,14 +83,10 @@ export function MediaPickerDialog({
                   >
                     <Thumb file={file} />
                     <span className="grid min-w-0 gap-0.5">
-                      <span className="truncate text-sm font-medium">
-                        {file.fileName}
-                      </span>
+                      <span className="truncate text-sm font-medium">{file.fileName}</span>
                       <span className="truncate text-xs text-muted-foreground">
                         {file.alt ?? COPY.media.noAlt} ·{' '}
-                        <span className="tabular-nums">
-                          {formatFileSize(file.size)}
-                        </span>
+                        <span className="tabular-nums">{formatFileSize(file.size)}</span>
                       </span>
                     </span>
                   </button>

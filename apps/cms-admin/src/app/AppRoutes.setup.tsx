@@ -3,8 +3,8 @@ import { Navigate, type RouteObject } from 'react-router';
 import { APP_ROUTES } from '../config/App.routes';
 import { PUBLIC_ROUTE_PATHS } from '../features/auth/Auth.feature';
 import { ProtectedRoute } from '../features/auth/ProtectedRoute';
-import type { FeatureRoute } from '../lib/FeatureDefinition';
 import { FEATURE_LIST } from '../features/Features.registry';
+import type { FeatureRoute } from '../lib/FeatureDefinition';
 import { AppShell } from './AppShell';
 
 const isPublic = ({ path }: FeatureRoute) =>
@@ -23,9 +23,7 @@ export const appRoutes: RouteObject[] = [
     children: [
       {
         Component: AppShell,
-        children: featureRoutes
-          .filter((route) => !isPublic(route))
-          .map(toRouteObject),
+        children: featureRoutes.filter((route) => !isPublic(route)).map(toRouteObject),
       },
     ],
   },

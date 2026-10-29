@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import {
   Button,
   Dialog,
@@ -10,14 +11,13 @@ import {
   FormAlert,
 } from '@abyss/form-commons';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
 
 import { COPY } from '../../config/Copy.constants';
 import { API_ERROR_CODES } from '../../config/Http.constants';
 import type { Account } from './Access.api';
-import { useAccessApi } from './AccessApi.context';
 import { toAccessError } from './Access.errors';
 import { ACCESS_QUERY_KEYS } from './Access.queries';
+import { useAccessApi } from './AccessApi.context';
 
 const copy = COPY.access.disable;
 
@@ -39,8 +39,7 @@ export function DisableAccountDialog({
   const queryClient = useQueryClient();
   const [alert, setAlert] = useState<string | null>(null);
 
-  const refresh = () =>
-    queryClient.invalidateQueries({ queryKey: ACCESS_QUERY_KEYS.accounts });
+  const refresh = () => queryClient.invalidateQueries({ queryKey: ACCESS_QUERY_KEYS.accounts });
 
   const disable = useMutation({
     mutationFn: (target: Account) => api.disableAccount(target.id),
@@ -76,13 +75,9 @@ export function DisableAccountDialog({
           <>
             <DialogHeader>
               <DialogTitle>{copy.title(account.displayName)}</DialogTitle>
-              <DialogDescription>
-                {copy.description(account.email)}
-              </DialogDescription>
+              <DialogDescription>{copy.description(account.email)}</DialogDescription>
             </DialogHeader>
-            {alert === null ? null : (
-              <FormAlert tone="error">{alert}</FormAlert>
-            )}
+            {alert === null ? null : <FormAlert tone="error">{alert}</FormAlert>}
             <DialogFooter>
               <DialogClose asChild>
                 <Button type="button" disabled={disable.isPending}>

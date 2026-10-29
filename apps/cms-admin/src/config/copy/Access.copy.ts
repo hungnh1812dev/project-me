@@ -4,8 +4,7 @@ export const ACCESS_COPY = {
   errors: {
     network: 'Could not reach the server. Check your connection and try again.',
     unexpected: 'Something went wrong on our side. Try again in a moment.',
-    rankForbidden:
-      'You can only manage accounts and roles ranked below your own role.',
+    rankForbidden: 'You can only manage accounts and roles ranked below your own role.',
     permissionNotHeld:
       'You cannot grant a permission you do not hold yourself. Remove the marked permissions and save again.',
     scopeNotHeld:
@@ -36,8 +35,7 @@ export const ACCESS_COPY = {
     twoFactorOff: 'Off',
     loading: 'Loading accounts',
     loadFailed: 'Could not load the accounts.',
-    forbidden:
-      'Your role cannot see accounts. Ask the owner if you need access.',
+    forbidden: 'Your role cannot see accounts. Ask the owner if you need access.',
     empty: 'No accounts yet.',
     emptyHint: 'Invite the first person who should work in Abyss CMS.',
     enable: 'Enable',
@@ -48,16 +46,14 @@ export const ACCESS_COPY = {
     enabledInvited: (name: string) =>
       `${name} is enabled. They have not set a password yet, so resend the invite if they need a new code.`,
     alreadyEnabled: 'That account is no longer disabled. The list is updated.',
-    resent: (email: string) =>
-      `New invitation sent to ${email}. Earlier codes no longer work.`,
+    resent: (email: string) => `New invitation sent to ${email}. Earlier codes no longer work.`,
     resentNoEmail: (email: string) =>
       `A new code was created for ${email}, but the email could not be sent. They can ask for a code on the Set password page.`,
     notInvited:
       'That account already set a password, so there is nothing to resend. The list is updated.',
     pagination: {
       label: 'Accounts pages',
-      range: (from: number, to: number, total: number) =>
-        `${from}\u2013${to} of ${total}`,
+      range: (from: number, to: number, total: number) => `${from}\u2013${to} of ${total}`,
       previous: 'Previous',
       next: 'Next',
     },
@@ -67,15 +63,13 @@ export const ACCESS_COPY = {
       `Invitation sent to ${email}. They choose a password with the code from the email.`,
     invitedNoEmail: (email: string) =>
       `The account for ${email} was created, but the invitation email could not be sent. They can ask for a code on the Set password page.`,
-    disabled: (name: string) =>
-      `${name} is disabled and was signed out everywhere.`,
+    disabled: (name: string) => `${name} is disabled and was signed out everywhere.`,
     alreadyDisabled: 'That account was already disabled. The list is updated.',
     gone: 'That account no longer exists. The list is updated.',
   },
   invite: {
     title: 'Invite an account',
-    description:
-      'We email them a code to set their password. You can change their role later.',
+    description: 'We email them a code to set their password. You can change their role later.',
     emailLabel: 'Email',
     displayNameLabel: 'Display name',
     displayNameHint: 'Shown in the admin console, for example "Linh Pham".',
@@ -93,12 +87,9 @@ export const ACCESS_COPY = {
       roleRequired: 'Choose the role they get.',
     },
     errors: {
-      emailTaken:
-        'An account with this email already exists. Use a different email.',
-      roleNotAssignable:
-        'This role cannot be given to an account. Choose another role.',
-      invalid:
-        'Some details were not accepted. Check the fields and try again.',
+      emailTaken: 'An account with this email already exists. Use a different email.',
+      roleNotAssignable: 'This role cannot be given to an account. Choose another role.',
+      invalid: 'Some details were not accepted. Check the fields and try again.',
     },
   },
   disable: {
@@ -136,18 +127,15 @@ export const ACCESS_COPY = {
     noAccess: 'No permissions',
     loading: 'Loading API tokens',
     loadFailed: 'Could not load the API tokens.',
-    forbidden:
-      'Your role cannot see API tokens. Ask the owner if you need access.',
+    forbidden: 'Your role cannot see API tokens. Ask the owner if you need access.',
     empty: 'No API tokens yet.',
-    emptyHint:
-      'Create a token when a script or another system needs to read or write content.',
+    emptyHint: 'Create a token when a script or another system needs to read or write content.',
     emptyHintReadOnly: 'Tokens created by your team appear here.',
     edit: 'Edit',
     editLabel: (name: string) => `Edit ${name}`,
     revoke: 'Revoke',
     revokeLabel: (name: string) => `Revoke ${name}`,
-    created: (name: string) =>
-      `Token ${name} is created. Anything using it can call the API now.`,
+    created: (name: string) => `Token ${name} is created. Anything using it can call the API now.`,
     updated: (name: string) => `Token ${name} is updated.`,
     revoked: (name: string) => `Token ${name} is revoked and no longer works.`,
     alreadyExpired:
@@ -156,8 +144,7 @@ export const ACCESS_COPY = {
     gone: 'That token no longer exists or you cannot manage it. The list is updated.',
     pagination: {
       label: 'API tokens pages',
-      range: (from: number, to: number, total: number) =>
-        `${from}\u2013${to} of ${total}`,
+      range: (from: number, to: number, total: number) => `${from}\u2013${to} of ${total}`,
       previous: 'Previous',
       next: 'Next',
     },
@@ -189,8 +176,7 @@ export const ACCESS_COPY = {
       scopeTooLong: `Use at most ${API_TOKEN_LIMITS.MAX_SCOPE_ENTRIES} permissions. Use "All content types" to cover more.`,
     },
     errors: {
-      invalid:
-        'Some details were not accepted. Check the marked fields and try again.',
+      invalid: 'Some details were not accepted. Check the marked fields and try again.',
       revoked: 'This token was revoked in the meantime and cannot be changed.',
     },
   },
@@ -224,8 +210,7 @@ export const ACCESS_COPY = {
   },
   roles: {
     title: 'Roles',
-    description:
-      'A role is a set of permissions. Accounts get exactly what their role allows.',
+    description: 'A role is a set of permissions. Accounts get exactly what their role allows.',
     tableLabel: 'Roles',
     columns: {
       name: 'Role',
@@ -246,22 +231,16 @@ export const ACCESS_COPY = {
     meta: (slug: string, rank: number, accounts: number) =>
       `${slug} · rank ${rank} · ${accounts} ${accounts === 1 ? 'account' : 'accounts'}`,
     notFound: 'This role does not exist or you cannot see it.',
-    owner:
-      'The owner holds every permission. There is nothing to configure for this role.',
-    readOnly:
-      'You can view this role but not change it: it ranks at or above your own role.',
+    owner: 'The owner holds every permission. There is nothing to configure for this role.',
+    readOnly: 'You can view this role but not change it: it ranks at or above your own role.',
     readOnlyNoUpdate: 'Your role can view roles but not change them.',
     save: 'Save permissions',
     discard: 'Discard changes',
     unsaved: 'You have unsaved changes.',
-    saved:
-      'Permissions saved. Accounts with this role get them on their next request.',
-    invalid:
-      'Some permissions were not accepted. Fix the marked rows and save again.',
-    conditionsInvalidJson:
-      'Fix the conditions that are not valid JSON before saving.',
-    contentTypesFailed:
-      'Could not load the content types, so field access cannot be shown.',
+    saved: 'Permissions saved. Accounts with this role get them on their next request.',
+    invalid: 'Some permissions were not accepted. Fix the marked rows and save again.',
+    conditionsInvalidJson: 'Fix the conditions that are not valid JSON before saving.',
+    contentTypesFailed: 'Could not load the content types, so field access cannot be shown.',
   },
   matrix: {
     contentTitle: 'Content',
@@ -295,8 +274,7 @@ export const ACCESS_COPY = {
     details: 'Fields and conditions',
     conditionsOnly: 'Conditions',
     detailsLabel: (subject: string) => `Fields and conditions for ${subject}`,
-    detailsEmpty:
-      'Check an action in this row to set its field access and conditions.',
+    detailsEmpty: 'Check an action in this row to set its field access and conditions.',
     extraRows: (count: number) =>
       `${count} more ${count === 1 ? 'row' : 'rows'} for this action came from the API and are kept unchanged.`,
   },
@@ -308,8 +286,7 @@ export const ACCESS_COPY = {
     sensitive: 'Sensitive',
     component: 'Group',
     covered: 'Included with its group',
-    noneSelected:
-      'No fields selected: only system fields such as the id and dates are visible.',
+    noneSelected: 'No fields selected: only system fields such as the id and dates are visible.',
     noneSelectedWrite: 'No fields selected: nothing can be written.',
   },
   conditions: {

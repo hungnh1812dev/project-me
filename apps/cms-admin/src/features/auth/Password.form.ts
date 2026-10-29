@@ -1,6 +1,6 @@
+import { type FormAlertTone } from '@abyss/form-commons';
 import { z } from 'zod';
 
-import { type FormAlertTone } from '@abyss/form-commons';
 import { OTP_CODE_LENGTH, PASSWORD_LENGTH } from '../../config/Auth.constants';
 import { COPY } from '../../config/Copy.constants';
 import type { PasswordError, PasswordErrorKind } from './Password.errors';
@@ -14,10 +14,7 @@ export const emailField = z
   .min(1, validation.emailRequired)
   .pipe(z.email(validation.emailInvalid));
 
-export const codeField = z
-  .string()
-  .trim()
-  .regex(OTP_CODE_PATTERN, validation.codeInvalid);
+export const codeField = z.string().trim().regex(OTP_CODE_PATTERN, validation.codeInvalid);
 
 /** Empty until the server asks for it (AUTH_TOTP_REQUIRED). */
 export const optionalTotpField = z
@@ -38,10 +35,7 @@ export const newPasswordShape = {
   confirmPassword: z.string(),
 };
 
-export function passwordsMatch(values: {
-  newPassword: string;
-  confirmPassword: string;
-}): boolean {
+export function passwordsMatch(values: { newPassword: string; confirmPassword: string }): boolean {
   return values.newPassword === values.confirmPassword;
 }
 

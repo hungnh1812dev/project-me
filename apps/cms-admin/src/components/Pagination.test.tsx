@@ -8,8 +8,7 @@ const copy = {
   label: 'Pages',
   previous: 'Previous',
   next: 'Next',
-  range: (from: number, to: number, total: number) =>
-    `${from}-${to} of ${total}`,
+  range: (from: number, to: number, total: number) => `${from}-${to} of ${total}`,
 };
 
 describe('Pagination', () => {
@@ -39,12 +38,8 @@ describe('Pagination', () => {
         copy={copy}
       />,
     );
-    expect(
-      screen.getByRole('button', { name: 'Previous' }).hasAttribute('disabled'),
-    ).toBe(true);
-    expect(
-      screen.getByRole('button', { name: 'Next' }).hasAttribute('disabled'),
-    ).toBe(true);
+    expect(screen.getByRole('button', { name: 'Previous' }).hasAttribute('disabled')).toBe(true);
+    expect(screen.getByRole('button', { name: 'Next' }).hasAttribute('disabled')).toBe(true);
   });
 
   it('prints the kit empty-page range', () => {

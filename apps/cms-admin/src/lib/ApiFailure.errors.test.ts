@@ -50,16 +50,10 @@ describe('api-failure', () => {
   it('keeps well-formed 400 issues and drops malformed ones', () => {
     const error = failedWith(400, {
       details: {
-        issues: [
-          { path: ['email', 0], message: 'bad' },
-          { path: 'email', message: 'bad' },
-          null,
-        ],
+        issues: [{ path: ['email', 0], message: 'bad' }, { path: 'email', message: 'bad' }, null],
       },
     });
-    expect(apiIssuesOf(error)).toEqual([
-      { path: ['email', 0], message: 'bad' },
-    ]);
+    expect(apiIssuesOf(error)).toEqual([{ path: ['email', 0], message: 'bad' }]);
     expect(apiIssuesOf(new Error('x'))).toEqual([]);
   });
 });

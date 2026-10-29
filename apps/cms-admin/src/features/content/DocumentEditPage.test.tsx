@@ -3,14 +3,10 @@ import userEvent from '@testing-library/user-event';
 
 import { CV_PAGE_TYPE } from '../../../test/CvPage.fixture';
 import type { FakeHandler } from '../../../test/FakeApi.fixture';
-import {
-  createTestServices,
-  renderApp,
-  TEST_USER,
-} from '../../../test/RenderApp.fixture';
-import { COPY } from '../../config/Copy.constants';
+import { createTestServices, renderApp, TEST_USER } from '../../../test/RenderApp.fixture';
 import { API_ENDPOINTS } from '../../config/Api.endpoints';
 import { contentEditPath, contentNewPath } from '../../config/App.routes';
+import { COPY } from '../../config/Copy.constants';
 import type { DocumentRecord } from './Content.api';
 
 const { REFRESH, ME } = API_ENDPOINTS.AUTH;
@@ -77,51 +73,31 @@ describe('DocumentEditPage: new cv-page', () => {
     });
 
     await screen.findByLabelText('Position');
-    expect(
-      screen.getByRole('heading', { name: copy.newTitle(SLUG) }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: copy.newTitle(SLUG) })).toBeInTheDocument();
     expect(screen.getByRole('switch', { name: 'Is main' })).toBeInTheDocument();
     expect(screen.getByText('Summary')).toBeInTheDocument();
-    for (const label of [
-      'Skill',
-      'Experience',
-      'Project',
-      'Education',
-      'Language',
-      'Reference',
-    ]) {
-      expect(
-        screen.getByRole('heading', { level: 2, name: label }),
-      ).toBeInTheDocument();
+    for (const label of ['Skill', 'Experience', 'Project', 'Education', 'Language', 'Reference']) {
+      expect(screen.getByRole('heading', { level: 2, name: label })).toBeInTheDocument();
     }
 
     await userEvent.type(screen.getByLabelText('Position'), 'Engineer');
     await userEvent.click(screen.getByRole('switch', { name: 'Is main' }));
     await userEvent.click(screen.getByRole('button', { name: 'Add skill' }));
-    await userEvent.type(
-      screen.getByLabelText('Skill', { selector: 'input' }),
-      'React',
-    );
+    await userEvent.type(screen.getByLabelText('Skill', { selector: 'input' }), 'React');
     await userEvent.click(screen.getByRole('button', { name: copy.save }));
 
-    await waitFor(() =>
-      expect(api.callsTo(`POST ${DOCUMENTS.BY_SLUG(SLUG)}`)).toHaveLength(1),
-    );
+    await waitFor(() => expect(api.callsTo(`POST ${DOCUMENTS.BY_SLUG(SLUG)}`)).toHaveLength(1));
     expect(bodyOf(api.callsTo(`POST ${DOCUMENTS.BY_SLUG(SLUG)}`)[0])).toEqual({
       values: { position: 'Engineer', isMain: true },
       components: { skill: [{ values: { skill: 'React' } }] },
     });
-    expect(
-      await screen.findByRole('heading', { name: copy.editTitle(SLUG) }),
-    ).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: copy.editTitle(SLUG) })).toBeInTheDocument();
   });
 
   it('blocks the save on invalid numbers and JSON in a nested component (depth 2)', async () => {
     const { api } = await open(contentNewPath(SLUG));
     await screen.findByLabelText('Position');
-    await userEvent.click(
-      screen.getByRole('button', { name: 'Add experience' }),
-    );
+    await userEvent.click(screen.getByRole('button', { name: 'Add experience' }));
     await userEvent.click(screen.getByRole('button', { name: 'Add role' }));
     await userEvent.type(screen.getByLabelText('Team size'), '4.5');
     await userEvent.type(screen.getByLabelText('Tech stack'), 'not json');
@@ -144,9 +120,7 @@ describe('DocumentEditPage: new cv-page', () => {
     });
     await userEvent.type(await screen.findByLabelText('Company'), 'Acme');
     await userEvent.click(screen.getByRole('button', { name: copy.save }));
-    expect(await screen.findByRole('alert')).toHaveTextContent(
-      'values.position is required',
-    );
+    expect(await screen.findByRole('alert')).toHaveTextContent('values.position is required');
     expect(screen.getByLabelText('Company')).toHaveValue('Acme');
   });
 
@@ -187,22 +161,18 @@ describe('DocumentEditPage: edit draft', () => {
     });
     const position = await screen.findByLabelText('Position');
     expect(position).toHaveValue('Engineer');
-    expect(
-      api.callsTo(`GET ${DOCUMENTS.BY_ID(SLUG, DOC_ID)}`)[0]?.params,
-    ).toEqual({ status: 'draft' });
+    expect(api.callsTo(`GET ${DOCUMENTS.BY_ID(SLUG, DOC_ID)}`)[0]?.params).toEqual({
+      status: 'draft',
+    });
 
     await userEvent.clear(position);
     await userEvent.type(position, 'Lead');
     await userEvent.click(screen.getByRole('button', { name: copy.save }));
 
     await waitFor(() =>
-      expect(api.callsTo(`PUT ${DOCUMENTS.BY_ID(SLUG, DOC_ID)}`)).toHaveLength(
-        1,
-      ),
+      expect(api.callsTo(`PUT ${DOCUMENTS.BY_ID(SLUG, DOC_ID)}`)).toHaveLength(1),
     );
-    expect(
-      bodyOf(api.callsTo(`PUT ${DOCUMENTS.BY_ID(SLUG, DOC_ID)}`)[0]),
-    ).toEqual({
+    expect(bodyOf(api.callsTo(`PUT ${DOCUMENTS.BY_ID(SLUG, DOC_ID)}`)[0])).toEqual({
       version: 3,
       values: { position: 'Lead' },
     });
@@ -236,24 +206,15 @@ describe('DocumentEditPage: edit draft', () => {
       }),
     });
     await screen.findByLabelText('Position');
-    await userEvent.click(
-      screen.getByRole('button', { name: 'Move skill 1 down' }),
-    );
+    await userEvent.click(screen.getByRole('button', { name: 'Move skill 1 down' }));
     await userEvent.click(screen.getByRole('button', { name: copy.save }));
     await waitFor(() =>
-      expect(api.callsTo(`PUT ${DOCUMENTS.BY_ID(SLUG, DOC_ID)}`)).toHaveLength(
-        1,
-      ),
+      expect(api.callsTo(`PUT ${DOCUMENTS.BY_ID(SLUG, DOC_ID)}`)).toHaveLength(1),
     );
-    const body = bodyOf(
-      api.callsTo(`PUT ${DOCUMENTS.BY_ID(SLUG, DOC_ID)}`)[0],
-    ) as {
+    const body = bodyOf(api.callsTo(`PUT ${DOCUMENTS.BY_ID(SLUG, DOC_ID)}`)[0]) as {
       components: { skill: { componentUid: string }[] };
     };
-    expect(body.components.skill.map((item) => item.componentUid)).toEqual([
-      second,
-      UID_SKILL,
-    ]);
+    expect(body.components.skill.map((item) => item.componentUid)).toEqual([second, UID_SKILL]);
   });
 
   it('renders masked fields read-only and never sends them', async () => {
@@ -279,20 +240,14 @@ describe('DocumentEditPage: edit draft', () => {
     expect(company).toHaveAttribute('readonly');
     expect(company).toHaveValue(copy.protectedValue);
     expect(screen.getByLabelText('Reference')).toHaveValue(copy.protectedValue);
-    expect(
-      screen.queryByRole('button', { name: 'Add reference' }),
-    ).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Add reference' })).not.toBeInTheDocument();
 
     await userEvent.type(screen.getByLabelText('Position'), '!');
     await userEvent.click(screen.getByRole('button', { name: copy.save }));
     await waitFor(() =>
-      expect(api.callsTo(`PUT ${DOCUMENTS.BY_ID(SLUG, DOC_ID)}`)).toHaveLength(
-        1,
-      ),
+      expect(api.callsTo(`PUT ${DOCUMENTS.BY_ID(SLUG, DOC_ID)}`)).toHaveLength(1),
     );
-    expect(
-      bodyOf(api.callsTo(`PUT ${DOCUMENTS.BY_ID(SLUG, DOC_ID)}`)[0]),
-    ).toEqual({
+    expect(bodyOf(api.callsTo(`PUT ${DOCUMENTS.BY_ID(SLUG, DOC_ID)}`)[0])).toEqual({
       version: 3,
       values: { position: 'Engineer!' },
     });
@@ -318,15 +273,9 @@ describe('DocumentEditPage: edit draft', () => {
     });
     await userEvent.type(await screen.findByLabelText('Position'), '!');
     await userEvent.click(screen.getByRole('button', { name: copy.save }));
-    expect(await screen.findByRole('alert')).toHaveTextContent(
-      copy.errors.conflict,
-    );
-    await userEvent.click(
-      screen.getByRole('button', { name: copy.errors.reload }),
-    );
-    await waitFor(() =>
-      expect(screen.queryByRole('alert')).not.toBeInTheDocument(),
-    );
+    expect(await screen.findByRole('alert')).toHaveTextContent(copy.errors.conflict);
+    await userEvent.click(screen.getByRole('button', { name: copy.errors.reload }));
+    await waitFor(() => expect(screen.queryByRole('alert')).not.toBeInTheDocument());
     expect(screen.getByLabelText('Position')).toHaveValue('Engineer');
   });
 
@@ -392,34 +341,24 @@ describe('DocumentEditPage: edit draft', () => {
       expect(within(dialog).queryByText(/Initech/)).not.toBeInTheDocument();
       expect(within(dialog).getByText(copy.conflict.summary(1))).toBeVisible();
 
-      await userEvent.click(
-        within(dialog).getByRole('button', { name: copy.conflict.save }),
-      );
+      await userEvent.click(within(dialog).getByRole('button', { name: copy.conflict.save }));
       await waitFor(() => expect(puts).toHaveLength(2));
       expect(puts[1]).toEqual({
         version: 5,
         values: { position: 'Engineer!' },
       });
       await waitFor(() =>
-        expect(
-          screen.queryByRole('dialog', { name: copy.conflict.title }),
-        ).not.toBeInTheDocument(),
+        expect(screen.queryByRole('dialog', { name: copy.conflict.title })).not.toBeInTheDocument(),
       );
     });
 
     it('choosing the saved version sends nothing and reloads', async () => {
       const puts: unknown[] = [];
       const dialog = await conflict([positionDiff], puts);
-      await userEvent.click(
-        within(dialog).getByRole('radio', { name: /Saved version/ }),
-      );
-      await userEvent.click(
-        within(dialog).getByRole('button', { name: copy.conflict.save }),
-      );
+      await userEvent.click(within(dialog).getByRole('radio', { name: /Saved version/ }));
+      await userEvent.click(within(dialog).getByRole('button', { name: copy.conflict.save }));
       await waitFor(() =>
-        expect(
-          screen.queryByRole('dialog', { name: copy.conflict.title }),
-        ).not.toBeInTheDocument(),
+        expect(screen.queryByRole('dialog', { name: copy.conflict.title })).not.toBeInTheDocument(),
       );
       expect(puts).toHaveLength(1);
     });
@@ -448,23 +387,15 @@ describe('DocumentEditPage: edit draft', () => {
       });
       await userEvent.type(await screen.findByLabelText('Position'), '!');
       await userEvent.click(screen.getByRole('button', { name: copy.save }));
-      expect(await screen.findByRole('alert')).toHaveTextContent(
-        copy.errors.conflict,
-      );
+      expect(await screen.findByRole('alert')).toHaveTextContent(copy.errors.conflict);
       expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     });
 
     it('can be closed and reopened from the alert', async () => {
       const dialog = await conflict([positionDiff], []);
-      await userEvent.click(
-        within(dialog).getByRole('button', { name: copy.conflict.cancel }),
-      );
-      await userEvent.click(
-        screen.getByRole('button', { name: copy.errors.reviewConflict }),
-      );
-      expect(
-        await screen.findByRole('dialog', { name: copy.conflict.title }),
-      ).toBeInTheDocument();
+      await userEvent.click(within(dialog).getByRole('button', { name: copy.conflict.cancel }));
+      await userEvent.click(screen.getByRole('button', { name: copy.errors.reviewConflict }));
+      expect(await screen.findByRole('dialog', { name: copy.conflict.title })).toBeInTheDocument();
     });
   });
 
@@ -474,9 +405,7 @@ describe('DocumentEditPage: edit draft', () => {
     });
     const alert = await screen.findByRole('alert');
     expect(alert).toHaveTextContent(copy.loadFailed);
-    expect(
-      within(alert.parentElement!).getByRole('button'),
-    ).toBeInTheDocument();
+    expect(within(alert.parentElement!).getByRole('button')).toBeInTheDocument();
   });
 
   it('shows a not-found notice for a hidden document', async () => {

@@ -4,9 +4,9 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { COPY } from '../../config/Copy.constants';
 import { API_ERROR_CODES } from '../../config/Http.constants';
 import type { Account } from './Access.api';
-import { useAccessApi } from './AccessApi.context';
 import { toAccessError } from './Access.errors';
 import { ACCESS_QUERY_KEYS } from './Access.queries';
+import { useAccessApi } from './AccessApi.context';
 
 const copy = COPY.access.accounts;
 
@@ -33,8 +33,7 @@ export function AccountRowActions({
 }) {
   const api = useAccessApi();
   const queryClient = useQueryClient();
-  const refresh = () =>
-    queryClient.invalidateQueries({ queryKey: ACCESS_QUERY_KEYS.accounts });
+  const refresh = () => queryClient.invalidateQueries({ queryKey: ACCESS_QUERY_KEYS.accounts });
 
   const enable = useMutation({
     mutationFn: () => api.enableAccount(account.id),

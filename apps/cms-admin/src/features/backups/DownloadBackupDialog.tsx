@@ -1,5 +1,5 @@
-import { Button, FormAlert } from '@abyss/form-commons';
 import { useState } from 'react';
+import { Button, FormAlert } from '@abyss/form-commons';
 import { Link } from 'react-router';
 
 import { Modal, ModalActions } from '../../components/Modal';
@@ -33,11 +33,7 @@ export function DownloadBackupDialog({
   const [isTwoFactorOff, setIsTwoFactorOff] = useState(false);
 
   return (
-    <Modal
-      title={copy.title(backup.fileName)}
-      description={copy.description}
-      onClose={onClose}
-    >
+    <Modal title={copy.title(backup.fileName)} description={copy.description} onClose={onClose}>
       {method === null || isTwoFactorOff ? (
         <div className="grid gap-4">
           <FormAlert tone="info">{copy.twoFactorOff}</FormAlert>
@@ -69,9 +65,7 @@ export function DownloadBackupDialog({
           {...(method === 'email' ? { emailCode } : {})}
         >
           {method === 'email' && emailCode.sentCount > 0 ? (
-            <p className="text-sm text-muted-foreground">
-              {copy.emailCodeSent}
-            </p>
+            <p className="text-sm text-muted-foreground">{copy.emailCodeSent}</p>
           ) : null}
         </ConfirmWithCodeForm>
       )}

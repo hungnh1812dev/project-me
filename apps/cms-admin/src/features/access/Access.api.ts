@@ -1,14 +1,10 @@
 import type { AxiosInstance } from 'axios';
 
-import type {
-  AccountStatus,
-  ApiTokenStatus,
-  PermissionAction,
-} from './Access.constants';
-import type { TwoFactorMethod } from '../../config/Auth.constants';
 import { API_ENDPOINTS } from '../../config/Api.endpoints';
+import type { TwoFactorMethod } from '../../config/Auth.constants';
 import type { PageMeta } from '../../lib/Api.client';
 import { getContentTypes } from '../content-types';
+import type { AccountStatus, ApiTokenStatus, PermissionAction } from './Access.constants';
 
 /** `null` = every field; otherwise API field paths (`reference.phone`). */
 export type FieldList = readonly string[] | null;
@@ -117,19 +113,14 @@ export interface AccountsPage {
 export function createAccessApi(client: AxiosInstance) {
   const { ACCOUNTS, ROLES, API_TOKENS } = API_ENDPOINTS;
   return {
-    listAccounts: async (
-      page: number,
-      pageSize: number,
-    ): Promise<AccountsPage> => {
+    listAccounts: async (page: number, pageSize: number): Promise<AccountsPage> => {
       const { data } = await client.get<AccountsPage>(ACCOUNTS.LIST, {
         params: { page, pageSize },
       });
       return data;
     },
 
-    inviteAccount: async (
-      input: InviteAccountInput,
-    ): Promise<InvitedAccount> => {
+    inviteAccount: async (input: InviteAccountInput): Promise<InvitedAccount> => {
       const { data } = await client.post<InvitedAccount>(ACCOUNTS.LIST, input);
       return data;
     },
@@ -146,9 +137,7 @@ export function createAccessApi(client: AxiosInstance) {
 
     /** Issues and mails a new invite code; `invitationSent: false` = mail failed. */
     resendInvite: async (id: string): Promise<{ invitationSent: boolean }> => {
-      const { data } = await client.post<{ invitationSent: boolean }>(
-        ACCOUNTS.RESEND_INVITE(id),
-      );
+      const { data } = await client.post<{ invitationSent: boolean }>(ACCOUNTS.RESEND_INVITE(id));
       return data;
     },
 
@@ -168,10 +157,7 @@ export function createAccessApi(client: AxiosInstance) {
       return data;
     },
 
-    listApiTokens: async (
-      page: number,
-      pageSize: number,
-    ): Promise<ApiTokensPage> => {
+    listApiTokens: async (page: number, pageSize: number): Promise<ApiTokensPage> => {
       const { data } = await client.get<ApiTokensPage>(API_TOKENS.LIST, {
         params: { page, pageSize },
       });
@@ -179,20 +165,12 @@ export function createAccessApi(client: AxiosInstance) {
     },
 
     /** The answer holds the raw token; keep it out of any cache. */
-    createApiToken: async (
-      input: CreateApiTokenInput,
-    ): Promise<CreatedApiToken> => {
-      const { data } = await client.post<CreatedApiToken>(
-        API_TOKENS.LIST,
-        input,
-      );
+    createApiToken: async (input: CreateApiTokenInput): Promise<CreatedApiToken> => {
+      const { data } = await client.post<CreatedApiToken>(API_TOKENS.LIST, input);
       return data;
     },
 
-    updateApiToken: async (
-      id: string,
-      input: UpdateApiTokenInput,
-    ): Promise<ApiToken> => {
+    updateApiToken: async (id: string, input: UpdateApiTokenInput): Promise<ApiToken> => {
       const { data } = await client.patch<ApiToken>(API_TOKENS.ONE(id), input);
       return data;
     },

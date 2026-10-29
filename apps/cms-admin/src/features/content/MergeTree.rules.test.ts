@@ -1,28 +1,18 @@
+import { conflictDetails, UID_A, UID_B, UID_C } from '../../../test/Merge.fixture';
 import { MASKED_FIELDS_KEY } from './Content.constants';
-import {
-  conflictDetails,
-  UID_A,
-  UID_B,
-  UID_C,
-} from '../../../test/Merge.fixture';
 import {
   INITIAL_MERGE_STATE,
   maskedPathsOf,
   mergeReducer,
-  type MergeState,
   visibleEntries,
+  type MergeState,
 } from './Merge.reducer';
 import { buildResolvedTree, isEmptyTree } from './MergeTree.rules';
 
 function build(state: MergeState = INITIAL_MERGE_STATE) {
   const details = conflictDetails();
   const masked = maskedPathsOf(details, new Set());
-  return buildResolvedTree(
-    details,
-    visibleEntries(details, masked),
-    state,
-    masked,
-  );
+  return buildResolvedTree(details, visibleEntries(details, masked), state, masked);
 }
 
 const choose = (path: string, side: 'server' | 'client') =>
@@ -94,17 +84,8 @@ describe('buildResolvedTree', () => {
     ];
     const masked = maskedPathsOf(details, new Set());
     const entries = visibleEntries(details, masked);
-    const client = buildResolvedTree(
-      details,
-      entries,
-      INITIAL_MERGE_STATE,
-      masked,
-    );
-    expect(client.components?.skill?.map((i) => i.componentUid)).toEqual([
-      UID_C,
-      UID_A,
-      UID_B,
-    ]);
+    const client = buildResolvedTree(details, entries, INITIAL_MERGE_STATE, masked);
+    expect(client.components?.skill?.map((i) => i.componentUid)).toEqual([UID_C, UID_A, UID_B]);
     const server = buildResolvedTree(
       details,
       entries,

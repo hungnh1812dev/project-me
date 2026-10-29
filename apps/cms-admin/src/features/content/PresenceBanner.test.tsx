@@ -1,15 +1,11 @@
 import { act, screen } from '@testing-library/react';
 
-import type { FakeHandler } from '../../../test/FakeApi.fixture';
-import {
-  createTestServices,
-  renderApp,
-  TEST_USER,
-} from '../../../test/RenderApp.fixture';
 import { CV_PAGE_TYPE } from '../../../test/CvPage.fixture';
+import type { FakeHandler } from '../../../test/FakeApi.fixture';
+import { createTestServices, renderApp, TEST_USER } from '../../../test/RenderApp.fixture';
 import { API_ENDPOINTS } from '../../config/Api.endpoints';
-import { PRESENCE_HEARTBEAT_MS } from './Content.constants';
 import { contentEditPath } from '../../config/App.routes';
+import { PRESENCE_HEARTBEAT_MS } from './Content.constants';
 
 const { REFRESH, ME } = API_ENDPOINTS.AUTH;
 const { CONTENT_TYPES, DOCUMENTS, ROLES } = API_ENDPOINTS;
@@ -60,9 +56,7 @@ describe('PresenceBanner', () => {
       status: 200,
       data: [entry(TEST_USER.id, 'Mai Tran'), entry('acc_2', 'Linh Pham')],
     }));
-    expect(
-      await screen.findByText('Linh Pham is also on this document.'),
-    ).toBeInTheDocument();
+    expect(await screen.findByText('Linh Pham is also on this document.')).toBeInTheDocument();
     expect(screen.queryByText(/Mai Tran is also/)).not.toBeInTheDocument();
     expect(api.callsTo(PRESENCE_KEY)).toHaveLength(1);
   });

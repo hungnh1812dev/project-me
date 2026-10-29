@@ -5,13 +5,7 @@ import { toSetupError } from './Setup.errors';
 
 function failure(status: number, data?: unknown, headers = {}): AxiosError {
   const response = { status, data, headers } as AxiosResponse;
-  return new AxiosError(
-    'failed',
-    AxiosError.ERR_BAD_REQUEST,
-    undefined,
-    null,
-    response,
-  );
+  return new AxiosError('failed', AxiosError.ERR_BAD_REQUEST, undefined, null, response);
 }
 
 describe('toSetupError', () => {
@@ -31,9 +25,7 @@ describe('toSetupError', () => {
   });
 
   it('maps 400 to the field issues', () => {
-    const issues = [
-      { path: ['email'], message: 'must be a valid email address' },
-    ];
+    const issues = [{ path: ['email'], message: 'must be a valid email address' }];
     expect(toSetupError(failure(400, { details: { issues } }))).toEqual({
       kind: 'field-issues',
       issues,

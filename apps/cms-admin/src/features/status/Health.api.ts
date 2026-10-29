@@ -13,9 +13,7 @@ export const HEALTH_QUERY_KEYS = {
 export function createHealthApi(client: AxiosInstance) {
   return {
     fetchLive: async (): Promise<HealthResponse> => {
-      const response = await client.get<HealthResponse>(
-        API_ENDPOINTS.HEALTH.LIVE,
-      );
+      const response = await client.get<HealthResponse>(API_ENDPOINTS.HEALTH.LIVE);
       return response.data;
     },
   };

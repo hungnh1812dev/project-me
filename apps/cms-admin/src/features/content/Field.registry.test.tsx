@@ -39,9 +39,7 @@ describe('adapterFor media', () => {
 
 describe('list display', () => {
   it('has an entry for every non-component field type', () => {
-    const types = Object.values(FIELD_TYPE).filter(
-      (type) => type !== FIELD_TYPE.COMPONENT,
-    );
+    const types = Object.values(FIELD_TYPE).filter((type) => type !== FIELD_TYPE.COMPONENT);
     expect(types.filter((type) => !(type in FIELD_REGISTRY))).toEqual([]);
   });
 
@@ -64,9 +62,7 @@ describe('list display', () => {
     const empty = COPY.content.collection.emptyValue;
     expect(formatListValue('string', null)).toBe(empty);
     expect(formatListValue('string', '')).toBe(empty);
-    expect(formatListValue('string', MASKED_VALUE)).toBe(
-      COPY.content.collection.protectedValue,
-    );
+    expect(formatListValue('string', MASKED_VALUE)).toBe(COPY.content.collection.protectedValue);
     expect(formatListValue('boolean', true)).toBe(COPY.content.collection.yes);
     expect(formatListValue('boolean', false)).toBe(COPY.content.collection.no);
     expect(formatListValue('integer', 7)).toBe('7');
@@ -76,10 +72,7 @@ describe('list display', () => {
   });
 
   it('keeps CollectionListPage free of FIELD_TYPE', () => {
-    const page = readFileSync(
-      join(import.meta.dirname, 'CollectionListPage.tsx'),
-      'utf8',
-    );
+    const page = readFileSync(join(import.meta.dirname, 'CollectionListPage.tsx'), 'utf8');
     expect(page).not.toContain('FIELD_TYPE');
   });
 });

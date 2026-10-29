@@ -1,12 +1,6 @@
 import { ACCESS_COPY } from './Access.copy';
-import {
-  APP_COPY,
-  COMMON_COPY,
-  NAV_COPY,
-  PASSWORD_COPY,
-  SESSION_COPY,
-} from './Common.copy';
 import { BACKUPS_COPY } from './Backups.copy';
+import { APP_COPY, COMMON_COPY, NAV_COPY, PASSWORD_COPY, SESSION_COPY } from './Common.copy';
 import { CONTENT_COPY } from './Content.copy';
 import { LOGIN_COPY } from './Login.copy';
 import { MEDIA_COPY } from './Media.copy';

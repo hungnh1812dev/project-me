@@ -1,12 +1,12 @@
+import { FormAlert } from '@abyss/form-commons';
 import { useQuery } from '@tanstack/react-query';
 
-import { FormAlert } from '@abyss/form-commons';
-import { PRESENCE_HEARTBEAT_MS } from './Content.constants';
 import { COPY } from '../../config/Copy.constants';
 import { useCurrentUser } from '../auth';
-import { useContentApi } from './ContentApi.context';
-import { CONTENT_QUERY_KEYS } from './Content.queries';
 import type { PresenceEntry } from './Content.api';
+import { PRESENCE_HEARTBEAT_MS } from './Content.constants';
+import { CONTENT_QUERY_KEYS } from './Content.queries';
+import { useContentApi } from './ContentApi.context';
 
 const copy = COPY.content.presence;
 const PAIR = 2;
@@ -23,13 +23,7 @@ function message(others: PresenceEntry[]): string {
  * the editor who else is on the document. Polling stops on unmount. A failed
  * heartbeat just hides the banner: presence is a hint, never a blocker.
  */
-export function PresenceBanner({
-  slug,
-  documentId,
-}: {
-  slug: string;
-  documentId: string;
-}) {
+export function PresenceBanner({ slug, documentId }: { slug: string; documentId: string }) {
   const api = useContentApi();
   const me = useCurrentUser();
   const presence = useQuery({
@@ -40,9 +34,7 @@ export function PresenceBanner({
     retry: false,
     gcTime: 0,
   });
-  const others = (presence.data ?? []).filter(
-    (entry) => entry.accountId !== me?.id,
-  );
+  const others = (presence.data ?? []).filter((entry) => entry.accountId !== me?.id);
   if (others.length === 0) return null;
   return <FormAlert tone="info">{message(others)}</FormAlert>;
 }

@@ -1,10 +1,5 @@
+import type { ComponentItem, DocumentRecord, DocumentTree, FieldValueMap } from './Content.api';
 import { ITEM_UID_KEY } from './Content.constants';
-import type {
-  ComponentItem,
-  DocumentRecord,
-  DocumentTree,
-  FieldValueMap,
-} from './Content.api';
 import { adapterFor } from './Field.registry';
 import type { FieldNode } from './FieldTree.rules';
 
@@ -16,9 +11,7 @@ const isComponent = (node: FieldNode) => node.children.length > 0;
 export function emptyItem(node: FieldNode): FormValues {
   const item: FormValues = { [ITEM_UID_KEY]: '' };
   for (const child of node.children) {
-    item[child.name] = isComponent(child)
-      ? []
-      : adapterFor(child.type).toForm(null);
+    item[child.name] = isComponent(child) ? [] : adapterFor(child.type).toForm(null);
   }
   return item;
 }
@@ -37,9 +30,7 @@ function fillLevel(
 ): void {
   for (const node of nodes) {
     if (isComponent(node)) {
-      into[node.name] = (components[node.name] ?? []).map((item) =>
-        itemToForm(node, item),
-      );
+      into[node.name] = (components[node.name] ?? []).map((item) => itemToForm(node, item));
     } else {
       into[node.name] = adapterFor(node.type).toForm(values[node.name]);
     }
@@ -56,11 +47,7 @@ export function toFormValues(
   return form;
 }
 
-function itemToApi(
-  node: FieldNode,
-  item: FormValues,
-  masked: ReadonlySet<string>,
-): ComponentItem {
+function itemToApi(node: FieldNode, item: FormValues, masked: ReadonlySet<string>): ComponentItem {
   const uid = item[ITEM_UID_KEY];
   const known = typeof uid === 'string' && uid !== '';
   const { values, components } = levelToApi(node.children, item, masked, known);
@@ -82,12 +69,8 @@ function levelToApi(
   for (const node of nodes) {
     if (masked.has(node.path)) continue;
     if (isComponent(node)) {
-      const items = Array.isArray(source[node.name])
-        ? (source[node.name] as FormValues[])
-        : [];
-      components[node.name] = items.map((item) =>
-        itemToApi(node, item, masked),
-      );
+      const items = Array.isArray(source[node.name]) ? (source[node.name] as FormValues[]) : [];
+      components[node.name] = items.map((item) => itemToApi(node, item, masked));
       continue;
     }
     const adapter = adapterFor(node.type);
@@ -98,8 +81,7 @@ function levelToApi(
   return { values, components };
 }
 
-const same = (a: unknown, b: unknown) =>
-  JSON.stringify(a) === JSON.stringify(b);
+const same = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
 
 /**
  * The request body for a form. A new document sends every filled field.
@@ -140,10 +122,6 @@ export function toDocumentTree(
   };
 }
 
-function nonEmpty(
-  components: Record<string, ComponentItem[]>,
-): Record<string, ComponentItem[]> {
-  return Object.fromEntries(
-    Object.entries(components).filter(([, items]) => items.length > 0),
-  );
+function nonEmpty(components: Record<string, ComponentItem[]>): Record<string, ComponentItem[]> {
+  return Object.fromEntries(Object.entries(components).filter(([, items]) => items.length > 0));
 }

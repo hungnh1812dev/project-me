@@ -45,13 +45,8 @@ export function createBackupsApi(client: AxiosInstance) {
       return data;
     },
 
-    createDownloadLink: async (
-      input: DownloadLinkInput,
-    ): Promise<DownloadLink> => {
-      const { data } = await client.post<DownloadLink>(
-        BACKUPS.DOWNLOAD_LINKS,
-        input,
-      );
+    createDownloadLink: async (input: DownloadLinkInput): Promise<DownloadLink> => {
+      const { data } = await client.post<DownloadLink>(BACKUPS.DOWNLOAD_LINKS, input);
       return data;
     },
   };

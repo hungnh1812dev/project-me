@@ -1,24 +1,24 @@
-import { Button, TextInput, FormAlert } from '@abyss/form-commons';
+import { useState } from 'react';
+import { Button, FormAlert, TextInput } from '@abyss/form-commons';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
 import { FormProvider, useForm } from 'react-hook-form';
 import { Navigate, useNavigate } from 'react-router';
 import { z } from 'zod';
 
+import { APP_ROUTES } from '../../config/App.routes';
 import {
   OWNER_DISPLAY_NAME_MAX_LENGTH,
   PASSWORD_LENGTH,
   SETUP_TOKEN_MAX_LENGTH,
 } from '../../config/Auth.constants';
 import { COPY } from '../../config/Copy.constants';
-import { APP_ROUTES } from '../../config/App.routes';
 import { AuthPageLayout } from './AuthPageLayout';
 import { BackToSignIn } from './BackToSignIn';
 import type { LoginNoticeState } from './LoginNotice.rules';
 import { emailField } from './Password.form';
-import { useSetupApi } from './SetupApi.context';
 import { toSetupError } from './Setup.errors';
+import { useSetupApi } from './SetupApi.context';
 import { SETUP_STATUS_QUERY_KEY, useSetupStatus } from './useSetupStatus';
 
 const { validation } = COPY.setup;
@@ -53,11 +53,7 @@ const EMPTY_VALUES: SetupValues = {
 };
 
 /** Fields the API can name in a 400; anything else becomes a form alert. */
-const SERVER_FIELDS: readonly SetupField[] = [
-  'email',
-  'displayName',
-  'password',
-];
+const SERVER_FIELDS: readonly SetupField[] = ['email', 'displayName', 'password'];
 
 function isServerField(name: unknown): name is SetupField {
   return SERVER_FIELDS.some((field) => field === name);
@@ -108,11 +104,7 @@ export function OwnerSetupPage() {
           );
           return;
         case 'email-taken':
-          form.setError(
-            'email',
-            { message: COPY.setup.errors.emailTaken },
-            { shouldFocus: true },
-          );
+          form.setError('email', { message: COPY.setup.errors.emailTaken }, { shouldFocus: true });
           return;
         case 'setup-closed': {
           form.reset(EMPTY_VALUES);
@@ -142,9 +134,7 @@ export function OwnerSetupPage() {
   if (status.isPending) {
     return (
       <AuthPageLayout>
-        <output className="mt-6 block text-sm text-muted-foreground">
-          {COPY.setup.checking}
-        </output>
+        <output className="mt-6 block text-sm text-muted-foreground">{COPY.setup.checking}</output>
       </AuthPageLayout>
     );
   }
@@ -181,21 +171,15 @@ export function OwnerSetupPage() {
 
   return (
     <AuthPageLayout>
-      <h1 className="mt-6 text-2xl font-semibold tracking-tight">
-        {COPY.setup.title}
-      </h1>
-      <p className="mt-2 text-sm text-muted-foreground">
-        {COPY.setup.description}
-      </p>
+      <h1 className="mt-6 text-2xl font-semibold tracking-tight">{COPY.setup.title}</h1>
+      <p className="mt-2 text-sm text-muted-foreground">{COPY.setup.description}</p>
       <FormProvider {...form}>
         <form
           noValidate
           onSubmit={(event) => void onSubmit(event)}
           className="mt-6 grid gap-4 rounded-md border border-border bg-card p-5"
         >
-          {formAlert !== null ? (
-            <FormAlert tone="error">{formAlert}</FormAlert>
-          ) : null}
+          {formAlert !== null ? <FormAlert tone="error">{formAlert}</FormAlert> : null}
           <TextInput<SetupValues>
             name="setupToken"
             label={COPY.setup.tokenLabel}

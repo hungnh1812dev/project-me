@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
-import { API_ERROR_CODES, ACCOUNT_LIMITS } from './Http.constants';
+import { PERMISSION_ACTIONS } from '../lib/PermissionAction.constants';
 import {
   OTP_CODE_LENGTH,
   OTP_TTL_MINUTES,
@@ -11,7 +11,7 @@ import {
   TOTP_CODE_LENGTH,
   TOTP_PERIOD_SECONDS,
 } from './Auth.constants';
-import { PERMISSION_ACTIONS } from '../lib/PermissionAction.constants';
+import { ACCOUNT_LIMITS, API_ERROR_CODES } from './Http.constants';
 
 interface PublicConstants {
   password: { minLength: number; maxLength: number };
@@ -31,10 +31,7 @@ interface PublicConstants {
 const SECONDS_PER_MINUTE = 60;
 
 const published: PublicConstants = JSON.parse(
-  readFileSync(
-    resolve(process.cwd(), '../cms-api/content/public-constants.json'),
-    'utf8',
-  ),
+  readFileSync(resolve(process.cwd(), '../cms-api/content/public-constants.json'), 'utf8'),
 ) as PublicConstants;
 
 /** Published auth codes the admin does not branch on (sent by flows it does not have). */
@@ -62,12 +59,8 @@ describe('admin constants against the cms-api public constants', () => {
     expect(PASSWORD_LENGTH.MIN).toBe(published.password.minLength);
     expect(PASSWORD_LENGTH.MAX).toBe(published.password.maxLength);
     expect(SETUP_TOKEN_MAX_LENGTH).toBe(published.setupTokenMaxLength);
-    expect(OWNER_DISPLAY_NAME_MAX_LENGTH).toBe(
-      published.ownerDisplayNameMaxLength,
-    );
-    expect(ACCOUNT_LIMITS.DISPLAY_NAME_MAX_LENGTH).toBe(
-      published.ownerDisplayNameMaxLength,
-    );
+    expect(OWNER_DISPLAY_NAME_MAX_LENGTH).toBe(published.ownerDisplayNameMaxLength);
+    expect(ACCOUNT_LIMITS.DISPLAY_NAME_MAX_LENGTH).toBe(published.ownerDisplayNameMaxLength);
   });
 
   it('matches the OTP and TOTP lengths and timing', () => {
@@ -79,9 +72,7 @@ describe('admin constants against the cms-api public constants', () => {
 
   it('mirrors every published auth code except the listed ones, and no other AUTH_ code', () => {
     const publishedAuth = Object.values(published.errorCodes.auth);
-    const expected = publishedAuth.filter(
-      (code) => !AUTH_CODES_NOT_USED_BY_ADMIN.includes(code),
-    );
+    const expected = publishedAuth.filter((code) => !AUTH_CODES_NOT_USED_BY_ADMIN.includes(code));
     const mirroredAuth = adminCodes.filter((code) => code.startsWith('AUTH_'));
     expect(mirroredAuth.sort()).toEqual(expected.sort());
     for (const code of AUTH_CODES_NOT_USED_BY_ADMIN) {
@@ -91,9 +82,7 @@ describe('admin constants against the cms-api public constants', () => {
 
   it('mirrors the published owner-setup and token-scope codes', () => {
     expect(adminCodes).toContain(published.errorCodes.ownerSetup.EMAIL_TAKEN);
-    expect(adminCodes).toContain(
-      published.errorCodes.access.TOKEN_SCOPE_INVALID,
-    );
+    expect(adminCodes).toContain(published.errorCodes.access.TOKEN_SCOPE_INVALID);
     const publishedAccess = Object.values(published.errorCodes.access);
     for (const code of ACCESS_CODES_NOT_USED_BY_ADMIN) {
       expect(publishedAccess).toContain(code);

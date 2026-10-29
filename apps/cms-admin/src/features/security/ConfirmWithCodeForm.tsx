@@ -1,12 +1,7 @@
-import {
-  Button,
-  TextInput,
-  FormAlert,
-  type FormAlertTone,
-} from '@abyss/form-commons';
+import { useState, type ReactNode } from 'react';
+import { Button, FormAlert, TextInput, type FormAlertTone } from '@abyss/form-commons';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation } from '@tanstack/react-query';
-import { type ReactNode, useState } from 'react';
 import { FormProvider, useForm } from 'react-hook-form';
 import { z } from 'zod';
 
@@ -17,10 +12,7 @@ import {
   type TwoFactorMethod,
 } from '../../config/Auth.constants';
 import { COPY } from '../../config/Copy.constants';
-import {
-  type ApiFailure,
-  rateLimitedMessage,
-} from '../../lib/ApiFailure.errors';
+import { rateLimitedMessage, type ApiFailure } from '../../lib/ApiFailure.errors';
 import type { useEmailCode } from '../auth';
 import { toSecurityError } from './Security.errors';
 
@@ -107,19 +99,11 @@ export function ConfirmWithCodeForm({
       switch (error.kind) {
         case 'wrong-password':
           form.resetField('password');
-          form.setError(
-            'password',
-            { message: copy.errors.wrongPassword },
-            { shouldFocus: true },
-          );
+          form.setError('password', { message: copy.errors.wrongPassword }, { shouldFocus: true });
           return;
         case 'invalid-code':
           form.resetField('code');
-          form.setError(
-            'code',
-            { message: copy.errors.invalidCode },
-            { shouldFocus: true },
-          );
+          form.setError('code', { message: copy.errors.invalidCode }, { shouldFocus: true });
           return;
         case 'state-changed':
           onStateChanged();
@@ -147,34 +131,23 @@ export function ConfirmWithCodeForm({
 
   const sendAlert = sendAlertOf(emailCode?.failure ?? null);
   const shown = alert ?? sendAlert;
-  const resent =
-    emailCode !== undefined && emailCode.sentCount > 1 && shown === null;
+  const resent = emailCode !== undefined && emailCode.sentCount > 1 && shown === null;
 
   return (
     <FormProvider {...form}>
-      <form
-        noValidate
-        onSubmit={(event) => void onSubmit(event)}
-        className="grid gap-4"
-      >
+      <form noValidate onSubmit={(event) => void onSubmit(event)} className="grid gap-4">
         {children}
-        {shown !== null ? (
-          <FormAlert tone={shown.tone}>{shown.message}</FormAlert>
-        ) : null}
+        {shown !== null ? <FormAlert tone={shown.tone}>{shown.message}</FormAlert> : null}
         {resent ? <FormAlert tone="info">{copy.codeResent}</FormAlert> : null}
         <TextInput<ConfirmValues>
           name="code"
-          label={
-            method === 'email' ? copy.fields.emailCode : copy.fields.totpCode
-          }
-          description={
-            method === 'email' ? copy.fields.emailHint : copy.fields.totpHint
-          }
+          label={method === 'email' ? copy.fields.emailCode : copy.fields.totpCode}
+          description={method === 'email' ? copy.fields.emailHint : copy.fields.totpHint}
           inputMode="numeric"
           autoComplete="one-time-code"
           maxLength={TOTP_CODE_LENGTH}
           spellCheck={false}
-          className="tabular-nums tracking-widest"
+          className="tracking-widest tabular-nums"
           required
         />
         {emailCode !== undefined ? (
@@ -202,11 +175,7 @@ export function ConfirmWithCodeForm({
           <Button type="button" onClick={onCancel}>
             {cancelLabel}
           </Button>
-          <Button
-            type="submit"
-            variant={submitVariant}
-            loading={mutation.isPending}
-          >
+          <Button type="submit" variant={submitVariant} loading={mutation.isPending}>
             {submitLabel}
           </Button>
         </ModalActions>

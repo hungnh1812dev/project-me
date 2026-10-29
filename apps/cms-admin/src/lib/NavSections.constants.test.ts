@@ -13,8 +13,6 @@ describe('NAV_SECTIONS', () => {
   });
 
   it('gives every section a label', () => {
-    expect(NAV_SECTIONS.every((section) => section.label.length > 0)).toBe(
-      true,
-    );
+    expect(NAV_SECTIONS.every((section) => section.label.length > 0)).toBe(true);
   });
 });

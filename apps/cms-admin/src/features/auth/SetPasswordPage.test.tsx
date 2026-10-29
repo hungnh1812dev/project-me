@@ -3,10 +3,10 @@ import userEvent from '@testing-library/user-event';
 
 import type { FakeHandler } from '../../../test/FakeApi.fixture';
 import { createTestServices, renderApp } from '../../../test/RenderApp.fixture';
-import { COPY } from '../../config/Copy.constants';
 import { API_ENDPOINTS } from '../../config/Api.endpoints';
-import { API_ERROR_CODES } from '../../config/Http.constants';
 import { APP_ROUTES } from '../../config/App.routes';
+import { COPY } from '../../config/Copy.constants';
+import { API_ERROR_CODES } from '../../config/Http.constants';
 
 const { REFRESH } = API_ENDPOINTS.AUTH;
 const { REQUEST_OTP, SET } = API_ENDPOINTS.PASSWORD;
@@ -32,9 +32,7 @@ async function fillAndSubmit() {
   await userEvent.type(field(COPY.password.codeLabel), CODE);
   await userEvent.type(field(COPY.password.newPasswordLabel), NEW_PASSWORD);
   await userEvent.type(field(COPY.password.confirmPasswordLabel), NEW_PASSWORD);
-  await userEvent.click(
-    screen.getByRole('button', { name: COPY.password.set.submit }),
-  );
+  await userEvent.click(screen.getByRole('button', { name: COPY.password.set.submit }));
 }
 
 describe('SetPasswordPage', () => {
@@ -48,9 +46,7 @@ describe('SetPasswordPage', () => {
     expect(
       await screen.findByRole('heading', { level: 1, name: COPY.login.title }),
     ).toBeInTheDocument();
-    expect(screen.getByRole('status')).toHaveTextContent(
-      COPY.login.notices.passwordSet,
-    );
+    expect(screen.getByRole('status')).toHaveTextContent(COPY.login.notices.passwordSet);
     expect(JSON.parse(String(api.callsTo(`POST ${SET}`)[0]?.data))).toEqual({
       email: EMAIL,
       code: CODE,
@@ -66,9 +62,7 @@ describe('SetPasswordPage', () => {
       }),
     });
     await fillAndSubmit();
-    expect(await screen.findByRole('alert')).toHaveTextContent(
-      COPY.password.errors.invalidCode,
-    );
+    expect(await screen.findByRole('alert')).toHaveTextContent(COPY.password.errors.invalidCode);
     expect(field(COPY.password.emailLabel)).toHaveValue(EMAIL);
   });
 
@@ -83,9 +77,7 @@ describe('SetPasswordPage', () => {
 
     await userEvent.type(field(COPY.password.emailLabel), EMAIL);
     await userEvent.click(resend);
-    expect(
-      await screen.findByText(COPY.password.codeResent(EMAIL)),
-    ).toBeVisible();
+    expect(await screen.findByText(COPY.password.codeResent(EMAIL))).toBeVisible();
     expect(field(COPY.password.codeLabel)).toHaveFocus();
   });
 });

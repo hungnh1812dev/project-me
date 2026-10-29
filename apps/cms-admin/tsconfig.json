@@ -8,12 +8,20 @@
     "noEmit": true,
     "noImplicitReturns": true,
     "declaration": false,
-    "types": [
-      "node",
-      "vite/client",
-      "vitest/globals",
-      "@testing-library/jest-dom"
-    ]
+    "types": ["node", "vite/client", "vitest/globals", "@testing-library/jest-dom"],
+    "paths": {
+      "@config/*": ["./src/configs/*", "./src/config/*"],
+      "@features/*": ["./src/features/*"],
+      "@api/*": ["./src/api/*"],
+      "@components/*": ["./src/components/*"],
+      "@libs/*": ["./src/libs/*", "./src/lib/*"],
+      "@assets/*": ["./src/assets/*"],
+      "@styles/*": ["./src/assets/styles/*"],
+      "@images/*": ["./src/assets/images/*"],
+      "@utils/*": ["./src/utils/*"],
+      "@views/*": ["./src/views/*"],
+      "@/*": ["./src/*"]
+    }
   },
   "include": ["src", "test", "*.ts"]
 }

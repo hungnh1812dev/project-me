@@ -67,22 +67,16 @@ export function accountColumns({
         <>
           <span className="font-medium">{account.displayName}</span>
           {account.id === currentUserId ? (
-            <span className="ml-2 text-xs font-normal text-muted-foreground">
-              {copy.you}
-            </span>
+            <span className="ml-2 text-xs font-normal text-muted-foreground">{copy.you}</span>
           ) : null}
-          <span className="block font-normal text-muted-foreground">
-            {account.email}
-          </span>
+          <span className="block font-normal text-muted-foreground">{account.email}</span>
         </>
       ),
     },
     {
       key: 'role',
       header: copy.columns.role,
-      renderCell: (account) => (
-        <span className="text-foreground">{account.role.name}</span>
-      ),
+      renderCell: (account) => <span className="text-foreground">{account.role.name}</span>,
     },
     {
       key: 'status',
@@ -98,8 +92,7 @@ export function accountColumns({
     {
       key: 'twoFactor',
       header: copy.columns.twoFactor,
-      renderCell: (account) =>
-        account.twoFactorEnabled ? copy.twoFactorOn : copy.twoFactorOff,
+      renderCell: (account) => (account.twoFactorEnabled ? copy.twoFactorOn : copy.twoFactorOff),
     },
     {
       key: 'created',

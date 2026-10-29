@@ -17,9 +17,7 @@ const STATUS_CLASS: Record<ApiToken['status'], string> = {
 function accessText(token: ApiToken): string {
   const { permissions, subjects } = scopeSummary(token.scope.permissions);
   if (permissions === 0) return copy.noAccess;
-  const names = subjects.map((subject) =>
-    subject === '*' ? matrixCopy.wildcard : subject,
-  );
+  const names = subjects.map((subject) => (subject === '*' ? matrixCopy.wildcard : subject));
   return copy.access(permissions, names.join(', '));
 }
 
@@ -126,9 +124,7 @@ export function apiTokenColumns({
       header: copy.columns.expires,
       renderCell: (token) => (
         <span className="tabular-nums">
-          {token.expiresAt === null
-            ? copy.noExpiry
-            : formatDate(token.expiresAt)}
+          {token.expiresAt === null ? copy.noExpiry : formatDate(token.expiresAt)}
         </span>
       ),
     },
@@ -137,9 +133,7 @@ export function apiTokenColumns({
       header: copy.columns.lastUsed,
       renderCell: (token) => (
         <span className="tabular-nums">
-          {token.lastUsedAt === null
-            ? copy.neverUsed
-            : formatDate(token.lastUsedAt)}
+          {token.lastUsedAt === null ? copy.neverUsed : formatDate(token.lastUsedAt)}
         </span>
       ),
     },

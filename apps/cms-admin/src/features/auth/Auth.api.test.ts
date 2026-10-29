@@ -1,7 +1,4 @@
-import {
-  createFakeApi,
-  TEST_API_BASE_URL,
-} from '../../../test/FakeApi.fixture';
+import { createFakeApi, TEST_API_BASE_URL } from '../../../test/FakeApi.fixture';
 import { API_ENDPOINTS } from '../../config/Api.endpoints';
 import { createApiClient } from '../../lib/Api.client';
 import { createAuthApi } from './Auth.api';

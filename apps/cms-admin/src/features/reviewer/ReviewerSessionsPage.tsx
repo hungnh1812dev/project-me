@@ -1,3 +1,4 @@
+import { useId, useState } from 'react';
 import {
   Button,
   Dialog,
@@ -7,34 +8,29 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  Label,
-  Switch,
   FormAlert,
-  type SheetColumn,
+  Label,
   SortableSheet,
+  Switch,
+  type SheetColumn,
 } from '@abyss/form-commons';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useId, useState } from 'react';
 
-import { COPY } from '../../config/Copy.constants';
-import { REVIEWER_SETTINGS_SUBJECT } from './Reviewer.constants';
-import { isForbidden, toAccessError, useCallerAccess } from '../access';
-import {
-  LoadError,
-  PageHeader,
-  TableSkeleton,
-} from '../../components/PageStates';
+import { LoadError, PageHeader, TableSkeleton } from '../../components/PageStates';
 import { Pagination } from '../../components/Pagination';
 import { useClampedPage } from '../../components/useClampedPage';
+import { COPY } from '../../config/Copy.constants';
 import { formatDateTime } from '../../lib/DateFormat.rules';
-import { useReviewerApi } from './ReviewerApi.context';
+import { isForbidden, toAccessError, useCallerAccess } from '../access';
+import type { ReviewerSession } from './Reviewer.api';
+import { REVIEWER_SETTINGS_SUBJECT } from './Reviewer.constants';
 import {
   isReviewerFeatureOff,
   REVIEWER_QUERY_KEYS,
   useReviewerEnabledQuery,
   useReviewerSessionsQuery,
 } from './Reviewer.queries';
-import type { ReviewerSession } from './Reviewer.api';
+import { useReviewerApi } from './ReviewerApi.context';
 
 const copy = COPY.reviewer;
 
@@ -53,18 +49,13 @@ export function ReviewerSessionsPage() {
 
   const rows = sessions.data?.data ?? [];
 
-  if (
-    isReviewerFeatureOff(enabled.error) ||
-    isReviewerFeatureOff(sessions.error)
-  ) {
+  if (isReviewerFeatureOff(enabled.error) || isReviewerFeatureOff(sessions.error)) {
     return (
       <div className="grid grid-cols-[minmax(0,1fr)] gap-6">
         <PageHeader title={copy.title} description={copy.description} />
         <div className="grid justify-items-start gap-1">
           <p className="m-0 font-medium">{copy.featureOff.title}</p>
-          <p className="m-0 max-w-prose text-sm text-muted-foreground">
-            {copy.featureOff.hint}
-          </p>
+          <p className="m-0 max-w-prose text-sm text-muted-foreground">{copy.featureOff.hint}</p>
         </div>
       </div>
     );
@@ -127,9 +118,7 @@ const SESSION_COLUMNS: readonly SheetColumn<ReviewerSession>[] = [
     key: 'purposes',
     header: copy.columns.purposes,
     renderCell: (session) =>
-      session.purposeTags.length === 0
-        ? copy.noPurposes
-        : session.purposeTags.join(', '),
+      session.purposeTags.length === 0 ? copy.noPurposes : session.purposeTags.join(', '),
   },
   {
     key: 'notes',
@@ -138,7 +127,7 @@ const SESSION_COLUMNS: readonly SheetColumn<ReviewerSession>[] = [
       session.notes === null || session.notes === '' ? (
         <span className="text-muted-foreground">{copy.noNotes}</span>
       ) : (
-        <span className="block max-w-72 whitespace-pre-wrap break-words text-foreground">
+        <span className="block max-w-72 break-words whitespace-pre-wrap text-foreground">
           {session.notes}
         </span>
       ),
@@ -147,10 +136,7 @@ const SESSION_COLUMNS: readonly SheetColumn<ReviewerSession>[] = [
     key: 'browser',
     header: copy.columns.browser,
     renderCell: (session) => (
-      <span
-        className="line-clamp-2 max-w-48 break-words"
-        title={session.userAgent ?? undefined}
-      >
+      <span className="line-clamp-2 max-w-48 break-words" title={session.userAgent ?? undefined}>
         {session.userAgent ?? copy.noBrowser}
       </span>
     ),
@@ -175,7 +161,7 @@ const SESSION_COLUMNS: readonly SheetColumn<ReviewerSession>[] = [
             {copy.status[status]}
           </span>
           {session.active ? (
-            <span className="mt-1 block text-xs tabular-nums text-muted-foreground">
+            <span className="mt-1 block text-xs text-muted-foreground tabular-nums">
               {copy.until(formatDateTime(session.expiresAt))}
             </span>
           ) : null}
@@ -195,8 +181,7 @@ function AccessSwitch() {
   const [confirmOff, setConfirmOff] = useState(false);
   const [failed, setFailed] = useState<string | null>(null);
 
-  const canChange =
-    caller.isReady && caller.can(REVIEWER_SETTINGS_SUBJECT, 'update');
+  const canChange = caller.isReady && caller.can(REVIEWER_SETTINGS_SUBJECT, 'update');
 
   const change = useMutation({
     mutationFn: api.setEnabled,
@@ -211,16 +196,12 @@ function AccessSwitch() {
     },
     onError: (cause) => {
       setConfirmOff(false);
-      setFailed(
-        isForbidden(cause) ? copy.forbidden : toAccessError(cause).message,
-      );
+      setFailed(isForbidden(cause) ? copy.forbidden : toAccessError(cause).message);
     },
   });
 
   if (enabled.isPending) {
-    return (
-      <p className="m-0 text-sm text-muted-foreground">{copy.switch.loading}</p>
-    );
+    return <p className="m-0 text-sm text-muted-foreground">{copy.switch.loading}</p>;
   }
   if (enabled.isError) {
     return (

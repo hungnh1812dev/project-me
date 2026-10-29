@@ -1,7 +1,7 @@
 import { isAxiosError } from 'axios';
 
-import { MASKED_FIELDS_KEY } from './Content.constants';
 import type { ComponentItem, FieldValueMap } from './Content.api';
+import { MASKED_FIELDS_KEY } from './Content.constants';
 
 /** One component item of a serialized record in a 409 body. */
 export interface ConflictItem {
@@ -56,8 +56,7 @@ const isDiffEntry = (value: unknown): value is DiffEntry =>
  */
 export function conflictDetailsOf(error: unknown): ConflictDetails | null {
   if (!isAxiosError(error)) return null;
-  const details = (error.response?.data as { details?: unknown } | null)
-    ?.details;
+  const details = (error.response?.data as { details?: unknown } | null)?.details;
   if (!isRecord(details)) return null;
   const { currentVersion, server, submitted, diff } = details;
   if (

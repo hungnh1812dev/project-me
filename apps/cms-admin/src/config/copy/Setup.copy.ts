@@ -5,8 +5,7 @@ export const SETUP_COPY = {
   description:
     'Create the one owner account. You need the setup token from the cms-api secret (OWNER_SETUP_TOKEN).',
   checking: 'Checking the setup status',
-  statusFailed:
-    'Could not check whether setup is open. Check your connection and try again.',
+  statusFailed: 'Could not check whether setup is open. Check your connection and try again.',
   retry: 'Try again',
   tokenLabel: 'Setup token',
   emailLabel: 'Email',

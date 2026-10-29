@@ -23,10 +23,7 @@ describe('Zod.setup', () => {
   });
 
   it('is the first import of main.tsx', () => {
-    const mainSource = readFileSync(
-      resolve(import.meta.dirname, '../main.tsx'),
-      'utf8',
-    );
+    const mainSource = readFileSync(resolve(import.meta.dirname, '../main.tsx'), 'utf8');
 
     expect(FIRST_IMPORT.exec(mainSource)?.[1]).toBe('./app/Zod.setup');
   });

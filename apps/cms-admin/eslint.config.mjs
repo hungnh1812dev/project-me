@@ -46,10 +46,7 @@ const importBoundary = (files, patterns, ignores = []) => ({
   files,
   ignores,
   rules: {
-    'no-restricted-imports': [
-      'error',
-      { patterns: [...patterns, COPY_FILE_BAN] },
-    ],
+    'no-restricted-imports': ['error', { patterns: [...patterns, COPY_FILE_BAN] }],
   },
 });
 
@@ -76,9 +73,7 @@ const allowedFeaturesOf = (feature) => {
 
 const featureOrderBoundary = (feature) => {
   const allowed = allowedFeaturesOf(feature);
-  const forbidden = ALL_FEATURES.filter(
-    (other) => other !== feature && !allowed.includes(other),
-  );
+  const forbidden = ALL_FEATURES.filter((other) => other !== feature && !allowed.includes(other));
   // A later config replaces earlier no-restricted-imports options, so repeat the base bans.
   const patterns = [
     WIRING_BAN,
@@ -100,8 +95,7 @@ const featureOrderBoundary = (feature) => {
 };
 
 const NO_DATE_FORMATTER = {
-  selector:
-    "NewExpression[callee.object.name='Intl'][callee.property.name='DateTimeFormat']",
+  selector: "NewExpression[callee.object.name='Intl'][callee.property.name='DateTimeFormat']",
   message: 'Format dates through lib/DateFormat.rules.ts.',
 };
 const NO_RAW_RADIO = {
@@ -150,11 +144,7 @@ export default [
   ),
   {
     files: ['src/**'],
-    ignores: [
-      ...TEST_FILES,
-      ...QUERY_KEY_OWNERS,
-      'src/lib/DateFormat.rules.ts',
-    ],
+    ignores: [...TEST_FILES, ...QUERY_KEY_OWNERS, 'src/lib/DateFormat.rules.ts'],
     rules: {
       'no-restricted-syntax': [
         'error',

@@ -39,9 +39,7 @@ export function BulkDeleteDialog({
       <DialogContent onCloseAutoFocus={onCloseAutoFocus}>
         <DialogHeader>
           <DialogTitle>{copy.title(count)}</DialogTitle>
-          <DialogDescription>
-            {copy.description(draftAndPublish)}
-          </DialogDescription>
+          <DialogDescription>{copy.description(draftAndPublish)}</DialogDescription>
         </DialogHeader>
         <DialogFooter>
           <DialogClose asChild>

@@ -1,31 +1,21 @@
-import {
-  Button,
-  FormAlert,
-  type FormAlertTone,
-  SortableSheet,
-} from '@abyss/form-commons';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRef, useState } from 'react';
+import { Button, FormAlert, SortableSheet, type FormAlertTone } from '@abyss/form-commons';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 
+import { LoadError, PageHeader, TableSkeleton } from '../../components/PageStates';
+import { Pagination } from '../../components/Pagination';
 import { useClampedPage } from '../../components/useClampedPage';
 import { useRestoreFocus } from '../../components/useRestoreFocus';
-
 import { COPY } from '../../config/Copy.constants';
-import { MEDIA_ACCEPT, MEDIA_SUBJECT } from './Media.constants';
 import { isForbidden, useCallerAccess } from '../access';
-import {
-  LoadError,
-  PageHeader,
-  TableSkeleton,
-} from '../../components/PageStates';
-import { Pagination } from '../../components/Pagination';
 import { DeleteMediaDialog } from './DeleteMediaDialog';
 import { EditAltDialog } from './EditAltDialog';
+import type { MediaFile } from './Media.api';
 import { mediaColumns } from './Media.columns';
-import { useMediaApi } from './MediaApi.context';
+import { MEDIA_ACCEPT, MEDIA_SUBJECT } from './Media.constants';
 import { toMediaError } from './Media.errors';
 import { MEDIA_QUERY_KEY, useMediaQuery } from './Media.queries';
-import type { MediaFile } from './Media.api';
+import { useMediaApi } from './MediaApi.context';
 
 const copy = COPY.media;
 
@@ -67,8 +57,7 @@ export function MediaLibraryPage() {
       setPage(1);
       setNotice({ tone: 'success', message: copy.uploaded(created.fileName) });
     },
-    onError: (cause) =>
-      setNotice({ tone: 'error', message: toMediaError(cause).message }),
+    onError: (cause) => setNotice({ tone: 'error', message: toMediaError(cause).message }),
   });
 
   const rows = media.data?.data ?? [];
@@ -117,9 +106,7 @@ export function MediaLibraryPage() {
         }
       />
       {upload.isPending && upload.variables !== undefined ? (
-        <FormAlert tone="info">
-          {copy.uploading(upload.variables.name)}
-        </FormAlert>
+        <FormAlert tone="info">{copy.uploading(upload.variables.name)}</FormAlert>
       ) : notice === null ? null : (
         <FormAlert tone={notice.tone}>{notice.message}</FormAlert>
       )}

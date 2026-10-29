@@ -2,11 +2,7 @@ import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import type { FakeHandler } from '../../../test/FakeApi.fixture';
-import {
-  createTestServices,
-  renderApp,
-  TEST_USER,
-} from '../../../test/RenderApp.fixture';
+import { createTestServices, renderApp, TEST_USER } from '../../../test/RenderApp.fixture';
 import { API_ENDPOINTS } from '../../config/Api.endpoints';
 import { APP_ROUTES } from '../../config/App.routes';
 import { COPY } from '../../config/Copy.constants';
@@ -40,10 +36,7 @@ beforeEach(() => {
 });
 afterEach(() => vi.unstubAllGlobals());
 
-async function openDialog(
-  user: CurrentUser,
-  handlers: Record<string, FakeHandler> = {},
-) {
+async function openDialog(user: CurrentUser, handlers: Record<string, FakeHandler> = {}) {
   const { api, services } = createTestServices({
     [`POST ${REFRESH}`]: () => ({ status: 200, data: { accessToken: 't1' } }),
     [`GET ${ME}`]: () => ({ status: 200, data: user }),
@@ -63,9 +56,7 @@ async function openDialog(
   });
   await services.session.restore();
   renderApp(services, APP_ROUTES.BACKUPS);
-  await userEvent.click(
-    await screen.findByRole('button', { name: copy.check.button }),
-  );
+  await userEvent.click(await screen.findByRole('button', { name: copy.check.button }));
   await userEvent.click(
     await screen.findByRole('button', {
       name: copy.download.buttonLabel(file.fileName),
@@ -78,14 +69,8 @@ async function openDialog(
 }
 
 async function fillAndSubmit(dialog: HTMLElement, code: string) {
-  await userEvent.type(
-    within(dialog).getByLabelText(/^Authenticator code/),
-    code,
-  );
-  await userEvent.type(
-    within(dialog).getByLabelText(/^Current password/),
-    `${PASSWORD}{Enter}`,
-  );
+  await userEvent.type(within(dialog).getByLabelText(/^Authenticator code/), code);
+  await userEvent.type(within(dialog).getByLabelText(/^Current password/), `${PASSWORD}{Enter}`);
 }
 
 describe('DownloadBackupDialog', () => {
@@ -112,9 +97,7 @@ describe('DownloadBackupDialog', () => {
       }),
     });
     await fillAndSubmit(dialog, '123456');
-    expect(
-      await within(dialog).findByText(COPY.security.errors.invalidCode),
-    ).toBeVisible();
+    expect(await within(dialog).findByText(COPY.security.errors.invalidCode)).toBeVisible();
     expect(assign).not.toHaveBeenCalled();
   });
 
@@ -126,17 +109,16 @@ describe('DownloadBackupDialog', () => {
       }),
     });
     await fillAndSubmit(dialog, '123456');
-    expect(
-      await within(dialog).findByText(COPY.security.errors.wrongPassword),
-    ).toBeVisible();
+    expect(await within(dialog).findByText(COPY.security.errors.wrongPassword)).toBeVisible();
   });
 
   it('points to the security settings when 2FA is off', async () => {
     const { dialog } = await openDialog(TEST_USER);
     expect(within(dialog).getByText(copy.dialog.twoFactorOff)).toBeVisible();
-    expect(
-      within(dialog).getByRole('link', { name: copy.dialog.openSecurity }),
-    ).toHaveAttribute('href', APP_ROUTES.SECURITY_SETTINGS);
+    expect(within(dialog).getByRole('link', { name: copy.dialog.openSecurity })).toHaveAttribute(
+      'href',
+      APP_ROUTES.SECURITY_SETTINGS,
+    );
     expect(within(dialog).queryByLabelText(/^Current password/)).toBeNull();
   });
 
@@ -148,9 +130,7 @@ describe('DownloadBackupDialog', () => {
       }),
     });
     await fillAndSubmit(dialog, '123456');
-    expect(
-      await within(dialog).findByText(copy.dialog.twoFactorOff),
-    ).toBeVisible();
+    expect(await within(dialog).findByText(copy.dialog.twoFactorOff)).toBeVisible();
   });
 
   it('shows the rate-limit message on 429', async () => {
@@ -163,9 +143,7 @@ describe('DownloadBackupDialog', () => {
     });
     await fillAndSubmit(dialog, '123456');
     expect(
-      await within(dialog).findByText(
-        COPY.password.errors.rateLimitedMinutes(2),
-      ),
+      await within(dialog).findByText(COPY.password.errors.rateLimitedMinutes(2)),
     ).toBeVisible();
   });
 

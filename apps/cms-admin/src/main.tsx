@@ -1,10 +1,10 @@
 import './app/Zod.setup';
-import './styles/app.css';
+import '@styles/globals.css';
 
-import { CSP_NONCE_META_NAME } from '@abyss/form-commons';
-import { setNonce } from 'get-nonce';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
+import { CSP_NONCE_META_NAME } from '@abyss/form-commons';
+import { setNonce } from 'get-nonce';
 import { BrowserRouter } from 'react-router';
 
 import { App } from './app/App';

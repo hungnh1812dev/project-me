@@ -1,14 +1,11 @@
 import type { QueryClient } from '@tanstack/react-query';
 import type { AxiosInstance } from 'axios';
 
-import {
-  REFRESH_LOCK_NAME,
-  SESSION_CHANNEL_NAME,
-} from '../config/Auth.constants';
+import { REFRESH_LOCK_NAME, SESSION_CHANNEL_NAME } from '../config/Auth.constants';
 import {
   accessTokenOf,
-  createAuthApi,
   browserCrossTabOptions,
+  createAuthApi,
   createSession,
   installAuthInterceptor,
 } from '../features/auth/AuthWiring.setup';
@@ -16,10 +13,7 @@ import { FEATURE_LIST } from '../features/Features.registry';
 import { createAppStore } from './App.store';
 
 /** Wires store, session, every feature API and the client's auth interceptor. */
-export function createAppServices(
-  client: AxiosInstance,
-  queryClient: QueryClient,
-) {
+export function createAppServices(client: AxiosInstance, queryClient: QueryClient) {
   const store = createAppStore();
   const session = createSession({
     dispatch: store.dispatch,
@@ -32,9 +26,9 @@ export function createAppServices(
     refreshAccessToken: session.refreshAccessToken,
     onSessionExpired: () => session.expire(),
   });
-  const apiProviders = FEATURE_LIST.flatMap(
-    (feature) => feature.apiServices ?? [],
-  ).map((service) => service.provideFor(client));
+  const apiProviders = FEATURE_LIST.flatMap((feature) => feature.apiServices ?? []).map((service) =>
+    service.provideFor(client),
+  );
   return { store, session, apiProviders, queryClient, removeInterceptor };
 }
 

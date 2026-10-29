@@ -1,12 +1,7 @@
-import {
-  Button,
-  TextInput,
-  FormAlert,
-  type FormAlertTone,
-} from '@abyss/form-commons';
+import { useEffect, useState } from 'react';
+import { Button, FormAlert, TextInput, type FormAlertTone } from '@abyss/form-commons';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation } from '@tanstack/react-query';
-import { useEffect, useState } from 'react';
 import { FormProvider, useForm } from 'react-hook-form';
 import { z } from 'zod';
 
@@ -18,11 +13,7 @@ import {
 } from '../../config/Auth.constants';
 import { COPY } from '../../config/Copy.constants';
 import { API_ERROR_CODES } from '../../config/Http.constants';
-import {
-  type ApiFailure,
-  apiFailureOf,
-  rateLimitedMessage,
-} from '../../lib/ApiFailure.errors';
+import { apiFailureOf, rateLimitedMessage, type ApiFailure } from '../../lib/ApiFailure.errors';
 import type { TwoFactorChallenge } from './Auth.api';
 import { useSession } from './Session.context';
 import { useEmailCode } from './useEmailCode';
@@ -85,9 +76,7 @@ export function TwoFactorModal({
   return (
     <Modal
       title={copy.title}
-      description={
-        method === 'email' ? copy.emailDescription : copy.totpDescription
-      }
+      description={method === 'email' ? copy.emailDescription : copy.totpDescription}
       onClose={onCancel}
     >
       {method === undefined ? (
@@ -167,17 +156,9 @@ function CodeForm({
 
   return (
     <FormProvider {...form}>
-      <form
-        noValidate
-        onSubmit={(event) => void onSubmit(event)}
-        className="grid gap-4"
-      >
-        {method === 'email' ? (
-          <FormAlert tone="warning">{copy.emailWarning}</FormAlert>
-        ) : null}
-        {shown !== null ? (
-          <FormAlert tone={shown.tone}>{shown.message}</FormAlert>
-        ) : null}
+      <form noValidate onSubmit={(event) => void onSubmit(event)} className="grid gap-4">
+        {method === 'email' ? <FormAlert tone="warning">{copy.emailWarning}</FormAlert> : null}
+        {shown !== null ? <FormAlert tone={shown.tone}>{shown.message}</FormAlert> : null}
         {resent ? <FormAlert tone="info">{copy.resent}</FormAlert> : null}
         <TextInput<CodeValues>
           name="code"
@@ -187,7 +168,7 @@ function CodeForm({
           autoComplete="one-time-code"
           maxLength={TOTP_CODE_LENGTH}
           spellCheck={false}
-          className="tabular-nums tracking-widest"
+          className="tracking-widest tabular-nums"
           required
         />
         {method === 'email' ? (

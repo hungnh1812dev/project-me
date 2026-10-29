@@ -2,16 +2,12 @@ import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import type { FakeHandler } from '../../../test/FakeApi.fixture';
-import {
-  createTestServices,
-  renderApp,
-  TEST_USER,
-} from '../../../test/RenderApp.fixture';
-import { COPY } from '../../config/Copy.constants';
+import { createTestServices, renderApp, TEST_USER } from '../../../test/RenderApp.fixture';
 import { API_ENDPOINTS } from '../../config/Api.endpoints';
 import { APP_ROUTES } from '../../config/App.routes';
-import type { CurrentUser } from '../auth/Auth.slice';
+import { COPY } from '../../config/Copy.constants';
 import type { Role } from '../access/Access.api';
+import type { CurrentUser } from '../auth/Auth.slice';
 import type { ReviewerSession } from './Reviewer.api';
 
 const { REFRESH, ME } = API_ENDPOINTS.AUTH;
@@ -116,12 +112,8 @@ describe('ReviewerSessionsPage', () => {
       [`GET ${REVIEWER.SESSIONS}`]: () => ({ status: 500, data: {} }),
     });
     // A 5xx retries once (HEALTH_QUERY_RETRY) before the error shows.
-    expect(
-      await screen.findByText(copy.loadFailed, {}, { timeout: 4000 }),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole('button', { name: COPY.access.errors.retry }),
-    ).toBeInTheDocument();
+    expect(await screen.findByText(copy.loadFailed, {}, { timeout: 4000 })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: COPY.access.errors.retry })).toBeInTheDocument();
   });
 
   it('says so when the role may not view the log', async () => {
@@ -164,14 +156,10 @@ describe('ReviewerSessionsPage', () => {
     expect(toggle).toBeChecked();
     await user.click(toggle);
     expect(put).not.toHaveBeenCalled();
-    await user.click(
-      await screen.findByRole('button', { name: copy.confirmOff.submit }),
-    );
+    await user.click(await screen.findByRole('button', { name: copy.confirmOff.submit }));
     await waitFor(() => expect(put).toHaveBeenCalledTimes(1));
     await waitFor(() =>
-      expect(
-        screen.getByRole('switch', { name: copy.switch.label }),
-      ).not.toBeChecked(),
+      expect(screen.getByRole('switch', { name: copy.switch.label })).not.toBeChecked(),
     );
   });
 
@@ -189,22 +177,16 @@ describe('ReviewerSessionsPage', () => {
       [`GET ${REVIEWER.SESSIONS}`]: () => listOf([]),
       [`PUT ${REVIEWER.SETTINGS}`]: put,
     });
-    await user.click(
-      await screen.findByRole('switch', { name: copy.switch.label }),
-    );
+    await user.click(await screen.findByRole('switch', { name: copy.switch.label }));
     await waitFor(() => expect(put).toHaveBeenCalledTimes(1));
   });
 
   it('keeps the switch read-only for a role that can only read', async () => {
     const viewer: CurrentUser = { ...TEST_USER, id: 'acc_v', role: 'auditor' };
-    await open(
-      viewer,
-      { [`GET ${REVIEWER.SESSIONS}`]: () => listOf([session()]) },
-      [roleWith('auditor', ['read'])],
-    );
-    expect(
-      await screen.findByRole('switch', { name: copy.switch.label }),
-    ).toBeDisabled();
+    await open(viewer, { [`GET ${REVIEWER.SESSIONS}`]: () => listOf([session()]) }, [
+      roleWith('auditor', ['read']),
+    ]);
+    expect(await screen.findByRole('switch', { name: copy.switch.label })).toBeDisabled();
   });
 
   it('reports a failed change and leaves the switch as it was', async () => {
@@ -239,20 +221,14 @@ describe('reviewer mode in the shell', () => {
       [`GET ${ROLES.LIST}`]: () => ({ status: 403, data: {} }),
     });
     expect(await screen.findByText(copy.banner.message)).toBeInTheDocument();
-    expect(
-      screen.queryByRole('link', { name: COPY.session.securityLink }),
-    ).not.toBeInTheDocument();
-    expect(
-      screen.queryByRole('link', { name: COPY.access.nav.reviewer }),
-    ).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: COPY.session.securityLink })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: COPY.access.nav.reviewer })).not.toBeInTheDocument();
   });
 
   it('does not show the banner to an owner', async () => {
     await open(TEST_USER, { [`GET ${REVIEWER.SESSIONS}`]: () => listOf([]) });
     await screen.findByText(copy.empty);
     expect(screen.queryByText(copy.banner.message)).not.toBeInTheDocument();
-    expect(
-      screen.getByRole('link', { name: COPY.access.nav.reviewer }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: COPY.access.nav.reviewer })).toBeInTheDocument();
   });
 });

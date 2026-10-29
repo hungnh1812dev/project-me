@@ -3,9 +3,9 @@ import userEvent from '@testing-library/user-event';
 
 import type { FakeHandler } from '../../../test/FakeApi.fixture';
 import { createTestServices, renderApp } from '../../../test/RenderApp.fixture';
-import { COPY } from '../../config/Copy.constants';
 import { API_ENDPOINTS } from '../../config/Api.endpoints';
 import { APP_ROUTES } from '../../config/App.routes';
+import { COPY } from '../../config/Copy.constants';
 import type { MediaFile } from './Media.api';
 
 const { REFRESH, ME } = API_ENDPOINTS.AUTH;
@@ -85,9 +85,7 @@ describe('MediaLibraryPage', () => {
       screen.getByTestId('media-upload-input'),
       new File(['x'], 'portrait.jpg', { type: 'image/jpeg' }),
     );
-    expect(
-      await screen.findByText(copy.uploaded('portrait.jpg')),
-    ).toBeInTheDocument();
+    expect(await screen.findByText(copy.uploaded('portrait.jpg'))).toBeInTheDocument();
     expect(await screen.findByText('2 KB')).toBeInTheDocument();
     expect(api.callsTo(`POST ${MEDIA.LIST}`)).toHaveLength(1);
   });
@@ -105,9 +103,7 @@ describe('MediaLibraryPage', () => {
       screen.getByTestId('media-upload-input'),
       new File(['x'], 'a.png', { type: 'image/png' }),
     );
-    expect(
-      await screen.findByText(copy.errors.unsupportedType),
-    ).toBeInTheDocument();
+    expect(await screen.findByText(copy.errors.unsupportedType)).toBeInTheDocument();
   });
 
   it('edits alt text (blank clears) and shows it in the list', async () => {
@@ -126,17 +122,10 @@ describe('MediaLibraryPage', () => {
       }),
     );
     const dialog = await screen.findByRole('dialog');
-    await userEvent.type(
-      within(dialog).getByLabelText(copy.altDialog.label),
-      'A portrait',
-    );
-    await userEvent.click(
-      within(dialog).getByRole('button', { name: copy.altDialog.save }),
-    );
+    await userEvent.type(within(dialog).getByLabelText(copy.altDialog.label), 'A portrait');
+    await userEvent.click(within(dialog).getByRole('button', { name: copy.altDialog.save }));
     expect(await screen.findByText('A portrait')).toBeInTheDocument();
-    expect(
-      JSON.parse(String(api.callsTo(`PATCH ${MEDIA.ONE('f1')}`)[0]?.data)),
-    ).toEqual({
+    expect(JSON.parse(String(api.callsTo(`PATCH ${MEDIA.ONE('f1')}`)[0]?.data))).toEqual({
       alt: 'A portrait',
     });
   });
@@ -154,12 +143,8 @@ describe('MediaLibraryPage', () => {
     const field = within(dialog).getByLabelText(copy.altDialog.label);
     await userEvent.click(field);
     await userEvent.paste('a'.repeat(501));
-    await userEvent.click(
-      within(dialog).getByRole('button', { name: copy.altDialog.save }),
-    );
-    expect(
-      await within(dialog).findByText(copy.altDialog.tooLong(500)),
-    ).toBeInTheDocument();
+    await userEvent.click(within(dialog).getByRole('button', { name: copy.altDialog.save }));
+    expect(await within(dialog).findByText(copy.altDialog.tooLong(500))).toBeInTheDocument();
     expect(api.callsTo(`PATCH ${MEDIA.ONE('f1')}`)).toHaveLength(0);
   });
 
@@ -182,12 +167,8 @@ describe('MediaLibraryPage', () => {
         name: copy.deleteDialog.submit('portrait.jpg'),
       }),
     );
-    expect(
-      await screen.findByText(copy.deleteDialog.deleted('portrait.jpg')),
-    ).toBeInTheDocument();
-    await waitFor(() =>
-      expect(screen.getByText(copy.empty)).toBeInTheDocument(),
-    );
+    expect(await screen.findByText(copy.deleteDialog.deleted('portrait.jpg'))).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByText(copy.empty)).toBeInTheDocument());
   });
 
   it('keeps the dialog open and explains a file that is in use', async () => {
@@ -209,11 +190,7 @@ describe('MediaLibraryPage', () => {
         name: copy.deleteDialog.submit('portrait.jpg'),
       }),
     );
-    expect(
-      await within(dialog).findByText(copy.errors.inUse),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText('portrait.jpg', { selector: 'span' }),
-    ).toBeInTheDocument();
+    expect(await within(dialog).findByText(copy.errors.inUse)).toBeInTheDocument();
+    expect(screen.getByText('portrait.jpg', { selector: 'span' })).toBeInTheDocument();
   });
 });

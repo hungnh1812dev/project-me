@@ -34,9 +34,7 @@ export function toMediaError(error: unknown): MediaError {
       return { kind: 'other', message: COPY.access.errors.unexpected };
     case 'http': {
       const known =
-        failure.errorCode === undefined
-          ? undefined
-          : MESSAGE_BY_CODE[failure.errorCode];
+        failure.errorCode === undefined ? undefined : MESSAGE_BY_CODE[failure.errorCode];
       const kind: MediaErrorKind =
         failure.errorCode === API_ERROR_CODES.MEDIA_IN_USE
           ? 'in-use'

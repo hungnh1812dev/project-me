@@ -21,10 +21,9 @@ export interface CreateOwnerInput {
 export function createSetupApi(client: AxiosInstance) {
   return {
     getSetupStatus: async (): Promise<SetupStatus> => {
-      const { data } = await client.get<SetupStatus>(
-        API_ENDPOINTS.SETUP.STATUS,
-        { shouldSkipAuthRefresh: true },
-      );
+      const { data } = await client.get<SetupStatus>(API_ENDPOINTS.SETUP.STATUS, {
+        shouldSkipAuthRefresh: true,
+      });
       return data;
     },
 

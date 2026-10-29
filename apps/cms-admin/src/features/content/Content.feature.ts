@@ -1,8 +1,8 @@
 import { APP_ROUTES } from '../../config/App.routes';
 import { defineApiService, type Feature } from '../../lib/FeatureDefinition';
-import { ContentApiProvider } from './ContentApi.context';
-import { createContentApi } from './Content.api';
 import { CollectionListPage } from './CollectionListPage';
+import { createContentApi } from './Content.api';
+import { ContentApiProvider } from './ContentApi.context';
 import { DocumentEditPage } from './DocumentEditPage';
 import { useContentNavItems } from './useContentNavItems';
 

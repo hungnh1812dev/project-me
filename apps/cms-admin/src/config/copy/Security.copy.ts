@@ -1,13 +1,8 @@
-import {
-  OTP_CODE_LENGTH,
-  OTP_TTL_MINUTES,
-  TOTP_CODE_LENGTH,
-} from '../Auth.constants';
+import { OTP_CODE_LENGTH, OTP_TTL_MINUTES, TOTP_CODE_LENGTH } from '../Auth.constants';
 
 export const SECURITY_COPY = {
   title: 'Security',
-  description:
-    'Protect your account with a second sign-in step and keep your password current.',
+  description: 'Protect your account with a second sign-in step and keep your password current.',
   twoFactor: {
     title: 'Two-factor authentication',
     description:
@@ -27,8 +22,7 @@ export const SECURITY_COPY = {
       'Two-factor authentication is on. Sign-in now asks for a code from your authenticator app.',
     enabledEmail:
       'Two-factor authentication is on. Sign-in now asks for a code sent to your email.',
-    disabled:
-      'Two-factor authentication is off. Sign-in asks only for your password.',
+    disabled: 'Two-factor authentication is off. Sign-in asks only for your password.',
   },
   totpSetup: {
     title: 'Set up an authenticator app',
@@ -68,8 +62,7 @@ export const SECURITY_COPY = {
   codeResent: 'A new code is on its way.',
   changePassword: {
     title: 'Password',
-    description:
-      'Changing your password signs you out on every device, this one included.',
+    description: 'Changing your password signs you out on every device, this one included.',
     submit: 'Change password',
   },
   validation: {

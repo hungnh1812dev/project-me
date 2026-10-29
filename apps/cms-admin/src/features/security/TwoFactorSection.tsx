@@ -1,13 +1,9 @@
-import { Button, FormAlert, type FormAlertTone } from '@abyss/form-commons';
 import { useCallback, useState } from 'react';
+import { Button, FormAlert, type FormAlertTone } from '@abyss/form-commons';
 
 import { COPY } from '../../config/Copy.constants';
 import { useCurrentUser, useSession } from '../auth';
-import {
-  DisableTwoFactorDialog,
-  EmailTwoFactorDialog,
-  TotpSetupDialog,
-} from './TwoFactorDialogs';
+import { DisableTwoFactorDialog, EmailTwoFactorDialog, TotpSetupDialog } from './TwoFactorDialogs';
 
 const copy = COPY.security.twoFactor;
 
@@ -42,8 +38,7 @@ export function TwoFactorSection() {
   );
 
   const onStateChanged = useCallback(
-    () =>
-      void settle({ tone: 'info', message: COPY.security.errors.stateChanged }),
+    () => void settle({ tone: 'info', message: COPY.security.errors.stateChanged }),
     [settle],
   );
 
@@ -62,9 +57,7 @@ export function TwoFactorSection() {
         <p className="text-sm text-muted-foreground">{copy.description}</p>
       </div>
 
-      {notice !== null ? (
-        <FormAlert tone={notice.tone}>{notice.message}</FormAlert>
-      ) : null}
+      {notice !== null ? <FormAlert tone={notice.tone}>{notice.message}</FormAlert> : null}
 
       <dl className="flex items-center gap-3 text-sm">
         <dt className="text-muted-foreground">{copy.statusLabel}</dt>
@@ -90,20 +83,14 @@ export function TwoFactorSection() {
           <p className="text-sm">{copy.offHint}</p>
           <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
             <Button onClick={() => setDialog('totp')}>{copy.setUpTotp}</Button>
-            <Button
-              variant="link"
-              className="h-auto px-0"
-              onClick={() => setDialog('email')}
-            >
+            <Button variant="link" className="h-auto px-0" onClick={() => setDialog('email')}>
               {copy.emailInstead}
             </Button>
           </div>
         </>
       ) : (
         <>
-          {method === 'email' ? (
-            <FormAlert tone="warning">{copy.emailWarning}</FormAlert>
-          ) : null}
+          {method === 'email' ? <FormAlert tone="warning">{copy.emailWarning}</FormAlert> : null}
           <div>
             <Button variant="warning" onClick={() => setDialog('disable')}>
               {copy.turnOff}
@@ -115,9 +102,7 @@ export function TwoFactorSection() {
       {dialog === 'totp' ? (
         <TotpSetupDialog
           onClose={close}
-          onDone={() =>
-            void settle({ tone: 'success', message: copy.enabledTotp })
-          }
+          onDone={() => void settle({ tone: 'success', message: copy.enabledTotp })}
           onStateChanged={onStateChanged}
         />
       ) : null}
@@ -125,9 +110,7 @@ export function TwoFactorSection() {
         <EmailTwoFactorDialog
           email={user.email}
           onClose={close}
-          onDone={() =>
-            void settle({ tone: 'success', message: copy.enabledEmail })
-          }
+          onDone={() => void settle({ tone: 'success', message: copy.enabledEmail })}
           onStateChanged={onStateChanged}
         />
       ) : null}
@@ -135,9 +118,7 @@ export function TwoFactorSection() {
         <DisableTwoFactorDialog
           method={method}
           onClose={close}
-          onDone={() =>
-            void settle({ tone: 'success', message: copy.disabled })
-          }
+          onDone={() => void settle({ tone: 'success', message: copy.disabled })}
           onStateChanged={onStateChanged}
         />
       ) : null}

@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import {
   Button,
   CheckboxInput,
@@ -8,19 +9,18 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  JsonInput,
   FormAlert,
+  JsonInput,
 } from '@abyss/form-commons';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
 import { FormProvider, useForm, useWatch } from 'react-hook-form';
 
-import { BULK_ACTION, BULK_MAX_ITEMS } from './Content.constants';
 import { COPY } from '../../config/Copy.constants';
 import { failedItems, itemReason, toBulkFailure } from './Bulk.rules';
-import { useContentApi } from './ContentApi.context';
 import type { DocumentTree } from './Content.api';
+import { BULK_ACTION, BULK_MAX_ITEMS } from './Content.constants';
 import { CONTENT_QUERY_KEYS } from './Content.queries';
+import { useContentApi } from './ContentApi.context';
 
 const copy = COPY.content.bulk.importDialog;
 
@@ -37,9 +37,7 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
  * Parses the pasted text into bulk create items. Returns the items, or the
  * message for the first problem (shown under the field).
  */
-export function parseImportText(
-  text: string,
-): { items: DocumentTree[] } | { error: string } {
+export function parseImportText(text: string): { items: DocumentTree[] } | { error: string } {
   let parsed: unknown;
   try {
     parsed = JSON.parse(text);
@@ -119,11 +117,7 @@ export function BulkCreateDialog({
       setProblems(
         failed.map((item) => ({
           position: item.index + 1,
-          reason: itemReason(
-            item.errorCode,
-            item.message,
-            copy.invalidFallback,
-          ),
+          reason: itemReason(item.errorCode, item.message, copy.invalidFallback),
         })),
       );
       setPartial(copy.partial(response.succeeded, failed.length));
@@ -136,12 +130,7 @@ export function BulkCreateDialog({
         setProblems([]);
         setAlert(failure.message);
       } else {
-        setAlert(
-          copy.atomicFailed(
-            failure.index + 1,
-            failure.reason ?? copy.invalidFallback,
-          ),
-        );
+        setAlert(copy.atomicFailed(failure.index + 1, failure.reason ?? copy.invalidFallback));
         setProblems([]);
       }
     },
@@ -182,22 +171,14 @@ export function BulkCreateDialog({
           >
             <DialogHeader>
               <DialogTitle>{copy.title}</DialogTitle>
-              <DialogDescription>
-                {copy.description(BULK_MAX_ITEMS)}
-              </DialogDescription>
+              <DialogDescription>{copy.description(BULK_MAX_ITEMS)}</DialogDescription>
             </DialogHeader>
-            {alert === null ? null : (
-              <FormAlert tone="error">{alert}</FormAlert>
-            )}
-            {partial === null ? null : (
-              <FormAlert tone="warning">{partial}</FormAlert>
-            )}
+            {alert === null ? null : <FormAlert tone="error">{alert}</FormAlert>}
+            {partial === null ? null : <FormAlert tone="warning">{partial}</FormAlert>}
             {problems.length === 0 ? null : (
               <ul className="m-0 grid list-none gap-1 p-0 text-sm text-destructive-strong">
                 {problems.map((problem) => (
-                  <li key={problem.position}>
-                    {copy.itemError(problem.position, problem.reason)}
-                  </li>
+                  <li key={problem.position}>{copy.itemError(problem.position, problem.reason)}</li>
                 ))}
               </ul>
             )}

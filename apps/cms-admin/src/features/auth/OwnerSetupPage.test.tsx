@@ -3,10 +3,10 @@ import userEvent from '@testing-library/user-event';
 
 import type { FakeHandler } from '../../../test/FakeApi.fixture';
 import { createTestServices, renderApp } from '../../../test/RenderApp.fixture';
-import { COPY } from '../../config/Copy.constants';
 import { API_ENDPOINTS } from '../../config/Api.endpoints';
-import { API_ERROR_CODES } from '../../config/Http.constants';
 import { APP_ROUTES } from '../../config/App.routes';
+import { COPY } from '../../config/Copy.constants';
+import { API_ERROR_CODES } from '../../config/Http.constants';
 
 const { REFRESH } = API_ENDPOINTS.AUTH;
 const { STATUS, OWNER } = API_ENDPOINTS.SETUP;
@@ -17,10 +17,7 @@ const PASSWORD = 'correct horse battery staple';
 const OPEN: FakeHandler = () => ({ status: 200, data: { open: true } });
 const CLOSED: FakeHandler = () => ({ status: 200, data: { open: false } });
 
-async function openSetup(
-  handlers: Record<string, FakeHandler>,
-  statusHandler: FakeHandler = OPEN,
-) {
+async function openSetup(handlers: Record<string, FakeHandler>, statusHandler: FakeHandler = OPEN) {
   const { api, services } = createTestServices({
     [`POST ${REFRESH}`]: () => ({ status: 401 }),
     [`GET ${STATUS}`]: statusHandler,
@@ -47,8 +44,7 @@ async function fillAndSubmit(repeat = PASSWORD) {
   await userEvent.click(submit());
 }
 
-const signInHeading = () =>
-  screen.findByRole('heading', { level: 1, name: COPY.login.title });
+const signInHeading = () => screen.findByRole('heading', { level: 1, name: COPY.login.title });
 
 describe('OwnerSetupPage', () => {
   it('redirects to sign in when the setup is closed', async () => {
@@ -58,12 +54,8 @@ describe('OwnerSetupPage', () => {
 
   it('shows the checking state, then an error with a retry when the status fails', async () => {
     await openSetup({}, () => ({ status: 500 }));
-    expect(await screen.findByRole('alert')).toHaveTextContent(
-      COPY.setup.statusFailed,
-    );
-    expect(
-      screen.getByRole('button', { name: COPY.setup.retry }),
-    ).toBeInTheDocument();
+    expect(await screen.findByRole('alert')).toHaveTextContent(COPY.setup.statusFailed);
+    expect(screen.getByRole('button', { name: COPY.setup.retry })).toBeInTheDocument();
   });
 
   it('hides the token and passwords, and tells the browser not to store the token', async () => {
@@ -95,13 +87,12 @@ describe('OwnerSetupPage', () => {
     await fillAndSubmit();
 
     expect(await signInHeading()).toBeInTheDocument();
-    expect(
-      screen.getByText(COPY.login.notices.ownerCreated),
-    ).toBeInTheDocument();
+    expect(screen.getByText(COPY.login.notices.ownerCreated)).toBeInTheDocument();
     expect(screen.getByLabelText(/^Email/)).toHaveValue(EMAIL);
-    const body = JSON.parse(
-      String(api.callsTo(`POST ${OWNER}`)[0]?.data),
-    ) as Record<string, unknown>;
+    const body = JSON.parse(String(api.callsTo(`POST ${OWNER}`)[0]?.data)) as Record<
+      string,
+      unknown
+    >;
     expect(body).toEqual({
       setupToken: TOKEN,
       email: EMAIL,
@@ -147,9 +138,7 @@ describe('OwnerSetupPage', () => {
         status: 400,
         data: {
           details: {
-            issues: [
-              { path: ['email'], message: 'must be a valid email address' },
-            ],
+            issues: [{ path: ['email'], message: 'must be a valid email address' }],
           },
         },
       }),
@@ -187,9 +176,7 @@ describe('OwnerSetupPage', () => {
     await fillAndSubmit();
 
     expect(await signInHeading()).toBeInTheDocument();
-    expect(
-      screen.getByText(COPY.login.notices.setupComplete),
-    ).toBeInTheDocument();
+    expect(screen.getByText(COPY.login.notices.setupComplete)).toBeInTheDocument();
   });
 
   it('shows the wait time in an alert when rate limited', async () => {
@@ -210,8 +197,6 @@ describe('OwnerSetupPage', () => {
     await waitForForm();
     await fillAndSubmit();
 
-    expect(await screen.findByRole('alert')).toHaveTextContent(
-      COPY.setup.errors.unexpected,
-    );
+    expect(await screen.findByRole('alert')).toHaveTextContent(COPY.setup.errors.unexpected);
   });
 });

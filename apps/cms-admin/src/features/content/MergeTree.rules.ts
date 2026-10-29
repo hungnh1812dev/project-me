@@ -1,10 +1,6 @@
-import type {
-  ConflictDetails,
-  ConflictItem,
-  DiffEntry,
-} from './Conflict.rules';
+import type { ConflictDetails, ConflictItem, DiffEntry } from './Conflict.rules';
 import type { ComponentItem, DocumentTree, FieldValueMap } from './Content.api';
-import { isMaskedPath, type MergeState, sideOf } from './Merge.reducer';
+import { isMaskedPath, sideOf, type MergeState } from './Merge.reducer';
 
 /** Marks a diff item that has no uid yet (`[new#<index>]`). */
 const NEW_ITEM_PREFIX = 'new#';
@@ -20,8 +16,7 @@ interface Context {
   masked: ReadonlySet<string>;
 }
 
-const join = (prefix: string, name: string) =>
-  prefix === '' ? name : `${prefix}.${name}`;
+const join = (prefix: string, name: string) => (prefix === '' ? name : `${prefix}.${name}`);
 
 const chosenClient = (context: Context, path: string) =>
   context.entries.has(path) && sideOf(context.state, path) === 'client';
@@ -50,9 +45,7 @@ function newItemInput(
     const childPath = join(namePath, name);
     if (children === null || isMaskedPath(childPath, masked)) continue;
     if (children.length > 0) {
-      components[name] = children.map((child) =>
-        newItemInput(child, childPath, masked),
-      );
+      components[name] = children.map((child) => newItemInput(child, childPath, masked));
     }
   }
   return {
@@ -73,18 +66,13 @@ function resolveLevel(
     const path = `${prefix}values.${name}`;
     if (isMaskedPath(join(namePath, name), context.masked)) continue;
     const value = submitted.values[name];
-    if (chosenClient(context, path) && value !== undefined)
-      values[name] = value;
+    if (chosenClient(context, path) && value !== undefined) values[name] = value;
   }
   const components: Record<string, ComponentItem[]> = {};
   for (const [name, serverItems] of Object.entries(server.components)) {
     const submittedItems = submitted.components[name];
     const childPath = join(namePath, name);
-    if (
-      serverItems === null ||
-      submittedItems == null ||
-      isMaskedPath(childPath, context.masked)
-    ) {
+    if (serverItems === null || submittedItems == null || isMaskedPath(childPath, context.masked)) {
       continue;
     }
     const list = resolveList(
@@ -115,9 +103,7 @@ function resolveList(
   if (!hasClientChoice(context, listPath)) return null;
 
   const serverByUid = new Map(server.map((item) => [item.componentUid, item]));
-  const submittedByUid = new Map(
-    submitted.map((item) => [item.componentUid, item]),
-  );
+  const submittedByUid = new Map(submitted.map((item) => [item.componentUid, item]));
   const reordered = chosenClient(context, listPath);
   const basis = reordered ? submitted : server;
   const result: ComponentItem[] = [];
@@ -141,12 +127,8 @@ function resolveList(
       );
       result.push({
         componentUid: uid,
-        ...(Object.keys(level.values).length > 0
-          ? { values: level.values }
-          : {}),
-        ...(Object.keys(level.components).length > 0
-          ? { components: level.components }
-          : {}),
+        ...(Object.keys(level.values).length > 0 ? { values: level.values } : {}),
+        ...(Object.keys(level.components).length > 0 ? { components: level.components } : {}),
       });
     } else if (inServer) {
       // Removed by the user's edit: only a "server" choice brings it back.
@@ -187,18 +169,10 @@ export function buildResolvedTree(
     state,
     masked,
   };
-  const level = resolveLevel(
-    context,
-    details.server,
-    details.submitted,
-    '',
-    '',
-  );
+  const level = resolveLevel(context, details.server, details.submitted, '', '');
   return {
     ...(Object.keys(level.values).length > 0 ? { values: level.values } : {}),
-    ...(Object.keys(level.components).length > 0
-      ? { components: level.components }
-      : {}),
+    ...(Object.keys(level.components).length > 0 ? { components: level.components } : {}),
   };
 }
 

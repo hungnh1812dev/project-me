@@ -1,32 +1,23 @@
-import {
-  Button,
-  TextInput,
-  FormAlert,
-  type FormAlertTone,
-} from '@abyss/form-commons';
+import { useCallback, useState } from 'react';
+import { Button, FormAlert, TextInput, type FormAlertTone } from '@abyss/form-commons';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation } from '@tanstack/react-query';
-import { useCallback, useState } from 'react';
 import { FormProvider, useForm } from 'react-hook-form';
 import { Link, Navigate, useLocation } from 'react-router';
 import { z } from 'zod';
 
-import { COPY } from '../../config/Copy.constants';
 import { APP_ROUTES } from '../../config/App.routes';
+import { COPY } from '../../config/Copy.constants';
 import type { TwoFactorChallenge } from './Auth.api';
 import { selectEndNotice, selectSessionStatus } from './Auth.slice';
-import { useAuthSelector } from './useAuthSelector';
 import { AuthPageLayout } from './AuthPageLayout';
-import { type LoginError, toLoginError } from './Login.errors';
-import {
-  type LoginNotice,
-  loginEmailOf,
-  loginNoticeOf,
-} from './LoginNotice.rules';
+import { toLoginError, type LoginError } from './Login.errors';
+import { loginEmailOf, loginNoticeOf, type LoginNotice } from './LoginNotice.rules';
 import type { LoginLocationState } from './ProtectedRoute';
 import { useSession } from './Session.context';
 import { SessionLoading } from './SessionLoading';
 import { TwoFactorModal } from './TwoFactorModal';
+import { useAuthSelector } from './useAuthSelector';
 import { useSetupStatus } from './useSetupStatus';
 
 const loginSchema = z.object({
@@ -66,9 +57,7 @@ const NOTICE_TONE: Record<LoginNotice, FormAlertTone> = {
 /** Only same-app paths, so router state can never redirect off-site. */
 function returnPathOf(state: unknown): string {
   const from = (state as LoginLocationState | null)?.from;
-  return typeof from === 'string' &&
-    from.startsWith('/') &&
-    !from.startsWith('//')
+  return typeof from === 'string' && from.startsWith('/') && !from.startsWith('//')
     ? from
     : APP_ROUTES.HOME;
 }
@@ -136,12 +125,8 @@ export function LoginPage() {
 
   return (
     <AuthPageLayout>
-      <h1 className="mt-6 text-2xl font-semibold tracking-tight">
-        {COPY.login.title}
-      </h1>
-      <p className="mt-2 text-sm text-muted-foreground">
-        {COPY.login.description}
-      </p>
+      <h1 className="mt-6 text-2xl font-semibold tracking-tight">{COPY.login.title}</h1>
+      <p className="mt-2 text-sm text-muted-foreground">{COPY.login.description}</p>
       {isSetupOpen ? (
         <div className="mt-6 grid gap-3">
           <FormAlert tone="info">{COPY.login.setupPrompt.message}</FormAlert>
@@ -159,18 +144,13 @@ export function LoginPage() {
           className="mt-6 grid gap-4 rounded-md border border-border bg-card p-5"
         >
           {notice !== undefined ? (
-            <FormAlert tone={NOTICE_TONE[notice]}>
-              {NOTICE_COPY[notice]}
-            </FormAlert>
+            <FormAlert tone={NOTICE_TONE[notice]}>{NOTICE_COPY[notice]}</FormAlert>
           ) : null}
           {challengeExpired ? (
             <FormAlert tone="info">{COPY.login.twoFactor.expired}</FormAlert>
           ) : null}
           {error !== null ? (
-            <p
-              role="alert"
-              className={`rounded-md px-3 py-2 text-sm ${ALERT_TONE[error.kind]}`}
-            >
+            <p role="alert" className={`rounded-md px-3 py-2 text-sm ${ALERT_TONE[error.kind]}`}>
               {error.message}
             </p>
           ) : null}
@@ -202,9 +182,7 @@ export function LoginPage() {
       </FormProvider>
       <p className="mt-4">
         <Button asChild variant="link" className="h-auto px-0">
-          <Link to={APP_ROUTES.RESET_PASSWORD}>
-            {COPY.login.forgotPassword}
-          </Link>
+          <Link to={APP_ROUTES.RESET_PASSWORD}>{COPY.login.forgotPassword}</Link>
         </Button>
       </p>
       {challenge !== null ? (

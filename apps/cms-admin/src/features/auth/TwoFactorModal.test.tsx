@@ -2,24 +2,17 @@ import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import type { FakeHandler } from '../../../test/FakeApi.fixture';
-import {
-  createTestServices,
-  renderApp,
-  TEST_USER,
-} from '../../../test/RenderApp.fixture';
-import { COPY } from '../../config/Copy.constants';
+import { createTestServices, renderApp, TEST_USER } from '../../../test/RenderApp.fixture';
 import { API_ENDPOINTS } from '../../config/Api.endpoints';
 import { APP_ROUTES } from '../../config/App.routes';
+import { COPY } from '../../config/Copy.constants';
 
 const { LOGIN, REFRESH, ME } = API_ENDPOINTS.AUTH;
 const { VERIFY, EMAIL_CHALLENGE } = API_ENDPOINTS.TWO_FACTOR;
 const copy = COPY.login.twoFactor;
 const TEMP = 'temp-token';
 
-async function openChallenge(
-  method: string,
-  handlers: Record<string, FakeHandler> = {},
-) {
+async function openChallenge(method: string, handlers: Record<string, FakeHandler> = {}) {
   const { api, services } = createTestServices({
     [`POST ${REFRESH}`]: () => ({ status: 401 }),
     [`POST ${LOGIN}`]: () => ({
@@ -33,9 +26,7 @@ async function openChallenge(
   renderApp(services, APP_ROUTES.LOGIN);
   await userEvent.type(screen.getByLabelText(/^Email/), TEST_USER.email);
   await userEvent.type(screen.getByLabelText(/^Password/), 'pw-123456789');
-  await userEvent.click(
-    screen.getByRole('button', { name: COPY.login.submit }),
-  );
+  await userEvent.click(screen.getByRole('button', { name: COPY.login.submit }));
   const dialog = await screen.findByRole('dialog', { name: copy.title });
   return { api, services, dialog };
 }
@@ -66,10 +57,7 @@ describe('TwoFactorModal (login second step)', () => {
   it('validates the code before calling the API', async () => {
     const { api, dialog } = await openChallenge('totp');
     await userEvent.type(codeInput(dialog, copy.totpLabel), '12{Enter}');
-    expect(codeInput(dialog, copy.totpLabel)).toHaveAttribute(
-      'aria-invalid',
-      'true',
-    );
+    expect(codeInput(dialog, copy.totpLabel)).toHaveAttribute('aria-invalid', 'true');
     expect(within(dialog).getByText(copy.codeInvalid)).toBeInTheDocument();
     expect(api.callsTo(`POST ${VERIFY}`)).toHaveLength(0);
   });
@@ -82,9 +70,7 @@ describe('TwoFactorModal (login second step)', () => {
       }),
     });
     await userEvent.type(codeInput(dialog, copy.totpLabel), '000000{Enter}');
-    expect(await within(dialog).findByRole('alert')).toHaveTextContent(
-      copy.errors.invalidCode,
-    );
+    expect(await within(dialog).findByRole('alert')).toHaveTextContent(copy.errors.invalidCode);
     expect(codeInput(dialog, copy.totpLabel)).toHaveValue('');
     expect(codeInput(dialog, copy.totpLabel)).toHaveFocus();
   });
@@ -103,9 +89,7 @@ describe('TwoFactorModal (login second step)', () => {
 
   it('cancels back to the sign-in form', async () => {
     const { dialog } = await openChallenge('totp');
-    await userEvent.click(
-      within(dialog).getByRole('button', { name: copy.cancel }),
-    );
+    await userEvent.click(within(dialog).getByRole('button', { name: copy.cancel }));
     expect(screen.queryByRole('dialog')).toBeNull();
     expect(screen.getByLabelText(/^Password/)).toHaveValue('');
   });
@@ -131,18 +115,12 @@ describe('TwoFactorModal (login second step)', () => {
     const { api, dialog } = await openChallenge('email', {
       [`POST ${EMAIL_CHALLENGE}`]: () => ({ status: 202 }),
     });
-    expect(within(dialog).getByRole('alert')).toHaveTextContent(
-      copy.emailWarning,
-    );
-    await waitFor(() =>
-      expect(api.callsTo(`POST ${EMAIL_CHALLENGE}`)).toHaveLength(1),
-    );
+    expect(within(dialog).getByRole('alert')).toHaveTextContent(copy.emailWarning);
+    await waitFor(() => expect(api.callsTo(`POST ${EMAIL_CHALLENGE}`)).toHaveLength(1));
     expect(api.callsTo(`POST ${EMAIL_CHALLENGE}`)[0]?.data).toBe(
       JSON.stringify({ tempToken: TEMP }),
     );
-    await userEvent.click(
-      within(dialog).getByRole('button', { name: copy.resend }),
-    );
+    await userEvent.click(within(dialog).getByRole('button', { name: copy.resend }));
     expect(await within(dialog).findByText(copy.resent)).toBeInTheDocument();
     expect(api.callsTo(`POST ${EMAIL_CHALLENGE}`)).toHaveLength(2);
   });
@@ -155,12 +133,8 @@ describe('TwoFactorModal (login second step)', () => {
       }),
     });
     expect(
-      await within(dialog).findByText(
-        COPY.password.errors.rateLimitedSeconds(30),
-      ),
+      await within(dialog).findByText(COPY.password.errors.rateLimitedSeconds(30)),
     ).toBeInTheDocument();
-    expect(
-      within(dialog).getByRole('button', { name: copy.resend }),
-    ).toBeDisabled();
+    expect(within(dialog).getByRole('button', { name: copy.resend })).toBeDisabled();
   });
 });

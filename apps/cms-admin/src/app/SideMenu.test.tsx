@@ -2,13 +2,9 @@ import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import type { FakeHandler } from '../../test/FakeApi.fixture';
-import {
-  createTestServices,
-  renderApp,
-  TEST_USER,
-} from '../../test/RenderApp.fixture';
-import { COPY } from '../config/Copy.constants';
+import { createTestServices, renderApp, TEST_USER } from '../../test/RenderApp.fixture';
 import { API_ENDPOINTS } from '../config/Api.endpoints';
+import { COPY } from '../config/Copy.constants';
 import type { Role } from '../features/access/Access.api';
 import type { CurrentUser } from '../features/auth/Auth.slice';
 
@@ -67,9 +63,10 @@ describe('SideMenu', () => {
   it('shows the owner all three sections with their items', async () => {
     await open();
 
-    expect(
-      await within(mainNav()).findByRole('link', { name: 'cv-page' }),
-    ).toHaveAttribute('href', '/content/cv-page');
+    expect(await within(mainNav()).findByRole('link', { name: 'cv-page' })).toHaveAttribute(
+      'href',
+      '/content/cv-page',
+    );
     const menu = within(mainNav());
     for (const heading of [
       nav.content,
@@ -80,14 +77,7 @@ describe('SideMenu', () => {
     ]) {
       expect(menu.getByRole('heading', { name: heading })).toBeInTheDocument();
     }
-    for (const label of [
-      'post',
-      nav.media,
-      nav.accounts,
-      nav.roles,
-      nav.apiTokens,
-      nav.reviewer,
-    ]) {
+    for (const label of ['post', nav.media, nav.accounts, nav.roles, nav.apiTokens, nav.reviewer]) {
       expect(menu.getByRole('link', { name: label })).toBeInTheDocument();
     }
   });
@@ -95,33 +85,19 @@ describe('SideMenu', () => {
   it('hides sections the caller has no item for', async () => {
     await open({ ...TEST_USER, role: 'reader' }, {}, [readerRole]);
 
-    expect(
-      await within(mainNav()).findByRole('link', { name: 'post' }),
-    ).toBeInTheDocument();
+    expect(await within(mainNav()).findByRole('link', { name: 'post' })).toBeInTheDocument();
     const menu = within(mainNav());
-    expect(
-      menu.queryByRole('heading', { name: nav.systemSettings }),
-    ).not.toBeInTheDocument();
-    expect(
-      menu.queryByRole('heading', { name: nav.utilities }),
-    ).not.toBeInTheDocument();
-    expect(
-      menu.queryByRole('heading', { name: nav.singleTypes }),
-    ).not.toBeInTheDocument();
+    expect(menu.queryByRole('heading', { name: nav.systemSettings })).not.toBeInTheDocument();
+    expect(menu.queryByRole('heading', { name: nav.utilities })).not.toBeInTheDocument();
+    expect(menu.queryByRole('heading', { name: nav.singleTypes })).not.toBeInTheDocument();
   });
 
   it('gives a reviewer no Security link', async () => {
-    await open({ ...TEST_USER, role: 'reviewer' }, {}, [
-      { ...readerRole, slug: 'reviewer' },
-    ]);
+    await open({ ...TEST_USER, role: 'reviewer' }, {}, [{ ...readerRole, slug: 'reviewer' }]);
 
     await within(mainNav()).findByRole('link', { name: 'post' });
-    expect(
-      screen.queryByRole('link', { name: COPY.session.securityLink }),
-    ).not.toBeInTheDocument();
-    expect(
-      screen.getByRole('button', { name: COPY.session.signOut }),
-    ).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: COPY.session.securityLink })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: COPY.session.signOut })).toBeInTheDocument();
   });
 
   it('marks the open page as current', async () => {
@@ -138,23 +114,15 @@ describe('SideMenu', () => {
     await open(TEST_USER, {
       [`GET ${API_ENDPOINTS.CONTENT_TYPES.LIST}`]: () => {
         attempts += 1;
-        return attempts === 1
-          ? { status: 500 }
-          : { status: 200, data: { data: contentTypes } };
+        return attempts === 1 ? { status: 500 } : { status: 200, data: { data: contentTypes } };
       },
     });
 
     expect(await screen.findByText(nav.catalogError)).toBeInTheDocument();
-    expect(
-      within(mainNav()).getByRole('link', { name: nav.media }),
-    ).toBeInTheDocument();
+    expect(within(mainNav()).getByRole('link', { name: nav.media })).toBeInTheDocument();
 
-    await userEvent.click(
-      screen.getByRole('button', { name: nav.retryCatalog }),
-    );
-    expect(
-      await within(mainNav()).findByRole('link', { name: 'post' }),
-    ).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: nav.retryCatalog }));
+    expect(await within(mainNav()).findByRole('link', { name: 'post' })).toBeInTheDocument();
     expect(screen.queryByText(nav.catalogError)).not.toBeInTheDocument();
   });
 });
@@ -168,9 +136,7 @@ describe('MobileMenu', () => {
     await userEvent.click(trigger);
     const sheet = await screen.findByRole('dialog');
     expect(trigger).toHaveAttribute('aria-expanded', 'true');
-    expect(
-      await within(sheet).findByRole('link', { name: nav.media }),
-    ).toBeInTheDocument();
+    expect(await within(sheet).findByRole('link', { name: nav.media })).toBeInTheDocument();
 
     await userEvent.keyboard('{Escape}');
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
@@ -181,18 +147,14 @@ describe('MobileMenu', () => {
     await userEvent.click(screen.getByRole('button', { name: nav.menu }));
     const sheet = await screen.findByRole('dialog');
 
-    await userEvent.click(
-      await within(sheet).findByRole('link', { name: nav.media }),
-    );
+    await userEvent.click(await within(sheet).findByRole('link', { name: nav.media }));
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 
   it('closes the sheet with its close button', async () => {
     await open();
     await userEvent.click(screen.getByRole('button', { name: nav.menu }));
-    await userEvent.click(
-      await screen.findByRole('button', { name: nav.closeMenu }),
-    );
+    await userEvent.click(await screen.findByRole('button', { name: nav.closeMenu }));
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 });

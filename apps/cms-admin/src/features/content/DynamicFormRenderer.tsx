@@ -35,35 +35,19 @@ export function DynamicFormRenderer({
         const name = prefix === '' ? node.name : `${prefix}.${node.name}`;
         if (masked.has(node.path)) {
           return (
-            <ProtectedField
-              key={node.path}
-              label={node.label}
-              group={node.children.length > 0}
-            />
+            <ProtectedField key={node.path} label={node.label} group={node.children.length > 0} />
           );
         }
         if (node.children.length > 0) {
           return (
-            <ComponentList
-              key={node.path}
-              node={node}
-              name={name}
-              masked={masked}
-              depth={depth}
-            />
+            <ComponentList key={node.path} node={node} name={name} masked={masked} depth={depth} />
           );
         }
         const adapter = adapterFor(node.type);
         if (!adapter.editable) {
-          return (
-            <ReadOnlyField key={node.path} name={name} label={node.label} />
-          );
+          return <ReadOnlyField key={node.path} name={name} label={node.label} />;
         }
-        return (
-          <div key={node.path}>
-            {adapter.render({ name, label: node.label })}
-          </div>
-        );
+        return <div key={node.path}>{adapter.render({ name, label: node.label })}</div>;
       })}
     </div>
   );
@@ -72,10 +56,7 @@ export function DynamicFormRenderer({
 /** A field the role cannot read: fixed text, nothing to edit or send. */
 function ProtectedField({ label, group }: { label: string; group: boolean }) {
   return (
-    <Field
-      label={label}
-      description={group ? copy.protectedGroup(label) : copy.protectedHint}
-    >
+    <Field label={label} description={group ? copy.protectedGroup(label) : copy.protectedHint}>
       {(control) => (
         <Input
           {...control}
@@ -93,9 +74,7 @@ function ReadOnlyField({ name, label }: { name: string; label: string }) {
   const { control } = useFormContext();
   const value: unknown = useWatch({ control, name });
   const shown =
-    typeof value === 'string' || typeof value === 'number'
-      ? String(value)
-      : copy.emptyValue;
+    typeof value === 'string' || typeof value === 'number' ? String(value) : copy.emptyValue;
   return (
     <Field label={label} description={copy.notEditableYet}>
       {(controlProps) => (

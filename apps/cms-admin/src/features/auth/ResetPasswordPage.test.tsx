@@ -3,10 +3,10 @@ import userEvent from '@testing-library/user-event';
 
 import type { FakeHandler } from '../../../test/FakeApi.fixture';
 import { createTestServices, renderApp } from '../../../test/RenderApp.fixture';
-import { COPY } from '../../config/Copy.constants';
 import { API_ENDPOINTS } from '../../config/Api.endpoints';
-import { API_ERROR_CODES } from '../../config/Http.constants';
 import { APP_ROUTES } from '../../config/App.routes';
+import { COPY } from '../../config/Copy.constants';
+import { API_ERROR_CODES } from '../../config/Http.constants';
 
 const { REFRESH } = API_ENDPOINTS.AUTH;
 const { REQUEST_OTP, RESET } = API_ENDPOINTS.PASSWORD;
@@ -29,9 +29,7 @@ const field = (label: string) => screen.getByLabelText(new RegExp(`^${label}`));
 
 async function requestCodeFor(email = EMAIL) {
   await userEvent.type(field(COPY.password.emailLabel), email);
-  await userEvent.click(
-    screen.getByRole('button', { name: COPY.password.reset.sendCode }),
-  );
+  await userEvent.click(screen.getByRole('button', { name: COPY.password.reset.sendCode }));
   return screen.findByRole('heading', {
     level: 1,
     name: COPY.password.reset.title,
@@ -42,9 +40,7 @@ async function fillNewPassword(code = CODE, confirm = NEW_PASSWORD) {
   await userEvent.type(field(COPY.password.codeLabel), code);
   await userEvent.type(field(COPY.password.newPasswordLabel), NEW_PASSWORD);
   await userEvent.type(field(COPY.password.confirmPasswordLabel), confirm);
-  await userEvent.click(
-    screen.getByRole('button', { name: COPY.password.reset.submit }),
-  );
+  await userEvent.click(screen.getByRole('button', { name: COPY.password.reset.submit }));
 }
 
 function bodyOf(call: { data?: unknown } | undefined): unknown {
@@ -54,9 +50,7 @@ function bodyOf(call: { data?: unknown } | undefined): unknown {
 describe('ResetPasswordPage', () => {
   it('validates the email, then asks for a code and moves to the next step', async () => {
     const { api } = await openReset({});
-    await userEvent.click(
-      screen.getByRole('button', { name: COPY.password.reset.sendCode }),
-    );
+    await userEvent.click(screen.getByRole('button', { name: COPY.password.reset.sendCode }));
     expect(field(COPY.password.emailLabel)).toHaveAccessibleDescription(
       COPY.password.validation.emailRequired,
     );
@@ -75,25 +69,18 @@ describe('ResetPasswordPage', () => {
     await requestCodeFor();
     await userEvent.type(field(COPY.password.codeLabel), '12ab');
     await userEvent.type(field(COPY.password.newPasswordLabel), 'short');
-    await userEvent.type(
-      field(COPY.password.confirmPasswordLabel),
-      'different',
-    );
-    await userEvent.click(
-      screen.getByRole('button', { name: COPY.password.reset.submit }),
-    );
+    await userEvent.type(field(COPY.password.confirmPasswordLabel), 'different');
+    await userEvent.click(screen.getByRole('button', { name: COPY.password.reset.submit }));
 
     expect(field(COPY.password.codeLabel)).toHaveAccessibleDescription(
       expect.stringContaining(COPY.password.validation.codeInvalid) as string,
     );
     expect(field(COPY.password.newPasswordLabel)).toHaveAccessibleDescription(
-      expect.stringContaining(
-        COPY.password.validation.passwordTooShort,
-      ) as string,
+      expect.stringContaining(COPY.password.validation.passwordTooShort) as string,
     );
-    expect(
-      field(COPY.password.confirmPasswordLabel),
-    ).toHaveAccessibleDescription(COPY.password.validation.passwordsDiffer);
+    expect(field(COPY.password.confirmPasswordLabel)).toHaveAccessibleDescription(
+      COPY.password.validation.passwordsDiffer,
+    );
     expect(api.callsTo(`POST ${RESET}`)).toHaveLength(0);
   });
 
@@ -107,9 +94,7 @@ describe('ResetPasswordPage', () => {
     expect(
       await screen.findByRole('heading', { level: 1, name: COPY.login.title }),
     ).toBeInTheDocument();
-    expect(screen.getByRole('status')).toHaveTextContent(
-      COPY.login.notices.passwordReset,
-    );
+    expect(screen.getByRole('status')).toHaveTextContent(COPY.login.notices.passwordReset);
     expect(bodyOf(api.callsTo(`POST ${RESET}`)[0])).toEqual({
       email: EMAIL,
       code: CODE,
@@ -127,9 +112,7 @@ describe('ResetPasswordPage', () => {
     await requestCodeFor();
     await fillNewPassword();
 
-    expect(await screen.findByRole('alert')).toHaveTextContent(
-      COPY.password.errors.invalidCode,
-    );
+    expect(await screen.findByRole('alert')).toHaveTextContent(COPY.password.errors.invalidCode);
     expect(field(COPY.password.codeLabel)).toHaveFocus();
     expect(field(COPY.password.newPasswordLabel)).toHaveValue(NEW_PASSWORD);
   });
@@ -150,24 +133,16 @@ describe('ResetPasswordPage', () => {
     await requestCodeFor();
     await fillNewPassword();
 
-    const totp = await screen.findByLabelText(
-      new RegExp(`^${COPY.password.totpLabel}`),
-    );
+    const totp = await screen.findByLabelText(new RegExp(`^${COPY.password.totpLabel}`));
     expect(totp).toHaveFocus();
-    expect(screen.getByRole('status')).toHaveTextContent(
-      COPY.password.errors.totpRequired,
-    );
-    await userEvent.click(
-      screen.getByRole('button', { name: COPY.password.reset.submit }),
-    );
+    expect(screen.getByRole('status')).toHaveTextContent(COPY.password.errors.totpRequired);
+    await userEvent.click(screen.getByRole('button', { name: COPY.password.reset.submit }));
     expect(totp).toHaveAccessibleDescription(
       expect.stringContaining(COPY.password.validation.totpInvalid) as string,
     );
 
     await userEvent.type(totp, '654321');
-    await userEvent.click(
-      screen.getByRole('button', { name: COPY.password.reset.submit }),
-    );
+    await userEvent.click(screen.getByRole('button', { name: COPY.password.reset.submit }));
     expect(
       await screen.findByRole('heading', { level: 1, name: COPY.login.title }),
     ).toBeInTheDocument();
@@ -182,12 +157,8 @@ describe('ResetPasswordPage', () => {
   it('sends a new code on request', async () => {
     const { api } = await openReset({});
     await requestCodeFor();
-    await userEvent.click(
-      screen.getByRole('button', { name: COPY.password.resendCode }),
-    );
-    expect(
-      await screen.findByText(COPY.password.codeResent(EMAIL)),
-    ).toBeVisible();
+    await userEvent.click(screen.getByRole('button', { name: COPY.password.resendCode }));
+    expect(await screen.findByText(COPY.password.codeResent(EMAIL))).toBeVisible();
     expect(api.callsTo(`POST ${REQUEST_OTP}`)).toHaveLength(2);
   });
 
@@ -199,9 +170,7 @@ describe('ResetPasswordPage', () => {
       }),
     });
     await userEvent.type(field(COPY.password.emailLabel), EMAIL);
-    await userEvent.click(
-      screen.getByRole('button', { name: COPY.password.reset.sendCode }),
-    );
+    await userEvent.click(screen.getByRole('button', { name: COPY.password.reset.sendCode }));
     expect(await screen.findByRole('alert')).toHaveTextContent(
       COPY.password.errors.rateLimitedMinutes(2),
     );
@@ -210,9 +179,7 @@ describe('ResetPasswordPage', () => {
   it('goes back to the email step', async () => {
     await openReset({});
     await requestCodeFor();
-    await userEvent.click(
-      screen.getByRole('button', { name: COPY.password.reset.otherEmail }),
-    );
+    await userEvent.click(screen.getByRole('button', { name: COPY.password.reset.otherEmail }));
     expect(
       screen.getByRole('heading', {
         level: 1,

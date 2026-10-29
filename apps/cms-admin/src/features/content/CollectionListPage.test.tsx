@@ -2,14 +2,10 @@ import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import type { FakeHandler } from '../../../test/FakeApi.fixture';
-import {
-  createTestServices,
-  renderApp,
-  TEST_USER,
-} from '../../../test/RenderApp.fixture';
-import { COPY } from '../../config/Copy.constants';
+import { createTestServices, renderApp, TEST_USER } from '../../../test/RenderApp.fixture';
 import { API_ENDPOINTS } from '../../config/Api.endpoints';
 import { contentListPath } from '../../config/App.routes';
+import { COPY } from '../../config/Copy.constants';
 import type { ContentType } from '../content-types';
 import type { DocumentListItem } from './Content.api';
 
@@ -154,17 +150,16 @@ describe('CollectionListPage: list', () => {
   it('shows the empty state with the first action', async () => {
     await open({ [LIST_KEY]: () => ({ status: 200, data: page([]) }) });
     expect(await screen.findByText(copy.empty)).toBeInTheDocument();
-    expect(
-      screen.getByRole('link', { name: copy.newDocument }),
-    ).toHaveAttribute('href', '/content/post/new');
+    expect(screen.getByRole('link', { name: copy.newDocument })).toHaveAttribute(
+      'href',
+      '/content/post/new',
+    );
   });
 
   it('shows a retry when the list fails', async () => {
     await open({ [LIST_KEY]: () => ({ status: 500 }) });
     expect(await screen.findByText(copy.loadFailed)).toBeInTheDocument();
-    expect(
-      screen.getByRole('button', { name: COPY.access.errors.retry }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: COPY.access.errors.retry })).toBeInTheDocument();
   });
 
   it('opens the one document of a single type', async () => {
@@ -180,9 +175,7 @@ describe('CollectionListPage: list', () => {
       }),
     });
     await waitFor(() => {
-      expect(api.callsTo(`GET ${DOCUMENTS.BY_ID(SLUG, 'doc_1')}`)).toHaveLength(
-        1,
-      );
+      expect(api.callsTo(`GET ${DOCUMENTS.BY_ID(SLUG, 'doc_1')}`)).toHaveLength(1);
     });
   });
 
@@ -197,9 +190,7 @@ describe('CollectionListPage: list', () => {
     expect(
       await screen.findByRole('heading', { name: COPY.content.newTitle(SLUG) }),
     ).toBeInTheDocument();
-    expect(
-      api.callsTo(`GET ${CONTENT_TYPES.ONE(SLUG)}`).length,
-    ).toBeGreaterThan(0);
+    expect(api.callsTo(`GET ${CONTENT_TYPES.ONE(SLUG)}`).length).toBeGreaterThan(0);
   });
 
   it('hides selection and bulk actions from a read-only role', async () => {
@@ -220,9 +211,7 @@ describe('CollectionListPage: list', () => {
     );
     await screen.findByRole('link', { name: 'Post 1' });
     expect(screen.queryByRole('checkbox')).not.toBeInTheDocument();
-    expect(
-      screen.queryByRole('button', { name: bulk.import }),
-    ).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: bulk.import })).not.toBeInTheDocument();
   });
 });
 
@@ -230,9 +219,7 @@ describe('CollectionListPage: bulk actions', () => {
   async function selectFive() {
     const user = userEvent.setup();
     for (const n of [1, 2, 3, 4, 5]) {
-      await user.click(
-        screen.getByRole('checkbox', { name: `Select Post ${n}` }),
-      );
+      await user.click(screen.getByRole('checkbox', { name: `Select Post ${n}` }));
     }
     return user;
   }
@@ -259,12 +246,8 @@ describe('CollectionListPage: bulk actions', () => {
     expect(screen.getByText(bulk.selected(5))).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: bulk.publish(5) }));
 
-    expect(
-      await screen.findByText(bulk.summary.publish(5, 5)),
-    ).toBeInTheDocument();
-    const body = bodyOf(
-      api.callsTo(`POST ${DOCUMENTS.BULK(SLUG, 'publish')}`)[0],
-    );
+    expect(await screen.findByText(bulk.summary.publish(5, 5))).toBeInTheDocument();
+    const body = bodyOf(api.callsTo(`POST ${DOCUMENTS.BULK(SLUG, 'publish')}`)[0]);
     expect(body.atomic).toBe(false);
     expect(body.items).toEqual(
       rows5.map((r) => ({
@@ -303,18 +286,12 @@ describe('CollectionListPage: bulk actions', () => {
     await user.click(screen.getByRole('checkbox', { name: 'Select Post 2' }));
     await user.click(screen.getByRole('button', { name: bulk.publish(2) }));
 
+    expect(await screen.findByText(bulk.summary.publish(1, 2))).toBeInTheDocument();
     expect(
-      await screen.findByText(bulk.summary.publish(1, 2)),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText(
-        bulk.summary.failedItem('Post 2', bulk.itemErrors.conflict),
-      ),
+      screen.getByText(bulk.summary.failedItem('Post 2', bulk.itemErrors.conflict)),
     ).toBeInTheDocument();
     expect(screen.getByText(bulk.selected(1))).toBeInTheDocument();
-    expect(
-      screen.getByRole('checkbox', { name: 'Select Post 2' }),
-    ).toBeChecked();
+    expect(screen.getByRole('checkbox', { name: 'Select Post 2' })).toBeChecked();
   });
 
   it('shows a request-level failure', async () => {
@@ -355,20 +332,17 @@ describe('CollectionListPage: bulk actions', () => {
     await user.click(screen.getByRole('button', { name: bulk.delete(2) }));
 
     const dialog = await screen.findByRole('dialog');
-    expect(api.callsTo(`POST ${DOCUMENTS.BULK(SLUG, 'delete')}`)).toHaveLength(
-      0,
-    );
+    expect(api.callsTo(`POST ${DOCUMENTS.BULK(SLUG, 'delete')}`)).toHaveLength(0);
     await user.click(
       within(dialog).getByRole('button', {
         name: bulk.deleteDialog.confirm(2),
       }),
     );
-    expect(
-      await screen.findByText(bulk.summary.delete(2, 2)),
-    ).toBeInTheDocument();
-    expect(
-      bodyOf(api.callsTo(`POST ${DOCUMENTS.BULK(SLUG, 'delete')}`)[0]).items,
-    ).toEqual([{ documentId: 'doc_1' }, { documentId: 'doc_2' }]);
+    expect(await screen.findByText(bulk.summary.delete(2, 2))).toBeInTheDocument();
+    expect(bodyOf(api.callsTo(`POST ${DOCUMENTS.BULK(SLUG, 'delete')}`)[0]).items).toEqual([
+      { documentId: 'doc_1' },
+      { documentId: 'doc_2' },
+    ]);
   });
 
   it('returns focus to the Delete button after Escape', async () => {
@@ -386,9 +360,7 @@ describe('CollectionListPage: bulk actions', () => {
   it('selects every row of the page from the header checkbox', async () => {
     await open({ [LIST_KEY]: () => ({ status: 200, data: page(rows5) }) });
     await screen.findByRole('link', { name: 'Post 1' });
-    await userEvent.click(
-      screen.getByRole('checkbox', { name: copy.selectAll }),
-    );
+    await userEvent.click(screen.getByRole('checkbox', { name: copy.selectAll }));
     expect(screen.getByText(bulk.selected(5))).toBeInTheDocument();
   });
 });
@@ -408,11 +380,7 @@ describe('CollectionListPage: import', () => {
     return { ...result, user, dialog };
   }
 
-  function paste(
-    user: ReturnType<typeof userEvent.setup>,
-    dialog: HTMLElement,
-    text: string,
-  ) {
+  function paste(user: ReturnType<typeof userEvent.setup>, dialog: HTMLElement, text: string) {
     const box = within(dialog).getByRole('textbox');
     return user.click(box).then(() => user.paste(text));
   }
@@ -420,18 +388,14 @@ describe('CollectionListPage: import', () => {
   it('returns focus to the Import button after Escape', async () => {
     const { user } = await openImport();
     await user.keyboard('{Escape}');
-    await waitFor(() =>
-      expect(screen.getByRole('button', { name: bulk.import })).toHaveFocus(),
-    );
+    await waitFor(() => expect(screen.getByRole('button', { name: bulk.import })).toHaveFocus());
   });
 
   it('rejects text that is not a JSON array before sending', async () => {
     const { api, user, dialog } = await openImport();
     await paste(user, dialog, '{"values":{}}');
     await user.click(within(dialog).getByRole('button', { name: /^Import/ }));
-    expect(
-      await within(dialog).findByText(bulk.importDialog.notArray),
-    ).toBeInTheDocument();
+    expect(await within(dialog).findByText(bulk.importDialog.notArray)).toBeInTheDocument();
     expect(api.callsTo(CREATE)).toHaveLength(0);
   });
 
@@ -450,19 +414,13 @@ describe('CollectionListPage: import', () => {
         },
       }),
     });
-    await paste(
-      user,
-      dialog,
-      '[{"values":{"title":"A"}},{"values":{"title":"B"}}]',
-    );
+    await paste(user, dialog, '[{"values":{"title":"A"}},{"values":{"title":"B"}}]');
     await user.click(
       within(dialog).getByRole('button', {
         name: bulk.importDialog.submit(2),
       }),
     );
-    expect(
-      await screen.findByText(bulk.importDialog.created(2)),
-    ).toBeInTheDocument();
+    expect(await screen.findByText(bulk.importDialog.created(2))).toBeInTheDocument();
     expect(bodyOf(api.callsTo(CREATE)[0])).toEqual({
       atomic: false,
       items: [{ values: { title: 'A' } }, { values: { title: 'B' } }],
@@ -498,13 +456,9 @@ describe('CollectionListPage: import', () => {
       }),
     );
     expect(
-      await within(dialog).findByText(
-        bulk.importDialog.itemError(2, 'title is required'),
-      ),
+      await within(dialog).findByText(bulk.importDialog.itemError(2, 'title is required')),
     ).toBeInTheDocument();
-    expect(
-      within(dialog).getByText(bulk.importDialog.partial(1, 1)),
-    ).toBeInTheDocument();
+    expect(within(dialog).getByText(bulk.importDialog.partial(1, 1))).toBeInTheDocument();
     const box = within(dialog).getByRole<HTMLTextAreaElement>('textbox');
     expect(JSON.parse(box.value)).toEqual([{ values: {} }]);
   });
@@ -520,11 +474,7 @@ describe('CollectionListPage: import', () => {
         },
       }),
     });
-    await paste(
-      user,
-      dialog,
-      '[{"values":{"title":"A"}},{"values":{"title":"B"}},{"values":{}}]',
-    );
+    await paste(user, dialog, '[{"values":{"title":"A"}},{"values":{"title":"B"}},{"values":{}}]');
     await user.click(within(dialog).getByLabelText(bulk.importDialog.atomic));
     await user.click(
       within(dialog).getByRole('button', {
@@ -532,9 +482,7 @@ describe('CollectionListPage: import', () => {
       }),
     );
     expect(
-      await within(dialog).findByText(
-        bulk.importDialog.atomicFailed(3, 'title is required'),
-      ),
+      await within(dialog).findByText(bulk.importDialog.atomicFailed(3, 'title is required')),
     ).toBeInTheDocument();
     expect(bodyOf(api.callsTo(CREATE)[0]).atomic).toBe(true);
   });

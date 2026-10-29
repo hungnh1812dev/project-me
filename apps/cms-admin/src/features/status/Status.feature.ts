@@ -1,6 +1,6 @@
 import { defineApiService, type Feature } from '../../lib/FeatureDefinition';
-import { HealthApiProvider } from './HealthApi.context';
 import { createHealthApi } from './Health.api';
+import { HealthApiProvider } from './HealthApi.context';
 import { StatusPage } from './StatusPage';
 
 export const statusFeature: Feature = {

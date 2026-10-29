@@ -1,10 +1,6 @@
 import { COPY } from '../../config/Copy.constants';
+import type { ConflictDetails, ConflictItem, DiffEntry } from './Conflict.rules';
 import { FIELD_TYPE } from './Content.constants';
-import type {
-  ConflictDetails,
-  ConflictItem,
-  DiffEntry,
-} from './Conflict.rules';
 import { type FieldNode } from './FieldTree.rules';
 import { fieldPathOf, isMaskedPath, parseEntryPath } from './Merge.reducer';
 
@@ -12,10 +8,7 @@ const copy = COPY.content.conflict;
 
 const NEW_ITEM = /^new#(\d+)$/;
 
-function nodeAt(
-  nodes: readonly FieldNode[],
-  names: readonly string[],
-): FieldNode | undefined {
+function nodeAt(nodes: readonly FieldNode[], names: readonly string[]): FieldNode | undefined {
   let level = nodes;
   let found: FieldNode | undefined;
   for (const name of names) {
@@ -36,8 +29,7 @@ export function entryTitle(
   if (parsed === null) return entry.path;
   const parts: string[] = [];
   const names: string[] = [];
-  let level: { components: Record<string, ConflictItem[] | null> } =
-    details.server;
+  let level: { components: Record<string, ConflictItem[] | null> } = details.server;
   for (const step of parsed.steps) {
     names.push(step.name);
     const label = nodeAt(fields, names)?.label ?? step.name;
@@ -124,12 +116,7 @@ export function sideContent(
   if (parsed.kind === 'value') return formatValue(raw, node?.type);
   if (parsed.kind === 'item') {
     if (node === undefined) return null;
-    const text = summarizeItem(
-      raw as ConflictItem,
-      node.children,
-      fieldPathOf(parsed),
-      masked,
-    );
+    const text = summarizeItem(raw as ConflictItem, node.children, fieldPathOf(parsed), masked);
     return text === '' ? copy.itemWithoutFields : text;
   }
   // moved: both sides list the kept uids; show each side's order by the

@@ -15,9 +15,7 @@ export function textToApi(value: unknown): string | null {
 
 /** A number as text; decimals already arrive as strings. */
 export function numberToForm(value: unknown): string {
-  return typeof value === 'number' || typeof value === 'string'
-    ? String(value)
-    : '';
+  return typeof value === 'number' || typeof value === 'string' ? String(value) : '';
 }
 
 /** Integers go to the API as numbers (cms-api limits them to int4). */
@@ -52,9 +50,7 @@ export function datetimeToApi(value: unknown): string | null {
 const JSON_INDENT = 2;
 
 export function jsonToForm(value: unknown): string {
-  return value === null || value === undefined
-    ? ''
-    : JSON.stringify(value, null, JSON_INDENT);
+  return value === null || value === undefined ? '' : JSON.stringify(value, null, JSON_INDENT);
 }
 
 /** Form JSON text -> value; blank or unparsable text is null (validation runs first). */

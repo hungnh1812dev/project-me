@@ -1,10 +1,10 @@
-import { Checkbox, Radio } from '@abyss/form-commons';
 import { useId } from 'react';
+import { Checkbox, Radio } from '@abyss/form-commons';
 
-import { FIELD_PICKER_INDENT_REM } from './Access.constants';
 import { COPY } from '../../config/Copy.constants';
 import type { ContentTypeField } from '../content-types';
 import type { FieldList } from './Access.api';
+import { FIELD_PICKER_INDENT_REM } from './Access.constants';
 import { isCoveredBy, toggleField } from './PermissionMatrix.rules';
 
 const copy = COPY.access.fields;
@@ -63,9 +63,7 @@ export function FieldPicker({
         <>
           <ul className="m-0 grid list-none gap-1.5 p-0">
             {fields.map((field) => {
-              const covered = selected.some((entry) =>
-                isCoveredBy(entry, field.path),
-              );
+              const covered = selected.some((entry) => isCoveredBy(entry, field.path));
               const depth = field.path.split('.').length - 1;
               const id = `${name}-${field.path}`;
               return (
@@ -81,29 +79,21 @@ export function FieldPicker({
                     checked={covered || selected.includes(field.path)}
                     disabled={disabled || covered}
                     onCheckedChange={(checked) =>
-                      onChange(
-                        ordered(
-                          toggleField(selected, field.path, checked === true),
-                        ),
-                      )
+                      onChange(ordered(toggleField(selected, field.path, checked === true)))
                     }
                   />
                   <label htmlFor={id} className="font-mono text-sm">
                     {field.path}
                   </label>
                   {field.component ? (
-                    <span className="text-xs text-muted-foreground">
-                      {copy.component}
-                    </span>
+                    <span className="text-xs text-muted-foreground">{copy.component}</span>
                   ) : null}
                   {field.sensitive ? (
                     <span className="rounded-sm bg-warning-soft px-1.5 py-0.5 text-xs font-medium text-warning-strong">
                       {copy.sensitive}
                     </span>
                   ) : null}
-                  {covered ? (
-                    <span className="sr-only">{copy.covered}</span>
-                  ) : null}
+                  {covered ? <span className="sr-only">{copy.covered}</span> : null}
                 </li>
               );
             })}
