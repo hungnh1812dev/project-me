@@ -1,4 +1,5 @@
-import { TEST_USER } from '../../../test/RenderApp.fixture';
+import { TEST_USER } from '@test/RenderApp.fixture';
+
 import {
   accessTokenReceived,
   selectAccessToken,

@@ -1,12 +1,12 @@
 import { API_ENDPOINTS } from '@configs/Api.endpoints';
 import { contentEditPath, contentNewPath } from '@configs/App.routes';
 import { COPY } from '@configs/Copy.constants';
+import { CV_PAGE_TYPE } from '@test/CvPage.fixture';
+import type { FakeHandler } from '@test/FakeApi.fixture';
+import { createTestServices, renderApp, TEST_USER } from '@test/RenderApp.fixture';
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
-import { CV_PAGE_TYPE } from '../../../test/CvPage.fixture';
-import type { FakeHandler } from '../../../test/FakeApi.fixture';
-import { createTestServices, renderApp, TEST_USER } from '../../../test/RenderApp.fixture';
 import type { DocumentRecord } from './Content.api';
 
 const { REFRESH, ME } = API_ENDPOINTS.AUTH;

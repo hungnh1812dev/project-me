@@ -1,4 +1,5 @@
-import { CV_PAGE_TYPE } from '../../../test/CvPage.fixture';
+import { CV_PAGE_TYPE } from '@test/CvPage.fixture';
+
 import { ITEM_UID_KEY } from './Content.constants';
 import { emptyItem, toDocumentTree, toFormValues, type FormValues } from './Document.form';
 import { buildFieldTree } from './FieldTree.rules';

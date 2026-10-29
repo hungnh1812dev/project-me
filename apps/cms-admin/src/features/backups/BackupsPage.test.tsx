@@ -1,11 +1,11 @@
 import { API_ENDPOINTS } from '@configs/Api.endpoints';
 import { APP_ROUTES } from '@configs/App.routes';
 import { COPY } from '@configs/Copy.constants';
+import type { FakeHandler } from '@test/FakeApi.fixture';
+import { createTestServices, renderApp, TEST_USER } from '@test/RenderApp.fixture';
 import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
-import type { FakeHandler } from '../../../test/FakeApi.fixture';
-import { createTestServices, renderApp, TEST_USER } from '../../../test/RenderApp.fixture';
 import type { Role } from '../access/Access.api';
 import type { CurrentUser } from '../auth/Auth.slice';
 import type { BackupFile, BackupsList } from './Backups.api';

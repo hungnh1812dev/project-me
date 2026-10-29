@@ -1,4 +1,5 @@
-import { conflictDetails, UID_A, UID_B, UID_C } from '../../../test/Merge.fixture';
+import { conflictDetails, UID_A, UID_B, UID_C } from '@test/Merge.fixture';
+
 import { MASKED_FIELDS_KEY } from './Content.constants';
 import {
   INITIAL_MERGE_STATE,

@@ -1,5 +1,6 @@
-import { deferred } from '../../../test/FakeApi.fixture';
-import { fakeBus, fakeLocks } from '../../../test/FakeTabs.fixture';
+import { deferred } from '@test/FakeApi.fixture';
+import { fakeBus, fakeLocks } from '@test/FakeTabs.fixture';
+
 import { createCrossTabRefresh } from './CrossTabRefresh';
 
 const LOCK = 'test:refresh';
