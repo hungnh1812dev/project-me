@@ -1,9 +1,9 @@
 import { Button, type SheetColumn } from '@abyss/form-commons';
 import { contentEditPath } from '@configs/App.routes';
 import { COPY } from '@configs/Copy.constants';
+import { formatDateTime } from '@libs/DateFormat.rules';
 import { Link } from 'react-router';
 
-import { formatDateTime } from '../../lib/DateFormat.rules';
 import type { ContentTypeField } from '../content-types';
 import type { DocumentListItem } from './Content.api';
 import { LIST_MAX_VALUE_COLUMNS, LIST_UPDATED_KEY } from './Content.constants';

@@ -1,6 +1,6 @@
 import { contentListPath } from '@configs/App.routes';
+import type { FeatureNavItem, NavItemsState } from '@libs/FeatureDefinition';
 
-import type { FeatureNavItem, NavItemsState } from '../../lib/FeatureDefinition';
 import { CONTENT_WILDCARD_SUBJECT, useCallerAccess, type PermissionAction } from '../access';
 import type { ContentType } from '../content-types';
 import { NAV_SECTION_BY_KIND } from './Content.constants';

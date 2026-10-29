@@ -1,7 +1,8 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
-import { PERMISSION_ACTIONS } from '../lib/PermissionAction.constants';
+import { PERMISSION_ACTIONS } from '@libs/PermissionAction.constants';
+
 import {
   OTP_CODE_LENGTH,
   OTP_TTL_MINUTES,

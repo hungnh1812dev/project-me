@@ -8,12 +8,12 @@ import {
 import { COPY } from '@configs/Copy.constants';
 import { API_ERROR_CODES } from '@configs/Http.constants';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { apiFailureOf, rateLimitedMessage, type ApiFailure } from '@libs/ApiFailure.errors';
 import { useMutation } from '@tanstack/react-query';
 import { FormProvider, useForm } from 'react-hook-form';
 import { z } from 'zod';
 
 import { Modal, ModalActions } from '../../components/Modal';
-import { apiFailureOf, rateLimitedMessage, type ApiFailure } from '../../lib/ApiFailure.errors';
 import type { TwoFactorChallenge } from './Auth.api';
 import { useSession } from './Session.context';
 import { useEmailCode } from './useEmailCode';

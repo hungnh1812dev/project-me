@@ -1,7 +1,7 @@
 import { API_ENDPOINTS } from '@configs/Api.endpoints';
+import { createApiClient } from '@libs/Api.client';
 
 import { createFakeApi, deferred, TEST_API_BASE_URL } from '../../../test/FakeApi.fixture';
-import { createApiClient } from '../../lib/Api.client';
 import { installAuthInterceptor } from './Auth.interceptor';
 import { singleFlight } from './SingleFlight.rules';
 

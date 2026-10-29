@@ -6,10 +6,9 @@ import { COPY } from '@configs/Copy.constants';
 import { useCallerAccess } from '@features/access/useCallerAccess';
 import { useCurrentUser, useSession } from '@features/auth';
 import { FEATURE_LIST } from '@features/Features.registry';
+import type { FeatureNavItem, NavItemsState } from '@libs/FeatureDefinition';
+import { collectLeafIds, DATA_BACKED_SECTION_ID, NAV_SECTIONS } from '@libs/NavSections.constants';
 import { Link, NavLink } from 'react-router';
-
-import type { FeatureNavItem, NavItemsState } from '../lib/FeatureDefinition';
-import { collectLeafIds, DATA_BACKED_SECTION_ID, NAV_SECTIONS } from '../lib/NavSections.constants';
 
 const SKELETON_ROW_COUNT = 3;
 

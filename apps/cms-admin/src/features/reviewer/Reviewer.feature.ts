@@ -1,7 +1,7 @@
 import { APP_ROUTES } from '@configs/App.routes';
 import { COPY } from '@configs/Copy.constants';
+import { defineApiService, type Feature } from '@libs/FeatureDefinition';
 
-import { defineApiService, type Feature } from '../../lib/FeatureDefinition';
 import { createReviewerApi } from './Reviewer.api';
 import { REVIEWER_SETTINGS_SUBJECT } from './Reviewer.constants';
 import { ReviewerApiProvider } from './ReviewerApi.context';

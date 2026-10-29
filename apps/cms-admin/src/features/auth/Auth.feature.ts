@@ -1,6 +1,6 @@
 import { APP_ROUTES } from '@configs/App.routes';
+import { defineApiService, type Feature } from '@libs/FeatureDefinition';
 
-import { defineApiService, type Feature } from '../../lib/FeatureDefinition';
 import { LoginPage } from './LoginPage';
 import { OwnerSetupPage } from './OwnerSetupPage';
 import { createPasswordApi } from './Password.api';

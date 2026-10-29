@@ -1,4 +1,5 @@
-import { createApiContext } from '../../lib/ApiContext.setup';
+import { createApiContext } from '@libs/ApiContext.setup';
+
 import type { ReviewerApi } from './Reviewer.api';
 
 export const [ReviewerApiProvider, useReviewerApi] = createApiContext<ReviewerApi>('Reviewer');

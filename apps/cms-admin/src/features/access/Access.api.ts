@@ -1,8 +1,8 @@
 import { API_ENDPOINTS } from '@configs/Api.endpoints';
 import type { TwoFactorMethod } from '@configs/Auth.constants';
+import type { PageMeta } from '@libs/Api.client';
 import type { AxiosInstance } from 'axios';
 
-import type { PageMeta } from '../../lib/Api.client';
 import { getContentTypes } from '../content-types';
 import type { AccountStatus, ApiTokenStatus, PermissionAction } from './Access.constants';
 

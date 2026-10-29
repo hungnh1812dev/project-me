@@ -1,7 +1,6 @@
 import { API_ENDPOINTS } from '@configs/Api.endpoints';
+import type { PageMeta } from '@libs/Api.client';
 import type { AxiosInstance } from 'axios';
-
-import type { PageMeta } from '../../lib/Api.client';
 
 const { REVIEWER } = API_ENDPOINTS;
 

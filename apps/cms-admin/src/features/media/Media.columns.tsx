@@ -1,7 +1,7 @@
 import { Button, formatFileSize, type SheetColumn } from '@abyss/form-commons';
 import { COPY } from '@configs/Copy.constants';
+import { formatDate } from '@libs/DateFormat.rules';
 
-import { formatDate } from '../../lib/DateFormat.rules';
 import type { MediaFile } from './Media.api';
 
 const copy = COPY.media;

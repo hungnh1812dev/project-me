@@ -1,6 +1,6 @@
 import { APP_ROUTES } from '@configs/App.routes';
+import { defineApiService, type Feature } from '@libs/FeatureDefinition';
 
-import { defineApiService, type Feature } from '../../lib/FeatureDefinition';
 import { createBackupsApi } from './Backups.api';
 import { useBackupsNavItems } from './Backups.queries';
 import { BackupsApiProvider } from './BackupsApi.context';

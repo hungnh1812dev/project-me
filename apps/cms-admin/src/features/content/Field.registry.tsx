@@ -10,8 +10,8 @@ import {
   TextInput,
 } from '@abyss/form-commons';
 import { COPY } from '@configs/Copy.constants';
+import { formatDateTime } from '@libs/DateFormat.rules';
 
-import { formatDateTime } from '../../lib/DateFormat.rules';
 import { MediaField, mediaToApi, mediaToForm } from '../media';
 import { FIELD_TYPE, MASKED_VALUE } from './Content.constants';
 import {

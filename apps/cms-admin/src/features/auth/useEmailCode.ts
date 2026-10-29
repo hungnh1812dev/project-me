@@ -1,8 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { MAX_TIMER_DELAY_MS, MS_PER_SECOND } from '@configs/Http.constants';
+import { apiFailureOf, type ApiFailure } from '@libs/ApiFailure.errors';
 import { useMutation } from '@tanstack/react-query';
-
-import { apiFailureOf, type ApiFailure } from '../../lib/ApiFailure.errors';
 
 /**
  * Sends emailed 2FA codes: once on mount when `autoSend` (refs survive the

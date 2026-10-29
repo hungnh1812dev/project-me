@@ -1,7 +1,7 @@
 import { APP_ROUTES } from '@configs/App.routes';
 import { COPY } from '@configs/Copy.constants';
+import { defineApiService, type Feature } from '@libs/FeatureDefinition';
 
-import { defineApiService, type Feature } from '../../lib/FeatureDefinition';
 import { createAccessApi } from './Access.api';
 import { AccessApiProvider } from './AccessApi.context';
 import { AccountsPage } from './AccountsPage';

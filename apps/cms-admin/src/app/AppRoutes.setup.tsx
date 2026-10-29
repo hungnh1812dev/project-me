@@ -2,9 +2,9 @@ import { APP_ROUTES } from '@configs/App.routes';
 import { PUBLIC_ROUTE_PATHS } from '@features/auth/Auth.feature';
 import { ProtectedRoute } from '@features/auth/ProtectedRoute';
 import { FEATURE_LIST } from '@features/Features.registry';
+import type { FeatureRoute } from '@libs/FeatureDefinition';
 import { Navigate, type RouteObject } from 'react-router';
 
-import type { FeatureRoute } from '../lib/FeatureDefinition';
 import { AppShell } from './AppShell';
 
 const isPublic = ({ path }: FeatureRoute) =>

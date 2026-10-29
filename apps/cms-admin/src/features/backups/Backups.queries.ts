@@ -1,10 +1,10 @@
 import { APP_ROUTES } from '@configs/App.routes';
 import { COPY } from '@configs/Copy.constants';
 import { API_ERROR_CODES, HEALTH_QUERY_RETRY, HTTP_STATUS } from '@configs/Http.constants';
+import { apiFailureOf } from '@libs/ApiFailure.errors';
+import type { FeatureNavItem, NavItemsState } from '@libs/FeatureDefinition';
 import { useQuery } from '@tanstack/react-query';
 
-import { apiFailureOf } from '../../lib/ApiFailure.errors';
-import type { FeatureNavItem, NavItemsState } from '../../lib/FeatureDefinition';
 import { useCallerAccess } from '../access';
 import { useBackupsApi } from './BackupsApi.context';
 

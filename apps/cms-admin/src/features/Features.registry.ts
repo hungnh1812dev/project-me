@@ -1,4 +1,5 @@
-import type { Feature } from '../lib/FeatureDefinition';
+import type { Feature } from '@libs/FeatureDefinition';
+
 import { accessFeature } from './access/Access.feature';
 import { authFeature } from './auth/Auth.feature';
 import { backupsFeature } from './backups/Backups.feature';
