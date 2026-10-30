@@ -1,6 +1,6 @@
 ---
 name: session-handoff
-description: The shared state files that carry knowledge between per-task agents - project profile, feature map, and each feature's folder (board, handoff, current unit record, findings, resolved issues, summary) plus conventions and archive - with their formats, size limits, and who writes, reads, clears and deletes each one. Use when the manager sets up a project, opens or closes a feature, dispatches, closes a task or a phase, or when the user answers a question.
+description: The shared state files that carry knowledge between per-task agents - project profile, feature map, and each feature's folder (board, handoff, current unit record, checklists, findings, resolved issues, summary) plus conventions and archive - with their formats, size limits, and who writes, reads, clears and deletes each one. Use when the manager sets up a project, opens or closes a feature, dispatches, closes a task or a phase, or when the user answers a question.
 ---
 
 # Session Handoff
@@ -9,7 +9,7 @@ Every unit (task or batch) gets fresh agents, and the manager's message is only 
 
 **One feature at a time.** A feature is one concrete function of the product (login, signup, ...), holding one or more phases of tasks. Only one feature is `in-progress`; its working files live in `features/<feature>/`. Every agent finds that folder from the `in-progress` row of `features.md`. Below, `<F>` means that folder.
 
-**Live files hold only what is still open.** Finished work leaves them: git holds the code history, module READMEs and `docs/` hold the module details, a closed feature keeps only its `SUMMARY.md`, and `archive/` holds stale conventions. No agent reads `archive/` or another feature's `SUMMARY.md` at start; grep them only when needed.
+**Live files hold only what is still open.** Finished work leaves them: git holds the code history, module READMEs and `docs/` hold the module details, a closed feature keeps only its `SUMMARY.md` and `CHECKLIST.md`, and `archive/` holds stale conventions. No agent reads `archive/` or another feature's `SUMMARY.md` at start; grep them only when needed.
 
 ## Layout
 
@@ -21,9 +21,11 @@ Every unit (task or batch) gets fresh agents, and the manager's message is only 
   archive/conventions-archive.md
   features/<feature>/
     board.md  handoff.md  current.md  qc-issues-handoff.md
+    checklists/         one checklist per checkpoint (a small checkpoint's, or the phase checkpoint's merged one)
     findings/           open findings only
     resolved/           one record per fixed critical/high finding
-    SUMMARY.md          written at close; after the user approves, the only file left
+    CHECKLIST.md        the feature's merged checklist; kept for reference, never deleted
+    SUMMARY.md          written at close; after the user approves, it and CHECKLIST.md are the only files left
 ```
 
 Spec, task files, phases file, design docs, ADRs and e2e tests live where `project.md` says, outside `.claude/state/`. They are never part of a feature folder and are never deleted at close.
@@ -39,7 +41,9 @@ Spec, task files, phases file, design docs, ADRs and e2e tests live where `proje
 | `<F>/handoff.md` | builders; manager adds user answers | builders and planner, in full, at start | ~3 KB | a task's lines are removed when it is committed with all checks passed; the file is deleted at feature close |
 | `<F>/current.md` | builder of the unit (format in `worker-flow`) | checkers, manager | one unit | manager resets after the unit's last commit; deleted at feature close |
 | `<F>/qc-issues-handoff.md` | qc, security-qc (own section) | manager, checkers | - | deleted at feature close (no `open` entry may be left) |
-| `<F>/findings/<unit, phase or feature>-<qc or security>.md` | the checker that failed | builder in a fix round | - | **that checker deletes it when its re-check passes** |
+| `<F>/checklists/<checkpoint>.md` | qc creates and merges; security-qc adds its rows; each fills `Status` / `Note` of its own rows | manager (`Status` only), checkers | one checkpoint | deleted at feature close |
+| `<F>/CHECKLIST.md` | qc merges at the feature check (or manager copies the phase checklist of a one-phase feature); security-qc adds its rows | anyone, on demand | the feature | never |
+| `<F>/findings/<unit, checkpoint or feature>-<qc or security>.md` | the checker that failed | builder in a fix round | - | **that checker deletes it when its re-check passes** |
 | `<F>/resolved/<finding id>.md` | builder fixing a critical/high finding | manager at close | ~6 lines | deleted at feature close, after `SUMMARY.md` takes its row |
 | `<F>/SUMMARY.md` | manager at close | anyone, on demand | as short as possible | never |
 | `archive/*.md` | manager | nobody at start; grep on demand | - | never |
@@ -95,12 +99,13 @@ Open risks: <project-wide, one line>
 ```markdown
 # Board - <feature>
 Source: <task file> · Phases: <phases file §> · Base: <hash>
-Feature checks: qc <pending|pass|n/a> · security <pending|pass|n/a>
+Feature checks: qc <pending|pass|n/a> · security <pending|pass|n/a> · Checklist: CHECKLIST.md
 Decisions: <open or feature-wide decisions, one line>
 Open risks: <one line>
 
 ## Phase <n>: <name>
 Base: <hash> · Phase checks: qc <pending|pass> · security <pending|pass> · Checkpoint: <pending|passed date>
+Checkpoints: <name> <pending|passed date> (checklists/<name>.md), ...
 
 | ID | Title | Scope | Status | Commit |
 |---|---|---|---|---|
@@ -146,9 +151,28 @@ Cross-cutting knowledge every builder may need, one line per fact, grouped under
 
 ## Findings files
 
-`<F>/findings/<unit>-qc.md` or `<unit>-security.md` for a unit; `<phase>-qc.md` or `<phase>-security.md` for the end-of-phase checks; `feature-qc.md` or `feature-security.md` for the end-of-feature checks; `audit-<YYYY-MM-DD>-qc.md` for an audit. Written only when a check fails, overwritten on each failed re-check. Each finding: id (`<file stem>#<n>`), severity, scope that owns the fix (`core-builder` / `ui-builder`), what is wrong, where (`file:line`), repro or evidence, suggested fix. When the re-check passes, the checker that wrote it deletes it, so later agents never read resolved issues.
+`<F>/findings/<unit>-security.md` for a high-risk unit; `<checkpoint>-qc.md` or `<checkpoint>-security.md` for a checkpoint checklist; `feature-qc.md` or `feature-security.md` for the feature checklist; `audit-<YYYY-MM-DD>-qc.md` for an audit. Written only when a check fails, overwritten on each failed re-check. Each finding: id (`<file stem>#<n>`), severity, scope that owns the fix (`core-builder` / `ui-builder`), checklist row ID (if any), what is wrong, where (`file:line`), repro or evidence, suggested fix. When the re-check passes, the checker that wrote it deletes it, so later agents never read resolved issues.
 
 A finding is fixed only when the checker that raised it re-checks and no longer reports it. Nobody waives a finding.
+
+## Checklists
+
+One table format everywhere: the planner's version under each checkpoint in the phases file, the merged copy per checkpoint in `<F>/checklists/<checkpoint>.md`, and the feature's in `<F>/CHECKLIST.md`.
+
+```markdown
+# Checklist - <checkpoint | feature>
+Base: <hash> · Updated: <YYYY-MM-DD> after <CHECKLIST | CHECK tier=<n> | RECHECK tier=<n>>
+
+| ID | Description | Input | Expected output | Checker | Method | Source | Status | Note |
+|---|---|---|---|---|---|---|---|---|
+| CLG-1 | Init container uses DB keys only | LG-db-1 | `docker compose ... config cms-api-init` lists only `NODE_ENV`, `DB_*` | qc | T3 cli | planner | pass | - |
+```
+
+- `Checker`: `qc`, `security-qc` or `both`. `Method`: `T<0|1|2|3> <cli | browser | static>`, the lowest test tier (`test-tiers`) that can show the row. `Source`: `planner`, `qc` or `security-qc`. `Status`: `todo`, `pass`, `failed` or `blocked`. `Note`: one short line (evidence, finding id, or the missing value for `blocked`).
+- Two kinds of checkpoint (`test-tiers`, "When each tier runs"): a **small checkpoint** (not the last one of a phase that has several) holds only `T0` rows, written by the planner and qc; a **phase checkpoint** (the last or only one of a phase) merges the phase's small checklists (their rows become `T1`, `Status` reset to `todo`) with its own rows, and runs tier 1 → 2 → 3.
+- Order of work: planner writes; qc copies, merges and adds its rows; security-qc adds its rows (phase checkpoint and feature only); then the rows are checked one tier at a time, every row of a tier in the same run of that tier.
+- Each checker writes `Status` and `Note` of its own rows only (both parts for a `both` row). Nobody deletes a row; a row that no longer applies stays, with `Note` saying why, and still needs `pass`.
+- The feature's `CHECKLIST.md` merges the phase checklists (repeats removed, `Status` reset to `todo`) and is run again in full, tier 1 → 2 → 3. With one phase it is a copy of that phase's checklist.
 
 ## resolved/ (per feature)
 
@@ -200,6 +224,6 @@ Done: <YYYY-MM-DD> · Commits: <base>..<head> · Apps / packages: <list>
 | User answers a question | manager | Writes the answers under `In progress / next` before resuming the agent |
 | Check passes | checker | Deletes its own findings file for the unit, if one exists |
 | Commit made | manager | Records the hash on the board; adds the task's `## Built` line; moves lasting user answers to conventions.md "User decisions in force" (one line each); **removes the task's lines from handoff.md**; after the unit's last commit, resets `current.md` |
-| Phase ends | manager | Runs qc `REGRESSION` then security-qc `PHASE`; writes the results under the phase heading; on checkpoint pass writes `Checkpoint: passed <date>` |
-| Feature ends | manager | Runs qc then security-qc `FEATURE` (when it has more than one phase); checks the definition of done; writes `SUMMARY.md`; asks the user once, then deletes every other file in `<F>/`; sets the row `done` |
+| Checkpoint reached | manager | Small checkpoint: qc `CHECKLIST`, then `CHECK tier=0`. Phase checkpoint: qc then security-qc `CHECKLIST`, then `CHECK` tier 1 → 2 → 3; on pass writes `Checkpoint <name>: passed <date>`; after the last checkpoint of a phase, the phase results and, on the user's yes, `Checkpoint: passed <date>` |
+| Feature ends | manager | Builds `CHECKLIST.md` (qc merge and run, or a copy for a one-phase feature); checks the definition of done; writes `SUMMARY.md`; asks the user once, then deletes every other file in `<F>/` except `CHECKLIST.md`; sets the row `done` |
 | handoff.md over ~3 KB or conventions.md over ~10 KB | manager | Trims: closed items out of handoff; module-only or stale facts from conventions into the archive |

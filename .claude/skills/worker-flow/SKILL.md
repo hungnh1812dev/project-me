@@ -73,7 +73,7 @@ If the message starts with `BATCH:`, load the shared files once, then run steps 
 
 ## Fix rounds
 
-The manager sends `FIX <unit>: <findings file>` (or `FIX <phase>: ...` / `FIX feature: ...` after the phase or feature checks: fix only the findings tagged with your scope, and start a fresh `current.md` named `<phase>-fix` or `feature-fix`). Read that file, fix each finding within the task scope, re-run steps 4 and 6 (steps 1-4 of Finish), and add a line per finding to the `Fix log` in `current.md`. For every `critical` or `high` finding you fixed, write its record in `<F>/resolved/` (format in `session-handoff`, "resolved/": problem, impact, root cause, fix applied; one line each, nothing else) before you report. Do not delete the findings file; the checker does that when its re-check passes. If a finding needs a design change or is outside the scope, report `blocked` instead of working around it.
+The manager sends `FIX <unit>: <findings file>` (or `FIX <checkpoint>: ...` / `FIX feature: ...` after a checkpoint or feature checklist: fix only the findings tagged with your scope, and start a fresh `current.md` named `<checkpoint>-fix` or `feature-fix`). Read that file, fix each finding within the task scope, re-run steps 4 and 6 (steps 1-4 of Finish), and add a line per finding to the `Fix log` in `current.md`. For every `critical` or `high` finding you fixed, write its record in `<F>/resolved/` (format in `session-handoff`, "resolved/": problem, impact, root cause, fix applied; one line each, nothing else) before you report. Do not delete the findings file; the checker does that when its re-check passes. If a finding needs a design change or is outside the scope, report `blocked` instead of working around it.
 
 ## State files
 
