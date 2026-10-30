@@ -1,8 +1,5 @@
 @import 'tailwindcss';
 @import '@abyss/form-commons/theme.css';
-@import '@abyss/form-commons/tokens.css';
-@import '@abyss/form-commons/styles.css';
-/* @source '../../node_modules/@abyss/form-commons/dist'; */
 
 @layer base {
   body {

@@ -7,15 +7,33 @@ build it first through `^build`).
 
 ## Exports
 
-| Import                           | What                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
-| -------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `@abyss/form-commons`            | `Button`, `buttonVariants`, `Input`, `Label`, `Field`, `FormAlert`, `TextInput`, `SelectInput`, `CheckboxInput`, `Checkbox`, `TextAreaInput`, `NumberInput`, `SwitchInput`, `DatePicker`, `DateTimePicker`, `JsonInput`, `isValidJsonText`, `RichtextInput`, `richtextExtensions`, `normalizeRichtextHtml`, `MediaInput`, `formatFileSize`, `SortableSheet`, `TablePagination`, `BulkActionBar`, `Textarea`, `Radio`, `Switch`, `NativeSelect`, `Dialog`, `DialogClose`, `DialogContent`, `DialogDescription`, `DialogFooter`, `DialogHeader`, `DialogOverlay`, `DialogTitle`, `DialogTrigger`, `FIELD_ID_SUFFIX`, `CSP_NONCE_META_NAME`, and the prop and label types (ESM + CJS + d.ts) |
-| `@abyss/form-commons/styles.css` | Compiled CSS: tokens + the utilities the components use, no reset                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
-| `@abyss/form-commons/theme.css`  | Tailwind v4 `@theme` mapping + tokens, for apps that run Tailwind                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
-| `@abyss/form-commons/tokens.css` | CSS variables only                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| Import                            | What                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `@abyss/form-commons`             | `Button`, `buttonVariants`, `Input`, `Label`, `Field`, `FormAlert`, `TextInput`, `SelectInput`, `CheckboxInput`, `Checkbox`, `TextAreaInput`, `NumberInput`, `SwitchInput`, `DatePicker`, `DateTimePicker`, `JsonInput`, `isValidJsonText`, `RichtextInput`, `richtextExtensions`, `normalizeRichtextHtml`, `MediaInput`, `formatFileSize`, `SortableSheet`, `TablePagination`, `BulkActionBar`, `Textarea`, `Radio`, `Switch`, `NativeSelect`, `Dialog`, `DialogClose`, `DialogContent`, `DialogDescription`, `DialogFooter`, `DialogHeader`, `DialogOverlay`, `DialogTitle`, `DialogTrigger`, `FIELD_ID_SUFFIX`, `CSP_NONCE_META_NAME`, and the prop and label types (ESM + d.ts) |
+| `@abyss/form-commons/<component>` | One component per entry, kebab-case: form blocks by folder (`text-input`, `richtext-input`, `sortable-sheet`, ...) and primitives by name (`button`, `dialog`, `native-select`, ...). Same exports as the root for that component                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| `@abyss/form-commons/styles.css`  | Compiled CSS: tokens + the utilities the components use, no reset                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| `@abyss/form-commons/theme.css`   | Tailwind v4 `@theme` mapping + tokens, for apps that run Tailwind                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| `@abyss/form-commons/tokens.css`  | CSS variables only                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 
 JS has no side effects (`sideEffects` lists only CSS), so unused components
 are tree-shaken.
+
+### Per-component entries
+
+`tsup.config.ts` builds one entry per folder in `src/components/forms/` and
+per component file in `src/components/ui/`, so a new component gets its
+subpath with no config change. Shared code lands in `dist/chunks/`, so
+importing `button` does not load the editor. Use a subpath to lazy-load a
+heavy component (tiptap ships only with `richtext-input`):
+
+```tsx
+const RichtextInput = React.lazy(() =>
+  import('@abyss/form-commons/richtext-input').then((m) => ({ default: m.RichtextInput })),
+);
+```
+
+Code that imports the same component from the root barrel puts it back in
+the main bundle.
 
 ### Public API
 
@@ -30,8 +48,10 @@ deliberate edit of the snapshot and every consumer in the same change.
 ```css
 @import 'tailwindcss';
 @import '@abyss/form-commons/theme.css';
-@source '../node_modules/@abyss/form-commons/dist';
 ```
+
+`theme.css` brings the tokens and its own `@source` for `dist/`, so this is
+the only import. Do not add `styles.css` or `tokens.css` as well.
 
 ### Using it without Tailwind
 
@@ -176,7 +196,7 @@ pnpm --filter @abyss/form-commons exec shadcn add <name>
 
 | Script      | What it does                                                                          |
 | ----------- | ------------------------------------------------------------------------------------- |
-| `build`     | tsup (ESM, CJS, d.ts) + Tailwind CLI for `dist/styles.css`                            |
+| `build`     | tsup (ESM, d.ts) + Tailwind CLI for `dist/styles.css`                                 |
 | `test`      | Vitest + Testing Library (jsdom)                                                      |
 | `lint`      | Oxlint (base-config + react, jsx-a11y, vitest) then ESLint (base-config, react-hooks) |
 | `typecheck` | `tsc --noEmit`                                                                        |
