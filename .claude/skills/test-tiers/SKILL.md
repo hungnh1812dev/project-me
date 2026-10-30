@@ -13,7 +13,7 @@ A full production-like stack (images, containers, proxy) is slow to build and st
 |---|---|---|
 | **1** | The unit and integration test commands from `project.md` | Every unit runs it. Enough alone for a behavior-preserving change (refactor, file moves, internal logic) with no change to a user flow, page or API response |
 | **2** | e2e against the apps in dev mode, with only the backing services they need (database, mail sink) from ready images, no image build. Single specs, not the whole suite | A changed user flow, page, endpoint or API response |
-| **3** | The full production-like stack from `project.md` (built images, proxy, production build and settings), plus the full e2e suite | Only what dev mode cannot show (list below), and every phase check |
+| **3** | The full production-like stack from `project.md` (built images, proxy, production build and settings), plus the full e2e suite | Only what dev mode cannot show (list below), and every phase and feature check |
 
 Each tier includes the ones below it: tier 2 and 3 start from a green tier 1.
 
@@ -31,7 +31,7 @@ Each tier includes the ones below it: tier 2 and 3 start from a green tier 1.
 - **Builder** writes the tier and its reason in `Checks needed` (`worker-flow`), e.g. `qc-cli tier 1 (behavior-preserving move; integration suite)`. Lowest tier the rules allow.
 - **qc** runs that tier. It may raise the tier when the diff touches a tier 3 area the builder did not count, saying why; it never lowers it. qc starts and stops the stack for its tier.
 - **security-qc** never starts or stops a stack. Tier 1: static review. Tier 2: dynamic checks of authz, object access, input validation and error bodies on the dev stack. Tier 3: headers, CSP, cookies, CORS, redirects, proxy routing and production-only behavior on the full stack. If the diff touches a tier 3 area and only a lower tier is running, it reviews those items statically and reports them as `not verified dynamically (needs tier 3)`, never as passed.
-- **Manager** passes the tier to both checkers, asks qc to keep its stack running when security-qc needs it, and starts the full stack for a security-qc recheck that reported `needs tier 3`. Phase checks are always tier 3.
+- **Manager** passes the tier to both checkers, asks qc to keep its stack running when security-qc needs it, and starts the full stack for a security-qc recheck that reported `needs tier 3`. Phase and feature checks are always tier 3.
 
 ## Commands and fallbacks
 

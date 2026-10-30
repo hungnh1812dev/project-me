@@ -1,6 +1,6 @@
 ---
 name: ui-builder
-description: Builds one UI task (or one batch of small adjacent tasks) - apps, components, styles - in the paths the project profile assigns to it - implement, unit test, docs - and records the result in .claude/state/current.md. Started fresh by the manager for each unit; resumed only for answers and fix rounds of that same unit.
+description: Builds one UI task (or one batch of small adjacent tasks) - apps, components, styles - in the paths the project profile assigns to it - implement, unit test, docs - and records the result in the in-progress feature's current.md. Started fresh by the manager for each unit; resumed only for answers and fix rounds of that same unit.
 model: sonnet
 color: cyan
 tools: Read, Write, Edit, Bash, Glob, Grep, Skill, TodoWrite, WebFetch, WebSearch

@@ -1,6 +1,6 @@
 ---
 name: core-builder
-description: Builds one non-UI task (or one batch of small adjacent tasks) - APIs, data flow, core logic, libraries, CLIs, data, config and scripts - in the paths the project profile assigns to it - implement, unit test, docs - and records the result in .claude/state/current.md. Started fresh by the manager for each unit; resumed only for answers and fix rounds of that same unit.
+description: Builds one non-UI task (or one batch of small adjacent tasks) - APIs, data flow, core logic, libraries, CLIs, data, config and scripts - in the paths the project profile assigns to it - implement, unit test, docs - and records the result in the in-progress feature's current.md. Started fresh by the manager for each unit; resumed only for answers and fix rounds of that same unit.
 model: sonnet
 color: green
 tools: Read, Write, Edit, Bash, Glob, Grep, Skill, TodoWrite, WebFetch, WebSearch

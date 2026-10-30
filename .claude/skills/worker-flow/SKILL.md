@@ -7,20 +7,22 @@ description: The pipeline every builder agent (core-builder, ui-builder) runs fo
 
 Run these steps in order for every task. Your agent file says which skills you may load at each step; load each one only when you reach its step, and no others. Do not move on until the step's exit check passes. Browser testing and the security review are done by other agents, working from your `current.md`. The state files you write and their formats are under "State files" below.
 
+`<F>` below is the in-progress feature's folder, `.claude/state/features/<feature>/`: the `in-progress` row of `.claude/state/features.md` names it. Every task, direct request included, belongs to that feature.
+
 ## 1. Load the task
 The manager's message is only `TASK <ID>` (or `BATCH: ...`) plus optional notes. Find out what to do from the files, reading only what you need:
 
 1. `.claude/state/project.md`: in full. It names the task source, spec, your scope, stack, and commands.
-2. `.claude/state/board.md`: grep the task's row, plus the decision lines at the top.
-3. The task source from `project.md`: that task's entry only (acceptance, verify, files, dependencies, spec refs). For a direct request (`DR<n>`), the entry is its `### DR<n>` brief under `## Direct requests` in `handoff.md`; it has no spec refs.
-4. `.claude/state/handoff.md`: in full (it is short). Take the user answers, provisional decisions, and follow-ups that name this task.
+2. `.claude/state/features.md`: the `in-progress` row (feature name, folder, apps). Then `<F>/board.md`: grep the task's row, plus the decision lines at the top.
+3. The task source from `project.md`: that task's entry only (acceptance, verify, files, dependencies, spec refs). For a direct request (`DR<n>`), the entry is its `### DR<n>` brief under `## Direct requests` in `<F>/handoff.md`; it has no spec refs.
+4. `<F>/handoff.md`: in full (it is short). Take the user answers, provisional decisions, and follow-ups that name this task.
 5. The spec: only the sections the task entry cites. Never the whole file.
 6. `.claude/state/conventions.md`: grep only the section for your area, when you need it. For the history of a finished area, grep `.claude/state/archive/` (never read it in full).
 7. The code and docs for the files the entry lists. Module details live in each module's README / `docs/modules/`, not in the state files.
 
 Then restate the goal and acceptance criteria in 2-3 lines (for yourself). If the files disagree, `project.md` lacks something you need, or you would have to make an assumption that matters, **stop and report `blocked`** with questions. Do not guess.
 
-Overwrite `.claude/state/current.md` with the unit header (`# Current Unit: <unit>`), unless you are the second builder of the same task: then add your section below the first builder's.
+Overwrite `<F>/current.md` with the unit header (`# Current Unit: <unit>`), unless you are the second builder of the same task: then add your section below the first builder's.
 
 Exit: every acceptance criterion is clear and testable.
 
@@ -71,11 +73,11 @@ If the message starts with `BATCH:`, load the shared files once, then run steps 
 
 ## Fix rounds
 
-The manager sends `FIX <unit>: <findings file>` (or `FIX <phase>: ...` after the phase checks: fix only the findings tagged with your scope, and start a fresh `current.md` named `<phase>-fix`). Read that file, fix each finding within the task scope, re-run steps 4 and 6 (steps 1-4 of Finish), and add a line per finding to the `Fix log` in `current.md`. Do not delete the findings file; the checker does that when its re-check passes. If a finding needs a design change or is outside the scope, report `blocked` instead of working around it.
+The manager sends `FIX <unit>: <findings file>` (or `FIX <phase>: ...` / `FIX feature: ...` after the phase or feature checks: fix only the findings tagged with your scope, and start a fresh `current.md` named `<phase>-fix` or `feature-fix`). Read that file, fix each finding within the task scope, re-run steps 4 and 6 (steps 1-4 of Finish), and add a line per finding to the `Fix log` in `current.md`. For every `critical` or `high` finding you fixed, write its record in `<F>/resolved/` (format in `session-handoff`, "resolved/": problem, impact, root cause, fix applied; one line each, nothing else) before you report. Do not delete the findings file; the checker does that when its re-check passes. If a finding needs a design change or is outside the scope, report `blocked` instead of working around it.
 
 ## State files
 
-All in `.claude/state/`. Short, no pasted code or diffs, point to file paths.
+`conventions.md` is in `.claude/state/`; `current.md`, `handoff.md` and `resolved/` are in `<F>`. Short, no pasted code or diffs, point to file paths.
 
 `current.md` (unit record): overwrite it at the start of a unit, complete it at finish, add to the fix log after each fix round. Checkers test and review only what it lists. One section per task in a batch:
 
@@ -122,6 +124,6 @@ Details live in `current.md`; do not repeat them here. No greeting, no narrative
 BUILD REPORT
 unit: <unit>
 status: ready-for-checks | blocked | failed     (per task for a batch: <ID> <status>)
-record: .claude/state/current.md
+record: .claude/state/features/<feature>/current.md
 questions: <numbered list, only when blocked>
 ```

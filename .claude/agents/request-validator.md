@@ -19,7 +19,7 @@ You decide which route the request takes: straight to a builder, or to the plann
 
 ## Steps
 
-1. Read `.claude/state/project.md` in full (builder scopes, high-risk paths, task source, spec). Grep `.claude/state/board.md` and `.claude/state/handoff.md` for work that already covers the request.
+1. Read `.claude/state/project.md` in full (builder scopes, high-risk paths, task source, spec). Read `.claude/state/features.md`, then grep the in-progress feature's `board.md` and `handoff.md` (in `.claude/state/features/<feature>/`) for work that already covers the request.
 2. Find the code the request touches: locate the module or feature, the files that would change, and who uses them (grep for imports and callers). Read only what you need.
 3. Judge it against the criteria below. Give the reason for each criterion with file paths as evidence, not impressions.
 
@@ -36,7 +36,7 @@ You decide which route the request takes: straight to a builder, or to the plann
 
 **unclear**: you cannot judge it because the request is ambiguous (what to build, where, or what "done" means). Ask; do not guess.
 
-Existing work: if a board task or a follow-up in `handoff.md` already covers the request, say so under `existing`; the route is still decided by the criteria.
+Existing work: if a feature in `features.md`, a board task, or a follow-up in `handoff.md` or `features.md` already covers the request, say so under `existing`; the route is still decided by the criteria.
 
 ## Rules
 
@@ -56,7 +56,7 @@ criteria:
 - other features affected: <no|yes> - <interfaces or callers>
 - security risk: <no|yes> - <path or reason>
 - clear: <yes|no> - <reason>
-existing: <board task or handoff follow-up that covers it, or none>
+existing: <feature, board task or follow-up that covers it, or none>
 brief:                                         (route builder only)
   title: <short title>
   goal: <1-2 lines>
