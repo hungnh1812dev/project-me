@@ -16,10 +16,10 @@
     },
 
     // Git Source Control
-    "git.autorefresh": false,
-    "git.countBadge": "off",
-    "git.autofetch": false,
-    "git.ignoreLimitWarning": true
+    // "git.autorefresh": false,
+    // "git.countBadge": "off",
+    // "git.autofetch": false,
+    // "git.ignoreLimitWarning": true
   },
   "extensions": {
     "recommendations": [

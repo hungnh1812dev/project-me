@@ -38,3 +38,4 @@ docs/adr
 tasks/
 
 .archify
+graphify-out
