@@ -14,7 +14,7 @@ Features (`src/features/`):
 - `backups`: owner-only list of the nightly database backups and a download behind password + 2FA code (ADR 0013). The nav item always shows for the owner; the page reads the list only when the owner presses "Check backups" (the server throttles it per actor), and then shows the not-configured state when the storage keys are unset.
 - `status`: status page that calls `GET /api/v1/health/live`.
 
-## Auth (T11, D14)
+## Auth (D14)
 
 - **Session state**: Redux Toolkit `authSlice` (`src/features/auth/Auth.slice.ts`):
   `status` (`unknown` until the start-up refresh settles, then
@@ -42,7 +42,7 @@ Features (`src/features/`):
   `signOut`, `expire`), wired in `src/app/AppServices.setup.ts`. Every refresh goes
   through one single-flight call. The cookie rotates on use, so two parallel
   refreshes would look like token reuse and revoke the session.
-- **Across tabs** (T11a): `src/features/auth/CrossTabRefresh.ts`. Tabs take turns
+- **Across tabs**: `src/features/auth/CrossTabRefresh.ts`. Tabs take turns
   under the Web Lock `abyss-admin:refresh`; the tab that refreshes posts the
   new access token on the BroadcastChannel `abyss-admin:session`, and a tab
   that waited uses it instead of sending its own refresh. If the message is
@@ -62,7 +62,7 @@ Features (`src/features/`):
 - **Login errors** are generic (`Login.errors.ts`): incorrect credentials (any
   4xx), rate limited (429; uses `Retry-After` when cms-api exposes it via CORS,
   otherwise a generic wait message), network, unexpected.
-- **2FA (T13)**: a `requires2FA` login answer opens `TwoFactorModal` (kit
+- **2FA**: a `requires2FA` login answer opens `TwoFactorModal` (kit
   `Dialog` via `src/components/Modal.tsx`: focus trap, Esc closes, an outside
   click does not). The temp
   token stays in component state only. TOTP accounts type the app code;
@@ -77,9 +77,9 @@ Features (`src/features/`):
   `session.expire('password-changed')` and the sign-in page shows why
   (`auth.endNotice`). Re-auth failures come back as 403, so the interceptor
   never treats them as an expired session.
-- **Access (T18)** (`src/features/access`): `/accounts` (paged list, invite
+- **Access** (`src/features/access`): `/accounts` (paged list, invite
   dialog, disable with a named confirmation, Enable and Resend invite without
-  confirmation (T18a), shown only on manageable rows and with `accounts:update` /
+  confirmation, shown only on manageable rows and with `accounts:update` /
   `accounts:create`), `/roles` and `/roles/:roleId`
   (permission matrix: subjects x actions; content rows open readable /
   writable field pickers fed by `GET /content-types`, sensitive fields
@@ -92,7 +92,7 @@ Features (`src/features/`):
   every rule and its answers (403, 404, 409) are handled in the UI. Dialogs
   use the form-commons Radix `Dialog`; `components/Modal.tsx` (2FA) wraps it
   and ignores outside clicks and focus. A lint rule forbids `<dialog`.
-- **API tokens (T19)** (`/api-tokens`, `ApiTokensPage.tsx`): paged list
+- **API tokens** (`/api-tokens`, `ApiTokensPage.tsx`): paged list
   (name + token prefix, access summary, derived status, expiry, last used;
   "Created by" appears when the list holds other accounts' tokens). Create
   and Edit share `TokenFormDialog` (name, optional expiry date = end of that
@@ -109,9 +109,8 @@ Features (`src/features/`):
   the list); the nav link needs `api_tokens:read`. Grid cells
   the caller's role does not hold are disabled (hint only); a 403
   `API_TOKEN_SCOPE_NOT_HELD` marks the refused cells by `details.indexes`.
-- **Dynamic document form (T23)** (`src/features/content`):
-  `/content/:slug/new` and `/content/:slug/:documentId` (`DocumentEditPage`;
-  no list or nav link until T34). The form is built from
+- **Dynamic document form** (`src/features/content`):
+  `/content/:slug/new` and `/content/:slug/:documentId` (`DocumentEditPage`). The form is built from
   `GET /content-types/:slug` (`FieldTree.rules.ts` rebuilds the tree from the flat
   path list) and the draft from `GET /documents/:slug/:id?status=draft`.
   `DynamicFormRenderer` maps each field type to a form-commons input through
@@ -121,21 +120,21 @@ Features (`src/features/`):
   depth limit; each item keeps its `componentUid` in form state
   (`ITEM_UID_KEY`). Masked fields (`_maskedFields`) show "Protected (***)",
   read-only, and are never sent. Richtext uses the Tiptap `RichtextInput` (sent as HTML,
-  blank = null). Media fields (T29, `features/media/MediaField.tsx`) hold the embedded file
+  blank = null). Media fields (`features/media/MediaField.tsx`) hold the embedded file
   the API returns and send only its uuid (null detaches); the field offers
   the library picker (`MediaPickerDialog`, needs `media:read`) and upload
   (needs `media:create`).
-  Media library (T29): `/media` (`features/media/`) lists files with upload,
+  Media library: `/media` (`features/media/`) lists files with upload,
   alt text edit (PATCH, blank clears) and delete behind a confirm; a file
   still attached to a document keeps the dialog open with the `MEDIA_IN_USE`
   reason. Shown in the nav for roles with `media:read`; buttons follow the
   `media` create/update/delete permissions.
   Create sends every filled field; save on an existing draft sends only the
   top-level fields and component lists that changed, plus `version`
-  (`Document.form.ts`). A 409 opens the conflict merge modal (T25, below);
+  (`Document.form.ts`). A 409 opens the conflict merge modal (below);
   a 400 `DOCUMENT_INVALID` shows the server's message. `required` is not in
   the content-types API, so required marks and errors come from the server.
-- **Conflict merge (T25)** (`ConflictMergeModal`, `Merge.reducer.ts`,
+- **Conflict merge** (`ConflictMergeModal`, `Merge.reducer.ts`,
   `MergeTree.rules.ts`, `MergeDescribe.rules.ts`): a 409 `DOCUMENT_VERSION_CONFLICT` on
   a draft save opens a modal listing the server's `diff` as `DiffViewerBlock` cards (local to
   `features/content`; saved vs your version; default = keep yours; "Keep
@@ -146,13 +145,13 @@ Features (`src/features/`):
   `currentVersion`; all-saved just reloads. A second 409 re-diffs inside the
   modal. If the role cannot read the row, or only masked fields differ, the
   page keeps the reload alert only.
-- **Presence (T26)** (`PresenceBanner`): on an existing document, a React Query
+- **Presence** (`PresenceBanner`): on an existing document, a React Query
   heartbeat `POST /documents/:slug/:id/presence` every 20 s
   (`PRESENCE_HEARTBEAT_MS`) while the page is open; it stops on unmount. The
   response includes the caller, who is filtered out by account id. Other
   editors show as an info banner; a failed heartbeat (403, 404, network)
   hides the banner.
-- **Collection list and bulk (T35)** (`CollectionListPage`, `BulkCreateDialog`,
+- **Collection list and bulk** (`CollectionListPage`, `BulkCreateDialog`,
   `BulkDeleteDialog`, `bulk.ts`): `/content/:slug` lists a collection (drafts
   for draft-and-publish types, `GET /documents/:slug?status=draft`, 20 per
   page) in a form-commons `SortableSheet`: up to three root scalar columns of
@@ -171,7 +170,7 @@ Features (`src/features/`):
   failed item is listed by position; "All or nothing" sends `atomic: true` and
   shows the one failing item. Single types show an explanation instead of a
   list. There is no nav link yet; open the route directly.
-- **Owner setup** (OS2, `/setup`): public page, reachable only while
+- **Owner setup** (`/setup`): public page, reachable only while
   `GET /setup/status` says `open` (else it redirects to `/login`). Fields: setup
   token (`OWNER_SETUP_TOKEN` of cms-api, password type, kept in form state only,
   never in the URL, storage or store), email, optional display name, password and
@@ -203,7 +202,7 @@ XApiProvider)`). `app/AppRoutes.setup.tsx` and `AppShell` iterate the registry;
 
 End-to-end coverage lives in [`apps/e2e`](../e2e/README.md).
 
-## Reviewer access (T32)
+## Reviewer access
 
 - `/reviewer` (nav "Reviewers", needs `reviewer_settings:read`; owner by
   default): the on/off switch (`PUT /reviewer/settings`, needs `update`;
@@ -278,7 +277,7 @@ routes. The build fails without `VITE_API_BASE_URL`.
 
 The `abyss/file-names` ESLint rule (ADR 0008, run by `pnpm lint`) fails on a file or folder under `src/` and `test/` that breaks the naming rule.
 
-## Security headers (SPEC D17, T36)
+## Security headers (SPEC D17)
 
 nginx sends the CSP, HSTS, `nosniff` and `Referrer-Policy` on every response
 (every location includes `/etc/nginx/conf.d/security-headers.inc`, rendered at

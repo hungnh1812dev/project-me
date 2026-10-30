@@ -275,7 +275,7 @@ Next.js standalone server run by Node as uid 1000. It is not behind nginx; its s
 | runtime env | `WEB_REVALIDATE_SECONDS`         | `60` (data cache for server-side fetches; `0` disables it)                         |
 | runtime env | `WEB_PORT`                       | `8080` (image default)                                                             |
 
-The build args are GitHub Environment variables (`docs/ci-cd.md`, "What you must create in GitHub"); changing one means a new image, not a new rollout of the old one. The runtime variables are read by the Node server at start, so changing them needs a pod restart. `API_INTERNAL_URL` is server-only: it never reaches the browser, and the server calls cms-api anonymously.
+The build args are GitHub Environment variables (`docs/ci-cd.md`, "GitHub setup, step by step"); changing one means a new image, not a new rollout of the old one. The runtime variables are read by the Node server at start, so changing them needs a pod restart. `API_INTERNAL_URL` is server-only: it never reaches the browser, and the server calls cms-api anonymously.
 
 ```yaml
 containers:

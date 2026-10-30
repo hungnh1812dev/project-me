@@ -1,6 +1,6 @@
 # cms-admin navigation: side menu
 
-Status: implemented SM1-SM3 (2026-10-26); Q-SM1..Q-SM4 decided as recommended (user, 2026-10-25). Tasks SM1-SM4 in `tasks/todo.md`.
+Status: implemented (2026-10-26). Q-SM1..Q-SM4 decided as recommended (user, 2026-10-25).
 
 ## What changes
 
@@ -42,7 +42,7 @@ A section or sub-heading with no visible item is not rendered (today both conten
 - New section: one entry in `NAV_SECTIONS` plus one copy label.
 - New content type: nothing (it appears from the catalog under its kind).
 
-## Open questions
+## Decisions (all as recommended)
 
 - **Q-SM1: where a single-type link goes.** Recommended: `/content/:slug`; for a `single` type the page opens the one document's edit form, or the create form when none exists (planned change in `features/content`; today the list page shows a "not a collection" notice). Alternative: the link goes to the list page and keeps the notice (no behaviour change, but the link is a dead end).
 - **Q-SM2: "permissions" and "users".** There is no separate permissions page; a role's permissions open from the Roles list (`/roles/:roleId`). Recommended: one item "Roles and permissions" (route `/roles`), and the "Accounts" label becomes "Users" (copy only, route `/accounts` unchanged). Alternative: keep "Roles" and "Accounts" labels as they are.
