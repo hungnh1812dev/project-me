@@ -39,3 +39,6 @@ tasks/
 
 .archify
 graphify-out
+
+# rollup-plugin-visualizer output
+apps/cms-admin/stats.html
