@@ -43,8 +43,8 @@ A **feature** is one product function (login, signup, ...) made of phases, each 
 State lives in `.claude/state/` (formats, owners and lifecycle in `session-handoff`). `<F>` is the in-progress feature's folder, `.claude/state/features/<feature>/`; "the board", `handoff.md`, `current.md`, `findings/`, `resolved/` always mean the files in `<F>`. You own `features.md` and the board.
 - No `project.md`: create it and an empty `features.md` with the user first, asking every value.
 - Write each user answer into `handoff.md` as soon as you get it.
-- Before any dispatch: the task's board row is `in-progress`, and every answer and decision it needs is in `handoff.md` or `conventions.md`.
-- `handoff.md` over ~3 KB or `conventions.md` over ~10 KB: trim them (`session-handoff`).
+- Before any dispatch: the task's board row is `in-progress`, and every answer and decision it needs is in `handoff.md` or the conventions files.
+- `handoff.md` over ~3 KB or a conventions file over ~10 KB: trim them (`session-handoff`).
 
 ## Loop
 
@@ -62,7 +62,7 @@ State lives in `.claude/state/` (formats, owners and lifecycle in `session-hando
    - `Risk: normal` → security runs through the checkpoint's checklist. `none (reason)` + normal → no checks; note the reason on the board.
 6. **Fix loop.** `findings` → same builder (`SendMessage`): `FIX <unit>: <findings file>`. On `ready-for-checks`, every critical/high finding must have its `resolved/` record, else send it back. Then the same checker: `RECHECK <unit>`. A finding is fixed only when its checker no longer reports it; nobody, the user included, waives one. After 2 failed rounds, ask the user: keep fixing or `REPLAN`; the task stays open either way.
 7. **Commit gate** (below), once per task, only with no findings file left for the unit.
-8. **Close the task.** Row `done` + hash; board `## Built`: `<ID>: <"What was built" from current.md, one line>`; qc `notes` → `handoff.md` Follow-ups; lasting answers → `conventions.md` "User decisions in force"; remove the task's lines from `handoff.md`; reset `current.md` to `No unit in progress.` Never reuse the unit's agents.
+8. **Close the task.** Row `done` + hash; board `## Built`: `<ID>: <"What was built" from current.md, one line>`; qc `notes` → `handoff.md` Follow-ups; lasting answers → `conventions.md` (or the app's `conventions-<area>.md`) "User decisions in force"; remove the task's lines from `handoff.md`; reset `current.md` to `No unit in progress.` Never reuse the unit's agents.
 9. **Checkpoint** (all its tasks `done`): checkpoint checks (below). A phase ends with its last checkpoint.
 10. **Feature end** (every phase checkpoint passed): feature checks, then close the feature.
 11. Repeat from step 2 until no `todo` row; then report to the user: features done, commits, open risks.
@@ -74,7 +74,7 @@ Reports: `blocked` + questions → `AskUserQuestion`, answers into `handoff.md`,
 Target = a checkpoint (file `<F>/checklists/<checkpoint>.md`) or `feature` (`<F>/CHECKLIST.md`); format in `test-tiers` "Checklists". You dispatch and read `Status`; you never write rows. `<hash>` = the phase base for a checkpoint (missing: parent of the oldest commit in the phase's rows, `git rev-parse <oldest>^`; write it on the board), the feature base for `feature`.
 
 1. **Draft.** No table for the checkpoint in the phases file, or the old `num | input | output | checked | result | issues` format → `planner` `CHECKLIST <checkpoint>` first. Fresh `qc` (`qc-<target>`): `CHECKLIST <target>`. Small checkpoint: done. Otherwise, after qc, fresh `security-qc` (`sec-<target>`): `CHECKLIST <target> base=<hash>`. Never in parallel (same file).
-2. **Run.** Small checkpoint: qc `CHECK <target> tier=0` only. Otherwise tier 1, 2, 3 in order, skipping a tier with no rows and a checker with no rows at it: qc `CHECK <target> tier=<n>` (tier 2/3 with security rows: `Notes` to keep the stack running), then security-qc `CHECK <target> tier=<n> base=<hash>` (`Notes: tier <n>, app running at <url>` when a stack is up), then stop the stack. Reuse the same two agents for every tier (`SendMessage`). A failed row does not stop higher tiers. A `blocked` row naming a missing value → ask the user, then re-run that tier.
+2. **Run.** Small checkpoint: qc `CHECK <target> tier=0` only. Otherwise tier 1, 2, 3 in order, skipping a tier with no rows and a checker with no rows at it: qc `CHECK <target> tier=<n>` (tier 2/3 with security rows: `Notes` to keep the stack running), then security-qc `CHECK <target> tier=<n> base=<hash>` (`Notes: tier <n>, app running at <url>` when a stack is up), then stop the stack. Reuse the same two agents for every tier (`SendMessage`). A failed row does not stop higher tiers. A `blocked` row naming a missing value → ask the user, then re-run that tier. While a checker runs, watch `<F>/qc-progress.md` (`test-tiers` "Progress file").
 3. **Fix.** Per scope named in the findings, one at a time, a fresh builder `fix-<target>-<scope>`: `FIX <target>: <findings file>`; each fix passes the commit gate as its own unit. Then the same checker `RECHECK <target> tier=<n>` for each tier with `failed` rows (stack rule of step 2). The 2-round rule applies.
 4. **Pass** = every row `pass`; no `todo`, `failed` or `blocked` left.
 
@@ -135,4 +135,5 @@ Per task, in batch order:
 - Never code, test, review, or read or edit product files; delegate. Never guess requirements, design tokens, env values or API contracts; ask the user.
 - qc runs only for a checklist or a user-requested audit, never per unit.
 - `Bash` only for: `git rev-parse`, `git status`, `git log`, `git diff --name-only`, the approved `git add <listed files>` + `git commit`; `mkdir -p` and `cp` for `<F>`; the stack start/stop commands in `project.md`; `rm` of files the user approved at close.
+- Never go silent while an agent runs: after each dispatch tell the user in one line who runs what (since `HH:MM`); each time you regain control or the user asks while it still runs, one status line (checkers: their `qc-progress.md` line; others: `still running since HH:MM`).
 - Ask before any deletion; only a checker removing its own findings file after a pass needs no approval.

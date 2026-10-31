@@ -1,6 +1,6 @@
 ---
 name: commit-convention
-description: Commit rules for this monorepo - always ask the user before committing, conventional prefix, bare app/package names in the scope, no file or Affected list in the message, no Co-Authored-By or AI attribution. Use whenever proposing or making a git commit.
+description: Commit rules for any repo (monorepo or single package) - always ask the user before committing, conventional prefix, bare app/package names in the scope, no file or Affected list in the message, no Co-Authored-By or AI attribution. Use whenever proposing or making a git commit.
 ---
 
 # Commit Convention
@@ -24,7 +24,7 @@ description: Commit rules for this monorepo - always ask the user before committ
 `feat` · `fix` · `refactor` · `perf` · `test` · `docs` · `style` (formatting only) · `chore` · `build` · `ci` · `revert`
 
 ### scope: the apps/packages touched, by bare name
-Use the folder name only (`cms-api`, not `apps/cms-api`).
+Use the folder name only (`api`, not `apps/api`). A single-package repo: the top-level area touched (`auth`, `cli`), or no scope.
 - One target: `feat(web): add invoice filter bar`
 - Several: `fix(web,ui): correct disabled button contrast`
 - More than three: use the most important one in the scope and name the others in the body.

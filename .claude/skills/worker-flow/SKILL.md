@@ -14,10 +14,10 @@ Run the steps in order; move on only when a step's exit check passes. Load a ski
 The dispatch is only `TASK <ID>` (or `BATCH: ...`) plus optional notes. Read only what you need:
 1. `.claude/state/project.md` in full (task source, spec, your scope, stack, commands).
 2. `features.md`: the `in-progress` row. `<F>/board.md`: grep the task's row and the decision lines at the top.
-3. The task's entry in the task source (acceptance, verify, files, deps, spec refs). A direct request `DR<n>`: its `### DR<n>` brief in `<F>/handoff.md` (no spec refs).
+3. The task's entry in the task source (`section <file> --id <ID>`, `lean-reading`): acceptance, verify, files, deps, spec refs. A direct request `DR<n>`: its `### DR<n>` brief in `<F>/handoff.md` (no spec refs).
 4. `<F>/handoff.md` in full: user answers, provisional decisions, follow-ups naming this task.
 5. Only the spec sections the entry cites.
-6. `conventions.md`: grep your area's section when needed; history of a finished area: grep `.claude/state/archive/`.
+6. Conventions, when needed: grep `conventions.md` (cross-cutting) and the `conventions-<area>.md` its header names for your app; history of a finished area: grep `.claude/state/archive/`.
 7. The code and docs of the listed files (module details are in its README / `docs/modules/`).
 
 Restate the goal and acceptance criteria for yourself in 2-3 lines. Files disagree, `project.md` lacks something, or an assumption would matter → **stop, report `blocked`** with questions.
@@ -60,14 +60,15 @@ Exit: docs match the code.
 
 ## 6. Finish
 
-1. Re-read your diff against §4: no duplicated responsibility, no "what" comments a better name would replace, no scattered edits in unrelated modules, no split finer than §4.4. Fix what you find.
-2. Format the changed files (`code-standards`); re-run the tests if formatting changed anything.
-3. Write the proposed commit message (`commit-convention`).
-4. Complete your section in `current.md`. Checkers test and review only what you list plus the diff, so be precise in "Behaviour to verify" and "Security-relevant". Set by rule:
+1. Code changed: run `graphify update .` (when `graphify-out/` exists) so the checkers' graph is current.
+2. Re-read your diff against §4: no duplicated responsibility, no "what" comments a better name would replace, no scattered edits in unrelated modules, no split finer than §4.4. Fix what you find.
+3. Format the changed files (`code-standards`); re-run the tests if formatting changed anything.
+4. Write the proposed commit message (`commit-convention`).
+5. Complete your section in `current.md`. Checkers test and review only what you list plus the diff, so be precise in "Behaviour to verify" and "Security-relevant". Set by rule:
    - `Checks needed`: `qc-browser (<flows>)` when a user sees the change in a page; `qc-cli (<e2e/API tests>)` for behaviour with no UI (endpoint, data, CLI); `none (<reason>)` only for docs, comments, or tooling with no runtime effect. Add the lowest allowed tier (`test-tiers`) and why, e.g. `qc-browser tier 3 (cookie flags changed)`.
    - `Risk: high (<why>)` for a high-risk path in `project.md`, `Security gate: yes`, or adding or changing auth, sessions, tokens, crypto, permissions, raw SQL from input, file upload, or payments. Otherwise `Risk: normal`.
-5. Update `handoff.md` and `conventions.md` (below).
-6. Return the report.
+6. Update `handoff.md` and `conventions.md` (below).
+7. Return the report.
 
 ## Batches
 
@@ -75,7 +76,7 @@ Exit: docs match the code.
 
 ## Fix rounds
 
-`FIX <unit>: <findings file>`, or `FIX <checkpoint>: ...` / `FIX feature: ...` (fix only findings tagged with your scope; start a fresh `current.md` named `<checkpoint>-fix` / `feature-fix`). Fix each finding within the task scope, redo steps 4 and 6.1-6.3, and add one `Fix log` line per finding. For each critical or high finding fixed, write `<F>/resolved/<finding id with # as ->.md` before you report; exactly these lines, nothing else from the process:
+`FIX <unit>: <findings file>`, or `FIX <checkpoint>: ...` / `FIX feature: ...` (fix only findings tagged with your scope; start a fresh `current.md` named `<checkpoint>-fix` / `feature-fix`). Fix each finding within the task scope, redo steps 4 and 6.1-6.4, and add one `Fix log` line per finding. For each critical or high finding fixed, write `<F>/resolved/<finding id with # as ->.md` before you report; exactly these lines, nothing else from the process:
 
 ```markdown
 # <finding id> <short title> (<severity>, <qc|security-qc>)
@@ -115,7 +116,7 @@ Fix log:
 
 `<F>/handoff.md` (unfinished work only, no history): at finish, one line under `In progress / next` (`<ID> <title> - awaiting checks/commit; next: <step>`) and your follow-ups under `Follow-ups` (`<item> -> <owner task or "unscheduled">`). The manager removes them at commit.
 
-`.claude/state/conventions.md`: only cross-cutting facts every builder needs (tooling, test setup, gotchas, user decisions in force), one line each, in the matching section; module details go in its README or `docs/modules/`.
+`.claude/state/conventions.md`: only cross-cutting facts every builder needs (tooling, test setup, gotchas, user decisions in force); a fact for one app goes in its `conventions-<area>.md`. One line each, in the matching section; module details go in its README or `docs/modules/`.
 
 ## Rules
 

@@ -13,9 +13,9 @@ Live files hold only what is still open. Code history is in git, module details 
 
 ```
 .claude/state/
-  project.md  features.md  conventions.md  archive/conventions-archive.md
+  project.md  features.md  conventions.md  conventions-<area>.md  archive/conventions-archive.md
   features/<feature>/            = <F>, the folder of the in-progress row of features.md
-    board.md  handoff.md  current.md  qc-issues-handoff.md
+    board.md  handoff.md  current.md  qc-issues-handoff.md  qc-progress.md
     checklists/<checkpoint>.md   findings/   resolved/
     CHECKLIST.md  SUMMARY.md     kept after close
 ```
@@ -28,11 +28,12 @@ Spec, task and phases files, design docs, ADRs and e2e tests live where `project
 |---|---|---|---|---|
 | `project.md` | manager, with the user | all, in full, at start | one line per item | never |
 | `features.md` | manager | all (the `in-progress` row); manager in full | one row per feature | never; closed rows stay `done` |
-| `conventions.md` | builders | grep the needed section | ~10 KB | stale or module-only facts → archive |
+| `conventions.md`, `conventions-<area>.md` | builders | grep the needed section | ~10 KB each | stale or module-only facts → archive |
 | `board.md` | manager | builders (task row), manager | - | at close |
 | `handoff.md` | builders; manager adds user answers | builders, planner, in full | ~3 KB | a task's lines when it is committed; file at close |
 | `current.md` | the unit's builder (format in `worker-flow`) | checkers, manager | one unit | manager resets after the unit's last commit; at close |
 | `qc-issues-handoff.md` | qc, security-qc (own section) | manager, checkers | - | at close (no `open` entry left) |
+| `qc-progress.md` | qc, security-qc (own line, format in `test-tiers`) | manager while a checker runs | one line per running checker | each checker removes its line at report; file at close |
 | `checklists/<checkpoint>.md` | qc, security-qc (format in `test-tiers`) | manager (`Status`), checkers | - | at close |
 | `CHECKLIST.md` | qc, security-qc; manager copies it for a one-phase feature | anyone | - | never |
 | `findings/<unit, checkpoint, feature or audit>-<qc or security>.md` | the failing checker (format in its agent file) | builder in a fix round | - | by its checker when the re-check passes |
@@ -40,7 +41,7 @@ Spec, task and phases files, design docs, ADRs and e2e tests live where `project
 | `SUMMARY.md` | manager at close | anyone | as short as possible | never |
 | `archive/*.md` | manager | grep on demand | - | never |
 
-Trim when over the limit: closed items out of `handoff.md`; module-only or stale facts from `conventions.md` into the archive.
+Trim when over the limit: closed items out of `handoff.md`; module-only or stale facts from the conventions files into the archive.
 
 ## project.md (project profile)
 
@@ -78,8 +79,8 @@ Open risks: <project-wide, one line>
 
 | # | Feature | Status | Folder | Apps / packages | Base | Summary |
 |---|---|---|---|---|---|---|
-| 1 | signup | done | features/signup/ | apps/cms-api, apps/web | <hash> | features/signup/SUMMARY.md |
-| 2 | login | in-progress | features/login/ | apps/cms-api, apps/web | <hash> | - |
+| 1 | signup | done | features/signup/ | apps/api, apps/web | <hash> | features/signup/SUMMARY.md |
+| 2 | login | in-progress | features/login/ | apps/api, apps/web | <hash> | - |
 | 3 | profile | todo | - | apps/web | - | - |
 
 ## Follow-ups
@@ -139,7 +140,7 @@ Only unfinished work: uncommitted tasks or tasks with checks pending, their user
 
 ## conventions.md
 
-Cross-cutting facts every builder may need, one line each, under: Tooling, Testing & smoke, Frontend, Backend, User decisions in force, Gotchas. Module structure and API details go in the module's README or `docs/modules/`.
+Facts every builder may need, one line each. `conventions.md`: cross-cutting (Tooling, Testing & smoke, User decisions in force, Gotchas), and its header names each `conventions-<area>.md` and the apps it covers. `conventions-<area>.md`: facts for one area, named by layer (`backend`, `frontend`, `mobile`, `infra`, ...), never by an app or package name (Testing, the area's rules, its user decisions). Module structure and API details go in the module's README or `docs/modules/`.
 
 ## resolved/
 

@@ -5,6 +5,7 @@ model: sonnet
 color: yellow
 tools: Read, Write, Edit, Bash, Glob, Grep, Skill, ToolSearch, mcp__chrome-devtools__new_page, mcp__chrome-devtools__list_pages, mcp__chrome-devtools__select_page, mcp__chrome-devtools__close_page, mcp__chrome-devtools__navigate_page, mcp__chrome-devtools__resize_page, mcp__chrome-devtools__take_snapshot, mcp__chrome-devtools__take_screenshot, mcp__chrome-devtools__click, mcp__chrome-devtools__hover, mcp__chrome-devtools__fill, mcp__chrome-devtools__fill_form, mcp__chrome-devtools__press_key, mcp__chrome-devtools__wait_for, mcp__chrome-devtools__evaluate_script, mcp__chrome-devtools__list_console_messages, mcp__chrome-devtools__get_console_message, mcp__chrome-devtools__list_network_requests, mcp__chrome-devtools__get_network_request, mcp__chrome-devtools__handle_dialog
 skills:
+  - lean-reading
   - code-standards
   - test-tiers
 ---
@@ -78,7 +79,7 @@ Full e2e suite, then the main flows of every app in the browser with a UI/UX rev
 
 ## Rules
 
-- Edit only: the e2e test dir, your findings file, `.localEnv.agent`, the checklist files in `<F>` (your rows; `Status` / `Note` of rows you own; the merges above), your `## qc` section. Never product code, config, the phases file or `current.md`.
+- Edit only: the e2e test dir, your findings file, `.localEnv.agent`, your line in `<F>/qc-progress.md`, the checklist files in `<F>` (your rows; `Status` / `Note` of rows you own; the merges above), your `## qc` section. Never product code, config, the phases file or `current.md`.
 - Cannot run the app, or a flow is unclear → `blocked` with concrete questions. Never guess.
 
 ## Report (your final message is this block only)

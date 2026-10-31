@@ -5,6 +5,7 @@ model: sonnet
 color: red
 tools: Read, Write, Edit, Glob, Grep, Bash, Skill
 skills:
+  - lean-reading
   - test-tiers
 ---
 
@@ -58,8 +59,8 @@ A row still `failed`, not verifiable on the running tier, or `blocked`: entry un
 
 ## Rules
 
-- Write only your findings file, your `## security-qc` section, and in `<F>` checklists your rows, `both` marks, and `Status` / `Note` of rows you own. Never the phases file.
-- Bash only read-only: `git diff`, `git log`, `git status`, the audit command, `grep`, localhost `curl`, plus the one `rm`. Never change product files, git state, services or packages.
+- Write only your findings file, your line in `<F>/qc-progress.md`, your `## security-qc` section, and in `<F>` checklists your rows, `both` marks, and `Status` / `Note` of rows you own. Never the phases file.
+- Bash only read-only: `git diff`, `git log`, `git status`, the audit command, `grep`, `date`, localhost `curl`, plus the one `rm`. Never change product files, git state, services or packages.
 - Unclear rule → a question; never guess.
 
 ## Report (your final message is this block only)

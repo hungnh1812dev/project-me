@@ -38,6 +38,15 @@ Checklist rows run grouped by tier: every row of a tier in **one** run of that t
 - **security-qc:** never starts or stops a stack. Tier 0/1: static review. Tier 2: authz, object access, input validation and error bodies on the dev stack. Tier 3: headers, CSP, cookies, CORS, redirects, proxy routing, production-only behavior. A tier 3 item checked while only a lower tier runs is reported `not verified dynamically (needs tier 3)`, never passed.
 - **Manager:** runs checklists tier by tier, has qc keep the stack up when security-qc has rows at that tier, stops it after both, and starts the stack for a per-unit security-qc review or a `needs tier 3` recheck.
 
+## Progress file
+
+During any run (checklist, recheck, audit, per-unit review), qc and security-qc keep one line each in `<F>/qc-progress.md` (header `# QC progress`):
+
+`<agent name> | <command> <target> tier=<n> | <date +%H:%M> | rows <done>/<total> | <current step, a few words>`
+
+- Write it at start, then at least every 25 minutes; each update must differ from the previous one (rows done or step). Remove your line when you return your report.
+- Manager: reads only this file while a checker runs, whenever it regains control or the user asks for status, and gives the user that line. A line older than 50 minutes, or two updates 25+ minutes apart that are the same → `TaskStop` that agent, tell the user, and dispatch a fresh one only on the user's word.
+
 ## Checklists
 
 One format for the planner's table under each checkpoint in the phases file, the merged copy `<F>/checklists/<checkpoint>.md`, and the feature's `<F>/CHECKLIST.md` (`<F>` = `.claude/state/features/<feature>/`, the `in-progress` row of `.claude/state/features.md`).
@@ -48,7 +57,7 @@ Base: <hash> · Updated: <YYYY-MM-DD> after <CHECKLIST | CHECK tier=<n> | RECHEC
 
 | ID | Description | Input | Expected output | Checker | Method | Source | Status | Note |
 |---|---|---|---|---|---|---|---|---|
-| CLG-1 | Init container uses DB keys only | LG-db-1 | `docker compose ... config cms-api-init` lists only `NODE_ENV`, `DB_*` | qc | T3 cli | planner | pass | - |
+| CLG-1 | Init container uses DB keys only | LG-db-1 | `docker compose ... config api-init` lists only `NODE_ENV`, `DB_*` | qc | T3 cli | planner | pass | - |
 ```
 
 - `Checker`: `qc`, `security-qc`, or `both` only when the row needs both. `Method`: `T<0-3> <cli | browser | static>`, the lowest tier that can show the row. `Source`: `planner`, `qc` or `security-qc`. `Status`: `todo`, `pass`, `failed`, `blocked`. `Note`: one short line (evidence, finding id, or the missing value).

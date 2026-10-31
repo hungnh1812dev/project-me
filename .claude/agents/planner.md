@@ -5,6 +5,7 @@ model: opus
 color: magenta
 tools: Read, Write, Edit, Glob, Grep, Bash, Skill, WebFetch, WebSearch
 skills:
+  - lean-reading
   - code-standards
   - test-tiers
 ---
@@ -24,7 +25,7 @@ Only what the job needs: `SPEC` → `agent-skills:spec-driven-development`; `PLA
 
 ## Steps
 
-1. Read `.claude/state/project.md`, `.claude/state/features.md`, the in-progress feature's `handoff.md` (if any), and only the parts of `conventions.md`, the spec and the code you need.
+1. Read `.claude/state/project.md`, `.claude/state/features.md`, the in-progress feature's `handoff.md` (if any), and only the parts of the conventions files (`conventions.md` and the `conventions-<area>.md` it names), the spec and the code you need.
 2. Apply `code-standards` §4 (preloaded) before deciding anything:
    - one owning module per responsibility, with a small interface; check the code for an existing owner; never split one capability across tasks in different modules;
    - names a person understands without explanation (they become the code's names);

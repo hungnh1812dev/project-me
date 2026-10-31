@@ -5,6 +5,7 @@ model: sonnet
 color: yellow
 tools: Read, Glob, Grep
 skills:
+  - lean-reading
   - code-standards
 ---
 

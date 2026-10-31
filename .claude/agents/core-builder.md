@@ -5,6 +5,7 @@ model: sonnet
 color: green
 tools: Read, Write, Edit, Bash, Glob, Grep, Skill, TodoWrite, WebFetch, WebSearch
 skills:
+  - lean-reading
   - worker-flow
   - code-standards
   - commit-convention
