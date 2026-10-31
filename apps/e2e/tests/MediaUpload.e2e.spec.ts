@@ -192,7 +192,7 @@ test.describe.serial('owner: upload dialog', () => {
     await dialog().getByRole('button', { name: dialogCopy.close, exact: true }).click();
     await expect(dialog()).toBeHidden();
     for (const fileName of names) {
-      await expect(page.getByRole('row').filter({ hasText: fileName })).toBeVisible();
+      await expect(page.getByRole('listitem').filter({ hasText: fileName })).toBeVisible();
     }
   });
 
