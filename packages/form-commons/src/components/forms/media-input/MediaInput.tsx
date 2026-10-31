@@ -19,6 +19,13 @@ export interface MediaInputFile {
   provider?: string | undefined;
   /** ISO 8601. */
   createdAt: string;
+  /** Hex digest; its first characters tell same-named files apart. */
+  sha256?: string | undefined;
+  /** ISO 8601; shown in place of `createdAt` when present. */
+  updatedAt?: string | undefined;
+  /** Pixels; known for images and videos only. */
+  width?: number | null | undefined;
+  height?: number | null | undefined;
 }
 
 export interface MediaInputLabels {

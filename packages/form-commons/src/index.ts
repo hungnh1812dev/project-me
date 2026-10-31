@@ -61,6 +61,12 @@ export {
   type MediaInputFile,
   type MediaInputLabels,
   type MediaInputProps,
+  MediaPreview,
+  type MediaPreviewHeight,
+  type MediaPreviewLabels,
+  type MediaPreviewProps,
+  MediaDetails,
+  type MediaDetailsProps,
 } from './components/forms/media-input';
 export {
   SortableSheet,
