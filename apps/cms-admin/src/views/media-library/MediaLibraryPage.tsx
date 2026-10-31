@@ -7,7 +7,11 @@ import { useRestoreFocus } from '@components/useRestoreFocus';
 import { COPY } from '@configs/Copy.constants';
 import { isForbidden, useCallerAccess } from '@features/access';
 import type { MediaFile } from '@features/media/Media.api';
-import { MEDIA_SUBJECT } from '@features/media/Media.constants';
+import {
+  MEDIA_DEFAULT_PAGE_SIZE,
+  MEDIA_MIME_ALL,
+  MEDIA_SUBJECT,
+} from '@features/media/Media.constants';
 import { MEDIA_QUERY_KEY, useMediaQuery } from '@features/media/Media.queries';
 import { UploadDialog } from '@features/media/UploadDialog';
 import { useQueryClient } from '@tanstack/react-query';
@@ -26,7 +30,12 @@ interface Notice {
 /** `/media`: the file library with upload, alt text edit and delete. */
 export function MediaLibraryPage() {
   const [page, setPage] = useState(1);
-  const media = useMediaQuery(page);
+  const media = useMediaQuery({
+    page,
+    pageSize: MEDIA_DEFAULT_PAGE_SIZE,
+    search: '',
+    mimeType: MEDIA_MIME_ALL,
+  });
   const queryClient = useQueryClient();
   const caller = useCallerAccess();
   const [editing, setEditing] = useState<MediaFile | null>(null);

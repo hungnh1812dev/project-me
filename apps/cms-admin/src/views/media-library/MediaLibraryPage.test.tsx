@@ -25,6 +25,8 @@ function file(overrides: Partial<MediaFile> = {}): MediaFile {
     thumbnailUrl: 'https://cdn.test/portrait-t.jpg',
     isReviewerPreset: false,
     createdAt: '2026-10-01T10:00:00.000Z',
+    updatedAt: '2026-10-01T10:00:00.000Z',
+    sha256: 'abcdef0123456789',
     ...overrides,
   };
 }

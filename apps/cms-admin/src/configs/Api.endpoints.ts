@@ -71,6 +71,7 @@ export const API_ENDPOINTS = {
   MEDIA: {
     LIST: '/media',
     ONE: (id: string) => `/media/${encodeURIComponent(id)}`,
+    FILE: (id: string) => `/media/${encodeURIComponent(id)}/file`,
   },
   /** Documents. `slug` = content type, `id` = document id. */
   DOCUMENTS: {

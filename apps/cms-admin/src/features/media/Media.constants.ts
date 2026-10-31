@@ -1,5 +1,10 @@
-/** Files per page of the media library (API default 20, max 100). */
-export const MEDIA_PAGE_SIZE = 20;
+/** Page sizes the library offers (API max 100). */
+export const MEDIA_PAGE_SIZES = [10, 20, 50, 100] as const;
+
+export const MEDIA_DEFAULT_PAGE_SIZE = 10;
+
+/** Wait after the last keystroke before the search runs. */
+export const MEDIA_SEARCH_DEBOUNCE_MS = 300;
 
 /** Longest alt text the API accepts (characters); mirrors cms-api ALT_MAX_LENGTH. */
 export const MEDIA_ALT_MAX_LENGTH = 500;
@@ -15,6 +20,21 @@ export const MEDIA_ALLOWED_MIME_TYPES: readonly string[] = [
   'image/avif',
   'application/pdf',
   'video/mp4',
+];
+
+/** The empty filter value: every type. */
+export const MEDIA_MIME_ALL = '';
+
+/** Type-family filters, then PDF; each other allowlisted type follows (`MEDIA_MIME_FILTER_VALUES`). */
+const MEDIA_MIME_FAMILY_FILTERS = ['image/*', 'video/*', 'application/pdf'] as const;
+
+/** Values of the type filter in display order; labels live in the media copy. */
+export const MEDIA_MIME_FILTER_VALUES: readonly string[] = [
+  MEDIA_MIME_ALL,
+  ...MEDIA_MIME_FAMILY_FILTERS,
+  ...MEDIA_ALLOWED_MIME_TYPES.filter(
+    (type) => !(MEDIA_MIME_FAMILY_FILTERS as readonly string[]).includes(type),
+  ),
 ];
 
 const BYTES_PER_MEGABYTE = 1024 * 1024;

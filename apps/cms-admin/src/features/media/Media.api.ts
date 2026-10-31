@@ -15,8 +15,20 @@ export interface MediaFile {
   thumbnailUrl: string | null;
   isReviewerPreset: boolean;
   createdAt: string;
+  updatedAt: string;
+  /** Hex digest of the stored bytes. */
+  sha256: string;
   /** Storage provider; sent once the API exposes it (attach contract). */
   provider?: string;
+}
+
+/** Filters of `GET /media`; empty `search` and `mimeType` are not sent. */
+export interface MediaListFilters {
+  page: number;
+  pageSize: number;
+  search: string;
+  /** Exact type, or a family such as `image/*`. */
+  mimeType: string;
 }
 
 export interface MediaPage {
@@ -37,9 +49,15 @@ const ALT_FIELD = 'alt';
 export function createMediaApi(client: AxiosInstance) {
   const { MEDIA } = API_ENDPOINTS;
   return {
-    list: async (page: number, pageSize: number): Promise<MediaPage> => {
+    list: async (filters: MediaListFilters): Promise<MediaPage> => {
+      const { page, pageSize, search, mimeType } = filters;
       const { data } = await client.get<MediaPage>(MEDIA.LIST, {
-        params: { page, pageSize },
+        params: {
+          page,
+          pageSize,
+          ...(search === '' ? {} : { search }),
+          ...(mimeType === '' ? {} : { mimeType }),
+        },
       });
       return data;
     },
@@ -50,6 +68,24 @@ export function createMediaApi(client: AxiosInstance) {
       if (alt !== undefined && alt !== '') body.append(ALT_FIELD, alt);
       body.append(FILE_FIELD, file);
       const { data } = await client.post<MediaFile>(MEDIA.LIST, body, {
+        ...(signal ? { signal } : {}),
+        ...(onProgress
+          ? { onUploadProgress: (event) => onProgress(event.loaded, event.total ?? file.size) }
+          : {}),
+      });
+      return data;
+    },
+
+    /** Swaps the bytes of a file and keeps its id; 400 when the type family differs. */
+    replaceFile: async (
+      id: string,
+      file: File,
+      options: Omit<UploadOptions, 'alt'> = {},
+    ): Promise<MediaFile> => {
+      const { onProgress, signal } = options;
+      const body = new FormData();
+      body.append(FILE_FIELD, file);
+      const { data } = await client.put<MediaFile>(MEDIA.FILE(id), body, {
         ...(signal ? { signal } : {}),
         ...(onProgress
           ? { onUploadProgress: (event) => onProgress(event.loaded, event.total ?? file.size) }
