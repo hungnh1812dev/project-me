@@ -45,7 +45,7 @@ function setup(props: Partial<Parameters<typeof UploadDialog>[0]> = {}) {
   const fake = deferredSend();
   const onUploaded = vi.fn<(files: MediaFile[]) => void>();
   const onClose = vi.fn<() => void>();
-  render(
+  const { unmount } = render(
     <MediaApiProvider api={{} as MediaApi}>
       <UploadDialog
         mode="many"
@@ -57,7 +57,7 @@ function setup(props: Partial<Parameters<typeof UploadDialog>[0]> = {}) {
       />
     </MediaApiProvider>,
   );
-  return { ...fake, onUploaded, onClose };
+  return { ...fake, onUploaded, onClose, unmount };
 }
 
 // The picker's accept filter is bypassed so the dialog's own checks are what is tested.
@@ -176,6 +176,45 @@ describe('UploadDialog', () => {
     expect(createObjectURL).toHaveBeenCalledTimes(1);
     await userEvent.click(screen.getByRole('button', { name: copy.cancel }));
     expect(revokeObjectURL).toHaveBeenCalledWith('blob:preview');
+  });
+
+  it('revokes the preview object URL when its row is removed', async () => {
+    setup();
+    await choose([png('a.png')]);
+    await userEvent.click(screen.getByRole('button', { name: copy.removeLabel('a.png') }));
+    expect(revokeObjectURL).toHaveBeenCalledWith('blob:preview');
+  });
+
+  it('revokes the preview object URL when the dialog unmounts', async () => {
+    const { unmount } = setup();
+    await choose([png('a.png')]);
+    unmount();
+    expect(revokeObjectURL).toHaveBeenCalledWith('blob:preview');
+  });
+
+  it('does not create an object URL for a non-image row', async () => {
+    setup();
+    await choose([new File(['x'], 'doc.pdf', { type: 'application/pdf' })]);
+    expect(screen.getByText('doc.pdf')).toBeInTheDocument();
+    expect(createObjectURL).not.toHaveBeenCalled();
+  });
+
+  it('renders a hostile file name as literal text', async () => {
+    setup();
+    const name = '<img src=x onerror=alert(1)>.png';
+    await choose([png(name)]);
+    const list = screen.getByRole('list', { name: copy.listLabel });
+    expect(within(list).getByText(name)).toBeInTheDocument();
+    expect(list.querySelector('img[onerror]')).toBeNull();
+  });
+
+  it('truncates a very long file name inside a shrinkable row', async () => {
+    setup();
+    const name = `${'a'.repeat(300)}.png`;
+    await choose([png(name)]);
+    const label = screen.getByText(name);
+    expect(label).toHaveClass('truncate');
+    expect(label.parentElement).toHaveClass('min-w-0');
   });
 
   it('takes one file in one mode and honours a narrower accept list', async () => {
