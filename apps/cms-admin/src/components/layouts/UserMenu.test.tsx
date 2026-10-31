@@ -31,6 +31,9 @@ describe('initialsOf', () => {
     ['  mai   van   tran ', 'MT'],
     ['', 'O'],
     ['   ', 'O'],
+    ['😀 Mai', '😀M'],
+    ['😀', '😀'],
+    ['Mai Tran Nguyen Van Anh Thu Minh Quang Long Hai Duong', 'MD'],
   ])('reads %j as %j', (name, expected) => {
     expect(initialsOf(name, 'owner@domain.localhost')).toBe(expected);
   });

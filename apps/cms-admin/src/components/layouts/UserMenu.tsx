@@ -23,13 +23,19 @@ const ACCOUNT_LINKS = [
   { path: APP_ROUTES.SECURITY_SETTINGS, label: COPY.session.securityLink, isForReviewer: false },
 ] as const;
 
+/** First code point, so an emoji is never split into a lone surrogate. */
+function firstLetterOf(text: string): string {
+  return Array.from(text)[0] ?? '';
+}
+
 /** First letters of the first and last word of the name, upper case; the email's first letter when the name is blank. */
 export function initialsOf(displayName: string, email = ''): string {
   const words = displayName.trim().split(/\s+/).filter(Boolean);
   const first = words[0];
   const last = words.at(-1);
-  if (first === undefined || last === undefined) return email.trim().charAt(0).toUpperCase();
-  const letters = words.length === 1 ? first.charAt(0) : first.charAt(0) + last.charAt(0);
+  if (first === undefined || last === undefined) return firstLetterOf(email.trim()).toUpperCase();
+  const letters =
+    words.length === 1 ? firstLetterOf(first) : firstLetterOf(first) + firstLetterOf(last);
   return letters.toUpperCase();
 }
 
