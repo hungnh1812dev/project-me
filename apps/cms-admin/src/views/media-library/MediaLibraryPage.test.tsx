@@ -6,6 +6,7 @@ import type { FakeHandler } from '@test/FakeApi.fixture';
 import { createTestServices, renderApp } from '@test/RenderApp.fixture';
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { beforeEach, vi } from 'vitest';
 
 const { REFRESH, ME } = API_ENDPOINTS.AUTH;
 const { MEDIA } = API_ENDPOINTS;
@@ -57,6 +58,16 @@ async function open(handlers: Record<string, FakeHandler>) {
   return { api };
 }
 
+async function chooseFiles(files: File[]) {
+  await userEvent.click(screen.getByRole('button', { name: copy.upload }));
+  await userEvent.upload(await screen.findByTestId('upload-dialog-input'), files);
+}
+
+beforeEach(() => {
+  URL.createObjectURL = vi.fn<(source: Blob | MediaSource) => string>(() => 'blob:preview');
+  URL.revokeObjectURL = vi.fn<(url: string) => void>();
+});
+
 describe('MediaLibraryPage', () => {
   it('lists files and shows the empty state', async () => {
     await open({
@@ -80,11 +91,12 @@ describe('MediaLibraryPage', () => {
       },
     });
     await screen.findByText(copy.empty);
-    await userEvent.upload(
-      screen.getByTestId('media-upload-input'),
-      new File(['x'], 'portrait.jpg', { type: 'image/jpeg' }),
-    );
-    expect(await screen.findByText(copy.uploaded('portrait.jpg'))).toBeInTheDocument();
+    await chooseFiles([new File(['x'], 'portrait.jpg', { type: 'image/jpeg' })]);
+    const dialog = screen.getByRole('dialog');
+    expect(within(dialog).getByText('portrait.jpg')).toBeInTheDocument();
+    expect(api.callsTo(`POST ${MEDIA.LIST}`)).toHaveLength(0);
+    await userEvent.click(within(dialog).getByRole('button', { name: copy.uploadDialog.upload }));
+    expect(await screen.findByText(copy.uploaded(1))).toBeInTheDocument();
     expect(await screen.findByText('2 KB')).toBeInTheDocument();
     expect(api.callsTo(`POST ${MEDIA.LIST}`)).toHaveLength(1);
   });
@@ -98,11 +110,10 @@ describe('MediaLibraryPage', () => {
       }),
     });
     await screen.findByText(copy.empty);
-    await userEvent.upload(
-      screen.getByTestId('media-upload-input'),
-      new File(['x'], 'a.png', { type: 'image/png' }),
-    );
-    expect(await screen.findByText(copy.errors.unsupportedType)).toBeInTheDocument();
+    await chooseFiles([new File(['x'], 'a.png', { type: 'image/png' })]);
+    const dialog = screen.getByRole('dialog');
+    await userEvent.click(within(dialog).getByRole('button', { name: copy.uploadDialog.upload }));
+    expect(await within(dialog).findByText(copy.errors.unsupportedType)).toBeInTheDocument();
   });
 
   it('edits alt text (blank clears) and shows it in the list', async () => {

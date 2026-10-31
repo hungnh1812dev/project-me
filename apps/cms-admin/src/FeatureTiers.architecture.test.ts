@@ -66,7 +66,7 @@ const FACADE_EXPORTS: Record<string, string[]> = {
     'useEmailCode',
     'useSession',
   ],
-  media: ['MediaField', 'mediaToApi', 'mediaToForm'],
+  media: ['MediaField', 'mediaToApi', 'mediaToForm', 'UploadDialog'],
   security: ['ConfirmWithCodeForm', 'useSecurityApi'],
 };
 

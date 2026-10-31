@@ -74,11 +74,13 @@ export function useUploadQueue(send: SendFile) {
   );
 
   const add = useCallback(
-    (files: readonly File[]) => {
+    (files: readonly File[], acceptedTypes?: readonly string[]) => {
       idCounterRef.current += 1;
       const batch = idCounterRef.current;
       let index = 0;
-      commit(addFiles(itemsRef.current, files, () => `upload-${batch}-${(index += 1)}`));
+      commit(
+        addFiles(itemsRef.current, files, () => `upload-${batch}-${(index += 1)}`, acceptedTypes),
+      );
       pump();
     },
     [commit, pump],

@@ -124,6 +124,9 @@ Features (`src/features/`):
   the API returns and send only its uuid (null detaches); the field offers
   the library picker (`MediaPickerDialog`, needs `media:read`) and upload
   (needs `media:create`).
+  Uploads go through `UploadDialog` (`features/media/`): a confirmation list with
+  previews and flagged files, then at most 2 files at once with per-file and total
+  progress, retry of one failed file, and a confirm before closing mid-upload.
   Media library: `/media` (`features/media/`) lists files with upload,
   alt text edit (PATCH, blank clears) and delete behind a confirm; a file
   still attached to a document keeps the dialog open with the `MEDIA_IN_USE`

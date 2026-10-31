@@ -36,9 +36,13 @@ export function mediaKindOf(mimeType: string): MediaKind | undefined {
   return undefined;
 }
 
-/** `acceptedCount` is how many files the batch already holds. */
-export function checkFile(file: File, acceptedCount: number): FileCheck {
-  if (!MEDIA_ALLOWED_MIME_TYPES.includes(file.type)) {
+/** `acceptedCount` is how many files the batch already holds; `acceptedTypes` narrows the allowlist. */
+export function checkFile(
+  file: File,
+  acceptedCount: number,
+  acceptedTypes: readonly string[] = MEDIA_ALLOWED_MIME_TYPES,
+): FileCheck {
+  if (!MEDIA_ALLOWED_MIME_TYPES.includes(file.type) || !acceptedTypes.includes(file.type)) {
     return { ok: false, reason: 'type-not-allowed' };
   }
   const kind = mediaKindOf(file.type);
@@ -58,11 +62,12 @@ export function addFiles(
   items: readonly UploadItem[],
   files: readonly File[],
   nextId: () => string,
+  acceptedTypes?: readonly string[],
 ): UploadItem[] {
   const result = [...items];
   let acceptedCount = result.filter(isAccepted).length;
   for (const file of files) {
-    const check = checkFile(file, acceptedCount);
+    const check = checkFile(file, acceptedCount, acceptedTypes);
     if (check.ok) acceptedCount += 1;
     result.push({
       id: nextId(),
