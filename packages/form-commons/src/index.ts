@@ -1,4 +1,15 @@
 export { Button, buttonVariants, type ButtonProps } from './components/ui/Button';
+export { IconButton, type IconButtonProps } from './components/ui/IconButton';
+export { Tooltip, TooltipContent, TooltipTrigger, TOOLTIP_DELAY_MS } from './components/ui/Tooltip';
+export { Popover, PopoverContent, PopoverTrigger } from './components/ui/Popover';
+export {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from './components/ui/DropdownMenu';
 export { Input } from './components/ui/Input';
 export { Label } from './components/ui/Label';
 export { Field, type FieldControlProps, type FieldProps } from './components/forms/field';
