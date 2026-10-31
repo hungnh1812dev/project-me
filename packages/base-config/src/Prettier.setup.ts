@@ -1,6 +1,12 @@
+import { createRequire } from 'node:module';
+
 import type { PluginConfig } from '@ianvs/prettier-plugin-sort-imports';
 import type { Config } from 'prettier';
 import type { PluginOptions } from 'prettier-plugin-tailwindcss';
+
+// Prettier loads bare plugin names from the working directory, so every consumer would need its
+// own copy; resolving from this package lets them install nothing.
+const resolvePlugin = createRequire(import.meta.url).resolve;
 
 export type PrettierBaseConfig = Config & PluginConfig & PluginOptions;
 
@@ -27,7 +33,10 @@ const config: PrettierBaseConfig = {
   bracketSameLine: false,
   arrowParens: 'always',
 
-  plugins: ['@ianvs/prettier-plugin-sort-imports', 'prettier-plugin-tailwindcss'],
+  plugins: [
+    resolvePlugin('@ianvs/prettier-plugin-sort-imports'),
+    resolvePlugin('prettier-plugin-tailwindcss'),
+  ],
 
   // Import Sorter
   importOrder: [
