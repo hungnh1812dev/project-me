@@ -1,5 +1,7 @@
-import { Button } from '@abyss/form-commons';
+import { useEffect, useRef } from 'react';
+import { IconButton } from '@abyss/form-commons';
 import { COPY } from '@configs/Copy.constants';
+import { ArrowDown, ArrowUp, Plus, X } from 'lucide-react';
 import { useFieldArray, useFormContext } from 'react-hook-form';
 
 import { MAX_COMPONENT_DEPTH, SINGLE_COMPONENT_MAX_ITEMS } from './Content.constants';
@@ -8,6 +10,8 @@ import { DynamicFormRenderer } from './DynamicFormRenderer';
 import type { FieldNode } from './FieldTree.rules';
 
 const copy = COPY.content.list;
+
+type MoveDirection = 'up' | 'down';
 
 export interface ComponentListProps {
   node: FieldNode;
@@ -26,74 +30,86 @@ export interface ComponentListProps {
 export function ComponentList({ node, name, masked, depth }: ComponentListProps) {
   const { control } = useFormContext();
   const { fields, append, remove, move } = useFieldArray({ control, name });
+  const listRef = useRef<HTMLOListElement>(null);
+  const pendingFocus = useRef<{ index: number; direction: MoveDirection } | null>(null);
   const canAdd =
     depth <= MAX_COMPONENT_DEPTH && (node.repeatable || fields.length < SINGLE_COMPONENT_MAX_ITEMS);
   const reorderable = node.repeatable && fields.length > 1;
   const headingId = `${name}-heading`;
+
+  // Reordering re-inserts the row, which drops focus; hand it back to the moved item's control.
+  useEffect(() => {
+    const movedTo = pendingFocus.current;
+    if (!movedTo) return;
+    pendingFocus.current = null;
+    const row = listRef.current?.children[movedTo.index];
+    const sameDirection = row?.querySelector<HTMLElement>(`[data-move="${movedTo.direction}"]`);
+    const oppositeDirection = row?.querySelector<HTMLElement>(
+      `[data-move="${movedTo.direction === 'up' ? 'down' : 'up'}"]`,
+    );
+    const isDisabled = sameDirection?.hasAttribute('disabled');
+    (isDisabled ? oppositeDirection : sameDirection)?.focus();
+  });
+
+  const moveItem = (index: number, direction: MoveDirection) => {
+    const target = direction === 'up' ? index - 1 : index + 1;
+    move(index, target);
+    pendingFocus.current = { index: target, direction };
+  };
 
   return (
     <section
       aria-labelledby={headingId}
       className={depth > 1 ? 'grid gap-3 border-l-2 border-border pl-4' : 'grid gap-3'}
     >
-      <div className="flex items-center justify-between gap-3">
-        <h2
-          id={headingId}
-          className={depth > 1 ? 'm-0 text-sm font-semibold' : 'm-0 text-base font-semibold'}
-        >
-          {node.label}
-        </h2>
-        {canAdd ? (
-          <Button type="button" size="sm" onClick={() => append(emptyItem(node))}>
-            {copy.add(node.label)}
-          </Button>
-        ) : null}
-      </div>
-      {fields.length === 0 ? (
-        <p className="m-0 text-sm text-muted-foreground">{copy.empty(node.label)}</p>
-      ) : (
-        <ol className="m-0 grid list-none gap-3 p-0">
+      <h2
+        id={headingId}
+        className={depth > 1 ? 'm-0 text-sm font-semibold' : 'm-0 text-base font-semibold'}
+      >
+        {node.label}
+      </h2>
+      {fields.length > 0 ? (
+        <ol ref={listRef} className="m-0 grid list-none gap-3 p-0">
           {fields.map((item, index) => (
             <li key={item.id} className="grid gap-4 rounded-md border border-border bg-card p-4">
               <div className="flex items-center justify-between gap-3">
-                <h3 className="m-0 text-sm font-medium text-muted-foreground">
-                  {copy.itemTitle(node.label, index)}
-                </h3>
-                <div className="flex items-center gap-1">
-                  {reorderable ? (
-                    <>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        disabled={index === 0}
-                        aria-label={copy.moveUp(node.label, index)}
-                        onClick={() => move(index, index - 1)}
-                      >
-                        {copy.upText}
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        disabled={index === fields.length - 1}
-                        aria-label={copy.moveDown(node.label, index)}
-                        onClick={() => move(index, index + 1)}
-                      >
-                        {copy.downText}
-                      </Button>
-                    </>
-                  ) : null}
-                  <Button
+                <div className="flex items-center gap-2">
+                  <IconButton
                     type="button"
                     variant="ghost"
-                    size="sm"
-                    aria-label={copy.remove(node.label, index)}
+                    label={copy.remove(node.label, index)}
                     onClick={() => remove(index)}
                   >
-                    {copy.removeText}
-                  </Button>
+                    <X aria-hidden="true" />
+                  </IconButton>
+                  <h3 className="m-0 text-sm font-medium text-muted-foreground">
+                    {copy.itemTitle(node.label, index)}
+                  </h3>
                 </div>
+                {reorderable ? (
+                  <div className="flex items-center gap-1">
+                    <IconButton
+                      type="button"
+                      variant="ghost"
+                      data-move="up"
+                      disabled={index === 0}
+                      label={copy.moveUp(node.label, index)}
+                      onClick={() => moveItem(index, 'up')}
+                    >
+                      <ArrowUp aria-hidden="true" />
+                    </IconButton>
+                    <IconButton
+                      type="button"
+                      variant="ghost"
+                      data-move="down"
+                      disabled={index === fields.length - 1}
+                      label={copy.moveDown(node.label, index)}
+                      onClick={() => moveItem(index, 'down')}
+                    >
+                      <ArrowDown aria-hidden="true" />
+                    </IconButton>
+                  </div>
+                ) : null}
               </div>
               <DynamicFormRenderer
                 fields={node.children}
@@ -104,7 +120,17 @@ export function ComponentList({ node, name, masked, depth }: ComponentListProps)
             </li>
           ))}
         </ol>
-      )}
+      ) : null}
+      {canAdd ? (
+        <button
+          type="button"
+          onClick={() => append(emptyItem(node))}
+          className="flex min-h-20 w-full cursor-pointer flex-col items-center justify-center gap-1 rounded-md border border-dashed border-input bg-transparent p-4 text-sm text-muted-foreground transition-colors hover:border-ring hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+        >
+          <Plus aria-hidden="true" className="size-5" />
+          {copy.addSlot(node.label)}
+        </button>
+      ) : null}
     </section>
   );
 }

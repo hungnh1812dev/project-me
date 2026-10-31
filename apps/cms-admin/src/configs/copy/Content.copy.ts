@@ -145,14 +145,10 @@ export const CONTENT_COPY = {
   protectedGroup: (label: string) => `${label} is protected for your role and is left unchanged.`,
   list: {
     itemTitle: (label: string, index: number) => `${label} ${index + 1}`,
-    empty: (label: string) => `No ${label.toLowerCase()} yet.`,
-    add: (label: string) => `Add ${label.toLowerCase()}`,
+    addSlot: (label: string) => `Click to add ${label.toLowerCase()}`,
     remove: (label: string, index: number) => `Remove ${label.toLowerCase()} ${index + 1}`,
     moveUp: (label: string, index: number) => `Move ${label.toLowerCase()} ${index + 1} up`,
     moveDown: (label: string, index: number) => `Move ${label.toLowerCase()} ${index + 1} down`,
-    removeText: 'Remove',
-    upText: 'Up',
-    downText: 'Down',
   },
   errors: {
     network: 'Could not reach the server. Your changes are still here; try saving again.',

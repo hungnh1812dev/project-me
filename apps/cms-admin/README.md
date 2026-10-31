@@ -115,8 +115,8 @@ Features (`src/features/`):
   path list) and the draft from `GET /documents/:slug/:id?status=draft`.
   `DynamicFormRenderer` maps each field type to a form-commons input through
   `Field.registry.tsx` (string, text, integer, decimal, boolean, date,
-  datetime, json). `ComponentList` handles component fields (add, remove,
-  reorder; a non-repeatable component holds one item) and nests to the API's
+  datetime, json). `ComponentList` handles component fields (a dashed
+  add box, a corner remove button, up/down buttons; a non-repeatable component holds one item) and nests to the API's
   depth limit; each item keeps its `componentUid` in form state
   (`ITEM_UID_KEY`). Masked fields (`_maskedFields`) show "Protected (***)",
   read-only, and are never sent. Richtext uses the Tiptap `RichtextInput` (sent as HTML,

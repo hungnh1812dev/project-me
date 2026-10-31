@@ -82,7 +82,7 @@ describe('DocumentEditPage: new cv-page', () => {
 
     await userEvent.type(screen.getByLabelText('Position'), 'Engineer');
     await userEvent.click(screen.getByRole('switch', { name: 'Is main' }));
-    await userEvent.click(screen.getByRole('button', { name: 'Add skill' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Click to add skill' }));
     await userEvent.type(screen.getByLabelText('Skill', { selector: 'input' }), 'React');
     await userEvent.click(screen.getByRole('button', { name: copy.save }));
 
@@ -97,8 +97,8 @@ describe('DocumentEditPage: new cv-page', () => {
   it('blocks the save on invalid numbers and JSON in a nested component (depth 2)', async () => {
     const { api } = await open(contentNewPath(SLUG));
     await screen.findByLabelText('Position');
-    await userEvent.click(screen.getByRole('button', { name: 'Add experience' }));
-    await userEvent.click(screen.getByRole('button', { name: 'Add role' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Click to add experience' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Click to add role' }));
     await userEvent.type(screen.getByLabelText('Team size'), '4.5');
     await userEvent.type(screen.getByLabelText('Tech stack'), 'not json');
     await userEvent.click(screen.getByRole('button', { name: copy.save }));
@@ -240,7 +240,9 @@ describe('DocumentEditPage: edit draft', () => {
     expect(company).toHaveAttribute('readonly');
     expect(company).toHaveValue(copy.protectedValue);
     expect(screen.getByLabelText('Reference')).toHaveValue(copy.protectedValue);
-    expect(screen.queryByRole('button', { name: 'Add reference' })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'Click to add reference' }),
+    ).not.toBeInTheDocument();
 
     await userEvent.type(screen.getByLabelText('Position'), '!');
     await userEvent.click(screen.getByRole('button', { name: copy.save }));

@@ -791,14 +791,10 @@
     "protectedGroup": "SAMPLE is protected for your role and is left unchanged.",
     "list": {
       "itemTitle": "SAMPLE NaN",
-      "empty": "No sample yet.",
-      "add": "Add sample",
+      "addSlot": "Click to add sample",
       "remove": "Remove sample NaN",
       "moveUp": "Move sample NaN up",
-      "moveDown": "Move sample NaN down",
-      "removeText": "Remove",
-      "upText": "Up",
-      "downText": "Down"
+      "moveDown": "Move sample NaN down"
     },
     "errors": {
       "network": "Could not reach the server. Your changes are still here; try saving again.",
