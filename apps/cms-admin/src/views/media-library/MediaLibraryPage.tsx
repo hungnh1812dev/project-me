@@ -72,9 +72,8 @@ export function MediaLibraryPage() {
             <Button
               type="button"
               variant="primary"
-              onClick={() => {
-                setNotice(null);
-                setIsUploadOpen(true);
+              onClick={(event) => {
+                open(event.currentTarget, () => setIsUploadOpen(true));
               }}
             >
               {copy.upload}
@@ -126,6 +125,7 @@ export function MediaLibraryPage() {
         mode="many"
         open={isUploadOpen}
         onClose={() => setIsUploadOpen(false)}
+        onCloseAutoFocus={restoreFocus}
         onUploaded={onUploaded}
       />
       <EditAltDialog

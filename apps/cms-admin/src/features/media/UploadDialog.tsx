@@ -162,6 +162,7 @@ export function UploadDialog({
   onUploaded,
   open,
   onClose,
+  onCloseAutoFocus,
 }: {
   mode: 'many' | 'one';
   accept?: readonly string[];
@@ -169,6 +170,7 @@ export function UploadDialog({
   onUploaded: (files: MediaFile[]) => void;
   open: boolean;
   onClose: () => void;
+  onCloseAutoFocus?: (event: Event) => void;
 }) {
   const api = useMediaApi();
   const defaultSend: SendFile = (file, onProgress, signal) =>
@@ -232,7 +234,7 @@ export function UploadDialog({
 
   return (
     <Dialog open={open} onOpenChange={(next) => (next ? undefined : requestClose())}>
-      <DialogContent>
+      <DialogContent onCloseAutoFocus={onCloseAutoFocus}>
         {isConfirmingStop ? (
           <>
             <DialogHeader>
