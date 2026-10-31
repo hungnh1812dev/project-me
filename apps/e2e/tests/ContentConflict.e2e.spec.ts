@@ -268,8 +268,13 @@ test.describe.serial('owner: conflict merge modal (cv-page)', () => {
     const position = card(dialog, 'Position');
     const mine = position.getByRole('radio', { name: merge.mine });
     const saved = position.getByRole('radio', { name: merge.saved });
-    await mine.focus();
-    await expect(mine).toBeFocused();
+    // the modal was re-rendered by the previous test's second conflict: wait until it is settled
+    await expect(dialog).toBeVisible();
+    await expect(mine).toBeChecked();
+    await expect(async () => {
+      await mine.focus();
+      await expect(mine).toBeFocused({ timeout: 1000 });
+    }).toPass();
     await a.keyboard.press('ArrowUp');
     await expect(saved).toBeFocused();
     await expect(saved).toBeChecked();
