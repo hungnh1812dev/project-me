@@ -589,7 +589,6 @@
     "description": "Images, PDFs and videos you can attach to documents. Uploaded images are re-encoded and lose their location data.",
     "upload": "Upload files",
     "uploaded": "SAMPLE files uploaded.",
-    "tableLabel": "Media files",
     "replaced": "SAMPLE replaced.",
     "loading": "Loading media files",
     "loadFailed": "Could not load the file library.",
@@ -597,17 +596,7 @@
     "empty": "No files yet",
     "emptyHint": "Upload a file to start the library.",
     "emptyHintReadOnly": "Nothing has been uploaded yet.",
-    "columns": {
-      "file": "File",
-      "alt": "Alt text",
-      "size": "Size",
-      "added": "Added",
-      "actions": "Actions"
-    },
-    "noAlt": "No alt text",
     "previewFallback": "Preview of SAMPLE",
-    "editAlt": "Edit alt",
-    "deleteAction": "Delete",
     "editAltLabel": "Edit alt text of SAMPLE",
     "deleteLabel": "Delete SAMPLE",
     "pagination": {
