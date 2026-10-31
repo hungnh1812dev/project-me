@@ -4,7 +4,6 @@ import {
   DateTimePicker,
   JsonInput,
   NumberInput,
-  RichtextInput,
   SwitchInput,
   TextAreaInput,
   TextInput,
@@ -25,6 +24,7 @@ import {
   textToApi,
   textToForm,
 } from './FieldValues.rules';
+import { RichtextField } from './RichtextField';
 
 const copy = COPY.content;
 const listCopy = copy.collection;
@@ -143,7 +143,14 @@ export const FIELD_REGISTRY: Readonly<Record<string, FieldAdapter>> = {
     editable: true,
     toForm: textToForm,
     toApi: textToApi,
-    render: ({ name, label }) => <RichtextInput name={name} label={label} labels={copy.richtext} />,
+    render: ({ name, label }) => (
+      <RichtextField
+        name={name}
+        label={label}
+        labels={copy.richtext}
+        loadingLabel={copy.richtextLoading}
+      />
+    ),
   },
   [FIELD_TYPE.MEDIA]: {
     editable: true,

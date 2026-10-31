@@ -74,7 +74,8 @@ describe('DocumentEditPage: new cv-page', () => {
     await screen.findByLabelText('Position');
     expect(screen.getByRole('heading', { name: copy.newTitle(SLUG) })).toBeInTheDocument();
     expect(screen.getByRole('switch', { name: 'Is main' })).toBeInTheDocument();
-    expect(screen.getByText('Summary')).toBeInTheDocument();
+    // The richtext editor is lazy-loaded.
+    expect(await screen.findByText('Summary')).toBeInTheDocument();
     for (const label of ['Skill', 'Experience', 'Project', 'Education', 'Language', 'Reference']) {
       expect(screen.getByRole('heading', { level: 2, name: label })).toBeInTheDocument();
     }

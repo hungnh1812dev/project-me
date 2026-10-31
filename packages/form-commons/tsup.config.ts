@@ -35,8 +35,15 @@ function componentEntries(): Record<string, string> {
   return entries;
 }
 
+/**
+ * esbuild groups modules by the set of entries that use them. Without its own
+ * entry, the CSP nonce constant (barrel + richtext) shares a chunk with the
+ * Tiptap editor, so importing it from the barrel loads Tiptap eagerly.
+ */
+const CONSTANT_ENTRIES = { 'security/index': 'src/constants/Security.constants.ts' };
+
 export default defineConfig({
-  entry: { index: 'src/index.ts', ...componentEntries() },
+  entry: { index: 'src/index.ts', ...componentEntries(), ...CONSTANT_ENTRIES },
   format: ['esm'],
   dts: true,
   sourcemap: true,

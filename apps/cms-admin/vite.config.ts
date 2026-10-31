@@ -7,6 +7,20 @@ import { defineConfig } from 'vitest/config';
 /** Used when DEV_SERVER_PORT is not set; differs from web so both can run. */
 const DEFAULT_DEV_SERVER_PORT = 5173;
 
+/**
+ * Tiptap and the packages only it pulls in. Kept in one lazy chunk so none of
+ * them lands in the eager `vendor` chunk.
+ */
+const EDITOR_PACKAGES = [
+  '@tiptap/',
+  'prosemirror-',
+  'orderedmap/',
+  'rope-sequence/',
+  'w3c-keyname/',
+  'linkifyjs/',
+  'fast-equals/',
+];
+
 export default defineConfig(({ mode }) => {
   // Dev-only keys (no VITE_ prefix, never reach the bundle). See .env.example.
   const env = loadEnv(mode, import.meta.dirname, '');
@@ -48,7 +62,7 @@ export default defineConfig(({ mode }) => {
             ) {
               return 'vendor-router';
             }
-            if (id.includes('node_modules/@tiptap/') || id.includes('node_modules/prosemirror')) {
+            if (EDITOR_PACKAGES.some((pkg) => id.includes(`node_modules/${pkg}`))) {
               return 'vendor-ui-editor';
             }
             if (id.includes('node_modules')) {

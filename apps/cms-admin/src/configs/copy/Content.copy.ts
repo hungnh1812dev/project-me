@@ -138,6 +138,7 @@ export const CONTENT_COPY = {
     unlink: 'Remove link',
     linkPrompt: 'Link address (https://, mailto: or tel:). Leave empty to remove the link.',
   },
+  richtextLoading: 'Loading the text editor…',
   invalidInteger: 'Enter a whole number, for example 12.',
   invalidDecimal: 'Enter a number, for example 12.5.',
   invalidJson: 'Enter valid JSON, for example ["React", "Node"].',
