@@ -63,6 +63,13 @@ pnpm dev:stack:stop     # when you are done
 
 `pnpm demo` starts Postgres and a mail catcher in containers and the three apps in dev mode, and turns reviewer access on. It prints the web, admin and mail addresses. Open the web and choose Reviewer access (needs internet for the Turnstile widget). Signing in to the admin locally needs a separate owner setup: see "Create the one owner account" in [docs/local-run.md](docs/local-run.md). That guide also covers the other ways to run the stack.
 
+## Git hooks
+
+`pnpm install` installs a pre-commit hook (husky). It formats the staged files with the repo's Prettier setup and adds the result to the commit; files listed in `.prettierignore` and files Prettier has no parser for are left alone. If Prettier fails, the commit is aborted.
+
+- Skip it for one commit: `git commit --no-verify`. Skip it for a shell session, or do not install the hooks: `HUSKY=0`.
+- Git clients with a GUI may not find `pnpm` on their `PATH`; add the needed `PATH` setup to `~/.config/husky/init.sh`, which husky runs before each hook.
+
 ## Where to look
 
 - [SPEC.md](SPEC.md): objective, scope, stack, security decisions, data model, API outline, success criteria.
