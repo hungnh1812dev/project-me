@@ -91,7 +91,7 @@ test.describe.serial('owner: conflict merge modal (cv-page)', () => {
     await a.goto(contentNewPath(CV_PAGE_SLUG));
     await fieldByLabel(a, 'Position').fill(`Base ${RUN_ID}`);
     for (const [index, name] of SKILLS.entries()) {
-      await a.getByRole('button', { name: list.add('Skill') }).click();
+      await a.getByRole('button', { name: list.addSlot('Skill') }).click();
       await skillName(a, index).fill(name);
       await skillLevel(a, index).fill('Basic');
     }
@@ -164,7 +164,7 @@ test.describe.serial('owner: conflict merge modal (cv-page)', () => {
     await fieldByLabel(a, 'Position').fill(`A2 ${RUN_ID}`);
     await skillLevel(a, 0).fill('A-level');
     await a.getByRole('button', { name: list.remove('Skill', 1) }).click();
-    await a.getByRole('button', { name: list.add('Skill') }).click();
+    await a.getByRole('button', { name: list.addSlot('Skill') }).click();
     await skillName(a, 2).fill(`Delta ${RUN_ID}`);
     await a.getByRole('button', { name: list.moveUp('Skill', 1) }).click();
     expect((await save(a)).status()).toBe(HTTP.CONFLICT);
@@ -198,7 +198,7 @@ test.describe.serial('owner: conflict merge modal (cv-page)', () => {
   test('item cases, other side: own removal, saved add, own order', async () => {
     await staleA((page) => skillLevel(page, 2).fill('B-gamma'));
     await a.getByRole('button', { name: list.remove('Skill', 2) }).click();
-    await a.getByRole('button', { name: list.add('Skill') }).click();
+    await a.getByRole('button', { name: list.addSlot('Skill') }).click();
     await skillName(a, 3).fill(`Eps ${RUN_ID}`);
     await a.getByRole('button', { name: list.moveUp('Skill', 1) }).click();
     expect((await save(a)).status()).toBe(HTTP.CONFLICT);

@@ -59,7 +59,10 @@ const section = (page: Page | Locator, label: string) =>
   page.getByRole('region', { name: label, exact: true });
 
 const addButton = (scope: Page | Locator, label: string) =>
-  scope.getByRole('button', { name: list.add(label), exact: true });
+  scope.getByRole('button', { name: list.addSlot(label), exact: true });
+
+const listItemsOf = (scope: Page | Locator, label: string) =>
+  section(scope, label).locator('ol > li');
 
 /** Selects the last `count` characters (Home/End differ between platforms). */
 async function selectBack(page: Page, count: number) {
@@ -146,7 +149,7 @@ test.describe.serial('owner: dynamic document form (cv-page)', () => {
     for (const label of ['Skill', 'Experience', 'Project', 'Education', 'Language', 'Reference']) {
       await expect(section(page, label)).toBeVisible();
       await expect(addButton(page, label)).toBeVisible();
-      await expect(section(page, label)).toContainText(list.empty(label));
+      await expect(listItemsOf(page, label)).toHaveCount(0);
     }
   });
 
@@ -180,7 +183,8 @@ test.describe.serial('owner: dynamic document form (cv-page)', () => {
 
     // Remove the invalid experience again.
     await experience.getByRole('button', { name: list.remove('Experience', 0) }).click();
-    await expect(section(page, 'Experience')).toContainText(list.empty('Experience'));
+    await expect(listItemsOf(page, 'Experience')).toHaveCount(0);
+    await expect(addButton(page, 'Experience')).toBeVisible();
   });
 
   test('creating a draft posts once and moves to the edit URL with the values', async () => {
