@@ -59,12 +59,16 @@ const EMBED_COLUMNS = [
   'id',
   'document_id',
   'file_name',
+  'mime_type',
   'url',
   'thumbnail_url',
   'provider',
   'alt',
   'size',
+  'width',
+  'height',
   'created_at',
+  'updated_at',
 ] as const;
 
 function recordOfRow(row: MediaRow): MediaRecord {
@@ -291,12 +295,16 @@ export class PrismaMediaRepository implements MediaRepository {
       file: {
         id: row.document_id as string,
         fileName: row.file_name as string,
+        mimeType: row.mime_type as string,
         url: row.url as string,
         thumbnailUrl: (row.thumbnail_url as string | null) ?? null,
         provider: row.provider as string,
         alt: (row.alt as string | null) ?? null,
         size: row.size as number,
+        width: (row.width as number | null) ?? null,
+        height: (row.height as number | null) ?? null,
         createdAt: (row.created_at as Date).toISOString(),
+        updatedAt: (row.updated_at as Date).toISOString(),
       },
     }));
   }

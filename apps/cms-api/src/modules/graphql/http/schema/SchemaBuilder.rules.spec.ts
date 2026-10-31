@@ -299,12 +299,16 @@ describe('buildGraphqlSchema', () => {
     expect(Object.keys(media)).toEqual([
       'id',
       'fileName',
+      'mimeType',
       'url',
       'thumbnailUrl',
       'provider',
       'alt',
       'size',
+      'width',
+      'height',
       'createdAt',
+      'updatedAt',
     ]);
     expect(String(objectType(schema, 'AllTypes').getFields().cover?.type)).toBe('Media');
   });

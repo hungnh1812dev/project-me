@@ -161,12 +161,16 @@ describe('document media references (T29; Postgres 17 via Testcontainers)', () =
   const FILE_KEYS = [
     'id',
     'fileName',
+    'mimeType',
     'url',
     'thumbnailUrl',
     'provider',
     'alt',
     'size',
+    'width',
+    'height',
     'createdAt',
+    'updatedAt',
   ];
 
   interface Doc {

@@ -59,12 +59,16 @@ export interface MediaPage<T = MediaRecord> {
 export interface EmbeddedMedia {
   readonly id: string;
   readonly fileName: string;
+  readonly mimeType: string;
   readonly url: string;
   readonly thumbnailUrl: string | null;
   readonly provider: string;
   readonly alt: string | null;
   readonly size: number;
+  readonly width: number | null;
+  readonly height: number | null;
   readonly createdAt: string;
+  readonly updatedAt: string;
 }
 
 /** 403 with the default body: the actor may not use the library this way at all. */
