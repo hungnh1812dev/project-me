@@ -8,7 +8,11 @@ export const APP_ROUTES = {
   RESET_PASSWORD: '/reset-password',
   /** Named in the invitation email (cms-api ADMIN_PAGE_PATHS); keep in sync. */
   SET_PASSWORD: '/set-password',
-  /** Two-factor and password settings of the signed-in account. */
+  /** Read-only details of the signed-in account. */
+  PROFILE: '/settings/profile',
+  /** Change password of the signed-in account. */
+  CHANGE_PASSWORD: '/settings/password',
+  /** Two-factor settings of the signed-in account. */
   SECURITY_SETTINGS: '/settings/security',
   /** Accounts list + invite. */
   ACCOUNTS: '/accounts',

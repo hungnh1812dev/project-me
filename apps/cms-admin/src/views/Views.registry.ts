@@ -9,11 +9,13 @@ import { REVIEWER_SETTINGS_SUBJECT } from '@features/reviewer/Reviewer.constants
 import { AccountsPage } from './accounts/AccountsPage';
 import { ApiTokensPage } from './api-tokens/ApiTokensPage';
 import { BackupsPage } from './backups/BackupsPage';
+import { ChangePasswordPage } from './change-password/ChangePasswordPage';
 import { CollectionListPage } from './collection-list/CollectionListPage';
 import { DocumentEditPage } from './document-edit/DocumentEditPage';
 import { LoginPage } from './login/LoginPage';
 import { MediaLibraryPage } from './media-library/MediaLibraryPage';
 import { OwnerSetupPage } from './owner-setup/OwnerSetupPage';
+import { ProfilePage } from './profile/ProfilePage';
 import { ResetPasswordPage } from './reset-password/ResetPasswordPage';
 import { ReviewerSessionsPage } from './reviewer-sessions/ReviewerSessionsPage';
 import { RolePermissionsPage } from './role-permissions/RolePermissionsPage';
@@ -124,6 +126,8 @@ export const VIEWS: readonly View[] = [
   },
   { path: APP_ROUTES.CONTENT_NEW, Component: DocumentEditPage },
   { path: APP_ROUTES.CONTENT_EDIT, Component: DocumentEditPage },
+  { path: APP_ROUTES.PROFILE, Component: ProfilePage },
+  { path: APP_ROUTES.CHANGE_PASSWORD, Component: ChangePasswordPage },
   { path: APP_ROUTES.SECURITY_SETTINGS, Component: SecuritySettingsPage },
 ];
 

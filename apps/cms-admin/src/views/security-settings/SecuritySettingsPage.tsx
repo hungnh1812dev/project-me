@@ -1,9 +1,8 @@
 import { COPY } from '@configs/Copy.constants';
 
-import { ChangePasswordSection } from './ChangePasswordSection';
 import { TwoFactorSection } from './TwoFactorSection';
 
-/** `/settings/security`: two-factor and password of the signed-in account. */
+/** `/settings/security`: two-factor of the signed-in account. */
 export function SecuritySettingsPage() {
   return (
     <div className="grid gap-6">
@@ -12,7 +11,6 @@ export function SecuritySettingsPage() {
         <p className="text-sm text-muted-foreground">{COPY.security.description}</p>
       </div>
       <TwoFactorSection />
-      <ChangePasswordSection />
     </div>
   );
 }

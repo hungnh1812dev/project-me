@@ -34,6 +34,8 @@ describe('route table', () => {
     const paths = shell?.children?.map((route) => route.path);
     expect(paths).toContain(APP_ROUTES.ACCOUNTS);
     expect(paths).toContain(APP_ROUTES.SECURITY_SETTINGS);
+    expect(paths).toContain(APP_ROUTES.PROFILE);
+    expect(paths).toContain(APP_ROUTES.CHANGE_PASSWORD);
     expect(paths).not.toContain(APP_ROUTES.LOGIN);
     expect(shell?.children?.some((route) => route.index === true)).toBe(true);
   });

@@ -2,7 +2,7 @@ import { OTP_CODE_LENGTH, OTP_TTL_MINUTES, TOTP_CODE_LENGTH } from '../Auth.cons
 
 export const SECURITY_COPY = {
   title: 'Security',
-  description: 'Protect your account with a second sign-in step and keep your password current.',
+  description: 'Protect your account with a second sign-in step.',
   twoFactor: {
     title: 'Two-factor authentication',
     description:
@@ -60,7 +60,15 @@ export const SECURITY_COPY = {
   },
   resendCode: 'Send a new code',
   codeResent: 'A new code is on its way.',
+  profile: {
+    title: 'Profile',
+    description: 'The details of the account you are signed in with.',
+    name: 'Name',
+    email: 'Email',
+    role: 'Role',
+  },
   changePassword: {
+    pageTitle: 'Change password',
     title: 'Password',
     description: 'Changing your password signs you out on every device, this one included.',
     submit: 'Change password',
