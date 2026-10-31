@@ -121,6 +121,7 @@ export interface PurgeCandidate {
   readonly id: number;
   readonly storageKey: string;
   readonly mimeType: string;
+  readonly provider: string;
 }
 
 /** A live file found for an embed, with the internal id the document stored. */

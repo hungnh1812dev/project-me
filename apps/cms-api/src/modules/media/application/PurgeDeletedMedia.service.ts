@@ -2,7 +2,11 @@ import { Inject, Injectable } from '@nestjs/common';
 
 import { Clock } from '../../../common/time/Clock.service';
 import { APP_LOGGER, type AppLogger } from '../../../infrastructure/logging/AppLogger.port';
-import { MEDIA_PURGE_BATCH_SIZE, MEDIA_PURGE_GRACE_MS } from '../domain/Media.constants';
+import {
+  MEDIA_PURGE_BATCH_SIZE,
+  MEDIA_PURGE_GRACE_MS,
+  PRESET_MEDIA_PROVIDER,
+} from '../domain/Media.constants';
 import { allowedMediaTypeOf } from '../domain/MediaUpload.rules';
 import {
   MEDIA_REFERENCE_CHECKER,
@@ -22,7 +26,7 @@ export interface PurgeResult {
 
 /**
  * Removes the stored object of files soft-deleted more than 24 h ago, then
- * the row. A file that a document points at again is left alone. The object
+ * the row; preset rows have no stored object and lose the row only. A file that a document points at again is left alone. The object
  * goes first: a crash between the two leaves a row to retry, never an
  * orphaned object.
  */
@@ -77,7 +81,9 @@ export class PurgeDeletedMediaService {
             );
             continue;
           }
-          await this.storage.delete(row.storageKey, kind);
+          if (row.provider !== PRESET_MEDIA_PROVIDER) {
+            await this.storage.delete(row.storageKey, kind);
+          }
           await this.repository.deleteRow(row.id);
           purged += 1;
         } catch {

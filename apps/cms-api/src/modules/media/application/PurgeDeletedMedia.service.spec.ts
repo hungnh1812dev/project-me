@@ -1,4 +1,4 @@
-import { MEDIA_PURGE_GRACE_MS } from '../domain/Media.constants';
+import { MEDIA_PURGE_GRACE_MS, PRESET_MEDIA_PROVIDER } from '../domain/Media.constants';
 import type {
   MediaReferenceChecker,
   MediaRepository,
@@ -29,10 +29,15 @@ function setup(rows: PurgeCandidate[], referencedIds: number[] = []) {
   return { service, findPurgeBatch, deleteRow, deleteObject, logger };
 }
 
-const row = (id: number, mimeType = 'image/png'): PurgeCandidate => ({
+const row = (
+  id: number,
+  mimeType = 'image/png',
+  provider: string = 'cloudinary',
+): PurgeCandidate => ({
   id,
   storageKey: `key-${id}`,
   mimeType,
+  provider,
 });
 
 describe('PurgeDeletedMediaService.run', () => {
@@ -51,6 +56,24 @@ describe('PurgeDeletedMediaService.run', () => {
     expect(await service.run()).toEqual({ purged: 1, skipped: 0 });
     expect(deleteObject).toHaveBeenCalledWith('key-1', 'image');
     expect(deleteRow).toHaveBeenCalledWith(1);
+  });
+
+  it('removes a preset row without a storage delete and still deletes a stored one', async () => {
+    const { service, deleteObject, deleteRow } = setup([
+      row(1, 'image/png', PRESET_MEDIA_PROVIDER),
+      row(2),
+    ]);
+    expect(await service.run()).toEqual({ purged: 2, skipped: 0 });
+    expect(deleteObject).toHaveBeenCalledTimes(1);
+    expect(deleteObject).toHaveBeenCalledWith('key-2', 'image');
+    expect(deleteRow).toHaveBeenCalledWith(1);
+    expect(deleteRow).toHaveBeenCalledWith(2);
+  });
+
+  it('keeps a preset row that a document points at', async () => {
+    const { service, deleteRow } = setup([row(1, 'image/png', PRESET_MEDIA_PROVIDER)], [1]);
+    expect(await service.run()).toEqual({ purged: 0, skipped: 1 });
+    expect(deleteRow).not.toHaveBeenCalled();
   });
 
   it('keeps a file a document points at again and a row of unknown type', async () => {

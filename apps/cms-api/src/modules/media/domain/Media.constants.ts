@@ -50,6 +50,9 @@ export function mediaRefInvalidMessage(inputPath: string): string {
   return `${inputPath} refers to a file that does not exist`;
 }
 
+/** `provider` of rows whose bytes ship with the app, not in `MediaStorage`; the purge job never deletes their object. */
+export const PRESET_MEDIA_PROVIDER = 'preset';
+
 /** Soft-deleted files are purged from storage once older than this (SPEC §9). */
 export const MEDIA_PURGE_GRACE_MS = 24 * MS_PER_HOUR;
 /** Rows read per query during a purge run (a run walks all eligible rows). */

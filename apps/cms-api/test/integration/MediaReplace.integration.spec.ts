@@ -15,7 +15,10 @@ import {
 import { hashPassword } from '../../src/modules/identity/application/Password.service';
 import { FakeMediaStorage } from '../../src/modules/media/adapters/Fake.adapter';
 import { MEDIA_STORAGE } from '../../src/modules/media/application/Media.port';
-import { MEDIA_PURGE_GRACE_MS } from '../../src/modules/media/domain/Media.constants';
+import {
+  MEDIA_PURGE_GRACE_MS,
+  PRESET_MEDIA_PROVIDER,
+} from '../../src/modules/media/domain/Media.constants';
 import { MediaPurgeJob } from '../../src/modules/media/jobs/MediaPurge.job';
 import { seedRolePermissions, seedSystemRoles } from '../fixtures/Access.fixture';
 import { createCoreTemplate } from '../fixtures/CoreDb.fixture';
@@ -219,6 +222,36 @@ describe('media replace in place (UIL-2; Postgres 17 via Testcontainers)', () =>
       where: { action: 'media.replaced', targetId: id },
     });
     expect(audit.metadata).toEqual({ previousSha256: before.sha256, sha256: after.sha256 });
+  });
+
+  it('replaces a reviewer preset row: the live row reads the active provider, the tombstone keeps preset, and purge never deletes the preset key', async () => {
+    const { id } = await uploaded();
+    const before = await rowOf(id);
+    await db.prisma.fileLibrary.update({
+      where: { id: before.id },
+      data: { provider: PRESET_MEDIA_PROVIDER, isReviewerPreset: true },
+    });
+    const res = await replace(editor, id, [imagePart(png, 'fresh.png', 'image/png')]);
+    expect(res.status).toBe(200);
+    const after = await rowOf(id);
+    expect(after.provider).toBe('cloudinary');
+    expect(after.isReviewerPreset).toBe(true);
+    const tombstone = await db.prisma.fileLibrary.findUniqueOrThrow({
+      where: { storageKey: before.storageKey },
+    });
+    expect(tombstone.provider).toBe(PRESET_MEDIA_PROVIDER);
+
+    await db.prisma.fileLibrary.update({
+      where: { id: tombstone.id },
+      data: { deletedAt: new Date(Date.now() - MEDIA_PURGE_GRACE_MS - 60_000) },
+    });
+    const deleteSpy = jest.spyOn(storage, 'delete');
+    await app.get(MediaPurgeJob).run();
+    expect(deleteSpy).not.toHaveBeenCalledWith(before.storageKey, expect.anything());
+    expect(
+      await db.prisma.fileLibrary.findUnique({ where: { storageKey: before.storageKey } }),
+    ).toBeNull();
+    deleteSpy.mockRestore();
   });
 
   it('400 for another family or an extra part, and the row stays as it was', async () => {
