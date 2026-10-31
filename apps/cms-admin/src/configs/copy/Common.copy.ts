@@ -76,7 +76,7 @@ export const NAV_COPY = {
   accounts: 'Users',
   roles: 'Roles and permissions',
   apiTokens: 'API tokens',
-  media: 'Media',
+  media: 'File Library',
   reviewer: 'Reviewers',
   content: 'Content',
   singleTypes: 'Single types',

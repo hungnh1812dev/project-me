@@ -159,6 +159,7 @@ export function UploadDialog({
   mode,
   accept = MEDIA_ALLOWED_MIME_TYPES,
   send,
+  initialFiles,
   onUploaded,
   open,
   onClose,
@@ -167,6 +168,8 @@ export function UploadDialog({
   mode: 'many' | 'one';
   accept?: readonly string[];
   send?: SendFile;
+  /** Files dropped outside the dialog; each new array is added once when the dialog is open. */
+  initialFiles?: readonly File[] | undefined;
   onUploaded: (files: MediaFile[]) => void;
   open: boolean;
   onClose: () => void;
@@ -228,6 +231,17 @@ export function UploadDialog({
     setIsDragging(false);
     if (!isStarted) addFiles(Array.from(event.dataTransfer.files));
   };
+
+  const addedInitialFiles = useRef<readonly File[] | undefined>(undefined);
+  const addFilesRef = useRef(addFiles);
+  useEffect(() => {
+    addFilesRef.current = addFiles;
+  });
+  useEffect(() => {
+    if (!open || initialFiles === undefined || addedInitialFiles.current === initialFiles) return;
+    addedInitialFiles.current = initialFiles;
+    addFilesRef.current([...initialFiles]);
+  }, [open, initialFiles]);
 
   const showDropzone = !isStarted && (isOne ? accepted.length === 0 : true);
   const hasList = items.length > 0;

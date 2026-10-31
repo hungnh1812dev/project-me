@@ -1,13 +1,14 @@
 export const MEDIA_COPY = {
-  title: 'Media library',
+  title: 'File Library',
   description:
     'Images, PDFs and videos you can attach to documents. Uploaded images are re-encoded and lose their location data.',
-  upload: 'Upload file',
+  upload: 'Upload files',
   uploaded: (count: number) => (count === 1 ? '1 file uploaded.' : `${count} files uploaded.`),
   tableLabel: 'Media files',
+  replaced: (name: string) => `${name} replaced.`,
   loading: 'Loading media files',
-  loadFailed: 'Could not load the media library.',
-  forbidden: 'Your role cannot view the media library.',
+  loadFailed: 'Could not load the file library.',
+  forbidden: 'Your role cannot view the file library.',
   empty: 'No files yet',
   emptyHint: 'Upload a file to start the library.',
   emptyHintReadOnly: 'Nothing has been uploaded yet.',
