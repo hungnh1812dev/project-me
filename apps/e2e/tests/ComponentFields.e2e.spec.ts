@@ -11,7 +11,7 @@ const list = copy.list;
 const EDIT_URL = /\/content\/cv-page\/([0-9a-f-]{36})$/;
 const DOCUMENTS_PATH = API_PATHS.documents(CV_PAGE_SLUG);
 const POSITION = `E2E components ${RUN_ID}`;
-const NAMES = [`Alpha ${RUN_ID}`, `Beta ${RUN_ID}`, `Gamma ${RUN_ID}`];
+const NAMES = [`Alpha ${RUN_ID}`, `Beta ${RUN_ID}`, `Gamma ${RUN_ID}`] as const;
 const ROLE_NAME = `Role ${RUN_ID}`;
 
 interface StoredItem {

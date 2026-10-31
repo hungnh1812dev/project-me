@@ -16,12 +16,15 @@ const ALT_PADDING = 'a';
 
 const row = (page: Page) => page.getByRole('row').filter({ hasText: FILE_NAME });
 
-const upload = (page: Page, name: string, mimeType: string, body: Buffer) =>
-  page.getByTestId('media-upload-input').setInputFiles({
-    name,
-    mimeType,
-    buffer: body,
-  });
+const dialogCopy = copy.uploadDialog;
+
+/** Opens the upload dialog, lists the file and returns the dialog. */
+const chooseFile = async (page: Page, name: string, mimeType: string, body: Buffer) => {
+  await page.getByRole('button', { name: copy.upload, exact: true }).click();
+  const dialog = page.getByRole('dialog');
+  await dialog.getByTestId('upload-dialog-input').setInputFiles({ name, mimeType, buffer: body });
+  return dialog;
+};
 
 test.describe.serial('owner: media library', () => {
   const inUse = new Set<string>();
@@ -48,14 +51,26 @@ test.describe.serial('owner: media library', () => {
   });
 
   test('an unsupported file type is refused with the reason', async () => {
-    await upload(page, TEXT_FILE_NAME, 'text/plain', Buffer.from('hello'));
-    await expect(page.getByText(copy.errors.unsupportedType)).toBeVisible();
-    await expect(page.getByText(TEXT_FILE_NAME)).toHaveCount(0);
+    const dialog = await chooseFile(page, TEXT_FILE_NAME, 'text/plain', Buffer.from('hello'));
+    await expect(dialog).toContainText(dialogCopy.rejected['type-not-allowed']);
+    await expect(
+      dialog.getByRole('button', { name: dialogCopy.upload, exact: true }),
+    ).toBeDisabled();
+    await dialog.getByRole('button', { name: dialogCopy.cancel, exact: true }).click();
+    await expect(dialog).toBeHidden();
   });
 
   test('an uploaded image shows a notice and appears in the list', async () => {
-    await upload(page, FILE_NAME, 'image/png', Buffer.from(PNG_BASE64, 'base64'));
-    await expect(page.getByText(copy.uploaded(FILE_NAME))).toBeVisible();
+    const dialog = await chooseFile(
+      page,
+      FILE_NAME,
+      'image/png',
+      Buffer.from(PNG_BASE64, 'base64'),
+    );
+    await dialog.getByRole('button', { name: dialogCopy.upload, exact: true }).click();
+    await dialog.getByRole('button', { name: dialogCopy.close, exact: true }).click();
+    await expect(dialog).toBeHidden();
+    await expect(page.getByText(copy.uploaded(1))).toBeVisible();
     await expect(row(page)).toBeVisible();
     await expect(row(page)).toContainText(copy.noAlt);
   });
