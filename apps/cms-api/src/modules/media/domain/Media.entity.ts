@@ -1,11 +1,12 @@
 import { DOMAIN_ERROR_KINDS, DomainError } from '../../../common/errors/Domain.errors';
-import type { PageMeta } from '../../../common/validation/SharedSchemas.rules';
+import type { PageMeta, PageQuery } from '../../../common/validation/SharedSchemas.rules';
 import {
   MEDIA_ERROR_CODES,
   MEDIA_ERROR_MESSAGES,
   MEDIA_REF_ERROR_CODES,
   mediaRefInvalidMessage,
 } from './Media.constants';
+import type { MediaMimeFilter } from './MediaUpload.rules';
 
 /** A library file row: the fields the API may show, in the storage's own names. */
 export interface MediaRecord {
@@ -20,7 +21,9 @@ export interface MediaRecord {
   readonly thumbnailUrl: string | null;
   readonly provider: string;
   readonly isReviewerPreset: boolean;
+  readonly sha256: string;
   readonly createdAt: Date;
+  readonly updatedAt: Date;
 }
 
 /** A library file as the API returns it: no storage key, no internal id. */
@@ -36,7 +39,15 @@ export interface MediaView {
   readonly thumbnailUrl: string | null;
   readonly provider: string;
   readonly isReviewerPreset: boolean;
+  readonly sha256: string;
   readonly createdAt: string;
+  readonly updatedAt: string;
+}
+
+/** `GET /media` query: the page, an optional file-name search and an optional MIME type or family. */
+export interface MediaListQuery extends PageQuery {
+  readonly search?: string | undefined;
+  readonly mimeType?: MediaMimeFilter | undefined;
 }
 
 export interface MediaPage<T = MediaRecord> {

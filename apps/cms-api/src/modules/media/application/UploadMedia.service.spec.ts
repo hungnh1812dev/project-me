@@ -52,7 +52,9 @@ function stubs(createError?: Error) {
           url: 'u',
           thumbnailUrl: 't',
           isReviewerPreset: false,
+          sha256: 'ab',
           createdAt: new Date(0),
+          updatedAt: new Date(0),
         })
       : Promise.reject(createError),
   );

@@ -69,7 +69,9 @@ interface MediaBody {
   url: string;
   thumbnailUrl: string | null;
   isReviewerPreset: boolean;
+  sha256: string;
   createdAt: string;
+  updatedAt: string;
 }
 interface Page {
   data: MediaBody[];
@@ -201,8 +203,10 @@ describe('media upload and list (T27; Postgres 17 via Testcontainers)', () => {
         'isReviewerPreset',
         'mimeType',
         'provider',
+        'sha256',
         'size',
         'thumbnailUrl',
+        'updatedAt',
         'url',
         'width',
       ]);
@@ -325,7 +329,11 @@ describe('media upload and list (T27; Postgres 17 via Testcontainers)', () => {
       const page = res.body as Page;
       expect(page.data.map((file) => file.fileName)).toEqual(['c.png', 'b.png']);
       expect(page.meta).toEqual({ page: 1, pageSize: 20, total: 2 });
-      expect(JSON.stringify(page)).not.toMatch(/storageKey|sha256|deletedAt/);
+      expect(JSON.stringify(page)).not.toMatch(/storageKey|deletedAt/);
+      expect(page.data[0]?.sha256).toMatch(/^[0-9a-f]{64}$/);
+      expect(new Date(page.data[0]?.updatedAt as string).toISOString()).toBe(
+        page.data[0]?.updatedAt,
+      );
       expect(res.headers['cache-control']).toMatch(/no-store/);
 
       const second = await http().get(`${MEDIA}?page=2&pageSize=1`).set(bearer(owner));
@@ -335,10 +343,101 @@ describe('media upload and list (T27; Postgres 17 via Testcontainers)', () => {
     });
 
     it('is 400 for a bad page query', async () => {
-      for (const query of ['pageSize=101', 'page=0', 'sort=name', 'pageSize=x']) {
+      for (const query of [
+        'pageSize=101',
+        'page=0',
+        'sort=name',
+        'pageSize=x',
+        'search=',
+        'search=%20%20',
+        `search=${'a'.repeat(101)}`,
+        'search=a&search=b',
+        'mimeType=text/html',
+        'mimeType=image/svg%2Bxml',
+        'mimeType=audio/*',
+        'mimeType=image/',
+      ]) {
         const res = await http().get(`${MEDIA}?${query}`).set(bearer(editor));
         expect(res.status).toBe(400);
       }
+    });
+
+    describe('search and mimeType', () => {
+      async function seed(names: string[]): Promise<void> {
+        await clear();
+        for (const name of names) {
+          expect((await upload(editor, fixtures.png, name)).status).toBe(201);
+        }
+      }
+      const namesOf = async (query: string, token = editor) => {
+        const res = await http().get(`${MEDIA}?${query}`).set(bearer(token));
+        expect(res.status).toBe(200);
+        return res.body as Page;
+      };
+
+      it('matches the file name case-insensitively as a substring', async () => {
+        await seed(['Holiday.png', 'work.png', 'HOLIDAY2.png']);
+        const page = await namesOf('search=holiday');
+        expect(page.data.map((file) => file.fileName)).toEqual(['HOLIDAY2.png', 'Holiday.png']);
+        expect(page.meta.total).toBe(2);
+        expect((await namesOf('search=%20ORK%20')).meta.total).toBe(1);
+      });
+
+      it('matches %, _ and backslash literally', async () => {
+        await seed(['a%b.png', 'a_b.png', 'axb.png', 'abx.png']);
+        // The upload strips path separators, so a stored backslash is set directly.
+        await db.prisma.fileLibrary.updateMany({
+          where: { fileName: 'abx.png' },
+          data: { fileName: 'a\\b.png' },
+        });
+        expect((await namesOf('search=a%25b')).data.map((f) => f.fileName)).toEqual(['a%b.png']);
+        expect((await namesOf('search=a_b')).data.map((f) => f.fileName)).toEqual(['a_b.png']);
+        expect((await namesOf('search=%25')).meta.total).toBe(1);
+        expect((await namesOf('search=_')).meta.total).toBe(1);
+        expect((await namesOf('search=a%5Cb')).meta.total).toBe(1);
+      });
+
+      it('filters by exact type and family, and counts the filtered set', async () => {
+        await seed(['one.png', 'two.png']);
+        expect((await upload(editor, MINIMAL_PDF, 'doc.pdf')).status).toBe(201);
+        expect((await upload(editor, MINIMAL_MP4, 'clip.mp4')).status).toBe(201);
+        expect((await namesOf('mimeType=image/*')).meta.total).toBe(2);
+        expect((await namesOf('mimeType=image/png')).meta.total).toBe(2);
+        expect((await namesOf('mimeType=image/jpeg')).meta.total).toBe(0);
+        expect((await namesOf('mimeType=video/*')).meta.total).toBe(1);
+        expect((await namesOf('mimeType=video/mp4')).meta.total).toBe(1);
+        const only = await namesOf('mimeType=application/pdf&search=DOC');
+        expect(only.data.map((file) => file.fileName)).toEqual(['doc.pdf']);
+        const paged = await namesOf('mimeType=image/*&pageSize=1&page=2');
+        expect(paged.meta).toEqual({ page: 2, pageSize: 1, total: 2 });
+      });
+
+      it('keeps the policy row filter when searching', async () => {
+        await seed(['plain.png', 'preset.png']);
+        const preset = await db.prisma.fileLibrary.findFirstOrThrow({
+          where: { fileName: 'preset.png' },
+        });
+        await db.prisma.fileLibrary.update({
+          where: { id: preset.id },
+          data: { isReviewerPreset: true },
+        });
+        const role = systemRole('reviewer', [grant('media', PermissionAction.read)]);
+        const media = app.get(MediaLibraryService);
+        const reviewer = reviewerActor(99, 1, role);
+        const base = { page: 1, pageSize: 20 };
+        const hit = await media.list(reviewer, { ...base, search: 'png' });
+        expect(hit.data.map((file) => file.fileName)).toEqual(['preset.png']);
+        expect(hit.meta.total).toBe(1);
+        const miss = await media.list(reviewer, { ...base, search: 'plain' });
+        expect(miss.data).toEqual([]);
+        expect(miss.meta.total).toBe(0);
+      });
+
+      it('never lists a soft-deleted match', async () => {
+        await seed(['gone.png']);
+        await db.prisma.fileLibrary.updateMany({ data: { deletedAt: new Date() } });
+        expect((await namesOf('search=gone')).meta.total).toBe(0);
+      });
     });
 
     it('is 401 without a token and 403 without media read; a read-only role lists', async () => {

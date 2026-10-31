@@ -31,7 +31,9 @@ interface MediaRow {
   thumbnail_url: string | null;
   provider: string;
   is_reviewer_preset: boolean;
+  sha256: string;
   created_at: Date;
+  updated_at: Date;
 }
 
 const MEDIA_COLUMNS = [
@@ -46,7 +48,9 @@ const MEDIA_COLUMNS = [
   'thumbnail_url',
   'provider',
   'is_reviewer_preset',
+  'sha256',
   'created_at',
+  'updated_at',
 ] as const;
 
 /** What a document read embeds, plus the id the document stores. */
@@ -75,7 +79,9 @@ function recordOfRow(row: MediaRow): MediaRecord {
     thumbnailUrl: row.thumbnail_url,
     provider: row.provider,
     isReviewerPreset: row.is_reviewer_preset,
+    sha256: row.sha256,
     createdAt: row.created_at,
+    updatedAt: row.updated_at,
   };
 }
 
@@ -106,13 +112,21 @@ export class PrismaMediaRepository implements MediaRepository {
     rowCondition: RowCondition | null;
     page: number;
     pageSize: number;
+    escapedSearch?: string | undefined;
+    mimeTypes?: readonly string[] | undefined;
   }): Promise<MediaPage> {
-    const { rowCondition, page, pageSize } = selection;
+    const { rowCondition, page, pageSize, escapedSearch, mimeTypes } = selection;
     const base = this.content.db
       .selectFrom(MEDIA_TABLE)
       .where(DELETED_AT_COLUMN, 'is', null)
       .$if(rowCondition !== null, (qb) =>
         qb.where(rowCondition as NonNullable<typeof rowCondition>),
+      )
+      .$if(escapedSearch !== undefined, (qb) =>
+        qb.where('file_name', 'ilike', `%${escapedSearch}%`),
+      )
+      .$if(mimeTypes !== undefined, (qb) =>
+        qb.where('mime_type', 'in', [...(mimeTypes as readonly string[])]),
       );
     const [rows, counted] = await Promise.all([
       base

@@ -42,7 +42,7 @@ import type { UploadStream } from '../application/Media.port';
 import { MediaLibraryService } from '../application/MediaLibrary.service';
 import { UploadMediaService } from '../application/UploadMedia.service';
 import type { MediaRecord, MediaView } from '../domain/Media.entity';
-import { isAltWithinLimit, normalizeAlt } from '../domain/MediaUpload.rules';
+import { isAltWithinLimit, MEDIA_MIME_FILTERS, normalizeAlt } from '../domain/MediaUpload.rules';
 
 /** SPEC §9 media (upload, list, delete). */
 const MEDIA_ROUTES = {
@@ -79,6 +79,14 @@ const updateMediaSchema = z.strictObject({
   alt: z.string().trim().refine(isAltWithinLimit).transform(normalizeAlt).nullable(),
 });
 
+const SEARCH_MAX_LENGTH = 100;
+
+/** `GET /media`: the page query plus `search` (file name, 1-100 chars) and `mimeType`; nothing else. */
+const mediaListQuerySchema = pageQuerySchema.extend({
+  search: z.string().trim().min(1).max(SEARCH_MAX_LENGTH).optional(),
+  mimeType: z.enum(MEDIA_MIME_FILTERS).optional(),
+});
+
 /** The API view of a library file: never the storage key or the internal id. */
 function mediaViewOf(record: MediaRecord): MediaView {
   return {
@@ -93,7 +101,9 @@ function mediaViewOf(record: MediaRecord): MediaView {
     thumbnailUrl: record.thumbnailUrl,
     provider: record.provider,
     isReviewerPreset: record.isReviewerPreset,
+    sha256: record.sha256,
     createdAt: record.createdAt.toISOString(),
+    updatedAt: record.updatedAt.toISOString(),
   };
 }
 
@@ -143,7 +153,7 @@ export class MediaController {
     @Req() req: AuthenticatedRequest,
     @Query() query: unknown,
   ): Promise<{ data: MediaView[]; meta: PageMeta }> {
-    const page = await this.library.list(req.user.actor, parseRequest(pageQuerySchema, query));
+    const page = await this.library.list(req.user.actor, parseRequest(mediaListQuerySchema, query));
     return { data: page.data.map(mediaViewOf), meta: page.meta };
   }
 

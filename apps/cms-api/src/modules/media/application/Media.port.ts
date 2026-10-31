@@ -128,6 +128,10 @@ export interface MediaRepository {
     rowCondition: RowCondition | null;
     page: number;
     pageSize: number;
+    /** Case-insensitive substring of the file name, already escaped for `ilike`. */
+    escapedSearch?: string | undefined;
+    /** Exact MIME types to keep (`undefined` = any). */
+    mimeTypes?: readonly string[] | undefined;
   }): Promise<MediaPage>;
   /** Internal id of a live file the condition reaches. */
   findLiveId(documentId: string, rowCondition: RowCondition | null): Promise<number | undefined>;

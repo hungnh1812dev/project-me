@@ -2,7 +2,6 @@ import { Inject, Injectable } from '@nestjs/common';
 
 import { Clock } from '../../../common/time/Clock.service';
 import type { ClientMeta } from '../../../common/types/ClientMeta.entity';
-import type { PageQuery } from '../../../common/validation/SharedSchemas.rules';
 import {
   CORE_TRANSACTION_RUNNER,
   type TransactionRunner,
@@ -20,9 +19,11 @@ import {
   mediaForbidden,
   mediaInUse,
   mediaNotFound,
+  type MediaListQuery,
   type MediaPage,
   type MediaRecord,
 } from '../domain/Media.entity';
+import { escapeLikePattern, mimeTypesOfFilter } from '../domain/MediaUpload.rules';
 import {
   MEDIA_REFERENCE_CHECKER,
   MEDIA_REPOSITORY,
@@ -49,11 +50,19 @@ export class MediaLibraryService {
 
   /**
    * Newest first. Read-only actors (reviewer) only get preset rows, whatever
-   * their role is called. Soft-deleted rows are never listed.
+   * their role is called. Soft-deleted rows are never listed. `search` and
+   * `mimeType` narrow the set the row condition already allows.
    */
-  async list(actor: ActorContext, query: PageQuery): Promise<MediaPage> {
+  async list(actor: ActorContext, query: MediaListQuery): Promise<MediaPage> {
     const rowCondition = await this.rowConditionOf(actor, PermissionAction.read);
-    return this.repository.list({ rowCondition, ...query });
+    const { page, pageSize, search, mimeType } = query;
+    return this.repository.list({
+      rowCondition,
+      page,
+      pageSize,
+      escapedSearch: search === undefined ? undefined : escapeLikePattern(search),
+      mimeTypes: mimeType === undefined ? undefined : mimeTypesOfFilter(mimeType),
+    });
   }
 
   /** Alt text only; not audited (SPEC §7 lists media delete only). */

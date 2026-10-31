@@ -45,6 +45,29 @@ export type ImageMime = {
   [M in AllowedMime]: (typeof ALLOWED_MEDIA_TYPES)[M]['kind'] extends 'image' ? M : never;
 }[AllowedMime];
 
+/** `?mimeType=` also accepts these family wildcards. */
+export const MEDIA_MIME_FAMILY_FILTERS = ['image/*', 'video/*'] as const;
+
+export const MEDIA_MIME_FILTERS = [
+  ...(Object.keys(ALLOWED_MEDIA_TYPES) as AllowedMime[]),
+  ...MEDIA_MIME_FAMILY_FILTERS,
+] as const;
+
+export type MediaMimeFilter = (typeof MEDIA_MIME_FILTERS)[number];
+
+/** The allowlisted MIME types a `?mimeType=` filter matches: one type, or every type of a family. */
+export function mimeTypesOfFilter(filter: MediaMimeFilter): readonly AllowedMime[] {
+  const allowed = Object.keys(ALLOWED_MEDIA_TYPES) as AllowedMime[];
+  if (!filter.endsWith('/*')) return allowed.filter((mime) => mime === filter);
+  const familyPrefix = filter.slice(0, -1);
+  return allowed.filter((mime) => mime.startsWith(familyPrefix));
+}
+
+/** Escapes `\`, `%` and `_` so a search term is matched literally by `ilike`. */
+export function escapeLikePattern(term: string): string {
+  return term.replace(/[\\%_]/g, (char) => `\\${char}`);
+}
+
 export function allowedMediaTypeOf(mime: string): AllowedMediaType | undefined {
   return Object.hasOwn(ALLOWED_MEDIA_TYPES, mime)
     ? ALLOWED_MEDIA_TYPES[mime as AllowedMime]

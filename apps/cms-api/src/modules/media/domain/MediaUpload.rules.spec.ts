@@ -1,7 +1,10 @@
 import { FALLBACK_FILE_NAME, FILE_NAME_MAX_LENGTH } from './Media.constants';
 import {
   allowedMediaTypeOf,
+  escapeLikePattern,
   isAltWithinLimit,
+  MEDIA_MIME_FILTERS,
+  mimeTypesOfFilter,
   normalizeAlt,
   sanitizeFileName,
   sha256Hex,
@@ -54,5 +57,29 @@ describe('sha256Hex', () => {
     expect(sha256Hex(Buffer.from('abc'))).toBe(
       'ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad',
     );
+  });
+});
+
+describe('media list filters', () => {
+  it('maps an exact type and each family to allowlisted types', () => {
+    expect(mimeTypesOfFilter('application/pdf')).toEqual(['application/pdf']);
+    expect(mimeTypesOfFilter('video/*')).toEqual(['video/mp4']);
+    expect(mimeTypesOfFilter('image/*')).toEqual([
+      'image/jpeg',
+      'image/png',
+      'image/webp',
+      'image/gif',
+      'image/avif',
+    ]);
+  });
+
+  it('accepts no type outside the allowlist and its families', () => {
+    expect(MEDIA_MIME_FILTERS).not.toContain('text/html');
+    expect(MEDIA_MIME_FILTERS).not.toContain('image/svg+xml');
+  });
+
+  it('escapes backslash, percent and underscore', () => {
+    expect(escapeLikePattern('a%b_c\\d')).toBe('a\\%b\\_c\\\\d');
+    expect(escapeLikePattern('plain')).toBe('plain');
   });
 });
