@@ -194,9 +194,9 @@ pnpm --filter @abyss/form-commons exec shadcn add <name>
 
 ## Scripts
 
-| Script      | What it does                                                                          |
-| ----------- | ------------------------------------------------------------------------------------- |
-| `build`     | tsup (ESM, d.ts) + Tailwind CLI for `dist/styles.css`                                 |
-| `test`      | Vitest + Testing Library (jsdom)                                                      |
-| `lint`      | Oxlint (base-config + react, jsx-a11y, vitest) then ESLint (base-config, react-hooks) |
-| `typecheck` | `tsc --noEmit`                                                                        |
+| Script      | What it does                                                                                    |
+| ----------- | ----------------------------------------------------------------------------------------------- |
+| `build`     | tsup (ESM, d.ts; 4 GB heap, the d.ts step needs over 2 GB) + Tailwind CLI for `dist/styles.css` |
+| `test`      | Vitest + Testing Library (jsdom)                                                                |
+| `lint`      | Oxlint (base-config + react, jsx-a11y, vitest) then ESLint (base-config, react-hooks)           |
+| `typecheck` | `tsc --noEmit`                                                                                  |

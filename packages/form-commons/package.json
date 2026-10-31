@@ -27,7 +27,7 @@
     "**/*.css"
   ],
   "scripts": {
-    "build": "tsup && tailwindcss -i src/styles/build.css -o dist/styles.css --minify",
+    "build": "NODE_OPTIONS=--max-old-space-size=4096 tsup && tailwindcss -i src/styles/build.css -o dist/styles.css --minify",
     "test": "vitest run",
     "lint": "oxlint && eslint .",
     "typecheck": "tsc -p tsconfig.json --noEmit"
