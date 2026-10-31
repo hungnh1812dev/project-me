@@ -99,6 +99,12 @@ Every frontend app uses this tree; a folder appears only when the app needs it:
   public/             static files served as-is
   src/
     app/              Next.js app route files (routes, layouts, route handlers) only; each page renders its view
+    assets/           files the bundler imports (not served as-is)
+      images/
+      styles/
+        global.css    the only stylesheet the app imports: framework and shared theme imports, then base.css and app.css
+        base.css      resets and plain HTML element styles (`@layer base`)
+        app.css       this app's own component and utility styles
     components/       UI components shared by several pages or features
       layouts/        page layouts
     apis/             API config and clients
@@ -115,6 +121,7 @@ Every frontend app uses this tree; a folder appears only when the app needs it:
 
 - A component used by one page lives in that page's `views/` folder; when a second page or feature needs it, move it to `features/` (feature-bound) or `components/` (generic).
 - `app/` holds no UI beyond rendering a view, layout or loading/error state.
+- Styles: the app entry (root layout or `main`) imports only `assets/styles/global.css`; a new stylesheet is imported from `global.css`, never from a component.
 - An existing app with a different tree: new code goes in the matching folder of this tree when it exists, else in the app's current folder; moving old folders is a planned task, never a side effect. Record the difference in the unit record.
 
 ## 5. General
