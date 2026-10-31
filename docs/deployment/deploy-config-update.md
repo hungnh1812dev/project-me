@@ -111,12 +111,7 @@ Rollback: revert both the CI tag commits and the manifest merge on the environme
 When the app team ships a cms-admin image that reads `ADMIN_PORT`, add `APP_PORT: "8080"` to `admin-configmap` and change `apps/cms-admin/deployment.yaml`:
 
 ```yaml
-command:
-  [
-    'sh',
-    '-c',
-    "ADMIN_PORT=${APP_PORT} exec /docker-entrypoint.sh nginx -g 'daemon off;'",
-  ]
+command: ['sh', '-c', "ADMIN_PORT=${APP_PORT} exec /docker-entrypoint.sh nginx -g 'daemon off;'"]
 ports:
   - name: http
     containerPort: ${APP_PORT}

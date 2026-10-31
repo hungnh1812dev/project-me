@@ -22,10 +22,6 @@
     // "git.ignoreLimitWarning": true
   },
   "extensions": {
-    "recommendations": [
-      "esbenp.prettier-vscode",
-      "dbaeumer.vscode-eslint",
-      "oxc.oxc-vscode",
-    ],
+    "recommendations": ["esbenp.prettier-vscode", "dbaeumer.vscode-eslint", "oxc.oxc-vscode"],
   },
 }
