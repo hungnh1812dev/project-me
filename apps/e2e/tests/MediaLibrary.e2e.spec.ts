@@ -1,10 +1,10 @@
-import { type BrowserContext, expect, type Page, test } from '@playwright/test';
+import { expect, test, type BrowserContext, type Page } from '@playwright/test';
 
 import { ADMIN_COPY, MEDIA_ALT_MAX_LENGTH } from '../src/Apps.contract';
+import { RUN_ID } from '../src/E2e.constants';
 import { e2eEnv } from '../src/E2e.env';
 import { fakeMediaApi, PNG_BASE64 } from '../src/FakeMediaApi.fixture';
 import { signInAs } from '../src/Session.fixture';
-import { RUN_ID } from '../src/E2e.constants';
 
 const copy = ADMIN_COPY.media;
 const access = ADMIN_COPY.access;
@@ -14,8 +14,7 @@ const TEXT_FILE_NAME = `e2e-media-${RUN_ID}.txt`;
 const ALT_TEXT = `E2E alt ${RUN_ID}`;
 const ALT_PADDING = 'a';
 
-const row = (page: Page) =>
-  page.getByRole('row').filter({ hasText: FILE_NAME });
+const row = (page: Page) => page.getByRole('row').filter({ hasText: FILE_NAME });
 
 const upload = (page: Page, name: string, mimeType: string, body: Buffer) =>
   page.getByTestId('media-upload-input').setInputFiles({
@@ -55,12 +54,7 @@ test.describe.serial('owner: media library', () => {
   });
 
   test('an uploaded image shows a notice and appears in the list', async () => {
-    await upload(
-      page,
-      FILE_NAME,
-      'image/png',
-      Buffer.from(PNG_BASE64, 'base64'),
-    );
+    await upload(page, FILE_NAME, 'image/png', Buffer.from(PNG_BASE64, 'base64'));
     await expect(page.getByText(copy.uploaded(FILE_NAME))).toBeVisible();
     await expect(row(page)).toBeVisible();
     await expect(row(page)).toContainText(copy.noAlt);
@@ -72,17 +66,13 @@ test.describe.serial('owner: media library', () => {
       if (request.method() === 'PATCH') patched += 1;
     };
     page.on('request', count);
-    await page
-      .getByRole('button', { name: copy.editAltLabel(FILE_NAME) })
-      .click();
+    await page.getByRole('button', { name: copy.editAltLabel(FILE_NAME) }).click();
     const dialog = page.getByRole('dialog');
     await dialog
       .getByLabel(copy.altDialog.label)
       .fill(ALT_PADDING.repeat(MEDIA_ALT_MAX_LENGTH + 1));
     await dialog.getByRole('button', { name: copy.altDialog.save }).click();
-    await expect(dialog).toContainText(
-      copy.altDialog.tooLong(MEDIA_ALT_MAX_LENGTH),
-    );
+    await expect(dialog).toContainText(copy.altDialog.tooLong(MEDIA_ALT_MAX_LENGTH));
     expect(patched).toBe(0);
     page.off('request', count);
     await page.keyboard.press('Escape');
@@ -109,36 +99,24 @@ test.describe.serial('owner: media library', () => {
   test('a file attached to a document keeps the delete dialog open with the in-use message', async () => {
     // The attach contract is not built yet: the stand-in API reports the file as in use.
     inUse.add(FILE_NAME);
-    await page
-      .getByRole('button', { name: copy.deleteLabel(FILE_NAME) })
-      .click();
+    await page.getByRole('button', { name: copy.deleteLabel(FILE_NAME) }).click();
     const dialog = page.getByRole('dialog');
     await expect(dialog).toContainText(copy.deleteDialog.title(FILE_NAME));
-    await dialog
-      .getByRole('button', { name: copy.deleteDialog.submit(FILE_NAME) })
-      .click();
+    await dialog.getByRole('button', { name: copy.deleteDialog.submit(FILE_NAME) }).click();
     await expect(dialog).toContainText(copy.errors.inUse);
     await expect(dialog).toBeVisible();
     inUse.delete(FILE_NAME);
-    await dialog
-      .getByRole('button', { name: copy.deleteDialog.cancel })
-      .click();
+    await dialog.getByRole('button', { name: copy.deleteDialog.cancel }).click();
     await expect(dialog).toBeHidden();
     // The page behind an open dialog is aria-hidden, so check the row after.
     await expect(row(page)).toBeVisible();
   });
 
   test('deleting an unused file removes its row', async () => {
-    await page
-      .getByRole('button', { name: copy.deleteLabel(FILE_NAME) })
-      .click();
+    await page.getByRole('button', { name: copy.deleteLabel(FILE_NAME) }).click();
     const dialog = page.getByRole('dialog');
-    await dialog
-      .getByRole('button', { name: copy.deleteDialog.submit(FILE_NAME) })
-      .click();
-    await expect(
-      page.getByText(copy.deleteDialog.deleted(FILE_NAME)),
-    ).toBeVisible();
+    await dialog.getByRole('button', { name: copy.deleteDialog.submit(FILE_NAME) }).click();
+    await expect(page.getByText(copy.deleteDialog.deleted(FILE_NAME))).toBeVisible();
     await expect(row(page)).toHaveCount(0);
   });
 });

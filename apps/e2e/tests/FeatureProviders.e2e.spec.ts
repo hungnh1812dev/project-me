@@ -1,4 +1,4 @@
-import { expect, type Page, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 
 import { ADMIN_COPY } from '../src/Apps.contract';
 import { e2eEnv } from '../src/E2e.env';
@@ -25,15 +25,11 @@ function collectProviderErrors(page: Page): string[] {
 }
 
 function expectNoMissingProvider(errors: string[]) {
-  expect(errors.filter((text) => MISSING_PROVIDER_PATTERN.test(text))).toEqual(
-    [],
-  );
+  expect(errors.filter((text) => MISSING_PROVIDER_PATTERN.test(text))).toEqual([]);
 }
 
 /** R3-10: API services and providers are built from the feature registry. */
-test('public pages render without a missing-provider error', async ({
-  page,
-}) => {
+test('public pages render without a missing-provider error', async ({ page }) => {
   const errors = collectProviderErrors(page);
   for (const path of PUBLIC_PATHS) {
     await page.goto(path);
@@ -45,12 +41,8 @@ test('public pages render without a missing-provider error', async ({
 test('owner: every feature page loads, then signs out', async ({ page }) => {
   const errors = collectProviderErrors(page);
   await page.goto('/login');
-  await page
-    .getByRole('textbox', { name: ADMIN_COPY.login.emailLabel })
-    .fill(e2eEnv.ownerEmail);
-  await page
-    .getByLabel(ADMIN_COPY.login.passwordLabel)
-    .fill(e2eEnv.ownerPassword);
+  await page.getByRole('textbox', { name: ADMIN_COPY.login.emailLabel }).fill(e2eEnv.ownerEmail);
+  await page.getByLabel(ADMIN_COPY.login.passwordLabel).fill(e2eEnv.ownerPassword);
   await page.getByRole('button', { name: ADMIN_COPY.login.submit }).click();
   const signOut = page.getByRole('button', {
     name: ADMIN_COPY.session.signOut,

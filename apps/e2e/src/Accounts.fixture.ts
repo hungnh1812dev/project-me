@@ -31,15 +31,9 @@ export async function inviteAccount(
   const seen = await mailIdsFor(ownerContext, account.email);
   await ownerPage.getByRole('button', { name: access.accounts.invite }).click();
   const dialog = ownerPage.getByRole('dialog', { name: access.invite.title });
-  await dialog
-    .getByLabel(labelStartingWith(access.invite.emailLabel))
-    .fill(account.email);
-  await dialog
-    .getByLabel(labelStartingWith(access.invite.displayNameLabel))
-    .fill(account.name);
-  await dialog
-    .getByLabel(labelStartingWith(access.invite.roleLabel))
-    .selectOption(account.role);
+  await dialog.getByLabel(labelStartingWith(access.invite.emailLabel)).fill(account.email);
+  await dialog.getByLabel(labelStartingWith(access.invite.displayNameLabel)).fill(account.name);
+  await dialog.getByLabel(labelStartingWith(access.invite.roleLabel)).selectOption(account.role);
   await dialog.getByRole('button', { name: access.invite.submit }).click();
   await expect(dialog).toBeHidden();
   const code = await waitForCode(ownerContext, account.email, seen);
@@ -49,19 +43,11 @@ export async function inviteAccount(
     page.on('pageerror', (error) => onPageError(error.message));
   }
   await page.goto('/set-password');
-  await page
-    .getByLabel(labelStartingWith(password.emailLabel))
-    .fill(account.email);
+  await page.getByLabel(labelStartingWith(password.emailLabel)).fill(account.email);
   await page.getByLabel(labelStartingWith(password.codeLabel)).fill(code);
-  await page
-    .getByLabel(labelStartingWith(password.newPasswordLabel))
-    .fill(account.password);
-  await page
-    .getByLabel(labelStartingWith(password.confirmPasswordLabel))
-    .fill(account.password);
+  await page.getByLabel(labelStartingWith(password.newPasswordLabel)).fill(account.password);
+  await page.getByLabel(labelStartingWith(password.confirmPasswordLabel)).fill(account.password);
   await page.getByRole('button', { name: password.set.submit }).click();
-  await expect(page.getByRole('status')).toHaveText(
-    ADMIN_COPY.login.notices.passwordSet,
-  );
+  await expect(page.getByRole('status')).toHaveText(ADMIN_COPY.login.notices.passwordSet);
   return page;
 }

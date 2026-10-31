@@ -33,8 +33,7 @@ function corsHeaders(route: Route): Record<string, string> {
     'access-control-allow-origin': request.headers()['origin'] ?? '*',
     'access-control-allow-credentials': 'true',
     'access-control-allow-methods': 'GET,POST,PATCH,DELETE,OPTIONS',
-    'access-control-allow-headers':
-      request.headers()['access-control-request-headers'] ?? '*',
+    'access-control-allow-headers': request.headers()['access-control-request-headers'] ?? '*',
   };
 }
 
@@ -83,10 +82,7 @@ function uploadedPart(route: Route): { name: string; type: string } {
  * in-memory stand-in for /media; the real API contract is covered by cms-api's
  * integration tests. Files named in `inUse` refuse deletion.
  */
-export async function fakeMediaApi(
-  context: BrowserContext,
-  inUse: Set<string>,
-): Promise<void> {
+export async function fakeMediaApi(context: BrowserContext, inUse: Set<string>): Promise<void> {
   const files: FakeFile[] = [];
 
   const list = (route: Route) =>
@@ -140,11 +136,7 @@ export async function fakeMediaApi(
     const id = new URL(request.url()).pathname.split('/').at(-1) ?? '';
     const found = files.find((file) => file.id === id);
     if (found === undefined) {
-      return respondError(
-        route,
-        HTTP.NOT_FOUND,
-        API_ERROR_CODES.MEDIA_NOT_FOUND,
-      );
+      return respondError(route, HTTP.NOT_FOUND, API_ERROR_CODES.MEDIA_NOT_FOUND);
     }
     return method === 'PATCH' ? update(route, found) : remove(route, found);
   });

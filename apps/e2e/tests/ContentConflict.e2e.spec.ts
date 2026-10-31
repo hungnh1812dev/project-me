@@ -1,27 +1,20 @@
 import {
-  type BrowserContext,
   expect,
+  test,
+  type BrowserContext,
   type Locator,
   type Page,
   type Request,
-  test,
 } from '@playwright/test';
 
-import { ADMIN_COPY, contentNewPath } from '../src/Apps.contract';
-import { e2eEnv } from '../src/E2e.env';
-import { signInAs } from '../src/Session.fixture';
-import { HTTP, RUN_ID, CV_PAGE_SLUG } from '../src/E2e.constants';
-import { API_PATHS } from '../src/Api.endpoints';
-import {
-  contentSaveButton,
-  fieldByLabel,
-  listItem,
-} from '../src/Locators.fixture';
+import { limitEditorToPositionField, restoreEditorRole } from '../src/AccessPages.fixture';
 import { inviteAccount } from '../src/Accounts.fixture';
-import {
-  limitEditorToPositionField,
-  restoreEditorRole,
-} from '../src/AccessPages.fixture';
+import { API_PATHS } from '../src/Api.endpoints';
+import { ADMIN_COPY, contentNewPath } from '../src/Apps.contract';
+import { CV_PAGE_SLUG, HTTP, RUN_ID } from '../src/E2e.constants';
+import { e2eEnv } from '../src/E2e.env';
+import { contentSaveButton, fieldByLabel, listItem } from '../src/Locators.fixture';
+import { signInAs } from '../src/Session.fixture';
 
 const copy = ADMIN_COPY.content;
 const merge = copy.conflict;
@@ -31,8 +24,7 @@ const EDIT_URL = /\/content\/cv-page\/[0-9a-f-]{36}$/;
 const DOCUMENTS_PATH = API_PATHS.documents(CV_PAGE_SLUG);
 const SKILLS = ['Alpha', 'Beta', 'Gamma'].map((name) => `${name} ${RUN_ID}`);
 
-const mergeDialog = (page: Page) =>
-  page.getByRole('dialog', { name: merge.title });
+const mergeDialog = (page: Page) => page.getByRole('dialog', { name: merge.title });
 const skillName = (page: Page, index: number) =>
   fieldByLabel(listItem(page, 'Skill', index), 'Skill');
 const skillLevel = (page: Page, index: number) =>
@@ -40,11 +32,8 @@ const skillLevel = (page: Page, index: number) =>
 /** One difference card: a fieldset named after what differs. */
 const card = (dialog: Locator, title: string) =>
   dialog.getByRole('group', { name: title, exact: true });
-const choose = (
-  dialog: Locator,
-  title: string,
-  side: typeof merge.saved | typeof merge.mine,
-) => card(dialog, title).getByRole('radio', { name: side }).check();
+const choose = (dialog: Locator, title: string, side: typeof merge.saved | typeof merge.mine) =>
+  card(dialog, title).getByRole('radio', { name: side }).check();
 
 const isWrite = (request: Request) =>
   request.url().includes(DOCUMENTS_PATH) && request.method() === 'PUT';
@@ -63,9 +52,7 @@ function recordPuts(page: Page) {
 /** Saves and waits for the PUT to finish (any status). */
 async function save(page: Page) {
   const [response] = await Promise.all([
-    page.waitForResponse(
-      (r) => r.url().includes(DOCUMENTS_PATH) && r.request().method() === 'PUT',
-    ),
+    page.waitForResponse((r) => r.url().includes(DOCUMENTS_PATH) && r.request().method() === 'PUT'),
     contentSaveButton(page).click(),
   ]);
   return response;
@@ -134,9 +121,7 @@ test.describe.serial('owner: conflict merge modal (cv-page)', () => {
     const position = card(dialog, 'Position');
     await expect(position).toContainText(`B1 ${RUN_ID}`);
     await expect(position).toContainText(`A1 ${RUN_ID}`);
-    await expect(
-      position.getByRole('radio', { name: merge.mine }),
-    ).toBeChecked();
+    await expect(position.getByRole('radio', { name: merge.mine })).toBeChecked();
 
     const recorder = recordPuts(a);
     await dialog.getByRole('button', { name: merge.save }).click();
@@ -161,9 +146,7 @@ test.describe.serial('owner: conflict merge modal (cv-page)', () => {
     page
       .getByRole('region', { name: 'Skill', exact: true })
       .getByLabel('Skill', { exact: true })
-      .evaluateAll((inputs) =>
-        inputs.map((input) => (input as HTMLInputElement).value),
-      );
+      .evaluateAll((inputs) => inputs.map((input) => (input as HTMLInputElement).value));
 
   /** Both pages show the latest version; b saves `edit`, then a is stale. */
   async function staleA(edit: (page: Page) => Promise<void>) {
@@ -207,12 +190,7 @@ test.describe.serial('owner: conflict merge modal (cv-page)', () => {
     await expect(dialog).toBeHidden();
     await expect(a.getByText(copy.saved)).toBeVisible();
     await expect(fieldByLabel(a, 'Position')).toHaveValue(`B2 ${RUN_ID}`);
-    expect(await skillNames(a)).toEqual([
-      SKILLS[0],
-      SKILLS[1],
-      SKILLS[2],
-      `Delta ${RUN_ID}`,
-    ]);
+    expect(await skillNames(a)).toEqual([SKILLS[0], SKILLS[1], SKILLS[2], `Delta ${RUN_ID}`]);
     await expect(skillLevel(a, 0)).toHaveValue('A-level');
     await expect(skillLevel(a, 1)).toHaveValue('B-level');
   });
@@ -234,11 +212,7 @@ test.describe.serial('owner: conflict merge modal (cv-page)', () => {
     ).toBeChecked();
     await dialog.getByRole('button', { name: merge.save }).click();
     await expect(dialog).toBeHidden();
-    expect(await skillNames(a)).toEqual([
-      SKILLS[1],
-      SKILLS[0],
-      `Delta ${RUN_ID}`,
-    ]);
+    expect(await skillNames(a)).toEqual([SKILLS[1], SKILLS[0], `Delta ${RUN_ID}`]);
   });
 
   test('all saved: no PUT, the form reloads to the saved version', async () => {
@@ -247,9 +221,7 @@ test.describe.serial('owner: conflict merge modal (cv-page)', () => {
     expect((await save(a)).status()).toBe(HTTP.CONFLICT);
     const dialog = mergeDialog(a);
     await dialog.getByRole('button', { name: merge.takeAllSaved }).click();
-    await expect(
-      card(dialog, 'Position').getByRole('radio', { name: merge.saved }),
-    ).toBeChecked();
+    await expect(card(dialog, 'Position').getByRole('radio', { name: merge.saved })).toBeChecked();
     const recorder = recordPuts(a);
     await dialog.getByRole('button', { name: merge.save }).click();
     await expect(dialog).toBeHidden();
@@ -265,9 +237,8 @@ test.describe.serial('owner: conflict merge modal (cv-page)', () => {
     await skillLevel(a, 0).fill('A4-level');
     const first = await save(a);
     expect(first.status()).toBe(HTTP.CONFLICT);
-    const firstVersion = (
-      (await first.json()) as { details: { currentVersion: number } }
-    ).details.currentVersion;
+    const firstVersion = ((await first.json()) as { details: { currentVersion: number } }).details
+      .currentVersion;
     const dialog = mergeDialog(a);
     await choose(dialog, 'Skill 1 > Level', merge.saved);
 
@@ -277,25 +248,19 @@ test.describe.serial('owner: conflict merge modal (cv-page)', () => {
     expect((await save(b)).ok()).toBe(true);
 
     const [second] = await Promise.all([
-      a.waitForResponse(
-        (r) =>
-          r.url().includes(DOCUMENTS_PATH) && r.request().method() === 'PUT',
-      ),
+      a.waitForResponse((r) => r.url().includes(DOCUMENTS_PATH) && r.request().method() === 'PUT'),
       dialog.getByRole('button', { name: merge.save }).click(),
     ]);
     expect(second.status()).toBe(HTTP.CONFLICT);
-    const secondVersion = (
-      (await second.json()) as { details: { currentVersion: number } }
-    ).details.currentVersion;
+    const secondVersion = ((await second.json()) as { details: { currentVersion: number } }).details
+      .currentVersion;
     expect(secondVersion).toBeGreaterThan(firstVersion);
     await expect(dialog).toBeVisible();
     // Only what the resubmit carried is compared against the new version.
     await expect(dialog).toContainText(merge.summary(1));
     const position = card(dialog, 'Position');
     await expect(position).toContainText(`B5 ${RUN_ID}`);
-    await expect(
-      position.getByRole('radio', { name: merge.mine }),
-    ).toBeChecked();
+    await expect(position.getByRole('radio', { name: merge.mine })).toBeChecked();
   });
 
   test('keyboard and closing: radios are reachable, Esc closes, Review reopens, Cancel closes', async () => {
@@ -345,14 +310,11 @@ test.describe.serial('owner: conflict merge modal (cv-page)', () => {
     await contentSaveButton(a).click();
     await expect(a.getByRole('alert')).toContainText(copy.errors.conflict);
     await expect(a.getByRole('dialog')).toHaveCount(0);
-    await expect(
-      a.getByRole('button', { name: copy.errors.reviewConflict }),
-    ).toHaveCount(0);
+    await expect(a.getByRole('button', { name: copy.errors.reviewConflict })).toHaveCount(0);
     await a.unroute(`**${DOCUMENTS_PATH}/*`);
   });
 
-  test.describe
-    .serial('role with masked fields (Editor, cv-page reads Position only)', () => {
+  test.describe.serial('role with masked fields (Editor, cv-page reads Position only)', () => {
     const EDITOR_EMAIL = `e2e-masked-${RUN_ID}@domain.localhost`;
     const EDITOR_NAME = `Masked ${RUN_ID}`;
     const EDITOR_PASSWORD = `${e2eEnv.ownerPassword.slice(0, 40)}-masked`;
@@ -420,9 +382,7 @@ test.describe.serial('owner: conflict merge modal (cv-page)', () => {
       expect(sent).not.toContain('company');
       expect(sent).not.toContain(SECRET);
       expect(sent).not.toContain('***');
-      await expect(fieldByLabel(editor, 'Position')).toHaveValue(
-        `Editor ${RUN_ID}`,
-      );
+      await expect(fieldByLabel(editor, 'Position')).toHaveValue(`Editor ${RUN_ID}`);
 
       // The owner still sees the untouched company.
       await open(b, editUrl);
@@ -438,21 +398,15 @@ test.describe.serial('owner: conflict merge modal (cv-page)', () => {
 
       const response = await save(editor);
       expect(response.status()).toBe(HTTP.CONFLICT);
-      await expect(editor.getByRole('alert')).toContainText(
-        copy.errors.conflict,
-      );
+      await expect(editor.getByRole('alert')).toContainText(copy.errors.conflict);
       await expect(editor.getByRole('dialog')).toHaveCount(0);
-      await expect(
-        editor.getByRole('button', { name: copy.errors.reviewConflict }),
-      ).toHaveCount(0);
+      await expect(editor.getByRole('button', { name: copy.errors.reviewConflict })).toHaveCount(0);
       expect(await editor.content()).not.toContain(SECRET_NEWER);
     });
   });
 
   test('the console stayed free of unexpected errors', () => {
-    const unexpected = consoleProblems.filter(
-      (text) => !text.includes('Failed to load resource'),
-    );
+    const unexpected = consoleProblems.filter((text) => !text.includes('Failed to load resource'));
     expect(unexpected).toEqual([]);
   });
 });

@@ -3,10 +3,7 @@ import { readFileSync } from 'node:fs';
 import { describe, it } from 'node:test';
 
 const ENV_EXAMPLE_PATH = new URL('../.env.example', import.meta.url);
-const STACK_SEED_PATH = new URL(
-  '../../../scripts/lib/stack-seed.sh',
-  import.meta.url,
-);
+const STACK_SEED_PATH = new URL('../../../scripts/lib/stack-seed.sh', import.meta.url);
 const ENV_SOURCE_PATH = new URL('./E2e.env.ts', import.meta.url);
 const E2E_NAME = /\bE2E_[A-Z0-9_]+\b/g;
 const ENV_EXAMPLE_KEY = /^(E2E_[A-Z0-9_]+)=/gm;
@@ -21,22 +18,13 @@ function sorted(names: string[]): string[] {
 }
 
 await describe('E2E variable contract', () => {
-  const exampleKeys = sorted(
-    matches(readFileSync(ENV_EXAMPLE_PATH, 'utf8'), ENV_EXAMPLE_KEY),
-  );
+  const exampleKeys = sorted(matches(readFileSync(ENV_EXAMPLE_PATH, 'utf8'), ENV_EXAMPLE_KEY));
   const scriptVars = sorted(
-    matches(
-      readFileSync(STACK_SEED_PATH, 'utf8').match(E2E_VARS_ARRAY)?.[1] ?? '',
-      E2E_NAME,
-    ),
+    matches(readFileSync(STACK_SEED_PATH, 'utf8').match(E2E_VARS_ARRAY)?.[1] ?? '', E2E_NAME),
   );
   const readerVars = sorted(
     matches(
-      [
-        ...readFileSync(ENV_SOURCE_PATH, 'utf8').matchAll(
-          /requireEnv\('([^']+)'\)/g,
-        ),
-      ]
+      [...readFileSync(ENV_SOURCE_PATH, 'utf8').matchAll(/requireEnv\('([^']+)'\)/g)]
         .map((match) => match[1])
         .join(' '),
       E2E_NAME,

@@ -1,17 +1,11 @@
-import {
-  type BrowserContext,
-  expect,
-  type Locator,
-  type Page,
-  test,
-} from '@playwright/test';
+import { expect, test, type BrowserContext, type Locator, type Page } from '@playwright/test';
 
-import { ADMIN_COPY } from '../src/Apps.contract';
-import { e2eEnv } from '../src/E2e.env';
-import { HTTP, RUN_ID } from '../src/E2e.constants';
-import { bearer, ownerApiToken, signInAs } from '../src/Session.fixture';
-import { labelStartingWith } from '../src/Locators.fixture';
 import { API_PATHS, apiUrl } from '../src/Api.endpoints';
+import { ADMIN_COPY } from '../src/Apps.contract';
+import { HTTP, RUN_ID } from '../src/E2e.constants';
+import { e2eEnv } from '../src/E2e.env';
+import { labelStartingWith } from '../src/Locators.fixture';
+import { bearer, ownerApiToken, signInAs } from '../src/Session.fixture';
 
 const access = ADMIN_COPY.access;
 const tokens = access.apiTokens;
@@ -30,14 +24,11 @@ const RAW_TOKEN = /ak_live_[A-Za-z0-9_-]{43}/;
 const PAST_DATE = '2000-01-01';
 const FUTURE_DATE = '2999-12-31';
 
-const tokenRow = (page: Page, name: string) =>
-  page.getByRole('row').filter({ hasText: name });
+const tokenRow = (page: Page, name: string) => page.getByRole('row').filter({ hasText: name });
 
-const createButton = (page: Page) =>
-  page.getByRole('button', { name: tokens.create });
+const createButton = (page: Page) => page.getByRole('button', { name: tokens.create });
 
-const createDialog = (page: Page) =>
-  page.getByRole('dialog', { name: form.createTitle });
+const createDialog = (page: Page) => page.getByRole('dialog', { name: form.createTitle });
 
 const cell = (scope: Page | Locator, action: string, subject: string) =>
   scope.getByRole('checkbox', {
@@ -49,9 +40,7 @@ const cell = (scope: Page | Locator, action: string, subject: string) =>
 async function openTokensPage(page: Page) {
   const nav = page.getByRole('navigation', { name: access.nav.label });
   await nav.getByRole('link', { name: access.nav.apiTokens }).click();
-  await expect(
-    page.getByRole('heading', { level: 1, name: tokens.title }),
-  ).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: tokens.title })).toBeVisible();
 }
 
 test.describe.serial('owner: API tokens', () => {
@@ -84,9 +73,7 @@ test.describe.serial('owner: API tokens', () => {
         tokens.columns.expires,
         tokens.columns.lastUsed,
       ]) {
-        await expect(
-          page.getByRole('columnheader', { name: column }),
-        ).toBeVisible();
+        await expect(page.getByRole('columnheader', { name: column })).toBeVisible();
       }
     } else {
       await expect(page.getByText(tokens.empty)).toBeVisible();
@@ -97,10 +84,7 @@ test.describe.serial('owner: API tokens', () => {
   test('an empty create form shows errors and sends nothing', async () => {
     let posted = 0;
     const count = (request: { method(): string; url(): string }) => {
-      if (
-        request.method() === 'POST' &&
-        request.url().endsWith('/api-tokens')
-      ) {
+      if (request.method() === 'POST' && request.url().endsWith('/api-tokens')) {
         posted += 1;
       }
     };
@@ -115,9 +99,7 @@ test.describe.serial('owner: API tokens', () => {
 
     // A past expiry is refused inline.
     await dialog.getByLabel(labelStartingWith(form.nameLabel)).fill(TOKEN_NAME);
-    await dialog
-      .getByLabel(labelStartingWith(form.expiresLabel))
-      .fill(PAST_DATE);
+    await dialog.getByLabel(labelStartingWith(form.expiresLabel)).fill(PAST_DATE);
     await cell(dialog, matrix.actions.read, matrix.wildcard).check();
     await dialog.getByRole('button', { name: form.submitCreate }).click();
     await expect(dialog).toContainText(form.validation.expiryPast);
@@ -134,9 +116,7 @@ test.describe.serial('owner: API tokens', () => {
     await createButton(page).click();
     const dialog = createDialog(page);
     await dialog.getByLabel(labelStartingWith(form.nameLabel)).fill(TOKEN_NAME);
-    await dialog
-      .getByLabel(labelStartingWith(form.expiresLabel))
-      .fill(FUTURE_DATE);
+    await dialog.getByLabel(labelStartingWith(form.expiresLabel)).fill(FUTURE_DATE);
     await cell(dialog, matrix.actions.read, matrix.wildcard).check();
     await dialog.getByRole('button', { name: form.submitCreate }).click();
 
@@ -151,9 +131,7 @@ test.describe.serial('owner: API tokens', () => {
     // Copy puts it on the clipboard.
     await revealDialog.getByRole('button', { name: reveal.copy }).click();
     await expect(revealDialog).toContainText(reveal.copied);
-    expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(
-      rawToken,
-    );
+    expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(rawToken);
 
     // Esc and an outside click do not dismiss it.
     await page.keyboard.press('Escape');
@@ -163,9 +141,7 @@ test.describe.serial('owner: API tokens', () => {
 
     await revealDialog.getByRole('button', { name: reveal.done }).click();
     await expect(revealDialog).toBeHidden();
-    await expect(page.getByRole('status')).toHaveText(
-      tokens.created(TOKEN_NAME),
-    );
+    await expect(page.getByRole('status')).toHaveText(tokens.created(TOKEN_NAME));
 
     // The list shows the prefix, never the secret; the page holds no secret.
     const row = tokenRow(page, TOKEN_NAME);
@@ -177,9 +153,7 @@ test.describe.serial('owner: API tokens', () => {
     // Reopening Create starts blank.
     await createButton(page).click();
     await expect(createDialog(page)).toBeVisible();
-    await expect(
-      createDialog(page).getByLabel(labelStartingWith(form.nameLabel)),
-    ).toHaveValue('');
+    await expect(createDialog(page).getByLabel(labelStartingWith(form.nameLabel))).toHaveValue('');
     expect(await page.content()).not.toContain(rawToken);
     await page.keyboard.press('Escape');
   });
@@ -194,55 +168,37 @@ test.describe.serial('owner: API tokens', () => {
     });
 
     // Prefilled, no change: closes without a request.
-    await row
-      .getByRole('button', { name: tokens.editLabel(TOKEN_NAME) })
-      .click();
+    await row.getByRole('button', { name: tokens.editLabel(TOKEN_NAME) }).click();
     let dialog = page.getByRole('dialog', {
       name: form.editTitle(TOKEN_NAME),
     });
-    await expect(
-      dialog.getByLabel(labelStartingWith(form.nameLabel)),
-    ).toHaveValue(TOKEN_NAME);
-    await expect(
-      dialog.getByLabel(labelStartingWith(form.expiresLabel)),
-    ).toHaveValue(FUTURE_DATE);
-    await expect(
-      cell(dialog, matrix.actions.read, matrix.wildcard),
-    ).toBeChecked();
+    await expect(dialog.getByLabel(labelStartingWith(form.nameLabel))).toHaveValue(TOKEN_NAME);
+    await expect(dialog.getByLabel(labelStartingWith(form.expiresLabel))).toHaveValue(FUTURE_DATE);
+    await expect(cell(dialog, matrix.actions.read, matrix.wildcard)).toBeChecked();
     await dialog.getByRole('button', { name: form.submitEdit }).click();
     await expect(dialog).toBeHidden();
     expect(patches).toHaveLength(0);
 
     // Name only.
-    await row
-      .getByRole('button', { name: tokens.editLabel(TOKEN_NAME) })
-      .click();
+    await row.getByRole('button', { name: tokens.editLabel(TOKEN_NAME) }).click();
     await dialog.getByLabel(labelStartingWith(form.nameLabel)).fill(RENAMED);
     await dialog.getByRole('button', { name: form.submitEdit }).click();
     await expect(dialog).toBeHidden();
     await expect(page.getByRole('status')).toHaveText(tokens.updated(RENAMED));
     expect(patches).toHaveLength(1);
-    expect(Object.keys(JSON.parse(patches[0] ?? '{}') as object)).toEqual([
-      'name',
-    ]);
+    expect(Object.keys(JSON.parse(patches[0] ?? '{}') as object)).toEqual(['name']);
     const renamed = tokenRow(page, RENAMED);
     await expect(renamed).toBeVisible();
-    await expect(
-      renamed.getByRole('button', { name: tokens.editLabel(RENAMED) }),
-    ).toBeFocused();
+    await expect(renamed.getByRole('button', { name: tokens.editLabel(RENAMED) })).toBeFocused();
 
     // Scope only.
-    await renamed
-      .getByRole('button', { name: tokens.editLabel(RENAMED) })
-      .click();
+    await renamed.getByRole('button', { name: tokens.editLabel(RENAMED) }).click();
     dialog = page.getByRole('dialog', { name: form.editTitle(RENAMED) });
     await cell(dialog, matrix.actions.create, matrix.wildcard).check();
     await dialog.getByRole('button', { name: form.submitEdit }).click();
     await expect(dialog).toBeHidden();
     expect(patches).toHaveLength(2);
-    expect(Object.keys(JSON.parse(patches[1] ?? '{}') as object)).toEqual([
-      'scope',
-    ]);
+    expect(Object.keys(JSON.parse(patches[1] ?? '{}') as object)).toEqual(['scope']);
     await expect(renamed).toContainText('2 permissions');
   });
 
@@ -250,9 +206,7 @@ test.describe.serial('owner: API tokens', () => {
     // A second token so revoke is tested on its own.
     await createButton(page).click();
     const dialog = createDialog(page);
-    await dialog
-      .getByLabel(labelStartingWith(form.nameLabel))
-      .fill(REVOKE_ONLY_NAME);
+    await dialog.getByLabel(labelStartingWith(form.nameLabel)).fill(REVOKE_ONLY_NAME);
     await cell(dialog, matrix.actions.read, matrix.wildcard).check();
     await dialog.getByRole('button', { name: form.submitCreate }).click();
     await page.getByRole('button', { name: reveal.done }).click();
@@ -279,37 +233,27 @@ test.describe.serial('owner: API tokens', () => {
       })
       .click();
     await expect(confirm).toBeHidden();
-    await expect(page.getByRole('status')).toHaveText(
-      tokens.revoked(REVOKE_ONLY_NAME),
-    );
+    await expect(page.getByRole('status')).toHaveText(tokens.revoked(REVOKE_ONLY_NAME));
     await expect(row).toContainText(tokens.status.revoked);
     await expect(row.getByRole('button')).toHaveCount(0);
   });
 
   test('failed create and edit map each API error to alert, marked cells or a notice', async () => {
-    const answer = (
-      status: number,
-      errorCode: string,
-      details: Record<string, unknown> = {},
-    ) => ({
+    const answer = (status: number, errorCode: string, details: Record<string, unknown> = {}) => ({
       status,
       contentType: 'application/json',
       body: JSON.stringify({ statusCode: status, errorCode, details }),
     });
     const tokensUrl = /\/api-tokens(\/[^/?]+)?$/;
     const fillCreate = async (dialog: Locator) => {
-      await dialog
-        .getByLabel(labelStartingWith(form.nameLabel))
-        .fill(`E2E fail ${RUN_ID}`);
+      await dialog.getByLabel(labelStartingWith(form.nameLabel)).fill(`E2E fail ${RUN_ID}`);
       await cell(dialog, matrix.actions.read, matrix.wildcard).check();
     };
 
     // Create: scope not held marks the cell and shows the alert.
     await page.route(tokensUrl, (route) =>
       route.request().method() === 'POST'
-        ? route.fulfill(
-            answer(403, 'API_TOKEN_SCOPE_NOT_HELD', { indexes: [0] }),
-          )
+        ? route.fulfill(answer(403, 'API_TOKEN_SCOPE_NOT_HELD', { indexes: [0] }))
         : route.fallback(),
     );
     await createButton(page).click();
@@ -317,9 +261,10 @@ test.describe.serial('owner: API tokens', () => {
     await fillCreate(dialog);
     await dialog.getByRole('button', { name: form.submitCreate }).click();
     await expect(dialog).toContainText(access.errors.scopeNotHeld);
-    await expect(
-      cell(dialog, matrix.actions.read, matrix.wildcard),
-    ).toHaveAttribute('aria-invalid', 'true');
+    await expect(cell(dialog, matrix.actions.read, matrix.wildcard)).toHaveAttribute(
+      'aria-invalid',
+      'true',
+    );
     await expect(dialog).toBeVisible();
 
     // Create: a 400 shows the expiry field error, marked cells and the alert.
@@ -339,9 +284,10 @@ test.describe.serial('owner: API tokens', () => {
     await dialog.getByRole('button', { name: form.submitCreate }).click();
     await expect(dialog).toContainText('Server says bad expiry');
     await expect(dialog).toContainText(form.errors.invalid);
-    await expect(
-      cell(dialog, matrix.actions.read, matrix.wildcard),
-    ).toHaveAttribute('aria-invalid', 'true');
+    await expect(cell(dialog, matrix.actions.read, matrix.wildcard)).toHaveAttribute(
+      'aria-invalid',
+      'true',
+    );
     await page.unroute(tokensUrl);
     await page.keyboard.press('Escape');
     await expect(dialog).toBeHidden();
@@ -358,15 +304,11 @@ test.describe.serial('owner: API tokens', () => {
           : route.fallback(),
       );
       const row = tokenRow(page, RENAMED);
-      await row
-        .getByRole('button', { name: tokens.editLabel(RENAMED) })
-        .click();
+      await row.getByRole('button', { name: tokens.editLabel(RENAMED) }).click();
       const edit = page.getByRole('dialog', {
         name: form.editTitle(RENAMED),
       });
-      await edit
-        .getByLabel(labelStartingWith(form.nameLabel))
-        .fill(`${RENAMED} x`);
+      await edit.getByLabel(labelStartingWith(form.nameLabel)).fill(`${RENAMED} x`);
       await edit.getByRole('button', { name: form.submitEdit }).click();
       await expect(edit).toBeHidden();
       await expect(page.getByRole('status')).toHaveText(message);
@@ -402,21 +344,13 @@ test.describe.serial('owner: API tokens', () => {
 
     const row = tokenRow(page, RENAMED);
     await expect(row).toContainText(tokens.status.expired);
-    await expect(
-      row.getByRole('button', { name: tokens.editLabel(RENAMED) }),
-    ).toHaveCount(0);
-    await expect(
-      row.getByRole('button', { name: tokens.revokeLabel(RENAMED) }),
-    ).toBeVisible();
+    await expect(row.getByRole('button', { name: tokens.editLabel(RENAMED) })).toHaveCount(0);
+    await expect(row.getByRole('button', { name: tokens.revokeLabel(RENAMED) })).toBeVisible();
     // Revoked row: neither action.
-    await expect(
-      tokenRow(page, REVOKE_ONLY_NAME).getByRole('button'),
-    ).toHaveCount(0);
+    await expect(tokenRow(page, REVOKE_ONLY_NAME).getByRole('button')).toHaveCount(0);
 
     // Expired row can be revoked.
-    await row
-      .getByRole('button', { name: tokens.revokeLabel(RENAMED) })
-      .click();
+    await row.getByRole('button', { name: tokens.revokeLabel(RENAMED) }).click();
     await page
       .getByRole('dialog', { name: access.revokeToken.title(RENAMED) })
       .getByRole('button', { name: access.revokeToken.submit(RENAMED) })
@@ -439,9 +373,7 @@ test.describe.serial('owner: API tokens', () => {
     );
     await createButton(page).click();
     const createForm = createDialog(page);
-    await createForm
-      .getByLabel(labelStartingWith(form.nameLabel))
-      .fill(EXPIRING_NAME);
+    await createForm.getByLabel(labelStartingWith(form.nameLabel)).fill(EXPIRING_NAME);
     await cell(createForm, matrix.actions.read, matrix.wildcard).check();
     await createForm.getByRole('button', { name: form.submitCreate }).click();
     const tokenId = ((await (await creating).json()) as { id: string }).id;
@@ -451,10 +383,10 @@ test.describe.serial('owner: API tokens', () => {
     const api = await playwright.request.newContext();
     const headers = bearer(await ownerApiToken(api));
     const expiresAt = new Date(Date.now() + EXPIRY_WINDOW_MS);
-    const shortened = await api.patch(
-      apiUrl(`${API_PATHS.API_TOKENS}/${tokenId}`),
-      { headers, data: { expiresAt: expiresAt.toISOString() } },
-    );
+    const shortened = await api.patch(apiUrl(`${API_PATHS.API_TOKENS}/${tokenId}`), {
+      headers,
+      data: { expiresAt: expiresAt.toISOString() },
+    });
     expect(shortened.status()).toBe(HTTP.OK);
 
     // Reload the list while it is still active, then open Edit.
@@ -463,15 +395,11 @@ test.describe.serial('owner: API tokens', () => {
     await openTokensPage(page);
     const row = tokenRow(page, EXPIRING_NAME);
     await expect(row).toContainText(tokens.status.active);
-    await row
-      .getByRole('button', { name: tokens.editLabel(EXPIRING_NAME) })
-      .click();
+    await row.getByRole('button', { name: tokens.editLabel(EXPIRING_NAME) }).click();
     const edit = page.getByRole('dialog', {
       name: form.editTitle(EXPIRING_NAME),
     });
-    await edit
-      .getByLabel(labelStartingWith(form.nameLabel))
-      .fill(`${EXPIRING_NAME} x`);
+    await edit.getByLabel(labelStartingWith(form.nameLabel)).fill(`${EXPIRING_NAME} x`);
 
     // Let it expire, then save.
     await expect
@@ -493,18 +421,14 @@ test.describe.serial('owner: API tokens', () => {
 
     const answer = await patched;
     expect(answer.status()).toBe(HTTP.CONFLICT);
-    expect(((await answer.json()) as { errorCode: string }).errorCode).toBe(
-      'API_TOKEN_EXPIRED',
-    );
+    expect(((await answer.json()) as { errorCode: string }).errorCode).toBe('API_TOKEN_EXPIRED');
     await refetched;
     await expect(edit).toBeHidden();
     await expect(page.getByRole('status')).toHaveText(tokens.alreadyExpired);
     await expect(row).toContainText(EXPIRING_NAME);
     await expect(row).not.toContainText(`${EXPIRING_NAME} x`);
     await expect(row).toContainText(tokens.status.expired);
-    await expect(
-      row.getByRole('button', { name: tokens.editLabel(EXPIRING_NAME) }),
-    ).toHaveCount(0);
+    await expect(row.getByRole('button', { name: tokens.editLabel(EXPIRING_NAME) })).toHaveCount(0);
     await expect(
       row.getByRole('button', { name: tokens.revokeLabel(EXPIRING_NAME) }),
     ).toBeVisible();
@@ -521,9 +445,7 @@ test.describe.serial('owner: API tokens', () => {
   test('the list endpoint never returns the raw token', async () => {
     // Reload via the UI's own list call and inspect what the server sent.
     const listed = page.waitForResponse(
-      (response) =>
-        response.url().includes('/api-tokens') &&
-        response.request().method() === 'GET',
+      (response) => response.url().includes('/api-tokens') && response.request().method() === 'GET',
     );
     const nav = page.getByRole('navigation', { name: access.nav.label });
     await nav.getByRole('link', { name: access.nav.accounts }).click();
@@ -535,15 +457,11 @@ test.describe.serial('owner: API tokens', () => {
 });
 
 test.describe('admin: only its own tokens, within its own role', () => {
-  test('an admin does not see the owner tokens and can open the create form', async ({
-    page,
-  }) => {
+  test('an admin does not see the owner tokens and can open the create form', async ({ page }) => {
     await signInAs(page, e2eEnv.twoFactorEmail, e2eEnv.twoFactorPassword);
     await openTokensPage(page);
     await expect(tokenRow(page, 'E2E build')).toHaveCount(0);
-    await expect(
-      page.getByRole('columnheader', { name: tokens.columns.createdBy }),
-    ).toHaveCount(0);
+    await expect(page.getByRole('columnheader', { name: tokens.columns.createdBy })).toHaveCount(0);
     await expect(createButton(page)).toBeVisible();
 
     await createButton(page).click();
@@ -552,9 +470,7 @@ test.describe('admin: only its own tokens, within its own role', () => {
     // The grid never offers more than the admin's role holds: at least one
     // box is greyed out (the admin has no publish rights it can pass on or
     // the hint explains it); the hint text is present when any box is.
-    const disabled = await dialog
-      .getByRole('checkbox', { disabled: true })
-      .count();
+    const disabled = await dialog.getByRole('checkbox', { disabled: true }).count();
     if (disabled > 0) {
       await expect(dialog).toContainText(access.tokenScope.notHeldHint);
     }

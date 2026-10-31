@@ -17,9 +17,7 @@ export async function watchCsp(page: Page): Promise<() => Promise<string[]>> {
   await page.addInitScript(() => {
     window.__cspViolations = [];
     document.addEventListener('securitypolicyviolation', (event) => {
-      window.__cspViolations.push(
-        `${event.violatedDirective} ${event.blockedURI} ${event.sample}`,
-      );
+      window.__cspViolations.push(`${event.violatedDirective} ${event.blockedURI} ${event.sample}`);
     });
   });
   const consoleErrors: string[] = [];

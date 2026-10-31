@@ -13,9 +13,7 @@ const SMOKE_HOST_SUFFIX = '.localhost';
 function assertSmokeStack(): void {
   const { hostname } = new URL(e2eEnv.apiBaseUrl);
   if (!hostname.endsWith(SMOKE_HOST_SUFFIX)) {
-    throw new Error(
-      `refusing to run SQL: ${hostname} does not end with ${SMOKE_HOST_SUFFIX}`,
-    );
+    throw new Error(`refusing to run SQL: ${hostname} does not end with ${SMOKE_HOST_SUFFIX}`);
   }
 }
 

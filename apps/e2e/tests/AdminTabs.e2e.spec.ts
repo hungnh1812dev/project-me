@@ -1,7 +1,7 @@
-import { expect, type Page, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 
-import { ADMIN_COPY } from '../src/Apps.contract';
 import { API_PATHS } from '../src/Api.endpoints';
+import { ADMIN_COPY } from '../src/Apps.contract';
 import { e2eEnv } from '../src/E2e.env';
 
 const homeHeading = (page: Page) =>
@@ -28,12 +28,8 @@ test('two admin tabs that refresh at the same moment both stay signed in', async
   context,
 }) => {
   await page.goto('/');
-  await page
-    .getByRole('textbox', { name: ADMIN_COPY.login.emailLabel })
-    .fill(e2eEnv.ownerEmail);
-  await page
-    .getByLabel(ADMIN_COPY.login.passwordLabel)
-    .fill(e2eEnv.ownerPassword);
+  await page.getByRole('textbox', { name: ADMIN_COPY.login.emailLabel }).fill(e2eEnv.ownerEmail);
+  await page.getByLabel(ADMIN_COPY.login.passwordLabel).fill(e2eEnv.ownerPassword);
   await page.getByRole('button', { name: ADMIN_COPY.login.submit }).click();
   await expect(homeHeading(page)).toBeVisible();
 

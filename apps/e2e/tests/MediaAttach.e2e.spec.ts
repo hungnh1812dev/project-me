@@ -1,18 +1,12 @@
-import {
-  type BrowserContext,
-  expect,
-  type Page,
-  type Request,
-  test,
-} from '@playwright/test';
+import { expect, test, type BrowserContext, type Page, type Request } from '@playwright/test';
 
-import { ADMIN_COPY, contentNewPath } from '../src/Apps.contract';
-import { e2eEnv } from '../src/E2e.env';
-import { insertLibraryFiles } from '../src/SmokeDatabase.client';
-import { PROFILE_SLUG, RUN_ID } from '../src/E2e.constants';
-import { signInAs } from '../src/Session.fixture';
 import { API_PATHS } from '../src/Api.endpoints';
+import { ADMIN_COPY, contentNewPath } from '../src/Apps.contract';
+import { PROFILE_SLUG, RUN_ID } from '../src/E2e.constants';
+import { e2eEnv } from '../src/E2e.env';
 import { contentSaveButton } from '../src/Locators.fixture';
+import { signInAs } from '../src/Session.fixture';
+import { insertLibraryFiles } from '../src/SmokeDatabase.client';
 
 const copy = ADMIN_COPY.media;
 const content = ADMIN_COPY.content;
@@ -36,8 +30,7 @@ const photoField = (page: Page) => page.getByRole('group', { name: 'Photo' });
 /** The API route; the admin page `/media` has the same tail on another origin. */
 const MEDIA_API_PATH = `${new URL(e2eEnv.apiBaseUrl).pathname}${API_PATHS.MEDIA}`;
 
-const libraryRow = (page: Page, name: string) =>
-  page.getByRole('row').filter({ hasText: name });
+const libraryRow = (page: Page, name: string) => page.getByRole('row').filter({ hasText: name });
 
 const isWrite = (request: Request) =>
   request.url().includes(DOCUMENTS_PATH) &&
@@ -67,23 +60,15 @@ test.describe.serial('owner: attach media to a profile', () => {
   test('a new profile shows the empty photo field', async () => {
     await page.goto(contentNewPath(PROFILE_SLUG));
     await expect(photoField(page)).toContainText(copy.input.empty);
-    await expect(
-      photoField(page).getByRole('button', { name: copy.input.choose }),
-    ).toBeVisible();
-    await expect(
-      photoField(page).getByRole('button', { name: copy.input.upload }),
-    ).toBeVisible();
+    await expect(photoField(page).getByRole('button', { name: copy.input.choose })).toBeVisible();
+    await expect(photoField(page).getByRole('button', { name: copy.input.upload })).toBeVisible();
   });
 
   test('the picker lists library files; cancel closes it', async () => {
-    await photoField(page)
-      .getByRole('button', { name: copy.input.choose })
-      .click();
+    await photoField(page).getByRole('button', { name: copy.input.choose }).click();
     const dialog = page.getByRole('dialog');
     await expect(dialog).toContainText(copy.picker.title);
-    await expect(
-      dialog.getByRole('button', { name: copy.picker.select(FILE_NAME) }),
-    ).toBeVisible();
+    await expect(dialog.getByRole('button', { name: copy.picker.select(FILE_NAME) })).toBeVisible();
     await dialog.getByRole('button', { name: copy.picker.cancel }).click();
     await expect(dialog).toBeHidden();
     await expect(photoField(page)).toContainText(copy.input.empty);
@@ -91,9 +76,7 @@ test.describe.serial('owner: attach media to a profile', () => {
 
   test('selecting a file shows its preview; saving sends only the uuid', async () => {
     await page.getByLabel('Name', { exact: true }).fill(PROFILE_NAME);
-    await photoField(page)
-      .getByRole('button', { name: copy.input.choose })
-      .click();
+    await photoField(page).getByRole('button', { name: copy.input.choose }).click();
     await page
       .getByRole('dialog')
       .getByRole('button', { name: copy.picker.select(FILE_NAME) })
@@ -124,9 +107,7 @@ test.describe.serial('owner: attach media to a profile', () => {
     await expect
       .poll(() => img.evaluate((el: HTMLImageElement) => el.naturalWidth))
       .toBeGreaterThan(0);
-    await expect(
-      photoField(page).getByRole('button', { name: copy.input.replace }),
-    ).toBeVisible();
+    await expect(photoField(page).getByRole('button', { name: copy.input.replace })).toBeVisible();
   });
 
   test('an unsupported file uploaded in the field shows the reason', async () => {
@@ -143,9 +124,7 @@ test.describe.serial('owner: attach media to a profile', () => {
   });
 
   test('replacing the file swaps it; saving sends the new uuid', async () => {
-    await photoField(page)
-      .getByRole('button', { name: copy.input.replace })
-      .click();
+    await photoField(page).getByRole('button', { name: copy.input.replace }).click();
     await page
       .getByRole('dialog')
       .getByRole('button', { name: copy.picker.select(SECOND_FILE_NAME) })
@@ -163,17 +142,11 @@ test.describe.serial('owner: attach media to a profile', () => {
 
   test('an attached file cannot be deleted from the library (in use)', async () => {
     await page.goto('/media');
-    await page
-      .getByRole('button', { name: copy.deleteLabel(SECOND_FILE_NAME) })
-      .click();
+    await page.getByRole('button', { name: copy.deleteLabel(SECOND_FILE_NAME) }).click();
     const dialog = page.getByRole('dialog');
-    await dialog
-      .getByRole('button', { name: copy.deleteDialog.submit(SECOND_FILE_NAME) })
-      .click();
+    await dialog.getByRole('button', { name: copy.deleteDialog.submit(SECOND_FILE_NAME) }).click();
     await expect(dialog).toContainText(copy.errors.inUse);
-    await dialog
-      .getByRole('button', { name: copy.deleteDialog.cancel })
-      .click();
+    await dialog.getByRole('button', { name: copy.deleteDialog.cancel }).click();
     await expect(dialog).toBeHidden();
     // The page behind an open dialog is aria-hidden, so check the row after.
     await expect(libraryRow(page, SECOND_FILE_NAME)).toBeVisible();
@@ -181,9 +154,7 @@ test.describe.serial('owner: attach media to a profile', () => {
 
   test('removing the photo and saving clears it; the file stays, then deletes', async () => {
     await page.goto(editUrl);
-    await photoField(page)
-      .getByRole('button', { name: copy.input.remove })
-      .click();
+    await photoField(page).getByRole('button', { name: copy.input.remove }).click();
     await expect(photoField(page)).toContainText(copy.input.empty);
     const [request] = await Promise.all([
       page.waitForRequest(isWrite),
@@ -199,9 +170,7 @@ test.describe.serial('owner: attach media to a profile', () => {
 
     await page.goto('/media');
     await expect(libraryRow(page, SECOND_FILE_NAME)).toBeVisible();
-    await page
-      .getByRole('button', { name: copy.deleteLabel(SECOND_FILE_NAME) })
-      .click();
+    await page.getByRole('button', { name: copy.deleteLabel(SECOND_FILE_NAME) }).click();
     await page
       .getByRole('dialog')
       .getByRole('button', { name: copy.deleteDialog.submit(SECOND_FILE_NAME) })
@@ -224,8 +193,7 @@ test.describe.serial('owner: attach media to a profile', () => {
           const response = await route.fetch();
           if (response.ok()) {
             const body = (await response.json()) as Listed;
-            third =
-              body.data.find((f) => f.fileName === THIRD_FILE_NAME) ?? third;
+            third = body.data.find((f) => f.fileName === THIRD_FILE_NAME) ?? third;
           }
           return route.fulfill({ response });
         }
@@ -234,8 +202,7 @@ test.describe.serial('owner: attach media to a profile', () => {
           status: 201,
           contentType: 'application/json',
           headers: {
-            'access-control-allow-origin':
-              route.request().headers()['origin'] ?? '*',
+            'access-control-allow-origin': route.request().headers()['origin'] ?? '*',
             'access-control-allow-credentials': 'true',
           },
           body: JSON.stringify(third),
@@ -261,8 +228,6 @@ test.describe.serial('owner: attach media to a profile', () => {
     await expect(page.getByText(content.saved)).toBeVisible();
     await page.unroute(() => true);
     // Deliberate 4xx responses (unsupported type, in-use) log console errors.
-    expect(consoleProblems.filter((m) => !m.includes('status of 4'))).toEqual(
-      [],
-    );
+    expect(consoleProblems.filter((m) => !m.includes('status of 4'))).toEqual([]);
   });
 });

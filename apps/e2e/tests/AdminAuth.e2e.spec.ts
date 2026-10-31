@@ -1,7 +1,7 @@
-import { expect, type Page, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 
-import { ADMIN_COPY } from '../src/Apps.contract';
 import { API_PATHS } from '../src/Api.endpoints';
+import { ADMIN_COPY } from '../src/Apps.contract';
 import { REFRESH_COOKIE_NAME } from '../src/E2e.constants';
 import { e2eEnv } from '../src/E2e.env';
 
@@ -26,18 +26,12 @@ test('the owner signs in, stays signed in across a reload, and signs out', async
   await page.goto('/');
   await expect(loginHeading(page)).toBeVisible();
 
-  await page
-    .getByRole('textbox', { name: ADMIN_COPY.login.emailLabel })
-    .fill(e2eEnv.ownerEmail);
-  await page
-    .getByLabel(ADMIN_COPY.login.passwordLabel)
-    .fill(e2eEnv.ownerPassword);
+  await page.getByRole('textbox', { name: ADMIN_COPY.login.emailLabel }).fill(e2eEnv.ownerEmail);
+  await page.getByLabel(ADMIN_COPY.login.passwordLabel).fill(e2eEnv.ownerPassword);
   await page.getByRole('button', { name: ADMIN_COPY.login.submit }).click();
 
   await expect(homeHeading(page)).toBeVisible();
-  await expect(
-    page.getByRole('button', { name: ADMIN_COPY.session.signOut }),
-  ).toBeVisible();
+  await expect(page.getByRole('button', { name: ADMIN_COPY.session.signOut })).toBeVisible();
 
   // The refresh cookie is HttpOnly + Secure + Strict on the API host, and
   // nothing token-like is reachable from JS.
@@ -71,28 +65,20 @@ test('the owner signs in, stays signed in across a reload, and signs out', async
   await page.reload();
   await expect(loginHeading(page)).toBeVisible();
   expect(
-    (
-      await context.cookies(`${e2eEnv.apiBaseUrl}${API_PATHS.AUTH.REFRESH}`)
-    ).filter((cookie) => cookie.name === REFRESH_COOKIE_NAME),
+    (await context.cookies(`${e2eEnv.apiBaseUrl}${API_PATHS.AUTH.REFRESH}`)).filter(
+      (cookie) => cookie.name === REFRESH_COOKIE_NAME,
+    ),
   ).toEqual([]);
 });
 
-test('a wrong password shows the invalid-credentials message as an alert', async ({
-  page,
-}) => {
+test('a wrong password shows the invalid-credentials message as an alert', async ({ page }) => {
   await page.goto('/');
-  await page
-    .getByRole('textbox', { name: ADMIN_COPY.login.emailLabel })
-    .fill(e2eEnv.ownerEmail);
-  await page
-    .getByLabel(ADMIN_COPY.login.passwordLabel)
-    .fill(`${e2eEnv.ownerPassword}-wrong`);
+  await page.getByRole('textbox', { name: ADMIN_COPY.login.emailLabel }).fill(e2eEnv.ownerEmail);
+  await page.getByLabel(ADMIN_COPY.login.passwordLabel).fill(`${e2eEnv.ownerPassword}-wrong`);
   await page.getByRole('button', { name: ADMIN_COPY.login.submit }).click();
 
   await expect(
-    page
-      .getByRole('alert')
-      .filter({ hasText: ADMIN_COPY.login.errors.invalidCredentials }),
+    page.getByRole('alert').filter({ hasText: ADMIN_COPY.login.errors.invalidCredentials }),
   ).toBeVisible();
   await expect(loginHeading(page)).toBeVisible();
 });
@@ -104,15 +90,12 @@ const SECONDS_PER_MINUTE = 60;
 
 async function submitLogin(page: Page) {
   await page.goto('/');
-  await page
-    .getByRole('textbox', { name: ADMIN_COPY.login.emailLabel })
-    .fill(e2eEnv.ownerEmail);
+  await page.getByRole('textbox', { name: ADMIN_COPY.login.emailLabel }).fill(e2eEnv.ownerEmail);
   await page.getByLabel(ADMIN_COPY.login.passwordLabel).fill('any-password-1');
   await page.getByRole('button', { name: ADMIN_COPY.login.submit }).click();
 }
 
-const loginAlert = (page: Page, text: string) =>
-  page.getByRole('alert').filter({ hasText: text });
+const loginAlert = (page: Page, text: string) => page.getByRole('alert').filter({ hasText: text });
 
 test('a rate-limited login names the wait from Retry-After, in seconds or minutes', async ({
   page,
@@ -132,26 +115,18 @@ test('a rate-limited login names the wait from Retry-After, in seconds or minute
 
   await submitLogin(page);
   await expect(
-    loginAlert(
-      page,
-      ADMIN_COPY.login.errors.rateLimitedSeconds(RETRY_AFTER_SECONDS),
-    ),
+    loginAlert(page, ADMIN_COPY.login.errors.rateLimitedSeconds(RETRY_AFTER_SECONDS)),
   ).toBeVisible();
 
   retryAfter = String(RETRY_AFTER_MINUTES * SECONDS_PER_MINUTE);
   await page.getByLabel(ADMIN_COPY.login.passwordLabel).fill('any-password-1');
   await page.getByRole('button', { name: ADMIN_COPY.login.submit }).click();
   await expect(
-    loginAlert(
-      page,
-      ADMIN_COPY.login.errors.rateLimitedMinutes(RETRY_AFTER_MINUTES),
-    ),
+    loginAlert(page, ADMIN_COPY.login.errors.rateLimitedMinutes(RETRY_AFTER_MINUTES)),
   ).toBeVisible();
 });
 
-test('a login that cannot reach the API shows the network message', async ({
-  page,
-}) => {
+test('a login that cannot reach the API shows the network message', async ({ page }) => {
   await page.route(LOGIN_URL_PATTERN, (route) => route.abort('failed'));
   await submitLogin(page);
   await expect(loginAlert(page, ADMIN_COPY.login.errors.network)).toBeVisible();
@@ -169,7 +144,5 @@ test('any other 4xx on login shows the one generic invalid-credentials message',
     }),
   );
   await submitLogin(page);
-  await expect(
-    loginAlert(page, ADMIN_COPY.login.errors.invalidCredentials),
-  ).toBeVisible();
+  await expect(loginAlert(page, ADMIN_COPY.login.errors.invalidCredentials)).toBeVisible();
 });

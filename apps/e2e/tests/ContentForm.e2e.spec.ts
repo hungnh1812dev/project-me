@@ -1,26 +1,18 @@
 import {
-  type BrowserContext,
   expect,
+  test,
+  type BrowserContext,
   type Locator,
   type Page,
   type Request,
-  test,
 } from '@playwright/test';
 
-import {
-  ADMIN_COPY,
-  API_ERROR_CODES,
-  contentNewPath,
-} from '../src/Apps.contract';
-import { e2eEnv } from '../src/E2e.env';
-import { signInAs } from '../src/Session.fixture';
-import { HTTP, RUN_ID, CV_PAGE_SLUG } from '../src/E2e.constants';
 import { API_PATHS } from '../src/Api.endpoints';
-import {
-  contentSaveButton,
-  fieldByLabel,
-  listItem,
-} from '../src/Locators.fixture';
+import { ADMIN_COPY, API_ERROR_CODES, contentNewPath } from '../src/Apps.contract';
+import { CV_PAGE_SLUG, HTTP, RUN_ID } from '../src/E2e.constants';
+import { e2eEnv } from '../src/E2e.env';
+import { contentSaveButton, fieldByLabel, listItem } from '../src/Locators.fixture';
+import { signInAs } from '../src/Session.fixture';
 
 const copy = ADMIN_COPY.content;
 const list = copy.list;
@@ -47,9 +39,7 @@ const NOTICE_WAIT_MS = 3_000;
 
 async function saveDraftAndExpectNotice(page: Page) {
   const [response] = await Promise.all([
-    page.waitForResponse(
-      (r) => r.url().includes(DOCUMENTS_PATH) && r.request().method() === 'PUT',
-    ),
+    page.waitForResponse((r) => r.url().includes(DOCUMENTS_PATH) && r.request().method() === 'PUT'),
     contentSaveButton(page).click(),
   ]);
   expect(response.ok()).toBe(true);
@@ -82,11 +72,7 @@ const richtextEditor = (scope: Page | Locator, label: string) =>
   scope.getByRole('textbox', { name: label, exact: true });
 
 /** Clicks a toolbar button and waits until focus is back in the editor. */
-async function applyFormat(
-  page: Page,
-  editor: Locator,
-  button: Locator,
-): Promise<void> {
+async function applyFormat(page: Page, editor: Locator, button: Locator): Promise<void> {
   await button.click();
   await expect(editor).toBeFocused();
   // Keys sent right after a toolbar click can be lost while the editor re-syncs.
@@ -155,18 +141,9 @@ test.describe.serial('owner: dynamic document form (cv-page)', () => {
     await expect(page.getByRole('switch', { name: 'Is main' })).toBeVisible();
     await expect(fieldByLabel(page, 'Company')).toBeVisible();
     await expect(richtextEditor(page, 'Summary')).toBeVisible();
-    await expect(
-      page.getByRole('toolbar', { name: copy.richtext.toolbar }).first(),
-    ).toBeVisible();
+    await expect(page.getByRole('toolbar', { name: copy.richtext.toolbar }).first()).toBeVisible();
     await expect(page.getByText(copy.notEditableYet)).toHaveCount(0);
-    for (const label of [
-      'Skill',
-      'Experience',
-      'Project',
-      'Education',
-      'Language',
-      'Reference',
-    ]) {
+    for (const label of ['Skill', 'Experience', 'Project', 'Education', 'Language', 'Reference']) {
       await expect(section(page, label)).toBeVisible();
       await expect(addButton(page, label)).toBeVisible();
       await expect(section(page, label)).toContainText(list.empty(label));
@@ -202,21 +179,15 @@ test.describe.serial('owner: dynamic document form (cv-page)', () => {
     stop();
 
     // Remove the invalid experience again.
-    await experience
-      .getByRole('button', { name: list.remove('Experience', 0) })
-      .click();
-    await expect(section(page, 'Experience')).toContainText(
-      list.empty('Experience'),
-    );
+    await experience.getByRole('button', { name: list.remove('Experience', 0) }).click();
+    await expect(section(page, 'Experience')).toContainText(list.empty('Experience'));
   });
 
   test('creating a draft posts once and moves to the edit URL with the values', async () => {
     const { writes, stop } = recordWrites(page);
     await fieldByLabel(page, 'Position').fill(POSITION);
     await addButton(page, 'Skill').click();
-    await fieldByLabel(listItem(page, 'Skill', 0), 'Skill').fill(
-      SKILL_NAMES[0] ?? '',
-    );
+    await fieldByLabel(listItem(page, 'Skill', 0), 'Skill').fill(SKILL_NAMES[0] ?? '');
     await fieldByLabel(listItem(page, 'Skill', 0), 'Level').fill('Expert');
     await page.keyboard.press('Enter');
     await expect(page).toHaveURL(EDIT_URL);
@@ -245,9 +216,7 @@ test.describe.serial('owner: dynamic document form (cv-page)', () => {
     for (const name of SKILL_NAMES.slice(1)) {
       await addButton(page, 'Skill').click();
       const count = await section(page, 'Skill').getByRole('listitem').count();
-      await fieldByLabel(listItem(page, 'Skill', count - 1), 'Skill').fill(
-        name,
-      );
+      await fieldByLabel(listItem(page, 'Skill', count - 1), 'Skill').fill(name);
     }
     let recorder = recordWrites(page);
     await saveDraftAndExpectNotice(page);
@@ -272,9 +241,7 @@ test.describe.serial('owner: dynamic document form (cv-page)', () => {
 
   test('richtext: toolbar formatting, links and cleared text persist across reload', async () => {
     const editor = richtextEditor(page, 'Summary');
-    const toolbar = page
-      .getByRole('toolbar', { name: copy.richtext.toolbar })
-      .first();
+    const toolbar = page.getByRole('toolbar', { name: copy.richtext.toolbar }).first();
     await editor.click();
     await page.keyboard.type(RICH_TEXT);
     await page.keyboard.press('ControlOrMeta+A');
@@ -282,11 +249,7 @@ test.describe.serial('owner: dynamic document form (cv-page)', () => {
     await expect(editor.locator('strong')).toContainText(RICH_TEXT);
     await page.keyboard.press('ArrowRight');
     await page.keyboard.press('Enter');
-    await applyFormat(
-      page,
-      editor,
-      toolbarButton(toolbar, copy.richtext.bulletList),
-    );
+    await applyFormat(page, editor, toolbarButton(toolbar, copy.richtext.bulletList));
     await page.keyboard.type(LIST_ITEM);
     await expect(editor.locator('ul li')).toContainText(LIST_ITEM);
 
@@ -340,13 +303,10 @@ test.describe.serial('owner: dynamic document form (cv-page)', () => {
   });
 
   test('reordering and removing skills keeps the same rows (component uid)', async () => {
-    const skillValue = (index: number) =>
-      fieldByLabel(listItem(page, 'Skill', index), 'Skill');
+    const skillValue = (index: number) => fieldByLabel(listItem(page, 'Skill', index), 'Skill');
     await expect(skillValue(0)).toHaveValue(SKILL_NAMES[0] ?? '');
     await expect(skillValue(2)).toHaveValue(SKILL_NAMES[2] ?? '');
-    await expect(
-      page.getByRole('button', { name: list.moveUp('Skill', 0) }),
-    ).toBeDisabled();
+    await expect(page.getByRole('button', { name: list.moveUp('Skill', 0) })).toBeDisabled();
 
     // Move the last skill to the top, remove the middle one.
     await page.getByRole('button', { name: list.moveUp('Skill', 2) }).click();
@@ -381,19 +341,13 @@ test.describe.serial('owner: dynamic document form (cv-page)', () => {
       name: copy.conflict.title,
     });
     await expect(mergeDialog).toBeVisible();
-    await mergeDialog
-      .getByRole('button', { name: copy.conflict.cancel, exact: true })
-      .click();
+    await mergeDialog.getByRole('button', { name: copy.conflict.cancel, exact: true }).click();
     await expect(mergeDialog).toBeHidden();
     await expect(other.getByRole('alert')).toContainText(copy.errors.conflict);
     // The typed value is still there until the user reloads.
-    await expect(fieldByLabel(other, 'Position')).toHaveValue(
-      `${POSITION_EDITED} B`,
-    );
+    await expect(fieldByLabel(other, 'Position')).toHaveValue(`${POSITION_EDITED} B`);
     await other.getByRole('button', { name: copy.errors.reload }).click();
-    await expect(fieldByLabel(other, 'Position')).toHaveValue(
-      `${POSITION_EDITED} A`,
-    );
+    await expect(fieldByLabel(other, 'Position')).toHaveValue(`${POSITION_EDITED} A`);
     await expect(other.getByRole('alert')).toHaveCount(0);
     await other.close();
   });
@@ -434,9 +388,7 @@ test.describe.serial('owner: dynamic document form (cv-page)', () => {
     });
     await contentSaveButton(page).click();
     await expect(page.getByRole('alert')).toContainText(copy.errors.conflict);
-    await expect(
-      page.getByRole('button', { name: copy.errors.reload }),
-    ).toBeVisible();
+    await expect(page.getByRole('button', { name: copy.errors.reload })).toBeVisible();
     await page.unroute(`**${DOCUMENTS_PATH}/*`);
   });
 
@@ -457,16 +409,14 @@ test.describe.serial('owner: dynamic document form (cv-page)', () => {
     const company = fieldByLabel(page, 'Company');
     await expect(company).toHaveValue(copy.protectedValue);
     await expect(company).toHaveAttribute('readonly', '');
-    await expect(fieldByLabel(page, 'Summary')).toHaveValue(
-      copy.protectedValue,
-    );
+    await expect(fieldByLabel(page, 'Summary')).toHaveValue(copy.protectedValue);
     await expect(fieldByLabel(page, 'Summary')).toHaveAttribute('readonly', '');
 
     await fieldByLabel(page, 'Position').fill(`${POSITION_EDITED} masked`);
     await addButton(page, 'Reference').click();
-    await expect(
-      fieldByLabel(listItem(page, 'Reference', 0), 'Phone'),
-    ).toHaveValue(copy.protectedValue);
+    await expect(fieldByLabel(listItem(page, 'Reference', 0), 'Phone')).toHaveValue(
+      copy.protectedValue,
+    );
     await fieldByLabel(listItem(page, 'Reference', 0), 'Name').fill('Ref name');
     const recorder = recordWrites(page);
     await saveDraftAndExpectNotice(page);
@@ -499,9 +449,7 @@ test.describe.serial('owner: dynamic document form (cv-page)', () => {
   });
 
   test('an unknown document and an unknown type show a notice', async () => {
-    await page.goto(
-      `/content/${CV_PAGE_SLUG}/00000000-0000-4000-8000-000000000000`,
-    );
+    await page.goto(`/content/${CV_PAGE_SLUG}/00000000-0000-4000-8000-000000000000`);
     await expect(page.getByText(copy.documentNotFound)).toBeVisible();
     await page.goto('/content/no-such-type/new');
     await expect(page.getByText(copy.typeNotFound)).toBeVisible();
@@ -509,9 +457,7 @@ test.describe.serial('owner: dynamic document form (cv-page)', () => {
 
   test('the console stayed free of unexpected errors', () => {
     // Deliberate 4xx/5xx responses above log "Failed to load resource".
-    const unexpected = consoleProblems.filter(
-      (text) => !text.includes('Failed to load resource'),
-    );
+    const unexpected = consoleProblems.filter((text) => !text.includes('Failed to load resource'));
     expect(unexpected).toEqual([]);
   });
 

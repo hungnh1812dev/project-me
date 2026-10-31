@@ -1,13 +1,8 @@
-import {
-  type BrowserContext,
-  expect,
-  type Route,
-  test,
-} from '@playwright/test';
+import { expect, test, type BrowserContext, type Route } from '@playwright/test';
 
 import { ADMIN_COPY, MEDIA_PAGE_SIZE } from '../src/Apps.contract';
-import { signInAsOwner } from '../src/Session.fixture';
 import { HTTP } from '../src/E2e.constants';
+import { signInAsOwner } from '../src/Session.fixture';
 
 const copy = ADMIN_COPY.media;
 
@@ -35,16 +30,12 @@ const cors = (route: Route): Record<string, string> => {
     'access-control-allow-origin': request.headers()['origin'] ?? '*',
     'access-control-allow-credentials': 'true',
     'access-control-allow-methods': 'GET,POST,PATCH,DELETE,OPTIONS',
-    'access-control-allow-headers':
-      request.headers()['access-control-request-headers'] ?? '*',
+    'access-control-allow-headers': request.headers()['access-control-request-headers'] ?? '*',
   };
 };
 
 /** A paged in-memory /media with one more file than fits on a page. */
-async function pagedMediaApi(
-  context: BrowserContext,
-  requestedPages: number[],
-) {
+async function pagedMediaApi(context: BrowserContext, requestedPages: number[]) {
   const files: FakeFile[] = Array.from({ length: FILE_COUNT }, (_, index) => ({
     id: crypto.randomUUID(),
     fileName: nameOf(index),
@@ -104,13 +95,9 @@ test('deleting the only row of the last page steps back and focus goes to the he
 
     await page.getByRole('button', { name: copy.pagination.next }).click();
     const lastName = nameOf(FILE_COUNT - 1);
-    await expect(
-      page.getByRole('row').filter({ hasText: lastName }),
-    ).toBeVisible();
+    await expect(page.getByRole('row').filter({ hasText: lastName })).toBeVisible();
 
-    await page
-      .getByRole('button', { name: copy.deleteLabel(lastName) })
-      .click();
+    await page.getByRole('button', { name: copy.deleteLabel(lastName) }).click();
     await page
       .getByRole('dialog')
       .getByRole('button', { name: copy.deleteDialog.submit(lastName) })
@@ -118,13 +105,9 @@ test('deleting the only row of the last page steps back and focus goes to the he
     await expect(page.getByRole('dialog')).toBeHidden();
 
     // The page steps back: the first file shows again, no empty page 2.
-    await expect(
-      page.getByRole('row').filter({ hasText: nameOf(0) }),
-    ).toBeVisible();
+    await expect(page.getByRole('row').filter({ hasText: nameOf(0) })).toBeVisible();
     expect(requestedPages.at(-1)).toBe(1);
-    await expect(
-      page.getByRole('heading', { level: 1, name: copy.title }),
-    ).toBeFocused();
+    await expect(page.getByRole('heading', { level: 1, name: copy.title })).toBeFocused();
   } finally {
     await context.close();
   }

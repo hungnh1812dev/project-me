@@ -1,7 +1,7 @@
-import { expect, type Page, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 
-import { ADMIN_COPY, WEB_COPY } from '../src/Apps.contract';
 import { API_PATHS } from '../src/Api.endpoints';
+import { ADMIN_COPY, WEB_COPY } from '../src/Apps.contract';
 import { REFRESH_COOKIE_NAME } from '../src/E2e.constants';
 import { e2eEnv } from '../src/E2e.env';
 import { mailIdsFor, waitForCode } from '../src/Mailpit.client';
@@ -34,56 +34,39 @@ async function openDialog(page: Page): Promise<void> {
   await expect(page.getByRole('dialog', { name: login.title })).toBeVisible();
 }
 
-async function fillCredentials(
-  page: Page,
-  email: string,
-  password: string,
-): Promise<void> {
+async function fillCredentials(page: Page, email: string, password: string): Promise<void> {
   const form = dialog(page);
   await form.getByRole('textbox', { name: login.emailLabel }).fill(email);
   await form.getByLabel(login.passwordLabel).fill(password);
   await form.getByRole('button', { name: login.submit }).click();
 }
 
-const signOutButton = (page: Page) =>
-  page.getByRole('button', { name: WEB_COPY.session.signOut });
+const signOutButton = (page: Page) => page.getByRole('button', { name: WEB_COPY.session.signOut });
 
 test('anonymous visit shows Sign in; the dialog validates, closes with Esc and Cancel, and reopens clean', async ({
   page,
 }) => {
-  const refresh = page.waitForResponse((res) =>
-    res.url().endsWith(API_PATHS.AUTH.REFRESH),
-  );
+  const refresh = page.waitForResponse((res) => res.url().endsWith(API_PATHS.AUTH.REFRESH));
   await page.goto(e2eEnv.webUrl);
   expect((await refresh).status()).toBe(401);
   await expect(headerSignIn(page)).toBeVisible();
   await expect(signOutButton(page)).toHaveCount(0);
   // Next's route announcer is an empty role=alert; only alerts with text count.
-  await expect(page.getByRole('alert').filter({ hasText: /\S/ })).toHaveCount(
-    0,
-  );
+  await expect(page.getByRole('alert').filter({ hasText: /\S/ })).toHaveCount(0);
 
   await openDialog(page);
   await dialog(page).getByRole('button', { name: login.submit }).click();
-  await expect(
-    dialog(page).getByText(login.validation.emailRequired),
-  ).toBeVisible();
-  await dialog(page)
-    .getByRole('textbox', { name: login.emailLabel })
-    .fill('not-an-email');
+  await expect(dialog(page).getByText(login.validation.emailRequired)).toBeVisible();
+  await dialog(page).getByRole('textbox', { name: login.emailLabel }).fill('not-an-email');
   await dialog(page).getByLabel(login.passwordLabel).fill('x');
   await dialog(page).getByRole('button', { name: login.submit }).click();
-  await expect(
-    dialog(page).getByText(login.validation.emailInvalid),
-  ).toBeVisible();
+  await expect(dialog(page).getByText(login.validation.emailInvalid)).toBeVisible();
 
   await page.keyboard.press('Escape');
   await expect(dialog(page)).toHaveCount(0);
 
   await openDialog(page);
-  await expect(
-    dialog(page).getByRole('textbox', { name: login.emailLabel }),
-  ).toHaveValue('');
+  await expect(dialog(page).getByRole('textbox', { name: login.emailLabel })).toHaveValue('');
   await dialog(page).getByRole('button', { name: login.cancel }).click();
   await expect(dialog(page)).toHaveCount(0);
 });
@@ -95,13 +78,9 @@ test('a wrong password shows one generic message, clears the password and keeps 
   await page.goto(e2eEnv.webUrl);
   await openDialog(page);
   await fillCredentials(page, email, 'definitely-wrong-password');
-  await expect(
-    dialog(page).getByText(login.errors.invalidCredentials),
-  ).toBeVisible();
+  await expect(dialog(page).getByText(login.errors.invalidCredentials)).toBeVisible();
   await expect(dialog(page).getByLabel(login.passwordLabel)).toHaveValue('');
-  await expect(
-    dialog(page).getByRole('textbox', { name: login.emailLabel }),
-  ).toHaveValue(email);
+  await expect(dialog(page).getByRole('textbox', { name: login.emailLabel })).toHaveValue(email);
 });
 
 test('a reader signs in on the web, stays signed in on reload, shares the session with the admin, and signs out', async ({
@@ -120,15 +99,13 @@ test('a reader signs in on the web, stays signed in on reload, shares the sessio
   await expect(headerSignIn(page)).toHaveCount(0);
 
   // Auth goes to the API only, never through a Next route.
-  const authPaths = requests.filter((path) =>
-    path.includes(API_PATHS.AUTH_PREFIX),
-  );
+  const authPaths = requests.filter((path) => path.includes(API_PATHS.AUTH_PREFIX));
   expect(authPaths.length).toBeGreaterThan(0);
   for (const path of authPaths) expect(path).toMatch(/^\/api\/v1\/auth\//);
 
-  const cookies = (
-    await context.cookies(`${e2eEnv.apiBaseUrl}${API_PATHS.AUTH.REFRESH}`)
-  ).filter((cookie) => cookie.name === REFRESH_COOKIE_NAME);
+  const cookies = (await context.cookies(`${e2eEnv.apiBaseUrl}${API_PATHS.AUTH.REFRESH}`)).filter(
+    (cookie) => cookie.name === REFRESH_COOKIE_NAME,
+  );
   expect(cookies).toHaveLength(1);
   expect(cookies[0]).toMatchObject({
     httpOnly: true,
@@ -139,9 +116,7 @@ test('a reader signs in on the web, stays signed in on reload, shares the sessio
   expect(await storageState(page)).toEqual(EMPTY_STORAGE);
 
   // The "Open CMS" link needs NEXT_PUBLIC_ADMIN_URL, which the smoke stack leaves unset.
-  await expect(
-    page.getByRole('link', { name: WEB_COPY.session.openCms }),
-  ).toHaveCount(0);
+  await expect(page.getByRole('link', { name: WEB_COPY.session.openCms })).toHaveCount(0);
 
   await page.reload();
   await expect(page.getByText(/^Signed in as /)).toBeVisible();
@@ -149,9 +124,7 @@ test('a reader signs in on the web, stays signed in on reload, shares the sessio
   // The same cookie restores the session on the admin origin.
   const admin = await context.newPage();
   await admin.goto(e2eEnv.adminUrl);
-  await expect(
-    admin.getByRole('button', { name: ADMIN_COPY.session.signOut }),
-  ).toBeVisible();
+  await expect(admin.getByRole('button', { name: ADMIN_COPY.session.signOut })).toBeVisible();
   await admin.close();
 
   // A failing sign-out keeps the session and says so.
@@ -202,9 +175,7 @@ test('a reader with email codes signs in on the web through the code step', asyn
   const step = page.getByRole('dialog', { name: login.twoFactor.title });
   await expect(step).toBeVisible();
   await expect(step.getByText(login.twoFactor.emailWarning)).toBeVisible();
-  const codeInput = step.getByLabel(
-    new RegExp(`^${login.twoFactor.emailLabel}`),
-  );
+  const codeInput = step.getByLabel(new RegExp(`^${login.twoFactor.emailLabel}`));
 
   // Empty and short codes are blocked on the client.
   await step.getByRole('button', { name: login.twoFactor.submit }).click();
@@ -216,9 +187,7 @@ test('a reader with email codes signs in on the web through the code step', asyn
   // A wrong code gets the message and clears the field.
   await codeInput.fill('000000');
   await step.getByRole('button', { name: login.twoFactor.submit }).click();
-  await expect(
-    step.getByText(login.twoFactor.errors.invalidCode),
-  ).toBeVisible();
+  await expect(step.getByText(login.twoFactor.errors.invalidCode)).toBeVisible();
   await expect(codeInput).toHaveValue('');
 
   const code = await waitForCode(context, e2eEnv.reader2faEmail, seen);
@@ -247,9 +216,7 @@ test('a rate-limited sign-in names the wait in seconds or minutes, and an offlin
     }),
   );
   await fillCredentials(page, e2eEnv.readerEmail, 'x');
-  await expect(
-    dialog(page).getByText(login.errors.rateLimitedSeconds(30)),
-  ).toBeVisible();
+  await expect(dialog(page).getByText(login.errors.rateLimitedSeconds(30))).toBeVisible();
 
   await page.unroute(loginRoute);
   await page.route(loginRoute, (route) =>
@@ -261,14 +228,10 @@ test('a rate-limited sign-in names the wait in seconds or minutes, and an offlin
   );
   await dialog(page).getByLabel(login.passwordLabel).fill('x');
   await dialog(page).getByRole('button', { name: login.submit }).click();
-  await expect(
-    dialog(page).getByText(login.errors.rateLimitedMinutes(2)),
-  ).toBeVisible();
+  await expect(dialog(page).getByText(login.errors.rateLimitedMinutes(2))).toBeVisible();
 
   await page.unroute(loginRoute);
-  await page.route(loginRoute, (route) =>
-    route.fulfill({ status: 429, json: rateLimitedBody }),
-  );
+  await page.route(loginRoute, (route) => route.fulfill({ status: 429, json: rateLimitedBody }));
   await dialog(page).getByLabel(login.passwordLabel).fill('x');
   await dialog(page).getByRole('button', { name: login.submit }).click();
   await expect(dialog(page).getByText(login.errors.rateLimited)).toBeVisible();
@@ -301,9 +264,7 @@ test('the code step: a dead temp token returns to the credentials with a notice,
     }),
   );
   await step.getByRole('button', { name: login.twoFactor.resend }).click();
-  await expect(
-    step.getByText(login.errors.rateLimitedSeconds(45)),
-  ).toBeVisible();
+  await expect(step.getByText(login.errors.rateLimitedSeconds(45))).toBeVisible();
 
   await page.route('**/auth/2fa/verify', (route) =>
     route.fulfill({
@@ -311,14 +272,10 @@ test('the code step: a dead temp token returns to the credentials with a notice,
       json: { errorCode: 'AUTH_INVALID_TEMP_TOKEN' },
     }),
   );
-  await step
-    .getByLabel(new RegExp(`^${login.twoFactor.emailLabel}`))
-    .fill('123456');
+  await step.getByLabel(new RegExp(`^${login.twoFactor.emailLabel}`)).fill('123456');
   await step.getByRole('button', { name: login.twoFactor.submit }).click();
   await expect(dialog(page).getByText(login.twoFactor.expired)).toBeVisible();
-  await expect(
-    dialog(page).getByRole('textbox', { name: login.emailLabel }),
-  ).toBeVisible();
+  await expect(dialog(page).getByRole('textbox', { name: login.emailLabel })).toBeVisible();
   await expect(page.getByText(/^Signed in as /)).toHaveCount(0);
 });
 
@@ -372,13 +329,12 @@ test('a signed-in reader gets no Reviewer access button and no reviewer status c
   await openDialog(page);
   const statusCalls: string[] = [];
   page.on('request', (req) => {
-    if (req.url().endsWith(API_PATHS.REVIEWER.STATUS))
-      statusCalls.push(req.url());
+    if (req.url().endsWith(API_PATHS.REVIEWER.STATUS)) statusCalls.push(req.url());
   });
   await fillCredentials(page, e2eEnv.readerEmail, e2eEnv.readerPassword);
   await expect(signOutButton(page)).toBeVisible();
-  await expect(
-    page.getByRole('button', { name: WEB_COPY.reviewer.open, exact: true }),
-  ).toHaveCount(0);
+  await expect(page.getByRole('button', { name: WEB_COPY.reviewer.open, exact: true })).toHaveCount(
+    0,
+  );
   expect(statusCalls).toEqual([]);
 });

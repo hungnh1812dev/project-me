@@ -1,10 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-import {
-  accountRow,
-  openRole,
-  roleSaveButton,
-} from '../src/AccessPages.fixture';
+import { accountRow, openRole, roleSaveButton } from '../src/AccessPages.fixture';
 import { ADMIN_COPY } from '../src/Apps.contract';
 import { CV_PAGE_SLUG } from '../src/E2e.constants';
 import { e2eEnv } from '../src/E2e.env';
@@ -16,17 +12,11 @@ const accounts = access.accounts;
 const invite = access.invite;
 
 test.describe('admin: limited by its own permissions and rank', () => {
-  test('an admin sees its own role read-only and cannot invite an admin', async ({
-    page,
-  }) => {
+  test('an admin sees its own role read-only and cannot invite an admin', async ({ page }) => {
     await submitLogin(page, e2eEnv.twoFactorEmail, e2eEnv.twoFactorPassword);
-    await expect(
-      page.getByRole('button', { name: ADMIN_COPY.session.signOut }),
-    ).toBeVisible();
+    await expect(page.getByRole('button', { name: ADMIN_COPY.session.signOut })).toBeVisible();
     const nav = page.getByRole('navigation', { name: access.nav.label });
-    await expect(
-      nav.getByRole('link', { name: access.nav.accounts }),
-    ).toBeVisible();
+    await expect(nav.getByRole('link', { name: access.nav.accounts })).toBeVisible();
 
     // Rank: no Disable on the owner or on the other admin rows.
     await page.goto('/accounts');

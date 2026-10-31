@@ -1,8 +1,8 @@
-import { expect, type Locator, type Page, test } from '@playwright/test';
+import { expect, test, type Locator, type Page } from '@playwright/test';
 
 import { ADMIN_COPY, contentNewPath } from '../src/Apps.contract';
-import { signInAsOwner } from '../src/Session.fixture';
 import { CV_PAGE_SLUG } from '../src/E2e.constants';
+import { signInAsOwner } from '../src/Session.fixture';
 
 const richtext = ADMIN_COPY.content.richtext;
 
