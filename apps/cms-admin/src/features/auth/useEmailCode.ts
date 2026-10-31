@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
+import { apiFailureOf, type ApiFailure } from '@apis/client/ApiFailure.errors';
 import { MAX_TIMER_DELAY_MS, MS_PER_SECOND } from '@configs/Http.constants';
-import { apiFailureOf, type ApiFailure } from '@libs/ApiFailure.errors';
 import { useMutation } from '@tanstack/react-query';
 
 /**

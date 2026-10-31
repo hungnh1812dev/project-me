@@ -179,26 +179,36 @@ Features (`src/features/`):
   time. Success clears the form and goes to `/login` with a notice and the email
   prefilled. The login page shows a "no owner yet" notice with a link to `/setup`
   while the status is open (nothing when closed or when the call fails).
-- **Routes** (`src/config/App.routes.ts`): `/login`, `/setup`, `/reset-password`,
+- **Routes** (`src/configs/App.routes.ts`): `/login`, `/setup`, `/reset-password`,
   `/set-password`, and `/`, `/settings/security`, `/accounts`, `/roles`,
   `/roles/:roleId`, `/api-tokens`, `/content/:slug`, `/content/:slug/new`,
   `/content/:slug/:documentId` behind `ProtectedRoute` + `AppShell` (side menu from `md` up, top bar with a
-  Menu button and a sheet below; sections from `lib/NavSections.constants.ts`, empty
+  Menu button and a sheet below; sections from `configs/NavSections.constants.ts`, empty
   sections hidden; user block with "Security" and "Sign out" at the bottom;
-  `app/SideMenu.tsx`, `app/MobileMenu.tsx`).
-- **Feature registry** (`src/features/Features.registry.ts`): each feature folder has a
-  `<Name>.feature.ts` with its `routes`, optional `navItems` (label, path, permission
-  subject and action) and optional `apiServices` (`defineApiService(createXApi,
-XApiProvider)`). `app/AppRoutes.setup.tsx` and `AppShell` iterate the registry;
-  nav order is registry order. A feature whose links depend on loaded data
-  adds `useNavItems`, which returns `{ items, isLoading, hasFailed, retry }` so the menu can show skeleton rows or a retry line (`contentFeature.useNavItems` lists one link per content
-  type the caller may read, under `singleTypes` or `collectionTypes` by kind;
-  `/content/:slug` of a single type redirects to its one document, or to the
-  create form when none exists). `app/AppServices.setup.ts` builds each feature API
-  from the registry and `AppProviders` nests the providers inside the session
-  provider. Routes are protected unless listed in
-  `PUBLIC_ROUTE_PATHS` (`features/auth/Auth.feature.ts`, the four auth pages). A new
-  feature is one folder with `<Name>.feature.ts` plus one line in the registry.
+  `components/layouts/`).
+- **Folders** (`code-standards` §4.6): `app/` wires store, providers and routes;
+  `views/<page>/` holds one page and every part only it uses; `features/<name>/`
+  holds a feature's API, queries, state, hooks and parts shared by several pages;
+  `components/` shared UI (`layouts/` for the shells); `apis/client/` the HTTP
+  client and API service wiring; `configs/`, `libs/` (library setup), `utils/`.
+  Imports go down only: app → views → features → components / apis / libs / utils / configs.
+  A view folder imports no other view (ESLint).
+- **View registry** (`src/views/Views.registry.ts`): every page with its `path`,
+  optional `navItems` (label, path, permission subject and action) and optional
+  `useNavItems`, which returns `{ items, isLoading, hasFailed, retry }` so the
+  menu can show skeleton rows or a retry line (the content list view uses
+  `useContentNavItems`: one link per content type the caller may read, under
+  `singleTypes` or `collectionTypes` by kind; `/content/:slug` of a single type
+  redirects to its one document, or to the create form when none exists).
+  `app/AppRoutes.setup.tsx` builds the routes from it and hands `APP_NAV` to
+  `AppShell`; nav order is registry order. Routes are protected unless listed in
+  `PUBLIC_ROUTE_PATHS` (same file, the four auth pages). A new page is one
+  `views/<page>/` folder plus one entry in the registry.
+- **Feature registry** (`src/features/Features.registry.ts`): each feature folder
+  has a `<Name>.feature.ts` with its optional `apiServices`
+  (`defineApiService(createXApi, XApiProvider)`, `apis/client/ApiService.setup.tsx`).
+  `app/AppServices.setup.ts` builds each feature API from the registry and
+  `AppProviders` nests the providers inside the session provider.
 
 End-to-end coverage lives in [`apps/e2e`](../e2e/README.md).
 
@@ -234,21 +244,21 @@ pnpm --filter @abyss/cms-admin dev       # http://localhost:5173 (DEV_SERVER_POR
 
 ## Config
 
-- `src/config/App.env.ts` is the only module that reads `import.meta.env`. Every
+- `src/configs/App.env.ts` is the only module that reads `import.meta.env`. Every
   key is documented in [`.env.example`](.env.example). `VITE_*` values are
   baked in at build time, so they are public: never put secrets there.
-- `src/config/Api.endpoints.ts` is the single map of API paths.
-- `src/config/Copy.constants.ts` re-exports `COPY`, the user-facing text
-  until an i18n module exists. Sections live in `src/config/copy/*.copy.ts`
+- `src/configs/Api.endpoints.ts` is the single map of API paths.
+- `src/configs/Copy.constants.ts` re-exports `COPY`, the user-facing text
+  until an i18n module exists. Sections live in `src/configs/copy/*.copy.ts`
   (shared text and nav labels in `common.copy.ts`) and are joined in
   `copy/index.ts`; only that folder imports a section file (ESLint).
-- `src/config/` keeps only cross-feature constants (`Http.constants`,
+- `src/configs/` keeps only cross-feature constants (`Http.constants`,
   `Auth.constants`, `App.routes`). A feature's own constants live in
   `src/features/<name>/<Name>.constants.ts`; other code reads them through
   that feature's `index.ts` (ESLint forbids importing another feature's
   constants file).
-- `src/lib/Api.client.ts` is the Axios instance. It strips trailing slashes
-  from every request path (`src/config/StripTrailingSlashes.rules.ts`, SPEC §6), so no proxy can answer with a redirect.
+- `src/apis/client/Api.client.ts` is the Axios instance. It strips trailing slashes
+  from every request path (`src/configs/StripTrailingSlashes.rules.ts`, SPEC §6), so no proxy can answer with a redirect.
 
 Styling: Tailwind v4 with the form-commons theme (`src/styles/app.css`).
 Components use semantic tokens only (`bg-card`, `text-muted-foreground`).
@@ -298,5 +308,5 @@ and adds `<meta name="csp-nonce">` to the HTML shell (`sub_filter`);
 
 The CSP has no `'unsafe-eval'`, so the bundle must not use `eval` or
 `new Function`. Zod runs with `jitless` for that reason: its eval probe would
-log a CSP violation on every page (`src/app/Zod.setup.ts`, imported first in
+log a CSP violation on every page (`src/libs/Zod.setup.ts`, imported first in
 `src/main.tsx`, ADR 0015).

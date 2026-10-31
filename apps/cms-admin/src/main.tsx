@@ -1,17 +1,17 @@
-import './app/Zod.setup';
+import '@libs/Zod.setup';
 import '@styles/globals.css';
 
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { CSP_NONCE_META_NAME } from '@abyss/form-commons';
+import { apiClient } from '@apis/client/Api.client';
+import { createQueryClient } from '@libs/QueryClient.setup';
 import { setNonce } from 'get-nonce';
 import { BrowserRouter } from 'react-router';
 
 import { App } from './app/App';
 import { AppProviders } from './app/AppProviders';
 import { createAppServices } from './app/AppServices.setup';
-import { createQueryClient } from './app/QueryClient.setup';
-import { apiClient } from './lib/Api.client';
 
 const rootElement = document.getElementById('root');
 if (rootElement === null) {

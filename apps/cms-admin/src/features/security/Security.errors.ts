@@ -1,7 +1,7 @@
 import { type FormAlertTone } from '@abyss/form-commons';
+import { apiFailureOf, rateLimitedMessage } from '@apis/client/ApiFailure.errors';
 import { COPY } from '@configs/Copy.constants';
 import { API_ERROR_CODES, HTTP_STATUS } from '@configs/Http.constants';
-import { apiFailureOf, rateLimitedMessage } from '@libs/ApiFailure.errors';
 
 /**
  * What a failed security call means for the form: a field to mark, a state

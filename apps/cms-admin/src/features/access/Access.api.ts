@@ -1,6 +1,6 @@
+import type { PageMeta } from '@apis/client/Api.client';
 import { API_ENDPOINTS } from '@configs/Api.endpoints';
 import type { TwoFactorMethod } from '@configs/Auth.constants';
-import type { PageMeta } from '@libs/Api.client';
 import type { AxiosInstance } from 'axios';
 
 import { getContentTypes } from '../content-types';

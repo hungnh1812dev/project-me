@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { PageMeta } from '@libs/Api.client';
+import type { PageMeta } from '@apis/client/Api.client';
 import { act, renderHook } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 

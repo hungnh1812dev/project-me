@@ -1,5 +1,5 @@
+import { apiFailureOf } from '@apis/client/ApiFailure.errors';
 import { API_ERROR_CODES, HEALTH_QUERY_RETRY, HTTP_STATUS } from '@configs/Http.constants';
-import { apiFailureOf } from '@libs/ApiFailure.errors';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 
 import { REVIEWER_SESSIONS_PAGE_SIZE } from './Reviewer.constants';

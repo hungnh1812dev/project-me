@@ -21,6 +21,8 @@ export default defineConfig(({ mode }) => {
         brotliSize: true,
       }),
     ],
+    // Path aliases come from tsconfig.json `paths`.
+    resolve: { tsconfigPaths: true },
     server: {
       port: Number(env.DEV_SERVER_PORT ?? DEFAULT_DEV_SERVER_PORT),
       strictPort: true,

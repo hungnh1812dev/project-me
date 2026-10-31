@@ -1,4 +1,4 @@
-import { createApiContext } from '@libs/ApiContext.setup';
+import { createApiContext } from '@apis/client/ApiContext.setup';
 
 import type { SecurityApi } from './Security.api';
 

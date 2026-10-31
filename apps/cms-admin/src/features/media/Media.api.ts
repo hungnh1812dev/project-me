@@ -1,5 +1,5 @@
+import type { PageMeta } from '@apis/client/Api.client';
 import { API_ENDPOINTS } from '@configs/Api.endpoints';
-import type { PageMeta } from '@libs/Api.client';
 import type { AxiosInstance } from 'axios';
 
 /** A library file as `GET /media` returns it. */

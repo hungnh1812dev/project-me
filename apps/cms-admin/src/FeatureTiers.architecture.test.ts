@@ -51,12 +51,8 @@ function deepCrossFeatureImports(): string[] {
 
 const FACADE_EXPORTS: Record<string, string[]> = {
   access: [
-    'AccountsPage',
-    'ApiTokensPage',
     'CONTENT_WILDCARD_SUBJECT',
     'PermissionAction',
-    'RolePermissionsPage',
-    'RolesPage',
     'isForbidden',
     'toAccessError',
     'useCallerAccess',
@@ -70,11 +66,11 @@ const FACADE_EXPORTS: Record<string, string[]> = {
     'useEmailCode',
     'useSession',
   ],
-  backups: ['BackupsPage'],
-  content: ['CollectionListPage', 'DocumentEditPage'],
-  media: ['MediaField', 'MediaLibraryPage', 'mediaToApi', 'mediaToForm'],
-  reviewer: ['ReviewerSessionsPage'],
-  security: ['ConfirmWithCodeForm', 'SecuritySettingsPage', 'useSecurityApi'],
+  backups: [],
+  content: [],
+  media: ['MediaField', 'mediaToApi', 'mediaToForm'],
+  reviewer: [],
+  security: ['ConfirmWithCodeForm', 'useSecurityApi'],
 };
 
 describe('feature facades', () => {

@@ -1,5 +1,5 @@
+import { createApiClient } from '@apis/client/Api.client';
 import { API_ENDPOINTS } from '@configs/Api.endpoints';
-import { createApiClient } from '@libs/Api.client';
 import { createFakeApi, TEST_API_BASE_URL } from '@test/FakeApi.fixture';
 
 import { createAuthApi } from './Auth.api';

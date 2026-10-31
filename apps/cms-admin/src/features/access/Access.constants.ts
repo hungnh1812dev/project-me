@@ -4,9 +4,9 @@
  * access-management.constants.ts; the server validates everything anyway.
  */
 
-import type { PermissionAction } from '@libs/PermissionAction.constants';
+import type { PermissionAction } from '@configs/PermissionAction.constants';
 
-export { PERMISSION_ACTIONS, type PermissionAction } from '@libs/PermissionAction.constants';
+export { PERMISSION_ACTIONS, type PermissionAction } from '@configs/PermissionAction.constants';
 
 /** Row subject covering every content type (never a system subject). */
 export const CONTENT_WILDCARD_SUBJECT = '*';

@@ -1,6 +1,6 @@
+import { retryAfterSecondsOf } from '@apis/client/ApiFailure.errors';
 import { COPY } from '@configs/Copy.constants';
 import { API_ERROR_CODES, HTTP_STATUS, RETRY_AFTER_HEADER } from '@configs/Http.constants';
-import { retryAfterSecondsOf } from '@libs/ApiFailure.errors';
 import { isAxiosError } from 'axios';
 
 const SECONDS_PER_MINUTE = 60;

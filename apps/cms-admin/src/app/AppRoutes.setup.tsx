@@ -1,29 +1,23 @@
+import { AppShell } from '@components/layouts/AppShell';
 import { APP_ROUTES } from '@configs/App.routes';
-import { PUBLIC_ROUTE_PATHS } from '@features/auth/Auth.feature';
 import { ProtectedRoute } from '@features/auth/ProtectedRoute';
-import { FEATURE_LIST } from '@features/Features.registry';
-import type { FeatureRoute } from '@libs/FeatureDefinition';
+import { APP_NAV, PUBLIC_ROUTE_PATHS, VIEWS, type View } from '@views/Views.registry';
 import { Navigate, type RouteObject } from 'react-router';
 
-import { AppShell } from './AppShell';
+const isPublic = ({ path }: View) => path !== undefined && PUBLIC_ROUTE_PATHS.includes(path);
 
-const isPublic = ({ path }: FeatureRoute) =>
-  path !== undefined && PUBLIC_ROUTE_PATHS.includes(path);
-
-const toRouteObject = ({ path, Component }: FeatureRoute): RouteObject =>
+const toRouteObject = ({ path, Component }: View): RouteObject =>
   path === undefined ? { index: true, Component } : { path, Component };
 
-const featureRoutes = FEATURE_LIST.flatMap((feature) => feature.routes);
-
-/** Public routes, then every other feature route behind sign-in, then the catch-all last. */
+/** Public routes, then every other view behind sign-in, then the catch-all last. */
 export const appRoutes: RouteObject[] = [
-  ...featureRoutes.filter(isPublic).map(toRouteObject),
+  ...VIEWS.filter(isPublic).map(toRouteObject),
   {
     Component: ProtectedRoute,
     children: [
       {
-        Component: AppShell,
-        children: featureRoutes.filter((route) => !isPublic(route)).map(toRouteObject),
+        element: <AppShell nav={APP_NAV} />,
+        children: VIEWS.filter((view) => !isPublic(view)).map(toRouteObject),
       },
     ],
   },

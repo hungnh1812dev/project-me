@@ -73,7 +73,7 @@ describe('list display', () => {
   });
 
   it('keeps CollectionListPage free of FIELD_TYPE', () => {
-    const page = readFileSync(join(import.meta.dirname, 'CollectionListPage.tsx'), 'utf8');
+    const page = readFileSync(join(import.meta.dirname, '../../views/collection-list/CollectionListPage.tsx'), 'utf8');
     expect(page).not.toContain('FIELD_TYPE');
   });
 });
