@@ -77,14 +77,51 @@
       "NOT_FOUND": "BACKUP_NOT_FOUND"
     }
   },
-  "permissionActions": ["read", "create", "update", "delete", "publish", "unpublish"],
+  "permissionActions": [
+    "read",
+    "create",
+    "update",
+    "delete",
+    "publish",
+    "unpublish"
+  ],
   "systemSubjects": {
-    "accounts": ["read", "create", "update", "delete"],
-    "roles": ["read", "create", "update", "delete"],
-    "api_tokens": ["read", "create", "update", "delete"],
-    "media": ["read", "create", "update", "delete"],
-    "audit_logs": ["read"],
-    "reviewer_settings": ["read", "update"]
+    "accounts": [
+      "read",
+      "create",
+      "update",
+      "delete"
+    ],
+    "roles": [
+      "read",
+      "create",
+      "update",
+      "delete"
+    ],
+    "api_tokens": [
+      "read",
+      "create",
+      "update",
+      "delete"
+    ],
+    "media": [
+      "read",
+      "create",
+      "update",
+      "delete"
+    ],
+    "audit_logs": [
+      "read"
+    ],
+    "reviewer_settings": [
+      "read",
+      "update"
+    ]
   },
-  "richtextUrlSchemes": ["http", "https", "mailto", "tel"]
+  "richtextUrlSchemes": [
+    "http",
+    "https",
+    "mailto",
+    "tel"
+  ]
 }

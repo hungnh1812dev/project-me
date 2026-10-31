@@ -201,6 +201,22 @@ describe('import graph statements and pinned paths', () => {
     expect(typeOnlyFlags("export const WORDS = [\n  'from',\n  'select',\n];")).toEqual([]);
   });
 
+  it('leaves inline type names out of the value names', () => {
+    writeFileSync(
+      join(root, 'a.ts'),
+      "import { Target, type Shape } from './target';\nimport type { Only } from './target';",
+    );
+    expect(
+      resolveImports(join(root, 'a.ts')).map(({ importedNames, importedValueNames }) => ({
+        importedNames,
+        importedValueNames,
+      })),
+    ).toEqual([
+      { importedNames: ['Target', 'Shape'], importedValueNames: ['Target'] },
+      { importedNames: ['Only'], importedValueNames: ['Only'] },
+    ]);
+  });
+
   it('flags import type and export type, and nothing else, as type-only', () => {
     expect(
       typeOnlyFlags(

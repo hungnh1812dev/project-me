@@ -125,8 +125,8 @@ function moduleImportViolations(
     otherModuleTargets.length > 0 &&
     rule.otherModuleValueImports !== 'any' &&
     !statement.isTypeOnly &&
-    (statement.importedNames === 'all' ||
-      statement.importedNames.some(
+    (statement.importedValueNames === 'all' ||
+      statement.importedValueNames.some(
         (name) => !(rule.otherModuleValueImports as readonly string[]).includes(name),
       ));
   return [

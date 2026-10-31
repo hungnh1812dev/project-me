@@ -21,6 +21,8 @@ interface NameBinding {
   imported: string;
   /** Name in the file that holds the statement. */
   local: string;
+  /** Written inline as `{ type A }`. */
+  isTypeOnly: boolean;
 }
 
 interface ModuleStatement {
@@ -38,6 +40,8 @@ export interface ResolvedImport {
   specifier: string;
   /** Names the statement brings in; `'all'` for namespace, default, star, bare and dynamic forms. */
   importedNames: string[] | 'all';
+  /** Names that stay at runtime: those not written `import type` nor inline `type`. */
+  importedValueNames: string[] | 'all';
   /** The statement is `import type` / `export type` (erased at build time). */
   isTypeOnly: boolean;
   /** Real files the import reaches. Empty for packages and non-ts files. */
@@ -90,12 +94,13 @@ function parseBindings(clause: string): NameBinding[] | 'all' {
   if (braces === null) return 'all';
   const names = (braces[1] ?? '')
     .split(',')
-    .map((item) => item.trim().replace(/^type\s+/, ''))
+    .map((item) => item.trim())
     .filter((item) => item !== '');
-  return names.map((item) => {
+  return names.map((rawItem) => {
+    const item = rawItem.replace(/^type\s+/, '');
     const [first = item, alias] = item.split(/\s+as\s+/);
     // `export { Original as Exposed }` and `import { Original as Alias }`
-    return { imported: first, local: alias ?? first };
+    return { imported: first, local: alias ?? first, isTypeOnly: item !== rawItem };
   });
 }
 
@@ -293,10 +298,15 @@ export function resolveImports(absolutePath: string): ResolvedImport[] {
     const target = resolveSpecifier(absolutePath, statement.specifier);
     const importedNames =
       statement.bindings === 'all' ? 'all' : statement.bindings.map((binding) => binding.imported);
+    const importedValueNames =
+      statement.bindings === 'all' || statement.isTypeOnly
+        ? importedNames
+        : statement.bindings.filter((binding) => !binding.isTypeOnly).map((b) => b.imported);
     if (target === null) {
       return {
         specifier: statement.specifier,
         importedNames,
+        importedValueNames,
         isTypeOnly: statement.isTypeOnly,
         targets: [],
       };
@@ -305,6 +315,7 @@ export function resolveImports(absolutePath: string): ResolvedImport[] {
     return {
       specifier: statement.specifier,
       importedNames,
+      importedValueNames,
       isTypeOnly: statement.isTypeOnly,
       targets: [...new Set(targets)],
     };
