@@ -90,6 +90,33 @@ TypeScript and JavaScript source files (`.ts`, `.tsx`, `.js`, `.jsx`, `.mjs`) an
 - **Project detail:** when the project profile has a `Naming:` line, that document adds the project's words, framework names and stricter rules (for example "word required" in a package). It never loosens this section. Without one, this section applies alone.
 - **Existing files:** name new files and folders by this section. Rename an existing file only when your task says so. A rename changes paths and imports, not exported identifiers or public package entry points.
 
+### 4.6 Frontend app layout
+
+Every frontend app uses this tree; a folder appears only when the app needs it:
+
+```
+<app-name>/
+  public/             static files served as-is
+  src/
+    app/              Next.js app route files (routes, layouts, route handlers) only; each page renders its view
+    components/       UI components shared by several pages or features
+      layouts/        page layouts
+    apis/             API config and clients
+      client/         browser-side calls
+      server/         server-side calls
+        restful/
+        graphql/
+    configs/          env readers, endpoints, routes, app constants
+    features/         one folder per business feature: its data access, state, hooks and components reused across pages
+    libs/             setup and wrappers of third-party libraries
+    utils/            pure helpers with no app state or I/O
+    views/            one folder per page: the page view and every component used only on that page
+```
+
+- A component used by one page lives in that page's `views/` folder; when a second page or feature needs it, move it to `features/` (feature-bound) or `components/` (generic).
+- `app/` holds no UI beyond rendering a view, layout or loading/error state.
+- An existing app with a different tree: new code goes in the matching folder of this tree when it exists, else in the app's current folder; moving old folders is a planned task, never a side effect. Record the difference in the unit record.
+
 ## 5. General
 
 - Match the surrounding style and naming; where it conflicts with §4, new code follows §4 and old code stays.
