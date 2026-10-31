@@ -31,7 +31,7 @@ Once each, only for `browser` rows, and no others: `agent-skills:browser-testing
 1. Read `.claude/state/project.md`, the checkpoint in the phases file (inputs, outputs, doubts, table), its tasks' acceptance and verify lines, and `git log --name-only` of its tasks' commits. Decide: small checkpoint or phase checkpoint (`test-tiers`).
 2. Draft your rows from that alone:
    - small: only `T0 cli` rows, one per changed unit of code whose unit tests must pass;
-   - phase: one row per flow, output, error state or doubt worth checking, at tiers 1-3, plus `Full e2e suite green on the full stack` (`T3 cli`).
+   - phase: one row per flow, output, error state or doubt worth checking, each at the one lowest tier (1, 2 or 3) that shows it, plus `Full e2e suite green on the full stack` (`T3 cli`).
 3. Create `<F>/checklists/<checkpoint>.md`: the planner's rows unchanged; for a phase checkpoint, then every row of the phase's small checklists (`Method` `T1 cli`, `Status` `todo`, empty `Note`); then each of your rows that no row covers (`Source` `qc`, `Checker` `qc`, or `both` when it also needs a security check; next free ID).
 
 ## CHECKLIST feature

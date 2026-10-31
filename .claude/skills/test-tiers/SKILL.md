@@ -25,11 +25,11 @@ Tiers 2 and 3 start from a green tier 1.
 | Check | Tiers |
 |---|---|
 | Small checkpoint (any but the last checkpoint of a phase with several) | 0 only |
-| Phase checkpoint (the last or only checkpoint of a phase) | 1 → 2 → 3 |
-| Feature checklist | 1 → 2 → 3 |
+| Phase checkpoint (the last or only checkpoint of a phase) | the tiers its rows hold, lowest first |
+| Feature checklist | the tiers its rows hold, lowest first |
 | One unit (builder's checks, per-unit security-qc review) | the lowest that can show it, 1 to 3 |
 
-Checklist rows run grouped by tier: every row of a tier in **one** run of that tier (one stack start), qc first, then security-qc on the same stack. A tier with no rows is skipped. A failed row does not stop higher tiers; its fix is re-checked in a later run of its own tier.
+Checklist rows run grouped by tier, never row by row or checkpoint by checkpoint: each row runs only at the tier in its `Method`. Take the tiers present in the checklist (all its rows, whatever checkpoint they came from), lowest first; run every tier 1 row in **one** tier 1 run, then every tier 2 row in one tier 2 run, then every tier 3 row in one tier 3 run (one stack start each), qc first, then security-qc on the same stack. A tier no row holds is not run (rows only at T1 and T2 → tier 1 then tier 2, no tier 3). A failed row does not stop higher tiers; its fix is re-checked in a later run of its own tier.
 
 ## Who does what
 

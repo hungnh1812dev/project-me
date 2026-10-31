@@ -52,7 +52,7 @@ Only what the job needs: `SPEC` → `agent-skills:spec-driven-development`; `PLA
 
    **Checklist** under each checkpoint, in the `test-tiers` format, `Source` `planner`, `Status` `todo`, empty `Note`; IDs `C<checkpoint>-<n>` (e.g. `CLG-2`), unique in the file, one row per requirement:
    - **small checkpoint** (not the last of a phase with several): only `T0 cli` rows, `Checker` `qc`, the unit tests that must pass for the files its tasks change (`Expected output` names the test files or cases). Anything needing integration tests, e2e, a browser or a security check goes in the phase checkpoint's table;
-   - **phase checkpoint** (the last or only one): rows at tiers 1-3; do not repeat the small checkpoints' rows (qc merges them in).
+   - **phase checkpoint** (the last or only one): each row at the one lowest tier (1, 2 or 3) that shows it; do not repeat the small checkpoints' rows (qc merges them in).
    Set `Checker` from the checker's scope; if unclear, ask the user. qc and security-qc work on copies; your table stays as written.
 7. Anything not decidable from the files (requirements, design tokens, env values, API contracts) is a question for the user, with a recommended answer and the trade-off.
 

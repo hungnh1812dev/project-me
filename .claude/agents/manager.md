@@ -74,7 +74,7 @@ Reports: `blocked` + questions → `AskUserQuestion`, answers into `handoff.md`,
 Target = a checkpoint (file `<F>/checklists/<checkpoint>.md`) or `feature` (`<F>/CHECKLIST.md`); format in `test-tiers` "Checklists". You dispatch and read `Status`; you never write rows. `<hash>` = the phase base for a checkpoint (missing: parent of the oldest commit in the phase's rows, `git rev-parse <oldest>^`; write it on the board), the feature base for `feature`.
 
 1. **Draft.** No table for the checkpoint in the phases file, or the old `num | input | output | checked | result | issues` format → `planner` `CHECKLIST <checkpoint>` first. Fresh `qc` (`qc-<target>`): `CHECKLIST <target>`. Small checkpoint: done. Otherwise, after qc, fresh `security-qc` (`sec-<target>`): `CHECKLIST <target> base=<hash>`. Never in parallel (same file).
-2. **Run.** Small checkpoint: qc `CHECK <target> tier=0` only. Otherwise tier 1, 2, 3 in order, skipping a tier with no rows and a checker with no rows at it: qc `CHECK <target> tier=<n>` (tier 2/3 with security rows: `Notes` to keep the stack running), then security-qc `CHECK <target> tier=<n> base=<hash>` (`Notes: tier <n>, app running at <url>` when a stack is up), then stop the stack. Reuse the same two agents for every tier (`SendMessage`). A failed row does not stop higher tiers. A `blocked` row naming a missing value → ask the user, then re-run that tier. While a checker runs, watch `<F>/qc-progress.md` (`test-tiers` "Progress file").
+2. **Run.** Small checkpoint: qc `CHECK <target> tier=0` only. Otherwise only the tiers the checklist's rows hold, lowest first, each once for all its rows (`test-tiers` "When each tier runs"; never per row or per merged checkpoint), skipping a checker with no rows at that tier: qc `CHECK <target> tier=<n>` (tier 2/3 with security rows: `Notes` to keep the stack running), then security-qc `CHECK <target> tier=<n> base=<hash>` (`Notes: tier <n>, app running at <url>` when a stack is up), then stop the stack. Reuse the same two agents for every tier (`SendMessage`). A failed row does not stop higher tiers. A `blocked` row naming a missing value → ask the user, then re-run that tier. While a checker runs, watch `<F>/qc-progress.md` (`test-tiers` "Progress file").
 3. **Fix.** Per scope named in the findings, one at a time, a fresh builder `fix-<target>-<scope>`: `FIX <target>: <findings file>`; each fix passes the commit gate as its own unit. Then the same checker `RECHECK <target> tier=<n>` for each tier with `failed` rows (stack rule of step 2). The 2-round rule applies.
 4. **Pass** = every row `pass`; no `todo`, `failed` or `blocked` left.
 
@@ -82,13 +82,13 @@ Target = a checkpoint (file `<F>/checklists/<checkpoint>.md`) or `feature` (`<F>
 
 Run when every task of a checkpoint is `done`, or when the user names one. On pass, write `Checkpoint <name>: passed <date>` under the phase heading.
 - **Small checkpoint** (not the last of a phase with several): qc only, tier 0.
-- **Phase checkpoint** (last or only of a phase): qc and security-qc, tiers 1 → 3; its checklist merges the phase's small ones and always holds the full e2e suite at tier 3 and the phase diff review. On pass, write `Phase checks: qc pass · security pass` and ask the user for the phase checkpoint; on yes write `Checkpoint: passed <date>`. Until then, warn the user before any push.
+- **Phase checkpoint** (last or only of a phase): qc and security-qc, the tiers its rows hold (step 2 of "Checklist runs"); its checklist merges the phase's small ones and always holds the full e2e suite at tier 3 and the phase diff review. On pass, write `Phase checks: qc pass · security pass` and ask the user for the phase checkpoint; on yes write `Checkpoint: passed <date>`. Until then, warn the user before any push.
 
 ## Feature checks
 
 - `Base` = the hash in the feature's row (missing: parent of the oldest commit of its tasks; write it in the row and on the board).
 - **One phase:** `cp` its phase checklist to `<F>/CHECKLIST.md`; write `Feature checks: qc n/a · security n/a (one phase)` at the board top.
-- **Several phases:** checklist runs with target `feature` (tiers 1 → 3; qc merges the phase checklists, all rows reset to `todo`). On pass write `Feature checks: qc pass · security pass` at the board top.
+- **Several phases:** checklist runs with target `feature` (the tiers its rows hold; qc merges the phase checklists, all rows reset to `todo`). On pass write `Feature checks: qc pass · security pass` at the board top.
 
 ## Feature definition of done
 
