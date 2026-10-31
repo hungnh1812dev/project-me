@@ -349,6 +349,24 @@ Setup order (owner, then deploy repo):
 5. Alerts (deploy repo): the job failed, or no new `daily/` object in 26 hours.
 6. Run the job once by hand (section 7 step 10), then the restore drill. Those two runs are the proof.
 
+## Turn reviewer features off or on
+
+Design: ADR 0014. Both keys are runtime env: a config change plus a restart, never a new image. Production runs with both `false`.
+
+Off:
+
+1. Owner, in cms-admin: Reviewer page, switch reviewer access off. This revokes live reviewer sessions and writes the audit row.
+2. cms-api ConfigMap: `REVIEWER_FEATURE_ENABLED: "false"`. web Deployment env: `WEB_STATUS_PAGE_ENABLED: "false"`. Roll out (restart only).
+3. Check: `GET /api/v1/reviewer/status` answers `404` with `REVIEWER_FEATURE_OFF`; `GET /status` on the web origin answers 404; the web header has no "Reviewer access" button; the cms-api start log shows the switch off and "Reviewer cleanup not started".
+
+On:
+
+1. Set both keys to `"true"` and roll out.
+2. Owner, in cms-admin: switch reviewer access on (the toggle stayed off from the off steps).
+3. Check: `GET /api/v1/reviewer/status` answers `200 { "enabled": true }`; `/status` shows the card; the "Reviewer access" button is back for an anonymous visitor.
+
+Reviewer access is open only when the switch is `true`, the owner toggle is on, and Turnstile plus `OTP_PEPPER` are configured.
+
 ## 7. First install, in order
 
 1. Section 2 blockers B1-B3 solved or accepted (Q-OPS2). B5 (Postgres 17) is done.

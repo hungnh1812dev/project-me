@@ -12,6 +12,8 @@ pnpm demo
 pnpm dev:stack:stop     # when you are done
 ```
 
+The dev stack and `pnpm demo` run with `REVIEWER_FEATURE_ENABLED` and `WEB_STATUS_PAGE_ENABLED` both `true`, so the reviewer flow and `/status` work; production runs with both `false`.
+
 The stack runs Postgres 17. A dev-stack volume created on Postgres 16 does not start on 17: run `pnpm dev:stack:stop` once, which stops the stack and removes its containers and volumes, then start again. The data is demo data.
 
 `pnpm demo` starts Postgres and Mailpit in containers and cms-api, cms-admin and web in dev mode on your machine, applies the migrations, turns reviewer access on, and publishes sample CV content (a made-up person with `example.com` addresses and `555` phone numbers, from `scripts/demo/content/`; one file per content type, so a new type is a new file). It ends by printing the web, admin and Mailpit addresses. Open the web and choose Reviewer access (needs internet for the Turnstile widget).

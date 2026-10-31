@@ -151,11 +151,7 @@ spec:
             - configMapRef: { name: cms-api-config }
             - secretRef: { name: cms-api-migrate-db } # migration role only; no app secrets
           volumeMounts: # Supabase only (DB_SSL_MODE=verify-full)
-            - {
-                name: database-ca,
-                mountPath: /etc/abyss/database-ca,
-                readOnly: true,
-              }
+            - { name: database-ca, mountPath: /etc/abyss/database-ca, readOnly: true }
           resources:
             requests: { cpu: 100m, memory: 256Mi }
             limits: { memory: 512Mi }
@@ -171,11 +167,7 @@ spec:
             - configMapRef: { name: cms-api-config }
             - secretRef: { name: cms-api-secrets } # API role + app secrets
           volumeMounts: # Supabase only (DB_SSL_MODE=verify-full)
-            - {
-                name: database-ca,
-                mountPath: /etc/abyss/database-ca,
-                readOnly: true,
-              }
+            - { name: database-ca, mountPath: /etc/abyss/database-ca, readOnly: true }
           livenessProbe:
             httpGet: { path: /api/v1/health/live, port: 3000 }
             periodSeconds: 10
@@ -266,14 +258,15 @@ In production, cms-api logs one warning at boot when its own role can run DDL (s
 
 Next.js standalone server run by Node as uid 1000. It is not behind nginx; its security headers (CSP with a per-request nonce) come from Next.js itself.
 
-| Kind        | Name                             | Value in this deployment                                                           |
-| ----------- | -------------------------------- | ---------------------------------------------------------------------------------- |
-| build arg   | `NEXT_PUBLIC_API_BASE_URL`       | `/api/v1` (same origin). Baked into the browser bundle at **image build**.         |
-| build arg   | `NEXT_PUBLIC_ADMIN_URL`          | `https://admin.domain.com` (optional; hides the "Open CMS" link when empty)        |
-| build arg   | `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | public Cloudflare site key (optional; hides "Reviewer access" when empty)          |
-| runtime env | `API_INTERNAL_URL`               | in-cluster Service URL: `http://cms-api.<namespace>.svc.cluster.local:3000/api/v1` |
-| runtime env | `WEB_REVALIDATE_SECONDS`         | `60` (data cache for server-side fetches; `0` disables it)                         |
-| runtime env | `WEB_PORT`                       | `8080` (image default)                                                             |
+| Kind        | Name                             | Value in this deployment                                                                                           |
+| ----------- | -------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| build arg   | `NEXT_PUBLIC_API_BASE_URL`       | `/api/v1` (same origin). Baked into the browser bundle at **image build**.                                         |
+| build arg   | `NEXT_PUBLIC_ADMIN_URL`          | `https://admin.domain.com` (optional; hides the "Open CMS" link when empty)                                        |
+| build arg   | `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | public Cloudflare site key (optional; hides "Reviewer access" when empty; unused while the reviewer switch is off) |
+| runtime env | `API_INTERNAL_URL`               | in-cluster Service URL: `http://cms-api.<namespace>.svc.cluster.local:3000/api/v1`                                 |
+| runtime env | `WEB_REVALIDATE_SECONDS`         | `60` (data cache for server-side fetches; `0` disables it)                                                         |
+| runtime env | `WEB_PORT`                       | `8080` (image default)                                                                                             |
+| runtime env | `WEB_STATUS_PAGE_ENABLED`        | `false` in production (`/status` answers 404; `true` shows the card; read per request)                             |
 
 The build args are GitHub Environment variables (`docs/ci-cd.md`, "GitHub setup, step by step"); changing one means a new image, not a new rollout of the old one. The runtime variables are read by the Node server at start, so changing them needs a pod restart. `API_INTERNAL_URL` is server-only: it never reaches the browser, and the server calls cms-api anonymously.
 
@@ -289,6 +282,7 @@ containers:
           value: 'http://cms-api.<namespace>.svc.cluster.local:3000/api/v1',
         }
       - { name: WEB_REVALIDATE_SECONDS, value: '60' }
+      - { name: WEB_STATUS_PAGE_ENABLED, value: 'false' }
     readinessProbe:
       httpGet: { path: /, port: 8080 }
       periodSeconds: 5
@@ -332,34 +326,35 @@ If you set `readOnlyRootFilesystem: true`, mount `emptyDir` volumes on `/tmp`, `
 
 Validated at boot by `apps/cms-api/src/config/Env.schema.ts`; the process refuses to start on any error. The authoritative, commented list is `apps/cms-api/.env.example`. Put the Secret column in a Secret, the rest in a ConfigMap.
 
-| Variable                                                                                             |  Secret  |      Required in production      | Production value                                                                                                                         |
-| ---------------------------------------------------------------------------------------------------- | :------: | :------------------------------: | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| `NODE_ENV`                                                                                           |          |               yes                | `production` (enables the guards below)                                                                                                  |
-| `PORT`                                                                                               |          |                                  | `3000`                                                                                                                                   |
-| `DB_HOST`, `DB_NAME`                                                                                 |          |               yes                | the Postgres Service or the Supabase session pooler host; database                                                                       |
-| `DB_PORT`                                                                                            |          |                                  | `5432` (on Supabase always the session pooler, never `6543`)                                                                             |
-| `DB_USERNAME`                                                                                        |   yes    |               yes                | per container: `abyss_api` in `cms-api-secrets`, `abyss_migrator` in `cms-api-migrate-db` (on Supabase with the `.<project-ref>` suffix) |
-| `DB_PASSWORD`                                                                                        |   yes    |               yes                | the password of that role, next to its `DB_USERNAME`                                                                                     |
-| `DB_SSL_MODE`                                                                                        |          |                                  | `verify-full` on Supabase; `disable` (default) for the in-cluster Postgres                                                               |
-| `DB_SSL_ROOT_CERT_PATH`                                                                              |          |        with `verify-full`        | `/etc/abyss/database-ca/ca.crt` (ConfigMap `database-ca`, read-only mount)                                                               |
-| `TRUST_PROXY_HOPS`, `CLIENT_IP_HEADER`                                                               |          |                                  | see section 2                                                                                                                            |
-| `ADMIN_ORIGIN`                                                                                       |          |               yes                | `https://admin.domain.com` (scheme + host, no trailing slash)                                                                            |
-| `WEB_ORIGIN`                                                                                         |          |               yes                | `https://domain.com`                                                                                                                     |
-| `MAIL_PROVIDER`                                                                                      |          |               yes                | `smtp` (`console` is rejected in production)                                                                                             |
-| `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `MAIL_FROM`                                                 |          |           with `smtp`            | your mail relay; `MAIL_FROM` e.g. `Abyss CMS <no-reply@domain.com>`                                                                      |
-| `SMTP_USER`, `SMTP_PASSWORD`                                                                         |   yes    |         both or neither          |                                                                                                                                          |
-| `MEDIA_PROVIDER`                                                                                     |          |               yes                | `cloudinary` (`fake` is rejected in production)                                                                                          |
-| `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_FOLDER`                                   |          | name and key (with `cloudinary`) | from the Cloudinary console                                                                                                              |
-| `CLOUDINARY_API_SECRET`                                                                              |   yes    |               yes                |                                                                                                                                          |
-| `TURNSTILE_SECRET_KEY`                                                                               |   yes    |      for reviewer sessions       | real key; unset answers 503 on `POST /reviewer/sessions`                                                                                 |
-| `TURNSTILE_EXPECTED_HOSTNAME`                                                                        |          |                                  | `domain.com`                                                                                                                             |
-| `JWT_ACCESS_SECRET`, `OTP_PEPPER`, `TOTP_ENC_KEY`                                                    |   yes    |               yes                | each at least 32 bytes: `openssl rand -base64 48`                                                                                        |
-| `JWT_ACCESS_KID`, `TOTP_ENC_KID`                                                                     |          |               yes                | key ids; change them when rotating the matching secret                                                                                   |
-| `TOTP_ENC_PREVIOUS_KEY` / `TOTP_ENC_PREVIOUS_KID`                                                    | yes / no |                                  | only during a TOTP key rotation (both or neither)                                                                                        |
-| `TOTP_ISSUER`                                                                                        |          |                                  | name shown in authenticator apps                                                                                                         |
-| `BACKUP_STORAGE_ENDPOINT`, `BACKUP_STORAGE_REGION`, `BACKUP_STORAGE_BUCKET`, `BACKUP_STORAGE_PREFIX` |          |         all six or none          | the backup bucket (section 7, "Backup download"); none set turns the Backups page off                                                    |
-| `BACKUP_STORAGE_ACCESS_KEY_ID`, `BACKUP_STORAGE_SECRET_ACCESS_KEY`                                   |   yes    |       with the four above        | a read-only bucket token (list and get)                                                                                                  |
-| `LOGIN_RATE_LIMIT_*`, `REFRESH_RATE_LIMIT_IP`, `ALLOW_LOGIN_RATE_LIMIT_OVERRIDE`                     |          |                                  | **never set in production** (startup fails; smoke/e2e only)                                                                              |
+| Variable                                                                                             |  Secret  |      Required in production      | Production value                                                                                                                                                                                                                              |
+| ---------------------------------------------------------------------------------------------------- | :------: | :------------------------------: | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `NODE_ENV`                                                                                           |          |               yes                | `production` (enables the guards below)                                                                                                                                                                                                       |
+| `PORT`                                                                                               |          |                                  | `3000`                                                                                                                                                                                                                                        |
+| `DB_HOST`, `DB_NAME`                                                                                 |          |               yes                | the Postgres Service or the Supabase session pooler host; database                                                                                                                                                                            |
+| `DB_PORT`                                                                                            |          |                                  | `5432` (on Supabase always the session pooler, never `6543`)                                                                                                                                                                                  |
+| `DB_USERNAME`                                                                                        |   yes    |               yes                | per container: `abyss_api` in `cms-api-secrets`, `abyss_migrator` in `cms-api-migrate-db` (on Supabase with the `.<project-ref>` suffix)                                                                                                      |
+| `DB_PASSWORD`                                                                                        |   yes    |               yes                | the password of that role, next to its `DB_USERNAME`                                                                                                                                                                                          |
+| `DB_SSL_MODE`                                                                                        |          |                                  | `verify-full` on Supabase; `disable` (default) for the in-cluster Postgres                                                                                                                                                                    |
+| `DB_SSL_ROOT_CERT_PATH`                                                                              |          |        with `verify-full`        | `/etc/abyss/database-ca/ca.crt` (ConfigMap `database-ca`, read-only mount)                                                                                                                                                                    |
+| `TRUST_PROXY_HOPS`, `CLIENT_IP_HEADER`                                                               |          |                                  | see section 2                                                                                                                                                                                                                                 |
+| `ADMIN_ORIGIN`                                                                                       |          |               yes                | `https://admin.domain.com` (scheme + host, no trailing slash)                                                                                                                                                                                 |
+| `WEB_ORIGIN`                                                                                         |          |               yes                | `https://domain.com`                                                                                                                                                                                                                          |
+| `MAIL_PROVIDER`                                                                                      |          |               yes                | `smtp` (`console` is rejected in production)                                                                                                                                                                                                  |
+| `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `MAIL_FROM`                                                 |          |           with `smtp`            | your mail relay; `MAIL_FROM` e.g. `Abyss CMS <no-reply@domain.com>`                                                                                                                                                                           |
+| `SMTP_USER`, `SMTP_PASSWORD`                                                                         |   yes    |         both or neither          |                                                                                                                                                                                                                                               |
+| `MEDIA_PROVIDER`                                                                                     |          |               yes                | `cloudinary` (`fake` is rejected in production)                                                                                                                                                                                               |
+| `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_FOLDER`                                   |          | name and key (with `cloudinary`) | from the Cloudinary console                                                                                                                                                                                                                   |
+| `CLOUDINARY_API_SECRET`                                                                              |   yes    |               yes                |                                                                                                                                                                                                                                               |
+| `REVIEWER_FEATURE_ENABLED`                                                                           |          |                                  | `false` in production until the owner turns reviewer features back on (`true` or `false` only; unset means `false`; every reviewer route answers `404 REVIEWER_FEATURE_OFF`); steps in `devops-runbook.md` "Turn reviewer features off or on" |
+| `TURNSTILE_SECRET_KEY`                                                                               |   yes    |      for reviewer sessions       | only when `REVIEWER_FEATURE_ENABLED=true`; real key; unset answers 503 on `POST /reviewer/sessions`                                                                                                                                           |
+| `TURNSTILE_EXPECTED_HOSTNAME`                                                                        |          |                                  | only when `REVIEWER_FEATURE_ENABLED=true`; `domain.com`                                                                                                                                                                                       |
+| `JWT_ACCESS_SECRET`, `OTP_PEPPER`, `TOTP_ENC_KEY`                                                    |   yes    |               yes                | each at least 32 bytes: `openssl rand -base64 48`                                                                                                                                                                                             |
+| `JWT_ACCESS_KID`, `TOTP_ENC_KID`                                                                     |          |               yes                | key ids; change them when rotating the matching secret                                                                                                                                                                                        |
+| `TOTP_ENC_PREVIOUS_KEY` / `TOTP_ENC_PREVIOUS_KID`                                                    | yes / no |                                  | only during a TOTP key rotation (both or neither)                                                                                                                                                                                             |
+| `TOTP_ISSUER`                                                                                        |          |                                  | name shown in authenticator apps                                                                                                                                                                                                              |
+| `BACKUP_STORAGE_ENDPOINT`, `BACKUP_STORAGE_REGION`, `BACKUP_STORAGE_BUCKET`, `BACKUP_STORAGE_PREFIX` |          |         all six or none          | the backup bucket (section 7, "Backup download"); none set turns the Backups page off                                                                                                                                                         |
+| `BACKUP_STORAGE_ACCESS_KEY_ID`, `BACKUP_STORAGE_SECRET_ACCESS_KEY`                                   |   yes    |       with the four above        | a read-only bucket token (list and get)                                                                                                                                                                                                       |
+| `LOGIN_RATE_LIMIT_*`, `REFRESH_RATE_LIMIT_IP`, `ALLOW_LOGIN_RATE_LIMIT_OVERRIDE`                     |          |                                  | **never set in production** (startup fails; smoke/e2e only)                                                                                                                                                                                   |
 
 Web and admin have no secrets (section 4 and 5). Database: the API runs as `abyss_api` (no DDL) and `deploy:migrate` runs as the migration role, each with its own Secret; the roles and the first-install steps are in section 3, "Database roles (first install)", and for Supabase in `docs/deployment/supabase-database.md`. Never reuse the Cloudflare always-pass test keys outside test stacks.
 
@@ -425,8 +420,7 @@ spec:
       template:
         spec:
           restartPolicy: Never
-          securityContext:
-            { runAsNonRoot: true, runAsUser: 1000, runAsGroup: 1000 }
+          securityContext: { runAsNonRoot: true, runAsUser: 1000, runAsGroup: 1000 }
           containers:
             - name: dump
               image: <image with pg_dump 17, psql, age, rclone>
@@ -464,11 +458,7 @@ spec:
                 - configMapRef: { name: postgres-backup-config }
                 - secretRef: { name: postgres-backup }
               volumeMounts: # Supabase only
-                - {
-                    name: database-ca,
-                    mountPath: /etc/abyss/database-ca,
-                    readOnly: true,
-                  }
+                - { name: database-ca, mountPath: /etc/abyss/database-ca, readOnly: true }
               resources:
                 requests: { cpu: 50m, memory: 128Mi }
                 limits: { memory: 384Mi }
