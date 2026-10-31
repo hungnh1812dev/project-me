@@ -66,10 +66,7 @@ const FACADE_EXPORTS: Record<string, string[]> = {
     'useEmailCode',
     'useSession',
   ],
-  backups: [],
-  content: [],
   media: ['MediaField', 'mediaToApi', 'mediaToForm'],
-  reviewer: [],
   security: ['ConfirmWithCodeForm', 'useSecurityApi'],
 };
 
