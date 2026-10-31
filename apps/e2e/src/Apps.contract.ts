@@ -19,4 +19,4 @@ export {
   MEDIA_ALT_MAX_LENGTH,
   MEDIA_PAGE_SIZE,
 } from '../../cms-admin/src/features/media/Media.constants';
-export { COPY as WEB_COPY } from '../../web/src/config/Copy.constants';
+export { COPY as WEB_COPY } from '../../web/src/configs/Copy.constants';

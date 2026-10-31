@@ -1,22 +1,21 @@
 'use client';
 
-import { Button, TextInput, FormAlert } from '@abyss/form-commons';
-import { useMutation } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
+import { Button, FormAlert, TextInput } from '@abyss/form-commons';
+import { useMutation } from '@tanstack/react-query';
 import { FormProvider, useForm } from 'react-hook-form';
 
+import type { Alert, ApiFailure } from '../../apis/client/ApiFailure.errors';
 import {
+  API_ERROR_CODES,
   LOGIN_CODE_LENGTH,
   TWO_FACTOR_METHODS,
   type TwoFactorMethod,
-} from '../../config/Auth.constants';
-import { COPY } from '../../config/Copy.constants';
-import { API_ERROR_CODES } from '../../config/Auth.constants';
-import type { Alert, ApiFailure } from '../../lib/ApiFailure.errors';
-import type { TwoFactorChallenge } from '../session';
+} from '../../configs/Auth.constants';
+import { COPY } from '../../configs/Copy.constants';
+import { useWebSession, type TwoFactorChallenge } from '../session';
 import { loginErrorAlertOf, rateLimitedMessage } from './LoginAlerts.rules';
 import { useEmailCode } from './useEmailCode';
-import { useWebSession } from '../session';
 
 const copy = COPY.login.twoFactor;
 const CODE_PATTERN = new RegExp(`^\\d{${LOGIN_CODE_LENGTH}}$`);
@@ -108,9 +107,7 @@ function CodeForm({
   const session = useWebSession();
   const [alert, setAlert] = useState<Alert | null>(null);
   const email = useEmailCode(
-    method === 'email'
-      ? () => session.sendLoginEmailCode(tempToken)
-      : () => Promise.resolve(),
+    method === 'email' ? () => session.sendLoginEmailCode(tempToken) : () => Promise.resolve(),
     (failure) => {
       if (alertOf(failure) === 'expired') onExpired();
     },
@@ -144,29 +141,18 @@ function CodeForm({
     verify.mutate({ tempToken, code: values.code.trim() });
   });
 
-  const sendAlert =
-    method === 'email' && email.failure !== null
-      ? alertOf(email.failure)
-      : null;
+  const sendAlert = method === 'email' && email.failure !== null ? alertOf(email.failure) : null;
   const shown = alert ?? (sendAlert === 'expired' ? null : sendAlert);
   const wasResent = method === 'email' && email.sentCount > 1 && shown === null;
 
   return (
     <FormProvider {...form}>
-      <form
-        noValidate
-        onSubmit={(event) => void onSubmit(event)}
-        className="grid gap-4"
-      >
-        <p className="text-sm text-muted-foreground">
+      <form noValidate onSubmit={(event) => void onSubmit(event)} className="grid gap-4">
+        <p className="text-muted-foreground text-sm">
           {method === 'email' ? copy.emailDescription : copy.totpDescription}
         </p>
-        {method === 'email' ? (
-          <FormAlert tone="warning">{copy.emailWarning}</FormAlert>
-        ) : null}
-        {shown !== null ? (
-          <FormAlert tone={shown.tone}>{shown.message}</FormAlert>
-        ) : null}
+        {method === 'email' ? <FormAlert tone="warning">{copy.emailWarning}</FormAlert> : null}
+        {shown !== null ? <FormAlert tone={shown.tone}>{shown.message}</FormAlert> : null}
         {wasResent ? <FormAlert tone="info">{copy.resent}</FormAlert> : null}
         <TextInput<CodeValues>
           name="code"
@@ -176,11 +162,10 @@ function CodeForm({
           autoComplete="one-time-code"
           maxLength={LOGIN_CODE_LENGTH}
           spellCheck={false}
-          className="tabular-nums tracking-widest"
+          className="tracking-widest tabular-nums"
           rules={{
             required: copy.codeInvalid,
-            validate: (value) =>
-              CODE_PATTERN.test(value.trim()) || copy.codeInvalid,
+            validate: (value) => CODE_PATTERN.test(value.trim()) || copy.codeInvalid,
           }}
         />
         {method === 'email' ? (

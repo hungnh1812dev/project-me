@@ -1,11 +1,8 @@
 import { NextResponse, type NextRequest } from 'next/server';
 
-import { appEnv } from './config/Browser.env';
-import { CSP_HEADER, NONCE_HEADER } from './config/Security.constants';
-import {
-  buildContentSecurityPolicy,
-  generateNonce,
-} from './lib/ContentSecurityPolicy.rules';
+import { appEnv } from './configs/Browser.env';
+import { CSP_HEADER, NONCE_HEADER } from './configs/Security.constants';
+import { buildContentSecurityPolicy, generateNonce } from './utils/ContentSecurityPolicy.rules';
 
 /**
  * Per-request CSP nonce (SPEC D17). Next.js reads the nonce from the request's

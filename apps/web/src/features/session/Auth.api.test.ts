@@ -1,5 +1,5 @@
-import { apiClient, createApiClient } from '../../lib/Api.client';
-import { createAuthApi, type CurrentUser, isPrivileged } from './Auth.api';
+import { apiClient, createApiClient } from '../../apis/client/Api.client';
+import { createAuthApi, isPrivileged, type CurrentUser } from './Auth.api';
 import { TEST_USER } from './Session.fixture';
 
 function userWith(permissions: string[]): CurrentUser {
@@ -8,9 +8,7 @@ function userWith(permissions: string[]): CurrentUser {
 
 describe('isPrivileged', () => {
   it('is false for a reader: only read permissions', () => {
-    expect(isPrivileged(userWith(['article:read', 'profile:read']))).toBe(
-      false,
-    );
+    expect(isPrivileged(userWith(['article:read', 'profile:read']))).toBe(false);
   });
 
   it('is false for an account with no permissions', () => {
@@ -62,17 +60,11 @@ describe('me', () => {
   });
 
   it('leaves no Authorization default on the shared apiClient', () => {
-    const headers = apiClient.defaults.headers as unknown as Record<
-      string,
-      unknown
-    >;
+    const headers = apiClient.defaults.headers as unknown as Record<string, unknown>;
     const sections = [headers, ...Object.values(headers)];
     expect(
       sections.some(
-        (section) =>
-          typeof section === 'object' &&
-          section !== null &&
-          'Authorization' in section,
+        (section) => typeof section === 'object' && section !== null && 'Authorization' in section,
       ),
     ).toBe(false);
   });

@@ -1,11 +1,8 @@
 import { SelectInput, TextInput } from '@abyss/form-commons';
 import { useFormContext, useWatch } from 'react-hook-form';
 
-import { COPY } from '../../config/Copy.constants';
-import {
-  REVIEWER_INPUT_LIMITS,
-  REVIEWER_OTHER_VALUE,
-} from '../../config/Reviewer.constants';
+import { COPY } from '../../configs/Copy.constants';
+import { REVIEWER_INPUT_LIMITS, REVIEWER_OTHER_VALUE } from '../../configs/Reviewer.constants';
 import { ROLE_OPTIONS, type ReviewerFormValues } from './Reviewer.form';
 
 const copy = COPY.reviewer;
@@ -29,8 +26,7 @@ export function RoleStep({ isActive }: { isActive: boolean }) {
           label={copy.role.otherLabel}
           maxLength={REVIEWER_INPUT_LIMITS.VISITOR_ROLE_MAX_LENGTH}
           rules={{
-            validate: (value) =>
-              String(value).trim() !== '' || copy.validation.roleOtherRequired,
+            validate: (value) => String(value).trim() !== '' || copy.validation.roleOtherRequired,
           }}
         />
       ) : null}

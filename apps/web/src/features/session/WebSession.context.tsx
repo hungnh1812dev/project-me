@@ -2,21 +2,21 @@
 
 import {
   createContext,
-  type ReactNode,
   useCallback,
   useContext,
   useEffect,
   useMemo,
   useRef,
   useState,
+  type ReactNode,
 } from 'react';
 
-import { apiClient } from '../../lib/Api.client';
+import { apiClient } from '../../apis/client/Api.client';
 import {
-  type AuthApi,
   createAuthApi,
   isPrivileged,
   PrivilegedAccessError,
+  type AuthApi,
   type CurrentUser,
   type LoginCredentials,
   type LoginOutcome,
@@ -89,11 +89,7 @@ export function WebSessionProvider({
 
   /** Loads the account for a fresh token; on failure the token is dropped. */
   const start = useCallback(
-    async (
-      accessToken: string,
-      kind: SessionKind,
-      revokeIfPrivileged = false,
-    ) => {
+    async (accessToken: string, kind: SessionKind, revokeIfPrivileged = false) => {
       try {
         const user = await api.me(accessToken);
         // Reader roles only: a privileged token is dropped, never held.
@@ -128,8 +124,7 @@ export function WebSessionProvider({
   const signIn = useCallback(
     async (credentials: LoginCredentials) => {
       const outcome = await api.login(credentials);
-      if (outcome.kind === 'signed-in')
-        await start(outcome.accessToken, 'account', true);
+      if (outcome.kind === 'signed-in') await start(outcome.accessToken, 'account', true);
       return outcome;
     },
     [api, start],
@@ -174,21 +169,10 @@ export function WebSessionProvider({
       startReviewerSession,
       signOut,
     }),
-    [
-      state,
-      signIn,
-      completeTwoFactor,
-      sendLoginEmailCode,
-      startReviewerSession,
-      signOut,
-    ],
+    [state, signIn, completeTwoFactor, sendLoginEmailCode, startReviewerSession, signOut],
   );
 
-  return (
-    <WebSessionContext.Provider value={value}>
-      {children}
-    </WebSessionContext.Provider>
-  );
+  return <WebSessionContext.Provider value={value}>{children}</WebSessionContext.Provider>;
 }
 
 export function useWebSession(): WebSession {

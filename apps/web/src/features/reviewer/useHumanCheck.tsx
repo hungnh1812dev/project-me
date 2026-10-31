@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-import { COPY } from '../../config/Copy.constants';
+import { COPY } from '../../configs/Copy.constants';
 import { TurnstileWidget } from './TurnstileWidget';
 
 const copy = COPY.reviewer.turnstile;
@@ -50,7 +50,7 @@ export function useHumanCheck(siteKey: string) {
         }}
       />
       {errorMessage !== null ? (
-        <p role="alert" className="text-sm text-destructive-strong">
+        <p role="alert" className="text-destructive-strong text-sm">
           {errorMessage}
         </p>
       ) : null}

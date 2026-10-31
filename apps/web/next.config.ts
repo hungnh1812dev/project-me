@@ -3,7 +3,7 @@ import path from 'node:path';
 import type { NextConfig } from 'next';
 import { PHASE_DEVELOPMENT_SERVER } from 'next/constants.js';
 
-import { SECURITY_RESPONSE_HEADERS } from './src/config/SecurityHeaders.constants';
+import { SECURITY_RESPONSE_HEADERS } from './src/configs/SecurityHeaders.constants';
 
 /** The standalone trace must include workspace packages (form-commons). */
 const MONOREPO_ROOT = path.join(import.meta.dirname, '../..');
@@ -19,9 +19,7 @@ export default function nextConfig(phase: string): NextConfig {
     // Next 16.4 would write an AGENTS.md into the app on `next dev`.
     agentRules: false,
     headers: () =>
-      Promise.resolve([
-        { source: '/:path*', headers: [...SECURITY_RESPONSE_HEADERS] },
-      ]),
+      Promise.resolve([{ source: '/:path*', headers: [...SECURITY_RESPONSE_HEADERS] }]),
   };
 
   // Dev only (never in a production build): Traefik does this in production.

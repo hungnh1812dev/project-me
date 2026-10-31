@@ -9,7 +9,7 @@ function readHelper(appFolder: string, helperFile: string): string {
 
 describe('StripTrailingSlashes.rules copies', () => {
   it('stay byte-identical in cms-admin and web', () => {
-    expect(readHelper('web', 'src/lib/StripTrailingSlashes.rules.ts')).toBe(
+    expect(readHelper('web', 'src/configs/StripTrailingSlashes.rules.ts')).toBe(
       readHelper('cms-admin', 'src/configs/StripTrailingSlashes.rules.ts'),
     );
   });

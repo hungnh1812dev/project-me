@@ -1,8 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
 
-import { appEnv } from '../../config/Browser.env';
-import { REVIEWER_STATUS_STALE_MS } from '../../config/Reviewer.constants';
-import { apiClient } from '../../lib/Api.client';
+import { apiClient } from '../../apis/client/Api.client';
+import { appEnv } from '../../configs/Browser.env';
+import { REVIEWER_STATUS_STALE_MS } from '../../configs/Reviewer.constants';
 import { useWebSession } from '../session';
 import { createReviewerApi } from './Reviewer.api';
 

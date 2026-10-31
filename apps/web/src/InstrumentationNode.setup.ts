@@ -1,4 +1,4 @@
-import { getServerEnv } from './config/Server.env';
+import { getServerEnv } from './configs/Server.env';
 
 /**
  * Node-runtime start check. An invalid server env exits the process (Next
