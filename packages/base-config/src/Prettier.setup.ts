@@ -54,7 +54,7 @@ const config: PrettierBaseConfig = {
     // {
     //   files: ['./src/**'],
     //   options: {
-    //     tailwindStylesheet: './src/assets/styles/globals.css',
+    //     tailwindStylesheet: './src/assets/styles/global.css',
     //     tailwindFunctions: ['clsx', 'cn', 'cva'],
     //   },
     // },

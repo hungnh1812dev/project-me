@@ -260,7 +260,7 @@ pnpm --filter @abyss/cms-admin dev       # http://localhost:5173 (DEV_SERVER_POR
 - `src/apis/client/Api.client.ts` is the Axios instance. It strips trailing slashes
   from every request path (`src/configs/StripTrailingSlashes.rules.ts`, SPEC §6), so no proxy can answer with a redirect.
 
-Styling: Tailwind v4 with the form-commons theme (`src/styles/app.css`).
+Styling: Tailwind v4 with the form-commons theme. `src/main.tsx` imports only `src/assets/styles/global.css`, which pulls in the theme, `base.css` (element styles) and `app.css` (app styles).
 Components use semantic tokens only (`bg-card`, `text-muted-foreground`).
 
 ## Docker

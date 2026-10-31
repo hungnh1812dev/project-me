@@ -1,5 +1,5 @@
 import '@libs/Zod.setup';
-import '@styles/globals.css';
+import '@styles/global.css';
 
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
