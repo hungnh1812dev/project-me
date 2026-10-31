@@ -11,8 +11,7 @@ export const CLOUDINARY_IMAGE_ORIGIN = 'https://res.cloudinary.com';
 /** Cloudflare Turnstile (explicit rendering). The only third-party origin. */
 export const TURNSTILE = {
   SCRIPT_ORIGIN: 'https://challenges.cloudflare.com',
-  SCRIPT_URL:
-    'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit',
+  SCRIPT_URL: 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit',
 } as const;
 
 /** Third-party origin Turnstile loads its script and challenge frame from. */

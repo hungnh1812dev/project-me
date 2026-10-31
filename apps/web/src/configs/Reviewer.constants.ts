@@ -13,17 +13,10 @@ export const REVIEWER_INPUT_LIMITS = {
 export const REVIEWER_OTHER_VALUE = '__other__';
 
 /** Visitor roles offered in the dialog. */
-export const REVIEWER_VISITOR_ROLES = [
-  'Recruiter',
-  'Peer / colleague',
-] as const;
+export const REVIEWER_VISITOR_ROLES = ['Recruiter', 'Peer / colleague'] as const;
 
 /** Purpose tags offered in the dialog. */
-export const REVIEWER_PURPOSE_TAGS = [
-  'Hiring',
-  'Project scoping',
-  'Networking',
-] as const;
+export const REVIEWER_PURPOSE_TAGS = ['Hiring', 'Project scoping', 'Networking'] as const;
 
 /** How often the reviewer-enabled flag is re-read while the page is open. */
 export const REVIEWER_STATUS_STALE_MS = 60_000;

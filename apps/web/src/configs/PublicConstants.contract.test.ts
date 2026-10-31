@@ -1,15 +1,8 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
-import {
-  API_ERROR_CODES,
-  LOGIN_CODE_LENGTH,
-  READ_ACTION,
-} from './Auth.constants';
-import {
-  REVIEWER_ERROR_CODES,
-  REVIEWER_INPUT_LIMITS,
-} from './Reviewer.constants';
+import { API_ERROR_CODES, LOGIN_CODE_LENGTH, READ_ACTION } from './Auth.constants';
+import { REVIEWER_ERROR_CODES, REVIEWER_INPUT_LIMITS } from './Reviewer.constants';
 
 interface PublicConstants {
   otp: { digits: number };
@@ -23,10 +16,7 @@ interface PublicConstants {
 }
 
 const published: PublicConstants = JSON.parse(
-  readFileSync(
-    resolve(process.cwd(), '../cms-api/content/public-constants.json'),
-    'utf8',
-  ),
+  readFileSync(resolve(process.cwd(), '../cms-api/content/public-constants.json'), 'utf8'),
 ) as PublicConstants;
 
 describe('web constants against the cms-api public constants', () => {

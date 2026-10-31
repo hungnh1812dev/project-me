@@ -12,9 +12,7 @@ describe('appEnv', () => {
 
   it('throws when NEXT_PUBLIC_API_BASE_URL is unset', async () => {
     vi.stubEnv('NEXT_PUBLIC_API_BASE_URL', '');
-    await expect(import('./Browser.env')).rejects.toThrow(
-      /NEXT_PUBLIC_API_BASE_URL is not set/,
-    );
+    await expect(import('./Browser.env')).rejects.toThrow(/NEXT_PUBLIC_API_BASE_URL is not set/);
   });
 
   it('leaves the admin URL undefined when blank', async () => {
@@ -27,9 +25,7 @@ describe('appEnv', () => {
   it('accepts an http(s) URL or a path and strips trailing slashes', async () => {
     vi.stubEnv('NEXT_PUBLIC_API_BASE_URL', '/api/v1');
     vi.stubEnv('NEXT_PUBLIC_ADMIN_URL', 'https://admin.example.com/');
-    expect((await import('./Browser.env')).appEnv.adminUrl).toBe(
-      'https://admin.example.com',
-    );
+    expect((await import('./Browser.env')).appEnv.adminUrl).toBe('https://admin.example.com');
     vi.resetModules();
     vi.stubEnv('NEXT_PUBLIC_ADMIN_URL', '/admin/');
     expect((await import('./Browser.env')).appEnv.adminUrl).toBe('/admin');
@@ -44,8 +40,6 @@ describe('appEnv', () => {
   ])('rejects %s as the admin URL', async (value) => {
     vi.stubEnv('NEXT_PUBLIC_API_BASE_URL', '/api/v1');
     vi.stubEnv('NEXT_PUBLIC_ADMIN_URL', value);
-    await expect(import('./Browser.env')).rejects.toThrow(
-      /NEXT_PUBLIC_ADMIN_URL must be/,
-    );
+    await expect(import('./Browser.env')).rejects.toThrow(/NEXT_PUBLIC_ADMIN_URL must be/);
   });
 });

@@ -1,10 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import {
-  buildContentSecurityPolicy,
-  generateNonce,
-  originOf,
-} from './ContentSecurityPolicy.rules';
+import { buildContentSecurityPolicy, generateNonce, originOf } from './ContentSecurityPolicy.rules';
 
 const NONCE = 'abc123';
 const build = (apiBaseUrl: string, isDev = false) =>
@@ -29,29 +25,23 @@ describe('buildContentSecurityPolicy', () => {
   it('uses nonce styles with inline style attributes only', () => {
     const csp = build('/api/v1');
     expect(directive(csp, 'style-src')).toBe("style-src 'self' 'nonce-abc123'");
-    expect(directive(csp, 'style-src-attr')).toBe(
-      "style-src-attr 'unsafe-inline'",
-    );
+    expect(directive(csp, 'style-src-attr')).toBe("style-src-attr 'unsafe-inline'");
   });
 
   it('keeps connect-src to self for a relative API base', () => {
-    expect(directive(build('/api/v1'), 'connect-src')).toBe(
-      "connect-src 'self'",
-    );
+    expect(directive(build('/api/v1'), 'connect-src')).toBe("connect-src 'self'");
   });
 
   it('adds the origin of an absolute API base URL', () => {
-    expect(
-      directive(build('https://api.example.com/api/v1'), 'connect-src'),
-    ).toBe("connect-src 'self' https://api.example.com");
+    expect(directive(build('https://api.example.com/api/v1'), 'connect-src')).toBe(
+      "connect-src 'self' https://api.example.com",
+    );
   });
 
   it('allows Cloudinary images, the Turnstile frame and forbids framing', () => {
     const csp = build('/api/v1');
     expect(directive(csp, 'img-src')).toContain('https://res.cloudinary.com');
-    expect(directive(csp, 'frame-src')).toBe(
-      'frame-src https://challenges.cloudflare.com',
-    );
+    expect(directive(csp, 'frame-src')).toBe('frame-src https://challenges.cloudflare.com');
     expect(directive(csp, 'frame-ancestors')).toBe("frame-ancestors 'none'");
     expect(directive(csp, 'object-src')).toBe("object-src 'none'");
   });
@@ -76,8 +66,6 @@ describe('originOf', () => {
   it('returns null for paths and non-http schemes', () => {
     expect(originOf('/api/v1')).toBeNull();
     expect(originOf('javascript:alert(1)')).toBeNull();
-    expect(originOf('http://localhost:3000/api/v1')).toBe(
-      'http://localhost:3000',
-    );
+    expect(originOf('http://localhost:3000/api/v1')).toBe('http://localhost:3000');
   });
 });

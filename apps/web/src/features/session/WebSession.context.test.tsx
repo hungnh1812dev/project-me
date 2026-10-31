@@ -1,13 +1,8 @@
+import { StrictMode, type ReactNode } from 'react';
 import { act, renderHook, waitFor } from '@testing-library/react';
-import type { ReactNode } from 'react';
 
-import { type AuthApi, PrivilegedAccessError } from './Auth.api';
-import {
-  fakeApi,
-  PRIVILEGED_USER,
-  TEST_USER,
-  Wrapper,
-} from './Session.fixture';
+import { PrivilegedAccessError, type AuthApi } from './Auth.api';
+import { fakeApi, PRIVILEGED_USER, TEST_USER, Wrapper } from './Session.fixture';
 import { useWebSession } from './WebSession.context';
 
 function setup(api = fakeApi()) {
@@ -44,9 +39,7 @@ describe('useWebSession', () => {
       <Wrapper api={api}>{children}</Wrapper>
     );
     const { result } = renderHook(() => useWebSession(), {
-      wrapper: ({ children }) => (
-        <StrictModeWrapper>{wrapper({ children })}</StrictModeWrapper>
-      ),
+      wrapper: ({ children }) => <StrictModeWrapper>{wrapper({ children })}</StrictModeWrapper>,
     });
     await waitFor(() => expect(result.current.status).toBe('anonymous'));
     expect(api.refresh).toHaveBeenCalledTimes(1);
@@ -54,9 +47,7 @@ describe('useWebSession', () => {
 
   it('signs in without 2FA and exposes the actor', async () => {
     const api = fakeApi({
-      login: vi
-        .fn<AuthApi['login']>()
-        .mockResolvedValue({ kind: 'signed-in', accessToken: 't2' }),
+      login: vi.fn<AuthApi['login']>().mockResolvedValue({ kind: 'signed-in', accessToken: 't2' }),
     });
     const { result } = setup(api);
     await waitFor(() => expect(result.current.status).toBe('anonymous'));
@@ -74,9 +65,7 @@ describe('useWebSession', () => {
         tempToken: 'tmp',
         methods: ['totp'],
       }),
-      verifyTwoFactor: vi
-        .fn<AuthApi['verifyTwoFactor']>()
-        .mockResolvedValue('t3'),
+      verifyTwoFactor: vi.fn<AuthApi['verifyTwoFactor']>().mockResolvedValue('t3'),
     });
     const { result } = setup(api);
     await waitFor(() => expect(result.current.status).toBe('anonymous'));
@@ -99,17 +88,15 @@ describe('useWebSession', () => {
 
   it('drops the token when the account cannot be loaded', async () => {
     const api = fakeApi({
-      login: vi
-        .fn<AuthApi['login']>()
-        .mockResolvedValue({ kind: 'signed-in', accessToken: 't' }),
+      login: vi.fn<AuthApi['login']>().mockResolvedValue({ kind: 'signed-in', accessToken: 't' }),
       me: vi.fn<AuthApi['me']>().mockRejectedValue(new Error('boom')),
     });
     const { result } = setup(api);
     await waitFor(() => expect(result.current.status).toBe('anonymous'));
     await act(async () => {
-      await expect(
-        result.current.signIn({ email: 'a@b.co', password: 'pw' }),
-      ).rejects.toThrow('boom');
+      await expect(result.current.signIn({ email: 'a@b.co', password: 'pw' })).rejects.toThrow(
+        'boom',
+      );
     });
     expect(result.current.status).toBe('anonymous');
     expect(result.current.getAccessToken()).toBeNull();
@@ -132,9 +119,7 @@ describe('useWebSession', () => {
   it('stays signed in and reports the failure when logout fails', async () => {
     const api = fakeApi({
       refresh: vi.fn<AuthApi['refresh']>().mockResolvedValue('tok'),
-      logout: vi
-        .fn<AuthApi['logout']>()
-        .mockRejectedValue(new Error('offline')),
+      logout: vi.fn<AuthApi['logout']>().mockRejectedValue(new Error('offline')),
     });
     const { result } = setup(api);
     await waitFor(() => expect(result.current.status).toBe('authenticated'));
@@ -158,9 +143,7 @@ describe('useWebSession', () => {
 
   it('refuses a privileged sign-in and keeps the web anonymous', async () => {
     const api = fakeApi({
-      login: vi
-        .fn<AuthApi['login']>()
-        .mockResolvedValue({ kind: 'signed-in', accessToken: 'adm' }),
+      login: vi.fn<AuthApi['login']>().mockResolvedValue({ kind: 'signed-in', accessToken: 'adm' }),
       me: vi.fn<AuthApi['me']>().mockResolvedValue(PRIVILEGED_USER),
     });
     const { result } = setup(api);
@@ -177,9 +160,7 @@ describe('useWebSession', () => {
 
   it('still refuses a privileged sign-in when the revoking logout fails', async () => {
     const api = fakeApi({
-      login: vi
-        .fn<AuthApi['login']>()
-        .mockResolvedValue({ kind: 'signed-in', accessToken: 'adm' }),
+      login: vi.fn<AuthApi['login']>().mockResolvedValue({ kind: 'signed-in', accessToken: 'adm' }),
       me: vi.fn<AuthApi['me']>().mockResolvedValue(PRIVILEGED_USER),
       logout: vi.fn<AuthApi['logout']>().mockRejectedValue(new Error('down')),
     });
@@ -205,9 +186,7 @@ describe('useWebSession', () => {
 
   it('revokes the refresh family when a privileged 2FA completes (I3)', async () => {
     const api = fakeApi({
-      verifyTwoFactor: vi
-        .fn<AuthApi['verifyTwoFactor']>()
-        .mockResolvedValue('adm'),
+      verifyTwoFactor: vi.fn<AuthApi['verifyTwoFactor']>().mockResolvedValue('adm'),
       me: vi.fn<AuthApi['me']>().mockResolvedValue(PRIVILEGED_USER),
     });
     const { result } = setup(api);
@@ -228,9 +207,9 @@ describe('useWebSession', () => {
     const { result } = setup(api);
     await waitFor(() => expect(result.current.status).toBe('anonymous'));
     await act(async () => {
-      await expect(
-        result.current.startReviewerSession('rev'),
-      ).rejects.toBeInstanceOf(PrivilegedAccessError);
+      await expect(result.current.startReviewerSession('rev')).rejects.toBeInstanceOf(
+        PrivilegedAccessError,
+      );
     });
     expect(api.logout).not.toHaveBeenCalled();
     expect(result.current.getAccessToken()).toBeNull();
@@ -274,13 +253,10 @@ describe('useWebSession', () => {
 
   it('throws outside the provider', () => {
     vi.spyOn(console, 'error').mockImplementation(() => undefined);
-    expect(() => renderHook(() => useWebSession())).toThrow(
-      /WebSessionProvider/,
-    );
+    expect(() => renderHook(() => useWebSession())).toThrow(/WebSessionProvider/);
   });
 });
 
-import { StrictMode } from 'react';
 function StrictModeWrapper({ children }: { children: ReactNode }) {
   return <StrictMode>{children}</StrictMode>;
 }
@@ -308,9 +284,7 @@ describe('reviewer session', () => {
     });
     const { result } = setup(api);
     await waitFor(() => expect(result.current.status).toBe('anonymous'));
-    await expect(
-      act(() => result.current.startReviewerSession('bad')),
-    ).rejects.toThrow('401');
+    await expect(act(() => result.current.startReviewerSession('bad'))).rejects.toThrow('401');
     expect(result.current.getAccessToken()).toBeNull();
   });
 });

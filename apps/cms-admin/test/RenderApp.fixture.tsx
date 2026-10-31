@@ -1,3 +1,5 @@
+import { createApiClient } from '@apis/client/Api.client';
+import { API_ENDPOINTS } from '@configs/Api.endpoints';
 import { QueryClient } from '@tanstack/react-query';
 import { render } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
@@ -5,9 +7,7 @@ import { MemoryRouter } from 'react-router';
 import { App } from '../src/app/App';
 import { AppProviders } from '../src/app/AppProviders';
 import { createAppServices } from '../src/app/AppServices.setup';
-import { API_ENDPOINTS } from '@configs/Api.endpoints';
 import type { CurrentUser } from '../src/features/auth/Auth.slice';
-import { createApiClient } from '@apis/client/Api.client';
 import { createFakeApi, TEST_API_BASE_URL, type FakeHandler } from './FakeApi.fixture';
 
 export const TEST_USER: CurrentUser = {

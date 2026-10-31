@@ -1,10 +1,6 @@
 import { AxiosError, type AxiosResponse } from 'axios';
 
-import {
-  apiFailureOf,
-  formatRetryAfter,
-  retryAfterSecondsOf,
-} from './ApiFailure.errors';
+import { apiFailureOf, formatRetryAfter, retryAfterSecondsOf } from './ApiFailure.errors';
 
 function failedWith(status: number, data: unknown, headers = {}) {
   return new AxiosError('failed', undefined, undefined, undefined, {
@@ -20,9 +16,10 @@ describe('apiFailureOf', () => {
   });
 
   it('reads a 429 with its Retry-After', () => {
-    expect(
-      apiFailureOf(failedWith(429, null, { 'retry-after': '30' })),
-    ).toEqual({ kind: 'rate-limited', retryAfterSeconds: 30 });
+    expect(apiFailureOf(failedWith(429, null, { 'retry-after': '30' }))).toEqual({
+      kind: 'rate-limited',
+      retryAfterSeconds: 30,
+    });
   });
 
   it('keeps status and error code of other answers', () => {

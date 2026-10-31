@@ -7,9 +7,7 @@ const WEB_PROTOCOLS = new Set(['http:', 'https:']);
 function hasUnsafeChar(value: string): boolean {
   return [...value].some((char) => {
     const code = char.charCodeAt(0);
-    return (
-      char === BACKSLASH || code <= LAST_CONTROL_CODE || code === DELETE_CODE
-    );
+    return char === BACKSLASH || code <= LAST_CONTROL_CODE || code === DELETE_CODE;
   });
 }
 

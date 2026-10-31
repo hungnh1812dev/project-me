@@ -38,8 +38,6 @@ describe('createApiClient', () => {
 
   it('sets no Authorization default on the shared client', () => {
     expect(apiClient.defaults.headers).not.toHaveProperty('Authorization');
-    expect(apiClient.defaults.headers.common).not.toHaveProperty(
-      'Authorization',
-    );
+    expect(apiClient.defaults.headers.common).not.toHaveProperty('Authorization');
   });
 });

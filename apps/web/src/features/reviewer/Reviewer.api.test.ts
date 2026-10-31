@@ -14,9 +14,7 @@ function failureOf(status: number, data: unknown): AxiosError {
 
 describe('reviewer api', () => {
   it('reads the public switch', async () => {
-    const get = vi
-      .fn<AxiosInstance['get']>()
-      .mockResolvedValue({ data: { enabled: true } });
+    const get = vi.fn<AxiosInstance['get']>().mockResolvedValue({ data: { enabled: true } });
     const client = { get } as unknown as AxiosInstance;
     expect(await createReviewerApi(client).isEnabled()).toBe(true);
     expect(get).toHaveBeenCalledWith('/reviewer/status');
@@ -35,13 +33,9 @@ describe('reviewer api', () => {
     [500, { errorCode: 'REVIEWER_FEATURE_OFF' }],
     [503, {}],
   ])('still throws on status %s with %j', async (status, body) => {
-    const get = vi
-      .fn<AxiosInstance['get']>()
-      .mockRejectedValue(failureOf(status, body));
+    const get = vi.fn<AxiosInstance['get']>().mockRejectedValue(failureOf(status, body));
     const client = { get } as unknown as AxiosInstance;
-    await expect(createReviewerApi(client).isEnabled()).rejects.toBeInstanceOf(
-      AxiosError,
-    );
+    await expect(createReviewerApi(client).isEnabled()).rejects.toBeInstanceOf(AxiosError);
   });
 
   it('posts the session request', async () => {

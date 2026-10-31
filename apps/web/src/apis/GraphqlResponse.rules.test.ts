@@ -34,9 +34,7 @@ describe('unwrapGraphqlResponse', () => {
   });
 
   it('uses a fixed code for an error without extensions.code', () => {
-    expect(
-      thrownBy(() => unwrapGraphqlResponse(200, { errors: [{}] })).code,
-    ).toBe('UNKNOWN_ERROR');
+    expect(thrownBy(() => unwrapGraphqlResponse(200, { errors: [{}] })).code).toBe('UNKNOWN_ERROR');
   });
 
   it('throws on a non-200 answer and keeps its status', () => {
@@ -47,25 +45,17 @@ describe('unwrapGraphqlResponse', () => {
 
   it('throws when the body has no data', () => {
     expect(thrownBy(() => unwrapGraphqlResponse(200, {})).code).toBe('NO_DATA');
-    expect(thrownBy(() => unwrapGraphqlResponse(200, undefined)).code).toBe(
-      'NO_DATA',
-    );
-    expect(
-      thrownBy(() => unwrapGraphqlResponse(200, { data: null })).code,
-    ).toBe('NO_DATA');
+    expect(thrownBy(() => unwrapGraphqlResponse(200, undefined)).code).toBe('NO_DATA');
+    expect(thrownBy(() => unwrapGraphqlResponse(200, { data: null })).code).toBe('NO_DATA');
   });
 });
 
 describe('isUnauthenticatedGraphqlError', () => {
   it('is true for an HTTP 401 and for the UNAUTHENTICATED code', () => {
-    expect(
-      isUnauthenticatedGraphqlError(new GraphqlRequestError('HTTP_ERROR', 401)),
-    ).toBe(true);
-    expect(
-      isUnauthenticatedGraphqlError(
-        new GraphqlRequestError('UNAUTHENTICATED', 200),
-      ),
-    ).toBe(true);
+    expect(isUnauthenticatedGraphqlError(new GraphqlRequestError('HTTP_ERROR', 401))).toBe(true);
+    expect(isUnauthenticatedGraphqlError(new GraphqlRequestError('UNAUTHENTICATED', 200))).toBe(
+      true,
+    );
   });
 
   it.each([

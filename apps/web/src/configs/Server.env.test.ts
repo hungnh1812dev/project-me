@@ -12,30 +12,22 @@ describe('parseServerEnv', () => {
   });
 
   it('defaults the revalidate window when unset or blank', () => {
-    expect(parseServerEnv(VALID).revalidateSeconds).toBe(
+    expect(parseServerEnv(VALID).revalidateSeconds).toBe(DEFAULT_REVALIDATE_SECONDS);
+    expect(parseServerEnv({ ...VALID, WEB_REVALIDATE_SECONDS: ' ' }).revalidateSeconds).toBe(
       DEFAULT_REVALIDATE_SECONDS,
     );
-    expect(
-      parseServerEnv({ ...VALID, WEB_REVALIDATE_SECONDS: ' ' })
-        .revalidateSeconds,
-    ).toBe(DEFAULT_REVALIDATE_SECONDS);
   });
 
   it('fails when API_INTERNAL_URL is missing or not absolute', () => {
     expect(() => parseServerEnv({})).toThrow(/API_INTERNAL_URL is not set/);
-    expect(() => parseServerEnv({ API_INTERNAL_URL: '/api/v1' })).toThrow(
-      /absolute URL/,
-    );
+    expect(() => parseServerEnv({ API_INTERNAL_URL: '/api/v1' })).toThrow(/absolute URL/);
   });
 
-  it.each(['-1', '1.5', 'abc'])(
-    'fails on WEB_REVALIDATE_SECONDS=%s',
-    (value) => {
-      expect(() =>
-        parseServerEnv({ ...VALID, WEB_REVALIDATE_SECONDS: value }),
-      ).toThrow(/WEB_REVALIDATE_SECONDS/);
-    },
-  );
+  it.each(['-1', '1.5', 'abc'])('fails on WEB_REVALIDATE_SECONDS=%s', (value) => {
+    expect(() => parseServerEnv({ ...VALID, WEB_REVALIDATE_SECONDS: value })).toThrow(
+      /WEB_REVALIDATE_SECONDS/,
+    );
+  });
 
   it.each([
     [undefined, false],
@@ -43,18 +35,14 @@ describe('parseServerEnv', () => {
     ['false', false],
     ['true', true],
   ])('reads WEB_STATUS_PAGE_ENABLED=%j as %s', (value, expected) => {
-    expect(
-      parseServerEnv({ ...VALID, WEB_STATUS_PAGE_ENABLED: value })
-        .isStatusPageEnabled,
-    ).toBe(expected);
+    expect(parseServerEnv({ ...VALID, WEB_STATUS_PAGE_ENABLED: value }).isStatusPageEnabled).toBe(
+      expected,
+    );
   });
 
-  it.each(['TRUE', '1', 'yes', 'on'])(
-    'fails on WEB_STATUS_PAGE_ENABLED=%s',
-    (value) => {
-      expect(() =>
-        parseServerEnv({ ...VALID, WEB_STATUS_PAGE_ENABLED: value }),
-      ).toThrow(/WEB_STATUS_PAGE_ENABLED/);
-    },
-  );
+  it.each(['TRUE', '1', 'yes', 'on'])('fails on WEB_STATUS_PAGE_ENABLED=%s', (value) => {
+    expect(() => parseServerEnv({ ...VALID, WEB_STATUS_PAGE_ENABLED: value })).toThrow(
+      /WEB_STATUS_PAGE_ENABLED/,
+    );
+  });
 });

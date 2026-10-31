@@ -8,10 +8,7 @@ export default defineConfig({
   resolve: {
     alias: {
       // The real package throws outside the Next server bundle.
-      'server-only': path.join(
-        import.meta.dirname,
-        'test/ServerOnly.fixture.ts',
-      ),
+      'server-only': path.join(import.meta.dirname, 'test/ServerOnly.fixture.ts'),
     },
   },
   test: {
