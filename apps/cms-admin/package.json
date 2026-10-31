@@ -19,6 +19,7 @@
     "@tanstack/react-query": "5.104.4",
     "axios": "1.20.0",
     "get-nonce": "1.0.1",
+    "lucide-react": "1.65.0",
     "qrcode.react": "4.2.0",
     "react": "19.3.1",
     "react-dom": "19.3.1",

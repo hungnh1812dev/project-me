@@ -15,4 +15,12 @@ describe('NAV_SECTIONS', () => {
   it('gives every section a label', () => {
     expect(NAV_SECTIONS.every((section) => section.label.length > 0)).toBe(true);
   });
+
+  it('gives every section and sub-section an icon', () => {
+    const everyEntry = NAV_SECTIONS.flatMap((section) => [
+      section,
+      ...('subSections' in section ? section.subSections : []),
+    ]);
+    expect(everyEntry.every((entry) => entry.icon !== undefined)).toBe(true);
+  });
 });

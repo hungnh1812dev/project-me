@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import { Button } from '@abyss/form-commons';
 import { APP_ROUTES } from '@configs/App.routes';
 import { REVIEWER_ROLE_SLUG } from '@configs/Auth.constants';
@@ -13,7 +13,10 @@ import {
 } from '@configs/NavSections.constants';
 import { useCallerAccess } from '@features/access/useCallerAccess';
 import { useCurrentUser, useSession } from '@features/auth';
+import { ChevronDown, type LucideIcon } from 'lucide-react';
 import { Link, NavLink } from 'react-router';
+
+import { useNavGroupOpenState } from './useNavGroupOpenState';
 
 const SKELETON_ROW_COUNT = 3;
 
@@ -94,12 +97,53 @@ function ItemList({ items, onNavigate }: MenuProps & { items: readonly NavItem[]
 }
 
 type SectionDefinition = (typeof NAV_SECTIONS)[number];
+type OpenState = ReturnType<typeof useNavGroupOpenState>;
+
+interface SubGroupProps extends MenuProps {
+  sub: { id: string; label: string; icon: LucideIcon };
+  items: readonly NavItem[];
+  openState: OpenState;
+}
+
+function SubGroup({ sub, items, openState, onNavigate }: SubGroupProps) {
+  const listId = useId();
+  const isOpen = openState.isOpen(sub.id);
+  const Icon = sub.icon;
+  return (
+    <div className="grid gap-0.5">
+      <h3 className="text-xs text-muted-foreground">
+        <button
+          type="button"
+          aria-expanded={isOpen}
+          aria-controls={listId}
+          onClick={() => openState.toggle(sub.id)}
+          className="flex w-full items-center gap-2 rounded-md px-3 py-1.5 text-left outline-none hover:bg-accent hover:text-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50"
+        >
+          <Icon aria-hidden="true" className="size-4 shrink-0" />
+          <span className="flex-1">{sub.label}</span>
+          <ChevronDown
+            aria-hidden="true"
+            className={`size-4 shrink-0 transition-transform ${isOpen ? '' : '-rotate-90'}`}
+          />
+        </button>
+      </h3>
+      <div id={listId} hidden={!isOpen} className="ml-5 border-l border-border pl-1">
+        <ItemList items={items} onNavigate={onNavigate} />
+      </div>
+    </div>
+  );
+}
 
 function MenuSection({
   section,
   menu,
+  openState,
   onNavigate,
-}: MenuProps & { section: SectionDefinition; menu: MenuState }) {
+}: MenuProps & {
+  section: SectionDefinition;
+  menu: MenuState;
+  openState: OpenState;
+}) {
   const leafIds = collectLeafIds([section]);
   const sectionItems = menu.items.filter((item) => leafIds.includes(item.section));
   const isDataBacked = section.id === DATA_BACKED_SECTION_ID;
@@ -108,9 +152,13 @@ function MenuSection({
   if (sectionItems.length === 0 && !hasFailed && !isLoading) return null;
 
   const subSections = 'subSections' in section ? section.subSections : [];
+  const Icon = section.icon;
   return (
-    <section className="grid gap-1">
-      <h2 className="px-3 text-xs font-medium text-muted-foreground">{section.label}</h2>
+    <section className="grid gap-1 border-t border-border pt-4 first:border-t-0 first:pt-0">
+      <h2 className="flex items-center gap-2 px-3 text-xs font-medium text-muted-foreground">
+        <Icon aria-hidden="true" className="size-4 shrink-0" />
+        {section.label}
+      </h2>
       {isLoading ? <SkeletonRows /> : null}
       {hasFailed ? (
         <div className="grid justify-items-start gap-1 px-3">
@@ -127,10 +175,13 @@ function MenuSection({
           const subItems = sectionItems.filter((item) => item.section === sub.id);
           if (subItems.length === 0) return null;
           return (
-            <div key={sub.id} className="grid gap-0.5">
-              <h3 className="px-3 pt-1 text-xs text-muted-foreground">{sub.label}</h3>
-              <ItemList items={subItems} onNavigate={onNavigate} />
-            </div>
+            <SubGroup
+              key={sub.id}
+              sub={sub}
+              items={subItems}
+              openState={openState}
+              onNavigate={onNavigate}
+            />
           );
         })
       )}
@@ -175,13 +226,20 @@ function UserBlock({ onNavigate }: MenuProps) {
 /** Sections from `NAV_SECTIONS` filled with the visible items of `nav`, then the user block. */
 export function SideMenu({ nav, onNavigate }: MenuProps & { nav: NavSource }) {
   const menu = useMenuState(nav);
+  const openState = useNavGroupOpenState();
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="min-h-0 flex-1 overflow-y-auto px-2 py-3">
         <nav aria-label={COPY.access.nav.label} className="grid gap-5">
           {menu.isReady ? (
             NAV_SECTIONS.map((section) => (
-              <MenuSection key={section.id} section={section} menu={menu} onNavigate={onNavigate} />
+              <MenuSection
+                key={section.id}
+                section={section}
+                menu={menu}
+                openState={openState}
+                onNavigate={onNavigate}
+              />
             ))
           ) : (
             <SkeletonRows />

@@ -1,10 +1,11 @@
 import { API_ENDPOINTS } from '@configs/Api.endpoints';
 import { COPY } from '@configs/Copy.constants';
+import { NAV_GROUP_OPEN_STORAGE_KEY } from '@configs/NavSections.constants';
 import type { Role } from '@features/access/Access.api';
 import type { CurrentUser } from '@features/auth/Auth.slice';
 import type { FakeHandler } from '@test/FakeApi.fixture';
 import { createTestServices, renderApp, TEST_USER } from '@test/RenderApp.fixture';
-import { screen, within } from '@testing-library/react';
+import { cleanup, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 const { REFRESH, ME } = API_ENDPOINTS.AUTH;
@@ -59,6 +60,11 @@ async function open(
 const mainNav = () => screen.getByRole('navigation', { name: nav.label });
 
 describe('SideMenu', () => {
+  afterEach(() => {
+    window.localStorage.clear();
+    vi.restoreAllMocks();
+  });
+
   it('shows the owner all three sections with their items', async () => {
     await open();
 
@@ -79,6 +85,54 @@ describe('SideMenu', () => {
     for (const label of ['post', nav.media, nav.accounts, nav.roles, nav.apiTokens, nav.reviewer]) {
       expect(menu.getByRole('link', { name: label })).toBeInTheDocument();
     }
+  });
+
+  it('lists Content, Utilities and System settings as three groups in order', async () => {
+    await open();
+    await within(mainNav()).findByRole('link', { name: 'post' });
+
+    const headings = within(mainNav())
+      .getAllByRole('heading', { level: 2 })
+      .map((heading) => heading.textContent);
+    expect(headings).toEqual([nav.content, nav.utilities, nav.systemSettings]);
+  });
+
+  it('collapses a sub-group and keeps it collapsed after the menu is opened again', async () => {
+    await open();
+    const toggle = await within(mainNav()).findByRole('button', { name: nav.collectionTypes });
+    expect(toggle).toHaveAttribute('aria-expanded', 'true');
+    expect(within(mainNav()).getByRole('link', { name: 'post' })).toBeVisible();
+
+    await userEvent.click(toggle);
+    expect(toggle).toHaveAttribute('aria-expanded', 'false');
+    expect(within(mainNav()).queryByRole('link', { name: 'post' })).not.toBeInTheDocument();
+    expect(JSON.parse(window.localStorage.getItem(NAV_GROUP_OPEN_STORAGE_KEY) ?? '{}')).toEqual({
+      collectionTypes: false,
+    });
+
+    cleanup();
+    await open();
+    const reopened = await within(mainNav()).findByRole('button', { name: nav.collectionTypes });
+    expect(reopened).toHaveAttribute('aria-expanded', 'false');
+    expect(within(mainNav()).getByRole('button', { name: nav.singleTypes })).toHaveAttribute(
+      'aria-expanded',
+      'true',
+    );
+  });
+
+  it('keeps sub-groups open when storage throws', async () => {
+    vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
+      throw new Error('blocked');
+    });
+    vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new Error('blocked');
+    });
+    await open();
+
+    const toggle = await within(mainNav()).findByRole('button', { name: nav.collectionTypes });
+    expect(toggle).toHaveAttribute('aria-expanded', 'true');
+    await userEvent.click(toggle);
+    expect(toggle).toHaveAttribute('aria-expanded', 'false');
   });
 
   it('hides sections the caller has no item for', async () => {

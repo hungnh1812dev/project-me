@@ -47,6 +47,9 @@ importers:
       get-nonce:
         specifier: 1.0.1
         version: 1.0.1
+      lucide-react:
+        specifier: 1.65.0
+        version: 1.65.0(@types/react@19.3.0)(react@19.3.1)
       qrcode.react:
         specifier: 4.2.0
         version: 4.2.0(react@19.3.1)

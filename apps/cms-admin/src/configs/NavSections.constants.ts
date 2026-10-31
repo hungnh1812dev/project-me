@@ -1,3 +1,5 @@
+import { Files, FileText, Layers, Settings, Wrench, type LucideIcon } from 'lucide-react';
+
 import { COPY } from './Copy.constants';
 import type { PermissionAction } from './PermissionAction.constants';
 
@@ -5,21 +7,26 @@ import type { PermissionAction } from './PermissionAction.constants';
 interface NavSectionDefinition {
   id: string;
   label: string;
+  icon: LucideIcon;
   subSections?: readonly NavSectionDefinition[];
 }
+
+/** Browser storage key holding which sub-groups are open (`{ [sectionId]: boolean }`). */
+export const NAV_GROUP_OPEN_STORAGE_KEY = 'abyss.cms-admin.nav-groups-open';
 
 /** Menu structure in display order. A new section is one entry here plus one copy label. */
 export const NAV_SECTIONS = [
   {
     id: 'content',
     label: COPY.access.nav.content,
+    icon: Files,
     subSections: [
-      { id: 'singleTypes', label: COPY.access.nav.singleTypes },
-      { id: 'collectionTypes', label: COPY.access.nav.collectionTypes },
+      { id: 'singleTypes', label: COPY.access.nav.singleTypes, icon: FileText },
+      { id: 'collectionTypes', label: COPY.access.nav.collectionTypes, icon: Layers },
     ],
   },
-  { id: 'utilities', label: COPY.access.nav.utilities },
-  { id: 'systemSettings', label: COPY.access.nav.systemSettings },
+  { id: 'utilities', label: COPY.access.nav.utilities, icon: Wrench },
+  { id: 'systemSettings', label: COPY.access.nav.systemSettings, icon: Settings },
 ] as const satisfies readonly NavSectionDefinition[];
 
 type LeafIds<Section> = Section extends {
