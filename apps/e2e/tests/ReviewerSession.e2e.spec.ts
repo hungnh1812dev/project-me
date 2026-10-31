@@ -2,6 +2,7 @@ import { expect, test, type BrowserContext } from '@playwright/test';
 
 import { API_PATHS, apiUrl } from '../src/Api.endpoints';
 import { WEB_COPY } from '../src/Apps.contract';
+import { isCspConsoleProblem } from '../src/CspWatch.fixture';
 import { CV_PAGE_SLUG, HTTP, RUN_ID } from '../src/E2e.constants';
 import { e2eEnv } from '../src/E2e.env';
 import { labelStartingWith } from '../src/Locators.fixture';
@@ -80,7 +81,7 @@ test.describe('reviewer access: session', () => {
     await expect(page.getByRole('button', { name: WEB_COPY.session.endReview })).toBeVisible();
     await expect(openButton(page)).toHaveCount(0);
     await expect(page.getByRole('link', { name: WEB_COPY.session.openCms })).toHaveCount(0);
-    expect(consoleProblems.filter((text) => /content security policy/i.test(text))).toEqual([]);
+    expect(consoleProblems.filter(isCspConsoleProblem)).toEqual([]);
 
     const stored = await page.evaluate(() => ({
       local: Object.keys(window.localStorage),

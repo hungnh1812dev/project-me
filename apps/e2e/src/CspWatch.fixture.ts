@@ -1,5 +1,7 @@
 import { expect, type Page } from '@playwright/test';
 
+import { e2eEnv } from './E2e.env';
+
 declare global {
   interface Window {
     /** Filled by the init script below; one line per reported CSP violation. */
@@ -8,6 +10,18 @@ declare global {
 }
 
 const CSP_CONSOLE_PATTERN = /content security policy|unsafe-eval/i;
+
+const DEV_SERVER_INLINE_STYLE_PATTERN = /^Applying inline style violates .*style-src/i;
+
+/**
+ * The Next dev server injects styles without the nonce, so the dev stack logs
+ * inline-style CSP errors the production build does not. Ignored only on the
+ * dev stack; the full stack stays strict.
+ */
+export function isCspConsoleProblem(text: string): boolean {
+  if (!CSP_CONSOLE_PATTERN.test(text)) return false;
+  return !(e2eEnv.isDevStack && DEV_SERVER_INLINE_STYLE_PATTERN.test(text));
+}
 
 /**
  * Records CSP violations of the page: `securitypolicyviolation` events (init
@@ -22,7 +36,7 @@ export async function watchCsp(page: Page): Promise<() => Promise<string[]>> {
   });
   const consoleErrors: string[] = [];
   page.on('console', (message) => {
-    if (CSP_CONSOLE_PATTERN.test(message.text())) {
+    if (isCspConsoleProblem(message.text())) {
       consoleErrors.push(message.text());
     }
   });
