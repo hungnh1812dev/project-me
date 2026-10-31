@@ -24,6 +24,12 @@ export interface MediaPage {
   meta: PageMeta;
 }
 
+export interface UploadOptions {
+  alt?: string;
+  onProgress?: (sentBytes: number, totalBytes: number) => void;
+  signal?: AbortSignal;
+}
+
 const FILE_FIELD = 'file';
 const ALT_FIELD = 'alt';
 
@@ -38,11 +44,17 @@ export function createMediaApi(client: AxiosInstance) {
       return data;
     },
 
-    upload: async (file: File, alt?: string): Promise<MediaFile> => {
+    upload: async (file: File, options: UploadOptions = {}): Promise<MediaFile> => {
+      const { alt, onProgress, signal } = options;
       const body = new FormData();
       if (alt !== undefined && alt !== '') body.append(ALT_FIELD, alt);
       body.append(FILE_FIELD, file);
-      const { data } = await client.post<MediaFile>(MEDIA.LIST, body);
+      const { data } = await client.post<MediaFile>(MEDIA.LIST, body, {
+        ...(signal ? { signal } : {}),
+        ...(onProgress
+          ? { onUploadProgress: (event) => onProgress(event.loaded, event.total ?? file.size) }
+          : {}),
+      });
       return data;
     },
 
