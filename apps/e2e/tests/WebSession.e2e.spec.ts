@@ -1,10 +1,11 @@
 import { expect, test, type Page } from '@playwright/test';
 
 import { API_PATHS } from '../src/Api.endpoints';
-import { ADMIN_COPY, WEB_COPY } from '../src/Apps.contract';
+import { WEB_COPY } from '../src/Apps.contract';
 import { REFRESH_COOKIE_NAME } from '../src/E2e.constants';
 import { e2eEnv } from '../src/E2e.env';
 import { mailIdsFor, waitForCode } from '../src/Mailpit.client';
+import { expectSignedIn } from '../src/Session.fixture';
 
 /**
  * apps/web sign-in dialog and in-memory session. Only reader accounts
@@ -124,7 +125,7 @@ test('a reader signs in on the web, stays signed in on reload, shares the sessio
   // The same cookie restores the session on the admin origin.
   const admin = await context.newPage();
   await admin.goto(e2eEnv.adminUrl);
-  await expect(admin.getByRole('button', { name: ADMIN_COPY.session.signOut })).toBeVisible();
+  await expectSignedIn(admin);
   await admin.close();
 
   // A failing sign-out keeps the session and says so.

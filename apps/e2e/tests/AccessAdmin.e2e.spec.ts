@@ -12,7 +12,7 @@ import { CV_PAGE_SLUG, RUN_ID } from '../src/E2e.constants';
 import { e2eEnv } from '../src/E2e.env';
 import { labelStartingWith } from '../src/Locators.fixture';
 import { mailIdsFor, waitForCode } from '../src/Mailpit.client';
-import { submitLogin } from '../src/Session.fixture';
+import { expectSignedIn, submitLogin } from '../src/Session.fixture';
 
 const access = ADMIN_COPY.access;
 const accounts = access.accounts;
@@ -37,7 +37,7 @@ test.describe.serial('owner: accounts and roles', () => {
     context = await browser.newContext();
     page = await context.newPage();
     await submitLogin(page, e2eEnv.ownerEmail, e2eEnv.ownerPassword);
-    await expect(page.getByRole('button', { name: ADMIN_COPY.session.signOut })).toBeVisible();
+    await expectSignedIn(page);
   });
 
   test.afterAll(async () => {
@@ -190,9 +190,7 @@ test.describe.serial('owner: accounts and roles', () => {
       await expect(row).toContainText(accounts.status.active);
       await expect(row.getByRole('button', { name: accounts.enable })).toHaveCount(0);
       await submitLogin(inviteePage, INVITEE_EMAIL, INVITEE_PASSWORD);
-      await expect(
-        inviteePage.getByRole('button', { name: ADMIN_COPY.session.signOut }),
-      ).toBeVisible();
+      await expectSignedIn(inviteePage);
     } finally {
       await inviteeContext.close();
     }

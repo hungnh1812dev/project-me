@@ -3,6 +3,7 @@ import { expect, test, type Page } from '@playwright/test';
 import { API_PATHS } from '../src/Api.endpoints';
 import { ADMIN_COPY } from '../src/Apps.contract';
 import { e2eEnv } from '../src/E2e.env';
+import { signOutFromUserMenu } from '../src/Session.fixture';
 
 const homeHeading = (page: Page) =>
   page.getByRole('heading', { level: 1, name: ADMIN_COPY.page.title });
@@ -54,6 +55,6 @@ test('two admin tabs that refresh at the same moment both stay signed in', async
   await page.reload();
   await expect(homeHeading(page)).toBeVisible();
 
-  await page.getByRole('button', { name: ADMIN_COPY.session.signOut }).click();
+  await signOutFromUserMenu(page);
   await expect(loginHeading(page)).toBeVisible();
 });

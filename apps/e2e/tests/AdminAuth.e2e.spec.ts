@@ -4,6 +4,7 @@ import { API_PATHS } from '../src/Api.endpoints';
 import { ADMIN_COPY } from '../src/Apps.contract';
 import { REFRESH_COOKIE_NAME } from '../src/E2e.constants';
 import { e2eEnv } from '../src/E2e.env';
+import { expectSignedIn, signOutFromUserMenu } from '../src/Session.fixture';
 
 const homeHeading = (page: Page) =>
   page.getByRole('heading', { level: 1, name: ADMIN_COPY.page.title });
@@ -31,7 +32,7 @@ test('the owner signs in, stays signed in across a reload, and signs out', async
   await page.getByRole('button', { name: ADMIN_COPY.login.submit }).click();
 
   await expect(homeHeading(page)).toBeVisible();
-  await expect(page.getByRole('button', { name: ADMIN_COPY.session.signOut })).toBeVisible();
+  await expectSignedIn(page);
 
   // The refresh cookie is HttpOnly + Secure + Strict on the API host, and
   // nothing token-like is reachable from JS.
@@ -59,7 +60,7 @@ test('the owner signs in, stays signed in across a reload, and signs out', async
   expect((await refreshed).status()).toBe(200);
   await expect(homeHeading(page)).toBeVisible();
 
-  await page.getByRole('button', { name: ADMIN_COPY.session.signOut }).click();
+  await signOutFromUserMenu(page);
   await expect(loginHeading(page)).toBeVisible();
 
   await page.reload();

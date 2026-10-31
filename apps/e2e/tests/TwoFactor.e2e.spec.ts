@@ -1,12 +1,17 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
 
-import { ADMIN_COPY } from '../src/Apps.contract';
+import { ADMIN_COPY, APP_ROUTES } from '../src/Apps.contract';
 import { expectNoViolation, watchCsp } from '../src/CspWatch.fixture';
 import { TWO_FACTOR_TEST_TIMEOUT_MS } from '../src/E2e.constants';
 import { e2eEnv } from '../src/E2e.env';
 import { labelStartingWith } from '../src/Locators.fixture';
 import { mailIdsFor, waitForCode } from '../src/Mailpit.client';
-import { expectSignedIn, submitLogin } from '../src/Session.fixture';
+import {
+  chooseUserMenuItem,
+  expectSignedIn,
+  signOutFromUserMenu,
+  submitLogin,
+} from '../src/Session.fixture';
 import { freshTotpCode } from '../src/Totp.fixture';
 
 /**
@@ -28,13 +33,9 @@ const security = ADMIN_COPY.security;
 const TWO_FACTOR_CHANGED_PASSWORD = `${e2eEnv.twoFactorPassword.slice(0, 100)}-changed`;
 
 async function openSecurity(page: Page): Promise<void> {
-  await page.getByRole('link', { name: ADMIN_COPY.session.securityLink }).click();
+  await chooseUserMenuItem(page, ADMIN_COPY.session.securityLink);
+  await expect(page).toHaveURL(new RegExp(`${APP_ROUTES.SECURITY_SETTINGS}$`));
   await expect(page.getByRole('heading', { level: 1, name: security.title })).toBeVisible();
-}
-
-async function signOut(page: Page): Promise<void> {
-  await page.getByRole('button', { name: ADMIN_COPY.session.signOut }).click();
-  await expect(page.getByRole('heading', { level: 1, name: ADMIN_COPY.login.title })).toBeVisible();
 }
 
 /** Click the page corner, which is the dialog overlay while a dialog is open. */
@@ -83,7 +84,7 @@ test('an account turns on TOTP, signs in with it, switches to email codes and ch
   await confirm(setup, security.fields.totpCode, first.code, security.totpSetup.submit);
   await expect(page.getByText(security.twoFactor.enabledTotp)).toBeVisible();
   await expect(page.getByText(security.twoFactor.statusTotp)).toBeVisible();
-  await signOut(page);
+  await signOutFromUserMenu(page);
 
   // Login 2: password, then the authenticator code in the challenge dialog.
   await submitLogin(page, e2eEnv.twoFactorEmail, e2eEnv.twoFactorPassword);
@@ -127,7 +128,7 @@ test('an account turns on TOTP, signs in with it, switches to email codes and ch
   const setupCode = await waitForCode(context, e2eEnv.twoFactorEmail, seenBeforeSetup);
   await confirm(emailSetup, security.fields.emailCode, setupCode, security.emailSetup.submit);
   await expect(page.getByText(security.twoFactor.enabledEmail)).toBeVisible();
-  await signOut(page);
+  await signOutFromUserMenu(page);
 
   // Login 3: the challenge dialog mails the code by itself.
   const seenBeforeLogin = await mailIdsFor(context, e2eEnv.twoFactorEmail);
@@ -147,7 +148,8 @@ test('an account turns on TOTP, signs in with it, switches to email codes and ch
   await expectSignedIn(page);
 
   // Change password: every session ends, the client lands on sign-in.
-  await openSecurity(page);
+  await chooseUserMenuItem(page, ADMIN_COPY.session.changePasswordLink);
+  await expect(page).toHaveURL(new RegExp(`${APP_ROUTES.CHANGE_PASSWORD}$`));
   await page
     .getByLabel(labelStartingWith(security.fields.currentPassword))
     .fill(e2eEnv.twoFactorPassword);

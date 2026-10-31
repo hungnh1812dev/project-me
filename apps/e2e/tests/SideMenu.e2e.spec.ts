@@ -2,7 +2,13 @@ import { expect, test, type Page } from '@playwright/test';
 
 import { ADMIN_COPY, API_ENDPOINTS, APP_ROUTES } from '../src/Apps.contract';
 import { e2eEnv } from '../src/E2e.env';
-import { signInAs, signInAsOwner, signInAsOwnerWithRole } from '../src/Session.fixture';
+import {
+  accountMenuTrigger,
+  signInAs,
+  signInAsOwner,
+  signInAsOwnerWithRole,
+  signOutFromUserMenu,
+} from '../src/Session.fixture';
 
 const nav = ADMIN_COPY.access.nav;
 const DESKTOP = { width: 1280, height: 800 };
@@ -16,7 +22,7 @@ const mainMenu = (page: Page) => page.getByRole('navigation', { name: nav.label 
 const menuButton = (page: Page) => page.getByRole('button', { name: nav.menu, exact: true });
 
 test.describe('side menu', () => {
-  test('owner at 1280 px sees every section, an active link and the user block', async ({
+  test('owner at 1280 px sees every section, an active link and no user block', async ({
     page,
   }) => {
     await page.setViewportSize(DESKTOP);
@@ -29,6 +35,9 @@ test.describe('side menu', () => {
       await expect(menu.getByRole('link', { name: link, exact: true })).toBeVisible();
     }
     await expect(menuButton(page)).toBeHidden();
+    await expect(menu.getByRole('button', { name: ADMIN_COPY.session.signOut })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: ADMIN_COPY.session.signOut })).toHaveCount(0);
+    await expect(menu.getByText(e2eEnv.ownerEmail)).toHaveCount(0);
 
     await menu.getByRole('link', { name: nav.media, exact: true }).click();
     await expect(menu.getByRole('link', { name: nav.media, exact: true })).toHaveAttribute(
@@ -39,6 +48,35 @@ test.describe('side menu', () => {
       'aria-current',
       'page',
     );
+  });
+
+  test('the content sub-groups are open by default, collapse on click and stay collapsed after a reload', async ({
+    page,
+  }) => {
+    await page.setViewportSize(DESKTOP);
+    await signInAsOwner(page);
+    const menu = mainMenu(page);
+    const single = menu.getByRole('button', { name: nav.singleTypes, exact: true });
+    const collection = menu.getByRole('button', { name: nav.collectionTypes, exact: true });
+    await expect(single).toHaveAttribute('aria-expanded', 'true');
+    await expect(collection).toHaveAttribute('aria-expanded', 'true');
+
+    const singleListId = await single.getAttribute('aria-controls');
+    expect(singleListId).not.toBeNull();
+    const singleList = page.locator(`[id="${singleListId}"]`);
+    await expect(singleList.getByRole('link').first()).toBeVisible();
+
+    await single.click();
+    await expect(single).toHaveAttribute('aria-expanded', 'false');
+    await expect(singleList.getByRole('link')).toHaveCount(0);
+    await expect(collection).toHaveAttribute('aria-expanded', 'true');
+
+    await page.reload();
+    await expect(single).toHaveAttribute('aria-expanded', 'false');
+    await expect(collection).toHaveAttribute('aria-expanded', 'true');
+
+    await single.click();
+    await expect(single).toHaveAttribute('aria-expanded', 'true');
   });
 
   test('768 px still shows the side menu; 375 px shows the sheet with Esc, Close and link', async ({
@@ -121,8 +159,7 @@ test.describe('side menu', () => {
     await expect(menu.getByRole('heading', { name: nav.utilities })).toBeVisible();
     await expect(menu.getByRole('link', { name: nav.media, exact: true })).toBeVisible();
     await expect(menu.getByRole('heading', { name: nav.systemSettings })).toHaveCount(0);
-    await expect(page.getByRole('link', { name: ADMIN_COPY.session.securityLink })).toHaveCount(0);
-    await expect(page.getByRole('button', { name: ADMIN_COPY.session.signOut })).toBeVisible();
+    await expect(accountMenuTrigger(page)).toBeVisible();
 
     const banner = page.getByRole('status').filter({
       hasText: ADMIN_COPY.reviewer.banner.title,
@@ -147,7 +184,6 @@ test.describe('side menu', () => {
     for (const link of [nav.accounts, nav.roles, nav.apiTokens, nav.reviewer]) {
       await expect(menu.getByRole('link', { name: link, exact: true })).toHaveCount(0);
     }
-    await expect(page.getByRole('link', { name: ADMIN_COPY.session.securityLink })).toBeVisible();
     await expect(
       page.getByRole('status').filter({
         hasText: ADMIN_COPY.reviewer.banner.title,
@@ -155,13 +191,13 @@ test.describe('side menu', () => {
     ).toHaveCount(0);
   });
 
-  test('sign out from the menu ends the session', async ({ page }) => {
+  test('sign out from the user menu ends the session', async ({ page }) => {
     await page.setViewportSize(DESKTOP);
     await signInAsOwner(page);
-    await page.getByRole('button', { name: ADMIN_COPY.session.signOut }).click();
+    await signOutFromUserMenu(page);
     await expect(page).toHaveURL(/\/login/);
     await page.goto('/');
     await expect(page).toHaveURL(/\/login/);
-    await expect(page.getByRole('button', { name: ADMIN_COPY.session.signOut })).toHaveCount(0);
+    await expect(accountMenuTrigger(page)).toHaveCount(0);
   });
 });

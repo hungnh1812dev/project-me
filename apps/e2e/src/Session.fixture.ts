@@ -1,4 +1,4 @@
-import { expect, type APIRequestContext, type Page } from '@playwright/test';
+import { expect, type APIRequestContext, type Locator, type Page } from '@playwright/test';
 
 import { API_PATHS, apiUrl } from './Api.endpoints';
 import { ADMIN_COPY, API_ENDPOINTS } from './Apps.contract';
@@ -13,9 +13,35 @@ export async function submitLogin(page: Page, email: string, password: string): 
   await page.getByRole('button', { name: ADMIN_COPY.login.submit }).click();
 }
 
-/** Waits for the signed-in shell (the sign-out button). */
+const ACCOUNT_MENU_NAME = /^Account menu for /;
+
+/** The avatar button in the top bar that opens the account menu. */
+export const accountMenuTrigger = (page: Page): Locator =>
+  page.getByRole('button', { name: ACCOUNT_MENU_NAME });
+
+/** Waits for the signed-in shell (the account menu button in the top bar). */
 export async function expectSignedIn(page: Page): Promise<void> {
-  await expect(page.getByRole('button', { name: ADMIN_COPY.session.signOut })).toBeVisible();
+  await expect(accountMenuTrigger(page)).toBeVisible();
+}
+
+/** Opens the account menu from the top bar. */
+export async function openUserMenu(page: Page): Promise<Locator> {
+  await accountMenuTrigger(page).click();
+  const menu = page.getByRole('menu');
+  await expect(menu).toBeVisible();
+  return menu;
+}
+
+/** Picks an item of the open account menu by its name. */
+export async function chooseUserMenuItem(page: Page, name: string): Promise<void> {
+  const menu = await openUserMenu(page);
+  await menu.getByRole('menuitem', { name, exact: true }).click();
+}
+
+/** Opens the account menu, signs out and waits for the sign-in page. */
+export async function signOutFromUserMenu(page: Page): Promise<void> {
+  await chooseUserMenuItem(page, ADMIN_COPY.session.signOut);
+  await expect(page.getByRole('heading', { level: 1, name: ADMIN_COPY.login.title })).toBeVisible();
 }
 
 /** Signs in through the admin login form and waits for the shell. */
