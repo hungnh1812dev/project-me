@@ -13,6 +13,7 @@ import {
   SETUP_TOKEN_MAX_LENGTH,
   TOTP,
 } from '../modules/identity';
+import { ALLOWED_MEDIA_TYPES, MEDIA_MAX_BYTES } from '../modules/media';
 import { REVIEWER_ERROR_CODES, REVIEWER_INPUT_LIMITS } from '../modules/reviewer';
 
 /**
@@ -33,6 +34,10 @@ export function buildPublicConstants() {
     totp: { digits: TOTP.DIGITS, periodSeconds: TOTP.PERIOD_SECONDS },
     refreshCookieName: REFRESH_COOKIE.NAME,
     reviewerInputLimits: { ...REVIEWER_INPUT_LIMITS },
+    mediaUpload: {
+      allowedMimeTypes: Object.keys(ALLOWED_MEDIA_TYPES),
+      maxBytesByKind: { ...MEDIA_MAX_BYTES },
+    },
     errorCodes: {
       common: { ...ERROR_CODES },
       auth: { ...AUTH_ERROR_CODES },

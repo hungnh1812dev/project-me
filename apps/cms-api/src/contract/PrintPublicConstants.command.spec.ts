@@ -2,6 +2,7 @@ import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
+import { ALLOWED_MEDIA_TYPES, MEDIA_MAX_BYTES } from '../modules/media';
 import {
   DEFAULT_PUBLIC_CONSTANTS_FILE,
   printPublicConstants,
@@ -12,6 +13,13 @@ const SOURCE_FILE = join(__dirname, 'PublicConstants.contract.ts');
 const SECRET_KEY_PATTERN = /secret|pepper|enc_?key|private/i;
 
 describe('public constants snapshot', () => {
+  it('publishes the media upload allowlist and limits from the media constants', () => {
+    expect(buildPublicConstants().mediaUpload).toEqual({
+      allowedMimeTypes: Object.keys(ALLOWED_MEDIA_TYPES),
+      maxBytesByKind: MEDIA_MAX_BYTES,
+    });
+  });
+
   let dir: string;
   let file: string;
 
