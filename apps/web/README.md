@@ -97,7 +97,7 @@ in a production build.
   redirect.
 
 Styling: Tailwind v4 through `@tailwindcss/postcss` with the form-commons theme
-(`src/app/app.css`, imported by `src/app/layout.tsx`). Components use semantic
+(`src/assets/styles/global.css`, the only stylesheet `src/app/layout.tsx` imports; it pulls in `base.css` and `app.css`). Components use semantic
 tokens only (`bg-card`, `text-muted-foreground`).
 
 ## Sign-in and session
