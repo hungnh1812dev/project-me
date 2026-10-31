@@ -42,12 +42,16 @@ const emailUser: CurrentUser = {
 };
 
 describe('SecuritySettingsPage', () => {
-  it('is linked from the header and shows 2FA off', async () => {
+  it('is linked from the user menu and shows 2FA off', async () => {
     await openSecurity([TEST_USER]);
-    expect(screen.getByRole('link', { name: COPY.session.securityLink })).toHaveAttribute(
+    await userEvent.click(
+      screen.getByRole('button', { name: COPY.session.accountMenu(TEST_USER.displayName) }),
+    );
+    expect(screen.getByRole('menuitem', { name: COPY.session.securityLink })).toHaveAttribute(
       'href',
       APP_ROUTES.SECURITY_SETTINGS,
     );
+    await userEvent.keyboard('{Escape}');
     expect(screen.getByText(copy.twoFactor.statusOff)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: copy.twoFactor.setUpTotp })).toBeInTheDocument();
   });

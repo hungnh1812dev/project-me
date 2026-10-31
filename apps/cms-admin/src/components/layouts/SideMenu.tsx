@@ -1,7 +1,6 @@
-import { useId, useState } from 'react';
+import { useId } from 'react';
 import { Button } from '@abyss/form-commons';
 import { APP_ROUTES } from '@configs/App.routes';
-import { REVIEWER_ROLE_SLUG } from '@configs/Auth.constants';
 import { COPY } from '@configs/Copy.constants';
 import {
   collectLeafIds,
@@ -12,7 +11,6 @@ import {
   type NavSource,
 } from '@configs/NavSections.constants';
 import { useCallerAccess } from '@features/access/useCallerAccess';
-import { useCurrentUser, useSession } from '@features/auth';
 import { ChevronDown, type LucideIcon } from 'lucide-react';
 import { Link, NavLink } from 'react-router';
 
@@ -189,41 +187,7 @@ function MenuSection({
   );
 }
 
-function UserBlock({ onNavigate }: MenuProps) {
-  const user = useCurrentUser();
-  const session = useSession();
-  const [isSigningOut, setIsSigningOut] = useState(false);
-  const isReviewer = user?.role === REVIEWER_ROLE_SLUG;
-
-  return (
-    <nav aria-label={COPY.session.mainNav} className="grid gap-2 border-t border-border px-4 py-3">
-      <p className="min-w-0 truncate text-sm text-muted-foreground">
-        <span className="sr-only">{COPY.session.signedInAs} </span>
-        <span className="text-foreground">{user?.displayName}</span>
-      </p>
-      {isReviewer ? null : (
-        <Button asChild variant="ghost" size="sm" className="justify-start px-3">
-          <Link to={APP_ROUTES.SECURITY_SETTINGS} onClick={onNavigate}>
-            {COPY.session.securityLink}
-          </Link>
-        </Button>
-      )}
-      <Button
-        size="sm"
-        loading={isSigningOut}
-        onClick={() => {
-          setIsSigningOut(true);
-          // The session ends either way; this component then unmounts.
-          void session.signOut();
-        }}
-      >
-        {COPY.session.signOut}
-      </Button>
-    </nav>
-  );
-}
-
-/** Sections from `NAV_SECTIONS` filled with the visible items of `nav`, then the user block. */
+/** Sections from `NAV_SECTIONS` filled with the visible items of `nav`. */
 export function SideMenu({ nav, onNavigate }: MenuProps & { nav: NavSource }) {
   const menu = useMenuState(nav);
   const openState = useNavGroupOpenState();
@@ -246,7 +210,6 @@ export function SideMenu({ nav, onNavigate }: MenuProps & { nav: NavSource }) {
           )}
         </nav>
       </div>
-      <UserBlock onNavigate={onNavigate} />
     </div>
   );
 }

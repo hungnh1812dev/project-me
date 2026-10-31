@@ -70,7 +70,7 @@ Features (`src/features/`):
   blocked for the 429 `Retry-After`) and a warning that TOTP is safer. A dead
   temp token (5 wrong codes or 300 s) closes the dialog with a notice.
 - **Security settings** (`src/features/security`, `/settings/security`,
-  linked as "Security" in the side menu's user block): 2FA status, TOTP setup (QR drawn
+  linked as "Security settings" in the top bar's user menu): 2FA status, TOTP setup (QR drawn
   client-side with `qrcode.react` from the `otpauth://` URI, plus the
   grouped manual key), email codes, turn off, all confirmed with code +
   current password in dialogs; change password, which ends every session:
@@ -182,9 +182,10 @@ Features (`src/features/`):
 - **Routes** (`src/configs/App.routes.ts`): `/login`, `/setup`, `/reset-password`,
   `/set-password`, and `/`, `/settings/security`, `/accounts`, `/roles`,
   `/roles/:roleId`, `/api-tokens`, `/content/:slug`, `/content/:slug/new`,
-  `/content/:slug/:documentId` behind `ProtectedRoute` + `AppShell` (side menu from `md` up, top bar with a
-  Menu button and a sheet below; sections from `configs/NavSections.constants.ts`, empty
-  sections hidden; user block with "Security" and "Sign out" at the bottom;
+  `/content/:slug/:documentId` behind `ProtectedRoute` + `AppShell` (side menu from `md` up, top bar on every
+  width with the user menu (initials avatar: Profile, Change password, Security settings, Sign out; reviewers
+  see Profile and Sign out) and, below `md`, the Menu button with its sheet; sections from
+  `configs/NavSections.constants.ts`, empty sections hidden;
   `components/layouts/`).
 - **Folders** (`code-standards` §4.6): `app/` wires store, providers and routes;
   `views/<page>/` holds one page and every part only it uses; `features/<name>/`

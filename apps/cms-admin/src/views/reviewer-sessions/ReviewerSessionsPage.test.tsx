@@ -220,7 +220,6 @@ describe('reviewer mode in the shell', () => {
       [`GET ${ROLES.LIST}`]: () => ({ status: 403, data: {} }),
     });
     expect(await screen.findByText(copy.banner.message)).toBeInTheDocument();
-    expect(screen.queryByRole('link', { name: COPY.session.securityLink })).not.toBeInTheDocument();
     expect(screen.queryByRole('link', { name: COPY.access.nav.reviewer })).not.toBeInTheDocument();
   });
 

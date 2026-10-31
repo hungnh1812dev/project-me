@@ -13,8 +13,10 @@ export const SESSION_COPY = {
   restoring: 'Restoring your session',
   signedInAs: 'Signed in as',
   signOut: 'Sign out',
-  securityLink: 'Security',
-  mainNav: 'Account',
+  profileLink: 'Profile',
+  changePasswordLink: 'Change password',
+  securityLink: 'Security settings',
+  accountMenu: (name: string) => `Account menu for ${name}`,
 } as const;
 
 export const PASSWORD_COPY = {

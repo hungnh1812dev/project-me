@@ -145,12 +145,12 @@ describe('SideMenu', () => {
     expect(menu.queryByRole('heading', { name: nav.singleTypes })).not.toBeInTheDocument();
   });
 
-  it('gives a reviewer no Security link', async () => {
-    await open({ ...TEST_USER, role: 'reviewer' }, {}, [{ ...readerRole, slug: 'reviewer' }]);
+  it('holds navigation only: no Sign out or Security link', async () => {
+    await open();
 
     await within(mainNav()).findByRole('link', { name: 'post' });
+    expect(screen.queryByRole('button', { name: COPY.session.signOut })).not.toBeInTheDocument();
     expect(screen.queryByRole('link', { name: COPY.session.securityLink })).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: COPY.session.signOut })).toBeInTheDocument();
   });
 
   it('marks the open page as current', async () => {

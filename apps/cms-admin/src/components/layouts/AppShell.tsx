@@ -4,10 +4,10 @@ import { useCurrentUser } from '@features/auth';
 import { ReviewerBanner } from '@features/reviewer/ReviewerBanner';
 import { Outlet } from 'react-router';
 
-import { MobileMenu } from './MobileMenu';
 import { AppNameLink, SideMenu } from './SideMenu';
+import { TopBar } from './TopBar';
 
-/** Layout of every signed-in page: side menu from `md` up, top bar with a menu sheet below. */
+/** Layout of every signed-in page: side menu from `md` up, top bar with the user menu on every width. */
 export function AppShell({ nav }: { nav: NavSource }) {
   const isReviewer = useCurrentUser()?.role === REVIEWER_ROLE_SLUG;
 
@@ -20,7 +20,7 @@ export function AppShell({ nav }: { nav: NavSource }) {
         <SideMenu nav={nav} />
       </aside>
       <div className="min-w-0 flex-1 md:overflow-y-auto">
-        <MobileMenu nav={nav} />
+        <TopBar nav={nav} />
         {isReviewer ? <ReviewerBanner /> : null}
         <main className="mx-auto max-w-5xl px-4 py-8 sm:px-6 sm:py-12">
           <Outlet />

@@ -62,7 +62,9 @@ describe('LoginPage', () => {
     expect(
       await screen.findByRole('heading', { level: 1, name: COPY.page.title }),
     ).toBeInTheDocument();
-    expect(screen.getByText(TEST_USER.displayName)).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: COPY.session.accountMenu(TEST_USER.displayName) }),
+    ).toBeInTheDocument();
     expect(api.callsTo(`POST ${LOGIN}`)[0]?.data).toBe(
       JSON.stringify({ email: TEST_USER.email, password: PASSWORD }),
     );

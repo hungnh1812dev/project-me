@@ -9,8 +9,10 @@
     "restoring": "Restoring your session",
     "signedInAs": "Signed in as",
     "signOut": "Sign out",
-    "securityLink": "Security",
-    "mainNav": "Account"
+    "profileLink": "Profile",
+    "changePasswordLink": "Change password",
+    "securityLink": "Security settings",
+    "accountMenu": "Account menu for SAMPLE"
   },
   "login": {
     "title": "Sign in",

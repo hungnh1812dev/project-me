@@ -56,9 +56,12 @@ describe('App', () => {
     expect(
       await screen.findByRole('heading', { level: 1, name: COPY.page.title }),
     ).toBeInTheDocument();
+    await userEvent.click(
+      screen.getByRole('button', { name: COPY.session.accountMenu(TEST_USER.displayName) }),
+    );
     expect(screen.getByText(TEST_USER.displayName)).toBeInTheDocument();
 
-    await userEvent.click(screen.getByRole('button', { name: COPY.session.signOut }));
+    await userEvent.click(screen.getByRole('menuitem', { name: COPY.session.signOut }));
     expect(await loginHeading()).toBeInTheDocument();
     expect(api.callsTo(`POST ${LOGOUT}`)).toHaveLength(1);
     expect(services.store.getState().auth.accessToken).toBeNull();
