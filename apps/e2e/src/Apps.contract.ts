@@ -19,7 +19,7 @@ export {
   MAX_FILES_PER_BATCH,
   MAX_PARALLEL_UPLOADS,
   MEDIA_ALT_MAX_LENGTH,
+  MEDIA_DEFAULT_PAGE_SIZE,
   MEDIA_MAX_BYTES_BY_KIND,
-  MEDIA_PAGE_SIZE,
 } from '../../cms-admin/src/features/media/Media.constants';
 export { COPY as WEB_COPY } from '../../web/src/configs/Copy.constants';

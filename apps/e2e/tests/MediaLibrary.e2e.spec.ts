@@ -14,7 +14,7 @@ const TEXT_FILE_NAME = `e2e-media-${RUN_ID}.txt`;
 const ALT_TEXT = `E2E alt ${RUN_ID}`;
 const ALT_PADDING = 'a';
 
-const row = (page: Page) => page.getByRole('row').filter({ hasText: FILE_NAME });
+const card = (page: Page) => page.getByRole('listitem').filter({ hasText: FILE_NAME });
 
 const dialogCopy = copy.uploadDialog;
 
@@ -71,8 +71,7 @@ test.describe.serial('owner: media library', () => {
     await dialog.getByRole('button', { name: dialogCopy.close, exact: true }).click();
     await expect(dialog).toBeHidden();
     await expect(page.getByText(copy.uploaded(1))).toBeVisible();
-    await expect(row(page)).toBeVisible();
-    await expect(row(page)).toContainText(copy.noAlt);
+    await expect(card(page)).toBeVisible();
   });
 
   test('alt text over the limit is refused inline without a request', async () => {
@@ -94,7 +93,7 @@ test.describe.serial('owner: media library', () => {
     await expect(dialog).toBeHidden();
   });
 
-  test('saving alt text shows it in the list; clearing it restores the placeholder', async () => {
+  test('saving alt text is kept; clearing it empties the field', async () => {
     const editButton = page.getByRole('button', {
       name: copy.editAltLabel(FILE_NAME),
     });
@@ -103,12 +102,17 @@ test.describe.serial('owner: media library', () => {
     await dialog.getByLabel(copy.altDialog.label).fill(ALT_TEXT);
     await dialog.getByRole('button', { name: copy.altDialog.save }).click();
     await expect(page.getByText(copy.altDialog.saved(FILE_NAME))).toBeVisible();
-    await expect(row(page)).toContainText(ALT_TEXT);
+    await expect(dialog).toBeHidden();
 
     await editButton.click();
+    await expect(dialog.getByLabel(copy.altDialog.label)).toHaveValue(ALT_TEXT);
     await dialog.getByLabel(copy.altDialog.label).fill('');
     await dialog.getByRole('button', { name: copy.altDialog.save }).click();
-    await expect(row(page)).toContainText(copy.noAlt);
+    await expect(dialog).toBeHidden();
+    await editButton.click();
+    await expect(dialog.getByLabel(copy.altDialog.label)).toHaveValue('');
+    await page.keyboard.press('Escape');
+    await expect(dialog).toBeHidden();
   });
 
   test('a file attached to a document keeps the delete dialog open with the in-use message', async () => {
@@ -123,15 +127,15 @@ test.describe.serial('owner: media library', () => {
     inUse.delete(FILE_NAME);
     await dialog.getByRole('button', { name: copy.deleteDialog.cancel }).click();
     await expect(dialog).toBeHidden();
-    // The page behind an open dialog is aria-hidden, so check the row after.
-    await expect(row(page)).toBeVisible();
+    // The page behind an open dialog is aria-hidden, so check the card after.
+    await expect(card(page)).toBeVisible();
   });
 
-  test('deleting an unused file removes its row', async () => {
+  test('deleting an unused file removes its card', async () => {
     await page.getByRole('button', { name: copy.deleteLabel(FILE_NAME) }).click();
     const dialog = page.getByRole('dialog');
     await dialog.getByRole('button', { name: copy.deleteDialog.submit(FILE_NAME) }).click();
     await expect(page.getByText(copy.deleteDialog.deleted(FILE_NAME))).toBeVisible();
-    await expect(row(page)).toHaveCount(0);
+    await expect(card(page)).toHaveCount(0);
   });
 });

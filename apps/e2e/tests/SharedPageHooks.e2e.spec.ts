@@ -1,13 +1,13 @@
 import { expect, test, type BrowserContext, type Route } from '@playwright/test';
 
-import { ADMIN_COPY, MEDIA_PAGE_SIZE } from '../src/Apps.contract';
+import { ADMIN_COPY, MEDIA_DEFAULT_PAGE_SIZE } from '../src/Apps.contract';
 import { HTTP } from '../src/E2e.constants';
 import { signInAsOwner } from '../src/Session.fixture';
 
 const copy = ADMIN_COPY.media;
 
 const MEDIA_API_PATTERN = /\/api\/v1\/media(\/[0-9a-f-]+)?(\?.*)?$/;
-const FILE_COUNT = MEDIA_PAGE_SIZE + 1;
+const FILE_COUNT = MEDIA_DEFAULT_PAGE_SIZE + 1;
 const nameOf = (index: number) => `hooks-${index}.png`;
 
 interface FakeFile {
@@ -60,16 +60,16 @@ async function pagedMediaApi(context: BrowserContext, requestedPages: number[]) 
       const url = new URL(request.url());
       const pageNumber = Number(url.searchParams.get('page') ?? '1');
       requestedPages.push(pageNumber);
-      const start = (pageNumber - 1) * MEDIA_PAGE_SIZE;
+      const start = (pageNumber - 1) * MEDIA_DEFAULT_PAGE_SIZE;
       return route.fulfill({
         status: HTTP.OK,
         contentType: 'application/json',
         headers,
         body: JSON.stringify({
-          data: files.slice(start, start + MEDIA_PAGE_SIZE),
+          data: files.slice(start, start + MEDIA_DEFAULT_PAGE_SIZE),
           meta: {
             page: pageNumber,
-            pageSize: MEDIA_PAGE_SIZE,
+            pageSize: MEDIA_DEFAULT_PAGE_SIZE,
             total: files.length,
           },
         }),
@@ -95,7 +95,7 @@ test('deleting the only row of the last page steps back and focus goes to the he
 
     await page.getByRole('button', { name: copy.pagination.next }).click();
     const lastName = nameOf(FILE_COUNT - 1);
-    await expect(page.getByRole('row').filter({ hasText: lastName })).toBeVisible();
+    await expect(page.getByRole('listitem').filter({ hasText: lastName })).toBeVisible();
 
     await page.getByRole('button', { name: copy.deleteLabel(lastName) }).click();
     await page
@@ -105,7 +105,7 @@ test('deleting the only row of the last page steps back and focus goes to the he
     await expect(page.getByRole('dialog')).toBeHidden();
 
     // The page steps back: the first file shows again, no empty page 2.
-    await expect(page.getByRole('row').filter({ hasText: nameOf(0) })).toBeVisible();
+    await expect(page.getByRole('listitem').filter({ hasText: nameOf(0) })).toBeVisible();
     expect(requestedPages.at(-1)).toBe(1);
     await expect(page.getByRole('heading', { level: 1, name: copy.title })).toBeFocused();
   } finally {

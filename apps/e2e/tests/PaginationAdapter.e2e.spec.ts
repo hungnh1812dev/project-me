@@ -1,13 +1,13 @@
 import { expect, test, type Page } from '@playwright/test';
 
-import { ADMIN_COPY, MEDIA_PAGE_SIZE } from '../src/Apps.contract';
+import { ADMIN_COPY, MEDIA_DEFAULT_PAGE_SIZE } from '../src/Apps.contract';
 import { HTTP } from '../src/E2e.constants';
 import { signInAsOwner } from '../src/Session.fixture';
 
 const copy = ADMIN_COPY.media;
 const MEDIA_LIST_PATTERN = /\/api\/v1\/media(\?.*)?$/;
 const LAST_PAGE_ROWS = 1;
-const TOTAL = MEDIA_PAGE_SIZE + LAST_PAGE_ROWS;
+const TOTAL = MEDIA_DEFAULT_PAGE_SIZE + LAST_PAGE_ROWS;
 
 function fakeFile(index: number) {
   return {
@@ -48,7 +48,7 @@ async function serveMediaList(
       headers,
       body: JSON.stringify({
         data: Array.from({ length: rowsOnPage(pageNumber) }, (_, i) => fakeFile(i)),
-        meta: { page: pageNumber, pageSize: MEDIA_PAGE_SIZE, total },
+        meta: { page: pageNumber, pageSize: MEDIA_DEFAULT_PAGE_SIZE, total },
       }),
     });
   });
@@ -59,7 +59,7 @@ test('the media list pages with the kit paginator: range, Previous / Next and di
 }) => {
   await serveMediaList(
     page,
-    (pageNumber) => (pageNumber === 1 ? MEDIA_PAGE_SIZE : LAST_PAGE_ROWS),
+    (pageNumber) => (pageNumber === 1 ? MEDIA_DEFAULT_PAGE_SIZE : LAST_PAGE_ROWS),
     TOTAL,
   );
   await signInAsOwner(page);
@@ -68,7 +68,7 @@ test('the media list pages with the kit paginator: range, Previous / Next and di
   const nav = page.getByRole('navigation', { name: copy.pagination.label });
   const previous = nav.getByRole('button', { name: copy.pagination.previous });
   const next = nav.getByRole('button', { name: copy.pagination.next });
-  await expect(nav).toContainText(copy.pagination.range(1, MEDIA_PAGE_SIZE, TOTAL));
+  await expect(nav).toContainText(copy.pagination.range(1, MEDIA_DEFAULT_PAGE_SIZE, TOTAL));
   await expect(previous).toBeDisabled();
   await expect(next).toBeEnabled();
 
@@ -78,5 +78,5 @@ test('the media list pages with the kit paginator: range, Previous / Next and di
   await expect(previous).toBeEnabled();
 
   await previous.click();
-  await expect(nav).toContainText(copy.pagination.range(1, MEDIA_PAGE_SIZE, TOTAL));
+  await expect(nav).toContainText(copy.pagination.range(1, MEDIA_DEFAULT_PAGE_SIZE, TOTAL));
 });

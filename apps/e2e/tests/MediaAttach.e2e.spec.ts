@@ -30,7 +30,8 @@ const photoField = (page: Page) => page.getByRole('group', { name: 'Photo' });
 /** The API route; the admin page `/media` has the same tail on another origin. */
 const MEDIA_API_PATH = `${new URL(e2eEnv.apiBaseUrl).pathname}${API_PATHS.MEDIA}`;
 
-const libraryRow = (page: Page, name: string) => page.getByRole('row').filter({ hasText: name });
+const libraryCard = (page: Page, name: string) =>
+  page.getByRole('listitem').filter({ hasText: name });
 
 const isWrite = (request: Request) =>
   request.url().includes(DOCUMENTS_PATH) &&
@@ -148,8 +149,8 @@ test.describe.serial('owner: attach media to a profile', () => {
     await expect(dialog).toContainText(copy.errors.inUse);
     await dialog.getByRole('button', { name: copy.deleteDialog.cancel }).click();
     await expect(dialog).toBeHidden();
-    // The page behind an open dialog is aria-hidden, so check the row after.
-    await expect(libraryRow(page, SECOND_FILE_NAME)).toBeVisible();
+    // The page behind an open dialog is aria-hidden, so check the card after.
+    await expect(libraryCard(page, SECOND_FILE_NAME)).toBeVisible();
   });
 
   test('removing the photo and saving clears it; the file stays, then deletes', async () => {
@@ -169,13 +170,13 @@ test.describe.serial('owner: attach media to a profile', () => {
     await expect(photoField(page)).toContainText(copy.input.empty);
 
     await page.goto('/media');
-    await expect(libraryRow(page, SECOND_FILE_NAME)).toBeVisible();
+    await expect(libraryCard(page, SECOND_FILE_NAME)).toBeVisible();
     await page.getByRole('button', { name: copy.deleteLabel(SECOND_FILE_NAME) }).click();
     await page
       .getByRole('dialog')
       .getByRole('button', { name: copy.deleteDialog.submit(SECOND_FILE_NAME) })
       .click();
-    await expect(libraryRow(page, SECOND_FILE_NAME)).toHaveCount(0);
+    await expect(libraryCard(page, SECOND_FILE_NAME)).toHaveCount(0);
   });
 
   test('uploading in the field attaches the new file; the console stayed clean', async () => {
@@ -210,7 +211,7 @@ test.describe.serial('owner: attach media to a profile', () => {
       },
     );
     await page.goto('/media');
-    await expect(libraryRow(page, THIRD_FILE_NAME)).toBeVisible();
+    await expect(libraryCard(page, THIRD_FILE_NAME)).toBeVisible();
     expect(third).toBeDefined();
     await page.goto(editUrl);
     await photoField(page).getByTestId('media-file-input').setInputFiles({
