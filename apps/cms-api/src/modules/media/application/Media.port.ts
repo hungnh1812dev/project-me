@@ -51,7 +51,8 @@ export interface PreparedUpload {
  * and hashes the bytes that will be stored. Both throw `DomainError`.
  */
 export interface UploadProcessor {
-  receive(upload: UploadStream): Promise<ReceivedUpload>;
+  /** `acceptsAlt: false` (a replacement) makes an `alt` field an unexpected part. */
+  receive(upload: UploadStream, options?: { acceptsAlt: boolean }): Promise<ReceivedUpload>;
   prepare(received: ReceivedUpload): Promise<PreparedUpload>;
 }
 
@@ -102,6 +103,19 @@ export interface NewMediaFile {
   readonly createdById: number;
 }
 
+/** The stored bytes and their derived values, as they replace a file's current ones. */
+export interface ReplacementFile {
+  readonly fileName: string;
+  readonly mimeType: string;
+  readonly size: number;
+  readonly width: number | null;
+  readonly height: number | null;
+  readonly storageKey: string;
+  readonly sha256: string;
+  readonly url: string;
+  readonly thumbnailUrl: string | null;
+}
+
 /** A soft-deleted row old enough to purge. */
 export interface PurgeCandidate {
   readonly id: number;
@@ -135,6 +149,20 @@ export interface MediaRepository {
   }): Promise<MediaPage>;
   /** Internal id of a live file the condition reaches. */
   findLiveId(documentId: string, rowCondition: RowCondition | null): Promise<number | undefined>;
+  /** Internal id and MIME type of a live file the condition reaches. */
+  findLiveTarget(
+    documentId: string,
+    rowCondition: RowCondition | null,
+  ): Promise<{ id: number; mimeType: string } | undefined>;
+  /**
+   * Swaps the file's bytes in the caller's transaction (the row must be
+   * locked) and inserts a soft-deleted row that takes the old storage key,
+   * so the purge job removes the old object later.
+   */
+  replaceFile(
+    unit: UnitOfWork,
+    change: { mediaId: number; file: ReplacementFile; replacedAt: Date; updatedById: number },
+  ): Promise<{ record: MediaRecord; previousSha256: string }>;
   /** Sets the alt text in one statement that also applies the condition. */
   updateAlt(change: {
     documentId: string;

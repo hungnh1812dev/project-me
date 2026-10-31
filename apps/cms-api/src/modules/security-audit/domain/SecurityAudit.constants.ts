@@ -43,6 +43,8 @@ export const AUDIT_ACTIONS = {
   API_TOKEN_UPDATED: 'api_token.updated',
   API_TOKEN_REVOKED: 'api_token.revoked',
   MEDIA_DELETED: 'media.deleted',
+  /** A library file's bytes were replaced in place (`metadata`: old and new sha256). */
+  MEDIA_REPLACED: 'media.replaced',
   /** Owner turned reviewer access on or off (D15). */
   REVIEWER_SETTINGS_CHANGED: 'reviewer.settings_changed',
   /** A visitor started a reviewer session; actor = the new reviewer account. */

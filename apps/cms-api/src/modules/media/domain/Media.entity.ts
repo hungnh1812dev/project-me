@@ -78,6 +78,14 @@ export const mediaNotFound = () =>
     message: MEDIA_ERROR_MESSAGES.NOT_FOUND,
   });
 
+/** A replacement of another kind than the stored file (image, pdf, video). */
+export const mediaFamilyMismatch = () =>
+  new DomainError({
+    kind: DOMAIN_ERROR_KINDS.INVALID_INPUT,
+    errorCode: MEDIA_ERROR_CODES.INVALID_UPLOAD,
+    message: MEDIA_ERROR_MESSAGES.FAMILY_MISMATCH,
+  });
+
 export const mediaInUse = () =>
   new DomainError({
     kind: DOMAIN_ERROR_KINDS.CONFLICT,

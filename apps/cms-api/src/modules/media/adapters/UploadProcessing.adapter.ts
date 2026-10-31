@@ -89,7 +89,10 @@ interface Spooled {
  */
 @Injectable()
 export class UploadProcessingAdapter implements UploadProcessor {
-  async receive(upload: UploadStream): Promise<ReceivedUpload> {
+  async receive(
+    upload: UploadStream,
+    options: { acceptsAlt: boolean } = { acceptsAlt: true },
+  ): Promise<ReceivedUpload> {
     const { body } = upload;
     if (upload.declaredLength !== null && upload.declaredLength > MEDIA_MAX_REQUEST_BYTES) {
       throw tooLarge();
@@ -138,8 +141,14 @@ export class UploadProcessingAdapter implements UploadProcessor {
       };
 
       parser.on('field', (name, value, info) => {
-        if (name !== UPLOAD_FIELDS.ALT) {
-          fail(invalidUpload(MEDIA_ERROR_MESSAGES.UNEXPECTED_PART));
+        if (name !== UPLOAD_FIELDS.ALT || !options.acceptsAlt) {
+          fail(
+            invalidUpload(
+              options.acceptsAlt
+                ? MEDIA_ERROR_MESSAGES.UNEXPECTED_PART
+                : MEDIA_ERROR_MESSAGES.UNEXPECTED_REPLACE_PART,
+            ),
+          );
           return;
         }
         if (info.valueTruncated || !isAltWithinLimit(value)) {

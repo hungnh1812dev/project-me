@@ -74,6 +74,13 @@ export function allowedMediaTypeOf(mime: string): AllowedMediaType | undefined {
     : undefined;
 }
 
+/** True when both types are allowlisted and of the same kind (image, pdf or video). */
+export function isSameMediaFamily(currentMime: string, replacementMime: string): boolean {
+  const current = allowedMediaTypeOf(currentMime);
+  const replacement = allowedMediaTypeOf(replacementMime);
+  return current !== undefined && replacement !== undefined && current.kind === replacement.kind;
+}
+
 /**
  * Client file name reduced to a safe display name: no path, no control
  * characters, bounded length. It is never used as a storage key.

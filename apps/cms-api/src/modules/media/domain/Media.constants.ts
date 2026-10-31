@@ -24,6 +24,9 @@ export const MEDIA_ERROR_MESSAGES = {
   NOT_MULTIPART: 'Send the file as multipart/form-data.',
   NO_FILE: 'The request has no file.',
   UNEXPECTED_PART: 'Send one "file" part and an optional "alt" field only.',
+  UNEXPECTED_REPLACE_PART: 'Send one "file" part only.',
+  FAMILY_MISMATCH:
+    'The new file must be the same kind as the file it replaces (image, PDF or video).',
   ALT_TOO_LONG: 'The alt text is too long.',
   UNSUPPORTED_TYPE:
     'This file type is not allowed. Allowed: JPEG, PNG, WebP, GIF, AVIF, PDF and MP4.',

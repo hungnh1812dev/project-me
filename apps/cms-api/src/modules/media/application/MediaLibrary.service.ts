@@ -114,7 +114,8 @@ export class MediaLibraryService {
     });
   }
 
-  private async rowConditionOf(
+  /** The actor's row filter for the action; 403 when the action is not allowed at all. */
+  async rowConditionOf(
     actor: ActorContext,
     action: PermissionAction,
   ): Promise<RowCondition | null> {

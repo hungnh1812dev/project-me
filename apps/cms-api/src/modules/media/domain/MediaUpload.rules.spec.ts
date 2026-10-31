@@ -3,6 +3,7 @@ import {
   allowedMediaTypeOf,
   escapeLikePattern,
   isAltWithinLimit,
+  isSameMediaFamily,
   MEDIA_MIME_FILTERS,
   mimeTypesOfFilter,
   normalizeAlt,
@@ -81,5 +82,15 @@ describe('media list filters', () => {
   it('escapes backslash, percent and underscore', () => {
     expect(escapeLikePattern('a%b_c\\d')).toBe('a\\%b\\_c\\\\d');
     expect(escapeLikePattern('plain')).toBe('plain');
+  });
+});
+
+describe('isSameMediaFamily', () => {
+  it('matches types of one kind only', () => {
+    expect(isSameMediaFamily('image/jpeg', 'image/webp')).toBe(true);
+    expect(isSameMediaFamily('application/pdf', 'application/pdf')).toBe(true);
+    expect(isSameMediaFamily('image/png', 'application/pdf')).toBe(false);
+    expect(isSameMediaFamily('video/mp4', 'image/png')).toBe(false);
+    expect(isSameMediaFamily('image/svg+xml', 'image/svg+xml')).toBe(false);
   });
 });

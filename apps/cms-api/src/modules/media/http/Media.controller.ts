@@ -9,6 +9,7 @@ import {
   Param,
   Patch,
   Post,
+  Put,
   Query,
   Req,
   UseGuards,
@@ -40,6 +41,7 @@ import {
 import { JwtAuthGuard, type AuthenticatedRequest } from '../../identity';
 import type { UploadStream } from '../application/Media.port';
 import { MediaLibraryService } from '../application/MediaLibrary.service';
+import { ReplaceMediaFileService } from '../application/ReplaceMediaFile.service';
 import { UploadMediaService } from '../application/UploadMedia.service';
 import type { MediaRecord, MediaView } from '../domain/Media.entity';
 import { isAltWithinLimit, MEDIA_MIME_FILTERS, normalizeAlt } from '../domain/MediaUpload.rules';
@@ -127,6 +129,7 @@ export class MediaController {
   constructor(
     private readonly library: MediaLibraryService,
     private readonly uploads: UploadMediaService,
+    private readonly replacements: ReplaceMediaFileService,
     private readonly clientIp: ClientIpResolver,
   ) {}
 
@@ -142,6 +145,30 @@ export class MediaController {
     const record = await this.uploads.upload(
       requireAccountActor(req.user.actor),
       uploadStreamOf(req),
+    );
+    return mediaViewOf(record);
+  }
+
+  /**
+   * Replaces the bytes in place and keeps the id and alt. One `file` part only;
+   * same upload pipeline and throttle counters as `POST /media`.
+   */
+  @Put(`${MEDIA_ROUTES.BY_ID}/file`)
+  @Header(NO_STORE_HEADER.NAME, NO_STORE_HEADER.VALUE)
+  @Throttle(MEDIA_RATE_LIMIT_POLICIES.MEDIA_UPLOAD)
+  @RequirePermission({
+    action: PermissionAction.update,
+    subject: MEDIA_SUBJECT,
+  })
+  async replaceFile(
+    @Req() req: AuthenticatedRequest,
+    @Param(ID_PARAM) id: string,
+  ): Promise<MediaView> {
+    const record = await this.replacements.replace(
+      requireAccountActor(req.user.actor),
+      parseRequest(documentIdSchema, id),
+      uploadStreamOf(req),
+      clientMetaOf(this.clientIp, req),
     );
     return mediaViewOf(record);
   }

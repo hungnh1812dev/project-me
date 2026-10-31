@@ -21,6 +21,7 @@ import {
 } from './application/Media.port';
 import { MediaLibraryService } from './application/MediaLibrary.service';
 import { PurgeDeletedMediaService } from './application/PurgeDeletedMedia.service';
+import { ReplaceMediaFileService } from './application/ReplaceMediaFile.service';
 import { UploadMediaService } from './application/UploadMedia.service';
 import { MediaController } from './http/Media.controller';
 import { MediaPurgeJob } from './jobs/MediaPurge.job';
@@ -68,6 +69,7 @@ export function createMediaStorage(config: IAppConfig): MediaStorage {
     DocumentMediaService,
     PurgeDeletedMediaService,
     UploadMediaService,
+    ReplaceMediaFileService,
     MediaPurgeJob,
     { provide: MEDIA_REPOSITORY, useClass: PrismaMediaRepository },
     { provide: MEDIA_REFERENCE_CHECKER, useClass: MediaReferenceAdapter },

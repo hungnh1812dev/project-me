@@ -12,6 +12,7 @@ import type {
   MediaRepository,
   NewMediaFile,
   PurgeCandidate,
+  ReplacementFile,
 } from '../application/Media.port';
 import type { MediaPage, MediaRecord } from '../domain/Media.entity';
 
@@ -158,6 +159,56 @@ export class PrismaMediaRepository implements MediaRepository {
       )
       .executeTakeFirst();
     return row === undefined ? undefined : Number((row as { id: number }).id);
+  }
+
+  async findLiveTarget(
+    documentId: string,
+    rowCondition: RowCondition | null,
+  ): Promise<{ id: number; mimeType: string } | undefined> {
+    const row = await this.content.db
+      .selectFrom(MEDIA_TABLE)
+      .select(['id', 'mime_type'])
+      .where('document_id', '=', documentId)
+      .where(DELETED_AT_COLUMN, 'is', null)
+      .$if(rowCondition !== null, (qb) =>
+        qb.where(rowCondition as NonNullable<typeof rowCondition>),
+      )
+      .executeTakeFirst();
+    return row === undefined
+      ? undefined
+      : { id: Number(row.id), mimeType: row.mime_type as string };
+  }
+
+  async replaceFile(
+    unit: UnitOfWork,
+    change: { mediaId: number; file: ReplacementFile; replacedAt: Date; updatedById: number },
+  ): Promise<{ record: MediaRecord; previousSha256: string }> {
+    const tx = prismaTxOf(unit);
+    const { mediaId, file, replacedAt, updatedById } = change;
+    const previous = await tx.fileLibrary.findUniqueOrThrow({ where: { id: mediaId } });
+    // The new key goes first: storage_key is unique and the tombstone takes the old one.
+    const record = await tx.fileLibrary.update({
+      where: { id: mediaId },
+      data: { ...file, updatedById },
+    });
+    await tx.fileLibrary.create({
+      data: {
+        fileName: previous.fileName,
+        mimeType: previous.mimeType,
+        size: previous.size,
+        width: previous.width,
+        height: previous.height,
+        storageKey: previous.storageKey,
+        sha256: previous.sha256,
+        url: previous.url,
+        thumbnailUrl: previous.thumbnailUrl,
+        provider: previous.provider,
+        createdById: previous.createdById,
+        updatedById,
+        deletedAt: replacedAt,
+      },
+    });
+    return { record, previousSha256: previous.sha256 };
   }
 
   async updateAlt(change: {
