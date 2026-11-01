@@ -21,9 +21,7 @@ describe('Tooltip', () => {
     renderTooltip();
     await userEvent.hover(screen.getByRole('button', { name: 'Info' }));
     expect(screen.queryByRole('tooltip')).not.toBeInTheDocument();
-    expect(await screen.findByRole('tooltip', {}, { timeout: 2000 })).toHaveTextContent(
-      'Helpful text',
-    );
+    expect(await screen.findByRole('tooltip')).toHaveTextContent('Helpful text');
   });
 
   it('opens on keyboard focus and closes on Escape', async () => {

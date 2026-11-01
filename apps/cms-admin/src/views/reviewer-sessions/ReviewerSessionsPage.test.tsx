@@ -111,7 +111,7 @@ describe('ReviewerSessionsPage', () => {
       [`GET ${REVIEWER.SESSIONS}`]: () => ({ status: 500, data: {} }),
     });
     // A 5xx retries once (HEALTH_QUERY_RETRY) before the error shows.
-    expect(await screen.findByText(copy.loadFailed, {}, { timeout: 4000 })).toBeInTheDocument();
+    expect(await screen.findByText(copy.loadFailed)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: COPY.access.errors.retry })).toBeInTheDocument();
   });
 

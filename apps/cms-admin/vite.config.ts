@@ -7,6 +7,9 @@ import { defineConfig } from 'vitest/config';
 /** Used when DEV_SERVER_PORT is not set; differs from web so both can run. */
 const DEFAULT_DEV_SERVER_PORT = 5173;
 
+/** Form-heavy page tests exceed the 5 s default when the whole monorepo's tests run in parallel. */
+const TEST_TIMEOUT_MS = 20_000;
+
 /**
  * Tiptap and the packages only it pulls in. Kept in one lazy chunk so none of
  * them lands in the eager `vendor` chunk.
@@ -48,6 +51,7 @@ export default defineConfig(({ mode }) => {
       env: { VITE_API_BASE_URL: 'http://domain.localhost/api/v1' },
       setupFiles: ['./test/Vitest.setup.ts'],
       include: ['src/**/*.test.{ts,tsx}'],
+      testTimeout: TEST_TIMEOUT_MS,
     },
     build: {
       rollupOptions: {

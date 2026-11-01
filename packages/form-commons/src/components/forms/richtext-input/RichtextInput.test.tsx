@@ -130,7 +130,7 @@ describe('RichtextInput toolbar', () => {
     const user = userEvent.setup();
     await renderEditor();
     await user.hover(screen.getByRole('button', { name: 'Bold' }));
-    expect(await screen.findByRole('tooltip', {}, { timeout: 2000 })).toHaveTextContent('Bold');
+    expect(await screen.findByRole('tooltip')).toHaveTextContent('Bold');
   });
 
   it('wraps on narrow widths', async () => {
