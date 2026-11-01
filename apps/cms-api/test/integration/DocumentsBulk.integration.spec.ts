@@ -38,6 +38,7 @@ import {
   TEST_SECRET_32_BYTES,
   TEST_WEB_ORIGIN,
 } from '../fixtures/Env.fixture';
+import { seedMediaFile } from '../fixtures/Media.fixture';
 import { startPostgres, type TestPostgres } from '../fixtures/Postgres.fixture';
 import { createTestApp } from '../fixtures/TestApp.fixture';
 
@@ -458,7 +459,8 @@ describe('document bulk (T34; Postgres 17 via Testcontainers)', () => {
     });
 
     it('stores only the richtext img from the active media origin', async () => {
-      const body = `<p><img src="${FAKE_STORAGE_ORIGIN}/a.png" alt="a" data-media-id="0197f3a0-7b1c-7c3e-8a52-0123456789ab"><img src="https://evil.example/b.png" alt="b"></p>`;
+      const mediaId = await seedMediaFile(db.prisma);
+      const body = `<p><img src="${FAKE_STORAGE_ORIGIN}/a.png" alt="a" data-media-id="${mediaId}"><img src="https://evil.example/b.png" alt="b"></p>`;
       const res = await bulk('article', 'create', owner, {
         atomic: true,
         items: [article('Img', 3, { values: { title: 'Img', priority: 3, body } })],
