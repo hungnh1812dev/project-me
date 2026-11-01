@@ -33,7 +33,10 @@ export const FIELD_TYPE_SPECS = {
   // The only richtext rule: no path stores the string as it came.
   richtext: {
     ...TEXT_LIKE,
-    coerceValue: (value) => (typeof value === 'string' ? sanitizeRichtext(value) : undefined),
+    coerceValue: (value, context) =>
+      typeof value === 'string'
+        ? sanitizeRichtext(value, { imageOrigins: context?.richtextImageOrigins })
+        : undefined,
   },
   integer: {
     columnType: 'integer',

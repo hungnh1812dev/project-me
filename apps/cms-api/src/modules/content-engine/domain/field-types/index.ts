@@ -1,5 +1,6 @@
 export { FIELD_TYPE_SPECS, fieldTypeOf } from './FieldTypeRegistry.rules';
 export {
+  type CoerceContext,
   type FieldTypeSpec,
   type FieldValueKind,
   type GraphqlOutputName,

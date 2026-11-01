@@ -73,6 +73,9 @@ describe('public constants snapshot', () => {
     );
     expect(Object.keys(constants.systemSubjects)).toContain('reviewer_settings');
     expect(constants.richtextUrlSchemes).toEqual(['http', 'https', 'mailto', 'tel']);
+    expect(constants.richtextTextColors).toHaveLength(10);
+    expect(constants.richtextTextColors[0]).toEqual({ name: 'default', hex: null });
+    expect(constants.richtextTextAlignments).toEqual(['left', 'center', 'right', 'justify']);
     expect(constants.errorCodes.auth.INVALID_CREDENTIALS).toBe('AUTH_INVALID_CREDENTIALS');
   });
 

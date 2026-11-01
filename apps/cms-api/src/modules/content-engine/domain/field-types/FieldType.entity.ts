@@ -11,6 +11,12 @@ export type GraphqlOutputName =
  * means adding one entry to `FIELD_TYPE_SPECS`; every property is required so
  * a missing answer is a compile error, never a silent default.
  */
+/** Request-scoped facts a type may need to check a value (additive; types that do not need it ignore it). */
+export interface CoerceContext {
+  /** Origins a richtext `img` src may point to (the active media storage's delivery origin). */
+  readonly richtextImageOrigins?: readonly string[];
+}
+
 export interface FieldTypeSpec {
   /** Postgres column type. */
   readonly columnType: string;
@@ -34,7 +40,7 @@ export interface FieldTypeSpec {
    * the type. Never throws, never returns the input unchecked for a type
    * that has a rule.
    */
-  readonly coerceValue: (value: unknown) => unknown;
+  readonly coerceValue: (value: unknown, context?: CoerceContext) => unknown;
   /** API value -> column value, for types the driver cannot send as they are. */
   readonly encodeForColumn?: (value: unknown) => unknown;
 }

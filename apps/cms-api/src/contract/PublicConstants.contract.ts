@@ -1,7 +1,11 @@
 import { ERROR_CODES } from '../common/constants/Error.constants';
 import { ACCESS_ERROR_CODES, PERMISSION_ACTIONS, SYSTEM_SUBJECT_ACTIONS } from '../modules/access';
 import { BACKUPS_ERROR_CODES } from '../modules/backups';
-import { RICHTEXT_ALLOWED_URL_SCHEMES } from '../modules/content-engine';
+import {
+  RICHTEXT_ALLOWED_URL_SCHEMES,
+  RICHTEXT_TEXT_ALIGNMENTS,
+  RICHTEXT_TEXT_COLORS,
+} from '../modules/content-engine';
 import {
   AUTH_ERROR_CODES,
   OTP,
@@ -51,6 +55,8 @@ export function buildPublicConstants() {
       Object.entries(SYSTEM_SUBJECT_ACTIONS).map(([subject, actions]) => [subject, [...actions]]),
     ),
     richtextUrlSchemes: [...RICHTEXT_ALLOWED_URL_SCHEMES],
+    richtextTextColors: RICHTEXT_TEXT_COLORS.map((color) => ({ ...color })),
+    richtextTextAlignments: [...RICHTEXT_TEXT_ALIGNMENTS],
   };
 }
 

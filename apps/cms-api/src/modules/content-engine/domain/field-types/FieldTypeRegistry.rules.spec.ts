@@ -72,6 +72,14 @@ describe('field type registry', () => {
 describe('coerceValue', () => {
   const coerce = (type: string, value: unknown) => fieldTypeOf(type)?.coerceValue(value);
 
+  it('passes the image origins to the richtext sanitizer and ignores them elsewhere', () => {
+    const html = '<img src="https://res.cloudinary.com/a.png">';
+    const ctx = { richtextImageOrigins: ['https://res.cloudinary.com'] };
+    expect(fieldTypeOf('richtext')?.coerceValue(html, ctx)).toContain('<img');
+    expect(fieldTypeOf('richtext')?.coerceValue(html)).toBe('');
+    expect(fieldTypeOf('text')?.coerceValue('x', ctx)).toBe('x');
+  });
+
   it('sanitizes richtext and never stores it raw', () => {
     const out = coerce('richtext', '<p>hi</p><img src=x onerror=alert(1)>');
     expect(out).toBe('<p>hi</p>');

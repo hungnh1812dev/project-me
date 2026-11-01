@@ -138,6 +138,27 @@ export const SINGLE_COMPONENT_MAX_ITEMS = 1;
 export const RICHTEXT_ALLOWED_URL_SCHEMES = ['http', 'https', 'mailto', 'tel'] as const;
 
 /**
+ * Text colours the richtext editor offers and the sanitizer keeps (ADR 0020 §9).
+ * `hex: null` clears the colour. Every hex has at least 4.5:1 contrast on white;
+ * stored lower case as `style="color: #rrggbb"` on `span`.
+ */
+export const RICHTEXT_TEXT_COLORS = [
+  { name: 'default', hex: null },
+  { name: 'gray', hex: '#475569' },
+  { name: 'red', hex: '#b91c1c' },
+  { name: 'orange', hex: '#c2410c' },
+  { name: 'amber', hex: '#b45309' },
+  { name: 'green', hex: '#15803d' },
+  { name: 'teal', hex: '#0f766e' },
+  { name: 'blue', hex: '#1d4ed8' },
+  { name: 'violet', hex: '#6d28d9' },
+  { name: 'pink', hex: '#be185d' },
+] as const;
+
+/** `text-align` values kept on paragraphs and headings. */
+export const RICHTEXT_TEXT_ALIGNMENTS = ['left', 'center', 'right', 'justify'] as const;
+
+/**
  * Postgres reserved key words (both "reserved" and "reserved (can be function
  * or type)" in the SQL Key Words appendix, PG 16). Neither kind can be used
  * unquoted as a table or column name.

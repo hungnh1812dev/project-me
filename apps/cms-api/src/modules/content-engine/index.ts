@@ -12,6 +12,8 @@ export {
   CONTENT_STATUSES,
   MEDIA_FIELD_TYPE,
   RICHTEXT_ALLOWED_URL_SCHEMES,
+  RICHTEXT_TEXT_ALIGNMENTS,
+  RICHTEXT_TEXT_COLORS,
   ROOT_SYSTEM_COLUMNS,
   SCALAR_FIELD_TYPES,
 } from './domain/ContentEngine.constants';
@@ -36,6 +38,7 @@ export {
   parseUuid,
   UUID_PATTERN,
   VALUE_PATTERNS,
+  type CoerceContext,
   type FieldTypeSpec,
   type FieldValueKind,
   type GraphqlOutputName,
