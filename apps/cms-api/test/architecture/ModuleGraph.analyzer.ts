@@ -1,14 +1,10 @@
 import { relative, sep } from 'node:path';
 
+import { listSourceFiles, reachedFilesOf, resolveImports } from './ImportGraph.analyzer';
 import {
-  listSourceFiles,
-  reachedFilesOf,
-  resolveImports,
-} from './ImportGraph.analyzer';
-import {
+  ACCESS_DOCUMENT_AUTH_DIRECTORY,
   ACCESS_MANAGEMENT_DIRECTORY,
   ACCESS_MODULE_DIRECTORY,
-  ACCESS_DOCUMENT_AUTH_DIRECTORY,
   MODULE_NODES,
   MODULES_DIRECTORY,
   PLATFORM_DIRECTORIES,
@@ -23,14 +19,7 @@ export interface FileEdge {
   toNode: ModuleNode;
 }
 
-export const FILE_LAYERS = [
-  'domain',
-  'application',
-  'adapters',
-  'http',
-  'cli',
-  'jobs',
-] as const;
+export const FILE_LAYERS = ['domain', 'application', 'adapters', 'http', 'cli', 'jobs'] as const;
 
 export type FileLayer = (typeof FILE_LAYERS)[number] | 'wiring' | 'unlayered';
 
@@ -47,9 +36,7 @@ const isLayerFolder = (segment: string | undefined): boolean =>
 /** The folder name of the module a file sits in (`modules/<name>/...`), or `null`. */
 export function moduleFolderOf(file: string): string | null {
   const [top, moduleName] = file.split(sep);
-  return top === MODULES_DIRECTORY && moduleName !== undefined
-    ? moduleName
-    : null;
+  return top === MODULES_DIRECTORY && moduleName !== undefined ? moduleName : null;
 }
 
 /**
@@ -62,13 +49,11 @@ export function layerOfFile(file: string): FileLayer {
   const [top, moduleName, ...rest] = file.split(sep);
   if (top !== MODULES_DIRECTORY || moduleName === undefined) return 'unlayered';
   const inner =
-    moduleName === ACCESS_MODULE_DIRECTORY &&
-    ACCESS_SUBMODULE_DIRECTORIES.includes(rest[0] ?? '')
+    moduleName === ACCESS_MODULE_DIRECTORY && ACCESS_SUBMODULE_DIRECTORIES.includes(rest[0] ?? '')
       ? rest.slice(1)
       : rest;
   const [first = '', ...below] = inner;
-  if (below.length === 0)
-    return WIRING_FILE.test(first) ? 'wiring' : 'unlayered';
+  if (below.length === 0) return WIRING_FILE.test(first) ? 'wiring' : 'unlayered';
   return isLayerFolder(first) ? (first as FileLayer) : 'unlayered';
 }
 

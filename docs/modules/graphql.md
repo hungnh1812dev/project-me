@@ -1,6 +1,12 @@
+---
+module: apps/cms-api/src/modules/graphql
+app: cms-api
+summary: Read-only GraphQL endpoint for documents, same rules as the REST reads
+---
+
 # GraphQL read API (cms-api)
 
-Status: **accepted** (user answers Q-G1..Q-G7, 2026-10-21; limits built in GQ3). SPEC D18. The
+Status: **accepted** (user answers Q-G1..Q-G7, 2026-10-21). SPEC D18. The
 `(Q-G#)` markers and the questions at the end record the decisions. ADR: [0003](../adr/0003-graphql-read-gateway.md).
 
 ## Scope
@@ -48,7 +54,7 @@ operationName? }`, at most `GRAPHQL_LIMITS.MAX_BODY_BYTES`; an array body
      actor cannot `read` (`evaluator.rowFilter(actor, read, slug).allowed`
      false, incl. a token scope without it) is reported **with exactly the
      same error as an unknown field** (`Cannot query field "x" on type
-"Query".`). Hidden = unknown, as in REST (T17b: hidden = 404).
+"Query".`). Hidden = unknown, as in REST (hidden = 404).
    - production only: `NoSchemaIntrospectionCustomRule`, and "Did you mean"
      suggestions are stripped from every message.
      Any validation failure: HTTP 400, `{ errors }`, nothing executed.
@@ -114,16 +120,21 @@ type PageMeta {
 type Media {
   id: ID!
   fileName: String
+  mimeType: String!
   url: String
   thumbnailUrl: String
   provider: String
   alt: String
   size: Int
+  width: Int
+  height: Int
+  sha256: String
   createdAt: DateTime
+  updatedAt: DateTime!
 }
 ```
 
-`Media` mirrors the T29 embed (`id` is the media uuid; the internal integer id
+`Media` mirrors the REST media embed (`id` is the media uuid; the internal integer id
 never appears).
 
 ### Per content type (example: `cv-page`, collection)
@@ -216,16 +227,16 @@ type Query {
 
 ## Authorization (no new rules)
 
-| Rule                                       | Where it is enforced                                  |
-| ------------------------------------------ | ----------------------------------------------------- |
-| Who may call (anon / JWT / token)          | `DocumentAuthGuard` (reviewer actor arrives with T32) |
-| `read` on the type, hidden = unknown       | `ContentTypeVisibilityRule` (validation) + service    |
-| drafts need read + update (else FORBIDDEN) | `DocumentsQueryService` scope                         |
-| row conditions (ABAC)                      | service SQL                                           |
-| field masking, `_maskedFields`             | `RecordSerializer` (only data path)                   |
-| filter/sort on unreadable field            | `QueryGuard` -> `FIELD_NOT_READABLE`                  |
-| token = scope ∩ creator's current rights   | `ApiTokenGuard` / evaluator, per request (D5)         |
-| anonymous throttle                         | `DOCUMENT_READ_ANONYMOUS`, per HTTP request           |
+| Rule                                       | Where it is enforced                               |
+| ------------------------------------------ | -------------------------------------------------- |
+| Who may call (anon / JWT / token)          | `DocumentAuthGuard`                                |
+| `read` on the type, hidden = unknown       | `ContentTypeVisibilityRule` (validation) + service |
+| drafts need read + update (else FORBIDDEN) | `DocumentsQueryService` scope                      |
+| row conditions (ABAC)                      | service SQL                                        |
+| field masking, `_maskedFields`             | `RecordSerializer` (only data path)                |
+| filter/sort on unreadable field            | `QueryGuard` -> `FIELD_NOT_READABLE`               |
+| token = scope ∩ creator's current rights   | `ApiTokenGuard` / evaluator, per request (D5)      |
+| anonymous throttle                         | `DOCUMENT_READ_ANONYMOUS`, per HTTP request        |
 
 Policy checks stay in `access` (SPEC §10); the GraphQL module never compares
 role slugs.
@@ -329,7 +340,7 @@ Architecture test (like `RecordSerializer.architecture.spec.ts`): files in
   `${API_INTERNAL_URL}/graphql` with no `Authorization` and no forwarded
   cookies or client IP headers, cached for `WEB_REVALIDATE_SECONDS`
   (60 s prod, 0 smoke). Any `errors` entry or non-200 = error state.
-- Browser (T33/T32 refetch): `lib/graphql/graphql-request.ts` POSTs the same
+- Browser (refetch after sign-in or a reviewer session): `lib/graphql/graphql-request.ts` POSTs the same
   query through the Axios client to `NEXT_PUBLIC_API_BASE_URL` + `/graphql`
   with the in-memory Bearer token.
 - Contract test: a web Vitest test validates every web query document
@@ -351,27 +362,24 @@ Architecture test (like `RecordSerializer.architecture.spec.ts`): files in
 - **Q-G7 which CV**: the web shows the published cv-page with `isMain = true`
   (newest `updatedAt` if several; none = empty state).
 
-## Implementation notes (GQ1)
+## Implementation notes
 
 - `graphql` is pinned to 17.0.2 (the current stable; `parse` supports
   `maxTokens`). Scalars use the v17 `coerceOutputValue` / `coerceInputValue` /
   `coerceInputLiteral` API (the v16 `serialize` / `parseValue` / `parseLiteral`
-  are deprecated in v17). The web contract test (T30) pins the same version.
+  are deprecated in v17). The web contract test pins the same version.
 - A **non-repeatable** component field is its one item (or `null`), not a
   list: the serializer returns a list of at most one item, the resolver
   unwraps it. Repeatable = `[T!]`, masked = `null`.
 - Each root field carries `extensions.abyss = { slug, operation }` with
-  `operation` one of `item | list | single`, so GQ2 attaches resolvers without
+  `operation` one of `item | list | single`, so resolvers attach without
   parsing names.
 - `http/schema/FilterInputs.rules.ts` also exports `filterToClauses` / `sortToKeys` (args ->
-  REST `FilterClause[]` / `SortKey[]`). `page` / `pageSize` range checks and
-  the default sort (`SORT_DEFAULT` when `sort` is empty) are left to GQ2.
+  REST `FilterClause[]` / `SortKey[]`).
 - The filterable/sortable rule is `queryKindOfField`
   (`documents/domain/ListQuery.rules.ts`), shared with REST `queryColumnOf`.
 - `buildGraphqlSchema([])` throws `GraphqlSchemaError` (a `Query` type needs
   a field).
-
-## Implementation notes (GQ2)
 
 - Validation runs against the caller's own schema (`GraphqlSchemaProvider.schemaFor`):
   only the content types the caller can read (with their Page / Filter / Sort
@@ -395,12 +403,6 @@ Architecture test (like `RecordSerializer.architecture.spec.ts`): files in
   code for 5xx; the design text's `INTERNAL_SERVER_ERROR` is this) is generic.
 - Variable coercion errors are reworded to name the variable only (graphql-js
   echoes the value).
-- Not in GQ2 (GQ3): the 32 KiB body check (Nest's default JSON parser limit
-  applies meanwhile), depth / root-field / field-node rules, and classifying
-  the `maxTokens` parse error as `GRAPHQL_LIMIT_EXCEEDED` (now
-  `GRAPHQL_PARSE_FAILED`).
-
-## Implementation notes (GQ3)
 
 - `http/rules/Limits.rules.ts`: `MaxDepthRule`, `MaxRootFieldsRule`,
   `MaxFieldNodesRule`. One memoized walk per operation expands fragments and
@@ -414,3 +416,42 @@ Architecture test (like `RecordSerializer.architecture.spec.ts`): files in
   (`http/GraphqlError.filter.ts` keeps it); messages never echo the query.
 - The body cap counts bytes on the wire. A gzip-compressed body is counted
   compressed; the global 100 KB parser limit still bounds the inflated size.
+
+## Files
+
+<!-- module-files:start (generated by .claude/bin/module-index; edit only the Description column) -->
+<!-- prettier-ignore-start -->
+
+```
+graphql/ (2 files)
+  application/ (1 file)
+  cli/ (1 file)
+  http/ (6 files)
+    rules/ (2 files)
+    schema/ (5 files)
+```
+
+Tests: 12 files (not listed).
+
+| File | Description |
+|---|---|
+| `Graphql.module.ts` | `GraphqlModule`: wiring |
+| `index.ts` | Public exports: `GraphqlModule`, `graphqlBodyLimit` and its mount path |
+| `application/Graphql.constants.ts` | Route, limits (`GRAPHQL_LIMITS`), type and field names, scalar names, error codes |
+| `cli/PrintSchema.command.ts` | `graphql:print-schema`: writes or checks the SDL file |
+| `http/Document.resolver.ts` | `attachDocumentResolvers`: root fields to the documents read use cases |
+| `http/Graphql.controller.ts` | `GraphqlController`: `POST /graphql` with document auth and the anonymous throttle |
+| `http/Graphql.executor.ts` | `GraphqlExecutor`: parse, limit rules, validate, execute against the caller's schema |
+| `http/GraphqlBodyLimit.middleware.ts` | `graphqlBodyLimit`: 413 in the GraphQL error shape before the JSON parser |
+| `http/GraphqlError.filter.ts` | `formatGraphqlError`: errors in the GraphQL shape, no internals |
+| `http/ListArguments.rules.ts` | `toListQuery`: list arguments to the documents list query |
+| `http/rules/Limits.rules.ts` | `MaxDepthRule`, `MaxRootFieldsRule`, `MaxFieldNodesRule`: query size limits |
+| `http/rules/Visibility.rules.ts` | `ContentTypeVisibilityRule`: refuses root fields of unreadable content types |
+| `http/schema/FilterInputs.rules.ts` | `FILTER_INPUTS`, `filterToClauses`, `sortToKeys`: filter and sort inputs |
+| `http/schema/Scalars.rules.ts` | `DateScalar`, `DateTimeScalar`, `DecimalScalar`, `JsonScalar` |
+| `http/schema/SchemaBuilder.rules.ts` | `buildGraphqlSchema`: schema from the content registry and the caller's access |
+| `http/schema/SharedTypes.entity.ts` | Shared types: document status, sort direction, page meta, media |
+| `http/schema/TypeNames.rules.ts` | Type and field names per content type, name clash detection |
+
+<!-- prettier-ignore-end -->
+<!-- module-files:end -->

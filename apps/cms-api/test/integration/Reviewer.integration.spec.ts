@@ -5,35 +5,39 @@ import type { Kysely } from 'kysely';
 import { Client } from 'pg';
 import request from 'supertest';
 
-import { inContentUnit } from '../fixtures/ContentUnit.fixture';
 import { Clock } from '../../src/common/time/Clock.service';
 import {
   openPrisma,
   type PrismaHandle,
 } from '../../src/infrastructure/database/PrismaClient.adapter';
-import {
-  TURNSTILE_VERIFIER,
-  type TurnstileOutcome,
-  type TurnstileVerifier,
-} from '../../src/modules/reviewer/application/Reviewer.port';
-import { AUDIT_ACTIONS } from '../../src/modules/security-audit';
 import { createContentDb } from '../../src/modules/content-engine/adapters/ContentDatabase.adapter';
-import { ContentRegistry } from '../../src/modules/content-engine/application/ContentRegistry.service';
 import { KyselyContentRepository } from '../../src/modules/content-engine/adapters/KyselyContent.repository';
+import type { ContentDatabase } from '../../src/modules/content-engine/adapters/TreeLoader.adapter';
+import { ContentRegistry } from '../../src/modules/content-engine/application/ContentRegistry.service';
 import { ContentTypeRegistry } from '../../src/modules/content-engine/domain/ContentTypeRegistry.entity';
 import {
   emptySnapshot,
   planMigration,
 } from '../../src/modules/content-engine/domain/SqlGenerator.rules';
-import type { ContentDatabase } from '../../src/modules/content-engine/adapters/TreeLoader.adapter';
 import { hashPassword } from '../../src/modules/identity/application/Password.service';
-import { ReviewerCleanupJob } from '../../src/modules/reviewer/jobs/ReviewerCleanup.job';
+import {
+  TURNSTILE_VERIFIER,
+  type TurnstileOutcome,
+  type TurnstileVerifier,
+} from '../../src/modules/reviewer/application/Reviewer.port';
 import { REVIEWER_SESSION_TTL_MS } from '../../src/modules/reviewer/domain/Reviewer.constants';
 import {
   REVIEWER_IP_WINDOW_MS,
   REVIEWER_MAX_ACTIVE_SESSIONS,
 } from '../../src/modules/reviewer/domain/ReviewerAdmission.rules';
-import { ARTICLE_DEFINITION } from '../fixtures/Access.fixture';
+import { ReviewerCleanupJob } from '../../src/modules/reviewer/jobs/ReviewerCleanup.job';
+import { AUDIT_ACTIONS } from '../../src/modules/security-audit';
+import {
+  ARTICLE_DEFINITION,
+  seedRolePermissions,
+  seedSystemRoles,
+} from '../fixtures/Access.fixture';
+import { inContentUnit } from '../fixtures/ContentUnit.fixture';
 import { createCoreTemplate } from '../fixtures/CoreDb.fixture';
 import {
   dbEnvOf,
@@ -45,10 +49,6 @@ import {
 } from '../fixtures/Env.fixture';
 import { startPostgres, type TestPostgres } from '../fixtures/Postgres.fixture';
 import { createTestApp } from '../fixtures/TestApp.fixture';
-import {
-  seedRolePermissions,
-  seedSystemRoles,
-} from '../fixtures/Access.fixture';
 
 const PASSWORD = 'correct horse battery staple';
 const REVIEWER = '/api/v1/reviewer';
@@ -96,9 +96,9 @@ describe('reviewer backend (T31, D2; Postgres 17 via Testcontainers)', () => {
     const client = new Client({ connectionString: databaseUrl });
     await client.connect();
     await client.query(
-      planMigration(emptySnapshot(), [
-        registry.resolve('article').definition,
-      ]).statements.join('\n'),
+      planMigration(emptySnapshot(), [registry.resolve('article').definition]).statements.join(
+        '\n',
+      ),
     );
     await client.end();
     content = createContentDb(databaseUrl);
@@ -137,9 +137,7 @@ describe('reviewer backend (T31, D2; Postgres 17 via Testcontainers)', () => {
       ],
     );
     const realNow = Date.now.bind(Date);
-    jest
-      .spyOn(app.get(Clock), 'now')
-      .mockImplementation(() => realNow() + clockOffset);
+    jest.spyOn(app.get(Clock), 'now').mockImplementation(() => realNow() + clockOffset);
     owner = await signedIn('owner');
     admin = await signedIn('admin');
   });
@@ -175,10 +173,7 @@ describe('reviewer backend (T31, D2; Postgres 17 via Testcontainers)', () => {
         role: { connect: { slug: roleSlug } },
       },
     });
-    const res = await http()
-      .post(LOGIN)
-      .set(from())
-      .send({ email, password: PASSWORD });
+    const res = await http().post(LOGIN).set(from()).send({ email, password: PASSWORD });
     expect(res.status).toBe(200);
     return (res.body as { accessToken: string }).accessToken;
   }
@@ -204,13 +199,9 @@ describe('reviewer backend (T31, D2; Postgres 17 via Testcontainers)', () => {
   });
 
   it('settings are owner only (401 anonymous, 403 admin) and listing too', async () => {
-    expect(
-      (await http().put(`${REVIEWER}/settings`).set(from()).send({})).status,
-    ).toBe(401);
+    expect((await http().put(`${REVIEWER}/settings`).set(from()).send({})).status).toBe(401);
     expect((await setEnabled(true, admin)).status).toBe(403);
-    expect(
-      (await http().get(`${REVIEWER}/sessions`).set(bearer(admin))).status,
-    ).toBe(403);
+    expect((await http().get(`${REVIEWER}/sessions`).set(bearer(admin))).status).toBe(403);
     expect((await setEnabled(true, owner)).status).toBe(200);
     const bad = await http()
       .put(`${REVIEWER}/settings`)
@@ -235,32 +226,24 @@ describe('reviewer backend (T31, D2; Postgres 17 via Testcontainers)', () => {
     const ttl = new Date(body.expiresAt).getTime() - Date.now();
     expect(ttl).toBeGreaterThan(REVIEWER_SESSION_TTL_MS - 60_000);
 
-    const me = await http()
-      .get('/api/v1/auth/me')
-      .set(bearer(body.accessToken));
+    const me = await http().get('/api/v1/auth/me').set(bearer(body.accessToken));
     expect(me.body).toMatchObject({ role: 'reviewer' });
     // T33a: a reviewer session lists read permissions only.
     const { permissions } = me.body as { permissions: string[] };
     expect(permissions.length).toBeGreaterThan(0);
     expect(permissions.every((entry) => entry.endsWith(':read'))).toBe(true);
 
-    const list = await http()
-      .get(`${DOCS}?status=published`)
-      .set(bearer(body.accessToken));
+    const list = await http().get(`${DOCS}?status=published`).set(bearer(body.accessToken));
     expect(list.status).toBe(200);
     expect((list.body as { data: unknown[] }).data).toHaveLength(1);
-    const draft = await http()
-      .get(`${DOCS}?status=draft`)
-      .set(bearer(body.accessToken));
+    const draft = await http().get(`${DOCS}?status=draft`).set(bearer(body.accessToken));
     expect(draft.status).toBe(403);
     const write = await http()
       .post(DOCS)
       .set(bearer(body.accessToken))
       .send({ values: { title: 'x' } });
     expect(write.status).toBe(403);
-    const roles = await http()
-      .get('/api/v1/roles')
-      .set(bearer(body.accessToken));
+    const roles = await http().get('/api/v1/roles').set(bearer(body.accessToken));
     expect(roles.status).toBe(403);
 
     const stored = await db.prisma.reviewerSession.findFirstOrThrow({
@@ -288,10 +271,7 @@ describe('reviewer backend (T31, D2; Postgres 17 via Testcontainers)', () => {
       ['/api/v1/auth/2fa/email/send-code', {}],
       ['/api/v1/auth/2fa/enable', { code: '123456', password: 'x' }],
       ['/api/v1/auth/2fa/disable', { code: '123456', password: 'x' }],
-      [
-        '/api/v1/auth/password/change',
-        { currentPassword: 'x', newPassword: 'y' },
-      ],
+      ['/api/v1/auth/password/change', { currentPassword: 'x', newPassword: 'y' }],
     ] as const) {
       const res = await http().post(path).set(bearer(token)).send(body);
       expect(res.status).toBe(403);
@@ -405,9 +385,7 @@ describe('reviewer backend (T31, D2; Postgres 17 via Testcontainers)', () => {
   });
 
   it('owner lists sessions (notes as stored text, no ip), newest first', async () => {
-    const res = await http()
-      .get(`${REVIEWER}/sessions?pageSize=2`)
-      .set(bearer(owner));
+    const res = await http().get(`${REVIEWER}/sessions?pageSize=2`).set(bearer(owner));
     expect(res.status).toBe(200);
     const page = res.body as {
       data: Record<string, unknown>[];
@@ -442,16 +420,12 @@ describe('reviewer backend (T31, D2; Postgres 17 via Testcontainers)', () => {
     });
     expect(roleAfter.policyVersion).toBe(roleBefore.policyVersion + 1);
 
-    const dead = await http()
-      .get(`${DOCS}?status=published`)
-      .set(bearer(token));
+    const dead = await http().get(`${DOCS}?status=published`).set(bearer(token));
     expect(dead.status).toBe(401);
     expect((await startSession()).status).toBe(403);
 
     await setEnabled(true);
-    const stillDead = await http()
-      .get(`${DOCS}?status=published`)
-      .set(bearer(token));
+    const stillDead = await http().get(`${DOCS}?status=published`).set(bearer(token));
     expect(stillDead.status).toBe(401);
   });
 
@@ -464,9 +438,7 @@ describe('reviewer backend (T31, D2; Postgres 17 via Testcontainers)', () => {
     const deleted = await job.run();
     expect(deleted).toBe(before);
     expect(await db.prisma.reviewerSession.count()).toBe(0);
-    expect(
-      await db.prisma.account.count({ where: { roleSlug: 'reviewer' } }),
-    ).toBe(0);
+    expect(await db.prisma.account.count({ where: { roleSlug: 'reviewer' } })).toBe(0);
     // Owner and admin accounts and audit rows survive.
     expect(await db.prisma.account.count()).toBe(2);
     expect(

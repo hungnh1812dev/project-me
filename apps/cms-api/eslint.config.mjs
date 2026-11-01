@@ -20,8 +20,7 @@ const DEEP_IMPORT_PATTERNS = {
   // `index.ts`: identity imports that, and document-auth imports identity).
   // `access/domain/FieldProjection.rules` is not in the facade (it bypasses masking, see
   // FacadeReexports.architecture.spec.ts); module-edge specs say who may use it.
-  access:
-    '(^|/)access/(?!management$|document-auth$|domain/FieldProjection\\.rules$).+',
+  access: '(^|/)access/(?!management$|document-auth$|domain/FieldProjection\\.rules$).+',
   // `KyselyContent.repository`, `ContentRowMapping.rules`, `ContentTree.entity`
   // (holds `rowToValues`) and `TreeLoader.adapter` are not in the facade for the same
   // reason: only the files the RecordSerializer architecture spec names use them.
@@ -65,8 +64,7 @@ const timeConversionLiteralBan = {
       'error',
       {
         selector: 'Literal[value=1000]',
-        message:
-          'Compose a unit from common/constants/Time.constants.ts instead of writing 1000.',
+        message: 'Compose a unit from common/constants/Time.constants.ts instead of writing 1000.',
       },
     ],
   },

@@ -1,10 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import type {
-  ContentTypeDefinition,
-  FieldDefinition,
-} from './DefinitionSchema.rules';
+import type { ContentTypeDefinition, FieldDefinition } from './DefinitionSchema.rules';
 import {
   buildSnapshot,
   emptySnapshot,
@@ -16,16 +13,7 @@ import {
 
 const CV_PAGE: ContentTypeDefinition = JSON.parse(
   readFileSync(
-    join(
-      __dirname,
-      '..',
-      '..',
-      '..',
-      '..',
-      'content',
-      'schemas',
-      'cv-page.json',
-    ),
+    join(__dirname, '..', '..', '..', '..', 'content', 'schemas', 'cv-page.json'),
     'utf8',
   ),
 ) as ContentTypeDefinition;
@@ -127,10 +115,7 @@ describe('sql-generator', () => {
   });
 
   it('adds a column without flagging it destructive', () => {
-    const plan = diff(
-      [post([TITLE])],
-      [post([TITLE, { name: 'publishedOn', type: 'date' }])],
-    );
+    const plan = diff([post([TITLE])], [post([TITLE, { name: 'publishedOn', type: 'date' }])]);
     expect(plan.statements).toEqual([
       'ALTER TABLE "content"."post" ADD COLUMN "published_on" date;',
     ]);
@@ -138,13 +123,8 @@ describe('sql-generator', () => {
   });
 
   it('flags a dropped field as destructive', () => {
-    const plan = diff(
-      [post([TITLE, { name: 'body', type: 'richtext' }])],
-      [post([TITLE])],
-    );
-    expect(plan.statements).toEqual([
-      'ALTER TABLE "content"."post" DROP COLUMN "body";',
-    ]);
+    const plan = diff([post([TITLE, { name: 'body', type: 'richtext' }])], [post([TITLE])]);
+    expect(plan.statements).toEqual(['ALTER TABLE "content"."post" DROP COLUMN "body";']);
     expect(plan.destructiveChanges).toEqual(['Drop column post.body']);
   });
 
@@ -156,9 +136,7 @@ describe('sql-generator', () => {
     expect(plan.statements).toEqual([
       'ALTER TABLE "content"."post" ALTER COLUMN "rank" TYPE integer USING "rank"::integer;',
     ]);
-    expect(plan.destructiveChanges).toEqual([
-      'Change type of post.rank from text to integer',
-    ]);
+    expect(plan.destructiveChanges).toEqual(['Change type of post.rank from text to integer']);
   });
 
   it('needs no DDL when the column type stays the same', () => {
@@ -172,10 +150,7 @@ describe('sql-generator', () => {
   });
 
   it('treats metadata changes as changes without DDL', () => {
-    const plan = diff(
-      [post([TITLE])],
-      [{ ...post([TITLE]), draftAndPublish: false }],
-    );
+    const plan = diff([post([TITLE])], [{ ...post([TITLE]), draftAndPublish: false }]);
     expect(plan.statements).toEqual([]);
     expect(plan.changedSlugs).toEqual(['post']);
   });
@@ -189,9 +164,7 @@ describe('sql-generator', () => {
       'CREATE TABLE "content"."post__tags" (',
       'CREATE TABLE "content"."post__tags__links" (',
     ]);
-    expect(plan.statements).not.toContain(
-      'CREATE SCHEMA IF NOT EXISTS "content";',
-    );
+    expect(plan.statements).not.toContain('CREATE SCHEMA IF NOT EXISTS "content";');
   });
 
   it('drops removed component tables children first, as destructive', () => {
@@ -222,9 +195,7 @@ describe('sql-generator', () => {
       '{"fields":[{"type":"string","name":"title"}],"draftAndPublish":true,"kind":"collection","slug":"post"}',
     ) as ContentTypeDefinition;
     expect(hashDefinition(reordered)).toBe(hashDefinition(post([TITLE])));
-    expect(hashDefinition(post([TITLE, TAGS]))).not.toBe(
-      hashDefinition(post([TAGS, TITLE])),
-    );
+    expect(hashDefinition(post([TITLE, TAGS]))).not.toBe(hashDefinition(post([TAGS, TITLE])));
   });
 
   it('quotes identifiers and escapes embedded quotes', () => {

@@ -1,11 +1,6 @@
 import { expect, test, type Page, type Route } from '@playwright/test';
 
-import {
-  ADMIN_COPY,
-  API_ENDPOINTS,
-  API_ERROR_CODES,
-  APP_ROUTES,
-} from '../src/Apps.contract';
+import { ADMIN_COPY, API_ENDPOINTS, API_ERROR_CODES, APP_ROUTES } from '../src/Apps.contract';
 import { HTTP } from '../src/E2e.constants';
 import { signInAsOwner, signInAsOwnerWithRole } from '../src/Session.fixture';
 
@@ -30,12 +25,7 @@ const SECOND_FACTOR_OWNER = {
   twoFactorMethod: 'totp',
 };
 
-const row = (
-  fileName: string,
-  createdAt: string,
-  mib: number,
-  kind: string,
-) => ({
+const row = (fileName: string, createdAt: string, mib: number, kind: string) => ({
   key: `backups/${fileName}`,
   kind,
   fileName,
@@ -60,8 +50,7 @@ const fulfillJson = (route: Route, status: number, json: unknown) =>
   route.fulfill({ status, json });
 
 const isListFetch = (route: Route): boolean =>
-  route.request().method() === 'GET' &&
-  ['fetch', 'xhr'].includes(route.request().resourceType());
+  route.request().method() === 'GET' && ['fetch', 'xhr'].includes(route.request().resourceType());
 
 async function stubList(page: Page, status: number, json: unknown) {
   await page.route(LIST_URL, (route) =>
@@ -80,12 +69,10 @@ async function stubOwnerWithTwoFactor(page: Page) {
   });
 }
 
-const mainMenu = (page: Page) =>
-  page.getByRole('navigation', { name: nav.label });
+const mainMenu = (page: Page) => page.getByRole('navigation', { name: nav.label });
 const backupsLink = (page: Page) =>
   mainMenu(page).getByRole('link', { name: copy.nav, exact: true });
-const checkBackups = (page: Page) =>
-  page.getByRole('button', { name: copy.check.button }).click();
+const checkBackups = (page: Page) => page.getByRole('button', { name: copy.check.button }).click();
 
 function collectConsoleErrors(page: Page): string[] {
   const errors: string[] = [];
@@ -94,9 +81,7 @@ function collectConsoleErrors(page: Page): string[] {
 }
 
 test.describe('backups page', () => {
-  test('feature off: page shows the not-configured state after Check backups', async ({
-    page,
-  }) => {
+  test('feature off: page shows the not-configured state after Check backups', async ({ page }) => {
     const errors = collectConsoleErrors(page);
     await signInAsOwner(page);
     await expect(mainMenu(page)).toBeVisible();
@@ -109,9 +94,7 @@ test.describe('backups page', () => {
     expect(errors).toEqual([]);
   });
 
-  test('owner with backups: menu item, rows, stale banner, age note, tooltip', async ({
-    page,
-  }) => {
+  test('owner with backups: menu item, rows, stale banner, age note, tooltip', async ({ page }) => {
     await stubList(page, HTTP.OK, fixtureList(true));
     await signInAsOwner(page);
     await expect(backupsLink(page)).toBeVisible();
@@ -119,9 +102,7 @@ test.describe('backups page', () => {
 
     await expect(page.getByRole('heading', { name: copy.title })).toBeVisible();
     await checkBackups(page);
-    await expect(
-      page.getByRole('button', { name: copy.check.refresh }),
-    ).toBeVisible();
+    await expect(page.getByRole('button', { name: copy.check.refresh })).toBeVisible();
     await expect(page.getByText(copy.summary.count(2))).toBeVisible();
     await expect(page.getByText(copy.stale)).toBeVisible();
     await expect(page.getByText(copy.encryptedNote)).toBeVisible();
@@ -136,9 +117,7 @@ test.describe('backups page', () => {
     await expect(rows.nth(1)).toContainText(copy.kind.daily);
   });
 
-  test('empty list shows the empty state; 500 shows an error with retry', async ({
-    page,
-  }) => {
+  test('empty list shows the empty state; 500 shows an error with retry', async ({ page }) => {
     await stubList(page, HTTP.OK, fixtureList(false, []));
     await signInAsOwner(page);
     await page.goto(APP_ROUTES.BACKUPS);
@@ -156,9 +135,7 @@ test.describe('backups page', () => {
     await page.unroute(LIST_URL);
     await stubList(page, HTTP.OK, fixtureList());
     await page.getByRole('button', { name: /retry|try again/i }).click();
-    await expect(
-      page.getByRole('table', { name: copy.tableLabel }),
-    ).toBeVisible();
+    await expect(page.getByRole('table', { name: copy.tableLabel })).toBeVisible();
   });
 
   test('non-owner: no menu item, page says forbidden at once with no list request', async ({
@@ -189,26 +166,21 @@ test.describe('backup download dialog', () => {
   const openDialog = async (page: Page) => {
     await page.goto(APP_ROUTES.BACKUPS);
     await checkBackups(page);
-    await page
-      .getByRole('button', { name: copy.download.buttonLabel(FILE_SOON) })
-      .click();
+    await page.getByRole('button', { name: copy.download.buttonLabel(FILE_SOON) }).click();
     return page.getByRole('dialog', { name: copy.dialog.title(FILE_SOON) });
   };
 
-  test('owner without 2FA sees the pointer to security settings, no form', async ({
-    page,
-  }) => {
+  test('owner without 2FA sees the pointer to security settings, no form', async ({ page }) => {
     await stubList(page, HTTP.OK, fixtureList());
     await signInAsOwner(page);
     const dialog = await openDialog(page);
     await expect(dialog.getByText(copy.dialog.description)).toBeVisible();
     await expect(dialog.getByText(copy.dialog.twoFactorOff)).toBeVisible();
-    await expect(
-      dialog.getByLabel(security.fields.currentPassword),
-    ).toHaveCount(0);
-    await expect(
-      dialog.getByRole('link', { name: copy.dialog.openSecurity }),
-    ).toHaveAttribute('href', APP_ROUTES.SECURITY_SETTINGS);
+    await expect(dialog.getByLabel(security.fields.currentPassword)).toHaveCount(0);
+    await expect(dialog.getByRole('link', { name: copy.dialog.openSecurity })).toHaveAttribute(
+      'href',
+      APP_ROUTES.SECURITY_SETTINGS,
+    );
     await page.keyboard.press('Escape');
     await expect(dialog).toBeHidden();
   });
@@ -236,9 +208,7 @@ test.describe('backup download dialog', () => {
     const submit = dialog.getByRole('button', { name: copy.dialog.submit });
 
     await submit.click();
-    await expect(
-      dialog.getByText(security.validation.codeInvalid),
-    ).toBeVisible();
+    await expect(dialog.getByText(security.validation.codeInvalid)).toBeVisible();
     expect(posted).toEqual([]);
 
     answer = () => ({

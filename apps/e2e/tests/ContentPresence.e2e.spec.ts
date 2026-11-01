@@ -1,21 +1,11 @@
-import {
-  type BrowserContext,
-  expect,
-  type Page,
-  type Request,
-  test,
-} from '@playwright/test';
+import { expect, test, type BrowserContext, type Page, type Request } from '@playwright/test';
 
-import {
-  ADMIN_COPY,
-  PRESENCE_HEARTBEAT_MS,
-  contentNewPath,
-} from '../src/Apps.contract';
+import { inviteAccount } from '../src/Accounts.fixture';
+import { API_PATHS } from '../src/Api.endpoints';
+import { ADMIN_COPY, contentNewPath, PRESENCE_HEARTBEAT_MS } from '../src/Apps.contract';
+import { CV_PAGE_SLUG, RUN_ID } from '../src/E2e.constants';
 import { e2eEnv } from '../src/E2e.env';
 import { signInAs } from '../src/Session.fixture';
-import { RUN_ID, CV_PAGE_SLUG } from '../src/E2e.constants';
-import { API_PATHS } from '../src/Api.endpoints';
-import { inviteAccount } from '../src/Accounts.fixture';
 
 const copy = ADMIN_COPY.content;
 const EDIT_URL = /\/content\/cv-page\/[0-9a-f-]{36}$/;
@@ -29,8 +19,7 @@ const EDITOR_PASSWORD = `${e2eEnv.ownerPassword.slice(0, 40)}-presence`;
 const ALSO_ON = /is also on this document\.$/;
 
 const isBeat = (request: Request) =>
-  request.url().includes(API_PATHS.PRESENCE_SEGMENT) &&
-  request.method() === 'POST';
+  request.url().includes(API_PATHS.PRESENCE_SEGMENT) && request.method() === 'POST';
 
 function recordBeats(page: Page) {
   const beats: Request[] = [];
@@ -70,9 +59,7 @@ test.describe.serial('presence banner (cv-page, two accounts)', () => {
     await ownerContext.close();
   });
 
-  test('setup: a draft and a second account that can edit it', async ({
-    browser,
-  }) => {
+  test('setup: a draft and a second account that can edit it', async ({ browser }) => {
     await owner.goto(contentNewPath(CV_PAGE_SLUG));
     await position(owner).fill(`Presence ${RUN_ID}`);
     await owner.keyboard.press('Enter');

@@ -1,13 +1,9 @@
 import { expect, test } from '@playwright/test';
 
-import {
-  ADMIN_COPY,
-  CONTENT_LIST_PAGE_SIZE,
-  contentListPath,
-} from '../src/Apps.contract';
-import { signInAsOwner } from '../src/Session.fixture';
 import { API_PATHS } from '../src/Api.endpoints';
+import { ADMIN_COPY, CONTENT_LIST_PAGE_SIZE, contentListPath } from '../src/Apps.contract';
 import { PROFILE_SLUG, RUN_ID } from '../src/E2e.constants';
+import { signInAsOwner } from '../src/Session.fixture';
 
 const copy = ADMIN_COPY.content;
 const EXTRA_ROWS = 2;
@@ -22,10 +18,7 @@ test('sorting on page 2 returns to page 1 and clears the selection; a failed loa
   const listRequests: URL[] = [];
   page.on('request', (request) => {
     const url = new URL(request.url());
-    if (
-      request.method() === 'GET' &&
-      url.pathname.endsWith(API_PATHS.documents(PROFILE_SLUG))
-    ) {
+    if (request.method() === 'GET' && url.pathname.endsWith(API_PATHS.documents(PROFILE_SLUG))) {
       listRequests.push(url);
     }
   });
@@ -35,36 +28,22 @@ test('sorting on page 2 returns to page 1 and clears the selection; a failed loa
   const dialog = page.getByRole('dialog', {
     name: copy.bulk.importDialog.title,
   });
-  await page
-    .getByRole('button', { name: copy.bulk.import, exact: true })
-    .click();
+  await page.getByRole('button', { name: copy.bulk.import, exact: true }).click();
   await dialog
     .getByLabel(copy.bulk.importDialog.label)
     .fill(JSON.stringify(names.map((name) => ({ values: { name } }))));
-  await dialog
-    .getByRole('button', { name: copy.bulk.importDialog.submit(names.length) })
-    .click();
+  await dialog.getByRole('button', { name: copy.bulk.importDialog.submit(names.length) }).click();
   await expect(dialog).toBeHidden();
 
-  await page
-    .getByRole('button', { name: copy.collection.pagination.next })
-    .click();
-  await expect
-    .poll(() => listRequests.at(-1)?.searchParams.get('page'))
-    .toBe('2');
+  await page.getByRole('button', { name: copy.collection.pagination.next }).click();
+  await expect.poll(() => listRequests.at(-1)?.searchParams.get('page')).toBe('2');
   const rows = page.getByRole('checkbox', { name: /^Select / });
   await rows.nth(0).check();
-  await expect(
-    page.getByRole('region', { name: copy.bulk.region }),
-  ).toBeVisible();
+  await expect(page.getByRole('region', { name: copy.bulk.region })).toBeVisible();
 
   await page.getByRole('button', { name: 'name' }).click();
-  await expect
-    .poll(() => listRequests.at(-1)?.searchParams.get('page'))
-    .toBe('1');
-  await expect(
-    page.getByRole('region', { name: copy.bulk.region }),
-  ).toBeHidden();
+  await expect.poll(() => listRequests.at(-1)?.searchParams.get('page')).toBe('1');
+  await expect(page.getByRole('region', { name: copy.bulk.region })).toBeHidden();
 
   // Load error, then retry.
   let failNext = true;

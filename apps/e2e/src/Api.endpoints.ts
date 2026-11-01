@@ -23,6 +23,7 @@ export const API_PATHS = {
   API_TOKENS: '/api-tokens',
   GRAPHQL: '/graphql',
   MEDIA: '/media',
+  ROLES: '/roles',
   REVIEWER: {
     SETTINGS: '/reviewer/settings',
     SESSIONS: '/reviewer/sessions',

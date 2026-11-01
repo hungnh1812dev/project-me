@@ -14,7 +14,7 @@ function secretState(value: string | undefined): string {
  */
 export function summarizeConfig(config: IAppConfig): Record<string, unknown> {
   const { smtp } = config.mail;
-  const { cloudinary } = config.media;
+  const { cloudinary, local } = config.media;
   const { backups } = config;
 
   return {
@@ -67,6 +67,10 @@ export function summarizeConfig(config: IAppConfig): Record<string, unknown> {
               apiSecret: secretState(cloudinary.apiSecret),
               folder: cloudinary.folder,
             },
+      local:
+        local === undefined
+          ? undefined
+          : { directory: local.directory, publicUrl: local.publicUrl },
     },
     backups:
       backups === undefined

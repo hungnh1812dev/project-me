@@ -1,4 +1,4 @@
-import { type DynamicModule, Global, Module } from '@nestjs/common';
+import { Global, Module, type DynamicModule } from '@nestjs/common';
 
 import { type IAppConfig } from './AppConfig.setup';
 import { APP_CONFIG } from './Config.constants';

@@ -1,16 +1,8 @@
-import {
-  type ArgumentsHost,
-  Catch,
-  type ExceptionFilter,
-  Logger,
-} from '@nestjs/common';
+import { Catch, Logger, type ArgumentsHost, type ExceptionFilter } from '@nestjs/common';
 import type { Response } from 'express';
 
 import { RETRY_AFTER_HEADER } from '../constants/Limits.constants';
-import {
-  describeError,
-  isServerErrorStatus,
-} from '../http/DescribeHttpException.rules';
+import { describeError, isServerErrorStatus } from '../http/DescribeHttpException.rules';
 import type { RequestWithId } from '../middleware/RequestId.middleware';
 
 /** The one error shape every endpoint returns. */

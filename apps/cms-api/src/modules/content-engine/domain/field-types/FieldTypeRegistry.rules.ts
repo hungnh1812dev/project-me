@@ -1,5 +1,4 @@
 import { type SCALAR_FIELD_TYPES } from '../ContentEngine.constants';
-
 import { type FieldTypeSpec } from './FieldType.entity';
 import { sanitizeRichtext } from './RichtextSanitizer.rules';
 import {
@@ -12,8 +11,7 @@ import {
 
 type ScalarFieldType = (typeof SCALAR_FIELD_TYPES)[number];
 
-const coerceText = (value: unknown) =>
-  typeof value === 'string' ? value : undefined;
+const coerceText = (value: unknown) => (typeof value === 'string' ? value : undefined);
 
 /**
  * `string`, `text` and `richtext` differ only in validation and editor, so
@@ -35,8 +33,10 @@ export const FIELD_TYPE_SPECS = {
   // The only richtext rule: no path stores the string as it came.
   richtext: {
     ...TEXT_LIKE,
-    coerceValue: (value) =>
-      typeof value === 'string' ? sanitizeRichtext(value) : undefined,
+    coerceValue: (value, context) =>
+      typeof value === 'string'
+        ? sanitizeRichtext(value, { imageOrigins: context?.richtextImageOrigins })
+        : undefined,
   },
   integer: {
     columnType: 'integer',
@@ -46,9 +46,7 @@ export const FIELD_TYPE_SPECS = {
     referencesMedia: false,
     graphqlOutput: 'Int',
     coerceValue: (value) =>
-      Number.isInteger(value) && Math.abs(value as number) <= INT4_MAX
-        ? value
-        : undefined,
+      Number.isInteger(value) && Math.abs(value as number) <= INT4_MAX ? value : undefined,
   },
   decimal: {
     columnType: 'numeric',
@@ -61,9 +59,7 @@ export const FIELD_TYPE_SPECS = {
       if (typeof value === 'number') {
         return Number.isFinite(value) ? value : undefined;
       }
-      return typeof value === 'string' && VALUE_PATTERNS.DECIMAL.test(value)
-        ? value
-        : undefined;
+      return typeof value === 'string' && VALUE_PATTERNS.DECIMAL.test(value) ? value : undefined;
     },
   },
   boolean: {
@@ -82,8 +78,7 @@ export const FIELD_TYPE_SPECS = {
     maskedValue: 'null',
     referencesMedia: false,
     graphqlOutput: 'Date',
-    coerceValue: (value) =>
-      typeof value === 'string' ? parseDate(value) : undefined,
+    coerceValue: (value) => (typeof value === 'string' ? parseDate(value) : undefined),
   },
   datetime: {
     columnType: 'timestamptz',
@@ -92,8 +87,7 @@ export const FIELD_TYPE_SPECS = {
     maskedValue: 'null',
     referencesMedia: false,
     graphqlOutput: 'DateTime',
-    coerceValue: (value) =>
-      typeof value === 'string' ? parseDatetime(value) : undefined,
+    coerceValue: (value) => (typeof value === 'string' ? parseDatetime(value) : undefined),
   },
   json: {
     columnType: 'jsonb',
@@ -115,8 +109,7 @@ export const FIELD_TYPE_SPECS = {
     referencesMedia: true,
     graphqlOutput: 'Media',
     // The file's public `document_id`; the internal id never crosses the API.
-    coerceValue: (value) =>
-      typeof value === 'string' ? parseUuid(value) : undefined,
+    coerceValue: (value) => (typeof value === 'string' ? parseUuid(value) : undefined),
   },
 } as const satisfies Record<ScalarFieldType, FieldTypeSpec>;
 

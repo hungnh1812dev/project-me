@@ -1,5 +1,1 @@
-export {
-  NumberInput,
-  type NumberInputProps,
-  type NumberMode,
-} from './NumberInput';
+export { NumberInput, type NumberInputProps, type NumberMode } from './NumberInput';

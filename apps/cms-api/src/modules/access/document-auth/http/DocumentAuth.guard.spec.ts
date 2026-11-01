@@ -1,10 +1,9 @@
-import type { ExecutionContext } from '@nestjs/common';
-import { UnauthorizedException } from '@nestjs/common';
+import { UnauthorizedException, type ExecutionContext } from '@nestjs/common';
 
 import type { JwtAuthGuard } from '../../../identity';
 import type { AnonymousActorService } from '../../application/AnonymousActor.service';
-import { API_TOKEN } from '../../domain/ApiToken.rules';
 import type { ActorContext } from '../../domain/ActorContext.entity';
+import { API_TOKEN } from '../../domain/ApiToken.rules';
 import type { ApiTokenAuthenticator } from '../../http/ApiToken.guard';
 import { DocumentAuthGuard } from './DocumentAuth.guard';
 
@@ -89,9 +88,7 @@ describe('DocumentAuthGuard', () => {
       headers: { authorization: `Bearer ${API_TOKEN.PREFIX}bad` },
     };
 
-    await expect(guard.canActivate(contextFor(request))).rejects.toThrow(
-      UnauthorizedException,
-    );
+    await expect(guard.canActivate(contextFor(request))).rejects.toThrow(UnauthorizedException);
 
     expect(calls).not.toContain('anonymous');
   });
@@ -103,9 +100,7 @@ describe('DocumentAuthGuard', () => {
     });
     const request = { headers: { authorization: 'Bearer broken' } };
 
-    await expect(guard.canActivate(contextFor(request))).rejects.toThrow(
-      UnauthorizedException,
-    );
+    await expect(guard.canActivate(contextFor(request))).rejects.toThrow(UnauthorizedException);
 
     expect(calls).not.toContain('anonymous');
   });

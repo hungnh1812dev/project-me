@@ -9,6 +9,7 @@ import {
   Param,
   Patch,
   Post,
+  Put,
   Query,
   Req,
   UseGuards,
@@ -23,29 +24,27 @@ import {
   type RateLimitRule,
 } from '../../../common/constants/Limits.constants';
 import { Throttle } from '../../../common/guards/Throttle.guard';
-import {
-  ClientIpResolver,
-  clientMetaOf,
-} from '../../../common/http/ClientIp.resolver';
+import { ClientIpResolver, clientMetaOf } from '../../../common/http/ClientIp.resolver';
 import { parseRequest } from '../../../common/http/RequestParsing.rules';
-import type { PageMeta } from '../../../common/validation/SharedSchemas.rules';
-import {
-  MEDIA_SUBJECT,
-  PermissionAction,
-  RequirePermission,
-  PermissionGuard,
-  requireAccountActor,
-} from '../../access';
-import { type AuthenticatedRequest, JwtAuthGuard } from '../../identity';
-import type { MediaRecord, MediaView } from '../domain/Media.entity';
-import { isAltWithinLimit, normalizeAlt } from '../domain/MediaUpload.rules';
-import type { UploadStream } from '../application/Media.port';
-import { MediaLibraryService } from '../application/MediaLibrary.service';
-import { UploadMediaService } from '../application/UploadMedia.service';
 import {
   documentIdSchema,
   pageQuerySchema,
+  type PageMeta,
 } from '../../../common/validation/SharedSchemas.rules';
+import {
+  MEDIA_SUBJECT,
+  PermissionAction,
+  PermissionGuard,
+  requireAccountActor,
+  RequirePermission,
+} from '../../access';
+import { JwtAuthGuard, type AuthenticatedRequest } from '../../identity';
+import type { UploadStream } from '../application/Media.port';
+import { MediaLibraryService } from '../application/MediaLibrary.service';
+import { ReplaceMediaFileService } from '../application/ReplaceMediaFile.service';
+import { UploadMediaService } from '../application/UploadMedia.service';
+import type { MediaRecord, MediaView } from '../domain/Media.entity';
+import { isAltWithinLimit, MEDIA_MIME_FILTERS, normalizeAlt } from '../domain/MediaUpload.rules';
 
 /** SPEC §9 media (upload, list, delete). */
 const MEDIA_ROUTES = {
@@ -79,12 +78,15 @@ export const MEDIA_RATE_LIMIT_POLICIES = {
  * (same rule as the upload's `alt` field); more than 500 characters is 400.
  */
 const updateMediaSchema = z.strictObject({
-  alt: z
-    .string()
-    .trim()
-    .refine(isAltWithinLimit)
-    .transform(normalizeAlt)
-    .nullable(),
+  alt: z.string().trim().refine(isAltWithinLimit).transform(normalizeAlt).nullable(),
+});
+
+const SEARCH_MAX_LENGTH = 100;
+
+/** `GET /media`: the page query plus `search` (file name, 1-100 chars) and `mimeType`; nothing else. */
+const mediaListQuerySchema = pageQuerySchema.extend({
+  search: z.string().trim().min(1).max(SEARCH_MAX_LENGTH).optional(),
+  mimeType: z.enum(MEDIA_MIME_FILTERS).optional(),
 });
 
 /** The API view of a library file: never the storage key or the internal id. */
@@ -101,7 +103,9 @@ function mediaViewOf(record: MediaRecord): MediaView {
     thumbnailUrl: record.thumbnailUrl,
     provider: record.provider,
     isReviewerPreset: record.isReviewerPreset,
+    sha256: record.sha256,
     createdAt: record.createdAt.toISOString(),
+    updatedAt: record.updatedAt.toISOString(),
   };
 }
 
@@ -125,6 +129,7 @@ export class MediaController {
   constructor(
     private readonly library: MediaLibraryService,
     private readonly uploads: UploadMediaService,
+    private readonly replacements: ReplaceMediaFileService,
     private readonly clientIp: ClientIpResolver,
   ) {}
 
@@ -144,6 +149,30 @@ export class MediaController {
     return mediaViewOf(record);
   }
 
+  /**
+   * Replaces the bytes in place and keeps the id and alt. One `file` part only;
+   * same upload pipeline and throttle counters as `POST /media`.
+   */
+  @Put(`${MEDIA_ROUTES.BY_ID}/file`)
+  @Header(NO_STORE_HEADER.NAME, NO_STORE_HEADER.VALUE)
+  @Throttle(MEDIA_RATE_LIMIT_POLICIES.MEDIA_UPLOAD)
+  @RequirePermission({
+    action: PermissionAction.update,
+    subject: MEDIA_SUBJECT,
+  })
+  async replaceFile(
+    @Req() req: AuthenticatedRequest,
+    @Param(ID_PARAM) id: string,
+  ): Promise<MediaView> {
+    const record = await this.replacements.replace(
+      requireAccountActor(req.user.actor),
+      parseRequest(documentIdSchema, id),
+      uploadStreamOf(req),
+      clientMetaOf(this.clientIp, req),
+    );
+    return mediaViewOf(record);
+  }
+
   @Get()
   @Header(NO_STORE_HEADER.NAME, NO_STORE_HEADER.VALUE)
   @RequirePermission({ action: PermissionAction.read, subject: MEDIA_SUBJECT })
@@ -151,10 +180,7 @@ export class MediaController {
     @Req() req: AuthenticatedRequest,
     @Query() query: unknown,
   ): Promise<{ data: MediaView[]; meta: PageMeta }> {
-    const page = await this.library.list(
-      req.user.actor,
-      parseRequest(pageQuerySchema, query),
-    );
+    const page = await this.library.list(req.user.actor, parseRequest(mediaListQuerySchema, query));
     return { data: page.data.map(mediaViewOf), meta: page.meta };
   }
 
@@ -185,10 +211,7 @@ export class MediaController {
     action: PermissionAction.delete,
     subject: MEDIA_SUBJECT,
   })
-  remove(
-    @Req() req: AuthenticatedRequest,
-    @Param(ID_PARAM) id: string,
-  ): Promise<void> {
+  remove(@Req() req: AuthenticatedRequest, @Param(ID_PARAM) id: string): Promise<void> {
     return this.library.remove(
       requireAccountActor(req.user.actor),
       parseRequest(documentIdSchema, id),

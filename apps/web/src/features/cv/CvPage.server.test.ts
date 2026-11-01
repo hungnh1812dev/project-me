@@ -1,7 +1,7 @@
-import { fetchGraphql } from '../../lib/Graphql.server';
+import { fetchGraphql } from '../../apis/server/graphql/Graphql.server';
 import { loadCvPage } from './CvPage.server';
 
-vi.mock('../../lib/Graphql.server', () => ({
+vi.mock('../../apis/server/graphql/Graphql.server', () => ({
   fetchGraphql: vi.fn<typeof fetchGraphql>(),
 }));
 
@@ -15,9 +15,7 @@ describe('loadCvPage', () => {
             summary: '<p>ok</p><script>steal()</script><img src=x onerror=x()>',
             experiences: [
               {
-                roles: [
-                  { responsibilities: '<a href="javascript:x()">go</a>' },
-                ],
+                roles: [{ responsibilities: '<a href="javascript:x()">go</a>' }],
               },
             ],
           },
@@ -29,8 +27,6 @@ describe('loadCvPage', () => {
     const [resume] = (await loadCvPage()).resumeList.data;
 
     expect(resume?.summary).toBe('<p>ok</p>');
-    expect(resume?.experiences?.[0]?.roles?.[0]?.responsibilities).toBe(
-      '<a>go</a>',
-    );
+    expect(resume?.experiences?.[0]?.roles?.[0]?.responsibilities).toBe('<a>go</a>');
   });
 });

@@ -1,9 +1,9 @@
 import {
-  type DatabaseConfig,
-  type DatabaseRoleFacts,
   ddlRiskNamesOf,
   ddlRiskWarningOf,
   poolOptionsOf,
+  type DatabaseConfig,
+  type DatabaseRoleFacts,
 } from './DatabaseConfig.rules';
 
 describe('poolOptionsOf', () => {
@@ -72,23 +72,14 @@ describe('ddlRiskNamesOf', () => {
       { schemasWithCreate: ['public', 'content'] },
       ['CREATE on schema public', 'CREATE on schema content'],
     ],
-    [
-      { schemasWithOwnedObjects: ['content'] },
-      ['owns objects in schema content'],
-    ],
+    [{ schemasWithOwnedObjects: ['content'] }, ['owns objects in schema content']],
     [
       { memberOfRoles: ['pg_execute_server_program', 'abyss_migrator'] },
-      [
-        'member of role pg_execute_server_program',
-        'member of role abyss_migrator',
-      ],
+      ['member of role pg_execute_server_program', 'member of role abyss_migrator'],
     ],
-  ] as [Partial<DatabaseRoleFacts>, string[]][])(
-    'names the problem for %j',
-    (change, expected) => {
-      expect(ddlRiskNamesOf({ ...dmlOnly, ...change })).toEqual(expected);
-    },
-  );
+  ] as [Partial<DatabaseRoleFacts>, string[]][])('names the problem for %j', (change, expected) => {
+    expect(ddlRiskNamesOf({ ...dmlOnly, ...change })).toEqual(expected);
+  });
 
   it('keeps every problem when several apply', () => {
     const names = ddlRiskNamesOf({

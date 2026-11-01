@@ -2,11 +2,7 @@ import { loadAppConfig } from '../../../config/AppConfig.setup';
 import { OWNER_CREATED_CHANNELS } from '../../security-audit';
 import { PASSWORD_STDIN_FLAG } from '../domain/Identity.constants';
 import { openIdentityCli, readOwnerEnv } from './IdentityCli.setup';
-import {
-  CliInputError,
-  promptHidden,
-  readPasswordFromStream,
-} from './PasswordInput.client';
+import { CliInputError, promptHidden, readPasswordFromStream } from './PasswordInput.client';
 
 /**
  * `owner:bootstrap` (D1): creates the single owner. Email from OWNER_EMAIL
@@ -23,16 +19,8 @@ async function readPassword(argv: readonly string[]): Promise<string> {
       `No terminal for the password prompt. Pipe it with ${PASSWORD_STDIN_FLAG}.`,
     );
   }
-  const first = await promptHidden(
-    process.stdin,
-    process.stderr,
-    'Owner password: ',
-  );
-  const second = await promptHidden(
-    process.stdin,
-    process.stderr,
-    'Repeat password: ',
-  );
+  const first = await promptHidden(process.stdin, process.stderr, 'Owner password: ');
+  const second = await promptHidden(process.stdin, process.stderr, 'Repeat password: ');
   if (first !== second) throw new CliInputError('Passwords do not match.');
   return first;
 }
@@ -56,9 +44,7 @@ async function main(): Promise<void> {
 
 if (require.main === module) {
   main().catch((error: unknown) => {
-    process.stderr.write(
-      `${error instanceof Error ? error.message : String(error)}\n`,
-    );
+    process.stderr.write(`${error instanceof Error ? error.message : String(error)}\n`);
     process.exitCode = 1;
   });
 }

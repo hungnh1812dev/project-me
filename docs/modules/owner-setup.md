@@ -1,6 +1,6 @@
 # Owner setup (one-time setup page)
 
-Status: design, 2026-10-22 (planner, DESIGN owner-setup). Decision record: [ADR 0005](../adr/0005-one-time-owner-setup-route.md). Spec: `SPEC.md` §1, D1, D15, D17, §9, §12-1. Tasks: OS1-OS4 in `tasks/todo.md` ("Ad-hoc: Owner setup").
+Status: implemented (designed 2026-10-22). Decision record: [ADR 0005](../adr/0005-one-time-owner-setup-route.md). Spec: `SPEC.md` §1, D1, D15, D17, §9, §12-1.
 
 ## Why
 
@@ -89,7 +89,7 @@ No row ever holds the token, the password or (for rejected attempts) the email.
 - Both paths share `OwnerBootstrapService.bootstrap()`, the advisory lock and the single-owner index, so a page submit and a CLI run at the same moment produce exactly one owner; the loser gets 404 (page) or `owner.exists` (CLI).
 - `owner:reset-2fa` is unchanged and remains CLI-only (break-glass; no HTTP route).
 
-## Code changes (for OS1 / OS2)
+## Code
 
 - `OwnerBootstrapService.bootstrap(input, options?)` (`application/OwnerBootstrap.service.ts`; the CLI builds it in `cli/IdentityCli.setup.ts`): optional `options` `{ channel, ip }` so the `owner.created` row is written inside its transaction. The CLI passes `channel: 'cli'`. Existing behaviour and error codes stay.
 - New in `apps/cms-api/src/modules/identity`: `http/OwnerSetup.controller.ts` (checks the setup token through `OwnerSetupService.admit` before it parses the body, maps the closed answer to the unknown-route 404), `application/OwnerSetup.service.ts` (latch, token compare, audit, error mapping to `DomainError`), `domain/SetupToken.rules.ts` (hash + timing-safe compare, pure, unit-tested). Constants in `domain/Identity.constants.ts` (`SETUP_TOKEN_MAX_LENGTH`, setup channels), route constants and policies in `http/IdentityHttp.constants.ts`, env in `Env.schema.ts` / `AppConfig.setup.ts` / `.env.example`.

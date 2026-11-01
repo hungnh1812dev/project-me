@@ -1,11 +1,11 @@
 import { ERROR_CODES } from '../common/constants/Error.constants';
-import {
-  ACCESS_ERROR_CODES,
-  PERMISSION_ACTIONS,
-  SYSTEM_SUBJECT_ACTIONS,
-} from '../modules/access';
+import { ACCESS_ERROR_CODES, PERMISSION_ACTIONS, SYSTEM_SUBJECT_ACTIONS } from '../modules/access';
 import { BACKUPS_ERROR_CODES } from '../modules/backups';
-import { RICHTEXT_ALLOWED_URL_SCHEMES } from '../modules/content-engine';
+import {
+  RICHTEXT_ALLOWED_URL_SCHEMES,
+  RICHTEXT_TEXT_ALIGNMENTS,
+  RICHTEXT_TEXT_COLORS,
+} from '../modules/content-engine';
 import {
   AUTH_ERROR_CODES,
   OTP,
@@ -17,10 +17,8 @@ import {
   SETUP_TOKEN_MAX_LENGTH,
   TOTP,
 } from '../modules/identity';
-import {
-  REVIEWER_ERROR_CODES,
-  REVIEWER_INPUT_LIMITS,
-} from '../modules/reviewer';
+import { ALLOWED_MEDIA_TYPES, MEDIA_MAX_BYTES } from '../modules/media';
+import { REVIEWER_ERROR_CODES, REVIEWER_INPUT_LIMITS } from '../modules/reviewer';
 
 /**
  * The cms-api constants that the admin, the web, the kit and the e2e suite
@@ -40,6 +38,10 @@ export function buildPublicConstants() {
     totp: { digits: TOTP.DIGITS, periodSeconds: TOTP.PERIOD_SECONDS },
     refreshCookieName: REFRESH_COOKIE.NAME,
     reviewerInputLimits: { ...REVIEWER_INPUT_LIMITS },
+    mediaUpload: {
+      allowedMimeTypes: Object.keys(ALLOWED_MEDIA_TYPES),
+      maxBytesByKind: { ...MEDIA_MAX_BYTES },
+    },
     errorCodes: {
       common: { ...ERROR_CODES },
       auth: { ...AUTH_ERROR_CODES },
@@ -50,12 +52,11 @@ export function buildPublicConstants() {
     },
     permissionActions: [...PERMISSION_ACTIONS],
     systemSubjects: Object.fromEntries(
-      Object.entries(SYSTEM_SUBJECT_ACTIONS).map(([subject, actions]) => [
-        subject,
-        [...actions],
-      ]),
+      Object.entries(SYSTEM_SUBJECT_ACTIONS).map(([subject, actions]) => [subject, [...actions]]),
     ),
     richtextUrlSchemes: [...RICHTEXT_ALLOWED_URL_SCHEMES],
+    richtextTextColors: RICHTEXT_TEXT_COLORS.map((color) => ({ ...color })),
+    richtextTextAlignments: [...RICHTEXT_TEXT_ALIGNMENTS],
   };
 }
 

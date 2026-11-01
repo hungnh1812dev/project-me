@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import {
   Button,
   Dialog,
@@ -5,112 +6,87 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  formatFileSize,
   FormAlert,
 } from '@abyss/form-commons';
-import { useState } from 'react';
+import { LoadError } from '@components/PageStates';
+import { Pagination } from '@components/Pagination';
+import { COPY } from '@configs/Copy.constants';
 
-import { COPY } from '../../config/Copy.constants';
 import { isForbidden } from '../access';
-import { LoadError, TableSkeleton } from '../../components/PageStates';
-import { Pagination } from '../../components/Pagination';
-import { useMediaQuery } from './Media.queries';
 import type { MediaFile } from './Media.api';
+import { MEDIA_DEFAULT_PAGE_SIZE, MEDIA_MIME_ALL } from './Media.constants';
+import { useMediaQuery } from './Media.queries';
+import { MediaFilters, type MediaFiltersValue } from './MediaFilters';
+import { MediaGrid } from './MediaGrid';
 
 const copy = COPY.media.picker;
-const IMAGE_PREFIX = 'image/';
-
-function Thumb({ file }: { file: MediaFile }) {
-  const src =
-    file.thumbnailUrl ??
-    (file.mimeType.startsWith(IMAGE_PREFIX) ? file.url : null);
-  return (
-    <span className="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-sm border border-border bg-muted">
-      {src === null ? (
-        <span className="text-xs font-medium uppercase text-muted-foreground">
-          {file.mimeType.split('/')[1] ?? ''}
-        </span>
-      ) : (
-        <img src={src} alt="" className="size-full object-cover" />
-      )}
-    </span>
-  );
-}
+const IMAGES_ONLY_MIME_TYPE = 'image/*';
 
 /** Pick one library file for a media field. */
 export function MediaPickerDialog({
   open,
   onClose,
   onSelect,
+  onlyImages = false,
 }: {
   open: boolean;
   onClose: () => void;
   onSelect: (file: MediaFile) => void;
+  onlyImages?: boolean;
 }) {
   const [page, setPage] = useState(1);
-  const media = useMediaQuery(page);
+  const [filters, setFilters] = useState<MediaFiltersValue>({
+    search: '',
+    mimeType: onlyImages ? IMAGES_ONLY_MIME_TYPE : MEDIA_MIME_ALL,
+    pageSize: MEDIA_DEFAULT_PAGE_SIZE,
+  });
+  const media = useMediaQuery({ page, ...filters });
   const rows = media.data?.data ?? [];
+  const isFiltered = filters.search !== '' || (!onlyImages && filters.mimeType !== MEDIA_MIME_ALL);
+
+  const loadError = media.isError ? (
+    isForbidden(media.error) ? (
+      <FormAlert tone="info">{COPY.media.forbidden}</FormAlert>
+    ) : (
+      <LoadError
+        message={COPY.media.loadFailed}
+        isRetrying={media.isFetching}
+        onRetry={() => void media.refetch()}
+      />
+    )
+  ) : undefined;
 
   return (
     <Dialog open={open} onOpenChange={(next) => (next ? undefined : onClose())}>
-      <DialogContent>
+      <DialogContent className="max-w-4xl">
         <DialogHeader>
           <DialogTitle>{copy.title}</DialogTitle>
           <DialogDescription>{copy.description}</DialogDescription>
         </DialogHeader>
-        {media.isPending ? (
-          <TableSkeleton label={copy.loading} />
-        ) : media.isError ? (
-          isForbidden(media.error) ? (
-            <FormAlert tone="info">{COPY.media.forbidden}</FormAlert>
-          ) : (
-            <LoadError
-              message={COPY.media.loadFailed}
-              isRetrying={media.isFetching}
-              onRetry={() => void media.refetch()}
-            />
-          )
-        ) : rows.length === 0 ? (
-          <p className="m-0 text-sm text-muted-foreground">{copy.empty}</p>
-        ) : (
-          <div className="rounded-md border border-border bg-card">
-            <ul className="m-0 grid max-h-96 list-none gap-0 overflow-y-auto p-0">
-              {rows.map((file) => (
-                <li
-                  key={file.id}
-                  className="border-b border-border last:border-0"
-                >
-                  <button
-                    type="button"
-                    aria-label={copy.select(file.fileName)}
-                    onClick={() => onSelect(file)}
-                    className="flex w-full items-center gap-3 bg-transparent px-3 py-2 text-left hover:bg-muted focus-visible:outline-2 focus-visible:outline-ring"
-                  >
-                    <Thumb file={file} />
-                    <span className="grid min-w-0 gap-0.5">
-                      <span className="truncate text-sm font-medium">
-                        {file.fileName}
-                      </span>
-                      <span className="truncate text-xs text-muted-foreground">
-                        {file.alt ?? COPY.media.noAlt} ·{' '}
-                        <span className="tabular-nums">
-                          {formatFileSize(file.size)}
-                        </span>
-                      </span>
-                    </span>
-                  </button>
-                </li>
-              ))}
-            </ul>
-            {media.data === undefined ? null : (
-              <Pagination
-                meta={media.data.meta}
-                count={rows.length}
-                onPage={setPage}
-                copy={COPY.media.pagination}
-              />
-            )}
-          </div>
+        <MediaFilters
+          value={filters}
+          hideMimeType={onlyImages}
+          onChange={(next) => {
+            setFilters(next);
+            setPage(1);
+          }}
+        />
+        <MediaGrid
+          mode="pick"
+          files={rows}
+          isLoading={media.isPending}
+          error={loadError}
+          onSelect={onSelect}
+          emptyTitle={isFiltered ? COPY.media.grid.noResults : copy.empty}
+          {...(isFiltered ? { emptyHint: COPY.media.grid.noResultsHint } : {})}
+        />
+        {media.data === undefined || rows.length === 0 ? null : (
+          <Pagination
+            meta={media.data.meta}
+            count={rows.length}
+            onPage={setPage}
+            copy={COPY.media.pagination}
+          />
         )}
         <div className="flex justify-end">
           <Button type="button" onClick={onClose}>

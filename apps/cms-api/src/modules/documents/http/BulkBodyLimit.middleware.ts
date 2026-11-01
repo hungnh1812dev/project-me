@@ -2,7 +2,6 @@ import { HttpStatus } from '@nestjs/common';
 import type { NextFunction, Request, Response } from 'express';
 
 import { API_PREFIX } from '../../../common/constants/Api.constants';
-import { DOCUMENTS_ROUTES } from './DocumentsHttp.constants';
 import { ERROR_CODES } from '../../../common/constants/Error.constants';
 import {
   closeAfterAnswer,
@@ -11,6 +10,7 @@ import {
 } from '../../../common/middleware/ByteLimit.rules';
 import type { RequestWithId } from '../../../common/middleware/RequestId.middleware';
 import { BULK_LIMITS, BULK_MESSAGES } from '../domain/Documents.constants';
+import { DOCUMENTS_ROUTES } from './DocumentsHttp.constants';
 
 /** Where `App.setup.ts` mounts the limit: before Nest's JSON parser, so never via `configure(consumer)`. */
 export const BULK_BODY_LIMIT_MOUNT_PATH = `/${API_PREFIX}/${DOCUMENTS_ROUTES.ROOT}/${DOCUMENTS_ROUTES.BULK_PREFIX}`;
@@ -39,11 +39,7 @@ function reject(
  * declared `Content-Length` over the limit is refused without reading; a
  * chunked body is counted as it arrives. Mount it on the bulk prefix.
  */
-export function bulkBodyLimit(
-  req: Request,
-  res: Response,
-  next: NextFunction,
-): void {
+export function bulkBodyLimit(req: Request, res: Response, next: NextFunction): void {
   const request = req as RequestWithId & Request;
   if (req.method !== 'POST' || !req.is('json')) {
     next();

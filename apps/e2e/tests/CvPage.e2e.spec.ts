@@ -1,4 +1,4 @@
-import { expect, type Page, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 
 import { API_PATHS, apiUrl } from '../src/Api.endpoints';
 import { WEB_COPY } from '../src/Apps.contract';
@@ -39,8 +39,7 @@ test.beforeAll(async ({ request }) => {
         name: RESUME_NAME,
         position: RESUME_POSITION,
         isMain: true,
-        summary:
-          '<p>Safe <b>text</b></p><img src=x onerror="window.e2ePwned=1">',
+        summary: '<p>Safe <b>text</b></p><img src=x onerror="window.e2ePwned=1">',
       },
       components: {
         experiences: [{ values: { company: SECRET_COMPANY, period: '2020' } }],
@@ -53,20 +52,16 @@ test.beforeAll(async ({ request }) => {
     version: number;
   };
   resumeId = draft.documentId;
-  await request.post(
-    apiUrl(API_PATHS.document('resume', resumeId) + '/publish'),
-    {
-      headers: ownerHeaders(),
-      data: { expectedVersion: draft.version },
-    },
-  );
+  await request.post(apiUrl(API_PATHS.document('resume', resumeId) + '/publish'), {
+    headers: ownerHeaders(),
+    data: { expectedVersion: draft.version },
+  });
 });
 
 test.afterAll(async ({ request }) => {
-  const removed = await request.delete(
-    apiUrl(API_PATHS.document('resume', resumeId)),
-    { headers: ownerHeaders() },
-  );
+  const removed = await request.delete(apiUrl(API_PATHS.document('resume', resumeId)), {
+    headers: ownerHeaders(),
+  });
   expect(removed.status()).toBe(HTTP.NO_CONTENT);
 });
 
@@ -86,9 +81,7 @@ test('anonymous visit renders the name and position on the server and sends no G
     if (isGraphqlRequest(req.url())) graphqlCalls.push(req.url());
   });
   await page.goto(e2eEnv.webUrl);
-  await expect(
-    page.getByRole('heading', { level: 1, name: RESUME_NAME }),
-  ).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: RESUME_NAME })).toBeVisible();
   await expect(page.getByText(RESUME_POSITION)).toBeVisible();
   await expect(page).toHaveTitle(`${RESUME_NAME} - ${RESUME_POSITION}`);
   await expect(headerSignIn(page)).toBeVisible();
@@ -106,15 +99,11 @@ test('anonymous visit shows placeholders for masked fields and never the raw val
 
   await page.goto(e2eEnv.webUrl);
   await expect
-    .poll(() =>
-      page.getByText(WEB_COPY.cv.maskedValue, { exact: true }).count(),
-    )
+    .poll(() => page.getByText(WEB_COPY.cv.maskedValue, { exact: true }).count())
     .toBeGreaterThanOrEqual(MIN_MASKED_PLACEHOLDERS);
   await expect(page.getByText('***', { exact: false })).toHaveCount(0);
   await expect(page.getByText('E2E Referee')).toBeVisible();
-  expect(
-    await page.evaluate(() => (window as { e2ePwned?: number }).e2ePwned),
-  ).toBeUndefined();
+  expect(await page.evaluate(() => (window as { e2ePwned?: number }).e2ePwned)).toBeUndefined();
 });
 
 test('a reader session refetches once with its Bearer token and sign-out returns to the server data without a request', async ({
@@ -122,33 +111,24 @@ test('a reader session refetches once with its Bearer token and sign-out returns
 }) => {
   const graphqlAuth: Array<string | undefined> = [];
   page.on('request', (req) => {
-    if (isGraphqlRequest(req.url()))
-      graphqlAuth.push(req.headers()['authorization']);
+    if (isGraphqlRequest(req.url())) graphqlAuth.push(req.headers()['authorization']);
   });
   await page.goto(e2eEnv.webUrl);
   await headerSignIn(page).click();
   const dialog = page.getByRole('dialog');
-  await dialog
-    .getByRole('textbox', { name: WEB_COPY.login.emailLabel })
-    .fill(e2eEnv.readerEmail);
-  await dialog
-    .getByLabel(WEB_COPY.login.passwordLabel)
-    .fill(e2eEnv.readerPassword);
+  await dialog.getByRole('textbox', { name: WEB_COPY.login.emailLabel }).fill(e2eEnv.readerEmail);
+  await dialog.getByLabel(WEB_COPY.login.passwordLabel).fill(e2eEnv.readerPassword);
   await dialog.getByRole('button', { name: WEB_COPY.login.submit }).click();
 
   const signOut = page.getByRole('button', { name: WEB_COPY.session.signOut });
   await expect(signOut).toBeVisible();
   await expect.poll(() => graphqlAuth.length).toBe(1);
   expect(graphqlAuth[0]).toMatch(/^Bearer \S+/);
-  await expect(
-    page.getByRole('heading', { level: 1, name: RESUME_NAME }),
-  ).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: RESUME_NAME })).toBeVisible();
 
   await signOut.click();
   await expect(headerSignIn(page)).toBeVisible();
-  await expect(
-    page.getByRole('heading', { level: 1, name: RESUME_NAME }),
-  ).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: RESUME_NAME })).toBeVisible();
   expect(graphqlAuth).toHaveLength(1);
 });
 

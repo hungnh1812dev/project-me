@@ -7,17 +7,9 @@ import {
   ROOT_SYSTEM_COLUMNS,
   SNAPSHOT_FORMAT_VERSION,
 } from './ContentEngine.constants';
-import {
-  type ContentTypeDefinition,
-  isComponentField,
-} from './DefinitionSchema.rules';
+import { isComponentField, type ContentTypeDefinition } from './DefinitionSchema.rules';
 import { FIELD_TYPE_SPECS } from './field-types';
-import {
-  type ColumnPlan,
-  planTables,
-  relationNames,
-  type TablePlan,
-} from './Naming.rules';
+import { planTables, relationNames, type ColumnPlan, type TablePlan } from './Naming.rules';
 
 /**
  * Pure part of `content:generate`: turns the previous snapshot and the
@@ -113,12 +105,8 @@ export function emptySnapshot(): DefinitionSnapshot {
   return { formatVersion: SNAPSHOT_FORMAT_VERSION, contentTypes: {} };
 }
 
-export function buildSnapshot(
-  definitions: readonly ContentTypeDefinition[],
-): DefinitionSnapshot {
-  const sorted = [...definitions].sort((a, b) =>
-    a.slug < b.slug ? -1 : a.slug > b.slug ? 1 : 0,
-  );
+export function buildSnapshot(definitions: readonly ContentTypeDefinition[]): DefinitionSnapshot {
+  const sorted = [...definitions].sort((a, b) => (a.slug < b.slug ? -1 : a.slug > b.slug ? 1 : 0));
   return {
     formatVersion: SNAPSHOT_FORMAT_VERSION,
     contentTypes: Object.fromEntries(
@@ -132,16 +120,10 @@ export function buildSnapshot(
 
 function createTableSql(table: TablePlan): string[] {
   const systemDdl: Record<string, string> =
-    table.kind === 'root'
-      ? ROOT_SYSTEM_COLUMN_DDL
-      : COMPONENT_SYSTEM_COLUMN_DDL;
+    table.kind === 'root' ? ROOT_SYSTEM_COLUMN_DDL : COMPONENT_SYSTEM_COLUMN_DDL;
   const lines = [
-    ...table.systemColumns.map(
-      (name) => `${quoteIdentifier(name)} ${systemDdl[name]}`,
-    ),
-    ...table.columns.map(
-      (column) => `${quoteIdentifier(column.name)} ${columnType(column)}`,
-    ),
+    ...table.systemColumns.map((name) => `${quoteIdentifier(name)} ${systemDdl[name]}`),
+    ...table.columns.map((column) => `${quoteIdentifier(column.name)} ${columnType(column)}`),
     `CONSTRAINT ${quoteIdentifier(relationNames.primaryKey(table.name))} PRIMARY KEY ("id")`,
   ];
   if (table.parentTable !== null) {
@@ -169,9 +151,7 @@ function createTableSql(table: TablePlan): string[] {
 }
 
 function tablesOf(snapshot: DefinitionSnapshot): TablePlan[] {
-  return Object.values(snapshot.contentTypes).flatMap((entry) =>
-    planTables(entry.definition),
-  );
+  return Object.values(snapshot.contentTypes).flatMap((entry) => planTables(entry.definition));
 }
 
 /**
@@ -184,9 +164,7 @@ export function planMigration(
   definitions: readonly ContentTypeDefinition[],
 ): MigrationPlan {
   const nextSnapshot = buildSnapshot(definitions);
-  const previousTables = new Map(
-    tablesOf(previous).map((table) => [table.name, table]),
-  );
+  const previousTables = new Map(tablesOf(previous).map((table) => [table.name, table]));
   const nextTables = tablesOf(nextSnapshot);
   const nextNames = new Set(nextTables.map((table) => table.name));
 
@@ -194,9 +172,7 @@ export function planMigration(
   const destructiveChanges: string[] = [];
 
   if (Object.keys(previous.contentTypes).length === 0 && nextTables.length) {
-    statements.push(
-      `CREATE SCHEMA IF NOT EXISTS ${quoteIdentifier(CONTENT_DB_SCHEMA)};`,
-    );
+    statements.push(`CREATE SCHEMA IF NOT EXISTS ${quoteIdentifier(CONTENT_DB_SCHEMA)};`);
   }
 
   for (const table of nextTables) {
@@ -206,9 +182,7 @@ export function planMigration(
       continue;
     }
     const target = qualified(table.name);
-    const oldColumns = new Map(
-      before.columns.map((column) => [column.name, column]),
-    );
+    const oldColumns = new Map(before.columns.map((column) => [column.name, column]));
     const newColumnNames = new Set(table.columns.map((column) => column.name));
 
     for (const column of table.columns) {
@@ -230,9 +204,7 @@ export function planMigration(
     }
     for (const old of before.columns) {
       if (!newColumnNames.has(old.name)) {
-        statements.push(
-          `ALTER TABLE ${target} DROP COLUMN ${quoteIdentifier(old.name)};`,
-        );
+        statements.push(`ALTER TABLE ${target} DROP COLUMN ${quoteIdentifier(old.name)};`);
         destructiveChanges.push(`Drop column ${table.name}.${old.name}`);
       }
     }
@@ -251,11 +223,7 @@ export function planMigration(
     ...Object.keys(nextSnapshot.contentTypes),
   ]);
   const changedSlugs = [...slugs]
-    .filter(
-      (slug) =>
-        previous.contentTypes[slug]?.hash !==
-        nextSnapshot.contentTypes[slug]?.hash,
-    )
+    .filter((slug) => previous.contentTypes[slug]?.hash !== nextSnapshot.contentTypes[slug]?.hash)
     .sort();
 
   return { statements, destructiveChanges, changedSlugs, nextSnapshot };

@@ -4,20 +4,14 @@ describe('sanitizeRichtext', () => {
   it('keeps editor markup', () => {
     const html =
       '<h2>T</h2><p>a <strong>b</strong> <em>c</em> <s>d</s> <code>e</code></p><ul><li>x</li></ul><ol><li>y</li></ol><blockquote><p>q</p></blockquote><pre><code>z</code></pre><hr><p>l<br>m</p>';
-    expect(sanitizeRichtext(html)).toBe(
-      html.replace('<hr>', '<hr />').replace('<br>', '<br />'),
-    );
+    expect(sanitizeRichtext(html)).toBe(html.replace('<hr>', '<hr />').replace('<br>', '<br />'));
   });
 
   it('keeps safe links and adds rel for target', () => {
-    expect(
-      sanitizeRichtext('<a href="https://x.dev" target="_blank">a</a>'),
-    ).toBe(
+    expect(sanitizeRichtext('<a href="https://x.dev" target="_blank">a</a>')).toBe(
       '<a href="https://x.dev" target="_blank" rel="noopener noreferrer">a</a>',
     );
-    expect(sanitizeRichtext('<a href="mailto:a@b.c">m</a>')).toBe(
-      '<a href="mailto:a@b.c">m</a>',
-    );
+    expect(sanitizeRichtext('<a href="mailto:a@b.c">m</a>')).toBe('<a href="mailto:a@b.c">m</a>');
   });
 
   const payloads: Array<[string, string]> = [
@@ -26,36 +20,25 @@ describe('sanitizeRichtext', () => {
     ['svg onload', '<svg onload=alert(1)><circle/></svg>'],
     ['javascript url', '<a href="javascript:alert(1)">x</a>'],
     ['mixed case javascript url', '<a href="JaVaScRiPt:alert(1)">x</a>'],
-    [
-      'entity encoded javascript url',
-      '<a href="&#106;avascript:alert(1)">x</a>',
-    ],
+    ['entity encoded javascript url', '<a href="&#106;avascript:alert(1)">x</a>'],
     ['tab split javascript url', '<a href="java\tscript:alert(1)">x</a>'],
     ['data url', '<a href="data:text/html;base64,PHNjcmlwdD4=">x</a>'],
     ['vbscript url', '<a href="vbscript:msgbox(1)">x</a>'],
     ['onclick attr', '<p onclick="alert(1)">x</p>'],
-    [
-      'onmouseover on link',
-      '<a href="https://x.dev" onmouseover="alert(1)">x</a>',
-    ],
+    ['onmouseover on link', '<a href="https://x.dev" onmouseover="alert(1)">x</a>'],
     ['iframe', '<iframe src="https://evil.dev"></iframe>'],
     ['style tag', '<style>body{display:none}</style><p>x</p>'],
     ['style attr', '<p style="background:url(javascript:alert(1))">x</p>'],
     ['object/embed', '<object data="x"></object><embed src="x">'],
     ['form', '<form action="https://evil.dev"><input name=a></form>'],
     ['protocol relative', '<a href="//evil.dev/x">x</a>'],
-    [
-      'meta refresh',
-      '<meta http-equiv="refresh" content="0;url=https://evil.dev">',
-    ],
+    ['meta refresh', '<meta http-equiv="refresh" content="0;url=https://evil.dev">'],
     ['base tag', '<base href="https://evil.dev/">'],
   ];
 
   it.each(payloads)('neutralizes %s', (_name, payload) => {
     const out = sanitizeRichtext(payload).toLowerCase();
-    expect(out).not.toMatch(
-      /<script|<iframe|<style|<svg|<img|<form|<object|<embed|<meta|<base/,
-    );
+    expect(out).not.toMatch(/<script|<iframe|<style|<svg|<img|<form|<object|<embed|<meta|<base/);
     expect(out).not.toMatch(/\son\w+\s*=/);
     expect(out).not.toMatch(/javascript:|vbscript:|data:|href="\/\//);
     expect(out).not.toContain('alert(1)');
@@ -69,6 +52,129 @@ describe('sanitizeRichtext', () => {
 
   it('keeps text of unknown wrapper tags', () => {
     expect(sanitizeRichtext('<div><span>hi</span></div>')).toBe('hi');
+  });
+
+  describe('text colour and alignment', () => {
+    it('keeps a palette colour on span, lower case out', () => {
+      expect(sanitizeRichtext('<p><span style="color: #B91C1C">x</span></p>')).toBe(
+        '<p><span style="color: #b91c1c">x</span></p>',
+      );
+      expect(sanitizeRichtext('<span style="color:#1d4ed8;">x</span>')).toBe(
+        '<span style="color: #1d4ed8">x</span>',
+      );
+    });
+
+    it('drops an oversized style value quickly', () => {
+      const padded = `color: #b91c1c${' '.repeat(100_000)}x`;
+      const started = Date.now();
+      expect(sanitizeRichtext(`<p><span style="${padded}">x</span></p>`)).toBe('<p>x</p>');
+      expect(sanitizeRichtext(`<p style="text-align: center${' '.repeat(100_000)}x">x</p>`)).toBe(
+        '<p>x</p>',
+      );
+      expect(Date.now() - started).toBeLessThan(500);
+    });
+
+    it.each([
+      ['named colour', '<span style="color: red">x</span>'],
+      ['colour outside the palette', '<span style="color: #123456">x</span>'],
+      ['extra declaration', '<span style="color: #b91c1c; background: x">x</span>'],
+      ['expression', '<span style="color: expression(alert(1))">x</span>'],
+      ['text-align on span', '<span style="text-align: center">x</span>'],
+      ['colour on p', '<p style="color: #b91c1c">x</p>'],
+    ])('drops %s but keeps the text', (_name, html) => {
+      const out = sanitizeRichtext(html);
+      expect(out).not.toContain('style=');
+      expect(out).not.toContain('<span');
+      expect(out).toContain('x');
+    });
+
+    it.each(['left', 'center', 'right', 'justify'])(
+      'keeps text-align %s on p and headings',
+      (v) => {
+        expect(sanitizeRichtext(`<p style="text-align: ${v}">x</p>`)).toBe(
+          `<p style="text-align: ${v}">x</p>`,
+        );
+        expect(sanitizeRichtext(`<h3 style="TEXT-ALIGN:${v.toUpperCase()}">x</h3>`)).toBe(
+          `<h3 style="text-align: ${v}">x</h3>`,
+        );
+      },
+    );
+
+    it('drops other text-align values and extra declarations', () => {
+      expect(sanitizeRichtext('<p style="text-align: start">x</p>')).toBe('<p>x</p>');
+      expect(sanitizeRichtext('<p style="text-align: center; color: red">x</p>')).toBe('<p>x</p>');
+    });
+  });
+
+  describe('images', () => {
+    const imageOrigins = ['https://res.cloudinary.com'];
+    const id = '0197f3a0-7b1c-7c3e-8a52-0123456789ab';
+    const src = 'https://res.cloudinary.com/demo/image/upload/a.png';
+
+    it('keeps src, alt and a UUID data-media-id', () => {
+      expect(
+        sanitizeRichtext(`<img src="${src}" alt="A" data-media-id="${id}">`, { imageOrigins }),
+      ).toBe(`<img src="${src}" alt="A" data-media-id="${id}" />`);
+    });
+
+    it.each([
+      ['missing', ''],
+      ['not a UUID', ' data-media-id="x"'],
+    ])('drops the img when data-media-id is %s', (_name, attr) => {
+      expect(sanitizeRichtext(`<img src="${src}"${attr}>`, { imageOrigins })).toBe('');
+    });
+
+    it('keeps an http img from the local origin and drops a scheme or port mismatch', () => {
+      const local = ['http://localhost:8080'];
+      const keep = (url: string) =>
+        sanitizeRichtext(`<img src="${url}" data-media-id="${id}">`, { imageOrigins: local });
+      expect(keep('http://localhost:8080/api/v1/media-files/a.png')).toContain('<img');
+      expect(keep('https://localhost:8080/a.png')).toBe('');
+      expect(keep('http://localhost:9090/a.png')).toBe('');
+    });
+
+    it('allows nothing for an origin with another scheme', () => {
+      expect(
+        sanitizeRichtext(`<img src="ftp://x/a.png" data-media-id="${id}">`, {
+          imageOrigins: ['ftp://x'],
+        }),
+      ).toBe('');
+    });
+
+    it('drops other img attributes', () => {
+      const out = sanitizeRichtext(
+        `<img src="${src}" data-media-id="${id}" onerror="alert(1)" width="9" style="x:y">`,
+        {
+          imageOrigins,
+        },
+      );
+      expect(out).toBe(`<img src="${src}" data-media-id="${id}" />`);
+    });
+
+    it.each([
+      ['another origin', 'https://evil.dev/a.png'],
+      ['http', 'http://res.cloudinary.com/a.png'],
+      ['javascript', 'javascript:alert(1)'],
+      ['data', 'data:image/png;base64,AAAA'],
+      ['protocol relative', '//res.cloudinary.com/a.png'],
+      ['malformed', 'https://'],
+      ['userinfo', 'https://x@res.cloudinary.com/a.png'],
+      ['look-alike host', 'https://res.cloudinary.com.evil.dev/a.png'],
+      ['scheme without slashes', 'https:res.cloudinary.com/a.png'],
+      ['scheme with one slash', 'https:/res.cloudinary.com/a.png'],
+    ])('drops the img for %s', (_name, badSrc) => {
+      expect(
+        sanitizeRichtext(`<p>a<img src="${badSrc}" alt="x" data-media-id="${id}"></p>`, {
+          imageOrigins,
+        }),
+      ).toBe('<p>a</p>');
+    });
+
+    it('keeps no img without imageOrigins', () => {
+      const html = `<img src="${src}" data-media-id="${id}">`;
+      expect(sanitizeRichtext(html)).toBe('');
+      expect(sanitizeRichtext(html, { imageOrigins: [] })).toBe('');
+    });
   });
 
   it('returns empty string for empty input', () => {

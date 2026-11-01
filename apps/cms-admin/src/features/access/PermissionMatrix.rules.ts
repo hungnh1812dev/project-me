@@ -1,14 +1,14 @@
+import type { FieldList, PermissionRow } from './Access.api';
 import {
   CONDITIONS_JSON_INDENT,
   CONTENT_WILDCARD_SUBJECT,
   PERMISSION_ACTIONS,
-  type PermissionAction,
   READABLE_FIELD_ACTIONS,
   SYSTEM_SUBJECT_ACTIONS,
   SYSTEM_SUBJECTS,
   WRITABLE_FIELD_ACTIONS,
+  type PermissionAction,
 } from './Access.constants';
-import type { FieldList, PermissionRow } from './Access.api';
 
 /**
  * Editing model of a role's permission set. One cell per subject and
@@ -23,9 +23,7 @@ export interface MatrixCell {
 }
 
 /** subject -> action -> cell. A missing cell = the action is not granted. */
-export type MatrixState = Readonly<
-  Record<string, Partial<Record<PermissionAction, MatrixCell>>>
->;
+export type MatrixState = Readonly<Record<string, Partial<Record<PermissionAction, MatrixCell>>>>;
 
 export type FieldListKind = 'readableFields' | 'writableFields';
 
@@ -46,10 +44,7 @@ export function actionsFor(subject: string): readonly PermissionAction[] {
 }
 
 /** Which field list an action's row carries, if any. */
-export function fieldListKindOf(
-  subject: string,
-  action: PermissionAction,
-): FieldListKind | null {
+export function fieldListKindOf(subject: string, action: PermissionAction): FieldListKind | null {
   if (subject === CONTENT_WILDCARD_SUBJECT || isSystemSubject(subject)) {
     return null;
   }
@@ -65,10 +60,7 @@ function conditionsTextOf(conditions: unknown): string {
 }
 
 export function matrixFromRows(rows: readonly PermissionRow[]): MatrixState {
-  const state: Record<
-    string,
-    Partial<Record<PermissionAction, MatrixCell>>
-  > = {};
+  const state: Record<string, Partial<Record<PermissionAction, MatrixCell>>> = {};
   for (const row of rows) {
     const bySubject = (state[row.subject] ??= {});
     const cell = bySubject[row.action];
@@ -118,11 +110,7 @@ function withCell(
 }
 
 /** Grant (new row: all fields, no conditions) or revoke every row of a cell. */
-export function toggleCell(
-  state: MatrixState,
-  ref: CellRef,
-  granted: boolean,
-): MatrixState {
+export function toggleCell(state: MatrixState, ref: CellRef, granted: boolean): MatrixState {
   if (!granted) return withCell(state, ref, undefined);
   if (state[ref.subject]?.[ref.action] !== undefined) return state;
   return withCell(state, ref, {
@@ -162,11 +150,7 @@ export function setFieldList(
   }));
 }
 
-export function setConditionsText(
-  state: MatrixState,
-  ref: CellRef,
-  text: string,
-): MatrixState {
+export function setConditionsText(state: MatrixState, ref: CellRef, text: string): MatrixState {
   return updateFirstRow(state, ref, (cell) => ({
     ...cell,
     conditionsText: text,
@@ -174,9 +158,7 @@ export function setConditionsText(
 }
 
 /** '' -> null; JSON -> value; otherwise `invalid`. */
-export function parseConditions(
-  text: string,
-): { ok: true; value: unknown } | { ok: false } {
+export function parseConditions(text: string): { ok: true; value: unknown } | { ok: false } {
   const trimmed = text.trim();
   if (trimmed === '') return { ok: true, value: null };
   try {
@@ -199,19 +181,13 @@ export interface SerializedMatrix {
 }
 
 /** The PUT body in display order, plus the index -> cell map. */
-export function serializeMatrix(
-  state: MatrixState,
-  order: readonly string[],
-): SerializedMatrix {
+export function serializeMatrix(state: MatrixState, order: readonly string[]): SerializedMatrix {
   const serialized: SerializedMatrix = {
     rows: [],
     cells: [],
     invalidConditions: [],
   };
-  const subjects = [
-    ...order,
-    ...Object.keys(state).filter((subject) => !order.includes(subject)),
-  ];
+  const subjects = [...order, ...Object.keys(state).filter((subject) => !order.includes(subject))];
   for (const subject of subjects) {
     for (const action of PERMISSION_ACTIONS) {
       const cell = state[subject]?.[action];
@@ -220,9 +196,7 @@ export function serializeMatrix(
       const parsed = parseConditions(cell.conditionsText);
       if (!parsed.ok) serialized.invalidConditions.push(ref);
       cell.rows.forEach((row, index) => {
-        serialized.rows.push(
-          index === 0 && parsed.ok ? { ...row, conditions: parsed.value } : row,
-        );
+        serialized.rows.push(index === 0 && parsed.ok ? { ...row, conditions: parsed.value } : row);
         serialized.cells.push(ref);
       });
     }
@@ -231,25 +205,18 @@ export function serializeMatrix(
 }
 
 /** Same grants as `rows`? Used for the unsaved-changes state. */
-export function sameMatrix(
-  a: MatrixState,
-  b: MatrixState,
-  order: readonly string[],
-): boolean {
+export function sameMatrix(a: MatrixState, b: MatrixState, order: readonly string[]): boolean {
   const left = serializeMatrix(a, order);
   const right = serializeMatrix(b, order);
   return (
     left.invalidConditions.length === right.invalidConditions.length &&
     JSON.stringify(left.rows) === JSON.stringify(right.rows) &&
-    JSON.stringify(textsOf(a, left.cells)) ===
-      JSON.stringify(textsOf(b, right.cells))
+    JSON.stringify(textsOf(a, left.cells)) === JSON.stringify(textsOf(b, right.cells))
   );
 }
 
 function textsOf(state: MatrixState, cells: readonly CellRef[]): string[] {
-  return cells.map(
-    (ref) => state[ref.subject]?.[ref.action]?.conditionsText.trim() ?? '',
-  );
+  return cells.map((ref) => state[ref.subject]?.[ref.action]?.conditionsText.trim() ?? '');
 }
 
 /** Messages per cell key from a 400 `details.issues` (path[0] = row index). */
@@ -269,10 +236,7 @@ export function cellIssues(
 }
 
 /** Cell keys for PERMISSION_NOT_HELD `details.indexes`. */
-export function cellsAt(
-  indexes: readonly number[],
-  cells: readonly CellRef[],
-): Set<string> {
+export function cellsAt(indexes: readonly number[], cells: readonly CellRef[]): Set<string> {
   return new Set(
     indexes.flatMap((index) => {
       const ref = cells[index];
@@ -291,11 +255,7 @@ export function isCoveredBy(entry: string, path: string): boolean {
   return path !== entry && path.startsWith(`${entry}.`);
 }
 
-export function toggleField(
-  list: readonly string[],
-  path: string,
-  selected: boolean,
-): string[] {
+export function toggleField(list: readonly string[], path: string, selected: boolean): string[] {
   if (!selected) return list.filter((entry) => entry !== path);
   if (list.includes(path)) return [...list];
   return [...list.filter((entry) => !isCoveredBy(path, entry)), path];

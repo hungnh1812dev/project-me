@@ -1,5 +1,6 @@
 export { FIELD_TYPE_SPECS, fieldTypeOf } from './FieldTypeRegistry.rules';
 export {
+  type CoerceContext,
   type FieldTypeSpec,
   type FieldValueKind,
   type GraphqlOutputName,
@@ -16,5 +17,7 @@ export {
 export {
   mediaColumnsOf,
   mediaFieldNamesByTable,
+  richtextColumnsOf,
+  richtextFieldNamesByTable,
   type MediaColumnRef,
 } from './MediaColumns.rules';

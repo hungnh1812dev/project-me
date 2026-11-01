@@ -1,9 +1,10 @@
 import { Injectable } from '@nestjs/common';
 
 import { Prisma } from '../../../../generated/prisma/client';
-import { prismaTxOf } from '../../../../infrastructure/database/PrismaTransactionRunner.adapter';
 import { PrismaService } from '../../../../infrastructure/database/Prisma.service';
+import { prismaTxOf } from '../../../../infrastructure/database/PrismaTransactionRunner.adapter';
 import type { UnitOfWork } from '../../../../infrastructure/database/TransactionRunner.port';
+import type { AccountStatus } from '../../domain/Access.constants';
 import { REVIEWER_ROLE_SLUG } from '../../domain/SystemRoles.entity';
 import type {
   AccountAdminRepository,
@@ -11,11 +12,7 @@ import type {
   NewAccount,
 } from '../application/AccessManagement.port';
 import { emailTaken } from '../domain/AccessManagement.errors';
-import type {
-  AccountRecord,
-  AccountRoleRecord,
-} from '../domain/Account.entity';
-import type { AccountStatus } from '../../domain/Access.constants';
+import type { AccountRecord, AccountRoleRecord } from '../domain/Account.entity';
 
 /** Postgres unique violation, as Prisma reports it. */
 const UNIQUE_VIOLATION = 'P2002';
@@ -42,8 +39,7 @@ const ACCOUNT_SELECT = {
 } as const;
 
 const isUniqueViolation = (error: unknown): boolean =>
-  error instanceof Prisma.PrismaClientKnownRequestError &&
-  error.code === UNIQUE_VIOLATION;
+  error instanceof Prisma.PrismaClientKnownRequestError && error.code === UNIQUE_VIOLATION;
 
 /** Accounts for the admin API: row locks, the unique-email mapping and the writes. */
 @Injectable()
@@ -69,10 +65,7 @@ export class PrismaAccountAdminRepository implements AccountAdminRepository {
     return { rows, total };
   }
 
-  async lockManageable(
-    unit: UnitOfWork,
-    documentId: string,
-  ): Promise<AccountRecord | null> {
+  async lockManageable(unit: UnitOfWork, documentId: string): Promise<AccountRecord | null> {
     const tx = prismaTxOf(unit);
     const locked = await tx.$queryRaw<{ id: number }[]>`
       SELECT id FROM accounts
@@ -132,17 +125,11 @@ export class PrismaAccountAdminRepository implements AccountAdminRepository {
     }
   }
 
-  update(
-    unit: UnitOfWork,
-    accountId: number,
-    change: AccountChange,
-  ): Promise<AccountRecord> {
+  update(unit: UnitOfWork, accountId: number, change: AccountChange): Promise<AccountRecord> {
     return prismaTxOf(unit).account.update({
       where: { id: accountId },
       data: {
-        ...(change.displayName === undefined
-          ? {}
-          : { displayName: change.displayName }),
+        ...(change.displayName === undefined ? {} : { displayName: change.displayName }),
         ...(change.role === undefined
           ? {}
           : {

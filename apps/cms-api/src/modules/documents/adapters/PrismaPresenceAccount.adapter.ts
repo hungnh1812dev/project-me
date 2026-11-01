@@ -1,10 +1,7 @@
 import { Injectable } from '@nestjs/common';
 
 import { PrismaService } from '../../../infrastructure/database/Prisma.service';
-import type {
-  PresenceAccount,
-  PresenceAccountLookup,
-} from '../application/Documents.port';
+import type { PresenceAccount, PresenceAccountLookup } from '../application/Documents.port';
 
 /** Reads `documentId` and `displayName` only: never an email, role or other account column. */
 @Injectable()

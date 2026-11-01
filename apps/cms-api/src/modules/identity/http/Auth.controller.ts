@@ -16,20 +16,12 @@ import type { Request, Response } from 'express';
 import { z } from 'zod';
 
 import { NO_STORE_HEADER } from '../../../common/constants/Http.constants';
-import {
-  DomainError,
-  DOMAIN_ERROR_KINDS,
-} from '../../../common/errors/Domain.errors';
+import { DOMAIN_ERROR_KINDS, DomainError } from '../../../common/errors/Domain.errors';
 import { Throttle } from '../../../common/guards/Throttle.guard';
-import {
-  ClientIpResolver,
-  clientMetaOf,
-} from '../../../common/http/ClientIp.resolver';
+import { ClientIpResolver, clientMetaOf } from '../../../common/http/ClientIp.resolver';
+import { type ClientMeta } from '../../../common/types/ClientMeta.entity';
 import { AccessPolicyService } from '../../access';
-import {
-  AuthService,
-  type CurrentAccountProfile,
-} from '../application/Auth.service';
+import { AuthService, type CurrentAccountProfile } from '../application/Auth.service';
 import {
   AUTH_ERROR_CODES,
   AUTH_ERROR_MESSAGES,
@@ -45,8 +37,7 @@ import {
   REFRESH_COOKIE,
   REFRESH_COOKIE_OPTIONS,
 } from './IdentityHttp.constants';
-import { type AuthenticatedRequest, JwtAuthGuard } from './Jwt.strategy';
-import { type ClientMeta } from '../../../common/types/ClientMeta.entity';
+import { JwtAuthGuard, type AuthenticatedRequest } from './Jwt.strategy';
 
 /**
  * `POST /auth/login` body. Shape checks only: the email format is not
@@ -90,8 +81,7 @@ function clearRefreshCookie(res: Response): void {
 function isRefusedRefresh(error: unknown): boolean {
   return (
     error instanceof UnauthorizedException ||
-    (error instanceof DomainError &&
-      error.kind === DOMAIN_ERROR_KINDS.UNAUTHENTICATED)
+    (error instanceof DomainError && error.kind === DOMAIN_ERROR_KINDS.UNAUTHENTICATED)
   );
 }
 
@@ -125,10 +115,7 @@ export class AuthController {
       });
     }
 
-    const loginOutcome = await this.auth.login(
-      parsed.data,
-      this.clientMeta(req),
-    );
+    const loginOutcome = await this.auth.login(parsed.data, this.clientMeta(req));
     if (loginOutcome.kind === 'two-factor') {
       return {
         requires2FA: true,
@@ -168,10 +155,7 @@ export class AuthController {
   @Post(AUTH_ROUTES.LOGOUT)
   @HttpCode(HttpStatus.NO_CONTENT)
   @UseGuards(AllowedOriginGuard)
-  async logout(
-    @Req() req: Request,
-    @Res({ passthrough: true }) res: Response,
-  ): Promise<void> {
+  async logout(@Req() req: Request, @Res({ passthrough: true }) res: Response): Promise<void> {
     await this.auth.logout(refreshCookieOf(req), this.clientMeta(req));
     clearRefreshCookie(res);
   }

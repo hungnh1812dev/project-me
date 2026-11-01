@@ -4,7 +4,14 @@ import type { NestExpressApplication } from '@nestjs/platform-express';
 import { decode, sign } from 'jsonwebtoken';
 import request from 'supertest';
 
+import { RATE_LIMIT_SWEEP_INTERVAL_MS } from '../../src/common/constants/Limits.constants';
 import { Clock } from '../../src/common/time/Clock.service';
+import {
+  openPrisma,
+  type PrismaHandle,
+} from '../../src/infrastructure/database/PrismaClient.adapter';
+import { hashPassword } from '../../src/modules/identity/application/Password.service';
+import { hashRefreshToken } from '../../src/modules/identity/application/RefreshToken.service';
 import {
   ACCESS_TOKEN_TTL_SECONDS,
   AUTH_ERROR_CODES,
@@ -13,13 +20,7 @@ import {
   TOKEN_TYPES,
 } from '../../src/modules/identity/domain/Identity.constants';
 import { REFRESH_COOKIE } from '../../src/modules/identity/http/IdentityHttp.constants';
-import { RATE_LIMIT_SWEEP_INTERVAL_MS } from '../../src/common/constants/Limits.constants';
-import {
-  openPrisma,
-  type PrismaHandle,
-} from '../../src/infrastructure/database/PrismaClient.adapter';
-import { hashPassword } from '../../src/modules/identity/application/Password.service';
-import { hashRefreshToken } from '../../src/modules/identity/application/RefreshToken.service';
+import { seedSystemRoles } from '../fixtures/Access.fixture';
 import { createCoreTemplate } from '../fixtures/CoreDb.fixture';
 import {
   dbEnvOf,
@@ -31,7 +32,6 @@ import {
 } from '../fixtures/Env.fixture';
 import { startPostgres, type TestPostgres } from '../fixtures/Postgres.fixture';
 import { createTestApp } from '../fixtures/TestApp.fixture';
-import { seedSystemRoles } from '../fixtures/Access.fixture';
 
 const AUTH = '/api/v1/auth';
 const LOGIN = `${AUTH}/login`;
@@ -60,9 +60,7 @@ function setCookies(res: request.Response): string[] {
 }
 
 function refreshCookieHeader(res: request.Response): string {
-  const header = setCookies(res).find((c) =>
-    c.startsWith(`${REFRESH_COOKIE.NAME}=`),
-  );
+  const header = setCookies(res).find((c) => c.startsWith(`${REFRESH_COOKIE.NAME}=`));
   if (header === undefined) throw new Error('no refresh cookie set');
   return header;
 }
@@ -150,10 +148,7 @@ describe('auth: login, JWT, refresh rotation, logout (Postgres 17 via Testcontai
       data: {
         email,
         displayName: `User ${accountCount}`,
-        passwordHash:
-          overrides.withPassword === false
-            ? null
-            : await hashPassword(PASSWORD),
+        passwordHash: overrides.withPassword === false ? null : await hashPassword(PASSWORD),
         status: overrides.status ?? 'active',
         deletedAt: overrides.deleted === true ? new Date() : null,
         is2faEnabled: overrides.twoFa !== undefined,
@@ -194,20 +189,14 @@ describe('auth: login, JWT, refresh rotation, logout (Postgres 17 via Testcontai
     clockSpy.mockImplementation(() => Date.now());
   }
 
-  function refresh(
-    token: string | undefined,
-    origin: string | null = TEST_ADMIN_ORIGIN,
-  ) {
+  function refresh(token: string | undefined, origin: string | null = TEST_ADMIN_ORIGIN) {
     const req = http().post(REFRESH);
     if (origin !== null) req.set('Origin', origin);
     if (token !== undefined) req.set('Cookie', cookie(token));
     return req;
   }
 
-  function logout(
-    token: string | undefined,
-    origin: string | null = TEST_ADMIN_ORIGIN,
-  ) {
+  function logout(token: string | undefined, origin: string | null = TEST_ADMIN_ORIGIN) {
     const req = http().post(LOGOUT);
     if (origin !== null) req.set('Origin', origin);
     if (token !== undefined) req.set('Cookie', cookie(token));
@@ -276,19 +265,13 @@ describe('auth: login, JWT, refresh rotation, logout (Postgres 17 via Testcontai
         kid: TEST_JWT_KID,
         typ: TOKEN_TYPES.ACCESS,
       });
-      expect(Number(payload['exp']) - Number(payload['iat'])).toBe(
-        ACCESS_TOKEN_TTL_SECONDS,
-      );
+      expect(Number(payload['exp']) - Number(payload['iat'])).toBe(ACCESS_TOKEN_TTL_SECONDS);
     });
 
     it('accepts a trailing slash without redirecting (SPEC §12-17)', async () => {
       const account = await createAccount();
-      expect((await login(account.email, PASSWORD, `${LOGIN}/`)).status).toBe(
-        200,
-      );
-      expect(
-        (await login(account.email, WRONG_PASSWORD, `${LOGIN}/`)).status,
-      ).toBe(401);
+      expect((await login(account.email, PASSWORD, `${LOGIN}/`)).status).toBe(200);
+      expect((await login(account.email, WRONG_PASSWORD, `${LOGIN}/`)).status).toBe(401);
     });
 
     it('gives unknown email, wrong password and non-active accounts the identical error', async () => {
@@ -375,9 +358,7 @@ describe('auth: login, JWT, refresh rotation, logout (Postgres 17 via Testcontai
       ).toBe(0);
 
       // The temp token is not an access token.
-      const me = await http()
-        .get(ME)
-        .set('Authorization', `Bearer ${body.tempToken}`);
+      const me = await http().get(ME).set('Authorization', `Bearer ${body.tempToken}`);
       expect(me.status).toBe(401);
     });
   });
@@ -395,9 +376,7 @@ describe('auth: login, JWT, refresh rotation, logout (Postgres 17 via Testcontai
     it('returns the minimal profile for a valid access token', async () => {
       const account = await createAccount();
       const { accessToken } = await signIn(account);
-      const res = await http()
-        .get(ME)
-        .set('Authorization', `Bearer ${accessToken}`);
+      const res = await http().get(ME).set('Authorization', `Bearer ${accessToken}`);
       expect(res.status).toBe(200);
       expect(res.body).toEqual({
         id: account.documentId,
@@ -437,8 +416,7 @@ describe('auth: login, JWT, refresh rotation, logout (Postgres 17 via Testcontai
       };
     });
 
-    const me = (token: string) =>
-      http().get(ME).set('Authorization', `Bearer ${token}`);
+    const me = (token: string) => http().get(ME).set('Authorization', `Bearer ${token}`);
 
     it('accepts a correctly signed HS256 token', async () => {
       const token = sign(claims, TEST_SECRET_32_BYTES, {
@@ -448,26 +426,20 @@ describe('auth: login, JWT, refresh rotation, logout (Postgres 17 via Testcontai
       expect((await me(token)).status).toBe(200);
     });
 
-    it.each(['HS384', 'HS512'] as const)(
-      'rejects %s even with the right secret',
-      async (alg) => {
-        const token = sign(claims, TEST_SECRET_32_BYTES, {
-          algorithm: alg,
-          keyid: TEST_JWT_KID,
-        });
-        expect((await me(token)).status).toBe(401);
-      },
-    );
+    it.each(['HS384', 'HS512'] as const)('rejects %s even with the right secret', async (alg) => {
+      const token = sign(claims, TEST_SECRET_32_BYTES, {
+        algorithm: alg,
+        keyid: TEST_JWT_KID,
+      });
+      expect((await me(token)).status).toBe(401);
+    });
 
     it('rejects alg none', async () => {
-      const encode = (value: object) =>
-        Buffer.from(JSON.stringify(value)).toString('base64url');
-      const token = `${encode({ alg: 'none', typ: 'JWT', kid: TEST_JWT_KID })}.${encode(
-        {
-          ...claims,
-          exp: Math.floor(Date.now() / 1000) + ACCESS_TOKEN_TTL_SECONDS,
-        },
-      )}.`;
+      const encode = (value: object) => Buffer.from(JSON.stringify(value)).toString('base64url');
+      const token = `${encode({ alg: 'none', typ: 'JWT', kid: TEST_JWT_KID })}.${encode({
+        ...claims,
+        exp: Math.floor(Date.now() / 1000) + ACCESS_TOKEN_TTL_SECONDS,
+      })}.`;
       expect((await me(token)).status).toBe(401);
     });
 
@@ -476,22 +448,14 @@ describe('auth: login, JWT, refresh rotation, logout (Postgres 17 via Testcontai
         algorithm: 'HS256',
         keyid: TEST_JWT_KID,
       });
-      const unknownKid = sign(
-        { ...claims, kid: 'other' },
-        TEST_SECRET_32_BYTES,
-        {
-          algorithm: 'HS256',
-          keyid: 'other',
-        },
-      );
-      const mismatched = sign(
-        { ...claims, kid: 'other' },
-        TEST_SECRET_32_BYTES,
-        {
-          algorithm: 'HS256',
-          keyid: TEST_JWT_KID,
-        },
-      );
+      const unknownKid = sign({ ...claims, kid: 'other' }, TEST_SECRET_32_BYTES, {
+        algorithm: 'HS256',
+        keyid: 'other',
+      });
+      const mismatched = sign({ ...claims, kid: 'other' }, TEST_SECRET_32_BYTES, {
+        algorithm: 'HS256',
+        keyid: TEST_JWT_KID,
+      });
       const noKid = sign(claims, TEST_SECRET_32_BYTES, { algorithm: 'HS256' });
       for (const token of [wrongSecret, unknownKid, mismatched, noKid]) {
         expect((await me(token)).status).toBe(401);
@@ -526,9 +490,7 @@ describe('auth: login, JWT, refresh rotation, logout (Postgres 17 via Testcontai
       expect(res.headers['cache-control']).toBe('no-store');
       const nextToken = refreshTokenOf(res);
       expect(nextToken).not.toBe(first.refreshToken);
-      expect(refreshCookieHeader(res)).toContain(
-        `; Path=${REFRESH_COOKIE.PATH}`,
-      );
+      expect(refreshCookieHeader(res)).toContain(`; Path=${REFRESH_COOKIE.PATH}`);
 
       const oldRow = await tokenRow(first.refreshToken);
       const newRow = await tokenRow(nextToken);
@@ -539,10 +501,7 @@ describe('auth: login, JWT, refresh rotation, logout (Postgres 17 via Testcontai
 
       const me = await http()
         .get(ME)
-        .set(
-          'Authorization',
-          `Bearer ${(res.body as { accessToken: string }).accessToken}`,
-        );
+        .set('Authorization', `Bearer ${(res.body as { accessToken: string }).accessToken}`);
       expect(me.status).toBe(200);
 
       // And again from the admin origin.
@@ -582,10 +541,7 @@ describe('auth: login, JWT, refresh rotation, logout (Postgres 17 via Testcontai
       const account = await createAccount();
       const { refreshToken } = await signIn(account);
       const versionBefore = await tokenVersion(account);
-      const results = await Promise.all([
-        refresh(refreshToken),
-        refresh(refreshToken),
-      ]);
+      const results = await Promise.all([refresh(refreshToken), refresh(refreshToken)]);
       expect(results.map((r) => r.status)).toEqual([200, 200]);
       // One rotation: only the winner sets a new cookie.
       const rotated = results.filter(hasRefreshCookie);
@@ -600,9 +556,7 @@ describe('auth: login, JWT, refresh rotation, logout (Postgres 17 via Testcontai
       expect(await tokenVersion(account)).toBe(versionBefore);
       for (const res of results) {
         const { accessToken } = res.body as { accessToken: string };
-        const me = await http()
-          .get(ME)
-          .set('Authorization', `Bearer ${accessToken}`);
+        const me = await http().get(ME).set('Authorization', `Bearer ${accessToken}`);
         expect(me.status).toBe(200);
       }
       expect((await refresh(successor)).status).toBe(200);
@@ -622,10 +576,7 @@ describe('auth: login, JWT, refresh rotation, logout (Postgres 17 via Testcontai
         (
           await http()
             .get(ME)
-            .set(
-              'Authorization',
-              `Bearer ${(late.body as { accessToken: string }).accessToken}`,
-            )
+            .set('Authorization', `Bearer ${(late.body as { accessToken: string }).accessToken}`)
         ).status,
       ).toBe(200);
       expect((await tokenRow(successor)).revokedAt).toBeNull();
@@ -650,10 +601,7 @@ describe('auth: login, JWT, refresh rotation, logout (Postgres 17 via Testcontai
       const account = await createAccount();
       const { refreshToken } = await signIn(account);
       const successor = refreshTokenOf(await refresh(refreshToken));
-      await http()
-        .post(LOGOUT)
-        .set('Origin', TEST_ADMIN_ORIGIN)
-        .set('Cookie', cookie(successor));
+      await http().post(LOGOUT).set('Origin', TEST_ADMIN_ORIGIN).set('Cookie', cookie(successor));
       const versionBefore = await tokenVersion(account);
 
       expect((await refresh(refreshToken)).status).toBe(401);
@@ -664,22 +612,19 @@ describe('auth: login, JWT, refresh rotation, logout (Postgres 17 via Testcontai
       ['a missing Origin', null],
       ['a foreign Origin', EVIL_ORIGIN],
       ['the literal "null" Origin', 'null'],
-    ])(
-      'refuses %s with 403 and leaves the token usable',
-      async (_label, origin) => {
-        const account = await createAccount();
-        const { refreshToken } = await signIn(account);
-        const res = await refresh(refreshToken, origin);
-        expect(res.status).toBe(403);
-        expect(errorBody(res)).toEqual({
-          statusCode: 403,
-          errorCode: AUTH_ERROR_CODES.ORIGIN_NOT_ALLOWED,
-          message: 'Request origin is not allowed',
-        });
-        expect((await tokenRow(refreshToken)).revokedAt).toBeNull();
-        expect((await refresh(refreshToken)).status).toBe(200);
-      },
-    );
+    ])('refuses %s with 403 and leaves the token usable', async (_label, origin) => {
+      const account = await createAccount();
+      const { refreshToken } = await signIn(account);
+      const res = await refresh(refreshToken, origin);
+      expect(res.status).toBe(403);
+      expect(errorBody(res)).toEqual({
+        statusCode: 403,
+        errorCode: AUTH_ERROR_CODES.ORIGIN_NOT_ALLOWED,
+        message: 'Request origin is not allowed',
+      });
+      expect((await tokenRow(refreshToken)).revokedAt).toBeNull();
+      expect((await refresh(refreshToken)).status).toBe(200);
+    });
 
     it('refuses a missing, unknown or expired cookie and a disabled account', async () => {
       expect((await refresh(undefined)).status).toBe(401);

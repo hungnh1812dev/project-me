@@ -1,5 +1,5 @@
-import { cn } from 'cn';
 import type * as React from 'react';
+import { cn } from 'cn';
 
 import { Checkbox } from '@/components/ui/Checkbox';
 
@@ -71,28 +71,16 @@ function SortableSheet<TRow>({
   busy = false,
   className,
 }: SortableSheetProps<TRow>) {
-  const selection = useRowSelection(
-    rows.map(getRowId),
-    selectedIds,
-    onSelectedChange,
-  );
+  const selection = useRowSelection(rows.map(getRowId), selectedIds, onSelectedChange);
 
   return (
-    <div
-      className={cn(
-        'overflow-x-auto rounded-md border border-border bg-card',
-        className,
-      )}
-    >
+    <div className={cn('border-border bg-card overflow-x-auto rounded-md border', className)}>
       <table
         aria-busy={busy || undefined}
-        className={cn(
-          'w-full border-collapse text-sm transition-opacity',
-          busy && 'opacity-60',
-        )}
+        className={cn('w-full border-collapse text-sm transition-opacity', busy && 'opacity-60')}
       >
         <caption className="sr-only">{caption}</caption>
-        <thead className="bg-muted text-left text-muted-foreground">
+        <thead className="bg-muted text-muted-foreground text-left">
           <tr>
             {selection.isSelectable ? (
               <th scope="col" className="w-10 px-3 py-2">

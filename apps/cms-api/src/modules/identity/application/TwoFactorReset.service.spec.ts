@@ -31,9 +31,7 @@ describe('parseResetEmail', () => {
   });
 
   it('does not echo the rejected value', () => {
-    expect(errorOf('secret-looking-input').message).not.toContain(
-      'secret-looking-input',
-    );
+    expect(errorOf('secret-looking-input').message).not.toContain('secret-looking-input');
   });
 });
 

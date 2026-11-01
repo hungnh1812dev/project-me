@@ -36,11 +36,7 @@ async function onServer(serverUrl: string, statement: string): Promise<void> {
 /** Starts the one server the whole integration run shares (global setup). */
 export function startSharedPostgres() {
   return new PostgreSqlContainer(POSTGRES_TEST_IMAGE)
-    .withCommand([
-      'postgres',
-      '-c',
-      `max_connections=${POSTGRES_TEST_MAX_CONNECTIONS}`,
-    ])
+    .withCommand(['postgres', '-c', `max_connections=${POSTGRES_TEST_MAX_CONNECTIONS}`])
     .start();
 }
 

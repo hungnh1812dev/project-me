@@ -12,8 +12,7 @@ const INT4_OID = 23;
 
 type Parse = (value: string) => unknown;
 
-const contentParser = (oid: number): Parse =>
-  CONTENT_TYPE_PARSERS.getTypeParser(oid) as Parse;
+const contentParser = (oid: number): Parse => CONTENT_TYPE_PARSERS.getTypeParser(oid) as Parse;
 const defaultParser = (oid: number): Parse => types.getTypeParser(oid) as Parse;
 
 describe('content pool type parsers', () => {
@@ -23,9 +22,7 @@ describe('content pool type parsers', () => {
 
   it('leaves every other type on the pg defaults', () => {
     const stamp = '2026-03-01 10:00:00+00';
-    expect(contentParser(TIMESTAMPTZ_OID)(stamp)).toEqual(
-      defaultParser(TIMESTAMPTZ_OID)(stamp),
-    );
+    expect(contentParser(TIMESTAMPTZ_OID)(stamp)).toEqual(defaultParser(TIMESTAMPTZ_OID)(stamp));
     expect(contentParser(INT4_OID)('42')).toBe(42);
   });
 

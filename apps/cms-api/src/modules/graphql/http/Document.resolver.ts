@@ -3,16 +3,19 @@ import type { GraphQLFieldResolver, GraphQLSchema } from 'graphql';
 
 import { describeError } from '../../../common/http/DescribeHttpException.rules';
 import { parseRequest } from '../../../common/http/RequestParsing.rules';
+import { documentIdSchema } from '../../../common/validation/SharedSchemas.rules';
 import { type ActorContext, type SerializedRecord } from '../../access';
-import { DOCUMENT_ERROR_CODES } from '../../documents';
-import type { DocumentPage, DocumentsQueryService } from '../../documents';
 import {
-  type RootFieldExtension,
+  DOCUMENT_ERROR_CODES,
+  type DocumentPage,
+  type DocumentsQueryService,
+} from '../../documents';
+import {
   ROOT_FIELD_EXTENSION_KEY,
   ROOT_OPERATIONS,
+  type RootFieldExtension,
 } from '../application/Graphql.constants';
-import { type ListArguments, toListQuery } from './ListArguments.rules';
-import { documentIdSchema } from '../../../common/validation/SharedSchemas.rules';
+import { toListQuery, type ListArguments } from './ListArguments.rules';
 
 /** What every resolver reads from the request: who is asking. */
 export interface GraphqlContext {
@@ -35,16 +38,10 @@ function isDocumentNotFound(error: unknown): boolean {
 function resolverFor(
   documents: DocumentsQueryService,
   { slug, operation }: RootFieldExtension,
-): GraphQLFieldResolver<
-  unknown,
-  GraphqlContext,
-  RootArgs,
-  Promise<RootResult>
-> {
+): GraphQLFieldResolver<unknown, GraphqlContext, RootArgs, Promise<RootResult>> {
   switch (operation) {
     case ROOT_OPERATIONS.LIST:
-      return (_source, args, { actor }) =>
-        documents.list(actor, slug, toListQuery(args));
+      return (_source, args, { actor }) => documents.list(actor, slug, toListQuery(args));
     case ROOT_OPERATIONS.SINGLE:
       return async (_source, args, { actor }) => {
         const page = await documents.list(
@@ -86,8 +83,7 @@ export function attachDocumentResolvers(
   const root = schema.getQueryType();
   if (root === undefined || root === null) return schema;
   for (const field of Object.values(root.getFields())) {
-    const extension = field.extensions[ROOT_FIELD_EXTENSION_KEY] as
-      RootFieldExtension | undefined;
+    const extension = field.extensions[ROOT_FIELD_EXTENSION_KEY] as RootFieldExtension | undefined;
     if (extension === undefined) continue;
     field.resolve = resolverFor(documents, extension) as GraphQLFieldResolver<
       unknown,

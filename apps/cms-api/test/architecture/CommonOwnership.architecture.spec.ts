@@ -20,23 +20,17 @@ describe('common/ and infrastructure/ ownership (D1)', () => {
   const commonFiles = sources
     .map(({ file }) => file)
     .filter((file) =>
-      SHARED_DIRECTORIES.some((directory) =>
-        file.startsWith(`${directory}${sep}`),
-      ),
+      SHARED_DIRECTORIES.some((directory) => file.startsWith(`${directory}${sep}`)),
     );
 
   /** Who imports each common file: a module node, or 'shared' for any other importer. */
   const importersOf = new Map<string, Set<string>>();
   for (const source of sources) {
     const importer = nodeOfFile(source.file);
-    const label =
-      importer === null || importer === 'platform' ? 'shared' : importer;
+    const label = importer === null || importer === 'platform' ? 'shared' : importer;
     for (const reached of reachedFilesOf(SRC_ROOT, source)) {
       if (!commonFiles.includes(reached) || reached === source.file) continue;
-      importersOf.set(
-        reached,
-        (importersOf.get(reached) ?? new Set()).add(label),
-      );
+      importersOf.set(reached, (importersOf.get(reached) ?? new Set()).add(label));
     }
   }
 
@@ -51,9 +45,7 @@ describe('common/ and infrastructure/ ownership (D1)', () => {
   });
 
   it('has no file that only one module imports', () => {
-    const unlisted = singleModuleFiles.filter(
-      (file) => !SINGLE_MODULE_ALLOWLIST.has(file),
-    );
+    const unlisted = singleModuleFiles.filter((file) => !SINGLE_MODULE_ALLOWLIST.has(file));
     expect(unlisted).toEqual([]);
   });
 

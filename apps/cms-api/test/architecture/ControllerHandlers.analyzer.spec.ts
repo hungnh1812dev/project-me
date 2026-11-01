@@ -1,16 +1,16 @@
 import { Controller, Get, UseGuards } from '@nestjs/common';
 
-import { RequirePermission } from '../../src/modules/access/http/Permission.guard';
 import { PermissionAction } from '../../src/generated/prisma/client';
+import { DocumentAuthGuard } from '../../src/modules/access/document-auth/http/DocumentAuth.guard';
+import { RequirePermission } from '../../src/modules/access/http/Permission.guard';
+import { JwtAuthGuard } from '../../src/modules/identity/http/Jwt.strategy';
 import {
-  type ControllerClass,
   handlersOf,
   hasPromisedGuard,
   isPermissionEnforced,
   PermissionGuard,
+  type ControllerClass,
 } from './ControllerHandlers.analyzer';
-import { DocumentAuthGuard } from '../../src/modules/access/document-auth/http/DocumentAuth.guard';
-import { JwtAuthGuard } from '../../src/modules/identity/http/Jwt.strategy';
 
 const READ_ROLES = {
   action: PermissionAction.read,
@@ -85,9 +85,7 @@ describe('controller handler discovery (R1-02 guards)', () => {
       @Get('own')
       own() {}
     }
-    const ids = handlersOf(Child as unknown as ControllerClass).map(
-      ({ id }) => id,
-    );
+    const ids = handlersOf(Child as unknown as ControllerClass).map(({ id }) => id);
     expect(ids.sort()).toEqual(['Child.inherited', 'Child.own']);
   });
 });

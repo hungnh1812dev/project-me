@@ -1,8 +1,4 @@
-import {
-  TURNSTILE_SITEVERIFY_URL,
-  TurnstileClient,
-  type HttpFetch,
-} from './Turnstile.client';
+import { TURNSTILE_SITEVERIFY_URL, TurnstileClient, type HttpFetch } from './Turnstile.client';
 
 function replying(json: unknown, ok = true): HttpFetch {
   return () => Promise.resolve({ ok, json: () => Promise.resolve(json) });
@@ -53,14 +49,9 @@ describe('TurnstileClient', () => {
   it.each([
     ['http error', replying({}, false)],
     ['malformed reply', replying({ nope: 1 })],
-    [
-      'internal-error',
-      replying({ success: false, 'error-codes': ['internal-error'] }),
-    ],
+    ['internal-error', replying({ success: false, 'error-codes': ['internal-error'] })],
     ['network error', () => Promise.reject(new Error('down'))],
   ])('is unavailable on %s', async (_name, fetchFn) => {
-    await expect(
-      new TurnstileClient('k', { fetchFn }).verify('t'),
-    ).resolves.toBe('unavailable');
+    await expect(new TurnstileClient('k', { fetchFn }).verify('t')).resolves.toBe('unavailable');
   });
 });

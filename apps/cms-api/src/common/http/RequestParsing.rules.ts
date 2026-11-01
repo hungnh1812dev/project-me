@@ -4,9 +4,7 @@ import { z } from 'zod';
 import { INVALID_REQUEST_ERROR } from '../constants/Error.constants';
 import type { RequestIssue } from '../validation/SharedSchemas.rules';
 
-export function invalidRequest(
-  issues: readonly RequestIssue[],
-): BadRequestException {
+export function invalidRequest(issues: readonly RequestIssue[]): BadRequestException {
   return new BadRequestException({
     errorCode: INVALID_REQUEST_ERROR.CODE,
     message: INVALID_REQUEST_ERROR.MESSAGE,

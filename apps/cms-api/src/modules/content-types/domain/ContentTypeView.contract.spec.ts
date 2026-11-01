@@ -1,12 +1,13 @@
 import { systemRole } from '../../../../test/fixtures/Access.fixture';
 import {
+  CONDITION_SYSTEM_FIELDS,
   FieldSelection,
+  joinFieldPath,
   recordReadAccess,
   reviewerActor,
   SubjectCatalog,
 } from '../../access';
 import { ContentTypeRegistry } from '../../content-engine';
-import { CONDITION_SYSTEM_FIELDS, joinFieldPath } from '../../access';
 import { contentTypeView } from './ContentTypeView.rules';
 
 const VOCABULARY = {
@@ -50,10 +51,7 @@ const registry = ContentTypeRegistry.fromDefinitions([PROFILE]);
 const view = contentTypeView(
   registry.resolve(PROFILE.slug),
   new SubjectCatalog(registry),
-  recordReadAccess(
-    reviewerActor(1, 1, systemRole('reviewer')),
-    FieldSelection.ALL,
-  ),
+  recordReadAccess(reviewerActor(1, 1, systemRole('reviewer')), FieldSelection.ALL),
   VOCABULARY,
 );
 

@@ -1,5 +1,5 @@
-import { createApiContext } from '../../lib/ApiContext.setup';
+import { createApiContext } from '@apis/client/ApiContext.setup';
+
 import type { SecurityApi } from './Security.api';
 
-export const [SecurityApiProvider, useSecurityApi] =
-  createApiContext<SecurityApi>('Security');
+export const [SecurityApiProvider, useSecurityApi] = createApiContext<SecurityApi>('Security');

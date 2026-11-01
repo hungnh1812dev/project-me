@@ -1,11 +1,5 @@
-import {
-  systemRole,
-  testCatalog,
-} from '../../../../../test/fixtures/Access.fixture';
-import {
-  actorWithRole,
-  fakeRunner,
-} from '../../../../../test/fixtures/Management.fixture';
+import { systemRole, testCatalog } from '../../../../../test/fixtures/Access.fixture';
+import { actorWithRole, fakeRunner } from '../../../../../test/fixtures/Management.fixture';
 import type { SecurityAuditService } from '../../../security-audit';
 import type { AccessPolicyService } from '../../application/AccessPolicy.service';
 import type {
@@ -14,10 +8,7 @@ import type {
 } from '../../application/RolePermissions.service';
 import type { VersionCache } from '../../application/VersionCache.service';
 import { PolicyEvaluator } from '../../domain/PolicyEvaluator.rules';
-import {
-  MANAGEMENT_ERROR_CODES,
-  MANAGEMENT_LIMITS,
-} from '../domain/AccessManagement.constants';
+import { MANAGEMENT_ERROR_CODES, MANAGEMENT_LIMITS } from '../domain/AccessManagement.constants';
 import type { RoleRecord } from './AccessManagement.port';
 import { RolesService } from './Roles.service';
 
@@ -52,9 +43,7 @@ function build(
     findByDocumentId: jest.fn(() => Promise.resolve(locked)),
     lockByDocumentId: jest.fn(() => Promise.resolve(locked)),
     countAccounts: jest.fn(() => Promise.resolve(overrides.accountCount ?? 0)),
-    lockAndCountCustomRoles: jest.fn(() =>
-      Promise.resolve(overrides.customRoleCount ?? 0),
-    ),
+    lockAndCountCustomRoles: jest.fn(() => Promise.resolve(overrides.customRoleCount ?? 0)),
     create: jest.fn(() => Promise.resolve(CUSTOM)),
     update: jest.fn((_unit: unknown, _id: number, change: { name?: string }) =>
       Promise.resolve({ ...CUSTOM, ...change }),
@@ -63,16 +52,12 @@ function build(
   };
   const catalog = testCatalog();
   const access = {
-    policy: () =>
-      Promise.resolve({ catalog, evaluator: new PolicyEvaluator(catalog) }),
+    policy: () => Promise.resolve({ catalog, evaluator: new PolicyEvaluator(catalog) }),
   };
   const rolePermissions = {
     replacePermissions: jest.fn(
-      (
-        _roleId: number,
-        _grants: unknown,
-        _options?: PermissionWriteOptions,
-      ): Promise<number> => Promise.resolve(2),
+      (_roleId: number, _grants: unknown, _options?: PermissionWriteOptions): Promise<number> =>
+        Promise.resolve(2),
     ),
   };
   const versions = { invalidateRole: jest.fn(() => events.push('drop')) };
@@ -112,10 +97,7 @@ describe('RolesService', () => {
         { slug: 'moderator', name: 'Moderator', rank: 25 },
         META,
       );
-      expect(roles.create).toHaveBeenCalledWith(
-        unit,
-        expect.objectContaining({ rank: 25 }),
-      );
+      expect(roles.create).toHaveBeenCalledWith(unit, expect.objectContaining({ rank: 25 }));
       expect(audit.record).toHaveBeenCalledWith(
         unit,
         expect.objectContaining({
@@ -131,11 +113,7 @@ describe('RolesService', () => {
         customRoleCount: MANAGEMENT_LIMITS.MAX_CUSTOM_ROLES,
       });
       await expect(
-        service.create(
-          actorWithRole('admin'),
-          { slug: 'x', name: 'X', rank: 25 },
-          META,
-        ),
+        service.create(actorWithRole('admin'), { slug: 'x', name: 'X', rank: 25 }, META),
       ).rejects.toMatchObject({
         errorCode: MANAGEMENT_ERROR_CODES.ROLE_LIMIT_REACHED,
       });
@@ -145,11 +123,7 @@ describe('RolesService', () => {
     it('refuses a rank the actor does not outrank before opening a unit', async () => {
       const { service, roles } = build();
       await expect(
-        service.create(
-          actorWithRole('admin'),
-          { slug: 'x', name: 'X', rank: 40 },
-          META,
-        ),
+        service.create(actorWithRole('admin'), { slug: 'x', name: 'X', rank: 40 }, META),
       ).rejects.toMatchObject({ kind: 'forbidden' });
       expect(roles.lockAndCountCustomRoles).not.toHaveBeenCalled();
     });
@@ -158,12 +132,7 @@ describe('RolesService', () => {
   describe('update', () => {
     it('audits the changed fields and drops the role after the commit', async () => {
       const { service, audit, events } = build();
-      await service.update(
-        actorWithRole('admin'),
-        CUSTOM.documentId,
-        { name: 'Mods' },
-        META,
-      );
+      await service.update(actorWithRole('admin'), CUSTOM.documentId, { name: 'Mods' }, META);
       expect(audit.record).toHaveBeenCalledWith(
         expect.anything(),
         expect.objectContaining({
@@ -176,12 +145,7 @@ describe('RolesService', () => {
 
     it('writes nothing for an unchanged role', async () => {
       const { service, roles, audit } = build();
-      await service.update(
-        actorWithRole('admin'),
-        CUSTOM.documentId,
-        { name: CUSTOM.name },
-        META,
-      );
+      await service.update(actorWithRole('admin'), CUSTOM.documentId, { name: CUSTOM.name }, META);
       expect(roles.update).not.toHaveBeenCalled();
       expect(audit.record).not.toHaveBeenCalled();
     });
@@ -191,12 +155,7 @@ describe('RolesService', () => {
         locked: { ...CUSTOM, isSystem: true, rank: 30 },
       });
       await expect(
-        service.update(
-          actorWithRole('admin'),
-          CUSTOM.documentId,
-          { rank: 25 },
-          META,
-        ),
+        service.update(actorWithRole('admin'), CUSTOM.documentId, { rank: 25 }, META),
       ).rejects.toMatchObject({
         errorCode: MANAGEMENT_ERROR_CODES.ROLE_SYSTEM_IMMUTABLE,
       });
@@ -205,12 +164,7 @@ describe('RolesService', () => {
     it('refuses a role the actor does not outrank', async () => {
       const { service, roles } = build({ locked: { ...CUSTOM, rank: 40 } });
       await expect(
-        service.update(
-          actorWithRole('admin'),
-          CUSTOM.documentId,
-          { name: 'x' },
-          META,
-        ),
+        service.update(actorWithRole('admin'), CUSTOM.documentId, { name: 'x' }, META),
       ).rejects.toMatchObject({ kind: 'forbidden' });
       expect(roles.update).not.toHaveBeenCalled();
     });
@@ -218,12 +172,7 @@ describe('RolesService', () => {
     it('answers 404 for an unknown role', async () => {
       const { service } = build({ locked: null });
       await expect(
-        service.update(
-          actorWithRole('admin'),
-          CUSTOM.documentId,
-          { name: 'x' },
-          META,
-        ),
+        service.update(actorWithRole('admin'), CUSTOM.documentId, { name: 'x' }, META),
       ).rejects.toMatchObject({
         errorCode: MANAGEMENT_ERROR_CODES.ROLE_NOT_FOUND,
       });
@@ -268,12 +217,7 @@ describe('RolesService', () => {
         { subject: 'audit_logs', action: 'read' },
       ];
       await expect(
-        service.replacePermissions(
-          actorWithRole('admin'),
-          CUSTOM.documentId,
-          rows,
-          META,
-        ),
+        service.replacePermissions(actorWithRole('admin'), CUSTOM.documentId, rows, META),
       ).rejects.toMatchObject({
         kind: 'forbidden',
         errorCode: MANAGEMENT_ERROR_CODES.PERMISSION_NOT_HELD,
@@ -301,12 +245,10 @@ describe('RolesService', () => {
 
     it('writes through RolePermissionsService and audits in its unit', async () => {
       const { service, rolePermissions, audit } = build();
-      rolePermissions.replacePermissions.mockImplementation(
-        async (_roleId, _grants, options) => {
-          await options?.alsoInTransaction?.({ afterCommit: jest.fn() }, 2);
-          return 2;
-        },
-      );
+      rolePermissions.replacePermissions.mockImplementation(async (_roleId, _grants, options) => {
+        await options?.alsoInTransaction?.({ afterCommit: jest.fn() }, 2);
+        return 2;
+      });
       await service.replacePermissions(
         actorWithRole('owner'),
         CUSTOM.documentId,
@@ -331,12 +273,7 @@ describe('RolesService', () => {
         locked: { ...CUSTOM, rank: systemRole('admin').rank },
       });
       await expect(
-        service.replacePermissions(
-          actorWithRole('admin'),
-          CUSTOM.documentId,
-          [],
-          META,
-        ),
+        service.replacePermissions(actorWithRole('admin'), CUSTOM.documentId, [], META),
       ).rejects.toMatchObject({ kind: 'forbidden' });
       expect(rolePermissions.replacePermissions).not.toHaveBeenCalled();
     });

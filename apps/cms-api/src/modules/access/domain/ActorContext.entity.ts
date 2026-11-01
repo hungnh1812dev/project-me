@@ -1,13 +1,9 @@
 import { z } from 'zod';
 
-import {
-  DomainError,
-  DOMAIN_ERROR_KINDS,
-} from '../../../common/errors/Domain.errors';
-import type { PermissionAction } from './Access.constants';
-import { OWNER_ROLE_SLUG } from './SystemRoles.entity';
-import { PERMISSION_ACTIONS } from './Access.constants';
+import { DOMAIN_ERROR_KINDS, DomainError } from '../../../common/errors/Domain.errors';
+import { PERMISSION_ACTIONS, type PermissionAction } from './Access.constants';
 import type { FieldList } from './FieldPaths.rules';
+import { OWNER_ROLE_SLUG } from './SystemRoles.entity';
 
 /** The one bare 401 every failed authentication answers with, whatever the cause (N2c). */
 export function unauthenticated(): DomainError {
@@ -132,14 +128,8 @@ export function rolePolicyFromRows(
     permissions: rows.map((row, index) => ({
       subject: row.subject,
       action: row.action,
-      readableFields: parseFieldList(
-        row.readableFields,
-        `Permission ${index} readable_fields`,
-      ),
-      writableFields: parseFieldList(
-        row.writableFields,
-        `Permission ${index} writable_fields`,
-      ),
+      readableFields: parseFieldList(row.readableFields, `Permission ${index} readable_fields`),
+      writableFields: parseFieldList(row.writableFields, `Permission ${index} writable_fields`),
       conditions: row.conditions ?? null,
     })),
   };
@@ -157,10 +147,7 @@ export function parseTokenScope(raw: unknown): TokenScope {
   return parsed.data;
 }
 
-export function accountActor(
-  accountId: number,
-  role: RolePolicy,
-): ActorContext {
+export function accountActor(accountId: number, role: RolePolicy): ActorContext {
   return { kind: 'account', accountId, role };
 }
 

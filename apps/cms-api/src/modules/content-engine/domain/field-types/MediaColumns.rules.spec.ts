@@ -1,5 +1,10 @@
 import { ContentTypeRegistry } from '../ContentTypeRegistry.entity';
-import { mediaColumnsOf, mediaFieldNamesByTable } from './MediaColumns.rules';
+import {
+  mediaColumnsOf,
+  mediaFieldNamesByTable,
+  richtextColumnsOf,
+  richtextFieldNamesByTable,
+} from './MediaColumns.rules';
 
 const GALLERY = {
   slug: 'gallery',
@@ -8,10 +13,14 @@ const GALLERY = {
   fields: [
     { name: 'cover', type: 'media' },
     { name: 'title', type: 'string' },
+    { name: 'body', type: 'richtext' },
     {
       name: 'block',
       type: 'component',
-      fields: [{ name: 'heroImage', type: 'media' }],
+      fields: [
+        { name: 'heroImage', type: 'media' },
+        { name: 'caption', type: 'richtext' },
+      ],
     },
   ],
 } as const;
@@ -38,18 +47,12 @@ describe('mediaColumnsOf', () => {
 
   it('returns names only, nothing that is SQL', () => {
     for (const ref of mediaColumnsOf(registry)) {
-      expect(Object.keys(ref).sort()).toEqual([
-        'columnName',
-        'fieldName',
-        'tableName',
-      ]);
+      expect(Object.keys(ref).sort()).toEqual(['columnName', 'fieldName', 'tableName']);
     }
   });
 
   it('is empty when no content type has a media field', () => {
-    expect(mediaColumnsOf(ContentTypeRegistry.fromDefinitions([NOTE]))).toEqual(
-      [],
-    );
+    expect(mediaColumnsOf(ContentTypeRegistry.fromDefinitions([NOTE]))).toEqual([]);
   });
 
   it('groups field names by table', () => {
@@ -57,6 +60,30 @@ describe('mediaColumnsOf', () => {
       new Map([
         ['gallery', ['cover']],
         ['gallery__block', ['heroImage']],
+      ]),
+    );
+  });
+});
+
+describe('richtextColumnsOf', () => {
+  const registry = ContentTypeRegistry.fromDefinitions([GALLERY, NOTE]);
+
+  it('lists a richtext field at the root and inside a component, not string or text', () => {
+    expect(richtextColumnsOf(registry)).toEqual([
+      { tableName: 'gallery', columnName: 'body', fieldName: 'body' },
+      { tableName: 'gallery__block', columnName: 'caption', fieldName: 'caption' },
+    ]);
+  });
+
+  it('is empty when no content type has a richtext field', () => {
+    expect(richtextColumnsOf(ContentTypeRegistry.fromDefinitions([NOTE]))).toEqual([]);
+  });
+
+  it('groups field names by table', () => {
+    expect(richtextFieldNamesByTable(registry)).toEqual(
+      new Map([
+        ['gallery', ['body']],
+        ['gallery__block', ['caption']],
       ]),
     );
   });

@@ -21,9 +21,7 @@ export class SmtpMailSender implements MailSender {
       port: smtp.port,
       secure: smtp.secure,
       auth:
-        smtp.auth === undefined
-          ? undefined
-          : { user: smtp.auth.user, pass: smtp.auth.password },
+        smtp.auth === undefined ? undefined : { user: smtp.auth.user, pass: smtp.auth.password },
       connectionTimeout: SMTP_TIMEOUTS_MS.CONNECTION,
       greetingTimeout: SMTP_TIMEOUTS_MS.GREETING,
       socketTimeout: SMTP_TIMEOUTS_MS.SOCKET,

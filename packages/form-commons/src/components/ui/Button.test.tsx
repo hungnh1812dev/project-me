@@ -12,18 +12,13 @@ describe('Button', () => {
     expect(button).toHaveAttribute('data-size', 'md');
   });
 
-  it.each([
-    'primary',
-    'secondary',
-    'success',
-    'warning',
-    'destructive',
-    'ghost',
-    'link',
-  ] as const)('renders the %s variant', (variant) => {
-    render(<Button variant={variant}>Action</Button>);
-    expect(screen.getByRole('button')).toHaveAttribute('data-variant', variant);
-  });
+  it.each(['primary', 'secondary', 'success', 'warning', 'destructive', 'ghost', 'link'] as const)(
+    'renders the %s variant',
+    (variant) => {
+      render(<Button variant={variant}>Action</Button>);
+      expect(screen.getByRole('button')).toHaveAttribute('data-variant', variant);
+    },
+  );
 
   it('calls onClick when enabled', async () => {
     const onClick = vi.fn<() => void>();
@@ -42,9 +37,10 @@ describe('Button', () => {
     const button = screen.getByRole('button', { name: 'Send invoice' });
     expect(button).toBeDisabled();
     expect(button).toHaveAttribute('aria-busy', 'true');
-    expect(
-      button.querySelector('[data-slot="button-spinner"]'),
-    ).toHaveAttribute('aria-hidden', 'true');
+    expect(button.querySelector('[data-slot="button-spinner"]')).toHaveAttribute(
+      'aria-hidden',
+      'true',
+    );
     await userEvent.click(button);
     expect(onClick).not.toHaveBeenCalled();
   });

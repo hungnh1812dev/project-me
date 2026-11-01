@@ -20,7 +20,7 @@ find `dist/`.
 
 | Export                        | Holds                                                                                                                                                                                                                                                          |
 | ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `@abyss/base-config/prettier` | A Prettier `Config`: 80 columns, single quotes, semicolons, trailing commas, LF. No plugins.                                                                                                                                                                   |
+| `@abyss/base-config/prettier` | A Prettier `Config`: 100 columns, single quotes, semicolons, trailing commas, LF. Import-sort and Tailwind class-sort plugins, resolved by base-config so consumers install nothing for them.                                                                  |
 | `@abyss/base-config/eslint`   | `baseEslint({ tsconfigRootDir, ignores?, fileNames? })`, a flat config array: `@eslint/js` recommended, `typescript-eslint` `recommendedTypeChecked` with the project service, shared ignores, `_`-prefix unused vars, and the opt-in `abyss/file-names` rule. |
 | `@abyss/base-config/oxlint`   | An Oxlint config: `typescript` plugin, `correctness` as error, `suspicious` as warn, `_`-prefix unused vars, shared ignores.                                                                                                                                   |
 

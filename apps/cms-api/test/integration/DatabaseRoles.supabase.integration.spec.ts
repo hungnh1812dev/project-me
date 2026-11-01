@@ -1,7 +1,6 @@
 import {
   applyDatabaseRoles,
   DDL_REFUSED_FOR_API_ROLE,
-  type DatabaseRoleNames,
   dropRoles,
   failureCodeOf,
   grantSnapshotOf,
@@ -13,6 +12,7 @@ import {
   randomRoleName,
   rowsOf,
   urlAs,
+  type DatabaseRoleNames,
 } from '../fixtures/CoreDb.fixture';
 import {
   SHARED_POSTGRES_URL_ENV,
@@ -78,14 +78,8 @@ describe('database roles script, hosting=supabase (ADR 0012 section 9)', () => {
       superuserUrl,
       `CREATE ROLE "${roles.migrator}" LOGIN CREATEROLE PASSWORD '${migratorPassword}'`,
     );
-    await rowsOf(
-      superuserUrl,
-      `GRANT CREATE ON DATABASE "${database}" TO "${roles.migrator}"`,
-    );
-    await rowsOf(
-      superuserUrl,
-      `GRANT CREATE ON SCHEMA public TO "${roles.migrator}"`,
-    );
+    await rowsOf(superuserUrl, `GRANT CREATE ON DATABASE "${database}" TO "${roles.migrator}"`);
+    await rowsOf(superuserUrl, `GRANT CREATE ON SCHEMA public TO "${roles.migrator}"`);
     for (const dataApiRole of dataApiRoles) {
       await rowsOf(superuserUrl, `CREATE ROLE "${dataApiRole}"`);
       for (const kind of ['TABLES', 'SEQUENCES', 'FUNCTIONS']) {
@@ -114,12 +108,7 @@ describe('database roles script, hosting=supabase (ADR 0012 section 9)', () => {
 
   afterAll(async () => {
     await postgres?.stop();
-    await dropRoles(serverUrl, [
-      roles.api,
-      roles.backup,
-      roles.migrator,
-      ...dataApiRoles,
-    ]);
+    await dropRoles(serverUrl, [roles.api, roles.backup, roles.migrator, ...dataApiRoles]);
   });
 
   it('leaves the database owner and the PUBLIC rights as they were', async () => {
@@ -164,9 +153,7 @@ describe('database roles script, hosting=supabase (ADR 0012 section 9)', () => {
   it.each(META_TABLE_WRITES_REFUSED_FOR_API_ROLE)(
     'refuses the API role a meta table write: %s',
     async (statement) => {
-      expect(await failureCodeOf(apiUrl, statement)).toBe(
-        INSUFFICIENT_PRIVILEGE,
-      );
+      expect(await failureCodeOf(apiUrl, statement)).toBe(INSUFFICIENT_PRIVILEGE);
     },
   );
 
@@ -193,9 +180,7 @@ describe('database roles script, hosting=supabase (ADR 0012 section 9)', () => {
       `TRUNCATE public.app_settings`,
       'CREATE TABLE public.denied_probe (id int)',
     ]) {
-      expect(await failureCodeOf(backupUrl, statement)).toBe(
-        INSUFFICIENT_PRIVILEGE,
-      );
+      expect(await failureCodeOf(backupUrl, statement)).toBe(INSUFFICIENT_PRIVILEGE);
     }
   });
 
@@ -220,13 +205,8 @@ describe('database roles script, hosting=supabase (ADR 0012 section 9)', () => {
     );
     expect(rights).toEqual([]);
 
-    await rowsOf(
-      apiUrl,
-      `INSERT INTO content.after_probe (label) VALUES ('a')`,
-    );
-    expect(await rowsOf(backupUrl, 'SELECT 1 FROM public.after_probe')).toEqual(
-      [],
-    );
+    await rowsOf(apiUrl, `INSERT INTO content.after_probe (label) VALUES ('a')`);
+    expect(await rowsOf(backupUrl, 'SELECT 1 FROM public.after_probe')).toEqual([]);
   });
 
   it('changes nothing when it runs again', async () => {
@@ -236,15 +216,13 @@ describe('database roles script, hosting=supabase (ADR 0012 section 9)', () => {
   });
 
   it('stops without a valid hosting, data_api_roles or the migrator login', async () => {
-    await expect(
-      run({ extraVariables: { hosting: undefined } }),
-    ).rejects.toThrow(/hosting must be/);
-    await expect(run({ hosting: 'elsewhere' })).rejects.toThrow(
+    await expect(run({ extraVariables: { hosting: undefined } })).rejects.toThrow(
       /hosting must be/,
     );
-    await expect(
-      run({ extraVariables: { data_api_roles: undefined } }),
-    ).rejects.toThrow(/data_api_roles is required/);
+    await expect(run({ hosting: 'elsewhere' })).rejects.toThrow(/hosting must be/);
+    await expect(run({ extraVariables: { data_api_roles: undefined } })).rejects.toThrow(
+      /data_api_roles is required/,
+    );
     await expect(
       run({ extraVariables: { data_api_roles: 'no_such_role_for_the_test' } }),
     ).rejects.toThrow(/does not exist/);
@@ -257,38 +235,24 @@ describe('database roles script, hosting=supabase (ADR 0012 section 9)', () => {
         run({
           extraVariables: { data_api_roles: `anon,${name}` },
         }),
-      ).rejects.toThrow(
-        new RegExp(`data_api_roles must not contain the value of ${variable}`),
-      );
+      ).rejects.toThrow(new RegExp(`data_api_roles must not contain the value of ${variable}`));
     }
-    await expect(run({ connectAs: undefined })).rejects.toThrow(
-      /must run as the migrator role/,
-    );
+    await expect(run({ connectAs: undefined })).rejects.toThrow(/must run as the migrator role/);
   });
 
   it('fails its self-check when the backup role is a member of another role', async () => {
     await rowsOf(superuserUrl, `GRANT pg_signal_backend TO "${roles.backup}"`);
     await expect(run()).rejects.toThrow(
-      new RegExp(
-        `self-check failed.*${roles.backup} is a member of role pg_signal_backend`,
-      ),
+      new RegExp(`self-check failed.*${roles.backup} is a member of role pg_signal_backend`),
     );
-    await rowsOf(
-      superuserUrl,
-      `REVOKE pg_signal_backend FROM "${roles.backup}"`,
-    );
+    await rowsOf(superuserUrl, `REVOKE pg_signal_backend FROM "${roles.backup}"`);
     await run();
   });
 
   it('fails its self-check when the API role may create in public, and does not revoke it', async () => {
-    await rowsOf(
-      superuserUrl,
-      `GRANT CREATE ON SCHEMA public TO "${roles.api}"`,
-    );
+    await rowsOf(superuserUrl, `GRANT CREATE ON SCHEMA public TO "${roles.api}"`);
     await expect(run()).rejects.toThrow(
-      new RegExp(
-        `self-check failed.*${roles.api} can create objects in schema public`,
-      ),
+      new RegExp(`self-check failed.*${roles.api} can create objects in schema public`),
     );
     expect(
       await rowsOf(
@@ -297,10 +261,7 @@ describe('database roles script, hosting=supabase (ADR 0012 section 9)', () => {
         [roles.api],
       ),
     ).toEqual([{ can_create: true }]);
-    await rowsOf(
-      superuserUrl,
-      `REVOKE CREATE ON SCHEMA public FROM "${roles.api}"`,
-    );
+    await rowsOf(superuserUrl, `REVOKE CREATE ON SCHEMA public FROM "${roles.api}"`);
     await run();
   });
 });

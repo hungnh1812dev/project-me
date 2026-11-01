@@ -1,11 +1,8 @@
 import { generate } from 'otplib';
 
-import {
-  devEnv,
-  TEST_SECRET_32_BYTES,
-} from '../../../../test/fixtures/Env.fixture';
-import { Clock } from '../../../common/time/Clock.service';
+import { devEnv, TEST_SECRET_32_BYTES } from '../../../../test/fixtures/Env.fixture';
 import { MS_PER_SECOND } from '../../../common/constants/Time.constants';
+import { Clock } from '../../../common/time/Clock.service';
 import { loadAppConfig } from '../../../config/AppConfig.setup';
 import { CONFIG_DEFAULTS } from '../../../config/Config.constants';
 import { type AppLogger } from '../../../infrastructure/logging/AppLogger.port';
@@ -67,20 +64,14 @@ describe('TotpService (D8, T13 Q3)', () => {
 
   it('accepts the current step and one step of drift either way', async () => {
     for (const offset of [-1, 0, 1]) {
-      const code = await codeAt(
-        secret,
-        START_SECONDS + offset * TOTP.PERIOD_SECONDS,
-      );
+      const code = await codeAt(secret, START_SECONDS + offset * TOTP.PERIOD_SECONDS);
       expect(await totp.matchStep(secret, code, null)).toBe(STEP + offset);
     }
   });
 
   it('rejects codes two steps away', async () => {
     for (const offset of [-2, 2]) {
-      const code = await codeAt(
-        secret,
-        START_SECONDS + offset * TOTP.PERIOD_SECONDS,
-      );
+      const code = await codeAt(secret, START_SECONDS + offset * TOTP.PERIOD_SECONDS);
       expect(await totp.matchStep(secret, code, null)).toBeUndefined();
     }
   });

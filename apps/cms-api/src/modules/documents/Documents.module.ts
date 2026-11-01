@@ -7,15 +7,15 @@ import { ContentEngineModule } from '../content-engine';
 import { MediaModule } from '../media';
 import { KyselyDocumentRepository } from './adapters/KyselyDocument.repository';
 import { PrismaPresenceAccountAdapter } from './adapters/PrismaPresenceAccount.adapter';
+import { BulkService } from './application/Bulk.service';
 import {
   ACTIVITY_RECORDER,
-  type ActivityRecorder,
   DOCUMENT_REPOSITORY,
   PRESENCE_ACCOUNT_LOOKUP,
+  type ActivityRecorder,
 } from './application/Documents.port';
 import { DocumentsCommandService } from './application/DocumentsCommand.service';
 import { DocumentsQueryService } from './application/DocumentsQuery.service';
-import { BulkService } from './application/Bulk.service';
 import { PresenceService } from './application/Presence.service';
 import { PublishService } from './application/Publish.service';
 import { BulkController } from './http/Bulk.controller';
@@ -28,13 +28,7 @@ const NO_ACTIVITY_RECORDER: ActivityRecorder = {
 
 /** Document reads, writes, publish and delete: JWT, API token or anonymous, through the access layer. */
 @Module({
-  imports: [
-    AccessModule,
-    ContentEngineModule,
-    DatabaseModule,
-    DocumentAuthModule,
-    MediaModule,
-  ],
+  imports: [AccessModule, ContentEngineModule, DatabaseModule, DocumentAuthModule, MediaModule],
   // BulkController first: `documents/:slug/bulk/publish` must not match `:slug/:documentId/publish`.
   controllers: [BulkController, DocumentsController],
   providers: [

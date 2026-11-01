@@ -1,11 +1,7 @@
-import { COPY } from '../../config/Copy.constants';
-import { HTTP_STATUS } from '../../config/Http.constants';
-import { REVIEWER_ERROR_CODES } from '../../config/Reviewer.constants';
-import {
-  type Alert,
-  type ApiFailure,
-  formatRetryAfter,
-} from '../../lib/ApiFailure.errors';
+import { formatRetryAfter, type Alert, type ApiFailure } from '../../apis/client/ApiFailure.errors';
+import { COPY } from '../../configs/Copy.constants';
+import { HTTP_STATUS } from '../../configs/Http.constants';
+import { REVIEWER_ERROR_CODES } from '../../configs/Reviewer.constants';
 
 const copy = COPY.reviewer.errors;
 
@@ -24,10 +20,7 @@ export interface ReviewerAlert extends Alert {
 
 /** A failed `POST /reviewer/sessions` -> the alert above the dialog's form. */
 export function reviewerAlertOf(failure: ApiFailure): ReviewerAlert {
-  const warn = (
-    message: string,
-    shouldResetChallenge = true,
-  ): ReviewerAlert => ({
+  const warn = (message: string, shouldResetChallenge = true): ReviewerAlert => ({
     tone: 'warning',
     message,
     shouldResetChallenge,

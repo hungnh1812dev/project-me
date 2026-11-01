@@ -16,9 +16,7 @@ const BOUNDARY = '----abyss-test-boundary';
 
 /** Builds a multipart/form-data body from text fields and file parts, in order. */
 export function multipart(
-  parts: readonly (
-    { readonly field: string; readonly value: string } | MultipartFile
-  )[],
+  parts: readonly ({ readonly field: string; readonly value: string } | MultipartFile)[],
 ): MultipartBody {
   const chunks: Buffer[] = [];
   for (const part of parts) {

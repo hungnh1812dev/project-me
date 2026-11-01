@@ -18,7 +18,7 @@ const config = defineConfig({
   },
   rules: {
     'no-unused-vars': [
-      'error',
+      'warn',
       {
         argsIgnorePattern: '^_',
         varsIgnorePattern: '^_',

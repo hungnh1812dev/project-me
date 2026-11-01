@@ -1,4 +1,3 @@
-import { accountActor } from './ActorContext.entity';
 import { systemRole } from '../../../../test/fixtures/Access.fixture';
 import {
   accountAccess,
@@ -8,11 +7,7 @@ import {
   rawRecord,
   seededRandom,
 } from '../../../../test/fixtures/Masking.fixture';
-import type {
-  ComponentTrees,
-  ContentDocument,
-  TableNode,
-} from '../../content-engine';
+import type { ComponentTrees, ContentDocument, TableNode } from '../../content-engine';
 import { rowToValues } from '../../content-engine/domain/ContentTree.entity';
 import {
   ACCOUNT_REFERENCE_FIELDS,
@@ -21,9 +16,9 @@ import {
   MASKED_FIELDS_KEY,
   RECORD_SYSTEM_FIELDS,
 } from './Access.constants';
-import type { ActorKind } from './ActorContext.entity';
-import { projectTable } from './FieldProjection.rules';
+import { accountActor, type ActorKind } from './ActorContext.entity';
 import { fieldPathsOf } from './FieldPaths.rules';
+import { projectTable } from './FieldProjection.rules';
 import { FieldSelection } from './PolicyEvaluator.rules';
 import { recordReadAccess } from './RecordReadAccess.rules';
 import {
@@ -63,16 +58,11 @@ describe('RecordSerializer', () => {
     const [first] = items(out, 'experience');
     expect(first).not.toHaveProperty('id');
     expect(first).not.toHaveProperty('orderIndex');
-    expect(first?.componentUid).toBe(
-      record.components.experience?.[0]?.componentUid,
-    );
+    expect(first?.componentUid).toBe(record.components.experience?.[0]?.componentUid);
   });
 
   it('masks text types with the sentinel and other types with null', () => {
-    const out = serializer.serialize(
-      record,
-      accountAccess(FieldSelection.NONE),
-    );
+    const out = serializer.serialize(record, accountAccess(FieldSelection.NONE));
     expect(out.values).toEqual({
       name: MASK_SENTINEL,
       summary: MASK_SENTINEL,
@@ -103,10 +93,7 @@ describe('RecordSerializer', () => {
   });
 
   it('keeps system fields readable even with no readable field', () => {
-    const out = serializer.serialize(
-      record,
-      accountAccess(FieldSelection.NONE),
-    );
+    const out = serializer.serialize(record, accountAccess(FieldSelection.NONE));
     expect(out.documentId).toBe(record.documentId);
     expect(out.updatedAt).toBe(record.updatedAt);
   });
@@ -149,8 +136,7 @@ describe('RecordSerializer', () => {
   it('a granted component covers its whole subtree', () => {
     const out = serializer.serialize(record, accountAccess(only('experience')));
     expect(out.components.experience).toEqual(
-      serializer.serialize(record, accountAccess(FieldSelection.ALL)).components
-        .experience,
+      serializer.serialize(record, accountAccess(FieldSelection.ALL)).components.experience,
     );
   });
 
@@ -160,9 +146,7 @@ describe('RecordSerializer', () => {
       values: { ...record.values, injected: 'RAW-injected' },
       passwordHash: 'RAW-hash',
     } as ContentDocument;
-    const json = JSON.stringify(
-      serializer.serialize(tampered, accountAccess(FieldSelection.ALL)),
-    );
+    const json = JSON.stringify(serializer.serialize(tampered, accountAccess(FieldSelection.ALL)));
     expect(json).not.toContain('RAW-injected');
     expect(json).not.toContain('RAW-hash');
   });
@@ -175,10 +159,7 @@ describe('RecordSerializer', () => {
   });
 
   it('serializeMany serializes each record', () => {
-    const out = serializer.serializeMany(
-      [record, record],
-      accountAccess(only('name')),
-    );
+    const out = serializer.serializeMany([record, record], accountAccess(only('name')));
     expect(out).toHaveLength(2);
     expect(out[1]?.values.bio).toBe(MASK_SENTINEL);
   });
@@ -193,20 +174,15 @@ function loadProjected(
   const projectedValues = rowToValues(
     table,
     Object.fromEntries(
-      table.plan.columns.map((column) => [
-        column.name,
-        values[column.field.name],
-      ]),
+      table.plan.columns.map((column) => [column.name, values[column.field.name]]),
     ),
   );
   const projectedComponents: ComponentTrees = {};
   for (const { field, table: child } of table.components) {
-    projectedComponents[field.name] = (components[field.name] ?? []).map(
-      (node) => ({
-        ...node,
-        ...loadProjected(child, node.values, node.components),
-      }),
-    );
+    projectedComponents[field.name] = (components[field.name] ?? []).map((node) => ({
+      ...node,
+      ...loadProjected(child, node.values, node.components),
+    }));
   }
   return { values: projectedValues, components: projectedComponents };
 }
@@ -217,11 +193,7 @@ type SerializedNode = Pick<SerializedComponent, 'values' | 'components'>;
 function valuesAt(node: SerializedNode, segments: string[]): unknown[] {
   const [head = '', ...rest] = segments;
   if (rest.length === 0) {
-    return [
-      Object.hasOwn(node.values, head)
-        ? node.values[head]
-        : node.components[head],
-    ];
+    return [Object.hasOwn(node.values, head) ? node.values[head] : node.components[head]];
   }
   return (node.components[head] ?? []).flatMap((item) => valuesAt(item, rest));
 }
@@ -233,10 +205,7 @@ describe('RecordSerializer account references by actor kind (decision T16)', () 
   it.each(Object.entries(ACTORS_BY_KIND))(
     '%s: createdBy/updatedBy shown only to accounts and API tokens',
     (kind, actor) => {
-      const out = serializer.serialize(
-        record,
-        recordReadAccess(actor, FieldSelection.ALL),
-      );
+      const out = serializer.serialize(record, recordReadAccess(actor, FieldSelection.ALL));
       const hidden = HIDDEN.includes(kind as ActorKind);
       for (const field of ACCOUNT_REFERENCE_FIELDS) {
         expect(Object.hasOwn(out, field)).toBe(!hidden);
@@ -260,10 +229,7 @@ describe('RecordSerializer account references for the guest role', () => {
   it('omits createdBy/updatedBy for a guest account, like public', () => {
     const { record } = rawRecord(type);
     const guest = accountActor(1, systemRole('guest'));
-    const out = serializer.serialize(
-      record,
-      recordReadAccess(guest, FieldSelection.ALL),
-    );
+    const out = serializer.serialize(record, recordReadAccess(guest, FieldSelection.ALL));
     for (const field of ACCOUNT_REFERENCE_FIELDS) {
       expect(Object.hasOwn(out, field)).toBe(false);
     }
@@ -290,9 +256,7 @@ describe('RecordSerializer property: no unreadable raw value leaks', () => {
       const readable = randomSelection();
       const actor = randomActor();
       const access = recordReadAccess(actor, readable);
-      const hidesAccounts = ACCOUNT_REFERENCES_HIDDEN_FROM.some(
-        (kind) => kind === actor.kind,
-      );
+      const hidesAccounts = ACCOUNT_REFERENCES_HIDDEN_FROM.some((kind) => kind === actor.kind);
       const outputs = [
         // Raw record with every value present: the serializer alone must mask.
         serializer.serialize(record, access),
@@ -300,11 +264,7 @@ describe('RecordSerializer property: no unreadable raw value leaks', () => {
         serializer.serialize(
           {
             ...record,
-            ...loadProjected(
-              projectTable(type.root, readable),
-              record.values,
-              record.components,
-            ),
+            ...loadProjected(projectTable(type.root, readable), record.values, record.components),
           },
           access,
         ),
@@ -328,9 +288,7 @@ describe('RecordSerializer property: no unreadable raw value leaks', () => {
           }
           // Masked by itself or by a masked component around it.
           const segments = path.split('.');
-          const listed = segments.some((_, i) =>
-            masked.has(segments.slice(0, i + 1).join('.')),
-          );
+          const listed = segments.some((_, i) => masked.has(segments.slice(0, i + 1).join('.')));
           expect(listed).toBe(true);
         }
         // Structural check (covers booleans): every masked path holds its mask.
@@ -339,9 +297,7 @@ describe('RecordSerializer property: no unreadable raw value leaks', () => {
             expect([MASK_SENTINEL, null]).toContain(value);
           }
         }
-        expect(out[MASKED_FIELDS_KEY]).toEqual(
-          maskedFieldPaths(type.root, readable),
-        );
+        expect(out[MASKED_FIELDS_KEY]).toEqual(maskedFieldPaths(type.root, readable));
       }
     }
   });

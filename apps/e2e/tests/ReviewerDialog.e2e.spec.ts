@@ -1,24 +1,24 @@
-import { type BrowserContext, expect, test } from '@playwright/test';
+import { expect, test, type BrowserContext } from '@playwright/test';
 
-import { ADMIN_COPY, WEB_COPY } from '../src/Apps.contract';
 import { API_PATHS } from '../src/Api.endpoints';
+import { ADMIN_COPY, WEB_COPY } from '../src/Apps.contract';
 import { NOTES_MAX_LENGTH, RUN_ID } from '../src/E2e.constants';
 import { e2eEnv } from '../src/E2e.env';
 import { labelStartingWith } from '../src/Locators.fixture';
 import {
+  reviewerAdminCopy as admin,
+  reviewerCopy as copy,
   dialog,
   next,
   openButton,
   reachNotesStep,
-  reviewerAdminCopy as admin,
-  reviewerCopy as copy,
   setEnabled,
   step,
   submit,
   TURNSTILE_HOST,
 } from '../src/ReviewerDialog.fixture';
-import { clearReviewerSessions } from '../src/SmokeDatabase.client';
 import { ownerApiToken, signInAs } from '../src/Session.fixture';
+import { clearReviewerSessions } from '../src/SmokeDatabase.client';
 
 /**
  * Reviewer access, web dialog (anonymous visitor): the switch, step
@@ -54,9 +54,7 @@ test.describe('reviewer access: web dialog', () => {
     );
     await page.goto(e2eEnv.webUrl);
     expect(await (await status).json()).toEqual({ enabled: false });
-    await expect(
-      page.getByRole('button', { name: WEB_COPY.session.signIn }),
-    ).toBeVisible();
+    await expect(page.getByRole('button', { name: WEB_COPY.session.signIn })).toBeVisible();
     await expect(openButton(page)).toHaveCount(0);
     await page.close();
   });
@@ -68,9 +66,7 @@ test.describe('reviewer access: web dialog', () => {
       .getByRole('navigation', { name: ADMIN_COPY.access.nav.label })
       .getByRole('link', { name: ADMIN_COPY.access.nav.reviewer })
       .click();
-    await expect(
-      adminPage.getByRole('heading', { level: 1, name: admin.title }),
-    ).toBeVisible();
+    await expect(adminPage.getByRole('heading', { level: 1, name: admin.title })).toBeVisible();
     const toggle = adminPage.getByRole('switch', { name: admin.switch.label });
     await expect(toggle).not.toBeChecked();
     await expect(adminPage.getByText(admin.empty)).toBeVisible();
@@ -80,13 +76,9 @@ test.describe('reviewer access: web dialog', () => {
     await adminPage.close();
 
     const page = await context.newPage();
-    await page.route('**/reviewer/status', (route) =>
-      route.fulfill({ status: 500, body: '{}' }),
-    );
+    await page.route('**/reviewer/status', (route) => route.fulfill({ status: 500, body: '{}' }));
     await page.goto(e2eEnv.webUrl);
-    await expect(
-      page.getByRole('button', { name: WEB_COPY.session.signIn }),
-    ).toBeVisible();
+    await expect(page.getByRole('button', { name: WEB_COPY.session.signIn })).toBeVisible();
     await expect(openButton(page)).toHaveCount(0);
     await page.unroute('**/reviewer/status');
     await page.reload();
@@ -97,15 +89,10 @@ test.describe('reviewer access: web dialog', () => {
   test('the dialog validates each step, Enter moves on without submitting, and Submit without a passed check is refused', async () => {
     const page = await context.newPage();
     // The check cannot load: the widget never yields a token.
-    await page.route(TURNSTILE_HOST, (route) =>
-      route.fulfill({ status: 500, body: '' }),
-    );
+    await page.route(TURNSTILE_HOST, (route) => route.fulfill({ status: 500, body: '' }));
     let posted = 0;
     page.on('request', (req) => {
-      if (
-        req.method() === 'POST' &&
-        req.url().endsWith(API_PATHS.REVIEWER.SESSIONS)
-      ) {
+      if (req.method() === 'POST' && req.url().endsWith(API_PATHS.REVIEWER.SESSIONS)) {
         posted += 1;
       }
     });
@@ -116,19 +103,11 @@ test.describe('reviewer access: web dialog', () => {
 
     // Step 1: a role is required; Other needs text.
     await next(page).click();
-    await expect(
-      dialog(page).getByText(copy.validation.roleRequired),
-    ).toBeVisible();
-    await dialog(page)
-      .getByLabel(labelStartingWith(copy.role.label))
-      .selectOption(copy.role.other);
+    await expect(dialog(page).getByText(copy.validation.roleRequired)).toBeVisible();
+    await dialog(page).getByLabel(labelStartingWith(copy.role.label)).selectOption(copy.role.other);
     await next(page).click();
-    await expect(
-      dialog(page).getByText(copy.validation.roleOtherRequired),
-    ).toBeVisible();
-    const other = dialog(page).getByLabel(
-      labelStartingWith(copy.role.otherLabel),
-    );
+    await expect(dialog(page).getByText(copy.validation.roleOtherRequired)).toBeVisible();
+    const other = dialog(page).getByLabel(labelStartingWith(copy.role.otherLabel));
     await other.fill(OTHER_ROLE);
     await other.press('Enter');
     await expect(step(page, 2)).toBeVisible();
@@ -139,12 +118,8 @@ test.describe('reviewer access: web dialog', () => {
     await dialog(page).getByRole('button', { name: copy.back }).click();
     await dialog(page).getByLabel(copy.purposes.other, { exact: true }).check();
     await next(page).click();
-    await expect(
-      dialog(page).getByText(copy.validation.purposeOtherRequired),
-    ).toBeVisible();
-    const purpose = dialog(page).getByLabel(
-      labelStartingWith(copy.purposes.otherLabel),
-    );
+    await expect(dialog(page).getByText(copy.validation.purposeOtherRequired)).toBeVisible();
+    const purpose = dialog(page).getByLabel(labelStartingWith(copy.purposes.otherLabel));
     await purpose.fill(OTHER_PURPOSE);
     await next(page).click();
     await expect(step(page, 3)).toBeVisible();
@@ -174,17 +149,11 @@ test.describe('reviewer access: web dialog', () => {
     const page = await context.newPage();
     await page.goto(e2eEnv.webUrl);
     await openButton(page).click();
-    await dialog(page)
-      .getByLabel(labelStartingWith(copy.role.label))
-      .selectOption('Recruiter');
+    await dialog(page).getByLabel(labelStartingWith(copy.role.label)).selectOption('Recruiter');
     await next(page).click();
     await dialog(page).getByLabel(copy.purposes.other, { exact: true }).check();
-    await dialog(page)
-      .getByLabel(labelStartingWith(copy.purposes.otherLabel))
-      .fill(OTHER_PURPOSE);
-    await dialog(page)
-      .getByLabel(labelStartingWith(copy.purposes.otherLabel))
-      .press('Enter');
+    await dialog(page).getByLabel(labelStartingWith(copy.purposes.otherLabel)).fill(OTHER_PURPOSE);
+    await dialog(page).getByLabel(labelStartingWith(copy.purposes.otherLabel)).press('Enter');
     await expect(step(page, 3)).toBeVisible();
     await page.close();
   });
@@ -193,17 +162,11 @@ test.describe('reviewer access: web dialog', () => {
     const page = await context.newPage();
     await page.goto(e2eEnv.webUrl);
     await openButton(page).click();
-    await dialog(page)
-      .getByLabel(labelStartingWith(copy.role.label))
-      .selectOption(copy.role.other);
-    await dialog(page)
-      .getByLabel(labelStartingWith(copy.role.otherLabel))
-      .fill(OTHER_ROLE);
+    await dialog(page).getByLabel(labelStartingWith(copy.role.label)).selectOption(copy.role.other);
+    await dialog(page).getByLabel(labelStartingWith(copy.role.otherLabel)).fill(OTHER_ROLE);
     await next(page).click();
     await dialog(page).getByLabel(copy.purposes.other, { exact: true }).check();
-    const purpose = dialog(page).getByLabel(
-      labelStartingWith(copy.purposes.otherLabel),
-    );
+    const purpose = dialog(page).getByLabel(labelStartingWith(copy.purposes.otherLabel));
     await purpose.fill(OTHER_PURPOSE);
     await purpose.press('Enter');
     await expect(step(page, 3)).toBeVisible({ timeout: 2_000 });
@@ -212,9 +175,7 @@ test.describe('reviewer access: web dialog', () => {
 
   test('a Turnstile script that cannot load shows the could-not-load message', async () => {
     const page = await context.newPage();
-    await page.route(TURNSTILE_HOST, (route) =>
-      route.fulfill({ status: 500, body: '' }),
-    );
+    await page.route(TURNSTILE_HOST, (route) => route.fulfill({ status: 500, body: '' }));
     await page.goto(e2eEnv.webUrl);
     await openButton(page).click();
     await reachNotesStep(page, 'Recruiter');
@@ -224,9 +185,7 @@ test.describe('reviewer access: web dialog', () => {
 
   test('the could-not-load message stays after Back and Next', async () => {
     const page = await context.newPage();
-    await page.route(TURNSTILE_HOST, (route) =>
-      route.fulfill({ status: 500, body: '' }),
-    );
+    await page.route(TURNSTILE_HOST, (route) => route.fulfill({ status: 500, body: '' }));
     await page.goto(e2eEnv.webUrl);
     await openButton(page).click();
     await reachNotesStep(page, 'Recruiter');
@@ -255,28 +214,19 @@ test.describe('reviewer access: web dialog', () => {
     );
     let posted = 0;
     page.on('request', (req) => {
-      if (
-        req.method() === 'POST' &&
-        req.url().endsWith(API_PATHS.REVIEWER.SESSIONS)
-      ) {
+      if (req.method() === 'POST' && req.url().endsWith(API_PATHS.REVIEWER.SESSIONS)) {
         posted += 1;
       }
     });
     await page.goto(e2eEnv.webUrl);
     await openButton(page).click();
-    await dialog(page)
-      .getByLabel(labelStartingWith(copy.role.label))
-      .selectOption('Recruiter');
+    await dialog(page).getByLabel(labelStartingWith(copy.role.label)).selectOption('Recruiter');
     await next(page).click();
     await dialog(page).getByLabel(copy.purposes.other, { exact: true }).check();
-    await dialog(page)
-      .getByLabel(labelStartingWith(copy.purposes.otherLabel))
-      .fill(OTHER_PURPOSE);
+    await dialog(page).getByLabel(labelStartingWith(copy.purposes.otherLabel)).fill(OTHER_PURPOSE);
     await next(page).click();
     await expect(step(page, 3)).toBeVisible();
-    await dialog(page)
-      .getByLabel(labelStartingWith(copy.notes.label))
-      .fill('kept notes');
+    await dialog(page).getByLabel(labelStartingWith(copy.notes.label)).fill('kept notes');
 
     const fire = (callback: 'callback' | 'expired-callback') =>
       page.evaluate((name) => {
@@ -297,18 +247,18 @@ test.describe('reviewer access: web dialog', () => {
 
     await fire('callback');
     await dialog(page).getByRole('button', { name: copy.back }).click();
-    await expect(
-      dialog(page).getByLabel(labelStartingWith(copy.purposes.otherLabel)),
-    ).toHaveValue(OTHER_PURPOSE);
+    await expect(dialog(page).getByLabel(labelStartingWith(copy.purposes.otherLabel))).toHaveValue(
+      OTHER_PURPOSE,
+    );
     await dialog(page).getByRole('button', { name: copy.back }).click();
-    await expect(
-      dialog(page).getByLabel(labelStartingWith(copy.role.label)),
-    ).toHaveValue('Recruiter');
+    await expect(dialog(page).getByLabel(labelStartingWith(copy.role.label))).toHaveValue(
+      'Recruiter',
+    );
     await next(page).click();
     await next(page).click();
-    await expect(
-      dialog(page).getByLabel(labelStartingWith(copy.notes.label)),
-    ).toHaveValue('kept notes');
+    await expect(dialog(page).getByLabel(labelStartingWith(copy.notes.label))).toHaveValue(
+      'kept notes',
+    );
     // The token from before Back is gone: submitting needs a new check.
     await submit(page).click();
     await expect(dialog(page).getByText(copy.turnstile.required)).toBeVisible();
@@ -347,9 +297,7 @@ test.describe('reviewer access: web dialog', () => {
     ).toHaveCount(0);
     await page.goto('/reviewer');
     await expect(page.getByText(admin.forbidden)).toBeVisible();
-    await expect(
-      page.getByRole('switch', { name: admin.switch.label }),
-    ).toBeDisabled();
+    await expect(page.getByRole('switch', { name: admin.switch.label })).toBeDisabled();
     await ctx.close();
   });
 });

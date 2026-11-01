@@ -50,19 +50,8 @@ import { TwoFactorController } from './http/TwoFactor.controller';
 
 /** Login, JWT, refresh rotation; OTP + password lifecycle; 2FA. */
 @Module({
-  imports: [
-    AccessModule,
-    DatabaseModule,
-    MailModule,
-    PassportModule,
-    SecurityAuditModule,
-  ],
-  controllers: [
-    AuthController,
-    OwnerSetupController,
-    PasswordController,
-    TwoFactorController,
-  ],
+  imports: [AccessModule, DatabaseModule, MailModule, PassportModule, SecurityAuditModule],
+  controllers: [AuthController, OwnerSetupController, PasswordController, TwoFactorController],
   providers: [
     { provide: ACCOUNT_REPOSITORY, useClass: PrismaAccountRepository },
     { provide: OTP_CODE_REPOSITORY, useClass: PrismaOtpCodeRepository },
@@ -110,9 +99,7 @@ import { TwoFactorController } from './http/TwoFactor.controller';
     SessionRevocationService,
   ],
 })
-export class IdentityModule
-  implements OnModuleInit, OnApplicationBootstrap, OnApplicationShutdown
-{
+export class IdentityModule implements OnModuleInit, OnApplicationBootstrap, OnApplicationShutdown {
   constructor(
     private readonly auth: AuthService,
     private readonly passwords: PasswordService,

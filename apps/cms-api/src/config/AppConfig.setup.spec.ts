@@ -28,12 +28,7 @@ import {
   TEST_TOTP_ENC_KID,
   TEST_TOTP_ENC_PREVIOUS_KID,
 } from '../../test/fixtures/Env.fixture';
-import {
-  ConfigValidationError,
-  loadAppConfig,
-  loadDatabaseConfig,
-} from './AppConfig.setup';
-import { summarizeConfig } from './ConfigSummary.rules';
+import { ConfigValidationError, loadAppConfig, loadDatabaseConfig } from './AppConfig.setup';
 import {
   BACKUP_STORAGE_REQUIRED_KEYS,
   CONFIG_DEFAULTS,
@@ -41,10 +36,9 @@ import {
   REDACTED,
   SECRET_ENV_KEYS,
 } from './Config.constants';
+import { summarizeConfig } from './ConfigSummary.rules';
 
-function configErrorOf(
-  env: Record<string, string | undefined>,
-): ConfigValidationError {
+function configErrorOf(env: Record<string, string | undefined>): ConfigValidationError {
   try {
     loadAppConfig(env);
   } catch (error) {
@@ -113,9 +107,7 @@ describe('loadAppConfig', () => {
   });
 
   it('treats empty optional values as unset', () => {
-    const config = loadAppConfig(
-      devEnv({ CLIENT_IP_HEADER: '', OTP_PEPPER: '' }),
-    );
+    const config = loadAppConfig(devEnv({ CLIENT_IP_HEADER: '', OTP_PEPPER: '' }));
     expect(config.http.clientIpHeader).toBeUndefined();
     expect(config.secrets.otpPepper).toBeUndefined();
   });
@@ -123,8 +115,7 @@ describe('loadAppConfig', () => {
   it('reads the optional Turnstile secret and redacts it in the summary', () => {
     expect(loadAppConfig(devEnv()).secrets.turnstileSecretKey).toBeUndefined();
     expect(
-      loadAppConfig(devEnv({ TURNSTILE_SECRET_KEY: '' })).secrets
-        .turnstileSecretKey,
+      loadAppConfig(devEnv({ TURNSTILE_SECRET_KEY: '' })).secrets.turnstileSecretKey,
     ).toBeUndefined();
     const config = loadAppConfig(devEnv({ TURNSTILE_SECRET_KEY: 'ts-secret' }));
     expect(config.secrets.turnstileSecretKey).toBe('ts-secret');
@@ -137,9 +128,7 @@ describe('loadAppConfig', () => {
     });
 
     it('shows the switch in the start-up summary', () => {
-      const config = loadAppConfig(
-        devEnv({ REVIEWER_FEATURE_ENABLED: 'true' }),
-      );
+      const config = loadAppConfig(devEnv({ REVIEWER_FEATURE_ENABLED: 'true' }));
       expect(summarizeConfig(config)).toMatchObject({
         reviewer: { isFeatureEnabled: true },
       });
@@ -159,9 +148,7 @@ describe('loadAppConfig', () => {
           ...(raw === undefined ? {} : { [key]: raw }),
         }),
       );
-      return key === 'SMTP_SECURE'
-        ? config.mail.smtp?.secure
-        : config.reviewer.isFeatureEnabled;
+      return key === 'SMTP_SECURE' ? config.mail.smtp?.secure : config.reviewer.isFeatureEnabled;
     };
 
     it('uses the default when unset or empty', () => {
@@ -188,12 +175,9 @@ describe('loadAppConfig', () => {
     it('is unset by default and when empty', () => {
       expect(loadAppConfig(devEnv()).secrets.ownerSetupToken).toBeUndefined();
       expect(
-        loadAppConfig(devEnv({ OWNER_SETUP_TOKEN: '' })).secrets
-          .ownerSetupToken,
+        loadAppConfig(devEnv({ OWNER_SETUP_TOKEN: '' })).secrets.ownerSetupToken,
       ).toBeUndefined();
-      expect(
-        loadAppConfig(productionEnv()).secrets.ownerSetupToken,
-      ).toBeUndefined();
+      expect(loadAppConfig(productionEnv()).secrets.ownerSetupToken).toBeUndefined();
     });
 
     it('is redacted in the summary, and shown as unset when missing', () => {
@@ -209,29 +193,23 @@ describe('loadAppConfig', () => {
 
     it('may be short outside production, but not in production', () => {
       expect(
-        loadAppConfig(devEnv({ OWNER_SETUP_TOKEN: TEST_SHORT_SECRET })).secrets
-          .ownerSetupToken,
+        loadAppConfig(devEnv({ OWNER_SETUP_TOKEN: TEST_SHORT_SECRET })).secrets.ownerSetupToken,
       ).toBe(TEST_SHORT_SECRET);
-      const error = configErrorOf(
-        productionEnv({ OWNER_SETUP_TOKEN: TEST_SHORT_SECRET }),
-      );
+      const error = configErrorOf(productionEnv({ OWNER_SETUP_TOKEN: TEST_SHORT_SECRET }));
       expect(error.issues).toContain(
         'OWNER_SETUP_TOKEN: OWNER_SETUP_TOKEN must be at least 32 bytes in production',
       );
       expect(error.message).not.toContain(TEST_SHORT_SECRET);
       expect(
-        loadAppConfig(
-          productionEnv({ OWNER_SETUP_TOKEN: TEST_SECRET_32_BYTES }),
-        ).secrets.ownerSetupToken,
+        loadAppConfig(productionEnv({ OWNER_SETUP_TOKEN: TEST_SECRET_32_BYTES })).secrets
+          .ownerSetupToken,
       ).toBe(TEST_SECRET_32_BYTES);
     });
   });
 
   it('leaves CORS off when ADMIN_ORIGIN is unset or empty', () => {
     expect(loadAppConfig(devEnv()).cors.allowedOrigins).toEqual([]);
-    expect(
-      loadAppConfig(devEnv({ ADMIN_ORIGIN: '' })).cors.allowedOrigins,
-    ).toEqual([]);
+    expect(loadAppConfig(devEnv({ ADMIN_ORIGIN: '' })).cors.allowedOrigins).toEqual([]);
   });
 
   it.each(['https://admin.example.com', 'http://admin.domain.localhost:8080'])(
@@ -265,12 +243,8 @@ describe('loadAppConfig', () => {
   });
 
   it('defaults the JWT key id outside production', () => {
-    expect(loadAppConfig(devEnv()).auth.jwtAccessKid).toBe(
-      CONFIG_DEFAULTS.JWT_ACCESS_KID,
-    );
-    expect(
-      loadAppConfig(devEnv({ JWT_ACCESS_KID: '2026-10' })).auth.jwtAccessKid,
-    ).toBe('2026-10');
+    expect(loadAppConfig(devEnv()).auth.jwtAccessKid).toBe(CONFIG_DEFAULTS.JWT_ACCESS_KID);
+    expect(loadAppConfig(devEnv({ JWT_ACCESS_KID: '2026-10' })).auth.jwtAccessKid).toBe('2026-10');
   });
 
   it('returns a deeply frozen object', () => {
@@ -291,11 +265,7 @@ describe('loadAppConfig', () => {
     ['out of range DB_PORT', { DB_PORT: '70000' }, 'DB_PORT'],
     ['non-numeric PORT', { PORT: 'abc' }, 'PORT'],
     ['out of range PORT', { PORT: '70000' }, 'PORT'],
-    [
-      'negative TRUST_PROXY_HOPS',
-      { TRUST_PROXY_HOPS: '-1' },
-      'TRUST_PROXY_HOPS',
-    ],
+    ['negative TRUST_PROXY_HOPS', { TRUST_PROXY_HOPS: '-1' }, 'TRUST_PROXY_HOPS'],
     ['unknown MAIL_PROVIDER', { MAIL_PROVIDER: 'pigeon' }, 'MAIL_PROVIDER'],
     ['unknown NODE_ENV', { NODE_ENV: 'staging' }, 'NODE_ENV'],
     ['wildcard ADMIN_ORIGIN', { ADMIN_ORIGIN: '*' }, 'ADMIN_ORIGIN'],
@@ -304,41 +274,15 @@ describe('loadAppConfig', () => {
       { ADMIN_ORIGIN: 'https://admin.example.com/' },
       'ADMIN_ORIGIN',
     ],
-    [
-      'ADMIN_ORIGIN with a path',
-      { ADMIN_ORIGIN: 'https://admin.example.com/app' },
-      'ADMIN_ORIGIN',
-    ],
-    [
-      'non-http ADMIN_ORIGIN',
-      { ADMIN_ORIGIN: 'ftp://admin.example.com' },
-      'ADMIN_ORIGIN',
-    ],
-    [
-      'WEB_ORIGIN with a path',
-      { WEB_ORIGIN: 'https://example.com/x' },
-      'WEB_ORIGIN',
-    ],
-    [
-      'JWT_ACCESS_KID with spaces',
-      { JWT_ACCESS_KID: 'key one' },
-      'JWT_ACCESS_KID',
-    ],
-    [
-      'over-long JWT_ACCESS_KID',
-      { JWT_ACCESS_KID: 'k'.repeat(65) },
-      'JWT_ACCESS_KID',
-    ],
-    [
-      'header with spaces',
-      { CLIENT_IP_HEADER: 'x forwarded' },
-      'CLIENT_IP_HEADER',
-    ],
+    ['ADMIN_ORIGIN with a path', { ADMIN_ORIGIN: 'https://admin.example.com/app' }, 'ADMIN_ORIGIN'],
+    ['non-http ADMIN_ORIGIN', { ADMIN_ORIGIN: 'ftp://admin.example.com' }, 'ADMIN_ORIGIN'],
+    ['WEB_ORIGIN with a path', { WEB_ORIGIN: 'https://example.com/x' }, 'WEB_ORIGIN'],
+    ['JWT_ACCESS_KID with spaces', { JWT_ACCESS_KID: 'key one' }, 'JWT_ACCESS_KID'],
+    ['over-long JWT_ACCESS_KID', { JWT_ACCESS_KID: 'k'.repeat(65) }, 'JWT_ACCESS_KID'],
+    ['header with spaces', { CLIENT_IP_HEADER: 'x forwarded' }, 'CLIENT_IP_HEADER'],
   ])('rejects %s', (_label, overrides, key) => {
     const error = configErrorOf(devEnv(overrides));
-    expect(error.issues.some((issue) => issue.startsWith(`${key}:`))).toBe(
-      true,
-    );
+    expect(error.issues.some((issue) => issue.startsWith(`${key}:`))).toBe(true);
   });
 
   describe('SMTP mail (T12)', () => {
@@ -381,25 +325,20 @@ describe('loadAppConfig', () => {
       });
     });
 
-    it.each(['SMTP_HOST', 'MAIL_FROM'])(
-      'requires %s when MAIL_PROVIDER=smtp',
-      (key) => {
-        const error = configErrorOf(smtpEnv({ [key]: undefined }));
-        expect(error.issues).toContain(
-          `${key}: ${key} is required when MAIL_PROVIDER=smtp`,
-        );
+    it.each(['SMTP_HOST', 'MAIL_FROM'])('requires %s when MAIL_PROVIDER=smtp', (key) => {
+      const error = configErrorOf(smtpEnv({ [key]: undefined }));
+      expect(error.issues).toContain(`${key}: ${key} is required when MAIL_PROVIDER=smtp`);
+    });
+
+    it.each([{ SMTP_USER: TEST_SMTP_USER }, { SMTP_PASSWORD: TEST_SMTP_PASSWORD }])(
+      'requires SMTP_USER and SMTP_PASSWORD together (%o)',
+      (overrides) => {
+        const error = configErrorOf(smtpEnv(overrides));
+        expect(error.issues).toEqual([
+          'SMTP_PASSWORD: SMTP_USER and SMTP_PASSWORD must be set together or both left empty',
+        ]);
       },
     );
-
-    it.each([
-      { SMTP_USER: TEST_SMTP_USER },
-      { SMTP_PASSWORD: TEST_SMTP_PASSWORD },
-    ])('requires SMTP_USER and SMTP_PASSWORD together (%o)', (overrides) => {
-      const error = configErrorOf(smtpEnv(overrides));
-      expect(error.issues).toEqual([
-        'SMTP_PASSWORD: SMTP_USER and SMTP_PASSWORD must be set together or both left empty',
-      ]);
-    });
 
     it('ignores SMTP settings with the console provider', () => {
       expect(loadAppConfig(devEnv()).mail.smtp).toBeUndefined();
@@ -440,22 +379,16 @@ describe('loadAppConfig', () => {
       'rejects a missing %s',
       (key) => {
         const error = configErrorOf(productionEnv({ [key]: undefined }));
-        expect(error.issues).toContain(
-          `${key}: ${key} is required in production`,
-        );
+        expect(error.issues).toContain(`${key}: ${key} is required in production`);
       },
     );
 
     it('uses the configured JWT key id', () => {
-      expect(loadAppConfig(productionEnv()).auth.jwtAccessKid).toBe(
-        TEST_JWT_KID,
-      );
+      expect(loadAppConfig(productionEnv()).auth.jwtAccessKid).toBe(TEST_JWT_KID);
     });
 
     it('uses the configured TOTP encryption key id', () => {
-      expect(loadAppConfig(productionEnv()).auth.totp.encKid).toBe(
-        TEST_TOTP_ENC_KID,
-      );
+      expect(loadAppConfig(productionEnv()).auth.totp.encKid).toBe(TEST_TOTP_ENC_KID);
     });
 
     it('rejects a short TOTP_ENC_PREVIOUS_KEY', () => {
@@ -469,57 +402,39 @@ describe('loadAppConfig', () => {
     });
 
     it('keeps the admin origin from production config', () => {
-      expect(loadAppConfig(productionEnv()).cors.allowedOrigins).toEqual([
-        TEST_ADMIN_ORIGIN,
-      ]);
+      expect(loadAppConfig(productionEnv()).cors.allowedOrigins).toEqual([TEST_ADMIN_ORIGIN]);
     });
 
     it.each(SECRET_ENV_KEYS)('rejects a missing %s', (key) => {
       const error = configErrorOf(productionEnv({ [key]: undefined }));
-      expect(error.issues).toContain(
-        `${key}: ${key} is required in production`,
-      );
+      expect(error.issues).toContain(`${key}: ${key} is required in production`);
     });
 
     it.each(SECRET_ENV_KEYS)('rejects a short %s without echoing it', (key) => {
       const error = configErrorOf(productionEnv({ [key]: TEST_SHORT_SECRET }));
-      expect(error.issues).toContain(
-        `${key}: ${key} must be at least 32 bytes in production`,
-      );
+      expect(error.issues).toContain(`${key}: ${key} must be at least 32 bytes in production`);
       expect(error.message).not.toContain(TEST_SHORT_SECRET);
     });
 
-    it.each(OPTIONAL_SECRET_ENV_KEYS)(
-      'rejects a short optional %s without echoing it',
-      (key) => {
-        const error = configErrorOf(
-          productionEnv({
-            [key]: TEST_SHORT_SECRET,
-            TOTP_ENC_PREVIOUS_KID: TEST_TOTP_ENC_PREVIOUS_KID,
-          }),
-        );
-        expect(error.issues).toContain(
-          `${key}: ${key} must be at least 32 bytes in production`,
-        );
-        expect(error.message).not.toContain(TEST_SHORT_SECRET);
-      },
-    );
+    it.each(OPTIONAL_SECRET_ENV_KEYS)('rejects a short optional %s without echoing it', (key) => {
+      const error = configErrorOf(
+        productionEnv({
+          [key]: TEST_SHORT_SECRET,
+          TOTP_ENC_PREVIOUS_KID: TEST_TOTP_ENC_PREVIOUS_KID,
+        }),
+      );
+      expect(error.issues).toContain(`${key}: ${key} must be at least 32 bytes in production`);
+      expect(error.message).not.toContain(TEST_SHORT_SECRET);
+    });
 
-    it.each(OPTIONAL_SECRET_ENV_KEYS)(
-      'accepts %s unset in production',
-      (key) => {
-        expect(() =>
-          loadAppConfig(productionEnv({ [key]: undefined })),
-        ).not.toThrow();
-      },
-    );
+    it.each(OPTIONAL_SECRET_ENV_KEYS)('accepts %s unset in production', (key) => {
+      expect(() => loadAppConfig(productionEnv({ [key]: undefined }))).not.toThrow();
+    });
 
     it('measures secret length in bytes, not characters', () => {
       // 16 two-byte characters = 32 bytes.
       const multiByte = 'é'.repeat(16);
-      expect(() =>
-        loadAppConfig(productionEnv({ OTP_PEPPER: multiByte })),
-      ).not.toThrow();
+      expect(() => loadAppConfig(productionEnv({ OTP_PEPPER: multiByte }))).not.toThrow();
     });
 
     it('reports every problem at once', () => {
@@ -538,13 +453,11 @@ describe('loadAppConfig', () => {
 describe('media provider (T27)', () => {
   it('defaults to the fake provider outside production', () => {
     const config = loadAppConfig(devEnv());
-    expect(config.media).toEqual({ provider: 'fake', cloudinary: undefined });
+    expect(config.media).toEqual({ provider: 'fake', cloudinary: undefined, local: undefined });
   });
 
   it('reads the Cloudinary settings', () => {
-    const config = loadAppConfig(
-      productionEnv({ CLOUDINARY_FOLDER: 'abyss/media' }),
-    );
+    const config = loadAppConfig(productionEnv({ CLOUDINARY_FOLDER: 'abyss/media' }));
     expect(config.media).toEqual({
       provider: 'cloudinary',
       cloudinary: {
@@ -556,11 +469,7 @@ describe('media provider (T27)', () => {
     });
   });
 
-  it.each([
-    'CLOUDINARY_CLOUD_NAME',
-    'CLOUDINARY_API_KEY',
-    'CLOUDINARY_API_SECRET',
-  ])(
+  it.each(['CLOUDINARY_CLOUD_NAME', 'CLOUDINARY_API_KEY', 'CLOUDINARY_API_SECRET'])(
     'requires %s when MEDIA_PROVIDER=cloudinary, in any environment',
     (key) => {
       const error = configErrorOf(
@@ -572,9 +481,7 @@ describe('media provider (T27)', () => {
           [key]: undefined,
         }),
       );
-      expect(error.issues).toEqual([
-        `${key}: ${key} is required when MEDIA_PROVIDER=cloudinary`,
-      ]);
+      expect(error.issues).toEqual([`${key}: ${key} is required when MEDIA_PROVIDER=cloudinary`]);
     },
   );
 
@@ -587,16 +494,90 @@ describe('media provider (T27)', () => {
     }
   });
 
+  describe('local provider (ADR 0021)', () => {
+    const localEnv = {
+      MEDIA_PROVIDER: 'local',
+      MEDIA_LOCAL_DIR: '/var/media',
+      MEDIA_LOCAL_PUBLIC_URL: 'http://localhost:8080/api/v1/media-files',
+    };
+    const notAllowedInProduction =
+      'MEDIA_PROVIDER: MEDIA_PROVIDER=local is not allowed in production without ALLOW_LOCAL_MEDIA_PROVIDER=smoke';
+
+    it('reads the directory and public URL outside production', () => {
+      expect(loadAppConfig(devEnv(localEnv)).media).toEqual({
+        provider: 'local',
+        cloudinary: undefined,
+        local: {
+          directory: '/var/media',
+          publicUrl: 'http://localhost:8080/api/v1/media-files',
+          allowedInProduction: false,
+        },
+      });
+    });
+
+    it('ignores the local keys for other providers', () => {
+      const config = loadAppConfig(devEnv({ ...localEnv, MEDIA_PROVIDER: 'fake' }));
+      expect(config.media.local).toBeUndefined();
+    });
+
+    it.each(['MEDIA_LOCAL_DIR', 'MEDIA_LOCAL_PUBLIC_URL'])('requires %s', (key) => {
+      const error = configErrorOf(devEnv({ ...localEnv, [key]: undefined }));
+      expect(error.issues).toEqual([`${key}: ${key} is required when MEDIA_PROVIDER=local`]);
+    });
+
+    it('rejects a relative directory', () => {
+      const error = configErrorOf(devEnv({ ...localEnv, MEDIA_LOCAL_DIR: 'media' }));
+      expect(error.issues[0]).toMatch(/^MEDIA_LOCAL_DIR:/);
+    });
+
+    it.each([
+      'http://localhost:8080/files/',
+      'http://localhost:8080/files?x=1',
+      'http://localhost:8080/files#top',
+      '/api/v1/media-files',
+      'ftp://localhost/files',
+      'http://user:secret@localhost:8080/files',
+      'http://user@localhost:8080/files',
+    ])('rejects the public URL %s', (url) => {
+      const error = configErrorOf(devEnv({ ...localEnv, MEDIA_LOCAL_PUBLIC_URL: url }));
+      expect(error.issues[0]).toMatch(/^MEDIA_LOCAL_PUBLIC_URL:/);
+    });
+
+    it('refuses production without the opt-in', () => {
+      expect(configErrorOf(productionEnv(localEnv)).issues).toContain(notAllowedInProduction);
+    });
+
+    it.each(['Smoke', 'yes', 'smoke '])('refuses production with the opt-in %j', (value) => {
+      const error = configErrorOf(
+        productionEnv({ ...localEnv, ALLOW_LOCAL_MEDIA_PROVIDER: value }),
+      );
+      expect(error.issues).toContain(notAllowedInProduction);
+    });
+
+    it('accepts production with the exact opt-in', () => {
+      const config = loadAppConfig(
+        productionEnv({ ...localEnv, ALLOW_LOCAL_MEDIA_PROVIDER: 'smoke' }),
+      );
+      expect(config.media.provider).toBe('local');
+      expect(config.media.local?.allowedInProduction).toBe(true);
+    });
+
+    it('keeps refusing fake in production even with the opt-in', () => {
+      const error = configErrorOf(
+        productionEnv({ MEDIA_PROVIDER: 'fake', ALLOW_LOCAL_MEDIA_PROVIDER: 'smoke' }),
+      );
+      expect(error.issues).toContain(
+        'MEDIA_PROVIDER: MEDIA_PROVIDER=fake is not allowed in production',
+      );
+    });
+  });
+
   it('rejects an unknown provider', () => {
-    expect(configErrorOf(devEnv({ MEDIA_PROVIDER: 's3' })).issues[0]).toMatch(
-      /^MEDIA_PROVIDER:/,
-    );
+    expect(configErrorOf(devEnv({ MEDIA_PROVIDER: 's3' })).issues[0]).toMatch(/^MEDIA_PROVIDER:/);
   });
 
   it('redacts the API key and secret in the summary', () => {
-    const summary = JSON.stringify(
-      summarizeConfig(loadAppConfig(productionEnv())),
-    );
+    const summary = JSON.stringify(summarizeConfig(loadAppConfig(productionEnv())));
     expect(summary).not.toContain(TEST_CLOUDINARY_API_KEY);
     expect(summary).not.toContain(TEST_CLOUDINARY_API_SECRET);
     expect(summary).toContain(TEST_CLOUDINARY_CLOUD_NAME);
@@ -621,9 +602,7 @@ describe('login rate-limit overrides (T18b)', () => {
     'refuses %s in production without the opt-in',
     (key) => {
       const error = configErrorOf(productionEnv({ [key]: '500' }));
-      expect(error.issues[0]).toMatch(
-        new RegExp(`^${key}: .*not allowed in production`),
-      );
+      expect(error.issues[0]).toMatch(new RegExp(`^${key}: .*not allowed in production`));
     },
   );
 
@@ -641,24 +620,20 @@ describe('login rate-limit overrides (T18b)', () => {
     });
   });
 
-  it.each(['yes', 'true', 'SMOKE', '1'])(
-    'refuses the opt-in value %s',
-    (value) => {
-      const error = configErrorOf(
-        productionEnv({
-          ALLOW_LOGIN_RATE_LIMIT_OVERRIDE: value,
-          LOGIN_RATE_LIMIT_IP: '500',
-        }),
-      );
-      expect(error.issues[0]).toMatch(/^ALLOW_LOGIN_RATE_LIMIT_OVERRIDE:/);
-    },
-  );
+  it.each(['yes', 'true', 'SMOKE', '1'])('refuses the opt-in value %s', (value) => {
+    const error = configErrorOf(
+      productionEnv({
+        ALLOW_LOGIN_RATE_LIMIT_OVERRIDE: value,
+        LOGIN_RATE_LIMIT_IP: '500',
+      }),
+    );
+    expect(error.issues[0]).toMatch(/^ALLOW_LOGIN_RATE_LIMIT_OVERRIDE:/);
+  });
 
   it('accepts the overrides without the opt-in outside production', () => {
-    expect(
-      loadAppConfig(devEnv({ LOGIN_RATE_LIMIT_IP: '500' })).rateLimit
-        .limitOverrides,
-    ).toEqual({ LOGIN_RATE_LIMIT_IP: 500 });
+    expect(loadAppConfig(devEnv({ LOGIN_RATE_LIMIT_IP: '500' })).rateLimit.limitOverrides).toEqual({
+      LOGIN_RATE_LIMIT_IP: 500,
+    });
   });
 
   it.each(['0', '-1', '1.5', 'abc', '1000001'])(
@@ -677,22 +652,16 @@ describe('refresh rate-limit override (T18c)', () => {
 
   it('reads the override, and an empty value counts as unset', () => {
     expect(
-      loadAppConfig(devEnv({ REFRESH_RATE_LIMIT_IP: '500' })).rateLimit
-        .limitOverrides,
+      loadAppConfig(devEnv({ REFRESH_RATE_LIMIT_IP: '500' })).rateLimit.limitOverrides,
     ).toEqual({ REFRESH_RATE_LIMIT_IP: 500 });
-    expect(
-      loadAppConfig(devEnv({ REFRESH_RATE_LIMIT_IP: '' })).rateLimit
-        .limitOverrides,
-    ).toEqual({});
+    expect(loadAppConfig(devEnv({ REFRESH_RATE_LIMIT_IP: '' })).rateLimit.limitOverrides).toEqual(
+      {},
+    );
   });
 
   it('refuses it in production without the opt-in', () => {
-    const error = configErrorOf(
-      productionEnv({ REFRESH_RATE_LIMIT_IP: '500' }),
-    );
-    expect(error.issues[0]).toMatch(
-      /^REFRESH_RATE_LIMIT_IP: .*not allowed in production/,
-    );
+    const error = configErrorOf(productionEnv({ REFRESH_RATE_LIMIT_IP: '500' }));
+    expect(error.issues[0]).toMatch(/^REFRESH_RATE_LIMIT_IP: .*not allowed in production/);
   });
 
   it('accepts it in production with ALLOW_LOGIN_RATE_LIMIT_OVERRIDE=smoke', () => {
@@ -739,9 +708,7 @@ describe('TOTP key config (T13)', () => {
   });
 
   it('requires the previous key and kid together', () => {
-    const error = configErrorOf(
-      devEnv({ TOTP_ENC_PREVIOUS_KEY: TEST_SECRET_32_BYTES }),
-    );
+    const error = configErrorOf(devEnv({ TOTP_ENC_PREVIOUS_KEY: TEST_SECRET_32_BYTES }));
     expect(error.issues[0]).toMatch(/^TOTP_ENC_PREVIOUS_KID:/);
   });
 
@@ -766,9 +733,7 @@ describe('TOTP key config (T13)', () => {
 describe('backup storage (ADR 0013)', () => {
   it('is off when none of the keys is set, or they are empty', () => {
     expect(loadAppConfig(devEnv()).backups).toBeUndefined();
-    const emptied = Object.fromEntries(
-      BACKUP_STORAGE_REQUIRED_KEYS.map((key) => [key, '']),
-    );
+    const emptied = Object.fromEntries(BACKUP_STORAGE_REQUIRED_KEYS.map((key) => [key, '']));
     expect(loadAppConfig(devEnv(emptied)).backups).toBeUndefined();
   });
 
@@ -798,9 +763,7 @@ describe('backup storage (ADR 0013)', () => {
   it.each(BACKUP_STORAGE_REQUIRED_KEYS)(
     'fails with the key name only when %s is missing',
     (missingKey) => {
-      const error = configErrorOf(
-        devEnv({ ...TEST_BACKUP_ENV, [missingKey]: undefined }),
-      );
+      const error = configErrorOf(devEnv({ ...TEST_BACKUP_ENV, [missingKey]: undefined }));
       expect(error.issues).toHaveLength(1);
       expect(error.issues[0]).toMatch(new RegExp(`^${missingKey}:`));
       expect(error.message).not.toContain(TEST_BACKUP_SECRET_ACCESS_KEY);
@@ -809,25 +772,16 @@ describe('backup storage (ADR 0013)', () => {
   );
 
   it('lists every missing key when only one is set', () => {
-    const error = configErrorOf(
-      devEnv({ BACKUP_STORAGE_BUCKET: TEST_BACKUP_BUCKET }),
-    );
+    const error = configErrorOf(devEnv({ BACKUP_STORAGE_BUCKET: TEST_BACKUP_BUCKET }));
     expect(error.issues.map((issue) => issue.split(':')[0]).sort()).toEqual(
-      BACKUP_STORAGE_REQUIRED_KEYS.filter(
-        (key) => key !== 'BACKUP_STORAGE_BUCKET',
-      ).sort(),
+      BACKUP_STORAGE_REQUIRED_KEYS.filter((key) => key !== 'BACKUP_STORAGE_BUCKET').sort(),
     );
   });
 
-  it.each(['postgres', '/postgres/', 'a b'])(
-    'refuses the prefix %j',
-    (prefix) => {
-      const error = configErrorOf(
-        devEnv({ ...TEST_BACKUP_ENV, BACKUP_STORAGE_PREFIX: prefix }),
-      );
-      expect(error.issues[0]).toMatch(/^BACKUP_STORAGE_PREFIX:/);
-    },
-  );
+  it.each(['postgres', '/postgres/', 'a b'])('refuses the prefix %j', (prefix) => {
+    const error = configErrorOf(devEnv({ ...TEST_BACKUP_ENV, BACKUP_STORAGE_PREFIX: prefix }));
+    expect(error.issues[0]).toMatch(/^BACKUP_STORAGE_PREFIX:/);
+  });
 
   it('refuses an endpoint with a path', () => {
     const error = configErrorOf(
@@ -849,15 +803,13 @@ describe('backup storage (ADR 0013)', () => {
   });
 
   it('accepts a complete https setup in production', () => {
-    expect(
-      loadAppConfig(productionEnv(TEST_BACKUP_ENV)).backups?.endpoint,
-    ).toBe(TEST_BACKUP_ENDPOINT);
+    expect(loadAppConfig(productionEnv(TEST_BACKUP_ENV)).backups?.endpoint).toBe(
+      TEST_BACKUP_ENDPOINT,
+    );
   });
 
   it('redacts the access key id and secret in the summary', () => {
-    const summary = JSON.stringify(
-      summarizeConfig(loadAppConfig(devEnv(TEST_BACKUP_ENV))),
-    );
+    const summary = JSON.stringify(summarizeConfig(loadAppConfig(devEnv(TEST_BACKUP_ENV))));
     expect(summary).not.toContain(TEST_BACKUP_ACCESS_KEY_ID);
     expect(summary).not.toContain(TEST_BACKUP_SECRET_ACCESS_KEY);
     expect(summary).toContain(TEST_BACKUP_BUCKET);
@@ -866,13 +818,7 @@ describe('backup storage (ADR 0013)', () => {
 });
 
 describe('loadDatabaseConfig (ADR 0012 §4)', () => {
-  const DB_ENV_KEYS = [
-    'DB_HOST',
-    'DB_PORT',
-    'DB_NAME',
-    'DB_USERNAME',
-    'DB_PASSWORD',
-  ] as const;
+  const DB_ENV_KEYS = ['DB_HOST', 'DB_PORT', 'DB_NAME', 'DB_USERNAME', 'DB_PASSWORD'] as const;
   const dbOnlyEnv = (overrides: Record<string, string | undefined> = {}) => ({
     DB_HOST: TEST_DB_HOST,
     DB_PORT: '5432',
@@ -893,36 +839,27 @@ describe('loadDatabaseConfig (ADR 0012 §4)', () => {
   });
 
   it('accepts NODE_ENV=production without any app secret or mail key', () => {
-    expect(() =>
-      loadDatabaseConfig(dbOnlyEnv({ NODE_ENV: 'production' })),
-    ).not.toThrow();
+    expect(() => loadDatabaseConfig(dbOnlyEnv({ NODE_ENV: 'production' }))).not.toThrow();
   });
 
   it('equals the database section of loadAppConfig', () => {
-    expect(loadDatabaseConfig(devEnv())).toEqual(
-      loadAppConfig(devEnv()).database,
-    );
+    expect(loadDatabaseConfig(devEnv())).toEqual(loadAppConfig(devEnv()).database);
   });
 
   it('is frozen', () => {
     expect(Object.isFrozen(loadDatabaseConfig(dbOnlyEnv()))).toBe(true);
   });
 
-  it.each(DB_ENV_KEYS.filter((key) => key !== 'DB_PORT'))(
-    'rejects a missing %s by name',
-    (key) => {
-      const call = () => loadDatabaseConfig(dbOnlyEnv({ [key]: undefined }));
-      expect(call).toThrow(ConfigValidationError);
-      expect(call).toThrow(key);
-    },
-  );
+  it.each(DB_ENV_KEYS.filter((key) => key !== 'DB_PORT'))('rejects a missing %s by name', (key) => {
+    const call = () => loadDatabaseConfig(dbOnlyEnv({ [key]: undefined }));
+    expect(call).toThrow(ConfigValidationError);
+    expect(call).toThrow(key);
+  });
 
   it('never echoes a value in the error', () => {
     const secret = 'super-secret-db-password-value';
     const call = () =>
-      loadDatabaseConfig(
-        dbOnlyEnv({ DB_PASSWORD: secret, DB_HOST: undefined, DB_PORT: 'abc' }),
-      );
+      loadDatabaseConfig(dbOnlyEnv({ DB_PASSWORD: secret, DB_HOST: undefined, DB_PORT: 'abc' }));
     expect(call).toThrow(ConfigValidationError);
     expect(call).not.toThrow(secret);
     expect(call).not.toThrow('abc');
@@ -949,9 +886,7 @@ describe('database TLS (DB_SSL_MODE, DB_SSL_ROOT_CERT_PATH)', () => {
   });
 
   it('treats an empty DB_SSL_MODE as the default', () => {
-    expect(loadDatabaseConfig(tlsEnv({ DB_SSL_MODE: '' }))).not.toHaveProperty(
-      'tls',
-    );
+    expect(loadDatabaseConfig(tlsEnv({ DB_SSL_MODE: '' }))).not.toHaveProperty('tls');
   });
 
   it('maps require without reading any file', () => {
@@ -990,22 +925,16 @@ describe('database TLS (DB_SSL_MODE, DB_SSL_ROOT_CERT_PATH)', () => {
   );
 
   it('rejects an unknown mode and a relative path', () => {
-    expect(() => loadDatabaseConfig(tlsEnv({ DB_SSL_MODE: 'prefer' }))).toThrow(
-      'DB_SSL_MODE',
-    );
+    expect(() => loadDatabaseConfig(tlsEnv({ DB_SSL_MODE: 'prefer' }))).toThrow('DB_SSL_MODE');
     expect(() =>
-      loadDatabaseConfig(
-        tlsEnv({ DB_SSL_MODE: 'verify-full', DB_SSL_ROOT_CERT_PATH: 'ca.crt' }),
-      ),
+      loadDatabaseConfig(tlsEnv({ DB_SSL_MODE: 'verify-full', DB_SSL_ROOT_CERT_PATH: 'ca.crt' })),
     ).toThrow('DB_SSL_ROOT_CERT_PATH: must be an absolute path');
   });
 
   it('rejects an unreadable file without the path in the message', () => {
     const missing = join(dir, 'missing-secret-name.crt');
     const call = () =>
-      loadDatabaseConfig(
-        tlsEnv({ DB_SSL_MODE: 'verify-full', DB_SSL_ROOT_CERT_PATH: missing }),
-      );
+      loadDatabaseConfig(tlsEnv({ DB_SSL_MODE: 'verify-full', DB_SSL_ROOT_CERT_PATH: missing }));
     expect(call).toThrow(ConfigValidationError);
     expect(call).toThrow('DB_SSL_ROOT_CERT_PATH');
     expect(call).not.toThrow('missing-secret-name');

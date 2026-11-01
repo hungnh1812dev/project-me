@@ -73,8 +73,7 @@ export const OWNER_SETUP_MESSAGES = {
   EMAIL_TAKEN: 'An account with this email already exists.',
   UNAVAILABLE: 'Setup is not available yet.',
   /** Logged at boot and after setup while the token is still configured. */
-  TOKEN_STILL_SET:
-    'OWNER_SETUP_TOKEN is set but an owner exists; remove it from the secret.',
+  TOKEN_STILL_SET: 'OWNER_SETUP_TOKEN is set but an owner exists; remove it from the secret.',
 } as const;
 
 /** Error codes of `owner:reset-2fa`. */
@@ -108,10 +107,7 @@ export const PASSWORD_STDIN_FLAG = '--password-stdin';
  * `seed:account` (smoke stacks only, SPEC D1). Roles it may create: an
  * explicit allowlist. `owner` and `reviewer` are never in it.
  */
-export const SEED_ACCOUNT_ROLES: readonly string[] = [
-  ADMIN_ROLE_SLUG,
-  GUEST_ROLE_SLUG,
-];
+export const SEED_ACCOUNT_ROLES: readonly string[] = [ADMIN_ROLE_SLUG, GUEST_ROLE_SLUG];
 
 /** Per-invocation opt-in that `seed:account` demands when NODE_ENV=production (D17). */
 export const SEED_ACCOUNT_OPT_IN = {
@@ -202,8 +198,7 @@ export const REFRESH_TOKEN_TTL_MS = REFRESH_TOKEN_TTL_SECONDS * MS_PER_SECOND;
  * token), so a replay inside the window can't gain a lasting session.
  */
 export const REFRESH_TOKEN_REUSE_GRACE_SECONDS = 10;
-export const REFRESH_TOKEN_REUSE_GRACE_MS =
-  REFRESH_TOKEN_REUSE_GRACE_SECONDS * MS_PER_SECOND;
+export const REFRESH_TOKEN_REUSE_GRACE_MS = REFRESH_TOKEN_REUSE_GRACE_SECONDS * MS_PER_SECOND;
 
 /** SPEC §6: 2FA temp token lifetime (300 s). */
 export const TWO_FACTOR_TEMP_TOKEN_TTL_SECONDS = 300;

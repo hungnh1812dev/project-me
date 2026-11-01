@@ -1,5 +1,4 @@
-import { LOGIN_FAILURE_REASONS } from '../../security-audit';
-import type { LoginFailureReason } from '../../security-audit';
+import { LOGIN_FAILURE_REASONS, type LoginFailureReason } from '../../security-audit';
 import {
   PASSWORD_MAX_LENGTH,
   PASSWORD_MIN_LENGTH,
@@ -10,10 +9,7 @@ const ACTIVE_ACCOUNT_STATUS = 'active';
 
 /** D8: 12 to 128 characters (the cap bounds Argon2id cost). */
 export function isAcceptablePassword(password: string): boolean {
-  return (
-    password.length >= PASSWORD_MIN_LENGTH &&
-    password.length <= PASSWORD_MAX_LENGTH
-  );
+  return password.length >= PASSWORD_MIN_LENGTH && password.length <= PASSWORD_MAX_LENGTH;
 }
 
 /** What a sign-in decision reads of an account. */

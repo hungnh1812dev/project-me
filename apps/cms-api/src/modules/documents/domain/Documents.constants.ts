@@ -21,8 +21,7 @@ export const DOCUMENT_ERROR_MESSAGES = {
     'The document was changed by someone else. Review the current version and submit again.',
   INVALID_BODY: 'The request body is not valid.',
   NOT_PUBLISHABLE: 'This content type has no draft and publish.',
-  PUBLISH_CONFLICT:
-    'The draft was changed since you loaded it. Reload it and publish again.',
+  PUBLISH_CONFLICT: 'The draft was changed since you loaded it. Reload it and publish again.',
   REQUIRED: 'is required',
   INVALID_TYPE: 'does not match the type of the field',
   DRAFTS_FORBIDDEN: 'You may not read drafts of this content type.',
@@ -37,31 +36,14 @@ export const DOCUMENT_ERROR_MESSAGES = {
 /** `status` default when a request names none: what the public sees. */
 export const DEFAULT_DOCUMENT_STATUS = 'published';
 
-export const FILTER_OPERATORS = [
-  'eq',
-  'ne',
-  'in',
-  'gt',
-  'gte',
-  'lt',
-  'lte',
-  'contains',
-] as const;
+export const FILTER_OPERATORS = ['eq', 'ne', 'in', 'gt', 'gte', 'lt', 'lte', 'contains'] as const;
 export type FilterOperator = (typeof FILTER_OPERATORS)[number];
 
 const EQUALITY: readonly FilterOperator[] = ['eq', 'ne', 'in'];
-const ORDERING: readonly FilterOperator[] = [
-  ...EQUALITY,
-  'gt',
-  'gte',
-  'lt',
-  'lte',
-];
+const ORDERING: readonly FilterOperator[] = [...EQUALITY, 'gt', 'gte', 'lt', 'lte'];
 
 /** Operators a value kind supports. `contains` is a case-insensitive substring match. */
-export const OPERATORS_BY_KIND: Readonly<
-  Record<ConditionValueKind, readonly FilterOperator[]>
-> = {
+export const OPERATORS_BY_KIND: Readonly<Record<ConditionValueKind, readonly FilterOperator[]>> = {
   string: [...EQUALITY, 'contains'],
   integer: ORDERING,
   decimal: ORDERING,
@@ -105,9 +87,7 @@ export const DOCUMENT_QUERY_LIMITS = {
 } as const;
 
 /** What each root system field compares as. */
-export const SYSTEM_FIELD_KINDS: Readonly<
-  Record<RecordSystemField, ConditionValueKind>
-> = {
+export const SYSTEM_FIELD_KINDS: Readonly<Record<RecordSystemField, ConditionValueKind>> = {
   documentId: 'uuid',
   version: 'integer',
   publishedAt: 'datetime',
@@ -162,10 +142,5 @@ export interface PublishItem {
 export const BULK_ITEM_STATUS = { OK: 'ok', ERROR: 'error' } as const;
 
 /** The bulk operations, one route each. */
-export const BULK_OPERATIONS = [
-  'create',
-  'publish',
-  'unpublish',
-  'delete',
-] as const;
+export const BULK_OPERATIONS = ['create', 'publish', 'unpublish', 'delete'] as const;
 export type BulkOperation = (typeof BULK_OPERATIONS)[number];

@@ -8,14 +8,11 @@ import {
   AUDIT_ACTIONS,
   REAUTH_FAILURE_REASONS,
   REAUTH_PURPOSES,
-  type SecurityAuditService,
   selfActor,
+  type SecurityAuditService,
 } from '../../security-audit';
 import { AUTH_ERROR_CODES } from '../domain/Identity.constants';
-import type {
-  AccountRepository,
-  TwoFactorAccountRecord,
-} from './Identity.port';
+import type { AccountRepository, TwoFactorAccountRecord } from './Identity.port';
 import type { OtpService } from './Otp.service';
 import { ReauthenticationService } from './Reauthentication.service';
 import type { TotpService } from './Totp.service';
@@ -32,9 +29,7 @@ jest.mock('./Password.service', () => ({
   ),
 }));
 
-function accountRecord(
-  overrides: Partial<TwoFactorAccountRecord> = {},
-): TwoFactorAccountRecord {
+function accountRecord(overrides: Partial<TwoFactorAccountRecord> = {}): TwoFactorAccountRecord {
   return {
     id: 4,
     documentId: 'doc-4',
@@ -66,9 +61,7 @@ function build(
   } as unknown as AccountRepository;
   const unit = { afterCommit: jest.fn() } as UnitOfWork;
   const runner: TransactionRunner = { run: (work) => work(unit) };
-  const verifyAccountCode = jest.fn(() =>
-    Promise.resolve(options.totpAccepts ?? true),
-  );
+  const verifyAccountCode = jest.fn(() => Promise.resolve(options.totpAccepts ?? true));
   const totp = { verifyAccountCode } as unknown as TotpService;
   const verify = jest.fn(() => Promise.resolve(options.liveOtpId));
   const tryConsume = jest.fn(() => Promise.resolve(options.consumes ?? true));
@@ -99,11 +92,8 @@ describe('ReauthenticationService.confirm', () => {
   const input = { password: PASSWORD, code: CODE };
 
   it('accepts the password and a TOTP code, and writes no audit row', async () => {
-    const { service, verifyAccountCode, recordStandalone } =
-      build(accountRecord());
-    await expect(
-      service.confirm('doc-4', input, PURPOSE, META),
-    ).resolves.toBeUndefined();
+    const { service, verifyAccountCode, recordStandalone } = build(accountRecord());
+    await expect(service.confirm('doc-4', input, PURPOSE, META)).resolves.toBeUndefined();
     expect(verifyAccountCode).toHaveBeenCalledWith(expect.anything(), CODE);
     expect(recordStandalone).not.toHaveBeenCalled();
   });
@@ -120,13 +110,11 @@ describe('ReauthenticationService.confirm', () => {
   });
 
   it('rejects an emailed code that was already used', async () => {
-    const { service, recordStandalone } = build(
-      accountRecord({ twoFaMethod: 'email' }),
-      { liveOtpId: 77, consumes: false },
-    );
-    const refusal = await refusalOf(
-      service.confirm('doc-4', input, PURPOSE, META),
-    );
+    const { service, recordStandalone } = build(accountRecord({ twoFaMethod: 'email' }), {
+      liveOtpId: 77,
+      consumes: false,
+    });
+    const refusal = await refusalOf(service.confirm('doc-4', input, PURPOSE, META));
     expect(refusal.kind).toBe('forbidden');
     expect(recordStandalone).toHaveBeenCalledTimes(1);
   });
@@ -140,19 +128,13 @@ describe('ReauthenticationService.confirm', () => {
       liveOtpId: 1,
     });
     await refusalOf(
-      malformed.service.confirm(
-        'doc-4',
-        { password: PASSWORD, code: 'abc' },
-        PURPOSE,
-        META,
-      ),
+      malformed.service.confirm('doc-4', { password: PASSWORD, code: 'abc' }, PURPOSE, META),
     );
     expect(malformed.verify).not.toHaveBeenCalled();
   });
 
   it('refuses a wrong password with 403 and one bad_password row', async () => {
-    const { service, verifyAccountCode, recordStandalone } =
-      build(accountRecord());
+    const { service, verifyAccountCode, recordStandalone } = build(accountRecord());
     const refusal = await refusalOf(
       service.confirm('doc-4', { password: 'nope', code: CODE }, PURPOSE, META),
     );
@@ -173,12 +155,8 @@ describe('ReauthenticationService.confirm', () => {
   });
 
   it('treats an account without a password as a wrong password', async () => {
-    const { service, recordStandalone } = build(
-      accountRecord({ passwordHash: null }),
-    );
-    const refusal = await refusalOf(
-      service.confirm('doc-4', input, PURPOSE, META),
-    );
+    const { service, recordStandalone } = build(accountRecord({ passwordHash: null }));
+    const refusal = await refusalOf(service.confirm('doc-4', input, PURPOSE, META));
     expect(refusal.errorCode).toBe(AUTH_ERROR_CODES.INVALID_CREDENTIALS);
     expect(recordStandalone).toHaveBeenCalledTimes(1);
   });
@@ -187,9 +165,7 @@ describe('ReauthenticationService.confirm', () => {
     const { service, recordStandalone } = build(accountRecord(), {
       totpAccepts: false,
     });
-    const refusal = await refusalOf(
-      service.confirm('doc-4', input, PURPOSE, META),
-    );
+    const refusal = await refusalOf(service.confirm('doc-4', input, PURPOSE, META));
     expect(refusal.kind).toBe('forbidden');
     expect(refusal.errorCode).toBe(AUTH_ERROR_CODES.INVALID_2FA_CODE);
     expect(recordStandalone).toHaveBeenCalledTimes(1);
@@ -204,9 +180,7 @@ describe('ReauthenticationService.confirm', () => {
     const { service, recordStandalone } = build(
       accountRecord({ is2faEnabled: false, twoFaMethod: null }),
     );
-    const refusal = await refusalOf(
-      service.confirm('doc-4', input, PURPOSE, META),
-    );
+    const refusal = await refusalOf(service.confirm('doc-4', input, PURPOSE, META));
     expect(refusal.kind).toBe('forbidden');
     expect(refusal.errorCode).toBe(AUTH_ERROR_CODES.TWO_FACTOR_NOT_ENABLED);
     expect(recordStandalone).not.toHaveBeenCalled();
@@ -219,9 +193,7 @@ describe('ReauthenticationService.confirm', () => {
     ['deleted', accountRecord({ deletedAt: new Date() })],
   ])('refuses as not signed in for a %s account', async (_name, account) => {
     const { service, recordStandalone } = build(account);
-    const refusal = await refusalOf(
-      service.confirm('doc-4', input, PURPOSE, META),
-    );
+    const refusal = await refusalOf(service.confirm('doc-4', input, PURPOSE, META));
     expect(refusal.kind).toBe('unauthenticated');
     expect(recordStandalone).not.toHaveBeenCalled();
   });

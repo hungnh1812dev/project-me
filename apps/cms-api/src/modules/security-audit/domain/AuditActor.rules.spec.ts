@@ -9,9 +9,11 @@ describe('auditActorOf', () => {
       type: 'account',
       accountId: 5,
     });
-    expect(
-      auditActorOf(apiTokenActor(9, 5, role, { permissions: [] })),
-    ).toEqual({ type: 'api_token', accountId: 5, tokenId: 9 });
+    expect(auditActorOf(apiTokenActor(9, 5, role, { permissions: [] }))).toEqual({
+      type: 'api_token',
+      accountId: 5,
+      tokenId: 9,
+    });
     expect(auditActorOf(anonymousActor(systemRole('public')))).toEqual({
       type: 'account',
       accountId: null,

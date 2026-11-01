@@ -24,12 +24,10 @@ function directoryOf(file: string): string {
 }
 
 function importedDirectories(file: string): string[] {
-  return [...readFileSync(file, 'utf8').matchAll(RELATIVE_IMPORT)].flatMap(
-    ([, specifier = '']) => {
-      const target = resolve(file, '..', specifier);
-      return target.startsWith(`${SRC_DIR}/`) ? [directoryOf(target)] : [];
-    },
-  );
+  return [...readFileSync(file, 'utf8').matchAll(RELATIVE_IMPORT)].flatMap(([, specifier = '']) => {
+    const target = resolve(file, '..', specifier);
+    return target.startsWith(`${SRC_DIR}/`) ? [directoryOf(target)] : [];
+  });
 }
 
 // config <-> lib already import each other (StripTrailingSlashes); that cycle
@@ -89,10 +87,7 @@ describe('session facade', () => {
   });
 
   it('exports no test utility', () => {
-    const facadeSource = readFileSync(
-      join(FEATURES_DIR, 'session', 'index.ts'),
-      'utf8',
-    );
+    const facadeSource = readFileSync(join(FEATURES_DIR, 'session', 'index.ts'), 'utf8');
     expect(facadeSource).not.toMatch(/\.fixture/);
   });
 });
@@ -113,10 +108,7 @@ const BLOCK_COMMENT = /\/\*[\s\S]*?\*\//g;
 const LINE_COMMENT = /(?:^|\s)\/\/.*$/gm;
 
 function backlogIdsInComments(text: string): string[] {
-  const comments = [
-    ...(text.match(BLOCK_COMMENT) ?? []),
-    ...(text.match(LINE_COMMENT) ?? []),
-  ];
+  const comments = [...(text.match(BLOCK_COMMENT) ?? []), ...(text.match(LINE_COMMENT) ?? [])];
   return comments.flatMap((comment) =>
     comment
       .split('\n')
@@ -139,22 +131,13 @@ describe('comments carry no backlog IDs', () => {
   describe('the guard itself', () => {
     it('flags task, question and OS IDs in block, doc and line comments', () => {
       expect(backlogIdsInComments('/** Throttle (T10a). */')).toEqual(['T10a']);
-      expect(backlogIdsInComments('const a = 1; // see Q-G4')).toEqual([
-        'Q-G4',
-      ]);
-      expect(backlogIdsInComments('/*\n * OS4 walk\n * and Q5\n */')).toEqual([
-        'OS4',
-        'Q5',
-      ]);
+      expect(backlogIdsInComments('const a = 1; // see Q-G4')).toEqual(['Q-G4']);
+      expect(backlogIdsInComments('/*\n * OS4 walk\n * and Q5\n */')).toEqual(['OS4', 'Q5']);
     });
 
     it('ignores SPEC IDs, section marks, 2fa and code outside comments', () => {
-      expect(
-        backlogIdsInComments('/** SPEC D9, D14 and §9 for 2fa. */'),
-      ).toEqual([]);
-      expect(backlogIdsInComments('Date.parse(`${raw}T00:00:00Z`);')).toEqual(
-        [],
-      );
+      expect(backlogIdsInComments('/** SPEC D9, D14 and §9 for 2fa. */')).toEqual([]);
+      expect(backlogIdsInComments('Date.parse(`${raw}T00:00:00Z`);')).toEqual([]);
       expect(backlogIdsInComments("const kind = 'T10';")).toEqual([]);
       expect(backlogIdsInComments("fetch('https://x.test/T10')")).toEqual([]);
     });

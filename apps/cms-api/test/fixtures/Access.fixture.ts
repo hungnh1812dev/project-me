@@ -1,20 +1,17 @@
-import type {
-  PermissionAction,
-  PrismaClient,
-} from '../../src/generated/prisma/client';
+import type { PermissionAction, PrismaClient } from '../../src/generated/prisma/client';
 import { roleSeedServiceOf } from '../../src/modules/access';
 import type {
   PermissionGrant,
   RolePolicy,
 } from '../../src/modules/access/domain/ActorContext.entity';
 import { SubjectCatalog } from '../../src/modules/access/domain/SubjectCatalog.rules';
-import { ContentTypeRegistry } from '../../src/modules/content-engine/domain/ContentTypeRegistry.entity';
 import {
   DEFAULT_ROLE_PERMISSIONS,
-  type DefaultPermission,
   SYSTEM_ROLES,
+  type DefaultPermission,
   type SystemRoleSlug,
 } from '../../src/modules/access/domain/SystemRoles.entity';
+import { ContentTypeRegistry } from '../../src/modules/content-engine/domain/ContentTypeRegistry.entity';
 
 /** Two small content types: one with a nested component, one flat. */
 export const ARTICLE_DEFINITION = {
@@ -76,10 +73,7 @@ function expand(defaults: readonly DefaultPermission[]): PermissionGrant[] {
 }
 
 /** A system role carrying its seeded default rows, or `permissions` when given. */
-export function systemRole(
-  slug: SystemRoleSlug,
-  permissions?: PermissionGrant[],
-): RolePolicy {
+export function systemRole(slug: SystemRoleSlug, permissions?: PermissionGrant[]): RolePolicy {
   const index = SYSTEM_ROLES.findIndex((role) => role.slug === slug);
   const role = SYSTEM_ROLES[index];
   if (role === undefined) throw new Error(`no system role ${slug}`);
@@ -93,10 +87,7 @@ export function systemRole(
   };
 }
 
-export function customRole(
-  rank: number,
-  permissions: PermissionGrant[],
-): RolePolicy {
+export function customRole(rank: number, permissions: PermissionGrant[]): RolePolicy {
   return {
     id: 100 + rank,
     slug: `custom-${rank}`,

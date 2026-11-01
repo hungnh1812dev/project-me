@@ -1,13 +1,13 @@
-import type {
-  ComponentNode,
-  ComponentTrees,
-  ContentDocument,
-  FieldDefinition,
-  RegisteredContentType,
-  TableNode,
+import {
+  fieldTypeOf,
+  type ComponentNode,
+  type ComponentTrees,
+  type ContentDocument,
+  type FieldDefinition,
+  type FieldValues,
+  type RegisteredContentType,
+  type TableNode,
 } from '../../content-engine';
-import { fieldTypeOf } from '../../content-engine';
-import type { FieldValues } from '../../content-engine';
 import {
   MASK_SENTINEL,
   MASKED_FIELDS_KEY,
@@ -37,9 +37,7 @@ export type SerializedComponents = Record<string, SerializedComponent[] | null>;
  * can produce one: response types of document endpoints must use
  * it, so a raw `ContentDocument` cannot be returned by mistake.
  */
-export type SerializedRecord = Partial<
-  Pick<ContentDocument, RecordSystemField>
-> & {
+export type SerializedRecord = Partial<Pick<ContentDocument, RecordSystemField>> & {
   values: FieldValues;
   components: SerializedComponents;
   [MASKED_FIELDS_KEY]: string[];
@@ -47,12 +45,8 @@ export type SerializedRecord = Partial<
 };
 
 /** SPEC §6: `"***"` for string/text/richtext, `null` for every other type and components. */
-export function maskValueFor(
-  field: FieldDefinition,
-): typeof MASK_SENTINEL | null {
-  return fieldTypeOf(field.type)?.maskedValue === 'sentinel'
-    ? MASK_SENTINEL
-    : null;
+export function maskValueFor(field: FieldDefinition): typeof MASK_SENTINEL | null {
+  return fieldTypeOf(field.type)?.maskedValue === 'sentinel' ? MASK_SENTINEL : null;
 }
 
 /**
@@ -93,23 +87,15 @@ export function maskedFieldPaths(
 export class RecordSerializer {
   constructor(private readonly type: RegisteredContentType) {}
 
-  serialize(
-    record: ContentDocument,
-    access: RecordReadAccess,
-  ): SerializedRecord {
+  serialize(record: ContentDocument, access: RecordReadAccess): SerializedRecord {
     const { root } = this.type;
     const { fields } = access;
-    const tree = serializeTree(
-      root,
-      record.values,
-      record.components,
-      fields,
-      '',
-    );
+    const tree = serializeTree(root, record.values, record.components, fields, '');
     const system = Object.fromEntries(
-      RECORD_SYSTEM_FIELDS.filter((key) => access.systemFields.has(key)).map(
-        (key) => [key, record[key]],
-      ),
+      RECORD_SYSTEM_FIELDS.filter((key) => access.systemFields.has(key)).map((key) => [
+        key,
+        record[key],
+      ]),
     ) as Partial<Pick<ContentDocument, RecordSystemField>>;
     return {
       ...system,
@@ -118,10 +104,7 @@ export class RecordSerializer {
     } as SerializedRecord;
   }
 
-  serializeMany(
-    records: readonly ContentDocument[],
-    access: RecordReadAccess,
-  ): SerializedRecord[] {
+  serializeMany(records: readonly ContentDocument[], access: RecordReadAccess): SerializedRecord[] {
     return records.map((record) => this.serialize(record, access));
   }
 }
@@ -146,9 +129,7 @@ function serializeTree(
   for (const { field, table: child } of table.components) {
     const path = joinFieldPath(prefix, field.name);
     outComponents[field.name] = readable.reaches(path)
-      ? (components[field.name] ?? []).map((node) =>
-          serializeNode(child, node, readable, path),
-        )
+      ? (components[field.name] ?? []).map((node) => serializeNode(child, node, readable, path))
       : null;
   }
   return { values: outValues, components: outComponents };

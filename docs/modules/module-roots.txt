@@ -1,0 +1,15 @@
+# Module roots read by .claude/bin/module-index: <app> <folder or folder/*>, one per line.
+# Each matched folder is one module and needs one doc in docs/modules/ (front matter `module: <folder>`).
+cms-api apps/cms-api/src/modules/*
+cms-api apps/cms-api/src/infrastructure/*
+cms-api apps/cms-api/src/common
+cms-api apps/cms-api/src/config
+cms-api apps/cms-api/src/contract
+cms-admin apps/cms-admin/src/features/*
+cms-admin apps/cms-admin/src/views/*
+cms-admin apps/cms-admin/src/components
+web apps/web/src/features/*
+web apps/web/src/views/*
+form-commons packages/form-commons/src/components/*
+base-config packages/base-config/src
+e2e apps/e2e/src

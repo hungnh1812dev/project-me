@@ -8,8 +8,7 @@ export const CONTENT_QUERY_KEYS = {
   types: ['content', 'types'] as const,
   list: (slug: string) => ['content', 'list', slug] as const,
   type: (slug: string) => ['content', 'type', slug] as const,
-  draft: (slug: string, documentId: string) =>
-    ['content', 'draft', slug, documentId] as const,
+  draft: (slug: string, documentId: string) => ['content', 'draft', slug, documentId] as const,
   presence: (slug: string, documentId: string) =>
     ['content', 'presence', slug, documentId] as const,
 } as const;
@@ -25,8 +24,7 @@ export function useDocumentListQuery(
   const api = useContentApi();
   return useQuery({
     queryKey: [...CONTENT_QUERY_KEYS.list(slug), { page, sort, draft }],
-    queryFn: () =>
-      api.list(slug, { page, pageSize: CONTENT_LIST_PAGE_SIZE, sort, draft }),
+    queryFn: () => api.list(slug, { page, pageSize: CONTENT_LIST_PAGE_SIZE, sort, draft }),
     placeholderData: keepPreviousData,
     enabled,
   });

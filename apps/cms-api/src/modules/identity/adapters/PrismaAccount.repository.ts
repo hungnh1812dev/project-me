@@ -1,11 +1,11 @@
 import { Inject, Injectable } from '@nestjs/common';
 
 import type { Prisma } from '../../../generated/prisma/client';
-import { prismaTxOf } from '../../../infrastructure/database/PrismaTransactionRunner.adapter';
-import { PrismaClient } from '../../../infrastructure/database/PrismaClient.adapter';
 import { PrismaService } from '../../../infrastructure/database/Prisma.service';
+import { PrismaClient } from '../../../infrastructure/database/PrismaClient.adapter';
+import { prismaTxOf } from '../../../infrastructure/database/PrismaTransactionRunner.adapter';
 import type { UnitOfWork } from '../../../infrastructure/database/TransactionRunner.port';
-import { type AccountStatus, OWNER_ROLE_SLUG } from '../../access';
+import { OWNER_ROLE_SLUG, type AccountStatus } from '../../access';
 import type {
   AccountProfileRecord,
   AccountRepository,
@@ -71,9 +71,7 @@ function flattenPolicyVersion<Row extends { role: { policyVersion: number } }>(
   return { ...columns, policyVersion: role.policyVersion };
 }
 
-function nextTwoFactorData(
-  next: TwoFactorChange['next'],
-): Prisma.AccountUpdateManyMutationInput {
+function nextTwoFactorData(next: TwoFactorChange['next']): Prisma.AccountUpdateManyMutationInput {
   if (!next.isEnabled) {
     return { is2faEnabled: false, twoFaMethod: null, ...CLEARED_TOTP };
   }
@@ -117,9 +115,7 @@ export class PrismaAccountRepository implements AccountRepository {
     });
   }
 
-  findPasswordAccount(
-    documentId: string,
-  ): Promise<PasswordAccountRecord | null> {
+  findPasswordAccount(documentId: string): Promise<PasswordAccountRecord | null> {
     return this.prisma.account.findUnique({
       where: { documentId },
       select: {
@@ -147,9 +143,7 @@ export class PrismaAccountRepository implements AccountRepository {
     });
   }
 
-  async findTwoFactorAccount(
-    documentId: string,
-  ): Promise<TwoFactorAccountRecord | null> {
+  async findTwoFactorAccount(documentId: string): Promise<TwoFactorAccountRecord | null> {
     return flattenPolicyVersion(
       await this.prisma.account.findUnique({
         where: { documentId },
@@ -170,10 +164,7 @@ export class PrismaAccountRepository implements AccountRepository {
     });
   }
 
-  async storePendingTotp(
-    accountId: number,
-    sealed: SealedSecret,
-  ): Promise<boolean> {
+  async storePendingTotp(accountId: number, sealed: SealedSecret): Promise<boolean> {
     const stored = await this.prisma.account.updateMany({
       where: { id: accountId, is2faEnabled: false },
       data: {
@@ -194,9 +185,7 @@ export class PrismaAccountRepository implements AccountRepository {
         id: accountId,
         is2faEnabled: expect.isEnabled,
         ...(expect.method === undefined ? {} : { twoFaMethod: expect.method }),
-        ...(expect.sealedSecret === undefined
-          ? {}
-          : { totpSecretEnc: expect.sealedSecret }),
+        ...(expect.sealedSecret === undefined ? {} : { totpSecretEnc: expect.sealedSecret }),
       },
       data: nextTwoFactorData(next),
     });
@@ -232,10 +221,7 @@ export class PrismaAccountRepository implements AccountRepository {
     return claimed.count === 1;
   }
 
-  async lockDocumentId(
-    unit: UnitOfWork,
-    accountId: number,
-  ): Promise<string | null> {
+  async lockDocumentId(unit: UnitOfWork, accountId: number): Promise<string | null> {
     const locked = await prismaTxOf(unit).$queryRaw<{ document_id: string }[]>`
         SELECT document_id FROM accounts WHERE id = ${accountId} FOR UPDATE`;
     return locked[0]?.document_id ?? null;
@@ -251,8 +237,7 @@ export class PrismaAccountRepository implements AccountRepository {
   }
 
   async lockOwnerCreation(unit: UnitOfWork): Promise<void> {
-    await prismaTxOf(unit)
-      .$executeRaw`SELECT pg_advisory_xact_lock(${OWNER_BOOTSTRAP_LOCK_KEY})`;
+    await prismaTxOf(unit).$executeRaw`SELECT pg_advisory_xact_lock(${OWNER_BOOTSTRAP_LOCK_KEY})`;
   }
 
   findRole(unit: UnitOfWork, slug: string): Promise<RoleFacts | null> {
@@ -270,10 +255,7 @@ export class PrismaAccountRepository implements AccountRepository {
     return taken !== null;
   }
 
-  createAccount(
-    unit: UnitOfWork,
-    account: NewAccount,
-  ): Promise<CreatedAccount> {
+  createAccount(unit: UnitOfWork, account: NewAccount): Promise<CreatedAccount> {
     return prismaTxOf(unit).account.create({
       data: {
         email: account.email,
@@ -291,10 +273,7 @@ export class PrismaAccountRepository implements AccountRepository {
     });
   }
 
-  findResettableAccount(
-    unit: UnitOfWork,
-    email: string,
-  ): Promise<ResettableAccount | null> {
+  findResettableAccount(unit: UnitOfWork, email: string): Promise<ResettableAccount | null> {
     return prismaTxOf(unit).account.findFirst({
       where: { email, deletedAt: null },
       select: { id: true, documentId: true, email: true, twoFaMethod: true },

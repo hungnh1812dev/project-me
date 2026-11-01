@@ -1,14 +1,7 @@
 import { SYSTEM_ROLES } from '../../src/modules/access/domain/SystemRoles.entity';
-import {
-  assertPinnedPathsExist,
-  listSourceFiles,
-} from './ImportGraph.analyzer';
+import { assertPinnedPathsExist, listSourceFiles } from './ImportGraph.analyzer';
 import { findRoleSlugLiterals } from './RoleSlugLiterals.analyzer';
-import {
-  NON_ROLE_LITERAL_FILES,
-  SYSTEM_ROLES_TABLE_FILE,
-  SRC_ROOT,
-} from './SourcePaths.constants';
+import { NON_ROLE_LITERAL_FILES, SRC_ROOT, SYSTEM_ROLES_TABLE_FILE } from './SourcePaths.constants';
 
 /**
  * SPEC D6 (R1-05): the system role slugs live in one table,
@@ -37,47 +30,35 @@ describe('system role slugs (D6)', () => {
 
   it('quotes no role slug outside the roles table', () => {
     const offenders = sources.flatMap(({ file, text }) =>
-      findRoleSlugLiterals(text, ROLE_SLUGS).map(
-        ({ slug, line }) => `${file}:${line}: '${slug}'`,
-      ),
+      findRoleSlugLiterals(text, ROLE_SLUGS).map(({ slug, line }) => `${file}:${line}: '${slug}'`),
     );
     expect(offenders).toEqual([]);
   });
 
   it('the files exempted as non-role literals exist', () => {
     expect(() =>
-      assertPinnedPathsExist(SRC_ROOT, [
-        SYSTEM_ROLES_TABLE_FILE,
-        ...NON_ROLE_LITERAL_FILES,
-      ]),
+      assertPinnedPathsExist(SRC_ROOT, [SYSTEM_ROLES_TABLE_FILE, ...NON_ROLE_LITERAL_FILES]),
     ).not.toThrow();
   });
 });
 
 describe('findRoleSlugLiterals', () => {
-  const scan = (code: string) =>
-    findRoleSlugLiterals(code, ROLE_SLUGS).map(({ slug }) => slug);
+  const scan = (code: string) => findRoleSlugLiterals(code, ROLE_SLUGS).map(({ slug }) => slug);
 
   it('finds a plain role check', () => {
     expect(scan("if (role.slug === 'admin') grant();")).toEqual(['admin']);
   });
 
   it('finds a slug after a URL string on the same line', () => {
-    expect(
-      scan("const u = 'https://x'; if (role.slug === 'admin') grant();"),
-    ).toEqual(['admin']);
+    expect(scan("const u = 'https://x'; if (role.slug === 'admin') grant();")).toEqual(['admin']);
   });
 
   it('finds a case of a switch on the role slug', () => {
-    expect(scan("switch (role.slug) { case 'reviewer': return 1; }")).toEqual([
-      'reviewer',
-    ]);
+    expect(scan("switch (role.slug) { case 'reviewer': return 1; }")).toEqual(['reviewer']);
   });
 
   it('finds a slug on the line next to an anonymous literal', () => {
-    expect(
-      scan("const a = 'anonymous';\nif (role.slug === 'owner') grant();"),
-    ).toEqual(['owner']);
+    expect(scan("const a = 'anonymous';\nif (role.slug === 'owner') grant();")).toEqual(['owner']);
   });
 
   it('ignores slugs in comments', () => {

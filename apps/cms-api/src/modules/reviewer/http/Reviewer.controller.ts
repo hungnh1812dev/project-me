@@ -13,10 +13,6 @@ import {
 } from '@nestjs/common';
 import type { Request } from 'express';
 
-import {
-  ClientIpResolver,
-  clientMetaOf,
-} from '../../../common/http/ClientIp.resolver';
 import { NO_STORE_HEADER } from '../../../common/constants/Http.constants';
 import {
   ONE_MINUTE_MS,
@@ -25,26 +21,24 @@ import {
   type RateLimitRule,
 } from '../../../common/constants/Limits.constants';
 import { Throttle } from '../../../common/guards/Throttle.guard';
+import { ClientIpResolver, clientMetaOf } from '../../../common/http/ClientIp.resolver';
 import { parseRequest } from '../../../common/http/RequestParsing.rules';
+import { pageQuerySchema } from '../../../common/validation/SharedSchemas.rules';
 import {
   PermissionAction,
-  REVIEWER_SETTINGS_SUBJECT,
-  RequirePermission,
   PermissionGuard,
   requireAccountActor,
+  RequirePermission,
+  REVIEWER_SETTINGS_SUBJECT,
 } from '../../access';
-import { type AuthenticatedRequest, JwtAuthGuard } from '../../identity';
-import {
-  createReviewerSessionSchema,
-  reviewerSettingsSchema,
-} from './Reviewer.requests';
+import { JwtAuthGuard, type AuthenticatedRequest } from '../../identity';
+import { ReviewerAccessService } from '../application/ReviewerAccess.service';
 import type {
   CreatedReviewerSessionView,
   ReviewerSessionPage,
   ReviewerStatusView,
 } from '../domain/ReviewerAdmission.rules';
-import { ReviewerAccessService } from '../application/ReviewerAccess.service';
-import { pageQuerySchema } from '../../../common/validation/SharedSchemas.rules';
+import { createReviewerSessionSchema, reviewerSettingsSchema } from './Reviewer.requests';
 
 /** SPEC §9 reviewer. */
 const REVIEWER_ROUTES = {

@@ -39,10 +39,7 @@ export class TwoFactorChallengeStore {
   attempt(jti: string, expiresAtMs: number): ChallengeAttempt {
     const entry = this.entryFor(jti, expiresAtMs);
     if (entry === undefined) return 'refused';
-    if (
-      entry.hasBeenUsed ||
-      entry.attempts >= TWO_FACTOR_TEMP_TOKEN_MAX_ATTEMPTS
-    ) {
+    if (entry.hasBeenUsed || entry.attempts >= TWO_FACTOR_TEMP_TOKEN_MAX_ATTEMPTS) {
       return 'exhausted';
     }
     entry.attempts += 1;
@@ -54,8 +51,7 @@ export class TwoFactorChallengeStore {
     const entry = this.entries.get(jti);
     return (
       entry === undefined ||
-      (!entry.hasBeenUsed &&
-        entry.attempts < TWO_FACTOR_TEMP_TOKEN_MAX_ATTEMPTS)
+      (!entry.hasBeenUsed && entry.attempts < TWO_FACTOR_TEMP_TOKEN_MAX_ATTEMPTS)
     );
   }
 
@@ -70,10 +66,7 @@ export class TwoFactorChallengeStore {
     return true;
   }
 
-  private entryFor(
-    jti: string,
-    expiresAtMs: number,
-  ): ChallengeEntry | undefined {
+  private entryFor(jti: string, expiresAtMs: number): ChallengeEntry | undefined {
     const existing = this.entries.get(jti);
     if (existing !== undefined) return existing;
     if (this.entries.size >= TWO_FACTOR_CHALLENGE_MAX_KEYS) {

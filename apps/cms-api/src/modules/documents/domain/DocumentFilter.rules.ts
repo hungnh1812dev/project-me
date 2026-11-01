@@ -8,10 +8,7 @@ import {
   parseUuid,
   VALUE_PATTERNS,
 } from '../../content-engine';
-import {
-  DOCUMENT_ERROR_MESSAGES,
-  OPERATORS_BY_KIND,
-} from './Documents.constants';
+import { DOCUMENT_ERROR_MESSAGES, OPERATORS_BY_KIND } from './Documents.constants';
 import type { FilterClause } from './ListQuery.rules';
 
 export type FilterValue = string | number | boolean;
@@ -25,18 +22,13 @@ export function filterRefused(message: string): DomainError {
 }
 
 /** A URL string as the typed value its column compares with; undefined = invalid. */
-export function coerceFilterValue(
-  kind: ConditionValueKind,
-  raw: string,
-): FilterValue | undefined {
+export function coerceFilterValue(kind: ConditionValueKind, raw: string): FilterValue | undefined {
   switch (kind) {
     case 'string':
       return raw;
     case 'integer': {
       const value = Number(raw);
-      return VALUE_PATTERNS.INTEGER.test(raw) && Math.abs(value) <= INT4_MAX
-        ? value
-        : undefined;
+      return VALUE_PATTERNS.INTEGER.test(raw) && Math.abs(value) <= INT4_MAX ? value : undefined;
     }
     case 'decimal':
       return VALUE_PATTERNS.DECIMAL.test(raw) ? raw : undefined;
@@ -63,10 +55,7 @@ export function coerceFilterValue(
  * reaches a query unchecked.
  * @throws DomainError (invalid_input) on an operator or value the field cannot take.
  */
-export function typedFilterValues(
-  kind: ConditionValueKind,
-  clause: FilterClause,
-): FilterValue[] {
+export function typedFilterValues(kind: ConditionValueKind, clause: FilterClause): FilterValue[] {
   if (!OPERATORS_BY_KIND[kind].includes(clause.op)) {
     throw filterRefused(DOCUMENT_ERROR_MESSAGES.UNSUPPORTED_OPERATOR);
   }

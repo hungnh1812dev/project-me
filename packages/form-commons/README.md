@@ -7,15 +7,33 @@ build it first through `^build`).
 
 ## Exports
 
-| Import                           | What                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
-| -------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `@abyss/form-commons`            | `Button`, `buttonVariants`, `Input`, `Label`, `Field`, `FormAlert`, `TextInput`, `SelectInput`, `CheckboxInput`, `Checkbox`, `TextAreaInput`, `NumberInput`, `SwitchInput`, `DatePicker`, `DateTimePicker`, `JsonInput`, `isValidJsonText`, `RichtextInput`, `richtextExtensions`, `normalizeRichtextHtml`, `MediaInput`, `formatFileSize`, `SortableSheet`, `TablePagination`, `BulkActionBar`, `Textarea`, `Radio`, `Switch`, `NativeSelect`, `Dialog`, `DialogClose`, `DialogContent`, `DialogDescription`, `DialogFooter`, `DialogHeader`, `DialogOverlay`, `DialogTitle`, `DialogTrigger`, `FIELD_ID_SUFFIX`, `CSP_NONCE_META_NAME`, and the prop and label types (ESM + CJS + d.ts) |
-| `@abyss/form-commons/styles.css` | Compiled CSS: tokens + the utilities the components use, no reset                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
-| `@abyss/form-commons/theme.css`  | Tailwind v4 `@theme` mapping + tokens, for apps that run Tailwind                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
-| `@abyss/form-commons/tokens.css` | CSS variables only                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| Import                            | What                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `@abyss/form-commons`             | `Button`, `buttonVariants`, `IconButton`, `Tooltip`, `TooltipContent`, `TooltipTrigger`, `TOOLTIP_DELAY_MS`, `Popover`, `PopoverContent`, `PopoverTrigger`, `DropdownMenu`, `DropdownMenuContent`, `DropdownMenuItem`, `DropdownMenuLabel`, `DropdownMenuSeparator`, `DropdownMenuTrigger`, `Input`, `Label`, `Field`, `FormAlert`, `TextInput`, `SelectInput`, `CheckboxInput`, `Checkbox`, `TextAreaInput`, `NumberInput`, `SwitchInput`, `DatePicker`, `DateTimePicker`, `JsonInput`, `isValidJsonText`, `RichtextInput`, `richtextExtensions`, `normalizeRichtextHtml`, `MediaInput`, `MediaPreview`, `MediaDetails`, `formatFileSize`, `SortableSheet`, `TablePagination`, `BulkActionBar`, `Textarea`, `Radio`, `Switch`, `NativeSelect`, `Dialog`, `DialogClose`, `DialogContent`, `DialogDescription`, `DialogFooter`, `DialogHeader`, `DialogOverlay`, `DialogTitle`, `DialogTrigger`, `FIELD_ID_SUFFIX`, `CSP_NONCE_META_NAME`, and the prop and label types (ESM + d.ts) |
+| `@abyss/form-commons/<component>` | One component per entry, kebab-case: form blocks by folder (`text-input`, `richtext-input`, `sortable-sheet`, ...) and primitives by name (`button`, `dialog`, `native-select`, ...). Same exports as the root for that component                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| `@abyss/form-commons/styles.css`  | Compiled CSS: tokens + the utilities the components use, no reset                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| `@abyss/form-commons/theme.css`   | Tailwind v4 `@theme` mapping + tokens, for apps that run Tailwind                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| `@abyss/form-commons/tokens.css`  | CSS variables only                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 
 JS has no side effects (`sideEffects` lists only CSS), so unused components
 are tree-shaken.
+
+### Per-component entries
+
+`tsup.config.ts` builds one entry per folder in `src/components/forms/` and
+per component file in `src/components/ui/`, so a new component gets its
+subpath with no config change. Shared code lands in `dist/chunks/`, so
+importing `button` does not load the editor. Use a subpath to lazy-load a
+heavy component (tiptap ships only with `richtext-input`):
+
+```tsx
+const RichtextInput = React.lazy(() =>
+  import('@abyss/form-commons/richtext-input').then((m) => ({ default: m.RichtextInput })),
+);
+```
+
+Code that imports the same component from the root barrel puts it back in
+the main bundle.
 
 ### Public API
 
@@ -30,8 +48,10 @@ deliberate edit of the snapshot and every consumer in the same change.
 ```css
 @import 'tailwindcss';
 @import '@abyss/form-commons/theme.css';
-@source '../node_modules/@abyss/form-commons/dist';
 ```
+
+`theme.css` brings the tokens and its own `@source` for `dist/`, so this is
+the only import. Do not add `styles.css` or `tokens.css` as well.
 
 ### Using it without Tailwind
 
@@ -62,12 +82,7 @@ Icon-only buttons need an `aria-label`.
 Layout and a11y wiring for any control:
 
 ```tsx
-<Field
-  label="Email"
-  description="We send the invite here."
-  error={error}
-  required
->
+<Field label="Email" description="We send the invite here." error={error} required>
   {(control) => <Input {...control} type="email" />}
 </Field>
 ```
@@ -126,16 +141,35 @@ All bind to the surrounding `FormProvider` like `TextInput`.
   `sanitizeRichtext` keeps (p, br, hr, strong, em, u, s, code, pre, blockquote,
   h1-h6, ul, ol, li, a with http/https/mailto/tel). Add a tag to the server
   allowlist before adding an extension. The server sanitizes again on write.
+  Alignment saves `style="text-align: ..."` on p and headings. The toolbar is
+  Radix `Toolbar` (one tab stop, arrow/Home/End keys) of `IconButton`s in
+  groups (history, block type menu, marks, text colour, alignment, blocks,
+  link, image); a new control is one entry in `RichtextToolbar.ts`. Text
+  colour is limited to `RICHTEXT_TEXT_COLORS` (mirror of the server's
+  `richtextTextColors`) and saves `<span style="color: #rrggbb">`; a colour
+  outside the palette is dropped on load. The optional `onRequestImage(insert)`
+  prop shows an image button; the host picks a File Library image and calls
+  `insert({ src, alt, mediaId })`, which adds `<img src alt data-media-id>`.
 
 ### MediaInput
 
 Presentational field for one library file (cms-admin binds it to the form in `MediaField`).
-`value` is a `MediaInputFile | null` (preview, name, size, optional `mimeType` (absent on files embedded in documents), optional `provider`
-badge, date). Callbacks: `onOpenLibrary` (choose or replace), `onFilePick(file)`
-(a file picked from disk; the parent uploads it; `onChange` is a deprecated alias),
-`onRemove` (detach from the field, the file stays in the library), `onDelete`
-(delete from the library). A button shows only when its
-callback is given. All copy comes through the `labels` prop.
+`value` is a `MediaInputFile | null`. Filled: a 300 px `MediaPreview` (`field`) with overlay
+`IconButton`s, then `MediaDetails` as the footer. Empty: a dashed 300 px area with Upload and
+Choose from library. Callbacks: `onUpload` (empty Upload, e.g. open the upload dialog),
+`onReplace` (Replace file), `onOpenLibrary` (Choose from library), `onRemove` (Remove from the
+field, the file stays in the library), `onDelete` (footer button, delete from the library),
+`onFilePick(file)` (old path: a hidden file input serves Upload and Replace file when
+`onUpload` / `onReplace` are absent; `onChange` is a deprecated alias). A button shows only when
+its handler (or the file input path) exists. All copy comes through `labels`; `replaceFile`,
+`removeFromField` and `videoBadge` are optional (they fall back to `replace`, `remove`, "Video").
+`formatFileSize` now lives in `MediaDetails.tsx`.
+
+`MediaPreview` (`file`, `height: 'field' | 'card'`, `labels`, `actions` overlay slot) draws the
+picture, a video badge, or a kind icon (one map per MIME family). `MediaDetails` (`file`) shows
+name with the first 8 hex of `sha256`, size, dimensions (image and video only), provider and
+`updatedAt` (falls back to `createdAt`). Heights come from `--size-media-preview` and
+`--size-media-card-preview`.
 
 ### SortableSheet, TablePagination, BulkActionBar
 
@@ -150,6 +184,15 @@ shows "from-to of total" with previous / next (parent owns `page`).
 `BulkActionBar` shows "n selected" with one button per action (variant by
 meaning) and a clear button; it renders nothing at zero selected, and `busy`
 disables it.
+
+### IconButton, Tooltip, DropdownMenu, Popover
+
+`IconButton` is a `Button` of size `icon` with a required `label` (its
+`aria-label` and tooltip text) and optional `tooltipSide`; a disabled one still
+shows the tooltip on keyboard focus of its wrapper. `Tooltip` (Radix, opens after
+`TOOLTIP_DELAY_MS` = 700 ms, no app-level provider needed), `DropdownMenu`
+(trigger, content, item, label, separator) and `Popover` (trigger, content) are
+shadcn components on the semantic tokens. Icons come from `lucide-react`.
 
 ### Dialog
 
@@ -179,9 +222,9 @@ pnpm --filter @abyss/form-commons exec shadcn add <name>
 
 ## Scripts
 
-| Script      | What it does                                                                          |
-| ----------- | ------------------------------------------------------------------------------------- |
-| `build`     | tsup (ESM, CJS, d.ts) + Tailwind CLI for `dist/styles.css`                            |
-| `test`      | Vitest + Testing Library (jsdom)                                                      |
-| `lint`      | Oxlint (base-config + react, jsx-a11y, vitest) then ESLint (base-config, react-hooks) |
-| `typecheck` | `tsc --noEmit`                                                                        |
+| Script      | What it does                                                                                    |
+| ----------- | ----------------------------------------------------------------------------------------------- |
+| `build`     | tsup (ESM, d.ts; 4 GB heap, the d.ts step needs over 2 GB) + Tailwind CLI for `dist/styles.css` |
+| `test`      | Vitest + Testing Library (jsdom)                                                                |
+| `lint`      | Oxlint (base-config + react, jsx-a11y, vitest) then ESLint (base-config, react-hooks)           |
+| `typecheck` | `tsc --noEmit`                                                                                  |

@@ -1,22 +1,17 @@
-import { DomainError } from '../../../common/errors/Domain.errors';
 import {
+  DummyDriver,
+  Kysely,
   PostgresAdapter,
   PostgresIntrospector,
   PostgresQueryCompiler,
 } from 'kysely';
-import { DummyDriver, Kysely } from 'kysely';
 
 import { ARTICLE_DEFINITION } from '../../../../test/fixtures/Access.fixture';
+import { DomainError } from '../../../common/errors/Domain.errors';
 import { ContentTypeRegistry } from '../../content-engine';
-import {
-  filterExpression,
-  queryColumnOf,
-  sortTarget,
-} from './DocumentFilterSql.adapter';
+import { filterExpression, queryColumnOf, sortTarget } from './DocumentFilterSql.adapter';
 
-const type = ContentTypeRegistry.fromDefinitions([ARTICLE_DEFINITION]).resolve(
-  'article',
-);
+const type = ContentTypeRegistry.fromDefinitions([ARTICLE_DEFINITION]).resolve('article');
 
 const db = new Kysely<Record<string, Record<string, unknown>>>({
   dialect: {
@@ -27,11 +22,7 @@ const db = new Kysely<Record<string, Record<string, unknown>>>({
   },
 });
 
-function compile(
-  path: string,
-  op: Parameters<typeof filterExpression>[1]['op'],
-  values: string[],
-) {
+function compile(path: string, op: Parameters<typeof filterExpression>[1]['op'], values: string[]) {
   const expression = filterExpression(queryColumnOf(type, path), {
     path,
     op,
@@ -57,17 +48,12 @@ describe('queryColumnOf', () => {
     expect(queryColumnOf(type, 'releaseDate').kind).toBe('date');
   });
 
-  it.each([
-    'avatar',
-    'meta',
-    'reference',
-    'reference.name',
-    'nope',
-    '__proto__',
-    'constructor',
-  ])('refuses %s', (path) => {
-    expect(() => queryColumnOf(type, path)).toThrow(DomainError);
-  });
+  it.each(['avatar', 'meta', 'reference', 'reference.name', 'nope', '__proto__', 'constructor'])(
+    'refuses %s',
+    (path) => {
+      expect(() => queryColumnOf(type, path)).toThrow(DomainError);
+    },
+  );
 });
 
 describe('media fields', () => {
@@ -85,9 +71,7 @@ describe('media fields', () => {
   });
 
   it('refuses a media field as a sort key', () => {
-    expect(() =>
-      sortTarget(mediaType, { path: 'cover', direction: 'asc' }),
-    ).toThrow(DomainError);
+    expect(() => sortTarget(mediaType, { path: 'cover', direction: 'asc' })).toThrow(DomainError);
   });
 });
 
@@ -99,12 +83,8 @@ describe('filterExpression', () => {
   });
 
   it('builds in, ne, ordering and contains', () => {
-    expect(compile('priority', 'in', ['1', '2']).sql).toContain(
-      '"priority" in ($1, $2)',
-    );
-    expect(compile('priority', 'ne', ['1']).sql).toContain(
-      '"priority" is distinct from $1',
-    );
+    expect(compile('priority', 'in', ['1', '2']).sql).toContain('"priority" in ($1, $2)');
+    expect(compile('priority', 'ne', ['1']).sql).toContain('"priority" is distinct from $1');
     expect(compile('priority', 'gte', ['1']).sql).toContain('"priority" >= $1');
     expect(compile('priority', 'lt', ['1']).sql).toContain('"priority" < $1');
   });

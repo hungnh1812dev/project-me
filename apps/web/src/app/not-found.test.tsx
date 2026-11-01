@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 
-import { COPY } from '../config/Copy.constants';
+import { COPY } from '../configs/Copy.constants';
 import NotFound from './not-found';
 
 describe('NotFound', () => {

@@ -39,14 +39,10 @@ function build(
     lockRoleForAssignment: jest.fn(() =>
       Promise.resolve(overrides.role === undefined ? EDITOR : overrides.role),
     ),
-    isEmailTaken: jest.fn(() =>
-      Promise.resolve(overrides.isEmailTaken ?? false),
-    ),
+    isEmailTaken: jest.fn(() => Promise.resolve(overrides.isEmailTaken ?? false)),
     create: jest.fn(() => Promise.resolve(INVITED)),
     lockManageable: jest.fn(() =>
-      Promise.resolve(
-        overrides.target === undefined ? INVITED : overrides.target,
-      ),
+      Promise.resolve(overrides.target === undefined ? INVITED : overrides.target),
     ),
   };
   const otp = {
@@ -116,9 +112,7 @@ describe('InvitationsService', () => {
 
     it('answers 409 for a taken email and creates nothing', async () => {
       const { service, accounts, mail } = build({ isEmailTaken: true });
-      await expect(
-        service.invite(actorWithRole('admin'), INPUT, META),
-      ).rejects.toMatchObject({
+      await expect(service.invite(actorWithRole('admin'), INPUT, META)).rejects.toMatchObject({
         kind: 'conflict',
         errorCode: MANAGEMENT_ERROR_CODES.ACCOUNT_EMAIL_TAKEN,
       });
@@ -130,9 +124,9 @@ describe('InvitationsService', () => {
       const { service, accounts } = build({
         role: { ...EDITOR, slug: 'owner', rank: 100 },
       });
-      await expect(
-        service.invite(actorWithRole('admin'), INPUT, META),
-      ).rejects.toMatchObject({ kind: 'forbidden' });
+      await expect(service.invite(actorWithRole('admin'), INPUT, META)).rejects.toMatchObject({
+        kind: 'forbidden',
+      });
       expect(accounts.create).not.toHaveBeenCalled();
     });
 

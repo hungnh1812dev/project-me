@@ -1,4 +1,5 @@
 import { MS_PER_HOUR } from '../../../common/constants/Time.constants';
+import type { AllowedMime } from './MediaUpload.rules';
 
 /** Kinds of file the library accepts (SPEC D12); decides storage resource type and size limit. */
 export const MEDIA_KINDS = ['image', 'pdf', 'video'] as const;
@@ -24,6 +25,9 @@ export const MEDIA_ERROR_MESSAGES = {
   NOT_MULTIPART: 'Send the file as multipart/form-data.',
   NO_FILE: 'The request has no file.',
   UNEXPECTED_PART: 'Send one "file" part and an optional "alt" field only.',
+  UNEXPECTED_REPLACE_PART: 'Send one "file" part only.',
+  FAMILY_MISMATCH:
+    'The new file must be the same kind as the file it replaces (image, PDF or video).',
   ALT_TOO_LONG: 'The alt text is too long.',
   UNSUPPORTED_TYPE:
     'This file type is not allowed. Allowed: JPEG, PNG, WebP, GIF, AVIF, PDF and MP4.',
@@ -47,7 +51,24 @@ export function mediaRefInvalidMessage(inputPath: string): string {
   return `${inputPath} refers to a file that does not exist`;
 }
 
+/** `provider` of rows whose bytes ship with the app, not in `MediaStorage`; the purge job never deletes their object. */
+export const PRESET_MEDIA_PROVIDER = 'preset';
+
 /** Soft-deleted files are purged from storage once older than this (SPEC §9). */
 export const MEDIA_PURGE_GRACE_MS = 24 * MS_PER_HOUR;
 /** Rows read per query during a purge run (a run walks all eligible rows). */
 export const MEDIA_PURGE_BATCH_SIZE = 100;
+
+/** File extension of each allowlisted MIME type; the local storage names files `<key>.<ext>` and serves the type back from it. */
+export const MEDIA_FILE_EXTENSIONS = {
+  'image/jpeg': 'jpg',
+  'image/png': 'png',
+  'image/webp': 'webp',
+  'image/gif': 'gif',
+  'image/avif': 'avif',
+  'application/pdf': 'pdf',
+  'video/mp4': 'mp4',
+} as const satisfies Record<AllowedMime, string>;
+
+/** A stored key is never reused (replace writes a new key), so a public file can be cached for good. */
+export const PUBLIC_MEDIA_CACHE_CONTROL = 'public, max-age=31536000, immutable';

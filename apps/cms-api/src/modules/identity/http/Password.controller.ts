@@ -14,21 +14,12 @@ import { type z } from 'zod';
 
 import { NO_STORE_HEADER } from '../../../common/constants/Http.constants';
 import { Throttle } from '../../../common/guards/Throttle.guard';
-import {
-  ClientIpResolver,
-  clientMetaOf,
-} from '../../../common/http/ClientIp.resolver';
+import { ClientIpResolver, clientMetaOf } from '../../../common/http/ClientIp.resolver';
 import { requireAccountActor } from '../../access';
 import { PasswordService } from '../application/Password.service';
-import {
-  AUTH_ERROR_CODES,
-  AUTH_ERROR_MESSAGES,
-} from '../domain/Identity.constants';
-import {
-  IDENTITY_RATE_LIMIT_POLICIES,
-  PASSWORD_ROUTES,
-} from './IdentityHttp.constants';
-import { type AuthenticatedRequest, JwtAuthGuard } from './Jwt.strategy';
+import { AUTH_ERROR_CODES, AUTH_ERROR_MESSAGES } from '../domain/Identity.constants';
+import { IDENTITY_RATE_LIMIT_POLICIES, PASSWORD_ROUTES } from './IdentityHttp.constants';
+import { JwtAuthGuard, type AuthenticatedRequest } from './Jwt.strategy';
 import {
   changePasswordSchema,
   requestOtpSchema,
@@ -85,10 +76,7 @@ export class PasswordController {
   @Header(NO_STORE_HEADER.NAME, NO_STORE_HEADER.VALUE)
   @Throttle(IDENTITY_RATE_LIMIT_POLICIES.PASSWORD_SUBMIT)
   set(@Body() body: unknown, @Req() req: Request): Promise<void> {
-    return this.passwords.set(
-      parseBody(setPasswordSchema, body),
-      clientMetaOf(this.clientIp, req),
-    );
+    return this.passwords.set(parseBody(setPasswordSchema, body), clientMetaOf(this.clientIp, req));
   }
 
   @Post(PASSWORD_ROUTES.CHANGE)
@@ -96,10 +84,7 @@ export class PasswordController {
   @Header(NO_STORE_HEADER.NAME, NO_STORE_HEADER.VALUE)
   @UseGuards(JwtAuthGuard)
   @Throttle(IDENTITY_RATE_LIMIT_POLICIES.PASSWORD_CHANGE)
-  change(
-    @Req() req: AuthenticatedRequest,
-    @Body() body: unknown,
-  ): Promise<void> {
+  change(@Req() req: AuthenticatedRequest, @Body() body: unknown): Promise<void> {
     requireAccountActor(req.user.actor);
     return this.passwords.change(
       req.user.accountId,

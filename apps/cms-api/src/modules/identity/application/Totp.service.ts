@@ -1,14 +1,11 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { generateSecret, generateURI, verify } from 'otplib';
 
-import { Clock } from '../../../common/time/Clock.service';
 import { MS_PER_SECOND } from '../../../common/constants/Time.constants';
+import { Clock } from '../../../common/time/Clock.service';
 import { type IAppConfig } from '../../../config/AppConfig.setup';
 import { APP_CONFIG } from '../../../config/Config.constants';
-import {
-  APP_LOGGER,
-  type AppLogger,
-} from '../../../infrastructure/logging/AppLogger.port';
+import { APP_LOGGER, type AppLogger } from '../../../infrastructure/logging/AppLogger.port';
 import { TOTP } from '../domain/Identity.constants';
 import {
   ACCOUNT_REPOSITORY,
@@ -99,10 +96,7 @@ export class TotpService implements ResetSecondFactor {
     } catch (error) {
       if (!(error instanceof SecretBoxError)) throw error;
       // Fail closed. The message names the kid at most, never key or secret.
-      this.logger.error(
-        `TOTP secret unreadable: ${error.message}`,
-        LOGGER_CONTEXT,
-      );
+      this.logger.error(`TOTP secret unreadable: ${error.message}`, LOGGER_CONTEXT);
       return undefined;
     }
   }
@@ -112,18 +106,14 @@ export class TotpService implements ResetSecondFactor {
    * (and re-encrypts the secret when an older key sealed it). False for a
    * wrong, replayed or concurrent-duplicate code.
    */
-  async verifyAccountCode(
-    account: TotpAccount,
-    code: string,
-  ): Promise<boolean> {
+  async verifyAccountCode(account: TotpAccount, code: string): Promise<boolean> {
     const secret = this.openSecret(account);
     if (secret === undefined) return false;
     const step = await this.matchStep(secret, code, account.totpLastStep);
     if (step === undefined) return false;
 
     const resealed =
-      account.totpSecretKid !== null &&
-      !this.secretBox.isCurrent(account.totpSecretKid)
+      account.totpSecretKid !== null && !this.secretBox.isCurrent(account.totpSecretKid)
         ? this.secretBox.seal(secret, account.documentId)
         : undefined;
     return this.accounts.claimTotpStep({
@@ -134,10 +124,7 @@ export class TotpService implements ResetSecondFactor {
   }
 
   /** RESET_SECOND_FACTOR (D8): an account with TOTP on needs a valid code. */
-  async verify(
-    accountId: number,
-    totpCode: string | undefined,
-  ): Promise<boolean> {
+  async verify(accountId: number, totpCode: string | undefined): Promise<boolean> {
     if (totpCode === undefined) return false;
     const account = await this.accounts.findTotpAccount(accountId);
     if (account === null) return false;

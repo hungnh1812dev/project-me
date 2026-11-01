@@ -1,6 +1,5 @@
+import { API_ENDPOINTS } from '@configs/Api.endpoints';
 import type { AxiosInstance } from 'axios';
-
-import { API_ENDPOINTS } from '../../config/Api.endpoints';
 
 /** A field of a content type. */
 export interface ContentTypeField {
@@ -22,11 +21,7 @@ export interface ContentType {
 }
 
 /** Content-type discovery, sorted by slug. */
-export async function getContentTypes(
-  client: AxiosInstance,
-): Promise<ContentType[]> {
-  const { data } = await client.get<{ data: ContentType[] }>(
-    API_ENDPOINTS.CONTENT_TYPES.LIST,
-  );
+export async function getContentTypes(client: AxiosInstance): Promise<ContentType[]> {
+  const { data } = await client.get<{ data: ContentType[] }>(API_ENDPOINTS.CONTENT_TYPES.LIST);
   return data.data;
 }

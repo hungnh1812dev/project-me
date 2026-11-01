@@ -1,12 +1,9 @@
-import { APP_ROUTES } from '../../config/App.routes';
-import { defineApiService, type Feature } from '../../lib/FeatureDefinition';
-import { BackupsApiProvider } from './BackupsApi.context';
+import { defineApiService } from '@apis/client/ApiService.setup';
+
+import type { Feature } from '../Features.registry';
 import { createBackupsApi } from './Backups.api';
-import { BackupsPage } from './BackupsPage';
-import { useBackupsNavItems } from './Backups.queries';
+import { BackupsApiProvider } from './BackupsApi.context';
 
 export const backupsFeature: Feature = {
   apiServices: [defineApiService(createBackupsApi, BackupsApiProvider)],
-  useNavItems: useBackupsNavItems,
-  routes: [{ path: APP_ROUTES.BACKUPS, Component: BackupsPage }],
 };

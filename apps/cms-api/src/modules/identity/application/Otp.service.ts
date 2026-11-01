@@ -2,35 +2,28 @@ import { createHmac, randomInt, timingSafeEqual } from 'node:crypto';
 
 import { Inject, Injectable } from '@nestjs/common';
 
+import { MS_PER_SECOND, SECONDS_PER_MINUTE } from '../../../common/constants/Time.constants';
 import { Clock } from '../../../common/time/Clock.service';
-import {
-  MS_PER_SECOND,
-  SECONDS_PER_MINUTE,
-} from '../../../common/constants/Time.constants';
 import { type IAppConfig } from '../../../config/AppConfig.setup';
 import { APP_CONFIG } from '../../../config/Config.constants';
-import { type MailMessage } from '../../../infrastructure/mail/Mail.port';
 import {
   CORE_TRANSACTION_RUNNER,
   type TransactionRunner,
   type UnitOfWork,
 } from '../../../infrastructure/database/TransactionRunner.port';
+import { type MailMessage } from '../../../infrastructure/mail/Mail.port';
 import {
   AUDIT_ACTIONS,
-  type AuditActor,
   SecurityAuditService,
   selfActor,
+  type AuditActor,
 } from '../../security-audit';
-import {
-  ADMIN_PAGE_PATHS,
-  OTP,
-  type OtpPurpose,
-} from '../domain/Identity.constants';
+import { ADMIN_PAGE_PATHS, OTP, type OtpPurpose } from '../domain/Identity.constants';
 import { tooManyRequests } from '../domain/Identity.errors';
 import {
   ACCOUNT_REPOSITORY,
-  type AccountRepository,
   OTP_CODE_REPOSITORY,
+  type AccountRepository,
   type OtpCodeRepository,
 } from './Identity.port';
 
@@ -151,16 +144,10 @@ export class OtpService {
    * `auth.otp_issued` row (purpose only, never the code) in the same
    * transaction (D15).
    */
-  issue(
-    accountId: number,
-    purpose: OtpPurpose,
-    options: OtpIssueOptions = {},
-  ): Promise<string> {
+  issue(accountId: number, purpose: OtpPurpose, options: OtpIssueOptions = {}): Promise<string> {
     const pepper = this.pepper();
     const now = this.clock.now();
-    const code = randomInt(0, OTP_CODE_SPACE)
-      .toString()
-      .padStart(OTP.DIGITS, '0');
+    const code = randomInt(0, OTP_CODE_SPACE).toString().padStart(OTP.DIGITS, '0');
 
     const run = async (unit: UnitOfWork): Promise<string> => {
       // Row lock on the account: concurrent issues for it run one at a time,
@@ -191,9 +178,7 @@ export class OtpService {
       });
       return code;
     };
-    return options.unit === undefined
-      ? this.runner.run(run)
-      : run(options.unit);
+    return options.unit === undefined ? this.runner.run(run) : run(options.unit);
   }
 
   /**
@@ -202,17 +187,9 @@ export class OtpService {
    * spent every further check fails, even with the right code. Returns the
    * row id to pass to `tryConsume`, or undefined.
    */
-  async verify(
-    accountId: number,
-    purpose: OtpPurpose,
-    code: string,
-  ): Promise<number | undefined> {
+  async verify(accountId: number, purpose: OtpPurpose, code: string): Promise<number | undefined> {
     const candidate = otpHmac(this.pepper(), accountId, purpose, code);
-    const live = await this.codes.findLive(
-      accountId,
-      purpose,
-      new Date(this.clock.now()),
-    );
+    const live = await this.codes.findLive(accountId, purpose, new Date(this.clock.now()));
     if (live === null) return undefined;
 
     const isCounted = await this.codes.countAttempt(live.id, OTP.MAX_ATTEMPTS);
@@ -220,8 +197,7 @@ export class OtpService {
 
     const expected = Buffer.from(live.codeHmac, 'hex');
     const actual = Buffer.from(candidate, 'hex');
-    return expected.length === actual.length &&
-      timingSafeEqual(expected, actual)
+    return expected.length === actual.length && timingSafeEqual(expected, actual)
       ? live.id
       : undefined;
   }

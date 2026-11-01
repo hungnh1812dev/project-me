@@ -30,9 +30,7 @@ export class HealthController {
   }
 
   @Get(HEALTH_ROUTES.READY)
-  async ready(
-    @Res({ passthrough: true }) res: Response,
-  ): Promise<HealthResponse> {
+  async ready(@Res({ passthrough: true }) res: Response): Promise<HealthResponse> {
     const { status, failureMessage } = await this.checkReadiness.check();
     if (status === HEALTH_STATUS.ERROR) {
       this.logger.warn(`Readiness DB ping failed: ${failureMessage}`);

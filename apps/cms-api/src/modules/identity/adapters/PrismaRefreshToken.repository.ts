@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 
-import { prismaTxOf } from '../../../infrastructure/database/PrismaTransactionRunner.adapter';
 import { PrismaService } from '../../../infrastructure/database/Prisma.service';
+import { prismaTxOf } from '../../../infrastructure/database/PrismaTransactionRunner.adapter';
 import type { UnitOfWork } from '../../../infrastructure/database/TransactionRunner.port';
 import type {
   NewRefreshToken,
@@ -50,10 +50,7 @@ export class PrismaRefreshTokenRepository implements RefreshTokenRepository {
     return row.id;
   }
 
-  async findByHash(
-    unit: UnitOfWork,
-    tokenHash: string,
-  ): Promise<RefreshTokenRecord | null> {
+  async findByHash(unit: UnitOfWork, tokenHash: string): Promise<RefreshTokenRecord | null> {
     const row = await prismaTxOf(unit).refreshToken.findUnique({
       where: { tokenHash },
       include: { account: { select: ACCOUNT_FACTS_SELECT } },
@@ -70,9 +67,7 @@ export class PrismaRefreshTokenRepository implements RefreshTokenRepository {
     };
   }
 
-  async findFamilyOwnerByHash(
-    tokenHash: string,
-  ): Promise<RefreshTokenFamilyOwner | null> {
+  async findFamilyOwnerByHash(tokenHash: string): Promise<RefreshTokenFamilyOwner | null> {
     const row = await this.prisma.refreshToken.findUnique({
       where: { tokenHash },
       select: {
@@ -89,10 +84,7 @@ export class PrismaRefreshTokenRepository implements RefreshTokenRepository {
     };
   }
 
-  async findRotated(
-    unit: UnitOfWork,
-    tokenId: number,
-  ): Promise<RotatedTokenRecord> {
+  async findRotated(unit: UnitOfWork, tokenId: number): Promise<RotatedTokenRecord> {
     const row = await prismaTxOf(unit).refreshToken.findUniqueOrThrow({
       where: { id: tokenId },
       select: {
@@ -138,11 +130,7 @@ export class PrismaRefreshTokenRepository implements RefreshTokenRepository {
     await prismaTxOf(unit).refreshToken.delete({ where: { id: tokenId } });
   }
 
-  async revokeFamily(
-    unit: UnitOfWork,
-    familyId: string,
-    at: Date,
-  ): Promise<void> {
+  async revokeFamily(unit: UnitOfWork, familyId: string, at: Date): Promise<void> {
     await prismaTxOf(unit).refreshToken.updateMany({
       where: { familyId, revokedAt: null },
       data: { revokedAt: at },

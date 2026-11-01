@@ -10,19 +10,16 @@ import {
   TEN_MINUTES_MS,
   type RateLimitRule,
 } from '../../src/common/constants/Limits.constants';
-import {
-  RATE_LIMIT_POLICY_METADATA,
-  ThrottleGuard,
-} from '../../src/common/guards/Throttle.guard';
+import { RATE_LIMIT_POLICY_METADATA, ThrottleGuard } from '../../src/common/guards/Throttle.guard';
 import { RATE_LIMIT_OVERRIDE_ENV_KEYS } from '../../src/config/Config.constants';
 import { ACCESS_RATE_LIMIT_POLICIES } from '../../src/modules/access/http/AccessHttp.constants';
+import { BACKUPS_RATE_LIMIT_POLICIES } from '../../src/modules/backups/http/Backups.controller';
 import { DOCUMENTS_RATE_LIMIT_POLICIES } from '../../src/modules/documents/http/DocumentsHttp.constants';
 import {
   IDENTITY_RATE_LIMIT_POLICIES,
   rateLimitOverrideBindings,
 } from '../../src/modules/identity/http/IdentityHttp.constants';
 import { MEDIA_RATE_LIMIT_POLICIES } from '../../src/modules/media/http/Media.controller';
-import { BACKUPS_RATE_LIMIT_POLICIES } from '../../src/modules/backups/http/Backups.controller';
 import { REVIEWER_RATE_LIMIT_POLICIES } from '../../src/modules/reviewer/http/Reviewer.controller';
 import {
   AUTHENTICATION_GUARDS,
@@ -35,12 +32,7 @@ import { SRC_ROOT } from './SourcePaths.constants';
 
 const { IP, EMAIL, ACTOR, ANONYMOUS_IP } = RATE_LIMIT_KEY_SOURCES;
 
-type PinnedRule = readonly [
-  name: string,
-  keySource: string,
-  limit: number,
-  windowMs: number,
-];
+type PinnedRule = readonly [name: string, keySource: string, limit: number, windowMs: number];
 
 /**
  * Every throttle policy pinned by value and order (SEC-AU1c C-01, C-02): the
@@ -65,9 +57,7 @@ const PINNED_POLICIES: Record<string, readonly PinnedRule[]> = {
     ['account-invite:ip', IP, 20, 3_600_000],
     ['account-invite:actor', ACTOR, 10, 3_600_000],
   ],
-  DOCUMENT_READ_ANONYMOUS: [
-    ['document-read:anonymous-ip', ANONYMOUS_IP, 120, 60_000],
-  ],
+  DOCUMENT_READ_ANONYMOUS: [['document-read:anonymous-ip', ANONYMOUS_IP, 120, 60_000]],
   MEDIA_UPLOAD: [
     ['media-upload:ip', IP, 120, 3_600_000],
     ['media-upload:actor', ACTOR, 60, 3_600_000],
@@ -84,10 +74,7 @@ const PINNED_POLICIES: Record<string, readonly PinnedRule[]> = {
   ],
 };
 
-const POLICIES_BY_MODULE: Record<
-  string,
-  Record<string, readonly RateLimitRule[]>
-> = {
+const POLICIES_BY_MODULE: Record<string, Record<string, readonly RateLimitRule[]>> = {
   identity: IDENTITY_RATE_LIMIT_POLICIES,
   access: ACCESS_RATE_LIMIT_POLICIES,
   documents: DOCUMENTS_RATE_LIMIT_POLICIES,
@@ -106,24 +93,16 @@ describe('rate-limit policies', () => {
     const actual = Object.fromEntries(
       allPolicies.map(([key, rules]) => [
         key,
-        rules.map((rule) => [
-          rule.name,
-          rule.keySource,
-          rule.maxHits,
-          rule.windowMs,
-        ]),
+        rules.map((rule) => [rule.name, rule.keySource, rule.maxHits, rule.windowMs]),
       ]),
     );
     expect(actual).toStrictEqual(PINNED_POLICIES);
   });
 
   it('keeps the shared window constants at their literal values', () => {
-    expect([
-      FIFTEEN_MINUTES_MS,
-      ONE_HOUR_MS,
-      ONE_MINUTE_MS,
-      TEN_MINUTES_MS,
-    ]).toStrictEqual([900_000, 3_600_000, 60_000, 600_000]);
+    expect([FIFTEEN_MINUTES_MS, ONE_HOUR_MS, ONE_MINUTE_MS, TEN_MINUTES_MS]).toStrictEqual([
+      900_000, 3_600_000, 60_000, 600_000,
+    ]);
   });
 
   it('gives every rule a name no other rule has (one shared counter store)', () => {
@@ -145,18 +124,18 @@ describe('rate-limit policies', () => {
 });
 
 describe('rate-limit override bindings', () => {
-  it('pins exactly today three overrides', () => {
+  it('pins exactly today five overrides', () => {
     expect(rateLimitOverrideBindings).toStrictEqual({
       LOGIN_RATE_LIMIT_IP: 'login:ip',
       LOGIN_RATE_LIMIT_EMAIL: 'login:email',
       REFRESH_RATE_LIMIT_IP: 'refresh:ip',
+      SETUP_STATUS_RATE_LIMIT_IP: 'setup-status:ip',
+      SETUP_SUBMIT_RATE_LIMIT_IP: 'setup-submit:ip',
     });
   });
 
   it('binds every env key exactly once, in identity only', () => {
-    const keyed = allRules.filter(
-      (rule) => rule.limitOverrideEnvKey !== undefined,
-    );
+    const keyed = allRules.filter((rule) => rule.limitOverrideEnvKey !== undefined);
     expect(keyed.map((rule) => rule.limitOverrideEnvKey).sort()).toEqual(
       [...RATE_LIMIT_OVERRIDE_ENV_KEYS].sort(),
     );
@@ -177,13 +156,9 @@ describe('throttled handlers', () => {
       return Object.values(loaded).filter(isControllerClass);
     });
   const handlers = controllers.flatMap(handlersOf);
-  const throttled = handlers.filter(
-    ({ throttlePolicy }) => throttlePolicy !== undefined,
-  );
+  const throttled = handlers.filter(({ throttlePolicy }) => throttlePolicy !== undefined);
   const needsAuthentication = (rules: readonly RateLimitRule[]) =>
-    rules.some(
-      (rule) => rule.keySource === ACTOR || rule.keySource === ANONYMOUS_IP,
-    );
+    rules.some((rule) => rule.keySource === ACTOR || rule.keySource === ANONYMOUS_IP);
 
   it('finds throttled handlers', () => {
     expect(throttled.length).toBeGreaterThan(0);
@@ -193,8 +168,7 @@ describe('throttled handlers', () => {
     const classLevel = controllers
       .filter(
         (controller: ControllerClass) =>
-          Reflect.getMetadata(RATE_LIMIT_POLICY_METADATA, controller) !==
-          undefined,
+          Reflect.getMetadata(RATE_LIMIT_POLICY_METADATA, controller) !== undefined,
       )
       .map((controller) => controller.name);
     expect(classLevel).toEqual([]);
@@ -205,9 +179,7 @@ describe('throttled handlers', () => {
       .filter(({ throttlePolicy }) => needsAuthentication(throttlePolicy ?? []))
       .filter(({ guards }) => {
         const throttleAt = guards.indexOf(ThrottleGuard);
-        return !guards
-          .slice(0, throttleAt)
-          .some((g) => AUTHENTICATION_GUARDS.includes(g));
+        return !guards.slice(0, throttleAt).some((g) => AUTHENTICATION_GUARDS.includes(g));
       })
       .map(({ id }) => id);
     expect(unguarded).toEqual([]);

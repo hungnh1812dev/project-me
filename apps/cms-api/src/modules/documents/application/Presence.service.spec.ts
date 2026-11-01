@@ -1,11 +1,8 @@
+import { DOMAIN_ERROR_KINDS } from '../../../common/errors/Domain.errors';
 import type { Clock } from '../../../common/time/Clock.service';
 import { type ActorContext, type RolePolicy } from '../../access';
-import {
-  PRESENCE_MAX_ENTRIES,
-  PRESENCE_TTL_MS,
-} from '../domain/Documents.constants';
+import { PRESENCE_MAX_ENTRIES, PRESENCE_TTL_MS } from '../domain/Documents.constants';
 import { PresenceService } from './Presence.service';
-import { DOMAIN_ERROR_KINDS } from '../../../common/errors/Domain.errors';
 
 const ROLE: RolePolicy = {
   id: 1,
@@ -29,12 +26,7 @@ let nowMs = START;
 const clock: Clock = { now: () => nowMs };
 
 /** Moves the fake clock, then sends the heartbeat. */
-function beat(
-  service: PresenceService,
-  actor: ActorContext,
-  documentId: string,
-  at: number,
-) {
+function beat(service: PresenceService, actor: ActorContext, documentId: string, at: number) {
   nowMs = at;
   return service.heartbeat(actor, SLUG, documentId, 'editing');
 }
@@ -73,28 +65,16 @@ function build(): PresenceService {
   );
 }
 
-const publicId = (id: number) =>
-  `00000000-0000-7000-8000-${String(id).padStart(12, '0')}`;
-const ids = (list: { accountId: string }[]) =>
-  list.map((entry) => entry.accountId).sort();
+const publicId = (id: number) => `00000000-0000-7000-8000-${String(id).padStart(12, '0')}`;
+const ids = (list: { accountId: string }[]) => list.map((entry) => entry.accountId).sort();
 
 describe('PresenceService', () => {
   it('lists an editor until the TTL passes without a heartbeat', async () => {
     const service = build();
     await beat(service, account(1), DOC, START);
-    const during = await beat(
-      service,
-      account(2),
-      DOC,
-      START + PRESENCE_TTL_MS - 1,
-    );
+    const during = await beat(service, account(2), DOC, START + PRESENCE_TTL_MS - 1);
     expect(ids(during)).toEqual([publicId(1), publicId(2)]);
-    const after = await beat(
-      service,
-      account(2),
-      DOC,
-      START + PRESENCE_TTL_MS + 1,
-    );
+    const after = await beat(service, account(2), DOC, START + PRESENCE_TTL_MS + 1);
     expect(ids(after)).toEqual([publicId(2)]);
   });
 
@@ -102,12 +82,7 @@ describe('PresenceService', () => {
     const service = build();
     await beat(service, account(1), DOC, START);
     await beat(service, account(1), DOC, START + PRESENCE_TTL_MS - 1);
-    const list = await beat(
-      service,
-      account(2),
-      DOC,
-      START + PRESENCE_TTL_MS + 5,
-    );
+    const list = await beat(service, account(2), DOC, START + PRESENCE_TTL_MS + 5);
     expect(ids(list)).toEqual([publicId(1), publicId(2)]);
     expect(list[0]?.displayName).toMatch(/^User /);
   });
@@ -133,9 +108,9 @@ describe('PresenceService', () => {
       },
     ],
   ] as const)('refuses a %s actor', async (_name, actor) => {
-    await expect(
-      beat(build(), actor as ActorContext, DOC, START),
-    ).rejects.toMatchObject({ kind: DOMAIN_ERROR_KINDS.FORBIDDEN });
+    await expect(beat(build(), actor as ActorContext, DOC, START)).rejects.toMatchObject({
+      kind: DOMAIN_ERROR_KINDS.FORBIDDEN,
+    });
   });
 
   it('refuses new editors at the cap but still accepts expired-slot reuse', async () => {
@@ -143,15 +118,10 @@ describe('PresenceService', () => {
     for (let n = 0; n < PRESENCE_MAX_ENTRIES; n += 1) {
       await beat(service, account(n + 1), `d${n}`, START);
     }
-    await expect(
-      beat(service, account(1), 'overflow', START),
-    ).rejects.toMatchObject({ kind: DOMAIN_ERROR_KINDS.RATE_LIMITED });
-    const later = await beat(
-      service,
-      account(1),
-      'overflow',
-      START + PRESENCE_TTL_MS + 1,
-    );
+    await expect(beat(service, account(1), 'overflow', START)).rejects.toMatchObject({
+      kind: DOMAIN_ERROR_KINDS.RATE_LIMITED,
+    });
+    const later = await beat(service, account(1), 'overflow', START + PRESENCE_TTL_MS + 1);
     expect(later).toHaveLength(1);
   });
 });

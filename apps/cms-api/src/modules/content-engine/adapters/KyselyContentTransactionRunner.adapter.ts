@@ -2,21 +2,15 @@ import { Inject, Injectable } from '@nestjs/common';
 import { sql, type Transaction } from 'kysely';
 
 import {
-  type AfterCommitCallback,
   AfterCommitCallbacks,
+  type AfterCommitCallback,
 } from '../../../infrastructure/database/AfterCommitCallbacks.store';
 import type {
   ContentTransactionRunner,
   UnitOfWork,
 } from '../../../infrastructure/database/TransactionRunner.port';
-import {
-  APP_LOGGER,
-  type AppLogger,
-} from '../../../infrastructure/logging/AppLogger.port';
-import {
-  CONTENT_STEP_SAVEPOINT,
-  ContentDbProvider,
-} from './ContentDatabase.adapter';
+import { APP_LOGGER, type AppLogger } from '../../../infrastructure/logging/AppLogger.port';
+import { CONTENT_STEP_SAVEPOINT, ContentDbProvider } from './ContentDatabase.adapter';
 import type { ContentDatabase } from './TreeLoader.adapter';
 
 class ContentUnitOfWork implements UnitOfWork {
@@ -32,9 +26,7 @@ class ContentUnitOfWork implements UnitOfWork {
 /** The Kysely transaction of an open unit. For content adapters (repositories) only. */
 export function contentTrxOf(unit: UnitOfWork): Transaction<ContentDatabase> {
   if (!(unit instanceof ContentUnitOfWork)) {
-    throw new TypeError(
-      'The unit of work was not opened by the content runner',
-    );
+    throw new TypeError('The unit of work was not opened by the content runner');
   }
   if (!unit.callbacks.isOpen) {
     throw new Error('The unit of work is closed');
@@ -72,22 +64,15 @@ export class KyselyContentTransactionRunner implements ContentTransactionRunner 
    * after the outer commit, also when this step rolled back: a cache drop
    * that was not needed only forces a re-read.
    */
-  async runInSavepoint<T>(
-    unit: UnitOfWork,
-    work: (unit: UnitOfWork) => Promise<T>,
-  ): Promise<T> {
+  async runInSavepoint<T>(unit: UnitOfWork, work: (unit: UnitOfWork) => Promise<T>): Promise<T> {
     const trx = contentTrxOf(unit);
     await sql`savepoint ${sql.id(CONTENT_STEP_SAVEPOINT)}`.execute(trx);
     try {
       const result = await work(unit);
-      await sql`release savepoint ${sql.id(CONTENT_STEP_SAVEPOINT)}`.execute(
-        trx,
-      );
+      await sql`release savepoint ${sql.id(CONTENT_STEP_SAVEPOINT)}`.execute(trx);
       return result;
     } catch (error) {
-      await sql`rollback to savepoint ${sql.id(CONTENT_STEP_SAVEPOINT)}`.execute(
-        trx,
-      );
+      await sql`rollback to savepoint ${sql.id(CONTENT_STEP_SAVEPOINT)}`.execute(trx);
       throw error;
     }
   }

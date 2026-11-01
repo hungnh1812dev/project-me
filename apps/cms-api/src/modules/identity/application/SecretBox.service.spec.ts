@@ -6,11 +6,7 @@ import {
 } from '../../../../test/fixtures/Env.fixture';
 import { loadAppConfig } from '../../../config/AppConfig.setup';
 import { SECRET_BOX } from '../domain/Identity.constants';
-import {
-  deriveSecretBoxKey,
-  SecretBox,
-  SecretBoxError,
-} from './SecretBox.service';
+import { deriveSecretBoxKey, SecretBox, SecretBoxError } from './SecretBox.service';
 
 const PLAINTEXT = 'JBSWY3DPEHPK3PXPJBSWY3DPEHPK3PXP';
 const ACCOUNT = '0190f1d2-7c3a-7b4e-8a5f-1234567890ab';
@@ -70,9 +66,9 @@ describe('SecretBox (AES-256-GCM, D8)', () => {
     const box = boxWith(previous);
     const sealed = box.seal(PLAINTEXT, ACCOUNT);
     // Same key material under another kid must still fail.
-    expect(() =>
-      box.open({ ...sealed, kid: TEST_TOTP_ENC_PREVIOUS_KID }, ACCOUNT),
-    ).toThrow(SecretBoxError);
+    expect(() => box.open({ ...sealed, kid: TEST_TOTP_ENC_PREVIOUS_KID }, ACCOUNT)).toThrow(
+      SecretBoxError,
+    );
   });
 
   it('rejects a tampered ciphertext', () => {
@@ -83,28 +79,23 @@ describe('SecretBox (AES-256-GCM, D8)', () => {
     body[0] = (body[0] ?? 0) ^ 1;
     parts[2] = body.toString('base64url');
     expect(() =>
-      box.open(
-        { ...sealed, ciphertext: parts.join(SECRET_BOX.SEPARATOR) },
-        ACCOUNT,
-      ),
+      box.open({ ...sealed, ciphertext: parts.join(SECRET_BOX.SEPARATOR) }, ACCOUNT),
     ).toThrow(SecretBoxError);
   });
 
   it.each(['', 'v2.a.b.c', 'v1.a.b', 'v1.AAAA.AAAA.AAAA'])(
     'rejects the malformed ciphertext %j',
     (ciphertext) => {
-      expect(() =>
-        boxWith().open({ ciphertext, kid: TEST_TOTP_ENC_KID }, ACCOUNT),
-      ).toThrow(SecretBoxError);
+      expect(() => boxWith().open({ ciphertext, kid: TEST_TOTP_ENC_KID }, ACCOUNT)).toThrow(
+        SecretBoxError,
+      );
     },
   );
 
   it('fails closed on an unknown kid', () => {
     const box = boxWith();
     const sealed = box.seal(PLAINTEXT, ACCOUNT);
-    expect(() => box.open({ ...sealed, kid: 'retired' }, ACCOUNT)).toThrow(
-      SecretBoxError,
-    );
+    expect(() => box.open({ ...sealed, kid: 'retired' }, ACCOUNT)).toThrow(SecretBoxError);
   });
 
   it('opens secrets sealed with the previous key after a rotation', () => {
@@ -123,8 +114,8 @@ describe('SecretBox (AES-256-GCM, D8)', () => {
   });
 
   it('refuses to seal without TOTP_ENC_KEY', () => {
-    expect(() =>
-      boxWith({ TOTP_ENC_KEY: undefined }).seal(PLAINTEXT, ACCOUNT),
-    ).toThrow(SecretBoxError);
+    expect(() => boxWith({ TOTP_ENC_KEY: undefined }).seal(PLAINTEXT, ACCOUNT)).toThrow(
+      SecretBoxError,
+    );
   });
 });

@@ -1,27 +1,15 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
+import { DEFINITION_RULES, MAX_IDENTIFIER_BYTES } from './ContentEngine.constants';
 import {
-  DEFINITION_RULES,
-  MAX_IDENTIFIER_BYTES,
-} from './ContentEngine.constants';
-import {
-  type DefinitionValidationError,
   formatDefinitionPath,
   validateDefinition,
   validateDefinitions,
+  type DefinitionValidationError,
 } from './DefinitionValidator.rules';
 
-const CV_PAGE_PATH = join(
-  __dirname,
-  '..',
-  '..',
-  '..',
-  '..',
-  'content',
-  'schemas',
-  'cv-page.json',
-);
+const CV_PAGE_PATH = join(__dirname, '..', '..', '..', '..', 'content', 'schemas', 'cv-page.json');
 
 type Field = Record<string, unknown>;
 
@@ -111,49 +99,24 @@ describe('validateDefinition', () => {
           fields: [{ name: 'a', type: 'string' }],
         },
       ],
-      [
-        'an unknown kind',
-        { ...definition([{ name: 'a', type: 'string' }]), kind: 'list' },
-      ],
-      [
-        'an unknown top-level key',
-        { ...definition([{ name: 'a', type: 'string' }]), extra: 1 },
-      ],
+      ['an unknown kind', { ...definition([{ name: 'a', type: 'string' }]), kind: 'list' }],
+      ['an unknown top-level key', { ...definition([{ name: 'a', type: 'string' }]), extra: 1 }],
       ['an empty field list', definition([])],
       ['an unknown field type', definition([{ name: 'a', type: 'uuid' }])],
-      [
-        'an unknown field key',
-        definition([{ name: 'a', type: 'string', width: 50 }]),
-      ],
-      [
-        'a component without fields',
-        definition([{ name: 'a', type: 'component' }]),
-      ],
+      ['an unknown field key', definition([{ name: 'a', type: 'string', width: 50 }])],
+      ['a component without fields', definition([{ name: 'a', type: 'component' }])],
       ['a component with no children', definition([component('a', [])])],
-      [
-        'a scalar with children',
-        definition([{ name: 'a', type: 'string', fields: [] }]),
-      ],
-      [
-        'repeatable on a scalar',
-        definition([{ name: 'a', type: 'string', repeatable: true }]),
-      ],
-      [
-        'a non-boolean sensitive',
-        definition([{ name: 'a', type: 'string', sensitive: 'yes' }]),
-      ],
+      ['a scalar with children', definition([{ name: 'a', type: 'string', fields: [] }])],
+      ['repeatable on a scalar', definition([{ name: 'a', type: 'string', repeatable: true }])],
+      ['a non-boolean sensitive', definition([{ name: 'a', type: 'string', sensitive: 'yes' }])],
     ])('rejects %s', (_label, input) => {
       const errors = errorsOf(input);
       expect(errors.length).toBeGreaterThan(0);
-      expect(
-        errors.every((e) => e.rule === DEFINITION_RULES.SCHEMA_INVALID),
-      ).toBe(true);
+      expect(errors.every((e) => e.rule === DEFINITION_RULES.SCHEMA_INVALID)).toBe(true);
     });
 
     it('points at the offending key', () => {
-      const [error] = errorsOf(
-        definition([component('a', [{ name: 'b', type: 'uuid' }])]),
-      );
+      const [error] = errorsOf(definition([component('a', [{ name: 'b', type: 'uuid' }])]));
       expect(error?.path).toEqual(['fields', 0, 'fields', 0, 'type']);
     });
   });
@@ -175,24 +138,17 @@ describe('validateDefinition', () => {
   });
 
   describe('identifier rule (identifier.invalid)', () => {
-    it.each([
-      'CV-page',
-      'cv_page',
-      'cv--page',
-      '1cv',
-      'cv-page-',
-      '-cv',
-      'cv page',
-    ])('rejects slug %j', (slug) => {
-      expect(
-        errorsOf(definition([{ name: 'a', type: 'string' }], slug)),
-      ).toEqual([
-        expect.objectContaining({
-          path: ['slug'],
-          rule: DEFINITION_RULES.IDENTIFIER_INVALID,
-        }),
-      ]);
-    });
+    it.each(['CV-page', 'cv_page', 'cv--page', '1cv', 'cv-page-', '-cv', 'cv page'])(
+      'rejects slug %j',
+      (slug) => {
+        expect(errorsOf(definition([{ name: 'a', type: 'string' }], slug))).toEqual([
+          expect.objectContaining({
+            path: ['slug'],
+            rule: DEFINITION_RULES.IDENTIFIER_INVALID,
+          }),
+        ]);
+      },
+    );
 
     it.each([
       'TeamSize',
@@ -214,13 +170,9 @@ describe('validateDefinition', () => {
     });
 
     it('checks names inside components too', () => {
-      expect(
-        errorsOf(
-          definition([component('items', [{ name: 'Bad', type: 'string' }])]),
-        ),
-      ).toEqual([
-        expect.objectContaining({ path: ['fields', 0, 'fields', 0, 'name'] }),
-      ]);
+      expect(errorsOf(definition([component('items', [{ name: 'Bad', type: 'string' }])]))).toEqual(
+        [expect.objectContaining({ path: ['fields', 0, 'fields', 0, 'name'] })],
+      );
     });
   });
 
@@ -252,27 +204,23 @@ describe('validateDefinition', () => {
         expect(rulesOf(definition([{ name, type: 'string' }]))).toEqual([
           DEFINITION_RULES.IDENTIFIER_RESERVED,
         ]);
-        expect(
-          rulesOf(
-            definition([component(name, [{ name: 'a', type: 'string' }])]),
-          ),
-        ).toEqual([DEFINITION_RULES.IDENTIFIER_RESERVED]);
+        expect(rulesOf(definition([component(name, [{ name: 'a', type: 'string' }])]))).toEqual([
+          DEFINITION_RULES.IDENTIFIER_RESERVED,
+        ]);
       },
     );
 
     it('rejects a slug that maps to an SQL keyword', () => {
-      expect(
-        rulesOf(definition([{ name: 'a', type: 'string' }], 'user')),
-      ).toEqual([DEFINITION_RULES.IDENTIFIER_RESERVED]);
+      expect(rulesOf(definition([{ name: 'a', type: 'string' }], 'user'))).toEqual([
+        DEFINITION_RULES.IDENTIFIER_RESERVED,
+      ]);
     });
 
     it('allows non-reserved keywords used by cv-page', () => {
-      const fields = ['position', 'role', 'level', 'name', 'language'].map(
-        (name) => ({
-          name,
-          type: 'string',
-        }),
-      );
+      const fields = ['position', 'role', 'level', 'name', 'language'].map((name) => ({
+        name,
+        type: 'string',
+      }));
       expect(validateDefinition(definition(fields)).ok).toBe(true);
     });
   });
@@ -282,16 +230,10 @@ describe('validateDefinition', () => {
 
     it('accepts a 63-byte column and rejects a 64-byte one', () => {
       expect(
-        validateDefinition(
-          definition([{ name: bytes(MAX_IDENTIFIER_BYTES), type: 'string' }]),
-        ).ok,
+        validateDefinition(definition([{ name: bytes(MAX_IDENTIFIER_BYTES), type: 'string' }])).ok,
       ).toBe(true);
       expect(
-        errorsOf(
-          definition([
-            { name: bytes(MAX_IDENTIFIER_BYTES + 1), type: 'string' },
-          ]),
-        ),
+        errorsOf(definition([{ name: bytes(MAX_IDENTIFIER_BYTES + 1), type: 'string' }])),
       ).toEqual([
         expect.objectContaining({
           path: ['fields', 0, 'name'],
@@ -316,11 +258,7 @@ describe('validateDefinition', () => {
 
     it('rejects a component table whose composed path exceeds 63 bytes', () => {
       const deep = definition(
-        [
-          component('experience', [
-            component(bytes(43), [{ name: 'a', type: 'string' }]),
-          ]),
-        ],
+        [component('experience', [component(bytes(43), [{ name: 'a', type: 'string' }])])],
         'cv-page',
       );
       expect(errorsOf(deep)).toEqual([
@@ -335,31 +273,19 @@ describe('validateDefinition', () => {
     it('rejects a component whose parent index name exceeds 63 bytes', () => {
       // `cv_page__` (9) + 44 = 53-byte table; `_parent_idx` makes it 64.
       expect(
-        rulesOf(
-          definition(
-            [component(bytes(44), [{ name: 'a', type: 'string' }])],
-            'cv-page',
-          ),
-        ),
+        rulesOf(definition([component(bytes(44), [{ name: 'a', type: 'string' }])], 'cv-page')),
       ).toEqual([DEFINITION_RULES.IDENTIFIER_TOO_LONG]);
       expect(
         validateDefinition(
-          definition(
-            [component(bytes(43), [{ name: 'a', type: 'string' }])],
-            'cv-page',
-          ),
+          definition([component(bytes(43), [{ name: 'a', type: 'string' }])], 'cv-page'),
         ).ok,
       ).toBe(true);
     });
 
     it('rejects a media column whose foreign key name exceeds 63 bytes', () => {
       // `post_` + 49 + `_media_fk` = 63 bytes.
-      expect(
-        validateDefinition(definition([{ name: bytes(49), type: 'media' }])).ok,
-      ).toBe(true);
-      expect(
-        errorsOf(definition([{ name: bytes(50), type: 'media' }])),
-      ).toEqual([
+      expect(validateDefinition(definition([{ name: bytes(49), type: 'media' }])).ok).toBe(true);
+      expect(errorsOf(definition([{ name: bytes(50), type: 'media' }]))).toEqual([
         expect.objectContaining({
           path: ['fields', 0, 'name'],
           rule: DEFINITION_RULES.IDENTIFIER_TOO_LONG,
@@ -370,9 +296,9 @@ describe('validateDefinition', () => {
     it('reports a non-ASCII name as invalid, not as too long', () => {
       // Names must be ASCII, so composed names are measured only after the
       // identifier rule passed; bytes then equal characters.
-      expect(
-        rulesOf(definition([{ name: `${bytes(40)}é`, type: 'string' }])),
-      ).toEqual([DEFINITION_RULES.IDENTIFIER_INVALID]);
+      expect(rulesOf(definition([{ name: `${bytes(40)}é`, type: 'string' }]))).toEqual([
+        DEFINITION_RULES.IDENTIFIER_INVALID,
+      ]);
     });
   });
 
@@ -420,11 +346,7 @@ describe('validateDefinition', () => {
   it('collects every error instead of stopping at the first', () => {
     const errors = errorsOf(
       definition(
-        [
-          { name: 'id', type: 'string' },
-          { name: 'Bad', type: 'string' },
-          ...nested(4),
-        ],
+        [{ name: 'id', type: 'string' }, { name: 'Bad', type: 'string' }, ...nested(4)],
         'Bad',
       ),
     );
@@ -444,13 +366,13 @@ describe('validateDefinition', () => {
 });
 
 describe('validateDefinitions', () => {
-  const simple = (slug: string) =>
-    definition([{ name: 'title', type: 'string' }], slug);
+  const simple = (slug: string) => definition([{ name: 'title', type: 'string' }], slug);
 
   it('accepts distinct definitions', () => {
-    expect(
-      validateDefinitions([simple('post'), simple('cv-page')]),
-    ).toMatchObject({ ok: true, definitions: { length: 2 } });
+    expect(validateDefinitions([simple('post'), simple('cv-page')])).toMatchObject({
+      ok: true,
+      definitions: { length: 2 },
+    });
   });
 
   it('rejects two definitions with the same slug', () => {

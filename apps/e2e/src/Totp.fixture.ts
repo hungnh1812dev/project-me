@@ -17,8 +17,7 @@ export async function freshTotpCode(
   usedStep: number | undefined,
 ): Promise<{ code: string; step: number }> {
   if (usedStep !== undefined) {
-    const nextStepStartMs =
-      (usedStep + 1) * TOTP_PERIOD_SECONDS * MS_PER_SECOND;
+    const nextStepStartMs = (usedStep + 1) * TOTP_PERIOD_SECONDS * MS_PER_SECOND;
     const waitMs = nextStepStartMs - Date.now();
     if (waitMs > 0) {
       await new Promise((resolve) => setTimeout(resolve, waitMs));

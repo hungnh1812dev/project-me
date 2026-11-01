@@ -1,6 +1,5 @@
+import { API_ENDPOINTS } from '@configs/Api.endpoints';
 import type { AxiosInstance } from 'axios';
-
-import { API_ENDPOINTS } from '../../config/Api.endpoints';
 
 export interface ResetPasswordInput {
   email: string;

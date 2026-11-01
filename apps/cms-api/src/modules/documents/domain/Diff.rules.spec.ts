@@ -1,9 +1,5 @@
-import { RecordSerializer, FieldSelection } from '../../access';
-import {
-  accountAccess,
-  profileType,
-  rawRecord,
-} from '../../../../test/fixtures/Masking.fixture';
+import { accountAccess, profileType, rawRecord } from '../../../../test/fixtures/Masking.fixture';
+import { FieldSelection, RecordSerializer } from '../../access';
 import { diffRecords, overlaySubmitted } from './Diff.rules';
 
 const type = profileType();
@@ -11,11 +7,7 @@ const serializer = new RecordSerializer(type);
 const { record } = rawRecord(type, 2);
 const all = accountAccess(FieldSelection.ALL);
 
-function diffFor(
-  tree: Parameters<typeof overlaySubmitted>[1],
-  access = all,
-  stored = record,
-) {
+function diffFor(tree: Parameters<typeof overlaySubmitted>[1], access = all, stored = record) {
   return diffRecords(
     serializer.serialize(stored, access),
     serializer.serialize(overlaySubmitted(stored, tree), access),
@@ -61,9 +53,9 @@ describe('document diff (T21)', () => {
     expect(byPath.get('components.experience[new#0]')).toEqual(
       expect.objectContaining({ change: 'added' }),
     );
-    expect(
-      byPath.get(`components.experience[${second.componentUid}].values.years`),
-    ).toEqual(expect.objectContaining({ change: 'changed', submitted: 77 }));
+    expect(byPath.get(`components.experience[${second.componentUid}].values.years`)).toEqual(
+      expect.objectContaining({ change: 'changed', submitted: 77 }),
+    );
   });
 
   it('reports a reorder of kept items', () => {
@@ -71,10 +63,7 @@ describe('document diff (T21)', () => {
     if (first === undefined || second === undefined) throw new Error('fixture');
     const entries = diffFor({
       components: {
-        experience: [
-          { componentUid: second.componentUid },
-          { componentUid: first.componentUid },
-        ],
+        experience: [{ componentUid: second.componentUid }, { componentUid: first.componentUid }],
       },
     });
     expect(entries.map((entry) => entry.change)).toContain('moved');
@@ -82,10 +71,7 @@ describe('document diff (T21)', () => {
 
   it('never shows an unreadable field: same mask on both sides', () => {
     const access = accountAccess(FieldSelection.of(['name']));
-    const entries = diffFor(
-      { values: { name: 'Visible', salary: '123.00', bio: 'x' } },
-      access,
-    );
+    const entries = diffFor({ values: { name: 'Visible', salary: '123.00', bio: 'x' } }, access);
     expect(entries.map((entry) => entry.path)).toEqual(['values.name']);
     expect(JSON.stringify(entries)).not.toContain('123.00');
   });

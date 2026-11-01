@@ -10,9 +10,7 @@ export function declaresBodyOver(req: Request, maxBytes: number): boolean {
  * Counts body bytes as chunks arrive; each call returns true once the total
  * passes `maxBytes`.
  */
-export function createByteCounter(
-  maxBytes: number,
-): (chunk: Buffer) => boolean {
+export function createByteCounter(maxBytes: number): (chunk: Buffer) => boolean {
   let received = 0;
   return (chunk) => {
     received += chunk.length;

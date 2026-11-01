@@ -1,6 +1,6 @@
+import { API_ENDPOINTS } from '@configs/Api.endpoints';
 import type { AxiosInstance } from 'axios';
 
-import { API_ENDPOINTS } from '../../config/Api.endpoints';
 import type { CurrentUser } from './Auth.slice';
 
 export interface LoginCredentials {
@@ -43,9 +43,11 @@ export type LoginOutcome =
 export function createAuthApi(client: AxiosInstance) {
   return {
     async login(credentials: LoginCredentials): Promise<LoginOutcome> {
-      const { data } = await client.post<
-        AccessTokenResponse | TwoFactorRequiredResponse
-      >(API_ENDPOINTS.AUTH.LOGIN, credentials, { shouldSkipAuthRefresh: true });
+      const { data } = await client.post<AccessTokenResponse | TwoFactorRequiredResponse>(
+        API_ENDPOINTS.AUTH.LOGIN,
+        credentials,
+        { shouldSkipAuthRefresh: true },
+      );
       return 'requires2FA' in data
         ? {
             kind: 'two-factor-required',

@@ -1,12 +1,12 @@
-import type { PermissionAction } from './Access.constants';
 import {
   CONTENT_WILDCARD_SUBJECT,
   READ_ONLY_ACTIONS,
+  type PermissionAction,
 } from './Access.constants';
 import {
+  isOwnerRole,
   type ActorContext,
   type ActorKind,
-  isOwnerRole,
   type PermissionGrant,
   type TokenScope,
   type TokenScopeEntry,
@@ -43,14 +43,8 @@ function intersectGrant(
   return {
     subject,
     action: entry.action,
-    readableFields: intersectFieldLists(
-      entry.readableFields ?? null,
-      creatorGrant.readableFields,
-    ),
-    writableFields: intersectFieldLists(
-      entry.writableFields ?? null,
-      creatorGrant.writableFields,
-    ),
+    readableFields: intersectFieldLists(entry.readableFields ?? null, creatorGrant.readableFields),
+    writableFields: intersectFieldLists(entry.writableFields ?? null, creatorGrant.writableFields),
     // The creator's row conditions always apply; tokens have none.
     conditions: creatorGrant.conditions,
   };
@@ -71,8 +65,7 @@ export function intersectTokenScope(
   for (const entry of scope.permissions) {
     if (!isContentSubject(entry.subject)) continue;
     const sameAction = creatorGrants.filter(
-      (grant) =>
-        grant.action === entry.action && isContentSubject(grant.subject),
+      (grant) => grant.action === entry.action && isContentSubject(grant.subject),
     );
     if (entry.subject === CONTENT_WILDCARD_SUBJECT) {
       for (const grant of sameAction) {
@@ -80,15 +73,11 @@ export function intersectTokenScope(
       }
       continue;
     }
-    const specific = sameAction.filter(
-      (grant) => grant.subject === entry.subject,
-    );
+    const specific = sameAction.filter((grant) => grant.subject === entry.subject);
     const matching =
       specific.length > 0
         ? specific
-        : sameAction.filter(
-            (grant) => grant.subject === CONTENT_WILDCARD_SUBJECT,
-          );
+        : sameAction.filter((grant) => grant.subject === CONTENT_WILDCARD_SUBJECT);
     for (const grant of matching) {
       intersectedGrants.push(intersectGrant(entry, grant, entry.subject));
     }
@@ -131,11 +120,7 @@ const POLICY_RESOLVERS: {
       ? actor.scope.permissions
           .filter((entry) => isContentSubject(entry.subject))
           .map(scopeEntryAsGrant)
-      : intersectTokenScope(
-          actor.scope,
-          actor.role.permissions,
-          isContentSubject,
-        );
+      : intersectTokenScope(actor.scope, actor.role.permissions, isContentSubject);
     return {
       full: false,
       contentOnly: true,

@@ -3,12 +3,8 @@ import type { Readable } from 'node:stream';
 import { v2 as cloudinary } from 'cloudinary';
 
 import type { CloudinaryConfig } from '../../../config/AppConfig.setup';
+import type { MediaStorage, PutObjectInput, StoredObject } from '../application/Media.port';
 import type { MediaKind } from '../domain/Media.constants';
-import type {
-  MediaStorage,
-  PutObjectInput,
-  StoredObject,
-} from '../application/Media.port';
 
 /** Longest side of the generated image thumbnail, in pixels. */
 const THUMBNAIL_MAX_SIZE_PX = 320;
@@ -37,10 +33,7 @@ export interface CloudinaryClient {
 }
 
 /** Options of every upload: fixed id, never overwrite, no name guessing. */
-export function cloudinaryUploadOptions(
-  publicId: string,
-  resourceType: ResourceType,
-) {
+export function cloudinaryUploadOptions(publicId: string, resourceType: ResourceType) {
   return {
     public_id: publicId,
     resource_type: resourceType,
@@ -52,9 +45,7 @@ export function cloudinaryUploadOptions(
 }
 
 /** SDK-backed client. Credentials come from the validated config only. */
-export function createCloudinaryClient(
-  config: CloudinaryConfig,
-): CloudinaryClient {
+export function createCloudinaryClient(config: CloudinaryConfig): CloudinaryClient {
   cloudinary.config({
     cloud_name: config.cloudName,
     api_key: config.apiKey,
@@ -68,11 +59,7 @@ export function createCloudinaryClient(
           cloudinaryUploadOptions(publicId, resourceType),
           (error, result) => {
             if (error !== undefined || result === undefined) {
-              reject(
-                error instanceof Error
-                  ? error
-                  : new Error('Cloudinary upload failed'),
-              );
+              reject(error instanceof Error ? error : new Error('Cloudinary upload failed'));
               return;
             }
             resolve({ secureUrl: result.secure_url });
@@ -103,8 +90,14 @@ export function createCloudinaryClient(
   };
 }
 
+/** Delivery origin of every Cloudinary URL. */
+const CLOUDINARY_DELIVERY_ORIGIN = 'https://res.cloudinary.com';
+
 /** Cloudinary storage (MEDIA_PROVIDER=cloudinary). */
 export class CloudinaryMediaStorage implements MediaStorage {
+  readonly provider = 'cloudinary';
+  readonly deliveryOrigin = CLOUDINARY_DELIVERY_ORIGIN;
+
   constructor(
     private readonly client: CloudinaryClient,
     private readonly folder: string | undefined,
@@ -119,16 +112,12 @@ export class CloudinaryMediaStorage implements MediaStorage {
     );
     return {
       url: secureUrl,
-      thumbnailUrl:
-        input.kind === 'image' ? this.client.thumbnailUrl(publicId) : null,
+      thumbnailUrl: input.kind === 'image' ? this.client.thumbnailUrl(publicId) : null,
     };
   }
 
   delete(key: string, kind: MediaKind): Promise<void> {
-    return this.client.destroy(
-      this.publicIdOf(key, kind),
-      CLOUDINARY_RESOURCE_TYPES[kind],
-    );
+    return this.client.destroy(this.publicIdOf(key, kind), CLOUDINARY_RESOURCE_TYPES[kind]);
   }
 
   private publicIdOf(key: string, kind: MediaKind): string {

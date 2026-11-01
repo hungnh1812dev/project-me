@@ -6,17 +6,17 @@ import {
   type PrismaHandle,
 } from '../../src/infrastructure/database/PrismaClient.adapter';
 import { SYSTEM_ROLES } from '../../src/modules/access/domain/SystemRoles.entity';
-import { OWNER_BOOTSTRAP_ERRORS } from '../../src/modules/identity/domain/Identity.constants';
 import {
   OwnerBootstrapError,
   type OwnerBootstrapInput,
   type OwnerBootstrapOptions,
 } from '../../src/modules/identity/application/OwnerBootstrap.service';
-import { identityUseCasesOf } from '../../src/modules/identity/cli/IdentityCli.setup';
 import { verifyPassword } from '../../src/modules/identity/application/Password.service';
+import { identityUseCasesOf } from '../../src/modules/identity/cli/IdentityCli.setup';
+import { OWNER_BOOTSTRAP_ERRORS } from '../../src/modules/identity/domain/Identity.constants';
+import { seedSystemRoles } from '../fixtures/Access.fixture';
 import { createCoreTemplate } from '../fixtures/CoreDb.fixture';
 import { startPostgres, type TestPostgres } from '../fixtures/Postgres.fixture';
-import { seedSystemRoles } from '../fixtures/Access.fixture';
 
 function bootstrapOwner(
   prisma: PrismaClient,
@@ -88,18 +88,14 @@ describe('core schema, system roles and owner:bootstrap (Postgres 17 via Testcon
   describe('system roles seed', () => {
     it('inserts the six system roles once and is idempotent', async () => {
       const { prisma } = await database(false);
-      expect(await seedSystemRoles(prisma)).toEqual(
-        SYSTEM_ROLES.map((role) => role.slug),
-      );
+      expect(await seedSystemRoles(prisma)).toEqual(SYSTEM_ROLES.map((role) => role.slug));
       expect(await seedSystemRoles(prisma)).toEqual([]);
 
       const roles = await prisma.role.findMany({
         select: { slug: true, rank: true, isSystem: true },
         orderBy: { rank: 'asc' },
       });
-      expect(roles).toEqual(
-        SYSTEM_ROLES.map(({ slug, rank }) => ({ slug, rank, isSystem: true })),
-      );
+      expect(roles).toEqual(SYSTEM_ROLES.map(({ slug, rank }) => ({ slug, rank, isSystem: true })));
     });
 
     it('keeps names edited after seeding', async () => {
@@ -109,28 +105,20 @@ describe('core schema, system roles and owner:bootstrap (Postgres 17 via Testcon
         data: { name: 'Writer' },
       });
       await seedSystemRoles(prisma);
-      expect(
-        (await prisma.role.findUnique({ where: { slug: 'editor' } }))?.name,
-      ).toBe('Writer');
+      expect((await prisma.role.findUnique({ where: { slug: 'editor' } }))?.name).toBe('Writer');
     });
 
     it('keeps system slug/rank immutable and undeletable in the database', async () => {
       const { url } = await database();
       expect(
-        await sqlErrorCode(
-          rawQuery(url, `UPDATE roles SET rank = 50 WHERE slug = 'owner'`),
-        ),
+        await sqlErrorCode(rawQuery(url, `UPDATE roles SET rank = 50 WHERE slug = 'owner'`)),
       ).toBe(INTEGRITY_VIOLATION);
       expect(
-        await sqlErrorCode(
-          rawQuery(url, `UPDATE roles SET slug = 'boss' WHERE slug = 'owner'`),
-        ),
+        await sqlErrorCode(rawQuery(url, `UPDATE roles SET slug = 'boss' WHERE slug = 'owner'`)),
       ).toBe(INTEGRITY_VIOLATION);
-      expect(
-        await sqlErrorCode(
-          rawQuery(url, `DELETE FROM roles WHERE slug = 'guest'`),
-        ),
-      ).toBe(INTEGRITY_VIOLATION);
+      expect(await sqlErrorCode(rawQuery(url, `DELETE FROM roles WHERE slug = 'guest'`))).toBe(
+        INTEGRITY_VIOLATION,
+      );
       // Custom roles must stay within 11-39.
       expect(
         await sqlErrorCode(
@@ -162,13 +150,11 @@ describe('core schema, system roles and owner:bootstrap (Postgres 17 via Testcon
         deletedAt: null,
       });
       expect(account.passwordHash).toMatch(/^\$argon2id\$/);
-      expect(await verifyPassword(account.passwordHash ?? '', PASSWORD)).toBe(
-        true,
-      );
+      expect(await verifyPassword(account.passwordHash ?? '', PASSWORD)).toBe(true);
 
-      await expect(
-        bootstrapOwner(prisma, owner('second@example.com')),
-      ).rejects.toMatchObject({ code: OWNER_BOOTSTRAP_ERRORS.OWNER_EXISTS });
+      await expect(bootstrapOwner(prisma, owner('second@example.com'))).rejects.toMatchObject({
+        code: OWNER_BOOTSTRAP_ERRORS.OWNER_EXISTS,
+      });
       expect(await prisma.account.count()).toBe(1);
     });
 
@@ -176,15 +162,10 @@ describe('core schema, system roles and owner:bootstrap (Postgres 17 via Testcon
       const { url } = await database();
       const results = await Promise.allSettled(
         Array.from({ length: CONCURRENT_RUNS }, (_, index) =>
-          bootstrapOwner(
-            connect(url).prisma,
-            owner(`racer${index}@example.com`),
-          ),
+          bootstrapOwner(connect(url).prisma, owner(`racer${index}@example.com`)),
         ),
       );
-      const fulfilled = results.filter(
-        (result) => result.status === 'fulfilled',
-      );
+      const fulfilled = results.filter((result) => result.status === 'fulfilled');
       const rejected = results.flatMap((result) =>
         result.status === 'rejected' ? [result.reason as unknown] : [],
       );
@@ -192,9 +173,7 @@ describe('core schema, system roles and owner:bootstrap (Postgres 17 via Testcon
       expect(rejected).toHaveLength(CONCURRENT_RUNS - 1);
       for (const reason of rejected) {
         expect(reason).toBeInstanceOf(OwnerBootstrapError);
-        expect((reason as OwnerBootstrapError).code).toBe(
-          OWNER_BOOTSTRAP_ERRORS.OWNER_EXISTS,
-        );
+        expect((reason as OwnerBootstrapError).code).toBe(OWNER_BOOTSTRAP_ERRORS.OWNER_EXISTS);
       }
       const owners = await rawQuery(
         url,
@@ -205,9 +184,9 @@ describe('core schema, system roles and owner:bootstrap (Postgres 17 via Testcon
 
     it('refuses before the roles are seeded', async () => {
       const { prisma } = await database(false);
-      await expect(
-        bootstrapOwner(prisma, owner('owner@example.com')),
-      ).rejects.toMatchObject({ code: OWNER_BOOTSTRAP_ERRORS.ROLE_MISSING });
+      await expect(bootstrapOwner(prisma, owner('owner@example.com'))).rejects.toMatchObject({
+        code: OWNER_BOOTSTRAP_ERRORS.ROLE_MISSING,
+      });
     });
 
     it('never promotes an existing account', async () => {
@@ -219,9 +198,9 @@ describe('core schema, system roles and owner:bootstrap (Postgres 17 via Testcon
           role: { connect: { slug: 'editor' } },
         },
       });
-      await expect(
-        bootstrapOwner(prisma, owner('EDITOR@example.com')),
-      ).rejects.toMatchObject({ code: OWNER_BOOTSTRAP_ERRORS.EMAIL_TAKEN });
+      await expect(bootstrapOwner(prisma, owner('EDITOR@example.com'))).rejects.toMatchObject({
+        code: OWNER_BOOTSTRAP_ERRORS.EMAIL_TAKEN,
+      });
     });
 
     it('rejects a short password without echoing it', async () => {
@@ -250,15 +229,9 @@ describe('core schema, system roles and owner:bootstrap (Postgres 17 via Testcon
           [email],
         );
 
-      expect(await sqlErrorCode(insertOwner('intruder@example.com'))).toBe(
-        UNIQUE_VIOLATION,
-      );
+      expect(await sqlErrorCode(insertOwner('intruder@example.com'))).toBe(UNIQUE_VIOLATION);
 
-      await rawQuery(
-        url,
-        `UPDATE accounts SET deleted_at = now() WHERE id = $1`,
-        [first.id],
-      );
+      await rawQuery(url, `UPDATE accounts SET deleted_at = now() WHERE id = $1`, [first.id]);
       await expect(insertOwner('next@example.com')).resolves.toBeDefined();
     });
 

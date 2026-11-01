@@ -1,16 +1,10 @@
-import { contentListPath } from '../../config/App.routes';
-import type {
-  FeatureNavItem,
-  NavItemsState,
-} from '../../lib/FeatureDefinition';
-import {
-  CONTENT_WILDCARD_SUBJECT,
-  type PermissionAction,
-  useCallerAccess,
-} from '../access';
+import { contentListPath } from '@configs/App.routes';
+import type { NavItem, NavItemsState } from '@configs/NavSections.constants';
+
+import { CONTENT_WILDCARD_SUBJECT, useCallerAccess, type PermissionAction } from '../access';
 import type { ContentType } from '../content-types';
-import { useContentTypesQuery } from './Content.queries';
 import { NAV_SECTION_BY_KIND } from './Content.constants';
+import { useContentTypesQuery } from './Content.queries';
 
 /**
  * One item per content type the caller may read, under the section of its
@@ -20,7 +14,7 @@ import { NAV_SECTION_BY_KIND } from './Content.constants';
 export function contentNavItemsOf(
   types: readonly ContentType[],
   can: (subject: string, action: PermissionAction) => boolean,
-): FeatureNavItem[] {
+): NavItem[] {
   return types.flatMap((type) => {
     const section = NAV_SECTION_BY_KIND[type.kind];
     const subject = [type.slug, CONTENT_WILDCARD_SUBJECT].find((candidate) =>

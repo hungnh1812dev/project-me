@@ -12,16 +12,13 @@ import { summarizeConfig } from './config/ConfigSummary.rules';
 type RawEnv = Readonly<Record<string, string | undefined>>;
 
 /** Validates config first (fail fast), then builds and starts the app. */
-export async function bootstrap(
-  rawEnv: RawEnv,
-): Promise<NestExpressApplication> {
+export async function bootstrap(rawEnv: RawEnv): Promise<NestExpressApplication> {
   const config = loadAppConfig(rawEnv);
   const logger = new Logger('Bootstrap');
 
-  const app = await NestFactory.create<NestExpressApplication>(
-    AppModule.forRoot(config),
-    { bufferLogs: true },
-  );
+  const app = await NestFactory.create<NestExpressApplication>(AppModule.forRoot(config), {
+    bufferLogs: true,
+  });
   configureApp(app, config);
 
   logger.log(`Config: ${JSON.stringify(summarizeConfig(config))}`);

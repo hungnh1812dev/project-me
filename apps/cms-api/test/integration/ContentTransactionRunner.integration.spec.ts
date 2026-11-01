@@ -1,13 +1,13 @@
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import { sql } from 'kysely';
 
-import { ContentDbProvider } from '../../src/modules/content-engine/adapters/ContentDatabase.adapter';
-import { contentTrxOf } from '../../src/modules/content-engine/adapters/KyselyContentTransactionRunner.adapter';
 import {
   CONTENT_TRANSACTION_RUNNER,
   type ContentTransactionRunner,
   type UnitOfWork,
 } from '../../src/infrastructure/database/TransactionRunner.port';
+import { ContentDbProvider } from '../../src/modules/content-engine/adapters/ContentDatabase.adapter';
+import { contentTrxOf } from '../../src/modules/content-engine/adapters/KyselyContentTransactionRunner.adapter';
 import { dbEnvOf, devEnv } from '../fixtures/Env.fixture';
 import { startPostgres, type TestPostgres } from '../fixtures/Postgres.fixture';
 import { createTestApp } from '../fixtures/TestApp.fixture';
@@ -20,14 +20,10 @@ describe('CONTENT_TRANSACTION_RUNNER (Postgres 17 via Testcontainers)', () => {
 
   beforeAll(async () => {
     postgres = await startPostgres();
-    app = await createTestApp(
-      devEnv({ ...dbEnvOf(postgres.getConnectionUri()) }),
-    );
+    app = await createTestApp(devEnv({ ...dbEnvOf(postgres.getConnectionUri()) }));
     content = app.get(ContentDbProvider);
     runner = app.get<ContentTransactionRunner>(CONTENT_TRANSACTION_RUNNER);
-    await sql`CREATE TABLE content_runner_probe (name text PRIMARY KEY)`.execute(
-      content.db,
-    );
+    await sql`CREATE TABLE content_runner_probe (name text PRIMARY KEY)`.execute(content.db);
   });
 
   afterAll(async () => {
@@ -40,9 +36,7 @@ describe('CONTENT_TRANSACTION_RUNNER (Postgres 17 via Testcontainers)', () => {
   });
 
   const insertProbe = (unit: UnitOfWork, name: string) =>
-    sql`INSERT INTO content_runner_probe (name) VALUES (${name})`.execute(
-      contentTrxOf(unit),
-    );
+    sql`INSERT INTO content_runner_probe (name) VALUES (${name})`.execute(contentTrxOf(unit));
 
   const probeNames = async (): Promise<string[]> => {
     const { rows } = await sql<{
@@ -174,9 +168,7 @@ describe('CONTENT_TRANSACTION_RUNNER (Postgres 17 via Testcontainers)', () => {
         return Promise.reject(new Error('boom'));
       }),
     ).rejects.toThrow('boom');
-    expect(() => rolledBack?.afterCommit(() => undefined)).toThrow(
-      /rolledBack/,
-    );
+    expect(() => rolledBack?.afterCommit(() => undefined)).toThrow(/rolledBack/);
   });
 
   describe('runInSavepoint', () => {
@@ -238,8 +230,6 @@ describe('CONTENT_TRANSACTION_RUNNER (Postgres 17 via Testcontainers)', () => {
   });
 
   it('contentTrxOf rejects a unit the content runner did not open', () => {
-    expect(() => contentTrxOf({ afterCommit: () => undefined })).toThrow(
-      TypeError,
-    );
+    expect(() => contentTrxOf({ afterCommit: () => undefined })).toThrow(TypeError);
   });
 });

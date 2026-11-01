@@ -1,19 +1,16 @@
 import {
-  type CanActivate,
-  type ExecutionContext,
   ForbiddenException,
   Inject,
   Injectable,
+  type CanActivate,
+  type ExecutionContext,
 } from '@nestjs/common';
 import type { Request } from 'express';
 
-import {
-  AUTH_ERROR_CODES,
-  AUTH_ERROR_MESSAGES,
-} from '../domain/Identity.constants';
-import { ORIGIN_HEADER } from './IdentityHttp.constants';
 import { type IAppConfig } from '../../../config/AppConfig.setup';
 import { APP_CONFIG } from '../../../config/Config.constants';
+import { AUTH_ERROR_CODES, AUTH_ERROR_MESSAGES } from '../domain/Identity.constants';
+import { ORIGIN_HEADER } from './IdentityHttp.constants';
 
 /**
  * D14 CSRF defence for the cookie endpoints (`/auth/refresh`, `/auth/logout`):
@@ -30,10 +27,7 @@ export class AllowedOriginGuard implements CanActivate {
   }
 
   canActivate(context: ExecutionContext): boolean {
-    const origin = context
-      .switchToHttp()
-      .getRequest<Request>()
-      .get(ORIGIN_HEADER);
+    const origin = context.switchToHttp().getRequest<Request>().get(ORIGIN_HEADER);
     if (origin !== undefined && this.allowed.has(origin)) return true;
     throw new ForbiddenException({
       errorCode: AUTH_ERROR_CODES.ORIGIN_NOT_ALLOWED,

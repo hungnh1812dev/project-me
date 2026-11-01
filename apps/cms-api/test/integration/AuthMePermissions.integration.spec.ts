@@ -9,7 +9,11 @@ import {
 import { ContentRegistry } from '../../src/modules/content-engine/application/ContentRegistry.service';
 import { ContentTypeRegistry } from '../../src/modules/content-engine/domain/ContentTypeRegistry.entity';
 import { hashPassword } from '../../src/modules/identity/application/Password.service';
-import { ARTICLE_DEFINITION } from '../fixtures/Access.fixture';
+import {
+  ARTICLE_DEFINITION,
+  seedRolePermissions,
+  seedSystemRoles,
+} from '../fixtures/Access.fixture';
 import { createCoreTemplate } from '../fixtures/CoreDb.fixture';
 import {
   dbEnvOf,
@@ -21,10 +25,6 @@ import {
 } from '../fixtures/Env.fixture';
 import { startPostgres, type TestPostgres } from '../fixtures/Postgres.fixture';
 import { createTestApp } from '../fixtures/TestApp.fixture';
-import {
-  seedRolePermissions,
-  seedSystemRoles,
-} from '../fixtures/Access.fixture';
 
 const PASSWORD = 'correct horse battery staple';
 const ME = '/api/v1/auth/me';
@@ -61,9 +61,7 @@ describe('GET /auth/me permissions (T33a; Postgres 17 via Testcontainers)', () =
     );
     // Not testing throttling: every rate-limit lookup lands in a new window.
     let fakeNow = Date.now();
-    jest
-      .spyOn(app.get(Clock), 'now')
-      .mockImplementation(() => (fakeNow += 3_600_000));
+    jest.spyOn(app.get(Clock), 'now').mockImplementation(() => (fakeNow += 3_600_000));
   });
 
   afterAll(async () => {
@@ -85,16 +83,11 @@ describe('GET /auth/me permissions (T33a; Postgres 17 via Testcontainers)', () =
       },
     });
     const server = app.getHttpServer();
-    const login = await request(server)
-      .post(LOGIN)
-      .send({ email, password: PASSWORD });
+    const login = await request(server).post(LOGIN).send({ email, password: PASSWORD });
     expect(login.status).toBe(200);
     const res = await request(server)
       .get(ME)
-      .set(
-        'Authorization',
-        `Bearer ${(login.body as { accessToken: string }).accessToken}`,
-      );
+      .set('Authorization', `Bearer ${(login.body as { accessToken: string }).accessToken}`);
     expect(res.status).toBe(200);
     const body = res.body as { role: string; permissions: string[] };
     expect(body.role).toBe(role);
@@ -119,17 +112,10 @@ describe('GET /auth/me permissions (T33a; Postgres 17 via Testcontainers)', () =
   it('editor gets the seeded content and media permissions only', async () => {
     const list = await permissionsOf('editor');
     expect(list).toEqual(
-      expect.arrayContaining([
-        'article:read',
-        'article:update',
-        'article:publish',
-        'media:create',
-      ]),
+      expect.arrayContaining(['article:read', 'article:update', 'article:publish', 'media:create']),
     );
     expect(list).not.toContain('article:delete');
-    expect(
-      list.some((entry) => /^(accounts|roles|api_tokens):/.test(entry)),
-    ).toBe(false);
+    expect(list.some((entry) => /^(accounts|roles|api_tokens):/.test(entry))).toBe(false);
   });
 
   it('keeps the other /auth/me fields unchanged', async () => {
@@ -145,15 +131,10 @@ describe('GET /auth/me permissions (T33a; Postgres 17 via Testcontainers)', () =
       },
     });
     const server = app.getHttpServer();
-    const login = await request(server)
-      .post(LOGIN)
-      .send({ email, password: PASSWORD });
+    const login = await request(server).post(LOGIN).send({ email, password: PASSWORD });
     const res = await request(server)
       .get(ME)
-      .set(
-        'Authorization',
-        `Bearer ${(login.body as { accessToken: string }).accessToken}`,
-      );
+      .set('Authorization', `Bearer ${(login.body as { accessToken: string }).accessToken}`);
     expect(Object.keys(res.body as object).sort()).toEqual([
       'displayName',
       'email',

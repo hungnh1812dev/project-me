@@ -6,10 +6,7 @@ import {
   type UnitOfWork,
 } from '../../../infrastructure/database/TransactionRunner.port';
 import type { PermissionGrant } from '../domain/ActorContext.entity';
-import {
-  PERMISSION_REPOSITORY,
-  type PermissionRepository,
-} from './Access.port';
+import { PERMISSION_REPOSITORY, type PermissionRepository } from './Access.port';
 import { VersionCache } from './VersionCache.service';
 
 export interface PermissionWriteOptions {
@@ -19,8 +16,7 @@ export interface PermissionWriteOptions {
    * Extra writes in the same transaction (the D15 audit row). The
    * cache is dropped only after the whole transaction commits.
    */
-  alsoInTransaction?:
-    ((unit: UnitOfWork, policyVersion: number) => Promise<void>) | undefined;
+  alsoInTransaction?: ((unit: UnitOfWork, policyVersion: number) => Promise<void>) | undefined;
 }
 
 /**

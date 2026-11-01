@@ -6,10 +6,10 @@ import {
   TABLE_PATH_SEPARATOR,
 } from './ContentEngine.constants';
 import {
+  isComponentField,
   type ComponentFieldDefinition,
   type ContentTypeDefinition,
   type FieldDefinition,
-  isComponentField,
 } from './DefinitionSchema.rules';
 
 /**
@@ -24,10 +24,7 @@ const SLUG_SEPARATOR = /-/g;
 
 /** Field name (camelCase or snake_case) -> column / table segment. `teamSize` -> `team_size`. */
 export function toSqlIdentifier(fieldName: string): string {
-  return fieldName.replace(
-    UPPERCASE_LETTER,
-    (letter) => `_${letter.toLowerCase()}`,
-  );
+  return fieldName.replace(UPPERCASE_LETTER, (letter) => `_${letter.toLowerCase()}`);
 }
 
 /** Slug -> root table name. `cv-page` -> `cv_page`. */
@@ -36,25 +33,17 @@ export function rootTableName(slug: string): string {
 }
 
 /** Parent table + component field -> child table. `cv_page` + `experience` -> `cv_page__experience`. */
-export function componentTableName(
-  parentTable: string,
-  fieldName: string,
-): string {
+export function componentTableName(parentTable: string, fieldName: string): string {
   return `${parentTable}${TABLE_PATH_SEPARATOR}${toSqlIdentifier(fieldName)}`;
 }
 
 export const relationNames = {
   primaryKey: (table: string) => `${table}${RELATION_NAME_SUFFIXES.primaryKey}`,
-  parentForeignKey: (table: string) =>
-    `${table}${RELATION_NAME_SUFFIXES.parentForeignKey}`,
-  parentOrderIndex: (table: string) =>
-    `${table}${RELATION_NAME_SUFFIXES.parentOrderIndex}`,
-  draftUnique: (table: string) =>
-    `${table}${RELATION_NAME_SUFFIXES.draftUnique}`,
-  publishedUnique: (table: string) =>
-    `${table}${RELATION_NAME_SUFFIXES.publishedUnique}`,
-  publishedListIndex: (table: string) =>
-    `${table}${RELATION_NAME_SUFFIXES.publishedListIndex}`,
+  parentForeignKey: (table: string) => `${table}${RELATION_NAME_SUFFIXES.parentForeignKey}`,
+  parentOrderIndex: (table: string) => `${table}${RELATION_NAME_SUFFIXES.parentOrderIndex}`,
+  draftUnique: (table: string) => `${table}${RELATION_NAME_SUFFIXES.draftUnique}`,
+  publishedUnique: (table: string) => `${table}${RELATION_NAME_SUFFIXES.publishedUnique}`,
+  publishedListIndex: (table: string) => `${table}${RELATION_NAME_SUFFIXES.publishedListIndex}`,
   mediaForeignKey: (table: string, column: string) =>
     `${table}_${column}${RELATION_NAME_SUFFIXES.mediaForeignKey}`,
 } as const;
@@ -166,8 +155,7 @@ export function planTables(definition: ContentTypeDefinition): TablePlan[] {
       parentTable,
       path,
       namePath,
-      systemColumns:
-        kind === 'root' ? ROOT_SYSTEM_COLUMNS : COMPONENT_SYSTEM_COLUMNS,
+      systemColumns: kind === 'root' ? ROOT_SYSTEM_COLUMNS : COMPONENT_SYSTEM_COLUMNS,
       columns,
       relationNames: ownRelationNames(name, kind, namePath, columns),
     });

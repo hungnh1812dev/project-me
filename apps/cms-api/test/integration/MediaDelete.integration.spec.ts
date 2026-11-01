@@ -20,6 +20,7 @@ import {
   MEDIA_PURGE_GRACE_MS,
 } from '../../src/modules/media/domain/Media.constants';
 import { MediaPurgeJob } from '../../src/modules/media/jobs/MediaPurge.job';
+import { seedRolePermissions, seedSystemRoles } from '../fixtures/Access.fixture';
 import { createCoreTemplate } from '../fixtures/CoreDb.fixture';
 import {
   dbEnvOf,
@@ -33,10 +34,6 @@ import { buildMediaFixtures } from '../fixtures/Media.fixture';
 import { multipart } from '../fixtures/Multipart.fixture';
 import { startPostgres, type TestPostgres } from '../fixtures/Postgres.fixture';
 import { createTestApp } from '../fixtures/TestApp.fixture';
-import {
-  seedRolePermissions,
-  seedSystemRoles,
-} from '../fixtures/Access.fixture';
 
 const PASSWORD = 'correct horse battery staple';
 const MEDIA = '/api/v1/media';
@@ -89,9 +86,9 @@ describe('media delete and purge (T28; Postgres 17 via Testcontainers)', () => {
     await client.connect();
     const registry = ContentTypeRegistry.fromDefinitions([GALLERY]);
     await client.query(
-      planMigration(emptySnapshot(), [
-        registry.resolve('gallery').definition,
-      ]).statements.join('\n'),
+      planMigration(emptySnapshot(), [registry.resolve('gallery').definition]).statements.join(
+        '\n',
+      ),
     );
     await client.end();
     app = await createTestApp(
@@ -187,8 +184,7 @@ describe('media delete and purge (T28; Postgres 17 via Testcontainers)', () => {
     );
   }
 
-  const auditRows = () =>
-    db.prisma.auditLog.findMany({ where: { action: 'media.deleted' } });
+  const auditRows = () => db.prisma.auditLog.findMany({ where: { action: 'media.deleted' } });
 
   it('soft-deletes an unreferenced file, hides it and audits it', async () => {
     const { id } = await uploaded();
@@ -222,9 +218,7 @@ describe('media delete and purge (T28; Postgres 17 via Testcontainers)', () => {
       where: { documentId: id },
     });
     expect(row.deletedAt).toBeNull();
-    expect((await auditRows()).some((entry) => entry.targetId === id)).toBe(
-      false,
-    );
+    expect((await auditRows()).some((entry) => entry.targetId === id)).toBe(false);
   });
 
   it('409 MEDIA_IN_USE for a published reference', async () => {
@@ -251,15 +245,9 @@ describe('media delete and purge (T28; Postgres 17 via Testcontainers)', () => {
   it('deletes once the last reference is gone', async () => {
     const { id, internalId } = await uploaded();
     await attachCover(internalId, false);
-    expect(
-      (await http().delete(`${MEDIA}/${id}`).set(bearer(admin))).status,
-    ).toBe(409);
-    await sql('update content.gallery set cover = null where cover = $1', [
-      internalId,
-    ]);
-    expect(
-      (await http().delete(`${MEDIA}/${id}`).set(bearer(admin))).status,
-    ).toBe(204);
+    expect((await http().delete(`${MEDIA}/${id}`).set(bearer(admin))).status).toBe(409);
+    await sql('update content.gallery set cover = null where cover = $1', [internalId]);
+    expect((await http().delete(`${MEDIA}/${id}`).set(bearer(admin))).status).toBe(204);
   });
 
   it('404 for an unknown, already deleted or malformed id', async () => {
@@ -267,13 +255,8 @@ describe('media delete and purge (T28; Postgres 17 via Testcontainers)', () => {
     await http().delete(`${MEDIA}/${id}`).set(bearer(admin)).expect(204);
     const again = await http().delete(`${MEDIA}/${id}`).set(bearer(admin));
     expect(again.status).toBe(404);
-    expect((again.body as { errorCode: string }).errorCode).toBe(
-      'MEDIA_NOT_FOUND',
-    );
-    await http()
-      .delete(`${MEDIA}/${MISSING_ID}`)
-      .set(bearer(admin))
-      .expect(404);
+    expect((again.body as { errorCode: string }).errorCode).toBe('MEDIA_NOT_FOUND');
+    await http().delete(`${MEDIA}/${MISSING_ID}`).set(bearer(admin)).expect(404);
     await http().delete(`${MEDIA}/not-a-uuid`).set(bearer(admin)).expect(400);
   });
 
@@ -377,9 +360,7 @@ describe('media delete and purge (T28; Postgres 17 via Testcontainers)', () => {
       });
       const result = await job().run();
       expect(result.skipped).toBeGreaterThanOrEqual(ids.length);
-      expect(
-        await db.prisma.fileLibrary.findUnique({ where: { id: last.id } }),
-      ).toBeNull();
+      expect(await db.prisma.fileLibrary.findUnique({ where: { id: last.id } })).toBeNull();
     });
   });
 });

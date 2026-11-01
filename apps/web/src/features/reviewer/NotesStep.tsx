@@ -1,22 +1,16 @@
-import { TextAreaInput } from '@abyss/form-commons';
 import type { ReactNode } from 'react';
+import { TextAreaInput } from '@abyss/form-commons';
 import { useFormContext, useWatch } from 'react-hook-form';
 
-import { COPY } from '../../config/Copy.constants';
-import { REVIEWER_INPUT_LIMITS } from '../../config/Reviewer.constants';
+import { COPY } from '../../configs/Copy.constants';
+import { REVIEWER_INPUT_LIMITS } from '../../configs/Reviewer.constants';
 import type { ReviewerFormValues } from './Reviewer.form';
 
 const copy = COPY.reviewer;
 const limits = REVIEWER_INPUT_LIMITS;
 
 /** `children` is the human-check area shown under the notes field. */
-export function NotesStep({
-  isActive,
-  children,
-}: {
-  isActive: boolean;
-  children?: ReactNode;
-}) {
+export function NotesStep({ isActive, children }: { isActive: boolean; children?: ReactNode }) {
   const { control } = useFormContext<ReviewerFormValues>();
   const notesLength = useWatch({ control, name: 'notes' }).length;
 

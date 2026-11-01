@@ -1,8 +1,8 @@
 import {
-  Controller,
-  Get,
   Body,
+  Controller,
   Delete,
+  Get,
   Header,
   HttpCode,
   HttpStatus,
@@ -16,27 +16,27 @@ import {
 import { z } from 'zod';
 
 import { SLUG_PARAM } from '../../../common/constants/Api.constants';
-import { Throttle } from '../../../common/guards/Throttle.guard';
 import { NO_STORE_HEADER } from '../../../common/constants/Http.constants';
+import { Throttle } from '../../../common/guards/Throttle.guard';
 import { parseRequest } from '../../../common/http/RequestParsing.rules';
+import { documentIdSchema } from '../../../common/validation/SharedSchemas.rules';
 import {
   PermissionAction,
-  RequirePermission,
   PermissionGuard,
+  RequirePermission,
   type SerializedRecord,
 } from '../../access';
-import { DEFAULT_DOCUMENT_STATUS } from '../domain/Documents.constants';
-import {
-  DOCUMENT_ID_PARAM,
-  DOCUMENT_QUERY_KEYS,
-  DOCUMENTS_RATE_LIMIT_POLICIES,
-  DOCUMENTS_ROUTES,
-} from './DocumentsHttp.constants';
+import { DocumentAuthGuard, type DocumentRequest } from '../../access/document-auth';
 import { CONTENT_STATUSES } from '../../content-engine';
 import {
-  DocumentAuthGuard,
-  type DocumentRequest,
-} from '../../access/document-auth';
+  DocumentsCommandService,
+  type WriteResult,
+  type WrittenRef,
+} from '../application/DocumentsCommand.service';
+import { DocumentsQueryService, type DocumentPage } from '../application/DocumentsQuery.service';
+import { PresenceService, type PresenceEntry } from '../application/Presence.service';
+import { PublishService } from '../application/Publish.service';
+import { DEFAULT_DOCUMENT_STATUS } from '../domain/Documents.constants';
 import {
   parseCreateBody,
   parseListQuery,
@@ -45,20 +45,11 @@ import {
   parseUpdateBody,
 } from './Documents.requests';
 import {
-  DocumentsCommandService,
-  type WriteResult,
-  type WrittenRef,
-} from '../application/DocumentsCommand.service';
-import {
-  type PresenceEntry,
-  PresenceService,
-} from '../application/Presence.service';
-import { PublishService } from '../application/Publish.service';
-import {
-  type DocumentPage,
-  DocumentsQueryService,
-} from '../application/DocumentsQuery.service';
-import { documentIdSchema } from '../../../common/validation/SharedSchemas.rules';
+  DOCUMENT_ID_PARAM,
+  DOCUMENT_QUERY_KEYS,
+  DOCUMENTS_RATE_LIMIT_POLICIES,
+  DOCUMENTS_ROUTES,
+} from './DocumentsHttp.constants';
 
 const detailQuerySchema = z.strictObject({
   [DOCUMENT_QUERY_KEYS.STATUS]: z
@@ -211,11 +202,7 @@ export class DocumentsController {
     @Param(SLUG_PARAM) slug: string,
     @Param(DOCUMENT_ID_PARAM) documentId: string,
   ): Promise<void> {
-    return this.publishing.remove(
-      req.user.actor,
-      slug,
-      parseRequest(documentIdSchema, documentId),
-    );
+    return this.publishing.remove(req.user.actor, slug, parseRequest(documentIdSchema, documentId));
   }
 
   /**

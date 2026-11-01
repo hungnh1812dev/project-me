@@ -1,10 +1,5 @@
-import {
-  type AxiosInstance,
-  type InternalAxiosRequestConfig,
-  isAxiosError,
-} from 'axios';
-
-import { BEARER_PREFIX, HTTP_STATUS } from '../../config/Http.constants';
+import { BEARER_PREFIX, HTTP_STATUS } from '@configs/Http.constants';
+import { isAxiosError, type AxiosInstance, type InternalAxiosRequestConfig } from 'axios';
 
 declare module 'axios' {
   interface AxiosRequestConfig {
@@ -56,36 +51,29 @@ export function installAuthInterceptor(
     return authConfig;
   });
 
-  const responseId = client.interceptors.response.use(
-    undefined,
-    async (error: unknown) => {
-      if (
-        !isAxiosError(error) ||
-        error.response?.status !== HTTP_STATUS.UNAUTHORIZED
-      ) {
-        throw error;
-      }
-      const config = error.config as AuthRequestConfig | undefined;
-      if (config === undefined || config.shouldSkipAuthRefresh === true)
-        throw error;
-      if (config.wasAuthRetried === true) {
+  const responseId = client.interceptors.response.use(undefined, async (error: unknown) => {
+    if (!isAxiosError(error) || error.response?.status !== HTTP_STATUS.UNAUTHORIZED) {
+      throw error;
+    }
+    const config = error.config as AuthRequestConfig | undefined;
+    if (config === undefined || config.shouldSkipAuthRefresh === true) throw error;
+    if (config.wasAuthRetried === true) {
+      options.onSessionExpired();
+      throw error;
+    }
+
+    const current = options.getAccessToken();
+    if (current === null || current === config.authToken) {
+      try {
+        await options.refreshAccessToken();
+      } catch {
         options.onSessionExpired();
         throw error;
       }
-
-      const current = options.getAccessToken();
-      if (current === null || current === config.authToken) {
-        try {
-          await options.refreshAccessToken();
-        } catch {
-          options.onSessionExpired();
-          throw error;
-        }
-      }
-      config.wasAuthRetried = true;
-      return client.request(config);
-    },
-  );
+    }
+    config.wasAuthRetried = true;
+    return client.request(config);
+  });
 
   return () => {
     client.interceptors.request.eject(requestId);

@@ -9,9 +9,9 @@ import { AccountStatus } from '../../access';
 import {
   AUDIT_ACTIONS,
   REAUTH_FAILURE_REASONS,
-  type REAUTH_PURPOSES,
   SecurityAuditService,
   selfActor,
+  type REAUTH_PURPOSES,
 } from '../../security-audit';
 import { EMAIL_CODE_PURPOSE } from '../domain/Identity.constants';
 import {
@@ -30,8 +30,7 @@ import { verifyPassword } from './Password.service';
 import { TotpService } from './Totp.service';
 
 type ReauthPurpose = (typeof REAUTH_PURPOSES)[keyof typeof REAUTH_PURPOSES];
-type ReauthFailureReason =
-  (typeof REAUTH_FAILURE_REASONS)[keyof typeof REAUTH_FAILURE_REASONS];
+type ReauthFailureReason = (typeof REAUTH_FAILURE_REASONS)[keyof typeof REAUTH_FAILURE_REASONS];
 
 export interface ReauthenticationInput {
   readonly password: string;
@@ -89,25 +88,16 @@ export class ReauthenticationService {
     }
   }
 
-  private async activeAccount(
-    accountDocumentId: string,
-  ): Promise<TwoFactorAccountRecord> {
+  private async activeAccount(accountDocumentId: string): Promise<TwoFactorAccountRecord> {
     const account = await this.accounts.findTwoFactorAccount(accountDocumentId);
-    if (
-      account === null ||
-      account.status !== AccountStatus.active ||
-      account.deletedAt !== null
-    ) {
+    if (account === null || account.status !== AccountStatus.active || account.deletedAt !== null) {
       throw notSignedIn();
     }
     return account;
   }
 
   /** True once the emailed code is verified and used up; a spent code is false. */
-  private async consumeEmailCode(
-    accountId: number,
-    code: string,
-  ): Promise<boolean> {
+  private async consumeEmailCode(accountId: number, code: string): Promise<boolean> {
     if (!isOtpCodeFormat(code)) return false;
     const otpId = await this.otp.verify(accountId, EMAIL_CODE_PURPOSE, code);
     if (otpId === undefined) return false;

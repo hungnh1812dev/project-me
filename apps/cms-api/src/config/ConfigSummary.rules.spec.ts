@@ -12,13 +12,13 @@ import {
   TEST_SMTP_USER,
 } from '../../test/fixtures/Env.fixture';
 import { loadAppConfig } from './AppConfig.setup';
-import { summarizeConfig } from './ConfigSummary.rules';
 import {
   CONFIG_DEFAULTS,
   OPTIONAL_SECRET_ENV_KEYS,
   REDACTED,
   SECRET_ENV_KEYS,
 } from './Config.constants';
+import { summarizeConfig } from './ConfigSummary.rules';
 import { envSchema } from './Env.schema';
 
 /** Env keys whose values must never reach the log, beyond the secret lists. */
@@ -45,6 +45,8 @@ const FORMATTED_SENTINELS: Readonly<Record<string, string>> = {
   DB_PORT: '3102',
   DB_SSL_MODE: 'require',
   DB_SSL_ROOT_CERT_PATH: '/sentinel/db-ca.crt',
+  MEDIA_LOCAL_DIR: '/sentinel/media-dir',
+  MEDIA_LOCAL_PUBLIC_URL: 'https://sentinel-media.example.test/files',
   TRUST_PROXY_HOPS: '3',
   SMTP_PORT: '3103',
   SMTP_SECURE: 'true',
@@ -59,6 +61,8 @@ const FORMATTED_SENTINELS: Readonly<Record<string, string>> = {
   LOGIN_RATE_LIMIT_IP: '3104',
   LOGIN_RATE_LIMIT_EMAIL: '3105',
   REFRESH_RATE_LIMIT_IP: '3106',
+  SETUP_STATUS_RATE_LIMIT_IP: '3107',
+  SETUP_SUBMIT_RATE_LIMIT_IP: '3108',
 };
 
 /** Boolean keys have only two valid values, so they cannot be unique. */
@@ -69,8 +73,7 @@ function sentinelEnv(): Record<string, string> {
   return Object.fromEntries(
     Object.keys(envSchema.shape).map((key) => [
       key,
-      FORMATTED_SENTINELS[key] ??
-        `sentinel-${key.toLowerCase().replaceAll('_', '-')}-value`,
+      FORMATTED_SENTINELS[key] ?? `sentinel-${key.toLowerCase().replaceAll('_', '-')}-value`,
     ]),
   );
 }
@@ -109,6 +112,21 @@ describe('summarizeConfig', () => {
         user: TEST_SMTP_USER,
         password: REDACTED,
       },
+    });
+  });
+
+  it('shows the local media block', () => {
+    const config = loadAppConfig(
+      devEnv({
+        MEDIA_PROVIDER: 'local',
+        MEDIA_LOCAL_DIR: '/var/media',
+        MEDIA_LOCAL_PUBLIC_URL: 'http://localhost:8080/api/v1/media-files',
+      }),
+    );
+    expect(summarizeConfig(config).media).toEqual({
+      provider: 'local',
+      cloudinary: undefined,
+      local: { directory: '/var/media', publicUrl: 'http://localhost:8080/api/v1/media-files' },
     });
   });
 

@@ -47,9 +47,7 @@ export function promptHidden(
   prompt: string,
 ): Promise<string> {
   if (input.isTTY !== true || input.setRawMode === undefined) {
-    return Promise.reject(
-      new CliInputError('No terminal for the password prompt.'),
-    );
+    return Promise.reject(new CliInputError('No terminal for the password prompt.'));
   }
   const setRawMode = input.setRawMode.bind(input);
   output.write(prompt);

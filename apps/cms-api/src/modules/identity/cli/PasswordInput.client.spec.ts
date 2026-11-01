@@ -3,9 +3,9 @@ import { Readable } from 'node:stream';
 
 import {
   CliInputError,
-  type HiddenInput,
   promptHidden,
   readPasswordFromStream,
+  type HiddenInput,
 } from './PasswordInput.client';
 
 class FakeTty extends EventEmitter implements HiddenInput {
@@ -32,9 +32,7 @@ describe('readPasswordFromStream', () => {
     ['secret value', 'secret value'],
     ['  spaced  \n\n', '  spaced  \n'],
   ])('reads %j as %j', async (input, expected) => {
-    await expect(readPasswordFromStream(Readable.from([input]))).resolves.toBe(
-      expected,
-    );
+    await expect(readPasswordFromStream(Readable.from([input]))).resolves.toBe(expected);
   });
 });
 
@@ -62,8 +60,6 @@ describe('promptHidden', () => {
   it('refuses when there is no terminal', async () => {
     const tty = new FakeTty();
     tty.isTTY = false;
-    await expect(promptHidden(tty, output(), 'x')).rejects.toBeInstanceOf(
-      CliInputError,
-    );
+    await expect(promptHidden(tty, output(), 'x')).rejects.toBeInstanceOf(CliInputError);
   });
 });

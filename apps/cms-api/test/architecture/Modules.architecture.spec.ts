@@ -2,23 +2,20 @@ import { existsSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 
 import {
+  ALLOWED_MODULE_EDGES,
+  KNOWN_VIOLATIONS,
+  MODULE_NODES,
+  MODULES_DIRECTORY,
+  type ModuleNode,
+} from './ModuleEdges.constants';
+import {
   collectCrossNodeEdges,
   collectNodeImports,
   layerOfFile,
   nodeOfFile,
   type NodeImport,
 } from './ModuleGraph.analyzer';
-import {
-  authGuardOnlyViolations,
-  typesOnlyViolations,
-} from './ModuleSubRules.analyzer';
-import {
-  ALLOWED_MODULE_EDGES,
-  KNOWN_VIOLATIONS,
-  MODULES_DIRECTORY,
-  MODULE_NODES,
-  type ModuleNode,
-} from './ModuleEdges.constants';
+import { authGuardOnlyViolations, typesOnlyViolations } from './ModuleSubRules.analyzer';
 import { SRC_ROOT } from './SourcePaths.constants';
 
 /**
@@ -27,14 +24,11 @@ import { SRC_ROOT } from './SourcePaths.constants';
  * still has are listed in `KNOWN_VIOLATIONS` until the R1 task that removes
  * them. Imports are resolved to real files (facades followed).
  */
-const isAllowed = (from: ModuleNode, to: ModuleNode) =>
-  ALLOWED_MODULE_EDGES[from].includes(to);
+const isAllowed = (from: ModuleNode, to: ModuleNode) => ALLOWED_MODULE_EDGES[from].includes(to);
 
 const edgeLabel = (from: string, to: string) => `${from} -> ${to}`;
 
-function findCycle(
-  edgesOf: (node: ModuleNode) => readonly ModuleNode[],
-): ModuleNode[] | null {
+function findCycle(edgesOf: (node: ModuleNode) => readonly ModuleNode[]): ModuleNode[] | null {
   const visiting: ModuleNode[] = [];
   const done = new Set<ModuleNode>();
   const visit = (node: ModuleNode): ModuleNode[] | null => {
@@ -59,12 +53,8 @@ function findCycle(
 
 describe('module dependency guard (SPEC §2)', () => {
   const { scannedFiles, edges } = collectCrossNodeEdges(SRC_ROOT);
-  const knownKeys = new Set(
-    KNOWN_VIOLATIONS.map(({ from, to }) => edgeLabel(from, to)),
-  );
-  const disallowed = edges.filter(
-    ({ fromNode, toNode }) => !isAllowed(fromNode, toNode),
-  );
+  const knownKeys = new Set(KNOWN_VIOLATIONS.map(({ from, to }) => edgeLabel(from, to)));
+  const disallowed = edges.filter(({ fromNode, toNode }) => !isAllowed(fromNode, toNode));
 
   it('scans the source tree and finds module edges', () => {
     expect(scannedFiles).toBeGreaterThan(0);
@@ -73,9 +63,7 @@ describe('module dependency guard (SPEC §2)', () => {
 
   it('lists only declared nodes in the allowed-edges table', () => {
     for (const node of MODULE_NODES) {
-      expect(
-        ALLOWED_MODULE_EDGES[node].every((to) => to in ALLOWED_MODULE_EDGES),
-      ).toBe(true);
+      expect(ALLOWED_MODULE_EDGES[node].every((to) => to in ALLOWED_MODULE_EDGES)).toBe(true);
     }
   });
 
@@ -91,23 +79,15 @@ describe('module dependency guard (SPEC §2)', () => {
   });
 
   it('has no stale known violation', () => {
-    const present = new Set(
-      disallowed.map(({ from, to }) => edgeLabel(from, to)),
-    );
+    const present = new Set(disallowed.map(({ from, to }) => edgeLabel(from, to)));
     const stale = [...knownKeys].filter((key) => !present.has(key));
     expect(stale).toEqual([]);
   });
 
   it('has no cycle between nodes once known violations are set aside', () => {
-    const live = edges.filter(
-      ({ from, to }) => !knownKeys.has(edgeLabel(from, to)),
-    );
+    const live = edges.filter(({ from, to }) => !knownKeys.has(edgeLabel(from, to)));
     const cycle = findCycle((node) => [
-      ...new Set(
-        live
-          .filter(({ fromNode }) => fromNode === node)
-          .map(({ toNode }) => toNode),
-      ),
+      ...new Set(live.filter(({ fromNode }) => fromNode === node).map(({ toNode }) => toNode)),
     ]);
     expect(cycle).toBeNull();
   });
@@ -144,15 +124,11 @@ describe('module sub-rules (SPEC §2)', () => {
     expect(imports.length).toBeGreaterThan(0);
     expect(
       imports.some(
-        ({ fromNode, toNodes }) =>
-          fromNode === 'security-audit' && toNodes.includes('access-core'),
+        ({ fromNode, toNodes }) => fromNode === 'security-audit' && toNodes.includes('access-core'),
       ),
     ).toBe(true);
     expect(
-      imports.some(
-        ({ fromNode, toNodes }) =>
-          fromNode === 'media' && toNodes.includes('identity'),
-      ),
+      imports.some(({ fromNode, toNodes }) => fromNode === 'media' && toNodes.includes('identity')),
     ).toBe(true);
   });
 
@@ -170,20 +146,14 @@ describe('module sub-rules (SPEC §2)', () => {
       toNodes: ['access-core'],
     };
     expect(typesOnlyViolations([importOf({ ...edge })])).toHaveLength(1);
-    expect(
-      typesOnlyViolations([importOf({ ...edge, isTypeOnly: true })]),
-    ).toEqual([]);
+    expect(typesOnlyViolations([importOf({ ...edge, isTypeOnly: true })])).toEqual([]);
   });
 
   it('the auth-guard-only rule catches other identity names and wildcard forms', () => {
-    expect(
-      authGuardOnlyViolations([
-        importOf({ importedNames: ['IdentityModule'] }),
-      ]),
-    ).toHaveLength(1);
-    expect(
-      authGuardOnlyViolations([importOf({ importedNames: 'all' })]),
-    ).toHaveLength(1);
+    expect(authGuardOnlyViolations([importOf({ importedNames: ['IdentityModule'] })])).toHaveLength(
+      1,
+    );
+    expect(authGuardOnlyViolations([importOf({ importedNames: 'all' })])).toHaveLength(1);
     expect(
       authGuardOnlyViolations([
         importOf({ importedNames: ['JwtAuthGuard', 'AuthenticatedRequest'] }),
@@ -196,81 +166,45 @@ describe('layers and nodes of module files (ADR 0006 §2)', () => {
   const at = (...parts: string[]) => join(...parts);
 
   it('reads the layer from the folder right after the module name', () => {
-    expect(layerOfFile(at('modules', 'media', 'domain', 'x.ts'))).toBe(
-      'domain',
-    );
-    expect(layerOfFile(at('modules', 'media', 'application', 'x.ts'))).toBe(
-      'application',
-    );
-    expect(layerOfFile(at('modules', 'media', 'adapters', 'a', 'x.ts'))).toBe(
-      'adapters',
-    );
+    expect(layerOfFile(at('modules', 'media', 'domain', 'x.ts'))).toBe('domain');
+    expect(layerOfFile(at('modules', 'media', 'application', 'x.ts'))).toBe('application');
+    expect(layerOfFile(at('modules', 'media', 'adapters', 'a', 'x.ts'))).toBe('adapters');
     expect(layerOfFile(at('modules', 'media', 'http', 'x.ts'))).toBe('http');
     expect(layerOfFile(at('modules', 'identity', 'cli', 'x.ts'))).toBe('cli');
-    expect(layerOfFile(at('modules', 'documents', 'jobs', 'x.ts'))).toBe(
-      'jobs',
-    );
+    expect(layerOfFile(at('modules', 'documents', 'jobs', 'x.ts'))).toBe('jobs');
   });
 
   it('treats module-root index.ts and *.module.ts as wiring, other files as unlayered', () => {
     expect(layerOfFile(at('modules', 'media', 'index.ts'))).toBe('wiring');
-    expect(layerOfFile(at('modules', 'media', 'Media.module.ts'))).toBe(
-      'wiring',
-    );
-    expect(layerOfFile(at('modules', 'media', 'media.service.ts'))).toBe(
-      'unlayered',
-    );
-    expect(layerOfFile(at('modules', 'media', 'roles', 'x.ts'))).toBe(
-      'unlayered',
-    );
+    expect(layerOfFile(at('modules', 'media', 'Media.module.ts'))).toBe('wiring');
+    expect(layerOfFile(at('modules', 'media', 'media.service.ts'))).toBe('unlayered');
+    expect(layerOfFile(at('modules', 'media', 'roles', 'x.ts'))).toBe('unlayered');
     expect(layerOfFile(at('common', 'http', 'x.ts'))).toBe('unlayered');
   });
 
   it('gives access management and document auth their own layer folders', () => {
     expect(
-      layerOfFile(
-        at(
-          'modules',
-          'access',
-          'document-auth',
-          'http',
-          'DocumentAuth.guard.ts',
-        ),
-      ),
+      layerOfFile(at('modules', 'access', 'document-auth', 'http', 'DocumentAuth.guard.ts')),
     ).toBe('http');
-    expect(
-      layerOfFile(at('modules', 'access', 'management', 'application', 'x.ts')),
-    ).toBe('application');
-    expect(
-      layerOfFile(at('modules', 'access', 'management', 'x.module.ts')),
-    ).toBe('wiring');
+    expect(layerOfFile(at('modules', 'access', 'management', 'application', 'x.ts'))).toBe(
+      'application',
+    );
+    expect(layerOfFile(at('modules', 'access', 'management', 'x.module.ts'))).toBe('wiring');
   });
 
   it('puts a file in the access node the folder says', () => {
-    expect(nodeOfFile(at('modules', 'access', 'application', 'x.ts'))).toBe(
-      'access-core',
-    );
+    expect(nodeOfFile(at('modules', 'access', 'application', 'x.ts'))).toBe('access-core');
     expect(nodeOfFile(at('modules', 'access', 'x.ts'))).toBe('access-core');
+    expect(nodeOfFile(at('modules', 'access', 'management', 'application', 'x.ts'))).toBe(
+      'access-management',
+    );
     expect(
-      nodeOfFile(at('modules', 'access', 'management', 'application', 'x.ts')),
-    ).toBe('access-management');
-    expect(
-      nodeOfFile(
-        at(
-          'modules',
-          'access',
-          'document-auth',
-          'http',
-          'DocumentAuth.guard.ts',
-        ),
-      ),
+      nodeOfFile(at('modules', 'access', 'document-auth', 'http', 'DocumentAuth.guard.ts')),
     ).toBe('access-document-auth');
-    expect(
-      nodeOfFile(at('modules', 'access', 'document-auth', 'index.ts')),
-    ).toBe('access-document-auth');
-    expect(
-      nodeOfFile(at('modules', 'access', 'http', 'Permission.guard.ts')),
-    ).toBe('access-core');
+    expect(nodeOfFile(at('modules', 'access', 'document-auth', 'index.ts'))).toBe(
+      'access-document-auth',
+    );
+    expect(nodeOfFile(at('modules', 'access', 'http', 'Permission.guard.ts'))).toBe('access-core');
     expect(nodeOfFile(at('modules', 'media', 'http', 'x.ts'))).toBe('media');
   });
 });

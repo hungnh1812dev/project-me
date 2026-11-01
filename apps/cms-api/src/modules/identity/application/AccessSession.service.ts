@@ -1,11 +1,11 @@
 import { Inject, Injectable } from '@nestjs/common';
 
 import {
-  type ActorContext,
   accountActor,
-  reviewerActor,
   REVIEWER_ROLE_SLUG,
+  reviewerActor,
   VersionCache,
+  type ActorContext,
 } from '../../access';
 import { notSignedIn } from '../domain/Identity.errors';
 import type { AccessTokenClaims } from './AccessToken.service';
@@ -41,10 +41,7 @@ export class AccessSessionService {
   ) {}
 
   async authenticate(claims: AccessTokenClaims): Promise<AuthenticatedAccount> {
-    const account = await this.versions.getAccountVersions(
-      claims.sub,
-      claims.tv,
-    );
+    const account = await this.versions.getAccountVersions(claims.sub, claims.tv);
     if (
       account === null ||
       account.tokenVersion !== claims.tv ||

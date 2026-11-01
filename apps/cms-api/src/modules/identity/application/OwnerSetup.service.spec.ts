@@ -1,14 +1,11 @@
+import { DOMAIN_ERROR_KINDS, DomainError } from '../../../common/errors/Domain.errors';
 import { type IAppConfig } from '../../../config/AppConfig.setup';
-import type { AppLogger } from '../../../infrastructure/logging/AppLogger.port';
 import type {
   TransactionRunner,
   UnitOfWork,
 } from '../../../infrastructure/database/TransactionRunner.port';
+import type { AppLogger } from '../../../infrastructure/logging/AppLogger.port';
 import type { SecurityAuditService } from '../../security-audit';
-import {
-  DomainError,
-  DOMAIN_ERROR_KINDS,
-} from '../../../common/errors/Domain.errors';
 import { SETUP_TOKEN_MAX_LENGTH } from '../domain/Identity.constants';
 import type { AccountRepository, AuditRecorder } from './Identity.port';
 import { OwnerBootstrapService } from './OwnerBootstrap.service';
@@ -51,9 +48,7 @@ function build(token: string | null = TOKEN, state?: Partial<World>) {
   const accounts = {
     hasLiveOwner: ownerQueries,
     lockOwnerCreation: jest.fn(() => Promise.resolve()),
-    findRole: jest.fn(() =>
-      Promise.resolve(world.roleSeeded ? { id: 1, isSystem: true } : null),
-    ),
+    findRole: jest.fn(() => Promise.resolve(world.roleSeeded ? { id: 1, isSystem: true } : null)),
     isEmailTaken: jest.fn(() => Promise.resolve(world.emailTaken)),
     createAccount: created,
   } as unknown as AccountRepository;
@@ -141,9 +136,7 @@ describe('OwnerSetupService.admit', () => {
     const { service, standalone } = build();
     const error = await rejection(service.admit('nope', META));
     expect(error).toBeInstanceOf(DomainError);
-    expect((error as DomainError).kind).toBe(
-      DOMAIN_ERROR_KINDS.UNAUTHENTICATED,
-    );
+    expect((error as DomainError).kind).toBe(DOMAIN_ERROR_KINDS.UNAUTHENTICATED);
     expect(standalone).toEqual([
       {
         actor: { type: 'account', accountId: null },
@@ -160,25 +153,19 @@ describe('OwnerSetupService.admit', () => {
     ['an over-long token', 'x'.repeat(SETUP_TOKEN_MAX_LENGTH + 1)],
   ])('treats %s as a wrong token', async (_name, submitted) => {
     const { service, standalone } = build();
-    await expect(service.admit(submitted, META)).rejects.toBeInstanceOf(
-      DomainError,
-    );
+    await expect(service.admit(submitted, META)).rejects.toBeInstanceOf(DomainError);
     expect(standalone).toHaveLength(1);
   });
 
   it('answers closed with no token configured, and audits nothing for a tokenless submit', async () => {
     const { service, standalone } = build(null);
-    await expect(service.admit(undefined, META)).rejects.toBeInstanceOf(
-      SetupClosedError,
-    );
+    await expect(service.admit(undefined, META)).rejects.toBeInstanceOf(SetupClosedError);
     expect(standalone).toEqual([]);
   });
 
   it('audits a closed submit that carries a token, without any value', async () => {
     const { service, standalone } = build(null);
-    await expect(service.admit(TOKEN, META)).rejects.toBeInstanceOf(
-      SetupClosedError,
-    );
+    await expect(service.admit(TOKEN, META)).rejects.toBeInstanceOf(SetupClosedError);
     expect(standalone).toEqual([
       {
         actor: { type: 'account', accountId: null },
@@ -192,9 +179,7 @@ describe('OwnerSetupService.admit', () => {
 
   it('answers closed when an owner exists', async () => {
     const { service } = build(TOKEN, { owner: true });
-    await expect(service.admit(TOKEN, META)).rejects.toBeInstanceOf(
-      SetupClosedError,
-    );
+    await expect(service.admit(TOKEN, META)).rejects.toBeInstanceOf(SetupClosedError);
   });
 });
 
@@ -224,9 +209,7 @@ describe('OwnerSetupService.createOwner', () => {
     const { service, world, ownerQueries, standalone } = build();
     await service.isOpen();
     world.owner = true;
-    await expect(service.createOwner(OWNER_INPUT, META)).rejects.toBeInstanceOf(
-      SetupClosedError,
-    );
+    await expect(service.createOwner(OWNER_INPUT, META)).rejects.toBeInstanceOf(SetupClosedError);
     expect(standalone).toHaveLength(1);
     const before = ownerQueries.mock.calls.length;
     await service.isOpen();

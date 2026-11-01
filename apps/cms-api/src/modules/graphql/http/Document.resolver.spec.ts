@@ -1,11 +1,7 @@
 import { NotFoundException } from '@nestjs/common';
-
-import {
-  DomainError,
-  DOMAIN_ERROR_KINDS,
-} from '../../../common/errors/Domain.errors';
 import { execute, parse } from 'graphql';
 
+import { DOMAIN_ERROR_KINDS, DomainError } from '../../../common/errors/Domain.errors';
 import { type ActorContext } from '../../access';
 import type { DocumentsQueryService } from '../../documents';
 import { attachDocumentResolvers } from './Document.resolver';
@@ -56,9 +52,7 @@ function setup() {
 describe('document resolvers', () => {
   it('list calls the service with the REST query and the default sort', async () => {
     const { documents, run } = setup();
-    const result = await run(
-      '{ articleList { data { title } meta { total } } }',
-    );
+    const result = await run('{ articleList { data { title } meta { total } } }');
     expect(result).toEqual({
       data: { articleList: { data: [{ title: 'A' }], meta: { total: 1 } } },
     });
@@ -93,15 +87,8 @@ describe('document resolvers', () => {
     expect(await run(`{ article(documentId: "${ID}") { title } }`)).toEqual({
       data: { article: { title: 'A' } },
     });
-    expect(documents.get).toHaveBeenCalledWith(
-      actor,
-      'article',
-      ID,
-      'published',
-    );
-    documents.get.mockRejectedValueOnce(
-      new NotFoundException({ errorCode: 'DOCUMENT_NOT_FOUND' }),
-    );
+    expect(documents.get).toHaveBeenCalledWith(actor, 'article', ID, 'published');
+    documents.get.mockRejectedValueOnce(new NotFoundException({ errorCode: 'DOCUMENT_NOT_FOUND' }));
     expect(await run(`{ article(documentId: "${ID}") { title } }`)).toEqual({
       data: { article: null },
     });
@@ -123,9 +110,7 @@ describe('document resolvers', () => {
   it('other service errors stay errors on that root field only', async () => {
     const { documents, run } = setup();
     documents.get.mockRejectedValueOnce(new NotFoundException());
-    const result = await run(
-      `{ article(documentId: "${ID}") { title } home { title } }`,
-    );
+    const result = await run(`{ article(documentId: "${ID}") { title } home { title } }`);
     expect(result.data).toEqual({ article: null, home: { title: 'A' } });
     expect(result.errors).toHaveLength(1);
   });

@@ -2,11 +2,11 @@ import { Inject, Injectable } from '@nestjs/common';
 
 import {
   AccessPolicyService,
-  type ActorContext,
   PermissionAction,
   QueryGuard,
   recordReadAccess,
   RecordSerializer,
+  type ActorContext,
   type RowCondition,
   type SerializedRecord,
 } from '../../access';
@@ -64,11 +64,7 @@ export class DocumentsQueryService {
     private readonly media: DocumentMediaService,
   ) {}
 
-  async list(
-    actor: ActorContext,
-    slug: string,
-    query: ListDocumentsQuery,
-  ): Promise<DocumentPage> {
+  async list(actor: ActorContext, slug: string, query: ListDocumentsQuery): Promise<DocumentPage> {
     const scope = await this.scope(actor, slug, query.status);
     const { type, access } = scope;
 
@@ -88,10 +84,7 @@ export class DocumentsQueryService {
       page: query.page,
       pageSize: query.pageSize,
     });
-    const serializedRecords = new RecordSerializer(type).serializeMany(
-      documents,
-      access,
-    );
+    const serializedRecords = new RecordSerializer(type).serializeMany(documents, access);
     await this.media.embed(type.root, serializedRecords);
     return {
       data: serializedRecords,

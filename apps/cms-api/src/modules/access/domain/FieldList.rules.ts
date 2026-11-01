@@ -2,9 +2,9 @@ import { z } from 'zod';
 
 import {
   ACCESS_ERROR_CODES,
-  type AccessErrorCode,
   FIELD_WRITE_ACTIONS,
   PermissionAction,
+  type AccessErrorCode,
 } from './Access.constants';
 import type { FieldList } from './FieldPaths.rules';
 import type { SubjectCatalog } from './SubjectCatalog.rules';
@@ -16,8 +16,7 @@ export interface AccessIssue {
   message: string;
 }
 
-export type ValidationResult<T> =
-  { ok: true; value: T } | { ok: false; issues: AccessIssue[] };
+export type ValidationResult<T> = { ok: true; value: T } | { ok: false; issues: AccessIssue[] };
 
 export function issue(
   code: AccessErrorCode,
@@ -75,9 +74,7 @@ function checkFieldList(
         issue(
           ACCESS_ERROR_CODES.PERMISSION_INVALID_FIELDS,
           [...path, index],
-          seen.has(field)
-            ? `duplicate field "${field}"`
-            : `unknown field "${field}"`,
+          seen.has(field) ? `duplicate field "${field}"` : `unknown field "${field}"`,
         ),
       );
     }

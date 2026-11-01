@@ -1,9 +1,5 @@
 import { OPERATORS_BY_KIND } from '../../../documents';
-import {
-  FILTER_INPUTS,
-  filterToClauses,
-  sortToKeys,
-} from './FilterInputs.rules';
+import { FILTER_INPUTS, filterToClauses, sortToKeys } from './FilterInputs.rules';
 
 describe('FILTER_INPUTS', () => {
   it('offers exactly the REST operators of each kind', () => {
@@ -17,10 +13,7 @@ describe('FILTER_INPUTS', () => {
   it('types the operands by kind', () => {
     const printed = (kind: keyof typeof FILTER_INPUTS) =>
       Object.fromEntries(
-        Object.entries(FILTER_INPUTS[kind].getFields()).map(([name, f]) => [
-          name,
-          String(f.type),
-        ]),
+        Object.entries(FILTER_INPUTS[kind].getFields()).map(([name, f]) => [name, String(f.type)]),
       );
     expect(printed('string')).toEqual({
       eq: 'String',
@@ -61,20 +54,13 @@ describe('filterToClauses', () => {
   it('ignores absent and null entries and unknown operators', () => {
     expect(filterToClauses(undefined)).toEqual([]);
     expect(filterToClauses(null)).toEqual([]);
-    expect(
-      filterToClauses({ a: null, b: { eq: null, bogus: 'x' }, c: {} }),
-    ).toEqual([]);
+    expect(filterToClauses({ a: null, b: { eq: null, bogus: 'x' }, c: {} })).toEqual([]);
   });
 });
 
 describe('sortToKeys', () => {
   it('maps the sort entries and defaults the direction to ascending', () => {
-    expect(
-      sortToKeys([
-        { field: 'updatedAt', direction: 'desc' },
-        { field: 'title' },
-      ]),
-    ).toEqual([
+    expect(sortToKeys([{ field: 'updatedAt', direction: 'desc' }, { field: 'title' }])).toEqual([
       { path: 'updatedAt', direction: 'desc' },
       { path: 'title', direction: 'asc' },
     ]);

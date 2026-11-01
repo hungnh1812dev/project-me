@@ -12,13 +12,7 @@ export type LayerName = Exclude<FileLayer, 'wiring' | 'unlayered'>;
 
 /** What a platform file is for, by folder (ADR 0006 §7.6). */
 export type PlatformRole =
-  | 'pure'
-  | 'pipeline'
-  | 'port'
-  | 'adapter'
-  | 'scheduling'
-  | 'config'
-  | 'generated';
+  'pure' | 'pipeline' | 'port' | 'adapter' | 'scheduling' | 'config' | 'generated';
 
 export const PLATFORM_ROLE_FOLDERS: readonly {
   /** Path prefix relative to `src/`. */
@@ -46,14 +40,9 @@ export const PLATFORM_PORT_SUFFIX = '.port.ts';
 export const INFRASTRUCTURE_FOLDER = 'infrastructure';
 
 /** Pure packages `domain/` may use; every I/O package stays banned. */
-export const ALLOWED_DOMAIN_PACKAGES: readonly string[] = [
-  'zod',
-  'sanitize-html',
-];
+export const ALLOWED_DOMAIN_PACKAGES: readonly string[] = ['zod', 'sanitize-html'];
 /** Deterministic Node built-ins `domain/` may use, limited to these names. */
-export const ALLOWED_DOMAIN_BUILTIN_IMPORTS: Readonly<
-  Record<string, readonly string[]>
-> = {
+export const ALLOWED_DOMAIN_BUILTIN_IMPORTS: Readonly<Record<string, readonly string[]>> = {
   'node:crypto': ['createHash', 'timingSafeEqual'],
   'node:util': ['isDeepStrictEqual'],
 };
@@ -224,12 +213,7 @@ const DOCUMENTS_REPOSITORY_CONTENT_ENGINE_FILES = [
   ['domain', 'ContentRowMapping.rules.ts'],
 ].map((parts) => join('modules', 'content-engine', ...parts));
 
-const GRAPHQL_PRINT_SCHEMA_FILE = join(
-  'modules',
-  'graphql',
-  'cli',
-  'PrintSchema.command.ts',
-);
+const GRAPHQL_PRINT_SCHEMA_FILE = join('modules', 'graphql', 'cli', 'PrintSchema.command.ts');
 
 export const LAYER_EXCEPTIONS: readonly LayerException[] = [
   ...[
@@ -253,12 +237,7 @@ export const LAYER_EXCEPTIONS: readonly LayerException[] = [
   })),
   {
     from: join('modules', 'media', 'adapters', 'PrismaMedia.repository.ts'),
-    importing: join(
-      'modules',
-      'content-engine',
-      'adapters',
-      'ContentDatabase.adapter.ts',
-    ),
+    importing: join('modules', 'content-engine', 'adapters', 'ContentDatabase.adapter.ts'),
     reason:
       'the media row filter is a Kysely expression, so the repository reads and updates file_library on the content database handle, like the documents repository',
   },
@@ -276,8 +255,7 @@ export const LAYER_EXCEPTIONS: readonly LayerException[] = [
   {
     from: join('modules', 'documents') + sep,
     importing: FIELD_PROJECTION_FILE,
-    reason:
-      'SPEC D3: documents reads the field projection by file, not through the access facade',
+    reason: 'SPEC D3: documents reads the field projection by file, not through the access facade',
   },
 ];
 

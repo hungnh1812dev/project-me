@@ -7,26 +7,30 @@ import type { Kysely } from 'kysely';
 import { Client } from 'pg';
 import request from 'supertest';
 
-import { inContentUnit } from '../fixtures/ContentUnit.fixture';
 import {
   openPrisma,
   type PrismaHandle,
 } from '../../src/infrastructure/database/PrismaClient.adapter';
+import { AccessPolicyService } from '../../src/modules/access/application/AccessPolicy.service';
 import { MASKED_FIELDS_KEY } from '../../src/modules/access/domain/Access.constants';
 import { createContentDb } from '../../src/modules/content-engine/adapters/ContentDatabase.adapter';
-import { ContentRegistry } from '../../src/modules/content-engine/application/ContentRegistry.service';
 import { KyselyContentRepository } from '../../src/modules/content-engine/adapters/KyselyContent.repository';
+import type { ContentDatabase } from '../../src/modules/content-engine/adapters/TreeLoader.adapter';
+import { ContentRegistry } from '../../src/modules/content-engine/application/ContentRegistry.service';
 import { ContentTypeRegistry } from '../../src/modules/content-engine/domain/ContentTypeRegistry.entity';
 import {
   emptySnapshot,
   planMigration,
 } from '../../src/modules/content-engine/domain/SqlGenerator.rules';
-import type { ContentDatabase } from '../../src/modules/content-engine/adapters/TreeLoader.adapter';
+import { DocumentsQueryService } from '../../src/modules/documents/application/DocumentsQuery.service';
 import { hashPassword } from '../../src/modules/identity/application/Password.service';
 import {
   ARTICLE_DEFINITION,
   NOTE_DEFINITION,
+  seedRolePermissions,
+  seedSystemRoles,
 } from '../fixtures/Access.fixture';
+import { inContentUnit } from '../fixtures/ContentUnit.fixture';
 import { createCoreTemplate } from '../fixtures/CoreDb.fixture';
 import {
   dbEnvOf,
@@ -39,12 +43,6 @@ import {
 } from '../fixtures/Env.fixture';
 import { startPostgres, type TestPostgres } from '../fixtures/Postgres.fixture';
 import { createTestApp } from '../fixtures/TestApp.fixture';
-import { AccessPolicyService } from '../../src/modules/access/application/AccessPolicy.service';
-import { DocumentsQueryService } from '../../src/modules/documents/application/DocumentsQuery.service';
-import {
-  seedRolePermissions,
-  seedSystemRoles,
-} from '../fixtures/Access.fixture';
 
 const PASSWORD = 'correct horse battery staple';
 const DOCUMENTS = '/api/v1/documents';
@@ -190,18 +188,11 @@ describe('GraphQL read API (GQ2; Postgres 17 via Testcontainers)', () => {
     await seedSystemRoles(db.prisma);
     await seedRolePermissions(db.prisma);
 
-    const registry = ContentTypeRegistry.fromDefinitions([
-      ARTICLE_DEFINITION,
-      NOTE_DEFINITION,
-    ]);
-    const definitions = registry
-      .slugs()
-      .map((slug) => registry.resolve(slug).definition);
+    const registry = ContentTypeRegistry.fromDefinitions([ARTICLE_DEFINITION, NOTE_DEFINITION]);
+    const definitions = registry.slugs().map((slug) => registry.resolve(slug).definition);
     const client = new Client({ connectionString: databaseUrl });
     await client.connect();
-    await client.query(
-      planMigration(emptySnapshot(), definitions).statements.join('\n'),
-    );
+    await client.query(planMigration(emptySnapshot(), definitions).statements.join('\n'));
     await client.end();
 
     content = createContentDb(databaseUrl);
@@ -331,10 +322,7 @@ describe('GraphQL read API (GQ2; Postgres 17 via Testcontainers)', () => {
     rank: number,
     permissions: JsonObject[],
   ): Promise<string> {
-    const created = await http()
-      .post(ROLES)
-      .set(bearer(owner))
-      .send({ slug, name: slug, rank });
+    const created = await http().post(ROLES).set(bearer(owner)).send({ slug, name: slug, rank });
     expect(created.status).toBe(201);
     const roleId = (created.body as { id: string }).id;
     await setPermissions(roleId, permissions);
@@ -358,10 +346,7 @@ describe('GraphQL read API (GQ2; Postgres 17 via Testcontainers)', () => {
     return (res.body as { token: string }).token;
   }
 
-  const gql = (
-    query: string,
-    options: { headers?: JsonObject; variables?: JsonObject } = {},
-  ) =>
+  const gql = (query: string, options: { headers?: JsonObject; variables?: JsonObject } = {}) =>
     http()
       .post(GRAPHQL)
       .set((options.headers ?? asAnonymous()) as Record<string, string>)
@@ -402,8 +387,7 @@ describe('GraphQL read API (GQ2; Postgres 17 via Testcontainers)', () => {
         meta: { page: number; pageSize: number; total: number };
       } | null
     )?.data ?? [];
-  const titles = (res: request.Response) =>
-    listOf(res).map((record) => record.title);
+  const titles = (res: request.Response) => listOf(res).map((record) => record.title);
   const sortTitle = { sort: [{ field: 'title' }] };
 
   /** The REST record re-shaped like the GraphQL selection. */
@@ -463,30 +447,20 @@ describe('GraphQL read API (GQ2; Postgres 17 via Testcontainers)', () => {
         variables: sortTitle,
       });
       const viaRest = await rest('?sort=title', bearer(token));
-      expect(listOf(viaGraphql)).toEqual(
-        (viaRest.body as Page).data.map(shaped),
-      );
+      expect(listOf(viaGraphql)).toEqual((viaRest.body as Page).data.map(shaped));
       expect(JSON.stringify(viaGraphql.body)).not.toContain('RAW');
       expect(listOf(viaGraphql)[0]?.body).toBe('***');
     });
 
     it('the item field equals the REST detail; a missing or draft-only id is null without error', async () => {
-      const item = (
-        id: string,
-        status = 'PUBLISHED',
-        headers = asAnonymous(),
-      ) =>
+      const item = (id: string, status = 'PUBLISHED', headers = asAnonymous()) =>
         gql(
           `query($id: ID!, $status: DocumentStatus) { article(documentId: $id, status: $status) { ${ARTICLE_FIELDS} } }`,
           { headers, variables: { id, status } },
         );
       const found = await item(ids.alpha);
-      const detail = await http()
-        .get(`${DOCUMENTS}/article/${ids.alpha}`)
-        .set(asAnonymous());
-      expect(bodyOf(found).data?.article).toEqual(
-        shaped(detail.body as DocRecord),
-      );
+      const detail = await http().get(`${DOCUMENTS}/article/${ids.alpha}`).set(asAnonymous());
+      expect(bodyOf(found).data?.article).toEqual(shaped(detail.body as DocRecord));
       for (const id of [randomUUID(), ids.draftOnly]) {
         const missing = await item(id);
         expect(missing.status).toBe(200);
@@ -494,9 +468,7 @@ describe('GraphQL read API (GQ2; Postgres 17 via Testcontainers)', () => {
       }
       const bad = await item('not-a-uuid');
       expect(bodyOf(bad).data).toEqual({ article: null });
-      expect(bodyOf(bad).errors?.[0]?.extensions.code).toBe(
-        'ACCESS_INVALID_REQUEST',
-      );
+      expect(bodyOf(bad).errors?.[0]?.extensions.code).toBe('ACCESS_INVALID_REQUEST');
     });
 
     it('applies row conditions: hidden rows are null and not in total', async () => {
@@ -506,19 +478,16 @@ describe('GraphQL read API (GQ2; Postgres 17 via Testcontainers)', () => {
         meta: { total: number };
       };
       expect(page.meta.total).toBe(1);
-      const hidden = await gql(
-        `{ article(documentId: "${ids.gamma}") { title } }`,
-        { headers: bearer(priorityThree) },
-      );
+      const hidden = await gql(`{ article(documentId: "${ids.gamma}") { title } }`, {
+        headers: bearer(priorityThree),
+      });
       expect(bodyOf(hidden)).toEqual({ data: { article: null } });
     });
 
     it('sorts by default like REST (newest updatedAt first) and honours filters and paging', async () => {
       const viaGraphql = await gql(LIST);
       const viaRest = await rest('');
-      expect(titles(viaGraphql)).toEqual(
-        (viaRest.body as Page).data.map((r) => r.values.title),
-      );
+      expect(titles(viaGraphql)).toEqual((viaRest.body as Page).data.map((r) => r.values.title));
       const filtered = await gql(LIST, {
         variables: {
           filter: { priority: { gte: 2 }, title: { contains: '100%' } },
@@ -548,9 +517,7 @@ describe('GraphQL read API (GQ2; Postgres 17 via Testcontainers)', () => {
         });
         expect(res.status).toBe(200);
         expect(bodyOf(res).data).toEqual({ articleList: null });
-        expect(bodyOf(res).errors?.[0]?.extensions.code).toBe(
-          'FIELD_NOT_READABLE',
-        );
+        expect(bodyOf(res).errors?.[0]?.extensions.code).toBe('FIELD_NOT_READABLE');
         expect(bodyOf(res).errors?.[0]?.extensions.requestId).toBeDefined();
       }
     });
@@ -580,27 +547,16 @@ describe('GraphQL read API (GQ2; Postgres 17 via Testcontainers)', () => {
           })),
         },
       ],
-      [
-        'a repeated sort key',
-        { sort: [{ field: 'title' }, { field: 'title' }] },
-      ],
+      ['a repeated sort key', { sort: [{ field: 'title' }, { field: 'title' }] }],
       ['an empty in list', { filter: { title: { in: [] } } }],
-      [
-        'too many in values',
-        { filter: { title: { in: Array.from({ length: 21 }, () => 'x') } } },
-      ],
+      ['too many in values', { filter: { title: { in: Array.from({ length: 21 }, () => 'x') } } }],
       ['a too long value', { filter: { title: { eq: 'x'.repeat(256) } } }],
-    ])(
-      '%s is ACCESS_INVALID_REQUEST before any SQL',
-      async (_name, variables) => {
-        const res = await gql(LIST, { variables });
-        expect(res.status).toBe(200);
-        expect(bodyOf(res).data).toEqual({ articleList: null });
-        expect(bodyOf(res).errors?.[0]?.extensions.code).toBe(
-          'ACCESS_INVALID_REQUEST',
-        );
-      },
-    );
+    ])('%s is ACCESS_INVALID_REQUEST before any SQL', async (_name, variables) => {
+      const res = await gql(LIST, { variables });
+      expect(res.status).toBe(200);
+      expect(bodyOf(res).data).toEqual({ articleList: null });
+      expect(bodyOf(res).errors?.[0]?.extensions.code).toBe('ACCESS_INVALID_REQUEST');
+    });
 
     it('a rejected variable never echoes the submitted value', async () => {
       const res = await gql(LIST, {
@@ -614,21 +570,16 @@ describe('GraphQL read API (GQ2; Postgres 17 via Testcontainers)', () => {
     it('parse and validation errors are 400 without data', async () => {
       const parse = await gql('{ articleList { ');
       expect(parse.status).toBe(400);
-      expect(bodyOf(parse).errors?.[0]?.extensions.code).toBe(
-        'GRAPHQL_PARSE_FAILED',
-      );
+      expect(bodyOf(parse).errors?.[0]?.extensions.code).toBe('GRAPHQL_PARSE_FAILED');
       const invalid = await gql('{ articleList { nope } }');
       expect(invalid.status).toBe(400);
       expect(bodyOf(invalid).data).toBeUndefined();
-      expect(bodyOf(invalid).errors?.[0]?.extensions.code).toBe(
-        'GRAPHQL_VALIDATION_FAILED',
-      );
+      expect(bodyOf(invalid).errors?.[0]?.extensions.code).toBe('GRAPHQL_VALIDATION_FAILED');
     });
   });
 
   describe('hidden = unknown', () => {
-    const MESSAGE = (name: string) =>
-      `Cannot query field "${name}" on type "Query".`;
+    const MESSAGE = (name: string) => `Cannot query field "${name}" on type "Query".`;
 
     it('a type the role cannot read fails exactly like an unknown field', async () => {
       const hidden = await gql('{ articleList { meta { total } } }', {
@@ -766,9 +717,7 @@ describe('GraphQL read API (GQ2; Postgres 17 via Testcontainers)', () => {
         headers: bearer(token),
       });
       expect(before.status).toBe(200);
-      await setPermissions(roleId, [
-        { subject: 'api_tokens', action: 'create' },
-      ]);
+      await setPermissions(roleId, [{ subject: 'api_tokens', action: 'create' }]);
       const after = await gql('{ articleList { meta { total } } }', {
         headers: bearer(token),
       });
@@ -805,9 +754,7 @@ describe('GraphQL read API (GQ2; Postgres 17 via Testcontainers)', () => {
       expect(batch.status).toBe(400);
       const missing = await http().post(GRAPHQL).set(asAnonymous()).send({});
       expect(missing.status).toBe(400);
-      expect((missing.body as { errorCode: string }).errorCode).toBe(
-        'ACCESS_INVALID_REQUEST',
-      );
+      expect((missing.body as { errorCode: string }).errorCode).toBe('ACCESS_INVALID_REQUEST');
       expect((await http().get(GRAPHQL).set(asAnonymous())).status).toBe(404);
     });
 
@@ -827,9 +774,7 @@ describe('GraphQL read API (GQ2; Postgres 17 via Testcontainers)', () => {
       const limited = await gql(query, { headers });
       expect(limited.status).toBe(429);
       expect(limited.headers['retry-after']).toBeDefined();
-      expect((limited.body as { errorCode: string }).errorCode).toBe(
-        'TOO_MANY_REQUESTS',
-      );
+      expect((limited.body as { errorCode: string }).errorCode).toBe('TOO_MANY_REQUESTS');
     });
 
     it('does not count signed-in requests', async () => {
@@ -907,39 +852,33 @@ describe('GraphQL read API (GQ2; Postgres 17 via Testcontainers)', () => {
       const { port } = server.address() as AddressInfo;
       const query = '{ articleList(pageSize: 1) { meta { total } } }';
       const body = JSON.stringify({ query: query + ' '.repeat(50 * 1024) });
-      const answer = await new Promise<{ status: number; text: string }>(
-        (resolve, reject) => {
-          const req = httpRequest(
-            {
-              port,
-              method: 'POST',
-              path: GRAPHQL,
-              headers: {
-                'Content-Type': 'application/json',
-                'Transfer-Encoding': 'chunked',
-                'X-Forwarded-For': nextIp(),
-              },
+      const answer = await new Promise<{ status: number; text: string }>((resolve, reject) => {
+        const req = httpRequest(
+          {
+            port,
+            method: 'POST',
+            path: GRAPHQL,
+            headers: {
+              'Content-Type': 'application/json',
+              'Transfer-Encoding': 'chunked',
+              'X-Forwarded-For': nextIp(),
             },
-            (res) => {
-              let text = '';
-              res.on('data', (chunk: Buffer) => (text += chunk.toString()));
-              res.on('end', () =>
-                resolve({ status: res.statusCode ?? 0, text }),
-              );
-            },
-          );
-          req.on('error', reject);
-          const half = Math.floor(body.length / 2);
-          req.write(body.slice(0, half));
-          req.end(body.slice(half));
-        },
-      );
+          },
+          (res) => {
+            let text = '';
+            res.on('data', (chunk: Buffer) => (text += chunk.toString()));
+            res.on('end', () => resolve({ status: res.statusCode ?? 0, text }));
+          },
+        );
+        req.on('error', reject);
+        const half = Math.floor(body.length / 2);
+        req.write(body.slice(0, half));
+        req.end(body.slice(half));
+      });
       expect(answer.status).toBe(413);
-      expect(
-        (JSON.parse(answer.text) as GqlBody).errors?.map(
-          (e) => e.extensions.code,
-        ),
-      ).toEqual(['PAYLOAD_TOO_LARGE']);
+      expect((JSON.parse(answer.text) as GqlBody).errors?.map((e) => e.extensions.code)).toEqual([
+        'PAYLOAD_TOO_LARGE',
+      ]);
       await new Promise((resolve) => setTimeout(resolve, 200));
       expect(list).not.toHaveBeenCalled();
       expect(policy).not.toHaveBeenCalled();
@@ -965,26 +904,21 @@ describe('GraphQL read API (GQ2; Postgres 17 via Testcontainers)', () => {
         'field nodes',
         `{ articleList { data { ${Array.from({ length: LIMITS.nodes }, (_, i) => `f${i}: title`).join(' ')} } } }`,
       ],
-    ])(
-      '%s overflow is 400 GRAPHQL_LIMIT_EXCEEDED and runs no read',
-      async (_n, query) => {
-        const { list, policy } = spies();
-        const res = await gql(query);
-        expect(res.status).toBe(400);
-        expect(bodyOf(res).data).toBeUndefined();
-        expect(code(res)).toEqual(['GRAPHQL_LIMIT_EXCEEDED']);
-        expect(list).not.toHaveBeenCalled();
-        expect(policy).not.toHaveBeenCalled();
-      },
-    );
+    ])('%s overflow is 400 GRAPHQL_LIMIT_EXCEEDED and runs no read', async (_n, query) => {
+      const { list, policy } = spies();
+      const res = await gql(query);
+      expect(res.status).toBe(400);
+      expect(bodyOf(res).data).toBeUndefined();
+      expect(code(res)).toEqual(['GRAPHQL_LIMIT_EXCEEDED']);
+      expect(list).not.toHaveBeenCalled();
+      expect(policy).not.toHaveBeenCalled();
+    });
 
     it('five aliased root fields pass and are all read', async () => {
       const query = `{ ${Array.from({ length: LIMITS.rootFields }, (_, i) => `r${i}: articleList(pageSize: 1) { meta { total } }`).join(' ')} }`;
       const res = await gql(query);
       expect(res.status).toBe(200);
-      expect(Object.keys(bodyOf(res).data ?? {})).toHaveLength(
-        LIMITS.rootFields,
-      );
+      expect(Object.keys(bodyOf(res).data ?? {})).toHaveLength(LIMITS.rootFields);
     });
 
     it('the full article query with a component passes every limit', async () => {
@@ -998,26 +932,17 @@ describe('GraphQL read API (GQ2; Postgres 17 via Testcontainers)', () => {
 
   describe('production hardening', () => {
     const prodGql = (query: string) =>
-      request(prodApp.getHttpServer())
-        .post(GRAPHQL)
-        .set(asAnonymous())
-        .send({ query });
+      request(prodApp.getHttpServer()).post(GRAPHQL).set(asAnonymous()).send({ query });
 
     it('refuses introspection in production and allows it in the test config', async () => {
       const query = '{ __schema { queryType { name } } }';
       const prod = await prodGql(query);
       expect(prod.status).toBe(400);
       expect(bodyOf(prod).data).toBeUndefined();
-      expect(bodyOf(prod).errors?.[0]?.extensions.code).toBe(
-        'GRAPHQL_VALIDATION_FAILED',
-      );
+      expect(bodyOf(prod).errors?.[0]?.extensions.code).toBe('GRAPHQL_VALIDATION_FAILED');
       expect((await gql(query)).status).toBe(200);
-      expect((await gql('{ __type(name: "Article") { name } }')).status).toBe(
-        200,
-      );
-      expect(
-        (await prodGql('{ __type(name: "Article") { name } }')).status,
-      ).toBe(400);
+      expect((await gql('{ __type(name: "Article") { name } }')).status).toBe(200);
+      expect((await prodGql('{ __type(name: "Article") { name } }')).status).toBe(400);
     });
 
     it('strips "Did you mean" suggestions in production only', async () => {
@@ -1029,9 +954,7 @@ describe('GraphQL read API (GQ2; Postgres 17 via Testcontainers)', () => {
 
     it('serves no playground or GET page', async () => {
       for (const server of [app, prodApp]) {
-        const res = await request(server.getHttpServer())
-          .get(GRAPHQL)
-          .set(asAnonymous());
+        const res = await request(server.getHttpServer()).get(GRAPHQL).set(asAnonymous());
         expect(res.status).toBe(404);
       }
     });

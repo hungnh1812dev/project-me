@@ -39,18 +39,14 @@ export const SYSTEM_ROLES = [
     name: 'Public',
     rank: 0,
     assignable: false,
-    defaultPermissions: [
-      { subject: CONTENT_WILDCARD_SUBJECT, actions: [PermissionAction.read] },
-    ],
+    defaultPermissions: [{ subject: CONTENT_WILDCARD_SUBJECT, actions: [PermissionAction.read] }],
   },
   {
     slug: 'guest',
     name: 'Guest',
     rank: 10,
     assignable: true,
-    defaultPermissions: [
-      { subject: CONTENT_WILDCARD_SUBJECT, actions: [PermissionAction.read] },
-    ],
+    defaultPermissions: [{ subject: CONTENT_WILDCARD_SUBJECT, actions: [PermissionAction.read] }],
   },
   {
     slug: 'reviewer',
@@ -80,11 +76,7 @@ export const SYSTEM_ROLES = [
       },
       {
         subject: 'media',
-        actions: [
-          PermissionAction.read,
-          PermissionAction.create,
-          PermissionAction.update,
-        ],
+        actions: [PermissionAction.read, PermissionAction.create, PermissionAction.update],
       },
     ],
   },
@@ -139,13 +131,12 @@ export const SENSITIVE_MASKED_ROLE_SLUGS: readonly SystemRoleSlug[] = [
  * Signed-in system roles that, like anonymous visitors and reviewers, never
  * see `createdBy` / `updatedBy` (read-only readers, user decision 2026-10-27).
  */
-export const ACCOUNT_REFERENCES_HIDDEN_ROLE_SLUGS: readonly SystemRoleSlug[] = [
-  GUEST_ROLE_SLUG,
-];
+export const ACCOUNT_REFERENCES_HIDDEN_ROLE_SLUGS: readonly SystemRoleSlug[] = [GUEST_ROLE_SLUG];
 
 /** System roles an invited account may never hold. */
-export const UNASSIGNABLE_ROLE_SLUGS: readonly SystemRoleSlug[] =
-  SYSTEM_ROLES.filter((role) => !role.assignable).map((role) => role.slug);
+export const UNASSIGNABLE_ROLE_SLUGS: readonly SystemRoleSlug[] = SYSTEM_ROLES.filter(
+  (role) => !role.assignable,
+).map((role) => role.slug);
 
 /** Default rows per system role, seeded by `seedRolePermissions`. */
 export const DEFAULT_ROLE_PERMISSIONS = Object.fromEntries(

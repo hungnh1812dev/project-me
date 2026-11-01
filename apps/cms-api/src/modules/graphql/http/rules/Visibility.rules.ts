@@ -3,8 +3,8 @@ import { GraphQLError, type ASTVisitor, type ValidationContext } from 'graphql';
 import {
   GRAPHQL_MESSAGES,
   ROOT_FIELD_EXTENSION_KEY,
+  type RootFieldExtension,
 } from '../../application/Graphql.constants';
-import type { RootFieldExtension } from '../../application/Graphql.constants';
 
 /**
  * Hidden = unknown (SPEC D18, as in the REST content types API): a root field of a content
@@ -26,12 +26,9 @@ export function ContentTypeVisibilityRule(
       ] as RootFieldExtension | undefined;
       if (extension === undefined || canRead(extension.slug)) return;
       context.reportError(
-        new GraphQLError(
-          GRAPHQL_MESSAGES.UNKNOWN_QUERY_FIELD(node.name.value),
-          {
-            nodes: node,
-          },
-        ),
+        new GraphQLError(GRAPHQL_MESSAGES.UNKNOWN_QUERY_FIELD(node.name.value), {
+          nodes: node,
+        }),
       );
     },
   });

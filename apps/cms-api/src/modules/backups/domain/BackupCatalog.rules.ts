@@ -45,9 +45,7 @@ function timestampOf(fileName: string): Date | null {
     number,
     number,
   ];
-  const date = new Date(
-    Date.UTC(year, month - MONTH_OFFSET, day, hour, minute, second),
-  );
+  const date = new Date(Date.UTC(year, month - MONTH_OFFSET, day, hour, minute, second));
   const isRealInstant =
     date.getUTCFullYear() === year &&
     date.getUTCMonth() === month - MONTH_OFFSET &&
@@ -62,10 +60,7 @@ function timestampOf(fileName: string): Date | null {
  * `<prefix><kind>/<file name>` or null. Anything else, including a key outside
  * the prefix or with `..` or extra folders, is not a backup.
  */
-export function parseBackupKey(
-  key: string,
-  prefix: string,
-): BackupEntry | null {
+export function parseBackupKey(key: string, prefix: string): BackupEntry | null {
   if (!key.startsWith(prefix)) return null;
   const parts = key.slice(prefix.length).split(KEY_SEPARATOR);
   if (parts.length !== KEY_PARTS) return null;
@@ -75,12 +70,8 @@ export function parseBackupKey(
   return createdAt === null ? null : { key, kind, fileName, createdAt };
 }
 
-export function sortNewestFirst<T extends { createdAt: Date }>(
-  entries: readonly T[],
-): T[] {
-  return [...entries].sort(
-    (a, b) => b.createdAt.getTime() - a.createdAt.getTime(),
-  );
+export function sortNewestFirst<T extends { createdAt: Date }>(entries: readonly T[]): T[] {
+  return [...entries].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
 }
 
 /** `isStale` is true when no `daily` dump is newer than the limit, or none exists. */
@@ -95,9 +86,7 @@ export function summarizeBackups(
     totalBytes: entries.reduce((sum, entry) => sum + entry.sizeBytes, 0),
     latestAt: latest?.createdAt ?? null,
     isStale: !entries.some(
-      (entry) =>
-        entry.kind === NIGHTLY_BACKUP_KIND &&
-        entry.createdAt.getTime() >= staleBeforeMs,
+      (entry) => entry.kind === NIGHTLY_BACKUP_KIND && entry.createdAt.getTime() >= staleBeforeMs,
     ),
   };
 }

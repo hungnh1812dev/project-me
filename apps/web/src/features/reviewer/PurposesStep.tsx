@@ -1,11 +1,8 @@
 import { CheckboxInput, TextInput } from '@abyss/form-commons';
 import { useFormContext, useWatch } from 'react-hook-form';
 
-import { COPY } from '../../config/Copy.constants';
-import {
-  REVIEWER_INPUT_LIMITS,
-  REVIEWER_PURPOSE_TAGS,
-} from '../../config/Reviewer.constants';
+import { COPY } from '../../configs/Copy.constants';
+import { REVIEWER_INPUT_LIMITS, REVIEWER_PURPOSE_TAGS } from '../../configs/Reviewer.constants';
 import type { ReviewerFormValues } from './Reviewer.form';
 
 const copy = COPY.reviewer;
@@ -19,21 +16,12 @@ export function PurposesStep({ isActive }: { isActive: boolean }) {
 
   return (
     <fieldset hidden={!isActive} className="m-0 grid gap-3 border-0 p-0">
-      <legend className="mb-1 p-0 text-sm font-medium">
-        {copy.purposes.legend}
-      </legend>
-      <p className="m-0 text-sm text-muted-foreground">{copy.purposes.hint}</p>
+      <legend className="mb-1 p-0 text-sm font-medium">{copy.purposes.legend}</legend>
+      <p className="text-muted-foreground m-0 text-sm">{copy.purposes.hint}</p>
       {REVIEWER_PURPOSE_TAGS.map((tag, index) => (
-        <CheckboxInput<ReviewerFormValues>
-          key={tag}
-          name={`purposeChecks.${index}`}
-          label={tag}
-        />
+        <CheckboxInput<ReviewerFormValues> key={tag} name={`purposeChecks.${index}`} label={tag} />
       ))}
-      <CheckboxInput<ReviewerFormValues>
-        name="purposeOtherChecked"
-        label={copy.purposes.other}
-      />
+      <CheckboxInput<ReviewerFormValues> name="purposeOtherChecked" label={copy.purposes.other} />
       {isOtherPurposeChecked ? (
         <TextInput<ReviewerFormValues>
           name="purposeOther"
@@ -41,8 +29,7 @@ export function PurposesStep({ isActive }: { isActive: boolean }) {
           maxLength={REVIEWER_INPUT_LIMITS.PURPOSE_TAG_MAX_LENGTH}
           rules={{
             validate: (value) =>
-              String(value).trim() !== '' ||
-              copy.validation.purposeOtherRequired,
+              String(value).trim() !== '' || copy.validation.purposeOtherRequired,
           }}
         />
       ) : null}

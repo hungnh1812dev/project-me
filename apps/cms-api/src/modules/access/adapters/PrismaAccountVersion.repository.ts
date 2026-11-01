@@ -1,10 +1,7 @@
 import { Injectable } from '@nestjs/common';
 
 import { PrismaService } from '../../../infrastructure/database/Prisma.service';
-import type {
-  AccountVersions,
-  AccountVersionSource,
-} from '../application/Access.port';
+import type { AccountVersions, AccountVersionSource } from '../application/Access.port';
 
 @Injectable()
 export class PrismaAccountVersionRepository implements AccountVersionSource {

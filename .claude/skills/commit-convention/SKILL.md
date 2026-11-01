@@ -1,6 +1,6 @@
 ---
 name: commit-convention
-description: Commit rules for this monorepo - always ask the user before committing, conventional prefix, apps/packages in the scope and body, no Co-Authored-By or AI attribution. Use whenever proposing or making a git commit.
+description: Commit rules for any repo (monorepo or single package) - always ask the user before committing, conventional prefix, bare app/package names in the scope, no file or Affected list in the message, no Co-Authored-By or AI attribution. Use whenever proposing or making a git commit.
 ---
 
 # Commit Convention
@@ -18,20 +18,21 @@ description: Commit rules for this monorepo - always ask the user before committ
 <type>(<scope>): <subject>
 
 <body: what changed and why, wrapped at ~72 chars>
-
-Affected:
-- apps/<name>
-- packages/<name>
 ```
 
 ### type
 `feat` · `fix` · `refactor` · `perf` · `test` · `docs` · `style` (formatting only) · `chore` · `build` · `ci` · `revert`
 
-### scope: the apps/packages touched
-- One target: `feat(apps/web): add invoice filter bar`
-- Several: `fix(apps/web,packages/ui): correct disabled button contrast`
-- More than three: use the most important one in the scope and list all of them under `Affected:`.
+### scope: the apps/packages touched, by bare name
+Use the folder name only (`api`, not `apps/api`). A single-package repo: the top-level area touched (`auth`, `cli`), or no scope.
+- One target: `feat(web): add invoice filter bar`
+- Several: `fix(web,ui): correct disabled button contrast`
+- More than three: use the most important one in the scope and name the others in the body.
 - Root-level config only: `chore(root): add prettier config`
+
+No `Affected:` or file list in the message: the scope already names the
+targets, and `git log --stat` shows the files. Show the file list only to
+the user when asking.
 
 ### subject
 Imperative mood, lower case, no trailing period, ≤ 72 chars including the prefix.

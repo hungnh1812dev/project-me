@@ -13,17 +13,14 @@ const EQUALITY_OPERATORS = new Set([
 ]);
 
 function stringLiteralText(node: ts.Node): string | null {
-  return ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node)
-    ? node.text
-    : null;
+  return ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node) ? node.text : null;
 }
 
 /** `typeof x === 'string'` compares a JS type, not a field type. */
 function isTypeofOperand(literal: ts.Node): boolean {
   const comparison = literal.parent;
   if (!ts.isBinaryExpression(comparison)) return false;
-  const other =
-    comparison.left === literal ? comparison.right : comparison.left;
+  const other = comparison.left === literal ? comparison.right : comparison.left;
   return ts.isTypeOfExpression(other);
 }
 
@@ -32,16 +29,8 @@ function isTypeofOperand(literal: ts.Node): boolean {
  * literal is one of `types`, except `typeof` checks. Branching on a field type belongs to the
  * field-type registry.
  */
-export function findFieldTypeBranches(
-  code: string,
-  types: readonly string[],
-): FieldTypeBranch[] {
-  const source = ts.createSourceFile(
-    'file.ts',
-    code,
-    ts.ScriptTarget.Latest,
-    true,
-  );
+export function findFieldTypeBranches(code: string, types: readonly string[]): FieldTypeBranch[] {
+  const source = ts.createSourceFile('file.ts', code, ts.ScriptTarget.Latest, true);
   const found: FieldTypeBranch[] = [];
   const check = (literal: ts.Node) => {
     if (isTypeofOperand(literal)) return;
@@ -54,10 +43,7 @@ export function findFieldTypeBranches(
   };
   const visit = (node: ts.Node) => {
     if (ts.isCaseClause(node)) check(node.expression);
-    if (
-      ts.isBinaryExpression(node) &&
-      EQUALITY_OPERATORS.has(node.operatorToken.kind)
-    ) {
+    if (ts.isBinaryExpression(node) && EQUALITY_OPERATORS.has(node.operatorToken.kind)) {
       check(node.left);
       check(node.right);
     }

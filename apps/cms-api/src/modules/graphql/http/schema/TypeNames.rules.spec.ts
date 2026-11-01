@@ -1,9 +1,4 @@
-import {
-  camelCase,
-  componentTypeName,
-  pascalCase,
-  rootNamesOf,
-} from './TypeNames.rules';
+import { camelCase, componentTypeName, pascalCase, rootNamesOf } from './TypeNames.rules';
 
 describe('type names', () => {
   it('converts slugs and field names', () => {
@@ -29,8 +24,6 @@ describe('type names', () => {
   it('joins component paths with underscores', () => {
     const experience = componentTypeName('CvPage', 'experience');
     expect(experience).toBe('CvPage_Experience');
-    expect(componentTypeName(experience, 'role')).toBe(
-      'CvPage_Experience_Role',
-    );
+    expect(componentTypeName(experience, 'role')).toBe('CvPage_Experience_Role');
   });
 });

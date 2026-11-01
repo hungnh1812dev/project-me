@@ -4,27 +4,21 @@ import { join, resolve } from 'node:path';
 
 import { z } from 'zod';
 
+import { ContentEngineError } from '../domain/ContentDocument.entity';
+import { HASH_ALGORITHM, SNAPSHOT_FORMAT_VERSION } from '../domain/ContentEngine.constants';
+import type { ContentTypeDefinition } from '../domain/DefinitionSchema.rules';
+import { formatDefinitionPath, validateDefinitions } from '../domain/DefinitionValidator.rules';
+import {
+  emptySnapshot,
+  hashDefinition,
+  type DefinitionSnapshot,
+} from '../domain/SqlGenerator.rules';
 import {
   MIGRATION_FILE_PATTERN,
   MIGRATION_SEQUENCE_DIGITS,
   MIGRATION_SNAPSHOT_FILE,
   SCHEMA_FILE_EXTENSION,
 } from './ContentDatabase.adapter';
-import {
-  HASH_ALGORITHM,
-  SNAPSHOT_FORMAT_VERSION,
-} from '../domain/ContentEngine.constants';
-import { ContentEngineError } from '../domain/ContentDocument.entity';
-import type { ContentTypeDefinition } from '../domain/DefinitionSchema.rules';
-import {
-  formatDefinitionPath,
-  validateDefinitions,
-} from '../domain/DefinitionValidator.rules';
-import {
-  type DefinitionSnapshot,
-  emptySnapshot,
-  hashDefinition,
-} from '../domain/SqlGenerator.rules';
 
 /** File-system side of the content engine CLIs (schemas in, migrations out). */
 
@@ -50,12 +44,7 @@ export const DEFAULT_CONTENT_PATHS = {
 
 /** No `instanceof Error`: fs errors can come from another realm (e.g. Jest). */
 function isMissing(error: unknown): boolean {
-  return (
-    typeof error === 'object' &&
-    error !== null &&
-    'code' in error &&
-    error.code === 'ENOENT'
-  );
+  return typeof error === 'object' && error !== null && 'code' in error && error.code === 'ENOENT';
 }
 
 export function checksumOf(text: string): string {
@@ -66,9 +55,7 @@ export function checksumOf(text: string): string {
  * Reads and validates every `<slug>.json` in `schemasDir`. Errors name the
  * file and the JSON path.
  */
-export async function loadDefinitions(
-  schemasDir: string,
-): Promise<ContentTypeDefinition[]> {
+export async function loadDefinitions(schemasDir: string): Promise<ContentTypeDefinition[]> {
   const files = (await readdir(schemasDir))
     .filter((file) => file.endsWith(SCHEMA_FILE_EXTENSION))
     .sort();
@@ -90,9 +77,7 @@ export async function loadDefinitions(
       const file = typeof index === 'number' ? files[index] : undefined;
       return `${file ?? '?'} ${formatDefinitionPath(path)} [${error.rule}] ${error.message}`;
     });
-    throw new ContentEngineError(
-      `Invalid content type definitions:\n- ${lines.join('\n- ')}`,
-    );
+    throw new ContentEngineError(`Invalid content type definitions:\n- ${lines.join('\n- ')}`);
   }
 
   const definitions = validation.definitions.map((entry) => entry.definition);
@@ -108,9 +93,7 @@ export async function loadDefinitions(
 }
 
 /** Ordered migrations in `migrationsDir` (missing dir = none). */
-export async function listMigrations(
-  migrationsDir: string,
-): Promise<MigrationFile[]> {
+export async function listMigrations(migrationsDir: string): Promise<MigrationFile[]> {
   let entries: string[];
   try {
     entries = await readdir(migrationsDir);
@@ -151,19 +134,14 @@ export function migrationFileName(sequence: number, label: string): string {
 
 const snapshotSchema = z.strictObject({
   formatVersion: z.literal(SNAPSHOT_FORMAT_VERSION),
-  contentTypes: z.record(
-    z.string(),
-    z.strictObject({ hash: z.string(), definition: z.unknown() }),
-  ),
+  contentTypes: z.record(z.string(), z.strictObject({ hash: z.string(), definition: z.unknown() })),
 });
 
 /**
  * Reads `snapshot.json` and re-validates every definition in it, so a
  * hand-edited snapshot can never inject an unchecked name into DDL.
  */
-export async function readSnapshot(
-  migrationsDir: string,
-): Promise<DefinitionSnapshot> {
+export async function readSnapshot(migrationsDir: string): Promise<DefinitionSnapshot> {
   let text: string;
   try {
     text = await readFile(join(migrationsDir, MIGRATION_SNAPSHOT_FILE), UTF8);
@@ -187,20 +165,14 @@ export async function readSnapshot(
     slugs.map((slug) => parsed.data.contentTypes[slug]?.definition),
   );
   if (!validation.ok) {
-    throw new ContentEngineError(
-      `${MIGRATION_SNAPSHOT_FILE}: contains an invalid definition`,
-    );
+    throw new ContentEngineError(`${MIGRATION_SNAPSHOT_FILE}: contains an invalid definition`);
   }
 
   const snapshot = emptySnapshot();
   validation.definitions.forEach(({ definition }, index) => {
     const key = slugs[index];
-    const stored =
-      key === undefined ? undefined : parsed.data.contentTypes[key];
-    if (
-      key !== definition.slug ||
-      stored?.hash !== hashDefinition(definition)
-    ) {
+    const stored = key === undefined ? undefined : parsed.data.contentTypes[key];
+    if (key !== definition.slug || stored?.hash !== hashDefinition(definition)) {
       throw new ContentEngineError(
         `${MIGRATION_SNAPSHOT_FILE}: entry "${key}" does not match its definition`,
       );

@@ -1,6 +1,6 @@
 import { AxiosError } from 'axios';
 
-import { COPY } from '../../config/Copy.constants';
+import { COPY } from '../../configs/Copy.constants';
 import { PrivilegedAccessError } from '../session';
 import { credentialAlertOf, loginErrorAlertOf } from './LoginAlerts.rules';
 
@@ -17,19 +17,19 @@ describe('loginErrorAlertOf', () => {
   });
 
   it('maps any other error through its failure', () => {
-    expect(
-      loginErrorAlertOf(new AxiosError('down'), (failure) => failure.kind),
-    ).toBe('network');
+    expect(loginErrorAlertOf(new AxiosError('down'), (failure) => failure.kind)).toBe('network');
   });
 });
 
 describe('credentialAlertOf', () => {
   it('reads a 4xx as incorrect credentials and a 5xx as unexpected', () => {
-    expect(
-      credentialAlertOf({ kind: 'http', status: 401, errorCode: undefined }),
-    ).toEqual({ tone: 'error', message: errors.invalidCredentials });
-    expect(
-      credentialAlertOf({ kind: 'http', status: 500, errorCode: undefined }),
-    ).toEqual({ tone: 'error', message: errors.unexpected });
+    expect(credentialAlertOf({ kind: 'http', status: 401, errorCode: undefined })).toEqual({
+      tone: 'error',
+      message: errors.invalidCredentials,
+    });
+    expect(credentialAlertOf({ kind: 'http', status: 500, errorCode: undefined })).toEqual({
+      tone: 'error',
+      message: errors.unexpected,
+    });
   });
 });

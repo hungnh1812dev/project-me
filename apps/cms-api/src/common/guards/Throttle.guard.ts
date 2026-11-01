@@ -2,41 +2,38 @@ import { createHash } from 'node:crypto';
 
 import {
   applyDecorators,
-  type CanActivate,
-  type ExecutionContext,
   HttpException,
   HttpStatus,
   Inject,
   Injectable,
   SetMetadata,
   UseGuards,
+  type CanActivate,
+  type ExecutionContext,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import type { Request, Response } from 'express';
 
 import { type IAppConfig } from '../../config/AppConfig.setup';
 import { APP_CONFIG } from '../../config/Config.constants';
-import { ClientIpResolver } from '../http/ClientIp.resolver';
-import { Clock } from '../time/Clock.service';
-import { MS_PER_SECOND } from '../constants/Time.constants';
 import { ERROR_CODES } from '../constants/Error.constants';
 import {
   RATE_LIMIT_KEY_HASH_ALGORITHM,
   RATE_LIMIT_KEY_SOURCES,
   RATE_LIMIT_MESSAGE,
-  type RateLimitPolicy,
-  type RateLimitRule,
   RETRY_AFTER_HEADER,
   RETRY_AFTER_MIN_SECONDS,
+  type RateLimitPolicy,
+  type RateLimitRule,
 } from '../constants/Limits.constants';
-import {
-  RATE_LIMIT_STORE,
-  type RateLimitStore,
-} from '../rate-limit/RateLimit.store';
+import { MS_PER_SECOND } from '../constants/Time.constants';
+import { ClientIpResolver } from '../http/ClientIp.resolver';
+import { RATE_LIMIT_STORE, type RateLimitStore } from '../rate-limit/RateLimit.store';
 import {
   THROTTLE_SUBJECT_RESOLVER,
   type ThrottleSubjectResolver,
 } from '../rate-limit/ThrottleSubject.port';
+import { Clock } from '../time/Clock.service';
 
 export const RATE_LIMIT_POLICY_METADATA = 'abyss:rate-limit-policy';
 
@@ -46,10 +43,7 @@ export const RATE_LIMIT_POLICY_METADATA = 'abyss:rate-limit-policy';
  * so it runs before the route's other guards.
  */
 export function Throttle(policy: RateLimitPolicy): MethodDecorator {
-  return applyDecorators(
-    SetMetadata(RATE_LIMIT_POLICY_METADATA, policy),
-    UseGuards(ThrottleGuard),
-  );
+  return applyDecorators(SetMetadata(RATE_LIMIT_POLICY_METADATA, policy), UseGuards(ThrottleGuard));
 }
 
 /**
@@ -65,9 +59,7 @@ function emailKeyOf(req: Request): string | undefined {
   if (typeof email !== 'string') return undefined;
   const normalized = email.trim().toLowerCase();
   if (normalized === '') return undefined;
-  return createHash(RATE_LIMIT_KEY_HASH_ALGORITHM)
-    .update(normalized)
-    .digest('hex');
+  return createHash(RATE_LIMIT_KEY_HASH_ALGORITHM).update(normalized).digest('hex');
 }
 
 function counterKeyOf(
@@ -116,18 +108,10 @@ export class ThrottleGuard implements CanActivate {
     const http = context.switchToHttp();
     const req = http.getRequest<Request>();
     for (const rule of rules) {
-      const counterKey = counterKeyOf(
-        rule,
-        req,
-        this.clientIp,
-        this.subjectResolver,
-      );
+      const counterKey = counterKeyOf(rule, req, this.clientIp, this.subjectResolver);
       if (counterKey === undefined) continue;
 
-      const hit = await this.store.hit(
-        `${rule.name}:${counterKey}`,
-        rule.windowMs,
-      );
+      const hit = await this.store.hit(`${rule.name}:${counterKey}`, rule.windowMs);
       // A refused hit (store at capacity) answers exactly like a limit hit.
       if (hit.isRefused === true || hit.count > this.limitOf(rule)) {
         this.reject(http.getResponse<Response>(), hit.resetAt);
@@ -139,10 +123,7 @@ export class ThrottleGuard implements CanActivate {
   /** The default limit, unless the config overrides the env key the rule declares. */
   private limitOf(rule: RateLimitRule): number {
     if (rule.limitOverrideEnvKey === undefined) return rule.maxHits;
-    return (
-      this.config.rateLimit.limitOverrides[rule.limitOverrideEnvKey] ??
-      rule.maxHits
-    );
+    return this.config.rateLimit.limitOverrides[rule.limitOverrideEnvKey] ?? rule.maxHits;
   }
 
   private reject(res: Response, resetAt: number): never {

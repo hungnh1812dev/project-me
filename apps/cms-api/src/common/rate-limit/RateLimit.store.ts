@@ -1,10 +1,10 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 
-import { Clock } from '../time/Clock.service';
 import {
   RATE_LIMIT_CAPACITY_WARN_INTERVAL_MS,
   RATE_LIMIT_SWEEP_INTERVAL_MS,
 } from '../constants/Limits.constants';
+import { Clock } from '../time/Clock.service';
 
 /** Counter state after one hit. */
 export interface RateLimitHit {

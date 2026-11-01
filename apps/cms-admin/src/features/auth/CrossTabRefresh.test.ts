@@ -1,5 +1,6 @@
-import { deferred } from '../../../test/FakeApi.fixture';
-import { fakeBus, fakeLocks } from '../../../test/FakeTabs.fixture';
+import { deferred } from '@test/FakeApi.fixture';
+import { fakeBus, fakeLocks } from '@test/FakeTabs.fixture';
+
 import { createCrossTabRefresh } from './CrossTabRefresh';
 
 const LOCK = 'test:refresh';
@@ -84,9 +85,7 @@ describe('createCrossTabRefresh', () => {
   });
 
   it('falls back to a plain refresh without Web Locks', async () => {
-    const refresh = vi.fn<() => Promise<string>>(() =>
-      Promise.resolve('access'),
-    );
+    const refresh = vi.fn<() => Promise<string>>(() => Promise.resolve('access'));
     const run = createCrossTabRefresh(refresh, { lockName: LOCK });
     expect(run).toBe(refresh);
     expect(await run()).toBe('access');

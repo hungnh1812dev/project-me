@@ -1,12 +1,9 @@
+import { MS_PER_MINUTE, MS_PER_SECOND } from '../../../common/constants/Time.constants';
 import {
-  DomainError,
   DOMAIN_ERROR_KINDS,
+  DomainError,
   type DomainErrorKind,
 } from '../../../common/errors/Domain.errors';
-import {
-  MS_PER_MINUTE,
-  MS_PER_SECOND,
-} from '../../../common/constants/Time.constants';
 import type { PageMeta } from '../../../common/validation/SharedSchemas.rules';
 import {
   REVIEWER_ACCOUNT,
@@ -52,10 +49,7 @@ export function isReviewerAtCapacity(activeSessions: number): boolean {
 }
 
 /** At least 1 s, so the `Retry-After` header is never 0. */
-export function retryAfterSecondsOf(
-  lastSessionCreatedAtMs: number,
-  nowMs: number,
-): number {
+export function retryAfterSecondsOf(lastSessionCreatedAtMs: number, nowMs: number): number {
   const seconds = Math.ceil(
     (lastSessionCreatedAtMs + REVIEWER_IP_WINDOW_MS - nowMs) / MS_PER_SECOND,
   );
@@ -83,10 +77,7 @@ export function reviewerIpLimited(retryAfterSeconds: number): DomainError {
   });
 }
 
-function refusal(
-  kind: DomainErrorKind,
-  code: keyof typeof REVIEWER_ERROR_CODES,
-) {
+function refusal(kind: DomainErrorKind, code: keyof typeof REVIEWER_ERROR_CODES) {
   return new DomainError({
     kind,
     errorCode: REVIEWER_ERROR_CODES[code],

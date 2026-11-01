@@ -5,26 +5,28 @@ import type { Kysely } from 'kysely';
 import { Client } from 'pg';
 import request from 'supertest';
 
-import { inContentUnit } from '../fixtures/ContentUnit.fixture';
 import {
   openPrisma,
   type PrismaHandle,
 } from '../../src/infrastructure/database/PrismaClient.adapter';
 import { MASKED_FIELDS_KEY } from '../../src/modules/access/domain/Access.constants';
 import { createContentDb } from '../../src/modules/content-engine/adapters/ContentDatabase.adapter';
-import { ContentRegistry } from '../../src/modules/content-engine/application/ContentRegistry.service';
 import { KyselyContentRepository } from '../../src/modules/content-engine/adapters/KyselyContent.repository';
+import type { ContentDatabase } from '../../src/modules/content-engine/adapters/TreeLoader.adapter';
+import { ContentRegistry } from '../../src/modules/content-engine/application/ContentRegistry.service';
 import { ContentTypeRegistry } from '../../src/modules/content-engine/domain/ContentTypeRegistry.entity';
 import {
   emptySnapshot,
   planMigration,
 } from '../../src/modules/content-engine/domain/SqlGenerator.rules';
-import type { ContentDatabase } from '../../src/modules/content-engine/adapters/TreeLoader.adapter';
 import { hashPassword } from '../../src/modules/identity/application/Password.service';
 import {
   ARTICLE_DEFINITION,
   NOTE_DEFINITION,
+  seedRolePermissions,
+  seedSystemRoles,
 } from '../fixtures/Access.fixture';
+import { inContentUnit } from '../fixtures/ContentUnit.fixture';
 import { createCoreTemplate } from '../fixtures/CoreDb.fixture';
 import {
   dbEnvOf,
@@ -36,10 +38,6 @@ import {
 } from '../fixtures/Env.fixture';
 import { startPostgres, type TestPostgres } from '../fixtures/Postgres.fixture';
 import { createTestApp } from '../fixtures/TestApp.fixture';
-import {
-  seedRolePermissions,
-  seedSystemRoles,
-} from '../fixtures/Access.fixture';
 
 const PASSWORD = 'correct horse battery staple';
 const DOCUMENTS = '/api/v1/documents';
@@ -183,18 +181,11 @@ describe('document read API (T20; Postgres 17 via Testcontainers)', () => {
     await seedSystemRoles(db.prisma);
     await seedRolePermissions(db.prisma);
 
-    const registry = ContentTypeRegistry.fromDefinitions([
-      ARTICLE_DEFINITION,
-      NOTE_DEFINITION,
-    ]);
-    const definitions = registry
-      .slugs()
-      .map((slug) => registry.resolve(slug).definition);
+    const registry = ContentTypeRegistry.fromDefinitions([ARTICLE_DEFINITION, NOTE_DEFINITION]);
+    const definitions = registry.slugs().map((slug) => registry.resolve(slug).definition);
     const client = new Client({ connectionString: databaseUrl });
     await client.connect();
-    await client.query(
-      planMigration(emptySnapshot(), definitions).statements.join('\n'),
-    );
+    await client.query(planMigration(emptySnapshot(), definitions).statements.join('\n'));
     await client.end();
 
     content = createContentDb(databaseUrl);
@@ -306,15 +297,8 @@ describe('document read API (T20; Postgres 17 via Testcontainers)', () => {
     return (res.body as { accessToken: string }).accessToken;
   }
 
-  async function customRole(
-    slug: string,
-    rank: number,
-    permissions: JsonObject[],
-  ) {
-    const created = await http()
-      .post(ROLES)
-      .set(bearer(owner))
-      .send({ slug, name: slug, rank });
+  async function customRole(slug: string, rank: number, permissions: JsonObject[]) {
+    const created = await http().post(ROLES).set(bearer(owner)).send({ slug, name: slug, rank });
     expect(created.status).toBe(201);
     await setPermissions((created.body as { id: string }).id, permissions);
   }
@@ -340,22 +324,15 @@ describe('document read API (T20; Postgres 17 via Testcontainers)', () => {
     http()
       .get(`${DOCUMENTS}/article${query}`)
       .set(headers as Record<string, string>);
-  const titles = (res: request.Response) =>
-    (res.body as Page).data.map((r) => r.values.title);
-  const code = (res: request.Response) =>
-    (res.body as { errorCode: string }).errorCode;
+  const titles = (res: request.Response) => (res.body as Page).data.map((r) => r.values.title);
+  const code = (res: request.Response) => (res.body as { errorCode: string }).errorCode;
 
   describe('anonymous (public role), published only', () => {
     it('lists published rows with meta, no drafts, no account references', async () => {
       const res = await list('?sort=title');
       expect(res.status).toBe(200);
       expect(res.headers['cache-control']).toContain('no-store');
-      expect(titles(res)).toEqual([
-        'Alpha',
-        'Beta 100% real',
-        'Delta',
-        'Gamma',
-      ]);
+      expect(titles(res)).toEqual(['Alpha', 'Beta 100% real', 'Delta', 'Gamma']);
       const page = res.body as Page;
       expect(page.meta).toEqual({ page: 1, pageSize: 20, total: 4 });
       expect(page.data[0]).not.toHaveProperty('createdBy');
@@ -389,9 +366,7 @@ describe('document read API (T20; Postgres 17 via Testcontainers)', () => {
     it('404 for an unknown slug, 400 for a bad document id', async () => {
       const unknown = await http().get(`${DOCUMENTS}/nope`).set(asAnonymous());
       expect(unknown.status).toBe(404);
-      const bad = await http()
-        .get(`${DOCUMENTS}/article/not-a-uuid`)
-        .set(asAnonymous());
+      const bad = await http().get(`${DOCUMENTS}/article/not-a-uuid`).set(asAnonymous());
       expect(bad.status).toBe(400);
     });
 
@@ -426,9 +401,7 @@ describe('document read API (T20; Postgres 17 via Testcontainers)', () => {
       expect(limited.status).toBe(429);
       expect(limited.headers['retry-after']).toBeDefined();
       expect(code(limited)).toBe('TOO_MANY_REQUESTS');
-      const detail = await http()
-        .get(`${DOCUMENTS}/article/${ids.alpha}`)
-        .set(ip);
+      const detail = await http().get(`${DOCUMENTS}/article/${ids.alpha}`).set(ip);
       expect(detail.status).toBe(429);
     });
 
@@ -449,11 +422,7 @@ describe('document read API (T20; Postgres 17 via Testcontainers)', () => {
     it('pages with page and pageSize and keeps the total', async () => {
       const first = (await list('?sort=title&pageSize=3&page=1')).body as Page;
       const second = (await list('?sort=title&pageSize=3&page=2')).body as Page;
-      expect(first.data.map((r) => r.values.title)).toEqual([
-        'Alpha',
-        'Beta 100% real',
-        'Delta',
-      ]);
+      expect(first.data.map((r) => r.values.title)).toEqual(['Alpha', 'Beta 100% real', 'Delta']);
       expect(second.data.map((r) => r.values.title)).toEqual(['Gamma']);
       expect(second.meta).toEqual({ page: 2, pageSize: 3, total: 4 });
       const beyond = (await list('?pageSize=3&page=9')).body as Page;
@@ -496,16 +465,10 @@ describe('document read API (T20; Postgres 17 via Testcontainers)', () => {
     it.each([
       ['?filter[title]=Alpha', ['Alpha']],
       ['?filter[title][eq]=Alpha', ['Alpha']],
-      [
-        '?filter[title][ne]=Alpha&sort=title',
-        ['Beta 100% real', 'Delta', 'Gamma'],
-      ],
+      ['?filter[title][ne]=Alpha&sort=title', ['Beta 100% real', 'Delta', 'Gamma']],
       ['?filter[priority][gte]=3&sort=title', ['Alpha', 'Delta']],
       ['?filter[priority][lt]=2', ['Beta 100% real']],
-      [
-        '?filter[priority][in]=1&filter[priority][in]=2&sort=title',
-        ['Beta 100% real', 'Gamma'],
-      ],
+      ['?filter[priority][in]=1&filter[priority][in]=2&sort=title', ['Beta 100% real', 'Gamma']],
       ['?filter[featured]=true&sort=title', ['Alpha', 'Gamma']],
       ['?filter[score][gt]=3.25&sort=title', ['Beta 100% real', 'Delta']],
       ['?filter[releaseDate][gte]=2026-03-01&sort=title', ['Alpha', 'Delta']],
@@ -528,45 +491,17 @@ describe('document read API (T20; Postgres 17 via Testcontainers)', () => {
       ['a json field', '?filter[meta]=x', 'BAD_REQUEST'],
       ['a component field', '?filter[reference]=x', 'BAD_REQUEST'],
       ['a nested field', '?filter[reference.name]=Ann', 'BAD_REQUEST'],
-      [
-        'createdBy for an anonymous actor',
-        '?filter[createdBy]=1',
-        'FIELD_NOT_READABLE',
-      ],
-      [
-        'sort by createdBy for an anonymous actor',
-        '?sort=createdBy',
-        'FIELD_NOT_READABLE',
-      ],
-      [
-        'an integer out of range',
-        '?filter[priority]=99999999999',
-        'BAD_REQUEST',
-      ],
+      ['createdBy for an anonymous actor', '?filter[createdBy]=1', 'FIELD_NOT_READABLE'],
+      ['sort by createdBy for an anonymous actor', '?sort=createdBy', 'FIELD_NOT_READABLE'],
+      ['an integer out of range', '?filter[priority]=99999999999', 'BAD_REQUEST'],
       ['a non-integer', '?filter[priority]=abc', 'BAD_REQUEST'],
       ['an impossible date', '?filter[releaseDate]=2026-02-31', 'BAD_REQUEST'],
       ['year zero', '?filter[releasedAt]=0000-01-01T00:00:00Z', 'BAD_REQUEST'],
-      [
-        'contains on an integer',
-        '?filter[priority][contains]=1',
-        'BAD_REQUEST',
-      ],
-      [
-        'an ordering operator on a boolean',
-        '?filter[featured][gt]=true',
-        'BAD_REQUEST',
-      ],
-      [
-        'an unknown operator',
-        '?filter[title][like]=a',
-        'ACCESS_INVALID_REQUEST',
-      ],
+      ['contains on an integer', '?filter[priority][contains]=1', 'BAD_REQUEST'],
+      ['an ordering operator on a boolean', '?filter[featured][gt]=true', 'BAD_REQUEST'],
+      ['an unknown operator', '?filter[title][like]=a', 'ACCESS_INVALID_REQUEST'],
       ['a malformed key', '?filter[title=a', 'ACCESS_INVALID_REQUEST'],
-      [
-        'two values for eq',
-        '?filter[title]=a&filter[title]=b',
-        'ACCESS_INVALID_REQUEST',
-      ],
+      ['two values for eq', '?filter[title]=a&filter[title]=b', 'ACCESS_INVALID_REQUEST'],
     ])('rejects %s with 400', async (_name, query, errorCode) => {
       const res = await list(query);
       expect(res.status).toBe(400);
@@ -574,10 +509,7 @@ describe('document read API (T20; Postgres 17 via Testcontainers)', () => {
     });
 
     it('lets signed-in accounts filter and sort by createdBy', async () => {
-      const res = await list(
-        `?filter[createdBy]=${CREATOR_ID}&sort=createdBy`,
-        bearer(editor),
-      );
+      const res = await list(`?filter[createdBy]=${CREATOR_ID}&sort=createdBy`, bearer(editor));
       expect(res.status).toBe(200);
       expect((res.body as Page).meta.total).toBe(4);
       expect((res.body as Page).data[0]?.createdBy).toBe(CREATOR_ID);
@@ -625,9 +557,7 @@ describe('document read API (T20; Postgres 17 via Testcontainers)', () => {
         expect(res.status).toBe(400);
         expect(code(res)).toBe('FIELD_NOT_READABLE');
       }
-      expect(
-        (await list('?filter[title]=Alpha', bearer(narrowReader))).status,
-      ).toBe(200);
+      expect((await list('?filter[title]=Alpha', bearer(narrowReader))).status).toBe(200);
     });
 
     it('applies the role row conditions to list, total and detail', async () => {
@@ -662,8 +592,7 @@ describe('document read API (T20; Postgres 17 via Testcontainers)', () => {
 
     it('serves the draft and the published row of one document apart', async () => {
       const published = (await detail(ids.delta)).body as DocRecord;
-      const draft = (await detail(ids.delta, '?status=draft', bearer(editor)))
-        .body as DocRecord;
+      const draft = (await detail(ids.delta, '?status=draft', bearer(editor))).body as DocRecord;
       expect(published.values.title).toBe('Delta');
       expect(draft.values.title).toBe('Delta DRAFT');
     });
@@ -673,9 +602,7 @@ describe('document read API (T20; Postgres 17 via Testcontainers)', () => {
       expect(res.status).toBe(404);
       expect(code(res)).toBe('DOCUMENT_NOT_FOUND');
       expect((await detail(ids.draftOnly, '?status=draft')).status).toBe(403);
-      expect(
-        (await detail(ids.draftOnly, '?status=draft', bearer(editor))).status,
-      ).toBe(200);
+      expect((await detail(ids.draftOnly, '?status=draft', bearer(editor))).status).toBe(200);
       expect((await detail(randomUUID())).status).toBe(404);
     });
   });
@@ -692,9 +619,7 @@ describe('document read API (T20; Postgres 17 via Testcontainers)', () => {
         { subject: 'article', action: 'read' },
         { subject: 'article', action: 'update' },
       ]);
-      expect((await list('?status=draft', bearer(withUpdate))).status).toBe(
-        200,
-      );
+      expect((await list('?status=draft', bearer(withUpdate))).status).toBe(200);
     });
 
     it('applies the token field scope and a scope without the type is 403', async () => {
@@ -704,9 +629,7 @@ describe('document read API (T20; Postgres 17 via Testcontainers)', () => {
       const res = await list('?sort=title', bearer(narrow));
       expect((res.body as Page).data[0]?.values.body).toBe('***');
       expect(JSON.stringify(res.body)).not.toContain('RAW');
-      expect((await list('?filter[priority]=1', bearer(narrow))).status).toBe(
-        400,
-      );
+      expect((await list('?filter[priority]=1', bearer(narrow))).status).toBe(400);
       const other = await apiToken([{ subject: 'note', action: 'read' }]);
       expect((await list('', bearer(other))).status).toBe(403);
     });

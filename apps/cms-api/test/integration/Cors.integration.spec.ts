@@ -33,13 +33,9 @@ describe('CORS', () => {
         .set('Access-Control-Request-Method', 'POST')
         .set('Access-Control-Request-Headers', 'content-type,authorization');
       expect(res.status).toBe(204);
-      expect(res.headers['access-control-allow-origin']).toBe(
-        TEST_ADMIN_ORIGIN,
-      );
+      expect(res.headers['access-control-allow-origin']).toBe(TEST_ADMIN_ORIGIN);
       expect(res.headers['access-control-allow-credentials']).toBe('true');
-      expect(res.headers['access-control-allow-headers']).toMatch(
-        /Authorization/,
-      );
+      expect(res.headers['access-control-allow-headers']).toMatch(/Authorization/);
       expect(res.headers['vary']).toMatch(/Origin/);
     });
 
@@ -48,21 +44,13 @@ describe('CORS', () => {
         .get(LIVE_PATH)
         .set('Origin', TEST_ADMIN_ORIGIN);
       expect(res.status).toBe(200);
-      expect(res.headers['access-control-allow-origin']).toBe(
-        TEST_ADMIN_ORIGIN,
-      );
-      expect(res.headers['access-control-expose-headers']).toMatch(
-        /x-request-id/,
-      );
-      expect(res.headers['access-control-expose-headers']).toMatch(
-        /Retry-After/,
-      );
+      expect(res.headers['access-control-allow-origin']).toBe(TEST_ADMIN_ORIGIN);
+      expect(res.headers['access-control-expose-headers']).toMatch(/x-request-id/);
+      expect(res.headers['access-control-expose-headers']).toMatch(/Retry-After/);
     });
 
     it('never allows another origin or a wildcard', async () => {
-      const res = await request(app.getHttpServer())
-        .get(LIVE_PATH)
-        .set('Origin', OTHER_ORIGIN);
+      const res = await request(app.getHttpServer()).get(LIVE_PATH).set('Origin', OTHER_ORIGIN);
       expect(res.headers['access-control-allow-origin']).toBeUndefined();
     });
   });
@@ -71,9 +59,7 @@ describe('CORS', () => {
     let app: NestExpressApplication;
 
     beforeAll(async () => {
-      app = await createTestApp(
-        devEnv({ ...dbEnvOf(await unreachableDatabaseUrl()) }),
-      );
+      app = await createTestApp(devEnv({ ...dbEnvOf(await unreachableDatabaseUrl()) }));
     });
 
     afterAll(async () => {

@@ -9,11 +9,7 @@ import {
   type ContentTransactionRunner,
   type UnitOfWork,
 } from '../../../infrastructure/database/TransactionRunner.port';
-import {
-  AccessPolicyService,
-  type ActorContext,
-  PermissionAction,
-} from '../../access';
+import { AccessPolicyService, PermissionAction, type ActorContext } from '../../access';
 import { ContentRegistry, type InsertTreeInput } from '../../content-engine';
 import {
   BULK_ITEM_STATUS,
@@ -31,15 +27,10 @@ import {
   unknownContentType,
 } from '../domain/Documents.errors';
 import { countComponentRows } from '../domain/ValueValidator.rules';
-import {
-  asItemError,
-  atomicFailure,
-  type BulkItemError,
-  itemError,
-} from './BulkItem.errors';
+import { asItemError, atomicFailure, itemError, type BulkItemError } from './BulkItem.errors';
 import { DOCUMENT_REPOSITORY, type DocumentRepository } from './Documents.port';
 import { DocumentsCommandService } from './DocumentsCommand.service';
-import { type ActionScope, PublishService } from './Publish.service';
+import { PublishService, type ActionScope } from './Publish.service';
 
 export interface BulkItemOk {
   index: number;
@@ -101,24 +92,16 @@ export class BulkService {
     const prepared: { index: number; input: InsertTreeInput }[] = [];
     for (const [index, item] of request.items.entries()) {
       try {
-        if (
-          countComponentRows(item) > BULK_LIMITS.MAX_COMPONENT_ROWS_PER_ITEM
-        ) {
+        if (countComponentRows(item) > BULK_LIMITS.MAX_COMPONENT_ROWS_PER_ITEM) {
           throw tooManyComponentRows();
         }
-        const { stored } = await this.commands.prepareCreate(
-          actor,
-          slug,
-          asTree(item),
-        );
+        const { stored } = await this.commands.prepareCreate(actor, slug, asTree(item));
         prepared.push({
           index,
           input: {
             ...stored,
             documentId: randomUUID(),
-            publishedAt: type.definition.draftAndPublish
-              ? null
-              : new Date(this.clock.now()),
+            publishedAt: type.definition.draftAndPublish ? null : new Date(this.clock.now()),
             createdBy: actor.accountId,
           },
         });
@@ -140,9 +123,7 @@ export class BulkService {
       ),
     );
 
-    const created = new Map(
-      prepared.map(({ index, input }) => [index, input.documentId]),
-    );
+    const created = new Map(prepared.map(({ index, input }) => [index, input.documentId]));
     return this.response(
       request.atomic,
       request.items.map((_, index): BulkItemResult => {
@@ -201,11 +182,7 @@ export class BulkService {
     );
   }
 
-  remove(
-    actor: ActorContext,
-    slug: string,
-    request: BulkRequest<string>,
-  ): Promise<BulkResponse> {
+  remove(actor: ActorContext, slug: string, request: BulkRequest<string>): Promise<BulkResponse> {
     return this.run(
       actor,
       slug,
@@ -226,21 +203,12 @@ export class BulkService {
     operation: Exclude<BulkOperation, 'create'>,
     request: BulkRequest<Item>,
     idOf: (item: Item) => string,
-    apply: (
-      unit: UnitOfWork,
-      scope: ActionScope,
-      item: Item,
-    ) => Promise<{ version?: number }>,
+    apply: (unit: UnitOfWork, scope: ActionScope, item: Item) => Promise<{ version?: number }>,
   ): Promise<BulkResponse> {
     this.assertWriter(actor);
     await this.collection(slug);
     const action = ACTIONS[operation];
-    const scope = await this.publishing.begin(
-      actor,
-      slug,
-      action,
-      operation !== 'delete',
-    );
+    const scope = await this.publishing.begin(actor, slug, action, operation !== 'delete');
 
     const results = await this.transactions.run(async (unit) => {
       const items: BulkItemResult[] = [];
@@ -269,22 +237,14 @@ export class BulkService {
 
     for (const result of results) {
       if (result.status === BULK_ITEM_STATUS.OK) {
-        await this.publishing.track(
-          actor,
-          operation,
-          slug,
-          result.documentId,
-          result.version,
-        );
+        await this.publishing.track(actor, operation, slug, result.documentId, result.version);
       }
     }
     return this.response(request.atomic, results);
   }
 
   private response(atomic: boolean, results: BulkItemResult[]): BulkResponse {
-    const failed = results.filter(
-      (result) => result.status === BULK_ITEM_STATUS.ERROR,
-    ).length;
+    const failed = results.filter((result) => result.status === BULK_ITEM_STATUS.ERROR).length;
     return { atomic, succeeded: results.length - failed, failed, results };
   }
 

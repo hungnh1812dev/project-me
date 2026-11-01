@@ -1,22 +1,23 @@
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import request from 'supertest';
 
-import { IDENTITY_RATE_LIMIT_POLICIES } from '../../src/modules/identity/http/IdentityHttp.constants';
 import {
   openPrisma,
   type PrismaClient,
   type PrismaHandle,
 } from '../../src/infrastructure/database/PrismaClient.adapter';
-import { AUDIT_ACTIONS } from '../../src/modules/security-audit';
 import { OWNER_ROLE_SLUG } from '../../src/modules/access/domain/SystemRoles.entity';
-import { OWNER_BOOTSTRAP_ERRORS } from '../../src/modules/identity/domain/Identity.constants';
 import {
   OwnerBootstrapError,
   type OwnerBootstrapInput,
   type OwnerBootstrapOptions,
 } from '../../src/modules/identity/application/OwnerBootstrap.service';
-import { identityUseCasesOf } from '../../src/modules/identity/cli/IdentityCli.setup';
 import { hashPassword } from '../../src/modules/identity/application/Password.service';
+import { identityUseCasesOf } from '../../src/modules/identity/cli/IdentityCli.setup';
+import { OWNER_BOOTSTRAP_ERRORS } from '../../src/modules/identity/domain/Identity.constants';
+import { IDENTITY_RATE_LIMIT_POLICIES } from '../../src/modules/identity/http/IdentityHttp.constants';
+import { AUDIT_ACTIONS } from '../../src/modules/security-audit';
+import { seedSystemRoles } from '../fixtures/Access.fixture';
 import { createCoreTemplate } from '../fixtures/CoreDb.fixture';
 import {
   dbEnvOf,
@@ -28,7 +29,6 @@ import {
 } from '../fixtures/Env.fixture';
 import { startPostgres, type TestPostgres } from '../fixtures/Postgres.fixture';
 import { createTestApp } from '../fixtures/TestApp.fixture';
-import { seedSystemRoles } from '../fixtures/Access.fixture';
 
 function bootstrapOwner(
   prisma: PrismaClient,
@@ -164,9 +164,7 @@ describe('owner setup (ADR 0005; Postgres 17 via Testcontainers)', () => {
     it('answers exactly like an unknown route when no token is configured', async () => {
       const { app, post, db } = await launch({ OWNER_SETUP_TOKEN: undefined });
       const res = await post(body());
-      const unknown = await request(app.getHttpServer()).post(
-        '/api/v1/setup/nothing',
-      );
+      const unknown = await request(app.getHttpServer()).post('/api/v1/setup/nothing');
       expect(res.status).toBe(404);
       expect(errorBody(res)).toEqual({
         ...errorBody(unknown),
@@ -208,20 +206,14 @@ describe('owner setup (ADR 0005; Postgres 17 via Testcontainers)', () => {
 
     it('treats a missing, numeric or over-long token as wrong (401)', async () => {
       const { post } = await launch();
-      expect((await post({ ...body(), setupToken: undefined })).status).toBe(
-        401,
-      );
+      expect((await post({ ...body(), setupToken: undefined })).status).toBe(401);
       expect((await post(body({ setupToken: 12345 }))).status).toBe(401);
-      expect((await post(body({ setupToken: 'x'.repeat(5_000) }))).status).toBe(
-        401,
-      );
+      expect((await post(body({ setupToken: 'x'.repeat(5_000) }))).status).toBe(401);
     });
 
     it('names fields only on 400, with the right token', async () => {
       const { post, db } = await launch();
-      const res = await post(
-        body({ email: 'not-an-email', password: 'short' }),
-      );
+      const res = await post(body({ email: 'not-an-email', password: 'short' }));
       expect(res.status).toBe(400);
       const text = JSON.stringify(res.body);
       expect(text).toContain('email');
@@ -314,9 +306,7 @@ describe('owner setup (ADR 0005; Postgres 17 via Testcontainers)', () => {
         password: PASSWORD,
       }).catch((e: unknown) => e);
       expect(cliAfterPage).toBeInstanceOf(OwnerBootstrapError);
-      expect((cliAfterPage as OwnerBootstrapError).code).toBe(
-        OWNER_BOOTSTRAP_ERRORS.OWNER_EXISTS,
-      );
+      expect((cliAfterPage as OwnerBootstrapError).code).toBe(OWNER_BOOTSTRAP_ERRORS.OWNER_EXISTS);
 
       const second = await launch();
       await bootstrapOwner(
@@ -354,10 +344,7 @@ describe('owner setup (ADR 0005; Postgres 17 via Testcontainers)', () => {
         ),
       ]);
       expect(await ownerRows(db)).toHaveLength(1);
-      const submits = results.slice(
-        0,
-        CONCURRENT_SUBMITS,
-      ) as request.Response[];
+      const submits = results.slice(0, CONCURRENT_SUBMITS) as request.Response[];
       const cliOutcome = results[CONCURRENT_SUBMITS];
       const created = submits.filter((res) => res.status === 201).length;
       const cliCreated = cliOutcome === 'cli-created' ? 1 : 0;
@@ -365,11 +352,8 @@ describe('owner setup (ADR 0005; Postgres 17 via Testcontainers)', () => {
       for (const res of submits.filter((r) => r.status !== 201)) {
         expect(res.status).toBe(404);
       }
-      const cliRefusedCode =
-        cliOutcome instanceof OwnerBootstrapError ? cliOutcome.code : null;
-      expect([null, OWNER_BOOTSTRAP_ERRORS.OWNER_EXISTS]).toContain(
-        cliRefusedCode,
-      );
+      const cliRefusedCode = cliOutcome instanceof OwnerBootstrapError ? cliOutcome.code : null;
+      expect([null, OWNER_BOOTSTRAP_ERRORS.OWNER_EXISTS]).toContain(cliRefusedCode);
     });
 
     it('answers 409 for an existing account email and never promotes it', async () => {

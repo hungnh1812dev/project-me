@@ -4,28 +4,27 @@ import type { NestExpressApplication } from '@nestjs/platform-express';
 import type { Kysely } from 'kysely';
 import request from 'supertest';
 
-import { inContentUnit } from '../fixtures/ContentUnit.fixture';
 import {
   openPrisma,
   type PrismaHandle,
 } from '../../src/infrastructure/database/PrismaClient.adapter';
-import {
-  MASK_SENTINEL,
-  MASKED_FIELDS_KEY,
-} from '../../src/modules/access/domain/Access.constants';
+import { MASK_SENTINEL, MASKED_FIELDS_KEY } from '../../src/modules/access/domain/Access.constants';
+import { createContentDb } from '../../src/modules/content-engine/adapters/ContentDatabase.adapter';
+import { KyselyContentRepository } from '../../src/modules/content-engine/adapters/KyselyContent.repository';
+import { DEFAULT_CONTENT_PATHS } from '../../src/modules/content-engine/adapters/MigrationFiles.adapter';
+import { runContentMigrations } from '../../src/modules/content-engine/adapters/MigrationRunner.adapter';
+import type { ContentDatabase } from '../../src/modules/content-engine/adapters/TreeLoader.adapter';
+import { ContentRegistry } from '../../src/modules/content-engine/application/ContentRegistry.service';
+import { createMigrationDb } from '../../src/modules/content-engine/cli/ContentEngineCli.setup';
+import type { ContentTypeRegistry } from '../../src/modules/content-engine/domain/ContentTypeRegistry.entity';
+import { hashPassword } from '../../src/modules/identity/application/Password.service';
 import {
   TURNSTILE_VERIFIER,
   type TurnstileVerifier,
 } from '../../src/modules/reviewer/application/Reviewer.port';
-import { DEFAULT_CONTENT_PATHS } from '../../src/modules/content-engine/adapters/MigrationFiles.adapter';
-import { createContentDb } from '../../src/modules/content-engine/adapters/ContentDatabase.adapter';
-import { createMigrationDb } from '../../src/modules/content-engine/cli/ContentEngineCli.setup';
-import { runContentMigrations } from '../../src/modules/content-engine/adapters/MigrationRunner.adapter';
-import { ContentRegistry } from '../../src/modules/content-engine/application/ContentRegistry.service';
-import { KyselyContentRepository } from '../../src/modules/content-engine/adapters/KyselyContent.repository';
-import type { ContentTypeRegistry } from '../../src/modules/content-engine/domain/ContentTypeRegistry.entity';
-import type { ContentDatabase } from '../../src/modules/content-engine/adapters/TreeLoader.adapter';
+import { seedRolePermissions, seedSystemRoles } from '../fixtures/Access.fixture';
 import { loadRegistryFromDatabase } from '../fixtures/ContentRegistry.fixture';
+import { inContentUnit } from '../fixtures/ContentUnit.fixture';
 import { createCoreTemplate } from '../fixtures/CoreDb.fixture';
 import {
   dbEnvOf,
@@ -37,11 +36,6 @@ import {
 } from '../fixtures/Env.fixture';
 import { startPostgres, type TestPostgres } from '../fixtures/Postgres.fixture';
 import { createTestApp } from '../fixtures/TestApp.fixture';
-import {
-  seedRolePermissions,
-  seedSystemRoles,
-} from '../fixtures/Access.fixture';
-import { hashPassword } from '../../src/modules/identity/application/Password.service';
 
 const PASSWORD = 'correct horse battery staple';
 const API = '/api/v1';
@@ -92,10 +86,7 @@ describe('sensitive fields start masked for public and reviewer (SPEC D2, RV-mas
     const migrationDb = createMigrationDb(databaseUrl);
     let registry: ContentTypeRegistry;
     try {
-      await runContentMigrations(
-        migrationDb,
-        DEFAULT_CONTENT_PATHS.migrationsDir,
-      );
+      await runContentMigrations(migrationDb, DEFAULT_CONTENT_PATHS.migrationsDir);
       registry = await loadRegistryFromDatabase(migrationDb);
     } finally {
       await migrationDb.destroy();
@@ -234,9 +225,7 @@ describe('sensitive fields start masked for public and reviewer (SPEC D2, RV-mas
       const [record] = (res.body as Page).data;
       expect(record?.values).toMatchObject(VISIBLE);
       expect(record?.values.phone).toBe('***');
-      expect(record?.[MASKED_FIELDS_KEY]).toEqual(
-        expect.arrayContaining(MASKED_CONTACT_FIELDS),
-      );
+      expect(record?.[MASKED_FIELDS_KEY]).toEqual(expect.arrayContaining(MASKED_CONTACT_FIELDS));
       expectNoRawValue(res.body);
     });
 
@@ -249,9 +238,7 @@ describe('sensitive fields start masked for public and reviewer (SPEC D2, RV-mas
       expect(record?.[MASKED_FIELDS_KEY]).toEqual(
         expect.arrayContaining(['experiences.company', 'referees.phone']),
       );
-      expect(record?.components.experiences?.[0]?.values.location).toBe(
-        'Remote',
-      );
+      expect(record?.components.experiences?.[0]?.values.location).toBe('Remote');
       expect(record?.components.referees?.[0]?.values.name).toBe('Ref Name');
       expectNoRawValue(res.body);
     });
@@ -268,8 +255,9 @@ describe('sensitive fields start masked for public and reviewer (SPEC D2, RV-mas
         data: { cvContact: { name: VISIBLE.name, phone: MASK_SENTINEL } },
       });
       expect(
-        (res.body as { data: { cvContact: Record<string, string[]> } }).data
-          .cvContact[MASKED_FIELDS_KEY],
+        (res.body as { data: { cvContact: Record<string, string[]> } }).data.cvContact[
+          MASKED_FIELDS_KEY
+        ],
       ).toEqual(expect.arrayContaining(MASKED_CONTACT_FIELDS));
       expect(JSON.stringify(res.body)).toContain('phone');
       expectNoRawValue(res.body);
@@ -301,8 +289,5 @@ describe('sensitive fields start masked for public and reviewer (SPEC D2, RV-mas
 });
 
 function pick<T extends object, K extends keyof T>(source: T, keys: K[]) {
-  return Object.fromEntries(keys.map((key) => [key, source[key]])) as Pick<
-    T,
-    K
-  >;
+  return Object.fromEntries(keys.map((key) => [key, source[key]])) as Pick<T, K>;
 }

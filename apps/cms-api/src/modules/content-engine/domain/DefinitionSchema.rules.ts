@@ -68,20 +68,15 @@ const fieldSchema: z.ZodType<FieldDefinition> = z.discriminatedUnion('type', [
   componentFieldSchema,
 ]);
 
-const fieldListSchema: z.ZodType<FieldDefinition[]> = z
-  .array(fieldSchema)
-  .min(1);
+const fieldListSchema: z.ZodType<FieldDefinition[]> = z.array(fieldSchema).min(1);
 
-export const contentTypeDefinitionSchema: z.ZodType<ContentTypeDefinition> =
-  z.strictObject({
-    slug: z.string().min(1),
-    kind: z.enum(CONTENT_TYPE_KINDS),
-    draftAndPublish: z.boolean(),
-    fields: fieldListSchema,
-  });
+export const contentTypeDefinitionSchema: z.ZodType<ContentTypeDefinition> = z.strictObject({
+  slug: z.string().min(1),
+  kind: z.enum(CONTENT_TYPE_KINDS),
+  draftAndPublish: z.boolean(),
+  fields: fieldListSchema,
+});
 
-export function isComponentField(
-  field: FieldDefinition,
-): field is ComponentFieldDefinition {
+export function isComponentField(field: FieldDefinition): field is ComponentFieldDefinition {
   return field.type === COMPONENT_FIELD_TYPE;
 }

@@ -28,5 +28,9 @@ export function libraryFileToInput(file: MediaFile): MediaInputFile {
     alt: file.alt,
     provider: file.provider,
     createdAt: file.createdAt,
+    updatedAt: file.updatedAt,
+    sha256: file.sha256,
+    width: file.width,
+    height: file.height,
   };
 }

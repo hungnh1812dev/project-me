@@ -22,9 +22,7 @@ const admin: Role = {
 
 describe('callerAccessOf', () => {
   it('lets the owner do everything', () => {
-    expect(callerAccessOf('owner', undefined).can('roles', 'delete')).toBe(
-      true,
-    );
+    expect(callerAccessOf('owner', undefined).can('roles', 'delete')).toBe(true);
   });
   it('derives actions from the own role rows', () => {
     const access = callerAccessOf('admin', [admin]);
@@ -33,8 +31,6 @@ describe('callerAccessOf', () => {
     expect(access.can('roles', 'read')).toBe(false);
   });
   it('allows nothing when roles are unknown', () => {
-    expect(callerAccessOf('admin', undefined).can('accounts', 'read')).toBe(
-      false,
-    );
+    expect(callerAccessOf('admin', undefined).can('accounts', 'read')).toBe(false);
   });
 });

@@ -1,20 +1,21 @@
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import request from 'supertest';
 
-import { Clock } from '../../src/common/time/Clock.service';
-import { MS_PER_SECOND } from '../../src/common/constants/Time.constants';
-import { RATE_LIMIT_STORE_MAX_KEYS } from '../../src/common/rate-limit/RateLimit.store';
 import { ERROR_CODES } from '../../src/common/constants/Error.constants';
 import {
   RATE_LIMIT_MESSAGE,
   RATE_LIMIT_SWEEP_INTERVAL_MS,
 } from '../../src/common/constants/Limits.constants';
-import { IDENTITY_RATE_LIMIT_POLICIES } from '../../src/modules/identity/http/IdentityHttp.constants';
+import { MS_PER_SECOND } from '../../src/common/constants/Time.constants';
+import { RATE_LIMIT_STORE_MAX_KEYS } from '../../src/common/rate-limit/RateLimit.store';
+import { Clock } from '../../src/common/time/Clock.service';
 import {
   openPrisma,
   type PrismaHandle,
 } from '../../src/infrastructure/database/PrismaClient.adapter';
 import { hashPassword } from '../../src/modules/identity/application/Password.service';
+import { IDENTITY_RATE_LIMIT_POLICIES } from '../../src/modules/identity/http/IdentityHttp.constants';
+import { seedSystemRoles } from '../fixtures/Access.fixture';
 import { createCoreTemplate } from '../fixtures/CoreDb.fixture';
 import {
   dbEnvOf,
@@ -25,11 +26,7 @@ import {
   TEST_WEB_ORIGIN,
 } from '../fixtures/Env.fixture';
 import { startPostgres, type TestPostgres } from '../fixtures/Postgres.fixture';
-import {
-  createTestApp,
-  type ProviderOverride,
-} from '../fixtures/TestApp.fixture';
-import { seedSystemRoles } from '../fixtures/Access.fixture';
+import { createTestApp, type ProviderOverride } from '../fixtures/TestApp.fixture';
 
 const LOGIN = '/api/v1/auth/login';
 const REFRESH = '/api/v1/auth/refresh';
@@ -210,19 +207,13 @@ describe('rate limiting + client IP (D7, SPEC §12-8; Postgres 17 via Testcontai
       const blocked = await login(attacker, unknownEmail());
       expect(blocked.status).toBe(429);
       expect(errorBody(blocked)).toEqual(TOO_MANY);
-      expect(blocked.headers['retry-after']).toBe(
-        String(seconds(LOGIN_IP.windowMs)),
-      );
+      expect(blocked.headers['retry-after']).toBe(String(seconds(LOGIN_IP.windowMs)));
 
       // Another real client is unaffected, and poisoning its address via XFF
       // from the attacker did nothing.
       const victim = nextIp();
-      expect(
-        (await login(victim, unknownEmail(), WRONG_PASSWORD, attacker)).status,
-      ).toBe(401);
-      expect(
-        (await login(attacker, unknownEmail(), WRONG_PASSWORD, victim)).status,
-      ).toBe(429);
+      expect((await login(victim, unknownEmail(), WRONG_PASSWORD, attacker)).status).toBe(401);
+      expect((await login(attacker, unknownEmail(), WRONG_PASSWORD, victim)).status).toBe(429);
     });
 
     it('limits per email across IPs, case- and whitespace-insensitively', async () => {
@@ -235,9 +226,7 @@ describe('rate limiting + client IP (D7, SPEC §12-8; Postgres 17 via Testcontai
       const blocked = await login(nextIp(), email.toUpperCase());
       expect(blocked.status).toBe(429);
       expect(errorBody(blocked)).toEqual(TOO_MANY);
-      expect(blocked.headers['retry-after']).toBe(
-        String(seconds(LOGIN_EMAIL.windowMs)),
-      );
+      expect(blocked.headers['retry-after']).toBe(String(seconds(LOGIN_EMAIL.windowMs)));
     });
 
     it('keeps the IP and email counters independent', async () => {
@@ -269,9 +258,7 @@ describe('rate limiting + client IP (D7, SPEC §12-8; Postgres 17 via Testcontai
       time.now += elapsedMs;
       const blocked = await login(ip, unknownEmail());
       expect(blocked.status).toBe(429);
-      expect(blocked.headers['retry-after']).toBe(
-        String(seconds(LOGIN_IP.windowMs - elapsedMs)),
-      );
+      expect(blocked.headers['retry-after']).toBe(String(seconds(LOGIN_IP.windowMs - elapsedMs)));
 
       time.now += LOGIN_IP.windowMs - elapsedMs;
       expect((await login(ip, unknownEmail())).status).toBe(401);
@@ -310,18 +297,14 @@ describe('rate limiting + client IP (D7, SPEC §12-8; Postgres 17 via Testcontai
     it('throttles refresh per IP before the Origin check', async () => {
       const ip = nextIp();
       const refresh = () =>
-        request(app.getHttpServer())
-          .post(REFRESH)
-          .set('X-Forwarded-For', `${spoofedIp()}, ${ip}`);
+        request(app.getHttpServer()).post(REFRESH).set('X-Forwarded-For', `${spoofedIp()}, ${ip}`);
       for (let i = 0; i < REFRESH_IP.maxHits; i += 1) {
         expect((await refresh()).status).toBe(403);
       }
       const blocked = await refresh();
       expect(blocked.status).toBe(429);
       expect(errorBody(blocked)).toEqual(TOO_MANY);
-      expect(blocked.headers['retry-after']).toBe(
-        String(seconds(REFRESH_IP.windowMs)),
-      );
+      expect(blocked.headers['retry-after']).toBe(String(seconds(REFRESH_IP.windowMs)));
     });
   });
 
@@ -361,9 +344,7 @@ describe('rate limiting + client IP (D7, SPEC §12-8; Postgres 17 via Testcontai
     let time: { now: number };
 
     beforeAll(async () => {
-      ({ app, time } = await startApp({}, [
-        { token: RATE_LIMIT_STORE_MAX_KEYS, value: CAP },
-      ]));
+      ({ app, time } = await startApp({}, [{ token: RATE_LIMIT_STORE_MAX_KEYS, value: CAP }]));
     });
 
     afterAll(async () => {
@@ -389,15 +370,11 @@ describe('rate limiting + client IP (D7, SPEC §12-8; Postgres 17 via Testcontai
       const refused = await login(nextIp(), unknownEmail());
       expect(refused.status).toBe(429);
       expect(errorBody(refused)).toEqual(TOO_MANY);
-      expect(refused.headers['retry-after']).toBe(
-        String(seconds(LOGIN_IP.windowMs)),
-      );
+      expect(refused.headers['retry-after']).toBe(String(seconds(LOGIN_IP.windowMs)));
 
       const first = known[0];
       expect(first).toBeDefined();
-      expect((await login(first?.ip ?? '', first?.email ?? '')).status).toBe(
-        401,
-      );
+      expect((await login(first?.ip ?? '', first?.email ?? '')).status).toBe(401);
 
       // Once the counters expire, the sweep frees room for new clients.
       time.now += LOGIN_IP.windowMs;

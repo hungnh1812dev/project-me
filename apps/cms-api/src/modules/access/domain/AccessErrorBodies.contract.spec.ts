@@ -1,17 +1,9 @@
-import {
-  BadRequestException,
-  ForbiddenException,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { BadRequestException, ForbiddenException, UnauthorizedException } from '@nestjs/common';
 
-import { describeError } from '../../../common/http/DescribeHttpException.rules';
-import { ERROR_CODES } from '../../../common/constants/Error.constants';
 import { systemRole } from '../../../../test/fixtures/Access.fixture';
-import {
-  ACCESS_ERROR_CODES,
-  FIELD_ERROR_MESSAGES,
-  RANK_FORBIDDEN_ERROR,
-} from './Access.constants';
+import { ERROR_CODES } from '../../../common/constants/Error.constants';
+import { describeError } from '../../../common/http/DescribeHttpException.rules';
+import { ACCESS_ERROR_CODES, FIELD_ERROR_MESSAGES, RANK_FORBIDDEN_ERROR } from './Access.constants';
 import { anonymousActor, unauthenticated } from './ActorContext.entity';
 import { fieldErrors } from './FieldPaths.rules';
 import { rankForbidden, requireAccountActor } from './Rank.rules';
@@ -71,8 +63,6 @@ describe('access error bodies', () => {
     } catch (error) {
       caught = error;
     }
-    expect(describeError(caught)).toEqual(
-      describeError(new ForbiddenException()),
-    );
+    expect(describeError(caught)).toEqual(describeError(new ForbiddenException()));
   });
 });

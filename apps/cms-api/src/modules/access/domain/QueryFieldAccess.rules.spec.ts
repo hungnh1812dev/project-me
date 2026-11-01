@@ -1,10 +1,9 @@
-import { DomainError } from '../../../common/errors/Domain.errors';
-
 import {
   accountAccess,
   ACTORS_BY_KIND,
   profileType,
 } from '../../../../test/fixtures/Masking.fixture';
+import { DomainError } from '../../../common/errors/Domain.errors';
 import {
   ACCESS_ERROR_CODES,
   ACCOUNT_REFERENCE_FIELDS,
@@ -12,20 +11,12 @@ import {
 } from './Access.constants';
 import { FieldSelection } from './PolicyEvaluator.rules';
 import { QueryGuard, type QueryFieldUse } from './QueryFieldAccess.rules';
-import {
-  type RecordReadAccess,
-  recordReadAccess,
-} from './RecordReadAccess.rules';
+import { recordReadAccess, type RecordReadAccess } from './RecordReadAccess.rules';
 
 const guard = new QueryGuard(profileType());
-const readable = accountAccess(
-  FieldSelection.of(['name', 'experience.years', 'contact']),
-);
+const readable = accountAccess(FieldSelection.of(['name', 'experience.years', 'contact']));
 
-function errorCodeOf(
-  use: QueryFieldUse,
-  access: RecordReadAccess = readable,
-): string | undefined {
+function errorCodeOf(use: QueryFieldUse, access: RecordReadAccess = readable): string | undefined {
   try {
     guard.assert(use, access);
   } catch (error) {
@@ -59,9 +50,9 @@ describe('QueryGuard', () => {
   });
 
   it('rejects everything but system fields when nothing is readable', () => {
-    expect(() =>
-      guard.assert({ sort: ['name'] }, accountAccess(FieldSelection.NONE)),
-    ).toThrow(DomainError);
+    expect(() => guard.assert({ sort: ['name'] }, accountAccess(FieldSelection.NONE))).toThrow(
+      DomainError,
+    );
     expect(() =>
       guard.assert({ sort: ['createdAt'] }, accountAccess(FieldSelection.NONE)),
     ).not.toThrow();
@@ -70,9 +61,7 @@ describe('QueryGuard', () => {
   it.each(['nope', 'id', 'experience.nope', 'Name', '__proto__', ''])(
     'rejects unknown field %p with FIELD_UNKNOWN',
     (path) => {
-      expect(errorCodeOf({ filter: [path] })).toBe(
-        ACCESS_ERROR_CODES.FIELD_UNKNOWN,
-      );
+      expect(errorCodeOf({ filter: [path] })).toBe(ACCESS_ERROR_CODES.FIELD_UNKNOWN);
     },
   );
 
@@ -84,26 +73,14 @@ describe('QueryGuard', () => {
     it.each(['reviewer', 'anonymous'] as const)(
       'rejects filter/sort/search on createdBy/updatedBy for %s actors',
       (kind) => {
-        const access = recordReadAccess(
-          ACTORS_BY_KIND[kind],
-          FieldSelection.ALL,
-        );
+        const access = recordReadAccess(ACTORS_BY_KIND[kind], FieldSelection.ALL);
         for (const field of ACCOUNT_REFERENCE_FIELDS) {
-          for (const use of [
-            { filter: [field] },
-            { sort: [field] },
-            { search: [field] },
-          ]) {
-            expect(errorCodeOf(use, access)).toBe(
-              ACCESS_ERROR_CODES.FIELD_NOT_READABLE,
-            );
+          for (const use of [{ filter: [field] }, { sort: [field] }, { search: [field] }]) {
+            expect(errorCodeOf(use, access)).toBe(ACCESS_ERROR_CODES.FIELD_NOT_READABLE);
           }
         }
         expect(() =>
-          guard.assert(
-            { filter: OTHER_SYSTEM_FIELDS, sort: OTHER_SYSTEM_FIELDS },
-            access,
-          ),
+          guard.assert({ filter: OTHER_SYSTEM_FIELDS, sort: OTHER_SYSTEM_FIELDS }, access),
         ).not.toThrow();
       },
     );
@@ -111,15 +88,9 @@ describe('QueryGuard', () => {
     it.each(['account', 'api_token'] as const)(
       'allows createdBy/updatedBy for %s actors',
       (kind) => {
-        const access = recordReadAccess(
-          ACTORS_BY_KIND[kind],
-          FieldSelection.NONE,
-        );
+        const access = recordReadAccess(ACTORS_BY_KIND[kind], FieldSelection.NONE);
         expect(() =>
-          guard.assert(
-            { filter: [...ACCOUNT_REFERENCE_FIELDS], sort: ['createdBy'] },
-            access,
-          ),
+          guard.assert({ filter: [...ACCOUNT_REFERENCE_FIELDS], sort: ['createdBy'] }, access),
         ).not.toThrow();
       },
     );

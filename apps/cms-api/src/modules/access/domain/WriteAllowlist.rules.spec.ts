@@ -1,17 +1,8 @@
+import { accountAccess, profileType, rawRecord } from '../../../../test/fixtures/Masking.fixture';
 import { DomainError } from '../../../common/errors/Domain.errors';
-
-import {
-  accountAccess,
-  profileType,
-  rawRecord,
-} from '../../../../test/fixtures/Masking.fixture';
 import { assertTreeInput } from '../../content-engine';
-import {
-  ACCESS_ERROR_CODES,
-  MASK_SENTINEL,
-  MASKED_FIELDS_KEY,
-} from './Access.constants';
-import { type FieldAccess, FieldSelection } from './PolicyEvaluator.rules';
+import { ACCESS_ERROR_CODES, MASK_SENTINEL, MASKED_FIELDS_KEY } from './Access.constants';
+import { FieldSelection, type FieldAccess } from './PolicyEvaluator.rules';
 import { RecordSerializer } from './RecordSerializer.rules';
 import { WriteAllowlist } from './WriteAllowlist.rules';
 
@@ -19,10 +10,7 @@ const type = profileType();
 const allowlist = new WriteAllowlist(type);
 const serializer = new RecordSerializer(type);
 
-const access = (
-  readable: string[] | null,
-  writable: string[] | null,
-): FieldAccess => ({
+const access = (readable: string[] | null, writable: string[] | null): FieldAccess => ({
   readable: FieldSelection.of(readable),
   writable: FieldSelection.of(writable),
 });
@@ -58,19 +46,13 @@ describe('WriteAllowlist', () => {
   it('drops a masked field that comes back with the sentinel (SPEC §12-5)', () => {
     const fields = access(['age'], ['age']);
     expect(
-      allowlist.apply(
-        { values: { name: MASK_SENTINEL, salary: null, age: 3 } },
-        fields,
-      ),
+      allowlist.apply({ values: { name: MASK_SENTINEL, salary: null, age: 3 } }, fields),
     ).toEqual({ values: { age: 3 } });
   });
 
   it('drops a masked component that comes back as null', () => {
     expect(
-      allowlist.apply(
-        { components: { contact: null, experience: null } },
-        access([], []),
-      ),
+      allowlist.apply({ components: { contact: null, experience: null } }, access([], [])),
     ).toEqual({ components: {} });
   });
 
@@ -105,38 +87,34 @@ describe('WriteAllowlist', () => {
   });
 
   it('drops the sentinel even on a writable but unreadable field', () => {
-    expect(
-      allowlist.apply({ values: { name: MASK_SENTINEL } }, access([], null)),
-    ).toEqual({ values: {} });
+    expect(allowlist.apply({ values: { name: MASK_SENTINEL } }, access([], null))).toEqual({
+      values: {},
+    });
   });
 
   it('writes a real value to a writable but unreadable field', () => {
-    expect(
-      allowlist.apply({ values: { name: 'new' } }, access([], null)),
-    ).toEqual({ values: { name: 'new' } });
+    expect(allowlist.apply({ values: { name: 'new' } }, access([], null))).toEqual({
+      values: { name: 'new' },
+    });
   });
 
   it('rejects a non-writable, non-masked field with 400 (SPEC §12-5)', () => {
     expect(
-      errorCodeOf(() =>
-        allowlist.apply({ values: { name: 'x' } }, access(null, ['age'])),
-      ),
+      errorCodeOf(() => allowlist.apply({ values: { name: 'x' } }, access(null, ['age']))),
     ).toBe(ACCESS_ERROR_CODES.FIELD_NOT_WRITABLE);
   });
 
   it('rejects a masked field that comes back with a value other than its mask', () => {
     for (const values of [{ name: 'changed' }, { name: null }, { age: 0 }]) {
-      expect(
-        errorCodeOf(() => allowlist.apply({ values }, access([], []))),
-      ).toBe(ACCESS_ERROR_CODES.FIELD_NOT_WRITABLE);
+      expect(errorCodeOf(() => allowlist.apply({ values }, access([], [])))).toBe(
+        ACCESS_ERROR_CODES.FIELD_NOT_WRITABLE,
+      );
     }
   });
 
   it('rejects a sentinel-looking value of the wrong type for the field', () => {
     expect(
-      errorCodeOf(() =>
-        allowlist.apply({ values: { age: MASK_SENTINEL } }, access([], [])),
-      ),
+      errorCodeOf(() => allowlist.apply({ values: { age: MASK_SENTINEL } }, access([], []))),
     ).toBe(ACCESS_ERROR_CODES.FIELD_NOT_WRITABLE);
   });
 
@@ -180,9 +158,7 @@ describe('WriteAllowlist', () => {
       { components: { experience: {} } },
       { components: { experience: [null] } },
     ]) {
-      expect(errorCodeOf(() => allowlist.apply(payload, FULL))).toBe(
-        'BAD_REQUEST',
-      );
+      expect(errorCodeOf(() => allowlist.apply(payload, FULL))).toBe('BAD_REQUEST');
     }
   });
 
@@ -207,10 +183,7 @@ describe('WriteAllowlist', () => {
   it('a client cannot unmask a field by sending _maskedFields', () => {
     expect(
       errorCodeOf(() =>
-        allowlist.apply(
-          { [MASKED_FIELDS_KEY]: [], values: { name: 'x' } },
-          access(null, []),
-        ),
+        allowlist.apply({ [MASKED_FIELDS_KEY]: [], values: { name: 'x' } }, access(null, [])),
       ),
     ).toBe(ACCESS_ERROR_CODES.FIELD_NOT_WRITABLE);
   });

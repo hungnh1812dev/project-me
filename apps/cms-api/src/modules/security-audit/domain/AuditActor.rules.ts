@@ -13,8 +13,7 @@ export type AuditActor =
   | { readonly type: 'system' };
 
 /** Names, ids, counts and flags only: never a field value or a secret (D15). */
-export type AuditMetadataValue =
-  string | number | boolean | null | readonly string[];
+export type AuditMetadataValue = string | number | boolean | null | readonly string[];
 
 export type AuditMetadata = Readonly<Record<string, AuditMetadataValue>>;
 

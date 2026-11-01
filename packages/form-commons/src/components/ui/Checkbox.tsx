@@ -2,25 +2,19 @@ import * as React from 'react';
 import { cn } from 'cn';
 import { Checkbox as CheckboxPrimitive } from 'radix-ui';
 
-import {
-  CONTROL_FOCUS_CLASSES,
-  CONTROL_INVALID_CLASSES,
-} from '@/components/ui/Control.constants';
+import { CONTROL_FOCUS_CLASSES, CONTROL_INVALID_CLASSES } from '@/components/ui/Control.constants';
 
 /**
  * shadcn checkbox (Radix) restyled to semantic tokens. `checked` may be
  * `'indeterminate'` for a partly selected group. Icons are inline so the
  * package needs no icon library.
  */
-function Checkbox({
-  className,
-  ...props
-}: React.ComponentProps<typeof CheckboxPrimitive.Root>) {
+function Checkbox({ className, ...props }: React.ComponentProps<typeof CheckboxPrimitive.Root>) {
   return (
     <CheckboxPrimitive.Root
       data-slot="checkbox"
       className={cn(
-        'peer size-4 shrink-0 cursor-pointer rounded-sm border border-input bg-card text-primary-foreground transition-[color,box-shadow] outline-none',
+        'peer border-input bg-card text-primary-foreground size-4 shrink-0 cursor-pointer rounded-sm border transition-[color,box-shadow] outline-none',
         CONTROL_FOCUS_CLASSES,
         'data-[state=checked]:border-primary data-[state=checked]:bg-primary data-[state=indeterminate]:border-primary data-[state=indeterminate]:bg-primary',
         'disabled:cursor-not-allowed disabled:opacity-50',
@@ -47,10 +41,7 @@ function Checkbox({
             d="M3.5 8.5 6.5 11.5 12.5 4.5"
             className="group-data-[state=indeterminate]:hidden"
           />
-          <path
-            d="M4 8h8"
-            className="hidden group-data-[state=indeterminate]:block"
-          />
+          <path d="M4 8h8" className="hidden group-data-[state=indeterminate]:block" />
         </svg>
       </CheckboxPrimitive.Indicator>
     </CheckboxPrimitive.Root>

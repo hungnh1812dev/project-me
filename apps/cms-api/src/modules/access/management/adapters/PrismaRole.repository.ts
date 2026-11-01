@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 
 import { Prisma } from '../../../../generated/prisma/client';
-import { prismaTxOf } from '../../../../infrastructure/database/PrismaTransactionRunner.adapter';
 import { PrismaService } from '../../../../infrastructure/database/Prisma.service';
+import { prismaTxOf } from '../../../../infrastructure/database/PrismaTransactionRunner.adapter';
 import type { UnitOfWork } from '../../../../infrastructure/database/TransactionRunner.port';
 import type {
   NewRole,
@@ -38,8 +38,7 @@ const ROLE_SELECT = {
 } as const;
 
 const isUniqueViolation = (error: unknown): boolean =>
-  error instanceof Prisma.PrismaClientKnownRequestError &&
-  error.code === UNIQUE_VIOLATION;
+  error instanceof Prisma.PrismaClientKnownRequestError && error.code === UNIQUE_VIOLATION;
 
 /** Roles for the admin API: the cap lock, row locks and the writes. */
 @Injectable()
@@ -60,9 +59,7 @@ export class PrismaRoleRepository implements RoleRepository {
     ]);
     return {
       roles,
-      accountCounts: new Map(
-        holders.map((group) => [group.role_id, group.holders]),
-      ),
+      accountCounts: new Map(holders.map((group) => [group.role_id, group.holders])),
     };
   }
 
@@ -73,10 +70,7 @@ export class PrismaRoleRepository implements RoleRepository {
     });
   }
 
-  async lockByDocumentId(
-    unit: UnitOfWork,
-    documentId: string,
-  ): Promise<RoleRecord | null> {
+  async lockByDocumentId(unit: UnitOfWork, documentId: string): Promise<RoleRecord | null> {
     const tx = prismaTxOf(unit);
     const locked = await tx.$queryRaw<{ id: number }[]>`
       SELECT id FROM roles WHERE document_id = ${documentId}::uuid FOR UPDATE`;
@@ -114,11 +108,7 @@ export class PrismaRoleRepository implements RoleRepository {
     }
   }
 
-  update(
-    unit: UnitOfWork,
-    roleId: number,
-    change: RoleChange,
-  ): Promise<RoleRecord> {
+  update(unit: UnitOfWork, roleId: number, change: RoleChange): Promise<RoleRecord> {
     return prismaTxOf(unit).role.update({
       where: { id: roleId },
       data: {

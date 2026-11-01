@@ -27,22 +27,14 @@ describe('isOtpCodeFormat', () => {
     expect(isOtpCodeFormat(code)).toBe(true);
   });
 
-  it.each(['', '12345', '1234567', '12a456', ' 123456', '١٢٣٤٥٦'])(
-    'rejects %j',
-    (code) => {
-      expect(isOtpCodeFormat(code)).toBe(false);
-    },
-  );
+  it.each(['', '12345', '1234567', '12a456', ' 123456', '١٢٣٤٥٦'])('rejects %j', (code) => {
+    expect(isOtpCodeFormat(code)).toBe(false);
+  });
 });
 
 describe('buildOtpMail', () => {
   it('writes the code, the TTL and the admin page as plain text', () => {
-    const message = buildOtpMail(
-      EMAIL,
-      'RESET_PASSWORD',
-      CODE,
-      TEST_ADMIN_ORIGIN,
-    );
+    const message = buildOtpMail(EMAIL, 'RESET_PASSWORD', CODE, TEST_ADMIN_ORIGIN);
     expect(message.to).toBe(EMAIL);
     expect(message.text).toContain(`\n${CODE}\n`);
     expect(message.text).toContain(`${OTP.TTL_SECONDS / 60} minutes`);
@@ -51,12 +43,7 @@ describe('buildOtpMail', () => {
   });
 
   it('points invites at the set-password page', () => {
-    const message = buildOtpMail(
-      EMAIL,
-      'INVITE_SET_PASSWORD',
-      CODE,
-      TEST_ADMIN_ORIGIN,
-    );
+    const message = buildOtpMail(EMAIL, 'INVITE_SET_PASSWORD', CODE, TEST_ADMIN_ORIGIN);
     expect(message.subject).toMatch(/invitation/i);
     expect(message.text).toContain(`${TEST_ADMIN_ORIGIN}/set-password`);
   });

@@ -139,13 +139,9 @@ export const ACCOUNT_REPOSITORY = Symbol('ACCOUNT_REPOSITORY');
 export interface AccountRepository {
   findLoginAccount(email: string): Promise<LoginAccountRecord | null>;
   findProfile(documentId: string): Promise<AccountProfileRecord | null>;
-  findPasswordAccount(
-    documentId: string,
-  ): Promise<PasswordAccountRecord | null>;
+  findPasswordAccount(documentId: string): Promise<PasswordAccountRecord | null>;
   findCodeAccount(email: string): Promise<CodeAccountRecord | null>;
-  findTwoFactorAccount(
-    documentId: string,
-  ): Promise<TwoFactorAccountRecord | null>;
+  findTwoFactorAccount(documentId: string): Promise<TwoFactorAccountRecord | null>;
   /** Stores the hash (and `status` when given) inside `unit`. */
   storePassword(
     unit: UnitOfWork,
@@ -176,10 +172,7 @@ export interface AccountRepository {
   isEmailTaken(unit: UnitOfWork, email: string): Promise<boolean>;
   createAccount(unit: UnitOfWork, account: NewAccount): Promise<CreatedAccount>;
   /** The not-deleted account with this email. */
-  findResettableAccount(
-    unit: UnitOfWork,
-    email: string,
-  ): Promise<ResettableAccount | null>;
+  findResettableAccount(unit: UnitOfWork, email: string): Promise<ResettableAccount | null>;
   /**
    * Turns 2FA off and clears the sealed TOTP columns, only while 2FA is
    * still on. False when a concurrent change got there first.
@@ -246,22 +239,12 @@ export const REFRESH_TOKEN_REPOSITORY = Symbol('REFRESH_TOKEN_REPOSITORY');
 export interface RefreshTokenRepository {
   /** Inserts a token; with `unit` it commits with the caller's change. Returns the row id. */
   insert(token: NewRefreshToken, unit?: UnitOfWork): Promise<number>;
-  findByHash(
-    unit: UnitOfWork,
-    tokenHash: string,
-  ): Promise<RefreshTokenRecord | null>;
-  findFamilyOwnerByHash(
-    tokenHash: string,
-  ): Promise<RefreshTokenFamilyOwner | null>;
+  findByHash(unit: UnitOfWork, tokenHash: string): Promise<RefreshTokenRecord | null>;
+  findFamilyOwnerByHash(tokenHash: string): Promise<RefreshTokenFamilyOwner | null>;
   /** Re-reads a token that lost a rotation race; the row must exist. */
   findRotated(unit: UnitOfWork, tokenId: number): Promise<RotatedTokenRecord>;
   /** Marks `tokenId` replaced and revoked while still unreplaced and unrevoked. True for the winner. */
-  claimRotation(
-    unit: UnitOfWork,
-    tokenId: number,
-    successorId: number,
-    at: Date,
-  ): Promise<boolean>;
+  claimRotation(unit: UnitOfWork, tokenId: number, successorId: number, at: Date): Promise<boolean>;
   deleteById(unit: UnitOfWork, tokenId: number): Promise<void>;
   revokeFamily(unit: UnitOfWork, familyId: string, at: Date): Promise<void>;
   /** Reuse: revokes the family, then bumps the account's `token_version` so its access tokens die. */
@@ -290,25 +273,12 @@ export const OTP_CODE_REPOSITORY = Symbol('OTP_CODE_REPOSITORY');
 
 /** One-time code rows (D8). Only the HMAC of a code is ever stored. */
 export interface OtpCodeRepository {
-  countIssuedSince(
-    unit: UnitOfWork,
-    accountId: number,
-    since: Date,
-  ): Promise<number>;
+  countIssuedSince(unit: UnitOfWork, accountId: number, since: Date): Promise<number>;
   /** Ends the unused codes of (account, purpose) that are still live at `at`. */
-  expireLive(
-    unit: UnitOfWork,
-    accountId: number,
-    purpose: OtpPurpose,
-    at: Date,
-  ): Promise<void>;
+  expireLive(unit: UnitOfWork, accountId: number, purpose: OtpPurpose, at: Date): Promise<void>;
   insert(unit: UnitOfWork, code: NewOtpCode): Promise<void>;
   /** The newest unused, unexpired code of (account, purpose). */
-  findLive(
-    accountId: number,
-    purpose: OtpPurpose,
-    now: Date,
-  ): Promise<LiveOtpCode | null>;
+  findLive(accountId: number, purpose: OtpPurpose, now: Date): Promise<LiveOtpCode | null>;
   /** Counts one check against a code with fewer than `maxAttempts` spent. True when it was counted. */
   countAttempt(codeId: number, maxAttempts: number): Promise<boolean>;
   /** Marks an unused, unexpired code used. True for the one caller that got it. */
@@ -327,9 +297,7 @@ export interface ResetSecondFactor {
   verify(accountId: number, totpCode: string | undefined): Promise<boolean>;
 }
 
-export const SESSION_REVOCATION_REPOSITORY = Symbol(
-  'SESSION_REVOCATION_REPOSITORY',
-);
+export const SESSION_REVOCATION_REPOSITORY = Symbol('SESSION_REVOCATION_REPOSITORY');
 
 /** Ends sessions inside the caller's unit (no connection of its own, so the CLI can build it). */
 export interface SessionRevocationRepository {

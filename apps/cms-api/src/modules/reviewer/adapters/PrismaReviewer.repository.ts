@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 
-import { prismaTxOf } from '../../../infrastructure/database/PrismaTransactionRunner.adapter';
 import { PrismaService } from '../../../infrastructure/database/Prisma.service';
+import { prismaTxOf } from '../../../infrastructure/database/PrismaTransactionRunner.adapter';
 import type { UnitOfWork } from '../../../infrastructure/database/TransactionRunner.port';
 import type {
   NewReviewerSession,
@@ -35,11 +35,7 @@ export class PrismaReviewerRepository implements ReviewerRepository {
     return rows[0]?.value === true;
   }
 
-  async saveEnabled(
-    unit: UnitOfWork,
-    enabled: boolean,
-    updatedByAccountId: number,
-  ): Promise<void> {
+  async saveEnabled(unit: UnitOfWork, enabled: boolean, updatedByAccountId: number): Promise<void> {
     const by = { connect: { id: updatedByAccountId } };
     await prismaTxOf(unit).appSetting.upsert({
       where: { key: REVIEWER_ENABLED_SETTING_KEY },
@@ -54,8 +50,7 @@ export class PrismaReviewerRepository implements ReviewerRepository {
   }
 
   async lockSessionCreation(unit: UnitOfWork): Promise<void> {
-    await prismaTxOf(unit)
-      .$executeRaw`SELECT pg_advisory_xact_lock(${REVIEWER_SESSION_LOCK})`;
+    await prismaTxOf(unit).$executeRaw`SELECT pg_advisory_xact_lock(${REVIEWER_SESSION_LOCK})`;
   }
 
   countActiveSessions(nowMs: number, unit?: UnitOfWork): Promise<number> {
@@ -77,10 +72,7 @@ export class PrismaReviewerRepository implements ReviewerRepository {
     return recent?.createdAt;
   }
 
-  async addSession(
-    unit: UnitOfWork,
-    session: NewReviewerSession,
-  ): Promise<void> {
+  async addSession(unit: UnitOfWork, session: NewReviewerSession): Promise<void> {
     await prismaTxOf(unit).reviewerSession.create({
       data: {
         accountId: session.accountId,
@@ -96,10 +88,7 @@ export class PrismaReviewerRepository implements ReviewerRepository {
     });
   }
 
-  async listSessions(
-    page: number,
-    pageSize: number,
-  ): Promise<ReviewerSessionRecordPage> {
+  async listSessions(page: number, pageSize: number): Promise<ReviewerSessionRecordPage> {
     const [total, rows] = await Promise.all([
       this.prisma.reviewerSession.count(),
       this.prisma.reviewerSession.findMany({
@@ -122,9 +111,7 @@ export class PrismaReviewerRepository implements ReviewerRepository {
       rows: rows.map((row) => ({
         visitorRole: row.visitorRole,
         purposeTags: Array.isArray(row.purposeTags)
-          ? row.purposeTags.filter(
-              (tag): tag is string => typeof tag === 'string',
-            )
+          ? row.purposeTags.filter((tag): tag is string => typeof tag === 'string')
           : [],
         notes: row.notes,
         userAgent: row.userAgent,

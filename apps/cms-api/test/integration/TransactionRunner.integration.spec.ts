@@ -1,7 +1,7 @@
 import type { NestExpressApplication } from '@nestjs/platform-express';
 
-import { prismaTxOf } from '../../src/infrastructure/database/PrismaTransactionRunner.adapter';
 import { PrismaService } from '../../src/infrastructure/database/Prisma.service';
+import { prismaTxOf } from '../../src/infrastructure/database/PrismaTransactionRunner.adapter';
 import {
   CORE_TRANSACTION_RUNNER,
   type TransactionRunner,
@@ -19,14 +19,10 @@ describe('CORE_TRANSACTION_RUNNER (Postgres 17 via Testcontainers)', () => {
 
   beforeAll(async () => {
     postgres = await startPostgres();
-    app = await createTestApp(
-      devEnv({ ...dbEnvOf(postgres.getConnectionUri()) }),
-    );
+    app = await createTestApp(devEnv({ ...dbEnvOf(postgres.getConnectionUri()) }));
     prisma = app.get(PrismaService);
     runner = app.get<TransactionRunner>(CORE_TRANSACTION_RUNNER);
-    await prisma.$executeRawUnsafe(
-      'CREATE TABLE tx_runner_probe (name text PRIMARY KEY)',
-    );
+    await prisma.$executeRawUnsafe('CREATE TABLE tx_runner_probe (name text PRIMARY KEY)');
   });
 
   afterAll(async () => {
@@ -38,10 +34,7 @@ describe('CORE_TRANSACTION_RUNNER (Postgres 17 via Testcontainers)', () => {
     await prisma.$executeRawUnsafe('DELETE FROM tx_runner_probe');
   });
 
-  const insertProbe = (
-    tx: ReturnType<typeof prismaTxOf>,
-    name: string,
-  ): Promise<number> =>
+  const insertProbe = (tx: ReturnType<typeof prismaTxOf>, name: string): Promise<number> =>
     tx.$executeRaw`INSERT INTO tx_runner_probe (name) VALUES (${name})`;
 
   const probeNames = async (): Promise<string[]> => {
@@ -178,8 +171,6 @@ describe('CORE_TRANSACTION_RUNNER (Postgres 17 via Testcontainers)', () => {
   });
 
   it('prismaTxOf rejects a unit the Prisma runner did not open', () => {
-    expect(() => prismaTxOf({ afterCommit: () => undefined })).toThrow(
-      TypeError,
-    );
+    expect(() => prismaTxOf({ afterCommit: () => undefined })).toThrow(TypeError);
   });
 });

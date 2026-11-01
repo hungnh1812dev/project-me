@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 
-import { PrismaTransactionRunner } from './PrismaTransactionRunner.adapter';
 import { PrismaService } from './Prisma.service';
+import { PrismaTransactionRunner } from './PrismaTransactionRunner.adapter';
 import { CORE_TRANSACTION_RUNNER } from './TransactionRunner.port';
 
 @Module({
