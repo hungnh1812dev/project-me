@@ -1,11 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 
 import { Clock } from '../../../common/time/Clock.service';
-import {
-  AccessPolicyService,
-  type ActorContext,
-  PermissionAction,
-} from '../../access';
+import { AccessPolicyService, PermissionAction, type ActorContext } from '../../access';
 import { ContentRegistry } from '../../content-engine';
 import {
   PRESENCE_MAX_ENTRIES,
@@ -20,8 +16,8 @@ import {
 } from '../domain/Documents.errors';
 import {
   DOCUMENT_REPOSITORY,
-  type DocumentRepository,
   PRESENCE_ACCOUNT_LOOKUP,
+  type DocumentRepository,
   type PresenceAccountLookup,
 } from './Documents.port';
 
@@ -102,11 +98,7 @@ export class PresenceService {
     );
   }
 
-  private record(
-    key: string,
-    entry: StoredEntry,
-    now: number,
-  ): PresenceEntry[] {
+  private record(key: string, entry: StoredEntry, now: number): PresenceEntry[] {
     const group = this.entries.get(key) ?? new Map<number, StoredEntry>();
     this.sweep(key, group, now);
     if (!group.has(entry.ownerKey)) {
@@ -119,21 +111,15 @@ export class PresenceService {
     }
     this.entries.set(key, group);
     group.set(entry.ownerKey, entry);
-    return [...group.values()].map(
-      ({ accountId, displayName, state, lastSeenAt }) => ({
-        accountId,
-        displayName,
-        state,
-        lastSeenAt,
-      }),
-    );
+    return [...group.values()].map(({ accountId, displayName, state, lastSeenAt }) => ({
+      accountId,
+      displayName,
+      state,
+      lastSeenAt,
+    }));
   }
 
-  private sweep(
-    key: string,
-    group: Map<number, StoredEntry>,
-    now: number,
-  ): void {
+  private sweep(key: string, group: Map<number, StoredEntry>, now: number): void {
     for (const [accountId, stored] of group) {
       if (stored.expiresAt <= now) {
         group.delete(accountId);

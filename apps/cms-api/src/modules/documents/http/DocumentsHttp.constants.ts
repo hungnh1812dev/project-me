@@ -16,8 +16,7 @@ export const DOCUMENT_QUERY_KEYS = {
 
 /** `filter[field]=v` (same as `eq`) and `filter[field][op]=v`. */
 export const FILTER_KEY_PREFIX = 'filter[';
-export const FILTER_KEY_PATTERN =
-  /^filter\[([^[\]]{1,200})\](?:\[([^[\]]{1,16})\])?$/;
+export const FILTER_KEY_PATTERN = /^filter\[([^[\]]{1,200})\](?:\[([^[\]]{1,16})\])?$/;
 export const FILTER_DEFAULT_OPERATOR = 'eq';
 
 /** Sort direction prefix: `sort=-updatedAt,title`. */

@@ -21,10 +21,7 @@ export const API_TOKEN = {
  * instant itself already counts as expired. Authentication, the list status
  * and the update guard all call this, so they agree to the millisecond.
  */
-export function isApiTokenExpired(
-  expiresAt: Date | null,
-  nowMs: number,
-): boolean {
+export function isApiTokenExpired(expiresAt: Date | null, nowMs: number): boolean {
   return expiresAt !== null && expiresAt.getTime() <= nowMs;
 }
 

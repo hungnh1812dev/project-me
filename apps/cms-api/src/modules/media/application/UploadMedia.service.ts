@@ -3,10 +3,7 @@ import { randomBytes } from 'node:crypto';
 import { Inject, Injectable } from '@nestjs/common';
 
 import { Clock } from '../../../common/time/Clock.service';
-import {
-  APP_LOGGER,
-  type AppLogger,
-} from '../../../infrastructure/logging/AppLogger.port';
+import { APP_LOGGER, type AppLogger } from '../../../infrastructure/logging/AppLogger.port';
 import type { AccountActor } from '../../access';
 import type { MediaRecord } from '../domain/Media.entity';
 import { UUID_BYTES, uuidv7 } from '../domain/Uuidv7.rules';
@@ -35,10 +32,7 @@ export class UploadMediaService {
    * If the row cannot be written the stored object is removed again, so no
    * orphan is left behind. The temp file is removed on every path.
    */
-  async upload(
-    actor: AccountActor,
-    upload: UploadStream,
-  ): Promise<MediaRecord> {
+  async upload(actor: AccountActor, upload: UploadStream): Promise<MediaRecord> {
     const received = await this.processor.receive(upload);
     try {
       const prepared = await this.processor.prepare(received);
@@ -61,6 +55,7 @@ export class UploadMediaService {
           sha256: prepared.sha256,
           url: stored.url,
           thumbnailUrl: stored.thumbnailUrl,
+          provider: this.storage.provider,
           createdById: actor.accountId,
         });
       } catch (error) {

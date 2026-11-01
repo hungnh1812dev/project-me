@@ -1,18 +1,14 @@
 import { INVALID_REQUEST_ERROR } from '../../../common/constants/Error.constants';
 import { DomainError } from '../../../common/errors/Domain.errors';
-import {
-  PAGINATION,
-  type RequestIssue,
-} from '../../../common/validation/SharedSchemas.rules';
+import { PAGINATION, type RequestIssue } from '../../../common/validation/SharedSchemas.rules';
 import type { ConditionValueKind } from '../../access';
-import type { ContentStatus, FieldDefinition } from '../../content-engine';
-import { fieldTypeOf } from '../../content-engine';
+import { fieldTypeOf, type ContentStatus, type FieldDefinition } from '../../content-engine';
 import {
   DOCUMENT_QUERY_LIMITS,
-  type FilterOperator,
   LIST_QUERY_MESSAGES,
   LIST_QUERY_PARTS,
   SORT_DEFAULT,
+  type FilterOperator,
 } from './Documents.constants';
 
 export type SortDirection = 'asc' | 'desc';
@@ -44,16 +40,13 @@ export interface ListDocumentsQuery {
  * the internal file id, which never crosses the API) are not queryable.
  * One rule for REST (`queryColumnOf`) and the GraphQL schema builder.
  */
-export function queryKindOfField(
-  field: FieldDefinition,
-): ConditionValueKind | undefined {
+export function queryKindOfField(field: FieldDefinition): ConditionValueKind | undefined {
   const spec = fieldTypeOf(field.type);
   if (spec === undefined || !spec.listQueryable) return undefined;
   return spec.conditionKind ?? undefined;
 }
 
-const FIELD_PATH_PATTERN =
-  /^[A-Za-z][A-Za-z0-9_]*(?:\.[A-Za-z][A-Za-z0-9_]*)*$/;
+const FIELD_PATH_PATTERN = /^[A-Za-z][A-Za-z0-9_]*(?:\.[A-Za-z][A-Za-z0-9_]*)*$/;
 const FILTER_PATH = [LIST_QUERY_PARTS.FILTER];
 
 function reject(path: readonly string[], message: string): never {
@@ -73,20 +66,11 @@ function isIntegerInRange(value: number, min: number, max: number): boolean {
 }
 
 function checkPaging({ page, pageSize }: ListDocumentsQuery): void {
-  if (
-    !isIntegerInRange(
-      page,
-      PAGINATION.FIRST_PAGE,
-      DOCUMENT_QUERY_LIMITS.MAX_PAGE,
-    )
-  ) {
+  if (!isIntegerInRange(page, PAGINATION.FIRST_PAGE, DOCUMENT_QUERY_LIMITS.MAX_PAGE)) {
     reject([LIST_QUERY_PARTS.PAGE], LIST_QUERY_MESSAGES.PAGE_OUT_OF_RANGE);
   }
   if (!isIntegerInRange(pageSize, 1, PAGINATION.MAX_PAGE_SIZE)) {
-    reject(
-      [LIST_QUERY_PARTS.PAGE_SIZE],
-      LIST_QUERY_MESSAGES.PAGE_SIZE_OUT_OF_RANGE,
-    );
+    reject([LIST_QUERY_PARTS.PAGE_SIZE], LIST_QUERY_MESSAGES.PAGE_SIZE_OUT_OF_RANGE);
   }
 }
 
@@ -98,10 +82,7 @@ function checkSort({ sort }: ListDocumentsQuery): void {
     sort.length > DOCUMENT_QUERY_LIMITS.MAX_SORT_KEYS ||
     new Set(sort.map((key) => key.path)).size !== sort.length
   ) {
-    reject(
-      [LIST_QUERY_PARTS.SORT],
-      LIST_QUERY_MESSAGES.SORT_DUPLICATE_OR_TOO_MANY,
-    );
+    reject([LIST_QUERY_PARTS.SORT], LIST_QUERY_MESSAGES.SORT_DUPLICATE_OR_TOO_MANY);
   }
 }
 
@@ -133,17 +114,12 @@ function checkFilters({ filters }: ListDocumentsQuery): void {
  * in `DocumentsQueryService.list`. Messages never contain a submitted value.
  * @throws DomainError (invalid_input, ACCESS_INVALID_REQUEST) out of range.
  */
-export function normalizeListQuery(
-  candidate: ListDocumentsQuery,
-): ListDocumentsQuery {
+export function normalizeListQuery(candidate: ListDocumentsQuery): ListDocumentsQuery {
   checkPaging(candidate);
   checkSort(candidate);
   checkFilters(candidate);
   return {
     ...candidate,
-    sort:
-      candidate.sort.length > 0
-        ? candidate.sort
-        : SORT_DEFAULT.map((key) => ({ ...key })),
+    sort: candidate.sort.length > 0 ? candidate.sort : SORT_DEFAULT.map((key) => ({ ...key })),
   };
 }

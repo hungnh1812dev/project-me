@@ -1,11 +1,11 @@
-import { COPY } from '../../config/Copy.constants';
-import { HTTP_STATUS } from '../../config/Http.constants';
 import {
-  type Alert,
-  type ApiFailure,
   apiFailureOf,
   formatRetryAfter,
-} from '../../lib/ApiFailure.errors';
+  type Alert,
+  type ApiFailure,
+} from '../../apis/client/ApiFailure.errors';
+import { COPY } from '../../configs/Copy.constants';
+import { HTTP_STATUS } from '../../configs/Http.constants';
 import { PrivilegedAccessError } from '../session';
 
 const { errors } = COPY.login;

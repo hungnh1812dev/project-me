@@ -1,12 +1,8 @@
-import { expect, type Page, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 
-import {
-  ADMIN_COPY,
-  contentListPath,
-  contentNewPath,
-} from '../src/Apps.contract';
-import { signInAsOwner } from '../src/Session.fixture';
+import { ADMIN_COPY, contentListPath, contentNewPath } from '../src/Apps.contract';
 import { CV_PAGE_SLUG, PROFILE_SLUG, RUN_ID } from '../src/E2e.constants';
+import { signInAsOwner } from '../src/Session.fixture';
 
 const copy = ADMIN_COPY.content;
 const bulk = copy.bulk;
@@ -44,9 +40,7 @@ test.describe.serial('kit internals keep their rendered behaviour', () => {
       name: collection.selectAll,
     });
     await expect(selectAll).not.toBeChecked();
-    await page
-      .getByRole('checkbox', { name: collection.selectRow(NAMES[0] as string) })
-      .check();
+    await page.getByRole('checkbox', { name: collection.selectRow(NAMES[0] as string) }).check();
     await expect(selectAll).toHaveAttribute('aria-checked', 'mixed');
     await selectAll.click();
     await expect(selectAll).toBeChecked();
@@ -70,9 +64,7 @@ test.describe.serial('kit internals keep their rendered behaviour', () => {
 
   test('richtext toolbar: Bold shows pressed while the caret is in bold text', async () => {
     await page.goto(contentNewPath(CV_PAGE_SLUG));
-    const toolbar = page
-      .getByRole('toolbar', { name: copy.richtext.toolbar })
-      .first();
+    const toolbar = page.getByRole('toolbar', { name: copy.richtext.toolbar }).first();
     const bold = toolbar.getByRole('button', { name: copy.richtext.bold });
     const editor = page.locator('[contenteditable="true"]').first();
     await editor.click();

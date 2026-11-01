@@ -28,11 +28,7 @@ export function queryInt(min: number, max: number, fallback: number) {
 
 /** `?page=&pageSize=` of a paginated list; nothing else is accepted. */
 export const pageQuerySchema = z.strictObject({
-  page: queryInt(
-    PAGINATION.FIRST_PAGE,
-    Number.MAX_SAFE_INTEGER,
-    PAGINATION.FIRST_PAGE,
-  ),
+  page: queryInt(PAGINATION.FIRST_PAGE, Number.MAX_SAFE_INTEGER, PAGINATION.FIRST_PAGE),
   pageSize: queryInt(1, PAGINATION.MAX_PAGE_SIZE, PAGINATION.DEFAULT_PAGE_SIZE),
 });
 

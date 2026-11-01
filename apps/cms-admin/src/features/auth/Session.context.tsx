@@ -1,16 +1,10 @@
-import { createContext, type ReactNode, use } from 'react';
+import { createContext, use, type ReactNode } from 'react';
 
 import type { Session } from './Session';
 
 const SessionContext = createContext<Session | null>(null);
 
-export function SessionProvider({
-  session,
-  children,
-}: {
-  session: Session;
-  children: ReactNode;
-}) {
+export function SessionProvider({ session, children }: { session: Session; children: ReactNode }) {
   return <SessionContext value={session}>{children}</SessionContext>;
 }
 

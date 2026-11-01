@@ -1,11 +1,11 @@
 import * as React from 'react';
 import {
+  useFormContext,
+  useFormState,
   type FieldPath,
   type FieldValues,
   type RegisterOptions,
   type UseFormReturn,
-  useFormContext,
-  useFormState,
 } from 'react-hook-form';
 
 import { FIELD_ID_SUFFIX } from '@/constants/Field.constants';
@@ -21,17 +21,17 @@ type WiredNativeProps =
   | 'aria-describedby'
   | 'aria-required';
 
-export type NativeFieldProps<TElement extends 'input' | 'textarea' | 'select'> =
-  Omit<React.ComponentProps<TElement>, WiredNativeProps>;
+export type NativeFieldProps<TElement extends 'input' | 'textarea' | 'select'> = Omit<
+  React.ComponentProps<TElement>,
+  WiredNativeProps
+>;
 
 export function useRequiredFormContext<
   TFieldValues extends FieldValues,
 >(): UseFormReturn<TFieldValues> {
   const form = useFormContext<TFieldValues>();
   if (!form) {
-    throw new Error(
-      'Form inputs must be rendered inside a react-hook-form <FormProvider>.',
-    );
+    throw new Error('Form inputs must be rendered inside a react-hook-form <FormProvider>.');
   }
   return form;
 }
@@ -42,18 +42,13 @@ interface FieldIdState {
 }
 
 /** Ids that link a control to its helper text and error through aria-describedby. */
-export function useFieldIds(
-  id: string | undefined,
-  { hasDescription, hasError }: FieldIdState,
-) {
+export function useFieldIds(id: string | undefined, { hasDescription, hasError }: FieldIdState) {
   const generatedId = React.useId();
   const controlId = id ?? generatedId;
   const descriptionId = `${controlId}-${FIELD_ID_SUFFIX.DESCRIPTION}`;
   const errorId = `${controlId}-${FIELD_ID_SUFFIX.ERROR}`;
   const describedBy =
-    [hasDescription && descriptionId, hasError && errorId]
-      .filter(Boolean)
-      .join(' ') || undefined;
+    [hasDescription && descriptionId, hasError && errorId].filter(Boolean).join(' ') || undefined;
 
   return { controlId, descriptionId, errorId, describedBy };
 }

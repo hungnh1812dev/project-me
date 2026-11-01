@@ -4,8 +4,8 @@ import { loadAppConfig } from '../../../config/AppConfig.setup';
 import {
   assertRoleAllowed,
   assertSeedAllowed,
-  type SeedAccountArgs,
   SeedAccountError,
+  type SeedAccountArgs,
 } from '../application/SeedAccount.service';
 import { SEED_ACCOUNT_OPTIONS } from '../domain/Identity.constants';
 import { openIdentityCli } from './IdentityCli.setup';
@@ -34,9 +34,7 @@ export function parseSeedArgs(argv: readonly string[]): SeedAccountArgs {
       },
     }));
   } catch (error) {
-    throw new CliInputError(
-      error instanceof Error ? error.message : 'Invalid arguments.',
-    );
+    throw new CliInputError(error instanceof Error ? error.message : 'Invalid arguments.');
   }
   const email = values[O.EMAIL];
   const roleSlug = values[O.ROLE];
@@ -71,13 +69,8 @@ async function main(): Promise<void> {
 
   const cli = openIdentityCli(loadAppConfig(process.env));
   try {
-    const seeded = await cli.seedAccount.seed(
-      { ...args, password },
-      process.env,
-    );
-    process.stdout.write(
-      `Seeded account: ${seeded.email} (${seeded.roleSlug})\n`,
-    );
+    const seeded = await cli.seedAccount.seed({ ...args, password }, process.env);
+    process.stdout.write(`Seeded account: ${seeded.email} (${seeded.roleSlug})\n`);
   } finally {
     await cli.close();
   }

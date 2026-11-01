@@ -1,5 +1,4 @@
 import { DomainError } from '../../../common/errors/Domain.errors';
-
 import type { RolePolicy } from '../domain/ActorContext.entity';
 import type { RoleLookup } from './Access.port';
 import { AnonymousActorService } from './AnonymousActor.service';

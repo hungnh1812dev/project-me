@@ -1,9 +1,6 @@
 export { AccessModule } from './Access.module';
 export { roleSeedServiceOf } from './adapters/PrismaRolePolicy.repository';
-export {
-  AccessPolicyService,
-  type AccessPolicy,
-} from './application/AccessPolicy.service';
+export { AccessPolicyService, type AccessPolicy } from './application/AccessPolicy.service';
 export {
   ACCESS_ERROR_CODES,
   AccountStatus,
@@ -34,22 +31,12 @@ export { ROLE_LOOKUP, type RoleLookup } from './application/Access.port';
 export { RoleSeedService } from './application/RoleSeed.service';
 export { API_TOKEN } from './domain/ApiToken.rules';
 export { ApiTokenAuthenticator } from './http/ApiToken.guard';
-export {
-  conditionKindOf,
-  type ConditionValueKind,
-} from './domain/Conditions.rules';
+export { conditionKindOf, type ConditionValueKind } from './domain/Conditions.rules';
 export { joinFieldPath } from './domain/FieldPaths.rules';
 export { PermissionGuard, RequirePermission } from './http/Permission.guard';
-export {
-  FieldSelection,
-  type RowCondition,
-} from './domain/PolicyEvaluator.rules';
+export { FieldSelection, type RowCondition } from './domain/PolicyEvaluator.rules';
 export { QueryGuard } from './domain/QueryFieldAccess.rules';
-export {
-  requireAccountActor,
-  requireOwnerActor,
-  type AccountActor,
-} from './domain/Rank.rules';
+export { requireAccountActor, requireOwnerActor, type AccountActor } from './domain/Rank.rules';
 export { recordReadAccess } from './domain/RecordReadAccess.rules';
 export {
   RecordSerializer,

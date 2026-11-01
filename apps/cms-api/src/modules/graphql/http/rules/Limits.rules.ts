@@ -95,10 +95,7 @@ class ShapeMeter {
   }
 }
 
-function limitError(
-  message: string,
-  node: OperationDefinitionNode,
-): GraphQLError {
+function limitError(message: string, node: OperationDefinitionNode): GraphQLError {
   return new GraphQLError(message, {
     nodes: node,
     extensions: { code: GRAPHQL_ERROR_CODES.LIMIT_EXCEEDED },
@@ -107,10 +104,7 @@ function limitError(
 
 /** Runs `check` on every operation (each is judged on its own). */
 function operationRule(
-  check: (
-    operation: OperationDefinitionNode,
-    meter: ShapeMeter,
-  ) => GraphQLError | undefined,
+  check: (operation: OperationDefinitionNode, meter: ShapeMeter) => GraphQLError | undefined,
 ): ValidationRule {
   return (context): ASTVisitor => {
     const meter = new ShapeMeter(context);
@@ -124,37 +118,31 @@ function operationRule(
 }
 
 /** Field nesting after fragment expansion (`MAX_DEPTH`). */
-export const MaxDepthRule: ValidationRule = operationRule(
-  (operation, meter) => {
-    const { depth } = meter.measure(operation.selectionSet, true);
-    return depth > GRAPHQL_LIMITS.MAX_DEPTH
-      ? limitError(GRAPHQL_LIMIT_MESSAGES.DEPTH, operation)
-      : undefined;
-  },
-);
+export const MaxDepthRule: ValidationRule = operationRule((operation, meter) => {
+  const { depth } = meter.measure(operation.selectionSet, true);
+  return depth > GRAPHQL_LIMITS.MAX_DEPTH
+    ? limitError(GRAPHQL_LIMIT_MESSAGES.DEPTH, operation)
+    : undefined;
+});
 
 /**
  * Root fields of one operation, aliases and repeats included
  * (`MAX_ROOT_FIELDS`): each one is a full document read.
  */
-export const MaxRootFieldsRule: ValidationRule = operationRule(
-  (operation, meter) => {
-    const { top } = meter.measure(operation.selectionSet, true);
-    return top > GRAPHQL_LIMITS.MAX_ROOT_FIELDS
-      ? limitError(GRAPHQL_LIMIT_MESSAGES.ROOT_FIELDS, operation)
-      : undefined;
-  },
-);
+export const MaxRootFieldsRule: ValidationRule = operationRule((operation, meter) => {
+  const { top } = meter.measure(operation.selectionSet, true);
+  return top > GRAPHQL_LIMITS.MAX_ROOT_FIELDS
+    ? limitError(GRAPHQL_LIMIT_MESSAGES.ROOT_FIELDS, operation)
+    : undefined;
+});
 
 /** All selected fields after fragment expansion (`MAX_FIELD_NODES`). */
-export const MaxFieldNodesRule: ValidationRule = operationRule(
-  (operation, meter) => {
-    const { fields } = meter.measure(operation.selectionSet, true);
-    return fields > GRAPHQL_LIMITS.MAX_FIELD_NODES
-      ? limitError(GRAPHQL_LIMIT_MESSAGES.FIELD_NODES, operation)
-      : undefined;
-  },
-);
+export const MaxFieldNodesRule: ValidationRule = operationRule((operation, meter) => {
+  const { fields } = meter.measure(operation.selectionSet, true);
+  return fields > GRAPHQL_LIMITS.MAX_FIELD_NODES
+    ? limitError(GRAPHQL_LIMIT_MESSAGES.FIELD_NODES, operation)
+    : undefined;
+});
 
 export const LIMIT_RULES: readonly ValidationRule[] = [
   MaxDepthRule,
@@ -174,8 +162,6 @@ const LIMITS_SCHEMA = new GraphQLSchema({
  * Runs the limit rules alone, before the caller's schema or the access
  * policy is even loaded: an over-limit document costs no database work.
  */
-export function findLimitViolations(
-  document: DocumentNode,
-): readonly GraphQLError[] {
+export function findLimitViolations(document: DocumentNode): readonly GraphQLError[] {
   return validate(LIMITS_SCHEMA, document, [...LIMIT_RULES]);
 }

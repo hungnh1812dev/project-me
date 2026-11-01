@@ -42,15 +42,43 @@ export type AllowedMime = keyof typeof ALLOWED_MEDIA_TYPES;
 
 /** The allowlisted MIME types of kind `image`; each needs a re-encoder. */
 export type ImageMime = {
-  [M in AllowedMime]: (typeof ALLOWED_MEDIA_TYPES)[M]['kind'] extends 'image'
-    ? M
-    : never;
+  [M in AllowedMime]: (typeof ALLOWED_MEDIA_TYPES)[M]['kind'] extends 'image' ? M : never;
 }[AllowedMime];
+
+/** `?mimeType=` also accepts these family wildcards. */
+export const MEDIA_MIME_FAMILY_FILTERS = ['image/*', 'video/*'] as const;
+
+export const MEDIA_MIME_FILTERS = [
+  ...(Object.keys(ALLOWED_MEDIA_TYPES) as AllowedMime[]),
+  ...MEDIA_MIME_FAMILY_FILTERS,
+] as const;
+
+export type MediaMimeFilter = (typeof MEDIA_MIME_FILTERS)[number];
+
+/** The allowlisted MIME types a `?mimeType=` filter matches: one type, or every type of a family. */
+export function mimeTypesOfFilter(filter: MediaMimeFilter): readonly AllowedMime[] {
+  const allowed = Object.keys(ALLOWED_MEDIA_TYPES) as AllowedMime[];
+  if (!filter.endsWith('/*')) return allowed.filter((mime) => mime === filter);
+  const familyPrefix = filter.slice(0, -1);
+  return allowed.filter((mime) => mime.startsWith(familyPrefix));
+}
+
+/** Escapes `\`, `%` and `_` so a search term is matched literally by `ilike`. */
+export function escapeLikePattern(term: string): string {
+  return term.replace(/[\\%_]/g, (char) => `\\${char}`);
+}
 
 export function allowedMediaTypeOf(mime: string): AllowedMediaType | undefined {
   return Object.hasOwn(ALLOWED_MEDIA_TYPES, mime)
     ? ALLOWED_MEDIA_TYPES[mime as AllowedMime]
     : undefined;
+}
+
+/** True when both types are allowlisted and of the same kind (image, pdf or video). */
+export function isSameMediaFamily(currentMime: string, replacementMime: string): boolean {
+  const current = allowedMediaTypeOf(currentMime);
+  const replacement = allowedMediaTypeOf(replacementMime);
+  return current !== undefined && replacement !== undefined && current.kind === replacement.kind;
 }
 
 /**
@@ -62,9 +90,7 @@ export function sanitizeFileName(raw: string): string {
   // eslint-disable-next-line no-control-regex
   const cleaned = base.replace(/[\u0000-\u001f\u007f]/g, '').trim();
   const bounded = Array.from(cleaned).slice(0, FILE_NAME_MAX_LENGTH).join('');
-  return bounded === '' || bounded === '.' || bounded === '..'
-    ? FALLBACK_FILE_NAME
-    : bounded;
+  return bounded === '' || bounded === '.' || bounded === '..' ? FALLBACK_FILE_NAME : bounded;
 }
 
 export function isAltWithinLimit(text: string): boolean {

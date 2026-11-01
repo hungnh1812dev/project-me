@@ -109,7 +109,7 @@ count).
 | GET    | `/api/v1/health/live`  | `200 { "status": "ok" }`                                                                       |
 | GET    | `/api/v1/health/ready` | `200 { "status": "ok" }`, or `503 { "status": "error" }` when the DB ping fails or exceeds 2 s |
 
-### Auth (T09, `src/modules/identity`)
+### Auth (`src/modules/identity`)
 
 | Method | Path                   | Auth                    | Response                                                                               |
 | ------ | ---------------------- | ----------------------- | -------------------------------------------------------------------------------------- |
@@ -118,7 +118,7 @@ count).
 | POST   | `/api/v1/auth/logout`  | refresh cookie + Origin | `204`, family revoked, cookie cleared                                                  |
 | GET    | `/api/v1/auth/me`      | `Authorization: Bearer` | `200 { id, email, displayName, role, twoFactorEnabled, twoFactorMethod, permissions }` |
 
-- `permissions` (T33a) is the caller's effective `subject:action` strings (e.g. `article:read`, `roles:update`), sorted, listing concrete content types and system subjects (never `*`); conditions are ignored. Owner gets every valid action; reviewer and public roles only `:read`. It carries no secrets.
+- `permissions` is the caller's effective `subject:action` strings (e.g. `article:read`, `roles:update`), sorted, listing concrete content types and system subjects (never `*`); conditions are ignored. Owner gets every valid action; reviewer and public roles only `:read`. It carries no secrets.
 - Login verifies Argon2id. Unknown email, wrong password and any account that
   is not `active` (invited, disabled, deleted) get the same
   `401 AUTH_INVALID_CREDENTIALS`; unknown emails are verified against a dummy
@@ -126,13 +126,13 @@ count).
 - Access token: HS256 only (any other `alg`, `none` included, is rejected),
   15 min, claims `sub` (account document id), `tv`, `pv`, `kid`, `typ`. The
   verification key is chosen by the `kid` header (`JWT_ACCESS_KID`).
-  Comparing `tv`/`pv` with the database is T15.
+  The JWT guard compares `tv`/`pv` with the database (see `docs/modules/access-control.md`).
 - Refresh cookie `__Secure-abyss_rt`: `HttpOnly; Secure; SameSite=Strict;
 Path=/api/v1/auth`, 7 days, host-only (no `Domain`). The raw token is never
   stored, only its SHA-256. Every refresh rotates it within its family;
   presenting an already rotated token revokes the whole family and bumps
   `accounts.token_version`.
-- Grace window (T11a, `REFRESH_TOKEN_REUSE_GRACE_SECONDS` = 10 s): an
+- Grace window (`REFRESH_TOKEN_REUSE_GRACE_SECONDS` = 10 s): an
   already rotated token is not treated as reuse when it comes back within
   10 s of its rotation (`revoked_at`), its successor (`replaced_by_id`) is
   still live and unused, and the account is active. That is a concurrent
@@ -150,7 +150,7 @@ Path=/api/v1/auth`, 7 days, host-only (no `Domain`). The raw token is never
   `methods` holds only the account's own method (`totp` or `email`). The
   second step is `POST /auth/2fa/verify` (below).
 
-### Two-factor authentication (T13)
+### Two-factor authentication
 
 | Method | Path                               | Auth                    | Body                         | Response                               |
 | ------ | ---------------------------------- | ----------------------- | ---------------------------- | -------------------------------------- |
@@ -232,7 +232,7 @@ one-time setup request guarded by a setup token. Design:
   working at once). If the owner row is ever deleted in SQL while a token is
   still configured, setup reopens to whoever holds the token.
 
-### Break-glass 2FA reset: `owner:reset-2fa` (T13a)
+### Break-glass 2FA reset: `owner:reset-2fa`
 
 > **Warning: break-glass tool.** It turns 2FA off for any account, the owner
 > included, without a password or code. Run it only after you have confirmed
@@ -262,7 +262,7 @@ email.`), 2FA already off, invalid email, missing `--email`, unknown
 - Audited in the same transaction: `two_factor.reset_by_operator` with
   `actor_type: system`, no actor id, no IP, metadata `{ previousMethod }`.
 
-### Password lifecycle (T12)
+### Password lifecycle
 
 | Method | Path                                | Auth                    | Body                                      | Response                  |
 | ------ | ----------------------------------- | ----------------------- | ----------------------------------------- | ------------------------- |
@@ -292,9 +292,10 @@ AUTH_INVALID_REQUEST` (malformed body).
 - Every password write bumps `token_version` and revokes every refresh token:
   all sessions end, the caller's included. Nobody is signed in by these
   endpoints.
-- The JWT guard compares `tv` with `accounts.token_version` on every request
-  (uncached) and rejects inactive or deleted accounts, so old access tokens
-  get 401 at once (§12-10). Caching and the `pv` check are T15.
+- The JWT guard compares `tv` with `accounts.token_version` and `pv` with the role's
+  `policy_version` (through the in-process version cache, see
+  `docs/modules/access-control.md`) and rejects inactive or deleted accounts,
+  so old access tokens get 401 (§12-10).
 
 The readiness ping goes through the `DATABASE_HEALTH` token
 (`src/modules/health/application/CheckReadiness.service.ts`), bound in
@@ -316,7 +317,7 @@ folder, so a new module is covered without a list to edit) keeps only `<Module>.
 `index.ts` and the layer folders `domain/`, `application/`, `adapters/`,
 `http/` (plus `cli/`, `jobs/` where it has them). Import rules per layer are
 in `LAYER_RULES`; `Layers.architecture.spec.ts` enforces them. Checklist,
-as the content-types pilot (CR-hc-2) used it:
+as the content-types pilot used it:
 
 File names follow ADR 0008 (`<PascalName>.<function>.ts`, tests add
 `.spec.ts` and an optional lower-case scenario variant such as
@@ -352,7 +353,7 @@ in that file.
 6. Specs: unit specs sit next to their file; integration specs change import
    paths only. Run `pnpm test:unit`, then the module's integration specs.
 
-`content-engine` is migrated (CR-ce-1, CR-ce-2). `domain/`: rules, entities,
+`content-engine` is migrated. `domain/`: rules, entities,
 constants, `field-types/` and the registry (`ContentTypeRegistry.entity.ts`).
 `application/`: the ports file `ContentEngine.port.ts`, and `ContentRegistry.service.ts` (lazy load,
 retry after a failure, empty registry when `content:migrate` never ran).
@@ -366,7 +367,7 @@ runs every write through `CONTENT_TRANSACTION_RUNNER`.
 Specs that seed rows open a unit with `inContentUnit(db, work)`
 (`test/fixtures/ContentUnit.fixture.ts`), which runs the real runner.
 
-### Rate limits (T10)
+### Rate limits
 
 Fixed windows, per resolved client IP and, for login, per email. Each module
 owns its policies in a constants file of its own (identity:
@@ -390,17 +391,23 @@ any other `*.constants.ts`:
 | `ACCOUNT_INVITE`             | 20 / hour per IP, then 10 / hour per caller (invite + resend) |
 | `MEDIA_UPLOAD`               | 120 / hour per IP, then 60 / hour per caller (`POST /media`)  |
 
-- Optional override (T18b): `LOGIN_RATE_LIMIT_IP` and `LOGIN_RATE_LIMIT_EMAIL`
+- Optional override: `LOGIN_RATE_LIMIT_IP` and `LOGIN_RATE_LIMIT_EMAIL`
   replace the `login:ip` (10) and `login:email` (5) limits per 15 min. Read at
   startup (positive integer, at most 1,000,000; invalid fails the start).
   Unset = defaults. Only `docker-compose.smoke.yml` sets them, so the e2e
   suite (one IP, many sign-ins) is not throttled; with `NODE_ENV=production` setting either fails the start unless
   `ALLOW_LOGIN_RATE_LIMIT_OVERRIDE=smoke` (exact value; anything else is
   invalid) is also set, which only `docker-compose.smoke.yml` does.
-- Optional override (T18c): `REFRESH_RATE_LIMIT_IP` replaces the `refresh:ip`
+- Optional override: `REFRESH_RATE_LIMIT_IP` replaces the `refresh:ip`
   limit (30 per minute per IP). Same validation and the same production
   opt-in flag (`ALLOW_LOGIN_RATE_LIMIT_OVERRIDE=smoke`) as the login overrides;
   only `docker-compose.smoke.yml` sets it.
+- Optional override: `SETUP_STATUS_RATE_LIMIT_IP` replaces the `setup-status:ip`
+  limit (30 per minute per IP). Same validation and production opt-in flag; the
+  e2e suite sets it because every login page visit reads the status.
+- Optional override: `SETUP_SUBMIT_RATE_LIMIT_IP` replaces the `setup-submit:ip`
+  limit (5 per 15 minutes per IP). Same validation and production opt-in flag;
+  the smoke script and the e2e suite submit more than 5 times from one IP.
 - Limit overrides: a rule opts in with `limitOverrideEnvKey`; the key must be in
   `RATE_LIMIT_OVERRIDE_ENV_KEYS` (`src/config/Config.constants.ts`), which also
   drives the env parsing and the production opt-in check. Identity's
@@ -431,7 +438,7 @@ any other `*.constants.ts`:
   Correct for one API replica only; counters reset on restart. Before running
   more than one replica, bind `RATE_LIMIT_STORE` to a Postgres or Redis
   implementation. Expired counters are swept every 15 minutes.
-- Store cap (T10a): at most `RATE_LIMIT_MAX_KEYS` (50,000, about 12 MB at
+- Store cap: at most `RATE_LIMIT_MAX_KEYS` (50,000, about 12 MB at
   ~250 bytes per key) live counters, so rotating IPs or emails can't exhaust
   memory. When a new key arrives at the cap, expired counters are swept
   first; if the store is still full the request is refused with the same
@@ -441,7 +448,7 @@ any other `*.constants.ts`:
   `RATE_LIMIT_CAPACITY_WARN_INTERVAL_MS` (1 min). Change the cap in
   `src/common/constants/Limits.constants.ts`.
 
-### Accounts and roles (T17, `src/modules/access`)
+### Accounts and roles (`src/modules/access`)
 
 All routes need `Authorization: Bearer` (an account session; API tokens and
 reviewers never reach them) plus the permission named. `:id` is always a
@@ -467,7 +474,7 @@ twoFactorMethod, role: { id, slug, name, rank }, createdAt, manageable }`.
   `Role`: `{ id, slug, name, rank, isSystem, accountCount, permissions,
 manageable }`. `manageable` says whether the caller may change it (D6), so
   the admin UI can hide actions; the server enforces it anyway.
-- **Enable** (T17a): only a `disabled` account (else `409
+- **Enable**: only a `disabled` account (else `409
 ACCOUNT_NOT_DISABLED`); it becomes `active` when it has a password, else
   `invited`. `token_version` is unchanged (disable already bumped it).
   **Resend invite**: only `invited` accounts (else `409 ACCOUNT_NOT_INVITED`);
@@ -506,7 +513,7 @@ ROLE_IN_USE` with `details.accountCount` while any account (disabled,
   messages, no values), `404 ACCOUNT_NOT_FOUND` / `ROLE_NOT_FOUND`, `409
 ROLE_SLUG_TAKEN`.
 
-### API tokens (T19, D5, `src/modules/access`)
+### API tokens (D5, `src/modules/access`)
 
 Routes need `Authorization: Bearer` with an **account session** (JWT). An
 `ak_live_` token gets `401` there, any other actor kind `403`.
@@ -547,7 +554,7 @@ API_TOKEN_NOT_FOUND`. A revoked token cannot be updated or revoked again
   `hasExpiry`), `api_token.updated` (`fields` changed, plus `subjects` and
   `permissionCount` when the scope changed), `api_token.revoked`. Never the
   raw token.
-- Authentication on content routes (T20+): `@UseGuards(ApiTokenGuard,
+- Authentication on content routes: `@UseGuards(ApiTokenGuard,
 PermissionGuard)`. `ApiTokenGuard` hashes the bearer value (it must start
   with `ak_live_`), looks it up by hash and sets `req.user.actor` with the
   creator's **current** role, so effective permissions are scope ∩ creator
@@ -556,7 +563,7 @@ PermissionGuard)`. `ApiTokenGuard` hashes the bearer value (it must start
   `last_used_at` is written at most once a minute (`updated_at` does not
   move). Tokens are not cached: revocation applies on the next request.
 
-### Content types (T17b, `src/modules/content-types`)
+### Content types (`src/modules/content-types`)
 
 Read-only discovery of the registered content types and their field paths,
 for the admin permission matrix now and the document UIs later. Both routes
@@ -586,7 +593,7 @@ conditionKind, sensitive }`. Content fields come first, depth-first in
 CONTENT_TYPE_NOT_FOUND` with the same message. The slug is only ever a
   registry lookup key.
 
-### Documents, read (T20, `src/modules/documents`)
+### Documents, read (`src/modules/documents`)
 
 | Method | Path                                  | Response                                                 |
 | ------ | ------------------------------------- | -------------------------------------------------------- |
@@ -636,17 +643,17 @@ updatedAt createdBy updatedBy`); components, nested paths and `json` are
   they reject (401/403/404) is not counted.
 - Responses are `Cache-Control: no-store`.
 
-### Documents, write (T21, `src/modules/documents`)
+### Documents, write (`src/modules/documents`)
 
 `POST /documents/:slug` and `PUT /documents/:slug/:documentId`. Auth: JWT account or API token (`DocumentAuthGuard`); anonymous and reviewer sessions get 403. Needs `create` / `update` on the content type, plus the `update` row conditions on PUT (a hidden row is 404 `DOCUMENT_NOT_FOUND`, and so is a row deleted by someone else while the update runs). Body = the document tree `{ values?, components? }`; PUT also needs `version` (the version the client edited; it is read first and never reaches the field allowlist).
 
-Order of every write: allowlist (D4: resent `"***"` dropped, `FIELD_UNKNOWN` / `FIELD_NOT_WRITABLE` 400) -> tree shape (`assertTreeInput`) -> value rules (`documents/domain/ValueValidator.rules.ts`: type per field type, `required`, each value through its field type's `coerceValue` in the registry (`content-engine/field-types/`); richtext goes through `sanitizeRichtext` there (`sanitize-html` allowlist: editor tags, `a[href|title|target|rel]`, schemes http/https/mailto/tel; script, `on*`, `javascript:`, style stripped); 400 `DOCUMENT_INVALID`, message has the input path, never the value) -> one transaction.
+Order of every write: allowlist (D4: resent `"***"` dropped, `FIELD_UNKNOWN` / `FIELD_NOT_WRITABLE` 400) -> tree shape (`assertTreeInput`) -> value rules (`documents/domain/ValueValidator.rules.ts`: type per field type, `required`, each value through its field type's `coerceValue` in the registry (`content-engine/field-types/`); richtext goes through `sanitizeRichtext` there (`sanitize-html` allowlist: editor tags, `a[href|title|target|rel]`, schemes http/https/mailto/tel; `span style="color: #hex"` from `RICHTEXT_TEXT_COLORS`, `style="text-align: ..."` on `p`/`h1`-`h6`, `img[src|alt|data-media-id]` only for `https:` on the given `imageOrigins` (coerce context `richtextImageOrigins`); script, `on*`, `javascript:`, every other style stripped); 400 `DOCUMENT_INVALID`, message has the input path, never the value) -> one transaction.
 
 - **Create** inserts a draft (`published_at` null, `version` 1, `created_by` = the actor or the token creator). A type with `draftAndPublish: false` stores one live row instead (`published_at` set at create); PUT then updates that row. The response (201) is the new record serialized for the actor, but only when the actor may read that row (read permission, read row conditions, and `read`+`update` for a draft); otherwise it is just `{ documentId, version }`. `create` permissions take no conditions: saving a role with one is 400 `PERMISSION_INVALID_CONDITION`.
 - **Update**: `UPDATE ... SET version = version + 1 WHERE document_id AND version = $v` (takes the row lock) then `replaceTree`, in one transaction; after the write the row is re-checked against the `update` row conditions and the request is rolled back with 403 if the new content moved it out of scope. 200 returns the record under the same read gate as create (else `{ documentId, version }`). Of N concurrent updates with the same version exactly one wins.
 - **Conflict** (`409 DOCUMENT_VERSION_CONFLICT`): `details = { currentVersion, server, submitted, diff }`. `server` is the stored document and `submitted` the sent changes applied on it, both through `RecordSerializer` with the actor's read access (masked fields are `***` / `null`, `_maskedFields` listed). `diff` is computed from those serialized records (`documents/domain/Diff.rules.ts`): entries `{ path, change: added|removed|changed|moved, server?, submitted? }`; components are matched by `componentUid`, an item without uid is `[new#<index>]`. An actor without `read` on the row (or whose read conditions exclude it) gets `server`/`submitted` null and an empty diff; `currentVersion` is still returned.
 
-### Documents, publish and delete (T22, `src/modules/documents`)
+### Documents, publish and delete (`src/modules/documents`)
 
 `POST /documents/:slug/:documentId/publish` (body `{ expectedVersion }`, nothing else), `POST .../unpublish`, `DELETE /documents/:slug/:documentId`. Auth as for writes (JWT account or API token; anonymous and reviewer 403). Needs `publish` / `unpublish` / `delete` on the content type. The row conditions of that action pick the rows the actor can reach; rows outside them are 404 `DOCUMENT_NOT_FOUND`.
 
@@ -655,37 +662,38 @@ Order of every write: allowlist (D4: resent `"***"` dropped, `FIELD_UNKNOWN` / `
 - **Delete** deletes the draft and the published row (cascade): 204. Every row of the document must be inside the actor's `delete` conditions, else 404 and nothing is deleted. A `draftAndPublish: false` type deletes its one live row.
 - **Activity tracking** is a port (`src/modules/documents/application/Documents.port.ts`: `ActivityRecorder`, token `ACTIVITY_RECORDER`; `Documents.module.ts` binds the `none` recorder). Publish, unpublish and delete call `record({ action, subject, documentId, accountId, tokenId?, version? })` after the commit; a failure is logged, never returned. Only the `none` adapter exists (default): the `database` adapter (SPEC D15) is not built yet. Create/update do not emit events yet.
 
-### Documents, bulk (T34, `src/modules/documents/bulk.*`)
+### Documents, bulk (`src/modules/documents/bulk.*`)
 
 `POST /documents/:slug/bulk/create|publish|unpublish|delete`, body `{ atomic: boolean, items: [...] }`. **Collections only**: a single type is 400 `DOCUMENT_BULK_NOT_COLLECTION`. Auth and permissions as the single-document routes (JWT account or API token; anonymous and reviewer 403; the route's action on `:slug` is needed, else 403). Limits: 1 to 50 items (`DOCUMENT_BULK_LIMIT`), 200 component rows per create item (that item is rejected with `DOCUMENT_BULK_LIMIT`), body 1 MB (413 `PAYLOAD_TOO_LARGE`, middleware `documents/http/BulkBodyLimit.middleware.ts`; other routes keep Nest's 100 KB parser).
 
 - **Items**: `create` = a document tree (`{ values?, components? }`, same allowlist and value rules as `POST /documents/:slug`, checked per item); `publish` = `{ documentId, expectedVersion }`; `unpublish` / `delete` = `{ documentId }`. Malformed publish/unpublish/delete items and repeated `documentId`s are 400 for the whole request.
 - **`atomic: true`**: one transaction. The first failing item aborts everything: the request fails with that item's status and error code, and `details: { index, details }`. Nothing is written.
 - **`atomic: false`**: always 200 with `{ atomic, succeeded, failed, results }`; `results[i]` is `{ index, status: 'ok', documentId, version? }` or `{ index, status: 'error', statusCode, errorCode, message, details? }`. Non-create items run in one transaction with a savepoint per item, so a failed item undoes only itself. Valid create items are inserted together.
-- **Per item rules** are those of T21/T22 (reused code: `DocumentsCommandService.prepareCreate`, `PublishService.publishIn/unpublishIn/removeIn`): stale `expectedVersion` is 409 `DOCUMENT_VERSION_CONFLICT { currentVersion }`; rows outside the action's row conditions are 404 `DOCUMENT_NOT_FOUND` (not 403); publish/unpublish on a `draftAndPublish: false` type is 400 `DOCUMENT_NOT_PUBLISHABLE` for the whole request.
+- **Per item rules** are those of single-document create, update and publish (reused code: `DocumentsCommandService.prepareCreate`, `PublishService.publishIn/unpublishIn/removeIn`): stale `expectedVersion` is 409 `DOCUMENT_VERSION_CONFLICT { currentVersion }`; rows outside the action's row conditions are 404 `DOCUMENT_NOT_FOUND` (not 403); publish/unpublish on a `draftAndPublish: false` type is 400 `DOCUMENT_NOT_PUBLISHABLE` for the whole request.
 - **Batched inserts**: `ContentRepository.insertTrees` writes all roots in one INSERT and each component table level in one INSERT, all `RETURNING id`; the statement count does not grow with the item count.
 - **Bodies hold ids and versions only** (create: `{ documentId, version: 1 }`), never records. Publish/unpublish/delete tell the activity port after commit, per succeeded item.
 - Routing: `BulkController` is registered before `DocumentsController` so `bulk` is never read as a `:documentId`.
 
-### Documents, presence (T26, `src/modules/documents`)
+### Documents, presence (`src/modules/documents`)
 
 `POST /documents/:slug/:documentId/presence` (SPEC D16), body `{ state?: 'viewing' | 'editing' }` (default `editing`, nothing else allowed). Needs `update` on the content type and the document's draft row inside the actor's `update` row conditions (else 404). Only account sessions: anonymous, reviewer and API token callers get 403. Heartbeat every 20 s; an entry expires 45 s after its last heartbeat (`PRESENCE_TTL_MS`). 200 returns everyone active on the document, each `{ accountId, displayName, state, lastSeenAt }` and nothing else (`accountId` is the account's public UUID, the `id` of `GET /auth/me`, never the internal numeric id; the caller is included, clients filter themselves out). In-memory store, one replica; capped at `PRESENCE_MAX_ENTRIES` (new editors get 429 at the cap). No audit event (not a content change).
 
-### Media (T27, D12, `src/modules/media`)
+### Media (D12, `src/modules/media`)
 
-- `POST /media`: `multipart/form-data`, one `file` part and an optional `alt` text field (max 500 characters); any other part is 400 `MEDIA_INVALID_UPLOAD`, a non-multipart body is 415. Needs `media` `create`; JWT sessions only. Throttled by `MEDIA_UPLOAD`. 201 returns `{ id, fileName, mimeType, size, width, height, alt, url, thumbnailUrl, isReviewerPreset, createdAt }` (`id` = `document_id`; the storage key and hash are never returned).
+- `POST /media`: `multipart/form-data`, one `file` part and an optional `alt` text field (max 500 characters); any other part is 400 `MEDIA_INVALID_UPLOAD`, a non-multipart body is 415. Needs `media` `create`; JWT sessions only. Throttled by `MEDIA_UPLOAD`. 201 returns `{ id, fileName, mimeType, size, width, height, alt, url, thumbnailUrl, provider, isReviewerPreset, sha256, createdAt, updatedAt }` (`id` = `document_id`; `sha256` is the hex hash of the stored bytes; the storage key is never returned).
 - Pipeline (`adapters/UploadProcessing.adapter.ts`, port `UploadProcessor` in `application/Media.port.ts`, use case `application/UploadMedia.service.ts`): `busboy` streams the file to a temp file (deleted afterwards), so a request is never buffered whole. The type is detected from the magic bytes with `file-type`; the declared type and the file name are ignored. Allowlist: JPEG, PNG, WebP, GIF, AVIF, PDF, MP4. Anything else, SVG and HTML included, is 415 `MEDIA_UNSUPPORTED_TYPE`. Limits per detected type (`MEDIA_MAX_BYTES`): image 10 MB, pdf 20 MB, video 100 MB; over the limit stops the stream and answers 413 `MEDIA_FILE_TOO_LARGE`; a `Content-Length` far above the largest limit is refused up front.
 - Images are decoded and re-encoded with sharp in the same format (orientation applied, ICC profile kept, no EXIF/GPS/XMP, input capped at 50 million pixels); bytes that pass the magic check but do not decode are 415. This also drops anything appended to the image (polyglots). PDF and MP4 are stored as received (their magic bytes are checked, not their content); they are served from the storage provider's domain, never the API's.
 - The storage key is a UUIDv7 (`src/modules/media/domain/Uuidv7.rules.ts`, time from `Clock`); the full SHA-256 of the stored bytes is kept in `file_library.sha256` (no dedupe yet). The file name is kept only for display (path and control characters removed, 255 characters). If the row cannot be written, the stored object is removed again.
-- Storage port: `MEDIA_STORAGE` (`MediaStorage` in `application/Media.port.ts`: `put`, `delete`; adapters `adapters/Cloudinary.adapter.ts` and `adapters/Fake.adapter.ts`). `MEDIA_PROVIDER=fake` keeps bytes in memory (dev and tests, rejected in production by the env schema and again by its factory); providers are chosen through `MEDIA_STORAGE_FACTORIES` in `Media.module.ts` (a `Record` per provider; a new provider adds one entry, mail does the same with `MAIL_SENDER_FACTORIES`); `cloudinary` uploads with the SDK (`CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`, optional `CLOUDINARY_FOLDER`; all three required with that provider). Rows from both are stored with `provider = cloudinary`. Images get a thumbnail URL (320 px longest side); PDF is stored as a Cloudinary `raw` resource, video as `video`.
-- `GET /media?page=&pageSize=` (the shared list convention): newest first, soft-deleted rows hidden. Needs `media` `read`. The policy row filter (`PolicyEvaluator.rowFilter`) limits read-only actors (reviewer, anonymous) to `is_reviewer_preset = true` rows, whatever their role is called. Reviewer sessions reach this route at T32.
-- `DELETE /media/:id` (T28, `MediaLibraryService.remove`): needs `media` `delete` (row filter applied; JWT sessions only). 204 on success: soft delete (`deleted_at`) plus a `media.deleted` audit row (subject `media`, target = the file's `document_id`, metadata `{ mimeType }`) in the same transaction. 409 `MEDIA_IN_USE` while any `media` column of any content table (root or component, draft or published row) holds the file; the check runs under a row lock on the file. 404 `MEDIA_NOT_FOUND` for an unknown, already deleted or out-of-scope file; 400 for a non-UUID id.
+- Storage port: `MEDIA_STORAGE` (`MediaStorage` in `application/Media.port.ts`: `provider`, `deliveryOrigin`, `put`, `delete`, optional `openPublicFile`; adapters `adapters/Cloudinary.adapter.ts`, `adapters/Fake.adapter.ts` and `adapters/Local.adapter.ts`). `MEDIA_PROVIDER=fake` keeps bytes in memory (dev and tests, rejected in production by the env schema and again by its factory); providers are chosen through `MEDIA_STORAGE_FACTORIES` in `Media.module.ts` (a `Record` per provider; a new provider adds one entry, mail does the same with `MAIL_SENDER_FACTORIES`); `cloudinary` uploads with the SDK (`CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`, optional `CLOUDINARY_FOLDER`; all three required with that provider). `local` (ADR 0021, dev and smoke stacks) writes `<MEDIA_LOCAL_DIR>/<key>.<ext>` through a temp file and a rename, returns `<MEDIA_LOCAL_PUBLIC_URL>/<key>.<ext>`, and is served by the public `GET /api/v1/media-files/:fileName` (`http/MediaFiles.controller.ts`: no session, only `<uuidv7>.<ext>` names with an extension of `MEDIA_FILE_EXTENSIONS`, content type from that map, `Cache-Control: public, max-age=31536000, immutable` on `200` only, `404` otherwise, also for any other provider). In production it needs `ALLOW_LOCAL_MEDIA_PROVIDER=smoke` (checked by the env schema and again by its factory). Rows are stored with `provider = cloudinary` until UIL-11. `DocumentMediaService.richtextImageOrigins()` returns the active storage's `deliveryOrigin` (Cloudinary `https://res.cloudinary.com`, fake `FAKE_STORAGE_ORIGIN`, local the origin of `MEDIA_LOCAL_PUBLIC_URL`); `DocumentsCommandService.prepare` (single and bulk writes) passes it to `validateTreeValues`, so a richtext `img` is kept only from that origin. Images get a thumbnail URL (320 px longest side); PDF is stored as a Cloudinary `raw` resource, video as `video`.
+- `GET /media?page=&pageSize=&search=&mimeType=` (the shared list convention): newest first, soft-deleted rows hidden. `search` (trimmed, 1-100 characters) is a case-insensitive substring of the file name; `%`, `_` and `\` match literally (escaped, bound parameter). `mimeType` is one allowlisted type or `image/*` / `video/*`; anything else, a repeated key or an unknown key is 400. Both narrow the set the row filter allows, and `meta.total` counts the filtered set. Needs `media` `read`. The policy row filter (`PolicyEvaluator.rowFilter`) limits read-only actors (reviewer, anonymous) to `is_reviewer_preset = true` rows, whatever their role is called.
+- `PUT /media/:id/file` (`ReplaceMediaFileService.replace`): multipart, one `file` part only (an `alt` or any other part is 400 `MEDIA_INVALID_UPLOAD`). Needs `media` `update` (row filter applied; JWT sessions only); throttled with the `POST /media` policies (same counters). Same pipeline as an upload (magic bytes, allowlist, re-encode, size per kind). 400 `MEDIA_INVALID_UPLOAD` when the new type is another family (image, pdf, video); 404 `MEDIA_NOT_FOUND` for an unknown, deleted or out-of-scope file (before the body is read). Keeps `id`, `alt`, `createdAt`, `createdBy`; sets the new key, hash, size, type, size in pixels, urls and `fileName` (the new file's name). In one transaction under a row lock, a soft-deleted row takes the old storage key (the purge job removes the old object after the grace time) and a `media.replaced` audit row (target = `document_id`, metadata `{ previousSha256, sha256 }`) is written. A failure removes the new object and leaves the row untouched. Returns the file view.
+- `DELETE /media/:id` (`MediaLibraryService.remove`): needs `media` `delete` (row filter applied; JWT sessions only). 204 on success: soft delete (`deleted_at`) plus a `media.deleted` audit row (subject `media`, target = the file's `document_id`, metadata `{ mimeType }`) in the same transaction. 409 `MEDIA_IN_USE` while any `media` column of any content table (root or component, draft or published row) holds the file, or any `richtext` column embeds it (a regex on a real `<img ... data-media-id="<document_id>">` element, the id a bound parameter; plain text that looks like the attribute does not count); the check runs under a row lock on the file. 404 `MEDIA_NOT_FOUND` for an unknown, already deleted or out-of-scope file; 400 for a non-UUID id.
 - Purge (`jobs/MediaPurge.job.ts` on `infrastructure/scheduling/IntervalJob.adapter.ts`, use case `application/PurgeDeletedMedia.service.ts`): an in-process job, hourly (`MEDIA_PURGE_INTERVAL_MS`), removes the stored object and then the row of files soft-deleted over 24 h ago (`MEDIA_PURGE_GRACE_MS`), walking all eligible rows in id order in batches of 100 (rows that stay never block later ones). A file a document points at again is skipped. Every replica runs it (harmless). A failed storage delete is logged and retried next run. Known limit: a document can attach the file between the reference check and the row delete; the object is then gone while the document still points at the (deleted) row.
-- `PATCH /media/:id` (T29, `MediaLibraryService.updateAlt`): strict body `{ alt: string | null }` (trimmed; blank or `null` clears; max 500 characters, else 400 `ACCESS_INVALID_REQUEST`). Needs `media` `update` (row filter applied; JWT sessions only). 200 returns the same view as upload. 404 `MEDIA_NOT_FOUND` for an unknown, deleted or out-of-scope file; 400 for a non-UUID id. Not audited (SPEC §7 audits media delete only). The row filter is applied in the update statement itself, so a row that leaves the actor's scope between check and write is not changed.
+- `PATCH /media/:id` (`MediaLibraryService.updateAlt`): strict body `{ alt: string | null }` (trimmed; blank or `null` clears; max 500 characters, else 400 `ACCESS_INVALID_REQUEST`). Needs `media` `update` (row filter applied; JWT sessions only). 200 returns the same view as upload. 404 `MEDIA_NOT_FOUND` for an unknown, deleted or out-of-scope file; 400 for a non-UUID id. Not audited (SPEC §7 audits media delete only). The row filter is applied in the update statement itself, so a row that leaves the actor's scope between check and write is not changed.
 - Media views (upload, list, PATCH) include `provider`.
-- Media in documents (T29, `application/DocumentMedia.service.ts`): a `media` field is written as the file's uuid (`id` of the media views) or `null`; an integer, unknown, deleted or (by the `media` read row filter) unreadable file is 400 `DOCUMENT_INVALID`. The column stores `file_library.id`, so `MEDIA_IN_USE` keeps working. Every document read (list, detail, write response, 409 `server` and `submitted`) returns the file instead: `{ id, fileName, url, thumbnailUrl, provider, alt, size, createdAt }` (`null` when empty, masked or gone). The embed follows the field's read permission, not `media` read. The internal id is never returned; `media` fields cannot be used in list `filter` or `sort` (400). Test type `content/schemas/profile.json` (`name`, `photo` media; migration `0002_content.sql`).
+- Media in documents (`application/DocumentMedia.service.ts`): a `media` field is written as the file's uuid (`id` of the media views) or `null`; an integer, unknown, deleted or (by the `media` read row filter) unreadable file is 400 `DOCUMENT_INVALID`. Richtext `data-media-id` values (after sanitizing, every table, root and components) follow the same rule in the same batched lookup: a missing, deleted or unreadable file, or a denied `media` read, is 400 `DOCUMENT_INVALID` with the richtext field path, single and bulk; the richtext is stored unchanged. The column stores `file_library.id`, so `MEDIA_IN_USE` keeps working. Every document read (list, detail, write response, 409 `server` and `submitted`) returns the file instead: `{ id, fileName, url, thumbnailUrl, provider, alt, size, createdAt }` (`null` when empty, masked or gone). The embed follows the field's read permission, not `media` read. Richtext images follow the file too: on every read (REST and GraphQL) each `img[data-media-id]` gets the file's current `url`, and is removed when the file is gone or not an `image/*` file (`domain/RichtextImages.rules.ts`). The internal id is never returned; `media` fields cannot be used in list `filter` or `sort` (400). Test type `content/schemas/profile.json` (`name`, `photo` media; migration `0002_content.sql`).
 
-### Reviewer (T31, D2, `src/modules/reviewer`)
+### Reviewer (D2, `src/modules/reviewer`)
 
 | Route                                    | Who                                | Result                                                                                                         |
 | ---------------------------------------- | ---------------------------------- | -------------------------------------------------------------------------------------------------------------- |
@@ -700,7 +708,7 @@ Layout: `application/ReviewerAccess.service.ts` (status, toggle, create session,
 
 `PUT /reviewer/settings` always bumps the `reviewer` role's `policy_version`; switching **off** also bumps `token_version` of every reviewer account, so live sessions get 401 on their next request (and stay dead if reviewer access is switched on again). Audited as `reviewer.settings_changed` (metadata: `enabled`, `sessionsRevoked`) and `reviewer.session_created` (actor = the new reviewer account). A JWT whose account holds the `reviewer` role is always the read-only `reviewer` actor (published content only, no writes, whatever the role rows say). `jobs/ReviewerCleanup.job.ts` (every 10 min, in-process, on `infrastructure/scheduling/IntervalJob.adapter.ts`) runs `application/ReviewerCleanup.service.ts`, which deletes reviewer accounts whose session expired; their session rows go with them and audit rows keep the text with the actor link set to null.
 
-### Security audit (T17, D15)
+### Security audit (D15)
 
 `SecurityAuditService` (`src/modules/security-audit/application/SecurityAudit.service.ts`,
 provided only by `SecurityAuditModule`; rows are stored through the `AuditLogWriter` port, implemented by `adapters/PrismaAuditLog.repository.ts`)
@@ -743,7 +751,7 @@ usage: [docs/modules/core-schema.md](../../docs/modules/core-schema.md).
 
 `src/modules/access/` decides what an actor (account, reviewer, API token,
 anonymous) may do: `PolicyEvaluator.can()` / `fieldsFor()` / `rowFilter()`,
-the conditions DSL compiler and the save-time validators T17/T19 call.
+the conditions DSL compiler and the save-time validators the roles and API-token services call.
 Routes opt in with `@UseGuards(JwtAuthGuard, PermissionGuard)` and
 `@RequirePermission(...)`. `tv`/`pv` revocation goes through the in-process
 `VersionCache` (5 s TTL, one replica; swap it before scaling out).
@@ -791,7 +799,7 @@ env value or secret can reach it. Run `pnpm --filter @abyss/cms-api
 contract:print` after changing a mirrored constant; `-- --check` (CI) exits 1
 when the file is stale. Only client tests import the JSON.
 
-### GraphQL endpoint (GQ2, `src/modules/graphql`)
+### GraphQL endpoint (`src/modules/graphql`)
 
 `POST /api/v1/graphql`, queries only, JSON body `{ query, variables?,
 operationName? }` (non-JSON is 415, an array or a missing `query` is 400).
@@ -893,7 +901,7 @@ and `pnpm deploy --prod` copies production dependencies into a runtime image
 that runs as the numeric `node` user (`USER 1000:1000`) on port 3000. Pass config as env vars; `.env*`
 files are never copied into the build context (`.dockerignore`).
 
-### Two containers: init + main (T37a)
+### Two containers: init + main
 
 cms-api ships as one image run as two containers in one pod (or compose
 project). Same image, different command; no second Dockerfile.

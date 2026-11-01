@@ -2,10 +2,9 @@ import {
   BadRequestException,
   ForbiddenException,
   InternalServerErrorException,
+  Logger,
 } from '@nestjs/common';
 import { GraphQLError } from 'graphql';
-
-import { Logger } from '@nestjs/common';
 
 import { formatGraphqlError } from './GraphqlError.filter';
 
@@ -14,10 +13,8 @@ const options = {
   requestId: 'req-1',
   shouldStripSuggestions: false,
 } as const;
-const wrapped = (
-  original: unknown,
-  path: (string | number)[] = ['articleList'],
-) => new GraphQLError('wrapped', { path, originalError: original as Error });
+const wrapped = (original: unknown, path: (string | number)[] = ['articleList']) =>
+  new GraphQLError('wrapped', { path, originalError: original as Error });
 
 describe('formatGraphqlError', () => {
   beforeAll(() => {
@@ -45,10 +42,7 @@ describe('formatGraphqlError', () => {
   });
 
   it('falls back to the status code when the exception names none', () => {
-    const formatted = formatGraphqlError(
-      wrapped(new ForbiddenException()),
-      options,
-    );
+    const formatted = formatGraphqlError(wrapped(new ForbiddenException()), options);
     expect(formatted.extensions.code).toBe('FORBIDDEN');
   });
 
@@ -84,15 +78,10 @@ describe('formatGraphqlError', () => {
 
   it('never echoes a variable value', () => {
     const named = formatGraphqlError(
-      new GraphQLError(
-        'Variable "$page" got invalid value "SECRET"; Int cannot represent',
-      ),
+      new GraphQLError('Variable "$page" got invalid value "SECRET"; Int cannot represent'),
       options,
     );
-    const anonymous = formatGraphqlError(
-      new GraphQLError('Variable of weird "SECRET"'),
-      options,
-    );
+    const anonymous = formatGraphqlError(new GraphQLError('Variable of weird "SECRET"'), options);
     expect(named.message).toBe('Variable "$page" is not valid.');
     expect(JSON.stringify([named, anonymous])).not.toContain('SECRET');
   });
@@ -108,12 +97,9 @@ describe('formatGraphqlError', () => {
     expect(formatGraphqlError(typo, validate).message).toBe(
       'Cannot query field "articleLis" on type "Query".',
     );
-    expect(formatGraphqlError(other, validate).message).toContain(
-      'Did you mean',
+    expect(formatGraphqlError(other, validate).message).toContain('Did you mean');
+    expect(formatGraphqlError(other, { ...validate, shouldStripSuggestions: true }).message).toBe(
+      'Cannot query field "titl" on type "Article".',
     );
-    expect(
-      formatGraphqlError(other, { ...validate, shouldStripSuggestions: true })
-        .message,
-    ).toBe('Cannot query field "titl" on type "Article".');
   });
 });

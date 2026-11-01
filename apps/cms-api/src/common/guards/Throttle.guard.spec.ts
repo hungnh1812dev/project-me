@@ -4,11 +4,8 @@ import type { Request } from 'express';
 
 import type { IAppConfig } from '../../config/AppConfig.setup';
 import type { RateLimitOverrideEnvKey } from '../../config/Config.constants';
+import { RATE_LIMIT_KEY_SOURCES, type RateLimitRule } from '../constants/Limits.constants';
 import type { ClientIpResolver } from '../http/ClientIp.resolver';
-import {
-  RATE_LIMIT_KEY_SOURCES,
-  type RateLimitRule,
-} from '../constants/Limits.constants';
 import type { RateLimitStore } from '../rate-limit/RateLimit.store';
 import { RATE_LIMIT_POLICY_METADATA, ThrottleGuard } from './Throttle.guard';
 
@@ -85,15 +82,10 @@ describe('ThrottleGuard limit overrides', () => {
 
   it('raises only the rule that declares the overridden env key', async () => {
     // OTHER_RULE still refuses at 11 although the first rule allows 500.
-    expect(await rejectedRulesAfter(11, { LOGIN_RATE_LIMIT_IP: 500 })).toEqual([
-      'hit 11',
-    ]);
+    expect(await rejectedRulesAfter(11, { LOGIN_RATE_LIMIT_IP: 500 })).toEqual(['hit 11']);
   });
 
   it('lowers the declared rule without touching the other', async () => {
-    expect(await rejectedRulesAfter(4, { LOGIN_RATE_LIMIT_IP: 2 })).toEqual([
-      'hit 3',
-      'hit 4',
-    ]);
+    expect(await rejectedRulesAfter(4, { LOGIN_RATE_LIMIT_IP: 2 })).toEqual(['hit 3', 'hit 4']);
   });
 });

@@ -22,15 +22,10 @@ describe('createReviewerSessionSchema', () => {
     ['newline in role', { visitorRole: 'a\nb' }],
     ['unknown key', { extra: 1 }],
   ])('rejects %s', (_name, patch) => {
-    expect(
-      createReviewerSessionSchema.safeParse({ ...VALID, ...patch }).success,
-    ).toBe(false);
+    expect(createReviewerSessionSchema.safeParse({ ...VALID, ...patch }).success).toBe(false);
   });
 
   it('allows newlines in notes', () => {
-    expect(
-      createReviewerSessionSchema.safeParse({ ...VALID, notes: 'a\nb' })
-        .success,
-    ).toBe(true);
+    expect(createReviewerSessionSchema.safeParse({ ...VALID, notes: 'a\nb' }).success).toBe(true);
   });
 });

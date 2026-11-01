@@ -6,14 +6,11 @@ import {
   type TransactionRunner,
 } from '../../../infrastructure/database/TransactionRunner.port';
 import { AUDIT_ACTIONS } from '../../security-audit';
-import {
-  TWO_FACTOR_RESET_ERRORS,
-  type TwoFaMethod,
-} from '../domain/Identity.constants';
+import { TWO_FACTOR_RESET_ERRORS, type TwoFaMethod } from '../domain/Identity.constants';
 import {
   ACCOUNT_REPOSITORY,
-  type AccountRepository,
   AUDIT_RECORDER,
+  type AccountRepository,
   type AuditRecorder,
 } from './Identity.port';
 import { SessionRevocationService } from './SessionRevocation.service';

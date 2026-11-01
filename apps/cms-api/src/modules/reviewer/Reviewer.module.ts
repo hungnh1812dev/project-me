@@ -8,10 +8,7 @@ import { IdentityModule } from '../identity';
 import { SecurityAuditModule } from '../security-audit';
 import { PrismaReviewerRepository } from './adapters/PrismaReviewer.repository';
 import { PrismaReviewerAccountAdapter } from './adapters/PrismaReviewerAccount.adapter';
-import {
-  TurnstileClient,
-  UnconfiguredTurnstileVerifier,
-} from './adapters/Turnstile.client';
+import { TurnstileClient, UnconfiguredTurnstileVerifier } from './adapters/Turnstile.client';
 import {
   IS_REVIEWER_FEATURE_ENABLED,
   REVIEWER_ACCOUNT_GATEWAY,
@@ -20,10 +17,7 @@ import {
   TURNSTILE_VERIFIER,
   type TurnstileVerifier,
 } from './application/Reviewer.port';
-import {
-  deriveReviewerIpKey,
-  ReviewerAccessService,
-} from './application/ReviewerAccess.service';
+import { deriveReviewerIpKey, ReviewerAccessService } from './application/ReviewerAccess.service';
 import { ReviewerCleanupService } from './application/ReviewerCleanup.service';
 import { ReviewerController } from './http/Reviewer.controller';
 import { ReviewerCleanupJob } from './jobs/ReviewerCleanup.job';
@@ -63,8 +57,7 @@ export function createTurnstileVerifier(config: IAppConfig): TurnstileVerifier {
     {
       provide: REVIEWER_IP_KEY,
       inject: [APP_CONFIG],
-      useFactory: (config: IAppConfig) =>
-        deriveReviewerIpKey(config.secrets.otpPepper),
+      useFactory: (config: IAppConfig) => deriveReviewerIpKey(config.secrets.otpPepper),
     },
   ],
 })

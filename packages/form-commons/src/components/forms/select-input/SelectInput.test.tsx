@@ -1,13 +1,8 @@
+import type { ReactNode } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import type { ReactNode } from 'react';
-import {
-  FormProvider,
-  type FieldValues,
-  type UseFormProps,
-  useForm,
-} from 'react-hook-form';
+import { FormProvider, useForm, type FieldValues, type UseFormProps } from 'react-hook-form';
 import { vi } from 'vitest';
 import { z } from 'zod';
 
@@ -27,10 +22,7 @@ function TestForm<T extends FieldValues>({
   const form = useForm<T>(options);
   return (
     <FormProvider {...form}>
-      <form
-        noValidate
-        onSubmit={(event) => void form.handleSubmit(onValid)(event)}
-      >
+      <form noValidate onSubmit={(event) => void form.handleSubmit(onValid)(event)}>
         {children}
         <Button type="submit" variant="primary">
           Save
@@ -49,9 +41,9 @@ const ROLES = [
 describe('SelectInput', () => {
   it('throws a clear error outside a FormProvider', () => {
     vi.spyOn(console, 'error').mockImplementation(() => undefined);
-    expect(() =>
-      render(<SelectInput name="roleId" label="Role" options={ROLES} />),
-    ).toThrow(/FormProvider/);
+    expect(() => render(<SelectInput name="roleId" label="Role" options={ROLES} />)).toThrow(
+      /FormProvider/,
+    );
   });
 
   it('shows the Zod error after submit and submits the chosen value', async () => {
@@ -81,16 +73,11 @@ describe('SelectInput', () => {
 
     await userEvent.click(screen.getByRole('button', { name: 'Save' }));
     expect(select).toHaveAttribute('aria-invalid', 'true');
-    expect(select).toHaveAccessibleDescription(
-      'Decides what they can do. Choose a role.',
-    );
+    expect(select).toHaveAccessibleDescription('Decides what they can do. Choose a role.');
 
     await userEvent.selectOptions(select, 'Editor');
     await userEvent.click(screen.getByRole('button', { name: 'Save' }));
-    expect(onValid).toHaveBeenCalledWith(
-      { roleId: 'r-editor' },
-      expect.anything(),
-    );
+    expect(onValid).toHaveBeenCalledWith({ roleId: 'r-editor' }, expect.anything());
     expect(select).not.toHaveAttribute('aria-invalid');
   });
 

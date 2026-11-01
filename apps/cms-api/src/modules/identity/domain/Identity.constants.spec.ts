@@ -16,13 +16,10 @@ describe.each([
 ] as const)('%s domain constants', (_name, domainValues, prismaValues) => {
   it('has exactly the values of the Prisma enum, byte for byte', () => {
     expect(domainFitsPrisma).toBeDefined();
-    expect(Object.values(domainValues).sort()).toEqual(
-      Object.values(prismaValues).sort(),
-    );
+    expect(Object.values(domainValues).sort()).toEqual(Object.values(prismaValues).sort());
   });
 
   it('maps every key to its own value', () => {
-    for (const [key, value] of Object.entries(domainValues))
-      expect(value).toBe(key);
+    for (const [key, value] of Object.entries(domainValues)) expect(value).toBe(key);
   });
 });

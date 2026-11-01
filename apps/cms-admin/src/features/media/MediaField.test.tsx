@@ -1,15 +1,11 @@
+import { API_ENDPOINTS } from '@configs/Api.endpoints';
+import { contentEditPath } from '@configs/App.routes';
+import { COPY } from '@configs/Copy.constants';
+import type { FakeHandler } from '@test/FakeApi.fixture';
+import { createTestServices, renderApp, TEST_USER } from '@test/RenderApp.fixture';
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
-import type { FakeHandler } from '../../../test/FakeApi.fixture';
-import {
-  createTestServices,
-  renderApp,
-  TEST_USER,
-} from '../../../test/RenderApp.fixture';
-import { COPY } from '../../config/Copy.constants';
-import { API_ENDPOINTS } from '../../config/Api.endpoints';
-import { contentEditPath } from '../../config/App.routes';
 import type { ContentType } from '../content-types';
 import type { MediaFile } from './Media.api';
 
@@ -18,6 +14,7 @@ const { CONTENT_TYPES, DOCUMENTS, ROLES, MEDIA } = API_ENDPOINTS;
 const copy = COPY.media;
 const SLUG = 'profile';
 const DOC_ID = 'doc_1';
+const PORTRAIT_NAME = 'portrait.jpg · abcdef01';
 
 const field = (path: string, type: string) => ({
   path,
@@ -49,6 +46,8 @@ function library(overrides: Partial<MediaFile> = {}): MediaFile {
     thumbnailUrl: 'https://cdn.test/portrait-t.jpg',
     isReviewerPreset: false,
     createdAt: '2026-10-01T10:00:00.000Z',
+    updatedAt: '2026-10-01T10:00:00.000Z',
+    sha256: 'abcdef0123456789',
     provider: 'cloudinary',
     ...overrides,
   };
@@ -69,11 +68,42 @@ function doc(photo: unknown) {
   };
 }
 
-async function open(handlers: Record<string, FakeHandler>) {
+const permission = (subject: string, action: string) => ({
+  subject,
+  action,
+  readableFields: null,
+  writableFields: null,
+  conditions: null,
+});
+
+async function open(
+  handlers: Record<string, FakeHandler>,
+  limitedTo?: ReturnType<typeof permission>[],
+) {
   const { api, services } = createTestServices({
     [`POST ${REFRESH}`]: () => ({ status: 200, data: { accessToken: 't1' } }),
-    [`GET ${ME}`]: () => ({ status: 200, data: TEST_USER }),
-    [`GET ${ROLES.LIST}`]: () => ({ status: 200, data: { data: [] } }),
+    [`GET ${ME}`]: () => ({
+      status: 200,
+      data: limitedTo ? { ...TEST_USER, role: 'editor' } : TEST_USER,
+    }),
+    [`GET ${ROLES.LIST}`]: () => ({
+      status: 200,
+      data: {
+        data: limitedTo
+          ? [
+              {
+                id: 'r1',
+                slug: 'editor',
+                name: 'editor',
+                isSystem: false,
+                accountCount: 1,
+                manageable: false,
+                permissions: limitedTo,
+              },
+            ]
+          : [],
+      },
+    }),
     [`GET ${CONTENT_TYPES.ONE(SLUG)}`]: () => ({ status: 200, data: PROFILE }),
     ...handlers,
   });
@@ -108,19 +138,15 @@ describe('media field in the document form', () => {
     });
 
     expect(await screen.findByText('old.jpg')).toBeInTheDocument();
-    await userEvent.click(
-      screen.getByRole('button', { name: copy.input.replace }),
-    );
+    await userEvent.click(screen.getByRole('button', { name: copy.input.choose }));
     const dialog = await screen.findByRole('dialog');
     await userEvent.click(
       await within(dialog).findByRole('button', {
         name: copy.picker.select('portrait.jpg'),
       }),
     );
-    expect(await screen.findByText('portrait.jpg')).toBeInTheDocument();
-    await userEvent.click(
-      screen.getByRole('button', { name: COPY.content.save }),
-    );
+    expect(await screen.findByText(PORTRAIT_NAME)).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: COPY.content.save }));
     await waitFor(() => expect(api.callsTo(put)).toHaveLength(1));
     expect(sent(api.callsTo(put)[0])).toMatchObject({
       values: { photo: 'f1' },
@@ -135,46 +161,95 @@ describe('media field in the document form', () => {
       }),
       [put]: () => ({ status: 200, data: doc(null) }),
     });
-    await screen.findByText('portrait.jpg');
-    await userEvent.click(
-      screen.getByRole('button', { name: copy.input.remove }),
-    );
+    await screen.findByText(PORTRAIT_NAME);
+    await userEvent.click(screen.getByRole('button', { name: copy.input.remove }));
     expect(await screen.findByText(copy.input.empty)).toBeInTheDocument();
-    await userEvent.click(
-      screen.getByRole('button', { name: COPY.content.save }),
-    );
+    await userEvent.click(screen.getByRole('button', { name: COPY.content.save }));
     await waitFor(() => expect(api.callsTo(put)).toHaveLength(1));
-    expect(
-      (sent(api.callsTo(put)[0]).values as Record<string, unknown>).photo,
-    ).toBeNull();
+    expect((sent(api.callsTo(put)[0]).values as Record<string, unknown>).photo).toBeNull();
   });
 
-  it('uploads a new file into the field and shows the reason when rejected', async () => {
-    let status = 415;
+  it('upload opens the upload dialog and a done file is set on the field', async () => {
+    const { api } = await open({
+      [`GET ${DOCUMENTS.BY_ID(SLUG, DOC_ID)}`]: () => ({ status: 200, data: doc(null) }),
+      [`POST ${MEDIA.LIST}`]: () => ({ status: 201, data: library() }),
+      [put]: () => ({ status: 200, data: doc(library()) }),
+    });
+    await userEvent.click(await screen.findByRole('button', { name: copy.input.upload }));
+    const dialog = await screen.findByRole('dialog');
+    await userEvent.upload(
+      within(dialog).getByTestId('upload-dialog-input'),
+      new File(['x'], 'portrait.jpg', { type: 'image/jpeg' }),
+    );
+    await userEvent.click(within(dialog).getByRole('button', { name: copy.uploadDialog.upload }));
+    await userEvent.click(
+      await within(dialog).findByRole('button', { name: copy.uploadDialog.close }),
+    );
+    expect(await screen.findByText(PORTRAIT_NAME)).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: COPY.content.save }));
+    await waitFor(() => expect(api.callsTo(put)).toHaveLength(1));
+    expect(sent(api.callsTo(put)[0])).toMatchObject({ values: { photo: 'f1' } });
+  });
+
+  it('replace uploads a new file, sets it and never deletes the old one from the library', async () => {
+    const { api } = await open({
+      [`GET ${DOCUMENTS.BY_ID(SLUG, DOC_ID)}`]: () => ({
+        status: 200,
+        data: doc(library({ id: 'f0', fileName: 'old.jpg' })),
+      }),
+      [`POST ${MEDIA.LIST}`]: () => ({ status: 201, data: library() }),
+    });
+    await userEvent.click(await screen.findByRole('button', { name: copy.input.replace }));
+    const dialog = await screen.findByRole('dialog');
+    await userEvent.upload(
+      within(dialog).getByTestId('upload-dialog-input'),
+      new File(['x'], 'portrait.jpg', { type: 'image/jpeg' }),
+    );
+    await userEvent.click(within(dialog).getByRole('button', { name: copy.uploadDialog.upload }));
+    await userEvent.click(
+      await within(dialog).findByRole('button', { name: copy.uploadDialog.close }),
+    );
+    expect(await screen.findByText(PORTRAIT_NAME)).toBeInTheDocument();
+    expect(api.calls.filter((call) => call.method === 'DELETE')).toHaveLength(0);
+    expect(api.calls.filter((call) => call.method === 'PUT')).toHaveLength(0);
+  });
+
+  it('closing the upload dialog returns focus to the Replace file button', async () => {
     await open({
       [`GET ${DOCUMENTS.BY_ID(SLUG, DOC_ID)}`]: () => ({
         status: 200,
-        data: doc(null),
+        data: doc({ ...library(), mimeType: undefined }),
       }),
-      [`POST ${MEDIA.LIST}`]: () =>
-        status === 415
-          ? { status, data: { errorCode: 'MEDIA_UNSUPPORTED_TYPE' } }
-          : { status: 201, data: library() },
     });
+    await screen.findByText(PORTRAIT_NAME);
+    const replace = screen.getByRole('button', { name: copy.input.replace });
+    replace.focus();
+    await userEvent.keyboard('{Enter}');
+    await screen.findByRole('dialog');
+    await userEvent.keyboard('{Escape}');
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    expect(replace).toHaveFocus();
+  });
+
+  it('without media:create the upload and replace actions are not offered', async () => {
+    await open(
+      {
+        [`GET ${DOCUMENTS.BY_ID(SLUG, DOC_ID)}`]: () => ({ status: 200, data: doc(null) }),
+      },
+      [permission(SLUG, 'read'), permission(SLUG, 'update'), permission('media', 'read')],
+    );
     await screen.findByText(copy.input.empty);
-    const input = screen.getByTestId('media-file-input');
-    await userEvent.upload(
-      input,
-      new File(['x'], 'a.png', { type: 'image/png' }),
-    );
-    expect(
-      await screen.findByText(copy.errors.unsupportedType),
-    ).toBeInTheDocument();
-    status = 201;
-    await userEvent.upload(
-      input,
-      new File(['x'], 'portrait.jpg', { type: 'image/jpeg' }),
-    );
-    expect(await screen.findByText('portrait.jpg')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: copy.input.choose })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: copy.input.upload })).not.toBeInTheDocument();
+  });
+
+  it('keeps the embedded type, size and date so the footer shows them after a reload', async () => {
+    await open({
+      [`GET ${DOCUMENTS.BY_ID(SLUG, DOC_ID)}`]: () => ({
+        status: 200,
+        data: doc(library({ width: 640, height: 480 })),
+      }),
+    });
+    expect(await screen.findByText(/640\s*[x×]\s*480/)).toBeInTheDocument();
   });
 });

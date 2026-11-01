@@ -1,5 +1,6 @@
 'use client';
 
+import { useCallback, useState } from 'react';
 import {
   Button,
   Dialog,
@@ -7,19 +8,17 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  TextInput,
   FormAlert,
+  TextInput,
 } from '@abyss/form-commons';
 import { useMutation } from '@tanstack/react-query';
-import { useCallback, useState } from 'react';
 import { FormProvider, useForm } from 'react-hook-form';
 
-import { COPY } from '../../config/Copy.constants';
-import type { Alert } from '../../lib/ApiFailure.errors';
-import type { TwoFactorChallenge } from '../session';
+import type { Alert } from '../../apis/client/ApiFailure.errors';
+import { COPY } from '../../configs/Copy.constants';
+import { useWebSession, type TwoFactorChallenge } from '../session';
 import { credentialAlertOf, loginErrorAlertOf } from './LoginAlerts.rules';
 import { TwoFactorStep } from './TwoFactorStep';
-import { useWebSession } from '../session';
 
 const copy = COPY.login;
 const EMAIL_SHAPE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -98,9 +97,7 @@ function LoginFlow({ onClose }: { onClose: () => void }) {
       <>
         <DialogHeader>
           <DialogTitle>{copy.twoFactor.title}</DialogTitle>
-          <DialogDescription className="sr-only">
-            {copy.twoFactor.title}
-          </DialogDescription>
+          <DialogDescription className="sr-only">{copy.twoFactor.title}</DialogDescription>
         </DialogHeader>
         <TwoFactorStep
           challenge={challenge}
@@ -119,17 +116,9 @@ function LoginFlow({ onClose }: { onClose: () => void }) {
         <DialogDescription>{copy.description}</DialogDescription>
       </DialogHeader>
       <FormProvider {...form}>
-        <form
-          noValidate
-          onSubmit={(event) => void onSubmit(event)}
-          className="grid gap-4"
-        >
-          {hasExpired ? (
-            <FormAlert tone="info">{copy.twoFactor.expired}</FormAlert>
-          ) : null}
-          {alert !== null ? (
-            <FormAlert tone={alert.tone}>{alert.message}</FormAlert>
-          ) : null}
+        <form noValidate onSubmit={(event) => void onSubmit(event)} className="grid gap-4">
+          {hasExpired ? <FormAlert tone="info">{copy.twoFactor.expired}</FormAlert> : null}
+          {alert !== null ? <FormAlert tone={alert.tone}>{alert.message}</FormAlert> : null}
           <TextInput<LoginValues>
             name="email"
             label={copy.emailLabel}
@@ -139,8 +128,7 @@ function LoginFlow({ onClose }: { onClose: () => void }) {
             spellCheck={false}
             rules={{
               required: copy.validation.emailRequired,
-              validate: (value) =>
-                EMAIL_SHAPE.test(value.trim()) || copy.validation.emailInvalid,
+              validate: (value) => EMAIL_SHAPE.test(value.trim()) || copy.validation.emailInvalid,
             }}
           />
           <TextInput<LoginValues>

@@ -35,7 +35,7 @@ AND deleted_at IS NULL` (D1). See ADR 0002 for `role_slug`.
   cannot change, a system role cannot be deleted, a custom role cannot become
   a system role.
 
-## Column decisions (T08)
+## Column decisions
 
 Where SPEC §8.1 leaves a shape open, the conservative choice:
 
@@ -54,15 +54,15 @@ Where SPEC §8.1 leaves a shape open, the conservative choice:
 - **accounts**: `password_hash` nullable (invited accounts set it later);
   `status` defaults to `invited`; `token_version` and
   `roles.policy_version` start at 1; 2FA columns `is_2fa_enabled`,
-  `two_fa_method`, `totp_secret_enc` (text, `v1.<iv>.<ct>.<tag>` AES-256-GCM, T13),
+  `two_fa_method`, `totp_secret_enc` (text, `v1.<iv>.<ct>.<tag>` AES-256-GCM),
   `totp_secret_kid` (key id for `TOTP_ENC_KEY` rotation), `totp_last_step`
   (int, last accepted time step).
 - **refresh_tokens**: one row per token (SHA-256 in `token_hash`), grouped
   by `family_id`. A rotation sets `replaced_by_id` to the successor and
   `revoked_at` to the rotation time; that `revoked_at` also anchors the 10 s
-  reuse grace window (T11a, `REFRESH_TOKEN_REUSE_GRACE_SECONDS`), so the
+  reuse grace window (`REFRESH_TOKEN_REUSE_GRACE_SECONDS`), so the
   window needs no extra column. Logout and reuse revoke the whole family.
-- **permissions**: no unique constraint on (role, subject, action): T14
+- **permissions**: no unique constraint on (role, subject, action): the policy
   allows several rows for the same pair (their fields add up and their
   conditions are ORed, see [access-control.md](access-control.md)). Indexed
   on (role_id, subject).
@@ -70,8 +70,7 @@ Where SPEC §8.1 leaves a shape open, the conservative choice:
   plain `text`; `reviewer_sessions.notes` is `varchar(500)`;
   `file_library.size` is `int` bytes (max upload 100 MB).
 - **Content FKs**: `content.<type>.created_by/updated_by` stay without an FK
-  to `public.accounts` for now (see the T08 report; revisit in T21 when the
-  columns are written).
+  to `public.accounts`.
 
 ## System roles seed
 
@@ -82,7 +81,7 @@ edited later survive), and fails if a role with a system slug is not that
 system role. Safe to run on every deploy.
 
 Then `RoleSeedService.seedRolePermissions` (writes in `access/adapters/PrismaRolePolicy.repository.ts`) inserts the default
-permission rows (T14 matrix in [access-control.md](access-control.md)) into
+permission rows (default matrix in [access-control.md](access-control.md)) into
 each system role that has **no** rows yet, under an advisory lock. A role the
 Owner already configured is never touched.
 
@@ -106,7 +105,7 @@ printf '%s\n' "$PASSWORD" | OWNER_EMAIL=me@example.com npm run owner:bootstrap -
   (`owner.email_taken`; accounts are never promoted). Creates an `active`
   owner. The partial unique index backs this up.
 
-## owner:reset-2fa (T13a, break-glass)
+## owner:reset-2fa (break-glass)
 
 **Break-glass tool:** it turns 2FA off for any account, the owner included,
 with no password or code. Use it only after confirming the person's identity

@@ -13,35 +13,26 @@ import {
   UseGuards,
 } from '@nestjs/common';
 
-import {
-  ClientIpResolver,
-  clientMetaOf,
-} from '../../../../common/http/ClientIp.resolver';
 import { ID_PARAM } from '../../../../common/constants/Api.constants';
-import { API_TOKENS_ROUTES } from '../../http/AccessHttp.constants';
 import { NO_STORE_HEADER } from '../../../../common/constants/Http.constants';
-import { PermissionAction } from '../../domain/Access.constants';
-import { type AuthenticatedRequest, JwtAuthGuard } from '../../../identity';
+import { ClientIpResolver, clientMetaOf } from '../../../../common/http/ClientIp.resolver';
 import { parseRequest } from '../../../../common/http/RequestParsing.rules';
-import {
-  type ApiTokenPage,
-  type ApiTokenView,
-  ApiTokensService,
-  type CreatedApiTokenView,
-} from '../application/ApiTokens.service';
-import {
-  createApiTokenSchema,
-  updateApiTokenSchema,
-} from './ApiTokens.requests';
-import {
-  PermissionGuard,
-  RequirePermission,
-} from '../../http/Permission.guard';
-import { requireAccountActor } from '../../domain/Rank.rules';
 import {
   documentIdSchema,
   pageQuerySchema,
 } from '../../../../common/validation/SharedSchemas.rules';
+import { JwtAuthGuard, type AuthenticatedRequest } from '../../../identity';
+import { PermissionAction } from '../../domain/Access.constants';
+import { requireAccountActor } from '../../domain/Rank.rules';
+import { API_TOKENS_ROUTES } from '../../http/AccessHttp.constants';
+import { PermissionGuard, RequirePermission } from '../../http/Permission.guard';
+import {
+  ApiTokensService,
+  type ApiTokenPage,
+  type ApiTokenView,
+  type CreatedApiTokenView,
+} from '../application/ApiTokens.service';
+import { createApiTokenSchema, updateApiTokenSchema } from './ApiTokens.requests';
 
 const SUBJECT = 'api_tokens';
 
@@ -62,10 +53,7 @@ export class ApiTokensController {
   @Get()
   @Header(NO_STORE_HEADER.NAME, NO_STORE_HEADER.VALUE)
   @RequirePermission({ action: PermissionAction.read, subject: SUBJECT })
-  list(
-    @Req() req: AuthenticatedRequest,
-    @Query() query: unknown,
-  ): Promise<ApiTokenPage> {
+  list(@Req() req: AuthenticatedRequest, @Query() query: unknown): Promise<ApiTokenPage> {
     return this.tokens.list(
       requireAccountActor(req.user.actor),
       parseRequest(pageQuerySchema, query),
@@ -76,10 +64,7 @@ export class ApiTokensController {
   @Post()
   @Header(NO_STORE_HEADER.NAME, NO_STORE_HEADER.VALUE)
   @RequirePermission({ action: PermissionAction.create, subject: SUBJECT })
-  create(
-    @Req() req: AuthenticatedRequest,
-    @Body() body: unknown,
-  ): Promise<CreatedApiTokenView> {
+  create(@Req() req: AuthenticatedRequest, @Body() body: unknown): Promise<CreatedApiTokenView> {
     return this.tokens.create(
       requireAccountActor(req.user.actor),
       parseRequest(createApiTokenSchema, body),
@@ -105,10 +90,7 @@ export class ApiTokensController {
   @Post(API_TOKENS_ROUTES.REVOKE)
   @HttpCode(HttpStatus.NO_CONTENT)
   @RequirePermission({ action: PermissionAction.update, subject: SUBJECT })
-  revoke(
-    @Req() req: AuthenticatedRequest,
-    @Param(ID_PARAM) id: string,
-  ): Promise<void> {
+  revoke(@Req() req: AuthenticatedRequest, @Param(ID_PARAM) id: string): Promise<void> {
     return this.tokens.revoke(
       requireAccountActor(req.user.actor),
       parseRequest(documentIdSchema, id),

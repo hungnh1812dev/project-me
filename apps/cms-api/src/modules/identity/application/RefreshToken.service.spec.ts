@@ -5,10 +5,7 @@ import type {
 } from '../../../infrastructure/database/TransactionRunner.port';
 import type { VersionCache } from '../../access';
 import type { SecurityAuditService } from '../../security-audit';
-import {
-  REFRESH_TOKEN_REUSE_GRACE_MS,
-  REFRESH_TOKEN_TTL_MS,
-} from '../domain/Identity.constants';
+import { REFRESH_TOKEN_REUSE_GRACE_MS, REFRESH_TOKEN_TTL_MS } from '../domain/Identity.constants';
 import type {
   RefreshTokenAccountFacts,
   RefreshTokenRepository,

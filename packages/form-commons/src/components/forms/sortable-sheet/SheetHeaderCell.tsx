@@ -1,10 +1,6 @@
 import { cn } from 'cn';
 
-import type {
-  SheetColumn,
-  SheetSort,
-  SheetSortDirection,
-} from './SortableSheet';
+import type { SheetColumn, SheetSort, SheetSortDirection } from './SortableSheet';
 
 const ARIA_SORT = {
   asc: 'ascending',
@@ -12,21 +8,14 @@ const ARIA_SORT = {
 } as const;
 
 /** Next sort when a header is clicked: new key ascending, same key flips. */
-function nextSort(
-  current: SheetSort | null | undefined,
-  key: string,
-): SheetSort {
+function nextSort(current: SheetSort | null | undefined, key: string): SheetSort {
   if (current?.key === key) {
     return { key, direction: current.direction === 'asc' ? 'desc' : 'asc' };
   }
   return { key, direction: 'asc' };
 }
 
-function SortIndicator({
-  direction,
-}: {
-  direction: SheetSortDirection | null;
-}) {
+function SortIndicator({ direction }: { direction: SheetSortDirection | null }) {
   return (
     <svg
       viewBox="0 0 16 16"
@@ -55,32 +44,21 @@ interface SheetHeaderCellProps<TRow> {
   onSortChange: ((sort: SheetSort) => void) | undefined;
 }
 
-function SheetHeaderCell<TRow>({
-  column,
-  sort,
-  onSortChange,
-}: SheetHeaderCellProps<TRow>) {
+function SheetHeaderCell<TRow>({ column, sort, onSortChange }: SheetHeaderCellProps<TRow>) {
   const activeDirection = sort?.key === column.key ? sort.direction : null;
   const isSortable = column.sortable === true && onSortChange !== undefined;
   return (
     <th
       scope="col"
-      aria-sort={
-        isSortable && activeDirection !== null
-          ? ARIA_SORT[activeDirection]
-          : undefined
-      }
-      className={cn(
-        'px-3 py-2 font-medium',
-        column.align === 'right' && 'text-right',
-      )}
+      aria-sort={isSortable && activeDirection !== null ? ARIA_SORT[activeDirection] : undefined}
+      className={cn('px-3 py-2 font-medium', column.align === 'right' && 'text-right')}
     >
       {isSortable ? (
         <button
           type="button"
           onClick={() => onSortChange(nextSort(sort, column.key))}
           className={cn(
-            'inline-flex cursor-pointer items-center gap-1 rounded-sm font-medium outline-none hover:text-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50',
+            'hover:text-foreground focus-visible:ring-ring/50 inline-flex cursor-pointer items-center gap-1 rounded-sm font-medium outline-none focus-visible:ring-[3px]',
             activeDirection !== null && 'text-foreground',
           )}
         >

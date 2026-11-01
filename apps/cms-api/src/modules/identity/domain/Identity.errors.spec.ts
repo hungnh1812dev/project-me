@@ -8,9 +8,9 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 
-import { describeError } from '../../../common/http/DescribeHttpException.rules';
 import { ERROR_CODES } from '../../../common/constants/Error.constants';
 import { RATE_LIMIT_MESSAGE } from '../../../common/constants/Limits.constants';
+import { describeError } from '../../../common/http/DescribeHttpException.rules';
 import {
   AUTH_ERROR_CODES,
   AUTH_ERROR_MESSAGES,
@@ -25,59 +25,40 @@ const body = (errorCode: string, message: string) => ({ errorCode, message });
 describe('identity error bodies', () => {
   it.each([
     ['notSignedIn', errors.notSignedIn(), new UnauthorizedException()],
-    [
-      'mailNotDelivered',
-      errors.mailNotDelivered(),
-      new ServiceUnavailableException(),
-    ],
+    ['mailNotDelivered', errors.mailNotDelivered(), new ServiceUnavailableException()],
     [
       'invalidCredentials',
       errors.invalidCredentials(),
       new UnauthorizedException(
-        body(
-          AUTH_ERROR_CODES.INVALID_CREDENTIALS,
-          AUTH_ERROR_MESSAGES.INVALID_CREDENTIALS,
-        ),
+        body(AUTH_ERROR_CODES.INVALID_CREDENTIALS, AUTH_ERROR_MESSAGES.INVALID_CREDENTIALS),
       ),
     ],
     [
       'wrongCurrentPassword (403, same code as the 401)',
       errors.wrongCurrentPassword(),
       new ForbiddenException(
-        body(
-          AUTH_ERROR_CODES.INVALID_CREDENTIALS,
-          AUTH_ERROR_MESSAGES.WRONG_CURRENT_PASSWORD,
-        ),
+        body(AUTH_ERROR_CODES.INVALID_CREDENTIALS, AUTH_ERROR_MESSAGES.WRONG_CURRENT_PASSWORD),
       ),
     ],
     [
       'invalidRefreshToken',
       errors.invalidRefreshToken(),
       new UnauthorizedException(
-        body(
-          AUTH_ERROR_CODES.INVALID_REFRESH_TOKEN,
-          AUTH_ERROR_MESSAGES.INVALID_REFRESH_TOKEN,
-        ),
+        body(AUTH_ERROR_CODES.INVALID_REFRESH_TOKEN, AUTH_ERROR_MESSAGES.INVALID_REFRESH_TOKEN),
       ),
     ],
     [
       'invalidTempToken',
       errors.invalidTempToken(),
       new UnauthorizedException(
-        body(
-          AUTH_ERROR_CODES.INVALID_TEMP_TOKEN,
-          AUTH_ERROR_MESSAGES.INVALID_TEMP_TOKEN,
-        ),
+        body(AUTH_ERROR_CODES.INVALID_TEMP_TOKEN, AUTH_ERROR_MESSAGES.INVALID_TEMP_TOKEN),
       ),
     ],
     [
       'invalidTwoFactorCodeAtLogin (401)',
       errors.invalidTwoFactorCodeAtLogin(),
       new HttpException(
-        body(
-          AUTH_ERROR_CODES.INVALID_2FA_CODE,
-          AUTH_ERROR_MESSAGES.INVALID_2FA_CODE,
-        ),
+        body(AUTH_ERROR_CODES.INVALID_2FA_CODE, AUTH_ERROR_MESSAGES.INVALID_2FA_CODE),
         HttpStatus.UNAUTHORIZED,
       ),
     ],
@@ -85,19 +66,14 @@ describe('identity error bodies', () => {
       'invalidTwoFactorCodeWhenSignedIn (403)',
       errors.invalidTwoFactorCodeWhenSignedIn(),
       new HttpException(
-        body(
-          AUTH_ERROR_CODES.INVALID_2FA_CODE,
-          AUTH_ERROR_MESSAGES.INVALID_2FA_CODE,
-        ),
+        body(AUTH_ERROR_CODES.INVALID_2FA_CODE, AUTH_ERROR_MESSAGES.INVALID_2FA_CODE),
         HttpStatus.FORBIDDEN,
       ),
     ],
     [
       'invalidOtp',
       errors.invalidOtp(),
-      new BadRequestException(
-        body(AUTH_ERROR_CODES.INVALID_OTP, AUTH_ERROR_MESSAGES.INVALID_OTP),
-      ),
+      new BadRequestException(body(AUTH_ERROR_CODES.INVALID_OTP, AUTH_ERROR_MESSAGES.INVALID_OTP)),
     ],
     [
       'weakPassword',
@@ -127,10 +103,7 @@ describe('identity error bodies', () => {
       'twoFactorNotEnabled',
       errors.twoFactorNotEnabled(),
       new ConflictException(
-        body(
-          AUTH_ERROR_CODES.TWO_FACTOR_NOT_ENABLED,
-          AUTH_ERROR_MESSAGES.TWO_FACTOR_NOT_ENABLED,
-        ),
+        body(AUTH_ERROR_CODES.TWO_FACTOR_NOT_ENABLED, AUTH_ERROR_MESSAGES.TWO_FACTOR_NOT_ENABLED),
       ),
     ],
     [
@@ -155,20 +128,14 @@ describe('identity error bodies', () => {
       'setupTokenInvalid',
       errors.setupTokenInvalid(),
       new UnauthorizedException(
-        body(
-          OWNER_SETUP_ERROR_CODES.TOKEN_INVALID,
-          OWNER_SETUP_MESSAGES.TOKEN_INVALID,
-        ),
+        body(OWNER_SETUP_ERROR_CODES.TOKEN_INVALID, OWNER_SETUP_MESSAGES.TOKEN_INVALID),
       ),
     ],
     [
       'ownerEmailTaken',
       errors.ownerEmailTaken(),
       new ConflictException(
-        body(
-          OWNER_SETUP_ERROR_CODES.EMAIL_TAKEN,
-          OWNER_SETUP_MESSAGES.EMAIL_TAKEN,
-        ),
+        body(OWNER_SETUP_ERROR_CODES.EMAIL_TAKEN, OWNER_SETUP_MESSAGES.EMAIL_TAKEN),
       ),
     ],
     [

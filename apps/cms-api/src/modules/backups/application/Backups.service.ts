@@ -1,12 +1,9 @@
 import { Inject, Injectable } from '@nestjs/common';
 
-import type { ClientMeta } from '../../../common/types/ClientMeta.entity';
-import {
-  DomainError,
-  DOMAIN_ERROR_KINDS,
-} from '../../../common/errors/Domain.errors';
-import { Clock } from '../../../common/time/Clock.service';
 import { MS_PER_SECOND } from '../../../common/constants/Time.constants';
+import { DOMAIN_ERROR_KINDS, DomainError } from '../../../common/errors/Domain.errors';
+import { Clock } from '../../../common/time/Clock.service';
+import type { ClientMeta } from '../../../common/types/ClientMeta.entity';
 import type { AccountActor } from '../../access';
 import { ReauthenticationService } from '../../identity';
 import {
@@ -113,9 +110,7 @@ export class BackupsService {
   async list(): Promise<BackupListing> {
     const { storage, prefix } = this.configured();
     const listed = await whenStorageAnswers(() =>
-      Promise.all(
-        BACKUP_KINDS.map((kind) => storage.list(`${prefix}${kind}/`)),
-      ),
+      Promise.all(BACKUP_KINDS.map((kind) => storage.list(`${prefix}${kind}/`))),
     );
     const items = listed.flat().flatMap((object): BackupListItem[] => {
       const entry = parseBackupKey(object.key, prefix);

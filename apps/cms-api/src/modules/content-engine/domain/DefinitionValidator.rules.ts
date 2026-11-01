@@ -9,21 +9,20 @@ import {
   TABLE_PATH_SEPARATOR,
 } from './ContentEngine.constants';
 import {
-  type ContentTypeDefinition,
   contentTypeDefinitionSchema,
-  type FieldDefinition,
   isComponentField,
+  type ContentTypeDefinition,
+  type FieldDefinition,
 } from './DefinitionSchema.rules';
 import {
   identifierBytes,
   planTables,
   rootTableName,
-  type TablePlan,
   toSqlIdentifier,
+  type TablePlan,
 } from './Naming.rules';
 
-export type DefinitionRule =
-  (typeof DEFINITION_RULES)[keyof typeof DEFINITION_RULES];
+export type DefinitionRule = (typeof DEFINITION_RULES)[keyof typeof DEFINITION_RULES];
 
 export type DefinitionPath = (string | number)[];
 
@@ -144,11 +143,7 @@ function checkFields(
   });
 }
 
-function tooLong(
-  name: string,
-  path: DefinitionPath,
-  what: string,
-): DefinitionValidationError {
+function tooLong(name: string, path: DefinitionPath, what: string): DefinitionValidationError {
   return {
     path,
     rule: DEFINITION_RULES.IDENTIFIER_TOO_LONG,
@@ -156,10 +151,7 @@ function tooLong(
   };
 }
 
-function checkLengths(
-  tables: TablePlan[],
-  errors: DefinitionValidationError[],
-): void {
+function checkLengths(tables: TablePlan[], errors: DefinitionValidationError[]): void {
   for (const table of tables) {
     if (identifierBytes(table.name) > MAX_IDENTIFIER_BYTES) {
       // Every relation name starts with the table name; one error is enough.
@@ -168,16 +160,12 @@ function checkLengths(
     }
     for (const relation of table.relationNames) {
       if (identifierBytes(relation.name) > MAX_IDENTIFIER_BYTES) {
-        errors.push(
-          tooLong(relation.name, relation.namePath, 'Index or constraint name'),
-        );
+        errors.push(tooLong(relation.name, relation.namePath, 'Index or constraint name'));
       }
     }
     for (const column of table.columns) {
       if (identifierBytes(column.name) > MAX_IDENTIFIER_BYTES) {
-        errors.push(
-          tooLong(column.name, [...column.path, 'name'], 'Column name'),
-        );
+        errors.push(tooLong(column.name, [...column.path, 'name'], 'Column name'));
       }
     }
   }
@@ -199,10 +187,7 @@ function schemaNames(tables: TablePlan[]): OwnedName[] {
   ]);
 }
 
-function checkSchemaCollisions(
-  names: OwnedName[],
-  errors: DefinitionValidationError[],
-): void {
+function checkSchemaCollisions(names: OwnedName[], errors: DefinitionValidationError[]): void {
   const owners = new Map<string, OwnedName>();
   for (const entry of names) {
     const owner = owners.get(entry.name);
@@ -249,9 +234,7 @@ export function validateDefinition(input: unknown): DefinitionValidationResult {
   checkLengths(tables, errors);
   checkSchemaCollisions(schemaNames(tables), errors);
 
-  return errors.length > 0
-    ? { ok: false, errors }
-    : { ok: true, definition, tables };
+  return errors.length > 0 ? { ok: false, errors } : { ok: true, definition, tables };
 }
 
 /**
@@ -259,12 +242,9 @@ export function validateDefinition(input: unknown): DefinitionValidationResult {
  * them (they share the `content` schema). Error paths start with the
  * definition's index in `inputs`.
  */
-export function validateDefinitions(
-  inputs: readonly unknown[],
-): DefinitionSetValidationResult {
+export function validateDefinitions(inputs: readonly unknown[]): DefinitionSetValidationResult {
   const errors: DefinitionValidationError[] = [];
-  const valid: { definition: ContentTypeDefinition; tables: TablePlan[] }[] =
-    [];
+  const valid: { definition: ContentTypeDefinition; tables: TablePlan[] }[] = [];
   const names: OwnedName[] = [];
 
   inputs.forEach((input, index) => {
@@ -292,7 +272,5 @@ export function validateDefinitions(
 
   checkSchemaCollisions(names, errors);
 
-  return errors.length > 0
-    ? { ok: false, errors }
-    : { ok: true, definitions: valid };
+  return errors.length > 0 ? { ok: false, errors } : { ok: true, definitions: valid };
 }

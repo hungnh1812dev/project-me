@@ -1,16 +1,14 @@
-import type {
-  ConflictDetails,
-  ConflictItem,
-} from '../src/features/content/Conflict.rules';
+import type { ConflictDetails, ConflictItem } from '@views/document-edit/Conflict.rules';
 
 export const UID_A = '00000000-0000-4000-8000-00000000000a';
 export const UID_B = '00000000-0000-4000-8000-00000000000b';
 export const UID_C = '00000000-0000-4000-8000-00000000000c';
 
-export const item = (
-  componentUid: string,
-  values: Record<string, unknown>,
-): ConflictItem => ({ componentUid, values, components: {} });
+export const item = (componentUid: string, values: Record<string, unknown>): ConflictItem => ({
+  componentUid,
+  values,
+  components: {},
+});
 
 /**
  * Saved version: position "Lead", company "Acme", skills A(React) B(Go)

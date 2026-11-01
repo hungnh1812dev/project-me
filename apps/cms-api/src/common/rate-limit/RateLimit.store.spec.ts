@@ -1,11 +1,11 @@
 import { Logger } from '@nestjs/common';
 
-import { Clock } from '../time/Clock.service';
 import {
   RATE_LIMIT_CAPACITY_WARN_INTERVAL_MS,
   RATE_LIMIT_MAX_KEYS,
   RATE_LIMIT_SWEEP_INTERVAL_MS,
 } from '../constants/Limits.constants';
+import { Clock } from '../time/Clock.service';
 import { InMemoryRateLimitStore } from './RateLimit.store';
 
 const WINDOW_MS = 60_000;
@@ -125,9 +125,7 @@ describe('InMemoryRateLimitStore', () => {
       await store.hit('b', WINDOW_MS);
       await store.hit('c', WINDOW_MS * 2);
       clock.time = START + 1_000;
-      expect((await store.hit('new', WINDOW_MS)).resetAt).toBe(
-        START + WINDOW_MS,
-      );
+      expect((await store.hit('new', WINDOW_MS)).resetAt).toBe(START + WINDOW_MS);
     });
 
     it('logs one warning per interval, with the refused count and no keys', async () => {

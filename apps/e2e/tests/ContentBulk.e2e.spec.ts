@@ -1,10 +1,10 @@
-import { expect, type Page, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 
-import { ADMIN_COPY, contentListPath } from '../src/Apps.contract';
-import { e2eEnv } from '../src/E2e.env';
-import { PROFILE_SLUG, RUN_ID } from '../src/E2e.constants';
-import { signInAs } from '../src/Session.fixture';
 import { API_PATHS } from '../src/Api.endpoints';
+import { ADMIN_COPY, contentListPath } from '../src/Apps.contract';
+import { PROFILE_SLUG, RUN_ID } from '../src/E2e.constants';
+import { e2eEnv } from '../src/E2e.env';
+import { signInAs } from '../src/Session.fixture';
 
 const copy = ADMIN_COPY.content;
 const bulk = copy.bulk;
@@ -16,17 +16,14 @@ const SAMPLE_SIZE = 5;
 const MAX_ITEMS = 50;
 const names = (prefix: string, count: number) =>
   Array.from({ length: count }, (_, index) => `${prefix}-${RUN_ID}-${index}`);
-const toJson = (values: string[]) =>
-  JSON.stringify(values.map((name) => ({ values: { name } })));
+const toJson = (values: string[]) => JSON.stringify(values.map((name) => ({ values: { name } })));
 
-const importDialog = (page: Page) =>
-  page.getByRole('dialog', { name: dialogCopy.title });
+const importDialog = (page: Page) => page.getByRole('dialog', { name: dialogCopy.title });
 const payload = (page: Page) => importDialog(page).getByLabel(dialogCopy.label);
 const rowBox = (page: Page, name: string) =>
   page.getByRole('checkbox', { name: collection.selectRow(name) });
 const bar = (page: Page) => page.getByRole('region', { name: bulk.region });
-const statusText = (page: Page, text: string | RegExp) =>
-  page.getByText(text).first();
+const statusText = (page: Page, text: string | RegExp) => page.getByText(text).first();
 
 async function importNames(page: Page, values: string[]) {
   await page.getByRole('button', { name: bulk.import, exact: true }).click();
@@ -35,9 +32,7 @@ async function importNames(page: Page, values: string[]) {
     .getByRole('button', { name: dialogCopy.submit(values.length) })
     .click();
   await expect(importDialog(page)).toBeHidden();
-  await expect(
-    statusText(page, dialogCopy.created(values.length)),
-  ).toBeVisible();
+  await expect(statusText(page, dialogCopy.created(values.length))).toBeVisible();
   for (const name of values) {
     await expect(page.getByRole('link', { name, exact: true })).toBeVisible();
   }
@@ -47,8 +42,7 @@ async function selectAll(page: Page, values: string[]) {
   for (const name of values) await rowBox(page, name).check();
 }
 
-test.describe
-  .serial('owner: collection list and bulk actions (profile)', () => {
+test.describe.serial('owner: collection list and bulk actions (profile)', () => {
   let page: Page;
   const consoleProblems: string[] = [];
   const set = names('Bulk', SAMPLE_SIZE);
@@ -56,10 +50,7 @@ test.describe
   test.beforeAll(async ({ browser }) => {
     page = await (await browser.newContext()).newPage();
     page.on('console', (message) => {
-      if (
-        message.type() === 'error' &&
-        !message.text().startsWith('Failed to load resource')
-      ) {
+      if (message.type() === 'error' && !message.text().startsWith('Failed to load resource')) {
         consoleProblems.push(message.text());
       }
     });
@@ -80,23 +71,15 @@ test.describe
 
   test('import creates documents; sortable headers and paging controls render', async () => {
     await importNames(page, set);
-    await expect(
-      page.getByRole('button', { name: collection.columns.updated }),
-    ).toBeVisible();
-    await expect(
-      page.getByRole('navigation', { name: collection.pagination.label }),
-    ).toBeVisible();
+    await expect(page.getByRole('button', { name: collection.columns.updated })).toBeVisible();
+    await expect(page.getByRole('navigation', { name: collection.pagination.label })).toBeVisible();
   });
 
   test('select 5 and publish: summary, published list, selection cleared', async () => {
     await selectAll(page, set);
     await expect(bar(page)).toContainText(bulk.selected(SAMPLE_SIZE));
-    await page
-      .getByRole('button', { name: bulk.publish(SAMPLE_SIZE), exact: true })
-      .click();
-    await expect(
-      statusText(page, bulk.summary.publish(SAMPLE_SIZE, SAMPLE_SIZE)),
-    ).toBeVisible();
+    await page.getByRole('button', { name: bulk.publish(SAMPLE_SIZE), exact: true }).click();
+    await expect(statusText(page, bulk.summary.publish(SAMPLE_SIZE, SAMPLE_SIZE))).toBeVisible();
     await expect(bar(page)).toBeHidden();
     await expect(rowBox(page, set[0] as string)).not.toBeChecked();
   });
@@ -106,20 +89,12 @@ test.describe
     await importNames(page, fresh);
     const mixed = [set[0] as string, set[1] as string, ...fresh];
     await selectAll(page, mixed);
-    await page
-      .getByRole('button', { name: bulk.unpublish(mixed.length), exact: true })
-      .click();
-    await expect(
-      statusText(page, bulk.summary.unpublish(2, mixed.length)),
-    ).toBeVisible();
-    await expect(
-      page.getByText(bulk.summary.failedHeading(2), { exact: true }),
-    ).toBeVisible();
+    await page.getByRole('button', { name: bulk.unpublish(mixed.length), exact: true }).click();
+    await expect(statusText(page, bulk.summary.unpublish(2, mixed.length))).toBeVisible();
+    await expect(page.getByText(bulk.summary.failedHeading(2), { exact: true })).toBeVisible();
     for (const name of fresh) {
       await expect(
-        page.getByText(
-          bulk.summary.failedItem(name, bulk.itemErrors.notPublished),
-        ),
+        page.getByText(bulk.summary.failedItem(name, bulk.itemErrors.notPublished)),
       ).toBeVisible();
       await expect(rowBox(page, name)).toBeChecked();
     }
@@ -141,22 +116,16 @@ test.describe
     await other.close();
 
     await rowBox(page, target).check();
-    await page
-      .getByRole('button', { name: bulk.publish(1), exact: true })
-      .click();
+    await page.getByRole('button', { name: bulk.publish(1), exact: true }).click();
     await expect(
       page.getByText(bulk.summary.failedItem(target, bulk.itemErrors.conflict)),
     ).toBeVisible();
     await expect(rowBox(page, target)).toBeChecked();
 
     await page.reload();
-    await expect(
-      page.getByRole('link', { name: renamed, exact: true }),
-    ).toBeVisible();
+    await expect(page.getByRole('link', { name: renamed, exact: true })).toBeVisible();
     await rowBox(page, renamed).check();
-    await page
-      .getByRole('button', { name: bulk.publish(1), exact: true })
-      .click();
+    await page.getByRole('button', { name: bulk.publish(1), exact: true }).click();
     await expect(statusText(page, bulk.summary.publish(1, 1))).toBeVisible();
   });
 
@@ -172,9 +141,7 @@ test.describe
       name: bulk.deleteDialog.title(2),
     });
     await expect(dialog).toBeVisible();
-    await dialog
-      .getByRole('button', { name: bulk.deleteDialog.cancel })
-      .click();
+    await dialog.getByRole('button', { name: bulk.deleteDialog.cancel }).click();
     await expect(dialog).toBeHidden();
     for (const name of victims) await expect(rowBox(page, name)).toBeChecked();
 
@@ -187,14 +154,10 @@ test.describe
     }
 
     await deleteButton.click();
-    await dialog
-      .getByRole('button', { name: bulk.deleteDialog.confirm(2) })
-      .click();
+    await dialog.getByRole('button', { name: bulk.deleteDialog.confirm(2) }).click();
     await expect(statusText(page, bulk.summary.delete(2, 2))).toBeVisible();
     for (const name of victims) {
-      await expect(page.getByRole('link', { name, exact: true })).toHaveCount(
-        0,
-      );
+      await expect(page.getByRole('link', { name, exact: true })).toHaveCount(0);
     }
   });
 
@@ -211,9 +174,7 @@ test.describe
       ['{"values":{}}', dialogCopy.notArray],
       ['[]', dialogCopy.empty],
       [
-        JSON.stringify(
-          Array.from({ length: MAX_ITEMS + 1 }, () => ({ values: {} })),
-        ),
+        JSON.stringify(Array.from({ length: MAX_ITEMS + 1 }, () => ({ values: {} }))),
         dialogCopy.tooMany(MAX_ITEMS),
       ],
     ];
@@ -232,10 +193,7 @@ test.describe
     await page.getByRole('button', { name: bulk.import, exact: true }).click();
     const dialog = importDialog(page);
     await payload(page).fill(
-      JSON.stringify([
-        { values: { name: good } },
-        { values: { name: ['not', 'a', 'string'] } },
-      ]),
+      JSON.stringify([{ values: { name: good } }, { values: { name: ['not', 'a', 'string'] } }]),
     );
     await dialog.locator('button[type="submit"]').click();
     await expect(dialog.getByText(dialogCopy.partial(1, 1))).toBeVisible();
@@ -251,22 +209,15 @@ test.describe
     await page.getByRole('button', { name: bulk.import, exact: true }).click();
     const dialog = importDialog(page);
     await payload(page).fill(
-      JSON.stringify([
-        { values: { name: good } },
-        { values: { name: ['bad'] } },
-      ]),
+      JSON.stringify([{ values: { name: good } }, { values: { name: ['bad'] } }]),
     );
     await dialog.getByLabel(dialogCopy.atomic).check();
     await dialog.locator('button[type="submit"]').click();
-    await expect(
-      dialog.getByText(/^Nothing was created\. Item 2: /),
-    ).toBeVisible();
+    await expect(dialog.getByText(/^Nothing was created\. Item 2: /)).toBeVisible();
     await page.keyboard.press('Escape');
     await expect(dialog).toBeHidden();
     await page.reload();
-    await expect(
-      page.getByRole('link', { name: good, exact: true }),
-    ).toHaveCount(0);
+    await expect(page.getByRole('link', { name: good, exact: true })).toHaveCount(0);
   });
 
   test('an unknown slug shows the not-found message', async () => {
@@ -308,12 +259,8 @@ test.describe('role without content permissions', () => {
         name: collection.title(PROFILE_SLUG),
       }),
     ).toBeVisible();
-    await expect(
-      page.getByRole('button', { name: bulk.import, exact: true }),
-    ).toHaveCount(0);
-    await expect(
-      page.getByRole('link', { name: collection.newDocument }),
-    ).toHaveCount(0);
+    await expect(page.getByRole('button', { name: bulk.import, exact: true })).toHaveCount(0);
+    await expect(page.getByRole('link', { name: collection.newDocument })).toHaveCount(0);
     await expect(page.getByRole('checkbox')).toHaveCount(0);
   });
 });

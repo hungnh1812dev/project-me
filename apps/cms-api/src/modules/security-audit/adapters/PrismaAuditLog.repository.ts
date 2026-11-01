@@ -1,19 +1,12 @@
 import { Inject, Injectable } from '@nestjs/common';
 
-import {
-  type AuditActorType,
-  type Prisma,
-} from '../../../generated/prisma/client';
-import { PrismaClient } from '../../../infrastructure/database/PrismaClient.adapter';
+import { type AuditActorType, type Prisma } from '../../../generated/prisma/client';
 import { PrismaService } from '../../../infrastructure/database/Prisma.service';
+import { PrismaClient } from '../../../infrastructure/database/PrismaClient.adapter';
 import { prismaTxOf } from '../../../infrastructure/database/PrismaTransactionRunner.adapter';
-import type { AuditLogWriter } from '../application/SecurityAudit.service';
 import type { UnitOfWork } from '../../../infrastructure/database/TransactionRunner.port';
-import type {
-  AuditActor,
-  AuditEntry,
-  AuditMetadataValue,
-} from '../domain/AuditActor.rules';
+import type { AuditLogWriter } from '../application/SecurityAudit.service';
+import type { AuditActor, AuditEntry, AuditMetadataValue } from '../domain/AuditActor.rules';
 
 /** Anything that can insert an audit row: a transaction or the client. */
 type AuditWriter = Pick<Prisma.TransactionClient, 'auditLog'>;

@@ -34,6 +34,19 @@ const TEST_UTILS_BAN = {
   group: ['**/*.fixture', '**/*.fixture.*'],
   message: 'Test fixtures are for *.test.* files only.',
 };
+const VIEWS_BAN = {
+  group: ['**/views', '**/views/**'],
+  message: 'Only app/ reads views/; views sit above features.',
+};
+const FEATURES_BAN = {
+  group: ['**/features', '**/features/**'],
+  message: 'Shared folders never depend on a feature.',
+};
+const OTHER_VIEW_BAN = {
+  regex: '^\\.\\./[^./]',
+  message:
+    'A view folder imports no other view; move a part two pages share to features/ or components/.',
+};
 const siblingFeatureBan = (feature) => ({
   regex: `^\\.\\./${feature}$`,
   message: `features/${feature} and this feature may not depend on each other.`,
@@ -71,19 +84,16 @@ export default [
   { languageOptions: { globals: globals.browser } },
   // A later config replaces earlier no-restricted-imports options, so each
   // block below repeats the bans that apply to its files.
+  restrictImports(['src/**'], [TEST_UTILS_BAN], [...TEST_FILES, 'src/features/**']),
+  // configs is the lowest layer: it may use pure utils, never the API
+  // client, a feature or a view.
   restrictImports(
-    ['src/**'],
-    [TEST_UTILS_BAN],
-    [...TEST_FILES, 'src/features/**'],
-  ),
-  // config is the lowest layer: it may use pure lib helpers, never the API
-  // client or a feature.
-  restrictImports(
-    ['src/config/**'],
+    ['src/configs/**'],
     [
       TEST_UTILS_BAN,
+      VIEWS_BAN,
       {
-        group: ['**/lib/Api.client'],
+        group: ['**/apis/client/Api.client'],
         message: 'config may not depend on the API client.',
       },
       {
@@ -94,9 +104,10 @@ export default [
     TEST_FILES,
   ),
   restrictImports(
-    ['src/config/Security.constants.ts'],
+    ['src/configs/Security.constants.ts'],
     [
       TEST_UTILS_BAN,
+      VIEWS_BAN,
       {
         group: ['./Reviewer.constants'],
         message: 'Third-party origins live in Security.constants itself.',
@@ -106,18 +117,25 @@ export default [
   ),
   restrictImports(
     ['src/features/**'],
-    [DEEP_FEATURE_IMPORT_BAN, TEST_UTILS_BAN],
+    [DEEP_FEATURE_IMPORT_BAN, TEST_UTILS_BAN, VIEWS_BAN],
     TEST_FILES,
   ),
+  restrictImports(['src/components/**'], [TEST_UTILS_BAN, VIEWS_BAN], TEST_FILES),
+  restrictImports(
+    ['src/libs/**', 'src/apis/**', 'src/utils/**'],
+    [TEST_UTILS_BAN, VIEWS_BAN, FEATURES_BAN],
+    TEST_FILES,
+  ),
+  restrictImports(['src/views/*/**'], [TEST_UTILS_BAN, OTHER_VIEW_BAN], TEST_FILES),
   // auth and reviewer both build on session and never on each other.
   restrictImports(
     ['src/features/auth/**'],
-    [DEEP_FEATURE_IMPORT_BAN, TEST_UTILS_BAN, siblingFeatureBan('reviewer')],
+    [DEEP_FEATURE_IMPORT_BAN, TEST_UTILS_BAN, VIEWS_BAN, siblingFeatureBan('reviewer')],
     TEST_FILES,
   ),
   restrictImports(
     ['src/features/reviewer/**'],
-    [DEEP_FEATURE_IMPORT_BAN, TEST_UTILS_BAN, siblingFeatureBan('auth')],
+    [DEEP_FEATURE_IMPORT_BAN, TEST_UTILS_BAN, VIEWS_BAN, siblingFeatureBan('auth')],
     TEST_FILES,
   ),
   restrictImports(
@@ -125,6 +143,7 @@ export default [
     [
       DEEP_FEATURE_IMPORT_BAN,
       TEST_UTILS_BAN,
+      VIEWS_BAN,
       siblingFeatureBan('auth'),
       siblingFeatureBan('reviewer'),
     ],

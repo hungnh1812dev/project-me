@@ -1,14 +1,6 @@
 import { createHash } from 'node:crypto';
 
-import {
-  Controller,
-  Delete,
-  Get,
-  HttpCode,
-  HttpStatus,
-  Module,
-  UseGuards,
-} from '@nestjs/common';
+import { Controller, Delete, Get, HttpCode, HttpStatus, Module, UseGuards } from '@nestjs/common';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import request from 'supertest';
 
@@ -17,23 +9,21 @@ import {
   openPrisma,
   type PrismaHandle,
 } from '../../src/infrastructure/database/PrismaClient.adapter';
-import { ACCESS_ERROR_CODES } from '../../src/modules/access/domain/Access.constants';
 import { AccessModule } from '../../src/modules/access/Access.module';
-import { MANAGEMENT_ERROR_CODES } from '../../src/modules/access/management/domain/AccessManagement.constants';
-import { ApiTokenGuard } from '../../src/modules/access/http/ApiToken.guard';
+import { ACCESS_ERROR_CODES } from '../../src/modules/access/domain/Access.constants';
 import { API_TOKEN } from '../../src/modules/access/domain/ApiToken.rules';
-import {
-  PermissionGuard,
-  RequirePermission,
-} from '../../src/modules/access/http/Permission.guard';
-import {
-  AUDIT_ACTIONS,
-  type AuditAction,
-} from '../../src/modules/security-audit';
+import { ApiTokenGuard } from '../../src/modules/access/http/ApiToken.guard';
+import { PermissionGuard, RequirePermission } from '../../src/modules/access/http/Permission.guard';
+import { MANAGEMENT_ERROR_CODES } from '../../src/modules/access/management/domain/AccessManagement.constants';
 import { ContentRegistry } from '../../src/modules/content-engine/application/ContentRegistry.service';
 import { ContentTypeRegistry } from '../../src/modules/content-engine/domain/ContentTypeRegistry.entity';
 import { hashPassword } from '../../src/modules/identity/application/Password.service';
-import { ARTICLE_DEFINITION } from '../fixtures/Access.fixture';
+import { AUDIT_ACTIONS, type AuditAction } from '../../src/modules/security-audit';
+import {
+  ARTICLE_DEFINITION,
+  seedRolePermissions,
+  seedSystemRoles,
+} from '../fixtures/Access.fixture';
 import { createCoreTemplate } from '../fixtures/CoreDb.fixture';
 import {
   dbEnvOf,
@@ -45,10 +35,6 @@ import {
 } from '../fixtures/Env.fixture';
 import { startPostgres, type TestPostgres } from '../fixtures/Postgres.fixture';
 import { createTestApp } from '../fixtures/TestApp.fixture';
-import {
-  seedRolePermissions,
-  seedSystemRoles,
-} from '../fixtures/Access.fixture';
 
 const PASSWORD = 'correct horse battery staple';
 const TOKENS = '/api/v1/api-tokens';
@@ -250,16 +236,12 @@ describe('API tokens (T19, D5, §12-6; Postgres 17 via Testcontainers)', () => {
       expect(res.headers['cache-control']).toBe('no-store');
       const body = res.body as TokenBody & { token: string };
       expect(body.token).toMatch(/^ak_live_[A-Za-z0-9_-]{43}$/);
-      expect(body.tokenPrefix).toBe(
-        body.token.slice(0, API_TOKEN.DISPLAY_PREFIX_LENGTH),
-      );
+      expect(body.tokenPrefix).toBe(body.token.slice(0, API_TOKEN.DISPLAY_PREFIX_LENGTH));
 
       const row = await db.prisma.apiToken.findUniqueOrThrow({
         where: { documentId: body.id },
       });
-      expect(row.tokenHash).toBe(
-        createHash('sha256').update(body.token).digest('hex'),
-      );
+      expect(row.tokenHash).toBe(createHash('sha256').update(body.token).digest('hex'));
       expect(JSON.stringify(row)).not.toContain(body.token);
       expect(row.createdById).toBe(admin.id);
 
@@ -307,10 +289,10 @@ describe('API tokens (T19, D5, §12-6; Postgres 17 via Testcontainers)', () => {
       const admin = await signedIn('admin');
       const token = await createdToken(admin);
       const big = {
-        permissions: Array.from(
-          { length: API_TOKEN.MAX_SCOPE_ENTRIES + 1 },
-          () => ({ subject: 'article', action: 'read' }),
-        ),
+        permissions: Array.from({ length: API_TOKEN.MAX_SCOPE_ENTRIES + 1 }, () => ({
+          subject: 'article',
+          action: 'read',
+        })),
       };
       const created = await createToken(admin, big);
       const updated = await http()
@@ -338,8 +320,7 @@ describe('API tokens (T19, D5, §12-6; Postgres 17 via Testcontainers)', () => {
         { action: 'read', readableFields: ['title'] },
       ]);
       const before = await db.prisma.apiToken.count();
-      const auditBefore = (await auditRows(AUDIT_ACTIONS.API_TOKEN_CREATED))
-        .length;
+      const auditBefore = (await auditRows(AUDIT_ACTIONS.API_TOKEN_CREATED)).length;
       const attempts = await Promise.all([
         createToken(limited, {
           permissions: [{ subject: 'article', action: 'update' }],
@@ -362,19 +343,13 @@ describe('API tokens (T19, D5, §12-6; Postgres 17 via Testcontainers)', () => {
       ]);
       for (const res of attempts) {
         expect(res.status).toBe(403);
-        expect(errorCodeOf(res)).toBe(
-          MANAGEMENT_ERROR_CODES.TOKEN_SCOPE_NOT_HELD,
-        );
+        expect(errorCodeOf(res)).toBe(MANAGEMENT_ERROR_CODES.TOKEN_SCOPE_NOT_HELD);
       }
       expect(await db.prisma.apiToken.count()).toBe(before);
-      expect((await auditRows(AUDIT_ACTIONS.API_TOKEN_CREATED)).length).toBe(
-        auditBefore,
-      );
+      expect((await auditRows(AUDIT_ACTIONS.API_TOKEN_CREATED)).length).toBe(auditBefore);
 
       const ok = await createToken(limited, {
-        permissions: [
-          { subject: 'article', action: 'read', readableFields: ['title'] },
-        ],
+        permissions: [{ subject: 'article', action: 'read', readableFields: ['title'] }],
       });
       expect(ok.status).toBe(201);
     });
@@ -382,9 +357,7 @@ describe('API tokens (T19, D5, §12-6; Postgres 17 via Testcontainers)', () => {
     it('needs the api_tokens permission: an editor gets 403', async () => {
       const editor = await signedIn('editor');
       expect((await createToken(editor)).status).toBe(403);
-      expect((await http().get(TOKENS).set(bearer(editor.token))).status).toBe(
-        403,
-      );
+      expect((await http().get(TOKENS).set(bearer(editor.token))).status).toBe(403);
     });
   });
 
@@ -396,14 +369,8 @@ describe('API tokens (T19, D5, §12-6; Postgres 17 via Testcontainers)', () => {
       });
       const attempts = await Promise.all([
         http().get(TOKENS).set(bearer(token.token)),
-        http()
-          .post(TOKENS)
-          .set(bearer(token.token))
-          .send({ name: 'x', scope: READ_ARTICLE }),
-        http()
-          .patch(`${TOKENS}/${token.id}`)
-          .set(bearer(token.token))
-          .send({ name: 'y' }),
+        http().post(TOKENS).set(bearer(token.token)).send({ name: 'x', scope: READ_ARTICLE }),
+        http().patch(`${TOKENS}/${token.id}`).set(bearer(token.token)).send({ name: 'y' }),
         http().post(`${TOKENS}/${token.id}/revoke`).set(bearer(token.token)),
       ]);
       for (const res of attempts) expect(res.status).toBe(401);
@@ -426,23 +393,15 @@ describe('API tokens (T19, D5, §12-6; Postgres 17 via Testcontainers)', () => {
         .patch(`${TOKENS}/${theirs.id}`)
         .set(bearer(first.token))
         .send({ name: 'taken over' });
-      const revoke = await http()
-        .post(`${TOKENS}/${theirs.id}/revoke`)
-        .set(bearer(first.token));
+      const revoke = await http().post(`${TOKENS}/${theirs.id}/revoke`).set(bearer(first.token));
       for (const res of [patch, revoke]) {
         expect(res.status).toBe(404);
         expect(errorCodeOf(res)).toBe(MANAGEMENT_ERROR_CODES.TOKEN_NOT_FOUND);
       }
-      expect((await http().get(PROBE).set(bearer(theirs.token))).status).toBe(
-        204,
-      );
+      expect((await http().get(PROBE).set(bearer(theirs.token))).status).toBe(204);
 
-      const ownerList = await http()
-        .get(`${TOKENS}?pageSize=100`)
-        .set(bearer(owner.token));
-      const ownerIds = (ownerList.body as { data: TokenBody[] }).data.map(
-        (t) => t.id,
-      );
+      const ownerList = await http().get(`${TOKENS}?pageSize=100`).set(bearer(owner.token));
+      const ownerIds = (ownerList.body as { data: TokenBody[] }).data.map((t) => t.id);
       expect(ownerIds).toEqual(expect.arrayContaining([mine.id, theirs.id]));
       const ownerRevoke = await http()
         .post(`${TOKENS}/${theirs.id}/revoke`)
@@ -455,9 +414,7 @@ describe('API tokens (T19, D5, §12-6; Postgres 17 via Testcontainers)', () => {
       await createdToken(admin);
       await createdToken(admin);
       await createdToken(admin);
-      const res = await http()
-        .get(`${TOKENS}?page=2&pageSize=2`)
-        .set(bearer(admin.token));
+      const res = await http().get(`${TOKENS}?page=2&pageSize=2`).set(bearer(admin.token));
       const body = res.body as { data: TokenBody[]; meta: { total: number } };
       expect(body.meta.total).toBe(3);
       expect(body.data).toHaveLength(1);
@@ -499,9 +456,7 @@ describe('API tokens (T19, D5, §12-6; Postgres 17 via Testcontainers)', () => {
     });
 
     it('re-runs the subset check on update (D5): widening past the creator is 403 and changes nothing', async () => {
-      const limited = await signedInWithRole('t19-limited-update', [
-        { action: 'read' },
-      ]);
+      const limited = await signedInWithRole('t19-limited-update', [{ action: 'read' }]);
       const token = await createdToken(limited, READ_ARTICLE);
       const res = await http()
         .patch(`${TOKENS}/${token.id}`)
@@ -510,22 +465,16 @@ describe('API tokens (T19, D5, §12-6; Postgres 17 via Testcontainers)', () => {
           scope: { permissions: [{ subject: 'article', action: 'delete' }] },
         });
       expect(res.status).toBe(403);
-      expect(errorCodeOf(res)).toBe(
-        MANAGEMENT_ERROR_CODES.TOKEN_SCOPE_NOT_HELD,
-      );
+      expect(errorCodeOf(res)).toBe(MANAGEMENT_ERROR_CODES.TOKEN_SCOPE_NOT_HELD);
       const row = await db.prisma.apiToken.findUniqueOrThrow({
         where: { documentId: token.id },
       });
       expect(row.scope).toEqual(READ_ARTICLE);
-      expect(
-        await auditRows(AUDIT_ACTIONS.API_TOKEN_UPDATED, token.id),
-      ).toEqual([]);
+      expect(await auditRows(AUDIT_ACTIONS.API_TOKEN_UPDATED, token.id)).toEqual([]);
     });
 
     it('checks the Owner’s edit of someone else’s token against the token’s creator', async () => {
-      const limited = await signedInWithRole('t19-limited-owner-edit', [
-        { action: 'read' },
-      ]);
+      const limited = await signedInWithRole('t19-limited-owner-edit', [{ action: 'read' }]);
       const token = await createdToken(limited, READ_ARTICLE);
       const res = await http()
         .patch(`${TOKENS}/${token.id}`)
@@ -534,18 +483,13 @@ describe('API tokens (T19, D5, §12-6; Postgres 17 via Testcontainers)', () => {
           scope: { permissions: [{ subject: 'article', action: 'delete' }] },
         });
       expect(res.status).toBe(403);
-      expect(errorCodeOf(res)).toBe(
-        MANAGEMENT_ERROR_CODES.TOKEN_SCOPE_NOT_HELD,
-      );
+      expect(errorCodeOf(res)).toBe(MANAGEMENT_ERROR_CODES.TOKEN_SCOPE_NOT_HELD);
     });
 
     it('does not update a revoked token (409)', async () => {
       const admin = await signedIn('admin');
       const token = await createdToken(admin);
-      await http()
-        .post(`${TOKENS}/${token.id}/revoke`)
-        .set(bearer(admin.token))
-        .expect(204);
+      await http().post(`${TOKENS}/${token.id}/revoke`).set(bearer(admin.token)).expect(204);
       const res = await http()
         .patch(`${TOKENS}/${token.id}`)
         .set(bearer(admin.token))
@@ -571,10 +515,7 @@ describe('API tokens (T19, D5, §12-6; Postgres 17 via Testcontainers)', () => {
         { expiresAt: null },
       ];
       for (const body of bodies) {
-        const res = await http()
-          .patch(`${TOKENS}/${token.id}`)
-          .set(bearer(admin.token))
-          .send(body);
+        const res = await http().patch(`${TOKENS}/${token.id}`).set(bearer(admin.token)).send(body);
         expect(res.status).toBe(409);
         expect(errorCodeOf(res)).toBe(MANAGEMENT_ERROR_CODES.TOKEN_EXPIRED);
         const row = await db.prisma.apiToken.findUniqueOrThrow({
@@ -584,18 +525,12 @@ describe('API tokens (T19, D5, §12-6; Postgres 17 via Testcontainers)', () => {
         expect(row.scope).toEqual(before.scope);
         expect(row.expiresAt).toEqual(before.expiresAt);
       }
-      expect(
-        await auditRows(AUDIT_ACTIONS.API_TOKEN_UPDATED, token.id),
-      ).toEqual([]);
+      expect(await auditRows(AUDIT_ACTIONS.API_TOKEN_UPDATED, token.id)).toEqual([]);
       const listed = await http().get(TOKENS).set(bearer(admin.token));
       expect(
-        (listed.body as { data: TokenBody[] }).data.find(
-          (t) => t.id === token.id,
-        )?.status,
+        (listed.body as { data: TokenBody[] }).data.find((t) => t.id === token.id)?.status,
       ).toBe('expired');
-      expect((await http().get(PROBE).set(bearer(token.token))).status).toBe(
-        401,
-      );
+      expect((await http().get(PROBE).set(bearer(token.token))).status).toBe(401);
     });
 
     it('answers an unknown id with 404 and a malformed id with 400', async () => {
@@ -617,31 +552,18 @@ describe('API tokens (T19, D5, §12-6; Postgres 17 via Testcontainers)', () => {
     it('stops the token at once, is audited, and a second revoke is 409', async () => {
       const admin = await signedIn('admin');
       const token = await createdToken(admin);
-      expect((await http().get(PROBE).set(bearer(token.token))).status).toBe(
-        204,
-      );
-      await http()
-        .post(`${TOKENS}/${token.id}/revoke`)
-        .set(bearer(admin.token))
-        .expect(204);
-      expect((await http().get(PROBE).set(bearer(token.token))).status).toBe(
-        401,
-      );
+      expect((await http().get(PROBE).set(bearer(token.token))).status).toBe(204);
+      await http().post(`${TOKENS}/${token.id}/revoke`).set(bearer(admin.token)).expect(204);
+      expect((await http().get(PROBE).set(bearer(token.token))).status).toBe(401);
       const audit = await auditRows(AUDIT_ACTIONS.API_TOKEN_REVOKED, token.id);
       expect(audit).toHaveLength(1);
       expect(audit[0]?.actorId).toBe(admin.id);
-      const again = await http()
-        .post(`${TOKENS}/${token.id}/revoke`)
-        .set(bearer(admin.token));
+      const again = await http().post(`${TOKENS}/${token.id}/revoke`).set(bearer(admin.token));
       expect(again.status).toBe(409);
-      expect(
-        await auditRows(AUDIT_ACTIONS.API_TOKEN_REVOKED, token.id),
-      ).toHaveLength(1);
+      expect(await auditRows(AUDIT_ACTIONS.API_TOKEN_REVOKED, token.id)).toHaveLength(1);
       const listed = await http().get(TOKENS).set(bearer(admin.token));
       expect(
-        (listed.body as { data: TokenBody[] }).data.find(
-          (t) => t.id === token.id,
-        )?.status,
+        (listed.body as { data: TokenBody[] }).data.find((t) => t.id === token.id)?.status,
       ).toBe('revoked');
     });
   });
@@ -654,18 +576,11 @@ describe('API tokens (T19, D5, §12-6; Postgres 17 via Testcontainers)', () => {
         where: { documentId: token.id },
         data: { expiresAt: new Date(Date.now() - HOUR_MS) },
       });
-      await http()
-        .post(`${TOKENS}/${token.id}/revoke`)
-        .set(bearer(admin.token))
-        .expect(204);
-      expect(
-        await auditRows(AUDIT_ACTIONS.API_TOKEN_REVOKED, token.id),
-      ).toHaveLength(1);
+      await http().post(`${TOKENS}/${token.id}/revoke`).set(bearer(admin.token)).expect(204);
+      expect(await auditRows(AUDIT_ACTIONS.API_TOKEN_REVOKED, token.id)).toHaveLength(1);
       const listed = await http().get(TOKENS).set(bearer(admin.token));
       expect(
-        (listed.body as { data: TokenBody[] }).data.find(
-          (t) => t.id === token.id,
-        )?.status,
+        (listed.body as { data: TokenBody[] }).data.find((t) => t.id === token.id)?.status,
       ).toBe('revoked');
     });
   });
@@ -693,29 +608,21 @@ describe('API tokens (T19, D5, §12-6; Postgres 17 via Testcontainers)', () => {
           { subject: 'article', action: 'delete' },
         ],
       });
-      expect((await http().delete(PROBE).set(bearer(token.token))).status).toBe(
-        204,
-      );
+      expect((await http().delete(PROBE).set(bearer(token.token))).status).toBe(204);
       // Admin -> editor: no delete, no api_tokens.
       await http()
         .patch(`${ACCOUNTS}/${admin.documentId}`)
         .set(bearer(owner.token))
         .send({ roleId: roleIds.editor })
         .expect(200);
-      expect((await http().delete(PROBE).set(bearer(token.token))).status).toBe(
-        403,
-      );
-      expect((await http().get(PROBE).set(bearer(token.token))).status).toBe(
-        204,
-      );
+      expect((await http().delete(PROBE).set(bearer(token.token))).status).toBe(403);
+      expect((await http().get(PROBE).set(bearer(token.token))).status).toBe(204);
     });
 
     it('a scope without the action is 403 even when the creator holds it', async () => {
       const admin = await signedIn('admin');
       const token = await createdToken(admin, READ_ARTICLE);
-      expect((await http().delete(PROBE).set(bearer(token.token))).status).toBe(
-        403,
-      );
+      expect((await http().delete(PROBE).set(bearer(token.token))).status).toBe(403);
     });
 
     it('a disabled creator gives 401', async () => {
@@ -725,9 +632,7 @@ describe('API tokens (T19, D5, §12-6; Postgres 17 via Testcontainers)', () => {
         .post(`${ACCOUNTS}/${admin.documentId}/disable`)
         .set(bearer(owner.token))
         .expect(204);
-      expect((await http().get(PROBE).set(bearer(token.token))).status).toBe(
-        401,
-      );
+      expect((await http().get(PROBE).set(bearer(token.token))).status).toBe(401);
     });
 
     it('an expired token gives 401', async () => {
@@ -737,14 +642,10 @@ describe('API tokens (T19, D5, §12-6; Postgres 17 via Testcontainers)', () => {
         where: { documentId: token.id },
         data: { expiresAt: new Date(Date.now() - HOUR_MS) },
       });
-      expect((await http().get(PROBE).set(bearer(token.token))).status).toBe(
-        401,
-      );
+      expect((await http().get(PROBE).set(bearer(token.token))).status).toBe(401);
       const listed = await http().get(TOKENS).set(bearer(admin.token));
       expect(
-        (listed.body as { data: TokenBody[] }).data.find(
-          (t) => t.id === token.id,
-        )?.status,
+        (listed.body as { data: TokenBody[] }).data.find((t) => t.id === token.id)?.status,
       ).toBe('expired');
     });
 
@@ -752,9 +653,7 @@ describe('API tokens (T19, D5, §12-6; Postgres 17 via Testcontainers)', () => {
       const admin = await signedIn('admin');
       const token = await createdToken(admin);
       await db.prisma.account.delete({ where: { id: admin.id } });
-      expect((await http().get(PROBE).set(bearer(token.token))).status).toBe(
-        401,
-      );
+      expect((await http().get(PROBE).set(bearer(token.token))).status).toBe(401);
     });
 
     it('records last_used_at without moving updated_at', async () => {

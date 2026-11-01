@@ -25,11 +25,7 @@ export async function createTestApp(
   testModules: readonly (Type | DynamicModule)[] = [],
 ): Promise<NestExpressApplication> {
   const config = loadAppConfig(rawEnv);
-  const app = await createApp(
-    AppModule.forRoot(config),
-    overrides,
-    testModules,
-  );
+  const app = await createApp(AppModule.forRoot(config), overrides, testModules);
   configureApp(app, config);
   await app.init();
   return app;

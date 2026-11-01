@@ -1,21 +1,21 @@
 import { Injectable } from '@nestjs/common';
 
 import {
-  type AccessPolicy,
   AccessPolicyService,
-  RECORD_SYSTEM_FIELDS,
-  type ActorContext,
-  type SystemSubject,
+  CONDITION_SYSTEM_FIELDS,
   FieldSelection,
   joinFieldPath,
-  CONDITION_SYSTEM_FIELDS,
   PermissionAction,
+  RECORD_SYSTEM_FIELDS,
   recordReadAccess,
+  type AccessPolicy,
+  type ActorContext,
+  type SystemSubject,
 } from '../../access';
 import {
-  type ContentTypeView,
   contentTypeNotFound,
   contentTypeView,
+  type ContentTypeView,
   type FieldVisibility,
   type ViewVocabulary,
 } from '../domain/ContentTypeView.rules';
@@ -78,22 +78,11 @@ export class ContentTypesService {
   ): ContentTypeView | undefined {
     const type = catalog.contentType(slug);
     if (type === undefined) return undefined;
-    if (
-      evaluator.can(
-        actor,
-        FULL_CATALOG_PERMISSION.action,
-        FULL_CATALOG_PERMISSION.subject,
-      )
-    ) {
+    if (evaluator.can(actor, FULL_CATALOG_PERMISSION.action, FULL_CATALOG_PERMISSION.subject)) {
       return contentTypeView(type, catalog, FULL_VISIBILITY, VIEW_VOCABULARY);
     }
     if (!evaluator.can(actor, PermissionAction.read, slug)) return undefined;
     const readable = evaluator.fieldsFor(actor, slug).readable;
-    return contentTypeView(
-      type,
-      catalog,
-      recordReadAccess(actor, readable),
-      VIEW_VOCABULARY,
-    );
+    return contentTypeView(type, catalog, recordReadAccess(actor, readable), VIEW_VOCABULARY);
   }
 }

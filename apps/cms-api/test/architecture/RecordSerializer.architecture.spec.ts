@@ -1,8 +1,4 @@
-import {
-  assertPinnedPathsExist,
-  listSourceFiles,
-  reachedFilesOf,
-} from './ImportGraph.analyzer';
+import { assertPinnedPathsExist, listSourceFiles, reachedFilesOf } from './ImportGraph.analyzer';
 import {
   ACCESS_CONSTANTS_FILE,
   CONTENT_ENGINE_DIRECTORY,
@@ -48,44 +44,34 @@ const SERIALIZER_BUILDING_BLOCKS = [SERIALIZER_FILE, ACCESS_CONSTANTS_FILE];
  * - presence reads a row version and returns presence entries;
  * - the module file only binds the port.
  */
-const BOUNDARY_FILE =
-  /(?:\.(?:controller|filter|interceptor|gateway)\.ts$|(?:^|[\\/])http[\\/])/;
+const BOUNDARY_FILE = /(?:\.(?:controller|filter|interceptor|gateway)\.ts$|(?:^|[\\/])http[\\/])/;
 const SERIALIZED_CAST = /\bas\s+SerializedRecord\b/;
 
-const files = listSourceFiles(SRC_ROOT, { excludeDirs: [GENERATED_DIR] }).map(
-  (source) => ({
-    file: source.file,
-    text: source.text,
-    reached: reachedFilesOf(SRC_ROOT, source),
-  }),
-);
+const files = listSourceFiles(SRC_ROOT, { excludeDirs: [GENERATED_DIR] }).map((source) => ({
+  file: source.file,
+  text: source.text,
+  reached: reachedFilesOf(SRC_ROOT, source),
+}));
 
 const importsRecordLoader = (reached: Set<string>) =>
   RECORD_LOADER_FILES.some((loader) => reached.has(loader));
 
 const readsRecords = (reached: Set<string>) =>
-  importsRecordLoader(reached) ||
-  RECORD_READER_PORT_FILES.some((port) => reached.has(port));
+  importsRecordLoader(reached) || RECORD_READER_PORT_FILES.some((port) => reached.has(port));
 
 describe('RecordSerializer is the only record -> response path', () => {
   it('scans the source tree', () => {
     assertPinnedPathsExist(SRC_ROOT, PINNED_PATHS);
     expect(files.length).toBeGreaterThan(0);
     expect(files.some(({ file }) => file === SERIALIZER_FILE)).toBe(true);
-    expect(
-      RECORD_LOADER_FILES.every((loader) =>
-        files.some(({ file }) => file === loader),
-      ),
-    ).toBe(true);
+    expect(RECORD_LOADER_FILES.every((loader) => files.some(({ file }) => file === loader))).toBe(
+      true,
+    );
   });
 
   it('still finds real edges: a record reader reaches the record loaders', () => {
-    const consumer = files.find(
-      ({ file }) => file === RECORD_LOADER_CONSUMER_FILE,
-    );
-    expect(
-      consumer !== undefined && importsRecordLoader(consumer.reached),
-    ).toBe(true);
+    const consumer = files.find(({ file }) => file === RECORD_LOADER_CONSUMER_FILE);
+    expect(consumer !== undefined && importsRecordLoader(consumer.reached)).toBe(true);
   });
 
   it('record loaders are only used next to the serializer', () => {
@@ -104,32 +90,22 @@ describe('RecordSerializer is the only record -> response path', () => {
 
   it('HTTP boundary files never import record loaders', () => {
     const offenders = files
-      .filter(
-        ({ file, reached }) =>
-          BOUNDARY_FILE.test(file) && importsRecordLoader(reached),
-      )
+      .filter(({ file, reached }) => BOUNDARY_FILE.test(file) && importsRecordLoader(reached))
       .map(({ file }) => file);
     expect(offenders).toEqual([]);
   });
 
   it('only the serializer produces SerializedRecord', () => {
     const offenders = files
-      .filter(
-        ({ file, text }) =>
-          file !== SERIALIZER_FILE && SERIALIZED_CAST.test(text),
-      )
+      .filter(({ file, text }) => file !== SERIALIZER_FILE && SERIALIZED_CAST.test(text))
       .map(({ file }) => file);
     expect(offenders).toEqual([]);
   });
 
   it('the rules match what they are meant to catch', () => {
     expect(BOUNDARY_FILE.test('documents/documents.controller.ts')).toBe(true);
-    expect(
-      BOUNDARY_FILE.test('modules/documents/http/Documents.routes.ts'),
-    ).toBe(true);
-    expect(BOUNDARY_FILE.test('modules/documents/adapters/Kysely.ts')).toBe(
-      false,
-    );
+    expect(BOUNDARY_FILE.test('modules/documents/http/Documents.routes.ts')).toBe(true);
+    expect(BOUNDARY_FILE.test('modules/documents/adapters/Kysely.ts')).toBe(false);
     expect(SERIALIZED_CAST.test('return body as SerializedRecord;')).toBe(true);
   });
 });

@@ -2,29 +2,29 @@ import {
   GraphQLBoolean,
   GraphQLID,
   GraphQLInputObjectType,
-  type GraphQLInputFieldConfigMap,
-  type GraphQLInputType,
-  type GraphQLNullableInputType,
   GraphQLInt,
   GraphQLList,
   GraphQLNonNull,
   GraphQLString,
+  type GraphQLInputFieldConfigMap,
+  type GraphQLInputType,
+  type GraphQLNullableInputType,
 } from 'graphql';
 
 import { type ConditionValueKind } from '../../../access';
-import type { FilterClause, SortDirection, SortKey } from '../../../documents';
 import {
   FILTER_OPERATORS,
-  type FilterOperator,
   OPERATORS_BY_KIND,
+  type FilterClause,
+  type FilterOperator,
+  type SortDirection,
+  type SortKey,
 } from '../../../documents';
 import { FILTER_INPUT_NAMES } from '../../application/Graphql.constants';
 import { DateScalar, DateTimeScalar, DecimalScalar } from './Scalars.rules';
 
 /** GraphQL type of the value each kind compares with. */
-const OPERAND_TYPES: Readonly<
-  Record<ConditionValueKind, GraphQLNullableInputType>
-> = {
+const OPERAND_TYPES: Readonly<Record<ConditionValueKind, GraphQLNullableInputType>> = {
   string: GraphQLString,
   integer: GraphQLInt,
   decimal: DecimalScalar,
@@ -38,15 +38,10 @@ const OPERAND_TYPES: Readonly<
 const SET_OPERATOR = 'in';
 const TEXT_OPERATOR = 'contains';
 
-function operandType(
-  kind: ConditionValueKind,
-  operator: FilterOperator,
-): GraphQLInputType {
+function operandType(kind: ConditionValueKind, operator: FilterOperator): GraphQLInputType {
   if (operator === TEXT_OPERATOR) return GraphQLString;
   const operand = OPERAND_TYPES[kind];
-  return operator === SET_OPERATOR
-    ? new GraphQLList(new GraphQLNonNull(operand))
-    : operand;
+  return operator === SET_OPERATOR ? new GraphQLList(new GraphQLNonNull(operand)) : operand;
 }
 
 function filterInputFor(kind: ConditionValueKind): GraphQLInputObjectType {
@@ -63,11 +58,11 @@ function filterInputFor(kind: ConditionValueKind): GraphQLInputObjectType {
 const KINDS = Object.keys(FILTER_INPUT_NAMES) as ConditionValueKind[];
 
 /** One input per REST operator set, operators read from `OPERATORS_BY_KIND`. */
-export const FILTER_INPUTS: Readonly<
-  Record<ConditionValueKind, GraphQLInputObjectType>
-> = Object.fromEntries(
-  KINDS.map((kind) => [kind, filterInputFor(kind)]),
-) as Record<ConditionValueKind, GraphQLInputObjectType>;
+export const FILTER_INPUTS: Readonly<Record<ConditionValueKind, GraphQLInputObjectType>> =
+  Object.fromEntries(KINDS.map((kind) => [kind, filterInputFor(kind)])) as Record<
+    ConditionValueKind,
+    GraphQLInputObjectType
+  >;
 
 const OPERATOR_SET: ReadonlySet<string> = new Set(FILTER_OPERATORS);
 
@@ -99,10 +94,7 @@ export function filterToClauses(
 
 /** The REST `SortKey`s of a `[<Root>Sort!]` argument (enum values are the paths). */
 export function sortToKeys(
-  sort:
-    | readonly { field: string; direction?: SortDirection | null }[]
-    | null
-    | undefined,
+  sort: readonly { field: string; direction?: SortDirection | null }[] | null | undefined,
 ): SortKey[] {
   return (sort ?? []).map(({ field, direction }) => ({
     path: field,

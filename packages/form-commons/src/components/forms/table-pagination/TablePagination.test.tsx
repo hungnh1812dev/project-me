@@ -8,8 +8,7 @@ const LABELS = {
   nav: 'Pages',
   previous: 'Previous',
   next: 'Next',
-  range: (from: number, to: number, total: number) =>
-    `${from}-${to} of ${total}`,
+  range: (from: number, to: number, total: number) => `${from}-${to} of ${total}`,
 };
 
 describe('TablePagination', () => {

@@ -6,11 +6,9 @@ import { DatabaseModule } from '../../infrastructure/database/Database.module';
 import { AccessModule } from '../access';
 import { ContentEngineModule } from '../content-engine';
 import { SecurityAuditModule } from '../security-audit';
-import {
-  CloudinaryMediaStorage,
-  createCloudinaryClient,
-} from './adapters/Cloudinary.adapter';
+import { CloudinaryMediaStorage, createCloudinaryClient } from './adapters/Cloudinary.adapter';
 import { FakeMediaStorage } from './adapters/Fake.adapter';
+import { LocalMediaStorage } from './adapters/Local.adapter';
 import { MediaReferenceAdapter } from './adapters/MediaReference.adapter';
 import { PrismaMediaRepository } from './adapters/PrismaMedia.repository';
 import { UploadProcessingAdapter } from './adapters/UploadProcessing.adapter';
@@ -24,8 +22,10 @@ import {
 } from './application/Media.port';
 import { MediaLibraryService } from './application/MediaLibrary.service';
 import { PurgeDeletedMediaService } from './application/PurgeDeletedMedia.service';
+import { ReplaceMediaFileService } from './application/ReplaceMediaFile.service';
 import { UploadMediaService } from './application/UploadMedia.service';
 import { MediaController } from './http/Media.controller';
+import { MediaFilesController } from './http/MediaFiles.controller';
 import { MediaPurgeJob } from './jobs/MediaPurge.job';
 
 type MediaProvider = IAppConfig['media']['provider'];
@@ -45,19 +45,27 @@ function createCloudinaryMediaStorage(config: IAppConfig): MediaStorage {
   if (cloudinary === undefined) {
     throw new Error('Cloudinary media storage is not configured');
   }
-  return new CloudinaryMediaStorage(
-    createCloudinaryClient(cloudinary),
-    cloudinary.folder,
-  );
+  return new CloudinaryMediaStorage(createCloudinaryClient(cloudinary), cloudinary.folder);
+}
+
+function createLocalMediaStorage(config: IAppConfig): MediaStorage {
+  const { local } = config.media;
+  // Env.rules.ts requires the keys, and the opt-in in production.
+  if (local === undefined) {
+    throw new Error('Local media storage is not configured');
+  }
+  // Defence in depth: Env.rules.ts already rejects this provider in production without the opt-in.
+  if (config.isProduction && !local.allowedInProduction) {
+    throw new Error('The local media storage is not allowed in production');
+  }
+  return LocalMediaStorage.open(local);
 }
 
 /** One factory per MEDIA_PROVIDERS entry; the type forces a new provider to add one. */
-export const MEDIA_STORAGE_FACTORIES: Record<
-  MediaProvider,
-  MediaStorageFactory
-> = {
+export const MEDIA_STORAGE_FACTORIES: Record<MediaProvider, MediaStorageFactory> = {
   fake: createFakeMediaStorage,
   cloudinary: createCloudinaryMediaStorage,
+  local: createLocalMediaStorage,
 };
 
 export function createMediaStorage(config: IAppConfig): MediaStorage {
@@ -70,18 +78,14 @@ export function createMediaStorage(config: IAppConfig): MediaStorage {
 
 /** File library: upload pipeline, storage for the configured MEDIA_PROVIDER, library use cases and purge job. */
 @Module({
-  imports: [
-    AccessModule,
-    ContentEngineModule,
-    DatabaseModule,
-    SecurityAuditModule,
-  ],
-  controllers: [MediaController],
+  imports: [AccessModule, ContentEngineModule, DatabaseModule, SecurityAuditModule],
+  controllers: [MediaController, MediaFilesController],
   providers: [
     MediaLibraryService,
     DocumentMediaService,
     PurgeDeletedMediaService,
     UploadMediaService,
+    ReplaceMediaFileService,
     MediaPurgeJob,
     { provide: MEDIA_REPOSITORY, useClass: PrismaMediaRepository },
     { provide: MEDIA_REFERENCE_CHECKER, useClass: MediaReferenceAdapter },

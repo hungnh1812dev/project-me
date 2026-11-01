@@ -1,17 +1,14 @@
 import {
   accountRecord,
-  actorWithRole,
   ACTOR_ID,
+  actorWithRole,
   fakeRunner,
 } from '../../../../../test/fixtures/Management.fixture';
 import type { SessionRevocationService } from '../../../identity';
 import type { SecurityAuditService } from '../../../security-audit';
 import type { VersionCache } from '../../application/VersionCache.service';
 import { MANAGEMENT_ERROR_CODES } from '../domain/AccessManagement.constants';
-import type {
-  AccountAdminRepository,
-  AccountChange,
-} from './AccessManagement.port';
+import type { AccountAdminRepository, AccountChange } from './AccessManagement.port';
 import { AccountsService } from './Accounts.service';
 
 const META = { ip: '203.0.113.7', userAgent: 'jest' };
@@ -37,16 +34,12 @@ function build(
     listPage: jest.fn(() => Promise.resolve({ rows: [TARGET], total: 1 })),
     lockManageable: jest.fn(() => Promise.resolve(target)),
     lockRoleForAssignment: jest.fn(() =>
-      Promise.resolve(
-        overrides.role === undefined ? EDITOR_ROLE : overrides.role,
-      ),
+      Promise.resolve(overrides.role === undefined ? EDITOR_ROLE : overrides.role),
     ),
     update: jest.fn((_unit: unknown, _id: number, change: AccountChange) =>
       Promise.resolve({
         ...TARGET,
-        ...(change.displayName === undefined
-          ? {}
-          : { displayName: change.displayName }),
+        ...(change.displayName === undefined ? {} : { displayName: change.displayName }),
         ...(change.role === undefined ? {} : { role: EDITOR_ROLE }),
       }),
     ),
@@ -117,12 +110,7 @@ describe('AccountsService', () => {
       target: accountRecord({ role: { ...TARGET.role, rank: 40 } }),
     });
     await expect(
-      service.update(
-        actorWithRole('admin'),
-        TARGET.documentId,
-        { displayName: 'x' },
-        META,
-      ),
+      service.update(actorWithRole('admin'), TARGET.documentId, { displayName: 'x' }, META),
     ).rejects.toMatchObject({ kind: 'forbidden' });
     expect(accounts.update).not.toHaveBeenCalled();
   });
@@ -220,16 +208,10 @@ describe('AccountsService', () => {
 
   describe('disable', () => {
     it('sets the status, ends the sessions and audits in one unit, then drops the cache', async () => {
-      const { service, accounts, sessions, audit, versions, unit, events } =
-        build();
+      const { service, accounts, sessions, audit, versions, unit, events } = build();
       versions.invalidateAccount.mockImplementation(() => events.push('drop'));
       await service.disable(actorWithRole('admin'), TARGET.documentId, META);
-      expect(accounts.setStatus).toHaveBeenCalledWith(
-        unit,
-        TARGET.id,
-        'disabled',
-        ACTOR_ID,
-      );
+      expect(accounts.setStatus).toHaveBeenCalledWith(unit, TARGET.id, 'disabled', ACTOR_ID);
       expect(sessions.revokeAll).toHaveBeenCalledWith(unit, TARGET.id);
       expect(audit.record).toHaveBeenCalledWith(
         unit,
@@ -260,29 +242,21 @@ describe('AccountsService', () => {
     it.each([
       [true, 'active'],
       [false, 'invited'],
-    ])(
-      'with a password %s the account returns to %s',
-      async (hasPassword, status) => {
-        const { service, accounts, audit, unit } = build({
-          target: accountRecord({ status: 'disabled' }),
-          hasPassword,
-        });
-        await service.enable(actorWithRole('admin'), TARGET.documentId, META);
-        expect(accounts.setStatus).toHaveBeenCalledWith(
-          unit,
-          TARGET.id,
-          status,
-          ACTOR_ID,
-        );
-        expect(audit.record).toHaveBeenCalledWith(
-          unit,
-          expect.objectContaining({
-            action: 'account.enabled',
-            metadata: { status },
-          }),
-        );
-      },
-    );
+    ])('with a password %s the account returns to %s', async (hasPassword, status) => {
+      const { service, accounts, audit, unit } = build({
+        target: accountRecord({ status: 'disabled' }),
+        hasPassword,
+      });
+      await service.enable(actorWithRole('admin'), TARGET.documentId, META);
+      expect(accounts.setStatus).toHaveBeenCalledWith(unit, TARGET.id, status, ACTOR_ID);
+      expect(audit.record).toHaveBeenCalledWith(
+        unit,
+        expect.objectContaining({
+          action: 'account.enabled',
+          metadata: { status },
+        }),
+      );
+    });
 
     it('answers 409 for an account that is not disabled', async () => {
       const { service } = build();
@@ -297,11 +271,7 @@ describe('AccountsService', () => {
   it('revokeSessions ends the sessions, audits and drops the cache after the commit', async () => {
     const { service, sessions, audit, versions, unit, events } = build();
     versions.invalidateAccount.mockImplementation(() => events.push('drop'));
-    await service.revokeSessions(
-      actorWithRole('admin'),
-      TARGET.documentId,
-      META,
-    );
+    await service.revokeSessions(actorWithRole('admin'), TARGET.documentId, META);
     expect(sessions.revokeAll).toHaveBeenCalledWith(unit, TARGET.id);
     expect(audit.record).toHaveBeenCalledWith(
       unit,

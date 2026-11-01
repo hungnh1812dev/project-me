@@ -59,9 +59,11 @@ check_web_security_headers() {
 check_admin_security_headers() {
   request GET "$ADMIN_ORIGIN/"
   expect_common_security_headers "admin /"
-  local admin_csp admin_style_nonce
+  local admin_csp admin_img_src admin_style_nonce
   admin_csp="$(header Content-Security-Policy)"
   if [[ "$admin_csp" == *"script-src 'self';"* && "$admin_csp" == *"connect-src 'self' $WEB_ORIGIN;"* && "$admin_csp" == *"$CLOUDINARY_ORIGIN"* ]]; then pass "admin CSP: script-src self, connect-src is the API origin (no path), Cloudinary img-src"; else fail "admin CSP: '$admin_csp'"; fi
+  admin_img_src="$(printf '%s' "$admin_csp" | tr ';' '\n' | grep -E '^ *img-src ' || true)"
+  if [[ "$admin_img_src" == *" $WEB_ORIGIN"* && "$admin_img_src" == *"$CLOUDINARY_ORIGIN"* ]]; then pass "admin CSP img-src holds the web origin (local media) and Cloudinary"; else fail "admin CSP img-src: '$admin_img_src'"; fi
   # style-src carries a per-request nonce (Radix scroll-lock style); the HTML
   # shell exposes the same value in a meta tag, and it changes per response.
   admin_style_nonce="$(nonce_of)"

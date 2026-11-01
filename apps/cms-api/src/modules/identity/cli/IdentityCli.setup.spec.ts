@@ -1,17 +1,17 @@
-import { CliInputError } from './PasswordInput.client';
 import { readOwnerEnv } from './IdentityCli.setup';
+import { CliInputError } from './PasswordInput.client';
 
 describe('readOwnerEnv', () => {
   it('reads the email and display name', () => {
-    expect(
-      readOwnerEnv({ OWNER_EMAIL: 'a@b.test', OWNER_DISPLAY_NAME: 'Ada' }),
-    ).toEqual({ email: 'a@b.test', displayName: 'Ada' });
+    expect(readOwnerEnv({ OWNER_EMAIL: 'a@b.test', OWNER_DISPLAY_NAME: 'Ada' })).toEqual({
+      email: 'a@b.test',
+      displayName: 'Ada',
+    });
   });
 
   it('treats a blank display name as unset', () => {
     expect(
-      readOwnerEnv({ OWNER_EMAIL: 'a@b.test', OWNER_DISPLAY_NAME: '  ' })
-        .displayName,
+      readOwnerEnv({ OWNER_EMAIL: 'a@b.test', OWNER_DISPLAY_NAME: '  ' }).displayName,
     ).toBeUndefined();
   });
 

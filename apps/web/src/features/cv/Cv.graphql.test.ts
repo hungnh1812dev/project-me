@@ -6,10 +6,7 @@ import { buildSchema, parse, validate } from 'graphql';
 import { CV_PAGE_DOCUMENT } from './Cv.graphql';
 
 // Read by path: the web app never imports cms-api code.
-const SDL_PATH = resolve(
-  import.meta.dirname,
-  '../../../../cms-api/content/schema.graphql',
-);
+const SDL_PATH = resolve(import.meta.dirname, '../../../../cms-api/content/schema.graphql');
 const schema = buildSchema(readFileSync(SDL_PATH, 'utf8'));
 
 describe('CvPage document', () => {
@@ -23,8 +20,6 @@ describe('CvPage document', () => {
   });
 
   it('names its operation', () => {
-    expect(CV_PAGE_DOCUMENT.query).toContain(
-      `query ${CV_PAGE_DOCUMENT.operationName}`,
-    );
+    expect(CV_PAGE_DOCUMENT.query).toContain(`query ${CV_PAGE_DOCUMENT.operationName}`);
   });
 });

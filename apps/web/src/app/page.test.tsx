@@ -1,12 +1,12 @@
 import { render, screen } from '@testing-library/react';
 
-import { COPY } from '../config/Copy.constants';
-import { fakeApi, Wrapper } from '../features/session/Session.fixture';
+import { fetchGraphql } from '../apis/server/graphql/Graphql.server';
+import { COPY } from '../configs/Copy.constants';
 import type { CvPageData } from '../features/cv/Cv.graphql';
-import { fetchGraphql } from '../lib/Graphql.server';
+import { fakeApi, Wrapper } from '../features/session/Session.fixture';
 import HomePage, { generateMetadata } from './page';
 
-vi.mock('../lib/Graphql.server', () => ({
+vi.mock('../apis/server/graphql/Graphql.server', () => ({
   fetchGraphql: vi.fn<typeof fetchGraphql>(),
 }));
 const fetchGraphqlMock = vi.mocked(fetchGraphql);
@@ -39,24 +39,18 @@ describe('HomePage', () => {
   it('renders the name and position of the main resume', async () => {
     fetchGraphqlMock.mockResolvedValue(WITH_RESUME);
     await renderPage();
-    expect(
-      screen.getByRole('heading', { level: 1, name: 'Mai Server' }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 1, name: 'Mai Server' })).toBeInTheDocument();
     expect(screen.getByText('Engineer')).toBeInTheDocument();
   });
 
   it('renders the empty state when the list is empty', async () => {
     fetchGraphqlMock.mockResolvedValue(EMPTY);
     await renderPage();
-    expect(
-      screen.getByRole('heading', { level: 1, name: COPY.cv.emptyTitle }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 1, name: COPY.cv.emptyTitle })).toBeInTheDocument();
   });
 
   it('lets a failed load reach the error boundary', async () => {
-    fetchGraphqlMock.mockImplementation(() =>
-      Promise.reject(new Error('down')),
-    );
+    fetchGraphqlMock.mockImplementation(() => Promise.reject(new Error('down')));
     let caught: unknown;
     try {
       await HomePage();
@@ -82,9 +76,7 @@ describe('generateMetadata', () => {
   it('keeps the default title when there is no resume or the load fails', async () => {
     fetchGraphqlMock.mockResolvedValueOnce(EMPTY);
     await expect(generateMetadata()).resolves.toEqual({});
-    fetchGraphqlMock.mockImplementationOnce(() =>
-      Promise.reject(new Error('down')),
-    );
+    fetchGraphqlMock.mockImplementationOnce(() => Promise.reject(new Error('down')));
     await expect(generateMetadata()).resolves.toEqual({});
   });
 });

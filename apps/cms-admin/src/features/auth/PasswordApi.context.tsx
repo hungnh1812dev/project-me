@@ -1,5 +1,5 @@
-import { createApiContext } from '../../lib/ApiContext.setup';
+import { createApiContext } from '@apis/client/ApiContext.setup';
+
 import type { PasswordApi } from './Password.api';
 
-export const [PasswordApiProvider, usePasswordApi] =
-  createApiContext<PasswordApi>('Password');
+export const [PasswordApiProvider, usePasswordApi] = createApiContext<PasswordApi>('Password');

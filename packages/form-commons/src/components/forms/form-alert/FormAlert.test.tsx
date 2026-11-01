@@ -15,9 +15,6 @@ describe('FormAlert', () => {
 
   it('tints the success tone with the success tokens', () => {
     render(<FormAlert tone="success">Saved</FormAlert>);
-    expect(screen.getByRole('status')).toHaveClass(
-      'bg-success-soft',
-      'text-success-strong',
-    );
+    expect(screen.getByRole('status')).toHaveClass('bg-success-soft', 'text-success-strong');
   });
 });

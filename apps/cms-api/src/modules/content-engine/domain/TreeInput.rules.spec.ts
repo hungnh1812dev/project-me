@@ -2,28 +2,15 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { CONTENT_ERROR_CODES } from './ContentEngine.constants';
-import {
-  ContentTypeRegistry,
-  type TableNode,
-} from './ContentTypeRegistry.entity';
+import { ContentTypeRegistry, type TableNode } from './ContentTypeRegistry.entity';
 import { assertTreeInput, ContentTreeError } from './TreeInput.rules';
 
-const CV_PAGE_PATH = join(
-  __dirname,
-  '..',
-  '..',
-  '..',
-  '..',
-  'content',
-  'schemas',
-  'cv-page.json',
-);
+const CV_PAGE_PATH = join(__dirname, '..', '..', '..', '..', 'content', 'schemas', 'cv-page.json');
 const UID = '0b9e7c1e-4c4e-4b8a-9f00-5d2a3c1b7e10';
 
 function cvPageRoot(): TableNode {
   const definition: unknown = JSON.parse(readFileSync(CV_PAGE_PATH, 'utf8'));
-  return ContentTypeRegistry.fromDefinitions([definition]).resolve('cv-page')
-    .root;
+  return ContentTypeRegistry.fromDefinitions([definition]).resolve('cv-page').root;
 }
 
 function treeError(input: unknown): ContentTreeError {
@@ -58,26 +45,10 @@ describe('assertTreeInput', () => {
   it.each([
     ['a non-object tree', [], []],
     ['an unknown top-level key', { status: 'x' }, ['status']],
-    [
-      'an unknown root field',
-      { values: { team_size: 1 } },
-      ['values', 'team_size'],
-    ],
-    [
-      'a field of another table',
-      { values: { location: 'x' } },
-      ['values', 'location'],
-    ],
-    [
-      'an unknown component',
-      { components: { roles: [] } },
-      ['components', 'roles'],
-    ],
-    [
-      'a component that is not a list',
-      { components: { skill: {} } },
-      ['components', 'skill'],
-    ],
+    ['an unknown root field', { values: { team_size: 1 } }, ['values', 'team_size']],
+    ['a field of another table', { values: { location: 'x' } }, ['values', 'location']],
+    ['an unknown component', { components: { roles: [] } }, ['components', 'roles']],
+    ['a component that is not a list', { components: { skill: {} } }, ['components', 'skill']],
     [
       'an unknown item key',
       { components: { skill: [{ id: 1 }] } },
@@ -90,16 +61,7 @@ describe('assertTreeInput', () => {
           experience: [{ components: { role: [{ values: { salary: 1 } }] } }],
         },
       },
-      [
-        'components',
-        'experience',
-        0,
-        'components',
-        'role',
-        0,
-        'values',
-        'salary',
-      ],
+      ['components', 'experience', 0, 'components', 'role', 0, 'values', 'salary'],
     ],
   ])('rejects %s', (_label, input, path) => {
     const error = treeError(input);
@@ -138,14 +100,10 @@ describe('assertTreeInput', () => {
         },
       ],
     };
-    const root = ContentTypeRegistry.fromDefinitions([definition]).resolve(
-      'profile',
-    ).root;
-    expect(() =>
-      assertTreeInput(root, { components: { contact: [{}] } }),
-    ).not.toThrow();
-    expect(() =>
-      assertTreeInput(root, { components: { contact: [{}, {}] } }),
-    ).toThrow(ContentTreeError);
+    const root = ContentTypeRegistry.fromDefinitions([definition]).resolve('profile').root;
+    expect(() => assertTreeInput(root, { components: { contact: [{}] } })).not.toThrow();
+    expect(() => assertTreeInput(root, { components: { contact: [{}, {}] } })).toThrow(
+      ContentTreeError,
+    );
   });
 });

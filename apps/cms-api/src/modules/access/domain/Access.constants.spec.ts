@@ -2,28 +2,16 @@ import * as prismaEnums from '../../../generated/prisma/enums';
 import { AccountStatus, PermissionAction } from './Access.constants';
 
 /** Fail to compile when either side has a value the other lacks. */
-const permissionActionFitsPrisma: Record<
-  PermissionAction,
-  prismaEnums.PermissionAction
-> = {} as Record<prismaEnums.PermissionAction, PermissionAction>;
-const accountStatusFitsPrisma: Record<
-  AccountStatus,
-  prismaEnums.AccountStatus
-> = {} as Record<prismaEnums.AccountStatus, AccountStatus>;
+const permissionActionFitsPrisma: Record<PermissionAction, prismaEnums.PermissionAction> =
+  {} as Record<prismaEnums.PermissionAction, PermissionAction>;
+const accountStatusFitsPrisma: Record<AccountStatus, prismaEnums.AccountStatus> = {} as Record<
+  prismaEnums.AccountStatus,
+  AccountStatus
+>;
 
 describe.each([
-  [
-    'PermissionAction',
-    PermissionAction,
-    prismaEnums.PermissionAction,
-    permissionActionFitsPrisma,
-  ],
-  [
-    'AccountStatus',
-    AccountStatus,
-    prismaEnums.AccountStatus,
-    accountStatusFitsPrisma,
-  ],
+  ['PermissionAction', PermissionAction, prismaEnums.PermissionAction, permissionActionFitsPrisma],
+  ['AccountStatus', AccountStatus, prismaEnums.AccountStatus, accountStatusFitsPrisma],
 ])('%s domain constants', (_name, domain, prisma, fitsPrisma) => {
   it('has exactly the values of the Prisma enum, byte for byte', () => {
     expect(fitsPrisma).toBeDefined();

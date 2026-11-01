@@ -1,14 +1,14 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
-import { COPY } from '../../config/Copy.constants';
-import { REVIEWER_OTHER_VALUE } from '../../config/Reviewer.constants';
-import { fakeApi, httpError, Wrapper } from '../session/Session.fixture';
+import { COPY } from '../../configs/Copy.constants';
+import { REVIEWER_OTHER_VALUE } from '../../configs/Reviewer.constants';
 import { useWebSession } from '../session';
-import { ReviewerAccessDialog } from './ReviewerAccessDialog';
-import { toSessionInput, type ReviewerFormValues } from './Reviewer.form';
 import type { AuthApi } from '../session/Auth.api';
+import { fakeApi, httpError, Wrapper } from '../session/Session.fixture';
 import type { ReviewerApi } from './Reviewer.api';
+import { toSessionInput, type ReviewerFormValues } from './Reviewer.form';
+import { ReviewerAccessDialog } from './ReviewerAccessDialog';
 
 // The real widget loads Cloudflare's script; tests stand in for it.
 vi.mock('./TurnstileWidget', () => ({
@@ -44,9 +44,7 @@ const copy = COPY.reviewer;
 
 function SessionProbe() {
   const { status, kind, getAccessToken } = useWebSession();
-  return (
-    <p data-testid="probe">{`${status}/${kind ?? '-'}/${getAccessToken() ?? '-'}`}</p>
-  );
+  return <p data-testid="probe">{`${status}/${kind ?? '-'}/${getAccessToken() ?? '-'}`}</p>;
 }
 
 function setup(createSession: ReviewerApi['createSession']) {
@@ -68,53 +66,34 @@ function setup(createSession: ReviewerApi['createSession']) {
   render(
     <Wrapper api={auth}>
       <SessionProbe />
-      <ReviewerAccessDialog
-        open
-        onOpenChange={onOpenChange}
-        siteKey="site-key"
-        api={reviewerApi}
-      />
+      <ReviewerAccessDialog open onOpenChange={onOpenChange} siteKey="site-key" api={reviewerApi} />
     </Wrapper>,
   );
   return { user, auth, createSession, onOpenChange };
 }
 
-async function chooseRole(
-  user: ReturnType<typeof userEvent.setup>,
-  value: string,
-) {
-  await user.selectOptions(
-    screen.getByLabelText(new RegExp(copy.role.label)),
-    value,
-  );
+async function chooseRole(user: ReturnType<typeof userEvent.setup>, value: string) {
+  await user.selectOptions(screen.getByLabelText(new RegExp(copy.role.label)), value);
 }
 
 describe('reviewer access dialog', () => {
   it('asks for a role before moving on', async () => {
     const { user } = setup(vi.fn<ReviewerApi['createSession']>());
     await user.click(screen.getByRole('button', { name: copy.next }));
-    expect(
-      await screen.findByText(copy.validation.roleRequired),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText(copy.stepLabel(1, 3), { exact: false }),
-    ).toBeVisible();
+    expect(await screen.findByText(copy.validation.roleRequired)).toBeInTheDocument();
+    expect(screen.getByText(copy.stepLabel(1, 3), { exact: false })).toBeVisible();
   });
 
   it('requires a description for Other roles and Other purposes', async () => {
     const { user } = setup(vi.fn<ReviewerApi['createSession']>());
     await chooseRole(user, REVIEWER_OTHER_VALUE);
     await user.click(screen.getByRole('button', { name: copy.next }));
-    expect(
-      await screen.findByText(copy.validation.roleOtherRequired),
-    ).toBeInTheDocument();
+    expect(await screen.findByText(copy.validation.roleOtherRequired)).toBeInTheDocument();
     await user.type(screen.getByLabelText(copy.role.otherLabel), 'Auditor');
     await user.click(screen.getByRole('button', { name: copy.next }));
     await user.click(screen.getByLabelText(copy.purposes.other));
     await user.click(screen.getByRole('button', { name: copy.next }));
-    expect(
-      await screen.findByText(copy.validation.purposeOtherRequired),
-    ).toBeInTheDocument();
+    expect(await screen.findByText(copy.validation.purposeOtherRequired)).toBeInTheDocument();
   });
 
   it('moves on with Enter on step 2 when both Other fields are open', async () => {
@@ -123,13 +102,8 @@ describe('reviewer access dialog', () => {
     await user.type(screen.getByLabelText(copy.role.otherLabel), 'Auditor');
     await user.click(screen.getByRole('button', { name: copy.next }));
     await user.click(screen.getByLabelText(copy.purposes.other));
-    await user.type(
-      screen.getByLabelText(copy.purposes.otherLabel),
-      'Due diligence{Enter}',
-    );
-    expect(
-      await screen.findByText(copy.stepLabel(3, 3), { exact: false }),
-    ).toBeVisible();
+    await user.type(screen.getByLabelText(copy.purposes.otherLabel), 'Due diligence{Enter}');
+    expect(await screen.findByText(copy.stepLabel(3, 3), { exact: false })).toBeVisible();
   });
 
   it('blocks submit until the verification check passes', async () => {
@@ -139,35 +113,26 @@ describe('reviewer access dialog', () => {
     await user.click(screen.getByRole('button', { name: copy.next }));
     await user.click(screen.getByRole('button', { name: copy.next }));
     await user.click(screen.getByRole('button', { name: copy.submit }));
-    expect(
-      await screen.findByText(copy.turnstile.required),
-    ).toBeInTheDocument();
+    expect(await screen.findByText(copy.turnstile.required)).toBeInTheDocument();
     expect(createSession).not.toHaveBeenCalled();
   });
 
   it('starts a session with the answers and holds the token in the session', async () => {
-    const createSession = vi
-      .fn<ReviewerApi['createSession']>()
-      .mockResolvedValue({
-        accessToken: 'rev-token',
-        expiresAt: '2026-10-23T00:00:00Z',
-      });
+    const createSession = vi.fn<ReviewerApi['createSession']>().mockResolvedValue({
+      accessToken: 'rev-token',
+      expiresAt: '2026-10-23T00:00:00Z',
+    });
     const { user, auth, onOpenChange } = setup(createSession);
     await chooseRole(user, 'Recruiter');
     await user.click(screen.getByRole('button', { name: copy.next }));
     await user.click(screen.getByLabelText('Hiring'));
     await user.click(screen.getByRole('button', { name: copy.next }));
-    await user.type(
-      screen.getByLabelText(new RegExp(copy.notes.label)),
-      ' Looking at the CV ',
-    );
+    await user.type(screen.getByLabelText(new RegExp(copy.notes.label)), ' Looking at the CV ');
     await user.click(screen.getByRole('button', { name: 'pass check' }));
     await user.click(screen.getByRole('button', { name: copy.submit }));
 
     await waitFor(() =>
-      expect(screen.getByTestId('probe')).toHaveTextContent(
-        'authenticated/reviewer/rev-token',
-      ),
+      expect(screen.getByTestId('probe')).toHaveTextContent('authenticated/reviewer/rev-token'),
     );
     expect(createSession).toHaveBeenCalledWith({
       visitorRole: 'Recruiter',
@@ -183,11 +148,7 @@ describe('reviewer access dialog', () => {
     const createSession = vi
       .fn<ReviewerApi['createSession']>()
       .mockRejectedValue(
-        httpError(
-          429,
-          { errorCode: 'REVIEWER_IP_LIMITED' },
-          { 'retry-after': '300' },
-        ),
+        httpError(429, { errorCode: 'REVIEWER_IP_LIMITED' }, { 'retry-after': '300' }),
       );
     const { user } = setup(createSession);
     await chooseRole(user, 'Recruiter');
@@ -195,15 +156,11 @@ describe('reviewer access dialog', () => {
     await user.click(screen.getByRole('button', { name: copy.next }));
     await user.click(screen.getByRole('button', { name: 'pass check' }));
     await user.click(screen.getByRole('button', { name: copy.submit }));
-    expect(
-      await screen.findByText(copy.errors.ipLimitedMinutes(5)),
-    ).toBeInTheDocument();
+    expect(await screen.findByText(copy.errors.ipLimitedMinutes(5))).toBeInTheDocument();
     expect(screen.getByTestId('probe')).toHaveTextContent('anonymous/-/-');
     // The spent token is gone: submitting again needs a new check.
     await user.click(screen.getByRole('button', { name: copy.submit }));
-    expect(
-      await screen.findByText(copy.turnstile.required),
-    ).toBeInTheDocument();
+    expect(await screen.findByText(copy.turnstile.required)).toBeInTheDocument();
   });
 
   it('explains a disabled switch', async () => {

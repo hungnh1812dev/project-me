@@ -6,11 +6,7 @@ import {
   packageSpecifiersOf,
   reachedFilesOf,
 } from './ImportGraph.analyzer';
-import {
-  GRAPHQL_DIRECTORY,
-  UNMASKED_FILES,
-  SRC_ROOT,
-} from './SourcePaths.constants';
+import { GRAPHQL_DIRECTORY, SRC_ROOT, UNMASKED_FILES } from './SourcePaths.constants';
 
 /**
  * SPEC D18 / D3: GraphQL reads go through `DocumentsQueryService` only, so

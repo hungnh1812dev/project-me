@@ -1,9 +1,6 @@
 export type CheckedState = boolean | 'indeterminate';
 
-export function getCheckedState(
-  selectedCount: number,
-  rowCount: number,
-): CheckedState {
+export function getCheckedState(selectedCount: number, rowCount: number): CheckedState {
   if (rowCount > 0 && selectedCount === rowCount) return true;
   return selectedCount > 0 ? 'indeterminate' : false;
 }

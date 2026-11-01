@@ -1,12 +1,13 @@
 import { systemRole } from '../../../../test/fixtures/Access.fixture';
 import {
-  reviewerActor,
+  CONDITION_SYSTEM_FIELDS,
   FieldSelection,
+  joinFieldPath,
   recordReadAccess,
+  reviewerActor,
   SubjectCatalog,
 } from '../../access';
 import { ContentTypeRegistry } from '../../content-engine';
-import { CONDITION_SYSTEM_FIELDS, joinFieldPath } from '../../access';
 import { contentTypeView } from './ContentTypeView.rules';
 
 const VOCABULARY = {
@@ -46,10 +47,7 @@ describe('contentTypeView (T17b)', () => {
     const view = contentTypeView(
       type,
       catalog,
-      recordReadAccess(
-        reviewerActor(1, 1, systemRole('reviewer')),
-        FieldSelection.ALL,
-      ),
+      recordReadAccess(reviewerActor(1, 1, systemRole('reviewer')), FieldSelection.ALL),
       VOCABULARY,
     );
     expect(view).toMatchObject({
@@ -57,9 +55,7 @@ describe('contentTypeView (T17b)', () => {
       kind: 'single',
       draftAndPublish: false,
     });
-    expect(
-      view.fields.map((f) => [f.path, f.repeatable, f.sensitive, f.system]),
-    ).toEqual([
+    expect(view.fields.map((f) => [f.path, f.repeatable, f.sensitive, f.system])).toEqual([
       ['email', false, true, false],
       ['experience', true, false, false],
       ['experience.company', false, false, false],

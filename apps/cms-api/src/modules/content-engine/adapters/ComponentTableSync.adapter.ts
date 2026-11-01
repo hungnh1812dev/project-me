@@ -2,20 +2,14 @@ import { randomUUID } from 'node:crypto';
 
 import type { Transaction } from 'kysely';
 
-import {
-  CONTENT_DB_SCHEMA,
-  CONTENT_ERROR_CODES,
-} from '../domain/ContentEngine.constants';
+import { CONTENT_DB_SCHEMA, CONTENT_ERROR_CODES } from '../domain/ContentEngine.constants';
 import { toColumnValues } from '../domain/ContentRowMapping.rules';
-import type {
-  ComponentTableNode,
-  TableNode,
-} from '../domain/ContentTypeRegistry.entity';
 import type { ContentRow } from '../domain/ContentTree.entity';
+import type { ComponentTableNode, TableNode } from '../domain/ContentTypeRegistry.entity';
 import {
+  ContentTreeError,
   type ComponentInput,
   type ComponentsInput,
-  ContentTreeError,
   type TreePath,
 } from '../domain/TreeInput.rules';
 import { anyInt, type ContentDatabase } from './TreeLoader.adapter';
@@ -72,20 +66,14 @@ async function syncComponentTable(
       .where('parent_id', '=', anyInt(storedParentIds))
       .execute();
     for (const row of rows) {
-      stored.set(
-        uidKey(row.parent_id as number, row.component_uid as string),
-        row.id as number,
-      );
+      stored.set(uidKey(row.parent_id as number, row.component_uid as string), row.id as number);
     }
   }
 
   const kept = new Set<number>();
   const updates: { id: number; parentId: number; row: ContentRow }[] = [];
   const inserts: ContentRow[] = [];
-  const insertedItems = new Map<
-    string,
-    { item: ComponentInput; path: TreePath }
-  >();
+  const insertedItems = new Map<string, { item: ComponentInput; path: TreePath }>();
   const next: ParentWrite[] = [];
 
   for (const { parent, items } of targets) {

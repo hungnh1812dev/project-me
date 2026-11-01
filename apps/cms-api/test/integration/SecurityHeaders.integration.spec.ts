@@ -27,9 +27,7 @@ describe('security headers', () => {
   it('hardens a normal route', async () => {
     const res = await request(app.getHttpServer()).get('/api/v1/health/live');
     expect(res.status).toBe(200);
-    expect(res.headers['content-security-policy']).toBe(
-      API_CONTENT_SECURITY_POLICY,
-    );
+    expect(res.headers['content-security-policy']).toBe(API_CONTENT_SECURITY_POLICY);
     expect(res.headers['x-powered-by']).toBeUndefined();
     expect(res.headers).toMatchObject(EXPECTED_HEADERS);
   });
@@ -38,9 +36,7 @@ describe('security headers', () => {
     const res = await request(app.getHttpServer())
       .post('/api/v1/graphql')
       .send({ query: '{ __typename }' });
-    expect(res.headers['content-security-policy']).toBe(
-      API_CONTENT_SECURITY_POLICY,
-    );
+    expect(res.headers['content-security-policy']).toBe(API_CONTENT_SECURITY_POLICY);
     expect(res.headers['x-powered-by']).toBeUndefined();
     expect(res.headers).toMatchObject(EXPECTED_HEADERS);
   });
@@ -48,9 +44,7 @@ describe('security headers', () => {
   it('hardens a 404', async () => {
     const res = await request(app.getHttpServer()).get('/api/v1/nope');
     expect(res.status).toBe(404);
-    expect(res.headers['content-security-policy']).toBe(
-      API_CONTENT_SECURITY_POLICY,
-    );
+    expect(res.headers['content-security-policy']).toBe(API_CONTENT_SECURITY_POLICY);
     expect(res.headers['x-powered-by']).toBeUndefined();
     expect(res.headers).toMatchObject(EXPECTED_HEADERS);
   });
@@ -61,9 +55,7 @@ describe('security headers', () => {
       .set('Content-Type', 'application/json')
       .send(JSON.stringify({ query: 'a'.repeat(40 * 1024) }));
     expect(res.status).toBe(413);
-    expect(res.headers['content-security-policy']).toBe(
-      API_CONTENT_SECURITY_POLICY,
-    );
+    expect(res.headers['content-security-policy']).toBe(API_CONTENT_SECURITY_POLICY);
     expect(res.headers['x-powered-by']).toBeUndefined();
     expect(res.headers).toMatchObject(EXPECTED_HEADERS);
   });

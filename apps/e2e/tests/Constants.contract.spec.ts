@@ -31,9 +31,7 @@ test.describe('e2e constants match the cms-api public constants', () => {
   });
 
   test('reviewer notes limit', () => {
-    expect(NOTES_MAX_LENGTH).toBe(
-      published.reviewerInputLimits.NOTES_MAX_LENGTH,
-    );
+    expect(NOTES_MAX_LENGTH).toBe(published.reviewerInputLimits.NOTES_MAX_LENGTH);
   });
 
   test('TOTP period', () => {

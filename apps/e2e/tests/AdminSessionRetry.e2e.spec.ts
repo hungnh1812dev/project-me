@@ -1,7 +1,7 @@
-import { expect, type Page, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 
-import { ADMIN_COPY } from '../src/Apps.contract';
 import { API_PATHS, apiUrl } from '../src/Api.endpoints';
+import { ADMIN_COPY } from '../src/Apps.contract';
 import { signInAsOwner } from '../src/Session.fixture';
 
 const UNAUTHORIZED = 401;
@@ -26,9 +26,7 @@ function recordRefreshes(page: Page): number[] {
   return statuses;
 }
 
-test('a 401 on a protected call refreshes once and retries it', async ({
-  page,
-}) => {
+test('a 401 on a protected call refreshes once and retries it', async ({ page }) => {
   await signInAsOwner(page);
 
   let refused = 0;
@@ -46,18 +44,14 @@ test('a 401 on a protected call refreshes once and retries it', async ({
 
   await page.goto('/accounts');
   await expect(accountsHeading(page)).toBeVisible();
-  await expect(
-    page.getByRole('button', { name: ADMIN_COPY.access.accounts.invite }),
-  ).toBeVisible();
+  await expect(page.getByRole('button', { name: ADMIN_COPY.access.accounts.invite })).toBeVisible();
   expect(refused).toBe(1);
   // One refresh for the page start, one for the 401 - never a loop. The
   // heading and button render before the retry's refresh answers, so wait.
   await expect.poll(() => refreshes).toEqual([200, 200]);
 });
 
-test('a refresh the server refuses ends the session at /login', async ({
-  page,
-}) => {
+test('a refresh the server refuses ends the session at /login', async ({ page }) => {
   await signInAsOwner(page);
 
   await page.route(

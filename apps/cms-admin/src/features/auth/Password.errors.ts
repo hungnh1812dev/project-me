@@ -1,31 +1,19 @@
+import { retryAfterSecondsOf } from '@apis/client/ApiFailure.errors';
+import { COPY } from '@configs/Copy.constants';
+import { API_ERROR_CODES, HTTP_STATUS, RETRY_AFTER_HEADER } from '@configs/Http.constants';
 import { isAxiosError } from 'axios';
-
-import { COPY } from '../../config/Copy.constants';
-import {
-  API_ERROR_CODES,
-  HTTP_STATUS,
-  RETRY_AFTER_HEADER,
-} from '../../config/Http.constants';
-import { retryAfterSecondsOf } from '../../lib/ApiFailure.errors';
 
 const SECONDS_PER_MINUTE = 60;
 
 export type PasswordErrorKind =
-  | 'invalid-code'
-  | 'weak-password'
-  | 'totp-required'
-  | 'rate-limited'
-  | 'network'
-  | 'unexpected';
+  'invalid-code' | 'weak-password' | 'totp-required' | 'rate-limited' | 'network' | 'unexpected';
 
 export interface PasswordError {
   kind: PasswordErrorKind;
   message: string;
 }
 
-const MESSAGE_BY_CODE: Readonly<
-  Record<string, Pick<PasswordError, 'kind' | 'message'>>
-> = {
+const MESSAGE_BY_CODE: Readonly<Record<string, Pick<PasswordError, 'kind' | 'message'>>> = {
   [API_ERROR_CODES.INVALID_OTP]: {
     kind: 'invalid-code',
     message: COPY.password.errors.invalidCode,
@@ -46,9 +34,7 @@ function rateLimitedMessage(retryAfter: unknown): string {
   if (seconds < SECONDS_PER_MINUTE) {
     return COPY.password.errors.rateLimitedSeconds(seconds);
   }
-  return COPY.password.errors.rateLimitedMinutes(
-    Math.ceil(seconds / SECONDS_PER_MINUTE),
-  );
+  return COPY.password.errors.rateLimitedMinutes(Math.ceil(seconds / SECONDS_PER_MINUTE));
 }
 
 /** Maps a failed request-code / reset / set call to what the form shows. */
@@ -67,11 +53,7 @@ export function toPasswordError(error: unknown): PasswordError {
       message: rateLimitedMessage(headers[RETRY_AFTER_HEADER]),
     };
   }
-  const errorCode = (response.data as { errorCode?: unknown } | null)
-    ?.errorCode;
-  const known =
-    typeof errorCode === 'string' ? MESSAGE_BY_CODE[errorCode] : undefined;
-  return (
-    known ?? { kind: 'unexpected', message: COPY.password.errors.unexpected }
-  );
+  const errorCode = (response.data as { errorCode?: unknown } | null)?.errorCode;
+  const known = typeof errorCode === 'string' ? MESSAGE_BY_CODE[errorCode] : undefined;
+  return known ?? { kind: 'unexpected', message: COPY.password.errors.unexpected };
 }

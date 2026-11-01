@@ -1,10 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 
-import {
-  type ActorContext,
-  anonymousActor,
-  unauthenticated,
-} from '../domain/ActorContext.entity';
+import { anonymousActor, unauthenticated, type ActorContext } from '../domain/ActorContext.entity';
 import { PUBLIC_ROLE_SLUG } from '../domain/SystemRoles.entity';
 import { ROLE_LOOKUP, type RoleLookup } from './Access.port';
 import { VersionCache } from './VersionCache.service';

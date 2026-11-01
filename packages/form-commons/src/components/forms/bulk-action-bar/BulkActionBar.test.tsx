@@ -13,12 +13,7 @@ const LABELS = {
 describe('BulkActionBar', () => {
   it('renders nothing without a selection', () => {
     const { container } = render(
-      <BulkActionBar
-        selectedCount={0}
-        actions={[]}
-        onClear={() => undefined}
-        labels={LABELS}
-      />,
+      <BulkActionBar selectedCount={0} actions={[]} onClear={() => undefined} labels={LABELS} />,
     );
     expect(container).toBeEmptyDOMElement();
   });
@@ -42,9 +37,7 @@ describe('BulkActionBar', () => {
         labels={LABELS}
       />,
     );
-    expect(
-      screen.getByRole('region', { name: 'Bulk actions' }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'Bulk actions' })).toBeInTheDocument();
     expect(screen.getByText('3 selected')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Publish 3' }));
     expect(onPublish).toHaveBeenCalledTimes(1);
@@ -56,17 +49,13 @@ describe('BulkActionBar', () => {
     render(
       <BulkActionBar
         selectedCount={2}
-        actions={[
-          { id: 'delete', label: 'Delete 2', onClick: () => undefined },
-        ]}
+        actions={[{ id: 'delete', label: 'Delete 2', onClick: () => undefined }]}
         onClear={() => undefined}
         labels={LABELS}
         busy
       />,
     );
     expect(screen.getByRole('button', { name: 'Delete 2' })).toBeDisabled();
-    expect(
-      screen.getByRole('button', { name: 'Clear selection' }),
-    ).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Clear selection' })).toBeDisabled();
   });
 });

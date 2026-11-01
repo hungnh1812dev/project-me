@@ -1,8 +1,5 @@
 import type { AppLogger } from '../logging/AppLogger.port';
-import {
-  AfterCommitCallbacks,
-  MUST_BE_SYNCHRONOUS_MESSAGE,
-} from './AfterCommitCallbacks.store';
+import { AfterCommitCallbacks, MUST_BE_SYNCHRONOUS_MESSAGE } from './AfterCommitCallbacks.store';
 
 function fakeLogger(): { logger: AppLogger; error: jest.Mock } {
   const error = jest.fn();
@@ -27,17 +24,12 @@ describe('AfterCommitCallbacks', () => {
     expect(order).toEqual([1, 2]);
   });
 
-  it.each(['markCommitted', 'markRolledBack'] as const)(
-    'refuses to register after %s',
-    (mark) => {
-      const store = new AfterCommitCallbacks();
-      store[mark]();
-      expect(store.isOpen).toBe(false);
-      expect(() => store.register(() => undefined)).toThrow(
-        /cannot be registered/,
-      );
-    },
-  );
+  it.each(['markCommitted', 'markRolledBack'] as const)('refuses to register after %s', (mark) => {
+    const store = new AfterCommitCallbacks();
+    store[mark]();
+    expect(store.isOpen).toBe(false);
+    expect(() => store.register(() => undefined)).toThrow(/cannot be registered/);
+  });
 
   it('logs a throwing callback and still runs the next one', () => {
     const store = new AfterCommitCallbacks();
@@ -65,18 +57,13 @@ describe('AfterCommitCallbacks', () => {
     store.markCommitted();
     store.runAll(logger);
     expect(next).toHaveBeenCalledTimes(1);
-    expect(error).toHaveBeenCalledWith(
-      MUST_BE_SYNCHRONOUS_MESSAGE,
-      expect.any(String),
-    );
+    expect(error).toHaveBeenCalledWith(MUST_BE_SYNCHRONOUS_MESSAGE, expect.any(String));
   });
 
   it('logs a rejecting promise by message only, with no unhandled rejection', async () => {
     const store = new AfterCommitCallbacks();
     const { logger, error } = fakeLogger();
-    store.register(
-      promiseCallback(() => Promise.reject(new Error('late failure'))),
-    );
+    store.register(promiseCallback(() => Promise.reject(new Error('late failure'))));
     store.markCommitted();
     store.runAll(logger);
     await new Promise((resolve) => setImmediate(resolve));

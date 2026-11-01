@@ -2,9 +2,9 @@ import { Controller, Get, Header, Param, Req, UseGuards } from '@nestjs/common';
 
 import { SLUG_PARAM } from '../../../common/constants/Api.constants';
 import { NO_STORE_HEADER } from '../../../common/constants/Http.constants';
-import { type AuthenticatedRequest, JwtAuthGuard } from '../../identity';
-import type { ContentTypeView } from '../domain/ContentTypeView.rules';
+import { JwtAuthGuard, type AuthenticatedRequest } from '../../identity';
 import { ContentTypesService } from '../application/ContentTypes.service';
+import type { ContentTypeView } from '../domain/ContentTypeView.rules';
 
 /** SPEC §9 content types, read-only. `:slug` is a registry slug. */
 export const CONTENT_TYPES_ROUTES = {
@@ -24,18 +24,13 @@ export class ContentTypesController {
 
   @Get()
   @Header(NO_STORE_HEADER.NAME, NO_STORE_HEADER.VALUE)
-  async list(
-    @Req() req: AuthenticatedRequest,
-  ): Promise<{ data: ContentTypeView[] }> {
+  async list(@Req() req: AuthenticatedRequest): Promise<{ data: ContentTypeView[] }> {
     return { data: await this.contentTypes.list(req.user.actor) };
   }
 
   @Get(CONTENT_TYPES_ROUTES.BY_SLUG)
   @Header(NO_STORE_HEADER.NAME, NO_STORE_HEADER.VALUE)
-  get(
-    @Req() req: AuthenticatedRequest,
-    @Param(SLUG_PARAM) slug: string,
-  ): Promise<ContentTypeView> {
+  get(@Req() req: AuthenticatedRequest, @Param(SLUG_PARAM) slug: string): Promise<ContentTypeView> {
     return this.contentTypes.get(req.user.actor, slug);
   }
 }

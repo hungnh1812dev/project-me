@@ -1,6 +1,6 @@
+import type { TwoFactorMethod } from '@configs/Auth.constants';
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
 
-import type { TwoFactorMethod } from '../../config/Auth.constants';
 import type { LoginNotice } from './LoginNotice.rules';
 
 /** `GET /auth/me` (SPEC §9). */
@@ -71,9 +71,5 @@ export const authSlice = createSlice({
 });
 
 export const { accessTokenReceived, signedIn, signedOut } = authSlice.actions;
-export const {
-  selectSessionStatus,
-  selectAccessToken,
-  selectCurrentUser,
-  selectEndNotice,
-} = authSlice.selectors;
+export const { selectSessionStatus, selectAccessToken, selectCurrentUser, selectEndNotice } =
+  authSlice.selectors;

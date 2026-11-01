@@ -1,6 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
 import {
-  type DocumentNode,
   execute,
   GraphQLError,
   GraphQLObjectType,
@@ -10,30 +9,14 @@ import {
   parse,
   specifiedRules,
   validate,
+  type DocumentNode,
 } from 'graphql';
 
 import { type IAppConfig } from '../../../config/AppConfig.setup';
 import { APP_CONFIG } from '../../../config/Config.constants';
-import {
-  AccessPolicyService,
-  PermissionAction,
-  type ActorContext,
-} from '../../access';
-import { ContentRegistry } from '../../content-engine';
-import type { ContentTypeDefinition } from '../../content-engine';
+import { AccessPolicyService, PermissionAction, type ActorContext } from '../../access';
+import { ContentRegistry, type ContentTypeDefinition } from '../../content-engine';
 import { DocumentsQueryService } from '../../documents';
-import {
-  attachDocumentResolvers,
-  type GraphqlContext,
-} from './Document.resolver';
-import {
-  type FormattedGraphqlError,
-  formatGraphqlError,
-  type GraphqlPhase,
-} from './GraphqlError.filter';
-import { findLimitViolations } from './rules/Limits.rules';
-import { ContentTypeVisibilityRule } from './rules/Visibility.rules';
-import { buildGraphqlSchema } from './schema/SchemaBuilder.rules';
 import {
   GRAPHQL_ERROR_CODES,
   GRAPHQL_LIMIT_MESSAGES,
@@ -42,6 +25,15 @@ import {
   QUERY_TYPE_NAME,
   TOKEN_LIMIT_PATTERN,
 } from '../application/Graphql.constants';
+import { attachDocumentResolvers, type GraphqlContext } from './Document.resolver';
+import {
+  formatGraphqlError,
+  type FormattedGraphqlError,
+  type GraphqlPhase,
+} from './GraphqlError.filter';
+import { findLimitViolations } from './rules/Limits.rules';
+import { ContentTypeVisibilityRule } from './rules/Visibility.rules';
+import { buildGraphqlSchema } from './schema/SchemaBuilder.rules';
 
 export interface GraphqlRequest {
   query: string;
@@ -99,9 +91,7 @@ export class GraphqlSchemaProvider {
   private loadDefinitions(): Promise<ContentTypeDefinition[]> {
     this.definitions ??= this.registry
       .registry()
-      .then((registry) =>
-        registry.slugs().map((slug) => registry.resolve(slug).definition),
-      )
+      .then((registry) => registry.slugs().map((slug) => registry.resolve(slug).definition))
       .catch((error: unknown) => {
         this.definitions = undefined;
         throw error;
@@ -124,10 +114,7 @@ export class GraphqlSchemaProvider {
         }),
       });
     }
-    return attachDocumentResolvers(
-      buildGraphqlSchema(definitions),
-      this.documents,
-    );
+    return attachDocumentResolvers(buildGraphqlSchema(definitions), this.documents);
   }
 }
 

@@ -1,55 +1,28 @@
+---
+module: apps/cms-api/src/modules/access
+app: cms-api
+summary: Policy evaluation, permission guard, field masking, accounts, roles and API tokens
+---
+
 # Access control (cms-api `src/modules/access/`)
 
 This module decides what an actor may do with a subject, which fields it may
 read or write, and which rows a conditioned permission reaches (SPEC §7
-D2–D6, §8.1, §8.3). It was built in T14 (rules) and wired into Nest in T15 (guard and revocation
-versions). T16 added field masking. T17 added the accounts and roles API,
-the rank rule and the security audit. T17b added the read-only content
-types API (`src/modules/content-types/`), which uses the evaluator to filter
-types and fields. T19 added API tokens: the API, the subset check
-(`domain/TokenScope.rules.ts`) and `ApiTokenGuard`.
+D2–D6, §8.1, §8.3). It holds the policy rules, the permission guard and
+revocation versions, field masking, the accounts and roles API with the rank
+rule, and API tokens (the API, the subset check in
+`domain/TokenScope.rules.ts`, and `ApiTokenGuard`). The read-only content
+types API (`src/modules/content-types/`) uses the evaluator to filter types
+and fields.
 
-| File                                                                      | What it holds                                                                                                                                                                                                                           |
-| ------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `domain/Access.constants.ts`                                              | Subjects, actions per subject (`PermissionAction`, `AccountStatus`), DSL operators/variables/limits, error codes, default matrix                                                                                                        |
-| `domain/ActorContext.entity.ts`                                           | `ActorContext`, `RolePolicy`, token scope, `rolePolicyFromRows`, actor builders                                                                                                                                                         |
-| `domain/EffectivePolicy.rules.ts`                                         | `effectivePolicy`: one resolver per actor kind (owner, read-only clamp, token scope ∩ creator)                                                                                                                                          |
-| `domain/SubjectCatalog.rules.ts`                                          | Known subjects (`*`, registry slugs, system subjects), field paths, DSL field catalog                                                                                                                                                   |
-| `domain/PolicyEvaluator.rules.ts`                                         | `PolicyEvaluator.can / canReadDrafts / fieldsFor / rowFilter`                                                                                                                                                                           |
-| `domain/Conditions.rules.ts`                                              | DSL validation and compilation to parameterized Kysely SQL                                                                                                                                                                              |
-| `domain/PermissionSet.rules.ts`                                           | Save-time check of a role's permission set: `validatePermissionSet`                                                                                                                                                                     |
-| `domain/TokenScope.rules.ts`                                              | Save-time check of an API token scope (`validateTokenScope`) and the D5 subset check (`scopeEntriesBeyondCreator`)                                                                                                                      |
-| `domain/FieldList.rules.ts`                                               | Field-list check and issue types shared by the two validators                                                                                                                                                                           |
-| `application/VersionCache.service.ts`                                     | D9 in-process cache of account `tv`/status/role and role `pv`/permission rows (T15); holds `VERSION_CACHE_TTL_MS` and `VERSION_CACHE_MAX_ENTRIES`                                                                                       |
-| `application/Access.port.ts`                                              | Ports with their tokens: `AccountVersionSource`, `RoleLookup` (exported for identity), `ApiTokenLookup`, `PermissionRepository`                                                                                                         |
-| `application/ApiTokenAuthentication.service.ts`                           | D5: raw token in, principal out; one bare 401 for every cause; `last_used_at` throttled write                                                                                                                                           |
-| `application/AnonymousActor.service.ts`                                   | The anonymous actor from the `public` role; 401 when the role is missing                                                                                                                                                                |
-| `adapters/Prisma{AccountVersion,RolePolicy,ApiTokenLookup}.repository.ts` | The Prisma side of the ports (role policy repository also writes permission rows inside a `UnitOfWork`)                                                                                                                                 |
-| `application/RolePermissions.service.ts`                                  | The one write path for a role's rows: replace + bump `policy_version` in the core `TransactionRunner`, invalidate in `afterCommit` (T15); `alsoInTransaction` receives the `UnitOfWork`                                                 |
-| `http/Permission.guard.ts`                                                | `@RequirePermission()` with `PERMISSION_METADATA_KEY`, and `PermissionGuard`, which enforces it with the evaluator (T15)                                                                                                                |
-| `application/AccessPolicy.service.ts`                                     | Builds the catalog + evaluator from the lazily loaded content registry (T15)                                                                                                                                                            |
-| `Access.module.ts`                                                        | Nest wiring (imported by IdentityModule)                                                                                                                                                                                                |
-| `http/ApiToken.guard.ts`                                                  | `ApiTokenAuthenticator` (bearer header, writes `request.user`) and `ApiTokenGuard`                                                                                                                                                      |
-| `http/ActorThrottleSubject.resolver.ts`                                   | Throttle subject read off the actor an earlier guard set                                                                                                                                                                                |
-| `http/AccessHttp.constants.ts`                                            | Account, role and API token routes; `ACCESS_RATE_LIMIT_POLICIES`                                                                                                                                                                        |
-| `application/RoleSeed.service.ts`                                         | Seeds the system roles and the default rows for system roles that have none (`db:seed`); the table is `domain/SystemRoles.entity.ts`                                                                                                    |
-| `domain/FieldProjection.rules.ts`                                         | `projectTable` / `selectedColumns`: never select unreadable columns (T16, D3)                                                                                                                                                           |
-| `domain/RecordSerializer.rules.ts`                                        | `RecordSerializer`: the one record -> response path, masks + `_maskedFields` (T16)                                                                                                                                                      |
-| `domain/WriteAllowlist.rules.ts`                                          | `WriteAllowlist`: client tree -> writable tree, drops masks, 400 otherwise (T16, D4)                                                                                                                                                    |
-| `domain/QueryFieldAccess.rules.ts`                                        | `QueryGuard`: filter/sort/search only on readable fields (T16, D3)                                                                                                                                                                      |
-| `domain/RecordReadAccess.rules.ts`                                        | `RecordReadAccess` / `recordReadAccess(actor, readable)`: fields + visible system fields                                                                                                                                                |
-| `domain/FieldPaths.rules.ts`                                              | Field-path helpers and the 400s of the field checks (`FIELD_NOT_READABLE`, `FIELD_NOT_WRITABLE`, `FIELD_UNKNOWN`)                                                                                                                       |
-| `domain/Rank.rules.ts`                                                    | D6: `outranks` / `assertOutranks`, `requireAccountActor`, `requireOwnerActor` (D20), `grantsBeyondActor` (T17)                                                                                                                          |
-| `domain/ApiToken.rules.ts`                                                | `API_TOKEN` (token format and limits), `hashApiToken` and `isApiTokenExpired`: the one expiry rule (`expires_at <= now`) for authentication, list status and the update guard                                                           |
-| `document-auth/`                                                          | `http/DocumentAuth.guard.ts` (`DocumentAuthGuard`, R1-12), `DocumentAuth.module.ts`; facade `index.ts` (not in the core `index.ts`: identity imports that)                                                                              |
-| `management/domain/`                                                      | `AccessManagement.constants.ts` (error codes, limits, token statuses), `AccessManagement.errors.ts` (the `DomainError` constructors of the 19 refusals), `Account.entity.ts` (account records and views, the D6 target and role checks) |
-| `management/application/AccessManagement.port.ts`                         | `AccountAdminRepository`, `RoleRepository`, `ApiTokenAdminRepository` (row locks, the role-cap lock and the unique-violation mapping live in their adapters)                                                                            |
-| `management/application/Accounts.service.ts`                              | list, update, disable, enable, revoke sessions (T17, T17a); `recordAccountEvent` writes the account audit row                                                                                                                           |
-| `management/application/Invitations.service.ts`                           | invite and resend invite (rank check, assignable role, invite code, mail sent after the commit)                                                                                                                                         |
-| `management/application/{Roles,ApiTokens}.service.ts`                     | `/roles` (T17) and `/api-tokens` (T19) use cases; cache drops are `afterCommit` callbacks                                                                                                                                               |
-| `management/adapters/Prisma{Account,Role,ApiToken}.repository.ts`         | the Prisma implementations of the three ports                                                                                                                                                                                           |
-| `management/http/`                                                        | `Accounts`, `Roles`, `ApiTokens` controllers and their request schemas; `AccessManagement.module.ts` (imports identity) and `index.ts` at the folder root                                                                               |
-| `../security-audit/`                                                      | D15 module (R1-04): `SecurityAuditService`, `PrismaAuditLogRepository` (built by hand by the CLIs), action names                                                                                                                        |
+Folders and neighbours (each file is described in [Files](#files)):
+
+| Path                 | What it holds                                                                                                                                                                                                                           |
+| -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `document-auth/`     | `http/DocumentAuth.guard.ts` (`DocumentAuthGuard`), `DocumentAuth.module.ts`; facade `index.ts` (not in the core `index.ts`: identity imports that)                                                                                     |
+| `management/domain/` | `AccessManagement.constants.ts` (error codes, limits, token statuses), `AccessManagement.errors.ts` (the `DomainError` constructors of the 19 refusals), `Account.entity.ts` (account records and views, the D6 target and role checks) |
+| `management/http/`   | `Accounts`, `Roles`, `ApiTokens` controllers and their request schemas; `AccessManagement.module.ts` (imports identity) and `index.ts` at the folder root                                                                               |
+| `../security-audit/` | D15 module: `SecurityAuditService`, `PrismaAuditLogRepository` (built by hand by the CLIs), action names                                                                                                                                |
 
 ## Subjects and actions
 
@@ -77,8 +50,8 @@ types and fields. T19 added API tokens: the API, the subset check
    valid action on every known subject, with all fields and no conditions.
    It has no permission rows.
 2. For a content type, rows naming its slug **override** the `*` rows for
-   the same action. This lets a field profile for one type (e.g. T30's masks
-   on `cv-page`) narrow a broad `*` grant.
+   the same action. This lets a field profile for one type (e.g. masks
+   on `resume`) narrow a broad `*` grant.
 3. Rows at the same level **add up**: field lists are unioned (`null` = all
    wins), and conditions are ORed. A row without conditions makes the action
    unconditional.
@@ -91,9 +64,9 @@ types and fields. T19 added API tokens: the API, the subset check
 6. **Reviewer** and **anonymous** actors only ever read, whatever their
    role's rows say (D2). They never get drafts, and nothing is writable for
    them. On the `media` subject `rowFilter` adds `is_reviewer_preset = true`
-   for such actors (T27), so the file library shows them preset files only;
+   for such actors, so the file library shows them preset files only;
    this keys on the actor kind, not on a role name. `JwtStrategy` makes an
-   account whose role is `reviewer` the `reviewer` actor (T31), so the rule
+   account whose role is `reviewer` the `reviewer` actor, so the rule
    holds even if the owner edits the reviewer role's rows.
 7. **API tokens** reach content subjects only. Effective permissions are
    the scope ∩ the creator's **current** role rows (D5): actions and field
@@ -113,7 +86,7 @@ types and fields. T19 added API tokens: the API, the subset check
    apply to content types only. A system subject is all or nothing.
 
 The rank rule (target rank < actor rank, D6) is not part of the evaluator.
-The T17 services enforce it inside each write transaction, with the target
+The management services enforce it inside each write transaction, with the target
 row locked (`domain/Rank.rules.ts`):
 
 - account writes: the target's current role rank and any role being
@@ -136,7 +109,7 @@ a specific content type: `readable_fields` on `read` rows, and
 `writable_fields` on `create`/`update` rows. Every path must exist in the
 definition, with no duplicates.
 
-### Sensitive fields (SPEC D2, task RV-mask)
+### Sensitive fields (SPEC D2)
 
 A field marked `sensitive: true` in its definition is not covered by the
 wildcard `*` content grant of the `public`, `guest` and `reviewer` system roles
@@ -153,7 +126,7 @@ editor) decides on its own, so adding the field to that row, or leaving
 `readable_fields` null on it, unmasks it. Other roles and API tokens are
 unchanged; the rule is code, so existing role rows need no migration.
 
-### Content types API (T17b)
+### Content types API
 
 `GET /content-types` and `/content-types/:slug` describe each type's field
 paths with the same `FieldSelection` the serializer uses:
@@ -163,15 +136,14 @@ paths with the same `FieldSelection` the serializer uses:
   fields follow `recordReadAccess` (no `createdBy` / `updatedBy` for
   reviewers, guests or anonymous actors);
 - an actor allowed `roles:update` (`FULL_CATALOG_PERMISSION`) sees every type
-  and field, since a role manager has to name fields it may not read itself
-  (decision T17b). Field names are schema, not record data, and the rank
+  and field, since a role manager has to name fields it may not read itself. Field names are schema, not record data, and the rank
   rule still bounds which roles it can change;
 - a hidden type answers the same `404 CONTENT_TYPE_NOT_FOUND` as an unknown
   one, so the API does not reveal which types exist.
 
-## Field masking and write allowlist (T16, D3/D4)
+## Field masking and write allowlist (D3/D4)
 
-Building blocks for the document endpoints (T20/T21). Each is created per
+Building blocks for the document endpoints. Each is created per
 content type (`new X(registry.resolve(slug))`). Reads take a
 `RecordReadAccess` from `recordReadAccess(actor, fieldsFor(...).readable)`:
 the readable content fields plus the system fields the actor kind may see.
@@ -209,7 +181,7 @@ for the root select), so masked columns never reach SQL. Then
 }
 ```
 
-Decisions (T16):
+Decisions:
 
 - **Mask values** (SPEC §6): `"***"` for string/text/richtext, `null` for
   every other type and for a masked component (single or repeatable).
@@ -225,7 +197,7 @@ Decisions (T16):
 - **System fields** (`RECORD_SYSTEM_FIELDS`): `documentId`, `version`,
   `publishedAt`, `locale`, `createdAt` and `updatedAt` are always readable
   and may be filtered and sorted on. Field lists cannot name them.
-- **Account references** (user decision T16): `createdBy` and `updatedBy`
+- **Account references** (user decision): `createdBy` and `updatedBy`
   are shown to signed-in accounts and API tokens only. For anonymous and
   reviewer actors (`ACCOUNT_REFERENCES_HIDDEN_FROM`) and for the `guest`
   role (`ACCOUNT_REFERENCES_HIDDEN_ROLE_SLUGS`, user decision 2026-10-27) they are **omitted**
@@ -259,7 +231,7 @@ fails when a module `index.ts` re-exports `KyselyContent.repository`,
 So list, detail, 409 conflict, bulk conflict, audit metadata and
 error-detail bodies all go through `serialize`.
 
-**Facades (R1-14).** Every folder under `src/modules/` has an `index.ts`, and
+**Facades.** Every folder under `src/modules/` has an `index.ts`, and
 code outside a module imports it through that file only (ESLint
 `no-restricted-imports`, patterns in `apps/cms-api/eslint.config.mjs`).
 Named exceptions, each kept out of the facade on purpose: `adapters/KyselyContent.repository`,
@@ -273,7 +245,7 @@ sub-rules: `security-audit` imports access core with `import type` only, and
 `IdentityModule` the app loads).
 
 **Write path.** `WriteAllowlist.apply(payload, fields)` takes the tree part
-of a body (`{ values, components }`; T21 takes `version` off first) and
+of a body (`{ values, components }`; the write path takes `version` off first) and
 returns the `TreeInput` to pass to `assertTreeInput` and `replaceTree` /
 `insertTree`:
 
@@ -288,7 +260,7 @@ returns the `TreeInput` to pass to `assertTreeInput` and `replaceTree` /
 A component list replaces the stored list (items not sent are deleted), so
 sending one needs the **whole component** writable. A grant on only some
 sub-fields (e.g. `writable: ["reference.phone"]`) does not allow sending
-`reference` (decision T16, fails closed). Inside a writable component,
+`reference` (fails closed). Inside a writable component,
 masked sub-fields that come back with their mask are dropped per item, so a
 matched item (`componentUid`) keeps them.
 
@@ -297,11 +269,11 @@ takes the field paths a list query uses. System fields the access includes
 pass. An unknown path is 400 `FIELD_UNKNOWN`. An unreadable field, or
 `createdBy` / `updatedBy` for an anonymous, reviewer or guest actor, is 400
 `FIELD_NOT_READABLE`.
-T20 (`DocumentsQueryService.list`) calls it with the `filter` and `sort`
+`DocumentsQueryService.list` calls it with the `filter` and `sort`
 paths before any SQL is built; a free-text search (not built yet) must only
 search readable fields.
 
-**Document reads (T20).** `DocumentAuthGuard` (JWT, `ak_live_` token, or no
+**Document reads.** `DocumentAuthGuard` (JWT, `ak_live_` token, or no
 header = `AnonymousActorService`) then `PermissionGuard`. For every read the
 service builds `recordReadAccess(actor, fieldsFor().readable)` once and
 passes it to `projectTable` / `selectedColumns`, `QueryGuard.assert` and
@@ -311,7 +283,7 @@ Anonymous reads are throttled per IP (`DOCUMENTS_RATE_LIMIT_POLICIES.DOCUMENT_RE
 120/min, key source `ANONYMOUS_IP`, which skips every non-anonymous actor).
 Endpoint rules: `apps/cms-api/README.md` "Documents, read".
 
-**Document writes (T21).** `DocumentsCommandService`: `fieldsFor(actor, slug,
+**Document writes.** `DocumentsCommandService`: `fieldsFor(actor, slug,
 'create' | 'update').writable` feeds `WriteAllowlist.apply` (the `version`
 key is removed from the body first), then `assertTreeInput`, then the value
 rules, then the transaction. The `update` `rowFilter` is in the WHERE of the
@@ -362,7 +334,7 @@ exclude the row, never gets raw or unreadable values back; the 200/201 bodies us
   `IS NULL`, `ne` → `IS DISTINCT FROM` (rows whose column is NULL count as
   not equal).
 
-## Default role matrix (seed, decision T14)
+## Default role matrix (seed)
 
 These rows are seeded once per system role: `roles.default_permissions_seeded_at`
 marks the role as seeded (the migration marks roles that already have rows),
@@ -380,7 +352,7 @@ fields are allowed and there are no conditions.
 | `reviewer` | read (published only)                    | media: read                                                   |
 | `public`   | read (published only)                    | none                                                          |
 
-## Request flow and revocation (T15, D9)
+## Request flow and revocation (D9)
 
 1. `JwtAuthGuard` (passport-jwt, HS256 pinned) verifies the token. Then
    `JwtStrategy.validate` reads the account through `VersionCache`:
@@ -420,7 +392,7 @@ check), so it cannot re-cache pre-write data. Writes the process cannot see
 `VERSION_CACHE_TTL_MS` (5 s).
 
 Permission writes go through `RolePermissionsService.replacePermissions()`
-only; T17 adds its audit row (and a locked rank re-check) through
+only; the roles service adds its audit row (and a locked rank re-check) through
 `alsoInTransaction`.
 
 **Swap point (more than one replica).** `VersionCache` and the rate-limit
@@ -434,3 +406,86 @@ starts while the database is down (readiness 503). A failed load is retried
 on the next call, and a successful load is kept until restart (D10). If
 `content:migrate` never ran, the registry is empty and every content
 subject is denied.
+
+## Files
+
+<!-- module-files:start (generated by .claude/bin/module-index; edit only the Description column) -->
+<!-- prettier-ignore-start -->
+
+```
+access/ (2 files)
+  adapters/ (3 files)
+  application/ (7 files)
+  document-auth/ (2 files)
+    http/ (1 file)
+  domain/ (18 files)
+  http/ (4 files)
+  management/ (2 files)
+    adapters/ (3 files)
+    application/ (5 files)
+    domain/ (3 files)
+    http/ (5 files)
+```
+
+Tests: 25 files (not listed).
+
+| File | Description |
+|---|---|
+| `Access.module.ts` | Nest wiring (imported by IdentityModule) |
+| `index.ts` | TODO (exports `AccessModule`, `roleSeedServiceOf`, `AccessPolicyService`, `AccessPolicy` +50) |
+| `adapters/PrismaAccountVersion.repository.ts` | The Prisma side of the ports (role policy repository also writes permission rows inside a `UnitOfWork`) |
+| `adapters/PrismaApiTokenLookup.repository.ts` | The Prisma side of the ports (role policy repository also writes permission rows inside a `UnitOfWork`) |
+| `adapters/PrismaRolePolicy.repository.ts` | The Prisma side of the ports (role policy repository also writes permission rows inside a `UnitOfWork`) |
+| `application/Access.port.ts` | Ports with their tokens: `AccountVersionSource`, `RoleLookup` (exported for identity), `ApiTokenLookup`, `PermissionRepository` |
+| `application/AccessPolicy.service.ts` | Builds the catalog + evaluator from the lazily loaded content registry |
+| `application/AnonymousActor.service.ts` | The anonymous actor from the `public` role; 401 when the role is missing |
+| `application/ApiTokenAuthentication.service.ts` | D5: raw token in, principal out; one bare 401 for every cause; `last_used_at` throttled write |
+| `application/RolePermissions.service.ts` | The one write path for a role's rows: replace + bump `policy_version` in the core `TransactionRunner`, invalidate in `afterCommit`; `alsoInTransaction` receives the `UnitOfWork` |
+| `application/RoleSeed.service.ts` | Seeds the system roles and the default rows for system roles that have none (`db:seed`); the table is `domain/SystemRoles.entity.ts` |
+| `application/VersionCache.service.ts` | D9 in-process cache of account `tv`/status/role and role `pv`/permission rows; holds `VERSION_CACHE_TTL_MS` and `VERSION_CACHE_MAX_ENTRIES` |
+| `document-auth/DocumentAuth.module.ts` | TODO (exports `DocumentAuthModule`) |
+| `document-auth/index.ts` | TODO (exports `DocumentAuthGuard`, `DocumentRequest`, `DocumentAuthModule`) |
+| `document-auth/http/DocumentAuth.guard.ts` | TODO (exports `DocumentRequest`, `DocumentAuthGuard`) |
+| `domain/Access.constants.ts` | Subjects, actions per subject (`PermissionAction`, `AccountStatus`), DSL operators/variables/limits, error codes, default matrix |
+| `domain/ActorContext.entity.ts` | `ActorContext`, `RolePolicy`, token scope, `rolePolicyFromRows`, actor builders |
+| `domain/ApiToken.rules.ts` | `API_TOKEN` (token format and limits), `hashApiToken` and `isApiTokenExpired`: the one expiry rule (`expires_at <= now`) for authentication, list status and the update guard |
+| `domain/Conditions.rules.ts` | DSL validation and compilation to parameterized Kysely SQL |
+| `domain/EffectivePolicy.rules.ts` | `effectivePolicy`: one resolver per actor kind (owner, read-only clamp, token scope ∩ creator) |
+| `domain/FieldList.rules.ts` | Field-list check and issue types shared by the two validators |
+| `domain/FieldPaths.rules.ts` | Field-path helpers and the 400s of the field checks (`FIELD_NOT_READABLE`, `FIELD_NOT_WRITABLE`, `FIELD_UNKNOWN`) |
+| `domain/FieldProjection.rules.ts` | `projectTable` / `selectedColumns`: never select unreadable columns (D3) |
+| `domain/PermissionSet.rules.ts` | Save-time check of a role's permission set: `validatePermissionSet` |
+| `domain/PolicyEvaluator.rules.ts` | `PolicyEvaluator.can / canReadDrafts / fieldsFor / rowFilter` |
+| `domain/QueryFieldAccess.rules.ts` | `QueryGuard`: filter/sort/search only on readable fields (D3) |
+| `domain/Rank.rules.ts` | D6: `outranks` / `assertOutranks`, `requireAccountActor`, `requireOwnerActor` (D20), `grantsBeyondActor` |
+| `domain/RecordReadAccess.rules.ts` | `RecordReadAccess` / `recordReadAccess(actor, readable)`: fields + visible system fields |
+| `domain/RecordSerializer.rules.ts` | `RecordSerializer`: the one record -> response path, masks + `_maskedFields` |
+| `domain/SubjectCatalog.rules.ts` | Known subjects (`*`, registry slugs, system subjects), field paths, DSL field catalog |
+| `domain/SystemRoles.entity.ts` | TODO (exports `DefaultPermission`, `SYSTEM_ROLES`, `SystemRoleSlug`, `OWNER_ROLE_SLUG` +10) |
+| `domain/TokenScope.rules.ts` | Save-time check of an API token scope (`validateTokenScope`) and the D5 subset check (`scopeEntriesBeyondCreator`) |
+| `domain/WriteAllowlist.rules.ts` | `WriteAllowlist`: client tree -> writable tree, drops masks, 400 otherwise (D4) |
+| `http/AccessHttp.constants.ts` | Account, role and API token routes; `ACCESS_RATE_LIMIT_POLICIES` |
+| `http/ActorThrottleSubject.resolver.ts` | Throttle subject read off the actor an earlier guard set |
+| `http/ApiToken.guard.ts` | `ApiTokenAuthenticator` (bearer header, writes `request.user`) and `ApiTokenGuard` |
+| `http/Permission.guard.ts` | `@RequirePermission()` with `PERMISSION_METADATA_KEY`, and `PermissionGuard`, which enforces it with the evaluator |
+| `management/AccessManagement.module.ts` | TODO (exports `AccessManagementModule`) |
+| `management/index.ts` | TODO (exports `AccessManagementModule`) |
+| `management/adapters/PrismaAccount.repository.ts` | the Prisma implementations of the three ports |
+| `management/adapters/PrismaApiToken.repository.ts` | the Prisma implementations of the three ports |
+| `management/adapters/PrismaRole.repository.ts` | the Prisma implementations of the three ports |
+| `management/application/AccessManagement.port.ts` | `AccountAdminRepository`, `RoleRepository`, `ApiTokenAdminRepository` (row locks, the role-cap lock and the unique-violation mapping live in their adapters) |
+| `management/application/Accounts.service.ts` | list, update, disable, enable, revoke sessions; `recordAccountEvent` writes the account audit row |
+| `management/application/ApiTokens.service.ts` | `/roles` and `/api-tokens` use cases; cache drops are `afterCommit` callbacks |
+| `management/application/Invitations.service.ts` | invite and resend invite (rank check, assignable role, invite code, mail sent after the commit) |
+| `management/application/Roles.service.ts` | `/roles` and `/api-tokens` use cases; cache drops are `afterCommit` callbacks |
+| `management/domain/AccessManagement.constants.ts` | TODO (exports `MANAGEMENT_ERROR_CODES`, `MANAGEMENT_ERROR_MESSAGES`, `EXPIRY_NOT_IN_FUTURE_ISSUE`, `MANAGEMENT_LIMITS` +6) |
+| `management/domain/AccessManagement.errors.ts` | TODO (exports `ManagementIssue`, `accountNotFound`, `emailTaken`, `accountAlreadyDisabled` +16) |
+| `management/domain/Account.entity.ts` | TODO (exports `AccountRoleRecord`, `AccountRecord`, `AccountRoleView`, `AccountView` +3) |
+| `management/http/AccessManagement.requests.ts` | TODO (exports `inviteAccountSchema`, `updateAccountSchema`, `createRoleSchema`, `updateRoleSchema` +5) |
+| `management/http/Accounts.controller.ts` | TODO (exports `AccountsController`) |
+| `management/http/ApiTokens.controller.ts` | TODO (exports `ApiTokensController`) |
+| `management/http/ApiTokens.requests.ts` | TODO (exports `createApiTokenSchema`, `updateApiTokenSchema`, `CreateApiTokenRequest`, `UpdateApiTokenRequest`) |
+| `management/http/Roles.controller.ts` | TODO (exports `RolesController`) |
+
+<!-- prettier-ignore-end -->
+<!-- module-files:end -->

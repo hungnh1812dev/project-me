@@ -1,4 +1,5 @@
 import { isAbsolute, relative } from 'node:path';
+
 import type { Rule } from 'eslint';
 
 export interface FileNameRuleOptions {
@@ -78,20 +79,13 @@ function lastPascalSegment(name: string): string {
 
 function isSameWord(first: string, second: string): boolean {
   const plurals = ['s', 'es'];
-  return (
-    first === second ||
-    plurals.some((p) => first + p === second || second + p === first)
-  );
+  return first === second || plurals.some((p) => first + p === second || second + p === first);
 }
 
 /** Message for the first broken part of a path below a scanned folder, or null. */
-function findFolderProblem(
-  folders: string[],
-  options: FileNameRuleOptions,
-): string | null {
+function findFolderProblem(folders: string[], options: FileNameRuleOptions): string | null {
   for (const folder of folders) {
-    const isRoute =
-      options.allowsRouteSegmentFolders && ROUTE_FOLDER.test(folder);
+    const isRoute = options.allowsRouteSegmentFolders && ROUTE_FOLDER.test(folder);
     if (!isRoute && !KEBAB_FOLDER.test(folder)) {
       return `Folder "${folder}" must be kebab-case.`;
     }
@@ -107,10 +101,7 @@ interface ParsedFileName {
   isFrameworkFile: boolean;
 }
 
-function parseFileName(
-  fileName: string,
-  options: FileNameRuleOptions,
-): ParsedFileName {
+function parseFileName(fileName: string, options: FileNameRuleOptions): ParsedFileName {
   const frameworkNames = options.frameworkFileNames ?? ['index.ts'];
   const testSuffixes = options.testSuffixes ?? ['test', 'spec'];
   const extension = fileName.slice(fileName.lastIndexOf('.') + 1);
@@ -121,17 +112,12 @@ function parseFileName(
   const isFrameworkFile =
     fileName.endsWith('.d.ts') ||
     frameworkNames.includes(fileName) ||
-    (isTest &&
-      !middle.length &&
-      frameworkNames.includes(`${name}.${extension}`));
+    (isTest && !middle.length && frameworkNames.includes(`${name}.${extension}`));
   return { name, middle, extension, isTest, isFrameworkFile };
 }
 
 /** Message for the first broken part of a parsed file name, or null. */
-function findFileNameProblem(
-  parsed: ParsedFileName,
-  options: FileNameRuleOptions,
-): string | null {
+function findFileNameProblem(parsed: ParsedFileName, options: FileNameRuleOptions): string | null {
   const { name, middle, extension, isTest } = parsed;
   if (!NAME_SHAPE.test(name)) {
     return `"${name}" must be PascalCase, optionally with a "use" prefix for hooks.`;
@@ -154,21 +140,14 @@ function findFileNameProblem(
 }
 
 /** Message for a mismatch between a file's hook name and its exports, or null. */
-function findHookProblem(
-  name: string,
-  exportedValues: ExportedValue[],
-): string | null {
+function findHookProblem(name: string, exportedValues: ExportedValue[]): string | null {
   if (HOOK_NAME.test(name)) {
     return exportedValues.some((value) => value.name === name)
       ? null
       : `Hook file "${name}" must export a value named "${name}".`;
   }
   const [only] = exportedValues;
-  if (
-    exportedValues.length === 1 &&
-    only?.isFunction &&
-    HOOK_NAME.test(only.name)
-  ) {
+  if (exportedValues.length === 1 && only?.isFunction && HOOK_NAME.test(only.name)) {
     return `File exports only the hook "${only.name}"; name the file "${only.name}".`;
   }
   return null;
@@ -201,17 +180,14 @@ export const fileNamesRule: Rule.RuleModule = {
     const fileName = rest.pop() ?? '';
     const extension = fileName.slice(fileName.lastIndexOf('.') + 1);
     const isChecked =
-      scannedFolders.includes(scannedFolder) &&
-      CHECKED_EXTENSIONS.includes(extension);
+      scannedFolders.includes(scannedFolder) && CHECKED_EXTENSIONS.includes(extension);
     if (!isChecked) return {};
     return {
       Program(program) {
         const parsed = parseFileName(fileName, options);
         const problem =
           findFolderProblem(rest, options) ??
-          (parsed.isFrameworkFile
-            ? null
-            : findFileProblem(parsed, options, program));
+          (parsed.isFrameworkFile ? null : findFileProblem(parsed, options, program));
         if (problem) {
           context.report({
             node: program,

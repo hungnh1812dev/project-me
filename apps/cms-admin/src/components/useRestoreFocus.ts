@@ -6,9 +6,7 @@ import { useRef, type RefObject } from 'react';
  * `onCloseAutoFocus`. When the opener is gone (its row was removed), focus
  * moves to the `h1` inside `headingContainer`, if one is given.
  */
-export function useRestoreFocus(
-  headingContainer?: RefObject<HTMLElement | null>,
-) {
+export function useRestoreFocus(headingContainer?: RefObject<HTMLElement | null>) {
   const opener = useRef<HTMLElement | null>(null);
 
   const rememberOpener = (element: Element | null) => {

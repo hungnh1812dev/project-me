@@ -30,11 +30,8 @@ function describeFailure(error: unknown): string {
 
 function isNotFound(error: unknown): boolean {
   if (!(error instanceof Error)) return false;
-  const status = (error as { $metadata?: { httpStatusCode?: number } })
-    .$metadata?.httpStatusCode;
-  return (
-    NOT_FOUND_ERROR_NAMES.includes(error.name) || status === NOT_FOUND_STATUS
-  );
+  const status = (error as { $metadata?: { httpStatusCode?: number } }).$metadata?.httpStatusCode;
+  return NOT_FOUND_ERROR_NAMES.includes(error.name) || status === NOT_FOUND_STATUS;
 }
 
 /** `BackupStorage` on the S3 API (Cloudflare R2 in production). Only reads and signs. */
@@ -72,9 +69,7 @@ export class S3BackupStorage implements BackupStorage {
           if (item.Key === undefined) continue;
           objects.push({ key: item.Key, sizeBytes: item.Size ?? 0 });
         }
-        continuationToken = page.IsTruncated
-          ? page.NextContinuationToken
-          : undefined;
+        continuationToken = page.IsTruncated ? page.NextContinuationToken : undefined;
       } while (continuationToken !== undefined);
     } catch (error) {
       throw new BackupStorageError('list', describeFailure(error));
@@ -94,10 +89,7 @@ export class S3BackupStorage implements BackupStorage {
     }
   }
 
-  async createDownloadUrl(
-    key: string,
-    expiresInSeconds: number,
-  ): Promise<string> {
+  async createDownloadUrl(key: string, expiresInSeconds: number): Promise<string> {
     try {
       return await getSignedUrl(
         this.client,

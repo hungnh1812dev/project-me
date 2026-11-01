@@ -27,9 +27,7 @@ describe('useRestoreFocus', () => {
     const heading = container.appendChild(document.createElement('h1'));
     heading.tabIndex = -1;
     const gone = document.createElement('button');
-    const { result } = renderHook(() =>
-      useRestoreFocus({ current: container }),
-    );
+    const { result } = renderHook(() => useRestoreFocus({ current: container }));
     result.current.rememberOpener(gone);
     result.current.restoreFocus(closeEvent());
     expect(document.activeElement).toBe(heading);

@@ -32,9 +32,7 @@ describe('.env.example parity with envSchema', () => {
   });
 
   it('lists each key once', () => {
-    const repeated = documented.filter(
-      (key, index) => documented.indexOf(key) !== index,
-    );
+    const repeated = documented.filter((key, index) => documented.indexOf(key) !== index);
     expect(repeated).toEqual([]);
   });
 

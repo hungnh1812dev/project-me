@@ -1,7 +1,7 @@
+import { DOMAIN_ERROR_KINDS } from '../../../common/errors/Domain.errors';
 import type { ActorContext, RolePolicy } from '../../access';
 import { DOCUMENT_ERROR_MESSAGES } from '../domain/Documents.constants';
 import { DocumentsQueryService } from './DocumentsQuery.service';
-import { DOMAIN_ERROR_KINDS } from '../../../common/errors/Domain.errors';
 
 const ROLE: RolePolicy = {
   id: 1,
@@ -70,9 +70,7 @@ describe('DocumentsQueryService.get', () => {
   });
 
   it('answers a missing row with 404 DOCUMENT_NOT_FOUND', async () => {
-    await expect(
-      build().get(ACTOR, 'x', 'id', 'published'),
-    ).rejects.toMatchObject({
+    await expect(build().get(ACTOR, 'x', 'id', 'published')).rejects.toMatchObject({
       kind: DOMAIN_ERROR_KINDS.NOT_FOUND,
       errorCode: 'DOCUMENT_NOT_FOUND',
       message: DOCUMENT_ERROR_MESSAGES.NOT_FOUND,

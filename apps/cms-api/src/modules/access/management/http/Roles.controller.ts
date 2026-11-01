@@ -14,28 +14,22 @@ import {
   UseGuards,
 } from '@nestjs/common';
 
-import {
-  ClientIpResolver,
-  clientMetaOf,
-} from '../../../../common/http/ClientIp.resolver';
 import { ID_PARAM } from '../../../../common/constants/Api.constants';
-import { ROLES_ROUTES } from '../../http/AccessHttp.constants';
 import { NO_STORE_HEADER } from '../../../../common/constants/Http.constants';
+import { ClientIpResolver, clientMetaOf } from '../../../../common/http/ClientIp.resolver';
+import { parseRequest } from '../../../../common/http/RequestParsing.rules';
+import { documentIdSchema } from '../../../../common/validation/SharedSchemas.rules';
+import { JwtAuthGuard, type AuthenticatedRequest } from '../../../identity';
 import { PermissionAction } from '../../domain/Access.constants';
-import { type AuthenticatedRequest, JwtAuthGuard } from '../../../identity';
+import { requireAccountActor } from '../../domain/Rank.rules';
+import { ROLES_ROUTES } from '../../http/AccessHttp.constants';
+import { PermissionGuard, RequirePermission } from '../../http/Permission.guard';
+import { RolesService, type RoleView } from '../application/Roles.service';
 import {
   createRoleSchema,
   replacePermissionsSchema,
   updateRoleSchema,
 } from './AccessManagement.requests';
-import { parseRequest } from '../../../../common/http/RequestParsing.rules';
-import {
-  PermissionGuard,
-  RequirePermission,
-} from '../../http/Permission.guard';
-import { requireAccountActor } from '../../domain/Rank.rules';
-import { type RoleView, RolesService } from '../application/Roles.service';
-import { documentIdSchema } from '../../../../common/validation/SharedSchemas.rules';
 
 const SUBJECT = 'roles';
 
@@ -60,10 +54,7 @@ export class RolesController {
 
   @Post()
   @RequirePermission({ action: PermissionAction.create, subject: SUBJECT })
-  create(
-    @Req() req: AuthenticatedRequest,
-    @Body() body: unknown,
-  ): Promise<RoleView> {
+  create(@Req() req: AuthenticatedRequest, @Body() body: unknown): Promise<RoleView> {
     return this.roles.create(
       requireAccountActor(req.user.actor),
       parseRequest(createRoleSchema, body),
@@ -89,10 +80,7 @@ export class RolesController {
   @Delete(ROLES_ROUTES.BY_ID)
   @HttpCode(HttpStatus.NO_CONTENT)
   @RequirePermission({ action: PermissionAction.delete, subject: SUBJECT })
-  remove(
-    @Req() req: AuthenticatedRequest,
-    @Param(ID_PARAM) id: string,
-  ): Promise<void> {
+  remove(@Req() req: AuthenticatedRequest, @Param(ID_PARAM) id: string): Promise<void> {
     return this.roles.remove(
       requireAccountActor(req.user.actor),
       parseRequest(documentIdSchema, id),

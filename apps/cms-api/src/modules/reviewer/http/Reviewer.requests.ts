@@ -1,9 +1,6 @@
 import { z } from 'zod';
 
-import {
-  REVIEWER_INPUT_LIMITS,
-  TURNSTILE_TOKEN_MAX_LENGTH,
-} from '../domain/Reviewer.constants';
+import { REVIEWER_INPUT_LIMITS, TURNSTILE_TOKEN_MAX_LENGTH } from '../domain/Reviewer.constants';
 
 const TAB = 9;
 const NEWLINE = 10;
@@ -46,9 +43,7 @@ export const createReviewerSessionSchema = z.strictObject({
   turnstileToken: z.string().min(1).max(TURNSTILE_TOKEN_MAX_LENGTH),
 });
 
-export type CreateReviewerSessionRequest = z.infer<
-  typeof createReviewerSessionSchema
->;
+export type CreateReviewerSessionRequest = z.infer<typeof createReviewerSessionSchema>;
 
 /** `PUT /reviewer/settings`. */
 export const reviewerSettingsSchema = z.strictObject({

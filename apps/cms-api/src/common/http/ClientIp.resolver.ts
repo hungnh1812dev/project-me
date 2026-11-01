@@ -3,11 +3,11 @@ import { isIP } from 'node:net';
 import { Inject, Injectable } from '@nestjs/common';
 import type { Request } from 'express';
 
+import { type IAppConfig } from '../../config/AppConfig.setup';
+import { APP_CONFIG } from '../../config/Config.constants';
 import { USER_AGENT_HEADER } from '../constants/Http.constants';
 import { UNKNOWN_CLIENT_IP } from '../constants/Limits.constants';
 import type { ClientMeta } from '../types/ClientMeta.entity';
-import { type IAppConfig } from '../../config/AppConfig.setup';
-import { APP_CONFIG } from '../../config/Config.constants';
 
 /** Prefix Node puts on IPv4 peers of a dual-stack socket. */
 const IPV4_MAPPED_PREFIX = '::ffff:';
@@ -52,10 +52,7 @@ export class ClientIpResolver {
 }
 
 /** User agent and client IP stored with a new refresh token. */
-export function clientMetaOf(
-  clientIp: ClientIpResolver,
-  req: Request,
-): ClientMeta {
+export function clientMetaOf(clientIp: ClientIpResolver, req: Request): ClientMeta {
   const ip = clientIp.resolve(req);
   return {
     userAgent: req.get(USER_AGENT_HEADER),

@@ -1,5 +1,4 @@
 import {
-  type GraphQLFieldConfigMap,
   GraphQLBoolean,
   GraphQLEnumType,
   GraphQLID,
@@ -8,33 +7,31 @@ import {
   GraphQLList,
   GraphQLNonNull,
   GraphQLObjectType,
-  type GraphQLNullableOutputType,
-  type GraphQLOutputType,
   GraphQLSchema,
   GraphQLString,
+  type GraphQLFieldConfigMap,
+  type GraphQLNullableOutputType,
+  type GraphQLOutputType,
 } from 'graphql';
 
+import { PAGINATION } from '../../../../common/validation/SharedSchemas.rules';
 import {
-  type ConditionValueKind,
   MASKED_FIELDS_KEY,
   RECORD_SYSTEM_FIELDS,
+  type ConditionValueKind,
   type RecordSystemField,
   type SerializedComponent,
 } from '../../../access';
 import {
+  fieldTypeOf,
+  isComponentField,
   type ComponentFieldDefinition,
   type ContentTypeDefinition,
   type FieldDefinition,
-  fieldTypeOf,
   type GraphqlOutputName,
-  isComponentField,
   type ScalarFieldType,
 } from '../../../content-engine';
-import {
-  DEFAULT_DOCUMENT_STATUS,
-  SYSTEM_FIELD_KINDS,
-} from '../../../documents';
-import { queryKindOfField } from '../../../documents';
+import { DEFAULT_DOCUMENT_STATUS, queryKindOfField, SYSTEM_FIELD_KINDS } from '../../../documents';
 import {
   COMPONENT_UID_FIELD,
   GRAPHQL_SCHEMA_ERROR_MESSAGES,
@@ -44,12 +41,7 @@ import {
   type RootFieldExtension,
 } from '../../application/Graphql.constants';
 import { FILTER_INPUTS } from './FilterInputs.rules';
-import {
-  DateScalar,
-  DateTimeScalar,
-  DecimalScalar,
-  JsonScalar,
-} from './Scalars.rules';
+import { DateScalar, DateTimeScalar, DecimalScalar, JsonScalar } from './Scalars.rules';
 import {
   DocumentStatusEnum,
   MediaType,
@@ -63,7 +55,6 @@ import {
   newTypeNameClaims,
   rootNamesOf,
 } from './TypeNames.rules';
-import { PAGINATION } from '../../../../common/validation/SharedSchemas.rules';
 
 export { GraphqlNameClashError };
 
@@ -78,8 +69,7 @@ export class GraphqlSchemaError extends Error {
 /** What a content or component field resolver reads: the serializer's output. */
 type ValuesHolder = Pick<SerializedComponent, 'values' | 'components'>;
 
-const nonNull = <T extends GraphQLNullableOutputType>(type: T) =>
-  new GraphQLNonNull(type);
+const nonNull = <T extends GraphQLNullableOutputType>(type: T) => new GraphQLNonNull(type);
 /** `[T!]`: items are never null, the list itself may be (a masked component). */
 const listOf = <T extends GraphQLNullableOutputType>(type: T) =>
   new GraphQLList(new GraphQLNonNull(type));
@@ -97,9 +87,7 @@ const SHARED_TYPES = [
 ];
 
 /** The graphql type object behind each name a field-type spec declares. */
-const GRAPHQL_OUTPUT_TYPES: Readonly<
-  Record<GraphqlOutputName, GraphQLOutputType>
-> = {
+const GRAPHQL_OUTPUT_TYPES: Readonly<Record<GraphqlOutputName, GraphQLOutputType>> = {
   String: GraphQLString,
   Int: GraphQLInt,
   Decimal: DecimalScalar,
@@ -113,17 +101,13 @@ const GRAPHQL_OUTPUT_TYPES: Readonly<
 function outputTypeOfScalar(fieldType: ScalarFieldType): GraphQLOutputType {
   const spec = fieldTypeOf(fieldType);
   if (spec === undefined) {
-    throw new GraphqlSchemaError(
-      GRAPHQL_SCHEMA_ERROR_MESSAGES.UNKNOWN_FIELD_TYPE(fieldType),
-    );
+    throw new GraphqlSchemaError(GRAPHQL_SCHEMA_ERROR_MESSAGES.UNKNOWN_FIELD_TYPE(fieldType));
   }
   return GRAPHQL_OUTPUT_TYPES[spec.graphqlOutput];
 }
 
 /** System fields of a record; `createdBy` / `updatedBy` are absent for some actors. */
-const SYSTEM_OUTPUT_TYPES: Readonly<
-  Record<RecordSystemField, GraphQLOutputType>
-> = {
+const SYSTEM_OUTPUT_TYPES: Readonly<Record<RecordSystemField, GraphQLOutputType>> = {
   documentId: nonNull(GraphQLID),
   version: nonNull(GraphQLInt),
   publishedAt: DateTimeScalar,
@@ -136,10 +120,7 @@ const SYSTEM_OUTPUT_TYPES: Readonly<
 
 function systemFieldConfigs(): GraphQLFieldConfigMap<unknown, unknown> {
   return Object.fromEntries(
-    RECORD_SYSTEM_FIELDS.map((name) => [
-      name,
-      { type: SYSTEM_OUTPUT_TYPES[name] },
-    ]),
+    RECORD_SYSTEM_FIELDS.map((name) => [name, { type: SYSTEM_OUTPUT_TYPES[name] }]),
   );
 }
 
@@ -192,17 +173,13 @@ function componentTypeOf(
     name,
     fields: {
       [COMPONENT_UID_FIELD]: { type: nonNull(GraphQLID) },
-      ...contentFieldConfigs(field.fields, (child) =>
-        componentTypeOf(name, child, source, claims),
-      ),
+      ...contentFieldConfigs(field.fields, (child) => componentTypeOf(name, child, source, claims)),
     },
   });
 }
 
 /** What a list query may filter and sort on, name -> kind (the REST rule). */
-function queryableFields(
-  definition: ContentTypeDefinition,
-): Map<string, ConditionValueKind> {
+function queryableFields(definition: ContentTypeDefinition): Map<string, ConditionValueKind> {
   const queryable = new Map<string, ConditionValueKind>(
     RECORD_SYSTEM_FIELDS.map((name) => [name, SYSTEM_FIELD_KINDS[name]]),
   );
@@ -218,10 +195,7 @@ interface RootClaims {
   queryFields: NameClaims;
 }
 
-function rootExtensions(
-  slug: string,
-  operation: RootFieldExtension['operation'],
-) {
+function rootExtensions(slug: string, operation: RootFieldExtension['operation']) {
   const extension: RootFieldExtension = { slug, operation };
   return { [ROOT_FIELD_EXTENSION_KEY]: extension };
 }
@@ -274,9 +248,7 @@ function buildContentType(
   const queryable = queryableFields(definition);
   const sortField = new GraphQLEnumType({
     name: names.sortField,
-    values: Object.fromEntries(
-      [...queryable.keys()].map((name) => [name, { value: name }]),
-    ),
+    values: Object.fromEntries([...queryable.keys()].map((name) => [name, { value: name }])),
   });
   const sort = new GraphQLInputObjectType({
     name: names.sort,
@@ -289,10 +261,7 @@ function buildContentType(
     name: names.filter,
     description: 'One optional entry per filterable field; entries are AND-ed.',
     fields: Object.fromEntries(
-      [...queryable].map(([name, kind]) => [
-        name,
-        { type: FILTER_INPUTS[kind] },
-      ]),
+      [...queryable].map(([name, kind]) => [name, { type: FILTER_INPUTS[kind] }]),
     ),
   });
   const page = new GraphQLObjectType({
@@ -338,13 +307,9 @@ function buildContentType(
  * @throws GraphqlNameClashError when two sources generate the same name.
  * @throws GraphqlSchemaError when there is no content type.
  */
-export function buildGraphqlSchema(
-  definitions: readonly ContentTypeDefinition[],
-): GraphQLSchema {
+export function buildGraphqlSchema(definitions: readonly ContentTypeDefinition[]): GraphQLSchema {
   if (definitions.length === 0) {
-    throw new GraphqlSchemaError(
-      GRAPHQL_SCHEMA_ERROR_MESSAGES.NO_CONTENT_TYPES,
-    );
+    throw new GraphqlSchemaError(GRAPHQL_SCHEMA_ERROR_MESSAGES.NO_CONTENT_TYPES);
   }
   const claims: RootClaims = {
     types: newTypeNameClaims(),

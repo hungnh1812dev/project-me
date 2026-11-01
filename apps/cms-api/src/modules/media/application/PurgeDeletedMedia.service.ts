@@ -1,13 +1,11 @@
 import { Inject, Injectable } from '@nestjs/common';
 
 import { Clock } from '../../../common/time/Clock.service';
-import {
-  APP_LOGGER,
-  type AppLogger,
-} from '../../../infrastructure/logging/AppLogger.port';
+import { APP_LOGGER, type AppLogger } from '../../../infrastructure/logging/AppLogger.port';
 import {
   MEDIA_PURGE_BATCH_SIZE,
   MEDIA_PURGE_GRACE_MS,
+  PRESET_MEDIA_PROVIDER,
 } from '../domain/Media.constants';
 import { allowedMediaTypeOf } from '../domain/MediaUpload.rules';
 import {
@@ -17,6 +15,7 @@ import {
   type MediaReferenceChecker,
   type MediaRepository,
   type MediaStorage,
+  type PurgeCandidate,
 } from './Media.port';
 
 /** What one purge run did. */
@@ -28,7 +27,8 @@ export interface PurgeResult {
 
 /**
  * Removes the stored object of files soft-deleted more than 24 h ago, then
- * the row. A file that a document points at again is left alone. The object
+ * the row; preset rows have no stored object and lose the row only; rows of
+ * another provider than the active storage are kept and logged. A file that a document points at again is left alone. The object
  * goes first: a crash between the two leaves a row to retry, never an
  * orphaned object.
  */
@@ -55,6 +55,10 @@ export class PurgeDeletedMediaService {
     }
   }
 
+  private isStoredByActiveStorage(row: PurgeCandidate): boolean {
+    return row.provider === this.storage.provider;
+  }
+
   /**
    * Walks every eligible row in id order, one batch at a time, so rows that
    * stay (still referenced, unknown type, storage error) never hold back the
@@ -66,11 +70,7 @@ export class PurgeDeletedMediaService {
     let skipped = 0;
     let cursor = 0;
     for (;;) {
-      const rows = await this.repository.findPurgeBatch(
-        cutoff,
-        cursor,
-        MEDIA_PURGE_BATCH_SIZE,
-      );
+      const rows = await this.repository.findPurgeBatch(cutoff, cursor, MEDIA_PURGE_BATCH_SIZE);
       for (const row of rows) {
         cursor = row.id;
         try {
@@ -87,7 +87,17 @@ export class PurgeDeletedMediaService {
             );
             continue;
           }
-          await this.storage.delete(row.storageKey, kind);
+          if (row.provider !== PRESET_MEDIA_PROVIDER && !this.isStoredByActiveStorage(row)) {
+            skipped += 1;
+            this.logger.warn(
+              `Media ${row.id} is stored by provider ${row.provider}, not the active one; kept.`,
+              PurgeDeletedMediaService.name,
+            );
+            continue;
+          }
+          if (row.provider !== PRESET_MEDIA_PROVIDER) {
+            await this.storage.delete(row.storageKey, kind);
+          }
           await this.repository.deleteRow(row.id);
           purged += 1;
         } catch {

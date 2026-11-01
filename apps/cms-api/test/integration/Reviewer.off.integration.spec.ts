@@ -7,10 +7,7 @@ import {
 } from '../../src/infrastructure/database/PrismaClient.adapter';
 import { AccessTokenService } from '../../src/modules/identity/application/AccessToken.service';
 import { hashPassword } from '../../src/modules/identity/application/Password.service';
-import {
-  seedRolePermissions,
-  seedSystemRoles,
-} from '../fixtures/Access.fixture';
+import { seedRolePermissions, seedSystemRoles } from '../fixtures/Access.fixture';
 import { createCoreTemplate } from '../fixtures/CoreDb.fixture';
 import {
   dbEnvOf,
@@ -90,30 +87,21 @@ describe('reviewer routes with REVIEWER_FEATURE_ENABLED=false (ADR 0014; Postgre
   });
 
   it('answers the two public routes 404 REVIEWER_FEATURE_OFF', async () => {
-    expect(answerOf(await http().get(`${REVIEWER}/status`))).toEqual(
+    expect(answerOf(await http().get(`${REVIEWER}/status`))).toEqual(FEATURE_OFF_ANSWER);
+    expect(answerOf(await http().post(`${REVIEWER}/sessions`).send(SESSION_BODY))).toEqual(
       FEATURE_OFF_ANSWER,
     );
-    expect(
-      answerOf(await http().post(`${REVIEWER}/sessions`).send(SESSION_BODY)),
-    ).toEqual(FEATURE_OFF_ANSWER);
   });
 
   it('keeps the owner routes behind authentication, then answers 404 REVIEWER_FEATURE_OFF', async () => {
     expect((await http().get(`${REVIEWER}/sessions`)).status).toBe(401);
-    expect(
-      (await http().put(`${REVIEWER}/settings`).send({ enabled: true })).status,
-    ).toBe(401);
+    expect((await http().put(`${REVIEWER}/settings`).send({ enabled: true })).status).toBe(401);
 
+    expect(answerOf(await http().get(`${REVIEWER}/sessions`).set(asOwner()))).toEqual(
+      FEATURE_OFF_ANSWER,
+    );
     expect(
-      answerOf(await http().get(`${REVIEWER}/sessions`).set(asOwner())),
-    ).toEqual(FEATURE_OFF_ANSWER);
-    expect(
-      answerOf(
-        await http()
-          .put(`${REVIEWER}/settings`)
-          .set(asOwner())
-          .send({ enabled: true }),
-      ),
+      answerOf(await http().put(`${REVIEWER}/settings`).set(asOwner()).send({ enabled: true })),
     ).toEqual(FEATURE_OFF_ANSWER);
   });
 
@@ -155,17 +143,12 @@ describe('reviewer routes with REVIEWER_FEATURE_ENABLED=false (ADR 0014; Postgre
     });
 
     it('gets 401 on a REST read', async () => {
-      const res = await http()
-        .get('/api/v1/documents/article')
-        .set(reviewerHeader);
+      const res = await http().get('/api/v1/documents/article').set(reviewerHeader);
       expect(res.status).toBe(401);
     });
 
     it('gets 401 on a GraphQL read', async () => {
-      const res = await http()
-        .post(GRAPHQL)
-        .set(reviewerHeader)
-        .send({ query: '{ __typename }' });
+      const res = await http().post(GRAPHQL).set(reviewerHeader).send({ query: '{ __typename }' });
       expect(res.status).toBe(401);
     });
   });

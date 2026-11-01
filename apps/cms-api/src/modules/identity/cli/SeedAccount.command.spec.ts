@@ -1,9 +1,6 @@
 import { OWNER_ROLE_SLUG, REVIEWER_ROLE_SLUG } from '../../access';
+import { assertSeedAllowed, SeedAccountError } from '../application/SeedAccount.service';
 import { CliInputError } from './PasswordInput.client';
-import {
-  assertSeedAllowed,
-  SeedAccountError,
-} from '../application/SeedAccount.service';
 import { parseSeedArgs } from './SeedAccount.command';
 
 const BASE_ARGS = ['--email', 'a@example.com', '--password-stdin'];
@@ -37,9 +34,7 @@ describe('assertSeedAllowed', () => {
 
 describe('parseSeedArgs', () => {
   it('reads email, role and the 2FA flag', () => {
-    expect(
-      parseSeedArgs([...BASE_ARGS, '--role', 'guest', '--email-2fa']),
-    ).toEqual({
+    expect(parseSeedArgs([...BASE_ARGS, '--role', 'guest', '--email-2fa'])).toEqual({
       email: 'a@example.com',
       roleSlug: 'guest',
       isEmail2faEnabled: true,
@@ -53,9 +48,7 @@ describe('parseSeedArgs', () => {
   it.each([OWNER_ROLE_SLUG, REVIEWER_ROLE_SLUG, 'editor', 'custom-role', ''])(
     'refuses role %j',
     (role) => {
-      expect(() => parseSeedArgs([...BASE_ARGS, '--role', role])).toThrow(
-        SeedAccountError,
-      );
+      expect(() => parseSeedArgs([...BASE_ARGS, '--role', role])).toThrow(SeedAccountError);
     },
   );
 

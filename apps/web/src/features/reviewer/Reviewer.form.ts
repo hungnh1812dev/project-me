@@ -1,9 +1,9 @@
-import { COPY } from '../../config/Copy.constants';
+import { COPY } from '../../configs/Copy.constants';
 import {
   REVIEWER_OTHER_VALUE,
   REVIEWER_PURPOSE_TAGS,
   REVIEWER_VISITOR_ROLES,
-} from '../../config/Reviewer.constants';
+} from '../../configs/Reviewer.constants';
 
 export interface ReviewerFormValues {
   role: string;

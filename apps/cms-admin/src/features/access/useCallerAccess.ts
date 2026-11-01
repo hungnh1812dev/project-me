@@ -1,6 +1,6 @@
-import { OWNER_ROLE_SLUG, type PermissionAction } from './Access.constants';
 import { useCurrentUser } from '../auth';
 import type { Role } from './Access.api';
+import { OWNER_ROLE_SLUG, type PermissionAction } from './Access.constants';
 import { useRolesQuery } from './Access.queries';
 
 /**
@@ -29,9 +29,7 @@ export function callerAccessOf(
   if (roleSlug === OWNER_ROLE_SLUG) return { isOwner: true, can: EVERYTHING };
   const own = roles?.find((role) => role.slug === roleSlug);
   if (own === undefined) return { isOwner: false, can: NOTHING };
-  const held = new Set(
-    own.permissions.map((row) => `${row.subject}:${row.action}`),
-  );
+  const held = new Set(own.permissions.map((row) => `${row.subject}:${row.action}`));
   return {
     isOwner: false,
     can: (subject, action) => held.has(`${subject}:${action}`),

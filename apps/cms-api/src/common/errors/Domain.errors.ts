@@ -11,8 +11,7 @@ export const DOMAIN_ERROR_KINDS = {
   UNAVAILABLE: 'unavailable',
 } as const;
 
-export type DomainErrorKind =
-  (typeof DOMAIN_ERROR_KINDS)[keyof typeof DOMAIN_ERROR_KINDS];
+export type DomainErrorKind = (typeof DOMAIN_ERROR_KINDS)[keyof typeof DOMAIN_ERROR_KINDS];
 
 export interface DomainErrorInit {
   kind: DomainErrorKind;

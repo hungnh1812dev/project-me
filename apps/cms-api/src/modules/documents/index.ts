@@ -1,8 +1,5 @@
 export { parseListQuery } from './http/Documents.requests';
-export {
-  BULK_BODY_LIMIT_MOUNT_PATH,
-  bulkBodyLimit,
-} from './http/BulkBodyLimit.middleware';
+export { BULK_BODY_LIMIT_MOUNT_PATH, bulkBodyLimit } from './http/BulkBodyLimit.middleware';
 export type {
   FilterClause,
   ListDocumentsQuery,
@@ -19,13 +16,7 @@ export {
   SYSTEM_FIELD_KINDS,
   type FilterOperator,
 } from './domain/Documents.constants';
-export {
-  DOCUMENT_QUERY_KEYS,
-  DOCUMENTS_RATE_LIMIT_POLICIES,
-} from './http/DocumentsHttp.constants';
+export { DOCUMENT_QUERY_KEYS, DOCUMENTS_RATE_LIMIT_POLICIES } from './http/DocumentsHttp.constants';
 export { DocumentsModule } from './Documents.module';
-export {
-  DocumentsQueryService,
-  type DocumentPage,
-} from './application/DocumentsQuery.service';
+export { DocumentsQueryService, type DocumentPage } from './application/DocumentsQuery.service';
 export { normalizeListQuery, queryKindOfField } from './domain/ListQuery.rules';

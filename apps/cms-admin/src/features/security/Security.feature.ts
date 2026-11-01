@@ -1,12 +1,9 @@
-import { APP_ROUTES } from '../../config/App.routes';
-import { defineApiService, type Feature } from '../../lib/FeatureDefinition';
-import { SecurityApiProvider } from './SecurityApi.context';
+import { defineApiService } from '@apis/client/ApiService.setup';
+
+import type { Feature } from '../Features.registry';
 import { createSecurityApi } from './Security.api';
-import { SecuritySettingsPage } from './SecuritySettingsPage';
+import { SecurityApiProvider } from './SecurityApi.context';
 
 export const securityFeature: Feature = {
   apiServices: [defineApiService(createSecurityApi, SecurityApiProvider)],
-  routes: [
-    { path: APP_ROUTES.SECURITY_SETTINGS, Component: SecuritySettingsPage },
-  ],
 };

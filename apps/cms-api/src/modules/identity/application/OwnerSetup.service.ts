@@ -2,10 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 
 import { type IAppConfig } from '../../../config/AppConfig.setup';
 import { APP_CONFIG } from '../../../config/Config.constants';
-import {
-  APP_LOGGER,
-  type AppLogger,
-} from '../../../infrastructure/logging/AppLogger.port';
+import { APP_LOGGER, type AppLogger } from '../../../infrastructure/logging/AppLogger.port';
 import {
   AUDIT_ACTIONS,
   OWNER_CREATED_CHANNELS,
@@ -13,21 +10,14 @@ import {
   SETUP_REJECTION_REASONS,
   type SetupRejectionReason,
 } from '../../security-audit';
-import {
-  OWNER_BOOTSTRAP_ERRORS,
-  OWNER_SETUP_MESSAGES,
-} from '../domain/Identity.constants';
-import {
-  ownerEmailTaken,
-  setupTokenInvalid,
-  setupUnavailable,
-} from '../domain/Identity.errors';
+import { OWNER_BOOTSTRAP_ERRORS, OWNER_SETUP_MESSAGES } from '../domain/Identity.constants';
+import { ownerEmailTaken, setupTokenInvalid, setupUnavailable } from '../domain/Identity.errors';
 import { isSetupTokenValid } from '../domain/SetupToken.rules';
 import { ACCOUNT_REPOSITORY, type AccountRepository } from './Identity.port';
 import {
   OwnerBootstrapError,
-  type OwnerBootstrapInput,
   OwnerBootstrapService,
+  type OwnerBootstrapInput,
 } from './OwnerBootstrap.service';
 
 /** Thrown when the setup is closed; the controller answers the unknown-route 404. */
@@ -98,10 +88,7 @@ export class OwnerSetupService {
   }
 
   /** Creates the owner from values that passed `admit` and the body check. */
-  async createOwner(
-    input: OwnerBootstrapInput,
-    meta: SetupClientMeta,
-  ): Promise<{ email: string }> {
+  async createOwner(input: OwnerBootstrapInput, meta: SetupClientMeta): Promise<{ email: string }> {
     try {
       const owner = await this.bootstrap.bootstrap(input, {
         channel: OWNER_CREATED_CHANNELS.SETUP_PAGE,
@@ -127,10 +114,7 @@ export class OwnerSetupService {
   }
 
   private warnTokenStillSet(): void {
-    this.logger.warn(
-      OWNER_SETUP_MESSAGES.TOKEN_STILL_SET,
-      OwnerSetupService.name,
-    );
+    this.logger.warn(OWNER_SETUP_MESSAGES.TOKEN_STILL_SET, OwnerSetupService.name);
   }
 
   /** True once a live owner exists; sets the latch and warns on the first sight. */
@@ -145,20 +129,14 @@ export class OwnerSetupService {
   }
 
   /** A closed submit is audited only when it names a token (so port scans leave no rows). */
-  private async refuseClosed(
-    carriesToken: boolean,
-    meta: SetupClientMeta,
-  ): Promise<never> {
+  private async refuseClosed(carriesToken: boolean, meta: SetupClientMeta): Promise<never> {
     if (carriesToken) {
       await this.reject(SETUP_REJECTION_REASONS.CLOSED, meta);
     }
     throw new SetupClosedError();
   }
 
-  private reject(
-    reason: SetupRejectionReason,
-    meta: SetupClientMeta,
-  ): Promise<void> {
+  private reject(reason: SetupRejectionReason, meta: SetupClientMeta): Promise<void> {
     return this.audit.recordStandalone({
       actor: { type: 'account', accountId: null },
       action: AUDIT_ACTIONS.OWNER_SETUP_REJECTED,

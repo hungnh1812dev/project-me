@@ -7,9 +7,7 @@ export const REVIEWER_ACCOUNT_GATEWAY = Symbol('REVIEWER_ACCOUNT_GATEWAY');
 /** DI token for the Turnstile verifier. */
 export const TURNSTILE_VERIFIER = Symbol('TURNSTILE_VERIFIER');
 /** DI token of the deploy switch REVIEWER_FEATURE_ENABLED (`boolean`, ADR 0014). */
-export const IS_REVIEWER_FEATURE_ENABLED = Symbol(
-  'IS_REVIEWER_FEATURE_ENABLED',
-);
+export const IS_REVIEWER_FEATURE_ENABLED = Symbol('IS_REVIEWER_FEATURE_ENABLED');
 /** DI token of the key behind the visitor-IP HMAC (`Buffer | undefined`). */
 export const REVIEWER_IP_KEY = Symbol('REVIEWER_IP_KEY');
 
@@ -68,11 +66,7 @@ export interface ReviewerRepository {
   isEnabled(): Promise<boolean>;
   /** Reads the toggle under `FOR SHARE`: a concurrent switch-off waits for this commit. */
   isEnabledSharedLock(unit: UnitOfWork): Promise<boolean>;
-  saveEnabled(
-    unit: UnitOfWork,
-    enabled: boolean,
-    updatedByAccountId: number,
-  ): Promise<void>;
+  saveEnabled(unit: UnitOfWork, enabled: boolean, updatedByAccountId: number): Promise<void>;
   /** Serialises session creation, so the cap and the per-IP rule are exact. */
   lockSessionCreation(unit: UnitOfWork): Promise<void>;
   countActiveSessions(nowMs: number, unit?: UnitOfWork): Promise<number>;
@@ -84,10 +78,7 @@ export interface ReviewerRepository {
   ): Promise<Date | undefined>;
   addSession(unit: UnitOfWork, session: NewReviewerSession): Promise<void>;
   /** Newest first. */
-  listSessions(
-    page: number,
-    pageSize: number,
-  ): Promise<ReviewerSessionRecordPage>;
+  listSessions(page: number, pageSize: number): Promise<ReviewerSessionRecordPage>;
 }
 
 /** The `reviewer` role and its ephemeral accounts. */
@@ -96,10 +87,7 @@ export interface ReviewerAccountGateway {
   bumpRolePolicyVersion(unit: UnitOfWork): Promise<number>;
   /** Bumps `token_version` of every reviewer account; returns their ids. */
   revokeAllSessions(unit: UnitOfWork): Promise<number[]>;
-  createAccount(
-    unit: UnitOfWork,
-    email: string,
-  ): Promise<CreatedReviewerAccount>;
+  createAccount(unit: UnitOfWork, email: string): Promise<CreatedReviewerAccount>;
   /** Reviewer accounts whose every session has expired, by id. */
   findExpiredAccountIds(nowMs: number, limit: number): Promise<number[]>;
   deleteAccounts(ids: readonly number[]): Promise<void>;

@@ -30,9 +30,7 @@ export interface ReadinessResult {
 
 @Injectable()
 export class CheckReadinessService {
-  constructor(
-    @Inject(DATABASE_HEALTH) private readonly database: DatabaseHealth,
-  ) {}
+  constructor(@Inject(DATABASE_HEALTH) private readonly database: DatabaseHealth) {}
 
   async check(): Promise<ReadinessResult> {
     try {

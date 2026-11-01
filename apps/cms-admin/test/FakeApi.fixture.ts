@@ -1,18 +1,15 @@
 import {
-  type AxiosAdapter,
   AxiosError,
+  type AxiosAdapter,
   type AxiosResponse,
   type InternalAxiosRequestConfig,
 } from 'axios';
 
 /** What a fake endpoint answers; `'network-error'` rejects without a response. */
 export type FakeReply =
-  | { status: number; data?: unknown; headers?: Record<string, string> }
-  | 'network-error';
+  { status: number; data?: unknown; headers?: Record<string, string> } | 'network-error';
 
-export type FakeHandler = (
-  config: InternalAxiosRequestConfig,
-) => FakeReply | Promise<FakeReply>;
+export type FakeHandler = (config: InternalAxiosRequestConfig) => FakeReply | Promise<FakeReply>;
 
 export const TEST_API_BASE_URL = 'http://domain.localhost/api/v1';
 
@@ -28,8 +25,7 @@ export function createFakeApi(handlers: Record<string, FakeHandler> = {}) {
     calls.push(config);
     const key = `${(config.method ?? 'get').toUpperCase()} ${config.url ?? ''}`;
     const handler = handlers[key];
-    const reply: FakeReply =
-      handler === undefined ? { status: 404 } : await handler(config);
+    const reply: FakeReply = handler === undefined ? { status: 404 } : await handler(config);
     if (reply === 'network-error') {
       throw new AxiosError('Network Error', AxiosError.ERR_NETWORK, config);
     }
@@ -58,9 +54,7 @@ export function createFakeApi(handlers: Record<string, FakeHandler> = {}) {
     handlers,
     /** Calls made to one route. */
     callsTo(key: string) {
-      return calls.filter(
-        (c) => `${(c.method ?? 'get').toUpperCase()} ${c.url ?? ''}` === key,
-      );
+      return calls.filter((c) => `${(c.method ?? 'get').toUpperCase()} ${c.url ?? ''}` === key);
     },
   };
 }

@@ -1,14 +1,14 @@
 import { Module } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 
+import { devEnv } from '../../../test/fixtures/Env.fixture';
+import { loadAppConfig } from '../../config/AppConfig.setup';
+import { ConfigModule } from '../../config/Config.module';
 import { ThrottleGuard } from '../guards/Throttle.guard';
 import { ClientIpModule } from '../http/ClientIp.module';
 import { ClockModule } from '../time/Clock.module';
 import { RateLimitModule } from './RateLimit.module';
 import type { ThrottleSubjectResolver } from './ThrottleSubject.port';
-import { ConfigModule } from '../../config/Config.module';
-import { devEnv } from '../../../test/fixtures/Env.fixture';
-import { loadAppConfig } from '../../config/AppConfig.setup';
 
 class FakeSubjectResolver implements ThrottleSubjectResolver {
   accountSubjectOf(): string | undefined {

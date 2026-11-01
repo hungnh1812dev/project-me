@@ -1,11 +1,11 @@
 import type { AxiosInstance } from 'axios';
 
-import { API_ENDPOINTS } from '../../config/Api.endpoints';
+import { API_ENDPOINTS } from '../../configs/Api.endpoints';
 import {
+  BEARER_PREFIX,
   PERMISSION_STRING_SEPARATOR,
   READ_ACTION,
-  BEARER_PREFIX,
-} from '../../config/Auth.constants';
+} from '../../configs/Auth.constants';
 
 export interface LoginCredentials {
   email: string;
@@ -66,8 +66,7 @@ export class PrivilegedAccessError extends Error {
 export function isPrivileged(user: CurrentUser): boolean {
   if (!Array.isArray(user.permissions)) return true;
   return user.permissions.some(
-    (permission) =>
-      permission.split(PERMISSION_STRING_SEPARATOR).pop() !== READ_ACTION,
+    (permission) => permission.split(PERMISSION_STRING_SEPARATOR).pop() !== READ_ACTION,
   );
 }
 
@@ -78,9 +77,10 @@ export function isPrivileged(user: CurrentUser): boolean {
 export function createAuthApi(client: AxiosInstance) {
   return {
     async login(credentials: LoginCredentials): Promise<LoginOutcome> {
-      const { data } = await client.post<
-        AccessTokenResponse | TwoFactorRequiredResponse
-      >(API_ENDPOINTS.AUTH.LOGIN, credentials);
+      const { data } = await client.post<AccessTokenResponse | TwoFactorRequiredResponse>(
+        API_ENDPOINTS.AUTH.LOGIN,
+        credentials,
+      );
       return 'requires2FA' in data
         ? {
             kind: 'two-factor-required',
@@ -107,9 +107,7 @@ export function createAuthApi(client: AxiosInstance) {
 
     /** Rotates the refresh cookie and returns a new access token. */
     async refresh(): Promise<string> {
-      const { data } = await client.post<AccessTokenResponse>(
-        API_ENDPOINTS.AUTH.REFRESH,
-      );
+      const { data } = await client.post<AccessTokenResponse>(API_ENDPOINTS.AUTH.REFRESH);
       return data.accessToken;
     },
 

@@ -1,6 +1,5 @@
+import { API_ENDPOINTS } from '@configs/Api.endpoints';
 import type { AxiosInstance } from 'axios';
-
-import { API_ENDPOINTS } from '../../config/Api.endpoints';
 
 const { BACKUPS } = API_ENDPOINTS;
 
@@ -45,13 +44,8 @@ export function createBackupsApi(client: AxiosInstance) {
       return data;
     },
 
-    createDownloadLink: async (
-      input: DownloadLinkInput,
-    ): Promise<DownloadLink> => {
-      const { data } = await client.post<DownloadLink>(
-        BACKUPS.DOWNLOAD_LINKS,
-        input,
-      );
+    createDownloadLink: async (input: DownloadLinkInput): Promise<DownloadLink> => {
+      const { data } = await client.post<DownloadLink>(BACKUPS.DOWNLOAD_LINKS, input);
       return data;
     },
   };

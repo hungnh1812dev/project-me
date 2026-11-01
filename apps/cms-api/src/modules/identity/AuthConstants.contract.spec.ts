@@ -11,10 +11,7 @@ import {
   TOKEN_TYPES,
   TWO_FACTOR_TEMP_TOKEN_TTL_SECONDS,
 } from './domain/Identity.constants';
-import {
-  REFRESH_COOKIE,
-  REFRESH_COOKIE_OPTIONS,
-} from './http/IdentityHttp.constants';
+import { REFRESH_COOKIE, REFRESH_COOKIE_OPTIONS } from './http/IdentityHttp.constants';
 
 /**
  * Security constants pinned as literals (SPEC D9, D14). If a refactor changes

@@ -1,13 +1,9 @@
+import type { PageMeta } from '@apis/client/Api.client';
+import { API_ENDPOINTS } from '@configs/Api.endpoints';
 import type { AxiosInstance } from 'axios';
 
-import {
-  type BulkAction,
-  DOCUMENT_STATUS,
-  MASKED_FIELDS_KEY,
-} from './Content.constants';
-import { API_ENDPOINTS } from '../../config/Api.endpoints';
-import type { PageMeta } from '../../lib/Api.client';
 import { getContentTypes, type ContentType } from '../content-types';
+import { DOCUMENT_STATUS, MASKED_FIELDS_KEY, type BulkAction } from './Content.constants';
 
 export type FieldValueMap = Record<string, unknown>;
 
@@ -75,8 +71,7 @@ export interface DocumentListQuery {
 }
 
 /** An item of a bulk request: a new tree, or a reference to a document. */
-export type BulkItem =
-  DocumentTree | { documentId: string; expectedVersion?: number };
+export type BulkItem = DocumentTree | { documentId: string; expectedVersion?: number };
 
 export interface BulkItemOk {
   index: number;
@@ -133,10 +128,10 @@ export function createContentApi(client: AxiosInstance) {
       items: readonly BulkItem[],
       atomic: boolean,
     ): Promise<BulkResponse> => {
-      const { data } = await client.post<BulkResponse>(
-        DOCUMENTS.BULK(slug, action),
-        { atomic, items },
-      );
+      const { data } = await client.post<BulkResponse>(DOCUMENTS.BULK(slug, action), {
+        atomic,
+        items,
+      });
       return data;
     },
 
@@ -153,14 +148,8 @@ export function createContentApi(client: AxiosInstance) {
       return { ...record, maskedFields };
     },
 
-    createDocument: async (
-      slug: string,
-      tree: DocumentTree,
-    ): Promise<WrittenRef> => {
-      const { data } = await client.post<WrittenRef>(
-        DOCUMENTS.BY_SLUG(slug),
-        tree,
-      );
+    createDocument: async (slug: string, tree: DocumentTree): Promise<WrittenRef> => {
+      const { data } = await client.post<WrittenRef>(DOCUMENTS.BY_SLUG(slug), tree);
       return data;
     },
 
@@ -170,22 +159,16 @@ export function createContentApi(client: AxiosInstance) {
       version: number,
       tree: DocumentTree,
     ): Promise<WrittenRef> => {
-      const { data } = await client.put<WrittenRef>(
-        DOCUMENTS.BY_ID(slug, documentId),
-        { ...tree, version },
-      );
+      const { data } = await client.put<WrittenRef>(DOCUMENTS.BY_ID(slug, documentId), {
+        ...tree,
+        version,
+      });
       return data;
     },
 
     /** Heartbeat: records the caller and lists everyone active on the draft. */
-    sendPresence: async (
-      slug: string,
-      documentId: string,
-    ): Promise<PresenceEntry[]> => {
-      const { data } = await client.post<PresenceEntry[]>(
-        DOCUMENTS.PRESENCE(slug, documentId),
-        {},
-      );
+    sendPresence: async (slug: string, documentId: string): Promise<PresenceEntry[]> => {
+      const { data } = await client.post<PresenceEntry[]>(DOCUMENTS.PRESENCE(slug, documentId), {});
       return data;
     },
   };

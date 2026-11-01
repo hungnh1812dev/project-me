@@ -1,7 +1,6 @@
+import type { PageMeta } from '@apis/client/Api.client';
+import { API_ENDPOINTS } from '@configs/Api.endpoints';
 import type { AxiosInstance } from 'axios';
-
-import { API_ENDPOINTS } from '../../config/Api.endpoints';
-import type { PageMeta } from '../../lib/Api.client';
 
 /** A library file as `GET /media` returns it. */
 export interface MediaFile {
@@ -16,13 +15,31 @@ export interface MediaFile {
   thumbnailUrl: string | null;
   isReviewerPreset: boolean;
   createdAt: string;
+  updatedAt: string;
+  /** Hex digest of the stored bytes. */
+  sha256: string;
   /** Storage provider; sent once the API exposes it (attach contract). */
   provider?: string;
+}
+
+/** Filters of `GET /media`; empty `search` and `mimeType` are not sent. */
+export interface MediaListFilters {
+  page: number;
+  pageSize: number;
+  search: string;
+  /** Exact type, or a family such as `image/*`. */
+  mimeType: string;
 }
 
 export interface MediaPage {
   data: MediaFile[];
   meta: PageMeta;
+}
+
+export interface UploadOptions {
+  alt?: string;
+  onProgress?: (sentBytes: number, totalBytes: number) => void;
+  signal?: AbortSignal;
 }
 
 const FILE_FIELD = 'file';
@@ -32,18 +49,48 @@ const ALT_FIELD = 'alt';
 export function createMediaApi(client: AxiosInstance) {
   const { MEDIA } = API_ENDPOINTS;
   return {
-    list: async (page: number, pageSize: number): Promise<MediaPage> => {
+    list: async (filters: MediaListFilters): Promise<MediaPage> => {
+      const { page, pageSize, search, mimeType } = filters;
       const { data } = await client.get<MediaPage>(MEDIA.LIST, {
-        params: { page, pageSize },
+        params: {
+          page,
+          pageSize,
+          ...(search === '' ? {} : { search }),
+          ...(mimeType === '' ? {} : { mimeType }),
+        },
       });
       return data;
     },
 
-    upload: async (file: File, alt?: string): Promise<MediaFile> => {
+    upload: async (file: File, options: UploadOptions = {}): Promise<MediaFile> => {
+      const { alt, onProgress, signal } = options;
       const body = new FormData();
       if (alt !== undefined && alt !== '') body.append(ALT_FIELD, alt);
       body.append(FILE_FIELD, file);
-      const { data } = await client.post<MediaFile>(MEDIA.LIST, body);
+      const { data } = await client.post<MediaFile>(MEDIA.LIST, body, {
+        ...(signal ? { signal } : {}),
+        ...(onProgress
+          ? { onUploadProgress: (event) => onProgress(event.loaded, event.total ?? file.size) }
+          : {}),
+      });
+      return data;
+    },
+
+    /** Swaps the bytes of a file and keeps its id; 400 when the type family differs. */
+    replaceFile: async (
+      id: string,
+      file: File,
+      options: Omit<UploadOptions, 'alt'> = {},
+    ): Promise<MediaFile> => {
+      const { onProgress, signal } = options;
+      const body = new FormData();
+      body.append(FILE_FIELD, file);
+      const { data } = await client.put<MediaFile>(MEDIA.FILE(id), body, {
+        ...(signal ? { signal } : {}),
+        ...(onProgress
+          ? { onUploadProgress: (event) => onProgress(event.loaded, event.total ?? file.size) }
+          : {}),
+      });
       return data;
     },
 

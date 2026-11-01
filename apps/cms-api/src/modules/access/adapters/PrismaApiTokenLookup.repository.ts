@@ -1,10 +1,7 @@
 import { Injectable } from '@nestjs/common';
 
 import { PrismaService } from '../../../infrastructure/database/Prisma.service';
-import type {
-  ApiTokenLookup,
-  ApiTokenRecord,
-} from '../application/Access.port';
+import type { ApiTokenLookup, ApiTokenRecord } from '../application/Access.port';
 
 /** Narrow on purpose: the select never includes `token_hash`. */
 @Injectable()

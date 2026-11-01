@@ -34,13 +34,12 @@ export const SCALAR_FIELD_TYPES = [
 export const COMPONENT_FIELD_TYPE = 'component';
 
 /** Stored as an int referencing `public.file_library(id)`. */
-export const MEDIA_FIELD_TYPE =
-  'media' satisfies (typeof SCALAR_FIELD_TYPES)[number];
+export const MEDIA_FIELD_TYPE = 'media' satisfies (typeof SCALAR_FIELD_TYPES)[number];
 
-export const FIELD_TYPES = [
-  ...SCALAR_FIELD_TYPES,
-  COMPONENT_FIELD_TYPE,
-] as const;
+/** Holds sanitized HTML whose `img[data-media-id]` elements reference media files. */
+export const RICHTEXT_FIELD_TYPE = 'richtext' satisfies (typeof SCALAR_FIELD_TYPES)[number];
+
+export const FIELD_TYPES = [...SCALAR_FIELD_TYPES, COMPONENT_FIELD_TYPE] as const;
 
 /** Engine-owned columns of every root table (SPEC §8.1 / §8.2). */
 export const ROOT_SYSTEM_COLUMNS = [
@@ -68,11 +67,7 @@ export const COMPONENT_SYSTEM_COLUMNS = [
  * draft/published filter). Fields may not use them anywhere.
  */
 export const ENGINE_RESERVED_NAMES = [
-  ...new Set<string>([
-    ...ROOT_SYSTEM_COLUMNS,
-    ...COMPONENT_SYSTEM_COLUMNS,
-    'status',
-  ]),
+  ...new Set<string>([...ROOT_SYSTEM_COLUMNS, ...COMPONENT_SYSTEM_COLUMNS, 'status']),
 ];
 
 /** Suffixes appended to a table name for the objects the SQL generator names explicitly. */
@@ -143,12 +138,28 @@ export const CONTENT_ERROR_CODES = {
 export const SINGLE_COMPONENT_MAX_ITEMS = 1;
 
 /** URL schemes a stored richtext link may use; the admin editor offers the same list. */
-export const RICHTEXT_ALLOWED_URL_SCHEMES = [
-  'http',
-  'https',
-  'mailto',
-  'tel',
+export const RICHTEXT_ALLOWED_URL_SCHEMES = ['http', 'https', 'mailto', 'tel'] as const;
+
+/**
+ * Text colours the richtext editor offers and the sanitizer keeps (ADR 0020 §9).
+ * `hex: null` clears the colour. Every hex has at least 4.5:1 contrast on white;
+ * stored lower case as `style="color: #rrggbb"` on `span`.
+ */
+export const RICHTEXT_TEXT_COLORS = [
+  { name: 'default', hex: null },
+  { name: 'gray', hex: '#475569' },
+  { name: 'red', hex: '#b91c1c' },
+  { name: 'orange', hex: '#c2410c' },
+  { name: 'amber', hex: '#b45309' },
+  { name: 'green', hex: '#15803d' },
+  { name: 'teal', hex: '#0f766e' },
+  { name: 'blue', hex: '#1d4ed8' },
+  { name: 'violet', hex: '#6d28d9' },
+  { name: 'pink', hex: '#be185d' },
 ] as const;
+
+/** `text-align` values kept on paragraphs and headings. */
+export const RICHTEXT_TEXT_ALIGNMENTS = ['left', 'center', 'right', 'justify'] as const;
 
 /**
  * Postgres reserved key words (both "reserved" and "reserved (can be function

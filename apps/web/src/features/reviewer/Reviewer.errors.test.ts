@@ -1,4 +1,4 @@
-import { COPY } from '../../config/Copy.constants';
+import { COPY } from '../../configs/Copy.constants';
 import { reviewerAlertOf } from './Reviewer.errors';
 
 const errors = COPY.reviewer.errors;
@@ -20,25 +20,23 @@ describe('reviewerAlertOf', () => {
   });
 
   it('reads a plain 400 as rejected answers', () => {
-    expect(
-      reviewerAlertOf({ kind: 'http', status: 400, errorCode: undefined }),
-    ).toMatchObject({ tone: 'error', message: errors.invalid });
+    expect(reviewerAlertOf({ kind: 'http', status: 400, errorCode: undefined })).toMatchObject({
+      tone: 'error',
+      message: errors.invalid,
+    });
   });
 
   it('formats the rate-limit wait', () => {
-    expect(
-      reviewerAlertOf({ kind: 'rate-limited', retryAfterSeconds: 30 }).message,
-    ).toBe(errors.ipLimitedSeconds(30));
-    expect(
-      reviewerAlertOf({ kind: 'rate-limited', retryAfterSeconds: undefined })
-        .message,
-    ).toBe(errors.ipLimited);
+    expect(reviewerAlertOf({ kind: 'rate-limited', retryAfterSeconds: 30 }).message).toBe(
+      errors.ipLimitedSeconds(30),
+    );
+    expect(reviewerAlertOf({ kind: 'rate-limited', retryAfterSeconds: undefined }).message).toBe(
+      errors.ipLimited,
+    );
   });
 
   it('handles network and unexpected failures', () => {
     expect(reviewerAlertOf({ kind: 'network' }).message).toBe(errors.network);
-    expect(reviewerAlertOf({ kind: 'unexpected' }).message).toBe(
-      errors.unexpected,
-    );
+    expect(reviewerAlertOf({ kind: 'unexpected' }).message).toBe(errors.unexpected);
   });
 });

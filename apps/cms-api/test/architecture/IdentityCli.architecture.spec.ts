@@ -12,12 +12,7 @@ import { SRC_ROOT } from './SourcePaths.constants';
  * else under `cli/` (its wiring builds the service), the identity facade included.
  */
 const CLI_DIRECTORY = join('modules', 'identity', 'cli') + '/';
-const PROTECTED_FILE = join(
-  'modules',
-  'identity',
-  'application',
-  'SeedAccount.service.ts',
-);
+const PROTECTED_FILE = join('modules', 'identity', 'application', 'SeedAccount.service.ts');
 
 function findOutsideReachers(root: string, protectedFile: string): string[] {
   return listSourceFiles(root)
@@ -25,8 +20,7 @@ function findOutsideReachers(root: string, protectedFile: string): string[] {
     .filter((source) => {
       const reached = [...reachedFilesOf(root, source)];
       return (
-        reached.includes(protectedFile) ||
-        reached.some((file) => file.startsWith(CLI_DIRECTORY))
+        reached.includes(protectedFile) || reached.some((file) => file.startsWith(CLI_DIRECTORY))
       );
     })
     .map(({ file }) => file);
@@ -72,13 +66,8 @@ describe('smoke seed CLI stays out of the app graph (S6)', () => {
 
     it('fails on an indirect path through the cli wiring', () => {
       write('modules/identity/cli/IdentityCli.setup.ts', 'export const x = 1;');
-      write(
-        'modules/identity/index.ts',
-        "export { x } from './cli/IdentityCli.setup';",
-      );
-      expect(findOutsideReachers(root, PROTECTED_FILE)).toEqual([
-        'modules/identity/index.ts',
-      ]);
+      write('modules/identity/index.ts', "export { x } from './cli/IdentityCli.setup';");
+      expect(findOutsideReachers(root, PROTECTED_FILE)).toEqual(['modules/identity/index.ts']);
     });
 
     it('passes when only cli files use it', () => {

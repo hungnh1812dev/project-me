@@ -1,9 +1,5 @@
 import { PermissionAction } from '../../../generated/prisma/client';
-import {
-  InvalidPolicyDataError,
-  parseTokenScope,
-  rolePolicyFromRows,
-} from './ActorContext.entity';
+import { InvalidPolicyDataError, parseTokenScope, rolePolicyFromRows } from './ActorContext.entity';
 import { intersectFieldLists, unionFieldLists } from './FieldPaths.rules';
 
 const ROLE = {
@@ -59,17 +55,14 @@ describe('rolePolicyFromRows', () => {
 
 describe('parseTokenScope', () => {
   it('parses a stored scope', () => {
-    expect(
-      parseTokenScope({ permissions: [{ subject: '*', action: 'read' }] }),
-    ).toEqual({ permissions: [{ subject: '*', action: 'read' }] });
+    expect(parseTokenScope({ permissions: [{ subject: '*', action: 'read' }] })).toEqual({
+      permissions: [{ subject: '*', action: 'read' }],
+    });
   });
 
-  it.each([null, {}, { permissions: [{ subject: '*', action: 'own' }] }])(
-    'rejects %j',
-    (raw) => {
-      expect(() => parseTokenScope(raw)).toThrow(InvalidPolicyDataError);
-    },
-  );
+  it.each([null, {}, { permissions: [{ subject: '*', action: 'own' }] }])('rejects %j', (raw) => {
+    expect(() => parseTokenScope(raw)).toThrow(InvalidPolicyDataError);
+  });
 });
 
 describe('field list algebra', () => {
@@ -80,9 +73,7 @@ describe('field list algebra', () => {
 
   it('intersection narrows component paths', () => {
     expect(intersectFieldLists(null, ['a'])).toEqual(['a']);
-    expect(intersectFieldLists(['ref'], ['ref.phone', 'x'])).toEqual([
-      'ref.phone',
-    ]);
+    expect(intersectFieldLists(['ref'], ['ref.phone', 'x'])).toEqual(['ref.phone']);
     expect(intersectFieldLists(['a'], ['b'])).toEqual([]);
     // `ref` is not a prefix match for `reference`.
     expect(intersectFieldLists(['ref'], ['reference'])).toEqual([]);

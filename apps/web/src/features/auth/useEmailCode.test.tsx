@@ -1,10 +1,10 @@
+import type { ReactNode } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { AxiosError, type AxiosResponse } from 'axios';
-import type { ReactNode } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { MAX_TIMER_DELAY_MS, MS_PER_SECOND } from '../../config/Http.constants';
+import { MAX_TIMER_DELAY_MS, MS_PER_SECOND } from '../../configs/Http.constants';
 import { useEmailCode } from './useEmailCode';
 
 const HUGE_RETRY_AFTER_SECONDS = 10_000_000;
@@ -35,9 +35,7 @@ describe('useEmailCode cooldown', () => {
   }
 
   it('keeps the resend blocked when Retry-After exceeds the timer limit', async () => {
-    expect(HUGE_RETRY_AFTER_SECONDS * MS_PER_SECOND).toBeGreaterThan(
-      MAX_TIMER_DELAY_MS,
-    );
+    expect(HUGE_RETRY_AFTER_SECONDS * MS_PER_SECOND).toBeGreaterThan(MAX_TIMER_DELAY_MS);
     vi.useFakeTimers({ shouldAdvanceTime: true });
     const { result } = await renderRateLimited(HUGE_RETRY_AFTER_SECONDS);
     await act(() => vi.advanceTimersByTimeAsync(MS_PER_SECOND));

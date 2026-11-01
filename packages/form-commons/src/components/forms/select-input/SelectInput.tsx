@@ -1,15 +1,8 @@
 import * as React from 'react';
-import {
-  type FieldPath,
-  type FieldValues,
-  type RegisterOptions,
-} from 'react-hook-form';
+import { type FieldPath, type FieldValues, type RegisterOptions } from 'react-hook-form';
 
 import { Field } from '@/components/forms/field';
-import {
-  type NativeFieldProps,
-  useRegisteredField,
-} from '@/components/forms/FieldWiring.setup';
+import { useRegisteredField, type NativeFieldProps } from '@/components/forms/FieldWiring.setup';
 import { NativeSelect } from '@/components/ui/NativeSelect';
 
 export interface SelectOption {
@@ -18,9 +11,10 @@ export interface SelectOption {
   disabled?: boolean | undefined;
 }
 
-export interface SelectInputProps<
-  TFieldValues extends FieldValues = FieldValues,
-> extends Omit<NativeFieldProps<'select'>, 'children'> {
+export interface SelectInputProps<TFieldValues extends FieldValues = FieldValues> extends Omit<
+  NativeFieldProps<'select'>,
+  'children'
+> {
   name: FieldPath<TFieldValues>;
   label: React.ReactNode;
   options: readonly SelectOption[];
@@ -80,15 +74,9 @@ function SelectInput<TFieldValues extends FieldValues = FieldValues>({
             onBlur?.(event);
           }}
         >
-          {placeholder === undefined ? null : (
-            <option value="">{placeholder}</option>
-          )}
+          {placeholder === undefined ? null : <option value="">{placeholder}</option>}
           {options.map((option) => (
-            <option
-              key={option.value}
-              value={option.value}
-              disabled={option.disabled}
-            >
+            <option key={option.value} value={option.value} disabled={option.disabled}>
               {option.label}
             </option>
           ))}

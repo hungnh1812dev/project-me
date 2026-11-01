@@ -12,15 +12,8 @@ import {
 } from '@nestjs/common';
 
 import { INTERNAL_ERROR_MESSAGE } from '../constants/Error.constants';
-import {
-  DomainError,
-  DOMAIN_ERROR_KINDS,
-  type DomainErrorKind,
-} from '../errors/Domain.errors';
-import {
-  describeError,
-  describeHttpException,
-} from './DescribeHttpException.rules';
+import { DOMAIN_ERROR_KINDS, DomainError, type DomainErrorKind } from '../errors/Domain.errors';
+import { describeError, describeHttpException } from './DescribeHttpException.rules';
 
 describe('describeHttpException', () => {
   it('uses the named errorCode, message and details of a client error', () => {
@@ -49,18 +42,13 @@ describe('describeHttpException', () => {
   });
 
   it('uses HTTP_ERROR for an unmapped client status', () => {
-    const described = describeHttpException(
-      new HttpException('teapot', HttpStatus.I_AM_A_TEAPOT),
-    );
+    const described = describeHttpException(new HttpException('teapot', HttpStatus.I_AM_A_TEAPOT));
     expect(described.errorCode).toBe('HTTP_ERROR');
   });
 
   it('hides message and details of a server error', () => {
     const described = describeHttpException(
-      new HttpException(
-        { message: 'db down', details: { secret: 1 } },
-        HttpStatus.BAD_GATEWAY,
-      ),
+      new HttpException({ message: 'db down', details: { secret: 1 } }, HttpStatus.BAD_GATEWAY),
     );
     expect(described.isServerError).toBe(true);
     expect(described.message).toBe(INTERNAL_ERROR_MESSAGE);
@@ -77,8 +65,7 @@ describe('describeError', () => {
     conflict: () => new ConflictException(),
     too_large: () => new PayloadTooLargeException(),
     unsupported_media_type: () => new UnsupportedMediaTypeException(),
-    rate_limited: () =>
-      new HttpException('Too Many Requests', HttpStatus.TOO_MANY_REQUESTS),
+    rate_limited: () => new HttpException('Too Many Requests', HttpStatus.TOO_MANY_REQUESTS),
     unavailable: () => new ServiceUnavailableException(),
   };
 

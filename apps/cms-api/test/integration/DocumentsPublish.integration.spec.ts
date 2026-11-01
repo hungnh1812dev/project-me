@@ -9,17 +9,19 @@ import {
 } from '../../src/infrastructure/database/PrismaClient.adapter';
 import { MASKED_FIELDS_KEY } from '../../src/modules/access/domain/Access.constants';
 import { createContentDb } from '../../src/modules/content-engine/adapters/ContentDatabase.adapter';
+import type { ContentDatabase } from '../../src/modules/content-engine/adapters/TreeLoader.adapter';
 import { ContentRegistry } from '../../src/modules/content-engine/application/ContentRegistry.service';
 import { ContentTypeRegistry } from '../../src/modules/content-engine/domain/ContentTypeRegistry.entity';
 import {
   emptySnapshot,
   planMigration,
 } from '../../src/modules/content-engine/domain/SqlGenerator.rules';
-import type { ContentDatabase } from '../../src/modules/content-engine/adapters/TreeLoader.adapter';
 import { hashPassword } from '../../src/modules/identity/application/Password.service';
 import {
   ARTICLE_DEFINITION,
   NOTE_DEFINITION,
+  seedRolePermissions,
+  seedSystemRoles,
 } from '../fixtures/Access.fixture';
 import { createCoreTemplate } from '../fixtures/CoreDb.fixture';
 import {
@@ -32,10 +34,6 @@ import {
 } from '../fixtures/Env.fixture';
 import { startPostgres, type TestPostgres } from '../fixtures/Postgres.fixture';
 import { createTestApp } from '../fixtures/TestApp.fixture';
-import {
-  seedRolePermissions,
-  seedSystemRoles,
-} from '../fixtures/Access.fixture';
 
 const PASSWORD = 'correct horse battery staple';
 const DOCUMENTS = '/api/v1/documents';
@@ -95,18 +93,11 @@ describe('document publish, unpublish and delete (T22; Postgres 17 via Testconta
     await seedSystemRoles(db.prisma);
     await seedRolePermissions(db.prisma);
 
-    const registry = ContentTypeRegistry.fromDefinitions([
-      ARTICLE_DEFINITION,
-      NOTE_DEFINITION,
-    ]);
-    const definitions = registry
-      .slugs()
-      .map((slug) => registry.resolve(slug).definition);
+    const registry = ContentTypeRegistry.fromDefinitions([ARTICLE_DEFINITION, NOTE_DEFINITION]);
+    const definitions = registry.slugs().map((slug) => registry.resolve(slug).definition);
     const client = new Client({ connectionString: databaseUrl });
     await client.connect();
-    await client.query(
-      planMigration(emptySnapshot(), definitions).statements.join('\n'),
-    );
+    await client.query(planMigration(emptySnapshot(), definitions).statements.join('\n'));
     await client.end();
     content = createContentDb(databaseUrl);
 
@@ -191,10 +182,7 @@ describe('document publish, unpublish and delete (T22; Postgres 17 via Testconta
   }
 
   async function customRole(slug: string, rank: number, permissions: Json[]) {
-    const created = await http()
-      .post(ROLES)
-      .set(bearer(owner))
-      .send({ slug, name: slug, rank });
+    const created = await http().post(ROLES).set(bearer(owner)).send({ slug, name: slug, rank });
     expect(created.status).toBe(201);
     const id = (created.body as { id: string }).id;
     const put = await http()
@@ -230,20 +218,14 @@ describe('document publish, unpublish and delete (T22; Postgres 17 via Testconta
     ...extra,
   });
 
-  async function createArticle(
-    token = editor,
-    body: Json = articleBody(),
-  ): Promise<Doc> {
+  async function createArticle(token = editor, body: Json = articleBody()): Promise<Doc> {
     const res = await post('article', token, body);
     expect(res.status).toBe(201);
     return res.body as Doc;
   }
 
   const publish = (id: string, token: string, expectedVersion: unknown) =>
-    http()
-      .post(`${DOCUMENTS}/article/${id}/publish`)
-      .set(bearer(token))
-      .send({ expectedVersion });
+    http().post(`${DOCUMENTS}/article/${id}/publish`).set(bearer(token)).send({ expectedVersion });
   const unpublish = (id: string, token: string) =>
     http().post(`${DOCUMENTS}/article/${id}/unpublish`).set(bearer(token));
   const remove = (slug: string, id: string, token: string) =>
@@ -333,9 +315,7 @@ describe('document publish, unpublish and delete (T22; Postgres 17 via Testconta
       });
       const res = await publish(doc.documentId, editor, 1);
       expect(res.status).toBe(409);
-      expect((res.body as Conflict).errorCode).toBe(
-        'DOCUMENT_VERSION_CONFLICT',
-      );
+      expect((res.body as Conflict).errorCode).toBe('DOCUMENT_VERSION_CONFLICT');
       expect((res.body as Conflict).details.currentVersion).toBe(2);
       expect(await published(doc.documentId)).toHaveLength(0);
     });
@@ -367,19 +347,14 @@ describe('document publish, unpublish and delete (T22; Postgres 17 via Testconta
 
     it('validates the body and the target', async () => {
       const doc = await createArticle();
-      expect((await publish(doc.documentId, editor, undefined)).status).toBe(
-        400,
-      );
+      expect((await publish(doc.documentId, editor, undefined)).status).toBe(400);
       expect((await publish(doc.documentId, editor, 0)).status).toBe(400);
       const extra = await http()
         .post(`${DOCUMENTS}/article/${doc.documentId}/publish`)
         .set(bearer(editor))
         .send({ expectedVersion: 1, values: {} });
       expect(extra.status).toBe(400);
-      expect(
-        (await publish('00000000-0000-4000-8000-00000000dead', editor, 1))
-          .status,
-      ).toBe(404);
+      expect((await publish('00000000-0000-4000-8000-00000000dead', editor, 1)).status).toBe(404);
       expect((await publish('not-a-uuid', editor, 1)).status).toBe(400);
     });
 
@@ -469,9 +444,7 @@ describe('document publish, unpublish and delete (T22; Postgres 17 via Testconta
 
     it('refuses an editor (no delete) and anonymous', async () => {
       const doc = await createArticle();
-      expect((await remove('article', doc.documentId, editor)).status).toBe(
-        403,
-      );
+      expect((await remove('article', doc.documentId, editor)).status).toBe(403);
       const anonymous = await http()
         .delete(`${DOCUMENTS}/article/${doc.documentId}`)
         .set('X-Forwarded-For', nextIp());
@@ -485,13 +458,9 @@ describe('document publish, unpublish and delete (T22; Postgres 17 via Testconta
         owner,
         articleBody({ values: { title: 'Other', priority: 1 } }),
       );
-      expect(
-        (await remove('article', outOfScope.documentId, scopedDelete)).status,
-      ).toBe(404);
+      expect((await remove('article', outOfScope.documentId, scopedDelete)).status).toBe(404);
       expect(await rows(outOfScope.documentId)).toHaveLength(1);
-      expect(
-        (await remove('article', inScope.documentId, scopedDelete)).status,
-      ).toBe(204);
+      expect((await remove('article', inScope.documentId, scopedDelete)).status).toBe(204);
 
       // Both rows must be inside the conditions: publish, then change the draft out of scope.
       const mixed = await createArticle(owner);
@@ -500,9 +469,7 @@ describe('document publish, unpublish and delete (T22; Postgres 17 via Testconta
         version: 1,
         values: { priority: 1 },
       });
-      expect(
-        (await remove('article', mixed.documentId, scopedDelete)).status,
-      ).toBe(404);
+      expect((await remove('article', mixed.documentId, scopedDelete)).status).toBe(404);
       expect(await rows(mixed.documentId)).toHaveLength(2);
     });
   });

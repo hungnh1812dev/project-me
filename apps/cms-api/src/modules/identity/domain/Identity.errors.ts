@@ -1,8 +1,8 @@
 import { ERROR_CODES } from '../../../common/constants/Error.constants';
 import { RATE_LIMIT_MESSAGE } from '../../../common/constants/Limits.constants';
 import {
-  DomainError,
   DOMAIN_ERROR_KINDS,
+  DomainError,
   type DomainErrorKind,
 } from '../../../common/errors/Domain.errors';
 import {
@@ -12,11 +12,7 @@ import {
   OWNER_SETUP_MESSAGES,
 } from './Identity.constants';
 
-function refusal(
-  kind: DomainErrorKind,
-  errorCode: string,
-  message: string,
-): DomainError {
+function refusal(kind: DomainErrorKind, errorCode: string, message: string): DomainError {
   return new DomainError({ kind, errorCode, message });
 }
 
@@ -125,11 +121,7 @@ export const twoFactorSetupRequired = (): DomainError =>
 
 /** Same body as the throttle guard: a full challenge store or a sixth code in the window. */
 export const tooManyRequests = (): DomainError =>
-  refusal(
-    DOMAIN_ERROR_KINDS.RATE_LIMITED,
-    ERROR_CODES.TOO_MANY_REQUESTS,
-    RATE_LIMIT_MESSAGE,
-  );
+  refusal(DOMAIN_ERROR_KINDS.RATE_LIMITED, ERROR_CODES.TOO_MANY_REQUESTS, RATE_LIMIT_MESSAGE);
 
 export const setupTokenInvalid = (): DomainError =>
   refusal(

@@ -1,5 +1,5 @@
-import { Readable } from 'node:stream';
 import { stat } from 'node:fs/promises';
+import { Readable } from 'node:stream';
 
 import sharp from 'sharp';
 
@@ -7,16 +7,13 @@ import {
   buildMediaFixtures,
   EXIF_MARKER,
   HTML_DOCUMENT,
-  type MediaFixtures,
   MINIMAL_MP4,
   MINIMAL_PDF,
   SVG_DOCUMENT,
+  type MediaFixtures,
 } from '../../../../test/fixtures/Media.fixture';
 import { multipart } from '../../../../test/fixtures/Multipart.fixture';
-import {
-  DomainError,
-  DOMAIN_ERROR_KINDS,
-} from '../../../common/errors/Domain.errors';
+import { DOMAIN_ERROR_KINDS, DomainError } from '../../../common/errors/Domain.errors';
 import type { PreparedUpload, UploadStream } from '../application/Media.port';
 import { MEDIA_ERROR_CODES } from '../domain/Media.constants';
 import { MEDIA_MAX_BYTES } from '../domain/MediaUpload.rules';
@@ -24,10 +21,7 @@ import { UploadProcessingAdapter } from './UploadProcessing.adapter';
 
 type Part = Parameters<typeof multipart>[0][number];
 
-function requestOf(
-  parts: readonly Part[],
-  headers: Record<string, string> = {},
-): UploadStream {
+function requestOf(parts: readonly Part[], headers: Record<string, string> = {}): UploadStream {
   const { body, contentType } = multipart(parts);
   const allHeaders: Record<string, string> = {
     'content-type': contentType,
@@ -41,11 +35,7 @@ function requestOf(
   };
 }
 
-const fileOf = (
-  data: Buffer,
-  fileName = 'photo.jpg',
-  field = 'file',
-): Part => ({
+const fileOf = (data: Buffer, fileName = 'photo.jpg', field = 'file'): Part => ({
   field,
   fileName,
   data,
@@ -99,10 +89,7 @@ describe('UploadProcessingAdapter (SPEC D12, §12-13)', () => {
   it('strips EXIF and GPS from a JPEG and hashes the stored bytes', async () => {
     expect(fixtures.exifJpeg.includes(Buffer.from(EXIF_MARKER))).toBe(true);
     const received = await pipeline.receive(
-      requestOf([
-        fileOf(fixtures.exifJpeg),
-        { field: 'alt', value: ' A red box ' },
-      ]),
+      requestOf([fileOf(fixtures.exifJpeg), { field: 'alt', value: ' A red box ' }]),
     );
     try {
       expect(received.alt).toBe('A red box');
@@ -126,9 +113,7 @@ describe('UploadProcessingAdapter (SPEC D12, §12-13)', () => {
   });
 
   it('drops the HTML appended to a polyglot JPEG', async () => {
-    const { prepared } = await receiveAndPrepare([
-      fileOf(fixtures.polyglotJpeg),
-    ]);
+    const { prepared } = await receiveAndPrepare([fileOf(fixtures.polyglotJpeg)]);
     const stored = await bytesOf(prepared);
     expect(stored.includes(Buffer.from('<script>'))).toBe(false);
   });
@@ -139,17 +124,13 @@ describe('UploadProcessingAdapter (SPEC D12, §12-13)', () => {
     ['gif', 'image/gif'],
     ['avif', 'image/avif'],
   ] as const)('re-encodes %s and keeps its type', async (name, mime) => {
-    const { prepared } = await receiveAndPrepare([
-      fileOf(fixtures[name], `x.${name}`),
-    ]);
+    const { prepared } = await receiveAndPrepare([fileOf(fixtures[name], `x.${name}`)]);
     expect(prepared.mimeType).toBe(mime);
     expect(prepared.width).toBe(6);
   });
 
   it('detects the type from the bytes, not the name or declared type', async () => {
-    const { prepared } = await receiveAndPrepare([
-      fileOf(fixtures.png, 'looks-like.pdf'),
-    ]);
+    const { prepared } = await receiveAndPrepare([fileOf(fixtures.png, 'looks-like.pdf')]);
     expect(prepared.mimeType).toBe('image/png');
   });
 
@@ -169,9 +150,7 @@ describe('UploadProcessingAdapter (SPEC D12, §12-13)', () => {
   });
 
   it('serves the stored bytes of a pdf from the temp file during the call', async () => {
-    const received = await pipeline.receive(
-      requestOf([fileOf(MINIMAL_PDF, 'cv.pdf')]),
-    );
+    const received = await pipeline.receive(requestOf([fileOf(MINIMAL_PDF, 'cv.pdf')]));
     try {
       const prepared = await pipeline.prepare(received);
       expect((await bytesOf(prepared)).equals(MINIMAL_PDF)).toBe(true);
@@ -188,15 +167,14 @@ describe('UploadProcessingAdapter (SPEC D12, §12-13)', () => {
     ['plain text', Buffer.from('hello'), 'a.txt'],
     ['an empty file', Buffer.alloc(0), 'a.jpg'],
   ])('refuses %s with 415', async (_name, data, fileName) => {
-    expect(
-      await statusOf(pipeline.receive(requestOf([fileOf(data, fileName)]))),
-    ).toEqual({ status: 415, code: MEDIA_ERROR_CODES.UNSUPPORTED_TYPE });
+    expect(await statusOf(pipeline.receive(requestOf([fileOf(data, fileName)])))).toEqual({
+      status: 415,
+      code: MEDIA_ERROR_CODES.UNSUPPORTED_TYPE,
+    });
   });
 
   it('refuses a JPEG that does not decode with 415', async () => {
-    const received = await pipeline.receive(
-      requestOf([fileOf(fixtures.brokenJpeg)]),
-    );
+    const received = await pipeline.receive(requestOf([fileOf(fixtures.brokenJpeg)]));
     try {
       expect(await statusOf(pipeline.prepare(received))).toEqual({
         status: 415,
@@ -208,15 +186,11 @@ describe('UploadProcessingAdapter (SPEC D12, §12-13)', () => {
   });
 
   it('refuses a file over the limit of its type with 413 while streaming', async () => {
-    const oversizedPdf = Buffer.concat([
-      MINIMAL_PDF,
-      Buffer.alloc(MEDIA_MAX_BYTES.pdf, 0x20),
-    ]);
-    expect(
-      await statusOf(
-        pipeline.receive(requestOf([fileOf(oversizedPdf, 'big.pdf')])),
-      ),
-    ).toEqual({ status: 413, code: MEDIA_ERROR_CODES.FILE_TOO_LARGE });
+    const oversizedPdf = Buffer.concat([MINIMAL_PDF, Buffer.alloc(MEDIA_MAX_BYTES.pdf, 0x20)]);
+    expect(await statusOf(pipeline.receive(requestOf([fileOf(oversizedPdf, 'big.pdf')])))).toEqual({
+      status: 413,
+      code: MEDIA_ERROR_CODES.FILE_TOO_LARGE,
+    });
   });
 
   it('refuses a request whose declared length is far over the cap with 413', async () => {
@@ -230,10 +204,7 @@ describe('UploadProcessingAdapter (SPEC D12, §12-13)', () => {
     ['no file', [{ field: 'alt', value: 'x' }]],
     ['a file in the wrong field', [fileOf(MINIMAL_PDF, 'a.pdf', 'upload')]],
     ['two files', [fileOf(MINIMAL_PDF, 'a.pdf'), fileOf(MINIMAL_PDF, 'b.pdf')]],
-    [
-      'an unknown field',
-      [{ field: 'folder', value: 'x' }, fileOf(MINIMAL_PDF, 'a.pdf')],
-    ],
+    ['an unknown field', [{ field: 'folder', value: 'x' }, fileOf(MINIMAL_PDF, 'a.pdf')]],
     [
       'an alt text over the limit',
       [{ field: 'alt', value: 'x'.repeat(501) }, fileOf(MINIMAL_PDF, 'a.pdf')],

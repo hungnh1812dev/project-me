@@ -5,10 +5,7 @@ describe('SessionRevocationService', () => {
     const unit = { afterCommit: jest.fn() };
     const revokeAll = jest.fn().mockResolvedValue(undefined);
     const frozenMs = Date.UTC(2026, 0, 2, 3, 4, 5);
-    const service = new SessionRevocationService(
-      { revokeAll },
-      { now: () => frozenMs },
-    );
+    const service = new SessionRevocationService({ revokeAll }, { now: () => frozenMs });
 
     await service.revokeAll(unit, 7);
 
@@ -17,10 +14,7 @@ describe('SessionRevocationService', () => {
 
   it('registers no after-commit callback: the caller owns the cache drop', async () => {
     const afterCommit = jest.fn();
-    const service = new SessionRevocationService(
-      { revokeAll: jest.fn() },
-      { now: () => 0 },
-    );
+    const service = new SessionRevocationService({ revokeAll: jest.fn() }, { now: () => 0 });
 
     await service.revokeAll({ afterCommit }, 1);
 

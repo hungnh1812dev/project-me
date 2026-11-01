@@ -1,10 +1,10 @@
 import {
+  Body,
   Controller,
   Header,
   HttpCode,
   HttpStatus,
   Post,
-  Body,
   Req,
   Res,
   UnsupportedMediaTypeException,
@@ -13,15 +13,12 @@ import {
 import type { Response } from 'express';
 import { z } from 'zod';
 
-import { NO_STORE_HEADER } from '../../../common/constants/Http.constants';
 import { ERROR_CODES } from '../../../common/constants/Error.constants';
+import { NO_STORE_HEADER } from '../../../common/constants/Http.constants';
 import { Throttle } from '../../../common/guards/Throttle.guard';
-import type { RequestWithId } from '../../../common/middleware/RequestId.middleware';
 import { parseRequest } from '../../../common/http/RequestParsing.rules';
-import {
-  DocumentAuthGuard,
-  type DocumentRequest,
-} from '../../access/document-auth';
+import type { RequestWithId } from '../../../common/middleware/RequestId.middleware';
+import { DocumentAuthGuard, type DocumentRequest } from '../../access/document-auth';
 import { DOCUMENTS_RATE_LIMIT_POLICIES } from '../../documents';
 import {
   GRAPHQL_MESSAGES,
@@ -65,11 +62,7 @@ export class GraphqlController {
       });
     }
     const request = parseRequest(requestSchema, body);
-    const graphqlResponse = await this.executor.run(
-      req.user.actor,
-      request,
-      req.requestId,
-    );
+    const graphqlResponse = await this.executor.run(req.user.actor, request, req.requestId);
     res.status(graphqlResponse.status);
     return graphqlResponse.body;
   }

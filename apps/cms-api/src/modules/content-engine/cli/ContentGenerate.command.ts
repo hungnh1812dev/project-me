@@ -4,7 +4,6 @@ import {
   DEFAULT_MIGRATION_LABEL,
   MIGRATION_LABEL_PATTERN,
 } from '../adapters/ContentDatabase.adapter';
-import { ContentEngineError } from '../domain/ContentDocument.entity';
 import {
   DEFAULT_CONTENT_PATHS,
   listMigrations,
@@ -13,10 +12,11 @@ import {
   readSnapshot,
   writeMigration,
 } from '../adapters/MigrationFiles.adapter';
+import { ContentEngineError } from '../domain/ContentDocument.entity';
 import {
-  type MigrationPlan,
   planMigration,
   renderMigrationSql,
+  type MigrationPlan,
 } from '../domain/SqlGenerator.rules';
 
 export interface GenerateOptions {
@@ -44,9 +44,7 @@ export class DestructiveChangeError extends ContentEngineError {
 }
 
 /** Diffs `schemasDir` against the snapshot of the last migration and writes the next one. */
-export async function generateContentMigration(
-  options: GenerateOptions,
-): Promise<GenerateResult> {
+export async function generateContentMigration(options: GenerateOptions): Promise<GenerateResult> {
   if (!MIGRATION_LABEL_PATTERN.test(options.label)) {
     throw new ContentEngineError(
       `Migration name "${options.label}" must match ${MIGRATION_LABEL_PATTERN.source}`,
@@ -76,9 +74,7 @@ export async function generateContentMigration(
  * `--check`: a dry run that fails when the committed migrations are behind the
  * schemas (CI uses it so a schema change cannot land without its migration).
  */
-export async function checkContentMigrations(
-  options: GenerateOptions,
-): Promise<GenerateResult> {
+export async function checkContentMigrations(options: GenerateOptions): Promise<GenerateResult> {
   const result = await generateContentMigration({ ...options, dryRun: true });
   if (result.status !== 'no-changes') {
     throw new ContentEngineError(
@@ -130,9 +126,7 @@ async function main(): Promise<void> {
 
 if (require.main === module) {
   main().catch((error: unknown) => {
-    process.stderr.write(
-      `${error instanceof Error ? error.message : String(error)}\n`,
-    );
+    process.stderr.write(`${error instanceof Error ? error.message : String(error)}\n`);
     process.exitCode = 1;
   });
 }

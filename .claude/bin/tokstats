@@ -1,0 +1,60 @@
+#!/usr/bin/env python3
+"""Token use per subagent type and the biggest Read/Bash outputs, from Claude Code transcripts.
+Usage: .claude/bin/tokstats [YYYY-MM-DD]   (run from the repo; default: last 14 days)"""
+import json, glob, os, re, sys, collections, subprocess, datetime
+repo = subprocess.run(["git", "rev-parse", "--show-toplevel"], capture_output=True, text=True).stdout.strip() or os.getcwd()
+root = os.path.expanduser("~/.claude/projects/" + re.sub(r"[^A-Za-z0-9]", "-", repo))
+since = sys.argv[1] if len(sys.argv) > 1 else (datetime.date.today() - datetime.timedelta(days=14)).isoformat()
+by_agent = collections.defaultdict(lambda: [0, 0, 0])   # runs, input-ish tokens, output tokens
+reads = collections.defaultdict(lambda: [0, 0])          # count, chars of result
+bash = collections.defaultdict(lambda: [0, 0])
+def txtlen(c):
+    if isinstance(c, str): return len(c)
+    if isinstance(c, list): return sum(txtlen(x.get("text", "")) if isinstance(x, dict) else 0 for x in c)
+    return 0
+for f in glob.glob(f"{root}/*/subagents/*.jsonl"):
+    meta = f.replace(".jsonl", ".meta.json")
+    agent = "?"
+    if os.path.exists(meta):
+        try: agent = json.load(open(meta)).get("agentType") or "?"
+        except Exception: pass
+    pending = {}; first = True; ok = False; tin = tout = 0
+    for line in open(f):
+        d = json.loads(line)
+        if first:
+            first = False
+            if d.get("timestamp", "") < since: break
+            ok = True
+        m = d.get("message") or {}
+        u = m.get("usage")
+        if u:
+            tin += u.get("input_tokens", 0) + u.get("cache_read_input_tokens", 0) + u.get("cache_creation_input_tokens", 0)
+            tout += u.get("output_tokens", 0)
+        c = m.get("content")
+        if not isinstance(c, list): continue
+        for x in c:
+            if not isinstance(x, dict): continue
+            if x.get("type") == "tool_use":
+                pending[x["id"]] = (x["name"], x.get("input", {}))
+            elif x.get("type") == "tool_result" and x.get("tool_use_id") in pending:
+                name, inp = pending.pop(x["tool_use_id"]); n = txtlen(x.get("content"))
+                if name == "Read":
+                    p = inp.get("file_path", "").replace(repo + "/", "")
+                    p = re.sub(r"\.claude/state/features/[^/]+/", ".claude/state/features/<F>/", p)
+                    reads[p][0] += 1; reads[p][1] += n
+                elif name == "Bash":
+                    cmd = inp.get("command", "").strip()
+                    key = " ".join(cmd.split()[:2])[:40]
+                    bash[key][0] += 1; bash[key][1] += n
+    if ok:
+        a = by_agent[agent]; a[0] += 1; a[1] += tin; a[2] += tout
+print(f"Subagent runs since {since}")
+print(f"{'agent':20} {'runs':>5} {'in tok (all turns)':>18} {'avg/run':>10} {'out':>9}")
+for k, (r, i, o) in sorted(by_agent.items(), key=lambda kv: -kv[1][1]):
+    print(f"{k:20} {r:5} {i:18,} {i//max(r,1):10,} {o:9,}")
+print("\nTop Read targets (count, result KB)")
+for k, (c, n) in sorted(reads.items(), key=lambda kv: -kv[1][1])[:20]:
+    print(f"{c:5} {n/1024:8.0f} KB  {k}")
+print("\nTop Bash prefixes (count, output KB)")
+for k, (c, n) in sorted(bash.items(), key=lambda kv: -kv[1][1])[:15]:
+    print(f"{c:5} {n/1024:8.0f} KB  {k}")

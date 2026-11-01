@@ -58,26 +58,26 @@ in a production build.
 
 ## Config
 
-- `src/config/Browser.env.ts` reads `NEXT_PUBLIC_*` keys. They are inlined into
+- `src/configs/Browser.env.ts` reads `NEXT_PUBLIC_*` keys. They are inlined into
   the browser bundle at build time (so they are public, never secrets) and a
   missing `NEXT_PUBLIC_API_BASE_URL` fails the build.
-- `src/config/Server.env.ts` (`server-only`) reads `API_INTERNAL_URL`,
+- `src/configs/Server.env.ts` (`server-only`) reads `API_INTERNAL_URL`,
   `WEB_REVALIDATE_SECONDS` and `WEB_STATUS_PAGE_ENABLED` at runtime. An invalid value stops the server at
   start (`src/instrumentation.ts`). It is not run during `next build`.
 - Every key is documented in [`.env.example`](.env.example).
-- `src/config/endpoints.ts` is the single map of API paths.
-- `src/config/Copy.constants.ts` holds user-facing text until an i18n module
+- `src/configs/endpoints.ts` is the single map of API paths.
+- `src/configs/Copy.constants.ts` holds user-facing text until an i18n module
   exists.
-- `config/**` may use pure `lib` helpers (`StripTrailingSlashes`,
-  `SafeLinkTarget`) but never `lib/Api.client` or a feature (ESLint). Error
+- `configs/**` may use pure helpers (`StripTrailingSlashes`,
+  `SafeLinkTarget`) but never `apis/client/Api.client` or a feature (ESLint). Error
   codes live with their feature constants (`Auth.constants`,
   `Reviewer.constants`); third-party origins in `Security.constants`.
-- `src/lib/SafeLinkTarget.rules.ts` decides what may be an `href` (http(s) URL or
+- `src/utils/SafeLinkTarget.rules.ts` decides what may be an `href` (http(s) URL or
   same-origin path); `optionalLinkTarget` in `RequireEnv.rules.ts` uses it.
 - `features/reviewer/Reviewer.queries.ts` owns the reviewer API instance, the
   query key and `useReviewerEnabled()` (anonymous visitor plus Turnstile site
   key only).
-- `src/lib/Graphql.server.ts` (`server-only`) is the one way a Server Component
+- `src/apis/server/graphql/Graphql.server.ts` (`server-only`) is the one way a Server Component
   reads content: `fetchGraphql(document, variables)` posts to
   `${API_INTERNAL_URL}/graphql` with JSON headers only (no `Authorization`, no
   cookie, no client IP), so the page holds what the `public` role may read.
@@ -85,19 +85,19 @@ in a production build.
   (Next 16 without Cache Components; 0 turns it off). Any failure throws one
   `GraphqlRequestError` (`GraphqlResponse.rules.ts`) with the first error code,
   never the server message or the variables.
-- `src/lib/Graphql.client.ts`: `requestGraphql(document, variables, accessToken)`
+- `src/apis/client/Graphql.client.ts`: `requestGraphql(document, variables, accessToken)`
   for the browser, over the Axios instance, with the Bearer token from
   `useWebSession`. Same error type.
-- `src/lib/SafeRichtext.rules.ts`: `sanitizeRichtext(html)` (DOMPurify; browser
-  and tests). Its allowlist mirrors the cms-api storage sanitizer. On the
+- `src/utils/SafeRichtext.rules.ts`: `sanitizeRichtext(html)` (DOMPurify; browser
+  and tests). Its allowlist mirrors the cms-api storage sanitizer (D13): palette colour on `span`, alignment on `p`/`h1`-`h6`, and `img` only from `CLOUDINARY_IMAGE_ORIGIN` with a UUID `data-media-id`; the palette and alignments are pinned in `PublicConstants.contract.test.ts`. On the
   server use `SafeRichtext.server.ts` (`sanitizeRichtextOnServer`, DOMPurify over
   jsdom), a separate file so jsdom never reaches a client chunk.
-- `src/lib/Api.client.ts` is the browser Axios instance. It strips trailing
+- `src/apis/client/Api.client.ts` is the browser Axios instance. It strips trailing
   slashes from every request path (SPEC §6), so no proxy can answer with a
   redirect.
 
 Styling: Tailwind v4 through `@tailwindcss/postcss` with the form-commons theme
-(`src/app/app.css`, imported by `src/app/layout.tsx`). Components use semantic
+(`src/assets/styles/global.css`, the only stylesheet `src/app/layout.tsx` imports; it pulls in `base.css` and `app.css`). Components use semantic
 tokens only (`bg-card`, `text-muted-foreground`).
 
 ## Sign-in and session
@@ -110,9 +110,9 @@ tokens only (`bg-card`, `text-muted-foreground`).
   Route Handler or `cookies()` call touches auth, and the Next server never
   sees a token.
 - `features/session` owns the session: `useWebSession` and `WebSessionProvider`
-  (mounted in `src/app/AppProviders.tsx`), the auth API and the one
+  (mounted in `src/components/layouts/AppProviders.tsx`), the auth API and the one
   `PrivilegedAccessError`. `features/auth` (sign-in dialog) and
-  `features/reviewer` build on it and never import each other; `app/AccountMenu`
+  `features/reviewer` build on it and never import each other; `components/layouts/AccountMenu`
   composes them. Lint bans deep imports between features and test fixtures in
   production code; `src/FeatureTiers.architecture.test.ts` fails on a directory cycle. The
   provider keeps the access token in memory only, tries one silent refresh on mount,
@@ -147,7 +147,7 @@ tokens only (`bg-card`, `text-muted-foreground`).
   live in `Reviewer.form.ts`, and `useHumanCheck.tsx` owns the Turnstile token.
 - Turnstile loads through `next/script` only while the dialog's last step is
   open (`challenges.cloudflare.com`, constant `TURNSTILE` in
-  `src/config/Security.constants.ts`). The CSP allows that origin in
+  `src/configs/Security.constants.ts`). The CSP allows that origin in
   `script-src` and `frame-src`; `next/script` stamps the request nonce on it.
 - The CV page refetches with the reviewer token (`useCvContent`), so the
   reviewer sees the reviewer profile's masking.
@@ -183,14 +183,14 @@ The `abyss/file-names` ESLint rule (ADR 0008, run by `pnpm lint`) fails on a fil
 - `src/proxy.ts` makes a fresh nonce per request and sets
   `Content-Security-Policy` on the forwarded request (Next.js stamps the nonce
   on its scripts) and on the response. The policy is built in
-  `src/lib/ContentSecurityPolicy.rules.ts`: `script-src 'self' 'nonce-<n>'
+  `src/utils/ContentSecurityPolicy.rules.ts`: `script-src 'self' 'nonce-<n>'
 'strict-dynamic'` + the Turnstile origin, `style-src 'self' 'nonce-<n>'` with
   `style-src-attr 'unsafe-inline'`, `connect-src 'self'` plus the origin
   of `NEXT_PUBLIC_API_BASE_URL` when it is absolute, `img-src` with Cloudinary,
   `frame-src` Turnstile, `frame-ancestors 'none'`. Dev adds `'unsafe-eval'` and
-  `ws:`. Origins and header values are constants in `src/config/security*.ts`.
+  `ws:`. Origins and header values are constants in `src/configs/security*.ts`.
 - Radix dialogs inject a scroll-lock `<style>` through react-remove-scroll-bar;
-  `app/CspNonce.tsx` passes it the request nonce (`get-nonce` `setNonce`) so
+  `components/layouts/CspNonce.tsx` passes it the request nonce (`get-nonce` `setNonce`) so
   `style-src` stays nonce-only.
 - `next.config.ts` adds HSTS, `nosniff` and `Referrer-Policy` to every route.
 - The proxy matcher skips `/api/`, `/_next/static`, `/_next/image` and

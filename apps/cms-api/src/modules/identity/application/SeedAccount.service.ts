@@ -12,15 +12,14 @@ import {
 } from '../domain/Identity.constants';
 import {
   ACCOUNT_REPOSITORY,
-  type AccountRepository,
   AUDIT_RECORDER,
+  type AccountRepository,
   type AuditRecorder,
 } from './Identity.port';
 import { ownerInputSchema } from './OwnerBootstrap.service';
 import { hashPassword } from './Password.service';
 
-type SeedAccountErrorCode =
-  (typeof SEED_ACCOUNT_ERRORS)[keyof typeof SEED_ACCOUNT_ERRORS];
+type SeedAccountErrorCode = (typeof SEED_ACCOUNT_ERRORS)[keyof typeof SEED_ACCOUNT_ERRORS];
 
 /** Messages never contain the password or a submitted value. */
 export class SeedAccountError extends Error {
@@ -75,10 +74,7 @@ function parseSeedFields(input: SeedAccountInput) {
     const problems = parsed.error.issues
       .map((issue) => `${issue.path.join('.')}: ${issue.message}`)
       .join('; ');
-    throw new SeedAccountError(
-      SEED_ACCOUNT_ERRORS.INVALID_INPUT,
-      `Invalid input (${problems}).`,
-    );
+    throw new SeedAccountError(SEED_ACCOUNT_ERRORS.INVALID_INPUT, `Invalid input (${problems}).`);
   }
   return parsed.data;
 }
@@ -100,10 +96,7 @@ export class SeedAccountService {
     @Inject(AUDIT_RECORDER) private readonly audit: AuditRecorder,
   ) {}
 
-  async seed(
-    input: SeedAccountInput,
-    env: NodeJS.ProcessEnv,
-  ): Promise<SeededAccount> {
+  async seed(input: SeedAccountInput, env: NodeJS.ProcessEnv): Promise<SeededAccount> {
     assertSeedAllowed(env);
     assertRoleAllowed(input.roleSlug);
     const { email, password } = parseSeedFields(input);

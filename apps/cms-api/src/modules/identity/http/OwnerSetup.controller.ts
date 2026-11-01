@@ -13,23 +13,11 @@ import type { Request } from 'express';
 
 import { NO_STORE_HEADER } from '../../../common/constants/Http.constants';
 import { Throttle } from '../../../common/guards/Throttle.guard';
-import {
-  ClientIpResolver,
-  clientMetaOf,
-} from '../../../common/http/ClientIp.resolver';
+import { ClientIpResolver, clientMetaOf } from '../../../common/http/ClientIp.resolver';
 import { parseRequest } from '../../../common/http/RequestParsing.rules';
-import {
-  ownerInputSchema,
-  type OwnerBootstrapInput,
-} from '../application/OwnerBootstrap.service';
-import {
-  OwnerSetupService,
-  SetupClosedError,
-} from '../application/OwnerSetup.service';
-import {
-  IDENTITY_RATE_LIMIT_POLICIES,
-  SETUP_ROUTES,
-} from './IdentityHttp.constants';
+import { ownerInputSchema, type OwnerBootstrapInput } from '../application/OwnerBootstrap.service';
+import { OwnerSetupService, SetupClosedError } from '../application/OwnerSetup.service';
+import { IDENTITY_RATE_LIMIT_POLICIES, SETUP_ROUTES } from './IdentityHttp.constants';
 
 /** The setup token is read apart (it is checked before anything else). */
 function parseOwnerSetupBody(body: unknown): OwnerBootstrapInput {
@@ -66,10 +54,7 @@ export class OwnerSetupController {
   @HttpCode(HttpStatus.CREATED)
   @Header(NO_STORE_HEADER.NAME, NO_STORE_HEADER.VALUE)
   @Throttle(IDENTITY_RATE_LIMIT_POLICIES.SETUP_SUBMIT)
-  async createOwner(
-    @Body() body: unknown,
-    @Req() req: Request,
-  ): Promise<{ email: string }> {
+  async createOwner(@Body() body: unknown, @Req() req: Request): Promise<{ email: string }> {
     const meta = { ip: clientMetaOf(this.clientIp, req).ip };
     try {
       await this.setup.admit(submittedSetupToken(body), meta);

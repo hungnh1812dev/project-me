@@ -1,11 +1,5 @@
-import { type BrowserContext, expect, type Page, test } from '@playwright/test';
+import { expect, test, type BrowserContext, type Page } from '@playwright/test';
 
-import { ADMIN_COPY } from '../src/Apps.contract';
-import { e2eEnv } from '../src/E2e.env';
-import { mailIdsFor, waitForCode } from '../src/Mailpit.client';
-import { labelStartingWith } from '../src/Locators.fixture';
-import { RUN_ID, CV_PAGE_SLUG } from '../src/E2e.constants';
-import { submitLogin } from '../src/Session.fixture';
 import {
   accountRow,
   openRole,
@@ -13,6 +7,12 @@ import {
   roleDiscardButton,
   roleSaveButton,
 } from '../src/AccessPages.fixture';
+import { ADMIN_COPY } from '../src/Apps.contract';
+import { CV_PAGE_SLUG, RUN_ID } from '../src/E2e.constants';
+import { e2eEnv } from '../src/E2e.env';
+import { labelStartingWith } from '../src/Locators.fixture';
+import { mailIdsFor, waitForCode } from '../src/Mailpit.client';
+import { expectSignedIn, submitLogin } from '../src/Session.fixture';
 
 const access = ADMIN_COPY.access;
 const accounts = access.accounts;
@@ -25,8 +25,7 @@ const INVITEE_PASSWORD = `${e2eEnv.ownerPassword.slice(0, 40)}-invitee`;
 const OLD_BROWSER_ROLE = 'Editor';
 const INVALID_JSON = '{"all": [';
 /** Valid JSON that the server's conditions DSL refuses (unknown operator). */
-const SERVER_REJECTED_CONDITIONS =
-  '{"all":[{"field":"createdBy","op":"nope"}]}';
+const SERVER_REJECTED_CONDITIONS = '{"all":[{"field":"createdBy","op":"nope"}]}';
 
 test.describe.serial('owner: accounts and roles', () => {
   let page: Page;
@@ -38,9 +37,7 @@ test.describe.serial('owner: accounts and roles', () => {
     context = await browser.newContext();
     page = await context.newPage();
     await submitLogin(page, e2eEnv.ownerEmail, e2eEnv.ownerPassword);
-    await expect(
-      page.getByRole('button', { name: ADMIN_COPY.session.signOut }),
-    ).toBeVisible();
+    await expectSignedIn(page);
   });
 
   test.afterAll(async () => {
@@ -49,12 +46,8 @@ test.describe.serial('owner: accounts and roles', () => {
 
   test('the accounts table shows the signed-in owner and the actions', async () => {
     await page.goto('/accounts');
-    await expect(
-      page.getByRole('heading', { level: 1, name: accounts.title }),
-    ).toBeVisible();
-    await expect(
-      page.getByRole('button', { name: accounts.invite }),
-    ).toBeVisible();
+    await expect(page.getByRole('heading', { level: 1, name: accounts.title })).toBeVisible();
+    await expect(page.getByRole('button', { name: accounts.invite })).toBeVisible();
     for (const column of [
       accounts.columns.name,
       accounts.columns.role,
@@ -62,20 +55,14 @@ test.describe.serial('owner: accounts and roles', () => {
       accounts.columns.twoFactor,
       accounts.columns.created,
     ]) {
-      await expect(
-        page.getByRole('columnheader', { name: column }),
-      ).toBeVisible();
+      await expect(page.getByRole('columnheader', { name: column })).toBeVisible();
     }
     const ownRow = accountRow(page, e2eEnv.ownerEmail);
     await expect(ownRow).toContainText(accounts.you);
     await expect(ownRow).toContainText(accounts.status.active);
     // No Disable on the owner's own row; other rows have it.
-    await expect(
-      ownRow.getByRole('button', { name: accounts.disable }),
-    ).toHaveCount(0);
-    await expect(
-      page.getByRole('button', { name: accounts.disable }).first(),
-    ).toBeVisible();
+    await expect(ownRow.getByRole('button', { name: accounts.disable })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: accounts.disable }).first()).toBeVisible();
   });
 
   test('the invite dialog validates, lists assignable roles and closes with Escape or Cancel', async () => {
@@ -103,9 +90,7 @@ test.describe.serial('owner: accounts and roles', () => {
       .getByLabel(labelStartingWith(invite.roleLabel))
       .locator('option')
       .allTextContents();
-    expect(options).toEqual(
-      expect.arrayContaining([invite.rolePlaceholder, 'Admin', 'Editor']),
-    );
+    expect(options).toEqual(expect.arrayContaining([invite.rolePlaceholder, 'Admin', 'Editor']));
     for (const forbidden of ['Owner', 'Public', 'Reviewer']) {
       expect(options).not.toContain(forbidden);
     }
@@ -118,23 +103,15 @@ test.describe.serial('owner: accounts and roles', () => {
     await page.goto('/accounts');
     await page.getByRole('button', { name: accounts.invite }).click();
     const dialog = page.getByRole('dialog', { name: invite.title });
-    await dialog
-      .getByLabel(labelStartingWith(invite.emailLabel))
-      .fill(e2eEnv.twoFactorEmail);
-    await dialog
-      .getByLabel(labelStartingWith(invite.displayNameLabel))
-      .fill('Duplicate');
-    await dialog
-      .getByLabel(labelStartingWith(invite.roleLabel))
-      .selectOption('Editor');
+    await dialog.getByLabel(labelStartingWith(invite.emailLabel)).fill(e2eEnv.twoFactorEmail);
+    await dialog.getByLabel(labelStartingWith(invite.displayNameLabel)).fill('Duplicate');
+    await dialog.getByLabel(labelStartingWith(invite.roleLabel)).selectOption('Editor');
     await dialog.getByRole('button', { name: invite.submit }).click();
     await expect(dialog).toContainText(invite.errors.emailTaken);
-    await expect(
-      dialog.getByLabel(labelStartingWith(invite.emailLabel)),
-    ).toHaveValue(e2eEnv.twoFactorEmail);
-    await expect(
-      dialog.getByLabel(labelStartingWith(invite.emailLabel)),
-    ).toBeFocused();
+    await expect(dialog.getByLabel(labelStartingWith(invite.emailLabel))).toHaveValue(
+      e2eEnv.twoFactorEmail,
+    );
+    await expect(dialog.getByLabel(labelStartingWith(invite.emailLabel))).toBeFocused();
     await page.keyboard.press('Escape');
   });
 
@@ -145,24 +122,14 @@ test.describe.serial('owner: accounts and roles', () => {
     const seen = await mailIdsFor(context, INVITEE_EMAIL);
     await page.getByRole('button', { name: accounts.invite }).click();
     const dialog = page.getByRole('dialog', { name: invite.title });
-    await dialog
-      .getByLabel(labelStartingWith(invite.emailLabel))
-      .fill(INVITEE_EMAIL);
-    await dialog
-      .getByLabel(labelStartingWith(invite.displayNameLabel))
-      .fill(INVITEE_NAME);
-    await dialog
-      .getByLabel(labelStartingWith(invite.roleLabel))
-      .selectOption('Editor');
+    await dialog.getByLabel(labelStartingWith(invite.emailLabel)).fill(INVITEE_EMAIL);
+    await dialog.getByLabel(labelStartingWith(invite.displayNameLabel)).fill(INVITEE_NAME);
+    await dialog.getByLabel(labelStartingWith(invite.roleLabel)).selectOption('Editor');
     // Enter submits the form.
-    await dialog
-      .getByLabel(labelStartingWith(invite.displayNameLabel))
-      .press('Enter');
+    await dialog.getByLabel(labelStartingWith(invite.displayNameLabel)).press('Enter');
 
     await expect(dialog).toBeHidden();
-    await expect(page.getByRole('status')).toHaveText(
-      accounts.invited(INVITEE_EMAIL),
-    );
+    await expect(page.getByRole('status')).toHaveText(accounts.invited(INVITEE_EMAIL));
     const row = accountRow(page, INVITEE_EMAIL);
     await expect(row).toContainText(INVITEE_NAME);
     await expect(row).toContainText(accounts.status.invited);
@@ -182,18 +149,14 @@ test.describe.serial('owner: accounts and roles', () => {
       await inviteePage
         .getByLabel(labelStartingWith(ADMIN_COPY.password.emailLabel))
         .fill(INVITEE_EMAIL);
-      await inviteePage
-        .getByLabel(labelStartingWith(ADMIN_COPY.password.codeLabel))
-        .fill(code);
+      await inviteePage.getByLabel(labelStartingWith(ADMIN_COPY.password.codeLabel)).fill(code);
       await inviteePage
         .getByLabel(labelStartingWith(ADMIN_COPY.password.newPasswordLabel))
         .fill(INVITEE_PASSWORD);
       await inviteePage
         .getByLabel(labelStartingWith(ADMIN_COPY.password.confirmPasswordLabel))
         .fill(INVITEE_PASSWORD);
-      await inviteePage
-        .getByRole('button', { name: ADMIN_COPY.password.set.submit })
-        .click();
+      await inviteePage.getByRole('button', { name: ADMIN_COPY.password.set.submit }).click();
       await expect(inviteePage.getByRole('status')).toHaveText(
         ADMIN_COPY.login.notices.passwordSet,
       );
@@ -201,9 +164,7 @@ test.describe.serial('owner: accounts and roles', () => {
       // Owner disables the now-active account: confirmation names it.
       await page.reload();
       await expect(row).toContainText(accounts.status.active);
-      await row
-        .getByRole('button', { name: accounts.disableLabel(INVITEE_NAME) })
-        .click();
+      await row.getByRole('button', { name: accounts.disableLabel(INVITEE_NAME) }).click();
       const confirm = page.getByRole('dialog', {
         name: access.disable.title(INVITEE_NAME),
       });
@@ -214,36 +175,22 @@ test.describe.serial('owner: accounts and roles', () => {
         })
         .click();
       await expect(confirm).toBeHidden();
-      await expect(page.getByRole('status')).toHaveText(
-        accounts.disabled(INVITEE_NAME),
-      );
+      await expect(page.getByRole('status')).toHaveText(accounts.disabled(INVITEE_NAME));
       await expect(row).toContainText(accounts.status.disabled);
-      await expect(
-        row.getByRole('button', { name: accounts.disable }),
-      ).toHaveCount(0);
+      await expect(row.getByRole('button', { name: accounts.disable })).toHaveCount(0);
 
       // The disabled account cannot sign in.
       await submitLogin(inviteePage, INVITEE_EMAIL, INVITEE_PASSWORD);
-      await expect(
-        inviteePage.getByText(ADMIN_COPY.login.errors.invalidCredentials),
-      ).toBeVisible();
+      await expect(inviteePage.getByText(ADMIN_COPY.login.errors.invalidCredentials)).toBeVisible();
 
       // Owner enables it again: no dialog, success notice, can sign in.
-      await row
-        .getByRole('button', { name: accounts.enableLabel(INVITEE_NAME) })
-        .click();
+      await row.getByRole('button', { name: accounts.enableLabel(INVITEE_NAME) }).click();
       await expect(page.getByRole('dialog')).toHaveCount(0);
-      await expect(page.getByRole('status')).toHaveText(
-        accounts.enabled(INVITEE_NAME),
-      );
+      await expect(page.getByRole('status')).toHaveText(accounts.enabled(INVITEE_NAME));
       await expect(row).toContainText(accounts.status.active);
-      await expect(
-        row.getByRole('button', { name: accounts.enable }),
-      ).toHaveCount(0);
+      await expect(row.getByRole('button', { name: accounts.enable })).toHaveCount(0);
       await submitLogin(inviteePage, INVITEE_EMAIL, INVITEE_PASSWORD);
-      await expect(
-        inviteePage.getByRole('button', { name: ADMIN_COPY.session.signOut }),
-      ).toBeVisible();
+      await expectSignedIn(inviteePage);
     } finally {
       await inviteeContext.close();
     }
@@ -260,12 +207,8 @@ test.describe.serial('owner: accounts and roles', () => {
     await page.getByRole('button', { name: accounts.invite }).click();
     const dialog = page.getByRole('dialog', { name: invite.title });
     await dialog.getByLabel(labelStartingWith(invite.emailLabel)).fill(email);
-    await dialog
-      .getByLabel(labelStartingWith(invite.displayNameLabel))
-      .fill(name);
-    await dialog
-      .getByLabel(labelStartingWith(invite.roleLabel))
-      .selectOption('Editor');
+    await dialog.getByLabel(labelStartingWith(invite.displayNameLabel)).fill(name);
+    await dialog.getByLabel(labelStartingWith(invite.roleLabel)).selectOption('Editor');
     await dialog.getByRole('button', { name: invite.submit }).click();
     await expect(dialog).toBeHidden();
     const oldCode = await waitForCode(context, email, seen);
@@ -273,9 +216,7 @@ test.describe.serial('owner: accounts and roles', () => {
     const row = accountRow(page, email);
     await expect(row).toContainText(accounts.status.invited);
     // Enable is for disabled rows only.
-    await expect(
-      row.getByRole('button', { name: accounts.enable }),
-    ).toHaveCount(0);
+    await expect(row.getByRole('button', { name: accounts.enable })).toHaveCount(0);
     const afterInvite = await mailIdsFor(context, email);
     await row.getByRole('button', { name: accounts.resendLabel(name) }).click();
     await expect(page.getByRole('status')).toHaveText(accounts.resent(email));
@@ -287,21 +228,15 @@ test.describe.serial('owner: accounts and roles', () => {
     // the refresh limit is 30 per minute per IP for the whole suite.
     await inviteePage.goto('/set-password');
     const fillForm = async (code: string) => {
-      await inviteePage
-        .getByLabel(labelStartingWith(ADMIN_COPY.password.emailLabel))
-        .fill(email);
-      await inviteePage
-        .getByLabel(labelStartingWith(ADMIN_COPY.password.codeLabel))
-        .fill(code);
+      await inviteePage.getByLabel(labelStartingWith(ADMIN_COPY.password.emailLabel)).fill(email);
+      await inviteePage.getByLabel(labelStartingWith(ADMIN_COPY.password.codeLabel)).fill(code);
       await inviteePage
         .getByLabel(labelStartingWith(ADMIN_COPY.password.newPasswordLabel))
         .fill(INVITEE_PASSWORD);
       await inviteePage
         .getByLabel(labelStartingWith(ADMIN_COPY.password.confirmPasswordLabel))
         .fill(INVITEE_PASSWORD);
-      await inviteePage
-        .getByRole('button', { name: ADMIN_COPY.password.set.submit })
-        .click();
+      await inviteePage.getByRole('button', { name: ADMIN_COPY.password.set.submit }).click();
     };
     try {
       if (newCode !== oldCode) {
@@ -327,12 +262,8 @@ test.describe.serial('owner: accounts and roles', () => {
       .filter({ has: page.getByRole('cell') })
       .count();
     await expect(nav).toContainText(accounts.pagination.range(1, rows, rows));
-    await expect(
-      nav.getByRole('button', { name: accounts.pagination.previous }),
-    ).toBeDisabled();
-    await expect(
-      nav.getByRole('button', { name: accounts.pagination.next }),
-    ).toBeDisabled();
+    await expect(nav.getByRole('button', { name: accounts.pagination.previous })).toBeDisabled();
+    await expect(nav.getByRole('button', { name: accounts.pagination.next })).toBeDisabled();
   });
 
   test('roles are listed by rank and the owner role has nothing to configure', async () => {
@@ -340,9 +271,7 @@ test.describe.serial('owner: accounts and roles', () => {
     const rankColumn = await page
       .getByRole('row')
       .filter({ has: page.getByRole('link') })
-      .evaluateAll((rows) =>
-        rows.map((row) => Number(row.querySelectorAll('td')[0]?.textContent)),
-      );
+      .evaluateAll((rows) => rows.map((row) => Number(row.querySelectorAll('td')[0]?.textContent)));
     expect(rankColumn).toEqual([...rankColumn].sort((a, b) => b - a));
 
     await openRole(page, 'Owner');
@@ -353,11 +282,7 @@ test.describe.serial('owner: accounts and roles', () => {
   test('toggling an action enables Save, Discard restores, and saved permissions survive a reload', async () => {
     await openRole(page, OLD_BROWSER_ROLE);
     const wildcard = access.matrix.wildcard;
-    const deleteCell = permissionCell(
-      page,
-      access.matrix.actions.delete,
-      wildcard,
-    );
+    const deleteCell = permissionCell(page, access.matrix.actions.delete, wildcard);
     await expect(deleteCell).not.toBeChecked();
     await expect(roleSaveButton(page)).toBeDisabled();
 
@@ -395,14 +320,9 @@ test.describe.serial('owner: accounts and roles', () => {
         name: access.matrix.detailsLabel(CV_PAGE_SLUG),
       })
       .click();
+    await expect(page.getByRole('radio', { name: access.fields.some })).toBeChecked();
     await expect(
-      page.getByRole('radio', { name: access.fields.some }),
-    ).toBeChecked();
-    await expect(
-      page
-        .getByRole('group', { name: access.fields.readable })
-        .getByRole('checkbox')
-        .first(),
+      page.getByRole('group', { name: access.fields.readable }).getByRole('checkbox').first(),
     ).toBeChecked();
 
     // Put the Editor role back.
@@ -415,30 +335,20 @@ test.describe.serial('owner: accounts and roles', () => {
 
   test('invalid conditions JSON blocks saving; conditions the server rejects mark the row', async () => {
     await openRole(page, OLD_BROWSER_ROLE);
-    const read = permissionCell(
-      page,
-      access.matrix.actions.read,
-      access.matrix.wildcard,
-    );
+    const read = permissionCell(page, access.matrix.actions.read, access.matrix.wildcard);
     await expect(read).toBeChecked();
     await page
       .getByRole('button', {
         name: access.matrix.detailsLabel(access.matrix.wildcard),
       })
       .click();
-    await page
-      .getByText(access.conditions.summary(access.matrix.actions.read))
-      .click();
-    const conditions = page.getByLabel(
-      access.conditions.label(access.matrix.actions.read),
-    );
+    await page.getByText(access.conditions.summary(access.matrix.actions.read)).click();
+    const conditions = page.getByLabel(access.conditions.label(access.matrix.actions.read));
 
     // The JSON check runs when saving: the form message and the field error.
     await conditions.fill(INVALID_JSON);
     await roleSaveButton(page).click();
-    await expect(
-      page.getByText(access.role.conditionsInvalidJson),
-    ).toBeVisible();
+    await expect(page.getByText(access.role.conditionsInvalidJson)).toBeVisible();
     await expect(page.getByText(access.conditions.invalidJson)).toBeVisible();
     await expect(conditions).toHaveAttribute('aria-invalid', 'true');
 

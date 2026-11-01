@@ -1,7 +1,4 @@
-import type {
-  RefreshChannel,
-  RefreshLocks,
-} from '../src/features/auth/CrossTabRefresh';
+import type { RefreshChannel, RefreshLocks } from '../src/features/auth/CrossTabRefresh';
 
 /** Fakes for simulating several admin tabs in one test (T11a). */
 

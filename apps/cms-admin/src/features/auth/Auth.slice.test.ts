@@ -1,4 +1,5 @@
-import { createAuthTestStore } from './AuthStore.fixture';
+import { TEST_USER } from '@test/RenderApp.fixture';
+
 import {
   accessTokenReceived,
   selectAccessToken,
@@ -7,7 +8,7 @@ import {
   signedIn,
   signedOut,
 } from './Auth.slice';
-import { TEST_USER } from '../../../test/RenderApp.fixture';
+import { createAuthTestStore } from './AuthStore.fixture';
 
 describe('authSlice', () => {
   it('starts unknown, so nothing renders as signed out before the silent refresh', () => {

@@ -45,10 +45,7 @@ describe('Field', () => {
     );
     const input = screen.getByLabelText('Email');
     expect(input).toHaveAttribute('aria-invalid', 'true');
-    expect(input).toHaveAttribute(
-      'aria-describedby',
-      'email-description email-error',
-    );
+    expect(input).toHaveAttribute('aria-describedby', 'email-description email-error');
     expect(input).toHaveAccessibleDescription(
       'We send the invite here. Enter an email like name@example.com.',
     );

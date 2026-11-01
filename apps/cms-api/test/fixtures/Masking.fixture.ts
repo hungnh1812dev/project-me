@@ -1,27 +1,27 @@
 import {
-  type ActorContext,
-  type ActorKind,
   accountActor,
   anonymousActor,
   apiTokenActor,
   reviewerActor,
+  type ActorContext,
+  type ActorKind,
 } from '../../src/modules/access/domain/ActorContext.entity';
 import type { FieldSelection } from '../../src/modules/access/domain/PolicyEvaluator.rules';
 import {
-  type RecordReadAccess,
   recordReadAccess,
+  type RecordReadAccess,
 } from '../../src/modules/access/domain/RecordReadAccess.rules';
 import type { ContentDocument } from '../../src/modules/content-engine/domain/ContentDocument.entity';
-import type { FieldDefinition } from '../../src/modules/content-engine/domain/DefinitionSchema.rules';
-import {
-  type RegisteredContentType,
-  ContentTypeRegistry,
-  type TableNode,
-} from '../../src/modules/content-engine/domain/ContentTypeRegistry.entity';
 import type {
   ComponentNode,
   ComponentTrees,
 } from '../../src/modules/content-engine/domain/ContentTree.entity';
+import {
+  ContentTypeRegistry,
+  type RegisteredContentType,
+  type TableNode,
+} from '../../src/modules/content-engine/domain/ContentTypeRegistry.entity';
+import type { FieldDefinition } from '../../src/modules/content-engine/domain/DefinitionSchema.rules';
 import type { FieldValues } from '../../src/modules/content-engine/domain/TreeInput.rules';
 import { systemRole } from './Access.fixture';
 
@@ -75,9 +75,7 @@ export const PROFILE_DEFINITION = {
 } as const;
 
 export function profileType(): RegisteredContentType {
-  return ContentTypeRegistry.fromDefinitions([PROFILE_DEFINITION]).resolve(
-    PROFILE_DEFINITION.slug,
-  );
+  return ContentTypeRegistry.fromDefinitions([PROFILE_DEFINITION]).resolve(PROFILE_DEFINITION.slug);
 }
 
 const RAW_NUMBER_BASE = 900_000_000;
@@ -133,15 +131,12 @@ export function rawRecord(
     for (const { field, table: child } of table.components) {
       const path = prefix === '' ? field.name : `${prefix}.${field.name}`;
       const count = field.repeatable ? itemsPerList : 1;
-      components[field.name] = Array.from(
-        { length: count },
-        (_, index): ComponentNode => ({
-          id: next(),
-          componentUid: `00000000-0000-4000-8000-${String(next()).padStart(12, '0')}`,
-          orderIndex: index,
-          ...build(child, path),
-        }),
-      );
+      components[field.name] = Array.from({ length: count }, (_, index): ComponentNode => ({
+        id: next(),
+        componentUid: `00000000-0000-4000-8000-${String(next()).padStart(12, '0')}`,
+        orderIndex: index,
+        ...build(child, path),
+      }));
     }
     return { values, components };
   };

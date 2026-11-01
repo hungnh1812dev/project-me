@@ -14,7 +14,7 @@ Features (`src/features/`):
 - `backups`: owner-only list of the nightly database backups and a download behind password + 2FA code (ADR 0013). The nav item always shows for the owner; the page reads the list only when the owner presses "Check backups" (the server throttles it per actor), and then shows the not-configured state when the storage keys are unset.
 - `status`: status page that calls `GET /api/v1/health/live`.
 
-## Auth (T11, D14)
+## Auth (D14)
 
 - **Session state**: Redux Toolkit `authSlice` (`src/features/auth/Auth.slice.ts`):
   `status` (`unknown` until the start-up refresh settles, then
@@ -42,7 +42,7 @@ Features (`src/features/`):
   `signOut`, `expire`), wired in `src/app/AppServices.setup.ts`. Every refresh goes
   through one single-flight call. The cookie rotates on use, so two parallel
   refreshes would look like token reuse and revoke the session.
-- **Across tabs** (T11a): `src/features/auth/CrossTabRefresh.ts`. Tabs take turns
+- **Across tabs**: `src/features/auth/CrossTabRefresh.ts`. Tabs take turns
   under the Web Lock `abyss-admin:refresh`; the tab that refreshes posts the
   new access token on the BroadcastChannel `abyss-admin:session`, and a tab
   that waited uses it instead of sending its own refresh. If the message is
@@ -62,7 +62,7 @@ Features (`src/features/`):
 - **Login errors** are generic (`Login.errors.ts`): incorrect credentials (any
   4xx), rate limited (429; uses `Retry-After` when cms-api exposes it via CORS,
   otherwise a generic wait message), network, unexpected.
-- **2FA (T13)**: a `requires2FA` login answer opens `TwoFactorModal` (kit
+- **2FA**: a `requires2FA` login answer opens `TwoFactorModal` (kit
   `Dialog` via `src/components/Modal.tsx`: focus trap, Esc closes, an outside
   click does not). The temp
   token stays in component state only. TOTP accounts type the app code;
@@ -70,16 +70,16 @@ Features (`src/features/`):
   blocked for the 429 `Retry-After`) and a warning that TOTP is safer. A dead
   temp token (5 wrong codes or 300 s) closes the dialog with a notice.
 - **Security settings** (`src/features/security`, `/settings/security`,
-  linked as "Security" in the side menu's user block): 2FA status, TOTP setup (QR drawn
+  linked as "Security settings" in the top bar's user menu): 2FA status, TOTP setup (QR drawn
   client-side with `qrcode.react` from the `otpauth://` URI, plus the
   grouped manual key), email codes, turn off, all confirmed with code +
   current password in dialogs; change password, which ends every session:
   `session.expire('password-changed')` and the sign-in page shows why
   (`auth.endNotice`). Re-auth failures come back as 403, so the interceptor
   never treats them as an expired session.
-- **Access (T18)** (`src/features/access`): `/accounts` (paged list, invite
+- **Access** (`src/features/access`): `/accounts` (paged list, invite
   dialog, disable with a named confirmation, Enable and Resend invite without
-  confirmation (T18a), shown only on manageable rows and with `accounts:update` /
+  confirmation, shown only on manageable rows and with `accounts:update` /
   `accounts:create`), `/roles` and `/roles/:roleId`
   (permission matrix: subjects x actions; content rows open readable /
   writable field pickers fed by `GET /content-types`, sensitive fields
@@ -92,7 +92,7 @@ Features (`src/features/`):
   every rule and its answers (403, 404, 409) are handled in the UI. Dialogs
   use the form-commons Radix `Dialog`; `components/Modal.tsx` (2FA) wraps it
   and ignores outside clicks and focus. A lint rule forbids `<dialog`.
-- **API tokens (T19)** (`/api-tokens`, `ApiTokensPage.tsx`): paged list
+- **API tokens** (`/api-tokens`, `ApiTokensPage.tsx`): paged list
   (name + token prefix, access summary, derived status, expiry, last used;
   "Created by" appears when the list holds other accounts' tokens). Create
   and Edit share `TokenFormDialog` (name, optional expiry date = end of that
@@ -109,33 +109,35 @@ Features (`src/features/`):
   the list); the nav link needs `api_tokens:read`. Grid cells
   the caller's role does not hold are disabled (hint only); a 403
   `API_TOKEN_SCOPE_NOT_HELD` marks the refused cells by `details.indexes`.
-- **Dynamic document form (T23)** (`src/features/content`):
-  `/content/:slug/new` and `/content/:slug/:documentId` (`DocumentEditPage`;
-  no list or nav link until T34). The form is built from
+- **Dynamic document form** (`src/features/content`):
+  `/content/:slug/new` and `/content/:slug/:documentId` (`DocumentEditPage`). The form is built from
   `GET /content-types/:slug` (`FieldTree.rules.ts` rebuilds the tree from the flat
   path list) and the draft from `GET /documents/:slug/:id?status=draft`.
   `DynamicFormRenderer` maps each field type to a form-commons input through
   `Field.registry.tsx` (string, text, integer, decimal, boolean, date,
-  datetime, json). `ComponentList` handles component fields (add, remove,
-  reorder; a non-repeatable component holds one item) and nests to the API's
+  datetime, json). `ComponentList` handles component fields (a dashed
+  add box, a corner remove button, up/down buttons; a non-repeatable component holds one item) and nests to the API's
   depth limit; each item keeps its `componentUid` in form state
   (`ITEM_UID_KEY`). Masked fields (`_maskedFields`) show "Protected (***)",
   read-only, and are never sent. Richtext uses the Tiptap `RichtextInput` (sent as HTML,
-  blank = null). Media fields (T29, `features/media/MediaField.tsx`) hold the embedded file
+  blank = null). Media fields (`features/media/MediaField.tsx`) hold the embedded file
   the API returns and send only its uuid (null detaches); the field offers
   the library picker (`MediaPickerDialog`, needs `media:read`) and upload
   (needs `media:create`).
-  Media library (T29): `/media` (`features/media/`) lists files with upload,
+  Uploads go through `UploadDialog` (`features/media/`): a confirmation list with
+  previews and flagged files, then at most 2 files at once with per-file and total
+  progress, retry of one failed file, and a confirm before closing mid-upload.
+  Media library: `/media` (`features/media/`) lists files with upload,
   alt text edit (PATCH, blank clears) and delete behind a confirm; a file
   still attached to a document keeps the dialog open with the `MEDIA_IN_USE`
   reason. Shown in the nav for roles with `media:read`; buttons follow the
   `media` create/update/delete permissions.
   Create sends every filled field; save on an existing draft sends only the
   top-level fields and component lists that changed, plus `version`
-  (`Document.form.ts`). A 409 opens the conflict merge modal (T25, below);
+  (`Document.form.ts`). A 409 opens the conflict merge modal (below);
   a 400 `DOCUMENT_INVALID` shows the server's message. `required` is not in
   the content-types API, so required marks and errors come from the server.
-- **Conflict merge (T25)** (`ConflictMergeModal`, `Merge.reducer.ts`,
+- **Conflict merge** (`ConflictMergeModal`, `Merge.reducer.ts`,
   `MergeTree.rules.ts`, `MergeDescribe.rules.ts`): a 409 `DOCUMENT_VERSION_CONFLICT` on
   a draft save opens a modal listing the server's `diff` as `DiffViewerBlock` cards (local to
   `features/content`; saved vs your version; default = keep yours; "Keep
@@ -146,13 +148,13 @@ Features (`src/features/`):
   `currentVersion`; all-saved just reloads. A second 409 re-diffs inside the
   modal. If the role cannot read the row, or only masked fields differ, the
   page keeps the reload alert only.
-- **Presence (T26)** (`PresenceBanner`): on an existing document, a React Query
+- **Presence** (`PresenceBanner`): on an existing document, a React Query
   heartbeat `POST /documents/:slug/:id/presence` every 20 s
   (`PRESENCE_HEARTBEAT_MS`) while the page is open; it stops on unmount. The
   response includes the caller, who is filtered out by account id. Other
   editors show as an info banner; a failed heartbeat (403, 404, network)
   hides the banner.
-- **Collection list and bulk (T35)** (`CollectionListPage`, `BulkCreateDialog`,
+- **Collection list and bulk** (`CollectionListPage`, `BulkCreateDialog`,
   `BulkDeleteDialog`, `bulk.ts`): `/content/:slug` lists a collection (drafts
   for draft-and-publish types, `GET /documents/:slug?status=draft`, 20 per
   page) in a form-commons `SortableSheet`: up to three root scalar columns of
@@ -171,7 +173,7 @@ Features (`src/features/`):
   failed item is listed by position; "All or nothing" sends `atomic: true` and
   shows the one failing item. Single types show an explanation instead of a
   list. There is no nav link yet; open the route directly.
-- **Owner setup** (OS2, `/setup`): public page, reachable only while
+- **Owner setup** (`/setup`): public page, reachable only while
   `GET /setup/status` says `open` (else it redirects to `/login`). Fields: setup
   token (`OWNER_SETUP_TOKEN` of cms-api, password type, kept in form state only,
   never in the URL, storage or store), email, optional display name, password and
@@ -180,30 +182,41 @@ Features (`src/features/`):
   time. Success clears the form and goes to `/login` with a notice and the email
   prefilled. The login page shows a "no owner yet" notice with a link to `/setup`
   while the status is open (nothing when closed or when the call fails).
-- **Routes** (`src/config/App.routes.ts`): `/login`, `/setup`, `/reset-password`,
+- **Routes** (`src/configs/App.routes.ts`): `/login`, `/setup`, `/reset-password`,
   `/set-password`, and `/`, `/settings/security`, `/accounts`, `/roles`,
   `/roles/:roleId`, `/api-tokens`, `/content/:slug`, `/content/:slug/new`,
-  `/content/:slug/:documentId` behind `ProtectedRoute` + `AppShell` (side menu from `md` up, top bar with a
-  Menu button and a sheet below; sections from `lib/NavSections.constants.ts`, empty
-  sections hidden; user block with "Security" and "Sign out" at the bottom;
-  `app/SideMenu.tsx`, `app/MobileMenu.tsx`).
-- **Feature registry** (`src/features/Features.registry.ts`): each feature folder has a
-  `<Name>.feature.ts` with its `routes`, optional `navItems` (label, path, permission
-  subject and action) and optional `apiServices` (`defineApiService(createXApi,
-XApiProvider)`). `app/AppRoutes.setup.tsx` and `AppShell` iterate the registry;
-  nav order is registry order. A feature whose links depend on loaded data
-  adds `useNavItems`, which returns `{ items, isLoading, hasFailed, retry }` so the menu can show skeleton rows or a retry line (`contentFeature.useNavItems` lists one link per content
-  type the caller may read, under `singleTypes` or `collectionTypes` by kind;
-  `/content/:slug` of a single type redirects to its one document, or to the
-  create form when none exists). `app/AppServices.setup.ts` builds each feature API
-  from the registry and `AppProviders` nests the providers inside the session
-  provider. Routes are protected unless listed in
-  `PUBLIC_ROUTE_PATHS` (`features/auth/Auth.feature.ts`, the four auth pages). A new
-  feature is one folder with `<Name>.feature.ts` plus one line in the registry.
+  `/content/:slug/:documentId` behind `ProtectedRoute` + `AppShell` (side menu from `md` up, top bar on every
+  width with the user menu (initials avatar: Profile, Change password, Security settings, Sign out; reviewers
+  see Profile and Sign out) and, below `md`, the Menu button with its sheet; sections from
+  `configs/NavSections.constants.ts`, empty sections hidden;
+  `components/layouts/`).
+- **Folders** (`code-standards` §4.6): `app/` wires store, providers and routes;
+  `views/<page>/` holds one page and every part only it uses; `features/<name>/`
+  holds a feature's API, queries, state, hooks and parts shared by several pages;
+  `components/` shared UI (`layouts/` for the shells); `apis/client/` the HTTP
+  client and API service wiring; `configs/`, `libs/` (library setup), `utils/`.
+  Imports go down only: app → views → features → components / apis / libs / utils / configs.
+  A view folder imports no other view (ESLint).
+- **View registry** (`src/views/Views.registry.ts`): every page with its `path`,
+  optional `navItems` (label, path, permission subject and action) and optional
+  `useNavItems`, which returns `{ items, isLoading, hasFailed, retry }` so the
+  menu can show skeleton rows or a retry line (the content list view uses
+  `useContentNavItems`: one link per content type the caller may read, under
+  `singleTypes` or `collectionTypes` by kind; `/content/:slug` of a single type
+  redirects to its one document, or to the create form when none exists).
+  `app/AppRoutes.setup.tsx` builds the routes from it and hands `APP_NAV` to
+  `AppShell`; nav order is registry order. Routes are protected unless listed in
+  `PUBLIC_ROUTE_PATHS` (same file, the four auth pages). A new page is one
+  `views/<page>/` folder plus one entry in the registry.
+- **Feature registry** (`src/features/Features.registry.ts`): each feature folder
+  has a `<Name>.feature.ts` with its optional `apiServices`
+  (`defineApiService(createXApi, XApiProvider)`, `apis/client/ApiService.setup.tsx`).
+  `app/AppServices.setup.ts` builds each feature API from the registry and
+  `AppProviders` nests the providers inside the session provider.
 
 End-to-end coverage lives in [`apps/e2e`](../e2e/README.md).
 
-## Reviewer access (T32)
+## Reviewer access
 
 - `/reviewer` (nav "Reviewers", needs `reviewer_settings:read`; owner by
   default): the on/off switch (`PUT /reviewer/settings`, needs `update`;
@@ -235,23 +248,23 @@ pnpm --filter @abyss/cms-admin dev       # http://localhost:5173 (DEV_SERVER_POR
 
 ## Config
 
-- `src/config/App.env.ts` is the only module that reads `import.meta.env`. Every
+- `src/configs/App.env.ts` is the only module that reads `import.meta.env`. Every
   key is documented in [`.env.example`](.env.example). `VITE_*` values are
   baked in at build time, so they are public: never put secrets there.
-- `src/config/Api.endpoints.ts` is the single map of API paths.
-- `src/config/Copy.constants.ts` re-exports `COPY`, the user-facing text
-  until an i18n module exists. Sections live in `src/config/copy/*.copy.ts`
+- `src/configs/Api.endpoints.ts` is the single map of API paths.
+- `src/configs/Copy.constants.ts` re-exports `COPY`, the user-facing text
+  until an i18n module exists. Sections live in `src/configs/copy/*.copy.ts`
   (shared text and nav labels in `common.copy.ts`) and are joined in
   `copy/index.ts`; only that folder imports a section file (ESLint).
-- `src/config/` keeps only cross-feature constants (`Http.constants`,
+- `src/configs/` keeps only cross-feature constants (`Http.constants`,
   `Auth.constants`, `App.routes`). A feature's own constants live in
   `src/features/<name>/<Name>.constants.ts`; other code reads them through
   that feature's `index.ts` (ESLint forbids importing another feature's
   constants file).
-- `src/lib/Api.client.ts` is the Axios instance. It strips trailing slashes
-  from every request path (`src/config/StripTrailingSlashes.rules.ts`, SPEC §6), so no proxy can answer with a redirect.
+- `src/apis/client/Api.client.ts` is the Axios instance. It strips trailing slashes
+  from every request path (`src/configs/StripTrailingSlashes.rules.ts`, SPEC §6), so no proxy can answer with a redirect.
 
-Styling: Tailwind v4 with the form-commons theme (`src/styles/app.css`).
+Styling: Tailwind v4 with the form-commons theme. `src/main.tsx` imports only `src/assets/styles/global.css`, which pulls in the theme, `base.css` (element styles) and `app.css` (app styles).
 Components use semantic tokens only (`bg-card`, `text-muted-foreground`).
 
 ## Docker
@@ -278,7 +291,7 @@ routes. The build fails without `VITE_API_BASE_URL`.
 
 The `abyss/file-names` ESLint rule (ADR 0008, run by `pnpm lint`) fails on a file or folder under `src/` and `test/` that breaks the naming rule.
 
-## Security headers (SPEC D17, T36)
+## Security headers (SPEC D17)
 
 nginx sends the CSP, HSTS, `nosniff` and `Referrer-Policy` on every response
 (every location includes `/etc/nginx/conf.d/security-headers.inc`, rendered at
@@ -291,6 +304,12 @@ matches that exact URL only): the origin of the `VITE_API_BASE_URL` the image
 was built with, or the runtime env `CSP_CONNECT_SRC` (space-separated origins)
 when set.
 
+`CSP_EXTRA_IMG_SRC` (runtime env, optional) appends space-separated
+`http(s)://host[:port]` origins to `img-src` only. It exists for test stacks
+whose media provider serves files from another origin (the smoke stack sets the
+web origin); production leaves it unset and the header is unchanged. Any other
+value (path, `;`, quote, `*`, keyword) makes the container exit non-zero.
+
 The nonce exists because Radix dialogs inject a scroll-lock `<style>` whose
 content depends on the measured scrollbar width, so a fixed sha256 hash would
 differ per OS/browser. nginx uses `$request_id` (128 random bits) as the nonce
@@ -299,5 +318,5 @@ and adds `<meta name="csp-nonce">` to the HTML shell (`sub_filter`);
 
 The CSP has no `'unsafe-eval'`, so the bundle must not use `eval` or
 `new Function`. Zod runs with `jitless` for that reason: its eval probe would
-log a CSP violation on every page (`src/app/Zod.setup.ts`, imported first in
+log a CSP violation on every page (`src/libs/Zod.setup.ts`, imported first in
 `src/main.tsx`, ADR 0015).

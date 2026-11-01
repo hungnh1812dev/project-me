@@ -1,15 +1,8 @@
 import * as React from 'react';
-import {
-  type FieldPath,
-  type FieldValues,
-  type RegisterOptions,
-} from 'react-hook-form';
+import { type FieldPath, type FieldValues, type RegisterOptions } from 'react-hook-form';
 
 import { Field } from '@/components/forms/field';
-import {
-  type NativeFieldProps,
-  useRegisteredField,
-} from '@/components/forms/FieldWiring.setup';
+import { useRegisteredField, type NativeFieldProps } from '@/components/forms/FieldWiring.setup';
 import { Input } from '@/components/ui/Input';
 
 export interface TextInputProps<

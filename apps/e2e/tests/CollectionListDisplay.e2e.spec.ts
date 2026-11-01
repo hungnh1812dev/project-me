@@ -1,14 +1,8 @@
-import {
-  type BrowserContext,
-  expect,
-  type Page,
-  type Route,
-  test,
-} from '@playwright/test';
+import { expect, test, type BrowserContext, type Page, type Route } from '@playwright/test';
 
 import { ADMIN_COPY, contentListPath } from '../src/Apps.contract';
-import { signInAsOwner } from '../src/Session.fixture';
 import { HTTP } from '../src/E2e.constants';
+import { signInAsOwner } from '../src/Session.fixture';
 
 /** R3-11: the collection list reads cell text, sortability and alignment from the field registry. */
 
@@ -16,8 +10,7 @@ const list = ADMIN_COPY.content.collection;
 const MASKED = '***';
 const cellText = (value: unknown): string =>
   typeof value === 'string' ? value : JSON.stringify(value ?? '');
-const API_PATTERN =
-  /\/api\/v1\/(content-types|documents)\/(listmix|listtime)(\?.*)?$/;
+const API_PATTERN = /\/api\/v1\/(content-types|documents)\/(listmix|listtime)(\?.*)?$/;
 const PAGE_SIZE = 25;
 
 const field = (path: string, type: string) => ({
@@ -58,10 +51,7 @@ const TYPES = {
 };
 
 const WHEN = '2026-03-05T10:30:00.000Z';
-const ROWS: Record<
-  string,
-  { documentId: string; values: Record<string, unknown> }[]
-> = {
+const ROWS: Record<string, { documentId: string; values: Record<string, unknown> }[]> = {
   listmix: [
     {
       documentId: 'a1',
@@ -134,9 +124,7 @@ async function mockCollections(context: BrowserContext, sorts: string[]) {
     }));
     const name = sort.replace(/^-/, '');
     if (name !== '' && name !== 'updatedAt') {
-      rows.sort((l, r) =>
-        cellText(l.values[name]).localeCompare(cellText(r.values[name])),
-      );
+      rows.sort((l, r) => cellText(l.values[name]).localeCompare(cellText(r.values[name])));
       if (sort.startsWith('-')) rows.reverse();
     }
     return route.fulfill({
@@ -160,8 +148,7 @@ const whitespaceTolerant = (text: string): RegExp =>
       .join('\\s'),
   );
 
-test.describe
-  .serial('owner: collection list cells come from the field registry', () => {
+test.describe.serial('owner: collection list cells come from the field registry', () => {
   let context: BrowserContext;
   let page: Page;
   const sorts: string[] = [];
@@ -172,10 +159,7 @@ test.describe
     await mockCollections(context, sorts);
     page = await context.newPage();
     page.on('console', (message) => {
-      if (
-        message.type() === 'error' &&
-        !message.text().startsWith('Failed to load resource')
-      ) {
+      if (message.type() === 'error' && !message.text().startsWith('Failed to load resource')) {
         consoleProblems.push(message.text());
       }
     });
@@ -195,17 +179,12 @@ test.describe
     await expect(headers.nth(1)).toContainText('title');
     await expect(headers.nth(2)).toContainText('qty');
     await expect(headers.nth(3)).toContainText('active');
-    await expect(
-      table.getByRole('columnheader', { name: 'extra' }),
-    ).toHaveCount(0);
-    await expect(
-      table.getByRole('columnheader', { name: 'payload' }),
-    ).toHaveCount(0);
+    await expect(table.getByRole('columnheader', { name: 'extra' })).toHaveCount(0);
+    await expect(table.getByRole('columnheader', { name: 'payload' })).toHaveCount(0);
   });
 
   test('cells: Yes/No, em dash, Protected, Untitled, integer right-aligned', async () => {
-    const rowOf = (text: string | RegExp) =>
-      page.getByRole('row').filter({ hasText: text });
+    const rowOf = (text: string | RegExp) => page.getByRole('row').filter({ hasText: text });
     const alpha = rowOf('Alpha');
     await expect(alpha.getByRole('cell', { name: list.yes })).toBeVisible();
     await expect(alpha.getByRole('cell', { name: '5', exact: true })).toHaveCSS(
@@ -214,18 +193,11 @@ test.describe
     );
     const untitled = rowOf(new RegExp(`^.*${list.untitled}`));
     await expect(untitled.getByRole('cell', { name: list.no })).toBeVisible();
-    await expect(
-      untitled.getByRole('cell', { name: list.emptyValue }).first(),
-    ).toBeVisible();
+    await expect(untitled.getByRole('cell', { name: list.emptyValue }).first()).toBeVisible();
     const masked = page.getByRole('row').filter({ hasText: '100' });
-    await expect(
-      masked.getByRole('link', { name: new RegExp(list.untitled) }),
-    ).toBeVisible();
+    await expect(masked.getByRole('link', { name: new RegExp(list.untitled) })).toBeVisible();
     await expect(page.getByText(MASKED)).toHaveCount(0);
-    await expect(alpha.getByRole('cell', { name: list.yes })).not.toHaveCSS(
-      'text-align',
-      'right',
-    );
+    await expect(alpha.getByRole('cell', { name: list.yes })).not.toHaveCSS('text-align', 'right');
   });
 
   test('datetime formatted, decimal right-aligned, richtext not a column', async () => {
@@ -241,20 +213,15 @@ test.describe
     );
     const dated = page.getByRole('row', { name: /^Select Dated/ });
     await expect(
-      dated
-        .getByRole('cell')
-        .filter({ hasText: whitespaceTolerant(expectedWhen) }),
+      dated.getByRole('cell').filter({ hasText: whitespaceTolerant(expectedWhen) }),
     ).toBeVisible();
-    await expect(
-      dated.getByRole('cell', { name: '12.50', exact: true }),
-    ).toHaveCSS('text-align', 'right');
-    const undated = page.getByRole('row').filter({ hasText: 'Undated' });
-    await expect(
-      undated.getByRole('cell', { name: list.emptyValue }),
-    ).toBeVisible();
-    await expect(page.getByRole('columnheader', { name: 'body' })).toHaveCount(
-      0,
+    await expect(dated.getByRole('cell', { name: '12.50', exact: true })).toHaveCSS(
+      'text-align',
+      'right',
     );
+    const undated = page.getByRole('row').filter({ hasText: 'Undated' });
+    await expect(undated.getByRole('cell', { name: list.emptyValue })).toBeVisible();
+    await expect(page.getByRole('columnheader', { name: 'body' })).toHaveCount(0);
   });
 
   test('sorting by a column sends the sort and reorders rows', async () => {

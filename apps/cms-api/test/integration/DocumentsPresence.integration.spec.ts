@@ -8,17 +8,19 @@ import {
   type PrismaHandle,
 } from '../../src/infrastructure/database/PrismaClient.adapter';
 import { createContentDb } from '../../src/modules/content-engine/adapters/ContentDatabase.adapter';
+import type { ContentDatabase } from '../../src/modules/content-engine/adapters/TreeLoader.adapter';
 import { ContentRegistry } from '../../src/modules/content-engine/application/ContentRegistry.service';
 import { ContentTypeRegistry } from '../../src/modules/content-engine/domain/ContentTypeRegistry.entity';
 import {
   emptySnapshot,
   planMigration,
 } from '../../src/modules/content-engine/domain/SqlGenerator.rules';
-import type { ContentDatabase } from '../../src/modules/content-engine/adapters/TreeLoader.adapter';
 import { hashPassword } from '../../src/modules/identity/application/Password.service';
 import {
   ARTICLE_DEFINITION,
   NOTE_DEFINITION,
+  seedRolePermissions,
+  seedSystemRoles,
 } from '../fixtures/Access.fixture';
 import { createCoreTemplate } from '../fixtures/CoreDb.fixture';
 import {
@@ -31,10 +33,6 @@ import {
 } from '../fixtures/Env.fixture';
 import { startPostgres, type TestPostgres } from '../fixtures/Postgres.fixture';
 import { createTestApp } from '../fixtures/TestApp.fixture';
-import {
-  seedRolePermissions,
-  seedSystemRoles,
-} from '../fixtures/Access.fixture';
 
 const PASSWORD = 'correct horse battery staple';
 const DOCUMENTS = '/api/v1/documents';
@@ -76,18 +74,11 @@ describe('document presence (T26; Postgres 17 via Testcontainers)', () => {
     await seedSystemRoles(db.prisma);
     await seedRolePermissions(db.prisma);
 
-    const registry = ContentTypeRegistry.fromDefinitions([
-      ARTICLE_DEFINITION,
-      NOTE_DEFINITION,
-    ]);
-    const definitions = registry
-      .slugs()
-      .map((slug) => registry.resolve(slug).definition);
+    const registry = ContentTypeRegistry.fromDefinitions([ARTICLE_DEFINITION, NOTE_DEFINITION]);
+    const definitions = registry.slugs().map((slug) => registry.resolve(slug).definition);
     const client = new Client({ connectionString: databaseUrl });
     await client.connect();
-    await client.query(
-      planMigration(emptySnapshot(), definitions).statements.join('\n'),
-    );
+    await client.query(planMigration(emptySnapshot(), definitions).statements.join('\n'));
     await client.end();
     content = createContentDb(databaseUrl);
 
@@ -126,8 +117,7 @@ describe('document presence (T26; Postgres 17 via Testcontainers)', () => {
       select: { documentId: true, displayName: true },
     });
     const idOf = (name: string) =>
-      accounts.find((account) => account.displayName === name)
-        ?.documentId as string;
+      accounts.find((account) => account.displayName === name)?.documentId as string;
     ids = { owner: idOf('User 1'), editor: idOf('User 2') };
   });
 
@@ -165,10 +155,7 @@ describe('document presence (T26; Postgres 17 via Testcontainers)', () => {
   }
 
   async function customRole(slug: string, rank: number, permissions: Json[]) {
-    const created = await http()
-      .post(ROLES)
-      .set(bearer(owner))
-      .send({ slug, name: slug, rank });
+    const created = await http().post(ROLES).set(bearer(owner)).send({ slug, name: slug, rank });
     expect(created.status).toBe(201);
     const id = (created.body as { id: string }).id;
     const put = await http()
@@ -188,12 +175,10 @@ describe('document presence (T26; Postgres 17 via Testcontainers)', () => {
   }
 
   const beat = (id: string, token?: string, body: unknown = {}) => {
-    const req = http()
-      .post(`${DOCUMENTS}/article/${id}/presence`)
-      .set('X-Forwarded-For', nextIp());
-    return (
-      token === undefined ? req : req.set('Authorization', `Bearer ${token}`)
-    ).send(body as Json);
+    const req = http().post(`${DOCUMENTS}/article/${id}/presence`).set('X-Forwarded-For', nextIp());
+    return (token === undefined ? req : req.set('Authorization', `Bearer ${token}`)).send(
+      body as Json,
+    );
   };
 
   it('returns only accountId, displayName, state and lastSeenAt for everyone active', async () => {
@@ -218,9 +203,7 @@ describe('document presence (T26; Postgres 17 via Testcontainers)', () => {
     const mine = list.find((entry) => entry.accountId === ids.editor);
     expect(mine).toMatchObject({ displayName: 'User 2', state: 'viewing' });
     expect(Number.isNaN(Date.parse(mine?.lastSeenAt ?? ''))).toBe(false);
-    expect(list.find((entry) => entry.accountId === ids.owner)?.state).toBe(
-      'editing',
-    );
+    expect(list.find((entry) => entry.accountId === ids.owner)?.state).toBe('editing');
   });
 
   it('repeated heartbeats from one account keep a single entry', async () => {
@@ -243,9 +226,7 @@ describe('document presence (T26; Postgres 17 via Testcontainers)', () => {
   });
 
   it('is 404 for an unknown document, a bad id and a row outside the update conditions', async () => {
-    expect(
-      (await beat('0194b0c0-0000-7000-8000-000000000000', editor)).status,
-    ).toBe(404);
+    expect((await beat('0194b0c0-0000-7000-8000-000000000000', editor)).status).toBe(404);
     expect((await beat('not-an-id', editor)).status).toBe(400);
     const outside = await createArticle(3);
     const inside = await createArticle(1);

@@ -5,16 +5,16 @@ description: Visual and UX direction for this project - soft but enterprise colo
 
 # UI Direction
 
-Design with `ui-ux-pro-max:ui-ux-pro-max` and build with `agent-skills:frontend-ui-engineering`. This skill sets the taste those skills must follow.
+The taste `ui-ux-pro-max:ui-ux-pro-max` (design) and `agent-skills:frontend-ui-engineering` (build) must follow.
 
 ## 1. Tone: soft, but enterprise
 
-- Calm and trustworthy, like a tool people use 8 hours a day. Not playful, not flashy.
-- **Neutrals carry the UI**: off-white / very light gray surfaces, gray-slate text, thin borders. Color is reserved for meaning (action, status, focus).
+- Calm and trustworthy, a tool used 8 hours a day; not playful or flashy.
+- **Neutrals carry the UI**: off-white / very light gray surfaces, gray-slate text, thin borders. Color only for meaning (action, status, focus).
 - **One muted primary hue** (e.g. a desaturated blue or teal), used sparingly.
-- Status colors are muted versions of green / amber / red / blue, with soft tinted backgrounds for badges and alerts and strong enough text to pass contrast.
+- Status colors: muted green / amber / red / blue, soft tinted backgrounds for badges and alerts, text that passes contrast.
 - Body text and controls meet WCAG AA (4.5:1 text, 3:1 UI and borders of inputs).
-- **All values live in design tokens** (primitive → semantic → component; see `ui-ux-pro-max:design-system`). Components use semantic tokens only. If the palette is not defined yet, propose 2-3 options and **ask the user to choose**. Do not pick one silently.
+- **All values live in design tokens** (primitive → semantic → component; see `ui-ux-pro-max:design-system`). Components use semantic tokens only. No palette yet: propose 2-3 options and **ask the user to choose**.
 
 ## 2. Buttons: color and style follow function
 
@@ -27,22 +27,22 @@ Design with `ui-ux-pro-max:ui-ux-pro-max` and build with `agent-skills:frontend-
 | `destructive` | Delete / irreversible (Delete, Revoke) | Red. Must confirm, and the confirm button names the action ("Delete 3 invoices"), not "OK" |
 | `ghost` / `link` | Tertiary, in-table, toolbar actions | No background until hover |
 
-- Every variant has hover, active, focus-visible (clear ring), disabled, and loading states. Loading keeps the button's width and disables double submit.
+- Every variant has hover, active, focus-visible (clear ring), disabled and loading states; loading keeps the width and blocks double submit.
 - Labels are verbs that say what happens ("Send invoice", not "Submit"). Icon-only buttons need an `aria-label` and a tooltip.
-- Order in dialogs and forms is consistent across the app (decide it once with the user, then never vary).
+- Button order in dialogs and forms is decided once with the user, then never varies.
 
 ## 3. User first
 
-- Start from the user's job on the screen: what do they come here to do, what do they need to see first? The layout follows that, not a template.
+- Layout follows the user's job on the screen (what they came to do, what they need first), not a template.
 - Real data density: tables with aligned numbers (tabular figures, right-aligned), sticky headers, sensible column widths, filters near the data.
 - Every data view has designed **empty, loading (skeletons matching the layout), error (with a retry or next step), and partial** states.
 - Forms: labels above inputs, helpful inline validation after blur, error text that says how to fix it, preserved input on error.
 - Keyboard: logical tab order, visible focus, Esc closes overlays, Enter submits forms.
-- Copy is plain and specific. Talk about the user's objects ("3 invoices overdue"), not about the system.
+- Plain, specific copy about the user's objects ("3 invoices overdue"), not the system.
 
 ## 4. Must look human-designed, not AI-generated
 
-Avoid these tells:
+Avoid:
 
 - Purple/blue gradients, glowing blobs, glassmorphism everywhere
 - Centered hero + three identical feature cards + emoji icons
@@ -52,7 +52,7 @@ Avoid these tells:
 - Lorem ipsum or obviously fake round-number data in demos
 - Decorative icons on every label
 
-Do instead:
+Instead:
 
 - Clear hierarchy through size, weight, and spacing on a 4/8px scale, with deliberate rhythm (tighter inside groups, more space between groups).
 - Mostly left-aligned layouts with a grid; restraint in radius (small, consistent) and shadow (only for elevation: menus, dialogs).

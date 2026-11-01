@@ -2,7 +2,7 @@ import { PrismaPg } from '@prisma/adapter-pg';
 import { Pool } from 'pg';
 
 import { PrismaClient } from '../../generated/prisma/client';
-import { type DatabaseConnection, poolOptionsOf } from './DatabaseConfig.rules';
+import { poolOptionsOf, type DatabaseConnection } from './DatabaseConfig.rules';
 
 export { PrismaClient };
 

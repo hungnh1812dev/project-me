@@ -2,12 +2,12 @@ import { copyFile, mkdir, mkdtemp, readdir, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { ContentEngineError } from '../domain/ContentDocument.entity';
 import { DEFAULT_CONTENT_PATHS } from '../adapters/MigrationFiles.adapter';
+import { ContentEngineError } from '../domain/ContentDocument.entity';
 import {
   checkContentMigrations,
-  type GenerateOptions,
   generateContentMigration,
+  type GenerateOptions,
 } from './ContentGenerate.command';
 
 const CV_PAGE_FILE = 'cv-page.json';

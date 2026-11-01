@@ -41,30 +41,18 @@ function TablePagination({
     <nav
       aria-label={labels.nav}
       className={cn(
-        'flex items-center justify-between gap-3 border-t border-border px-3 py-2 text-sm',
+        'border-border flex items-center justify-between gap-3 border-t px-3 py-2 text-sm',
         className,
       )}
     >
-      <span className="tabular-nums text-muted-foreground">
-        {count === 0
-          ? labels.range(0, 0, total)
-          : labels.range(from, to, total)}
+      <span className="text-muted-foreground tabular-nums">
+        {count === 0 ? labels.range(0, 0, total) : labels.range(from, to, total)}
       </span>
       <span className="flex gap-2">
-        <Button
-          type="button"
-          size="sm"
-          disabled={page <= 1}
-          onClick={() => onPageChange(page - 1)}
-        >
+        <Button type="button" size="sm" disabled={page <= 1} onClick={() => onPageChange(page - 1)}>
           {labels.previous}
         </Button>
-        <Button
-          type="button"
-          size="sm"
-          disabled={!hasNext}
-          onClick={() => onPageChange(page + 1)}
-        >
+        <Button type="button" size="sm" disabled={!hasNext} onClick={() => onPageChange(page + 1)}>
           {labels.next}
         </Button>
       </span>

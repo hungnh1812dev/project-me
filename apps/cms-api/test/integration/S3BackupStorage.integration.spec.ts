@@ -1,20 +1,12 @@
-import {
-  CreateBucketCommand,
-  PutObjectCommand,
-  S3Client,
-} from '@aws-sdk/client-s3';
-import {
-  GenericContainer,
-  Wait,
-  type StartedTestContainer,
-} from 'testcontainers';
+import { CreateBucketCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import { GenericContainer, Wait, type StartedTestContainer } from 'testcontainers';
 
 import type { BackupStorageConfig } from '../../src/config/AppConfig.setup';
+import { S3BackupStorage } from '../../src/modules/backups/adapters/S3BackupStorage.adapter';
 import {
   BackupStorageError,
   type StoredBackupObject,
 } from '../../src/modules/backups/application/Backups.port';
-import { S3BackupStorage } from '../../src/modules/backups/adapters/S3BackupStorage.adapter';
 
 /** S3 stand-in. MinIO no longer publishes images on Docker Hub, so SeaweedFS (Apache-2.0). */
 const S3_STAND_IN_IMAGE = 'chrislusf/seaweedfs:4.51';
@@ -24,8 +16,7 @@ const SECRET_ACCESS_KEY = 'test-secret-access-key-0123456789';
 const BUCKET = 'abyss-backups-test';
 const PREFIX = 'postgres/';
 const DAILY_PREFIX = `${PREFIX}daily/`;
-const CONTENT_DISPOSITION =
-  'attachment; filename="abyss-20261027T020000Z.dump.age"';
+const CONTENT_DISPOSITION = 'attachment; filename="abyss-20261027T020000Z.dump.age"';
 const DOWNLOAD_TTL_SECONDS = 60;
 const SHORT_TTL_SECONDS = 1;
 const PAST_SHORT_TTL_MS = 3_000;
@@ -79,10 +70,9 @@ describe('S3BackupStorage against an S3 stand-in', () => {
 
   it('lists every object under the prefix with its size', async () => {
     const listed = await storage.list(PREFIX);
-    const expected: StoredBackupObject[] = [
-      ...DAILY_OBJECTS,
-      NON_MATCHING_OBJECT,
-    ].map(({ key, body }) => ({ key, sizeBytes: body.length }));
+    const expected: StoredBackupObject[] = [...DAILY_OBJECTS, NON_MATCHING_OBJECT].map(
+      ({ key, body }) => ({ key, sizeBytes: body.length }),
+    );
     expect(sortByKey(listed)).toEqual(sortByKey(expected));
   });
 
@@ -116,25 +106,15 @@ describe('S3BackupStorage against an S3 stand-in', () => {
   });
 
   it('issues a URL that downloads the exact bytes with the stored Content-Disposition', async () => {
-    const url = await storage.createDownloadUrl(
-      DOWNLOADED.key,
-      DOWNLOAD_TTL_SECONDS,
-    );
+    const url = await storage.createDownloadUrl(DOWNLOADED.key, DOWNLOAD_TTL_SECONDS);
     const response = await fetch(url);
     expect(response.status).toBe(200);
-    expect(response.headers.get('content-disposition')).toBe(
-      CONTENT_DISPOSITION,
-    );
-    expect(Buffer.from(await response.arrayBuffer()).toString()).toBe(
-      DOWNLOADED.body,
-    );
+    expect(response.headers.get('content-disposition')).toBe(CONTENT_DISPOSITION);
+    expect(Buffer.from(await response.arrayBuffer()).toString()).toBe(DOWNLOADED.body);
   });
 
   it('refuses the URL after it expired', async () => {
-    const url = await storage.createDownloadUrl(
-      DOWNLOADED.key,
-      SHORT_TTL_SECONDS,
-    );
+    const url = await storage.createDownloadUrl(DOWNLOADED.key, SHORT_TTL_SECONDS);
     await new Promise((resolve) => setTimeout(resolve, PAST_SHORT_TTL_MS));
     expect((await fetch(url)).status).toBe(HTTP_FORBIDDEN);
   });

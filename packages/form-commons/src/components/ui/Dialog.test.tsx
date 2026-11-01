@@ -1,6 +1,6 @@
+import { useState } from 'react';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { useState } from 'react';
 
 import { Button } from './Button';
 import {
@@ -50,14 +50,10 @@ describe('Dialog', () => {
     render(<Example onConfirm={() => undefined} />);
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
 
-    await userEvent.click(
-      screen.getByRole('button', { name: 'Disable account' }),
-    );
+    await userEvent.click(screen.getByRole('button', { name: 'Disable account' }));
 
     const dialog = screen.getByRole('dialog', { name: 'Disable Mai Tran?' });
-    expect(dialog).toHaveAccessibleDescription(
-      'They are signed out everywhere.',
-    );
+    expect(dialog).toHaveAccessibleDescription('They are signed out everywhere.');
   });
 
   it('closes on Esc and returns focus to the trigger', async () => {
@@ -74,9 +70,7 @@ describe('Dialog', () => {
   it('closes from DialogClose without running the action', async () => {
     const onConfirm = vi.fn<() => void>();
     render(<Example onConfirm={onConfirm} />);
-    await userEvent.click(
-      screen.getByRole('button', { name: 'Disable account' }),
-    );
+    await userEvent.click(screen.getByRole('button', { name: 'Disable account' }));
 
     await userEvent.click(screen.getByRole('button', { name: 'Cancel' }));
 
@@ -87,13 +81,9 @@ describe('Dialog', () => {
   it('runs the named action button', async () => {
     const onConfirm = vi.fn<() => void>();
     render(<Example onConfirm={onConfirm} />);
-    await userEvent.click(
-      screen.getByRole('button', { name: 'Disable account' }),
-    );
+    await userEvent.click(screen.getByRole('button', { name: 'Disable account' }));
 
-    await userEvent.click(
-      screen.getByRole('button', { name: 'Disable Mai Tran' }),
-    );
+    await userEvent.click(screen.getByRole('button', { name: 'Disable Mai Tran' }));
 
     expect(onConfirm).toHaveBeenCalledOnce();
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();

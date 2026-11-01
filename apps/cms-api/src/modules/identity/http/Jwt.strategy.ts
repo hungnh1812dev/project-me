@@ -4,13 +4,10 @@ import { ExtractJwt, Strategy } from 'passport-jwt';
 
 import type { RequestWithId } from '../../../common/middleware/RequestId.middleware';
 import {
-  type AuthenticatedAccount,
   AccessSessionService,
+  type AuthenticatedAccount,
 } from '../application/AccessSession.service';
-import {
-  accessTokenClaimsSchema,
-  AccessTokenService,
-} from '../application/AccessToken.service';
+import { accessTokenClaimsSchema, AccessTokenService } from '../application/AccessToken.service';
 import { JWT_ALGORITHM } from '../domain/Identity.constants';
 import { JWT_STRATEGY_NAME } from './IdentityHttp.constants';
 

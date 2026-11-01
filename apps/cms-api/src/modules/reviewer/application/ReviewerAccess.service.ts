@@ -11,24 +11,11 @@ import {
   type TransactionRunner,
   type UnitOfWork,
 } from '../../../infrastructure/database/TransactionRunner.port';
-import {
-  type AccountActor,
-  REVIEWER_SETTINGS_SUBJECT,
-  VersionCache,
-} from '../../access';
+import { REVIEWER_SETTINGS_SUBJECT, VersionCache, type AccountActor } from '../../access';
 import { AccessTokenService, USER_AGENT_MAX_LENGTH } from '../../identity';
+import { AUDIT_ACTIONS, auditActorOf, SecurityAuditService, selfActor } from '../../security-audit';
+import { REVIEWER_ACCOUNT, REVIEWER_SESSION_TTL_MS } from '../domain/Reviewer.constants';
 import {
-  AUDIT_ACTIONS,
-  auditActorOf,
-  SecurityAuditService,
-  selfActor,
-} from '../../security-audit';
-import {
-  REVIEWER_ACCOUNT,
-  REVIEWER_SESSION_TTL_MS,
-} from '../domain/Reviewer.constants';
-import {
-  type CreatedReviewerSessionView,
   isReviewerAtCapacity,
   isReviewerSessionActive,
   retryAfterSecondsOf,
@@ -39,6 +26,7 @@ import {
   reviewerIpLimited,
   reviewerTurnstileFailed,
   reviewerUnavailable,
+  type CreatedReviewerSessionView,
   type ReviewerSessionPage,
   type ReviewerStatusView,
 } from '../domain/ReviewerAdmission.rules';
@@ -74,9 +62,7 @@ const REVIEWER_IP_HMAC = {
 } as const;
 
 /** The key behind `REVIEWER_IP_KEY`; undefined without a pepper (reviewer access then answers 503). */
-export function deriveReviewerIpKey(
-  pepper: string | undefined,
-): Buffer | undefined {
+export function deriveReviewerIpKey(pepper: string | undefined): Buffer | undefined {
   if (pepper === undefined) return undefined;
   return Buffer.from(
     hkdfSync(
@@ -131,9 +117,7 @@ export class ReviewerAccessService {
       await this.reviewers.saveEnabled(unit, input.enabled, actor.accountId);
       const roleId = await this.accounts.bumpRolePolicyVersion(unit);
       // Off: kill live sessions (tv mismatch -> 401). Idempotent.
-      const accountIds = input.enabled
-        ? []
-        : await this.accounts.revokeAllSessions(unit);
+      const accountIds = input.enabled ? [] : await this.accounts.revokeAllSessions(unit);
       await this.audit.record(unit, {
         actor: auditActorOf(actor),
         action: AUDIT_ACTIONS.REVIEWER_SETTINGS_CHANGED,
@@ -166,12 +150,7 @@ export class ReviewerAccessService {
     await this.assertHumanVerified(input.turnstileToken, ip);
 
     const expiresAt = new Date(this.clock.now() + REVIEWER_SESSION_TTL_MS);
-    const created = await this.createAccountAndSession(
-      input,
-      ipHmac,
-      userAgent,
-      expiresAt,
-    );
+    const created = await this.createAccountAndSession(input, ipHmac, userAgent, expiresAt);
 
     return {
       accessToken: this.tokens.signReviewerSessionToken({
@@ -186,10 +165,7 @@ export class ReviewerAccessService {
   /** Owner: newest first. */
   async listSessions(query: PageQuery): Promise<ReviewerSessionPage> {
     this.requireFeatureOn();
-    const { total, rows } = await this.reviewers.listSessions(
-      query.page,
-      query.pageSize,
-    );
+    const { total, rows } = await this.reviewers.listSessions(query.page, query.pageSize);
     const now = this.clock.now();
     return {
       data: rows.map((row) => ({
@@ -218,10 +194,7 @@ export class ReviewerAccessService {
     return this.ipKey;
   }
 
-  private async assertHumanVerified(
-    turnstileToken: string,
-    ip: string | undefined,
-  ): Promise<void> {
+  private async assertHumanVerified(turnstileToken: string, ip: string | undefined): Promise<void> {
     const outcome = await this.turnstile.verify(turnstileToken, ip);
     if (outcome === 'unavailable') throw reviewerUnavailable();
     if (outcome === 'failed') throw reviewerTurnstileFailed();
@@ -265,9 +238,7 @@ export class ReviewerAccessService {
   }
 
   private hmacOf(value: string, key: Buffer): string {
-    return createHmac(REVIEWER_IP_HMAC.HMAC_ALGORITHM, key)
-      .update(value)
-      .digest('hex');
+    return createHmac(REVIEWER_IP_HMAC.HMAC_ALGORITHM, key).update(value).digest('hex');
   }
 
   /**
@@ -276,10 +247,7 @@ export class ReviewerAccessService {
    * with FOR SHARE, so a concurrent switch-off waits for this commit and then
    * revokes the new session too.
    */
-  private async assertAllowed(
-    ipHmac: string,
-    unit?: UnitOfWork,
-  ): Promise<void> {
+  private async assertAllowed(ipHmac: string, unit?: UnitOfWork): Promise<void> {
     const isEnabled =
       unit === undefined
         ? await this.reviewers.isEnabled()

@@ -1,18 +1,11 @@
-import { type Generated, type Kysely, sql } from 'kysely';
+import { sql, type Generated, type Kysely } from 'kysely';
 
-import { MIGRATION_LOCK_KEY } from './ContentDatabase.adapter';
-import {
-  CONTENT_DB_SCHEMA,
-  META_TABLES,
-} from '../domain/ContentEngine.constants';
 import { ContentEngineError } from '../domain/ContentDocument.entity';
+import { CONTENT_DB_SCHEMA, META_TABLES } from '../domain/ContentEngine.constants';
 import type { ContentTypeKind } from '../domain/DefinitionSchema.rules';
-import {
-  listMigrations,
-  type MigrationFile,
-  readSnapshot,
-} from './MigrationFiles.adapter';
 import { quoteIdentifier } from '../domain/SqlGenerator.rules';
+import { MIGRATION_LOCK_KEY } from './ContentDatabase.adapter';
+import { listMigrations, readSnapshot, type MigrationFile } from './MigrationFiles.adapter';
 
 /** Kysely view of the engine's bookkeeping tables in schema `content`. */
 export interface ContentMetaDatabase {
@@ -66,10 +59,7 @@ CREATE TABLE IF NOT EXISTS ${SCHEMA}.${quoteIdentifier(META_TABLES.contentTypes)
 );
 `;
 
-function findPending(
-  files: MigrationFile[],
-  applied: Map<string, string>,
-): MigrationFile[] {
+function findPending(files: MigrationFile[], applied: Map<string, string>): MigrationFile[] {
   const byName = new Map(files.map((file) => [file.name, file]));
   for (const [name, checksum] of applied) {
     const file = byName.get(name);
@@ -120,10 +110,7 @@ export async function runContentMigrations(
       .selectFrom(META_TABLES.migrations)
       .select(['name', 'checksum'])
       .execute();
-    const pending = findPending(
-      files,
-      new Map(appliedRows.map((row) => [row.name, row.checksum])),
-    );
+    const pending = findPending(files, new Map(appliedRows.map((row) => [row.name, row.checksum])));
 
     for (const migration of pending) {
       // Migration files are generated from validated definitions and
@@ -157,21 +144,14 @@ export async function runContentMigrations(
               definition_hash: row.definition_hash,
               updated_at: sql<Date>`now()`,
             })
-            .where(
-              `${META_TABLES.contentTypes}.definition_hash`,
-              '<>',
-              row.definition_hash,
-            ),
+            .where(`${META_TABLES.contentTypes}.definition_hash`, '<>', row.definition_hash),
         )
         .executeTakeFirst();
-      if (Number(upsertOutcome.numInsertedOrUpdatedRows ?? 0) > 0)
-        upserted.push(slug);
+      if (Number(upsertOutcome.numInsertedOrUpdatedRows ?? 0) > 0) upserted.push(slug);
     }
 
     const slugs = Object.keys(snapshot.contentTypes);
-    let removeQuery = meta
-      .deleteFrom(META_TABLES.contentTypes)
-      .returning('slug');
+    let removeQuery = meta.deleteFrom(META_TABLES.contentTypes).returning('slug');
     if (slugs.length > 0) {
       removeQuery = removeQuery.where('slug', 'not in', slugs);
     }

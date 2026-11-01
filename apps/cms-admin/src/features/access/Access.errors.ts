@@ -1,13 +1,13 @@
 import { type FormAlertTone } from '@abyss/form-commons';
-import { COPY } from '../../config/Copy.constants';
-import { API_ERROR_CODES, HTTP_STATUS } from '../../config/Http.constants';
 import {
-  type ApiIssue,
   apiDetailsOf,
   apiFailureOf,
   apiIssuesOf,
   rateLimitedMessage,
-} from '../../lib/ApiFailure.errors';
+  type ApiIssue,
+} from '@apis/client/ApiFailure.errors';
+import { COPY } from '@configs/Copy.constants';
+import { API_ERROR_CODES, HTTP_STATUS } from '@configs/Http.constants';
 
 const copy = COPY.access;
 
@@ -25,9 +25,7 @@ export interface AccessError {
 
 function indexesOf(details: Record<string, unknown>): number[] {
   const raw = details.indexes;
-  return Array.isArray(raw)
-    ? raw.filter((value): value is number => Number.isInteger(value))
-    : [];
+  return Array.isArray(raw) ? raw.filter((value): value is number => Number.isInteger(value)) : [];
 }
 
 const MESSAGE_BY_CODE: Readonly<Record<string, string>> = {
@@ -59,9 +57,7 @@ export function toAccessError(error: unknown): AccessError {
     case 'http': {
       const details = apiDetailsOf(error);
       const known =
-        failure.errorCode === undefined
-          ? undefined
-          : MESSAGE_BY_CODE[failure.errorCode];
+        failure.errorCode === undefined ? undefined : MESSAGE_BY_CODE[failure.errorCode];
       return {
         errorCode: failure.errorCode,
         status: failure.status,

@@ -1,9 +1,9 @@
 import type { AxiosInstance } from 'axios';
 
-import { API_ENDPOINTS } from '../../config/Api.endpoints';
-import { HTTP_STATUS } from '../../config/Http.constants';
-import { REVIEWER_ERROR_CODES } from '../../config/Reviewer.constants';
-import { apiFailureOf } from '../../lib/ApiFailure.errors';
+import { apiFailureOf } from '../../apis/client/ApiFailure.errors';
+import { API_ENDPOINTS } from '../../configs/Api.endpoints';
+import { HTTP_STATUS } from '../../configs/Http.constants';
+import { REVIEWER_ERROR_CODES } from '../../configs/Reviewer.constants';
 
 /** What the visitor tells the owner when asking for review access (no PII). */
 export interface ReviewerSessionInput {
@@ -40,9 +40,7 @@ export function createReviewerApi(client: AxiosInstance) {
      */
     isEnabled: async (): Promise<boolean> => {
       try {
-        const { data } = await client.get<{ enabled: boolean }>(
-          API_ENDPOINTS.REVIEWER.STATUS,
-        );
+        const { data } = await client.get<{ enabled: boolean }>(API_ENDPOINTS.REVIEWER.STATUS);
         return data.enabled === true;
       } catch (cause) {
         if (isFeatureOff(cause)) return false;
@@ -50,9 +48,7 @@ export function createReviewerApi(client: AxiosInstance) {
       }
     },
 
-    createSession: async (
-      input: ReviewerSessionInput,
-    ): Promise<ReviewerSessionResult> => {
+    createSession: async (input: ReviewerSessionInput): Promise<ReviewerSessionResult> => {
       const { data } = await client.post<ReviewerSessionResult>(
         API_ENDPOINTS.REVIEWER.SESSIONS,
         input,

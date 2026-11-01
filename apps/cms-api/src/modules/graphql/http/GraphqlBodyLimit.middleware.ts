@@ -2,8 +2,8 @@ import { HttpStatus } from '@nestjs/common';
 import type { NextFunction, Response } from 'express';
 
 import { API_PREFIX } from '../../../common/constants/Api.constants';
-import { NO_STORE_HEADER } from '../../../common/constants/Http.constants';
 import { ERROR_CODES } from '../../../common/constants/Error.constants';
+import { NO_STORE_HEADER } from '../../../common/constants/Http.constants';
 import {
   closeAfterAnswer,
   createByteCounter,
@@ -35,9 +35,7 @@ function tooLarge(req: RequestWithId, res: Response): void {
           message: GRAPHQL_LIMIT_MESSAGES.BODY_TOO_LARGE,
           extensions: {
             code: ERROR_CODES.PAYLOAD_TOO_LARGE,
-            ...(req.requestId === undefined
-              ? {}
-              : { requestId: req.requestId }),
+            ...(req.requestId === undefined ? {} : { requestId: req.requestId }),
           },
         },
       ],
@@ -55,11 +53,7 @@ function tooLarge(req: RequestWithId, res: Response): void {
  * limit is refused without reading anything; a chunked body is counted as it
  * arrives. Mount it on the GraphQL path before Nest's own parser.
  */
-export function graphqlBodyLimit(
-  req: RequestWithId,
-  res: Response,
-  next: NextFunction,
-): void {
+export function graphqlBodyLimit(req: RequestWithId, res: Response, next: NextFunction): void {
   if (req.method !== 'POST') {
     next();
     return;

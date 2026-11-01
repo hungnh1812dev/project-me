@@ -13,6 +13,7 @@ import {
   planMigration,
 } from '../../src/modules/content-engine/domain/SqlGenerator.rules';
 import { hashPassword } from '../../src/modules/identity/application/Password.service';
+import { seedRolePermissions, seedSystemRoles } from '../fixtures/Access.fixture';
 import { createCoreTemplate } from '../fixtures/CoreDb.fixture';
 import {
   dbEnvOf,
@@ -22,14 +23,10 @@ import {
   TEST_SECRET_32_BYTES,
   TEST_WEB_ORIGIN,
 } from '../fixtures/Env.fixture';
-import { buildMediaFixtures } from '../fixtures/Media.fixture';
+import { buildMediaFixtures, MINIMAL_PDF } from '../fixtures/Media.fixture';
 import { multipart } from '../fixtures/Multipart.fixture';
 import { startPostgres, type TestPostgres } from '../fixtures/Postgres.fixture';
 import { createTestApp } from '../fixtures/TestApp.fixture';
-import {
-  seedRolePermissions,
-  seedSystemRoles,
-} from '../fixtures/Access.fixture';
 
 const PASSWORD = 'correct horse battery staple';
 const MEDIA = '/api/v1/media';
@@ -43,10 +40,14 @@ const GALLERY = {
   draftAndPublish: true,
   fields: [
     { name: 'cover', type: 'media' },
+    { name: 'body', type: 'richtext' },
     {
       name: 'block',
       type: 'component',
-      fields: [{ name: 'image', type: 'media' }],
+      fields: [
+        { name: 'image', type: 'media' },
+        { name: 'caption', type: 'richtext' },
+      ],
     },
   ],
 } as const;
@@ -63,12 +64,17 @@ describe('document media references (T29; Postgres 17 via Testcontainers)', () =
   let db: PrismaHandle;
   let databaseUrl: string;
   let jpeg: Buffer;
+  let png: Buffer;
   let accountCount = 0;
   let editor: string;
   let admin: string;
+  let owner: string;
+  let noMediaReadWriter: string;
 
   beforeAll(async () => {
-    jpeg = (await buildMediaFixtures()).exifJpeg;
+    const fixtures = await buildMediaFixtures();
+    jpeg = fixtures.exifJpeg;
+    png = fixtures.png;
     postgres = await startPostgres();
     const template = await createCoreTemplate(postgres.getConnectionUri());
     databaseUrl = await template.fresh();
@@ -80,9 +86,9 @@ describe('document media references (T29; Postgres 17 via Testcontainers)', () =
     await client.connect();
     const registry = ContentTypeRegistry.fromDefinitions([GALLERY]);
     await client.query(
-      planMigration(emptySnapshot(), [
-        registry.resolve('gallery').definition,
-      ]).statements.join('\n'),
+      planMigration(emptySnapshot(), [registry.resolve('gallery').definition]).statements.join(
+        '\n',
+      ),
     );
     await client.end();
     app = await createTestApp(
@@ -104,6 +110,14 @@ describe('document media references (T29; Postgres 17 via Testcontainers)', () =
     );
     editor = await signedIn('editor');
     admin = await signedIn('admin');
+    owner = await signedIn('owner');
+    const gallery = (action: string) => ({ subject: 'gallery', action });
+    await customRole('no-media-writer', 21, [
+      gallery('read'),
+      gallery('create'),
+      gallery('update'),
+    ]);
+    noMediaReadWriter = await signedIn('no-media-writer');
   });
 
   afterAll(async () => {
@@ -138,15 +152,28 @@ describe('document media references (T29; Postgres 17 via Testcontainers)', () =
     return (res.body as { accessToken: string }).accessToken;
   }
 
-  async function uploaded(): Promise<{ id: string; internalId: number }> {
-    const { body, contentType } = multipart([
-      {
-        field: 'file',
-        fileName: 'a.jpg',
-        data: jpeg,
-        contentType: 'image/jpeg',
-      },
-    ]);
+  async function customRole(slug: string, rank: number, permissions: unknown[]) {
+    const created = await http()
+      .post('/api/v1/roles')
+      .set(bearer(owner))
+      .send({ slug, name: slug, rank });
+    expect(created.status).toBe(201);
+    const id = (created.body as { id: string }).id;
+    const put = await http()
+      .put(`/api/v1/roles/${id}/permissions`)
+      .set(bearer(owner))
+      .send({ permissions });
+    if (put.status !== 200) throw new Error(JSON.stringify(put.body));
+  }
+
+  async function uploaded(
+    part: { fileName: string; data: Buffer; contentType: string } = {
+      fileName: 'a.jpg',
+      data: jpeg,
+      contentType: 'image/jpeg',
+    },
+  ): Promise<{ id: string; internalId: number; url: string }> {
+    const { body, contentType } = multipart([{ field: 'file', ...part }]);
     const res = await http()
       .post(MEDIA)
       .set(bearer(admin))
@@ -157,27 +184,32 @@ describe('document media references (T29; Postgres 17 via Testcontainers)', () =
     const row = await db.prisma.fileLibrary.findUniqueOrThrow({
       where: { documentId: id },
     });
-    return { id, internalId: row.id };
+    return { id, internalId: row.id, url: row.url };
   }
 
   const DOCS = '/api/v1/documents/gallery';
   const FILE_KEYS = [
     'id',
     'fileName',
+    'mimeType',
     'url',
     'thumbnailUrl',
     'provider',
     'alt',
     'size',
+    'width',
+    'height',
+    'sha256',
     'createdAt',
+    'updatedAt',
   ];
 
   interface Doc {
     documentId: string;
     version: number;
-    values: { cover: Record<string, unknown> | null };
+    values: { cover: Record<string, unknown> | null; body?: string };
     components: {
-      block: { values: { image: Record<string, unknown> | null } }[];
+      block: { values: { image: Record<string, unknown> | null; caption?: string } }[];
     };
   }
 
@@ -192,9 +224,7 @@ describe('document media references (T29; Postgres 17 via Testcontainers)', () =
       });
     expect(created.status).toBe(201);
     const doc = created.body as Doc;
-    expect(Object.keys(doc.values.cover ?? {}).sort()).toEqual(
-      [...FILE_KEYS].sort(),
-    );
+    expect(Object.keys(doc.values.cover ?? {}).sort()).toEqual([...FILE_KEYS].sort());
     expect(doc.values.cover).toMatchObject({ id, provider: 'cloudinary' });
     expect(doc.components.block[0]?.values.image).toMatchObject({ id });
     const stored = await db.prisma.$queryRawUnsafe<{ cover: number }[]>(
@@ -202,9 +232,7 @@ describe('document media references (T29; Postgres 17 via Testcontainers)', () =
       doc.documentId,
     );
     expect(stored[0]?.cover).toBe(internalId);
-    const detail = await http()
-      .get(`${DOCS}/${doc.documentId}?status=draft`)
-      .set(bearer(editor));
+    const detail = await http().get(`${DOCS}/${doc.documentId}?status=draft`).set(bearer(editor));
     expect((detail.body as Doc).values.cover).toMatchObject({ id });
     const list = await http().get(`${DOCS}?status=draft`).set(bearer(editor));
     expect(JSON.stringify(list.body)).not.toContain(`"cover":${internalId}`);
@@ -227,14 +255,9 @@ describe('document media references (T29; Postgres 17 via Testcontainers)', () =
     const gone = await uploaded();
     await http().delete(`${MEDIA}/${gone.id}`).set(bearer(admin)).expect(204);
     for (const cover of [internalId, MISSING_ID, gone.id, 'nope']) {
-      const res = await http()
-        .post(DOCS)
-        .set(bearer(editor))
-        .send({ values: { cover } });
+      const res = await http().post(DOCS).set(bearer(editor)).send({ values: { cover } });
       expect(res.status).toBe(400);
-      expect((res.body as { errorCode: string }).errorCode).toBe(
-        'DOCUMENT_INVALID',
-      );
+      expect((res.body as { errorCode: string }).errorCode).toBe('DOCUMENT_INVALID');
     }
     expect(id).toBeDefined();
   });
@@ -289,6 +312,200 @@ describe('document media references (T29; Postgres 17 via Testcontainers)', () =
     expect(details.submitted.values.cover).toMatchObject({ id: second.id });
   });
 
+  const imgOf = (file: { id: string; url: string }, extra = '') =>
+    `<img src="${file.url}"${extra} data-media-id="${file.id}" />`;
+
+  describe('richtext images', () => {
+    const createWithBody = async (body: string, caption = '<p>c</p>') =>
+      (
+        await http()
+          .post(DOCS)
+          .set(bearer(editor))
+          .send({ values: { body }, components: { block: [{ values: { caption } }] } })
+          .expect(201)
+      ).body as Doc;
+
+    describe('richtext image ids follow the media field write rule', () => {
+      const writeBody = (token: string, body: string, documentId?: string) =>
+        documentId === undefined
+          ? http().post(DOCS).set(bearer(token)).send({ values: { body } })
+          : http()
+              .put(`${DOCS}/${documentId}`)
+              .set(bearer(token))
+              .send({ values: { body }, version: 1 });
+      const bulkCreate = (token: string, bodies: string[]) =>
+        http()
+          .post(`${DOCS}/bulk/create`)
+          .set(bearer(token))
+          .send({ atomic: true, items: bodies.map((body) => ({ values: { body } })) });
+      const galleryCount = async () => {
+        const rows = await db.prisma.$queryRawUnsafe<{ n: bigint }[]>(
+          'select count(*)::bigint as n from content.gallery',
+        );
+        return Number(rows[0]?.n);
+      };
+
+      it('400 with the field path, nothing stored, when media:read is denied to the writer', async () => {
+        const file = await uploaded();
+        const before = await galleryCount();
+        const res = await writeBody(noMediaReadWriter, imgOf(file));
+        expect(res.status).toBe(400);
+        expect((res.body as { errorCode: string }).errorCode).toBe('DOCUMENT_INVALID');
+        expect(JSON.stringify(res.body)).toContain('body');
+        const component = await http()
+          .post(DOCS)
+          .set(bearer(noMediaReadWriter))
+          .send({ values: {}, components: { block: [{ values: { caption: imgOf(file) } }] } });
+        expect(component.status).toBe(400);
+        expect(JSON.stringify(component.body)).toContain('caption');
+        expect(await galleryCount()).toBe(before);
+      });
+
+      it('400 for an unknown or deleted file id, on create and on update', async () => {
+        const gone = await uploaded();
+        await http().delete(`${MEDIA}/${gone.id}`).set(bearer(admin)).expect(204);
+        const ok = await uploaded();
+        const created = (await createWithBody(imgOf(ok))).documentId;
+        for (const id of [MISSING_ID, gone.id]) {
+          const html = `<img src="${ok.url}" data-media-id="${id}" />`;
+          expect((await writeBody(editor, html)).status).toBe(400);
+          expect((await writeBody(editor, html, created)).status).toBe(400);
+        }
+      });
+
+      it('succeeds for a readable file and stores the richtext unchanged', async () => {
+        const file = await uploaded();
+        const res = await writeBody(noMediaReadWriter, '<p>no image</p>');
+        expect(res.status).toBe(201);
+        const doc = await createWithBody(imgOf(file));
+        const row = await db.prisma.$queryRawUnsafe<{ body: string }[]>(
+          'select body from content.gallery where document_id = $1::uuid',
+          doc.documentId,
+        );
+        expect(row[0]?.body).toContain(`data-media-id="${file.id}"`);
+      });
+
+      it('bulk create answers 400 for an unreadable richtext image and stores nothing', async () => {
+        const file = await uploaded();
+        const before = await galleryCount();
+        const res = await bulkCreate(noMediaReadWriter, ['<p>a</p>', imgOf(file)]);
+        expect(res.status).toBe(400);
+        expect(await galleryCount()).toBe(before);
+        const readable = await bulkCreate(editor, ['<p>a</p>', imgOf(file)]);
+        expect(readable.status).toBe(200);
+      });
+
+      it('a refused write does not block deleting the file', async () => {
+        const file = await uploaded();
+        expect((await writeBody(noMediaReadWriter, imgOf(file))).status).toBe(400);
+        await http().delete(`${MEDIA}/${file.id}`).set(bearer(admin)).expect(204);
+      });
+    });
+
+    it('409 MEDIA_IN_USE when only a root richtext uses the file (draft counts)', async () => {
+      const file = await uploaded();
+      await createWithBody(`<p>x</p>${imgOf(file)}`);
+      const res = await http().delete(`${MEDIA}/${file.id}`).set(bearer(admin));
+      expect(res.status).toBe(409);
+      expect((res.body as { errorCode: string }).errorCode).toBe('MEDIA_IN_USE');
+    });
+
+    it('409 MEDIA_IN_USE when only a component richtext uses the file', async () => {
+      const file = await uploaded();
+      await createWithBody('<p>x</p>', imgOf(file));
+      const res = await http().delete(`${MEDIA}/${file.id}`).set(bearer(admin));
+      expect(res.status).toBe(409);
+      expect((res.body as { errorCode: string }).errorCode).toBe('MEDIA_IN_USE');
+    });
+
+    it('a file no richtext or media field uses can still be deleted', async () => {
+      const used = await uploaded();
+      const free = await uploaded();
+      await createWithBody(imgOf(used));
+      const res = await http().delete(`${MEDIA}/${free.id}`).set(bearer(admin));
+      expect(res.status).toBe(204);
+    });
+
+    it('text that only looks like the image marker is not a reference', async () => {
+      const file = await uploaded();
+      await createWithBody(`<p>data-media-id="${file.id}"</p>`);
+      const res = await http().delete(`${MEDIA}/${file.id}`).set(bearer(admin));
+      expect(res.status).toBe(204);
+    });
+
+    it('a malformed stored media id does not break reads', async () => {
+      const doc = await createWithBody('<p>a</p>');
+      await db.prisma.$executeRawUnsafe(
+        'update content.gallery set body = $1 where document_id = $2::uuid',
+        '<p>a</p><img src="x" data-media-id="not-a-uuid" />',
+        doc.documentId,
+      );
+      const detail = await http().get(`${DOCS}/${doc.documentId}?status=draft`).set(bearer(editor));
+      expect(detail.status).toBe(200);
+      expect((detail.body as Doc).values.body).toBe('<p>a</p>');
+    });
+
+    it('reads show the current url after the file is replaced', async () => {
+      const file = await uploaded();
+      const doc = await createWithBody(imgOf(file, ' alt="cat"'), imgOf(file));
+      const { body, contentType } = multipart([
+        { field: 'file', fileName: 'fresh.png', data: png, contentType: 'image/png' },
+      ]);
+      await http()
+        .put(`${MEDIA}/${file.id}/file`)
+        .set(bearer(editor))
+        .set('Content-Type', contentType)
+        .send(body)
+        .expect(200);
+      const fresh = await db.prisma.fileLibrary.findUniqueOrThrow({
+        where: { documentId: file.id },
+      });
+      expect(fresh.url).not.toBe(file.url);
+      const detail = (
+        await http().get(`${DOCS}/${doc.documentId}?status=draft`).set(bearer(editor))
+      ).body as Doc;
+      expect(detail.values.body).toBe(
+        `<img src="${fresh.url}" alt="cat" data-media-id="${file.id}" />`,
+      );
+      expect(detail.components.block[0]?.values.caption).toBe(imgOf({ ...file, url: fresh.url }));
+      const list = await http().get(`${DOCS}?status=draft`).set(bearer(editor));
+      expect(JSON.stringify(list.body)).toContain(fresh.url);
+      expect(JSON.stringify(list.body)).not.toContain(file.url);
+    });
+
+    it('the image is gone from reads once the file is deleted', async () => {
+      const file = await uploaded();
+      const doc = await createWithBody(`<p>a</p>${imgOf(file)}<p>b</p>`);
+      await db.prisma.fileLibrary.update({
+        where: { documentId: file.id },
+        data: { deletedAt: new Date() },
+      });
+      const detail = (
+        await http().get(`${DOCS}/${doc.documentId}?status=draft`).set(bearer(editor))
+      ).body as Doc;
+      expect(detail.values.body).toBe('<p>a</p><p>b</p>');
+    });
+
+    it('a non-image file id is removed from reads', async () => {
+      const pdf = await uploaded({
+        fileName: 'a.pdf',
+        data: MINIMAL_PDF,
+        contentType: 'application/pdf',
+      });
+      const image = await uploaded();
+      const doc = await createWithBody('<p>a</p>');
+      await db.prisma.$executeRawUnsafe(
+        'update content.gallery set body = $1 where document_id = $2::uuid',
+        `${imgOf(pdf)}${imgOf(image)}`,
+        doc.documentId,
+      );
+      const detail = (
+        await http().get(`${DOCS}/${doc.documentId}?status=draft`).set(bearer(editor))
+      ).body as Doc;
+      expect(detail.values.body).toBe(imgOf(image));
+    });
+  });
+
   it('rejects filtering and sorting on a media field (internal id stays private)', async () => {
     const { id } = await uploaded();
     for (const query of [
@@ -298,9 +515,7 @@ describe('document media references (T29; Postgres 17 via Testcontainers)', () =
       '?sort=cover',
       '?sort=-cover',
     ]) {
-      const res = await http()
-        .get(`${DOCS}${query}&status=draft`)
-        .set(bearer(editor));
+      const res = await http().get(`${DOCS}${query}&status=draft`).set(bearer(editor));
       expect(res.status).toBe(400);
     }
   });

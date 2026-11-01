@@ -1,5 +1,5 @@
-import { createApiContext } from '../../lib/ApiContext.setup';
+import { createApiContext } from '@apis/client/ApiContext.setup';
+
 import type { ContentApi } from './Content.api';
 
-export const [ContentApiProvider, useContentApi] =
-  createApiContext<ContentApi>('Content');
+export const [ContentApiProvider, useContentApi] = createApiContext<ContentApi>('Content');

@@ -21,9 +21,7 @@ function cleanupOver(batches: number[][]) {
 
 describe('ReviewerCleanupService', () => {
   it('deletes each batch, drops each account from the cache and counts them', async () => {
-    const { service, deleteAccounts, invalidateAccount } = cleanupOver([
-      [1, 2],
-    ]);
+    const { service, deleteAccounts, invalidateAccount } = cleanupOver([[1, 2]]);
 
     await expect(service.run()).resolves.toBe(2);
     expect(deleteAccounts).toHaveBeenCalledWith([1, 2]);

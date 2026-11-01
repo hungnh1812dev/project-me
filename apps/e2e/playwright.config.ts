@@ -9,11 +9,7 @@ export default defineConfig({
   workers: WORKERS,
   forbidOnly: e2eEnv.ci,
   retries: e2eEnv.ci ? CI_RETRIES : 0,
-  reporter: [
-    ['list'],
-    ...(e2eEnv.ci ? [['github'] as const] : []),
-    ['html', { open: 'never' }],
-  ],
+  reporter: [['list'], ...(e2eEnv.ci ? [['github'] as const] : []), ['html', { open: 'never' }]],
   expect: { timeout: EXPECT_TIMEOUT_MS },
   use: {
     baseURL: e2eEnv.adminUrl,

@@ -1,20 +1,17 @@
 import {
-  type CanActivate,
-  type ExecutionContext,
   ForbiddenException,
   Injectable,
   NotFoundException,
   SetMetadata,
   UnauthorizedException,
+  type CanActivate,
+  type ExecutionContext,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import type { Request } from 'express';
 
 import { AccessPolicyService } from '../application/AccessPolicy.service';
-import type {
-  PermissionAction,
-  SystemSubject,
-} from '../domain/Access.constants';
+import type { PermissionAction, SystemSubject } from '../domain/Access.constants';
 import type { ActorContext } from '../domain/ActorContext.entity';
 
 /** Metadata key of `@RequirePermission()` (read by `PermissionGuard`). */
@@ -57,9 +54,10 @@ export class PermissionGuard implements CanActivate {
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const requirement = this.reflector.getAllAndOverride<
-      PermissionRequirement | undefined
-    >(PERMISSION_METADATA_KEY, [context.getHandler(), context.getClass()]);
+    const requirement = this.reflector.getAllAndOverride<PermissionRequirement | undefined>(
+      PERMISSION_METADATA_KEY,
+      [context.getHandler(), context.getClass()],
+    );
     if (requirement === undefined) return true;
 
     const request = context.switchToHttp().getRequest<Request & WithActor>();

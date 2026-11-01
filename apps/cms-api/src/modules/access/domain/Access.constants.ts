@@ -1,7 +1,4 @@
-import type {
-  ContentDocument,
-  ROOT_SYSTEM_COLUMNS,
-} from '../../content-engine';
+import type { ContentDocument, ROOT_SYSTEM_COLUMNS } from '../../content-engine';
 import type { ActorKind } from './ActorContext.entity';
 
 /** What a permission allows on a subject. Values are stored in permissions.action, token scope JSON and audit metadata, so they stay byte-identical to the database enum. */
@@ -14,8 +11,7 @@ export const PermissionAction = {
   unpublish: 'unpublish',
 } as const;
 
-export type PermissionAction =
-  (typeof PermissionAction)[keyof typeof PermissionAction];
+export type PermissionAction = (typeof PermissionAction)[keyof typeof PermissionAction];
 
 /** Lifecycle state of an account. Values are stored in accounts.status, so they stay byte-identical to the database enum. */
 export const AccountStatus = {
@@ -86,8 +82,7 @@ export const SYSTEM_SUBJECT_ACTIONS = {
 } as const satisfies Record<string, readonly PermissionAction[]>;
 
 /** The file library subject; read-only actors only see preset rows. */
-export const MEDIA_SUBJECT =
-  'media' satisfies keyof typeof SYSTEM_SUBJECT_ACTIONS;
+export const MEDIA_SUBJECT = 'media' satisfies keyof typeof SYSTEM_SUBJECT_ACTIONS;
 
 /** The owner-only reviewer toggle and session log subject. */
 export const REVIEWER_SETTINGS_SUBJECT =
@@ -95,9 +90,7 @@ export const REVIEWER_SETTINGS_SUBJECT =
 
 export type SystemSubject = keyof typeof SYSTEM_SUBJECT_ACTIONS;
 
-export const SYSTEM_SUBJECTS = Object.keys(
-  SYSTEM_SUBJECT_ACTIONS,
-) as SystemSubject[];
+export const SYSTEM_SUBJECTS = Object.keys(SYSTEM_SUBJECT_ACTIONS) as SystemSubject[];
 
 /** Separator of nested field paths in field lists: `reference.phone`. */
 export const FIELD_PATH_SEPARATOR = '.';
@@ -149,8 +142,7 @@ export const ACCESS_ERROR_CODES = {
   FIELD_UNKNOWN: 'FIELD_UNKNOWN',
 } as const;
 
-export type AccessErrorCode =
-  (typeof ACCESS_ERROR_CODES)[keyof typeof ACCESS_ERROR_CODES];
+export type AccessErrorCode = (typeof ACCESS_ERROR_CODES)[keyof typeof ACCESS_ERROR_CODES];
 
 /** D6 / §12-7: the target's rank is not below the actor's, or it is the actor. */
 export const RANK_FORBIDDEN_ERROR = {
@@ -198,10 +190,7 @@ export const RECORD_SYSTEM_COLUMNS = {
   updatedAt: 'updated_at',
   createdBy: 'created_by',
   updatedBy: 'updated_by',
-} as const satisfies Record<
-  RecordSystemField,
-  (typeof ROOT_SYSTEM_COLUMNS)[number]
->;
+} as const satisfies Record<RecordSystemField, (typeof ROOT_SYSTEM_COLUMNS)[number]>;
 
 /**
  * System fields that name accounts, and the actor kinds that never see

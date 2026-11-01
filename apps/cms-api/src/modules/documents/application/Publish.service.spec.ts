@@ -1,7 +1,7 @@
+import { DOMAIN_ERROR_KINDS } from '../../../common/errors/Domain.errors';
 import type { ActorContext, RolePolicy } from '../../access';
 import { DOCUMENT_ERROR_CODES } from '../domain/Documents.constants';
 import { PublishService } from './Publish.service';
-import { DOMAIN_ERROR_KINDS } from '../../../common/errors/Domain.errors';
 
 const ROLE: RolePolicy = {
   id: 1,
@@ -28,16 +28,10 @@ function build(fakes: Fakes = {}) {
   const draftVersion = fakes.draftVersion ?? 3;
   const documents = {
     lockRow: jest.fn((_unit, _type, selector: { status: string }) =>
-      Promise.resolve(
-        selector.status === 'draft'
-          ? { id: 1, version: draftVersion }
-          : undefined,
-      ),
+      Promise.resolve(selector.status === 'draft' ? { id: 1, version: draftVersion } : undefined),
     ),
     loadTrees: jest.fn(() =>
-      Promise.resolve([
-        { values: {}, components: {}, createdBy: 2, documentId: DOC },
-      ]),
+      Promise.resolve([{ values: {}, components: {}, createdBy: 2, documentId: DOC }]),
     ),
     lockRowIds: jest.fn(() => Promise.resolve([] as number[])),
     deleteRows: jest.fn(() => Promise.resolve(1)),
@@ -47,9 +41,7 @@ function build(fakes: Fakes = {}) {
   const logger = { warn: jest.fn(), error: jest.fn() };
   const activity = {
     record: jest.fn(() =>
-      fakes.activityFails
-        ? Promise.reject(new Error('down'))
-        : Promise.resolve(),
+      fakes.activityFails ? Promise.reject(new Error('down')) : Promise.resolve(),
     ),
   };
   const service = new PublishService(

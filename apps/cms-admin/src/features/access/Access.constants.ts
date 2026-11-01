@@ -4,12 +4,9 @@
  * access-management.constants.ts; the server validates everything anyway.
  */
 
-import type { PermissionAction } from '../../lib/PermissionAction.constants';
+import type { PermissionAction } from '@configs/PermissionAction.constants';
 
-export {
-  PERMISSION_ACTIONS,
-  type PermissionAction,
-} from '../../lib/PermissionAction.constants';
+export { PERMISSION_ACTIONS, type PermissionAction } from '@configs/PermissionAction.constants';
 
 /** Row subject covering every content type (never a system subject). */
 export const CONTENT_WILDCARD_SUBJECT = '*';
@@ -18,10 +15,7 @@ export const CONTENT_WILDCARD_SUBJECT = '*';
 export const READABLE_FIELD_ACTIONS: readonly PermissionAction[] = ['read'];
 
 /** Actions whose rows carry `writableFields`. */
-export const WRITABLE_FIELD_ACTIONS: readonly PermissionAction[] = [
-  'create',
-  'update',
-];
+export const WRITABLE_FIELD_ACTIONS: readonly PermissionAction[] = ['create', 'update'];
 
 /** Non-content subjects and the actions valid on each (matrix order). */
 export const SYSTEM_SUBJECT_ACTIONS = {
@@ -35,18 +29,13 @@ export const SYSTEM_SUBJECT_ACTIONS = {
 
 export type SystemSubject = keyof typeof SYSTEM_SUBJECT_ACTIONS;
 
-export const SYSTEM_SUBJECTS = Object.keys(
-  SYSTEM_SUBJECT_ACTIONS,
-) as SystemSubject[];
+export const SYSTEM_SUBJECTS = Object.keys(SYSTEM_SUBJECT_ACTIONS) as SystemSubject[];
 
 /** The owner holds every permission without rows (SPEC §1). */
 export const OWNER_ROLE_SLUG = 'owner';
 
 /** System roles that are never given to an invited account. */
-export const UNASSIGNABLE_ROLE_SLUGS: readonly string[] = [
-  'public',
-  'reviewer',
-];
+export const UNASSIGNABLE_ROLE_SLUGS: readonly string[] = ['public', 'reviewer'];
 
 export const ACCOUNT_STATUSES = ['invited', 'active', 'disabled'] as const;
 export type AccountStatus = (typeof ACCOUNT_STATUSES)[number];

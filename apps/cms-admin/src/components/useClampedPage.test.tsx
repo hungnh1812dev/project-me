@@ -1,8 +1,8 @@
-import { act, renderHook } from '@testing-library/react';
 import { useState } from 'react';
+import type { PageMeta } from '@apis/client/Api.client';
+import { act, renderHook } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 
-import type { PageMeta } from '../lib/Api.client';
 import { useClampedPage } from './useClampedPage';
 
 function setup(initialPage: number, meta: PageMeta | undefined) {

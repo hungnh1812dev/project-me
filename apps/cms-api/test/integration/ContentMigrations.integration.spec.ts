@@ -14,14 +14,14 @@ import { join } from 'node:path';
 
 import { Client } from 'pg';
 
+import { DEFAULT_CONTENT_PATHS } from '../../src/modules/content-engine/adapters/MigrationFiles.adapter';
+import { runContentMigrations } from '../../src/modules/content-engine/adapters/MigrationRunner.adapter';
+import { createMigrationDb } from '../../src/modules/content-engine/cli/ContentEngineCli.setup';
 import {
   DestructiveChangeError,
   generateContentMigration,
   type GenerateOptions,
 } from '../../src/modules/content-engine/cli/ContentGenerate.command';
-import { DEFAULT_CONTENT_PATHS } from '../../src/modules/content-engine/adapters/MigrationFiles.adapter';
-import { createMigrationDb } from '../../src/modules/content-engine/cli/ContentEngineCli.setup';
-import { runContentMigrations } from '../../src/modules/content-engine/adapters/MigrationRunner.adapter';
 import { startPostgres, type TestPostgres } from '../fixtures/Postgres.fixture';
 
 const CV_PAGE_FILE = 'cv-page.json';
@@ -41,9 +41,7 @@ describe('content:generate + content:migrate (Postgres 17 via Testcontainers)', 
   });
 
   afterAll(async () => {
-    await Promise.all(
-      cleanup.map((dir) => rm(dir, { recursive: true, force: true })),
-    );
+    await Promise.all(cleanup.map((dir) => rm(dir, { recursive: true, force: true })));
     await postgres?.stop();
   });
 
@@ -184,17 +182,14 @@ describe('content:generate + content:migrate (Postgres 17 via Testcontainers)', 
     const documentId = randomUUID();
     const insertRoot = `INSERT INTO content.cv_page (document_id, published_at) VALUES ($1, $2) RETURNING id`;
 
-    const [draft] = await query<{ id: number }>(ws.databaseUrl, insertRoot, [
-      documentId,
-      null,
-    ]);
+    const [draft] = await query<{ id: number }>(ws.databaseUrl, insertRoot, [documentId, null]);
     await query(ws.databaseUrl, insertRoot, [documentId, new Date()]);
-    await expect(
-      query(ws.databaseUrl, insertRoot, [documentId, null]),
-    ).rejects.toThrow(/cv_page_draft_uq/);
-    await expect(
-      query(ws.databaseUrl, insertRoot, [documentId, new Date()]),
-    ).rejects.toThrow(/cv_page_published_uq/);
+    await expect(query(ws.databaseUrl, insertRoot, [documentId, null])).rejects.toThrow(
+      /cv_page_draft_uq/,
+    );
+    await expect(query(ws.databaseUrl, insertRoot, [documentId, new Date()])).rejects.toThrow(
+      /cv_page_published_uq/,
+    );
 
     const [experience] = await query<{ id: number }>(
       ws.databaseUrl,
@@ -206,9 +201,7 @@ describe('content:generate + content:migrate (Postgres 17 via Testcontainers)', 
       `INSERT INTO content.cv_page__experience__role (component_uid, parent_id) VALUES ($1, $2)`,
       [randomUUID(), experience?.id],
     );
-    await query(ws.databaseUrl, 'DELETE FROM content.cv_page WHERE id = $1', [
-      draft?.id,
-    ]);
+    await query(ws.databaseUrl, 'DELETE FROM content.cv_page WHERE id = $1', [draft?.id]);
     const [left] = await query<{ count: string }>(
       ws.databaseUrl,
       'SELECT count(*) FROM content.cv_page__experience__role',
@@ -223,10 +216,7 @@ describe('content:generate + content:migrate (Postgres 17 via Testcontainers)', 
     const tablesBefore = await contentTables(ws);
 
     expect(await generate(ws)).toEqual({ status: 'no-changes' });
-    expect(await readdir(ws.migrationsDir)).toEqual([
-      '0001_test.sql',
-      'snapshot.json',
-    ]);
+    expect(await readdir(ws.migrationsDir)).toEqual(['0001_test.sql', 'snapshot.json']);
     expect(await migrate(ws)).toEqual({
       applied: [],
       upserted: [],
@@ -262,19 +252,14 @@ describe('content:generate + content:migrate (Postgres 17 via Testcontainers)', 
     await generate(ws);
     await migrate(ws);
     await editCvPage(ws, (definition) => {
-      definition.fields = definition.fields.filter(
-        (field) => field.name !== 'summary',
-      );
+      definition.fields = definition.fields.filter((field) => field.name !== 'summary');
     });
 
     const refused = generate(ws);
     await expect(refused).rejects.toBeInstanceOf(DestructiveChangeError);
     await expect(refused).rejects.toThrow(/Drop column cv_page\.summary/);
     await expect(refused).rejects.toThrow(/--allow-destructive/);
-    expect(await readdir(ws.migrationsDir)).toEqual([
-      '0001_test.sql',
-      'snapshot.json',
-    ]);
+    expect(await readdir(ws.migrationsDir)).toEqual(['0001_test.sql', 'snapshot.json']);
 
     const dryRun = await generate(ws, { dryRun: true });
     expect(dryRun).toMatchObject({ status: 'dry-run' });
@@ -326,10 +311,7 @@ describe('content:generate + content:migrate (Postgres 17 via Testcontainers)', 
     const applied = results.flatMap((result) => result.applied);
     expect(applied).toEqual(['0001_test.sql']);
     expect(await contentTables(ws)).toHaveLength(8);
-    const rows = await query(
-      ws.databaseUrl,
-      'SELECT name FROM content._migrations',
-    );
+    const rows = await query(ws.databaseUrl, 'SELECT name FROM content._migrations');
     expect(rows).toHaveLength(1);
   });
 

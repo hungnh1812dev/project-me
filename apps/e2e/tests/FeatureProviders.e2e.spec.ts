@@ -1,7 +1,8 @@
-import { expect, type Page, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 
 import { ADMIN_COPY } from '../src/Apps.contract';
 import { e2eEnv } from '../src/E2e.env';
+import { accountMenuTrigger, expectSignedIn, signOutFromUserMenu } from '../src/Session.fixture';
 
 const MISSING_PROVIDER_PATTERN = /must be used (inside|within)/i;
 const PAGE_PATHS = [
@@ -25,15 +26,11 @@ function collectProviderErrors(page: Page): string[] {
 }
 
 function expectNoMissingProvider(errors: string[]) {
-  expect(errors.filter((text) => MISSING_PROVIDER_PATTERN.test(text))).toEqual(
-    [],
-  );
+  expect(errors.filter((text) => MISSING_PROVIDER_PATTERN.test(text))).toEqual([]);
 }
 
 /** R3-10: API services and providers are built from the feature registry. */
-test('public pages render without a missing-provider error', async ({
-  page,
-}) => {
+test('public pages render without a missing-provider error', async ({ page }) => {
   const errors = collectProviderErrors(page);
   for (const path of PUBLIC_PATHS) {
     await page.goto(path);
@@ -45,17 +42,10 @@ test('public pages render without a missing-provider error', async ({
 test('owner: every feature page loads, then signs out', async ({ page }) => {
   const errors = collectProviderErrors(page);
   await page.goto('/login');
-  await page
-    .getByRole('textbox', { name: ADMIN_COPY.login.emailLabel })
-    .fill(e2eEnv.ownerEmail);
-  await page
-    .getByLabel(ADMIN_COPY.login.passwordLabel)
-    .fill(e2eEnv.ownerPassword);
+  await page.getByRole('textbox', { name: ADMIN_COPY.login.emailLabel }).fill(e2eEnv.ownerEmail);
+  await page.getByLabel(ADMIN_COPY.login.passwordLabel).fill(e2eEnv.ownerPassword);
   await page.getByRole('button', { name: ADMIN_COPY.login.submit }).click();
-  const signOut = page.getByRole('button', {
-    name: ADMIN_COPY.session.signOut,
-  });
-  await expect(signOut).toBeVisible();
+  await expectSignedIn(page);
 
   for (const path of PAGE_PATHS) {
     await page.goto(path);
@@ -64,8 +54,8 @@ test('owner: every feature page loads, then signs out', async ({ page }) => {
   }
 
   await page.reload();
-  await expect(signOut).toBeVisible();
-  await signOut.click();
+  await expect(accountMenuTrigger(page)).toBeVisible();
+  await signOutFromUserMenu(page);
   await expect(page).toHaveURL(/\/login$/);
   expectNoMissingProvider(errors);
 });

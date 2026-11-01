@@ -5,17 +5,17 @@ A content type is defined in one JSON file per type under
 into tables in the Postgres schema `content` (SPEC §8.2). Before any SQL is
 generated, the definition must pass the validator.
 
-| Piece                | File (in `apps/cms-api/src/modules/content-engine/`)                                                                                                                                                                                                                                                                 |
-| -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Shape (Zod)          | `domain/DefinitionSchema.rules.ts`                                                                                                                                                                                                                                                                                   |
-| Rules and errors     | `domain/DefinitionValidator.rules.ts`                                                                                                                                                                                                                                                                                |
-| SQL name assembly    | `domain/Naming.rules.ts` (the only place names are built; T06/T07 must use it)                                                                                                                                                                                                                                       |
-| Limits, words, codes | `domain/ContentEngine.constants.ts` (pool, pg codes, migration file names and the lock key: `adapters/ContentDatabase.adapter.ts`)                                                                                                                                                                                   |
-| Field type behaviour | `domain/field-types/` (`FIELD_TYPE_SPECS`, `fieldTypeOf`: one entry per type, including `coerceValue`; value patterns, `INT4_MAX` and the date/datetime/uuid parsers are exported next to it; `mediaColumnsOf(registry)` lists the media columns by table, column and field name, from the `referencesMedia` marker) |
-| Diff → DDL (pure)    | `domain/SqlGenerator.rules.ts`                                                                                                                                                                                                                                                                                       |
-| Files, snapshot      | `adapters/MigrationFiles.adapter.ts`                                                                                                                                                                                                                                                                                 |
-| Apply + bookkeeping  | `adapters/MigrationRunner.adapter.ts` (Kysely)                                                                                                                                                                                                                                                                       |
-| CLIs                 | `cli/ContentGenerate.command.ts`, `cli/ContentMigrate.command.ts`                                                                                                                                                                                                                                                    |
+| Piece                | File (in `apps/cms-api/src/modules/content-engine/`)                                                                                                                                                                                                                                                                                                                                                                        |
+| -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Shape (Zod)          | `domain/DefinitionSchema.rules.ts`                                                                                                                                                                                                                                                                                                                                                                                          |
+| Rules and errors     | `domain/DefinitionValidator.rules.ts`                                                                                                                                                                                                                                                                                                                                                                                       |
+| SQL name assembly    | `domain/Naming.rules.ts` (the only place names are built; the migration generator and the tree repository use it)                                                                                                                                                                                                                                                                                                           |
+| Limits, words, codes | `domain/ContentEngine.constants.ts` (pool, pg codes, migration file names and the lock key: `adapters/ContentDatabase.adapter.ts`)                                                                                                                                                                                                                                                                                          |
+| Field type behaviour | `domain/field-types/` (`FIELD_TYPE_SPECS`, `fieldTypeOf`: one entry per type, including `coerceValue`; value patterns, `INT4_MAX` and the date/datetime/uuid parsers are exported next to it; `mediaColumnsOf(registry)` lists the media columns by table, column and field name, from the `referencesMedia` marker; `richtextColumnsOf(registry)` does the same for `richtext` columns, whose images are media references) |
+| Diff → DDL (pure)    | `domain/SqlGenerator.rules.ts`                                                                                                                                                                                                                                                                                                                                                                                              |
+| Files, snapshot      | `adapters/MigrationFiles.adapter.ts`                                                                                                                                                                                                                                                                                                                                                                                        |
+| Apply + bookkeeping  | `adapters/MigrationRunner.adapter.ts` (Kysely)                                                                                                                                                                                                                                                                                                                                                                              |
+| CLIs                 | `cli/ContentGenerate.command.ts`, `cli/ContentMigrate.command.ts`                                                                                                                                                                                                                                                                                                                                                           |
 
 ## Top level
 
@@ -264,7 +264,7 @@ is passed. Review the SQL with `--dry-run` first.
 All field columns are nullable: `required` is enforced by the API (drafts may
 be incomplete), not by `NOT NULL`. Not generated yet: the `media` FK to
 `public.file_library` and the `created_by`/`updated_by` FKs to
-`public.accounts`, because those tables arrive with Prisma (T08/T27). The
+`public.accounts`, because those tables arrive with Prisma. The
 names are already reserved in `naming.ts`.
 
 System columns: root `id integer GENERATED ALWAYS AS IDENTITY`,
@@ -327,7 +327,7 @@ Loaded documents add the root system columns (`id`, `documentId`,
 `version`, `publishedAt`, …) and, per component, `id`, `componentUid`,
 `orderIndex`. Every planned field and component list is present (`null` /
 `[]` when empty). Values are raw from `pg` (`decimal` is a string, `json` is
-parsed); serialization and masking belong to the API layer (T16/T20).
+parsed); serialization and masking belong to the API layer.
 
 **Operations** (`ContentRepository` port, Kysely adapter `KyselyContentRepository`; all per slug, all take the caller's `UnitOfWork`):
 
@@ -340,12 +340,12 @@ parsed); serialization and masking belong to the API layer (T16/T20).
 `loadComponentTrees(db, root, rootIds)` (`adapters/TreeLoader.adapter.ts`) is exported for read
 paths that select roots themselves (filters, pagination).
 
-**replaceTree rules** (decisions, T07):
+**replaceTree rules** (decisions):
 
 - Present keys are authoritative, absent keys are untouched: a value key
   overwrites the column (send `null` to clear), a component list replaces
   the stored list of that parent. Omitting a key never deletes data, so a
-  client that does not see a field (masking, T16) cannot wipe it.
+  client that does not see a field (masking) cannot wipe it.
 - In a list, an item whose `componentUid` matches a stored item of the
   same parent and field is updated in place (id and uid kept, `order_index`
   = its position). An item without a uid is inserted with a new UUID. Stored
@@ -354,7 +354,7 @@ paths that select roots themselves (filters, pagination).
   rejected (`tree.unknown_uid`), never inserted or matched elsewhere, so a
   request cannot reach another root's rows. Deletes are also scoped by
   `parent_id`.
-- Version bump and OCC (T21), publish cloning (T22) are the caller's job.
+- Version bump and OCC, publish cloning are the caller's job.
 
 **Input checks** (`ContentTreeError`, with `code` and an input `path`), run
 before any SQL: unknown keys or fields (`tree.invalid`), a component that is

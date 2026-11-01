@@ -34,7 +34,7 @@ tests for most of its sentence, and the missing part is named.
 ## Gaps
 
 - **G1 (criterion 14, web half).** Nothing renders stored richtext on `apps/web`
-  yet (the CV page, T30, is skipped), so "not executed on web" has no test.
+  yet (the CV page, is skipped), so "not executed on web" has no test.
   Add a Playwright spec when the public render returns. The public web render
   must sanitize again (handoff follow-up).
 - **G2 (criterion 18).** Each event family has its own test, but no single test
