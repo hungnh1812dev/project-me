@@ -6,16 +6,19 @@ Open risks: braces 3.0.3 high DoS advisory (build-only, via tailwind CLI/shadcn;
 | # | Feature | Status | Folder | Apps / packages | Base | Summary |
 |---|---|---|---|---|---|---|
 | 1 | husky-precommit | done | features/husky-precommit/ | root package.json, .husky/, pnpm-lock.yaml, README.md | 4f21466 | features/husky-precommit/SUMMARY.md |
-| 2 | reviewer-toggle | todo | features/reviewer-toggle/ | apps/cms-api, apps/cms-admin, docs/deployment (web part moved to web-bff-hardening) | 5bfd7b2 | paused by user (state kept); resume needs REPLAN |
-| 3 | web-bff-hardening | todo | features/web-bff-hardening/ | apps/web, apps/e2e, apps/cms-api (no code change), docker-compose.smoke.yml, scripts/, docs/deployment, docs/local-run.md | 4f21466 | - |
-| 4 | backup | todo | features/backup/ | apps/cms-api, apps/cms-admin, docs/deployment | f4c4690 | - |
-| 5 | ci | todo | features/ci/ | .github | 9db3759 | - |
-| 6 | mf | todo | features/mf/ | apps/cms-admin, apps/web (planner to confirm after web-bff-hardening) | - | - |
-| 7 | launch-gate | todo | features/launch-gate/ | whole project | 9d6a334 | - |
+| 2 | reviewer-toggle | blocked (paused by user 2026-10-31; resume after admin-ui-refresh) | features/reviewer-toggle/ | apps/cms-api, apps/cms-admin (notice), docs/deployment (reviewer mode moved to reviewer-console) | 5bfd7b2 | only the SEC-1 recheck (CRVOFF-25, CRVOFF-21) left |
+| 3 | admin-ui-refresh | done | features/admin-ui-refresh/ | apps/cms-admin, packages/form-commons, apps/cms-api (media + content-engine), apps/web (sanitizer, Q-UI8) | 6ec6aa48 | features/admin-ui-refresh/SUMMARY.md |
+| 4 | web-bff-hardening | todo | features/web-bff-hardening/ | apps/web, apps/e2e, apps/cms-api (no code change), docker-compose.smoke.yml, scripts/, docs/deployment, docs/local-run.md | 4f21466 | - |
+| 5 | reviewer-console | todo | features/reviewer-console/ | apps/cms-admin, apps/cms-api, apps/e2e, docker-compose.smoke.yml, scripts/, docs/deployment | - | - |
+| 6 | backup | todo | features/backup/ | apps/cms-api, apps/cms-admin, docs/deployment | f4c4690 | - |
+| 7 | ci | todo | features/ci/ | .github | 9db3759 | - |
+| 8 | mf | todo | features/mf/ | apps/cms-admin, apps/web (planner to confirm after web-bff-hardening) | - | - |
+| 9 | launch-gate | todo | features/launch-gate/ | whole project | 9d6a334 | - |
 
 Bases 1, 2, 3 and 5 are the parent of the oldest commit of the feature's tasks (from `tasks/done.md`); feature histories interleave, so a `base..HEAD` diff also holds other features' commits. Folders 2-5 were pre-created during the migration to keep their open state; the manager keeps their content when it opens them.
 
 ## Follow-ups
+- Media file route GET /media-files/:fileName has no per-IP throttle (admin-ui-refresh UIL-10, user decision while the local provider is smoke/dev only); add one if the local provider is ever allowed beyond smoke/dev -> unscheduled.
 - Remove the multer pnpm override once Nest pins multer >= 2.5.0 -> core-builder, unscheduled.
 - Hardening (optional, not findings): `SubjectCatalog.nonSensitiveFields` falls back to all fields for an unknown slug (core-builder); `ContactCard` EMAIL_SHAPE accepts `?`, `&` (apps/web/src/features/cv/ContactCard.tsx) (ui-builder) -> unscheduled.
 - `scripts/docs/architecture/{build,notes}.py` still list old cms-admin paths (`features/registry.ts` -> `Features.registry.ts`); regenerate docs/architecture -> core-builder, unscheduled.
