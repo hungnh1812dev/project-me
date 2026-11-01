@@ -68,7 +68,8 @@ Exit: docs match the code.
    - `Checks needed`: `qc-browser (<flows>)` when a user sees the change in a page; `qc-cli (<e2e/API tests>)` for behaviour with no UI (endpoint, data, CLI); `none (<reason>)` only for docs, comments, or tooling with no runtime effect. Add the lowest allowed tier (`test-tiers`) and why, e.g. `qc-browser tier 3 (cookie flags changed)`.
    - `Risk: high (<why>)` for a high-risk path in `project.md`, `Security gate: yes`, or adding or changing auth, sessions, tokens, crypto, permissions, raw SQL from input, file upload, or payments. Otherwise `Risk: normal`.
 6. Update `handoff.md` and `conventions.md` (below).
-7. Return the report.
+7. A bug, issue or risk you found that a check should cover (outside your task, or a risk a later tier must prove): append one line to `<F>/checklist-requests.md` (create it if missing): `- <unit> · bug | issue | risk · <what to check> · where: <file:line or flow> · tier: <lowest that shows it> · checker: qc | security-qc | both · status: open`. The planner turns it into checklist rows at the phase end; never edit a checklist or the phases file yourself.
+8. Return the report.
 
 ## Batches
 
@@ -132,5 +133,6 @@ BUILD REPORT
 unit: <unit>
 status: ready-for-checks | blocked | failed     (per task for a batch: <ID> <status>)
 record: .claude/state/features/<feature>/current.md
+checklist requests: <n added to checklist-requests.md, or none>
 questions: <numbered list, only when blocked>
 ```
