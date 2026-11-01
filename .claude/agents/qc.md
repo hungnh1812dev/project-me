@@ -56,6 +56,8 @@ Stay inside the rows: a defect outside them is one line in `notes`, not investig
 
 Walk each flow with Chrome DevTools MCP: happy path, validation errors, empty / loading / error states, keyboard navigation; console errors; failed or unexpected network requests; the changed screens against `web-design-guidelines` and `ui-direction`. Never open a browser for a `cli` row or to look around. App will not start → rows `blocked`.
 
+Read the page with `take_snapshot`. Take a screenshot only for the visual review (layout, color, spacing) of a changed screen: once per screen and state, viewport or the element (`uid`), never `fullPage`. Each image stays in your context for the rest of the run.
+
 ## e2e time budget
 
 1. One stack per tier run (tier 3 kept mode; reuse built images only when `project.md` says how and no product code changed since). For tier 3 this is full run 1.
