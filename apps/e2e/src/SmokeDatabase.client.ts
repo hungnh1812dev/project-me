@@ -45,14 +45,15 @@ export function clearReviewerSessions(): void {
  * there; image rows get a thumbnail like real Cloudinary uploads; everything
  * after the upload (list, attach, in-use) is real.
  */
-export function insertLibraryFiles(fileNames: string[]): void {
+export function insertLibraryFiles(fileNames: string[], mimeType = 'image/png'): void {
   for (const name of fileNames) {
     if (!SAFE_NAME.test(name)) throw new Error(`unsafe file name: ${name}`);
   }
+  const thumbnail = mimeType.startsWith('image/') ? `'${PNG_DATA_URL}'` : 'NULL';
   const values = fileNames
     .map(
       (name) =>
-        `(gen_random_uuid(), '${name}', 'image/png', ${PNG_BYTES}, 1, 1, 'e2e/${name}', md5('${name}') || md5('${name}'), '${PNG_DATA_URL}', '${PNG_DATA_URL}', 'cloudinary')`,
+        `(gen_random_uuid(), '${name}', '${mimeType}', ${PNG_BYTES}, 1, 1, 'e2e/${name}', md5('${name}') || md5('${name}'), '${PNG_DATA_URL}', ${thumbnail}, 'cloudinary')`,
     )
     .join(', ');
   runSql(
