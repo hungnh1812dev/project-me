@@ -21,8 +21,7 @@ export default [
             },
             {
               group: ['node:child_process', 'child_process'],
-              message:
-                'Run SQL and shell commands through src/SmokeDatabase.client.ts.',
+              message: 'Run SQL and shell commands through src/SmokeDatabase.client.ts.',
             },
           ],
         },
@@ -36,18 +35,15 @@ export default [
         'error',
         {
           selector: 'FunctionDeclaration[id.name=/^signIn/]',
-          message:
-            'Sign in through signInAs / submitLogin from src/Session.fixture.ts.',
+          message: 'Sign in through signInAs / submitLogin from src/Session.fixture.ts.',
         },
         {
           selector:
             'Program > VariableDeclaration > VariableDeclarator[id.name=/^(RUN_ID|HTTP|HTTP_.*|CV_SLUG|PROFILE_SLUG|CONTENT_TYPE_SLUG)$/]',
-          message:
-            'Import RUN_ID, HTTP and the content type slugs from src/E2e.constants.ts.',
+          message: 'Import RUN_ID, HTTP and the content type slugs from src/E2e.constants.ts.',
         },
         {
-          selector:
-            'Program > VariableDeclaration > VariableDeclarator[id.name=/^(label|item)$/]',
+          selector: 'Program > VariableDeclaration > VariableDeclarator[id.name=/^(label|item)$/]',
           message: 'Import the shared locators from src/Locators.fixture.ts.',
         },
         {

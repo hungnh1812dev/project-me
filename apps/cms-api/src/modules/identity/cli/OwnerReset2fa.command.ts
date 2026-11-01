@@ -3,10 +3,7 @@ import { parseArgs } from 'node:util';
 
 import { loadAppConfig } from '../../../config/AppConfig.setup';
 import { parseResetEmail } from '../application/TwoFactorReset.service';
-import {
-  CONFIRM_ANSWERS,
-  RESET_2FA_OPTIONS,
-} from '../domain/Identity.constants';
+import { CONFIRM_ANSWERS, RESET_2FA_OPTIONS } from '../domain/Identity.constants';
 import { openIdentityCli } from './IdentityCli.setup';
 import { CliInputError } from './PasswordInput.client';
 
@@ -32,9 +29,7 @@ export function parseResetArgs(argv: readonly string[]): ResetArgs {
       allowPositionals: false,
     }));
   } catch {
-    throw new CliInputError(
-      `Usage: owner:reset-2fa ${EMAIL_FLAG} <address> [${YES_FLAG}]`,
-    );
+    throw new CliInputError(`Usage: owner:reset-2fa ${EMAIL_FLAG} <address> [${YES_FLAG}]`);
   }
   const email = values[RESET_2FA_OPTIONS.EMAIL];
   if (email === undefined || email.trim() === '') {
@@ -45,9 +40,7 @@ export function parseResetArgs(argv: readonly string[]): ResetArgs {
 
 /** True for "y" / "yes" (any case); anything else, Enter included, is no. */
 export function isConfirmed(answer: string): boolean {
-  return (CONFIRM_ANSWERS as readonly string[]).includes(
-    answer.trim().toLowerCase(),
-  );
+  return (CONFIRM_ANSWERS as readonly string[]).includes(answer.trim().toLowerCase());
 }
 
 async function confirm(email: string): Promise<boolean> {
@@ -62,9 +55,7 @@ async function confirm(email: string): Promise<boolean> {
   });
   try {
     return isConfirmed(
-      await prompt.question(
-        `Turn off 2FA and end all sessions for ${email}? [y/N] `,
-      ),
+      await prompt.question(`Turn off 2FA and end all sessions for ${email}? [y/N] `),
     );
   } catch {
     // Ctrl+C / Ctrl+D at the prompt: treat as no.
@@ -102,9 +93,7 @@ async function main(): Promise<void> {
 
 if (require.main === module) {
   main().catch((error: unknown) => {
-    process.stderr.write(
-      `${error instanceof Error ? error.message : String(error)}\n`,
-    );
+    process.stderr.write(`${error instanceof Error ? error.message : String(error)}\n`);
     process.exitCode = 1;
   });
 }

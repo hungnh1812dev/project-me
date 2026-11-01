@@ -1,23 +1,11 @@
-import {
-  customRole,
-  grant,
-  systemRole,
-} from '../../../../test/fixtures/Access.fixture';
+import { customRole, grant, systemRole } from '../../../../test/fixtures/Access.fixture';
 import { PermissionAction } from '../../../generated/prisma/client';
-import {
-  ContentTypeRegistry,
-  type ContentTypeDefinition,
-} from '../../content-engine';
-import {
-  accountActor,
-  anonymousActor,
-  apiTokenActor,
-  reviewerActor,
-} from './ActorContext.entity';
+import { ContentTypeRegistry, type ContentTypeDefinition } from '../../content-engine';
+import { accountActor, anonymousActor, apiTokenActor, reviewerActor } from './ActorContext.entity';
 import { nonSensitiveFieldList } from './FieldPaths.rules';
 import { PolicyEvaluator } from './PolicyEvaluator.rules';
-import { REVIEWER_ROLE_SLUG } from './SystemRoles.entity';
 import { SubjectCatalog } from './SubjectCatalog.rules';
+import { REVIEWER_ROLE_SLUG } from './SystemRoles.entity';
 
 const { read } = PermissionAction;
 
@@ -90,18 +78,12 @@ describe('sensitive fields and the wildcard grant (SPEC D2)', () => {
 
   it('keeps a type without sensitive fields fully readable', () => {
     const anonymous = anonymousActor(systemRole('public'));
-    expect(
-      evaluator.fieldsFor(anonymous, PLAIN.slug).readable.isUnrestricted,
-    ).toBe(true);
+    expect(evaluator.fieldsFor(anonymous, PLAIN.slug).readable.isUnrestricted).toBe(true);
   });
 
   it('leaves editor and owner unrestricted', () => {
-    expect(
-      readableOf(accountActor(1, systemRole('editor'))).allows('phone'),
-    ).toBe(true);
-    expect(
-      readableOf(accountActor(1, systemRole('owner'))).allows('phone'),
-    ).toBe(true);
+    expect(readableOf(accountActor(1, systemRole('editor'))).allows('phone')).toBe(true);
+    expect(readableOf(accountActor(1, systemRole('owner'))).allows('phone')).toBe(true);
   });
 
   it('lets a type-specific grant of the public role unmask a field', () => {

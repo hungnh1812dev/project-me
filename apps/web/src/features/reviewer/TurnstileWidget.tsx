@@ -1,10 +1,11 @@
 'use client';
 
-import Script from 'next/script';
 import { useEffect, useRef, useState } from 'react';
+import Script from 'next/script';
 
-import { COPY } from '../../config/Copy.constants';
-import { TURNSTILE } from '../../config/Security.constants';
+import { COPY } from '../../configs/Copy.constants';
+import { TURNSTILE } from '../../configs/Security.constants';
+
 import './Turnstile.client';
 
 const copy = COPY.reviewer.turnstile;
@@ -64,13 +65,11 @@ export function TurnstileWidget({
       />
       <div ref={container} className="min-h-16" />
       {hasScriptFailed ? (
-        <p role="alert" className="text-sm text-destructive-strong">
+        <p role="alert" className="text-destructive-strong text-sm">
           {copy.failed}
         </p>
       ) : !ready ? (
-        <output className="block text-sm text-muted-foreground">
-          {copy.loading}
-        </output>
+        <output className="text-muted-foreground block text-sm">{copy.loading}</output>
       ) : null}
     </div>
   );

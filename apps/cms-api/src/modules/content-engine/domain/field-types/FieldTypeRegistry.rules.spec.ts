@@ -1,18 +1,13 @@
 import { SCALAR_FIELD_TYPES } from '../ContentEngine.constants';
-
 import { FIELD_TYPE_SPECS, fieldTypeOf } from './FieldTypeRegistry.rules';
 
 const typesWhere = (
-  predicate: (
-    spec: (typeof FIELD_TYPE_SPECS)[keyof typeof FIELD_TYPE_SPECS],
-  ) => boolean,
+  predicate: (spec: (typeof FIELD_TYPE_SPECS)[keyof typeof FIELD_TYPE_SPECS]) => boolean,
 ) => SCALAR_FIELD_TYPES.filter((type) => predicate(FIELD_TYPE_SPECS[type]));
 
 describe('field type registry', () => {
   it('has one spec per scalar type and no other', () => {
-    expect(Object.keys(FIELD_TYPE_SPECS).sort()).toEqual(
-      [...SCALAR_FIELD_TYPES].sort(),
-    );
+    expect(Object.keys(FIELD_TYPE_SPECS).sort()).toEqual([...SCALAR_FIELD_TYPES].sort());
   });
 
   it('marks exactly media as referencing a media file', () => {
@@ -20,10 +15,7 @@ describe('field type registry', () => {
   });
 
   it('keeps media and json out of list filters and sorts', () => {
-    expect(typesWhere((spec) => !spec.listQueryable).sort()).toEqual([
-      'json',
-      'media',
-    ]);
+    expect(typesWhere((spec) => !spec.listQueryable).sort()).toEqual(['json', 'media']);
   });
 
   it('keeps media usable in conditions even though it is not list-queryable', () => {
@@ -42,10 +34,7 @@ describe('field type registry', () => {
   it('keeps the column types the generated SQL was built with', () => {
     expect(
       Object.fromEntries(
-        SCALAR_FIELD_TYPES.map((type) => [
-          type,
-          FIELD_TYPE_SPECS[type].columnType,
-        ]),
+        SCALAR_FIELD_TYPES.map((type) => [type, FIELD_TYPE_SPECS[type].columnType]),
       ),
     ).toEqual({
       string: 'text',
@@ -81,8 +70,16 @@ describe('field type registry', () => {
 });
 
 describe('coerceValue', () => {
-  const coerce = (type: string, value: unknown) =>
-    fieldTypeOf(type)?.coerceValue(value);
+  const coerce = (type: string, value: unknown) => fieldTypeOf(type)?.coerceValue(value);
+
+  it('passes the image origins to the richtext sanitizer and ignores them elsewhere', () => {
+    const html =
+      '<img src="https://res.cloudinary.com/a.png" data-media-id="0197f3a0-7b1c-7c3e-8a52-0123456789ab">';
+    const ctx = { richtextImageOrigins: ['https://res.cloudinary.com'] };
+    expect(fieldTypeOf('richtext')?.coerceValue(html, ctx)).toContain('<img');
+    expect(fieldTypeOf('richtext')?.coerceValue(html)).toBe('');
+    expect(fieldTypeOf('text')?.coerceValue('x', ctx)).toBe('x');
+  });
 
   it('sanitizes richtext and never stores it raw', () => {
     const out = coerce('richtext', '<p>hi</p><img src=x onerror=alert(1)>');
@@ -103,11 +100,7 @@ describe('coerceValue', () => {
     ['boolean', false, false],
     ['date', '2026-02-28', '2026-02-28'],
     ['datetime', '2026-03-01T10:00:00+07:00', '2026-03-01T03:00:00.000Z'],
-    [
-      'media',
-      '0A0A0A0A-0A0A-4A0A-8A0A-0A0A0A0A0A0A',
-      '0a0a0a0a-0a0a-4a0a-8a0a-0a0a0a0a0a0a',
-    ],
+    ['media', '0A0A0A0A-0A0A-4A0A-8A0A-0A0A0A0A0A0A', '0a0a0a0a-0a0a-4a0a-8a0a-0a0a0a0a0a0a'],
   ])('%s accepts %p', (type, value, expected) => {
     expect(coerce(type, value)).toBe(expected);
   });

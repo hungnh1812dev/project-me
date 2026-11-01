@@ -6,10 +6,7 @@ export interface RefreshLocks {
 /** Minimal BroadcastChannel surface. */
 export interface RefreshChannel {
   postMessage(message: unknown): void;
-  addEventListener(
-    type: 'message',
-    listener: (event: { data: unknown }) => void,
-  ): void;
+  addEventListener(type: 'message', listener: (event: { data: unknown }) => void): void;
 }
 
 export interface CrossTabRefreshOptions {
@@ -87,8 +84,7 @@ export function browserCrossTabOptions(
   lockName: string,
   channelName: string,
 ): CrossTabRefreshOptions {
-  const locks = (globalThis.navigator as Navigator | undefined)?.locks as
-    RefreshLocks | undefined;
+  const locks = (globalThis.navigator as Navigator | undefined)?.locks as RefreshLocks | undefined;
   // A channel is only useful with the lock (and would keep tests alive).
   const channel =
     locks !== undefined && typeof BroadcastChannel !== 'undefined'

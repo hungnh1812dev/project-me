@@ -1,4 +1,4 @@
-import { type Expression, sql, type SqlBool } from 'kysely';
+import { sql, type Expression, type SqlBool } from 'kysely';
 
 import {
   RECORD_SYSTEM_COLUMNS,
@@ -7,19 +7,9 @@ import {
   type RecordSystemField,
 } from '../../access';
 import type { RegisteredContentType } from '../../content-engine';
-import {
-  DOCUMENT_ERROR_MESSAGES,
-  SYSTEM_FIELD_KINDS,
-} from '../domain/Documents.constants';
-import {
-  filterRefused,
-  typedFilterValues,
-} from '../domain/DocumentFilter.rules';
-import {
-  type FilterClause,
-  queryKindOfField,
-  type SortKey,
-} from '../domain/ListQuery.rules';
+import { filterRefused, typedFilterValues } from '../domain/DocumentFilter.rules';
+import { DOCUMENT_ERROR_MESSAGES, SYSTEM_FIELD_KINDS } from '../domain/Documents.constants';
+import { queryKindOfField, type FilterClause, type SortKey } from '../domain/ListQuery.rules';
 
 /** Characters `contains` must escape so the value matches literally. */
 const LIKE_SPECIALS_PATTERN = /[\\%_]/g;
@@ -40,10 +30,7 @@ const SYSTEM_FIELDS: ReadonlySet<string> = new Set(RECORD_SYSTEM_FIELDS);
  * is readable.
  * @throws DomainError (invalid_input) when the path cannot be filtered or sorted.
  */
-export function queryColumnOf(
-  type: RegisteredContentType,
-  path: string,
-): QueryColumn {
+export function queryColumnOf(type: RegisteredContentType, path: string): QueryColumn {
   if (SYSTEM_FIELDS.has(path)) {
     const field = path as RecordSystemField;
     return {
@@ -52,8 +39,7 @@ export function queryColumnOf(
     };
   }
   const column = type.root.columnsByField.get(path);
-  const kind =
-    column === undefined ? undefined : queryKindOfField(column.field);
+  const kind = column === undefined ? undefined : queryKindOfField(column.field);
   if (column === undefined || kind === undefined) {
     throw filterRefused(DOCUMENT_ERROR_MESSAGES.UNSUPPORTED_FIELD);
   }
@@ -70,10 +56,7 @@ function escapeLike(raw: string): string {
  * bind parameter (`contains` has its LIKE wildcards escaped).
  * @throws DomainError (invalid_input) on an operator or value the field cannot take.
  */
-export function filterExpression(
-  target: QueryColumn,
-  clause: FilterClause,
-): Expression<SqlBool> {
+export function filterExpression(target: QueryColumn, clause: FilterClause): Expression<SqlBool> {
   const typed = typedFilterValues(target.kind, clause);
   const column = sql.ref(target.column);
   const [first] = typed;

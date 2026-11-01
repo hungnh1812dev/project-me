@@ -1,7 +1,7 @@
 import type { PrismaClient } from '../../../generated/prisma/client';
 import { PrismaTransactionRunner } from '../../../infrastructure/database/PrismaTransactionRunner.adapter';
-import { AUDIT_ACTIONS } from '../domain/SecurityAudit.constants';
 import type { AuditEntry } from '../domain/AuditActor.rules';
+import { AUDIT_ACTIONS } from '../domain/SecurityAudit.constants';
 import { PrismaAuditLogRepository } from './PrismaAuditLog.repository';
 
 /** A Prisma stand-in whose `auditLog.create` and transactions record their rows. */
@@ -24,14 +24,11 @@ async function writeInUnit(entry: AuditEntry) {
   const transaction = capturingClient();
   const runner = new PrismaTransactionRunner(
     {
-      $transaction: (work: (tx: unknown) => Promise<unknown>) =>
-        work(transaction.writer),
+      $transaction: (work: (tx: unknown) => Promise<unknown>) => work(transaction.writer),
     } as unknown as PrismaClient,
     { warn: jest.fn(), error: jest.fn() },
   );
-  const repository = new PrismaAuditLogRepository(
-    client.writer as unknown as PrismaClient,
-  );
+  const repository = new PrismaAuditLogRepository(client.writer as unknown as PrismaClient);
   await runner.run((unit) => repository.write(unit, entry));
   return { client: client.rows, transaction: transaction.rows };
 }
@@ -94,9 +91,7 @@ describe('PrismaAuditLogRepository (D15)', () => {
 
   it('writeStandalone uses the client', async () => {
     const client = capturingClient();
-    const repository = new PrismaAuditLogRepository(
-      client.writer as unknown as PrismaClient,
-    );
+    const repository = new PrismaAuditLogRepository(client.writer as unknown as PrismaClient);
     await repository.writeStandalone({
       actor: { type: 'system' },
       action: AUDIT_ACTIONS.ACCOUNT_SEEDED,

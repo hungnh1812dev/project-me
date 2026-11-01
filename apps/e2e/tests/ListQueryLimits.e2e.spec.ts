@@ -1,7 +1,7 @@
-import { type APIRequestContext, expect, test } from '@playwright/test';
+import { expect, test, type APIRequestContext } from '@playwright/test';
 
 import { API_PATHS, apiUrl } from '../src/Api.endpoints';
-import { HTTP, CV_PAGE_SLUG } from '../src/E2e.constants';
+import { CV_PAGE_SLUG, HTTP } from '../src/E2e.constants';
 import { bearer, ownerApiToken } from '../src/Session.fixture';
 
 const DOCUMENTS_PATH = API_PATHS.documents(CV_PAGE_SLUG);
@@ -26,18 +26,12 @@ const REST_CASES: [string, string][] = [
   ['pageSize over the maximum', 'pageSize=101'],
   ['four sort keys', 'sort=position,summary,isMain,createdAt'],
   ['a repeated sort key', 'sort=position,position'],
-  [
-    'eleven filters',
-    repeat(OVER_MAX_FILTERS, (i) => `filter[position][$ne${i}]=x`).join('&'),
-  ],
+  ['eleven filters', repeat(OVER_MAX_FILTERS, (i) => `filter[position][$ne${i}]=x`).join('&')],
   [
     'too many in values',
     `filter[position][in]=${repeat(OVER_MAX_IN_VALUES, () => 'x').join('&filter[position][in]=')}`,
   ],
-  [
-    'a 256 character value',
-    `filter[position]=${'x'.repeat(OVER_MAX_VALUE_LENGTH)}`,
-  ],
+  ['a 256 character value', `filter[position]=${'x'.repeat(OVER_MAX_VALUE_LENGTH)}`],
   ['a malformed sort key', `sort=${SECRET}!`],
   ['a malformed filter path', `filter[${SECRET}!]=x`],
 ];
@@ -52,9 +46,7 @@ test.describe('API: list query limits (R2-06)', () => {
   });
 
   for (const [name, query] of REST_CASES) {
-    test(`REST: ${name} is a 400 that echoes no submitted value`, async ({
-      request,
-    }) => {
+    test(`REST: ${name} is a 400 that echoes no submitted value`, async ({ request }) => {
       const response = await request.get(apiUrl(`${DOCUMENTS_PATH}?${query}`), {
         headers,
       });
@@ -66,23 +58,16 @@ test.describe('API: list query limits (R2-06)', () => {
     });
   }
 
-  test('REST: a valid list with the default sort is unchanged', async ({
-    request,
-  }) => {
-    const response = await request.get(
-      apiUrl(`${DOCUMENTS_PATH}?status=draft`),
-      {
-        headers,
-      },
-    );
+  test('REST: a valid list with the default sort is unchanged', async ({ request }) => {
+    const response = await request.get(apiUrl(`${DOCUMENTS_PATH}?status=draft`), {
+      headers,
+    });
     expect(response.status()).toBe(HTTP.OK);
     const body = (await response.json()) as { meta: { page: number } };
     expect(body.meta.page).toBe(1);
   });
 
-  test('REST: a field the role cannot read is still rejected by the guard', async ({
-    request,
-  }) => {
+  test('REST: a field the role cannot read is still rejected by the guard', async ({ request }) => {
     const response = await request.get(
       apiUrl(`${DOCUMENTS_PATH}?sort=noSuchField${SECRET.length}`),
       { headers },
@@ -108,10 +93,7 @@ test.describe('API: list query limits (R2-06)', () => {
         })),
       },
     ],
-    [
-      'a repeated sort key',
-      { sort: [{ field: 'position' }, { field: 'position' }] },
-    ],
+    ['a repeated sort key', { sort: [{ field: 'position' }, { field: 'position' }] }],
     [
       'too many in values',
       {
@@ -120,16 +102,11 @@ test.describe('API: list query limits (R2-06)', () => {
         },
       },
     ],
-    [
-      'a 256 character value',
-      { filter: { position: { eq: 'x'.repeat(OVER_MAX_VALUE_LENGTH) } } },
-    ],
+    ['a 256 character value', { filter: { position: { eq: 'x'.repeat(OVER_MAX_VALUE_LENGTH) } } }],
   ];
 
   for (const [name, variables] of GRAPHQL_CASES) {
-    test(`GraphQL: ${name} is an invalid-request error`, async ({
-      request,
-    }) => {
+    test(`GraphQL: ${name} is an invalid-request error`, async ({ request }) => {
       const response = await request.post(apiUrl(GRAPHQL_PATH), {
         headers,
         data: { query: GRAPHQL_LIST, variables },

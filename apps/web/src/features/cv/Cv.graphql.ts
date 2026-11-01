@@ -1,4 +1,4 @@
-import type { GraphqlDocument } from '../../lib/GraphqlResponse.rules';
+import type { GraphqlDocument } from '../../apis/GraphqlResponse.rules';
 
 export interface ResumeSkill {
   level: string | null;
@@ -182,10 +182,7 @@ function sanitizedOrNull(
  * (server load, browser refetch) must pass through here first; the sanitizer
  * is passed in because the server and the browser need different DOMs.
  */
-export function sanitizeCvRichtext(
-  data: CvPageData,
-  sanitize: RichtextSanitizer,
-): CvPageData {
+export function sanitizeCvRichtext(data: CvPageData, sanitize: RichtextSanitizer): CvPageData {
   return {
     ...data,
     resumeList: {
@@ -198,17 +195,11 @@ export function sanitizeCvRichtext(
             roles:
               experience.roles?.map((role) => ({
                 ...role,
-                responsibilities: sanitizedOrNull(
-                  role.responsibilities,
-                  sanitize,
-                ),
+                responsibilities: sanitizedOrNull(role.responsibilities, sanitize),
                 projects:
                   role.projects?.map((project) => ({
                     ...project,
-                    responsibilities: sanitizedOrNull(
-                      project.responsibilities,
-                      sanitize,
-                    ),
+                    responsibilities: sanitizedOrNull(project.responsibilities, sanitize),
                   })) ?? null,
               })) ?? null,
           })) ?? null,

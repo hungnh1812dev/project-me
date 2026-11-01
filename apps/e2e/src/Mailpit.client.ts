@@ -38,15 +38,9 @@ async function getJson<T>(context: BrowserContext, path: string): Promise<T> {
 }
 
 /** IDs of the messages Mailpit holds for `email` right now. */
-export async function mailIdsFor(
-  context: BrowserContext,
-  email: string,
-): Promise<Set<string>> {
+export async function mailIdsFor(context: BrowserContext, email: string): Promise<Set<string>> {
   const query = encodeURIComponent(`to:"${email}"`);
-  const result = await getJson<MailpitSearch>(
-    context,
-    `${MAILPIT_API.SEARCH}?query=${query}`,
-  );
+  const result = await getJson<MailpitSearch>(context, `${MAILPIT_API.SEARCH}?query=${query}`);
   return new Set(result.messages.map((message) => message.ID));
 }
 
@@ -73,10 +67,7 @@ export async function waitForCode(
       },
     )
     .toBeDefined();
-  const message = await getJson<MailpitMessage>(
-    context,
-    `${MAILPIT_API.MESSAGE}/${newId}`,
-  );
+  const message = await getJson<MailpitMessage>(context, `${MAILPIT_API.MESSAGE}/${newId}`);
   const code = OTP_IN_MAIL.exec(message.Text)?.[1];
   if (code === undefined) throw new Error('No code in the OTP email');
   return code;

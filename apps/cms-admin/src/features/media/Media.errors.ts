@@ -1,6 +1,6 @@
-import { COPY } from '../../config/Copy.constants';
-import { API_ERROR_CODES, HTTP_STATUS } from '../../config/Http.constants';
-import { apiFailureOf, rateLimitedMessage } from '../../lib/ApiFailure.errors';
+import { apiFailureOf, rateLimitedMessage } from '@apis/client/ApiFailure.errors';
+import { COPY } from '@configs/Copy.constants';
+import { API_ERROR_CODES, HTTP_STATUS } from '@configs/Http.constants';
 
 const copy = COPY.media.errors;
 
@@ -34,9 +34,7 @@ export function toMediaError(error: unknown): MediaError {
       return { kind: 'other', message: COPY.access.errors.unexpected };
     case 'http': {
       const known =
-        failure.errorCode === undefined
-          ? undefined
-          : MESSAGE_BY_CODE[failure.errorCode];
+        failure.errorCode === undefined ? undefined : MESSAGE_BY_CODE[failure.errorCode];
       const kind: MediaErrorKind =
         failure.errorCode === API_ERROR_CODES.MEDIA_IN_USE
           ? 'in-use'

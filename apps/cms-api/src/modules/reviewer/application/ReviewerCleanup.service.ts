@@ -2,10 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 
 import { Clock } from '../../../common/time/Clock.service';
 import { VersionCache } from '../../access';
-import {
-  REVIEWER_ACCOUNT_GATEWAY,
-  type ReviewerAccountGateway,
-} from './Reviewer.port';
+import { REVIEWER_ACCOUNT_GATEWAY, type ReviewerAccountGateway } from './Reviewer.port';
 
 const REVIEWER_CLEANUP_BATCH_SIZE = 100;
 

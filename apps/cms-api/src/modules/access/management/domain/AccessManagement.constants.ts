@@ -44,8 +44,7 @@ export const MANAGEMENT_ERROR_MESSAGES = {
   TOKEN_NOT_FOUND: 'API token not found.',
   TOKEN_REVOKED: 'The API token is revoked.',
   TOKEN_EXPIRED: 'The API token is expired.',
-  TOKEN_SCOPE_NOT_HELD:
-    'A token cannot be granted a permission its creator does not hold.',
+  TOKEN_SCOPE_NOT_HELD: 'A token cannot be granted a permission its creator does not hold.',
 } as const;
 
 /** The issue text of an API token expiry that is not in the future. */
@@ -73,15 +72,10 @@ export const API_TOKEN_STATUSES = {
   EXPIRED: 'expired',
 } as const;
 
-export type ApiTokenStatus =
-  (typeof API_TOKEN_STATUSES)[keyof typeof API_TOKEN_STATUSES];
+export type ApiTokenStatus = (typeof API_TOKEN_STATUSES)[keyof typeof API_TOKEN_STATUSES];
 
 /** Fields `api_token.updated` may name in `metadata.fields`. */
-export const API_TOKEN_UPDATABLE_FIELDS = [
-  'name',
-  'scope',
-  'expiresAt',
-] as const;
+export const API_TOKEN_UPDATABLE_FIELDS = ['name', 'scope', 'expiresAt'] as const;
 
 /** Subjects the management audit rows name. */
 export const MANAGEMENT_AUDIT_SUBJECTS = {

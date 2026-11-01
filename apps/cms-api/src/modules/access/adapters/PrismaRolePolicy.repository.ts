@@ -1,9 +1,9 @@
 import { Inject, Injectable } from '@nestjs/common';
 
 import { Prisma } from '../../../generated/prisma/client';
-import { prismaTxOf } from '../../../infrastructure/database/PrismaTransactionRunner.adapter';
-import { PrismaClient } from '../../../infrastructure/database/PrismaClient.adapter';
 import { PrismaService } from '../../../infrastructure/database/Prisma.service';
+import { PrismaClient } from '../../../infrastructure/database/PrismaClient.adapter';
+import { prismaTxOf } from '../../../infrastructure/database/PrismaTransactionRunner.adapter';
 import type { UnitOfWork } from '../../../infrastructure/database/TransactionRunner.port';
 import type {
   DefaultPermissionSeed,
@@ -15,15 +15,13 @@ import type {
 } from '../application/Access.port';
 import { RoleSeedService } from '../application/RoleSeed.service';
 import {
+  rolePolicyFromRows,
   type PermissionGrant,
   type RolePolicy,
-  rolePolicyFromRows,
 } from '../domain/ActorContext.entity';
 
 /** null -> SQL NULL (Prisma needs DbNull for nullable Json columns). */
-function jsonOrDbNull(
-  value: unknown,
-): Prisma.InputJsonValue | typeof Prisma.DbNull {
+function jsonOrDbNull(value: unknown): Prisma.InputJsonValue | typeof Prisma.DbNull {
   return value === null || value === undefined ? Prisma.DbNull : value;
 }
 
@@ -35,9 +33,7 @@ const ROLE_PERMISSIONS_SEED_LOCK_KEY = 7_163_201_908n;
  * path, and the seeds.
  */
 @Injectable()
-export class PrismaRolePolicyRepository
-  implements RoleLookup, PermissionRepository, RoleSeedStore
-{
+export class PrismaRolePolicyRepository implements RoleLookup, PermissionRepository, RoleSeedStore {
   /** Typed as the client so the CLIs can build the adapter on a plain `PrismaClient`. */
   constructor(@Inject(PrismaService) private readonly prisma: PrismaClient) {}
 
@@ -120,9 +116,7 @@ export class PrismaRolePolicyRepository
     });
   }
 
-  async insertMissingSystemRoles(
-    roles: readonly SystemRoleSeed[],
-  ): Promise<void> {
+  async insertMissingSystemRoles(roles: readonly SystemRoleSeed[]): Promise<void> {
     await this.prisma.role.createMany({
       data: roles.map(({ slug, name, rank }) => ({
         slug,

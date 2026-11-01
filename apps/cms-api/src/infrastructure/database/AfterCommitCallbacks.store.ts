@@ -21,9 +21,7 @@ export class AfterCommitCallbacks {
 
   register(callback: AfterCommitCallback): void {
     if (!this.isOpen) {
-      throw new Error(
-        `afterCommit cannot be registered on a unit that is ${this.state}`,
-      );
+      throw new Error(`afterCommit cannot be registered on a unit that is ${this.state}`);
     }
     this.callbacks.push(callback);
   }
@@ -55,10 +53,7 @@ export class AfterCommitCallbacks {
           );
         }
       } catch (error) {
-        logger.error(
-          `An after-commit callback failed: ${describeFailure(error)}`,
-          LOG_CONTEXT,
-        );
+        logger.error(`An after-commit callback failed: ${describeFailure(error)}`, LOG_CONTEXT);
       }
     }
   }

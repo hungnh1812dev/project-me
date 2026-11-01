@@ -1,0 +1,57 @@
+#!/usr/bin/env python3
+"""Print one part of a Markdown file, so agents never read the whole file.
+
+  section <file> <heading text>   the first heading containing the text, up to the next heading of the same or a higher level
+  section <file> §<n>             the heading that starts with "<n>." (spec sections, e.g. §7 or §7.2)
+  section <file> --id <ID>        the list item that starts with **<ID>: (a task entry), with its indented lines
+  section <file> --toc            the headings only, with line numbers
+
+Exit 4 when nothing matches; then the headings are listed so the caller can pick one.
+"""
+import re, sys
+
+def headings(lines):
+    for i, line in enumerate(lines):
+        m = re.match(r"^(#{1,6})\s+(.*)", line)
+        if m:
+            yield i, len(m.group(1)), m.group(2)
+
+def toc(lines):
+    return "".join(f"{i + 1}: {line}" for i, _, _ in headings(lines) for line in [lines[i]])
+
+def by_heading(lines, query):
+    sec = re.match(r"^§(\d+(?:\.\d+)*)$", query)
+    for i, level, text in headings(lines):
+        hit = text.startswith(sec.group(1) + ".") or text.startswith(sec.group(1) + " ") if sec else query.lower() in text.lower()
+        if hit:
+            end = next((j for j, lv, _ in headings(lines) if j > i and lv <= level), len(lines))
+            return "".join(lines[i:end])
+    return None
+
+def by_id(lines, task_id):
+    start = re.compile(r"^\s*(?:- \[.\]\s*)?(?:- )?\*\*" + re.escape(task_id) + r"[:*]")
+    for i, line in enumerate(lines):
+        if start.match(line):
+            indent = len(line) - len(line.lstrip())
+            out = [line]
+            for nxt in lines[i + 1:]:
+                if nxt.strip() and len(nxt) - len(nxt.lstrip()) <= indent:
+                    break
+                out.append(nxt)
+            return "".join(out).rstrip() + "\n"
+    return None
+
+def main(argv):
+    if len(argv) < 3:
+        sys.exit(__doc__)
+    path, args = argv[1], argv[2:]
+    lines = open(path, encoding="utf-8").readlines()
+    if args[0] == "--toc":
+        sys.stdout.write(toc(lines)); return
+    found = by_id(lines, args[1]) if args[0] == "--id" and len(args) > 1 else by_heading(lines, " ".join(args))
+    if found is None:
+        sys.stderr.write(f"no match for {' '.join(args)!r} in {path}; headings:\n{toc(lines)}")
+        sys.exit(4)
+    sys.stdout.write(found)
+
+main(sys.argv)

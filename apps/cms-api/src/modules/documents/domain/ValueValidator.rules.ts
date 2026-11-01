@@ -1,17 +1,13 @@
 import { DomainError } from '../../../common/errors/Domain.errors';
-import type { FieldSelection } from '../../access';
-import { joinFieldPath } from '../../access';
-import type {
-  ComponentInput,
-  FieldValues,
-  TableNode,
-  TreeInput,
-} from '../../content-engine';
-import { fieldTypeOf } from '../../content-engine';
+import { joinFieldPath, type FieldSelection } from '../../access';
 import {
-  DOCUMENT_ERROR_CODES,
-  DOCUMENT_ERROR_MESSAGES,
-} from './Documents.constants';
+  fieldTypeOf,
+  type ComponentInput,
+  type FieldValues,
+  type TableNode,
+  type TreeInput,
+} from '../../content-engine';
+import { DOCUMENT_ERROR_CODES, DOCUMENT_ERROR_MESSAGES } from './Documents.constants';
 
 export type WriteMode = 'create' | 'update';
 
@@ -19,10 +15,11 @@ export interface TreeValidationOptions {
   mode: WriteMode;
   /** Fields the actor may write: a missing required field only counts when the actor could have sent it. */
   writable: FieldSelection;
+  /** Origins a richtext `img` may point to; none = no image is kept. */
+  richtextImageOrigins?: readonly string[] | undefined;
 }
 
-const at = (base: string, rest: string) =>
-  base === '' ? rest : `${base}.${rest}`;
+const at = (base: string, rest: string) => (base === '' ? rest : `${base}.${rest}`);
 
 function invalid(path: string, message: string): DomainError {
   return new DomainError({
@@ -53,7 +50,9 @@ function validateValues(
       continue;
     }
     // A type with no registry entry (a component) never reaches a value column.
-    const coerced = fieldTypeOf(column.field.type)?.coerceValue(value);
+    const coerced = fieldTypeOf(column.field.type)?.coerceValue(value, {
+      richtextImageOrigins: options.richtextImageOrigins,
+    });
     if (coerced === undefined) {
       throw invalid(path, DOCUMENT_ERROR_MESSAGES.INVALID_TYPE);
     }
@@ -66,10 +65,7 @@ function validateValues(
         !(name in output) &&
         options.writable.allows(joinFieldPath(fieldPrefix, name))
       ) {
-        throw invalid(
-          at(inputPath, `values.${name}`),
-          DOCUMENT_ERROR_MESSAGES.REQUIRED,
-        );
+        throw invalid(at(inputPath, `values.${name}`), DOCUMENT_ERROR_MESSAGES.REQUIRED);
       }
     }
   }
@@ -85,24 +81,14 @@ function validateLevel(
   options: TreeValidationOptions,
 ): ComponentInput {
   const output: ComponentInput = {};
-  if (input.componentUid !== undefined)
-    output.componentUid = input.componentUid;
+  if (input.componentUid !== undefined) output.componentUid = input.componentUid;
   if (input.values !== undefined || isNew) {
-    output.values = validateValues(
-      table,
-      input.values,
-      fieldPrefix,
-      inputPath,
-      isNew,
-      options,
-    );
+    output.values = validateValues(table, input.values, fieldPrefix, inputPath, isNew, options);
   }
   if (input.components !== undefined) {
     output.components = {};
     for (const [name, items] of Object.entries(input.components)) {
-      const child = table.components.find(
-        (component) => component.field.name === name,
-      );
+      const child = table.components.find((component) => component.field.name === name);
       if (child === undefined) continue;
       const path = joinFieldPath(fieldPrefix, name);
       const listPath = at(inputPath, `components.${name}`);
@@ -155,19 +141,10 @@ export function validateTreeValues(
   tree: TreeInput,
   options: TreeValidationOptions,
 ): TreeInput {
-  const output = validateLevel(
-    root,
-    tree,
-    '',
-    '',
-    options.mode === 'create',
-    options,
-  );
+  const output = validateLevel(root, tree, '', '', options.mode === 'create', options);
   return {
     ...(output.values === undefined ? {} : { values: output.values }),
-    ...(output.components === undefined
-      ? {}
-      : { components: output.components }),
+    ...(output.components === undefined ? {} : { components: output.components }),
   };
 }
 

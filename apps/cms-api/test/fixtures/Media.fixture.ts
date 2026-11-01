@@ -1,4 +1,8 @@
+import { randomUUID } from 'node:crypto';
+
 import sharp from 'sharp';
+
+import type { PrismaClient } from '../../src/infrastructure/database/PrismaClient.adapter';
 
 /** Marker written into EXIF so tests can prove it is gone after re-encoding. */
 export const EXIF_MARKER = 'abyss-secret-camera-owner';
@@ -73,9 +77,22 @@ export async function buildMediaFixtures(): Promise<MediaFixtures> {
     webp: await plain('webp'),
     gif: await plain('gif'),
     avif: await plain('avif'),
-    brokenJpeg: Buffer.concat([
-      Buffer.from([0xff, 0xd8, 0xff, 0xe0]),
-      Buffer.alloc(64, 0x41),
-    ]),
+    brokenJpeg: Buffer.concat([Buffer.from([0xff, 0xd8, 0xff, 0xe0]), Buffer.alloc(64, 0x41)]),
   };
+}
+
+/** Inserts a readable media row without an upload and returns its document id. */
+export async function seedMediaFile(prisma: PrismaClient): Promise<string> {
+  const row = await prisma.fileLibrary.create({
+    data: {
+      fileName: 'seeded.png',
+      mimeType: 'image/png',
+      size: 1,
+      storageKey: randomUUID(),
+      sha256: 'a'.repeat(64),
+      url: 'https://fake-media.invalid/seeded.png',
+      provider: 'local',
+    },
+  });
+  return row.documentId;
 }

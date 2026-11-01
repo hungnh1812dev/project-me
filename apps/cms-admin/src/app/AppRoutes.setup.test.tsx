@@ -1,9 +1,10 @@
 import { readdirSync, statSync } from 'node:fs';
 import { resolve } from 'node:path';
 
-import { APP_ROUTES } from '../config/App.routes';
-import { PUBLIC_ROUTE_PATHS } from '../features/auth/Auth.feature';
-import { FEATURES } from '../features/Features.registry';
+import { APP_ROUTES } from '@configs/App.routes';
+import { FEATURES } from '@features/Features.registry';
+import { PUBLIC_ROUTE_PATHS } from '@views/Views.registry';
+
 import { appRoutes } from './AppRoutes.setup';
 
 const FEATURES_DIR = resolve(import.meta.dirname, '../features');
@@ -33,6 +34,8 @@ describe('route table', () => {
     const paths = shell?.children?.map((route) => route.path);
     expect(paths).toContain(APP_ROUTES.ACCOUNTS);
     expect(paths).toContain(APP_ROUTES.SECURITY_SETTINGS);
+    expect(paths).toContain(APP_ROUTES.PROFILE);
+    expect(paths).toContain(APP_ROUTES.CHANGE_PASSWORD);
     expect(paths).not.toContain(APP_ROUTES.LOGIN);
     expect(shell?.children?.some((route) => route.index === true)).toBe(true);
   });

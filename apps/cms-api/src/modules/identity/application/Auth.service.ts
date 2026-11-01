@@ -10,20 +10,13 @@ import {
 import { AccountStatus } from '../../access';
 import {
   AUDIT_ACTIONS,
-  type LoginFailureReason,
   SecurityAuditService,
   selfActor,
+  type LoginFailureReason,
 } from '../../security-audit';
 import { loginFailureReason } from '../domain/Authentication.rules';
-import {
-  DUMMY_PASSWORD_BYTES,
-  type TwoFaMethod,
-} from '../domain/Identity.constants';
-import {
-  invalidCredentials,
-  invalidRefreshToken,
-  notSignedIn,
-} from '../domain/Identity.errors';
+import { DUMMY_PASSWORD_BYTES, type TwoFaMethod } from '../domain/Identity.constants';
+import { invalidCredentials, invalidRefreshToken, notSignedIn } from '../domain/Identity.errors';
 import { AccessTokenService } from './AccessToken.service';
 import {
   ACCOUNT_REPOSITORY,
@@ -108,19 +101,16 @@ export class AuthService {
 
   /** A failed hash is dropped, so the next sign-in makes a new one instead of failing for good. */
   private dummyHashPromise(): Promise<string> {
-    this.dummyHash ??= hashPassword(
-      randomBytes(DUMMY_PASSWORD_BYTES).toString('hex'),
-    ).catch((error: unknown) => {
-      this.dummyHash = undefined;
-      throw error;
-    });
+    this.dummyHash ??= hashPassword(randomBytes(DUMMY_PASSWORD_BYTES).toString('hex')).catch(
+      (error: unknown) => {
+        this.dummyHash = undefined;
+        throw error;
+      },
+    );
     return this.dummyHash;
   }
 
-  async login(
-    credentials: LoginCredentials,
-    meta: ClientMeta,
-  ): Promise<LoginResult> {
+  async login(credentials: LoginCredentials, meta: ClientMeta): Promise<LoginResult> {
     const account = await this.accounts.findLoginAccount(credentials.email);
     const isPasswordCorrect = await this.verifyPasswordAgainstAnyHash(
       account,
@@ -145,8 +135,7 @@ export class AuthService {
     account: LoginAccountRecord | null,
     password: string,
   ): Promise<boolean> {
-    const passwordHash =
-      account?.passwordHash ?? (await this.dummyHashPromise());
+    const passwordHash = account?.passwordHash ?? (await this.dummyHashPromise());
     return verifyPassword(passwordHash, password);
   }
 
@@ -161,10 +150,7 @@ export class AuthService {
       actor: selfActor(account?.id ?? null),
       action: AUDIT_ACTIONS.AUTH_LOGIN_FAILED,
       targetId: account?.documentId ?? null,
-      metadata:
-        account === null
-          ? { reason, emailHmac: this.audit.emailHmac(email) }
-          : { reason },
+      metadata: account === null ? { reason, emailHmac: this.audit.emailHmac(email) } : { reason },
       ip: meta.ip,
     });
   }
@@ -241,11 +227,7 @@ export class AuthService {
 
   async me(accountDocumentId: string): Promise<AccountProfile> {
     const account = await this.accounts.findProfile(accountDocumentId);
-    if (
-      account === null ||
-      account.status !== AccountStatus.active ||
-      account.deletedAt !== null
-    ) {
+    if (account === null || account.status !== AccountStatus.active || account.deletedAt !== null) {
       throw notSignedIn();
     }
     return {

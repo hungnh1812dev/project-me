@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common';
 
-import { ContentRegistry } from '../../content-engine';
-import type { ContentTypeRegistry } from '../../content-engine';
+import { ContentRegistry, type ContentTypeRegistry } from '../../content-engine';
 import { PolicyEvaluator } from '../domain/PolicyEvaluator.rules';
 import { SubjectCatalog } from '../domain/SubjectCatalog.rules';
 
@@ -16,8 +15,7 @@ export interface AccessPolicy {
  */
 @Injectable()
 export class AccessPolicyService {
-  private built:
-    { registry: ContentTypeRegistry; policy: AccessPolicy } | undefined;
+  private built: { registry: ContentTypeRegistry; policy: AccessPolicy } | undefined;
 
   constructor(private readonly registry: ContentRegistry) {}
 

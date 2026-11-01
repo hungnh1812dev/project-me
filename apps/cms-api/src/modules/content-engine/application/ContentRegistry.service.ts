@@ -1,14 +1,8 @@
 import { Inject, Injectable } from '@nestjs/common';
 
-import {
-  APP_LOGGER,
-  type AppLogger,
-} from '../../../infrastructure/logging/AppLogger.port';
+import { APP_LOGGER, type AppLogger } from '../../../infrastructure/logging/AppLogger.port';
 import { ContentTypeRegistry } from '../domain/ContentTypeRegistry.entity';
-import {
-  CONTENT_TYPE_REPOSITORY,
-  type ContentTypeRepository,
-} from './ContentEngine.port';
+import { CONTENT_TYPE_REPOSITORY, type ContentTypeRepository } from './ContentEngine.port';
 
 const LOGGER_CONTEXT = 'ContentRegistry';
 

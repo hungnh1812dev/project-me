@@ -1,10 +1,7 @@
+import { cn } from 'cn';
 import type { FieldValues } from 'react-hook-form';
 
-import {
-  TextAreaInput,
-  type TextAreaInputProps,
-} from '@/components/forms/text-area-input';
-import { cn } from 'cn';
+import { TextAreaInput, type TextAreaInputProps } from '@/components/forms/text-area-input';
 
 export interface JsonInputProps<
   TFieldValues extends FieldValues = FieldValues,

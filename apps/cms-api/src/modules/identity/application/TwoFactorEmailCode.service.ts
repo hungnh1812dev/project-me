@@ -3,14 +3,8 @@ import { Inject, Injectable } from '@nestjs/common';
 import type { ClientMeta } from '../../../common/types/ClientMeta.entity';
 import { type IAppConfig } from '../../../config/AppConfig.setup';
 import { APP_CONFIG } from '../../../config/Config.constants';
-import {
-  APP_LOGGER,
-  type AppLogger,
-} from '../../../infrastructure/logging/AppLogger.port';
-import {
-  MAIL_SENDER,
-  type MailSender,
-} from '../../../infrastructure/mail/Mail.port';
+import { APP_LOGGER, type AppLogger } from '../../../infrastructure/logging/AppLogger.port';
+import { MAIL_SENDER, type MailSender } from '../../../infrastructure/mail/Mail.port';
 import { EMAIL_CODE_PURPOSE } from '../domain/Identity.constants';
 import { mailNotDelivered } from '../domain/Identity.errors';
 import { buildOtpMail, OtpService } from './Otp.service';
@@ -28,22 +22,13 @@ export class TwoFactorEmailCodeService {
   ) {}
 
   /** 429 past the hourly cap; 503 when the mail is not delivered. */
-  async send(
-    accountId: number,
-    email: string,
-    meta: ClientMeta,
-  ): Promise<void> {
+  async send(accountId: number, email: string, meta: ClientMeta): Promise<void> {
     const code = await this.otp.issue(accountId, EMAIL_CODE_PURPOSE, {
       ip: meta.ip,
     });
     try {
       await this.mail.send(
-        buildOtpMail(
-          email,
-          EMAIL_CODE_PURPOSE,
-          code,
-          this.config.cors.allowedOrigins[0],
-        ),
+        buildOtpMail(email, EMAIL_CODE_PURPOSE, code, this.config.cors.allowedOrigins[0]),
       );
     } catch (error) {
       // Name and code only: SMTP error messages can echo the recipient.

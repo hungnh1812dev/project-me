@@ -15,9 +15,7 @@ function listRoutes(app: NestExpressApplication): string[] {
   return instance.router.stack.flatMap(({ route }) =>
     route === undefined
       ? []
-      : Object.keys(route.methods).map(
-          (method) => `${method.toUpperCase()} ${route.path}`,
-        ),
+      : Object.keys(route.methods).map((method) => `${method.toUpperCase()} ${route.path}`),
   );
 }
 
@@ -72,9 +70,11 @@ const EXPECTED_ROUTES: string[] = [
   'POST /api/v1/documents/:slug/:documentId/presence',
   'POST /api/v1/graphql',
   'POST /api/v1/media',
+  'PUT /api/v1/media/:id/file',
   'GET /api/v1/media',
   'PATCH /api/v1/media/:id',
   'DELETE /api/v1/media/:id',
+  'GET /api/v1/media-files/:fileName',
   'GET /api/v1/reviewer/status',
   'POST /api/v1/reviewer/sessions',
   'GET /api/v1/reviewer/sessions',
@@ -89,9 +89,7 @@ describe('route snapshot (R2-10)', () => {
 
   beforeAll(async () => {
     postgres = await startPostgres();
-    app = await createTestApp(
-      devEnv({ ...dbEnvOf(postgres.getConnectionUri()) }),
-    );
+    app = await createTestApp(devEnv({ ...dbEnvOf(postgres.getConnectionUri()) }));
   });
 
   afterAll(async () => {

@@ -9,10 +9,7 @@ import { graphqlBodyLimit } from './GraphqlBodyLimit.middleware';
 function fake(method: string, contentLength?: number) {
   const req = Object.assign(new EventEmitter(), {
     method,
-    headers:
-      contentLength === undefined
-        ? {}
-        : { 'content-length': String(contentLength) },
+    headers: contentLength === undefined ? {} : { 'content-length': String(contentLength) },
     requestId: 'rid',
     destroy: jest.fn(),
     pause: jest.fn(),
@@ -21,9 +18,7 @@ function fake(method: string, contentLength?: number) {
     headersSent: false,
     status: jest.fn().mockReturnThis(),
     setHeader: jest.fn().mockReturnThis(),
-    json: jest.fn().mockImplementation(function (this: {
-      headersSent: boolean;
-    }) {
+    json: jest.fn().mockImplementation(function (this: { headersSent: boolean }) {
       this.headersSent = true;
     }),
   });

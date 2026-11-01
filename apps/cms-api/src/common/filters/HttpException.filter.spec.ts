@@ -1,6 +1,6 @@
-import { type ArgumentsHost, ConflictException, Logger } from '@nestjs/common';
+import { ConflictException, Logger, type ArgumentsHost } from '@nestjs/common';
 
-import { DomainError, DOMAIN_ERROR_KINDS } from '../errors/Domain.errors';
+import { DOMAIN_ERROR_KINDS, DomainError } from '../errors/Domain.errors';
 import { HttpExceptionFilter } from './HttpException.filter';
 
 function run(exception: unknown) {
@@ -26,9 +26,7 @@ describe('HttpExceptionFilter', () => {
   afterAll(() => jest.restoreAllMocks());
 
   it('answers a Nest exception in the unified body', () => {
-    const res = run(
-      new ConflictException({ errorCode: 'TAKEN', message: 'Taken.' }),
-    );
+    const res = run(new ConflictException({ errorCode: 'TAKEN', message: 'Taken.' }));
     expect(res.status).toHaveBeenCalledWith(409);
     expect(res.json).toHaveBeenCalledWith({
       statusCode: 409,

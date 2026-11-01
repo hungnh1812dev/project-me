@@ -1,12 +1,8 @@
+import { assertPinnedPathsExist, listSourceFiles, withoutComments } from './ImportGraph.analyzer';
 import {
-  assertPinnedPathsExist,
-  listSourceFiles,
-  withoutComments,
-} from './ImportGraph.analyzer';
-import {
+  ACCOUNT_VERSION_REPOSITORY_FILE,
   IDENTITY_DIRECTORY,
   REVIEWER_ACCOUNT_ADAPTER_FILE,
-  ACCOUNT_VERSION_REPOSITORY_FILE,
   SRC_ROOT,
 } from './SourcePaths.constants';
 
@@ -18,8 +14,7 @@ import {
  */
 const GENERATED_DIRECTORY = 'generated';
 
-const REFRESH_TOKEN_REFERENCE =
-  /\brefreshToken\b|\bRefreshToken\b|refresh_tokens/;
+const REFRESH_TOKEN_REFERENCE = /\brefreshToken\b|\bRefreshToken\b|refresh_tokens/;
 /**
  * Any `tokenVersion:` that is not a read (`: true` in a select, `: number` in
  * a type) counts as a write, and so does a raw `token_version =` with or
@@ -52,15 +47,10 @@ describe('session ownership (D9)', () => {
   const sources = listSourceFiles(SRC_ROOT).filter(
     ({ file }) => !file.startsWith(GENERATED_DIRECTORY),
   );
-  const outsideIdentity = sources.filter(
-    ({ file }) => !file.startsWith(IDENTITY_DIRECTORY),
-  );
+  const outsideIdentity = sources.filter(({ file }) => !file.startsWith(IDENTITY_DIRECTORY));
 
   it('scans the source tree and identity', () => {
-    assertPinnedPathsExist(SRC_ROOT, [
-      IDENTITY_DIRECTORY,
-      ...TOKEN_VERSION_WRITE_ALLOWLIST.keys(),
-    ]);
+    assertPinnedPathsExist(SRC_ROOT, [IDENTITY_DIRECTORY, ...TOKEN_VERSION_WRITE_ALLOWLIST.keys()]);
     expect(outsideIdentity.length).toBeGreaterThan(0);
     expect(sources.length).toBeGreaterThan(outsideIdentity.length);
   });
@@ -76,8 +66,7 @@ describe('session ownership (D9)', () => {
     const offenders = outsideIdentity
       .filter(
         ({ file, text }) =>
-          countTokenVersionWrites(text) !==
-          (TOKEN_VERSION_WRITE_ALLOWLIST.get(file) ?? 0),
+          countTokenVersionWrites(text) !== (TOKEN_VERSION_WRITE_ALLOWLIST.get(file) ?? 0),
       )
       .map(({ file, text }) => `${file}: ${countTokenVersionWrites(text)}`);
     expect(offenders).toEqual([]);
@@ -86,9 +75,7 @@ describe('session ownership (D9)', () => {
   it('every allowlisted file exists', () => {
     const files = sources.map(({ file }) => file);
     expect(
-      [...TOKEN_VERSION_WRITE_ALLOWLIST.keys()].filter(
-        (listed) => !files.includes(listed),
-      ),
+      [...TOKEN_VERSION_WRITE_ALLOWLIST.keys()].filter((listed) => !files.includes(listed)),
     ).toEqual([]);
   });
 });

@@ -1,5 +1,6 @@
-import type { NestExpressApplication } from '@nestjs/platform-express';
 import { createHash } from 'node:crypto';
+
+import type { NestExpressApplication } from '@nestjs/platform-express';
 import request from 'supertest';
 
 import { PermissionAction } from '../../src/generated/prisma/client';
@@ -11,13 +12,15 @@ import { reviewerActor } from '../../src/modules/access/domain/ActorContext.enti
 import { ContentRegistry } from '../../src/modules/content-engine/application/ContentRegistry.service';
 import { ContentTypeRegistry } from '../../src/modules/content-engine/domain/ContentTypeRegistry.entity';
 import { hashPassword } from '../../src/modules/identity/application/Password.service';
-import { MEDIA_MAX_BYTES } from '../../src/modules/media/domain/MediaUpload.rules';
 import { FakeMediaStorage } from '../../src/modules/media/adapters/Fake.adapter';
 import { MEDIA_STORAGE } from '../../src/modules/media/application/Media.port';
 import { MediaLibraryService } from '../../src/modules/media/application/MediaLibrary.service';
+import { MEDIA_MAX_BYTES } from '../../src/modules/media/domain/MediaUpload.rules';
 import {
   ARTICLE_DEFINITION,
   grant,
+  seedRolePermissions,
+  seedSystemRoles,
   systemRole,
 } from '../fixtures/Access.fixture';
 import { createCoreTemplate } from '../fixtures/CoreDb.fixture';
@@ -33,26 +36,21 @@ import {
   buildMediaFixtures,
   EXIF_MARKER,
   HTML_DOCUMENT,
-  type MediaFixtures,
   MINIMAL_MP4,
   MINIMAL_PDF,
   SVG_DOCUMENT,
+  type MediaFixtures,
 } from '../fixtures/Media.fixture';
 import { multipart } from '../fixtures/Multipart.fixture';
 import { startPostgres, type TestPostgres } from '../fixtures/Postgres.fixture';
 import { createTestApp } from '../fixtures/TestApp.fixture';
-import {
-  seedRolePermissions,
-  seedSystemRoles,
-} from '../fixtures/Access.fixture';
 
 const PASSWORD = 'correct horse battery staple';
 const MEDIA = '/api/v1/media';
 const LOGIN = '/api/v1/auth/login';
 const ROLES = '/api/v1/roles';
 const OCTET_RANGE = 250;
-const UUID_V7_PATTERN =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
+const UUID_V7_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
 
 let ipCounter = 0;
 function nextIp(): string {
@@ -71,7 +69,9 @@ interface MediaBody {
   url: string;
   thumbnailUrl: string | null;
   isReviewerPreset: boolean;
+  sha256: string;
   createdAt: string;
+  updatedAt: string;
 }
 interface Page {
   data: MediaBody[];
@@ -184,9 +184,7 @@ describe('media upload and list (T27; Postgres 17 via Testcontainers)', () => {
       .post(MEDIA)
       .set('X-Forwarded-For', nextIp())
       .set('Content-Type', contentType);
-    return (
-      token === undefined ? req : req.set('Authorization', `Bearer ${token}`)
-    ).send(body);
+    return (token === undefined ? req : req.set('Authorization', `Bearer ${token}`)).send(body);
   }
 
   describe('POST /media', () => {
@@ -205,8 +203,10 @@ describe('media upload and list (T27; Postgres 17 via Testcontainers)', () => {
         'isReviewerPreset',
         'mimeType',
         'provider',
+        'sha256',
         'size',
         'thumbnailUrl',
+        'updatedAt',
         'url',
         'width',
       ]);
@@ -257,9 +257,7 @@ describe('media upload and list (T27; Postgres 17 via Testcontainers)', () => {
       const row = await db.prisma.fileLibrary.findUniqueOrThrow({
         where: { documentId: (res.body as MediaBody).id },
       });
-      expect(
-        storage.get(row.storageKey)?.bytes.includes(Buffer.from('<script>')),
-      ).toBe(false);
+      expect(storage.get(row.storageKey)?.bytes.includes(Buffer.from('<script>'))).toBe(false);
     });
 
     it.each([
@@ -268,10 +266,7 @@ describe('media upload and list (T27; Postgres 17 via Testcontainers)', () => {
       ['svg renamed to .png', SVG_DOCUMENT, 'a.png'],
       [
         'a jpeg that does not decode',
-        Buffer.concat([
-          Buffer.from([0xff, 0xd8, 0xff, 0xe0]),
-          Buffer.alloc(64, 0x41),
-        ]),
+        Buffer.concat([Buffer.from([0xff, 0xd8, 0xff, 0xe0]), Buffer.alloc(64, 0x41)]),
         'a.jpg',
       ],
     ])('is 415 for %s and stores nothing', async (_name, data, fileName) => {
@@ -285,10 +280,7 @@ describe('media upload and list (T27; Postgres 17 via Testcontainers)', () => {
     });
 
     it('is 413 for a pdf over its limit', async () => {
-      const big = Buffer.concat([
-        MINIMAL_PDF,
-        Buffer.alloc(MEDIA_MAX_BYTES.pdf, 0x20),
-      ]);
+      const big = Buffer.concat([MINIMAL_PDF, Buffer.alloc(MEDIA_MAX_BYTES.pdf, 0x20)]);
       const res = await upload(editor, big, 'big.pdf');
       expect(res.status).toBe(413);
       expect((res.body as ErrorBody).errorCode).toBe('MEDIA_FILE_TOO_LARGE');
@@ -302,9 +294,7 @@ describe('media upload and list (T27; Postgres 17 via Testcontainers)', () => {
         .set('Content-Type', noFile.contentType)
         .send(noFile.body);
       expect(missing.status).toBe(400);
-      expect((missing.body as ErrorBody).errorCode).toBe(
-        'MEDIA_INVALID_UPLOAD',
-      );
+      expect((missing.body as ErrorBody).errorCode).toBe('MEDIA_INVALID_UPLOAD');
       const json = await http().post(MEDIA).set(bearer(editor)).send({});
       expect(json.status).toBe(415);
     });
@@ -337,17 +327,16 @@ describe('media upload and list (T27; Postgres 17 via Testcontainers)', () => {
       const res = await http().get(MEDIA).set(bearer(editor));
       expect(res.status).toBe(200);
       const page = res.body as Page;
-      expect(page.data.map((file) => file.fileName)).toEqual([
-        'c.png',
-        'b.png',
-      ]);
+      expect(page.data.map((file) => file.fileName)).toEqual(['c.png', 'b.png']);
       expect(page.meta).toEqual({ page: 1, pageSize: 20, total: 2 });
-      expect(JSON.stringify(page)).not.toMatch(/storageKey|sha256|deletedAt/);
+      expect(JSON.stringify(page)).not.toMatch(/storageKey|deletedAt/);
+      expect(page.data[0]?.sha256).toMatch(/^[0-9a-f]{64}$/);
+      expect(new Date(page.data[0]?.updatedAt as string).toISOString()).toBe(
+        page.data[0]?.updatedAt,
+      );
       expect(res.headers['cache-control']).toMatch(/no-store/);
 
-      const second = await http()
-        .get(`${MEDIA}?page=2&pageSize=1`)
-        .set(bearer(owner));
+      const second = await http().get(`${MEDIA}?page=2&pageSize=1`).set(bearer(owner));
       const secondPage = second.body as Page;
       expect(secondPage.data.map((file) => file.fileName)).toEqual(['b.png']);
       expect(secondPage.meta).toEqual({ page: 2, pageSize: 1, total: 2 });
@@ -359,10 +348,96 @@ describe('media upload and list (T27; Postgres 17 via Testcontainers)', () => {
         'page=0',
         'sort=name',
         'pageSize=x',
+        'search=',
+        'search=%20%20',
+        `search=${'a'.repeat(101)}`,
+        'search=a&search=b',
+        'mimeType=text/html',
+        'mimeType=image/svg%2Bxml',
+        'mimeType=audio/*',
+        'mimeType=image/',
       ]) {
         const res = await http().get(`${MEDIA}?${query}`).set(bearer(editor));
         expect(res.status).toBe(400);
       }
+    });
+
+    describe('search and mimeType', () => {
+      async function seed(names: string[]): Promise<void> {
+        await clear();
+        for (const name of names) {
+          expect((await upload(editor, fixtures.png, name)).status).toBe(201);
+        }
+      }
+      const namesOf = async (query: string, token = editor) => {
+        const res = await http().get(`${MEDIA}?${query}`).set(bearer(token));
+        expect(res.status).toBe(200);
+        return res.body as Page;
+      };
+
+      it('matches the file name case-insensitively as a substring', async () => {
+        await seed(['Holiday.png', 'work.png', 'HOLIDAY2.png']);
+        const page = await namesOf('search=holiday');
+        expect(page.data.map((file) => file.fileName)).toEqual(['HOLIDAY2.png', 'Holiday.png']);
+        expect(page.meta.total).toBe(2);
+        expect((await namesOf('search=%20ORK%20')).meta.total).toBe(1);
+      });
+
+      it('matches %, _ and backslash literally', async () => {
+        await seed(['a%b.png', 'a_b.png', 'axb.png', 'abx.png']);
+        // The upload strips path separators, so a stored backslash is set directly.
+        await db.prisma.fileLibrary.updateMany({
+          where: { fileName: 'abx.png' },
+          data: { fileName: 'a\\b.png' },
+        });
+        expect((await namesOf('search=a%25b')).data.map((f) => f.fileName)).toEqual(['a%b.png']);
+        expect((await namesOf('search=a_b')).data.map((f) => f.fileName)).toEqual(['a_b.png']);
+        expect((await namesOf('search=%25')).meta.total).toBe(1);
+        expect((await namesOf('search=_')).meta.total).toBe(1);
+        expect((await namesOf('search=a%5Cb')).meta.total).toBe(1);
+      });
+
+      it('filters by exact type and family, and counts the filtered set', async () => {
+        await seed(['one.png', 'two.png']);
+        expect((await upload(editor, MINIMAL_PDF, 'doc.pdf')).status).toBe(201);
+        expect((await upload(editor, MINIMAL_MP4, 'clip.mp4')).status).toBe(201);
+        expect((await namesOf('mimeType=image/*')).meta.total).toBe(2);
+        expect((await namesOf('mimeType=image/png')).meta.total).toBe(2);
+        expect((await namesOf('mimeType=image/jpeg')).meta.total).toBe(0);
+        expect((await namesOf('mimeType=video/*')).meta.total).toBe(1);
+        expect((await namesOf('mimeType=video/mp4')).meta.total).toBe(1);
+        const only = await namesOf('mimeType=application/pdf&search=DOC');
+        expect(only.data.map((file) => file.fileName)).toEqual(['doc.pdf']);
+        const paged = await namesOf('mimeType=image/*&pageSize=1&page=2');
+        expect(paged.meta).toEqual({ page: 2, pageSize: 1, total: 2 });
+      });
+
+      it('keeps the policy row filter when searching', async () => {
+        await seed(['plain.png', 'preset.png']);
+        const preset = await db.prisma.fileLibrary.findFirstOrThrow({
+          where: { fileName: 'preset.png' },
+        });
+        await db.prisma.fileLibrary.update({
+          where: { id: preset.id },
+          data: { isReviewerPreset: true },
+        });
+        const role = systemRole('reviewer', [grant('media', PermissionAction.read)]);
+        const media = app.get(MediaLibraryService);
+        const reviewer = reviewerActor(99, 1, role);
+        const base = { page: 1, pageSize: 20 };
+        const hit = await media.list(reviewer, { ...base, search: 'png' });
+        expect(hit.data.map((file) => file.fileName)).toEqual(['preset.png']);
+        expect(hit.meta.total).toBe(1);
+        const miss = await media.list(reviewer, { ...base, search: 'plain' });
+        expect(miss.data).toEqual([]);
+        expect(miss.meta.total).toBe(0);
+      });
+
+      it('never lists a soft-deleted match', async () => {
+        await seed(['gone.png']);
+        await db.prisma.fileLibrary.updateMany({ data: { deletedAt: new Date() } });
+        expect((await namesOf('search=gone')).meta.total).toBe(0);
+      });
     });
 
     it('is 401 without a token and 403 without media read; a read-only role lists', async () => {
@@ -382,16 +457,12 @@ describe('media upload and list (T27; Postgres 17 via Testcontainers)', () => {
       expect(plain.status).toBe(201);
 
       const media = app.get(MediaLibraryService);
-      const role = systemRole('reviewer', [
-        grant('media', PermissionAction.read),
-      ]);
+      const role = systemRole('reviewer', [grant('media', PermissionAction.read)]);
       const asReviewer = await media.list(reviewerActor(99, 1, role), {
         page: 1,
         pageSize: 20,
       });
-      expect(asReviewer.data.map((file) => file.fileName)).toEqual([
-        'preset.png',
-      ]);
+      expect(asReviewer.data.map((file) => file.fileName)).toEqual(['preset.png']);
       expect(asReviewer.meta.total).toBe(1);
 
       const asEditor = await http().get(MEDIA).set(bearer(editor));

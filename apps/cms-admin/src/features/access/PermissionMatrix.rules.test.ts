@@ -46,20 +46,13 @@ describe('permission matrix model', () => {
   it('grants a new cell with all fields and no conditions, and revokes it', () => {
     const ref = { subject: 'article', action: 'update' } as const;
     const granted = toggleCell({}, ref, true);
-    expect(serializeMatrix(granted, ['article']).rows).toEqual([
-      row('article', 'update'),
-    ]);
-    expect(
-      serializeMatrix(toggleCell(granted, ref, false), ['article']).rows,
-    ).toEqual([]);
+    expect(serializeMatrix(granted, ['article']).rows).toEqual([row('article', 'update')]);
+    expect(serializeMatrix(toggleCell(granted, ref, false), ['article']).rows).toEqual([]);
   });
 
   it('only edits the first row of a cell', () => {
     const ref = { subject: 'article', action: 'read' } as const;
-    const state = matrixFromRows([
-      row('article', 'read'),
-      row('article', 'read'),
-    ]);
+    const state = matrixFromRows([row('article', 'read'), row('article', 'read')]);
     const next = setFieldList(state, ref, 'readableFields', ['title']);
     const { rows } = serializeMatrix(next, ['article']);
     expect(rows[0]?.readableFields).toEqual(['title']);
@@ -69,13 +62,9 @@ describe('permission matrix model', () => {
   it('parses conditions text on save and flags invalid JSON', () => {
     const ref = { subject: 'article', action: 'read' } as const;
     const base = toggleCell({}, ref, true);
-    const good = serializeMatrix(setConditionsText(base, ref, '{"all":[]}'), [
-      'article',
-    ]);
+    const good = serializeMatrix(setConditionsText(base, ref, '{"all":[]}'), ['article']);
     expect(good.rows[0]?.conditions).toEqual({ all: [] });
-    const bad = serializeMatrix(setConditionsText(base, ref, '{oops'), [
-      'article',
-    ]);
+    const bad = serializeMatrix(setConditionsText(base, ref, '{oops'), ['article']);
     expect(bad.invalidConditions).toEqual([ref]);
     expect(parseConditions('   ')).toEqual({ ok: true, value: null });
   });
@@ -83,15 +72,9 @@ describe('permission matrix model', () => {
   it('detects unsaved changes', () => {
     const ref = { subject: 'article', action: 'read' } as const;
     const base = matrixFromRows([row('article', 'read')]);
-    expect(
-      sameMatrix(base, matrixFromRows([row('article', 'read')]), ['article']),
-    ).toBe(true);
-    expect(sameMatrix(base, toggleCell(base, ref, false), ['article'])).toBe(
-      false,
-    );
-    expect(
-      sameMatrix(base, setConditionsText(base, ref, '{"a":1}'), ['article']),
-    ).toBe(false);
+    expect(sameMatrix(base, matrixFromRows([row('article', 'read')]), ['article'])).toBe(true);
+    expect(sameMatrix(base, toggleCell(base, ref, false), ['article'])).toBe(false);
+    expect(sameMatrix(base, setConditionsText(base, ref, '{"a":1}'), ['article'])).toBe(false);
   });
 
   it('orders subjects and keeps unknown slugs from the rows', () => {
@@ -114,10 +97,7 @@ describe('permission matrix model', () => {
       { subject: 'article', action: 'read' },
       { subject: 'roles', action: 'update' },
     ] as const;
-    const issues = cellIssues(
-      [{ path: [1, 'conditions'], message: 'bad' }],
-      cells,
-    );
+    const issues = cellIssues([{ path: [1, 'conditions'], message: 'bad' }], cells);
     expect([...issues.values()]).toEqual([['bad']]);
     expect(cellsAt([0, 9], cells).size).toBe(1);
   });

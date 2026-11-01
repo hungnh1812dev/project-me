@@ -4,6 +4,10 @@ import { Inject, Injectable } from '@nestjs/common';
 import { decode, sign, verify } from 'jsonwebtoken';
 import { z } from 'zod';
 
+import { MS_PER_SECOND } from '../../../common/constants/Time.constants';
+import { Clock } from '../../../common/time/Clock.service';
+import { type IAppConfig } from '../../../config/AppConfig.setup';
+import { APP_CONFIG } from '../../../config/Config.constants';
 import {
   ACCESS_TOKEN_TTL_SECONDS,
   AUTH_ERROR_MESSAGES,
@@ -12,10 +16,6 @@ import {
   TOKEN_TYPES,
   TWO_FACTOR_TEMP_TOKEN_TTL_SECONDS,
 } from '../domain/Identity.constants';
-import { Clock } from '../../../common/time/Clock.service';
-import { MS_PER_SECOND } from '../../../common/constants/Time.constants';
-import { type IAppConfig } from '../../../config/AppConfig.setup';
-import { APP_CONFIG } from '../../../config/Config.constants';
 
 /** D9 access-token claims (plus the `typ` discriminator and JWT `iat`/`exp`). */
 export const accessTokenClaimsSchema = z.object({
@@ -38,9 +38,7 @@ const twoFactorTempTokenClaimsSchema = z.object({
   exp: z.int(),
 });
 
-export type TwoFactorTempTokenClaims = z.infer<
-  typeof twoFactorTempTokenClaimsSchema
->;
+export type TwoFactorTempTokenClaims = z.infer<typeof twoFactorTempTokenClaimsSchema>;
 
 /** Who a temp token is for: the account and its token_version at login. */
 export interface TwoFactorTempTokenSubject {
@@ -79,18 +77,12 @@ export class AccessTokenService {
 
   /** The 15 min access token. */
   signAccessToken(subject: AccessTokenSubject): string {
-    return this.sign(
-      { ...subject, typ: TOKEN_TYPES.ACCESS },
-      ACCESS_TOKEN_TTL_SECONDS,
-    );
+    return this.sign({ ...subject, typ: TOKEN_TYPES.ACCESS }, ACCESS_TOKEN_TTL_SECONDS);
   }
 
   /** The 24 h access token of a reviewer session; same claims and `typ` as any access token. */
   signReviewerSessionToken(subject: AccessTokenSubject): string {
-    return this.sign(
-      { ...subject, typ: TOKEN_TYPES.ACCESS },
-      REVIEWER_SESSION_TTL_SECONDS,
-    );
+    return this.sign({ ...subject, typ: TOKEN_TYPES.ACCESS }, REVIEWER_SESSION_TTL_SECONDS);
   }
 
   /**
@@ -115,9 +107,7 @@ export class AccessTokenService {
    * Verifies a temp token (HS256 only, kid-matched key, not expired) and
    * returns its claims, or undefined. Access tokens fail on `typ`.
    */
-  verifyTwoFactorTempToken(
-    rawToken: string,
-  ): TwoFactorTempTokenClaims | undefined {
+  verifyTwoFactorTempToken(rawToken: string): TwoFactorTempTokenClaims | undefined {
     const key = this.keyFor(rawToken);
     if (key === undefined) return undefined;
     try {
@@ -152,11 +142,7 @@ export class AccessTokenService {
     return Math.floor(this.clock.now() / MS_PER_SECOND);
   }
 
-  private sign(
-    payload: Record<string, unknown>,
-    ttlSeconds: number,
-    jwtId?: string,
-  ): string {
+  private sign(payload: Record<string, unknown>, ttlSeconds: number, jwtId?: string): string {
     const secret = this.keys.get(this.kid);
     if (secret === undefined) {
       throw new Error(AUTH_ERROR_MESSAGES.JWT_NOT_CONFIGURED);

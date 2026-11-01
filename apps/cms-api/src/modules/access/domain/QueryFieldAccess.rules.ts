@@ -1,10 +1,6 @@
 import type { RegisteredContentType } from '../../content-engine';
-import {
-  RECORD_SYSTEM_FIELDS,
-  type RecordSystemField,
-} from './Access.constants';
-import { fieldErrors } from './FieldPaths.rules';
-import { fieldPathsOf } from './FieldPaths.rules';
+import { RECORD_SYSTEM_FIELDS, type RecordSystemField } from './Access.constants';
+import { fieldErrors, fieldPathsOf } from './FieldPaths.rules';
 import type { RecordReadAccess } from './RecordReadAccess.rules';
 
 /** Field paths a list query uses, by purpose (parsed from the URL). */
@@ -40,11 +36,7 @@ export class QueryGuard {
   }
 
   assert(use: QueryFieldUse, access: RecordReadAccess): void {
-    for (const path of [
-      ...(use.filter ?? []),
-      ...(use.sort ?? []),
-      ...(use.search ?? []),
-    ]) {
+    for (const path of [...(use.filter ?? []), ...(use.sort ?? []), ...(use.search ?? [])]) {
       if (isRecordSystemField(path)) {
         if (!access.systemFields.has(path)) throw fieldErrors.notReadable(path);
         continue;

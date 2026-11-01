@@ -2,10 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 
 import { Clock } from '../../../common/time/Clock.service';
 import type { UnitOfWork } from '../../../infrastructure/database/TransactionRunner.port';
-import {
-  SESSION_REVOCATION_REPOSITORY,
-  type SessionRevocationRepository,
-} from './Identity.port';
+import { SESSION_REVOCATION_REPOSITORY, type SessionRevocationRepository } from './Identity.port';
 
 /**
  * Ends every session of an account in the caller's unit (D9): the

@@ -5,16 +5,18 @@ import {
   execute,
   GraphQLList,
   GraphQLNonNull,
-  type GraphQLObjectType,
-  type GraphQLSchema,
   parse,
   printSchema,
   validate,
+  type GraphQLObjectType,
+  type GraphQLSchema,
 } from 'graphql';
 
-import type { ContentTypeDefinition } from '../../../content-engine';
-import { DEFAULT_CONTENT_PATHS } from '../../../content-engine';
-import { loadDefinitions } from '../../../content-engine';
+import {
+  DEFAULT_CONTENT_PATHS,
+  loadDefinitions,
+  type ContentTypeDefinition,
+} from '../../../content-engine';
 import {
   GRAPHQL_SDL_FILE_NAME,
   ROOT_FIELD_EXTENSION_KEY,
@@ -131,20 +133,13 @@ describe('buildGraphqlSchema', () => {
     const items = objectType(schema, 'AllTypes_Items').getFields();
     expect(String(items.componentUid?.type)).toBe('ID!');
     expect(String(items.inner?.type)).toBe('AllTypes_Items_Inner');
-    expect(
-      objectType(schema, 'AllTypes_Items_Inner').getFields().note,
-    ).toBeDefined();
-    expect(
-      objectType(schema, 'AllTypes_Seo').getFields().team_size,
-    ).toBeDefined();
+    expect(objectType(schema, 'AllTypes_Items_Inner').getFields().note).toBeDefined();
+    expect(objectType(schema, 'AllTypes_Seo').getFields().team_size).toBeDefined();
   });
 
   it('gives a collection an item field and a list field', () => {
     const query = objectType(schema, 'Query').getFields();
-    expect(query.allTypes?.args.map((arg) => arg.name)).toEqual([
-      'documentId',
-      'status',
-    ]);
+    expect(query.allTypes?.args.map((arg) => arg.name)).toEqual(['documentId', 'status']);
     expect(query.allTypesList?.args.map((arg) => arg.name)).toEqual([
       'status',
       'page',
@@ -153,12 +148,8 @@ describe('buildGraphqlSchema', () => {
       'filter',
     ]);
     expect(String(query.allTypesList?.type)).toBe('AllTypesPage');
-    expect(
-      query.allTypesList?.args.find((a) => a.name === 'page')?.defaultValue,
-    ).toBe(1);
-    expect(
-      query.allTypesList?.args.find((a) => a.name === 'pageSize')?.defaultValue,
-    ).toBe(20);
+    expect(query.allTypesList?.args.find((a) => a.name === 'page')?.defaultValue).toBe(1);
+    expect(query.allTypesList?.args.find((a) => a.name === 'pageSize')?.defaultValue).toBe(20);
   });
 
   it('gives a single type only the item field', () => {
@@ -172,8 +163,7 @@ describe('buildGraphqlSchema', () => {
 
   it('tells the resolvers (GQ2) which content type and read each root field is', () => {
     const fields = objectType(schema, 'Query').getFields();
-    const extension = (name: string) =>
-      fields[name]?.extensions[ROOT_FIELD_EXTENSION_KEY];
+    const extension = (name: string) => fields[name]?.extensions[ROOT_FIELD_EXTENSION_KEY];
     expect(extension('allTypes')).toEqual({
       slug: 'all-types',
       operation: 'item',
@@ -192,9 +182,7 @@ describe('buildGraphqlSchema', () => {
     const filter = schema.getType('AllTypesFilter');
     const entries = Object.fromEntries(
       Object.entries(
-        (
-          filter as { getFields(): Record<string, { type: unknown }> }
-        ).getFields(),
+        (filter as { getFields(): Record<string, { type: unknown }> }).getFields(),
       ).map(([name, field]) => [name, String(field.type)]),
     );
     expect(entries).toMatchObject({
@@ -216,9 +204,7 @@ describe('buildGraphqlSchema', () => {
     }
     const sortField = schema.getType('AllTypesSortField');
     expect(
-      sortField && 'getValues' in sortField
-        ? sortField.getValues().map((value) => value.name)
-        : [],
+      sortField && 'getValues' in sortField ? sortField.getValues().map((value) => value.name) : [],
     ).toEqual(Object.keys(entries));
   });
 
@@ -243,9 +229,7 @@ describe('buildGraphqlSchema', () => {
             componentUid: 'c1',
             values: { label: 'one' },
             components: {
-              inner: [
-                { componentUid: 'c2', values: { note: 'n' }, components: {} },
-              ],
+              inner: [{ componentUid: 'c2', values: { note: 'n' }, components: {} }],
             },
           },
         ],
@@ -315,16 +299,19 @@ describe('buildGraphqlSchema', () => {
     expect(Object.keys(media)).toEqual([
       'id',
       'fileName',
+      'mimeType',
       'url',
       'thumbnailUrl',
       'provider',
       'alt',
       'size',
+      'width',
+      'height',
+      'sha256',
       'createdAt',
+      'updatedAt',
     ]);
-    expect(String(objectType(schema, 'AllTypes').getFields().cover?.type)).toBe(
-      'Media',
-    );
+    expect(String(objectType(schema, 'AllTypes').getFields().cover?.type)).toBe('Media');
   });
 
   describe('name clashes', () => {
@@ -345,9 +332,9 @@ describe('buildGraphqlSchema', () => {
     };
 
     it('rejects a slug whose generated type is another slug page type', () => {
-      expect(() =>
-        buildGraphqlSchema([type('cv-page'), type('cv-page-page')]),
-      ).toThrow(GraphqlNameClashError);
+      expect(() => buildGraphqlSchema([type('cv-page'), type('cv-page-page')])).toThrow(
+        GraphqlNameClashError,
+      );
     });
 
     it('names both sources of a clash and renames nothing', () => {
@@ -358,25 +345,19 @@ describe('buildGraphqlSchema', () => {
     });
 
     it('rejects two slugs that map to the same name', () => {
-      expect(() =>
-        buildGraphqlSchema([type('cv-page'), type('cv_page')]),
-      ).toThrow(GraphqlNameClashError);
-      expect(() => buildGraphqlSchema([type('a-b'), type('a-b')])).toThrow(
+      expect(() => buildGraphqlSchema([type('cv-page'), type('cv_page')])).toThrow(
         GraphqlNameClashError,
       );
+      expect(() => buildGraphqlSchema([type('a-b'), type('a-b')])).toThrow(GraphqlNameClashError);
     });
 
     it('rejects a list field equal to another slug item field', () => {
-      expect(() =>
-        buildGraphqlSchema([type('post'), type('post-list')]),
-      ).toThrow(/postList/);
+      expect(() => buildGraphqlSchema([type('post'), type('post-list')])).toThrow(/postList/);
     });
 
     it('rejects a slug equal to a shared type name', () => {
       expect(() => buildGraphqlSchema([type('media')])).toThrow(/"Media"/);
-      expect(() => buildGraphqlSchema([type('page-meta')])).toThrow(
-        /"PageMeta"/,
-      );
+      expect(() => buildGraphqlSchema([type('page-meta')])).toThrow(/"PageMeta"/);
       expect(() => buildGraphqlSchema([type('query')])).toThrow(/"Query"/);
     });
 

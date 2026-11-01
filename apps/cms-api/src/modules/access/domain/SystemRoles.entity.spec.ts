@@ -31,9 +31,7 @@ describe('system roles table (SPEC §6)', () => {
 
   it('keeps public, guest and reviewer read-only by default', () => {
     for (const slug of ['public', 'guest', 'reviewer'] as const) {
-      const actions = DEFAULT_ROLE_PERMISSIONS[slug].flatMap(
-        (row) => row.actions,
-      );
+      const actions = DEFAULT_ROLE_PERMISSIONS[slug].flatMap((row) => row.actions);
       expect(new Set(actions)).toEqual(new Set([PermissionAction.read]));
     }
   });
@@ -53,10 +51,7 @@ describe('ROLE_SLUG_PATTERN', () => {
     expect(ROLE_SLUG_PATTERN.test(slug)).toBe(true);
   });
 
-  it.each(['', '1abc', 'Admin', 'a--b', '-a', 'a-', 'a_b'])(
-    'rejects %j',
-    (slug) => {
-      expect(ROLE_SLUG_PATTERN.test(slug)).toBe(false);
-    },
-  );
+  it.each(['', '1abc', 'Admin', 'a--b', '-a', 'a-', 'a_b'])('rejects %j', (slug) => {
+    expect(ROLE_SLUG_PATTERN.test(slug)).toBe(false);
+  });
 });

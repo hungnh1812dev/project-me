@@ -39,11 +39,16 @@ export const MediaType = new GraphQLObjectType({
   fields: {
     id: { type: new GraphQLNonNull(GraphQLID) },
     fileName: { type: GraphQLString },
+    mimeType: { type: new GraphQLNonNull(GraphQLString) },
     url: { type: GraphQLString },
     thumbnailUrl: { type: GraphQLString },
     provider: { type: GraphQLString },
     alt: { type: GraphQLString },
     size: { type: GraphQLInt },
+    width: { type: GraphQLInt },
+    height: { type: GraphQLInt },
+    sha256: { type: GraphQLString },
     createdAt: { type: DateTimeScalar },
+    updatedAt: { type: new GraphQLNonNull(DateTimeScalar) },
   },
 });

@@ -3,18 +3,9 @@ import type { NestExpressApplication } from '@nestjs/platform-express';
 import { generate } from 'otplib';
 import request from 'supertest';
 
-import { Clock } from '../../src/common/time/Clock.service';
-import {
-  AUTH_ERROR_CODES,
-  OTP,
-  TOTP,
-  TWO_FACTOR_RESET_ERRORS,
-  TWO_FACTOR_TEMP_TOKEN_MAX_ATTEMPTS,
-  TWO_FACTOR_TEMP_TOKEN_TTL_SECONDS,
-} from '../../src/modules/identity/domain/Identity.constants';
 import { ERROR_CODES } from '../../src/common/constants/Error.constants';
 import { MS_PER_SECOND } from '../../src/common/constants/Time.constants';
-import { IDENTITY_RATE_LIMIT_POLICIES } from '../../src/modules/identity/http/IdentityHttp.constants';
+import { Clock } from '../../src/common/time/Clock.service';
 import { loadAppConfig } from '../../src/config/AppConfig.setup';
 import {
   openPrisma,
@@ -26,15 +17,22 @@ import {
   type MailSender,
 } from '../../src/infrastructure/mail/Mail.port';
 import {
-  AUDIT_ACTIONS,
-  type AuditAction,
-} from '../../src/modules/security-audit';
-import { SecretBox } from '../../src/modules/identity/application/SecretBox.service';
-import {
   hashPassword,
   PasswordService,
 } from '../../src/modules/identity/application/Password.service';
+import { SecretBox } from '../../src/modules/identity/application/SecretBox.service';
 import { identityUseCasesOf } from '../../src/modules/identity/cli/IdentityCli.setup';
+import {
+  AUTH_ERROR_CODES,
+  OTP,
+  TOTP,
+  TWO_FACTOR_RESET_ERRORS,
+  TWO_FACTOR_TEMP_TOKEN_MAX_ATTEMPTS,
+  TWO_FACTOR_TEMP_TOKEN_TTL_SECONDS,
+} from '../../src/modules/identity/domain/Identity.constants';
+import { IDENTITY_RATE_LIMIT_POLICIES } from '../../src/modules/identity/http/IdentityHttp.constants';
+import { AUDIT_ACTIONS, type AuditAction } from '../../src/modules/security-audit';
+import { seedSystemRoles } from '../fixtures/Access.fixture';
 import { createCoreTemplate } from '../fixtures/CoreDb.fixture';
 import {
   dbEnvOf,
@@ -48,7 +46,6 @@ import {
 } from '../fixtures/Env.fixture';
 import { startPostgres, type TestPostgres } from '../fixtures/Postgres.fixture';
 import { createTestApp } from '../fixtures/TestApp.fixture';
-import { seedSystemRoles } from '../fixtures/Access.fixture';
 
 const AUTH = '/api/v1/auth';
 const LOGIN = `${AUTH}/login`;
@@ -128,9 +125,7 @@ describe('Two-factor authentication (D8, SPEC §9, T13; Postgres 17 via Testcont
     db = openPrisma(databaseUrl);
     await seedSystemRoles(db.prisma);
     mail = new CapturingMailSender();
-    app = await createTestApp(appEnv(databaseUrl), [
-      { token: MAIL_SENDER, value: mail },
-    ]);
+    app = await createTestApp(appEnv(databaseUrl), [{ token: MAIL_SENDER, value: mail }]);
     // Listen once: supertest then reuses the server instead of opening and
     // closing it per request, so a request built before an awaited one
     // inside its body (e.g. a fresh temp token) still finds it open.
@@ -161,9 +156,7 @@ describe('Two-factor authentication (D8, SPEC §9, T13; Postgres 17 via Testcont
   }
 
   function me(accessToken: string) {
-    return request(app.getHttpServer())
-      .get(ME)
-      .set('Authorization', `Bearer ${accessToken}`);
+    return request(app.getHttpServer()).get(ME).set('Authorization', `Bearer ${accessToken}`);
   }
 
   /** The TOTP code of the current fake time. */
@@ -238,9 +231,7 @@ describe('Two-factor authentication (D8, SPEC §9, T13; Postgres 17 via Testcont
 
   async function withEmail2fa(account: Account) {
     const accessToken = await signIn(account.email);
-    expect((await authed(SEND_CODE, accessToken).send()).status).toBe(
-      HttpStatus.ACCEPTED,
-    );
+    expect((await authed(SEND_CODE, accessToken).send()).status).toBe(HttpStatus.ACCEPTED);
     const enabled = await authed(ENABLE, accessToken).send({
       method: 'email',
       password: PASSWORD,
@@ -253,9 +244,7 @@ describe('Two-factor authentication (D8, SPEC §9, T13; Postgres 17 via Testcont
   describe('TOTP setup and enable', () => {
     it('needs a Bearer token', async () => {
       expect((await post(SETUP).send()).status).toBe(HttpStatus.UNAUTHORIZED);
-      expect((await post(ENABLE).send({})).status).toBe(
-        HttpStatus.UNAUTHORIZED,
-      );
+      expect((await post(ENABLE).send({})).status).toBe(HttpStatus.UNAUTHORIZED);
     });
 
     it('returns an otpauth URI and stores only the encrypted secret', async () => {
@@ -307,10 +296,7 @@ describe('Two-factor authentication (D8, SPEC §9, T13; Postgres 17 via Testcont
       expect(errorCodeOf(res)).toBe(AUTH_ERROR_CODES.INVALID_CREDENTIALS);
       expect((await me(accessToken)).status).toBe(HttpStatus.OK);
       expect(
-        await auditMetadata(
-          AUDIT_ACTIONS.TWO_FACTOR_MANAGE_FAILED,
-          account.documentId,
-        ),
+        await auditMetadata(AUDIT_ACTIONS.TWO_FACTOR_MANAGE_FAILED, account.documentId),
       ).toEqual([{ operation: 'enable', reason: 'bad_password' }]);
     });
 
@@ -326,22 +312,16 @@ describe('Two-factor authentication (D8, SPEC §9, T13; Postgres 17 via Testcont
       expect(res.status).toBe(HttpStatus.FORBIDDEN);
       expect(errorCodeOf(res)).toBe(AUTH_ERROR_CODES.INVALID_2FA_CODE);
       expect(
-        await auditMetadata(
-          AUDIT_ACTIONS.TWO_FACTOR_MANAGE_FAILED,
-          account.documentId,
-        ),
+        await auditMetadata(AUDIT_ACTIONS.TWO_FACTOR_MANAGE_FAILED, account.documentId),
       ).toEqual([{ operation: 'enable', reason: 'bad_code' }]);
     });
 
     it('enables TOTP, shows it in /me and refuses a second setup', async () => {
       const account = await createAccount();
       const { accessToken } = await withTotp(account);
-      expect(
-        await auditMetadata(
-          AUDIT_ACTIONS.TWO_FACTOR_ENABLED,
-          account.documentId,
-        ),
-      ).toEqual([{ method: 'totp' }]);
+      expect(await auditMetadata(AUDIT_ACTIONS.TWO_FACTOR_ENABLED, account.documentId)).toEqual([
+        { method: 'totp' },
+      ]);
       // Enabling does not end the session (T13 Q10).
       const profile = await me(accessToken);
       expect(profile.status).toBe(HttpStatus.OK);
@@ -351,9 +331,7 @@ describe('Two-factor authentication (D8, SPEC §9, T13; Postgres 17 via Testcont
       });
       const again = await authed(SETUP, accessToken).send();
       expect(again.status).toBe(HttpStatus.CONFLICT);
-      expect(errorCodeOf(again)).toBe(
-        AUTH_ERROR_CODES.TWO_FACTOR_ALREADY_ENABLED,
-      );
+      expect(errorCodeOf(again)).toBe(AUTH_ERROR_CODES.TWO_FACTOR_ALREADY_ENABLED);
     });
 
     it('rejects a malformed body', async () => {
@@ -390,10 +368,7 @@ describe('Two-factor authentication (D8, SPEC §9, T13; Postgres 17 via Testcont
       expect(setCookies(res)).toHaveLength(1);
       // The TOTP-enable flow signed in once with the password only.
       expect(
-        await auditMetadata(
-          AUDIT_ACTIONS.AUTH_LOGIN_SUCCEEDED,
-          account.documentId,
-        ),
+        await auditMetadata(AUDIT_ACTIONS.AUTH_LOGIN_SUCCEEDED, account.documentId),
       ).toContainEqual({ twoFactorMethod: 'totp' });
     });
 
@@ -424,10 +399,7 @@ describe('Two-factor authentication (D8, SPEC §9, T13; Postgres 17 via Testcont
         expect(errorCodeOf(wrong)).toBe(AUTH_ERROR_CODES.INVALID_2FA_CODE);
       }
       expect(
-        await auditMetadata(
-          AUDIT_ACTIONS.TWO_FACTOR_VERIFY_FAILED,
-          account.documentId,
-        ),
+        await auditMetadata(AUDIT_ACTIONS.TWO_FACTOR_VERIFY_FAILED, account.documentId),
       ).toHaveLength(TWO_FACTOR_TEMP_TOKEN_MAX_ATTEMPTS);
       const res = await post(VERIFY).send({
         tempToken,
@@ -508,9 +480,7 @@ describe('Two-factor authentication (D8, SPEC §9, T13; Postgres 17 via Testcont
         select: { totpSecretKid: true, totpLastStep: true },
       });
       expect(row.totpSecretKid).toBe(TEST_TOTP_ENC_KID);
-      expect(row.totpLastStep).toBe(
-        Math.floor(now / MS_PER_SECOND / TOTP.PERIOD_SECONDS),
-      );
+      expect(row.totpLastStep).toBe(Math.floor(now / MS_PER_SECOND / TOTP.PERIOD_SECONDS));
     });
 
     it('fails closed for a secret under an unknown kid', async () => {
@@ -538,9 +508,7 @@ describe('Two-factor authentication (D8, SPEC §9, T13; Postgres 17 via Testcont
         code: await totpNow(secret),
       });
       expect(wrongPassword.status).toBe(HttpStatus.FORBIDDEN);
-      expect(errorCodeOf(wrongPassword)).toBe(
-        AUTH_ERROR_CODES.INVALID_CREDENTIALS,
-      );
+      expect(errorCodeOf(wrongPassword)).toBe(AUTH_ERROR_CODES.INVALID_CREDENTIALS);
 
       const wrongCode = await authed(DISABLE, accessToken).send({
         password: PASSWORD,
@@ -555,20 +523,14 @@ describe('Two-factor authentication (D8, SPEC §9, T13; Postgres 17 via Testcont
       });
       expect(ok.status).toBe(HttpStatus.NO_CONTENT);
       expect(
-        await auditMetadata(
-          AUDIT_ACTIONS.TWO_FACTOR_MANAGE_FAILED,
-          account.documentId,
-        ),
+        await auditMetadata(AUDIT_ACTIONS.TWO_FACTOR_MANAGE_FAILED, account.documentId),
       ).toEqual([
         { operation: 'disable', reason: 'bad_password' },
         { operation: 'disable', reason: 'bad_code' },
       ]);
-      expect(
-        await auditMetadata(
-          AUDIT_ACTIONS.TWO_FACTOR_DISABLED,
-          account.documentId,
-        ),
-      ).toEqual([{ method: 'totp' }]);
+      expect(await auditMetadata(AUDIT_ACTIONS.TWO_FACTOR_DISABLED, account.documentId)).toEqual([
+        { method: 'totp' },
+      ]);
       const row = await db.prisma.account.findUniqueOrThrow({
         where: { id: account.id },
         select: {
@@ -630,18 +592,10 @@ describe('Two-factor authentication (D8, SPEC §9, T13; Postgres 17 via Testcont
         code: lastCodeMailedTo(account.email),
       });
       expect(off.status).toBe(HttpStatus.NO_CONTENT);
-      for (const action of [
-        AUDIT_ACTIONS.TWO_FACTOR_ENABLED,
-        AUDIT_ACTIONS.TWO_FACTOR_DISABLED,
-      ]) {
-        expect(await auditMetadata(action, account.documentId)).toEqual([
-          { method: 'email' },
-        ]);
+      for (const action of [AUDIT_ACTIONS.TWO_FACTOR_ENABLED, AUDIT_ACTIONS.TWO_FACTOR_DISABLED]) {
+        expect(await auditMetadata(action, account.documentId)).toEqual([{ method: 'email' }]);
       }
-      const issued = await auditMetadata(
-        AUDIT_ACTIONS.AUTH_OTP_ISSUED,
-        account.documentId,
-      );
+      const issued = await auditMetadata(AUDIT_ACTIONS.AUTH_OTP_ISSUED, account.documentId);
       expect(issued.length).toBeGreaterThanOrEqual(3);
       expect(issued).toContainEqual({ purpose: 'LOGIN_2FA_EMAIL' });
     });
@@ -652,9 +606,7 @@ describe('Two-factor authentication (D8, SPEC §9, T13; Postgres 17 via Testcont
       const tempToken = await loginForTempToken(account.email);
       await post(EMAIL_CHALLENGE).send({ tempToken });
       const code = lastCodeMailedTo(account.email);
-      expect((await post(VERIFY).send({ tempToken, code })).status).toBe(
-        HttpStatus.OK,
-      );
+      expect((await post(VERIFY).send({ tempToken, code })).status).toBe(HttpStatus.OK);
       const again = await post(VERIFY).send({
         tempToken: await loginForTempToken(account.email),
         code,
@@ -766,9 +718,7 @@ describe('Two-factor authentication (D8, SPEC §9, T13; Postgres 17 via Testcont
       expect(errorCodeOf(verify)).toBe(AUTH_ERROR_CODES.INVALID_TEMP_TOKEN);
 
       // The password alone signs in again.
-      expect((await me(await signIn(account.email))).status).toBe(
-        HttpStatus.OK,
-      );
+      expect((await me(await signIn(account.email))).status).toBe(HttpStatus.OK);
     });
 
     it('works for the owner and for email 2FA', async () => {
@@ -795,9 +745,7 @@ describe('Two-factor authentication (D8, SPEC §9, T13; Postgres 17 via Testcont
 
     it('refuses an unknown or deleted account', async () => {
       await expect(
-        identityUseCasesOf(db.prisma).twoFactorReset.reset(
-          'nobody@example.test',
-        ),
+        identityUseCasesOf(db.prisma).twoFactorReset.reset('nobody@example.test'),
       ).rejects.toMatchObject({
         code: TWO_FACTOR_RESET_ERRORS.ACCOUNT_NOT_FOUND,
       });

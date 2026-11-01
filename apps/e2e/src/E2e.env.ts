@@ -39,6 +39,8 @@ export const e2eEnv = Object.freeze({
   dbContainer: requireEnv('E2E_DB_CONTAINER'),
   dbUser: requireEnv('E2E_DB_USER'),
   dbName: requireEnv('E2E_DB_NAME'),
+  /** True when the run targets the dev stack (`E2E_STACK=dev`); the full stack is the strict one. */
+  isDevStack: process.env['E2E_STACK'] === 'dev',
   /** Set in CI to forbid `test.only` and retry once. */
   ci: process.env['CI'] !== undefined && process.env['CI'] !== '',
 });

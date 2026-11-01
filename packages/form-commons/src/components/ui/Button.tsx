@@ -24,8 +24,7 @@ const buttonVariants = cva(
           'border-warning bg-warning-soft text-warning-strong hover:bg-warning/20 active:bg-warning/30',
         destructive:
           'bg-destructive text-destructive-foreground hover:bg-destructive-hover active:bg-destructive-hover focus-visible:ring-destructive/40',
-        ghost:
-          'text-foreground hover:bg-accent hover:text-accent-foreground active:bg-accent',
+        ghost: 'text-foreground hover:bg-accent hover:text-accent-foreground active:bg-accent',
         link: 'text-primary underline-offset-4 hover:underline',
       },
       size: {
@@ -85,9 +84,7 @@ function Button({
     >
       {loading ? (
         <>
-          <span className="invisible inline-flex items-center gap-2">
-            {children}
-          </span>
+          <span className="invisible inline-flex items-center gap-2">{children}</span>
           <span
             data-slot="button-spinner"
             aria-hidden="true"

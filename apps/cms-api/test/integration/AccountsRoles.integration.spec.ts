@@ -1,11 +1,7 @@
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import request from 'supertest';
 
-import { REFRESH_COOKIE } from '../../src/modules/identity/http/IdentityHttp.constants';
-import {
-  ERROR_CODES,
-  INVALID_REQUEST_ERROR,
-} from '../../src/common/constants/Error.constants';
+import { ERROR_CODES, INVALID_REQUEST_ERROR } from '../../src/common/constants/Error.constants';
 import {
   openPrisma,
   type PrismaHandle,
@@ -20,15 +16,20 @@ import {
   RANK_FORBIDDEN_ERROR,
 } from '../../src/modules/access/domain/Access.constants';
 import { MANAGEMENT_ERROR_CODES } from '../../src/modules/access/management/domain/AccessManagement.constants';
-import {
-  AUDIT_ACTIONS,
-  type AuditAction,
-  LOGIN_FAILURE_REASONS,
-} from '../../src/modules/security-audit';
 import { ContentRegistry } from '../../src/modules/content-engine/application/ContentRegistry.service';
 import { ContentTypeRegistry } from '../../src/modules/content-engine/domain/ContentTypeRegistry.entity';
 import { hashPassword } from '../../src/modules/identity/application/Password.service';
-import { ARTICLE_DEFINITION } from '../fixtures/Access.fixture';
+import { REFRESH_COOKIE } from '../../src/modules/identity/http/IdentityHttp.constants';
+import {
+  AUDIT_ACTIONS,
+  LOGIN_FAILURE_REASONS,
+  type AuditAction,
+} from '../../src/modules/security-audit';
+import {
+  ARTICLE_DEFINITION,
+  seedRolePermissions,
+  seedSystemRoles,
+} from '../fixtures/Access.fixture';
 import { createCoreTemplate } from '../fixtures/CoreDb.fixture';
 import {
   dbEnvOf,
@@ -40,10 +41,6 @@ import {
 } from '../fixtures/Env.fixture';
 import { startPostgres, type TestPostgres } from '../fixtures/Postgres.fixture';
 import { createTestApp } from '../fixtures/TestApp.fixture';
-import {
-  seedRolePermissions,
-  seedSystemRoles,
-} from '../fixtures/Access.fixture';
 
 const PASSWORD = 'correct horse battery staple';
 const NEW_PASSWORD = 'a different horse battery staple';
@@ -168,10 +165,7 @@ describe('accounts & roles API + security audit (T17, §12-7, §12-18; Postgres 
   }
 
   async function login(email: string, password = PASSWORD) {
-    return http()
-      .post(LOGIN)
-      .set('X-Forwarded-For', nextIp())
-      .send({ email, password });
+    return http().post(LOGIN).set('X-Forwarded-For', nextIp()).send({ email, password });
   }
 
   async function signedIn(roleSlug: string): Promise<Signed> {
@@ -198,10 +192,7 @@ describe('accounts & roles API + security audit (T17, §12-7, §12-18; Postgres 
   }
 
   async function createCustomRole(slug: string, rank: number) {
-    const res = await http()
-      .post(ROLES)
-      .set(bearer(owner.token))
-      .send({ slug, name: slug, rank });
+    const res = await http().post(ROLES).set(bearer(owner.token)).send({ slug, name: slug, rank });
     expect(res.status).toBe(201);
     return res.body as RoleBody;
   }
@@ -418,9 +409,7 @@ describe('accounts & roles API + security audit (T17, §12-7, §12-18; Postgres 
         .set('X-Forwarded-For', nextIp())
         .send({ email: body.email, code, newPassword: NEW_PASSWORD });
       expect(set.status).toBe(204);
-      expect(await auditRows(AUDIT_ACTIONS.PASSWORD_SET, body.id)).toHaveLength(
-        1,
-      );
+      expect(await auditRows(AUDIT_ACTIONS.PASSWORD_SET, body.id)).toHaveLength(1);
       expect((await login(body.email, NEW_PASSWORD)).status).toBe(200);
     });
 
@@ -431,9 +420,7 @@ describe('accounts & roles API + security audit (T17, §12-7, §12-18; Postgres 
         roleId: roleIds.editor,
       });
       expect(taken.status).toBe(409);
-      expect(errorCodeOf(taken)).toBe(
-        MANAGEMENT_ERROR_CODES.ACCOUNT_EMAIL_TAKEN,
-      );
+      expect(errorCodeOf(taken)).toBe(MANAGEMENT_ERROR_CODES.ACCOUNT_EMAIL_TAKEN);
 
       const invalid = await http()
         .post(ACCOUNTS)
@@ -443,31 +430,21 @@ describe('accounts & roles API + security audit (T17, §12-7, §12-18; Postgres 
       expect(errorCodeOf(invalid)).toBe(INVALID_REQUEST_ERROR.CODE);
       expect(JSON.stringify(invalid.body)).not.toContain('not-an-email');
 
-      const reviewer = await http()
-        .post(ACCOUNTS)
-        .set(bearer(admin.token))
-        .send({
-          email: 'reviewer-x@example.test',
-          displayName: 'R',
-          roleId: roleIds.reviewer,
-        });
+      const reviewer = await http().post(ACCOUNTS).set(bearer(admin.token)).send({
+        email: 'reviewer-x@example.test',
+        displayName: 'R',
+        roleId: roleIds.reviewer,
+      });
       expect(reviewer.status).toBe(400);
-      expect(errorCodeOf(reviewer)).toBe(
-        MANAGEMENT_ERROR_CODES.ROLE_NOT_ASSIGNABLE,
-      );
+      expect(errorCodeOf(reviewer)).toBe(MANAGEMENT_ERROR_CODES.ROLE_NOT_ASSIGNABLE);
 
-      const unknownRole = await http()
-        .post(ACCOUNTS)
-        .set(bearer(admin.token))
-        .send({
-          email: 'unknown-role@example.test',
-          displayName: 'U',
-          roleId: UNKNOWN_ID,
-        });
+      const unknownRole = await http().post(ACCOUNTS).set(bearer(admin.token)).send({
+        email: 'unknown-role@example.test',
+        displayName: 'U',
+        roleId: UNKNOWN_ID,
+      });
       expect(unknownRole.status).toBe(404);
-      expect(errorCodeOf(unknownRole)).toBe(
-        MANAGEMENT_ERROR_CODES.ROLE_NOT_FOUND,
-      );
+      expect(errorCodeOf(unknownRole)).toBe(MANAGEMENT_ERROR_CODES.ROLE_NOT_FOUND);
     });
 
     it('update: email is not accepted; unknown or malformed ids fail', async () => {
@@ -487,9 +464,7 @@ describe('accounts & roles API + security audit (T17, §12-7, §12-18; Postgres 
         .set(bearer(admin.token))
         .send({ displayName: 'X' });
       expect(unknown.status).toBe(404);
-      expect(errorCodeOf(unknown)).toBe(
-        MANAGEMENT_ERROR_CODES.ACCOUNT_NOT_FOUND,
-      );
+      expect(errorCodeOf(unknown)).toBe(MANAGEMENT_ERROR_CODES.ACCOUNT_NOT_FOUND);
       const malformed = await http()
         .patch(`${ACCOUNTS}/42`)
         .set(bearer(admin.token))
@@ -505,9 +480,7 @@ describe('accounts & roles API + security audit (T17, §12-7, §12-18; Postgres 
         .send({ permissions: [{ subject: 'accounts', action: 'read' }] })
         .expect(200);
       const target = await signedIn('editor');
-      expect(
-        (await http().get(ACCOUNTS).set(bearer(target.token))).status,
-      ).toBe(403);
+      expect((await http().get(ACCOUNTS).set(bearer(target.token))).status).toBe(403);
 
       const res = await http()
         .patch(`${ACCOUNTS}/${target.documentId}`)
@@ -520,18 +493,10 @@ describe('accounts & roles API + security audit (T17, §12-7, §12-18; Postgres 
       });
 
       // VersionCache invalidated: same token, new role.
-      expect(
-        (await http().get(ACCOUNTS).set(bearer(target.token))).status,
-      ).toBe(200);
-      const [renamed] = await auditRows(
-        AUDIT_ACTIONS.ACCOUNT_UPDATED,
-        target.documentId,
-      );
+      expect((await http().get(ACCOUNTS).set(bearer(target.token))).status).toBe(200);
+      const [renamed] = await auditRows(AUDIT_ACTIONS.ACCOUNT_UPDATED, target.documentId);
       expect(renamed?.metadata).toEqual({ fields: ['displayName'] });
-      const [changed] = await auditRows(
-        AUDIT_ACTIONS.ACCOUNT_ROLE_CHANGED,
-        target.documentId,
-      );
+      const [changed] = await auditRows(AUDIT_ACTIONS.ACCOUNT_ROLE_CHANGED, target.documentId);
       expect(changed?.metadata).toEqual({
         fromRole: 'editor',
         toRole: 't17-account-readers',
@@ -551,16 +516,10 @@ describe('accounts & roles API + security audit (T17, §12-7, §12-18; Postgres 
         .set('Cookie', target.refreshCookie);
       expect(refresh.status).toBe(401);
       expect((await login(target.email)).status).toBe(401);
-      const rows = await auditRows(
-        AUDIT_ACTIONS.ACCOUNT_DISABLED,
-        target.documentId,
-      );
+      const rows = await auditRows(AUDIT_ACTIONS.ACCOUNT_DISABLED, target.documentId);
       expect(rows).toHaveLength(1);
       expect(rows[0]).toMatchObject({ actorId: admin.id, subject: 'accounts' });
-      const [failed] = await auditRows(
-        AUDIT_ACTIONS.AUTH_LOGIN_FAILED,
-        target.documentId,
-      );
+      const [failed] = await auditRows(AUDIT_ACTIONS.AUTH_LOGIN_FAILED, target.documentId);
       expect(failed?.metadata).toEqual({
         reason: LOGIN_FAILURE_REASONS.NOT_ACTIVE,
       });
@@ -569,9 +528,7 @@ describe('accounts & roles API + security audit (T17, §12-7, §12-18; Postgres 
         .post(`${ACCOUNTS}/${target.documentId}/disable`)
         .set(bearer(admin.token));
       expect(again.status).toBe(409);
-      expect(errorCodeOf(again)).toBe(
-        MANAGEMENT_ERROR_CODES.ACCOUNT_ALREADY_DISABLED,
-      );
+      expect(errorCodeOf(again)).toBe(MANAGEMENT_ERROR_CODES.ACCOUNT_ALREADY_DISABLED);
     });
 
     it('revoke sessions: 204, the target is signed out everywhere, audited', async () => {
@@ -588,10 +545,7 @@ describe('accounts & roles API + security audit (T17, §12-7, §12-18; Postgres 
       expect(refresh.status).toBe(401);
       expect((await login(target.email)).status).toBe(200);
       expect(
-        await auditRows(
-          AUDIT_ACTIONS.ACCOUNT_SESSIONS_REVOKED,
-          target.documentId,
-        ),
+        await auditRows(AUDIT_ACTIONS.ACCOUNT_SESSIONS_REVOKED, target.documentId),
       ).toHaveLength(1);
     });
   });
@@ -621,9 +575,7 @@ describe('accounts & roles API + security audit (T17, §12-7, §12-18; Postgres 
     const enable = (actor: Signed, documentId: string) =>
       http().post(`${ACCOUNTS}/${documentId}/enable`).set(bearer(actor.token));
     const resend = (actor: Signed, documentId: string) =>
-      http()
-        .post(`${ACCOUNTS}/${documentId}/invite/resend`)
-        .set(bearer(actor.token));
+      http().post(`${ACCOUNTS}/${documentId}/invite/resend`).set(bearer(actor.token));
 
     it('enable: a disabled account with a password is active again and can log in', async () => {
       const target = await signedIn('editor');
@@ -641,10 +593,7 @@ describe('accounts & roles API + security audit (T17, §12-7, §12-18; Postgres 
       // The token issued before the disable stays dead (no token_version change).
       expect((await http().get(ME).set(bearer(target.token))).status).toBe(401);
 
-      const [audit] = await auditRows(
-        AUDIT_ACTIONS.ACCOUNT_ENABLED,
-        target.documentId,
-      );
+      const [audit] = await auditRows(AUDIT_ACTIONS.ACCOUNT_ENABLED, target.documentId);
       expect(audit).toMatchObject({
         actorId: admin.id,
         subject: 'accounts',
@@ -661,10 +610,7 @@ describe('accounts & roles API + security audit (T17, §12-7, §12-18; Postgres 
         select: { status: true },
       });
       expect(row.status).toBe('invited');
-      const [audit] = await auditRows(
-        AUDIT_ACTIONS.ACCOUNT_ENABLED,
-        target.documentId,
-      );
+      const [audit] = await auditRows(AUDIT_ACTIONS.ACCOUNT_ENABLED, target.documentId);
       expect(audit?.metadata).toEqual({ status: 'invited' });
     });
 
@@ -672,9 +618,7 @@ describe('accounts & roles API + security audit (T17, §12-7, §12-18; Postgres 
       const editor = await signedIn('editor');
       const notDisabled = await enable(admin, editor.documentId);
       expect(notDisabled.status).toBe(409);
-      expect(errorCodeOf(notDisabled)).toBe(
-        MANAGEMENT_ERROR_CODES.ACCOUNT_NOT_DISABLED,
-      );
+      expect(errorCodeOf(notDisabled)).toBe(MANAGEMENT_ERROR_CODES.ACCOUNT_NOT_DISABLED);
       const otherAdmin = await signedIn('admin');
       expect((await disable(owner, otherAdmin.documentId)).status).toBe(204);
       const peer = await enable(admin, otherAdmin.documentId);
@@ -683,9 +627,7 @@ describe('accounts & roles API + security audit (T17, §12-7, §12-18; Postgres 
       expect((await enable(admin, admin.documentId)).status).toBe(403);
       expect((await enable(admin, UNKNOWN_ID)).status).toBe(404);
       expect((await enable(admin, 'not-a-uuid')).status).toBe(400);
-      expect(
-        (await http().post(`${ACCOUNTS}/${editor.documentId}/enable`)).status,
-      ).toBe(401);
+      expect((await http().post(`${ACCOUNTS}/${editor.documentId}/enable`)).status).toBe(401);
       const noAccess = await enable(editor, editor.documentId);
       expect(noAccess.status).toBe(403);
     });
@@ -713,10 +655,7 @@ describe('accounts & roles API + security audit (T17, §12-7, §12-18; Postgres 
       expect((await setWith(newCode)).status).toBe(204);
       expect((await login(target.email, NEW_PASSWORD)).status).toBe(200);
 
-      const rows = await auditRows(
-        AUDIT_ACTIONS.ACCOUNT_INVITE_RESENT,
-        target.documentId,
-      );
+      const rows = await auditRows(AUDIT_ACTIONS.ACCOUNT_INVITE_RESENT, target.documentId);
       expect(rows).toHaveLength(2);
       expect(rows[0]).toMatchObject({
         actorId: inviter.id,
@@ -729,9 +668,7 @@ describe('accounts & roles API + security audit (T17, §12-7, §12-18; Postgres 
       const active = await signedIn('editor');
       const notInvited = await resend(actor, active.documentId);
       expect(notInvited.status).toBe(409);
-      expect(errorCodeOf(notInvited)).toBe(
-        MANAGEMENT_ERROR_CODES.ACCOUNT_NOT_INVITED,
-      );
+      expect(errorCodeOf(notInvited)).toBe(MANAGEMENT_ERROR_CODES.ACCOUNT_NOT_INVITED);
       expect((await resend(actor, actor.documentId)).status).toBe(403);
       expect((await resend(actor, UNKNOWN_ID)).status).toBe(404);
       const target = await invitedAccount();
@@ -751,9 +688,9 @@ describe('accounts & roles API + security audit (T17, §12-7, §12-18; Postgres 
       }
       const refused = await resend(inviter, target.documentId);
       expect(refused.status).toBe(429);
-      expect(
-        await auditRows(AUDIT_ACTIONS.ACCOUNT_INVITE_RESENT, target.documentId),
-      ).toHaveLength(5);
+      expect(await auditRows(AUDIT_ACTIONS.ACCOUNT_INVITE_RESENT, target.documentId)).toHaveLength(
+        5,
+      );
     });
 
     it('invite throttle: the 11th invite or resend by one caller is 429 with Retry-After, nothing written', async () => {
@@ -792,11 +729,7 @@ describe('accounts & roles API + security audit (T17, §12-7, §12-18; Postgres 
 
   describe('invite throttle per IP (T17a)', () => {
     it('the 21st invite or resend from one IP is 429 even across callers', async () => {
-      const callers = await Promise.all([
-        signedIn('admin'),
-        signedIn('admin'),
-        signedIn('admin'),
-      ]);
+      const callers = await Promise.all([signedIn('admin'), signedIn('admin'), signedIn('admin')]);
       const sharedIp = '10.9.9.9';
       const statuses: number[] = [];
       for (let i = 0; i < 21; i += 1) {
@@ -812,9 +745,7 @@ describe('accounts & roles API + security audit (T17, §12-7, §12-18; Postgres 
           });
         statuses.push(res.status);
       }
-      expect(statuses.slice(0, 20).every((status) => status === 201)).toBe(
-        true,
-      );
+      expect(statuses.slice(0, 20).every((status) => status === 201)).toBe(true);
       expect(statuses[20]).toBe(429);
     });
   });
@@ -824,8 +755,7 @@ describe('accounts & roles API + security audit (T17, §12-7, §12-18; Postgres 
       data: { id: string }[];
       meta: { page: number; pageSize: number; total: number };
     };
-    const pageOf = (query: string) =>
-      http().get(`${ACCOUNTS}${query}`).set(bearer(owner.token));
+    const pageOf = (query: string) => http().get(`${ACCOUNTS}${query}`).set(bearer(owner.token));
 
     it('pages by offset with a stable order and a total that skips deleted accounts', async () => {
       const deleted = await createAccount('editor');
@@ -934,10 +864,7 @@ describe('accounts & roles API + security audit (T17, §12-7, §12-18; Postgres 
         });
       expect(replaced.status).toBe(200);
       expect((replaced.body as RoleBody).permissions).toHaveLength(2);
-      const [permRow] = await auditRows(
-        AUDIT_ACTIONS.ROLE_PERMISSIONS_REPLACED,
-        role.id,
-      );
+      const [permRow] = await auditRows(AUDIT_ACTIONS.ROLE_PERMISSIONS_REPLACED, role.id);
       expect(permRow?.metadata).toMatchObject({
         subjects: ['article', 'media'],
         permissionCount: 2,
@@ -953,28 +880,20 @@ describe('accounts & roles API + security audit (T17, §12-7, §12-18; Postgres 
         .set(bearer(admin.token))
         .send({ permissions: [{ subject: 'nope', action: 'read' }] });
       expect(res.status).toBe(400);
-      expect(errorCodeOf(res)).toBe(
-        ACCESS_ERROR_CODES.PERMISSION_INVALID_SUBJECT,
-      );
-      expect(
-        (res.body as { details: { issues: unknown[] } }).details.issues,
-      ).toHaveLength(1);
+      expect(errorCodeOf(res)).toBe(ACCESS_ERROR_CODES.PERMISSION_INVALID_SUBJECT);
+      expect((res.body as { details: { issues: unknown[] } }).details.issues).toHaveLength(1);
     });
 
     it('a role permission change applies to holders on the next request', async () => {
       const role = await createCustomRole('t17-live', 18);
       const holder = await signedIn('t17-live');
-      expect((await http().get(ROLES).set(bearer(holder.token))).status).toBe(
-        403,
-      );
+      expect((await http().get(ROLES).set(bearer(holder.token))).status).toBe(403);
       await http()
         .put(`${ROLES}/${role.id}/permissions`)
         .set(bearer(admin.token))
         .send({ permissions: [{ subject: 'roles', action: 'read' }] })
         .expect(200);
-      expect((await http().get(ROLES).set(bearer(holder.token))).status).toBe(
-        200,
-      );
+      expect((await http().get(ROLES).set(bearer(holder.token))).status).toBe(200);
     });
 
     it('delete: 409 while held (with the count), 409 for system roles, 204 + audit otherwise', async () => {
@@ -984,22 +903,16 @@ describe('accounts & roles API + security audit (T17, §12-7, §12-18; Postgres 
         where: { id: holder.id },
         data: { status: 'disabled', deletedAt: new Date() },
       });
-      const held = await http()
-        .delete(`${ROLES}/${role.id}`)
-        .set(bearer(admin.token));
+      const held = await http().delete(`${ROLES}/${role.id}`).set(bearer(admin.token));
       expect(held.status).toBe(409);
       expect(held.body).toMatchObject({
         errorCode: MANAGEMENT_ERROR_CODES.ROLE_IN_USE,
         details: { accountCount: 1 },
       });
 
-      const system = await http()
-        .delete(`${ROLES}/${roleIds.editor}`)
-        .set(bearer(owner.token));
+      const system = await http().delete(`${ROLES}/${roleIds.editor}`).set(bearer(owner.token));
       expect(system.status).toBe(409);
-      expect(errorCodeOf(system)).toBe(
-        MANAGEMENT_ERROR_CODES.ROLE_SYSTEM_IMMUTABLE,
-      );
+      expect(errorCodeOf(system)).toBe(MANAGEMENT_ERROR_CODES.ROLE_SYSTEM_IMMUTABLE);
       const reRank = await http()
         .patch(`${ROLES}/${roleIds.editor}`)
         .set(bearer(owner.token))
@@ -1007,13 +920,9 @@ describe('accounts & roles API + security audit (T17, §12-7, §12-18; Postgres 
       expect(reRank.status).toBe(409);
 
       const free = await createCustomRole('t17-free', 14);
-      const deleted = await http()
-        .delete(`${ROLES}/${free.id}`)
-        .set(bearer(admin.token));
+      const deleted = await http().delete(`${ROLES}/${free.id}`).set(bearer(admin.token));
       expect(deleted.status).toBe(204);
-      expect(
-        await db.prisma.role.findUnique({ where: { documentId: free.id } }),
-      ).toBeNull();
+      expect(await db.prisma.role.findUnique({ where: { documentId: free.id } })).toBeNull();
       const [row] = await auditRows(AUDIT_ACTIONS.ROLE_DELETED, free.id);
       expect(row?.metadata).toEqual({ slug: 't17-free' });
     });
@@ -1033,13 +942,9 @@ describe('accounts & roles API + security audit (T17, §12-7, §12-18; Postgres 
         .send({ slug: 't17c-over', name: 'Over', rank: 15 });
       expect(res.status).toBe(409);
       expect(errorCodeOf(res)).toBe(MANAGEMENT_ERROR_CODES.ROLE_LIMIT_REACHED);
-      expect(await db.prisma.role.count({ where: { slug: 't17c-over' } })).toBe(
-        0,
-      );
+      expect(await db.prisma.role.count({ where: { slug: 't17c-over' } })).toBe(0);
       const list = await http().get(ROLES).set(bearer(owner.token));
-      expect((list.body as { data: unknown[] }).data.length).toBeGreaterThan(
-        50,
-      );
+      expect((list.body as { data: unknown[] }).data.length).toBeGreaterThan(50);
     });
   });
 
@@ -1048,19 +953,13 @@ describe('accounts & roles API + security audit (T17, §12-7, §12-18; Postgres 
       const account = await createAccount('editor');
       expect((await login(account.email, 'wrong password!!')).status).toBe(401);
       expect((await login(account.email)).status).toBe(200);
-      const [failed] = await auditRows(
-        AUDIT_ACTIONS.AUTH_LOGIN_FAILED,
-        account.documentId,
-      );
+      const [failed] = await auditRows(AUDIT_ACTIONS.AUTH_LOGIN_FAILED, account.documentId);
       expect(failed).toMatchObject({
         actorId: account.id,
         actorType: 'account',
         metadata: { reason: LOGIN_FAILURE_REASONS.BAD_PASSWORD },
       });
-      const [ok] = await auditRows(
-        AUDIT_ACTIONS.AUTH_LOGIN_SUCCEEDED,
-        account.documentId,
-      );
+      const [ok] = await auditRows(AUDIT_ACTIONS.AUTH_LOGIN_SUCCEEDED, account.documentId);
       expect(ok).toMatchObject({
         actorId: account.id,
         metadata: { twoFactorMethod: null },
@@ -1083,35 +982,25 @@ describe('accounts & roles API + security audit (T17, §12-7, §12-18; Postgres 
       expect(first.metadata.reason).toBe(LOGIN_FAILURE_REASONS.UNKNOWN_ACCOUNT);
       expect(first.metadata.emailHmac).toMatch(/^[0-9a-f]{64}$/);
       expect(second.metadata.emailHmac).toBe(first.metadata.emailHmac);
-      expect(JSON.stringify(rows.map((row) => row.metadata))).not.toMatch(
-        /nobody-t17/i,
-      );
+      expect(JSON.stringify(rows.map((row) => row.metadata))).not.toMatch(/nobody-t17/i);
     });
 
     it('password change failure and success, logout and refresh reuse are audited', async () => {
       const account = await signedIn('editor');
-      const wrong = await http()
-        .post(CHANGE_PASSWORD)
-        .set(bearer(account.token))
-        .send({
-          currentPassword: 'not the password',
-          newPassword: NEW_PASSWORD,
-        });
+      const wrong = await http().post(CHANGE_PASSWORD).set(bearer(account.token)).send({
+        currentPassword: 'not the password',
+        newPassword: NEW_PASSWORD,
+      });
       expect(wrong.status).toBe(403);
       expect(
-        await auditRows(
-          AUDIT_ACTIONS.PASSWORD_CHANGE_FAILED,
-          account.documentId,
-        ),
+        await auditRows(AUDIT_ACTIONS.PASSWORD_CHANGE_FAILED, account.documentId),
       ).toHaveLength(1);
       const changed = await http()
         .post(CHANGE_PASSWORD)
         .set(bearer(account.token))
         .send({ currentPassword: PASSWORD, newPassword: NEW_PASSWORD });
       expect(changed.status).toBe(204);
-      expect(
-        await auditRows(AUDIT_ACTIONS.PASSWORD_CHANGED, account.documentId),
-      ).toHaveLength(1);
+      expect(await auditRows(AUDIT_ACTIONS.PASSWORD_CHANGED, account.documentId)).toHaveLength(1);
 
       const session = await login(account.email, NEW_PASSWORD);
       const cookie = ([] as string[])
@@ -1134,10 +1023,7 @@ describe('accounts & roles API + security audit (T17, §12-7, §12-18; Postgres 
       });
       expect((await refresh()).status).toBe(401);
       expect(
-        await auditRows(
-          AUDIT_ACTIONS.AUTH_REFRESH_REUSE_DETECTED,
-          account.documentId,
-        ),
+        await auditRows(AUDIT_ACTIONS.AUTH_REFRESH_REUSE_DETECTED, account.documentId),
       ).toHaveLength(1);
 
       const next = await login(account.email, NEW_PASSWORD);
@@ -1150,9 +1036,7 @@ describe('accounts & roles API + security audit (T17, §12-7, §12-18; Postgres 
         .set('Origin', TEST_ADMIN_ORIGIN)
         .set('Cookie', nextCookie ?? '');
       expect(logout.status).toBe(204);
-      expect(
-        await auditRows(AUDIT_ACTIONS.AUTH_LOGOUT, account.documentId),
-      ).toHaveLength(1);
+      expect(await auditRows(AUDIT_ACTIONS.AUTH_LOGOUT, account.documentId)).toHaveLength(1);
     });
   });
 });

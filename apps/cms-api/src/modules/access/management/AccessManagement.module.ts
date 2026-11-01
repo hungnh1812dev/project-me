@@ -27,13 +27,7 @@ import { RolesController } from './http/Roles.controller';
  * AccessModule for the version cache and the audit.
  */
 @Module({
-  imports: [
-    AccessModule,
-    DatabaseModule,
-    IdentityModule,
-    MailModule,
-    SecurityAuditModule,
-  ],
+  imports: [AccessModule, DatabaseModule, IdentityModule, MailModule, SecurityAuditModule],
   controllers: [AccountsController, ApiTokensController, RolesController],
   providers: [
     {

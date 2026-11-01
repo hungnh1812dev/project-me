@@ -2,9 +2,11 @@
  * Tailwind v4 theme for apps that compile their own Tailwind:
  *   @import 'tailwindcss';
  *   @import '@abyss/form-commons/theme.css';
- *   @source '../node_modules/@abyss/form-commons/dist';
  */
 @import './tokens.css';
+
+/* Copied next to the built JS, so this scans dist/ for the component classes. */
+@source './**/*.js';
 
 @theme inline {
   --color-background: var(--background);

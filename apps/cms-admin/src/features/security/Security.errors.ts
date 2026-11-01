@@ -1,7 +1,7 @@
 import { type FormAlertTone } from '@abyss/form-commons';
-import { COPY } from '../../config/Copy.constants';
-import { API_ERROR_CODES, HTTP_STATUS } from '../../config/Http.constants';
-import { apiFailureOf, rateLimitedMessage } from '../../lib/ApiFailure.errors';
+import { apiFailureOf, rateLimitedMessage } from '@apis/client/ApiFailure.errors';
+import { COPY } from '@configs/Copy.constants';
+import { API_ERROR_CODES, HTTP_STATUS } from '@configs/Http.constants';
 
 /**
  * What a failed security call means for the form: a field to mark, a state
@@ -49,14 +49,9 @@ export function toSecurityError(error: unknown): SecurityError {
         message: COPY.password.errors.network,
       };
     case 'http': {
-      const known =
-        failure.errorCode === undefined
-          ? undefined
-          : BY_CODE[failure.errorCode];
+      const known = failure.errorCode === undefined ? undefined : BY_CODE[failure.errorCode];
       if (known !== undefined) return known;
-      return failure.status === HTTP_STATUS.CONFLICT
-        ? { kind: 'state-changed' }
-        : UNEXPECTED;
+      return failure.status === HTTP_STATUS.CONFLICT ? { kind: 'state-changed' } : UNEXPECTED;
     }
     case 'unexpected':
       return UNEXPECTED;

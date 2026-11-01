@@ -16,6 +16,8 @@ import { hashPassword } from '../../src/modules/identity/application/Password.se
 import {
   ARTICLE_DEFINITION,
   NOTE_DEFINITION,
+  seedRolePermissions,
+  seedSystemRoles,
 } from '../fixtures/Access.fixture';
 import { createCoreTemplate } from '../fixtures/CoreDb.fixture';
 import {
@@ -28,10 +30,6 @@ import {
 } from '../fixtures/Env.fixture';
 import { startPostgres, type TestPostgres } from '../fixtures/Postgres.fixture';
 import { createTestApp } from '../fixtures/TestApp.fixture';
-import {
-  seedRolePermissions,
-  seedSystemRoles,
-} from '../fixtures/Access.fixture';
 
 const PASSWORD = 'correct horse battery staple';
 const CONTENT_TYPES = '/api/v1/content-types';
@@ -85,10 +83,7 @@ describe('content types API (T17b; Postgres 17 via Testcontainers)', () => {
     db = openPrisma(databaseUrl);
     await seedSystemRoles(db.prisma);
     await seedRolePermissions(db.prisma);
-    const registry = ContentTypeRegistry.fromDefinitions([
-      ARTICLE_DEFINITION,
-      NOTE_DEFINITION,
-    ]);
+    const registry = ContentTypeRegistry.fromDefinitions([ARTICLE_DEFINITION, NOTE_DEFINITION]);
     app = await createTestApp(
       devEnv({
         ...dbEnvOf(databaseUrl),
@@ -157,15 +152,8 @@ describe('content types API (T17b; Postgres 17 via Testcontainers)', () => {
     return (res.body as { accessToken: string }).accessToken;
   }
 
-  async function customRole(
-    slug: string,
-    rank: number,
-    permissions: Record<string, unknown>[],
-  ) {
-    const created = await http()
-      .post(ROLES)
-      .set(bearer(owner))
-      .send({ slug, name: slug, rank });
+  async function customRole(slug: string, rank: number, permissions: Record<string, unknown>[]) {
+    const created = await http().post(ROLES).set(bearer(owner)).send({ slug, name: slug, rank });
     expect(created.status).toBe(201);
     const id = (created.body as { id: string }).id;
     const put = await http()
@@ -189,13 +177,9 @@ describe('content types API (T17b; Postgres 17 via Testcontainers)', () => {
   }
 
   it('requires a signed-in account', async () => {
-    const res = await http()
-      .get(CONTENT_TYPES)
-      .set('X-Forwarded-For', nextIp());
+    const res = await http().get(CONTENT_TYPES).set('X-Forwarded-For', nextIp());
     expect(res.status).toBe(401);
-    const one = await http()
-      .get(`${CONTENT_TYPES}/article`)
-      .set('X-Forwarded-For', nextIp());
+    const one = await http().get(`${CONTENT_TYPES}/article`).set('X-Forwarded-For', nextIp());
     expect(one.status).toBe(401);
   });
 
@@ -302,9 +286,7 @@ describe('content types API (T17b; Postgres 17 via Testcontainers)', () => {
         CONTENT_TYPES_ERROR_CODES.NOT_FOUND,
       );
     }
-    const messages = new Set(
-      responses.map((res) => (res.body as { message: string }).message),
-    );
+    const messages = new Set(responses.map((res) => (res.body as { message: string }).message));
     expect(messages.size).toBe(1);
   });
 });

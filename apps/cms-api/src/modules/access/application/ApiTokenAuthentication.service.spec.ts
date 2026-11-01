@@ -1,18 +1,10 @@
-import {
-  DomainError,
-  DOMAIN_ERROR_KINDS,
-} from '../../../common/errors/Domain.errors';
+import { DOMAIN_ERROR_KINDS, DomainError } from '../../../common/errors/Domain.errors';
 import { describeError } from '../../../common/http/DescribeHttpException.rules';
-
 import { Clock } from '../../../common/time/Clock.service';
 import type { AppLogger } from '../../../infrastructure/logging/AppLogger.port';
 import type { RolePolicy } from '../domain/ActorContext.entity';
 import { API_TOKEN, hashApiToken } from '../domain/ApiToken.rules';
-import type {
-  AccountVersions,
-  ApiTokenLookup,
-  ApiTokenRecord,
-} from './Access.port';
+import type { AccountVersions, ApiTokenLookup, ApiTokenRecord } from './Access.port';
 import { ApiTokenAuthentication } from './ApiTokenAuthentication.service';
 import type { VersionCache } from './VersionCache.service';
 

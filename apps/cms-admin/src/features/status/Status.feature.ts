@@ -1,9 +1,9 @@
-import { defineApiService, type Feature } from '../../lib/FeatureDefinition';
-import { HealthApiProvider } from './HealthApi.context';
+import { defineApiService } from '@apis/client/ApiService.setup';
+
+import type { Feature } from '../Features.registry';
 import { createHealthApi } from './Health.api';
-import { StatusPage } from './StatusPage';
+import { HealthApiProvider } from './HealthApi.context';
 
 export const statusFeature: Feature = {
   apiServices: [defineApiService(createHealthApi, HealthApiProvider)],
-  routes: [{ Component: StatusPage }],
 };

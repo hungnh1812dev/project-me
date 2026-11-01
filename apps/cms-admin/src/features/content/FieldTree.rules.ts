@@ -25,9 +25,7 @@ export function labelOf(name: string): string {
  * fields the caller can reach depth-first (parents before their fields).
  * System fields are skipped. A field whose parent is missing is dropped.
  */
-export function buildFieldTree(
-  fields: readonly ContentTypeField[],
-): FieldNode[] {
+export function buildFieldTree(fields: readonly ContentTypeField[]): FieldNode[] {
   const roots: FieldNode[] = [];
   const byPath = new Map<string, FieldNode>();
   for (const field of fields) {

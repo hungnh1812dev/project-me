@@ -13,6 +13,7 @@ import {
   planMigration,
 } from '../../src/modules/content-engine/domain/SqlGenerator.rules';
 import { hashPassword } from '../../src/modules/identity/application/Password.service';
+import { seedRolePermissions, seedSystemRoles } from '../fixtures/Access.fixture';
 import { createCoreTemplate } from '../fixtures/CoreDb.fixture';
 import {
   dbEnvOf,
@@ -26,10 +27,6 @@ import { buildMediaFixtures } from '../fixtures/Media.fixture';
 import { multipart } from '../fixtures/Multipart.fixture';
 import { startPostgres, type TestPostgres } from '../fixtures/Postgres.fixture';
 import { createTestApp } from '../fixtures/TestApp.fixture';
-import {
-  seedRolePermissions,
-  seedSystemRoles,
-} from '../fixtures/Access.fixture';
 
 const PASSWORD = 'correct horse battery staple';
 const MEDIA = '/api/v1/media';
@@ -81,9 +78,9 @@ describe('media alt update (T29; Postgres 17 via Testcontainers)', () => {
     await client.connect();
     const registry = ContentTypeRegistry.fromDefinitions([GALLERY]);
     await client.query(
-      planMigration(emptySnapshot(), [
-        registry.resolve('gallery').definition,
-      ]).statements.join('\n'),
+      planMigration(emptySnapshot(), [registry.resolve('gallery').definition]).statements.join(
+        '\n',
+      ),
     );
     await client.end();
     app = await createTestApp(
@@ -177,15 +174,9 @@ describe('media alt update (T29; Postgres 17 via Testcontainers)', () => {
     const list = await http().get(MEDIA).set(bearer(admin));
     const listed = (list.body as { data: { id: string; alt: string }[] }).data;
     expect(listed.find((m) => m.id === id)?.alt).toBe('A red door');
-    const blank = await http()
-      .patch(`${MEDIA}/${id}`)
-      .set(bearer(admin))
-      .send({ alt: '   ' });
+    const blank = await http().patch(`${MEDIA}/${id}`).set(bearer(admin)).send({ alt: '   ' });
     expect((blank.body as { alt: null }).alt).toBeNull();
-    const nulled = await http()
-      .patch(`${MEDIA}/${id}`)
-      .set(bearer(admin))
-      .send({ alt: null });
+    const nulled = await http().patch(`${MEDIA}/${id}`).set(bearer(admin)).send({ alt: null });
     expect(nulled.status).toBe(200);
     expect(await auditCount()).toBe(before);
   });
@@ -202,36 +193,23 @@ describe('media alt update (T29; Postgres 17 via Testcontainers)', () => {
     expect((await patch({ alt: 5 })).status).toBe(400);
     expect((await patch({ alt: 'x'.repeat(501) })).status).toBe(400);
     expect((await patch({ alt: 'x'.repeat(500) })).status).toBe(200);
-    await http()
-      .patch(`${MEDIA}/not-a-uuid`)
-      .set(bearer(admin))
-      .send({ alt: 'a' })
-      .expect(400);
+    await http().patch(`${MEDIA}/not-a-uuid`).set(bearer(admin)).send({ alt: 'a' }).expect(400);
   });
 
   it('404 for an unknown or soft-deleted file', async () => {
     const { id } = await uploaded();
     await http().delete(`${MEDIA}/${id}`).set(bearer(admin)).expect(204);
     for (const target of [id, MISSING_ID]) {
-      const res = await http()
-        .patch(`${MEDIA}/${target}`)
-        .set(bearer(admin))
-        .send({ alt: 'a' });
+      const res = await http().patch(`${MEDIA}/${target}`).set(bearer(admin)).send({ alt: 'a' });
       expect(res.status).toBe(404);
-      expect((res.body as { errorCode: string }).errorCode).toBe(
-        'MEDIA_NOT_FOUND',
-      );
+      expect((res.body as { errorCode: string }).errorCode).toBe('MEDIA_NOT_FOUND');
     }
   });
 
   it('401 without a session, 403 without media:update', async () => {
     const { id } = await uploaded();
     await http().patch(`${MEDIA}/${id}`).send({ alt: 'a' }).expect(401);
-    await http()
-      .patch(`${MEDIA}/${id}`)
-      .set(bearer(guest))
-      .send({ alt: 'a' })
-      .expect(403);
+    await http().patch(`${MEDIA}/${id}`).set(bearer(guest)).send({ alt: 'a' }).expect(403);
     const row = await db.prisma.fileLibrary.findUniqueOrThrow({
       where: { documentId: id },
     });

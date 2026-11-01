@@ -1,13 +1,8 @@
+import type { ChangeEvent, FocusEvent, ReactNode } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import type { ChangeEvent, FocusEvent, ReactNode } from 'react';
-import {
-  FormProvider,
-  type FieldValues,
-  type UseFormProps,
-  useForm,
-} from 'react-hook-form';
+import { FormProvider, useForm, type FieldValues, type UseFormProps } from 'react-hook-form';
 import { vi } from 'vitest';
 import { z } from 'zod';
 
@@ -27,10 +22,7 @@ function TestForm<T extends FieldValues>({
   const form = useForm<T>(options);
   return (
     <FormProvider {...form}>
-      <form
-        noValidate
-        onSubmit={(event) => void form.handleSubmit(onValid)(event)}
-      >
+      <form noValidate onSubmit={(event) => void form.handleSubmit(onValid)(event)}>
         {children}
         <Button type="submit" variant="primary">
           Save
@@ -43,9 +35,7 @@ function TestForm<T extends FieldValues>({
 describe('TextInput', () => {
   it('throws a clear error outside a FormProvider', () => {
     vi.spyOn(console, 'error').mockImplementation(() => undefined);
-    expect(() => render(<TextInput name="email" label="Email" />)).toThrow(
-      /FormProvider/,
-    );
+    expect(() => render(<TextInput name="email" label="Email" />)).toThrow(/FormProvider/);
   });
 
   it('shows the RHF native-rule error and links it via aria-describedby', async () => {
@@ -109,10 +99,7 @@ describe('TextInput', () => {
 
     expect(input).not.toHaveAttribute('aria-invalid');
     expect(input).toHaveAccessibleDescription('We send the invite here.');
-    expect(onValid).toHaveBeenCalledWith(
-      { email: 'ada@example.com' },
-      expect.anything(),
-    );
+    expect(onValid).toHaveBeenCalledWith({ email: 'ada@example.com' }, expect.anything());
   });
 
   it('supports nested field names', async () => {
@@ -138,12 +125,7 @@ describe('TextInput', () => {
     const onBlur = vi.fn<(event: FocusEvent<HTMLInputElement>) => void>();
     render(
       <TestForm>
-        <TextInput
-          name="title"
-          label="Title"
-          onChange={onChange}
-          onBlur={onBlur}
-        />
+        <TextInput name="title" label="Title" onChange={onChange} onBlur={onBlur} />
       </TestForm>,
     );
     await userEvent.type(screen.getByLabelText('Title'), 'a');
@@ -155,11 +137,7 @@ describe('TextInput', () => {
   it('never sets the native required attribute', () => {
     render(
       <TestForm>
-        <TextInput
-          name="title"
-          label="Title"
-          rules={{ required: 'Required.' }}
-        />
+        <TextInput name="title" label="Title" rules={{ required: 'Required.' }} />
       </TestForm>,
     );
     expect(screen.getByLabelText(/Title/)).not.toHaveAttribute('required');

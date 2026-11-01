@@ -1,4 +1,4 @@
-import { type Kysely, sql } from 'kysely';
+import { sql, type Kysely } from 'kysely';
 
 import type { UnitOfWork } from '../../../infrastructure/database/TransactionRunner.port';
 import type {
@@ -8,33 +8,25 @@ import type {
   ReplaceTreeInput,
 } from '../application/ContentEngine.port';
 import {
+  DocumentNotFoundError,
+  type ContentDocument,
+  type DocumentRef,
+} from '../domain/ContentDocument.entity';
+import {
   CONTENT_DB_SCHEMA,
   CONTENT_ERROR_CODES,
   ROOT_SYSTEM_COLUMNS,
 } from '../domain/ContentEngine.constants';
-import {
-  type ContentDocument,
-  DocumentNotFoundError,
-  type DocumentRef,
-} from '../domain/ContentDocument.entity';
 import { toColumnValues, toDocument } from '../domain/ContentRowMapping.rules';
 import type { ContentTypeRegistry } from '../domain/ContentTypeRegistry.entity';
-import {
-  assertTreeInput,
-  ContentTreeError,
-  isUuid,
-} from '../domain/TreeInput.rules';
+import { assertTreeInput, ContentTreeError, isUuid } from '../domain/TreeInput.rules';
 import { syncChildren } from './ComponentTableSync.adapter';
 import { contentTrxOf } from './KyselyContentTransactionRunner.adapter';
-import { type ContentDatabase, loadComponentTrees } from './TreeLoader.adapter';
+import { loadComponentTrees, type ContentDatabase } from './TreeLoader.adapter';
 
 function assertDocumentId(documentId: unknown, path: string): void {
   if (!isUuid(documentId)) {
-    throw new ContentTreeError(
-      CONTENT_ERROR_CODES.TREE_INVALID_UID,
-      [path],
-      'must be a UUID',
-    );
+    throw new ContentTreeError(CONTENT_ERROR_CODES.TREE_INVALID_UID, [path], 'must be a UUID');
   }
 }
 
@@ -47,11 +39,7 @@ export class KyselyContentRepository implements ContentRepository {
   constructor(private readonly registry: ContentTypeRegistry) {}
 
   /** Inserts a root row and its whole tree. Returns the root id. */
-  async insertTree(
-    unit: UnitOfWork,
-    slug: string,
-    input: InsertTreeInput,
-  ): Promise<number> {
+  async insertTree(unit: UnitOfWork, slug: string, input: InsertTreeInput): Promise<number> {
     const [id] = await this.insertTrees(unit, slug, [input]);
     return id as number;
   }
@@ -80,16 +68,14 @@ export class KyselyContentRepository implements ContentRepository {
       .withSchema(CONTENT_DB_SCHEMA)
       .insertInto(root.plan.name)
       .values(
-        prepared.map(
-          ({ documentId, publishedAt, locale, createdBy, tree }) => ({
-            ...toColumnValues(root, tree.values),
-            document_id: documentId,
-            published_at: publishedAt,
-            locale: locale ?? null,
-            created_by: createdBy ?? null,
-            updated_by: createdBy ?? null,
-          }),
-        ),
+        prepared.map(({ documentId, publishedAt, locale, createdBy, tree }) => ({
+          ...toColumnValues(root, tree.values),
+          document_id: documentId,
+          published_at: publishedAt,
+          locale: locale ?? null,
+          created_by: createdBy ?? null,
+          updated_by: createdBy ?? null,
+        })),
       )
       .returning(['id', 'document_id', 'published_at'])
       .execute();
@@ -128,18 +114,13 @@ export class KyselyContentRepository implements ContentRepository {
   ): Promise<ContentDocument[]> {
     const db: Kysely<ContentDatabase> = contentTrxOf(unit);
     const { root } = this.registry.resolve(slug);
-    query.documentIds?.forEach((id, index) =>
-      assertDocumentId(id, `documentIds[${index}]`),
-    );
+    query.documentIds?.forEach((id, index) => assertDocumentId(id, `documentIds[${index}]`));
     if (query.documentIds?.length === 0) return [];
 
     let rootQuery = db
       .withSchema(CONTENT_DB_SCHEMA)
       .selectFrom(root.plan.name)
-      .select([
-        ...ROOT_SYSTEM_COLUMNS,
-        ...root.plan.columns.map((column) => column.name),
-      ])
+      .select([...ROOT_SYSTEM_COLUMNS, ...root.plan.columns.map((column) => column.name)])
       .where('published_at', query.status === 'draft' ? 'is' : 'is not', null)
       .orderBy('id');
     if (query.documentIds !== undefined) {
@@ -155,9 +136,7 @@ export class KyselyContentRepository implements ContentRepository {
       root,
       rows.map((row) => row.id as number),
     );
-    return rows.map((row) =>
-      toDocument(root, row, trees.get(row.id as number) ?? {}),
-    );
+    return rows.map((row) => toDocument(root, row, trees.get(row.id as number) ?? {}));
   }
 
   /**

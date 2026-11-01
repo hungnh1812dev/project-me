@@ -1,10 +1,4 @@
-import {
-  GraphQLObjectType,
-  GraphQLSchema,
-  GraphQLString,
-  parse,
-  validate,
-} from 'graphql';
+import { GraphQLObjectType, GraphQLSchema, GraphQLString, parse, validate } from 'graphql';
 
 import { ContentTypeVisibilityRule } from './Visibility.rules';
 
@@ -30,9 +24,7 @@ const run = (query: string, readable: string[]) =>
 
 describe('ContentTypeVisibilityRule', () => {
   it('passes readable and extension-less fields', () => {
-    expect(run('{ articleList noteList plain }', ['article', 'note'])).toEqual(
-      [],
-    );
+    expect(run('{ articleList noteList plain }', ['article', 'note'])).toEqual([]);
   });
 
   it('reports a hidden root field as an unknown field, aliases and fragments included', () => {
@@ -40,9 +32,7 @@ describe('ContentTypeVisibilityRule', () => {
       'Cannot query field "noteList" on type "Query".',
     ]);
     expect(run('{ a: noteList }', [])).toHaveLength(1);
-    expect(run('fragment F on Query { noteList } { ...F }', [])).toHaveLength(
-      1,
-    );
+    expect(run('fragment F on Query { noteList } { ...F }', [])).toHaveLength(1);
     expect(run('{ ... on Query { noteList } }', [])).toHaveLength(1);
   });
 

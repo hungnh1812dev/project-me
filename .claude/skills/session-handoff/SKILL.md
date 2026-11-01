@@ -1,34 +1,56 @@
 ---
 name: session-handoff
-description: The shared state files that carry knowledge between per-task agents - project profile, board, handoff, conventions, current unit record, findings, archive - with their formats, size limits, and who writes, reads, clears and archives each one. Use when the manager sets up a project or dispatches, closes a task or a phase, or when the user answers a question.
+description: The manager's reference for the shared state files - project profile, feature map, conventions, archive, and each feature's folder (board, handoff, current unit record, checklists, findings, resolved issues, summary) - with their formats, size limits, and who writes, reads, clears and deletes each one. Use when the manager sets up a project, opens or closes a feature, dispatches, closes a task or a phase, or when the user answers a question.
 ---
 
 # Session Handoff
 
-Every unit (task or batch) gets fresh agents, and the manager's message is only the task ID. Agents learn what to do from the files below. Nothing else carries over, so anything an agent needs must be written down here. All files live in `.claude/state/`. Rules for all: short, no pasted code or diffs, point to file paths.
+Each unit gets fresh agents and a dispatch of only its ID; agents learn everything else from these files, so whatever an agent needs must be written here. Everything is in `.claude/state/`: short, no pasted code or diffs, point to paths.
 
-**Live files hold only what is still open.** Finished work leaves them: git holds the code history, module READMEs and `docs/` hold the module details, and `archive/` holds the rest for later lookup. No agent reads `archive/` at start; grep it only when needed.
+Live files hold only what is still open. Code history is in git, module details in READMEs and `docs/`, stale conventions in `archive/`; a closed feature keeps only `SUMMARY.md` and `CHECKLIST.md`. Nobody reads `archive/` or another feature's summary at start; grep them when needed.
+
+## Layout
+
+```
+.claude/state/
+  project.md  features.md  conventions.md  conventions-<area>.md  archive/conventions-archive.md
+  features/<feature>/            = <F>, the folder of the in-progress row of features.md
+    board.md  handoff.md  current.md  qc-issues-handoff.md  qc-progress.md
+    checklists/<checkpoint>.md   findings/   resolved/
+    CHECKLIST.md  SUMMARY.md     kept after close
+```
+
+Module docs (`docs/modules/`) and the generated root index `MODULES.md` are the long-term map of the code; builders keep them current in every task (`worker-flow`). Spec, task and phases files, design docs, ADRs and e2e tests live where `project.md` says; they are never in `<F>` and never deleted at close.
 
 ## Files
 
-| File | Written by | Read by | Limit | Cleared / archived |
+| File | Written by | Read by | Limit | Cleared / deleted |
 |---|---|---|---|---|
-| `project.md` | manager, with the user | every agent, in full, at start | one line per item | never |
-| `board.md` | manager | builders (grep the task's row); manager | active phases only | a phase moves to `archive/board-archive.md` when its checkpoint passes |
-| `handoff.md` | builders; manager adds user answers | builders and planner, in full, at start | ~3 KB | a task's lines are removed when it is committed with all checks passed |
-| `conventions.md` | builders | grep the needed section only | ~10 KB | stale or module-only facts move to `archive/conventions-archive.md` |
-| `current.md` | builder of the unit (format in `worker-flow`) | checkers, manager | one unit | manager resets after the unit's last commit |
-| `findings/<unit or phase>-<qc or security>.md` | the checker that failed | builder in a fix round | - | **that checker deletes it when its re-check passes** |
-| `archive/*.md` | manager | nobody at start; grep on demand | - | never |
+| `project.md` | manager, with the user | all, in full, at start | one line per item | never |
+| `features.md` | manager | all (the `in-progress` row); manager in full | one row per feature | never; closed rows stay `done` |
+| `conventions.md`, `conventions-<area>.md` | builders | grep the needed section | ~10 KB each | stale or module-only facts → archive |
+| `board.md` | manager | builders (task row), manager | - | at close |
+| `handoff.md` | builders; manager adds user answers | builders, planner, in full | ~3 KB | a task's lines when it is committed; file at close |
+| `current.md` | the unit's builder (format in `worker-flow`) | checkers, manager | one unit | manager resets after the unit's last commit; at close |
+| `qc-issues-handoff.md` | qc, security-qc (own section) | manager, checkers | - | at close (no `open` entry left) |
+| `qc-progress.md` | qc, security-qc (own line, format in `test-tiers`) | manager while a checker runs | one line per running checker | each checker removes its line at report; file at close |
+| `checklists/<checkpoint>.md` | qc, security-qc (format in `test-tiers`) | manager (`Status`), checkers | - | at close |
+| `CHECKLIST.md` | qc, security-qc; manager copies it for a one-phase feature | anyone | - | never |
+| `findings/<unit, checkpoint, feature or audit>-<qc or security>.md` | the failing checker (format in its agent file) | builder in a fix round | - | by its checker when the re-check passes |
+| `resolved/<finding id>.md` | builder fixing a critical/high finding (format in `worker-flow`) | manager at close | ~6 lines | at close, after `SUMMARY.md` takes its row |
+| `SUMMARY.md` | manager at close | anyone | as short as possible | never |
+| `archive/*.md` | manager | grep on demand | - | never |
+
+Trim when over the limit: closed items out of `handoff.md`; module-only or stale facts from the conventions files into the archive.
 
 ## project.md (project profile)
 
-Created once per project by the manager, with the user. Every value comes from the user or the repo; never guess. One line per item.
+Created once by the manager with the user, together with an empty `features.md`. Every value comes from the user or the repo; never guess.
 
 ```markdown
 # Project Profile
 Tasks: <file holding each task's acceptance/verify/files, and how to find one by ID>
-Phases: <file holding each phase's goal/inputs/outputs/exit criteria, or none (flat list)>
+Phases: <file holding the feature list and build order, and each phase's goal/inputs/outputs, checkpoints and checklists>
 Spec: <path, or none>
 Scopes:
 - core-builder: <paths>
@@ -47,30 +69,59 @@ Docs to keep current: <READMEs, API docs, ADR dir, env example file>
 Security rules: <docs with this project's authz / audit / data rules, or none>
 ```
 
+## features.md
+
+```markdown
+# Features
+Order: <phases file § where the planner wrote the build order>
+Decisions: <project-wide user decisions, one line>
+Open risks: <project-wide, one line>
+
+| # | Feature | Status | Folder | Apps / packages | Base | Summary |
+|---|---|---|---|---|---|---|
+| 1 | signup | done | features/signup/ | apps/api, apps/web | <hash> | features/signup/SUMMARY.md |
+| 2 | login | in-progress | features/login/ | apps/api, apps/web | <hash> | - |
+| 3 | profile | todo | - | apps/web | - | - |
+
+## Follow-ups
+- <new work left over from a closed feature, one line> -> <feature it belongs to, or unscheduled>
+```
+
+`#` is the planner's root-to-leaf order. Status `todo` → `in-progress` → `done`; at most one `in-progress`.
+
 ## board.md
 
 ```markdown
-# Board - <project>
-Source: <task file> · Spec: <path>
-Decisions: <open or project-wide decisions, one line>
+# Board - <feature>
+Source: <task file> · Phases: <phases file §> · Base: <hash>
+Feature checks: qc <pending|pass|n/a> · security <pending|pass|n/a> · Checklist: CHECKLIST.md
+Decisions: <open or feature-wide decisions, one line>
 Open risks: <one line>
 
 ## Phase <n>: <name>
 Base: <hash> · Phase checks: qc <pending|pass> · security <pending|pass> · Checkpoint: <pending|passed date>
+Checkpoints: <name> <pending|passed date> (checklists/<name>.md), ...
 
 | ID | Title | Scope | Status | Commit |
 |---|---|---|---|---|
 
+## Direct requests
+| ID | Title | Scope | Status | Commit |
+|---|---|---|---|---|
+
+## Built
+- <ID>: <what was built, one line>
+
 ## Notes
-- <only items still open for the active phases; at most ~10 lines>
+- <only items still open; at most ~10 lines>
 ```
 
-No log. Events worth keeping go into a commit message, `handoff.md` (while open), or `conventions.md` (if lasting).
+No log: lasting events go into commit messages, `handoff.md` (while open), `resolved/`, or `conventions.md`.
 
 ## handoff.md
 
 ```markdown
-# Handoff
+# Handoff - <feature>
 Updated: <YYYY-MM-DD> after <task ID>
 
 ## In progress / next
@@ -85,29 +136,36 @@ Updated: <YYYY-MM-DD> after <task ID>
 - <item> -> <owner task, or unscheduled>
 ```
 
-`Direct requests` holds the task entries for requests the request-validator routed straight to a builder (no planner task file). The manager writes each brief before dispatch and removes it when the task is committed, like the task's other lines.
-
-Only unfinished work: tasks not yet committed or with checks pending, user answers for those tasks, and open follow-ups. No `Done` list (the board and git have it).
+Only unfinished work: uncommitted tasks or tasks with checks pending, their user answers (under `In progress / next`), direct-request briefs (written before dispatch, removed with the task's lines at commit), open follow-ups. No `Done` list.
 
 ## conventions.md
 
-Cross-cutting knowledge every builder may need, one line per fact, grouped under: Tooling, Testing & smoke, Frontend, Backend, User decisions in force, Gotchas. Module structure and API details belong in the module's README / `docs/modules/`, not here.
+Facts every builder may need, one line each. `conventions.md`: cross-cutting (Tooling, Testing & smoke, User decisions in force, Gotchas), and its header names each `conventions-<area>.md` and the apps it covers. `conventions-<area>.md`: facts for one area, named by layer (`backend`, `frontend`, `mobile`, `infra`, ...), never by an app or package name (Testing, the area's rules, its user decisions). Module structure and API details go in the module's README or `docs/modules/`.
 
-## Findings files
+## resolved/
 
-`findings/<unit>-qc.md` or `findings/<unit>-security.md` for a unit; `findings/<phase>-qc.md` or `findings/<phase>-security.md` for the end-of-phase checks; `findings/audit-<YYYY-MM-DD>-qc.md` for an audit. Written only when a check fails, overwritten on each failed re-check. Each finding: severity, scope that owns the fix (`core-builder` / `ui-builder`), what is wrong, where (`file:line`), repro or evidence, suggested fix. When the re-check passes, the checker that wrote it deletes it, so later agents never read resolved issues.
+One file per fixed critical/high finding: `Problem`, `Impact`, `Root cause`, `Fix applied` (format in `worker-flow`). It feeds the summary's major-issues table.
 
-## Who does what
+## SUMMARY.md (per feature, written at close)
 
-| When | Who | Action |
+As short as possible without dropping a main point.
+
+```markdown
+# <Feature>
+Done: <YYYY-MM-DD> · Commits: <base>..<head> · Apps / packages: <list>
+
+## Overview
+<2-4 lines: what the feature does for the user>
+
+## Sub-features
+| Sub-feature | What it does | Tasks |
 |---|---|---|
-| New project | manager | Creates `project.md` with the user, plus empty board and handoff |
-| Phase starts | manager | Writes `Base: <HEAD hash>` under the phase heading on the board |
-| Before dispatch | manager | Sets the board row to `in-progress`; makes sure every decision the task needs is in handoff.md or conventions.md |
-| Unit finished | builder | Completes `current.md`; adds its line and follow-ups to handoff.md; adds cross-cutting facts to conventions.md |
-| User answers a question | manager | Writes the answers under `In progress / next` before resuming the agent |
-| Check passes | checker | Deletes its own findings file for the unit, if one exists |
-| Commit made | manager | Records the hash on the board; moves lasting user answers to conventions.md "User decisions in force" (one line each); **removes the task's lines from handoff.md**; after the unit's last commit, resets `current.md` |
-| Phase ends | manager | Runs qc `REGRESSION` then security-qc `PHASE`; writes the results under the phase heading |
-| Checkpoint passes | manager | **Moves the phase section to `archive/board-archive.md`**; clears its Notes; moves stale conventions to `archive/conventions-archive.md` |
-| handoff.md over ~3 KB or conventions.md over ~10 KB | manager | Trims: closed items out of handoff; module-only or stale facts from conventions into the archive |
+
+## Structure
+<tree of added and changed paths from `git diff --name-only <base>..HEAD`, grouped by app/package; a folder whose files are all new is shown once>
+
+## Major issues
+| Issue | Problem | Impact | Root cause | Fix |
+|---|---|---|---|---|
+<one row per resolved/ record, or "None">
+```

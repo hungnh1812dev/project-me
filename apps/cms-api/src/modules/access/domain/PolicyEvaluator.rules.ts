@@ -1,25 +1,21 @@
-import { type Expression, sql, type SqlBool } from 'kysely';
+import { sql, type Expression, type SqlBool } from 'kysely';
 
 import {
   CONTENT_WILDCARD_SUBJECT,
-  type FieldWriteAction,
   MEDIA_SUBJECT,
   PERMISSION_STRING_SEPARATOR,
   PermissionAction,
   SYSTEM_SUBJECT_ACTIONS,
+  type FieldWriteAction,
 } from './Access.constants';
 import { type ActorContext, type PermissionGrant } from './ActorContext.entity';
-import { type EffectivePolicy, effectivePolicy } from './EffectivePolicy.rules';
+import { compileConditions, InvalidConditionError, type ConditionActor } from './Conditions.rules';
+import { effectivePolicy, type EffectivePolicy } from './EffectivePolicy.rules';
 import {
-  compileConditions,
-  type ConditionActor,
-  InvalidConditionError,
-} from './Conditions.rules';
-import {
-  type FieldList,
   fieldListAllows,
   fieldListReaches,
   unionFieldLists,
+  type FieldList,
 } from './FieldPaths.rules';
 import type { SubjectCatalog } from './SubjectCatalog.rules';
 import { SENSITIVE_MASKED_ROLE_SLUGS } from './SystemRoles.entity';
@@ -66,8 +62,7 @@ export type RowCondition = Expression<SqlBool>;
  * Row filter for an action on a subject. `where: null` = every row.
  * `allowed: false` = no permission (403 before any SQL runs).
  */
-export type RowFilter =
-  { allowed: false } | { allowed: true; where: RowCondition | null };
+export type RowFilter = { allowed: false } | { allowed: true; where: RowCondition | null };
 
 const NO_ACCESS: FieldAccess = {
   readable: FieldSelection.NONE,
@@ -104,17 +99,12 @@ export class PolicyEvaluator {
    * the `*` wildcard: it lists concrete content types and system subjects.
    */
   effectivePermissions(actor: ActorContext): string[] {
-    const subjects = [
-      ...this.subjects.contentTypeSlugs(),
-      ...Object.keys(SYSTEM_SUBJECT_ACTIONS),
-    ];
+    const subjects = [...this.subjects.contentTypeSlugs(), ...Object.keys(SYSTEM_SUBJECT_ACTIONS)];
     const permissionStrings: string[] = [];
     for (const subject of subjects) {
       for (const action of this.subjects.actionsFor(subject)) {
         if (this.can(actor, action, subject)) {
-          permissionStrings.push(
-            `${subject}${PERMISSION_STRING_SEPARATOR}${action}`,
-          );
+          permissionStrings.push(`${subject}${PERMISSION_STRING_SEPARATOR}${action}`);
         }
       }
     }
@@ -143,25 +133,13 @@ export class PolicyEvaluator {
     const read = this.withSensitiveMasked(
       actor,
       subject,
-      this.fieldListFor(
-        policy,
-        PermissionAction.read,
-        subject,
-        (grant) => grant.readableFields,
-      ),
+      this.fieldListFor(policy, PermissionAction.read, subject, (grant) => grant.readableFields),
     );
-    const write = this.fieldListFor(
-      policy,
-      writeAction,
-      subject,
-      (grant) => grant.writableFields,
-    );
+    const write = this.fieldListFor(policy, writeAction, subject, (grant) => grant.writableFields);
     if (read === undefined && write === undefined) return NO_ACCESS;
     return {
-      readable:
-        read === undefined ? FieldSelection.NONE : FieldSelection.of(read),
-      writable:
-        write === undefined ? FieldSelection.NONE : FieldSelection.of(write),
+      readable: read === undefined ? FieldSelection.NONE : FieldSelection.of(read),
+      writable: write === undefined ? FieldSelection.NONE : FieldSelection.of(write),
     };
   }
 
@@ -181,17 +159,11 @@ export class PolicyEvaluator {
     const policy = this.policyOf(actor);
     if (subject !== MEDIA_SUBJECT || !policy.readOnly) return filter;
     // Read-only actors (reviewer, anonymous) only see preset media.
-    const column =
-      table === undefined
-        ? 'is_reviewer_preset'
-        : `${table}.is_reviewer_preset`;
+    const column = table === undefined ? 'is_reviewer_preset' : `${table}.is_reviewer_preset`;
     const preset = sql<SqlBool>`${sql.ref(column)} = true`;
     return {
       allowed: true,
-      where:
-        filter.where === null
-          ? preset
-          : sql<SqlBool>`(${filter.where} and ${preset})`,
+      where: filter.where === null ? preset : sql<SqlBool>`(${filter.where} and ${preset})`,
     };
   }
 
@@ -214,9 +186,7 @@ export class PolicyEvaluator {
     const filters: Expression<SqlBool>[] = [];
     for (const grant of grants) {
       try {
-        filters.push(
-          compileConditions(grant.conditions, catalog, conditionActor, table),
-        );
+        filters.push(compileConditions(grant.conditions, catalog, conditionActor, table));
       } catch (error) {
         if (!(error instanceof InvalidConditionError)) throw error;
       }
@@ -229,9 +199,7 @@ export class PolicyEvaluator {
   }
 
   private policyOf(actor: ActorContext): EffectivePolicy {
-    return effectivePolicy(actor, (subject) =>
-      this.subjects.isContentSubject(subject),
-    );
+    return effectivePolicy(actor, (subject) => this.subjects.isContentSubject(subject));
   }
 
   private conditionActor(actor: ActorContext): ConditionActor {
@@ -243,17 +211,12 @@ export class PolicyEvaluator {
 
   private isActionValid(action: PermissionAction, subject: string): boolean {
     return (
-      this.subjects.isKnownSubject(subject) &&
-      this.subjects.actionsFor(subject).includes(action)
+      this.subjects.isKnownSubject(subject) && this.subjects.actionsFor(subject).includes(action)
     );
   }
 
   /** Actor-kind limits that hold whatever the rows say. */
-  private reachable(
-    policy: EffectivePolicy,
-    action: PermissionAction,
-    subject: string,
-  ): boolean {
+  private reachable(policy: EffectivePolicy, action: PermissionAction, subject: string): boolean {
     if (policy.contentOnly && !this.subjects.isContentType(subject)) {
       return false;
     }
@@ -276,9 +239,7 @@ export class PolicyEvaluator {
     );
     const own = forAction.filter((grant) => grant.subject === subject);
     if (own.length > 0 || !this.subjects.isContentType(subject)) return own;
-    return forAction.filter(
-      (grant) => grant.subject === CONTENT_WILDCARD_SUBJECT,
-    );
+    return forAction.filter((grant) => grant.subject === CONTENT_WILDCARD_SUBJECT);
   }
 
   /**
@@ -294,13 +255,10 @@ export class PolicyEvaluator {
     if (readable !== null) return readable;
     const isMaskedRole =
       actor.role.isSystem &&
-      (SENSITIVE_MASKED_ROLE_SLUGS as readonly string[]).includes(
-        actor.role.slug,
-      );
+      (SENSITIVE_MASKED_ROLE_SLUGS as readonly string[]).includes(actor.role.slug);
     if (!isMaskedRole) return readable;
     const hasOwnRow = actor.role.permissions.some(
-      (grant) =>
-        grant.subject === subject && grant.action === PermissionAction.read,
+      (grant) => grant.subject === subject && grant.action === PermissionAction.read,
     );
     return hasOwnRow ? readable : this.subjects.nonSensitiveFields(subject);
   }

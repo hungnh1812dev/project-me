@@ -1,17 +1,23 @@
+import type { ApiService } from '@apis/client/ApiService.setup';
+
 import { accessFeature } from './access/Access.feature';
 import { authFeature } from './auth/Auth.feature';
 import { backupsFeature } from './backups/Backups.feature';
-import { contentFeature } from './content/Content.feature';
 import { contentTypesFeature } from './content-types/ContentTypes.feature';
-import type { Feature } from '../lib/FeatureDefinition';
+import { contentFeature } from './content/Content.feature';
 import { mediaFeature } from './media/Media.feature';
 import { reviewerFeature } from './reviewer/Reviewer.feature';
 import { securityFeature } from './security/Security.feature';
 import { statusFeature } from './status/Status.feature';
 
+/** What a feature contributes to the app; its pages and nav links are in `views/Views.registry.ts`. */
+export interface Feature {
+  apiServices?: readonly ApiService[];
+}
+
 /**
  * Every feature folder, keyed by folder name. Adding a feature is one line
- * here; the nav order follows this order.
+ * here.
  */
 export const FEATURES: Readonly<Record<string, Feature>> = {
   auth: authFeature,

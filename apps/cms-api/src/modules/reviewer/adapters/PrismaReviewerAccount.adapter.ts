@@ -1,14 +1,11 @@
 import { Injectable } from '@nestjs/common';
 
-import { prismaTxOf } from '../../../infrastructure/database/PrismaTransactionRunner.adapter';
 import { PrismaService } from '../../../infrastructure/database/Prisma.service';
+import { prismaTxOf } from '../../../infrastructure/database/PrismaTransactionRunner.adapter';
 import type { UnitOfWork } from '../../../infrastructure/database/TransactionRunner.port';
 import { REVIEWER_ROLE_SLUG } from '../../access';
+import type { CreatedReviewerAccount, ReviewerAccountGateway } from '../application/Reviewer.port';
 import { REVIEWER_ACCOUNT } from '../domain/Reviewer.constants';
-import type {
-  CreatedReviewerAccount,
-  ReviewerAccountGateway,
-} from '../application/Reviewer.port';
 
 /** The `reviewer` role and its ephemeral accounts in the core database. */
 @Injectable()
@@ -31,10 +28,7 @@ export class PrismaReviewerAccountAdapter implements ReviewerAccountGateway {
     return rows.map((row) => row.id);
   }
 
-  async createAccount(
-    unit: UnitOfWork,
-    email: string,
-  ): Promise<CreatedReviewerAccount> {
+  async createAccount(unit: UnitOfWork, email: string): Promise<CreatedReviewerAccount> {
     const tx = prismaTxOf(unit);
     const role = await tx.role.findUniqueOrThrow({
       where: { slug: REVIEWER_ROLE_SLUG },

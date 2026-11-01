@@ -8,9 +8,7 @@ import { ContentTypeRegistry } from '../../src/modules/content-engine/domain/Con
 export async function loadRegistryFromDatabase(
   migrationDb: Kysely<ContentMetaDatabase>,
 ): Promise<ContentTypeRegistry> {
-  const stored = await new PgContentTypeRepository(
-    migrationDb,
-  ).loadDefinitions();
+  const stored = await new PgContentTypeRepository(migrationDb).loadDefinitions();
   if (stored.status !== 'loaded') {
     throw new Error('content:migrate has not run on this database');
   }

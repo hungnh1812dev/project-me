@@ -15,10 +15,7 @@ import {
   selfActor,
   TWO_FACTOR_OPERATIONS,
 } from '../../security-audit';
-import {
-  EMAIL_CODE_PURPOSE,
-  type TwoFaMethod,
-} from '../domain/Identity.constants';
+import { EMAIL_CODE_PURPOSE, type TwoFaMethod } from '../domain/Identity.constants';
 import {
   invalidTwoFactorCodeWhenSignedIn,
   notSignedIn,
@@ -27,21 +24,15 @@ import {
   twoFactorSetupRequired,
   wrongCurrentPassword,
 } from '../domain/Identity.errors';
-import {
-  ACCOUNT_REPOSITORY,
-  type AccountRepository,
-  type TwoFactorChange,
-} from './Identity.port';
+import { ACCOUNT_REPOSITORY, type AccountRepository, type TwoFactorChange } from './Identity.port';
 import { isOtpCodeFormat, OtpService } from './Otp.service';
 import { verifyPassword } from './Password.service';
 import { SecretBox } from './SecretBox.service';
 import { TotpService } from './Totp.service';
 import { TwoFactorEmailCodeService } from './TwoFactorEmailCode.service';
 
-type TwoFactorOperation =
-  (typeof TWO_FACTOR_OPERATIONS)[keyof typeof TWO_FACTOR_OPERATIONS];
-type ReauthFailureReason =
-  (typeof REAUTH_FAILURE_REASONS)[keyof typeof REAUTH_FAILURE_REASONS];
+type TwoFactorOperation = (typeof TWO_FACTOR_OPERATIONS)[keyof typeof TWO_FACTOR_OPERATIONS];
+type ReauthFailureReason = (typeof REAUTH_FAILURE_REASONS)[keyof typeof REAUTH_FAILURE_REASONS];
 
 /** The account an audit row names (actor and target are the same here). */
 interface AuditedAccount {
@@ -143,8 +134,7 @@ export class TwoFactorManagementService {
       },
       onMissed: twoFactorAlreadyEnabled,
       onBadCode: badCode,
-      alsoInTransaction: (unit) =>
-        this.recordChange(unit, account, 'email', true, meta),
+      alsoInTransaction: (unit) => this.recordChange(unit, account, 'email', true, meta),
     });
   }
 
@@ -186,8 +176,7 @@ export class TwoFactorManagementService {
       },
       onMissed: twoFactorNotEnabled,
       onBadCode: badCode,
-      alsoInTransaction: (unit) =>
-        this.recordChange(unit, account, method, false, meta),
+      alsoInTransaction: (unit) => this.recordChange(unit, account, method, false, meta),
     });
   }
 
@@ -195,10 +184,7 @@ export class TwoFactorManagementService {
    * Emails a LOGIN_2FA_EMAIL code to the signed-in account, for enabling or
    * disabling email 2FA. Nothing is sent while TOTP is on (it has no use).
    */
-  async sendEmailCode(
-    accountDocumentId: string,
-    meta: ClientMeta,
-  ): Promise<void> {
+  async sendEmailCode(accountDocumentId: string, meta: ClientMeta): Promise<void> {
     const account = await this.signedInAccount(accountDocumentId);
     if (account.is2faEnabled && account.twoFaMethod !== 'email') return;
     await this.emailCodes.send(account.id, account.email, meta);
@@ -206,11 +192,7 @@ export class TwoFactorManagementService {
 
   private async signedInAccount(accountDocumentId: string) {
     const account = await this.accounts.findTwoFactorAccount(accountDocumentId);
-    if (
-      account === null ||
-      account.status !== AccountStatus.active ||
-      account.deletedAt !== null
-    ) {
+    if (account === null || account.status !== AccountStatus.active || account.deletedAt !== null) {
       throw notSignedIn();
     }
     return account;
@@ -222,16 +204,8 @@ export class TwoFactorManagementService {
     operation: TwoFactorOperation,
     meta: ClientMeta,
   ): Promise<void> {
-    if (
-      account.passwordHash === null ||
-      !(await verifyPassword(account.passwordHash, password))
-    ) {
-      await this.manageFailed(
-        account,
-        operation,
-        REAUTH_FAILURE_REASONS.BAD_PASSWORD,
-        meta,
-      );
+    if (account.passwordHash === null || !(await verifyPassword(account.passwordHash, password))) {
+      await this.manageFailed(account, operation, REAUTH_FAILURE_REASONS.BAD_PASSWORD, meta);
       // A signed-in re-auth failure is 403, so the client keeps its session.
       throw wrongCurrentPassword();
     }
@@ -243,12 +217,7 @@ export class TwoFactorManagementService {
     operation: TwoFactorOperation,
     meta: ClientMeta,
   ): Promise<DomainError> {
-    await this.manageFailed(
-      account,
-      operation,
-      REAUTH_FAILURE_REASONS.BAD_CODE,
-      meta,
-    );
+    await this.manageFailed(account, operation, REAUTH_FAILURE_REASONS.BAD_CODE, meta);
     return invalidTwoFactorCodeWhenSignedIn();
   }
 
@@ -278,9 +247,7 @@ export class TwoFactorManagementService {
   ): Promise<void> {
     return this.audit.record(unit, {
       actor: selfActor(account.id),
-      action: isEnabled
-        ? AUDIT_ACTIONS.TWO_FACTOR_ENABLED
-        : AUDIT_ACTIONS.TWO_FACTOR_DISABLED,
+      action: isEnabled ? AUDIT_ACTIONS.TWO_FACTOR_ENABLED : AUDIT_ACTIONS.TWO_FACTOR_DISABLED,
       targetId: account.documentId,
       metadata: { method },
       ip: meta.ip,

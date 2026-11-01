@@ -1,4 +1,4 @@
-import type { Feature } from '../../lib/FeatureDefinition';
+import type { Feature } from '../Features.registry';
 
-/** Data only: no pages of its own. */
-export const contentTypesFeature: Feature = { routes: [] };
+/** Data only: no API service of its own. */
+export const contentTypesFeature: Feature = {};

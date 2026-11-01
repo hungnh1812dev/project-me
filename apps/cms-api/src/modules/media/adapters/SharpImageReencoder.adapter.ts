@@ -2,14 +2,8 @@ import { readFile } from 'node:fs/promises';
 
 import sharp from 'sharp';
 
-import {
-  DomainError,
-  DOMAIN_ERROR_KINDS,
-} from '../../../common/errors/Domain.errors';
-import {
-  MEDIA_ERROR_CODES,
-  MEDIA_ERROR_MESSAGES,
-} from '../domain/Media.constants';
+import { DOMAIN_ERROR_KINDS, DomainError } from '../../../common/errors/Domain.errors';
+import { MEDIA_ERROR_CODES, MEDIA_ERROR_MESSAGES } from '../domain/Media.constants';
 import type { ImageMime } from '../domain/MediaUpload.rules';
 
 /** Decompression-bomb guard for sharp: most input pixels re-encoded. */
@@ -53,10 +47,7 @@ export interface ReencodedImage {
  * first (`rotate`) and the ICC profile kept so colours stay right. Bytes
  * that pass the magic-byte check but do not decode are refused (415).
  */
-export async function reencodeImage(
-  path: string,
-  mimeType: string,
-): Promise<ReencodedImage> {
+export async function reencodeImage(path: string, mimeType: string): Promise<ReencodedImage> {
   const encode = imageEncoderOf(mimeType);
   if (encode === undefined) {
     throw unsupportedImage(MEDIA_ERROR_MESSAGES.UNSUPPORTED_TYPE);

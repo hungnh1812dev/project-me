@@ -1,17 +1,17 @@
 import { DomainError } from '../../../common/errors/Domain.errors';
 import type {
   CONDITION_SYSTEM_FIELDS,
-  RecordSystemField,
   ConditionValueKind,
   FieldSelection,
+  RecordSystemField,
   SubjectCatalog,
 } from '../../access';
-import type {
-  ContentTypeKind,
-  FieldDefinition,
-  RegisteredContentType,
+import {
+  isComponentField,
+  type ContentTypeKind,
+  type FieldDefinition,
+  type RegisteredContentType,
 } from '../../content-engine';
-import { isComponentField } from '../../content-engine';
 
 type ConditionSystemFields = typeof CONDITION_SYSTEM_FIELDS;
 type SystemConditionField = keyof ConditionSystemFields;
@@ -88,9 +88,7 @@ export function contentTypeView(
   visible: FieldVisibility,
   { systemConditionFields, joinFieldPath }: ViewVocabulary,
 ): ContentTypeView {
-  const systemFieldNames = Object.keys(
-    systemConditionFields,
-  ) as SystemConditionField[];
+  const systemFieldNames = Object.keys(systemConditionFields) as SystemConditionField[];
   const conditionField = catalog.conditionFields(type.slug, null);
   const fields: FieldView[] = [];
 
@@ -107,9 +105,7 @@ export function contentTypeView(
         component,
         repeatable: component && field.repeatable === true,
         rootScalar,
-        conditionKind: rootScalar
-          ? (conditionField(field.name)?.kind ?? null)
-          : null,
+        conditionKind: rootScalar ? (conditionField(field.name)?.kind ?? null) : null,
         sensitive: field.sensitive === true,
       });
       if (component) visit(field.fields, path);

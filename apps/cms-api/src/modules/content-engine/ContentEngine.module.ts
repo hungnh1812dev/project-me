@@ -3,14 +3,11 @@ import { Module } from '@nestjs/common';
 import { type IAppConfig } from '../../config/AppConfig.setup';
 import { APP_CONFIG } from '../../config/Config.constants';
 import { CONTENT_TRANSACTION_RUNNER } from '../../infrastructure/database/TransactionRunner.port';
-import { ContentRegistry } from './application/ContentRegistry.service';
-import { CONTENT_TYPE_REPOSITORY } from './application/ContentEngine.port';
-import {
-  ContentDbProvider,
-  createMigrationDb,
-} from './adapters/ContentDatabase.adapter';
+import { ContentDbProvider, createMigrationDb } from './adapters/ContentDatabase.adapter';
 import { KyselyContentTransactionRunner } from './adapters/KyselyContentTransactionRunner.adapter';
 import { PgContentTypeRepository } from './adapters/PgContentType.repository';
+import { CONTENT_TYPE_REPOSITORY } from './application/ContentEngine.port';
+import { ContentRegistry } from './application/ContentRegistry.service';
 
 @Module({
   providers: [

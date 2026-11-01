@@ -1,6 +1,6 @@
+import type { ReactNode } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AxiosError, AxiosHeaders, type AxiosResponse } from 'axios';
-import type { ReactNode } from 'react';
 import type { Mock } from 'vitest';
 
 import type { AuthApi, CurrentUser } from './Auth.api';
@@ -28,9 +28,7 @@ export function fakeApi(overrides: Partial<AuthApi> = {}): FakeApi {
   return {
     login: vi.fn<AuthApi['login']>(),
     verifyTwoFactor: vi.fn<AuthApi['verifyTwoFactor']>(),
-    sendLoginEmailCode: vi
-      .fn<AuthApi['sendLoginEmailCode']>()
-      .mockResolvedValue(undefined),
+    sendLoginEmailCode: vi.fn<AuthApi['sendLoginEmailCode']>().mockResolvedValue(undefined),
     refresh: vi
       .fn<AuthApi['refresh']>()
       .mockRejectedValue(httpError(401, { errorCode: 'AUTH_REQUIRED' })),
@@ -55,13 +53,7 @@ export function httpError(
   return new AxiosError('failed', undefined, undefined, undefined, response);
 }
 
-export function Wrapper({
-  api,
-  children,
-}: {
-  api: AuthApi;
-  children: ReactNode;
-}) {
+export function Wrapper({ api, children }: { api: AuthApi; children: ReactNode }) {
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   });

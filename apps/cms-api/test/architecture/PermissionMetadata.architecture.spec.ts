@@ -6,11 +6,11 @@ import { join } from 'node:path';
 import { SYSTEM_SUBJECT_ACTIONS } from '../../src/modules/access/domain/Access.constants';
 import { PERMISSION_METADATA_KEY } from '../../src/modules/access/http/Permission.guard';
 import {
-  type ControllerClass,
   handlersOf,
   hasPromisedGuard,
   isControllerClass,
   isPermissionEnforced,
+  type ControllerClass,
 } from './ControllerHandlers.analyzer';
 import { listSourceFiles } from './ImportGraph.analyzer';
 import { PUBLIC_HANDLERS } from './PublicHandlers.constants';
@@ -24,11 +24,7 @@ import { SRC_ROOT } from './SourcePaths.constants';
  */
 const CONTROLLER_MARKER = '@Controller(';
 const CONTROLLER_FILE = /\.controller\.ts$/;
-const MANAGEMENT_CONTROLLERS = [
-  'AccountsController',
-  'RolesController',
-  'ApiTokensController',
-];
+const MANAGEMENT_CONTROLLERS = ['AccountsController', 'RolesController', 'ApiTokensController'];
 const KEY_DECLARATION = /export const PERMISSION_METADATA_KEY\b/;
 const KEY_USE_IN_DECORATOR = /SetMetadata\(\s*PERMISSION_METADATA_KEY\b/;
 
@@ -39,9 +35,7 @@ function controllerClassesOf(file: string): ControllerClass[] {
 }
 
 const sources = listSourceFiles(SRC_ROOT);
-const controllerFiles = sources.filter(({ text }) =>
-  text.includes(CONTROLLER_MARKER),
-);
+const controllerFiles = sources.filter(({ text }) => text.includes(CONTROLLER_MARKER));
 const handlers = controllerFiles
   .flatMap(({ file }) => controllerClassesOf(file))
   .flatMap(handlersOf);
@@ -79,10 +73,7 @@ describe('permission metadata (D5, D6, X2)', () => {
   it('every handler has RequirePermission metadata or is on the public list', () => {
     const publicIds = new Set(PUBLIC_HANDLERS.map(({ handler }) => handler));
     const unprotected = handlers
-      .filter(
-        ({ requirement, id }) =>
-          requirement === undefined && !publicIds.has(id),
-      )
+      .filter(({ requirement, id }) => requirement === undefined && !publicIds.has(id))
       .map(({ id }) => id);
     expect(unprotected).toEqual([]);
   });
@@ -95,19 +86,14 @@ describe('permission metadata (D5, D6, X2)', () => {
     expect(management.length).toBeGreaterThan(0);
     expect(
       management
-        .filter(
-          ({ requirement, id }) =>
-            requirement === undefined || publicIds.has(id),
-        )
+        .filter(({ requirement, id }) => requirement === undefined || publicIds.has(id))
         .map(({ id }) => id),
     ).toEqual([]);
   });
 
   it('the public list names only handlers that exist and carry no permission metadata', () => {
     const withoutRequirement = new Set(
-      handlers
-        .filter(({ requirement }) => requirement === undefined)
-        .map(({ id }) => id),
+      handlers.filter(({ requirement }) => requirement === undefined).map(({ id }) => id),
     );
     const stale = PUBLIC_HANDLERS.map(({ handler }) => handler).filter(
       (id) => !withoutRequirement.has(id),

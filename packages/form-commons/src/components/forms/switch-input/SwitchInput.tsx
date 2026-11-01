@@ -1,22 +1,17 @@
 import * as React from 'react';
 import { cn } from 'cn';
 import {
+  useController,
   type FieldPath,
   type FieldValues,
   type RegisterOptions,
-  useController,
 } from 'react-hook-form';
 
+import { useFieldIds, useRequiredFormContext } from '@/components/forms/FieldWiring.setup';
 import { Label } from '@/components/ui/Label';
 import { Switch } from '@/components/ui/Switch';
-import {
-  useFieldIds,
-  useRequiredFormContext,
-} from '@/components/forms/FieldWiring.setup';
 
-export interface SwitchInputProps<
-  TFieldValues extends FieldValues = FieldValues,
-> {
+export interface SwitchInputProps<TFieldValues extends FieldValues = FieldValues> {
   name: FieldPath<TFieldValues>;
   /** Visible label, to the right of the switch. */
   label: React.ReactNode;
@@ -79,17 +74,13 @@ function SwitchInput<TFieldValues extends FieldValues = FieldValues>({
           <p
             id={descriptionId}
             data-slot="field-description"
-            className="m-0 text-sm text-muted-foreground"
+            className="text-muted-foreground m-0 text-sm"
           >
             {description}
           </p>
         )}
         {hasError && (
-          <p
-            id={errorId}
-            data-slot="field-error"
-            className="m-0 text-sm text-destructive-strong"
-          >
+          <p id={errorId} data-slot="field-error" className="text-destructive-strong m-0 text-sm">
             {errorMessage}
           </p>
         )}

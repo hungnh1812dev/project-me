@@ -2,6 +2,7 @@ import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
+import { ALLOWED_MEDIA_TYPES, MEDIA_MAX_BYTES } from '../modules/media';
 import {
   DEFAULT_PUBLIC_CONSTANTS_FILE,
   printPublicConstants,
@@ -12,6 +13,13 @@ const SOURCE_FILE = join(__dirname, 'PublicConstants.contract.ts');
 const SECRET_KEY_PATTERN = /secret|pepper|enc_?key|private/i;
 
 describe('public constants snapshot', () => {
+  it('publishes the media upload allowlist and limits from the media constants', () => {
+    expect(buildPublicConstants().mediaUpload).toEqual({
+      allowedMimeTypes: Object.keys(ALLOWED_MEDIA_TYPES),
+      maxBytesByKind: MEDIA_MAX_BYTES,
+    });
+  });
+
   let dir: string;
   let file: string;
 
@@ -26,9 +34,7 @@ describe('public constants snapshot', () => {
     expect(await printPublicConstants({ file, check: false })).toEqual({
       status: 'written',
     });
-    expect(JSON.parse(await readFile(file, 'utf8'))).toEqual(
-      buildPublicConstants(),
-    );
+    expect(JSON.parse(await readFile(file, 'utf8'))).toEqual(buildPublicConstants());
     expect(await printPublicConstants({ file, check: false })).toEqual({
       status: 'up-to-date',
     });
@@ -65,18 +71,12 @@ describe('public constants snapshot', () => {
     expect(constants.permissionActions).toEqual(
       expect.arrayContaining(['read', 'create', 'update', 'delete']),
     );
-    expect(Object.keys(constants.systemSubjects)).toContain(
-      'reviewer_settings',
-    );
-    expect(constants.richtextUrlSchemes).toEqual([
-      'http',
-      'https',
-      'mailto',
-      'tel',
-    ]);
-    expect(constants.errorCodes.auth.INVALID_CREDENTIALS).toBe(
-      'AUTH_INVALID_CREDENTIALS',
-    );
+    expect(Object.keys(constants.systemSubjects)).toContain('reviewer_settings');
+    expect(constants.richtextUrlSchemes).toEqual(['http', 'https', 'mailto', 'tel']);
+    expect(constants.richtextTextColors).toHaveLength(10);
+    expect(constants.richtextTextColors[0]).toEqual({ name: 'default', hex: null });
+    expect(constants.richtextTextAlignments).toEqual(['left', 'center', 'right', 'justify']);
+    expect(constants.errorCodes.auth.INVALID_CREDENTIALS).toBe('AUTH_INVALID_CREDENTIALS');
   });
 
   it('carries no env or secret value', () => {
@@ -96,9 +96,7 @@ describe('public constants snapshot', () => {
 
   it('imports shared constants files and module facades only', async () => {
     const source = await readFile(SOURCE_FILE, 'utf8');
-    const imports = [...source.matchAll(/from '([^']+)'/g)].map(
-      (match) => match[1] ?? '',
-    );
+    const imports = [...source.matchAll(/from '([^']+)'/g)].map((match) => match[1] ?? '');
     const isAllowed = (path: string) =>
       /\.constants$/.test(path) || /^\.\.\/modules\/[a-z-]+$/.test(path);
     expect(imports.filter((path) => !isAllowed(path))).toEqual([]);

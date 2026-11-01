@@ -10,21 +10,24 @@ import {
 import { MASKED_FIELDS_KEY } from '../../src/modules/access/domain/Access.constants';
 import { createContentDb } from '../../src/modules/content-engine/adapters/ContentDatabase.adapter';
 import { contentTrxOf } from '../../src/modules/content-engine/adapters/KyselyContentTransactionRunner.adapter';
-import {
-  DOCUMENT_REPOSITORY,
-  type DocumentRepository,
-} from '../../src/modules/documents/application/Documents.port';
+import type { ContentDatabase } from '../../src/modules/content-engine/adapters/TreeLoader.adapter';
 import { ContentRegistry } from '../../src/modules/content-engine/application/ContentRegistry.service';
 import { ContentTypeRegistry } from '../../src/modules/content-engine/domain/ContentTypeRegistry.entity';
 import {
   emptySnapshot,
   planMigration,
 } from '../../src/modules/content-engine/domain/SqlGenerator.rules';
-import type { ContentDatabase } from '../../src/modules/content-engine/adapters/TreeLoader.adapter';
+import {
+  DOCUMENT_REPOSITORY,
+  type DocumentRepository,
+} from '../../src/modules/documents/application/Documents.port';
 import { hashPassword } from '../../src/modules/identity/application/Password.service';
+import { FAKE_STORAGE_ORIGIN } from '../../src/modules/media/adapters/Fake.adapter';
 import {
   ARTICLE_DEFINITION,
   NOTE_DEFINITION,
+  seedRolePermissions,
+  seedSystemRoles,
 } from '../fixtures/Access.fixture';
 import { createCoreTemplate } from '../fixtures/CoreDb.fixture';
 import {
@@ -35,12 +38,9 @@ import {
   TEST_SECRET_32_BYTES,
   TEST_WEB_ORIGIN,
 } from '../fixtures/Env.fixture';
+import { seedMediaFile } from '../fixtures/Media.fixture';
 import { startPostgres, type TestPostgres } from '../fixtures/Postgres.fixture';
 import { createTestApp } from '../fixtures/TestApp.fixture';
-import {
-  seedRolePermissions,
-  seedSystemRoles,
-} from '../fixtures/Access.fixture';
 
 const PASSWORD = 'correct horse battery staple';
 const DOCUMENTS = '/api/v1/documents';
@@ -99,18 +99,11 @@ describe('document write API (T21; Postgres 17 via Testcontainers)', () => {
     await seedSystemRoles(db.prisma);
     await seedRolePermissions(db.prisma);
 
-    const registry = ContentTypeRegistry.fromDefinitions([
-      ARTICLE_DEFINITION,
-      NOTE_DEFINITION,
-    ]);
-    const definitions = registry
-      .slugs()
-      .map((slug) => registry.resolve(slug).definition);
+    const registry = ContentTypeRegistry.fromDefinitions([ARTICLE_DEFINITION, NOTE_DEFINITION]);
+    const definitions = registry.slugs().map((slug) => registry.resolve(slug).definition);
     const client = new Client({ connectionString: databaseUrl });
     await client.connect();
-    await client.query(
-      planMigration(emptySnapshot(), definitions).statements.join('\n'),
-    );
+    await client.query(planMigration(emptySnapshot(), definitions).statements.join('\n'));
     await client.end();
     content = createContentDb(databaseUrl);
 
@@ -192,10 +185,7 @@ describe('document write API (T21; Postgres 17 via Testcontainers)', () => {
   }
 
   async function customRole(slug: string, rank: number, permissions: Json[]) {
-    const created = await http()
-      .post(ROLES)
-      .set(bearer(owner))
-      .send({ slug, name: slug, rank });
+    const created = await http().post(ROLES).set(bearer(owner)).send({ slug, name: slug, rank });
     expect(created.status).toBe(201);
     const id = (created.body as { id: string }).id;
     const put = await http()
@@ -231,10 +221,7 @@ describe('document write API (T21; Postgres 17 via Testcontainers)', () => {
     ...extra,
   });
 
-  async function createArticle(
-    token = editor,
-    body: Json = articleBody(),
-  ): Promise<Doc> {
+  async function createArticle(token = editor, body: Json = articleBody()): Promise<Doc> {
     const res = await post('article', token, body);
     expect(res.status).toBe(201);
     return res.body as Doc;
@@ -263,6 +250,19 @@ describe('document write API (T21; Postgres 17 via Testcontainers)', () => {
       expect(rows[0]?.published_at).toBeNull();
     });
 
+    it('stores only the richtext img from the active media origin, on create and update', async () => {
+      const mediaId = await seedMediaFile(db.prisma);
+      const body = `<p><img src="${FAKE_STORAGE_ORIGIN}/a.png" alt="a" data-media-id="${mediaId}"><img src="https://evil.example/b.png" alt="b"></p>`;
+      const doc = await createArticle(editor, { values: { title: 'Img', body } });
+      const [created] = await storedRow(doc.documentId);
+      expect(created?.body).toContain(`${FAKE_STORAGE_ORIGIN}/a.png`);
+      expect(created?.body).not.toContain('evil.example');
+      const res = await put('article', doc.documentId, editor, { version: 1, values: { body } });
+      expect(res.status).toBe(200);
+      const [updated] = await storedRow(doc.documentId);
+      expect(updated?.body).not.toContain('evil.example');
+    });
+
     it('refuses anonymous (403), guest (403) and an unknown type (404)', async () => {
       const anonymous = await http()
         .post(`${DOCUMENTS}/article`)
@@ -283,9 +283,7 @@ describe('document write API (T21; Postgres 17 via Testcontainers)', () => {
       expect(typed.status).toBe(400);
       expect((typed.body as Conflict).errorCode).toBe('DOCUMENT_INVALID');
       expect((await post('article', editor, [])).status).toBe(400);
-      expect(
-        (await post('article', editor, { version: 9, values: {} })).status,
-      ).toBe(400);
+      expect((await post('article', editor, { version: 9, values: {} })).status).toBe(400);
     });
 
     it('stores a type without draft and publish as a live row', async () => {
@@ -409,9 +407,7 @@ describe('document write API (T21; Postgres 17 via Testcontainers)', () => {
     it('validates the version and the document', async () => {
       const doc = await createArticle();
       for (const version of [undefined, 0, 'x', 1.5]) {
-        expect(
-          (await put('article', doc.documentId, editor, { version })).status,
-        ).toBe(400);
+        expect((await put('article', doc.documentId, editor, { version })).status).toBe(400);
       }
       expect(
         (
@@ -420,12 +416,8 @@ describe('document write API (T21; Postgres 17 via Testcontainers)', () => {
           })
         ).status,
       ).toBe(404);
-      expect(
-        (await put('article', 'not-a-uuid', editor, { version: 1 })).status,
-      ).toBe(400);
-      expect(
-        (await put('article', doc.documentId, guest, { version: 1 })).status,
-      ).toBe(403);
+      expect((await put('article', 'not-a-uuid', editor, { version: 1 })).status).toBe(400);
+      expect((await put('article', doc.documentId, guest, { version: 1 })).status).toBe(403);
     });
 
     it('enforces the row conditions of the update permission', async () => {
@@ -489,9 +481,7 @@ describe('document write API (T21; Postgres 17 via Testcontainers)', () => {
           ],
         });
       expect(res.status).toBe(400);
-      expect(JSON.stringify(res.body)).toContain(
-        'PERMISSION_INVALID_CONDITION',
-      );
+      expect(JSON.stringify(res.body)).toContain('PERMISSION_INVALID_CONDITION');
     });
 
     it('returns only {documentId, version} when the actor may not read the written row', async () => {
@@ -514,10 +504,7 @@ describe('document write API (T21; Postgres 17 via Testcontainers)', () => {
         }),
       );
       expect(hidden.status).toBe(201);
-      expect(Object.keys(hidden.body as Json).sort()).toEqual([
-        'documentId',
-        'version',
-      ]);
+      expect(Object.keys(hidden.body as Json).sort()).toEqual(['documentId', 'version']);
       expect((hidden.body as Doc).version).toBe(1);
 
       const visible = await post('article', token, {
@@ -525,12 +512,10 @@ describe('document write API (T21; Postgres 17 via Testcontainers)', () => {
       });
       expect((visible.body as Doc).values.title).toBe('p3');
 
-      const updated = await put(
-        'article',
-        (hidden.body as Doc).documentId,
-        token,
-        { version: 1, values: { title: 'p4 edited' } },
-      );
+      const updated = await put('article', (hidden.body as Doc).documentId, token, {
+        version: 1,
+        values: { title: 'p4 edited' },
+      });
       expect(updated.status).toBe(200);
       expect(updated.body).toEqual({
         documentId: (hidden.body as Doc).documentId,

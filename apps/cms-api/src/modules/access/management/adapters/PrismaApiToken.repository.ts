@@ -1,16 +1,16 @@
 import { Injectable } from '@nestjs/common';
 
 import type { Prisma } from '../../../../generated/prisma/client';
-import { prismaTxOf } from '../../../../infrastructure/database/PrismaTransactionRunner.adapter';
 import { PrismaService } from '../../../../infrastructure/database/Prisma.service';
+import { prismaTxOf } from '../../../../infrastructure/database/PrismaTransactionRunner.adapter';
 import type { UnitOfWork } from '../../../../infrastructure/database/TransactionRunner.port';
+import type { TokenScope } from '../../domain/ActorContext.entity';
 import type {
   ApiTokenAdminRepository,
   ApiTokenChange,
   ManagedApiToken,
   NewApiToken,
 } from '../application/AccessManagement.port';
-import type { TokenScope } from '../../domain/ActorContext.entity';
 
 const TOKEN_SELECT = {
   id: true,
@@ -37,14 +37,12 @@ function scopeJson(scope: TokenScope): Prisma.InputJsonObject {
       ...(entry.readableFields === undefined
         ? {}
         : {
-            readableFields:
-              entry.readableFields === null ? null : [...entry.readableFields],
+            readableFields: entry.readableFields === null ? null : [...entry.readableFields],
           }),
       ...(entry.writableFields === undefined
         ? {}
         : {
-            writableFields:
-              entry.writableFields === null ? null : [...entry.writableFields],
+            writableFields: entry.writableFields === null ? null : [...entry.writableFields],
           }),
     })),
   };
@@ -60,8 +58,7 @@ export class PrismaApiTokenAdminRepository implements ApiTokenAdminRepository {
     page: number,
     pageSize: number,
   ): Promise<{ rows: ManagedApiToken[]; total: number }> {
-    const where: Prisma.ApiTokenWhereInput =
-      createdById === undefined ? {} : { createdById };
+    const where: Prisma.ApiTokenWhereInput = createdById === undefined ? {} : { createdById };
     const [rows, total] = await Promise.all([
       this.prisma.apiToken.findMany({
         where,
@@ -89,10 +86,7 @@ export class PrismaApiTokenAdminRepository implements ApiTokenAdminRepository {
     });
   }
 
-  async lockByDocumentId(
-    unit: UnitOfWork,
-    documentId: string,
-  ): Promise<ManagedApiToken | null> {
+  async lockByDocumentId(unit: UnitOfWork, documentId: string): Promise<ManagedApiToken | null> {
     const tx = prismaTxOf(unit);
     const locked = await tx.$queryRaw<{ id: number }[]>`
       SELECT id FROM api_tokens WHERE document_id = ${documentId}::uuid FOR UPDATE`;
@@ -103,31 +97,19 @@ export class PrismaApiTokenAdminRepository implements ApiTokenAdminRepository {
     });
   }
 
-  update(
-    unit: UnitOfWork,
-    tokenId: number,
-    change: ApiTokenChange,
-  ): Promise<ManagedApiToken> {
+  update(unit: UnitOfWork, tokenId: number, change: ApiTokenChange): Promise<ManagedApiToken> {
     return prismaTxOf(unit).apiToken.update({
       where: { id: tokenId },
       data: {
         ...(change.name === undefined ? {} : { name: change.name }),
-        ...(change.scope === undefined
-          ? {}
-          : { scope: scopeJson(change.scope) }),
-        ...(change.expiresAt === undefined
-          ? {}
-          : { expiresAt: change.expiresAt }),
+        ...(change.scope === undefined ? {} : { scope: scopeJson(change.scope) }),
+        ...(change.expiresAt === undefined ? {} : { expiresAt: change.expiresAt }),
       },
       select: TOKEN_SELECT,
     });
   }
 
-  async markRevoked(
-    unit: UnitOfWork,
-    tokenId: number,
-    revokedAt: Date,
-  ): Promise<void> {
+  async markRevoked(unit: UnitOfWork, tokenId: number, revokedAt: Date): Promise<void> {
     await prismaTxOf(unit).apiToken.update({
       where: { id: tokenId },
       data: { revokedAt },

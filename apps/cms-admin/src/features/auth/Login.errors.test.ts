@@ -1,17 +1,11 @@
+import { COPY } from '@configs/Copy.constants';
 import { AxiosError, type AxiosResponse } from 'axios';
 
-import { COPY } from '../../config/Copy.constants';
 import { toLoginError } from './Login.errors';
 
 function httpError(status: number, headers: Record<string, string> = {}) {
   const response = { status, headers, data: null } as AxiosResponse;
-  return new AxiosError(
-    'failed',
-    AxiosError.ERR_BAD_REQUEST,
-    undefined,
-    null,
-    response,
-  );
+  return new AxiosError('failed', AxiosError.ERR_BAD_REQUEST, undefined, null, response);
 }
 
 describe('toLoginError', () => {
@@ -32,12 +26,10 @@ describe('toLoginError', () => {
     ['1', COPY.login.errors.rateLimitedSeconds(1)],
     ['45', COPY.login.errors.rateLimitedSeconds(45)],
   ])('turns Retry-After %s into a wait message', (retryAfter, message) => {
-    expect(toLoginError(httpError(429, { 'retry-after': retryAfter }))).toEqual(
-      {
-        kind: 'rate-limited',
-        message,
-      },
-    );
+    expect(toLoginError(httpError(429, { 'retry-after': retryAfter }))).toEqual({
+      kind: 'rate-limited',
+      message,
+    });
   });
 
   it.each([undefined, '', 'soon', '-5', '0'])(
@@ -45,9 +37,7 @@ describe('toLoginError', () => {
     (retryAfter) => {
       const headers: Record<string, string> =
         retryAfter === undefined ? {} : { 'retry-after': retryAfter };
-      expect(toLoginError(httpError(429, headers)).message).toBe(
-        COPY.login.errors.rateLimited,
-      );
+      expect(toLoginError(httpError(429, headers)).message).toBe(COPY.login.errors.rateLimited);
     },
   );
 

@@ -1,11 +1,11 @@
-import { COPY } from '../../config/Copy.constants';
-import { API_ERROR_CODES, HTTP_STATUS } from '../../config/Http.constants';
 import {
-  type ApiIssue,
   apiFailureOf,
   apiIssuesOf,
   rateLimitedMessage,
-} from '../../lib/ApiFailure.errors';
+  type ApiIssue,
+} from '@apis/client/ApiFailure.errors';
+import { COPY } from '@configs/Copy.constants';
+import { API_ERROR_CODES, HTTP_STATUS } from '@configs/Http.constants';
 
 /** A failed `POST /setup/owner`, reduced to what the setup page does next. */
 export type SetupError =
@@ -39,10 +39,7 @@ function toHttpSetupError(
 ): SetupError {
   if (status === HTTP_STATUS.UNAUTHORIZED) return { kind: 'token-invalid' };
   if (status === HTTP_STATUS.NOT_FOUND) return { kind: 'setup-closed' };
-  if (
-    status === HTTP_STATUS.CONFLICT &&
-    errorCode === API_ERROR_CODES.OWNER_EMAIL_TAKEN
-  ) {
+  if (status === HTTP_STATUS.CONFLICT && errorCode === API_ERROR_CODES.OWNER_EMAIL_TAKEN) {
     return { kind: 'email-taken' };
   }
   const issues = apiIssuesOf(error);

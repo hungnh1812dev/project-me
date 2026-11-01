@@ -1,7 +1,7 @@
-import { Textarea } from '@abyss/form-commons';
 import { useId } from 'react';
+import { Textarea } from '@abyss/form-commons';
+import { COPY } from '@configs/Copy.constants';
 
-import { COPY } from '../../config/Copy.constants';
 import type { ContentType } from '../content-types';
 import { FieldPicker } from './FieldPicker';
 import type { PermissionMatrixProps } from './PermissionMatrix';
@@ -33,19 +33,11 @@ export function CellDetails({
   subjectLabel: string;
   contentType: ContentType | undefined;
 }) {
-  const granted = actionsFor(subject).filter(
-    (action) => state[subject]?.[action] !== undefined,
-  );
-  const contentFields = (contentType?.fields ?? []).filter(
-    (field) => !field.system,
-  );
+  const granted = actionsFor(subject).filter((action) => state[subject]?.[action] !== undefined);
+  const contentFields = (contentType?.fields ?? []).filter((field) => !field.system);
 
   if (granted.length === 0) {
-    return (
-      <p className="m-0 text-sm text-muted-foreground">
-        {copy.matrix.detailsEmpty}
-      </p>
-    );
+    return <p className="m-0 text-sm text-muted-foreground">{copy.matrix.detailsEmpty}</p>;
   }
 
   return (
@@ -81,9 +73,7 @@ export function CellDetails({
                     ? copy.fields.noneSelected
                     : copy.fields.noneSelectedWrite
                 }
-                onChange={(list) =>
-                  onChange((current) => setFieldList(current, ref, kind, list))
-                }
+                onChange={(list) => onChange((current) => setFieldList(current, ref, kind, list))}
               />
             ) : null}
             <ConditionsEditor
@@ -92,9 +82,7 @@ export function CellDetails({
               disabled={!editable}
               isJsonInvalid={badJson}
               shouldForceOpen={badJson || messages.length > 0}
-              onChange={(text) =>
-                onChange((current) => setConditionsText(current, ref, text))
-              }
+              onChange={(text) => onChange((current) => setConditionsText(current, ref, text))}
             />
             {cell.rows.length > 1 ? (
               <p className="m-0 text-sm text-muted-foreground">

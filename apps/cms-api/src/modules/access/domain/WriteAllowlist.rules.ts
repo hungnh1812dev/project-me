@@ -1,13 +1,13 @@
-import type { RegisteredContentType, TableNode } from '../../content-engine';
 import type {
   ComponentInput,
   ComponentsInput,
   FieldValues,
+  RegisteredContentType,
+  TableNode,
   TreeInput,
 } from '../../content-engine';
 import { MASKED_FIELDS_KEY, WRITE_TREE_KEYS } from './Access.constants';
-import { fieldErrors } from './FieldPaths.rules';
-import { joinFieldPath } from './FieldPaths.rules';
+import { fieldErrors, joinFieldPath } from './FieldPaths.rules';
 import type { FieldAccess } from './PolicyEvaluator.rules';
 import { maskValueFor } from './RecordSerializer.rules';
 
@@ -104,18 +104,13 @@ function applyComponents(
   prefix: string,
 ): ComponentsInput {
   if (!isPlainObject(input)) throw fieldErrors.invalidPayload();
-  const children = new Map(
-    table.components.map((component) => [component.field.name, component]),
-  );
+  const children = new Map(table.components.map((component) => [component.field.name, component]));
   const output: ComponentsInput = {};
   for (const [name, value] of Object.entries(input)) {
     const component = children.get(name);
     if (component === undefined) throw fieldErrors.unknown();
     const path = joinFieldPath(prefix, name);
-    if (
-      !fields.readable.reaches(path) &&
-      value === maskValueFor(component.field)
-    ) {
+    if (!fields.readable.reaches(path) && value === maskValueFor(component.field)) {
       continue;
     }
     if (!fields.writable.allows(path)) throw fieldErrors.notWritable(path);

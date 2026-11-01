@@ -68,8 +68,7 @@ export class NameClaims {
 
   claim(name: string, source: string): void {
     const owner = this.owners.get(name);
-    if (owner !== undefined)
-      throw new GraphqlNameClashError(name, owner, source);
+    if (owner !== undefined) throw new GraphqlNameClashError(name, owner, source);
     this.owners.set(name, source);
   }
 }

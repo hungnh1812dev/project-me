@@ -1,12 +1,8 @@
-import { Logger } from '@nestjs/common';
-import type { ArgumentsHost } from '@nestjs/common';
+import { Logger, type ArgumentsHost } from '@nestjs/common';
 import { GraphQLError } from 'graphql';
 
+import { DOMAIN_ERROR_KINDS, DomainError } from '../../src/common/errors/Domain.errors';
 import { HttpExceptionFilter } from '../../src/common/filters/HttpException.filter';
-import {
-  DomainError,
-  DOMAIN_ERROR_KINDS,
-} from '../../src/common/errors/Domain.errors';
 import { itemError } from '../../src/modules/documents/application/BulkItem.errors';
 import { toBulkBody } from '../../src/modules/documents/http/Bulk.controller';
 import { formatGraphqlError } from '../../src/modules/graphql/http/GraphqlError.filter';

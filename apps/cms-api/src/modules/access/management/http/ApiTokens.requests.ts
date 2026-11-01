@@ -5,9 +5,7 @@ import { API_TOKEN } from '../../domain/ApiToken.rules';
 const name = z.string().trim().min(1).max(API_TOKEN.NAME_MAX_LENGTH);
 
 /** ISO 8601 with an offset; the service rejects a time in the past. */
-const expiresAt = z.iso
-  .datetime({ offset: true })
-  .transform((value) => new Date(value));
+const expiresAt = z.iso.datetime({ offset: true }).transform((value) => new Date(value));
 
 /**
  * `POST /api-tokens`. `scope` is checked by validateTokenScope (shape,
@@ -27,10 +25,7 @@ export const updateApiTokenSchema = z
     expiresAt: expiresAt.nullable().optional(),
   })
   .refine(
-    (body) =>
-      body.name !== undefined ||
-      body.scope !== undefined ||
-      body.expiresAt !== undefined,
+    (body) => body.name !== undefined || body.scope !== undefined || body.expiresAt !== undefined,
   );
 
 export type CreateApiTokenRequest = z.infer<typeof createApiTokenSchema>;

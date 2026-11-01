@@ -11,9 +11,7 @@ describe('proxy', () => {
     const nonce = /'nonce-([^']+)'/.exec(csp)?.[1];
     expect(nonce).toBeTruthy();
     expect(first.headers.get('x-middleware-request-x-nonce')).toBe(nonce);
-    expect(
-      first.headers.get('x-middleware-request-content-security-policy'),
-    ).toBe(csp);
+    expect(first.headers.get('x-middleware-request-content-security-policy')).toBe(csp);
     expect(second.headers.get('content-security-policy')).not.toBe(csp);
   });
 });

@@ -9,14 +9,9 @@ describe('ReviewerCleanupJob (ADR 0014)', () => {
 
   function bootWith(isFeatureEnabled: boolean) {
     const stop = jest.fn();
-    const start = jest
-      .spyOn(intervalJob, 'startIntervalJob')
-      .mockReturnValue(stop);
+    const start = jest.spyOn(intervalJob, 'startIntervalJob').mockReturnValue(stop);
     const log = jest.spyOn(Logger.prototype, 'log').mockImplementation();
-    const job = new ReviewerCleanupJob(
-      {} as ReviewerCleanupService,
-      isFeatureEnabled,
-    );
+    const job = new ReviewerCleanupJob({} as ReviewerCleanupService, isFeatureEnabled);
     job.onApplicationBootstrap();
     return { job, start, stop, log };
   }

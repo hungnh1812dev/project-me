@@ -6,7 +6,10 @@
     "lib": ["ES2023", "DOM"],
     "noEmit": true,
     "declaration": false,
-    "types": ["node"]
+    "types": ["node"],
+    "paths": {
+      "@configs/*": ["../cms-admin/src/configs/*"]
+    }
   },
   "include": ["tests", "src", "*.ts"]
 }

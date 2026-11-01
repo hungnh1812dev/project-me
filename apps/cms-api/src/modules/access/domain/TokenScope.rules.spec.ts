@@ -1,15 +1,12 @@
-import { PermissionAction } from '../../../generated/prisma/client';
 import {
   customRole,
   grant,
   systemRole,
   testCatalog,
 } from '../../../../test/fixtures/Access.fixture';
+import { PermissionAction } from '../../../generated/prisma/client';
 import type { TokenScope } from './ActorContext.entity';
-import {
-  scopeEntriesBeyondCreator,
-  validateTokenScope,
-} from './TokenScope.rules';
+import { scopeEntriesBeyondCreator, validateTokenScope } from './TokenScope.rules';
 
 const { read, create, update, delete: remove } = PermissionAction;
 const catalog = testCatalog();
@@ -31,14 +28,8 @@ describe('validateTokenScope', () => {
   });
 
   it.each([
-    [
-      'a system subject',
-      { permissions: [{ subject: 'accounts', action: 'read' }] },
-    ],
-    [
-      'an unknown subject',
-      { permissions: [{ subject: 'nope', action: 'read' }] },
-    ],
+    ['a system subject', { permissions: [{ subject: 'accounts', action: 'read' }] }],
+    ['an unknown subject', { permissions: [{ subject: 'nope', action: 'read' }] }],
     ['an unknown action', { permissions: [{ subject: '*', action: 'own' }] }],
     [
       'conditions (tokens have none)',
@@ -48,9 +39,7 @@ describe('validateTokenScope', () => {
     [
       'an unknown field',
       {
-        permissions: [
-          { subject: 'article', action: 'read', readableFields: ['nope'] },
-        ],
+        permissions: [{ subject: 'article', action: 'read', readableFields: ['nope'] }],
       },
     ],
   ])('rejects %s', (_label, input) => {
@@ -58,27 +47,19 @@ describe('validateTokenScope', () => {
   });
 });
 
-function scope(
-  ...permissions: TokenScope['permissions'][number][]
-): TokenScope {
+function scope(...permissions: TokenScope['permissions'][number][]): TokenScope {
   return { permissions };
 }
 
 describe('scopeEntriesBeyondCreator (D5 subset check)', () => {
   it('lets the owner hold anything', () => {
     expect(
-      scopeEntriesBeyondCreator(
-        scope({ subject: '*', action: remove }),
-        systemRole('owner'),
-      ),
+      scopeEntriesBeyondCreator(scope({ subject: '*', action: remove }), systemRole('owner')),
     ).toEqual([]);
   });
 
   it('accepts entries the creator holds and flags the rest', () => {
-    const creator = customRole(20, [
-      grant('*', read),
-      grant('article', update),
-    ]);
+    const creator = customRole(20, [grant('*', read), grant('article', update)]);
     const result = scopeEntriesBeyondCreator(
       scope(
         { subject: 'article', action: read },
@@ -104,12 +85,9 @@ describe('scopeEntriesBeyondCreator (D5 subset check)', () => {
       grant('*', read),
       grant('article', read, { readableFields: ['title'] }),
     ]);
-    expect(
-      scopeEntriesBeyondCreator(
-        scope({ subject: 'article', action: read }),
-        creator,
-      ),
-    ).toEqual([0]);
+    expect(scopeEntriesBeyondCreator(scope({ subject: 'article', action: read }), creator)).toEqual(
+      [0],
+    );
   });
 
   describe('field lists', () => {
@@ -171,10 +149,7 @@ describe('scopeEntriesBeyondCreator (D5 subset check)', () => {
         }),
       ]);
       expect(
-        scopeEntriesBeyondCreator(
-          scope({ subject: 'article', action: read }),
-          conditional,
-        ),
+        scopeEntriesBeyondCreator(scope({ subject: 'article', action: read }), conditional),
       ).toEqual([]);
     });
   });

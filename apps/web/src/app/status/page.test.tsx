@@ -1,18 +1,15 @@
+import { notFound } from 'next/navigation';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
-import { notFound } from 'next/navigation';
-
-import { COPY } from '../../config/Copy.constants';
+import { COPY } from '../../configs/Copy.constants';
+import { getServerEnv } from '../../configs/Server.env';
 import { fetchLiveHealth } from '../../features/status/Health.api';
-import { getServerEnv } from '../../config/Server.env';
 import StatusPage from './page';
 
 vi.mock('../../features/status/Health.api', async (importOriginal) => ({
-  ...(await importOriginal<
-    typeof import('../../features/status/Health.api')
-  >()),
+  ...(await importOriginal<typeof import('../../features/status/Health.api')>()),
   fetchLiveHealth: vi.fn<typeof fetchLiveHealth>(),
 }));
 
@@ -24,7 +21,7 @@ vi.mock('next/navigation', () => ({
 vi.mock('next/server', () => ({
   connection: vi.fn<() => Promise<void>>().mockResolvedValue(undefined),
 }));
-vi.mock('../../config/Server.env', () => ({
+vi.mock('../../configs/Server.env', () => ({
   getServerEnv: vi.fn<typeof getServerEnv>(),
 }));
 
@@ -36,9 +33,7 @@ async function renderPage() {
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
-  return render(
-    <QueryClientProvider client={client}>{page}</QueryClientProvider>,
-  );
+  return render(<QueryClientProvider client={client}>{page}</QueryClientProvider>);
 }
 
 describe('StatusPage', () => {
@@ -64,15 +59,14 @@ describe('StatusPage', () => {
     fetchLiveHealthMock.mockResolvedValue({ status: 'ok' });
     await renderPage();
 
-    expect(
-      screen.getByRole('heading', { level: 1, name: COPY.page.title }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 1, name: COPY.page.title })).toBeInTheDocument();
     expect(await screen.findByText(COPY.status.state.ok)).toBeInTheDocument();
     expect(screen.getByText(/\/api\/v1\/health\/live$/)).toBeInTheDocument();
     // The button comes from @abyss/form-commons.
-    expect(
-      screen.getByRole('button', { name: COPY.status.checkAgain }),
-    ).toHaveAttribute('data-slot', 'button');
+    expect(screen.getByRole('button', { name: COPY.status.checkAgain })).toHaveAttribute(
+      'data-slot',
+      'button',
+    );
   });
 
   it('shows the error state and recovers on "check again"', async () => {
@@ -81,16 +75,10 @@ describe('StatusPage', () => {
       .mockResolvedValue({ status: 'ok' });
     await renderPage();
 
-    expect(await screen.findByRole('alert')).toHaveTextContent(
-      COPY.status.errorHint,
-    );
-    expect(screen.getByRole('status')).toHaveTextContent(
-      COPY.status.state.error,
-    );
+    expect(await screen.findByRole('alert')).toHaveTextContent(COPY.status.errorHint);
+    expect(screen.getByRole('status')).toHaveTextContent(COPY.status.state.error);
 
-    await userEvent.click(
-      screen.getByRole('button', { name: COPY.status.checkAgain }),
-    );
+    await userEvent.click(screen.getByRole('button', { name: COPY.status.checkAgain }));
 
     expect(await screen.findByText(COPY.status.state.ok)).toBeInTheDocument();
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();

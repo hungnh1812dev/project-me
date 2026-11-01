@@ -1,21 +1,21 @@
-import { Button, Checkbox } from '@abyss/form-commons';
 import { Fragment, useState } from 'react';
+import { Button, Checkbox } from '@abyss/form-commons';
+import { COPY } from '@configs/Copy.constants';
 
+import type { ContentType } from '../content-types';
 import {
   CONTENT_WILDCARD_SUBJECT,
   PERMISSION_ACTIONS,
   type PermissionAction,
 } from './Access.constants';
-import { COPY } from '../../config/Copy.constants';
-import type { ContentType } from '../content-types';
 import { CellDetails } from './CellDetails';
 import {
   actionsFor,
   cellKey,
-  type CellRef,
   isSystemSubject,
-  type MatrixState,
   toggleCell,
+  type CellRef,
+  type MatrixState,
 } from './PermissionMatrix.rules';
 
 const copy = COPY.access.matrix;
@@ -77,9 +77,7 @@ export function PermissionMatrix(props: PermissionMatrixProps) {
         subjects={order.system}
         known={known}
         showsDetails={false}
-        footnote={
-          props.editable && anyNotGrantable ? copy.notHeldHint : undefined
-        }
+        footnote={props.editable && anyNotGrantable ? copy.notHeldHint : undefined}
       />
     </div>
   );
@@ -127,11 +125,7 @@ function MatrixSection({
                 {copy.subjectColumn}
               </th>
               {PERMISSION_ACTIONS.map((action) => (
-                <th
-                  key={action}
-                  scope="col"
-                  className="px-3 py-2 text-center font-medium"
-                >
+                <th key={action} scope="col" className="px-3 py-2 text-center font-medium">
                   {copy.actions[action]}
                 </th>
               ))}
@@ -164,8 +158,7 @@ function MatrixSection({
                     <th
                       scope="row"
                       className={`px-3 py-2 text-left font-medium ${
-                        subject === CONTENT_WILDCARD_SUBJECT ||
-                        isSystemSubject(subject)
+                        subject === CONTENT_WILDCARD_SUBJECT || isSystemSubject(subject)
                           ? ''
                           : 'font-mono'
                       }`}
@@ -217,9 +210,7 @@ function MatrixSection({
                           {...props}
                           subject={subject}
                           subjectLabel={label}
-                          contentType={props.contentTypes.find(
-                            (type) => type.slug === subject,
-                          )}
+                          contentType={props.contentTypes.find((type) => type.slug === subject)}
                         />
                       </td>
                     </tr>
@@ -251,8 +242,7 @@ function MatrixCheckbox({
   label,
 }: PermissionMatrixProps & { cell: CellRef; label: string }) {
   const granted = state[cell.subject]?.[cell.action] !== undefined;
-  const grantable =
-    !isSystemSubject(cell.subject) || canGrant(cell.subject, cell.action);
+  const grantable = !isSystemSubject(cell.subject) || canGrant(cell.subject, cell.action);
   const key = cellKey(cell);
   const invalid = errors.has(key) || notHeld.has(key);
   return (

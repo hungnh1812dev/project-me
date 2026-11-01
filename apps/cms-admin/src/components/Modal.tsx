@@ -31,9 +31,7 @@ export function Modal({
     <Dialog open onOpenChange={(open) => (open ? undefined : onClose())}>
       <DialogContent
         onInteractOutside={(event) => event.preventDefault()}
-        {...(description === undefined
-          ? { 'aria-describedby': undefined }
-          : {})}
+        {...(description === undefined ? { 'aria-describedby': undefined } : {})}
       >
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>

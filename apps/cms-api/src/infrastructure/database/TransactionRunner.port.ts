@@ -27,8 +27,5 @@ export interface TransactionRunner {
 /** The content database runner, which can also scope a nested step to a savepoint. */
 export interface ContentTransactionRunner extends TransactionRunner {
   /** Runs `work` in a savepoint of `unit`: a throw rolls back only this step and is rethrown. */
-  runInSavepoint<T>(
-    unit: UnitOfWork,
-    work: (unit: UnitOfWork) => Promise<T>,
-  ): Promise<T>;
+  runInSavepoint<T>(unit: UnitOfWork, work: (unit: UnitOfWork) => Promise<T>): Promise<T>;
 }

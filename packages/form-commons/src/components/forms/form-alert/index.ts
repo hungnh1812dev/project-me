@@ -1,5 +1,1 @@
-export {
-  FormAlert,
-  type FormAlertProps,
-  type FormAlertTone,
-} from './FormAlert';
+export { FormAlert, type FormAlertProps, type FormAlertTone } from './FormAlert';

@@ -1,10 +1,7 @@
 import type { AppLogger } from '../../../infrastructure/logging/AppLogger.port';
 import { ContentTypeRegistry } from '../domain/ContentTypeRegistry.entity';
+import type { ContentTypeRepository, StoredContentTypes } from './ContentEngine.port';
 import { ContentRegistry } from './ContentRegistry.service';
-import type {
-  ContentTypeRepository,
-  StoredContentTypes,
-} from './ContentEngine.port';
 
 const NOTE = {
   slug: 'note',

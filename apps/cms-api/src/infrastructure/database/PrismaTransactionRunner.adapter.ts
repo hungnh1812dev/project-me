@@ -2,12 +2,9 @@ import { Inject, Injectable } from '@nestjs/common';
 
 import type { Prisma } from '../../generated/prisma/client';
 import { APP_LOGGER, type AppLogger } from '../logging/AppLogger.port';
-import {
-  type AfterCommitCallback,
-  AfterCommitCallbacks,
-} from './AfterCommitCallbacks.store';
-import { PrismaClient } from './PrismaClient.adapter';
+import { AfterCommitCallbacks, type AfterCommitCallback } from './AfterCommitCallbacks.store';
 import { PrismaService } from './Prisma.service';
+import { PrismaClient } from './PrismaClient.adapter';
 import type { TransactionRunner, UnitOfWork } from './TransactionRunner.port';
 
 class PrismaUnitOfWork implements UnitOfWork {

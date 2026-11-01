@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, type FormEvent } from 'react';
 import {
   Button,
   Dialog,
@@ -10,16 +11,14 @@ import {
   FormAlert,
 } from '@abyss/form-commons';
 import { useMutation } from '@tanstack/react-query';
-import { type FormEvent, useState } from 'react';
 import { FormProvider, useForm } from 'react-hook-form';
 
-import { COPY } from '../../config/Copy.constants';
-import { apiFailureOf } from '../../lib/ApiFailure.errors';
+import { apiFailureOf } from '../../apis/client/ApiFailure.errors';
+import { COPY } from '../../configs/Copy.constants';
 import { useWebSession } from '../session';
 import { NotesStep } from './NotesStep';
 import { PurposesStep } from './PurposesStep';
 import { type ReviewerApi } from './Reviewer.api';
-import { reviewerApi } from './Reviewer.queries';
 import { reviewerAlertOf, type ReviewerAlert } from './Reviewer.errors';
 import {
   DEFAULT_VALUES,
@@ -28,6 +27,7 @@ import {
   toSessionInput,
   type ReviewerFormValues,
 } from './Reviewer.form';
+import { reviewerApi } from './Reviewer.queries';
 import { RoleStep } from './RoleStep';
 import { useHumanCheck } from './useHumanCheck';
 
@@ -55,11 +55,7 @@ export function ReviewerAccessDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
-        <ReviewerFlow
-          siteKey={siteKey}
-          api={api}
-          onClose={() => onOpenChange(false)}
-        />
+        <ReviewerFlow siteKey={siteKey} api={api} onClose={() => onOpenChange(false)} />
       </DialogContent>
     </Dialog>
   );
@@ -129,18 +125,12 @@ function ReviewerFlow({
       </DialogHeader>
       <FormProvider {...form}>
         <form noValidate onSubmit={onSubmit} className="grid gap-4">
-          <p className="m-0 text-sm text-muted-foreground">
-            <span className="tabular-nums">
-              {copy.stepLabel(step + 1, STEP_FIELDS.length)}
-            </span>
+          <p className="text-muted-foreground m-0 text-sm">
+            <span className="tabular-nums">{copy.stepLabel(step + 1, STEP_FIELDS.length)}</span>
             {' - '}
-            <span className="font-medium text-foreground">
-              {STEP_TITLES[step]}
-            </span>
+            <span className="text-foreground font-medium">{STEP_TITLES[step]}</span>
           </p>
-          {alert !== null ? (
-            <FormAlert tone={alert.tone}>{alert.message}</FormAlert>
-          ) : null}
+          {alert !== null ? <FormAlert tone={alert.tone}>{alert.message}</FormAlert> : null}
 
           <RoleStep isActive={step === 0} />
           <PurposesStep isActive={step === 1} />
@@ -174,11 +164,7 @@ function ReviewerFlow({
               </Button>
             )}
             {step < LAST_STEP ? (
-              <Button
-                type="button"
-                variant="primary"
-                onClick={() => void advance()}
-              >
+              <Button type="button" variant="primary" onClick={() => void advance()}>
                 {copy.next}
               </Button>
             ) : (

@@ -1,17 +1,10 @@
+import { apiFailureOf } from '@apis/client/ApiFailure.errors';
+import { APP_ROUTES } from '@configs/App.routes';
+import { COPY } from '@configs/Copy.constants';
+import { API_ERROR_CODES, HEALTH_QUERY_RETRY, HTTP_STATUS } from '@configs/Http.constants';
+import type { NavItem, NavItemsState } from '@configs/NavSections.constants';
 import { useQuery } from '@tanstack/react-query';
 
-import { APP_ROUTES } from '../../config/App.routes';
-import { COPY } from '../../config/Copy.constants';
-import {
-  API_ERROR_CODES,
-  HEALTH_QUERY_RETRY,
-  HTTP_STATUS,
-} from '../../config/Http.constants';
-import { apiFailureOf } from '../../lib/ApiFailure.errors';
-import type {
-  FeatureNavItem,
-  NavItemsState,
-} from '../../lib/FeatureDefinition';
 import { useCallerAccess } from '../access';
 import { useBackupsApi } from './BackupsApi.context';
 
@@ -20,7 +13,7 @@ export const BACKUPS_QUERY_KEYS = {
 } as const;
 
 /** The owner-only rule has no permission subject; this names the link for the shell's check. */
-const BACKUPS_NAV_ITEM: FeatureNavItem = {
+const BACKUPS_NAV_ITEM: NavItem = {
   label: COPY.backups.nav,
   path: APP_ROUTES.BACKUPS,
   section: 'systemSettings',
@@ -46,10 +39,7 @@ export function isBackupsRateLimited(error: unknown): boolean {
 function shouldRetry(failureCount: number, error: unknown): boolean {
   const failure = apiFailureOf(error);
   if (failure.kind === 'rate-limited') return false;
-  if (
-    failure.kind === 'http' &&
-    failure.status < HTTP_STATUS.SERVER_ERROR_MIN
-  ) {
+  if (failure.kind === 'http' && failure.status < HTTP_STATUS.SERVER_ERROR_MIN) {
     return false;
   }
   return failureCount < HEALTH_QUERY_RETRY;

@@ -10,7 +10,6 @@ import {
   type PrismaHandle,
 } from '../../src/infrastructure/database/PrismaClient.adapter';
 import { SYSTEM_SUBJECT_ACTIONS } from '../../src/modules/access';
-import { hashPassword } from '../../src/modules/identity/application/Password.service';
 import {
   BACKUP_STORAGE,
   type BackupStorage,
@@ -20,6 +19,7 @@ import { BACKUPS_ERROR_CODES } from '../../src/modules/backups/domain/Backups.co
 import { BACKUPS_RATE_LIMIT_POLICIES } from '../../src/modules/backups/http/Backups.controller';
 import { ContentRegistry } from '../../src/modules/content-engine/application/ContentRegistry.service';
 import { ContentTypeRegistry } from '../../src/modules/content-engine/domain/ContentTypeRegistry.entity';
+import { hashPassword } from '../../src/modules/identity/application/Password.service';
 import { AUTH_ERROR_CODES } from '../../src/modules/identity/domain/Identity.constants';
 import {
   TURNSTILE_VERIFIER,
@@ -52,8 +52,7 @@ const AUTH = '/api/v1/auth';
 const OCTET_RANGE = 250;
 /** Longer than every throttle window and a few TOTP steps. */
 const CLOCK_STEP_MS = 11 * MS_PER_MINUTE;
-const SIGNED_URL =
-  'https://account.r2.example.test/abyss-backups/signed?sig=secret-sig';
+const SIGNED_URL = 'https://account.r2.example.test/abyss-backups/signed?sig=secret-sig';
 
 const DAILY_KEY = 'postgres/daily/abyss-20261027T020000Z.dump.age';
 const MONTHLY_KEY = 'postgres/monthly/abyss-20261001T020000Z.dump.age';
@@ -64,10 +63,8 @@ const OBJECTS: StoredBackupObject[] = [
 ];
 
 const fakeStorage: BackupStorage = {
-  list: (prefix) =>
-    Promise.resolve(OBJECTS.filter((object) => object.key.startsWith(prefix))),
-  find: (key) =>
-    Promise.resolve(OBJECTS.find((object) => object.key === key) ?? null),
+  list: (prefix) => Promise.resolve(OBJECTS.filter((object) => object.key.startsWith(prefix))),
+  find: (key) => Promise.resolve(OBJECTS.find((object) => object.key === key) ?? null),
   createDownloadUrl: () => Promise.resolve(SIGNED_URL),
 };
 
@@ -102,17 +99,14 @@ describe('backups endpoints (D20, ADR 0013; Postgres 17 via Testcontainers)', ()
   });
   const http = (target = app) => request(target.getHttpServer());
   const list = (token = owner) => http().get(BACKUPS).set(bearer(token));
-  const link = (body: object, token = owner) =>
-    http().post(LINKS).set(bearer(token)).send(body);
-  const totpNow = () =>
-    generate({ secret: totpSecret, epoch: Math.floor(now() / 1000) });
+  const link = (body: object, token = owner) => http().post(LINKS).set(bearer(token)).send(body);
+  const totpNow = () => generate({ secret: totpSecret, epoch: Math.floor(now() / 1000) });
   const validBody = async (key = DAILY_KEY) => ({
     key,
     password: PASSWORD,
     code: await totpNow(),
   });
-  const errorCodeOf = (res: request.Response) =>
-    (res.body as { errorCode?: string }).errorCode;
+  const errorCodeOf = (res: request.Response) => (res.body as { errorCode?: string }).errorCode;
   const auditRows = (action: string) =>
     db.prisma.auditLog.findMany({ where: { action }, orderBy: { id: 'asc' } });
 
@@ -208,10 +202,7 @@ describe('backups endpoints (D20, ADR 0013; Postgres 17 via Testcontainers)', ()
 
   describe('with the owner signed in and TOTP on', () => {
     beforeAll(async () => {
-      const setup = await http()
-        .post(`${AUTH}/2fa/totp/setup`)
-        .set(bearer(owner))
-        .send();
+      const setup = await http().post(`${AUTH}/2fa/totp/setup`).set(bearer(owner)).send();
       if (!setup.ok) throw new Error('totp setup failed');
       totpSecret = (setup.body as { secret: string }).secret;
       const enabled = await http()
@@ -241,10 +232,7 @@ describe('backups endpoints (D20, ADR 0013; Postgres 17 via Testcontainers)', ()
             isStale: boolean;
           };
         };
-        expect(body.data.map((item) => item.key)).toEqual([
-          DAILY_KEY,
-          MONTHLY_KEY,
-        ]);
+        expect(body.data.map((item) => item.key)).toEqual([DAILY_KEY, MONTHLY_KEY]);
         expect(body.data[0]).toEqual({
           key: DAILY_KEY,
           kind: 'daily',
@@ -260,9 +248,7 @@ describe('backups endpoints (D20, ADR 0013; Postgres 17 via Testcontainers)', ()
       });
 
       it('needs a session', async () => {
-        const res = await http()
-          .get(BACKUPS)
-          .set({ 'X-Forwarded-For': nextIp() });
+        const res = await http().get(BACKUPS).set({ 'X-Forwarded-For': nextIp() });
         expect(res.status).toBe(HttpStatus.UNAUTHORIZED);
       });
     });
@@ -270,19 +256,13 @@ describe('backups endpoints (D20, ADR 0013; Postgres 17 via Testcontainers)', ()
     describe('owner only', () => {
       async function refusedFor(token: string) {
         const listed = await list(token);
-        const linked = await link(
-          { key: DAILY_KEY, password: PASSWORD, code: '123456' },
-          token,
-        );
+        const linked = await link({ key: DAILY_KEY, password: PASSWORD, code: '123456' }, token);
         return [listed.status, linked.status];
       }
 
       it('refuses an admin', async () => {
         const admin = await signedIn('admin');
-        expect(await refusedFor(admin.token)).toEqual([
-          HttpStatus.FORBIDDEN,
-          HttpStatus.FORBIDDEN,
-        ]);
+        expect(await refusedFor(admin.token)).toEqual([HttpStatus.FORBIDDEN, HttpStatus.FORBIDDEN]);
       });
 
       it('refuses a custom role that holds every grant', async () => {
@@ -292,9 +272,8 @@ describe('backups endpoints (D20, ADR 0013; Postgres 17 via Testcontainers)', ()
           .send({ slug: 'everything', name: 'everything', rank: 20 });
         expect(created.status).toBe(HttpStatus.CREATED);
         const roleId = (created.body as { id: string }).id;
-        const permissions = Object.entries(SYSTEM_SUBJECT_ACTIONS).flatMap(
-          ([subject, actions]) =>
-            actions.map((action) => ({ subject, action })),
+        const permissions = Object.entries(SYSTEM_SUBJECT_ACTIONS).flatMap(([subject, actions]) =>
+          actions.map((action) => ({ subject, action })),
         );
         const put = await http()
           .put(`/api/v1/roles/${roleId}/permissions`)
@@ -320,9 +299,7 @@ describe('backups endpoints (D20, ADR 0013; Postgres 17 via Testcontainers)', ()
         const { token } = created.body as { token: string };
         const statuses = await refusedFor(token);
         for (const status of statuses) {
-          expect([HttpStatus.UNAUTHORIZED, HttpStatus.FORBIDDEN]).toContain(
-            status,
-          );
+          expect([HttpStatus.UNAUTHORIZED, HttpStatus.FORBIDDEN]).toContain(status);
         }
       });
 
@@ -343,18 +320,13 @@ describe('backups endpoints (D20, ADR 0013; Postgres 17 via Testcontainers)', ()
           });
         expect(session.status).toBe(HttpStatus.CREATED);
         const { accessToken } = session.body as { accessToken: string };
-        expect(await refusedFor(accessToken)).toEqual([
-          HttpStatus.FORBIDDEN,
-          HttpStatus.FORBIDDEN,
-        ]);
+        expect(await refusedFor(accessToken)).toEqual([HttpStatus.FORBIDDEN, HttpStatus.FORBIDDEN]);
       });
     });
 
     describe('POST /backups/download-links', () => {
       it('issues a link, writes one audit row and never stores the url', async () => {
-        const before = (
-          await auditRows(AUDIT_ACTIONS.BACKUP_DOWNLOAD_LINK_CREATED)
-        ).length;
+        const before = (await auditRows(AUDIT_ACTIONS.BACKUP_DOWNLOAD_LINK_CREATED)).length;
         const res = await link(await validBody());
         expect(res.status).toBe(HttpStatus.CREATED);
         expect(res.headers['cache-control']).toBe('no-store');
@@ -363,9 +335,7 @@ describe('backups endpoints (D20, ADR 0013; Postgres 17 via Testcontainers)', ()
           fileName: 'abyss-20261027T020000Z.dump.age',
           expiresAt: expect.any(String) as string,
         });
-        const rows = await auditRows(
-          AUDIT_ACTIONS.BACKUP_DOWNLOAD_LINK_CREATED,
-        );
+        const rows = await auditRows(AUDIT_ACTIONS.BACKUP_DOWNLOAD_LINK_CREATED);
         expect(rows).toHaveLength(before + 1);
         const row = rows.at(-1);
         expect(row).toMatchObject({
@@ -377,8 +347,7 @@ describe('backups endpoints (D20, ADR 0013; Postgres 17 via Testcontainers)', ()
       });
 
       it('answers 403 and one auth.reauth_failed row for a wrong password', async () => {
-        const before = (await auditRows(AUDIT_ACTIONS.AUTH_REAUTH_FAILED))
-          .length;
+        const before = (await auditRows(AUDIT_ACTIONS.AUTH_REAUTH_FAILED)).length;
         const res = await link({
           ...(await validBody()),
           password: 'not the password!!',
@@ -394,8 +363,7 @@ describe('backups endpoints (D20, ADR 0013; Postgres 17 via Testcontainers)', ()
       });
 
       it('answers 403 and one auth.reauth_failed row for a wrong code', async () => {
-        const before = (await auditRows(AUDIT_ACTIONS.AUTH_REAUTH_FAILED))
-          .length;
+        const before = (await auditRows(AUDIT_ACTIONS.AUTH_REAUTH_FAILED)).length;
         const res = await link({
           key: DAILY_KEY,
           password: PASSWORD,
@@ -412,38 +380,27 @@ describe('backups endpoints (D20, ADR 0013; Postgres 17 via Testcontainers)', ()
       });
 
       it('answers 404 BACKUP_NOT_FOUND for an unknown key and writes no link row', async () => {
-        const before = (
-          await auditRows(AUDIT_ACTIONS.BACKUP_DOWNLOAD_LINK_CREATED)
-        ).length;
-        const res = await link(
-          await validBody('postgres/daily/abyss-20200101T000000Z.dump.age'),
-        );
+        const before = (await auditRows(AUDIT_ACTIONS.BACKUP_DOWNLOAD_LINK_CREATED)).length;
+        const res = await link(await validBody('postgres/daily/abyss-20200101T000000Z.dump.age'));
         expect(res.status).toBe(HttpStatus.NOT_FOUND);
         expect(errorCodeOf(res)).toBe(BACKUPS_ERROR_CODES.NOT_FOUND);
-        expect(
-          await auditRows(AUDIT_ACTIONS.BACKUP_DOWNLOAD_LINK_CREATED),
-        ).toHaveLength(before);
+        expect(await auditRows(AUDIT_ACTIONS.BACKUP_DOWNLOAD_LINK_CREATED)).toHaveLength(before);
       });
 
       it('answers 400 for a key outside the prefix, before re-authentication', async () => {
-        const before = (await auditRows(AUDIT_ACTIONS.AUTH_REAUTH_FAILED))
-          .length;
+        const before = (await auditRows(AUDIT_ACTIONS.AUTH_REAUTH_FAILED)).length;
         const res = await link({
           key: 'other/daily/abyss-20261027T020000Z.dump.age',
           password: 'not the password!!',
           code: '000000',
         });
         expect(res.status).toBe(HttpStatus.BAD_REQUEST);
-        expect(await auditRows(AUDIT_ACTIONS.AUTH_REAUTH_FAILED)).toHaveLength(
-          before,
-        );
+        expect(await auditRows(AUDIT_ACTIONS.AUTH_REAUTH_FAILED)).toHaveLength(before);
       });
 
       it('answers 400 for a key with a parent segment', async () => {
         const res = await link(
-          await validBody(
-            'postgres/daily/../daily/abyss-20261027T020000Z.dump.age',
-          ),
+          await validBody('postgres/daily/../daily/abyss-20261027T020000Z.dump.age'),
         );
         expect(res.status).toBe(HttpStatus.BAD_REQUEST);
       });
@@ -451,23 +408,15 @@ describe('backups endpoints (D20, ADR 0013; Postgres 17 via Testcontainers)', ()
       it('answers 429 on the 6th link request of one owner in the window', async () => {
         const statuses: number[] = [];
         for (let attempt = 0; attempt < 6; attempt += 1) {
-          statuses.push(
-            (await link({ key: 'bad', password: 'x', code: '' })).status,
-          );
+          statuses.push((await link({ key: 'bad', password: 'x', code: '' })).status);
         }
-        expect(statuses.slice(0, 5)).toEqual(
-          Array(5).fill(HttpStatus.BAD_REQUEST),
-        );
+        expect(statuses.slice(0, 5)).toEqual(Array(5).fill(HttpStatus.BAD_REQUEST));
         expect(statuses[5]).toBe(HttpStatus.TOO_MANY_REQUESTS);
       });
 
       it('answers 429 for the 11th request from one IP across accounts', async () => {
         const [ipRule] = BACKUPS_RATE_LIMIT_POLICIES.BACKUP_LINK;
-        const callers = [
-          await signedIn('admin'),
-          await signedIn('admin'),
-          await signedIn('admin'),
-        ];
+        const callers = [await signedIn('admin'), await signedIn('admin'), await signedIn('admin')];
         const ip = nextIp();
         const statuses: number[] = [];
         for (let attempt = 0; attempt <= ipRule.maxHits; attempt += 1) {
@@ -478,9 +427,7 @@ describe('backups endpoints (D20, ADR 0013; Postgres 17 via Testcontainers)', ()
             .send({ key: 'bad', password: 'x', code: '' });
           statuses.push(res.status);
         }
-        expect(statuses.slice(0, ipRule.maxHits)).not.toContain(
-          HttpStatus.TOO_MANY_REQUESTS,
-        );
+        expect(statuses.slice(0, ipRule.maxHits)).not.toContain(HttpStatus.TOO_MANY_REQUESTS);
         expect(statuses.at(-1)).toBe(HttpStatus.TOO_MANY_REQUESTS);
       });
     });
@@ -488,9 +435,7 @@ describe('backups endpoints (D20, ADR 0013; Postgres 17 via Testcontainers)', ()
 
   describe('with the backup keys unset', () => {
     it('answers 404 BACKUPS_NOT_CONFIGURED on both routes', async () => {
-      const listed = await http(unconfiguredApp)
-        .get(BACKUPS)
-        .set(bearer(owner));
+      const listed = await http(unconfiguredApp).get(BACKUPS).set(bearer(owner));
       expect(listed.status).toBe(HttpStatus.NOT_FOUND);
       expect(errorCodeOf(listed)).toBe(BACKUPS_ERROR_CODES.NOT_CONFIGURED);
       const linked = await http(unconfiguredApp)

@@ -1,12 +1,4 @@
-import {
-  Body,
-  Controller,
-  Get,
-  Header,
-  Post,
-  Req,
-  UseGuards,
-} from '@nestjs/common';
+import { Body, Controller, Get, Header, Post, Req, UseGuards } from '@nestjs/common';
 import { z } from 'zod';
 
 import { NO_STORE_HEADER } from '../../../common/constants/Http.constants';
@@ -17,18 +9,10 @@ import {
   type RateLimitRule,
 } from '../../../common/constants/Limits.constants';
 import { Throttle } from '../../../common/guards/Throttle.guard';
-import {
-  ClientIpResolver,
-  clientMetaOf,
-} from '../../../common/http/ClientIp.resolver';
+import { ClientIpResolver, clientMetaOf } from '../../../common/http/ClientIp.resolver';
 import { parseRequest } from '../../../common/http/RequestParsing.rules';
 import { requireOwnerActor } from '../../access';
-import {
-  type AuthenticatedRequest,
-  JwtAuthGuard,
-  PASSWORD_MAX_LENGTH,
-  TOTP,
-} from '../../identity';
+import { JwtAuthGuard, PASSWORD_MAX_LENGTH, TOTP, type AuthenticatedRequest } from '../../identity';
 import {
   BackupsService,
   type BackupListing,

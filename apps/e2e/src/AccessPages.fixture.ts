@@ -14,11 +14,7 @@ export async function openRole(page: Page, name: string): Promise<void> {
   await expect(page.getByRole('heading', { level: 1, name })).toBeVisible();
 }
 
-export const permissionCell = (
-  page: Page,
-  action: string,
-  subject: string,
-): Locator =>
+export const permissionCell = (page: Page, action: string, subject: string): Locator =>
   page.getByRole('checkbox', {
     name: access.matrix.cellLabel(action, subject),
     exact: true,
@@ -37,9 +33,7 @@ const readCvPageCell = (page: Page): Locator =>
 export async function limitEditorToPositionField(page: Page): Promise<void> {
   await openRole(page, 'Editor');
   await readCvPageCell(page).check();
-  await page
-    .getByRole('button', { name: access.matrix.detailsLabel(CV_PAGE_SLUG) })
-    .click();
+  await page.getByRole('button', { name: access.matrix.detailsLabel(CV_PAGE_SLUG) }).click();
   await page.getByRole('radio', { name: access.fields.some }).check();
   await page
     .getByRole('group', { name: access.fields.readable })

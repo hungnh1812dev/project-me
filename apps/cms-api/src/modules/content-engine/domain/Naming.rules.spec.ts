@@ -10,21 +10,10 @@ import {
   toSqlIdentifier,
 } from './Naming.rules';
 
-const CV_PAGE_PATH = join(
-  __dirname,
-  '..',
-  '..',
-  '..',
-  '..',
-  'content',
-  'schemas',
-  'cv-page.json',
-);
+const CV_PAGE_PATH = join(__dirname, '..', '..', '..', '..', 'content', 'schemas', 'cv-page.json');
 
 function loadCvPage(): ContentTypeDefinition {
-  return JSON.parse(
-    readFileSync(CV_PAGE_PATH, 'utf8'),
-  ) as ContentTypeDefinition;
+  return JSON.parse(readFileSync(CV_PAGE_PATH, 'utf8')) as ContentTypeDefinition;
 }
 
 describe('naming', () => {
@@ -44,12 +33,10 @@ describe('naming', () => {
   });
 
   it('joins component tables with a double underscore', () => {
-    expect(
-      componentTableName(componentTableName('cv_page', 'experience'), 'role'),
-    ).toBe('cv_page__experience__role');
-    expect(componentTableName('cv_page', 'workHistory')).toBe(
-      'cv_page__work_history',
+    expect(componentTableName(componentTableName('cv_page', 'experience'), 'role')).toBe(
+      'cv_page__experience__role',
     );
+    expect(componentTableName('cv_page', 'workHistory')).toBe('cv_page__work_history');
   });
 
   it('composes relation names from the table name', () => {
@@ -59,9 +46,7 @@ describe('naming', () => {
     expect(relationNames.draftUnique('t')).toBe('t_draft_uq');
     expect(relationNames.publishedUnique('t')).toBe('t_published_uq');
     expect(relationNames.publishedListIndex('t')).toBe('t_published_idx');
-    expect(relationNames.mediaForeignKey('t', 'photo')).toBe(
-      't_photo_media_fk',
-    );
+    expect(relationNames.mediaForeignKey('t', 'photo')).toBe('t_photo_media_fk');
   });
 
   describe('planTables(cv-page)', () => {
@@ -81,21 +66,14 @@ describe('naming', () => {
     });
 
     it('links each component to its direct parent', () => {
-      const role = tables.find(
-        (table) => table.name === 'cv_page__experience__role',
-      );
+      const role = tables.find((table) => table.name === 'cv_page__experience__role');
       expect(role).toMatchObject({
         kind: 'component',
         depth: 2,
         parentTable: 'cv_page__experience',
         namePath: ['fields', 5, 'fields', 2, 'name'],
       });
-      expect(role?.systemColumns).toEqual([
-        'id',
-        'component_uid',
-        'parent_id',
-        'order_index',
-      ]);
+      expect(role?.systemColumns).toEqual(['id', 'component_uid', 'parent_id', 'order_index']);
     });
 
     it('keeps component fields out of the parent columns', () => {
@@ -118,9 +96,7 @@ describe('naming', () => {
 
     it('uses the fixed repositoryLink spelling', () => {
       const project = tables.find((table) => table.name === 'cv_page__project');
-      expect(project?.columns.map((column) => column.name)).toContain(
-        'repository_link',
-      );
+      expect(project?.columns.map((column) => column.name)).toContain('repository_link');
     });
   });
 

@@ -1,9 +1,6 @@
 import { TEST_SECRET_32_BYTES } from '../../../../test/fixtures/Env.fixture';
 import { type IAppConfig } from '../../../config/AppConfig.setup';
-import {
-  type AuditLogWriter,
-  SecurityAuditService,
-} from './SecurityAudit.service';
+import { SecurityAuditService, type AuditLogWriter } from './SecurityAudit.service';
 
 function serviceWith(
   otpPepper: string | undefined,

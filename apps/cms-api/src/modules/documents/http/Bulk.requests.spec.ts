@@ -1,11 +1,7 @@
 import { BadRequestException } from '@nestjs/common';
 
 import { BULK_LIMITS } from '../domain/Documents.constants';
-import {
-  parseBulkCreateBody,
-  parseBulkDocumentsBody,
-  parseBulkPublishBody,
-} from './Bulk.requests';
+import { parseBulkCreateBody, parseBulkDocumentsBody, parseBulkPublishBody } from './Bulk.requests';
 
 const ID_A = '8d8f1c4e-0000-4000-8000-00000000000a';
 const ID_B = '8d8f1c4e-0000-4000-8000-00000000000b';
@@ -51,9 +47,9 @@ describe('bulk body parsing (T34)', () => {
         items: [{ documentId: ID_A, expectedVersion: 2 }],
       }).items,
     ).toEqual([{ documentId: ID_A, expectedVersion: 2 }]);
-    expect(() =>
-      parseBulkPublishBody({ atomic: false, items: [{ documentId: ID_A }] }),
-    ).toThrow(BadRequestException);
+    expect(() => parseBulkPublishBody({ atomic: false, items: [{ documentId: ID_A }] })).toThrow(
+      BadRequestException,
+    );
     expect(() =>
       parseBulkPublishBody({
         atomic: false,
@@ -78,8 +74,8 @@ describe('bulk body parsing (T34)', () => {
         items: [{ documentId: ID_A, expectedVersion: 1 }],
       }),
     ).toThrow(BadRequestException);
-    expect(() =>
-      parseBulkDocumentsBody({ atomic: true, items: [{ documentId: 'x' }] }),
-    ).toThrow(BadRequestException);
+    expect(() => parseBulkDocumentsBody({ atomic: true, items: [{ documentId: 'x' }] })).toThrow(
+      BadRequestException,
+    );
   });
 });

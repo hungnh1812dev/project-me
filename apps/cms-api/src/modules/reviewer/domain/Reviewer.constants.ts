@@ -1,10 +1,8 @@
+import { MS_PER_SECOND } from '../../../common/constants/Time.constants';
 import { REVIEWER_SESSION_TTL_SECONDS } from '../../identity';
 
-import { MS_PER_SECOND } from '../../../common/constants/Time.constants';
-
 /** The session row ends when the access token does; identity owns the lifetime. */
-export const REVIEWER_SESSION_TTL_MS =
-  REVIEWER_SESSION_TTL_SECONDS * MS_PER_SECOND;
+export const REVIEWER_SESSION_TTL_MS = REVIEWER_SESSION_TTL_SECONDS * MS_PER_SECOND;
 
 /** Limits of the visitor's input (SPEC §8.1: notes at most 500 characters, plain text). */
 export const REVIEWER_INPUT_LIMITS = {

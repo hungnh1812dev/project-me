@@ -10,23 +10,17 @@ import {
   EXPRESS_SETTINGS,
 } from './common/constants/Http.constants';
 import { HttpExceptionFilter } from './common/filters/HttpException.filter';
-import { securityHeadersMiddleware } from './common/middleware/SecurityHeaders.middleware';
 import { requestIdMiddleware } from './common/middleware/RequestId.middleware';
+import { securityHeadersMiddleware } from './common/middleware/SecurityHeaders.middleware';
 import { type IAppConfig } from './config/AppConfig.setup';
 import { BULK_BODY_LIMIT_MOUNT_PATH, bulkBodyLimit } from './modules/documents';
-import {
-  GRAPHQL_BODY_LIMIT_MOUNT_PATH,
-  graphqlBodyLimit,
-} from './modules/graphql';
+import { GRAPHQL_BODY_LIMIT_MOUNT_PATH, graphqlBodyLimit } from './modules/graphql';
 
 /**
  * Pipeline shared by `main.ts` and the integration tests, so tests run
  * against exactly what production boots.
  */
-export function configureApp(
-  app: NestExpressApplication,
-  config: IAppConfig,
-): void {
+export function configureApp(app: NestExpressApplication, config: IAppConfig): void {
   // Trailing slash tolerated (SPEC §6); clients strip it, Traefik never rewrites.
   app.set(EXPRESS_SETTINGS.STRICT_ROUTING, false);
   // D7: trust exactly N proxy hops, never `true`.

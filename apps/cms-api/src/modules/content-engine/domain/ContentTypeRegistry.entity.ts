@@ -1,16 +1,12 @@
+import { ContentEngineError } from './ContentDocument.entity';
 import { CONTENT_ERROR_CODES } from './ContentEngine.constants';
 import {
+  isComponentField,
   type ComponentFieldDefinition,
   type ContentTypeDefinition,
-  isComponentField,
 } from './DefinitionSchema.rules';
 import { validateDefinitions } from './DefinitionValidator.rules';
-import { ContentEngineError } from './ContentDocument.entity';
-import {
-  type ColumnPlan,
-  componentTableName,
-  type TablePlan,
-} from './Naming.rules';
+import { componentTableName, type ColumnPlan, type TablePlan } from './Naming.rules';
 
 /**
  * One table of a content type with what the repository needs to walk it:
@@ -65,17 +61,12 @@ function buildTableNode(
   });
   return {
     plan,
-    columnsByField: new Map(
-      plan.columns.map((column) => [column.field.name, column]),
-    ),
+    columnsByField: new Map(plan.columns.map((column) => [column.field.name, column])),
     components,
   };
 }
 
-function register(
-  definition: ContentTypeDefinition,
-  tables: TablePlan[],
-): RegisteredContentType {
+function register(definition: ContentTypeDefinition, tables: TablePlan[]): RegisteredContentType {
   const [rootPlan] = tables;
   if (rootPlan === undefined) {
     throw new ContentEngineError(`No tables planned for "${definition.slug}".`);
@@ -95,17 +86,13 @@ function register(
  * a request slug is only ever a lookup key.
  */
 export class ContentTypeRegistry {
-  private constructor(
-    private readonly types: ReadonlyMap<string, RegisteredContentType>,
-  ) {}
+  private constructor(private readonly types: ReadonlyMap<string, RegisteredContentType>) {}
 
   /** Validates the definitions (alone and as a set) and plans their tables. */
   static fromDefinitions(definitions: readonly unknown[]): ContentTypeRegistry {
     const validation = validateDefinitions(definitions);
     if (!validation.ok) {
-      throw new ContentEngineError(
-        'Content type registry contains an invalid definition.',
-      );
+      throw new ContentEngineError('Content type registry contains an invalid definition.');
     }
     return new ContentTypeRegistry(
       new Map(

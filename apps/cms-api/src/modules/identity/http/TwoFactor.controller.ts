@@ -15,26 +15,17 @@ import { type z } from 'zod';
 
 import { NO_STORE_HEADER } from '../../../common/constants/Http.constants';
 import { Throttle } from '../../../common/guards/Throttle.guard';
-import {
-  ClientIpResolver,
-  clientMetaOf,
-} from '../../../common/http/ClientIp.resolver';
+import { ClientIpResolver, clientMetaOf } from '../../../common/http/ClientIp.resolver';
 import { requireAccountActor } from '../../access';
 import { TwoFactorLoginService } from '../application/TwoFactorLogin.service';
 import {
-  type TotpSetupResponse,
   TwoFactorManagementService,
+  type TotpSetupResponse,
 } from '../application/TwoFactorManagement.service';
-import {
-  AUTH_ERROR_CODES,
-  AUTH_ERROR_MESSAGES,
-} from '../domain/Identity.constants';
-import { type AccessTokenResponse, setRefreshCookie } from './Auth.controller';
-import {
-  IDENTITY_RATE_LIMIT_POLICIES,
-  TWO_FACTOR_ROUTES,
-} from './IdentityHttp.constants';
-import { type AuthenticatedRequest, JwtAuthGuard } from './Jwt.strategy';
+import { AUTH_ERROR_CODES, AUTH_ERROR_MESSAGES } from '../domain/Identity.constants';
+import { setRefreshCookie, type AccessTokenResponse } from './Auth.controller';
+import { IDENTITY_RATE_LIMIT_POLICIES, TWO_FACTOR_ROUTES } from './IdentityHttp.constants';
+import { JwtAuthGuard, type AuthenticatedRequest } from './Jwt.strategy';
 import {
   disableTwoFactorSchema,
   emailChallengeSchema,
@@ -80,10 +71,7 @@ export class TwoFactorController {
   @HttpCode(HttpStatus.NO_CONTENT)
   @UseGuards(JwtAuthGuard)
   @Throttle(IDENTITY_RATE_LIMIT_POLICIES.TWO_FACTOR_MANAGE)
-  enable(
-    @Req() req: AuthenticatedRequest,
-    @Body() body: unknown,
-  ): Promise<void> {
+  enable(@Req() req: AuthenticatedRequest, @Body() body: unknown): Promise<void> {
     requireAccountActor(req.user.actor);
     return this.management.enable(
       req.user.accountId,
@@ -96,10 +84,7 @@ export class TwoFactorController {
   @HttpCode(HttpStatus.NO_CONTENT)
   @UseGuards(JwtAuthGuard)
   @Throttle(IDENTITY_RATE_LIMIT_POLICIES.TWO_FACTOR_MANAGE)
-  disable(
-    @Req() req: AuthenticatedRequest,
-    @Body() body: unknown,
-  ): Promise<void> {
+  disable(@Req() req: AuthenticatedRequest, @Body() body: unknown): Promise<void> {
     requireAccountActor(req.user.actor);
     return this.management.disable(
       req.user.accountId,
@@ -114,10 +99,7 @@ export class TwoFactorController {
   @Throttle(IDENTITY_RATE_LIMIT_POLICIES.TWO_FACTOR_EMAIL_CHALLENGE)
   sendEmailCode(@Req() req: AuthenticatedRequest): Promise<void> {
     requireAccountActor(req.user.actor);
-    return this.management.sendEmailCode(
-      req.user.accountId,
-      clientMetaOf(this.clientIp, req),
-    );
+    return this.management.sendEmailCode(req.user.accountId, clientMetaOf(this.clientIp, req));
   }
 
   /** Same response as a password-only login: access token + refresh cookie. */

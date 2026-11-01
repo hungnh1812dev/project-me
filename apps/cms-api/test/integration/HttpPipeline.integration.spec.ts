@@ -5,8 +5,7 @@ import { dbEnvOf, devEnv } from '../fixtures/Env.fixture';
 import { unreachableDatabaseUrl } from '../fixtures/Postgres.fixture';
 import { createTestApp } from '../fixtures/TestApp.fixture';
 
-const UUID_PATTERN =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 
 describe('HTTP pipeline', () => {
   let app: NestExpressApplication;
@@ -25,9 +24,7 @@ describe('HTTP pipeline', () => {
   });
 
   it('returns the unified error shape for an unknown route', async () => {
-    const res = await request(app.getHttpServer()).get(
-      '/api/v1/does-not-exist',
-    );
+    const res = await request(app.getHttpServer()).get('/api/v1/does-not-exist');
     expect(res.status).toBe(404);
     expect(Object.keys(res.body as object).sort()).toEqual([
       'errorCode',

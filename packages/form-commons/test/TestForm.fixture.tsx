@@ -1,10 +1,5 @@
 import type { ReactNode } from 'react';
-import {
-  FormProvider,
-  type FieldValues,
-  type UseFormProps,
-  useForm,
-} from 'react-hook-form';
+import { FormProvider, useForm, type FieldValues, type UseFormProps } from 'react-hook-form';
 
 import { Button } from '@/components/ui/Button';
 
@@ -21,10 +16,7 @@ export function TestForm<T extends FieldValues>({
   const form = useForm<T>(options);
   return (
     <FormProvider {...form}>
-      <form
-        noValidate
-        onSubmit={(event) => void form.handleSubmit(onValid)(event)}
-      >
+      <form noValidate onSubmit={(event) => void form.handleSubmit(onValid)(event)}>
         {children}
         <Button type="submit" variant="primary">
           Save

@@ -31,9 +31,7 @@ describe('AuthService dummy hash', () => {
       .login({ email: 'nobody@example.test', password: 'x' }, {} as never)
       .catch((error: unknown) => error);
     expect(refusal).toBeInstanceOf(DomainError);
-    expect((refusal as DomainError).errorCode).toBe(
-      AUTH_ERROR_CODES.INVALID_CREDENTIALS,
-    );
+    expect((refusal as DomainError).errorCode).toBe(AUTH_ERROR_CODES.INVALID_CREDENTIALS);
     expect(verifyPassword).toHaveBeenCalledWith('dummy', 'x');
   });
 });

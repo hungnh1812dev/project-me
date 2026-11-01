@@ -7,21 +7,14 @@ import {
   type TransactionRunner,
 } from '../../../infrastructure/database/TransactionRunner.port';
 import { AccountStatus } from '../../access';
-import {
-  AUDIT_ACTIONS,
-  SecurityAuditService,
-  selfActor,
-} from '../../security-audit';
+import { AUDIT_ACTIONS, SecurityAuditService, selfActor } from '../../security-audit';
 import { EMAIL_CODE_PURPOSE } from '../domain/Identity.constants';
 import {
   invalidTempToken,
   invalidTwoFactorCodeAtLogin,
   tooManyRequests,
 } from '../domain/Identity.errors';
-import {
-  AccessTokenService,
-  type TwoFactorTempTokenClaims,
-} from './AccessToken.service';
+import { AccessTokenService, type TwoFactorTempTokenClaims } from './AccessToken.service';
 import { AuthService, type SessionTokens } from './Auth.service';
 import { ACCOUNT_REPOSITORY, type AccountRepository } from './Identity.port';
 import { isOtpCodeFormat, OtpService } from './Otp.service';
@@ -57,10 +50,7 @@ export class TwoFactorLoginService {
    * Every call counts one of the token's 5 attempts; a correct code uses the
    * token up and starts the session.
    */
-  async verifyLogin(
-    input: VerifyTwoFactorInput,
-    meta: ClientMeta,
-  ): Promise<SessionTokens> {
+  async verifyLogin(input: VerifyTwoFactorInput, meta: ClientMeta): Promise<SessionTokens> {
     const claims = this.tempTokenClaims(input.tempToken);
     const expiresAtMs = claims.exp * MS_PER_SECOND;
     const attempt = this.challenges.attempt(claims.jti, expiresAtMs);
@@ -122,10 +112,7 @@ export class TwoFactorLoginService {
   }
 
   /** Checks and uses up an emailed code. */
-  private async tryEmailCode(
-    accountId: number,
-    code: string,
-  ): Promise<boolean> {
+  private async tryEmailCode(accountId: number, code: string): Promise<boolean> {
     if (!isOtpCodeFormat(code)) return false;
     const otpId = await this.otp.verify(accountId, EMAIL_CODE_PURPOSE, code);
     if (otpId === undefined) return false;

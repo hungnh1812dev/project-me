@@ -31,10 +31,7 @@ describe('comments carry no backlog IDs', () => {
     it('flags task, question and OS IDs in block, doc and line comments', () => {
       expect(findBacklogIds('/** Throttle (T10a). */')).toEqual(['T10a']);
       expect(findBacklogIds('const a = 1; // see Q-G4')).toEqual(['Q-G4']);
-      expect(findBacklogIds('/*\n * OS4 walk\n * and Q5\n */')).toEqual([
-        'OS4',
-        'Q5',
-      ]);
+      expect(findBacklogIds('/*\n * OS4 walk\n * and Q5\n */')).toEqual(['OS4', 'Q5']);
     });
 
     it('ignores SPEC IDs, section marks, 2fa and code outside comments', () => {

@@ -7,20 +7,13 @@ import { promisify } from 'node:util';
 import { Client } from 'pg';
 
 import { DEFAULT_CONTENT_PATHS } from '../../src/modules/content-engine/adapters/MigrationFiles.adapter';
-import { createMigrationDb } from '../../src/modules/content-engine/cli/ContentEngineCli.setup';
 import { runContentMigrations } from '../../src/modules/content-engine/adapters/MigrationRunner.adapter';
+import { createMigrationDb } from '../../src/modules/content-engine/cli/ContentEngineCli.setup';
 import { dbEnvOf } from './Env.fixture';
 
 const run = promisify(execFile);
 const APP_ROOT = join(__dirname, '..', '..');
-const ROLES_SCRIPT = join(
-  APP_ROOT,
-  '..',
-  '..',
-  'scripts',
-  'db',
-  'database-roles.sql',
-);
+const ROLES_SCRIPT = join(APP_ROOT, '..', '..', 'scripts', 'db', 'database-roles.sql');
 const PRISMA_BIN = join(APP_ROOT, 'node_modules', '.bin', 'prisma');
 
 /** Runs `prisma migrate deploy` (the real db:migrate path) against `databaseUrl`. */
@@ -31,10 +24,7 @@ export async function migrateCore(databaseUrl: string): Promise<void> {
   });
 }
 
-async function admin<T>(
-  serverUrl: string,
-  action: (client: Client) => Promise<T>,
-): Promise<T> {
+async function admin<T>(serverUrl: string, action: (client: Client) => Promise<T>): Promise<T> {
   const client = new Client({ connectionString: serverUrl });
   await client.connect();
   try {
@@ -56,9 +46,7 @@ function withDatabase(serverUrl: string, database: string): string {
  */
 export async function createCoreTemplate(serverUrl: string) {
   const template = `tpl_${randomUUID().replace(/-/g, '')}`;
-  await admin(serverUrl, (client) =>
-    client.query(`CREATE DATABASE "${template}"`),
-  );
+  await admin(serverUrl, (client) => client.query(`CREATE DATABASE "${template}"`));
   await migrateCore(withDatabase(serverUrl, template));
   return {
     fresh: async (): Promise<string> => {
@@ -111,9 +99,7 @@ function expandPsqlVariables(
     .filter((line) => !line.trimStart().startsWith('\\'))
     .join('\n')
     .replace(/:(['"])([a-z_]+)\1/g, (_match, quote: string, name: string) =>
-      quote === "'"
-        ? quoteLiteral(variables[name] ?? '')
-        : quoteIdentifier(variables[name] ?? ''),
+      quote === "'" ? quoteLiteral(variables[name] ?? '') : quoteIdentifier(variables[name] ?? ''),
     );
 }
 
@@ -143,9 +129,7 @@ export async function applyDatabaseRoles(
   const client = new Client({ connectionString: url.toString() });
   let selfCheckPassed = false;
   client.on('notice', (notice) => {
-    selfCheckPassed ||= (notice.message ?? '').startsWith(
-      ROLES_SCRIPT_PASSED_NOTICE,
-    );
+    selfCheckPassed ||= (notice.message ?? '').startsWith(ROLES_SCRIPT_PASSED_NOTICE);
   });
   await client.connect();
   try {
@@ -174,20 +158,13 @@ export async function loginUrlOf(
 ): Promise<string> {
   const password = randomUUID();
   await admin(serverUrl, (client) =>
-    client.query(
-      `ALTER ROLE ${quoteIdentifier(role)} PASSWORD ${quoteLiteral(password)}`,
-    ),
+    client.query(`ALTER ROLE ${quoteIdentifier(role)} PASSWORD ${quoteLiteral(password)}`),
   );
   return urlAs(serverUrl, database, role, password);
 }
 
 /** The URL of `database` that logs in as `role`. */
-export function urlAs(
-  serverUrl: string,
-  database: string,
-  role: string,
-  password: string,
-): string {
+export function urlAs(serverUrl: string, database: string, role: string, password: string): string {
   const url = new URL(withDatabase(serverUrl, database));
   url.username = role;
   url.password = password;
@@ -198,10 +175,7 @@ export function urlAs(
  * Drops the suite's roles. Drop the database first: a role cannot be dropped
  * while it owns the database or has rights recorded in it.
  */
-export async function dropRoles(
-  serverUrl: string,
-  roles: string[],
-): Promise<void> {
+export async function dropRoles(serverUrl: string, roles: string[]): Promise<void> {
   await admin(serverUrl, async (client) => {
     for (const role of roles) {
       await client.query(`DROP ROLE IF EXISTS ${quoteIdentifier(role)}`);

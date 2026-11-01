@@ -3,20 +3,17 @@ import { z } from 'zod';
 
 import { ERROR_CODES } from '../../../common/constants/Error.constants';
 import { parseRequest } from '../../../common/http/RequestParsing.rules';
+import { documentIdSchema } from '../../../common/validation/SharedSchemas.rules';
+import { INT4_MAX } from '../../content-engine';
 import {
   BULK_LIMITS,
-  type BulkRequest,
   BULK_MESSAGES,
   DOCUMENT_ERROR_CODES,
   DOCUMENT_ERROR_MESSAGES,
+  type BulkRequest,
   type PublishItem,
 } from '../domain/Documents.constants';
-import {
-  BULK_BODY_KEYS,
-  EXPECTED_VERSION_BODY_KEY,
-} from './DocumentsHttp.constants';
-import { INT4_MAX } from '../../content-engine';
-import { documentIdSchema } from '../../../common/validation/SharedSchemas.rules';
+import { BULK_BODY_KEYS, EXPECTED_VERSION_BODY_KEY } from './DocumentsHttp.constants';
 
 const envelopeSchema = z.strictObject({
   [BULK_BODY_KEYS.ATOMIC]: z.boolean(),
@@ -69,9 +66,7 @@ export function parseBulkPublishBody(body: unknown): BulkRequest<PublishItem> {
 /** `bulk/unpublish` and `bulk/delete`: document ids only. */
 export function parseBulkDocumentsBody(body: unknown): BulkRequest<string> {
   const { atomic, items } = envelope(body);
-  const ids = items.map(
-    (item) => parseRequest(documentItemSchema, item).documentId,
-  );
+  const ids = items.map((item) => parseRequest(documentItemSchema, item).documentId);
   assertDistinct(ids);
   return { atomic, items: ids };
 }

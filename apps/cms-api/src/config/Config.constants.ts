@@ -3,7 +3,7 @@ export const APP_CONFIG = Symbol('APP_CONFIG');
 
 export const NODE_ENVS = ['development', 'test', 'production'] as const;
 export const MAIL_PROVIDERS = ['console', 'smtp'] as const;
-export const MEDIA_PROVIDERS = ['fake', 'cloudinary'] as const;
+export const MEDIA_PROVIDERS = ['fake', 'cloudinary', 'local'] as const;
 /** DB_SSL_MODE values (libpq names). `verify-full` checks the CA and the host name. */
 export const DB_SSL_MODES = ['disable', 'require', 'verify-full'] as const;
 
@@ -11,17 +11,10 @@ export const DB_SSL_MODES = ['disable', 'require', 'verify-full'] as const;
 export const MIN_SECRET_BYTES = 32;
 
 /** Env keys holding secrets. Required and length-checked in production. */
-export const SECRET_ENV_KEYS = [
-  'JWT_ACCESS_SECRET',
-  'OTP_PEPPER',
-  'TOTP_ENC_KEY',
-] as const;
+export const SECRET_ENV_KEYS = ['JWT_ACCESS_SECRET', 'OTP_PEPPER', 'TOTP_ENC_KEY'] as const;
 
 /** Secrets that may be unset, but are length-checked in production when set. */
-export const OPTIONAL_SECRET_ENV_KEYS = [
-  'OWNER_SETUP_TOKEN',
-  'TOTP_ENC_PREVIOUS_KEY',
-] as const;
+export const OPTIONAL_SECRET_ENV_KEYS = ['OWNER_SETUP_TOKEN', 'TOTP_ENC_PREVIOUS_KEY'] as const;
 
 export const CONFIG_DEFAULTS = {
   NODE_ENV: 'development',
@@ -74,14 +67,15 @@ export const JWT_KID_PATTERN = /^[A-Za-z0-9._-]{1,64}$/;
  * to fit an authenticator app's row.
  */
 export const TOTP_ISSUER_MAX_LENGTH = 64;
-export const TOTP_ISSUER_PATTERN = new RegExp(
-  `^[^:]{1,${TOTP_ISSUER_MAX_LENGTH}}$`,
-);
+export const TOTP_ISSUER_PATTERN = new RegExp(`^[^:]{1,${TOTP_ISSUER_MAX_LENGTH}}$`);
 
 export const MAX_PORT = 65_535;
 
 /** The only accepted value of ALLOW_LOGIN_RATE_LIMIT_OVERRIDE (also gates REFRESH_RATE_LIMIT_IP). */
 export const LOGIN_RATE_LIMIT_OVERRIDE_OPT_IN = 'smoke';
+
+/** The only accepted value of ALLOW_LOCAL_MEDIA_PROVIDER (local media in production: test stacks only). */
+export const LOCAL_MEDIA_PROVIDER_OPT_IN = 'smoke';
 
 /**
  * Env keys that may replace one rate-limit rule's limit. Config
@@ -93,10 +87,11 @@ export const RATE_LIMIT_OVERRIDE_ENV_KEYS = [
   'LOGIN_RATE_LIMIT_IP',
   'LOGIN_RATE_LIMIT_EMAIL',
   'REFRESH_RATE_LIMIT_IP',
+  'SETUP_STATUS_RATE_LIMIT_IP',
+  'SETUP_SUBMIT_RATE_LIMIT_IP',
 ] as const;
 
-export type RateLimitOverrideEnvKey =
-  (typeof RATE_LIMIT_OVERRIDE_ENV_KEYS)[number];
+export type RateLimitOverrideEnvKey = (typeof RATE_LIMIT_OVERRIDE_ENV_KEYS)[number];
 
 /** Upper bound of the optional login rate-limit overrides. */
 export const MAX_RATE_LIMIT_OVERRIDE = 1_000_000;

@@ -1,6 +1,6 @@
+import { useState } from 'react';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { useState } from 'react';
 
 import { Checkbox } from './Checkbox';
 
@@ -38,13 +38,7 @@ describe('Checkbox', () => {
 
   it('cannot be toggled when disabled', async () => {
     const onCheckedChange = vi.fn<(value: boolean | 'indeterminate') => void>();
-    render(
-      <Checkbox
-        aria-label="Delete"
-        disabled
-        onCheckedChange={onCheckedChange}
-      />,
-    );
+    render(<Checkbox aria-label="Delete" disabled onCheckedChange={onCheckedChange} />);
     await userEvent.click(screen.getByRole('checkbox', { name: 'Delete' }));
     expect(onCheckedChange).not.toHaveBeenCalled();
   });

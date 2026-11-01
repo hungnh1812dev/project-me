@@ -1,10 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
-import type {
-  ContentType,
-  ContentTypeField,
-} from '../src/features/content-types';
+import type { ContentType, ContentTypeField } from '../src/features/content-types';
 
 interface Definition {
   name: string;
@@ -15,10 +12,7 @@ interface Definition {
 
 /** The real cv-page definition of cms-api, so tests follow the schema. */
 const definition = JSON.parse(
-  readFileSync(
-    resolve(import.meta.dirname, '../../cms-api/content/schemas/cv-page.json'),
-    'utf8',
-  ),
+  readFileSync(resolve(import.meta.dirname, '../../cms-api/content/schemas/cv-page.json'), 'utf8'),
 ) as {
   slug: string;
   kind: string;

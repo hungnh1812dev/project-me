@@ -6,20 +6,14 @@ import {
   type TransactionRunner,
   type UnitOfWork,
 } from '../../../infrastructure/database/TransactionRunner.port';
-import {
-  APP_LOGGER,
-  type AppLogger,
-} from '../../../infrastructure/logging/AppLogger.port';
+import { APP_LOGGER, type AppLogger } from '../../../infrastructure/logging/AppLogger.port';
 import {
   AccessPolicyService,
-  type ActorContext,
   PermissionAction,
+  type ActorContext,
   type RowCondition,
 } from '../../access';
-import {
-  ContentRegistry,
-  type RegisteredContentType,
-} from '../../content-engine';
+import { ContentRegistry, type RegisteredContentType } from '../../content-engine';
 import { DOCUMENT_ERROR_MESSAGES } from '../domain/Documents.constants';
 import {
   documentNotFound,
@@ -31,9 +25,9 @@ import {
 import { cloneTree } from '../domain/TreeCloner.rules';
 import {
   ACTIVITY_RECORDER,
+  DOCUMENT_REPOSITORY,
   type ActivityRecorder,
   type ContentActivityEvent,
-  DOCUMENT_REPOSITORY,
   type DocumentRepository,
   type DocumentRowSelector,
 } from './Documents.port';
@@ -117,12 +111,7 @@ export class PublishService {
     // The row about to be replaced must be in the actor's publish scope too.
     const existing = await this.documents.lockRow(unit, type, publishedRows);
     if (existing !== undefined && rowCondition !== null) {
-      const isInScope = await this.documents.isRowInScope(
-        unit,
-        type,
-        existing.id,
-        rowCondition,
-      );
+      const isInScope = await this.documents.isRowInScope(unit, type, existing.id, rowCondition);
       if (!isInScope) throw documentNotFound();
     }
 
@@ -146,29 +135,14 @@ export class PublishService {
     return draft.version;
   }
 
-  async unpublish(
-    actor: ActorContext,
-    slug: string,
-    documentId: string,
-  ): Promise<void> {
-    const scope = await this.begin(
-      actor,
-      slug,
-      PermissionAction.unpublish,
-      true,
-    );
-    await this.transactions.run((unit) =>
-      this.unpublishIn(unit, scope, documentId),
-    );
+  async unpublish(actor: ActorContext, slug: string, documentId: string): Promise<void> {
+    const scope = await this.begin(actor, slug, PermissionAction.unpublish, true);
+    await this.transactions.run((unit) => this.unpublishIn(unit, scope, documentId));
     await this.track(actor, 'unpublish', slug, documentId);
   }
 
   /** Deletes the published row in the caller's transaction (also per item for bulk); 404 if out of scope. */
-  async unpublishIn(
-    unit: UnitOfWork,
-    scope: ActionScope,
-    documentId: string,
-  ): Promise<void> {
+  async unpublishIn(unit: UnitOfWork, scope: ActionScope, documentId: string): Promise<void> {
     const removed = await this.documents.deleteRows(unit, scope.type, {
       documentId,
       status: 'published',
@@ -177,24 +151,14 @@ export class PublishService {
     if (removed === 0) throw documentNotFound();
   }
 
-  async remove(
-    actor: ActorContext,
-    slug: string,
-    documentId: string,
-  ): Promise<void> {
+  async remove(actor: ActorContext, slug: string, documentId: string): Promise<void> {
     const scope = await this.begin(actor, slug, PermissionAction.delete, false);
-    await this.transactions.run((unit) =>
-      this.removeIn(unit, scope, documentId),
-    );
+    await this.transactions.run((unit) => this.removeIn(unit, scope, documentId));
     await this.track(actor, 'delete', slug, documentId);
   }
 
   /** Deletes both rows inside the caller's transaction (also per item for bulk). */
-  async removeIn(
-    unit: UnitOfWork,
-    scope: ActionScope,
-    documentId: string,
-  ): Promise<void> {
+  async removeIn(unit: UnitOfWork, scope: ActionScope, documentId: string): Promise<void> {
     const { type, rowCondition } = scope;
     const everyRow: DocumentRowSelector = {
       documentId,
@@ -255,9 +219,7 @@ export class PublishService {
     } catch (error) {
       this.logger.error(
         `activity tracking failed for ${action} ${subject}: ${
-          error instanceof Error
-            ? (error.stack ?? error.message)
-            : String(error)
+          error instanceof Error ? (error.stack ?? error.message) : String(error)
         }`,
         PublishService.name,
       );

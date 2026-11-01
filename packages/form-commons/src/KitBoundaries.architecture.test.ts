@@ -11,9 +11,7 @@ function listSourceFiles(dir: string): string[] {
   return readdirSync(dir).flatMap((entry) => {
     const path = join(dir, entry);
     if (statSync(path).isDirectory()) return listSourceFiles(path);
-    return /\.tsx?$/.test(entry) && !/\.(test|spec)\.tsx?$/.test(entry)
-      ? [path]
-      : [];
+    return /\.tsx?$/.test(entry) && !/\.(test|spec)\.tsx?$/.test(entry) ? [path] : [];
   });
 }
 
@@ -32,9 +30,7 @@ function filesContaining(needle: string, owner: string): string[] {
 
 describe('kit architecture', () => {
   it('keeps the FormProvider guard in FieldWiring only', () => {
-    expect(
-      filesContaining('must be rendered inside', FIELD_WIRING_FILE),
-    ).toEqual([]);
+    expect(filesContaining('must be rendered inside', FIELD_WIRING_FILE)).toEqual([]);
   });
 
   it('builds field helper ids in FieldWiring only', () => {
@@ -46,21 +42,13 @@ describe('kit architecture', () => {
     const foldersWithoutOwnFile = readdirSync(formsDir)
       .filter((entry) => statSync(join(formsDir, entry)).isDirectory())
       .filter(
-        (folder) =>
-          !readdirSync(join(formsDir, folder)).includes(
-            `${toPascalCase(folder)}.tsx`,
-          ),
+        (folder) => !readdirSync(join(formsDir, folder)).includes(`${toPascalCase(folder)}.tsx`),
       );
     expect(foldersWithoutOwnFile).toEqual([]);
   });
 
   it('keeps the invalid control classes in Control.constants only', () => {
-    expect(
-      filesContaining(
-        'aria-invalid:border-destructive',
-        CONTROL_CONSTANTS_FILE,
-      ),
-    ).toEqual([]);
+    expect(filesContaining('aria-invalid:border-destructive', CONTROL_CONSTANTS_FILE)).toEqual([]);
   });
 });
 
@@ -71,10 +59,7 @@ const BLOCK_COMMENT = /\/\*[\s\S]*?\*\//g;
 const LINE_COMMENT = /(?:^|\s)\/\/.*$/gm;
 
 function backlogIdsInComments(text: string): string[] {
-  const comments = [
-    ...(text.match(BLOCK_COMMENT) ?? []),
-    ...(text.match(LINE_COMMENT) ?? []),
-  ];
+  const comments = [...(text.match(BLOCK_COMMENT) ?? []), ...(text.match(LINE_COMMENT) ?? [])];
   return comments.flatMap((comment) =>
     comment
       .split('\n')
@@ -96,8 +81,7 @@ describe('comments carry no backlog IDs', () => {
 
   it('keeps every source file at or under the line limit', () => {
     const oversized = listSourceFiles(SRC_DIR).filter(
-      (path) =>
-        readFileSync(path, 'utf8').split('\n').length > MAX_SOURCE_LINES,
+      (path) => readFileSync(path, 'utf8').split('\n').length > MAX_SOURCE_LINES,
     );
     expect(oversized).toEqual([]);
   });
@@ -105,22 +89,13 @@ describe('comments carry no backlog IDs', () => {
   describe('the guard itself', () => {
     it('flags task, question and OS IDs in block, doc and line comments', () => {
       expect(backlogIdsInComments('/** Throttle (T10a). */')).toEqual(['T10a']);
-      expect(backlogIdsInComments('const a = 1; // see Q-G4')).toEqual([
-        'Q-G4',
-      ]);
-      expect(backlogIdsInComments('/*\n * OS4 walk\n * and Q5\n */')).toEqual([
-        'OS4',
-        'Q5',
-      ]);
+      expect(backlogIdsInComments('const a = 1; // see Q-G4')).toEqual(['Q-G4']);
+      expect(backlogIdsInComments('/*\n * OS4 walk\n * and Q5\n */')).toEqual(['OS4', 'Q5']);
     });
 
     it('ignores SPEC IDs, section marks, 2fa and code outside comments', () => {
-      expect(
-        backlogIdsInComments('/** SPEC D9, D14 and §9 for 2fa. */'),
-      ).toEqual([]);
-      expect(backlogIdsInComments('Date.parse(`${raw}T00:00:00Z`);')).toEqual(
-        [],
-      );
+      expect(backlogIdsInComments('/** SPEC D9, D14 and §9 for 2fa. */')).toEqual([]);
+      expect(backlogIdsInComments('Date.parse(`${raw}T00:00:00Z`);')).toEqual([]);
       expect(backlogIdsInComments("const kind = 'T10';")).toEqual([]);
       expect(backlogIdsInComments("fetch('https://x.test/T10')")).toEqual([]);
     });

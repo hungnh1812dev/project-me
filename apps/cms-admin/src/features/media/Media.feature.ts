@@ -1,20 +1,9 @@
-import { COPY } from '../../config/Copy.constants';
-import { APP_ROUTES } from '../../config/App.routes';
-import { defineApiService, type Feature } from '../../lib/FeatureDefinition';
-import { MediaApiProvider } from './MediaApi.context';
+import { defineApiService } from '@apis/client/ApiService.setup';
+
+import type { Feature } from '../Features.registry';
 import { createMediaApi } from './Media.api';
-import { MediaLibraryPage } from './MediaLibraryPage';
+import { MediaApiProvider } from './MediaApi.context';
 
 export const mediaFeature: Feature = {
   apiServices: [defineApiService(createMediaApi, MediaApiProvider)],
-  routes: [{ path: APP_ROUTES.MEDIA, Component: MediaLibraryPage }],
-  navItems: [
-    {
-      label: COPY.access.nav.media,
-      path: APP_ROUTES.MEDIA,
-      section: 'utilities',
-      subject: 'media',
-      action: 'read',
-    },
-  ],
 };

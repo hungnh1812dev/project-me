@@ -1,13 +1,6 @@
+import { DOMAIN_ERROR_KINDS, DomainError } from '../../../common/errors/Domain.errors';
 import type { ActorContext, RolePolicy } from '../../access';
-import {
-  BULK_ITEM_STATUS,
-  BULK_LIMITS,
-  DOCUMENT_ERROR_CODES,
-} from '../domain/Documents.constants';
-import {
-  DomainError,
-  DOMAIN_ERROR_KINDS,
-} from '../../../common/errors/Domain.errors';
+import { BULK_ITEM_STATUS, BULK_LIMITS, DOCUMENT_ERROR_CODES } from '../domain/Documents.constants';
 import { BulkService } from './Bulk.service';
 
 const ROLE: RolePolicy = {
@@ -25,8 +18,8 @@ const ID_A = 'a';
 const ID_B = 'b';
 
 function build(kind: 'collection' | 'single' = 'collection') {
-  const runInSavepoint = jest.fn(
-    (_unit: unknown, work: (unit: unknown) => Promise<unknown>) => work(UNIT),
+  const runInSavepoint = jest.fn((_unit: unknown, work: (unit: unknown) => Promise<unknown>) =>
+    work(UNIT),
   );
   const publishing = {
     begin: jest.fn(() => Promise.resolve({ type: {}, rowCondition: null })),
@@ -52,8 +45,7 @@ function build(kind: 'collection' | 'single' = 'collection') {
         }),
     } as never,
     {
-      registry: () =>
-        Promise.resolve({ resolve: () => ({ definition: { kind } }) }),
+      registry: () => Promise.resolve({ resolve: () => ({ definition: { kind } }) }),
     } as never,
     {
       run: (work: (unit: unknown) => Promise<unknown>) => work(UNIT),
@@ -112,10 +104,7 @@ describe('BulkService', () => {
   });
 
   it('refuses a create item over the component row limit before any write', async () => {
-    const rows = Array.from(
-      { length: BULK_LIMITS.MAX_COMPONENT_ROWS_PER_ITEM + 1 },
-      () => ({}),
-    );
+    const rows = Array.from({ length: BULK_LIMITS.MAX_COMPONENT_ROWS_PER_ITEM + 1 }, () => ({}));
     const { service } = build();
     await expect(
       service.create(ACTOR, SLUG, {

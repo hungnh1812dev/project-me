@@ -1,10 +1,6 @@
-import {
-  DomainError,
-  DOMAIN_ERROR_KINDS,
-} from '../../../common/errors/Domain.errors';
-import type { PermissionGrant } from './ActorContext.entity';
-import { type ActorContext, isOwnerRole } from './ActorContext.entity';
+import { DOMAIN_ERROR_KINDS, DomainError } from '../../../common/errors/Domain.errors';
 import { RANK_FORBIDDEN_ERROR } from './Access.constants';
+import { isOwnerRole, type ActorContext, type PermissionGrant } from './ActorContext.entity';
 import type { PolicyEvaluator } from './PolicyEvaluator.rules';
 import type { SubjectCatalog } from './SubjectCatalog.rules';
 
@@ -16,8 +12,7 @@ export type AccountActor = Extract<ActorContext, { kind: 'account' }>;
 
 /** @throws DomainError (forbidden) for every actor that is not a signed-in account. */
 export function requireAccountActor(actor: ActorContext): AccountActor {
-  if (actor.kind !== 'account')
-    throw new DomainError({ kind: DOMAIN_ERROR_KINDS.FORBIDDEN });
+  if (actor.kind !== 'account') throw new DomainError({ kind: DOMAIN_ERROR_KINDS.FORBIDDEN });
   return actor;
 }
 
@@ -28,8 +23,7 @@ export function requireAccountActor(actor: ActorContext): AccountActor {
  */
 export function requireOwnerActor(actor: ActorContext): AccountActor {
   const account = requireAccountActor(actor);
-  if (!isOwnerRole(account.role))
-    throw new DomainError({ kind: DOMAIN_ERROR_KINDS.FORBIDDEN });
+  if (!isOwnerRole(account.role)) throw new DomainError({ kind: DOMAIN_ERROR_KINDS.FORBIDDEN });
   return account;
 }
 
@@ -51,10 +45,7 @@ export function rankForbidden(): DomainError {
 }
 
 /** @throws DomainError (forbidden, ACCESS_RANK_FORBIDDEN) unless `actor` outranks every rank. */
-export function assertOutranks(
-  actor: ActorContext,
-  ...targetRanks: readonly number[]
-): void {
+export function assertOutranks(actor: ActorContext, ...targetRanks: readonly number[]): void {
   if (!targetRanks.every((rank) => outranks(actor, rank))) {
     throw rankForbidden();
   }

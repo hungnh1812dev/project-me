@@ -32,13 +32,7 @@ export const FILTER_INPUT_NAMES = {
 } as const;
 
 /** Names graphql-js already owns. */
-export const BUILT_IN_TYPE_NAMES = [
-  'String',
-  'Int',
-  'Float',
-  'Boolean',
-  'ID',
-] as const;
+export const BUILT_IN_TYPE_NAMES = ['String', 'Int', 'Float', 'Boolean', 'ID'] as const;
 
 /** Name parts of the generated types: `CvPage` + `Page` / `Filter` / `Sort`. */
 export const TYPE_SUFFIXES = {
@@ -67,8 +61,7 @@ export const ROOT_OPERATIONS = {
   /** The one document of a `single` type. */
   SINGLE: 'single',
 } as const;
-export type RootOperation =
-  (typeof ROOT_OPERATIONS)[keyof typeof ROOT_OPERATIONS];
+export type RootOperation = (typeof ROOT_OPERATIONS)[keyof typeof ROOT_OPERATIONS];
 
 /** What a root field's `extensions[ROOT_FIELD_EXTENSION_KEY]` carries. */
 export interface RootFieldExtension {

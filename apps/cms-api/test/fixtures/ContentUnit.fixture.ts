@@ -1,9 +1,9 @@
 import type { Kysely } from 'kysely';
 
-import { KyselyContentTransactionRunner } from '../../src/modules/content-engine/adapters/KyselyContentTransactionRunner.adapter';
-import type { ContentDbProvider } from '../../src/modules/content-engine/adapters/ContentDatabase.adapter';
-import type { ContentDatabase } from '../../src/modules/content-engine/adapters/TreeLoader.adapter';
 import type { UnitOfWork } from '../../src/infrastructure/database/TransactionRunner.port';
+import type { ContentDbProvider } from '../../src/modules/content-engine/adapters/ContentDatabase.adapter';
+import { KyselyContentTransactionRunner } from '../../src/modules/content-engine/adapters/KyselyContentTransactionRunner.adapter';
+import type { ContentDatabase } from '../../src/modules/content-engine/adapters/TreeLoader.adapter';
 
 const SILENT_LOGGER = { warn: () => undefined, error: () => undefined };
 

@@ -1,39 +1,33 @@
-import {
-  Controller,
-  Get,
-  HttpCode,
-  HttpStatus,
-  Module,
-  Put,
-  UseGuards,
-} from '@nestjs/common';
+import { Controller, Get, HttpCode, HttpStatus, Module, Put, UseGuards } from '@nestjs/common';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import request from 'supertest';
 
-import { Clock } from '../../src/common/time/Clock.service';
 import { ERROR_CODES } from '../../src/common/constants/Error.constants';
+import { Clock } from '../../src/common/time/Clock.service';
 import { PermissionAction } from '../../src/generated/prisma/client';
 import {
   openPrisma,
   type PrismaHandle,
 } from '../../src/infrastructure/database/PrismaClient.adapter';
 import { AccessModule } from '../../src/modules/access/Access.module';
-import type { PermissionGrant } from '../../src/modules/access/domain/ActorContext.entity';
-import {
-  PermissionGuard,
-  RequirePermission,
-} from '../../src/modules/access/http/Permission.guard';
 import { RolePermissionsService } from '../../src/modules/access/application/RolePermissions.service';
 import {
   VERSION_CACHE_TTL_MS,
   VersionCache,
 } from '../../src/modules/access/application/VersionCache.service';
+import type { PermissionGrant } from '../../src/modules/access/domain/ActorContext.entity';
+import { PermissionGuard, RequirePermission } from '../../src/modules/access/http/Permission.guard';
 import { ContentRegistry } from '../../src/modules/content-engine/application/ContentRegistry.service';
 import { ContentTypeRegistry } from '../../src/modules/content-engine/domain/ContentTypeRegistry.entity';
-import { IdentityModule } from '../../src/modules/identity/Identity.module';
-import { JwtAuthGuard } from '../../src/modules/identity/http/Jwt.strategy';
 import { hashPassword } from '../../src/modules/identity/application/Password.service';
-import { ARTICLE_DEFINITION, grant } from '../fixtures/Access.fixture';
+import { JwtAuthGuard } from '../../src/modules/identity/http/Jwt.strategy';
+import { IdentityModule } from '../../src/modules/identity/Identity.module';
+import {
+  ARTICLE_DEFINITION,
+  grant,
+  seedRolePermissions,
+  seedSystemRoles,
+} from '../fixtures/Access.fixture';
 import { createCoreTemplate } from '../fixtures/CoreDb.fixture';
 import {
   dbEnvOf,
@@ -45,10 +39,6 @@ import {
 } from '../fixtures/Env.fixture';
 import { startPostgres, type TestPostgres } from '../fixtures/Postgres.fixture';
 import { createTestApp } from '../fixtures/TestApp.fixture';
-import {
-  seedRolePermissions,
-  seedSystemRoles,
-} from '../fixtures/Access.fixture';
 
 const PASSWORD = 'correct horse battery staple';
 const NEW_PASSWORD = 'a different horse battery staple';
@@ -123,16 +113,12 @@ describe('revocation versions + permission guard (T15, §12-11; Postgres 17 via 
       include: { permissions: true },
     });
     editorRoleId = role.id;
-    editorDefaults = role.permissions.map((row) =>
-      grant(row.subject, row.action),
-    );
+    editorDefaults = role.permissions.map((row) => grant(row.subject, row.action));
   });
 
   afterEach(async () => {
     // Every test starts from the seeded editor rows.
-    await app
-      .get(RolePermissionsService)
-      .replacePermissions(editorRoleId, editorDefaults);
+    await app.get(RolePermissionsService).replacePermissions(editorRoleId, editorDefaults);
   });
 
   afterAll(async () => {
@@ -156,9 +142,7 @@ describe('revocation versions + permission guard (T15, §12-11; Postgres 17 via 
       },
       select: { id: true },
     });
-    const res = await http()
-      .post('/api/v1/auth/login')
-      .send({ email, password: PASSWORD });
+    const res = await http().post('/api/v1/auth/login').send({ email, password: PASSWORD });
     expect(res.status).toBe(200);
     return {
       id: account.id,
@@ -174,8 +158,7 @@ describe('revocation versions + permission guard (T15, §12-11; Postgres 17 via 
 
   it('an editor losing update gets 403 on the next request with the same token', async () => {
     const { token } = await editorToken();
-    const put = () =>
-      http().put(`${PROBE}/documents/article`).set(bearer(token));
+    const put = () => http().put(`${PROBE}/documents/article`).set(bearer(token));
     expect((await put()).status).toBe(204);
 
     const before = await db.prisma.role.findUniqueOrThrow({
@@ -200,26 +183,19 @@ describe('revocation versions + permission guard (T15, §12-11; Postgres 17 via 
     expect((await audit()).status).toBe(403);
     await app
       .get(RolePermissionsService)
-      .replacePermissions(editorRoleId, [
-        ...editorDefaults,
-        grant('audit_logs', read),
-      ]);
+      .replacePermissions(editorRoleId, [...editorDefaults, grant('audit_logs', read)]);
     expect((await audit()).status).toBe(204);
   });
 
   it('a slug that is not a registered content type is 404', async () => {
     const { token } = await editorToken();
-    const res = await http()
-      .put(`${PROBE}/documents/missing`)
-      .set(bearer(token));
+    const res = await http().put(`${PROBE}/documents/missing`).set(bearer(token));
     expect(res.status).toBe(404);
   });
 
   it('routes without @RequirePermission only need a valid token', async () => {
     const { token } = await editorToken();
-    expect(
-      (await http().get(`${PROBE}/signed-in`).set(bearer(token))).status,
-    ).toBe(204);
+    expect((await http().get(`${PROBE}/signed-in`).set(bearer(token))).status).toBe(204);
     expect((await http().get(`${PROBE}/signed-in`)).status).toBe(401);
   });
 
@@ -236,44 +212,33 @@ describe('revocation versions + permission guard (T15, §12-11; Postgres 17 via 
 
   it('a disabled account is 401 on the next request once its write invalidates', async () => {
     const { id, token } = await editorToken();
-    expect(
-      (await http().get(`${PROBE}/signed-in`).set(bearer(token))).status,
-    ).toBe(204);
+    expect((await http().get(`${PROBE}/signed-in`).set(bearer(token))).status).toBe(204);
     await db.prisma.account.update({
       where: { id },
       data: { status: 'disabled' },
     });
     // The T17 write path will do this after its commit.
     app.get(VersionCache).invalidateAccount(id);
-    expect(
-      (await http().get(`${PROBE}/signed-in`).set(bearer(token))).status,
-    ).toBe(401);
+    expect((await http().get(`${PROBE}/signed-in`).set(bearer(token))).status).toBe(401);
   });
 
   it('a write the process cannot see (CLI, other replica) applies within the TTL', async () => {
     const { id, token } = await editorToken();
-    expect(
-      (await http().get(`${PROBE}/signed-in`).set(bearer(token))).status,
-    ).toBe(204);
+    expect((await http().get(`${PROBE}/signed-in`).set(bearer(token))).status).toBe(204);
     await db.prisma.account.update({
       where: { id },
       data: { status: 'disabled' },
     });
     // Served from the cache until the entry expires (/auth/me would
     // re-read the account itself, so probe a route that only has the guard).
-    expect(
-      (await http().get(`${PROBE}/signed-in`).set(bearer(token))).status,
-    ).toBe(204);
+    expect((await http().get(`${PROBE}/signed-in`).set(bearer(token))).status).toBe(204);
     now += VERSION_CACHE_TTL_MS;
-    expect(
-      (await http().get(`${PROBE}/signed-in`).set(bearer(token))).status,
-    ).toBe(401);
+    expect((await http().get(`${PROBE}/signed-in`).set(bearer(token))).status).toBe(401);
   });
 
   it('the same for a role write made outside RolePermissionsService', async () => {
     const { token } = await editorToken();
-    const put = () =>
-      http().put(`${PROBE}/documents/article`).set(bearer(token));
+    const put = () => http().put(`${PROBE}/documents/article`).set(bearer(token));
     expect((await put()).status).toBe(204);
     await db.prisma.permission.deleteMany({
       where: { roleId: editorRoleId, action: update },

@@ -1,9 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { sql } from 'kysely';
 
-import { MediaProvider } from '../../../generated/prisma/client';
-import { prismaTxOf } from '../../../infrastructure/database/PrismaTransactionRunner.adapter';
 import { PrismaService } from '../../../infrastructure/database/Prisma.service';
+import { prismaTxOf } from '../../../infrastructure/database/PrismaTransactionRunner.adapter';
 import type { UnitOfWork } from '../../../infrastructure/database/TransactionRunner.port';
 import type { RowCondition } from '../../access';
 import { ContentDbProvider } from '../../content-engine';
@@ -12,6 +11,7 @@ import type {
   MediaRepository,
   NewMediaFile,
   PurgeCandidate,
+  ReplacementFile,
 } from '../application/Media.port';
 import type { MediaPage, MediaRecord } from '../domain/Media.entity';
 
@@ -31,7 +31,9 @@ interface MediaRow {
   thumbnail_url: string | null;
   provider: string;
   is_reviewer_preset: boolean;
+  sha256: string;
   created_at: Date;
+  updated_at: Date;
 }
 
 const MEDIA_COLUMNS = [
@@ -46,7 +48,9 @@ const MEDIA_COLUMNS = [
   'thumbnail_url',
   'provider',
   'is_reviewer_preset',
+  'sha256',
   'created_at',
+  'updated_at',
 ] as const;
 
 /** What a document read embeds, plus the id the document stores. */
@@ -54,12 +58,17 @@ const EMBED_COLUMNS = [
   'id',
   'document_id',
   'file_name',
+  'mime_type',
   'url',
   'thumbnail_url',
   'provider',
   'alt',
   'size',
+  'width',
+  'height',
+  'sha256',
   'created_at',
+  'updated_at',
 ] as const;
 
 function recordOfRow(row: MediaRow): MediaRecord {
@@ -75,7 +84,9 @@ function recordOfRow(row: MediaRow): MediaRecord {
     thumbnailUrl: row.thumbnail_url,
     provider: row.provider,
     isReviewerPreset: row.is_reviewer_preset,
+    sha256: row.sha256,
     createdAt: row.created_at,
+    updatedAt: row.updated_at,
   };
 }
 
@@ -95,8 +106,6 @@ export class PrismaMediaRepository implements MediaRepository {
     return this.prisma.fileLibrary.create({
       data: {
         ...file,
-        // The column is an enum with one live value; the fake storage reports it too.
-        provider: MediaProvider.cloudinary,
         updatedById: file.createdById,
       },
     });
@@ -106,13 +115,21 @@ export class PrismaMediaRepository implements MediaRepository {
     rowCondition: RowCondition | null;
     page: number;
     pageSize: number;
+    escapedSearch?: string | undefined;
+    mimeTypes?: readonly string[] | undefined;
   }): Promise<MediaPage> {
-    const { rowCondition, page, pageSize } = selection;
+    const { rowCondition, page, pageSize, escapedSearch, mimeTypes } = selection;
     const base = this.content.db
       .selectFrom(MEDIA_TABLE)
       .where(DELETED_AT_COLUMN, 'is', null)
       .$if(rowCondition !== null, (qb) =>
         qb.where(rowCondition as NonNullable<typeof rowCondition>),
+      )
+      .$if(escapedSearch !== undefined, (qb) =>
+        qb.where('file_name', 'ilike', `%${escapedSearch}%`),
+      )
+      .$if(mimeTypes !== undefined, (qb) =>
+        qb.where('mime_type', 'in', [...(mimeTypes as readonly string[])]),
       );
     const [rows, counted] = await Promise.all([
       base
@@ -146,6 +163,56 @@ export class PrismaMediaRepository implements MediaRepository {
     return row === undefined ? undefined : Number((row as { id: number }).id);
   }
 
+  async findLiveTarget(
+    documentId: string,
+    rowCondition: RowCondition | null,
+  ): Promise<{ id: number; mimeType: string } | undefined> {
+    const row = await this.content.db
+      .selectFrom(MEDIA_TABLE)
+      .select(['id', 'mime_type'])
+      .where('document_id', '=', documentId)
+      .where(DELETED_AT_COLUMN, 'is', null)
+      .$if(rowCondition !== null, (qb) =>
+        qb.where(rowCondition as NonNullable<typeof rowCondition>),
+      )
+      .executeTakeFirst();
+    return row === undefined
+      ? undefined
+      : { id: Number(row.id), mimeType: row.mime_type as string };
+  }
+
+  async replaceFile(
+    unit: UnitOfWork,
+    change: { mediaId: number; file: ReplacementFile; replacedAt: Date; updatedById: number },
+  ): Promise<{ record: MediaRecord; previousSha256: string }> {
+    const tx = prismaTxOf(unit);
+    const { mediaId, file, replacedAt, updatedById } = change;
+    const previous = await tx.fileLibrary.findUniqueOrThrow({ where: { id: mediaId } });
+    // The new key goes first: storage_key is unique and the tombstone takes the old one.
+    const record = await tx.fileLibrary.update({
+      where: { id: mediaId },
+      data: { ...file, updatedById },
+    });
+    await tx.fileLibrary.create({
+      data: {
+        fileName: previous.fileName,
+        mimeType: previous.mimeType,
+        size: previous.size,
+        width: previous.width,
+        height: previous.height,
+        storageKey: previous.storageKey,
+        sha256: previous.sha256,
+        url: previous.url,
+        thumbnailUrl: previous.thumbnailUrl,
+        provider: previous.provider,
+        createdById: previous.createdById,
+        updatedById,
+        deletedAt: replacedAt,
+      },
+    });
+    return { record, previousSha256: previous.sha256 };
+  }
+
   async updateAlt(change: {
     documentId: string;
     alt: string | null;
@@ -163,9 +230,7 @@ export class PrismaMediaRepository implements MediaRepository {
       )
       .returning([...MEDIA_COLUMNS])
       .executeTakeFirst();
-    return row === undefined
-      ? undefined
-      : recordOfRow(row as unknown as MediaRow);
+    return row === undefined ? undefined : recordOfRow(row as unknown as MediaRow);
   }
 
   async lockLive(unit: UnitOfWork, mediaId: number): Promise<boolean> {
@@ -199,9 +264,7 @@ export class PrismaMediaRepository implements MediaRepository {
         qb.where(rowCondition as NonNullable<typeof rowCondition>),
       )
       .execute();
-    return new Map(
-      rows.map((row) => [row.document_id as string, row.id as number]),
-    );
+    return new Map(rows.map((row) => [row.document_id as string, row.id as number]));
   }
 
   async findEmbeddable(ids: {
@@ -221,11 +284,7 @@ export class PrismaMediaRepository implements MediaRepository {
         : []),
       ...(ids.documentIds.length > 0
         ? await base()
-            .where(
-              'document_id',
-              '=',
-              sql<string>`any(${[...ids.documentIds]}::uuid[])`,
-            )
+            .where('document_id', '=', sql<string>`any(${[...ids.documentIds]}::uuid[])`)
             .execute()
         : []),
     ];
@@ -234,26 +293,27 @@ export class PrismaMediaRepository implements MediaRepository {
       file: {
         id: row.document_id as string,
         fileName: row.file_name as string,
+        mimeType: row.mime_type as string,
         url: row.url as string,
         thumbnailUrl: (row.thumbnail_url as string | null) ?? null,
         provider: row.provider as string,
         alt: (row.alt as string | null) ?? null,
         size: row.size as number,
+        width: (row.width as number | null) ?? null,
+        height: (row.height as number | null) ?? null,
+        sha256: row.sha256 as string,
         createdAt: (row.created_at as Date).toISOString(),
+        updatedAt: (row.updated_at as Date).toISOString(),
       },
     }));
   }
 
-  findPurgeBatch(
-    cutoff: Date,
-    afterId: number,
-    limit: number,
-  ): Promise<PurgeCandidate[]> {
+  findPurgeBatch(cutoff: Date, afterId: number, limit: number): Promise<PurgeCandidate[]> {
     return this.prisma.fileLibrary.findMany({
       where: { deletedAt: { lt: cutoff }, id: { gt: afterId } },
       orderBy: { id: 'asc' },
       take: limit,
-      select: { id: true, storageKey: true, mimeType: true },
+      select: { id: true, storageKey: true, mimeType: true, provider: true },
     });
   }
 

@@ -20,9 +20,7 @@ describe('contentNavItemsOf', () => {
   it('puts each kind under its section with the list path', () => {
     const items = contentNavItemsOf(TYPES, () => true);
 
-    expect(
-      items.map(({ label, path, section }) => ({ label, path, section })),
-    ).toEqual([
+    expect(items.map(({ label, path, section }) => ({ label, path, section }))).toEqual([
       { label: 'cv-page', path: '/content/cv-page', section: 'singleTypes' },
       { label: 'post', path: '/content/post', section: 'collectionTypes' },
     ]);

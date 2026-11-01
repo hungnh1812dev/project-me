@@ -3,28 +3,28 @@ import { randomUUID } from 'node:crypto';
 import { Kysely, PostgresDialect, sql } from 'kysely';
 import { Client, Pool } from 'pg';
 
-import { inContentUnit } from '../fixtures/ContentUnit.fixture';
-import { DEFAULT_CONTENT_PATHS } from '../../src/modules/content-engine/adapters/MigrationFiles.adapter';
-import { createMigrationDb } from '../../src/modules/content-engine/cli/ContentEngineCli.setup';
-import { CONTENT_ERROR_CODES } from '../../src/modules/content-engine/domain/ContentEngine.constants';
-import {
-  type ContentDocument,
-  DocumentNotFoundError,
-} from '../../src/modules/content-engine/domain/ContentDocument.entity';
 import { KyselyContentRepository } from '../../src/modules/content-engine/adapters/KyselyContent.repository';
+import { DEFAULT_CONTENT_PATHS } from '../../src/modules/content-engine/adapters/MigrationFiles.adapter';
+import { runContentMigrations } from '../../src/modules/content-engine/adapters/MigrationRunner.adapter';
+import type { ContentDatabase } from '../../src/modules/content-engine/adapters/TreeLoader.adapter';
 import type {
   InsertTreeInput,
   LoadTreesQuery,
 } from '../../src/modules/content-engine/application/ContentEngine.port';
-import { runContentMigrations } from '../../src/modules/content-engine/adapters/MigrationRunner.adapter';
+import { createMigrationDb } from '../../src/modules/content-engine/cli/ContentEngineCli.setup';
+import {
+  DocumentNotFoundError,
+  type ContentDocument,
+} from '../../src/modules/content-engine/domain/ContentDocument.entity';
+import { CONTENT_ERROR_CODES } from '../../src/modules/content-engine/domain/ContentEngine.constants';
+import type { ComponentNode } from '../../src/modules/content-engine/domain/ContentTree.entity';
 import {
   ContentTypeRegistry,
   UnknownContentTypeError,
 } from '../../src/modules/content-engine/domain/ContentTypeRegistry.entity';
 import type { ComponentInput } from '../../src/modules/content-engine/domain/TreeInput.rules';
-import type { ComponentNode } from '../../src/modules/content-engine/domain/ContentTree.entity';
-import type { ContentDatabase } from '../../src/modules/content-engine/adapters/TreeLoader.adapter';
 import { loadRegistryFromDatabase } from '../fixtures/ContentRegistry.fixture';
+import { inContentUnit } from '../fixtures/ContentUnit.fixture';
 import { startPostgres, type TestPostgres } from '../fixtures/Postgres.fixture';
 
 const SLUG = 'cv-page';
@@ -81,10 +81,7 @@ function echo(node: ComponentNode): ComponentInput {
     componentUid: node.componentUid,
     values: node.values,
     components: Object.fromEntries(
-      Object.entries(node.components).map(([name, items]) => [
-        name,
-        items.map(echo),
-      ]),
+      Object.entries(node.components).map(([name, items]) => [name, items.map(echo)]),
     ),
   };
 }
@@ -118,10 +115,7 @@ describe('KyselyContentRepository on cv-page (Postgres 17 via Testcontainers)', 
 
     const migrationDb = createMigrationDb(url.toString());
     try {
-      await runContentMigrations(
-        migrationDb,
-        DEFAULT_CONTENT_PATHS.migrationsDir,
-      );
+      await runContentMigrations(migrationDb, DEFAULT_CONTENT_PATHS.migrationsDir);
       registry = await loadRegistryFromDatabase(migrationDb);
     } finally {
       await migrationDb.destroy();
@@ -132,10 +126,7 @@ describe('KyselyContentRepository on cv-page (Postgres 17 via Testcontainers)', 
         pool: new Pool({ connectionString: url.toString() }),
       }),
       log: (event) => {
-        if (
-          event.level === 'query' &&
-          !TRANSACTION_CONTROL.test(event.query.sql)
-        ) {
+        if (event.level === 'query' && !TRANSACTION_CONTROL.test(event.query.sql)) {
           queries.push(event.query.sql);
         }
       },
@@ -153,15 +144,10 @@ describe('KyselyContentRepository on cv-page (Postgres 17 via Testcontainers)', 
   });
 
   async function insert(input: InsertTreeInput): Promise<number> {
-    return inContentUnit(db, (unit) =>
-      repository.insertTree(unit, SLUG, input),
-    );
+    return inContentUnit(db, (unit) => repository.insertTree(unit, SLUG, input));
   }
 
-  function loadTrees(
-    slug: string,
-    query: LoadTreesQuery,
-  ): Promise<ContentDocument[]> {
+  function loadTrees(slug: string, query: LoadTreesQuery): Promise<ContentDocument[]> {
     return inContentUnit(db, (unit) => repository.loadTrees(unit, slug, query));
   }
 
@@ -199,12 +185,8 @@ describe('KyselyContentRepository on cv-page (Postgres 17 via Testcontainers)', 
     });
 
     it('rejects an unknown slug with a typed error before any SQL', async () => {
-      expect(() => registry.resolve('cv_page')).toThrow(
-        UnknownContentTypeError,
-      );
-      await expect(
-        loadTrees('nope; DROP TABLE x', { status: 'draft' }),
-      ).rejects.toMatchObject({
+      expect(() => registry.resolve('cv_page')).toThrow(UnknownContentTypeError);
+      await expect(loadTrees('nope; DROP TABLE x', { status: 'draft' })).rejects.toMatchObject({
         code: CONTENT_ERROR_CODES.CONTENT_TYPE_UNKNOWN,
       });
       expect(queries).toEqual([]);
@@ -246,12 +228,10 @@ describe('KyselyContentRepository on cv-page (Postgres 17 via Testcontainers)', 
       },
       expect.objectContaining({ position: 'Senior', period: '2020-2022' }),
     ]);
-    expect(acme.components.role?.map((node) => node.orderIndex)).toEqual([
-      0, 1,
-    ]);
-    expect(
-      component(document, 'experience', 1).components.role?.[0]?.values,
-    ).toMatchObject({ position: 'Junior' });
+    expect(acme.components.role?.map((node) => node.orderIndex)).toEqual([0, 1]);
+    expect(component(document, 'experience', 1).components.role?.[0]?.values).toMatchObject({
+      position: 'Junior',
+    });
   });
 
   it('loads N roots with one query per level table, never per row', async () => {
@@ -268,14 +248,12 @@ describe('KyselyContentRepository on cv-page (Postgres 17 via Testcontainers)', 
       documentIds: full,
     });
     expect(documents).toHaveLength(full.length);
-    expect(
-      documents.flatMap((document) => document.components.experience ?? []),
-    ).toHaveLength(full.length * 2);
+    expect(documents.flatMap((document) => document.components.experience ?? [])).toHaveLength(
+      full.length * 2,
+    );
     // 1 root query + 7 component tables, whatever N is.
     expect(queries).toHaveLength(CV_PAGE_TABLE_COUNT);
-    expect(
-      queries.slice(1).every((text) => /= any\(\$1::int\[\]\)/.test(text)),
-    ).toBe(true);
+    expect(queries.slice(1).every((text) => /= any\(\$1::int\[\]\)/.test(text))).toBe(true);
 
     queries = [];
     await loadTrees(SLUG, {
@@ -350,9 +328,7 @@ describe('KyselyContentRepository on cv-page (Postgres 17 via Testcontainers)', 
       componentUid: typescript.componentUid,
       orderIndex: 1,
     });
-    expect(component(after, 'skill', 0).componentUid).not.toBe(
-      typescript.componentUid,
-    );
+    expect(component(after, 'skill', 0).componentUid).not.toBe(typescript.componentUid);
 
     expect(after?.components.experience).toHaveLength(1);
     const acmeAfter = component(after, 'experience', 0);
@@ -515,8 +491,6 @@ describe('KyselyContentRepository on cv-page (Postgres 17 via Testcontainers)', 
       }),
     ).rejects.toMatchObject({ code: CONTENT_ERROR_CODES.TREE_INVALID_UID });
     // Only the transaction's BEGIN/ROLLBACK reached the database.
-    expect(queries.every((text) => /^(begin|rollback)$/i.test(text))).toBe(
-      true,
-    );
+    expect(queries.every((text) => /^(begin|rollback)$/i.test(text))).toBe(true);
   });
 });

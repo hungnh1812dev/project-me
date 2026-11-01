@@ -3,14 +3,14 @@ import 'reflect-metadata';
 import { GUARDS_METADATA } from '@nestjs/common/constants';
 import { Reflector } from '@nestjs/core';
 
+import type { RateLimitPolicy } from '../../src/common/constants/Limits.constants';
+import { RATE_LIMIT_POLICY_METADATA } from '../../src/common/guards/Throttle.guard';
+import { DocumentAuthGuard } from '../../src/modules/access/document-auth/http/DocumentAuth.guard';
 import {
   PERMISSION_METADATA_KEY,
   PermissionGuard,
   type PermissionRequirement,
 } from '../../src/modules/access/http/Permission.guard';
-import { DocumentAuthGuard } from '../../src/modules/access/document-auth/http/DocumentAuth.guard';
-import { RATE_LIMIT_POLICY_METADATA } from '../../src/common/guards/Throttle.guard';
-import type { RateLimitPolicy } from '../../src/common/constants/Limits.constants';
 import { JwtAuthGuard } from '../../src/modules/identity/http/Jwt.strategy';
 import type { PublicHandlerReason } from './PublicHandlers.constants';
 
@@ -40,28 +40,20 @@ export interface DiscoveredHandler {
 }
 
 /** The guard each non-public reason promises (see PUBLIC_HANDLERS). */
-export const GUARD_PROMISED_BY_REASON: Record<
-  PublicHandlerReason,
-  GuardClass | undefined
-> = {
+export const GUARD_PROMISED_BY_REASON: Record<PublicHandlerReason, GuardClass | undefined> = {
   public: undefined,
   'authenticated-only': JwtAuthGuard,
   'document-auth-guard': DocumentAuthGuard,
 };
 
-export const AUTHENTICATION_GUARDS: readonly GuardClass[] = [
-  JwtAuthGuard,
-  DocumentAuthGuard,
-];
+export const AUTHENTICATION_GUARDS: readonly GuardClass[] = [JwtAuthGuard, DocumentAuthGuard];
 
 export { PermissionGuard };
 
 const reflector = new Reflector();
 
 export function isControllerClass(value: unknown): value is ControllerClass {
-  return (
-    typeof value === 'function' && Reflect.hasMetadata(PATH_METADATA, value)
-  );
+  return typeof value === 'function' && Reflect.hasMetadata(PATH_METADATA, value);
 }
 
 function guardsDeclaredOn(target: object): GuardClass[] {
@@ -84,23 +76,19 @@ export function handlersOf(controller: ControllerClass): DiscoveredHandler[] {
   const classPath = String(Reflect.getMetadata(PATH_METADATA, controller));
   return methodNamesOf(controller).flatMap((name) => {
     const method = controller.prototype[name];
-    if (
-      typeof method !== 'function' ||
-      !Reflect.hasMetadata(METHOD_METADATA, method)
-    ) {
+    if (typeof method !== 'function' || !Reflect.hasMetadata(METHOD_METADATA, method)) {
       return [];
     }
     return {
       id: `${controller.name}.${name}`,
       routePath: `${classPath}/${String(Reflect.getMetadata(PATH_METADATA, method))}`,
-      requirement: reflector.getAllAndOverride<
-        PermissionRequirement | undefined
-      >(PERMISSION_METADATA_KEY, [method as HandlerFunction, controller]),
+      requirement: reflector.getAllAndOverride<PermissionRequirement | undefined>(
+        PERMISSION_METADATA_KEY,
+        [method as HandlerFunction, controller],
+      ),
       guards: [...guardsDeclaredOn(controller), ...guardsDeclaredOn(method)],
-      throttlePolicy: Reflect.getMetadata(
-        RATE_LIMIT_POLICY_METADATA,
-        method,
-      ) as RateLimitPolicy | undefined,
+      throttlePolicy: Reflect.getMetadata(RATE_LIMIT_POLICY_METADATA, method) as
+        RateLimitPolicy | undefined,
     };
   });
 }

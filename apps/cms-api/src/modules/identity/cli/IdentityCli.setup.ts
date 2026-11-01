@@ -1,12 +1,12 @@
 import { z } from 'zod';
 
-import { type IAppConfig } from '../../../config/AppConfig.setup';
 import { Clock } from '../../../common/time/Clock.service';
+import { type IAppConfig } from '../../../config/AppConfig.setup';
 import type { PrismaClient } from '../../../generated/prisma/client';
-import { PrismaTransactionRunner } from '../../../infrastructure/database/PrismaTransactionRunner.adapter';
 import { openPrisma } from '../../../infrastructure/database/PrismaClient.adapter';
+import { PrismaTransactionRunner } from '../../../infrastructure/database/PrismaTransactionRunner.adapter';
 import { NestAppLogger } from '../../../infrastructure/logging/NestAppLogger.adapter';
-import { type RoleSeedService, roleSeedServiceOf } from '../../access';
+import { roleSeedServiceOf, type RoleSeedService } from '../../access';
 import { PrismaAuditLogRepository } from '../../security-audit';
 import { PrismaAccountRepository } from '../adapters/PrismaAccount.repository';
 import { PrismaSessionRevocationRepository } from '../adapters/PrismaSessionRevocation.repository';
@@ -22,9 +22,7 @@ import { CliInputError } from './PasswordInput.client';
 const optionalText = z
   .string()
   .optional()
-  .transform((value) =>
-    value === undefined || value.trim() === '' ? undefined : value,
-  );
+  .transform((value) => (value === undefined || value.trim() === '' ? undefined : value));
 
 const ownerEnvSchema = z.object({
   [OWNER_ENV_KEYS.email]: optionalText,
@@ -71,12 +69,7 @@ export function identityUseCasesOf(prisma: PrismaClient): IdentityCliUseCases {
   );
   return {
     ownerBootstrap: new OwnerBootstrapService(accounts, runner, audit),
-    twoFactorReset: new TwoFactorResetService(
-      accounts,
-      runner,
-      sessions,
-      audit,
-    ),
+    twoFactorReset: new TwoFactorResetService(accounts, runner, sessions, audit),
     seedAccount: new SeedAccountService(accounts, runner, audit),
     roleSeed: roleSeedServiceOf(prisma),
   };
@@ -90,9 +83,7 @@ export interface IdentityCli extends IdentityCliUseCases {
 }
 
 /** Opens its own connection for one CLI run. Call `close()` when done. */
-export function openIdentityCli(
-  config: Pick<IAppConfig, 'database'>,
-): IdentityCli {
+export function openIdentityCli(config: Pick<IAppConfig, 'database'>): IdentityCli {
   const { prisma, close } = openPrisma(config.database);
   return { ...identityUseCasesOf(prisma), prisma, close };
 }

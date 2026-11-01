@@ -4,9 +4,9 @@ import { Clock } from '../../../common/time/Clock.service';
 import type { RolePolicy } from '../domain/ActorContext.entity';
 import {
   ACCOUNT_VERSION_SOURCE,
+  ROLE_LOOKUP,
   type AccountVersions,
   type AccountVersionSource,
-  ROLE_LOOKUP,
   type RoleLookup,
 } from './Access.port';
 
@@ -126,9 +126,7 @@ export class VersionCache {
     const cached = this.accounts.get(documentId);
     if (
       cached !== undefined &&
-      (cached === null ||
-        minTokenVersion === undefined ||
-        cached.tokenVersion >= minTokenVersion)
+      (cached === null || minTokenVersion === undefined || cached.tokenVersion >= minTokenVersion)
     ) {
       return cached;
     }
@@ -142,10 +140,7 @@ export class VersionCache {
    * A role with its permission rows; null if it does not exist.
    * `minPolicyVersion`: re-read when the cache holds an older version.
    */
-  async getRolePolicy(
-    roleId: number,
-    minPolicyVersion?: number,
-  ): Promise<RolePolicy | null> {
+  async getRolePolicy(roleId: number, minPolicyVersion?: number): Promise<RolePolicy | null> {
     const cached = this.roles.get(roleId);
     if (
       cached !== undefined &&

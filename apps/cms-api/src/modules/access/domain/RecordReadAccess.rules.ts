@@ -19,15 +19,9 @@ export interface RecordReadAccess {
   systemFields: ReadonlySet<RecordSystemField>;
 }
 
-const HIDDEN_FROM: ReadonlySet<ActorKind> = new Set(
-  ACCOUNT_REFERENCES_HIDDEN_FROM,
-);
-const ACCOUNT_REFERENCES: ReadonlySet<RecordSystemField> = new Set(
-  ACCOUNT_REFERENCE_FIELDS,
-);
-const ALL_SYSTEM_FIELDS: ReadonlySet<RecordSystemField> = new Set(
-  RECORD_SYSTEM_FIELDS,
-);
+const HIDDEN_FROM: ReadonlySet<ActorKind> = new Set(ACCOUNT_REFERENCES_HIDDEN_FROM);
+const ACCOUNT_REFERENCES: ReadonlySet<RecordSystemField> = new Set(ACCOUNT_REFERENCE_FIELDS);
+const ALL_SYSTEM_FIELDS: ReadonlySet<RecordSystemField> = new Set(RECORD_SYSTEM_FIELDS);
 const PUBLIC_SYSTEM_FIELDS: ReadonlySet<RecordSystemField> = new Set(
   RECORD_SYSTEM_FIELDS.filter((field) => !ACCOUNT_REFERENCES.has(field)),
 );
@@ -36,22 +30,15 @@ function hidesAccountReferences(actor: ActorContext): boolean {
   return (
     HIDDEN_FROM.has(actor.kind) ||
     (actor.role.isSystem &&
-      (ACCOUNT_REFERENCES_HIDDEN_ROLE_SLUGS as readonly string[]).includes(
-        actor.role.slug,
-      ))
+      (ACCOUNT_REFERENCES_HIDDEN_ROLE_SLUGS as readonly string[]).includes(actor.role.slug))
   );
 }
 
 /** Anonymous visitors, reviewers and guests never see `createdBy` / `updatedBy`. */
-export function recordReadAccess(
-  actor: ActorContext,
-  fields: FieldSelection,
-): RecordReadAccess {
+export function recordReadAccess(actor: ActorContext, fields: FieldSelection): RecordReadAccess {
   return {
     fields,
-    systemFields: hidesAccountReferences(actor)
-      ? PUBLIC_SYSTEM_FIELDS
-      : ALL_SYSTEM_FIELDS,
+    systemFields: hidesAccountReferences(actor) ? PUBLIC_SYSTEM_FIELDS : ALL_SYSTEM_FIELDS,
   };
 }
 

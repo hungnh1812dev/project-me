@@ -1,9 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 
-import {
-  DEFAULT_ROLE_PERMISSIONS,
-  SYSTEM_ROLES,
-} from '../domain/SystemRoles.entity';
+import { DEFAULT_ROLE_PERMISSIONS, SYSTEM_ROLES } from '../domain/SystemRoles.entity';
 import { ROLE_SEED_STORE, type RoleSeedStore } from './Access.port';
 
 export class SystemRoleSeedError extends Error {
@@ -26,9 +23,7 @@ export class RoleSeedService {
    */
   async seedSystemRoles(): Promise<string[]> {
     const slugs = SYSTEM_ROLES.map((role) => role.slug);
-    const before = new Set(
-      (await this.store.findRolesBySlugs(slugs)).map((role) => role.slug),
-    );
+    const before = new Set((await this.store.findRolesBySlugs(slugs)).map((role) => role.slug));
     await this.store.insertMissingSystemRoles(
       SYSTEM_ROLES.map(({ slug, name, rank }) => ({ slug, name, rank })),
     );

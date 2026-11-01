@@ -1,14 +1,7 @@
 import { SCALAR_FIELD_TYPES } from '../../src/modules/content-engine/domain/ContentEngine.constants';
 import { findFieldTypeBranches } from './FieldTypeLiterals.analyzer';
-import {
-  assertPinnedPathsExist,
-  listSourceFiles,
-} from './ImportGraph.analyzer';
-import {
-  FIELD_TYPES_DIRECTORY,
-  VALUE_KIND_SWITCH_FILES,
-  SRC_ROOT,
-} from './SourcePaths.constants';
+import { assertPinnedPathsExist, listSourceFiles } from './ImportGraph.analyzer';
+import { FIELD_TYPES_DIRECTORY, SRC_ROOT, VALUE_KIND_SWITCH_FILES } from './SourcePaths.constants';
 
 /**
  * SPEC D12 (R2-05): what a scalar field type means is decided in
@@ -46,10 +39,7 @@ describe('field type branches (D12)', () => {
 describe('value kind switch files', () => {
   it('exist', () => {
     expect(() =>
-      assertPinnedPathsExist(SRC_ROOT, [
-        ...VALUE_KIND_SWITCH_FILES,
-        FIELD_TYPES_DIRECTORY,
-      ]),
+      assertPinnedPathsExist(SRC_ROOT, [...VALUE_KIND_SWITCH_FILES, FIELD_TYPES_DIRECTORY]),
     ).not.toThrow();
   });
 });
@@ -60,17 +50,13 @@ describe('findFieldTypeBranches', () => {
 
   it('finds case labels and comparisons on either side', () => {
     expect(
-      scan(
-        `switch (t) { case 'media': break; }\nif (x.type === 'text') {}\nif ('json' !== y) {}`,
-      ),
+      scan(`switch (t) { case 'media': break; }\nif (x.type === 'text') {}\nif ('json' !== y) {}`),
     ).toEqual(['media', 'text', 'json']);
   });
 
   it('ignores other literals, non-comparison uses and typeof checks', () => {
-    expect(
-      scan(
-        `const a = 'text'; if (x === 'other') {} if (typeof v === 'string') {}`,
-      ),
-    ).toEqual([]);
+    expect(scan(`const a = 'text'; if (x === 'other') {} if (typeof v === 'string') {}`)).toEqual(
+      [],
+    );
   });
 });

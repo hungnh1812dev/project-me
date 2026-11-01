@@ -1,4 +1,5 @@
-import { deferred } from '../../../test/FakeApi.fixture';
+import { deferred } from '@test/FakeApi.fixture';
+
 import { singleFlight } from './SingleFlight.rules';
 
 describe('singleFlight', () => {

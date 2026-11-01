@@ -5,7 +5,7 @@
 # CLI and log messages, the mail subject, security header values, the refresh
 # cookie name. When an app changes one of them, only this file changes. The
 # values themselves are owned by the apps:
-#   header values  apps/web/src/config/SecurityHeaders.constants.ts,
+#   header values  apps/web/src/configs/SecurityHeaders.constants.ts,
 #                  apps/cms-admin/nginx/security-headers.inc.template,
 #                  apps/cms-api/src/common/constants/Http.constants.ts
 #   cookie name    apps/cms-api/src/modules/identity/http/IdentityHttp.constants.ts

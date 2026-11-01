@@ -1,18 +1,14 @@
+import { createApiClient } from '@apis/client/Api.client';
+import { API_ENDPOINTS } from '@configs/Api.endpoints';
 import { QueryClient } from '@tanstack/react-query';
 import { render } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 
 import { App } from '../src/app/App';
-import { createAppServices } from '../src/app/AppServices.setup';
 import { AppProviders } from '../src/app/AppProviders';
+import { createAppServices } from '../src/app/AppServices.setup';
 import type { CurrentUser } from '../src/features/auth/Auth.slice';
-import { API_ENDPOINTS } from '../src/config/Api.endpoints';
-import { createApiClient } from '../src/lib/Api.client';
-import {
-  createFakeApi,
-  type FakeHandler,
-  TEST_API_BASE_URL,
-} from './FakeApi.fixture';
+import { createFakeApi, TEST_API_BASE_URL, type FakeHandler } from './FakeApi.fixture';
 
 export const TEST_USER: CurrentUser = {
   id: 'acc_owner',
@@ -42,10 +38,7 @@ export function createTestServices(handlers: Record<string, FakeHandler> = {}) {
   return { api, client, services: createAppServices(client, queryClient) };
 }
 
-export function renderApp(
-  services: ReturnType<typeof createAppServices>,
-  route = '/',
-) {
+export function renderApp(services: ReturnType<typeof createAppServices>, route = '/') {
   return render(
     <AppProviders services={services}>
       <MemoryRouter initialEntries={[route]}>

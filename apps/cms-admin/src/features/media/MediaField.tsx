@@ -1,40 +1,36 @@
-import { MediaInput } from '@abyss/form-commons';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
+import { MediaInput } from '@abyss/form-commons';
+import { useRestoreFocus } from '@components/useRestoreFocus';
+import { COPY } from '@configs/Copy.constants';
+import { useQueryClient } from '@tanstack/react-query';
 import { useController } from 'react-hook-form';
 
-import { COPY } from '../../config/Copy.constants';
-import { MEDIA_SUBJECT } from './Media.constants';
 import { useCallerAccess } from '../access';
-import { useMediaApi } from './MediaApi.context';
-import { toMediaError } from './Media.errors';
-import { libraryFileToInput, mediaToForm } from './MediaFieldValue.rules';
+import { MEDIA_SUBJECT } from './Media.constants';
 import { MEDIA_QUERY_KEY } from './Media.queries';
+import { libraryFileToInput, mediaToForm } from './MediaFieldValue.rules';
 import { MediaPickerDialog } from './MediaPickerDialog';
+import { UploadDialog } from './UploadDialog';
 
 const copy = COPY.media;
 
-/** A `media` field of the dynamic form: attach from the library, upload, or detach. */
+/** A `media` field of the dynamic form: upload, pick from the library, or detach. */
 export function MediaField({ name, label }: { name: string; label: string }) {
   const { field, fieldState } = useController({ name });
-  const api = useMediaApi();
   const queryClient = useQueryClient();
   const caller = useCallerAccess();
   const [picking, setPicking] = useState(false);
-  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
 
   const canRead = caller.isReady && caller.can(MEDIA_SUBJECT, 'read');
   const canCreate = caller.isReady && caller.can(MEDIA_SUBJECT, 'create');
-
-  const upload = useMutation({
-    mutationFn: (file: File) => api.upload(file),
-    onSuccess: (created) => {
-      void queryClient.invalidateQueries({ queryKey: MEDIA_QUERY_KEY });
-      setUploadError(null);
-      field.onChange(libraryFileToInput(created));
-    },
-    onError: (cause) => setUploadError(toMediaError(cause).message),
-  });
+  const { rememberOpener, restoreFocus } = useRestoreFocus();
+  const openUpload = canCreate
+    ? () => {
+        rememberOpener(document.activeElement);
+        setUploading(true);
+      }
+    : undefined;
 
   return (
     <>
@@ -45,29 +41,24 @@ export function MediaField({ name, label }: { name: string; label: string }) {
           previewFallback: copy.previewFallback,
         }}
         value={mediaToForm(field.value)}
-        disabled={upload.isPending}
-        error={uploadError ?? fieldState.error?.message}
-        onOpenLibrary={
-          canRead
-            ? () => {
-                setUploadError(null);
-                setPicking(true);
-              }
-            : undefined
-        }
-        onFilePick={
-          canCreate
-            ? (file) => {
-                setUploadError(null);
-                upload.mutate(file);
-              }
-            : undefined
-        }
-        onRemove={() => {
-          setUploadError(null);
-          field.onChange(null);
-        }}
+        error={fieldState.error?.message}
+        onOpenLibrary={canRead ? () => setPicking(true) : undefined}
+        onUpload={openUpload}
+        onReplace={openUpload}
+        onRemove={() => field.onChange(null)}
       />
+      {canCreate ? (
+        <UploadDialog
+          mode="one"
+          open={uploading}
+          onClose={() => setUploading(false)}
+          onCloseAutoFocus={restoreFocus}
+          onUploaded={([created]) => {
+            void queryClient.invalidateQueries({ queryKey: MEDIA_QUERY_KEY });
+            if (created !== undefined) field.onChange(libraryFileToInput(created));
+          }}
+        />
+      ) : null}
       {canRead ? (
         <MediaPickerDialog
           open={picking}

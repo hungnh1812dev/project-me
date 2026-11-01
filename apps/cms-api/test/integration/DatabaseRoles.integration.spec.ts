@@ -1,7 +1,8 @@
+import { PrismaService } from '../../src/infrastructure/database/Prisma.service';
+import { APP_LOGGER } from '../../src/infrastructure/logging/AppLogger.port';
 import {
   applyDatabaseRoles,
   DDL_REFUSED_FOR_API_ROLE,
-  type DatabaseRoleNames,
   dropRoles,
   failureCodeOf,
   grantSnapshotOf,
@@ -12,16 +13,15 @@ import {
   migrateCore,
   randomRoleName,
   rowsOf,
+  type DatabaseRoleNames,
 } from '../fixtures/CoreDb.fixture';
-import { PrismaService } from '../../src/infrastructure/database/Prisma.service';
-import { APP_LOGGER } from '../../src/infrastructure/logging/AppLogger.port';
 import { dbEnvOf, productionEnv } from '../fixtures/Env.fixture';
-import { createTestApp } from '../fixtures/TestApp.fixture';
 import {
   SHARED_POSTGRES_URL_ENV,
   startPostgres,
   type TestPostgres,
 } from '../fixtures/Postgres.fixture';
+import { createTestApp } from '../fixtures/TestApp.fixture';
 
 const SETUP_TIMEOUT_MS = 180_000;
 const TEMPORARY_TABLE = 'CREATE TEMP TABLE denied_probe (id int)';
@@ -64,12 +64,7 @@ describe('database roles script, hosting=self_managed (ADR 0012)', () => {
 
   afterAll(async () => {
     await postgres?.stop();
-    await dropRoles(serverUrl, [
-      roles.migrator,
-      roles.api,
-      roles.backup,
-      otherRole,
-    ]);
+    await dropRoles(serverUrl, [roles.migrator, roles.api, roles.backup, otherRole]);
   });
 
   it('makes the migrator the database owner and takes PUBLIC rights away', async () => {
@@ -94,9 +89,7 @@ describe('database roles script, hosting=self_managed (ADR 0012)', () => {
 
     await rowsOf(superuserUrl, `CREATE ROLE "${otherRole}" LOGIN`);
     const otherUrl = await loginUrlOf(serverUrl, database, otherRole);
-    expect(await failureCodeOf(otherUrl, 'SELECT 1')).toBe(
-      INSUFFICIENT_PRIVILEGE,
-    );
+    expect(await failureCodeOf(otherUrl, 'SELECT 1')).toBe(INSUFFICIENT_PRIVILEGE);
   });
 
   it('gives the roles no password and no privileged attribute', async () => {
@@ -112,24 +105,12 @@ describe('database roles script, hosting=self_managed (ADR 0012)', () => {
   });
 
   it('lets the API role do DML in public and content', async () => {
-    await rowsOf(
-      apiUrl,
-      `INSERT INTO public.app_settings ("key", "value") VALUES ('probe', '1')`,
-    );
-    await rowsOf(
-      apiUrl,
-      `UPDATE public.app_settings SET "value" = '2' WHERE "key" = 'probe'`,
-    );
+    await rowsOf(apiUrl, `INSERT INTO public.app_settings ("key", "value") VALUES ('probe', '1')`);
+    await rowsOf(apiUrl, `UPDATE public.app_settings SET "value" = '2' WHERE "key" = 'probe'`);
     expect(
-      await rowsOf(
-        apiUrl,
-        `SELECT 1 FROM public.app_settings WHERE "key" = 'probe'`,
-      ),
+      await rowsOf(apiUrl, `SELECT 1 FROM public.app_settings WHERE "key" = 'probe'`),
     ).toHaveLength(1);
-    await rowsOf(
-      apiUrl,
-      `DELETE FROM public.app_settings WHERE "key" = 'probe'`,
-    );
+    await rowsOf(apiUrl, `DELETE FROM public.app_settings WHERE "key" = 'probe'`);
 
     await rowsOf(
       apiUrl,
@@ -143,13 +124,8 @@ describe('database roles script, hosting=self_managed (ADR 0012)', () => {
       migratorUrl,
       `CREATE TABLE content.later_probe (id serial PRIMARY KEY, label text)`,
     );
-    await rowsOf(
-      apiUrl,
-      `INSERT INTO content.later_probe (label) VALUES ('a')`,
-    );
-    expect(
-      await rowsOf(backupUrl, `SELECT 1 FROM content.later_probe`),
-    ).toHaveLength(1);
+    await rowsOf(apiUrl, `INSERT INTO content.later_probe (label) VALUES ('a')`);
+    expect(await rowsOf(backupUrl, `SELECT 1 FROM content.later_probe`)).toHaveLength(1);
   });
 
   it.each(DDL_REFUSED_FOR_API_ROLE)('refuses the API role: %s', async (ddl) => {
@@ -157,17 +133,13 @@ describe('database roles script, hosting=self_managed (ADR 0012)', () => {
   });
 
   it('refuses temporary tables for the API role', async () => {
-    expect(await failureCodeOf(apiUrl, TEMPORARY_TABLE)).toBe(
-      INSUFFICIENT_PRIVILEGE,
-    );
+    expect(await failureCodeOf(apiUrl, TEMPORARY_TABLE)).toBe(INSUFFICIENT_PRIVILEGE);
   });
 
   it.each(META_TABLE_WRITES_REFUSED_FOR_API_ROLE)(
     'refuses the API role a meta table write: %s',
     async (statement) => {
-      expect(await failureCodeOf(apiUrl, statement)).toBe(
-        INSUFFICIENT_PRIVILEGE,
-      );
+      expect(await failureCodeOf(apiUrl, statement)).toBe(INSUFFICIENT_PRIVILEGE);
     },
   );
 
@@ -198,9 +170,7 @@ describe('database roles script, hosting=self_managed (ADR 0012)', () => {
       'CREATE TABLE public.denied_probe (id int)',
       TEMPORARY_TABLE,
     ]) {
-      expect(await failureCodeOf(backupUrl, statement)).toBe(
-        INSUFFICIENT_PRIVILEGE,
-      );
+      expect(await failureCodeOf(backupUrl, statement)).toBe(INSUFFICIENT_PRIVILEGE);
     }
   });
 
@@ -211,97 +181,63 @@ describe('database roles script, hosting=self_managed (ADR 0012)', () => {
   });
 
   it('stops without a valid hosting or role variable', async () => {
-    await expect(
-      run({ extraVariables: { hosting: undefined } }),
-    ).rejects.toThrow(/hosting must be/);
-    await expect(run({ hosting: 'elsewhere' })).rejects.toThrow(
+    await expect(run({ extraVariables: { hosting: undefined } })).rejects.toThrow(
       /hosting must be/,
     );
-    await expect(
-      run({ extraVariables: { migrator_role: undefined } }),
-    ).rejects.toThrow(/migrator_role is required/);
-    await expect(
-      run({ extraVariables: { api_role: roles.backup } }),
-    ).rejects.toThrow(/three different roles/);
+    await expect(run({ hosting: 'elsewhere' })).rejects.toThrow(/hosting must be/);
+    await expect(run({ extraVariables: { migrator_role: undefined } })).rejects.toThrow(
+      /migrator_role is required/,
+    );
+    await expect(run({ extraVariables: { api_role: roles.backup } })).rejects.toThrow(
+      /three different roles/,
+    );
   });
 
   it('fails its self-check when the API role may create in public', async () => {
-    await rowsOf(
-      superuserUrl,
-      `GRANT CREATE ON SCHEMA public TO "${roles.api}"`,
-    );
+    await rowsOf(superuserUrl, `GRANT CREATE ON SCHEMA public TO "${roles.api}"`);
     await expect(run()).rejects.toThrow(
-      new RegExp(
-        `self-check failed.*${roles.api} can create objects in schema public`,
-      ),
+      new RegExp(`self-check failed.*${roles.api} can create objects in schema public`),
     );
-    await rowsOf(
-      superuserUrl,
-      `REVOKE CREATE ON SCHEMA public FROM "${roles.api}"`,
-    );
+    await rowsOf(superuserUrl, `REVOKE CREATE ON SCHEMA public FROM "${roles.api}"`);
     await run();
   });
 
   it('fails its self-check when the backup role may write', async () => {
-    await rowsOf(
-      superuserUrl,
-      `GRANT INSERT ON public.app_settings TO "${roles.backup}"`,
-    );
+    await rowsOf(superuserUrl, `GRANT INSERT ON public.app_settings TO "${roles.backup}"`);
     await expect(run()).rejects.toThrow(
-      new RegExp(
-        `self-check failed.*${roles.backup} can write public.app_settings`,
-      ),
+      new RegExp(`self-check failed.*${roles.backup} can write public.app_settings`),
     );
-    await rowsOf(
-      superuserUrl,
-      `REVOKE INSERT ON public.app_settings FROM "${roles.backup}"`,
-    );
+    await rowsOf(superuserUrl, `REVOKE INSERT ON public.app_settings FROM "${roles.backup}"`);
     await run();
   });
 
   it.each([
     ['api', 'pg_execute_server_program'],
     ['backup', 'pg_signal_backend'],
-  ] as const)(
-    'fails its self-check when the %s role is a member of %s',
-    async (which, group) => {
-      await rowsOf(superuserUrl, `GRANT ${group} TO "${roles[which]}"`);
-      await expect(run()).rejects.toThrow(
-        new RegExp(
-          `self-check failed.*${roles[which]} is a member of role ${group}`,
-        ),
-      );
-      await rowsOf(superuserUrl, `REVOKE ${group} FROM "${roles[which]}"`);
-      await run();
-    },
-  );
+  ] as const)('fails its self-check when the %s role is a member of %s', async (which, group) => {
+    await rowsOf(superuserUrl, `GRANT ${group} TO "${roles[which]}"`);
+    await expect(run()).rejects.toThrow(
+      new RegExp(`self-check failed.*${roles[which]} is a member of role ${group}`),
+    );
+    await rowsOf(superuserUrl, `REVOKE ${group} FROM "${roles[which]}"`);
+    await run();
+  });
 
   it('fails its self-check when the API role is a member of the migrator role', async () => {
     await rowsOf(superuserUrl, `GRANT "${roles.migrator}" TO "${roles.api}"`);
     await expect(run()).rejects.toThrow(
-      new RegExp(
-        `self-check failed.*${roles.api} is a member of role ${roles.migrator}`,
-      ),
+      new RegExp(`self-check failed.*${roles.api} is a member of role ${roles.migrator}`),
     );
-    await rowsOf(
-      superuserUrl,
-      `REVOKE "${roles.migrator}" FROM "${roles.api}"`,
-    );
+    await rowsOf(superuserUrl, `REVOKE "${roles.migrator}" FROM "${roles.api}"`);
     await run();
   });
 
   it('repairs a meta table write right instead of keeping it', async () => {
-    await rowsOf(
-      superuserUrl,
-      `GRANT UPDATE ON content._content_types TO "${roles.api}"`,
-    );
+    await rowsOf(superuserUrl, `GRANT UPDATE ON content._content_types TO "${roles.api}"`);
     await run();
-    expect(
-      await failureCodeOf(
-        apiUrl,
-        `UPDATE content._content_types SET slug = 'x'`,
-      ),
-    ).toBe(INSUFFICIENT_PRIVILEGE);
+    expect(await failureCodeOf(apiUrl, `UPDATE content._content_types SET slug = 'x'`)).toBe(
+      INSUFFICIENT_PRIVILEGE,
+    );
   });
 
   describe('production boot warning (ADR 0012 section 7)', () => {
@@ -333,10 +269,7 @@ describe('database roles script, hosting=self_managed (ADR 0012)', () => {
         expect(warnings).toHaveLength(1);
         expect(warnings[0]).toContain('member of role pg_signal_backend');
       } finally {
-        await rowsOf(
-          superuserUrl,
-          `REVOKE pg_signal_backend FROM "${roles.api}"`,
-        );
+        await rowsOf(superuserUrl, `REVOKE pg_signal_backend FROM "${roles.api}"`);
       }
     });
 

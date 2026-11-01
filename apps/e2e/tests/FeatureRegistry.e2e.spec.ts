@@ -3,7 +3,7 @@ import { expect, test } from '@playwright/test';
 import { ADMIN_COPY } from '../src/Apps.contract';
 import { CV_PAGE_SLUG, PROFILE_SLUG } from '../src/E2e.constants';
 import { e2eEnv } from '../src/E2e.env';
-import { submitLogin } from '../src/Session.fixture';
+import { expectSignedIn, submitLogin } from '../src/Session.fixture';
 
 const nav = ADMIN_COPY.access.nav;
 
@@ -62,18 +62,10 @@ test.describe('anonymous', () => {
 
 test('owner: nav order, deep links and unknown path', async ({ page }) => {
   await submitLogin(page, e2eEnv.ownerEmail, e2eEnv.ownerPassword);
-  const links = page
-    .getByRole('navigation', { name: nav.label })
-    .getByRole('link');
+  const links = page.getByRole('navigation', { name: nav.label }).getByRole('link');
   await expect(links).toHaveText(EXPECTED_OWNER_NAV);
 
-  for (const path of [
-    '/accounts',
-    '/roles',
-    '/api-tokens',
-    '/media',
-    '/reviewer',
-  ]) {
+  for (const path of ['/accounts', '/roles', '/api-tokens', '/media', '/reviewer']) {
     await page.goto(path);
     await expect(page).toHaveURL(new RegExp(`${path}$`));
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
@@ -85,10 +77,6 @@ test('owner: nav order, deep links and unknown path', async ({ page }) => {
 
 test('reader without permissions sees no feature nav', async ({ page }) => {
   await submitLogin(page, e2eEnv.readerEmail, e2eEnv.readerPassword);
-  await expect(
-    page.getByRole('button', { name: ADMIN_COPY.session.signOut }),
-  ).toBeVisible();
-  await expect(
-    page.getByRole('navigation', { name: nav.label }).getByRole('link'),
-  ).toHaveCount(0);
+  await expectSignedIn(page);
+  await expect(page.getByRole('navigation', { name: nav.label }).getByRole('link')).toHaveCount(0);
 });

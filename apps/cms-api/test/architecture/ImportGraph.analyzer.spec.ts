@@ -28,10 +28,7 @@ describe('import graph resolver', () => {
     root = mkdtempSync(join(tmpdir(), 'import-graph-'));
     write('engine/loader.ts', 'export class Loader {}');
     write('engine/safe.ts', 'export class Safe {}');
-    write(
-      'engine/index.ts',
-      "export { Loader } from './loader';\nexport * from './safe';",
-    );
+    write('engine/index.ts', "export { Loader } from './loader';\nexport * from './safe';");
   });
 
   afterEach(() => rmSync(root, { recursive: true, force: true }));
@@ -59,10 +56,7 @@ describe('import graph resolver', () => {
   });
 
   it('follows a facade that imports and then exports locally', () => {
-    write(
-      'hidden/index.ts',
-      "import { Loader } from '../engine/loader';\nexport { Loader };",
-    );
+    write('hidden/index.ts', "import { Loader } from '../engine/loader';\nexport { Loader };");
     write('a.ts', "import { Loader } from './hidden';");
     expect(reached('a.ts')).toContain('engine/loader.ts');
   });
@@ -114,10 +108,7 @@ describe('import graph resolver', () => {
   });
 
   it('keeps an import it cannot pair with a clause', () => {
-    write(
-      'a.ts',
-      "import type from './engine/loader';\nconst x = 1; // from './engine/safe'",
-    );
+    write('a.ts', "import type from './engine/loader';\nconst x = 1; // from './engine/safe'");
     expect(reached('a.ts')).toContain('engine/loader.ts');
   });
 
@@ -130,19 +121,13 @@ describe('import graph resolver', () => {
   });
 
   it('follows a namespace import of an import-then-export barrel', () => {
-    write(
-      'engine/hidden.ts',
-      "import { Loader } from './loader';\nexport { Loader };",
-    );
+    write('engine/hidden.ts', "import { Loader } from './loader';\nexport { Loader };");
     write('a.ts', "import * as engine from './engine/hidden';");
     expect(reached('a.ts')).toContain('engine/loader.ts');
   });
 
   it('follows a default import of a barrel that exports it as default', () => {
-    write(
-      'engine/def.ts',
-      "import { Loader } from './loader';\nexport default Loader;",
-    );
+    write('engine/def.ts', "import { Loader } from './loader';\nexport default Loader;");
     write('a.ts', "import loader from './engine/def';");
     expect(reached('a.ts')).toContain('engine/loader.ts');
   });
@@ -163,14 +148,8 @@ describe('import graph resolver', () => {
   });
 
   it('follows an aliased export of an imported name', () => {
-    write(
-      'engine/al.ts',
-      "import { Loader } from './loader';\nexport { Loader as safeLoad };",
-    );
-    write(
-      'engine/ns4.ts',
-      "import * as tl4 from './loader';\nexport { tl4 as renamed4 };",
-    );
+    write('engine/al.ts', "import { Loader } from './loader';\nexport { Loader as safeLoad };");
+    write('engine/ns4.ts', "import * as tl4 from './loader';\nexport { tl4 as renamed4 };");
     write('a.ts', "import { safeLoad } from './engine/al';");
     write('b.ts', "import { renamed4 } from './engine/ns4';");
     expect(reached('a.ts')).toContain('engine/loader.ts');
@@ -178,10 +157,7 @@ describe('import graph resolver', () => {
   });
 
   it('follows a default import combined with a namespace import', () => {
-    write(
-      'engine/ns5.ts',
-      "import d5, * as tl5 from './loader';\nexport { tl5 };",
-    );
+    write('engine/ns5.ts', "import d5, * as tl5 from './loader';\nexport { tl5 };");
     write('a.ts', "import { tl5 } from './engine/ns5';");
     expect(reached('a.ts')).toContain('engine/loader.ts');
   });
@@ -198,10 +174,7 @@ describe('import graph resolver', () => {
   });
 
   it('does not expand imports of a file without an export list or default', () => {
-    write(
-      'engine/plain.ts',
-      "import { Loader } from './loader';\nexport class Plain {}",
-    );
+    write('engine/plain.ts', "import { Loader } from './loader';\nexport class Plain {}");
     write('a.ts', "import { Plain } from './engine/plain';");
     expect(reached('a.ts')).not.toContain('engine/loader.ts');
   });
@@ -225,9 +198,23 @@ describe('import graph statements and pinned paths', () => {
   };
 
   it('does not read a quoted word list that holds the word from as an import', () => {
+    expect(typeOnlyFlags("export const WORDS = [\n  'from',\n  'select',\n];")).toEqual([]);
+  });
+
+  it('leaves inline type names out of the value names', () => {
+    writeFileSync(
+      join(root, 'a.ts'),
+      "import { Target, type Shape } from './target';\nimport type { Only } from './target';",
+    );
     expect(
-      typeOnlyFlags("export const WORDS = [\n  'from',\n  'select',\n];"),
-    ).toEqual([]);
+      resolveImports(join(root, 'a.ts')).map(({ importedNames, importedValueNames }) => ({
+        importedNames,
+        importedValueNames,
+      })),
+    ).toEqual([
+      { importedNames: ['Target', 'Shape'], importedValueNames: ['Target'] },
+      { importedNames: ['Only'], importedValueNames: ['Only'] },
+    ]);
   });
 
   it('flags import type and export type, and nothing else, as type-only', () => {
@@ -258,17 +245,12 @@ describe('import graph statements and pinned paths', () => {
 
   it('keeps two statements on one specifier apart', () => {
     expect(
-      typeOnlyFlags(
-        "import { B } from './target';\nimport type { A } from './target';",
-      ),
+      typeOnlyFlags("import { B } from './target';\nimport type { A } from './target';"),
     ).toEqual(['./target:false', './target:true']);
   });
 
   it('textMatches ignores comments and a global flag', () => {
-    writeFileSync(
-      join(root, 'a.ts'),
-      '// process.env\n/* Date.now( */\nconst a = 1;',
-    );
+    writeFileSync(join(root, 'a.ts'), '// process.env\n/* Date.now( */\nconst a = 1;');
     const file = join(root, 'a.ts');
     expect(textMatches(file, /process\.env/g)).toBe(false);
     expect(textMatches(file, /Date\.now\(/)).toBe(false);
@@ -278,8 +260,8 @@ describe('import graph statements and pinned paths', () => {
 
   it('assertPinnedPathsExist names a path that is gone', () => {
     expect(() => assertPinnedPathsExist(root, ['target.ts'])).not.toThrow();
-    expect(() =>
-      assertPinnedPathsExist(root, ['target.ts', 'moved/gone.ts']),
-    ).toThrow(/missing path: moved\/gone\.ts/);
+    expect(() => assertPinnedPathsExist(root, ['target.ts', 'moved/gone.ts'])).toThrow(
+      /missing path: moved\/gone\.ts/,
+    );
   });
 });

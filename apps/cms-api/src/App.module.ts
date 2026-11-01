@@ -1,9 +1,9 @@
-import { type DynamicModule, Module } from '@nestjs/common';
+import { Module, type DynamicModule } from '@nestjs/common';
 
-import { type IAppConfig } from './config/AppConfig.setup';
 import { ClientIpModule } from './common/http/ClientIp.module';
 import { RateLimitModule } from './common/rate-limit/RateLimit.module';
 import { ClockModule } from './common/time/Clock.module';
+import { type IAppConfig } from './config/AppConfig.setup';
 import { ConfigModule } from './config/Config.module';
 import { LoggingModule } from './infrastructure/logging/Logging.module';
 import { ActorThrottleSubjectResolver } from './modules/access';

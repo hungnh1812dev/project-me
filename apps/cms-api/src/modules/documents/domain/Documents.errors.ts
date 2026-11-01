@@ -1,8 +1,5 @@
 import { ERROR_CODES } from '../../../common/constants/Error.constants';
-import {
-  DomainError,
-  DOMAIN_ERROR_KINDS,
-} from '../../../common/errors/Domain.errors';
+import { DOMAIN_ERROR_KINDS, DomainError } from '../../../common/errors/Domain.errors';
 import { ContentTreeError, DocumentNotFoundError } from '../../content-engine';
 import {
   BULK_MESSAGES,
@@ -11,8 +8,7 @@ import {
   PRESENCE_MESSAGES,
 } from './Documents.constants';
 
-const { INVALID_INPUT, FORBIDDEN, NOT_FOUND, CONFLICT, RATE_LIMITED } =
-  DOMAIN_ERROR_KINDS;
+const { INVALID_INPUT, FORBIDDEN, NOT_FOUND, CONFLICT, RATE_LIMITED } = DOMAIN_ERROR_KINDS;
 
 /** 403 with the default body: the actor may not do this at all. */
 export const forbidden = () => new DomainError({ kind: FORBIDDEN });

@@ -19,9 +19,7 @@ const REVIEWER_CLEANUP_INTERVAL_MS = 10 * MS_PER_MINUTE;
  * one runs it, which is harmless.
  */
 @Injectable()
-export class ReviewerCleanupJob
-  implements OnApplicationBootstrap, OnModuleDestroy
-{
+export class ReviewerCleanupJob implements OnApplicationBootstrap, OnModuleDestroy {
   private readonly logger = new Logger(ReviewerCleanupJob.name);
   private stop: (() => void) | undefined;
 
@@ -33,9 +31,7 @@ export class ReviewerCleanupJob
 
   onApplicationBootstrap(): void {
     if (!this.isFeatureEnabled) {
-      this.logger.log(
-        'Reviewer cleanup not started: REVIEWER_FEATURE_ENABLED is off',
-      );
+      this.logger.log('Reviewer cleanup not started: REVIEWER_FEATURE_ENABLED is off');
       return;
     }
     this.stop = startIntervalJob({

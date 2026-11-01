@@ -1,10 +1,6 @@
 import { isDeepStrictEqual } from 'node:util';
 
-import type {
-  SerializedComponent,
-  SerializedComponents,
-  SerializedRecord,
-} from '../../access';
+import type { SerializedComponent, SerializedComponents, SerializedRecord } from '../../access';
 import type {
   ComponentInput,
   ComponentNode,
@@ -34,10 +30,7 @@ export interface DiffEntry {
  * overwrite, a sent component list replaces the stored one (items matched
  * by `componentUid`; others are new). Fields not sent stay as stored.
  */
-export function overlaySubmitted(
-  server: ContentDocument,
-  tree: TreeInput,
-): ContentDocument {
+export function overlaySubmitted(server: ContentDocument, tree: TreeInput): ContentDocument {
   return {
     ...server,
     values: { ...server.values, ...tree.values },
@@ -51,14 +44,10 @@ function overlayComponents(
 ): ComponentTrees {
   const mergedTrees: ComponentTrees = { ...base };
   for (const [name, items] of Object.entries(sent ?? {})) {
-    const stored = new Map(
-      (base[name] ?? []).map((node) => [node.componentUid, node]),
-    );
+    const stored = new Map((base[name] ?? []).map((node) => [node.componentUid, node]));
     mergedTrees[name] = items.map((item, index): ComponentNode => {
       const known =
-        item.componentUid === undefined
-          ? undefined
-          : stored.get(item.componentUid.toLowerCase());
+        item.componentUid === undefined ? undefined : stored.get(item.componentUid.toLowerCase());
       return {
         id: known?.id ?? 0,
         componentUid: known?.componentUid ?? NEW_ITEM_UID,
@@ -93,10 +82,7 @@ function normalize<T>(value: T): T {
  * same mask on both sides and never shows up: the diff cannot leak it.
  * Components are matched by `componentUid` (SPEC D11).
  */
-export function diffRecords(
-  server: SerializedRecord,
-  submitted: SerializedRecord,
-): DiffEntry[] {
+export function diffRecords(server: SerializedRecord, submitted: SerializedRecord): DiffEntry[] {
   const entries: DiffEntry[] = [];
   diffLevel(normalize(server), normalize(submitted), '', entries);
   return entries;
@@ -107,15 +93,9 @@ interface Level {
   components: SerializedComponents;
 }
 
-const at = (base: string, rest: string) =>
-  base === '' ? rest : `${base}.${rest}`;
+const at = (base: string, rest: string) => (base === '' ? rest : `${base}.${rest}`);
 
-function diffLevel(
-  server: Level,
-  submitted: Level,
-  base: string,
-  entries: DiffEntry[],
-): void {
+function diffLevel(server: Level, submitted: Level, base: string, entries: DiffEntry[]): void {
   for (const [name, serverValue] of Object.entries(server.values)) {
     const submittedValue = submitted.values[name];
     if (!sameValue(serverValue, submittedValue)) {
@@ -131,12 +111,7 @@ function diffLevel(
     // A masked component is null on both sides.
     const submittedItems = submitted.components[name];
     if (serverItems === null || submittedItems == null) continue;
-    diffList(
-      serverItems,
-      submittedItems,
-      at(base, `components.${name}`),
-      entries,
-    );
+    diffList(serverItems, submittedItems, at(base, `components.${name}`), entries);
   }
 }
 
@@ -148,9 +123,7 @@ function diffList(
 ): void {
   const serverByUid = new Map(server.map((item) => [item.componentUid, item]));
   const submittedUids = new Set(
-    submitted
-      .map((item) => item.componentUid)
-      .filter((uid) => uid !== NEW_ITEM_UID),
+    submitted.map((item) => item.componentUid).filter((uid) => uid !== NEW_ITEM_UID),
   );
 
   for (const item of server) {
@@ -164,9 +137,7 @@ function diffList(
   }
   submitted.forEach((item, index) => {
     const match =
-      item.componentUid === NEW_ITEM_UID
-        ? undefined
-        : serverByUid.get(item.componentUid);
+      item.componentUid === NEW_ITEM_UID ? undefined : serverByUid.get(item.componentUid);
     if (match === undefined) {
       entries.push({
         path: `${base}[new#${index}]`,

@@ -1,7 +1,6 @@
+import type { PageMeta } from '@apis/client/Api.client';
+import { API_ENDPOINTS } from '@configs/Api.endpoints';
 import type { AxiosInstance } from 'axios';
-
-import { API_ENDPOINTS } from '../../config/Api.endpoints';
-import type { PageMeta } from '../../lib/Api.client';
 
 const { REVIEWER } = API_ENDPOINTS;
 
@@ -33,21 +32,14 @@ export function createReviewerApi(client: AxiosInstance) {
 
     /** Switching off also ends every live reviewer session. */
     setEnabled: async (enabled: boolean): Promise<boolean> => {
-      const { data } = await client.put<{ enabled: boolean }>(
-        REVIEWER.SETTINGS,
-        { enabled },
-      );
+      const { data } = await client.put<{ enabled: boolean }>(REVIEWER.SETTINGS, { enabled });
       return data.enabled === true;
     },
 
-    listSessions: async (
-      page: number,
-      pageSize: number,
-    ): Promise<ReviewerSessionsPage> => {
-      const { data } = await client.get<ReviewerSessionsPage>(
-        REVIEWER.SESSIONS,
-        { params: { page, pageSize } },
-      );
+    listSessions: async (page: number, pageSize: number): Promise<ReviewerSessionsPage> => {
+      const { data } = await client.get<ReviewerSessionsPage>(REVIEWER.SESSIONS, {
+        params: { page, pageSize },
+      });
       return data;
     },
   };
