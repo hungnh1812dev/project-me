@@ -1,6 +1,5 @@
 export {
   MediaInput,
-  formatFileSize,
   type MediaInputFile,
   type MediaInputLabels,
   type MediaInputProps,
@@ -11,4 +10,4 @@ export {
   type MediaPreviewLabels,
   type MediaPreviewProps,
 } from './MediaPreview';
-export { MediaDetails, type MediaDetailsProps } from './MediaDetails';
+export { MediaDetails, formatFileSize, type MediaDetailsProps } from './MediaDetails';

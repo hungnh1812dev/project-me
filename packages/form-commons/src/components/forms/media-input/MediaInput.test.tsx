@@ -2,7 +2,8 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { vi } from 'vitest';
 
-import { formatFileSize, MediaInput, type MediaInputFile } from './MediaInput';
+import { formatFileSize } from './MediaDetails';
+import { MediaInput, type MediaInputFile } from './MediaInput';
 
 const labels = {
   empty: 'No file attached',
@@ -11,6 +12,8 @@ const labels = {
   replace: 'Replace',
   remove: 'Remove',
   delete: 'Delete from library',
+  replaceFile: 'Replace file',
+  removeFromField: 'Remove from field',
   previewFallback: (name: string) => `Preview of ${name}`,
 };
 
@@ -40,7 +43,7 @@ describe('MediaInput', () => {
     );
     expect(screen.getByText('No file attached')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Choose from library' })).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Remove' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Remove from field' })).toBeNull();
     expect(screen.queryByRole('button', { name: /Delete/ })).toBeNull();
   });
 
@@ -67,11 +70,11 @@ describe('MediaInput', () => {
     expect(screen.getByRole('img', { name: 'A portrait' })).toBeInTheDocument();
   });
 
-  it('calls the action callbacks', async () => {
+  it('calls each overlay action and the footer delete', async () => {
     const onOpenLibrary = vi.fn<() => void>();
     const onRemove = vi.fn<() => void>();
     const onDelete = vi.fn<() => void>();
-    const onFilePick = vi.fn<(file: File) => void>();
+    const onReplace = vi.fn<() => void>();
     render(
       <MediaInput
         label="Photo"
@@ -80,17 +83,82 @@ describe('MediaInput', () => {
         onOpenLibrary={onOpenLibrary}
         onRemove={onRemove}
         onDelete={onDelete}
-        onFilePick={onFilePick}
+        onReplace={onReplace}
       />,
     );
-    await userEvent.click(screen.getByRole('button', { name: 'Replace' }));
-    await userEvent.click(screen.getByRole('button', { name: 'Remove' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Replace file' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Choose from library' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Remove from field' }));
     await userEvent.click(screen.getByRole('button', { name: 'Delete from library' }));
-    const picked = new File(['x'], 'new.png', { type: 'image/png' });
-    await userEvent.upload(screen.getByTestId('media-file-input'), picked);
+    expect(onReplace).toHaveBeenCalledOnce();
     expect(onOpenLibrary).toHaveBeenCalledOnce();
     expect(onRemove).toHaveBeenCalledOnce();
     expect(onDelete).toHaveBeenCalledOnce();
+  });
+
+  it('hides an overlay action whose handler is absent', () => {
+    render(<MediaInput label="Photo" labels={labels} value={file} onRemove={() => undefined} />);
+    expect(screen.getByRole('button', { name: 'Remove from field' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Replace file' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Choose from library' })).toBeNull();
+  });
+
+  it('falls back to the old labels when the new ones are absent', () => {
+    const { replaceFile: _r, removeFromField: _f, ...oldLabels } = labels;
+    render(
+      <MediaInput
+        label="Photo"
+        labels={oldLabels}
+        value={file}
+        onReplace={() => undefined}
+        onRemove={() => undefined}
+      />,
+    );
+    expect(screen.getByRole('button', { name: 'Replace' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Remove' })).toBeInTheDocument();
+  });
+
+  it('shows the details footer with the file name and short hash', () => {
+    render(
+      <MediaInput label="Photo" labels={labels} value={{ ...file, sha256: 'abcdef0123456789' }} />,
+    );
+    expect(screen.getByText('portrait.jpg · abcdef01')).toBeInTheDocument();
+  });
+
+  it('empty: Upload calls onUpload and a 300 px area holds both actions', async () => {
+    const onUpload = vi.fn<() => void>();
+    const onOpenLibrary = vi.fn<() => void>();
+    const { container } = render(
+      <MediaInput
+        label="Photo"
+        labels={labels}
+        value={null}
+        onUpload={onUpload}
+        onOpenLibrary={onOpenLibrary}
+      />,
+    );
+    expect(container.querySelector('[data-slot="media-empty"]')).toHaveClass(
+      'h-(--size-media-preview)',
+    );
+    await userEvent.click(screen.getByRole('button', { name: 'Upload new' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Choose from library' }));
+    expect(onUpload).toHaveBeenCalledOnce();
+    expect(onOpenLibrary).toHaveBeenCalledOnce();
+  });
+
+  it('keeps the old onFilePick path for Upload and for Replace file', async () => {
+    const onFilePick = vi.fn<(file: File) => void>();
+    const picked = new File(['x'], 'new.png', { type: 'image/png' });
+    const { rerender } = render(
+      <MediaInput label="Photo" labels={labels} value={null} onFilePick={onFilePick} />,
+    );
+    await userEvent.upload(screen.getByTestId('media-file-input'), picked);
+    expect(onFilePick).toHaveBeenCalledWith(picked);
+
+    onFilePick.mockClear();
+    rerender(<MediaInput label="Photo" labels={labels} value={file} onFilePick={onFilePick} />);
+    expect(screen.getByRole('button', { name: 'Replace file' })).toBeInTheDocument();
+    await userEvent.upload(screen.getByTestId('media-file-input'), picked);
     expect(onFilePick).toHaveBeenCalledWith(picked);
   });
 
@@ -130,7 +198,7 @@ describe('MediaInput', () => {
         onRemove={() => undefined}
       />,
     );
-    expect(screen.getByRole('button', { name: 'Remove' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Remove from field' })).toBeDisabled();
     expect(screen.getByText('Required')).toBeInTheDocument();
   });
 });

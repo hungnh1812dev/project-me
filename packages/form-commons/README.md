@@ -145,12 +145,16 @@ All bind to the surrounding `FormProvider` like `TextInput`.
 ### MediaInput
 
 Presentational field for one library file (cms-admin binds it to the form in `MediaField`).
-`value` is a `MediaInputFile | null` (preview, name, size, optional `mimeType` (absent on files embedded in documents), optional `provider`
-badge, date). Callbacks: `onOpenLibrary` (choose or replace), `onFilePick(file)`
-(a file picked from disk; the parent uploads it; `onChange` is a deprecated alias),
-`onRemove` (detach from the field, the file stays in the library), `onDelete`
-(delete from the library). A button shows only when its
-callback is given. All copy comes through the `labels` prop.
+`value` is a `MediaInputFile | null`. Filled: a 300 px `MediaPreview` (`field`) with overlay
+`IconButton`s, then `MediaDetails` as the footer. Empty: a dashed 300 px area with Upload and
+Choose from library. Callbacks: `onUpload` (empty Upload, e.g. open the upload dialog),
+`onReplace` (Replace file), `onOpenLibrary` (Choose from library), `onRemove` (Remove from the
+field, the file stays in the library), `onDelete` (footer button, delete from the library),
+`onFilePick(file)` (old path: a hidden file input serves Upload and Replace file when
+`onUpload` / `onReplace` are absent; `onChange` is a deprecated alias). A button shows only when
+its handler (or the file input path) exists. All copy comes through `labels`; `replaceFile`,
+`removeFromField` and `videoBadge` are optional (they fall back to `replace`, `remove`, "Video").
+`formatFileSize` now lives in `MediaDetails.tsx`.
 
 `MediaPreview` (`file`, `height: 'field' | 'card'`, `labels`, `actions` overlay slot) draws the
 picture, a video badge, or a kind icon (one map per MIME family). `MediaDetails` (`file`) shows

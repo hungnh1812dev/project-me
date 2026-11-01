@@ -1,8 +1,12 @@
 import * as React from 'react';
-import { cn } from 'cn';
+import { FolderOpen, ImagePlus, RefreshCw, X } from 'lucide-react';
 
 import { Field } from '@/components/forms/field';
 import { Button } from '@/components/ui/Button';
+import { IconButton } from '@/components/ui/IconButton';
+
+import { MediaDetails } from './MediaDetails';
+import { MediaPreview } from './MediaPreview';
 
 /** A library file as the field shows it. */
 export interface MediaInputFile {
@@ -35,6 +39,12 @@ export interface MediaInputLabels {
   replace: string;
   remove: string;
   delete: string;
+  /** Overlay action that picks a new file from disk; defaults to `replace`. */
+  replaceFile?: string | undefined;
+  /** Overlay action that detaches the file from the field; defaults to `remove`. */
+  removeFromField?: string | undefined;
+  /** Badge on a video preview. */
+  videoBadge?: string | undefined;
   /** Alt text of the preview image when the file has none. */
   previewFallback: (fileName: string) => string;
 }
@@ -54,6 +64,10 @@ export interface MediaInputProps {
   onFilePick?: ((file: File) => void) | undefined;
   /** @deprecated Use `onFilePick`; this is not a change event, it starts an upload. */
   onChange?: ((file: File) => void) | undefined;
+  /** Replace the attached file; the parent opens its own picker. Falls back to the file input of `onFilePick`. */
+  onReplace?: (() => void) | undefined;
+  /** Start an upload (e.g. open the upload dialog); falls back to the file input of `onFilePick`. */
+  onUpload?: (() => void) | undefined;
   /** Detach the file from this field (the file stays in the library). */
   onRemove?: (() => void) | undefined;
   /** Delete the file from the library. */
@@ -62,35 +76,11 @@ export interface MediaInputProps {
   onOpenLibrary?: (() => void) | undefined;
 }
 
-const BYTES_PER_UNIT = 1024;
-const SIZE_UNITS = ['B', 'KB', 'MB', 'GB'] as const;
-const IMAGE_PREFIX = 'image/';
-
-/** `1536` -> `1.5 KB`. */
-export function formatFileSize(bytes: number): string {
-  let value = bytes;
-  let unit = 0;
-  while (value >= BYTES_PER_UNIT && unit < SIZE_UNITS.length - 1) {
-    value /= BYTES_PER_UNIT;
-    unit += 1;
-  }
-  const rounded = unit === 0 ? value : Math.round(value * 10) / 10;
-  return `${rounded} ${SIZE_UNITS[unit]}`;
-}
-
-/** `jpeg`-style tag for a file without preview: from the type, else the extension. */
-function fileKind(file: MediaInputFile): string {
-  const fromType = file.mimeType?.split('/')[1];
-  if (fromType !== undefined && fromType !== '') return fromType;
-  const extensionDotIndex = file.fileName.lastIndexOf('.');
-  return extensionDotIndex === -1 ? '' : file.fileName.slice(extensionDotIndex + 1);
-}
-
-const dateFormat = new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' });
+const DEFAULT_VIDEO_BADGE = 'Video';
 
 /**
- * Shows the attached library file (preview, name, size, provider, date) with
- * the actions around it. Presentational: the owner holds the value.
+ * The attached library file as a large preview with overlay actions and a
+ * details footer, or an empty drop area. Presentational: the owner holds the value.
  */
 function MediaInput({
   label,
@@ -104,17 +94,17 @@ function MediaInput({
   className,
   onFilePick,
   onChange,
+  onReplace,
+  onUpload,
   onRemove,
   onDelete,
   onOpenLibrary,
 }: MediaInputProps) {
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const handleFilePick = onFilePick ?? onChange;
-  const preview =
-    value === null
-      ? null
-      : (value.thumbnailUrl ??
-        (value.mimeType?.startsWith(IMAGE_PREFIX) === true ? value.url : null));
+  const openFileInput = () => fileInputRef.current?.click();
+  const startReplace = onReplace ?? (handleFilePick === undefined ? undefined : openFileInput);
+  const startUpload = onUpload ?? (handleFilePick === undefined ? undefined : openFileInput);
 
   return (
     <Field
@@ -129,98 +119,113 @@ function MediaInput({
         <fieldset
           id={control.id}
           aria-describedby={control['aria-describedby']}
-          className="border-input bg-card m-0 grid min-w-0 gap-3 rounded-md border p-3"
+          className="m-0 grid min-w-0 gap-3 border-0 p-0"
         >
           <legend className="sr-only">{label}</legend>
           {value === null ? (
-            <p className="text-muted-foreground m-0 text-sm">{labels.empty}</p>
-          ) : (
-            <div className="flex items-start gap-3">
-              <div className="border-border bg-muted flex size-16 shrink-0 items-center justify-center overflow-hidden rounded-sm border">
-                {preview === null ? (
-                  <span className="text-muted-foreground text-xs font-medium uppercase">
-                    {fileKind(value)}
-                  </span>
-                ) : (
-                  <img
-                    src={preview}
-                    alt={value.alt ?? labels.previewFallback(value.fileName)}
-                    className="size-full object-cover"
-                  />
+            <div
+              data-slot="media-empty"
+              className="border-input bg-card flex h-(--size-media-preview) w-full flex-col items-center justify-center gap-4 rounded-md border border-dashed p-4"
+            >
+              <p className="text-muted-foreground m-0 text-sm">{labels.empty}</p>
+              <div className="flex flex-wrap justify-center gap-2">
+                {startUpload === undefined ? null : (
+                  <Button type="button" size="sm" disabled={disabled} onClick={startUpload}>
+                    <ImagePlus aria-hidden="true" />
+                    {labels.upload}
+                  </Button>
+                )}
+                {onOpenLibrary === undefined ? null : (
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="secondary"
+                    disabled={disabled}
+                    onClick={onOpenLibrary}
+                  >
+                    <FolderOpen aria-hidden="true" />
+                    {labels.choose}
+                  </Button>
                 )}
               </div>
-              <div className="grid min-w-0 gap-1">
-                <p className="m-0 truncate text-sm font-medium">{value.fileName}</p>
-                <p className="text-muted-foreground m-0 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
-                  <span className="tabular-nums">{formatFileSize(value.size)}</span>
-                  {value.provider === undefined ? null : (
-                    <span
-                      data-slot="media-provider"
-                      className="bg-muted rounded-sm px-1.5 py-0.5 font-medium"
-                    >
-                      {value.provider}
-                    </span>
-                  )}
-                  <time dateTime={value.createdAt} className="tabular-nums">
-                    {dateFormat.format(new Date(value.createdAt))}
-                  </time>
-                </p>
-              </div>
             </div>
+          ) : (
+            <>
+              <MediaPreview
+                file={value}
+                height="field"
+                labels={{
+                  previewFallback: labels.previewFallback,
+                  videoBadge: labels.videoBadge ?? DEFAULT_VIDEO_BADGE,
+                }}
+                actions={
+                  <>
+                    {startReplace === undefined ? null : (
+                      <IconButton
+                        type="button"
+                        variant="ghost"
+                        label={labels.replaceFile ?? labels.replace}
+                        disabled={disabled}
+                        onClick={startReplace}
+                      >
+                        <RefreshCw aria-hidden="true" />
+                      </IconButton>
+                    )}
+                    {onOpenLibrary === undefined ? null : (
+                      <IconButton
+                        type="button"
+                        variant="ghost"
+                        label={labels.choose}
+                        disabled={disabled}
+                        onClick={onOpenLibrary}
+                      >
+                        <FolderOpen aria-hidden="true" />
+                      </IconButton>
+                    )}
+                    {onRemove === undefined ? null : (
+                      <IconButton
+                        type="button"
+                        variant="ghost"
+                        label={labels.removeFromField ?? labels.remove}
+                        disabled={disabled}
+                        onClick={onRemove}
+                      >
+                        <X aria-hidden="true" />
+                      </IconButton>
+                    )}
+                  </>
+                }
+              />
+              <div className="flex items-start justify-between gap-3">
+                <MediaDetails file={value} />
+                {onDelete === undefined ? null : (
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="destructive"
+                    disabled={disabled}
+                    onClick={onDelete}
+                  >
+                    {labels.delete}
+                  </Button>
+                )}
+              </div>
+            </>
           )}
-          <div className={cn('flex flex-wrap gap-2')}>
-            {onOpenLibrary === undefined ? null : (
-              <Button type="button" size="sm" disabled={disabled} onClick={onOpenLibrary}>
-                {value === null ? labels.choose : labels.replace}
-              </Button>
-            )}
-            {handleFilePick === undefined ? null : (
-              <>
-                <Button
-                  type="button"
-                  size="sm"
-                  disabled={disabled}
-                  onClick={() => fileInputRef.current?.click()}
-                >
-                  {labels.upload}
-                </Button>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  hidden
-                  tabIndex={-1}
-                  data-testid="media-file-input"
-                  onChange={(event) => {
-                    const file = event.currentTarget.files?.[0];
-                    event.currentTarget.value = '';
-                    if (file !== undefined) handleFilePick(file);
-                  }}
-                />
-              </>
-            )}
-            {value === null || onRemove === undefined ? null : (
-              <Button
-                type="button"
-                size="sm"
-                variant="ghost"
-                disabled={disabled}
-                onClick={onRemove}
-              >
-                {labels.remove}
-              </Button>
-            )}
-            {value === null || onDelete === undefined ? null : (
-              <Button
-                type="button"
-                size="sm"
-                variant="destructive"
-                disabled={disabled}
-                onClick={onDelete}
-              >
-                {labels.delete}
-              </Button>
-            )}
-          </div>
+          {handleFilePick === undefined ? null : (
+            <input
+              ref={fileInputRef}
+              type="file"
+              hidden
+              tabIndex={-1}
+              data-testid="media-file-input"
+              onChange={(event) => {
+                const file = event.currentTarget.files?.[0];
+                event.currentTarget.value = '';
+                if (file !== undefined) handleFilePick(file);
+              }}
+            />
+          )}
         </fieldset>
       )}
     </Field>

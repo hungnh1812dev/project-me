@@ -1,4 +1,4 @@
-import { formatFileSize, type MediaInputFile } from './MediaInput';
+import type { MediaInputFile } from './MediaInput';
 
 interface MediaDetailsProps {
   file: Pick<
@@ -13,6 +13,21 @@ interface MediaDetailsProps {
     | 'width'
     | 'height'
   >;
+}
+
+const BYTES_PER_UNIT = 1024;
+const SIZE_UNITS = ['B', 'KB', 'MB', 'GB'] as const;
+
+/** `1536` -> `1.5 KB`. */
+function formatFileSize(bytes: number): string {
+  let value = bytes;
+  let unit = 0;
+  while (value >= BYTES_PER_UNIT && unit < SIZE_UNITS.length - 1) {
+    value /= BYTES_PER_UNIT;
+    unit += 1;
+  }
+  const rounded = unit === 0 ? value : Math.round(value * 10) / 10;
+  return `${rounded} ${SIZE_UNITS[unit]}`;
 }
 
 const SHORT_HASH_LENGTH = 8;
@@ -73,4 +88,4 @@ function MediaDetails({ file }: MediaDetailsProps) {
   );
 }
 
-export { MediaDetails, type MediaDetailsProps };
+export { MediaDetails, formatFileSize, type MediaDetailsProps };
