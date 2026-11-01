@@ -304,6 +304,12 @@ matches that exact URL only): the origin of the `VITE_API_BASE_URL` the image
 was built with, or the runtime env `CSP_CONNECT_SRC` (space-separated origins)
 when set.
 
+`CSP_EXTRA_IMG_SRC` (runtime env, optional) appends space-separated
+`http(s)://host[:port]` origins to `img-src` only. It exists for test stacks
+whose media provider serves files from another origin (the smoke stack sets the
+web origin); production leaves it unset and the header is unchanged. Any other
+value (path, `;`, quote, `*`, keyword) makes the container exit non-zero.
+
 The nonce exists because Radix dialogs inject a scroll-lock `<style>` whose
 content depends on the measured scrollbar width, so a fixed sha256 hash would
 differ per OS/browser. nginx uses `$request_id` (128 random bits) as the nonce
