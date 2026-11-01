@@ -26,8 +26,9 @@ Commands:
 - e2e single spec: `pnpm e2e:spec <spec relative to apps/e2e> [-g <test name>]` against a running stack (first time: `pnpm --filter @abyss/e2e browsers:install`)
 - run app: dev `pnpm --filter @abyss/cms-admin dev` (5173), `pnpm --filter @abyss/web dev` (5174)
 - dependency audit: `pnpm audit`
+- module docs: `.claude/bin/module-index` (regenerate file tables and `MODULES.md`), `--check`, `--new <module folder>`; module roots in `docs/modules/module-roots.txt`
 Tier 3 also when: `docker-compose.smoke.yml`, `scripts/stack/`, `scripts/smoke*`, any `apps/*/Dockerfile`, the cms-api env schema (`apps/cms-api/src/config/`), Traefik routing, the `deploy:migrate` / `content:migrate` CLIs
 E2E tests: `apps/e2e` (Playwright, Chromium)
-Docs to keep current: each app/package `README.md`, `docs/modules/*.md`, ADRs in `docs/adr/`, each app's `.env.example`
+Docs to keep current: each app/package `README.md`, the module docs in `docs/modules/` (and the generated `MODULES.md`), ADRs in `docs/adr/`, each app's `.env.example`
 Security rules: `SPEC.md` §7 (Security Decisions), `docs/modules/access-control.md`
 Naming: `SPEC.md` §5 "Naming rules" (word vocabulary, word required in cms-api and apps/e2e, framework names, test suffixes) and `docs/adr/0008-file-naming-rule.md`; checked by `pnpm lint` (`abyss/file-names`; the per-package `FileNames.architecture.*` guards stay until the FN-lint tasks land)

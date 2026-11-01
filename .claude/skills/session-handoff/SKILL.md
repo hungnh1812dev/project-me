@@ -20,7 +20,7 @@ Live files hold only what is still open. Code history is in git, module details 
     CHECKLIST.md  SUMMARY.md     kept after close
 ```
 
-Spec, task and phases files, design docs, ADRs and e2e tests live where `project.md` says; they are never in `<F>` and never deleted at close.
+Module docs (`docs/modules/`) and the generated root index `MODULES.md` are the long-term map of the code; builders keep them current in every task (`worker-flow`). Spec, task and phases files, design docs, ADRs and e2e tests live where `project.md` says; they are never in `<F>` and never deleted at close.
 
 ## Files
 

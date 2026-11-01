@@ -105,7 +105,7 @@ Check each yourself; any miss keeps the feature `in-progress`:
 - every board task `done` with a hash; no `todo`, `in-progress`, `blocked` or placeholder row;
 - every phase shows `Phase checks: qc pass · security pass` and `Checkpoint: passed`; feature checks passed;
 - `CHECKLIST.md` exists, every row `pass`;
-- `findings/` empty; no `open` entry in `qc-issues-handoff.md`;
+- `findings/` empty; no `open` entry in `qc-issues-handoff.md`; `.claude/bin/module-index --check` prints nothing;
 - `handoff.md` has no open question or task line (new-work follow-ups move to `features.md` `## Follow-ups`; tell the user which);
 - `current.md` says `No unit in progress.`
 
@@ -113,8 +113,9 @@ Check each yourself; any miss keeps the feature `in-progress`:
 
 1. Check the definition of done.
 2. Write `<F>/SUMMARY.md` (format in `session-handoff`), as short as possible without losing a main point. Sources only: Goal and Outputs from the phases file and the board's `## Built` lines (overview, sub-features); `git diff --name-only <base>..HEAD`, grouped by app/package, all-new folders collapsed (structure); one row per `resolved/` file, else `None` (major issues).
-3. Ask the user once (`AskUserQuestion`): the summary path and every other file in `<F>` except `CHECKLIST.md` (always kept); options Delete them / Keep them for now. Delete only on yes, only the listed files.
-4. Set the row `done` with the summary path.
+3. Before cleaning, check that what lasts is outside `<F>`: open follow-ups in `features.md` `## Follow-ups`; user decisions in force in the conventions files; module knowledge in the module docs (`--check` above). Anything left only in `handoff.md` or `board.md` `## Notes` → move it first (follow-ups and decisions yourself; module facts by a fresh builder of that scope).
+4. Ask the user once (`AskUserQuestion`): the summary path and every other file in `<F>` except `SUMMARY.md` and `CHECKLIST.md` (always kept, never changed); options Delete them / Keep them for now. Delete only on yes, only the listed files.
+5. Set the row `done` with the summary path.
 
 ## Dispatch message
 
@@ -134,7 +135,7 @@ One builder may take a batch of small tasks (about 5 at most) that are adjacent 
 Per task, in batch order:
 1. Read the proposed message and file list in `current.md`, plus e2e files qc changed for the task.
 2. The message follows `commit-convention`.
-3. `current.md` shows formatting run and every verify step passed; every applicable check passed (no findings file). A `Risk: normal` task does not wait for the phase security check.
+3. `.claude/bin/module-index --check` prints nothing (else `SendMessage` the same builder `Module docs: <its output>` and wait for `ready-for-checks`). `current.md` shows formatting run and every verify step passed; every applicable check passed (no findings file). A `Risk: normal` task does not wait for the phase security check.
 4. Ask the user as `commit-convention` says (`AskUserQuestion`).
 5. Commit only on yes, only the listed files. Never push unless asked.
 6. Record the hash on the board and in the task's `handoff.md` line.
@@ -143,7 +144,7 @@ Per task, in batch order:
 
 - Never code, test, review, or read or edit product files; delegate. Never guess requirements, design tokens, env values or API contracts; ask the user.
 - qc runs only for a checklist or a user-requested audit, never per unit.
-- `Bash` only for: `git rev-parse`, `git status`, `git log`, `git diff --name-only`, the approved `git add <listed files>` + `git commit`; `mkdir -p` and `cp` for `<F>`; the stack start/stop commands in `project.md`; `rm` of files the user approved at close.
+- `Bash` only for: `git rev-parse`, `git status`, `git log`, `git diff --name-only`, the approved `git add <listed files>` + `git commit`; `mkdir -p` and `cp` for `<F>`; the stack start/stop commands in `project.md`; `.claude/bin/module-index --check`; `rm` of files the user approved at close.
 - **Session break.** Every fact lives in the state files, so a fresh session loses nothing and each turn of a long one re-reads its whole context. After a passed checkpoint or a closed feature, or when this session has run about 150 turns: wait until no agent runs, make sure every answer and decision is in `handoff.md` or the board, then tell the user `Session break after <checkpoint | feature>: run /clear (or start a new manager session), then say "continue"`, and dispatch nothing more.
 - **Resume** ("continue" in a fresh session): read `features.md`, the board, `handoff.md`, `current.md` and `qc-progress.md` once; resume at the first unfinished loop step; one line to the user saying which.
 - Never go silent while an agent runs: after each dispatch tell the user in one line who runs what (since `HH:MM`); each time you regain control or the user asks while it still runs, one status line (checkers: their `qc-progress.md` line; others: `still running since HH:MM`).

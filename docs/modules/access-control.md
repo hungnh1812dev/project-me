@@ -1,3 +1,9 @@
+---
+module: apps/cms-api/src/modules/access
+app: cms-api
+summary: Policy evaluation, permission guard, field masking, accounts, roles and API tokens
+---
+
 # Access control (cms-api `src/modules/access/`)
 
 This module decides what an actor may do with a subject, which fields it may
@@ -9,47 +15,14 @@ rule, and API tokens (the API, the subset check in
 types API (`src/modules/content-types/`) uses the evaluator to filter types
 and fields.
 
-| File                                                                      | What it holds                                                                                                                                                                                                                           |
-| ------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `domain/Access.constants.ts`                                              | Subjects, actions per subject (`PermissionAction`, `AccountStatus`), DSL operators/variables/limits, error codes, default matrix                                                                                                        |
-| `domain/ActorContext.entity.ts`                                           | `ActorContext`, `RolePolicy`, token scope, `rolePolicyFromRows`, actor builders                                                                                                                                                         |
-| `domain/EffectivePolicy.rules.ts`                                         | `effectivePolicy`: one resolver per actor kind (owner, read-only clamp, token scope ∩ creator)                                                                                                                                          |
-| `domain/SubjectCatalog.rules.ts`                                          | Known subjects (`*`, registry slugs, system subjects), field paths, DSL field catalog                                                                                                                                                   |
-| `domain/PolicyEvaluator.rules.ts`                                         | `PolicyEvaluator.can / canReadDrafts / fieldsFor / rowFilter`                                                                                                                                                                           |
-| `domain/Conditions.rules.ts`                                              | DSL validation and compilation to parameterized Kysely SQL                                                                                                                                                                              |
-| `domain/PermissionSet.rules.ts`                                           | Save-time check of a role's permission set: `validatePermissionSet`                                                                                                                                                                     |
-| `domain/TokenScope.rules.ts`                                              | Save-time check of an API token scope (`validateTokenScope`) and the D5 subset check (`scopeEntriesBeyondCreator`)                                                                                                                      |
-| `domain/FieldList.rules.ts`                                               | Field-list check and issue types shared by the two validators                                                                                                                                                                           |
-| `application/VersionCache.service.ts`                                     | D9 in-process cache of account `tv`/status/role and role `pv`/permission rows; holds `VERSION_CACHE_TTL_MS` and `VERSION_CACHE_MAX_ENTRIES`                                                                                             |
-| `application/Access.port.ts`                                              | Ports with their tokens: `AccountVersionSource`, `RoleLookup` (exported for identity), `ApiTokenLookup`, `PermissionRepository`                                                                                                         |
-| `application/ApiTokenAuthentication.service.ts`                           | D5: raw token in, principal out; one bare 401 for every cause; `last_used_at` throttled write                                                                                                                                           |
-| `application/AnonymousActor.service.ts`                                   | The anonymous actor from the `public` role; 401 when the role is missing                                                                                                                                                                |
-| `adapters/Prisma{AccountVersion,RolePolicy,ApiTokenLookup}.repository.ts` | The Prisma side of the ports (role policy repository also writes permission rows inside a `UnitOfWork`)                                                                                                                                 |
-| `application/RolePermissions.service.ts`                                  | The one write path for a role's rows: replace + bump `policy_version` in the core `TransactionRunner`, invalidate in `afterCommit`; `alsoInTransaction` receives the `UnitOfWork`                                                       |
-| `http/Permission.guard.ts`                                                | `@RequirePermission()` with `PERMISSION_METADATA_KEY`, and `PermissionGuard`, which enforces it with the evaluator                                                                                                                      |
-| `application/AccessPolicy.service.ts`                                     | Builds the catalog + evaluator from the lazily loaded content registry                                                                                                                                                                  |
-| `Access.module.ts`                                                        | Nest wiring (imported by IdentityModule)                                                                                                                                                                                                |
-| `http/ApiToken.guard.ts`                                                  | `ApiTokenAuthenticator` (bearer header, writes `request.user`) and `ApiTokenGuard`                                                                                                                                                      |
-| `http/ActorThrottleSubject.resolver.ts`                                   | Throttle subject read off the actor an earlier guard set                                                                                                                                                                                |
-| `http/AccessHttp.constants.ts`                                            | Account, role and API token routes; `ACCESS_RATE_LIMIT_POLICIES`                                                                                                                                                                        |
-| `application/RoleSeed.service.ts`                                         | Seeds the system roles and the default rows for system roles that have none (`db:seed`); the table is `domain/SystemRoles.entity.ts`                                                                                                    |
-| `domain/FieldProjection.rules.ts`                                         | `projectTable` / `selectedColumns`: never select unreadable columns (D3)                                                                                                                                                                |
-| `domain/RecordSerializer.rules.ts`                                        | `RecordSerializer`: the one record -> response path, masks + `_maskedFields`                                                                                                                                                            |
-| `domain/WriteAllowlist.rules.ts`                                          | `WriteAllowlist`: client tree -> writable tree, drops masks, 400 otherwise (D4)                                                                                                                                                         |
-| `domain/QueryFieldAccess.rules.ts`                                        | `QueryGuard`: filter/sort/search only on readable fields (D3)                                                                                                                                                                           |
-| `domain/RecordReadAccess.rules.ts`                                        | `RecordReadAccess` / `recordReadAccess(actor, readable)`: fields + visible system fields                                                                                                                                                |
-| `domain/FieldPaths.rules.ts`                                              | Field-path helpers and the 400s of the field checks (`FIELD_NOT_READABLE`, `FIELD_NOT_WRITABLE`, `FIELD_UNKNOWN`)                                                                                                                       |
-| `domain/Rank.rules.ts`                                                    | D6: `outranks` / `assertOutranks`, `requireAccountActor`, `requireOwnerActor` (D20), `grantsBeyondActor`                                                                                                                                |
-| `domain/ApiToken.rules.ts`                                                | `API_TOKEN` (token format and limits), `hashApiToken` and `isApiTokenExpired`: the one expiry rule (`expires_at <= now`) for authentication, list status and the update guard                                                           |
-| `document-auth/`                                                          | `http/DocumentAuth.guard.ts` (`DocumentAuthGuard`), `DocumentAuth.module.ts`; facade `index.ts` (not in the core `index.ts`: identity imports that)                                                                                     |
-| `management/domain/`                                                      | `AccessManagement.constants.ts` (error codes, limits, token statuses), `AccessManagement.errors.ts` (the `DomainError` constructors of the 19 refusals), `Account.entity.ts` (account records and views, the D6 target and role checks) |
-| `management/application/AccessManagement.port.ts`                         | `AccountAdminRepository`, `RoleRepository`, `ApiTokenAdminRepository` (row locks, the role-cap lock and the unique-violation mapping live in their adapters)                                                                            |
-| `management/application/Accounts.service.ts`                              | list, update, disable, enable, revoke sessions; `recordAccountEvent` writes the account audit row                                                                                                                                       |
-| `management/application/Invitations.service.ts`                           | invite and resend invite (rank check, assignable role, invite code, mail sent after the commit)                                                                                                                                         |
-| `management/application/{Roles,ApiTokens}.service.ts`                     | `/roles` and `/api-tokens` use cases; cache drops are `afterCommit` callbacks                                                                                                                                                           |
-| `management/adapters/Prisma{Account,Role,ApiToken}.repository.ts`         | the Prisma implementations of the three ports                                                                                                                                                                                           |
-| `management/http/`                                                        | `Accounts`, `Roles`, `ApiTokens` controllers and their request schemas; `AccessManagement.module.ts` (imports identity) and `index.ts` at the folder root                                                                               |
-| `../security-audit/`                                                      | D15 module: `SecurityAuditService`, `PrismaAuditLogRepository` (built by hand by the CLIs), action names                                                                                                                                |
+Folders and neighbours (each file is described in [Files](#files)):
+
+| Path                 | What it holds                                                                                                                                                                                                                           |
+| -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `document-auth/`     | `http/DocumentAuth.guard.ts` (`DocumentAuthGuard`), `DocumentAuth.module.ts`; facade `index.ts` (not in the core `index.ts`: identity imports that)                                                                                     |
+| `management/domain/` | `AccessManagement.constants.ts` (error codes, limits, token statuses), `AccessManagement.errors.ts` (the `DomainError` constructors of the 19 refusals), `Account.entity.ts` (account records and views, the D6 target and role checks) |
+| `management/http/`   | `Accounts`, `Roles`, `ApiTokens` controllers and their request schemas; `AccessManagement.module.ts` (imports identity) and `index.ts` at the folder root                                                                               |
+| `../security-audit/` | D15 module: `SecurityAuditService`, `PrismaAuditLogRepository` (built by hand by the CLIs), action names                                                                                                                                |
 
 ## Subjects and actions
 
@@ -433,3 +406,86 @@ starts while the database is down (readiness 503). A failed load is retried
 on the next call, and a successful load is kept until restart (D10). If
 `content:migrate` never ran, the registry is empty and every content
 subject is denied.
+
+## Files
+
+<!-- module-files:start (generated by .claude/bin/module-index; edit only the Description column) -->
+<!-- prettier-ignore-start -->
+
+```
+access/ (2 files)
+  adapters/ (3 files)
+  application/ (7 files)
+  document-auth/ (2 files)
+    http/ (1 file)
+  domain/ (18 files)
+  http/ (4 files)
+  management/ (2 files)
+    adapters/ (3 files)
+    application/ (5 files)
+    domain/ (3 files)
+    http/ (5 files)
+```
+
+Tests: 25 files (not listed).
+
+| File | Description |
+|---|---|
+| `Access.module.ts` | Nest wiring (imported by IdentityModule) |
+| `index.ts` | TODO (exports `AccessModule`, `roleSeedServiceOf`, `AccessPolicyService`, `AccessPolicy` +50) |
+| `adapters/PrismaAccountVersion.repository.ts` | The Prisma side of the ports (role policy repository also writes permission rows inside a `UnitOfWork`) |
+| `adapters/PrismaApiTokenLookup.repository.ts` | The Prisma side of the ports (role policy repository also writes permission rows inside a `UnitOfWork`) |
+| `adapters/PrismaRolePolicy.repository.ts` | The Prisma side of the ports (role policy repository also writes permission rows inside a `UnitOfWork`) |
+| `application/Access.port.ts` | Ports with their tokens: `AccountVersionSource`, `RoleLookup` (exported for identity), `ApiTokenLookup`, `PermissionRepository` |
+| `application/AccessPolicy.service.ts` | Builds the catalog + evaluator from the lazily loaded content registry |
+| `application/AnonymousActor.service.ts` | The anonymous actor from the `public` role; 401 when the role is missing |
+| `application/ApiTokenAuthentication.service.ts` | D5: raw token in, principal out; one bare 401 for every cause; `last_used_at` throttled write |
+| `application/RolePermissions.service.ts` | The one write path for a role's rows: replace + bump `policy_version` in the core `TransactionRunner`, invalidate in `afterCommit`; `alsoInTransaction` receives the `UnitOfWork` |
+| `application/RoleSeed.service.ts` | Seeds the system roles and the default rows for system roles that have none (`db:seed`); the table is `domain/SystemRoles.entity.ts` |
+| `application/VersionCache.service.ts` | D9 in-process cache of account `tv`/status/role and role `pv`/permission rows; holds `VERSION_CACHE_TTL_MS` and `VERSION_CACHE_MAX_ENTRIES` |
+| `document-auth/DocumentAuth.module.ts` | TODO (exports `DocumentAuthModule`) |
+| `document-auth/index.ts` | TODO (exports `DocumentAuthGuard`, `DocumentRequest`, `DocumentAuthModule`) |
+| `document-auth/http/DocumentAuth.guard.ts` | TODO (exports `DocumentRequest`, `DocumentAuthGuard`) |
+| `domain/Access.constants.ts` | Subjects, actions per subject (`PermissionAction`, `AccountStatus`), DSL operators/variables/limits, error codes, default matrix |
+| `domain/ActorContext.entity.ts` | `ActorContext`, `RolePolicy`, token scope, `rolePolicyFromRows`, actor builders |
+| `domain/ApiToken.rules.ts` | `API_TOKEN` (token format and limits), `hashApiToken` and `isApiTokenExpired`: the one expiry rule (`expires_at <= now`) for authentication, list status and the update guard |
+| `domain/Conditions.rules.ts` | DSL validation and compilation to parameterized Kysely SQL |
+| `domain/EffectivePolicy.rules.ts` | `effectivePolicy`: one resolver per actor kind (owner, read-only clamp, token scope ∩ creator) |
+| `domain/FieldList.rules.ts` | Field-list check and issue types shared by the two validators |
+| `domain/FieldPaths.rules.ts` | Field-path helpers and the 400s of the field checks (`FIELD_NOT_READABLE`, `FIELD_NOT_WRITABLE`, `FIELD_UNKNOWN`) |
+| `domain/FieldProjection.rules.ts` | `projectTable` / `selectedColumns`: never select unreadable columns (D3) |
+| `domain/PermissionSet.rules.ts` | Save-time check of a role's permission set: `validatePermissionSet` |
+| `domain/PolicyEvaluator.rules.ts` | `PolicyEvaluator.can / canReadDrafts / fieldsFor / rowFilter` |
+| `domain/QueryFieldAccess.rules.ts` | `QueryGuard`: filter/sort/search only on readable fields (D3) |
+| `domain/Rank.rules.ts` | D6: `outranks` / `assertOutranks`, `requireAccountActor`, `requireOwnerActor` (D20), `grantsBeyondActor` |
+| `domain/RecordReadAccess.rules.ts` | `RecordReadAccess` / `recordReadAccess(actor, readable)`: fields + visible system fields |
+| `domain/RecordSerializer.rules.ts` | `RecordSerializer`: the one record -> response path, masks + `_maskedFields` |
+| `domain/SubjectCatalog.rules.ts` | Known subjects (`*`, registry slugs, system subjects), field paths, DSL field catalog |
+| `domain/SystemRoles.entity.ts` | TODO (exports `DefaultPermission`, `SYSTEM_ROLES`, `SystemRoleSlug`, `OWNER_ROLE_SLUG` +10) |
+| `domain/TokenScope.rules.ts` | Save-time check of an API token scope (`validateTokenScope`) and the D5 subset check (`scopeEntriesBeyondCreator`) |
+| `domain/WriteAllowlist.rules.ts` | `WriteAllowlist`: client tree -> writable tree, drops masks, 400 otherwise (D4) |
+| `http/AccessHttp.constants.ts` | Account, role and API token routes; `ACCESS_RATE_LIMIT_POLICIES` |
+| `http/ActorThrottleSubject.resolver.ts` | Throttle subject read off the actor an earlier guard set |
+| `http/ApiToken.guard.ts` | `ApiTokenAuthenticator` (bearer header, writes `request.user`) and `ApiTokenGuard` |
+| `http/Permission.guard.ts` | `@RequirePermission()` with `PERMISSION_METADATA_KEY`, and `PermissionGuard`, which enforces it with the evaluator |
+| `management/AccessManagement.module.ts` | TODO (exports `AccessManagementModule`) |
+| `management/index.ts` | TODO (exports `AccessManagementModule`) |
+| `management/adapters/PrismaAccount.repository.ts` | the Prisma implementations of the three ports |
+| `management/adapters/PrismaApiToken.repository.ts` | the Prisma implementations of the three ports |
+| `management/adapters/PrismaRole.repository.ts` | the Prisma implementations of the three ports |
+| `management/application/AccessManagement.port.ts` | `AccountAdminRepository`, `RoleRepository`, `ApiTokenAdminRepository` (row locks, the role-cap lock and the unique-violation mapping live in their adapters) |
+| `management/application/Accounts.service.ts` | list, update, disable, enable, revoke sessions; `recordAccountEvent` writes the account audit row |
+| `management/application/ApiTokens.service.ts` | `/roles` and `/api-tokens` use cases; cache drops are `afterCommit` callbacks |
+| `management/application/Invitations.service.ts` | invite and resend invite (rank check, assignable role, invite code, mail sent after the commit) |
+| `management/application/Roles.service.ts` | `/roles` and `/api-tokens` use cases; cache drops are `afterCommit` callbacks |
+| `management/domain/AccessManagement.constants.ts` | TODO (exports `MANAGEMENT_ERROR_CODES`, `MANAGEMENT_ERROR_MESSAGES`, `EXPIRY_NOT_IN_FUTURE_ISSUE`, `MANAGEMENT_LIMITS` +6) |
+| `management/domain/AccessManagement.errors.ts` | TODO (exports `ManagementIssue`, `accountNotFound`, `emailTaken`, `accountAlreadyDisabled` +16) |
+| `management/domain/Account.entity.ts` | TODO (exports `AccountRoleRecord`, `AccountRecord`, `AccountRoleView`, `AccountView` +3) |
+| `management/http/AccessManagement.requests.ts` | TODO (exports `inviteAccountSchema`, `updateAccountSchema`, `createRoleSchema`, `updateRoleSchema` +5) |
+| `management/http/Accounts.controller.ts` | TODO (exports `AccountsController`) |
+| `management/http/ApiTokens.controller.ts` | TODO (exports `ApiTokensController`) |
+| `management/http/ApiTokens.requests.ts` | TODO (exports `createApiTokenSchema`, `updateApiTokenSchema`, `CreateApiTokenRequest`, `UpdateApiTokenRequest`) |
+| `management/http/Roles.controller.ts` | TODO (exports `RolesController`) |
+
+<!-- prettier-ignore-end -->
+<!-- module-files:end -->

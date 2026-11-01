@@ -18,7 +18,7 @@ The dispatch is only `TASK <ID>` (or `BATCH: ...`) plus optional notes. Read onl
 4. `<F>/handoff.md` in full: user answers, provisional decisions, follow-ups naming this task.
 5. Only the spec sections the entry cites.
 6. Conventions, when needed: grep `conventions.md` (cross-cutting) and the `conventions-<area>.md` its header names for your app; history of a finished area: grep `.claude/state/archive/`.
-7. The code and docs of the listed files (module details are in its README / `docs/modules/`).
+7. Where the code lives: `MODULES.md` (root index), then the doc of each module the task touches, then the code and docs of the listed files (`lean-reading`).
 
 Restate the goal and acceptance criteria for yourself in 2-3 lines. Files disagree, `project.md` lacks something, or an assumption would matter → **stop, report `blocked`** with questions.
 
@@ -56,11 +56,16 @@ Exit: all pass; note the count.
 
 Update the "Docs to keep current" in `project.md` for what changed, including the env example for new config keys (names and descriptions only). ADR only for a non-obvious architectural decision.
 
-Exit: docs match the code.
+Module docs (`docs/modules/`, listed in `MODULES.md`): run `.claude/bin/module-index` (it regenerates each doc's file table and the index), then for every module you changed:
+- each new or changed file: one line in the `Description` column of its row (what it holds or does); never edit anything else inside the generated block;
+- the hand-written sections (Purpose, Techniques, Technologies, Entry points, Where to change what) and the `summary:` line, when they no longer match;
+- a module with no doc: if `MODULES.md` lists a topic doc for it, add `module: <folder>` and `app: <app>` front matter to that doc; otherwise `.claude/bin/module-index --new <module folder>`. Fill every `TODO`.
+
+Exit: docs match the code; `.claude/bin/module-index --check` prints nothing.
 
 ## 6. Finish
 
-1. Code changed: run `graphify update .` (when `graphify-out/` exists) so the checkers' graph is current.
+1. Code changed: run `graphify update .` (when `graphify-out/` exists) so the checkers' graph is current, then `.claude/bin/module-index` and `.claude/bin/module-index --check`.
 2. Re-read your diff against §4: no duplicated responsibility, no "what" comments a better name would replace, no scattered edits in unrelated modules, no split finer than §4.4. Fix what you find.
 3. Format the changed files (`code-standards`); re-run the tests if formatting changed anything.
 4. Write the proposed commit message (`commit-convention`).
@@ -106,7 +111,7 @@ Behaviour to verify:
 Security-relevant: <new endpoints, auth/permission paths, input handling, new deps, or none>
 Checks needed: qc-browser tier <1-3> (<flows>) | qc-cli tier <1-3> (<tests>) | none (reason)
 Risk: high (<why>) | normal
-Verification: format <pass|n/a> · build/type-check <pass|fail> · unit tests <pass (n)|fail> · docs <paths|n/a>
+Verification: format <pass|n/a> · build/type-check <pass|fail> · unit tests <pass (n)|fail> · docs <paths|n/a> · module docs <pass|n/a>
 Proposed commit: |
   <message per commit-convention>
 Deletions needing approval: <list or none>
