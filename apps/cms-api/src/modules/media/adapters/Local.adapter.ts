@@ -51,6 +51,8 @@ function isMissingFile(error: unknown): boolean {
  * request input is ever joined to a path before it matches `<uuidv7>.<ext>`.
  */
 export class LocalMediaStorage implements MediaStorage {
+  readonly provider = 'local';
+
   private readonly directory: string;
 
   /** `directory` is resolved once here; every path is joined to this value. */

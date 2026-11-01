@@ -92,6 +92,8 @@ export function createCloudinaryClient(config: CloudinaryConfig): CloudinaryClie
 
 /** Cloudinary storage (MEDIA_PROVIDER=cloudinary). */
 export class CloudinaryMediaStorage implements MediaStorage {
+  readonly provider = 'cloudinary';
+
   constructor(
     private readonly client: CloudinaryClient,
     private readonly folder: string | undefined,

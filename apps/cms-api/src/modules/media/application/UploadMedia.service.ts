@@ -55,6 +55,7 @@ export class UploadMediaService {
           sha256: prepared.sha256,
           url: stored.url,
           thumbnailUrl: stored.thumbnailUrl,
+          provider: this.storage.provider,
           createdById: actor.accountId,
         });
       } catch (error) {

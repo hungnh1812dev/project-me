@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { sql } from 'kysely';
 
-import { MediaProvider } from '../../../generated/prisma/client';
 import { PrismaService } from '../../../infrastructure/database/Prisma.service';
 import { prismaTxOf } from '../../../infrastructure/database/PrismaTransactionRunner.adapter';
 import type { UnitOfWork } from '../../../infrastructure/database/TransactionRunner.port';
@@ -16,8 +15,6 @@ import type {
 } from '../application/Media.port';
 import type { MediaPage, MediaRecord } from '../domain/Media.entity';
 
-/** Provider of the active storage; every newly written object carries it. The column is an enum with one live value; the fake storage reports it too. */
-const STORED_MEDIA_PROVIDER = MediaProvider.cloudinary;
 const MEDIA_TABLE = 'public.file_library';
 const DELETED_AT_COLUMN = 'deleted_at';
 const MEDIA_ORDER = { CREATED_AT: 'created_at', ID: 'id' } as const;
@@ -108,7 +105,6 @@ export class PrismaMediaRepository implements MediaRepository {
     return this.prisma.fileLibrary.create({
       data: {
         ...file,
-        provider: STORED_MEDIA_PROVIDER,
         updatedById: file.createdById,
       },
     });
@@ -194,7 +190,7 @@ export class PrismaMediaRepository implements MediaRepository {
     // The new key goes first: storage_key is unique and the tombstone takes the old one.
     const record = await tx.fileLibrary.update({
       where: { id: mediaId },
-      data: { ...file, provider: STORED_MEDIA_PROVIDER, updatedById },
+      data: { ...file, updatedById },
     });
     await tx.fileLibrary.create({
       data: {

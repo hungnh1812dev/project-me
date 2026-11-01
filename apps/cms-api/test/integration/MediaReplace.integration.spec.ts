@@ -224,6 +224,16 @@ describe('media replace in place (UIL-2; Postgres 17 via Testcontainers)', () =>
     expect(audit.metadata).toEqual({ previousSha256: before.sha256, sha256: after.sha256 });
   });
 
+  it('accepts the local provider value the migration added', async () => {
+    const { id } = await uploaded();
+    const row = await rowOf(id);
+    const updated = await db.prisma.fileLibrary.update({
+      where: { id: row.id },
+      data: { provider: 'local' },
+    });
+    expect(updated.provider).toBe('local');
+  });
+
   it('replaces a reviewer preset row: the live row reads the active provider, the tombstone keeps preset, and purge never deletes the preset key', async () => {
     const { id } = await uploaded();
     const before = await rowOf(id);

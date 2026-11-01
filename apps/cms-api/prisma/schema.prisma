@@ -57,6 +57,7 @@ enum OtpPurpose {
 enum MediaProvider {
   cloudinary
   preset
+  local
 
   @@map("media_provider")
 }

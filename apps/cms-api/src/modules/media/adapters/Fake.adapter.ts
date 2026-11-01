@@ -1,6 +1,11 @@
 import type { Readable } from 'node:stream';
 
-import type { MediaStorage, PutObjectInput, StoredObject } from '../application/Media.port';
+import type {
+  MediaStorage,
+  PutObjectInput,
+  StoredMediaProvider,
+  StoredObject,
+} from '../application/Media.port';
 import type { MediaKind } from '../domain/Media.constants';
 
 /** Origin of URLs handed out by the in-memory fake storage (never reachable). */
@@ -24,6 +29,8 @@ async function readAll(stream: Readable): Promise<Buffer> {
  * on restart; never allowed in production (Env.schema.ts).
  */
 export class FakeMediaStorage implements MediaStorage {
+  readonly provider: StoredMediaProvider = 'cloudinary';
+
   private readonly objects = new Map<string, FakeStoredObject>();
 
   async put(input: PutObjectInput): Promise<StoredObject> {

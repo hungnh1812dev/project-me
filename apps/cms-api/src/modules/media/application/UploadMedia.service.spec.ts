@@ -19,7 +19,11 @@ const actor: AccountActor = {
   role: systemRole('editor'),
 };
 
-function stubs(createError?: Error) {
+class LocalProviderStorage extends FakeMediaStorage {
+  override readonly provider = 'local';
+}
+
+function stubs(createError?: Error, storage: FakeMediaStorage = new FakeMediaStorage()) {
   const dispose = jest.fn(() => Promise.resolve());
   const received = {
     fileName: 'a.png',
@@ -59,7 +63,6 @@ function stubs(createError?: Error) {
       : Promise.reject(createError),
   );
   const repository = { create } as unknown as MediaRepository;
-  const storage = new FakeMediaStorage();
   const logger = { warn: jest.fn(), error: jest.fn() };
   const service = new UploadMediaService(processor, repository, new Clock(), storage, logger);
   return { service, storage, create, dispose };
@@ -77,8 +80,16 @@ describe('UploadMediaService.upload', () => {
     expect(call[0]).toMatchObject({
       storageKey: storage.keys()[0],
       createdById: 5,
+      provider: storage.provider,
     });
     expect(dispose).toHaveBeenCalledTimes(1);
+  });
+
+  it('records the provider of the storage that stored the file', async () => {
+    const { service, create } = stubs(undefined, new LocalProviderStorage());
+    await service.upload(actor, upload);
+    const [call] = create.mock.calls as unknown as [[Record<string, unknown>]];
+    expect(call[0]).toMatchObject({ provider: 'local' });
   });
 
   it('removes the stored object when the row cannot be written', async () => {

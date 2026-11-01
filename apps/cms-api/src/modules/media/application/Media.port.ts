@@ -56,6 +56,9 @@ export interface UploadProcessor {
   prepare(received: ReceivedUpload): Promise<PreparedUpload>;
 }
 
+/** Providers a storage can report: the values `media_provider` accepts for new files (`preset` is only set by the reviewer seed). */
+export type StoredMediaProvider = 'cloudinary' | 'local';
+
 /** DI token of the configured `MediaStorage` (MEDIA_PROVIDER). */
 export const MEDIA_STORAGE = Symbol('MEDIA_STORAGE');
 
@@ -87,6 +90,8 @@ export interface PublicMediaFile {
  * validated and re-encoded the bytes; the adapter only stores them.
  */
 export interface MediaStorage {
+  /** Written to every file this storage stores; never taken from a request. */
+  readonly provider: StoredMediaProvider;
   put(input: PutObjectInput): Promise<StoredObject>;
   /** Removes the object; deleting a missing object is not an error. */
   delete(key: string, kind: MediaKind): Promise<void>;
@@ -112,6 +117,7 @@ export interface NewMediaFile {
   readonly sha256: string;
   readonly url: string;
   readonly thumbnailUrl: string | null;
+  readonly provider: StoredMediaProvider;
   readonly createdById: number;
 }
 
@@ -126,6 +132,7 @@ export interface ReplacementFile {
   readonly sha256: string;
   readonly url: string;
   readonly thumbnailUrl: string | null;
+  readonly provider: StoredMediaProvider;
 }
 
 /** A soft-deleted row old enough to purge. */

@@ -507,7 +507,11 @@ describe('media provider (T27)', () => {
       expect(loadAppConfig(devEnv(localEnv)).media).toEqual({
         provider: 'local',
         cloudinary: undefined,
-        local: { directory: '/var/media', publicUrl: 'http://localhost:8080/api/v1/media-files' },
+        local: {
+          directory: '/var/media',
+          publicUrl: 'http://localhost:8080/api/v1/media-files',
+          allowedInProduction: false,
+        },
       });
     });
 
@@ -532,6 +536,8 @@ describe('media provider (T27)', () => {
       'http://localhost:8080/files#top',
       '/api/v1/media-files',
       'ftp://localhost/files',
+      'http://user:secret@localhost:8080/files',
+      'http://user@localhost:8080/files',
     ])('rejects the public URL %s', (url) => {
       const error = configErrorOf(devEnv({ ...localEnv, MEDIA_LOCAL_PUBLIC_URL: url }));
       expect(error.issues[0]).toMatch(/^MEDIA_LOCAL_PUBLIC_URL:/);
@@ -553,6 +559,7 @@ describe('media provider (T27)', () => {
         productionEnv({ ...localEnv, ALLOW_LOCAL_MEDIA_PROVIDER: 'smoke' }),
       );
       expect(config.media.provider).toBe('local');
+      expect(config.media.local?.allowedInProduction).toBe(true);
     });
 
     it('keeps refusing fake in production even with the opt-in', () => {

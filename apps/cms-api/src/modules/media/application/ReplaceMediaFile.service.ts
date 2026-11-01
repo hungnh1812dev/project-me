@@ -77,6 +77,7 @@ export class ReplaceMediaFileService {
           sha256: prepared.sha256,
           url: stored.url,
           thumbnailUrl: stored.thumbnailUrl,
+          provider: this.storage.provider,
         });
       } catch (error) {
         await this.storage.delete(storageKey, prepared.kind).catch(() => {

@@ -19,7 +19,17 @@ import { ReplaceMediaFileService } from './ReplaceMediaFile.service';
 const actor: AccountActor = { kind: 'account', accountId: 5, role: systemRole('editor') };
 const meta = { ip: '1.2.3.4' } as never;
 
-function stubs(options: { newMime?: 'image/png' | 'application/pdf'; replaceError?: Error } = {}) {
+class LocalProviderStorage extends FakeMediaStorage {
+  override readonly provider = 'local';
+}
+
+function stubs(
+  options: {
+    newMime?: 'image/png' | 'application/pdf';
+    replaceError?: Error;
+    storage?: FakeMediaStorage;
+  } = {},
+) {
   const newMime = options.newMime ?? 'image/png';
   const dispose = jest.fn(() => Promise.resolve());
   const received = { fileName: 'new.png', alt: null, dispose } as unknown as ReceivedUpload;
@@ -53,7 +63,7 @@ function stubs(options: { newMime?: 'image/png' | 'application/pdf'; replaceErro
   } as unknown as TransactionRunner;
   const library = { rowConditionOf: jest.fn(() => Promise.resolve(null)) };
   const audit = { record: jest.fn(() => Promise.resolve()) };
-  const storage = new FakeMediaStorage();
+  const storage = options.storage ?? new FakeMediaStorage();
   const logger = { warn: jest.fn(), error: jest.fn() };
   const service = new ReplaceMediaFileService(
     processor,
@@ -71,6 +81,13 @@ function stubs(options: { newMime?: 'image/png' | 'application/pdf'; replaceErro
 describe('ReplaceMediaFileService.replace', () => {
   const upload = {} as UploadStream;
 
+  it('passes the provider of the storage that stored the new file', async () => {
+    const { service, replaceFile } = stubs({ storage: new LocalProviderStorage() });
+    await service.replace(actor, 'doc', {} as UploadStream, meta);
+    const [call] = replaceFile.mock.calls as unknown as [[unknown, { file: { provider: string } }]];
+    expect(call[1].file.provider).toBe('local');
+  });
+
   it('swaps the row, audits old and new hashes and removes the temp file', async () => {
     const { service, storage, receive, replaceFile, audit, dispose } = stubs();
     const result = await service.replace(actor, 'doc', upload, meta);
@@ -81,7 +98,12 @@ describe('ReplaceMediaFileService.replace', () => {
     expect(call[1]).toMatchObject({
       mediaId: 9,
       updatedById: 5,
-      file: { fileName: 'new.png', storageKey: storage.keys()[0], sha256: 'b'.repeat(64) },
+      file: {
+        fileName: 'new.png',
+        storageKey: storage.keys()[0],
+        sha256: 'b'.repeat(64),
+        provider: storage.provider,
+      },
     });
     expect(audit.record).toHaveBeenCalledWith(
       expect.anything(),
