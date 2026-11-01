@@ -22,6 +22,11 @@ export const MEDIA_ALLOWED_MIME_TYPES: readonly string[] = [
   'video/mp4',
 ];
 
+/** The allowlisted types an editor may place inline: images only. */
+export const MEDIA_IMAGE_MIME_TYPES: readonly string[] = MEDIA_ALLOWED_MIME_TYPES.filter((type) =>
+  type.startsWith('image/'),
+);
+
 /** The empty filter value: every type. */
 export const MEDIA_MIME_ALL = '';
 

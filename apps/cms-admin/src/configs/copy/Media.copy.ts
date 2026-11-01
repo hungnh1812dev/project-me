@@ -134,4 +134,11 @@ export const MEDIA_COPY = {
     select: (name: string) => `Select ${name}`,
     cancel: 'Cancel',
   },
+  imageInsert: {
+    title: 'Insert an image',
+    description: 'Upload a new image or pick one from the File Library.',
+    upload: 'Upload a new image',
+    library: 'Choose from library',
+    cancel: 'Cancel',
+  },
 } as const;

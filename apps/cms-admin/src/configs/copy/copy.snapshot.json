@@ -712,6 +712,13 @@
       "empty": "The library is empty. Close this and upload a new file.",
       "select": "Select SAMPLE",
       "cancel": "Cancel"
+    },
+    "imageInsert": {
+      "title": "Insert an image",
+      "description": "Upload a new image or pick one from the File Library.",
+      "upload": "Upload a new image",
+      "library": "Choose from library",
+      "cancel": "Cancel"
     }
   },
   "content": {
