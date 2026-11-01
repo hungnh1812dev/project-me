@@ -36,6 +36,9 @@ export const COMPONENT_FIELD_TYPE = 'component';
 /** Stored as an int referencing `public.file_library(id)`. */
 export const MEDIA_FIELD_TYPE = 'media' satisfies (typeof SCALAR_FIELD_TYPES)[number];
 
+/** Holds sanitized HTML whose `img[data-media-id]` elements reference media files. */
+export const RICHTEXT_FIELD_TYPE = 'richtext' satisfies (typeof SCALAR_FIELD_TYPES)[number];
+
 export const FIELD_TYPES = [...SCALAR_FIELD_TYPES, COMPONENT_FIELD_TYPE] as const;
 
 /** Engine-owned columns of every root table (SPEC §8.1 / §8.2). */

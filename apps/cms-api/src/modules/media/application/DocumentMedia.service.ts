@@ -9,6 +9,7 @@ import {
 import {
   ContentRegistry,
   mediaFieldNamesByTable,
+  richtextFieldNamesByTable,
   type TableNode,
   type TreeInput,
 } from '../../content-engine';
@@ -19,6 +20,7 @@ import {
   type MediaSlot,
   type TreeNodeLike,
 } from '../domain/MediaSlots.rules';
+import { mediaIdsInRichtext, rewriteRichtextImages } from '../domain/RichtextImages.rules';
 import {
   MEDIA_REPOSITORY,
   MEDIA_STORAGE,
@@ -79,31 +81,56 @@ export class DocumentMediaService {
 
   /**
    * Replaces, in serialized records, every media value by the embedded file
-   * (null when the file is gone). Accepts a stored id or an uuid (the
-   * submitted side of a 409). Masked values (`null`) stay as they are.
+   * (null when the file is gone), and points every richtext image at its
+   * file's current url (removed when the file is gone or not an image).
+   * Accepts a stored id or an uuid (the submitted side of a 409). Masked
+   * values stay as they are. One batched lookup per call.
    */
   async embed<T extends TreeNodeLike>(root: TableNode, records: readonly T[]): Promise<void> {
-    const slots = await this.slotsOf(root, records);
-    const present = slots.filter(({ values, name }) => values[name] != null);
-    if (present.length === 0) return;
+    const registry = await this.registry.registry();
+    const mediaValueSlots = this.presentSlots(mediaFieldNamesByTable(registry), root, records);
+    const richtextSlots = this.presentSlots(richtextFieldNamesByTable(registry), root, records);
+    const richtextIds = richtextSlots.flatMap(({ values, name }) =>
+      typeof values[name] === 'string' ? mediaIdsInRichtext(values[name]) : [],
+    );
+    if (mediaValueSlots.length === 0 && richtextSlots.length === 0) return;
     const internalIds = new Set<number>();
-    const documentIds = new Set<string>();
-    for (const { values, name } of present) {
+    const documentIds = new Set<string>(richtextIds);
+    for (const { values, name } of mediaValueSlots) {
       const value = values[name];
       if (typeof value === 'number') internalIds.add(value);
       else if (typeof value === 'string') documentIds.add(value);
     }
-    const found = await this.repository.findEmbeddable({
-      internalIds: [...internalIds],
-      documentIds: [...documentIds],
-    });
+    const found =
+      internalIds.size + documentIds.size === 0
+        ? []
+        : await this.repository.findEmbeddable({
+            internalIds: [...internalIds],
+            documentIds: [...documentIds],
+          });
     const byKey = new Map<number | string, EmbeddedMedia>();
     for (const { internalId, file } of found) {
       byKey.set(internalId, file);
       byKey.set(file.id, file);
     }
-    for (const { values, name } of present) {
+    for (const { values, name } of mediaValueSlots) {
       values[name] = byKey.get(values[name] as number | string) ?? null;
     }
+    const filesById = new Map(found.map(({ file }) => [file.id.toLowerCase(), file]));
+    for (const { values, name } of richtextSlots) {
+      if (typeof values[name] === 'string') {
+        values[name] = rewriteRichtextImages(values[name], filesById);
+      }
+    }
+  }
+
+  private presentSlots(
+    fieldsByTable: ReadonlyMap<string, readonly string[]>,
+    root: TableNode,
+    nodes: readonly TreeNodeLike[],
+  ): MediaSlot[] {
+    return nodes
+      .flatMap((node) => mediaSlots(fieldsByTable, root, node, ''))
+      .filter(({ values, name }) => values[name] != null);
   }
 }

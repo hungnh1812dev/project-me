@@ -23,7 +23,7 @@ import {
   TEST_SECRET_32_BYTES,
   TEST_WEB_ORIGIN,
 } from '../fixtures/Env.fixture';
-import { buildMediaFixtures } from '../fixtures/Media.fixture';
+import { buildMediaFixtures, MINIMAL_PDF } from '../fixtures/Media.fixture';
 import { multipart } from '../fixtures/Multipart.fixture';
 import { startPostgres, type TestPostgres } from '../fixtures/Postgres.fixture';
 import { createTestApp } from '../fixtures/TestApp.fixture';
@@ -40,10 +40,14 @@ const GALLERY = {
   draftAndPublish: true,
   fields: [
     { name: 'cover', type: 'media' },
+    { name: 'body', type: 'richtext' },
     {
       name: 'block',
       type: 'component',
-      fields: [{ name: 'image', type: 'media' }],
+      fields: [
+        { name: 'image', type: 'media' },
+        { name: 'caption', type: 'richtext' },
+      ],
     },
   ],
 } as const;
@@ -60,12 +64,15 @@ describe('document media references (T29; Postgres 17 via Testcontainers)', () =
   let db: PrismaHandle;
   let databaseUrl: string;
   let jpeg: Buffer;
+  let png: Buffer;
   let accountCount = 0;
   let editor: string;
   let admin: string;
 
   beforeAll(async () => {
-    jpeg = (await buildMediaFixtures()).exifJpeg;
+    const fixtures = await buildMediaFixtures();
+    jpeg = fixtures.exifJpeg;
+    png = fixtures.png;
     postgres = await startPostgres();
     const template = await createCoreTemplate(postgres.getConnectionUri());
     databaseUrl = await template.fresh();
@@ -135,15 +142,14 @@ describe('document media references (T29; Postgres 17 via Testcontainers)', () =
     return (res.body as { accessToken: string }).accessToken;
   }
 
-  async function uploaded(): Promise<{ id: string; internalId: number }> {
-    const { body, contentType } = multipart([
-      {
-        field: 'file',
-        fileName: 'a.jpg',
-        data: jpeg,
-        contentType: 'image/jpeg',
-      },
-    ]);
+  async function uploaded(
+    part: { fileName: string; data: Buffer; contentType: string } = {
+      fileName: 'a.jpg',
+      data: jpeg,
+      contentType: 'image/jpeg',
+    },
+  ): Promise<{ id: string; internalId: number; url: string }> {
+    const { body, contentType } = multipart([{ field: 'file', ...part }]);
     const res = await http()
       .post(MEDIA)
       .set(bearer(admin))
@@ -154,7 +160,7 @@ describe('document media references (T29; Postgres 17 via Testcontainers)', () =
     const row = await db.prisma.fileLibrary.findUniqueOrThrow({
       where: { documentId: id },
     });
-    return { id, internalId: row.id };
+    return { id, internalId: row.id, url: row.url };
   }
 
   const DOCS = '/api/v1/documents/gallery';
@@ -177,9 +183,9 @@ describe('document media references (T29; Postgres 17 via Testcontainers)', () =
   interface Doc {
     documentId: string;
     version: number;
-    values: { cover: Record<string, unknown> | null };
+    values: { cover: Record<string, unknown> | null; body?: string };
     components: {
-      block: { values: { image: Record<string, unknown> | null } }[];
+      block: { values: { image: Record<string, unknown> | null; caption?: string } }[];
     };
   }
 
@@ -280,6 +286,123 @@ describe('document media references (T29; Postgres 17 via Testcontainers)', () =
     ).details;
     expect(details.server.values.cover).toMatchObject({ id: first.id });
     expect(details.submitted.values.cover).toMatchObject({ id: second.id });
+  });
+
+  const imgOf = (file: { id: string; url: string }, extra = '') =>
+    `<img src="${file.url}"${extra} data-media-id="${file.id}" />`;
+
+  describe('richtext images', () => {
+    const createWithBody = async (body: string, caption = '<p>c</p>') =>
+      (
+        await http()
+          .post(DOCS)
+          .set(bearer(editor))
+          .send({ values: { body }, components: { block: [{ values: { caption } }] } })
+          .expect(201)
+      ).body as Doc;
+
+    it('409 MEDIA_IN_USE when only a root richtext uses the file (draft counts)', async () => {
+      const file = await uploaded();
+      await createWithBody(`<p>x</p>${imgOf(file)}`);
+      const res = await http().delete(`${MEDIA}/${file.id}`).set(bearer(admin));
+      expect(res.status).toBe(409);
+      expect((res.body as { errorCode: string }).errorCode).toBe('MEDIA_IN_USE');
+    });
+
+    it('409 MEDIA_IN_USE when only a component richtext uses the file', async () => {
+      const file = await uploaded();
+      await createWithBody('<p>x</p>', imgOf(file));
+      const res = await http().delete(`${MEDIA}/${file.id}`).set(bearer(admin));
+      expect(res.status).toBe(409);
+      expect((res.body as { errorCode: string }).errorCode).toBe('MEDIA_IN_USE');
+    });
+
+    it('a file no richtext or media field uses can still be deleted', async () => {
+      const used = await uploaded();
+      const free = await uploaded();
+      await createWithBody(imgOf(used));
+      const res = await http().delete(`${MEDIA}/${free.id}`).set(bearer(admin));
+      expect(res.status).toBe(204);
+    });
+
+    it('text that only looks like the image marker is not a reference', async () => {
+      const file = await uploaded();
+      await createWithBody(`<p>data-media-id="${file.id}"</p>`);
+      const res = await http().delete(`${MEDIA}/${file.id}`).set(bearer(admin));
+      expect(res.status).toBe(204);
+    });
+
+    it('a malformed stored media id does not break reads', async () => {
+      const doc = await createWithBody('<p>a</p>');
+      await db.prisma.$executeRawUnsafe(
+        'update content.gallery set body = $1 where document_id = $2::uuid',
+        '<p>a</p><img src="x" data-media-id="not-a-uuid" />',
+        doc.documentId,
+      );
+      const detail = await http().get(`${DOCS}/${doc.documentId}?status=draft`).set(bearer(editor));
+      expect(detail.status).toBe(200);
+      expect((detail.body as Doc).values.body).toBe('<p>a</p>');
+    });
+
+    it('reads show the current url after the file is replaced', async () => {
+      const file = await uploaded();
+      const doc = await createWithBody(imgOf(file, ' alt="cat"'), imgOf(file));
+      const { body, contentType } = multipart([
+        { field: 'file', fileName: 'fresh.png', data: png, contentType: 'image/png' },
+      ]);
+      await http()
+        .put(`${MEDIA}/${file.id}/file`)
+        .set(bearer(editor))
+        .set('Content-Type', contentType)
+        .send(body)
+        .expect(200);
+      const fresh = await db.prisma.fileLibrary.findUniqueOrThrow({
+        where: { documentId: file.id },
+      });
+      expect(fresh.url).not.toBe(file.url);
+      const detail = (
+        await http().get(`${DOCS}/${doc.documentId}?status=draft`).set(bearer(editor))
+      ).body as Doc;
+      expect(detail.values.body).toBe(
+        `<img src="${fresh.url}" alt="cat" data-media-id="${file.id}" />`,
+      );
+      expect(detail.components.block[0]?.values.caption).toBe(imgOf({ ...file, url: fresh.url }));
+      const list = await http().get(`${DOCS}?status=draft`).set(bearer(editor));
+      expect(JSON.stringify(list.body)).toContain(fresh.url);
+      expect(JSON.stringify(list.body)).not.toContain(file.url);
+    });
+
+    it('the image is gone from reads once the file is deleted', async () => {
+      const file = await uploaded();
+      const doc = await createWithBody(`<p>a</p>${imgOf(file)}<p>b</p>`);
+      await db.prisma.fileLibrary.update({
+        where: { documentId: file.id },
+        data: { deletedAt: new Date() },
+      });
+      const detail = (
+        await http().get(`${DOCS}/${doc.documentId}?status=draft`).set(bearer(editor))
+      ).body as Doc;
+      expect(detail.values.body).toBe('<p>a</p><p>b</p>');
+    });
+
+    it('a non-image file id is removed from reads', async () => {
+      const pdf = await uploaded({
+        fileName: 'a.pdf',
+        data: MINIMAL_PDF,
+        contentType: 'application/pdf',
+      });
+      const image = await uploaded();
+      const doc = await createWithBody('<p>a</p>');
+      await db.prisma.$executeRawUnsafe(
+        'update content.gallery set body = $1 where document_id = $2::uuid',
+        `${imgOf(pdf)}${imgOf(image)}`,
+        doc.documentId,
+      );
+      const detail = (
+        await http().get(`${DOCS}/${doc.documentId}?status=draft`).set(bearer(editor))
+      ).body as Doc;
+      expect(detail.values.body).toBe(imgOf(image));
+    });
   });
 
   it('rejects filtering and sorting on a media field (internal id stays private)', async () => {
