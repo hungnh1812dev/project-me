@@ -3,7 +3,7 @@ import { deflateSync } from 'node:zlib';
 import { expect, test, type Locator, type Page } from '@playwright/test';
 
 import { ADMIN_COPY, MEDIA_DEFAULT_PAGE_SIZE } from '../src/Apps.contract';
-import { RUN_ID } from '../src/E2e.constants';
+import { HTTP, RUN_ID } from '../src/E2e.constants';
 import { e2eEnv } from '../src/E2e.env';
 import { signInAs } from '../src/Session.fixture';
 import { insertLibraryFiles } from '../src/SmokeDatabase.client';
@@ -69,7 +69,6 @@ const PHONE_WIDTH = 375;
 const PHONE_HEIGHT = 800;
 const DESKTOP_WIDTH = 1280;
 const DESKTOP_HEIGHT = 720;
-const HTTP_UNAUTHORIZED = 401;
 const PDF_NAME = `${PREFIX}-doc.pdf`;
 
 const cards = (page: Page) =>
@@ -102,7 +101,7 @@ test.describe.serial('owner: file library edge states with the real API', () => 
       if (message.type() === 'error') problems.push(message.text());
     });
     page.on('response', (response) => {
-      if (response.status() === HTTP_UNAUTHORIZED) problems.push(`401 ${response.url()}`);
+      if (response.status() === HTTP.UNAUTHORIZED) problems.push(`401 ${response.url()}`);
     });
     page.on('pageerror', (error) => problems.push(error.message));
     await page.goto('/media');
