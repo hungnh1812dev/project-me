@@ -39,7 +39,7 @@ Builder scopes and high-risk paths come from `project.md`. Default models: manag
 | Agent and job | Model |
 |---|---|
 | `planner` `SPEC`, `PLAN`, `DESIGN <topic>`, `REPLAN` of a phase or feature | `opus` |
-| `planner` `CHECKLIST <phase>`, `REPLAN` of one task | `sonnet` |
+| `planner` `CHECKLIST <phase>`, `REPLAN` of one task, `ADR-STATUS <feature>` | `sonnet` |
 | `security-qc` `TASK` / `BATCH`, its first `RECHECK`, any `CHECKLIST` | `sonnet` |
 | `security-qc` `CHECK` of a phase checkpoint whose phase has a `Risk: high` task, `CHECK feature` | `opus` |
 | any second round that still fails (unit or checklist row) | `opus` |
@@ -108,14 +108,16 @@ Check each yourself; any miss keeps the feature `in-progress`:
 - `findings/` empty; no `open` entry in `qc-issues-handoff.md`; `.claude/bin/module-index --check` prints nothing;
 - `handoff.md` has no open question or task line (new-work follow-ups move to `features.md` `## Follow-ups`; tell the user which);
 - `current.md` says `No unit in progress.`
+- no ADR the feature names still shows `Status: proposed` (`ADR-STATUS` done).
 
 ## Closing a feature
 
 1. Check the definition of done.
-2. Write `<F>/SUMMARY.md` (format in `session-handoff`), as short as possible without losing a main point. Sources only: Goal and Outputs from the phases file and the board's `## Built` lines (overview, sub-features); `git diff --name-only <base>..HEAD`, grouped by app/package, all-new folders collapsed (structure); one row per `resolved/` file, else `None` (major issues).
-3. Before cleaning, check that what lasts is outside `<F>`: open follow-ups in `features.md` `## Follow-ups`; user decisions in force in the conventions files; module knowledge in the module docs (`--check` above). Anything left only in `handoff.md` or `board.md` `## Notes` → move it first (follow-ups and decisions yourself; module facts by a fresh builder of that scope).
-4. Ask the user once (`AskUserQuestion`): the summary path and every other file in `<F>` except `SUMMARY.md` and `CHECKLIST.md` (always kept, never changed); options Delete them / Keep them for now. Delete only on yes, only the listed files.
-5. Set the row `done` with the summary path.
+2. Fresh `planner` (`plan-adr-status-<feature>`, sonnet): `ADR-STATUS <feature>`, `Notes: <base>..<head hash>`. Its `questions` → the user before going on. ADR changes git tracks go through the commit gate (ignored ones stay local).
+3. Write `<F>/SUMMARY.md` (format in `session-handoff`), as short as possible without losing a main point. Sources only: Goal and Outputs from the phases file and the board's `## Built` lines (overview, sub-features); `git diff --name-only <base>..<head hash>`, grouped by app/package, all-new folders collapsed (structure); `Commits:` with the head hash, never `HEAD`; one row per `resolved/` file with its `Problem`, `Impact`, `Root cause` and `Fix applied` lines copied in (never "see file": the files are deleted at close), else `None` (major issues).
+4. Before cleaning, check that what lasts is outside `<F>`: open follow-ups in `features.md` `## Follow-ups`; user decisions in force in the conventions files; module knowledge in the module docs (`--check` above). Anything left only in `handoff.md` or `board.md` `## Notes` → move it first (follow-ups and decisions yourself; module facts by a fresh builder of that scope).
+5. Ask the user once (`AskUserQuestion`): the summary path and every other file in `<F>` except `SUMMARY.md` and `CHECKLIST.md` (always kept, never changed); options Delete them / Keep them for now. Delete only on yes, only the listed files.
+6. Set the row `done` with the summary path.
 
 ## Dispatch message
 
