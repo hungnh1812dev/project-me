@@ -30,7 +30,6 @@ const BAD_LINK_TEXT = 'Bad link';
 const SAFE_LINK = 'https://example.com/e2e';
 const BAD_LINK = 'javascript:alert(1)';
 const FORMAT_SETTLE_MS = 300;
-const TOOLBAR_BUTTONS = 11;
 const DOCUMENTS_PATH = API_PATHS.documents(CV_PAGE_SLUG);
 
 /** Clicks Save, expects a 2xx PUT, then the success notice. */
@@ -300,9 +299,10 @@ test.describe.serial('owner: dynamic document form (cv-page)', () => {
     await first.focus();
     await expect(first).toBeFocused();
     await expect(first).toHaveCSS('outline-style', /.*/);
-    for (let i = 0; i < TOOLBAR_BUTTONS; i += 1) {
-      await page.keyboard.press('Tab');
-    }
+    // The toolbar is one tab stop; arrow keys move inside it.
+    await page.keyboard.press('ArrowRight');
+    await expect(toolbarButton(page, copy.richtext.italic).first()).toBeFocused();
+    await page.keyboard.press('Tab');
     await expect(richtextEditor(page, 'Summary')).toBeFocused();
   });
 

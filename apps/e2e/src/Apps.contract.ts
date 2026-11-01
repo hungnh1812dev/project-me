@@ -8,6 +8,7 @@ export { API_ENDPOINTS } from '../../cms-admin/src/configs/Api.endpoints';
 export { API_ERROR_CODES } from '../../cms-admin/src/configs/Http.constants';
 export {
   APP_ROUTES,
+  contentEditPath,
   contentListPath,
   contentNewPath,
 } from '../../cms-admin/src/configs/App.routes';

@@ -1,10 +1,9 @@
-import { deflateSync } from 'node:zlib';
-
 import { expect, test, type Locator, type Page } from '@playwright/test';
 
 import { ADMIN_COPY, MEDIA_DEFAULT_PAGE_SIZE } from '../src/Apps.contract';
 import { HTTP, RUN_ID } from '../src/E2e.constants';
 import { e2eEnv } from '../src/E2e.env';
+import { pngOf } from '../src/Png.fixture';
 import { signInAs } from '../src/Session.fixture';
 import { insertLibraryFiles } from '../src/SmokeDatabase.client';
 
@@ -12,55 +11,10 @@ const copy = ADMIN_COPY.media;
 
 const PREFIX = `e2e-edge-${RUN_ID}`;
 const FILE_COUNT = MEDIA_DEFAULT_PAGE_SIZE;
-const PNG_SIDE = 8;
-const COLOR_RANGE = 256;
-const RGB_BYTES = 3;
-const PNG_SIGNATURE = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
-const PNG_BIT_DEPTH = 8;
-const PNG_COLOR_TYPE_RGB = 2;
 const UPLOAD_SETTLE_MS = 20_000;
 const PDF_BYTES = Buffer.from(
   '%PDF-1.4\n1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj\n2 0 obj<</Type/Pages/Kids[3 0 R]/Count 1>>endobj\n3 0 obj<</Type/Page/Parent 2 0 R/MediaBox[0 0 200 200]>>endobj\ntrailer<</Root 1 0 R>>\n%%EOF\n',
 );
-
-const crcTable = Array.from({ length: COLOR_RANGE }, (_, n) => {
-  let c = n;
-  for (let k = 0; k < PNG_SIDE; k += 1) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
-  return c >>> 0;
-});
-const crc32 = (bytes: Buffer): number => {
-  let c = 0xffffffff;
-  for (const byte of bytes) c = (crcTable[(c ^ byte) & 0xff] ?? 0) ^ (c >>> PNG_SIDE);
-  return (c ^ 0xffffffff) >>> 0;
-};
-const chunk = (type: string, data: Buffer): Buffer => {
-  const body = Buffer.concat([Buffer.from(type), data]);
-  const length = Buffer.alloc(4);
-  length.writeUInt32BE(data.length);
-  const crc = Buffer.alloc(4);
-  crc.writeUInt32BE(crc32(body));
-  return Buffer.concat([length, body, crc]);
-};
-/** A small PNG whose bytes differ per seed, so no two uploads share a hash. */
-const pngOf = (seed: number): Buffer => {
-  const header = Buffer.alloc(13);
-  header.writeUInt32BE(PNG_SIDE, 0);
-  header.writeUInt32BE(PNG_SIDE, 4);
-  header[8] = PNG_BIT_DEPTH;
-  header[9] = PNG_COLOR_TYPE_RGB;
-  const pixel = [seed % COLOR_RANGE, (seed * 7) % COLOR_RANGE, (seed * 13) % COLOR_RANGE];
-  const row = Buffer.concat([
-    Buffer.from([0]),
-    Buffer.from(Array.from({ length: PNG_SIDE * RGB_BYTES }, (_, i) => pixel[i % RGB_BYTES] ?? 0)),
-  ]);
-  const raw = Buffer.concat(Array.from({ length: PNG_SIDE }, () => row));
-  return Buffer.concat([
-    PNG_SIGNATURE,
-    chunk('IHDR', header),
-    chunk('IDAT', deflateSync(raw)),
-    chunk('IEND', Buffer.alloc(0)),
-  ]);
-};
 
 const nameOf = (index: number) => `${PREFIX}-${String(index).padStart(2, '0')}.png`;
 const PREVIEW_HEIGHT_PX = 200;
