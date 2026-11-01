@@ -853,7 +853,21 @@
       "horizontalRule": "Divider",
       "link": "Link",
       "unlink": "Remove link",
-      "linkPrompt": "Link address (https://, mailto: or tel:). Leave empty to remove the link."
+      "linkPrompt": "Link address (https://, mailto: or tel:). Leave empty to remove the link.",
+      "textColor": "Text colour",
+      "clearTextColor": "Clear colour",
+      "insertImage": "Insert image",
+      "colors": {
+        "gray": "Gray",
+        "red": "Red",
+        "orange": "Orange",
+        "amber": "Amber",
+        "green": "Green",
+        "teal": "Teal",
+        "blue": "Blue",
+        "violet": "Violet",
+        "pink": "Pink"
+      }
     },
     "richtextLoading": "Loading the text editor…",
     "invalidInteger": "Enter a whole number, for example 12.",

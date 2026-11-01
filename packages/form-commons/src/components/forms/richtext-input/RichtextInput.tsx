@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { EditorContent, useEditor } from '@tiptap/react';
 import { cn } from 'cn';
-import { ChevronDown } from 'lucide-react';
+import { Check, ChevronDown, Palette } from 'lucide-react';
 import { Toolbar } from 'radix-ui';
 import {
   useController,
@@ -24,17 +24,21 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/DropdownMenu';
 import { IconButton } from '@/components/ui/IconButton';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/Popover';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/Tooltip';
 
 import { normalizeRichtextHtml, readCspNonce, richtextExtensions } from './Richtext.setup';
 import { RICHTEXT_CONTENT_CLASS } from './Richtext.styles';
+import type { RichtextToolbarColors } from './RichtextTextColor';
 import {
   buildRichtextToolbar,
+  type RichtextImage,
   type RichtextLabels,
   type RichtextToolbarControl,
+  type RichtextToolbarOptions,
 } from './RichtextToolbar';
 
-export type { RichtextLabels };
+export type { RichtextImage, RichtextLabels };
 
 export interface RichtextInputProps<TFieldValues extends FieldValues = FieldValues> {
   name: FieldPath<TFieldValues>;
@@ -46,6 +50,63 @@ export interface RichtextInputProps<TFieldValues extends FieldValues = FieldValu
   disabled?: boolean;
   id?: string | undefined;
   fieldClassName?: string | undefined;
+  /** Shows the image button; call `insert` with a File Library image to add it at the cursor. */
+  onRequestImage?: RichtextToolbarOptions['onRequestImage'];
+}
+
+function ColorControl({
+  control,
+  disabled,
+}: {
+  control: RichtextToolbarColors;
+  disabled: boolean;
+}) {
+  const [isOpen, setIsOpen] = React.useState(false);
+  const choose = (run: () => void) => {
+    run();
+    setIsOpen(false);
+  };
+  return (
+    <Popover open={isOpen} onOpenChange={setIsOpen}>
+      <PopoverTrigger asChild>
+        <Toolbar.Button asChild disabled={disabled}>
+          <IconButton type="button" variant="ghost" label={control.label} className="size-8">
+            <Palette
+              aria-hidden
+              style={control.currentHex ? { color: control.currentHex } : undefined}
+            />
+          </IconButton>
+        </Toolbar.Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-auto" aria-label={control.label}>
+        <div className="grid grid-cols-5 gap-1">
+          {control.swatches.map((swatch) => (
+            <button
+              key={swatch.key}
+              type="button"
+              aria-label={swatch.label}
+              aria-pressed={swatch.isActive}
+              title={swatch.label}
+              onClick={() => choose(swatch.run)}
+              style={{ backgroundColor: swatch.hex ?? undefined }}
+              className="text-primary-foreground focus-visible:ring-ring flex size-7 items-center justify-center rounded-md border border-black/10 outline-none focus-visible:ring-2"
+            >
+              {swatch.isActive && <Check aria-hidden className="size-4" />}
+            </button>
+          ))}
+        </div>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="mt-2 w-full"
+          onClick={() => choose(control.clear.run)}
+        >
+          {control.clear.label}
+        </Button>
+      </PopoverContent>
+    </Popover>
+  );
 }
 
 function ToolbarControl({
@@ -55,6 +116,7 @@ function ToolbarControl({
   control: RichtextToolbarControl;
   disabled: boolean;
 }) {
+  if (control.kind === 'colors') return <ColorControl control={control} disabled={disabled} />;
   if (control.kind === 'button') {
     const Icon = control.icon;
     return (
@@ -128,6 +190,7 @@ function RichtextInput<TFieldValues extends FieldValues = FieldValues>({
   disabled = false,
   id,
   fieldClassName,
+  onRequestImage,
 }: RichtextInputProps<TFieldValues>) {
   const form = useRequiredFormContext<TFieldValues>();
   const { field, fieldState } = useController({
@@ -194,7 +257,7 @@ function RichtextInput<TFieldValues extends FieldValues = FieldValues>({
               aria-label={labels.toolbar}
               className="border-input flex flex-wrap items-center gap-1 border-b p-1"
             >
-              {buildRichtextToolbar(editor, labels).map((group, index) => (
+              {buildRichtextToolbar(editor, labels, { onRequestImage }).map((group, index) => (
                 <React.Fragment key={group.key}>
                   {index > 0 && <Toolbar.Separator className="bg-border mx-1 h-5 w-px" />}
                   {group.controls.map((item) => (

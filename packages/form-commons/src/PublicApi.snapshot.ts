@@ -80,6 +80,7 @@ export const PUBLIC_API_SNAPSHOT = {
     'MediaPreviewProps',
     'NumberInputProps',
     'NumberMode',
+    'RichtextImage',
     'RichtextInputProps',
     'RichtextLabels',
     'SelectInputProps',

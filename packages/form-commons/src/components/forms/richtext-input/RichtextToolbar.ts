@@ -7,6 +7,7 @@ import {
   Bold,
   Code,
   Code2,
+  ImagePlus,
   Italic,
   Link,
   Link2Off,
@@ -21,9 +22,14 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 
+import {
+  buildColorControl,
+  type RichtextColorLabels,
+  type RichtextToolbarColors,
+} from './RichtextTextColor';
+
 const HEADING_LEVELS = [1, 2, 3, 4, 5, 6] as const;
-type HeadingLevel = (typeof HEADING_LEVELS)[number];
-type HeadingLabelKey = `heading${HeadingLevel}`;
+type HeadingLabelKey = `heading${(typeof HEADING_LEVELS)[number]}`;
 
 export type RichtextLabels = {
   toolbar: string;
@@ -50,7 +56,9 @@ export type RichtextLabels = {
   unlink: string;
   /** Shown by the link prompt. */
   linkPrompt: string;
-} & Record<HeadingLabelKey, string>;
+  insertImage: string;
+} & RichtextColorLabels &
+  Record<HeadingLabelKey, string>;
 
 export interface RichtextToolbarButton {
   kind: 'button';
@@ -77,7 +85,20 @@ export interface RichtextToolbarMenu {
   items: RichtextToolbarMenuItem[];
 }
 
-export type RichtextToolbarControl = RichtextToolbarButton | RichtextToolbarMenu;
+export type RichtextToolbarControl =
+  RichtextToolbarButton | RichtextToolbarMenu | RichtextToolbarColors;
+
+/** What the host receives to put a File Library image at the cursor. */
+export interface RichtextImage {
+  src: string;
+  alt: string;
+  mediaId: string;
+}
+
+export interface RichtextToolbarOptions {
+  /** Shows the image button; it hands the host an `insert` function. */
+  onRequestImage?: ((insert: (image: RichtextImage) => void) => void) | undefined;
+}
 
 export interface RichtextToolbarGroup {
   key: string;
@@ -184,51 +205,67 @@ function buildAlignmentButtons(editor: Editor, labels: RichtextLabels): Richtext
   }));
 }
 
+function buildImageButton(
+  editor: Editor,
+  labels: RichtextLabels,
+  onRequestImage: NonNullable<RichtextToolbarOptions['onRequestImage']>,
+): RichtextToolbarButton {
+  const insert = ({ src, alt, mediaId }: RichtextImage) =>
+    void editor
+      .chain()
+      .focus()
+      .insertContent({ type: 'image', attrs: { src, alt, mediaId } })
+      .run();
+  return {
+    kind: 'button',
+    key: 'image',
+    label: labels.insertImage,
+    icon: ImagePlus,
+    isActive: false,
+    isDisabled: false,
+    run: () => onRequestImage(insert),
+  };
+}
+
+function plainButton(
+  key: string,
+  label: string,
+  icon: LucideIcon,
+  isDisabled: boolean,
+  run: () => unknown,
+): RichtextToolbarButton {
+  return { kind: 'button', key, label, icon, isActive: false, isDisabled, run: () => void run() };
+}
+
 /** One entry per control; a new control is one more entry in its group. */
 export function buildRichtextToolbar(
   editor: Editor,
   labels: RichtextLabels,
+  { onRequestImage }: RichtextToolbarOptions = {},
 ): RichtextToolbarGroup[] {
   return [
     {
       key: 'history',
       controls: [
-        {
-          kind: 'button',
-          key: 'undo',
-          label: labels.undo,
-          icon: Undo2,
-          isActive: false,
-          isDisabled: !editor.can().undo(),
-          run: () => void editor.chain().focus().undo().run(),
-        },
-        {
-          kind: 'button',
-          key: 'redo',
-          label: labels.redo,
-          icon: Redo2,
-          isActive: false,
-          isDisabled: !editor.can().redo(),
-          run: () => void editor.chain().focus().redo().run(),
-        },
+        plainButton('undo', labels.undo, Undo2, !editor.can().undo(), () =>
+          editor.chain().focus().undo().run(),
+        ),
+        plainButton('redo', labels.redo, Redo2, !editor.can().redo(), () =>
+          editor.chain().focus().redo().run(),
+        ),
       ],
     },
     { key: 'blockType', controls: [buildBlockTypeMenu(editor, labels)] },
     { key: 'marks', controls: MARKS.map((mark) => toggleButton(editor, labels, mark)) },
+    { key: 'color', controls: [buildColorControl(editor, labels)] },
     { key: 'alignment', controls: buildAlignmentButtons(editor, labels) },
     {
       key: 'blocks',
       controls: [
         ...BLOCKS.map((block) => toggleButton(editor, labels, block)),
-        {
-          kind: 'button',
-          key: 'horizontalRule',
-          label: labels.horizontalRule,
-          icon: Minus,
-          isActive: false,
-          isDisabled: false,
-          run: () => void editor.chain().focus().setHorizontalRule().run(),
-        },
+        plainButton('horizontalRule', labels.horizontalRule, Minus, false, () =>
+          editor.chain().focus().setHorizontalRule().run(),
+        ),
       ],
     },
     {
@@ -243,16 +280,13 @@ export function buildRichtextToolbar(
           isDisabled: false,
           run: () => promptForLink(editor, labels),
         },
-        {
-          kind: 'button',
-          key: 'unlink',
-          label: labels.unlink,
-          icon: Link2Off,
-          isActive: false,
-          isDisabled: !editor.isActive('link'),
-          run: () => void editor.chain().focus().extendMarkRange('link').unsetLink().run(),
-        },
+        plainButton('unlink', labels.unlink, Link2Off, !editor.isActive('link'), () =>
+          editor.chain().focus().extendMarkRange('link').unsetLink().run(),
+        ),
       ],
     },
+    ...(onRequestImage
+      ? [{ key: 'image', controls: [buildImageButton(editor, labels, onRequestImage)] }]
+      : []),
   ];
 }

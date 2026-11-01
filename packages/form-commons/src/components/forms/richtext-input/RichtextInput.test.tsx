@@ -3,7 +3,13 @@ import userEvent from '@testing-library/user-event';
 import type { Editor } from '@tiptap/react';
 import { vi } from 'vitest';
 
-import { normalizeRichtextHtml, richtextExtensions, RichtextInput, type RichtextLabels } from '.';
+import {
+  normalizeRichtextHtml,
+  richtextExtensions,
+  RichtextInput,
+  type RichtextImage,
+  type RichtextLabels,
+} from '.';
 import { TestForm } from '../../../../test/TestForm.fixture';
 
 const LABELS: RichtextLabels = {
@@ -35,6 +41,20 @@ const LABELS: RichtextLabels = {
   link: 'Link',
   unlink: 'Remove link',
   linkPrompt: 'Link address',
+  textColor: 'Text colour',
+  clearTextColor: 'Clear colour',
+  insertImage: 'Insert image',
+  colors: {
+    gray: 'Gray',
+    red: 'Red',
+    orange: 'Orange',
+    amber: 'Amber',
+    green: 'Green',
+    teal: 'Teal',
+    blue: 'Blue',
+    violet: 'Violet',
+    pink: 'Pink',
+  },
 };
 
 /** Tags cms-api sanitizeRichtext keeps (ALLOWED_TAGS). */
@@ -90,6 +110,7 @@ describe('RichtextInput toolbar', () => {
     ['Undo', 'Redo'],
     ['Text style: Paragraph'],
     ['Bold', 'Italic', 'Underline', 'Strikethrough', 'Code'],
+    ['Text colour'],
     ['Align left', 'Align center', 'Align right', 'Justify'],
     ['Bullet list', 'Numbered list', 'Quote', 'Code block', 'Divider'],
     ['Link', 'Remove link'],
@@ -201,6 +222,128 @@ describe('RichtextInput toolbar', () => {
     expect(document.activeElement).toBe(first);
     await user.tab();
     expect(toolbar).not.toContainElement(document.activeElement as HTMLElement);
+  });
+});
+
+const MEDIA_ID = '0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b';
+const IMAGE_HTML = `<p><img src="https://cdn.test/a.png" alt="Logo" data-media-id="${MEDIA_ID}"></p>`;
+
+describe('RichtextInput text colour', () => {
+  it('writes the palette hex as a style and keeps it byte-identical after a reload', async () => {
+    const { Editor } = await import('@tiptap/react');
+    const html = '<p><span style="color: #b91c1c">red</span> plain</p>';
+    const first = new Editor({ extensions: richtextExtensions, content: html });
+    expect(first.getHTML()).toBe(html);
+    const second = new Editor({ extensions: richtextExtensions, content: first.getHTML() });
+    expect(second.getHTML()).toBe(html);
+    first.destroy();
+    second.destroy();
+  });
+
+  it('reads an rgb() colour of the palette back as the same hex', async () => {
+    const { Editor } = await import('@tiptap/react');
+    const editor = new Editor({
+      extensions: richtextExtensions,
+      content: '<p><span style="color: rgb(185, 28, 28)">red</span></p>',
+    });
+    expect(editor.getHTML()).toBe('<p><span style="color: #b91c1c">red</span></p>');
+    editor.destroy();
+  });
+
+  it('does not keep a colour outside the palette', async () => {
+    const { Editor } = await import('@tiptap/react');
+    const editor = new Editor({
+      extensions: richtextExtensions,
+      content: '<p><span style="color: #123456">x</span></p>',
+    });
+    expect(editor.getHTML()).not.toContain('#123456');
+    expect(editor.getHTML()).not.toContain('color');
+    editor.destroy();
+  });
+
+  it('offers the nine named swatches with the current one marked, and applies a pick', async () => {
+    const user = userEvent.setup();
+    const onValid = vi.fn<(values: { body: string }) => void>();
+    const editor = await renderEditor('<p>word</p>', onValid);
+    act(() => {
+      editorOf(editor).commands.selectAll();
+    });
+    await user.click(screen.getByRole('button', { name: 'Text colour' }));
+    const swatches = await screen.findAllByRole('button', {
+      name: /^(Gray|Red|Orange|Amber|Green|Teal|Blue|Violet|Pink)$/,
+    });
+    expect(swatches).toHaveLength(9);
+    await user.click(screen.getByRole('button', { name: 'Red' }));
+    await user.click(screen.getByRole('button', { name: 'Text colour' }));
+    expect(await screen.findByRole('button', { name: 'Red' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    expect(screen.getByRole('button', { name: 'Blue' })).toHaveAttribute('aria-pressed', 'false');
+    await user.keyboard('{Escape}');
+    await user.click(screen.getByRole('button', { name: 'Save' }));
+    await waitFor(() => expect(onValid).toHaveBeenCalled());
+    expect(onValid.mock.calls[0]?.[0].body).toBe('<p><span style="color: #b91c1c">word</span></p>');
+  });
+
+  it('Clear removes the colour span', async () => {
+    const user = userEvent.setup();
+    const onValid = vi.fn<(values: { body: string }) => void>();
+    const editor = await renderEditor('<p><span style="color: #b91c1c">word</span></p>', onValid);
+    act(() => {
+      editorOf(editor).commands.selectAll();
+    });
+    await user.click(screen.getByRole('button', { name: 'Text colour' }));
+    await user.click(await screen.findByRole('button', { name: 'Clear colour' }));
+    await user.click(screen.getByRole('button', { name: 'Save' }));
+    await waitFor(() => expect(onValid).toHaveBeenCalled());
+    expect(onValid.mock.calls[0]?.[0].body).toBe('<p>word</p>');
+  });
+});
+
+describe('RichtextInput image hook', () => {
+  it('hides the image button without onRequestImage', async () => {
+    await renderEditor();
+    expect(screen.queryByRole('button', { name: 'Insert image' })).not.toBeInTheDocument();
+  });
+
+  it('calls onRequestImage and inserts the image with its media id at the cursor', async () => {
+    const user = userEvent.setup();
+    const onValid = vi.fn<(values: { body: string }) => void>();
+    const onRequestImage = vi.fn<(insert: (image: RichtextImage) => void) => void>();
+    render(
+      <TestForm<{ body: string }> options={{ defaultValues: { body: '' } }} onValid={onValid}>
+        <RichtextInput
+          name="body"
+          label="Summary"
+          labels={LABELS}
+          onRequestImage={onRequestImage}
+        />
+      </TestForm>,
+    );
+    const editor = await screen.findByRole('textbox', { name: 'Summary' });
+    act(() => {
+      editorOf(editor).commands.focus();
+    });
+    await user.click(screen.getByRole('button', { name: 'Insert image' }));
+    expect(onRequestImage).toHaveBeenCalledTimes(1);
+    act(() => {
+      onRequestImage.mock.calls[0]?.[0]({
+        src: 'https://cdn.test/a.png',
+        alt: 'Logo',
+        mediaId: MEDIA_ID,
+      });
+    });
+    await user.click(screen.getByRole('button', { name: 'Save' }));
+    await waitFor(() => expect(onValid).toHaveBeenCalled());
+    expect(onValid.mock.calls[0]?.[0].body).toBe(IMAGE_HTML);
+  });
+
+  it('keeps data-media-id when a stored image is loaded and saved again', async () => {
+    const { Editor } = await import('@tiptap/react');
+    const editor = new Editor({ extensions: richtextExtensions, content: IMAGE_HTML });
+    expect(editor.getHTML()).toBe(IMAGE_HTML);
+    editor.destroy();
   });
 });
 

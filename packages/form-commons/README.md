@@ -143,8 +143,13 @@ All bind to the surrounding `FormProvider` like `TextInput`.
   allowlist before adding an extension. The server sanitizes again on write.
   Alignment saves `style="text-align: ..."` on p and headings. The toolbar is
   Radix `Toolbar` (one tab stop, arrow/Home/End keys) of `IconButton`s in
-  groups (history, block type menu, marks, alignment, blocks, link); a new
-  control is one entry in `RichtextToolbar.ts`.
+  groups (history, block type menu, marks, text colour, alignment, blocks,
+  link, image); a new control is one entry in `RichtextToolbar.ts`. Text
+  colour is limited to `RICHTEXT_TEXT_COLORS` (mirror of the server's
+  `richtextTextColors`) and saves `<span style="color: #rrggbb">`; a colour
+  outside the palette is dropped on load. The optional `onRequestImage(insert)`
+  prop shows an image button; the host picks a File Library image and calls
+  `insert({ src, alt, mediaId })`, which adds `<img src alt data-media-id>`.
 
 ### MediaInput
 

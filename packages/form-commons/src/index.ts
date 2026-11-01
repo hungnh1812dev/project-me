@@ -52,6 +52,7 @@ export {
   RichtextInput,
   richtextExtensions,
   normalizeRichtextHtml,
+  type RichtextImage,
   type RichtextInputProps,
   type RichtextLabels,
 } from './components/forms/richtext-input';
