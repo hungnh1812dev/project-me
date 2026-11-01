@@ -214,6 +214,23 @@ describe('media field in the document form', () => {
     expect(api.calls.filter((call) => call.method === 'PUT')).toHaveLength(0);
   });
 
+  it('closing the upload dialog returns focus to the Replace file button', async () => {
+    await open({
+      [`GET ${DOCUMENTS.BY_ID(SLUG, DOC_ID)}`]: () => ({
+        status: 200,
+        data: doc({ ...library(), mimeType: undefined }),
+      }),
+    });
+    await screen.findByText(PORTRAIT_NAME);
+    const replace = screen.getByRole('button', { name: copy.input.replace });
+    replace.focus();
+    await userEvent.keyboard('{Enter}');
+    await screen.findByRole('dialog');
+    await userEvent.keyboard('{Escape}');
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    expect(replace).toHaveFocus();
+  });
+
   it('without media:create the upload and replace actions are not offered', async () => {
     await open(
       {

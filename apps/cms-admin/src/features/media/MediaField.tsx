@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { MediaInput } from '@abyss/form-commons';
+import { useRestoreFocus } from '@components/useRestoreFocus';
 import { COPY } from '@configs/Copy.constants';
 import { useQueryClient } from '@tanstack/react-query';
 import { useController } from 'react-hook-form';
@@ -23,7 +24,13 @@ export function MediaField({ name, label }: { name: string; label: string }) {
 
   const canRead = caller.isReady && caller.can(MEDIA_SUBJECT, 'read');
   const canCreate = caller.isReady && caller.can(MEDIA_SUBJECT, 'create');
-  const openUpload = canCreate ? () => setUploading(true) : undefined;
+  const { rememberOpener, restoreFocus } = useRestoreFocus();
+  const openUpload = canCreate
+    ? () => {
+        rememberOpener(document.activeElement);
+        setUploading(true);
+      }
+    : undefined;
 
   return (
     <>
@@ -45,6 +52,7 @@ export function MediaField({ name, label }: { name: string; label: string }) {
           mode="one"
           open={uploading}
           onClose={() => setUploading(false)}
+          onCloseAutoFocus={restoreFocus}
           onUploaded={([created]) => {
             void queryClient.invalidateQueries({ queryKey: MEDIA_QUERY_KEY });
             if (created !== undefined) field.onChange(libraryFileToInput(created));
