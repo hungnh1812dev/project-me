@@ -60,6 +60,8 @@ export interface IAppConfig {
     readonly provider: Env['MEDIA_PROVIDER'];
     /** Set only when MEDIA_PROVIDER=cloudinary. */
     readonly cloudinary: CloudinaryConfig | undefined;
+    /** Set only when MEDIA_PROVIDER=local. */
+    readonly local: LocalMediaConfig | undefined;
   };
   /** Set only when the backup bucket keys are set (ADR 0013); undefined = feature off. */
   readonly backups: BackupStorageConfig | undefined;
@@ -106,6 +108,13 @@ export interface CloudinaryConfig {
   readonly apiSecret: string;
   /** Folder every object is stored under; undefined = the account root. */
   readonly folder: string | undefined;
+}
+
+export interface LocalMediaConfig {
+  /** Absolute directory the files are written to. */
+  readonly directory: string;
+  /** Public URL prefix of the file route, without a trailing slash. */
+  readonly publicUrl: string;
 }
 
 export interface BackupStorageConfig {
@@ -237,6 +246,7 @@ export function loadAppConfig(rawEnv: RawEnv): IAppConfig {
     media: {
       provider: env.MEDIA_PROVIDER,
       cloudinary: cloudinaryConfigOf(env),
+      local: localMediaConfigOf(env),
     },
     backups: backupStorageConfigOf(env),
     reviewer: {
@@ -279,6 +289,18 @@ function cloudinaryConfigOf(env: Env): CloudinaryConfig | undefined {
     apiSecret: env.CLOUDINARY_API_SECRET,
     folder: env.CLOUDINARY_FOLDER,
   };
+}
+
+function localMediaConfigOf(env: Env): LocalMediaConfig | undefined {
+  // Env.rules.ts guarantees both keys when the provider is local.
+  if (
+    env.MEDIA_PROVIDER !== 'local' ||
+    env.MEDIA_LOCAL_DIR === undefined ||
+    env.MEDIA_LOCAL_PUBLIC_URL === undefined
+  ) {
+    return undefined;
+  }
+  return { directory: env.MEDIA_LOCAL_DIR, publicUrl: env.MEDIA_LOCAL_PUBLIC_URL };
 }
 
 function backupStorageConfigOf(env: Env): BackupStorageConfig | undefined {

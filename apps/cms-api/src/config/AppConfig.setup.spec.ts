@@ -453,7 +453,7 @@ describe('loadAppConfig', () => {
 describe('media provider (T27)', () => {
   it('defaults to the fake provider outside production', () => {
     const config = loadAppConfig(devEnv());
-    expect(config.media).toEqual({ provider: 'fake', cloudinary: undefined });
+    expect(config.media).toEqual({ provider: 'fake', cloudinary: undefined, local: undefined });
   });
 
   it('reads the Cloudinary settings', () => {
@@ -492,6 +492,77 @@ describe('media provider (T27)', () => {
         'MEDIA_PROVIDER: MEDIA_PROVIDER=fake is not allowed in production',
       );
     }
+  });
+
+  describe('local provider (ADR 0021)', () => {
+    const localEnv = {
+      MEDIA_PROVIDER: 'local',
+      MEDIA_LOCAL_DIR: '/var/media',
+      MEDIA_LOCAL_PUBLIC_URL: 'http://localhost:8080/api/v1/media-files',
+    };
+    const notAllowedInProduction =
+      'MEDIA_PROVIDER: MEDIA_PROVIDER=local is not allowed in production without ALLOW_LOCAL_MEDIA_PROVIDER=smoke';
+
+    it('reads the directory and public URL outside production', () => {
+      expect(loadAppConfig(devEnv(localEnv)).media).toEqual({
+        provider: 'local',
+        cloudinary: undefined,
+        local: { directory: '/var/media', publicUrl: 'http://localhost:8080/api/v1/media-files' },
+      });
+    });
+
+    it('ignores the local keys for other providers', () => {
+      const config = loadAppConfig(devEnv({ ...localEnv, MEDIA_PROVIDER: 'fake' }));
+      expect(config.media.local).toBeUndefined();
+    });
+
+    it.each(['MEDIA_LOCAL_DIR', 'MEDIA_LOCAL_PUBLIC_URL'])('requires %s', (key) => {
+      const error = configErrorOf(devEnv({ ...localEnv, [key]: undefined }));
+      expect(error.issues).toEqual([`${key}: ${key} is required when MEDIA_PROVIDER=local`]);
+    });
+
+    it('rejects a relative directory', () => {
+      const error = configErrorOf(devEnv({ ...localEnv, MEDIA_LOCAL_DIR: 'media' }));
+      expect(error.issues[0]).toMatch(/^MEDIA_LOCAL_DIR:/);
+    });
+
+    it.each([
+      'http://localhost:8080/files/',
+      'http://localhost:8080/files?x=1',
+      'http://localhost:8080/files#top',
+      '/api/v1/media-files',
+      'ftp://localhost/files',
+    ])('rejects the public URL %s', (url) => {
+      const error = configErrorOf(devEnv({ ...localEnv, MEDIA_LOCAL_PUBLIC_URL: url }));
+      expect(error.issues[0]).toMatch(/^MEDIA_LOCAL_PUBLIC_URL:/);
+    });
+
+    it('refuses production without the opt-in', () => {
+      expect(configErrorOf(productionEnv(localEnv)).issues).toContain(notAllowedInProduction);
+    });
+
+    it.each(['Smoke', 'yes', 'smoke '])('refuses production with the opt-in %j', (value) => {
+      const error = configErrorOf(
+        productionEnv({ ...localEnv, ALLOW_LOCAL_MEDIA_PROVIDER: value }),
+      );
+      expect(error.issues).toContain(notAllowedInProduction);
+    });
+
+    it('accepts production with the exact opt-in', () => {
+      const config = loadAppConfig(
+        productionEnv({ ...localEnv, ALLOW_LOCAL_MEDIA_PROVIDER: 'smoke' }),
+      );
+      expect(config.media.provider).toBe('local');
+    });
+
+    it('keeps refusing fake in production even with the opt-in', () => {
+      const error = configErrorOf(
+        productionEnv({ MEDIA_PROVIDER: 'fake', ALLOW_LOCAL_MEDIA_PROVIDER: 'smoke' }),
+      );
+      expect(error.issues).toContain(
+        'MEDIA_PROVIDER: MEDIA_PROVIDER=fake is not allowed in production',
+      );
+    });
   });
 
   it('rejects an unknown provider', () => {

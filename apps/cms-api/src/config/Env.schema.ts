@@ -37,6 +37,21 @@ function isHttpOrigin(value: string): boolean {
   }
 }
 
+/** True for an absolute http(s) URL with no query, fragment or trailing slash; a path is allowed. */
+function isHttpUrlWithoutQueryOrTrailingSlash(value: string): boolean {
+  try {
+    const url = new URL(value);
+    return (
+      ALLOWED_ORIGIN_PROTOCOLS.includes(url.protocol) &&
+      !value.includes('?') &&
+      !value.includes('#') &&
+      !value.endsWith('/')
+    );
+  } catch {
+    return false;
+  }
+}
+
 /** Optional exact origin (scheme + host [+ port]); empty = unset. */
 const optionalOrigin = z.preprocess(
   emptyToUndefined,
@@ -151,6 +166,21 @@ export const envSchema = z
     CLOUDINARY_API_KEY: optionalText,
     CLOUDINARY_API_SECRET: optionalText,
     CLOUDINARY_FOLDER: optionalText,
+    MEDIA_LOCAL_DIR: z.preprocess(
+      emptyToUndefined,
+      z.string().refine(isAbsolute, { message: 'must be an absolute path' }).optional(),
+    ),
+    MEDIA_LOCAL_PUBLIC_URL: z.preprocess(
+      emptyToUndefined,
+      z
+        .string()
+        .refine(isHttpUrlWithoutQueryOrTrailingSlash, {
+          message:
+            'must be an absolute http(s) URL with no query, fragment or trailing slash, e.g. https://example.com/api/v1/media-files',
+        })
+        .optional(),
+    ),
+    ALLOW_LOCAL_MEDIA_PROVIDER: optionalText,
     OWNER_SETUP_TOKEN: optionalSecret,
     REVIEWER_FEATURE_ENABLED: envBoolean(CONFIG_DEFAULTS.REVIEWER_FEATURE_ENABLED),
     TURNSTILE_SECRET_KEY: optionalSecret,

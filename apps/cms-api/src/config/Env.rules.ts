@@ -3,6 +3,7 @@ import type { z } from 'zod';
 import {
   BACKUP_STORAGE_REQUIRED_KEYS,
   CONFIG_DEFAULTS,
+  LOCAL_MEDIA_PROVIDER_OPT_IN,
   LOGIN_RATE_LIMIT_OVERRIDE_OPT_IN,
   MIN_SECRET_BYTES,
   OPTIONAL_SECRET_ENV_KEYS,
@@ -28,6 +29,9 @@ const CLOUDINARY_REQUIRED_KEYS = [
   'CLOUDINARY_API_KEY',
   'CLOUDINARY_API_SECRET',
 ] as const;
+
+/** Keys required whenever MEDIA_PROVIDER=local (any NODE_ENV). */
+const LOCAL_MEDIA_REQUIRED_KEYS = ['MEDIA_LOCAL_DIR', 'MEDIA_LOCAL_PUBLIC_URL'] as const;
 
 /** Keys required whenever MAIL_PROVIDER=smtp (any NODE_ENV). */
 const SMTP_REQUIRED_KEYS = ['SMTP_HOST', 'MAIL_FROM'] as const;
@@ -70,6 +74,16 @@ const requireCloudinarySettings: EnvRule = (env, ctx) => {
     ctx,
     CLOUDINARY_REQUIRED_KEYS,
     (key) => `${key} is required when MEDIA_PROVIDER=cloudinary`,
+  );
+};
+
+const requireLocalMediaSettings: EnvRule = (env, ctx) => {
+  if (env.MEDIA_PROVIDER !== 'local') return;
+  addMissingIssues(
+    env,
+    ctx,
+    LOCAL_MEDIA_REQUIRED_KEYS,
+    (key) => `${key} is required when MEDIA_PROVIDER=local`,
   );
 };
 
@@ -130,6 +144,16 @@ const rejectFakeMediaProvider: EnvRule = (env, ctx) => {
   }
 };
 
+const rejectLocalMediaProviderWithoutOptIn: EnvRule = (env, ctx) => {
+  if (env.MEDIA_PROVIDER !== 'local') return;
+  if (env.ALLOW_LOCAL_MEDIA_PROVIDER === LOCAL_MEDIA_PROVIDER_OPT_IN) return;
+  addIssue(
+    ctx,
+    'MEDIA_PROVIDER',
+    `MEDIA_PROVIDER=local is not allowed in production without ALLOW_LOCAL_MEDIA_PROVIDER=${LOCAL_MEDIA_PROVIDER_OPT_IN}`,
+  );
+};
+
 const rejectConsoleMailProvider: EnvRule = (env, ctx) => {
   if (env.MAIL_PROVIDER === 'console') {
     addIssue(ctx, 'MAIL_PROVIDER', 'MAIL_PROVIDER=console is not allowed in production');
@@ -169,6 +193,7 @@ const requireStrongSecrets: EnvRule = (env, ctx) => {
 const PRODUCTION_RULES: readonly EnvRule[] = [
   rejectRateLimitOverrideWithoutOptIn,
   rejectFakeMediaProvider,
+  rejectLocalMediaProviderWithoutOptIn,
   rejectConsoleMailProvider,
   requireHttpsBackupEndpoint,
   requireProductionKeys,
@@ -190,6 +215,7 @@ const ALWAYS_RULES: readonly EnvRule[] = [
   requireRootCertificateForVerifyFull,
   requireSmtpSettings,
   requireCloudinarySettings,
+  requireLocalMediaSettings,
   requireSmtpCredentialsTogether,
   requireBackupStorageKeysTogether,
   requirePreviousTotpKeyPair,

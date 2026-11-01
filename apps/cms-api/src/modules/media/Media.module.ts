@@ -46,10 +46,16 @@ function createCloudinaryMediaStorage(config: IAppConfig): MediaStorage {
   return new CloudinaryMediaStorage(createCloudinaryClient(cloudinary), cloudinary.folder);
 }
 
+/** Placeholder until the local adapter lands (UIL-10): the boot fails instead of storing nowhere. */
+function createLocalMediaStorage(): MediaStorage {
+  throw new Error('The local media storage is not implemented yet');
+}
+
 /** One factory per MEDIA_PROVIDERS entry; the type forces a new provider to add one. */
 export const MEDIA_STORAGE_FACTORIES: Record<MediaProvider, MediaStorageFactory> = {
   fake: createFakeMediaStorage,
   cloudinary: createCloudinaryMediaStorage,
+  local: createLocalMediaStorage,
 };
 
 export function createMediaStorage(config: IAppConfig): MediaStorage {

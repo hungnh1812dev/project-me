@@ -3,7 +3,7 @@ export const APP_CONFIG = Symbol('APP_CONFIG');
 
 export const NODE_ENVS = ['development', 'test', 'production'] as const;
 export const MAIL_PROVIDERS = ['console', 'smtp'] as const;
-export const MEDIA_PROVIDERS = ['fake', 'cloudinary'] as const;
+export const MEDIA_PROVIDERS = ['fake', 'cloudinary', 'local'] as const;
 /** DB_SSL_MODE values (libpq names). `verify-full` checks the CA and the host name. */
 export const DB_SSL_MODES = ['disable', 'require', 'verify-full'] as const;
 
@@ -73,6 +73,9 @@ export const MAX_PORT = 65_535;
 
 /** The only accepted value of ALLOW_LOGIN_RATE_LIMIT_OVERRIDE (also gates REFRESH_RATE_LIMIT_IP). */
 export const LOGIN_RATE_LIMIT_OVERRIDE_OPT_IN = 'smoke';
+
+/** The only accepted value of ALLOW_LOCAL_MEDIA_PROVIDER (local media in production: test stacks only). */
+export const LOCAL_MEDIA_PROVIDER_OPT_IN = 'smoke';
 
 /**
  * Env keys that may replace one rate-limit rule's limit. Config

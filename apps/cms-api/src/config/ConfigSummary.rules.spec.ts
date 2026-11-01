@@ -45,6 +45,8 @@ const FORMATTED_SENTINELS: Readonly<Record<string, string>> = {
   DB_PORT: '3102',
   DB_SSL_MODE: 'require',
   DB_SSL_ROOT_CERT_PATH: '/sentinel/db-ca.crt',
+  MEDIA_LOCAL_DIR: '/sentinel/media-dir',
+  MEDIA_LOCAL_PUBLIC_URL: 'https://sentinel-media.example.test/files',
   TRUST_PROXY_HOPS: '3',
   SMTP_PORT: '3103',
   SMTP_SECURE: 'true',
@@ -108,6 +110,21 @@ describe('summarizeConfig', () => {
         user: TEST_SMTP_USER,
         password: REDACTED,
       },
+    });
+  });
+
+  it('shows the local media block', () => {
+    const config = loadAppConfig(
+      devEnv({
+        MEDIA_PROVIDER: 'local',
+        MEDIA_LOCAL_DIR: '/var/media',
+        MEDIA_LOCAL_PUBLIC_URL: 'http://localhost:8080/api/v1/media-files',
+      }),
+    );
+    expect(summarizeConfig(config).media).toEqual({
+      provider: 'local',
+      cloudinary: undefined,
+      local: { directory: '/var/media', publicUrl: 'http://localhost:8080/api/v1/media-files' },
     });
   });
 
