@@ -1,3 +1,4 @@
+import TextAlign from '@tiptap/extension-text-align';
 import StarterKit from '@tiptap/starter-kit';
 
 import { RICHTEXT_LINK_PROTOCOLS } from '@/constants/Richtext.constants';
@@ -21,7 +22,7 @@ const EMPTY_DOC_HTML = '<p></p>';
 /**
  * Extensions kept to what cms-api `sanitizeRichtext` allows: paragraphs,
  * line breaks, rules, bold/italic/underline/strike, code, quotes, headings,
- * lists and links. Add a tag here only after adding it to the server list.
+ * lists, links, and `text-align` on paragraphs and headings. Add a tag here only after adding it to the server list.
  */
 export const richtextExtensions = [
   StarterKit.configure({
@@ -33,6 +34,7 @@ export const richtextExtensions = [
     },
     codeBlock: { HTMLAttributes: { class: null } },
   }),
+  TextAlign.configure({ types: ['paragraph', 'heading'] }),
 ];
 
 /** Empty editor content is stored as '' (no value), not '<p></p>'. */

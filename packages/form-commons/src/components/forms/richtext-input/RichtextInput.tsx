@@ -1,6 +1,8 @@
 import * as React from 'react';
 import { EditorContent, useEditor } from '@tiptap/react';
 import { cn } from 'cn';
+import { ChevronDown } from 'lucide-react';
+import { Toolbar } from 'radix-ui';
 import {
   useController,
   type FieldPath,
@@ -15,10 +17,22 @@ import {
   CONTROL_FOCUS_WITHIN_CLASSES,
   CONTROL_INVALID_CLASSES,
 } from '@/components/ui/Control.constants';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/DropdownMenu';
+import { IconButton } from '@/components/ui/IconButton';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/Tooltip';
 
 import { normalizeRichtextHtml, readCspNonce, richtextExtensions } from './Richtext.setup';
 import { RICHTEXT_CONTENT_CLASS } from './Richtext.styles';
-import { buildRichtextToolbar, type RichtextLabels } from './RichtextToolbar';
+import {
+  buildRichtextToolbar,
+  type RichtextLabels,
+  type RichtextToolbarControl,
+} from './RichtextToolbar';
 
 export type { RichtextLabels };
 
@@ -32,6 +46,71 @@ export interface RichtextInputProps<TFieldValues extends FieldValues = FieldValu
   disabled?: boolean;
   id?: string | undefined;
   fieldClassName?: string | undefined;
+}
+
+function ToolbarControl({
+  control,
+  disabled,
+}: {
+  control: RichtextToolbarControl;
+  disabled: boolean;
+}) {
+  if (control.kind === 'button') {
+    const Icon = control.icon;
+    return (
+      <Toolbar.Button asChild disabled={disabled}>
+        <IconButton
+          type="button"
+          variant="ghost"
+          label={control.label}
+          aria-pressed={control.isActive}
+          aria-disabled={control.isDisabled || undefined}
+          className={cn(
+            'size-8 aria-disabled:cursor-default aria-disabled:opacity-50',
+            control.isActive && 'bg-accent',
+          )}
+          onClick={control.isDisabled ? undefined : control.run}
+        >
+          <Icon aria-hidden />
+        </IconButton>
+      </Toolbar.Button>
+    );
+  }
+  return (
+    <DropdownMenu>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <DropdownMenuTrigger asChild>
+            <Toolbar.Button asChild disabled={disabled}>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                aria-label={`${control.label}: ${control.currentLabel}`}
+                disabled={disabled}
+              >
+                {control.currentLabel}
+                <ChevronDown aria-hidden />
+              </Button>
+            </Toolbar.Button>
+          </DropdownMenuTrigger>
+        </TooltipTrigger>
+        <TooltipContent>{control.label}</TooltipContent>
+      </Tooltip>
+      <DropdownMenuContent align="start">
+        {control.items.map((item) => (
+          <DropdownMenuItem
+            key={item.key}
+            aria-current={item.isActive || undefined}
+            className={cn(item.isActive && 'bg-accent')}
+            onSelect={item.run}
+          >
+            {item.label}
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
 }
 
 /**
@@ -111,26 +190,19 @@ function RichtextInput<TFieldValues extends FieldValues = FieldValues>({
           )}
         >
           {editor && (
-            <div
-              role="toolbar"
+            <Toolbar.Root
               aria-label={labels.toolbar}
-              className="border-input flex flex-wrap gap-1 border-b p-1"
+              className="border-input flex flex-wrap items-center gap-1 border-b p-1"
             >
-              {buildRichtextToolbar(editor, labels).map((action) => (
-                <Button
-                  key={action.key}
-                  type="button"
-                  size="sm"
-                  variant="ghost"
-                  disabled={disabled}
-                  aria-pressed={action.isActive}
-                  className={cn(action.isActive && 'bg-accent')}
-                  onClick={action.run}
-                >
-                  {action.label}
-                </Button>
+              {buildRichtextToolbar(editor, labels).map((group, index) => (
+                <React.Fragment key={group.key}>
+                  {index > 0 && <Toolbar.Separator className="bg-border mx-1 h-5 w-px" />}
+                  {group.controls.map((item) => (
+                    <ToolbarControl key={item.key} control={item} disabled={disabled} />
+                  ))}
+                </React.Fragment>
               ))}
-            </div>
+            </Toolbar.Root>
           )}
           <EditorContent editor={editor} id={control.id} className={RICHTEXT_CONTENT_CLASS} />
         </div>

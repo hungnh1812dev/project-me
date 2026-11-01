@@ -141,6 +141,10 @@ All bind to the surrounding `FormProvider` like `TextInput`.
   `sanitizeRichtext` keeps (p, br, hr, strong, em, u, s, code, pre, blockquote,
   h1-h6, ul, ol, li, a with http/https/mailto/tel). Add a tag to the server
   allowlist before adding an extension. The server sanitizes again on write.
+  Alignment saves `style="text-align: ..."` on p and headings. The toolbar is
+  Radix `Toolbar` (one tab stop, arrow/Home/End keys) of `IconButton`s in
+  groups (history, block type menu, marks, alignment, blocks, link); a new
+  control is one entry in `RichtextToolbar.ts`.
 
 ### MediaInput
 
