@@ -14,7 +14,7 @@ export type GraphqlOutputName =
 /** Request-scoped facts a type may need to check a value (additive; types that do not need it ignore it). */
 export interface CoerceContext {
   /** Origins a richtext `img` src may point to (the active media storage's delivery origin). */
-  readonly richtextImageOrigins?: readonly string[];
+  readonly richtextImageOrigins?: readonly string[] | undefined;
 }
 
 export interface FieldTypeSpec {

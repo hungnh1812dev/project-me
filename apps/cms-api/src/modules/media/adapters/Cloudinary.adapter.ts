@@ -90,9 +90,13 @@ export function createCloudinaryClient(config: CloudinaryConfig): CloudinaryClie
   };
 }
 
+/** Delivery origin of every Cloudinary URL. */
+const CLOUDINARY_DELIVERY_ORIGIN = 'https://res.cloudinary.com';
+
 /** Cloudinary storage (MEDIA_PROVIDER=cloudinary). */
 export class CloudinaryMediaStorage implements MediaStorage {
   readonly provider = 'cloudinary';
+  readonly deliveryOrigin = CLOUDINARY_DELIVERY_ORIGIN;
 
   constructor(
     private readonly client: CloudinaryClient,

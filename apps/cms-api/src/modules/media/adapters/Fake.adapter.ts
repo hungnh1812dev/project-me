@@ -30,6 +30,7 @@ async function readAll(stream: Readable): Promise<Buffer> {
  */
 export class FakeMediaStorage implements MediaStorage {
   readonly provider: StoredMediaProvider = 'cloudinary';
+  readonly deliveryOrigin = FAKE_STORAGE_ORIGIN;
 
   private readonly objects = new Map<string, FakeStoredObject>();
 

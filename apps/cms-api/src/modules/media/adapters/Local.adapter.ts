@@ -52,6 +52,7 @@ function isMissingFile(error: unknown): boolean {
  */
 export class LocalMediaStorage implements MediaStorage {
   readonly provider = 'local';
+  readonly deliveryOrigin: string;
 
   private readonly directory: string;
 
@@ -61,6 +62,7 @@ export class LocalMediaStorage implements MediaStorage {
     private readonly publicUrl: string,
   ) {
     this.directory = resolve(directory);
+    this.deliveryOrigin = new URL(publicUrl).origin;
   }
 
   /** Creates the directory when missing and fails when it is not writable (boot). */

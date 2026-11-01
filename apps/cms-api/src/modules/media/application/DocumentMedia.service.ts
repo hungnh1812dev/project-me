@@ -19,7 +19,12 @@ import {
   type MediaSlot,
   type TreeNodeLike,
 } from '../domain/MediaSlots.rules';
-import { MEDIA_REPOSITORY, type MediaRepository } from './Media.port';
+import {
+  MEDIA_REPOSITORY,
+  MEDIA_STORAGE,
+  type MediaRepository,
+  type MediaStorage,
+} from './Media.port';
 
 /**
  * Document <-> media file mapping. Documents speak the file's public
@@ -31,9 +36,15 @@ import { MEDIA_REPOSITORY, type MediaRepository } from './Media.port';
 export class DocumentMediaService {
   constructor(
     @Inject(MEDIA_REPOSITORY) private readonly repository: MediaRepository,
+    @Inject(MEDIA_STORAGE) private readonly storage: MediaStorage,
     private readonly access: AccessPolicyService,
     private readonly registry: ContentRegistry,
   ) {}
+
+  /** Origins a richtext `img` may point to: the active storage's delivery origin. */
+  richtextImageOrigins(): readonly string[] {
+    return [this.storage.deliveryOrigin];
+  }
 
   private async slotsOf(root: TableNode, nodes: readonly TreeNodeLike[]): Promise<MediaSlot[]> {
     const mediaFields = mediaFieldNamesByTable(await this.registry.registry());

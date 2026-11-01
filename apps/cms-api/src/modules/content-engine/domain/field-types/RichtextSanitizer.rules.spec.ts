@@ -117,17 +117,38 @@ describe('sanitizeRichtext', () => {
       ).toBe(`<img src="${src}" alt="A" data-media-id="${id}" />`);
     });
 
-    it('drops a data-media-id that is not a UUID but keeps the image', () => {
-      expect(sanitizeRichtext(`<img src="${src}" data-media-id="x">`, { imageOrigins })).toBe(
-        `<img src="${src}" />`,
-      );
+    it.each([
+      ['missing', ''],
+      ['not a UUID', ' data-media-id="x"'],
+    ])('drops the img when data-media-id is %s', (_name, attr) => {
+      expect(sanitizeRichtext(`<img src="${src}"${attr}>`, { imageOrigins })).toBe('');
+    });
+
+    it('keeps an http img from the local origin and drops a scheme or port mismatch', () => {
+      const local = ['http://localhost:8080'];
+      const keep = (url: string) =>
+        sanitizeRichtext(`<img src="${url}" data-media-id="${id}">`, { imageOrigins: local });
+      expect(keep('http://localhost:8080/api/v1/media-files/a.png')).toContain('<img');
+      expect(keep('https://localhost:8080/a.png')).toBe('');
+      expect(keep('http://localhost:9090/a.png')).toBe('');
+    });
+
+    it('allows nothing for an origin with another scheme', () => {
+      expect(
+        sanitizeRichtext(`<img src="ftp://x/a.png" data-media-id="${id}">`, {
+          imageOrigins: ['ftp://x'],
+        }),
+      ).toBe('');
     });
 
     it('drops other img attributes', () => {
-      const out = sanitizeRichtext(`<img src="${src}" onerror="alert(1)" width="9" style="x:y">`, {
-        imageOrigins,
-      });
-      expect(out).toBe(`<img src="${src}" />`);
+      const out = sanitizeRichtext(
+        `<img src="${src}" data-media-id="${id}" onerror="alert(1)" width="9" style="x:y">`,
+        {
+          imageOrigins,
+        },
+      );
+      expect(out).toBe(`<img src="${src}" data-media-id="${id}" />`);
     });
 
     it.each([
@@ -140,14 +161,17 @@ describe('sanitizeRichtext', () => {
       ['userinfo', 'https://x@res.cloudinary.com/a.png'],
       ['look-alike host', 'https://res.cloudinary.com.evil.dev/a.png'],
     ])('drops the img for %s', (_name, badSrc) => {
-      expect(sanitizeRichtext(`<p>a<img src="${badSrc}" alt="x"></p>`, { imageOrigins })).toBe(
-        '<p>a</p>',
-      );
+      expect(
+        sanitizeRichtext(`<p>a<img src="${badSrc}" alt="x" data-media-id="${id}"></p>`, {
+          imageOrigins,
+        }),
+      ).toBe('<p>a</p>');
     });
 
     it('keeps no img without imageOrigins', () => {
-      expect(sanitizeRichtext(`<img src="${src}">`)).toBe('');
-      expect(sanitizeRichtext(`<img src="${src}">`, { imageOrigins: [] })).toBe('');
+      const html = `<img src="${src}" data-media-id="${id}">`;
+      expect(sanitizeRichtext(html)).toBe('');
+      expect(sanitizeRichtext(html, { imageOrigins: [] })).toBe('');
     });
   });
 

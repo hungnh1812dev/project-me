@@ -15,6 +15,8 @@ export interface TreeValidationOptions {
   mode: WriteMode;
   /** Fields the actor may write: a missing required field only counts when the actor could have sent it. */
   writable: FieldSelection;
+  /** Origins a richtext `img` may point to; none = no image is kept. */
+  richtextImageOrigins?: readonly string[] | undefined;
 }
 
 const at = (base: string, rest: string) => (base === '' ? rest : `${base}.${rest}`);
@@ -48,7 +50,9 @@ function validateValues(
       continue;
     }
     // A type with no registry entry (a component) never reaches a value column.
-    const coerced = fieldTypeOf(column.field.type)?.coerceValue(value);
+    const coerced = fieldTypeOf(column.field.type)?.coerceValue(value, {
+      richtextImageOrigins: options.richtextImageOrigins,
+    });
     if (coerced === undefined) {
       throw invalid(path, DOCUMENT_ERROR_MESSAGES.INVALID_TYPE);
     }

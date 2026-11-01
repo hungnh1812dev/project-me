@@ -22,6 +22,7 @@ import {
   planMigration,
 } from '../../src/modules/content-engine/domain/SqlGenerator.rules';
 import { hashPassword } from '../../src/modules/identity/application/Password.service';
+import { FAKE_STORAGE_ORIGIN } from '../../src/modules/media/adapters/Fake.adapter';
 import {
   ARTICLE_DEFINITION,
   NOTE_DEFINITION,
@@ -454,6 +455,17 @@ describe('document bulk (T34; Postgres 17 via Testcontainers)', () => {
         .where('parent_id', '=', draft?.id as number)
         .execute();
       expect(refs).toHaveLength(1);
+    });
+
+    it('stores only the richtext img from the active media origin', async () => {
+      const body = `<p><img src="${FAKE_STORAGE_ORIGIN}/a.png" alt="a" data-media-id="0197f3a0-7b1c-7c3e-8a52-0123456789ab"><img src="https://evil.example/b.png" alt="b"></p>`;
+      const res = await bulk('article', 'create', owner, {
+        atomic: true,
+        items: [article('Img', 3, { values: { title: 'Img', priority: 3, body } })],
+      });
+      const [draft] = await rows((res.body as BulkBody).results[0]?.documentId as string);
+      expect(draft?.body).toContain(`${FAKE_STORAGE_ORIGIN}/a.png`);
+      expect(draft?.body).not.toContain('evil.example');
     });
 
     it('atomic: one bad item fails the request and writes nothing', async () => {

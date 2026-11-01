@@ -14,6 +14,18 @@ import { LocalMediaStorage } from './Local.adapter';
 const KEY = '01900000-0000-7000-8000-000000000001';
 const KEY_2 = '01900000-0000-7000-8000-000000000002';
 
+describe('delivery origin', () => {
+  it('is the origin each adapter delivers from', () => {
+    expect(new FakeMediaStorage().deliveryOrigin).toBe(FAKE_STORAGE_ORIGIN);
+    expect(new CloudinaryMediaStorage({} as CloudinaryClient, undefined).deliveryOrigin).toBe(
+      'https://res.cloudinary.com',
+    );
+    expect(
+      new LocalMediaStorage('/tmp/x', 'http://localhost:8080/api/v1/media-files').deliveryOrigin,
+    ).toBe('http://localhost:8080');
+  });
+});
+
 describe('FakeMediaStorage', () => {
   it('keeps the bytes under the key and returns urls', async () => {
     const storage = new FakeMediaStorage();

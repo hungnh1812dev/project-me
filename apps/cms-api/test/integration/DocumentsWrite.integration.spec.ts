@@ -22,6 +22,7 @@ import {
   type DocumentRepository,
 } from '../../src/modules/documents/application/Documents.port';
 import { hashPassword } from '../../src/modules/identity/application/Password.service';
+import { FAKE_STORAGE_ORIGIN } from '../../src/modules/media/adapters/Fake.adapter';
 import {
   ARTICLE_DEFINITION,
   NOTE_DEFINITION,
@@ -246,6 +247,18 @@ describe('document write API (T21; Postgres 17 via Testcontainers)', () => {
       const rows = await storedRow(doc.documentId);
       expect(rows).toHaveLength(1);
       expect(rows[0]?.published_at).toBeNull();
+    });
+
+    it('stores only the richtext img from the active media origin, on create and update', async () => {
+      const body = `<p><img src="${FAKE_STORAGE_ORIGIN}/a.png" alt="a" data-media-id="0197f3a0-7b1c-7c3e-8a52-0123456789ab"><img src="https://evil.example/b.png" alt="b"></p>`;
+      const doc = await createArticle(editor, { values: { title: 'Img', body } });
+      const [created] = await storedRow(doc.documentId);
+      expect(created?.body).toContain(`${FAKE_STORAGE_ORIGIN}/a.png`);
+      expect(created?.body).not.toContain('evil.example');
+      const res = await put('article', doc.documentId, editor, { version: 1, values: { body } });
+      expect(res.status).toBe(200);
+      const [updated] = await storedRow(doc.documentId);
+      expect(updated?.body).not.toContain('evil.example');
     });
 
     it('refuses anonymous (403), guest (403) and an unknown type (404)', async () => {

@@ -92,6 +92,8 @@ export interface PublicMediaFile {
 export interface MediaStorage {
   /** Written to every file this storage stores; never taken from a request. */
   readonly provider: StoredMediaProvider;
+  /** `scheme://host[:port]` the stored files are delivered from (the richtext `img` allow-list). */
+  readonly deliveryOrigin: string;
   put(input: PutObjectInput): Promise<StoredObject>;
   /** Removes the object; deleting a missing object is not an error. */
   delete(key: string, kind: MediaKind): Promise<void>;

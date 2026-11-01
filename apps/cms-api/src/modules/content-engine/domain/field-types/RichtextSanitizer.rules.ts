@@ -60,7 +60,7 @@ const ALIGN_STYLE = new RegExp(
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export interface RichtextSanitizeContext {
-  /** Origins (`https://host`) an `img` src may point to; none = no image is kept. */
+  /** Origins (`https://host`, or `http://host:port` for the local provider) an `img` src must match exactly; none = no image is kept. */
   readonly imageOrigins?: readonly string[] | undefined;
 }
 
@@ -77,6 +77,9 @@ function paletteColorOf(style: string | undefined): string | undefined {
   return hex && PALETTE_HEXES.has(hex) ? hex : undefined;
 }
 
+/** Schemes a configured image origin may have; the src must match the origin exactly, scheme included. */
+const IMAGE_ORIGIN_PROTOCOLS: ReadonlySet<string> = new Set(['https:', 'http:']);
+
 function isAllowedImageSrc(src: string | undefined, origins: ReadonlySet<string>): boolean {
   if (!src) return false;
   let url: URL;
@@ -85,7 +88,7 @@ function isAllowedImageSrc(src: string | undefined, origins: ReadonlySet<string>
   } catch {
     return false;
   }
-  return url.protocol === 'https:' && !url.username && !url.password && origins.has(url.origin);
+  return !url.username && !url.password && origins.has(url.origin);
 }
 
 function toOriginSet(origins: readonly string[] = []): ReadonlySet<string> {
@@ -93,7 +96,7 @@ function toOriginSet(origins: readonly string[] = []): ReadonlySet<string> {
   for (const origin of origins) {
     try {
       const url = new URL(origin);
-      if (url.protocol === 'https:') result.add(url.origin);
+      if (IMAGE_ORIGIN_PROTOCOLS.has(url.protocol)) result.add(url.origin);
     } catch {
       // a malformed configured origin allows nothing
     }
@@ -117,12 +120,13 @@ function buildOptions(context: RichtextSanitizeContext): sanitizeHtml.IOptions {
     },
     img: (tagName, attribs) => {
       const src = attribs.src?.trim();
-      if (!src || !isAllowedImageSrc(src, origins)) return { tagName, attribs: {} };
+      const mediaId = attribs['data-media-id'];
+      if (!src || !isAllowedImageSrc(src, origins) || !mediaId || !UUID.test(mediaId)) {
+        return { tagName, attribs: {} };
+      }
       const kept: sanitizeHtml.Attributes = { src };
       if (attribs.alt !== undefined) kept.alt = attribs.alt;
-      if (attribs['data-media-id'] && UUID.test(attribs['data-media-id'])) {
-        kept['data-media-id'] = attribs['data-media-id'].toLowerCase();
-      }
+      kept['data-media-id'] = mediaId.toLowerCase();
       return { tagName, attribs: kept };
     },
   };
@@ -154,7 +158,7 @@ function buildOptions(context: RichtextSanitizeContext): sanitizeHtml.IOptions {
     disallowedTagsMode: 'discard',
     nonTextTags: DISCARD_CONTENT_TAGS,
     transformTags,
-    // An img whose src failed has no src left: drop it.
+    // An img that failed the origin or media-id rule has no src left: drop it.
     exclusiveFilter: (frame) => frame.tag === 'img' && !frame.attribs.src,
   };
 }

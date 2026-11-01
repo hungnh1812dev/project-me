@@ -297,6 +297,7 @@ export class DocumentsCommandService {
     const tree = validateTreeValues(type.root, allowed, {
       mode,
       writable: fields.writable,
+      richtextImageOrigins: this.media.richtextImageOrigins(),
     });
     return {
       type,

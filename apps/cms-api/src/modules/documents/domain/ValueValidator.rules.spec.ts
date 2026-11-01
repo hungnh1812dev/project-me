@@ -71,6 +71,23 @@ describe('write value rules (T21)', () => {
     expect(out.values?.avatar).toBe('0190a000-0000-7000-8000-000000000001');
   });
 
+  it('keeps a richtext img from the allowed origin and drops any other', () => {
+    const bio =
+      '<p><img src="https://cdn.example/a.png" alt="a" data-media-id="0197f3a0-7b1c-7c3e-8a52-0123456789ab"><img src="https://evil.example/b.png" alt="b"></p>';
+    const out = validateTreeValues(
+      profile.root,
+      { values: { bio } },
+      {
+        mode: 'update',
+        writable: FieldSelection.ALL,
+        richtextImageOrigins: ['https://cdn.example'],
+      },
+    );
+    expect(out.values?.bio).toContain('https://cdn.example/a.png');
+    expect(out.values?.bio).not.toContain('evil.example');
+    expect(run({ values: { bio } }, 'update').values?.bio).not.toContain('<img');
+  });
+
   it.each([
     ['name', 5],
     ['age', 1.5],

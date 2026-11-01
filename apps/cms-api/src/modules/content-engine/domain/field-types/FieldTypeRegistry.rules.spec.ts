@@ -73,7 +73,8 @@ describe('coerceValue', () => {
   const coerce = (type: string, value: unknown) => fieldTypeOf(type)?.coerceValue(value);
 
   it('passes the image origins to the richtext sanitizer and ignores them elsewhere', () => {
-    const html = '<img src="https://res.cloudinary.com/a.png">';
+    const html =
+      '<img src="https://res.cloudinary.com/a.png" data-media-id="0197f3a0-7b1c-7c3e-8a52-0123456789ab">';
     const ctx = { richtextImageOrigins: ['https://res.cloudinary.com'] };
     expect(fieldTypeOf('richtext')?.coerceValue(html, ctx)).toContain('<img');
     expect(fieldTypeOf('richtext')?.coerceValue(html)).toBe('');

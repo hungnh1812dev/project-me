@@ -66,6 +66,7 @@ function build(fakes: Fakes = {}) {
     {
       toStored: (_actor: unknown, _root: unknown, tree: unknown) => Promise.resolve(tree),
       embed: () => Promise.resolve(),
+      richtextImageOrigins: () => [],
     } as never,
     { now: () => NOW_MS },
   );
