@@ -94,7 +94,9 @@ Required keys, from `apps/cms-api/.env.example` (the file documents every key; t
 | `ADMIN_ORIGIN`                                     | `http://admin.domain.localhost:5173` (CORS origin; matches the admin dev URL) |
 | `WEB_ORIGIN`                                       | `http://domain.localhost:5174`                                                |
 | `MAIL_PROVIDER`                                    | `console` (OTP codes appear in the cms-api log)                               |
-| `MEDIA_PROVIDER`                                   | `fake` (uploads kept in memory, lost on restart)                              |
+| `MEDIA_PROVIDER`                                   | `local` (files in `.dev-stack/media`, served by cms-api; clear: see below)    |
+
+With `local`, also set `MEDIA_LOCAL_DIR` (an absolute directory) and `MEDIA_LOCAL_PUBLIC_URL` (the `/api/v1/media-files` URL of cms-api). `pnpm dev:stack` sets both: files go to `.dev-stack/media` and `pnpm dev:stack:stop` removes them; to clear them while the stack runs, delete that directory.
 
 Every other key is optional locally. `apps/cms-api/.env.example` is the list: it names each key, says when it applies and what the default is, and marks the CLI-only ones (`OWNER_EMAIL`, `OWNER_DISPLAY_NAME`). A spec (`config/EnvExample.contract.spec.ts`) fails when that file and the config schema drift apart. Do not set the `*_RATE_LIMIT_*` keys; they are for the smoke stack.
 

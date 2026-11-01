@@ -79,6 +79,12 @@ services:
       OTP_PEPPER: ${SMOKE_OTP_PEPPER:?set by scripts/smoke.sh}
       TOTP_ENC_KEY: ${SMOKE_TOTP_ENC_KEY:?set by scripts/smoke.sh}
       TOTP_ENC_KID: ${SMOKE_TOTP_ENC_KID:?set by scripts/smoke.sh}
+      MEDIA_LOCAL_PUBLIC_URL: ${SMOKE_WEB_ORIGIN}/api/v1/media-files
+    # Uploaded media (MEDIA_LOCAL_DIR in scripts/stack/cms-api.env). 512m holds the
+    # 100 MB video limit several times; memory-backed and gone with the container.
+    # The image runs as uid/gid 1000, so the mount is owned by it.
+    tmpfs:
+      - /var/lib/abyss-media:size=512m,uid=1000,gid=1000,mode=0755
     depends_on:
       cms-api-init:
         condition: service_completed_successfully
@@ -158,6 +164,9 @@ services:
       dockerfile: apps/cms-admin/Dockerfile
       args:
         VITE_API_BASE_URL: ${SMOKE_API_BASE_URL:?set by scripts/smoke.sh}
+    environment:
+      # Admin img-src also allows the files cms-api serves from the web origin.
+      CSP_EXTRA_IMG_SRC: ${SMOKE_WEB_ORIGIN:?set by scripts/smoke.sh}
     labels:
       traefik.enable: 'true'
       traefik.http.routers.admin.entrypoints: web

@@ -34,6 +34,7 @@ RATE_LIMIT_OVERRIDE="10000"
 READY_TIMEOUT_SECONDS=180
 POLL_INTERVAL_SECONDS=2
 LOG_TAIL_LINES=40
+MEDIA_DIR="$STATE_DIR/media"
 APPS=(cms-api cms-admin web)
 
 # Default host ports, off the usual dev ports; override them in .localEnv.agent.
@@ -122,7 +123,8 @@ export_api_env() {
   export NODE_ENV=development PORT="$API_PORT" DB_HOST="$LOOPBACK" DB_NAME=abyss DB_USERNAME=abyss
   export TRUST_PROXY_HOPS=1 ADMIN_ORIGIN WEB_ORIGIN
   export MAIL_PROVIDER=smtp SMTP_HOST="$LOOPBACK" SMTP_PORT="$DEV_STACK_MAILPIT_SMTP_PORT" SMTP_SECURE=false
-  export MAIL_FROM="Abyss Dev <no-reply@$DOMAIN>" MEDIA_PROVIDER=fake
+  export MAIL_FROM="Abyss Dev <no-reply@$DOMAIN>"
+  export MEDIA_PROVIDER=local MEDIA_LOCAL_DIR="$MEDIA_DIR" MEDIA_LOCAL_PUBLIC_URL="$API_BASE_URL/media-files"
   export ALLOW_LOGIN_RATE_LIMIT_OVERRIDE="$RATE_LIMIT_OVERRIDE_OPT_IN"
   export LOGIN_RATE_LIMIT_IP="$RATE_LIMIT_OVERRIDE" LOGIN_RATE_LIMIT_EMAIL="$RATE_LIMIT_OVERRIDE"
   export REFRESH_RATE_LIMIT_IP="$RATE_LIMIT_OVERRIDE"
@@ -173,6 +175,7 @@ stop_stack() {
   stop_apps
   compose down -v --remove-orphans >/dev/null 2>&1 || true
   rm -f "$E2E_VARS_FILE"
+  rm -rf "$MEDIA_DIR"
 }
 
 start_app() {
