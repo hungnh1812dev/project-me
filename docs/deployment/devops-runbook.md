@@ -233,7 +233,7 @@ data:
   BACKUP_STORAGE_PREFIX: postgres/
 ```
 
-Never set these in production: `LOGIN_RATE_LIMIT_*`, `REFRESH_RATE_LIMIT_IP`, `ALLOW_LOGIN_RATE_LIMIT_OVERRIDE` (boot fails), `OWNER_EMAIL` / `OWNER_DISPLAY_NAME` (CLI only). `DB_USERNAME` goes in the Secrets, not here (section 4.5).
+Never set these in production: `LOGIN_RATE_LIMIT_*`, `REFRESH_RATE_LIMIT_IP`, `SETUP_STATUS_RATE_LIMIT_IP`, `SETUP_SUBMIT_RATE_LIMIT_IP`, `ALLOW_LOGIN_RATE_LIMIT_OVERRIDE` (boot fails), `OWNER_EMAIL` / `OWNER_DISPLAY_NAME` (CLI only). `DB_USERNAME` goes in the Secrets, not here (section 4.5).
 
 Database TLS keys (both go in `cms-api-config`, read by the init container and the main container; neither is a secret):
 

@@ -178,6 +178,7 @@ export const IDENTITY_RATE_LIMIT_POLICIES = {
       keySource: RATE_LIMIT_KEY_SOURCES.IP,
       maxHits: 5,
       windowMs: FIFTEEN_MINUTES_MS,
+      limitOverrideEnvKey: 'SETUP_SUBMIT_RATE_LIMIT_IP',
     },
   ],
   /** `GET /setup/status` (ADR 0005): public, one small read. */
@@ -187,6 +188,7 @@ export const IDENTITY_RATE_LIMIT_POLICIES = {
       keySource: RATE_LIMIT_KEY_SOURCES.IP,
       maxHits: 30,
       windowMs: ONE_MINUTE_MS,
+      limitOverrideEnvKey: 'SETUP_STATUS_RATE_LIMIT_IP',
     },
   ],
   REFRESH: [

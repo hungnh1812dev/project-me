@@ -402,6 +402,12 @@ any other `*.constants.ts`:
   limit (30 per minute per IP). Same validation and the same production
   opt-in flag (`ALLOW_LOGIN_RATE_LIMIT_OVERRIDE=smoke`) as the login overrides;
   only `docker-compose.smoke.yml` sets it.
+- Optional override: `SETUP_STATUS_RATE_LIMIT_IP` replaces the `setup-status:ip`
+  limit (30 per minute per IP). Same validation and production opt-in flag; the
+  e2e suite sets it because every login page visit reads the status.
+- Optional override: `SETUP_SUBMIT_RATE_LIMIT_IP` replaces the `setup-submit:ip`
+  limit (5 per 15 minutes per IP). Same validation and production opt-in flag;
+  the smoke script and the e2e suite submit more than 5 times from one IP.
 - Limit overrides: a rule opts in with `limitOverrideEnvKey`; the key must be in
   `RATE_LIMIT_OVERRIDE_ENV_KEYS` (`src/config/Config.constants.ts`), which also
   drives the env parsing and the production opt-in check. Identity's

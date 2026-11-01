@@ -87,6 +87,8 @@ export const RATE_LIMIT_OVERRIDE_ENV_KEYS = [
   'LOGIN_RATE_LIMIT_IP',
   'LOGIN_RATE_LIMIT_EMAIL',
   'REFRESH_RATE_LIMIT_IP',
+  'SETUP_STATUS_RATE_LIMIT_IP',
+  'SETUP_SUBMIT_RATE_LIMIT_IP',
 ] as const;
 
 export type RateLimitOverrideEnvKey = (typeof RATE_LIMIT_OVERRIDE_ENV_KEYS)[number];
