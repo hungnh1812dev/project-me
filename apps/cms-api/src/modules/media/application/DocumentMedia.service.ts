@@ -48,26 +48,32 @@ export class DocumentMediaService {
     return [this.storage.deliveryOrigin];
   }
 
-  private async slotsOf(root: TableNode, nodes: readonly TreeNodeLike[]): Promise<MediaSlot[]> {
-    const mediaFields = mediaFieldNamesByTable(await this.registry.registry());
-    return nodes.flatMap((node) => mediaSlots(mediaFields, root, node, ''));
-  }
-
   /**
    * A copy of the validated tree with every media uuid replaced by the
    * internal id. The file must exist, not be deleted and be readable by the
-   * actor (`media` read row filter), else 400. Needs no `media` permission
+   * actor (`media` read row filter), else 400. Richtext image ids are checked
+   * the same way (the value stays as it is). Needs no `media` permission
    * beyond that.
    */
   async toStored(actor: ActorContext, root: TableNode, tree: TreeInput): Promise<TreeInput> {
     const copy = cloneTree(tree);
-    const slots = (await this.slotsOf(root, [copy])).filter(
-      ({ values, name }) => values[name] !== null,
-    );
-    if (slots.length === 0) return copy;
+    const registry = await this.registry.registry();
+    const slots = this.presentSlots(mediaFieldNamesByTable(registry), root, [copy]);
+    const richtextImages = this.presentSlots(richtextFieldNamesByTable(registry), root, [copy])
+      .map(({ values, name, path }) => ({
+        path,
+        ids: typeof values[name] === 'string' ? mediaIdsInRichtext(values[name]) : [],
+      }))
+      .filter(({ ids }) => ids.length > 0);
+    if (slots.length === 0 && richtextImages.length === 0) return copy;
     const { evaluator } = await this.access.policy();
     const filter = evaluator.rowFilter(actor, PermissionAction.read, MEDIA_SUBJECT);
-    const documentIds = [...new Set(slots.map(({ values, name }) => values[name] as string))];
+    const documentIds = [
+      ...new Set([
+        ...slots.map(({ values, name }) => values[name] as string),
+        ...richtextImages.flatMap(({ ids }) => ids),
+      ]),
+    ];
     const ids = filter.allowed
       ? await this.repository.findReadableIds(documentIds, filter.where)
       : new Map<string, number>();
@@ -75,6 +81,9 @@ export class DocumentMediaService {
       const id = ids.get(values[name] as string);
       if (id === undefined) throw mediaRefInvalid(path);
       values[name] = id;
+    }
+    for (const { path, ids: imageIds } of richtextImages) {
+      if (imageIds.some((imageId) => !ids.has(imageId))) throw mediaRefInvalid(path);
     }
     return copy;
   }

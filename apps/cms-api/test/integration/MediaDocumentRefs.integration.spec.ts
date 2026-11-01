@@ -68,6 +68,8 @@ describe('document media references (T29; Postgres 17 via Testcontainers)', () =
   let accountCount = 0;
   let editor: string;
   let admin: string;
+  let owner: string;
+  let noMediaReadWriter: string;
 
   beforeAll(async () => {
     const fixtures = await buildMediaFixtures();
@@ -108,6 +110,14 @@ describe('document media references (T29; Postgres 17 via Testcontainers)', () =
     );
     editor = await signedIn('editor');
     admin = await signedIn('admin');
+    owner = await signedIn('owner');
+    const gallery = (action: string) => ({ subject: 'gallery', action });
+    await customRole('no-media-writer', 21, [
+      gallery('read'),
+      gallery('create'),
+      gallery('update'),
+    ]);
+    noMediaReadWriter = await signedIn('no-media-writer');
   });
 
   afterAll(async () => {
@@ -140,6 +150,20 @@ describe('document media references (T29; Postgres 17 via Testcontainers)', () =
       .send({ email, password: PASSWORD });
     expect(res.status).toBe(200);
     return (res.body as { accessToken: string }).accessToken;
+  }
+
+  async function customRole(slug: string, rank: number, permissions: unknown[]) {
+    const created = await http()
+      .post('/api/v1/roles')
+      .set(bearer(owner))
+      .send({ slug, name: slug, rank });
+    expect(created.status).toBe(201);
+    const id = (created.body as { id: string }).id;
+    const put = await http()
+      .put(`/api/v1/roles/${id}/permissions`)
+      .set(bearer(owner))
+      .send({ permissions });
+    if (put.status !== 200) throw new Error(JSON.stringify(put.body));
   }
 
   async function uploaded(
@@ -300,6 +324,83 @@ describe('document media references (T29; Postgres 17 via Testcontainers)', () =
           .send({ values: { body }, components: { block: [{ values: { caption } }] } })
           .expect(201)
       ).body as Doc;
+
+    describe('richtext image ids follow the media field write rule', () => {
+      const writeBody = (token: string, body: string, documentId?: string) =>
+        documentId === undefined
+          ? http().post(DOCS).set(bearer(token)).send({ values: { body } })
+          : http()
+              .put(`${DOCS}/${documentId}`)
+              .set(bearer(token))
+              .send({ values: { body }, version: 1 });
+      const bulkCreate = (token: string, bodies: string[]) =>
+        http()
+          .post(`${DOCS}/bulk/create`)
+          .set(bearer(token))
+          .send({ atomic: true, items: bodies.map((body) => ({ values: { body } })) });
+      const galleryCount = async () => {
+        const rows = await db.prisma.$queryRawUnsafe<{ n: bigint }[]>(
+          'select count(*)::bigint as n from content.gallery',
+        );
+        return Number(rows[0]?.n);
+      };
+
+      it('400 with the field path, nothing stored, when media:read is denied to the writer', async () => {
+        const file = await uploaded();
+        const before = await galleryCount();
+        const res = await writeBody(noMediaReadWriter, imgOf(file));
+        expect(res.status).toBe(400);
+        expect((res.body as { errorCode: string }).errorCode).toBe('DOCUMENT_INVALID');
+        expect(JSON.stringify(res.body)).toContain('body');
+        const component = await http()
+          .post(DOCS)
+          .set(bearer(noMediaReadWriter))
+          .send({ values: {}, components: { block: [{ values: { caption: imgOf(file) } }] } });
+        expect(component.status).toBe(400);
+        expect(JSON.stringify(component.body)).toContain('caption');
+        expect(await galleryCount()).toBe(before);
+      });
+
+      it('400 for an unknown or deleted file id, on create and on update', async () => {
+        const gone = await uploaded();
+        await http().delete(`${MEDIA}/${gone.id}`).set(bearer(admin)).expect(204);
+        const ok = await uploaded();
+        const created = (await createWithBody(imgOf(ok))).documentId;
+        for (const id of [MISSING_ID, gone.id]) {
+          const html = `<img src="${ok.url}" data-media-id="${id}" />`;
+          expect((await writeBody(editor, html)).status).toBe(400);
+          expect((await writeBody(editor, html, created)).status).toBe(400);
+        }
+      });
+
+      it('succeeds for a readable file and stores the richtext unchanged', async () => {
+        const file = await uploaded();
+        const res = await writeBody(noMediaReadWriter, '<p>no image</p>');
+        expect(res.status).toBe(201);
+        const doc = await createWithBody(imgOf(file));
+        const row = await db.prisma.$queryRawUnsafe<{ body: string }[]>(
+          'select body from content.gallery where document_id = $1::uuid',
+          doc.documentId,
+        );
+        expect(row[0]?.body).toContain(`data-media-id="${file.id}"`);
+      });
+
+      it('bulk create answers 400 for an unreadable richtext image and stores nothing', async () => {
+        const file = await uploaded();
+        const before = await galleryCount();
+        const res = await bulkCreate(noMediaReadWriter, ['<p>a</p>', imgOf(file)]);
+        expect(res.status).toBe(400);
+        expect(await galleryCount()).toBe(before);
+        const readable = await bulkCreate(editor, ['<p>a</p>', imgOf(file)]);
+        expect(readable.status).toBe(200);
+      });
+
+      it('a refused write does not block deleting the file', async () => {
+        const file = await uploaded();
+        expect((await writeBody(noMediaReadWriter, imgOf(file))).status).toBe(400);
+        await http().delete(`${MEDIA}/${file.id}`).set(bearer(admin)).expect(204);
+      });
+    });
 
     it('409 MEDIA_IN_USE when only a root richtext uses the file (draft counts)', async () => {
       const file = await uploaded();
