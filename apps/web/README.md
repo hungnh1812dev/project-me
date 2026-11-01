@@ -89,7 +89,7 @@ in a production build.
   for the browser, over the Axios instance, with the Bearer token from
   `useWebSession`. Same error type.
 - `src/utils/SafeRichtext.rules.ts`: `sanitizeRichtext(html)` (DOMPurify; browser
-  and tests). Its allowlist mirrors the cms-api storage sanitizer. On the
+  and tests). Its allowlist mirrors the cms-api storage sanitizer (D13): palette colour on `span`, alignment on `p`/`h1`-`h6`, and `img` only from `CLOUDINARY_IMAGE_ORIGIN` with a UUID `data-media-id`; the palette and alignments are pinned in `PublicConstants.contract.test.ts`. On the
   server use `SafeRichtext.server.ts` (`sanitizeRichtextOnServer`, DOMPurify over
   jsdom), a separate file so jsdom never reaches a client chunk.
 - `src/apis/client/Api.client.ts` is the browser Axios instance. It strips trailing

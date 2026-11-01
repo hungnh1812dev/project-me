@@ -82,13 +82,21 @@ const IMAGE_ORIGIN_PROTOCOLS: ReadonlySet<string> = new Set(['https:', 'http:'])
 
 function isAllowedImageSrc(src: string | undefined, origins: ReadonlySet<string>): boolean {
   if (!src) return false;
+  const trimmed = src.trim();
   let url: URL;
   try {
-    url = new URL(src.trim());
+    url = new URL(trimmed);
   } catch {
     return false;
   }
-  return !url.username && !url.password && origins.has(url.origin);
+  // The prefix check rejects `https:host/x` and `https:/host/x`: they parse as absolute here
+  // but a browser resolves them against the page, and the raw src is what gets stored.
+  return (
+    !url.username &&
+    !url.password &&
+    origins.has(url.origin) &&
+    trimmed.startsWith(`${url.origin}/`)
+  );
 }
 
 function toOriginSet(origins: readonly string[] = []): ReadonlySet<string> {

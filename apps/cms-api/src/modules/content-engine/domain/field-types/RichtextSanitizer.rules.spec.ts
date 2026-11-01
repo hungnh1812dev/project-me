@@ -160,6 +160,8 @@ describe('sanitizeRichtext', () => {
       ['malformed', 'https://'],
       ['userinfo', 'https://x@res.cloudinary.com/a.png'],
       ['look-alike host', 'https://res.cloudinary.com.evil.dev/a.png'],
+      ['scheme without slashes', 'https:res.cloudinary.com/a.png'],
+      ['scheme with one slash', 'https:/res.cloudinary.com/a.png'],
     ])('drops the img for %s', (_name, badSrc) => {
       expect(
         sanitizeRichtext(`<p>a<img src="${badSrc}" alt="x" data-media-id="${id}"></p>`, {
