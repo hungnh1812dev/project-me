@@ -27,8 +27,11 @@ import { escapeLikePattern, mimeTypesOfFilter } from '../domain/MediaUpload.rule
 import {
   MEDIA_REFERENCE_CHECKER,
   MEDIA_REPOSITORY,
+  MEDIA_STORAGE,
   type MediaReferenceChecker,
   type MediaRepository,
+  type MediaStorage,
+  type PublicMediaFile,
 } from './Media.port';
 
 /**
@@ -42,6 +45,7 @@ export class MediaLibraryService {
     @Inject(MEDIA_REPOSITORY) private readonly repository: MediaRepository,
     @Inject(MEDIA_REFERENCE_CHECKER)
     private readonly references: MediaReferenceChecker,
+    @Inject(MEDIA_STORAGE) private readonly storage: MediaStorage,
     @Inject(CORE_TRANSACTION_RUNNER) private readonly runner: TransactionRunner,
     private readonly access: AccessPolicyService,
     private readonly audit: SecurityAuditService,
@@ -63,6 +67,11 @@ export class MediaLibraryService {
       escapedSearch: search === undefined ? undefined : escapeLikePattern(search),
       mimeTypes: mimeType === undefined ? undefined : mimeTypesOfFilter(mimeType),
     });
+  }
+
+  /** A public file of the active storage; `null` when it has none by that name or does not serve files. */
+  openPublicFile(fileName: string): Promise<PublicMediaFile | null> {
+    return this.storage.openPublicFile?.(fileName) ?? Promise.resolve(null);
   }
 
   /** Alt text only; not audited (SPEC §7 lists media delete only). */

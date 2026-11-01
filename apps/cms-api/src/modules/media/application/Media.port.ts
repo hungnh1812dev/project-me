@@ -75,6 +75,13 @@ export interface StoredObject {
   readonly thumbnailUrl: string | null;
 }
 
+/** A stored file the public file route streams back. */
+export interface PublicMediaFile {
+  readonly stream: Readable;
+  readonly mimeType: string;
+  readonly size: number;
+}
+
 /**
  * Where media bytes live (SPEC D12). The upload pipeline has already
  * validated and re-encoded the bytes; the adapter only stores them.
@@ -83,6 +90,11 @@ export interface MediaStorage {
   put(input: PutObjectInput): Promise<StoredObject>;
   /** Removes the object; deleting a missing object is not an error. */
   delete(key: string, kind: MediaKind): Promise<void>;
+  /**
+   * Only for storages whose bytes this API serves (`GET /media-files/:fileName`).
+   * `null` for a name it does not own, never a throw.
+   */
+  openPublicFile?(fileName: string): Promise<PublicMediaFile | null>;
 }
 
 /** DI token of the `MediaRepository` adapter. */

@@ -8,6 +8,7 @@ import { ContentEngineModule } from '../content-engine';
 import { SecurityAuditModule } from '../security-audit';
 import { CloudinaryMediaStorage, createCloudinaryClient } from './adapters/Cloudinary.adapter';
 import { FakeMediaStorage } from './adapters/Fake.adapter';
+import { LocalMediaStorage } from './adapters/Local.adapter';
 import { MediaReferenceAdapter } from './adapters/MediaReference.adapter';
 import { PrismaMediaRepository } from './adapters/PrismaMedia.repository';
 import { UploadProcessingAdapter } from './adapters/UploadProcessing.adapter';
@@ -24,6 +25,7 @@ import { PurgeDeletedMediaService } from './application/PurgeDeletedMedia.servic
 import { ReplaceMediaFileService } from './application/ReplaceMediaFile.service';
 import { UploadMediaService } from './application/UploadMedia.service';
 import { MediaController } from './http/Media.controller';
+import { MediaFilesController } from './http/MediaFiles.controller';
 import { MediaPurgeJob } from './jobs/MediaPurge.job';
 
 type MediaProvider = IAppConfig['media']['provider'];
@@ -46,9 +48,17 @@ function createCloudinaryMediaStorage(config: IAppConfig): MediaStorage {
   return new CloudinaryMediaStorage(createCloudinaryClient(cloudinary), cloudinary.folder);
 }
 
-/** Placeholder until the local adapter lands (UIL-10): the boot fails instead of storing nowhere. */
-function createLocalMediaStorage(): MediaStorage {
-  throw new Error('The local media storage is not implemented yet');
+function createLocalMediaStorage(config: IAppConfig): MediaStorage {
+  const { local } = config.media;
+  // Env.rules.ts requires the keys, and the opt-in in production.
+  if (local === undefined) {
+    throw new Error('Local media storage is not configured');
+  }
+  // Defence in depth: Env.rules.ts already rejects this provider in production without the opt-in.
+  if (config.isProduction && !local.allowedInProduction) {
+    throw new Error('The local media storage is not allowed in production');
+  }
+  return LocalMediaStorage.open(local);
 }
 
 /** One factory per MEDIA_PROVIDERS entry; the type forces a new provider to add one. */
@@ -69,7 +79,7 @@ export function createMediaStorage(config: IAppConfig): MediaStorage {
 /** File library: upload pipeline, storage for the configured MEDIA_PROVIDER, library use cases and purge job. */
 @Module({
   imports: [AccessModule, ContentEngineModule, DatabaseModule, SecurityAuditModule],
-  controllers: [MediaController],
+  controllers: [MediaController, MediaFilesController],
   providers: [
     MediaLibraryService,
     DocumentMediaService,

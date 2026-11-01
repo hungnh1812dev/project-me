@@ -5,6 +5,7 @@ import { z } from 'zod';
 import type { DatabaseConfig, DatabaseTls } from '../infrastructure/database/DatabaseConfig.rules';
 import {
   CONFIG_DEFAULTS,
+  LOCAL_MEDIA_PROVIDER_OPT_IN,
   RATE_LIMIT_OVERRIDE_ENV_KEYS,
   type RateLimitOverrideEnvKey,
 } from './Config.constants';
@@ -115,6 +116,8 @@ export interface LocalMediaConfig {
   readonly directory: string;
   /** Public URL prefix of the file route, without a trailing slash. */
   readonly publicUrl: string;
+  /** True only with ALLOW_LOCAL_MEDIA_PROVIDER=smoke; the storage factory checks it again in production. */
+  readonly allowedInProduction: boolean;
 }
 
 export interface BackupStorageConfig {
@@ -300,7 +303,11 @@ function localMediaConfigOf(env: Env): LocalMediaConfig | undefined {
   ) {
     return undefined;
   }
-  return { directory: env.MEDIA_LOCAL_DIR, publicUrl: env.MEDIA_LOCAL_PUBLIC_URL };
+  return {
+    directory: env.MEDIA_LOCAL_DIR,
+    publicUrl: env.MEDIA_LOCAL_PUBLIC_URL,
+    allowedInProduction: env.ALLOW_LOCAL_MEDIA_PROVIDER === LOCAL_MEDIA_PROVIDER_OPT_IN,
+  };
 }
 
 function backupStorageConfigOf(env: Env): BackupStorageConfig | undefined {

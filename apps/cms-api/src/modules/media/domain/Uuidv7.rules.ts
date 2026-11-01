@@ -7,6 +7,7 @@ const VERSION_7 = 0x70;
 const VERSION_MASK = 0x0f;
 const VARIANT_RFC = 0x80;
 const VARIANT_MASK = 0x3f;
+const UUID_V7_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
 
 /**
  * RFC 9562 UUID v7: a 48-bit millisecond timestamp followed by random bits,
@@ -30,4 +31,9 @@ export function uuidv7(nowMs: number, randomBytes: Uint8Array): string {
     hex.slice(16, 20),
     hex.slice(20),
   ].join('-');
+}
+
+/** True for the lower-case canonical form `uuidv7` makes; nothing else (no separators, no case variants). */
+export function isUuidv7(value: string): boolean {
+  return UUID_V7_PATTERN.test(value);
 }

@@ -43,6 +43,8 @@ function isHttpUrlWithoutQueryOrTrailingSlash(value: string): boolean {
     const url = new URL(value);
     return (
       ALLOWED_ORIGIN_PROTOCOLS.includes(url.protocol) &&
+      url.username === '' &&
+      url.password === '' &&
       !value.includes('?') &&
       !value.includes('#') &&
       !value.endsWith('/')
@@ -176,7 +178,7 @@ export const envSchema = z
         .string()
         .refine(isHttpUrlWithoutQueryOrTrailingSlash, {
           message:
-            'must be an absolute http(s) URL with no query, fragment or trailing slash, e.g. https://example.com/api/v1/media-files',
+            'must be an absolute http(s) URL with no credentials, query, fragment or trailing slash, e.g. https://example.com/api/v1/media-files',
         })
         .optional(),
     ),

@@ -20,6 +20,7 @@ const publicHandlers = (
 
 export const PUBLIC_HANDLERS: readonly PublicHandler[] = [
   ...publicHandlers('HealthController', 'public', ['live', 'ready']),
+  ...publicHandlers('MediaFilesController', 'public', ['read']),
   ...publicHandlers('AuthController', 'public', ['login', 'refresh', 'logout']),
   ...publicHandlers('AuthController', 'authenticated-only', ['me']),
   ...publicHandlers('OwnerSetupController', 'public', ['status', 'createOwner']),

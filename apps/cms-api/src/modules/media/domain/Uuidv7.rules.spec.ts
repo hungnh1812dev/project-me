@@ -1,6 +1,6 @@
 import { randomBytes } from 'node:crypto';
 
-import { UUID_BYTES, uuidv7 } from './Uuidv7.rules';
+import { isUuidv7, UUID_BYTES, uuidv7 } from './Uuidv7.rules';
 
 const UUID_V7_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
 
@@ -27,5 +27,23 @@ describe('uuidv7', () => {
     const random = new Uint8Array(UUID_BYTES).fill(0xff);
     uuidv7(1_000, random);
     expect(random.every((byte) => byte === 0xff)).toBe(true);
+  });
+});
+
+describe('isUuidv7', () => {
+  it('accepts what uuidv7 makes', () => {
+    expect(isUuidv7(uuidv7(Date.now(), randomOf()))).toBe(true);
+  });
+
+  it.each([
+    '',
+    '../x',
+    '01900000-0000-4000-8000-000000000001',
+    '01900000-0000-7000-c000-000000000001',
+    '01900000-0000-7000-8000-00000000000A',
+    '01900000-0000-7000-8000-000000000001\n',
+    '01900000000070008000000000000001',
+  ])('rejects %j', (value) => {
+    expect(isUuidv7(value)).toBe(false);
   });
 });
