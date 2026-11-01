@@ -190,6 +190,11 @@ if [[ "${SMOKE_NO_BUILD:-}" == "1" ]]; then
 fi
 # A fresh stack gets new secrets: any vars file from an earlier stack is stale.
 rm -f "$E2E_VARS_FILE"
+# Fresh secrets only reach the roles on a first start (scripts/stack/database-roles.sh
+# runs from the image init hook), and the db image keeps its data in an anonymous
+# volume that survives a container recreate. Drop what an earlier kept or failed
+# run left, or abyss_migrator keeps the old password (P1000).
+compose down -v --remove-orphans >/dev/null 2>&1 || true
 echo "Building and starting the smoke stack ($WEB_ORIGIN, $ADMIN_ORIGIN)..."
 compose up ${BUILD_FLAG[@]+"${BUILD_FLAG[@]}"} --detach --wait --wait-timeout "$TIMEOUT_SECONDS"
 
