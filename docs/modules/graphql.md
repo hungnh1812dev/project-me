@@ -435,23 +435,23 @@ Tests: 12 files (not listed).
 
 | File | Description |
 |---|---|
-| `Graphql.module.ts` | TODO (exports `GraphqlModule`) |
-| `index.ts` | TODO (exports `GraphqlModule`, `GRAPHQL_BODY_LIMIT_MOUNT_PATH`, `graphqlBodyLimit`) |
-| `application/Graphql.constants.ts` | TODO (exports `GRAPHQL_SDL_FILE_NAME`, `QUERY_TYPE_NAME`, `SCALAR_NAMES`, `SHARED_TYPE_NAMES` +22) |
-| `cli/PrintSchema.command.ts` | TODO (exports `DEFAULT_SDL_FILE`, `PrintSchemaOptions`, `PrintSchemaResult`, `renderSdl` +1) |
-| `http/Document.resolver.ts` | TODO (exports `GraphqlContext`, `attachDocumentResolvers`) |
-| `http/Graphql.controller.ts` | TODO (exports `GraphqlController`) |
-| `http/Graphql.executor.ts` | TODO (exports `GraphqlRequest`, `GraphqlResponse`, `GraphqlSchemaProvider`, `GraphqlExecutor`) |
-| `http/GraphqlBodyLimit.middleware.ts` | TODO (exports `GRAPHQL_BODY_LIMIT_MOUNT_PATH`, `graphqlBodyLimit`) |
-| `http/GraphqlError.filter.ts` | TODO (exports `GraphqlPhase`, `FormattedGraphqlError`, `ErrorFormatOptions`, `formatGraphqlError`) |
-| `http/ListArguments.rules.ts` | TODO (exports `ListArguments`, `toListQuery`) |
-| `http/rules/Limits.rules.ts` | TODO (exports `MaxDepthRule`, `MaxRootFieldsRule`, `MaxFieldNodesRule`, `LIMIT_RULES` +1) |
-| `http/rules/Visibility.rules.ts` | TODO (exports `ContentTypeVisibilityRule`) |
-| `http/schema/FilterInputs.rules.ts` | TODO (exports `FILTER_INPUTS`, `filterToClauses`, `sortToKeys`) |
-| `http/schema/Scalars.rules.ts` | TODO (exports `DateScalar`, `DateTimeScalar`, `DecimalScalar`, `JsonScalar`) |
-| `http/schema/SchemaBuilder.rules.ts` | TODO (exports `GraphqlSchemaError`, `buildGraphqlSchema`, `GraphqlNameClashError`) |
-| `http/schema/SharedTypes.entity.ts` | TODO (exports `DocumentStatusEnum`, `SortDirectionEnum`, `PageMetaType`, `MediaType`) |
-| `http/schema/TypeNames.rules.ts` | TODO (exports `GraphqlNameClashError`, `pascalCase`, `camelCase`, `rootNamesOf` +3) |
+| `Graphql.module.ts` | `GraphqlModule`: wiring |
+| `index.ts` | Public exports: `GraphqlModule`, `graphqlBodyLimit` and its mount path |
+| `application/Graphql.constants.ts` | Route, limits (`GRAPHQL_LIMITS`), type and field names, scalar names, error codes |
+| `cli/PrintSchema.command.ts` | `graphql:print-schema`: writes or checks the SDL file |
+| `http/Document.resolver.ts` | `attachDocumentResolvers`: root fields to the documents read use cases |
+| `http/Graphql.controller.ts` | `GraphqlController`: `POST /graphql` with document auth and the anonymous throttle |
+| `http/Graphql.executor.ts` | `GraphqlExecutor`: parse, limit rules, validate, execute against the caller's schema |
+| `http/GraphqlBodyLimit.middleware.ts` | `graphqlBodyLimit`: 413 in the GraphQL error shape before the JSON parser |
+| `http/GraphqlError.filter.ts` | `formatGraphqlError`: errors in the GraphQL shape, no internals |
+| `http/ListArguments.rules.ts` | `toListQuery`: list arguments to the documents list query |
+| `http/rules/Limits.rules.ts` | `MaxDepthRule`, `MaxRootFieldsRule`, `MaxFieldNodesRule`: query size limits |
+| `http/rules/Visibility.rules.ts` | `ContentTypeVisibilityRule`: refuses root fields of unreadable content types |
+| `http/schema/FilterInputs.rules.ts` | `FILTER_INPUTS`, `filterToClauses`, `sortToKeys`: filter and sort inputs |
+| `http/schema/Scalars.rules.ts` | `DateScalar`, `DateTimeScalar`, `DecimalScalar`, `JsonScalar` |
+| `http/schema/SchemaBuilder.rules.ts` | `buildGraphqlSchema`: schema from the content registry and the caller's access |
+| `http/schema/SharedTypes.entity.ts` | Shared types: document status, sort direction, page meta, media |
+| `http/schema/TypeNames.rules.ts` | Type and field names per content type, name clash detection |
 
 <!-- prettier-ignore-end -->
 <!-- module-files:end -->

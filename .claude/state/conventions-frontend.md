@@ -29,3 +29,5 @@ apps/cms-admin, apps/web, packages/form-commons. grep the section you need; cros
 
 ## User decisions in force
 - apps/web: features import each other only through `index.ts`; `session` is below `auth` and `reviewer`, which never import each other; `**/*.fixture.*` only in `*.test.*` (eslint + `src/FeatureTiers.architecture.test.ts`).
+- cms-admin admin UI (ADR 0020, Q-UI1/4/5/6): menu routes, `/media` kept as the File Library route, 200 px media cards and the palette are in the ADR. Icons from `lucide-react`; Tiptap 3 packages pinned to 3.32.0.
+- Richtext editor: images keep the alt-text action; image order changes with up/down buttons only, no drag (Q-UI10).
