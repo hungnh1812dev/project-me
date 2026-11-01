@@ -128,8 +128,7 @@ test.describe.serial('owner: attach media to a profile', () => {
     await expect(preview.getByRole('img')).toHaveCSS('object-fit', 'contain');
     const details = photoField(page).locator('[data-slot="media-details"]');
     await expect(preview.locator('[data-slot="media-details"]')).toHaveCount(0);
-    // The document embed carries no sha256 (finding), so a reloaded field shows the bare name.
-    await expect(details).toContainText(FILE_NAME);
+    await expect(details).toContainText(`${FILE_NAME} · ${shortHash(FILE_NAME)}`);
     await expect(details).toContainText('68 B');
     await expect(details.locator('[data-slot="media-provider"]')).toHaveText('cloudinary');
     await expect(details.locator('time')).toBeVisible();
