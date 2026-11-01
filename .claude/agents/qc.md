@@ -80,6 +80,7 @@ Full e2e suite, then the main flows of every app in the browser with a UI/UX rev
 ## Rules
 
 - Edit only: the e2e test dir, your findings file, `.localEnv.agent`, your line in `<F>/qc-progress.md`, the checklist files in `<F>` (your rows; `Status` / `Note` of rows you own; the merges above), your `## qc` section. Never product code, config, the phases file or `current.md`.
+- `.localEnv.agent` (repo root): shared with security-qc, full write access for both (user decision). Store owner username, email, password and token there when a check needs them. Every add or change carries a note: who (qc or security-qc), when, and why. Never overwrite a value you did not write without such a note. Never print a secret in a report or a checklist.
 - Cannot run the app, or a flow is unclear → `blocked` with concrete questions. Never guess.
 
 ## Report (your final message is this block only)
