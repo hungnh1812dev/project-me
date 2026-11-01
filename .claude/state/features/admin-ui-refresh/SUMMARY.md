@@ -1,5 +1,5 @@
 # admin-ui-refresh
-Done: 2026-11-01 · Commits: 6ec6aa48..fbc6127d · Apps / packages: cms-api, cms-admin, web, form-commons, e2e, docs
+Done: 2026-11-01 · Commits: 6ec6aa48..dd6efa9f · Apps / packages: cms-api, cms-admin, web, form-commons, e2e, docs
 
 ## Overview
 The cms-admin console gets a new shell: grouped side menu with icons, a top-right user menu, separate settings routes, and a shared component set. Media moves to a File Library with search, filters, an upload dialog with confirmation and progress, in-place file replace, a media field in forms, and a rich-text editor with a palette, toolbar and media-backed images. Local disk storage is available for dev and smoke stacks only.
@@ -30,6 +30,6 @@ Changed paths since base, grouped (259 files; the range also holds commits of ot
 ## Major issues
 | Issue | Problem | Impact | Root cause | Fix |
 |---|---|---|---|---|
-| UIL-B-qc#1 (medium, qc) | OwnerSetup e2e specs failed late in the full suite: `GET /setup/status` answered 429 | Two false failures in the tier 3 full run; no product defect | The status route allows 30 reads per minute per IP and every request behind the proxy shares one bucket | Each OwnerSetup test polls the status route until it answers 200 (`5a0969bc`); smoke-only override of the setup limits (`710a1cc1`) |
-| UIM-A-qc#1 (medium, qc) | A saved or reloaded media field showed the file name without the short hash | Editors saw less file identity than in the library; REST and GraphQL document reads lacked the field | UIL-3 added mimeType, width, height and updatedAt to `EmbeddedMedia` but not sha256 | `sha256` added to the embed, its columns and mapping, GraphQL `Media.sha256` (nullable), schema regenerated (`25008d49`) |
-| UIM-A-qc#2 (medium, qc) | Closing the upload dialog opened from Replace file left focus on the page body | Keyboard and screen reader users lost their place in the form | `MediaField` passed no focus return to `UploadDialog`, and the controlled dialog has no Radix trigger | `MediaField` restores focus to its opener with `useRestoreFocus`, unit and e2e tests (`3217f2ce`) |
+| UIL-B-qc#1 (medium, qc) | OwnerSetup e2e specs failed late in the full suite: `GET /setup/status` answered 429 | Two false failures in the tier 3 full run; no product defect | The status route allows 30 reads per minute per IP and every request behind the proxy shares one bucket | Each OwnerSetup test polls the status route until it answers 200 (`0644e989`); smoke-only override of the setup limits (`bf3a1282`) |
+| UIM-A-qc#1 (medium, qc) | A saved or reloaded media field showed the file name without the short hash | Editors saw less file identity than in the library; REST and GraphQL document reads lacked the field | UIL-3 added mimeType, width, height and updatedAt to `EmbeddedMedia` but not sha256 | `sha256` added to the embed, its columns and mapping, GraphQL `Media.sha256` (nullable), schema regenerated (`ba444329`) |
+| UIM-A-qc#2 (medium, qc) | Closing the upload dialog opened from Replace file left focus on the page body | Keyboard and screen reader users lost their place in the form | `MediaField` passed no focus return to `UploadDialog`, and the controlled dialog has no Radix trigger | `MediaField` restores focus to its opener with `useRestoreFocus`, unit and e2e tests (`5e5c06d1`) |

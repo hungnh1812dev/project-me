@@ -82,3 +82,10 @@ No agent reads or writes `.env*` files (except `.env.example`). Local dev values
 - never `git add` it, copy it into an image, or print its values;
 - key names only go in the matching `.env.example`;
 - builders, qc and security-qc create, read and edit it, and add missing dev-only values there without asking the user (qc and security-qc note who, when and why on each change); security-qc reports a finding if it is tracked or holds a value that looks real.
+
+## Git in scratch copies
+
+A worktree shares the repo's `.git/config`, so `git config` inside it changes the identity of every later commit in the repo.
+- Never run `git config` (any scope) in the repo or in a worktree of it.
+- A test commit in a scratch copy: `git -c user.name=agent -c user.email=agent@localhost commit ...`.
+- Remove a scratch worktree with `git worktree remove <path>` before you report.
