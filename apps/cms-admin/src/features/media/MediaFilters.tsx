@@ -56,6 +56,7 @@ export function MediaFilters({ value, onChange, hideMimeType = false }: MediaFil
         {copy.search}
         <Input
           type="search"
+          name="search"
           value={searchText}
           placeholder={copy.searchPlaceholder}
           onChange={(event) => setSearchText(event.target.value)}
@@ -65,6 +66,7 @@ export function MediaFilters({ value, onChange, hideMimeType = false }: MediaFil
         <label className="grid gap-1 text-sm font-medium">
           {copy.mimeType}
           <NativeSelect
+            name="mimeType"
             value={value.mimeType}
             onChange={(event) => onChange({ ...value, mimeType: event.target.value })}
           >
@@ -79,6 +81,7 @@ export function MediaFilters({ value, onChange, hideMimeType = false }: MediaFil
       <label className="grid gap-1 text-sm font-medium">
         {copy.pageSize}
         <NativeSelect
+          name="pageSize"
           value={value.pageSize}
           onChange={(event) => onChange({ ...value, pageSize: Number(event.target.value) })}
         >

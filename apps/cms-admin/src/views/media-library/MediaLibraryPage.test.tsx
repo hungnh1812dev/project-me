@@ -208,6 +208,14 @@ describe('MediaLibraryPage', () => {
     expect(screen.getByText(PORTRAIT_CARD_NAME)).toBeInTheDocument();
   });
 
+  it('names the filter controls so the browser can autofill and report them', async () => {
+    await open({ [`GET ${MEDIA.LIST}`]: () => ({ status: 200, data: body([file()]) }) });
+    await screen.findByText(PORTRAIT_CARD_NAME);
+    expect(screen.getByLabelText(copy.filters.search)).toHaveAttribute('name', 'search');
+    expect(screen.getByLabelText(copy.filters.mimeType)).toHaveAttribute('name', 'mimeType');
+    expect(screen.getByLabelText(copy.filters.pageSize)).toHaveAttribute('name', 'pageSize');
+  });
+
   it('reads page, size, search and type from the URL', async () => {
     const { api } = await open(
       { [`GET ${MEDIA.LIST}`]: () => ({ status: 200, data: body([file()]) }) },

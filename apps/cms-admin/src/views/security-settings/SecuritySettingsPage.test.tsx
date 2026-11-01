@@ -76,7 +76,10 @@ describe('SecuritySettingsPage', () => {
     );
     expect(within(dialog).getByTitle(copy.totpSetup.qrLabel)).toBeInTheDocument();
 
-    await userEvent.type(within(dialog).getByLabelText(/^Authenticator code/), '123456');
+    await userEvent.type(
+      within(dialog).getByLabelText(new RegExp(`^${copy.fields.totpCode}`)),
+      '123456',
+    );
     await userEvent.type(within(dialog).getByLabelText(/^Current password/), `${PASSWORD}{Enter}`);
 
     expect(await screen.findByText(copy.twoFactor.enabledTotp)).toBeVisible();
@@ -122,7 +125,10 @@ describe('SecuritySettingsPage', () => {
     await userEvent.click(screen.getByRole('button', { name: copy.twoFactor.setUpTotp }));
     const dialog = await screen.findByRole('dialog');
     await within(dialog).findByTestId('totp-secret');
-    await userEvent.type(within(dialog).getByLabelText(/^Authenticator code/), '123456');
+    await userEvent.type(
+      within(dialog).getByLabelText(new RegExp(`^${copy.fields.totpCode}`)),
+      '123456',
+    );
     const password = within(dialog).getByLabelText(/^Current password/);
     await userEvent.type(password, 'wrong password{Enter}');
 
@@ -130,6 +136,23 @@ describe('SecuritySettingsPage', () => {
     expect(password).toHaveFocus();
     expect(api.callsTo(`POST ${REFRESH}`)).toHaveLength(1);
     expect(services.store.getState().auth.status).toBe('authenticated');
+  });
+
+  it('keeps the turn-off dialog and its code field after an Esc and a reopen', async () => {
+    await openSecurity([totpUser]);
+    const turnOff = () => screen.getByRole('button', { name: copy.twoFactor.turnOff });
+    await userEvent.click(turnOff());
+    await screen.findByRole('dialog', { name: copy.disable.title });
+    await userEvent.keyboard('{Escape}');
+    expect(screen.queryByRole('dialog')).toBeNull();
+
+    await userEvent.click(turnOff());
+    const dialog = await screen.findByRole('dialog', { name: copy.disable.title });
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    expect(screen.getByRole('dialog', { name: copy.disable.title })).toBe(dialog);
+    expect(
+      within(dialog).getByLabelText(new RegExp(`^${copy.fields.totpCode}`)),
+    ).toBeInTheDocument();
   });
 
   it('warns about email 2FA and turns it off with an emailed code', async () => {
