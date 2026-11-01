@@ -115,6 +115,8 @@ test('an account turns on TOTP, signs in with it, switches to email codes and ch
   await page.getByRole('button', { name: security.twoFactor.turnOff }).click();
   await expect(disable).toBeVisible();
   const third = await freshTotpCode(secret, second.step);
+  await expect(disable).toBeVisible();
+  await expect(disable.getByLabel(labelStartingWith(security.fields.totpCode))).toBeVisible();
   await confirm(disable, security.fields.totpCode, third.code, security.disable.submit);
   await expect(page.getByText(security.twoFactor.disabled)).toBeVisible();
 
