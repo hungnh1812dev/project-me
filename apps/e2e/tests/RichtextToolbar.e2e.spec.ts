@@ -309,6 +309,11 @@ test.describe.serial('richtext toolbar: formatting survives save and reload', ()
     await writeLines(alignments.map(({ css }) => `Aligned ${css}`));
     for (const { label, css } of alignments) {
       await lineOf(`Aligned ${css}`).click();
+      await expect
+        .poll(() =>
+          page.evaluate(() => getSelection()?.anchorNode?.parentElement?.closest('p')?.textContent),
+        )
+        .toBe(`Aligned ${css}`);
       await button(toolbar, label).click();
     }
     const before = await saveAndReload();
