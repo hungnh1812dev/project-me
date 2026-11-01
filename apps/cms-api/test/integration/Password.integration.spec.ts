@@ -55,7 +55,7 @@ const PASSWORD = 'correct horse battery staple';
 const NEW_PASSWORD = 'a brand new passphrase 42';
 const WRONG_CODE_OFFSET = 1;
 const CODE_IN_MAIL = new RegExp(`^(\\d{${OTP.DIGITS}})$`, 'm');
-const TIMING_SAMPLES = 5;
+const TIMING_SAMPLES = 9;
 /** Unknown-email requests must take at least / at most this share of known ones. */
 const TIMING_RATIO = { min: 0.5, max: 2 };
 const OCTET_RANGE = 250;
@@ -79,9 +79,9 @@ function nextIp(): string {
   return `10.1.${Math.floor(ipCounter / OCTET_RANGE)}.${(ipCounter % OCTET_RANGE) + 1}`;
 }
 
-function median(values: number[]): number {
-  const sorted = [...values].sort((a, b) => a - b);
-  return sorted[Math.floor(sorted.length / 2)] ?? 0;
+/** Load only adds time, so the fastest sample is the least noisy measure of the code path itself. */
+function fastest(values: number[]): number {
+  return Math.min(...values);
 }
 
 function wrongCodeFor(code: string): string {
@@ -247,7 +247,7 @@ describe('OTP + password lifecycle (D8, SPEC §12-9/10; Postgres 17 via Testcont
         unknown.push(await time(`ghost-timing${i}@example.test`));
       }
       await settle();
-      const ratio = median(unknown) / median(known);
+      const ratio = fastest(unknown) / fastest(known);
       expect(ratio).toBeGreaterThan(TIMING_RATIO.min);
       expect(ratio).toBeLessThan(TIMING_RATIO.max);
     });
