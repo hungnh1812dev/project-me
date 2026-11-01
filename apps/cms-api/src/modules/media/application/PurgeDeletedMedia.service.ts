@@ -15,6 +15,7 @@ import {
   type MediaReferenceChecker,
   type MediaRepository,
   type MediaStorage,
+  type PurgeCandidate,
 } from './Media.port';
 
 /** What one purge run did. */
@@ -26,7 +27,8 @@ export interface PurgeResult {
 
 /**
  * Removes the stored object of files soft-deleted more than 24 h ago, then
- * the row; preset rows have no stored object and lose the row only. A file that a document points at again is left alone. The object
+ * the row; preset rows have no stored object and lose the row only; rows of
+ * another provider than the active storage are kept and logged. A file that a document points at again is left alone. The object
  * goes first: a crash between the two leaves a row to retry, never an
  * orphaned object.
  */
@@ -53,6 +55,10 @@ export class PurgeDeletedMediaService {
     }
   }
 
+  private isStoredByActiveStorage(row: PurgeCandidate): boolean {
+    return row.provider === this.storage.provider;
+  }
+
   /**
    * Walks every eligible row in id order, one batch at a time, so rows that
    * stay (still referenced, unknown type, storage error) never hold back the
@@ -77,6 +83,14 @@ export class PurgeDeletedMediaService {
             skipped += 1;
             this.logger.error(
               `Media ${row.id} has an unknown type; kept.`,
+              PurgeDeletedMediaService.name,
+            );
+            continue;
+          }
+          if (row.provider !== PRESET_MEDIA_PROVIDER && !this.isStoredByActiveStorage(row)) {
+            skipped += 1;
+            this.logger.warn(
+              `Media ${row.id} is stored by provider ${row.provider}, not the active one; kept.`,
               PurgeDeletedMediaService.name,
             );
             continue;
