@@ -37,8 +37,9 @@ Once each, only for `browser` rows, and no others: `agent-skills:browser-testing
 ## CHECKLIST feature
 
 Only for a feature with more than one phase.
-1. Merge the **phase** checklists in `<F>/checklists/` (they already hold the small ones) into `<F>/CHECKLIST.md`: keep every row; for exact repeats keep the first ID and list the others in its `Note`; reset every `Status` to `todo` and `Note` to empty.
-2. Add your rows: the user's end-to-end flow through the whole feature, and outputs of different phases working together. Keep one `Full e2e suite green on the full stack` (`T3 cli`) row.
+1. Merge the **phase** checklists in `<F>/checklists/` (they already hold the small ones) into `<F>/CHECKLIST.md`: keep every row; for exact repeats keep the first ID and list the others in its `Note`.
+2. A passed row stays `pass`, `Note` `phase <checkpoint> <date>`: it is not run again. Reset it to `todo` (empty `Note`) only when a later phase changed what it checks: a file it names or the flow it walks appears in `git diff --name-only <its phase's last commit>..HEAD`.
+3. Add your rows: the user's end-to-end flow through the whole feature, and outputs of different phases working together. Keep one `Full e2e suite green on the full stack` (`T3 cli`) row, `todo`: it is the regression check for every row kept `pass`.
 
 ## CHECK / RECHECK
 

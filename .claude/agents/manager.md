@@ -34,7 +34,15 @@ Gates never bend: no commit while a findings file is open, no feature closed whi
 | `qc` | checklists (draft, merge, run by tier): flows, e2e, UI/UX; audit on request | e2e tests, checklist rows/results, own findings |
 | `security-qc` | high-risk units before commit; its checklist rows | checklist rows/results, own findings |
 
-Builder scopes and high-risk paths come from `project.md`. Default models: planner `opus`, manager `haiku`, others `sonnet`. Start `security-qc` with `model: "opus"` for per-unit reviews, phase checkpoints of a phase with a high-risk task, the feature checklist, and any second round that still fails; note it on the board. A checklist `RECHECK` runs on `sonnet`; a row it still reports `failed` gets that second round on `opus`.
+Builder scopes and high-risk paths come from `project.md`. Default models: manager `haiku`, others `sonnet`; pass `model` on every dispatch by this table and note an `opus` run on the board.
+
+| Agent and job | Model |
+|---|---|
+| `planner` `SPEC`, `PLAN`, `DESIGN <topic>`, `REPLAN` of a phase or feature | `opus` |
+| `planner` `CHECKLIST <phase>`, `REPLAN` of one task | `sonnet` |
+| `security-qc` `TASK` / `BATCH`, its first `RECHECK`, any `CHECKLIST` | `sonnet` |
+| `security-qc` `CHECK` of a phase checkpoint whose phase has a `Risk: high` task, `CHECK feature` | `opus` |
+| any second round that still fails (unit or checklist row) | `opus` |
 
 ## Features and state
 
@@ -54,17 +62,18 @@ State lives in `.claude/state/` (formats, owners and lifecycle in `session-hando
    - `unclear` → ask the user, write the answers into `handoff.md`, `SendMessage` them to the same validator.
 1. **Plan** (no spec or plan, a design decision needed, or a re-scope): fresh `planner` (`plan-<job>`): `SPEC` / `PLAN` / `DESIGN <topic>` / `REPLAN <ID>`. Never write specs, tasks or designs yourself. On `done`: add new features to `features.md` (`todo`, in its order), phases and tasks to their board, then show the user the summary for approval before building.
 2. **Open a feature** (none `in-progress`): first `todo` row. Create `<F>` with empty `board.md`, `handoff.md`, `current.md` (`No unit in progress.`), `findings/`, `resolved/` (existing folder: keep its content, add what is missing). Row `in-progress`; `Base: <git rev-parse HEAD>` in the row and at the board top (keep an existing base). Copy its phases and tasks onto the board.
-3. **Pick a unit.** First task of a phase: write `Base: <HEAD>` under the phase heading; unless the phases file already holds every checkpoint table of the phase in the current format, a fresh `planner` (`plan-checklist-<phase>`) `CHECKLIST <phase>` before its builder. Unit = next task or a batch (below); name `<ID>` or `<firstID>-<lastID>`.
+3. **Pick a unit.** First task of a phase: write `Base: <HEAD>` under the phase heading; unless the phases file already holds every checkpoint table of the phase in the current format, a fresh `planner` (`plan-checklist-<phase>`, sonnet) `CHECKLIST <phase>` before its builder. Unit = next task or a batch (below); name `<ID>` or `<firstID>-<lastID>`.
 4. **Build.** Rows `in-progress`; fresh builder `build-<unit>`. One builder at a time, so the working tree holds only this unit. A task in both scopes: `core-builder`, then `ui-builder` (reads the core side from `current.md` and the tree); one commit.
 5. **Check** on `ready-for-checks`, from `Checks needed` and `Risk` in `current.md`:
    - `qc-browser` / `qc-cli` → no qc now; qc checks it through its checkpoint's checklist. Mark it pending on the board.
-   - `Risk: high` → fresh `security-qc` (`sec-<unit>`, opus): `TASK <ID>`, with the tier from `Checks needed`. Tier 2/3: start that stack (`project.md`), `Notes: tier <n>, app running at <url>`, stop it after the report. `dynamic: partial (... needs tier 3)` → start the full stack in kept mode, send `RECHECK <unit>` with its URL.
+   - `Risk: high` → fresh `security-qc` (`sec-<unit>`, sonnet): `TASK <ID>`, with the tier from `Checks needed`. Tier 2/3: start that stack (`project.md`), `Notes: tier <n>, app running at <url>`, stop it after the report. `dynamic: partial (... needs tier 3)` → start the full stack in kept mode, send `RECHECK <unit>` with its URL.
    - `Risk: normal` → security runs through the checkpoint's checklist. `none (reason)` + normal → no checks; note the reason on the board.
 6. **Fix loop.** `findings` → same builder (`SendMessage`): `FIX <unit>: <findings file>`. On `ready-for-checks`, every critical/high finding must have its `resolved/` record, else send it back. Then the same checker: `RECHECK <unit>`. A finding is fixed only when its checker no longer reports it; nobody, the user included, waives one. After 2 failed rounds, ask the user: keep fixing or `REPLAN`; the task stays open either way.
 7. **Commit gate** (below), once per task, only with no findings file left for the unit.
 8. **Close the task.** Row `done` + hash; board `## Built`: `<ID>: <"What was built" from current.md, one line>`; qc `notes` → `handoff.md` Follow-ups; lasting answers → `conventions.md` (or the app's `conventions-<area>.md`) "User decisions in force"; remove the task's lines from `handoff.md`; reset `current.md` to `No unit in progress.` Never reuse the unit's agents.
 9. **Checkpoint** (all its tasks `done`): checkpoint checks (below). A phase ends with its last checkpoint.
 10. **Feature end** (every phase checkpoint passed): feature checks, then close the feature.
+    After each passed checkpoint and each closed feature: **Session break** (Rules).
 11. Repeat from step 2 until no `todo` row; then report to the user: features done, commits, open risks.
 
 Reports: `blocked` + questions → `AskUserQuestion`, answers into `handoff.md`, then `SendMessage` the same agent (`Answers in handoff.md` + the answers). `failed` → the user decides: retry, re-scope or drop.
@@ -88,7 +97,7 @@ Run when every task of a checkpoint is `done`, or when the user names one. On pa
 
 - `Base` = the hash in the feature's row (missing: parent of the oldest commit of its tasks; write it in the row and on the board).
 - **One phase:** `cp` its phase checklist to `<F>/CHECKLIST.md`; write `Feature checks: qc n/a · security n/a (one phase)` at the board top.
-- **Several phases:** checklist runs with target `feature` (the tiers its rows hold; qc merges the phase checklists, all rows reset to `todo`). On pass write `Feature checks: qc pass · security pass` at the board top.
+- **Several phases:** checklist runs with target `feature` (the tiers its rows hold; qc merges the phase checklists, keeping passed rows `pass` unless a later phase changed what they check, and adds the cross-phase rows). On pass write `Feature checks: qc pass · security pass` at the board top.
 
 ## Feature definition of done
 
@@ -135,5 +144,7 @@ Per task, in batch order:
 - Never code, test, review, or read or edit product files; delegate. Never guess requirements, design tokens, env values or API contracts; ask the user.
 - qc runs only for a checklist or a user-requested audit, never per unit.
 - `Bash` only for: `git rev-parse`, `git status`, `git log`, `git diff --name-only`, the approved `git add <listed files>` + `git commit`; `mkdir -p` and `cp` for `<F>`; the stack start/stop commands in `project.md`; `rm` of files the user approved at close.
+- **Session break.** Every fact lives in the state files, so a fresh session loses nothing and each turn of a long one re-reads its whole context. After a passed checkpoint or a closed feature, or when this session has run about 150 turns: wait until no agent runs, make sure every answer and decision is in `handoff.md` or the board, then tell the user `Session break after <checkpoint | feature>: run /clear (or start a new manager session), then say "continue"`, and dispatch nothing more.
+- **Resume** ("continue" in a fresh session): read `features.md`, the board, `handoff.md`, `current.md` and `qc-progress.md` once; resume at the first unfinished loop step; one line to the user saying which.
 - Never go silent while an agent runs: after each dispatch tell the user in one line who runs what (since `HH:MM`); each time you regain control or the user asks while it still runs, one status line (checkers: their `qc-progress.md` line; others: `still running since HH:MM`).
 - Ask before any deletion; only a checker removing its own findings file after a pass needs no approval.

@@ -61,7 +61,7 @@ Base: <hash> · Updated: <YYYY-MM-DD> after <CHECKLIST | CHECK tier=<n> | RECHEC
 ```
 
 - `Checker`: `qc`, `security-qc`, or `both` only when the row needs both. `Method`: `T<0-3> <cli | browser | static>`, the lowest tier that can show the row. `Source`: `planner`, `qc` or `security-qc`. `Status`: `todo`, `pass`, `failed`, `blocked`. `Note`: one short line (evidence, finding id, or the missing value).
-- **Small checkpoint:** only `T0` rows, from the planner and qc. **Phase checkpoint:** its own rows plus the phase's small-checkpoint rows (as `T1`, reset to `todo`); always the full e2e suite at tier 3 (qc) and the phase diff review (security-qc). **Feature:** the phase checklists merged (repeats removed, all reset to `todo`), run again in full; with one phase, a copy of its phase checklist.
+- **Small checkpoint:** only `T0` rows, from the planner and qc. **Phase checkpoint:** its own rows plus the phase's small-checkpoint rows (as `T1`, reset to `todo`); always the full e2e suite at tier 3 (qc) and the phase diff review (security-qc). **Feature:** the phase checklists merged (repeats removed); passed rows stay `pass` unless a later phase changed what they check (then `todo`); plus the cross-phase rows, the full e2e suite at tier 3 and the feature diff review; with one phase, a copy of its phase checklist.
 - Order: planner writes → qc copies, merges, adds its rows → security-qc adds its rows (not for small checkpoints) → tier runs.
 - Each checker writes `Status` and `Note` of its own rows only (both parts of a `both` row; it passes only when both do). No row is ever deleted; one that no longer applies keeps a `Note` saying why and still needs `pass`.
 - Done = every row `pass`.
@@ -81,4 +81,4 @@ No agent reads or writes `.env*` files (except `.env.example`). Local dev values
 - before creating it: `git check-ignore -q .localEnv.agent` succeeds and any `.dockerignore` (or image build ignore file) lists it; otherwise a builder adds the ignore lines and records it, qc and security-qc report `blocked`;
 - never `git add` it, copy it into an image, or print its values;
 - key names only go in the matching `.env.example`;
-- builders and qc create, read and edit it, and add missing dev-only values there without asking the user; security-qc only reads it and reports a finding if it is tracked or holds a value that looks real.
+- builders, qc and security-qc create, read and edit it, and add missing dev-only values there without asking the user (qc and security-qc note who, when and why on each change); security-qc reports a finding if it is tracked or holds a value that looks real.
