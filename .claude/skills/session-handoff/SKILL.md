@@ -15,7 +15,7 @@ Live files hold only what is still open. Code history is in git, module details 
 .claude/state/
   project.md  features.md  conventions.md  conventions-<area>.md  archive/conventions-archive.md
   features/<feature>/            = <F>, the folder of the in-progress row of features.md
-    board.md  handoff.md  current.md  qc-issues-handoff.md  qc-progress.md  checklist-requests.md
+    board.md  handoff.md  current.md  qc-issues-handoff.md  qc-progress.md
     checklists/<checkpoint>.md   findings/   resolved/
     CHECKLIST.md  SUMMARY.md     kept after close
 ```
@@ -34,7 +34,6 @@ Spec, task and phases files, design docs, ADRs and e2e tests live where `project
 | `current.md` | the unit's builder (format in `worker-flow`) | checkers, manager | one unit | manager resets after the unit's last commit; at close |
 | `qc-issues-handoff.md` | qc, security-qc (own section) | manager, checkers | - | at close (no `open` entry left) |
 | `qc-progress.md` | qc, security-qc (own line, format in `test-tiers`) | manager while a checker runs | one line per running checker | each checker removes its line at report; file at close |
-| `checklist-requests.md` | builders (format in `worker-flow`); manager appends a planner's `checklist requests` and sets each `status` after `CHECKLIST-ADD` | planner at `CHECKLIST-ADD <phase>` | one line per request | a phase's entries when its phase checkpoint passes; file at close |
 | `checklists/<checkpoint>.md` | qc, security-qc (format in `test-tiers`) | manager (`Status`), checkers | - | at close |
 | `CHECKLIST.md` | qc, security-qc; manager copies it for a one-phase feature | anyone | - | never |
 | `findings/<unit, checkpoint, feature or audit>-<qc or security>.md` | the failing checker (format in its agent file) | builder in a fix round | - | by its checker when the re-check passes |
