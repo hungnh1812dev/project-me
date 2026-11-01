@@ -114,12 +114,17 @@ type PageMeta {
 type Media {
   id: ID!
   fileName: String
+  mimeType: String!
   url: String
   thumbnailUrl: String
   provider: String
   alt: String
   size: Int
+  width: Int
+  height: Int
+  sha256: String
   createdAt: DateTime
+  updatedAt: DateTime!
 }
 ```
 

@@ -307,6 +307,7 @@ describe('buildGraphqlSchema', () => {
       'size',
       'width',
       'height',
+      'sha256',
       'createdAt',
       'updatedAt',
     ]);

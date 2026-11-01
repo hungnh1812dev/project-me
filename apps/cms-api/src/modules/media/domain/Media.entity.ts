@@ -67,6 +67,7 @@ export interface EmbeddedMedia {
   readonly size: number;
   readonly width: number | null;
   readonly height: number | null;
+  readonly sha256: string;
   readonly createdAt: string;
   readonly updatedAt: string;
 }

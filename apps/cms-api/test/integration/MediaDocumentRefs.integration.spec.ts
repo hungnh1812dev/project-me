@@ -169,6 +169,7 @@ describe('document media references (T29; Postgres 17 via Testcontainers)', () =
     'size',
     'width',
     'height',
+    'sha256',
     'createdAt',
     'updatedAt',
   ];

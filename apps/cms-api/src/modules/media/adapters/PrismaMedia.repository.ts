@@ -66,6 +66,7 @@ const EMBED_COLUMNS = [
   'size',
   'width',
   'height',
+  'sha256',
   'created_at',
   'updated_at',
 ] as const;
@@ -300,6 +301,7 @@ export class PrismaMediaRepository implements MediaRepository {
         size: row.size as number,
         width: (row.width as number | null) ?? null,
         height: (row.height as number | null) ?? null,
+        sha256: row.sha256 as string,
         createdAt: (row.created_at as Date).toISOString(),
         updatedAt: (row.updated_at as Date).toISOString(),
       },

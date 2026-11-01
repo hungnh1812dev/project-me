@@ -47,6 +47,7 @@ export const MediaType = new GraphQLObjectType({
     size: { type: GraphQLInt },
     width: { type: GraphQLInt },
     height: { type: GraphQLInt },
+    sha256: { type: GraphQLString },
     createdAt: { type: DateTimeScalar },
     updatedAt: { type: new GraphQLNonNull(DateTimeScalar) },
   },

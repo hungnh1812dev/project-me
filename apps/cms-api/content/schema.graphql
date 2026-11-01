@@ -38,6 +38,7 @@ type Media {
   size: Int
   width: Int
   height: Int
+  sha256: String
   createdAt: DateTime
   updatedAt: DateTime!
 }
