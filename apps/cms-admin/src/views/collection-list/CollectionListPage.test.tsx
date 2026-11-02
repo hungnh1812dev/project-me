@@ -127,6 +127,40 @@ describe('CollectionListPage: list', () => {
     });
   });
 
+  it('shows a Status column with one badge per publish state, not sortable', async () => {
+    await open({
+      [LIST_KEY]: () => ({
+        status: 200,
+        data: page([
+          row(1, { publishState: 'draft' }),
+          row(2, { publishState: 'modified' }),
+          row(3, { publishState: 'published' }),
+        ]),
+      }),
+    });
+    await screen.findByRole('link', { name: 'Post 1' });
+    expect(screen.getByRole('columnheader', { name: copy.columns.status })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: copy.columns.status })).not.toBeInTheDocument();
+    expect(screen.getByText(COPY.content.publishState.draft)).toBeInTheDocument();
+    expect(screen.getByText(COPY.content.publishState.modified)).toBeInTheDocument();
+    expect(screen.getByText(COPY.content.publishState.published)).toBeInTheDocument();
+  });
+
+  it('has no Status column when the items carry no publish state', async () => {
+    await open({ [LIST_KEY]: () => ({ status: 200, data: page(rows5) }) });
+    await screen.findByRole('link', { name: 'Post 1' });
+    expect(screen.queryByRole('columnheader', { name: copy.columns.status })).toBeNull();
+  });
+
+  it('has no Status column for a type without draft and publish', async () => {
+    await open({
+      [`GET ${CONTENT_TYPES.ONE(SLUG)}`]: typeHandler({ ...POST_TYPE, draftAndPublish: false }),
+      [LIST_KEY]: () => ({ status: 200, data: page([row(1, { publishState: 'published' })]) }),
+    });
+    await screen.findByRole('link', { name: 'Post 1' });
+    expect(screen.queryByRole('columnheader', { name: copy.columns.status })).toBeNull();
+  });
+
   it('sorts by a column and goes back to the first page', async () => {
     const user = userEvent.setup();
     const { api } = await open({
@@ -225,6 +259,35 @@ describe('CollectionListPage: bulk actions', () => {
     }
     return user;
   }
+
+  it('shows the new states after a bulk publish refetches the list', async () => {
+    let published = false;
+    await open({
+      [LIST_KEY]: () => ({
+        status: 200,
+        data: page(rows5.map((r) => ({ ...r, publishState: published ? 'published' : 'draft' }))),
+      }),
+      [`POST ${DOCUMENTS.BULK(SLUG, 'publish')}`]: () => {
+        published = true;
+        return {
+          status: 200,
+          data: {
+            atomic: false,
+            succeeded: 5,
+            failed: 0,
+            results: rows5.map((r, index) => ({ index, status: 'ok', documentId: r.documentId })),
+          },
+        };
+      },
+    });
+    await screen.findByRole('link', { name: 'Post 1' });
+    expect(screen.getAllByText(COPY.content.publishState.draft)).toHaveLength(5);
+    const user = await selectFive();
+    await user.click(screen.getByRole('button', { name: bulk.publish(5) }));
+    await waitFor(() =>
+      expect(screen.getAllByText(COPY.content.publishState.published)).toHaveLength(5),
+    );
+  });
 
   it('publishes five selected rows with their versions', async () => {
     const { api } = await open({

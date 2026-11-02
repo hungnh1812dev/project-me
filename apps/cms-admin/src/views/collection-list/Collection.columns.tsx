@@ -3,12 +3,17 @@ import { contentEditPath } from '@configs/App.routes';
 import { COPY } from '@configs/Copy.constants';
 import type { ContentTypeField } from '@features/content-types';
 import type { DocumentListItem } from '@features/content/Content.api';
-import { LIST_MAX_VALUE_COLUMNS, LIST_UPDATED_KEY } from '@features/content/Content.constants';
+import {
+  LIST_MAX_VALUE_COLUMNS,
+  LIST_PUBLISH_STATE_KEY,
+  LIST_UPDATED_KEY,
+} from '@features/content/Content.constants';
 import {
   formatListValue,
   isSortableListType,
   listAlignmentOf,
 } from '@features/content/Field.registry';
+import { PublishStateBadge } from '@features/content/PublishStateBadge';
 import { formatDateTime } from '@utils/DateFormat.rules';
 import { Link } from 'react-router';
 
@@ -54,6 +59,7 @@ function EditLink({
 export function collectionColumnsOf(
   slug: string,
   valueFields: readonly ContentTypeField[],
+  showPublishState = false,
 ): SheetColumn<DocumentListItem>[] {
   const hasValueColumns = valueFields.length > 0;
   return [
@@ -72,6 +78,20 @@ export function collectionColumnsOf(
           formatListValue(field.type, row.values[field.path])
         ),
     })),
+    ...(showPublishState
+      ? [
+          {
+            key: LIST_PUBLISH_STATE_KEY,
+            header: list.columns.status,
+            renderCell: (row: DocumentListItem) =>
+              row.publishState === undefined ? (
+                list.emptyValue
+              ) : (
+                <PublishStateBadge state={row.publishState} />
+              ),
+          } satisfies SheetColumn<DocumentListItem>,
+        ]
+      : []),
     {
       key: LIST_UPDATED_KEY,
       header: list.columns.updated,

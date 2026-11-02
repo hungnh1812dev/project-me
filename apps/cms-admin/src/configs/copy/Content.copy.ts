@@ -29,6 +29,7 @@ export const CONTENT_COPY = {
     yes: 'Yes',
     no: 'No',
     columns: {
+      status: 'Status',
       updated: 'Updated',
     },
     selectAll: 'Select all documents on this page',

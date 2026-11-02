@@ -44,7 +44,7 @@ Tests: 2 files (not listed).
 | `BulkBanner.tsx` | Result banner of a bulk run (exports `BulkBanner`) |
 | `BulkCreateDialog.tsx` | JSON import dialog and its parser (exports `parseImportText`, `BulkCreateDialog`) |
 | `BulkDeleteDialog.tsx` | Confirm dialog for bulk delete (exports `BulkDeleteDialog`) |
-| `Collection.columns.tsx` | Table columns and document names (exports `listValueFieldsOf`, `documentNameOf`, `collectionColumnsOf`) |
+| `Collection.columns.tsx` | Table columns and document names (exports `listValueFieldsOf`, `documentNameOf`, `collectionColumnsOf`); a non-sortable Status column renders `PublishStateBadge` when the type has draft and publish and items carry `publishState` |
 | `CollectionListPage.tsx` | The list page (exports `CollectionListPage`) |
 | `SingleTypeRedirect.tsx` | Redirect of a single type to its document (exports `SingleTypeRedirect`) |
 | `useBulkRun.ts` | Runs bulk actions (exports `BulkRunInput`, `useBulkRun`) |

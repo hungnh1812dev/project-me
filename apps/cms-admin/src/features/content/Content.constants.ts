@@ -84,6 +84,8 @@ export const BULK_ITEM_STATUS = { OK: 'ok', ERROR: 'error' } as const;
 
 /** System sort key of the list (cms-api default order is `-updatedAt`). */
 export const LIST_UPDATED_KEY = 'updatedAt';
+/** Key of the list's Status column; never a sort key (SPEC §16.6). */
+export const LIST_PUBLISH_STATE_KEY = 'publishState';
 
 /** `kind` of a content type that holds many documents (bulk works on these). */
 export const COLLECTION_KIND = 'collection';

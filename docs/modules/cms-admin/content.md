@@ -55,7 +55,7 @@ Tests: 7 files (not listed).
 | `Field.registry.tsx` | `FIELD_REGISTRY`, `adapterFor`: one adapter per field type; list formatting helpers |
 | `FieldTree.rules.ts` | `buildFieldTree`, `labelOf`: field tree of a content type |
 | `FieldValues.rules.ts` | Value converters per field type (text, number, integer, boolean, datetime, json) |
-| `PublishStateBadge.tsx` | `PublishStateBadge`: Draft / Modified / Published chip, shared by the edit header and the list column |
+| `PublishStateBadge.tsx` | `PublishStateBadge`: Draft / Modified / Published chip, shared by the edit header and the collection list Status column |
 | `RichtextField.tsx` | `RichtextField`: lazily loaded Tiptap editor with media image picking |
 | `useContentNavItems.ts` | `useContentNavItems`, `contentNavItemsOf`: content menu items per readable content type |
 

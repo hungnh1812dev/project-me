@@ -86,7 +86,11 @@ export function CollectionListPage() {
   });
 
   const displayName = type.data?.displayName ?? '';
-  const columns = collectionColumnsOf(slug, valueFields);
+  const columns = collectionColumnsOf(
+    slug,
+    valueFields,
+    draftAndPublish && rows.some((row) => row.publishState !== undefined),
+  );
   const nameOf = (row: (typeof rows)[number]) => documentNameOf(valueFields, row);
 
   const heading = (
