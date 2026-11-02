@@ -724,6 +724,8 @@
   "content": {
     "newTitle": "New SAMPLE",
     "editTitle": "Edit SAMPLE",
+    "titleLoading": "Loading the content type",
+    "titleUnavailable": "Content",
     "description": "Changes are saved to the draft. Publishing is a separate step.",
     "loading": "Loading the document",
     "loadFailed": "The document could not be loaded.",

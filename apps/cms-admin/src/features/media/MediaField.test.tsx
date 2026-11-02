@@ -28,6 +28,7 @@ const field = (path: string, type: string) => ({
 });
 const PROFILE: ContentType = {
   slug: SLUG,
+  displayName: 'Profile',
   kind: 'collection',
   draftAndPublish: true,
   fields: [field('name', 'string'), field('photo', 'media')],

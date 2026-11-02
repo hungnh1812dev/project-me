@@ -19,7 +19,7 @@ import { useNavGroupOpenState } from './useNavGroupOpenState';
 const SKELETON_ROW_COUNT = 3;
 
 const LINK_CLASS =
-  'block rounded-md border-l-2 px-3 py-1.5 text-sm outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50';
+  'block break-words rounded-md border-l-2 px-3 py-1.5 text-sm outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50';
 const LINK_ACTIVE_CLASS = 'border-primary bg-primary/10 font-medium text-foreground';
 const LINK_IDLE_CLASS =
   'border-transparent text-muted-foreground hover:bg-accent hover:text-foreground';
@@ -81,6 +81,7 @@ function ItemList({ items, onNavigate }: MenuProps & { items: readonly NavItem[]
         <li key={item.path}>
           <NavLink
             to={item.path}
+            title={item.label}
             onClick={onNavigate}
             className={({ isActive }) =>
               `${LINK_CLASS} ${isActive ? LINK_ACTIVE_CLASS : LINK_IDLE_CLASS}`

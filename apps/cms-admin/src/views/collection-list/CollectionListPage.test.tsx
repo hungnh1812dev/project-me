@@ -29,6 +29,7 @@ function field(path: string, type: string, system = false) {
 
 const POST_TYPE: ContentType = {
   slug: SLUG,
+  displayName: 'Blog Post',
   kind: 'collection',
   draftAndPublish: true,
   fields: [
@@ -116,6 +117,8 @@ describe('CollectionListPage: list', () => {
     );
     expect(screen.getAllByText('Yes')).toHaveLength(2);
     expect(screen.getByText('1–5 of 45')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Blog Post' })).toBeInTheDocument();
+    expect(screen.getByRole('table', { name: 'Blog Post documents' })).toBeInTheDocument();
     const call = api.callsTo(LIST_KEY)[0];
     expect(call?.params).toMatchObject({
       page: 1,
@@ -187,7 +190,7 @@ describe('CollectionListPage: list', () => {
       [LIST_KEY]: () => ({ status: 200, data: page([]) }),
     });
     expect(
-      await screen.findByRole('heading', { name: COPY.content.newTitle(SLUG) }),
+      await screen.findByRole('heading', { name: COPY.content.newTitle('Blog Post') }),
     ).toBeInTheDocument();
     expect(api.callsTo(`GET ${CONTENT_TYPES.ONE(SLUG)}`).length).toBeGreaterThan(0);
   });

@@ -18,13 +18,26 @@ export function PageHeader({
   return (
     <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
       <div className="grid gap-2">
-        <h1 tabIndex={-1} className="m-0 text-2xl font-semibold tracking-tight outline-none">
+        <h1
+          tabIndex={-1}
+          className="m-0 text-2xl font-semibold tracking-tight break-words outline-none"
+        >
           {title}
         </h1>
         <p className="m-0 max-w-prose text-sm text-muted-foreground">{description}</p>
       </div>
       {action === undefined ? null : <div className="shrink-0">{action}</div>}
     </div>
+  );
+}
+
+/** Stands in for a page title that is not known yet; announces `label` to screen readers. */
+export function TitleSkeleton({ label }: { label: string }) {
+  return (
+    <>
+      <span aria-hidden="true" className="block h-8 w-48 animate-pulse rounded bg-muted" />
+      <span className="sr-only">{label}</span>
+    </>
   );
 }
 

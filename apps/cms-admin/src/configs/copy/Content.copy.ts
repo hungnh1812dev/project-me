@@ -1,6 +1,8 @@
 export const CONTENT_COPY = {
-  newTitle: (type: string) => `New ${type}`,
-  editTitle: (type: string) => `Edit ${type}`,
+  newTitle: (displayName: string) => `New ${displayName}`,
+  editTitle: (displayName: string) => `Edit ${displayName}`,
+  titleLoading: 'Loading the content type',
+  titleUnavailable: 'Content',
   description: 'Changes are saved to the draft. Publishing is a separate step.',
   loading: 'Loading the document',
   loadFailed: 'The document could not be loaded.',
@@ -8,13 +10,13 @@ export const CONTENT_COPY = {
   documentNotFound: 'This document does not exist, or your role cannot read it.',
   retry: 'Try again',
   collection: {
-    title: (type: string) => type,
+    title: (displayName: string) => displayName,
     description: (draftAndPublish: boolean) =>
       draftAndPublish
         ? 'Drafts of this collection. Select rows to publish, unpublish or delete them together.'
         : 'Documents of this collection. Select rows to delete them together.',
     newDocument: 'New document',
-    tableLabel: (type: string) => `${type} documents`,
+    tableLabel: (displayName: string) => `${displayName} documents`,
     loading: 'Loading documents',
     loadFailed: 'The documents could not be loaded.',
     forbidden: 'Your role cannot view these documents.',

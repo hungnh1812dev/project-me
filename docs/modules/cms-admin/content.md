@@ -22,6 +22,10 @@ React 19, react-hook-form, TanStack Query, axios (API client), `@abyss/form-comm
 
 `Content.feature.ts` (registered in `features/Features.registry.ts`), `useContentNavItems` (menu), `DynamicFormRenderer`, `createContentApi`.
 
+## Display name
+
+`ContentType.displayName` (from the content-type API) is the only name shown to people: the menu label (`useContentNavItems`), the list page title and table caption, and the new/edit titles. The slug stays in routes and API calls. While the type loads, the title is a `TitleSkeleton`; if it cannot be loaded, the title is `Content`.
+
 ## Where to change what
 
 A new field type: one adapter in `Field.registry.tsx` (plus value converters in `FieldValues.rules.ts`). A new content API call: `Content.api.ts` + a key in `Content.queries.ts`.

@@ -14,9 +14,11 @@ const list = COPY.content.collection;
  */
 export function SingleTypeRedirect({
   slug,
+  displayName,
   draftAndPublish,
 }: {
   slug: string;
+  displayName: string;
   draftAndPublish: boolean;
 }) {
   const documents = useDocumentListQuery(slug, 1, undefined, draftAndPublish, true);
@@ -32,7 +34,7 @@ export function SingleTypeRedirect({
   }
   return (
     <div className="grid gap-6">
-      <PageHeader title={list.title(slug)} description={null} />
+      <PageHeader title={list.title(displayName)} description={null} />
       {documents.isError ? (
         isForbidden(documents.error) ? (
           <FormAlert tone="info">{list.forbidden}</FormAlert>

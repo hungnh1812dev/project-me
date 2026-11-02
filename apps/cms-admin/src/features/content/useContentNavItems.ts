@@ -23,7 +23,7 @@ export function contentNavItemsOf(
     if (section === undefined || subject === undefined) return [];
     return [
       {
-        label: type.slug,
+        label: type.displayName,
         path: contentListPath(type.slug),
         section,
         subject,

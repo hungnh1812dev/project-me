@@ -72,7 +72,8 @@ describe('DocumentEditPage: new cv-page', () => {
     });
 
     await screen.findByLabelText('Position');
-    expect(screen.getByRole('heading', { name: copy.newTitle(SLUG) })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: copy.newTitle('CV Page') })).toBeInTheDocument();
+    expect(screen.queryByText(new RegExp(SLUG))).not.toBeInTheDocument();
     expect(screen.getByRole('switch', { name: 'Is main' })).toBeInTheDocument();
     // The richtext editor is lazy-loaded.
     expect(await screen.findByText('Summary')).toBeInTheDocument();
@@ -91,7 +92,9 @@ describe('DocumentEditPage: new cv-page', () => {
       values: { position: 'Engineer', isMain: true },
       components: { skill: [{ values: { skill: 'React' } }] },
     });
-    expect(await screen.findByRole('heading', { name: copy.editTitle(SLUG) })).toBeInTheDocument();
+    expect(
+      await screen.findByRole('heading', { name: copy.editTitle('CV Page') }),
+    ).toBeInTheDocument();
   });
 
   it('blocks the save on invalid numbers and JSON in a nested component (depth 2)', async () => {

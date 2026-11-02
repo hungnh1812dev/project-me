@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Button, FormAlert } from '@abyss/form-commons';
-import { LoadError, PageHeader, TableSkeleton } from '@components/PageStates';
+import { LoadError, PageHeader, TableSkeleton, TitleSkeleton } from '@components/PageStates';
 import { contentEditPath } from '@configs/App.routes';
 import { REVIEWER_ROLE_SLUG } from '@configs/Auth.constants';
 import { COPY } from '@configs/Copy.constants';
@@ -47,7 +47,19 @@ export function DocumentEditPage() {
     () => (type.data === undefined ? [] : buildFieldTree(type.data.fields)),
     [type.data],
   );
-  const title = documentId === undefined ? copy.newTitle(slug) : copy.editTitle(slug);
+  const displayName = type.data?.displayName;
+  const title =
+    displayName === undefined ? (
+      type.isPending ? (
+        <TitleSkeleton label={copy.titleLoading} />
+      ) : (
+        copy.titleUnavailable
+      )
+    ) : documentId === undefined ? (
+      copy.newTitle(displayName)
+    ) : (
+      copy.editTitle(displayName)
+    );
 
   if (type.isPending || (documentId !== undefined && draft.isPending && !draft.isError)) {
     return (
