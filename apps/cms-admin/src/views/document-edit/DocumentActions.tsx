@@ -54,6 +54,16 @@ export function DocumentActions({
   const queryClient = useQueryClient();
   const access = useCallerAccess();
   const [confirming, setConfirming] = useState<ConfirmedAction | null>(null);
+  // The dialog stays mounted with its last action so Radix can run its close
+  // focus handling; it only restores focus to a DialogTrigger, which these
+  // buttons are not, so the opening button is remembered here.
+  const [lastConfirmed, setLastConfirmed] = useState<ConfirmedAction>('unpublish');
+  const opener = useRef<HTMLElement | null>(null);
+  const askToConfirm = (action: ConfirmedAction, trigger: HTMLElement) => {
+    opener.current = trigger;
+    setLastConfirmed(action);
+    setConfirming(action);
+  };
   const holds = (action: PermissionAction) => access.can(slug, action) || access.can('*', action);
   const state = record?.publishState;
   const hasLifecycle = record !== null && draftAndPublish && state !== undefined;
@@ -104,7 +114,7 @@ export function DocumentActions({
           type="button"
           variant="warning"
           disabled={!isLive || busy}
-          onClick={() => setConfirming('unpublish')}
+          onClick={(event) => askToConfirm('unpublish', event.currentTarget)}
         >
           {copy.unpublish}
         </Button>
@@ -114,7 +124,7 @@ export function DocumentActions({
           type="button"
           variant="destructive"
           disabled={state !== PUBLISH_STATE.MODIFIED || busy}
-          onClick={() => setConfirming('discard')}
+          onClick={(event) => askToConfirm('discard', event.currentTarget)}
         >
           {copy.discard}
         </Button>
@@ -139,40 +149,48 @@ export function DocumentActions({
           {copy.publish}
         </Button>
       ) : null}
-      {confirming === null ? null : (
-        <ConfirmDialog
-          action={confirming}
-          isFormDirty={isFormDirty}
-          isRunning={lifecycle.isPending}
-          onConfirm={() => lifecycle.mutate(confirming)}
-          onCancel={() => setConfirming(null)}
-        />
-      )}
+      <ConfirmDialog
+        open={confirming !== null}
+        action={lastConfirmed}
+        onCloseFocus={() => opener.current?.focus()}
+        isFormDirty={isFormDirty}
+        isRunning={lifecycle.isPending}
+        onConfirm={() => lifecycle.mutate(lastConfirmed)}
+        onCancel={() => setConfirming(null)}
+      />
     </fieldset>
   );
 }
 
 function ConfirmDialog({
+  open,
   action,
+  onCloseFocus,
   isFormDirty,
   isRunning,
   onConfirm,
   onCancel,
 }: {
+  open: boolean;
   action: ConfirmedAction;
   isFormDirty: boolean;
   isRunning: boolean;
   onConfirm: () => void;
   onCancel: () => void;
+  onCloseFocus: () => void;
 }) {
   const cancelRef = useRef<HTMLButtonElement>(null);
   const text = action === 'discard' ? copy.discardDialog : copy.unpublishDialog;
   return (
-    <Dialog open onOpenChange={(open) => (open ? undefined : onCancel())}>
+    <Dialog open={open} onOpenChange={(open) => (open ? undefined : onCancel())}>
       <DialogContent
         onOpenAutoFocus={(event) => {
           event.preventDefault();
           cancelRef.current?.focus();
+        }}
+        onCloseAutoFocus={(event) => {
+          event.preventDefault();
+          onCloseFocus();
         }}
       >
         <DialogHeader>
