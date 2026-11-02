@@ -84,6 +84,8 @@ describe('document publish, unpublish and delete (T22; Postgres 17 via Testconta
   let noPublish: string;
   let scopedDelete: string;
   let scopedPublish: string;
+  let titleOnlyEditor: string;
+  let scopedUpdate: string;
 
   beforeAll(async () => {
     postgres = await startPostgres();
@@ -146,6 +148,20 @@ describe('document publish, unpublish and delete (T22; Postgres 17 via Testconta
       },
     ]);
     scopedPublish = await signedIn('scoped-publish');
+    await customRole('title-only-editor', 23, [
+      { subject: 'article', action: 'read' },
+      { subject: 'article', action: 'update', writableFields: ['title'] },
+    ]);
+    titleOnlyEditor = await signedIn('title-only-editor');
+    await customRole('scoped-update', 24, [
+      { subject: 'article', action: 'read' },
+      {
+        subject: 'article',
+        action: 'update',
+        conditions: { all: [{ field: 'priority', op: 'eq', value: 1 }] },
+      },
+    ]);
+    scopedUpdate = await signedIn('scoped-update');
   });
 
   afterAll(async () => {
@@ -228,6 +244,8 @@ describe('document publish, unpublish and delete (T22; Postgres 17 via Testconta
     http().post(`${DOCUMENTS}/article/${id}/publish`).set(bearer(token)).send({ expectedVersion });
   const unpublish = (id: string, token: string) =>
     http().post(`${DOCUMENTS}/article/${id}/unpublish`).set(bearer(token));
+  const discard = (id: string, token: string, expectedVersion: unknown) =>
+    http().post(`${DOCUMENTS}/article/${id}/discard`).set(bearer(token)).send({ expectedVersion });
   const remove = (slug: string, id: string, token: string) =>
     http().delete(`${DOCUMENTS}/${slug}/${id}`).set(bearer(token));
   const rows = (documentId: string) =>
@@ -417,6 +435,133 @@ describe('document publish, unpublish and delete (T22; Postgres 17 via Testconta
       await publish(doc.documentId, editor, 1);
       expect((await unpublish(doc.documentId, noPublish)).status).toBe(403);
       expect(await published(doc.documentId)).toHaveLength(1);
+    });
+  });
+
+  describe('discard', () => {
+    const readDraft = async (id: string) =>
+      (await http().get(`${DOCUMENTS}/article/${id}?status=draft`).set(bearer(editor))).body as Doc;
+    const readPublic = (id: string) =>
+      http().get(`${DOCUMENTS}/article/${id}`).set('X-Forwarded-For', nextIp());
+
+    /** Published at version 1, then edited twice: the draft is at version 3 and differs. */
+    async function modifiedArticle(): Promise<{ doc: Doc; uid: string }> {
+      const doc = await createArticle();
+      const uid = doc.components.reference?.[0]?.componentUid as string;
+      await publish(doc.documentId, editor, 1);
+      const first = await put('article', doc.documentId, editor, {
+        version: 1,
+        values: { title: 'Edited', priority: 9 },
+        components: { reference: [{ componentUid: uid, values: { name: 'Changed' } }] },
+      });
+      expect(first.status).toBe(200);
+      const second = await put('article', doc.documentId, editor, {
+        version: 2,
+        values: { featured: false },
+      });
+      if (second.status !== 200) throw new Error(JSON.stringify(second.body));
+      return { doc, uid };
+    }
+
+    it('puts the published tree back into the draft and moves both rows to the next version', async () => {
+      const { doc, uid } = await modifiedArticle();
+      const publicBefore = await readPublic(doc.documentId);
+      const res = await discard(doc.documentId, editor, 3);
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual({ documentId: doc.documentId, version: 4 });
+
+      const draft = await readDraft(doc.documentId);
+      expect(draft.version).toBe(4);
+      expect(draft.values).toMatchObject({ title: 'First', priority: 3, featured: true });
+      expect(draft.components.reference).toHaveLength(1);
+      expect(draft.components.reference?.[0]).toMatchObject({
+        componentUid: uid,
+        values: { name: 'Ann', phone: RAW_PHONE },
+      });
+      const [live] = await published(doc.documentId);
+      expect(live?.version).toBe(4);
+      expect(live?.title).toBe('First');
+      expect(live?.published_at).not.toBeNull();
+
+      const publicAfter = await readPublic(doc.documentId);
+      expect(publicAfter.status).toBe(200);
+      // Only `version` moves: discard gives the published row the draft's new version (SPEC §16.3).
+      expect({ ...publicAfter.body, version: 0 }).toEqual({ ...publicBefore.body, version: 0 });
+      expect((publicAfter.body as Doc).version).toBe(4);
+      const again = await discard(doc.documentId, editor, 4);
+      expect(again.status).toBe(409);
+      expect((again.body as Conflict).errorCode).toBe('DOCUMENT_NOT_MODIFIED');
+    });
+
+    it('restores a component the draft deleted, under its old uid', async () => {
+      const doc = await createArticle();
+      const uid = doc.components.reference?.[0]?.componentUid;
+      await publish(doc.documentId, editor, 1);
+      const cleared = await put('article', doc.documentId, editor, {
+        version: 1,
+        components: { reference: [] },
+      });
+      expect(cleared.status).toBe(200);
+      expect((await readDraft(doc.documentId)).components.reference).toHaveLength(0);
+      expect((await discard(doc.documentId, editor, 2)).status).toBe(200);
+      const draft = await readDraft(doc.documentId);
+      expect(draft.components.reference?.map((item) => item.componentUid)).toEqual([uid]);
+    });
+
+    it('is 409 DOCUMENT_NOT_MODIFIED for a draft-only and for a published document', async () => {
+      const draftOnly = await createArticle();
+      const first = await discard(draftOnly.documentId, editor, 1);
+      expect(first.status).toBe(409);
+      expect((first.body as Conflict).errorCode).toBe('DOCUMENT_NOT_MODIFIED');
+
+      const live = await createArticle();
+      await publish(live.documentId, editor, 1);
+      const second = await discard(live.documentId, editor, 1);
+      expect(second.status).toBe(409);
+      expect((second.body as Conflict).errorCode).toBe('DOCUMENT_NOT_MODIFIED');
+      expect((await readDraft(live.documentId)).version).toBe(1);
+    });
+
+    it('rejects a stale expectedVersion with 409 and the current version, changing nothing', async () => {
+      const { doc } = await modifiedArticle();
+      const res = await discard(doc.documentId, editor, 2);
+      expect(res.status).toBe(409);
+      expect((res.body as Conflict).errorCode).toBe('DOCUMENT_VERSION_CONFLICT');
+      expect((res.body as Conflict).details.currentVersion).toBe(3);
+      expect((await readDraft(doc.documentId)).values).toMatchObject({ title: 'Edited' });
+    });
+
+    it('is 403 for an editor limited to some fields, 403 without update, 404 outside the row conditions', async () => {
+      const { doc } = await modifiedArticle();
+      expect((await discard(doc.documentId, titleOnlyEditor, 3)).status).toBe(403);
+      expect((await discard(doc.documentId, guest, 3)).status).toBe(403);
+      // priority is 9 on the draft: outside the scoped-update condition (priority = 1).
+      expect((await discard(doc.documentId, scopedUpdate, 3)).status).toBe(404);
+      expect((await readDraft(doc.documentId)).values).toMatchObject({ title: 'Edited' });
+    });
+
+    it('is 403 for anonymous and 404 for an unknown document', async () => {
+      const { doc } = await modifiedArticle();
+      const anonymous = await http()
+        .post(`${DOCUMENTS}/article/${doc.documentId}/discard`)
+        .set('X-Forwarded-For', nextIp())
+        .send({ expectedVersion: 3 });
+      expect(anonymous.status).toBe(403);
+      const missing = await discard('0190a000-0000-7000-8000-000000000000', editor, 1);
+      expect(missing.status).toBe(404);
+    });
+
+    it('is 400 DOCUMENT_NOT_PUBLISHABLE for a type without draft and publish and 400 for a bad body', async () => {
+      const note = await post('note', owner, { values: { text: 'x' } });
+      const noteId = (note.body as Doc).documentId;
+      const res = await http()
+        .post(`${DOCUMENTS}/note/${noteId}/discard`)
+        .set(bearer(owner))
+        .send({ expectedVersion: 1 });
+      expect(res.status).toBe(400);
+      expect((res.body as Conflict).errorCode).toBe('DOCUMENT_NOT_PUBLISHABLE');
+      const { doc } = await modifiedArticle();
+      expect((await discard(doc.documentId, editor, 'x')).status).toBe(400);
     });
   });
 

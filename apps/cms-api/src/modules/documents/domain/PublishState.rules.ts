@@ -1,3 +1,4 @@
+import type { FieldSelection } from '../../access';
 import type { PublishState } from './Documents.constants';
 
 /**
@@ -10,4 +11,12 @@ export function publishStateOf(
 ): PublishState {
   if (publishedVersion === null) return 'draft';
   return draftVersion === publishedVersion ? 'published' : 'modified';
+}
+
+/** SPEC §16.3: discard overwrites every content field, so the actor must be allowed to write each root field. */
+export function writesEveryField(
+  writable: FieldSelection,
+  rootFieldNames: readonly string[],
+): boolean {
+  return writable.isUnrestricted || rootFieldNames.every((name) => writable.allows(name));
 }

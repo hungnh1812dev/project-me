@@ -8,6 +8,7 @@ import { MediaModule } from '../media';
 import { KyselyDocumentRepository } from './adapters/KyselyDocument.repository';
 import { PrismaPresenceAccountAdapter } from './adapters/PrismaPresenceAccount.adapter';
 import { BulkService } from './application/Bulk.service';
+import { DiscardService } from './application/Discard.service';
 import {
   ACTIVITY_RECORDER,
   DOCUMENT_REPOSITORY,
@@ -35,6 +36,7 @@ const NO_ACTIVITY_RECORDER: ActivityRecorder = {
     DocumentsQueryService,
     DocumentsCommandService,
     PublishService,
+    DiscardService,
     BulkService,
     PresenceService,
     { provide: DOCUMENT_REPOSITORY, useClass: KyselyDocumentRepository },

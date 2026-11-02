@@ -161,7 +161,7 @@ export class KyselyContentRepository implements ContentRepository {
     const trx = contentTrxOf(unit);
     const { root } = this.registry.resolve(slug);
     assertDocumentId(ref.documentId, 'documentId');
-    const { updatedBy, ...tree } = input;
+    const { updatedBy, restoreComponentUids, ...tree } = input;
     assertTreeInput(root, tree);
 
     const target = await trx
@@ -190,7 +190,7 @@ export class KyselyContentRepository implements ContentRepository {
       trx,
       root,
       [{ id, isNew: false, components: tree.components, path: ['components'] }],
-      'replace',
+      restoreComponentUids === true ? 'restore' : 'replace',
     );
     return id;
   }

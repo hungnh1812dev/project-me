@@ -136,7 +136,7 @@ export interface PresenceAccountLookup {
 export const PRESENCE_ACCOUNT_LOOKUP = Symbol('PRESENCE_ACCOUNT_LOOKUP');
 
 /** What happened to a document (SPEC D15: content edits are tracked through a pluggable adapter). */
-export const CONTENT_ACTIVITY_ACTIONS = ['publish', 'unpublish', 'delete'] as const;
+export const CONTENT_ACTIVITY_ACTIONS = ['publish', 'unpublish', 'discard', 'delete'] as const;
 export type ContentActivityAction = (typeof CONTENT_ACTIVITY_ACTIONS)[number];
 
 /** Ids and names only: never a field value (D15). */

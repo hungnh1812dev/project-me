@@ -46,7 +46,7 @@ Tests: 11 files (not listed).
 |---|---|
 | `ContentEngine.module.ts` | `ContentEngineModule`: wiring (content DB, registry, repositories) |
 | `index.ts` | Public exports for documents, graphql and media |
-| `adapters/ComponentTableSync.adapter.ts` | `syncChildren`: insert, update and delete component rows of a tree |
+| `adapters/ComponentTableSync.adapter.ts` | `syncChildren`: insert, update and delete component rows of a tree (`restore` mode keeps unknown uids on discard) |
 | `adapters/ContentDatabase.adapter.ts` | Content DB connection and migration constants (lock key, file names) |
 | `adapters/KyselyContent.repository.ts` | `KyselyContentRepository`: insert, replace and load document trees |
 | `adapters/KyselyContentTransactionRunner.adapter.ts` | `KyselyContentTransactionRunner`, `contentTrxOf`: content transactions with after-commit callbacks |
