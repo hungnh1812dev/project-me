@@ -144,3 +144,7 @@ export const BULK_ITEM_STATUS = { OK: 'ok', ERROR: 'error' } as const;
 /** The bulk operations, one route each. */
 export const BULK_OPERATIONS = ['create', 'publish', 'unpublish', 'delete'] as const;
 export type BulkOperation = (typeof BULK_OPERATIONS)[number];
+
+/** SPEC §16.2: derived from the two row versions, never stored. */
+export const PUBLISH_STATES = ['draft', 'modified', 'published'] as const;
+export type PublishState = (typeof PUBLISH_STATES)[number];

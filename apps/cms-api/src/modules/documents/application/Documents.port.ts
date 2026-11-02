@@ -28,10 +28,15 @@ export interface ListSelection {
   sort: readonly SortKey[];
   page: number;
   pageSize: number;
+  /** Also read the other copy's version (SPEC §16.2); additive, off by default. */
+  includePublishState?: boolean;
 }
 
+/** A document row plus, when asked for, the version of the document's other copy (`null` = none). */
+export type DocumentWithCounterpart = ContentDocument & { counterpartVersion?: number | null };
+
 export interface ListedDocuments {
-  documents: ContentDocument[];
+  documents: DocumentWithCounterpart[];
   total: number;
 }
 
@@ -55,7 +60,8 @@ export interface DocumentRepository extends ContentRepository {
     lookup: DocumentLookup,
     rowCondition: RowCondition | null,
     unit?: UnitOfWork,
-  ): Promise<ContentDocument | undefined>;
+    options?: { includePublishState?: boolean },
+  ): Promise<DocumentWithCounterpart | undefined>;
 
   findVersion(
     type: RegisteredContentType,

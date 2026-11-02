@@ -16,6 +16,7 @@ import {
   type RegisteredContentType,
 } from '../../content-engine';
 import { DocumentMediaService } from '../../media';
+import type { PublishState } from '../domain/Documents.constants';
 import {
   documentNotFound,
   draftsForbidden,
@@ -23,14 +24,19 @@ import {
   unknownContentType,
 } from '../domain/Documents.errors';
 import type { ListDocumentsQuery } from '../domain/ListQuery.rules';
+import { publishStateOf } from '../domain/PublishState.rules';
 import {
   DOCUMENT_REPOSITORY,
   type DocumentRepository,
+  type DocumentWithCounterpart,
   type RecordReadAccess,
 } from './Documents.port';
 
+/** A serialized record; `publishState` is present only for draft readers of draft-and-publish types (SPEC §16.2). */
+export type DocumentRecord = SerializedRecord & { publishState?: PublishState };
+
 export interface DocumentPage {
-  data: SerializedRecord[];
+  data: DocumentRecord[];
   meta: { page: number; pageSize: number; total: number };
 }
 
@@ -42,6 +48,8 @@ interface ReadScope {
   rowCondition: RowCondition | null;
   /** The copy to read; null for a type without draft and publish. */
   status: ContentStatus | null;
+  /** Whether the reads carry `publishState`: draft readers of a draft-and-publish type. */
+  includesPublishState: boolean;
 }
 
 /**
@@ -83,9 +91,19 @@ export class DocumentsQueryService {
       sort: query.sort,
       page: query.page,
       pageSize: query.pageSize,
+      includePublishState: scope.includesPublishState,
     });
-    const serializedRecords = new RecordSerializer(type).serializeMany(documents, access);
+    const serializedRecords: DocumentRecord[] = new RecordSerializer(type).serializeMany(
+      documents,
+      access,
+    );
     await this.media.embed(type.root, serializedRecords);
+    if (scope.includesPublishState) {
+      serializedRecords.forEach((record, index) => {
+        const document = documents[index];
+        if (document !== undefined) record.publishState = publishStateOfRow(document);
+      });
+    }
     return {
       data: serializedRecords,
       meta: { page: query.page, pageSize: query.pageSize, total },
@@ -98,7 +116,7 @@ export class DocumentsQueryService {
     slug: string,
     documentId: string,
     status: ContentStatus,
-  ): Promise<SerializedRecord> {
+  ): Promise<DocumentRecord> {
     const scope = await this.scope(actor, slug, status);
     const { type, access } = scope;
 
@@ -107,12 +125,15 @@ export class DocumentsQueryService {
       access,
       { documentId, status: scope.status },
       scope.rowCondition,
+      undefined,
+      { includePublishState: scope.includesPublishState },
     );
     if (document === undefined) {
       throw documentNotFound();
     }
-    const record = new RecordSerializer(type).serialize(document, access);
+    const record: DocumentRecord = new RecordSerializer(type).serialize(document, access);
     await this.media.embed(type.root, [record]);
+    if (scope.includesPublishState) record.publishState = publishStateOfRow(document);
     return record;
   }
 
@@ -131,11 +152,20 @@ export class DocumentsQueryService {
 
     const type = (await this.registry.registry()).resolve(slug);
     const readable = evaluator.fieldsFor(actor, slug).readable;
+    const draftAndPublish = type.definition.draftAndPublish;
     return {
       type,
       access: recordReadAccess(actor, readable),
       rowCondition: rowFilter.where,
-      status: type.definition.draftAndPublish ? status : null,
+      status: draftAndPublish ? status : null,
+      includesPublishState: draftAndPublish && evaluator.canReadDrafts(actor, slug),
     };
   }
+}
+
+/** A published row with no draft counterpart cannot occur; it reads as its own version. */
+function publishStateOfRow(document: DocumentWithCounterpart): PublishState {
+  const counterpart = document.counterpartVersion ?? null;
+  if (document.publishedAt === null) return publishStateOf(document.version, counterpart);
+  return publishStateOf(counterpart ?? document.version, document.version);
 }

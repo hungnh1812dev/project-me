@@ -12,7 +12,7 @@ The REST API for content documents of every content type: paged lists with filte
 
 ## Techniques
 
-Use cases split into query, command, publish, bulk and presence services behind ports. Access from the access module on every call: field projection (never select unreadable columns), masks, write allowlist, row filters as Kysely expressions. Filters are typed per field kind; an unknown kind is refused. Version conflicts return the server and submitted records with a diff (`Diff.rules`). Bulk bodies have their own size limit middleware; bulk is atomic or per item by rule. Media fields and richtext images go through `DocumentMediaService`.
+Use cases split into query, command, publish, bulk and presence services behind ports. Access from the access module on every call: field projection (never select unreadable columns), masks, write allowlist, row filters as Kysely expressions. Filters are typed per field kind; an unknown kind is refused. Version conflicts return the server and submitted records with a diff (`Diff.rules`). Bulk bodies have their own size limit middleware; bulk is atomic or per item by rule. Media fields and richtext images go through `DocumentMediaService`. `publishState` (`draft`, `modified`, `published`; SPEC §16.2) is derived, never stored: the repository reads the other copy's version in the same statement (`includePublishState`), `DocumentsQueryService` adds the root field only for actors who can read drafts of a draft-and-publish type; it is not filterable, sortable or in GraphQL's schema.
 
 ## Technologies
 
@@ -35,11 +35,11 @@ A new filter operator: `OPERATORS_BY_KIND` in `domain/Documents.constants.ts` + 
 documents/ (2 files)
   adapters/ (3 files)
   application/ (7 files)
-  domain/ (7 files)
+  domain/ (8 files)
   http/ (6 files)
 ```
 
-Tests: 14 files (not listed).
+Tests: 15 files (not listed).
 
 | File | Description |
 |---|---|
@@ -52,14 +52,15 @@ Tests: 14 files (not listed).
 | `application/BulkItem.errors.ts` | `itemError`, `asItemError`, `atomicFailure`: bulk item errors |
 | `application/Documents.port.ts` | Ports and tokens: document repository, presence account lookup, content activity |
 | `application/DocumentsCommand.service.ts` | `DocumentsCommandService`: create, draft save with version check, delete |
-| `application/DocumentsQuery.service.ts` | `DocumentsQueryService`: list and read with access rules applied |
+| `application/DocumentsQuery.service.ts` | `DocumentsQueryService`: list and read with access rules applied, plus `publishState` for draft readers |
 | `application/Presence.service.ts` | `PresenceService`: in-memory editing presence per document |
 | `application/Publish.service.ts` | `PublishService`: publish and unpublish one document |
 | `domain/Diff.rules.ts` | `diffRecords`, `overlaySubmitted`: diff of a version conflict (masked parts stay masked) |
 | `domain/DocumentFilter.rules.ts` | `coerceFilterValue`, `typedFilterValues`: filter values typed per field kind |
-| `domain/Documents.constants.ts` | Error codes and messages, filter operators per kind, sort default, query limits, system fields |
+| `domain/Documents.constants.ts` | Error codes and messages, filter operators per kind, sort default, query limits, system fields, publish states |
 | `domain/Documents.errors.ts` | Document domain errors (not found, forbidden, version conflict, ...), `mapContentErrors` |
 | `domain/ListQuery.rules.ts` | `normalizeListQuery`: list query model (filters, sort, paging) |
+| `domain/PublishState.rules.ts` | `publishStateOf`: draft, modified or published from the two row versions |
 | `domain/TreeCloner.rules.ts` | `cloneTree`: copies a document tree for publish |
 | `domain/ValueValidator.rules.ts` | `validateTreeValues`, `countComponentRows`: values against field types and limits |
 | `http/Bulk.controller.ts` | `BulkController`: the bulk routes |

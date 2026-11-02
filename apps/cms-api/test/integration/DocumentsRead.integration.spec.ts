@@ -607,6 +607,96 @@ describe('document read API (T20; Postgres 17 via Testcontainers)', () => {
     });
   });
 
+  describe('publishState (SPEC §16.2)', () => {
+    const MANY_DOCUMENTS = 20;
+    const stateOf = async (id: string, status: 'draft' | 'published', token = editor) =>
+      (
+        (await http().get(`${DOCUMENTS}/article/${id}?status=${status}`).set(bearer(token)))
+          .body as { publishState?: string }
+      ).publishState;
+    const createDraft = async (title: string) => {
+      const res = await http()
+        .post(`${DOCUMENTS}/article`)
+        .set(bearer(editor))
+        .send({ values: { title } });
+      expect(res.status).toBe(201);
+      return res.body as DocRecord;
+    };
+
+    it('follows create, publish, save, no-op save and unpublish', async () => {
+      const doc = await createDraft('State walk');
+      const id = doc.documentId;
+      expect(await stateOf(id, 'draft')).toBe('draft');
+
+      const publish = await http()
+        .post(`${DOCUMENTS}/article/${id}/publish`)
+        .set(bearer(editor))
+        .send({ expectedVersion: doc.version });
+      expect(publish.status).toBe(200);
+      expect(await stateOf(id, 'draft')).toBe('published');
+      expect(await stateOf(id, 'published')).toBe('published');
+
+      const save = await http()
+        .put(`${DOCUMENTS}/article/${id}`)
+        .set(bearer(editor))
+        .send({ version: doc.version, values: { title: 'State walk 2' } });
+      expect(save.status).toBe(200);
+      expect(await stateOf(id, 'draft')).toBe('modified');
+      expect(await stateOf(id, 'published')).toBe('modified');
+
+      const noOpSave = await http()
+        .put(`${DOCUMENTS}/article/${id}`)
+        .set(bearer(editor))
+        .send({ version: (save.body as DocRecord).version, values: { title: 'State walk 2' } });
+      expect(noOpSave.status).toBe(200);
+      expect(await stateOf(id, 'draft')).toBe('modified');
+
+      const unpublish = await http()
+        .post(`${DOCUMENTS}/article/${id}/unpublish`)
+        .set(bearer(editor));
+      expect(unpublish.status).toBe(204);
+      expect(await stateOf(id, 'draft')).toBe('draft');
+    });
+
+    it('is absent for anonymous reads, a published-only token and a type without drafts', async () => {
+      const anonymous = await list('');
+      expect(JSON.stringify(anonymous.body)).not.toContain('publishState');
+      const readOnly = await apiToken([{ subject: 'article', action: 'read' }]);
+      const tokenList = await list('', bearer(readOnly));
+      expect(JSON.stringify(tokenList.body)).not.toContain('publishState');
+      const note = await http().get(`${DOCUMENTS}/note`).set(bearer(editor));
+      expect(note.status).toBe(200);
+      expect(JSON.stringify(note.body)).not.toContain('publishState');
+    });
+
+    it('is present on both list statuses for a draft reader', async () => {
+      const drafts = (await list('?status=draft', bearer(editor))).body as Page;
+      expect(drafts.data.every((record) => 'publishState' in record)).toBe(true);
+      const published = (await list('?status=published', bearer(editor))).body as Page;
+      expect(published.data.every((record) => 'publishState' in record)).toBe(true);
+    });
+
+    it('is not filterable or sortable', async () => {
+      expect((await list('?filter[publishState]=draft', bearer(editor))).status).toBe(400);
+      expect((await list('?sort=publishState', bearer(editor))).status).toBe(400);
+    });
+
+    it('runs the same statements for a list of 1 and of 20 rows', async () => {
+      for (let index = 0; index < MANY_DOCUMENTS; index += 1) await createDraft(`Many ${index}`);
+      const statementsOf = async (pageSize: number) => {
+        const seen = jest.spyOn(Client.prototype, 'query');
+        try {
+          const res = await list(`?status=draft&pageSize=${pageSize}`, bearer(editor));
+          expect((res.body as Page).data).toHaveLength(pageSize);
+          return seen.mock.calls.filter(([text]) => String(text).includes('"article"')).length;
+        } finally {
+          seen.mockRestore();
+        }
+      };
+      expect(await statementsOf(MANY_DOCUMENTS)).toBe(await statementsOf(1));
+    });
+  });
+
   describe('API tokens', () => {
     it('reads with a token scope; drafts need read and update', async () => {
       const readOnly = await apiToken([{ subject: 'article', action: 'read' }]);
