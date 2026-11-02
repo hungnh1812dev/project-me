@@ -53,6 +53,7 @@ describe('contentTypeView (T17b)', () => {
     );
     expect(view).toMatchObject({
       slug: 'profile',
+      displayName: 'Profile',
       kind: 'single',
       draftAndPublish: false,
     });

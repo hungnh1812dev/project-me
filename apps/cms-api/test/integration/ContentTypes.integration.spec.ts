@@ -269,6 +269,13 @@ describe('content types API (T17b; Postgres 17 via Testcontainers)', () => {
     ]);
   });
 
+  it('returns the display name on the single-type route and hides it with the type', async () => {
+    const res = await getOne(owner, 'article');
+    expect(res.status).toBe(200);
+    expect((res.body as { data: ContentTypeView }).data.displayName).toBe('Article');
+    expect(JSON.stringify((await getOne(narrowReader, 'note')).body)).not.toContain('Note');
+  });
+
   it('gives a role with no content read an empty list', async () => {
     expect(await list(noAccess)).toEqual([]);
   });
