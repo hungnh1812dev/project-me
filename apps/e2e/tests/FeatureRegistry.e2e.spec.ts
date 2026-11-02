@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 
 import { ADMIN_COPY } from '../src/Apps.contract';
-import { CONTENT_TYPE_NAMES } from '../src/E2e.constants';
+import { CONTENT_TYPE_NAMES, CV_PAGE_SLUG } from '../src/E2e.constants';
 import { e2eEnv } from '../src/E2e.env';
 import { expectSignedIn, submitLogin } from '../src/Session.fixture';
 
@@ -27,7 +27,7 @@ const EXPECTED_OWNER_NAV = [
   CONTENT_TYPE_NAMES['common-text'],
   CONTENT_TYPE_NAMES['cv-contact'],
   CONTENT_TYPE_NAMES.header,
-  CONTENT_TYPE_NAMES['cv-page'],
+  CONTENT_TYPE_NAMES[CV_PAGE_SLUG],
   CONTENT_TYPE_NAMES.profile,
   CONTENT_TYPE_NAMES.resume,
   nav.media,
