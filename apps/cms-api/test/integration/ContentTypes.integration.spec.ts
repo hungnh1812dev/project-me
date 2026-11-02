@@ -189,6 +189,7 @@ describe('content types API (T17b; Postgres 17 via Testcontainers)', () => {
     const [article, note] = types as [ContentTypeView, ContentTypeView];
     expect(article).toMatchObject({
       slug: 'article',
+      displayName: 'Article',
       kind: 'collection',
       draftAndPublish: true,
     });

@@ -1,5 +1,6 @@
 {
   "slug": "cv-contact",
+  "displayName": "CV Contact",
   "kind": "single",
   "draftAndPublish": true,
   "fields": [

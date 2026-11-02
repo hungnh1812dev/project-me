@@ -12,7 +12,7 @@ Turns the content type definitions (JSON) into database tables in the `content` 
 
 ## Techniques
 
-Definitions validated by zod + `DefinitionValidator.rules`; SQL planned from a definition snapshot (`SqlGenerator.rules`, `Naming.rules`) and written as checked migration files; destructive changes refused. Kysely for content rows with its own transaction runner and after-commit callbacks. Each field type is one `FieldTypeSpec` in `FIELD_TYPE_SPECS`. Richtext is always sanitized (`sanitize-html`) before it is stored.
+Definitions (including the required `displayName`, a metadata-only key) validated by zod + `DefinitionValidator.rules`; SQL planned from a definition snapshot (`SqlGenerator.rules`, `Naming.rules`) and written as checked migration files; destructive changes refused. Kysely for content rows with its own transaction runner and after-commit callbacks. Each field type is one `FieldTypeSpec` in `FIELD_TYPE_SPECS`. Richtext is always sanitized (`sanitize-html`) before it is stored.
 
 ## Technologies
 

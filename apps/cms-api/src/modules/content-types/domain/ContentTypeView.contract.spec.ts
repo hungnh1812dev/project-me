@@ -34,6 +34,7 @@ const FIELD_KEYS = [
 
 const PROFILE = {
   slug: 'profile',
+  displayName: 'Profile',
   kind: 'single',
   draftAndPublish: false,
   fields: [

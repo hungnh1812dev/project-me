@@ -26,6 +26,7 @@ import { GraphqlNameClashError } from './TypeNames.rules';
 
 const ALL_TYPES: ContentTypeDefinition = {
   slug: 'all-types',
+  displayName: 'All Types',
   kind: 'collection',
   draftAndPublish: true,
   fields: [
@@ -62,6 +63,7 @@ const ALL_TYPES: ContentTypeDefinition = {
 
 const SETTINGS: ContentTypeDefinition = {
   slug: 'site-settings',
+  displayName: 'Site Settings',
   kind: 'single',
   draftAndPublish: false,
   fields: [{ name: 'siteName', type: 'string' }],
@@ -317,6 +319,7 @@ describe('buildGraphqlSchema', () => {
   describe('name clashes', () => {
     const type = (slug: string): ContentTypeDefinition => ({
       slug,
+      displayName: 'Test Type',
       kind: 'collection',
       draftAndPublish: false,
       fields: [{ name: 'title', type: 'string' }],
@@ -364,6 +367,7 @@ describe('buildGraphqlSchema', () => {
     it('rejects two component fields that map to the same type name', () => {
       const definition: ContentTypeDefinition = {
         slug: 'post',
+        displayName: 'Post',
         kind: 'collection',
         draftAndPublish: false,
         fields: [

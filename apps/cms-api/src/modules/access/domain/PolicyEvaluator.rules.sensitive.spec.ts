@@ -11,6 +11,7 @@ const { read } = PermissionAction;
 
 const CONTACT: ContentTypeDefinition = {
   slug: 'contact',
+  displayName: 'Contact',
   kind: 'single',
   draftAndPublish: true,
   fields: [
@@ -36,6 +37,7 @@ const CONTACT: ContentTypeDefinition = {
 
 const PLAIN: ContentTypeDefinition = {
   slug: 'plain',
+  displayName: 'Plain',
   kind: 'collection',
   draftAndPublish: false,
   fields: [{ name: 'text', type: 'text' }],

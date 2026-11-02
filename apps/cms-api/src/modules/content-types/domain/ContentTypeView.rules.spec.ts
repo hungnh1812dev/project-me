@@ -17,6 +17,7 @@ const VOCABULARY = {
 
 const PROFILE = {
   slug: 'profile',
+  displayName: 'Profile',
   kind: 'single',
   draftAndPublish: false,
   fields: [

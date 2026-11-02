@@ -60,6 +60,7 @@ describe('media fields', () => {
   const mediaType = ContentTypeRegistry.fromDefinitions([
     {
       slug: 'gallery',
+      displayName: 'Gallery',
       kind: 'collection',
       draftAndPublish: false,
       fields: [{ name: 'cover', type: 'media' }],

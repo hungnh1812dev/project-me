@@ -3,6 +3,7 @@ import { mediaReferenceQuery } from './MediaReference.adapter';
 
 const WITH_MEDIA = {
   slug: 'gallery',
+  displayName: 'Gallery',
   kind: 'collection',
   draftAndPublish: true,
   fields: [
@@ -20,6 +21,7 @@ const WITH_MEDIA = {
 } as const;
 const WITHOUT_MEDIA = {
   slug: 'note',
+  displayName: 'Note',
   kind: 'collection',
   draftAndPublish: false,
   fields: [{ name: 'text', type: 'text' }],

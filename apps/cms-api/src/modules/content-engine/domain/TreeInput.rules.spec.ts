@@ -90,6 +90,7 @@ describe('assertTreeInput', () => {
   it('allows more than one item only for repeatable components', () => {
     const definition = {
       slug: 'profile',
+      displayName: 'Profile',
       kind: 'single',
       draftAndPublish: false,
       fields: [

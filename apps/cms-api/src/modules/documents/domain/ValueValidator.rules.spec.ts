@@ -9,6 +9,7 @@ const profile = profileType();
 const required = ContentTypeRegistry.fromDefinitions([
   {
     slug: 'req',
+    displayName: 'Req',
     kind: 'collection',
     draftAndPublish: true,
     fields: [
