@@ -31,6 +31,7 @@ import { systemRole } from './Access.fixture';
  */
 export const PROFILE_DEFINITION = {
   slug: 'profile',
+  displayName: 'Profile',
   kind: 'collection',
   draftAndPublish: true,
   fields: [

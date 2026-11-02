@@ -60,6 +60,19 @@ export const RUN_ID = Date.now().toString(36);
 /** Content type of the smoke stack with lists, rich text and relations. */
 export const CV_PAGE_SLUG = 'cv-page';
 
+/** Display name of cv-page; screens show it, never the slug. */
+export const CV_PAGE_NAME = 'CV Page';
+
+/** Display names of the six content types of the smoke and dev stacks, by slug. */
+export const CONTENT_TYPE_NAMES = {
+  'common-text': 'Common Text',
+  'cv-contact': 'CV Contact',
+  'cv-page': CV_PAGE_NAME,
+  header: 'Header',
+  profile: 'Profile',
+  resume: 'Resume',
+} as const;
+
 /** Content type of the smoke stack with a media field and a list view. */
 export const PROFILE_SLUG = 'profile';
 

@@ -37,6 +37,9 @@ export function toSaveError(error: unknown): SaveError {
       if (failure.errorCode === API_ERROR_CODES.DOCUMENT_VERSION_CONFLICT) {
         return { tone: 'warning', conflict: true, message: copy.conflict };
       }
+      if (failure.errorCode === API_ERROR_CODES.DOCUMENT_NOT_MODIFIED) {
+        return { tone: 'warning', conflict: false, message: copy.notModified };
+      }
       if (failure.status === HTTP_STATUS.FORBIDDEN) {
         return { tone: 'error', conflict: false, message: copy.forbidden };
       }

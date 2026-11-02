@@ -247,6 +247,28 @@ describe('content:generate + content:migrate (Postgres 17 via Testcontainers)', 
     });
   });
 
+  it('stores a changed displayName without running DDL', async () => {
+    const ws = await workspace();
+    await generate(ws);
+    await migrate(ws);
+    const tablesBefore = await contentTables(ws);
+    const file = join(ws.schemasDir, CV_PAGE_FILE);
+    const definition = JSON.parse(await readFile(file, 'utf8')) as Record<string, unknown>;
+    await writeFile(file, JSON.stringify({ ...definition, displayName: 'Renamed CV Page' }));
+
+    expect(await generate(ws)).toMatchObject({ status: 'written', fileName: '0002_test.sql' });
+    const migration = await readFile(join(ws.migrationsDir, '0002_test.sql'), 'utf8');
+    expect(migration).toContain('Definition metadata only: no DDL needed.');
+    expect(await migrate(ws)).toMatchObject({ applied: ['0002_test.sql'], upserted: ['cv-page'] });
+
+    expect(await contentTables(ws)).toEqual(tablesBefore);
+    const [row] = await query<{ definition: { displayName: string } }>(
+      ws.databaseUrl,
+      'SELECT definition FROM content._content_types',
+    );
+    expect(row?.definition.displayName).toBe('Renamed CV Page');
+  });
+
   it('refuses a dropped field without --allow-destructive, applies it with', async () => {
     const ws = await workspace();
     await generate(ws);

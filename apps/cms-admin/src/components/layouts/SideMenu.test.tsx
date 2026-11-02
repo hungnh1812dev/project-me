@@ -31,8 +31,20 @@ const readerRole: Role = {
 };
 
 const contentTypes = [
-  { slug: 'cv-page', kind: 'single', draftAndPublish: false, fields: [] },
-  { slug: 'post', kind: 'collection', draftAndPublish: false, fields: [] },
+  {
+    slug: 'cv-page',
+    displayName: 'CV Page',
+    kind: 'single',
+    draftAndPublish: false,
+    fields: [],
+  },
+  {
+    slug: 'post',
+    displayName: 'Blog Post',
+    kind: 'collection',
+    draftAndPublish: false,
+    fields: [],
+  },
 ];
 
 async function open(
@@ -68,9 +80,13 @@ describe('SideMenu', () => {
   it('shows the owner all three sections with their items', async () => {
     await open();
 
-    expect(await within(mainNav()).findByRole('link', { name: 'cv-page' })).toHaveAttribute(
+    expect(await within(mainNav()).findByRole('link', { name: 'CV Page' })).toHaveAttribute(
       'href',
       '/content/cv-page',
+    );
+    expect(within(mainNav()).getByRole('link', { name: 'CV Page' })).toHaveAttribute(
+      'title',
+      'CV Page',
     );
     const menu = within(mainNav());
     for (const heading of [
@@ -82,14 +98,21 @@ describe('SideMenu', () => {
     ]) {
       expect(menu.getByRole('heading', { name: heading })).toBeInTheDocument();
     }
-    for (const label of ['post', nav.media, nav.accounts, nav.roles, nav.apiTokens, nav.reviewer]) {
+    for (const label of [
+      'Blog Post',
+      nav.media,
+      nav.accounts,
+      nav.roles,
+      nav.apiTokens,
+      nav.reviewer,
+    ]) {
       expect(menu.getByRole('link', { name: label })).toBeInTheDocument();
     }
   });
 
   it('lists Content, Utilities and System settings as three groups in order', async () => {
     await open();
-    await within(mainNav()).findByRole('link', { name: 'post' });
+    await within(mainNav()).findByRole('link', { name: 'Blog Post' });
 
     const headings = within(mainNav())
       .getAllByRole('heading', { level: 2 })
@@ -101,11 +124,11 @@ describe('SideMenu', () => {
     await open();
     const toggle = await within(mainNav()).findByRole('button', { name: nav.collectionTypes });
     expect(toggle).toHaveAttribute('aria-expanded', 'true');
-    expect(within(mainNav()).getByRole('link', { name: 'post' })).toBeVisible();
+    expect(within(mainNav()).getByRole('link', { name: 'Blog Post' })).toBeVisible();
 
     await userEvent.click(toggle);
     expect(toggle).toHaveAttribute('aria-expanded', 'false');
-    expect(within(mainNav()).queryByRole('link', { name: 'post' })).not.toBeInTheDocument();
+    expect(within(mainNav()).queryByRole('link', { name: 'Blog Post' })).not.toBeInTheDocument();
     expect(JSON.parse(window.localStorage.getItem(NAV_GROUP_OPEN_STORAGE_KEY) ?? '{}')).toEqual({
       collectionTypes: false,
     });
@@ -138,7 +161,7 @@ describe('SideMenu', () => {
   it('hides sections the caller has no item for', async () => {
     await open({ ...TEST_USER, role: 'reader' }, {}, [readerRole]);
 
-    expect(await within(mainNav()).findByRole('link', { name: 'post' })).toBeInTheDocument();
+    expect(await within(mainNav()).findByRole('link', { name: 'Blog Post' })).toBeInTheDocument();
     const menu = within(mainNav());
     expect(menu.queryByRole('heading', { name: nav.systemSettings })).not.toBeInTheDocument();
     expect(menu.queryByRole('heading', { name: nav.utilities })).not.toBeInTheDocument();
@@ -148,14 +171,14 @@ describe('SideMenu', () => {
   it('holds navigation only: no Sign out or Security link', async () => {
     await open();
 
-    await within(mainNav()).findByRole('link', { name: 'post' });
+    await within(mainNav()).findByRole('link', { name: 'Blog Post' });
     expect(screen.queryByRole('button', { name: COPY.session.signOut })).not.toBeInTheDocument();
     expect(screen.queryByRole('link', { name: COPY.session.securityLink })).not.toBeInTheDocument();
   });
 
   it('marks the open page as current', async () => {
     await open();
-    const link = await within(mainNav()).findByRole('link', { name: 'post' });
+    const link = await within(mainNav()).findByRole('link', { name: 'Blog Post' });
     expect(link).not.toHaveAttribute('aria-current');
 
     await userEvent.click(link);
@@ -175,7 +198,7 @@ describe('SideMenu', () => {
     expect(within(mainNav()).getByRole('link', { name: nav.media })).toBeInTheDocument();
 
     await userEvent.click(screen.getByRole('button', { name: nav.retryCatalog }));
-    expect(await within(mainNav()).findByRole('link', { name: 'post' })).toBeInTheDocument();
+    expect(await within(mainNav()).findByRole('link', { name: 'Blog Post' })).toBeInTheDocument();
     expect(screen.queryByText(nav.catalogError)).not.toBeInTheDocument();
   });
 });

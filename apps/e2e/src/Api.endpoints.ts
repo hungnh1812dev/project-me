@@ -31,6 +31,8 @@ export const API_PATHS = {
   },
   documents: (slug: string) => `/documents/${slug}`,
   document: (slug: string, id: string) => `/documents/${slug}/${id}`,
+  documentPublish: (slug: string, id: string) => `/documents/${slug}/${id}/publish`,
+  documentDiscard: (slug: string, id: string) => `/documents/${slug}/${id}/discard`,
   documentsBulk: (slug: string) => `/documents/${slug}/bulk`,
   media: (id: string) => `/media/${id}`,
   /** Tail of the presence route under a document. */

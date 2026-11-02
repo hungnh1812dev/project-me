@@ -16,6 +16,9 @@ export const SLUG_PATTERN = /^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/;
 /** Joins the slug and component field names into a component table name. */
 export const TABLE_PATH_SEPARATOR = '__';
 
+/** Max length of a content type `displayName`, counted in Unicode code points. */
+export const DISPLAY_NAME_MAX_LENGTH = 60;
+
 export const CONTENT_TYPE_KINDS = ['single', 'collection'] as const;
 
 export const SCALAR_FIELD_TYPES = [
@@ -95,6 +98,8 @@ export const DEFINITION_RULES = {
   IDENTIFIER_COLLISION: 'identifier.collision',
   /** A component is nested deeper than MAX_COMPONENT_DEPTH. */
   COMPONENT_DEPTH_EXCEEDED: 'component.depth_exceeded',
+  /** `displayName` is empty, untrimmed, holds a control character or is too long. */
+  DISPLAY_NAME_INVALID: 'display_name.invalid',
 } as const;
 
 /**

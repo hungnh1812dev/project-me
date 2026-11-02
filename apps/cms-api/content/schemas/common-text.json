@@ -1,5 +1,6 @@
 {
   "slug": "common-text",
+  "displayName": "Common Text",
   "kind": "single",
   "draftAndPublish": true,
   "fields": [

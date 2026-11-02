@@ -12,6 +12,8 @@ export interface InsertTreeInput extends TreeInput {
 
 export interface ReplaceTreeInput extends TreeInput {
   updatedBy?: number | null | undefined;
+  /** A component `componentUid` with no stored item is inserted under that uid instead of a 400. */
+  restoreComponentUids?: boolean | undefined;
 }
 
 export interface LoadTreesQuery {

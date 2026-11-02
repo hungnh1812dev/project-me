@@ -3,6 +3,7 @@ import { cloneTree, mediaSlots, type TreeNodeLike } from './MediaSlots.rules';
 
 const GALLERY = {
   slug: 'gallery',
+  displayName: 'Gallery',
   kind: 'collection',
   draftAndPublish: false,
   fields: [

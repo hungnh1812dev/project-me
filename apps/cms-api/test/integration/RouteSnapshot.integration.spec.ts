@@ -65,6 +65,7 @@ const EXPECTED_ROUTES: string[] = [
   'POST /api/v1/documents/:slug',
   'PUT /api/v1/documents/:slug/:documentId',
   'POST /api/v1/documents/:slug/:documentId/publish',
+  'POST /api/v1/documents/:slug/:documentId/discard',
   'POST /api/v1/documents/:slug/:documentId/unpublish',
   'DELETE /api/v1/documents/:slug/:documentId',
   'POST /api/v1/documents/:slug/:documentId/presence',

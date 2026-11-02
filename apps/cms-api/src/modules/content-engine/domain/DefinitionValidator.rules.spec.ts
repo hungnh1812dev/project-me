@@ -1,7 +1,11 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { DEFINITION_RULES, MAX_IDENTIFIER_BYTES } from './ContentEngine.constants';
+import {
+  DEFINITION_RULES,
+  DISPLAY_NAME_MAX_LENGTH,
+  MAX_IDENTIFIER_BYTES,
+} from './ContentEngine.constants';
 import {
   formatDefinitionPath,
   validateDefinition,
@@ -14,7 +18,7 @@ const CV_PAGE_PATH = join(__dirname, '..', '..', '..', '..', 'content', 'schemas
 type Field = Record<string, unknown>;
 
 function definition(fields: Field[], slug = 'post'): Record<string, unknown> {
-  return { slug, kind: 'collection', draftAndPublish: true, fields };
+  return { slug, displayName: 'Test Type', kind: 'collection', draftAndPublish: true, fields };
 }
 
 function component(name: string, fields: Field[]): Field {
@@ -62,9 +66,45 @@ describe('validateDefinition', () => {
     });
   });
 
+  describe('displayName', () => {
+    const withDisplayName = (displayName: unknown): unknown => ({
+      ...definition([{ name: 'a', type: 'string' }]),
+      displayName,
+    });
+    const fields = [{ name: 'a', type: 'string' }];
+
+    it('is required', () => {
+      const { displayName: _omitted, ...rest } = definition(fields);
+      expect(errorsOf(rest).map((error) => error.path)).toEqual([['displayName']]);
+    });
+
+    it.each([
+      ['empty', ''],
+      ['untrimmed at the start', ' Post'],
+      ['untrimmed at the end', 'Post '],
+      ['holding a line break', 'Post\nPage'],
+      ['holding a tab', 'Post\tPage'],
+      ['61 code points', 'a'.repeat(61)],
+    ])('rejects a value that is %s', (_label, value) => {
+      expect(errorsOf(withDisplayName(value))).toEqual([
+        {
+          path: ['displayName'],
+          rule: DEFINITION_RULES.DISPLAY_NAME_INVALID,
+          message: containing(`1 to ${DISPLAY_NAME_MAX_LENGTH} characters`),
+        },
+      ]);
+    });
+
+    it('accepts 60 code points and counts an emoji once', () => {
+      expect(validateDefinition(withDisplayName('a'.repeat(60))).ok).toBe(true);
+      expect(validateDefinition(withDisplayName('😀'.repeat(60))).ok).toBe(true);
+    });
+  });
+
   it('accepts every scalar field type and the optional hints', () => {
     const result = validateDefinition({
       slug: 'about',
+      displayName: 'About',
       kind: 'single',
       draftAndPublish: false,
       fields: [

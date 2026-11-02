@@ -1,5 +1,6 @@
 {
   "slug": "profile",
+  "displayName": "Profile",
   "kind": "collection",
   "draftAndPublish": true,
   "fields": [

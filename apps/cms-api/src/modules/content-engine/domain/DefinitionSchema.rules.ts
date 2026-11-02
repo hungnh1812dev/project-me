@@ -38,6 +38,8 @@ export type FieldDefinition = ScalarFieldDefinition | ComponentFieldDefinition;
 
 export interface ContentTypeDefinition {
   slug: string;
+  /** Label shown in the admin UI; rules in `DefinitionValidator.rules.ts`. */
+  displayName: string;
   kind: ContentTypeKind;
   draftAndPublish: boolean;
   fields: FieldDefinition[];
@@ -72,6 +74,7 @@ const fieldListSchema: z.ZodType<FieldDefinition[]> = z.array(fieldSchema).min(1
 
 export const contentTypeDefinitionSchema: z.ZodType<ContentTypeDefinition> = z.strictObject({
   slug: z.string().min(1),
+  displayName: z.string(),
   kind: z.enum(CONTENT_TYPE_KINDS),
   draftAndPublish: z.boolean(),
   fields: fieldListSchema,

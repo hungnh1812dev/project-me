@@ -1,5 +1,6 @@
 {
   "slug": "resume",
+  "displayName": "Resume",
   "kind": "collection",
   "draftAndPublish": true,
   "fields": [

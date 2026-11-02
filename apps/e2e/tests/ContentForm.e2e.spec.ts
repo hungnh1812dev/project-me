@@ -9,7 +9,7 @@ import {
 
 import { API_PATHS } from '../src/Api.endpoints';
 import { ADMIN_COPY, API_ERROR_CODES, contentNewPath } from '../src/Apps.contract';
-import { CV_PAGE_SLUG, HTTP, RUN_ID } from '../src/E2e.constants';
+import { CV_PAGE_NAME, CV_PAGE_SLUG, HTTP, RUN_ID } from '../src/E2e.constants';
 import { e2eEnv } from '../src/E2e.env';
 import { contentSaveButton, fieldByLabel, listItem } from '../src/Locators.fixture';
 import { signInAs } from '../src/Session.fixture';
@@ -136,7 +136,7 @@ test.describe.serial('owner: dynamic document form (cv-page)', () => {
     await expect(
       page.getByRole('heading', {
         level: 1,
-        name: copy.newTitle(CV_PAGE_SLUG),
+        name: copy.newTitle(CV_PAGE_NAME),
       }),
     ).toBeVisible();
     await expect(fieldByLabel(page, 'Position')).toBeVisible();
@@ -205,7 +205,7 @@ test.describe.serial('owner: dynamic document form (cv-page)', () => {
     await expect(
       page.getByRole('heading', {
         level: 1,
-        name: copy.editTitle(CV_PAGE_SLUG),
+        name: copy.editTitle(CV_PAGE_NAME),
       }),
     ).toBeVisible();
     await expect(fieldByLabel(page, 'Position')).toHaveValue(POSITION);

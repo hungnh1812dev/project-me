@@ -14,7 +14,13 @@ import {
 } from '../domain/TreeInput.rules';
 import { anyInt, type ContentDatabase } from './TreeLoader.adapter';
 
-export type WriteMode = 'insert' | 'replace';
+/**
+ * - insert: every item is new (a sent uid is kept).
+ * - replace: a sent uid must be a stored item of that list, else 400.
+ * - restore: like replace, but a sent uid with no stored item is inserted under that uid
+ *   (discard puts the published components back, including ones the draft deleted).
+ */
+export type WriteMode = 'insert' | 'replace' | 'restore';
 
 export interface ParentWrite {
   id: number;
@@ -85,8 +91,16 @@ async function syncComponentTable(
         ...toColumnValues(table, item.values),
         order_index: index,
       };
-      if (mode === 'replace' && sentUid !== undefined) {
-        const id = stored.get(uidKey(parent.id, sentUid));
+      const storedId =
+        mode !== 'insert' && sentUid !== undefined
+          ? stored.get(uidKey(parent.id, sentUid))
+          : undefined;
+      if (
+        mode !== 'insert' &&
+        sentUid !== undefined &&
+        (storedId !== undefined || mode === 'replace')
+      ) {
+        const id = storedId;
         if (id === undefined) {
           throw new ContentTreeError(
             CONTENT_ERROR_CODES.TREE_UNKNOWN_UID,

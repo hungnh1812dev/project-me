@@ -42,6 +42,7 @@ export const DOCUMENTS_ROUTES = {
   BY_ID: ':slug/:documentId',
   PUBLISH: ':slug/:documentId/publish',
   UNPUBLISH: ':slug/:documentId/unpublish',
+  DISCARD: ':slug/:documentId/discard',
   PRESENCE: ':slug/:documentId/presence',
   /**
    * SPEC §9 bulk: `BulkController` lives under `documents/:slug/bulk`

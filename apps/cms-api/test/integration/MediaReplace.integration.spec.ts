@@ -43,6 +43,7 @@ const OCTET_RANGE = 250;
 
 const GALLERY = {
   slug: 'gallery',
+  displayName: 'Gallery',
   kind: 'collection',
   draftAndPublish: true,
   fields: [

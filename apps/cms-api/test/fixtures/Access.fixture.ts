@@ -16,6 +16,7 @@ import { ContentTypeRegistry } from '../../src/modules/content-engine/domain/Con
 /** Two small content types: one with a nested component, one flat. */
 export const ARTICLE_DEFINITION = {
   slug: 'article',
+  displayName: 'Article',
   kind: 'collection',
   draftAndPublish: true,
   fields: [
@@ -40,6 +41,7 @@ export const ARTICLE_DEFINITION = {
 
 export const NOTE_DEFINITION = {
   slug: 'note',
+  displayName: 'Note',
   kind: 'collection',
   draftAndPublish: false,
   fields: [{ name: 'text', type: 'text' }],

@@ -28,10 +28,15 @@ export interface ListSelection {
   sort: readonly SortKey[];
   page: number;
   pageSize: number;
+  /** Also read the other copy's version (SPEC §16.2); additive, off by default. */
+  includePublishState?: boolean;
 }
 
+/** A document row plus, when asked for, the version of the document's other copy (`null` = none). */
+export type DocumentWithCounterpart = ContentDocument & { counterpartVersion?: number | null };
+
 export interface ListedDocuments {
-  documents: ContentDocument[];
+  documents: DocumentWithCounterpart[];
   total: number;
 }
 
@@ -55,7 +60,8 @@ export interface DocumentRepository extends ContentRepository {
     lookup: DocumentLookup,
     rowCondition: RowCondition | null,
     unit?: UnitOfWork,
-  ): Promise<ContentDocument | undefined>;
+    options?: { includePublishState?: boolean },
+  ): Promise<DocumentWithCounterpart | undefined>;
 
   findVersion(
     type: RegisteredContentType,
@@ -130,7 +136,7 @@ export interface PresenceAccountLookup {
 export const PRESENCE_ACCOUNT_LOOKUP = Symbol('PRESENCE_ACCOUNT_LOOKUP');
 
 /** What happened to a document (SPEC D15: content edits are tracked through a pluggable adapter). */
-export const CONTENT_ACTIVITY_ACTIONS = ['publish', 'unpublish', 'delete'] as const;
+export const CONTENT_ACTIVITY_ACTIONS = ['publish', 'unpublish', 'discard', 'delete'] as const;
 export type ContentActivityAction = (typeof CONTENT_ACTIVITY_ACTIONS)[number];
 
 /** Ids and names only: never a field value (D15). */

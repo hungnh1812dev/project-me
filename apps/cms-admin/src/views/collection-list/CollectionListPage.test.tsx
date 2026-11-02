@@ -29,6 +29,7 @@ function field(path: string, type: string, system = false) {
 
 const POST_TYPE: ContentType = {
   slug: SLUG,
+  displayName: 'Blog Post',
   kind: 'collection',
   draftAndPublish: true,
   fields: [
@@ -116,12 +117,48 @@ describe('CollectionListPage: list', () => {
     );
     expect(screen.getAllByText('Yes')).toHaveLength(2);
     expect(screen.getByText('1–5 of 45')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Blog Post' })).toBeInTheDocument();
+    expect(screen.getByRole('table', { name: 'Blog Post documents' })).toBeInTheDocument();
     const call = api.callsTo(LIST_KEY)[0];
     expect(call?.params).toMatchObject({
       page: 1,
       sort: '-updatedAt',
       status: 'draft',
     });
+  });
+
+  it('shows a Status column with one badge per publish state, not sortable', async () => {
+    await open({
+      [LIST_KEY]: () => ({
+        status: 200,
+        data: page([
+          row(1, { publishState: 'draft' }),
+          row(2, { publishState: 'modified' }),
+          row(3, { publishState: 'published' }),
+        ]),
+      }),
+    });
+    await screen.findByRole('link', { name: 'Post 1' });
+    expect(screen.getByRole('columnheader', { name: copy.columns.status })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: copy.columns.status })).not.toBeInTheDocument();
+    expect(screen.getByText(COPY.content.publishState.draft)).toBeInTheDocument();
+    expect(screen.getByText(COPY.content.publishState.modified)).toBeInTheDocument();
+    expect(screen.getByText(COPY.content.publishState.published)).toBeInTheDocument();
+  });
+
+  it('has no Status column when the items carry no publish state', async () => {
+    await open({ [LIST_KEY]: () => ({ status: 200, data: page(rows5) }) });
+    await screen.findByRole('link', { name: 'Post 1' });
+    expect(screen.queryByRole('columnheader', { name: copy.columns.status })).toBeNull();
+  });
+
+  it('has no Status column for a type without draft and publish', async () => {
+    await open({
+      [`GET ${CONTENT_TYPES.ONE(SLUG)}`]: typeHandler({ ...POST_TYPE, draftAndPublish: false }),
+      [LIST_KEY]: () => ({ status: 200, data: page([row(1, { publishState: 'published' })]) }),
+    });
+    await screen.findByRole('link', { name: 'Post 1' });
+    expect(screen.queryByRole('columnheader', { name: copy.columns.status })).toBeNull();
   });
 
   it('sorts by a column and goes back to the first page', async () => {
@@ -187,7 +224,7 @@ describe('CollectionListPage: list', () => {
       [LIST_KEY]: () => ({ status: 200, data: page([]) }),
     });
     expect(
-      await screen.findByRole('heading', { name: COPY.content.newTitle(SLUG) }),
+      await screen.findByRole('heading', { name: COPY.content.newTitle('Blog Post') }),
     ).toBeInTheDocument();
     expect(api.callsTo(`GET ${CONTENT_TYPES.ONE(SLUG)}`).length).toBeGreaterThan(0);
   });
@@ -222,6 +259,35 @@ describe('CollectionListPage: bulk actions', () => {
     }
     return user;
   }
+
+  it('shows the new states after a bulk publish refetches the list', async () => {
+    let published = false;
+    await open({
+      [LIST_KEY]: () => ({
+        status: 200,
+        data: page(rows5.map((r) => ({ ...r, publishState: published ? 'published' : 'draft' }))),
+      }),
+      [`POST ${DOCUMENTS.BULK(SLUG, 'publish')}`]: () => {
+        published = true;
+        return {
+          status: 200,
+          data: {
+            atomic: false,
+            succeeded: 5,
+            failed: 0,
+            results: rows5.map((r, index) => ({ index, status: 'ok', documentId: r.documentId })),
+          },
+        };
+      },
+    });
+    await screen.findByRole('link', { name: 'Post 1' });
+    expect(screen.getAllByText(COPY.content.publishState.draft)).toHaveLength(5);
+    const user = await selectFive();
+    await user.click(screen.getByRole('button', { name: bulk.publish(5) }));
+    await waitFor(() =>
+      expect(screen.getAllByText(COPY.content.publishState.published)).toHaveLength(5),
+    );
+  });
 
   it('publishes five selected rows with their versions', async () => {
     const { api } = await open({
