@@ -41,7 +41,7 @@ Tests: 5 files (not listed).
 | File | Description |
 |---|---|
 | `Modal.tsx` | `Modal`, `ModalActions`: dialog frame with the standard button order |
-| `PageStates.tsx` | `PageHeader`, `TableSkeleton`, `LoadError`: page title and loading/error states |
+| `PageStates.tsx` | `PageHeader` (optional `badge`), `TableSkeleton`, `LoadError`: page title and loading/error states |
 | `Pagination.tsx` | `Pagination`: previous/next paging control for list pages |
 | `useClampedPage.ts` | `useClampedPage`: keeps the current page within the last page |
 | `useRestoreFocus.ts` | `useRestoreFocus`: puts focus back on the opener after a dialog closes |

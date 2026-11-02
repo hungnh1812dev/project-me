@@ -12,12 +12,14 @@ import { useContentApi } from '@features/content/ContentApi.context';
 import { toDocumentTree, toFormValues, type FormValues } from '@features/content/Document.form';
 import { DynamicFormRenderer } from '@features/content/DynamicFormRenderer';
 import { buildFieldTree, type FieldNode } from '@features/content/FieldTree.rules';
+import { PublishStateBadge } from '@features/content/PublishStateBadge';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { FormProvider, useForm } from 'react-hook-form';
 import { useNavigate, useParams } from 'react-router';
 
 import { conflictDetailsOf, type ConflictDetails } from './Conflict.rules';
 import { ConflictMergeModal } from './ConflictMergeModal';
+import { DocumentActions } from './DocumentActions';
 import { maskedPathsOf, visibleEntries } from './Merge.reducer';
 import { PresenceBanner } from './PresenceBanner';
 
@@ -45,6 +47,13 @@ export function DocumentEditPage() {
   });
   const fields = useMemo(
     () => (type.data === undefined ? [] : buildFieldTree(type.data.fields)),
+    [type.data],
+  );
+  const rootFieldNames = useMemo(
+    () =>
+      (type.data?.fields ?? [])
+        .filter((f) => !f.system && !f.path.includes('.'))
+        .map((f) => f.path),
     [type.data],
   );
   const displayName = type.data?.displayName;
@@ -91,7 +100,15 @@ export function DocumentEditPage() {
 
   return (
     <div className="grid gap-6">
-      <PageHeader title={title} description={copy.description} />
+      <PageHeader
+        title={title}
+        description={copy.description}
+        badge={
+          draftAndPublish && draft.data?.publishState !== undefined ? (
+            <PublishStateBadge state={draft.data.publishState} />
+          ) : undefined
+        }
+      />
       {documentId === undefined ? null : <PresenceBanner slug={slug} documentId={documentId} />}
       {fields.length === 0 ? (
         <FormAlert tone="info">{copy.noFields}</FormAlert>
@@ -101,6 +118,8 @@ export function DocumentEditPage() {
           key={`${documentId ?? 'new'}:${draft.data?.version ?? 0}`}
           slug={slug}
           fields={fields}
+          draftAndPublish={draftAndPublish}
+          rootFieldNames={rootFieldNames}
           record={draft.data ?? null}
           onReload={() => void draft.refetch()}
           notice={notice}
@@ -114,6 +133,8 @@ export function DocumentEditPage() {
 function DocumentForm({
   slug,
   fields,
+  draftAndPublish,
+  rootFieldNames,
   record,
   onReload,
   notice,
@@ -121,6 +142,8 @@ function DocumentForm({
 }: {
   slug: string;
   fields: FieldNode[];
+  draftAndPublish: boolean;
+  rootFieldNames: readonly string[];
   record: DocumentRecord | null;
   onReload: () => void;
   notice: string | null;
@@ -200,6 +223,13 @@ function DocumentForm({
     },
   });
 
+  const showActionFailure = (failure: unknown) => {
+    onNotice(null);
+    setError(toSaveError(failure));
+    setConflict(null);
+    setMergeOpen(false);
+  };
+
   return (
     <FormProvider {...form}>
       <form
@@ -233,11 +263,16 @@ function DocumentForm({
           <DynamicFormRenderer fields={fields} masked={masked} />
         </fieldset>
         {readOnly ? null : (
-          <div className="flex justify-end">
-            <Button type="submit" variant="primary" loading={save.isPending}>
-              {copy.save}
-            </Button>
-          </div>
+          <DocumentActions
+            slug={slug}
+            record={record}
+            draftAndPublish={draftAndPublish}
+            rootFieldNames={rootFieldNames}
+            isFormDirty={form.formState.isDirty}
+            isSaving={save.isPending}
+            onNotice={onNotice}
+            onFailure={showActionFailure}
+          />
         )}
       </form>
       {conflict !== null && mergeOpen ? (

@@ -36,17 +36,17 @@ A new field type: one adapter in `Field.registry.tsx` (plus value converters in 
 <!-- prettier-ignore-start -->
 
 ```
-content/ (14 files)
+content/ (15 files)
 ```
 
-Tests: 6 files (not listed).
+Tests: 7 files (not listed).
 
 | File | Description |
 |---|---|
 | `ComponentList.tsx` | `ComponentList`: repeatable component items with add, remove and up/down reorder |
 | `Content.api.ts` | `createContentApi` and the document, list, presence, bulk, publish, unpublish and discard calls and types |
 | `Content.constants.ts` | Field types, document status, publish states, component limits, mask keys, presence timing, page size |
-| `Content.errors.ts` | `toSaveError`, `SaveError`, `serverMessage`, `isMissing`: API errors to form errors |
+| `Content.errors.ts` | `toSaveError`, `SaveError`, `serverMessage`, `isMissing`: API errors to form errors (incl. `DOCUMENT_NOT_MODIFIED`) |
 | `Content.feature.ts` | `contentFeature`: feature registration (API service) |
 | `Content.queries.ts` | `CONTENT_QUERY_KEYS`, `useDocumentListQuery`, `useContentTypesQuery` |
 | `ContentApi.context.tsx` | React context that provides the content API |
@@ -55,6 +55,7 @@ Tests: 6 files (not listed).
 | `Field.registry.tsx` | `FIELD_REGISTRY`, `adapterFor`: one adapter per field type; list formatting helpers |
 | `FieldTree.rules.ts` | `buildFieldTree`, `labelOf`: field tree of a content type |
 | `FieldValues.rules.ts` | Value converters per field type (text, number, integer, boolean, datetime, json) |
+| `PublishStateBadge.tsx` | `PublishStateBadge`: Draft / Modified / Published chip, shared by the edit header and the list column |
 | `RichtextField.tsx` | `RichtextField`: lazily loaded Tiptap editor with media image picking |
 | `useContentNavItems.ts` | `useContentNavItems`, `contentNavItemsOf`: content menu items per readable content type |
 

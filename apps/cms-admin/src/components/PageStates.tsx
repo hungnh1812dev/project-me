@@ -9,21 +9,27 @@ const TABLE_SKELETON_ROWS = 3;
 export function PageHeader({
   title,
   description,
+  badge,
   action,
 }: {
   title: ReactNode;
   description: ReactNode;
+  /** Small status shown right after the title, outside the heading text. */
+  badge?: ReactNode;
   action?: ReactNode;
 }) {
   return (
     <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
       <div className="grid gap-2">
-        <h1
-          tabIndex={-1}
-          className="m-0 text-2xl font-semibold tracking-tight break-words outline-none"
-        >
-          {title}
-        </h1>
+        <div className="flex flex-wrap items-center gap-3">
+          <h1
+            tabIndex={-1}
+            className="m-0 text-2xl font-semibold tracking-tight break-words outline-none"
+          >
+            {title}
+          </h1>
+          {badge}
+        </div>
         <p className="m-0 max-w-prose text-sm text-muted-foreground">{description}</p>
       </div>
       {action === undefined ? null : <div className="shrink-0">{action}</div>}

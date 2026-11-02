@@ -8,11 +8,11 @@ summary: Create and edit a content document; presence banner and the version-con
 
 ## Purpose
 
-The editor page for one document of a content type (`/content/:slug/new`, `/content/:slug/:documentId`): renders the type's form, saves drafts and publishes, shows who else is editing, and resolves a `409 DOCUMENT_VERSION_CONFLICT` with a field-by-field merge.
+The editor page for one document of a content type (`/content/:slug/new`, `/content/:slug/:documentId`): renders the type's form, saves drafts, publishes, unpublishes and discards draft changes (status badge in the header), shows who else is editing, and resolves a `409 DOCUMENT_VERSION_CONFLICT` with a field-by-field merge.
 
 ## Techniques
 
-The form comes from `features/content` (`DynamicFormRenderer`, `Document.form`). Conflict merge: `conflictDetailsOf` reads the 409 body, `mergeReducer` holds the per-field choice (server or mine), `buildResolvedTree` builds the tree to resend; masked fields never take a side. A new conflict during the merge starts the choices over. Presence polls with a heartbeat (`PRESENCE_HEARTBEAT_MS`).
+The form comes from `features/content` (`DynamicFormRenderer`, `Document.form`). Conflict merge: `conflictDetailsOf` reads the 409 body, `mergeReducer` holds the per-field choice (server or mine), `buildResolvedTree` builds the tree to resend; masked fields never take a side. A new conflict during the merge starts the choices over. Lifecycle actions (`DocumentActions`) show per the caller's permissions (`useCallerAccess`, `canWriteEveryField` for Discard) and the document's `publishState`; Publish needs a clean form, Unpublish and Discard confirm; a 409 version conflict keeps the notice and offers Reload (no refetch, which would drop it), `DOCUMENT_NOT_MODIFIED` refetches. Presence polls with a heartbeat (`PRESENCE_HEARTBEAT_MS`).
 
 ## Technologies
 
@@ -32,16 +32,17 @@ Field types and their inputs live in `features/content` (`Field.registry.tsx`); 
 <!-- prettier-ignore-start -->
 
 ```
-document-edit/ (8 files)
+document-edit/ (9 files)
 ```
 
-Tests: 5 files (not listed).
+Tests: 6 files (not listed).
 
 | File | Description |
 |---|---|
 | `Conflict.rules.ts` | `conflictDetailsOf` and the 409 conflict types (server and submitted records, diff entries) |
 | `ConflictMergeModal.tsx` | `ConflictMergeModal`: field-by-field merge dialog, resends the resolved tree |
 | `DiffViewerBlock.tsx` | `DiffViewerBlock`: one changed field shown server vs mine with a side choice |
+| `DocumentActions.tsx` | `DocumentActions`: Save, Publish, Unpublish and Discard row with the two confirm dialogs (SPEC §16.4) |
 | `DocumentEditPage.tsx` | `DocumentEditPage`: loads the document and type, renders the form, save/publish, conflict and error states |
 | `Merge.reducer.ts` | `mergeReducer` and helpers: chosen side per entry path, masked paths, visible entries |
 | `MergeDescribe.rules.ts` | `entryTitle`, `changeLabel`, `formatValue`, `sideContent`: text shown for each merge entry |
