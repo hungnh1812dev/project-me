@@ -181,7 +181,7 @@ export function CollectionListPage() {
           </p>
         </div>
       ) : (
-        <div className="grid gap-3">
+        <div className="grid grid-cols-[minmax(0,1fr)] gap-3">
           {selectable ? (
             <BulkActionBar
               selectedCount={selectedRows.length}
@@ -195,7 +195,7 @@ export function CollectionListPage() {
               }}
             />
           ) : null}
-          <div className="rounded-md border border-border bg-card">
+          <div className="min-w-0 rounded-md border border-border bg-card">
             <SortableSheet
               className="rounded-none border-0"
               caption={list.tableLabel(displayName)}
