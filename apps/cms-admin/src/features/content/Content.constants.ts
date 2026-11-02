@@ -15,6 +15,18 @@ export const DOCUMENT_STATUS = {
   PUBLISHED: 'published',
 } as const;
 
+/** `publishState` values cms-api derives for draft readers (SPEC §16.2). */
+export const PUBLISH_STATE = {
+  DRAFT: 'draft',
+  MODIFIED: 'modified',
+  PUBLISHED: 'published',
+} as const;
+
+export type PublishState = (typeof PUBLISH_STATE)[keyof typeof PUBLISH_STATE];
+
+/** Body key carrying the draft version a publish or discard was based on. */
+export const EXPECTED_VERSION_KEY = 'expectedVersion';
+
 /** Route segment that stands for "no document yet". */
 export const NEW_DOCUMENT_SEGMENT = 'new';
 

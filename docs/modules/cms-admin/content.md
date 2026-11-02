@@ -44,8 +44,8 @@ Tests: 6 files (not listed).
 | File | Description |
 |---|---|
 | `ComponentList.tsx` | `ComponentList`: repeatable component items with add, remove and up/down reorder |
-| `Content.api.ts` | `createContentApi` and the document, list, presence and bulk types |
-| `Content.constants.ts` | Field types, document status, component limits, mask keys, presence timing, page size |
+| `Content.api.ts` | `createContentApi` and the document, list, presence, bulk, publish, unpublish and discard calls and types |
+| `Content.constants.ts` | Field types, document status, publish states, component limits, mask keys, presence timing, page size |
 | `Content.errors.ts` | `toSaveError`, `SaveError`, `serverMessage`, `isMissing`: API errors to form errors |
 | `Content.feature.ts` | `contentFeature`: feature registration (API service) |
 | `Content.queries.ts` | `CONTENT_QUERY_KEYS`, `useDocumentListQuery`, `useContentTypesQuery` |
