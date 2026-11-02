@@ -8,6 +8,7 @@ import {
 
 const GALLERY = {
   slug: 'gallery',
+  displayName: 'Gallery',
   kind: 'collection',
   draftAndPublish: true,
   fields: [
@@ -26,6 +27,7 @@ const GALLERY = {
 } as const;
 const NOTE = {
   slug: 'note',
+  displayName: 'Note',
   kind: 'collection',
   draftAndPublish: false,
   fields: [{ name: 'text', type: 'text' }],

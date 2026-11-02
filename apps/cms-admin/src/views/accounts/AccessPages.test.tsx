@@ -66,6 +66,7 @@ const reviewerRole: Role = {
 
 const article: ContentType = {
   slug: 'article',
+  displayName: 'Article',
   kind: 'collection',
   draftAndPublish: true,
   fields: [

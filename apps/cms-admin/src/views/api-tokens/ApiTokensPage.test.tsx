@@ -69,6 +69,7 @@ const field = (path: string) => ({
 });
 const article: ContentType = {
   slug: 'article',
+  displayName: 'Article',
   kind: 'collection',
   draftAndPublish: true,
   fields: [field('title'), field('body')],

@@ -9,6 +9,8 @@ export const DOCUMENT_ERROR_CODES = {
   INVALID: 'DOCUMENT_INVALID',
   /** Publish or unpublish on a content type without draft and publish. */
   NOT_PUBLISHABLE: 'DOCUMENT_NOT_PUBLISHABLE',
+  /** Discard on a document whose draft already equals the published copy, or that has none. */
+  NOT_MODIFIED: 'DOCUMENT_NOT_MODIFIED',
   /** A bulk request on a single type (SPEC §9: bulk is for collections). */
   BULK_NOT_COLLECTION: 'DOCUMENT_BULK_NOT_COLLECTION',
   /** A bulk request over the item, component row or body limits. */
@@ -21,6 +23,7 @@ export const DOCUMENT_ERROR_MESSAGES = {
     'The document was changed by someone else. Review the current version and submit again.',
   INVALID_BODY: 'The request body is not valid.',
   NOT_PUBLISHABLE: 'This content type has no draft and publish.',
+  NOT_MODIFIED: 'The draft has no changes to discard.',
   PUBLISH_CONFLICT: 'The draft was changed since you loaded it. Reload it and publish again.',
   REQUIRED: 'is required',
   INVALID_TYPE: 'does not match the type of the field',
@@ -144,3 +147,7 @@ export const BULK_ITEM_STATUS = { OK: 'ok', ERROR: 'error' } as const;
 /** The bulk operations, one route each. */
 export const BULK_OPERATIONS = ['create', 'publish', 'unpublish', 'delete'] as const;
 export type BulkOperation = (typeof BULK_OPERATIONS)[number];
+
+/** SPEC §16.2: derived from the two row versions, never stored. */
+export const PUBLISH_STATES = ['draft', 'modified', 'published'] as const;
+export type PublishState = (typeof PUBLISH_STATES)[number];

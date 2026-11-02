@@ -15,6 +15,7 @@ export interface ContentTypeField {
 
 export interface ContentType {
   slug: string;
+  displayName: string;
   kind: string;
   draftAndPublish: boolean;
   fields: ContentTypeField[];

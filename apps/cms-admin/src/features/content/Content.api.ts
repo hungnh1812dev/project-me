@@ -3,7 +3,13 @@ import { API_ENDPOINTS } from '@configs/Api.endpoints';
 import type { AxiosInstance } from 'axios';
 
 import { getContentTypes, type ContentType } from '../content-types';
-import { DOCUMENT_STATUS, MASKED_FIELDS_KEY, type BulkAction } from './Content.constants';
+import {
+  DOCUMENT_STATUS,
+  EXPECTED_VERSION_KEY,
+  MASKED_FIELDS_KEY,
+  type BulkAction,
+  type PublishState,
+} from './Content.constants';
 
 export type FieldValueMap = Record<string, unknown>;
 
@@ -23,6 +29,8 @@ export interface DocumentRecord {
   components: Record<string, ComponentItem[] | null>;
   /** Paths (no item index) the caller's role cannot read. */
   maskedFields: string[];
+  /** Only for draft readers of a draft-and-publish type (SPEC §16.2). */
+  publishState?: PublishState;
 }
 
 /** The body of `GET /documents/:slug/:id`. */
@@ -53,6 +61,8 @@ export interface DocumentListItem {
   documentId: string;
   version: number;
   updatedAt?: string;
+  /** Only for draft readers of a draft-and-publish type (SPEC §16.2). */
+  publishState?: PublishState;
   values: FieldValueMap;
 }
 
@@ -162,6 +172,35 @@ export function createContentApi(client: AxiosInstance) {
       const { data } = await client.put<WrittenRef>(DOCUMENTS.BY_ID(slug, documentId), {
         ...tree,
         version,
+      });
+      return data;
+    },
+
+    /** Copies the draft over the published row; a stale version is a 409. */
+    publishDocument: async (
+      slug: string,
+      documentId: string,
+      expectedVersion: number,
+    ): Promise<WrittenRef> => {
+      const { data } = await client.post<WrittenRef>(DOCUMENTS.PUBLISH(slug, documentId), {
+        [EXPECTED_VERSION_KEY]: expectedVersion,
+      });
+      return data;
+    },
+
+    /** Removes the published row; the draft stays (state becomes draft). */
+    unpublishDocument: async (slug: string, documentId: string): Promise<void> => {
+      await client.post(DOCUMENTS.UNPUBLISH(slug, documentId));
+    },
+
+    /** Restores the published tree into the draft; a stale version is a 409. */
+    discardDocument: async (
+      slug: string,
+      documentId: string,
+      expectedVersion: number,
+    ): Promise<WrittenRef> => {
+      const { data } = await client.post<WrittenRef>(DOCUMENTS.DISCARD(slug, documentId), {
+        [EXPECTED_VERSION_KEY]: expectedVersion,
       });
       return data;
     },

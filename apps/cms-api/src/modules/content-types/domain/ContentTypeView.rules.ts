@@ -54,6 +54,8 @@ export type FieldView = ContentFieldView | SystemFieldView;
 /** `GET /content-types` item and `GET /content-types/:slug` body. */
 export interface ContentTypeView {
   readonly slug: string;
+  /** Label for people, from the definition as is. */
+  readonly displayName: string;
   readonly kind: ContentTypeKind;
   readonly draftAndPublish: boolean;
   /** Content fields depth-first in definition order, then the system fields. */
@@ -130,6 +132,7 @@ export function contentTypeView(
 
   return {
     slug: type.slug,
+    displayName: type.definition.displayName,
     kind: type.definition.kind,
     draftAndPublish: type.definition.draftAndPublish,
     fields,

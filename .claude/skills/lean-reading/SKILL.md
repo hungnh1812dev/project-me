@@ -12,6 +12,7 @@ Everything you read stays in your context for every later turn. Read the smalles
 **Large Markdown (task, phases, done, spec, conventions, docs over ~5 KB): never whole.**
 - `.claude/bin/section <file> --id <ID>`: one task entry. `section <file> "<heading text>"`: one section (e.g. `"Checkpoint RVOFF-B"`). `section <file> §7.2`: one spec section. `section <file> --toc`: headings only, to find the right one.
 - `grep -n -A3 -i <word> <file>` for one fact.
+- ADRs (`docs/adr/`, 20-50 KB each): `grep -m1 '^- Status:' <adr>` to see whether it is still in force, then `section <adr> "Decision"`, or only the heading you need (`--toc` first). Never the whole file.
 
 **Code** (when `graphify-out/graph.json` exists):
 - `graphify affected "<file or symbol>"`: who depends on it (impact, callers).

@@ -6,6 +6,7 @@ import { buildGraphqlSchema } from './schema/SchemaBuilder.rules';
 const schema = buildGraphqlSchema([
   {
     slug: 'article',
+    displayName: 'Article',
     kind: 'collection',
     draftAndPublish: true,
     fields: [{ name: 'title', type: 'string' }],

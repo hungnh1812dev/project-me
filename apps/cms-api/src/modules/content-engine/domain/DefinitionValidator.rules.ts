@@ -1,5 +1,6 @@
 import {
   DEFINITION_RULES,
+  DISPLAY_NAME_MAX_LENGTH,
   ENGINE_RESERVED_NAMES,
   MAX_COMPONENT_DEPTH,
   MAX_IDENTIFIER_BYTES,
@@ -82,6 +83,29 @@ function checkSlug(slug: string, errors: DefinitionValidationError[]): void {
       message: `Slug "${slug}" maps to "${table}", a reserved SQL word. Choose another slug.`,
     });
   }
+}
+
+const CONTROL_CHARACTER_PATTERN = /\p{Cc}/u;
+
+function checkDisplayName(displayName: string, errors: DefinitionValidationError[]): void {
+  const problem = displayNameProblem(displayName);
+  if (problem === undefined) return;
+  errors.push({
+    path: ['displayName'],
+    rule: DEFINITION_RULES.DISPLAY_NAME_INVALID,
+    message: `displayName ${problem}. It must be 1 to ${DISPLAY_NAME_MAX_LENGTH} characters, trimmed, on one line.`,
+  });
+}
+
+function displayNameProblem(displayName: string): string | undefined {
+  if (displayName === '') return 'is empty';
+  if (displayName !== displayName.trim()) return 'has leading or trailing whitespace';
+  if (CONTROL_CHARACTER_PATTERN.test(displayName)) {
+    return 'holds a line break or another control character';
+  }
+  const length = [...displayName].length;
+  if (length > DISPLAY_NAME_MAX_LENGTH) return `is ${length} characters long`;
+  return undefined;
 }
 
 function checkFields(
@@ -225,6 +249,7 @@ export function validateDefinition(input: unknown): DefinitionValidationResult {
   const definition = parsed.data;
   const errors: DefinitionValidationError[] = [];
   checkSlug(definition.slug, errors);
+  checkDisplayName(definition.displayName, errors);
   checkFields(definition.fields, 0, [], errors);
 
   // Composition only makes sense on well-formed, depth-limited names.

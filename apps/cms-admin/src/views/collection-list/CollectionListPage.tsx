@@ -6,7 +6,7 @@ import {
   SortableSheet,
   TablePagination,
 } from '@abyss/form-commons';
-import { LoadError, PageHeader, TableSkeleton } from '@components/PageStates';
+import { LoadError, PageHeader, TableSkeleton, TitleSkeleton } from '@components/PageStates';
 import { useRestoreFocus } from '@components/useRestoreFocus';
 import { contentNewPath } from '@configs/App.routes';
 import { COPY } from '@configs/Copy.constants';
@@ -85,12 +85,27 @@ export function CollectionListPage() {
     },
   });
 
-  const columns = collectionColumnsOf(slug, valueFields);
+  const displayName = type.data?.displayName ?? '';
+  const columns = collectionColumnsOf(
+    slug,
+    valueFields,
+    draftAndPublish && rows.some((row) => row.publishState !== undefined),
+  );
   const nameOf = (row: (typeof rows)[number]) => documentNameOf(valueFields, row);
 
   const heading = (
     <PageHeader
-      title={list.title(slug)}
+      title={
+        type.data === undefined ? (
+          type.isPending ? (
+            <TitleSkeleton label={copy.titleLoading} />
+          ) : (
+            copy.titleUnavailable
+          )
+        ) : (
+          list.title(displayName)
+        )
+      }
       description={list.description(draftAndPublish)}
       action={
         canCreate && isCollection ? (
@@ -139,7 +154,9 @@ export function CollectionListPage() {
     );
   }
   if (!isCollection) {
-    return <SingleTypeRedirect slug={slug} draftAndPublish={draftAndPublish} />;
+    return (
+      <SingleTypeRedirect slug={slug} displayName={displayName} draftAndPublish={draftAndPublish} />
+    );
   }
 
   return (
@@ -168,7 +185,7 @@ export function CollectionListPage() {
           </p>
         </div>
       ) : (
-        <div className="grid gap-3">
+        <div className="grid grid-cols-[minmax(0,1fr)] gap-3">
           {selectable ? (
             <BulkActionBar
               selectedCount={selectedRows.length}
@@ -182,10 +199,10 @@ export function CollectionListPage() {
               }}
             />
           ) : null}
-          <div className="rounded-md border border-border bg-card">
+          <div className="min-w-0 rounded-md border border-border bg-card">
             <SortableSheet
               className="rounded-none border-0"
-              caption={list.tableLabel(slug)}
+              caption={list.tableLabel(displayName)}
               columns={columns}
               rows={rows}
               getRowId={(row) => row.documentId}

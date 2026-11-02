@@ -1,5 +1,6 @@
 {
   "slug": "header",
+  "displayName": "Header",
   "kind": "single",
   "draftAndPublish": true,
   "fields": [

@@ -19,7 +19,7 @@ const CV_PAGE: ContentTypeDefinition = JSON.parse(
 ) as ContentTypeDefinition;
 
 function post(fields: FieldDefinition[]): ContentTypeDefinition {
-  return { slug: 'post', kind: 'collection', draftAndPublish: true, fields };
+  return { slug: 'post', displayName: 'Post', kind: 'collection', draftAndPublish: true, fields };
 }
 
 const TITLE: FieldDefinition = { name: 'title', type: 'string' };
@@ -192,7 +192,7 @@ describe('sql-generator', () => {
 
   it('hashes definitions independent of key order', () => {
     const reordered = JSON.parse(
-      '{"fields":[{"type":"string","name":"title"}],"draftAndPublish":true,"kind":"collection","slug":"post"}',
+      '{"fields":[{"type":"string","name":"title"}],"draftAndPublish":true,"kind":"collection","displayName":"Post","slug":"post"}',
     ) as ContentTypeDefinition;
     expect(hashDefinition(reordered)).toBe(hashDefinition(post([TITLE])));
     expect(hashDefinition(post([TITLE, TAGS]))).not.toBe(hashDefinition(post([TAGS, TITLE])));

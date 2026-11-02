@@ -574,7 +574,7 @@ need `Authorization: Bearer` (an account session).
 | GET    | `/api/v1/content-types`       | `200 { data: ContentType[] }` (sorted by slug) |
 | GET    | `/api/v1/content-types/:slug` | `200 ContentType`                              |
 
-- `ContentType`: `{ slug, kind, draftAndPublish, fields: Field[] }`.
+- `ContentType`: `{ slug, displayName, kind, draftAndPublish, fields: Field[] }`.
   `Field`: `{ path, type, system, component, repeatable, rootScalar,
 conditionKind, sensitive }`. Content fields come first, depth-first in
   definition order (`reference`, then `reference.phone`), then the system

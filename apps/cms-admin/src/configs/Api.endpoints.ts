@@ -81,6 +81,12 @@ export const API_ENDPOINTS = {
     /** Bulk: `action` is create | publish | unpublish | delete. */
     BULK: (slug: string, action: string) =>
       `/documents/${encodeURIComponent(slug)}/bulk/${encodeURIComponent(action)}`,
+    PUBLISH: (slug: string, id: string) =>
+      `/documents/${encodeURIComponent(slug)}/${encodeURIComponent(id)}/publish`,
+    UNPUBLISH: (slug: string, id: string) =>
+      `/documents/${encodeURIComponent(slug)}/${encodeURIComponent(id)}/unpublish`,
+    DISCARD: (slug: string, id: string) =>
+      `/documents/${encodeURIComponent(slug)}/${encodeURIComponent(id)}/discard`,
     PRESENCE: (slug: string, id: string) =>
       `/documents/${encodeURIComponent(slug)}/${encodeURIComponent(id)}/presence`,
   },

@@ -26,6 +26,7 @@ import type {
   DocumentLookup,
   DocumentRepository,
   DocumentRowSelector,
+  DocumentWithCounterpart,
   ListedDocuments,
   ListSelection,
   RecordReadAccess,
@@ -95,7 +96,12 @@ export class KyselyDocumentRepository implements DocumentRepository {
     const db = this.content.db.withSchema(CONTENT_DB_SCHEMA);
     const table = type.root.plan.name;
 
-    let rowsQuery = db.selectFrom(table).select(selectedColumns(projected, access));
+    let rowsQuery = db
+      .selectFrom(table)
+      .select(selectedColumns(projected, access))
+      .$if(selection.includePublishState === true, (query) =>
+        query.select(counterpartVersionColumn(table)),
+      );
     let countQuery = db.selectFrom(table).select(sql<string>`count(*)`.as('total'));
     for (const predicate of predicates) {
       rowsQuery = rowsQuery.where(predicate);
@@ -119,7 +125,13 @@ export class KyselyDocumentRepository implements DocumentRepository {
       rows.map((row) => row.id as number),
     );
     return {
-      documents: rows.map((row) => toDocument(projected, row, trees.get(row.id as number) ?? {})),
+      documents: rows.map((row) =>
+        withCounterpart(
+          toDocument(projected, row, trees.get(row.id as number) ?? {}),
+          row,
+          selection.includePublishState === true,
+        ),
+      ),
       total: Number(counted.total),
     };
   }
@@ -130,13 +142,18 @@ export class KyselyDocumentRepository implements DocumentRepository {
     lookup: DocumentLookup,
     rowCondition: RowCondition | null,
     unit?: UnitOfWork,
-  ): Promise<ContentDocument | undefined> {
+    options?: { includePublishState?: boolean },
+  ): Promise<DocumentWithCounterpart | undefined> {
     const projected = projectTable(type.root, access.fields);
     const raw = this.handle(unit);
+    const includePublishState = options?.includePublishState === true;
     let query = raw
       .withSchema(CONTENT_DB_SCHEMA)
       .selectFrom(type.root.plan.name)
-      .select(selectedColumns(projected, access));
+      .select(selectedColumns(projected, access))
+      .$if(includePublishState, (builder) =>
+        builder.select(counterpartVersionColumn(type.root.plan.name)),
+      );
     const predicates =
       'rowId' in lookup
         ? [sql<SqlBool>`${sql.ref('id')} = ${lookup.rowId}`]
@@ -150,7 +167,11 @@ export class KyselyDocumentRepository implements DocumentRepository {
     const row = await query.limit(1).executeTakeFirst();
     if (row === undefined) return undefined;
     const trees = await loadComponentTrees(raw, projected, [row.id as number]);
-    return toDocument(projected, row, trees.get(row.id as number) ?? {});
+    return withCounterpart(
+      toDocument(projected, row, trees.get(row.id as number) ?? {}),
+      row,
+      includePublishState,
+    );
   }
 
   async findVersion(
@@ -276,6 +297,36 @@ export class KyselyDocumentRepository implements DocumentRepository {
     }
     return query;
   }
+}
+
+const COUNTERPART_VERSION_ALIAS = 'counterpart_version';
+
+/**
+ * Correlated subquery: the version of the document's other copy (the draft
+ * row for a published row and the reverse). Only the version is read, with
+ * no row condition applied to that other row.
+ */
+function counterpartVersionColumn(table: string) {
+  const other = sql.id(CONTENT_DB_SCHEMA, table);
+  const outer = (column: string) => sql.ref(`${table}.${column}`);
+  return sql<number | null>`(
+    select o.version from ${other} o
+    where o.document_id = ${outer('document_id')}
+      and (o.published_at is null) <> (${outer('published_at')} is null)
+    limit 1
+  )`.as(COUNTERPART_VERSION_ALIAS);
+}
+
+function withCounterpart(
+  document: ContentDocument,
+  row: Record<string, unknown>,
+  isIncluded: boolean,
+): DocumentWithCounterpart {
+  if (!isIncluded) return document;
+  return {
+    ...document,
+    counterpartVersion: (row[COUNTERPART_VERSION_ALIAS] as number | null) ?? null,
+  };
 }
 
 function statusPredicate(status: 'draft' | 'published' | null): Predicate | null {

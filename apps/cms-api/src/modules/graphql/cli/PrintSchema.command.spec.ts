@@ -7,6 +7,7 @@ import { DEFAULT_SDL_FILE, printSchemaFile } from './PrintSchema.command';
 
 const DEFINITION = JSON.stringify({
   slug: 'note',
+  displayName: 'Note',
   kind: 'collection',
   draftAndPublish: false,
   fields: [{ name: 'title', type: 'string' }],

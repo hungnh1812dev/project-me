@@ -398,9 +398,14 @@ test.describe.serial('owner: conflict merge modal (cv-page)', () => {
     test('only masked fields differ: no modal, just the reload alert', async () => {
       await open(editor, editUrl);
       await open(b, editUrl);
+      // Save stays disabled until the form changes, so the Editor types the very value the owner saved:
+      // the only remaining difference is the masked Company.
+      const sharedPosition = `Shared ${RUN_ID}`;
+      await fieldByLabel(b, 'Position').fill(sharedPosition);
       await fieldByLabel(b, 'Company').fill(SECRET_NEWER);
       expect((await save(b)).ok()).toBe(true);
 
+      await fieldByLabel(editor, 'Position').fill(sharedPosition);
       const response = await save(editor);
       expect(response.status()).toBe(HTTP.CONFLICT);
       await expect(editor.getByRole('alert')).toContainText(copy.errors.conflict);

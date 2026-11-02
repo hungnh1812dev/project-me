@@ -36,6 +36,13 @@ export const notPublishable = () =>
     message: DOCUMENT_ERROR_MESSAGES.NOT_PUBLISHABLE,
   });
 
+export const notModified = () =>
+  new DomainError({
+    kind: CONFLICT,
+    errorCode: DOCUMENT_ERROR_CODES.NOT_MODIFIED,
+    message: DOCUMENT_ERROR_MESSAGES.NOT_MODIFIED,
+  });
+
 export const invalidBody = () =>
   new DomainError({
     kind: INVALID_INPUT,
