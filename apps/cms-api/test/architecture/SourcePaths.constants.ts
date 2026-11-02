@@ -76,6 +76,7 @@ export const INTERNAL_COPY_FILES = [
   // Module wiring: binds the port, reads no record.
   join(MODULES, 'documents', 'Documents.module.ts'),
   join(MODULES, 'documents', 'application', 'Publish.service.ts'),
+  join(MODULES, 'documents', 'application', 'Discard.service.ts'),
   join(MODULES, 'documents', 'domain', 'TreeCloner.rules.ts'),
   join(MODULES, 'documents', 'application', 'Bulk.service.ts'),
 ];

@@ -103,6 +103,7 @@ describe('naming', () => {
   it('names a media foreign key per media column', () => {
     const [root] = planTables({
       slug: 'post',
+      displayName: 'Post',
       kind: 'collection',
       draftAndPublish: true,
       fields: [{ name: 'coverImage', type: 'media' }],

@@ -15,6 +15,7 @@ const definition = JSON.parse(
   readFileSync(resolve(import.meta.dirname, '../../cms-api/content/schemas/cv-page.json'), 'utf8'),
 ) as {
   slug: string;
+  displayName: string;
   kind: string;
   draftAndPublish: boolean;
   fields: Definition[];
@@ -41,6 +42,7 @@ function flatten(fields: Definition[], prefix: string): ContentTypeField[] {
 
 export const CV_PAGE_TYPE: ContentType = {
   slug: definition.slug,
+  displayName: definition.displayName,
   kind: definition.kind,
   draftAndPublish: definition.draftAndPublish,
   fields: flatten(definition.fields, ''),

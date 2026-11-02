@@ -28,6 +28,7 @@ import {
 } from '../../access';
 import { DocumentAuthGuard, type DocumentRequest } from '../../access/document-auth';
 import { CONTENT_STATUSES } from '../../content-engine';
+import { DiscardService } from '../application/Discard.service';
 import {
   DocumentsCommandService,
   type WriteResult,
@@ -71,6 +72,7 @@ export class DocumentsController {
     private readonly documents: DocumentsQueryService,
     private readonly commands: DocumentsCommandService,
     private readonly publishing: PublishService,
+    private readonly discarding: DiscardService,
     private readonly presence: PresenceService,
   ) {}
 
@@ -164,6 +166,28 @@ export class DocumentsController {
     @Body() body: unknown,
   ): Promise<WrittenRef> {
     return this.publishing.publish(
+      req.user.actor,
+      slug,
+      parseRequest(documentIdSchema, documentId),
+      parsePublishBody(body),
+    );
+  }
+
+  /** SPEC §16.3: restores the published tree into the draft; a stale `expectedVersion` is a 409. */
+  @Post(DOCUMENTS_ROUTES.DISCARD)
+  @HttpCode(HttpStatus.OK)
+  @RequirePermission({
+    action: PermissionAction.update,
+    subjectParam: SLUG_PARAM,
+  })
+  @Header(NO_STORE_HEADER.NAME, NO_STORE_HEADER.VALUE)
+  discard(
+    @Req() req: DocumentRequest,
+    @Param(SLUG_PARAM) slug: string,
+    @Param(DOCUMENT_ID_PARAM) documentId: string,
+    @Body() body: unknown,
+  ): Promise<WrittenRef> {
+    return this.discarding.discard(
       req.user.actor,
       slug,
       parseRequest(documentIdSchema, documentId),

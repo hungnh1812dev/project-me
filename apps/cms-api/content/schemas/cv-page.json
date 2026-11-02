@@ -1,5 +1,6 @@
 {
   "slug": "cv-page",
+  "displayName": "CV Page",
   "kind": "collection",
   "draftAndPublish": true,
   "fields": [

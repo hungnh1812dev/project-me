@@ -5,6 +5,7 @@ import { ContentRegistry } from './ContentRegistry.service';
 
 const NOTE = {
   slug: 'note',
+  displayName: 'Note',
   kind: 'collection',
   draftAndPublish: false,
   fields: [{ name: 'title', type: 'string' }],

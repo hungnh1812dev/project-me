@@ -3,17 +3,18 @@ import { describe, expect, it } from 'vitest';
 import type { ContentType } from '../content-types';
 import { contentNavItemsOf } from './useContentNavItems';
 
-const typeOf = (slug: string, kind: string): ContentType => ({
+const typeOf = (slug: string, displayName: string, kind: string): ContentType => ({
   slug,
+  displayName,
   kind,
   draftAndPublish: false,
   fields: [],
 });
 
 const TYPES = [
-  typeOf('cv-page', 'single'),
-  typeOf('post', 'collection'),
-  typeOf('legacy', 'unknown-kind'),
+  typeOf('cv-page', 'CV Page', 'single'),
+  typeOf('post', 'Blog Post', 'collection'),
+  typeOf('legacy', 'Legacy', 'unknown-kind'),
 ];
 
 describe('contentNavItemsOf', () => {
@@ -21,8 +22,8 @@ describe('contentNavItemsOf', () => {
     const items = contentNavItemsOf(TYPES, () => true);
 
     expect(items.map(({ label, path, section }) => ({ label, path, section }))).toEqual([
-      { label: 'cv-page', path: '/content/cv-page', section: 'singleTypes' },
-      { label: 'post', path: '/content/post', section: 'collectionTypes' },
+      { label: 'CV Page', path: '/content/cv-page', section: 'singleTypes' },
+      { label: 'Blog Post', path: '/content/post', section: 'collectionTypes' },
     ]);
   });
 
@@ -32,7 +33,7 @@ describe('contentNavItemsOf', () => {
       (subject, action) => subject === 'post' && action === 'read',
     );
 
-    expect(items.map((item) => item.label)).toEqual(['post']);
+    expect(items.map((item) => item.label)).toEqual(['Blog Post']);
     expect(items[0]?.subject).toBe('post');
   });
 

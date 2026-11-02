@@ -31,12 +31,14 @@ function setup() {
     buildGraphqlSchema([
       {
         slug: 'article',
+        displayName: 'Article',
         kind: 'collection',
         draftAndPublish: true,
         fields: [{ name: 'title', type: 'string' }],
       },
       {
         slug: 'home',
+        displayName: 'Home',
         kind: 'single',
         draftAndPublish: true,
         fields: [{ name: 'title', type: 'string' }],

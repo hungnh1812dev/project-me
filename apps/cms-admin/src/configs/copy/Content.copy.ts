@@ -1,6 +1,8 @@
 export const CONTENT_COPY = {
-  newTitle: (type: string) => `New ${type}`,
-  editTitle: (type: string) => `Edit ${type}`,
+  newTitle: (displayName: string) => `New ${displayName}`,
+  editTitle: (displayName: string) => `Edit ${displayName}`,
+  titleLoading: 'Loading the content type',
+  titleUnavailable: 'Content',
   description: 'Changes are saved to the draft. Publishing is a separate step.',
   loading: 'Loading the document',
   loadFailed: 'The document could not be loaded.',
@@ -8,13 +10,13 @@ export const CONTENT_COPY = {
   documentNotFound: 'This document does not exist, or your role cannot read it.',
   retry: 'Try again',
   collection: {
-    title: (type: string) => type,
+    title: (displayName: string) => displayName,
     description: (draftAndPublish: boolean) =>
       draftAndPublish
         ? 'Drafts of this collection. Select rows to publish, unpublish or delete them together.'
         : 'Documents of this collection. Select rows to delete them together.',
     newDocument: 'New document',
-    tableLabel: (type: string) => `${type} documents`,
+    tableLabel: (displayName: string) => `${displayName} documents`,
     loading: 'Loading documents',
     loadFailed: 'The documents could not be loaded.',
     forbidden: 'Your role cannot view these documents.',
@@ -27,6 +29,7 @@ export const CONTENT_COPY = {
     yes: 'Yes',
     no: 'No',
     columns: {
+      status: 'Status',
       updated: 'Updated',
     },
     selectAll: 'Select all documents on this page',
@@ -115,6 +118,36 @@ export const CONTENT_COPY = {
     many: (a: string, b: string, rest: number) =>
       `${a}, ${b} and ${rest} more are also on this document.`,
   },
+  publishState: {
+    draft: 'Draft',
+    modified: 'Modified',
+    published: 'Published',
+  },
+  actions: {
+    group: 'Document actions',
+    publish: 'Publish',
+    unpublish: 'Unpublish',
+    discard: 'Discard changes',
+    published: 'Document published.',
+    unpublished: 'Document unpublished. The draft is kept.',
+    discarded: 'Draft restored to the published version.',
+    publishNeedsSave: 'Save your changes before publishing.',
+    unpublishDialog: {
+      title: 'Unpublish this document?',
+      description:
+        'It disappears from the public site. The draft is kept, and you can publish it again.',
+      confirm: 'Unpublish',
+      cancel: 'Cancel',
+    },
+    discardDialog: {
+      title: 'Discard the changes to this draft?',
+      description:
+        'The draft goes back to the last published version. Every draft change since then is lost for good.',
+      unsavedEdits: 'The edits you have not saved yet in this form are lost too.',
+      confirm: 'Discard changes',
+      cancel: 'Cancel',
+    },
+  },
   save: 'Save draft',
   saved: 'Draft saved.',
   created: 'Draft created.',
@@ -187,6 +220,7 @@ export const CONTENT_COPY = {
     invalidFallback: 'The server rejected the draft. Check the fields.',
     conflict:
       'Someone else saved this document first. Reload to see their version, then apply your changes again.',
+    notModified: 'There is nothing to discard: the draft already matches the published version.',
     reload: 'Reload latest version',
     reviewConflict: 'Review differences',
   },

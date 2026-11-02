@@ -57,6 +57,7 @@ function nextIp(): string {
 type Json = { [key: string]: unknown };
 const PROFILE_DEFINITION = {
   slug: 'profile',
+  displayName: 'Profile',
   kind: 'single',
   draftAndPublish: true,
   fields: [{ name: 'name', type: 'string' }],
@@ -64,6 +65,7 @@ const PROFILE_DEFINITION = {
 
 const POST_DEFINITION = {
   slug: 'post',
+  displayName: 'Post',
   kind: 'collection',
   draftAndPublish: true,
   fields: [

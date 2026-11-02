@@ -17,6 +17,7 @@ const VOCABULARY = {
 
 const PROFILE = {
   slug: 'profile',
+  displayName: 'Profile',
   kind: 'single',
   draftAndPublish: false,
   fields: [
@@ -52,6 +53,7 @@ describe('contentTypeView (T17b)', () => {
     );
     expect(view).toMatchObject({
       slug: 'profile',
+      displayName: 'Profile',
       kind: 'single',
       draftAndPublish: false,
     });

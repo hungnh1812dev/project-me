@@ -8,11 +8,11 @@ summary: Document REST API: list/filter/sort, read, create, draft save with vers
 
 ## Purpose
 
-The REST API for content documents of every content type: paged lists with filters and sorting, reads of drafts or published versions, create, draft save with optimistic version check (409 with a diff), publish and unpublish, delete, bulk create/publish/unpublish/delete, and editing presence (SPEC §9).
+The REST API for content documents of every content type: paged lists with filters and sorting, reads of drafts or published versions, create, draft save with optimistic version check (409 with a diff), publish, unpublish, discard, delete, bulk create/publish/unpublish/delete, and editing presence (SPEC §9).
 
 ## Techniques
 
-Use cases split into query, command, publish, bulk and presence services behind ports. Access from the access module on every call: field projection (never select unreadable columns), masks, write allowlist, row filters as Kysely expressions. Filters are typed per field kind; an unknown kind is refused. Version conflicts return the server and submitted records with a diff (`Diff.rules`). Bulk bodies have their own size limit middleware; bulk is atomic or per item by rule. Media fields and richtext images go through `DocumentMediaService`.
+Use cases split into query, command, publish, discard, bulk and presence services behind ports. Access from the access module on every call: field projection (never select unreadable columns), masks, write allowlist, row filters as Kysely expressions. Filters are typed per field kind; an unknown kind is refused. Version conflicts return the server and submitted records with a diff (`Diff.rules`). Bulk bodies have their own size limit middleware; bulk is atomic or per item by rule. Media fields and richtext images go through `DocumentMediaService`. `publishState` (`draft`, `modified`, `published`; SPEC §16.2) is derived, never stored: the repository reads the other copy's version in the same statement (`includePublishState`), `DocumentsQueryService` adds the root field only for actors who can read drafts of a draft-and-publish type; it is not filterable, sortable or in GraphQL's schema. Discard (SPEC §16.3, `DiscardService`) needs `update` plus write access to every root field (`writesEveryField`), locks the draft (row conditions, `expectedVersion` or 409) then the published row (none or equal version: `409 DOCUMENT_NOT_MODIFIED`; outside the conditions: 404), copies the published tree over the draft with component uids restored (`restoreComponentUids`), and gives both rows draft version + 1; it records a `discard` activity after commit and no audit row.
 
 ## Technologies
 
@@ -20,7 +20,7 @@ NestJS 11, Kysely 0.28 (content schema), Prisma 7 (presence accounts), zod (requ
 
 ## Entry points
 
-`GET/POST /api/v1/documents/:slug`, `GET/PUT/DELETE /api/v1/documents/:slug/:documentId`, `POST .../publish`, `.../unpublish`, `.../presence`, `POST /api/v1/documents/:slug/bulk/{create,publish,unpublish,delete}`; `parseListQuery` and limits exported for graphql.
+`GET/POST /api/v1/documents/:slug`, `GET/PUT/DELETE /api/v1/documents/:slug/:documentId`, `POST .../publish`, `.../unpublish`, `.../discard` (body `{ expectedVersion }`, answers `{ documentId, version }`; no bulk route), `.../presence`, `POST /api/v1/documents/:slug/bulk/{create,publish,unpublish,delete}`; `parseListQuery` and limits exported for graphql.
 
 ## Where to change what
 
@@ -34,12 +34,12 @@ A new filter operator: `OPERATORS_BY_KIND` in `domain/Documents.constants.ts` + 
 ```
 documents/ (2 files)
   adapters/ (3 files)
-  application/ (7 files)
-  domain/ (7 files)
+  application/ (8 files)
+  domain/ (8 files)
   http/ (6 files)
 ```
 
-Tests: 14 files (not listed).
+Tests: 16 files (not listed).
 
 | File | Description |
 |---|---|
@@ -50,22 +50,24 @@ Tests: 14 files (not listed).
 | `adapters/PrismaPresenceAccount.adapter.ts` | `PrismaPresenceAccountAdapter`: account names for presence |
 | `application/Bulk.service.ts` | `BulkService`: bulk create, publish, unpublish, delete with per-item results |
 | `application/BulkItem.errors.ts` | `itemError`, `asItemError`, `atomicFailure`: bulk item errors |
+| `application/Discard.service.ts` | `DiscardService`: restores the published tree into the draft (discard) |
 | `application/Documents.port.ts` | Ports and tokens: document repository, presence account lookup, content activity |
 | `application/DocumentsCommand.service.ts` | `DocumentsCommandService`: create, draft save with version check, delete |
-| `application/DocumentsQuery.service.ts` | `DocumentsQueryService`: list and read with access rules applied |
+| `application/DocumentsQuery.service.ts` | `DocumentsQueryService`: list and read with access rules applied, plus `publishState` for draft readers |
 | `application/Presence.service.ts` | `PresenceService`: in-memory editing presence per document |
 | `application/Publish.service.ts` | `PublishService`: publish and unpublish one document |
 | `domain/Diff.rules.ts` | `diffRecords`, `overlaySubmitted`: diff of a version conflict (masked parts stay masked) |
 | `domain/DocumentFilter.rules.ts` | `coerceFilterValue`, `typedFilterValues`: filter values typed per field kind |
-| `domain/Documents.constants.ts` | Error codes and messages, filter operators per kind, sort default, query limits, system fields |
+| `domain/Documents.constants.ts` | Error codes and messages, filter operators per kind, sort default, query limits, system fields, publish states |
 | `domain/Documents.errors.ts` | Document domain errors (not found, forbidden, version conflict, ...), `mapContentErrors` |
 | `domain/ListQuery.rules.ts` | `normalizeListQuery`: list query model (filters, sort, paging) |
+| `domain/PublishState.rules.ts` | `publishStateOf`, `writesEveryField`: draft, modified or published from the two row versions; whether a field selection covers every root field |
 | `domain/TreeCloner.rules.ts` | `cloneTree`: copies a document tree for publish |
 | `domain/ValueValidator.rules.ts` | `validateTreeValues`, `countComponentRows`: values against field types and limits |
 | `http/Bulk.controller.ts` | `BulkController`: the bulk routes |
 | `http/Bulk.requests.ts` | Bulk request body parsers |
 | `http/BulkBodyLimit.middleware.ts` | `bulkBodyLimit`: byte limit for bulk bodies before the JSON parser |
-| `http/Documents.controller.ts` | `DocumentsController`: list, read, create, save, publish, unpublish, delete, presence |
+| `http/Documents.controller.ts` | `DocumentsController`: list, read, create, save, publish, unpublish, discard, delete, presence |
 | `http/Documents.requests.ts` | Request parsers: list query, create, update, publish, presence bodies |
 | `http/DocumentsHttp.constants.ts` | Routes, query keys, filter/sort syntax, body keys |
 

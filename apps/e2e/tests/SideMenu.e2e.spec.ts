@@ -1,6 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 
 import { ADMIN_COPY, API_ENDPOINTS, APP_ROUTES } from '../src/Apps.contract';
+import { CONTENT_TYPE_NAMES } from '../src/E2e.constants';
 import { e2eEnv } from '../src/E2e.env';
 import {
   accountMenuTrigger,
@@ -107,6 +108,25 @@ test.describe('side menu', () => {
     await expect(mainMenu(page)).toBeHidden();
     await expect(page).toHaveURL(/\/media/);
     await expect(menuButton(page)).toBeFocused();
+  });
+
+  test('the content links carry the six display names, never a slug, and open /content/<slug>', async ({
+    page,
+  }) => {
+    await page.setViewportSize(DESKTOP);
+    await signInAsOwner(page);
+    const menu = mainMenu(page);
+    const entries = Object.entries(CONTENT_TYPE_NAMES);
+    expect(entries).toHaveLength(6);
+    for (const [slug, name] of entries) {
+      await expect(menu.getByRole('link', { name, exact: true })).toHaveAttribute(
+        'href',
+        `/content/${slug}`,
+      );
+      if (slug !== name.toLowerCase()) {
+        await expect(menu.getByRole('link', { name: slug, exact: true })).toHaveCount(0);
+      }
+    }
   });
 
   test('a failing content-type catalog shows the error row and a retry restores it', async ({

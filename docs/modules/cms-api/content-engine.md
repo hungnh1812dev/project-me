@@ -12,7 +12,7 @@ Turns the content type definitions (JSON) into database tables in the `content` 
 
 ## Techniques
 
-Definitions validated by zod + `DefinitionValidator.rules`; SQL planned from a definition snapshot (`SqlGenerator.rules`, `Naming.rules`) and written as checked migration files; destructive changes refused. Kysely for content rows with its own transaction runner and after-commit callbacks. Each field type is one `FieldTypeSpec` in `FIELD_TYPE_SPECS`. Richtext is always sanitized (`sanitize-html`) before it is stored.
+Definitions (including the required `displayName`, a metadata-only key) validated by zod + `DefinitionValidator.rules`; SQL planned from a definition snapshot (`SqlGenerator.rules`, `Naming.rules`) and written as checked migration files; destructive changes refused. Kysely for content rows with its own transaction runner and after-commit callbacks. Each field type is one `FieldTypeSpec` in `FIELD_TYPE_SPECS`. Richtext is always sanitized (`sanitize-html`) before it is stored.
 
 ## Technologies
 
@@ -46,7 +46,7 @@ Tests: 11 files (not listed).
 |---|---|
 | `ContentEngine.module.ts` | `ContentEngineModule`: wiring (content DB, registry, repositories) |
 | `index.ts` | Public exports for documents, graphql and media |
-| `adapters/ComponentTableSync.adapter.ts` | `syncChildren`: insert, update and delete component rows of a tree |
+| `adapters/ComponentTableSync.adapter.ts` | `syncChildren`: insert, update and delete component rows of a tree (`restore` mode keeps unknown uids on discard) |
 | `adapters/ContentDatabase.adapter.ts` | Content DB connection and migration constants (lock key, file names) |
 | `adapters/KyselyContent.repository.ts` | `KyselyContentRepository`: insert, replace and load document trees |
 | `adapters/KyselyContentTransactionRunner.adapter.ts` | `KyselyContentTransactionRunner`, `contentTrxOf`: content transactions with after-commit callbacks |

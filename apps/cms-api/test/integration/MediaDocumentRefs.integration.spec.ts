@@ -36,6 +36,7 @@ const OCTET_RANGE = 250;
 
 const GALLERY = {
   slug: 'gallery',
+  displayName: 'Gallery',
   kind: 'collection',
   draftAndPublish: true,
   fields: [
@@ -260,6 +261,40 @@ describe('document media references (T29; Postgres 17 via Testcontainers)', () =
       expect((res.body as { errorCode: string }).errorCode).toBe('DOCUMENT_INVALID');
     }
     expect(id).toBeDefined();
+  });
+
+  it('a discard frees a file only the discarded edit used and keeps the published one in use', async () => {
+    const published = await uploaded();
+    const draftOnly = await uploaded();
+    const doc = (
+      await http()
+        .post(DOCS)
+        .set(bearer(editor))
+        .send({ values: { cover: published.id } })
+    ).body as Doc;
+    await http()
+      .post(`${DOCS}/${doc.documentId}/publish`)
+      .set(bearer(editor))
+      .send({ expectedVersion: 1 })
+      .expect(200);
+    await http()
+      .put(`${DOCS}/${doc.documentId}`)
+      .set(bearer(editor))
+      .send({ version: 1, values: { cover: draftOnly.id } })
+      .expect(200);
+    const inUse = await http().delete(`${MEDIA}/${draftOnly.id}`).set(bearer(admin));
+    expect(inUse.status).toBe(409);
+
+    await http()
+      .post(`${DOCS}/${doc.documentId}/discard`)
+      .set(bearer(editor))
+      .send({ expectedVersion: 2 })
+      .expect(200);
+    const draft = (await http().get(`${DOCS}/${doc.documentId}?status=draft`).set(bearer(editor)))
+      .body as Doc;
+    expect(draft.values.cover).toMatchObject({ id: published.id });
+    expect((await http().delete(`${MEDIA}/${published.id}`).set(bearer(admin))).status).toBe(409);
+    expect((await http().delete(`${MEDIA}/${draftOnly.id}`).set(bearer(admin))).status).toBe(204);
   });
 
   it('updates and clears the reference; null stays null', async () => {

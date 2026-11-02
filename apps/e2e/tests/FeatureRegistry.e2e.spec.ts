@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 
 import { ADMIN_COPY } from '../src/Apps.contract';
-import { CV_PAGE_SLUG, PROFILE_SLUG } from '../src/E2e.constants';
+import { CONTENT_TYPE_NAMES, CV_PAGE_SLUG } from '../src/E2e.constants';
 import { e2eEnv } from '../src/E2e.env';
 import { expectSignedIn, submitLogin } from '../src/Session.fixture';
 
@@ -22,14 +22,14 @@ const PROTECTED_PATHS = [
 ];
 const PUBLIC_PATHS = ['/login', '/set-password', '/reset-password'];
 // Side menu order: content types, then Utilities, then System settings.
-// Content types are listed alphabetically by slug.
+// Content types show their display name, in the order the API lists them.
 const EXPECTED_OWNER_NAV = [
-  'common-text',
-  'cv-contact',
-  'header',
-  CV_PAGE_SLUG,
-  PROFILE_SLUG,
-  'resume',
+  CONTENT_TYPE_NAMES['common-text'],
+  CONTENT_TYPE_NAMES['cv-contact'],
+  CONTENT_TYPE_NAMES.header,
+  CONTENT_TYPE_NAMES[CV_PAGE_SLUG],
+  CONTENT_TYPE_NAMES.profile,
+  CONTENT_TYPE_NAMES.resume,
   nav.media,
   nav.accounts,
   nav.roles,

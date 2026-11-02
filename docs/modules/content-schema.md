@@ -22,18 +22,20 @@ generated, the definition must pass the validator.
 ```json
 {
   "slug": "cv-page",
+  "displayName": "CV Page",
   "kind": "collection",
   "draftAndPublish": true,
   "fields": [ ... ]
 }
 ```
 
-| Key               | Type                         | Meaning                                                                      |
-| ----------------- | ---------------------------- | ---------------------------------------------------------------------------- |
-| `slug`            | string, kebab-case           | API name and source of the root table name. `^[a-z][a-z0-9]*(-[a-z0-9]+)*$`. |
-| `kind`            | `"single"` \| `"collection"` | `single`: one document (e.g. a settings page). `collection`: many documents. |
-| `draftAndPublish` | boolean                      | `true`: edits are drafts until published. `false`: every save is live.       |
-| `fields`          | array, at least one entry    | Ordered field list. The order is the order of columns and of the admin form. |
+| Key               | Type                         | Meaning                                                                                                                                                    |
+| ----------------- | ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `slug`            | string, kebab-case           | API name and source of the root table name. `^[a-z][a-z0-9]*(-[a-z0-9]+)*$`.                                                                               |
+| `displayName`     | string, 1-60 characters      | Label the admin UI shows for the type. Required. Metadata only: changing it generates a comment-only migration (no DDL) and updates the stored definition. |
+| `kind`            | `"single"` \| `"collection"` | `single`: one document (e.g. a settings page). `collection`: many documents.                                                                               |
+| `draftAndPublish` | boolean                      | `true`: edits are drafts until published. `false`: every save is live.                                                                                     |
+| `fields`          | array, at least one entry    | Ordered field list. The order is the order of columns and of the admin form.                                                                               |
 
 Unknown keys are rejected everywhere (top level and fields), so a typo never
 passes silently.
@@ -140,14 +142,15 @@ error has this shape, ready for the admin UI and the CLI:
 When several files are validated together (`validateDefinitions`), the path
 starts with the file's index in the list.
 
-| `rule`                     | Rejected when                                                                                                                                                                   |
-| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `schema.invalid`           | The shape is wrong: missing or unknown key, wrong value type, unknown `type`, a component without `fields`, `fields`/`repeatable` on a non-component, an empty field list.      |
-| `identifier.invalid`       | The slug is not kebab-case, or a field's SQL name fails `^[a-z][a-z0-9_]*$`, contains `__` or ends with `_` (so: no capital first letter, digit first, `-`, spaces, non-ASCII). |
-| `identifier.reserved`      | A field's SQL name is an engine-owned column (above, plus `status`) or a Postgres reserved word (`order`, `user`, `select`, ...). A slug may not map to a reserved word.        |
-| `identifier.too_long`      | A composed table, column, index or constraint name is longer than **63 bytes** (Postgres would silently truncate it). The generator never truncates.                            |
-| `identifier.collision`     | Two fields at the same level map to the same SQL name (`teamSize` and `team_size`), or two generated table/index/constraint names are equal in the `content` schema.            |
-| `component.depth_exceeded` | A component sits deeper than level 3.                                                                                                                                           |
+| `rule`                     | Rejected when                                                                                                                                                                                                                               |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `schema.invalid`           | The shape is wrong: missing or unknown key, wrong value type, unknown `type`, a component without `fields`, `fields`/`repeatable` on a non-component, an empty field list.                                                                  |
+| `identifier.invalid`       | The slug is not kebab-case, or a field's SQL name fails `^[a-z][a-z0-9_]*$`, contains `__` or ends with `_` (so: no capital first letter, digit first, `-`, spaces, non-ASCII).                                                             |
+| `display_name.invalid`     | `displayName` is empty, has leading or trailing whitespace, holds a line break or another control character, or is longer than 60 Unicode code points (an emoji counts once). The path is `displayName`. A missing key is `schema.invalid`. |
+| `identifier.reserved`      | A field's SQL name is an engine-owned column (above, plus `status`) or a Postgres reserved word (`order`, `user`, `select`, ...). A slug may not map to a reserved word.                                                                    |
+| `identifier.too_long`      | A composed table, column, index or constraint name is longer than **63 bytes** (Postgres would silently truncate it). The generator never truncates.                                                                                        |
+| `identifier.collision`     | Two fields at the same level map to the same SQL name (`teamSize` and `team_size`), or two generated table/index/constraint names are equal in the `content` schema.                                                                        |
+| `component.depth_exceeded` | A component sits deeper than level 3.                                                                                                                                                                                                       |
 
 Length budget: the longest suffix decides. A root table may be at most 49
 bytes (`_published_idx` adds 14), a component table at most 52 bytes

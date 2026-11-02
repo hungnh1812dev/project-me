@@ -20,7 +20,7 @@ const VOCABULARY = {
  * in `{ data }`). Frontends read these keys; removing or renaming one is a
  * breaking change. Adding a key is allowed: extend the lists on purpose.
  */
-const CONTENT_TYPE_KEYS = ['draftAndPublish', 'fields', 'kind', 'slug'];
+const CONTENT_TYPE_KEYS = ['displayName', 'draftAndPublish', 'fields', 'kind', 'slug'];
 const FIELD_KEYS = [
   'component',
   'conditionKind',
@@ -34,6 +34,7 @@ const FIELD_KEYS = [
 
 const PROFILE = {
   slug: 'profile',
+  displayName: 'Profile',
   kind: 'single',
   draftAndPublish: false,
   fields: [

@@ -10,7 +10,7 @@ then read the module doc, then `graphify explain`, then only the lines you need.
 | access | `apps/cms-api/src/modules/access` | `docs/modules/access-control.md` | Policy evaluation, permission guard, field masking, accounts, roles and API tokens |
 | backups | `apps/cms-api/src/modules/backups` | `docs/modules/backups.md` | Owner-only list of nightly database dumps and short download links |
 | content-engine | `apps/cms-api/src/modules/content-engine` | `docs/modules/cms-api/content-engine.md` | Content type definitions, generated SQL migrations, content storage and the field-type registry |
-| content-types | `apps/cms-api/src/modules/content-types` | none yet | - |
+| content-types | `apps/cms-api/src/modules/content-types` | `docs/modules/cms-api/content-types.md` | Read-only catalog of registered content types (slug, display name, kind, fields) filtered to what the caller may read. |
 | documents | `apps/cms-api/src/modules/documents` | `docs/modules/cms-api/documents.md` | Document REST API: list/filter/sort, read, create, draft save with version check, publish, bulk, presence |
 | graphql | `apps/cms-api/src/modules/graphql` | `docs/modules/graphql.md` | Read-only GraphQL endpoint for documents, same rules as the REST reads |
 | health | `apps/cms-api/src/modules/health` | none yet | - |
@@ -30,11 +30,11 @@ then read the module doc, then `graphify explain`, then only the lines you need.
 
 | Module | Folder | Doc | Summary |
 |---|---|---|---|
-| access | `apps/cms-admin/src/features/access` | none yet | - |
+| access | `apps/cms-admin/src/features/access` | `docs/modules/cms-admin/access.md` | Accounts, roles and permission matrix client, plus the caller's own access hints (can, canWriteEveryField) |
 | auth | `apps/cms-admin/src/features/auth` | none yet | - |
 | backups | `apps/cms-admin/src/features/backups` | none yet | - |
 | content | `apps/cms-admin/src/features/content` | `docs/modules/cms-admin/content.md` | Content API client, queries, dynamic document form (field registry, components, richtext) and menu items |
-| content-types | `apps/cms-admin/src/features/content-types` | none yet | - |
+| content-types | `apps/cms-admin/src/features/content-types` | `docs/modules/cms-admin/content-types.md` | Content type catalog client: slug, display name, kind and fields |
 | media | `apps/cms-admin/src/features/media` | `docs/modules/cms-admin/media.md` | Media API client, upload queue and dialog, grid, filters, picker, MediaField and richtext image insert |
 | reviewer | `apps/cms-admin/src/features/reviewer` | none yet | - |
 | security | `apps/cms-admin/src/features/security` | none yet | - |
@@ -43,7 +43,7 @@ then read the module doc, then `graphify explain`, then only the lines you need.
 | api-tokens | `apps/cms-admin/src/views/api-tokens` | none yet | - |
 | backups | `apps/cms-admin/src/views/backups` | none yet | - |
 | change-password | `apps/cms-admin/src/views/change-password` | `docs/modules/cms-admin/change-password.md` | Signed-in password change (`/settings/password`); ends every session after success |
-| collection-list | `apps/cms-admin/src/views/collection-list` | none yet | - |
+| collection-list | `apps/cms-admin/src/views/collection-list` | `docs/modules/cms-admin/collection-list.md` | List page of a content collection with bulk actions and single type redirect |
 | document-edit | `apps/cms-admin/src/views/document-edit` | `docs/modules/cms-admin/document-edit.md` | Create and edit a content document; presence banner and the version-conflict merge |
 | login | `apps/cms-admin/src/views/login` | `docs/modules/cms-admin/login.md` | Sign-in page with the two-factor step (`/login`) |
 | media-library | `apps/cms-admin/src/views/media-library` | `docs/modules/cms-admin/media-library.md` | The File Library (`/media`): search, filter, grid, upload, replace, alt text, delete |
