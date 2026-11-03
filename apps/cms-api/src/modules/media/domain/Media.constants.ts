@@ -9,6 +9,8 @@ export const ALT_MAX_LENGTH = 500;
 /** UTF-8 bytes allowed for the alt field (4 per character at most). */
 export const ALT_MAX_BYTES = ALT_MAX_LENGTH * 4;
 export const FILE_NAME_MAX_LENGTH = 255;
+/** Leading hex characters of the stored bytes' sha256 that end a stored file name (`<stem>_<hash>.<ext>`). */
+export const STORED_NAME_HASH_LENGTH = 8;
 /** Name shown when the client sends none (or only unusable characters). */
 export const FALLBACK_FILE_NAME = 'file';
 

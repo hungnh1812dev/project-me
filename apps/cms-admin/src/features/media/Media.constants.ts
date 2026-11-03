@@ -60,5 +60,11 @@ export const MAX_PARALLEL_UPLOADS = 2;
 /** Files one upload batch may hold (the API allows 60 uploads per hour per user). */
 export const MAX_FILES_PER_BATCH = 20;
 
+/**
+ * Longest wait for an upload or a file replace (sending plus server
+ * processing). Kept below the proxy's 5 min so the client reports the timeout.
+ */
+export const MEDIA_UPLOAD_TIMEOUT_MS = 4 * 60 * 1000;
+
 /** Permission subject of the library. */
 export const MEDIA_SUBJECT = 'media';

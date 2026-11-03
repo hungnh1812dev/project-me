@@ -12,7 +12,7 @@ Owns uploaded files: streaming upload with type and size checks, image re-encodi
 
 ## Techniques
 
-Clean layers: `domain/` rules, `application/` use cases behind ports (`MediaStorage`, `UploadProcessor`, `Repository`), `adapters/`, `http/`. Uploads stream through busboy with per-type limits, `file-type` sniffing and sharp re-encoding. Storage chosen by a factory per provider (`MEDIA_STORAGE_FACTORIES`); each row records its provider. Row locks serialise replace and delete; delete leaves a tombstone, `MediaPurgeJob` removes bytes later and skips rows of another provider. Delete and replace are written to the security audit log. `DocumentMediaService` checks and rewrites media fields and richtext images of a document.
+Clean layers: `domain/` rules, `application/` use cases behind ports (`MediaStorage`, `UploadProcessor`, `Repository`), `adapters/`, `http/`. Uploads stream through busboy with per-type limits, `file-type` sniffing and sharp re-encoding. Storage chosen by a factory per provider (`MEDIA_STORAGE_FACTORIES`); each row records its provider. Row locks serialise replace and delete; delete leaves a tombstone, `MediaPurgeJob` removes bytes later and skips rows of another provider. Delete and replace are written to the security audit log. `DocumentMediaService` checks and rewrites media fields and richtext images of a document. The stored `fileName` is `<stem>_<hash8>.<ext>` (`storedFileNameOf`); rows made before that rule are renamed by the SQL migration `prisma/migrations/20261103090000_media_stored_file_name`, which must give the same name as `storedFileNameOf` (checked by `MediaStoredFileName.integration.spec.ts`).
 
 ## Technologies
 
@@ -52,7 +52,7 @@ Tests: 12 files (not listed).
 | `adapters/MediaReference.adapter.ts` | `MediaReferenceAdapter`: finds documents that reference a file (in-use check) |
 | `adapters/PrismaMedia.repository.ts` | `PrismaMediaRepository`: media rows, list with filters, row locks, tombstones |
 | `adapters/SharpImageReencoder.adapter.ts` | `reencodeImage`: re-encodes uploaded images with sharp |
-| `adapters/UploadProcessing.adapter.ts` | `UploadProcessingAdapter`: streams a multipart upload to a temp file with limits and type sniffing |
+| `adapters/UploadProcessing.adapter.ts` | `UploadProcessingAdapter`: streams a multipart upload to a temp file with limits and type sniffing; `prepare()` re-encodes images and names the stored file |
 | `application/DocumentMedia.service.ts` | `DocumentMediaService`: validates and rewrites media fields and richtext images of a document |
 | `application/Media.port.ts` | Ports and tokens: `MediaStorage`, `UploadProcessor`, repository, upload and stored-object types |
 | `application/MediaLibrary.service.ts` | `MediaLibraryService`: list, alt text, delete (audited), local file read |
@@ -62,7 +62,7 @@ Tests: 12 files (not listed).
 | `domain/Media.constants.ts` | Media kinds, alt and file-name limits, error codes and messages, purge timing, preset provider |
 | `domain/Media.entity.ts` | `MediaRecord`, `MediaView`, list query/page types, media domain errors |
 | `domain/MediaSlots.rules.ts` | `mediaSlots`, `cloneTree`: media field slots in a document tree |
-| `domain/MediaUpload.rules.ts` | Allowed MIME types, MIME filters, size limits per type and request |
+| `domain/MediaUpload.rules.ts` | Allowed MIME types (with their extensions), MIME filters, size limits per type and request, `storedFileNameOf` (`<stem>_<hash8>.<ext>`) |
 | `domain/RichtextImages.rules.ts` | `mediaIdsInRichtext`, `rewriteRichtextImages`: media ids of richtext images |
 | `domain/Uuidv7.rules.ts` | `uuidv7`, `isUuidv7`: ids and local file names |
 | `http/Media.controller.ts` | `MediaController`, `MEDIA_RATE_LIMIT_POLICIES`: the `/media` routes |

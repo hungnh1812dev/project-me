@@ -4,6 +4,7 @@ import {
   ALT_MAX_LENGTH,
   FALLBACK_FILE_NAME,
   FILE_NAME_MAX_LENGTH,
+  STORED_NAME_HASH_LENGTH,
   type MediaKind,
 } from './Media.constants';
 
@@ -22,6 +23,8 @@ export const MEDIA_MAX_REQUEST_BYTES = MEDIA_MAX_FILE_BYTES + BYTES_PER_MB;
 
 export interface AllowedMediaType {
   readonly kind: MediaKind;
+  /** File extensions that belong to the type, lower-case; the first is the canonical one. */
+  readonly extensions: readonly [string, ...string[]];
 }
 
 /**
@@ -29,13 +32,13 @@ export interface AllowedMediaType {
  * (`file-type`). SVG and HTML are not here and are never detected as one.
  */
 export const ALLOWED_MEDIA_TYPES = {
-  'image/jpeg': { kind: 'image' },
-  'image/png': { kind: 'image' },
-  'image/webp': { kind: 'image' },
-  'image/gif': { kind: 'image' },
-  'image/avif': { kind: 'image' },
-  'application/pdf': { kind: 'pdf' },
-  'video/mp4': { kind: 'video' },
+  'image/jpeg': { kind: 'image', extensions: ['jpg', 'jpeg'] },
+  'image/png': { kind: 'image', extensions: ['png'] },
+  'image/webp': { kind: 'image', extensions: ['webp'] },
+  'image/gif': { kind: 'image', extensions: ['gif'] },
+  'image/avif': { kind: 'image', extensions: ['avif'] },
+  'application/pdf': { kind: 'pdf', extensions: ['pdf'] },
+  'video/mp4': { kind: 'video', extensions: ['mp4'] },
 } as const satisfies Record<string, AllowedMediaType>;
 
 export type AllowedMime = keyof typeof ALLOWED_MEDIA_TYPES;
@@ -91,6 +94,32 @@ export function sanitizeFileName(raw: string): string {
   const cleaned = base.replace(/[\u0000-\u001f\u007f]/g, '').trim();
   const bounded = Array.from(cleaned).slice(0, FILE_NAME_MAX_LENGTH).join('');
   return bounded === '' || bounded === '.' || bounded === '..' ? FALLBACK_FILE_NAME : bounded;
+}
+
+/**
+ * The name stored for a file: `<stem>_<hash8>.<ext>`. The stem is the
+ * sanitized original name without its extension; the extension is the
+ * original one when it belongs to the detected type, else the type's
+ * canonical one. A stem already ending in this hash is not suffixed twice, and
+ * the stem is cut so the suffix always fits `FILE_NAME_MAX_LENGTH`.
+ */
+export function storedFileNameOf(
+  originalName: string,
+  sha256: string,
+  mimeType: AllowedMime,
+): string {
+  const extensions: AllowedMediaType['extensions'] = ALLOWED_MEDIA_TYPES[mimeType].extensions;
+  const name = sanitizeFileName(originalName);
+  const dotIndex = name.lastIndexOf('.');
+  const hasExtension = dotIndex > 0;
+  const originalExtension = hasExtension ? name.slice(dotIndex + 1).toLowerCase() : '';
+  const extension = extensions.includes(originalExtension) ? originalExtension : extensions[0];
+  const hashSuffix = `_${sha256.slice(0, STORED_NAME_HASH_LENGTH)}`;
+  const rawStem = hasExtension ? name.slice(0, dotIndex) : name;
+  const stem = rawStem.endsWith(hashSuffix) ? rawStem.slice(0, -hashSuffix.length) : rawStem;
+  const suffix = `${hashSuffix}.${extension}`;
+  const stemLimit = FILE_NAME_MAX_LENGTH - suffix.length;
+  return `${Array.from(stem).slice(0, stemLimit).join('')}${suffix}`;
 }
 
 export function isAltWithinLimit(text: string): boolean {

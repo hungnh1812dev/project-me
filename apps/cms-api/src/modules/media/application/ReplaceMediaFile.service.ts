@@ -68,7 +68,7 @@ export class ReplaceMediaFileService {
       });
       try {
         return await this.swapRow(actor, target.id, meta, {
-          fileName: received.fileName,
+          fileName: prepared.fileName,
           mimeType: prepared.mimeType,
           size: prepared.size,
           width: prepared.width,

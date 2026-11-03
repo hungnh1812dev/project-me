@@ -21,7 +21,9 @@ const SUMMARY_LABEL = 'Summary';
 const UPLOAD_SETTLE_MS = 20_000;
 const PNG_SEED_RANGE = 200;
 const SEED = (Number.parseInt(RUN_ID, 36) % PNG_SEED_RANGE) + 1;
-const FILE_NAME = `e2e-chain-${RUN_ID}.png`;
+const STEM = `e2e-chain-${RUN_ID}`;
+const FILE_NAME = `${STEM}.png`;
+const STORED_NAME_PATTERN = new RegExp(`^${STEM}_[0-9a-f]{8}\\.png$`);
 const RESUME_NAME = `E2E media chain ${RUN_ID}`;
 
 interface ResumeRead {
@@ -41,6 +43,7 @@ test.describe.serial('media chain: upload to richtext to public read, replace, d
   let draft: DraftRef;
   let file: UploadedImage;
   let urlBefore = '';
+  let storedName = '';
 
   const dialog = () => page.getByRole('dialog');
   const images = () => editor.locator('img[data-media-id]');
@@ -70,7 +73,7 @@ test.describe.serial('media chain: upload to richtext to public read, replace, d
   const mediaItem = async (): Promise<UploadedImage | undefined> => {
     const response = await api.get(apiUrl(API_PATHS.MEDIA), {
       headers: bearer(token()),
-      params: { search: FILE_NAME },
+      params: { search: STEM },
     });
     expect(response.status()).toBe(HTTP.OK);
     const { data } = (await response.json()) as { data: UploadedImage[] };
@@ -146,6 +149,8 @@ test.describe.serial('media chain: upload to richtext to public read, replace, d
     file = { id: id ?? '', fileName: FILE_NAME, url: '' };
     const item = await mediaItem();
     expect(item).toBeDefined();
+    storedName = item?.fileName ?? '';
+    expect(storedName).toMatch(STORED_NAME_PATTERN);
     urlBefore = item?.url ?? '';
     expect(urlBefore).not.toBe('');
   });
@@ -163,19 +168,22 @@ test.describe.serial('media chain: upload to richtext to public read, replace, d
 
   test('after replace the new url shows in the editor, REST and GraphQL', async () => {
     await page.goto('/media');
-    await page.getByRole('searchbox', { name: media.filters.search }).fill(FILE_NAME);
-    const card = page.getByRole('listitem').filter({ hasText: FILE_NAME });
-    await card.getByRole('button', { name: media.grid.replaceLabel(FILE_NAME) }).click();
+    await page.getByRole('searchbox', { name: media.filters.search }).fill(STEM);
+    const card = page.getByRole('listitem').filter({ hasText: STEM });
+    await card.getByRole('button', { name: media.grid.replaceLabel(storedName) }).click();
     await dialog()
       .getByTestId('upload-dialog-input')
       .setInputFiles({ name: FILE_NAME, mimeType: 'image/png', buffer: pngOf(SEED + 1) });
     await dialog()
       .getByRole('button', { name: /^Upload/ })
       .click();
-    await expect(page.getByText(media.replaced(FILE_NAME))).toBeVisible({
+    await expect(page.getByText(new RegExp(`${STEM}_[0-9a-f]{8}\\.png replaced\\.`))).toBeVisible({
       timeout: UPLOAD_SETTLE_MS,
     });
-    const urlAfter = (await mediaItem())?.url ?? '';
+    const replacedItem = await mediaItem();
+    storedName = replacedItem?.fileName ?? '';
+    expect(storedName).toMatch(STORED_NAME_PATTERN);
+    const urlAfter = replacedItem?.url ?? '';
     expect(urlAfter).not.toBe('');
     expect(urlAfter).not.toBe(urlBefore);
 
@@ -193,10 +201,10 @@ test.describe.serial('media chain: upload to richtext to public read, replace, d
 
   test('delete is refused while in use; after the image is removed it deletes and reads lose it', async () => {
     await page.goto('/media');
-    await page.getByRole('searchbox', { name: media.filters.search }).fill(FILE_NAME);
-    await page.getByRole('button', { name: media.deleteLabel(FILE_NAME) }).click();
+    await page.getByRole('searchbox', { name: media.filters.search }).fill(STEM);
+    await page.getByRole('button', { name: media.deleteLabel(storedName) }).click();
     await dialog()
-      .getByRole('button', { name: media.deleteDialog.submit(FILE_NAME) })
+      .getByRole('button', { name: media.deleteDialog.submit(storedName) })
       .click();
     await expect(dialog()).toContainText(media.errors.inUse);
     await dialog().getByRole('button', { name: media.deleteDialog.cancel }).click();
@@ -214,12 +222,12 @@ test.describe.serial('media chain: upload to richtext to public read, replace, d
     expect(cleared.ok()).toBe(true);
     await publish();
 
-    await page.getByRole('button', { name: media.deleteLabel(FILE_NAME) }).click();
+    await page.getByRole('button', { name: media.deleteLabel(storedName) }).click();
     await dialog()
-      .getByRole('button', { name: media.deleteDialog.submit(FILE_NAME) })
+      .getByRole('button', { name: media.deleteDialog.submit(storedName) })
       .click();
     await expect(dialog()).toBeHidden();
-    await expect(page.getByRole('listitem').filter({ hasText: FILE_NAME })).toHaveCount(0);
+    await expect(page.getByRole('listitem').filter({ hasText: STEM })).toHaveCount(0);
 
     expect(await mediaItem()).toBeUndefined();
     expect(await restSummary('published')).not.toContain('<img');

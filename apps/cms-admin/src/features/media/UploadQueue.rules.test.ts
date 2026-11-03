@@ -9,15 +9,18 @@ import {
 } from './Media.constants';
 import {
   addFiles,
+  batchPercentOf,
   checkFile,
   dropUnsent,
+  hasDeterminateProgress,
   markDone,
   markFailed,
   markProgress,
   markUploading,
   nextToStart,
   retryItem,
-  totalsOf,
+  sentPercentOf,
+  UPLOAD_SENT_SHARE,
 } from './UploadQueue.rules';
 
 function fileOf(type: string, size = 10): File {
@@ -94,13 +97,42 @@ describe('nextToStart', () => {
   });
 });
 
-describe('totalsOf', () => {
-  it('sums the bytes of accepted files only', () => {
+describe('progress and batchPercentOf', () => {
+  it('moves uploading to processing once every byte is sent', () => {
+    let items = addFiles([], [png(100)], nextId);
+    const id = items[0]?.id as string;
+    items = markProgress(markUploading(items, id), id, 40, 100);
+    expect(items[0]?.status).toBe('uploading');
+    expect(sentPercentOf(items[0] as never)).toBe(40);
+    items = markProgress(items, id, 100, 100);
+    expect(items[0]?.status).toBe('processing');
+    expect(hasDeterminateProgress(items[0] as never)).toBe(false);
+  });
+
+  it('keeps an unknown total uploading and indeterminate', () => {
+    let items = addFiles([], [png(100)], nextId);
+    const id = items[0]?.id as string;
+    items = markProgress(markUploading(items, id), id, 500, undefined);
+    expect(items[0]?.status).toBe('uploading');
+    expect(hasDeterminateProgress(items[0] as never)).toBe(false);
+  });
+
+  it('weighs files by size and stays below 100 until every file answered', () => {
     let items = addFiles([], [png(100), png(300), fileOf('text/plain', 999)], nextId);
-    items = markUploading(items, items[0]?.id as string);
-    items = markProgress(items, items[0]?.id as string, 40, 100);
-    items = markDone(markUploading(items, items[1]?.id as string), items[1]?.id as string, media);
-    expect(totalsOf(items)).toEqual({ sentBytes: 340, totalBytes: 400 });
+    const [a, b] = [items[0]?.id as string, items[1]?.id as string];
+    items = markProgress(markUploading(items, a), a, 100, 100);
+    expect(batchPercentOf(items)).toBe(Math.floor(UPLOAD_SENT_SHARE * 25));
+    items = markDone(markUploading(items, b), b, media);
+    expect(batchPercentOf(items)).toBe(Math.floor((300 + 90) / 4));
+    items = markDone(items, a, media);
+    expect(batchPercentOf(items)).toBe(100);
+  });
+
+  it('counts a failed file as settled', () => {
+    let items = addFiles([], [png(100)], nextId);
+    const id = items[0]?.id as string;
+    items = markFailed(markUploading(items, id), id, 'x');
+    expect(batchPercentOf(items)).toBe(100);
   });
 });
 

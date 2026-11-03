@@ -68,6 +68,8 @@ export {
   type MediaPreviewProps,
   MediaDetails,
   type MediaDetailsProps,
+  FileName,
+  type FileNameProps,
 } from './components/forms/media-input';
 export {
   SortableSheet,

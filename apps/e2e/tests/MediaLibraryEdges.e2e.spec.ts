@@ -155,12 +155,18 @@ test.describe.serial('owner: file library edge states with the real API', () => 
       buffer: pngOf(FILE_COUNT + 50),
     });
     await dialog.getByRole('button', { name: /^Upload/ }).click();
-    await expect(page.getByText(copy.replaced(nameOf(2)))).toBeVisible({
+    const stem = nameOf(2).replace(/\.png$/, '');
+    await expect(
+      page.getByText(
+        new RegExp(`^${stem}_[0-9a-f]{8}\\.png ${copy.replaced('').trim().replace('.', '\\.')}$`),
+      ),
+    ).toBeVisible({
       timeout: UPLOAD_SETTLE_MS,
     });
     await closeDialog(page);
-    await expect(cardOf(page, nameOf(2))).toHaveCount(1);
-    await expect.poll(async () => cardOf(page, nameOf(2)).innerText()).not.toBe(before);
+    await searchBox(page).fill(stem);
+    await expect(cardOf(page, stem)).toHaveCount(1);
+    await expect.poll(async () => cardOf(page, stem).innerText()).not.toBe(before);
   });
 
   test('the console stayed clean', () => {

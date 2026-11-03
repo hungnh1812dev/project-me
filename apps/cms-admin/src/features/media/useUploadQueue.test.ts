@@ -8,7 +8,7 @@ import { useUploadQueue, type SendFile } from './useUploadQueue';
 interface PendingSend {
   file: File;
   signal: AbortSignal;
-  onProgress: (sent: number, total: number) => void;
+  onProgress: (sent: number, total: number | undefined) => void;
   resolve: () => void;
   reject: (error: unknown) => void;
 }
@@ -63,6 +63,29 @@ describe('useUploadQueue', () => {
     expect(result.current.items[0]?.status).toBe('processing');
     await act(() => Promise.resolve(pending[0]?.resolve()));
     expect(result.current.items[0]?.status).toBe('done');
+  });
+
+  it('keeps the batch percent below 100 until the answer and never lowers it', async () => {
+    const { send, pending } = fakeSend();
+    const { result } = renderHook(() => useUploadQueue(send));
+    act(() => result.current.add([png('a.png'), png('b.png')]));
+    act(() => result.current.start());
+    const seen: number[] = [];
+    for (const [sent, total] of [
+      [1, 10],
+      [5, 10],
+      [10, 10],
+      [3, 10],
+    ] as const) {
+      act(() => pending[0]?.onProgress(sent, total));
+      seen.push(result.current.batchPercent);
+    }
+    expect(seen).toEqual([...seen].sort((x, y) => x - y));
+    expect(Math.max(...seen)).toBeLessThan(100);
+    await act(() => Promise.resolve(pending[0]?.reject(new Error('x'))));
+    const afterFail = result.current.batchPercent;
+    act(() => result.current.retry(result.current.items[0]?.id as string));
+    expect(result.current.batchPercent).toBeGreaterThanOrEqual(afterFail);
   });
 
   it('marks a failed file and retries it alone', async () => {
