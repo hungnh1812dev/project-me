@@ -307,6 +307,11 @@ describe('media upload and list (T27; Postgres 17 via Testcontainers)', () => {
   });
 
   describe('GET /media', () => {
+    const originalNameOf = (storedName: string): string =>
+      storedName.replace(/_[0-9a-f]{8}(?=\.[^.]+$)/, '');
+    const originalNamesOf = (page: { data: readonly { fileName: string }[] }): string[] =>
+      page.data.map((file) => originalNameOf(file.fileName));
+
     async function clear(): Promise<void> {
       await db.prisma.fileLibrary.deleteMany();
     }
@@ -327,7 +332,7 @@ describe('media upload and list (T27; Postgres 17 via Testcontainers)', () => {
       const res = await http().get(MEDIA).set(bearer(editor));
       expect(res.status).toBe(200);
       const page = res.body as Page;
-      expect(page.data.map((file) => file.fileName)).toEqual(['c.png', 'b.png']);
+      expect(originalNamesOf(page)).toEqual(['c.png', 'b.png']);
       expect(page.meta).toEqual({ page: 1, pageSize: 20, total: 2 });
       expect(JSON.stringify(page)).not.toMatch(/storageKey|deletedAt/);
       expect(page.data[0]?.sha256).toMatch(/^[0-9a-f]{64}$/);
@@ -338,7 +343,7 @@ describe('media upload and list (T27; Postgres 17 via Testcontainers)', () => {
 
       const second = await http().get(`${MEDIA}?page=2&pageSize=1`).set(bearer(owner));
       const secondPage = second.body as Page;
-      expect(secondPage.data.map((file) => file.fileName)).toEqual(['b.png']);
+      expect(originalNamesOf(secondPage)).toEqual(['b.png']);
       expect(secondPage.meta).toEqual({ page: 2, pageSize: 1, total: 2 });
     });
 
@@ -378,18 +383,23 @@ describe('media upload and list (T27; Postgres 17 via Testcontainers)', () => {
       it('matches the file name case-insensitively as a substring', async () => {
         await seed(['Holiday.png', 'work.png', 'HOLIDAY2.png']);
         const page = await namesOf('search=holiday');
-        expect(page.data.map((file) => file.fileName)).toEqual(['HOLIDAY2.png', 'Holiday.png']);
+        expect(originalNamesOf(page)).toEqual(['HOLIDAY2.png', 'Holiday.png']);
         expect(page.meta.total).toBe(2);
         expect((await namesOf('search=%20ORK%20')).meta.total).toBe(1);
       });
 
       it('matches %, _ and backslash literally', async () => {
         await seed(['a%b.png', 'a_b.png', 'axb.png', 'abx.png']);
-        // The upload strips path separators, so a stored backslash is set directly.
-        await db.prisma.fileLibrary.updateMany({
-          where: { fileName: 'abx.png' },
-          data: { fileName: 'a\\b.png' },
-        });
+        // Uploads add a hash suffix (which holds an underscore) and strip path
+        // separators, so the names under test are set directly.
+        const rows = await db.prisma.fileLibrary.findMany();
+        for (const row of rows) {
+          const plainName = originalNameOf(row.fileName);
+          await db.prisma.fileLibrary.update({
+            where: { id: row.id },
+            data: { fileName: plainName === 'abx.png' ? 'a\\b.png' : plainName },
+          });
+        }
         expect((await namesOf('search=a%25b')).data.map((f) => f.fileName)).toEqual(['a%b.png']);
         expect((await namesOf('search=a_b')).data.map((f) => f.fileName)).toEqual(['a_b.png']);
         expect((await namesOf('search=%25')).meta.total).toBe(1);
@@ -407,7 +417,7 @@ describe('media upload and list (T27; Postgres 17 via Testcontainers)', () => {
         expect((await namesOf('mimeType=video/*')).meta.total).toBe(1);
         expect((await namesOf('mimeType=video/mp4')).meta.total).toBe(1);
         const only = await namesOf('mimeType=application/pdf&search=DOC');
-        expect(only.data.map((file) => file.fileName)).toEqual(['doc.pdf']);
+        expect(originalNamesOf(only)).toEqual(['doc.pdf']);
         const paged = await namesOf('mimeType=image/*&pageSize=1&page=2');
         expect(paged.meta).toEqual({ page: 2, pageSize: 1, total: 2 });
       });
@@ -415,7 +425,7 @@ describe('media upload and list (T27; Postgres 17 via Testcontainers)', () => {
       it('keeps the policy row filter when searching', async () => {
         await seed(['plain.png', 'preset.png']);
         const preset = await db.prisma.fileLibrary.findFirstOrThrow({
-          where: { fileName: 'preset.png' },
+          where: { fileName: { startsWith: 'preset_' } },
         });
         await db.prisma.fileLibrary.update({
           where: { id: preset.id },
@@ -426,7 +436,7 @@ describe('media upload and list (T27; Postgres 17 via Testcontainers)', () => {
         const reviewer = reviewerActor(99, 1, role);
         const base = { page: 1, pageSize: 20 };
         const hit = await media.list(reviewer, { ...base, search: 'png' });
-        expect(hit.data.map((file) => file.fileName)).toEqual(['preset.png']);
+        expect(originalNamesOf(hit)).toEqual(['preset.png']);
         expect(hit.meta.total).toBe(1);
         const miss = await media.list(reviewer, { ...base, search: 'plain' });
         expect(miss.data).toEqual([]);
@@ -462,7 +472,7 @@ describe('media upload and list (T27; Postgres 17 via Testcontainers)', () => {
         page: 1,
         pageSize: 20,
       });
-      expect(asReviewer.data.map((file) => file.fileName)).toEqual(['preset.png']);
+      expect(originalNamesOf(asReviewer)).toEqual(['preset.png']);
       expect(asReviewer.meta.total).toBe(1);
 
       const asEditor = await http().get(MEDIA).set(bearer(editor));
