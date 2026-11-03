@@ -40,6 +40,18 @@ spec:
     - kind: Rule
       match: Host(`domain.com`) && PathPrefix(`/api`)
       priority: 20
+      middlewares:
+        - name: api-inflight
+      services:
+        - name: cms-api
+          port: 3000
+    - kind: Rule
+      # api-upload: upload and replace only, in every path form cms-api accepts
+      match: Host(`domain.com`) && ((Method(`POST`) && PathRegexp(`(?i)^/api/v1/media/?$`)) || (Method(`PUT`) && PathRegexp(`(?i)^/api/v1/media/[^/]+/file/?$`)))
+      priority: 200
+      middlewares:
+        - name: api-inflight
+        - name: upload-close
       services:
         - name: cms-api
           port: 3000
@@ -69,9 +81,38 @@ spec:
     secretName: <admin-domain-com-tls>
 ```
 
+Define the two middlewares in the same namespace:
+
+```yaml
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: api-inflight
+  namespace: <namespace>
+spec:
+  inFlightReq:
+    amount: 100 # per client IP (default sourceCriterion)
+---
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: upload-close
+  namespace: <namespace>
+spec:
+  headers:
+    customResponseHeaders:
+      Connection: close
+```
+
 Add a `web` entrypoint redirect to HTTPS in your Traefik config. The smoke stack (`docker-compose.smoke.yml`) uses the same routers with labels; the assertions in `pnpm smoke` check `/api` reaching cms-api, the web catch-all and the admin host.
 
-**Upload timeouts.** Media uploads can be slow on poor links. Set the Traefik entrypoint that serves the API (`websecure`) to `transport.respondingTimeouts.readTimeout: 15m` (the smoke stack sets `--entrypoints.web.transport.respondingTimeouts.readTimeout=15m`). cms-api sets the Node server `requestTimeout` to 15 minutes in `Bootstrap.setup.ts` (no env key); `headersTimeout` stays at the Node default. The browser client gives up after 10 minutes.
+**Upload timeouts.** Media uploads can be slow on poor links, and a slow request holds a socket.
+
+- Set the Traefik `websecure` entrypoint to `transport.respondingTimeouts.readTimeout: 5m` (the smoke stack sets `--entrypoints.web.transport.respondingTimeouts.readTimeout=5m`). It applies to every route and also bounds slow request headers. cms-api sets the Node server `requestTimeout` to the same 5 minutes in `Bootstrap.setup.ts` (no env key); `headersTimeout` stays at the Node default.
+- `api-upload` routes only `POST /api/v1/media` and `PUT /api/v1/media/:id/file` (priority above the `/api` route, same service). It carries `api-inflight` and `upload-close`. `api-inflight` (`inFlightReq`, 100 per client IP) is also on the `/api` route because the 5 minute entrypoint value applies to every `/api` route, login included; each router counts its own 100.
+- Why `upload-close`: when cms-api rejects an upload early (401/403), Traefik (Go `net/http`) still reads up to 256 KB of the unread body before it answers, bounded only by `readTimeout`, so an anonymous client sending slowly holds the answer back. A response with `Connection: close` skips that drain and the connection closes after the answer. cms-api sends the header too, but the reverse proxy drops hop-by-hop headers from the backend, so it must be set in Traefik. Keep-alive stays on for every other route.
+- Limits: the browser gives up an upload after 4 minutes (below the 5 minute server value), so a 100 MB file needs about 3.5 Mbit/s upload. Every upload response closes its connection. HTTP/2 was not exercised on the smoke stack (plain HTTP). Traefik v3.6 is enough; no router-level timeouts are used.
+- When web-bff-hardening moves the API to its own host (Q-BFF1), `api-upload` changes host together with `/api`.
 
 ## 2. Client IP: `externalTrafficPolicy: Local` and `TRUST_PROXY_HOPS`
 

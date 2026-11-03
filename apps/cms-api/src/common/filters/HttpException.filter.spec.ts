@@ -1,17 +1,23 @@
-import { ConflictException, Logger, type ArgumentsHost } from '@nestjs/common';
+import {
+  ConflictException,
+  Logger,
+  UnauthorizedException,
+  type ArgumentsHost,
+} from '@nestjs/common';
 
 import { DOMAIN_ERROR_KINDS, DomainError } from '../errors/Domain.errors';
 import { HttpExceptionFilter } from './HttpException.filter';
 
-function run(exception: unknown) {
+function run(exception: unknown, req: object = {}) {
   const res = {
+    once: jest.fn(),
     status: jest.fn().mockReturnThis(),
     json: jest.fn(),
     setHeader: jest.fn(),
   };
   const host = {
     switchToHttp: () => ({
-      getRequest: () => ({ requestId: 'req-1', method: 'GET', path: '/x' }),
+      getRequest: () => ({ requestId: 'req-1', method: 'GET', path: '/x', ...req }),
       getResponse: () => res,
     }),
   } as unknown as ArgumentsHost;
@@ -80,6 +86,33 @@ describe('HttpExceptionFilter', () => {
       errorCode: 'INTERNAL_ERROR',
       message: 'Internal server error',
       requestId: 'req-1',
+    });
+  });
+
+  describe('rejected uploads', () => {
+    const unfinishedUpload = {
+      headers: { 'content-type': 'multipart/form-data; boundary=x' },
+      complete: false,
+      pause: jest.fn(),
+      destroy: jest.fn(),
+    };
+
+    it('closes the connection after a 401 while the body is still arriving', () => {
+      const res = run(new UnauthorizedException(), unfinishedUpload);
+      expect(res.setHeader).toHaveBeenCalledWith('Connection', 'close');
+      const onFinish = res.once.mock.calls[0] as [string, () => void];
+      onFinish[1]();
+      expect(unfinishedUpload.destroy).toHaveBeenCalled();
+    });
+
+    it('keeps the connection when the body was fully received', () => {
+      const res = run(new UnauthorizedException(), { ...unfinishedUpload, complete: true });
+      expect(res.setHeader).not.toHaveBeenCalled();
+    });
+
+    it('keeps the connection for a non-multipart 401', () => {
+      const res = run(new UnauthorizedException(), { complete: false, headers: {} });
+      expect(res.setHeader).not.toHaveBeenCalled();
     });
   });
 });

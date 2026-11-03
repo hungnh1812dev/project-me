@@ -1,9 +1,31 @@
-import { Catch, Logger, type ArgumentsHost, type ExceptionFilter } from '@nestjs/common';
-import type { Response } from 'express';
+import {
+  Catch,
+  HttpStatus,
+  Logger,
+  type ArgumentsHost,
+  type ExceptionFilter,
+} from '@nestjs/common';
+import type { Request, Response } from 'express';
 
 import { RETRY_AFTER_HEADER } from '../constants/Limits.constants';
 import { describeError, isServerErrorStatus } from '../http/DescribeHttpException.rules';
+import { closeAfterAnswer } from '../middleware/ByteLimit.rules';
 import type { RequestWithId } from '../middleware/RequestId.middleware';
+
+const MULTIPART_CONTENT_TYPE = 'multipart/form-data';
+const CONNECTION_HEADER = 'Connection';
+const CONNECTION_CLOSE = 'close';
+
+/**
+ * A rejected upload (401/403) whose body is still arriving must not make the client
+ * keep sending: a slow-drip body would otherwise hold the socket for the whole request timeout.
+ */
+function shouldCloseRejectedUpload(statusCode: number, req: Request): boolean {
+  const isRejection =
+    statusCode === Number(HttpStatus.UNAUTHORIZED) || statusCode === Number(HttpStatus.FORBIDDEN);
+  const isMultipart = req.headers?.['content-type']?.startsWith(MULTIPART_CONTENT_TYPE) ?? false;
+  return isRejection && isMultipart && req.complete === false;
+}
 
 /** The one error shape every endpoint returns. */
 export interface ErrorResponseBody {
@@ -45,6 +67,11 @@ export class HttpExceptionFilter implements ExceptionFilter {
         `requestId=${body.requestId ?? 'none'} ${req.method} ${req.path}`,
         exception instanceof Error ? exception.stack : undefined,
       );
+    }
+
+    if (shouldCloseRejectedUpload(body.statusCode, req)) {
+      res.setHeader(CONNECTION_HEADER, CONNECTION_CLOSE);
+      closeAfterAnswer(req, res);
     }
 
     res.status(body.statusCode).json(body);

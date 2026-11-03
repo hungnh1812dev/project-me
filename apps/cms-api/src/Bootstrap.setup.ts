@@ -9,8 +9,11 @@ import { configureApp } from './App.setup';
 import { loadAppConfig } from './config/AppConfig.setup';
 import { summarizeConfig } from './config/ConfigSummary.rules';
 
-/** Slow media uploads on poor links must finish; Node's default is 5 min. headersTimeout stays default. */
-const REQUEST_TIMEOUT_MS = 15 * 60 * 1000;
+/**
+ * Matches the proxy entrypoint readTimeout (5 min); the browser gives up on an upload at 4 min,
+ * so a slow upload ends client-side first. headersTimeout stays at the Node default.
+ */
+const REQUEST_TIMEOUT_MS = 5 * 60 * 1000;
 
 type RawEnv = Readonly<Record<string, string | undefined>>;
 

@@ -22,7 +22,7 @@ then read the module doc, then `graphify explain`, then only the lines you need.
 | logging | `apps/cms-api/src/infrastructure/logging` | none yet | - |
 | mail | `apps/cms-api/src/infrastructure/mail` | none yet | - |
 | scheduling | `apps/cms-api/src/infrastructure/scheduling` | none yet | - |
-| common | `apps/cms-api/src/common` | none yet | - |
+| common | `apps/cms-api/src/common` | `docs/modules/cms-api/common.md` | Shared HTTP plumbing of cms-api: constants, error filter, guards, middleware, rate limit, clock, shared schemas |
 | config | `apps/cms-api/src/config` | `docs/modules/cms-api/config.md` | Typed app config: env schema, cross-key rules, production guards, safe boot summary |
 | contract | `apps/cms-api/src/contract` | `docs/modules/cms-api/contract.md` | Builds and prints the constants shared with the frontends (`contract:print`) |
 
