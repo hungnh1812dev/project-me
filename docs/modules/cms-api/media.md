@@ -12,7 +12,7 @@ Owns uploaded files: streaming upload with type and size checks, image re-encodi
 
 ## Techniques
 
-Clean layers: `domain/` rules, `application/` use cases behind ports (`MediaStorage`, `UploadProcessor`, `Repository`), `adapters/`, `http/`. Uploads stream through busboy with per-type limits, `file-type` sniffing and sharp re-encoding. Storage chosen by a factory per provider (`MEDIA_STORAGE_FACTORIES`); each row records its provider. Row locks serialise replace and delete; delete leaves a tombstone, `MediaPurgeJob` removes bytes later and skips rows of another provider. Delete and replace are written to the security audit log. `DocumentMediaService` checks and rewrites media fields and richtext images of a document.
+Clean layers: `domain/` rules, `application/` use cases behind ports (`MediaStorage`, `UploadProcessor`, `Repository`), `adapters/`, `http/`. Uploads stream through busboy with per-type limits, `file-type` sniffing and sharp re-encoding. Storage chosen by a factory per provider (`MEDIA_STORAGE_FACTORIES`); each row records its provider. Row locks serialise replace and delete; delete leaves a tombstone, `MediaPurgeJob` removes bytes later and skips rows of another provider. Delete and replace are written to the security audit log. `DocumentMediaService` checks and rewrites media fields and richtext images of a document. The stored `fileName` is `<stem>_<hash8>.<ext>` (`storedFileNameOf`); rows made before that rule are renamed by the SQL migration `prisma/migrations/20261103090000_media_stored_file_name`, which must give the same name as `storedFileNameOf` (checked by `MediaStoredFileName.integration.spec.ts`).
 
 ## Technologies
 
