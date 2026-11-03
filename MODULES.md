@@ -22,7 +22,7 @@ then read the module doc, then `graphify explain`, then only the lines you need.
 | logging | `apps/cms-api/src/infrastructure/logging` | none yet | - |
 | mail | `apps/cms-api/src/infrastructure/mail` | none yet | - |
 | scheduling | `apps/cms-api/src/infrastructure/scheduling` | none yet | - |
-| common | `apps/cms-api/src/common` | none yet | - |
+| common | `apps/cms-api/src/common` | `docs/modules/cms-api/common.md` | Shared HTTP plumbing of cms-api: constants, error filter, guards, middleware, rate limit, clock, shared schemas |
 | config | `apps/cms-api/src/config` | `docs/modules/cms-api/config.md` | Typed app config: env schema, cross-key rules, production guards, safe boot summary |
 | contract | `apps/cms-api/src/contract` | `docs/modules/cms-api/contract.md` | Builds and prints the constants shared with the frontends (`contract:print`) |
 
@@ -31,7 +31,7 @@ then read the module doc, then `graphify explain`, then only the lines you need.
 | Module | Folder | Doc | Summary |
 |---|---|---|---|
 | access | `apps/cms-admin/src/features/access` | `docs/modules/cms-admin/access.md` | Accounts, roles and permission matrix client, plus the caller's own access hints (can, canWriteEveryField) |
-| auth | `apps/cms-admin/src/features/auth` | none yet | - |
+| auth | `apps/cms-admin/src/features/auth` | `docs/modules/cms-admin/auth.md` | Sign-in session, access token handling, refresh interceptor, password and first-owner setup flows |
 | backups | `apps/cms-admin/src/features/backups` | none yet | - |
 | content | `apps/cms-admin/src/features/content` | `docs/modules/cms-admin/content.md` | Content API client, queries, dynamic document form (field registry, components, richtext) and menu items |
 | content-types | `apps/cms-admin/src/features/content-types` | `docs/modules/cms-admin/content-types.md` | Content type catalog client: slug, display name, kind and fields |

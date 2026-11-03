@@ -11,3 +11,4 @@ export {
   type MediaPreviewProps,
 } from './MediaPreview';
 export { MediaDetails, formatFileSize, type MediaDetailsProps } from './MediaDetails';
+export { FileName, type FileNameProps } from './FileName';

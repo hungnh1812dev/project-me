@@ -1,6 +1,6 @@
 import { COPY } from '@configs/Copy.constants';
 import { HTTP_STATUS, RETRY_AFTER_HEADER } from '@configs/Http.constants';
-import { isAxiosError } from 'axios';
+import { AxiosError, isAxiosError, isCancel } from 'axios';
 
 const SECONDS_PER_MINUTE = 60;
 
@@ -24,6 +24,19 @@ export function retryAfterSecondsOf(retryAfter: unknown): number | undefined {
       ? Number(retryAfter.trim())
       : Number.NaN;
   return Number.isFinite(seconds) && seconds > 0 ? seconds : undefined;
+}
+
+/** The request ran past its timeout (axios `ECONNABORTED` / `ETIMEDOUT`). */
+export function isRequestTimeout(error: unknown): boolean {
+  return (
+    isAxiosError(error) &&
+    (error.code === AxiosError.ECONNABORTED || error.code === AxiosError.ETIMEDOUT)
+  );
+}
+
+/** The request was aborted by the caller (signal), not by a timeout or the network. */
+export function isRequestCanceled(error: unknown): boolean {
+  return isCancel(error) || (isAxiosError(error) && error.code === AxiosError.ERR_CANCELED);
 }
 
 export function apiFailureOf(error: unknown): ApiFailure {

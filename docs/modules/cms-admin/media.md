@@ -12,7 +12,7 @@ The media pieces shared by the File Library page and the document editor: the me
 
 ## Techniques
 
-Upload queue as pure rules (`UploadQueue.rules.ts`: file checks by kind and size, state transitions, totals) driven by `useUploadQueue` with a parallel limit; the library refreshes when a batch settles. Allowed MIME types and size limits per kind in `Media.constants.ts`. API errors mapped by `toMediaError`. Actions shown by caller permissions (`MEDIA_SUBJECT`).
+Upload queue as pure rules (`UploadQueue.rules.ts`: file checks by kind and size, state transitions, honest progress: sent bytes fill `UPLOAD_SENT_SHARE` of a file, the server answer the rest) driven by `useUploadQueue` with a parallel limit; the library refreshes when a batch settles. Allowed MIME types and size limits per kind in `Media.constants.ts`. API errors mapped by `toMediaError`. Actions shown by caller permissions (`MEDIA_SUBJECT`).
 
 ## Technologies
 
@@ -35,14 +35,14 @@ A new allowed file kind or limit: `Media.constants.ts` (and the cms-api media ru
 media/ (16 files)
 ```
 
-Tests: 7 files (not listed).
+Tests: 9 files (not listed).
 
 | File | Description |
 |---|---|
 | `ImageInsertDialog.tsx` | `ImageInsertDialog`: pick or upload an image for the richtext editor |
-| `Media.api.ts` | `createMediaApi`: list, upload with progress, replace, alt text, delete; `MediaFile` and filter types |
-| `Media.constants.ts` | Page sizes, search debounce, alt max length, allowed MIME types per kind, size limits |
-| `Media.errors.ts` | `toMediaError`: API failures to media error kinds and messages |
+| `Media.api.ts` | `createMediaApi`: list, upload and replace with the 4 min upload timeout and a fresh access token before sending, progress, alt text, delete; `MediaFile` and filter types |
+| `Media.constants.ts` | Page sizes, search debounce, upload timeout, alt max length, allowed MIME types per kind, size limits |
+| `Media.errors.ts` | `toMediaError`: API failures to media error kinds and messages (timeout copy, silent `canceled`) |
 | `Media.feature.ts` | `mediaFeature`: feature registration (API service) |
 | `Media.queries.ts` | `MEDIA_QUERY_KEY`, `useMediaQuery`: the paged media list query |
 | `MediaApi.context.tsx` | React context that provides the media API |
@@ -51,8 +51,8 @@ Tests: 7 files (not listed).
 | `MediaFilters.tsx` | `MediaFilters`: debounced search and MIME filter |
 | `MediaGrid.tsx` | `MediaGrid`: card grid with per-file actions |
 | `MediaPickerDialog.tsx` | `MediaPickerDialog`: choose a file from the library, with paging |
-| `UploadDialog.tsx` | `UploadDialog`: select files, confirm, upload with per-file progress, retry and errors |
-| `UploadQueue.rules.ts` | Upload queue state: `MAX_PARALLEL_UPLOADS`, `MAX_FILES_PER_BATCH`, `checkFile`, `addFiles`, `nextToStart`, `markProgress`/`markDone`/`markFailed`, `totalsOf` |
+| `UploadDialog.tsx` | `UploadDialog`: select files, confirm, upload with a determinate or indeterminate per-file bar, retry and errors; row names through `FileName` (local name, then the stored name once done) |
+| `UploadQueue.rules.ts` | Upload queue state: `MAX_PARALLEL_UPLOADS`, `MAX_FILES_PER_BATCH`, `checkFile`, `addFiles`, `nextToStart`, `markProgress`/`markDone`/`markFailed`, `batchPercentOf`, `UPLOAD_SENT_SHARE`, `hasDeterminateProgress` |
 | `index.ts` | Public exports of the feature |
 | `useUploadQueue.ts` | `useUploadQueue`: runs the queue (starts the next items the rules allow, reports progress) |
 

@@ -134,4 +134,60 @@ describe('installAuthInterceptor', () => {
     });
     expect(refreshRuns).not.toHaveBeenCalled();
   });
+
+  describe('fresh token before a flagged request', () => {
+    const SECONDS_PER_MINUTE = 60;
+    const jwtExpiringIn = (seconds: number) => {
+      const payload = btoa(JSON.stringify({ exp: Math.floor(Date.now() / 1000) + seconds }))
+        .replace(/\+/g, '-')
+        .replace(/\//g, '_')
+        .replace(/=+$/, '');
+      return `h.${payload}.s`;
+    };
+    const flagged = { shouldRefreshExpiringToken: true };
+
+    it('refreshes a token that expires within 60 s and sends the new one', async () => {
+      const { api, client, refreshRuns, setToken } = setup();
+      setToken(jwtExpiringIn(30));
+      await client.get(PROTECTED, flagged);
+      expect(refreshRuns).toHaveBeenCalledTimes(1);
+      expect(api.calls[0]?.headers.get('Authorization')).toBe(`Bearer ${NEW}`);
+    });
+
+    it('refreshes a token whose expiry cannot be read', async () => {
+      const { client, refreshRuns } = setup();
+      await client.get(PROTECTED, flagged);
+      expect(refreshRuns).toHaveBeenCalledTimes(1);
+    });
+
+    it('keeps a fresh token', async () => {
+      const { api, client, setToken } = setup();
+      const fresh = jwtExpiringIn(10 * SECONDS_PER_MINUTE);
+      setToken(fresh);
+      await client.get(PROTECTED, flagged).catch(() => undefined);
+      expect(api.calls[0]?.headers.get('Authorization')).toBe(`Bearer ${fresh}`);
+    });
+
+    it('shares one refresh between two flagged requests', async () => {
+      const { client, refreshRuns, setToken } = setup();
+      setToken(jwtExpiringIn(5));
+      await Promise.all([client.get(PROTECTED, flagged), client.get(PROTECTED, flagged)]);
+      expect(refreshRuns).toHaveBeenCalledTimes(1);
+    });
+
+    it('ends the session and sends nothing when the refresh is refused', async () => {
+      const { api, client, onSessionExpired, setToken } = setup({ refreshFails: true });
+      setToken(jwtExpiringIn(5));
+      await expect(client.get(PROTECTED, flagged)).rejects.toThrow('refresh refused');
+      expect(onSessionExpired).toHaveBeenCalledTimes(1);
+      expect(api.calls).toHaveLength(0);
+    });
+
+    it('leaves an unflagged request untouched', async () => {
+      const { client, refreshRuns, setToken } = setup();
+      setToken(jwtExpiringIn(5));
+      await client.get(PROTECTED).catch(() => undefined);
+      expect(refreshRuns).toHaveBeenCalledTimes(1); // only the 401 retry path
+    });
+  });
 });

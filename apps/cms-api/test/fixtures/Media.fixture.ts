@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto';
 import sharp from 'sharp';
 
 import type { PrismaClient } from '../../src/infrastructure/database/PrismaClient.adapter';
+import { sha256Hex, type AllowedMime } from '../../src/modules/media/domain/MediaUpload.rules';
 
 /** Marker written into EXIF so tests can prove it is gone after re-encoding. */
 export const EXIF_MARKER = 'abyss-secret-camera-owner';
@@ -95,4 +96,39 @@ export async function seedMediaFile(prisma: PrismaClient): Promise<string> {
     },
   });
   return row.documentId;
+}
+
+/** A `file_library` row as stored before names became `<stem>_<hash8>.<ext>`. */
+export interface LegacyMediaRow {
+  readonly label: string;
+  readonly fileName: string;
+  readonly mimeType: AllowedMime;
+  readonly isTombstone?: boolean;
+}
+
+/** Old-name rows for the rename migration; `storedFileNameOf` is the oracle for each. */
+export function legacyMediaRows(): readonly LegacyMediaRow[] {
+  const sha8 = (label: string) => sha256Hex(Buffer.from(label)).slice(0, 8);
+  return [
+    { label: 'plain', fileName: 'photo.jpg', mimeType: 'image/jpeg' },
+    { label: 'no extension', fileName: 'scan', mimeType: 'application/pdf' },
+    { label: 'upper-case extension', fileName: 'Photo.JPG', mimeType: 'image/jpeg' },
+    { label: 'alternate extension', fileName: 'holiday.jpeg', mimeType: 'image/jpeg' },
+    { label: 'mismatched extension', fileName: 'fake.png', mimeType: 'image/jpeg' },
+    { label: 'dots in the stem', fileName: 'report.v2.final.pdf', mimeType: 'application/pdf' },
+    { label: 'trailing dot', fileName: 'clip.', mimeType: 'video/mp4' },
+    { label: 'leading dot only', fileName: '.hidden', mimeType: 'image/png' },
+    { label: '255-character name', fileName: `${'a'.repeat(251)}.png`, mimeType: 'image/png' },
+    {
+      label: 'multi-byte 255-character name',
+      fileName: `${'é'.repeat(251)}.webp`,
+      mimeType: 'image/webp',
+    },
+    { label: 'tombstone', fileName: 'old.gif', mimeType: 'image/gif', isTombstone: true },
+    {
+      label: 'already in the new format',
+      fileName: `done_${sha8('already in the new format')}.avif`,
+      mimeType: 'image/avif',
+    },
+  ];
 }

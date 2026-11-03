@@ -6,8 +6,15 @@ import type { NestExpressApplication } from '@nestjs/platform-express';
 
 import { AppModule } from './App.module';
 import { configureApp } from './App.setup';
+import { sendContinueWhenBodyIsRead } from './common/middleware/ByteLimit.rules';
 import { loadAppConfig } from './config/AppConfig.setup';
 import { summarizeConfig } from './config/ConfigSummary.rules';
+
+/**
+ * Matches the proxy entrypoint readTimeout (5 min); the browser gives up on an upload at 4 min,
+ * so a slow upload ends client-side first. headersTimeout stays at the Node default.
+ */
+const REQUEST_TIMEOUT_MS = 5 * 60 * 1000;
 
 type RawEnv = Readonly<Record<string, string | undefined>>;
 
@@ -20,6 +27,10 @@ export async function bootstrap(rawEnv: RawEnv): Promise<NestExpressApplication>
     bufferLogs: true,
   });
   configureApp(app, config);
+
+  const server = app.getHttpServer();
+  server.requestTimeout = REQUEST_TIMEOUT_MS;
+  sendContinueWhenBodyIsRead(server);
 
   logger.log(`Config: ${JSON.stringify(summarizeConfig(config))}`);
   await app.listen(config.http.port);

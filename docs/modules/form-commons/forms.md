@@ -39,7 +39,7 @@ forms/ (1 file)
   field/ (2 files)
   form-alert/ (2 files)
   json-input/ (2 files)
-  media-input/ (4 files)
+  media-input/ (5 files)
   number-input/ (2 files)
   richtext-input/ (6 files)
   select-input/ (2 files)
@@ -50,7 +50,7 @@ forms/ (1 file)
   text-input/ (2 files)
 ```
 
-Tests: 17 files (not listed).
+Tests: 18 files (not listed).
 
 | File | Description |
 |---|---|
@@ -67,7 +67,8 @@ Tests: 17 files (not listed).
 | `form-alert/index.ts` | Re-exports the folder's component and types |
 | `json-input/JsonInput.tsx` | `JsonInput`, `isValidJsonText`: JSON text input with validation |
 | `json-input/index.ts` | Re-exports the folder's component and types |
-| `media-input/MediaDetails.tsx` | `MediaDetails`, `formatFileSize`: file name, type, size and dimensions |
+| `media-input/FileName.tsx` | `FileName`: file name with a shrinking head and a fixed `_<hash8>.<ext>` tail |
+| `media-input/MediaDetails.tsx` | `MediaDetails`, `formatFileSize`: stored file name (via `FileName`), size and dimensions |
 | `media-input/MediaInput.tsx` | `MediaInput`: media value with preview and pick/upload/replace/clear actions |
 | `media-input/MediaPreview.tsx` | `MediaPreview`: image, video or file preview at a set height |
 | `media-input/index.ts` | Re-exports the folder's component and types |

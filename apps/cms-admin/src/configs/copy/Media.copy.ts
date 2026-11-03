@@ -44,6 +44,7 @@ export const MEDIA_COPY = {
     gone: 'This file no longer exists. The list was refreshed.',
     unsupportedType: 'This file type is not allowed. Use JPEG, PNG, WebP, GIF, AVIF, PDF or MP4.',
     tooLarge: 'This file is too large. Images may be up to 10 MB, PDFs 20 MB and videos 100 MB.',
+    timeout: 'The upload took too long. Try again, or try a smaller file.',
     invalidUpload: 'The server could not read this file. Try another one.',
     forbidden: 'Your role is not allowed to do this.',
     retry: 'Try again',

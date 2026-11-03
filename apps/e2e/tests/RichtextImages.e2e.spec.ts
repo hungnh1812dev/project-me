@@ -27,13 +27,14 @@ const PNG_SEED_RANGE = 200;
 const SEED = (Number.parseInt(RUN_ID, 36) % PNG_SEED_RANGE) + 1;
 const UPLOADED_NAME = `e2e-rt-up-${RUN_ID}.png`;
 const PICKED_NAME = `e2e-rt-pick-${RUN_ID}.png`;
+const PICKED_STEM = `e2e-rt-pick-${RUN_ID}`;
 const WEB_NAME = `e2e-rt-web-${RUN_ID}.png`;
 const RESUME_NAME = `E2E richtext web ${RUN_ID}`;
 
 const isLoaded = (image: Locator) =>
   image.evaluate((element) => (element as HTMLImageElement).naturalWidth > 0);
 
-/** The library has no read-one route; the list filtered by name holds the file. */
+/** The library has no read-one route; the list filtered by the name stem holds the file, also after a replace changed its hash. */
 async function mediaUrlOf(
   request: APIRequestContext,
   token: string,
@@ -41,7 +42,7 @@ async function mediaUrlOf(
 ): Promise<string> {
   const response = await request.get(apiUrl(API_PATHS.MEDIA), {
     headers: bearer(token),
-    params: { search: file.fileName },
+    params: { search: file.fileName.replace(/_[0-9a-f]{8}\.png$/, '') },
   });
   expect(response.status()).toBe(HTTP.OK);
   const { data } = (await response.json()) as { data: UploadedImage[] };
@@ -148,7 +149,7 @@ test.describe.serial('owner: images in the richtext editor', () => {
     await openInsertDialog();
     await dialog().getByRole('button', { name: insertCopy.library }).click();
     await dialog()
-      .getByRole('button', { name: media.picker.select(PICKED_NAME) })
+      .getByRole('button', { name: media.picker.select(picked.fileName) })
       .click();
     await expect(dialog()).toBeHidden();
     await expect(images()).toHaveCount(2);
@@ -166,9 +167,9 @@ test.describe.serial('owner: images in the richtext editor', () => {
 
   test('deleting a file used in the document answers the in-use message', async () => {
     await page.goto('/media');
-    await page.getByRole('button', { name: media.deleteLabel(PICKED_NAME) }).click();
+    await page.getByRole('button', { name: media.deleteLabel(picked.fileName) }).click();
     await dialog()
-      .getByRole('button', { name: media.deleteDialog.submit(PICKED_NAME) })
+      .getByRole('button', { name: media.deleteDialog.submit(picked.fileName) })
       .click();
     await expect(dialog()).toContainText(media.errors.inUse);
     await dialog().getByRole('button', { name: media.deleteDialog.cancel }).click();
@@ -177,10 +178,11 @@ test.describe.serial('owner: images in the richtext editor', () => {
 
   test('replacing the file shows the new file in the document after reload', async () => {
     const before = await mediaUrlOf(api, token(), picked);
+    const replacedNotice = new RegExp(`^${PICKED_STEM}_[0-9a-f]{8}\\.png replaced\\.$`);
     await page.goto('/media');
-    await page.getByRole('searchbox', { name: media.filters.search }).fill(PICKED_NAME);
-    const card = page.getByRole('listitem').filter({ hasText: PICKED_NAME });
-    await card.getByRole('button', { name: media.grid.replaceLabel(PICKED_NAME) }).click();
+    await page.getByRole('searchbox', { name: media.filters.search }).fill(picked.fileName);
+    const card = page.getByRole('listitem').filter({ hasText: picked.fileName });
+    await card.getByRole('button', { name: media.grid.replaceLabel(picked.fileName) }).click();
     await dialog()
       .getByTestId('upload-dialog-input')
       .setInputFiles({
@@ -191,7 +193,7 @@ test.describe.serial('owner: images in the richtext editor', () => {
     await dialog()
       .getByRole('button', { name: /^Upload/ })
       .click();
-    await expect(page.getByText(media.replaced(PICKED_NAME))).toBeVisible({
+    await expect(page.getByText(replacedNotice)).toBeVisible({
       timeout: UPLOAD_SETTLE_MS,
     });
     const after = await mediaUrlOf(api, token(), picked);
