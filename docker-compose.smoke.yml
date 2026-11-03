@@ -13,6 +13,7 @@ services:
       - --providers.docker=true
       - --providers.docker.exposedbydefault=false
       - --entrypoints.web.address=:80
+      - --entrypoints.web.transport.respondingTimeouts.readTimeout=15m
       - --ping=true
     ports:
       - '${SMOKE_HTTP_PORT:?set by scripts/smoke.sh}:80'

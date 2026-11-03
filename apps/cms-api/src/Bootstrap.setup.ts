@@ -9,6 +9,9 @@ import { configureApp } from './App.setup';
 import { loadAppConfig } from './config/AppConfig.setup';
 import { summarizeConfig } from './config/ConfigSummary.rules';
 
+/** Slow media uploads on poor links must finish; Node's default is 5 min. headersTimeout stays default. */
+const REQUEST_TIMEOUT_MS = 15 * 60 * 1000;
+
 type RawEnv = Readonly<Record<string, string | undefined>>;
 
 /** Validates config first (fail fast), then builds and starts the app. */
@@ -20,6 +23,8 @@ export async function bootstrap(rawEnv: RawEnv): Promise<NestExpressApplication>
     bufferLogs: true,
   });
   configureApp(app, config);
+
+  app.getHttpServer().requestTimeout = REQUEST_TIMEOUT_MS;
 
   logger.log(`Config: ${JSON.stringify(summarizeConfig(config))}`);
   await app.listen(config.http.port);

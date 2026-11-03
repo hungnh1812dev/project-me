@@ -71,6 +71,8 @@ spec:
 
 Add a `web` entrypoint redirect to HTTPS in your Traefik config. The smoke stack (`docker-compose.smoke.yml`) uses the same routers with labels; the assertions in `pnpm smoke` check `/api` reaching cms-api, the web catch-all and the admin host.
 
+**Upload timeouts.** Media uploads can be slow on poor links. Set the Traefik entrypoint that serves the API (`websecure`) to `transport.respondingTimeouts.readTimeout: 15m` (the smoke stack sets `--entrypoints.web.transport.respondingTimeouts.readTimeout=15m`). cms-api sets the Node server `requestTimeout` to 15 minutes in `Bootstrap.setup.ts` (no env key); `headersTimeout` stays at the Node default. The browser client gives up after 10 minutes.
+
 ## 2. Client IP: `externalTrafficPolicy: Local` and `TRUST_PROXY_HOPS`
 
 Rate limits (login, refresh, reviewer sessions) are keyed by client IP. cms-api reads it from `X-Forwarded-For`, so the IP Traefik sees must be the real one (SPEC D7).
