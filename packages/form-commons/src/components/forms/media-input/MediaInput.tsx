@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { cn } from 'cn';
 import { FolderOpen, ImagePlus, RefreshCw, X } from 'lucide-react';
 
 import { Field } from '@/components/forms/field';
@@ -150,7 +151,13 @@ function MediaInput({
               </div>
             </div>
           ) : (
-            <>
+            <div
+              data-slot="media-frame"
+              className={cn(
+                'border-border bg-card grid min-w-0 gap-3 rounded-md border p-3',
+                error !== undefined && 'border-destructive',
+              )}
+            >
               <MediaPreview
                 file={value}
                 height="field"
@@ -210,7 +217,7 @@ function MediaInput({
                   </Button>
                 )}
               </div>
-            </>
+            </div>
           )}
           {handleFilePick === undefined ? null : (
             <input

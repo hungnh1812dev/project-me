@@ -15,14 +15,15 @@ const file = {
 };
 
 describe('MediaDetails', () => {
-  it('shows the name with the first 8 hash characters, size and provider', () => {
-    render(<MediaDetails file={file} />);
-    expect(screen.getByText('portrait.jpg · abcdef01')).toBeInTheDocument();
+  it('shows the stored name without a hash addition, size and provider', () => {
+    render(<MediaDetails file={{ ...file, fileName: 'portrait_abcdef01.jpg' }} />);
+    expect(screen.getByText('portrait_abcdef01.jpg')).toBeInTheDocument();
+    expect(screen.queryByText(/ · /)).toBeNull();
     expect(screen.getByText('1.5 KB')).toBeInTheDocument();
     expect(screen.getByText('cloudinary')).toBeInTheDocument();
   });
 
-  it('shows only the name without a hash', () => {
+  it('still accepts a missing sha256', () => {
     render(<MediaDetails file={{ ...file, sha256: undefined }} />);
     expect(screen.getByText('portrait.jpg')).toBeInTheDocument();
   });
