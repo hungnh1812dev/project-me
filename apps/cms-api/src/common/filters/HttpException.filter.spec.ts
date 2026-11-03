@@ -89,30 +89,66 @@ describe('HttpExceptionFilter', () => {
     });
   });
 
-  describe('rejected uploads', () => {
-    const unfinishedUpload = {
-      headers: { 'content-type': 'multipart/form-data; boundary=x' },
-      complete: false,
-      pause: jest.fn(),
-      destroy: jest.fn(),
-    };
+  describe('uploads answered before their body is read', () => {
+    function unfinishedUpload(overrides: object = {}) {
+      return {
+        headers: { 'content-type': 'multipart/form-data; boundary=x' },
+        readableEnded: false,
+        resume: jest.fn(),
+        once: jest.fn(),
+        on: jest.fn(),
+        destroy: jest.fn(),
+        ...overrides,
+      };
+    }
 
-    it('closes the connection after a 401 while the body is still arriving', () => {
-      const res = run(new UnauthorizedException(), unfinishedUpload);
-      expect(res.setHeader).toHaveBeenCalledWith('Connection', 'close');
-      const onFinish = res.once.mock.calls[0] as [string, () => void];
-      onFinish[1]();
-      expect(unfinishedUpload.destroy).toHaveBeenCalled();
+    function discardsBodyAfterAnswer(exception: unknown, req = unfinishedUpload()) {
+      const res = run(exception, req);
+      const onFinish = res.once.mock.calls.find(([event]) => event === 'finish') as
+        [string, () => void] | undefined;
+      onFinish?.[1]();
+      return { res, isDiscarded: req.resume.mock.calls.length > 0, req };
+    }
+
+    it('discards the unread body after a 401 without closing the socket', () => {
+      const { res, isDiscarded, req } = discardsBodyAfterAnswer(new UnauthorizedException());
+      expect(res.setHeader).not.toHaveBeenCalled();
+      expect(isDiscarded).toBe(true);
+      expect(req.destroy).not.toHaveBeenCalled();
     });
 
-    it('keeps the connection when the body was fully received', () => {
-      const res = run(new UnauthorizedException(), { ...unfinishedUpload, complete: true });
-      expect(res.setHeader).not.toHaveBeenCalled();
+    it('discards the rest of the body after a 413 refused mid-upload', () => {
+      const { res, isDiscarded, req } = discardsBodyAfterAnswer(
+        new DomainError({ kind: DOMAIN_ERROR_KINDS.TOO_LARGE }),
+      );
+      expect(res.status).toHaveBeenCalledWith(413);
+      expect(isDiscarded).toBe(true);
+      expect(req.destroy).not.toHaveBeenCalled();
     });
 
-    it('keeps the connection for a non-multipart 401', () => {
-      const res = run(new UnauthorizedException(), { complete: false, headers: {} });
-      expect(res.setHeader).not.toHaveBeenCalled();
+    it('discards the rest of the body after a 415 found mid-upload', () => {
+      const { isDiscarded } = discardsBodyAfterAnswer(
+        new DomainError({ kind: DOMAIN_ERROR_KINDS.UNSUPPORTED_MEDIA_TYPE }),
+      );
+      expect(isDiscarded).toBe(true);
+    });
+
+    it('leaves a body that was read to the end alone', () => {
+      const { res, isDiscarded } = discardsBodyAfterAnswer(
+        new DomainError({ kind: DOMAIN_ERROR_KINDS.TOO_LARGE }),
+        unfinishedUpload({ readableEnded: true }),
+      );
+      expect(res.once).not.toHaveBeenCalled();
+      expect(isDiscarded).toBe(false);
+    });
+
+    it('leaves a non-multipart request alone', () => {
+      const { res, isDiscarded } = discardsBodyAfterAnswer(
+        new UnauthorizedException(),
+        unfinishedUpload({ headers: {} }),
+      );
+      expect(res.once).not.toHaveBeenCalled();
+      expect(isDiscarded).toBe(false);
     });
   });
 });

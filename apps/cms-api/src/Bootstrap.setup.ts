@@ -6,6 +6,7 @@ import type { NestExpressApplication } from '@nestjs/platform-express';
 
 import { AppModule } from './App.module';
 import { configureApp } from './App.setup';
+import { sendContinueWhenBodyIsRead } from './common/middleware/ByteLimit.rules';
 import { loadAppConfig } from './config/AppConfig.setup';
 import { summarizeConfig } from './config/ConfigSummary.rules';
 
@@ -27,7 +28,9 @@ export async function bootstrap(rawEnv: RawEnv): Promise<NestExpressApplication>
   });
   configureApp(app, config);
 
-  app.getHttpServer().requestTimeout = REQUEST_TIMEOUT_MS;
+  const server = app.getHttpServer();
+  server.requestTimeout = REQUEST_TIMEOUT_MS;
+  sendContinueWhenBodyIsRead(server);
 
   logger.log(`Config: ${JSON.stringify(summarizeConfig(config))}`);
   await app.listen(config.http.port);

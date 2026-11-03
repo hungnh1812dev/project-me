@@ -12,7 +12,7 @@ Cross-cutting building blocks every cms-api module uses: the unified error respo
 
 ## Techniques
 
-One global exception filter shapes every error. A 401/403 on an unfinished multipart upload closes the socket after the answer (`closeAfterAnswer`), so a slow body cannot hold a connection.
+One global exception filter shapes every error. Any error answer to a multipart upload whose body was not read to the end (401/403 before reading, 413/415/400 mid-body) reads and drops the rest after the answer (`discardBodyAfterAnswer`, 16 MiB / 5 s cap, then the socket is destroyed), so the proxy's kept-alive connection is never left mid-body and the next request on it is answered. `Expect: 100-continue` is answered only when the app starts reading the body (`sendContinueWhenBodyIsRead`, wired in `Bootstrap.setup.ts`), so a request refused before reading gets its final status without inviting the body.
 
 ## Technologies
 
@@ -55,13 +55,13 @@ Tests: 8 files (not listed).
 | `constants/Limits.constants.ts` | Holds (exports `FIFTEEN_MINUTES_MS`, `ONE_MINUTE_MS`, `ONE_HOUR_MS`, `TEN_MINUTES_MS` +13) |
 | `constants/Time.constants.ts` | Holds (exports `MS_PER_SECOND`, `MS_PER_MINUTE`, `MS_PER_HOUR`, `SECONDS_PER_MINUTE` +2) |
 | `errors/Domain.errors.ts` | Holds (exports `DOMAIN_ERROR_KINDS`, `DomainErrorKind`, `DomainErrorInit`, `DomainError`) |
-| `filters/HttpException.filter.ts` | Unified error body; closes the socket on a 401/403 to an unfinished multipart upload |
+| `filters/HttpException.filter.ts` | Unified error body; discards the unread body of a multipart upload answered with any error (401/403/413/415/...) |
 | `guards/Throttle.guard.ts` | Holds (exports `RATE_LIMIT_POLICY_METADATA`, `Throttle`, `ThrottleGuard`) |
 | `http/ClientIp.module.ts` | Holds (exports `ClientIpModule`) |
 | `http/ClientIp.resolver.ts` | Holds (exports `ClientIpResolver`, `clientMetaOf`) |
 | `http/DescribeHttpException.rules.ts` | Holds (exports `DOMAIN_ERROR_HTTP_STATUS`, `DOMAIN_ERROR_DEFAULT_MESSAGE`, `ERROR_CODE_BY_STATUS`, `HttpExceptionDescription` +4) |
 | `http/RequestParsing.rules.ts` | Holds (exports `invalidRequest`, `parseRequest`) |
-| `middleware/ByteLimit.rules.ts` | Holds (exports `declaresBodyOver`, `createByteCounter`, `closeAfterAnswer`) |
+| `middleware/ByteLimit.rules.ts` | Body-size checks (`declaresBodyOver`, `createByteCounter`) and connection endings after an early answer: `closeAfterAnswer` (destroy) and `discardBodyAfterAnswer` (read and drop the rest, 16 MiB / 5 s cap); `sendContinueWhenBodyIsRead` (100 Continue only once the body is read) |
 | `middleware/RequestId.middleware.ts` | Holds (exports `RequestWithId`, `requestIdMiddleware`) |
 | `middleware/SecurityHeaders.middleware.ts` | Holds (exports `securityHeadersMiddleware`) |
 | `rate-limit/RateLimit.module.ts` | Holds (exports `RateLimitModuleOptions`, `RateLimitModule`) |
