@@ -89,7 +89,10 @@ function GridSkeleton() {
       <span className="sr-only">{copy.loading}</span>
       <ul aria-hidden="true" className={GRID_CLASSES}>
         {Array.from({ length: SKELETON_CARD_COUNT }, (_, index) => (
-          <li key={index} className="grid gap-3 rounded-md border border-border bg-card p-3">
+          <li
+            key={index}
+            className="grid grid-cols-[minmax(0,1fr)] gap-3 rounded-md border border-border bg-card p-3"
+          >
             <div className="h-(--size-media-card-preview) animate-pulse rounded-md bg-muted" />
             <div className="h-4 w-2/3 animate-pulse rounded bg-muted" />
             <div className="h-3 w-1/2 animate-pulse rounded bg-muted" />
@@ -134,13 +137,13 @@ export function MediaGrid({
               type="button"
               aria-label={COPY.media.picker.select(file.fileName)}
               onClick={() => onSelect?.(file)}
-              className="grid w-full cursor-pointer gap-3 rounded-md border border-border bg-card p-3 text-left hover:bg-muted focus-visible:outline-2 focus-visible:outline-ring"
+              className="grid w-full cursor-pointer grid-cols-[minmax(0,1fr)] gap-3 rounded-md border border-border bg-card p-3 text-left hover:bg-muted focus-visible:outline-2 focus-visible:outline-ring"
             >
               <MediaPreview file={file} height="card" labels={CARD_LABELS} />
               <MediaDetails file={file} />
             </button>
           ) : (
-            <div className="grid gap-3 rounded-md border border-border bg-card p-3">
+            <div className="grid grid-cols-[minmax(0,1fr)] gap-3 rounded-md border border-border bg-card p-3">
               <MediaPreview
                 file={file}
                 height="card"

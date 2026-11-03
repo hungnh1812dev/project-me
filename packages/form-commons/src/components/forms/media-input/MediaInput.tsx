@@ -154,7 +154,7 @@ function MediaInput({
             <div
               data-slot="media-frame"
               className={cn(
-                'border-border bg-card grid min-w-0 gap-3 rounded-md border p-3',
+                'border-border bg-card grid min-w-0 grid-cols-[minmax(0,1fr)] gap-3 rounded-md border p-3',
                 error !== undefined && 'border-destructive',
               )}
             >

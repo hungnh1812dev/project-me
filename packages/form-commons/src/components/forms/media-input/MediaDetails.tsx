@@ -54,7 +54,7 @@ function MediaDetails({ file }: MediaDetailsProps) {
   const changedAt = file.updatedAt ?? file.createdAt;
 
   return (
-    <div data-slot="media-details" className="grid min-w-0 gap-1">
+    <div data-slot="media-details" className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-1">
       <p className="m-0 text-sm font-medium">
         <FileName name={file.fileName} />
       </p>
