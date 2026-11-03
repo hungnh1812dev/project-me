@@ -1,10 +1,15 @@
-import { apiFailureOf, rateLimitedMessage } from '@apis/client/ApiFailure.errors';
+import {
+  apiFailureOf,
+  isRequestCanceled,
+  isRequestTimeout,
+  rateLimitedMessage,
+} from '@apis/client/ApiFailure.errors';
 import { COPY } from '@configs/Copy.constants';
 import { API_ERROR_CODES, HTTP_STATUS } from '@configs/Http.constants';
 
 const copy = COPY.media.errors;
 
-export type MediaErrorKind = 'in-use' | 'gone' | 'other';
+export type MediaErrorKind = 'in-use' | 'gone' | 'canceled' | 'other';
 
 export interface MediaError {
   kind: MediaErrorKind;
@@ -21,6 +26,8 @@ const MESSAGE_BY_CODE: Readonly<Record<string, string>> = {
 
 /** A failed media call as the library page shows it. */
 export function toMediaError(error: unknown): MediaError {
+  if (isRequestCanceled(error)) return { kind: 'canceled', message: '' };
+  if (isRequestTimeout(error)) return { kind: 'other', message: copy.timeout };
   const failure = apiFailureOf(error);
   switch (failure.kind) {
     case 'rate-limited':

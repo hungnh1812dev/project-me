@@ -35,14 +35,14 @@ A new allowed file kind or limit: `Media.constants.ts` (and the cms-api media ru
 media/ (16 files)
 ```
 
-Tests: 7 files (not listed).
+Tests: 9 files (not listed).
 
 | File | Description |
 |---|---|
 | `ImageInsertDialog.tsx` | `ImageInsertDialog`: pick or upload an image for the richtext editor |
-| `Media.api.ts` | `createMediaApi`: list, upload with progress, replace, alt text, delete; `MediaFile` and filter types |
-| `Media.constants.ts` | Page sizes, search debounce, alt max length, allowed MIME types per kind, size limits |
-| `Media.errors.ts` | `toMediaError`: API failures to media error kinds and messages |
+| `Media.api.ts` | `createMediaApi`: list, upload and replace with the 10 min upload timeout, progress, alt text, delete; `MediaFile` and filter types |
+| `Media.constants.ts` | Page sizes, search debounce, upload timeout, alt max length, allowed MIME types per kind, size limits |
+| `Media.errors.ts` | `toMediaError`: API failures to media error kinds and messages (timeout copy, silent `canceled`) |
 | `Media.feature.ts` | `mediaFeature`: feature registration (API service) |
 | `Media.queries.ts` | `MEDIA_QUERY_KEY`, `useMediaQuery`: the paged media list query |
 | `MediaApi.context.tsx` | React context that provides the media API |

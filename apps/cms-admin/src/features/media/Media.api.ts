@@ -2,6 +2,8 @@ import type { PageMeta } from '@apis/client/Api.client';
 import { API_ENDPOINTS } from '@configs/Api.endpoints';
 import type { AxiosInstance } from 'axios';
 
+import { MEDIA_UPLOAD_TIMEOUT_MS } from './Media.constants';
+
 /** A library file as `GET /media` returns it. */
 export interface MediaFile {
   id: string;
@@ -68,6 +70,7 @@ export function createMediaApi(client: AxiosInstance) {
       if (alt !== undefined && alt !== '') body.append(ALT_FIELD, alt);
       body.append(FILE_FIELD, file);
       const { data } = await client.post<MediaFile>(MEDIA.LIST, body, {
+        timeout: MEDIA_UPLOAD_TIMEOUT_MS,
         ...(signal ? { signal } : {}),
         ...(onProgress
           ? { onUploadProgress: (event) => onProgress(event.loaded, event.total ?? file.size) }
@@ -86,6 +89,7 @@ export function createMediaApi(client: AxiosInstance) {
       const body = new FormData();
       body.append(FILE_FIELD, file);
       const { data } = await client.put<MediaFile>(MEDIA.FILE(id), body, {
+        timeout: MEDIA_UPLOAD_TIMEOUT_MS,
         ...(signal ? { signal } : {}),
         ...(onProgress
           ? { onUploadProgress: (event) => onProgress(event.loaded, event.total ?? file.size) }
