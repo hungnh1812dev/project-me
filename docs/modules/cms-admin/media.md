@@ -40,7 +40,7 @@ Tests: 9 files (not listed).
 | File | Description |
 |---|---|
 | `ImageInsertDialog.tsx` | `ImageInsertDialog`: pick or upload an image for the richtext editor |
-| `Media.api.ts` | `createMediaApi`: list, upload and replace with the 10 min upload timeout, progress, alt text, delete; `MediaFile` and filter types |
+| `Media.api.ts` | `createMediaApi`: list, upload and replace with the 4 min upload timeout and a fresh access token before sending, progress, alt text, delete; `MediaFile` and filter types |
 | `Media.constants.ts` | Page sizes, search debounce, upload timeout, alt max length, allowed MIME types per kind, size limits |
 | `Media.errors.ts` | `toMediaError`: API failures to media error kinds and messages (timeout copy, silent `canceled`) |
 | `Media.feature.ts` | `mediaFeature`: feature registration (API service) |

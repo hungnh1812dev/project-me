@@ -39,6 +39,19 @@ describe('createMediaApi timeouts', () => {
     await api.replaceFile('id-1', file);
     expect(configs.post?.timeout).toBe(MEDIA_UPLOAD_TIMEOUT_MS);
     expect(configs.put?.timeout).toBe(MEDIA_UPLOAD_TIMEOUT_MS);
+    expect(MEDIA_UPLOAD_TIMEOUT_MS).toBe(4 * 60 * 1000);
+  });
+
+  it('asks for a fresh token on upload and replaceFile only', async () => {
+    const { api, configs } = recordingClient();
+    await api.upload(file);
+    await api.replaceFile('id-1', file);
+    await api.list({ page: 1, pageSize: 10, search: '', mimeType: '' });
+    await api.remove('id-1');
+    expect(configs.post?.shouldRefreshExpiringToken).toBe(true);
+    expect(configs.put?.shouldRefreshExpiringToken).toBe(true);
+    expect(configs.get?.shouldRefreshExpiringToken).toBeUndefined();
+    expect(configs.delete?.shouldRefreshExpiringToken).toBeUndefined();
   });
 
   it('leaves list and remove on the client default', async () => {

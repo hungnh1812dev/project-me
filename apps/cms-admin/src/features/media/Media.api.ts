@@ -71,6 +71,7 @@ export function createMediaApi(client: AxiosInstance) {
       body.append(FILE_FIELD, file);
       const { data } = await client.post<MediaFile>(MEDIA.LIST, body, {
         timeout: MEDIA_UPLOAD_TIMEOUT_MS,
+        shouldRefreshExpiringToken: true,
         ...(signal ? { signal } : {}),
         ...(onProgress
           ? { onUploadProgress: (event) => onProgress(event.loaded, event.total) }
@@ -90,6 +91,7 @@ export function createMediaApi(client: AxiosInstance) {
       body.append(FILE_FIELD, file);
       const { data } = await client.put<MediaFile>(MEDIA.FILE(id), body, {
         timeout: MEDIA_UPLOAD_TIMEOUT_MS,
+        shouldRefreshExpiringToken: true,
         ...(signal ? { signal } : {}),
         ...(onProgress
           ? { onUploadProgress: (event) => onProgress(event.loaded, event.total) }

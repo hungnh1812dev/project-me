@@ -8,10 +8,39 @@ declare module 'axios' {
      * returned as is, never refreshed and retried.
      */
     shouldSkipAuthRefresh?: boolean;
+    /**
+     * Long calls (uploads): when the access token expires within
+     * ACCESS_TOKEN_REFRESH_MARGIN_MS, or its expiry is unreadable, refresh
+     * before sending so it cannot expire while the request is in flight.
+     */
+    shouldRefreshExpiringToken?: boolean;
   }
 }
 
 const AUTHORIZATION_HEADER = 'Authorization';
+
+/** A flagged request refreshes when its token expires within this margin. */
+const ACCESS_TOKEN_REFRESH_MARGIN_MS = 60 * 1000;
+const MS_PER_SECOND = 1000;
+
+/** Expiry of a JWT in epoch ms, or null when the payload cannot be read. */
+function readTokenExpiryMs(token: string): number | null {
+  try {
+    const payload = token.split('.')[1];
+    if (payload === undefined) return null;
+    const base64 = payload.replace(/-/g, '+').replace(/_/g, '/');
+    const claims: unknown = JSON.parse(atob(base64));
+    const exp = (claims as { exp?: unknown } | null)?.exp;
+    return typeof exp === 'number' ? exp * MS_PER_SECOND : null;
+  } catch {
+    return null;
+  }
+}
+
+function isExpiringSoon(token: string): boolean {
+  const expiryMs = readTokenExpiryMs(token);
+  return expiryMs === null || expiryMs - Date.now() < ACCESS_TOKEN_REFRESH_MARGIN_MS;
+}
 
 interface AuthRequestConfig extends InternalAxiosRequestConfig {
   /** Access token this attempt was sent with. */
@@ -40,10 +69,18 @@ export function installAuthInterceptor(
   client: AxiosInstance,
   options: AuthInterceptorOptions,
 ): () => void {
-  const requestId = client.interceptors.request.use((config) => {
+  const requestId = client.interceptors.request.use(async (config) => {
     const authConfig = config as AuthRequestConfig;
     if (authConfig.shouldSkipAuthRefresh === true) return authConfig;
-    const token = options.getAccessToken();
+    let token = options.getAccessToken();
+    if (authConfig.shouldRefreshExpiringToken === true && token !== null && isExpiringSoon(token)) {
+      try {
+        token = await options.refreshAccessToken();
+      } catch (error) {
+        options.onSessionExpired();
+        throw error;
+      }
+    }
     authConfig.authToken = token;
     if (token !== null) {
       authConfig.headers.set(AUTHORIZATION_HEADER, `${BEARER_PREFIX}${token}`);
