@@ -19,6 +19,17 @@ describe('splitFileName', () => {
     expect(splitFileName('README')).toEqual({ head: 'README', tail: '' });
     expect(splitFileName('.env')).toEqual({ head: '.env', tail: '' });
   });
+
+  it('keeps the last extension of a name with several dots', () => {
+    expect(splitFileName('a.b.c.jpg')).toEqual({ head: 'a.b.c', tail: '.jpg' });
+    expect(splitFileName('a.b_a1b2c3d4.jpg')).toEqual({ head: 'a.b', tail: '_a1b2c3d4.jpg' });
+  });
+
+  it('splits a 255-character stored name', () => {
+    const tail = '_a1b2c3d4.jpg';
+    const head = 'x'.repeat(255 - tail.length);
+    expect(splitFileName(head + tail)).toEqual({ head, tail });
+  });
 });
 
 describe('FileName', () => {

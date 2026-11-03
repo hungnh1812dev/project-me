@@ -65,6 +65,20 @@ test.describe.serial('owner: honest upload progress on a throttled real upload',
       .getByRole('button', { name: /^Upload( \d+ files?)?$/ })
       .click();
 
+    await page.evaluate(() => {
+      const w = window as unknown as { sawIndeterminate: boolean };
+      w.sawIndeterminate = false;
+      const scan = () => {
+        if (document.querySelector('[role="dialog"] li progress:not([value])'))
+          w.sawIndeterminate = true;
+      };
+      new MutationObserver(scan).observe(document.body, {
+        subtree: true,
+        childList: true,
+        attributes: true,
+      });
+      scan();
+    });
     const row = rowOf(LONG_STEM.slice(0, 20));
     const bar = row.getByRole('progressbar');
     const total = dialog().getByRole('progressbar', { name: dialogCopy.totalLabel });
@@ -84,8 +98,21 @@ test.describe.serial('owner: honest upload progress on a throttled real upload',
       await page.waitForTimeout(100);
     }
     expect(seen.partial).toBe(true);
+    const sawIndeterminate =
+      seen.indeterminate ||
+      (await page.evaluate(
+        () => (window as unknown as { sawIndeterminate: boolean }).sawIndeterminate,
+      ));
+    // Through the production proxy the server often answers in the same render as the last
+    // byte, so the Processing phase can be shorter than one frame; UploadDialog.test.tsx
+    // holds the indeterminate bar. The honest-progress guarantee below is always asserted.
+    if (!sawIndeterminate) {
+      test.info().annotations.push({
+        type: 'note',
+        description: 'Processing phase too short to observe the indeterminate bar',
+      });
+    }
     expect(seen.totalAt100BeforeDone).toBe(false);
-    console.log('INDETERMINATE_SEEN', seen.indeterminate);
     await expect(row).toContainText(STORED_TAIL);
   });
 
