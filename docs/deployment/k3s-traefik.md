@@ -2,6 +2,8 @@
 
 For the separate deploy repo (SPEC §1, §6, D7). Deploy order, blockers and the repo-to-deploy-repo contract: `docs/deployment/devops-runbook.md`. This repo builds and publishes the images (`docs/ci-cd.md`); the deploy repo owns the manifests, secrets and backups. Everything below is a contract plus example manifests to copy from, not files that live here. Names in `<angle brackets>` are yours to choose. The database is either the in-cluster PostgreSQL StatefulSet (sections 3 and 7, the self-managed path) or a Supabase project (production, `docs/deployment/supabase-database.md`); each place below says which one it describes.
 
+Versions, media-upload deploy items, deploy order, post-deploy checks and rollback in one page: `docs/deployment/production-deploy-requirements.md`.
+
 Scope in v1: one VPS, K3s with the bundled Traefik, **one replica per app**, PostgreSQL 17 in the cluster on a PVC.
 
 ## 1. Images and the three public hosts

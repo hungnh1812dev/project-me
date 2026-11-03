@@ -1,6 +1,6 @@
 # Spec: Abyss Headless CMS & Portfolio (v1)
 
-Status: **Approved 2026-10-20** · Date: 2026-10-20. Amended: 2026-10-21 (web on Next.js, GraphQL read API: §2, §3, §5, D17, D18, §9; D18 details pending Q-G1..Q-G7) · 2026-10-22 (one-time owner setup route: §1, §2, D1, D15, D17, §9, §12-1, Q2; details pending Q-OS1..Q-OS4) · 2026-10-23 (smoke seed CLI: D1, D15, D17, Q2) · 2026-10-23 (R1-00 module directions from the audit: §2, §5, §10 constants line) · 2026-10-27 (recruiter reviewability and launch gate: §4 `pnpm demo`, §5 web CV files, D2 masking mechanism, §13 launch gate, §14 Q5/Q-G6/Q-G7 answered; ADR 0011) · 2026-10-27 (backup download: §2, §3, D20, §9; ADR 0013; Q-BK1..Q-BK7 answered) · 2026-10-31 (web BFF, reviewer mode removed from web, homepage status, web hardening: §2, §5 web rules, §6, D2a, D7, D14, D17, new D21, §9, §12-20..25; ADR 0017; pending Q-BFF1..Q-BFF5). Supersedes `CMS_Requirements_And_Architecture_Spec.html`, `CMS_Implementation_Planning.html`, `CMS_Project_Tasks.html` (kept for history; this file wins where they disagree).
+Status: **Approved 2026-10-20** · Date: 2026-10-20. Amended: 2026-10-21 (web on Next.js, GraphQL read API: §2, §3, §5, D17, D18, §9; D18 details pending Q-G1..Q-G7) · 2026-10-22 (one-time owner setup route: §1, §2, D1, D15, D17, §9, §12-1, Q2; details pending Q-OS1..Q-OS4) · 2026-10-23 (smoke seed CLI: D1, D15, D17, Q2) · 2026-10-23 (R1-00 module directions from the audit: §2, §5, §10 constants line) · 2026-10-27 (recruiter reviewability and launch gate: §4 `pnpm demo`, §5 web CV files, D2 masking mechanism, §13 launch gate, §14 Q5/Q-G6/Q-G7 answered; ADR 0011) · 2026-10-27 (backup download: §2, §3, D20, §9; ADR 0013; Q-BK1..Q-BK7 answered) · 2026-10-31 (web BFF, reviewer mode removed from web, homepage status, web hardening: §2, §5 web rules, §6, D2a, D7, D14, D17, new D21, §9, §12-20..25; ADR 0017; pending Q-BFF1..Q-BFF5) · 2026-11-03 (media upload fixes: new §15, §6 upload timeout row, D12 stored file name and rename migration; Q-MU1..Q-MU6 answered) · 2026-11-03 (remember me, approved by the user 2026-11-03: new §16, §6 TTL and refresh cookie rows, D21 session, new D22, §8.1 `refresh_tokens.remember_me`, §9 login bodies, §12-26, §12-27; Q-RM1..Q-RM8 answered). Supersedes `CMS_Requirements_And_Architecture_Spec.html`, `CMS_Implementation_Planning.html`, `CMS_Project_Tasks.html` (kept for history; this file wins where they disagree).
 
 Related: [tasks/plan.md](tasks/plan.md) · [tasks/todo.md](tasks/todo.md)
 
@@ -264,17 +264,18 @@ Web rules: Server Components by default; `'use client'` only for state, effects,
 | Custom role rank range | 11–39 |
 | Permission actions | `read` `create` `update` `delete` `publish` `unpublish` |
 | Mask sentinel / key | `"***"` for string/text/richtext · `null` for other types and components · `_maskedFields: string[]` |
-| Access / refresh TTL | 15 min / 7 days (rotated on every refresh) |
+| Access / refresh TTL | 15 min / 7 days when "Keep me signed in" is ticked, else 12 hours with a session cookie (rotated on every refresh, §16) |
 | OTP | 6 digits, TTL 300 s, 5 attempts per code, max 5 issued per account per hour, single-use |
 | 2FA temp token | TTL 300 s, 5 attempts |
 | Presence | heartbeat every 20 s, entry TTL 45 s |
 | Component depth | max 3 |
 | Bulk | max 50 records per request, max 200 component rows per record, body limit 1 MB |
 | Upload limits | image 10 MB · pdf 20 MB · video 100 MB |
+| Upload request timeout | client `MEDIA_UPLOAD_TIMEOUT_MS` 4 min (upload and replace only; every other admin call 10 s) · Traefik entrypoint `respondingTimeouts.readTimeout` 5 min (every route; bounds slow headers and bodies) · `api-upload` router (upload and replace) with `api-inflight` and `upload-close` (`Connection: close`) · cms-api Node `requestTimeout` 5 min · Traefik stays v3.6 (ADR 0014, user 2026-11-03, Q-UT3 option 2) |
 | Reviewer session | 24 h, 1 session per IP per 10 min, global cap 200 active |
 | Identifier rule | `^[a-z][a-z0-9_]*$`, max **63 bytes after composition** |
 | Core tables | `accounts`, `roles`, `permissions`, `refresh_tokens`, `otp_codes`, `api_tokens`, `reviewer_sessions`, `file_library`, `audit_logs`, `app_settings` (content registry in `content._content_types` + `content._migrations`, owned by the content engine, not Prisma) |
-| Refresh cookie | `__Secure-abyss_rt`, host-only on the host serving cms-api to browsers (`admin.domain.com` after Q-BFF1, else `domain.com`), `Path=/api/v1/auth`, `HttpOnly; Secure; SameSite=Strict`. Never reaches the web browser: the BFF holds the web visitor's refresh token inside `__Host-abyss_web_session` (D21) |
+| Refresh cookie | `__Secure-abyss_rt`, host-only on the host serving cms-api to browsers (`admin.domain.com` after Q-BFF1, else `domain.com`), `Path=/api/v1/auth`, `HttpOnly; Secure; SameSite=Strict`; persistent (`Max-Age` 7 days) only for a remembered session, else a session cookie (§16). Never reaches the web browser: the BFF holds the web visitor's refresh token inside `__Host-abyss_web_session` (D21) |
 | Origins | web: `https://domain.com` (pages + BFF `/bff/v1`, no cms-api route; D21) · admin + API: `https://admin.domain.com` (cms-api under `/api`, same-origin for cms-admin; pending Q-BFF1; before it: API on `https://domain.com/api`, admin the only CORS origin, credentials on) · cms-api in-cluster: `API_INTERNAL_URL` (Service URL, used only by the web server) |
 
 ---
@@ -310,7 +311,7 @@ Web rules: Server Components by default; `'use client'` only for state, effects,
 
 **D11 Draft/publish integrity.** Partial unique indexes allow at most one draft and one published row per `document_id`. Publish takes the draft's `expectedVersion`. Components carry a stable `component_uid` (UUID) for diff/merge matching.
 
-**D12 Media.** Type detected from magic bytes against an allowlist (`jpeg png webp gif avif pdf mp4`); SVG and HTML always rejected. Images re-encoded with sharp (strips EXIF/GPS). Storage keys UUIDv7; full SHA-256 stored for dedupe. Soft delete, blocked (`409 MEDIA_IN_USE`) while any document references the file; a job purges cloud objects afterwards.
+**D12 Media.** Type detected from magic bytes against an allowlist (`jpeg png webp gif avif pdf mp4`); SVG and HTML always rejected. Images re-encoded with sharp (strips EXIF/GPS). Storage keys UUIDv7; full SHA-256 stored for dedupe. Soft delete, blocked (`409 MEDIA_IN_USE`) while any document references the file; a job purges cloud objects afterwards. The stored `fileName` is `<stem>_<hash8>.<ext>` (§15 MU-3); existing rows are renamed by one SQL migration; storage keys stay UUIDv7.
 
 **D13 Richtext/XSS.** Sanitized on the server when written (allowlist via `sanitize-html`) and again by the web when rendering (DOMPurify). No global "XSS pipe" rewriting all input.
 
@@ -356,12 +357,15 @@ Web rules: Server Components by default; `'use client'` only for state, effects,
 
 - **Topology.** The BFF is part of apps/web: Next.js Route Handlers under `/bff/v1`, same Node server and origin. The browser calls only the web origin; no browser code knows a cms-api URL (`NEXT_PUBLIC_API_BASE_URL`, `DEV_API_PROXY_TARGET` retired). The BFF reaches cms-api only on `API_INTERNAL_URL` (cluster-local Service URL), never following redirects. Q-BFF1 (recommended yes): Traefik serves no cms-api route on `domain.com`; cms-api's public route moves to `admin.domain.com/api` for cms-admin (same-origin, no cms-api code change); a NetworkPolicy lets only Traefik and web pods reach cms-api.
 - **Endpoints** (§9 "Web BFF"): `GET /health`, `GET /session`, `POST /auth/login`, `POST /auth/two-factor/email-code`, `POST /auth/two-factor/verify`, `POST /auth/logout`, `GET /cv`; each one fixed cms-api call; no generic proxy, no GraphQL passthrough.
-- **Session.** No token in the browser. `__Host-abyss_web_session` holds the sealed `{ refreshToken, accessToken, accessExpiresAt }`; `__Host-abyss_web_2fa` the sealed 2FA challenge for 300 s. Both `HttpOnly; Secure; SameSite=Strict; Path=/`, no `Domain`. Sealed with AES-256-GCM, key derived from `WEB_SESSION_SECRET` (required, ≥ 32 bytes in production, else start fails), cookie name as additional data; a cookie that does not open counts as absent and is cleared. Refresh when the access token has < 30 s left; concurrent refreshes of one token share one in-process call and its result for 10 s (D9 family revocation never fires on a race; single replica, like D16). Accounts with any permission other than `read` are signed out at cms-api and refused (`403 BFF_PRIVILEGED_ACCOUNT`) after login, after 2FA and on every session read. Sign-out calls cms-api logout and always clears both cookies.
+- **Session.** No token in the browser. `__Host-abyss_web_session` holds the sealed `{ refreshToken, accessToken, accessExpiresAt, rememberMe }`; `__Host-abyss_web_2fa` the sealed 2FA challenge for 300 s, which also carries `rememberMe` from `POST /bff/v1/auth/login` (`rememberMe?`) to verify. Both `HttpOnly; Secure; SameSite=Strict; Path=/`, no `Domain`. `__Host-abyss_web_session` is a browser-session cookie (no `Max-Age`, no `Expires`) unless remembered, then `Max-Age` 7 days, set again on each refresh (amended 2026-11-03, Q-RM7, §16 RM-6). Sealed with AES-256-GCM, key derived from `WEB_SESSION_SECRET` (required, ≥ 32 bytes in production, else start fails), cookie name as additional data; a cookie that does not open counts as absent and is cleared. Refresh when the access token has < 30 s left; concurrent refreshes of one token share one in-process call and its result for 10 s (D9 family revocation never fires on a race; single replica, like D16). Accounts with any permission other than `read` are signed out at cms-api and refused (`403 BFF_PRIVILEGED_ACCOUNT`) after login, after 2FA and on every session read. Sign-out calls cms-api logout and always clears both cookies.
 - **Pipeline on every BFF route, in order:** allowed method only · state-changing routes need `Origin` exactly `WEB_ORIGIN` and `Sec-Fetch-Site` (when sent) `same-origin` · POST bodies `application/json` only, never CORS headers · body ≤ 8 KiB · per-IP fixed-window rate limit (`auth` 20 / 60 s, `read` 120 / 60 s, at most 10 000 keys) · Zod schema per body, unknown keys refused, lengths capped · Turnstile check where needed · upstream call with `API_TIMEOUT_MS`, forwarded client IP (D7), only the headers that call needs · answer with allowlisted fields, errors `{ statusCode, errorCode, message }` from the ADR 0017 §3 list, `Cache-Control: no-store` · log route and error code of refused requests, never bodies, tokens, codes, cookies, emails or passwords.
 - **Human check.** Cloudflare Turnstile on the login form (`login`) and in the 2FA popup (`two-factor`: sending the email code and verifying, a fresh token each, Q-BFF3). The BFF verifies server-side (`siteverify` with `TURNSTILE_SECRET_KEY` in the web server env, `remoteip`, expected `action`, `hostname` = `TURNSTILE_EXPECTED_HOSTNAME` when set) before any cms-api call; failure `400 BFF_HUMAN_CHECK_FAILED`, siteverify unreachable `503 BFF_HUMAN_CHECK_UNAVAILABLE` (fail closed). `NEXT_PUBLIC_TURNSTILE_SITE_KEY` required at build. Dev, demo and smoke use Cloudflare's published always-pass test keys. The widget script loads only while the login dialog is open.
 - **Reviewer mode on web is removed**, not paused (ADR 0017 §5); Turnstile widget and hook move to `features/auth`. cms-api's reviewer module, cms-admin's Reviewer page and `REVIEWER_FEATURE_ENABLED` are unchanged (D2a).
 - **Homepage.** `/` shows the CV and a "Service status" card like cms-admin's home, polling `GET /bff/v1/health` and showing only that path; it renders even when the CV fails to load. Always on; `/status` and `WEB_STATUS_PAGE_ENABLED` removed (Q-BFF2).
 - **Web env** (server, runtime): adds `WEB_ORIGIN`, `WEB_SESSION_SECRET`, `TURNSTILE_SECRET_KEY`, `TURNSTILE_EXPECTED_HOSTNAME` (optional), `TRUST_PROXY_HOPS` (default 1), `CLIENT_IP_HEADER` (optional); removes `WEB_STATUS_PAGE_ENABLED`, `NEXT_PUBLIC_API_BASE_URL`, `DEV_API_PROXY_TARGET`. Invalid values fail start (instrumentation), as today.
+- **Note (2026-11-03, Q-RM7):** ADR 0017 is to be rewritten when web-bff-hardening is re-planned (the file is missing from `docs/adr/`); the rewrite includes §16 RM-6.
+
+**D22 Remember me (added 2026-11-03, user request, approved 2026-11-03; §16, feature `remember-me`).** "Keep me signed in" is a choice per sign-in, stored on the refresh token family (`refresh_tokens.remember_me`) and copied on every rotation; on two-factor sign-ins it travels in the signed 2FA temp token (claim `rm`). Remembered: persistent cookie (`Max-Age` 7 days) and 7-day sliding server lifetime; not remembered (default): session cookie and 12-hour sliding server lifetime. cms-api alone enforces the lifetime (`expires_at`); the cookie mode only decides whether the browser keeps the cookie after it closes. Cookie names, flags and paths, rotation and reuse detection (D9) and every other session rule are unchanged.
 
 ---
 
@@ -376,7 +380,7 @@ Every table has `id` (int identity PK), `created_at`, `updated_at`. User-facing 
 | `accounts` | email UK (citext), password_hash, display_name, role_id FK, role_slug (composite FK (role_id, role_slug) → roles(id, slug), ADR 0002), status (`invited\|active\|disabled`), token_version int, is_2fa_enabled, two_fa_method (`totp\|email`), totp_secret_enc, totp_last_step, deleted_at |
 | `roles` | slug UK, name, rank, is_system, policy_version int |
 | `permissions` | role_id FK, subject (content type slug or system subject), action, readable_fields jsonb (null = all), writable_fields jsonb (null = all), conditions jsonb (DSL §8.3) |
-| `refresh_tokens` | account_id FK, family_id uuid, token_hash UK, replaced_by_id, user_agent, ip, expires_at, revoked_at |
+| `refresh_tokens` | account_id FK, family_id uuid, token_hash UK, replaced_by_id, user_agent, ip, expires_at, revoked_at, remember_me (boolean, NOT NULL, default `true` for rows before §16) |
 | `otp_codes` | account_id FK, purpose, code_hmac, attempts, expires_at, used_at |
 | `api_tokens` | name, token_prefix, token_hash UK, created_by_id FK (not null, ON DELETE CASCADE), scope jsonb, expires_at, revoked_at, last_used_at |
 | `reviewer_sessions` | account_id FK (ephemeral `reviewer` account), visitor_role, purpose_tags jsonb, notes (≤ 500 chars, plain text), ip_hmac, user_agent, expires_at, last_active_at |
@@ -413,7 +417,7 @@ All routes sit under `/api/v1`. One error shape: `{ statusCode, errorCode, messa
 | Area | Endpoints |
 |---|---|
 | Health | `GET /health/live`, `GET /health/ready` |
-| Auth | `POST /auth/login` → `{ accessToken }` or `{ requires2FA, tempToken, methods }` · `POST /auth/2fa/verify` · `POST /auth/2fa/email-challenge` · `POST /auth/refresh` (cookie) · `POST /auth/logout` (cookie) · `GET /auth/me` |
+| Auth | `POST /auth/login` (`{ email, password, rememberMe? }`, §16) → `{ accessToken }` or `{ requires2FA, tempToken, methods }` · `POST /auth/2fa/verify` · `POST /auth/2fa/email-challenge` · `POST /auth/refresh` (cookie) · `POST /auth/logout` (cookie) · `GET /auth/me` |
 | 2FA setup | `POST /auth/2fa/totp/setup` · `POST /auth/2fa/enable` · `POST /auth/2fa/disable` (password + code) |
 | Password | `POST /auth/password/request-otp` (always 202) · `POST /auth/password/reset` · `POST /auth/password/set` (invite) · `POST /auth/password/change` |
 | Accounts | `GET /accounts?page=&pageSize=` (`{ data, meta { page, pageSize, total } }`) · `POST /accounts` (invite) · `PATCH /accounts/:id` · `POST /accounts/:id/disable` · `POST /accounts/:id/enable` · `POST /accounts/:id/invite/resend` · `POST /accounts/:id/sessions/revoke` |
@@ -438,7 +442,7 @@ All routes sit under `/api/v1`. One error shape: `{ statusCode, errorCode, messa
 |---|---|---|
 | `GET /bff/v1/health` | - | `200 { status: "ok" }` · `503 { status: "unavailable" }` |
 | `GET /bff/v1/session` | - | `200 { user: { id, email, displayName, role } \| null }` |
-| `POST /bff/v1/auth/login` | `{ email, password, humanCheckToken }` | `200 { status: "signed-in", user }` · `200 { status: "two-factor-required", methods }` |
+| `POST /bff/v1/auth/login` | `{ email, password, humanCheckToken, rememberMe? }` (§16 RM-6) | `200 { status: "signed-in", user }` · `200 { status: "two-factor-required", methods }` |
 | `POST /bff/v1/auth/two-factor/email-code` | `{ humanCheckToken }` | `202` |
 | `POST /bff/v1/auth/two-factor/verify` | `{ code, humanCheckToken }` | `200 { user }` |
 | `POST /bff/v1/auth/logout` | - | `204` |
@@ -513,6 +517,8 @@ Coverage target: ≥ 80 % lines on `access`, `identity`, `documents` and `conten
 23. Every state-changing BFF route refuses a foreign or missing `Origin` (403), a non-JSON body (415), a body over 8 KiB (413), unknown keys (400) and the 21st `auth` request from one IP within 60 s (429 with `Retry-After`); a spoofed `X-Forwarded-For` changes neither the BFF's rate-limit key nor the IP cms-api sees (with the documented hop count); no BFF response carries an upstream body, header, stack or URL.
 24. Login, email code and 2FA verify refuse a missing, failed, reused or wrong-action Turnstile token before any cms-api call (`400 BFF_HUMAN_CHECK_FAILED`), and fail closed when siteverify is unreachable (503).
 25. The web serves no reviewer entry and no `/status` route (404); the homepage shows the service status card, which reads `GET /bff/v1/health` and stays visible when the CV cannot load; web responses carry the D17 headers including `Cross-Origin-Opener-Policy`, `Permissions-Policy`, `X-Frame-Options: DENY` and a CSP whose `connect-src` is `'self'` (plus `ws:` in dev only).
+26. cms-admin sign-in (§16 acceptance 4, 5): `POST /auth/login` with `rememberMe: true` sets `__Secure-abyss_rt` with `Max-Age=604800`; with `false` or absent it is a session cookie (no `Max-Age`, no `Expires`); refresh and both 2FA paths keep the family's mode; a not-remembered refresh token presented 12 hours plus 1 s after its last rotation → 401 and the cookie is cleared, while a remembered one still rotates.
+27. Web sign-in (§16 acceptance 10): unticked, with and without 2FA, `__Host-abyss_web_session` is a session cookie; ticked, it expires about 7 days from now; a BFF refresh keeps each mode; the browser still holds no access or refresh token (criterion 22).
 
 ---
 
@@ -561,3 +567,168 @@ The live check runs on the production config before the site is public (a stagin
 | Q-OS2 | Should `GET /setup/status` need no token? It tells anyone a fresh instance awaits setup. | Yes, no token: the console must know whether to show the page; the window is short and the submit still needs the token |
 | Q-OS3 | Persist a "setup completed" marker so setup never reopens, even if the owner row is deleted in SQL with a token still configured? | No marker (no schema change); rely on the owner row, the boot warning and removing the token after setup |
 | Q-OS4 | How does the smoke stack create its owner? | Through the setup route (curl, test token in `scripts/stack/cms-api.env`), then assert `owner:bootstrap` refuses; the CLI's create path stays covered by integration tests |
+| Q-MU1 | Is `<origin>_<hash8>.<ext>` only shown, or stored? | Stored: `file_library.file_name` holds it (API `fileName` too); storage keys stay UUIDv7 |
+| Q-MU2 | Upload timeouts | Client 10 min (upload and replace only); Traefik readTimeout 15 min; Node requestTimeout 15 min. Amended 2026-11-03 (user, SQ-1, Q-UT3 option 2, ADR 0014): entrypoint readTimeout N = 5 min for every route; client 4 min (below N); Node requestTimeout 5 min; a separate `api-upload` router for the two upload routes with `api-inflight` and `upload-close` (`Connection: close`); cms-admin refreshes an access token that is about to expire (JWT `exp`) before each upload or replace; Traefik stays v3.6. Trade-off accepted: a 100 MB file needs about 3.5 Mbit/s upload to finish within 4 min |
+| Q-MU3 | Extension-safe names in the upload dialog rows too? | Yes, same `FileName` component |
+| Q-MU4 | Safari check | Manual by the user; no WebKit e2e project |
+| Q-MU5 | Batch bar weight of sent bytes | 90 %; processing fills the last 10 % |
+| Q-MU6 | Rename existing files to the new rule? | Yes: one Prisma SQL migration, idempotent, `file_name` only; checked at tier 3 through `deploy:migrate` |
+
+---
+
+## 15. Media upload fixes (amended 2026-11-03, user report)
+
+Scope: the cms-admin upload dialog, the File Card (`MediaGrid` card) and `MediaInput` (form-commons), the stored file name in cms-api media (new uploads and a rename migration for existing rows), and the proxy and server timeouts the upload path crosses. The media API keeps its routes and response shape; only the value of `fileName` changes (MU-3). Storage keys stay UUIDv7 (D12), so stored object names and URLs do not change.
+
+### 15.1 Findings (from the code, 2026-11-03)
+
+| # | Report | Cause |
+|---|---|---|
+| F1 | Progress bar jumps to 100 % on Safari (macOS), then the user still waits | The bar measures only bytes handed to the browser. Safari reports upload progress coarsely (often one event at the end), and after the last byte the server still spools, re-encodes (sharp) and uploads to Cloudinary inside the same request. The `processing` state exists in `UploadQueue.rules.ts`, but the dialog draws it as a full determinate bar and the batch bar counts it as complete. |
+| F2 | Uploads often fail with "Could not reach the server..." (`canceled` in the network tab) | Every cms-admin request, uploads included, uses the 10 s client timeout (`API_TIMEOUT_MS`, `apis/client/Api.client.ts`). An upload whose sending plus server processing passes 10 s is aborted by axios (the browser shows `canceled`), and `toMediaError` maps every response-less failure, timeouts and user cancels included, to the network message. Behind it: Traefik v3 stops reading a request body after 60 s by default (`respondingTimeouts.readTimeout`), and Node's HTTP server ends a request after 300 s (`requestTimeout`). |
+| F3 | File name format | The stored `fileName` is the sanitized original name; `MediaDetails` shows `<fileName> · <hash8>`. |
+| F4 | Extension hidden on long names | The name is one `truncate` line, so its end (the extension) is cut first. |
+| F5 | `MediaInput` footer has no frame | Preview and details sit loose in the field; the File Card has a bordered frame, `MediaInput` does not. |
+
+### 15.2 Requirements
+
+**MU-1 Honest progress (F1).** Owner: cms-admin `features/media` (`UploadQueue.rules.ts`, `useUploadQueue.ts`, `UploadDialog.tsx`).
+- A file row shows a determinate bar with `Uploading <n> %` only while bytes are being sent and the browser reports a known total. When the total is unknown, or once every byte is sent, the row shows an indeterminate bar (native `<progress>` without `value`) with the existing `Processing...` label until the server answers.
+- No bar, per file or batch, shows 100 % before the server has answered for every file it covers.
+- Batch bar: each accepted file is weighed by its size. While sending, its sent bytes count for `UPLOAD_SENT_SHARE` = `0.9` of the file (named constant in `UploadQueue.rules.ts`); a `processing` file counts 90 %; a `done` or `failed` file counts 100 % (settled; a failed one is still listed as failed). Processing fills the last 10 % only when the server answers. The bar never moves backwards.
+- Screen readers: the indeterminate bar keeps its accessible name; the row's status text changes from the percentage to `Processing...`.
+
+**MU-2 Uploads are not cut off by a timeout (F2), and slow requests are bounded (SQ-1).** Owners: cms-admin `features/media` (`Media.api.ts`, `Media.constants.ts`, `Media.errors.ts`), `features/auth` (`Auth.interceptor.ts`, fresh token before an upload) and `apis/client/ApiFailure.errors.ts`; cms-api `Bootstrap.setup.ts` (where the app listens; `main.ts` only calls `bootstrap()`); `docker-compose.smoke.yml`; `docs/deployment/k3s-traefik.md`. Amended 2026-11-03 (user, Q-UT3 option 2, ADR 0014): N = 5 min.
+- `upload` and `replaceFile` pass `timeout: MEDIA_UPLOAD_TIMEOUT_MS` = 4 min (constant in `Media.constants.ts`, below the proxy's N so the browser reports "took too long" before the proxy cuts) instead of the 10 s default; every other call keeps `API_TIMEOUT_MS`.
+- `ApiFailure.errors.ts` gains two additive exports, `isRequestTimeout(error)` and `isRequestCanceled(error)`; the `ApiFailure` union is unchanged, so no other caller changes. `toMediaError` checks them first: a timeout shows the new copy `COPY.media.errors.timeout` ("The upload took too long. Try again, or try a smaller file."); a cancel the user started (remove, stop, close) shows no error (the row is already gone). The network message stays for real connection failures.
+- **Fresh token before an upload (S).** cms-api checks the access token when the request headers arrive, and an early 401 to a half-sent upload can reach the browser as a network error (the proxy closes the connection). So `upload` and `replaceFile` opt in, per request, to a check in the auth interceptor: when the in-memory access token's JWT `exp` is less than `ACCESS_TOKEN_REFRESH_MARGIN_MS` (60 s) away, or `exp` cannot be read, the interceptor runs the existing single-flight, cross-tab refresh first and sends the new token. A refused refresh ends the session as the 401 path does, and the upload is not sent. Other calls are unchanged (refresh on 401 and retry once).
+- **Proxy (smoke and the deploy repo).** The Traefik entrypoint `readTimeout` is N = 5 min for every route (it also bounds slow request headers). A separate router `api-upload` matches only `POST /api/v1/media` and `PUT /api/v1/media/:id/file`, in every path form cms-api accepts (case-insensitive, optional trailing slash; MUF-8-security#1) (explicit priority above `api`, same service) with the middlewares `api-inflight` (`inFlightReq`, 100 per client IP) and `upload-close` (`headers.customResponseHeaders`, `Connection: close`). The `api` router keeps `api-inflight` too, because the 5 min entrypoint value applies to every `/api` route, login and the other anonymous routes included (each router counts its own 100). `Connection: close` makes Traefik skip draining up to 256 KB of an unread body before it answers, so an early 401/403 to a slow anonymous upload ends at once; keep-alive stays on for every other route. Traefik stays `v3.6` (no router-level timeouts). The first task confirms on smoke that the header reaches the client on v3.6 and that slow headers are bounded by the entrypoint value.
+- cms-api sets the Node server `requestTimeout` = N (5 min) from a named constant in `Bootstrap.setup.ts` (no new env key; `headersTimeout` stays at the Node default) and keeps the error-filter change that closes the socket after a 401/403 to an unfinished multipart request (defence in depth when Node is reached directly). `docs/deployment/k3s-traefik.md` states the values, the `api-upload` route and its two `Middleware` objects for the deploy repo, and the real cause of the slow-body hold.
+- Accepted limits: an upload slower than 4 min fails with the timeout copy (100 MB needs about 3.5 Mbit/s); slow requests on any route are held at most 5 min (was 60 s by Traefik's default before this section); every upload response closes its connection; HTTP/2 and TLS behaviour cannot be shown on smoke (plain HTTP/1.1).
+- Rate limits, size limits (§6) and the D12 checks are unchanged.
+
+**MU-3 Stored file name `<stem>_<hash8>.<ext>` (F3).** Owner: cms-api `modules/media` (high-risk path, security gate). The rule `storedFileNameOf(originalName, sha256, mimeType)` lives in `domain/MediaUpload.rules.ts` and is applied once, in the step that produces the prepared upload (where the hash of the stored bytes is known), so `POST /media` and `PUT /media/:id/file` both store it without their own copy of the rule.
+- `<stem>`: the sanitized original name (existing `sanitizeFileName`) without its extension. `<hash8>`: the first 8 hex characters of the `sha256` of the stored bytes (after re-encoding). `<ext>`: the original extension, lower-cased, when it belongs to the detected type; otherwise the detected type's canonical extension (`jpeg` -> `jpg`, `png`, `webp`, `gif`, `avif`, `pdf`, `mp4`). A name with no extension gets the canonical one.
+- Examples: `Photo.JPG` -> `Photo_a1b2c3d4.jpg`; `scan` (a pdf) -> `scan_9f8e7d6c.pdf`; `fake.png` holding JPEG bytes -> `fake_a1b2c3d4.jpg`.
+- Uploading a file whose stem already ends with `_<hash8>` of the same bytes keeps the name (no `x_a1b2c3d4_a1b2c3d4.jpg`).
+- The stem is cut so the whole name stays within `FILE_NAME_MAX_LENGTH` (255 characters); the suffix `_<hash8>.<ext>` is never cut.
+- A replace stores the new file's name with the new hash. The tombstone row keeps the previous name (unchanged behaviour).
+- Search by name keeps working on the original stem (`search` matches `file_name`).
+- **Existing rows (Q-MU6):** one Prisma migration (`apps/cms-api/prisma/migrations/<timestamp>_media_stored_file_name/migration.sql`, plain SQL, no app code) renames every `file_library` row, live and tombstoned, to the same rule: `<stem>_<left(sha256, 8)>.<ext>`, using the row's `mime_type` for the extension check and the canonical extension, and cutting the stem so the name fits 255 characters. A row that already ends with `_<left(sha256, 8)>.<ext>` is left as is, so running the SQL twice changes nothing. It runs with the other migrations through `db:migrate` / `deploy:migrate`; no new CLI and no new env key. It changes only `file_name` (no key, URL, hash or timestamp). Document references read the name from the row, so they show the new name without a rewrite.
+- The SQL and `storedFileNameOf` must give the same name for the same row; an integration test checks this on a shared fixture set (acceptance 4a).
+
+**MU-4 The extension stays visible (F4, Q-MU3).** Owner: form-commons `media-input/` (new exported component `FileName`; an additive public API change, `PublicApi.snapshot.ts` updated).
+- `FileName` splits a name into a shrinking head and a fixed tail: the tail is `_<hash8>.<ext>` when the name ends that way, else `.<ext>`, else empty. The head truncates with an ellipsis; the tail never shrinks: `a-very-long-holiday-ph..._a1b2c3d4.jpg`. The full name stays in `title` and in the accessible text (no ellipsis read out).
+- `MediaDetails` shows the stored `fileName` through `FileName` and drops the ` · <hash8>` addition (the hash is now in the name). The `sha256` prop stays accepted (public API unchanged).
+- The cms-admin upload dialog file rows show the local file name through `FileName` while the file waits or is sent, and the stored name from the server's answer once it is done.
+- Works at the narrowest File Card width, in `MediaInput` at the editor's narrowest column, and in the upload dialog rows.
+
+**MU-5 `MediaInput` frame (F5).** Owner: form-commons `media-input/MediaInput.tsx`.
+- With a file attached, the preview and the details footer (with the Delete button) sit inside one frame with the File Card's look: `rounded-md border border-border bg-card p-3`, theme tokens only. The empty drop area keeps its dashed border. When the field has an error, the frame border uses the field's error token, like other inputs.
+
+### 15.3 Acceptance
+
+1. Unit (cms-admin): progress events `0 -> total` move the item `uploading -> processing`; the batch percent stays at or below 90 % of the file until `markDone`, then reaches 100 %; with an unknown total the row renders `<progress>` without `value`; the batch percent never decreases across a sequence of events.
+2. Unit (cms-admin): `upload` and `replaceFile` send `timeout = MEDIA_UPLOAD_TIMEOUT_MS` (4 min), other media calls keep the default; an axios timeout maps to the timeout copy, a cancel to no visible error, a response-less failure to the network copy.
+2a. Unit (cms-admin): a request that opts in to the fresh-token check, with an access token whose `exp` is under 60 s away or unreadable, is sent only after one shared refresh and carries the new token; a token with more time left is sent as is without a refresh; a refused refresh ends the session and the request is not sent; requests that do not opt in behave as before; `upload` and `replaceFile` opt in, other media calls do not.
+3. Unit (cms-api): `storedFileNameOf` gives the examples of MU-3, keeps an already-suffixed name, uses the canonical extension on a mismatch, and cuts a 300-character stem so the name is 255 characters with the suffix whole.
+4. Integration (cms-api): `POST /media` and `PUT /media/:id/file` answer and store `fileName` = `<stem>_<first 8 of sha256>.<ext>`; `GET /media?search=<original stem>` finds the file.
+4a. Integration (cms-api, Testcontainers): rows seeded with old names (with and without extension, upper-case extension, mismatched extension, a 255-character name, a tombstone, one already in the new format) are renamed by the migration SQL exactly as `storedFileNameOf` names them; running the SQL a second time changes no row; `storage_key`, `url`, `sha256` and `updated_at` are unchanged.
+5. Unit (form-commons): `FileName` keeps `_a1b2c3d4.jpg`, `.pdf` or nothing as the fixed tail, `title` holds the full name; `MediaDetails` renders the stored name without ` · `; `MediaInput` with a value renders one bordered frame containing the preview and `media-details`; the empty state is unchanged.
+6. Tier 3: through the smoke proxy, an upload whose request lasts longer than 60 s and less than 4 min (a throttled upload of a large allowed file) succeeds.
+6b. Tier 3 (smoke proxy, Traefik v3.6): an anonymous 200 KB multipart `POST /api/v1/media` sent at 2 KB/s gets its 401 within 5 s with `Connection: close` and the connection closes; an anonymous `PUT /api/v1/media/<id>/file` also answers with `Connection: close`; other `/api` answers carry no `Connection: close` and keep the connection; a request whose headers arrive slowly, to `/api/v1/media` or any other route, is closed by the proxy after about 5 min, not 15.
+6a. Tier 3: on the smoke stack, `deploy:migrate` applies the new migration on a database that already holds media rows with old names (seeded before the migration), the API then lists them in the new format, and a second `deploy:migrate` run reports nothing to apply.
+7. Tier 2 browser (Chromium): the upload dialog shows the indeterminate bar after sending and no 100 % before the row is done; dialog rows, File Card and `MediaInput` show long names with the extension visible; the `MediaInput` frame is visible.
+8. Manual (user, Safari on macOS; no WebKit e2e project, Q-MU4): the bar no longer sits at 100 % while waiting; a 50 MB video upload completes.
+
+### 15.4 Out of scope
+
+Resumable or chunked uploads, direct browser-to-Cloudinary uploads, changing storage keys, object names or URLs (D12), a WebKit e2e project.
+
+## 16. Remember me (2026-11-03, user request; Q-RM1..Q-RM8 answered 2026-11-03; approved by the user 2026-11-03)
+
+Status: **approved 2026-11-03** (user). The one-line updates of §16.6 are applied to §6, §7 (D21, new D22), §8.1, §9 and §12 (criteria 26, 27). Planned as feature `remember-me` in `tasks/plan.md`.
+
+Scope (Q-RM1, user): both sign-ins, cms-admin and apps/web, with the cms-api identity module behind them. Today every cms-admin sign-in sets the refresh cookie `__Secure-abyss_rt` with `Max-Age` = 7 days (`setRefreshCookie`, `http/Auth.controller.ts`) and every refresh token row lives 7 days, sliding on each rotation: every user is always remembered. This section makes that a choice on each sign-in form.
+
+**Dependency on web-bff-hardening.** The web part (RM-6) is written against the web BFF of D21 (`/bff/v1/auth/login`, the sealed `__Host-abyss_web_session` cookie), which is not built yet (feature `web-bff-hardening`, `todo`). It cannot be built before that feature, and building it on the web's current login would be thrown away by D21. The cms-api part (RM-1..RM-4) and the cms-admin part (RM-5) do not depend on it. Delivery (Q-RM6, user): one feature `remember-me` with two phases: phase 1 cms-api + cms-admin (RM-1..RM-5), phase 2 apps/web (RM-6), built only after web-bff-hardening is done. The feature enters `.claude/state/features.md` as `todo` (approved 2026-11-03).
+
+### 16.1 Behaviour
+
+| Choice on the sign-in form | Browser cookie (cms-admin: `__Secure-abyss_rt`; web: `__Host-abyss_web_session`) | Server-side refresh token lifetime (cms-api) | After the browser closes |
+|---|---|---|---|
+| "Keep me signed in" ticked | persistent: `Max-Age` = `REFRESH_TOKEN_TTL_MS` (7 days, §6, unchanged), set again on every refresh | 7 days, sliding on every rotation (unchanged) | still signed in, until 7 days without use |
+| not ticked (default, Q-RM3) | session cookie: no `Max-Age`, no `Expires` | `SESSION_REFRESH_TOKEN_TTL_MS` = 12 hours, sliding on every rotation (Q-RM2) | signed out; a browser that restores session cookies still loses the session 12 hours after the last use |
+
+- The choice belongs to the session (the refresh token family), not to the account or the device: each sign-in decides again, and the form never pre-ticks the box from an earlier choice.
+- Every rotation keeps the family's choice: the successor row copies it, and the new cookie is set in the same mode with the lifetime of that mode. The reuse grace path sets no cookie (unchanged).
+- cms-api is the one place that enforces the lifetime (the refresh token row's `expires_at`); the cookie mode only decides whether the browser keeps the cookie after it closes.
+- Unchanged by this section: access token TTL (15 min), cookie names, flags and paths (`__Secure-abyss_rt`: `HttpOnly; Secure; SameSite=Strict; Path=/api/v1/auth`, host-only; `__Host-abyss_web_session` and `__Host-abyss_web_2fa` as in D21), the 300 s web 2FA cookie, rotation and reuse detection (D9), logout, `POST /accounts/:id/sessions/revoke`, the `token_version` bump on password change or reset, rate limits, the Origin allowlist (D14), the BFF pipeline and Turnstile checks (D21).
+- Neither app stores the email or the choice anywhere in the browser (Q-RM4); cms-admin keeps the access token in memory only (unchanged).
+
+### 16.2 Requirements
+
+**RM-1 Login request (cms-api, identity, high-risk path, security gate).** Owner: `modules/identity`.
+- `POST /auth/login` body gains the optional `rememberMe: boolean` (additive; absent = `false`). Any other type → `400 INVALID_REQUEST` (existing code and message).
+- Password-only login: the session starts with that choice.
+- Two-factor login: the choice travels inside the signed 2FA temp token as the claim `rm` (boolean), set by `AccessTokenService.signTwoFactorTempToken`; `POST /auth/2fa/verify` starts the session with the claim's value and never reads a choice from its own body. A temp token without `rm` (issued before the deploy) counts as `false`.
+- The only places that start a session stay `AuthService.startSession` (login and `TwoFactorLoginService`); `startSession` takes the choice as one added parameter.
+
+**RM-2 Refresh token lifetime (cms-api, identity).** Owner: `modules/identity` (`domain/Authentication.rules.ts`, `domain/Identity.constants.ts`, `application/RefreshToken.service.ts`, `adapters/PrismaRefreshToken.repository.ts`).
+- `refresh_tokens` gains `remember_me boolean NOT NULL DEFAULT true` (Q-RM5) through one Prisma migration; existing rows keep `true`, which matches the 7-day persistent cookie they were issued with. New rows always write the value explicitly.
+- One rule, `refreshTokenTtlMsOf(rememberMe)` in `domain/Authentication.rules.ts`, gives `REFRESH_TOKEN_TTL_MS` or `SESSION_REFRESH_TOKEN_TTL_MS` (named constants in `domain/Identity.constants.ts`). `issue` and `rotate` both use it; `rotate` takes the choice from the presented row.
+- The session result of login, 2FA verify and refresh carries `rememberMe`, so the controllers set the cookie without a second read.
+
+**RM-3 Refresh cookie (cms-api, identity; tier 3 area).** Owner: `http/Auth.controller.ts` (`setRefreshCookie`, also used by `http/TwoFactor.controller.ts`).
+- `setRefreshCookie(res, token, rememberMe)`: `true` → today's options plus `maxAge: REFRESH_TOKEN_TTL_MS`; `false` → the same options without `maxAge` or `expires`. `clearRefreshCookie` is unchanged.
+- cms-api's JSON responses are unchanged: the web BFF learns the mode from its own sealed state (RM-6), never by parsing cms-api's `Set-Cookie` attributes.
+
+**RM-4 Audit (cms-api, security-audit through identity).** `auth.login_succeeded` metadata gains `rememberMe` next to `twoFactorMethod` (D15). No new audit action.
+
+**RM-5 Sign-in form (cms-admin).** Owners: `views/login/LoginPage.tsx`, `features/auth/Auth.api.ts` (`LoginCredentials` gains `rememberMe`), `configs/copy/Login.copy.ts` (and `copy.snapshot.json`).
+- A checkbox under the password field, using form-commons `CheckboxInput` (the react-hook-form-bound checkbox, whose `description` is linked by `aria-describedby`; no new component): label `COPY.login.rememberMe` = "Keep me signed in", hint `COPY.login.rememberMeHint` = "Use this only on a device you trust." Unticked on every visit to the page.
+- The value is sent as `rememberMe` with the email and password; the 2FA modal is unchanged (the choice is already in the temp token).
+- Keyboard and screen reader: the label is the checkbox's accessible name, the hint is linked with `aria-describedby`; Space toggles; the tab order is email, password, checkbox, submit.
+
+**RM-6 Web sign-in (apps/web; after web-bff-hardening; high-risk path `apps/web/src/features/auth`, security gate; tier 3 area).** Owners: the BFF login, 2FA verify and session code that D21 creates (`app/bff/v1/auth/**/route.ts`, `apis/server/`, `features/session`) and `features/auth/WebLoginDialog.tsx` with the web copy module (`configs/Copy.constants.ts`).
+- `POST /bff/v1/auth/login` body gains the optional `rememberMe: boolean` (absent = `false`), added to its Zod schema (unknown keys still refused); the BFF passes it to cms-api `POST /auth/login`.
+- The BFF keeps the choice in its sealed state: in `__Host-abyss_web_2fa` while the 2FA step is open, and in `__Host-abyss_web_session` as `{ refreshToken, accessToken, accessExpiresAt, rememberMe }`. `POST /bff/v1/auth/two-factor/verify` takes it from the sealed 2FA cookie, never from its body.
+- `__Host-abyss_web_session` is set with `Max-Age` = `REFRESH_TOKEN_TTL_MS` (7 days) when `rememberMe` is true, and as a session cookie otherwise; every BFF refresh that rewrites the cookie keeps the mode and, when remembered, sets `Max-Age` again (sliding). The 7-day value comes from one named web constant; the 12-hour limit is enforced by cms-api only.
+- A sealed session without `rememberMe` (written before the deploy) counts as `false` and is rewritten as a session cookie on its next refresh.
+- `WebLoginDialog`: the same checkbox and the same text as RM-5 (Q-RM8, user): label "Keep me signed in", hint "Use this only on a device you trust.", held in the web copy module, unticked every time the dialog opens, sent with the login request; the 2FA step is unchanged. It uses the web app's existing checkbox, or a native `<input type="checkbox">` styled with the web theme tokens when the web has none (no new dependency).
+- `GET /bff/v1/session`, sign-out, the privileged-account refusal and every other D21 rule are unchanged.
+
+### 16.3 Acceptance
+
+1. Unit (cms-api): the login schema accepts `rememberMe` `true`, `false` and absent (`false`) and refuses `"true"`, `1` and `null` with `400 INVALID_REQUEST`.
+2. Unit (cms-api): `refreshTokenTtlMsOf(true)` = 7 days, `refreshTokenTtlMsOf(false)` = 12 hours; `issue` writes `expires_at` and `remember_me` from the choice; `rotate` copies `remember_me` and slides `expires_at` by that mode's TTL.
+3. Unit (cms-api): the 2FA temp token carries `rm` from the login request; a temp token without `rm` verifies and starts a session with `rememberMe = false`.
+4. Integration (cms-api): `POST /auth/login` with `rememberMe: true` sets `__Secure-abyss_rt` with `Max-Age=604800`; with `false` or absent the cookie has neither `Max-Age` nor `Expires`; `POST /auth/refresh` keeps the mode of the family; the TOTP and email 2FA paths behave the same; `auth.login_succeeded` metadata holds `rememberMe`.
+5. Integration (cms-api): a not-remembered refresh token presented 12 hours plus 1 s after its last rotation → `401` and the cookie is cleared; a remembered one at the same time still rotates.
+6. Integration (cms-api, Testcontainers): the migration gives every existing `refresh_tokens` row `remember_me = true` and changes no other column.
+7. Unit (cms-admin): the checkbox renders unticked with its label and hint; submitting sends `rememberMe` `false` or `true` as ticked; the copy snapshot holds the two new strings.
+8. Tier 2 browser (Chromium, cms-admin): sign in unticked → `__Secure-abyss_rt` is a session cookie (Playwright `expires === -1`); sign in ticked → it expires about 7 days from now; after a page reload both stay signed in.
+9. Unit (apps/web): the BFF login schema accepts `rememberMe` `true`, `false`, absent and refuses other types; the sealed session round-trips `rememberMe`; a sealed session without it reads as `false`; the cookie writer sets `Max-Age` only when remembered; the 2FA verify route takes the choice from the sealed 2FA cookie and ignores a `rememberMe` in its body; `WebLoginDialog` renders the box unticked and sends its value.
+10. Tier 2 browser (Chromium, apps/web, after web-bff-hardening): sign in unticked, with and without 2FA → `__Host-abyss_web_session` has `expires === -1`; ticked → about 7 days; a BFF refresh keeps each mode; the browser still holds no access or refresh token (§12 criterion 22).
+11. Tier 3: through the smoke proxy, both modes' `Set-Cookie` for `__Secure-abyss_rt` keep `HttpOnly; Secure; SameSite=Strict; Path=/api/v1/auth` and no `Domain`, and for `__Host-abyss_web_session` keep the D21 flags (`HttpOnly; Secure; SameSite=Strict; Path=/`, no `Domain`); only `Max-Age` differs.
+
+### 16.4 Out of scope
+
+Remembering the email, a trusted device that skips 2FA, a "signed-in devices" list, an absolute session cap, changing the 7-day remembered lifetime, building the web part before web-bff-hardening.
+
+### 16.5 Decisions and open points
+
+Answered by the user (2026-11-03): Q-RM1 both cms-admin and apps/web (web part after web-bff-hardening) · Q-RM2 ticked 7 days sliding, unticked a session cookie with a 12-hour sliding server lifetime · Q-RM3 unticked by default · Q-RM4 the email is not remembered; label "Keep me signed in", hint "Use this only on a device you trust." · Q-RM5 names `rememberMe`, `refresh_tokens.remember_me` (default `true` for existing rows), claim `rm`, `SESSION_REFRESH_TOKEN_TTL_MS`, `refreshTokenTtlMsOf`.
+
+Answered by the user (2026-11-03, second round): Q-RM6 one feature `remember-me`, phase 1 cms-api + cms-admin, phase 2 apps/web after web-bff-hardening is done; added to `features.md` as `todo` only after this section is approved · Q-RM7 D21 is amended as in §16.6; ADR 0017 (cited by D21, missing from `docs/adr/`) is rewritten when web-bff-hardening is re-planned, and includes RM-6 · Q-RM8 the web dialog uses the cms-admin label and hint.
+
+No open questions remain in this section; approved by the user 2026-11-03.
+
+### 16.6 Spec updates on approval (applied 2026-11-03)
+
+- §6 `Access / refresh TTL`: "15 min / 7 days when 'Keep me signed in' is ticked, else 12 hours with a session cookie (rotated on every refresh, §16)". `Refresh cookie`: add "persistent (`Max-Age` 7 days) only for a remembered session, else a session cookie (§16)".
+- §7: new **D22 Remember me** pointing to §16 (choice per session family, carried in the 2FA temp token, cookie mode per family, lifetime enforced by cms-api).
+- §7 D21 "Session" (Q-RM7, user): the sealed session also holds `rememberMe`; `__Host-abyss_web_session` is a browser-session cookie (no `Max-Age`, no `Expires`) unless remembered, then `Max-Age` 7 days, set again on each refresh; `POST /bff/v1/auth/login` takes `rememberMe?` and the sealed 2FA cookie carries it to verify (§16 RM-6). D21 also gains the note: "ADR 0017 is to be rewritten when web-bff-hardening is re-planned (the file is missing from `docs/adr/`); the rewrite includes §16 RM-6."
+- §8.1 `refresh_tokens`: add `remember_me`.
+- §9 Auth: `POST /auth/login` body `{ email, password, rememberMe? }`; Web BFF: `POST /bff/v1/auth/login` body gains `rememberMe?`.
+- §12: one criterion for acceptance 4 and 5, one for acceptance 10.
