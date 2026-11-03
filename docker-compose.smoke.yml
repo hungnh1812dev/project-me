@@ -13,7 +13,7 @@ services:
       - --providers.docker=true
       - --providers.docker.exposedbydefault=false
       - --entrypoints.web.address=:80
-      - --entrypoints.web.transport.respondingTimeouts.readTimeout=15m
+      - --entrypoints.web.transport.respondingTimeouts.readTimeout=5m
       - --ping=true
     ports:
       - '${SMOKE_HTTP_PORT:?set by scripts/smoke.sh}:80'
@@ -102,6 +102,19 @@ services:
       traefik.enable: 'true'
       traefik.http.routers.api.entrypoints: web
       traefik.http.routers.api.rule: Host(`${SMOKE_DOMAIN:?set by scripts/smoke.sh}`) && PathPrefix(`/api`)
+      traefik.http.routers.api.priority: '100'
+      traefik.http.routers.api.middlewares: api-inflight
+      # Upload and replace answer with Connection: close, so a rejected request
+      # (401/403) never leaves the proxy draining a slow body on a kept connection.
+      # Case-insensitive with optional trailing slash: Express serves /Media and /media/ too.
+      traefik.http.routers.api-upload.entrypoints: web
+      traefik.http.routers.api-upload.service: api
+      traefik.http.routers.api-upload.rule: Host(`${SMOKE_DOMAIN}`) && ((Method(`POST`) && PathRegexp(`(?i)^/api/v1/media/?$$`)) || (Method(`PUT`) && PathRegexp(`(?i)^/api/v1/media/[^/]+/file/?$$`)))
+      traefik.http.routers.api-upload.priority: '200'
+      traefik.http.routers.api-upload.middlewares: api-inflight,upload-close
+      # Caps open requests per client IP on api and api-upload (each router counts its own 100): with the 5m readTimeout a slow request holds a socket that long.
+      traefik.http.middlewares.api-inflight.inflightreq.amount: '100'
+      traefik.http.middlewares.upload-close.headers.customresponseheaders.Connection: close
       traefik.http.services.api.loadbalancer.server.port: '3000'
 
   # Init container. Same image as cms-api, different command: applies committed
