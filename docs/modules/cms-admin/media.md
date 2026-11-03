@@ -51,7 +51,7 @@ Tests: 9 files (not listed).
 | `MediaFilters.tsx` | `MediaFilters`: debounced search and MIME filter |
 | `MediaGrid.tsx` | `MediaGrid`: card grid with per-file actions |
 | `MediaPickerDialog.tsx` | `MediaPickerDialog`: choose a file from the library, with paging |
-| `UploadDialog.tsx` | `UploadDialog`: select files, confirm, upload with a determinate or indeterminate per-file bar, retry and errors |
+| `UploadDialog.tsx` | `UploadDialog`: select files, confirm, upload with a determinate or indeterminate per-file bar, retry and errors; row names through `FileName` (local name, then the stored name once done) |
 | `UploadQueue.rules.ts` | Upload queue state: `MAX_PARALLEL_UPLOADS`, `MAX_FILES_PER_BATCH`, `checkFile`, `addFiles`, `nextToStart`, `markProgress`/`markDone`/`markFailed`, `batchPercentOf`, `UPLOAD_SENT_SHARE`, `hasDeterminateProgress` |
 | `index.ts` | Public exports of the feature |
 | `useUploadQueue.ts` | `useUploadQueue`: runs the queue (starts the next items the rules allow, reports progress) |

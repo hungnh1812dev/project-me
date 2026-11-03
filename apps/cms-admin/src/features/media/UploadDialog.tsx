@@ -7,6 +7,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  FileName,
   FormAlert,
   formatFileSize,
 } from '@abyss/form-commons';
@@ -76,6 +77,11 @@ function statusText(item: UploadItem): string {
   }
 }
 
+/** The local name until the server answers, then the name it stored the file under. */
+function shownNameOf(item: UploadItem): string {
+  return item.status === 'done' && item.media ? item.media.fileName : item.file.name;
+}
+
 function rowPercentOf(item: UploadItem): number | undefined {
   if (item.status === 'done') return PERCENT;
   if (item.status === 'uploading' || item.status === 'processing') {
@@ -102,7 +108,7 @@ function UploadRow({
     <li className="flex items-center gap-3 border-b border-border px-3 py-2 last:border-0">
       <Preview file={item.file} />
       <div className="grid min-w-0 flex-1 gap-1">
-        <span className="truncate text-sm font-medium">{item.file.name}</span>
+        <FileName name={shownNameOf(item)} className="text-sm font-medium" />
         <span className="truncate text-xs text-muted-foreground">
           {formatFileSize(item.file.size)} · {item.file.type || '-'}
         </span>
