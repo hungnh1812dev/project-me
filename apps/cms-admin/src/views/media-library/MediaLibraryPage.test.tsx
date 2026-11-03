@@ -31,7 +31,7 @@ function file(overrides: Partial<MediaFile> = {}): MediaFile {
   };
 }
 
-const PORTRAIT_CARD_NAME = /^portrait\.jpg · abcdef01$/;
+const PORTRAIT_CARD_NAME = /^portrait\.jpg$/;
 
 function body(list: MediaFile[]) {
   return { data: list, meta: { page: 1, pageSize: 10, total: list.length } };

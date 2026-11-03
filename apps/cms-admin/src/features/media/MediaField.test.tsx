@@ -14,7 +14,7 @@ const { CONTENT_TYPES, DOCUMENTS, ROLES, MEDIA } = API_ENDPOINTS;
 const copy = COPY.media;
 const SLUG = 'profile';
 const DOC_ID = 'doc_1';
-const PORTRAIT_NAME = 'portrait.jpg · abcdef01';
+const PORTRAIT_NAME = 'portrait.jpg';
 
 const field = (path: string, type: string) => ({
   path,

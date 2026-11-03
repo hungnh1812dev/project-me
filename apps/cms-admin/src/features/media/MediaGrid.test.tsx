@@ -40,9 +40,9 @@ const PDF = file({
 });
 
 describe('MediaGrid', () => {
-  it('shows name with short hash and size on each card', () => {
+  it('shows the stored name and size on each card', () => {
     render(<MediaGrid mode="manage" files={[file()]} emptyTitle="none" />);
-    expect(screen.getByText('portrait.jpg · abcdef01')).toBeInTheDocument();
+    expect(screen.getByText('portrait.jpg')).toBeInTheDocument();
     expect(screen.getByText('2 KB')).toBeInTheDocument();
   });
 
