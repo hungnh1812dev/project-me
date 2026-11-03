@@ -40,7 +40,7 @@ export interface MediaPage {
 
 export interface UploadOptions {
   alt?: string;
-  onProgress?: (sentBytes: number, totalBytes: number) => void;
+  onProgress?: (sentBytes: number, totalBytes: number | undefined) => void;
   signal?: AbortSignal;
 }
 
@@ -73,7 +73,7 @@ export function createMediaApi(client: AxiosInstance) {
         timeout: MEDIA_UPLOAD_TIMEOUT_MS,
         ...(signal ? { signal } : {}),
         ...(onProgress
-          ? { onUploadProgress: (event) => onProgress(event.loaded, event.total ?? file.size) }
+          ? { onUploadProgress: (event) => onProgress(event.loaded, event.total) }
           : {}),
       });
       return data;
@@ -92,7 +92,7 @@ export function createMediaApi(client: AxiosInstance) {
         timeout: MEDIA_UPLOAD_TIMEOUT_MS,
         ...(signal ? { signal } : {}),
         ...(onProgress
-          ? { onUploadProgress: (event) => onProgress(event.loaded, event.total ?? file.size) }
+          ? { onUploadProgress: (event) => onProgress(event.loaded, event.total) }
           : {}),
       });
       return data;

@@ -4,6 +4,7 @@ import type { MediaFile } from './Media.api';
 import { toMediaError } from './Media.errors';
 import {
   addFiles,
+  batchPercentOf,
   dropUnsent,
   markDone,
   markFailed,
@@ -12,13 +13,12 @@ import {
   nextToStart,
   removeItem,
   retryItem,
-  totalsOf,
   type UploadItem,
 } from './UploadQueue.rules';
 
 export type SendFile = (
   file: File,
-  onProgress: (sentBytes: number, totalBytes: number) => void,
+  onProgress: (sentBytes: number, totalBytes: number | undefined) => void,
   signal: AbortSignal,
 ) => Promise<MediaFile>;
 
@@ -34,9 +34,16 @@ export function useUploadQueue(send: SendFile) {
     sendRef.current = send;
   }, [send]);
 
+  const [batchPercent, setBatchPercent] = useState(0);
+  const batchPercentRef = useRef(0);
+
   const commit = useCallback((next: UploadItem[]) => {
     itemsRef.current = next;
     setItems(next);
+    // The batch bar never moves back, even when a failed file is retried or a row is removed.
+    batchPercentRef.current =
+      next.length === 0 ? 0 : Math.max(batchPercentRef.current, batchPercentOf(next));
+    setBatchPercent(batchPercentRef.current);
   }, []);
 
   const pump = useCallback(
@@ -132,7 +139,7 @@ export function useUploadQueue(send: SendFile) {
 
   return {
     items,
-    totals: totalsOf(items),
+    batchPercent,
     isBusy,
     hasWaiting,
     add,

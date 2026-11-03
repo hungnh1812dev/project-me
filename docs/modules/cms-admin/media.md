@@ -12,7 +12,7 @@ The media pieces shared by the File Library page and the document editor: the me
 
 ## Techniques
 
-Upload queue as pure rules (`UploadQueue.rules.ts`: file checks by kind and size, state transitions, totals) driven by `useUploadQueue` with a parallel limit; the library refreshes when a batch settles. Allowed MIME types and size limits per kind in `Media.constants.ts`. API errors mapped by `toMediaError`. Actions shown by caller permissions (`MEDIA_SUBJECT`).
+Upload queue as pure rules (`UploadQueue.rules.ts`: file checks by kind and size, state transitions, honest progress: sent bytes fill `UPLOAD_SENT_SHARE` of a file, the server answer the rest) driven by `useUploadQueue` with a parallel limit; the library refreshes when a batch settles. Allowed MIME types and size limits per kind in `Media.constants.ts`. API errors mapped by `toMediaError`. Actions shown by caller permissions (`MEDIA_SUBJECT`).
 
 ## Technologies
 
@@ -51,8 +51,8 @@ Tests: 9 files (not listed).
 | `MediaFilters.tsx` | `MediaFilters`: debounced search and MIME filter |
 | `MediaGrid.tsx` | `MediaGrid`: card grid with per-file actions |
 | `MediaPickerDialog.tsx` | `MediaPickerDialog`: choose a file from the library, with paging |
-| `UploadDialog.tsx` | `UploadDialog`: select files, confirm, upload with per-file progress, retry and errors |
-| `UploadQueue.rules.ts` | Upload queue state: `MAX_PARALLEL_UPLOADS`, `MAX_FILES_PER_BATCH`, `checkFile`, `addFiles`, `nextToStart`, `markProgress`/`markDone`/`markFailed`, `totalsOf` |
+| `UploadDialog.tsx` | `UploadDialog`: select files, confirm, upload with a determinate or indeterminate per-file bar, retry and errors |
+| `UploadQueue.rules.ts` | Upload queue state: `MAX_PARALLEL_UPLOADS`, `MAX_FILES_PER_BATCH`, `checkFile`, `addFiles`, `nextToStart`, `markProgress`/`markDone`/`markFailed`, `batchPercentOf`, `UPLOAD_SENT_SHARE`, `hasDeterminateProgress` |
 | `index.ts` | Public exports of the feature |
 | `useUploadQueue.ts` | `useUploadQueue`: runs the queue (starts the next items the rules allow, reports progress) |
 

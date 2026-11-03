@@ -16,18 +16,15 @@ import { FileText, X } from 'lucide-react';
 import type { MediaFile } from './Media.api';
 import { MEDIA_ALLOWED_MIME_TYPES } from './Media.constants';
 import { useMediaApi } from './MediaApi.context';
-import type { UploadItem } from './UploadQueue.rules';
+import { hasDeterminateProgress, sentPercentOf, type UploadItem } from './UploadQueue.rules';
 import { useUploadQueue, type SendFile } from './useUploadQueue';
 
 const copy = COPY.media.uploadDialog;
 const IMAGE_PREFIX = 'image/';
 const PERCENT = 100;
 
-function percentOf(sentBytes: number, totalBytes: number): number {
-  return totalBytes === 0 ? 0 : Math.round((sentBytes / totalBytes) * PERCENT);
-}
-
-function ProgressBar({ label, percent }: { label: string; percent: number }) {
+/** Without a `percent` the bar is indeterminate: a native `<progress>` with no `value`. */
+function ProgressBar({ label, percent }: { label: string; percent?: number | undefined }) {
   return (
     <progress
       aria-label={label}
@@ -63,7 +60,9 @@ function Preview({ file }: { file: File }) {
 function statusText(item: UploadItem): string {
   switch (item.status) {
     case 'uploading':
-      return copy.status.uploading(percentOf(item.sentBytes, item.file.size));
+      return hasDeterminateProgress(item)
+        ? copy.status.uploading(sentPercentOf(item))
+        : copy.status.processing;
     case 'processing':
       return copy.status.processing;
     case 'done':
@@ -75,6 +74,14 @@ function statusText(item: UploadItem): string {
     default:
       return copy.status.waiting;
   }
+}
+
+function rowPercentOf(item: UploadItem): number | undefined {
+  if (item.status === 'done') return PERCENT;
+  if (item.status === 'uploading' || item.status === 'processing') {
+    return hasDeterminateProgress(item) ? sentPercentOf(item) : undefined;
+  }
+  return 0;
 }
 
 function UploadRow({
@@ -100,10 +107,7 @@ function UploadRow({
           {formatFileSize(item.file.size)} · {item.file.type || '-'}
         </span>
         {item.status === 'rejected' ? null : (
-          <ProgressBar
-            label={item.file.name}
-            percent={item.status === 'done' ? PERCENT : percentOf(item.sentBytes, item.file.size)}
-          />
+          <ProgressBar label={item.file.name} percent={rowPercentOf(item)} />
         )}
         <span
           className={`text-xs ${isProblem ? 'text-destructive' : 'text-muted-foreground'}`}
@@ -179,7 +183,7 @@ export function UploadDialog({
   const defaultSend: SendFile = (file, onProgress, signal) =>
     api.upload(file, { onProgress, signal });
   const queue = useUploadQueue(send ?? defaultSend);
-  const { items, totals, isBusy, hasWaiting } = queue;
+  const { items, batchPercent, isBusy, hasWaiting } = queue;
   const [isStarted, setIsStarted] = useState(false);
   const [isConfirmingStop, setIsConfirmingStop] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
@@ -331,10 +335,7 @@ export function UploadDialog({
                   ))}
                 </ul>
                 {isStarted ? (
-                  <ProgressBar
-                    label={copy.totalLabel}
-                    percent={percentOf(totals.sentBytes, totals.totalBytes)}
-                  />
+                  <ProgressBar label={copy.totalLabel} percent={batchPercent} />
                 ) : (
                   <p className="m-0 text-xs text-muted-foreground">
                     {copy.summary(accepted.length)}

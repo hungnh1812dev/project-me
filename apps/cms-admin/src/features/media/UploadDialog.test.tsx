@@ -15,7 +15,7 @@ const MIB = 1024 * 1024;
 interface Pending {
   file: File;
   signal: AbortSignal;
-  onProgress: (sent: number, total: number) => void;
+  onProgress: (sent: number, total: number | undefined) => void;
   resolve: () => void;
   reject: (error: unknown) => void;
 }
@@ -126,6 +126,23 @@ describe('UploadDialog', () => {
     expect(onUploaded.mock.calls.flatMap((call) => call[0])).toHaveLength(3);
     await userEvent.click(screen.getByRole('button', { name: copy.close }));
     expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows an indeterminate bar without a value when the total is unknown or all bytes are sent', async () => {
+    const { pending } = setup();
+    await choose([png('a.png', 100)]);
+    await userEvent.click(uploadButton());
+    act(() => pending[0]?.onProgress(50, 100));
+    expect(screen.getByRole('progressbar', { name: 'a.png' })).toHaveAttribute('value', '50');
+    act(() => pending[0]?.onProgress(60, undefined));
+    expect(screen.getByRole('progressbar', { name: 'a.png' })).not.toHaveAttribute('value');
+    expect(screen.getByText(copy.status.processing)).toBeInTheDocument();
+    act(() => pending[0]?.onProgress(100, 100));
+    expect(screen.getByRole('progressbar', { name: 'a.png' })).not.toHaveAttribute('value');
+    expect(screen.getByRole('progressbar', { name: copy.totalLabel })).not.toHaveAttribute(
+      'value',
+      '100',
+    );
   });
 
   it('retries only the failed file', async () => {
