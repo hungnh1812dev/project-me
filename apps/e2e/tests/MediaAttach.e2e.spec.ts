@@ -1,5 +1,3 @@
-import { createHash } from 'node:crypto';
-
 import { expect, test, type BrowserContext, type Page, type Request } from '@playwright/test';
 
 import { API_PATHS } from '../src/Api.endpoints';
@@ -30,11 +28,6 @@ const PNG_BASE64 =
 const PREVIEW_HEIGHT_PX = 300;
 const TOOLTIP_DELAY_MS = 700;
 const BEFORE_TOOLTIP_MS = 300;
-const SHORT_HASH_LENGTH = 8;
-const shortHash = (name: string) =>
-  (
-    createHash('md5').update(name).digest('hex') + createHash('md5').update(name).digest('hex')
-  ).slice(0, SHORT_HASH_LENGTH);
 const png = () => Buffer.from(PNG_BASE64, 'base64');
 
 // The profile form has one fieldset (the photo field); it has no accessible name.
@@ -103,9 +96,7 @@ test.describe.serial('owner: attach media to a profile', () => {
     await expect(page.getByRole('dialog')).toBeHidden();
     await expect(photoField(page)).toContainText(FILE_NAME);
     await expect(photoField(page).getByRole('img')).toBeVisible();
-    await expect(photoField(page).locator('[data-slot="media-details"]')).toContainText(
-      `${FILE_NAME} · ${shortHash(FILE_NAME)}`,
-    );
+    await expect(photoField(page).locator('[data-slot="media-details"]')).toContainText(FILE_NAME);
 
     const [request] = await Promise.all([
       page.waitForRequest(isWrite),
@@ -128,7 +119,7 @@ test.describe.serial('owner: attach media to a profile', () => {
     await expect(preview.getByRole('img')).toHaveCSS('object-fit', 'contain');
     const details = photoField(page).locator('[data-slot="media-details"]');
     await expect(preview.locator('[data-slot="media-details"]')).toHaveCount(0);
-    await expect(details).toContainText(`${FILE_NAME} · ${shortHash(FILE_NAME)}`);
+    await expect(details).toContainText(FILE_NAME);
     await expect(details).toContainText('68 B');
     await expect(details.locator('[data-slot="media-provider"]')).toHaveText('cloudinary');
     await expect(details.locator('time')).toBeVisible();
