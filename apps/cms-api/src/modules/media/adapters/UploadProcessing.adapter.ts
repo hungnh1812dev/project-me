@@ -32,6 +32,7 @@ import {
   normalizeAlt,
   sanitizeFileName,
   sha256Hex,
+  storedFileNameOf,
   type AllowedMime,
 } from '../domain/MediaUpload.rules';
 import { reencodeImage } from './SharpImageReencoder.adapter';
@@ -256,6 +257,7 @@ export class UploadProcessingAdapter implements UploadProcessor {
   async prepare(received: ReceivedUpload): Promise<PreparedUpload> {
     if (received.kind !== 'image') {
       return {
+        fileName: storedFileNameOf(received.fileName, received.sha256, received.mimeType),
         mimeType: received.mimeType,
         kind: received.kind,
         size: received.size,
@@ -266,11 +268,13 @@ export class UploadProcessingAdapter implements UploadProcessor {
       };
     }
     const image = await reencodeImage(received.path, received.mimeType);
+    const sha256 = sha256Hex(image.bytes);
     return {
+      fileName: storedFileNameOf(received.fileName, sha256, received.mimeType),
       mimeType: received.mimeType,
       kind: 'image',
       size: image.bytes.length,
-      sha256: sha256Hex(image.bytes),
+      sha256,
       width: image.width,
       height: image.height,
       open: () => Readable.from([image.bytes]),

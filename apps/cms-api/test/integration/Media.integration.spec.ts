@@ -210,8 +210,8 @@ describe('media upload and list (T27; Postgres 17 via Testcontainers)', () => {
         'url',
         'width',
       ]);
+      expect(body.fileName).toBe(`holiday_${body.sha256.slice(0, 8)}.jpg`);
       expect(body).toMatchObject({
-        fileName: 'holiday.jpg',
         mimeType: 'image/jpeg',
         alt: 'A red box',
         width: 8,
