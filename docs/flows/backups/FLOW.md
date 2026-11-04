@@ -52,8 +52,8 @@ sequenceDiagram
 | `apps/cms-api/src/modules/backups` | Owner-only list of dumps and presigned download links (read-only R2 client) | [backups.md](../../modules/backups.md) |
 | `apps/cms-api/src/modules/identity` | `ReauthenticationService`: password plus a 2FA code | [identity.md](../../modules/cms-api/identity.md) |
 | `apps/cms-api/src/modules/security-audit` | `auth.reauth_failed`, `backup.download_link_created` | [security-audit.md](../../modules/cms-api/security-audit.md) |
-| `apps/cms-admin/src/features/backups` | Backups API client | none yet |
-| `apps/cms-admin/src/views/backups` | Backups page with the staleness warning | none yet |
+| `apps/cms-admin/src/features/backups` | Backups API client | [backups.md](../../modules/cms-admin/backups.md) |
+| `apps/cms-admin/src/views/backups` | Backups page with the staleness warning | [views-backups.md](../../modules/cms-admin/views-backups.md) |
 
 <!-- prettier-ignore-end -->
 <!-- flow-modules:end -->

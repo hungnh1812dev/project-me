@@ -85,14 +85,14 @@ Tests: 2 files (not listed).
 
 | File | Description |
 |---|---|
-| `Backups.module.ts` | TODO (exports `createBackupStorage`, `BackupsModule`) |
-| `index.ts` | TODO (exports `BackupsModule`, `BACKUPS_ERROR_CODES`, `BACKUP_STORAGE`, `BackupStorageError` +2) |
-| `adapters/S3BackupStorage.adapter.ts` | TODO (exports `S3BackupStorageOptions`, `S3BackupStorage`) |
-| `application/Backups.port.ts` | TODO (exports `BACKUP_STORAGE`, `BACKUP_PREFIX`, `StoredBackupObject`, `BackupStorage` +1) |
-| `application/Backups.service.ts` | TODO (exports `BackupListItem`, `BackupListing`, `DownloadLinkInput`, `DownloadLinkView` +2) |
-| `domain/BackupCatalog.rules.ts` | TODO (exports `BackupEntry`, `BackupSummary`, `parseBackupKey`, `sortNewestFirst` +1) |
-| `domain/Backups.constants.ts` | TODO (exports `BACKUP_KINDS`, `BackupKind`, `NIGHTLY_BACKUP_KIND`, `DOWNLOAD_LINK_TTL_SECONDS` +5) |
-| `http/Backups.controller.ts` | TODO (exports `BACKUPS_RATE_LIMIT_POLICIES`, `BackupsController`) |
+| `Backups.module.ts` | Nest wiring; builds the S3 storage from the `BACKUP_STORAGE_*` config (or none) (exports `createBackupStorage`, `BackupsModule`) |
+| `index.ts` | Public exports (exports `BackupsModule`, `BACKUPS_ERROR_CODES`, `BACKUP_STORAGE`, `BackupStorageError` +2) |
+| `adapters/S3BackupStorage.adapter.ts` | Read-only S3 client: list, find and presign a GET (exports `S3BackupStorageOptions`, `S3BackupStorage`) |
+| `application/Backups.port.ts` | The `BackupStorage` port, its DI token and the key prefix (exports `BACKUP_STORAGE`, `BACKUP_PREFIX`, `StoredBackupObject`, `BackupStorage` +1) |
+| `application/Backups.service.ts` | Owner-only list and download-link use cases with re-authentication (exports `BackupListItem`, `BackupListing`, `DownloadLinkInput`, `DownloadLinkView` +2) |
+| `domain/BackupCatalog.rules.ts` | Parses dump keys, sorts them and builds the summary with `isStale` (exports `BackupEntry`, `BackupSummary`, `parseBackupKey`, `sortNewestFirst` +1) |
+| `domain/Backups.constants.ts` | Backup kinds, link TTL, staleness limit and error codes (exports `BACKUP_KINDS`, `BackupKind`, `NIGHTLY_BACKUP_KIND`, `DOWNLOAD_LINK_TTL_SECONDS` +5) |
+| `http/Backups.controller.ts` | The two owner routes and their rate limits (exports `BACKUPS_RATE_LIMIT_POLICIES`, `BackupsController`) |
 
 <!-- prettier-ignore-end -->
 <!-- module-files:end -->

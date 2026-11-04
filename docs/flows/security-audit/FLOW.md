@@ -42,7 +42,7 @@ sequenceDiagram
 | `apps/cms-api/src/modules/identity` | Writes login, 2FA, password, owner, seed and re-authentication events | [identity.md](../../modules/cms-api/identity.md) |
 | `apps/cms-api/src/modules/access` | Writes role, permission, account and token events | [access-control.md](../../modules/access-control.md) |
 | `apps/cms-api/src/modules/media` | Writes media delete events | [media.md](../../modules/cms-api/media.md) |
-| `apps/cms-api/src/modules/reviewer` | Writes reviewer toggle events | none yet |
+| `apps/cms-api/src/modules/reviewer` | Writes reviewer toggle events | [reviewer.md](../../modules/cms-api/reviewer.md) |
 | `apps/cms-api/src/modules/backups` | Writes backup link events | [backups.md](../../modules/backups.md) |
 
 <!-- prettier-ignore-end -->

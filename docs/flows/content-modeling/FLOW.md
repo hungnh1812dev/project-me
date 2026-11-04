@@ -45,7 +45,7 @@ flowchart LR
 | `apps/cms-api/src/modules/content-engine` | Schema validation, migration generator, content storage, field-type registry, `content:generate` / `content:migrate` | [content-engine.md](../../modules/cms-api/content-engine.md) |
 | `apps/cms-api/src/modules/content-types` | Read-only catalog of registered types | [content-types.md](../../modules/cms-api/content-types.md) |
 | `apps/cms-api/src/modules/graphql` | Schema generated from the definitions; printed SDL `content/schema.graphql` | [graphql.md](../../modules/graphql.md) |
-| `apps/cms-api/src/infrastructure/database` | Database connection used by the migration commands | none yet |
+| `apps/cms-api/src/infrastructure/database` | Database connection used by the migration commands | [database.md](../../modules/cms-api/database.md) |
 
 <!-- prettier-ignore-end -->
 <!-- flow-modules:end -->

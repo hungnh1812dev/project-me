@@ -149,8 +149,8 @@ sequenceDiagram
 | `apps/cms-api/src/modules/security-audit` | `auth.login_succeeded` / `auth.login_failed` rows (D15, RM-4) | [security-audit.md](../../modules/cms-api/security-audit.md) |
 | `apps/cms-admin/src/features/auth` | Session, in-memory access token, refresh interceptor, single-flight and cross-tab refresh, login API client | [auth.md](../../modules/cms-admin/auth.md) |
 | `apps/cms-admin/src/views/login` | Sign-in page with the 2FA modal and the remember-me checkbox (RM-5) | [login.md](../../modules/cms-admin/login.md) |
-| `apps/web/src/features/auth` | Web login dialog, Turnstile widget (D21, RM-6) | none yet |
-| `apps/web/src/features/session` | Who is signed in; the sealed BFF session cookie server-side (D21, RM-6) | none yet |
+| `apps/web/src/features/auth` | Web login dialog, Turnstile widget (D21, RM-6) | [auth.md](../../modules/web/auth.md) |
+| `apps/web/src/features/session` | Who is signed in; the sealed BFF session cookie server-side (D21, RM-6) | [session.md](../../modules/web/session.md) |
 | `packages/form-commons/src/components/forms` | `CheckboxInput` used by the remember-me checkbox (RM-5) | [forms.md](../../modules/form-commons/forms.md) |
 
 <!-- prettier-ignore-end -->

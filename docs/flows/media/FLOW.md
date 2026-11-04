@@ -74,7 +74,7 @@ sequenceDiagram
 |---|---|---|
 | `apps/cms-api/src/modules/media` | Upload pipeline, replace, alt text, delete, purge job, storage adapters, media refs; `storedFileNameOf` (MU-3) | [media.md](../../modules/cms-api/media.md) |
 | `apps/cms-api/src/modules/security-audit` | Audit row for media delete (D15) | [security-audit.md](../../modules/cms-api/security-audit.md) |
-| `apps/cms-api/src/infrastructure/scheduling` | Runs the purge job | none yet |
+| `apps/cms-api/src/infrastructure/scheduling` | Runs the purge job | [scheduling.md](../../modules/cms-api/scheduling.md) |
 | `apps/cms-admin/src/features/media` | Media API client, upload queue and dialog, grid, picker (MU-1, MU-2, MU-4) | [media.md](../../modules/cms-admin/media.md) |
 | `apps/cms-admin/src/features/auth` | Fresh token before an upload (MU-2) | [auth.md](../../modules/cms-admin/auth.md) |
 | `apps/cms-admin/src/views/media-library` | The File Library page (`/media`) | [media-library.md](../../modules/cms-admin/media-library.md) |

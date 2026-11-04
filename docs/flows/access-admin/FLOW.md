@@ -50,12 +50,12 @@ sequenceDiagram
 | `apps/cms-api/src/modules/identity` | Invitation codes and session revocation used by account actions | [identity.md](../../modules/cms-api/identity.md) |
 | `apps/cms-api/src/modules/content-types` | Content type catalog that feeds the permission matrix | [content-types.md](../../modules/cms-api/content-types.md) |
 | `apps/cms-api/src/modules/security-audit` | Audit rows for role, permission, account and token changes (D15) | [security-audit.md](../../modules/cms-api/security-audit.md) |
-| `apps/cms-api/src/infrastructure/mail` | Sends invitations | none yet |
+| `apps/cms-api/src/infrastructure/mail` | Sends invitations | [mail.md](../../modules/cms-api/mail.md) |
 | `apps/cms-admin/src/features/access` | Accounts, roles and permission matrix client; the caller's access hints | [access.md](../../modules/cms-admin/access.md) |
-| `apps/cms-admin/src/views/accounts` | Accounts list and invite | none yet |
-| `apps/cms-admin/src/views/roles` | Roles list | none yet |
-| `apps/cms-admin/src/views/role-permissions` | Permission matrix of one role | none yet |
-| `apps/cms-admin/src/views/api-tokens` | API tokens | none yet |
+| `apps/cms-admin/src/views/accounts` | Accounts list and invite | [accounts.md](../../modules/cms-admin/accounts.md) |
+| `apps/cms-admin/src/views/roles` | Roles list | [roles.md](../../modules/cms-admin/roles.md) |
+| `apps/cms-admin/src/views/role-permissions` | Permission matrix of one role | [role-permissions.md](../../modules/cms-admin/role-permissions.md) |
+| `apps/cms-admin/src/views/api-tokens` | API tokens | [api-tokens.md](../../modules/cms-admin/api-tokens.md) |
 
 <!-- prettier-ignore-end -->
 <!-- flow-modules:end -->

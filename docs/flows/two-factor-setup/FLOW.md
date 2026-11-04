@@ -42,8 +42,8 @@ sequenceDiagram
 |---|---|---|
 | `apps/cms-api/src/modules/identity` | TOTP secret, enable and disable, email code, secret encryption, `owner:reset-2fa` CLI | [identity.md](../../modules/cms-api/identity.md) |
 | `apps/cms-api/src/modules/security-audit` | Audit rows for 2FA changes (D15) | [security-audit.md](../../modules/cms-api/security-audit.md) |
-| `apps/cms-api/src/infrastructure/mail` | Sends email codes | none yet |
-| `apps/cms-admin/src/features/security` | Two-factor setup client | none yet |
+| `apps/cms-api/src/infrastructure/mail` | Sends email codes | [mail.md](../../modules/cms-api/mail.md) |
+| `apps/cms-admin/src/features/security` | Two-factor setup client | [security.md](../../modules/cms-admin/security.md) |
 | `apps/cms-admin/src/views/security-settings` | Two-factor setup and removal page (`/settings/security`) | [security-settings.md](../../modules/cms-admin/security-settings.md) |
 
 <!-- prettier-ignore-end -->

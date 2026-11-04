@@ -50,13 +50,13 @@ sequenceDiagram
 
 | Module | Role in this flow | Doc |
 |---|---|---|
-| `apps/cms-api/src/modules/reviewer` | Reviewer toggle, session creation, field profile, owner log, cleanup job | none yet |
+| `apps/cms-api/src/modules/reviewer` | Reviewer toggle, session creation, field profile, owner log, cleanup job | [reviewer.md](../../modules/cms-api/reviewer.md) |
 | `apps/cms-api/src/modules/access` | `reviewer` role field profile, masking | [access-control.md](../../modules/access-control.md) |
 | `apps/cms-api/src/modules/identity` | Reviewer access tokens; `AccessSessionService` refuses reviewer accounts while the switch is off | [identity.md](../../modules/cms-api/identity.md) |
 | `apps/cms-api/src/modules/security-audit` | Audit row for the reviewer toggle (D15) | [security-audit.md](../../modules/cms-api/security-audit.md) |
-| `apps/cms-admin/src/features/reviewer` | Reviewer switch and session log client | none yet |
+| `apps/cms-admin/src/features/reviewer` | Reviewer switch and session log client | [reviewer.md](../../modules/cms-admin/reviewer.md) |
 | `apps/cms-admin/src/views/reviewer-sessions` | Reviewer switch and reviewer session log page (`/reviewer`) | [reviewer-sessions.md](../../modules/cms-admin/reviewer-sessions.md) |
-| `apps/web/src/features/reviewer` | Web reviewer access dialog; removed by D21 (web-bff-hardening) | none yet |
+| `apps/web/src/features/reviewer` | Web reviewer access dialog; removed by D21 (web-bff-hardening) | [reviewer.md](../../modules/web/reviewer.md) |
 
 <!-- prettier-ignore-end -->
 <!-- flow-modules:end -->

@@ -60,7 +60,7 @@ sequenceDiagram
 | `apps/cms-api/src/modules/identity` | `bootstrapOwner`, setup route, `owner:bootstrap` and `seed:account` CLIs | [identity.md](../../modules/cms-api/identity.md) |
 | `apps/cms-api/src/modules/security-audit` | `owner.created`, `owner.setup_rejected`, `account.seeded` (D15) | [security-audit.md](../../modules/cms-api/security-audit.md) |
 | `apps/cms-admin/src/features/auth` | Setup status check and the setup request | [auth.md](../../modules/cms-admin/auth.md) |
-| `apps/cms-admin/src/views/owner-setup` | The one-time setup page | none yet |
+| `apps/cms-admin/src/views/owner-setup` | The one-time setup page | [owner-setup.md](../../modules/cms-admin/owner-setup.md) |
 
 <!-- prettier-ignore-end -->
 <!-- flow-modules:end -->

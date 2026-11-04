@@ -52,12 +52,12 @@ sequenceDiagram
 | `apps/cms-api/src/modules/graphql` | Read-only GraphQL endpoint over document reads (D18) | [graphql.md](../../modules/graphql.md) |
 | `apps/cms-api/src/modules/documents` | `DocumentsQueryService`, the one read path | [documents.md](../../modules/cms-api/documents.md) |
 | `apps/cms-api/src/modules/access` | Document auth guard, public field profile, masking | [access-control.md](../../modules/access-control.md) |
-| `apps/cms-api/src/modules/health` | Health endpoints behind the status card | none yet |
-| `apps/web/src/features/cv` | CV data (GraphQL documents, server code) | none yet |
-| `apps/web/src/views/cv` | CV page | none yet |
-| `apps/web/src/features/status` | Service status card (`GET /bff/v1/health`) | none yet |
-| `apps/web/src/views/status` | Status view | none yet |
-| `apps/web/src/features/session` | Who is signed in, for `GET /bff/v1/cv` | none yet |
+| `apps/cms-api/src/modules/health` | Health endpoints behind the status card | [health.md](../../modules/cms-api/health.md) |
+| `apps/web/src/features/cv` | CV data (GraphQL documents, server code) | [cv.md](../../modules/web/cv.md) |
+| `apps/web/src/views/cv` | CV page | [views-cv.md](../../modules/web/views-cv.md) |
+| `apps/web/src/features/status` | Service status card (`GET /bff/v1/health`) | [status.md](../../modules/web/status.md) |
+| `apps/web/src/views/status` | Status view | [views-status.md](../../modules/web/views-status.md) |
+| `apps/web/src/features/session` | Who is signed in, for `GET /bff/v1/cv` | [session.md](../../modules/web/session.md) |
 
 <!-- prettier-ignore-end -->
 <!-- flow-modules:end -->

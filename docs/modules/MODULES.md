@@ -11,21 +11,21 @@ flows in `docs/flows/` whose `FLOW.md` names the module.
 
 | Module | Folder | Doc | Doc status | Flows | Summary |
 |---|---|---|---|---|---|
-| access | `apps/cms-api/src/modules/access` | `docs/modules/access-control.md` | draft | [`access-admin`](../flows/access-admin/FLOW.md), [`content-editing`](../flows/content-editing/FLOW.md), [`public-site`](../flows/public-site/FLOW.md), [`reviewer`](../flows/reviewer/FLOW.md), [`security-audit`](../flows/security-audit/FLOW.md) | Policy evaluation, permission guard, field masking, accounts, roles and API tokens |
-| backups | `apps/cms-api/src/modules/backups` | `docs/modules/backups.md` | draft | [`backups`](../flows/backups/FLOW.md), [`security-audit`](../flows/security-audit/FLOW.md) | Owner-only list of nightly database dumps and short download links |
+| access | `apps/cms-api/src/modules/access` | `docs/modules/access-control.md` | complete | [`access-admin`](../flows/access-admin/FLOW.md), [`content-editing`](../flows/content-editing/FLOW.md), [`public-site`](../flows/public-site/FLOW.md), [`reviewer`](../flows/reviewer/FLOW.md), [`security-audit`](../flows/security-audit/FLOW.md) | Policy evaluation, permission guard, field masking, accounts, roles and API tokens |
+| backups | `apps/cms-api/src/modules/backups` | `docs/modules/backups.md` | complete | [`backups`](../flows/backups/FLOW.md), [`security-audit`](../flows/security-audit/FLOW.md) | Owner-only list of nightly database dumps and short download links |
 | content-engine | `apps/cms-api/src/modules/content-engine` | `docs/modules/cms-api/content-engine.md` | complete | [`content-editing`](../flows/content-editing/FLOW.md), [`content-modeling`](../flows/content-modeling/FLOW.md) | Content type definitions, generated SQL migrations, content storage and the field-type registry |
 | content-types | `apps/cms-api/src/modules/content-types` | `docs/modules/cms-api/content-types.md` | complete | [`access-admin`](../flows/access-admin/FLOW.md), [`content-modeling`](../flows/content-modeling/FLOW.md) | Read-only catalog of registered content types (slug, display name, kind, fields) filtered to what the caller may read. |
 | documents | `apps/cms-api/src/modules/documents` | `docs/modules/cms-api/documents.md` | complete | [`content-editing`](../flows/content-editing/FLOW.md), [`public-site`](../flows/public-site/FLOW.md) | Document REST API: list/filter/sort, read, create, draft save with version check, publish, bulk, presence |
 | graphql | `apps/cms-api/src/modules/graphql` | `docs/modules/graphql.md` | complete | [`content-modeling`](../flows/content-modeling/FLOW.md), [`public-site`](../flows/public-site/FLOW.md) | Read-only GraphQL endpoint for documents, same rules as the REST reads |
-| health | `apps/cms-api/src/modules/health` | - | missing | [`public-site`](../flows/public-site/FLOW.md) | - |
+| health | `apps/cms-api/src/modules/health` | `docs/modules/cms-api/health.md` | complete | [`public-site`](../flows/public-site/FLOW.md) | Liveness and readiness probes: `{ status }` only, readiness pings the database |
 | identity | `apps/cms-api/src/modules/identity` | `docs/modules/cms-api/identity.md` | complete | [`access-admin`](../flows/access-admin/FLOW.md), [`backups`](../flows/backups/FLOW.md), [`owner-setup`](../flows/owner-setup/FLOW.md), [`password`](../flows/password/FLOW.md), [`reviewer`](../flows/reviewer/FLOW.md), [`security-audit`](../flows/security-audit/FLOW.md), [`sign-in`](../flows/sign-in/FLOW.md), [`two-factor-setup`](../flows/two-factor-setup/FLOW.md) | Sign-in, sessions, refresh tokens, passwords, OTP, two-factor (TOTP/email), owner setup and bootstrap CLIs |
 | media | `apps/cms-api/src/modules/media` | `docs/modules/cms-api/media.md` | complete | [`content-editing`](../flows/content-editing/FLOW.md), [`media`](../flows/media/FLOW.md), [`security-audit`](../flows/security-audit/FLOW.md) | Media library API: upload, replace in place, alt text, delete, purge; storage adapters; media refs in documents |
-| reviewer | `apps/cms-api/src/modules/reviewer` | - | missing | [`reviewer`](../flows/reviewer/FLOW.md), [`security-audit`](../flows/security-audit/FLOW.md) | - |
+| reviewer | `apps/cms-api/src/modules/reviewer` | `docs/modules/cms-api/reviewer.md` | complete | [`reviewer`](../flows/reviewer/FLOW.md), [`security-audit`](../flows/security-audit/FLOW.md) | Self-service read-only reviewer sessions, the owner toggle, the session log and the cleanup job (D2, D2a) |
 | security-audit | `apps/cms-api/src/modules/security-audit` | `docs/modules/cms-api/security-audit.md` | complete | [`access-admin`](../flows/access-admin/FLOW.md), [`backups`](../flows/backups/FLOW.md), [`media`](../flows/media/FLOW.md), [`owner-setup`](../flows/owner-setup/FLOW.md), [`password`](../flows/password/FLOW.md), [`reviewer`](../flows/reviewer/FLOW.md), [`security-audit`](../flows/security-audit/FLOW.md), [`sign-in`](../flows/sign-in/FLOW.md), [`two-factor-setup`](../flows/two-factor-setup/FLOW.md) | Writes the security audit log (logins, 2FA, roles, tokens, setup, reviewer) - SPEC D15 |
-| database | `apps/cms-api/src/infrastructure/database` | - | missing | [`content-modeling`](../flows/content-modeling/FLOW.md) | - |
-| logging | `apps/cms-api/src/infrastructure/logging` | - | missing | - | - |
-| mail | `apps/cms-api/src/infrastructure/mail` | - | missing | [`access-admin`](../flows/access-admin/FLOW.md), [`password`](../flows/password/FLOW.md), [`two-factor-setup`](../flows/two-factor-setup/FLOW.md) | - |
-| scheduling | `apps/cms-api/src/infrastructure/scheduling` | - | missing | [`media`](../flows/media/FLOW.md) | - |
+| database | `apps/cms-api/src/infrastructure/database` | `docs/modules/cms-api/database.md` | complete | [`content-modeling`](../flows/content-modeling/FLOW.md) | Core database access: the Prisma client, connection settings, transaction runners and after-commit callbacks |
+| logging | `apps/cms-api/src/infrastructure/logging` | `docs/modules/cms-api/logging.md` | complete | - | The `AppLogger` port and its Nest adapter, injectable anywhere |
+| mail | `apps/cms-api/src/infrastructure/mail` | `docs/modules/cms-api/mail.md` | complete | [`access-admin`](../flows/access-admin/FLOW.md), [`password`](../flows/password/FLOW.md), [`two-factor-setup`](../flows/two-factor-setup/FLOW.md) | Outgoing plain-text mail: the `MailSender` port with SMTP and console adapters |
+| scheduling | `apps/cms-api/src/infrastructure/scheduling` | `docs/modules/cms-api/scheduling.md` | complete | [`media`](../flows/media/FLOW.md) | Runs in-process recurring jobs on an interval |
 | common | `apps/cms-api/src/common` | `docs/modules/cms-api/common.md` | complete | - | Shared HTTP plumbing of cms-api: constants, error filter, guards, middleware, rate limit, clock, shared schemas |
 | config | `apps/cms-api/src/config` | `docs/modules/cms-api/config.md` | complete | - | Typed app config: env schema, cross-key rules, production guards, safe boot summary |
 | contract | `apps/cms-api/src/contract` | `docs/modules/cms-api/contract.md` | complete | - | Builds and prints the constants shared with the frontends (`contract:print`) |
@@ -36,43 +36,43 @@ flows in `docs/flows/` whose `FLOW.md` names the module.
 |---|---|---|---|---|---|
 | access | `apps/cms-admin/src/features/access` | `docs/modules/cms-admin/access.md` | complete | [`access-admin`](../flows/access-admin/FLOW.md) | Accounts, roles and permission matrix client, plus the caller's own access hints (can, canWriteEveryField) |
 | auth | `apps/cms-admin/src/features/auth` | `docs/modules/cms-admin/auth.md` | complete | [`media`](../flows/media/FLOW.md), [`owner-setup`](../flows/owner-setup/FLOW.md), [`password`](../flows/password/FLOW.md), [`sign-in`](../flows/sign-in/FLOW.md) | Sign-in session, access token handling, refresh interceptor, password and first-owner setup flows |
-| backups | `apps/cms-admin/src/features/backups` | - | missing | [`backups`](../flows/backups/FLOW.md) | - |
+| backups | `apps/cms-admin/src/features/backups` | `docs/modules/cms-admin/backups.md` | complete | [`backups`](../flows/backups/FLOW.md) | Backups API client: list the nightly dumps and request a short download link |
 | content | `apps/cms-admin/src/features/content` | `docs/modules/cms-admin/content.md` | complete | [`content-editing`](../flows/content-editing/FLOW.md) | Content API client, queries, dynamic document form (field registry, components, richtext) and menu items |
 | content-types | `apps/cms-admin/src/features/content-types` | `docs/modules/cms-admin/content-types.md` | complete | [`content-editing`](../flows/content-editing/FLOW.md) | Content type catalog client: slug, display name, kind and fields |
 | media | `apps/cms-admin/src/features/media` | `docs/modules/cms-admin/media.md` | complete | [`media`](../flows/media/FLOW.md) | Media API client, upload queue and dialog, grid, filters, picker, MediaField and richtext image insert |
-| reviewer | `apps/cms-admin/src/features/reviewer` | - | missing | [`reviewer`](../flows/reviewer/FLOW.md) | - |
-| security | `apps/cms-admin/src/features/security` | - | missing | [`two-factor-setup`](../flows/two-factor-setup/FLOW.md) | - |
-| status | `apps/cms-admin/src/features/status` | - | missing | - | - |
-| accounts | `apps/cms-admin/src/views/accounts` | - | missing | [`access-admin`](../flows/access-admin/FLOW.md) | - |
-| api-tokens | `apps/cms-admin/src/views/api-tokens` | - | missing | [`access-admin`](../flows/access-admin/FLOW.md) | - |
-| backups | `apps/cms-admin/src/views/backups` | - | missing | [`backups`](../flows/backups/FLOW.md) | - |
+| reviewer | `apps/cms-admin/src/features/reviewer` | `docs/modules/cms-admin/reviewer.md` | complete | [`reviewer`](../flows/reviewer/FLOW.md) | Reviewer switch and session log client, and the banner shown to reviewer sessions |
+| security | `apps/cms-admin/src/features/security` | `docs/modules/cms-admin/security.md` | complete | [`two-factor-setup`](../flows/two-factor-setup/FLOW.md) | Security settings client of the signed-in account: two-factor setup and removal, password change, and the code-plus-password confirm form |
+| status | `apps/cms-admin/src/features/status` | `docs/modules/cms-admin/status.md` | complete | - | Health API client for the service status card on the admin home |
+| accounts | `apps/cms-admin/src/views/accounts` | `docs/modules/cms-admin/accounts.md` | complete | [`access-admin`](../flows/access-admin/FLOW.md) | Accounts page (`/accounts`): list, invite, enable, disable and resend invite |
+| api-tokens | `apps/cms-admin/src/views/api-tokens` | `docs/modules/cms-admin/api-tokens.md` | complete | [`access-admin`](../flows/access-admin/FLOW.md) | API tokens page (`/api-tokens`): create, edit scope and expiry, reveal once, revoke |
+| backups | `apps/cms-admin/src/views/backups` | `docs/modules/cms-admin/views-backups.md` | complete | [`backups`](../flows/backups/FLOW.md) | Backups page (`/backups`, owner): the nightly dumps and a download behind password plus 2FA code |
 | change-password | `apps/cms-admin/src/views/change-password` | `docs/modules/cms-admin/change-password.md` | complete | [`password`](../flows/password/FLOW.md) | Signed-in password change (`/settings/password`); ends every session after success |
 | collection-list | `apps/cms-admin/src/views/collection-list` | `docs/modules/cms-admin/collection-list.md` | complete | [`content-editing`](../flows/content-editing/FLOW.md) | List page of a content collection with bulk actions and single type redirect |
 | document-edit | `apps/cms-admin/src/views/document-edit` | `docs/modules/cms-admin/document-edit.md` | complete | [`content-editing`](../flows/content-editing/FLOW.md) | Create and edit a content document; presence banner and the version-conflict merge |
 | login | `apps/cms-admin/src/views/login` | `docs/modules/cms-admin/login.md` | complete | [`sign-in`](../flows/sign-in/FLOW.md) | Sign-in page with the two-factor step (`/login`) |
 | media-library | `apps/cms-admin/src/views/media-library` | `docs/modules/cms-admin/media-library.md` | complete | [`media`](../flows/media/FLOW.md) | The File Library (`/media`): search, filter, grid, upload, replace, alt text, delete |
-| owner-setup | `apps/cms-admin/src/views/owner-setup` | - | missing | [`owner-setup`](../flows/owner-setup/FLOW.md) | - |
+| owner-setup | `apps/cms-admin/src/views/owner-setup` | `docs/modules/cms-admin/owner-setup.md` | complete | [`owner-setup`](../flows/owner-setup/FLOW.md) | One-time owner setup page (`/setup`), shown only while the setup is open |
 | profile | `apps/cms-admin/src/views/profile` | `docs/modules/cms-admin/profile.md` | complete | - | Read-only profile of the signed-in account (`/settings/profile`) |
-| reset-password | `apps/cms-admin/src/views/reset-password` | - | missing | [`password`](../flows/password/FLOW.md) | - |
+| reset-password | `apps/cms-admin/src/views/reset-password` | `docs/modules/cms-admin/reset-password.md` | complete | [`password`](../flows/password/FLOW.md) | Forgotten-password page (`/reset-password`): ask for a code, then set a new password |
 | reviewer-sessions | `apps/cms-admin/src/views/reviewer-sessions` | `docs/modules/cms-admin/reviewer-sessions.md` | complete | [`reviewer`](../flows/reviewer/FLOW.md) | Reviewer switch and reviewer session log and the reviewer session log (`/reviewer`) |
-| role-permissions | `apps/cms-admin/src/views/role-permissions` | - | missing | [`access-admin`](../flows/access-admin/FLOW.md) | - |
-| roles | `apps/cms-admin/src/views/roles` | - | missing | [`access-admin`](../flows/access-admin/FLOW.md) | - |
+| role-permissions | `apps/cms-admin/src/views/role-permissions` | `docs/modules/cms-admin/role-permissions.md` | complete | [`access-admin`](../flows/access-admin/FLOW.md) | Role permissions page (`/roles/:roleId`): one role's permission matrix |
+| roles | `apps/cms-admin/src/views/roles` | `docs/modules/cms-admin/roles.md` | complete | [`access-admin`](../flows/access-admin/FLOW.md) | Roles page (`/roles`): every role, highest rank first |
 | security-settings | `apps/cms-admin/src/views/security-settings` | `docs/modules/cms-admin/security-settings.md` | complete | [`two-factor-setup`](../flows/two-factor-setup/FLOW.md) | Two-factor setup and removal for the signed-in account (`/settings/security`) |
-| set-password | `apps/cms-admin/src/views/set-password` | - | missing | [`password`](../flows/password/FLOW.md) | - |
-| status | `apps/cms-admin/src/views/status` | - | missing | - | - |
+| set-password | `apps/cms-admin/src/views/set-password` | `docs/modules/cms-admin/set-password.md` | complete | [`password`](../flows/password/FLOW.md) | Invitation page (`/set-password`): enter the emailed code and choose a password |
+| status | `apps/cms-admin/src/views/status` | `docs/modules/cms-admin/views-status.md` | complete | - | Admin home: the service status card |
 | components | `apps/cms-admin/src/components` | `docs/modules/cms-admin/components.md` | complete | - | App shell (side menu, top bar, user menu), modal, page states, pagination, focus hooks |
 
 ## web
 
 | Module | Folder | Doc | Doc status | Flows | Summary |
 |---|---|---|---|---|---|
-| auth | `apps/web/src/features/auth` | - | missing | [`sign-in`](../flows/sign-in/FLOW.md) | - |
-| cv | `apps/web/src/features/cv` | - | missing | [`public-site`](../flows/public-site/FLOW.md) | - |
-| reviewer | `apps/web/src/features/reviewer` | - | missing | [`reviewer`](../flows/reviewer/FLOW.md) | - |
-| session | `apps/web/src/features/session` | - | missing | [`public-site`](../flows/public-site/FLOW.md), [`sign-in`](../flows/sign-in/FLOW.md) | - |
-| status | `apps/web/src/features/status` | - | missing | [`public-site`](../flows/public-site/FLOW.md) | - |
-| cv | `apps/web/src/views/cv` | - | missing | [`public-site`](../flows/public-site/FLOW.md) | - |
-| status | `apps/web/src/views/status` | - | missing | [`public-site`](../flows/public-site/FLOW.md) | - |
+| auth | `apps/web/src/features/auth` | `docs/modules/web/auth.md` | complete | [`sign-in`](../flows/sign-in/FLOW.md) | Web sign-in dialog with the two-factor step |
+| cv | `apps/web/src/features/cv` | `docs/modules/web/cv.md` | complete | [`public-site`](../flows/public-site/FLOW.md) | CV data of the public site: the GraphQL document and the server loader |
+| reviewer | `apps/web/src/features/reviewer` | `docs/modules/web/reviewer.md` | complete | [`reviewer`](../flows/reviewer/FLOW.md) | Web reviewer access dialog with the Turnstile check (to be removed by D21) |
+| session | `apps/web/src/features/session` | `docs/modules/web/session.md` | complete | [`public-site`](../flows/public-site/FLOW.md), [`sign-in`](../flows/sign-in/FLOW.md) | Who is signed in on the web: the session context and the auth API |
+| status | `apps/web/src/features/status` | `docs/modules/web/status.md` | complete | [`public-site`](../flows/public-site/FLOW.md) | Health API client for the web service status card |
+| cv | `apps/web/src/views/cv` | `docs/modules/web/views-cv.md` | complete | [`public-site`](../flows/public-site/FLOW.md) | The CV page: sections, contact card, masked values |
+| status | `apps/web/src/views/status` | `docs/modules/web/views-status.md` | complete | [`public-site`](../flows/public-site/FLOW.md) | Web service status card (the `/status` page; to move to the homepage by D21) |
 
 ## form-commons
 
@@ -85,7 +85,7 @@ flows in `docs/flows/` whose `FLOW.md` names the module.
 
 | Module | Folder | Doc | Doc status | Flows | Summary |
 |---|---|---|---|---|---|
-| src | `packages/base-config/src` | - | missing | - | - |
+| src | `packages/base-config/src` | `docs/modules/base-config/src.md` | complete | - | Shared Prettier, ESLint (with the file-name rule) and Oxlint configs for every package |
 
 ## e2e
 

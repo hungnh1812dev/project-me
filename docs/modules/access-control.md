@@ -438,7 +438,7 @@ Tests: 25 files (not listed).
 | File | Description |
 |---|---|
 | `Access.module.ts` | Nest wiring (imported by IdentityModule) |
-| `index.ts` | TODO (exports `AccessModule`, `roleSeedServiceOf`, `AccessPolicyService`, `AccessPolicy` +50) |
+| `index.ts` | Public facade of access core (exports `AccessModule`, `roleSeedServiceOf`, `AccessPolicyService`, `AccessPolicy` +50) |
 | `adapters/PrismaAccountVersion.repository.ts` | The Prisma side of the ports (role policy repository also writes permission rows inside a `UnitOfWork`) |
 | `adapters/PrismaApiTokenLookup.repository.ts` | The Prisma side of the ports (role policy repository also writes permission rows inside a `UnitOfWork`) |
 | `adapters/PrismaRolePolicy.repository.ts` | The Prisma side of the ports (role policy repository also writes permission rows inside a `UnitOfWork`) |
@@ -449,9 +449,9 @@ Tests: 25 files (not listed).
 | `application/RolePermissions.service.ts` | The one write path for a role's rows: replace + bump `policy_version` in the core `TransactionRunner`, invalidate in `afterCommit`; `alsoInTransaction` receives the `UnitOfWork` |
 | `application/RoleSeed.service.ts` | Seeds the system roles and the default rows for system roles that have none (`db:seed`); the table is `domain/SystemRoles.entity.ts` |
 | `application/VersionCache.service.ts` | D9 in-process cache of account `tv`/status/role and role `pv`/permission rows; holds `VERSION_CACHE_TTL_MS` and `VERSION_CACHE_MAX_ENTRIES` |
-| `document-auth/DocumentAuth.module.ts` | TODO (exports `DocumentAuthModule`) |
-| `document-auth/index.ts` | TODO (exports `DocumentAuthGuard`, `DocumentRequest`, `DocumentAuthModule`) |
-| `document-auth/http/DocumentAuth.guard.ts` | TODO (exports `DocumentRequest`, `DocumentAuthGuard`) |
+| `document-auth/DocumentAuth.module.ts` | Nest wiring of document auth (exports `DocumentAuthModule`) |
+| `document-auth/index.ts` | Public facade of document auth (exports `DocumentAuthGuard`, `DocumentRequest`, `DocumentAuthModule`) |
+| `document-auth/http/DocumentAuth.guard.ts` | Who reads content: JWT, API token or anonymous; an invalid credential is always 401 (exports `DocumentRequest`, `DocumentAuthGuard`) |
 | `domain/Access.constants.ts` | Subjects, actions per subject (`PermissionAction`, `AccountStatus`), DSL operators/variables/limits, error codes, default matrix |
 | `domain/ActorContext.entity.ts` | `ActorContext`, `RolePolicy`, token scope, `rolePolicyFromRows`, actor builders |
 | `domain/ApiToken.rules.ts` | `API_TOKEN` (token format and limits), `hashApiToken` and `isApiTokenExpired`: the one expiry rule (`expires_at <= now`) for authentication, list status and the update guard |
@@ -467,15 +467,15 @@ Tests: 25 files (not listed).
 | `domain/RecordReadAccess.rules.ts` | `RecordReadAccess` / `recordReadAccess(actor, readable)`: fields + visible system fields |
 | `domain/RecordSerializer.rules.ts` | `RecordSerializer`: the one record -> response path, masks + `_maskedFields` |
 | `domain/SubjectCatalog.rules.ts` | Known subjects (`*`, registry slugs, system subjects), field paths, DSL field catalog |
-| `domain/SystemRoles.entity.ts` | TODO (exports `DefaultPermission`, `SYSTEM_ROLES`, `SystemRoleSlug`, `OWNER_ROLE_SLUG` +10) |
+| `domain/SystemRoles.entity.ts` | The system roles with their ranks and default permissions (exports `DefaultPermission`, `SYSTEM_ROLES`, `SystemRoleSlug`, `OWNER_ROLE_SLUG` +10) |
 | `domain/TokenScope.rules.ts` | Save-time check of an API token scope (`validateTokenScope`) and the D5 subset check (`scopeEntriesBeyondCreator`) |
 | `domain/WriteAllowlist.rules.ts` | `WriteAllowlist`: client tree -> writable tree, drops masks, 400 otherwise (D4) |
 | `http/AccessHttp.constants.ts` | Account, role and API token routes; `ACCESS_RATE_LIMIT_POLICIES` |
 | `http/ActorThrottleSubject.resolver.ts` | Throttle subject read off the actor an earlier guard set |
 | `http/ApiToken.guard.ts` | `ApiTokenAuthenticator` (bearer header, writes `request.user`) and `ApiTokenGuard` |
 | `http/Permission.guard.ts` | `@RequirePermission()` with `PERMISSION_METADATA_KEY`, and `PermissionGuard`, which enforces it with the evaluator |
-| `management/AccessManagement.module.ts` | TODO (exports `AccessManagementModule`) |
-| `management/index.ts` | TODO (exports `AccessManagementModule`) |
+| `management/AccessManagement.module.ts` | Nest wiring of accounts, roles and API tokens (exports `AccessManagementModule`) |
+| `management/index.ts` | Public facade of access management (exports `AccessManagementModule`) |
 | `management/adapters/PrismaAccount.repository.ts` | the Prisma implementations of the three ports |
 | `management/adapters/PrismaApiToken.repository.ts` | the Prisma implementations of the three ports |
 | `management/adapters/PrismaRole.repository.ts` | the Prisma implementations of the three ports |
@@ -484,14 +484,14 @@ Tests: 25 files (not listed).
 | `management/application/ApiTokens.service.ts` | `/roles` and `/api-tokens` use cases; cache drops are `afterCommit` callbacks |
 | `management/application/Invitations.service.ts` | invite and resend invite (rank check, assignable role, invite code, mail sent after the commit) |
 | `management/application/Roles.service.ts` | `/roles` and `/api-tokens` use cases; cache drops are `afterCommit` callbacks |
-| `management/domain/AccessManagement.constants.ts` | TODO (exports `MANAGEMENT_ERROR_CODES`, `MANAGEMENT_ERROR_MESSAGES`, `EXPIRY_NOT_IN_FUTURE_ISSUE`, `MANAGEMENT_LIMITS` +6) |
-| `management/domain/AccessManagement.errors.ts` | TODO (exports `ManagementIssue`, `accountNotFound`, `emailTaken`, `accountAlreadyDisabled` +16) |
-| `management/domain/Account.entity.ts` | TODO (exports `AccountRoleRecord`, `AccountRecord`, `AccountRoleView`, `AccountView` +3) |
-| `management/http/AccessManagement.requests.ts` | TODO (exports `inviteAccountSchema`, `updateAccountSchema`, `createRoleSchema`, `updateRoleSchema` +5) |
-| `management/http/Accounts.controller.ts` | TODO (exports `AccountsController`) |
-| `management/http/ApiTokens.controller.ts` | TODO (exports `ApiTokensController`) |
-| `management/http/ApiTokens.requests.ts` | TODO (exports `createApiTokenSchema`, `updateApiTokenSchema`, `CreateApiTokenRequest`, `UpdateApiTokenRequest`) |
-| `management/http/Roles.controller.ts` | TODO (exports `RolesController`) |
+| `management/domain/AccessManagement.constants.ts` | Error codes and messages of the management endpoints (exports `MANAGEMENT_ERROR_CODES`, `MANAGEMENT_ERROR_MESSAGES`, `EXPIRY_NOT_IN_FUTURE_ISSUE`, `MANAGEMENT_LIMITS` +6) |
+| `management/domain/AccessManagement.errors.ts` | Domain errors of the management endpoints (exports `ManagementIssue`, `accountNotFound`, `emailTaken`, `accountAlreadyDisabled` +16) |
+| `management/domain/Account.entity.ts` | Account and role records, their views and the D6 checks on a locked target (exports `AccountRoleRecord`, `AccountRecord`, `AccountRoleView`, `AccountView` +3) |
+| `management/http/AccessManagement.requests.ts` | Zod schemas of the account and role bodies (exports `inviteAccountSchema`, `updateAccountSchema`, `createRoleSchema`, `updateRoleSchema` +5) |
+| `management/http/Accounts.controller.ts` | Account routes: list, invite, update, enable, disable, resend, revoke sessions (exports `AccountsController`) |
+| `management/http/ApiTokens.controller.ts` | API token routes: list, create, update, revoke (exports `ApiTokensController`) |
+| `management/http/ApiTokens.requests.ts` | Zod schemas of the API token bodies (exports `createApiTokenSchema`, `updateApiTokenSchema`, `CreateApiTokenRequest`, `UpdateApiTokenRequest`) |
+| `management/http/Roles.controller.ts` | Role routes: list, create, update, delete, replace permissions (exports `RolesController`) |
 
 <!-- prettier-ignore-end -->
 <!-- module-files:end -->

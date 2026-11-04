@@ -483,6 +483,9 @@ def create_doc(folder, roots):
     app = roots[folder]
     path = f"{DOCS_DIR}/{app}/{os.path.basename(folder)}.md"
     if os.path.exists(path):
+        # another module of the app has the same folder name (features/status, views/status)
+        path = f"{DOCS_DIR}/{app}/{os.path.basename(os.path.dirname(folder))}-{os.path.basename(folder)}.md"
+    if os.path.exists(path):
         sys.exit(f"{path} already exists")
     os.makedirs(os.path.dirname(path), exist_ok=True)
     title = os.path.basename(folder).replace("-", " ").capitalize()

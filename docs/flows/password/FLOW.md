@@ -47,10 +47,10 @@ sequenceDiagram
 |---|---|---|
 | `apps/cms-api/src/modules/identity` | OTP issue and check, password set, reset and change, `token_version` bump | [identity.md](../../modules/cms-api/identity.md) |
 | `apps/cms-api/src/modules/security-audit` | Audit rows for password changes (D15) | [security-audit.md](../../modules/cms-api/security-audit.md) |
-| `apps/cms-api/src/infrastructure/mail` | Sends the one-time codes | none yet |
+| `apps/cms-api/src/infrastructure/mail` | Sends the one-time codes | [mail.md](../../modules/cms-api/mail.md) |
 | `apps/cms-admin/src/features/auth` | Password form, setup and password error mapping | [auth.md](../../modules/cms-admin/auth.md) |
-| `apps/cms-admin/src/views/set-password` | Invitation acceptance page | none yet |
-| `apps/cms-admin/src/views/reset-password` | Forgot and reset password page | none yet |
+| `apps/cms-admin/src/views/set-password` | Invitation acceptance page | [set-password.md](../../modules/cms-admin/set-password.md) |
+| `apps/cms-admin/src/views/reset-password` | Forgot and reset password page | [reset-password.md](../../modules/cms-admin/reset-password.md) |
 | `apps/cms-admin/src/views/change-password` | Signed-in password change (`/settings/password`) | [change-password.md](../../modules/cms-admin/change-password.md) |
 
 <!-- prettier-ignore-end -->
