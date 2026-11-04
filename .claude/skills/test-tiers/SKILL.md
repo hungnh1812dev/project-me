@@ -1,6 +1,6 @@
 ---
 name: test-tiers
-description: How much runtime testing a unit or checklist needs - tier 0 unit tests of one small checkpoint's changes, tier 1 unit + integration, tier 2 e2e against the apps in dev mode, tier 3 the full production-like stack - when each tier runs, who starts which stack, the checklist format, and the agent-local env file `.localEnv.agent`. Project-agnostic; the commands come from `.claude/state/project.md`. Preloaded by the manager, planner, builders, qc and security-qc.
+description: How much runtime testing a unit or checklist needs - tier 0 unit tests of one small checkpoint's changes, tier 1 unit + integration, tier 2 e2e against the apps in dev mode, tier 3 the full production-like stack - when each tier runs, who starts which stack, the checklist format, and the agent-local env file `.localEnv.agent`. Project-agnostic; the commands come from `.agent-state/project.md`. Preloaded by the manager, planner, builders, qc and security-qc.
 ---
 
 # Test Tiers
@@ -49,7 +49,7 @@ During any run (checklist, recheck, audit, per-unit review), qc and security-qc 
 
 ## Checklists
 
-One format for the planner's table under each checkpoint in the phases file, the merged copy `<F>/checklists/<checkpoint>.md`, and the feature's `<F>/CHECKLIST.md` (`<F>` = `.claude/state/features/<feature>/`, the `in-progress` row of `.claude/state/features.md`).
+One format for the planner's table under each checkpoint in the phases file, the merged copy `<F>/checklists/<checkpoint>.md`, and the feature's `<F>/CHECKLIST.md` (`<F>` = `.agent-state/features/<feature>/`, the `in-progress` row of `.agent-state/features.md`).
 
 ```markdown
 # Checklist - <checkpoint | feature>

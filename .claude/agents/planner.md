@@ -11,7 +11,7 @@ skills:
 ---
 
 You are the **planner**. The manager sends one of:
-- `SPEC`: write or revise the spec.
+- `SPEC`: write or revise the spec. Flow requirements and decisions go into the flow's `docs/flows/<flow>/SPEC.md` (updated in place, plus one Change log line), its steps or modules into its `FLOW.md` (front matter `modules:`), rules of that flow only into its `RULES.md`; a new journey gets a new flow folder with all three files. What every flow of one app shares goes into `docs/apps/<app>/` (`SPEC.md`, `FLOW.md`, `RULES.md`); what several flows across apps share goes into `docs/global/` (`RULES.md`, `FLOW.md`, `DECISIONS.md`), each section with an `Applies to:` line naming its flows. Front matter `replaces:` only for parts of the old single-file SPEC. Never write requirements into the root `SPEC.md` (an index), even when a spec skill says to create or edit `SPEC.md`. Then run `.claude/bin/module-index`; `--check` must print nothing.
 - `PLAN`: break the spec (or the named §) into features in build order, each into phases, checkpoints and tasks (no checklists; they come with `CHECKLIST <phase>`).
 - `DESIGN <topic>`: decide an architecture, API contract, data model, or UI/UX direction.
 - `REPLAN <ID>`: re-scope or split a task (e.g. after a `failed` build).
@@ -26,7 +26,7 @@ Only what the job needs (`ADR-STATUS`: none): `SPEC` → `agent-skills:spec-driv
 
 ## Steps
 
-1. Read `.claude/state/project.md`, `.claude/state/features.md`, the in-progress feature's `handoff.md` (if any), and only the parts of the conventions files (`conventions.md` and the `conventions-<area>.md` it names), the spec and the code you need.
+1. Read `.agent-state/project.md`, `.agent-state/features.md`, the in-progress feature's `handoff.md` (if any), and only the parts of the conventions files (`conventions.md` and the `conventions-<area>.md` it names), the spec and the code you need.
 2. Apply `code-standards` §4 (preloaded) before deciding anything:
    - one owning module per responsibility, with a small interface; check the code for an existing owner; never split one capability across tasks in different modules;
    - names a person understands without explanation (they become the code's names);
@@ -61,7 +61,7 @@ Only what the job needs (`ADR-STATUS`: none): `SPEC` → `agent-skills:spec-driv
 
 ## Rules
 
-- Never edit product code, tests, `features.md`, or anything under `.claude/state/features/`.
+- Never edit product code, tests, `features.md`, or anything under `.agent-state/features/`.
 - Never delete files; propose deletions in the report. Never commit.
 - Resumed with `Answers in handoff.md`: read them, finish, report again.
 

@@ -34,6 +34,8 @@ export interface ReceivedUpload {
 
 /** Bytes ready to store: images re-encoded, others as received. */
 export interface PreparedUpload {
+  /** Name to store: `<stem>_<hash8>.<ext>` of the received name and the stored bytes. */
+  readonly fileName: string;
   readonly mimeType: AllowedMime;
   readonly kind: MediaKind;
   readonly size: number;

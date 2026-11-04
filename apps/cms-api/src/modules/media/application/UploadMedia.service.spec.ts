@@ -31,6 +31,7 @@ function stubs(createError?: Error, storage: FakeMediaStorage = new FakeMediaSto
     dispose,
   } as unknown as ReceivedUpload;
   const prepared: PreparedUpload = {
+    fileName: 'a_ffffffff.png',
     mimeType: 'image/png',
     kind: 'image',
     size: 3,
@@ -47,7 +48,7 @@ function stubs(createError?: Error, storage: FakeMediaStorage = new FakeMediaSto
     createError === undefined
       ? Promise.resolve({
           documentId: 'doc',
-          fileName: 'a.png',
+          fileName: 'a_ffffffff.png',
           mimeType: 'image/png',
           size: 3,
           width: 1,

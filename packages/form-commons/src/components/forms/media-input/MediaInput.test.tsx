@@ -118,11 +118,15 @@ describe('MediaInput', () => {
     expect(screen.getByRole('button', { name: 'Remove' })).toBeInTheDocument();
   });
 
-  it('shows the details footer with the file name and short hash', () => {
+  it('shows the details footer with the stored file name', () => {
     render(
-      <MediaInput label="Photo" labels={labels} value={{ ...file, sha256: 'abcdef0123456789' }} />,
+      <MediaInput
+        label="Photo"
+        labels={labels}
+        value={{ ...file, fileName: 'portrait_abcdef01.jpg' }}
+      />,
     );
-    expect(screen.getByText('portrait.jpg · abcdef01')).toBeInTheDocument();
+    expect(screen.getByText('portrait_abcdef01.jpg')).toBeInTheDocument();
   });
 
   it('empty: Upload calls onUpload and a 300 px area holds both actions', async () => {
@@ -200,6 +204,28 @@ describe('MediaInput', () => {
     );
     expect(screen.getByRole('button', { name: 'Remove from field' })).toBeDisabled();
     expect(screen.getByText('Required')).toBeInTheDocument();
+  });
+});
+
+describe('MediaInput frame', () => {
+  it('holds the preview and details in one bordered frame', () => {
+    const { container } = render(<MediaInput label="Photo" labels={labels} value={file} />);
+    const frame = container.querySelector('[data-slot="media-frame"]');
+    expect(frame).toHaveClass('rounded-md', 'border', 'border-border', 'bg-card', 'p-3');
+    expect(frame?.querySelector('[data-slot="media-details"]')).not.toBeNull();
+  });
+
+  it('uses the error border on a field error', () => {
+    const { container } = render(
+      <MediaInput label="Photo" labels={labels} value={file} error="Required" />,
+    );
+    expect(container.querySelector('[data-slot="media-frame"]')).toHaveClass('border-destructive');
+  });
+
+  it('keeps the dashed empty drop area without a frame', () => {
+    const { container } = render(<MediaInput label="Photo" labels={labels} value={null} />);
+    expect(container.querySelector('[data-slot="media-frame"]')).toBeNull();
+    expect(container.querySelector('[data-slot="media-empty"]')).toHaveClass('border-dashed');
   });
 });
 

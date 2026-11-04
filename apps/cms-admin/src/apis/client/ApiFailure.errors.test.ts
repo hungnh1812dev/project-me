@@ -4,6 +4,8 @@ import { describe, expect, it } from 'vitest';
 import {
   apiFailureOf,
   apiIssuesOf,
+  isRequestCanceled,
+  isRequestTimeout,
   rateLimitedMessage,
   retryAfterSecondsOf,
 } from './ApiFailure.errors';
@@ -55,5 +57,17 @@ describe('api-failure', () => {
     });
     expect(apiIssuesOf(error)).toEqual([{ path: ['email', 0], message: 'bad' }]);
     expect(apiIssuesOf(new Error('x'))).toEqual([]);
+  });
+
+  it('tells a timeout from a user cancel and from a network failure', () => {
+    const timedOut = new AxiosError('timeout', AxiosError.ECONNABORTED);
+    const canceled = new AxiosError('canceled', AxiosError.ERR_CANCELED);
+    const down = new AxiosError('down', AxiosError.ERR_NETWORK);
+    expect(isRequestTimeout(timedOut)).toBe(true);
+    expect(isRequestTimeout(canceled)).toBe(false);
+    expect(isRequestTimeout(new Error('x'))).toBe(false);
+    expect(isRequestCanceled(canceled)).toBe(true);
+    expect(isRequestCanceled(timedOut)).toBe(false);
+    expect(isRequestCanceled(down)).toBe(false);
   });
 });

@@ -40,7 +40,7 @@ for f in glob.glob(f"{root}/*/subagents/*.jsonl"):
                 name, inp = pending.pop(x["tool_use_id"]); n = txtlen(x.get("content"))
                 if name == "Read":
                     p = inp.get("file_path", "").replace(repo + "/", "")
-                    p = re.sub(r"\.claude/state/features/[^/]+/", ".claude/state/features/<F>/", p)
+                    p = re.sub(r"\.agent-state/features/[^/]+/", ".agent-state/features/<F>/", p)
                     reads[p][0] += 1; reads[p][1] += n
                 elif name == "Bash":
                     cmd = inp.get("command", "").strip()

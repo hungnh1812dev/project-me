@@ -45,7 +45,7 @@ export class UploadMediaService {
       });
       try {
         return await this.repository.create({
-          fileName: received.fileName,
+          fileName: prepared.fileName,
           mimeType: prepared.mimeType,
           size: prepared.size,
           width: prepared.width,

@@ -107,6 +107,7 @@ describe('UploadProcessingAdapter (SPEC D12, §12-13)', () => {
         size: stored.length,
       });
       expect(prepared.sha256).toMatch(/^[0-9a-f]{64}$/);
+      expect(prepared.fileName).toBe(`photo_${prepared.sha256.slice(0, 8)}.jpg`);
     } finally {
       await received.dispose();
     }
@@ -132,6 +133,7 @@ describe('UploadProcessingAdapter (SPEC D12, §12-13)', () => {
   it('detects the type from the bytes, not the name or declared type', async () => {
     const { prepared } = await receiveAndPrepare([fileOf(fixtures.png, 'looks-like.pdf')]);
     expect(prepared.mimeType).toBe('image/png');
+    expect(prepared.fileName).toBe(`looks-like_${prepared.sha256.slice(0, 8)}.png`);
   });
 
   it('stores pdf and mp4 as received, with their own hash', async () => {

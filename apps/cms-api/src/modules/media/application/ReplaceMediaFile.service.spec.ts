@@ -34,6 +34,7 @@ function stubs(
   const dispose = jest.fn(() => Promise.resolve());
   const received = { fileName: 'new.png', alt: null, dispose } as unknown as ReceivedUpload;
   const prepared: PreparedUpload = {
+    fileName: 'new_bbbbbbbb.png',
     mimeType: newMime,
     kind: newMime === 'image/png' ? 'image' : 'pdf',
     size: 3,
@@ -99,7 +100,7 @@ describe('ReplaceMediaFileService.replace', () => {
       mediaId: 9,
       updatedById: 5,
       file: {
-        fileName: 'new.png',
+        fileName: 'new_bbbbbbbb.png',
         storageKey: storage.keys()[0],
         sha256: 'b'.repeat(64),
         provider: storage.provider,

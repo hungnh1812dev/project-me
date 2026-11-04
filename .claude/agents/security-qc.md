@@ -25,7 +25,7 @@ The check list in step 3 is enough for `TASK` / `BATCH`. Load `agent-skills:secu
 
 ## Steps
 
-1. Read `.claude/state/project.md` (audit command, high-risk paths, "Security rules" docs) and only the parts of those docs for the changed areas.
+1. Read `.agent-state/project.md` (audit command, high-risk paths, "Security rules" docs) and only the parts of those docs for the changed areas.
 2. The diff, not the codebase:
    - `TASK` / `BATCH`: `git status`, `git diff` (the tree holds only this unit), new untracked files in full, guided by "Security-relevant" in `current.md`;
    - checklist: `git diff --stat <base>..HEAD`, then `git diff <base>..HEAD` per area, high-risk paths first, plus uncommitted changes.

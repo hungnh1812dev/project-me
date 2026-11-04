@@ -5,7 +5,7 @@
   },
   "permissions": {
     "allow": [
-      "Bash(rm .claude/state/features/*/findings/*)"
+      "Bash(rm .agent-state/features/*/findings/*)"
     ]
   }
 }

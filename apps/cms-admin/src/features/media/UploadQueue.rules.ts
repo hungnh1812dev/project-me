@@ -16,6 +16,8 @@ export interface UploadItem {
   file: File;
   status: UploadStatus;
   sentBytes: number;
+  /** Total the browser reports for the request; undefined when it does not know it. */
+  totalBytes?: number | undefined;
   rejection?: RejectionReason | undefined;
   /** Message of the failed upload, as `toMediaError` words it. */
   error?: string | undefined;
@@ -24,10 +26,10 @@ export interface UploadItem {
 
 export type FileCheck = { ok: true } | { ok: false; reason: RejectionReason };
 
-export interface UploadTotals {
-  sentBytes: number;
-  totalBytes: number;
-}
+/** Share of a file's weight that sending its bytes fills; the answer of the server fills the rest. */
+export const UPLOAD_SENT_SHARE = 0.9;
+
+const PERCENT = 100;
 
 export function mediaKindOf(mimeType: string): MediaKind | undefined {
   if (mimeType.startsWith('image/')) return 'image';
@@ -73,6 +75,7 @@ export function addFiles(
       id: nextId(),
       file,
       sentBytes: 0,
+      totalBytes: file.size,
       status: check.ok ? 'waiting' : 'rejected',
       rejection: check.ok ? undefined : check.reason,
     });
@@ -105,26 +108,46 @@ export function nextToStart(items: readonly UploadItem[]): string[] {
 }
 
 export function markUploading(items: readonly UploadItem[], id: string): UploadItem[] {
-  return updateItem(items, id, { status: 'uploading', sentBytes: 0, error: undefined });
+  return updateItem(items, id, {
+    status: 'uploading',
+    sentBytes: 0,
+    totalBytes: items.find((item) => item.id === id)?.file.size,
+    error: undefined,
+  });
 }
 
-/** All bytes sent means `processing` until the server answers. */
+/** All bytes sent means `processing` until the server answers; an unknown total keeps the file `uploading`. */
 export function markProgress(
   items: readonly UploadItem[],
   id: string,
   sentBytes: number,
-  totalBytes: number,
+  totalBytes: number | undefined,
 ): UploadItem[] {
+  if (totalBytes === undefined) {
+    return updateItem(items, id, { status: 'uploading', sentBytes, totalBytes });
+  }
   const isSent = sentBytes >= totalBytes;
   return updateItem(items, id, {
     status: isSent ? 'processing' : 'uploading',
     sentBytes: Math.min(sentBytes, totalBytes),
+    totalBytes,
   });
+}
+
+/** True while the row can show a determinate bar: bytes are going out and their total is known. */
+export function hasDeterminateProgress(item: UploadItem): boolean {
+  return item.status === 'uploading' && item.totalBytes !== undefined;
+}
+
+/** Whole percent of the bytes sent; 0 while the total is unknown. */
+export function sentPercentOf(item: UploadItem): number {
+  if (item.totalBytes === undefined || item.totalBytes === 0) return 0;
+  return Math.floor((item.sentBytes / item.totalBytes) * PERCENT);
 }
 
 export function markDone(items: readonly UploadItem[], id: string, media: MediaFile): UploadItem[] {
   const size = items.find((item) => item.id === id)?.file.size ?? 0;
-  return updateItem(items, id, { status: 'done', sentBytes: size, media });
+  return updateItem(items, id, { status: 'done', sentBytes: size, totalBytes: size, media });
 }
 
 export function markFailed(items: readonly UploadItem[], id: string, error: string): UploadItem[] {
@@ -148,13 +171,30 @@ export function dropUnsent(items: readonly UploadItem[]): UploadItem[] {
   );
 }
 
-/** Bytes over all files being sent in this batch (rejected files do not count). */
-export function totalsOf(items: readonly UploadItem[]): UploadTotals {
-  return items.filter(isAccepted).reduce<UploadTotals>(
-    (totals, item) => ({
-      sentBytes: totals.sentBytes + (item.status === 'done' ? item.file.size : item.sentBytes),
-      totalBytes: totals.totalBytes + item.file.size,
-    }),
-    { sentBytes: 0, totalBytes: 0 },
-  );
+function settledShareOf(item: UploadItem): number {
+  switch (item.status) {
+    case 'done':
+    case 'failed':
+      return 1;
+    case 'processing':
+      return UPLOAD_SENT_SHARE;
+    case 'uploading':
+      return item.totalBytes === undefined || item.totalBytes === 0
+        ? 0
+        : UPLOAD_SENT_SHARE * Math.min(1, item.sentBytes / item.totalBytes);
+    default:
+      return 0;
+  }
+}
+
+/**
+ * Batch percent, each accepted file weighed by its size. Sent bytes fill `UPLOAD_SENT_SHARE` of a
+ * file, the server's answer (done or failed) the rest, so 100 shows only when every file answered.
+ */
+export function batchPercentOf(items: readonly UploadItem[]): number {
+  const accepted = items.filter(isAccepted);
+  const totalBytes = accepted.reduce((sum, item) => sum + item.file.size, 0);
+  if (totalBytes === 0) return 0;
+  const doneBytes = accepted.reduce((sum, item) => sum + item.file.size * settledShareOf(item), 0);
+  return Math.floor((doneBytes / totalBytes) * PERCENT);
 }

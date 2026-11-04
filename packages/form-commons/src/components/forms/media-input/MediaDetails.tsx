@@ -1,3 +1,4 @@
+import { FileName } from './FileName';
 import type { MediaInputFile } from './MediaInput';
 
 interface MediaDetailsProps {
@@ -30,8 +31,6 @@ function formatFileSize(bytes: number): string {
   return `${rounded} ${SIZE_UNITS[unit]}`;
 }
 
-const SHORT_HASH_LENGTH = 8;
-const NAME_HASH_SEPARATOR = ' · ';
 const DIMENSION_SEPARATOR = ' × ';
 const DIMENSION_MIME_PREFIXES = ['image/', 'video/'];
 
@@ -50,18 +49,14 @@ function hasDimensions(file: MediaDetailsProps['file']): file is MediaDetailsPro
   );
 }
 
-/** Name with short hash, then size, provider, last change and dimensions. */
+/** Stored name (its hash is part of it), then size, provider, last change and dimensions. */
 function MediaDetails({ file }: MediaDetailsProps) {
   const changedAt = file.updatedAt ?? file.createdAt;
-  const displayName =
-    file.sha256 === undefined || file.sha256 === ''
-      ? file.fileName
-      : `${file.fileName}${NAME_HASH_SEPARATOR}${file.sha256.slice(0, SHORT_HASH_LENGTH)}`;
 
   return (
-    <div data-slot="media-details" className="grid min-w-0 gap-1">
-      <p className="m-0 truncate text-sm font-medium" title={displayName}>
-        {displayName}
+    <div data-slot="media-details" className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-1">
+      <p className="m-0 text-sm font-medium">
+        <FileName name={file.fileName} />
       </p>
       <p className="text-muted-foreground m-0 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
         <span className="tabular-nums">{formatFileSize(file.size)}</span>

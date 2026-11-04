@@ -1,0 +1,45 @@
+---
+summary: Tech stack per area and the main commands
+replaces: §3, §4
+---
+
+# Tech stack and commands
+
+Part of the [project spec](../../../SPEC.md). Reference: definitions and values only; the rules that use them are in the `RULES.md` files.
+
+## Tech stack
+
+| Area                    | Choice                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Package manager / build | pnpm workspaces + Turborepo                                                                                                                                                                                                                                                                                                                                                                                                  |
+| API                     | NestJS 11 on **Express**, TypeScript strict                                                                                                                                                                                                                                                                                                                                                                                  |
+| Core persistence        | Prisma (PG schema `public`, system tables only) via `@prisma/adapter-pg`                                                                                                                                                                                                                                                                                                                                                     |
+| Content persistence     | Generated SQL migrations in PG schema `content`; queries through **Kysely**, parameters only (D10; confirm, new dependency)                                                                                                                                                                                                                                                                                                  |
+| Auth                    | Passport-JWT, `argon2` (Argon2id), `otplib` (TOTP)                                                                                                                                                                                                                                                                                                                                                                           |
+| GraphQL (cms-api)       | `graphql` (graphql-js) with an in-house handler inside the Nest pipeline, no Apollo/Yoga (D18; dependency pending Q-G1)                                                                                                                                                                                                                                                                                                      |
+| Admin (cms-admin)       | React 19 + Vite SPA served by nginx, Redux Toolkit (session/UI), TanStack Query (server data), Axios, REST only                                                                                                                                                                                                                                                                                                              |
+| Web (apps/web)          | **Next.js 16 App Router** (pinned ≥ 16.2.5), `output: 'standalone'` run by Node (no nginx); Server Components by default; server data fetched **through GraphQL** (anonymous, from `API_INTERNAL_URL`, data cache `WEB_REVALIDATE_SECONDS`: 60 s production, 0 smoke); browser state with React context + TanStack Query + Axios, **no Redux**; DOMPurify on server and client (D13); Tailwind v4 via `@tailwindcss/postcss` |
+| UI kit                  | shadcn/ui + Tailwind, react-hook-form + Zod, Tiptap, CodeMirror 6                                                                                                                                                                                                                                                                                                                                                            |
+| Media                   | Cloudinary, `sharp` for re-encoding, `file-type` for magic bytes                                                                                                                                                                                                                                                                                                                                                             |
+| Backups                 | Cloudflare R2 bucket (Q-BK5), read by cms-api via the official S3 SDK, `@aws-sdk/client-s3` + `@aws-sdk/s3-request-presigner` (D20, Q-BK7 answered 2026-10-27); adapter tests use `testcontainers` with an S3 stand-in image; dumps encrypted with `age` by the deploy repo's job                                                                                                                                            |
+| Bot protection          | Cloudflare Turnstile (server-side verification)                                                                                                                                                                                                                                                                                                                                                                              |
+| Tests                   | Jest + Supertest + Testcontainers (Postgres 17) for API · Vitest + Testing Library for UI · Playwright for e2e                                                                                                                                                                                                                                                                                                               |
+
+## Commands
+
+```bash
+pnpm install
+pnpm demo                       # whole product on the dev stack + reviewer access on + sample content (ADR 0011); stop: pnpm dev:stack:stop
+pnpm turbo run build            # builds @abyss/form-commons dist/ first, then apps
+pnpm turbo run lint typecheck
+pnpm turbo run test             # unit + integration (Testcontainers needs Docker)
+pnpm --filter @abyss/cms-api test:e2e
+pnpm --filter @abyss/cms-api db:migrate         # Prisma core migrations (public schema)
+pnpm --filter @abyss/cms-api content:generate   # schemas/*.json -> content migrations (+ dry-run diff)
+pnpm --filter @abyss/cms-api content:migrate    # apply content migrations
+pnpm --filter @abyss/cms-api owner:bootstrap    # one-time; fails if an owner exists
+pnpm --filter @abyss/cms-admin dev
+pnpm --filter @abyss/web dev
+pnpm format                     # Prettier (required before every commit)
+pnpm --filter @abyss/e2e test   # Playwright
+```

@@ -61,7 +61,7 @@ pnpm demo
 pnpm dev:stack:stop     # when you are done
 ```
 
-`pnpm demo` starts Postgres and a mail catcher in containers and the three apps in dev mode, and turns reviewer access on. It prints the web, admin and mail addresses. Open the web and choose Reviewer access (needs internet for the Turnstile widget). Signing in to the admin locally needs a separate owner setup: see "Create the one owner account" in [docs/local-run.md](docs/local-run.md). That guide also covers the other ways to run the stack.
+`pnpm demo` starts Postgres and a mail catcher in containers and the three apps in dev mode, and turns reviewer access on. It prints the web, admin and mail addresses. Open the web and choose Reviewer access (needs internet for the Turnstile widget). Signing in to the admin locally needs a separate owner setup: see "Create the one owner account" in [docs/guidelines/local-run.md](docs/guidelines/local-run.md). That guide also covers the other ways to run the stack.
 
 ## Git hooks
 
@@ -72,23 +72,28 @@ pnpm dev:stack:stop     # when you are done
 
 ## Where to look
 
-- [SPEC.md](SPEC.md): objective, scope, stack, security decisions, data model, API outline, success criteria.
+- [SPEC.md](SPEC.md): objective and scope, and the index of every spec doc: [docs/global/](docs/global) (shared rules, decisions, acceptance, reference), [docs/apps/](docs/apps) (per app), [docs/flows/](docs/flows) (per business flow).
 - [docs/adr/](docs/adr): architecture decision records.
-- [docs/modules/](docs/modules): one page per module.
-- [docs/architecture/](docs/architecture): ten diagram pages as HTML. GitHub shows HTML as source, so open them locally, for example `open docs/architecture/project-architecture.html` on macOS, or open the file in a browser.
+- [CHANGELOG.md](CHANGELOG.md): every release with its versions, changes and DevOps patches.
+- [docs/modules/](docs/modules): one page per module, indexed in [docs/modules/MODULES.md](docs/modules/MODULES.md).
 - [.github/workflows/](.github/workflows): CI.
 - [apps/e2e](apps/e2e): browser tests ([README](apps/e2e/README.md)).
-- [docs/deployment/](docs/deployment) and [docs/ci-cd.md](docs/ci-cd.md): deployment and pipeline notes.
+- [docs/deployments/](docs/deployments/devops-runbook.md): CI/CD and deployment (start at the DevOps runbook).
+- [docs/guidelines/](docs/guidelines): running the stack and the checks locally.
 
 ## Repository map
 
 - `apps/`: `cms-api`, `cms-admin`, `web`, `e2e`; each has its own README.
 - `packages/`: `form-commons`, `base-config`.
 - `docs/`: ADRs, module pages, architecture pages, deployment and local-run guides.
-- `scripts/`: the demo and dev stack, the smoke stack, and the architecture page generator.
+- `scripts/`: the demo and dev stack, and the smoke stack.
 - `tasks/`: the plan and task list ([plan.md](tasks/plan.md), [todo.md](tasks/todo.md)) that drove the build, one task at a time with acceptance criteria.
 - `.claude/`: the agent workflow used to build the project (agent roles, skills and the shared state files). It is kept in the repository on purpose, so the process is visible.
 
 ## License
 
-Copyright (c) 2026 AbyssOfTime Dev. All rights reserved. See [LICENSE](LICENSE): no use, copying, modification or sale without the owner's prior written permission.
+Copyright (C) 2026 AbyssOfTime Dev. Licensed under the [GNU Affero General Public License v3.0](LICENSE) (`AGPL-3.0-only`); see [NOTICE](NOTICE).
+
+You may use, change and share the code. If you distribute it, or run a modified version as a network service, you must share that version's complete source under the same license and keep the copyright notices.
+
+If you use or build on this project, please let the owner know by opening an [issue](https://github.com/hungnh1812dev/project-me/issues). This is a request, not a license condition.

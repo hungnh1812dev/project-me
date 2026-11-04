@@ -1,24 +1,24 @@
 ---
 name: worker-flow
-description: The pipeline every builder agent (core-builder, ui-builder) runs for a task - load the task from the state files, plan, implement, unit test, docs, write the unit record, report - plus fix rounds and the rules all builders share. Project-agnostic; project specifics come from .claude/state/project.md. Preloaded by the builder agents.
+description: The pipeline every builder agent (core-builder, ui-builder) runs for a task - load the task from the state files, plan, implement, unit test, docs, write the unit record, report - plus fix rounds and the rules all builders share. Project-agnostic; project specifics come from .agent-state/project.md. Preloaded by the builder agents.
 ---
 
 # Worker Flow (builders)
 
 Run the steps in order; move on only when a step's exit check passes. Load a skill your agent file allows only at its step. qc and security-qc check your work from your `current.md`.
 
-`<F>` = `.claude/state/features/<feature>/`, the `in-progress` row of `.claude/state/features.md`. Every task, direct requests included, belongs to that feature.
+`<F>` = `.agent-state/features/<feature>/`, the `in-progress` row of `.agent-state/features.md`. Every task, direct requests included, belongs to that feature.
 
 ## 1. Load the task
 
 The dispatch is only `TASK <ID>` (or `BATCH: ...`) plus optional notes. Read only what you need:
-1. `.claude/state/project.md` in full (task source, spec, your scope, stack, commands).
+1. `.agent-state/project.md` in full (task source, spec, your scope, stack, commands).
 2. `features.md`: the `in-progress` row. `<F>/board.md`: grep the task's row and the decision lines at the top.
 3. The task's entry in the task source (`section <file> --id <ID>`, `lean-reading`): acceptance, verify, files, deps, spec refs. A direct request `DR<n>`: its `### DR<n>` brief in `<F>/handoff.md` (no spec refs).
 4. `<F>/handoff.md` in full: user answers, provisional decisions, follow-ups naming this task.
 5. Only the spec sections the entry cites.
-6. Conventions, when needed: grep `conventions.md` (cross-cutting) and the `conventions-<area>.md` its header names for your app; history of a finished area: grep `.claude/state/archive/`.
-7. Where the code lives: `MODULES.md` (root index), then the doc of each module the task touches, then the code and docs of the listed files (`lean-reading`).
+6. Conventions, when needed: grep `conventions.md` (cross-cutting) and the `conventions-<area>.md` its header names for your app; history of a finished area: grep `.agent-state/archive/`.
+7. Where the code lives: `docs/modules/MODULES.md` (the module index), then the doc of each module the task touches, then the code and docs of the listed files (`lean-reading`).
 
 Restate the goal and acceptance criteria for yourself in 2-3 lines. Files disagree, `project.md` lacks something, or an assumption would matter → **stop, report `blocked`** with questions.
 
@@ -56,10 +56,10 @@ Exit: all pass; note the count.
 
 Update the "Docs to keep current" in `project.md` for what changed, including the env example for new config keys (names and descriptions only). ADR only for a non-obvious architectural decision.
 
-Module docs (`docs/modules/`, listed in `MODULES.md`): run `.claude/bin/module-index` (it regenerates each doc's file table and the index), then for every module you changed:
+Module docs (`docs/modules/`, listed in `docs/modules/MODULES.md`): run `.claude/bin/module-index` (it regenerates each doc's file table and the index), then for every module you changed:
 - each new or changed file: one line in the `Description` column of its row (what it holds or does); never edit anything else inside the generated block;
 - the hand-written sections (Purpose, Techniques, Technologies, Entry points, Where to change what) and the `summary:` line, when they no longer match;
-- a module with no doc: if `MODULES.md` lists a topic doc for it, add `module: <folder>` and `app: <app>` front matter to that doc; otherwise `.claude/bin/module-index --new <module folder>`. Fill every `TODO`.
+- a module with no doc: if `docs/modules/MODULES.md` lists a topic doc for it, add `module: <folder>` and `app: <app>` front matter to that doc; otherwise `.claude/bin/module-index --new <module folder>`. Fill every `TODO`.
 
 Exit: docs match the code; `.claude/bin/module-index --check` prints nothing.
 
@@ -121,7 +121,7 @@ Fix log:
 
 `<F>/handoff.md` (unfinished work only, no history): at finish, one line under `In progress / next` (`<ID> <title> - awaiting checks/commit; next: <step>`) and your follow-ups under `Follow-ups` (`<item> -> <owner task or "unscheduled">`). The manager removes them at commit.
 
-`.claude/state/conventions.md`: only cross-cutting facts every builder needs (tooling, test setup, gotchas, user decisions in force); a fact for one app goes in its `conventions-<area>.md`. One line each, in the matching section; module details go in its README or `docs/modules/`.
+`.agent-state/conventions.md`: only cross-cutting facts every builder needs (tooling, test setup, gotchas, user decisions in force); a fact for one app goes in its `conventions-<area>.md`. One line each, in the matching section; module details go in its README or `docs/modules/`.
 
 ## Rules
 
@@ -136,6 +136,6 @@ Fix log:
 BUILD REPORT
 unit: <unit>
 status: ready-for-checks | blocked | failed     (per task for a batch: <ID> <status>)
-record: .claude/state/features/<feature>/current.md
+record: .agent-state/features/<feature>/current.md
 questions: <numbered list, only when blocked>
 ```

@@ -15,8 +15,8 @@ const MIB = 1024 * 1024;
 interface Pending {
   file: File;
   signal: AbortSignal;
-  onProgress: (sent: number, total: number) => void;
-  resolve: () => void;
+  onProgress: (sent: number, total: number | undefined) => void;
+  resolve: (storedName?: string) => void;
   reject: (error: unknown) => void;
 }
 
@@ -28,7 +28,8 @@ function deferredSend() {
         file,
         signal,
         onProgress,
-        resolve: () => resolve({ id: file.name, fileName: file.name } as MediaFile),
+        resolve: (storedName) =>
+          resolve({ id: file.name, fileName: storedName ?? file.name } as MediaFile),
         reject,
       });
     });
@@ -128,6 +129,23 @@ describe('UploadDialog', () => {
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
+  it('shows an indeterminate bar without a value when the total is unknown or all bytes are sent', async () => {
+    const { pending } = setup();
+    await choose([png('a.png', 100)]);
+    await userEvent.click(uploadButton());
+    act(() => pending[0]?.onProgress(50, 100));
+    expect(screen.getByRole('progressbar', { name: 'a.png' })).toHaveAttribute('value', '50');
+    act(() => pending[0]?.onProgress(60, undefined));
+    expect(screen.getByRole('progressbar', { name: 'a.png' })).not.toHaveAttribute('value');
+    expect(screen.getByText(copy.status.processing)).toBeInTheDocument();
+    act(() => pending[0]?.onProgress(100, 100));
+    expect(screen.getByRole('progressbar', { name: 'a.png' })).not.toHaveAttribute('value');
+    expect(screen.getByRole('progressbar', { name: copy.totalLabel })).not.toHaveAttribute(
+      'value',
+      '100',
+    );
+  });
+
   it('retries only the failed file', async () => {
     const { pending, onUploaded } = setup();
     await choose([png('a.png'), png('b.png')]);
@@ -212,9 +230,30 @@ describe('UploadDialog', () => {
     setup();
     const name = `${'a'.repeat(300)}.png`;
     await choose([png(name)]);
-    const label = screen.getByText(name);
-    expect(label).toHaveClass('truncate');
-    expect(label.parentElement).toHaveClass('min-w-0');
+    const label = screen.getByText(name).closest('[data-slot="file-name"]');
+    expect(label).toHaveClass('min-w-0');
+    expect(label?.firstElementChild).toHaveClass('truncate');
+    expect(label?.lastElementChild?.previousElementSibling).toHaveTextContent('.png');
+  });
+
+  it('keeps the extension in the fixed tail of a long name', async () => {
+    setup();
+    await choose([png(`${'b'.repeat(200)}.png`)]);
+    const tail = document.querySelector('[data-slot="file-name"] .shrink-0');
+    expect(tail).toHaveTextContent('.png');
+  });
+
+  it('shows the local name until done, then the stored name from the server', async () => {
+    const { pending } = setup();
+    await choose([png('photo.png', 100)]);
+    await userEvent.click(uploadButton());
+    expect(screen.getByText('photo.png')).toBeInTheDocument();
+    await act(() => Promise.resolve(pending[0]?.resolve('photo_a1b2c3d4.png')));
+    const list = screen.getByRole('list', { name: copy.listLabel });
+    expect(within(list).getByText('photo_a1b2c3d4.png')).toBeInTheDocument();
+    expect(within(list).queryByText('photo.png')).toBeNull();
+    const tail = list.querySelector('[data-slot="file-name"] .shrink-0');
+    expect(tail).toHaveTextContent('_a1b2c3d4.png');
   });
 
   it('takes one file in one mode and honours a narrower accept list', async () => {

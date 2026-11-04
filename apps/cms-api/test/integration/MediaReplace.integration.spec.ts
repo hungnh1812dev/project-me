@@ -197,10 +197,12 @@ describe('media replace in place (UIL-2; Postgres 17 via Testcontainers)', () =>
     const before = await rowOf(id);
     const res = await replace(editor, id, [imagePart(png, 'fresh.png', 'image/png')]);
     expect(res.status).toBe(200);
+    expect((res.body as { fileName: string; sha256: string }).fileName).toBe(
+      `fresh_${(res.body as { sha256: string }).sha256.slice(0, 8)}.png`,
+    );
     expect(res.body).toMatchObject({
       id,
       alt: 'A door',
-      fileName: 'fresh.png',
       mimeType: 'image/png',
     });
     expect(res.body).not.toHaveProperty('storageKey');

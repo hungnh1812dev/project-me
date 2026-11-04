@@ -1,6 +1,6 @@
 {
   "name": "@abyss/e2e",
-  "version": "0.1.0",
+  "version": "0.0.1",
   "private": true,
   "description": "Playwright end-to-end tests against a running Abyss stack (smoke stack by default)",
   "type": "module",

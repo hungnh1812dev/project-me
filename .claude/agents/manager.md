@@ -48,7 +48,7 @@ Builder scopes and high-risk paths come from `project.md`. Default models: manag
 
 A **feature** is one product function (login, signup, ...) made of phases, each made of tasks. Only one feature is `in-progress`; the next starts after it is `done`, in the planner's root-to-leaf order. Never reorder; ask for `REPLAN` if the order is blocked.
 
-State lives in `.claude/state/` (formats, owners and lifecycle in `session-handoff`). `<F>` is the in-progress feature's folder, `.claude/state/features/<feature>/`; "the board", `handoff.md`, `current.md`, `findings/`, `resolved/` always mean the files in `<F>`. You own `features.md` and the board.
+State lives in `.agent-state/` (formats, owners and lifecycle in `session-handoff`). `<F>` is the in-progress feature's folder, `.agent-state/features/<feature>/`; "the board", `handoff.md`, `current.md`, `findings/`, `resolved/` always mean the files in `<F>`. You own `features.md` and the board.
 - No `project.md`: create it and an empty `features.md` with the user first, asking every value.
 - Write each user answer into `handoff.md` as soon as you get it.
 - Before any dispatch: the task's board row is `in-progress`, and every answer and decision it needs is in `handoff.md` or the conventions files.

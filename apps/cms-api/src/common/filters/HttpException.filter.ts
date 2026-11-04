@@ -1,9 +1,22 @@
 import { Catch, Logger, type ArgumentsHost, type ExceptionFilter } from '@nestjs/common';
-import type { Response } from 'express';
+import type { Request, Response } from 'express';
 
 import { RETRY_AFTER_HEADER } from '../constants/Limits.constants';
 import { describeError, isServerErrorStatus } from '../http/DescribeHttpException.rules';
+import { discardBodyAfterAnswer } from '../middleware/ByteLimit.rules';
 import type { RequestWithId } from '../middleware/RequestId.middleware';
+
+const MULTIPART_CONTENT_TYPE = 'multipart/form-data';
+
+/**
+ * An upload answered with an error (401/403 before the body is read, 413/415/400
+ * while it is being read) leaves body bytes the app never consumed; they must be
+ * discarded so the proxy's kept-alive connection ends this request cleanly.
+ */
+function hasUnreadUploadBody(req: Request): boolean {
+  const isMultipart = req.headers?.['content-type']?.startsWith(MULTIPART_CONTENT_TYPE) ?? false;
+  return isMultipart && req.readableEnded === false;
+}
 
 /** The one error shape every endpoint returns. */
 export interface ErrorResponseBody {
@@ -45,6 +58,10 @@ export class HttpExceptionFilter implements ExceptionFilter {
         `requestId=${body.requestId ?? 'none'} ${req.method} ${req.path}`,
         exception instanceof Error ? exception.stack : undefined,
       );
+    }
+
+    if (hasUnreadUploadBody(req)) {
+      discardBodyAfterAnswer(req, res);
     }
 
     res.status(body.statusCode).json(body);
