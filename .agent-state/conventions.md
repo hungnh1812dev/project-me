@@ -1,6 +1,6 @@
 # Conventions (read on demand)
 
-Cross-cutting facts only. Never read a conventions file whole: grep the section you need (e.g. `grep -n -A3 -i prisma .claude/state/conventions*.md`).
+Cross-cutting facts only. Never read a conventions file whole: grep the section you need (e.g. `grep -n -A3 -i prisma .agent-state/conventions*.md`).
 App-specific facts: `conventions-backend.md` (apps/cms-api), `conventions-frontend.md` (apps/cms-admin, apps/web, packages/form-commons). Module structure and API details: the module's README / `docs/modules/*.md`. Finished-task history: `tasks/done.md` and git log.
 
 ## Tooling
@@ -35,7 +35,7 @@ App-specific facts: `conventions-backend.md` (apps/cms-api), `conventions-fronte
 - Deploy (T37): one cms-api image, run as init (`deploy:migrate` = `db:migrate` then `content:migrate`, committed migrations only; CI fails on a missing migration via `content:generate --check`) and as main. docker-compose is for local testing only.
 - CI (T37): triggers keep the template's branches (develop/staging/main), but never assume staging/develop exist. Actions are pinned to commit SHAs. Publish waits only for the app checks (not e2e, not the repo job). Agents never push.
 - Backups (user, 2026-10-27): opt-in. The feature runs only when the `BACKUP_STORAGE_*` keys are set; unset means both endpoints answer 404 `BACKUPS_NOT_CONFIGURED`; the owner still sees the menu item and the page loads the status on demand (Check button). No separate enable flag (ADR 0013).
-- Git (2026-10-28): never commit anything under `tasks/`; `.claude/state/` is tracked (309ef43).
+- Git (2026-10-28): never commit anything under `tasks/`; `.agent-state/` is tracked (309ef43).
 - Launch (2026-10-27): no public DNS, ingress or announced URL until phase LG passes and the user approves in writing. Reviewer features ship OFF in production (`REVIEWER_FEATURE_ENABLED=false`, `WEB_STATUS_PAGE_ENABLED=false`); ON in dev, demo and smoke stacks (ADR 0014).
 - LICENSE (2026-10-27): proprietary, All rights reserved, holder AbyssOfTime Dev; package.json license `UNLICENSED`, never MIT.
 - Database (2026-10-27, ADR 0012): Supabase Session pooler on 5432 only (never 6543, no direct connection), TLS `verify-full`, runtime role `abyss_api`, backup role `abyss_backup`, migrations as the DDL-capable migrator role; free-plan pause accepted for launch.

@@ -28,7 +28,7 @@ Once each, only for `browser` rows, and no others: `agent-skills:browser-testing
 
 ## CHECKLIST <checkpoint>
 
-1. Read `.claude/state/project.md`, the checkpoint in the phases file (inputs, outputs, doubts, table), its tasks' acceptance and verify lines, and `git log --name-only` of its tasks' commits. Decide: small checkpoint or phase checkpoint (`test-tiers`).
+1. Read `.agent-state/project.md`, the checkpoint in the phases file (inputs, outputs, doubts, table), its tasks' acceptance and verify lines, and `git log --name-only` of its tasks' commits. Decide: small checkpoint or phase checkpoint (`test-tiers`).
 2. Draft your rows from that alone:
    - small: only `T0 cli` rows, one per changed unit of code whose unit tests must pass;
    - phase: one row per flow, output, error state or doubt worth checking, each at the one lowest tier (1, 2 or 3) that shows it, plus `Full e2e suite green on the full stack` (`T3 cli`).

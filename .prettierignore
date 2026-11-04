@@ -10,6 +10,7 @@ CMS_*.html
 
 # Agent tooling and approved planning docs are maintained outside the code format pass
 .claude/
+.agent-state/
 SPEC.md
 tasks/
 

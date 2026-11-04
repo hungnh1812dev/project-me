@@ -5,14 +5,14 @@ description: The manager's reference for the shared state files - project profil
 
 # Session Handoff
 
-Each unit gets fresh agents and a dispatch of only its ID; agents learn everything else from these files, so whatever an agent needs must be written here. Everything is in `.claude/state/`: short, no pasted code or diffs, point to paths.
+Each unit gets fresh agents and a dispatch of only its ID; agents learn everything else from these files, so whatever an agent needs must be written here. Everything is in `.agent-state/`: short, no pasted code or diffs, point to paths.
 
 Live files hold only what is still open. Code history is in git, module details in READMEs and `docs/`, stale conventions in `archive/`; a closed feature keeps only `SUMMARY.md` and `CHECKLIST.md`. Nobody reads `archive/` or another feature's summary at start; grep them when needed.
 
 ## Layout
 
 ```
-.claude/state/
+.agent-state/
   project.md  features.md  conventions.md  conventions-<area>.md  archive/conventions-archive.md
   features/<feature>/            = <F>, the folder of the in-progress row of features.md
     board.md  handoff.md  current.md  qc-issues-handoff.md  qc-progress.md

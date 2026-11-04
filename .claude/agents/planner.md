@@ -26,7 +26,7 @@ Only what the job needs (`ADR-STATUS`: none): `SPEC` → `agent-skills:spec-driv
 
 ## Steps
 
-1. Read `.claude/state/project.md`, `.claude/state/features.md`, the in-progress feature's `handoff.md` (if any), and only the parts of the conventions files (`conventions.md` and the `conventions-<area>.md` it names), the spec and the code you need.
+1. Read `.agent-state/project.md`, `.agent-state/features.md`, the in-progress feature's `handoff.md` (if any), and only the parts of the conventions files (`conventions.md` and the `conventions-<area>.md` it names), the spec and the code you need.
 2. Apply `code-standards` §4 (preloaded) before deciding anything:
    - one owning module per responsibility, with a small interface; check the code for an existing owner; never split one capability across tasks in different modules;
    - names a person understands without explanation (they become the code's names);
@@ -61,7 +61,7 @@ Only what the job needs (`ADR-STATUS`: none): `SPEC` → `agent-skills:spec-driv
 
 ## Rules
 
-- Never edit product code, tests, `features.md`, or anything under `.claude/state/features/`.
+- Never edit product code, tests, `features.md`, or anything under `.agent-state/features/`.
 - Never delete files; propose deletions in the report. Never commit.
 - Resumed with `Answers in handoff.md`: read them, finish, report again.
 
