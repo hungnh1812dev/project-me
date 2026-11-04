@@ -21,8 +21,6 @@ Part of the [project spec](../../../SPEC.md). Flow `media`: [SPEC.md](SPEC.md) (
 4. Replace in place: `PUT /media/:id/file` keeps the id and stores the new name and hash.
 5. Delete: refused with `409 MEDIA_IN_USE` while a document references the file; otherwise a soft delete plus audit row; the purge job deletes the cloud object later.
 
-Source: [docs/architecture/07-flows.html](../../architecture/07-flows.html).
-
 ```mermaid
 sequenceDiagram
   actor E as Editor

@@ -20,8 +20,6 @@ Part of the [project spec](../../../SPEC.md). Flow `content-editing`: [SPEC.md](
 4. Publish: `POST …/:documentId/publish` with `expectedVersion`; one CONTENT transaction replaces the published rows with a deep clone of the draft.
 5. Bulk (collections only): create, publish, unpublish, delete, each `{ atomic, items }`, at most 50 records.
 
-Source: [docs/architecture/07-flows.html](../../architecture/07-flows.html).
-
 ```mermaid
 sequenceDiagram
   actor E as Editor

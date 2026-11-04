@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Module docs and the root MODULES.md index.
+"""Module docs and their index docs/modules/MODULES.md.
 
 Usage (from the repo root):
-  .claude/bin/module-index            regenerate the file table of every module doc and MODULES.md
-  .claude/bin/module-index --check    fail when a doc or MODULES.md is stale, a module touched by the
+  .claude/bin/module-index            regenerate the file table of every module doc and docs/modules/MODULES.md
+  .claude/bin/module-index --check    fail when a doc or the index is stale, a module touched by the
                                       working tree has no doc, or a touched file's row is still TODO
   .claude/bin/module-index --new <module folder>   create its doc from the template
 
@@ -15,7 +15,7 @@ Spec docs: each docs/flows/<flow>/ and docs/apps/<app>/ holds SPEC.md, FLOW.md a
 SPEC.md has front matter `flow`, `summary`, `replaces` and its FLOW.md `modules` (comma-separated module
 folders); an app's SPEC.md has `app`, `summary`, `replaces`. Each docs/global/**/*.md has `summary` and
 `replaces`. `replaces` lists the old single-file SPEC ids the doc took over. The Docs table of the root
-SPEC.md, the module table of each flow FLOW.md, the Flows and Doc status columns of MODULES.md and the
+SPEC.md, the module table of each flow FLOW.md, the Flows and Doc status columns of docs/modules/MODULES.md and the
 Flows line of each module doc are generated from them. --check also fails when a flow or app misses a file
 or front matter, a flow names a folder that is not a module root, two docs claim the same old id, or a
 `## ` section of a global or app RULES.md / FLOW.md has no `Applies to` line or names an unknown flow.
@@ -24,7 +24,7 @@ import glob, os, re, subprocess, sys
 
 ROOTS_FILE = "docs/modules/module-roots.txt"
 DOCS_DIR = "docs/modules"
-INDEX_FILE = "MODULES.md"
+INDEX_FILE = "docs/modules/MODULES.md"
 FLOWS_DIR = "docs/flows"
 FLOW_FILES = ("SPEC.md", "FLOW.md", "RULES.md")
 APPS_DIR = "docs/apps"
@@ -180,6 +180,8 @@ def split_doc(text):
 def module_docs():
     docs, topics = {}, []
     for path in sorted(glob.glob(f"{DOCS_DIR}/**/*.md", recursive=True)):
+        if path == INDEX_FILE:
+            continue
         meta = front_matter(read(path))
         if meta.get("module"):
             docs[meta["module"].rstrip("/")] = (path, meta)
@@ -321,13 +323,16 @@ def replaced_ids(replaces):
 
 
 def render_spec_docs():
-    lines = ["| Doc | Kind | Holds | Replaces (old SPEC) |", "|---|---|---|---|"]
-    for kind, target, label, summary, replaces in spec_docs():
-        if kind == "global":
-            doc = f"[`{label}`]({target})"
-        else:
-            doc = f"`{label}`: " + " · ".join(f"[{f}]({target}/{f})" for f in FLOW_FILES)
-        lines.append(f"| {doc} | {kind} | {summary} | {', '.join(replaced_ids(replaces)) or '-'} |")
+    rows = spec_docs()
+    files = lambda target: " · ".join(f"[{f}]({target}/{f})" for f in FLOW_FILES)
+    replaced = lambda replaces: ", ".join(replaced_ids(replaces)) or "-"
+    lines = ["### Global", "", "| Doc | Holds | Replaces (old SPEC) |", "|---|---|---|"]
+    lines += [f"| [`{label}`]({target}) | {summary} | {replaced(rep)} |"
+              for kind, target, label, summary, rep in rows if kind == "global"]
+    for kind, title, column in (("app", "Apps", "App"), ("flow", "Flows", "Flow")):
+        lines += ["", f"### {title}", "", f"| {column} | Files | Holds | Replaces (old SPEC) |", "|---|---|---|---|"]
+        lines += [f"| `{label}` | {files(target)} | {summary} | {replaced(rep)} |"
+                  for row_kind, target, label, summary, rep in rows if row_kind == kind]
     return "\n".join(lines)
 
 
@@ -414,7 +419,8 @@ def render_index(roots, docs, topics, flows):
             path, meta = docs.get(folder, (None, {}))
             doc = f"`{path}`" if path else "-"
             summary = meta.get("summary", "-") if path else "-"
-            names = ", ".join(f"[`{n}`]({FLOWS_DIR}/{n}/FLOW.md)" for n in by_module.get(folder, [])) or "-"
+            names = ", ".join(f"[`{n}`]({os.path.relpath(f'{FLOWS_DIR}/{n}/FLOW.md', os.path.dirname(INDEX_FILE))})"
+                              for n in by_module.get(folder, [])) or "-"
             lines.append(f"| {os.path.basename(folder)} | `{folder}` | {doc} | {doc_status(folder, docs)} | {names} | {summary} |")
         lines.append("")
     lines += ["## Topic docs", "", "| Doc | Title |", "|---|---|"]

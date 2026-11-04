@@ -19,7 +19,6 @@
     "format:staged": "turbo run build --filter=@abyss/base-config --filter=@abyss/form-commons --output-logs=errors-only && lint-staged",
     "smoke": "bash scripts/smoke.sh",
     "e2e:spec": "bash scripts/e2e-spec.sh",
-    "docs:architecture": "python3 scripts/docs/architecture/build.py",
     "dev:stack": "bash scripts/dev-stack.sh start",
     "demo": "bash scripts/dev-stack.sh demo",
     "dev:stack:stop": "bash scripts/dev-stack.sh stop",

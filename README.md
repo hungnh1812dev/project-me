@@ -61,7 +61,7 @@ pnpm demo
 pnpm dev:stack:stop     # when you are done
 ```
 
-`pnpm demo` starts Postgres and a mail catcher in containers and the three apps in dev mode, and turns reviewer access on. It prints the web, admin and mail addresses. Open the web and choose Reviewer access (needs internet for the Turnstile widget). Signing in to the admin locally needs a separate owner setup: see "Create the one owner account" in [docs/local-run.md](docs/local-run.md). That guide also covers the other ways to run the stack.
+`pnpm demo` starts Postgres and a mail catcher in containers and the three apps in dev mode, and turns reviewer access on. It prints the web, admin and mail addresses. Open the web and choose Reviewer access (needs internet for the Turnstile widget). Signing in to the admin locally needs a separate owner setup: see "Create the one owner account" in [docs/guidelines/local-run.md](docs/guidelines/local-run.md). That guide also covers the other ways to run the stack.
 
 ## Git hooks
 
@@ -72,13 +72,13 @@ pnpm dev:stack:stop     # when you are done
 
 ## Where to look
 
-- [SPEC.md](SPEC.md): objective, scope, stack, security decisions, data model, API outline, success criteria.
+- [SPEC.md](SPEC.md): objective and scope, and the index of every spec doc: [docs/global/](docs/global) (shared rules, decisions, acceptance, reference), [docs/apps/](docs/apps) (per app), [docs/flows/](docs/flows) (per business flow).
 - [docs/adr/](docs/adr): architecture decision records.
-- [docs/modules/](docs/modules): one page per module.
-- [docs/architecture/](docs/architecture): ten diagram pages as HTML. GitHub shows HTML as source, so open them locally, for example `open docs/architecture/project-architecture.html` on macOS, or open the file in a browser.
+- [docs/modules/](docs/modules): one page per module, indexed in [docs/modules/MODULES.md](docs/modules/MODULES.md).
 - [.github/workflows/](.github/workflows): CI.
 - [apps/e2e](apps/e2e): browser tests ([README](apps/e2e/README.md)).
-- [docs/deployment/](docs/deployment) and [docs/ci-cd.md](docs/ci-cd.md): deployment and pipeline notes.
+- [docs/deployments/](docs/deployments/devops-runbook.md): CI/CD and deployment (start at the DevOps runbook).
+- [docs/guidelines/](docs/guidelines): running the stack and the checks locally.
 
 ## Repository map
 

@@ -1,6 +1,6 @@
 # Local run guide
 
-How to run the stack on your machine: install, the three apps in dev mode, a local database, and the smoke stack. Production deployment is in `docs/deployment/k3s-traefik.md`; secrets there are in `docs/deployment/k3s-secrets-sops.md`.
+How to run the stack on your machine: install, the three apps in dev mode, a local database, and the smoke stack. The checks CI runs: [run-checks-locally.md](run-checks-locally.md). Production deployment: [docs/deployments/](../deployments/devops-runbook.md).
 
 ## Quick start
 

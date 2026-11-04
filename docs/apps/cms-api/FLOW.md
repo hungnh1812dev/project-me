@@ -21,8 +21,6 @@ Applies to: all flows.
 
 Applies to flows: `content-editing`, `public-site`, `reviewer`.
 
-Source: [docs/architecture/07-flows.html](../../architecture/07-flows.html).
-
 ```mermaid
 flowchart TB
   r(["request"]) --> auth{"credentials?"}

@@ -12,7 +12,7 @@ Flows: [`backups`](../flows/backups/FLOW.md), [`security-audit`](../flows/securi
 
 <!-- module-flows:end -->
 
-Owner-only list of the nightly database dumps and short download links (SPEC §7 D20, §9 "Backups"; [ADR 0013](../adr/0013-backup-download.md)). The module reads the backup bucket and never writes to it. It holds no database credential and never dumps or streams bytes. The nightly job lives in the deploy repo (`docs/deployment/k3s-traefik.md` §7).
+Owner-only list of the nightly database dumps and short download links (SPEC §7 D20, §9 "Backups"; [ADR 0013](../adr/0013-backup-download.md)). The module reads the backup bucket and never writes to it. It holds no database credential and never dumps or streams bytes. The nightly job lives in the deploy repo (`docs/deployments/backups.md`).
 
 ## Switching it on
 

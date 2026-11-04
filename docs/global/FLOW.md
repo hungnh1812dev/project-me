@@ -11,7 +11,7 @@ Part of the [project spec](../../SPEC.md). Flows of one app: `docs/apps/<app>/FL
 
 Applies to: all flows.
 
-1. Find the flow in the Docs table of the [project spec](../../SPEC.md), and its modules in `MODULES.md`.
+1. Find the flow in the Docs table of the [project spec](../../SPEC.md), and its modules in [docs/modules/MODULES.md](../modules/MODULES.md).
 2. Before changing anything, read the rules that apply: [RULES.md](RULES.md), the `RULES.md` of each app the change touches (`docs/apps/<app>/`), and the flow's `RULES.md` and `FLOW.md`.
 3. A new or changed requirement goes into the flow's `SPEC.md`, updated in place, plus one Change log line; a new journey gets a new `docs/flows/<flow>/` folder with `SPEC.md`, `FLOW.md` and `RULES.md`.
 4. A rule or process shared by every flow of one app goes into that app's `RULES.md` or `FLOW.md`; one shared by several flows across apps goes here or into [RULES.md](RULES.md), naming the flows it applies to.

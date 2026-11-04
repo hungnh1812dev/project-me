@@ -26,7 +26,7 @@ Part of the [project spec](../../../SPEC.md). Flow `sign-in`: [SPEC.md](SPEC.md)
 
 ## Login, with and without 2FA
 
-Source: [docs/architecture/07-flows.html](../../architecture/07-flows.html) (generated 2026-10-26; before remember me, which adds `rememberMe` to the login body, the `rm` claim to the temp token and the cookie mode to step 5).
+The login diagram predates remember me, which adds `rememberMe` to the login body, the `rm` claim to the temp token and the cookie mode to step 5.
 
 ```mermaid
 sequenceDiagram

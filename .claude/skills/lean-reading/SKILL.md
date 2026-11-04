@@ -7,7 +7,7 @@ description: How agents read files, code and command output with the fewest toke
 
 Everything you read stays in your context for every later turn. Read the smallest part that answers the question, once.
 
-**Where things are: `MODULES.md` first.** It maps every app module to its folder and its doc in `docs/modules/` (purpose, techniques, entry points, where to change what, and a table of its files). Read the docs of the modules you need, then use graphify and line ranges below. Never list folders or grep the whole repo to find where a feature lives.
+**Where things are: `docs/modules/MODULES.md` first.** It maps every app module to its folder and its doc in `docs/modules/` (purpose, techniques, entry points, where to change what, and a table of its files). Read the docs of the modules you need, then use graphify and line ranges below. Never list folders or grep the whole repo to find where a feature lives.
 
 **Large Markdown (task, phases, done, spec, conventions, docs over ~5 KB): never whole.**
 - `.claude/bin/section <file> --id <ID>`: one task entry. `section <file> "<heading text>"`: one section (e.g. `"Checkpoint RVOFF-B"`). `section <file> §7.2`: one numbered section (an old `SPEC §n` / `Dn` ref: find its doc in the Replaces column of the root `SPEC.md` Docs table first, then read that doc by heading). `section <file> --toc`: headings only, to find the right one.

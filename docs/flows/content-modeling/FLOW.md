@@ -22,8 +22,6 @@ Part of the [project spec](../../../SPEC.md). Flow `content-modeling`: [SPEC.md]
 5. The init container runs `deploy:migrate`; `content:migrate` applies the migration under an advisory lock and records it in `content._migrations`.
 6. At runtime the registry (`content._content_types`) resolves each slug before any SQL.
 
-Source: [docs/architecture/07-flows.html](../../architecture/07-flows.html).
-
 ```mermaid
 flowchart LR
   s["content/schemas/*.json<br/>cv-page, profile"] --> g["content:generate<br/>validate, diff vs snapshot.json"]

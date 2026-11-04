@@ -21,7 +21,7 @@ Part of the [project spec](../../../SPEC.md). Flow `reviewer`: [SPEC.md](SPEC.md
 4. The reviewer reads published content through the `reviewer` field profile; drafts and writes are refused.
 5. The owner reads `GET /reviewer/sessions`; turning the toggle off revokes live sessions; a cleanup job removes expired ones.
 
-Source: [docs/architecture/07-flows.html](../../architecture/07-flows.html) (generated 2026-10-26, before D21 removed the web dialog).
+The diagram predates D21, which removes the web reviewer dialog.
 
 ```mermaid
 sequenceDiagram

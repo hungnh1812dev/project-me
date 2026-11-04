@@ -1,4 +1,4 @@
-# Docs: docs/ci-cd.md
+# Docs: docs/deployments/ci-cd.md
 # Entrypoint: changes -> one flow per affected app (cms-api.yml; app-checks.yml for cms-admin and web)
 #   each flow: checks -> build; a repo-wide job (format, audit) always runs.
 #   e2e does not run in CI (local only: `pnpm smoke`, `pnpm e2e:spec`).

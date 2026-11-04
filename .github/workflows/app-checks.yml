@@ -1,7 +1,7 @@
-# Docs: docs/ci-cd.md
+# Docs: docs/deployments/ci-cd.md
 # Shared app flow, called by ci.yml for cms-admin and web when affected: checks -> build
 # cms-api has extra steps and keeps its own flow (cms-api.yml).
-# This flow builds no image; publishing runs from ci.yml through _publish.yml (docs/ci-cd.md).
+# This flow builds no image; publishing runs from ci.yml through _publish.yml (docs/deployments/ci-cd.md).
 # Status checks show as "<app> / Checks" and "<app> / Build" (the caller job is named after the app).
 name: app-checks
 

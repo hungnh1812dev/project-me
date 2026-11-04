@@ -9,7 +9,7 @@ Part of the [project spec](../../../SPEC.md). Flow `owner-setup`: [SPEC.md](SPEC
 
 ## Actors
 
-- **Operator**: holds the setup token (k3s Secret `OWNER_SETUP_TOKEN`) or a shell for the CLI.
+- **Operator**: holds the setup token (Kubernetes Secret `OWNER_SETUP_TOKEN`) or a shell for the CLI.
 - **cms-admin `/setup`**: shown only while `GET /setup/status` says `open`.
 - **cms-api identity**: `bootstrapOwner`, shared by the route and the CLI.
 
@@ -21,8 +21,6 @@ Part of the [project spec](../../../SPEC.md). Flow `owner-setup`: [SPEC.md](SPEC
 4. `bootstrapOwner` creates the owner in one transaction with `pg_advisory_xact_lock` and writes `owner.created` (channel `setup_page`); answer `201 { email }`, no session.
 5. The owner signs in on the login page (email prefilled, Q-OS1); the operator removes `OWNER_SETUP_TOKEN`.
 6. Fallback: `owner:bootstrap` CLI (channel `cli`).
-
-Source: [docs/architecture/07-flows.html](../../architecture/07-flows.html).
 
 ```mermaid
 sequenceDiagram

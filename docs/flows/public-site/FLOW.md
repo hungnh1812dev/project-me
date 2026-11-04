@@ -21,8 +21,6 @@ Part of the [project spec](../../../SPEC.md). Flow `public-site`: [SPEC.md](SPEC
 4. Richtext is sanitized again with DOMPurify when rendering (D13).
 5. The status card polls `GET /bff/v1/health` and renders even when the CV fails to load.
 
-Source: [docs/architecture/07-flows.html](../../architecture/07-flows.html).
-
 ```mermaid
 sequenceDiagram
   participant W as web server (Next.js)

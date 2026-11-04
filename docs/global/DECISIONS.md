@@ -48,7 +48,7 @@ Security decisions (fixes for review findings C1–C8 and related; old SPEC §7)
 
 - With `NODE_ENV=production`, Zod rejects `MAIL_PROVIDER=console`, any missing secret, and secrets under 32 bytes. The boot config summary redacts secrets.
 - `OWNER_SETUP_TOKEN` is optional; set with `NODE_ENV=production`, it must be ≥ 32 bytes (D1).
-- `ALLOW_ACCOUNT_SEED` is not an app setting: the server schema does not accept it, and it never appears in `.env.example`, the smoke env file, compose or k3s manifests. Only `seed:account` reads it, passed on one invocation, and it must equal exactly `smoke` (D1).
+- `ALLOW_ACCOUNT_SEED` is not an app setting: the server schema does not accept it, and it never appears in `.env.example`, the smoke env file, compose or Kubernetes manifests. Only `seed:account` reads it, passed on one invocation, and it must equal exactly `smoke` (D1).
 - Headers on every app: HSTS, CSP, `X-Content-Type-Options: nosniff`, `Referrer-Policy`, no `X-Powered-By`.
   - **API**: `default-src 'none'` on every route, `/graphql` included.
   - **cms-admin**: CSP from its nginx config (unchanged): `script-src 'self'`, `connect-src` from env, `img-src` includes Cloudinary. No `'unsafe-eval'`: the bundle must not call `eval` or `new Function`, so Zod runs `jitless` (its eval probe is reported as a CSP violation even when caught; ADR 0015, 2026-10-28).
