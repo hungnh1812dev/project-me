@@ -1,7 +1,7 @@
 # Docs: docs/deployments/ci-cd.md
 # Shared publish for one app, called by the publish-<app> jobs of ci.yml (after the app flow passed; e2e does not run in CI):
 #   image (per platform: build -> non-root guard -> bundle check (cms-admin); with should_push also push by digest)
-#   -> manifest (tags) -> deploy (bump <app>-sync-overlay.yaml); manifest and deploy run only with should_push.
+#   -> manifest (tag <app version>) -> deploy (bump <app>-sync-overlay.yaml); manifest and deploy run only with should_push.
 # should_push false (the default) builds and guards the image and pushes, tags and deploys nothing.
 # One production image per service, built straight from apps/<app>/Dockerfile.
 # cms-api is one image: the init container runs `npm run deploy:migrate`, the main container
@@ -26,13 +26,9 @@ on:
         type: string
         required: true
       tag:
-        description: Image tag; needed when should_push is true
+        description: Image tag (the app version); needed when should_push is true
         type: string
         required: false
-      branch:
-        description: Source branch, also the moving image tag
-        type: string
-        required: true
       deploy_ref:
         description: Deployment repo branch to bump; needed when should_push is true
         type: string
@@ -97,6 +93,7 @@ jobs:
           labels: |
             org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
             org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.version=${{ inputs.tag }}
           load: true
           tags: ${{ inputs.app }}:ci
           cache-from: type=gha,scope=${{ inputs.app }}-${{ inputs.environment }}-${{ matrix.arch }}
@@ -125,6 +122,7 @@ jobs:
           labels: |
             org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
             org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.version=${{ inputs.tag }}
           outputs: type=image,name=${{ inputs.image_prefix }}/${{ inputs.app }},push-by-digest=true,name-canonical=true,push=true
           cache-from: type=gha,scope=${{ inputs.app }}-${{ inputs.environment }}-${{ matrix.arch }}
       - name: Export digest
@@ -170,11 +168,23 @@ jobs:
         env:
           IMAGE: ${{ inputs.image_prefix }}/${{ inputs.app }}
           TAG: ${{ inputs.tag }}
-          BRANCH: ${{ inputs.branch }}
+          REVISION: ${{ github.sha }}
         run: |
+          # A release tag is never overwritten: skip a re-run of this commit, fail on any other revision
+          inspect_error="$(mktemp)"
+          if existing="$(docker buildx imagetools inspect "${IMAGE}:${TAG}" --format '{{json .Image}}' 2>"${inspect_error}")"; then
+            existing_revision="$(jq -r '[.. | objects | .config?.Labels?["org.opencontainers.image.revision"]? | select(. != null)] | first // ""' <<<"${existing}")"
+            if [ "${existing_revision}" = "${REVISION}" ]; then
+              echo "::notice::${IMAGE}:${TAG} already exists for this commit; skipping tagging"; exit 0
+            fi
+            echo "::error::${IMAGE}:${TAG} already exists for revision '${existing_revision}'; a release tag is never overwritten"; exit 1
+          elif ! grep -qiE 'not found|manifest unknown|MANIFEST_UNKNOWN' "${inspect_error}"; then
+            # Any other failure (network, auth, registry) must not read as "tag is free"
+            echo "::error::Could not check whether ${IMAGE}:${TAG} exists: $(head -c 300 "${inspect_error}")"; exit 1
+          fi
           refs=()
           for digest in *; do refs+=("${IMAGE}@sha256:${digest}"); done
-          docker buildx imagetools create --tag="${IMAGE}:${TAG}" --tag="${IMAGE}:${BRANCH}" "${refs[@]}"
+          docker buildx imagetools create --tag="${IMAGE}:${TAG}" "${refs[@]}"
           docker buildx imagetools inspect "${IMAGE}:${TAG}"
 
   deploy:
@@ -202,7 +212,6 @@ jobs:
         env:
           APP: ${{ inputs.app }}
           TAG: ${{ inputs.tag }}
-          BRANCH: ${{ inputs.branch }}
           DEPLOY_REF: ${{ inputs.deploy_ref }}
           CLUSTER_PATH: ${{ vars.DEPLOYMENT_CLUSTER_PATH }}
         run: |
@@ -228,7 +237,7 @@ jobs:
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git commit -qam "chore(${BRANCH}): bump ${APP} to ${TAG}"
+          git commit -qam "chore(${DEPLOY_REF}): bump ${APP} to ${TAG}"
           git diff HEAD~1 --stat
       - name: Push the bump
         if: steps.bump.outputs.changed == 'true'

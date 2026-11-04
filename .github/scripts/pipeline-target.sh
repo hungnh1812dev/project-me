@@ -3,6 +3,7 @@
 #   develop: checks only. staging: checks + build. main: checks + build + an image built but not pushed.
 # Usage: EVENT_NAME=push REF_TYPE=branch REF_NAME=<branch> CMS_API_IMAGE=<bool> CMS_ADMIN_IMAGE=<bool> \
 #        WEB_IMAGE=<bool> TURBO_VERSION=<x.y.z> IMAGE_PREFIX=<registry/path> pipeline-target.sh
+# A tag push (REF_TYPE=tag) builds and pushes the release set to production and bumps the deploy repo main.
 # Writes branch, should_build, should_build_image, should_push_image, environment, deploy_ref,
 # <app>_matrix (cms_api_*, cms_admin_*, web_*), turbo_version and image_prefix to $GITHUB_OUTPUT,
 # or to stdout when it is unset. An app without a new image gets an empty matrix.
@@ -19,13 +20,17 @@ IMAGE_PREFIX="${IMAGE_PREFIX:-}"
 
 # The one table: branch -> depth, image platforms, GitHub Environment, deployment repo branch.
 # A new branch or depth is one line here.
-case "$REF_NAME" in
+if [ "$REF_TYPE" = tag ]; then
+  should_build=true; should_build_image=true; platforms='["linux/amd64"]'; environment=production; deploy_ref=main; should_push_image=true
+else
+  should_push_image=false
+  case "$REF_NAME" in
   develop) should_build=false; should_build_image=false; platforms='[]';              environment='';           deploy_ref='' ;;
   staging) should_build=true;  should_build_image=false; platforms='[]';              environment='';           deploy_ref='' ;;
   main)    should_build=true;  should_build_image=true;  platforms='["linux/amd64"]'; environment=production;   deploy_ref='' ;; # x86_64 Ubuntu
   *) echo "::error::No deploy target for branch '$REF_NAME'" >&2; exit 1 ;;
-esac
-should_push_image=false
+  esac
+fi
 
 # One image job per platform, each on a native runner. A new platform needs one line here.
 runner_for() {

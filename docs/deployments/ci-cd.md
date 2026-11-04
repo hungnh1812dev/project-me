@@ -7,7 +7,7 @@ Status: **ready** in code (the routing tests `affected.test.sh` and `pins-check.
 ## 1. Flow
 
 ```
-push to develop / staging / main
+push to develop / staging / main, or a repo tag v<x.y.z>
   -> changes (turbo query affected, .github/scripts/affected.sh)
   -> repo          version pins check + format:check + dependency audit (always runs)
   -> cms-api       Checks -> Build   (when cms-api is affected)
@@ -51,7 +51,7 @@ push to develop / staging / main
 | `ghcr.io/hungnh1812dev/project-me/web`       | 8080 | 1000 | public site (Next.js standalone)                                             |
 | `ghcr.io/hungnh1812dev/project-me/cms-admin` | 8080 | 101  | admin console (nginx)                                                        |
 
-- Tags: `<branch>-<sha7>` (for example `main-1a2b3c4`) is immutable and is the release identifier. The moving `<branch>` tag is for humans only; never reference it in a manifest, or a rollback cannot pin a version.
+- Tags: a release image is tagged `<app version>` only (for example `cms-api:0.0.2`), immutable, no moving tag; it is pushed by a repo tag `v<x.y.z>` run (`.github/scripts/release-apps.sh` picks the apps whose version changed since the previous release; it refuses a commit that is not the origin/main tip and any version that is not x.y.z) and the deploy repo `main` is bumped. Branch pushes push nothing (ADR 0016).
 - Each app is bumped only when its own image changed, so the three apps can sit on different tags.
 - No git tag or GitHub Release today (Q-OPS5).
 - Build-time values are baked into the images, so a change needs a new image, not a restart: web `NEXT_PUBLIC_API_BASE_URL`, `NEXT_PUBLIC_ADMIN_URL`, `NEXT_PUBLIC_TURNSTILE_SITE_KEY`; cms-admin `VITE_API_BASE_URL`.

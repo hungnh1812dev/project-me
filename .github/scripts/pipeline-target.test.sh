@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Tests for pipeline-target.sh: one case per branch, the unknown-branch failure, empty matrices.
+# Tests for pipeline-target.sh: one case per branch and the tag, the unknown-branch failure, empty matrices.
 # Usage: bash .github/scripts/pipeline-target.test.sh
 set -euo pipefail
 
@@ -42,6 +42,12 @@ check "main: app with a new image gets a matrix" \
 check "main: app without a new image gets an empty matrix" "$(has 'cms_admin_matrix={"include":[]}')"
 check "main: passes turbo version and image prefix through" \
   "$([ "$(has turbo_version=2.0.0)$(has image_prefix=ghcr.io/o/r)" = yesyes ] && echo yes || echo no)"
+
+run_script REF_TYPE=tag REF_NAME=v1.2.3
+check "tag: builds and pushes to production, deploys to main" \
+  "$([ "$(has should_build=true)$(has should_build_image=true)$(has should_push_image=true)$(has environment=production)$(has deploy_ref=main)" = yesyesyesyesyes ] && echo yes || echo no)"
+check "tag: app with a new image gets a matrix" \
+  "$(has 'cms_api_matrix={"include":[{"platform":"linux/amd64","arch":"amd64","runner":"ubuntu-24.04"}]}')"
 
 run_script REF_NAME=feature-x
 check "unknown branch fails" "$([ "$status" -ne 0 ] && [ -z "$output" ] && echo yes || echo no)"
