@@ -21,13 +21,28 @@ const runInAct = (action: () => void) =>
 
 const renderInAct = (ui: ReactElement) => runInAct(() => render(ui));
 
+/** Settles like `loadScreenText`, which marks its promise `fulfilled` / `rejected` once it settles. */
+const markSettled = <T extends Promise<unknown>>(promise: T): T => {
+  const marked = promise as T & { status?: string; value?: unknown; reason?: unknown };
+  promise
+    .then(
+      (value) => Object.assign(marked, { status: 'fulfilled', value }),
+      (reason: unknown) => Object.assign(marked, { status: 'rejected', reason }),
+    )
+    .catch(() => {});
+  promise.catch(() => {});
+  return promise;
+};
+
 const deferred = () => {
   let resolve!: (value: unknown) => void;
   let reject!: (reason: unknown) => void;
-  const promise = new Promise((res, rej) => {
-    resolve = res;
-    reject = rej;
-  });
+  const promise = markSettled(
+    new Promise((res, rej) => {
+      resolve = res;
+      reject = rej;
+    }),
+  );
   return { promise, resolve, reject };
 };
 
@@ -72,10 +87,10 @@ describe('ScreenTextBoundary', () => {
   });
 
   it('shows a retry after a failed load and recovers on retry', async () => {
-    const failing = Promise.reject(new Error('chunk failed'));
-    failing.catch(() => {});
+    const failing = markSettled(Promise.reject(new Error('chunk failed')));
+    const recovered = markSettled(Promise.resolve({}));
     let isRetried = false;
-    loadMock.mockImplementation((() => (isRetried ? Promise.resolve({}) : failing)) as never);
+    loadMock.mockImplementation((() => (isRetried ? recovered : failing)) as never);
     await renderInAct(
       <ScreenTextBoundary screens={['login']}>
         <p>page body</p>

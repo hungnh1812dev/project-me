@@ -1,5 +1,10 @@
-import { Component, Suspense, use, useState, type ReactNode } from 'react';
-import { COMMON_TEXT, loadScreenText, type ScreenName } from '@configs/locales';
+import { Component, Suspense, useState, type ReactNode } from 'react';
+import {
+  COMMON_TEXT,
+  loadScreenText,
+  retryFailedScreenText,
+  type ScreenName,
+} from '@configs/locales';
 
 import { LoadError, TitleSkeleton } from './PageStates';
 
@@ -15,9 +20,16 @@ function ScreenTextGate({
 }) {
   const loads = screens.map((screen) => loadScreenText(screen)) as (Promise<unknown> & {
     status?: string;
+    reason?: unknown;
   })[];
-  // `use` on a settled thenable still stalls a route change inside a transition (React 19.3.1).
-  for (const load of loads) if (load.status !== 'fulfilled') use(load as Promise<unknown>);
+  // The promise is thrown, not passed to `use`: `use` must be called the same number of times on
+  // every render, and a settled thenable passed to it stalls a route change inside a transition.
+  for (const load of loads) {
+    if (load.status === 'rejected')
+      throw load.reason instanceof Error ? load.reason : new Error(String(load.reason));
+    // eslint-disable-next-line @typescript-eslint/only-throw-error -- Suspense reads a thrown promise as "still loading"
+    if (load.status !== 'fulfilled') throw load;
+  }
   return children;
 }
 
@@ -60,8 +72,12 @@ export function ScreenTextBoundary({
   children: ReactNode;
 }) {
   const [attempt, setAttempt] = useState(0);
+  const retry = () => {
+    retryFailedScreenText(screens);
+    setAttempt((count) => count + 1);
+  };
   return (
-    <LoadFailureBoundary key={attempt} onRetry={() => setAttempt((count) => count + 1)}>
+    <LoadFailureBoundary key={attempt} onRetry={retry}>
       <Suspense
         fallback={
           fallback === undefined ? (

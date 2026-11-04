@@ -49,7 +49,7 @@ const cache = new Map<string, SettledPromise<unknown>>();
 
 const toCacheKey = (locale: Locale, screen: ScreenName) => `${locale}:${screen}`;
 
-/** Loads one screen's text once per locale; a failed load is dropped so the next call retries. */
+/** Loads one screen's text once per locale; a failed load stays cached until `retryFailedScreenText`. */
 export const loadScreenText = <S extends ScreenName>(
   screen: S,
   locale: Locale = DEFAULT_LOCALE,
@@ -69,11 +69,21 @@ export const loadScreenText = <S extends ScreenName>(
     (reason: unknown) => {
       settled.status = 'rejected';
       settled.reason = reason;
-      cache.delete(key);
     },
   );
   cache.set(key, promise);
   return promise;
+};
+
+/** Drops the failed loads of these screens so the next `loadScreenText` fetches them again. */
+export const retryFailedScreenText = (
+  screens: readonly ScreenName[],
+  locale: Locale = DEFAULT_LOCALE,
+): void => {
+  for (const screen of screens) {
+    const key = toCacheKey(locale, screen);
+    if (cache.get(key)?.status === 'rejected') cache.delete(key);
+  }
 };
 
 export const preloadScreenText = (

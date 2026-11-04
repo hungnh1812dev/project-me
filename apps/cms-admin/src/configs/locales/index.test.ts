@@ -36,7 +36,7 @@ describe('loadScreenText', () => {
     expect(loadScreenText('login')).toBe(loadScreenText('login', 'en'));
   });
 
-  it('retries a failed load on the next call', async () => {
+  it('keeps a failed load cached until it is retried', async () => {
     vi.resetModules();
     vi.doMock('./en/Setup', () => ({
       get SETUP_COPY(): never {
@@ -45,7 +45,9 @@ describe('loadScreenText', () => {
     }));
     const fresh = await import('.');
     await expect(fresh.loadScreenText('setup')).rejects.toThrow('chunk failed');
+    await expect(fresh.loadScreenText('setup')).rejects.toThrow('chunk failed');
     vi.doUnmock('./en/Setup');
+    fresh.retryFailedScreenText(['setup']);
     const again = await fresh.loadScreenText('setup');
     expect(again.setup).toBeDefined();
   });
