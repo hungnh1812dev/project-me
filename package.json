@@ -1,5 +1,6 @@
 {
   "name": "abyss",
+  "version": "0.0.1",
   "private": true,
   "license": "AGPL-3.0-only",
   "packageManager": "pnpm@11.5.2",

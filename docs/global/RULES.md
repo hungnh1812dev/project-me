@@ -75,3 +75,11 @@ Applies to flows: `content-editing`, `public-site`.
 
 1. Sanitize richtext on the server when it is written (`sanitize-html` allowlist) and again on web when it is rendered (DOMPurify) (D13, criterion 14).
 2. No global "XSS pipe" that rewrites all input (D13).
+
+## Versions, change log, DevOps patches
+
+Applies to: all flows.
+
+1. Every release has a [CHANGELOG.md](../../CHANGELOG.md) entry with the repo version, the version of each app and package, and its features, changes, fixes and DevOps patches ([FLOW.md](FLOW.md) "Versions and change log").
+2. An app's version changes only in a release that changes that app; `base-config` and `form-commons` change only when they are released themselves.
+3. A change that needs the deploy repo to change updates `docs/deployments/` to the new target state and ships a `patch-<name>-<repo version>.md` in the doc folder of its app, flow or module. Never describe a DevOps change only in a patch, or only in `docs/deployments/`.

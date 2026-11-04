@@ -74,6 +74,7 @@ pnpm dev:stack:stop     # when you are done
 
 - [SPEC.md](SPEC.md): objective and scope, and the index of every spec doc: [docs/global/](docs/global) (shared rules, decisions, acceptance, reference), [docs/apps/](docs/apps) (per app), [docs/flows/](docs/flows) (per business flow).
 - [docs/adr/](docs/adr): architecture decision records.
+- [CHANGELOG.md](CHANGELOG.md): every release with its versions, changes and DevOps patches.
 - [docs/modules/](docs/modules): one page per module, indexed in [docs/modules/MODULES.md](docs/modules/MODULES.md).
 - [.github/workflows/](.github/workflows): CI.
 - [apps/e2e](apps/e2e): browser tests ([README](apps/e2e/README.md)).

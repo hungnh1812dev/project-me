@@ -16,7 +16,18 @@ Applies to: all flows.
 3. A new or changed requirement goes into the flow's `SPEC.md`, updated in place, plus one Change log line; a new journey gets a new `docs/flows/<flow>/` folder with `SPEC.md`, `FLOW.md` and `RULES.md`.
 4. A rule or process shared by every flow of one app goes into that app's `RULES.md` or `FLOW.md`; one shared by several flows across apps goes here or into [RULES.md](RULES.md), naming the flows it applies to.
 5. A new decision goes into the `SPEC.md` (Decisions) of the flow or app that owns it, or into [DECISIONS.md](DECISIONS.md) when it covers several apps; then the rules that follow from it are written into the matching `RULES.md`.
-6. Run `.claude/bin/module-index`; `--check` must print nothing.
+6. Record the change for the next release in [CHANGELOG.md](../../CHANGELOG.md) (section below).
+7. Run `.claude/bin/module-index`; `--check` must print nothing.
+
+## Versions and change log
+
+Applies to: all flows.
+
+1. **Versions.** The repo version (root `package.json`) names a release and follows Semantic Versioning: patch for fixes, minor for new features, major for breaking changes. Each app in `apps/` keeps its own version in its `package.json` and takes the release's repo version only in a release that changes it; an app that did not change keeps its version. `packages/base-config` and `packages/form-commons` keep their own versions and change only when the package itself is released.
+2. **Change log.** Every release gets one entry at the top of [CHANGELOG.md](../../CHANGELOG.md): the repo version and date, the version of each app and package (and whether it changed), then the lists New features, Changes, Bug fixes, and DevOps patches. Each item names the app it touches and links the flow or module doc it changed. A change that is not released yet goes under `## Unreleased` until the release.
+3. **Docs.** A flow, app or module with no doc yet gets one (`docs/flows/<flow>/`, `docs/apps/<app>/`, `.claude/bin/module-index --new <folder>`). An existing doc is updated in place with the change.
+4. **DevOps changes.** When a change needs the deploy repo to change (configuration, Secrets, routes, probes, workloads, the rollout order), update the matching page of [docs/deployments/](../deployments/devops-runbook.md) to the new target state, **and** write `patch-<name>-<repo version>.md` in the doc folder of the app, flow or module the change belongs to (for example `docs/apps/web/patch-web-0.0.2.md`, `docs/flows/media/patch-media-0.0.2.md`). The patch lists only what the deploy repo must change from the previous release: each item with its deploy repo object, the change and a link to its target state, then the order, the checks and the rollback. The change log entry links every patch of the release.
+5. **Release.** In the release commit: bump the versions, move `## Unreleased` under the new version heading, run `.claude/bin/module-index --check` and `pnpm format:check`.
 
 ## Launch gate
 

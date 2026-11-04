@@ -36,6 +36,7 @@ Scope in v1: one cluster per environment, Traefik as the ingress controller, **o
 
 - Every image has a numeric non-root user, so `runAsNonRoot: true` works. Pod security for all: `runAsNonRoot: true`, `allowPrivilegeEscalation: false`, drop all capabilities.
 - Pin each image with the tag the publish job writes to `APP_IMAGE_TAG` ([ci-cd.md](ci-cd.md)); cms-api uses **one tag for both of its containers**. Never reference the moving `<branch>` tag.
+- If the deploy repo templates the container port (an `APP_PORT` key in each app's ConfigMap), the values are cms-api `"3000"`, web `"8080"` and cms-admin `"8080"`; the images listen on these ports (cms-admin's is fixed until an image reads `ADMIN_PORT`, section 5).
 
 ## 3. cms-api: init container + main container
 
