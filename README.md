@@ -85,10 +85,14 @@ pnpm dev:stack:stop     # when you are done
 - `apps/`: `cms-api`, `cms-admin`, `web`, `e2e`; each has its own README.
 - `packages/`: `form-commons`, `base-config`.
 - `docs/`: ADRs, module pages, architecture pages, deployment and local-run guides.
-- `scripts/`: the demo and dev stack, the smoke stack, and the architecture page generator.
+- `scripts/`: the demo and dev stack, and the smoke stack.
 - `tasks/`: the plan and task list ([plan.md](tasks/plan.md), [todo.md](tasks/todo.md)) that drove the build, one task at a time with acceptance criteria.
 - `.claude/`: the agent workflow used to build the project (agent roles, skills and the shared state files). It is kept in the repository on purpose, so the process is visible.
 
 ## License
 
-Copyright (c) 2026 AbyssOfTime Dev. All rights reserved. See [LICENSE](LICENSE): no use, copying, modification or sale without the owner's prior written permission.
+Copyright (C) 2026 AbyssOfTime Dev. Licensed under the [GNU Affero General Public License v3.0](LICENSE) (`AGPL-3.0-only`); see [NOTICE](NOTICE).
+
+You may use, change and share the code. If you distribute it, or run a modified version as a network service, you must share that version's complete source under the same license and keep the copyright notices.
+
+If you use or build on this project, please let the owner know by opening an [issue](https://github.com/hungnh1812dev/project-me/issues). This is a request, not a license condition.
