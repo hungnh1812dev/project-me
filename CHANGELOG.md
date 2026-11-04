@@ -4,6 +4,12 @@ Every release of the repository, newest first. Each entry gives the repo version
 
 Versions follow [Semantic Versioning](https://semver.org/). The repo version names the release; an app's version changes only in a release that changes that app.
 
+## Unreleased
+
+### DevOps patches
+
+- Tag-driven release ([ADR 0016](docs/adr/0016-tag-driven-release-ci.md)): images are built and pushed only by a repo tag `v<x.y.z>` made by the `release-tag` skill, and tagged with the app version (`APP_IMAGE_TAG` changes from `main-<sha7>` to `<x.y.z>`); the deploy repo `staging` branch is no longer bumped by CI. Patch notes: [cms-api](docs/apps/cms-api/patch-cms-api-0.0.2.md), [cms-admin](docs/apps/cms-admin/patch-cms-admin-0.0.2.md), [web](docs/apps/web/patch-web-0.0.2.md).
+
 ## 0.0.1 (2026-11-04)
 
 First versioned release: everything built up to this date.

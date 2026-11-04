@@ -16,7 +16,7 @@ Every version is a stable or LTS release. Never deploy beta, RC, nightly or `lat
 | Traefik            | v3.6 (3.6.x) or a later v3                                                       | `traefik:v3.6` in `docker-compose.smoke.yml`                          | [traefik.md](traefik.md)                                                                                |
 | Kubernetes         | a release of a stable channel                                                    | not pinned here (the deploy repo pins it)                             | never `latest` or `testing`                                                                             |
 | nginx (cms-admin)  | `nginxinc/nginx-unprivileged:1.29-alpine`                                        | `ARG NGINX_IMAGE` in `apps/cms-admin/Dockerfile`                      | accepted exception (owner decision): 1.29 is on the nginx mainline branch, not the stable branch (1.28) |
-| Container registry | GHCR, `ghcr.io/hungnh1812dev/project-me/{cms-api,web,cms-admin}:<APP_IMAGE_TAG>` | [ci-cd.md](ci-cd.md)                                                  | tag per release; production never uses `latest`                                                         |
+| Container registry | GHCR, `ghcr.io/hungnh1812dev/project-me/{cms-api,web,cms-admin}:<APP_IMAGE_TAG>` | [ci-cd.md](ci-cd.md)                                                  | tag per release (`<app version>`); production never uses `latest`                                       |
 
 Other tools the deploy repo needs, at stable releases chosen there: a GitOps tool that applies the deploy repo, SOPS or sealed-secrets ([secrets.md](secrets.md)), and `age` and `rclone` in the backup job image ([backups.md](backups.md)). Mailpit is a dev and smoke component only.
 
@@ -35,18 +35,20 @@ When a manifest change and an image change need each other (for example a new po
 
 ## 3. A normal release
 
-1. Merge into `staging` (or `main`). CI publishes the changed apps and pushes one bump commit per app into the deploy repo.
-2. The GitOps tool applies the commit on its next interval (or reconcile it at once).
-3. cms-api: the new pod's init container runs `deploy:migrate`. The old pod keeps serving (`maxUnavailable: 0`); the new main container starts only after the init container exits 0, and the old pod stops when the new one is ready.
-4. web and cms-admin roll the same way, after cms-api is ready when the deploy repo applies the recommended order.
-5. Run the checks of section 4.
+1. Run the `release-tag` skill on `develop` (first sitting): it shows the changes since the previous `v*` tag, asks the repo and per-app bumps, writes the versions and the `CHANGELOG.md` entry, and makes the release commit.
+2. Merge `develop` into `staging`, then `staging` into `main` (pull requests). Branch pushes build and check but push no image.
+3. With the release commit on `main`, run the skill again on `main` (second sitting): it creates the annotated repo tag `v<x.y.z>` and one `<app>@<x.y.z>` per bumped app, and asks before pushing. Push the repo tag alone first, then the app tags. The tag run publishes the released apps as `<app version>` images and bumps `APP_IMAGE_TAG` in the deploy repo `main` ([ci-cd.md](ci-cd.md) section 4).
+4. The GitOps tool applies the commit on its next interval (or reconcile it at once).
+5. cms-api: the new pod's init container runs `deploy:migrate`. The old pod keeps serving (`maxUnavailable: 0`); the new main container starts only after the init container exits 0, and the old pod stops when the new one is ready.
+6. web and cms-admin roll the same way, after cms-api is ready when the deploy repo applies the recommended order.
+7. Run the checks of section 4.
 
 Rules for every release:
 
 - Migrations are forward only: Prisma `migrate deploy` and `content:migrate` have no down step. During a rollout the old pod runs against the new schema, so a destructive change (dropping or renaming a column, a table or a content type) needs two releases: expand first, contract later.
 - A new content type takes effect only through a committed generated migration; CI fails a missing one.
-- A change to a build-time value ([configmaps.md](configmaps.md) sections 4 and 5) needs a new image: push a commit, or re-run the publish.
-- The three apps can sit on different tags; each is bumped only when its own image changed.
+- A change to a build-time value ([configmaps.md](configmaps.md) sections 4 and 5) needs a new image: release a new version (a new app version and tag); a tag is never re-pushed.
+- The three apps can sit on different versions; each is bumped only when its own version changed in the release.
 
 ## 4. Checks after a release
 
@@ -62,7 +64,7 @@ Rules for every release:
 
 | Situation                                                     | What to do                                                                                                                                                                                                                                                                                                                                                           | Status                             |
 | ------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------- |
-| Bad app release, schema compatible                            | In the deploy repo, `git revert <bump commit>`, or set `APP_IMAGE_TAG` back to the previous `<branch>-<sha7>`, and push; the GitOps tool rolls back. Do not use `kubectl rollout undo`: the GitOps tool would put the new tag back.                                                                                                                                  | **not run**                        |
+| Bad app release, schema compatible                            | In the deploy repo, `git revert <bump commit>`, or set `APP_IMAGE_TAG` back to the previous `<app version>` (for example `0.0.1`), and push; the GitOps tool rolls back. Do not use `kubectl rollout undo`: the GitOps tool would put the new tag back.                                                                                                              | **not run**                        |
 | A release needed a manifest change and an image change        | Revert both the tag commits and the manifest merge on the environment branch, then reconcile. Reverting only one leaves the broken mix of section 2.                                                                                                                                                                                                                 | **not run**                        |
 | Stop the deploy repo from changing anything                   | Suspend the GitOps tool's sync of the app; resume it later. A CI bump waits in git meanwhile.                                                                                                                                                                                                                                                                        | **not run**                        |
 | Init container fails (`Init:Error` / `Init:CrashLoopBackOff`) | The old pod keeps serving. Read the cause with `kubectl -n <ns> logs <pod> -c migrate`. A config error lists the key names. A wrong DB password: fix the Secret. A failed migration: fix forward with a new commit, or revert the bump.                                                                                                                              | ready (checked on the smoke stack) |
