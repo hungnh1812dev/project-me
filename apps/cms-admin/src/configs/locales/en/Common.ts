@@ -3,6 +3,8 @@ import { OTP_CODE_LENGTH, OTP_TTL_MINUTES, PASSWORD_LENGTH } from '../../Auth.co
 /** Text shared by several features: app shell, session, password rules, navigation labels. */
 export const COMMON_COPY = {
   retry: 'Try again',
+  loadingPage: 'Loading the page',
+  textLoadFailed: 'This page could not be loaded. Check your connection, then try again.',
 } as const;
 
 export const APP_COPY = {

@@ -1,6 +1,7 @@
 import type { ComponentType } from 'react';
 import { APP_ROUTES } from '@configs/App.routes';
 import { COPY } from '@configs/Copy.constants';
+import type { ScreenName } from '@configs/locales';
 import type { NavItem, NavItemsState, NavSource } from '@configs/NavSections.constants';
 import { useBackupsNavItems } from '@features/backups/Backups.queries';
 import { useContentNavItems } from '@features/content/useContentNavItems';
@@ -29,6 +30,8 @@ export interface View {
   /** Omit for the index route of the app shell. */
   path?: string;
   Component: ComponentType;
+  /** Screen text the page needs; the route waits for it before rendering. */
+  textScreens?: readonly ScreenName[];
   navItems?: readonly NavItem[];
   /** Items that depend on loaded data; a hook, so it may call queries. */
   useNavItems?: () => NavItemsState;

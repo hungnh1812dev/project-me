@@ -1,6 +1,8 @@
 {
   "common": {
-    "retry": "Try again"
+    "retry": "Try again",
+    "loadingPage": "Loading the page",
+    "textLoadFailed": "This page could not be loaded. Check your connection, then try again."
   },
   "app": {
     "name": "Abyss CMS"
