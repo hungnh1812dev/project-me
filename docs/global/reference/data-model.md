@@ -1,6 +1,11 @@
+---
+summary: Core tables, generated content tables, conditions DSL
+replaces: §8, §8.1, §8.2, §8.3
+---
+
 # Data model
 
-Part of the [project spec](../../SPEC.md); moved from the old SPEC §8. Global: it applies to every flow in `docs/flows/`.
+Part of the [project spec](../../../SPEC.md). Reference: definitions and values only; the rules that use them are in the `RULES.md` files.
 
 ### 8.1 Core (`public`, Prisma)
 

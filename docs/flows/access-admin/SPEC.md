@@ -1,17 +1,18 @@
 ---
 flow: access-admin
+replaces: D6, §14 Q2, §14 Q7, §14 Q8, §14 Q9, §14 Q11, §14 Q12, §14 Q13
 summary: Accounts and invitations, roles and the permission matrix, API tokens
 ---
 
 # Access administration: spec
 
-Part of the [project spec](../../../SPEC.md). Flow `access-admin`: [SPEC.md](SPEC.md) (what it must do) · [FLOW.md](FLOW.md) (steps and modules) · [RULE.md](RULE.md) (rules every change must keep).
+Part of the [project spec](../../../SPEC.md). Flow `access-admin`: [SPEC.md](SPEC.md) (what it must do) · [FLOW.md](FLOW.md) (steps and modules) · [RULES.md](RULES.md) (rules every change must keep).
 
 ## Behaviour
 
-Admins and the owner invite accounts, enable and disable them, revoke their sessions, create custom roles, edit a role's permissions in the permission matrix (subjects from the content type catalog), and create, update and revoke API tokens. Accounts exist only by invitation (Q2). Every action follows the rank rule (D6); API tokens follow D5; permission rows may carry conditions in the DSL of [data-model.md](../../global/data-model.md) §8.3.
+Admins and the owner invite accounts, enable and disable them, revoke their sessions, create custom roles, edit a role's permissions in the permission matrix (subjects from the content type catalog), and create, update and revoke API tokens. Accounts exist only by invitation (Q2). Every action follows the rank rule (D6); API tokens follow D5; permission rows may carry conditions in the DSL of [data-model.md](../../global/reference/data-model.md) §8.3.
 
-Endpoints: [api-contract.md](../../global/api-contract.md) rows "Accounts", "Roles", "API tokens", "Content types". Values (ranks, custom rank range, actions): [canonical-values.md](../../global/canonical-values.md).
+Endpoints: [api-contract.md](../../global/reference/api-contract.md) rows "Accounts", "Roles", "API tokens", "Content types". Values (ranks, custom rank range, actions): [canonical-values.md](../../global/reference/canonical-values.md).
 
 ## Requirements
 
@@ -19,9 +20,11 @@ D5, D6 and the conditions DSL (§8.3), plus the decisions below. New requirement
 
 ## Acceptance
 
-Global success criteria of this flow ([success-criteria.md](../../global/success-criteria.md)): 2, 6, 7, 11.
+Global success criteria of this flow ([ACCEPTANCE.md](../../global/ACCEPTANCE.md)): 2, 6, 7, 11.
 
 ## Decisions
+
+**D6 Role hierarchy (C7).** Manage an account, assign a role or edit a role's permissions only when target rank < actor rank. No "created by me" exception. System roles' slug and rank are immutable. Only one account can hold `owner`.
 
 | # | Question | Recommendation |
 |---|---|---|

@@ -1,6 +1,11 @@
+---
+summary: Tech stack per area and the main commands
+replaces: §3, §4
+---
+
 # Tech stack and commands
 
-Part of the [project spec](../../SPEC.md); moved from the old SPEC §3 and §4. Global: it applies to every flow in `docs/flows/`.
+Part of the [project spec](../../../SPEC.md). Reference: definitions and values only; the rules that use them are in the `RULES.md` files.
 
 ## Tech stack
 

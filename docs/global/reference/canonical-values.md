@@ -1,6 +1,11 @@
+---
+summary: Canonical values: paths, ranks, TTLs, limits, cookies, origins
+replaces: §6
+---
+
 # Canonical values (resolves every contradiction in the old docs)
 
-Part of the [project spec](../../SPEC.md); moved from the old SPEC §6. Global: it applies to every flow in `docs/flows/`.
+Part of the [project spec](../../../SPEC.md). Reference: definitions and values only; the rules that use them are in the `RULES.md` files.
 
 | Item                   | Value                                                                                                                                                                                                                                                                                                                                                                                                                  |
 | ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

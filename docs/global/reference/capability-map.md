@@ -1,8 +1,11 @@
-# Architecture: capability map and module directions
+---
+summary: Every module with its responsibility and the modules it may depend on, and the dependency order
+replaces: §2 Capability map
+---
 
-Part of the [project spec](../../SPEC.md); moved from the old SPEC §2 (Capability map, Module directions, Frontend directions). Global: it applies to every flow in `docs/flows/`.
+# Capability map
 
-### Capability map
+Part of the [project spec](../../../SPEC.md). Reference: definitions and values only; the rules that use them are in the `RULES.md` files.
 
 | Module id              | Responsibility                                                                                                                                                                                                                         | Depends on                                                                        |
 | ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
@@ -26,31 +29,4 @@ Part of the [project spec](../../SPEC.md); moved from the old SPEC §2 (Capabili
 
 Dependency order (lowest first): `platform` → (`ui-kit`, `content-engine`, `health`) → `access` core → `security-audit` → `identity` → (`access` management, `access` document auth, `content-types`, `media`, `reviewer`, `backups`) → `documents` → `graphql` → app slices. UI work goes into each vertical slice, not a separate phase.
 
-### Module directions (cms-api)
-
-Amended 2026-10-23 (audit G6): the map follows the code and is the one authority for which module may import which.
-
-- A file in module A may import from module B only when B is in A's "Depends on" cell; no cycles. `apps/cms-api/test/architecture/ModuleEdges.constants.ts` (`ALLOWED_MODULE_EDGES`) mirrors the cms-api rows row for row; change both together.
-- `platform` (`src/common`, `src/config`, `src/infrastructure`, `src/generated`) never imports `src/modules/**`. The composition root (`app.module.ts`, `app.setup.ts`, `bootstrap.ts`, `main.ts`) may import any module.
-- `access` is one folder with three parts, by folder (Q-CA15c): core `access/<layer>/` with `access/Access.module.ts` and `access/index.ts`; management `access/management/<layer>/` and document auth `access/document-auth/<layer>/`, each with its own module file and `index.ts`. Core never imports `identity`; only management and document auth do. `AccessModule` (core) imports `ContentEngineModule`.
-- "types only" = `import type` (security-audit uses the `ActorContext` and `SystemSubject` types). "auth guard only" = the JWT guard and `AuthenticatedRequest`, nothing else.
-- Other modules use a module only through its `index.ts` (public interface), never internal files.
-- `KNOWN_VIOLATIONS` (edges the code has but the table forbids) is empty and must stay empty.
-- Adding a module: one table row and one `ALLOWED_MODULE_EDGES` entry in the same change.
-- **Layers inside a module** (amended 2026-10-25, ADR 0006 §1-2, §7). A module folder holds only the layer folders it needs (`domain/`, `application/`, `adapters/`, `http/`, `cli/`, `jobs/`) plus wiring files `<Module>.module.ts` and `index.ts`. `apps/cms-api/test/architecture/LayerRules.constants.ts` (`LAYER_RULES`) mirrors this bullet; change both together. A layer may import:
-  - `domain/`: own `domain/`; another module's facade along a module edge with `import type` only, except the pure helpers in `DOMAIN_CROSS_MODULE_HELPERS` (Q-CA6); pure platform folders; no package but `zod`, `sanitize-html` (Q-CA5) and `createHash` from `node:crypto`. No `process.env`, `new Date()` or `Date.now(`.
-  - `application/`: own `domain/`, `application/`; other modules' facades (not their `http/` exports); pure platform folders, platform ports, `config/`. From `@nestjs/*` only `Injectable` and `Inject` (Q-CA1); never `express`, `@prisma/*`, `src/generated/**` (`import type` included), `kysely`, `pg`, `passport*`, `process.env`, `new Date()` or `Date.now(`.
-  - `adapters/`: own `domain/`, `application/`, `adapters/`; other modules' facades (not their `http/` exports); pure platform folders, platform ports and adapters, `config/`, `src/generated/`; any package.
-  - `http/`: own `domain/`, `application/`, `http/`; other modules' facades incl. their exported guards and decorators; pure platform folders, the HTTP pipeline, `config/`; never `@prisma/*`, `kysely` or `pg`.
-  - `cli/`: own `domain/`, `application/`, `adapters/`, `cli/`; other modules' facades (not their `http/` exports), incl. an adapter a facade exports (`loadDefinitions`, Q-CA14b); pure platform folders, platform ports and adapters, `config/`, `src/generated/`; any package. A CLI builds adapters and hands them to use cases.
-  - `jobs/` (Q-CA7): own `domain/`, `application/`, `jobs/`; other modules' facades (not their `http/` exports); pure platform folders, `config/`, `infrastructure/scheduling/`. From `@nestjs/common` only `Injectable`, `Inject`, `Logger` and lifecycle hooks; never `express`, `@prisma/*`, `kysely`, `pg` or `passport*`. A job calls use cases only.
-  - Wiring (`<Module>.module.ts`, `index.ts`): anything in the module. A facade never exports `adapters/` (except `loadDefinitions`).
-  - Platform folders by role (ADR 0006 §7.6): pure = `common/{constants,errors,time,types,validation}/`; HTTP pipeline = `common/{http,middleware,filters,guards,rate-limit}/`; ports = `infrastructure/**/*.port.ts`; job runner = `infrastructure/scheduling/`; every other `infrastructure/` file is an adapter.
-  - Named exceptions only in `LAYER_EXCEPTIONS`: `kysely` in `access/domain/PolicyEvaluator.ts` and `access/domain/Conditions.rules.ts`, seen by other modules as the opaque `RowFilter` type (Q-CA17); `documents` reading the access field projection by file (D3). `src/contract/` is not module code and not checked (`LAYER_EXEMPT_ROOTS`); the guards live in `test/architecture/`, outside `src/`. Deep imports into another module stay banned for every layer.
-  - `Layers.architecture.spec.ts` checks every module: no file outside its layer folders and wiring files. `KNOWN_LAYER_VIOLATIONS` is empty and must stay empty.
-
-### Frontend directions
-
-- **cms-admin layers** (higher imports lower, never the reverse): `main.tsx` → `app/` (composition root: store, providers, shell, routes) → `features/*` → `components/`, `lib/` → `config/`. `lib/` and `components/` import no feature and no `app/`; features import no `app/`. Only `app/` imports `features/auth/app-wiring.ts`.
-- **cms-admin feature order** (a feature imports only features to its left, via their `index.ts`): `auth` < `security` < `content-types` < `access` < `media` < `content`, `reviewer`. `status` imports no other feature. `content-types` owns the `ContentType` / `ContentTypeField` model and `getContentTypes`, read by `access`, `media`, `content` and `reviewer`.
-- **web layers** (amended 2026-10-31, ADR 0017 §6): `app/` (pages, shell incl. `AccountMenu`, BFF route files `app/bff/v1/**/route.ts`) → `features/*` → `features/session` → `apis/` (browser client of the BFF; cms-api server clients and the BFF pipeline in `apis/server/`) → `libs/`, `utils/` → `configs/`. A BFF route file only binds its path to `defineBffRoute(...)` with one feature function. `apis/server/**` imports no feature. `auth`, `status` and `cv` import no feature other than `session`. Cross-feature imports go through `index.ts`. No `reviewer` feature on web.
+The import rules that this map drives: [apps/cms-api/RULES.md](../../apps/cms-api/RULES.md) (cms-api), [apps/cms-admin/RULES.md](../../apps/cms-admin/RULES.md), [apps/web/RULES.md](../../apps/web/RULES.md).

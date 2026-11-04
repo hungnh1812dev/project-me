@@ -1,6 +1,11 @@
+---
+summary: REST, GraphQL and web BFF endpoints
+replaces: §9
+---
+
 # API contract (v1 outline)
 
-Part of the [project spec](../../SPEC.md); moved from the old SPEC §9. Global: it applies to every flow in `docs/flows/`.
+Part of the [project spec](../../../SPEC.md). Reference: definitions and values only; the rules that use them are in the `RULES.md` files.
 
 All routes sit under `/api/v1`. One error shape: `{ statusCode, errorCode, message, details?, requestId }`.
 

@@ -1,15 +1,16 @@
 ---
 flow: sign-in
+replaces: §16, §16.1, §16.2, §16.3, §16.4, §16.5, §16.6, RM-1..RM-6, Q-RM1..Q-RM8, D22
 summary: Login with password and the 2FA step, remember me, refresh, sign-out; cms-admin and the web BFF
 ---
 
 # Sign-in: spec
 
-Part of the [project spec](../../../SPEC.md). Flow `sign-in`: [SPEC.md](SPEC.md) (what it must do) · [FLOW.md](FLOW.md) (steps and modules) · [RULE.md](RULE.md) (rules every change must keep).
+Part of the [project spec](../../../SPEC.md). Flow `sign-in`: [SPEC.md](SPEC.md) (what it must do) · [FLOW.md](FLOW.md) (steps and modules) · [RULES.md](RULES.md) (rules every change must keep).
 
 ## Behaviour
 
-An invited account signs in with email and password, then with a second factor when 2FA is on, in cms-admin and on the web site (through the web BFF). The session is a short access token plus a rotating refresh token; refresh, sign-out and session revocation keep the rules of D9 and D14, and the web BFF holds every token server-side (D21). Endpoints: [api-contract.md](../../global/api-contract.md) rows "Auth" and "Web BFF". Values (TTL, cookie, 2FA temp token): [canonical-values.md](../../global/canonical-values.md).
+An invited account signs in with email and password, then with a second factor when 2FA is on, in cms-admin and on the web site (through the web BFF). The session is a short access token plus a rotating refresh token; refresh, sign-out and session revocation keep the rules of D9 and D14, and the web BFF holds every token server-side (D21). Endpoints: [api-contract.md](../../global/reference/api-contract.md) rows "Auth" and "Web BFF". Values (TTL, cookie, 2FA temp token): [canonical-values.md](../../global/reference/canonical-values.md).
 
 ### Remember me
 
@@ -74,9 +75,11 @@ Scope (Q-RM1, user): both sign-ins, cms-admin and apps/web, with the cms-api ide
 10. Tier 2 browser (Chromium, apps/web, after web-bff-hardening): sign in unticked, with and without 2FA → `__Host-abyss_web_session` has `expires === -1`; ticked → about 7 days; a BFF refresh keeps each mode; the browser still holds no access or refresh token (§12 criterion 22).
 11. Tier 3: through the smoke proxy, both modes' `Set-Cookie` for `__Secure-abyss_rt` keep `HttpOnly; Secure; SameSite=Strict; Path=/api/v1/auth` and no `Domain`, and for `__Host-abyss_web_session` keep the D21 flags (`HttpOnly; Secure; SameSite=Strict; Path=/`, no `Domain`); only `Max-Age` differs.
 
-Global success criteria of this flow ([success-criteria.md](../../global/success-criteria.md)): 10, 17, 22, 24, 26, 27.
+Global success criteria of this flow ([ACCEPTANCE.md](../../global/ACCEPTANCE.md)): 10, 17, 22, 24, 26, 27.
 
 ## Decisions
+
+**D22 Remember me (added 2026-11-03, user request, approved 2026-11-03; §16, feature `remember-me`).** "Keep me signed in" is a choice per sign-in, stored on the refresh token family (`refresh_tokens.remember_me`) and copied on every rotation; on two-factor sign-ins it travels in the signed 2FA temp token (claim `rm`). Remembered: persistent cookie (`Max-Age` 7 days) and 7-day sliding server lifetime; not remembered (default): session cookie and 12-hour sliding server lifetime. cms-api alone enforces the lifetime (`expires_at`); the cookie mode only decides whether the browser keeps the cookie after it closes. Cookie names, flags and paths, rotation and reuse detection (D9) and every other session rule are unchanged.
 
 Answered by the user (2026-11-03): Q-RM1 both cms-admin and apps/web (web part after web-bff-hardening) · Q-RM2 ticked 7 days sliding, unticked a session cookie with a 12-hour sliding server lifetime · Q-RM3 unticked by default · Q-RM4 the email is not remembered; label "Keep me signed in", hint "Use this only on a device you trust." · Q-RM5 names `rememberMe`, `refresh_tokens.remember_me` (default `true` for existing rows), claim `rm`, `SESSION_REFRESH_TOKEN_TTL_MS`, `refreshTokenTtlMsOf`.
 

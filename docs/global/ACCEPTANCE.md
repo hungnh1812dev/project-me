@@ -1,6 +1,13 @@
-# Success criteria (each one is an automated test)
+---
+summary: Success criteria (numbering kept) with the flow of each, and the testing strategy
+replaces: §11, §12
+---
 
-Part of the [project spec](../../SPEC.md); moved from the old SPEC §12. Global: it applies to every flow in `docs/flows/`. Numbers are kept, so `§12-n` means criterion n here. The tests that prove each criterion: [docs/modules/success-criteria.md](../modules/success-criteria.md).
+# Acceptance
+
+Part of the [project spec](../../SPEC.md). `§12-n` means success criterion n below. The tests that prove each criterion: [docs/modules/success-criteria.md](../modules/success-criteria.md).
+
+## Success criteria (each one is an automated test)
 
 1. The owner can be created once: by `owner:bootstrap` or by `POST /setup/owner` with the valid setup token. A second attempt by either path fails; concurrent attempts (route + CLI) give exactly one owner. The setup route answers 401 for a wrong token, 404 when no token is configured or an owner exists. No other HTTP route can create an owner.
 2. No self-registration route (`POST /auth/register` → 404).
@@ -30,18 +37,29 @@ Part of the [project spec](../../SPEC.md); moved from the old SPEC §12. Global:
 26. cms-admin sign-in (§16 acceptance 4, 5): `POST /auth/login` with `rememberMe: true` sets `__Secure-abyss_rt` with `Max-Age=604800`; with `false` or absent it is a session cookie (no `Max-Age`, no `Expires`); refresh and both 2FA paths keep the family's mode; a not-remembered refresh token presented 12 hours plus 1 s after its last rotation → 401 and the cookie is cleared, while a remembered one still rotates.
 27. Web sign-in (§16 acceptance 10): unticked, with and without 2FA, `__Host-abyss_web_session` is a session cookie; ticked, it expires about 7 days from now; a BFF refresh keeps each mode; the browser still holds no access or refresh token (criterion 22).
 
-## By flow
+### By flow
 
-| Flow                                                  | Criteria                                                               |
-| ----------------------------------------------------- | ---------------------------------------------------------------------- |
-| [sign-in](../flows/sign-in/SPEC.md)                   | 10, 17, 22, 24, 26, 27                                                 |
-| [password](../flows/password/SPEC.md)                 | 9, 10                                                                  |
-| [owner-setup](../flows/owner-setup/SPEC.md)           | 1                                                                      |
-| [access-admin](../flows/access-admin/SPEC.md)         | 2, 6, 7, 11                                                            |
-| [content-modeling](../flows/content-modeling/SPEC.md) | 16                                                                     |
-| [content-editing](../flows/content-editing/SPEC.md)   | 4, 5, 12, 14                                                           |
-| [media](../flows/media/SPEC.md)                       | 13                                                                     |
-| [public-site](../flows/public-site/SPEC.md)           | 14, 19, 21, 25                                                         |
-| [reviewer](../flows/reviewer/SPEC.md)                 | 3, 20                                                                  |
-| [security-audit](../flows/security-audit/SPEC.md)     | 18                                                                     |
-| global (no single flow)                               | 8 (client IP, D7), 15 (production guards, D17), 23 (BFF pipeline, D21) |
+| Flow                                                                   | Criteria                                                               |
+| ---------------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| [sign-in](../flows/sign-in/SPEC.md)                                    | 10, 17, 22, 24, 26, 27                                                 |
+| [password](../flows/password/SPEC.md)                                  | 9, 10                                                                  |
+| [owner-setup](../flows/owner-setup/SPEC.md)                            | 1                                                                      |
+| [access-admin](../flows/access-admin/SPEC.md)                          | 2, 6, 7, 11                                                            |
+| [content-modeling](../flows/content-modeling/SPEC.md)                  | 16                                                                     |
+| [content-editing](../flows/content-editing/SPEC.md)                    | 4, 5, 12, 14                                                           |
+| [media](../flows/media/SPEC.md)                                        | 13                                                                     |
+| [public-site](../flows/public-site/SPEC.md)                            | 14, 19, 21, 25                                                         |
+| [reviewer](../flows/reviewer/SPEC.md)                                  | 3, 20                                                                  |
+| [security-audit](../flows/security-audit/SPEC.md)                      | 18                                                                     |
+| several flows ([RULES.md](RULES.md), [apps/web](../apps/web/RULES.md)) | 8 (client IP, D7), 15 (production guards, D17), 23 (BFF pipeline, D21) |
+
+## Testing strategy
+
+| Level       | Tool                                   | Where                           | Required for                                                                  |
+| ----------- | -------------------------------------- | ------------------------------- | ----------------------------------------------------------------------------- |
+| Unit        | Jest (API), Vitest (UI)                | next to source, `*.spec.ts(x)`  | pure logic: policy evaluator, DSL compiler, generator, serializers, parsers   |
+| Integration | Jest + Supertest + Testcontainers PG16 | `apps/cms-api/test/integration` | every endpoint: happy path, 401, 403, validation, plus the §12 security cases |
+| Component   | Vitest + Testing Library               | `packages/form-commons`         | every exported component: props, a11y attributes, RHF integration             |
+| E2E         | Playwright                             | `apps/e2e`                      | critical flows in §12 (login+2FA, edit+conflict, publish, reviewer, masking)  |
+
+Coverage target: ≥ 80 % lines on `access`, `identity`, `documents` and `content-engine`. Every task in `tasks/todo.md` lands with its own tests; no "test phase" at the end.

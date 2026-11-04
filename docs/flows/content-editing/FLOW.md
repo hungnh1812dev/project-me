@@ -5,7 +5,7 @@ modules: apps/cms-api/src/modules/documents, apps/cms-api/src/modules/access, ap
 
 # Content editing: flow
 
-Part of the [project spec](../../../SPEC.md). Flow `content-editing`: [SPEC.md](SPEC.md) (what it must do) · [FLOW.md](FLOW.md) (steps and modules) · [RULE.md](RULE.md) (rules every change must keep).
+Part of the [project spec](../../../SPEC.md). Flow `content-editing`: [SPEC.md](SPEC.md) (what it must do) · [FLOW.md](FLOW.md) (steps and modules) · [RULES.md](RULES.md) (rules every change must keep).
 
 ## Actors
 
@@ -54,27 +54,9 @@ sequenceDiagram
   Note over P: activity recorder is told after commit, its failure never fails the request
 ```
 
-## Authorization decision (every content request)
+## Authorization decision
 
-```mermaid
-flowchart TB
-  r(["request"]) --> auth{"credentials?"}
-  auth -->|"none"| anon["public actor"]
-  auth -->|"Bearer ak_live_"| tok["API token: scope ∩ creator's current permissions"]
-  auth -->|"Bearer JWT"| jwt["JWT: HS256, kid, tv and pv vs DB (cache)"]
-  auth -->|"invalid"| e401["401"]
-  anon --> pg{"PermissionGuard: can(action, subject)?"}
-  tok --> pg
-  jwt --> pg
-  pg -->|"unknown content type"| e404["404"]
-  pg -->|"no"| e403["403"]
-  pg -->|"yes"| uc["use case"]
-  uc --> rf["row filter from conditions"]
-  uc --> fp["field projection: unreadable columns never selected"]
-  uc --> qa{"filter / sort on unreadable field?"}
-  qa -->|"yes"| e400["400 FIELD_NOT_READABLE"]
-  qa -->|"no"| ser["RecordSerializer: *** / null + _maskedFields"]
-```
+Every content request is authorized as in [apps/cms-api/FLOW.md](../../apps/cms-api/FLOW.md) "Authorization decision".
 
 ## Modules in this flow
 

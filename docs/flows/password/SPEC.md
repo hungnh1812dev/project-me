@@ -1,11 +1,12 @@
 ---
 flow: password
+replaces: 
 summary: Invitation acceptance (set password), forgot and reset password, signed-in password change
 ---
 
 # Password: spec
 
-Part of the [project spec](../../../SPEC.md). Flow `password`: [SPEC.md](SPEC.md) (what it must do) · [FLOW.md](FLOW.md) (steps and modules) · [RULE.md](RULE.md) (rules every change must keep).
+Part of the [project spec](../../../SPEC.md). Flow `password`: [SPEC.md](SPEC.md) (what it must do) · [FLOW.md](FLOW.md) (steps and modules) · [RULES.md](RULES.md) (rules every change must keep).
 
 ## Behaviour
 
@@ -14,7 +15,7 @@ Part of the [project spec](../../../SPEC.md). Flow `password`: [SPEC.md](SPEC.md
 - **Change (signed in):** `POST /auth/password/change` on `/settings/password`; it ends every session after success ([change-password module doc](../../modules/cms-admin/change-password.md)).
 - A change or reset bumps `token_version`, so old access tokens fail on the next request (D9).
 
-Endpoints: [api-contract.md](../../global/api-contract.md) row "Password". Values (OTP): [canonical-values.md](../../global/canonical-values.md).
+Endpoints: [api-contract.md](../../global/reference/api-contract.md) row "Password". Values (OTP): [canonical-values.md](../../global/reference/canonical-values.md).
 
 ## Requirements
 
@@ -22,7 +23,7 @@ The requirements of this flow are global decisions: D8 (Argon2id, minimum 12 cha
 
 ## Acceptance
 
-Global success criteria of this flow ([success-criteria.md](../../global/success-criteria.md)): 9 (OTP attempts, issue limit, no enumeration), 10 (old access tokens fail after a reset).
+Global success criteria of this flow ([ACCEPTANCE.md](../../global/ACCEPTANCE.md)): 9 (OTP attempts, issue limit, no enumeration), 10 (old access tokens fail after a reset).
 
 ## Decisions
 

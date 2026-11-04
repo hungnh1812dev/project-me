@@ -1,17 +1,18 @@
 ---
 flow: media
+replaces: §15, §15.1, §15.2, §15.3, §15.4, MU-1..MU-5, §14 Q-MU1..Q-MU6, D12
 summary: Media library: upload with progress, replace in place, alt text, delete while unreferenced, purge; stored file names
 ---
 
 # Media: spec
 
-Part of the [project spec](../../../SPEC.md). Flow `media`: [SPEC.md](SPEC.md) (what it must do) · [FLOW.md](FLOW.md) (steps and modules) · [RULE.md](RULE.md) (rules every change must keep).
+Part of the [project spec](../../../SPEC.md). Flow `media`: [SPEC.md](SPEC.md) (what it must do) · [FLOW.md](FLOW.md) (steps and modules) · [RULES.md](RULES.md) (rules every change must keep).
 
 ## Behaviour
 
-Editors upload files to the File Library (`/media`) and from a media field, replace a file in place, edit alt text, and delete files no document references; a job purges cloud objects afterwards. Uploads are checked by magic bytes, images are re-encoded, and the stored name carries the first 8 hex of the file hash. The full decision is D12 in [RULE.md](RULE.md).
+Editors upload files to the File Library (`/media`) and from a media field, replace a file in place, edit alt text, and delete files no document references; a job purges cloud objects afterwards. Uploads are checked by magic bytes, images are re-encoded, and the stored name carries the first 8 hex of the file hash. The full decision is D12 in Decisions below.
 
-Endpoints: [api-contract.md](../../global/api-contract.md) row "Media". Values (upload limits, upload request timeout): [canonical-values.md](../../global/canonical-values.md).
+Endpoints: [api-contract.md](../../global/reference/api-contract.md) row "Media". Values (upload limits, upload request timeout): [canonical-values.md](../../global/reference/canonical-values.md).
 
 ### Upload fixes (2026-11-03, user report)
 
@@ -78,9 +79,11 @@ Scope: the cms-admin upload dialog, the File Card (`MediaGrid` card) and `MediaI
 7. Tier 2 browser (Chromium): the upload dialog shows the indeterminate bar after sending and no 100 % before the row is done; dialog rows, File Card and `MediaInput` show long names with the extension visible; the `MediaInput` frame is visible.
 8. Manual (user, Safari on macOS; no WebKit e2e project, Q-MU4): the bar no longer sits at 100 % while waiting; a 50 MB video upload completes.
 
-Global success criterion of this flow ([success-criteria.md](../../global/success-criteria.md)): 13.
+Global success criterion of this flow ([ACCEPTANCE.md](../../global/ACCEPTANCE.md)): 13.
 
 ## Decisions
+
+**D12 Media.** Type detected from magic bytes against an allowlist (`jpeg png webp gif avif pdf mp4`); SVG and HTML always rejected. Images re-encoded with sharp (strips EXIF/GPS). Storage keys UUIDv7; full SHA-256 stored for dedupe. Soft delete, blocked (`409 MEDIA_IN_USE`) while any document references the file; a job purges cloud objects afterwards. The stored `fileName` is `<stem>_<hash8>.<ext>` (§15 MU-3); existing rows are renamed by one SQL migration; storage keys stay UUIDv7.
 
 | # | Question | Recommendation |
 |---|---|---|

@@ -1,6 +1,11 @@
-# Project structure and naming
+---
+summary: Project tree and the file-name word vocabulary
+replaces: §5 tree, §5 Words in use
+---
 
-Part of the [project spec](../../SPEC.md); moved from the old SPEC §5. Global: it applies to every flow in `docs/flows/`.
+# Project structure
+
+Part of the [project spec](../../../SPEC.md). Reference: definitions and values only; the rules that use them are in the `RULES.md` files.
 
 ```
 abyss/
@@ -54,16 +59,7 @@ abyss/
 
 Tree names are the names on disk today and predate the naming rule (ADR 0008); the code is the authority for exact names. Phase FN tasks rename them to the rule below; the planner updates the tree when phase FN closes.
 
-Naming rules (ADR 0008, user decisions 2026-10-25/26, revision 3 accepted 2026-10-26 with Q-FN12..Q-FN16): one format in every TypeScript package (cms-api, cms-admin, web, form-commons, e2e, base-config), for `.ts`, `.tsx`, `.js`, `.jsx`, `.mjs` only; other file types (CSS, JSON, Markdown, shell scripts, images) keep their conventions (Q-FN13). The general rule is `code-standards` §4.5 "File and folder names" (agent layer, project-agnostic; each project has its own copy, naming nothing from this repo, Q-FN15): folders `kebab-case`; files `<use><PascalCase>.<feature>.<ext>`, `<use>` only when the main export is one React hook, `<feature>` one optional word only when needed, never by habit. Repo specifics:
-
-- Framework folder syntax kept (Next.js `[param]`, `(group)`, `_private`); e.g. `content-engine/`, `bulk-action-bar/`.
-- Files `<PascalName>.<feature>.<ext>` when a word is needed (`Health.controller.ts`, `TransactionRunner.port.ts`, `ApiTokenExpiry.rules.ts`), else `<PascalName>.<ext>`. `<PascalName>` never repeats its word (`Security.errors.ts`, not `SecurityError.errors.ts`); error files `<Feature>.errors.ts`, or `<Flow>.errors.ts` when a feature has several (`Login.errors.ts`). Hooks: `use<PascalName>.<ext>`, no hook word (`useSetupStatus.ts`, `useCurrentUser.ts`, `useHumanCheck.tsx`; Q-FN12); a word only if the general rule needs one (tool/config selects by it, or it separates same-named files in a folder), none today. Hook words `query`, `mutation`, `state` are retired; task FN-hook-rename drops them from the 16 hook files still carrying them.
-- Word test (first match decides): one hook → `use<PascalName>.<ext>`; several TanStack hooks of one feature → `<Feature>.queries.ts`, no `use`; one React component (pages included) → no word, file = component name (`LoginPage.tsx`, `Button.tsx`); cms-api and apps/e2e files always carry a word (Nest roles, layer rules, Playwright / Jest globs select by it); otherwise only when a tool/config selects by it or it separates same-named files in a folder.
-- Open word set (revision 3): the table below is the vocabulary in use, not an allow-list; one meaning, one word. If no row fits, the builder picks one plain lower-case word, never vague (`helper`, `util`, `utils`, `misc`, `common`, `types`, `component`), lists it in the unit record, and the planner adds the row. No guard or constants file lists the words.
-- Tests: package suffix on the full name, `.spec.ts` in cms-api and e2e (e2e `tests/`), `.test.ts(x)` elsewhere and for the e2e `node:test` checks in `apps/e2e/src/` (`AccessPolicy.service.spec.ts`, `useSetupStatus.test.ts`, `LoginPage.test.tsx`); scenario splits add one lower-case variant before the suffix (`AccountMenu.login.test.tsx`).
-- Kept as is: framework-fixed names (`index.ts`, `main.ts(x)`, `.d.ts`, Next.js `page.tsx` / `layout.tsx` / `not-found.tsx`, `proxy.ts`, `instrumentation.ts`), package-root tool configs (`vite.config.ts`, `eslint.config.mjs`, ...), generated code. Types-only and re-export-only files merge into their nearest neighbour (`code-standards` §4.4).
-- Check: ESLint rule `abyss/file-names` (owner `@abyss/base-config/eslint`), on via `baseEslint({ fileNames })` for `src/`, `test/`, `tests/` of each package passing `fileNames` (all six after FN-lint-*; ADR 0008 revision 3). It checks `.ts`, `.tsx`, `.js`, `.jsx`, `.mjs` (Q-FN13): shape (no word list), kebab-case folders, `use` prefix <-> one exported React hook, a word repeating its name, the required word (cms-api, e2e), test suffix per folder. Each package passes only its options (framework file names, route-segment folders, test suffixes, word required). Whether a word was needed is a review check, not lint. Until FN-lint-api / -ui / -e2e land, the per-package `FileNames.architecture.spec.ts` / `.test.ts` guards stay.
-- A `.port.ts` sits in a cms-api module's `application/`, in `src/infrastructure/` (role `port`: `application/` may import it), or in a `src/common/` pipeline folder as a seam the app binds (its folder's role, e.g. `pipeline`: only `http/` may import it; `ThrottleSubject.port.ts`). One endpoint map per frontend in `src/config/` (`Api.endpoints.ts`), one for e2e in `apps/e2e/src/Api.endpoints.ts` (FN-e2e-2).
+The naming rules: [RULES.md](../RULES.md) "Naming".
 
 Words in use (open vocabulary; at most one per file; the planner adds a row when a builder reports a new word; React components have no row on purpose; "Where" = used today):
 
@@ -101,7 +97,3 @@ Words in use (open vocabulary; at most one per file; the planner adds a row when
 | `slice`                                      | cms-admin                                            | a Redux Toolkit slice                                                                                | `Auth.slice.ts`                                                   |
 | `copy`                                       | frontends                                            | one copy section                                                                                     | `Access.copy.ts`                                                  |
 | `graphql`, `server`                          | web                                                  | a GraphQL document; server-only code                                                                 | `CvPage.graphql.ts`, `Content.server.ts`                          |
-
-Constants placement (Q-A1): a constant lives next to its one owning module or feature, in `<Module>.constants.ts` (cms-api) or `features/<feature>/<Feature>.constants.ts` (frontends; lower-case names until phase FN renames them); others read it through the owner's `index.ts`. cms-api `common/constants/` and frontend `config/` hold only values shared by several modules or the app shell (env, endpoints, routes, HTTP, auth, copy).
-
-Web rules: Server Components by default; `'use client'` only for state, effects, handlers, browser APIs, TanStack Query, react-hook-form or any `@abyss/form-commons` import. Files that read server env or call `API_INTERNAL_URL` import `server-only`. The browser never holds a user token and never calls cms-api: every browser call goes to the BFF Route Handlers under `/bff/v1` on the web origin, which keep the cms-api tokens in a sealed HttpOnly cookie (D21, amended 2026-10-31, ADR 0017; replaces the earlier "the Next server never holds a token" rule). No Server Actions. No `store/` on web.
