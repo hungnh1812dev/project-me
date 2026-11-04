@@ -30,14 +30,14 @@ const OTHER_VIEW_BAN = {
     'A view folder imports no other view; move a part two pages share to features/ or components/.',
 };
 
-const COPY_FILE_BAN = {
-  group: ['**/configs/copy/*.copy'],
+const LOCALE_FILE_BAN = {
+  group: ['**/configs/locales/*/*'],
   message:
-    'Read text through COPY (configs/Copy.constants); a section file belongs to configs/copy/ only.',
+    'Read text through @configs/locales (loadScreenText, useScreenText, COMMON_TEXT); a locale file belongs to configs/locales/ only.',
 };
-const COPY_SIBLING_BAN = {
-  regex: '^\\./(?!Common\\.copy$)[^/]+\\.copy$',
-  message: 'A copy section file imports no other section; only Common.copy.',
+const LOCALE_SIBLING_BAN = {
+  regex: '^\\./(?!Common$)[^/]+$',
+  message: 'A locale section file imports no other section; only Common.',
 };
 
 const FEATURE_CONSTANTS_BAN = {
@@ -55,7 +55,7 @@ const importBoundary = (files, patterns, ignores = []) => ({
   files,
   ignores,
   rules: {
-    'no-restricted-imports': ['error', { patterns: [...patterns, COPY_FILE_BAN] }],
+    'no-restricted-imports': ['error', { patterns: [...patterns, LOCALE_FILE_BAN] }],
   },
 });
 
@@ -173,9 +173,14 @@ export default [
     },
   },
   {
-    files: ['src/configs/copy/*.copy.ts'],
+    files: ['src/configs/locales/*/*.ts'],
+    ignores: [
+      'src/configs/locales/*/index.ts',
+      'src/configs/locales/*/index.test.ts',
+      'src/configs/locales/*/CopySnapshot.fixture.ts',
+    ],
     rules: {
-      'no-restricted-imports': ['error', { patterns: [COPY_SIBLING_BAN] }],
+      'no-restricted-imports': ['error', { patterns: [LOCALE_SIBLING_BAN] }],
     },
   },
   {

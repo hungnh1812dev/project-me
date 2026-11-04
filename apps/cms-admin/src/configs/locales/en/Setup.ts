@@ -1,4 +1,4 @@
-import { PASSWORD_LENGTH } from '../Auth.constants';
+import { PASSWORD_LENGTH } from '../../Auth.constants';
 
 export const SETUP_COPY = {
   title: 'Set up the owner account',
