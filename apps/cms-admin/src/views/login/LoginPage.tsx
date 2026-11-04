@@ -92,7 +92,7 @@ export function LoginPage() {
       }
     },
     onError: (cause) => {
-      setError(toLoginError(cause));
+      setError(toLoginError(cause, { login: COPY.login }));
       form.resetField('password');
       form.setFocus('password');
     },

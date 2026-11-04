@@ -230,6 +230,7 @@
       "apiTokens": "API tokens",
       "media": "File Library",
       "reviewer": "Reviewers",
+      "backups": "Backups",
       "content": "Content",
       "singleTypes": "Single types",
       "collectionTypes": "Collection types",
@@ -962,7 +963,6 @@
     }
   },
   "backups": {
-    "nav": "Backups",
     "title": "Backups",
     "description": "Nightly database backups, stored off the server. Only the owner can download them.",
     "check": {

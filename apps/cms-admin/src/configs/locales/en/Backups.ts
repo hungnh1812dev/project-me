@@ -1,5 +1,4 @@
 export const BACKUPS_COPY = {
-  nav: 'Backups',
   title: 'Backups',
   description: 'Nightly database backups, stored off the server. Only the owner can download them.',
   check: {

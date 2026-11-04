@@ -191,7 +191,7 @@ describe('BackupsPage', () => {
 describe('Backups nav item', () => {
   it('shows for the owner without any request', async () => {
     const { api } = await open(TEST_USER, {}, APP_ROUTES.HOME);
-    expect(await screen.findByRole('link', { name: copy.nav })).toHaveAttribute(
+    expect(await screen.findByRole('link', { name: COPY.access.nav.backups })).toHaveAttribute(
       'href',
       APP_ROUTES.BACKUPS,
     );
@@ -201,6 +201,6 @@ describe('Backups nav item', () => {
   it('is hidden for an admin', async () => {
     await open(admin, {}, APP_ROUTES.HOME);
     await screen.findByRole('navigation', { name: COPY.access.nav.label });
-    expect(screen.queryByRole('link', { name: copy.nav })).toBeNull();
+    expect(screen.queryByRole('link', { name: COPY.access.nav.backups })).toBeNull();
   });
 });

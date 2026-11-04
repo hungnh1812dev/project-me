@@ -48,15 +48,26 @@ class LoadFailureBoundary extends Component<LoadFailureBoundaryProps, { hasFaile
  */
 export function ScreenTextBoundary({
   screens = NO_SCREENS,
+  fallback,
   children,
 }: {
   screens?: readonly ScreenName[] | undefined;
+  /** What shows while the text loads; the page skeleton when omitted. */
+  fallback?: ReactNode;
   children: ReactNode;
 }) {
   const [attempt, setAttempt] = useState(0);
   return (
     <LoadFailureBoundary key={attempt} onRetry={() => setAttempt((count) => count + 1)}>
-      <Suspense fallback={<TitleSkeleton label={COMMON_TEXT.common.loadingPage} />}>
+      <Suspense
+        fallback={
+          fallback === undefined ? (
+            <TitleSkeleton label={COMMON_TEXT.common.loadingPage} />
+          ) : (
+            fallback
+          )
+        }
+      >
         <ScreenTextGate screens={screens}>{children}</ScreenTextGate>
       </Suspense>
     </LoadFailureBoundary>

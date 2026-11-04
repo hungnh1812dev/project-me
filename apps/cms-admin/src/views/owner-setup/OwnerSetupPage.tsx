@@ -93,7 +93,7 @@ export function OwnerSetupPage() {
       void queryClient.invalidateQueries({ queryKey: SETUP_STATUS_QUERY_KEY });
     },
     onError: (cause) => {
-      const error = toSetupError(cause);
+      const error = toSetupError(cause, { setup: COPY.setup });
       switch (error.kind) {
         case 'token-invalid':
           form.setError(

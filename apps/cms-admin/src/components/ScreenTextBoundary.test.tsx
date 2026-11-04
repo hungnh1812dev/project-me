@@ -90,6 +90,20 @@ describe('ScreenTextBoundary', () => {
     expect(screen.getByText('page body')).toBeInTheDocument();
   });
 
+  it('shows the given fallback instead of the loading label', async () => {
+    const login = deferred();
+    loadMock.mockReturnValue(login.promise as never);
+    await renderInAct(
+      <ScreenTextBoundary screens={['login']} fallback={null}>
+        <p>page body</p>
+      </ScreenTextBoundary>,
+    );
+    expect(screen.queryByText(COMMON_TEXT.common.loadingPage)).not.toBeInTheDocument();
+    expect(screen.queryByText('page body')).not.toBeInTheDocument();
+    await runInAct(() => login.resolve({}));
+    expect(screen.getByText('page body')).toBeInTheDocument();
+  });
+
   it('renders at once when no screens are listed', () => {
     render(
       <ScreenTextBoundary>

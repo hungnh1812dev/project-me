@@ -80,6 +80,7 @@ export const NAV_COPY = {
   apiTokens: 'API tokens',
   media: 'File Library',
   reviewer: 'Reviewers',
+  backups: 'Backups',
   content: 'Content',
   singleTypes: 'Single types',
   collectionTypes: 'Collection types',
