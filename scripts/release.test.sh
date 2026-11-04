@@ -151,6 +151,14 @@ release tag
 check "tag: refused without a CHANGELOG heading" "$(refused_with "no '## 0.1.0' heading")"
 printf '# Changelog\n\n## 0.1.0 - 2026-01-01\n' >CHANGELOG.md && commit "docs(root): heading" >/dev/null && git push -q origin main
 
+web_package_ok="$(cat apps/web/package.json)"
+sed -i.bak 's/"version": "1.0.0"/"version": "1.0"/' apps/web/package.json && rm apps/web/package.json.bak
+commit "chore(web): malformed app version" >/dev/null && git push -q origin main
+release tag
+check "tag: refused when release-apps.sh fails, no tag created" \
+  "$(yes_if grep -qF 'release-apps.sh refused v0.1.0' "${errors}" && ! git rev-parse -q --verify refs/tags/v0.1.0 >/dev/null)"
+printf '%s\n' "${web_package_ok}" >apps/web/package.json && commit "chore(web): restore app version" >/dev/null && git push -q origin main
+
 origin_refs_before="$(git --git-dir="${origin}" for-each-ref | sort)"
 
 # ---- first release: every app tagged
