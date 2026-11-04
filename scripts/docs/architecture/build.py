@@ -178,7 +178,7 @@ def build_master():
     ['<code>0008</code>', 'File naming: kebab-case folders, &lt;PascalName&gt;.&lt;function&gt;.&lt;ext&gt; files', 'accepted (renames in progress)'],
     ['<code>0009</code>', 'cms-api uses NestJS CLI defaults (nest build / start)', 'proposed'],
 ])}
-<p class="muted">Sources: <code>SPEC.md</code> (the authority), <code>docs/adr/*</code>, <code>docs/modules/*</code>, <code>docs/ci-cd.md</code>, <code>docs/local-run.md</code>, <code>docs/deployment/*</code>.</p>
+<p class="muted">Sources: <code>SPEC.md</code>, <code>docs/flows/*</code>, <code>docs/global/*</code> (the authority), <code>docs/adr/*</code>, <code>docs/modules/*</code>, <code>docs/ci-cd.md</code>, <code>docs/local-run.md</code>, <code>docs/deployment/*</code>.</p>
 """
     write('project-architecture.html', 'Abyss project architecture', body,
           'Master page. Start here for the big picture, then open the topic pages on the left.')
@@ -250,7 +250,7 @@ def build_system():
 ├─ .github/           workflows (ci, cms-api, app-checks, _publish) · scripts
 ├─ docker-compose.dev.yml     Postgres + Mailpit for the dev stack
 ├─ docker-compose.smoke.yml   full prod-like stack behind Traefik (local only)
-├─ SPEC.md            the spec (authority over everything else)
+├─ SPEC.md            the spec index (authority over everything else) · docs/flows/ · docs/global/
 └─ turbo.json · pnpm-workspace.yaml · tsconfig.base.json</pre>
 """
     write('01-system-overview.html', 'System & monorepo', body,

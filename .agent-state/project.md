@@ -1,7 +1,7 @@
 # Project Profile
 Tasks: `tasks/todo.md` (open tasks only) - grep `**<ID>:` and read that entry (Acceptance, Verify, Files, Deps, SPEC § refs). Finished tasks: `tasks/done.md` (requirement + result).
 Phases: `tasks/plan.md` (features in build order, their open phases and checkpoint tables)
-Spec: `SPEC.md` - read only the § the task cites.
+Spec: root `SPEC.md` is the index (project description, scope, generated Flows and Modules tables, Old references). Flows: `docs/flows/<flow>/` with `SPEC.md` (requirements), `FLOW.md` (steps, modules) and `RULE.md` (rules every change must keep); global rules: `docs/global/`. Read only the part the task cites; an old `SPEC §n` / `Dn` / `§12-n` ref resolves through the root `SPEC.md` "Old references" table. Before working in a flow, read its `RULE.md` and `FLOW.md`. New or changed requirements go into the flow's `SPEC.md` (in place, plus a Change log line), never into the root `SPEC.md`.
 Scopes:
 - core-builder: `apps/cms-api`, `packages/base-config`, `.github/`, `turbo.json`, `docker-compose.smoke.yml`, `scripts/`, `docs/ci-cd.md` (the template at `.github_template/` is reference only; do not edit it)
 - ui-builder: `apps/cms-admin`, `apps/web`, `packages/form-commons`
@@ -29,6 +29,6 @@ Commands:
 - module docs: `.claude/bin/module-index` (regenerate file tables and `MODULES.md`), `--check`, `--new <module folder>`; module roots in `docs/modules/module-roots.txt`
 Tier 3 also when: `docker-compose.smoke.yml`, `scripts/stack/`, `scripts/smoke*`, any `apps/*/Dockerfile`, the cms-api env schema (`apps/cms-api/src/config/`), Traefik routing, the `deploy:migrate` / `content:migrate` CLIs
 E2E tests: `apps/e2e` (Playwright, Chromium)
-Docs to keep current: each app/package `README.md`, the module docs in `docs/modules/` (and the generated `MODULES.md`), ADRs in `docs/adr/`, each app's `.env.example`
-Security rules: `SPEC.md` §7 (Security Decisions), `docs/modules/access-control.md`
-Naming: `SPEC.md` §5 "Naming rules" (word vocabulary, word required in cms-api and apps/e2e, framework names, test suffixes) and `docs/adr/0008-file-naming-rule.md`; checked by `pnpm lint` (`abyss/file-names`; the per-package `FileNames.architecture.*` guards stay until the FN-lint tasks land)
+Docs to keep current: each app/package `README.md`, the module docs in `docs/modules/` (and the generated `MODULES.md`), the flow docs in `docs/flows/` (the root `SPEC.md` tables are generated), ADRs in `docs/adr/`, each app's `.env.example`
+Security rules: `docs/global/security.md` (old SPEC §7; lists where each D id lives), the flow's `RULE.md`, `docs/modules/access-control.md`
+Naming: `docs/global/project-structure.md` (old SPEC §5) "Naming rules" (word vocabulary, word required in cms-api and apps/e2e, framework names, test suffixes) and `docs/adr/0008-file-naming-rule.md`; checked by `pnpm lint` (`abyss/file-names`; the per-package `FileNames.architecture.*` guards stay until the FN-lint tasks land)
