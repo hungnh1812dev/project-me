@@ -1,6 +1,6 @@
 import { API_ENDPOINTS } from '@configs/Api.endpoints';
 import { APP_ROUTES } from '@configs/App.routes';
-import { COPY } from '@configs/Copy.constants';
+import { EN_TEXT } from '@configs/locales/en';
 import { deferred, type FakeReply } from '@test/FakeApi.fixture';
 import { createTestServices, renderApp, TEST_USER } from '@test/RenderApp.fixture';
 import { screen, waitFor } from '@testing-library/react';
@@ -22,7 +22,7 @@ async function openLogin(loginReply: () => FakeReply | Promise<FakeReply>) {
 
 const email = () => screen.getByLabelText(/^Email/);
 const password = () => screen.getByLabelText(/^Password/);
-const submit = () => screen.getByRole('button', { name: COPY.login.submit });
+const submit = () => screen.getByRole('button', { name: EN_TEXT.login.submit });
 
 async function fillAndSubmit(pw = PASSWORD) {
   await userEvent.type(email(), TEST_USER.email);
@@ -33,12 +33,14 @@ async function fillAndSubmit(pw = PASSWORD) {
 describe('LoginPage', () => {
   it('labels its fields and focuses the first invalid one on submit', async () => {
     const { api } = await openLogin(() => ({ status: 500 }));
-    expect(screen.getByRole('heading', { level: 1, name: COPY.login.title })).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { level: 1, name: EN_TEXT.login.title }),
+    ).toBeInTheDocument();
     await userEvent.click(submit());
 
     expect(email()).toHaveFocus();
-    expect(email()).toHaveAccessibleDescription(COPY.login.validation.emailRequired);
-    expect(password()).toHaveAccessibleDescription(COPY.login.validation.passwordRequired);
+    expect(email()).toHaveAccessibleDescription(EN_TEXT.login.validation.emailRequired);
+    expect(password()).toHaveAccessibleDescription(EN_TEXT.login.validation.passwordRequired);
     expect(api.callsTo(`POST ${LOGIN}`)).toHaveLength(0);
   });
 
@@ -47,7 +49,7 @@ describe('LoginPage', () => {
     await userEvent.type(email(), 'not-an-email');
     await userEvent.tab();
     expect(email()).toHaveAttribute('aria-invalid', 'true');
-    expect(email()).toHaveAccessibleDescription(COPY.login.validation.emailInvalid);
+    expect(email()).toHaveAccessibleDescription(EN_TEXT.login.validation.emailInvalid);
   });
 
   it('shows loading on the submit button, then signs in and leaves the page', async () => {
@@ -60,10 +62,10 @@ describe('LoginPage', () => {
     gate.resolve({ status: 200, data: { accessToken: 't1' } });
 
     expect(
-      await screen.findByRole('heading', { level: 1, name: COPY.page.title }),
+      await screen.findByRole('heading', { level: 1, name: EN_TEXT.page.title }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole('button', { name: COPY.session.accountMenu(TEST_USER.displayName) }),
+      screen.getByRole('button', { name: EN_TEXT.session.accountMenu(TEST_USER.displayName) }),
     ).toBeInTheDocument();
     expect(api.callsTo(`POST ${LOGIN}`)[0]?.data).toBe(
       JSON.stringify({ email: TEST_USER.email, password: PASSWORD }),
@@ -79,7 +81,7 @@ describe('LoginPage', () => {
     await fillAndSubmit('wrong');
 
     expect(await screen.findByRole('alert')).toHaveTextContent(
-      COPY.login.errors.invalidCredentials,
+      EN_TEXT.login.errors.invalidCredentials,
     );
     expect(password()).toHaveValue('');
     expect(password()).toHaveFocus();
@@ -93,14 +95,14 @@ describe('LoginPage', () => {
     }));
     await fillAndSubmit();
     expect(await screen.findByRole('alert')).toHaveTextContent(
-      COPY.login.errors.rateLimitedMinutes(14),
+      EN_TEXT.login.errors.rateLimitedMinutes(14),
     );
   });
 
   it('reports a network error', async () => {
     await openLogin(() => 'network-error');
     await fillAndSubmit();
-    expect(await screen.findByRole('alert')).toHaveTextContent(COPY.login.errors.network);
+    expect(await screen.findByRole('alert')).toHaveTextContent(EN_TEXT.login.errors.network);
   });
 
   it('sends an already signed-in user home', async () => {
@@ -111,17 +113,19 @@ describe('LoginPage', () => {
     await services.session.restore();
     renderApp(services, APP_ROUTES.LOGIN);
     await waitFor(() => {
-      expect(screen.getByRole('heading', { level: 1, name: COPY.page.title })).toBeInTheDocument();
+      expect(
+        screen.getByRole('heading', { level: 1, name: EN_TEXT.page.title }),
+      ).toBeInTheDocument();
     });
   });
 
   it('links to the password reset page', async () => {
     await openLogin(() => ({ status: 500 }));
-    await userEvent.click(screen.getByRole('link', { name: COPY.login.forgotPassword }));
+    await userEvent.click(screen.getByRole('link', { name: EN_TEXT.login.forgotPassword }));
     expect(
       screen.getByRole('heading', {
         level: 1,
-        name: COPY.password.reset.requestTitle,
+        name: EN_TEXT.password.reset.requestTitle,
       }),
     ).toBeInTheDocument();
   });
@@ -140,8 +144,8 @@ describe('LoginPage', () => {
 
     it('offers the owner setup while it is open', async () => {
       await openLoginWithStatus(() => ({ status: 200, data: { open: true } }));
-      expect(await screen.findByText(COPY.login.setupPrompt.message)).toBeInTheDocument();
-      expect(screen.getByRole('link', { name: COPY.login.setupPrompt.action })).toHaveAttribute(
+      expect(await screen.findByText(EN_TEXT.login.setupPrompt.message)).toBeInTheDocument();
+      expect(screen.getByRole('link', { name: EN_TEXT.login.setupPrompt.action })).toHaveAttribute(
         'href',
         APP_ROUTES.SETUP,
       );
@@ -150,16 +154,18 @@ describe('LoginPage', () => {
     it('shows nothing extra when the setup is closed', async () => {
       await openLoginWithStatus(() => ({ status: 200, data: { open: false } }));
       await waitFor(() => {
-        expect(screen.queryByText(COPY.login.setupPrompt.message)).not.toBeInTheDocument();
+        expect(screen.queryByText(EN_TEXT.login.setupPrompt.message)).not.toBeInTheDocument();
       });
     });
 
     it('shows nothing extra when the status call fails', async () => {
       await openLoginWithStatus(() => ({ status: 500 }));
       await waitFor(() => {
-        expect(screen.queryByText(COPY.login.setupPrompt.message)).not.toBeInTheDocument();
+        expect(screen.queryByText(EN_TEXT.login.setupPrompt.message)).not.toBeInTheDocument();
       });
-      expect(screen.getByRole('heading', { level: 1, name: COPY.login.title })).toBeInTheDocument();
+      expect(
+        screen.getByRole('heading', { level: 1, name: EN_TEXT.login.title }),
+      ).toBeInTheDocument();
     });
   });
 });

@@ -1,11 +1,11 @@
 import { Button, FormAlert } from '@abyss/form-commons';
-import { COPY } from '@configs/Copy.constants';
+import { useScreenText, type ScreenText } from '@configs/locales';
 
 import { bannerTone, type Banner } from './BulkBanner.rules';
 
-const bulkCopy = COPY.content.bulk;
+type BulkCopy = ScreenText<'content'>['content']['bulk'];
 
-function bannerMessage(banner: Banner): string {
+function bannerMessage(banner: Banner, bulkCopy: BulkCopy): string {
   switch (banner.kind) {
     case 'imported':
       return bulkCopy.importDialog.created(banner.count);
@@ -17,9 +17,10 @@ function bannerMessage(banner: Banner): string {
 }
 
 export function BulkBanner({ banner, onDismiss }: { banner: Banner; onDismiss: () => void }) {
+  const bulkCopy = useScreenText('content').content.bulk;
   return (
     <div className="grid gap-2">
-      <FormAlert tone={bannerTone(banner)}>{bannerMessage(banner)}</FormAlert>
+      <FormAlert tone={bannerTone(banner)}>{bannerMessage(banner, bulkCopy)}</FormAlert>
       {banner.kind === 'result' && banner.failures.length > 0 ? (
         <div className="grid gap-1 text-sm">
           <p className="m-0 font-medium">

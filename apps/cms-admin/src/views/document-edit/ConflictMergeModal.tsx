@@ -10,7 +10,7 @@ import {
   DialogTitle,
   FormAlert,
 } from '@abyss/form-commons';
-import { COPY } from '@configs/Copy.constants';
+import { useScreenText } from '@configs/locales';
 import type { DocumentTree } from '@features/content/Content.api';
 import type { FieldNode } from '@features/content/FieldTree.rules';
 
@@ -25,8 +25,6 @@ import {
 } from './Merge.reducer';
 import { changeLabel, entryTitle, sideContent } from './MergeDescribe.rules';
 import { buildResolvedTree } from './MergeTree.rules';
-
-const copy = COPY.content.conflict;
 
 export interface ConflictMergeModalProps {
   details: ConflictDetails;
@@ -63,6 +61,8 @@ function MergeDialog({
   onUseSaved,
   onClose,
 }: ConflictMergeModalProps) {
+  const text = useScreenText('content');
+  const copy = text.content.conflict;
   const [state, dispatch] = useReducer(mergeReducer, INITIAL_MERGE_STATE);
   const masked = useMemo(() => maskedPathsOf(details, formMasked), [details, formMasked]);
   const entries = useMemo(() => visibleEntries(details, masked), [details, masked]);
@@ -100,16 +100,16 @@ function MergeDialog({
             <DiffViewerBlock
               key={entry.path}
               name={`merge:${entry.path}`}
-              title={entryTitle(entry, fields, details)}
-              changeLabel={changeLabel(entry)}
+              title={entryTitle(entry, fields, details, text)}
+              changeLabel={changeLabel(entry, text)}
               emptyText={copy.noValue}
               server={{
                 label: copy.saved,
-                content: sideContent(entry, 'server', fields, masked),
+                content: sideContent(entry, 'server', fields, masked, text),
               }}
               client={{
                 label: copy.mine,
-                content: sideContent(entry, 'submitted', fields, masked),
+                content: sideContent(entry, 'submitted', fields, masked, text),
               }}
               choice={sideOf(state, entry.path)}
               onChoiceChange={(side) => dispatch({ type: 'choose', path: entry.path, side })}

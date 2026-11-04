@@ -113,4 +113,16 @@ describe('ScreenTextBoundary', () => {
     expect(screen.getByText('page body')).toBeInTheDocument();
     expect(loadMock).not.toHaveBeenCalled();
   });
+
+  it('renders at once when the load is already fulfilled', () => {
+    const settled = Object.assign(Promise.resolve({}), { status: 'fulfilled', value: {} });
+    loadMock.mockReturnValue(settled as never);
+    render(
+      <ScreenTextBoundary screens={['login']}>
+        <p>page body</p>
+      </ScreenTextBoundary>,
+    );
+    expect(screen.getByText('page body')).toBeInTheDocument();
+    expect(screen.queryByText(COMMON_TEXT.common.loadingPage)).not.toBeInTheDocument();
+  });
 });

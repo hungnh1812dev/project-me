@@ -1,6 +1,6 @@
 import { API_ENDPOINTS } from '@configs/Api.endpoints';
 import { contentEditPath } from '@configs/App.routes';
-import { COPY } from '@configs/Copy.constants';
+import { EN_TEXT } from '@configs/locales/en';
 import type { PermissionRow } from '@features/access/Access.api';
 import type { PublishState } from '@features/content/Content.constants';
 import { CV_PAGE_TYPE } from '@test/CvPage.fixture';
@@ -11,7 +11,7 @@ import userEvent from '@testing-library/user-event';
 
 const { REFRESH, ME } = API_ENDPOINTS.AUTH;
 const { CONTENT_TYPES, DOCUMENTS, ROLES } = API_ENDPOINTS;
-const copy = COPY.content;
+const copy = EN_TEXT.content;
 const actions = copy.actions;
 const SLUG = 'cv-page';
 const DOC_ID = 'doc_1';

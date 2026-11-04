@@ -1,7 +1,6 @@
 import type { ComponentType } from 'react';
 import { APP_ROUTES } from '@configs/App.routes';
-import { COPY } from '@configs/Copy.constants';
-import type { ScreenName } from '@configs/locales';
+import { COMMON_TEXT, type ScreenName } from '@configs/locales';
 import type { NavItem, NavItemsState, NavSource } from '@configs/NavSections.constants';
 import { useBackupsNavItems } from '@features/backups/Backups.queries';
 import { useContentNavItems } from '@features/content/useContentNavItems';
@@ -50,17 +49,18 @@ export const PUBLIC_ROUTE_PATHS: readonly string[] = [
 
 /** Every page. Adding a page is its `views/<page>/` folder plus one entry here; the nav order follows this order. */
 export const VIEWS: readonly View[] = [
-  { path: APP_ROUTES.LOGIN, Component: LoginPage },
-  { path: APP_ROUTES.SETUP, Component: OwnerSetupPage },
+  { path: APP_ROUTES.LOGIN, Component: LoginPage, textScreens: ['login'] },
+  { path: APP_ROUTES.SETUP, Component: OwnerSetupPage, textScreens: ['setup'] },
   { path: APP_ROUTES.RESET_PASSWORD, Component: ResetPasswordPage },
   { path: APP_ROUTES.SET_PASSWORD, Component: SetPasswordPage },
-  { Component: StatusPage },
+  { Component: StatusPage, textScreens: ['status'] },
   {
     path: APP_ROUTES.ACCOUNTS,
     Component: AccountsPage,
+    textScreens: ['access'],
     navItems: [
       {
-        label: COPY.access.nav.accounts,
+        label: COMMON_TEXT.nav.accounts,
         path: APP_ROUTES.ACCOUNTS,
         section: 'systemSettings',
         subject: 'accounts',
@@ -71,9 +71,10 @@ export const VIEWS: readonly View[] = [
   {
     path: APP_ROUTES.ROLES,
     Component: RolesPage,
+    textScreens: ['access'],
     navItems: [
       {
-        label: COPY.access.nav.roles,
+        label: COMMON_TEXT.nav.roles,
         path: APP_ROUTES.ROLES,
         section: 'systemSettings',
         subject: 'roles',
@@ -84,9 +85,10 @@ export const VIEWS: readonly View[] = [
   {
     path: APP_ROUTES.API_TOKENS,
     Component: ApiTokensPage,
+    textScreens: ['access'],
     navItems: [
       {
-        label: COPY.access.nav.apiTokens,
+        label: COMMON_TEXT.nav.apiTokens,
         path: APP_ROUTES.API_TOKENS,
         section: 'systemSettings',
         subject: 'api_tokens',
@@ -94,13 +96,14 @@ export const VIEWS: readonly View[] = [
       },
     ],
   },
-  { path: APP_ROUTES.ROLE_PERMISSIONS, Component: RolePermissionsPage },
+  { path: APP_ROUTES.ROLE_PERMISSIONS, Component: RolePermissionsPage, textScreens: ['access'] },
   {
     path: APP_ROUTES.MEDIA,
     Component: MediaLibraryPage,
+    textScreens: ['media', 'access'],
     navItems: [
       {
-        label: COPY.access.nav.media,
+        label: COMMON_TEXT.nav.media,
         path: APP_ROUTES.MEDIA,
         section: 'utilities',
         subject: 'media',
@@ -111,9 +114,10 @@ export const VIEWS: readonly View[] = [
   {
     path: APP_ROUTES.REVIEWER_SESSIONS,
     Component: ReviewerSessionsPage,
+    textScreens: ['reviewer', 'access'],
     navItems: [
       {
-        label: COPY.access.nav.reviewer,
+        label: COMMON_TEXT.nav.reviewer,
         path: APP_ROUTES.REVIEWER_SESSIONS,
         section: 'systemSettings',
         subject: REVIEWER_SETTINGS_SUBJECT,
@@ -121,17 +125,35 @@ export const VIEWS: readonly View[] = [
       },
     ],
   },
-  { path: APP_ROUTES.BACKUPS, Component: BackupsPage, useNavItems: useBackupsNavItems },
+  {
+    path: APP_ROUTES.BACKUPS,
+    Component: BackupsPage,
+    textScreens: ['backups', 'security'],
+    useNavItems: useBackupsNavItems,
+  },
   {
     path: APP_ROUTES.CONTENT_LIST,
     Component: CollectionListPage,
+    textScreens: ['content'],
     useNavItems: useContentNavItems,
   },
-  { path: APP_ROUTES.CONTENT_NEW, Component: DocumentEditPage },
-  { path: APP_ROUTES.CONTENT_EDIT, Component: DocumentEditPage },
-  { path: APP_ROUTES.PROFILE, Component: ProfilePage },
-  { path: APP_ROUTES.CHANGE_PASSWORD, Component: ChangePasswordPage },
-  { path: APP_ROUTES.SECURITY_SETTINGS, Component: SecuritySettingsPage },
+  {
+    path: APP_ROUTES.CONTENT_NEW,
+    Component: DocumentEditPage,
+    textScreens: ['content', 'media', 'access'],
+  },
+  {
+    path: APP_ROUTES.CONTENT_EDIT,
+    Component: DocumentEditPage,
+    textScreens: ['content', 'media', 'access'],
+  },
+  { path: APP_ROUTES.PROFILE, Component: ProfilePage, textScreens: ['security'] },
+  { path: APP_ROUTES.CHANGE_PASSWORD, Component: ChangePasswordPage, textScreens: ['security'] },
+  {
+    path: APP_ROUTES.SECURITY_SETTINGS,
+    Component: SecuritySettingsPage,
+    textScreens: ['security'],
+  },
 ];
 
 export const APP_NAV: NavSource = {

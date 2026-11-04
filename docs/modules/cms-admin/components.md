@@ -49,7 +49,7 @@ Tests: 6 files (not listed).
 | `Modal.tsx` | `Modal`, `ModalActions`: dialog frame with the standard button order |
 | `PageStates.tsx` | `PageHeader` (optional `badge`), `TableSkeleton`, `LoadError`: page title and loading/error states |
 | `Pagination.tsx` | `Pagination`: previous/next paging control for list pages |
-| `ScreenTextBoundary.tsx` | `ScreenTextBoundary`: holds a route back until its `textScreens` text is loaded (title skeleton), shows `LoadError` with a retry when the load fails; optional `fallback` replaces the skeleton |
+| `ScreenTextBoundary.tsx` | `ScreenTextBoundary`: holds a route back until its `textScreens` text is loaded (title skeleton), an already loaded screen renders at once without calling `use`; shows `LoadError` with a retry when the load fails; optional `fallback` replaces the skeleton |
 | `useClampedPage.ts` | `useClampedPage`: keeps the current page within the last page |
 | `useRestoreFocus.ts` | `useRestoreFocus`: puts focus back on the opener after a dialog closes |
 | `layouts/AppShell.tsx` | `AppShell`: signed-in layout (side menu, top bar, reviewer banner, outlet) |

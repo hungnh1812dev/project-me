@@ -1,7 +1,7 @@
 import { Button } from '@abyss/form-commons';
 import { API_ENDPOINTS } from '@configs/Api.endpoints';
 import { appEnv } from '@configs/App.env';
-import { COPY } from '@configs/Copy.constants';
+import { useScreenText } from '@configs/locales';
 import { formatTime } from '@utils/DateFormat.rules';
 
 import { useLiveHealth, type LiveHealthState } from './useLiveHealth';
@@ -19,6 +19,7 @@ const DOT_TONE: Record<LiveHealthState, string> = {
 };
 
 export function StatusCard() {
+  const { status } = useScreenText('status');
   const { state, isFetching, lastCheckedAt, refetch } = useLiveHealth();
   const endpoint = `${appEnv.apiBaseUrl}${API_ENDPOINTS.HEALTH.LIVE}`;
 
@@ -30,27 +31,27 @@ export function StatusCard() {
       <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-3 px-5 py-4">
         <div className="min-w-0">
           <h2 id="api-status-title" className="text-base font-semibold">
-            {COPY.status.cardTitle}
+            {status.cardTitle}
           </h2>
-          <p className="mt-1 text-sm text-muted-foreground">{COPY.status.cardDescription}</p>
+          <p className="mt-1 text-sm text-muted-foreground">{status.cardDescription}</p>
         </div>
         <output
           className={`inline-flex items-center gap-2 rounded-sm px-2 py-1 text-xs font-medium ${BADGE_TONE[state]}`}
         >
           <span aria-hidden="true" className={`size-1.5 rounded-full ${DOT_TONE[state]}`} />
-          {COPY.status.state[state]}
+          {status.state[state]}
         </output>
       </div>
 
       <dl className="grid grid-cols-1 gap-x-6 gap-y-1 border-t border-border px-5 py-4 text-sm sm:grid-cols-[max-content_1fr] sm:gap-y-3">
-        <dt className="text-muted-foreground">{COPY.status.endpointLabel}</dt>
+        <dt className="text-muted-foreground">{status.endpointLabel}</dt>
         <dd className="mb-2 font-mono text-xs break-all sm:mb-0 sm:text-sm">GET {endpoint}</dd>
-        <dt className="text-muted-foreground">{COPY.status.lastCheckedLabel}</dt>
+        <dt className="text-muted-foreground">{status.lastCheckedLabel}</dt>
         <dd className="tabular-nums">
           {lastCheckedAt ? (
             <time dateTime={lastCheckedAt.toISOString()}>{formatTime(lastCheckedAt)}</time>
           ) : (
-            COPY.status.notCheckedYet
+            status.notCheckedYet
           )}
         </dd>
       </dl>
@@ -60,13 +61,13 @@ export function StatusCard() {
           role="alert"
           className="mx-5 mb-4 rounded-md bg-destructive-soft px-3 py-2 text-sm text-destructive-strong"
         >
-          {COPY.status.errorHint}
+          {status.errorHint}
         </p>
       ) : null}
 
       <div className="flex justify-end border-t border-border px-5 py-3">
         <Button variant="secondary" size="sm" loading={isFetching} onClick={() => void refetch()}>
-          {COPY.status.checkAgain}
+          {status.checkAgain}
         </Button>
       </div>
     </section>

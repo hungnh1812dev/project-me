@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { COPY } from '@configs/Copy.constants';
 import { API_ERROR_CODES, API_TOKEN_LIMITS, HTTP_STATUS } from '@configs/Http.constants';
+import { useScreenText, type ScreenText } from '@configs/locales';
 import type { ApiToken, UpdateApiTokenInput } from '@features/access/Access.api';
 import { toAccessError } from '@features/access/Access.errors';
 import { ACCESS_QUERY_KEYS } from '@features/access/Access.queries';
@@ -17,7 +17,7 @@ import {
   type SerializedScope,
 } from './TokenScope.rules';
 
-const copy = COPY.access.tokenForm;
+type TokenFormCopy = ScreenText<'access'>['access']['tokenForm'];
 
 export type TokenDialogOutcome =
   | { kind: 'created'; name: string }
@@ -48,7 +48,7 @@ interface UseTokenSubmitOptions {
 }
 
 /** Message when the scope cannot be sent, else null. */
-function scopeProblemOf(entries: readonly unknown[]): string | null {
+function scopeProblemOf(entries: readonly unknown[], copy: TokenFormCopy): string | null {
   if (entries.length === 0) return copy.validation.scopeRequired;
   if (entries.length > API_TOKEN_LIMITS.MAX_SCOPE_ENTRIES) {
     return copy.validation.scopeTooLong;
@@ -69,6 +69,8 @@ export function useTokenSubmit({
   onDone,
   onLockChange,
 }: UseTokenSubmitOptions) {
+  const access = useScreenText('access');
+  const copy = access.access.tokenForm;
   const api = useAccessApi();
   const queryClient = useQueryClient();
   const initialEntries = editing?.scope.permissions;
@@ -82,7 +84,7 @@ export function useTokenSubmit({
   const refresh = () => queryClient.invalidateQueries({ queryKey: ACCESS_QUERY_KEYS.apiTokens });
 
   const fail = (cause: unknown, cells: readonly CellRef[]) => {
-    const error = toAccessError(cause, { access: COPY.access });
+    const error = toAccessError(cause, access);
     onLockChange(false);
     switch (error.errorCode) {
       case API_ERROR_CODES.API_TOKEN_NOT_FOUND:
@@ -180,14 +182,14 @@ export function useTokenSubmit({
       setAlert(null);
       setMarked(new Set());
       const serialized = serializeScope(scope, subjects);
-      const problem = scopeProblemOf(serialized.entries);
+      const problem = scopeProblemOf(serialized.entries, copy);
       setScopeError(problem);
       if (problem !== null) return;
       if (editing === null) submitCreate(values, serialized);
       else submitUpdate(editing, values, serialized);
     },
     // Show the scope problem together with the field errors.
-    () => setScopeError(scopeProblemOf(serializeScope(scope, subjects).entries)),
+    () => setScopeError(scopeProblemOf(serializeScope(scope, subjects).entries, copy)),
   );
 
   const clearScopeMarks = () => {

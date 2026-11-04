@@ -7,7 +7,7 @@ import {
   PASSWORD_LENGTH,
   SETUP_TOKEN_MAX_LENGTH,
 } from '@configs/Auth.constants';
-import { COPY } from '@configs/Copy.constants';
+import { useScreenText, type ScreenText } from '@configs/locales';
 import { BackToSignIn } from '@features/auth/BackToSignIn';
 import type { LoginNoticeState } from '@features/auth/LoginNotice.rules';
 import { emailField } from '@features/auth/Password.form';
@@ -20,27 +20,28 @@ import { FormProvider, useForm } from 'react-hook-form';
 import { Navigate, useNavigate } from 'react-router';
 import { z } from 'zod';
 
-const { validation } = COPY.setup;
+type SetupValidation = ScreenText<'setup'>['setup']['validation'];
 
-const setupSchema = z
-  .object({
-    setupToken: z.string().min(1, validation.tokenRequired),
-    email: emailField,
-    displayName: z
-      .string()
-      .trim()
-      .max(OWNER_DISPLAY_NAME_MAX_LENGTH, validation.displayNameTooLong),
-    password: z
-      .string()
-      .min(PASSWORD_LENGTH.MIN, validation.passwordTooShort)
-      .max(PASSWORD_LENGTH.MAX, validation.passwordTooLong),
-    confirmPassword: z.string(),
-  })
-  .refine((values) => values.password === values.confirmPassword, {
-    message: validation.passwordsDiffer,
-    path: ['confirmPassword'],
-  });
-type SetupValues = z.input<typeof setupSchema>;
+const setupSchemaOf = (validation: SetupValidation) =>
+  z
+    .object({
+      setupToken: z.string().min(1, validation.tokenRequired),
+      email: emailField,
+      displayName: z
+        .string()
+        .trim()
+        .max(OWNER_DISPLAY_NAME_MAX_LENGTH, validation.displayNameTooLong),
+      password: z
+        .string()
+        .min(PASSWORD_LENGTH.MIN, validation.passwordTooShort)
+        .max(PASSWORD_LENGTH.MAX, validation.passwordTooLong),
+      confirmPassword: z.string(),
+    })
+    .refine((values) => values.password === values.confirmPassword, {
+      message: validation.passwordsDiffer,
+      path: ['confirmPassword'],
+    });
+type SetupValues = z.input<ReturnType<typeof setupSchemaOf>>;
 type SetupField = keyof SetupValues;
 
 const EMPTY_VALUES: SetupValues = {
@@ -69,6 +70,8 @@ function sentenceOf(message: string): string {
  * storage or the store, and they are cleared on success.
  */
 export function OwnerSetupPage() {
+  const text = useScreenText('setup');
+  const copy = text.setup;
   const setup = useSetupApi();
   const status = useSetupStatus();
   const queryClient = useQueryClient();
@@ -76,7 +79,7 @@ export function OwnerSetupPage() {
   const [formAlert, setFormAlert] = useState<string | null>(null);
 
   const form = useForm<SetupValues>({
-    resolver: zodResolver(setupSchema),
+    resolver: zodResolver(setupSchemaOf(copy.validation)),
     defaultValues: EMPTY_VALUES,
     mode: 'onTouched',
   });
@@ -93,17 +96,13 @@ export function OwnerSetupPage() {
       void queryClient.invalidateQueries({ queryKey: SETUP_STATUS_QUERY_KEY });
     },
     onError: (cause) => {
-      const error = toSetupError(cause, { setup: COPY.setup });
+      const error = toSetupError(cause, text);
       switch (error.kind) {
         case 'token-invalid':
-          form.setError(
-            'setupToken',
-            { message: COPY.setup.errors.tokenInvalid },
-            { shouldFocus: true },
-          );
+          form.setError('setupToken', { message: copy.errors.tokenInvalid }, { shouldFocus: true });
           return;
         case 'email-taken':
-          form.setError('email', { message: COPY.setup.errors.emailTaken }, { shouldFocus: true });
+          form.setError('email', { message: copy.errors.emailTaken }, { shouldFocus: true });
           return;
         case 'setup-closed': {
           form.reset(EMPTY_VALUES);
@@ -121,7 +120,7 @@ export function OwnerSetupPage() {
             form.setError(name, { message: sentenceOf(issue.message) });
             return false;
           });
-          if (unplaced.length > 0) setFormAlert(COPY.setup.errors.unexpected);
+          if (unplaced.length > 0) setFormAlert(copy.errors.unexpected);
           return;
         }
         case 'alert':
@@ -133,7 +132,7 @@ export function OwnerSetupPage() {
   if (status.isPending) {
     return (
       <AuthPageLayout>
-        <output className="mt-6 block text-sm text-muted-foreground">{COPY.setup.checking}</output>
+        <output className="mt-6 block text-sm text-muted-foreground">{copy.checking}</output>
       </AuthPageLayout>
     );
   }
@@ -141,10 +140,10 @@ export function OwnerSetupPage() {
     return (
       <AuthPageLayout>
         <div className="mt-6 grid gap-3">
-          <FormAlert tone="warning">{COPY.setup.statusFailed}</FormAlert>
+          <FormAlert tone="warning">{copy.statusFailed}</FormAlert>
           <div>
             <Button variant="secondary" onClick={() => void status.refetch()}>
-              {COPY.setup.retry}
+              {copy.retry}
             </Button>
           </div>
         </div>
@@ -170,8 +169,8 @@ export function OwnerSetupPage() {
 
   return (
     <AuthPageLayout>
-      <h1 className="mt-6 text-2xl font-semibold tracking-tight">{COPY.setup.title}</h1>
-      <p className="mt-2 text-sm text-muted-foreground">{COPY.setup.description}</p>
+      <h1 className="mt-6 text-2xl font-semibold tracking-tight">{copy.title}</h1>
+      <p className="mt-2 text-sm text-muted-foreground">{copy.description}</p>
       <FormProvider {...form}>
         <form
           noValidate
@@ -181,7 +180,7 @@ export function OwnerSetupPage() {
           {formAlert !== null ? <FormAlert tone="error">{formAlert}</FormAlert> : null}
           <TextInput<SetupValues>
             name="setupToken"
-            label={COPY.setup.tokenLabel}
+            label={copy.tokenLabel}
             type="password"
             autoComplete="off"
             maxLength={SETUP_TOKEN_MAX_LENGTH}
@@ -190,7 +189,7 @@ export function OwnerSetupPage() {
           />
           <TextInput<SetupValues>
             name="email"
-            label={COPY.setup.emailLabel}
+            label={copy.emailLabel}
             type="email"
             autoComplete="username"
             inputMode="email"
@@ -199,22 +198,22 @@ export function OwnerSetupPage() {
           />
           <TextInput<SetupValues>
             name="displayName"
-            label={COPY.setup.displayNameLabel}
-            description={COPY.setup.displayNameHint}
+            label={copy.displayNameLabel}
+            description={copy.displayNameHint}
             autoComplete="name"
             maxLength={OWNER_DISPLAY_NAME_MAX_LENGTH}
           />
           <TextInput<SetupValues>
             name="password"
-            label={COPY.setup.passwordLabel}
-            description={COPY.setup.passwordHint}
+            label={copy.passwordLabel}
+            description={copy.passwordHint}
             type="password"
             autoComplete="new-password"
             required
           />
           <TextInput<SetupValues>
             name="confirmPassword"
-            label={COPY.setup.confirmPasswordLabel}
+            label={copy.confirmPasswordLabel}
             type="password"
             autoComplete="new-password"
             required
@@ -225,7 +224,7 @@ export function OwnerSetupPage() {
             className="mt-2 w-full"
             loading={createOwner.isPending}
           >
-            {COPY.setup.submit}
+            {copy.submit}
           </Button>
         </form>
       </FormProvider>

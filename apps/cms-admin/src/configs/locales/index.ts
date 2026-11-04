@@ -81,6 +81,12 @@ export const preloadScreenText = (
   locale: Locale = DEFAULT_LOCALE,
 ): Promise<unknown[]> => Promise.all(screens.map((screen) => loadScreenText(screen, locale)));
 
-/** Suspends on the first visit of a screen; returns at once when it is preloaded. */
-export const useScreenText = <S extends ScreenName>(screen: S): ScreenText<S> =>
-  use(loadScreenText(screen));
+/**
+ * Suspends on the first visit of a screen; returns at once when it is preloaded.
+ * A settled load is read directly: `use` on a thenable React did not create still
+ * stalls a route change that renders inside a transition (React 19.3.1).
+ */
+export const useScreenText = <S extends ScreenName>(screen: S): ScreenText<S> => {
+  const loading = loadScreenText(screen) as SettledPromise<ScreenText<S>>;
+  return loading.status === 'fulfilled' ? loading.value : use(loading);
+};

@@ -1,6 +1,6 @@
 import { API_ENDPOINTS } from '@configs/Api.endpoints';
 import { APP_ROUTES, rolePermissionsPath } from '@configs/App.routes';
-import { COPY } from '@configs/Copy.constants';
+import { EN_TEXT } from '@configs/locales/en';
 import type { Account, PermissionRow, Role } from '@features/access/Access.api';
 import type { CurrentUser } from '@features/auth/Auth.slice';
 import type { ContentType } from '@features/content-types';
@@ -11,7 +11,7 @@ import userEvent from '@testing-library/user-event';
 
 const { REFRESH, ME } = API_ENDPOINTS.AUTH;
 const { ACCOUNTS, ROLES, CONTENT_TYPES } = API_ENDPOINTS;
-const copy = COPY.access;
+const copy = EN_TEXT.access;
 
 function rows(...specs: [string, PermissionRow['action']][]): PermissionRow[] {
   return specs.map(([subject, action]) => ({
@@ -560,7 +560,9 @@ describe('AccountsPage enable, resend and paging', () => {
     });
     const user = userEvent.setup();
     await user.click(await screen.findByRole('button', { name: resendName }));
-    expect(await screen.findByText(COPY.password.errors.rateLimitedMinutes(2))).toBeInTheDocument();
+    expect(
+      await screen.findByText(EN_TEXT.password.errors.rateLimitedMinutes(2)),
+    ).toBeInTheDocument();
   });
 
   it('pages through accounts and shows the range', async () => {

@@ -1,6 +1,6 @@
 import { API_ENDPOINTS } from '@configs/Api.endpoints';
 import { contentEditPath, contentNewPath } from '@configs/App.routes';
-import { COPY } from '@configs/Copy.constants';
+import { EN_TEXT } from '@configs/locales/en';
 import type { DocumentRecord } from '@features/content/Content.api';
 import { CV_PAGE_TYPE } from '@test/CvPage.fixture';
 import type { FakeHandler } from '@test/FakeApi.fixture';
@@ -10,7 +10,7 @@ import userEvent from '@testing-library/user-event';
 
 const { REFRESH, ME } = API_ENDPOINTS.AUTH;
 const { CONTENT_TYPES, DOCUMENTS, ROLES } = API_ENDPOINTS;
-const copy = COPY.content;
+const copy = EN_TEXT.content;
 const SLUG = 'cv-page';
 const DOC_ID = 'doc_1';
 const UID_SKILL = '00000000-0000-4000-8000-00000000000a';

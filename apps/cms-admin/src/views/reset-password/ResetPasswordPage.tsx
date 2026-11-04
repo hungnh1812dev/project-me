@@ -3,7 +3,7 @@ import { Button, FormAlert, TextInput } from '@abyss/form-commons';
 import { AuthPageLayout } from '@components/layouts/AuthPageLayout';
 import { APP_ROUTES } from '@configs/App.routes';
 import { OTP_CODE_LENGTH } from '@configs/Auth.constants';
-import { COPY } from '@configs/Copy.constants';
+import { COMMON_TEXT } from '@configs/locales';
 import { BackToSignIn } from '@features/auth/BackToSignIn';
 import type { LoginNoticeState } from '@features/auth/LoginNotice.rules';
 import { toPasswordError, type PasswordError } from '@features/auth/Password.errors';
@@ -71,9 +71,11 @@ function RequestCodeStep({ onSent }: { onSent: (email: string) => void }) {
   return (
     <>
       <h1 className="mt-6 text-2xl font-semibold tracking-tight">
-        {COPY.password.reset.requestTitle}
+        {COMMON_TEXT.password.reset.requestTitle}
       </h1>
-      <p className="mt-2 text-sm text-muted-foreground">{COPY.password.reset.requestDescription}</p>
+      <p className="mt-2 text-sm text-muted-foreground">
+        {COMMON_TEXT.password.reset.requestDescription}
+      </p>
       <FormProvider {...form}>
         <form
           noValidate
@@ -85,7 +87,7 @@ function RequestCodeStep({ onSent }: { onSent: (email: string) => void }) {
           ) : null}
           <TextInput<RequestValues>
             name="email"
-            label={COPY.password.emailLabel}
+            label={COMMON_TEXT.password.emailLabel}
             type="email"
             autoComplete="username"
             inputMode="email"
@@ -98,7 +100,7 @@ function RequestCodeStep({ onSent }: { onSent: (email: string) => void }) {
             className="mt-2 w-full"
             loading={requestCode.isPending}
           >
-            {COPY.password.reset.sendCode}
+            {COMMON_TEXT.password.reset.sendCode}
           </Button>
         </form>
       </FormProvider>
@@ -175,7 +177,7 @@ function ChoosePasswordStep({
     if (totpRequired && totpCode === '') {
       form.setError(
         'totpCode',
-        { message: COPY.password.validation.totpInvalid },
+        { message: COMMON_TEXT.password.validation.totpInvalid },
         { shouldFocus: true },
       );
       return;
@@ -196,10 +198,12 @@ function ChoosePasswordStep({
         tabIndex={-1}
         className="mt-6 text-2xl font-semibold tracking-tight outline-none"
       >
-        {COPY.password.reset.title}
+        {COMMON_TEXT.password.reset.title}
       </h1>
       <p className="mt-2 text-sm text-muted-foreground">
-        {resent ? COPY.password.codeResent(email) : COPY.password.reset.codeSent(email)}
+        {resent
+          ? COMMON_TEXT.password.codeResent(email)
+          : COMMON_TEXT.password.reset.codeSent(email)}
       </p>
       <FormProvider {...form}>
         <form
@@ -221,8 +225,8 @@ function ChoosePasswordStep({
           />
           <TextInput<ResetValues>
             name="code"
-            label={COPY.password.codeLabel}
-            description={COPY.password.codeHint}
+            label={COMMON_TEXT.password.codeLabel}
+            description={COMMON_TEXT.password.codeHint}
             inputMode="numeric"
             autoComplete="one-time-code"
             maxLength={OTP_CODE_LENGTH}
@@ -232,15 +236,15 @@ function ChoosePasswordStep({
           />
           <TextInput<ResetValues>
             name="newPassword"
-            label={COPY.password.newPasswordLabel}
-            description={COPY.password.newPasswordHint}
+            label={COMMON_TEXT.password.newPasswordLabel}
+            description={COMMON_TEXT.password.newPasswordHint}
             type="password"
             autoComplete="new-password"
             required
           />
           <TextInput<ResetValues>
             name="confirmPassword"
-            label={COPY.password.confirmPasswordLabel}
+            label={COMMON_TEXT.password.confirmPasswordLabel}
             type="password"
             autoComplete="new-password"
             required
@@ -248,8 +252,8 @@ function ChoosePasswordStep({
           {totpRequired ? (
             <TextInput<ResetValues>
               name="totpCode"
-              label={COPY.password.totpLabel}
-              description={COPY.password.totpHint}
+              label={COMMON_TEXT.password.totpLabel}
+              description={COMMON_TEXT.password.totpHint}
               inputMode="numeric"
               autoComplete="one-time-code"
               maxLength={OTP_CODE_LENGTH}
@@ -259,7 +263,7 @@ function ChoosePasswordStep({
             />
           ) : null}
           <Button type="submit" variant="primary" className="mt-2 w-full" loading={reset.isPending}>
-            {COPY.password.reset.submit}
+            {COMMON_TEXT.password.reset.submit}
           </Button>
         </form>
       </FormProvider>
@@ -270,10 +274,10 @@ function ChoosePasswordStep({
           loading={resend.isPending}
           onClick={() => resend.mutate(email)}
         >
-          {COPY.password.resendCode}
+          {COMMON_TEXT.password.resendCode}
         </Button>
         <Button variant="link" className="h-auto px-0" onClick={onChangeEmail}>
-          {COPY.password.reset.otherEmail}
+          {COMMON_TEXT.password.reset.otherEmail}
         </Button>
       </div>
       <BackToSignIn />

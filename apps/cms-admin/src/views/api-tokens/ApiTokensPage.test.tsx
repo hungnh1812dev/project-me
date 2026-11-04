@@ -1,6 +1,6 @@
 import { API_ENDPOINTS } from '@configs/Api.endpoints';
 import { APP_ROUTES } from '@configs/App.routes';
-import { COPY } from '@configs/Copy.constants';
+import { EN_TEXT } from '@configs/locales/en';
 import type { ApiToken, PermissionRow, Role } from '@features/access/Access.api';
 import type { CurrentUser } from '@features/auth/Auth.slice';
 import type { ContentType } from '@features/content-types';
@@ -11,7 +11,7 @@ import userEvent from '@testing-library/user-event';
 
 const { REFRESH, ME } = API_ENDPOINTS.AUTH;
 const { API_TOKENS, ROLES, CONTENT_TYPES } = API_ENDPOINTS;
-const copy = COPY.access;
+const copy = EN_TEXT.access;
 
 function rows(...specs: [string, PermissionRow['action']][]): PermissionRow[] {
   return specs.map(([subject, action]) => ({

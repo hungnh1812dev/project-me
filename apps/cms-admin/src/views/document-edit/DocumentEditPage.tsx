@@ -3,7 +3,7 @@ import { Button, FormAlert } from '@abyss/form-commons';
 import { LoadError, PageHeader, TableSkeleton, TitleSkeleton } from '@components/PageStates';
 import { contentEditPath } from '@configs/App.routes';
 import { REVIEWER_ROLE_SLUG } from '@configs/Auth.constants';
-import { COPY } from '@configs/Copy.constants';
+import { useScreenText } from '@configs/locales';
 import { useCurrentUser } from '@features/auth';
 import type { DocumentRecord, DocumentTree } from '@features/content/Content.api';
 import { isMissing, toSaveError, type SaveError } from '@features/content/Content.errors';
@@ -23,14 +23,13 @@ import { DocumentActions } from './DocumentActions';
 import { maskedPathsOf, visibleEntries } from './Merge.reducer';
 import { PresenceBanner } from './PresenceBanner';
 
-const copy = COPY.content;
-
 /**
  * `/content/:slug/new` and `/content/:slug/:documentId`: the dynamic
  * form of one document's draft. Creating goes to the edit route; saving an
  * existing draft sends its version (a stale one is a 409 that opens the merge modal).
  */
 export function DocumentEditPage() {
+  const copy = useScreenText('content').content;
   const { slug = '', documentId } = useParams();
   const api = useContentApi();
   // Held here: the form remounts when a save brings a new version.
@@ -149,6 +148,8 @@ function DocumentForm({
   notice: string | null;
   onNotice: (notice: string | null) => void;
 }) {
+  const content = useScreenText('content');
+  const copy = content.content;
   const api = useContentApi();
   const readOnly = useCurrentUser()?.role === REVIEWER_ROLE_SLUG;
   const navigate = useNavigate();
@@ -188,7 +189,7 @@ function DocumentForm({
     },
     onError: (failure) => {
       onNotice(null);
-      setError(toSaveError(failure, { content: COPY.content }));
+      setError(toSaveError(failure, content));
       const details = conflictDetailsOf(failure);
       // Only worth a merge when there is a difference the role may see.
       const decidable =
@@ -219,13 +220,13 @@ function DocumentForm({
         setMergeError(null);
         return;
       }
-      setMergeError(toSaveError(failure, { content: COPY.content }).message);
+      setMergeError(toSaveError(failure, content).message);
     },
   });
 
   const showActionFailure = (failure: unknown) => {
     onNotice(null);
-    setError(toSaveError(failure, { content: COPY.content }));
+    setError(toSaveError(failure, content));
     setConflict(null);
     setMergeOpen(false);
   };

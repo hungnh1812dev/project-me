@@ -6,7 +6,7 @@ import {
   TOTP_SECRET_GROUP_SIZE,
   type TwoFactorMethod,
 } from '@configs/Auth.constants';
-import { COPY } from '@configs/Copy.constants';
+import { useScreenText } from '@configs/locales';
 import { useEmailCode } from '@features/auth';
 import { ConfirmWithCodeForm } from '@features/security/ConfirmWithCodeForm';
 import { toSecurityError } from '@features/security/Security.errors';
@@ -14,7 +14,6 @@ import { useSecurityApi } from '@features/security/SecurityApi.context';
 import { useMutation } from '@tanstack/react-query';
 import { QRCodeSVG } from 'qrcode.react';
 
-const copy = COPY.security;
 const SECRET_GROUPS = new RegExp(`.{1,${TOTP_SECRET_GROUP_SIZE}}`, 'g');
 
 /** Shared props: close without change, finish, or 2FA changed elsewhere. */
@@ -34,6 +33,7 @@ function groupSecret(secret: string): string {
  * needs the app's current code and the password.
  */
 export function TotpSetupDialog({ onClose, onDone, onStateChanged }: DialogProps) {
+  const copy = useScreenText('security').security;
   const security = useSecurityApi();
   const setup = useMutation({ mutationFn: security.setupTotp });
   const { mutate: startSetup } = setup;
@@ -121,6 +121,7 @@ export function EmailTwoFactorDialog({
   onDone,
   onStateChanged,
 }: DialogProps & { email: string }) {
+  const copy = useScreenText('security').security;
   const security = useSecurityApi();
   const emailCode = useEmailCode(security.sendEmailCode, true);
   return (
@@ -153,6 +154,7 @@ export function DisableTwoFactorDialog({
   onDone,
   onStateChanged,
 }: DialogProps & { method: TwoFactorMethod }) {
+  const copy = useScreenText('security').security;
   const security = useSecurityApi();
   const emailCode = useEmailCode(security.sendEmailCode, method === 'email');
   return (

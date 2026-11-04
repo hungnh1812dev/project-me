@@ -13,8 +13,11 @@ function ScreenTextGate({
   screens: readonly ScreenName[];
   children: ReactNode;
 }) {
-  const loads = screens.map((screen) => loadScreenText(screen));
-  for (const load of loads) use(load);
+  const loads = screens.map((screen) => loadScreenText(screen)) as (Promise<unknown> & {
+    status?: string;
+  })[];
+  // `use` on a settled thenable still stalls a route change inside a transition (React 19.3.1).
+  for (const load of loads) if (load.status !== 'fulfilled') use(load as Promise<unknown>);
   return children;
 }
 

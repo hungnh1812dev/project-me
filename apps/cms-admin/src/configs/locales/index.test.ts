@@ -1,5 +1,5 @@
 import { createElement, Suspense } from 'react';
-import { render, screen } from '@testing-library/react';
+import { render, renderHook, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
 import { DEFAULT_LOCALE, loadScreenText, preloadScreenText, useScreenText } from '.';
@@ -65,5 +65,28 @@ describe('useScreenText', () => {
     );
     expect(screen.queryByText('fallback')).toBeNull();
     expect(screen.getByText(EN_TEXT.login.title)).toBeTruthy();
+  });
+
+  it('reads a fulfilled load as its value, without calling use', async () => {
+    await preloadScreenText(['login']);
+    const loading = loadScreenText('login') as unknown as { status: string; value: unknown };
+    expect(loading.status).toBe('fulfilled');
+    const { result } = renderHook(() => useScreenText('login'));
+    expect(result.current).toBe(loading.value);
+  });
+
+  it('still suspends while a load is unsettled', async () => {
+    vi.resetModules();
+    const fresh = await import('.');
+    const Probe = () => createElement('p', null, fresh.useScreenText('backups').backups.title);
+    render(
+      createElement(
+        Suspense,
+        { fallback: createElement('p', null, 'fallback') },
+        createElement(Probe),
+      ),
+    );
+    expect(screen.getByText('fallback')).toBeTruthy();
+    expect(screen.queryByText(EN_TEXT.backups.title)).toBeNull();
   });
 });

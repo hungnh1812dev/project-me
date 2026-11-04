@@ -1,6 +1,6 @@
 import { Button, type SheetColumn } from '@abyss/form-commons';
 import { contentEditPath } from '@configs/App.routes';
-import { COPY } from '@configs/Copy.constants';
+import type { ScreenText } from '@configs/locales';
 import type { ContentTypeField } from '@features/content-types';
 import type { DocumentListItem } from '@features/content/Content.api';
 import {
@@ -17,8 +17,6 @@ import { PublishStateBadge } from '@features/content/PublishStateBadge';
 import { formatDateTime } from '@utils/DateFormat.rules';
 import { Link } from 'react-router';
 
-const list = COPY.content.collection;
-
 export function listValueFieldsOf(fields: readonly ContentTypeField[]): ContentTypeField[] {
   return fields
     .filter(
@@ -32,13 +30,15 @@ export function listValueFieldsOf(fields: readonly ContentTypeField[]): ContentT
 export function documentNameOf(
   valueFields: readonly ContentTypeField[],
   row: DocumentListItem,
+  text: ScreenText<'content'>,
 ): string {
+  const list = text.content.collection;
   const first = valueFields[0];
-  const text =
-    first === undefined ? '' : formatListValue(first.type, row.values[first.path], COPY.content);
-  return text === '' || text === list.emptyValue || text === list.protectedValue
+  const name =
+    first === undefined ? '' : formatListValue(first.type, row.values[first.path], text.content);
+  return name === '' || name === list.emptyValue || name === list.protectedValue
     ? `${list.untitled} (${row.documentId.slice(0, 8)})`
-    : text;
+    : name;
 }
 
 function EditLink({
@@ -60,8 +60,10 @@ function EditLink({
 export function collectionColumnsOf(
   slug: string,
   valueFields: readonly ContentTypeField[],
-  showPublishState = false,
+  showPublishState: boolean,
+  text: ScreenText<'content'>,
 ): SheetColumn<DocumentListItem>[] {
+  const list = text.content.collection;
   const hasValueColumns = valueFields.length > 0;
   return [
     ...valueFields.map((field, index): SheetColumn<DocumentListItem> => ({
@@ -73,10 +75,10 @@ export function collectionColumnsOf(
       renderCell: (row) =>
         index === 0 ? (
           <EditLink slug={slug} row={row}>
-            {documentNameOf(valueFields, row)}
+            {documentNameOf(valueFields, row, text)}
           </EditLink>
         ) : (
-          formatListValue(field.type, row.values[field.path], COPY.content)
+          formatListValue(field.type, row.values[field.path], text.content)
         ),
     })),
     ...(showPublishState
