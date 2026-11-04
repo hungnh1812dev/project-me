@@ -1,6 +1,6 @@
 {
   "name": "@abyss/cms-api",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "private": true,
   "description": "Abyss headless CMS REST API (NestJS on Express)",
   "main": "dist/main.js",

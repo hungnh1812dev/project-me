@@ -6,9 +6,24 @@ Versions follow [Semantic Versioning](https://semver.org/). The repo version nam
 
 ## Unreleased
 
+## 0.0.2 (2026-11-04)
+
+Repo 0.0.2 and cms-api 0.0.2: tag-driven release CI and the cms-api integration tests on release tags.
+
+### Versions
+
+| Part               | Version | Changed in this release |
+| ------------------ | ------- | ----------------------- |
+| repo               | 0.0.2   | yes                     |
+| `@abyss/cms-api`   | 0.0.2   | yes                     |
+| `@abyss/cms-admin` | 0.0.1   | no                      |
+| `@abyss/web`       | 0.0.1   | no                      |
+
 ### DevOps patches
 
 - Tag-driven release ([ADR 0016](docs/adr/0016-tag-driven-release-ci.md)): images are built and pushed only by a repo tag `v<x.y.z>` made by the `release-tag` skill, and tagged with the app version (`APP_IMAGE_TAG` changes from `main-<sha7>` to `<x.y.z>`); the deploy repo `staging` branch is no longer bumped by CI. Patch notes: [cms-api](docs/apps/cms-api/patch-cms-api-0.0.2.md), [cms-admin](docs/apps/cms-admin/patch-cms-admin-0.0.2.md), [web](docs/apps/web/patch-web-0.0.2.md).
+- cms-api integration tests (Testcontainers) moved out of the Checks job into their own job that runs only on `v<x.y.z>` tags and gates the cms-api publish.
+- Test coverage for the tag refusal when `release-apps.sh` fails.
 
 ## 0.0.1 (2026-11-04)
 
