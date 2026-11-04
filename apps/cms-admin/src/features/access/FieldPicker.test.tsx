@@ -1,4 +1,4 @@
-import { COPY } from '@configs/Copy.constants';
+import { EN_TEXT } from '@configs/locales/en';
 import { cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
@@ -6,7 +6,7 @@ import type { ContentTypeField } from '../content-types';
 import type { FieldList } from './Access.api';
 import { FieldPicker } from './FieldPicker';
 
-const copy = COPY.access.fields;
+const copy = EN_TEXT.access.fields;
 const FIELDS = [{ path: 'title' }] as unknown as ContentTypeField[];
 
 function renderPicker(props: {

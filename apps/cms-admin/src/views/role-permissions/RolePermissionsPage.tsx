@@ -59,7 +59,7 @@ export function RolePermissionsPage() {
         <LoadError
           message={
             failedRoles
-              ? toAccessError(roles.error).status === HTTP_STATUS.FORBIDDEN
+              ? toAccessError(roles.error, { access: COPY.access }).status === HTTP_STATUS.FORBIDDEN
                 ? copy.roles.forbidden
                 : copy.roles.loadFailed
               : copy.role.contentTypesFailed
@@ -141,7 +141,7 @@ function RoleEditor({ role, contentTypes }: { role: Role; contentTypes: readonly
       setFeedback({ tone: 'success', message: copy.role.saved });
     },
     onError: (cause, sent) => {
-      const error = toAccessError(cause);
+      const error = toAccessError(cause, { access: COPY.access });
       setErrors(cellIssues(error.issues, sent.cells));
       setNotHeld(cellsAt(error.indexes, sent.cells));
       const invalid = error.status === HTTP_STATUS.BAD_REQUEST && error.errorCode !== undefined;

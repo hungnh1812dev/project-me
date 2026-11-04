@@ -195,7 +195,9 @@ function AccessSwitch() {
     },
     onError: (cause) => {
       setConfirmOff(false);
-      setFailed(isForbidden(cause) ? copy.forbidden : toAccessError(cause).message);
+      setFailed(
+        isForbidden(cause) ? copy.forbidden : toAccessError(cause, { access: COPY.access }).message,
+      );
     },
   });
 

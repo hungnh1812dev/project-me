@@ -188,7 +188,7 @@ function DocumentForm({
     },
     onError: (failure) => {
       onNotice(null);
-      setError(toSaveError(failure));
+      setError(toSaveError(failure, { content: COPY.content }));
       const details = conflictDetailsOf(failure);
       // Only worth a merge when there is a difference the role may see.
       const decidable =
@@ -219,13 +219,13 @@ function DocumentForm({
         setMergeError(null);
         return;
       }
-      setMergeError(toSaveError(failure).message);
+      setMergeError(toSaveError(failure, { content: COPY.content }).message);
     },
   });
 
   const showActionFailure = (failure: unknown) => {
     onNotice(null);
-    setError(toSaveError(failure));
+    setError(toSaveError(failure, { content: COPY.content }));
     setConflict(null);
     setMergeOpen(false);
   };

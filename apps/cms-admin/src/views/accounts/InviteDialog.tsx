@@ -91,7 +91,7 @@ export function InviteDialog({
       onInvited(account);
     },
     onError: (cause) => {
-      const error = toAccessError(cause);
+      const error = toAccessError(cause, { access: COPY.access });
       if (error.errorCode === API_ERROR_CODES.ACCOUNT_EMAIL_TAKEN) {
         form.setError('email', { message: copy.errors.emailTaken });
         form.setFocus('email');

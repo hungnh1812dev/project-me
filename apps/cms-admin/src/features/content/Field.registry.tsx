@@ -8,7 +8,7 @@ import {
   TextAreaInput,
   TextInput,
 } from '@abyss/form-commons';
-import { COPY } from '@configs/Copy.constants';
+import type { ScreenText } from '@configs/locales';
 import { formatDateTime } from '@utils/DateFormat.rules';
 
 import { MediaField, mediaToApi, mediaToForm } from '../media';
@@ -26,13 +26,13 @@ import {
 } from './FieldValues.rules';
 import { RichtextField } from './RichtextField';
 
-const copy = COPY.content;
-const listCopy = copy.collection;
+type ContentCopy = ScreenText<'content'>['content'];
 
 export interface FieldRenderProps {
   /** Form path including item indexes (`experience.0.company`). */
   name: string;
   label: string;
+  copy: ContentCopy;
 }
 
 /** How one scalar field type is shown, edited and sent. */
@@ -44,7 +44,7 @@ export interface FieldAdapter {
   toApi: (value: unknown) => unknown;
   render: (props: FieldRenderProps) => ReactNode;
   /** Text for a present list cell; defaults to plain strings and numbers. */
-  formatForList?: (value: unknown) => string | null;
+  formatForList?: (value: unknown, copy: ContentCopy) => string | null;
   /** True: the type can be a list column the API sorts by. */
   isSortable?: boolean;
   /** Column alignment in the list; defaults to left. */
@@ -94,7 +94,7 @@ export const FIELD_REGISTRY: Readonly<Record<string, FieldAdapter>> = {
     listAlignment: 'right',
     toForm: numberToForm,
     toApi: integerToApi,
-    render: ({ name, label }) => (
+    render: ({ name, label, copy }) => (
       <NumberInput name={name} label={label} mode="integer" invalidMessage={copy.invalidInteger} />
     ),
   },
@@ -104,14 +104,14 @@ export const FIELD_REGISTRY: Readonly<Record<string, FieldAdapter>> = {
     listAlignment: 'right',
     toForm: numberToForm,
     toApi: textToApi,
-    render: ({ name, label }) => (
+    render: ({ name, label, copy }) => (
       <NumberInput name={name} label={label} mode="decimal" invalidMessage={copy.invalidDecimal} />
     ),
   },
   [FIELD_TYPE.BOOLEAN]: {
     editable: true,
     isSortable: true,
-    formatForList: (value) => (value ? listCopy.yes : listCopy.no),
+    formatForList: (value, copy) => (value ? copy.collection.yes : copy.collection.no),
     toForm: booleanToForm,
     toApi: (value) => value === true,
     render: ({ name, label }) => <SwitchInput name={name} label={label} />,
@@ -135,7 +135,7 @@ export const FIELD_REGISTRY: Readonly<Record<string, FieldAdapter>> = {
     editable: true,
     toForm: jsonToForm,
     toApi: jsonToApi,
-    render: ({ name, label }) => (
+    render: ({ name, label, copy }) => (
       <JsonInput name={name} label={label} rows={4} invalidMessage={copy.invalidJson} />
     ),
   },
@@ -143,7 +143,7 @@ export const FIELD_REGISTRY: Readonly<Record<string, FieldAdapter>> = {
     editable: true,
     toForm: textToForm,
     toApi: textToApi,
-    render: ({ name, label }) => (
+    render: ({ name, label, copy }) => (
       <RichtextField
         name={name}
         label={label}
@@ -174,11 +174,12 @@ export function listAlignmentOf(type: string): 'left' | 'right' {
 }
 
 /** Cell text for a list column: empty and masked values are shared by all types. */
-export function formatListValue(type: string, value: unknown): string {
+export function formatListValue(type: string, value: unknown, copy: ContentCopy): string {
+  const listCopy = copy.collection;
   if (value === null || value === undefined || value === '') {
     return listCopy.emptyValue;
   }
   if (value === MASKED_VALUE) return listCopy.protectedValue;
   const format = adapterFor(type).formatForList ?? plainForList;
-  return format(value) ?? listCopy.emptyValue;
+  return format(value, copy) ?? listCopy.emptyValue;
 }

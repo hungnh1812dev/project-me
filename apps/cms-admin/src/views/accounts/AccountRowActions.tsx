@@ -41,7 +41,7 @@ export function AccountRowActions({
       onNotice({ tone: 'success', message: copy.enabled(account.displayName) });
     },
     onError: (cause) => {
-      const error = toAccessError(cause);
+      const error = toAccessError(cause, { access: COPY.access });
       if (error.errorCode === API_ERROR_CODES.ACCOUNT_NOT_DISABLED) {
         void refresh();
         onNotice({ tone: 'info', message: copy.alreadyEnabled });
@@ -64,7 +64,7 @@ export function AccountRowActions({
       );
     },
     onError: (cause) => {
-      const error = toAccessError(cause);
+      const error = toAccessError(cause, { access: COPY.access });
       if (error.errorCode === API_ERROR_CODES.ACCOUNT_NOT_INVITED) {
         void refresh();
         onNotice({ tone: 'info', message: copy.notInvited });

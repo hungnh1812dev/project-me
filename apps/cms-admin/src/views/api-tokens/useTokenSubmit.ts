@@ -82,7 +82,7 @@ export function useTokenSubmit({
   const refresh = () => queryClient.invalidateQueries({ queryKey: ACCESS_QUERY_KEYS.apiTokens });
 
   const fail = (cause: unknown, cells: readonly CellRef[]) => {
-    const error = toAccessError(cause);
+    const error = toAccessError(cause, { access: COPY.access });
     onLockChange(false);
     switch (error.errorCode) {
       case API_ERROR_CODES.API_TOKEN_NOT_FOUND:

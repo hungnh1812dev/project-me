@@ -42,7 +42,7 @@ export function DeleteMediaDialog({
       onDone(target, 'deleted');
     },
     onError: (cause, target) => {
-      const error = toMediaError(cause);
+      const error = toMediaError(cause, { media: COPY.media, access: COPY.access });
       if (error.kind === 'gone') {
         void queryClient.invalidateQueries({ queryKey: MEDIA_QUERY_KEY });
         onDone(target, 'gone');

@@ -47,7 +47,7 @@ export function RevokeTokenDialog({
       onDone(target, 'revoked');
     },
     onError: (cause, target) => {
-      const error = toAccessError(cause);
+      const error = toAccessError(cause, { access: COPY.access });
       if (error.errorCode === API_ERROR_CODES.API_TOKEN_REVOKED) {
         void refresh();
         onDone(target, 'already-revoked');

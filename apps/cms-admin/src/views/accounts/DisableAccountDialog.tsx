@@ -47,7 +47,7 @@ export function DisableAccountDialog({
       onDone(target, 'disabled');
     },
     onError: (cause, target) => {
-      const error = toAccessError(cause);
+      const error = toAccessError(cause, { access: COPY.access });
       if (error.errorCode === API_ERROR_CODES.ACCOUNT_ALREADY_DISABLED) {
         void refresh();
         onDone(target, 'already-disabled');

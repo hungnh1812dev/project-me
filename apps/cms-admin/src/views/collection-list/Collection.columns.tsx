@@ -34,7 +34,8 @@ export function documentNameOf(
   row: DocumentListItem,
 ): string {
   const first = valueFields[0];
-  const text = first === undefined ? '' : formatListValue(first.type, row.values[first.path]);
+  const text =
+    first === undefined ? '' : formatListValue(first.type, row.values[first.path], COPY.content);
   return text === '' || text === list.emptyValue || text === list.protectedValue
     ? `${list.untitled} (${row.documentId.slice(0, 8)})`
     : text;
@@ -75,7 +76,7 @@ export function collectionColumnsOf(
             {documentNameOf(valueFields, row)}
           </EditLink>
         ) : (
-          formatListValue(field.type, row.values[field.path])
+          formatListValue(field.type, row.values[field.path], COPY.content)
         ),
     })),
     ...(showPublishState

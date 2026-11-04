@@ -52,7 +52,7 @@ export function EditAltDialog({
       onSaved(updated);
     },
     onError: (cause) => {
-      const error = toMediaError(cause);
+      const error = toMediaError(cause, { media: COPY.media, access: COPY.access });
       if (error.kind === 'gone') {
         void queryClient.invalidateQueries({ queryKey: MEDIA_QUERY_KEY });
         onGone();

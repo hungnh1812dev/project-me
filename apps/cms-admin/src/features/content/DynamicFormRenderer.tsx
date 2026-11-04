@@ -1,12 +1,10 @@
 import { Field, Input } from '@abyss/form-commons';
-import { COPY } from '@configs/Copy.constants';
+import { useScreenText } from '@configs/locales';
 import { useFormContext, useWatch } from 'react-hook-form';
 
 import { ComponentList } from './ComponentList';
 import { adapterFor } from './Field.registry';
 import type { FieldNode } from './FieldTree.rules';
-
-const copy = COPY.content;
 
 export interface DynamicFormRendererProps {
   fields: readonly FieldNode[];
@@ -29,6 +27,7 @@ export function DynamicFormRenderer({
   prefix = '',
   depth = 1,
 }: DynamicFormRendererProps) {
+  const copy = useScreenText('content').content;
   return (
     <div className="grid gap-5">
       {fields.map((node) => {
@@ -47,7 +46,7 @@ export function DynamicFormRenderer({
         if (!adapter.editable) {
           return <ReadOnlyField key={node.path} name={name} label={node.label} />;
         }
-        return <div key={node.path}>{adapter.render({ name, label: node.label })}</div>;
+        return <div key={node.path}>{adapter.render({ name, label: node.label, copy })}</div>;
       })}
     </div>
   );
@@ -55,6 +54,7 @@ export function DynamicFormRenderer({
 
 /** A field the role cannot read: fixed text, nothing to edit or send. */
 function ProtectedField({ label, group }: { label: string; group: boolean }) {
+  const copy = useScreenText('content').content;
   return (
     <Field label={label} description={group ? copy.protectedGroup(label) : copy.protectedHint}>
       {(control) => (
@@ -71,6 +71,7 @@ function ProtectedField({ label, group }: { label: string; group: boolean }) {
 
 /** A field type whose editor is not built yet: shows the stored value only. */
 function ReadOnlyField({ name, label }: { name: string; label: string }) {
+  const copy = useScreenText('content').content;
   const { control } = useFormContext();
   const value: unknown = useWatch({ control, name });
   const shown =

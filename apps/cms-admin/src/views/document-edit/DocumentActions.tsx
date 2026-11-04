@@ -97,7 +97,7 @@ export function DocumentActions({
       setConfirming(null);
       onFailure(failure);
       // A refetch changes the version and would drop this notice with the form.
-      if (!toSaveError(failure).conflict) await refetch();
+      if (!toSaveError(failure, { content: COPY.content }).conflict) await refetch();
     },
   });
   const busy = lifecycle.isPending || isSaving;
