@@ -252,10 +252,12 @@ pnpm --filter @abyss/cms-admin dev       # http://localhost:5173 (DEV_SERVER_POR
   key is documented in [`.env.example`](.env.example). `VITE_*` values are
   baked in at build time, so they are public: never put secrets there.
 - `src/configs/Api.endpoints.ts` is the single map of API paths.
-- `src/configs/Copy.constants.ts` re-exports `COPY`, the user-facing text
-  until an i18n module exists. Sections live in `src/configs/copy/*.copy.ts`
-  (shared text and nav labels in `common.copy.ts`) and are joined in
-  `copy/index.ts`; only that folder imports a section file (ESLint).
+- `src/configs/locales/` holds the user-facing text. `en/` has one file per
+  screen (`Login.ts`, `Content.ts`, ...) plus `Common.ts` (shared text, always
+  loaded). Product code reads it only through `@configs/locales`
+  (`loadScreenText`, `useScreenText`, `COMMON_TEXT`); tests may also import
+  `@configs/locales/en` (`EN_TEXT`). ESLint rejects any other import of a
+  locale folder or file.
 - `src/configs/` keeps only cross-feature constants (`Http.constants`,
   `Auth.constants`, `App.routes`). A feature's own constants live in
   `src/features/<name>/<Name>.constants.ts`; other code reads them through

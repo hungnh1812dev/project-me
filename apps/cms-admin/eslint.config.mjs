@@ -31,9 +31,14 @@ const OTHER_VIEW_BAN = {
 };
 
 const LOCALE_FILE_BAN = {
-  group: ['**/configs/locales/*/*'],
+  group: ['**/configs/locales/*/*', '@configs/locales/*/*'],
   message:
     'Read text through @configs/locales (loadScreenText, useScreenText, COMMON_TEXT); a locale file belongs to configs/locales/ only.',
+};
+const LOCALE_LANGUAGE_BAN = {
+  group: ['**/configs/locales/*', '@configs/locales/*'],
+  message:
+    'Product code reads text through @configs/locales; only tests import @configs/locales/en (EN_TEXT).',
 };
 const LOCALE_SIBLING_BAN = {
   regex: '^\\./(?!Common$)[^/]+$',
@@ -51,13 +56,29 @@ const SIBLING_FEATURE_CONSTANTS_BAN = {
     'A feature constants file belongs to its feature; export what others need through its index.ts.',
 };
 
-const importBoundary = (files, patterns, ignores = []) => ({
-  files,
-  ignores,
-  rules: {
-    'no-restricted-imports': ['error', { patterns: [...patterns, LOCALE_FILE_BAN] }],
+// Tests name the exact module a consumer imports (vi.mock), so they may go deep.
+const TEST_FILES = ['**/*.test.{ts,tsx}'];
+
+// Product files also may not import a language folder; tests may (EN_TEXT).
+const importBoundary = (files, patterns, ignores = []) => [
+  {
+    files,
+    ignores: [...ignores, ...TEST_FILES],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        { patterns: [...patterns, LOCALE_FILE_BAN, LOCALE_LANGUAGE_BAN] },
+      ],
+    },
   },
-});
+  {
+    files: files.map((pattern) => [pattern, ...TEST_FILES]),
+    ignores,
+    rules: {
+      'no-restricted-imports': ['error', { patterns: [...patterns, LOCALE_FILE_BAN] }],
+    },
+  },
+];
 
 // SPEC §2 import order, lowest first. A feature may import only from tiers
 // below its own, and only through the other feature's index.ts.
@@ -71,9 +92,6 @@ const FEATURE_TIERS = [
 ];
 const FEATURES_IMPORTING_NO_FEATURE = ['auth', 'content-types', 'status'];
 const ALL_FEATURES = [...FEATURE_TIERS.flat(), 'status'];
-// Tests name the exact module a consumer imports (vi.mock), so they may go deep.
-const TEST_FILES = ['**/*.test.{ts,tsx}'];
-
 const allowedFeaturesOf = (feature) => {
   if (FEATURES_IMPORTING_NO_FEATURE.includes(feature)) return [];
   const tierIndex = FEATURE_TIERS.findIndex((tier) => tier.includes(feature));
@@ -138,23 +156,23 @@ export default [
   }),
   reactHooks.configs.flat['recommended-latest'],
   { languageOptions: { globals: globals.browser } },
-  importBoundary(
+  ...importBoundary(
     ['src/**'],
     [WIRING_BAN, FEATURE_CONSTANTS_BAN],
     ['src/app/**', 'src/views/**', 'src/FeatureTiers.architecture.test.ts'],
   ),
-  importBoundary(['src/features/**'], [WIRING_BAN, APP_BAN, API_CLIENT_BAN, VIEWS_BAN]),
-  importBoundary(['src/components/**'], [WIRING_BAN, APP_BAN, VIEWS_BAN]),
-  importBoundary(['src/views/**'], [WIRING_BAN, APP_BAN]),
-  importBoundary(['src/views/*/**'], [WIRING_BAN, APP_BAN, OTHER_VIEW_BAN], TEST_FILES),
-  importBoundary(['src/app/**'], [FEATURE_CONSTANTS_BAN]),
-  importBoundary(
+  ...importBoundary(['src/features/**'], [WIRING_BAN, APP_BAN, API_CLIENT_BAN, VIEWS_BAN]),
+  ...importBoundary(['src/components/**'], [WIRING_BAN, APP_BAN, VIEWS_BAN]),
+  ...importBoundary(['src/views/**'], [WIRING_BAN, APP_BAN]),
+  ...importBoundary(['src/views/*/**'], [WIRING_BAN, APP_BAN, OTHER_VIEW_BAN], TEST_FILES),
+  ...importBoundary(['src/app/**'], [FEATURE_CONSTANTS_BAN]),
+  ...importBoundary(
     ['src/libs/**', 'src/apis/**', 'src/utils/**', 'src/configs/**'],
     [WIRING_BAN, APP_BAN, FEATURES_BAN, VIEWS_BAN],
   ),
-  ...ALL_FEATURES.map(featureOrderBoundary),
+  ...ALL_FEATURES.flatMap(featureOrderBoundary),
   // Tests build a real client with createApiClient, so only they may reach apis/client/Api.client.
-  importBoundary(
+  ...importBoundary(
     TEST_FILES.map((pattern) => `src/features/${pattern}`),
     [WIRING_BAN, APP_BAN, VIEWS_BAN, SIBLING_FEATURE_CONSTANTS_BAN],
   ),
