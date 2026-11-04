@@ -1,7 +1,8 @@
 # Docs: docs/deployments/ci-cd.md
 # Shared publish for one app, called by the publish-<app> jobs of ci.yml (after the app flow passed; e2e does not run in CI):
-#   image (per platform: build -> non-root guard -> bundle check (cms-admin) -> push by digest)
-#   -> manifest (<branch>-<sha7> and <branch>) -> deploy (bump <app>-sync-overlay.yaml)
+#   image (per platform: build -> non-root guard -> bundle check (cms-admin); with should_push also push by digest)
+#   -> manifest (tags) -> deploy (bump <app>-sync-overlay.yaml); manifest and deploy run only with should_push.
+# should_push false (the default) builds and guards the image and pushes, tags and deploys nothing.
 # One production image per service, built straight from apps/<app>/Dockerfile.
 # cms-api is one image: the init container runs `npm run deploy:migrate`, the main container
 # runs `node dist/main.js`; both use the same tag from cms-api-sync-overlay.yaml.
@@ -25,17 +26,17 @@ on:
         type: string
         required: true
       tag:
-        description: Image tag, <branch>-<sha7>
+        description: Image tag; needed when should_push is true
         type: string
-        required: true
+        required: false
       branch:
         description: Source branch, also the moving image tag
         type: string
         required: true
       deploy_ref:
-        description: Deployment repo branch to bump
+        description: Deployment repo branch to bump; needed when should_push is true
         type: string
-        required: true
+        required: false
       image_prefix:
         description: Registry prefix; the image is <image_prefix>/<app>
         type: string
@@ -44,6 +45,11 @@ on:
         description: Turbo version passed to the Dockerfile as a build arg
         type: string
         required: true
+      should_push:
+        description: Push the image, tag it and bump the deployment repo
+        type: boolean
+        required: false
+        default: false
 
 permissions:
   contents: read
@@ -62,6 +68,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
       - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        if: inputs.should_push
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -108,6 +115,7 @@ jobs:
       # Same inputs as the loaded build, so every layer comes from the builder cache.
       - name: Push by digest
         id: build
+        if: inputs.should_push
         uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
           context: .
@@ -121,12 +129,14 @@ jobs:
           cache-from: type=gha,scope=${{ inputs.app }}-${{ inputs.environment }}-${{ matrix.arch }}
       - name: Export digest
         id: digest
+        if: inputs.should_push
         env:
           DIGEST: ${{ steps.build.outputs.digest }}
         run: |
           mkdir -p "$RUNNER_TEMP/digests"
           touch "$RUNNER_TEMP/digests/${DIGEST#sha256:}"
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: inputs.should_push
         with:
           name: digest-${{ inputs.app }}-${{ matrix.arch }}
           path: ${{ runner.temp }}/digests/*
@@ -136,6 +146,7 @@ jobs:
   manifest:
     name: Tag
     needs: image
+    if: inputs.should_push
     runs-on: ubuntu-latest
     environment: ${{ inputs.environment }}
     permissions:
@@ -169,6 +180,7 @@ jobs:
   deploy:
     name: Deploy to ${{ inputs.environment }}
     needs: manifest
+    if: inputs.should_push
     runs-on: ubuntu-latest
     environment: ${{ inputs.environment }}
     # One tag bump at a time per environment, across apps; never cancel a half-done bump

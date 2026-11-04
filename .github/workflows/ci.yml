@@ -1,9 +1,10 @@
 # Docs: docs/deployments/ci-cd.md
 # Entrypoint: changes -> one flow per affected app (cms-api.yml; app-checks.yml for cms-admin and web)
-#   each flow: checks -> build; a repo-wide job (format, audit) always runs.
+#   Depth per branch (.github/scripts/pipeline-target.sh): develop = checks; staging = checks + build;
+#   main = checks + build + an image built and guarded but not pushed. A repo-wide job (format, audit) always runs.
 #   e2e does not run in CI (local only: `pnpm smoke`, `pnpm e2e:spec`).
-#   publish-<app> (_publish.yml): image -> manifest -> deploy bump, only on a push to staging/main, only when
-#   the app's build inputs changed and the app flow succeeded. CI never starts the local smoke stack.
+#   publish-<app> (_publish.yml): runs when the branch builds images, the app's build inputs changed and the app
+#   flow succeeded; it pushes nothing until should_push_image is true. CI never starts the local smoke stack.
 # The app flows never depend on each other, so one app failing never skips another.
 name: CI
 
@@ -41,9 +42,10 @@ jobs:
       web_affected: ${{ steps.affected.outputs.web_affected }}
       web_image: ${{ steps.affected.outputs.web_image }}
       web_matrix: ${{ steps.target.outputs.web_matrix }}
-      publish: ${{ steps.target.outputs.publish }}
+      should_build: ${{ steps.target.outputs.should_build }}
+      should_build_image: ${{ steps.target.outputs.should_build_image }}
+      should_push_image: ${{ steps.target.outputs.should_push_image }}
       branch: ${{ steps.target.outputs.branch }}
-      tag: ${{ steps.target.outputs.tag }}
       environment: ${{ steps.target.outputs.environment }}
       deploy_ref: ${{ steps.target.outputs.deploy_ref }}
       # Workflow-level env does not reach `with:` of a reusable-workflow call; pass it through here
@@ -63,61 +65,18 @@ jobs:
           HEAD_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
         run: bash .github/scripts/affected.sh
 
-      - name: Resolve deploy target
+      - name: Resolve pipeline target
         id: target
         env:
           EVENT_NAME: ${{ github.event_name }}
-          BRANCH: ${{ github.event_name == 'pull_request' && github.base_ref || github.ref_name }}
-          SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          REF_TYPE: ${{ github.ref_type }}
+          REF_NAME: ${{ github.event_name == 'pull_request' && github.base_ref || github.ref_name }}
           CMS_API_IMAGE: ${{ steps.affected.outputs.cms_api_image }}
           CMS_ADMIN_IMAGE: ${{ steps.affected.outputs.cms_admin_image }}
           WEB_IMAGE: ${{ steps.affected.outputs.web_image }}
-        run: |
-          # branch -> image platforms, GitHub Environment, deployment repo branch
-          # (consumed by the publish-<app> jobs; nothing here assumes these branches exist)
-          case "$BRANCH" in
-            develop) platforms='[]';              environment='';           deploy_ref='' ;;     # checks + build only
-            staging) platforms='["linux/amd64"]'; environment=staging;    deploy_ref=staging ;; # x86_64 Ubuntu, like production
-            main)    platforms='["linux/amd64"]'; environment=production; deploy_ref=main ;;    # x86_64 Ubuntu
-            *) echo "::error::No deploy target for branch '$BRANCH'"; exit 1 ;;
-          esac
-          publish=false
-          if [ "$EVENT_NAME" = push ] && [ -n "$environment" ]; then publish=true; fi
-          # One image job per platform, each on a native runner; empty for apps without a new image.
-          # A new platform needs one line here.
-          runner_for() {
-            case "$1" in
-              amd64) echo ubuntu-24.04 ;;
-              *) echo "::error::No runner for platform '$1'" >&2; return 1 ;;
-            esac
-          }
-          matrix_for() {
-            local p='[]'
-            if [ "$1" = true ]; then p=$platforms; fi
-            local platform arch runner entries=()
-            for platform in $(jq -r '.[]' <<<"$p"); do
-              arch=${platform#*/}
-              runner=$(runner_for "$arch") || return 1
-              entries+=("$(jq -cn --arg platform "$platform" --arg arch "$arch" --arg runner "$runner" '{platform: $platform, arch: $arch, runner: $runner}')")
-            done
-            printf '%s\n' "${entries[@]}" | jq -cs '{include: .}'
-          }
-          cms_api_matrix=$(matrix_for "$CMS_API_IMAGE") || exit 1
-          cms_admin_matrix=$(matrix_for "$CMS_ADMIN_IMAGE") || exit 1
-          web_matrix=$(matrix_for "$WEB_IMAGE") || exit 1
-          {
-            echo "publish=$publish"
-            echo "branch=$BRANCH"
-            echo "tag=${BRANCH}-${SHA::7}"
-            echo "environment=$environment"
-            echo "deploy_ref=$deploy_ref"
-            echo "cms_api_matrix=$cms_api_matrix"
-            echo "cms_admin_matrix=$cms_admin_matrix"
-            echo "web_matrix=$web_matrix"
-            echo "turbo_version=$TURBO_VERSION"
-            echo "image_prefix=$IMAGE_PREFIX"
-          } >> "$GITHUB_OUTPUT"
-          echo "Target: $BRANCH, publish=$publish, platforms $platforms, environment '${environment}'"
+          TURBO_VERSION: ${{ env.TURBO_VERSION }}
+          IMAGE_PREFIX: ${{ env.IMAGE_PREFIX }}
+        run: bash .github/scripts/pipeline-target.sh
 
   # Repo-wide checks that no single app owns
   repo:
@@ -146,6 +105,7 @@ jobs:
     uses: ./.github/workflows/cms-api.yml
     with:
       turbo_version: ${{ needs.changes.outputs.turbo_version }}
+      should_build: ${{ needs.changes.outputs.should_build == 'true' }}
 
   cms-admin:
     name: cms-admin
@@ -155,6 +115,7 @@ jobs:
     with:
       app: cms-admin
       turbo_version: ${{ needs.changes.outputs.turbo_version }}
+      should_build: ${{ needs.changes.outputs.should_build == 'true' }}
 
   web:
     name: web
@@ -164,13 +125,14 @@ jobs:
     with:
       app: web
       turbo_version: ${{ needs.changes.outputs.turbo_version }}
+      should_build: ${{ needs.changes.outputs.should_build == 'true' }}
 
   publish-cms-api:
     name: publish cms-api
     needs: [changes, cms-api]
     # always(): run even though a sibling app flow failed or was skipped; only this app must be green
     if: >-
-      always() && needs.changes.outputs.publish == 'true' && needs.changes.outputs.cms_api_image == 'true'
+      always() && needs.changes.outputs.should_build_image == 'true' && needs.changes.outputs.cms_api_image == 'true'
       && needs.cms-api.result == 'success'
     uses: ./.github/workflows/_publish.yml
     # Called workflow's jobs get at most these; only its image and manifest jobs use packages: write
@@ -182,9 +144,9 @@ jobs:
       app: cms-api
       environment: ${{ needs.changes.outputs.environment }}
       matrix: ${{ needs.changes.outputs.cms_api_matrix }}
-      tag: ${{ needs.changes.outputs.tag }}
       branch: ${{ needs.changes.outputs.branch }}
       deploy_ref: ${{ needs.changes.outputs.deploy_ref }}
+      should_push: ${{ needs.changes.outputs.should_push_image == 'true' }}
       image_prefix: ${{ needs.changes.outputs.image_prefix }}
       turbo_version: ${{ needs.changes.outputs.turbo_version }}
 
@@ -193,7 +155,7 @@ jobs:
     needs: [changes, cms-admin]
     # always(): run even though a sibling app flow failed or was skipped; only this app must be green
     if: >-
-      always() && needs.changes.outputs.publish == 'true' && needs.changes.outputs.cms_admin_image == 'true'
+      always() && needs.changes.outputs.should_build_image == 'true' && needs.changes.outputs.cms_admin_image == 'true'
       && needs.cms-admin.result == 'success'
     uses: ./.github/workflows/_publish.yml
     # Called workflow's jobs get at most these; only its image and manifest jobs use packages: write
@@ -205,9 +167,9 @@ jobs:
       app: cms-admin
       environment: ${{ needs.changes.outputs.environment }}
       matrix: ${{ needs.changes.outputs.cms_admin_matrix }}
-      tag: ${{ needs.changes.outputs.tag }}
       branch: ${{ needs.changes.outputs.branch }}
       deploy_ref: ${{ needs.changes.outputs.deploy_ref }}
+      should_push: ${{ needs.changes.outputs.should_push_image == 'true' }}
       image_prefix: ${{ needs.changes.outputs.image_prefix }}
       turbo_version: ${{ needs.changes.outputs.turbo_version }}
 
@@ -216,7 +178,7 @@ jobs:
     needs: [changes, web]
     # always(): run even though a sibling app flow failed or was skipped; only this app must be green
     if: >-
-      always() && needs.changes.outputs.publish == 'true' && needs.changes.outputs.web_image == 'true'
+      always() && needs.changes.outputs.should_build_image == 'true' && needs.changes.outputs.web_image == 'true'
       && needs.web.result == 'success'
     uses: ./.github/workflows/_publish.yml
     # Called workflow's jobs get at most these; only its image and manifest jobs use packages: write
@@ -228,8 +190,8 @@ jobs:
       app: web
       environment: ${{ needs.changes.outputs.environment }}
       matrix: ${{ needs.changes.outputs.web_matrix }}
-      tag: ${{ needs.changes.outputs.tag }}
       branch: ${{ needs.changes.outputs.branch }}
       deploy_ref: ${{ needs.changes.outputs.deploy_ref }}
+      should_push: ${{ needs.changes.outputs.should_push_image == 'true' }}
       image_prefix: ${{ needs.changes.outputs.image_prefix }}
       turbo_version: ${{ needs.changes.outputs.turbo_version }}

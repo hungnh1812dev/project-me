@@ -11,6 +11,11 @@ on:
         description: turbo version, kept in sync with the Dockerfiles and the root package.json
         type: string
         required: true
+      should_build:
+        description: Run the Build job (false on develop)
+        type: boolean
+        required: false
+        default: true
 
 # Read-only: checks and build push nothing
 permissions:
@@ -50,6 +55,7 @@ jobs:
   build:
     name: Build
     needs: checks
+    if: inputs.should_build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
