@@ -13,10 +13,10 @@ Open risks: braces 3.0.3 high DoS advisory (build-only, via tailwind CLI/shadcn;
 | 12 | remember-me | todo (plan approved 2026-11-03; after web-bff-hardening; phase 2 only for apps/web) | features/remember-me/ | apps/cms-api (modules/identity, prisma), apps/cms-admin (login, auth, copy), apps/web (BFF auth, session, dialog), docs/modules, apps/e2e | - | - |
 | 6 | reviewer-console | todo (after web-bff-hardening, draft-publish) | features/reviewer-console/ | apps/cms-admin, apps/cms-api, apps/e2e, docker-compose.smoke.yml, scripts/, docs/deployments | - | - |
 | 7 | backup | todo | features/backup/ | apps/cms-api, apps/cms-admin, docs/deployments | f4c4690 | - |
-| 8 | ci | todo | features/ci/ | .github | 9db3759 | - |
+| 8 | ci | in-progress | features/ci/ | .github, scripts, .claude/skills/release-tag, docs/deployments, docs/apps (patch notes), CHANGELOG.md, docs/global/FLOW.md | 9db3759 | - |
 | 9 | mf | todo | features/mf/ | apps/cms-admin, apps/web (planner to confirm after web-bff-hardening) | - | - |
 | 10 | launch-gate | todo | features/launch-gate/ | whole project | 9d6a334 | - |
-| 13 | deploy-docs | in-progress | features/deploy-docs/ | docs/deployments | 1e7cab92 | - |
+| 13 | deploy-docs | dropped (user 2026-11-04; folder kept as record, empty) | features/deploy-docs/ | docs/deployments | 1e7cab92 | - |
 
 Bases 1, 2, 3 and 5 are the parent of the oldest commit of the feature's tasks (from `tasks/done.md`); feature histories interleave, so a `base..HEAD` diff also holds other features' commits. Folders 2-5 were pre-created during the migration to keep their open state; the manager keeps their content when it opens them.
 
