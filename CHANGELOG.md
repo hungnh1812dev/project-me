@@ -1,4 +1,4 @@
-# Changelog
+# CHANGELOG
 
 Every release of the repository, newest first. Each entry gives the repo version, the version of each app and package, the changes (new features, changes, bug fixes) and the DevOps patches the deploy repo must apply for it. How a release is versioned and recorded: [docs/global/FLOW.md](docs/global/FLOW.md) "Versions and change log".
 
@@ -10,15 +10,12 @@ First versioned release: everything built up to this date.
 
 ### Versions
 
-| Part                  | Version | Changed in this release |
-| --------------------- | ------- | ----------------------- |
-| repo                  | 0.0.1   | yes (first version)     |
-| `@abyss/cms-api`      | 0.0.1   | yes                     |
-| `@abyss/cms-admin`    | 0.0.1   | yes                     |
-| `@abyss/web`          | 0.0.1   | yes                     |
-| `@abyss/e2e`          | 0.0.1   | yes                     |
-| `@abyss/base-config`  | 0.1.0   | no (version kept)       |
-| `@abyss/form-commons` | 0.1.0   | no (version kept)       |
+| Part               | Version | Changed in this release |
+| ------------------ | ------- | ----------------------- |
+| repo               | 0.0.1   | yes (first version)     |
+| `@abyss/cms-api`   | 0.0.1   | yes                     |
+| `@abyss/cms-admin` | 0.0.1   | yes                     |
+| `@abyss/web`       | 0.0.1   | yes                     |
 
 ### New features
 
@@ -46,10 +43,6 @@ web:
 
 - Public CV page from published content over GraphQL, with sensitive fields masked and richtext sanitized.
 - Sign-in dialog with the two-factor step, reviewer access dialog, `/status` page; CSP with a per-request nonce.
-
-e2e:
-
-- Playwright suite against the smoke stack, run locally before a push to `staging` or `main`.
 
 Repository:
 
