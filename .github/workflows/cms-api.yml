@@ -78,6 +78,9 @@ jobs:
           node-version-file: .nvmrc
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      # jest runs outside turbo, so its db:generate dependency must run here
+      - name: Generate Prisma client
+        run: pnpm --filter @abyss/cms-api db:generate
       # Testcontainers starts PostgreSQL on the runner's Docker
       - name: Integration tests
         run: pnpm --filter @abyss/cms-api test:integration
