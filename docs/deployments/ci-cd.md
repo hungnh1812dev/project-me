@@ -10,7 +10,7 @@ Status: **ready** in code (the routing tests `affected.test.sh` and `pins-check.
 push to develop / staging / main, or a repo tag v<x.y.z>
   -> changes (turbo query affected, .github/scripts/affected.sh; release set on a tag, release-apps.sh)
   -> repo          version pins check + format:check + dependency audit (always runs)
-  -> cms-api       Checks -> Build   (when cms-api is affected)
+  -> cms-api       Checks -> Build   (when cms-api is affected); Integration tests too on a tag
   -> cms-admin     Checks -> Build   (when cms-admin is affected; app-checks.yml)
   -> web           Checks -> Build   (when web is affected; app-checks.yml)
   -> publish-<app> image -> (tag run only) manifest -> deploy bump
@@ -34,15 +34,16 @@ Release images come only from a `v<x.y.z>` tag made by the `release-tag` skill i
 
 ## 2. Jobs
 
-| Job                | What it runs                                                                                                                                                                                                               |
-| ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `changes`          | lists affected apps (`apps`, `<app>_affected`, `<app>_image`; on a tag the release set from `release-apps.sh`) and resolves the depth (`pipeline-target.sh`); routing is tested by `bash .github/scripts/affected.test.sh` |
-| `repo`             | `.github/scripts/pins-check.sh` (Turbo and Node pins agree), `pnpm format:check`, `pnpm audit --prod --audit-level high`                                                                                                   |
-| `cms-api` Checks   | `turbo run typecheck lint`, `test:unit`, `test:integration` (Testcontainers on the runner's Docker), `content:generate -- --check`, `graphql:print-schema -- --check`, `contract:print -- --check`                         |
-| `cms-admin` Checks | `turbo run typecheck lint`, `pnpm --filter @abyss/cms-admin test`                                                                                                                                                          |
-| `web` Checks       | `turbo run typecheck lint`, `pnpm --filter @abyss/web test`                                                                                                                                                                |
-| `<app>` Build      | `pnpm turbo run build --filter=@abyss/<app>` (no Docker image here)                                                                                                                                                        |
-| `publish-<app>`    | `_publish.yml`: per-platform image (build, non-root guard, admin bundle check; push by digest on a tag run only), manifest, deploy bump (section 4)                                                                        |
+| Job                         | What it runs                                                                                                                                                                                                               |
+| --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `changes`                   | lists affected apps (`apps`, `<app>_affected`, `<app>_image`; on a tag the release set from `release-apps.sh`) and resolves the depth (`pipeline-target.sh`); routing is tested by `bash .github/scripts/affected.test.sh` |
+| `repo`                      | `.github/scripts/pins-check.sh` (Turbo and Node pins agree), `pnpm format:check`, `pnpm audit --prod --audit-level high`                                                                                                   |
+| `cms-api` Checks            | `turbo run typecheck lint`, `test:unit`, `content:generate -- --check`, `graphql:print-schema -- --check`, `contract:print -- --check`                                                                                     |
+| `cms-api` Integration tests | `test:integration` (Testcontainers on the runner's Docker); release tags `v<x.y.z>` only; gates `publish cms-api`; not a required check on `main`                                                                          |
+| `cms-admin` Checks          | `turbo run typecheck lint`, `pnpm --filter @abyss/cms-admin test`                                                                                                                                                          |
+| `web` Checks                | `turbo run typecheck lint`, `pnpm --filter @abyss/web test`                                                                                                                                                                |
+| `<app>` Build               | `pnpm turbo run build --filter=@abyss/<app>` (no Docker image here)                                                                                                                                                        |
+| `publish-<app>`             | `_publish.yml`: per-platform image (build, non-root guard, admin bundle check; push by digest on a tag run only), manifest, deploy bump (section 4)                                                                        |
 
 **Change detection.** `turbo.json` `build.inputs` excludes docs and tests, so a docs or test only change runs checks and build but gets no new image (`<app>_image=false`). A change to `.github/workflows/cms-api.yml` re-runs cms-api, `app-checks.yml` re-runs cms-admin and web; `ci.yml`, `_publish.yml` and `.github/scripts/**` re-run all apps. A new branch or a force push treats every app as affected.
 
@@ -160,7 +161,7 @@ These are baked into public bundles, so they are variables, never secrets. A mis
 
 ## 7. What stays in this pipeline
 
-Never removed by a CI change: SHA-pinned actions; the tag guards of `release-apps.sh` and the never-overwrite check of `_publish.yml`; the `repo` job (pins check, `format:check`, audit); unit tests in every app flow; cms-api integration tests and the three `--check` generators; publish gated on the app flow, not on e2e; `persist-credentials: false` with the header-only token on the deploy push; `packages: write` only on the image and manifest jobs; the `pull_request` trigger commented out.
+Never removed by a CI change: SHA-pinned actions; the tag guards of `release-apps.sh` and the never-overwrite check of `_publish.yml`; the `repo` job (pins check, `format:check`, audit); unit tests in every app flow; cms-api integration tests on every release tag and the three `--check` generators; publish gated on the app flow, not on e2e; `persist-credentials: false` with the header-only token on the deploy push; `packages: write` only on the image and manifest jobs; the `pull_request` trigger commented out.
 
 ## 8. Carried over from the earlier deployment
 
