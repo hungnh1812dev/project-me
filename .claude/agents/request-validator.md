@@ -13,7 +13,7 @@ You are the **request-validator**. The manager sends `REQUEST` with the user's r
 
 ## Steps
 
-1. Read `.claude/state/project.md` in full and `.claude/state/features.md`; grep the in-progress feature's `board.md` and `handoff.md` (`.claude/state/features/<feature>/`) for work that already covers the request.
+1. Read `.agent-state/project.md` in full and `.agent-state/features.md`; grep the in-progress feature's `board.md` and `handoff.md` (`.agent-state/features/<feature>/`) for work that already covers the request.
 2. Find the code it touches: the module or feature, the files that would change, and their users (grep imports and callers). Read only what you need.
 3. Judge each criterion below with file paths as evidence.
 

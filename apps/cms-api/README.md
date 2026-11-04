@@ -35,12 +35,12 @@ database and user, and the password as redacted.
 
 Database roles in production (ADR 0012): the API runs as `abyss_api`, which
 has no DDL right, and `deploy:migrate` runs as the migration role
-(`abyss_migrator`; on Supabase `postgres`), each with its own Secret. The
+(`abyss_migrator`, or a managed service's admin role), each with its own Secret. The
 migration commands load only the `DB_*` keys and `NODE_ENV`, so the init
 container needs no app secret. `scripts/db/database-roles.sql` creates the
 roles and grants; with `NODE_ENV=production` the API logs one warning at boot
-when its own role can run DDL. First-install steps and the Supabase runbook:
-`docs/deployment/k3s-traefik.md` and `docs/deployment/supabase-database.md`.
+when its own role can run DDL. First-install steps and the roles runbook:
+`docs/deployments/database.md` and `docs/deployments/devops-runbook.md`.
 
 Database TLS: `DB_SSL_MODE` is `disable` (default), `require` (encrypted, the
 server is not checked) or `verify-full` (certificate chain and host name
@@ -888,7 +888,7 @@ redacted in the boot summary. `modules/backups/adapters/S3BackupStorage.adapter.
 implements the `BackupStorage` port (`list`, `find`, `createDownloadUrl`) with
 the official S3 SDK. Design: `docs/adr/0013-backup-download.md`. The bucket, the
 nightly job and the key placement (ConfigMap or Secret) are in
-`docs/deployment/k3s-traefik.md` section 7.
+`docs/deployments/backups.md`.
 
 ## Docker
 

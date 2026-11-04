@@ -13,7 +13,7 @@ export const BACKUPS_COPY = {
   forbidden: 'Only the owner can view backups.',
   notConfigured: {
     title: 'Backup storage is not set up on this server',
-    hint: 'The backup bucket is connected in the deployment. See “Backup download (cms-admin)” in docs/deployment/k3s-traefik.md.',
+    hint: 'The backup bucket is connected in the deployment.',
   },
   empty: 'No backups yet',
   emptyHint: 'The first backup appears here after the nightly job has run.',

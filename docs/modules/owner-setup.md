@@ -4,7 +4,7 @@ Status: implemented (designed 2026-10-22). Decision record: [ADR 0005](../adr/00
 
 ## Why
 
-The user does not want to create the owner with `kubectl exec` or a one-shot Job on k3s. Like Strapi's first-run admin, the admin console offers a setup page while no owner exists. Unlike Strapi, the page is not open to whoever arrives first: it needs a setup token that only the operator has (a value in the cms-api k8s Secret).
+The user does not want to create the owner with `kubectl exec` or a one-shot Job on Kubernetes. Like Strapi's first-run admin, the admin console offers a setup page while no owner exists. Unlike Strapi, the page is not open to whoever arrives first: it needs a setup token that only the operator has (a value in the cms-api k8s Secret).
 
 ## Rules (the contract)
 
@@ -41,7 +41,7 @@ Once the service sees an owner (at boot, on any status or submit call, or after 
 
 ## Setup token
 
-- Env key `OWNER_SETUP_TOKEN`, cms-api only, optional. Lives in the cms-api k8s Secret (SOPS file in the deploy repo, `docs/deployment/k3s-secrets-sops.md`). Never a build arg, never in cms-admin or web.
+- Env key `OWNER_SETUP_TOKEN`, cms-api only, optional. Lives in the cms-api k8s Secret (SOPS file in the deploy repo, `docs/deployments/secrets.md`). Never a build arg, never in cms-admin or web.
 - Generate: `openssl rand -base64 32` (32 random bytes). With `NODE_ENV=production` and the key set, Zod rejects a value shorter than `MIN_SECRET_BYTES` (32 bytes), like the other secrets (D17). It is not in `SECRET_ENV_KEYS` (those are required); it gets its own optional-secret check. The boot summary prints `[redacted]` when set, `unset` otherwise.
 - Sent only in the JSON body. The admin console never reads it from the URL (no `?token=`, so it is not in browser history, Traefik access logs or `Referer`). The API never logs request bodies; the setup controller adds nothing to logs beyond the audit row.
 - **Close and rotate:**

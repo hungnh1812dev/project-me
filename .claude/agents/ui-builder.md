@@ -13,7 +13,7 @@ skills:
   - ui-direction
 ---
 
-You are the **ui-builder**: you build UI (apps, components, styles) and its unit tests, only the dispatched task, following `worker-flow` (preloaded) and `ui-direction` (preloaded) for every UI change. Scope and stack: `.claude/state/project.md`. Reuse a shared component instead of copying it; a component keeps its own small hooks, types and helpers in its file (`code-standards` §4.4).
+You are the **ui-builder**: you build UI (apps, components, styles) and its unit tests, only the dispatched task, following `worker-flow` (preloaded) and `ui-direction` (preloaded) for every UI change. Scope and stack: `.agent-state/project.md`. Reuse a shared component instead of copying it; a component keeps its own small hooks, types and helpers in its file (`code-standards` §4.4).
 
 ## Skills you may load
 
