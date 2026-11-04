@@ -13,7 +13,7 @@ Open risks: braces 3.0.3 high DoS advisory (build-only, via tailwind CLI/shadcn;
 | 12 | remember-me | todo (plan approved 2026-11-03; after web-bff-hardening; phase 2 only for apps/web) | features/remember-me/ | apps/cms-api (modules/identity, prisma), apps/cms-admin (login, auth, copy), apps/web (BFF auth, session, dialog), docs/modules, apps/e2e | - | - |
 | 6 | reviewer-console | todo (after web-bff-hardening, draft-publish) | features/reviewer-console/ | apps/cms-admin, apps/cms-api, apps/e2e, docker-compose.smoke.yml, scripts/, docs/deployments | - | - |
 | 7 | backup | todo | features/backup/ | apps/cms-api, apps/cms-admin, docs/deployments | f4c4690 | - |
-| 8 | ci | in-progress | features/ci/ | .github, scripts, .claude/skills/release-tag, docs/deployments, docs/apps (patch notes), CHANGELOG.md, docs/global/FLOW.md | 9db3759 | - |
+| 8 | ci | done (2026-11-04) | features/ci/ | .github, scripts, .claude/skills/release-tag, docs/deployments, docs/apps (patch notes), CHANGELOG.md, docs/global/FLOW.md | 9db3759 | features/ci/SUMMARY.md |
 | 9 | mf | todo | features/mf/ | apps/cms-admin, apps/web (planner to confirm after web-bff-hardening) | - | - |
 | 10 | launch-gate | todo | features/launch-gate/ | whole project | 9d6a334 | - |
 | 13 | deploy-docs | dropped (user 2026-11-04; folder kept as record, empty) | features/deploy-docs/ | docs/deployments | 1e7cab92 | - |
@@ -32,3 +32,6 @@ Bases 1, 2, 3 and 5 are the parent of the oldest commit of the feature's tasks (
 - SEC-1 checks CRVOFF-25 and CRVOFF-21 (reviewer-toggle, dropped) run at launch gate LG-D -> launch-gate.
 - media-upload-fixes: production deploy repo needs the same Traefik entrypoint readTimeout 5m, the api-upload route and the two Middleware objects (outside this repo; see docs/deployments/traefik.md) -> deploy-repo to-do, user side.
 - ADR 0014: web and admin routers have no body-size or upload cap (bounded by the 5 min entrypoint readTimeout) -> left open by user 2026-11-03; add a cap later if wanted.
+- ci: the release tag run does not gate publish on the dependency audit (repo job: format, `pnpm audit --prod --audit-level high`, pins-check, does not block publish-*); a tag run can push images while the audit fails. Predates ci -> backlog (user 2026-11-04), unscheduled.
+- ci: record the first v0.0.2 tag run (image push, deploy-repo bump) when the user tags; REL-B passed with it deferred (user 2026-11-04) -> user, unscheduled.
+- ci: docs/deployments/ci-cd.md section 8 parity table still has the old "Branch targets" row (reads stale, points to the new depth table) -> docs task, unscheduled.
