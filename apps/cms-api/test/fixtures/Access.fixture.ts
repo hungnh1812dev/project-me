@@ -22,7 +22,7 @@ export const ARTICLE_DEFINITION = {
   fields: [
     { name: 'title', type: 'string' },
     { name: 'body', type: 'richtext' },
-    { name: 'priority', type: 'integer' },
+    { name: 'priority', type: 'integer', width: '1/2', displayName: 'Priority level' },
     { name: 'score', type: 'decimal' },
     { name: 'featured', type: 'boolean' },
     { name: 'releaseDate', type: 'date' },

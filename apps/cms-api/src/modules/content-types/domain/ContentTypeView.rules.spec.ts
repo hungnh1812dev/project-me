@@ -7,12 +7,13 @@ import {
   reviewerActor,
   SubjectCatalog,
 } from '../../access';
-import { ContentTypeRegistry } from '../../content-engine';
-import { contentTypeView } from './ContentTypeView.rules';
+import { ContentTypeRegistry, DEFAULT_FIELD_WIDTH } from '../../content-engine';
+import { contentTypeView, type ViewVocabulary } from './ContentTypeView.rules';
 
-const VOCABULARY = {
+const VOCABULARY: ViewVocabulary = {
   systemConditionFields: CONDITION_SYSTEM_FIELDS,
   joinFieldPath,
+  defaultFieldWidth: DEFAULT_FIELD_WIDTH,
 };
 
 const PROFILE = {
@@ -34,7 +35,7 @@ const PROFILE = {
           type: 'component',
           component: 'role',
           repeatable: true,
-          fields: [{ name: 'teamSize', type: 'integer' }],
+          fields: [{ name: 'teamSize', type: 'integer', width: '1/3', displayName: 'Team size' }],
         },
       ],
     },
@@ -68,6 +69,24 @@ describe('contentTypeView (T17b)', () => {
       // reviewers never see createdBy / updatedBy (T16)
       ['documentId', false, false, true],
     ]);
+  });
+
+  it('reports width (schema value or default) on scalars and displayName only when set', () => {
+    const view = contentTypeView(
+      type,
+      catalog,
+      recordReadAccess(reviewerActor(1, 1, systemRole('reviewer')), FieldSelection.ALL),
+      VOCABULARY,
+    );
+    const byPath = (path: string) => view.fields.find((f) => f.path === path)!;
+    expect(byPath('email')).toMatchObject({ width: 'full' });
+    expect(byPath('email')).not.toHaveProperty('displayName');
+    expect(byPath('experience.role.teamSize')).toMatchObject({
+      width: '1/3',
+      displayName: 'Team size',
+    });
+    expect(byPath('experience')).not.toHaveProperty('width');
+    expect(byPath('documentId')).not.toHaveProperty('width');
   });
 
   it('keeps a component that is only partly visible, without its other fields', () => {
