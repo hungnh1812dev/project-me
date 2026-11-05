@@ -77,6 +77,7 @@ export SMOKE_DB_API_PASSWORD="$(stack_random_secret)"
 export SMOKE_JWT_ACCESS_SECRET="$(stack_random_secret)"
 export SMOKE_OTP_PEPPER="$(stack_random_secret)"
 export SMOKE_TOTP_ENC_KEY="$(stack_random_secret)"
+export SMOKE_WEB_SESSION_SECRET="$(stack_random_secret)"
 stack_generate_credentials "$SMOKE_DOMAIN"
 
 compose() { docker compose -f "$COMPOSE_FILE" "$@"; }
@@ -241,7 +242,7 @@ check_two_factor
 check_mail
 
 stack_resolve_db_identity
-stack_export_e2e_env "$ADMIN_ORIGIN" "$SMOKE_API_BASE_URL" "$MAILPIT_URL"
+stack_export_e2e_env "$ADMIN_ORIGIN" "$SMOKE_API_BASE_URL" "$MAILPIT_URL" "$WEB_ORIGIN"
 
 if [[ "${SMOKE_KEEP:-}" == "1" ]]; then
   mkdir -p "$(dirname "$E2E_VARS_FILE")"

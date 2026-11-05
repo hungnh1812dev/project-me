@@ -151,11 +151,15 @@ services:
         NEXT_PUBLIC_TURNSTILE_SITE_KEY: 1x00000000000000000000AA
     environment:
       API_INTERNAL_URL: http://cms-api:3000/api/v1
+      WEB_ORIGIN: ${SMOKE_WEB_ORIGIN:?set by scripts/smoke.sh}
+      WEB_SESSION_SECRET: ${SMOKE_WEB_SESSION_SECRET:?set by scripts/smoke.sh}
       # Smoke runs with no data cache; production uses 60.
       WEB_REVALIDATE_SECONDS: '0'
       # /status stays on in the smoke stack (ADR 0014).
       WEB_STATUS_PAGE_ENABLED: 'true'
       WEB_PORT: ${WEB_PORT:-8080}
+      TURNSTILE_SECRET_KEY: 1x0000000000000000000000000000000AA
+      ALLOW_TURNSTILE_TEST_SECRET: smoke
     depends_on:
       cms-api:
         condition: service_healthy
